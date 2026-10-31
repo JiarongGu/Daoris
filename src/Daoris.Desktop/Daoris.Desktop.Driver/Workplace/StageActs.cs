@@ -119,11 +119,11 @@ public sealed class StageActs(ActJournal journal)
     // ——— The reads an act rests on.
 
     /// <summary>The switch, the checkout's identity, the ledger and an operation in progress: why the act is refused now, or null.</summary>
-    private async Task<string?> GuardAsync(StageContext context, string what, CancellationToken ct)
+    internal static async Task<string?> GuardAsync(StageContext context, string what, CancellationToken ct)
     {
         if (!context.Allowed())
         {
-            return Said($"Daoris may not change `{context.Repository}`'s checkout's files; turn on *Daoris may change this checkout's files* in Setup → Reach to stage here");
+            return Said($"Daoris may not change `{context.Repository}`'s checkout's files; turn on *Daoris may change this checkout's files* in Setup → Reach to make this act");
         }
 
         if (!Directory.Exists(context.Checkout) || !await WorkingTree.IsTopLevelAsync(context.Checkout, ct).ConfigureAwait(false))
@@ -219,7 +219,7 @@ public sealed class StageActs(ActJournal journal)
         }
     }
 
-    private static async Task<(string GitDir, string CommonDir)?> LayoutAsync(string checkout)
+    internal static async Task<(string GitDir, string CommonDir)?> LayoutAsync(string checkout)
     {
         var (code, said, _) = await WorkingTree.GitAsync(
             checkout, ["rev-parse", "--absolute-git-dir", "--git-common-dir"], environment: null, GitBounds.Question, CancellationToken.None).ConfigureAwait(false);
