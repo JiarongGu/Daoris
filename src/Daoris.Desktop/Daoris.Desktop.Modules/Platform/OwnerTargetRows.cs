@@ -80,8 +80,14 @@ internal static class OwnerTargetRows
         Row("GIT_REF_CREATE", Repository(), Workspace());
         Row("GIT_REF_UNDO", Repository(), Workspace());
         Row("GIT_REF_DELETE", Repository(), Workspace());
+        Row("GIT_REF_RENAME", Repository(), Workspace());
+        Row("GIT_REF_FINISH", Repository(), Workspace());
         // GITAPP2m: a branch's history edited in one repository's checkout.
         Row("GIT_HISTORY_EDIT", Repository(), Workspace());
+        // GITAPP2h: the index of one repository's checkout staged, unstaged or put back.
+        Row("GIT_STAGE", Repository(), Workspace());
+        Row("GIT_UNSTAGE", Repository(), Workspace());
+        Row("GIT_UNDO", Repository(), Workspace());
         Row("SETUP_PRESS", Repository());
         foreach (var route in new[] { "SET_DRIVABLE", "SET_HOLD", "SET_TREES", "SET_STANDING", "SET_SESSION_CHECKS", "SET_HEAVY_GATES", "SET_WRITE_ACROSS", "SET_CHECKOUT_WRITES" })
         {

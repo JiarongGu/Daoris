@@ -230,7 +230,7 @@ export const useGitTryAgain = () =>
       call<{ lifted: number }>('GIT_TRY_AGAIN', { repositories: [...repositories], ...(workspace ? { workspace } : {}) }),
   });
 
-/** What `GIT_REF_CREATE`, `GIT_REF_DELETE` and `GIT_REF_UNDO` answer (GITAPP2c, d): the journal's act and its outcome, or a refusal as data with the driver's sentence. */
+/** What `GIT_REF_CREATE`, `GIT_REF_DELETE`, `GIT_REF_RENAME`, `GIT_REF_FINISH` and `GIT_REF_UNDO` answer (GITAPP2c to e): the journal's act and its outcome, or a refusal as data with the driver's sentence. */
 export type GitRefAnswer = { act?: string | null; outcome?: string | null; refused: boolean; said: string; code?: string | null };
 
 /**
@@ -255,7 +255,16 @@ export const useGitRefActs = (repository: string, workspace: string) => {
     mutationFn: (ask: { kind: 'branch' | 'tag'; name: string; at: string }) => call<GitRefAnswer>('GIT_REF_DELETE', { ...base, ...ask }),
     onSuccess: refresh,
   });
-  return { make: make.mutateAsync, undo: undo.mutateAsync, remove: remove.mutateAsync };
+  // GITAPP2e: a branch renamed at the commit the list showed, and a rename that stopped before its settings moved finished.
+  const rename = useMutation({
+    mutationFn: (ask: { kind: 'branch' | 'tag'; name: string; to: string; at: string }) => call<GitRefAnswer>('GIT_REF_RENAME', { ...base, ...ask }),
+    onSuccess: refresh,
+  });
+  const finish = useMutation({
+    mutationFn: (act: string) => call<GitRefAnswer>('GIT_REF_FINISH', { ...base, act }),
+    onSuccess: refresh,
+  });
+  return { make: make.mutateAsync, undo: undo.mutateAsync, remove: remove.mutateAsync, rename: rename.mutateAsync, finish: finish.mutateAsync };
 };
 
 /** A history edit asked of a branch (GITAPP2m): the commit or `A..B` range to pick or revert onto it, or the commit to rebase it onto. */

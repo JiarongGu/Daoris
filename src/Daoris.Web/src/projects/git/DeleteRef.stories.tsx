@@ -16,7 +16,7 @@ const CHECKED_OUT = '`spike/renderer` is checked out in `engine-tree`, so nothin
 const meta: Meta<typeof DeleteRef> = {
   title: 'Repositories/DeleteRef',
   component: DeleteRef,
-  args: { name: 'spike/renderer', commit: COMMIT, acts: { make: nothing, remove: nothing, undo: nothing }, onDeleted: () => {} },
+  args: { name: 'spike/renderer', commit: COMMIT, acts: { make: nothing, remove: nothing, rename: nothing, finish: nothing, undo: nothing }, onDeleted: () => {} },
   decorators: [storyWidths.wide],
 };
 export default meta;

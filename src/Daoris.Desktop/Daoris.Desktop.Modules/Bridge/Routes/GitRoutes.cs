@@ -255,6 +255,51 @@ public sealed class GitRoutes(DriverLoop loop)
         return Answered(run, checkout, repository);
     }
 
+    // GITAPP2e (D204, the git-writes design §6): *Rename* on a branch or a lightweight tag, one transaction (the old name deleted, the new made, the old
+    // tip kept on a recovery ref), then the branch's section renamed under config.lock. The refusals are the delete's, and a taken name. An answer of
+    // outcome `partial` is a rename stopped between its ref and its section: the page offers GIT_REF_FINISH and GIT_REF_UNDO, each conditional.
+    [DriverRoute("GIT_REF_RENAME")]
+    [Publishes("GIT_REF_RENAME", StateScopes.Driver)]
+    private async Task<object?> GitRefRenameAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var repository = Optional(request, "repository") ?? throw new DriverException("a ref act names its repository.");
+        var kind = Optional(request, "kind");
+        var name = Optional(request, "name");
+        var to = Optional(request, "to");
+        if (kind is not ("branch" or "tag") || string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(to)) throw new DriverException("a rename names its kind, `branch` or `tag`, its name and the name it takes.");
+        _ = _loop.Service ?? throw NotReady();
+
+        var verb = new GitRefVerb(kind, repository, name, Optional(request, "at"), Yes: true, RenameTo: to);
+        var world = new GitRefWorld(
+            async (_, token) => await CheckoutOfAsync(repository, Optional(request, "workspace"), token).ConfigureAwait(false), () => _acts,
+            async (_, checkout, token) => (await CanonicalLine.ResolveAsync(checkout, repository, Optional(request, "workspace"), DriverConfig.Load(_loop.ConfigPath), token).ConfigureAwait(false)).Branch);
+        if (Flag(request, "said"))
+        {
+            var writer = new StringWriter { NewLine = "\n" };
+            var code = await GitRefCommand.ExecuteAsync(verb, world, "terminal", "window", writer, writer, cancellationToken).ConfigureAwait(false);
+            var lines = writer.ToString().Split('\n');
+            return new { Said = new TreesSaid(lines[^1].Length == 0 ? lines[..^1] : lines, [], code).ToWire() };
+        }
+
+        if (await world.CheckoutOf(repository, cancellationToken).ConfigureAwait(false) is not { } checkout) return NoCheckout(repository);
+        var line = await world.LineOf!(repository, checkout, cancellationToken).ConfigureAwait(false);
+        var run = await GitRefActs.RenameAsync(_acts, new RefRenameAsk(repository, checkout, kind, name, to, verb.At, line), "window", "window", cancellationToken).ConfigureAwait(false);
+        return Answered(run, checkout, repository);
+    }
+
+    // GITAPP2e: the Finish beside a stopped rename's answer, the section moved alone where the ref and the section stand as the act journaled them.
+    [DriverRoute("GIT_REF_FINISH")]
+    [Publishes("GIT_REF_FINISH", StateScopes.Driver)]
+    private async Task<object?> GitRefFinishAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var repository = Optional(request, "repository") ?? throw new DriverException("a ref act names its repository.");
+        var act = Optional(request, "act") ?? throw new DriverException("a finish names the act it finishes.");
+        _ = _loop.Service ?? throw NotReady();
+        if (await CheckoutOfAsync(repository, Optional(request, "workspace"), cancellationToken).ConfigureAwait(false) is not { } checkout) return NoCheckout(repository);
+        var run = await GitRefActs.FinishAsync(_acts, repository, checkout, act, "window", "window", cancellationToken).ConfigureAwait(false);
+        return Answered(run, checkout, repository);
+    }
+
     // GITAPP2c: the Undo beside a create's answer, the act's ref deleted only at the id the act made it at; refused as data where it moved.
     // GITAPP2d: and beside a delete's, the ref made again where the name is free and its section put back.
     [DriverRoute("GIT_REF_UNDO")]

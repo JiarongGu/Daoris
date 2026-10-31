@@ -171,6 +171,9 @@ internal static class PipeTargetRows
         Row("GIT_REF_UNDO", new RepositoryGround("repository", "workspace"));
         // GITAPP2d: a branch is deleted only at the commit the page showed (`at`), judged fresh under the lock like the rest.
         Row("GIT_REF_DELETE", new RepositoryGround("repository", "workspace"));
+        // GITAPP2e: a rename judges the commit shown, the new name and its section fresh under the lock; Finish judges the act's journaled steps.
+        Row("GIT_REF_RENAME", new RepositoryGround("repository", "workspace"));
+        Row("GIT_REF_FINISH", new RepositoryGround("repository", "workspace"));
         // GITAPP2m: the repository a branch's history is edited in; the act refuses where an id its plan pinned moved, read under the checkout's lock.
         Row("GIT_HISTORY_EDIT", new RepositoryGround("repository", "workspace"));
         Row("RECOVERY_DROP", new RepositoryGround("repository"), new BranchGround(["repository", "refs"], payload =>

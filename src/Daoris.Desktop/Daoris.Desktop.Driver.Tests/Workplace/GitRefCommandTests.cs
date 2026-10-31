@@ -77,6 +77,43 @@ public sealed class GitRefCommandTests : TreeSyncFixture
     }
 
     [Fact]
+    public void A_rename_is_read_from_its_word_and_cannot_also_delete()
+    {
+        Assert.Equal(new GitRefVerb("branch", "repo", "topic", "abc", true, false, "work"), GitRefCommand.Read(["branch", "repo", "topic", "abc", "--rename", "work", "--yes"], out var problem));
+        Assert.Null(problem);
+        Assert.Equal(PersonPresses.GitRefRename, GitRefCommand.RouteOf(new GitRefVerb("tag", "repo", "v1", null, true, false, "v2")));
+        Assert.Null(GitRefCommand.Read(["branch", "repo", "topic", "--rename"], out var missing));
+        Assert.NotNull(missing);
+        Assert.Null(GitRefCommand.Read(["branch", "repo", "topic", "--rename", "x", "--delete"], out var both));
+        Assert.NotNull(both);
+        Assert.True(VerbLeases.Holds(["git", "branch", "repo", "n", "--rename", "m", "--yes"]));
+    }
+
+    [Fact]
+    public async Task A_rename_plan_says_what_it_would_move_and_a_yes_renames_it_through_the_journal_refusing_the_line()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var root = await RepositoryAsync("engine");
+        await GitAsync(root, "branch", "topic", "main");
+        var world = World(root) with { LineOf = (_, _, _) => Task.FromResult<string?>("main") };
+        var planned = new StringWriter();
+        var refused = new StringWriter();
+        var done = new StringWriter();
+
+        var plan = await GitRefCommand.RunAsync(["branch", "engine", "topic", "--rename", "work"], world, Alone(planned, new StringWriter()), CancellationToken.None);
+        var line = await GitRefCommand.RunAsync(["branch", "engine", "main", "--rename", "work", "--yes"], world, Alone(new StringWriter(), refused), CancellationToken.None);
+        var yes = await GitRefCommand.RunAsync(["branch", "engine", "topic", "--rename", "work", "--yes"], world, Alone(done, new StringWriter()), CancellationToken.None);
+
+        Assert.Equal((0, 1, 0), (plan, line, yes));
+        Assert.Contains("would rename the branch `topic`", planned.ToString());
+        Assert.Contains("new reflog", planned.ToString());
+        Assert.Contains("line", refused.ToString());
+        Assert.Contains("renamed the branch `topic` to `work`", done.ToString());
+        Assert.Equal(await RevAsync(root, "main"), await RevAsync(root, "work"));
+        Assert.Empty(new ActJournal(Home).Unclosed());
+    }
+
+    [Fact]
     public void Only_a_yes_changes_the_home_and_so_holds_its_lease()
     {
         Assert.True(GitRefCommand.Changes(["branch", "repo", "n", "--yes"]));

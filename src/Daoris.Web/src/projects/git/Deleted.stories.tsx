@@ -14,7 +14,7 @@ const LONG = 'feature/a-name-long-enough-to-meet-the-floor-of-the-main-area';
 const meta: Meta<typeof Deleted> = {
   title: 'Repositories/Deleted',
   component: Deleted,
-  args: { name: 'spike/renderer', act: 'd1', acts: { make: nothing, remove: nothing, undo: nothing }, onClose: () => {} },
+  args: { name: 'spike/renderer', act: 'd1', acts: { make: nothing, remove: nothing, rename: nothing, finish: nothing, undo: nothing }, onClose: () => {} },
   decorators: [storyWidths.wide],
 };
 export default meta;
