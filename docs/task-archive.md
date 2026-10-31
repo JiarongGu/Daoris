@@ -5,6 +5,14 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## COMPANYVIEW1f — the diagram (2026-10-31)
+
+> **1f: the diagram** (web). Placement with the column bound, the workspace fold (new), lit paths, the detail and the flowchart's keys (§3.7); an appointed node selects its section. Playwright reads every edge clear of nodes at 80rem, and the rail at 39 and 25rem; one Narrator pass. After 1d and 1e. (`docs/2026-10-31-company-view-design.md` §4 and §7 row 6; the COMPANYVIEW1 row stays open.)
+
+Completed 2026-10-31: `buildStructure` (now `agents/roles/roleStructure.ts`, renamed so the page's tree test's mirror rule holds) also makes the diagram's nodes and edges under the same filters, a node with its row's id; `litOf`, `nodeOfRow` and `sectionOf` beside it. `agents/roles/diagram.ts` ranks by `layoutFlow` (an edgeless offered role set in the roles column, the places in declared order) and places by its own rule, across at 42rem through `PlacementBounds`' new `column` bound, else its list; `design/groupFolds.ts` folds each workspace past 24 nodes. `RoleDiagram.tsx` draws it (§3.7's list, roving stop and keys; edges from measured boxes); `RolesMode` holds the view (remembered), the chosen node, the filters and the rows open across both views, a node of another kind moves the section, its detail is its row's molecule (`DiagramDetail`; a role's `RolesCard only`, the same editor), and each row's ⋯ offers *On the diagram*. Proof: `roleStructure.test.ts`, `diagram.test.ts`, `groupFolds.test.ts`, `flowLayout.test.ts`, `RolesDiagram.test.tsx`, `RoleDiagram.stories.tsx` at 80, 39 and 25rem in en and zh and both themes, `measured/roles.spec.ts`. Left to the window: the Narrator pass.
+
+---
+
 ## COMPANYVIEW1i — what a work may call (2026-10-31)
 
 > **1i: what a work may call** (service, driver, web). The call table's answer per work, read-only, in Work's opened row; its read is named by the row (the call table lives in the service). After 1d. (`docs/2026-10-31-company-view-design.md` §2 and §7 row 9; the COMPANYVIEW1 row stays open.)
@@ -22178,6 +22186,12 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 
 **Outcome** 2026-10-31: both were patience on the machine's clock. The Claude usage test's 10 s read gave up while a starved thread pool ran the fake CLI's flush late, so `AskWithinAsync` takes an optional clock (the machine's by default) the tests move; the say verb's 300 ms wait now counts from the loop's take. Each red first, 20 of 20 beside a load on every core. Detail in the FIX-LOG entry.
 
+## LOADFLAKE3 — fast-half tests that give up or reorder under load (2026-10-31)
+
+> **LOADFLAKE3 — fast-half tests that give up or reorder under load** (modules and driver tests; 2026-10-31). Each failed beside other builders' runs and passed alone: `SweepStateSliceTests.A_ref_moved_in_one_repository_pushes_that_partition_alone` (modules; its two-minute patience; `WorkStateSliceTests` and `LinesStateSliceTests` hold a test of the same name and shape), `NewsTellerTests.A_park_its_answer_and_a_park_again_are_two_parks` (driver; the parks in the wrong order, [8, 5] for [5, 8]) and `LookParallelTests.The_lost_claim_checks_are_asked_at_once` (driver; 12 s, its line missing). Find what each waits on (a watcher's tick, a thread-pool turn, a clock), red first under a forced interleaving or a starved pool, fixed with no larger wait, the sweep test's two twins checked for the same cause. Proof: 20 runs beside a load on every core.
+
+**Outcome** 2026-10-31: three causes. The sweep (and the work's twin) test raced a product ordering: `MachineFacts` stamped a subject's end after its fact landed, so a clock moved at the landing froze the rest forever; the stamp is now taken at the answer. The park test's rows were stamped a millisecond apart and the claim tells the newest first; they share one stamp. The lost-claim test's five-second client gave up on the first check when a starved pool started the second late; its client now waits as long as a test may. The lines twin has no rest and was not affected. Detail in the three FIX-LOG entries.
+
 ## LIMITPICK1 — an expired sign-in is not a limit, and no account at its weekly limit is picked (2026-10-31, D206)
 
 > **LIMITPICK1 — an expired sign-in is not a limit, and no account at its weekly limit is picked** (driver; the owner's report, 2026-10-31). Lyntai's MC7 quest (`#1035e1c66547`) ran three times: on `acct-56015909` (8% of its weekly limit) and on `account-3` (97%), each refused *Authentication required* (the agent: "OAuth session expired and could not be refreshed"), then on `Gmail` at 100% of its weekly limit, which hit it; the note then said every account it may run on is at its limit and it would wait for `account-1`. An account whose sign-in expired is said as needing the person's sign-in (on its record and in *What needs you*), not as a limit and not struck as a code defect; the picker never picks an account already at 100% of a limit when its own reading says so; the waiting note names the accounts that need a sign-in apart from the ones cooling. Proof: an auth refusal through the protocol door marking the account for sign-in; a pick passing over an account at 100% weekly; the note's words.
@@ -22221,3 +22235,14 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 > **STARTSPROBE1:** `STARTS` walks a workspace's Build and Intake adapters through `WiringAsync` → `ChooseAsync(..., counts: false)`, whose `Pass` still answers `Ask` for a signed-out account with an old reading, so the walk asks it and asks the agent's binary again where the cached report says the agent is absent. D150 point 5 has a view probe nothing as it opens. Check whether the Map's wiring or any other view reading `STARTS` asks; if so, make the read compose from the last readings, never a question.
 
 **Outcome** 2026-10-31 (quest `#2c62571112d5`, asked by `#6162c9`; FIX-LOG): the probe was real, and only `STARTS` read it (the two `WiringAsync` callers in `AgentsRoutes`; `Next`, `SetUpAgents` and the report already ask nothing). `HarnessRoster.WalkAsync` takes `asks`, false for `WiringAsync`: `Pass` neither asks a signed-out account nor spends its owed fresh reading, and an absent report refuses without the binary asked again. `RosterReadTests` holds both cases red-first with `SelectAsync` as the asking control; `StartWiringTests` and `StartWiringRouteTests` stay green, the hold to `SelectAsync` kept where the readings agree. Left: where an old signed-out reading is stale, the view says signed out until a start or a press asks again.
+
+## INTEGRATE1q — the graph presets (2026-10-31, D215)
+
+> **q** (the integration design's presets): the graph presets, `workflow new --from` and the Workflow tab's offer; the pull request preset over a stand-in plugin and the line preset integrating a done quest end to end.
+
+**Outcome** 2026-10-31: built. The presets, `workflow new --from` and the Workflow tab's offer came first; the two end-to-end proofs closed it: `IntegrationPresetsGitTests` (a done quest landed onto the line through a bound `integrated-no-press` run, its `integrate` and `line` steps reached) and `PullRequestPresetPluginTests` (a person's Accept pushed through the stand-in landing plugin, `landing` and `pushed` reached, `pull-request` once the platform's answer is recorded). They found no defect. Detail in D215's 2026-10-31 note.
+## KNOWCENTRAL2e2 — a proposal from an intake, Ask Daoris or a person's own agent travels (2026-10-31, D220)
+
+> **2e2** (the memory coordinator design §4, §8 row 2e; KNOWCENTRAL2e's left-over): proposals from an intake, Ask Daoris or a person's own agent travel as a quest like a session's, naming the proposer, never widening who may write another repository's memory; a caller with no repository at all refused in a sentence.
+
+**Outcome** 2026-10-31: built. An intake proposes as its ask, Ask Daoris as `daoris:help`, a person's own agent as the registered repository its directory sits in, each in its own workspace; the owner's quest body, packet and list say which proposed. A caller placed in no repository is refused in a sentence; the change doors stay a registered repository's session's alone. Left: a person's own agent is not told how its proposal settles (it has no session); an intake's proposal quest keeps its ask reading waiting until the owner closes it. Detail in D220's note.

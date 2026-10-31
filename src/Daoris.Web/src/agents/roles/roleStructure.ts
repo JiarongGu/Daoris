@@ -6,8 +6,8 @@
  * @remarks
  * Pure: it asks nothing, resolves nothing (the driver's `RoleFor` answered every place already, so a second resolution here would be a
  * second truth) and words nothing; a row carries codes and names, and the molecule says them. A failed part is its row's own field,
- * never an empty list. The ids are shaped for the diagram of row 1f (`place:`, `role:`, `agent:`), which builds nodes and edges over
- * the same answer; this builds rows only.
+ * never an empty list. The diagram's nodes and edges (COMPANYVIEW1f, §4) are built here too, over the same answer and filters, a node
+ * with the id its row has (`place:`, `role:`, `agent:`), so the two views are one selection.
  */
 import type { RoleStructure, StructureChoice, StructureWork } from '../../data/wiring';
 import type { AccountsAnswer } from '../../settings/accounts/accounts';
@@ -15,6 +15,7 @@ import type { RepositoryLine } from '../../settings/repository/Lines';
 import type { RepositoryLanding } from '../../settings/repository/Landings';
 import type { CurrentWorkflow } from '../../workflow/current';
 import { accountStates, agentRows, latestRead } from '../agents';
+import type { RoleSection } from '../modes';
 import type { Tool } from '../tools';
 
 /** The shared filters of the three sections (§3): the workspace, one work, one agent, a name, and *Needs a look*. */
@@ -145,6 +146,50 @@ export type RepositoryRow = {
 
 export type WorkspaceGroup = { id: string; workspace: string; repositories: RepositoryRow[]; differs: number };
 
+/** A node of the diagram (§4): a place, a working role, an appointed role or an agent, each with the id its row has. */
+export type DiagramNode =
+  | {
+    id: string; kind: 'place'; workspace: string | null; repository: string | null;
+    /** The workspace it folds into past 24 nodes; none for this machine. */
+    group: string | null;
+    /** False where the registry does not have it and only a role's scope names it: drawn as written. */
+    known: boolean;
+    /** Whether it sets something of its own: a role placed here, an answer that differs from the one it would take, an appointment. */
+    own: boolean;
+    /** Whether its roles are its own: a role placed here, or an answer that differs. */
+    ownRoles: boolean;
+    /** The repositories in this workspace that set nothing of their own, counted here rather than drawn. */
+    counted: number;
+    /** Per work, what the driver answered here, which choosing the place lights and its detail says. */
+    works: RepositoryWork[];
+    reasons: Reason[];
+  }
+  | { id: string; kind: 'role'; role: RoleRef; takes: string[]; first: StructureChoice | null; more: number; reasons: Reason[] }
+  | { id: string; kind: 'appointed'; role: 'steward' | 'supervisor'; offered: boolean }
+  | { id: string; kind: 'agent'; agent: string; product: string; phrase: string | null; known: boolean; installed: boolean | null; reasons: Reason[] };
+
+/** An edge of the diagram, each from a record: a role placed in a scope, a role's choice, an appointment. */
+export type DiagramEdge =
+  | { id: string; kind: 'placed'; from: string; to: string }
+  | {
+    id: string; kind: 'staffed'; from: string; to: string; agent: string; model?: string; effort?: string;
+    /** `1` to `4`, or `before`. */
+    position: string;
+    state: StructureChoice['state'];
+    /** The last reading says this choice cannot run. */
+    dashed: boolean;
+  }
+  | { id: string; kind: 'appointed'; from: string; to: string; dashed: boolean };
+
+export type Diagram = { nodes: DiagramNode[]; edges: DiagramEdge[] };
+
+/** The appointments as `STATE` says them: which roles this build offers, and each appointment's scope and whether it is dormant. */
+export type AppointedRead = {
+  stewardOffered: boolean;
+  supervisorOffered: boolean;
+  appointments: readonly { role: string; scope: string; workspace: string; repository: string; dormant: boolean }[];
+};
+
 export type Structure = {
   /** The scope Work and Accounts say: this machine, or the filtered workspace. */
   scope: StructurePlace;
@@ -153,6 +198,8 @@ export type Structure = {
   works: WorkRow[];
   accounts: AccountRow[];
   repositories: WorkspaceGroup[];
+  /** The diagram's nodes and edges, under the same filters. */
+  diagram: Diagram;
   /** The filters' options. */
   options: { workspaces: string[]; works: string[]; agents: string[] };
 };
@@ -170,6 +217,8 @@ export type StructureInput = {
   driver: { drivable: readonly string[]; holds: readonly string[] } | null | undefined;
   /** The workflow of each repository opened, by name. */
   workflows: Readonly<Record<string, WorkflowRead>>;
+  /** The appointments from `STATE`; absent, the diagram draws no appointed role. */
+  appointed?: AppointedRead | null;
   filters: StructureFilters;
 };
 
@@ -200,6 +249,17 @@ const lower = (value: string | undefined | null) => (value ?? '').toLowerCase();
 
 /** Whether every choice of a work cannot run by its last reading: one that can, or may, is a start that goes. */
 const allCannot = (choices: readonly StructureChoice[]) => choices.length > 0 && choices.every((choice) => CANNOT_RUN.has(choice.state.code));
+
+type AnsweredPlace = RoleStructure['places'][number] | undefined;
+
+/** A place's answer per work as a row says it: the role, why it holds, its first choice, and whether it differs from this machine's. */
+function placeWorks(place: AnsweredPlace, machine: AnsweredPlace): RepositoryWork[] {
+  return (place?.works ?? []).map((each) => ({
+    work: each.work, role: each.role ? toRef(each.role) : null, held: each.held, first: each.choices[0] ?? null,
+    more: Math.max(0, each.choices.length - 1), choicesFailed: each.choicesFailed, policyFailed: each.policyFailed,
+    differs: !sameAnswer(each, machine?.works.find((other) => other.work === each.work)), cannotRun: allCannot(each.choices),
+  }));
+}
 
 export function buildStructure(input: StructureInput): Structure {
   const { structure, filters } = input;
@@ -303,14 +363,7 @@ export function buildStructure(input: StructureInput): Structure {
         const landing = input.lines?.landings?.find((each) => each.repository === row.repository);
         const driven = input.driver ? (input.driver.holds.includes(row.repository) ? 'held' : input.driver.drivable.includes(row.repository) ? 'driven' : 'not-driven') : null;
         const flow = input.workflows[row.repository] ?? null;
-        const rowWorks: RepositoryWork[] = (place?.works ?? []).map((each) => {
-          const base = workAt(machine, each.work);
-          return {
-            work: each.work, role: each.role ? toRef(each.role) : null, held: each.held, first: each.choices[0] ?? null,
-            more: Math.max(0, each.choices.length - 1), choicesFailed: each.choicesFailed, policyFailed: each.policyFailed,
-            differs: !sameAnswer(each, base), cannotRun: allCannot(each.choices),
-          };
-        });
+        const rowWorks = placeWorks(place, machine);
         const agents = new Set((place?.works ?? []).flatMap((each) => each.choices.map((choice) => choice.agent)));
         const via = new Map<string, Set<'agent' | 'landing'>>();
         for (const agent of agents) {
@@ -368,7 +421,244 @@ export function buildStructure(input: StructureInput): Structure {
     }))
     .filter((group) => group.repositories.length > 0 || (!filters.needsLook && needle === '' && filters.work === null && filters.agent === null));
 
-  return { scope, catalogueFailed: structure.catalogue?.why, works: workShown, accounts: accountsShown, repositories: groups, options };
+  const diagram = diagramOf(input, accounts, needle);
+  return { scope, catalogueFailed: structure.catalogue?.why, works: workShown, accounts: accountsShown, repositories: groups, diagram, options };
+}
+
+const APPOINTED_ROLES = ['steward', 'supervisor'] as const;
+
+/**
+ * The diagram (§4): three columns, places, roles and agents, and the edges between them, each from a record. A place is drawn where it
+ * sets something of its own, and counted in its workspace's node otherwise; an agent the roster lacks is drawn as the choice wrote it.
+ * Never drawn: a rule, an account, a line, a plugin, a resolution, a role over a role.
+ */
+function diagramOf(input: StructureInput, accounts: readonly AccountRow[], needle: string): Diagram {
+  const { structure, filters } = input;
+  const registryWorkspaces = [...new Set(input.registry.map((row) => row.workspace ?? 'default'))].sort();
+  const repositories = [...input.registry].sort((a, b) => a.repository.localeCompare(b.repository));
+  const workspaceOfRepository = (repository: string) => input.registry.find((row) => row.repository === repository)?.workspace ?? 'default';
+  const placeAt = (place: StructurePlace) =>
+    structure.places.find((each) => (each.workspace ?? null) === (place.workspace ?? null) && (each.repository ?? null) === (place.repository ?? null));
+  const machine = placeAt({});
+  const differs = (place: typeof machine, parent: typeof machine) =>
+    (place?.works ?? []).some((each) => !sameAnswer(each, parent?.works.find((other) => other.work === each.work)));
+
+  // ---- Roles: the catalogue's, and any the driver answered that the catalogue lacks, each once.
+  type RoleSeed = { ref: RoleRef; takes: string[]; stored: StructureChoice[] };
+  const roles = new Map<string, RoleSeed>();
+  for (const row of structure.roles) {
+    if (row.state === 'removed') continue;
+    roles.set(row.id, {
+      ref: {
+        id: row.id, nameEn: row.nameEn ?? '', nameZh: row.nameZh ?? '', revision: row.revision,
+        scope: { kind: row.scopeKind ?? 'machine', ...(row.scopeId ? { id: row.scopeId } : {}) },
+      },
+      takes: row.takes,
+      stored: (row.choices ?? []).map((each, index) => ({
+        agent: each.agent, ...(each.model ? { model: each.model } : {}), ...(each.effort ? { effort: each.effort } : {}),
+        from: String(index + 1), state: { code: 'not-read' },
+      })),
+    });
+  }
+  // A role's staffing is its own, so the first place the driver answered it at says its choices and their states.
+  const answered = new Map<string, StructureChoice[]>();
+  for (const place of structure.places) {
+    for (const work of place.works) {
+      if (!work.role) continue;
+      const catalogued = structure.roles.some((row) => row.id === work.role!.id);
+      if (!roles.has(work.role.id)) roles.set(work.role.id, { ref: toRef(work.role), takes: [], stored: [] });
+      const seed = roles.get(work.role.id)!;
+      if (!catalogued && !seed.takes.includes(work.work)) seed.takes.push(work.work);
+      if (!answered.has(work.role.id) && !work.choicesFailed) answered.set(work.role.id, work.choices);
+    }
+  }
+
+  // ---- Places: this machine, each workspace and repository that sets something of its own, and any a role's scope names as written.
+  const appointments = input.appointed?.appointments ?? [];
+  const placedAt = (kind: string, id: string) => [...roles.values()].some((seed) => seed.ref.scope.kind === kind && seed.ref.scope.id === id);
+  const appointedAt = (scope: string) => appointments.some((each) => each.scope.toLowerCase() === scope.toLowerCase());
+  const reasonsOf = (place: typeof machine): Reason[] => {
+    const reasons: Reason[] = [];
+    if ((place?.works ?? []).some((each) => each.held || each.choicesFailed || each.policyFailed)) reasons.push('held');
+    if ((place?.works ?? []).some((each) => allCannot(each.choices))) reasons.push('cannot-run');
+    return reasons;
+  };
+  type PlaceNode = Extract<DiagramNode, { kind: 'place' }>;
+  const places: PlaceNode[] = [{
+    id: placeId({}), kind: 'place', workspace: null, repository: null, group: null, known: true, own: true, ownRoles: true, counted: 0,
+    works: placeWorks(machine, machine), reasons: reasonsOf(machine),
+  }];
+  for (const workspace of registryWorkspaces) {
+    const here = placeAt({ workspace });
+    const inside = repositories.filter((row) => (row.workspace ?? 'default') === workspace).map((row) => {
+      const place = placeAt({ workspace, repository: row.repository });
+      const ownRoles = placedAt('repository', row.repository) || differs(place, here ?? machine);
+      return { repository: row.repository, place, ownRoles, own: ownRoles || appointedAt(`repository:${row.repository}`) };
+    });
+    const ownRoles = placedAt('workspace', workspace) || differs(here, machine);
+    const own = ownRoles || appointedAt(`workspace:${workspace}`);
+    const counted = inside.filter((each) => !each.own).length;
+    if (own || counted > 0) {
+      places.push({
+        id: placeId({ workspace }), kind: 'place', workspace, repository: null, group: workspace, known: true, own, ownRoles, counted,
+        works: placeWorks(here, machine), reasons: reasonsOf(here),
+      });
+    }
+    for (const each of inside.filter((one) => one.own)) {
+      places.push({
+        id: placeId({ workspace, repository: each.repository }), kind: 'place', workspace, repository: each.repository, group: workspace,
+        known: true, own: true, ownRoles: each.ownRoles, counted: 0, works: placeWorks(each.place, machine), reasons: reasonsOf(each.place),
+      });
+    }
+  }
+  const placeOfScope = (kind: string, id: string | undefined): string => {
+    if (kind === 'workspace' && id) return placeId({ workspace: id });
+    if (kind === 'repository' && id) return placeId({ workspace: workspaceOfRepository(id), repository: id });
+    return placeId({});
+  };
+  const asWritten = (kind: string, id: string | undefined, ownRoles: boolean) => {
+    const at = placeOfScope(kind, id);
+    if (places.some((place) => place.id === at)) return;
+    const workspace = kind === 'workspace' ? id! : workspaceOfRepository(id!);
+    places.push({
+      id: at, kind: 'place', workspace, repository: kind === 'repository' ? id! : null, group: workspace, known: false, own: true, ownRoles,
+      counted: 0, works: [], reasons: [],
+    });
+  };
+  for (const seed of roles.values()) {
+    if (seed.ref.scope.kind === 'workspace' || seed.ref.scope.kind === 'repository') asWritten(seed.ref.scope.kind, seed.ref.scope.id, true);
+  }
+
+  // ---- The edges: each role placed in its scope, staffed choice by choice; each appointment.
+  const edges: DiagramEdge[] = [];
+  const roleNodes: Extract<DiagramNode, { kind: 'role' }>[] = [];
+  const agentKeys: string[] = [];
+  for (const [id, seed] of roles) {
+    const node = roleId(id);
+    const from = placeOfScope(seed.ref.scope.kind, seed.ref.scope.id);
+    edges.push({ id: `placed:${from}>${node}`, kind: 'placed', from, to: node });
+    const choices = (answered.get(id) ?? seed.stored).filter((choice) => choice.from !== 'rule-default');
+    for (const choice of choices) {
+      const key = toolOf(input.tools, choice.agent)?.name ?? choice.agent;
+      const edge = `staffed:${node}>${agentId(key)}:${choice.from}`;
+      if (edges.some((each) => each.id === edge)) continue;
+      if (!agentKeys.includes(key)) agentKeys.push(key);
+      edges.push({
+        id: edge, kind: 'staffed', from: node, to: agentId(key), agent: choice.agent, position: choice.from, state: choice.state,
+        dashed: CANNOT_RUN.has(choice.state.code), ...(choice.model ? { model: choice.model } : {}), ...(choice.effort ? { effort: choice.effort } : {}),
+      });
+    }
+    roleNodes.push({
+      id: node, kind: 'role', role: seed.ref, takes: seed.takes, first: choices[0] ?? null, more: Math.max(0, choices.length - 1),
+      reasons: allCannot(choices) ? ['cannot-run'] : [],
+    });
+  }
+  const appointedNodes: Extract<DiagramNode, { kind: 'appointed' }>[] = [];
+  for (const role of APPOINTED_ROLES) {
+    const offered = role === 'steward' ? input.appointed?.stewardOffered === true : input.appointed?.supervisorOffered === true;
+    const these = appointments.filter((each) => each.role === role);
+    if (!offered && these.length === 0) continue;
+    const node = `appointed:${role}`;
+    appointedNodes.push({ id: node, kind: 'appointed', role, offered });
+    for (const each of these) {
+      const [kind, id] = each.scope === 'machine' ? ['machine', undefined] : [each.scope.slice(0, each.scope.indexOf(':')), each.scope.slice(each.scope.indexOf(':') + 1)];
+      if (kind === 'workspace' || kind === 'repository') asWritten(kind, id, false);
+      const from = placeOfScope(kind!, id);
+      edges.push({ id: `appointed:${from}>${node}`, kind: 'appointed', from, to: node, dashed: each.dormant });
+    }
+  }
+  const agentNodes: Extract<DiagramNode, { kind: 'agent' }>[] = agentKeys.map((key) => {
+    const row = accounts.find((each) => each.id === agentId(key));
+    return row
+      ? { id: row.id, kind: 'agent', agent: key, product: row.product, phrase: row.phrase, known: row.known, installed: row.installed, reasons: row.reasons }
+      : { id: agentId(key), kind: 'agent', agent: key, product: key, phrase: null, known: false, installed: null, reasons: ['not-known'] };
+  });
+
+  // ---- The shared filters, as the sections take them: a node is kept by them, and an edge where both its ends are.
+  const titleOf = (place: PlaceNode) => [place.workspace, place.repository].filter(Boolean).join('/');
+  const inScope = (place: PlaceNode) => filters.workspace === null || place.group === null || place.group === filters.workspace;
+  const answering = (work: string) => new Set(structure.places.flatMap((place) => place.works.filter((each) => each.work === work && each.role).map((each) => roleId(each.role!.id))));
+  const byWork = filters.work === null ? null : answering(filters.work);
+  const narrowed = filters.work !== null || filters.agent !== null || needle !== '' || filters.needsLook;
+  const placeById = new Map(places.map((place) => [place.id, place]));
+  const agentById = new Map(agentNodes.map((agent) => [agent.id, agent]));
+  const out = (from: string) => edges.filter((edge) => edge.from === from);
+  const into = (to: string) => edges.filter((edge) => edge.to === to);
+  const keptRoles = new Set(roleNodes.filter((node) => {
+    const from = placeById.get(into(node.id)[0]?.from ?? '');
+    const agents = out(node.id).map((edge) => agentById.get(edge.to)!);
+    return (from === undefined || inScope(from))
+      && (byWork === null || byWork.has(node.id))
+      && (filters.agent === null || agents.some((agent) => agent.agent === filters.agent))
+      && (needle === '' || [node.role.id, node.role.nameEn, node.role.nameZh, ...(from ? [titleOf(from)] : []), ...agents.flatMap((agent) => [agent.agent, agent.product])]
+        .some((text) => lower(text).includes(needle)))
+      && (!filters.needsLook || node.reasons.length > 0);
+  }).map((node) => node.id));
+  const keptAppointed = new Set(appointedNodes.filter((node) => filters.work === null && filters.agent === null && needle === ''
+    && (!filters.needsLook || into(node.id).some((edge) => edge.kind === 'appointed' && edge.dashed))).map((node) => node.id));
+  const keptPlaces = new Set(places.filter((place) => inScope(place) && (
+    place.id === placeId({})
+    || !narrowed
+    || out(place.id).some((edge) => keptRoles.has(edge.to) || keptAppointed.has(edge.to))
+    || (needle !== '' && lower(titleOf(place)).includes(needle))
+  )).map((place) => place.id));
+  const keptAgents = new Set(agentNodes.filter((agent) => (filters.agent === null || agent.agent === filters.agent)
+    && into(agent.id).some((edge) => keptRoles.has(edge.from))).map((agent) => agent.id));
+  const kept = new Set([...keptPlaces, ...keptRoles, ...keptAppointed, ...keptAgents]);
+  return {
+    nodes: [...places, ...roleNodes, ...appointedNodes, ...agentNodes].filter((node) => kept.has(node.id)),
+    edges: edges.filter((edge) => kept.has(edge.from) && kept.has(edge.to)),
+  };
+}
+
+/** What choosing a node lights (§4, *inheritance is lit, never drawn*): never a new edge, only what the records already draw. */
+export function litOf(diagram: Diagram, id: string | null): { nodes: Set<string>; edges: Set<string> } {
+  const nodes = new Set<string>();
+  const edges = new Set<string>();
+  const node = id === null ? undefined : diagram.nodes.find((each) => each.id === id);
+  if (!node) return { nodes, edges };
+  const light = (edge: DiagramEdge) => { edges.add(edge.id); nodes.add(edge.from); nodes.add(edge.to); };
+  const around = (role: string) => {
+    nodes.add(role);
+    for (const edge of diagram.edges) if ((edge.to === role && edge.kind === 'placed') || (edge.from === role && edge.kind === 'staffed')) light(edge);
+  };
+  nodes.add(node.id);
+  if (node.kind === 'place') {
+    // Per work, the role the driver answered here, where that role is placed and its staffing; and this place's appointments.
+    for (const work of node.works) if (work.role && diagram.nodes.some((each) => each.id === roleId(work.role!.id))) around(roleId(work.role.id));
+    for (const edge of diagram.edges) if (edge.kind === 'appointed' && edge.from === node.id) light(edge);
+  } else if (node.kind === 'agent') {
+    for (const edge of diagram.edges) if (edge.kind === 'staffed' && edge.to === node.id) light(edge);
+  } else if (node.kind === 'role') {
+    around(node.id);
+  } else {
+    for (const edge of diagram.edges) if (edge.to === node.id) light(edge);
+  }
+  return { nodes, edges };
+}
+
+/** The node a row is drawn as: a work's by its role, a place that sets nothing of its own by its workspace's; none where none is drawn. */
+export function nodeOfRow(structure: Structure, id: string): string | null {
+  const drawn = (node: string) => structure.diagram.nodes.some((each) => each.id === node);
+  if (id.startsWith('work:')) {
+    const role = structure.works.find((row) => row.id === id)?.role;
+    return role && drawn(roleId(role.id)) ? roleId(role.id) : null;
+  }
+  if (drawn(id)) return id;
+  if (id.startsWith('place:') && id.includes('/')) {
+    const workspace = `place:${id.slice('place:'.length, id.indexOf('/'))}`;
+    return drawn(workspace) ? workspace : null;
+  }
+  return null;
+}
+
+/** The section a node's row is in: so choosing a node of another kind moves the section, and *Show as list* lands on its row. */
+export function sectionOf(node: string): RoleSection {
+  if (node === placeId({})) return 'work';
+  if (node.startsWith('place:')) return 'repository';
+  if (node.startsWith('appointed:')) return 'appointed';
+  if (node.startsWith('agent:')) return 'accounts';
+  return 'working';
 }
 
 /** Each role that leans on an agent at this machine, for the agent's page (*Used by*): the roles at their choices' positions. */

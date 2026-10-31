@@ -549,6 +549,12 @@ internal sealed class StandInLedger : HttpMessageHandler
         }
     }
 
+    /// <summary>A record's line of work (D167 point 2), as the ledger answers it: the parts that share it are one entry.</summary>
+    public void InEntry(string session, string entry)
+    {
+        lock (_gate) _sessions.Single(s => s["id"]!.GetValue<string>() == session)["entry"] = entry;
+    }
+
     /// <summary>
     /// A driven session of this machine's that took <paramref name="quest"/> and parked to ask the person (D83), in its own
     /// tree, with no words on it yet (ANSWER2): what the say door keeps the person's answer on.
