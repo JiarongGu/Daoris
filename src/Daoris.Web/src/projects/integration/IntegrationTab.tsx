@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Inline, Prose, SkeletonRows } from '../../design/ui';
 import { PageSection } from '../../work/frame/ViewMain';
@@ -41,6 +42,8 @@ export type IntegrationTabProps = {
   onDrop?: (request: string) => void;
   /** *Check again*: have the line looked at now. */
   onRecheck?: () => void;
+  /** The related sessions' read, drawn read-only after the history (LINESTOGETHER1c). */
+  related?: ReactNode;
 };
 
 const short = (tip: string) => tip.slice(0, 7);
@@ -50,7 +53,7 @@ const short = (tip: string) => tip.slice(0, 7);
  * and a fixed strip of steps, what holds it and the act that releases it, what was handed back, the superseded commits awaiting a
  * disposition, and the promoted history. Read from the integration record, never copied; a terminal's twin is `daoris-driver integrate`.
  */
-export function IntegrationTab({ repository, look, reading = false, refusal = null, onDrop, onRecheck }: IntegrationTabProps & { repository: string }) {
+export function IntegrationTab({ repository, look, reading = false, refusal = null, onDrop, onRecheck, related }: IntegrationTabProps & { repository: string }) {
   const { t } = useTranslation();
   if (!look) {
     return (
@@ -104,6 +107,8 @@ export function IntegrationTab({ repository, look, reading = false, refusal = nu
           <Requests rows={look.promoted} />
         </PageSection>
       )}
+
+      {related}
     </div>
   );
 }
