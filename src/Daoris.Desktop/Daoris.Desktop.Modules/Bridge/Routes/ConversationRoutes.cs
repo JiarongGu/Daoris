@@ -411,6 +411,24 @@ public sealed class ConversationRoutes(DriverContext context)
         return edit == QueueEdit.Done ? new { Done = true } : new { Done = false, Why = "taken" };
     }
 
+    // Moving one word held on a part's record to the head (LINESTOGETHER1b, the review-flow design §2): `{ session, id, to }`, where `id` is the
+    // word as SESSION_QUEUE names it and `to` the head the page shows, from which the service walks on to the head now. Taken off and kept there
+    // in one step under the key `move:<session>:<id>`, so asked again after a lost answer it answers moved and says nothing twice. Answers
+    // `{ moved: true, to, word }`, a retry's `{ moved: true, again: true, to }`, and `{ moved: false, why, message, to? }`: `taken`, the service's
+    // refusal by its code (a running head named as `to`), or `not-known` where the service's answer never came. It moves the words of two
+    // sessions, so it publishes as a word said does, naming the part by its `session` field.
+    [DriverRoute("SESSION_QUEUE_MOVE")]
+    [Publishes("SESSION_QUEUE_MOVE", StateScopes.Sessions, Session = "session")]
+    private async Task<object?> SessionQueueMoveAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
+        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var to = PayloadHelper.GetRequiredValue<string>(request.Payload, "to");
+        var moved = await _loop.Words.MoveAsync(session, id, to, cancellationToken).ConfigureAwait(false);
+        if (!moved.Moved) return new { Moved = false, moved.Why, moved.Message, moved.To };
+        return moved.Again ? new { Moved = true, Again = true, moved.To } : (object)new { Moved = true, moved.To, Word = moved.Word?.Id };
+    }
+
     // A conversation's model and effort, as its agent offers them on the protocol door (AGT6b, D98):
     // the page asks once, and takes every change after that as `SESSION_OPTIONS_CHANGED`. Nothing here
     // holding it, or a door that carries none, is an empty list — never a refusal, since a composer

@@ -50,6 +50,8 @@ internal static class OwnerTargetRows
             Row(route, Session("session"));
         }
 
+        // LINESTOGETHER1b: a held word moved from a part to the head changes the words of both.
+        Row("SESSION_QUEUE_MOVE", Session("session"), Session("to"));
         rows.Add("SESSION_ARCHIVE", OwnerTarget.Of(new OwnerField("ids", OwnerKinds.Session, Many: true)));
 
         // Quests, asks and the work they are.
