@@ -10,8 +10,8 @@ namespace Daoris.Driver;
 /// </summary>
 internal static class ActFiles
 {
-    /// <summary>Where an act's files are kept: beside the desktop's store, one folder per act.</summary>
-    public static string Dir(string home, string act) => Path.Combine(home, "act-files", act);
+    /// <summary>Where an act's files are kept: beside the desktop's store, one folder per act (<see cref="HomeEntry.ActFiles"/>).</summary>
+    public static string Dir(string home, string act) => DaorisHome.Entry(home, HomeEntry.ActFiles, act);
 
     /// <summary>An act's files let go of, with its record's expiry; nothing where there are none.</summary>
     public static void Remove(string home, string act)

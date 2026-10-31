@@ -12743,3 +12743,13 @@ mis-rooted instance.
 **Fix.** The test's request waits `Poll.Patience`, as a wait on a signal does (the short-waits census's rule); it returns as soon as the loop honours it.
 
 **Verification.** `SessionsCommandTests`, 70 of 70; the failure was the candidate's alone, the test passing three times in a row run by itself.
+
+## 2026-11-01 — INTEGRATETREE1: a line's integration tree read as an unknown owner's unit
+
+**Symptom.** The install's Needs showed "clean-up is blocked" for the plugins repository's and Lyntai's `i-main-…` and `i-master-…` trees: "its owner is unknown: no record names `HEAD`, so nothing here is cleaned", with no press that could take them.
+
+**Root cause.** The work inventory lists every folder under the trees home (`SessionTrees.ListAsync`) and attaches each to the unit whose branch it is on, else makes it a unit of unknown owner. A line's integration tree (`IntegrationReplays`, INTEGRATE1e e3a) is Daoris's own, kept warm and detached between candidates, so no branch record named it. The stray tidy already passes over the other flows' own folders (`TreeStrays.OthersOwn`); the inventory had no such rule.
+
+**Fix.** `WorkInventory.AttachTrees` passes over a detached tree whose folder carries the integration prefix: no unit, so nothing waits on the person. An `i-` folder with a branch checked out is still judged as before.
+
+**Verified.** `WorkInventoryTests.A_lines_integration_tree_is_no_unit_and_one_on_a_branch_is_still_unknown`.

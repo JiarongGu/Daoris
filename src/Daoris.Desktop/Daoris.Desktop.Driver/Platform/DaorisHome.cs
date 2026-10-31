@@ -389,6 +389,9 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     // CONFIRMWAIT1a-ii (the confirm-wait design §7.1): a terminal's presses waiting for the person, one record each, kept across a restart in
     // data/ (backed up), never run/ (anyone may clear it while Daoris is closed); never a key in it (D172 point 3).
     public static readonly HomeEntry PipeWaiting = new("pipe-waiting", HomeCategory.Data, "data/pipe-waiting", "data/pipe-waiting");
+    // GITAPP2j (D204; the git-writes design §5): the bytes a file step of the act journal replaces and writes, one folder per act, let go of
+    // with its record; data/ (backed up), since they are the person's files as they stood.
+    public static readonly HomeEntry ActFiles = new("act-files", HomeCategory.Data, "data/act-files/*", "data/act-files/*");
     public static readonly HomeEntry Keys = new("keys", HomeCategory.Profiles, "profiles/keys.json", "keys.json");
     public static readonly HomeEntry Remotes = new("remotes", HomeCategory.Profiles, "profiles/remotes.json", "remotes.json");
     public static readonly HomeEntry AgentHomes = new("agent-homes", HomeCategory.Profiles, "profiles/agents/*/*", "harnesses/*/*");
@@ -445,7 +448,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
         PluginApprovals, Usage,
         Landings, SessionBranches, LinesMoved, OverlapsTold, RegistryFollowed, Abandoned, Update, Knowledge, DesktopDb, Sessions, Helpers, Partners, Handed, Setup,
         Workflows, HelpProposals, ConfiguredAccess, OpinionGates, OpinionDues, BrowserSettings, BrowserFavorites, HomeId, Brainstorms,
-        UsageHistory, Keeping, Notices, GitIdentities, StandingConfirmation, AgentOffers, PipeWaiting,
+        UsageHistory, Keeping, Notices, GitIdentities, StandingConfirmation, AgentOffers, PipeWaiting, ActFiles,
         Keys, Remotes, AgentHomes, BrowserEngine, BrowserEdge, EdgeCookies, GitKeys, GitSshConfig, GitKnownHosts, GitConfig, Window, PipeSent,
         Trees, HelpRoom, HelpRooms, Intake, OpinionPackets, QuestFiles, AskFiles, SessionFiles, Proof, UsageRead, BrainstormRooms, RoleRooms,
         Toolchain, ToolVersions, Bin,

@@ -294,6 +294,16 @@ public sealed class WorkInventoryTests
         Assert.Same(entry, Assert.Single(unit.Cleanup.Waits));
     }
 
+    /// <summary>INTEGRATETREE1: a line's integration tree, detached as its run keeps it, is Daoris's own: no unit, so no clean-up waits on the person.</summary>
+    [Fact]
+    public void A_lines_integration_tree_is_no_unit_and_one_on_a_branch_is_still_unknown()
+    {
+        Assert.Empty(WorkInventory.Derive(Facts(trees: [Tree("i-main-0d6e4079", "HEAD")])));
+
+        // Only the run's shape is its own: an i- folder with a branch checked out is no integration tree.
+        Assert.Equal("unknown", One(Facts(trees: [Tree("i-main-0d6e4079", "daoris/other")])).End.State);
+    }
+
     [Theory]
     [InlineData("(not a tree)", "no repository is linked")]
     [InlineData("(unreadable)", "could not read which branch")]
