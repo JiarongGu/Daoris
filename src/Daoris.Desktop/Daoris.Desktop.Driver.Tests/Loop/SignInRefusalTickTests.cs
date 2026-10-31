@@ -86,9 +86,8 @@ public sealed class SignInRefusalTickTests : IDisposable
         Assert.Contains("the ACP agent refused the call: Authentication required", note);
         Assert.Contains("The agent refused the `stub` account `account-1` for its sign-in", note);
         Assert.Contains(refused["noteParts"]!.AsArray(), part => part?["code"]?.GetValue<string>() == "account.signed-out");
-        Assert.Equal("Open", service.Status("q1"));
 
-        // reads.json holds account-1 signed out, with its time, as a reading would.
+        // reads.json holds account-1 signed out, with its time, as a reading would; account-2 was never read.
         Assert.Equal(new AccountRead(LoginState.Out, Seen), AccountReads.Of(_home, "stub").Accounts["account-1"]);
         Assert.False(AccountReads.Of(_home, "stub").Accounts.ContainsKey("account-2"));
 
@@ -99,10 +98,7 @@ public sealed class SignInRefusalTickTests : IDisposable
             Assert.False(ServiceClient.ReadStrikes(records).ContainsKey("q1"));
         }
 
-        // The next start walks past account-1 to account-2, and closes the quest.
-        var next = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
-
-        Assert.DoesNotContain(next.Considerations, c => c.Verdict == StartVerdict.Exhausted);
+        // LIMITPICK2: the same start went on under the walk's next account, with no second look.
         var carried = service.Session("s2");
         Assert.Equal(("completed", "account-2"), (carried["state"]!.GetValue<string>(), carried["profile"]!.GetValue<string>()));
         Assert.Equal("Done", service.Status("q1"));
@@ -111,20 +107,53 @@ public sealed class SignInRefusalTickTests : IDisposable
             [("account-1", "session/new"), ("account-2", "session/new"), ("account-2", "session/prompt")],
             runs.Select(run => (run["account"]!.GetValue<string>(), run["method"]!.GetValue<string>())));
 
-        // Its conversation record opens saying why it ran on account-2: the quest was never taken, so this is a start, not a
-        // carry-on, and the step that passed account-1 is its sign-in.
-        var opening = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After("s2", 0).Events[0];
-        Assert.StartsWith("opened on `account-2`: the `stub` account `account-1` is not signed in", opening.Text);
+        // Its conversation record opens on account-2 and says the start moved off account-1 for its sign-in.
+        var opening = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After("s2", 0).Events;
+        Assert.StartsWith("opened on `account-2`", opening[0].Text);
+        Assert.Contains(opening, line => line.Text == "The same start moved here: `account-1` refused it for its sign-in.");
+    }
+
+    /// <summary>LIMITPICK2: with no other account in the list the start ends as it did, failed with no strike, its quest open.</summary>
+    [Fact]
+    public async Task A_start_refused_for_its_sign_in_with_no_other_account_free_ends_failed_and_waits()
+    {
+        Directory.Delete(HarnessSettings.ProfileHome(_home, "stub", "account-2"), recursive: true);
+        new HarnessSettings().WithDefault("stub", "account-1").WithRotation("stub", ["account-1"])
+            .Save(DaorisHome.Entry(_home, HomeEntry.Harnesses));
+        await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
+        var adapters = AdapterSet.Built();
+        var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
+        using var client = new ServiceClient(service.Url, null);
+        var config = DriverConfig.Empty with
+        {
+            Drivable = ["engine"],
+            Trees = ["engine"],
+            Adapter = "acp-stub",
+            TestBound = 1,
+            PollSeconds = 1,
+            Strikes = 1,
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", AcpAgent(), Log] },
+        };
+        var driver = new Daoris.Driver.Driver(client, config, adapters, _home, processes: new SessionProcesses(), harnesses: roster);
+
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+
+        var refused = service.Session("s1");
+        Assert.Equal(("failed", "account-1"), (refused["state"]!.GetValue<string>(), refused["profile"]!.GetValue<string>()));
+        Assert.Contains(refused["noteParts"]!.AsArray(), part => part?["code"]?.GetValue<string>() == "account.signed-out");
+        Assert.Equal("Open", service.Status("q1"));
+        Assert.Equal(
+            [("account-1", "session/new")],
+            File.ReadAllLines(Log).Select(line => JsonNode.Parse(line)!).Select(run => (run["account"]!.GetValue<string>(), run["method"]!.GetValue<string>())));
     }
 
     /// <summary>
     /// TOOL6h through real ticks: account-1 was last read signed in, and its agent refuses it while its status question still
-    /// says signed in. The refusal owes account-1 one fresh reading: the next look asks it, alone, and honours the yes by starting
-    /// on it, which the agent refuses again; that refusal owes none, so the look after asks nothing and walks past account-1 to
-    /// account-2, which closes the quest. One status question in three looks, and never one per look.
+    /// says signed in. Its refusal marks it and the same start goes on to account-2 (LIMITPICK2), which closes the quest, so no status
+    /// question is asked in that look.
     /// </summary>
     [Fact]
-    public async Task A_refused_account_last_read_signed_in_is_asked_once_and_its_answer_honoured_never_at_every_look()
+    public async Task A_refused_account_last_read_signed_in_is_passed_in_the_same_start_without_a_status_question()
     {
         await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
         var adapters = AdapterSet.Built();
@@ -148,23 +177,21 @@ public sealed class SignInRefusalTickTests : IDisposable
         var driver = new Daoris.Driver.Driver(client, config, adapters, _home, processes: new SessionProcesses(), harnesses: roster);
         AccountReads.Keep(_home, "stub", "account-1", LoginState.In, Seen.AddMinutes(-30));
 
-        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
-        var retried = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
-        var next = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
-        // One status question, of account-1 alone, at the look after its refusal; the yes ran it, and nothing asked it again.
-        Assert.Equal(["status account-1"], Asked.Where(line => line.StartsWith("status ", StringComparison.Ordinal)));
+        // LIMITPICK2: the same start went on under account-2 at once, so nothing asked account-1's status in this look.
+        Assert.Empty(Asked.Where(line => line.StartsWith("status ", StringComparison.Ordinal)));
         Assert.Equal(
-            [("failed", "account-1"), ("failed", "account-1"), ("completed", "account-2")],
-            new[] { "s1", "s2", "s3" }.Select(id => service.Session(id))
+            [("failed", "account-1"), ("completed", "account-2")],
+            new[] { "s1", "s2" }.Select(id => service.Session(id))
                 .Select(record => (record["state"]!.GetValue<string>(), record["profile"]!.GetValue<string>())));
         Assert.Equal("Done", service.Status("q1"));
         var runs = File.ReadAllLines(Log).Select(line => JsonNode.Parse(line)!).ToList();
         Assert.Equal(
-            [("account-1", "session/new"), ("account-1", "session/new"), ("account-2", "session/new"), ("account-2", "session/prompt")],
+            [("account-1", "session/new"), ("account-2", "session/new"), ("account-2", "session/prompt")],
             runs.Select(run => (run["account"]!.GetValue<string>(), run["method"]!.GetValue<string>())));
         Assert.Equal(new AccountRead(LoginState.Out, Seen), AccountReads.Of(_home, "stub").Accounts["account-1"]);
-        Assert.DoesNotContain(new[] { retried, next }.SelectMany(look => look.Considerations), c => c.Verdict == StartVerdict.Exhausted);
+        Assert.DoesNotContain(look.Considerations, c => c.Verdict == StartVerdict.Exhausted);
     }
 
     private string AskedLog => Path.Combine(_home, "asked.log");

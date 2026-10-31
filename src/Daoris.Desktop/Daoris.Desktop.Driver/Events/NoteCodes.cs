@@ -682,6 +682,9 @@ public static class NoteCodes
     // its name as written, since an added role has no id the page knows.
     public static readonly NoteCode OpeningDesign = new("opening.design", ["role"]);
 
+    // LIMITPICK2: a start refused for its account's sign-in went on under another, which says the account it moved off.
+    public static readonly NoteCode OpeningMovedOff = new("opening.moved-off", ["account"]);
+
     // ——— A chat run's binding (CHATFLOW1c, the chat-flow design §4.3), said once in the conversation that grew its tree: the named workflow
     // and the repository or workspace that chose it, the one bound with why it cannot land the work, or a bind the home could not keep.
     // Under Current nothing is said, as a start's binding says nothing.

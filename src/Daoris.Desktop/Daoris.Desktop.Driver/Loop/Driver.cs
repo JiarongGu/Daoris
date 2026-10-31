@@ -1441,9 +1441,22 @@ public sealed class Driver(
 
                 // QUEUEDTREE1: the tree the start opens goes on the driver's close before its record's open is asked, on no token.
                 var fresh = new FreshTree(path => Context.Trees.RemoveAsync(path));
-                return await fresh.UntilOpenAsync(
+                var run = await fresh.UntilOpenAsync(
                         () => Runner is { } runner ? runner(start, opened, ct) : RunAsync(start, snapshot.Repositories, own, opened, fresh, ct), ct)
                     .ConfigureAwait(false);
+
+                // LIMITPICK2: a start refused for its account's sign-in goes on under the next account the walk gives, once, in this start;
+                // where the walk gives none (or the same), the first run's end stands as it was.
+                if (run.SignedOutOn is { } signedOut && Runner is null && start.Resumes is null)
+                {
+                    var again = new FreshTree(path => Context.Trees.RemoveAsync(path));
+                    var moved = await again.UntilOpenAsync(
+                            () => RunAsync(start, snapshot.Repositories, own, () => { }, again, ct, movedOff: signedOut), ct)
+                        .ConfigureAwait(false);
+                    if (moved.Opened) return moved;
+                }
+
+                return run;
             }
             finally
             {
@@ -2062,8 +2075,10 @@ public sealed class Driver(
     /// <param name="registry">The registry as this tick's snapshot answered it: what the session may reach across (D107).</param>
     /// <param name="onOpened">Called once the session's record is open, and never for a start that held or was refused (DEV3).</param>
     /// <param name="fresh">The tree this start opens, let go on each way out that starts nothing, on no token (QUEUEDTREE1).</param>
+    /// <param name="movedOff">The account the first run of this start was refused for its sign-in (LIMITPICK2); a walk that gives it again holds.</param>
     private async Task<StartRun> RunAsync(
-        Consideration start, IReadOnlyList<RepoView> registry, List<TrustHold> untrusted, Action onOpened, FreshTree fresh, CancellationToken ct)
+        Consideration start, IReadOnlyList<RepoView> registry, List<TrustHold> untrusted, Action onOpened, FreshTree fresh, CancellationToken ct,
+        string? movedOff = null)
     {
         var quest = start.Quest;
         var root = start.Root!;
@@ -2285,6 +2300,12 @@ public sealed class Driver(
             // A cooling account's hold carries its cool-off (TOOL4d), so the look says the wait once and a screen shows
             // the quest waiting for an account; and the accounts it passed not signed in (TOOL6g), so both say the sign-in.
             return Hold(selection.Refusal!) with { Cooling = selection.Cooling, SignedOut = selection.SignedOut };
+        }
+
+        if (movedOff is not null && string.Equals(selection.Profile, movedOff, StringComparison.OrdinalIgnoreCase))
+        {
+            Context.Harnesses.Release(selection.Number);
+            return Hold("the walk gave the account that was refused for its sign-in, and no other is free");
         }
 
         // The access setup this start runs under (AUTONOMY1a, D184 point 1), resolved once here from the file this look read, so its
@@ -2816,6 +2837,7 @@ public sealed class Driver(
                     prior.Limit ? Context.Events.TurnsEnded(prior.Session) + 1 : null,
                     prior.Limit ? RotatedOpening.ContextOf(usage, Context.Events, prior.Session) : null));
         // Where a later choice of Build's ran, its actor line beside it, naming each choice passed (D205 §4.6 item 1, MODELROLE1c2).
+        if (movedOff is not null) RotatedOpening.SayMovedOff(Context.Events, sessionId, AccountNames.Said(AccountNames.Of(home, agent), movedOff));
         if (chosen is not null) RotatedOpening.SayActor(Context.Events, sessionId, "build", chosen, buildPasses);
         // A quest marked design says whose order it ran on: the role taking design, Build's while none does (FOUNDATION1x, MODELROLE1l).
         if (start.Resumes is null && StartWork(quest) == ParticipantWork.Design && DesignRoleName(start) is { } designer)
@@ -3192,7 +3214,10 @@ public sealed class Driver(
                     if (ended.Transient?.Opened == true) await TransientRetries.GoOnOffAsync(service, sessionId, ct).ConfigureAwait(false);
 
                     conclusion = AccountRefused(conclusion, adapter, selection, ended);
+                    var beforeSignIn = conclusion;
                     conclusion = AccountSignedOut(conclusion, adapter, selection, turnFailed, ended);
+                    // LIMITPICK2: the account this start was refused for, where it has a profile another can stand in for.
+                    var signedOutOn = !ReferenceEquals(beforeSignIn, conclusion) && stop is null ? selection.Profile : null;
                     // MODELROLE1c3 (D205 §3.3's pipe exception): the pipe door refused the model its choice named on a silent turn, so the
                     // account's reading is kept and the part ends with its line, no strike; the next look starts what the walk then answers.
                     var refusedModel = ModelRefused(conclusion, adapter.Name, selection, target.Asked?.NamedModel, ended, sessionId);
@@ -3265,7 +3290,10 @@ public sealed class Driver(
                                 Limit = limited,
                                 NotOffered = notOffered || modelRefused,
                                 Reason = SessionEnded.ReasonOf(conclusion.Parts),
-                            });
+                            })
+                    {
+                        SignedOutOn = signedOutOn,
+                    };
                 }).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
