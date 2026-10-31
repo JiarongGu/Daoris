@@ -1,19 +1,37 @@
-import { useState } from 'react';
+import { type ComponentType, type Dispatch, type SetStateAction, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  helpModeOf, refusedNoRoute, useActors, useAnswerStaffingFound, useDriver, useHarnesses, useRoles, useSetActor, useSetRole,
-  useStaffingFound, useStarts, type RoleChangePress,
+  helpModeOf, refusedNoRoute, standingOf, useAccounts, useActors, useAnswerStaffingFound, useDriver, useHarnesses, useLines, usePlugins, useRoles,
+  useSetActor, useSetRole, useStaffingFound, useStarts, useWorkflowCurrents, type RoleChangePress,
 } from '../../bridge/shell';
 import { useRegistry } from '../../data/queries';
 import { workspacesOf } from '../../data/workspaces';
 import type { Notify } from '../../design/ui';
+import { store, stored } from '../../lib/stored';
 import { sentence } from '../../locales/format';
 import { namer } from '../../settings/accounts/namer';
 import { AskDaorisAbout, IntakeAbout } from '../../settings/ai/ActorAbout';
-import { doorLabel } from '../tools';
+import { byTool, doorLabel } from '../tools';
 import type { RoleSection } from '../modes';
-import { type ActorChoice, type Editing, RolesCard, roleName } from './Roles';
-import { RoleSectionMain } from './RoleSections';
+import { type ActorChoice, type Editing, newRoleEditing, RolesCard, roleName } from './Roles';
+import { AppointedRoles } from './AppointedRoles';
+import { DiagramSection } from './RoleDiagram';
+import { RoleSectionMain, type RolesView } from './RoleSections';
+import { type RoleDoors, AccountsSection, DiagramDetail, RepositorySection, WorkSection } from './StructureSections';
+import {
+  buildStructure, NO_FILTERS, nodeOfRow, placeId, roleId, sectionOf, type StructureFilters, type WorkflowRead, workflowReadOf,
+} from './roleStructure';
+import { useStructureRead } from './structureRead';
+
+/** Where the application leads a press of these sections: the Agents mode at an agent, a repository's tab, a workspace's Setup, a plugin. */
+export type RoleOpeners = {
+  agent?: (agent: string) => void;
+  repository?: (repository: string, tab: 'setup' | 'workflow' | 'integration') => void;
+  workspace?: (workspace: string) => void;
+  repositories?: () => void;
+  plugin?: (plugin: string) => void;
+  section?: (section: RoleSection) => void;
+};
 
 type Answered = { done: () => void; refused: (sentence: string) => void };
 
@@ -27,8 +45,12 @@ type Answered = { done: () => void; refused: (sentence: string) => void };
  * `STAFFING_FOUND_ANSWER`) and the driver judges; a refusal is its sentence under the press. It is mounted only while the mode is in
  * front, so opening the place asks the driver nothing of roles (D150 point 5).
  */
-export function useRolesMode({ notify }: { notify: Notify }) {
+export function useRolesMode({ notify, section = 'working', doors = {}, page: given }: {
+  notify: Notify; section?: RoleSection; doors?: RoleOpeners; page?: RolesPage;
+}) {
   const { t, i18n } = useTranslation();
+  const own = useRolesPage();
+  const page = given ?? own;
   const driver = useDriver();
   const roster = useHarnesses();
   const registry = useRegistry('machine');
@@ -109,22 +131,170 @@ export function useRolesMode({ notify }: { notify: Notify }) {
     },
   };
 
-  const shown = roles.data || staffing.length > 0 || read === 'failed';
-  const card = shown
-    ? (
-      <RolesCard
-        catalogue={roles.data ?? null} read={read} staffing={staffing} agents={agents} about={about}
-        busy={setRole.isPending || setActor.isPending || answerFound.isPending}
-        onSet={pressRole} onSetActor={saveActor} found={found.data ?? []} onAnswerFound={answerStaffingFound}
-        editor={editing} onEditor={setEditing}
-      />
-    )
+  // Work, Accounts and By repository (COMPANYVIEW1d) and the diagram (COMPANYVIEW1f): one read of the driver's structure, the shared
+  // filters, the rows open, the chosen node and each opened repository's workflow, all held by the page; the sections draw and press.
+  const asked = section === 'work' || section === 'accounts' || section === 'repository' || page.view === 'diagram';
+  const { answer, read: structureRead } = useStructureRead(asked);
+  const { filters, onFilters: setFilters, opened, onOpened: setOpened } = page;
+  const toggle = (id: string) => {
+    const opening = !opened.has(id);
+    setOpened((was) => {
+      const next = new Set(was);
+      if (!next.delete(id)) next.add(id);
+      return next;
+    });
+    // A row opened is the one chosen, so the diagram shows it chosen.
+    const node = opening && structure ? nodeOfRow(structure, id) : null;
+    if (node) page.onSelected(node);
+  };
+  const accounts = useAccounts();
+  const plugins = usePlugins({ enabled: asked });
+  const lines = useLines();
+  const registryRows = registry.data ?? [];
+  const sought = section === 'repository'
+    ? registryRows.filter((row) => opened.has(placeId({ workspace: row.workspace ?? 'default', repository: row.repository }))).map((row) => row.repository)
+    : [];
+  const currents = useWorkflowCurrents(sought);
+  const workflows: Record<string, WorkflowRead> = {};
+  for (const { name, result } of currents) {
+    workflows[name] = result.data ? workflowReadOf(result.data) : result.isError ? { read: 'failed' } : { read: 'loading' };
+  }
+  // The appointments as STATE says them, which the diagram draws; Appointed roles keeps their presses.
+  const standing = standingOf(driver.data?.standingConfirmation);
+  const structure = answer
+    ? buildStructure({
+      structure: answer, registry: registryRows, tools: byTool(harnesses), accounts: accounts.data, plugins: plugins.data?.plugins, lines: lines.data,
+      driver: driver.data ? { drivable: driver.data.drivable ?? [], holds: driver.data.holds ?? [] } : null, workflows, filters,
+      appointed: standing ? { stewardOffered: standing.stewardOffered, supervisorOffered: standing.supervisorOffered, appointments: standing.appointments } : null,
+    })
     : null;
-  return { card };
+
+  // Choosing a node (COMPANYVIEW1f, §4 *Moving between them*): it is the one chosen, its row is opened so *Show as list* lands on it, and
+  // one of another kind moves the section to its row's.
+  const choose = (id: string) => {
+    page.onSelected(id);
+    const rows = id.startsWith('place:') && id.includes('/') ? [`place:${id.slice('place:'.length, id.indexOf('/'))}`, id] : [id];
+    setOpened((was) => new Set([...was, ...rows]));
+    const home = sectionOf(id);
+    if (home !== section) doors.section?.(home);
+  };
+  const toDiagram = (row: string) => {
+    const node = structure ? nodeOfRow(structure, row) : null;
+    if (node) choose(node);
+    page.onView('diagram');
+  };
+
+  const shown = roles.data || staffing.length > 0 || read === 'failed';
+  const cardOf = (only?: string) => (
+    <RolesCard
+      catalogue={roles.data ?? null} read={read} staffing={staffing} agents={agents} about={about}
+      busy={setRole.isPending || setActor.isPending || answerFound.isPending}
+      onSet={pressRole} onSetActor={saveActor} found={found.data ?? []} onAnswerFound={answerStaffingFound}
+      editor={editing} onEditor={(next) => {
+        setEditing(next);
+        if (next && !next.isNew) page.onSelected(roleId(next.id));
+      }}
+      only={only} onDiagram={(role) => toDiagram(roleId(role))}
+    />
+  );
+  const card = shown ? cardOf() : null;
+
+  // Where each press leads; "Open its setting" is the workspace's Setup under a workspace filter, Working roles for the two works whose
+  // *Off* is there, and Repositories otherwise.
+  const rowDoors: RoleDoors = {
+    ...(doors.agent ? { agent: doors.agent } : {}),
+    ...(doors.repository ? { repository: doors.repository } : {}),
+    ...(doors.plugin ? { plugin: doors.plugin } : {}),
+    // *Add a role here*: Working roles' editor for a new role, the place filled; it saves over SET_ROLE as any role does.
+    addRole: (place) => {
+      setEditing(newRoleEditing(roles.data?.works ?? [], agents, place, -1));
+      doors.section?.('working');
+      // The new role's editor is the catalogue's, which the list holds: from a node's detail, the list.
+      page.onView('list');
+    },
+    setting: (work) => {
+      if (work === 'intake' || work === 'ask-daoris') doors.section?.('working');
+      else if (filters.workspace && doors.workspace) doors.workspace(filters.workspace);
+      else doors.repositories?.();
+    },
+    diagram: toDiagram,
+  };
+  const shared = { structure, read: structureRead, filters, onFilters: setFilters, open: opened, onToggle: toggle, doors: rowDoors };
+  const selected = page.selected;
+  const detail = selected && structure && (
+    <DiagramDetail
+      structure={structure} id={selected} open={opened} onToggle={toggle} doors={rowDoors}
+      working={selected.startsWith('role:') && shown ? cardOf(selected.slice('role:'.length)) : undefined}
+      appointed={selected.startsWith('appointed:') ? <AppointedRoles /> : undefined}
+    />
+  );
+  return {
+    card,
+    work: <WorkSection {...shared} />,
+    accounts: <AccountsSection {...shared} />,
+    repository: <RepositorySection {...shared} />,
+    diagram: (
+      <DiagramSection
+        structure={structure} read={structureRead} filters={filters} onFilters={setFilters} selected={selected} onSelect={choose} detail={detail}
+      />
+    ),
+  };
 }
 
-/** The Roles mode's main area: the chosen section, and for Working roles the catalogue and its staffing. */
-export function RolesMode({ section, notify }: { section: RoleSection; notify: Notify }) {
-  const { card } = useRolesMode({ notify });
-  return <RoleSectionMain section={section}>{card}</RoleSectionMain>;
+/** What the Roles mode's page holds across its sections and both views: the view, the node chosen, the filters and the rows open. */
+export type RolesPage = {
+  view: RolesView;
+  onView: (view: RolesView) => void;
+  selected: string | null;
+  onSelected: (id: string | null) => void;
+  filters: StructureFilters;
+  onFilters: (filters: StructureFilters) => void;
+  opened: ReadonlySet<string>;
+  onOpened: Dispatch<SetStateAction<ReadonlySet<string>>>;
+};
+
+/** The person's choice of the diagram over the list, remembered on this machine. */
+const VIEW_KEY = 'daoris.roles.view';
+
+function useRolesPage(): RolesPage {
+  const [view, setView] = useState<RolesView>(() => (stored(VIEW_KEY) === 'diagram' ? 'diagram' : 'list'));
+  const [selected, onSelected] = useState<string | null>(null);
+  const [filters, onFilters] = useState<StructureFilters>(NO_FILTERS);
+  const [opened, onOpened] = useState<ReadonlySet<string>>(new Set());
+  const onView = (next: RolesView) => {
+    store(VIEW_KEY, next === 'diagram' ? 'diagram' : null);
+    setView(next);
+  };
+  return { view, onView, selected, onSelected, filters, onFilters, opened, onOpened };
+}
+
+/**
+ * The Roles mode's main area: the chosen section, and for Working roles the catalogue and its staffing; or the diagram, whichever section
+ * is chosen (COMPANYVIEW1f). The page's state is held here, so the toggle and a section that holds its own keep it.
+ */
+export function RolesMode({ section, notify, doors = {} }: { section: RoleSection; notify: Notify; doors?: RoleOpeners }) {
+  const page = useRolesPage();
+  const Own = OWN_MAINS[section];
+  return Own && page.view === 'list'
+    ? <RoleSectionMain section={section} view={page.view} onView={page.onView}><Own /></RoleSectionMain>
+    : <SharedMain section={section} notify={notify} doors={doors} page={page} />;
+}
+
+/** The sections that hold their own reads and presses, so opening another asks nothing of them. */
+const OWN_MAINS: Partial<Record<RoleSection, ComponentType>> = {
+  appointed: AppointedRoles,
+};
+
+/** Working roles, Work, Accounts and By repository, and the diagram: one hook's card, read and doors. */
+function SharedMain({ section, notify, doors, page }: { section: RoleSection; notify: Notify; doors: RoleOpeners; page: RolesPage }) {
+  const mode = useRolesMode({ notify, section, doors, page });
+  const body = page.view === 'diagram' ? mode.diagram
+    : section === 'working' ? mode.card : section === 'work' ? mode.work : section === 'accounts' ? mode.accounts : section === 'repository' ? mode.repository : null;
+  // Back on the list, the chosen node's row is brought into view.
+  const { view, selected } = page;
+  useEffect(() => {
+    if (view !== 'list' || !selected) return;
+    document.querySelector(`[data-structure-row="${selected}"]`)?.scrollIntoView?.({ block: 'nearest' });
+  }, [view, selected, section]);
+  return <RoleSectionMain section={section} view={page.view} onView={page.onView}>{body}</RoleSectionMain>;
 }

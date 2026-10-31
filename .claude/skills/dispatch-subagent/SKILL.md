@@ -103,8 +103,10 @@ A builder runs before it hands back the checks a candidate runs that its lines r
 page's twins of a driver code list). Its brief names them: `node tools/optional-locks.mjs`, `node tools/test-map.mjs
 --check`, the driver's `ParticipantWorkReadersTests`, `ContinuedReadersCensusTests`, `SystemWiringTests`,
 `ProviderCensusTests` (a new file naming a door's wire), `GitLaunchTests` and `ProcessStartsCensusTests` (a new process
-start) and `LineCourseTests` (a case added to a ported suite), and for a new code in a list the page copies, the page's twin
-test. A Process or Git class that calls what the builder changed is its own to run too, found by searching the test projects for the
+start), `CheckoutWritersCensusTests` (any git write: its `Census` row, and a `HeldIn` row with the lock it takes for a writer of
+a checkout), `SettledReadersCensusTests` (a new reader of a keyed answer), `StructureTests` (a new type or a name crossing a
+folder) and `LineCourseTests` (a case added to a ported suite), and for a new code in a list the page copies, the page's twin
+test. Never a whole fast half: the parent runs the halves once per batch, before it queues. A Process or Git class that calls what the builder changed is its own to run too, found by searching the test projects for the
 changed method's name, not by the class's name: batch s's candidate failed `CommandShimTests`, a Process class that prepares a
 driven start, after a member moved that start's prompt onto its input, and two more candidate failures that day were tests reading
 a path or a prompt no builder searched for. A builder that changes a public signature in the driver builds the modules' and the

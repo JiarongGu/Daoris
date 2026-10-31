@@ -336,6 +336,40 @@ public sealed class IntegrateNodeTests(ITestOutputHelper output) : IDisposable
         if (!asks) Assert.Contains(pass.Said, line => line.Contains("its integration waits", StringComparison.Ordinal));
     }
 
+    /// <summary>
+    /// INTEGRATE1h (§17.4): an automatic landing under <c>owner</c> waits for the owner's card and is named as one, its unit, branch and tip; once
+    /// the card made the landing's request, the node follows that request as its own, asks the door nothing more, and the wait is gone.
+    /// </summary>
+    [Fact]
+    public async Task A_landing_waiting_for_the_owners_card_is_named_until_the_card_makes_its_request_which_the_node_then_follows()
+    {
+        _units = [BranchUnit(Landed(by: AcceptedBy.Auto, request: LandingIntegrate.Owner))];
+        var runtime = Runtime();
+
+        await PassAsync(runtime, Config());
+
+        var wait = Assert.Single(runtime.CardWaits());
+        Assert.Equal((Unit, "engine", Branch, T1, IntegrationRefusals.AwaitsOwner, (DateTimeOffset?)Then), (wait.Unit, wait.Repository, wait.Branch, wait.Tip, wait.Code, wait.Since));
+        Assert.Equal(NodeStates.Ready, Status().State);
+
+        // The card: the recorded-landing door keeps the request under the landing's unit and tip.
+        _door.Requests[(Unit, T1)] = new IntegrationRequest("request-card", "engine", "default", Branch, T1, IntegrationRoutes.Recorded, "main",
+            IntegrationRequester.Card, new LandingIntegrate().Resolved(), Then) { Unit = Unit };
+        await PassAsync(runtime, Config());
+
+        Assert.Empty(runtime.CardWaits());
+        Assert.Equal(NodeStates.Active, Status().State);
+        Assert.Empty(_door.Asked);
+
+        // A rule saying `request: done` leaves a landing that says neither to Daoris's sweep: no wait of the owner's.
+        _units = [BranchUnit(Landed(request: null), id: "unit-b")];
+        var swept = Runtime();
+        await PassAsync(swept, Config(LandingIntegrate.Done, autoAccept: true));
+        Assert.Empty(swept.CardWaits());
+        await PassAsync(swept, Config());
+        Assert.Equal(IntegrationRefusals.NoRequest, Assert.Single(swept.CardWaits()).Code);
+    }
+
     /// <summary>A refused ask fails the node with the door's code and words, said once; a door that cannot read git is unknown, never failed.</summary>
     [Fact]
     public async Task A_refused_ask_fails_the_node_with_the_doors_code_and_an_unread_one_is_unknown()

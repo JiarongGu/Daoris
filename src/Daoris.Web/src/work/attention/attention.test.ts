@@ -649,6 +649,43 @@ describe('a run held at a declined request, worded', () => {
   });
 });
 
+/** INTEGRATE1h (§5.8, §17.4): an integration's waits on the owner, each a row with a door to its repository's Integration tab. */
+describe('an integration’s wait on the owner, worded', () => {
+  const decide = row('integration', 'decide:c1', '2026-10-31T09:00:00Z', {
+    where: 'engine', stands: true,
+    integration: { wait: 'decide', repository: 'engine', line: 'main', candidate: 'c1', branches: ['feature/a', 'feature/b'], why: 'an unconfirmed failure of unit' },
+  });
+  const superseded = row('integration', 'superseded:r1:abc1234', '2026-10-31T09:05:00Z', {
+    where: 'engine', integration: { wait: 'superseded', repository: 'engine', line: 'main', branch: 'feature/c', request: 'r1', commit: 'abc1234def', subject: 'later work' },
+  });
+  const card = row('integration', 'card:u1', '2026-10-31T09:10:00Z', {
+    where: 'engine', stands: true, integration: { wait: 'card', repository: 'engine', branch: 'feature/d', unit: 'u1', tip: 'def5678aaa' },
+  });
+
+  it('says each wait in words, offers no press of its own, holds work where it holds the line or a flow, and counts at Repositories', () => {
+    expect(words(decide)).toMatchObject({
+      kind: 'integration', title: 'Candidate for main', where: 'engine',
+      detail: 'feature/a, feature/b held for your decide: split, hand back or land. an unconfirmed failure of unit',
+    });
+    expect(words(superseded)).toMatchObject({ title: 'feature/c', detail: 'Commit `abc1234` (“later work”) was superseded on main: answer superseded, or ask its session to rebase it.' });
+    expect(words(card)).toMatchObject({ title: 'feature/d', detail: 'Landed at `def5678`; its integration waits for you to request it into the line.' });
+    for (const each of [decide, superseded, card]) expect(attentionActs(words(each))).toEqual([]);
+    expect([decide, superseded, card].map((each) => attentionGroup(each))).toEqual(['holding', 'word', 'holding']);
+    expect(placeOf(decide, [])).toBe('projects');
+    expect(placeCounts([decide, superseded, card])).toEqual({ projects: 3 });
+  });
+
+  it('says it in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      expect(words(card).detail).toBe('已在 `def5678` 落地；它的集成等你把它请求进主线。');
+      expect(words(decide).title).toBe('main 的候选');
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+});
+
 /** UX6c (design §6.2): the three groups, in the order a person acts on them, and none shown empty. */
 describe('the groups', () => {
   it('puts each kind in its group', () => {
@@ -659,6 +696,7 @@ describe('the groups', () => {
       'account-wait': 'holding', 'signed-out': 'holding',
       proposal: 'word', intake: 'word', departure: 'word', 'set-up': 'word', opinion: 'word', rule: 'word', helper: 'word',
       'hand-over': 'word', unanswerable: 'word', review: 'ready', work: 'word', space: 'word', 'git-held': 'word', memory: 'word',
+      integration: 'word',
     });
   });
 
@@ -1014,7 +1052,7 @@ describe('the place each wait is counted at', () => {
       permission: 'sessions', answer: 'sessions', quiet: 'sessions', 'helper-ended': 'sessions', memory: 'sessions',
       proposal: 'quests', intake: 'quests', unanswerable: 'quests', 'parked-quest': 'quests', 'steward-stopped': 'quests', 'request-declined': 'quests', 'go-ahead': 'quests',
       departure: 'quests', 'set-up': 'quests', trust: 'quests',
-      work: 'projects',
+      work: 'projects', integration: 'projects',
       rule: 'agents', 'account-wait': 'agents', 'signed-out': 'agents',
       space: 'settings',
       confirmation: null,

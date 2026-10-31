@@ -284,6 +284,38 @@ public sealed class MachineFactsTests
     }
 
     /// <summary>
+    /// LOADFLAKE3: a rest counts from the moment the judgement answered, never from when the pool ran its ending, so a clock moved
+    /// the instant its fact lands (a reader of <c>Changed</c>) has rested the subject by the next wake.
+    /// </summary>
+    [Fact]
+    public async Task A_rest_counts_from_the_judgement_s_answer_not_from_its_ending_run_late()
+    {
+        var ticks = DateTimeOffset.Parse("2026-10-19T10:00:00Z", System.Globalization.CultureInfo.InvariantCulture).UtcTicks;
+        var asked = new Asked();
+        using var facts = new MachineFacts(() => new DateTimeOffset(Interlocked.Read(ref ticks), TimeSpan.Zero));
+        facts.Topic(Lines, Rules with { Rest = TimeSpan.FromSeconds(30) }, (subject, _) =>
+        {
+            asked.Add(subject);
+            return Task.FromResult<object?>($"{subject} #{asked[subject]}");
+        });
+        facts.Subject(Lines, "engine");
+        var first = true;
+        facts.Changed += _ =>
+        {
+            // The pool runs the judgement's ending late: the test's clock has passed the rest by then.
+            if (first) Interlocked.Add(ref ticks, TimeSpan.FromSeconds(31).Ticks);
+            first = false;
+        };
+        facts.Start();
+        await facts.FirstAsync(Lines, "engine", CancellationToken.None).WaitAsync(Within);
+        await facts.Settled().WaitAsync(Within);
+
+        facts.Wake(Lines, "engine");
+
+        await Poll.Until(() => asked["engine"] == 2, within: TimeSpan.FromSeconds(5));
+    }
+
+    /// <summary>
     /// OWNMOVES1: a wake afresh, a move Daoris made itself, is judged at once past the subject's rest and waits for nothing, while a
     /// plain wake of another subject in the same moment is still held; the clock never moves, so no rest ends.
     /// </summary>

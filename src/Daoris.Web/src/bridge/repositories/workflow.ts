@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../../data/queries';
 import type { CurrentWorkflow, WorkflowScope, WorkflowStart } from '../../workflow/current';
@@ -25,6 +25,23 @@ export const useWorkflowCurrent = (scope: WorkflowScope | null, { enabled = true
     queryFn: () => call<CurrentWorkflow>('WORKFLOW_CURRENT', kind === 'repository' ? { repository: name } : { workspace: name }),
     enabled: isAvailable && enabled && scope !== null,
     staleTime: 0,
+  });
+};
+
+/**
+ * The Current workflow of each repository named (COMPANYVIEW1d): By repository asks only the repositories a person has opened, for
+ * their integration declaration's state, so a list of many repositories reads none until a row opens.
+ */
+export const useWorkflowCurrents = (repositories: readonly string[]) => {
+  const { isAvailable } = useShenora();
+  return useQueries({
+    queries: repositories.map((name) => ({
+      queryKey: keys.workflow('repository', name),
+      queryFn: () => call<CurrentWorkflow>('WORKFLOW_CURRENT', { repository: name }),
+      enabled: isAvailable,
+      staleTime: 0,
+    })),
+    combine: (results) => repositories.map((name, at) => ({ name, result: results[at]! })),
   });
 };
 

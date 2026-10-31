@@ -5,6 +5,46 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-31 - A pull waited for a session that had ended, its quest still open (GITLOCK2)
+
+- **Symptom:** `daoris-driver trees sync --yes` said a session worked in the checkout and its pull waited, though that session had ended and its quest was merely still open (the family rehearsal's newcomer sync).
+- **Root cause:** the checkout's writers read `BranchTidying.HoldersAsync`, the set that keeps a tree from deletion, which counts the newest part of every open or taken quest whatever its state.
+- **Fix:** the writers (the pull, the promotion, every landing door) read `BranchTidying.BesideAsync`: the running and waiting sessions, and a quest's newest part only while it will go on (words waiting, a limit to wait out, a stop held for the person), never one completed, declined or failed. The tree-deletion doors keep the wide set.
+- **Verify:** `CheckoutBesideGitTests.A_pull_beside_an_ended_session_whose_quest_is_still_open_goes_through`; `BranchTidyingTests.A_writer_waits_for_the_newest_part_of_an_open_quest_only_while_it_will_go_on` (a limit-waiting retry still waits). Not run: the family rehearsal (the parent's).
+
+## 2026-10-31 - A merge rule's Accept moved a clean checkout under a working session (GITLOCK2)
+
+- **Symptom:** with trees off, a merge rule's Accept fast-forwarded the person's checkout while a driven session worked in it; the pull and the promotion waited, the Accept did not.
+- **Root cause:** GITLOCK1 handed the ledger to the pull and the transport's promotion, not to the landing doors, which reach the same promotion through `IntegrationPresses` with no ledger.
+- **Fix:** each landing door hands the landing the ledger read; `TreeLands.MergeAsync` passes it to the promotion's effect, which reads it inside the checkout's hold. A landing out of a session's own tree is unaffected. A tidy left by a held repository names the writer, and the old key's lock files are removed once.
+- **Verify:** `CheckoutBesideGitTests` (a merge rule's Accept deferred then landed once the session ends; a landing out of a session's own tree), `TreeLockTests`, `BranchTidyingTests`; the census names the doors.
+
+## 2026-10-31 - A ref transaction git never answered was said as nothing moved (GITTXN2)
+
+- **Symptom:** none seen; found at the foundation read. A bound reached or a git that never started leaves exit -1, and `RefTransaction.RunAsync` and `RollBackAsync` said the transaction was refused and nothing moved, though git may have moved the refs before it was cut off.
+- **Root cause:** any non-zero exit was read as git's refusal; only a real exit with git's message proves nothing moved.
+- **Fix:** `RefRun.Unanswered` marks exit -1; each ref the transaction moves is read back and said moved, not moved or unknown. A create beside a case-alias that stands is refused first where `core.ignorecase` is true.
+- **Verify:** `RefTransactionGitTests` (an unanswered transaction after moving and after not moving, an unanswered rollback, `Feature` beside a packed `feature`).
+
+## 2026-10-31 - A subject's rest counted from an ending the pool ran late (LOADFLAKE3)
+
+- **Symptom:** `SweepStateSliceTests.A_ref_moved_in_one_repository_pushes_that_partition_alone` gave up at its two minutes under load; `WorkStateSliceTests` holds the same shape.
+- **Root cause:** `MachineFacts` landed a fact, then stamped `Ended` in `Ended()`, run later. A test (or any reader) moving its clock at the landing could have the stamp taken after the move; the rest then never ended against the frozen clock, and each rest wait re-armed.
+- **Fix:** the answer's moment is taken before the fact lands (`SubjectState.Answered`) and is what `Ended` records.
+- **Verify:** `MachineFactsTests.A_rest_counts_from_the_judgement_s_answer_not_from_its_ending_run_late`, red before; the lines twin has no rest and is unaffected.
+
+## 2026-10-31 - Park rows stamped a millisecond apart reordered the told parks (LOADFLAKE3)
+
+- **Symptom:** `NewsTellerTests.A_park_its_answer_and_a_park_again_are_two_parks` read [8, 5] for [5, 8].
+- **Root cause:** `News.Claim` tells the newest first (so its cap keeps the newest); the test stamped each row from the clock, tied only when made in one millisecond.
+- **Fix:** the test's rows share one stamp. Red with a 3 ms pause per row.
+
+## 2026-10-31 - A client's five seconds were the lost-claim test's patience (LOADFLAKE3)
+
+- **Symptom:** `LookParallelTests.The_lost_claim_checks_are_asked_at_once` ran 12 s and lacked its stop line.
+- **Root cause:** the first check waits for the second to be asked, inside a client that gives up at five seconds; a starved pool starting the second later cost the first its answer.
+- **Fix:** the test's client waits `Poll.Patience`. Red with the second ask held 6 s, green with the same hold.
+
 ## 2026-10-31 - Two driver tests read the machine's load, not the code (LOADFLAKE2)
 
 - **Symptom:** under builders' load, the usage read wrote one line of two; the head-mark say exited 2.
@@ -109,6 +149,12 @@ repository.
 - **Root cause:** the hand-over called `EnsureAsync`, which starts the browser, to learn the endpoint.
 - **Fix:** it asks `EndpointAsync`; the shell hands a held port (`LazyEndpoint`) that starts the browser at the first connection.
 - **Verify:** hand-over, quest-start and chat tests red then green; relay tests.
+## 2026-10-31 - The deployment rehearsal still held CHR8's browser at a session's start (DEPLOYBROWSER1)
+
+- **Symptom:** the CI stage's `deployment` gate failed section 5: no browser from the install's application after the driven session, none on its profile, no engine.
+- **Root cause:** the rehearsal that holds CHR8's behaviour (a browser up at the hand-over) runs only in a CI stage, so BROWSERSTART1's deliberate change passed every gate it met.
+- **Fix:** section 5 now checks no browser at the session's start, a port the shell holds as the handed endpoint, a `json/version` connection to it as an agent's server would make, and only then the three browser checks.
+- **Verify:** `npm run rehearse:deploy`, section 5.
 ## 2026-10-31 - A terminal chat's running turn read idle in the window (CLITURN1)
 
 - **Symptom:** a capture showed idle during a terminal's turn; the window's stop was refused as "no door".
@@ -12629,3 +12675,50 @@ mis-rooted instance.
 **Fix.** The props were copied into the scope tree by hand once and the batch queued again; with LYNTAILOCAL1 on main, every later runner copies them itself. A tool change that a gate needs in order to run its own candidate meets this once: run it by hand in the runner's tree before queuing.
 
 **Verification.** Batch 1031c's second run built the service against `3.5.3-local.c8dde4b` and landed (`1b8c3b2`).
+
+## Bring up to date pulled the line before taking the lock its replays held (2026-10-31)
+
+**Root cause.** `TreeSync.SyncAsync` judged the line's pull and ran `LinePulls.PullAsync`'s `merge --ff-only` in the checkout before it took `TreeLock` for the replays, so a promotion, another press or a start could meet the checkout between the pull's fresh read and its move (Codex's read of GITAPP2, R2-11).
+
+**Fix.** One hold alone (`TreeLock.TryWriting`) from the pull's judgement through its move, its registry follow and the replays; `PullAsync` needs it (GITLOCK1, D51's note).
+
+**Verification.** `CheckoutLockProcessTests`' pull case and `TreeSyncStepTests`' held case: red (the line moved under another's hold), then green.
+
+## A promotion fast-forwarded the checkout under no lock (2026-10-31)
+
+**Root cause.** `IntegrationPromotes.EffectAsync` read the line, the checkout's worktree and its cleanliness and ran `merge --ff-only` in it under the integration's claim alone, which fences other integrators and no pull, replay or start; the legacy merge (`TreeLands.MergeAsync`) reached it the same way (GITAPP2's second blocking finding).
+
+**Fix.** The effect holds the checkout alone from its first read through its read back, naming what refuses it; the legacy merge takes no hold, so it is taken once.
+
+**Verification.** `CheckoutLockProcessTests`' promotion, landing and order cases: red, then green.
+
+## A session starting in the checkout itself took no lock (2026-10-31)
+
+**Root cause.** `ChatRunner`, `ChatGoOn` and the driven start (`Driver.cs`) took `TreeLock` only for a tree of their own (`isolated ?`, `own ?`), so a start in the checkout read the commit it begins from and opened its record with nothing holding a writer off; held, they said a replay held them whatever did.
+
+**Fix.** Every start holds the checkout shared until its record is open; a held start names its holder (`held.tidying`, `held.promoting`, `held.writing`, or `held.replaying`).
+
+**Verification.** `ChatGoOnTests`' checkout go-on case: red (it went on under a writer's hold), then green; `CheckoutWritersCensusTests` holds the starts.
+
+## One checkout registered twice had two locks (2026-10-31)
+
+**Root cause.** `TreeLock` was keyed by workspace and repository name, so the same checkout under two names or in two workspaces had two locks, and their writers excluded nothing.
+
+**Fix.** Keyed by the checkout's common git directory, read from `.git` and its `commondir` as git resolves them, so a session tree names its checkout's lock too.
+
+**Verification.** `TreeLockTests`' one-checkout case; the key changed the lock's signature, so it ran green only.
+
+## The line's pull and a promotion moved a checkout a session was working in (2026-10-31)
+
+**Root cause.** `LinePulls.PullAsync` and the promotion's effect judged the checkout by git alone (clean, on the line), so with trees off they fast-forwarded the checkout a driven session or a conversation was working in, between two of its agent's reads (GITAPP2's §3 *Beside a session*).
+
+**Fix.** Each reads the ledger's holders of the checkout inside its hold (`BranchTidying.HoldersAsync`, `CheckoutBeside`) and waits, naming the session, while one is running, waiting or held to go on, or while the ledger cannot be read; every pull door and the integration transport hand it the ledger.
+
+**Verification.** `CheckoutBesideGitTests` (a pull and a promotion beside a driven session in the checkout, each going on once its quest is done; an unreadable ledger), written with the fix and run green; `CheckoutWritersCensusTests` holds the doors.
+## A live stop under the standing confirmation gave up under load (2026-11-01)
+
+**Root cause.** `SessionsCommandTests.A_live_stop_under_the_standing_confirmation_hands_its_loop_the_note_part` waited 5 s (the test world's `Wait`) for the loop's own turn to honour the stop; batch 1031e's candidate ran it beside every other gate, the honouring task's turn came late, and the command answered exit 2.
+
+**Fix.** The test's request waits `Poll.Patience`, as a wait on a signal does (the short-waits census's rule); it returns as soon as the loop honours it.
+
+**Verification.** `SessionsCommandTests`, 70 of 70; the failure was the candidate's alone, the test passing three times in a row run by itself.

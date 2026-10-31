@@ -41,6 +41,7 @@ internal sealed class RecordLock : IDisposable
     /// <exception cref="IOException">It was held for the whole of the wait, or its folder could not be made.</exception>
     public static RecordLock Take(string path, TimeSpan? within = null)
     {
+        LockWaits.Waits(LockWaits.Records);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         var until = DateTime.UtcNow + (within ?? Wait);
         while (true)

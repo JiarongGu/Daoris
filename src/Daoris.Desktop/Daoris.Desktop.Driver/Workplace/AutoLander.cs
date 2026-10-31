@@ -340,7 +340,8 @@ public sealed class AutoLander(
                 judgedAgain = await UnderHoldAsync(choice, waited, token).ConfigureAwait(false);
                 return judgedAgain is null ? null : new TreeLanding(false, judgedAgain) { Refusal = AutoLandingCode.Refused };
             },
-            beforePush: (record, waited, token) => BeforePushAsync(choice, record, waited, token), uncommitted: choice.Uncommitted).ConfigureAwait(false);
+            beforePush: (record, waited, token) => BeforePushAsync(choice, record, waited, token), uncommitted: choice.Uncommitted,
+            beside: fresh.BesideAsync).ConfigureAwait(false);
         // Judged again under the tree's hold and refused there: what that judgement kept is the try, so nothing more is kept for it.
         if (judgedAgain is not null) return judgedAgain;
         // A landing the session can clear (a conflict, work left uncommitted since the look) carries it on again under the kept yes,

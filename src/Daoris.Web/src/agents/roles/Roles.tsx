@@ -1,9 +1,11 @@
 import type { TFunction } from 'i18next';
 import { type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ActorRow, RoleCatalogue, RoleChangePress, RoleChoice, RoleRow, StaffingFound, SuggestedRole } from '../../data/wiring';
+import type { ActorRow, RoleCatalogue, RoleChangePress, RoleChoice, RoleRow, RoleUse, StaffingFound, SuggestedRole } from '../../data/wiring';
 import { Button, Card, CardHeader, FormField, FormGrid, FormRow, Icon, Inline, Prose, SelectField, SettingList, SettingRow } from '../../design/ui';
 import { type Answered, Refused } from '../../work/InlineConfirm';
+import { RowMore } from './RowMore';
+import { SuggestedChoicesCard } from './SuggestedChoicesCard';
 
 /** An entry as `SET_ACTOR` takes it: an agent, and its model and effort in the tool's own words, absent for account default. */
 export type ActorChoice = { agent: string; model?: string | null; effort?: string | null };
@@ -36,6 +38,16 @@ export type Editing = {
   id: string; mode: 'role' | 'staffing'; isNew: boolean; revision: number | null; nameEn: string; nameZh: string; takes: string[]; work: string;
   place: string; placeId: string; drafts: Draft[];
 };
+
+/** A new role's editor, its place filled where one is given (*Add a role here*); its one empty choice starts on the first agent. */
+export function newRoleEditing(
+  works: readonly string[], agents: readonly { value: string }[], place: { kind: 'workspace' | 'repository'; id: string } | null = null, key = 0,
+): Editing {
+  return {
+    id: '', mode: 'role', isNew: true, revision: null, nameEn: '', nameZh: '', takes: [], work: works[0] ?? 'build',
+    place: place?.kind ?? 'machine', placeId: place?.id ?? '', drafts: [{ key, agent: agents[0]?.value ?? '', model: '', effort: '' }],
+  };
+}
 
 /** One row: the catalogue's role where there is one, and the staffing `ACTORS` answers for the same id. */
 type Line = { id: string; row: RoleRow | null; actor: ActorRow | null };
@@ -92,6 +104,28 @@ export function roleSummary(t: TFunction, row: RoleRow, actor?: ActorRow | null)
   return `${works} · ${placeText(t, row.scopeKind, row.scopeId)}${order}`;
 }
 
+/**
+ * A role's last days as one quiet line (MODELROLE1f): starts, where they landed, and how many fell to a later choice with the walk's codes.
+ * A log that holds fewer than seven days says its span; names and counts only, never a price.
+ */
+export function useLine(t: TFunction, use: RoleUse, days: number): string {
+  const choiceName = (choice: string) => t(
+    choice === 'before' ? 'settings.ai.roles.use.choiceBefore' : choice === 'rule-default' ? 'settings.ai.roles.use.choiceRuleDefault' : 'settings.ai.roles.use.choice',
+    { choice },
+  );
+  const span = t(days >= 7 ? 'settings.ai.roles.use.week' : 'settings.ai.roles.use.kept', { count: Math.max(1, days) });
+  const parts = [
+    t('settings.ai.roles.use.starts', { count: use.starts }),
+    use.choices.map((each) => `${choiceName(each.choice)} ×${each.starts}`).join(', '),
+  ].filter((part) => part !== '');
+  if (use.fell > 0) {
+    const why = use.why.map((each) => `${t(`settings.ai.roles.use.why.${each.code}`, { defaultValue: each.code })} ×${each.starts}`).join(', ');
+    parts.push(`${t('settings.ai.roles.use.fell', { count: use.fell })}${why ? ` (${why})` : ''}`);
+  }
+
+  return `${span}: ${parts.join(' · ')}`;
+}
+
 /** A suggestion's press: its record and choices set, as `SET_ROLE` takes them, against the revision 0 of an id the catalogue lacks. */
 function suggestionPress(role: SuggestedRole): RoleChangePress {
   return {
@@ -116,8 +150,12 @@ function suggestionPress(role: SuggestedRole): RoleChangePress {
  */
 export function RolesCard({
   catalogue, read = catalogue ? 'ok' : 'notOffered', staffing = [], agents, about = {}, busy = false, onSet, onSetActor, found = [], onAnswerFound,
-  editor: held, onEditor,
+  editor: held, onEditor, only, onDiagram,
 }: {
+  /** One role's row alone, as the diagram's detail draws it (COMPANYVIEW1f): no card, no adding, no suggestion. */
+  only?: string;
+  /** A row's ⋯ *On the diagram*, its role chosen there. */
+  onDiagram?: (role: string) => void;
   /** The open editor, where the place that owns the section holds it (D168 point 3); with none given the card holds its own. */
   editor?: Editing | null;
   onEditor?: (next: Editing | null) => void;
@@ -158,10 +196,11 @@ export function RolesCard({
   const [foundRefused, setFoundRefused] = useState<{ id: number; sentence: string } | null>(null);
   const name = (row: Pick<RoleRow, 'id' | 'seeded' | 'nameEn' | 'nameZh'>) => roleName(t, i18n.language, row);
   const kept = catalogue?.kept === true;
-  const lines: Line[] = catalogue
+  const all: Line[] = catalogue
     ? catalogue.roles.map((row) => ({ id: row.id, row, actor: staffing.find((each) => each.id === row.id) ?? null }))
     : staffing.map((actor) => ({ id: actor.id, row: null, actor }));
-  const lineOf = (id: string) => lines.find((line) => line.id === id);
+  const lines = only === undefined ? all : all.filter((line) => line.id === only);
+  const lineOf = (id: string) => all.find((line) => line.id === id);
   const nameOfLine = (line: Line) => name(line.row ?? { id: line.id, seeded: true });
   const draftOf = (entry?: RoleChoice): Draft => ({
     key: next.current++, agent: entry?.agent ?? agents[0]?.value ?? '', model: entry?.model ?? '', effort: entry?.effort ?? '',
@@ -183,10 +222,7 @@ export function RolesCard({
   const open = (line: Line | null) => {
     setRefused(null);
     if (!line) {
-      setEditing({
-        id: '', mode: 'role', isNew: true, revision: null, nameEn: '', nameZh: '', takes: [], work: catalogue?.works[0] ?? 'build',
-        place: 'machine', placeId: '', drafts: [draftOf()],
-      });
+      setEditing(newRoleEditing(catalogue?.works ?? [], agents, null, next.current++));
       return;
     }
     const row = line.row;
@@ -377,18 +413,19 @@ export function RolesCard({
     );
   };
 
-  return (
-    <Card>
-      <CardHeader title={t('settings.ai.roles.title')} />
-      <Prose className="mb-3 mt-0 text-small text-ink-soft">{t('settings.ai.roles.body')}</Prose>
+  const said = (
+    <>
       {catalogue && !kept && <p className="m-0 mb-2 text-small text-ink-soft">{t('settings.ai.roles.unkept')}</p>}
       {read === 'notOffered' && <p className="m-0 mb-2 text-small text-ink-soft">{t('settings.ai.roles.notOffered')}</p>}
       {read === 'failed' && <p role="alert" className="m-0 mb-2 text-small text-ink-soft">{t('settings.ai.roles.readFailed')}</p>}
-      {catalogue && catalogue.roles.length === 0 && <p className="m-0 mb-2 text-small text-ink-soft">{t('settings.ai.roles.none')}</p>}
-      <SettingList>
+    </>
+  );
+  const rows = (
+    <SettingList>
         {lines.map((line) => {
           const { row, actor } = line;
           const named = nameOfLine(line);
+          const used = catalogue?.use?.roles.find((each) => each.role === line.id);
           const open_ = editing?.id === line.id && !editing.isNew;
           const mayEdit = row
             ? (row.state === 'seed' || row.state === 'set') && (staffingOnly(line) ? !!actor && EDITABLE.has(line.id) : kept)
@@ -426,16 +463,34 @@ export function RolesCard({
                       {t('settings.ai.roles.default')}
                     </Button>
                   )}
+                  {onDiagram && row && row.state !== 'removed' && <RowMore name={named} onDiagram={() => onDiagram(line.id)} />}
                 </>
               )}
             >
+              {!open_ && used && <p className="m-0 text-small text-ink-faint wrap-anywhere">{useLine(t, used, catalogue!.use!.days)}</p>}
               {!open_ && about[line.id]?.below}
               {open_ && editing && editor(editing)}
               {!open_ && refused?.at === line.id && <Refused sentence={refused.sentence} />}
             </SettingRow>
           );
         })}
-      </SettingList>
+    </SettingList>
+  );
+  if (only !== undefined) return <div className="min-w-0">{said}{rows}</div>;
+
+  return (
+    <Card>
+      <CardHeader title={t('settings.ai.roles.title')} />
+      <Prose className="mb-3 mt-0 text-small text-ink-soft">{t('settings.ai.roles.body')}</Prose>
+      {catalogue && (
+        <SuggestedChoicesCard
+          catalogue={catalogue} staffing={staffing} agents={agents.map((agent) => agent.value)} busy={busy}
+          name={(row) => name(row)} entry={(choice) => entryText(t, choice)} onSet={(press, done) => { setRefused(null); onSet(press, done); }}
+        />
+      )}
+      {said}
+      {catalogue && catalogue.roles.length === 0 && <p className="m-0 mb-2 text-small text-ink-soft">{t('settings.ai.roles.none')}</p>}
+      {rows}
       {catalogue && (editing?.isNew ? <div className="mt-3">{editor(editing)}</div> : (
         <div className="mt-3">
           <Button variant="ghost" disabled={locked || editing !== null} onClick={() => open(null)}>

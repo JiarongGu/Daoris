@@ -98,6 +98,36 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
         Assert.Equal(JsonValueKind.Null, detached.GetProperty("branch").ValueKind);
     }
 
+    /// <summary>GITAPP2b: the Changes read answers a staged-and-removed file in both lists, `readAt` saying when, and no path.</summary>
+    [Fact]
+    [Trait(Category.Name, Category.Process)]
+    public async Task The_changes_read_answers_a_staged_and_removed_file_twice_and_says_when()
+    {
+        var root = await InitAsync();
+        await File.WriteAllTextAsync(Path.Combine(root, "gone.txt"), "x\n");
+        await GitAsync(root, "add", "gone.txt");
+        File.Delete(Path.Combine(root, "gone.txt"));
+        var module = await UpAsync(root);
+
+        var answer = await AnswerAsync(module, "GIT_CHANGES", new { repository = "engine", workspace = "aurora" });
+
+        var value = answer.GetProperty("value");
+        Assert.Equal("gone.txt", value.GetProperty("staged")[0].GetProperty("path").GetString());
+        Assert.Equal("gone.txt", value.GetProperty("unstaged")[0].GetProperty("path").GetString());
+        Assert.Equal(JsonValueKind.String, value.GetProperty("readAt").ValueKind);
+        Assert.DoesNotContain("checkouts", answer.GetRawText());
+    }
+
+    [Fact]
+    public async Task The_changes_read_of_a_repository_with_no_checkout_is_answered_with_its_code()
+    {
+        var module = await UpAsync(null);
+
+        var answer = await AnswerAsync(module, "GIT_CHANGES", new { repository = "engine" });
+
+        Assert.Equal(Refusals.GitNoCheckout, answer.GetProperty("refusal").GetString());
+    }
+
     /// <summary>A commit named by anything but its whole id is the driver's refusal, coded; git is not asked.</summary>
     [Fact]
     public async Task A_name_that_is_not_a_whole_commit_is_refused_with_its_code()

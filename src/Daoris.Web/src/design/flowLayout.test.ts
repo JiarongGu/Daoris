@@ -194,6 +194,20 @@ describe('the placement by the pane\'s width (§3.2, trap 4)', () => {
     expect(placementFor(layoutFlow(chain(2)), 1200, false, 16, { across: false })).toBe('down');
     expect(placementFor(layoutFlow(chain(2)), 1200)).toBe('across');
   });
+
+  // COMPANYVIEW1f (the company-view design §4): the roles' diagram is three columns, places, roles and agents, each as tall as its
+  // nodes, so its caller bounds a column by its own count, not three. At a 12rem floor three columns and two 3rem gaps are 42rem.
+  it("takes a caller's column bound, so a column of eight is left to right where its three columns fit", () => {
+    const columns = layoutFlow(shape(
+      ['machine', 'r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7', 'r8', 'agent'],
+      [1, 2, 3, 4, 5, 6, 7, 8].flatMap((n): [string, string][] => [['machine', `r${n}`], [`r${n}`, 'agent']]),
+    ));
+    expect(needs(columns, 16, 12).across).toBe(42 * 16);
+    // Three a rank, as every flow is, it is never left to right.
+    expect(placementFor(columns, 1232, false, 16, { least: 12 })).not.toBe('across');
+    expect([671, 672, 888, 1232].map((width) => placementFor(columns, width, false, 16, { least: 12, column: Infinity })))
+      .toEqual(['rail', 'across', 'across', 'across']);
+  });
 });
 
 describe('the crossing table (trap 3, its first half: the slots)', () => {

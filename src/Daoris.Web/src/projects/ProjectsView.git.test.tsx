@@ -18,11 +18,11 @@ vi.mock('@shenora/react', () => ({
 
 import type { GitBranchList, GitGraphPage } from '../bridge/repositories/git';
 import {
-  GIT_BRANCH_PARTED, GIT_BRANCH_PARTED_PAGES, GIT_BRANCHES_ENGINE, GIT_BRANCHES_GAME, GIT_HISTORY_ENGINE, GIT_HISTORY_PAGES,
+  GIT_BRANCH_PARTED, GIT_BRANCH_PARTED_PAGES, GIT_BRANCHES_ENGINE, GIT_BRANCHES_GAME, GIT_CHANGES_ENGINE, GIT_HISTORY_ENGINE, GIT_HISTORY_PAGES,
 } from './fixtures';
 import { SHARED_BRANCH, SHARED_DUE, SHARED_UNITS, traceAnswerOf } from './git/landingFixtures';
 import { DRIVER_STATE, respond, show, WIRING } from '../test/shellHarness';
-import { chooseRepository, chooseWorkspace, ProjectsView, repositoryMain } from '../test/projectsView';
+import { chooseRepository, chooseWorkspace, openSetup, ProjectsView, repositoryMain } from '../test/projectsView';
 
 // The engine has a checkout here; the game is a teammate's, with none.
 const REGISTRY = [
@@ -560,5 +560,125 @@ describe("a repository's Branches and History tabs", () => {
     await userEvent.click(within(repositoryMain()).getByRole('tab', { name: 'Branches' }));
     await within(repositoryMain()).findByRole('heading', { name: 'Session branches' });
     expect(within(repositoryMain()).queryByRole('heading', { name: 'Cleaned up on its own' })).toBeNull();
+  });
+});
+
+// GITAPP2b (D204, the git-writes design §2, §11): the switch *Daoris may change this checkout's files*, off by default in Setup's
+// Reach, and the Changes tab beside Branches and History where it is on. The tab reads on open and on *Refresh* and writes nothing.
+describe("a repository's Changes tab and the switch behind it (GITAPP2b)", () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      return url.startsWith('/api/registry') ? Response.json(REGISTRY) : respond(url);
+    }));
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+    window.localStorage.clear();
+  });
+
+  const switchOff = { ...DRIVER_STATE, checkoutWrites: [] as string[] };
+  const switchOn = { ...DRIVER_STATE, checkoutWrites: ['engine'] };
+  const answering = (state: Record<string, unknown> = switchOff, changes: () => unknown = () => answer({ ...GIT_CHANGES_ENGINE, readAt: new Date().toISOString() })) =>
+    invoke.mockImplementation(async (module: string, type: string) => {
+      if (module === 'DAORIS.REMOTES') return WIRING;
+      if (module === 'DAORIS.LOG') return { lines: [] };
+      if (type === 'GIT_CHANGES') return changes();
+      if (type === 'LINES') return { lines: [], landings: [], reviews: [], opinions: [] };
+      if (type === 'HARNESSES') return { harnesses: [] };
+      if (type === 'PLUGINS') return { plugins: [] };
+      if (type === 'RULES') return { defaults: [], scopes: [] };
+      if (type === 'ACROSS') return { repositories: [] };
+      return state;
+    });
+
+  it('draws no Changes tab and reads nothing of the checkout while the switch is off, as it is by default', async () => {
+    answering();
+    show(<ProjectsView notify={() => {}} />);
+    const page = await chooseRepository('engine');
+
+    expect(within(page).getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Details', 'Branches', 'History', 'Integration', 'Workflow', 'Setup']);
+    expect(asked('GIT_CHANGES')).toEqual([]);
+  });
+
+  it("offers the switch in Reach, off, and presses it on for this repository alone", async () => {
+    answering();
+    show(<ProjectsView notify={() => {}} />);
+    await chooseRepository('engine');
+    const page = await openSetup('Reach');
+
+    const control = await within(page).findByLabelText("Daoris may change this checkout's files");
+    expect(control).not.toBeChecked();
+    // Off, it says nothing of sessions: there is nothing yet for them to be beside.
+    expect(within(page).queryByText(/already runs? in this checkout/)).toBeNull();
+    await userEvent.click(control);
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_CHECKOUT_WRITES', { payload: { repository: 'engine', allow: true } });
+  });
+
+  it('says, once on, that a session already runs in the checkout, from the records the service lists', async () => {
+    answering(switchOn);
+    show(<ProjectsView notify={() => {}} />);
+    await chooseRepository('engine');
+    const page = await openSetup('Reach');
+
+    expect(await within(page).findByLabelText("Daoris may change this checkout's files")).toBeChecked();
+    expect(await within(page).findByText('1 session already runs in this checkout.')).toBeInTheDocument();
+  });
+
+  it('draws the Changes tab where the switch is on, reads it when it opens, and reads again on Refresh', async () => {
+    answering(switchOn);
+    show(<ProjectsView notify={() => {}} />);
+    const page = await chooseRepository('engine');
+    expect(within(page).getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Details', 'Branches', 'History', 'Changes', 'Integration', 'Workflow', 'Setup']);
+    expect(asked('GIT_CHANGES')).toEqual([]);
+
+    await userEvent.click(within(page).getByRole('tab', { name: 'Changes' }));
+
+    const region = await within(repositoryMain()).findByRole('region', { name: "engine's changes" });
+    expect(within(region).getByRole('list', { name: 'Staged (2)' })).toBeInTheDocument();
+    expect(within(region).getByRole('list', { name: 'Not staged (2)' })).toBeInTheDocument();
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_CHANGES', expect.objectContaining({
+      payload: expect.objectContaining({ repository: 'engine', workspace: 'aurora' }),
+    }));
+    const refresh = within(region).getByRole('button', { name: 'Refresh' });
+    await waitFor(() => expect(refresh).toBeEnabled());
+    const before = asked('GIT_CHANGES').length;
+
+    await userEvent.click(refresh);
+
+    await waitFor(() => expect(asked('GIT_CHANGES').length).toBeGreaterThan(before));
+    // It only reads: no route that changes a repository is pressed.
+    expect(invoke.mock.calls.map(([, called]) => called).filter((called) => /^(STAGE|UNSTAGE|COMMIT)/.test(String(called)))).toEqual([]);
+  });
+
+  it("shows the read the shell held as read again until a fresh one lands, and does not offer Refresh meanwhile", async () => {
+    // The shell answers what it held at once: a read made before this window asked, with its own time.
+    answering(switchOn, () => answer({ ...GIT_CHANGES_ENGINE, readAt: new Date(Date.now() - 3_600_000).toISOString() }));
+    show(<ProjectsView notify={() => {}} />);
+    const page = await chooseRepository('engine');
+    await userEvent.click(within(page).getByRole('tab', { name: 'Changes' }));
+
+    const region = await within(repositoryMain()).findByRole('region', { name: "engine's changes" });
+    expect(within(region).getByText('Reading again…')).toBeInTheDocument();
+    expect(within(region).getByRole('button', { name: 'Refresh' })).toBeDisabled();
+  });
+
+  it("says this machine has none for a repository with no checkout, and why git did not answer", async () => {
+    answering({ ...DRIVER_STATE, checkoutWrites: ['game'] });
+    show(<ProjectsView notify={() => {}} />);
+    const game = await chooseRepository('game');
+    await userEvent.click(within(game).getByRole('tab', { name: 'Changes' }));
+    expect(await within(repositoryMain()).findByText("game's changes are read from its checkout, and this machine has none.")).toBeInTheDocument();
+    expect(asked('GIT_CHANGES')).toEqual([]);
+  });
+
+  it('says the sentence of a read git did not answer, in its place', async () => {
+    answering(switchOn, () => ({ ...answer(null, 'GIT_NOT_ANSWERED'), problem: 'git could not read this checkout.' }));
+    show(<ProjectsView notify={() => {}} />);
+    const page = await chooseRepository('engine');
+    await userEvent.click(within(page).getByRole('tab', { name: 'Changes' }));
+    expect(await within(repositoryMain()).findByText(/Git could not|git could not read this checkout/i)).toBeInTheDocument();
   });
 });

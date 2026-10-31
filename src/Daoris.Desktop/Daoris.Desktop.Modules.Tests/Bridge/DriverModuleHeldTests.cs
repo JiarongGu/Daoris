@@ -33,6 +33,7 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
         ["SESSION_RELATED"] = new { session = "a1b2c3d4" },
         ["SESSION_MEMORY"] = new { session = "a1b2c3d4" },
         ["TOGETHER"] = new { session = "a1b2c3d4" },
+        ["GIT_CHANGES"] = new { repository = "engine" },
     };
 
     public static TheoryData<string> HeldRoutes() => [.. DriverModule.ByEventRoutes.Order(StringComparer.Ordinal)];

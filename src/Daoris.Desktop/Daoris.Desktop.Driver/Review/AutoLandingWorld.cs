@@ -45,6 +45,8 @@ public sealed class ServiceAutoLandingWorld(ServiceClient service) : IAutoLandin
         .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0)
         .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
+    public Task<IReadOnlyList<TreeHolder>> BesideAsync(CancellationToken ct) => BranchTidying.BesideAsync(service, ct);
+
     /// <summary>A new world over the same service, so nothing this one read is kept.</summary>
     public IAutoLandingWorld Again() => new ServiceAutoLandingWorld(service);
 

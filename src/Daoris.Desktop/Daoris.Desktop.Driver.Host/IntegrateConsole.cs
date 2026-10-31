@@ -15,6 +15,7 @@ internal static class IntegrateConsole
             return 2;
         }
 
+        if (ask.Plan is { } branch) return await PlanAsync(ask.Repository, branch, closing).ConfigureAwait(false);
         if (ask.Act is not null)
         {
             try
@@ -36,5 +37,45 @@ internal static class IntegrateConsole
 
         foreach (var line in IntegrateCommand.Said(IntegrationLooks.Of(new IntegrationStore(home), ask.Repository))) Console.Out.WriteLine(line);
         return 0;
+    }
+
+    /// <summary>
+    /// <c>--plan &lt;branch&gt;</c>: the repository's registered checkout read of the service, its line the rule's or the repository's, and the branch
+    /// merged onto it in git's objects alone, quarantined under the home's trees and removed after.
+    /// </summary>
+    private static async Task<int> PlanAsync(string repository, string branch, CancellationToken closing)
+    {
+        try
+        {
+            var configPath = DriverConfig.ResolvePath();
+            var home = DriverConfig.HomeOf(configPath);
+            var config = DriverConfig.Load(configPath);
+            using var service = ServiceClient.FromEnvironment();
+            var row = (await service.RegistryAsync(closing).ConfigureAwait(false))
+                .FirstOrDefault(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(each.Root) && Directory.Exists(each.Root));
+            if (row is null)
+            {
+                Console.Error.WriteLine($"integrate: `{repository}` has no checkout here, so there is nothing to preview.");
+                return 1;
+            }
+
+            var line = LandingRules.Effective(config, repository, row.Workspace).Rule?.Integrate?.Resolved().Line
+                       ?? (await CanonicalLine.ResolveAsync(row.Root!, repository, row.Workspace, config, closing).ConfigureAwait(false)).Branch;
+            if (line is null)
+            {
+                Console.Error.WriteLine($"integrate: `{repository}` has no line here (none is set and git names none), so there is nothing to preview onto.");
+                return 1;
+            }
+
+            var scratch = Path.Combine(DaorisHome.Entry(home, HomeEntry.Trees), "integration-plans");
+            var plan = await IntegrationPlans.PlanAsync(repository, row.Root!, line, branch, scratch, closing).ConfigureAwait(false);
+            foreach (var said in IntegrationPlans.Said(plan)) Console.Out.WriteLine(said);
+            return plan.Problem is null ? 0 : 1;
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException)
+        {
+            Console.Error.WriteLine($"integrate: {error.Message}");
+            return 2;
+        }
     }
 }

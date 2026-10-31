@@ -486,6 +486,31 @@ export const SetupSessions: Story = { args: { start: 'setup', setup: opened('ses
 /** Setup's Reach open: read by agents outside it, writing into nothing else, and no rule of its own. */
 export const SetupReach: Story = { args: { start: 'setup', setup: opened('reach') } };
 
+// GITAPP2b (D204, the git-writes design §2): Reach's switch *Daoris may change this checkout's files*, off, and on with the sessions that
+// already run in the checkout named; at the main area's three widths in English and 中文, in both themes.
+const withSwitch = (on: boolean, running: number | null): RepositorySetupProps =>
+  opened('reach', { ...SETUP_DEFAULTS, reach: { ...SETUP_DEFAULTS.reach, checkout: { on, running, onChange: nothing } } });
+
+/** Reach with the switch off, as it is by default: the row says why it matters in its tip, and names nothing of sessions. */
+export const SetupCheckoutOff: Story = { args: { start: 'setup', setup: withSwitch(false, 2) } };
+
+/** The switch on: Reach opens on its own and names the two sessions that already run in this checkout. */
+export const SetupCheckoutOn: Story = { args: { start: 'setup', setup: withSwitch(true, 2) } };
+
+/** On, with no session running in the checkout. */
+export const SetupCheckoutOnNone: Story = { args: { start: 'setup', setup: withSwitch(true, 0) } };
+
+/** On, with the sessions unread: it says it does not know. */
+export const SetupCheckoutOnUnread: Story = { args: { start: 'setup', setup: withSwitch(true, null) } };
+
+export const SetupCheckoutOnChinese: Story = { ...SetupCheckoutOn, decorators: [chinese] };
+export const SetupCheckoutOnDark: Story = { ...SetupCheckoutOn, decorators: [dark] };
+export const SetupCheckoutOnHalf: Story = { ...SetupCheckoutOn, decorators: [storyWidths.half] };
+export const SetupCheckoutOnHalfChinese: Story = { ...SetupCheckoutOn, decorators: [storyWidths.half, chinese] };
+export const SetupCheckoutOnNarrow: Story = { ...SetupCheckoutOn, decorators: [narrow] };
+export const SetupCheckoutOnNarrowChineseDark: Story = { ...SetupCheckoutOn, decorators: [narrow, chinese, dark] };
+export const SetupCheckoutOffNarrow: Story = { ...SetupCheckoutOff, decorators: [narrow] };
+
 /**
  * Setup's *Heavy gates* (HEAVYRUN1b2b, D180's HEAVYRUN1b2a note): this machine's list for it where its own `daoris.gates.json`
  * marks none, open on its own as a list is set, each gate by name with its command and its folder, then *Edit* and *Clear*. Its

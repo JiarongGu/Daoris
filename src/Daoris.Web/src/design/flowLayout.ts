@@ -268,22 +268,24 @@ export function needs(layout: FlowLayout, rem = 16, least: number = FLOW_REM.nod
 /**
  * What a caller bounds the placement by (FLOWCHART1d): its node track's floor in rem, and whether left to right is one of its
  * placements. A flow in sections is read rank by rank under their titles, so it is never left to right (the workflow's
- * *Before it lands* and *After it lands*, the flowchart design §2.4 and §5.1).
+ * *Before it lands* and *After it lands*, the flowchart design §2.4 and §5.1). `column` is the most nodes a rank may hold left to
+ * right, three unless the caller's ranks are columns that read as lists (COMPANYVIEW1f: the roles' places, roles and agents).
  */
-export type PlacementBounds = { least?: number; across?: boolean };
+export type PlacementBounds = { least?: number; across?: boolean; column?: number };
 
 /**
  * Where the flow is placed at a measured inner width (§3.2): left to right where every rank fits side by side and none
- * holds more than three nodes, and the caller allows it; else top to bottom where the widest rank and the lanes fit; else,
- * wherever nothing measured the pane, and wherever the person chose the list, the rail.
+ * holds more than three nodes (or the caller's column bound), and the caller allows it; else top to bottom where the widest rank
+ * and the lanes fit; else, wherever nothing measured the pane, and wherever the person chose the list, the rail.
  */
 export function placementFor(
-  layout: FlowLayout, width: number | undefined, asList = false, rem = 16, { least = FLOW_REM.node, across = true }: PlacementBounds = {},
+  layout: FlowLayout, width: number | undefined, asList = false, rem = 16,
+  { least = FLOW_REM.node, across = true, column = ACROSS_MOST }: PlacementBounds = {},
 ): Placement {
   if (asList || width === undefined || layout.ranks.length === 0) return 'rail';
   const need = needs(layout, rem, least);
   const most = Math.max(0, ...layout.ranks.map((slots) => slots.filter((slot) => slot.kind === 'node').length));
-  if (across && need.across <= width && most <= ACROSS_MOST) return 'across';
+  if (across && need.across <= width && most <= column) return 'across';
   if (need.down <= width) return 'down';
   return 'rail';
 }

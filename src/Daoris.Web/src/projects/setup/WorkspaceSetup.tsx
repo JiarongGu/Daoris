@@ -17,7 +17,8 @@ import { Button, FormField, FormGrid, FormRow, Icon, Inline, PathText, Prose, Se
 import { RepositoryRules, type RuleLists } from './RepositoryRules';
 import type { AccessSetup } from './RepositorySetup';
 import { Inheritable, landingRowSays, landingSays, SetupSection, type UnreadLanding, UnreadLandingNote } from './SetupParts';
-import { SupervisorRow, type SupervisorSetup } from './SupervisorRow';
+import type { SupervisorLine } from './SupervisorRow';
+import { SupervisorDoor } from './SupervisorDoor';
 import type { WorkspaceSection } from '../tabs';
 import { hostOf } from '../workspace/workspace';
 
@@ -91,7 +92,9 @@ export type WorkspaceSetupProps = {
    * The supervisor's appointment for every repository of the workspace (SUPERVISOR1e, D208 §5), a repository's own winning over it;
    * absent where the shell says no standing confirmation.
    */
-  supervisor?: SupervisorSetup | null;
+  supervisor?: SupervisorLine | null;
+  /** The door from the supervisor's line to Agents → Roles → Appointed roles, where it is appointed (COMPANYVIEW1e). */
+  onOpenAppointed?: () => void;
   remote: WorkspaceRemote;
   busy?: boolean;
   /** A section a door asked to see open, beside those that open on their own. */
@@ -124,7 +127,7 @@ const plain = (text: string) => text.replace(/`/g, '');
  * A molecule: every state is reached by its props, and every press goes out.
  */
 export function WorkspaceSetup({
-  workspace, defaults, access, supervisor, remote, busy = false, open, wiring: startWiring = false, onOpenPlugin,
+  workspace, defaults, access, supervisor, onOpenAppointed, remote, busy = false, open, wiring: startWiring = false, onOpenPlugin,
 }: WorkspaceSetupProps) {
   const { t } = useTranslation();
   const daoris = (value: string) => t('projects.setup.marked.daoris', { value });
@@ -363,7 +366,7 @@ export function WorkspaceSetup({
         : appointed.dormant
           ? t('projects.supervisor.dormant')
           : t('projects.supervisor.window', { count: appointed.window }),
-      body: <SupervisorRow workspace={workspace} supervisor={supervisor} />,
+      body: <SupervisorDoor workspace={workspace} supervisor={supervisor} onOpen={onOpenAppointed} />,
     });
   }
   if (remoteParts.length > 0) {

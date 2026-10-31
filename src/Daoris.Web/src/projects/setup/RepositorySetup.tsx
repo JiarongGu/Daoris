@@ -21,7 +21,8 @@ import { type OpinionEdit, OpinionField, opinionRowSays, opinionSummary, type Re
 import { type RepositoryReview, type ReviewEdit, ReviewField, reviewRowSays, reviewSummary } from '../../settings/repository/Reviews';
 import { Button, CheckField, Chip, Icon, Segmented, SelectField, SettingRow } from '../../design/ui';
 import { clockOf } from '../../locales/format';
-import { type SupervisorSetup, SupervisorRow } from './SupervisorRow';
+import type { SupervisorLine } from './SupervisorRow';
+import { SupervisorDoor } from './SupervisorDoor';
 import type { Answered } from '../../work/InlineConfirm';
 import { RepositoryRules, type RuleLists } from './RepositoryRules';
 import { Inheritable, landingRowSays, landingSays, SetupSection, type UnreadLanding, UnreadLandingNote } from './SetupParts';
@@ -84,7 +85,9 @@ export type Driving = {
    */
   heldStanding?: boolean;
   /** The supervisor's appointment here (SUPERVISOR1a-ii, D208 §5), beside the hold; absent on a shell older than it. */
-  supervisor?: SupervisorSetup;
+  supervisor?: SupervisorLine;
+  /** The door from its line to Agents → Roles → Appointed roles, where it is appointed (COMPANYVIEW1e). */
+  onOpenAppointed?: () => void;
   /**
    * When the steward last set this repository's driving (STEWARDROLE1b, D209 §5.1), from this run's memory: the newest of its drive,
    * undrive, trees, hold and resume here that still stands. Null or absent where none does.
@@ -165,6 +168,12 @@ export type ReachSetup = {
   rules?: RuleLists | null;
   onAddRule?: (list: RuleListName, rule: string, added: () => void) => void;
   onRemoveRule?: (rule: string) => void;
+  /**
+   * The switch *Daoris may change this checkout's files* (GITAPP2b, the git-writes design §2): off by default, and on it says how many
+   * sessions already run in the checkout (`running`: null where the sessions could not be read, absent while they are on their way).
+   * Absent on a shell older than it, and no row is drawn.
+   */
+  checkout?: { on: boolean; running?: number | null; onChange: (on: boolean) => void };
 };
 
 export type RepositorySetupProps = {
@@ -304,6 +313,8 @@ export function RepositorySetup({ repository, driving, work, access, heavy, land
         ]
       : []),
     ...(reach.rules ? [ruleCount > 0 ? t('projects.setup.summary.rules', { count: ruleCount }) : t('projects.setup.summary.noRules')] : []),
+    // Named only when on: off is the default, and a folded line names what the person set.
+    ...(reach.checkout?.on ? [t('projects.setup.summary.checkout')] : []),
   ];
 
   // Sessions' access (AUTONOMY1d): full access, or each pause's value, marked where it came from above.
@@ -319,7 +330,7 @@ export function RepositorySetup({ repository, driving, work, access, heavy, land
     // This machine's heavy gates are set for this repository alone, so a list set is its own; and so are its sessions' checks.
     heavy: (heavy?.gates.length ?? 0) > 0 || Boolean(heavy?.checks?.set),
     sessions: languageOwn || helpersOwn || handOverOwn || standing !== null,
-    reach: readOwn || writesTo.length > 0 || ruleCount > 0,
+    reach: readOwn || writesTo.length > 0 || ruleCount > 0 || Boolean(reach?.checkout?.on),
   };
 
   const sections: { id: SetupSectionId; summary: string; body: ReactNode }[] = [];
@@ -355,7 +366,7 @@ export function RepositorySetup({ repository, driving, work, access, heavy, land
           )}
           {/* SUPERVISOR1a-ii: the supervisor's appointment beside the hold, once the repository is driven, or while one is on record. */}
           {driving.supervisor && (driving.drivable || driving.supervisor.appointment) && (
-            <SupervisorRow repository={repository} supervisor={driving.supervisor} />
+            <SupervisorDoor repository={repository} supervisor={driving.supervisor} onOpen={driving.onOpenAppointed} />
           )}
           {/* Session trees (D51): its sessions open their own worktree, so the person's uncommitted work in the
               checkout stops holding the driver. */}
@@ -659,6 +670,9 @@ export function RepositorySetup({ repository, driving, work, access, heavy, land
               onWrite={reach.onWrite}
             />
           )}
+          {reach.checkout && (
+            <CheckoutSwitch checkout={reach.checkout} busy={busy} />
+          )}
           {reach.rules && (
             <SettingRow label={t('projects.setup.rules')} hint={t('projects.setup.twin.rules', { repository })}>
               <RepositoryRules rules={reach.rules} busy={busy} onAdd={reach.onAddRule} onRemove={reach.onRemoveRule} />
@@ -683,6 +697,29 @@ export function RepositorySetup({ repository, driving, work, access, heavy, land
         </SetupSection>
       ))}
     </div>
+  );
+}
+
+/**
+ * The switch *Daoris may change this checkout's files* (GITAPP2b, D204 §2): off by default; on, it says whether sessions already run in
+ * this checkout, which a later act of Daoris's here would meet. It writes nothing to the repository.
+ */
+function CheckoutSwitch({ checkout, busy }: { checkout: NonNullable<ReachSetup['checkout']>; busy: boolean }) {
+  const { t } = useTranslation();
+  const label = t('projects.setup.checkout.label');
+  return (
+    <SettingRow
+      label={label}
+      why={t('projects.setup.checkout.why')}
+      control={<CheckField checked={checkout.on} disabled={busy} onChange={checkout.onChange} label={label} hideLabel />}
+    >
+      {checkout.on && checkout.running === null && <p className="m-0 text-small text-ink-soft">{t('projects.setup.checkout.unread')}</p>}
+      {checkout.on && typeof checkout.running === 'number' && (
+        <p data-checkout-sessions="" className="m-0 text-small text-ink-soft">
+          {checkout.running === 0 ? t('projects.setup.checkout.none') : t('projects.setup.checkout.running', { count: checkout.running })}
+        </p>
+      )}
+    </SettingRow>
   );
 }
 

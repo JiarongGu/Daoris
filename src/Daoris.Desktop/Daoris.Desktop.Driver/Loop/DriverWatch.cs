@@ -72,6 +72,9 @@ public sealed class DriverWatch(
     /// <summary>The runs held at a declined request (INTEGRATE1o part o3), as the evaluation runtime last read the quests; none before a pass.</summary>
     public IReadOnlyList<RequestHold> RequestHolds => _nodes?.RequestHolds() ?? [];
 
+    /// <summary>The landed branches whose integration waits for the owner's card (INTEGRATE1h), as the evaluation runtime last judged them; none before a pass.</summary>
+    public IReadOnlyList<IntegrationCardWait> CardWaits => _nodes?.CardWaits() ?? [];
+
     /// <summary>The loop's evaluation runtime once it runs, or null: a test holds its pass with one of its own (PARALLEL1h).</summary>
     internal NodeRuntime? Nodes => _nodes;
 
@@ -542,6 +545,23 @@ public sealed class DriverWatch(
                 Log?.Failed("the start's reconciliation of the tidy", error);
             }
         }, CancellationToken.None);
+        // GITAPP2a: the act journal's reconciliation at the start, beside the first looks so it never holds the come-up (D181 point 1): one
+        // checkout at a time, each under its own lock alone, one it cannot take left to the next look's writer, which reconciles it too.
+        var reconciling = Task.Run(async () =>
+        {
+            try
+            {
+                foreach (var line in await new ActReconciler(new ActJournal(home)).StartAsync(ct).ConfigureAwait(false)) Log?.Info("acts.held", ("said", line));
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                // The loop closed first: every writer's lock reconciles what is still open.
+            }
+            catch (Exception error) when (error is not OperationCanceledException)
+            {
+                Log?.Failed("the start's reconciliation of the act journal", error);
+            }
+        }, CancellationToken.None);
         // FABRIC-RUN1, link 8: the evaluation runtime, begun after the plan on every wake it hears and at the look's deadline, and run beside
         // the look (PARALLEL1h); only where this loop
         // holds a hook set, and its passes write only where it holds the home's lease. It reads nothing unless a graph naming a plugin's
@@ -581,6 +601,7 @@ public sealed class DriverWatch(
                 Say = async (session, text, key, token) =>
                     (await WordsHead.FollowAsync(session, at => service.SayAsync(at, text, null, token, from: SaidFrom.Daoris, key: key)).ConfigureAwait(false)).Said,
                 Tidy = IntegrationTidies.Through(new SessionTrees(home)),
+                Beside = token => BranchTidying.BesideAsync(service, token),
                 Told = told => Log?.Info(told.Code, ("repository", told.Repository), ("line", told.Line), ("candidate", told.Candidate), ("request", told.Request),
                     ("outcome", told.Outcome)),
                 Said = said => Log?.Info("integration.said", ("said", said)),
@@ -975,6 +996,7 @@ public sealed class DriverWatch(
             if (tidying is not null) await tidying.ContinueWith(_ => { }, TaskScheduler.Default).ConfigureAwait(false);
             if (limiting is not null) await limiting.ContinueWith(_ => { }, TaskScheduler.Default).ConfigureAwait(false);
             await recovering.ContinueWith(_ => { }, TaskScheduler.Default).ConfigureAwait(false);
+            await reconciling.ContinueWith(_ => { }, TaskScheduler.Default).ConfigureAwait(false);
         }
     }
 

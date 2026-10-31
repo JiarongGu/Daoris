@@ -444,6 +444,10 @@
       "reads": "tells",
       "note": "lets only Ask Daoris's record call its box, its store's own guard; the call layer's table (row 1r, §2.3) refuses the same cells first"
     },
+    "Core/Knowledge/Memory/MemoryProposals.cs": {
+      "reads": "tells",
+      "note": "names a memory proposal's proposer: Ask Daoris proposes as its own sender (KNOWCENTRAL2e2, D220's note), the quest's words saying which"
+    },
     "Core/Remote/SessionSync.cs": {
       "reads": "tells",
       "note": "keeps Ask Daoris's record off every feed; no row of this design moves it"
@@ -494,6 +498,10 @@
     "Http/Program.cs": {
       "reads": "other",
       "note": "an ask's own field or a scope's ask, not a record's mark"
+    },
+    "Mcp/MemoryTools.cs": {
+      "reads": "tells",
+      "note": "places a caller with no repository of its own as a proposer: an intake as its ask, Ask Daoris's record as its own sender (KNOWCENTRAL2e2); its change doors stay a repository session's"
     },
     "Mcp/Program.cs": {
       "reads": "other",

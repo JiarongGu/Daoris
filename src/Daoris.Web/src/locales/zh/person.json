@@ -168,6 +168,7 @@
   "person.route.SET_STANDING": "更改一个仓库的长期答复",
   "person.route.SET_STRIKES": "更改多少个失败的会话会使委托挂起",
   "person.route.SET_TREES": "更改一个仓库的会话是否在各自的工作树中工作",
+  "person.route.SET_CHECKOUT_WRITES": "更改 Daoris 是否可以改动一个仓库检出中的文件",
   "person.route.SET_WRITE_ACROSS": "更改一个仓库的会话可以在别处写入什么",
   "person.route.TRUST_FOLDER": "为智能体的工作信任一个文件夹",
   "person.route.RULE_ACTION": "更改智能体可以做什么",

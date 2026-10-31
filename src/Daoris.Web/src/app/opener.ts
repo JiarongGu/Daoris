@@ -1,5 +1,5 @@
 import type { AgentPart } from '../agents/agents';
-import type { AgentsMode } from '../agents/modes';
+import type { AgentsMode, RoleSection } from '../agents/modes';
 import type { PlanDoor } from '../person/Confirmations';
 import type { View } from '../menus/commands';
 import type { StarterDoor } from '../help/starters';
@@ -54,7 +54,7 @@ export type Compose = { repository?: string; sentence?: string };
  * Sessions' or Quests' list.
  */
 export type OpenPart = {
-  anchor?: SettingsAnchor; drawer?: 'add' | 'import'; drawerWorkspace?: string; tab?: ProjectTab; code?: string; agentPart?: AgentPart; agentsMode?: AgentsMode;
+  anchor?: SettingsAnchor; drawer?: 'add' | 'import'; drawerWorkspace?: string; tab?: ProjectTab; code?: string; agentPart?: AgentPart; agentsMode?: AgentsMode; roleSection?: RoleSection;
   workspaceTab?: WorkspaceTab; workspaceSection?: WorkspaceSection; knowledge?: KnowledgeMode; group?: OpenGroup;
   compose?: Compose;
   /** A landed branch of the repository the door names, whose page opens with how it landed (FLOWCHART1c). */
@@ -109,6 +109,8 @@ export type Opening = {
    * names Agents. A door into the place names none, and it opens in the mode it was left in.
    */
   agentsMode?: AgentsMode;
+  /** The Roles section a door opens (COMPANYVIEW1e): it names Roles' mode, and the section is chosen in Roles' list. */
+  roleSection?: RoleSection;
   /**
    * The group of Sessions' or Quests' list to bring into view (ENTRY1b, D161's ENTRY1 note): what waits on the person there,
    * with no item in it chosen. The list brings it once it has answered, then lets it go (`useBringGroup`).
@@ -161,8 +163,9 @@ export function opening(view: View, item?: string | null, part: OpenPart = {}, h
   if (view === 'map' && part.code) plan.code = part.code;
   if (view === 'agents' && part.agentPart) plan.agentPart = part.agentPart;
   if (view === 'agents') {
-    const mode = part.agentsMode ?? (named || part.agentPart ? 'agents' : undefined);
+    const mode = part.agentsMode ?? (part.roleSection ? 'roles' : named || part.agentPart ? 'agents' : undefined);
     if (mode) plan.agentsMode = mode;
+    if (part.roleSection) plan.roleSection = part.roleSection;
   }
   if (part.group && GROUP_VIEW[part.group] === view) plan.group = part.group;
   if (view === 'sessions' && part.compose) plan.compose = part.compose;

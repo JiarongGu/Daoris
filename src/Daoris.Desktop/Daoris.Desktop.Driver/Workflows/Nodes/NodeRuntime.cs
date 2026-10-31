@@ -260,6 +260,17 @@ public sealed class NodeRuntime(
     public IReadOnlyList<RequestHold> RequestHolds() =>
         _governed is { } governed ? Daoris.Driver.RequestHolds.Of(governed.Values, records.Read, _quests) : [];
 
+    /// <summary>
+    /// The landed branches whose <c>integrate</c> waits for the owner's card (INTEGRATE1h; §17.4), each as its unit's last judgement found it,
+    /// oldest landing first; a unit the last look no longer governs is none. Empty before a pass has judged one.
+    /// </summary>
+    public IReadOnlyList<IntegrationCardWait> CardWaits() =>
+        _governed is { } governed
+            ? [.. _cards.Values.Where(each => governed.ContainsKey(each.Unit)).OrderBy(each => each.Since).ThenBy(each => each.Unit, StringComparer.Ordinal)]
+            : [];
+
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, IntegrationCardWait> _cards = new(StringComparer.Ordinal);
+
     private readonly Func<bool> _holdsLease = holdsLease ?? (() => true);
 
     private readonly SemaphoreSlim _one = new(1, 1);
@@ -868,6 +879,8 @@ public sealed class NodeRuntime(
         PassTips tips, PassReads git, CancellationToken ct)
     {
         var unit = governed.Unit.Id;
+        // INTEGRATE1h: a card wait is the unit's judgement now; one its evaluation no longer proposes to start is gone.
+        _cards.TryRemove(unit, out _);
         // FABRIC-PERFORM1m: a branch unit's observed plugin nodes bind to its branch's tip read this pass, not to the unit's revision, which is
         // the end fact's and lags a moved branch until the end judgement catches up; the pass's one read of the checkout, null where unread.
         // FABRIC-PERFORM1p: its performed plugin nodes too, so one wired after an observed node starts on the tip that node was reached on.
@@ -1021,13 +1034,32 @@ public sealed class NodeRuntime(
 
         // The landing's acceptance read first, with no git and no write: where it was no request, the node waits ready for the owner's card
         // or the steward's act, and nothing is written (a rule gaining `integrate` over standing landings requests none of them).
-        if (IntegrationRequests.NodeJudgement(ask, landed.Entry, LandingRules.Effective(settings, repository, governed.Watched.Workspace)).Refused is { } waits)
+        var landing = LandingRules.Effective(settings, repository, governed.Watched.Workspace);
+        if (IntegrationRequests.NodeJudgement(ask, landed.Entry, landing).Refused is { } waits)
         {
-            var line = $"work  {unit}: its integration waits: {waits.Message}";
-            if (!said.Contains(line, StringComparer.Ordinal)) said.Add(line);
-            return null;
+            // INTEGRATE1h: the owner's card made this landing's request at its tip (the recorded-landing door keeps its unit), so the node
+            // follows that request as its own; until one is made, the wait is the owner's to answer where their card is the request.
+            IntegrationRequest? carded;
+            try
+            {
+                carded = await Integration.FindAsync(unit, landed.Tip, ct).ConfigureAwait(false);
+            }
+            catch (Exception error) when (!ct.IsCancellationRequested && error is IOException or Microsoft.Data.Sqlite.SqliteException or TimeoutException or DriverException)
+            {
+                carded = null;
+            }
+
+            if (carded is null)
+            {
+                if (IntegrationCardWait.Waits(waits.Refusal, landing)) _cards[unit] = new IntegrationCardWait(unit, repository, governed.Watched.Workspace, landed.Entry.Branch, landed.Tip, waits.Refusal!, waits.Message, landed.Entry.LandedAt);
+                else _cards.TryRemove(unit, out _);
+                var line = $"work  {unit}: its integration waits: {waits.Message}";
+                if (!said.Contains(line, StringComparer.Ordinal)) said.Add(line);
+                return null;
+            }
         }
 
+        _cards.TryRemove(unit, out _);
         var sent = await Integrate.StartAsync(node, start, statuses[start.Node], ask, settings, ct).ConfigureAwait(false);
         said.AddRange(Integrate.TakeSaid());
         return sent;

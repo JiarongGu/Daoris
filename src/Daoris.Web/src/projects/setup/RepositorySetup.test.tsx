@@ -386,6 +386,64 @@ describe("Setup's Reach", () => {
     expect(onAddRule).toHaveBeenLastCalledWith('allow', 'Edit(/docs/**)', expect.any(Function));
   });
 
+  // GITAPP2b (D204, the git-writes design §2): the switch is off by default, and on it says whether sessions already run there.
+  describe('the switch for changing the checkout\'s files', () => {
+    const LABEL = "Daoris may change this checkout's files";
+    const withSwitch = (checkout: NonNullable<NonNullable<RepositorySetupProps['reach']>['checkout']>) =>
+      ({ ...SETUP_DEFAULTS, reach: { ...SETUP_DEFAULTS.reach, checkout } });
+
+    it('draws no row where the shell offers none', async () => {
+      draw(SETUP_DEFAULTS);
+      await userEvent.click(head('Reach'));
+      expect(screen.queryByLabelText(LABEL)).toBeNull();
+    });
+
+    it('is off, names nothing of sessions, and goes out as a press on', async () => {
+      const onChange = vi.fn();
+      draw(withSwitch({ on: false, running: 2, onChange }));
+      // Off, the folded line names nothing of it.
+      expect(head('Reach')).toHaveAccessibleDescription(
+        "read by agents outside it (Daoris's default) · writes into nothing else · no rules of its own");
+      await userEvent.click(head('Reach'));
+
+      const control = screen.getByLabelText(LABEL);
+      expect(control).not.toBeChecked();
+      expect(screen.queryByText(/already runs? in this checkout/)).toBeNull();
+      await userEvent.click(control);
+      expect(onChange).toHaveBeenLastCalledWith(true);
+    });
+
+    it('is named in its folded line and opens on its own when on, saying how many sessions already run in the checkout', async () => {
+      const onChange = vi.fn();
+      draw(withSwitch({ on: true, running: 2, onChange }));
+
+      expect(head('Reach')).toHaveAttribute('aria-expanded', 'true');
+      expect(screen.getByLabelText(LABEL)).toBeChecked();
+      expect(screen.getByText('2 sessions already run in this checkout.')).toBeInTheDocument();
+      await userEvent.click(head('Reach'));
+      expect(head('Reach')).toHaveAccessibleDescription(expect.stringContaining('Daoris may change its files'));
+    });
+
+    it('says one session, none, and that the sessions could not be read', () => {
+      const onChange = vi.fn();
+      const { unmount } = draw(withSwitch({ on: true, running: 1, onChange }));
+      expect(screen.getByText('1 session already runs in this checkout.')).toBeInTheDocument();
+      unmount();
+      const none = draw(withSwitch({ on: true, running: 0, onChange }));
+      expect(screen.getByText('No session runs in this checkout now.')).toBeInTheDocument();
+      none.unmount();
+      draw(withSwitch({ on: true, running: null, onChange }));
+      expect(screen.getByText(/could not be read, so whether one runs in this checkout is not known/)).toBeInTheDocument();
+    });
+
+    it('says it in 中文', async () => {
+      await i18n.changeLanguage('zh');
+      draw(withSwitch({ on: true, running: 2, onChange: vi.fn() }));
+      expect(screen.getByLabelText('允许 Daoris 改动此检出中的文件')).toBeChecked();
+      expect(screen.getByText('已有 2 个会话在此检出中运行。')).toBeInTheDocument();
+    });
+  });
+
   it('says it reads nobody, writes into another and counts its rules in its folded line', async () => {
     draw(SETUP_OWN);
     await userEvent.click(head('Reach'));

@@ -244,7 +244,7 @@ public sealed class TreeUpdateTests : LandedFixture
         await PlatformCommitAsync(origin, "line.txt", "theirs\n", "the line moves on");
         var tip = await RevAsync(tree.Path, "HEAD");
 
-        using (var held = TreeLock.TryReplaying(Home, "aurora", "engine"))
+        using (var held = TreeLock.TryReplaying(Home, root, "engine", TreeLock.Updating))
         {
             Assert.NotNull(held);
             var refused = await trees.UpdateTreeAsync(tree.Path, Idle);

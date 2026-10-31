@@ -76,6 +76,18 @@ public sealed class DriverRoutes(DriverContext context)
         return State(_loop);
     }
 
+    // GITAPP2b (D204, the git-writes design §2): the switch *Daoris may change this checkout's files*, off by default, in
+    // `driver.json` by repository. It writes nothing to a repository: it lets the acts of later rows be offered.
+    [DriverRoute("SET_CHECKOUT_WRITES")]
+    [Publishes("SET_CHECKOUT_WRITES", StateScopes.Driver)]
+    private object? SetCheckoutWrites(IpcRequest request)
+    {
+        var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
+        var allow = PayloadHelper.GetRequiredValue<bool>(request.Payload, "allow");
+        _context.Change(config => config.WithCheckoutWrites(repository, allow));
+        return State(_loop);
+    }
+
     // A repository's standing answer (KNOWUSE1b, D135 §3): the person's words, handed to every session there, over the same
     // file `daoris driver standing <repo> "…"|--clear` edits — one truth, two doors (D50). No words clears it; blank words or
     // words past the bound are the driver's refusal.
@@ -365,12 +377,15 @@ public sealed class DriverRoutes(DriverContext context)
     // stored choices, and the work codes a role may take; a read, the same `daoris driver role` says. Beside them, the roles Daoris
     // suggests adding (the Designer while no role takes design), each the person's press alone.
     [DriverRoute("ROLES")]
-    [ByEvent("ROLES", Untold = "the store's roles and driver.json's staffing")]
+    [ByEvent("ROLES", Untold = "the store's roles and driver.json's staffing, and the machine log's starts that Use sums")]
     private Task<object?> RolesAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var catalogue = RoleCatalog.ReadHome(_loop.Home);
+        // Each role's last seven days (MODELROLE1f): names and counts from the machine log's actor.chose lines; a role with no start is not listed.
+        var use = RoleUse.Of(_loop.Home, DateTimeOffset.UtcNow);
         return Task.FromResult<object?>(new
         {
+            Use = new { use.Days, use.Roles },
             Roles = RoleDoor.Rows(catalogue, DriverConfig.Load(_loop.ConfigPath)),
             Works = RoleWork.Codes,
             Kept = RoleStaffing.Of(_loop.ConfigPath) is not null,
@@ -378,6 +393,9 @@ public sealed class DriverRoutes(DriverContext context)
             {
                 each.Role.Id, each.Role.NameEn, each.Role.NameZh, each.Role.Takes, ScopeKind = each.Role.Scope.Kind, each.Choices,
             }),
+            // MODELROLE1g: the choices suggested for the seeded roles, whole; the page leaves out an agent this machine has not set up.
+            SuggestedChoices = ActorSuggestion.Table.Select(each => new { each.Role, each.Choices }),
+            SuggestedChoicesDated = ActorSuggestion.Dated,
         });
     }
 
@@ -753,6 +771,8 @@ public sealed class DriverRoutes(DriverContext context)
                 .Select(p => new { Workspace = p.Key, Read = p.Value }).ToArray(),
             WriteAcross = config.WriteAcross.OrderBy(p => p.Key, StringComparer.Ordinal)
                 .Select(p => new { Repository = p.Key, To = p.Value }).ToArray(),
+            // GITAPP2b: the repositories whose checkout the person let Daoris change the files of (off where absent), as names.
+            CheckoutWrites = config.CheckoutWrites.Where(p => p.Value).Select(p => p.Key).Order(StringComparer.Ordinal).ToArray(),
             // Each repository's standing answer (KNOWUSE1b), as rows for the same reason; `at` in UTC, or null where unknown.
             Standing = config.Standing.OrderBy(p => p.Key, StringComparer.Ordinal)
                 .Select(p => new { Repository = p.Key, p.Value.Says, p.Value.At }).ToArray(),

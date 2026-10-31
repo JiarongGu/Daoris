@@ -189,9 +189,13 @@ internal sealed class TreeLands(
     /// The commit the door judged (FABRIC-CUTOVER1d, <see cref="LandingGate.Tip"/>: a graph run's <c>handed</c>'s): the branch must stand there
     /// immediately before the merge, and the merge takes that commit, never the branch as it stands then. Null merges the branch as it stands.
     /// </param>
+    /// <param name="beside">
+    /// The ledger's sessions and their trees (GITLOCK2, <see cref="BranchTidying.HoldersAsync"/>), which the promotion reads inside the
+    /// checkout's hold, so the merge waits for a session working in that checkout. Null asks nothing and merges as before.
+    /// </param>
     internal async Task<TreeMerge> MergeAsync(
         string path, CancellationToken ct = default, LandReplay? replay = null, int? uncommitted = null, CommonDirAndBranch? here = null,
-        string? pinned = null)
+        string? pinned = null, Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null)
     {
         var full = Path.GetFullPath(path);
         if (!context.Holds(full))
@@ -296,8 +300,10 @@ internal sealed class TreeLands(
         // only fast-forwarded to it. A conflict or a refusing hook (HOOKMERGE1) leaves the checkout as it was, in today's words.
         var frozen = replay?.Now ?? pinned ?? await CommitOfAsync(root, $"refs/heads/{branch}", ct).ConfigureAwait(false);
         if (frozen is null) return new(false, $"git could not read where `{branch}` stands, so nothing was merged.");
+        // GITLOCK1: no hold here. The checkout's checks above are this press's early words; the promotion's effect holds the checkout alone
+        // and reads them again before it moves it, and a hold taken here would refuse that one in this very process.
         var (carried, refused) = await IntegrationPresses.MergeAsync(
-            context.Home, context.Config(), root, repository, workspace, canonical, branch, frozen, ct).ConfigureAwait(false);
+            context.Home, context.Config(), root, repository, workspace, canonical, branch, frozen, ct, beside).ConfigureAwait(false);
         if (!carried) return new(false, refused!);
 
         var landed = ahead.Trim().Split('\n').Length;
@@ -391,11 +397,12 @@ internal sealed class TreeLands(
     /// them there, so the landing asks `status` no more. Read again where the landing waited for another of its tree; null reads them.
     /// </param>
     /// <param name="together">The operation bringing sessions together whose combined Accept this is: the one door a tree it binds lands by.</param>
+    /// <param name="beside">The ledger's sessions and their trees (GITLOCK2), read inside the checkout's hold by a merge rule's move; see <see cref="MergeAsync"/>.</param>
     internal async Task<TreeLanding> LandAsync(
         string path, LandingSubject subject, CancellationToken ct = default, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null,
         string acceptedBy = AcceptedBy.Person, IWorkplaceGate? gate = null, bool joins = false, bool fetched = false,
         Func<bool, CancellationToken, Task<TreeLanding?>>? judged = null, Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null,
-        int? uncommitted = null, string? together = null)
+        int? uncommitted = null, string? together = null, Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null)
     {
         var repository = context.OwnerOf(Path.GetFullPath(path)).Repository;
         // LANDRACE1 (D145 point 2, D173's FABRIC-END7 note and its review): one landing of one session's tree at a time, whichever door
@@ -434,7 +441,7 @@ internal sealed class TreeLands(
         using (RepositoryHolds.Hold(context.Home, repository))
         {
             landed = await LandingAsync(path, subject, ct, inUse, acceptedBy, gate, joins, fetched, hold, beforePush,
-                hold.Waited ? null : uncommitted).ConfigureAwait(false);
+                hold.Waited ? null : uncommitted, beside).ConfigureAwait(false);
         }
 
         // FABRIC-END3: Accept is Daoris's own ref move; its repository is judged at once by the ref watch, with its echo (§B4).
@@ -509,7 +516,8 @@ internal sealed class TreeLands(
     private async Task<TreeLanding> LandingAsync(
         string path, LandingSubject subject, CancellationToken ct, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse,
         string acceptedBy, IWorkplaceGate? gate, bool joins, bool fetched, LandingHold? hold,
-        Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null, int? uncommitted = null)
+        Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null, int? uncommitted = null,
+        Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null)
     {
         // One look (UIFREEZE1, PROC1d-i): the landing and its tidy ask git's guess at the line once.
         using var look = context.OneLook();
@@ -617,7 +625,7 @@ internal sealed class TreeLands(
                 replayed = made;
             }
 
-            var merged = await MergeAsync(path, ct, replayed, uncommitted, here, pinned: gate?.Tip).ConfigureAwait(false);
+            var merged = await MergeAsync(path, ct, replayed, uncommitted, here, pinned: gate?.Tip, beside: beside).ConfigureAwait(false);
             landed = new(merged.Merged, merged.Message) { LeftOut = merged.Merged ? replayed?.LeftOut : null, Refusal = merged.Refusal };
             landed = Fetched(landed, notFetched);
         }

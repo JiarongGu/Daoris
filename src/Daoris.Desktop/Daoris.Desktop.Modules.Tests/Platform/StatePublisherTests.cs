@@ -523,6 +523,7 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("GIT_HISTORY", "", null)]
     [InlineData("GIT_BLAME", "", null)]
     [InlineData("GIT_COMPARE", "", null)]
+    [InlineData("GIT_CHANGES", "", null)]
     // HELPMODE1c3: and the driver's, whose helpGrants draws the browser's grant from the plugin's approval.
     [InlineData("PLUGIN_ACTION", "driver,plugins,harnesses", null)]
     [InlineData("PLUGIN_UPDATE", "driver,plugins,harnesses", null)]
@@ -556,6 +557,7 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("SET_HOLD", "driver", null)]
     [InlineData("SET_STANDING_CONFIRMATION", "driver", null)]
     [InlineData("SET_TREES", "driver", null)]
+    [InlineData("SET_CHECKOUT_WRITES", "driver", null)]
     [InlineData("SET_STANDING", "driver", null)]
     [InlineData("SET_HEAVY_GATES", "driver", null)]
     [InlineData("SET_KEEP", "driver,wiring", null)]

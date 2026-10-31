@@ -275,7 +275,8 @@ internal static class TreesConsole
                 var done = await trees.SyncAsync(repositories, inUse, only: null, fetch: true,
                     inUseNow: async token => (await service.ActiveSessionsAsync(token).ConfigureAwait(false))
                         .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0)
-                        .ToHashSet(StringComparer.OrdinalIgnoreCase), scope: scope).ConfigureAwait(false);
+                        .ToHashSet(StringComparer.OrdinalIgnoreCase), scope: scope,
+                    beside: token => BranchTidying.BesideAsync(service, token)).ConfigureAwait(false);
                 Told(home, PressesTold.TreesSync);
                 // The words are the route's too (RPC1b3): what was not fetched, each row, what was left apart, the registry's
                 // following of the lines moved, and the count, 1 where something the proofs cleared did not happen.
@@ -307,7 +308,7 @@ internal static class TreesConsole
                     new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)), (_, line) => Console.Error.WriteLine($"trees: {line}"),
                     async token => (await service.ActiveSessionsAsync(token).ConfigureAwait(false))
                         .Select(each => each.Tree).OfType<string>().Where(each => each.Length > 0).ToHashSet(StringComparer.OrdinalIgnoreCase),
-                    log, ReviewDoors.Terminal);
+                    log, ReviewDoors.Terminal, token => BranchTidying.BesideAsync(service, token));
                 var (found, rows) = await SessionEntries.LookAsync(
                     service, config, SessionsConsole.Wire(config), lastLook: null, waits: null, home,
                     ask.IsAsk ? entry => entry.Origin == $"ask:{ask.Id}" : entry => entry.Key == ask.Id, default).ConfigureAwait(false);
@@ -467,7 +468,8 @@ internal static class TreesConsole
                 var landed = await landing.LandAsync(tree, subject, inUse: async token => (await service.ActiveSessionsAsync(token).ConfigureAwait(false))
                     .Select(each => each.Tree).OfType<string>().Where(each => each.Length > 0)
                     .ToHashSet(StringComparer.OrdinalIgnoreCase), gate: gate, joins: subject.Joins,
-                    judged: pressed?.Judged, beforePush: pressed?.BeforePush).ConfigureAwait(false);
+                    judged: pressed?.Judged, beforePush: pressed?.BeforePush,
+                    beside: token => BranchTidying.BesideAsync(service, token)).ConfigureAwait(false);
                 Told(home, PressesTold.Land, session);
                 // The plugin's lines were said as they came; the landing's sentence and the exit are the route's words too (RPC1b3).
                 var said = TreesWords.Land(landed, []);

@@ -668,8 +668,9 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         }
 
         var isolated = tree is null && Isolates(ownTree, config, repository);
-        using var starting = isolated ? TreeLock.TryStarting(_home, known.Workspace, known.Repository) : null;
-        if (isolated && starting is null) return new(null, TreeLock.Replaying(known.Repository));
+        // GITLOCK1: in the checkout itself too, so no writer moves it between the commit read below and the record that holds it.
+        using var starting = TreeLock.TryStarting(_home, root!);
+        if (starting is null) return new(null, HeldWords.Holding(known.Repository, TreeLock.HolderOf(_home, root!)).Why);
 
         TreeOpened? opened = null;
         if (isolated)

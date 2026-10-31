@@ -98,7 +98,7 @@ internal sealed class TreeUpdates(
         facts = facts with { Line = line, Branch = branch, NoLine = line is null };
         if (facts.First() is not null) return Refused(facts);
 
-        using var held = TreeLock.TryReplaying(context.Home, workspace, repository);
+        using var held = TreeLock.TryReplaying(context.Home, root, repository, TreeLock.Updating);
         facts = facts with { Held = held is null };
         if (facts.First() is not null) return Refused(facts);
         // LINESTOGETHER1d: a tree bound into an operation bringing sessions together is left as it stands, its operation named.
@@ -284,7 +284,7 @@ internal sealed class TreeUpdates(
             return Left($"git could not tell: {error.Message}");
         }
 
-        using var held = TreeLock.TryReplaying(context.Home, workspace, repository);
+        using var held = TreeLock.TryReplaying(context.Home, full, repository, TreeLock.Updating);
         if (held is null) return Left($"`{repository}`'s trees are held right now, by a session starting in one or by another replay");
 
         // Where its own commits start: where its record says it grew from, while the tree still holds that, else where it leaves the
