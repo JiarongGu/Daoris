@@ -57,6 +57,12 @@ public sealed record BriefLine(string Why, IReadOnlyList<BriefPart> Parts)
 
     /// <summary>The questions the session asked that no word answered yet: a go-ahead, a helper's ask still open.</summary>
     public IReadOnlyList<string> Open { get; init; } = [];
+
+    /// <summary>
+    /// The memory the line read, newest first, each entry in one line as the service rechecked it when the brief was composed, never as it
+    /// was read (KNOWCENTRAL2f).
+    /// </summary>
+    public IReadOnlyList<string> Memory { get; init; } = [];
 }
 
 /// <summary>
@@ -121,6 +127,12 @@ public static class ContextBrief
 
     /// <summary>The most entries of a list named: plan steps, what is uncommitted, the commits.</summary>
     public const int ListLimit = 50;
+
+    /// <summary>The most memory entries the line read that the state names, the newest; each clipped at <see cref="MemoryItemLimit"/>.</summary>
+    public const int MemoryLimit = 5;
+
+    /// <summary>The most one memory entry's line weighs.</summary>
+    public const int MemoryItemLimit = 400;
 
     /// <summary>The most of the last failed check's output carried: the record's own bound on it.</summary>
     public const int OutputLimit = SessionEventText.RawLimit;
@@ -554,6 +566,10 @@ public static class ContextBrief
         }
 
         fixedLines.AddRange(line.Open.Select(open => $"\n- Asked and not answered yet: {TextBounds.OneLine(open)}"));
+        fixedLines.AddRange(line.Memory.Take(MemoryLimit).Select(entry =>
+            $"\n- Memory this line read, as it stands now: {TextBounds.Clip(TextBounds.OneLine(entry), MemoryItemLimit)}"));
+        var memoryLeft = Math.Max(0, line.Memory.Count - MemoryLimit);
+        if (memoryLeft > 0) fixedLines.Add($"\n- … and {memoryLeft} more memory entries this line read, which memory_get reads as they stand.");
         var files = read.Turns.SelectMany(turn => turn.Words).Prepend(read.Request).OfType<Word>()
             .SelectMany(word => word.Files.Select(file => (Name: file, Kept: line.Parts[word.Part].Kept))).Distinct().ToList();
         if (files.Count > 0)
@@ -592,7 +608,7 @@ public static class ContextBrief
         }
 
         if (Weight(rendered) > StateCap) rendered = clipped.Head(rendered, StateCap);
-        var listsLeft = uncommitted.Count - shown[0] + commits.Count - shown[1];
+        var listsLeft = uncommitted.Count - shown[0] + commits.Count - shown[1] + memoryLeft;
         return (rendered.Length == 0 ? null : rendered, listsLeft, steps.Count - shown[2]);
     }
 

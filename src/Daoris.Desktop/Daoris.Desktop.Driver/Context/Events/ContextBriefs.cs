@@ -91,7 +91,22 @@ internal static class ContextBriefs
             NoteAsked = noteAsked,
             Others = Others(json, line),
             Open = Open(home, line),
+            Memory = await MemoryAsync(service, session, ct).ConfigureAwait(false),
         });
+    }
+
+    /// <summary>What the line read of memory, as the service rechecks it now (KNOWCENTRAL2f); none where it could not be had.</summary>
+    private static async Task<IReadOnlyList<string>> MemoryAsync(ServiceClient service, string session, CancellationToken ct)
+    {
+        try
+        {
+            return await service.LineMemoryAsync(session, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is HttpRequestException or DriverException or System.Text.Json.JsonException or InvalidOperationException
+                                          || (error is OperationCanceledException && !ct.IsCancellationRequested))
+        {
+            return [];
+        }
     }
 
     /// <summary>The ids of the parts a new part's line continues, for the reads its rules allow (design §3.1 item 5); none read, none.</summary>
