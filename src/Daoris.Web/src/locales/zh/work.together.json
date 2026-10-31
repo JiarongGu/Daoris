@@ -9,7 +9,7 @@
   "work.together.member": "正被并入另一个会话：{{phase}}",
   "work.together.why": "上次核对：{{why}}",
   "work.together.accept": "一并采纳",
-  "work.together.askAgain": "再请求一次",
+  "work.together.askAgain": "再问一次",
   "work.together.letGo": "放开它们",
   "work.together.landed": "已落地到 {{into}}",
   "work.together.landedLine": "已落地到主线 {{into}}",

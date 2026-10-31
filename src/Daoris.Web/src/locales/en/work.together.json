@@ -1,7 +1,7 @@
 {
   "work.together.title": "Bringing sessions together",
   "work.together.open": "Bring them together…",
-  "work.together.choose": "Tick the sessions whose work this one should replay onto its branch:",
+  "work.together.choose": "Choose the sessions whose work this one should replay onto its branch:",
   "work.together.bring": "Bring them together",
   "work.together.cancel": "Cancel",
   "work.together.head": "Bringing {{count}} session into this one: {{phase}}",
