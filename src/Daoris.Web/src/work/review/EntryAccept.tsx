@@ -144,6 +144,7 @@ function PlanLines({ t, plan, named, name, leaving, onLeave, held, refused }: {
   /** Under an ask, a part would be refused (and none is gated), so its repository's work stays. */
   refused: boolean;
 }) {
+  const { i18n } = useTranslation();
   const count = plan.parts.filter((part) => !part.sameTreeAs && !leaving.has(part.session)).length;
   return (
     <div className="grid gap-1 text-small text-ink-soft">
@@ -185,7 +186,10 @@ function PlanLines({ t, plan, named, name, leaving, onLeave, held, refused }: {
                   <CheckField
                     checked={leaving.has(part.session)}
                     onChange={() => onLeave(part.session)}
-                    label={t('work.accept.leaveOut', { part: part_ })}
+                    label={t('work.accept.leaveOut', {
+                      part: new Intl.ListFormat(i18n.language, { type: 'conjunction' }).format(
+                        [part.session, ...plan.parts.filter((each) => each.sameTreeAs === part.session).map((each) => each.session)].map(name)),
+                    })}
                   />
                 </>
               )}

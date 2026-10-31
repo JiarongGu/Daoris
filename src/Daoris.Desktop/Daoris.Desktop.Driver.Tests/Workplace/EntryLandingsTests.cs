@@ -46,6 +46,27 @@ public sealed class EntryLandingsTests
         Assert.Equal(("s1", false), (steps[1].SameTreeAs, steps[1].LeftOut));
     }
 
+    /// <summary>REVIEWFLOW1d: leaving out a shared tree's first part leaves out every part of it; none lands, none is said to share a tree.</summary>
+    [Fact]
+    public void Leaving_out_a_shared_tree_leaves_out_all_its_parts()
+    {
+        var steps = EntryLandings.Sequence([Part("s1", "s-1"), Part("s2", "s-1"), Part("s3", "s-3")], new HashSet<string>(["s1"], StringComparer.Ordinal));
+
+        Assert.Equal([false, false, true], steps.Select(step => step.Lands));
+        Assert.Equal([true, true, false], steps.Select(step => step.LeftOut));
+        Assert.All(steps, step => Assert.Null(step.SameTreeAs));
+    }
+
+    /// <summary>REVIEWFLOW1d: a part a kept later part grew from is carried, and is offered no leave-out.</summary>
+    [Fact]
+    public void A_part_a_later_part_grew_from_is_carried()
+    {
+        var own = new HashSet<string>(["a1", "a2"], StringComparer.Ordinal);
+
+        Assert.True(EntryLandings.Carries(own, ["b9", "a2"]));
+        Assert.False(EntryLandings.Carries(own, ["b9", "b8"]));
+    }
+
     [Fact]
     public void A_merged_branchs_successor_keeps_the_name_and_counts_on() =>
         Assert.Equal(
