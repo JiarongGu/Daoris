@@ -1,0 +1,69 @@
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Button, CheckField, Inline, Prose } from '../../design/ui';
+import type { GitRead } from './RepositoryGit';
+
+/** What a stash Save rests on (the bridge's `GitStashPlan`, handed as it came). */
+export type StashPlanValue = {
+  head: string | null;
+  stash: string | null;
+  tracked: number;
+  untracked: number;
+  sharedWith: number;
+  why: string | null;
+  hooks: readonly string[];
+};
+
+/** The press: untracked files too or not, the message typed, and the tip and stash of the plan shown, which the driver finds unchanged or refuses. */
+export type StashBoxPress = { untracked: boolean; message: string; head: string | null; stash: string | null };
+
+/**
+ * **The stash box of the Changes tab** (GITAPP2k, D204, the git-writes design §8): *Save to the stash*, tracked files only unless *Include
+ * untracked files* is ticked, and the plan's plain words that the stash is shared by every linked tree, sessions' included, so a Save here is
+ * seen there. Applying a stash and dropping one are not offered.
+ *
+ * @remarks **A molecule**: the plan arrives as a prop. `busy` holds the press while an act runs.
+ */
+export function StashBox({ read, busy, onPress }: {
+  read: GitRead<StashPlanValue>;
+  busy: boolean;
+  /** `done` is called once the act is done, so the box clears its message. */
+  onPress: (press: StashBoxPress, done: () => void) => void;
+}) {
+  const { t } = useTranslation();
+  const [message, setMessage] = useState('');
+  const [untracked, setUntracked] = useState(false);
+  if (read.state === 'reading') return <Prose className="text-small text-ink-soft">{t('projects.git.stash.reading')}</Prose>;
+  if (read.state === 'refused') return <Prose className="text-small text-ink-soft">{read.sentence}</Prose>;
+  if (read.state === 'noCheckout') return null;
+  const plan = read.value;
+  const blocked = plan.why ?? (plan.tracked === 0 && !untracked ? t('projects.git.stash.onlyUntracked') : null);
+  return (
+    <section aria-label={t('projects.git.stash.heading')} className="grid min-w-0 gap-2 rounded-control border border-line p-2">
+      <h3 className="m-0 text-small font-semibold text-ink-faint">{t('projects.git.stash.heading')}</h3>
+      <Prose className="min-w-0 text-small text-ink-soft"><Inline text={t('projects.git.stash.shared', { count: plan.sharedWith })} /></Prose>
+      <Prose className="min-w-0 text-small text-ink-soft">
+        <Inline text={t('projects.git.stash.counts', { tracked: plan.tracked, untracked: plan.untracked })} />
+      </Prose>
+      <label className="grid min-w-0 gap-1">
+        <span className="text-small text-ink-faint">{t('projects.git.stash.message')}</span>
+        <input
+          value={message}
+          disabled={busy}
+          onChange={(event) => setMessage(event.target.value)}
+          className="w-full min-w-0 rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
+        />
+      </label>
+      <CheckField checked={untracked} onChange={setUntracked} disabled={busy} label={t('projects.git.stash.untracked')} />
+      {blocked && <Prose className="min-w-0 text-small text-ink-soft"><Inline text={blocked} /></Prose>}
+      <div className="flex flex-wrap gap-2">
+        <Button
+          disabled={busy || blocked !== null}
+          onClick={() => onPress({ untracked, message, head: plan.head, stash: plan.stash }, () => { setMessage(''); setUntracked(false); })}
+        >
+          {t('projects.git.stash.press')}
+        </Button>
+      </div>
+    </section>
+  );
+}

@@ -383,6 +383,28 @@ export const GIT_COMMIT_PLAN_ENGINE = {
   identity: 'Aurora Dev <aurora@example.com>' as string | null,
 };
 
+/** `GIT_SWITCH_PLAN` for the engine's `release` branch from `main`: nothing changed, a post-checkout hook (GITAPP2k). */
+export const GIT_SWITCH_PLAN_ENGINE = {
+  from: 'main' as string | null,
+  head: id('c4f1a2') as string | null,
+  to: 'release',
+  dirty: false,
+  elsewhere: null as string | null,
+  why: null as string | null,
+  hooks: ['post-checkout'],
+};
+
+/** `GIT_STASH_PLAN` for the engine: two tracked files changed, one untracked, one session tree sharing the stash (GITAPP2k). */
+export const GIT_STASH_PLAN_ENGINE = {
+  head: id('c4f1a2') as string | null,
+  stash: null as string | null,
+  tracked: 2,
+  untracked: 1,
+  sharedWith: 1,
+  why: null as string | null,
+  hooks: [] as string[],
+};
+
 /**
  * The physics session's branch beside the engine's line since they parted, as `GIT_GRAPH` answers `sinceParted` with the two
  * tips, the branch then the line (UX6h3b): its two commits (`left`) and the line's two since it grew from `77a0e1` (`right`),

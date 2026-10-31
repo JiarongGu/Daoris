@@ -73,8 +73,9 @@ public sealed class SwitchActs(ActJournal journal)
         if (run.Refused || run.Act is null) return run;
         if (run.Outcome == ActOutcomes.Done)
         {
-            var back = state.From is null ? "" : $" Switch back to `{Short(state.From)}` to undo it.";
-            return run with { Notes = $"The checkout is on `{name}`.{back}", Said = run.Said + back };
+            if (state.From is null) return run;
+            var back = $"Switch back to `{Short(state.From)}` to undo it.";
+            return run with { Notes = back, Said = $"{run.Said} {back}" };
         }
 
         return journal.Steps(run.Act).LastOrDefault(each => each.Kind == ActStepKinds.Switch)?.Said is { Length: > 0 } why

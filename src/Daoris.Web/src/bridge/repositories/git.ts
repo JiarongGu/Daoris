@@ -513,6 +513,106 @@ export const useGitCommitAct = (repository: string | null, workspace: string) =>
   });
 
 /**
+ * What a switch to a branch would rest on (GITAPP2k): where HEAD is, whether tracked files are changed, the folder of another tree that has the
+ * branch out and, in the driver's sentence, why it would be refused. A press sends back the branch HEAD named and its commit.
+ */
+export type GitSwitchPlan = {
+  from: string | null;
+  head: string | null;
+  to: string;
+  toHead: string | null;
+  dirty: boolean;
+  elsewhere: string | null;
+  why: string | null;
+  hooks: string[];
+};
+
+/** What a stash Save would rest on (GITAPP2k): the changes, the tip of `refs/stash`, and how many other trees share that stash. */
+export type GitStashPlan = {
+  head: string | null;
+  branch: string | null;
+  stash: string | null;
+  tracked: number;
+  untracked: number;
+  sharedWith: number;
+  why: string | null;
+  hooks: string[];
+  identity: string | null;
+};
+
+const readPlanOf = <T>(fill: (value: Partial<T>) => T) => (raw: unknown): GitAnswer<T> | null => {
+  const answer = raw as Partial<GitAnswer<Partial<T>>> | null;
+  if (!answer || typeof answer !== 'object' || !('value' in answer)) return null;
+  return {
+    value: answer.value && typeof answer.value === 'object' ? fill(answer.value) : null,
+    refusal: answer.refusal ?? null,
+    problem: answer.problem ?? null,
+    commands: answer.commands ?? [],
+    remembered: answer.remembered === true,
+  };
+};
+
+const readSwitchPlan = readPlanOf<GitSwitchPlan>((value) => ({
+  from: value.from ?? null, head: value.head ?? null, to: value.to ?? '', toHead: value.toHead ?? null, dirty: value.dirty === true,
+  elsewhere: value.elsewhere ?? null, why: value.why ?? null, hooks: value.hooks ?? [],
+}));
+
+const readStashPlan = readPlanOf<GitStashPlan>((value) => ({
+  head: value.head ?? null, branch: value.branch ?? null, stash: value.stash ?? null, tracked: value.tracked ?? 0, untracked: value.untracked ?? 0,
+  sharedWith: value.sharedWith ?? 0, why: value.why ?? null, hooks: value.hooks ?? [], identity: value.identity ?? null,
+}));
+
+/** The switch's plan for a branch, read again with the Changes tab and whenever the page asks; not asked while no branch is chosen. */
+export const useGitSwitchPlan = (repository: string | null, workspace: string, branch: string | null) => {
+  const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const queryKey = [...keys.gitChanges(repository ?? '', workspace), 'switch-plan', branch ?? ''] as const;
+  return useQuery({
+    queryKey,
+    queryFn: () => askHeld('GIT_SWITCH_PLAN', client, queryKey, { repository, branch, ...(workspace ? { workspace } : {}) }, readSwitchPlan),
+    enabled: isAvailable && Boolean(repository) && Boolean(branch),
+    staleTime: 0,
+    refetchOnMount: 'always',
+  });
+};
+
+/** The stash's plan, read again with the Changes tab and whenever the page asks. */
+export const useGitStashPlan = (repository: string | null, workspace: string) => {
+  const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const queryKey = [...keys.gitChanges(repository ?? '', workspace), 'stash-plan'] as const;
+  return useQuery({
+    queryKey,
+    queryFn: () => askHeld('GIT_STASH_PLAN', client, queryKey, { repository, ...(workspace ? { workspace } : {}) }, readStashPlan),
+    enabled: isAvailable && Boolean(repository),
+    staleTime: 0,
+    refetchOnMount: 'always',
+  });
+};
+
+/** A switch as pressed: the branch, and the branch and commit HEAD stood on in the plan the page showed. */
+export type GitSwitchPress = { branch: string; from: string | null; head: string | null };
+
+/** *Switch* (GITAPP2k, the git-writes design §8): never forced; a refusal is data in the answer. Switching back is the same press on the branch it left. */
+export const useGitSwitchAct = (repository: string | null, workspace: string) =>
+  useMutation({
+    mutationFn: async (press: GitSwitchPress): Promise<GitActAnswer> =>
+      readAct(await call('GIT_SWITCH', { repository, ...(workspace ? { workspace } : {}), branch: press.branch, from: press.from, head: press.head })),
+  });
+
+/** A stash Save as pressed: untracked files too or not, an optional message, and the tip and stash the plan showed. */
+export type GitStashPress = { untracked: boolean; message: string; head: string | null; stash: string | null };
+
+/** *Save to the stash* (GITAPP2k): tracked files only unless `untracked`; refused where the shared stash moved since the plan. */
+export const useGitStashAct = (repository: string | null, workspace: string) =>
+  useMutation({
+    mutationFn: async (press: GitStashPress): Promise<GitActAnswer> =>
+      readAct(await call('GIT_STASH', {
+        repository, ...(workspace ? { workspace } : {}), untracked: press.untracked, message: press.message, head: press.head, stash: press.stash,
+      })),
+  });
+
+/**
  * Stage and unstage by file, hunk or line, and Undo (GITAPP2h, the git-writes design §8). One act at a time: the driver's lock refuses a
  * second, and says so. A refusal is data in the answer, never an error; the state hub reads the Changes tab again.
  */

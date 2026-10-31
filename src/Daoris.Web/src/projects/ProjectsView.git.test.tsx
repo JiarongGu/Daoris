@@ -19,7 +19,7 @@ vi.mock('@shenora/react', () => ({
 import type { GitBranchList, GitGraphPage } from '../bridge/repositories/git';
 import {
   GIT_BRANCH_PARTED, GIT_BRANCH_PARTED_PAGES, GIT_BRANCHES_ENGINE, GIT_BRANCHES_GAME, GIT_CHANGES_ENGINE, GIT_HISTORY_ENGINE, GIT_HISTORY_PAGES,
-  GIT_HUNKS_BUDGET, GIT_COMMIT_PLAN_ENGINE,
+  GIT_HUNKS_BUDGET, GIT_COMMIT_PLAN_ENGINE, GIT_STASH_PLAN_ENGINE, GIT_SWITCH_PLAN_ENGINE,
 } from './fixtures';
 import { SHARED_BRANCH, SHARED_DUE, SHARED_UNITS, traceAnswerOf } from './git/landingFixtures';
 import { DRIVER_STATE, respond, show, WIRING } from '../test/shellHarness';
@@ -762,6 +762,49 @@ describe("a repository's Changes tab and the switch behind it (GITAPP2b)", () =>
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_AMEND', { payload: expect.objectContaining({ message: 'Round the budget total', head: GIT_COMMIT_PLAN_ENGINE.head }) }));
     expect(await within(region).findByRole('status')).toHaveTextContent('HEAD moved since the staged changes were read');
     expect(asked('GIT_MAKE_COMMIT')).toEqual([]);
+  });
+
+  // GITAPP2k: stash Save reads its plan and presses with the tip and the shared stash it showed.
+  it('saves to the stash: reads the plan, presses GIT_STASH with the tip and the stash it showed, and names the stash saved', async () => {
+    answering(switchOn, undefined, {
+      GIT_STASH_PLAN: () => answer(GIT_STASH_PLAN_ENGINE),
+      GIT_STASH: () => ({ done: true, refused: false, act: 'act-21', outcome: 'done', said: 'x', notes: 'Saved as stash `3fa91c0e2b7d` in `refs/stash`.' }),
+    });
+    show(<ProjectsView notify={() => {}} />);
+    const page = await chooseRepository('engine');
+    await userEvent.click(within(page).getByRole('tab', { name: 'Changes' }));
+    const region = await within(repositoryMain()).findByRole('region', { name: "engine's changes" });
+
+    await userEvent.click(await within(region).findByRole('checkbox', { name: 'Include untracked files' }));
+    await userEvent.click(within(region).getByRole('button', { name: 'Save to the stash' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_STASH', {
+      payload: expect.objectContaining({ repository: 'engine', workspace: 'aurora', untracked: true, head: GIT_STASH_PLAN_ENGINE.head, stash: null }),
+    }));
+    expect(await within(region).findByRole('status')).toHaveTextContent('Saved as stash 3fa91c0e2b7d');
+  });
+
+  // GITAPP2k: switch reads the plan of the branch chosen and presses with the branch HEAD named and its commit.
+  it('switches: chooses a local branch, reads its plan, presses GIT_SWITCH, and says a refusal in the driver\'s sentence', async () => {
+    answering(switchOn, undefined, {
+      GIT_BRANCHES: () => ({ repositories: [{ ...GIT_BRANCHES_ENGINE, workspace: 'aurora' }], apart: [], sessionsUnread: false }),
+      GIT_SWITCH_PLAN: () => answer(GIT_SWITCH_PLAN_ENGINE),
+      GIT_SWITCH: () => ({ done: false, refused: true, said: 'tracked files are changed here: nothing was changed.' }),
+    });
+    show(<ProjectsView notify={() => {}} />);
+    const page = await chooseRepository('engine');
+    await userEvent.click(within(page).getByRole('tab', { name: 'Changes' }));
+    const region = await within(repositoryMain()).findByRole('region', { name: "engine's changes" });
+
+    await userEvent.click(await within(region).findByRole('combobox', { name: 'Branch to switch to' }));
+    await userEvent.click(await screen.findByRole('option', { name: 'try/ecs' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_SWITCH_PLAN', { payload: expect.objectContaining({ branch: 'try/ecs' }) }));
+    await userEvent.click(await within(region).findByRole('button', { name: 'Switch' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_SWITCH', {
+      payload: expect.objectContaining({ repository: 'engine', branch: 'try/ecs', from: 'main', head: GIT_SWITCH_PLAN_ENGINE.head }),
+    }));
+    expect(await within(region).findByRole('status')).toHaveTextContent('tracked files are changed here');
   });
 
   it("shows the read the shell held as read again until a fresh one lands, and does not offer Refresh meanwhile", async () => {
