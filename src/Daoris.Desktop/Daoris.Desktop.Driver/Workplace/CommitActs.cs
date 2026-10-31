@@ -183,7 +183,7 @@ public sealed class CommitActs(ActJournal journal)
     }
 
     /// <summary>The name and email the commit carries, as git would print them, or null where git has none.</summary>
-    private static async Task<string?> IdentityAsync(string root, (string Name, string Email)? author, CancellationToken ct)
+    internal static async Task<string?> IdentityAsync(string root, (string Name, string Email)? author, CancellationToken ct)
     {
         var (code, said, _) = await WorkingTree.GitAsync(root, [.. GitAuthor.Arguments(author), "var", "GIT_COMMITTER_IDENT"], environment: null, GitBounds.Question, ct).ConfigureAwait(false);
         var line = said.Trim();

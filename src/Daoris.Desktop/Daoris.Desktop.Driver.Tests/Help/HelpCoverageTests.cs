@@ -1002,11 +1002,24 @@ public sealed partial class HelpCoverageTests
             "it is the person's own act on their repository, named and confirmed on the page before it is pressed and run as an act of the "
             + "journal; Ask Daoris's git kind proposes cards for git acts, never applies them (design §9), and no card kind carries a ref "
             + "act yet, so a go reaches the repository's Branches and the person makes the ref there.")),
+        // GITAPP2m (D204, the git-writes design §7, §9): Edit history on a branch's page, its plan asked and shown before its Confirm.
+        ("projects", "useGitHistoryEdits", null, new Exempt(
+            "it is the person's own act on their branch, its plan read from the driver and shown with every commit it takes before the edit "
+            + "is pressed and run as an act of the journal; Ask Daoris's git kind proposes cards for git acts, never applies them (design §9), "
+            + "and no card kind carries a history edit yet, so a go reaches the branch's page and the person edits it there.")),
         // GITAPP2i (D204, the git-writes design §8): commit and amend in the Changes tab.
         ("projects", "useGitCommitAct", null, new Exempt(
             "it writes a commit into the person's own checkout, with the message the person typed and the hooks the repository runs, each press "
             + "judged against the HEAD and the index the page read (D204 point 3); a go could not stand for a message the person has not written, "
             + "so Ask Daoris proposes none and the person presses it in the Changes tab.")),
+        // GITAPP2k (D204, the git-writes design §8): switch and stash Save in the Changes tab.
+        ("projects", "useGitSwitchAct", null, new Exempt(
+            "it moves the person's own checkout to another branch and runs the repository's post-checkout hook, each press judged against the HEAD "
+            + "the page read and refused where tracked files are changed; Ask Daoris's git kind proposes cards for git acts, never applies them, so "
+            + "the person presses it in the Changes tab.")),
+        ("projects", "useGitStashAct", null, new Exempt(
+            "it saves the person's changed files into the stash every linked tree shares, judged against the HEAD and the stash tip the page read; "
+            + "a go could not stand for the files it would take away from the working tree, so the person presses it in the Changes tab.")),
         ("projects", "useSetLine", null, new Door("setting", "line")),
         ("projects", "useSetLanding", null, new Door("setting", "landing")),
         ("projects", "useSetLanguage", null, new Door("setting", "language")),

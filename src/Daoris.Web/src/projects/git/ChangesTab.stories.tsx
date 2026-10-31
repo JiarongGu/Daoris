@@ -3,7 +3,9 @@ import { InTheme } from '../../plugins/storyIcons';
 import { chinese } from '../../design/storyLanguage';
 import { storyWidths } from '../../design/storyWidths';
 import { useState } from 'react';
-import { GIT_CHANGES_ENGINE, GIT_COMMIT_PLAN_ENGINE, GIT_CONFLICT_CACHE, GIT_HUNKS_BUDGET } from '../fixtures';
+import { GIT_CHANGES_ENGINE, GIT_COMMIT_PLAN_ENGINE, GIT_CONFLICT_CACHE, GIT_HUNKS_BUDGET, GIT_STASH_PLAN_ENGINE, GIT_SWITCH_PLAN_ENGINE } from '../fixtures';
+import { StashBox, type StashPlanValue } from './StashBox';
+import { SwitchBox, type SwitchPlanValue } from './SwitchBox';
 import { ChangeHunks } from './ChangeHunks';
 import { ConflictHunks } from './ConflictHunks';
 import { CommitBox, type CommitPlanValue } from './CommitBox';
@@ -24,6 +26,20 @@ const commitBox = (over: Partial<CommitPlanValue> = {}, amended = false): NonNul
   return <CommitBox read={{ state: 'read', value: { ...GIT_COMMIT_PLAN_ENGINE, ...over } }} amend={amend} onAmend={setAmend} busy={busy} onPress={nothing} />;
 };
 
+// GITAPP2k: and the switch box (a branch chosen, its plan) and the stash box (what a Save would take, the stash shared with every linked tree).
+const switchBox = (chosen = '', over: Partial<SwitchPlanValue> = {}): NonNullable<ChangesActs['Switch']> => function Switch({ busy }) {
+  const [now, setNow] = useState(chosen);
+  return (
+    <SwitchBox
+      branches={['main', 'release', 'physics']} chosen={now} onChoose={setNow} busy={busy} onPress={nothing}
+      read={now === '' ? null : { state: 'read', value: { ...GIT_SWITCH_PLAN_ENGINE, to: now, ...over } }}
+    />
+  );
+};
+const stashBox = (over: Partial<StashPlanValue> = {}): NonNullable<ChangesActs['Stash']> => function Stash({ busy }) {
+  return <StashBox read={{ state: 'read', value: { ...GIT_STASH_PLAN_ENGINE, ...over } }} busy={busy} onPress={nothing} />;
+};
+
 // GITAPP2h: every story below carries the presses (Stage, Unstage, Show changes) a tab has where the switch is on.
 const acts = (over: Partial<ChangesActs> = {}): ChangesActs => ({
   busy: false,
@@ -38,6 +54,8 @@ const acts = (over: Partial<ChangesActs> = {}): ChangesActs => ({
   resolve: nothing,
   mark: nothing,
   Conflict: ({ busy, onPress }) => <ConflictHunks read={{ state: 'read', value: GIT_CONFLICT_CACHE }} busy={busy} onPress={onPress} />,
+  Switch: switchBox('release'),
+  Stash: stashBox(),
   ...over,
 });
 
@@ -197,3 +215,26 @@ export const NoCheckout: Story = { args: { read: { state: 'noCheckout' } } };
 export const Refused: Story = {
   args: { read: { state: 'refused', sentence: 'git could not read this checkout\'s changes: it may be busy, or git did not start.' } },
 };
+
+// GITAPP2k: a switch done (with the way back), one the plan holds for a changed tracked file, and a stash Save done / holding to untracked files only.
+export const SwitchDone: Story = {
+  args: { acts: acts({ last: { verb: 'switch', path: 'release', act: 'a2', done: true, said: null, notes: 'Switch back to `main` to undo it.' } }) },
+};
+export const SwitchDoneChinese: Story = { ...SwitchDone, decorators: [chinese] };
+export const SwitchDoneNarrowDark: Story = { ...SwitchDone, decorators: [storyWidths.narrow, dark] };
+
+export const SwitchHeld: Story = {
+  args: { acts: acts({ Switch: switchBox('release', { dirty: true, why: 'tracked files are changed here; commit or stash them first, since a switch never carries them' }) }) },
+};
+export const SwitchHeldNarrowChinese: Story = { ...SwitchHeld, decorators: [storyWidths.narrow, chinese] };
+export const SwitchHeldHalfDark: Story = { ...SwitchHeld, decorators: [storyWidths.half, dark] };
+
+export const Stashed: Story = {
+  args: { acts: acts({ last: { verb: 'stash', path: null, act: 'a3', done: true, said: null, notes: 'Saved as stash `3fa91c0e2b7d` in `refs/stash`, which every linked tree shares; `git stash apply 3fa91c0e2b7d4a18` puts it back.' } }) },
+};
+export const StashedChinese: Story = { ...Stashed, decorators: [chinese] };
+export const StashedNarrowDark: Story = { ...Stashed, decorators: [storyWidths.narrow, dark] };
+
+export const StashUntrackedOnly: Story = { args: { acts: acts({ Stash: stashBox({ tracked: 0, untracked: 3 }) }) } };
+export const StashUntrackedOnlyNarrowChinese: Story = { ...StashUntrackedOnly, decorators: [storyWidths.narrow, chinese] };
+export const StashUntrackedOnlyHalfDark: Story = { ...StashUntrackedOnly, decorators: [storyWidths.half, dark] };

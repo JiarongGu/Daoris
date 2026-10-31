@@ -180,6 +180,7 @@ public static class PipeWording
         Row("GIT_REF_DELETE", W("repository", PipeRole.Repository), W("name", PipeRole.Words));
         Row("GIT_REF_RENAME", W("repository", PipeRole.Repository), W("name", PipeRole.Words), W("to", PipeRole.Words));
         Row("GIT_REF_FINISH", W("repository", PipeRole.Repository));
+        Row("GIT_HISTORY_EDIT", W("repository", PipeRole.Repository), W("branch", PipeRole.Words));
         Row("SETUP_PRESS", W("repository", PipeRole.Repository));
         Row("WORKFLOW_LANDED", W("repository", PipeRole.Repository));
         Row("INTEGRATION_GATES", W("repository", PipeRole.Repository));

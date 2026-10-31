@@ -101,11 +101,15 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   // GITAPP2i: a commit moves the checkout's index and the branch it has out.
   GIT_MAKE_COMMIT: { scopes: ['driver', 'checkouts'] },
   GIT_AMEND: { scopes: ['driver', 'checkouts'] },
+  // GITAPP2k: a switch moves HEAD and the checkout's files; a stash Save moves the shared stash and the tracked files.
+  GIT_SWITCH: { scopes: ['driver', 'checkouts'] },
+  GIT_STASH: { scopes: ['driver', 'checkouts'] },
   GIT_REF_CREATE: { scopes: ['driver'] },
   GIT_REF_UNDO: { scopes: ['driver'] },
   GIT_REF_DELETE: { scopes: ['driver'] },
   GIT_REF_RENAME: { scopes: ['driver'] },
   GIT_REF_FINISH: { scopes: ['driver'] },
+  GIT_HISTORY_EDIT: { scopes: ['driver'] },
   SET_STANDING: { scopes: ['driver'] },
   SET_HEAVY_GATES: { scopes: ['driver'] },
   SET_SESSION_CHECKS: { scopes: ['driver'] },

@@ -287,7 +287,7 @@ public sealed class PipeCensus
         Add(PipeClass.Open,
             // Reads (D156 §3's reads stay open): they change nothing and declare nothing (D169 point 2).
             "ACCOUNTS", "ACROSS", "ACTORS", "ANSWER_WAITS", "ASKS_ELSEWHERE", "ASK_LANDING", "CHANNEL_READ", "CHECKOUT_BRANCH", "ENTRY_LANDING",
-            "GIT_BLAME", "GIT_BRANCHES", "GIT_CHANGES", "GIT_COMMIT", "GIT_COMMIT_PLAN", "GIT_COMPARE", "GIT_CONFLICT", "GIT_GRAPH", "GIT_HISTORY", "GIT_HUNKS", "HANDOFF_PLAN", "HARNESSES",
+            "GIT_BLAME", "GIT_BRANCHES", "GIT_CHANGES", "GIT_COMMIT", "GIT_COMMIT_PLAN", "GIT_COMPARE", "GIT_CONFLICT", "GIT_STASH_PLAN", "GIT_SWITCH_PLAN", "GIT_GRAPH", "GIT_HISTORY", "GIT_HUNKS", "HANDOFF_PLAN", "HARNESSES",
             "HELPER_WAITS", "HELP_CONVERSATIONS", "HELP_PROPOSALS", "HELP_PUBLISHED", "HELP_WIRED", "HEAVY_MARKS", "INTEGRATION", "HEAVY_SLOT", "HISTORY_PLAN", "LANDING", "LINES", "OPINION_GATE",
             "OPINION_WAITS", "PERMISSION_WAITS", "PLUGIN", "PLUGINS", "PLUGIN_ACTIVITY", "PLUGIN_READ", "ROLES", "RULES", "SESSION_DIFF", "SESSION_FILE",
             "SESSION_FILES", "SESSION_GROUPS", "SESSION_HAND_OVER_ASK", "SESSION_HELPERS", "SESSION_PARTNERS", "SESSION_HISTORY", "SESSION_OPENINGS", "SESSION_OPTIONS",
@@ -394,6 +394,7 @@ public sealed class PipeCensus
             // review on one of their accounts; Read again lets a refused account through and ends the tool's own cool-off.
             "TREES_SYNC", "ASK_OPINION", "HARNESSES_REFRESH",
             // GITAPP2c: a branch or a lightweight tag made in a repository, and the undo that deletes it at the id it was made at.
+            // GITAPP2m's history edit is classed by its payload below.
             "GIT_REF_CREATE", "GIT_REF_UNDO", "GIT_REF_DELETE", "GIT_REF_RENAME", "GIT_REF_FINISH");
         Add(PipeClass.Window,
             // The file manager, the file picker and Daoris's browser are the window's; so is what is typed into an action a
@@ -404,6 +405,8 @@ public sealed class PipeCensus
             "GIT_MAKE_COMMIT", "GIT_AMEND",
             // GITAPP2j: a conflict is resolved hunk by hunk in the same tab, each choice made there.
             "GIT_RESOLVE", "GIT_MARK_RESOLVED",
+            // GITAPP2k: Switch and stash Save are pressed in the Changes tab, which no terminal verb names yet.
+            "GIT_SWITCH", "GIT_STASH",
             "SESSION_OPEN_FOLDER", "PLUGIN_OPEN_FOLDER", "WORK_RECORDS_FOLDER", "TOOLS_PICK", "SHOW_REVIEW_AGAIN", "HARNESS_INPUT", "HARNESS_CANCEL",
             // RPC1c, PERSONDOOR1f: what waits for the person's Confirm is the window's to read and answer, so a terminal can ask and never
             // answer; and the person key is the window's, which the pipe never answers (D156 point 2, the terminal RPC design §4.3).
@@ -430,6 +433,8 @@ public sealed class PipeCensus
         table.Add("PLUGIN_UPDATE", PipeRule.Of("apply", PipeClass.Person, PipeClass.Open, "true"));
         // KEEP1e: Free up space's list (`plan: true`) changes nothing; every other form starts a run removing what it names, their delete.
         table.Add("SYSTEM_SPACE_FREE", PipeRule.Of("plan", PipeClass.Open, PipeClass.Person, "true"));
+        // GITAPP2m: a history edit's plan (`plan: true`) changes nothing; every other form moves the person's branch, pinned to what it showed.
+        table.Add("GIT_HISTORY_EDIT", PipeRule.Of("plan", PipeClass.Open, PipeClass.Person, "true"));
         return table;
 
         void Add(PipeClass @class, params string[] routes)
@@ -479,8 +484,8 @@ public sealed class PipeCensus
             // and a delete, each of which removes a tree or a branch, and Free up space's run, which takes finished trees too.
             "LAND_SESSION_TREE", "LAND_WITHOUT_LOOK", "LAND_ENTRY", "LAND_ASK", "HANDOFF", "DISCARD_SESSION_TREE", "DISCARD_SESSION_BRANCH",
             "WITHDRAW_LANDING_BRANCH", "RECOVERY_DROP", "SWEEP", "TREES_SYNC", "WORK_ABANDON", "SESSION_DELETE", "SYSTEM_SPACE_FREE",
-            // GITAPP2c: a ref act moves the person's repository's refs through git.
-            "GIT_REF_CREATE", "GIT_REF_UNDO", "GIT_REF_DELETE", "GIT_REF_RENAME", "GIT_REF_FINISH",
+            // GITAPP2c: a ref act moves the person's repository's refs through git; GITAPP2m: so does a history edit, its plan's git included.
+            "GIT_REF_CREATE", "GIT_REF_UNDO", "GIT_REF_DELETE", "GIT_REF_RENAME", "GIT_REF_FINISH", "GIT_HISTORY_EDIT",
             // A role's act is a row of its role's table, which no act fills yet: the strictest until each is classed.
             "ROLE_ACT");
         Add(PipeDrain.Passes,

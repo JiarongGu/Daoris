@@ -26,6 +26,12 @@ public sealed record ActPlan(string Kind, string Press, string Repository, strin
     public Func<CancellationToken, Task<string?>>? Judge { get; init; }
 
     /// <summary>
+    /// The objects an act writes before its record (a history edit's commits, the git-writes design §7), made under the lock once
+    /// <see cref="Judge"/> holds: the steps to journal in place of <see cref="Steps"/>, or why the act is refused with only objects written.
+    /// </summary>
+    public Func<CancellationToken, Task<(IReadOnlyList<ActStepPlan>? Steps, string? Refusal)>>? Make { get; init; }
+
+    /// <summary>
     /// Read under the lock after each effect step ended, with its ordinal: the words that stop the act there, or null to go on. It has put right
     /// by its own rule whatever it stops for (a deleted branch a tree checked out meanwhile is made again), and runs under no cancellation.
     /// </summary>
@@ -118,6 +124,14 @@ public sealed class ActRuns(ActJournal journal)
         if (await LayoutAsync(plan.Checkout).ConfigureAwait(false) is not { } layout) return Refused($"git could not read `{plan.Repository}`'s checkout, so nothing was changed.");
         if (ActLocks.Standing(layout.GitDir, layout.CommonDir, plan.Steps.SelectMany(RefsOf)) is [var standing, ..]) return Refused(ActLocks.Stale(standing, plan.Repository));
         if (plan.Judge is { } judge && await judge(ct).ConfigureAwait(false) is { } refusal) return Refused(refusal);
+        if (plan.Make is { } make)
+        {
+            var (steps, unmade) = await make(ct).ConfigureAwait(false);
+            if (steps is null) return Refused(unmade ?? "its objects were not made, so nothing was changed.");
+            plan = plan with { Steps = steps };
+            if (ActLocks.Standing(layout.GitDir, layout.CommonDir, steps.SelectMany(RefsOf)) is [var late, ..]) return Refused(ActLocks.Stale(late, plan.Repository));
+        }
+
         ct.ThrowIfCancellationRequested();
 
         var id = plan.Id ?? Guid.NewGuid().ToString("N");
@@ -220,6 +234,8 @@ public sealed class ActRuns(ActJournal journal)
                 && value.TryGetValue<string>(out var full) ? [full] : [];
         }
 
+        // A stash moves the stash ref every linked tree shares.
+        if (step.Kind == ActStepKinds.Stash) return ["refs/stash"];
         return step.Kind != ActStepKinds.Ref || JsonNode.Parse(step.Postconditions)?["refs"] is not JsonArray refs
             ? []
             : refs.Select(each => each?["ref"]?.GetValue<string>()).OfType<string>();

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   type GitActAnswer, type GitAnswer, type GitBranch, type GitGraphPage, type GitLogCommit, type GitRepositoryBranches, gitRefusal, useGitActs,
-  useGitBranches, useGitChanges, useGitCommitAct, useGitCommitPlan, useGitConflict, useGitGraphPages, useGitHunks, useGitRefActs,
+  useGitBranches, useGitChanges, useGitCommitAct, useGitCommitPlan, useGitConflict, useGitGraphPages, useGitHistoryEdits, useGitHunks, useGitRefActs,
+  useGitStashAct, useGitStashPlan, useGitSwitchAct, useGitSwitchPlan,
 } from '../../bridge/repositories/git';
 import { useWorkState } from '../../bridge/repositories/lines';
 import { useSessionOpenings } from '../../bridge/sessions/sessions';
@@ -16,6 +17,8 @@ import { BranchesTab, type ChangeSide, type ChangesActs, type ChangesLast, Chang
 import { ChangeHunks, type HunkPress, type HunksValue } from './ChangeHunks';
 import { type ConflictPress, type ConflictValue, ConflictHunks } from './ConflictHunks';
 import { CommitBox, type CommitBoxPress, type CommitPlanValue } from './CommitBox';
+import { StashBox, type StashBoxPress, type StashPlanValue } from './StashBox';
+import { SwitchBox, type SwitchBoxPress, type SwitchPlanValue } from './SwitchBox';
 import { WorkspaceBranches, type WorkspaceGroups } from '../workspace/WorkspaceBranches';
 
 /** Matched without case, as the driver matches a repository's name and a workspace's. */
@@ -160,8 +163,56 @@ function ChangesRead({ repository, workspace }: { repository: string; workspace:
       : { state: 'read', value: answered.value };
     return <CommitBox read={planRead} amend={amend} onAmend={setAmend} busy={busy} onPress={(box, done) => pressCommit.current(box, done)} />;
   }, [repository, workspace]);
+  // GITAPP2k: the switch box and the stash box, each a component of its own so what was chosen or typed stays while the tab reads again.
+  const switching = useGitSwitchAct(repository, workspace);
+  const pressSwitch = useRef<(press: SwitchBoxPress, done: () => void) => void>(() => {});
+  pressSwitch.current = (box, done) => switching.mutate(box, {
+    onSuccess: (answered) => {
+      setLast({ verb: 'switch', path: box.branch, act: answered.act, done: answered.done, said: answered.said, notes: answered.notes });
+      if (answered.done) done();
+    },
+    onError: (error) => setLast({ verb: 'switch', path: box.branch, act: null, done: false, said: sentence(error) }),
+  });
+  const Switch = useMemo(() => function Switch({ busy }: { busy: boolean }) {
+    const [chosen, setChosen] = useState('');
+    const listed = useGitBranches({ repository, workspace }).query.data?.repositories?.find((each) => same(each.repository, repository));
+    const names = (listed?.branches ?? NO_BRANCHES).filter((branch) => branch.kind === 'line' || branch.kind === 'yours').map((branch) => branch.name);
+    const planned = useGitSwitchPlan(repository, workspace, chosen || null);
+    const answered = planned.data;
+    const refusal = gitRefusal(answered);
+    const planRead: GitRead<SwitchPlanValue> | null = chosen === '' ? null
+      : planned.error ? { state: 'refused', sentence: sentence(planned.error) }
+      : !answered ? { state: 'reading' }
+      : refusal?.code === 'GIT_NO_CHECKOUT' ? { state: 'noCheckout' }
+      : refusal ? { state: 'refused', sentence: sentence(refusal) }
+      : !answered.value ? { state: 'refused', sentence: sentence({ code: 'UNKNOWN' }) }
+      : { state: 'read', value: answered.value };
+    return <SwitchBox branches={names} chosen={chosen} onChoose={setChosen} read={planRead} busy={busy} onPress={(box) => pressSwitch.current(box, () => setChosen(''))} />;
+  }, [repository, workspace]);
+
+  const stashing = useGitStashAct(repository, workspace);
+  const pressStash = useRef<(press: StashBoxPress, done: () => void) => void>(() => {});
+  pressStash.current = (box, done) => stashing.mutate(box, {
+    onSuccess: (answered) => {
+      setLast({ verb: 'stash', path: null, act: answered.act, done: answered.done, said: answered.said, notes: answered.notes });
+      if (answered.done) done();
+    },
+    onError: (error) => setLast({ verb: 'stash', path: null, act: null, done: false, said: sentence(error) }),
+  });
+  const Stash = useMemo(() => function Stash({ busy }: { busy: boolean }) {
+    const planned = useGitStashPlan(repository, workspace);
+    const answered = planned.data;
+    const refusal = gitRefusal(answered);
+    const planRead: GitRead<StashPlanValue> = planned.error ? { state: 'refused', sentence: sentence(planned.error) }
+      : !answered ? { state: 'reading' }
+      : refusal?.code === 'GIT_NO_CHECKOUT' ? { state: 'noCheckout' }
+      : refusal ? { state: 'refused', sentence: sentence(refusal) }
+      : !answered.value ? { state: 'refused', sentence: sentence({ code: 'UNKNOWN' }) }
+      : { state: 'read', value: answered.value };
+    return <StashBox read={planRead} busy={busy} onPress={(box, done) => pressStash.current(box, done)} />;
+  }, [repository, workspace]);
   const acts: ChangesActs = {
-    busy: press.isPending || undo.isPending || commit.isPending || resolve.isPending,
+    busy: press.isPending || undo.isPending || commit.isPending || resolve.isPending || switching.isPending || stashing.isPending,
     last,
     press: (act) => press.mutate({ ...act, picks: act.picks ?? [] }, { onSuccess: say(act.verb, act.path), onError: (error) => setLast({ verb: act.verb, path: act.path, act: null, done: false, said: sentence(error) }) }),
     undo: (act) => {
@@ -170,6 +221,8 @@ function ChangesRead({ repository, workspace }: { repository: string; workspace:
     },
     Hunks,
     Commit,
+    Switch,
+    Stash,
     Conflict,
     resolve: (act) => resolve.mutate({ verb: 'resolve', path: act.path, faces: act.faces, picks: act.picks }, {
       onSuccess: say('resolve', act.path),
@@ -388,6 +441,7 @@ function BranchPageRead({ repository, workspace, name, onBack, landingOpen }: {
   const drawn = useMemo(() => [...asked].reverse(), [asked]);
   const { graph, onMore } = usePagedGraph(repository, asked, { sinceParted: true, workspace });
   const titles = useSessionTitles(repository, branch ? [branch] : NO_BRANCHES);
+  const edits = useGitHistoryEdits(repository, workspace);
 
   const read = ((): BranchRead => {
     if (list.state !== 'read') return list;
@@ -397,7 +451,7 @@ function BranchPageRead({ repository, workspace, name, onBack, landingOpen }: {
     if (!lineTip) return { state: 'read', value, graph: { state: 'noLine' } };
     return { state: 'read', value, graph: graph.state === 'read' ? { state: 'read', value: { tips: drawn, ...graph.value } } : graph };
   })();
-  return <BranchPage repository={repository} name={name} read={read} onBack={onBack} onMore={onMore} landing={landing} />;
+  return <BranchPage repository={repository} name={name} read={read} onBack={onBack} onMore={onMore} landing={landing} edits={edits} />;
 }
 
 /**

@@ -201,7 +201,7 @@ export type ChangeSide = 'unstaged' | 'staged';
 
 /** The last act's answer, said under the tab's head with *Undo* where it is done and kept a way back. */
 export type ChangesLast = {
-  verb: 'stage' | 'unstage' | 'undo' | 'undoResolve' | 'commit' | 'amend' | 'resolve' | 'mark';
+  verb: 'stage' | 'unstage' | 'undo' | 'undoResolve' | 'commit' | 'amend' | 'resolve' | 'mark' | 'switch' | 'stash';
   path: string | null;
   act: string | null;
   done: boolean;
@@ -232,6 +232,9 @@ export type ChangesActs = {
   resolve?: (press: { path: string } & ConflictPress) => void;
   /** *Mark resolved*: the file added, its stages gone from the index. */
   mark?: (path: string) => void;
+  /** The switch box (GITAPP2k) and the stash box, each read and pressed by its holder; absent, the tab draws none. */
+  Switch?: ComponentType<{ busy: boolean }>;
+  Stash?: ComponentType<{ busy: boolean }>;
 };
 
 /**
@@ -273,6 +276,8 @@ export function ChangesTab({ repository, read, refreshing = false, onRefresh, ac
       </div>
       {acts?.last && <ActSaid last={acts.last} busy={acts.busy} onUndo={acts.undo} />}
       {acts?.Commit && <acts.Commit busy={acts.busy} />}
+      {acts?.Switch && <acts.Switch busy={acts.busy} />}
+      {acts?.Stash && <acts.Stash busy={acts.busy} />}
       {none && <Nothing headline={t('projects.git.changes.none.headline')} body={t('projects.git.changes.none.body', { repository })} />}
       {staged.length > 0 && (
         <ChangeKind kind="staged" count={staged.length}>
