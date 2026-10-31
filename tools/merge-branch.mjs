@@ -433,7 +433,7 @@ import { isMain, renameHeld, spawnGit, stagedTree, writeAtomic } from './fsx.mjs
 import { indexLockNote, mentionsIndexLock, readIndexLock } from './index-lock.mjs';
 import { admissionLines, createAdmission, lookAt } from './machine-admission.mjs';
 import { censusOf, classesReached, halfOf, reachSettings, repository, withSettings } from './process-reach.mjs';
-import { endOrphans, endStranded, processList } from './processes.mjs';
+import { endOrphans, endStranded, endStrandedUnder, processList } from './processes.mjs';
 import { gateSignature, readTrx, signatureKey, signatureOf } from './test-failures.mjs';
 import {
   IN_THE_LINE, MERGE_QUEUE, MERGE_QUEUE_LOG, RUNNER_ACK_MS, SCOPE_TREE, appendScopeRun, appendSighting, candidateOutcome, censusLine, censusTrees, confirmReadings, confirmStep, dropQueued, enqueue,
@@ -7616,9 +7616,9 @@ async function drainHeld() {
 }
 
 /** QUEUEDRAIN1: what the runner does once the drop has ended the candidate's steps: say what was ended, tell the drop, take the next work. */
-async function drained(home, candidate, run, { ended = [], left = [], probe = null, why = null } = {}) {
+async function drained(home, candidate, run, { ended = [], left = [], probe = null, strays = [], why = null } = {}) {
   await drainHeld();
-  const record = drainedRecord(candidate, { ended, left, probe });
+  const record = drainedRecord(candidate, { ended, left, probe, strays });
   // PROCLEAK1: a run ended because its runner is no longer the queue's (or its owner went) says that, and the runner's loop ends it.
   const dropped = !why || why === DROPPED;
   console.log(`${record.at} ${candidate.tip.slice(0, 7)} ${dropped ? 'was dropped or replaced' : `was ended: ${why}`}: ${drainedLine(record)}; ${dropped ? 'the runner takes the next queued work' : 'the runner ends'}`);
@@ -7694,6 +7694,7 @@ const confirmSaid = (outcome) => [
 ].filter(Boolean).map((part) => `; ${part}`).join('');
 
 async function runCandidateWatched(home, candidate, watch) {
+  const startedAt = Date.now();
   const tree = prepareScopeTree(home, candidate.tip);
   installDependencies(tree);
   copyPrivateFiles(home, tree, privateGateFiles(home));
@@ -7727,9 +7728,12 @@ async function runCandidateWatched(home, candidate, watch) {
     kept: set.kept.map((each) => each.name), deferred: [...set.deferred, ...deferredClasses.map((name) => ({ name, why: "past the git half's budget" }))],
   };
   // QUEUEDRAIN1: asked once more now every step has ended, so a drop that came as the last gate ended is drained too.
+  // QUEUEDROPLEAK1: and what a test of an ended step had already orphaned (its killed run's child, a detached runner and its gate) is in
+  // none of the step trees, so it is ended by the scope tree's folder, once every step has gone and before the drop is told.
   const gone = () => ({
     ended: results.filter((result) => result.verdict === 'ENDED').map((result) => result.gate.name),
     left: gates.filter((gate) => !results.some((result) => result.gate.name === gate.name)).map((gate) => gate.name),
+    strays: watch.trees.ended ? endStrandedUnder(tree, startedAt, { except: [process.pid] }) : [],
   });
   if (watch.check()) return drained(home, candidate, run, { ...gone(), why: watch.trees.ended });
   if (!sameCandidate(readQueue(home).candidate, candidate)) {

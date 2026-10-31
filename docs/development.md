@@ -325,8 +325,11 @@ tier in `local/admission.json` is released only after the run's last step has en
 each step: another runner, a CI run, a driven session's build, the install and a build server are not in its trees. `--drop-batch`
 waits, for thirty seconds at most, for the runner's record of what it ended, and says it (the gates, the probe, the gates never started);
 `local/merge-queue.log` has the same line, and `local/scope-runs.jsonl` an `ended` run carrying it. A drop that comes while the scope tree
-installs its dependencies lets the install finish, and no gate starts after it. What a step's own process left running after its
-parent ended is in no tree (CIPRIO1c's limit).
+installs its dependencies lets the install finish, and no gate starts after it. What a test of a step had already orphaned (a child
+its killed run left, a detached runner and the gate it started) is in no step's tree, so once every step has ended the runner also ends,
+on Windows, each process created since the run began whose parent is gone and which, or what it started, names the scope tree's folder
+(`endStrandedUnder`, `tools/processes.mjs`; a gate run as `node qgate.mjs check` names nothing, its child does), each with its tree,
+never the runner or what holds it and never a process older than the run. The drop's answer and `drained.strays` say which (QUEUEDROPLEAK1).
 
 **The runner ends with its record, and the queue says what was left** (PROCLEAK1). Before every step, and every two seconds during a
 run, the runner reads the queue: where the record names another process as its runner, or none, it ends the steps it owns with their

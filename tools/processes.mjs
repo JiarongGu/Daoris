@@ -233,3 +233,76 @@ export function endStranded(folder, since) {
   for (const pid of stranded) spawnSync('taskkill', ['/F', '/T', '/PID', String(pid)], { stdio: 'ignore', windowsHide: true });
   return stranded;
 }
+
+/**
+ * QUEUEDROPLEAK1: the roots of what a run's tests left running, from `processes` (`{ pid, ppid, created, command }`, `created` in
+ * epoch milliseconds): each process created at or after `since` whose parent is in no row (nothing holds it) and which, or something
+ * under it, has `folder` in its command line (as a folder: the name ends there or goes on with a separator). The run's own end reaches
+ * its steps by their parent ids, so what a test killed mid-way had already orphaned (a killed child, a detached runner, the gate it
+ * started) is held by no tree; but it is found by the folder it names, or by what it started naming it, since a gate run as
+ * `node qgate.mjs check` names nothing. `except` lists the pids the run is made of (the runner's own), and a root that is one of them or
+ * holds one is left out. A root older than `since` is never taken, so nothing the owner started before the run is.
+ */
+export function strandedRoots(processes, { folder, since, except = [] }) {
+  const flat = (text) => String(text ?? '').replaceAll('\\', '/').toLowerCase();
+  const wanted = flat(folder).replace(/\/+$/, '');
+  if (!wanted) return [];
+  const names = (command) => {
+    const text = flat(command);
+    for (let at = text.indexOf(wanted); at >= 0; at = text.indexOf(wanted, at + 1)) {
+      const next = text[at + wanted.length];
+      if (next === undefined || /[/\s"']/.test(next)) return true;
+    }
+    return false;
+  };
+  const ids = new Set(processes.map((each) => each.pid));
+  const children = new Map();
+  for (const each of processes) children.set(each.ppid, [...(children.get(each.ppid) ?? []), each]);
+  /** Everything under `root`, itself included; a pid listed twice in a cycle (a reused id) is walked once. */
+  const tree = (root) => {
+    const seen = new Set([root.pid]);
+    const found = [root];
+    for (let i = 0; i < found.length; i += 1) {
+      for (const child of children.get(found[i].pid) ?? []) {
+        if (!seen.has(child.pid)) {
+          seen.add(child.pid);
+          found.push(child);
+        }
+      }
+    }
+    return found;
+  };
+  return processes
+    .filter((each) => each.created >= since && !ids.has(each.ppid))
+    .map((each) => ({ each, under: tree(each) }))
+    .filter(({ under }) => !under.some((one) => except.includes(one.pid)) && under.some((one) => names(one.command)))
+    .map(({ each }) => each);
+}
+
+/** `pid|parent|created|command line` per line (what {@link strandedProcesses} asks of Windows), as `{ pid, ppid, created, command }` rows. */
+export function parseCreatedRows(text) {
+  return String(text ?? '').split('\n').flatMap((line) => {
+    const match = /^(\d+)\|(\d+)\|(\d+)\|(.*)$/.exec(line.replace(/\r$/, '').trim());
+    return match ? [{ pid: Number(match[1]), ppid: Number(match[2]), created: Number(match[3]), command: match[4] }] : [];
+  });
+}
+
+/**
+ * End what a run's tests left running under `folder` (QUEUEDROPLEAK1): the {@link strandedRoots} created at or after `since` (epoch
+ * milliseconds), each with its tree. Answers the pids it ended, roots only. Only Windows ends any: there a kill reaches the one process
+ * it names, and what a killed test had started runs on under a dead parent id, in no tree the run holds. Elsewhere the run's end walks
+ * `ps` for what is under each step (`endTree`), and this ends nothing.
+ *
+ * Nothing outside the run's own tree is touched: a root must be created since the run began, name the scope tree's folder itself or
+ * hold a process that does, and neither be the runner nor hold it (`except`).
+ */
+export function endStrandedUnder(folder, since, { except = [], platform = process.platform, run = powershell, end = (pid) => spawnSync('taskkill', ['/F', '/T', '/PID', String(pid)], { stdio: 'ignore', windowsHide: true }) } = {}) {
+  if (platform !== 'win32' || typeof folder !== 'string' || folder.length === 0) return [];
+  const listing = run(
+    'Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | ForEach-Object { '
+    + '$ms = if ($_.CreationDate) { [DateTimeOffset]::new($_.CreationDate).ToUnixTimeMilliseconds() } else { 0 }; '
+    + '"$($_.ProcessId)|$($_.ParentProcessId)|$ms|$($_.CommandLine)" }');
+  const roots = strandedRoots(parseCreatedRows(listing), { folder, since: Math.floor(since) - 1000, except: [...except, process.pid] }).map((each) => each.pid);
+  for (const pid of roots) end(pid);
+  return roots;
+}

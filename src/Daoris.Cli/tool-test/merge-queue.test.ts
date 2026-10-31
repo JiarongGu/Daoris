@@ -32,7 +32,7 @@ interface Reservation { runner: string; gate: string; needGb: number; job: strin
 interface Admission { schema: number; reservations: Reservation[]; scopedTier: { state: string; since: string } | null; waiting: unknown[] }
 interface Job { state: string; workingGb?: number; committedGb?: number; why?: string }
 interface Rule { lane?: string; paths?: string[]; gates: string[] | '*' }
-interface Drained { tip: string; at: string; ended: string[]; left: string[]; probe: string | null }
+interface Drained { tip: string; at: string; ended: string[]; left: string[]; probe: string | null; strays: number[] }
 /** INTEGRATE1b part 2: a confirm run as the scope run's record keeps it. */
 interface ConfirmRecord { gate: string; result: string; why: string; composition: { units: string[] | null; digest: string | null } | null; admission: (Evidence & { capacity?: number }) | null; waitedMs: number | null; ms: number | null }
 interface ScopeRun {
@@ -59,7 +59,7 @@ const q = await import(
   messageOf: (entry: Member) => string;
   dropQueued: (queue: Queue, branches: string[], at?: string) => { queue: Queue; dropped: string[]; ended: Candidate | null };
   requestStanding: (queue: Queue, request: { branch: string; tip: string; request?: string }) => Standing;
-  drainedRecord: (candidate: Candidate, what: { ended?: string[]; left?: string[]; probe?: string | null }, at?: string) => Drained;
+  drainedRecord: (candidate: Candidate, what: { ended?: string[]; left?: string[]; probe?: string | null; strays?: number[] }, at?: string) => Drained;
   drainedLine: (drained: Drained) => string;
   sameCandidate: (current: Candidate | null, expected: Candidate) => boolean;
   changeCandidate: (queue: Queue, expected: Candidate, change: (queue: Queue) => { queue: Queue }) => { queue?: Queue; obsolete?: boolean };
@@ -137,7 +137,12 @@ const tool = await import(
 
 const procs = await import(
   // @ts-expect-error — untyped workspace tooling
-  '../../../tools/processes.mjs') as { parseProcessRows: (text: string, form: 'rows' | 'ps') => ProcessRow[] };
+  '../../../tools/processes.mjs') as {
+  parseProcessRows: (text: string, form: 'rows' | 'ps') => ProcessRow[];
+  parseCreatedRows: (text: string) => (ProcessRow & { created: number })[];
+  strandedRoots: (processes: (ProcessRow & { created: number })[], options: { folder: string; since: number; except?: number[] }) => (ProcessRow & { created: number })[];
+  endStrandedUnder: (folder: string, since: number, options?: { except?: number[]; platform?: string; run?: (script: string) => string; end?: (pid: number) => void }) => number[];
+};
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const AT = '2026-10-24T10:00:00.000Z';
@@ -253,9 +258,14 @@ describe('the queue: a frozen request, read before it is queued', () => {
     assert.equal(q.dropQueued(queue, ['b1']).ended, null, 'a queued branch has no run to end');
     assert.equal(q.dropQueued(queue, ['cb2']).ended, queue.candidate);
     const drained = q.drainedRecord(queue.candidate, { ended: ['check', 'driver'], left: ['modules'], probe: 'driver.prefix-2' }, AT);
-    assert.deepEqual(drained, { tip: 'c', at: AT, ended: ['check', 'driver'], left: ['modules'], probe: 'driver.prefix-2' });
+    assert.deepEqual(drained, { tip: 'c', at: AT, ended: ['check', 'driver'], left: ['modules'], probe: 'driver.prefix-2', strays: [] });
     assert.equal(q.drainedLine(drained), 'ended gates check, driver, the probe driver.prefix-2, each with everything it started; never started: modules');
     assert.equal(q.drainedLine(q.drainedRecord(queue.candidate, {}, AT)), 'ended no gate running, each with everything it started');
+    // QUEUEDROPLEAK1: what a test had left running is said with the gates; a record written before it was kept says nothing of it.
+    assert.equal(q.drainedLine(q.drainedRecord(queue.candidate, { ended: ['check'], strays: [11, 12] }, AT)), 'ended gates check, each with everything it started, and 2 processes their tests had left running under the scope tree (pid 11, 12)');
+    assert.equal(q.drainedLine(q.drainedRecord(queue.candidate, { strays: [11] }, AT)), 'ended no gate running, each with everything it started, and 1 process their tests had left running under the scope tree (pid 11)');
+    const { strays: _kept, ...older } = drained;
+    assert.equal(q.drainedLine(older as Drained), 'ended gates check, driver, the probe driver.prefix-2, each with everything it started; never started: modules');
   });
 
   test('QUEUEWAITEND1: a request dropped while queued or forming is handed back as dropped, so its waiter has an outcome; a drop leaves the rest forming', () => {
@@ -3306,3 +3316,134 @@ describe('PROCLEAK1: nothing the merge tool and its tests start outlives what st
     }
   });
 });
+
+// QUEUEDROPLEAK1 (2026-10-31): a drop said it ended the run "with everything it started", yet minutes later the tool-tests gate's
+// processes ran on with their parents gone: a fixture's `tree.mjs`, and a `node qgate.mjs check` with two node children. The drop
+// ends each step by its tree of parent ids; a test killed with its step had already orphaned those, or never got to end them.
+describe('QUEUEDROPLEAK1: a dropped run ends what its tests had left running under the scope tree', { concurrency: true }, () => {
+  const row = (pid: number, ppid: number, created: number, command: string) => ({ pid, ppid, created, command });
+  const FOLDER = 'D:/work/repo/local/scope-tree';
+  const SINCE = 1_000_000;
+
+  test('the roots are the processes since the run began whose parent is gone and which, or what they hold, name the folder', () => {
+    const rows = [
+      row(1, 0, 0, 'init'),
+      row(10, 99, SINCE + 5, 'node D:\\work\\repo\\local\\scope-tree\\src\\_fixtures\\tree.mjs'),
+      row(20, 98, SINCE + 5, 'node qgate.mjs check'),
+      row(21, 20, SINCE + 6, 'node "D:\\Work\\Repo\\local\\scope-tree\\src\\_fixtures\\qgate.mjs" child'),
+      row(22, 21, SINCE + 7, 'node qgate.mjs grandchild'),
+      row(30, 97, SINCE + 5, 'node D:/work/repo/local/scope-tree-other/x.mjs'),
+      row(31, 96, SINCE + 5, 'node outsider.mjs'),
+      row(32, 31, SINCE + 6, 'node D:/work/repo/local/other/x.mjs'),
+      row(40, 95, SINCE - 5000, 'node D:/work/repo/local/scope-tree/older.mjs'),
+      row(50, 10, SINCE + 6, 'node D:/work/repo/local/scope-tree/held.mjs'),
+      row(60, 94, SINCE + 5, 'cmd /c "D:/work/repo/local/scope-tree"'),
+    ];
+    const found = (options: { except?: number[] } = {}) => procs.strandedRoots(rows, { folder: FOLDER, since: SINCE, ...options }).map((each) => each.pid);
+    assert.deepEqual(found(), [10, 20, 60],
+      'a root naming the folder, a root that names nothing but holds a process that does, and the folder itself as a whole word; not a sibling folder, not an older process, not a process whose parent runs, not a root of another folder');
+    assert.deepEqual(found({ except: [22] }), [10, 60], "a root holding the runner is not the run's to end");
+    assert.deepEqual(procs.strandedRoots(rows, { folder: '', since: SINCE }), [], 'no folder names nothing');
+    assert.deepEqual(procs.strandedRoots([row(5, 6, SINCE, 'node D:/work/repo/local/scope-tree/a.mjs'), row(6, 5, SINCE, 'node b.mjs')], { folder: FOLDER, since: SINCE }), [],
+      "a reused id that makes two processes each other's parent holds no root, and ends the walk");
+  });
+
+  test('the rows a Windows listing gives are read whole, a command line with a bar in it kept', () => {
+    assert.deepEqual(procs.parseCreatedRows('4|0|1700000000000|\r\n12|4|1700000000500|node a.mjs "x|y"\r\nnot a row\r\n'),
+      [{ pid: 4, ppid: 0, created: 1700000000000, command: '' }, { pid: 12, ppid: 4, created: 1700000000500, command: 'node a.mjs "x|y"' }]);
+  });
+
+  test('only Windows ends any, each root with its tree and nothing the run did not make; a list that cannot be read ends none', () => {
+    const rows = '10|99|1000500|node D:/work/repo/local/scope-tree/a.mjs\n11|99|1000500|node unrelated.mjs\n12|10|1000600|node b.mjs\n';
+    const ended: number[] = [];
+    const asked: string[] = [];
+    const run = (script: string) => { asked.push(script); return rows; };
+    assert.deepEqual(procs.endStrandedUnder(FOLDER, 1_001_000, { platform: 'linux', run, end: (pid) => ended.push(pid) }), []);
+    assert.deepEqual(asked, [], 'nothing is read elsewhere');
+    assert.deepEqual(procs.endStrandedUnder(FOLDER, 1_001_000, { platform: 'win32', run, end: (pid) => ended.push(pid) }), [10]);
+    assert.deepEqual(ended, [10]);
+    assert.deepEqual(procs.endStrandedUnder(FOLDER, 1_001_000, { platform: 'win32', run: () => '', end: (pid) => ended.push(pid) }), []);
+    assert.deepEqual(procs.endStrandedUnder('', 1_001_000, { platform: 'win32', run, end: (pid) => ended.push(pid) }), []);
+  });
+
+  test('a candidate dropped while its gate runs ends the orphans its tests left under the scope tree, one named by a descendant alone; a process outside it is untouched', { skip: process.platform !== 'win32' }, async () => {
+    const repo = queueScratch('drain-strays');
+    const dir = join(repo.root, 'local', 'drain');
+    mkdirSync(dir, { recursive: true });
+    const roles = ['one', 'two', 'three'];
+    const pidOf = (role: string) => Number(readFileSync(join(dir, `${role}.pid`), 'utf8'));
+    const strays = () => roles.filter((role) => existsSync(join(dir, `${role}.pid`))).map(pidOf);
+    let outsider = 0;
+    try {
+      repo.branch('b1', { 'hold-check': 'x\n', 'qgate.mjs': strayGate(dir) });
+      assert.equal((await repo.run(['b1', '--preview'])).status, 0);
+      const first = repo.run(['b1', '--message', 'local/b1.msg']);
+      await repo.until(() => roles.every((role) => existsSync(join(dir, `${role}.pid`))), PATIENCE);
+      const pids = strays();
+      assert.ok(pids.every(alive), `the orphans run: ${repo.log()}`);
+      // A process the run did not make: orphaned too, created after the run began, naming a folder beside the scope tree and not it.
+      outsider = orphanNaming(join(dirname(repo.root), 'outsider'));
+      assert.ok(outsider > 0 && alive(outsider));
+      const dropped = await repo.run(['--drop-batch', 'b1']);
+      assert.equal(dropped.status, 0, dropped.out);
+      assert.match(dropped.out, /the runner \(pid \d+\) ended gates .*check.*each with everything it started, and 2 processes their tests had left running under the scope tree \(pid \d+, \d+\)/);
+      await repo.until(() => pids.every((pid) => !alive(pid)), PATIENCE);
+      assert.deepEqual(pids.filter(alive), [], 'the orphan naming the folder, the one named by its child, and that child are gone');
+      assert.equal(alive(outsider), true, "a process outside the run's trees is left alone");
+      assert.equal((await first).status, 1);
+      const ended = (q.readScopeRuns(repo.root) as { state: string; drained?: Drained }[]).find((each) => each.state === 'ended');
+      assert.equal(ended?.drained?.strays.length, 2, 'the two roots are recorded, the child going with its root');
+    } finally {
+      writeFileSync(join(dir, 'release'), '');
+      for (const pid of [...strays(), outsider]) if (pid > 0) try { process.kill(pid); } catch { /* ended */ }
+      await repo.cleanup();
+    }
+  });
+});
+
+/**
+ * What a test of a gate leaves running: it waits for `release` in the folder it is given, and gives up at the bound whatever happens, so
+ * one a failed case misses ends by itself. `two` starts `three`, which its absolute path names.
+ */
+const STRAY = [
+  "import { existsSync, writeFileSync } from 'node:fs';",
+  "import { spawn } from 'node:child_process';",
+  "import { fileURLToPath } from 'node:url';",
+  'const [role, dir] = process.argv.slice(2);',
+  'writeFileSync(`${dir}/${role}.pid`, String(process.pid));',
+  "if (role === 'two') spawn(process.execPath, [fileURLToPath(import.meta.url), 'three', dir], { detached: true, stdio: 'ignore' }).unref();",
+  'const bound = Date.now() + 120000;',
+  'while (Date.now() < bound && !existsSync(`${dir}/release`)) await new Promise((done) => setTimeout(done, 100));',
+  '',
+].join('\n');
+
+/** What the gate runs to leave them: `one` is named by its absolute path, `two` by a relative one, so its command line names no folder. */
+const MAKE_STRAYS = [
+  "import { spawn } from 'node:child_process';",
+  "import { resolve } from 'node:path';",
+  'const dir = process.argv[2];',
+  "spawn(process.execPath, [resolve('_fixtures/stray.mjs'), 'one', dir], { detached: true, stdio: 'ignore' }).unref();",
+  "spawn(process.execPath, ['_fixtures/stray.mjs', 'two', dir], { detached: true, stdio: 'ignore' }).unref();",
+  '',
+].join('\n');
+
+/**
+ * A `check` that, where `hold-check` stands, writes both scripts into the scope tree it runs in and leaves three orphans there, as a test
+ * killed with its step does (a node that starts them ends at once, so their parent is gone), then waits for `release` as `treeGate` does.
+ */
+function strayGate(dir: string): string {
+  return [
+    "import { existsSync, mkdirSync, writeFileSync } from 'node:fs';",
+    "import { spawnSync } from 'node:child_process';",
+    `const dir = ${JSON.stringify(dir)};`,
+    "if (process.argv[2] === 'check' && existsSync('hold-check')) {",
+    "  mkdirSync('_fixtures', { recursive: true });",
+    `  writeFileSync('_fixtures/stray.mjs', ${JSON.stringify(STRAY)});`,
+    `  writeFileSync('_fixtures/make.mjs', ${JSON.stringify(MAKE_STRAYS)});`,
+    "  spawnSync(process.execPath, ['_fixtures/make.mjs', dir], { stdio: 'ignore' });",
+    '  while (!existsSync(`${dir}/release`)) await new Promise((done) => setTimeout(done, 25));',
+    '}',
+    "console.log(`${process.argv[2]} ran`);",
+    '',
+  ].join('\n');
+}
