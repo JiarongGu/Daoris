@@ -209,6 +209,8 @@
   "note.landing.person-accepted": "You accepted this work:",
   "note.landing.person-handed": "You handed this work on:",
   "note.landing.left-out": "You left this part out when its line of work landed on `{{branch}}`: its work did not land there.",
+  "note.landing.brought-into": "Its work was brought into `{{branch}}` by another session's Accept (operation {{operation}}), so it lands no second time.",
+  "note.landing.brought-into-line": "Its work was brought into the line `{{branch}}` by another session's Accept (operation {{operation}}), so it lands no second time.",
   "note.chat.option-set": "You set {{option}} to {{chosen}} for this conversation.",
   "note.chat.told-where": "The agent was told where you are:",
   "note.chat.told-browser": "The agent was told it has Daoris's browser:",

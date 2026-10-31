@@ -6,7 +6,9 @@ namespace Daoris.Driver;
 /// under way keeps, then the record lock; every other open one is stepped (<see cref="TogetherLook"/>) by what the records say of its
 /// head now.
 /// </summary>
-internal sealed class TogetherWatch(string home, Func<DateTimeOffset> now)
+/// <param name="config">The settings the line's accepted rules are read from; none reads no rule.</param>
+/// <param name="keep">Where a member's note is kept once its operation lands after a restart: the session and the event.</param>
+internal sealed class TogetherWatch(string home, Func<DateTimeOffset> now, Func<DriverConfig>? config = null, Action<string, SessionEvent>? keep = null)
 {
     /// <summary>A repository's line as its checkout reads it: the branch a landing replays from; null where none is known.</summary>
     internal delegate Task<string?> LineOf(string root, string repository, CancellationToken ct);
@@ -40,19 +42,25 @@ internal sealed class TogetherWatch(string home, Func<DateTimeOffset> now)
                 continue;
             }
 
+            var line = await lineOf(root, operation.Repository, ct).ConfigureAwait(false);
             if (operation.Phase is TogetherPhase.Landing or TogetherPhase.Uncertain)
             {
-                looked.Add(await SettleAsync(root, operation, ct).ConfigureAwait(false) ?? operation);
+                var workspace = byId.TryGetValue(operation.Head.Record, out var head) ? head.Workspace : RemoteTarget.DefaultWorkspace;
+                looked.Add(await SettleAsync(root, operation, ct, workspace, line).ConfigureAwait(false) ?? operation);
                 continue;
             }
 
-            if (FactsOf(operation, byId, await lineOf(root, operation.Repository, ct).ConfigureAwait(false)) is not { } facts)
+            if (FactsOf(operation, byId, line) is not { } facts)
             {
                 looked.Add(operation);
                 continue;
             }
 
-            looked.Add(await new TogetherLook(home, now).StepAsync(root, operation.Id, facts, null, ct).ConfigureAwait(false) ?? operation);
+            // Only what the person accepted for integration settles a path by rule, as the landing's replay reads it.
+            var rules = config is not null && operation.Phase == TogetherPhase.Checking
+                ? await LineRules.AcceptedAsync(config(), root, operation.Repository, facts.LineTip, ct).ConfigureAwait(false)
+                : null;
+            looked.Add(await new TogetherLook(home, now).StepAsync(root, operation.Id, facts, rules, ct).ConfigureAwait(false) ?? operation);
         }
 
         return looked;
@@ -62,7 +70,8 @@ internal sealed class TogetherWatch(string home, Func<DateTimeOffset> now)
     /// A landing attempt settled by its records and its git effects, while no landing of the head's tree is under way; null where one
     /// is, or nothing moved.
     /// </summary>
-    internal async Task<TogetherOperation?> SettleAsync(string root, TogetherOperation operation, CancellationToken ct)
+    internal async Task<TogetherOperation?> SettleAsync(
+        string root, TogetherOperation operation, CancellationToken ct, string workspace = RemoteTarget.DefaultWorkspace, string? line = null)
     {
         if (operation.Attempt is not { } attempt) return null;
         using var hold = await LandingHolds.TakeAsync(home, operation.Head.Tree, ct, TimeSpan.Zero).ConfigureAwait(false);
@@ -70,7 +79,16 @@ internal sealed class TogetherWatch(string home, Func<DateTimeOffset> now)
         var integration = new IntegrationStore(home);
         var evidence = await TogetherSettle.ReadAsync(root, operation, each => Recorded(home, operation.Repository, each),
             integration.Request, integration.Of, ct).ConfigureAwait(false);
-        return new TogetherOperations(home).Settle(operation.Id, TogetherSettle.Decide(attempt, evidence), now(), evidence.Request?.Id);
+        var decided = TogetherSettle.Decide(attempt, evidence);
+        // Git made the branch and the process ended before its record: the record is written now, the members listed in it.
+        if (decided == TogetherSettled.Landed) TogetherSettle.WriteMissed(home, operation, evidence, workspace, line, now());
+        var settled = new TogetherOperations(home).Settle(operation.Id, decided, now(), evidence.Request?.Id);
+        if (settled is { Phase: TogetherPhase.Landed } && keep is not null)
+        {
+            foreach (var brought in TogetherInclusion.Of(settled)) keep(brought.Session, LandingRules.BroughtIntoNote(brought));
+        }
+
+        return settled;
     }
 
     /// <summary>

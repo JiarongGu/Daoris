@@ -293,6 +293,9 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'landing.person-handed': { values: [] },
   // A part the person left out of its entry's Accept (ACCEPTALL1c): the branch its line of work landed on, or the line.
   'landing.left-out': { values: ['branch'] },
+  // A member a combined Accept brought into its head's landing (LINESTOGETHER1d2): where its work went and the operation.
+  'landing.brought-into': { values: ['branch', 'operation'] },
+  'landing.brought-into-line': { values: ['branch', 'operation'] },
   'chat.option-set': { values: ['option', 'chosen'] },
   'chat.told-where': { values: [] },
   // Words that did not reach an agent or were not taken (CONVNOTE2d1): the agent's or the service's words follow a lead.

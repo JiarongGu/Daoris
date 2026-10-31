@@ -126,6 +126,43 @@ public sealed class TogetherAcceptsTests : LandedFixture
     }
 
     [Fact]
+    public async Task An_entrys_one_Accept_lands_the_head_by_the_operation_and_reads_its_members_brought_into_never_landed()
+    {
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"));
+        var (trees, _, head, beside, operation) = await ReadyAsync();
+        var other = operation.Members.Single(each => each.Session == "s-other");
+        var together = new EntryTogether(operation.Id, "s-head", new Dictionary<string, IWorkplaceGate?>(), new HashSet<string> { "s-beside", "s-other" });
+        IReadOnlyList<EntryLandingPart> parts =
+            [new("s-head", head.Path), new("s-beside", beside.Path), new("s-other", other.Tree)];
+
+        var landed = await trees.LandEntryAsync(parts, new LandingSubject("s-head", "q1", "Bring the work together"), new HashSet<string>(), together: together);
+
+        Assert.True(landed.Landed, landed.Message);
+        Assert.Equal([EntryPartOutcome.Landed, EntryPartOutcome.BroughtInto, EntryPartOutcome.BroughtInto], landed.Parts.Select(each => each.Outcome));
+        Assert.Equal(TogetherPhase.Landed, new TogetherOperations(Home).Of(operation.Id)!.Phase);
+        var record = Assert.Single(new LandedBranches(Home).All());
+        Assert.Equal(["s-head", "s-beside", "s-other"], record.Work().Select(each => each.Session));
+        Assert.All(TogetherInclusion.All(Home).Values, brought => Assert.Equal(operation.Id, brought.Operation));
+        Assert.Equal(2, TogetherInclusion.All(Home).Count);
+    }
+
+    [Fact]
+    public async Task A_bound_member_in_another_windows_entry_Accept_with_no_operation_to_land_it_is_refused_naming_the_operation()
+    {
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"));
+        var (trees, _, head, beside, operation) = await ReadyAsync();
+        IReadOnlyList<EntryLandingPart> parts = [new("s-beside", beside.Path)];
+
+        var landed = await trees.LandEntryAsync(parts, new LandingSubject("s-beside", "q2", "The work beside it"), new HashSet<string>());
+
+        Assert.False(landed.Landed);
+        Assert.Contains(operation.Id, landed.Message);
+        Assert.Equal(TogetherPhase.Ready, new TogetherOperations(Home).Of(operation.Id)!.Phase);
+        Assert.Empty(new LandedBranches(Home).All());
+        Assert.NotNull(head);
+    }
+
+    [Fact]
     public void An_entrys_part_bound_as_a_member_is_brought_into_its_head_and_lands_nothing_itself()
     {
         var steps = EntryLandings.Sequence(

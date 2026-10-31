@@ -818,7 +818,16 @@ public sealed class SessionsRoutes(DriverContext context)
             : Array.Empty<string>();
         var service = _loop.Service ?? throw NotReady();
         var records = await service.SessionRecordsAsync(cancellationToken).ConfigureAwait(false);
-        var (head, candidates, refused) = await TogetherPress.CandidatesAsync(records, session, members, cancellationToken).ConfigureAwait(false);
+        var snapshot = await service.SnapshotAsync(cancellationToken).ConfigureAwait(false);
+        var config = DriverConfig.Load(_loop.ConfigPath);
+        var plugins = WorkflowCurrent.PluginsOf(PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names));
+        string? WorkspaceOf(string repository) => snapshot.Repositories
+            .FirstOrDefault(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase))?.Workspace;
+        var sources = new WorkflowRunSources(service, _loop.Home, config, plugins, WorkspaceOf);
+        async Task<bool> StepsOnAsync(string member, CancellationToken token) =>
+            await WorkflowRunReader.ReadAsync(new WorkflowRunAsk(Session: member), sources, token).ConfigureAwait(false) is { Problem: null } read
+            && read.Runs.Any(run => TogetherPress.StepsOn(run.Steps));
+        var (head, candidates, refused) = await TogetherPress.CandidatesAsync(records, session, members, cancellationToken, StepsOnAsync).ConfigureAwait(false);
         if (head is null) return new { Operation = (string?)null, Refused = refused };
         var pressed = await Press(service).PressAsync(head, candidates, cancellationToken).ConfigureAwait(false);
         _loop.Nudge();

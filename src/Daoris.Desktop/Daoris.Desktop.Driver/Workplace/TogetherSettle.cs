@@ -98,7 +98,44 @@ internal static class TogetherSettle
         return new LandingEvidence(record == true, request, unread && request is null, target, holds);
     }
 
+    /// <summary>
+    /// The record a landing made before its crash wrote none of, written as the Accept would have: a new branch's landing record, or the
+    /// advance of the one standing, each listing the members. Nothing for a merge, which keeps no record, or where one was found.
+    /// </summary>
+    /// <returns>Whether a record was written.</returns>
+    public static bool WriteMissed(
+        string home, TogetherOperation operation, LandingEvidence evidence, string workspace, string? line, DateTimeOffset at)
+    {
+        if (operation.Attempt is not { } attempt || attempt.Form == TogetherForms.Merge || evidence.Recorded || evidence.Target.Tip is not { } tip) return false;
+        var brought = operation.Members.Select(member => new LandedWork(member.Session, member.Tip) { Quest = member.Quest, Unit = member.Unit }).ToList();
+        var squashed = attempt.Form == TogetherForms.Squash ? attempt.Pinned : null;
+        var session = operation.Head.Record;
+        try
+        {
+            var landings = new LandedBranches(home);
+            if (attempt.Expected is not null && landings.Of(operation.Repository, attempt.Target) is not null)
+            {
+                landings.Advanced(operation.Repository, attempt.Target,
+                    new LandedAdvance(attempt.Expected, tip, at, session) { AcceptedBy = AcceptedBy.Person, Squashed = squashed, Brought = brought });
+            }
+            else
+            {
+                landings.Record(new LandedBranch(operation.Repository, workspace, attempt.Target, line, tip, session, null, null, at)
+                {
+                    AcceptedBy = AcceptedBy.Person, Squashed = squashed, Brought = brought,
+                });
+            }
+
+            return true;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
+
     /// <summary>A branch's tip, or git's own word that it is missing; unread otherwise.</summary>
+
     internal static async Task<RefRead> RefAsync(string root, string branch, CancellationToken ct)
     {
         var name = branch.StartsWith("refs/", StringComparison.Ordinal) ? branch : $"refs/heads/{branch}";
