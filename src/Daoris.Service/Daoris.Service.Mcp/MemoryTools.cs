@@ -5,23 +5,31 @@ using ModelContextProtocol.Server;
 namespace Daoris.Knowledge.Mcp;
 
 /// <summary>
-/// A repository's memory as a session meets it (KNOWCENTRAL2b; the memory coordinator design §2): <c>memory_search</c> and
+/// A repository's memory as a session meets it (KNOWCENTRAL2b, 2d; the memory coordinator design §1, §2): <c>memory_search</c> and
 /// <c>memory_get</c> read, <c>memory_write</c> and <c>memory_end</c> change the caller's own repository's, and <c>memory_propose</c> asks
 /// an entry's owner. Every door answers from the repositories the registry places in the caller's workspace (<see cref="MemoryScope"/>),
-/// and every engine is opened with no reinforcement, so a read changes nothing. A change answers <see cref="NotOn"/> until the record
-/// that holds it to its session's commit point lands, and a read does where no engine is open.
+/// and every engine is opened with no reinforcement, so a read changes nothing. A change is kept <c>staged</c> under its session, seen by
+/// that session and a session continuing it alone, until the session's commit point releases it; no tool here calls an engine's write.
 /// </summary>
 /// <param name="service">The registry each call reads its workspace's repositories from.</param>
 /// <param name="ambient">An unnamed caller's workspace, from where it runs.</param>
-/// <param name="intake">The session this connector names; none names none, a person's own agent's.</param>
-/// <param name="ledger">Where the named session's record is read.</param>
-/// <param name="engines">Each repository's memory; none until the engine lands.</param>
+/// <param name="intake">The session this connector names, and the role it started in; none names none, a person's own agent's.</param>
+/// <param name="ledger">Where the named session's record is read and its changes staged.</param>
+/// <param name="engines">Each repository's memory; none where memory is off.</param>
+/// <param name="time">The clock a change's instant is read from.</param>
 [McpServerToolType]
 public sealed class MemoryTools(
-    KnowledgeService service, AmbientWorkspace ambient, IntakeScope? intake = null, SessionLedger? ledger = null, IMemoryEngines? engines = null)
+    KnowledgeService service, AmbientWorkspace ambient, IntakeScope? intake = null, SessionLedger? ledger = null, IMemoryEngines? engines = null,
+    TimeProvider? time = null)
 {
-    /// <summary>What every tool answers until memory is on, after its checks.</summary>
+    /// <summary>What every tool answers where memory is off, after its checks.</summary>
     public const string NotOn = "Memory is not on in this Daoris yet, so nothing was read or kept.";
+
+    /// <summary>What <c>memory_write</c> answers to a replacement, until Lyntai applies one as one change (the design §4, §6 A).</summary>
+    public const string SupersedesWaits =
+        "Refused: replacing an entry in one change waits on Lyntai's atomic supersession, requested as §6 A of the memory coordinator "
+        + "design. Write the new fact with `relation` `disputes` and `target` the old entry, then end the old one with memory_end: two "
+        + "decisions, both current until the end is approved. Nothing was kept.";
 
     private const int Limit = 10;
 
@@ -52,11 +60,26 @@ public sealed class MemoryTools(
             found.AddRange(entries.Select(entry => (new MemoryReference(repository, entry.Id), entry)));
         }
 
-        if (found.Count == 0) return $"No memory entry in workspace `{caller.Workspace}` matches `{query}`.";
+        // This session's own additions, and those of the sessions it continues, before their commit point: no other session sees them.
+        var staged = caller.Record is { } record && ledger is not null
+            ? (await ledger.Memory.StagedForAsync(record.Id, ct).ConfigureAwait(false))
+                .Where(op => op.Change is { Kind: MemoryOpKind.Write, Text: { } written } && Matches(written, query))
+                .ToList()
+            : [];
+        if (found.Count == 0 && staged.Count == 0) return $"No memory entry in workspace `{caller.Workspace}` matches `{query}`.";
         var text = new StringBuilder($"Memory in workspace `{caller.Workspace}`:").AppendLine().AppendLine();
         foreach (var (reference, entry) in found.Take(Limit)) text.AppendLine($"- `{reference}` (revision {entry.Revision}): {entry.Text}");
+        foreach (var op in staged.Take(Limit))
+        {
+            text.AppendLine($"- staged for `{op.Repository}` by this session's work (operation `{op.Id}`), applied when it is accepted: {op.Change.Text}");
+        }
+
         return text.AppendLine().Append("Call `memory_get` with a reference to read it whole.").ToString();
     }
+
+    private static bool Matches(string text, string query) =>
+        query.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Any(word => text.Contains(word, StringComparison.OrdinalIgnoreCase));
 
     [McpServerTool(Name = "memory_get")]
     [Description(
@@ -98,15 +121,17 @@ public sealed class MemoryTools(
     [Description(
         "Write one entry into the memory of the repository this session works in, for later sessions to find: a fact you confirmed, in "
         + "a sentence or two. Cite a record by its knowledge id rather than copying it. With `relation` and `target`, the entry disputes "
-        + "or amends another entry of this workspace, which stays as it is. The write is kept with this session's work and applies when "
-        + "that work is accepted.")]
+        + "or amends another entry of this repository's memory, which stays as it is. The write is kept with this session's work and "
+        + "applies when that work is accepted.")]
     public async Task<string> WriteAsync(
         [Description("The fact, as later sessions should read it.")] string text,
         [Description("`disputes` or `amends`, given with `target`; omit for an entry that relates to none.")] string? relation = null,
         [Description("The reference of the entry this one disputes or amends.")] string? target = null,
+        [Description("Not taken yet: a replacement waits on Lyntai. Dispute the old entry and end it instead.")] string? supersedes = null,
         CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(text)) return "Write the entry's text: one fact, in a sentence or two.";
+        if (!string.IsNullOrWhiteSpace(supersedes)) return SupersedesWaits;
         MemoryReference? related = null;
         if ((relation ?? target) is not null
             && (relation is not { } kind || !Relations.Contains(kind.Trim().ToLowerInvariant()) || (related = MemoryReference.Parse(target)) is null))
@@ -115,8 +140,20 @@ public sealed class MemoryTools(
         }
 
         var caller = await _scope.ReadAsync(ct).ConfigureAwait(false);
-        if ((caller.Refused ?? (related is null ? null : caller.Outside(related)) ?? caller.Unchanging("memory_write")) is { } refused) return refused;
-        return NotOn;
+        if ((caller.Refused ?? (related is null ? null : caller.Outside(related)) ?? caller.Unchanging("memory_write")
+                ?? (related is null ? null : caller.NotOwnRelation(related))) is { } refused)
+        {
+            return refused;
+        }
+
+        if (engines is null || ledger is null || caller.Record is not { } record) return NotOn;
+        var op = await ledger.Memory.StageAsync(
+            caller.OwnPlaced!,
+            new MemoryChange(MemoryOpKind.Write, Text: text.Trim(), Target: related is null ? null : caller.Placed(related).Entry,
+                Relation: relation?.Trim().ToLowerInvariant()),
+            Author(record), ct).ConfigureAwait(false);
+        return $"Kept as operation `{op.Id}`, staged: `{op.Repository}`'s memory takes this entry when this session's work is accepted. "
+            + "Until then only this session, and a session continuing it, finds it with memory_search.";
     }
 
     [McpServerTool(Name = "memory_end")]
@@ -133,8 +170,19 @@ public sealed class MemoryTools(
         if (string.IsNullOrWhiteSpace(reason)) return "Say why the entry is no longer true, citing what shows it.";
         var caller = await _scope.ReadAsync(ct).ConfigureAwait(false);
         if ((caller.Refused ?? caller.Outside(named) ?? caller.Unchanging("memory_end") ?? caller.NotOwn(named)) is { } refused) return refused;
-        return NotOn;
+        if (engines is null || ledger is null || caller.Record is not { } record) return NotOn;
+        var at = caller.Placed(named);
+        var op = await ledger.Memory.StageAsync(
+            at.Repository, new MemoryChange(MemoryOpKind.End, Text: reason.Trim(), Target: at.Entry, Revision: revision), Author(record), ct)
+            .ConfigureAwait(false);
+        return $"Kept as operation `{op.Id}`, staged: the end of `{at}` at revision {revision} waits for its approver once this session's "
+            + "work is accepted. Nothing changes before.";
     }
+
+    /// <summary>Who makes a change, from the caller's record and the role its connector was started in (§1), at this instant.</summary>
+    private MemoryAuthor Author(Session record) => new(
+        record.Id, record.Workspace, record.Quest, record.Adapter, record.HarnessVersion, intake?.Role, intake?.RoleRevision,
+        (time ?? TimeProvider.System).GetUtcNow());
 
     [McpServerTool(Name = "memory_propose")]
     [Description(
@@ -173,6 +221,19 @@ public sealed class MemoryTools(
 /// <param name="Own">The repository the named session works in.</param>
 public sealed record MemoryCaller(string? Workspace, IReadOnlyList<string> Members, bool Named, string? Own)
 {
+    /// <summary>The named session's record, as read at this call; null for an unnamed caller.</summary>
+    public Session? Record { get; init; }
+
+    /// <summary>The caller's own repository as the registry spells it.</summary>
+    public string? OwnPlaced => Own is null ? null : Member(Own) ?? Own;
+
+    /// <summary>The refusal of a relation to another repository's entry: a relation joins entries of one memory.</summary>
+    public string? NotOwnRelation(MemoryReference reference) =>
+        Own is not null && string.Equals(Member(reference.Repository), Member(Own), StringComparison.Ordinal)
+            ? null
+            : $"Refused: a relation joins entries of one memory, and `{reference}` is repository `{reference.Repository}`'s. To dispute or "
+              + "amend it, ask its owner with memory_propose. Nothing was kept.";
+
     /// <summary>The refusal of a caller no workspace places; null where one does.</summary>
     public string? Refused => Workspace is null
         ? "Refused: Daoris cannot say which workspace this session is in, so its memory tools answer nothing here. Nothing was done."
@@ -215,20 +276,23 @@ public sealed class MemoryScope(KnowledgeService service, AmbientWorkspace ambie
     {
         var named = intake?.Session is { Length: > 0 };
         string? workspace;
-        string? own = null;
+        Session? record = null;
         if (named)
         {
-            var record = await RecordAsync(intake!.Session!, ct).ConfigureAwait(false);
-            (workspace, own) = (record?.Workspace, record?.Repository);
+            record = await RecordAsync(intake!.Session!, ct).ConfigureAwait(false);
+            workspace = record?.Workspace;
         }
         else
         {
             workspace = await ambient.ResolveAsync(service, ct).ConfigureAwait(false);
         }
 
-        if (workspace is null) return new(null, [], named, own);
+        if (workspace is null) return new(null, [], named, record?.Repository) { Record = record };
         var members = await service.RegistryAsync(workspace, ct).ConfigureAwait(false);
-        return new(workspace, [.. members.Select(member => member.Repository).Order(StringComparer.Ordinal)], named, own);
+        return new(workspace, [.. members.Select(member => member.Repository).Order(StringComparer.Ordinal)], named, record?.Repository)
+        {
+            Record = record,
+        };
     }
 
     /// <summary>This machine's record of <paramref name="session"/>; null where none is kept or it cannot be read.</summary>

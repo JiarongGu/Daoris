@@ -165,6 +165,32 @@ public sealed partial class MemoryOpStore
     }, ct);
 
     /// <summary>
+    /// The staged rows <paramref name="session"/> may see (§1): its own, and those of the sessions it continues by <c>From</c>; a session it
+    /// continues sees none of its own.
+    /// </summary>
+    public Task<IReadOnlyList<MemoryOp>> StagedForAsync(string session, CancellationToken ct = default) => _db.RunAsync<IReadOnlyList<MemoryOp>>(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = $"""
+            WITH RECURSIVE chain(id) AS (
+              SELECT $session
+              UNION SELECT s.from_session FROM sessions s JOIN chain c ON s.id = c.id WHERE s.from_session IS NOT NULL)
+            SELECT {Columns} FROM memory_ops WHERE state = 'staged' AND session IN (SELECT id FROM chain) ORDER BY rowid
+            """;
+        command.Parameters.AddWithValue("$session", session);
+        return await ReadAllAsync(command, ct).ConfigureAwait(false);
+    }, ct);
+
+    /// <summary>Every row <paramref name="session"/> made, in the order they were kept.</summary>
+    public Task<IReadOnlyList<MemoryOp>> OfSessionAsync(string session, CancellationToken ct = default) => _db.RunAsync<IReadOnlyList<MemoryOp>>(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = $"SELECT {Columns} FROM memory_ops WHERE session = $session ORDER BY rowid";
+        command.Parameters.AddWithValue("$session", session);
+        return await ReadAllAsync(command, ct).ConfigureAwait(false);
+    }, ct);
+
+    /// <summary>
     /// The commit point's move (§1), inside the transaction that records it: the staged rows of <paramref name="sessions"/>, and with
     /// <paramref name="predecessors"/> those of the sessions each continues, become <c>ready</c>, an end <c>awaiting</c>, each naming the
     /// models of the turn that holds its instant.

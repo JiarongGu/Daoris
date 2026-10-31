@@ -37,6 +37,9 @@ internal sealed class MemoryMachine : IAsyncDisposable
 
     public MemoryOpStore Memory => Sessions.Memory;
 
+    /// <summary>The registry, Owner alone in the default workspace.</summary>
+    public KnowledgeService Registry => _registry;
+
     public static async Task<MemoryMachine> OpenAsync(string name)
     {
         var machine = new MemoryMachine(System.IO.Path.Combine(SourceFiles.WorkspaceFolder(), "_fixtures", name, Guid.NewGuid().ToString("N")[..8]));

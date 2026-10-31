@@ -395,6 +395,9 @@ public sealed class SessionLedger(
     /// <summary>The go-ahead family over the ledger's stores (PART6).</summary>
     private readonly SessionGoAheads goAheads = new(quests, sessions, asks);
 
+    /// <summary>The memory coordinator's log of record, where a session's connector stages its changes (KNOWCENTRAL2d).</summary>
+    public MemoryOpStore Memory => sessions.Memory;
+
     /// <summary>The set-up step's serve and say family over the ledger's stores (PART6).</summary>
     private readonly SessionReviews reviews = new(quests, sessions);
 

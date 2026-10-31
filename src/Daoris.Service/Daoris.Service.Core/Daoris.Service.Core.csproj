@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="Lyntai.Core" />
+    <PackageReference Include="Lyntai.Storage.Sqlite" />
     <PackageReference Include="Microsoft.Data.Sqlite" />
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" />
   </ItemGroup>
