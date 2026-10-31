@@ -433,6 +433,57 @@ public sealed class DesktopStore : IDisposable
             ALTER TABLE integration_requests ADD COLUMN queue_order INTEGER;
             ALTER TABLE integration_dispositions ADD COLUMN answer TEXT;
             """)),
+
+        // GITAPP2a: the act journal (the git-writes design §5, D204), Workplace's. New tables an older build never opens, so the stamp stays
+        // where it is; a record carries its own `format`, and one past a build's is held by it, never reconciled. One open act per checkout
+        // (`common_dir`, the checkout lock's key), one job per act; each step's start is written before its effect and its end after.
+        new(13, WriterStamp, write => write.Execute(
+            """
+            CREATE TABLE git_acts (
+              id               TEXT NOT NULL PRIMARY KEY,
+              format           INTEGER NOT NULL,
+              kind             TEXT NOT NULL,
+              press            TEXT NOT NULL,
+              confirmed        TEXT,
+              repository       TEXT NOT NULL,
+              checkout         TEXT NOT NULL,
+              common_dir       TEXT NOT NULL,
+              plan             TEXT NOT NULL,
+              job              TEXT NOT NULL,
+              claim_run        TEXT NOT NULL REFERENCES store_runs (run),
+              claim_generation INTEGER NOT NULL,
+              phase            TEXT NOT NULL,
+              recovery         TEXT,
+              outcome          TEXT,
+              said             TEXT,
+              at               TEXT NOT NULL,
+              reconciled_at    TEXT,
+              closed_at        TEXT,
+              expires_at       TEXT,
+              expired_at       TEXT
+            );
+            CREATE UNIQUE INDEX git_acts_open ON git_acts (common_dir) WHERE closed_at IS NULL;
+            CREATE UNIQUE INDEX git_acts_job ON git_acts (job);
+            CREATE INDEX git_acts_expiring ON git_acts (expires_at) WHERE expired_at IS NULL;
+            CREATE TABLE git_act_steps (
+              act            TEXT NOT NULL REFERENCES git_acts (id),
+              ordinal        INTEGER NOT NULL,
+              kind           TEXT NOT NULL,
+              arguments      TEXT NOT NULL,
+              postconditions TEXT NOT NULL,
+              rollback       TEXT,
+              began_at       TEXT,
+              deadline       TEXT,
+              pid            INTEGER,
+              pid_started    INTEGER,
+              ended_at       TEXT,
+              exit_code      INTEGER,
+              unended        INTEGER,
+              outcome        TEXT,
+              said           TEXT,
+              PRIMARY KEY (act, ordinal)
+            );
+            """)),
     ];
 
     /// <summary>

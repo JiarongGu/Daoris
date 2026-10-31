@@ -483,6 +483,12 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
             return Held($"{TreeLock.Held(ask.Repository, TreeLock.HolderOf(ask.Home, ask.Root))}: nothing was moved, and it is tried again at the next look.");
         }
 
+        // GITAPP2a: the checkout's open acts reconciled under the hold, before the line's first read; one that still runs holds the promotion.
+        if (await ActReconciler.ForWriterAsync(ask.Home, ask.Root, ct).ConfigureAwait(false) is { } acting)
+        {
+            return Held($"{acting.Said}: nothing was moved, and it is tried again at the next look.");
+        }
+
         var tip = candidate.Tip!;
         var (now, why) = await LineAsync(ask.Root, ask.Line, ct).ConfigureAwait(false);
         if (now is null) return Held($"git could not read where `{ask.Line}` stands ({why}): nothing was moved, and it is tried again at the next look.");

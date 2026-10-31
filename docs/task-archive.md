@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## GITAPP2a — the act journal (2026-10-31)
+
+> **GITAPP2 a** (driver; D204, accepted 2026-10-31; `docs/2026-10-23-git-writes-design.md` round 3 §5, §6's recovery namespaces, §12 row a). The journal (after GITLOCK1, GITTXN2), §5 and act refs on a fixture act with ref, configuration and index steps: crash, bound, unended child and restart at every boundary (before launch, before the pid write, in a descendant hook), nothing re-run; an orphan past its deadline ended or said; a live step refusing writers; two reconcilers; reconciling in a sync look and a promotion step; a stale `index.lock` named; a changed section or entry refused under git's lock; the terminal closed mid-step; an older build refused; the store busy at restart; a stray held only by an act ref kept; an act ref expiring at its id.
+
+**Outcome** 2026-10-31: the journal is desktop-store migration 13 (`git_acts`, `git_act_steps`; `Workplace/ActJournal.cs`), run by `ActRuns` over `ActSteps`' ref, configuration and index steps, each git started suspended in a job named for its act (`Platform/HeldChild.cs`), and reconciled by `ActReconciler` at the driver's start and under the line pull's and the promotion's checkout lock; `refs/daoris/acts/` (`ActRefs`) holds nothing for the clean-ups. No act a person can press; what the code settled is D204's note of 2026-10-31. Proof: `ActJournalTests`, `ActRunGitTests`, `DesktopStoreTests`' step 13, the censuses' rows.
+
 ## GITTXN2 — a ref transaction git did not answer is read, never said as nothing moved (2026-10-31)
 
 > **GITTXN2 — a ref transaction git did not answer is read, never said as nothing moved** (driver; GITAPP2's foundation read F5, 2026-10-31, `docs/2026-10-31-git-writes-read-codex.md`). `RefTransaction.RunAsync` treated exit -1 (the bound reached, the process unended, never started) as git's refusal and said *nothing moved*, as `RollBackAsync` did; only postconditions prove an effect. `RefRun` tells *git refused* from *git did not answer*, the second read before anything is said; and an alias is refused against the refs that stand, not only within one transaction. Proof: an unanswered transaction and rollback each read and said as their refs stand; `Feature` refused beside a packed `feature` on a case-blind disk.

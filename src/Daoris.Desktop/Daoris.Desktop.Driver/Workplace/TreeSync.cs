@@ -208,8 +208,12 @@ internal sealed class TreeSync(
 
             // GITLOCK1: the checkout held alone from the pull's own judgement through its move and the replays (LEFT2), as every writer
             // of it holds it; let go before the deletions. What held it otherwise is named on the line and on each replay it leaves.
-            using var held = TreeLock.TryWriting(context.Home, root, repository, TreeLock.Updating);
-            var holder = held is null ? TreeLock.Held(repository, TreeLock.HolderOf(context.Home, root)) : null;
+            using var taken = TreeLock.TryWriting(context.Home, root, repository, TreeLock.Updating);
+            // GITAPP2a: the checkout's open acts reconciled under the hold, before the pull's judgement and outside the look's memos; one that
+            // still runs holds the pull and the replays for the next look, named.
+            var acting = taken is null ? null : await ActReconciler.ForWriterAsync(context.Home, root, ct).ConfigureAwait(false);
+            var held = acting is null ? taken : null;
+            var holder = taken is null ? TreeLock.Held(repository, TreeLock.HolderOf(context.Home, root)) : acting?.Said;
 
             // (a) Pull the line.
             var (asJudged, inRoot) = await LinePulls.JudgePullAsync(root, repository, workspace, line, fetched.Failed, ct).ConfigureAwait(false);
@@ -267,7 +271,7 @@ internal sealed class TreeSync(
             }
 
             // Let go once the replays are done: the deletions below touch no session's tree. (The `using` is for a throw.)
-            held?.Dispose();
+            taken?.Dispose();
 
             // (b) Delete what merged: the landed half of the clean-up, after the replays, and never a branch just replayed.
             var replayedNow = judged.Where(each => each.Item.Replays).Select(each => $"{repository}:{each.Item.Branch}").ToHashSet(StringComparer.Ordinal);

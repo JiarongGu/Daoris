@@ -535,6 +535,32 @@ public sealed class DesktopStoreTests : IDisposable
         Assert.Equal(0, Count(again, "integration_decides"));
     }
 
+    // ——— Step 13, the act journal (GITAPP2a; the git-writes design §5).
+
+    [Fact]
+    public void Step_13_makes_the_act_journal_one_open_act_for_each_checkout_and_raises_no_stamp()
+    {
+        var step = Assert.Single(DesktopStore.Steps, each => each.Version == 13);
+        Assert.Equal(1, step.Writer);
+
+        var store = Open(new DesktopStoreOptions { Settled = () => StoreSettled.Yes });
+
+        Assert.Equal((Own, 1), store.Stamp);
+        Assert.True(HasTable(store, "git_acts"));
+        Assert.True(HasTable(store, "git_act_steps"));
+        void Act(string id, string? closed = null) => store.Write("acts", write => write.Execute(
+            """
+            INSERT INTO git_acts (id, format, kind, press, repository, checkout, common_dir, plan, job, claim_run, claim_generation, phase, at, closed_at)
+            VALUES ($id, 1, 'fixture', 'test', 'engine', 'c:/engine', 'c:/engine/.git', '{}', $job, $run, 1, 'judged', '2026-11-01T00:00:00.0000000+00:00', $closed)
+            """,
+            ("$id", id), ("$job", $"job-{id}"), ("$run", store.Run), ("$closed", closed)));
+
+        // 2067 is SQLite's unique refusal: a second act open in one checkout is refused; a closed one beside it is not.
+        Act("a1", closed: "2026-11-01T00:00:00.0000000+00:00");
+        Act("a2");
+        Assert.Equal(2067, Assert.Throws<SqliteException>(() => Act("a3")).SqliteExtendedErrorCode);
+    }
+
     // ——— Step 10, the role catalogue (FOUNDATION1w; the foundation design §2.7, §13.3).
 
     [Fact]

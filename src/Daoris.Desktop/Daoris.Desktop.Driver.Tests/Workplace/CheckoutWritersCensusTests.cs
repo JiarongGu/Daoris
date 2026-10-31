@@ -26,6 +26,7 @@ public sealed partial class CheckoutWritersCensusTests
         // The checkout's writers: each holds the repository alone from its fresh judgement through its write and its read after it.
         ["LinePulls.cs"] = (Checkout, "a line's pull (D109): `merge --ff-only` in the checkout that has the line out, read clean and on it under the hold; elsewhere the ref from the commit judged", ["merge@root", "update-ref@root"]),
         ["IntegrationPromotes.cs"] = (Checkout, "a promotion's move, background or a merge rule's press: `merge --ff-only` in the checkout that has the line out, read clean under the hold; elsewhere one verified `update-ref`", ["merge@checkout.Path", "update-ref@ask.Root"]),
+        ["ActSteps.cs"] = (Checkout, "a git act's effect steps (GITAPP2a, D204): one `update-ref --stdin` transaction, and an index's entries replaced under git's own `index.lock` from a copy `update-index` builds, each git held in the act's job; the act's open records reconciled first under the hold", ["update-index@launch.Root", "update-ref@launch.Root"]),
 
         // Trees of Daoris's own, under the trees home: no checkout of the person's.
         ["BacklogMerge.cs"] = (OwnTree, "a backlog's union, staged in the replay's own tree", ["checkout@tree", "update-index@tree"]),
@@ -65,6 +66,7 @@ public sealed partial class CheckoutWritersCensusTests
     {
         ["LinePulls.cs"] = "TreeSync.cs",
         ["IntegrationPromotes.cs"] = "IntegrationPromotes.cs",
+        ["ActSteps.cs"] = "ActRuns.cs",
     };
 
     /// <summary>Writers of a checkout that start no git of Daoris's and so take no lock: how each is fenced instead.</summary>

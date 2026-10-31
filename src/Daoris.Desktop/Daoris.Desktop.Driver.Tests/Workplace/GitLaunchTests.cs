@@ -208,7 +208,7 @@ public sealed class GitLaunchTests
     /// <summary>The files that may start a process, each for the seam it is (how many starts a listed file makes is not pinned, CENSUSRULES1).</summary>
     private static readonly string[] StartingFiles =
     [
-        "AgentStarts.cs", "ChatRunner.cs", "ChildProcess.cs", "CodexUsage.cs", "Driver.cs", "DriverContinuations.cs",
+        "ActSteps.cs", "AgentStarts.cs", "ChatRunner.cs", "ChildProcess.cs", "CodexUsage.cs", "Driver.cs", "DriverContinuations.cs",
         "GeneratedWriters.cs", "GitDoors.cs", "GitIdentityActs.cs", "HarnessActions.cs", "HarnessSelection.cs",
         "HeavyStep.cs", "HookProcess.cs", "PieceLauncher.cs", "PluginToolRuns.cs", "PluginTrialProcess.cs",
         "ProcessStarts.cs", "SetupWorld.cs", "ToolQuestions.cs", "TransportRun.cs", "WorkingTree.cs",
@@ -224,8 +224,9 @@ public sealed class GitLaunchTests
     public void No_git_is_started_in_the_trees_code_outside_the_seam()
     {
         // The trees' two: WorkingTree (GitStart's definition, its calls, the Whole runner's ChildProcess runs and the other two runners' gate
-        // starts) and GeneratedWriters, a generator's shell (GEN1), which is no git. The rest are other seams' starts (a harness, a plugin's
-        // tool, the launcher's containment), none of them a git start of the trees'.
+        // starts) and GeneratedWriters, a generator's shell (GEN1), which is no git. ActSteps' git is an act's effect step (GITAPP2a), started
+        // held in its act's job and counted at the seam as GitRunner.Held. The rest are other seams' starts (a harness, a plugin's tool, the
+        // launcher's containment), none of them a git start of the trees'.
         var problems = StartProblems(StartFiles(SourceFiles.All(SourceFiles.DriverProject, "*.cs")
             .Select(file => (Path.GetFileName(file), File.ReadAllText(file)))));
         Assert.True(problems.Count == 0, string.Join('\n', problems));

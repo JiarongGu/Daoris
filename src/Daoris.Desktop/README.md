@@ -220,6 +220,15 @@ slot as the heavy executor's check does, and a closed request asks a pass, which
 holds the home's lease and drains no update. A merge rule's press is carried by the same run (`IntegrationPresses`, route `merge`, under
 `{ owner, none, 1, merge }`): merged in the integration tree with its message and the repository's hooks, the checkout only fast-forwarded.
 
+**The act journal** (GITAPP2a, D204; the git-writes design §5). A person's git act runs through `ActRuns` with the checkout lock held alone:
+its record (`ActJournal`, store step 13, claimed as the integration's candidates are) is written *judged* before any effect, each step's start
+with its deadline before its git, which `HeldChild` starts suspended in a job named for the act, its pid written before it runs. `ActSteps`
+holds the three steps (a ref transaction; a configuration section and index entries moved under git's own `config.lock` and `index.lock`)
+and their postconditions, which alone say what happened. `ActReconciler` takes an act a dead run left open, ends a live step past its deadline,
+and closes it by its postconditions, nothing run again: at the driver's start beside the first looks, and under the line pull's and the
+promotion's lock, whose writer it holds while a step runs. An act's own ref (`refs/daoris/acts/<act>`, `ActRefs`) holds nothing for the
+clean-ups. No door or verb starts an act; the tests' fixture act is the only one.
+
 Workplace reads and removes conversations through the supplied `IWorkplaceEventHistory` and `ISessionEventRemoval`
 facets. Context's `Context/Events/SessionEventLog.cs` answers them on the original record, retaining its numbering,
 lock and subscriptions. `Context/WorkplaceEventRecordsWiring.cs` installs the required factory for standalone landing;

@@ -14,4 +14,7 @@ public static class HeldBy
 
     /// <summary>Moving its line to what its integration promoted.</summary>
     public const string Promoting = "promoting";
+
+    /// <summary>A git act of the person's, or the act journal's reconciliation of one (GITAPP2a).</summary>
+    public const string Acting = "acting";
 }
