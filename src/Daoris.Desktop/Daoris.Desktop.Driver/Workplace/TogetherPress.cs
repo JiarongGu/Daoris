@@ -40,8 +40,99 @@ public sealed record TogetherPressed(TogetherOperation? Operation, string? Refus
 /// pins every tip, records the operation at <i>asked</i>, then says the fixed words to the head through the say door under the
 /// operation's key. Words that reach nobody let it go, so nothing stays bound.
 /// </summary>
-internal sealed class TogetherPress(string home, RebaseTelling.Say say, Func<DateTimeOffset> now)
+public sealed class TogetherPress(string home, RebaseTelling.Say say, Func<DateTimeOffset> now)
 {
+    /// <summary>
+    /// The head and the ticked members as their records and their trees say: the head is the line's head of <paramref name="session"/>,
+    /// bound to the line's first record; each member's base is where its work leaves the head's. The sentence where one is not here.
+    /// </summary>
+    public static async Task<(TogetherHeadCandidate? Head, IReadOnlyList<TogetherCandidate> Members, string? Refused)> CandidatesAsync(
+        IReadOnlyList<SessionRecord> records, string session, IReadOnlyCollection<string> members, CancellationToken ct)
+    {
+        var byId = records.GroupBy(each => each.Id, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(group => group.Key, group => group.Last(), StringComparer.OrdinalIgnoreCase);
+        if (!byId.TryGetValue(session, out var pressed)) return (null, [], "Nothing was brought together: the head's record is not here.");
+        var at = pressed.Head is { } named && byId.TryGetValue(named, out var ahead) ? ahead : pressed;
+        if (at.Tree is not { Length: > 0 } tree || await BranchAsync(tree, ct).ConfigureAwait(false) is not { } branch)
+        {
+            return (null, [], "Nothing was brought together: the head's tree is not here, or its branch could not be read.");
+        }
+
+        var first = at;
+        for (var hops = 0; first.From is { } from && byId.TryGetValue(from, out var before) && hops < 256; hops++) first = before;
+        var headTip = await TipAsync(tree, ct).ConfigureAwait(false);
+        var head = new TogetherHeadCandidate(first.Id, at.Id, at.Repository, at.Workspace, tree, branch)
+        {
+            TakesWords = at.State is not ("stood-down" or "declined"), RunsElsewhere = at.Teammate,
+        };
+        var list = new List<TogetherCandidate>(members.Count);
+        foreach (var id in members)
+        {
+            if (!byId.TryGetValue(id, out var member)) return (null, [], $"Nothing was brought together: `{id}` has no record here.");
+            var memberTree = member.Tree ?? "";
+            var @base = headTip is not null && Directory.Exists(memberTree) ? await MergeBaseAsync(memberTree, headTip, ct).ConfigureAwait(false) : null;
+            list.Add(new TogetherCandidate(member.Id, member.Repository, memberTree,
+                Directory.Exists(memberTree) ? await BranchAsync(memberTree, ct).ConfigureAwait(false) ?? "" : "", @base ?? member.BaseCommit ?? "")
+            {
+                Quest = member.Quest, Teammate = member.Teammate, Live = member.Live,
+            });
+        }
+
+        return (head, list, null);
+    }
+
+    /// <summary><i>Ask again</i> after a failed check: the words said once more under a key of their own; the sentence where it cannot be.</summary>
+    public async Task<string?> AskAgainAsync(string session, CancellationToken ct)
+    {
+        var store = new TogetherOperations(home);
+        if (HeadOf(store, session) is not { } operation) return "Nothing was asked again: nothing is being brought into this session.";
+        if (operation.Phase != TogetherPhase.Checking || operation.Why is null) return "Nothing was asked again: its check has not failed.";
+        if (store.AskedAgain(operation.Id, now()) is not { } again) return "Nothing was asked again: it moved meanwhile.";
+        SayAnswer? said;
+        try
+        {
+            said = await say(again.Head.Record, Words(again), again.Key, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
+        {
+            said = new SayAnswer(false, error.Message);
+        }
+
+        return said is { Kept: true } ? null
+            : $"The head could not be told again ({(said?.Message ?? "nothing here reaches its conversation").TrimEnd('.')}); let them go, or ask again later.";
+    }
+
+    /// <summary><i>Let them go</i> under the door's locks, before the landing; what the head made stays. The sentence where it cannot be.</summary>
+    public async Task<string?> LetGoAsync(string session, CancellationToken ct)
+    {
+        var store = new TogetherOperations(home);
+        if (HeadOf(store, session) is not { } operation) return "Nothing was let go: nothing is being brought into this session.";
+        var (locks, held) = await TogetherLocks.TakeAsync(home, null, operation.Repository,
+            [operation.Head.Tree, .. operation.Members.Select(each => each.Tree)], Wait, ct).ConfigureAwait(false);
+        if (locks is null) return $"Nothing was let go: {held}.";
+        using (locks)
+        {
+            return store.LetGo(operation.Id, now()) is null ? $"Nothing was let go: it is {operation.Phase} now, past letting go." : null;
+        }
+    }
+
+    private static TogetherOperation? HeadOf(TogetherOperations store, string session) =>
+        store.All().LastOrDefault(each => each.IsOpen && (string.Equals(each.Head.Record, session, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(each.Head.Line, session, StringComparison.OrdinalIgnoreCase)));
+
+    private static async Task<string?> BranchAsync(string tree, CancellationToken ct)
+    {
+        if (!Directory.Exists(tree)) return null;
+        var (code, branch, _) = await WorkingTree.GitAsync(tree, ["--no-optional-locks", "rev-parse", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
+        return code == 0 && branch.Trim() is { Length: > 0 } name ? name : null;
+    }
+
+    private static async Task<string?> MergeBaseAsync(string tree, string other, CancellationToken ct)
+    {
+        var (code, found, _) = await WorkingTree.GitAsync(tree, ["--no-optional-locks", "merge-base", "HEAD", other], ct).ConfigureAwait(false);
+        return code == 0 && found.Trim() is { Length: > 0 } commit ? commit : null;
+    }
+
     /// <summary>How long the press waits for a landing of a tree it binds.</summary>
     internal static readonly TimeSpan Wait = TimeSpan.FromSeconds(30);
 
@@ -101,7 +192,7 @@ internal sealed class TogetherPress(string home, RebaseTelling.Say say, Func<Dat
     }
 
     /// <summary>The fixed words, shown as the rebase words are: each member's branch, base and tip, oldest first.</summary>
-    internal static string Words(TogetherOperation operation) =>
+    public static string Words(TogetherOperation operation) =>
         "Bring the work of these sessions into yours. "
         + string.Join(" ", operation.Members.Select(member =>
             $"For `{member.Session}`, replay `{member.Branch}`'s commits from `{member.Base}` to `{member.Tip}` onto your branch, oldest first."))

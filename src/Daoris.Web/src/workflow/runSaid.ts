@@ -22,7 +22,7 @@ const DETAILS: Record<string, readonly string[]> = {
     'anyway', 'myself', 'answered', 'landed', 'unread', 'cannot-start', 'chat-at-accept',
   ],
   look: ['not-shown', 'being-set-up', 'shown', 'not-yet', 'not-held', 'reviewed', 'skip', 'off', 'unread'],
-  landing: ['accept', 'automatic', 'branch', 'merge', 'already', 'nothing', 'refused', 'gone', 'elsewhere'],
+  landing: ['accept', 'automatic', 'branch', 'merge', 'already', 'nothing', 'refused', 'gone', 'elsewhere', 'brought-into'],
   'pull-request': ['merge', 'merged', 'abandoned', 'not-pushed', 'ask-failed', 'no-branch', 'nothing'],
 };
 
@@ -156,6 +156,9 @@ export function runSaid(t: TFunction, step: RunStep): string | null {
       return t(step.code === 'auto' ? 'workflow.run.said.landing.branchAuto' : at, { branch: step.branch ?? '' });
     case 'landing.refused':
       return t(at, { why: t(`workflow.run.try.${TRIES.includes(step.code ?? '') ? step.code : 'refused'}`) });
+    // LINESTOGETHER1d: carried by another session's one Accept, onto its branch or into the line; never its own acceptance.
+    case 'landing.brought-into':
+      return t(step.code === 'line' ? `${at}Line` : at, { branch: step.branch ?? '' });
     case 'pull-request.merge':
       return t(step.code === 'open' ? `${at}.open` : step.code ? `${at}.unknown` : `${at}.unread`, { plugin: step.plugin ?? '' });
     case 'pull-request.not-pushed':

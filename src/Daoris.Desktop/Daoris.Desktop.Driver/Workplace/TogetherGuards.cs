@@ -33,6 +33,24 @@ internal static class TogetherGuard
         }
     }
 
+    /// <summary>
+    /// The words a member's own landing is refused with where a combined Accept brought its work in at the tip it stands at (or the one
+    /// its door pinned); null where nothing did, or it moved on since.
+    /// </summary>
+    public static async Task<string?> BroughtAsync(string home, string tree, string? pinned, CancellationToken ct)
+    {
+        if (TogetherInclusion.OfTree(home, tree) is not { } brought) return null;
+        var tip = pinned;
+        if (tip is null)
+        {
+            var (code, head, _) = await WorkingTree.GitAsync(tree, ["--no-optional-locks", "rev-parse", "--verify", "--quiet", "HEAD^{commit}"], ct)
+                .ConfigureAwait(false);
+            tip = code == 0 ? head.Trim() : null;
+        }
+
+        return string.Equals(tip, brought.Tip, StringComparison.OrdinalIgnoreCase) ? TogetherInclusion.Words(brought) : null;
+    }
+
     internal static string Bound(TogetherOperation operation) =>
         $"it is being brought together with another session's work (operation {operation.Id}, {operation.Phase}), so it lands only by that "
         + "head's Accept and is left as it stands until then, or until they are let go";

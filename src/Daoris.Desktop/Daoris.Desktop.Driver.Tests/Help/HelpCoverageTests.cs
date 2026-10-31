@@ -746,6 +746,13 @@ public sealed partial class HelpCoverageTests
             "it decides a memory end awaiting the person, or keeps or drops what an ended session left staged: until a second opinion "
             + "may approve (MC8) the person is every end's approver, and an end's proposer or its lineage may not approve it, so no agent "
             + "proposes this press.")),
+        // LINESTOGETHER1d (the review-flow design §4, §5): Bring them together…, Ask again and Let them go on a head's Session step.
+        ("work", "useBringTogether", null, new Exempt(
+            "it asks a session to replay other sessions' work onto its branch and binds their trees until one Accept lands them: a "
+            + "steward's fixed form is LINESTOGETHER1e's, and until then the press is the person's alone, never a proposal.")),
+        ("work", "useTogetherAct", null, new Exempt(
+            "it asks a head again after its check failed, or lets the sessions being brought into it go before it lands: the person's "
+            + "word on their own operation, which LINESTOGETHER1e's steward forms take later, never a proposal.")),
         // SESSWATCH1a (D200, the session-watch design §2.3): the person's presses on a quiet session's row in What needs you.
         ("work", "useQuietCarryOn", null, new Exempt(
             "it ends a quiet session's run as the person's stop and releases it in the same press, so its work goes on in a new part: "
