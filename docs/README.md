@@ -196,7 +196,8 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-11-01-agents-place-brief.md` | Brief: AGENTSPLACE1, the Agents place made usable: Roles, a repository's set-up at once, the workflow's configuration
 | `2026-11-01-agents-place-proposal-opus.md` | Proposal: AGENTSPLACE1, Opus, sealed
 | `2026-11-01-agents-place-proposal-codex.md` | Proposal: AGENTSPLACE1, Codex, sealed
-| `2026-11-01-agents-place-design.md` | Design: AGENTSPLACE1, round 1's synthesis: place pages, one plan and one Apply, presets as recipes; awaiting the makers' reads
+| `2026-11-01-agents-place-design.md` | Design: AGENTSPLACE1, the Agents place: place pages, one plan and one Apply, presets as recipes; accepted 2026-11-01
+| `2026-11-01-agents-place-reads.md` | Reads: AGENTSPLACE1, both makers' reads and the steward's settlement
 
 ## UI, browser, tools and plugin contracts
 
