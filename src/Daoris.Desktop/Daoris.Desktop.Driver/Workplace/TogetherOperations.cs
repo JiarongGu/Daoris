@@ -214,6 +214,20 @@ public sealed class TogetherOperations(string home)
         }
     }
 
+    /// <summary>The open operation binding <paramref name="branch"/> of <paramref name="repository"/>, read under the record lock; null where none.</summary>
+    /// <exception cref="IOException">The lock was held past its wait, or the file does not read.</exception>
+    public TogetherOperation? BindingBranch(string repository, string branch)
+    {
+        lock (Gate)
+        {
+            using var held = RecordLock.Take(LockPath);
+            return All().FirstOrDefault(each => each.IsOpen && string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase)
+                && (Same(each.Head.Branch, branch) || each.Members.Any(member => Same(member.Branch, branch))));
+        }
+    }
+
+    private static bool Same(string a, string b) => string.Equals(a, b, StringComparison.Ordinal);
+
     /// <summary>
     /// Record a press at <i>asked</i>: refused, with its sentence, where the head or a member is in an open operation already, or a member
     /// tree is bound. Nothing is written where it is refused.

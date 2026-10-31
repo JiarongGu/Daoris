@@ -11,13 +11,18 @@ namespace Daoris.Driver;
 /// </summary>
 internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, ContentHolds content, TreeSquashes squashes)
 {
+    /// <summary>How long a discard waits for a landing of its tree before it leaves the tree.</summary>
+    private static readonly TimeSpan DiscardWait = TimeSpan.FromSeconds(30);
+
     /// <summary>
     /// Remove a session tree — <b>and only a session tree</b>: anything outside the trees home is
     /// somebody's checkout, and is refused before git is asked anything.
     /// </summary>
     /// <param name="force">The person saying it again, meaning it: work and branch go too.</param>
     /// <param name="service">The person's door supplies the local ledger: a held tree stays, and force can lift an ended session's own lock.</param>
-    internal async Task<TreeRemoval> RemoveAsync(string path, bool force = false, CancellationToken ct = default, ServiceClient? service = null)
+    /// <param name="landing">A landing's own tidy, which holds the tree's landing hold already.</param>
+    internal async Task<TreeRemoval> RemoveAsync(
+        string path, bool force = false, CancellationToken ct = default, ServiceClient? service = null, bool landing = false)
     {
         var full = Path.GetFullPath(path);
         if (!context.Holds(full))
@@ -46,10 +51,21 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
             return new(false, $"the tree at {path} stays: {bound}.");
         }
 
+        // LINESTOGETHER1d: the tree's landing hold first, as the door's lock order takes it, so a press cannot bind it mid-removal; a
+        // landing's own tidy holds it already.
+        using var landingHold = landing ? null : await LandingHolds.TakeAsync(context.Home, full, ct, DiscardWait).ConfigureAwait(false);
+        if (!landing && landingHold is null) return new(false, $"the tree at {path} stays: a landing of it was still under way.");
+
         // TREELOCK2: keep the repository's starts out from the ledger read through the removal. A stale lock can name an ended
         // session while a later one holds the same tree, so the live-tree check precedes the lock owner's record.
         var owner = context.OwnerOf(full);
         using var removing = service is null ? null : TreeLock.TryReplaying(context.Home, owner.Workspace, owner.Repository);
+        // Then the bindings under the record lock, with no service too, where no tree lock is taken.
+        if ((service is null || removing is not null) && TogetherGuard.Refusal(context.Home, full) is { } together)
+        {
+            return new(false, $"the tree at {path} stays: {together}.");
+        }
+
         if (service is not null)
         {
             if (removing is null) return new(false, TreeLock.Starting(owner.Repository));

@@ -390,11 +390,12 @@ internal sealed class TreeLands(
     /// The tree's uncommitted paths as the door read them where it judged the landing (LANDGIT1c): the look's automatic landing reads
     /// them there, so the landing asks `status` no more. Read again where the landing waited for another of its tree; null reads them.
     /// </param>
+    /// <param name="together">The operation bringing sessions together whose combined Accept this is: the one door a tree it binds lands by.</param>
     internal async Task<TreeLanding> LandAsync(
         string path, LandingSubject subject, CancellationToken ct = default, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null,
         string acceptedBy = AcceptedBy.Person, IWorkplaceGate? gate = null, bool joins = false, bool fetched = false,
         Func<bool, CancellationToken, Task<TreeLanding?>>? judged = null, Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null,
-        int? uncommitted = null)
+        int? uncommitted = null, string? together = null)
     {
         var repository = context.OwnerOf(Path.GetFullPath(path)).Repository;
         // LANDRACE1 (D145 point 2, D173's FABRIC-END7 note and its review): one landing of one session's tree at a time, whichever door
@@ -409,6 +410,13 @@ internal sealed class TreeLands(
             && string.Equals(asked, before.Tip, StringComparison.OrdinalIgnoreCase))
         {
             return LandedMeanwhile(before, subject.Session);
+        }
+
+        // LINESTOGETHER1d: a tree bound into an operation bringing sessions together lands only by its combined Accept, read under the
+        // record lock while this holds the tree, so a press binding it waits for this landing to end.
+        if (TogetherGuard.Refusal(context.Home, path, together) is { } bound)
+        {
+            return new(false, $"Nothing was landed: {bound}.") { Refusal = AutoLandingCode.Refused };
         }
 
         // FABRIC-CLOSE1h: what the door judged before it took the hold may have moved while it waited, so it judges again here, under the
@@ -808,7 +816,7 @@ internal sealed class TreeLands(
             await ends.KeepAsync(checkout, repository, workspace, judged, ct).ConfigureAwait(false);
         }
 
-        var tidied = await removals.RemoveAsync(path, force: false, ct).ConfigureAwait(false);
+        var tidied = await removals.RemoveAsync(path, force: false, ct, landing: true).ConfigureAwait(false);
         landed = landed with
         {
             // 🔴 The sentence that the tree stays goes when the tidy removed it: the message said both
