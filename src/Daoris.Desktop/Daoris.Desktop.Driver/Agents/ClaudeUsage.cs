@@ -165,13 +165,14 @@ public static class ClaudeUsage
     /// <summary>
     /// The read over the CLI's lines (evidence, the request): <c>initialize</c>, its reply, then <c>get_usage</c>, whose reply
     /// is read past whatever else the CLI writes. Unknown (null) where either is an error reply, the CLI ends, or is silent
-    /// past <paramref name="patience"/>; <paramref name="ct"/> is the caller's own stop, and throws.
+    /// past <paramref name="patience"/> on <paramref name="clock"/>, the machine's unless a test hands one; <paramref name="ct"/> is
+    /// the caller's own stop, and throws.
     /// </summary>
     internal static async Task<IReadOnlyList<WindowReading>?> AskWithinAsync(
-        TextReader incoming, TextWriter outgoing, TimeSpan patience, DateTimeOffset now, CancellationToken ct)
+        TextReader incoming, TextWriter outgoing, TimeSpan patience, DateTimeOffset now, CancellationToken ct, TimeProvider? clock = null)
     {
-        using var bounded = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        bounded.CancelAfter(patience);
+        using var spent = new CancellationTokenSource(patience, clock ?? TimeProvider.System);
+        using var bounded = CancellationTokenSource.CreateLinkedTokenSource(ct, spent.Token);
         // Waited on apart from the read itself: a pipe's read may not honour a token, and is ended by the CLI's stop.
         var asking = AskAsync(incoming, outgoing, bounded.Token);
         try

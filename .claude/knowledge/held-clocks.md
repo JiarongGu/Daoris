@@ -37,8 +37,11 @@ product being flaky. A wider window only moves the load at which it fails, and m
 - **Bound the hold.** The clock runs by itself after `Poll.Patience`, the suite's two minutes (`HeldClock`), so a condition that never holds fails
   its test on the code's own wait rather than hanging the run.
 - **Keep the loop late in every run.** The test's loop looks only after the wait would have run out on the machine's clock
-  (`Late(world)`, the wait twice, as the loop's `every:`), and a late pass delays inside its `Say`. Every run then has the
-  load's shape, so the test is red on the machine's clock before the fix, and stays meaningful on a quiet machine.
+  (`Late(world)`, the wait twice, as the loop's `every:`, with a `FakeChangeSource` that raises nothing, since the folder's
+  watcher wakes a look at once: LOADFLAKE2), and a late pass delays inside its `Say`. A stand-in writer is late under load
+  too, since `TextWriter`'s default `FlushAsync` runs on the pool: give it a late flush (`ClaudeUsageTests`' `FakeCli.Late`).
+  Every run then has the load's shape, so the test is red on the machine's clock before the fix, and stays meaningful on a
+  quiet machine.
 - **Wait on an answer the other side always writes, where it writes one** (FLAKE3): a loop that took a say always answers
   it, so the verb waits on that answer, bounded by the loop's own bound on a say, and on the clock only for whether it took
   the words at all. Across processes the taker says so first (DROPWAIT1: the queue's runner marks `draining` before it ends a

@@ -593,9 +593,22 @@ public sealed class SessionsSayCommandTests : IDisposable
         room.Heads["c1000000"] = "c2000000";
         using var service = room.Client();
         var events = new SessionEvents(Sessions);
-        await using var loop = Loop(new SessionProcesses(Pids), service, events);
+        var processes = new SessionProcesses(Pids);
+        var clock = new HeldClock();
+        var world = World(service, wait: TimeSpan.FromMilliseconds(300)) with { Clock = clock };
+        var words = new LoopWords(processes, () => service) { Events = events };
+        // LOADFLAKE2: its look is late, as a loaded machine's was: no watcher wakes it, and it lists only after the wait would end.
+        // The verb's wait, which bounds its following of the words at the head, counts from the take.
+        await using var loop = new SessionRequestWatch(_home, processes, () => service, every: Late(world), source: new FakeChangeSource())
+        {
+            Say = (request, ct) =>
+            {
+                clock.Run();
+                return words.HoldAsync(request, ct);
+            },
+        };
 
-        var (exit, said) = await SayAsync(room, ["c1000000", "also the changelog"], World(service, wait: TimeSpan.FromMilliseconds(300)));
+        var (exit, said) = await SayAsync(room, ["c1000000", "also the changelog"], world);
 
         if (!marked)
         {
