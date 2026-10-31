@@ -198,6 +198,9 @@ public static class PersonPresses
     /// <summary><c>git branch|tag &lt;repository&gt; &lt;name&gt; --delete --yes</c> (GITAPP2d, D204): a branch or a lightweight tag deleted, the person's yes.</summary>
     public static InstanceRoute GitRefDelete { get; } = Person("GIT_REF_DELETE");
 
+    /// <summary><c>git branch|tag &lt;repository&gt; &lt;name&gt; --rename &lt;new-name&gt; --yes</c> (GITAPP2e, D204): a branch or a lightweight tag renamed, the person's yes.</summary>
+    public static InstanceRoute GitRefRename { get; } = Person("GIT_REF_RENAME");
+
     /// <summary><c>ask --pause &lt;id&gt;</c> and <c>quest pause &lt;id&gt;</c> (RPC1e): a work paused on this machine, what of it runs stopped.</summary>
     public static InstanceRoute WorkPause { get; } = Person("WORK_PAUSE");
 
@@ -254,6 +257,8 @@ public static class PersonPresses
         ("git tag <repository> <name> [<commit>] --yes", GitRefCreate),
         ("git branch <repository> <name> [<commit>] --delete --yes", GitRefDelete),
         ("git tag <repository> <name> [<commit>] --delete --yes", GitRefDelete),
+        ("git branch <repository> <name> [<commit>] --rename <new-name> --yes", GitRefRename),
+        ("git tag <repository> <name> [<commit>] --rename <new-name> --yes", GitRefRename),
         ("ask --pause <id>", WorkPause),
         ("quest pause <id>", WorkPause),
         ("ask --resume <id>", WorkResume),

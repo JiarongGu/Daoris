@@ -957,4 +957,102 @@ describe("a repository's New branch and New tag (GITAPP2c)", () => {
       }
     });
   });
+
+  describe('Rename (GITAPP2e)', () => {
+    const SPIKE = GIT_BRANCHES_ENGINE.branches.find((branch) => branch.name === 'spike/renderer')!.commit;
+
+    const openBranches = async () => {
+      const page = await chooseRepository('engine');
+      await userEvent.click(within(page).getByRole('tab', { name: 'Branches' }));
+      return within(repositoryMain()).findByRole('region', { name: "engine's branches" });
+    };
+
+    const rename = async (list: HTMLElement, to: string) => {
+      await userEvent.click(within(list).getByRole('button', { name: 'Rename the branch spike/renderer' }));
+      const group = within(list).getByRole('group', { name: 'Rename the branch spike/renderer' });
+      await userEvent.clear(within(group).getByRole('textbox', { name: 'New name' }));
+      await userEvent.type(within(group).getByRole('textbox', { name: 'New name' }), to);
+      await userEvent.click(within(group).getByRole('button', { name: 'Continue' }));
+      return group;
+    };
+
+    it('asks the new name, says what happens, sends nothing until Rename, then presses at the commit the row showed', async () => {
+      answering({ GIT_REF_RENAME: () => ({ act: 'r1', outcome: 'done', refused: false, said: 'renamed' }) });
+      show(<ProjectsView notify={() => {}} />);
+      const list = await openBranches();
+
+      const group = await rename(list, 'spike/renderer-2');
+
+      expect(within(group).getByText(/Rename the branch spike\/renderer \(5d2e770\) to spike\/renderer-2\? Its old tip stays on a recovery ref/)).toBeInTheDocument();
+      expect(asked('GIT_REF_RENAME')).toEqual([]);
+      await userEvent.click(within(group).getByRole('button', { name: 'Rename' }));
+
+      expect(await within(list).findByText(/Renamed the branch spike\/renderer to spike\/renderer-2\. spike\/renderer-2 starts a new reflog/)).toBeInTheDocument();
+      expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_REF_RENAME', {
+        payload: { repository: 'engine', workspace: 'aurora', kind: 'branch', name: 'spike/renderer', to: 'spike/renderer-2', at: SPIKE },
+      });
+    });
+
+    it('undoes a done rename at its act', async () => {
+      answering({
+        GIT_REF_RENAME: () => ({ act: 'r1', outcome: 'done', refused: false, said: 'renamed' }),
+        GIT_REF_UNDO: () => ({ act: 'u1', outcome: 'done', refused: false, said: 'moved back' }),
+      });
+      show(<ProjectsView notify={() => {}} />);
+      const list = await openBranches();
+      await userEvent.click(within(await rename(list, 'spike/renderer-2')).getByRole('button', { name: 'Rename' }));
+
+      expect(within(list).queryByRole('button', { name: 'Finish' })).toBeNull();
+      await userEvent.click(await within(list).findByRole('button', { name: 'Undo' }));
+
+      expect(await within(list).findByText('Undone: the branch spike/renderer-2 is spike/renderer again.')).toBeInTheDocument();
+      expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_REF_UNDO', { payload: { repository: 'engine', workspace: 'aurora', act: 'r1' } });
+    });
+
+    it('offers Finish and Undo for a rename that stopped before its settings moved, and Finish names the act', async () => {
+      answering({
+        GIT_REF_RENAME: () => ({ act: 'r1', outcome: 'partial', refused: false, said: 'part of it stands' }),
+        GIT_REF_FINISH: () => ({ act: 'f1', outcome: 'done', refused: false, said: 'finished' }),
+      });
+      show(<ProjectsView notify={() => {}} />);
+      const list = await openBranches();
+      await userEvent.click(within(await rename(list, 'spike/renderer-2')).getByRole('button', { name: 'Rename' }));
+
+      expect(await within(list).findByText(/but its settings \(its upstream and the like\) did not move/)).toBeInTheDocument();
+      expect(within(list).getByRole('button', { name: 'Undo' })).toBeInTheDocument();
+      await userEvent.click(within(list).getByRole('button', { name: 'Finish' }));
+
+      expect(await within(list).findByText(/Renamed the branch spike\/renderer to spike\/renderer-2\. spike\/renderer-2 starts a new reflog/)).toBeInTheDocument();
+      expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_REF_FINISH', { payload: { repository: 'engine', workspace: 'aurora', act: 'r1' } });
+      expect(within(list).queryByRole('button', { name: 'Finish' })).toBeNull();
+    });
+
+    it("says a refusal in the driver's sentence with the name kept, and leaves a stopped rename's presses to try the other", async () => {
+      answering({ GIT_REF_RENAME: () => ({ refused: true, outcome: null, said: 'a branch named `spike/physics` already exists, so nothing was renamed' }) });
+      show(<ProjectsView notify={() => {}} />);
+      const list = await openBranches();
+
+      await userEvent.click(within(await rename(list, 'spike/physics')).getByRole('button', { name: 'Rename' }));
+
+      expect(await within(list).findByText(/already exists, so nothing was renamed/)).toBeInTheDocument();
+      expect(within(list).getByRole('textbox', { name: 'New name' })).toHaveValue('spike/physics');
+      expect(within(list).queryByRole('button', { name: 'Undo' })).toBeNull();
+    });
+
+    it('goes back without sending, will not rename to the same name, and is drawn on no line, session or landed row', async () => {
+      answering();
+      show(<ProjectsView notify={() => {}} />);
+      const list = await openBranches();
+
+      await userEvent.click(within(list).getByRole('button', { name: 'Rename the branch spike/renderer' }));
+      const group = within(list).getByRole('group', { name: 'Rename the branch spike/renderer' });
+      expect(within(group).getByRole('button', { name: 'Continue' })).toBeDisabled();
+      await userEvent.click(within(group).getByRole('button', { name: 'Cancel' }));
+
+      expect(asked('GIT_REF_RENAME')).toEqual([]);
+      for (const held of ['main', 'daoris/engine-physics-step', 'review/q6-asset-cache']) {
+        expect(within(list).queryByRole('button', { name: `Rename the branch ${held}` })).toBeNull();
+      }
+    });
+  });
 });

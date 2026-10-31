@@ -5,10 +5,15 @@ import { Button, Prose, Segmented } from '../../design/ui';
 /** What the driver answers a ref act with (`GIT_REF_CREATE`, `GIT_REF_UNDO`): the journal's act and its outcome, or a refusal in words. */
 export type RefOutcome = { act?: string | null; outcome?: string | null; refused: boolean; said: string; code?: string | null };
 
-/** The acts the holder hands: make a ref at a commit, delete one at the commit shown, and undo what an act did. */
+/**
+ * The acts the holder hands: make a ref at a commit, delete or rename one at the commit shown, finish a rename that stopped between its ref
+ * and its settings, and undo what an act did.
+ */
 export type RefActs = {
   make: (ask: { kind: RefKind; name: string; at: string }) => Promise<RefOutcome>;
   remove: (ask: { kind: RefKind; name: string; at: string }) => Promise<RefOutcome>;
+  rename: (ask: { kind: RefKind; name: string; to: string; at: string }) => Promise<RefOutcome>;
+  finish: (act: string) => Promise<RefOutcome>;
   undo: (act: string) => Promise<RefOutcome>;
 };
 
