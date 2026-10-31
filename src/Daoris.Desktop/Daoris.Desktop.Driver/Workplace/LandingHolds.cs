@@ -10,7 +10,9 @@ namespace Daoris.Driver;
 /// One landing of one session's tree at a time, and one push of one landed branch, whichever door (LANDRACE1, D145 point 2, D173's
 /// FABRIC-END7 note and its review). The person's press, a terminal's <c>trees land</c>, an entry's Accept and the look's automatic
 /// landing each take the tree's hold around the whole landing (<c>TreeLands.LandAsync</c>); the landing's plugin step and a hand-off
-/// (<c>TreeHandOffs.HandAsync</c>) each take the branch's around the push.
+/// (<c>TreeHandOffs.HandAsync</c>) each take the branch's around the push. A discard and the press bringing sessions together take the
+/// tree's too (LINESTOGETHER1d). A hold is not re-entrant: a door that calls another taking the same key waits on itself, so the landing's
+/// own tidy tells the removal it holds it.
 /// </summary>
 /// <remarks>
 /// <para><b>Why.</b> Git's ref writes keep two landings of a made branch apart (a branch made once, an advance by compare-and-swap),

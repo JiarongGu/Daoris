@@ -239,6 +239,13 @@ internal sealed class TreeSync(
                     continue;
                 }
 
+                // LINESTOGETHER1d: a branch bound into an operation bringing sessions together is left as it stands, its operation named.
+                if (TogetherGuard.BranchRefusal(context.Home, repository, each.Item.Branch) is { } together)
+                {
+                    rebases.Add(new(each.Item, false, $"`{each.Item.Branch}`: {together}."));
+                    continue;
+                }
+
                 rebases.Add(await replays.ReplayAsync(root, repository, workspace, line!, onto!, each, replayed, ct).ConfigureAwait(false));
             }
 

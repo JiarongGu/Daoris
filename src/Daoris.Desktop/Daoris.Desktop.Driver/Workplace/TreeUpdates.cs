@@ -101,6 +101,8 @@ internal sealed class TreeUpdates(
         using var held = TreeLock.TryReplaying(context.Home, workspace, repository);
         facts = facts with { Held = held is null };
         if (facts.First() is not null) return Refused(facts);
+        // LINESTOGETHER1d: a tree bound into an operation bringing sessions together is left as it stands, its operation named.
+        if (TogetherGuard.Refusal(context.Home, full) is { } together) return new(false, $"Nothing was brought up to date: {together}.");
 
         // The one network step (point 2). FetchAsync names no address only where there is no `origin` at all: nothing to fetch.
         var (failed, url) = fetched ? (null, null) : await FetchAsync(root, line, ct, repository, workspace).ConfigureAwait(false);
