@@ -12,7 +12,7 @@ import { DRIVER, LINES, PLUGINS, REGISTRY, STRUCTURE, TOOLS, WORKFLOWS } from '.
 // 80, 39 and 25 rem, in both languages and both themes; a failed read and a shell that does not offer it are said, never drawn empty.
 
 const nothing = () => {};
-const DOORS: RoleDoors = { agent: nothing, setting: nothing, repository: nothing, plugin: nothing };
+const DOORS: RoleDoors = { agent: nothing, setting: nothing, repository: nothing, plugin: nothing, addRole: nothing };
 
 type Which = 'work' | 'accounts' | 'repository';
 

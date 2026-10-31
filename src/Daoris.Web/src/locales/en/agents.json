@@ -196,6 +196,7 @@
   "agents.roles.door.open": "Open {{agent}}",
   "agents.roles.door.openLabel": "Open",
   "agents.roles.door.plugin": "Open plugin {{plugin}}",
+  "agents.roles.door.addHere": "Add a role here",
   "agents.roles.door.setup": "Open Setup",
   "agents.roles.door.workflow": "Open Workflow",
   "agents.roles.door.integration": "Open Integration",

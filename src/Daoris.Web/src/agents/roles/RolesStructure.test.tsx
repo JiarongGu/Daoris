@@ -73,7 +73,7 @@ describe('The Roles mode, Work, Accounts and By repository', () => {
         case 'HARNESSES': return ROSTER;
         case 'ACCOUNTS': return { agents: [CLAUDE_USE, CODEX_USE] };
         case 'ACTORS': return { actors: [] };
-        case 'ROLES': return { roles: [], works: [], kept: true, suggested: [] };
+        case 'ROLES': return { roles: [], works: ['build', 'design'], kept: true, suggested: [] };
         case 'STARTS': return { adapter: 'claude-code', starts: [] };
         case 'PLUGINS': return { folder: 'plugins', plugins: PLUGINS };
         case 'LINES': return LINES;
@@ -311,6 +311,29 @@ describe('The Roles mode, Work, Accounts and By repository', () => {
       expect(row.textContent).toMatch(/proposed, waiting for you to accept it/);
       expect(within(row).getByRole('button', { name: 'Open plugin GitHub pull request' })).toBeTruthy();
       expect(invoke.mock.calls.filter(([, type, request]) => type === 'WORKFLOW_CURRENT' && (request as { payload: { repository: string } }).payload.repository === 'site')).toHaveLength(0);
+    });
+
+    // COMPANYVIEW1g: a new place takes the roles above it; a role of its own is added here, then saved over SET_ROLE.
+    it.each([
+      ['a repository row', 'engine', 'repository'],
+      ['a workspace group', 'aurora', 'workspace'],
+    ])('adds a role here from %s: the editor opens in Working roles with the place filled, and Save goes out over SET_ROLE', async (_name, place, kind) => {
+      const user = await open();
+      await user.click(await screen.findByRole('button', { name: 'Show aurora' }));
+      if (kind === 'repository') await user.click(await screen.findByRole('button', { name: 'Show engine' }));
+      await user.click(await screen.findByRole('button', { name: `Add a role here · ${place}` }));
+
+      const form = await screen.findByRole('form', { name: 'A new role' });
+      expect(screen.getByRole('heading', { name: 'Working roles' })).toBeTruthy();
+      expect(within(form).getByRole('combobox', { name: 'Where' })).toHaveTextContent(kind === 'repository' ? 'A repository' : 'A workspace');
+      expect(within(form).getByRole('textbox', { name: 'Workspace or repository' })).toHaveValue(place);
+
+      await user.type(within(form).getByRole('textbox', { name: 'Id' }), 'night');
+      await user.type(within(form).getByRole('textbox', { name: 'Name in English' }), 'Night shift');
+      await user.click(within(form).getByRole('button', { name: 'Save' }));
+      await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_ROLE', {
+        payload: expect.objectContaining({ change: 'set', id: 'night', role: expect.objectContaining({ scope: { kind, id: place } }) }),
+      }));
     });
 
     it('presses its doors: Setup, Workflow, the Integration tab where a declaration waits, and the plugin', async () => {
