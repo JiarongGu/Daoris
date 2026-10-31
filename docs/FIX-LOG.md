@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-01 - A checkout's holder was read without sharing its writer's rename (batch 1031f)
+
+- **Symptom:** `read-shares` in `npm run verify` refused `TreeLock.cs` once batch 1031f merged GITLOCK1 and 2; the earlier run had stopped at the CLI's tests before reaching it.
+- **Root cause:** `TreeLock.HolderOf` read the `.by` file, which `TryAlone` writes through `AtomicFile`, with a plain `File.ReadAllText`; a read that does not share deletion is refused while the landing move holds the file (BINDRACE1), and the refused start then named "another of Daoris's writes" instead of its holder. The two reads of git's own `.git` and `commondir` files were unmarked.
+- **Fix:** the holder is read through `AtomicFile.ReadText`; git's files are marked as plain reads.
+- **Verify:** `node tools/read-shares.mjs` clean; `TreeLockTests` (the holder read, a gone holder read as none). Not run: the Process half's `CheckoutBesideGitTests` (the parent's).
+
 ## 2026-11-01 - The woken-turn retry test answered the check before its session read the wake (batch 1031f)
 
 - **Symptom:** under the queue's load, `AcpTransientTests.A_turn_woken_during_the_owner_s_check_holds_the_try_until_it_ends` found the go-on sent into the woken turn: two prompts for one.
