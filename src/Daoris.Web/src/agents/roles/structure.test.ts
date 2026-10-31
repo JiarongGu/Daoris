@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import i18n from '../../locales/i18n';
 import { CLAUDE_USE, CODEX_USE } from '../agentsFixtures';
 import { DRIVER, LINES, PLUGINS, REGISTRY, STRUCTURE, TOOLS, WORKFLOWS } from './structureFixtures';
-import { buildStructure, heldMarks, NO_FILTERS, placesToAsk, type StructureFilters, usedByAgent } from './structure';
+import { buildStructure, heldMarks, NO_FILTERS, placesToAsk, type StructureFilters, usedByAgent, workflowReadOf } from './structure';
 
 // COMPANYVIEW1d (the company-view design §3.3 to §3.5, §4): the rows of Work, Accounts and By repository, built once over the driver's
 // answer, with one id each. A row says the driver's answer; it resolves nothing itself.
@@ -214,6 +214,20 @@ describe('buildStructure', () => {
     const { options } = build();
     expect(options.workspaces).toEqual(['aurora', 'default']);
     expect(options.works).toEqual(STRUCTURE.works);
+  });
+});
+
+describe('workflowReadOf', () => {
+  const current = (integration: unknown) => ({ steps: [{}, {}], start: integration === undefined ? undefined : { integration } }) as never;
+
+  it('reads the integration declaration as none, proposed or accepted, and leaves it unsaid on a driver that does not send it', () => {
+    expect(workflowReadOf(current(undefined))).toEqual({ read: 'ok', steps: 2, integration: null });
+    expect(workflowReadOf(current(null))).toMatchObject({ integration: 'none' });
+    expect(workflowReadOf(current({ gates: 'abc', state: 'accepted' }))).toMatchObject({ integration: 'accepted' });
+    expect(workflowReadOf(current({ gates: 'none', state: 'accepted' }))).toMatchObject({ integration: 'none' });
+    expect(workflowReadOf(current({ gates: null, state: 'unaccepted' }))).toMatchObject({ integration: 'proposed' });
+    expect(workflowReadOf(current({ gates: 'abc', state: 'changed' }))).toMatchObject({ integration: 'proposed' });
+    expect(workflowReadOf(current({ gates: null, state: 'unread' }))).toMatchObject({ integration: 'unread' });
   });
 });
 

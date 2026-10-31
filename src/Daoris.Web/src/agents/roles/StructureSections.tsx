@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { StructureChoice } from '../../bridge/driver';
+import type { StructureChoice } from '../../data/wiring';
 import { Button, CheckField, Chip, Icon, SelectField } from '../../design/ui';
 import { clockOf, list, moment } from '../../locales/format';
 import { entryText, roleName } from './Roles';

@@ -1,9 +1,8 @@
-import type { RoleStructure, StructureChoice, StructureWork } from '../../bridge/driver';
-import type { PluginEntry } from '../../bridge/plugins';
+import type { RoleStructure, StructureChoice, StructureWork } from '../../data/wiring';
 import type { RepositoryLanding } from '../../settings/repository/Landings';
 import type { RepositoryLine } from '../../settings/repository/Lines';
 import { TOOLS } from '../agentsFixtures';
-import type { WorkflowRead } from './structure';
+import type { PluginRef, WorkflowRead } from './structure';
 
 // The roles' structure as the stories and tests hand it (COMPANYVIEW1d): this machine with its nine works, a workspace taking them, a
 // repository with a role of its own whose first choice is signed out, one taking this machine's, and a repository in no workspace whose
@@ -91,15 +90,9 @@ export const REGISTRY = [
   { repository: 'tools' },
 ];
 
-export const PLUGINS: PluginEntry[] = [
-  {
-    id: 'acme.gate', name: 'Acme gate', version: '1.0.0', description: '', enabled: true, problem: null, harnesses: ['acme-agent'], points: [],
-    running: true, folder: 'plugins/acme.gate', data: 'data',
-  },
-  {
-    id: 'github-pull-request', name: 'GitHub pull request', version: '1.0.0', description: '', enabled: true, problem: null, harnesses: [], points: [],
-    running: true, folder: 'plugins/github-pull-request', data: 'data',
-  },
+export const PLUGINS: PluginRef[] = [
+  { id: 'acme.gate', name: 'Acme gate', harnesses: ['acme-agent'] },
+  { id: 'github-pull-request', name: 'GitHub pull request', harnesses: [] },
 ];
 
 export const LINES: { lines: RepositoryLine[]; landings: RepositoryLanding[] } = {

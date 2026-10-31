@@ -9,8 +9,7 @@
  * never an empty list. The ids are shaped for the diagram of row 1f (`place:`, `role:`, `agent:`), which builds nodes and edges over
  * the same answer; this builds rows only.
  */
-import type { RoleStructure, StructureChoice, StructureWork } from '../../bridge/driver';
-import type { PluginEntry } from '../../bridge/plugins';
+import type { RoleStructure, StructureChoice, StructureWork } from '../../data/wiring';
 import type { AccountsAnswer } from '../../settings/accounts/accounts';
 import type { RepositoryLine } from '../../settings/repository/Lines';
 import type { RepositoryLanding } from '../../settings/repository/Landings';
@@ -158,12 +157,15 @@ export type Structure = {
   options: { workspaces: string[]; works: string[]; agents: string[] };
 };
 
+/** What a plugin is to the structure: its id and name, and the agents it declares (the catalogue's entry says more). */
+export type PluginRef = { id: string; name: string; harnesses: readonly string[] };
+
 export type StructureInput = {
   structure: RoleStructure;
   registry: readonly { repository: string; workspace?: string | null }[];
   tools: readonly Tool[];
   accounts: AccountsAnswer | null | undefined;
-  plugins: readonly PluginEntry[] | null | undefined;
+  plugins: readonly PluginRef[] | null | undefined;
   lines: { lines: readonly RepositoryLine[]; landings?: readonly RepositoryLanding[] } | null | undefined;
   driver: { drivable: readonly string[]; holds: readonly string[] } | null | undefined;
   /** The workflow of each repository opened, by name. */
