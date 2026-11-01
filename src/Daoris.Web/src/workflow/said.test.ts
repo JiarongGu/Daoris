@@ -55,11 +55,11 @@ describe('stepTitle', () => {
     // A value this page does not know reads as the terminal reads it: the owner's, no gates, back to its session.
     expect(stepSet(en, of({ request: 'someday' }))).toBe(stepSet(en, INTEGRATE_OWNER));
 
-    expect(stepSet(zh, INTEGRATE_OWNER)).toBe('把已落地的分支集成进它的主线，由你发起，不跑关卡；冲突退回它的会话。');
+    expect(stepSet(zh, INTEGRATE_OWNER)).toBe('把已落地的分支集成进它的主线，由你发起，不跑检查项；冲突退回它的会话。');
     expect(stepSet(zh, of({ request: 'done', gates: 'declared', conflicts: 'hold' }))).toBe(
-      '把已落地的分支集成进它的主线，委托完成时发起，跑它声明的关卡；冲突会被搁置。');
+      '把已落地的分支集成进它的主线，委托完成时发起，跑它声明的检查项；冲突会被暂停。');
     expect(stepSet(zh, of({ request: 'steward', gates: 'declared', conflicts: 'session' }))).toBe(
-      '把已落地的分支集成进它的主线，由管家发起，跑它声明的关卡；冲突退回它的会话。');
+      '把已落地的分支集成进它的主线，由管家发起，跑它声明的检查项；冲突退回它的会话。');
   });
 
   it('keeps the words of the kinds beside it', () => {
