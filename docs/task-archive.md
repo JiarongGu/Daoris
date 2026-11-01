@@ -22529,3 +22529,7 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 ## WORKFLOWEDIT1a — the step editor's reads (2026-11-01)
 
 **Outcome** 2026-11-01: `WORKFLOW_LIST`, `WORKFLOW_SHOW` and `WORKFLOW_PALETTE` (`WorkflowEditRoutes`, told by event, publishing nothing) read the saved workflows, one version as saved and what a step graph may hold; `WorkflowPalette` and `NodeOptionFields` build the palette from `NodeAuthorities`, `WireKinds` and the land, integrate and request choices, never from land's `accept`; the page's `bridge/repositories/workflowEdit.ts` types them. Tests `WorkflowPaletteTests`, `DriverModuleWorkflowTests`, `workflowEdit.test.ts`.
+
+## ROLESTEP1b — a step names the role that takes it, and the start plan takes that role (2026-11-01, FABRIC2)
+
+**Outcome** 2026-11-01: `claimed` and `opinion` take an option `role`; the bind judges it by `RoleCatalog.Named`, keeps it with its revision (`WorkflowRunBinding.Roles`, `roles` in the run's file) or makes it the binding's problem; the quest's start walks the work step's role and the second opinion's reviewer the opinion step's. An older build runs such a version on each work's own role (D173's note). Tests `WorkflowRunBindingTests`, `StartRoleTests`, `ReviewerChoiceTests`.
