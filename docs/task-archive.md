@@ -22602,3 +22602,9 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 ## WORKFLOWEDIT1d — the palette and the draft carry outputsOn, the press census lists workflow changes, and Ask Daoris proposes default-all (2026-11-01, FABRIC2)
 
 **Outcome** 2026-11-01: `PaletteStep.OutputsOn` and the draft's `StepChoice.outputsOn` copy a plugin step's `outputsOn` into the node `addStep` writes, so a release workflow composed in the window keeps `release` on `release` only; `PersonPresses.Presses` lists `workflow changes` over `WORKFLOW_NODE`; the `role` kind has a `default-all` door (id `*`, no revision) in the driver's judge, the service's writer and `role_propose`, with the room's text and goldens. Tests `WorkflowPaletteTests`, `graphDraft.test.ts`, `WorkflowNodeThroughInstanceTests`, `HelpRoleProposalsTests`, `HelpRoleProposalTests`.
+
+## INDEXAUTO1 — the code index regenerated with the commit that stales it (2026-11-01)
+
+- [ ] **INDEXAUTO1 — the code index regenerated with the commit that stales it** (tools; 2026-11-01). On main a fix to `NodeGraphs.cs` was committed without `node tools/orient-index.mjs`, and main's next CI failed at `orient-index` alone, costing a run. Contract: a commit that stales `docs/index/` regenerates it in the same commit (a commit hook the repository installs, or the merge's own step), so no merge or fix leaves the index stale. Proof: a hook test over a fixture repository, and a commit that changes a source file carrying its regenerated outline.
+
+**Outcome** 2026-11-01: `tools/index-hook.mjs` installs a pre-commit hook (`prepare`, after merge-rows') that runs orient-index's write and stages `docs/index/`; it skips a docs-only commit, a partly staged file and `DAORIS_INDEX_HOOK=0`, and a tool failure aborts the commit. Test `tools/index-hook.test.mjs`; the sentence is in `docs/development.md`.
