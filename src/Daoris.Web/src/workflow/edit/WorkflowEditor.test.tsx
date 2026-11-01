@@ -4,6 +4,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { openDraftNow } from '../../help/openDraft';
 import i18n from '../../locales/i18n';
 import { EDIT_EVENT } from '../../menus/editing';
 import { RELEASE_GRAPH as SHIPPED_RELEASE } from '../graphFixtures';
@@ -353,6 +354,26 @@ describe('removing, moving, and every change undone', () => {
     await user.keyboard('{Control>}v{/Control}');
     expect(live()).toHaveTextContent('Pasted The work; ways to steps not copied left out: 1.');
     expect(within(screen.getByRole('list', { name: 'How the steps go on' })).getAllByRole('listitem', { name: 'The work' })).toHaveLength(2);
+  });
+});
+
+// FLOWCHART2d's half (D223 §4, §8.3): Ask Daoris is told the draft open in the editor, as the editor registers it while it is mounted.
+describe('the draft Ask Daoris is told', () => {
+  it('follows the draft, its place, source, save target and selected step, and is let go when the editor closes', async () => {
+    const { unmount } = render(wrap(<Editor />));
+    await user.click(await screen.findByRole('button', { name: 'Begin from Merge workflow' }));
+    expect(openDraftNow()).toMatchObject({ place: 'engine', source: 'preset:merge-after-accept', workflow: 'merge-after-accept-2', base: null, selected: null });
+    expect(openDraftNow()!.graph.nodes).toHaveLength(7);
+
+    await user.click(await screen.findByRole('button', { name: 'Add a step between What the line holds and Your review' }));
+    await user.click(await screen.findByRole('option', { name: /^The checks/ }));
+    await waitFor(() => expect(openDraftNow()!.graph.nodes).toHaveLength(8));
+    expect(openDraftNow()).toMatchObject({ selected: 'check' });
+    await user.type(screen.getByRole('textbox', { name: 'Its name' }), 'Checked');
+    expect(openDraftNow()).toMatchObject({ workflow: 'checked' });
+
+    unmount();
+    expect(openDraftNow()).toBeNull();
   });
 });
 

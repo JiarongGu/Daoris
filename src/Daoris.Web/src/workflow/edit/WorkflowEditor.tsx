@@ -4,6 +4,7 @@ import { Button, Drawer, Inline, Prose, SkeletonRows } from '../../design/ui';
 import { useWidth } from '../../design/useWidth';
 import { isComposing } from '../../lib/composing';
 import { useDebounced } from '../../lib/useDebounced';
+import { registerOpenDraft } from '../../help/openDraft';
 import { sentence } from '../../locales/format';
 import { EDIT_EVENT } from '../../menus/editing';
 import { isTextField } from '../../menus/press';
@@ -55,6 +56,9 @@ export type WorkflowEditorProps = WorkflowEditorBridge & {
   place: { repository: string } | { workspace: string };
   /** The steps it opens on, a graph as a version holds it, and the saved workflow and version they are, where they are one. */
   startFrom?: { graph: unknown; id?: string; name?: string; base?: number | null };
+  /** The route and the pipeline the place opened it for, where the caller knows them: Ask Daoris is told them with the draft. */
+  route?: string | null;
+  pipeline?: 'development' | 'verification' | null;
   onClose?: () => void;
 };
 
@@ -119,7 +123,8 @@ export function WorkflowEditor(props: WorkflowEditorProps) {
 
 /** The editor once its reads are answered, told whether its region holds the inspector beside the chart. */
 function Composing({
-  list, palette, roles, shown, onShow, judged, judging, onJudge, saving, onSave, using, onUse, place, startFrom, onClose, wide,
+  list, palette, roles, shown, onShow, judged, judging, onJudge, saving, onSave, using, onUse, place, startFrom, route = null, pipeline = null,
+  onClose, wide,
 }: WorkflowEditorProps & { list: WorkflowListAnswer; palette: WorkflowPaletteAnswer; wide: boolean }) {
   const { t, i18n } = useTranslation();
   const headId = useId();
@@ -394,6 +399,15 @@ function Composing({
     if (wire?.from && nodeOf(wire.from)) return wire.from;
     return problem.node && nodeOf(problem.node) ? problem.node : null;
   };
+  // Ask Daoris is told the draft open here (FLOWCHART2d; D223 §8.3), registered while the editor is mounted and let go when it closes.
+  const placeName = 'repository' in place ? place.repository : place.workspace;
+  const source = target.base !== null ? `${target.id}@v${target.base}` : target.from ? `preset:${target.from}` : 'new';
+  const problemsKey = JSON.stringify(problems);
+  useEffect(() => registerOpenDraft({
+    place: placeName, graph, workflow: saveId || null, base: target.base, source, route, pipeline, selected,
+    problems: JSON.parse(problemsKey) as GraphProblem[],
+  }), [placeName, graph, saveId, target.base, source, route, pipeline, selected, problemsKey]);
+
   const atStep = (id: string) => problems.filter((problem) => problem.node === id && !(problem.wire && wireOf(problem.wire)));
   const atWire = (id: string) => problems.filter((problem) => problem.wire === id);
   const holdRefused = draft.nodes.some((node) => isHoldKind(node.kind) && problems.some((problem) => stepOf(problem) === node.id));
