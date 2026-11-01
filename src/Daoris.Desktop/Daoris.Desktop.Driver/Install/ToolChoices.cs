@@ -124,6 +124,34 @@ public static class ToolChoices
         return version;
     }
 
+    /// <summary>
+    /// A setting Daoris's git carries, set or cleared (TOOLS6, D121 §2.5): a key on the allow-list, and a value set only where the git
+    /// Tools resolves is not known older than <see cref="GitVersions.Setting"/>, asked its version once per change of it. Clearing is
+    /// never refused. The file it travels in is written at the next start (<see cref="GitGlobalFile"/>).
+    /// </summary>
+    /// <param name="ask">A git's answer to <c>--version</c>: <see cref="GitVersions.AskAsync"/>, or a test's.</param>
+    /// <returns>The git's version where it was asked, else null.</returns>
+    /// <exception cref="ToolRefusal"><see cref="ToolRefusal.GitTooOld"/>, naming the version and its floor; nothing is written.</exception>
+    /// <exception cref="DriverException">A key off the allow-list, or a <c>tools.json</c> this build cannot write.</exception>
+    public static async Task<Version?> SetGitAsync(
+        string home, string key, string? value, Func<string, CancellationToken, Task<string?>> ask, CancellationToken ct)
+    {
+        if (Tools.GitKeyProblem(key) is { } problem) throw new DriverException($"{problem} — nothing was written.");
+        Version? version = null;
+        if (value is not null)
+        {
+            version = await GitVersions.OfAsync(Tools.Resolve(home, "git").File, ask, ct).ConfigureAwait(false);
+            if (GitVersions.SettingRefusal(version) is { } old)
+            {
+                throw new ToolRefusal(ToolRefusal.GitTooOld, $"`{key}` was not set: {old}.",
+                    ("key", key), ("version", version!.ToString()), ("floor", GitVersions.Setting.ToString()));
+            }
+        }
+
+        Tools.SetGit(home, key, value);
+        return version;
+    }
+
     /// <summary>A resource location added (§3.3), refused where it is no address Daoris reads from.</summary>
     /// <returns>False where it is already listed, and nothing is written.</returns>
     /// <exception cref="ToolRefusal"><see cref="ToolRefusal.Location"/>; nothing is written.</exception>

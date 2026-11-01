@@ -20,7 +20,8 @@ namespace Daoris.Driver;
 /// shell characters (<see cref="Bare"/>), which git starts directly, with no <c>sh</c>; where the install's path holds one, by
 /// <c>GIT_SSH</c>, which git starts whole but which a repository's own <c>core.sshCommand</c> outranks (§4.2). The remote helper is
 /// reached by <c>insteadOf</c> in the command scope, appended after any the start already holds.</para>
-/// <para>The configuration file of §4.1 (TOOLS6) and the identity's author are GITAUTH1c's; they join here.</para>
+/// <para>The configuration file of §4.1 (TOOLS6) is handed beside these by <see cref="GitGlobalFile"/>, through the same seam; the
+/// identity's author by <c>GitAuthor</c> at a session's start and a squash.</para>
 /// </remarks>
 public static class GitWiring
 {
@@ -47,7 +48,7 @@ public static class GitWiring
     public static readonly IReadOnlyList<string> SessionTokens = ["GH_TOKEN", "GITHUB_TOKEN", "GH_ENTERPRISE_TOKEN", "AZURE_DEVOPS_EXT_PAT"];
 
     /// <summary>The ssh door's file in the install's <c>app/bin/</c> (§4.2).</summary>
-    public const string SshDoor = "daoris-git-ssh.exe";
+    public const string SshDoor = GitGlobalFile.SshDoor;
 
     /// <summary>The remote helper's file in the install's <c>app/bin/</c>, which git runs for a <c>daoris::</c> address (§4.3).</summary>
     public const string RemoteHelper = "git-remote-daoris.exe";
