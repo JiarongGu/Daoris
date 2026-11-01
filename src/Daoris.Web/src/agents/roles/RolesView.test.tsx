@@ -281,6 +281,8 @@ describe('The Agents place, Roles mode', () => {
     const user = userEvent.setup();
 
     await user.click(await screen.findByRole('button', { name: 'Remove Build' }));
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_ROLE', expect.anything());
+    await user.click(await screen.findByRole('button', { name: 'Remove role' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_ROLE', { payload: { change: 'remove', id: 'build', revision: 0 } });
     expect(await screen.findByText(/a role must take it on the machine/)).toBeTruthy();
