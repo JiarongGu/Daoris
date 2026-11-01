@@ -388,6 +388,8 @@
   "work.sitting.SourceReopened_withdrawn": "委托 `#{{quest}}` 基于 `#{{other}}` 的工作，而你重新打开了那项工作：它已撤回，在你选择基于新的工作继续或放弃它之前，不会启动。",
   "work.sitting.SourceReopened_held": "委托 `#{{quest}}` 基于 `#{{other}}` 的工作，而你重新打开了那项工作：它已搁置，在你选择基于新的工作继续或放弃它之前，不会被接续。",
   "work.sitting.TransientHeld_transient": "它上一个会话的服务方一直出错：它在等你的话或「重试」。",
+  "work.sitting.PolicyHeld_policy-ask": "它的角色策略在把这项委托改用其他选择之前先问你：「重试」表示同意改用一次。",
+  "work.sitting.PolicyHeld_moves-bound": "这项委托今天已按其角色策略改用其他选择达到上限：「重试」表示再同意一次。",
   "work.sitting.Stopped_steward": "管家停止了会话 `{{session}}`；管家或所有者「重试」会让它继续。",
   "work.sitting.Blocked_checkout": "它之前的工作在你的检出里，所以由你来让它继续。",
   "work.scope.ask": "需求 #{{id}}",

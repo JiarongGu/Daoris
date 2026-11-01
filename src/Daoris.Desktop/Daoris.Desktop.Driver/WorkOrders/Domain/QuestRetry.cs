@@ -31,6 +31,9 @@ public static class QuestRetry
                 // stop's session-keyed release, so the same record's next exhaustion is held again. No mark: an outage is not a strike.
                 return new(quest, RetryDecision.Released, exhausted.Session,
                     config => config.WithTransientReleased(quest, exhausted.Session, ended));
+            case { Verdict: StartVerdict.PolicyHeld, HeldBy: { } held }:
+                // STAFFPOLICY1e (§11 point 7): the yes to a role policy's ask or bound: one approval, one move, written beside the moves.
+                return new(quest, RetryDecision.Approved, held.Session, config => config, held.Actor ?? RoleWork.Build);
             case { Verdict: StartVerdict.Paused, PausedBy: { } pause }:
                 // A pause is the reason before a stop and the strikes (PAUSE1b, D132 §6.1): Resume moves it, and nothing is written.
                 throw pause.Scope == WorkScope.Ask

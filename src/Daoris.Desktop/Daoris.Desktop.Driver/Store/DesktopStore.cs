@@ -593,6 +593,26 @@ public sealed class DesktopStore : IDisposable
             );
             CREATE INDEX role_starts_role ON role_starts (role, at);
             """)),
+
+        // STAFFPOLICY1e: a line's moves to another choice and the person's approvals of a policy's ask (the staff policy design §4.2, §11 point 5),
+        // Roles'. Keyed by the line's identity (a quest's id, a conversation's), so a restart keeps the count and an in-start replacement, which
+        // writes no part link, is counted beside a part's. No raise: an older build reads no table it does not know.
+        new(17, PolicyWriter, write => write.Execute(
+            """
+            CREATE TABLE role_moves (
+              id        INTEGER PRIMARY KEY AUTOINCREMENT,
+              line      TEXT NOT NULL,
+              role      TEXT NOT NULL,
+              kind      TEXT NOT NULL,
+              session   TEXT,
+              from_choice TEXT,
+              to_choice TEXT,
+              condition TEXT,
+              action    TEXT,
+              at        TEXT NOT NULL
+            );
+            CREATE INDEX role_moves_line ON role_moves (line, at);
+            """)),
     ];
 
     /// <summary>

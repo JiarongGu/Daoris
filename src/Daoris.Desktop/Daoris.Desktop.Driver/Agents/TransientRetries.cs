@@ -16,12 +16,13 @@ internal static class TransientRetries
     internal static TransientRetry For(
         AdapterSet adapters, ISessionAdapter adapter, HarnessRoster harnesses, ServiceClient service, ISessionEvents events,
         ISessionOutput? output, SessionWatch watch, MachineLog? log, string sessionId, string questId, string? profile, TimeProvider clock,
-        Func<CancellationToken, Task<bool>> wanted)
+        Func<CancellationToken, Task<bool>> wanted, int tries = 5)
     {
         var keepGoOn = AgentCourse.Current.RetryGoOn(service, sessionId);
         return new TransientRetry
         {
             Clock = clock,
+            Limit = tries,
             Read = refused =>
             {
                 var read = AgentErrors.Read(adapters, adapter, DoorFailure.OfPrompt(refused), clock.GetUtcNow(), harnesses.Zone);
