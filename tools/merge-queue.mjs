@@ -842,6 +842,12 @@ export function scopedSet({ gates, reached, standing = new Set(), knownRed = new
       deferred.push({ name, why: 'a browser spec or a rehearsal: deferred to the background run, which the install waits for' });
       continue;
     }
+    // The owner's direction (2026-11-01): main moves on the fast tiers, and the Process and git halves run on main after it, in the
+    // CI run the install waits for, fixed forward when red. A half holding a known red still runs before the landing.
+    if ((kind === 'process' || kind === 'git') && !knownRed.has(name)) {
+      deferred.push({ name, why: 'a Process or git half: deferred to the CI run on main, which the install waits for' });
+      continue;
+    }
     if (recordsOnly && name === 'service') {
       deferred.push({ name, why: "a base moved by records only: the service suite's scan of the documents is deferred to the background run" });
       continue;
