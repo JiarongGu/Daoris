@@ -392,6 +392,9 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     // GITAPP2j (D204; the git-writes design §5): the bytes a file step of the act journal replaces and writes, one folder per act, let go of
     // with its record; data/ (backed up), since they are the person's files as they stood.
     public static readonly HomeEntry ActFiles = new("act-files", HomeCategory.Data, "data/act-files/*", "data/act-files/*");
+    // AGENTSPLACE1b2 (the Agents-place design §4): a place's apply written before its first effect, one file per plan's digest, each operation's
+    // outcome kept there so a restart settles it; data/ (backed up), since it says what was done to the person's configuration.
+    public static readonly HomeEntry PlaceReceipts = new("place-receipts", HomeCategory.Data, "data/place-receipts", "data/place-receipts");
     public static readonly HomeEntry Keys = new("keys", HomeCategory.Profiles, "profiles/keys.json", "keys.json");
     public static readonly HomeEntry Remotes = new("remotes", HomeCategory.Profiles, "profiles/remotes.json", "remotes.json");
     public static readonly HomeEntry AgentHomes = new("agent-homes", HomeCategory.Profiles, "profiles/agents/*/*", "harnesses/*/*");
@@ -448,7 +451,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
         PluginApprovals, Usage,
         Landings, SessionBranches, LinesMoved, OverlapsTold, RegistryFollowed, Abandoned, Update, Knowledge, DesktopDb, Sessions, Helpers, Partners, Handed, Setup,
         Workflows, HelpProposals, ConfiguredAccess, OpinionGates, OpinionDues, BrowserSettings, BrowserFavorites, HomeId, Brainstorms,
-        UsageHistory, Keeping, Notices, GitIdentities, StandingConfirmation, AgentOffers, PipeWaiting, ActFiles,
+        UsageHistory, Keeping, Notices, GitIdentities, StandingConfirmation, AgentOffers, PipeWaiting, ActFiles, PlaceReceipts,
         Keys, Remotes, AgentHomes, BrowserEngine, BrowserEdge, EdgeCookies, GitKeys, GitSshConfig, GitKnownHosts, GitConfig, Window, PipeSent,
         Trees, HelpRoom, HelpRooms, Intake, OpinionPackets, QuestFiles, AskFiles, SessionFiles, Proof, UsageRead, BrainstormRooms, RoleRooms,
         Toolchain, ToolVersions, Bin,

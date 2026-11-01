@@ -412,6 +412,21 @@ public sealed class DaorisHomeTests
     }
 
     /// <summary>
+    /// AGENTSPLACE1b2 (the Agents-place design §4): a place's apply receipts, a data folder of its own after the act files, as the three
+    /// twins hold it. New since the layout, so its old place is its new one.
+    /// </summary>
+    [Fact]
+    public void The_place_receipts_are_a_data_folder_after_the_act_files()
+    {
+        Assert.Same(HomeEntry.PlaceReceipts, HomeEntry.Named("place-receipts"));
+        Assert.Equal(
+            (HomeCategory.Data, "data/place-receipts", "data/place-receipts"),
+            (HomeEntry.PlaceReceipts.Category, HomeEntry.PlaceReceipts.New, HomeEntry.PlaceReceipts.Old));
+        var table = HomeEntry.Table.ToList();
+        Assert.Equal(table.IndexOf(HomeEntry.ActFiles) + 1, table.IndexOf(HomeEntry.PlaceReceipts));
+    }
+
+    /// <summary>
     /// CONFIRMWAIT1 (the confirm-wait design §15.2 item 6): the keys of a terminal's sent presses, kept as long as the press's card lives, a
     /// profiles folder after the window's, as the three twins hold it. A file that holds a key is a sign-in (D172 point 3), and never under
     /// <c>run/</c>, which anyone may clear while Daoris is closed. New since the layout, so its old place is its new one.
