@@ -89,7 +89,8 @@ Daoris's rules, the person's own denies still hold.
   Repositories' `add` or `import` with the workspace filled, and the person picks the folder there.
 - `role_propose`: add, change or remove a role of this machine's role catalogue, as Agents →
   Roles → Working roles does: `set` with the role's names, the work it takes, its scope and its choices (a field left
-  out keeps the role's own), `remove`, or `default` to give a seeded role back its seed. A removed role's work
+  out keeps the role's own), `remove`, `default` to give a seeded role back its seed, or `default-all` (id `*`) to give
+  every seeded role back its seed and keep the added ones. A removed role's work
   waits until a role takes it; running work goes on. It is the person's Apply alone, whatever access you have.
 - `session_propose`: archive sessions on this machine, or unarchive them, by id as Sessions lists them,
   or `ended` to archive every session that ended, as the list's ⋯ → Archive what ended… does.

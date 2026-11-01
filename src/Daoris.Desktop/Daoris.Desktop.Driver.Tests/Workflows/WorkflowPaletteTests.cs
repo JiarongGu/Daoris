@@ -62,10 +62,14 @@ public sealed class WorkflowPaletteTests
         var find = new NodeDeclaration("find", "local-release/find", 1, NodeReach.Performed)
         {
             Outcomes = ["release", "none"], Outputs = new Dictionary<string, string> { ["release"] = "local-release/release@1" }, Evidence = "local-release/receipt@1",
+            OutputsOn = new Dictionary<string, IReadOnlyList<string>> { ["release"] = ["release"] },
         };
         var step = Assert.Single(Assert.Single(WorkflowPalette.Build([("local-release", [find])]).Plugins).Steps);
         Assert.Equal((1, "local-release/receipt@1"), (step.Version, step.Evidence));
         Assert.Equal(["release", "none"], step.Outcomes);
+        // DECIDE1d: the output a step carries on one outcome alone is said, so a graph composed from the palette keeps it there.
+        Assert.Equal(["release"], Assert.Single(step.OutputsOn, each => each.Key == "release").Value);
+        Assert.Empty(Assert.Single(WorkflowPalette.Build([("local-release", [find with { OutputsOn = new Dictionary<string, IReadOnlyList<string>>() }])]).Plugins).Steps[0].OutputsOn);
         Assert.Contains(WireKinds.When, step.Leaves);
         Assert.Contains(WireKinds.Failed, step.Leaves);
         Assert.DoesNotContain(WireKinds.Rejected, step.Leaves);

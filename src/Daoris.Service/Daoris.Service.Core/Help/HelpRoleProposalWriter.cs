@@ -4,14 +4,19 @@ namespace Daoris.Knowledge;
 
 /// <summary>
 /// The <c>role</c> kind's writer (FOUNDATION1y-i, the foundation design §2.7): a working role of the role catalogue added, changed,
-/// removed or given back its seed, the change <c>daoris driver role</c> and Agents → Roles → Working roles make. Its door is
+/// removed or given back its seed (one role's, or every seeded role's at once), the change <c>daoris driver role</c> and Agents → Roles → Working roles make. Its door is
 /// the change, its target the role's id, and its own <c>press</c> the record and choices as the driver's role door takes them, with the
 /// revision Ask Daoris read. Whether the judge takes it is the driver's to say, before the person sees it.
 /// </summary>
 internal sealed class HelpRoleProposalWriter(HelpProposalFile file)
 {
     /// <summary>The changes a role proposal makes, as the driver's role door reads them.</summary>
-    public static readonly IReadOnlyList<string> Doors = ["set", "remove", "default"];
+    public static readonly IReadOnlyList<string> Doors = ["set", "remove", "default", "default-all"];
+
+    /// <summary>DEFAULTCONFIG1b's <i>Restore all role defaults</i>: every seeded role given back its seed, added roles kept. It names no one role, so its id is <c>*</c>.</summary>
+    private const string AllDoor = "default-all";
+
+    private const string AllId = "*";
 
     /// <summary>
     /// Write one proposal to change the role catalogue: <paramref name="change"/> of <paramref name="id"/>; for a set, its names, the work
@@ -27,10 +32,13 @@ internal sealed class HelpRoleProposalWriter(HelpProposalFile file)
         var named = Blank(id);
         var (kind, place) = Scope(Blank(scope));
         var entries = choices?.Select(Entry).ToList();
-        var refused = door is null || !Doors.Contains(door) ? "a role's change is `set`, `remove` or `default`."
+        var all = door == AllDoor;
+        var refused = door is null || !Doors.Contains(door) ? "a role's change is `set`, `remove`, `default` or `default-all`."
             : named is null ? "a role's change names the role's id."
-            : Word(named, "a role's id")
-              ?? (door != "set" && (nameEn ?? nameZh ?? scope) is not null || door != "set" && (takes?.Count > 0 || choices?.Count > 0)
+            : all && named != AllId || !all && named == AllId ? $"`{AllId}` is the id of `{AllDoor}` alone, which names no one role, and `{AllDoor}` takes no other."
+            : (all ? null : Word(named, "a role's id"))
+              ?? (all && revision is not null ? $"`{AllDoor}` names no one role, so it has no revision to read."
+                  : door != "set" && (nameEn ?? nameZh ?? scope) is not null || door != "set" && (takes?.Count > 0 || choices?.Count > 0)
                   ? $"`{door}` names the role alone: only `set` carries its names, work, scope and choices."
                   : scope is not null && kind is null ? $"`{scope}` is not a scope: `machine`, `workspace:<id>` or `repository:<id>`."
                   : entries?.FirstOrDefault(entry => entry is null) is not null || entries?.Count > 4

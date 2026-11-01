@@ -37,8 +37,22 @@ public sealed class HelpRoleProposalTests : HelpProposalBoxFixture
         Assert.Equal(("remove", "night", 3L), (written.GetProperty("door").GetString(), written.GetProperty("target").GetString(), written.GetProperty("press").GetProperty("revision").GetInt64()));
     }
 
+    [Fact]
+    public void A_restore_of_every_default_names_no_role_and_is_written_with_the_id_the_door_stands_for()
+    {
+        var (id, message) = Box().ProposeRole("default-all", "*", null, null, null, null, null, null, "the person asked", "h1", Now);
+
+        var written = Written(id!);
+        Assert.Equal(("role", "default-all", "*"), (written.GetProperty("kind").GetString(), written.GetProperty("door").GetString(), written.GetProperty("target").GetString()));
+        Assert.False(written.GetProperty("press").TryGetProperty("revision", out _));
+        Assert.Contains($"Proposed `#{id}`", message);
+    }
+
     [Theory]
-    [InlineData("rename", "night", null, null, "a role's change is `set`, `remove` or `default`.")]
+    [InlineData("rename", "night", null, null, "a role's change is `set`, `remove`, `default` or `default-all`.")]
+    [InlineData("default-all", "night", null, null, "is the id of `default-all` alone")]
+    [InlineData("default", "*", null, null, "is the id of `default-all` alone")]
+    [InlineData("default-all", "*", "Night", null, "names the role alone")]
     [InlineData("remove", "night", "Night", null, "`remove` names the role alone")]
     [InlineData("set", "night", null, "planet:x", "is not a scope")]
     [InlineData("set", " ", null, null, "names the role's id")]
