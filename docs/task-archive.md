@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## LANDNODE1b2 — the git adapter (2026-11-01)
+
+> **1b2, the git adapter** (driver; `docs/2026-11-01-land-node-design.md` §3 and §8 row 4): `TreeLands` from the explicit intent; `RefTransaction` under GITLOCK and LANDRACE1. Proof: moved tips, collisions, squash, containment, and a ref written before its record across a crash. After b.
+
+**Outcome** 2026-11-01: `TreeLands.LandAsync` takes a `TreeDelivery` (the store and its claim). The intent's method, branch, line and pinned tip choose; of the live rule, only its tidy stays. Each effect is written ahead (prepared, ref written, recorded) and read back after (`Workplace/TreeDeliveries.cs`). A refusal withdraws the preparation and leaves the delivery unresolved; merge, branch and integrate settle delivered; push and pull request stop at the record. Nothing calls it yet but `LandDeliveryGitTests`. Detail: D204's note of this date.
+
 ## LANDNODE1b — the delivery record and its intent (2026-11-01)
 
 > **1b, the delivery record and its intent** (driver, store; `docs/2026-11-01-land-node-design.md` §3, §4 and §8 row 3): the `deliveries` table under the raised writer stamp, the delivery key, the frozen intent with its authorization, and the write-ahead phase entries; the rollback refused while one is unresolved. Proof: concurrent starts make one delivery; an older writer's store write refused; a rollback refused with one open. After a.

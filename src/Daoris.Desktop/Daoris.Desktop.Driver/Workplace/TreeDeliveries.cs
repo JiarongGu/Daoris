@@ -20,10 +20,6 @@ public sealed record TreeDelivery(DeliveryStore Store, DeliveryClaim Claim)
 /// (GITLOCK1), inside the tree's landing hold (LANDRACE1) the landing took first; a merge's line is moved by the promotion's effect, which
 /// takes that lock itself. The landing's ownership is its landing record: no act-journal mark is made.
 /// </summary>
-/// <remarks>
-/// A refusal before any effect withdraws the preparation and leaves the delivery unresolved, so it is tried again or stopped; the delivery
-/// is settled delivered once its method's reaching phase is done. A push and a pull request stop at the record, for their plugin's phases.
-/// </remarks>
 internal sealed class TreeDelivering
 {
     private static readonly Regex FullId = new("^(?:[0-9a-f]{40}|[0-9a-f]{64})$", RegexOptions.CultureInvariant);
@@ -193,7 +189,8 @@ internal sealed class TreeDelivering
 
     /// <summary>
     /// The landing ended as <paramref name="landed"/> says: a preparation still standing is withdrawn with the landing's words, a refusal having
-    /// made nothing; the delivery settled delivered once its method's reaching phase is done.
+    /// made nothing, and the delivery stays unresolved, to be tried again or stopped; it is settled delivered once its method's reaching phase
+    /// is done, so a push and a pull request stay open for their plugin's phases.
     /// </summary>
     public TreeLanding Close(TreeLanding landed)
     {
