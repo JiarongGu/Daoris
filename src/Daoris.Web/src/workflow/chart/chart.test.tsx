@@ -67,7 +67,7 @@ describe('StepNode', () => {
     expect(item).toHaveAttribute('data-refused', 'true');
     const words = within(item).getByText('Its role does not do this step\'s work.');
     expect(words.closest('[data-flow-refusal]')?.className).toContain('text-ink-danger');
-    expect(item).toHaveAccessibleDescription('Next: Review. Refused: Its role does not do this step\'s work.');
+    expect(item).toHaveAccessibleDescription('Next: Review. To put right: Its role does not do this step\'s work.');
   });
 
   it('wears no refusal mark on a step the judgement holds, and one line for each refusal it has', () => {
