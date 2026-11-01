@@ -99,6 +99,11 @@ export type FlowEdge = {
    * ink, since an edge wears no status hue (D186 point 6).
    */
   problem?: string;
+  /**
+   * Words said to a reader in the source's description and drawn nowhere (CANVAS1b): a refusal's sentence, which as a line in the
+   * source's foot would move every rank below it.
+   */
+  note?: string;
 };
 
 export type FlowProps = {
@@ -881,6 +886,7 @@ function describe(
   const next = out.filter((edge) => !backs.has(edge.id)).map((edge) => t('flow.move', { node: title(edge.to), says: edge.says }));
   if (next.length > 0) sentences.push(t('flow.next', { moves: next.reduce((first, second) => t('flow.moves', { first, second })) }));
   for (const edge of out) if (backs.has(edge.id)) sentences.push(t('flow.back', { node: title(edge.to), says: edge.says }));
+  for (const edge of out) if (edge.note) sentences.push(edge.note);
   sentences.push(...(note?.after ?? []));
   return sentences.length === 0 ? '' : sentences.reduce((first, second) => t('flow.join', { first, second }));
 }

@@ -39,7 +39,14 @@ type Line = { from: Point; to: Point; over: { x: number; y: number; w: number; h
  */
 export function useConnection(
   connect: Connect | null | undefined, pane: RefObject<HTMLElement | null>, pan: (dx: number, dy: number) => void,
-): { down: (event: PointerEvent) => void; move: (event: PointerEvent) => void; up: (event: PointerEvent) => void; lost: () => void; overlay: ReactNode } {
+): {
+  down: (event: PointerEvent) => void; move: (event: PointerEvent) => void; up: (event: PointerEvent) => void; lost: () => void;
+  /** Whether a way is being drawn: the view is the person's meanwhile, and no focus the way begins moves it. */
+  active: () => boolean;
+  /** Whether the press just ended was dragged: a plain press on a port is followed by the view, a drawn line is not. */
+  dragged: () => boolean;
+  overlay: ReactNode;
+} {
   const latest = useRef(connect);
   latest.current = connect;
   const press = useRef<{ pointerId: number; port: string; source: HTMLElement; from: Point; dragging: boolean } | null>(null);
@@ -64,7 +71,8 @@ export function useConnection(
     };
   };
 
-  const clear = () => { press.current = null; setLine(null); setDrift(null); };
+  const dragged = useRef(false);
+  const clear = () => { dragged.current = press.current?.dragging ?? false; press.current = null; setLine(null); setDrift(null); };
 
   const down = (event: PointerEvent) => {
     const now = latest.current;
@@ -166,5 +174,5 @@ export function useConnection(
     </>
   );
 
-  return { down, move, up, lost, overlay };
+  return { down, move, up, lost, active: () => press.current !== null, dragged: () => dragged.current, overlay };
 }

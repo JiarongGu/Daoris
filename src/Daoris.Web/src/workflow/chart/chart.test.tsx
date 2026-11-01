@@ -250,6 +250,58 @@ describe('the release workflow through the components', () => {
   });
 });
 
+// CANVAS1b (D224): a chart read selects a step too, one at a time; a press with Ctrl or Shift is told to the editor, which alone chooses many.
+describe('selection', () => {
+  const chart = (props: Partial<React.ComponentProps<typeof FlowChart>> = {}) => {
+    const flow = graphFlow(t, drawnFromJson(t, i18n, RELEASE_GRAPH), { label: 'How work moves' });
+    return render(<FlowChart label={flow.label} nodes={flow.nodes} edges={flow.edges} entries={flow.entries} sections={flow.sections} track={flow.track} {...props} />);
+  };
+
+  it('outlines the step pressed in a chart read, one at a time, and releases it on a press with Ctrl', async () => {
+    const user = userEvent.setup();
+    chart({ canvas: 'display' });
+    const review = screen.getByRole('listitem', { name: 'Your review' });
+    const checks = screen.getByRole('listitem', { name: 'The checks' });
+    expect(review).not.toHaveAttribute('data-selected');
+    await user.click(review);
+    expect(review).toHaveAttribute('data-selected', 'true');
+    await user.click(checks);
+    expect(checks).toHaveAttribute('data-selected', 'true');
+    expect(review).not.toHaveAttribute('data-selected');
+    await user.keyboard('{Control>}');
+    await user.click(checks);
+    await user.keyboard('{/Control}');
+    expect(checks).not.toHaveAttribute('data-selected');
+  });
+
+  it('selects nothing in a chart drawn inline, with no canvas', async () => {
+    chart();
+    const review = screen.getByRole('listitem', { name: 'Your review' });
+    await userEvent.click(review);
+    expect(review).not.toHaveAttribute('data-selected');
+    expect(review.className).not.toContain('cursor-pointer');
+  });
+
+  it('tells the editor how a press selects: plain, with Ctrl (toggle) and with Shift (add), and outlines every step chosen', async () => {
+    const onSelect = vi.fn();
+    const flow = graphFlow(t, drawnFromJson(t, i18n, RELEASE_GRAPH), { label: 'How work moves' });
+    render(<FlowChart label={flow.label} nodes={flow.nodes} edges={flow.edges} entries={flow.entries} sections={flow.sections} track={flow.track}
+      edit={{ selected: 'review', chosen: new Set(['check']), onSelect, onBox: vi.fn() }} canvas="edit" />);
+    const check = screen.getByRole('listitem', { name: 'The checks' });
+    expect(screen.getByRole('listitem', { name: 'Your review' })).toHaveAttribute('data-selected', 'true');
+    expect(check).toHaveAttribute('data-selected', 'true');
+    const user = userEvent.setup();
+    await user.click(check);
+    expect(onSelect).toHaveBeenLastCalledWith('check');
+    await user.keyboard('{Control>}');
+    await user.click(check);
+    await user.keyboard('{/Control}{Shift>}');
+    await user.click(check);
+    await user.keyboard('{/Shift}');
+    expect(onSelect.mock.calls.map((call) => call.slice(1))).toEqual([[], ['toggle'], ['add']]);
+  });
+});
+
 // FLOWCHART2b (D223 §3): the chart as the editor draws it. A step pressed is selected; a port pressed or dragged from starts its way, which a
 // step that can take it picks or open ground gives a new step; a ◎ and each way the editor offers one wear a ＋.
 describe('the chart in the editor', () => {

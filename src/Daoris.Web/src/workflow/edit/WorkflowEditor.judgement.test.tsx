@@ -157,10 +157,10 @@ describe('a refusal where it is', () => {
     expect(work.parentElement!.querySelector('[data-flow-mark-kind="refused"]')).toHaveTextContent('To put right');
     expect(work).toHaveAccessibleDescription(/To put right: Its role does not do this step's work\./);
 
-    // The way back at its way: the source's foot says it, and the chip wears a word beside the ⚠.
+    // The way back at its way: the source's description says it (its foot gains no line), and the chip wears a word beside the ⚠.
     expect(refusedSteps().map((each) => each.getAttribute('data-flow-node'))).toEqual(['work']);
     const review = step('Your review');
-    expect(within(review).getByRole('button', { name: /to put right: A way back goes only to a step that comes before this one\./ })).toBeInTheDocument();
+    expect(within(review).queryByRole('button', { name: /to put right/ })).toBeNull();
     expect(review).toHaveAccessibleDescription(/to put right: A way back goes only to a step that comes before this one\./);
     for (const chip of document.querySelectorAll('[data-flow-refusal-chip]')) expect(chip.textContent).toMatch(/⚠ \S+/);
 

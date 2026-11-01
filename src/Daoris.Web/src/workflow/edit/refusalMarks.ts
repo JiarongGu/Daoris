@@ -32,8 +32,9 @@ export function withRefusals(t: TFunction, i18n: I18n, flow: GraphFlow, problems
     edges: flow.edges.map((edge) => {
       const refused = atWay.get(edge.id);
       if (!refused) return edge;
-      const says = refused.reduce((said, words) => t('workflow.edit.chart.refusedSays', { says: said, words }), edge.says);
-      return { ...edge, says, problem: t('workflow.edit.chart.refusedWay') };
+      // The sentence is said in the source's description, never as a line in its foot, which would move every rank below (CANVAS1b).
+      const note = refused.map((words) => t('workflow.edit.chart.refusedSays', { says: edge.says, words })).join(' ');
+      return { ...edge, problem: t('workflow.edit.chart.refusedWay'), note };
     }),
   };
 }

@@ -105,3 +105,50 @@ describe('a rem', () => {
     expect(placement()).toBe('rail');
   });
 });
+
+// CANVAS1b (D224; the canvas design §2.3): a node's marks are chips the canvas places beside it, in words and never alone, hidden from a
+// reader (the caller's description says them), and in the rail a chip standing under its step. jsdom lays nothing out, so where a chip
+// stands is the measured spec's.
+describe('a mark on a node', () => {
+  const marked = NODES.map((node) => (node.id === 'b' ? { ...node, marks: [{ word: 'To put right', kind: 'refused' as const }, { word: 'new', kind: 'new' as const }] } : node));
+
+  it('is a chip for each mark in the drawing, hidden until it is placed, naming its node, and hidden from a reader', () => {
+    draw(800, { viewport: VIEWPORT, nodes: marked });
+    const chips = [...document.querySelectorAll<HTMLElement>('[data-flow-chip]')];
+    expect(chips.map((chip) => [chip.dataset.flowChip, chip.dataset.chipNode, chip.textContent])).toEqual([['b:0', 'b', '⚠ To put right'], ['b:1', 'b', 'new']]);
+    for (const chip of chips) {
+      expect(chip).toHaveAttribute('aria-hidden', 'true');
+      expect(chip.style.visibility).toBe('hidden');
+    }
+    expect(chips[0]).toHaveAttribute('data-flow-mark-kind', 'refused');
+    expect(chips[1]).toHaveAttribute('data-flow-mark-kind', 'new');
+  });
+
+  it('stands under its step in the rail, where nothing is placed, and no step gains a line', () => {
+    draw(400, { viewport: VIEWPORT, nodes: marked });
+    expect(placement()).toBe('rail');
+    const step = document.querySelector('[data-flow-node="b"]')!;
+    const chips = [...step.parentElement!.querySelectorAll('[data-flow-mark-kind]')];
+    expect(chips.map((chip) => chip.textContent)).toEqual(['⚠ To put right', 'new']);
+    expect(step.querySelector('[data-flow-mark-kind]')).toBeNull();
+    expect(document.querySelector('[data-flow-chip]')).toBeNull();
+  });
+
+  it('draws no chip on a flow whose nodes carry no mark', () => {
+    draw(800, { viewport: VIEWPORT });
+    expect(document.querySelector('[data-flow-chip]')).toBeNull();
+    expect(document.querySelector('[data-flow-mark-kind]')).toBeNull();
+  });
+});
+
+describe('a way said to a reader only', () => {
+  it('adds its note to the source\'s description and to no line of the flow', () => {
+    const edges = EDGES.map((edge) => (edge.id === 'ab' ? { ...edge, note: 'then (to put right: it goes nowhere)' } : edge));
+    draw(400, {
+      edges,
+      renderNode: ({ node, description }) => <div role="listitem" data-flow-node={node.id} aria-describedby={`d-${node.id}`}>{node.title}<span id={`d-${node.id}`} hidden>{description}</span></div>,
+    });
+    expect(document.getElementById('d-a')!.textContent).toContain('then (to put right: it goes nowhere)');
+    expect(document.getElementById('d-c')!.textContent).not.toContain('it goes nowhere');
+  });
+});
