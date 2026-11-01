@@ -22702,6 +22702,11 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 
 **Outcome** 2026-11-02: `tools/index-hook.mjs` separates a glued note in every staged decision file before it regenerates the index (pre-commit, which a conflicted merge finishes through), and a `notes` merge driver (`--merge-notes`, set by `--install`, named for `docs/decisions/*.md` in `.gitattributes`) does union and the separation inside the merge itself, since a clean merge runs no pre-commit and git ignores what a `pre-merge-commit` hook stages; no commit is remade. Detail: the FIX-LOG entry of 2026-11-02.
 
+## SETUPUX1j — the choices (2026-11-02, D221)
+
+> **SETUPUX1j — the choices** (web; row j of `docs/2026-11-01-setup-ux-design.md` §5). §2.2's choices page: *Keep how it lands*, the deliveries and their `why` worded by id from the page's catalogues, *Not driven*'s key, Driving's caption from the plan's sides, each refusal under its part with a door that repairs its cause and returns, the chooser from `members`, and mixed suggestions said per repository. Proof: refusal → repair → return → plan read again; mixed suggestions preselect nothing; `defaultName.*`, `set.line.*` and `PRESETS` gone; stories at 80, 39 and 25rem.
+
+**Outcome** 2026-11-02: `PlaceSetUp.tsx` draws the choices from `WORKFLOW_LIST`'s set-up deliveries, `placePlan.ts` reads the suggestions (Keep, mixed), the driving's sides and each refusal's part, `PlaceChooser.tsx` is the workspace's chooser, a door leaves the set-up with its draft kept (`SetUpPage.leave` and `resume`) and `Back` returns; `setup_propose` names `keep`. Detail: D221's SETUPUX1j note; `placePlan.test.ts`, `PlaceSetUp.test.tsx`, `PlaceSetUpPanel.test.tsx`, `setupKeys.test.ts`.
 ## SETUPUX1u — a run's view (2026-11-02, D221)
 
 > **SETUPUX1u — a run's view** (web; row u of the set-up design). §2.3's run view through the one drawing: its head naming the bound version and how it was chosen, one sentence of where the work stands, a selected step's record and its owner's controls, a decision's returned outcome with *route not taken* told apart, *Finished* only from the driver's record. Proof: a release run of each outcome; stories at 300 px, 45% of the window and 25rem; page tests; the measured stories.

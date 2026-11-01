@@ -1,10 +1,14 @@
 import { type ReactNode, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, CheckField, ChoiceRow, Inline, Pill, SkeletonRows } from '../../design/ui';
+import type { PresetWorkflow } from '../../workflow/edit/answers';
+import { deliveryFor, deliveryName } from '../../workflow/edit/presetWords';
 import { Refused } from '../../work/InlineConfirm';
 import {
-  BUILDS, isChosen, NOT_DRIVEN, offered, type PlaceAccept, type PlaceDeclaration, type PlacePlanned, PRESETS, type SetUpDraft,
+  BUILDS, doorOf, drivingOf, isChosen, KEEP, NOT_DRIVEN, offered, PARTS, type PlaceAccept, type PlaceDeclaration, type PlacePart, type PlacePlanned,
+  type PlaceRefusal, refusalsOf, type SetUpDraft, suggestionsOf,
 } from './placePlan';
+import { PlaceChooser } from './PlaceChooser';
 
 const short = (id: string) => id.slice(0, 7);
 
@@ -14,6 +18,10 @@ export type PlaceSetUpProps = {
   kind: 'repository' | 'workspace';
   /** The repositories a workspace's plan may cover, each with whether it is driven; none for a repository. */
   choices: { repository: string; driven: boolean }[];
+  /** The deliveries the set-up writes, as the page's catalogues word them by id (`deliveriesOf`). */
+  deliveries: PresetWorkflow[];
+  /** A refusal's door: where its cause is put right, which returns here; none where a refusal has no door. */
+  doorFor?: (refusal: PlaceRefusal) => (() => void) | null;
   draft: SetUpDraft;
   onChange: (patch: Partial<SetUpDraft>) => void;
   /** The driver's plan for the draft's ask; the last one stays while the next is read. */
@@ -31,12 +39,46 @@ export type PlaceSetUpProps = {
   onClose: () => void;
 };
 
+/** A part of the choices, its heading able to take the focus so the plan's line can jump to it. */
 function Part({ id, title, children }: { id: string; title: string; children: ReactNode }) {
   return (
     <section aria-labelledby={id} className="grid min-w-0 gap-2">
-      <h3 id={id} className="m-0 text-body font-semibold text-ink">{title}</h3>
+      <h3 id={id} tabIndex={-1} className="m-0 text-body font-semibold text-ink outline-none focus-visible:outline-2 focus-visible:outline-accent">{title}</h3>
       {children}
     </section>
+  );
+}
+
+/** Up to three names, then how many more. */
+function useNamesSaid() {
+  const { t } = useTranslation();
+  return (names: readonly string[]) =>
+    names.length <= 3 ? names.join(', ') : t('agents.setup.set.names', { names: names.slice(0, 3).join(', '), count: names.length - 3 });
+}
+
+/** A part's refusals, whole and under it, each with the door that repairs its cause and returns where it has one. */
+function PartRefusals({ refusals, doorFor }: { refusals: readonly PlaceRefusal[]; doorFor?: (refusal: PlaceRefusal) => (() => void) | null }) {
+  const { t } = useTranslation();
+  if (refusals.length === 0) return null;
+  return (
+    <ul aria-label={t('agents.setup.set.refused')} className="m-0 grid list-none gap-1.5 p-0">
+      {refusals.map((each) => {
+        const go = doorFor?.(each) ?? null;
+        return (
+          <li key={`${each.repository ?? ''}${each.code}${each.sentence}`} data-refusal={each.code} className="m-0 grid min-w-0 justify-items-start gap-1 border-l-[3px] border-warn pl-2.5 text-small text-ink-soft [overflow-wrap:anywhere]">
+            <span>
+              {each.repository && <span className="mr-1.5 font-mono text-meta text-ink">{each.repository}</span>}
+              <Inline text={each.sentence} />
+            </span>
+            {go && doorOf(each.code) && (
+              <Button variant="ghost" className="min-h-0 border border-line px-2.5 py-0.5 text-small" onClick={go}>
+                {t(`agents.setup.set.door.${each.code}`)}
+              </Button>
+            )}
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
@@ -90,26 +132,51 @@ function Declaration({ repository, declaration, accept, onAccept, disabled }: {
 }
 
 /**
- * **Set up…** (AGENTSPLACE1j; the Agents-place design §4): a place's quick set-up as one page of three parts kept apart, *Delivery*,
- * *Adoption* with *What it builds*, and *General driving*, then the plan the driver reads for them and the acceptances it offers, and one
- * *Apply*. The suggested delivery is the plan's own and comes preselected; roles are no part of it. A workspace's page covers the
- * repositories it ticks with one plan, each change said once.
+ * **Set up…**'s choices (AGENTSPLACE1j, SETUPUX1j; the setup-UX design §2.2): a place's quick set-up as one page of three parts kept apart,
+ * *How it lands* (*Keep how it lands*, the deliveries the data offers, *Not driven*, and the second opinion and your look), *Adoption* with
+ * *What it builds*, and *Driving*, each with the refusals about it, whole, and the door that repairs their cause and returns. Below, the plan the
+ * driver reads for them and the acceptances it offers, and one *Apply*. The suggestion is the plan's own and comes preselected where every
+ * repository suggests the same, and nothing is preselected where they differ, each choice naming those it suits; roles are no part of it.
  *
  * @remarks
- * The page judges nothing: every refusal is the driver's sentence, said in place, and a plan that refuses offers no Apply. Apply is the
- * person's own press (`PLACE_APPLY`); a plan that moved since it was read is refused `moved` and read again, which is said here too.
+ * The page judges nothing: every refusal is the driver's sentence, and a plan that refuses offers no Apply. Apply is the person's own
+ * press (`PLACE_APPLY`); a plan that moved since it was read is refused `moved` and read again, which is said here too.
  *
  * A molecule: the draft, the plan and the last result arrive as props, and every choice and press goes out.
  */
-export function PlaceSetUp({ place, kind, choices, draft, onChange, plan: read, reading, stale, problem, applying, holding, onApply, onHold, onClose }: PlaceSetUpProps) {
-  const { t } = useTranslation();
+export function PlaceSetUp({
+  place, kind, choices, deliveries, doorFor, draft, onChange, plan: read, reading, stale, problem, applying, holding, onApply, onHold, onClose,
+}: PlaceSetUpProps) {
+  const { t, i18n } = useTranslation();
   const id = useId();
+  const namesSaid = useNamesSaid();
   // Until the suggestion is preselected the plan in hand is the one that read it, of nothing asked: it is not shown.
   const plan = draft.preset === null ? null : read;
   const delivers = draft.preset !== NOT_DRIVEN;
   const adoption = draft.adoption ?? false;
-  const suggested = read?.repositories[0]?.suggested.preset;
+  const suggestion = suggestionsOf(read);
+  const choosing = draft.preset === null && read !== null && suggestion?.mixed === true;
   const several = (plan?.repositories.length ?? 0) > 1;
+  const refusedIn = (part: PlacePart) => refusalsOf(plan, part);
+  const stops = PARTS.filter((part) => refusedIn(part).length > 0);
+  const jump = (part: PlacePart) => document.getElementById(`${id}-${part}`)?.focus();
+  // The suggested choice leads the deliveries; Keep comes first and Not driven last.
+  const ordered = [...deliveries].sort((a, b) => Number(b.id === suggestion?.preset) - Number(a.id === suggestion?.preset));
+  const pillOf = (preset: string) => (suggestion?.preset === preset ? <Pill tone="neutral">{t('agents.setup.set.suggested')}</Pill> : null);
+  const whyOf = (preset: string) => {
+    const why = suggestion?.preset === preset ? suggestion.why : null;
+    if (!why) return null;
+    return (
+      <span className="grid gap-0.5">
+        <span className="text-small text-ink-soft">{t('agents.setup.set.whyLine', { reason: t(`agents.setup.set.why.${why.code}`, { defaultValue: why.said }) })}</span>
+        {why.said && <span className="text-meta text-ink-faint"><Inline text={why.said} /></span>}
+      </span>
+    );
+  };
+  const suitsOf = (preset: string) => {
+    const names = suggestion?.mixed ? suggestion.suits[preset] : undefined;
+    return names ? <span className="text-small text-ink-soft">{t('agents.setup.set.suits', { repositories: namesSaid(names) })}</span> : null;
+  };
   const none = draft.repositories.length === 0;
   const result = draft.result;
   const releasing = plan?.repositories.filter((row) => row.released.length > 0) ?? [];
@@ -119,9 +186,6 @@ export function PlaceSetUp({ place, kind, choices, draft, onChange, plan: read, 
   const busy = reading || stale || applying;
   const canApply = plan !== null && plan.applies && !nothing && !busy && !none && draft.preset !== null;
 
-  const toggleRepository = (repository: string, on: boolean) =>
-    onChange({ repositories: choices.map((each) => each.repository).filter((each) => (each === repository ? on : draft.repositories.includes(each))) });
-
   return (
     <section aria-labelledby={`${id}-title`} className="grid min-w-0 gap-4">
       <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
@@ -130,27 +194,15 @@ export function PlaceSetUp({ place, kind, choices, draft, onChange, plan: read, 
       </div>
       <p className="m-0 text-small text-ink-soft">{t('agents.setup.set.lead')}</p>
 
-      {kind === 'workspace' && (
-        <div role="group" aria-label={t('agents.setup.set.repositories')} className="grid min-w-0 gap-1.5">
-          <span className="text-body font-semibold text-ink">{t('agents.setup.set.repositories')}</span>
-          <p className="m-0 text-small text-ink-soft">{t('agents.setup.set.repositoriesBody')}</p>
-          <div className="grid max-h-48 min-w-0 gap-1 overflow-auto pr-1">
-            {choices.map((each) => (
-              <CheckField
-                key={each.repository}
-                checked={draft.repositories.includes(each.repository)}
-                onChange={(on) => toggleRepository(each.repository, on)}
-                label={each.repository}
-                className="whitespace-normal text-ink [overflow-wrap:anywhere]"
-              />
-            ))}
-          </div>
-        </div>
-      )}
+      {kind === 'workspace' && <PlaceChooser rows={choices} chosen={draft.repositories} onChange={(repositories) => onChange({ repositories })} />}
 
-      <Part id={`${id}-delivery`} title={t('agents.setup.set.delivery')}>
+      <Part id={`${id}-delivery`} title={t('agents.setup.set.lands')}>
         <div role="radiogroup" aria-labelledby={`${id}-delivery`} className="grid min-w-0 gap-1.5">
-          {PRESETS.map((preset) => (
+          {[
+            { preset: KEEP, name: t('agents.setup.set.keep'), line: t('agents.setup.set.keepLine'), now: suggestion?.following ? t('agents.setup.set.keepFollowing', { workflow: suggestion.following }) : null },
+            ...ordered.map((each) => ({ preset: each.id, name: deliveryName(t, i18n, each.delivery!), line: deliveryFor(t, i18n, each.delivery!), now: null })),
+            { preset: NOT_DRIVEN, name: t('agents.setup.set.notDriven'), line: t('agents.setup.set.notDrivenLine'), now: null },
+          ].map(({ preset, name, line, now }) => (
             <ChoiceRow
               key={preset}
               name={`${id}-delivery`}
@@ -162,16 +214,22 @@ export function PlaceSetUp({ place, kind, choices, draft, onChange, plan: read, 
             >
               <span className="grid min-w-0 gap-0.5">
                 <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
-                  <span id={`${id}-p-${preset}`} className="text-body text-ink">{t(`agents.setup.defaultName.${preset}`)}</span>
-                  {suggested === preset && <Pill tone="neutral">{t('agents.setup.set.suggested')}</Pill>}
+                  <span id={`${id}-p-${preset}`} className="text-body text-ink">{name}</span>
+                  {pillOf(preset)}
                 </span>
-                <span id={`${id}-d-${preset}`} className="text-small text-ink-soft">{t(`agents.setup.set.line.${preset}`)}</span>
+                <span id={`${id}-d-${preset}`} className="grid gap-0.5 text-small text-ink-soft">
+                  <span>{line}</span>
+                  {now && <span><Inline text={now} /></span>}
+                  {suitsOf(preset)}
+                </span>
+                {whyOf(preset)}
               </span>
             </ChoiceRow>
           ))}
         </div>
         <CheckField checked={delivers && draft.opinion} onChange={(on) => onChange({ opinion: on })} label={t('agents.setup.set.opinion')} disabled={!delivers} className="whitespace-normal text-ink" />
         <CheckField checked={delivers && draft.look} onChange={(on) => onChange({ look: on })} label={t('agents.setup.set.look')} disabled={!delivers} className="whitespace-normal text-ink" />
+        <PartRefusals refusals={refusedIn('delivery')} doorFor={doorFor} />
       </Part>
 
       <Part id={`${id}-adoption`} title={t('agents.setup.set.adoption')}>
@@ -197,11 +255,22 @@ export function PlaceSetUp({ place, kind, choices, draft, onChange, plan: read, 
             <p className="m-0 text-small text-ink-soft">{t('agents.setup.set.buildsBody')}</p>
           </div>
         )}
+        <PartRefusals refusals={refusedIn('adoption')} doorFor={doorFor} />
       </Part>
 
       <Part id={`${id}-driving`} title={t('agents.setup.set.driving')}>
         <CheckField checked={delivers && draft.drive} onChange={(on) => onChange({ drive: on })} label={t('agents.setup.set.drive')} disabled={!delivers} className="whitespace-normal text-ink" />
-        <p className="m-0 text-small text-ink-soft">{t('agents.setup.set.driveBody')}</p>
+        {plan !== null && (
+          <div className="grid gap-0.5 text-small text-ink-soft">
+            {!(delivers && draft.drive) && <p className="m-0">{t('agents.setup.set.driving.off')}</p>}
+            <ul aria-label={t('agents.setup.set.driving')} className="m-0 grid list-none gap-0.5 p-0">
+              {drivingOf(plan).map((each) => (
+                <li key={each.state} className="m-0 [overflow-wrap:anywhere]">{t(`agents.setup.set.driving.${each.state}`, { repositories: namesSaid(each.repositories) })}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        <PartRefusals refusals={refusedIn('driving')} doorFor={doorFor} />
       </Part>
 
       <section aria-labelledby={`${id}-plan`} aria-busy={busy || undefined} className="grid min-w-0 gap-2 border-t border-line pt-3">
@@ -209,23 +278,24 @@ export function PlaceSetUp({ place, kind, choices, draft, onChange, plan: read, 
         {problem && <Refused sentence={problem} />}
         {none
           ? <p className="m-0 text-small text-ink-soft">{t('agents.setup.set.noneChosen')}</p>
-          : plan === null
-            ? (problem ? null : <div className="grid gap-1"><p className="m-0 text-small text-ink-soft">{t('agents.setup.set.reading')}</p><SkeletonRows rows={3} /></div>)
-            : (
+          : choosing
+            ? <p className="m-0 text-small text-ink-soft">{t('agents.setup.set.choose')}</p>
+            : plan === null
+              ? (problem ? null : <div className="grid gap-1"><p className="m-0 text-small text-ink-soft">{t('agents.setup.set.reading')}</p><SkeletonRows rows={3} /></div>)
+              : (
               <>
-                {plan.refusals.length > 0 && (
-                  <div className="grid min-w-0 gap-1">
-                    <p className="m-0 text-small font-medium text-ink">{t('agents.setup.set.refused')}</p>
-                    <ul aria-label={t('agents.setup.set.refused')} className="m-0 grid list-none gap-1 p-0">
-                      {plan.refusals.map((each) => (
-                        <li key={`${each.repository ?? ''}${each.code}${each.sentence}`} className="m-0 border-l-[3px] border-warn pl-2.5 text-small text-ink-soft [overflow-wrap:anywhere]">
-                          {each.repository && <span className="mr-1.5 font-mono text-meta text-ink">{each.repository}</span>}
-                          <Inline text={each.sentence} />
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-small text-ink">
+                  <span>
+                    {t('agents.setup.set.planChanges', { count: plan.changes.length })}
+                    {' · '}
+                    {stops.length === 0 ? t('agents.setup.set.planClear') : t('agents.setup.set.planStops', { count: plan.refusals.length })}
+                  </span>
+                  {stops.map((part) => (
+                    <Button key={part} variant="ghost" className="min-h-0 px-1.5 py-0 text-small" onClick={() => jump(part)}>
+                      {`↑ ${t(part === 'delivery' ? 'agents.setup.set.lands' : `agents.setup.set.${part}`)}`}
+                    </Button>
+                  ))}
+                </div>
                 {plan.changes.length > 0
                   ? (
                     <ul aria-label={t('agents.setup.set.changes')} className="m-0 grid list-none gap-1 p-0">
