@@ -27,7 +27,7 @@ describe("a repository's Current asked for a route", () => {
   it('sends the route beside the repository, and sends none when none is asked, as before', async () => {
     invoke.mockResolvedValue({ repository: 'engine', steps: [] });
     const { result, rerender } = renderHook(({ route }: { route?: string }) => useWorkflowCurrent({ repository: 'engine' }, { route }), {
-      wrapper, initialProps: { route: 'kind:docs' },
+      wrapper, initialProps: { route: 'kind:docs' } as { route?: string },
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(invoke).toHaveBeenLastCalledWith('DAORIS.DRIVER', 'WORKFLOW_CURRENT', { payload: { repository: 'engine', route: 'kind:docs' } });

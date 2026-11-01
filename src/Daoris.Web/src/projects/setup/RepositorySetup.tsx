@@ -30,9 +30,12 @@ import { StandingAnswer } from './StandingAnswer';
 
 /**
  * The sections of a repository's Setup (UX6f, D150 §4.2; *Sessions' access* since AUTONOMY1d, *Heavy gates* since HEAVYRUN1b2b), in
- * the order the page draws them.
+ * the order the page draws them. The last six are the place's Workflow folds (SETUPUX1o), each a row `work` and `heavy` hold, drawn only where
+ * `only` names them.
  */
-export type SetupSectionId = 'driving' | 'work' | 'access' | 'heavy' | 'sessions' | 'reach';
+export type SetupSectionId =
+  | 'driving' | 'work' | 'access' | 'heavy' | 'sessions' | 'reach'
+  | 'landing' | 'opinion' | 'look' | 'landedRoute' | 'line' | 'more';
 
 /**
  * This machine's heavy gates for it (HEAVYRUN1b2b, D180's HEAVYRUN1b2a note), used where its own `daoris.gates.json` marks none, and
@@ -210,8 +213,14 @@ export type RepositorySetupProps = {
   onOpenPlugin?: (plugin: string) => void;
 };
 
-/** The sections the place's page draws under its Sessions (AGENTSPLACE1f): the access, the heavy gates and checks, the sessions' own rows and the reach. */
-export const SESSIONS_SECTIONS: readonly SetupSectionId[] = ['access', 'heavy', 'sessions', 'reach'];
+/** The sections the place's page draws under its Sessions (AGENTSPLACE1f): the access, the sessions' own rows and the reach; the heavy gates went to *More* (SETUPUX1o). */
+export const SESSIONS_SECTIONS: readonly SetupSectionId[] = ['access', 'sessions', 'reach'];
+
+/**
+ * The folds the place's page draws under its Workflow beside Gates (SETUPUX1o, the Setup design's §2.3), each with its owner: *Landing*
+ * (`SET_LANDING`), *Second opinion*, *Your look*, *Landed route* (`WORKFLOW_LANDED`), *The line*, and *More* (commits and the heavy gates).
+ */
+export const FOLD_SECTIONS: readonly SetupSectionId[] = ['landing', 'opinion', 'look', 'landedRoute', 'line', 'more'];
 
 const JOIN = ' · ';
 
@@ -268,21 +277,20 @@ export function RepositorySetup({ repository, driving, work, access, heavy, land
   const landedOwn = landed?.start.landed.level === 'repository-landed';
   // The integration declaration at the line's tip waits for the person's acceptance (D215): never accepted, or changed since.
   const integrationOwed = !gatesApart && Boolean(landed?.onAcceptIntegration) && (landed?.start.integration?.state === 'unaccepted' || landed?.start.integration?.state === 'changed');
-  const workParts = work && [
-    ...(line
-      ? [marked(
-          line.notReadYet
-            ? t('projects.setup.summary.lineNotRead')
-            : line.branch ? t('projects.setup.summary.line', { branch: line.branch }) : t('projects.setup.summary.noLine'),
-          line.source === 'repository' ? 'repository' : line.source === 'workspace' ? 'workspace' : 'daoris')]
-      : []),
-    ...(landing ? [marked(landingSays(t, landing), landing.source === 'default' ? 'daoris' : landing.source)] : []),
-    ...(commits ? [marked(commitSummary(t, commitRule), commits.source === 'repository' || commits.source === 'workspace' ? commits.source : 'daoris')] : []),
-    ...(review ? [marked(reviewSummary(t, review.rule), review.rule && review.source ? review.source : 'daoris')] : []),
-    ...(opinion ? [marked(opinionSummary(t, opinion.rule), opinion.rule && opinion.source ? opinion.source : 'daoris')] : []),
-    // FABRIC-PIPELINE1a: what verifies the work that lands, marked where its workspace chose it.
-    ...(landed ? [marked(landedSummary(t, landed.start), landedOwn ? 'repository' : landed.start.landed.level === 'workspace-landed' ? 'workspace' : 'daoris')] : []),
-  ];
+  const lineSaid = line
+    ? marked(
+        line.notReadYet
+          ? t('projects.setup.summary.lineNotRead')
+          : line.branch ? t('projects.setup.summary.line', { branch: line.branch }) : t('projects.setup.summary.noLine'),
+        line.source === 'repository' ? 'repository' : line.source === 'workspace' ? 'workspace' : 'daoris')
+    : null;
+  const landingSaid = landing ? marked(landingSays(t, landing), landing.source === 'default' ? 'daoris' : landing.source) : null;
+  const commitsSaid = commits ? marked(commitSummary(t, commitRule), commits.source === 'repository' || commits.source === 'workspace' ? commits.source : 'daoris') : null;
+  const reviewSaid = review ? marked(reviewSummary(t, review.rule), review.rule && review.source ? review.source : 'daoris') : null;
+  const opinionSaid = opinion ? marked(opinionSummary(t, opinion.rule), opinion.rule && opinion.source ? opinion.source : 'daoris') : null;
+  // FABRIC-PIPELINE1a: what verifies the work that lands, marked where its workspace chose it.
+  const landedSaid = landed ? marked(landedSummary(t, landed.start), landedOwn ? 'repository' : landed.start.landed.level === 'workspace-landed' ? 'workspace' : 'daoris') : null;
+  const workParts = work && [lineSaid, landingSaid, commitsSaid, reviewSaid, opinionSaid, landedSaid].filter((each): each is string => each !== null);
 
   // Sessions: the language they write in, what a helper their agent asks for does (DOORS1b), then the standing answer.
   const language = sessions?.language;
@@ -346,6 +354,13 @@ export function RepositorySetup({ repository, driving, work, access, heavy, land
     heavy: (heavy?.gates.length ?? 0) > 0 || Boolean(heavy?.checks?.set),
     sessions: languageOwn || helpersOwn || handOverOwn || standing !== null,
     reach: readOwn || writesTo.length > 0 || ruleCount > 0 || Boolean(reach?.checkout?.on),
+    // The Workflow folds open for a need alone (SETUPUX1o): a landing rule that reads as none, and a door that asked for one.
+    landing: Boolean(work?.landingUnread),
+    opinion: false,
+    look: false,
+    landedRoute: false,
+    line: false,
+    more: false,
   };
 
   const sections: { id: SetupSectionId; summary: string; body: ReactNode }[] = [];
@@ -394,13 +409,9 @@ export function RepositorySetup({ repository, driving, work, access, heavy, land
       ),
     });
   }
-  if (work && workParts && workParts.length > 0) {
-    sections.push({
-      id: 'work',
-      summary: workParts.join(JOIN),
-      body: (
-        <>
-          {line && work.onLine && (
+  // The rows of the line and landing, each one `work` holds and the place's folds hold apart (SETUPUX1o).
+  const lineRow = line && work?.onLine
+    ? (
             <Inheritable
               setHere={t('projects.setup.setHere')}
               label={t('projects.setup.line')}
@@ -424,8 +435,10 @@ export function RepositorySetup({ repository, driving, work, access, heavy, land
                 />
               )}
             />
-          )}
-          {landing && work.onLanding && (
+      )
+    : null;
+  const landingRow = landing && work?.onLanding
+    ? (
             <LandingSetting
               repository={repository}
               landing={landing}
@@ -437,8 +450,10 @@ export function RepositorySetup({ repository, driving, work, access, heavy, land
               refusal={work.landingRefusal ?? null}
               onOpenPlugin={onOpenPlugin}
             />
-          )}
-          {commits && work.onCommits && (
+      )
+    : null;
+  const commitsRow = commits && work?.onCommits
+    ? (
             <Inheritable
               setHere={t('projects.setup.setHere')}
               label={t('settings.commits.label')}
@@ -459,8 +474,10 @@ export function RepositorySetup({ repository, driving, work, access, heavy, land
                 />
               )}
             />
-          )}
-          {review && work.onReview && (
+      )
+    : null;
+  const reviewRow = review && work?.onReview
+    ? (
             <Inheritable
               setHere={t('projects.setup.setHere')}
               label={t('settings.review.label')}
@@ -481,8 +498,10 @@ export function RepositorySetup({ repository, driving, work, access, heavy, land
                 />
               )}
             />
-          )}
-          {opinion && work.onOpinion && (
+      )
+    : null;
+  const opinionRow = opinion && work?.onOpinion
+    ? (
             <Inheritable
               setHere={t('projects.setup.setHere')}
               label={t('settings.opinion.label')}
@@ -503,15 +522,43 @@ export function RepositorySetup({ repository, driving, work, access, heavy, land
                 />
               )}
             />
+      )
+    : null;
+  const landedRow = landed
+    ? <LandedRoute repository={repository} workspace={landed.workspace} start={landed.start} busy={busy} onChoose={landed.onChoose} />
+    : null;
+  const integrationRow = !gatesApart && landed?.start.integration && landed.onAcceptIntegration
+    ? <IntegrationDeclaration repository={repository} integration={landed.start.integration} busy={busy} onAccept={landed.onAcceptIntegration} />
+    : null;
+  // FABRIC-PIPELINE1b: the heavy gates and the sessions' checks, the checks first. The heavy gates named are those its own file marks where it
+  // marks some, else this machine's list, as `run-heavy` resolves them.
+  const heavyNames = heavy ? (heavy.marks?.marks === true ? heavy.marks.names : heavy.gates.map((gate) => gate.name)) : [];
+  const heavyChecksSaid = heavy?.checks ? sessionChecksSummary(t, heavy.checks.set) : null;
+  const heavyRows = heavy
+    ? (
+        <>
+          {heavy.checks && (
+            <SessionChecksRow
+              repository={repository}
+              checks={heavy.checks.set}
+              light={heavy.marks?.light ?? null}
+              heavy={heavyNames}
+              known={typeof heavy.marks?.marks === 'boolean'}
+              busy={busy}
+              onChange={heavy.checks.onChange}
+            />
           )}
-          {landed && (
-            <LandedRoute repository={repository} workspace={landed.workspace} start={landed.start} busy={busy} onChoose={landed.onChoose} />
-          )}
-          {!gatesApart && landed?.start.integration && landed.onAcceptIntegration && (
-            <IntegrationDeclaration repository={repository} integration={landed.start.integration} busy={busy} onAccept={landed.onAcceptIntegration} />
-          )}
+          <HeavyGates repository={repository} gates={heavy.gates} marks={heavy.marks} busy={busy} onSave={heavy.onSave} />
         </>
-      ),
+      )
+    : null;
+  const heavySaid = heavy ? [...(heavyChecksSaid ? [heavyChecksSaid] : []), heavySummary(t, heavy.gates, heavy.marks)].join(JOIN) : null;
+
+  if (work && workParts && workParts.length > 0) {
+    sections.push({
+      id: 'work',
+      summary: workParts.join(JOIN),
+      body: <>{lineRow}{landingRow}{commitsRow}{reviewRow}{opinionRow}{landedRow}{integrationRow}</>,
     });
   }
   if (accessShown) {
@@ -532,32 +579,7 @@ export function RepositorySetup({ repository, driving, work, access, heavy, land
       ),
     });
   }
-  if (heavy) {
-    // FABRIC-PIPELINE1b: its sessions' checks first where one is set, then the gates; the heavy gates named are those its own file
-    // marks where it marks some, else this machine's list, as `run-heavy` resolves them.
-    const checksSaid = heavy.checks ? sessionChecksSummary(t, heavy.checks.set) : null;
-    const heavyNames = heavy.marks?.marks === true ? heavy.marks.names : heavy.gates.map((gate) => gate.name);
-    sections.push({
-      id: 'heavy',
-      summary: [...(checksSaid ? [checksSaid] : []), heavySummary(t, heavy.gates, heavy.marks)].join(JOIN),
-      body: (
-        <>
-          {heavy.checks && (
-            <SessionChecksRow
-              repository={repository}
-              checks={heavy.checks.set}
-              light={heavy.marks?.light ?? null}
-              heavy={heavyNames}
-              known={typeof heavy.marks?.marks === 'boolean'}
-              busy={busy}
-              onChange={heavy.checks.onChange}
-            />
-          )}
-          <HeavyGates repository={repository} gates={heavy.gates} marks={heavy.marks} busy={busy} onSave={heavy.onSave} />
-        </>
-      ),
-    });
-  }
+  if (heavyRows && heavySaid !== null) sections.push({ id: 'heavy', summary: heavySaid, body: heavyRows });
   if (sessions && sessionsParts && sessionsParts.length > 0) {
     sections.push({
       id: 'sessions',
@@ -699,19 +721,36 @@ export function RepositorySetup({ repository, driving, work, access, heavy, land
     });
   }
 
+  // The place's Workflow folds (SETUPUX1o), each a row above drawn apart under its own name, in the order the page draws them.
+  const folds: [SetupSectionId, string | null, ReactNode][] = [
+    ['landing', landingSaid, landingRow],
+    ['opinion', opinionSaid, opinionRow],
+    ['look', reviewSaid, reviewRow],
+    ['landedRoute', landedSaid, landedRow],
+    ['line', lineSaid, lineRow],
+    ['more', [commitsSaid, heavySaid].filter((each): each is string => each !== null).join(JOIN) || null, commitsRow || heavyRows ? <>{commitsRow}{heavyRows}</> : null],
+  ];
+  for (const [id, summary, body] of folds) if (summary !== null && body) sections.push({ id, summary, body });
+
   return (
     <div className="grid">
-      {sections.filter((section) => !only || only.includes(section.id)).map((section) => (
-        <SetupSection
-          // Keyed by the repository, so another repository's page opens its own sections afresh.
-          key={`${repository}:${section.id}`}
-          title={t(`projects.setup.section.${section.id}`)}
-          summary={section.summary}
-          startsOpen={opensItself[section.id] || open === section.id}
-        >
-          {section.body}
-        </SetupSection>
-      ))}
+      {sections.filter((section) => (only ? only.includes(section.id) : !FOLD_SECTIONS.includes(section.id))).map((section) => {
+        const fold = (
+          <SetupSection
+            // Keyed by the repository, so another repository's page opens its own sections afresh.
+            key={`${repository}:${section.id}`}
+            title={t(`projects.setup.section.${section.id}`)}
+            summary={section.summary}
+            startsOpen={opensItself[section.id] || open === section.id}
+          >
+            {section.body}
+          </SetupSection>
+        );
+        // A fold is a row of the place a door can bring into view (the place page's `data-place-row`).
+        return FOLD_SECTIONS.includes(section.id)
+          ? <div key={section.id} data-place-row={section.id} tabIndex={-1} className="outline-none focus-visible:outline-2 focus-visible:outline-accent">{fold}</div>
+          : fold;
+      })}
     </div>
   );
 }
