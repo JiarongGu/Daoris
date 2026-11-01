@@ -22526,6 +22526,11 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 ## DECIDE1a — decision steps, the model: a reach's named outcome and the `when` wire that follows it (2026-11-01, D173)
 
 **Outcome** 2026-11-01: a step declares `Outcomes` and its reach names one, outside the acceptance's id (D173's note); a `when` wire follows it on an `out-` receipt, so another outcome lapses the route, and `WireEvaluated.NotTaken` names what no route starts, settled in an `all` join. Inert in files and outside `NodeGraphs`' digest until DECIDE1b. Detail: the commits.
+
+## DECIDE1b — decision steps in files and in the graph rules: `when` read and digested, the review's two routes, and the `back` route (2026-11-01, D173)
+
+**Outcome** 2026-11-01: a file's `outcomes`, `when` and `back` are read and digested only where present, so every stored graph keeps its digest; `back` (refused `back-forward`, `back-twice`, `back-never`) is read by no forward rule and no cycle, inert at run time until DECIDE1c; a review's changes are its rejection. Detail: D173's DECIDE1b note, the rows of `graph-problems.json`.
+
 ## WORKFLOWEDIT1a — the step editor's reads (2026-11-01)
 
 **Outcome** 2026-11-01: `WORKFLOW_LIST`, `WORKFLOW_SHOW` and `WORKFLOW_PALETTE` (`WorkflowEditRoutes`, told by event, publishing nothing) read the saved workflows, one version as saved and what a step graph may hold; `WorkflowPalette` and `NodeOptionFields` build the palette from `NodeAuthorities`, `WireKinds` and the land, integrate and request choices, never from land's `accept`; the page's `bridge/repositories/workflowEdit.ts` types them. Tests `WorkflowPaletteTests`, `DriverModuleWorkflowTests`, `workflowEdit.test.ts`.
