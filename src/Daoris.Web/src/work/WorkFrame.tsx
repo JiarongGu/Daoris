@@ -17,7 +17,7 @@ import {
   useEntryLanding, useLandEntry, useSessionHelpers, useSessionPartners, useUnderWaySubject, useSessionProcess, useWorkState, usePushedCalls, withCall,
   useAnswerPermission, usePermissionWaits, useSessionHandOverAsk, useApproveHandOver, useDeclineHandOver, type HandOverWord,
   useAnswerWaits, useAnswerAlone, useRunNodeWord, useResolveHeld, useSessionQuestion, useStopWaiting,
-  useBringTogether, useTogether, useTogetherAct,
+  useBringTogether, useTogether, useTogetherAct, useConsidered,
 } from '../bridge/shell';
 import { handOverRefused, type HandOverAskWait } from './waits/HandOverAgentAsk';
 import { permissionSaid, type PermissionWaits } from './waits/PermissionAsks';
@@ -1175,6 +1175,8 @@ export function WorkFrame({
   // Also asked while the followed session works, for the head's *working with it* (§3.7), at its mount and each wake.
   const atWork = useSessionAtWork(atWorkShown || (following !== null && following.state === 'working') ? following?.id : null);
   const atWorkHeld = atWork.data;
+  // Why an untaken quest sits is the driver's last look's, read beside the answer from memory (COWORKVIEW1b-ii).
+  const considered = useConsidered().data;
   const withIt = atWorkHeld && 'answer' in atWorkHeld
     ? atWorkHeld.answer.subagents.working + atWorkHeld.answer.parts.filter((part) => part.key !== atWorkHeld.answer.attended && part.state === 'working').length
     : 0;
@@ -1481,6 +1483,8 @@ export function WorkFrame({
             held={atWork.data}
             error={atWork.error ? sentence(atWork.error) : null}
             onOpen={(id) => { attend(id); if (elsewhere) onOpenSessions?.(); }}
+            onOpenQuest={onOpenQuest}
+            considered={considered}
             onRetry={() => { void atWork.refetch(); }}
             // A child's console tab, while the window holds its stream (the harness's agent id ends the stream's key).
             streamOf={(child) => streams.find((row) => row.key.endsWith(`/${child}`))?.key}
