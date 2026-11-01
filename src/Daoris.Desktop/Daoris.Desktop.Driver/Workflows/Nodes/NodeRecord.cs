@@ -198,7 +198,13 @@ public static class NodeWordActs
     /// <summary>A declined request gone on without, with the person's words: a failed request passed over as a skip is (INTEGRATE1p, C33).</summary>
     public const string GoOn = "go-on";
 
-    public static readonly IReadOnlyList<string> All = [Skip, Stop, AskAgain, GoOn];
+    /// <summary>
+    /// The person's Accept of the work (LANDNODE1c2): a <c>review</c> reached on their word at the binding it stands on, kept by the landing's
+    /// press. An older build reads it as no act it knows and applies nothing.
+    /// </summary>
+    public const string Accept = "accept";
+
+    public static readonly IReadOnlyList<string> All = [Skip, Stop, AskAgain, GoOn, Accept];
 }
 
 /// <summary>

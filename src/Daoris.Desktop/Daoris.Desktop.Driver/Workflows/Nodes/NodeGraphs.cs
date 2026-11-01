@@ -154,12 +154,6 @@ public static class GraphRefusal
     /// <c>pushed</c>, <c>integrate</c> an <c>integrate</c>, and <c>merge</c> and <c>branch</c> nothing. Replaces <see cref="IntegratePlugin"/> for a <c>land</c>.
     /// </summary>
     public const string LandTail = "land-tail";
-
-    /// <summary>
-    /// A <c>land</c> accepting automatically where D145 refuses it (LANDNODE1a): a merge, and an integrate except under the integrate step's
-    /// <c>request: done</c>. That the line's gates are declared and accepted is judged where the line is bound.
-    /// </summary>
-    public const string LandAutomatic = "land-automatic";
 }
 
 /// <summary>
@@ -299,7 +293,8 @@ public static class NodeGraphs
         var lands = landings.Where(node => node.Kind == NodeKinds.Land).ToList();
         var looks = byId.Values.Where(node => node.Kind == NodeKinds.Look).ToList();
         var unreached = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var gate in byId.Values.Where(node => node.Kind is NodeKinds.Opinion or NodeKinds.Look))
+        // LANDNODE1c2: a `review` is the person's Accept, a gate before every landing as the look is.
+        foreach (var gate in byId.Values.Where(node => node.Kind is NodeKinds.Opinion or NodeKinds.Look or NodeKinds.Review))
         {
             var after = Reach([gate.Id], ordered, forward: true);
             var later = landings.Select(landing => ("landing", landing));
@@ -329,7 +324,7 @@ public static class NodeGraphs
         if (!problems.Any(problem => problem.Code == GraphRefusal.ProtectedOrder))
         {
             bool Wired(string from, string to) => ordered.Any(wire => wire.From!.Node == from && wire.To.Node == to && wire.Group?.Mode != WireGroupModes.AnyOf);
-            foreach (var gate in byId.Values.Where(node => node.Kind is NodeKinds.Opinion or NodeKinds.Look))
+            foreach (var gate in byId.Values.Where(node => node.Kind is NodeKinds.Opinion or NodeKinds.Look or NodeKinds.Review))
             {
                 var later = landings.Select(landing => ("landing", landing));
                 if (later.FirstOrDefault(each => !Wired(gate.Id, each.Item2.Id)) is ({ } what, { } next))
@@ -376,9 +371,9 @@ public static class NodeGraphs
             }
         }
 
-        // LANDNODE1a (the land node design §6): one landing where a `land` is, the method's tail and no other, and D145's refusals of automatic.
-        // A `handed` graph is judged as before, so a stored one reads unchanged. The line's gates being declared and accepted for an automatic
-        // integrate is the bind's to judge, since the graph does not hold them.
+        // LANDNODE1a (the land node design §6): one landing where a `land` is, and the method's tail and no other. A `handed` graph is judged as
+        // before, so a stored one reads unchanged. LANDNODE1c2: what precedes a `land` decides whether it waits on a person; nothing here refuses
+        // one that starts without a press.
         if (lands.Count > 0)
         {
             foreach (var again in landings.Skip(1))
@@ -430,17 +425,6 @@ public static class NodeGraphs
                 }
             }
 
-            if (NodeOptions.Text(land, "accept") == LandNodes.Automatic)
-            {
-                if (method == LandNodes.Merge)
-                {
-                    Say(GraphRefusal.LandAutomatic, null, land.Id, $"node `{land.Id}`: a merge writes into your checkout, and with no press nothing would stand between the work and the line (D145).");
-                }
-                else if (method == LandNodes.Integrate && !integrates.Any(node => NodeOptions.Text(node, "request") == LandingIntegrate.Done))
-                {
-                    Say(GraphRefusal.LandAutomatic, null, land.Id, $"node `{land.Id}`: an integrate is accepted automatically only under `request: {LandingIntegrate.Done}`, with the line's gates declared and accepted.");
-                }
-            }
         }
 
         // INTEGRATE1o (§17.3's graph rules): at most one `work.requests`, after a `claimed` and before every landing. After: a `claimed` of this graph
@@ -965,7 +949,8 @@ public static class NodeGraphHomes
     /// the plugin that pushes, or <c>integrate</c> where a branch rule with no plugin and no squash carries <c>integrate</c> (INTEGRATE1n;
     /// the integration design §17.4: the forms the key refuses carry none, so a file naming one draws today's), then <c>line</c>, each
     /// after the one before; entered at <c>handed</c>, ended at <c>line</c>, cleaned up at <i>held</i>. A rule with no cycle is this, today's
-    /// behaviour (§C2's default).
+    /// behaviour (§C2's default). LANDNODE1c2: a rule that does not accept automatically draws the person's Accept, a <c>review</c>
+    /// (<see cref="Review"/>), before the <c>land</c>, and the graph is entered there.
     /// </summary>
     public static NodeGraph Landing(LandingRule rule)
     {
@@ -974,16 +959,22 @@ public static class NodeGraphHomes
             : rule is { Integrate: not null, Squash: false } ? (Integrated, LandNodes.Integrate)
             : (Landed, LandNodes.Branch);
 
-        // LANDNODE1c: the `land` keeps the identifier `handed` had, so a cycle's wires and evidence bindings to it resolve. Nothing performs it yet.
-        string[] ids = [NodeKinds.Handed, .. kinds.Skip(1)];
-        NodeDeclaration Declared(int index) => index == 0
-            ? new(ids[0], NodeKinds.Land, 1, NodeAuthorities.BuiltIn[NodeKinds.Land].Reach) { Options = new Dictionary<string, string> { ["method"] = JsonSerializer.Serialize(method) } }
-            : new(ids[index], kinds[index], 1, NodeAuthorities.BuiltIn[kinds[index]].Reach);
+        // LANDNODE1c: the `land` keeps the identifier `handed` had, so a cycle's wires and evidence bindings to it resolve.
+        string[] reviewed = rule.AutoAccept ? [] : [Review];
+        string[] ids = [.. reviewed, NodeKinds.Handed, .. kinds.Skip(1)];
+        var landAt = rule.AutoAccept ? 0 : 1;
+        NodeDeclaration Declared(int index) =>
+            index < landAt ? new(ids[index], NodeKinds.Review, 1, NodeAuthorities.BuiltIn[NodeKinds.Review].Reach)
+            : index == landAt ? new(ids[index], NodeKinds.Land, 1, NodeAuthorities.BuiltIn[NodeKinds.Land].Reach) { Options = new Dictionary<string, string> { ["method"] = JsonSerializer.Serialize(method) } }
+            : new(ids[index], kinds[index - landAt], 1, NodeAuthorities.BuiltIn[kinds[index - landAt]].Reach);
         return new NodeGraph(
             [.. ids.Select((_, index) => Declared(index))],
             [.. ids.Skip(1).Select((id, index) => new Wire($"landing/{ids[index]}-{id}", WireKinds.After, new(ids[index]), new(id)))],
-            [NodeKinds.Handed], NodeKinds.Line);
+            [ids[0]], NodeKinds.Line);
     }
+
+    /// <summary>The identifier of the person's Accept Current draws before its <c>land</c> (LANDNODE1c2), apart from any a cycle names.</summary>
+    public const string Review = "landing-review";
 
     /// <summary>
     /// A branch's graph under <paramref name="rule"/>: the landing's (<see cref="Landing"/>), and its <c>cycle</c> after it, whose wires

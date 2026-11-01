@@ -313,19 +313,24 @@ public static class WorkflowWords
             : integrate is not null ? LandNodes.Integrate
             : plugin is not null && plugin != LandNodes.NoPlugin ? LandNodes.PullRequest
             : LandNodes.Branch;
-        var land = new JsonObject { ["method"] = method, ["accept"] = (string?)landing["accept"] };
+        // LANDNODE1c2: the press is a `review` before the `land`, which takes no `accept` of its own.
+        var reviewed = (string?)landing["accept"] != "automatic";
+        var land = new JsonObject { ["method"] = method };
         if (method != LandNodes.Merge && (string?)landing["pattern"] is { } pattern) land["pattern"] = pattern;
         if (method is LandNodes.PullRequest or LandNodes.Branch && plugin is not null) land["plugin"] = plugin;
+        if (reviewed) Node("review", NodeKinds.Review, "pressed");
         Node("landing", NodeKinds.Land, "performed", land);
 
         Wire("work", "requests");
         foreach (var gate in gates.Select(gate => (string)gate["id"]!))
         {
             Wire("requests", gate);
+            if (reviewed) Wire(gate, "review");
             Wire(gate, "landing");
         }
 
-        if (gates.Count == 0) Wire("requests", "landing");
+        if (gates.Count == 0) Wire("requests", reviewed ? "review" : "landing");
+        if (reviewed) Wire("review", "landing");
         var end = "landing";
         if (method == LandNodes.PullRequest)
         {

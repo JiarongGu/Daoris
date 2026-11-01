@@ -75,14 +75,20 @@ public static class NodeKinds
     /// <summary>
     /// The unit's landing as a step Daoris performs (LANDNODE1a; the land node design §2), 落地: reached when the landing record holds the bound
     /// tip and failed by the landing's own refusal. A kind of its own, since making <c>handed</c> performed would change what a stored version
-    /// means; an older build reads it as no kind and holds the run whole. Declared and judged here, performed by a later row.
+    /// means; an older build reads it as no kind and holds the run whole. It takes no <c>accept</c>: it starts once its wires hold (LANDNODE1c2).
     /// </summary>
     public const string Land = "land";
+
+    /// <summary>
+    /// The person's Accept of the work as a step of its own (LANDNODE1c2), placed before a <c>land</c> where a workflow wants one: reached by
+    /// the Accept, never skipped, since a skip would read as accepted. A flow with none lands without a press.
+    /// </summary>
+    public const string Review = "review";
 
     /// <summary>Whether a kind is the graph's one landing: the observed <c>handed</c>, or the performed <c>land</c>.</summary>
     public static bool IsLanding(string kind) => kind is Handed or Land;
 
-    public static readonly IReadOnlyList<string> BuiltIn = [Claimed, Handed, Pushed, PullRequest, Line, Human, Look, GoAhead, WaitUnit, QuestClose, All, Opinion, Stop, Check, Integrate, WorkRequests, Request, Land];
+    public static readonly IReadOnlyList<string> BuiltIn = [Claimed, Handed, Pushed, PullRequest, Line, Human, Look, GoAhead, WaitUnit, QuestClose, All, Opinion, Stop, Check, Integrate, WorkRequests, Request, Land, Review];
 
     /// <summary>Whether a kind is a plugin's own node: <c>&lt;plugin&gt;/&lt;node&gt;</c>, both parts named.</summary>
     public static bool IsPlugin(string kind)
@@ -317,8 +323,10 @@ public static class NodeAuthorities
         // skip of an active node: after a decline the person's *Go on without it…* is the failed node's own move.
         [NodeKinds.Request] = new(NodeKinds.Request, NodeReach.Waited, NodeSource.Commitment, NodeSource.Commitment, false, PersonSkips: false, true, true),
         // LANDNODE1a (land node design §2): reached when the landing record holds the bound tip, failed by the landing's own refusal. Never
-        // skipped, since a skip would read as landed; the person's doors are Accept, stop and Try again.
+        // skipped, since a skip would read as landed; the person's doors are stop and Try again, and their Accept is a `review`'s.
         [NodeKinds.Land] = new(NodeKinds.Land, NodeReach.Performed, NodeSource.Landing, NodeSource.Landing, false, PersonSkips: false, true, true),
+        // LANDNODE1c2: the person's Accept reaches it; nothing fails it, and it is never a graph's end.
+        [NodeKinds.Review] = new(NodeKinds.Review, NodeReach.Pressed, NodeSource.Person, null, false, PersonSkips: false, MayEnd: false, Evidenced: false),
     };
 
     /// <summary>
