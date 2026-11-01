@@ -55,8 +55,23 @@ public static class ActStepKinds
     /// <summary>Index entries replaced under git's own <c>index.lock</c>, the replacement built on a copy.</summary>
     public const string Index = "index";
 
+    /// <summary>One <c>git commit</c>, its hooks and their children in the act's job (GITAPP2i).</summary>
+    public const string Commit = "commit";
+
+    /// <summary>A worktree file's bytes replaced where they still equal the plan's, the bytes it replaced kept as a file beside the record (GITAPP2j).</summary>
+    public const string Bytes = "file";
+
+    /// <summary>One <c>git switch</c> of the checkout to a local branch, its <c>post-checkout</c> hook in the act's job (GITAPP2k).</summary>
+    public const string Switch = "switch";
+
+    /// <summary>One <c>git stash push</c>, which writes the stash shared by every linked tree (GITAPP2k).</summary>
+    public const string Stash = "stash";
+
+    /// <summary>One <c>git fetch</c> of origin's branches into <c>refs/remotes/origin/*</c> alone, in the act's job (GITAPP2f).</summary>
+    public const string Fetch = "fetch";
+
     /// <summary>Every kind this build runs and reads.</summary>
-    public static IReadOnlyList<string> All { get; } = [Ref, Config, Index];
+    public static IReadOnlyList<string> All { get; } = [Ref, Config, Index, Commit, Bytes, Switch, Stash, Fetch];
 }
 
 /// <summary>One step of an act's plan, as the journal keeps it: its kind, and its arguments, postconditions and rollback as JSON.</summary>
@@ -351,7 +366,7 @@ public sealed class ActJournal(
     /// <summary>
     /// Take up an act whose claim's run is dead by the lease's test, in one guarded update that writes this run and raises the generation:
     /// refused, nothing written, where the act is gone or closed, its claim is this run's own, the generation moved since
-    /// <paramref name="generation"/> was read, or its run lives or cannot be told dead.
+    /// <paramref name="generation"/> was read, or its run lives or cannot be told dead (said taken first where that run is a reconciler's).
     /// </summary>
     public ActTaken Take(string act, long generation)
     {
@@ -364,7 +379,12 @@ public sealed class ActJournal(
                 if (!found.Open) throw Refused(found, "it is closed");
                 if (string.Equals(found.ClaimRun, Run, StringComparison.Ordinal)) throw Refused(found, "it is this run's own");
                 if (found.ClaimGeneration != generation) throw Refused(found, "another reconciler took it first");
-                if (RunIn(write, found.ClaimRun) is not { } holder || _alive(holder)) throw Refused(found, "the Daoris process that runs it still runs");
+
+                // Above the opening's generation the claim is a reconciler's: a read made after its take refuses as one made before it.
+                if (RunIn(write, found.ClaimRun) is not { } holder || _alive(holder))
+                {
+                    throw Refused(found, found.ClaimGeneration > 1 ? "another reconciler took it first" : "the Daoris process that runs it still runs");
+                }
                 var taken = write.Execute(
                     """
                     UPDATE git_acts SET claim_run = $mine, claim_generation = claim_generation + 1

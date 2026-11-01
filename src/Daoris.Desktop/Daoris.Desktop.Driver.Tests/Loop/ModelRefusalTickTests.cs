@@ -86,15 +86,14 @@ public sealed class ModelRefusalTickTests : IDisposable
         await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
         var (driver, _) = Driver(service.Url, "account-1:opus");
 
+        // MODELREFUSE1: one look, one start: the refused record ends and the same start goes on under the walk's next answer.
         await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         var refused = service.Session("s1");
         Assert.Equal(("failed", "account-1"), (refused["state"]!.GetValue<string>(), refused["profile"]!.GetValue<string>()));
         Assert.Equal("ended.choice-not-offered", Code(refused));
-        Assert.Equal("Open", service.Status("q1"));
         // The list named `opus` and the set refused it: that account's `refused` reading, kept before the record ended.
         Assert.Equal(AgentOffers.RefusedCode, AgentOffers.Judge(AgentOffers.Read(_home), "acp-stub", null, "account-1", "opus", DateTimeOffset.UtcNow));
 
-        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         var ran = service.Session("s2");
         Assert.Equal(("completed", "account-2"), (ran["state"]!.GetValue<string>(), ran["profile"]!.GetValue<string>()));
         Assert.Equal("1", ran["choice"]?.GetValue<string>());
@@ -103,6 +102,74 @@ public sealed class ModelRefusalTickTests : IDisposable
         var runs = Runs();
         Assert.Equal([("account-1", "opus", false), ("account-2", "opus", true)],
             runs.Select(run => (run["account"]!.GetValue<string>(), run["model"]?.GetValue<string>(), run["prompted"]!.GetValue<bool>())));
+
+        // No strike and no cool-off: the account is not at fault, and the model is the only thing marked.
+        using (var http = new HttpClient())
+        {
+            var records = await http.GetStringAsync($"{service.Url}/api/sessions?includeClosed=true");
+            Assert.False(ServiceClient.ReadStrikes(records).ContainsKey("q1"));
+        }
+
+        Assert.Null(AgentOffers.Judge(AgentOffers.Read(_home), "acp-stub", null, "account-2", "opus", DateTimeOffset.UtcNow));
+
+        // Its conversation record says which model was refused and on which agent, by code.
+        var opening = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After("s2", 0).Events;
+        var moved = Assert.Single(opening, line => line.Parts?.Any(part => part.Code == "opening.moved-off-model") == true);
+        Assert.Equal("The same start moved here: `acp-stub` refused `opus` on the account it ran on.", moved.Text);
+    }
+
+    /// <summary>
+    /// MODELREFUSE1: an agent that answers the set with another model it lists, without saying no, is a refusal as well: the same start
+    /// goes on to the walk's next answer and says so.
+    /// </summary>
+    [Fact]
+    public async Task A_stub_that_silently_swaps_the_model_ends_that_choice_and_the_same_start_runs_the_other_account()
+    {
+        await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
+        var (driver, _) = Driver(service.Url, "account-1:~opus");
+
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        Assert.Equal("ended.choice-not-offered", Code(service.Session("s1")));
+        var ran = service.Session("s2");
+        Assert.Equal(("completed", "account-2"), (ran["state"]!.GetValue<string>(), ran["profile"]!.GetValue<string>()));
+        Assert.Equal("Done", service.Status("q1"));
+        var opening = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After("s2", 0).Events;
+        Assert.Contains(opening, line => line.Parts?.Any(part => part.Code == "opening.moved-off-model") == true);
+    }
+
+    /// <summary>
+    /// MODELREFUSE1: from the moment the refused record is failed until the next run's record is open, the quest stays reserved, as
+    /// LIMITPICK2 holds it across an account's move.
+    /// </summary>
+    [Fact]
+    public async Task A_look_between_the_refused_model_s_end_and_the_next_run_finds_the_quest_reserved()
+    {
+        await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
+        var (driver, _) = Driver(service.Url, "account-1:opus");
+
+        var finished = false;
+        var open = false;
+        var watcher = Task.Run(() =>
+        {
+            var failedSeen = false;
+            while (!Volatile.Read(ref finished))
+            {
+                if (service.SessionCount == 0 || service.Session("s1")["state"]!.GetValue<string>() != "failed") continue;
+                failedSeen = true;
+                var held = driver.Context.Runs.Reserved.Any(each => each.Quest == "q1");
+                if (!held && service.SessionCount == 1) open = true;
+            }
+
+            return failedSeen;
+        });
+
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        Volatile.Write(ref finished, true);
+
+        Assert.True(await watcher, "the watcher never saw the refused record failed");
+        Assert.False(open, "a look could have planned the quest between the refused end and the next run's record");
+        Assert.Equal("completed", service.Session("s2")["state"]!.GetValue<string>());
+        Assert.Empty(driver.Context.Runs.Reserved);
     }
 
     /// <summary>
@@ -152,10 +219,9 @@ public sealed class ModelRefusalTickTests : IDisposable
         var codes = refused["noteParts"]!.AsArray().Select(part => part?["code"]?.GetValue<string>()).ToList();
         Assert.Equal("account.refused-model", codes[^1]);
         Assert.DoesNotContain("account-1", refused["note"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.Equal("Open", service.Status("q1"));
         Assert.NotNull(AgentOffers.Judge(AgentOffers.Read(_home), PipeStub.Named, null, "account-1", "opus", DateTimeOffset.UtcNow));
 
-        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        // MODELREFUSE1: the same look went on to account-2.
         var ran = service.Session("s2");
         Assert.Equal(("completed", "account-2"), (ran["state"]!.GetValue<string>(), ran["profile"]!.GetValue<string>()));
         Assert.Equal("1", ran["choice"]?.GetValue<string>());
@@ -281,7 +347,10 @@ public sealed class ModelRefusalTickTests : IDisposable
               } else if (frame.method === 'session/set_config_option') {
                 const value = frame.params.value;
                 asked = value;
-                if (refused.has(value)) {
+                if (refused.has('~' + value)) {
+                  // Answers with another value it lists and says nothing of refusing.
+                  send({ jsonrpc: '2.0', id: frame.id, result: { configOptions: options() } });
+                } else if (refused.has(value)) {
                   send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: 'Internal error',
                     data: { details: `Invalid value for config option model: ${value}` } } });
                 } else {

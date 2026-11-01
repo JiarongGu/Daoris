@@ -1,11 +1,14 @@
-import { type ReactNode, useCallback, useId, useRef } from 'react';
+import { type ComponentType, type ReactNode, useCallback, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Inline, Pill, Prose, SkeletonRows } from '../../design/ui';
 import { clockOf } from '../../locales/format';
 import { BranchList, type BranchListValue } from './BranchList';
+import type { RefActs } from './NewRef';
 import { CommitGraph, type GraphCommitRow } from './CommitGraph';
 import { ListMore } from '../../work/frame/ListPane';
 import { GraphFoot, useGraphPaging } from './GraphFoot';
+import type { HunkPress } from './ChangeHunks';
+import type { ConflictPress } from './ConflictHunks';
 
 const noop = () => {};
 
@@ -63,9 +66,11 @@ export function Waiting({ sentence, reading }: { sentence: string; reading: bool
  * title its holder joined. A branch's name opens its page, and the line's opens History, where its holder hands the presses
  * (UX6h3b).
  */
-export function BranchesTab({ repository, read, titles, onOpen, onOpenHistory }: {
+export function BranchesTab({ repository, read, titles, onOpen, onOpenHistory, acts }: {
   repository: string;
   read: GitRead<BranchListValue>;
+  /** *New branch or tag* (GITAPP2c), made at the line's commit; absent, the tab offers none. */
+  acts?: RefActs;
   /** Each session branch's session's title, by the branch's name. */
   titles?: Readonly<Record<string, string>>;
   /** Open a branch's page, by its name. */
@@ -83,7 +88,7 @@ export function BranchesTab({ repository, read, titles, onOpen, onOpenHistory }:
   if (read.value.branches.length === 0) {
     return <Nothing headline={t('projects.git.branches.none.headline')} body={t('projects.git.branches.none.body', { repository })} />;
   }
-  return <BranchList repository={repository} list={read.value} titles={titles} onOpen={onOpen} onOpenHistory={onOpenHistory} />;
+  return <BranchList repository={repository} list={read.value} titles={titles} onOpen={onOpen} onOpenHistory={onOpenHistory} acts={acts} />;
 }
 
 /**
@@ -191,23 +196,65 @@ const short = (blob: string) => blob.slice(0, 7);
 const mode = (file: ChangedFile) => (NONE.test(file.newMode) ? file.oldMode : file.newMode);
 const blobOf = (file: ChangedFile) => (NONE.test(file.newBlob) ? file.oldBlob : file.newBlob);
 
+/** The side of a file's hunks: the index → worktree for a file to stage, HEAD → index for one to unstage. */
+export type ChangeSide = 'unstaged' | 'staged';
+
+/** The last act's answer, said under the tab's head with *Undo* where it is done and kept a way back. */
+export type ChangesLast = {
+  verb: 'stage' | 'unstage' | 'undo' | 'undoResolve' | 'commit' | 'amend' | 'resolve' | 'mark' | 'switch' | 'stash' | 'stashApply';
+  path: string | null;
+  act: string | null;
+  done: boolean;
+  said: string | null;
+  stale?: boolean;
+  /** A commit's own words beside the record's sentence: what a hook changed in it, or why git refused it. */
+  notes?: string | null;
+};
+
+/**
+ * The presses of the Changes tab (GITAPP2h): stage and unstage a file whole or by hunk and line, and *Undo*. Absent, the tab only reads
+ * (the switch is off, or the shell is not there).
+ */
+export type ChangesActs = {
+  /** An act is running: every press waits. */
+  busy: boolean;
+  last: ChangesLast | null;
+  /** A file pressed whole (no pick), or the hunks it picked with the faces they were read against. `shown` is the index entry the list showed. */
+  press: (press: { verb: 'stage' | 'unstage'; path: string; shown: string; picks?: HunkPress['picks']; faces?: HunkPress['faces'] }) => void;
+  undo: (act: string) => void;
+  /** A file's hunks on a side, read by its holder. */
+  Hunks: ComponentType<{ path: string; side: ChangeSide; busy: boolean; onPress: (press: HunkPress) => void }>;
+  /** The commit box (GITAPP2i), read and pressed by its holder; absent, the tab draws none. */
+  Commit?: ComponentType<{ busy: boolean }>;
+  /** A conflicted file's conflicts (GITAPP2j), read by its holder; with `resolve` and `mark`, the row draws *Resolve* and *Mark resolved*. */
+  Conflict?: ComponentType<{ path: string; busy: boolean; onPress: (press: ConflictPress) => void }>;
+  /** The choices made for a file's conflicts, with the faces they were read against. */
+  resolve?: (press: { path: string } & ConflictPress) => void;
+  /** *Mark resolved*: the file added, its stages gone from the index. */
+  mark?: (path: string) => void;
+  /** The switch box (GITAPP2k) and the stash box, each read and pressed by its holder; absent, the tab draws none. */
+  Switch?: ComponentType<{ busy: boolean }>;
+  Stash?: ComponentType<{ busy: boolean }>;
+};
+
 /**
  * **A repository's Changes tab** (GITAPP2b, D204, the git-writes design §1 and §4): where the person lets Daoris change the
  * checkout's files, what is staged against the last commit, what the files hold beyond it, what is untracked and what a merge
- * left in conflict. It is read when the tab opens, on focus and on *Refresh*, never watched, and says when. This row only reads:
- * no row of it presses a git act.
+ * left in conflict. It is read when the tab opens, on focus and on *Refresh*, never watched, and says when. With `acts` (GITAPP2h)
+ * a file can be staged or unstaged whole, or by the hunks and lines of its changes, and the last act can be undone.
  *
  * @remarks
  * **A molecule**: the read arrives as a prop and `refreshing` says it is being read again while the last stays on show, with its
  * own time. A staged addition whose file was removed since is in Staged and in Not staged: two observations, both true.
  */
-export function ChangesTab({ repository, read, refreshing = false, onRefresh }: {
+export function ChangesTab({ repository, read, refreshing = false, onRefresh, acts }: {
   repository: string;
   read: GitRead<ChangesValue>;
   /** The holder is reading it again. */
   refreshing?: boolean;
   /** *Refresh*: read again now. Absent, the tab draws no press. */
   onRefresh?: () => void;
+  acts?: ChangesActs;
 }) {
   const { t, i18n } = useTranslation();
   if (read.state === 'reading') return <Waiting reading sentence={t('projects.git.reading.changes', { repository })} />;
@@ -227,22 +274,34 @@ export function ChangesTab({ repository, read, refreshing = false, onRefresh }: 
         </Prose>
         {onRefresh && <Button variant="ghost" disabled={refreshing} onClick={onRefresh}>{t('projects.git.changes.refresh')}</Button>}
       </div>
+      {acts?.last && <ActSaid last={acts.last} busy={acts.busy} onUndo={acts.undo} />}
+      {acts?.Commit && <acts.Commit busy={acts.busy} />}
+      {acts?.Switch && <acts.Switch busy={acts.busy} />}
+      {acts?.Stash && <acts.Stash busy={acts.busy} />}
       {none && <Nothing headline={t('projects.git.changes.none.headline')} body={t('projects.git.changes.none.body', { repository })} />}
-      {staged.length > 0 && <ChangeKind kind="staged" count={staged.length}>{staged.map((file) => <ChangeRow key={file.path} file={file} />)}</ChangeKind>}
-      {unstaged.length > 0 && <ChangeKind kind="unstaged" count={unstaged.length}>{unstaged.map((file) => <ChangeRow key={file.path} file={file} />)}</ChangeKind>}
+      {staged.length > 0 && (
+        <ChangeKind kind="staged" count={staged.length}>
+          {staged.map((file) => <ChangeRow key={file.path} file={file} side="staged" acts={acts} />)}
+        </ChangeKind>
+      )}
+      {unstaged.length > 0 && (
+        <ChangeKind kind="unstaged" count={unstaged.length}>
+          {unstaged.map((file) => <ChangeRow key={file.path} file={file} side="unstaged" acts={acts} />)}
+        </ChangeKind>
+      )}
       {untracked.length > 0 && (
         <ChangeKind kind="untracked" count={untracked.length}>
-          {untracked.map((path) => <li key={path} className="min-w-0 border-b border-line py-1.5 last:border-b-0"><Path path={path} /></li>)}
+          {untracked.map((path) => (
+            <li key={path} className="flex min-w-0 flex-wrap items-center justify-between gap-2 border-b border-line py-1.5 last:border-b-0">
+              <Path path={path} />
+              {acts && <Button variant="ghost" disabled={acts.busy} onClick={() => acts.press({ verb: 'stage', path, shown: '' })}>{t('projects.git.changes.stage')}</Button>}
+            </li>
+          ))}
         </ChangeKind>
       )}
       {unmerged.length > 0 && (
         <ChangeKind kind="unmerged" count={unmerged.length}>
-          {unmerged.map((entry) => (
-            <li key={entry.path} className="grid min-w-0 gap-0.5 border-b border-line py-1.5 last:border-b-0">
-              <Path path={entry.path} code={entry.code} />
-              <Detail parts={[t('projects.git.changes.mode', { mode: entry.modes.join(' ') }), t('projects.git.changes.stages', { ids: entry.blobs.map(short).join(', ') })]} />
-            </li>
-          ))}
+          {unmerged.map((entry) => <ConflictRow key={entry.path} entry={entry} acts={acts} />)}
         </ChangeKind>
       )}
     </section>
@@ -261,13 +320,81 @@ function ChangeKind({ kind, count, children }: { kind: 'staged' | 'unstaged' | '
   );
 }
 
-function ChangeRow({ file }: { file: ChangedFile }) {
+/** The index entry a listed file stands for, as the driver names it: `mode blob`, or empty where the index holds none. */
+const indexOf = (file: ChangedFile, side: ChangeSide) => {
+  const [m, b] = side === 'unstaged' ? [file.oldMode, file.oldBlob] : [file.newMode, file.newBlob];
+  return NONE.test(b) ? '' : `${m} ${b}`;
+};
+
+function ChangeRow({ file, side, acts }: { file: ChangedFile; side: ChangeSide; acts?: ChangesActs }) {
   const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const verb = side === 'unstaged' ? 'stage' : 'unstage';
   return (
-    <li className="grid min-w-0 gap-0.5 border-b border-line py-1.5 last:border-b-0">
-      <Path path={file.path} status={file.status} />
-      <Detail parts={[t('projects.git.changes.mode', { mode: mode(file) }), t('projects.git.changes.blob', { id: short(blobOf(file)) })]} />
+    <li className="grid min-w-0 gap-1 border-b border-line py-1.5 last:border-b-0">
+      <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
+        <div className="grid min-w-0 gap-0.5">
+          <Path path={file.path} status={file.status} />
+          <Detail parts={[t('projects.git.changes.mode', { mode: mode(file) }), t('projects.git.changes.blob', { id: short(blobOf(file)) })]} />
+        </div>
+        {acts && (
+          <div className="flex flex-wrap gap-1">
+            <Button variant="ghost" disabled={acts.busy} onClick={() => acts.press({ verb, path: file.path, shown: indexOf(file, side) })}>{t(`projects.git.changes.${verb}`)}</Button>
+            <Button variant="ghost" aria-expanded={open} onClick={() => setOpen(!open)}>{t(open ? 'projects.git.changes.hide' : 'projects.git.changes.show')}</Button>
+          </div>
+        )}
+      </div>
+      {acts && open && (
+        <acts.Hunks
+          path={file.path}
+          side={side}
+          busy={acts.busy}
+          onPress={(press) => acts.press({ verb, path: file.path, shown: indexOf(file, side), ...press })}
+        />
+      )}
     </li>
+  );
+}
+
+/** A file the index holds in conflict: its stages, and where the tab can resolve it, *Resolve* beside *Mark resolved*. */
+function ConflictRow({ entry, acts }: { entry: ChangesValue['unmerged'][number]; acts?: ChangesActs }) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const { Conflict, resolve, mark } = acts ?? {};
+  return (
+    <li className="grid min-w-0 gap-1 border-b border-line py-1.5 last:border-b-0">
+      <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
+        <div className="grid min-w-0 gap-0.5">
+          <Path path={entry.path} code={entry.code} />
+          <Detail parts={[t('projects.git.changes.mode', { mode: entry.modes.join(' ') }), t('projects.git.changes.stages', { ids: entry.blobs.map(short).join(', ') })]} />
+        </div>
+        {acts && Conflict && resolve && mark && (
+          <div className="flex flex-wrap gap-1">
+            <Button variant="ghost" aria-expanded={open} onClick={() => setOpen(!open)}>{t(open ? 'projects.git.changes.conflict.hide' : 'projects.git.changes.conflict.show')}</Button>
+            <Button variant="ghost" disabled={acts.busy} onClick={() => mark(entry.path)}>{t('projects.git.changes.conflict.mark')}</Button>
+          </div>
+        )}
+      </div>
+      {acts && Conflict && resolve && open && (
+        <Conflict path={entry.path} busy={acts.busy} onPress={(press) => resolve({ path: entry.path, ...press })} />
+      )}
+    </li>
+  );
+}
+
+/** The last act in words, a refusal in the driver's sentence, and *Undo* beside a done one that kept a way back. */
+function ActSaid({ last, busy, onUndo }: { last: ChangesLast; busy: boolean; onUndo: (act: string) => void }) {
+  const { t } = useTranslation();
+  const words = last.done
+    ? [t(`projects.git.changes.acted.${last.verb}`, { path: last.path ?? '' }), last.notes].filter(Boolean).join(' ')
+    : last.stale ? t('projects.git.changes.acted.stale') : last.notes ?? last.said ?? t('projects.git.changes.acted.unknown');
+  return (
+    <div role="status" className="flex flex-wrap items-center justify-between gap-2 rounded-control border border-line p-2">
+      <Prose className="min-w-0 text-small"><Inline text={words} /></Prose>
+      {last.done && last.act && (last.verb === 'stage' || last.verb === 'unstage' || last.verb === 'resolve' || last.verb === 'mark') && (
+        <Button variant="ghost" disabled={busy} onClick={() => onUndo(last.act!)}>{t('projects.git.changes.undo')}</Button>
+      )}
+    </div>
   );
 }
 

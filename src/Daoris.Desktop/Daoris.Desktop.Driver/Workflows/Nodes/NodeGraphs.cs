@@ -65,7 +65,7 @@ public static class GraphRefusal
     /// <summary>A node whose own declaration does not hold (<see cref="NodeDeclarations.Problem"/>).</summary>
     public const string Declaration = "declaration";
 
-    /// <summary>A cycle after the landing declaring a node of a landing's kind, which the landing rule holds already.</summary>
+    /// <summary>A cycle after the landing declaring a node of a landing's kind: the graph holds one landing, and under Current the rule's <c>land</c> is it.</summary>
     public const string LandingKind = "landing-kind";
 
     /// <summary>A cycle's wire into the landing's nodes: the cycle comes after the landing, and the rules' gates come before it.</summary>
@@ -145,6 +145,21 @@ public static class GraphRefusal
     /// no such node would land the work with its requests unanswered, a hold dropped.
     /// </summary>
     public const string WorkRequestsLate = "work-requests-late";
+
+    /// <summary>A graph holding a <c>land</c> and another landing (LANDNODE1a; the land node design §6): one <c>land</c> or one <c>handed</c>, never both.</summary>
+    public const string LandOnce = "land-once";
+
+    /// <summary>
+    /// A <c>land</c> whose method and tail disagree (LANDNODE1a): <c>pull-request</c> brings <c>pushed</c> then <c>pull-request</c>, <c>push</c> brings
+    /// <c>pushed</c>, <c>integrate</c> an <c>integrate</c>, and <c>merge</c> and <c>branch</c> nothing. Replaces <see cref="IntegratePlugin"/> for a <c>land</c>.
+    /// </summary>
+    public const string LandTail = "land-tail";
+
+    /// <summary>
+    /// A <c>land</c> accepting automatically where D145 refuses it (LANDNODE1a): a merge, and an integrate except under the integrate step's
+    /// <c>request: done</c>. That the line's gates are declared and accepted is judged where the line is bound.
+    /// </summary>
+    public const string LandAutomatic = "land-automatic";
 }
 
 /// <summary>
@@ -180,7 +195,7 @@ public static class NodeGraphs
 
     /// <summary>The kinds an end is at or before the line by: the cleanup waits for no such end (§C2, §C3).</summary>
     private static readonly HashSet<string> AtOrBeforeTheLine =
-        new([NodeKinds.Claimed, NodeKinds.WorkRequests, NodeKinds.Handed, NodeKinds.Pushed, NodeKinds.PullRequest, NodeKinds.Integrate, NodeKinds.Line], StringComparer.Ordinal);
+        new([NodeKinds.Claimed, NodeKinds.WorkRequests, NodeKinds.Handed, NodeKinds.Land, NodeKinds.Pushed, NodeKinds.PullRequest, NodeKinds.Integrate, NodeKinds.Line], StringComparer.Ordinal);
 
     /// <summary>The kinds that observe the landing record (INTEGRATE1n, F47): none can be reached before a <c>handed</c> has made one.</summary>
     private static readonly string[] OfTheLanding = [NodeKinds.Pushed, NodeKinds.PullRequest, NodeKinds.Line, NodeKinds.Integrate];
@@ -279,7 +294,9 @@ public static class NodeGraphs
         // failure's or a rejection's path. The holds stay the rules' gate at the landing, no node yet. FABRIC-CUTOVER1b (the cutover design
         // §5.1): the opinion is not asked to reach a look, whose set-up the review gate holds while an agent reads the opinion.
         var ordered = local.Where(wire => wire.Kind is WireKinds.After or WireKinds.Trigger or WireKinds.Data).ToList();
-        var landings = byId.Values.Where(node => node.Kind == NodeKinds.Handed).ToList();
+        // LANDNODE1a: a `land` is a landing as a `handed` is, for every rule below that counts one.
+        var landings = byId.Values.Where(node => node.Kind is NodeKinds.Handed or NodeKinds.Land).ToList();
+        var lands = landings.Where(node => node.Kind == NodeKinds.Land).ToList();
         var looks = byId.Values.Where(node => node.Kind == NodeKinds.Look).ToList();
         var unreached = new HashSet<string>(StringComparer.Ordinal);
         foreach (var gate in byId.Values.Where(node => node.Kind is NodeKinds.Opinion or NodeKinds.Look))
@@ -339,12 +356,13 @@ public static class NodeGraphs
                 Say(GraphRefusal.IntegrateUnlanded, null, integrates[0].Id, $"node `{integrates[0].Id}`: an `{NodeKinds.Integrate}` integrates the landing a `{NodeKinds.Handed}` makes, and the graph holds no `{NodeKinds.Handed}`.");
             }
 
-            foreach (var plugged in byId.Values.Where(node => node.Kind is NodeKinds.Pushed or NodeKinds.PullRequest))
+            // A `land` brings its own tail, which land-tail judges (LANDNODE1a): these two are the `handed`'s.
+            foreach (var plugged in byId.Values.Where(node => lands.Count == 0 && node.Kind is NodeKinds.Pushed or NodeKinds.PullRequest))
             {
                 Say(GraphRefusal.IntegratePlugin, null, plugged.Id, $"node `{plugged.Id}`: a `{plugged.Kind}` is a plugin's landing node, and an `{NodeKinds.Integrate}` is the step of a branch no plugin lands.");
             }
 
-            foreach (var landing in landings)
+            foreach (var landing in landings.Where(node => node.Kind == NodeKinds.Handed))
             {
                 if (!string.IsNullOrEmpty(NodeOptions.Text(landing, "plugin")))
                 {
@@ -354,6 +372,73 @@ public static class NodeGraphs
                 else if (NodeOptions.Text(landing, "form") == LandingForm.Merge)
                 {
                     Say(GraphRefusal.IntegratePlugin, null, integrates[0].Id, $"node `{integrates[0].Id}`: the landing `{landing.Id}` is a merge, and an `{NodeKinds.Integrate}` is the step of a branch's landing.");
+                }
+            }
+        }
+
+        // LANDNODE1a (the land node design §6): one landing where a `land` is, the method's tail and no other, and D145's refusals of automatic.
+        // A `handed` graph is judged as before, so a stored one reads unchanged. The line's gates being declared and accepted for an automatic
+        // integrate is the bind's to judge, since the graph does not hold them.
+        if (lands.Count > 0)
+        {
+            foreach (var again in landings.Skip(1))
+            {
+                Say(GraphRefusal.LandOnce, null, again.Id, $"node `{again.Id}`: `{landings[0].Id}` and `{again.Id}` are both a landing, and a graph holds one, a `{NodeKinds.Land}` or a `{NodeKinds.Handed}`.");
+            }
+        }
+
+        foreach (var land in lands)
+        {
+            var method = NodeOptions.Text(land, "method");
+            if (method is not null && LandNodes.Methods.Contains(method, StringComparer.Ordinal))
+            {
+                var after = Reach([land.Id], ordered, forward: true);
+                var pushes = byId.Values.Where(node => node.Kind == NodeKinds.Pushed).ToList();
+                var requests = byId.Values.Where(node => node.Kind == NodeKinds.PullRequest).ToList();
+                void Tail(string kind, bool brought, List<NodeDeclaration> held)
+                {
+                    if (!brought)
+                    {
+                        foreach (var extra in held)
+                        {
+                            Say(GraphRefusal.LandTail, null, extra.Id, $"node `{extra.Id}`: a `{method}` land brings no `{kind}`, and `{land.Id}` is the graph's landing.");
+                        }
+                    }
+                    else if (held.Count == 0)
+                    {
+                        Say(GraphRefusal.LandTail, null, land.Id, $"node `{land.Id}`: a `{method}` land brings a `{kind}` after it, and the graph holds none.");
+                    }
+                    else
+                    {
+                        foreach (var late in held.Where(node => !after.Contains(node.Id)))
+                        {
+                            Say(GraphRefusal.LandTail, null, late.Id, $"node `{late.Id}`: a `{kind}` is the tail of `{land.Id}`, and no way from `{land.Id}` reaches it.");
+                        }
+                    }
+                }
+
+                Tail(NodeKinds.Pushed, method is LandNodes.Push or LandNodes.PullRequest, pushes);
+                Tail(NodeKinds.PullRequest, method == LandNodes.PullRequest, requests);
+                Tail(NodeKinds.Integrate, method == LandNodes.Integrate, integrates);
+                if (method == LandNodes.PullRequest && pushes.Count > 0)
+                {
+                    var afterPush = Reach(pushes.Select(node => node.Id), ordered, forward: true);
+                    foreach (var early in requests.Where(node => !afterPush.Contains(node.Id)))
+                    {
+                        Say(GraphRefusal.LandTail, null, early.Id, $"node `{early.Id}`: a `{NodeKinds.PullRequest}` comes after the `{NodeKinds.Pushed}` of `{land.Id}`, and no way from it reaches `{early.Id}`.");
+                    }
+                }
+            }
+
+            if (NodeOptions.Text(land, "accept") == LandNodes.Automatic)
+            {
+                if (method == LandNodes.Merge)
+                {
+                    Say(GraphRefusal.LandAutomatic, null, land.Id, $"node `{land.Id}`: a merge writes into your checkout, and with no press nothing would stand between the work and the line (D145).");
+                }
+                else if (method == LandNodes.Integrate && !integrates.Any(node => NodeOptions.Text(node, "request") == LandingIntegrate.Done))
+                {
+                    Say(GraphRefusal.LandAutomatic, null, land.Id, $"node `{land.Id}`: an integrate is accepted automatically only under `request: {LandingIntegrate.Done}`, with the line's gates declared and accepted.");
                 }
             }
         }
@@ -397,7 +482,7 @@ public static class NodeGraphs
             foreach (var node in byId.Values.Where(node => OfTheLanding.Contains(node.Kind, StringComparer.Ordinal) && unlanded.Contains(node.Id)))
             {
                 Say(GraphRefusal.BeforeLanding, null, node.Id, $"node `{node.Id}`: {(node.Kind == NodeKinds.Integrate ? "an" : "a")} `{node.Kind}` observes the landing, and a way to it passes no "
-                    + $"`{NodeKinds.Handed}` ({string.Join(", ", landings.Select(landing => $"`{landing.Id}`"))}), so it would wait for ever before one.");
+                    + $"`{landings[0].Kind}` ({string.Join(", ", landings.Select(landing => $"`{landing.Id}`"))}), so it would wait for ever before one.");
             }
         }
 
@@ -906,9 +991,10 @@ public static class NodeGraphHomes
 
         var problems = new List<WireProblem>();
         var held = landing.Nodes.Select(node => node.Id).ToHashSet(StringComparer.Ordinal);
-        foreach (var node in parts.Nodes.Where(node => Pulled.Contains(node.Kind, StringComparer.Ordinal) || node.Kind == NodeKinds.Integrate))
+        foreach (var node in parts.Nodes.Where(node => Pulled.Contains(node.Kind, StringComparer.Ordinal) || node.Kind is NodeKinds.Integrate or NodeKinds.Land))
         {
-            problems.Add(new(GraphRefusal.LandingKind, null, node.Id, $"node `{node.Id}` is a `{node.Kind}`, a landing's node, which the landing rule holds already: wire from it."));
+            problems.Add(new(GraphRefusal.LandingKind, null, node.Id,
+                $"node `{node.Id}` is a `{node.Kind}`, a landing's node: the graph holds one landing, and under Current the rule's `{NodeKinds.Land}` is it. Wire from it."));
         }
 
         // A wire into the landing is said here and left out of the graph judged below, so it is not said again as an entry's wire.

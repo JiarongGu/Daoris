@@ -24,10 +24,26 @@ public sealed record ActPlan(string Kind, string Press, string Repository, strin
 
     /// <summary>The fresh reads under the lock, before any effect: why the act is refused, or null where they equal the plan.</summary>
     public Func<CancellationToken, Task<string?>>? Judge { get; init; }
+
+    /// <summary>
+    /// The objects an act writes before its record (a history edit's commits, the git-writes design §7), made under the lock once
+    /// <see cref="Judge"/> holds: the steps to journal in place of <see cref="Steps"/>, or why the act is refused with only objects written.
+    /// </summary>
+    public Func<CancellationToken, Task<(IReadOnlyList<ActStepPlan>? Steps, string? Refusal)>>? Make { get; init; }
+
+    /// <summary>
+    /// Read under the lock after each effect step ended, with its ordinal: the words that stop the act there, or null to go on. It has put right
+    /// by its own rule whatever it stops for (a deleted branch a tree checked out meanwhile is made again), and runs under no cancellation.
+    /// </summary>
+    public Func<int, Task<string?>>? After { get; init; }
 }
 
 /// <summary>What an act's run answered: the act and its outcome (<see cref="ActOutcomes"/>), or that it was refused before anything was written, in words.</summary>
-public sealed record ActRun(string? Act, string? Outcome, string Said, bool Refused);
+public sealed record ActRun(string? Act, string? Outcome, string Said, bool Refused)
+{
+    /// <summary>What the act's door adds in plain words beside the record's sentence (a commit's hook's rewrite, a hook's refusal); null where it has none.</summary>
+    public string? Notes { get; init; }
+}
 
 /// <summary>The boundaries a test's seam is called at, by the step's ordinal (none for <see cref="Prepared"/>).</summary>
 public static class ActSeams
@@ -84,6 +100,9 @@ public sealed class ActRuns(ActJournal journal)
     /// <summary>The test seam for ending a job past a step's bound; null ends it (<see cref="ProcessJob.Terminate"/>).</summary>
     internal Action<ProcessJob>? Ending { get; set; }
 
+    /// <summary>The journal this run writes.</summary>
+    internal ActJournal Journal => journal;
+
     /// <summary>The act this run holds now, while it runs.</summary>
     internal string? Running { get; private set; }
 
@@ -105,6 +124,14 @@ public sealed class ActRuns(ActJournal journal)
         if (await LayoutAsync(plan.Checkout).ConfigureAwait(false) is not { } layout) return Refused($"git could not read `{plan.Repository}`'s checkout, so nothing was changed.");
         if (ActLocks.Standing(layout.GitDir, layout.CommonDir, plan.Steps.SelectMany(RefsOf)) is [var standing, ..]) return Refused(ActLocks.Stale(standing, plan.Repository));
         if (plan.Judge is { } judge && await judge(ct).ConfigureAwait(false) is { } refusal) return Refused(refusal);
+        if (plan.Make is { } make)
+        {
+            var (steps, unmade) = await make(ct).ConfigureAwait(false);
+            if (steps is null) return Refused(unmade ?? "its objects were not made, so nothing was changed.");
+            plan = plan with { Steps = steps };
+            if (ActLocks.Standing(layout.GitDir, layout.CommonDir, steps.SelectMany(RefsOf)) is [var late, ..]) return Refused(ActLocks.Stale(late, plan.Repository));
+        }
+
         ct.ThrowIfCancellationRequested();
 
         var id = plan.Id ?? Guid.NewGuid().ToString("N");
@@ -145,6 +172,7 @@ public sealed class ActRuns(ActJournal journal)
 
             var limits = new ActRunsLimits(Seam, Ending, ExitBound);
             var launch = new ActLaunch(journal, claim, job, plan.Checkout, plan.Repository, limits);
+            string? stoppedWhy = null;
             foreach (var step in journal.Steps(id))
             {
                 var bound = Bound?.Invoke(step.Kind) ?? ActSteps.BoundOf(step.Kind);
@@ -160,9 +188,14 @@ public sealed class ActRuns(ActJournal journal)
                 }
 
                 if (end.Stops) break;
+                if (plan.After is { } after && await after(step.Ordinal).ConfigureAwait(false) is { } stopped)
+                {
+                    stoppedWhy = stopped;
+                    break;
+                }
             }
 
-            return await CloseAsync(reconciler, claim, plan, null).ConfigureAwait(false);
+            return await CloseAsync(reconciler, claim, plan, stoppedWhy).ConfigureAwait(false);
         }
         finally
         {
@@ -192,10 +225,21 @@ public sealed class ActRuns(ActJournal journal)
     }
 
     /// <summary>The refs a step moves, whose lock files are read before it.</summary>
-    private static IEnumerable<string> RefsOf(ActStepPlan step) =>
-        step.Kind != ActStepKinds.Ref || JsonNode.Parse(step.Postconditions)?["refs"] is not JsonArray refs
+    private static IEnumerable<string> RefsOf(ActStepPlan step)
+    {
+        // A commit moves the branch HEAD names (none when detached).
+        if (step.Kind == ActStepKinds.Commit)
+        {
+            return JsonNode.Parse(step.Postconditions) is JsonObject read && read.TryGetPropertyValue("branch", out var named) && named is JsonValue value
+                && value.TryGetValue<string>(out var full) ? [full] : [];
+        }
+
+        // A stash Save moves the stash ref every linked tree shares; an Apply only reads it.
+        if (step.Kind == ActStepKinds.Stash) return JsonNode.Parse(step.Postconditions)?["mode"]?.GetValue<string>() == "apply" ? [] : ["refs/stash"];
+        return step.Kind != ActStepKinds.Ref || JsonNode.Parse(step.Postconditions)?["refs"] is not JsonArray refs
             ? []
             : refs.Select(each => each?["ref"]?.GetValue<string>()).OfType<string>();
+    }
 
     /// <summary>
     /// A commit, objects only, whose tree holds <paramref name="entries"/>' blobs, each by its place, for the act's own ref to hold; null where

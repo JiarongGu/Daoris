@@ -134,7 +134,7 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
             return new(IntegrationReplayRuns.Unread, $"git could not read where `{ask.Line}` stands ({ContentHolds.Said(err)}): nothing was formed, and it is asked again at the next look.");
         }
 
-        // The line's declaration is the rule's, which each request carries as it stood: the first request's is the line's.
+        // The first request's policy is the candidate's, and only requests of its epoch join it (below).
         var batch = Math.Clamp(queued[0].Policy.Batch ?? 1, 1, LandingIntegrate.MaxBatch);
         // A candidate the judge split (§5.3: its members run one at a time) is followed by one of a single member (INTEGRATE1e part e4a).
         if (store.LastEnded(ask.Repository, ask.Line) is { } last && store.Steps(last.Id).LastOrDefault() is { Step: IntegrationStepNames.Judge, Outcome: IntegrationStepOutcomes.Split })
@@ -145,7 +145,16 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
         IntegrationFormed formed;
         try
         {
-            formed = store.Form(new IntegrationForming(ask.Repository, ask.Workspace, ask.Line, commit.Trim(), [.. queued.Take(batch).Select(each => each.Id)]));
+            // Only the first's epoch batches (LANDNODE1g): the arrivals after it that share it, up to the first of another; an older record has none and goes alone.
+            var epoch = store.RequestEpoch(queued[0].Id);
+            var members = new List<string> { queued[0].Id };
+            foreach (var next in queued.Skip(1).Take(batch - 1))
+            {
+                if (!IntegrationEpoch.Shared(epoch, store.RequestEpoch(next.Id))) break;
+                members.Add(next.Id);
+            }
+
+            formed = store.Form(new IntegrationForming(ask.Repository, ask.Workspace, ask.Line, commit.Trim(), members));
         }
         catch (IntegrationRefusedException refused)
         {

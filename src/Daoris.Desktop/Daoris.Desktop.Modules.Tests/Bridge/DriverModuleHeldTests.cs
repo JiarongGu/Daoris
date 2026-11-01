@@ -25,7 +25,9 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
         ["HEAVY_SLOT"] = new { repository = "engine" },
         ["ROLES"] = new { },
         ["ROLE_STRUCTURE"] = new { places = new[] { new { workspace = "aurora", repository = "engine" } } },
-        ["HELP_PROPOSALS"] = new { session = "a1b2c3d4" },
+        ["PLACES"] = new { },
+        ["PLACE_PLAN"] = new { repositories = new[] { "engine" }, preset = "merge-after-accept" },
+        ["HELP_PROPOSALS"] =new { session = "a1b2c3d4" },
         ["TOOLS_LIST"] = new { },
         ["SUPERVISOR_WAITING"] = new { },
         ["INTEGRATION"] = new { repository = "engine" },
@@ -34,6 +36,12 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
         ["SESSION_MEMORY"] = new { session = "a1b2c3d4" },
         ["TOGETHER"] = new { session = "a1b2c3d4" },
         ["GIT_CHANGES"] = new { repository = "engine" },
+        ["GIT_HUNKS"] = new { repository = "engine", path = "a.txt", side = "unstaged" },
+        ["GIT_COMMIT_PLAN"] = new { repository = "engine", verb = "commit" },
+        ["GIT_CONFLICT"] = new { repository = "engine", path = "a.txt" },
+        ["GIT_SWITCH_PLAN"] = new { repository = "engine", branch = "main" },
+        ["GIT_STASH_PLAN"] = new { repository = "engine" },
+        ["GIT_FETCH_PLAN"] = new { repository = "engine" },
     };
 
     public static TheoryData<string> HeldRoutes() => [.. DriverModule.ByEventRoutes.Order(StringComparer.Ordinal)];

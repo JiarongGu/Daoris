@@ -119,6 +119,8 @@ public sealed class LinesRoutes(DriverContext context)
                     // The ticket's key and the squash (DOORS1b), for the page to show and keep: none is left out.
                     pair.landing.Rule.Key,
                     pair.landing.Rule.Squash,
+                    // AGENTSPLACE1d: the rule's `integrate` as the file holds it (null when none), for the editor to start from.
+                    Integrate = IntegrateWire(pair.landing.Rule.Integrate),
                     pair.landing.Source,
                 })
                 .ToArray(),
@@ -211,12 +213,45 @@ public sealed class LinesRoutes(DriverContext context)
             rule = LandingKept(rule, standing, request.Payload);
         }
 
+        // AGENTSPLACE1d: `integrate` is set where the press names an object, withdrawn on null, and kept when it is not named; its
+        // shape and its values are LandingKey's to judge, never the route's.
+        var withdraw = false;
+        if (rule is not null && request.Payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty("integrate", out var asked))
+        {
+            if (asked.ValueKind == JsonValueKind.Null) withdraw = true;
+            else rule = rule with { Integrate = LandingKey.IntegrateOf(asked, out var shape) ?? throw new DriverException(shape!) };
+        }
+
         // The rule's plugin must be able to land work here, said as `daoris driver landing` says it (D100): the library's operation
         // asks it before anything is written, as the terminal's command acting alone asks it (PUSH1f2a).
         var catalog = PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names);
-        _context.Change(config => LandingRules.Put(config, repository, workspace, rule, catalog));
+        _context.Change(config =>
+        {
+            // Withdrawn first, so a rule whose new form cannot carry it is not refused for the integrate it drops.
+            if (withdraw && (workspace is not null ? config.WorkspaceLandings : config.Landings).TryGetValue((workspace ?? repository)!, out var held)
+                && held.Integrate is not null)
+            {
+                config = workspace is not null ? config.WithWorkspaceLandingIntegrate(workspace, null) : config.WithLandingIntegrate(repository!, null);
+            }
+
+            return LandingRules.Put(config, repository, workspace, rule, catalog);
+        });
         return DriverRoutes.State(_loop);
     }
+
+    /// <summary>A rule's <c>integrate</c> as the file writes it (and a press may send it), each key null where absent; null where the rule has none.</summary>
+    internal static object? IntegrateWire(LandingIntegrate? integrate) => integrate is null ? null : new
+    {
+        integrate.Request,
+        integrate.Commit,
+        integrate.Batch,
+        integrate.Order,
+        integrate.Gates,
+        Unconfirmed = integrate.Unreached is null && integrate.Reached is null ? null : new { integrate.Unreached, integrate.Reached },
+        integrate.Conflicts,
+        integrate.Overlap,
+        integrate.Line,
+    };
 
     /// <summary>
     /// The rule a landing press leaves (DOORS1b): its <c>key</c> where the press names one (a string; empty or null is none), else

@@ -134,7 +134,8 @@ public static class ChoiceRoutes
         ("driver work-cycle", null, "alone: no route sets a quest's or an ask's cycle of work"),
         ("driver brainstorms", null, "alone: no route sets the brainstorm policy"),
         ("driver workflow new|edit|apply|import|use|kind", null,
-            "alone: no route writes a named workflow or chooses one; the window's WORKFLOW_LANDED reads the tip from its own registry"),
+            "alone: it runs the typed operations the window's WORKFLOW_SAVE, WORKFLOW_USE and WORKFLOW_KIND run, holding the home's lease; "
+            + "the window's WORKFLOW_LANDED reads the tip from its own registry"),
     ];
 }
 

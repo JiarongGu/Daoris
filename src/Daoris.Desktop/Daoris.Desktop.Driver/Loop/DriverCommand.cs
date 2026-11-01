@@ -62,10 +62,16 @@ public static class DriverCommand
           ask --abandon <id> [--reason "…" --yes]  ·  quest abandon <id> [--reason "…" --yes]
               list what abandoning it would decline, discard and archive, and what it keeps and why; with
               --reason and --yes, give up what the list holds, each quest declined with your reason.
-          setup <repository> [--plan]
+          setup <repository> [--plan] [--what-it-builds <kind>]
               ask a repository's own session to set it up for every agent: the doctrine, its knowledge, its
               brief, on its own branch. The press adds the doctrine tool's exact verbs to its rules; --plan
-              prints what was read, the rule and the quest, and publishes nothing.
+              prints what was read, the rule and the quest, and publishes nothing. --what-it-builds library,
+              service, desktop or tooling names the checks its session is asked to declare.
+          place <repository>… --preset <id> [--with opinion,look,adoption] [--what-it-builds <kind>] [--drive] --plan
+              a quick set-up's plan: a delivery preset (not-driven, merge-after-accept, branch-to-push,
+              pull-request, integrated), its second opinion and your look, a set-up quest and general
+              driving, read before and after through the driver's own readers, every refusal at once, what
+              lowers your part, the work driving releases and each declaration to accept. Writes nothing.
           setup --workspace <name> [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]
           setup --workspace <name> --pause | --resume | --stop
               set a workspace up one repository at a time, the ones other work touches first: a press
@@ -125,7 +131,7 @@ public static class DriverCommand
               a session's second opinion before its work lands: ask another agent to read it (one of its rule's reviewers by
               name, or the working agent fresh), say where it stands with its findings and their answers, stop a reviewer
               reading, go on without a settled one, or record your own reading in its place. `sessions say` sends it back.
-          brainstorm "<question>" [--repository <name>] [--agents <a,b>]  ·  brainstorm show|send|clear <id>  ·  brainstorm list
+          brainstorm "<question>" [--repository <name>] [--agents <a,b>] [--source <path>]...  ·  brainstorm show|send|clear <id>  ·  brainstorm list
               one question put to several agents: Daoris freezes a context packet from its own knowledge for you to read,
               and once you send it each agent proposes, one synthesizes, and the ranked document is kept on this machine.
           meeting ask "<question>" --agents <a,b> [--repository <name>] [--id <id>]  ·  meeting show|stop|clear <id>
@@ -321,6 +327,24 @@ public static class DriverCommand
               each repository's line and branches: the sessions', the landed (on origin or not, their pull
               request), yours, and how many only origin holds, each against the line; and the git each read
               ran. Those holding Daoris's branches, every one with --all. Reads only.
+          git branch|tag <repository> <name> [<commit>] [--plan | --yes]
+              make a branch or a lightweight tag at a commit (HEAD without one), as the Branches tab's New branch and
+              New tag do. --plan says what it would make; --yes makes it, after your yes in Daoris's window where
+              Daoris runs. Refused from a session's terminal. --delete takes the branch or tag away instead (the
+              commit, if given, is the one it must stand at), keeping its commits on a recovery ref; annotated
+              tags, daoris/ branches, a landing's, the line and an occupied branch are refused. --rename <new-name>
+              moves it instead, keeping its old tip on a recovery ref; the new name starts a new reflog.
+          git fetch <repository> [--plan | --yes]
+              fetch origin's branches into refs/remotes/origin/* alone (nothing else moves, no tags, FETCH_HEAD kept),
+              removing those origin no longer has and naming them, as the Branches tab's Fetch does. --plan says what
+              it would do; --yes does it, after your yes in Daoris's window where Daoris runs. Only where Daoris's git
+              doors are installed and origin is not set to run another program; refused from a session's terminal.
+          git pick|revert <repository> <branch> <commit|A..B> [--plan | --yes]
+          git rebase <repository> <branch> <onto> [--plan | --yes]
+              edit a branch no tree has out without a working tree, as a branch page's Edit history does: pick or
+              revert commits onto it, or rebase its own commits onto another. Each says its plan; --yes makes it
+              after your yes in Daoris's window where Daoris runs, keeping the old tip under refs/daoris/discarded/.
+              Refused from a session's terminal.
           git review <session> [--json] [--time]
               a session's review as its Review page reads it: the files and their base, the uncommitted ones, the line
               and the branch; --time each git it started, its node and budget, the gate's wait, the creation and the run,

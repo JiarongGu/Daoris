@@ -27,6 +27,8 @@ public sealed partial class CheckoutWritersCensusTests
         ["LinePulls.cs"] = (Checkout, "a line's pull (D109): `merge --ff-only` in the checkout that has the line out, read clean and on it under the hold; elsewhere the ref from the commit judged", ["merge@root", "update-ref@root"]),
         ["IntegrationPromotes.cs"] = (Checkout, "a promotion's move, background or a merge rule's press: `merge --ff-only` in the checkout that has the line out, read clean under the hold; elsewhere one verified `update-ref`", ["merge@checkout.Path", "update-ref@ask.Root"]),
         ["ActSteps.cs"] = (Checkout, "a git act's effect steps (GITAPP2a, D204): one `update-ref --stdin` transaction, and an index's entries replaced under git's own `index.lock` from a copy `update-index` builds, each git held in the act's job; the act's open records reconciled first under the hold", ["update-index@launch.Root", "update-ref@launch.Root"]),
+        ["ActWorkSteps.cs"] = (Checkout, "a switch, a stash Save or a stash Apply (GITAPP2k, GITAPP2l, D204): one `switch --no-guess` of the checkout to a local branch, never forced, one `stash push` that writes the shared `refs/stash`, or one `stash apply <id>` that writes the tracked files and leaves the stash, each in the act's job with its repository's hooks never skipped", ["switch@launch.Root", "stash@?", "stash@launch.Root"]),
+        ["ActCommits.cs"] = (Checkout,"a commit or an amend (GITAPP2i, D204): one `commit` of the act journal, its repository's hooks run and never skipped, in the act's job; the old tip kept first by a ref step, and the index only read on a private copy (`write-tree`)", ["commit@?"]),
 
         // Trees of Daoris's own, under the trees home: no checkout of the person's.
         ["BacklogMerge.cs"] = (OwnTree, "a backlog's union, staged in the replay's own tree", ["checkout@tree", "update-index@tree"]),
@@ -42,8 +44,8 @@ public sealed partial class CheckoutWritersCensusTests
         ["BranchReplays.cs"] = (Refs, "a branch replayed in its own tree or one made for it (D109 §2), moved from the tip judged while no checkout has it out", ["add@tree", "checkout@tree", "rebase@tree", "rm@tree", "switch@tree", "update-ref@root", "worktree@root"]),
         ["TreeUpdates.cs"] = (Refs, "a session's branch brought up to date in its own tree, moved from the tip judged while that tree is detached", ["rebase@tree", "switch@full", "switch@tree", "update-ref@root"]),
         ["TreeLandSyncs.cs"] = (Refs, "a session's branch following what landed, moved from the tip judged while its own tree is detached", ["switch@full", "update-ref@sync.Root"]),
-        ["TreeLands.cs"] = (Refs, "a landing's new branch, and its advance from the recorded tip of a branch checked out in no tree; its merge rule writes the checkout only through IntegrationPromotes' effect and holds nothing itself", ["branch@root", "update-ref@root"]),
-        ["TreeSquashes.cs"] = (Refs, "a squash's advance, from the recorded tip of a branch checked out in no tree", ["update-ref@root"]),
+        ["TreeLands.cs"] = (Refs, "a landing's new branch, and its advance from the recorded tip of a branch checked out in no tree; a delivery's are TreeDeliveries' transaction instead; its merge rule writes the checkout only through IntegrationPromotes' effect and holds nothing itself", ["branch@root", "update-ref@root"]),
+        ["TreeSquashes.cs"] = (Refs, "a squash's advance, from the recorded tip of a branch checked out in no tree; a delivery's is TreeDeliveries' transaction instead", ["update-ref@root"]),
         ["ContentHolds.cs"] = (Refs, "Daoris's holds on content under its own refs, and a branch deleted verified at the tip judged", ["update-ref@root"]),
         ["RecoveryDropping.cs"] = (Refs, "a recovery ref dropped verified at its commit", ["update-ref@root"]),
         ["RefTransaction.cs"] = (Refs, "one typed transaction per ref act (GITTXN1, GITTXN2), each ref's expectation inside it, for refs no checkout has out: the content holds' deletes, drops and put-backs", ["update-ref@?", "update-ref@root"]),
@@ -58,7 +60,9 @@ public sealed partial class CheckoutWritersCensusTests
         ["TreeStrays.cs"] = (Refs, "a stray tree's git lock let go and taken again", ["worktree@root"]),
         ["SessionLocks.cs"] = (Refs, "a session's tree locked and unlocked in git's record of the trees", ["worktree@root", "worktree@tree"]),
         ["SessionTrees.cs"] = (Refs, "a session's tree opened on a new branch, through git's record of the trees", ["worktree@root"]),
-        ["PassLeftovers.cs"] = (Refs, "a pass's tree's git lock let go and taken again", ["worktree@root"]),
+        ["StageActs.cs"] = (Refs, "stage and unstage (GITAPP2h, D204): what an act leaves is found by `add`, `reset`, `rm --cached` or `apply --cached` on a private copy of the index (GIT_INDEX_FILE), never the index, which only the act's index step replaces, in `ActRuns`' hold under git's own `index.lock`", ["add@?", "apply@?", "reset@?", "rm@?"]),
+        ["ResolveActs.cs"] = (Refs, "mark resolved (GITAPP2j, D204): what the index would hold once the file is added is found by `add` on a private copy of the index (GIT_INDEX_FILE), never the index, which only the act's index step replaces, in `ActRuns`' hold under git's own `index.lock`; a resolve's file step is `ActFiles`, in the same hold", ["add@root"]),
+        ["PassLeftovers.cs"] = (Refs,"a pass's tree's git lock let go and taken again", ["worktree@root"]),
     };
 
     /// <summary>Each writer of a checkout, and the file whose code takes the repository's lock alone around it.</summary>
@@ -67,6 +71,17 @@ public sealed partial class CheckoutWritersCensusTests
         ["LinePulls.cs"] = "TreeSync.cs",
         ["IntegrationPromotes.cs"] = "IntegrationPromotes.cs",
         ["ActSteps.cs"] = "ActRuns.cs",
+        ["ActCommits.cs"] = "ActRuns.cs",
+        ["ActWorkSteps.cs"] = "ActRuns.cs",
+    };
+
+    /// <summary>
+    /// Files that hold a checkout alone around a write of refs no checkout has out, through <c>RefTransaction</c>, so no act of the person's on
+    /// the same refs runs beside it: what each writes.
+    /// </summary>
+    private static readonly Dictionary<string, string> RefsHeldAlone = new(StringComparer.Ordinal)
+    {
+        ["TreeDeliveries.cs"] = "a delivery's landing (LANDNODE1b2): its branch made, moved on from the tip judged, or its tree's own verified at the tip, one transaction in its phase",
     };
 
     /// <summary>Writers of a checkout that start no git of Daoris's and so take no lock: how each is fenced instead.</summary>
@@ -92,6 +107,7 @@ public sealed partial class CheckoutWritersCensusTests
         ["LinesRoutes.cs"] = "the window's Bring up to date",
         ["HelpRoutes.cs"] = "Ask Daoris's Bring up to date",
         ["DriverWatch.cs"] = "the integration transport's promotions",
+        ["GitRoutes.cs"] = "the Changes tab's stage, unstage and Undo",
     };
 
     /// <summary>
@@ -191,7 +207,13 @@ public sealed partial class CheckoutWritersCensusTests
         }
 
         var taking = sources.Where(each => each.Value.Contains("TreeLock.TryWriting(", StringComparison.Ordinal)).Select(each => each.Key);
-        Assert.Equal(HeldIn.Values.Distinct().Order(StringComparer.Ordinal), taking.Order(StringComparer.Ordinal));
+        Assert.Equal(HeldIn.Values.Concat(RefsHeldAlone.Keys).Distinct().Order(StringComparer.Ordinal), taking.Order(StringComparer.Ordinal));
+        foreach (var (holder, what) in RefsHeldAlone)
+        {
+            Assert.False(string.IsNullOrWhiteSpace(what), holder);
+            Assert.Contains("new RefTransaction()", sources[holder], StringComparison.Ordinal);
+            Assert.DoesNotContain(holder, Census.Keys);
+        }
 
         foreach (var (start, how) in Fenced)
         {

@@ -143,6 +143,8 @@ export const HOME_ENTRIES = [
   // CONFIRMWAIT1a-ii (the confirm-wait design §7.1): a terminal's presses waiting for the person, kept across a restart; named here,
   // never read by the CLI.
   row('pipe-waiting', 'data', 'data/pipe-waiting', 'data/pipe-waiting'),
+  // GITAPP2j (D204): an act's file step's bytes, one folder per act; named here, never read by the CLI.
+  row('act-files', 'data', 'data/act-files/*', 'data/act-files/*'),
   row('keys', 'profiles', 'profiles/keys.json', 'keys.json'),
   row('remotes', 'profiles', 'profiles/remotes.json', 'remotes.json'),
   row('agent-homes', 'profiles', 'profiles/agents/*/*', 'harnesses/*/*'),

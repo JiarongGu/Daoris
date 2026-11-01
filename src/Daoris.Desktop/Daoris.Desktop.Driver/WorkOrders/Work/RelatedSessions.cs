@@ -12,6 +12,13 @@ public sealed record RelatedSession(
     string Session, string Kind, string? Quest, string Read, DateTimeOffset? ReadAt,
     IReadOnlyList<string> DeclaredOverlap, IReadOnlyList<string> ChangedOverlap);
 
+/// <summary>The asking session's own tree could not be read here.</summary>
+/// <param name="ReadAt">When it was last read well, or null.</param>
+public sealed record RelatedOwn(DateTimeOffset? ReadAt);
+
+/// <summary>What a look answers: the asker's own unread state, or the sessions beside it.</summary>
+public sealed record RelatedLook(RelatedOwn? Own, IReadOnlyList<RelatedSession> Related);
+
 /// <summary>
 /// The sessions of one repository beside one another (LINESTOGETHER1c, the review-flow design §3): each session with a tree here,
 /// chats included, compared for declared paths that meet and changed paths both hold. A tree's read is kept by its base and commit
@@ -47,17 +54,26 @@ public sealed class RelatedSessions(RelatedSessions.Reads reads, Func<DateTimeOf
 
     /// <summary>What each of <paramref name="others"/> meets of <paramref name="mine"/>, the ones whose work meets none left out.</summary>
     public async Task<IReadOnlyList<RelatedSession>> LookAsync(
+        RelatedCandidate mine, IReadOnlyList<RelatedCandidate> others, CancellationToken ct = default) =>
+        (await AskAsync(mine, others, ct).ConfigureAwait(false)).Related;
+
+    /// <summary>
+    /// <see cref="LookAsync"/> with the asker's own read told apart: where its own tree cannot be read, <see cref="RelatedLook.Own"/> says
+    /// so once and no other session is marked for it (SESSRELATED1); a <c>not-read</c> row is only a present tree git could not read.
+    /// </summary>
+    public async Task<RelatedLook> AskAsync(
         RelatedCandidate mine, IReadOnlyList<RelatedCandidate> others, CancellationToken ct = default)
     {
         var own = await ReadAsync(mine, ct).ConfigureAwait(false);
+        if (own.Paths is null) return new(new(own.At), []);
+
         var found = new List<RelatedSession>();
         foreach (var other in others.Where(other => !string.Equals(other.Id, mine.Id, StringComparison.OrdinalIgnoreCase)))
         {
             var theirs = await ReadAsync(other, ct).ConfigureAwait(false);
-            if (own.Paths is null || theirs.Paths is null)
+            if (theirs.Paths is null)
             {
-                // Where the asker's own tree cannot be read, the others still say what is theirs.
-                found.Add(new(other.Id, other.Kind, other.Quest, "not-read", (theirs.At ?? own.At), [], []));
+                found.Add(new(other.Id, other.Kind, other.Quest, "not-read", theirs.At, [], []));
                 continue;
             }
 
@@ -66,7 +82,7 @@ public sealed class RelatedSessions(RelatedSessions.Reads reads, Func<DateTimeOf
             if (declared.Count > 0 || changed.Count > 0) found.Add(new(other.Id, other.Kind, other.Quest, "read", null, declared, changed));
         }
 
-        return found;
+        return new(null, found);
     }
 
     private async Task<(IReadOnlyList<string>? Paths, DateTimeOffset? At)> ReadAsync(RelatedCandidate session, CancellationToken ct)

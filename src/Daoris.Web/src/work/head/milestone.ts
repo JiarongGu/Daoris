@@ -252,8 +252,24 @@ export function entryDetail(t: TFunction, entry: Pick<MilestoneEntry, 'detail' |
     const why = KEPT.find((one) => one === facts.why);
     return why ? t(`work.milestone.code.kept.${why}`) : entry.detail;
   }
+  if (entry.code === 'unfollowed' && (facts.keeps || facts.unread)) return unfollowedKept(t, facts);
   const code = CODES.find((one) => one === entry.code);
   return code ? t(`work.milestone.code.${code}`, { branch: facts.branch ?? '', quest: facts.quest ?? '' }) : entry.detail;
+}
+
+/**
+ * A tree no branch record follows that the clean-up would keep (CLEANUPADVICE1): what keeps it, and the remove that takes it, which is the
+ * driver's `trees remove <path> --force`; where git could not say what it holds, no remove is named. Its path and its files are written as they are.
+ */
+function unfollowedKept(t: TFunction, facts: Record<string, string>): string {
+  const branch = facts.branch ?? '';
+  if (!facts.keeps) return t('work.milestone.code.unfollowedUnread', { branch });
+  const parts = [
+    Number(facts.uncommitted) > 0 ? t('work.milestone.code.keptUncommitted', { count: Number(facts.uncommitted) }) : null,
+    Number(facts.own) > 0 ? t('work.milestone.code.keptOwn', { count: Number(facts.own), paths: facts.paths ?? '' }) : null,
+  ].filter((part): part is string => part !== null);
+  const holds = parts.length === 2 ? t('work.milestone.code.keptAnd', { first: parts[0], second: parts[1] }) : parts[0] ?? facts.keeps;
+  return t('work.milestone.code.unfollowedKept', { branch, holds, remove: `\`daoris-driver trees remove ${facts.tree ?? ''} --force\`` });
 }
 
 /**

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Modules.Tests;
@@ -65,6 +66,30 @@ public sealed class DriverModuleSetupTests : DriverModuleBridge
         // `--plan`'s promise: nothing was published, and no rule was added.
         Assert.Empty(_world.Published);
         Assert.False(File.Exists(DaorisHome.Entry(Home, HomeEntry.Permissions)));
+    }
+
+    /// <summary>
+    /// AGENTSPLACE1a2: what the repository builds shapes the quest's safe work, in the plan and in the press's ask alike, and a word that is
+    /// none of the four is the driver's sentence with nothing published.
+    /// </summary>
+    [Fact]
+    public async Task What_it_builds_shapes_the_plans_body_and_the_press_s_ask_and_an_unknown_one_is_refused()
+    {
+        Driven();
+        var module = await UpAsync();
+
+        var plan = await AnswerAsync(module, "SETUP_PLAN", new { repository = "atlas", builds = SetupBuilds.Desktop });
+        var plain = await AnswerAsync(module, "SETUP_PLAN", new { repository = "atlas" });
+        var refusal = await RefusalAsync(module, "SETUP_PLAN", new { repository = "atlas", builds = "game" });
+        var pressed = await AnswerAsync(module, "SETUP_PRESS", new { repository = "atlas", builds = SetupBuilds.Desktop });
+
+        Assert.Equal(SetupBuilds.Desktop, plan.GetProperty("builds").GetString());
+        Assert.Contains(SetupBuilds.Checks(SetupBuilds.Desktop), plan.GetProperty("body").GetString());
+        Assert.Equal(JsonValueKind.Null, plain.GetProperty("builds").ValueKind);
+        Assert.DoesNotContain("This repository builds", plain.GetProperty("body").GetString());
+        Assert.Contains(SetupBuilds.Problem("game"), refusal);
+        Assert.True(pressed.GetProperty("published").GetBoolean());
+        Assert.Contains(SetupBuilds.Checks(SetupBuilds.Desktop), Assert.Single(_world.Published).Sentence);
     }
 
     /// <summary>Every refusal that applies, at once, each with its code and the sentence naming the door that answers it.</summary>

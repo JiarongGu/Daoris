@@ -486,6 +486,21 @@ describe("The taskbar's count", () => {
     expect(within(held).getByRole('button', { name: 'Open integration' })).toBeInTheDocument();
   });
 
+  /** INTEGRATE1h (§5.8): a declaration owed acceptance is a wait counted at Repositories, its door the Setup, where it is read and accepted. */
+  it('counts a declaration owed acceptance and lists it with its door to Setup', async () => {
+    start([{
+      kind: 'integration', id: 'declaration:engine', since: '2026-10-01T10:15:00Z', workspace: 'default', where: 'engine',
+      integration: { wait: 'declaration', repository: 'engine', line: 'main', tip: '0123456789abcdef0123456789abcdef01234567', state: 'unaccepted' },
+    }], {}, {});
+
+    await waitFor(() => expect(within(bell()).getByText('1')).toBeInTheDocument());
+    expect(figure('Repositories')).toBe('1');
+    await openNotifications();
+    const owed = await screen.findByRole('listitem', { name: 'engine' });
+    expect(within(owed).getByText('declaration waits for your acceptance')).toBeInTheDocument();
+    expect(within(owed).getByRole('button', { name: 'Open Setup' })).toBeInTheDocument();
+  });
+
   it('counts no run when none is pushed held', async () => {
     start(PARKS, {}, {});
 

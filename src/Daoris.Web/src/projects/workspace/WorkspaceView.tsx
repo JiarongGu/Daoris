@@ -44,9 +44,9 @@ const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
 const mine = <R extends { workspace: string }>(rows: readonly R[], workspace: string) => rows.filter((row) => same(row.workspace, workspace));
 
 /** A workspace's landing rule as the driver answers it, without the name it is answered under, its key and squash kept (DOORS1b). */
-const ruleOf = ({ form, pattern, tidy, plugin, autoAccept, key, squash }: LandingRule): LandingRule => ({
+const ruleOf = ({ form, pattern, tidy, plugin, autoAccept, key, squash, integrate }: LandingRule): LandingRule => ({
   form, ...(pattern ? { pattern } : {}), ...(tidy ? { tidy } : {}), ...(plugin ? { plugin } : {}), ...(autoAccept ? { autoAccept } : {}),
-  ...(key ? { key } : {}), ...(squash ? { squash } : {}),
+  ...(key ? { key } : {}), ...(squash ? { squash } : {}), ...(integrate ? { integrate } : {}),
 });
 
 /**
@@ -484,8 +484,10 @@ function SetupPart({ workspace, notify, open, wiring, onOpenPlugin, onOpenAppoin
                 ? t('settings.landing.savedBranchPlugin', { name: workspace, pattern: rule.pattern, plugin: rule.plugin })
                 : t('settings.landing.savedBranch', { name: workspace, pattern: rule.pattern })
               : t('settings.landing.savedMerge', { name: workspace })),
-          onError,
+          // A rule the driver refuses is said under *Save*, in LandingKey's sentence (AGENTSPLACE1d); a clear has no such place.
+          onError: rule ? undefined : onError,
         }),
+        refusal: setLanding.error ? sentence(setLanding.error) : null,
       },
       // A shell older than LANG1c answers no table, and nothing is offered rather than a field whose save is refused.
       language: state && Array.isArray(table)

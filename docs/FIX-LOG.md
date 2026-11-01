@@ -5,6 +5,40 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-01 - A brainstorm's pass ended `not-started` and the reason was nowhere (BRAINSTORMSTART1)
+
+- **Symptom:** `daoris-driver brainstorm "..." --agents claude,codex` ended `no-agent`; both passes `unavailable (not-started)` with `account: null`, while sessions of both agents ran that hour. Neither the pass record, `brainstorm show` nor the machine log said why.
+- **Root cause:** two together. `--agents` names adapters (`claude-code`, `claude-code-acp`, `codex-acp`), and `claude`/`codex` are agent names no adapter answers to, so `Adapters.Resolve` threw before any account was walked; an adapter is added deliberately and never guessed. And `DriverBrainstorms.TurnAsync` turned that `DriverException` into the code `not-started` and kept the sentence only in the turn's own words, which nothing stored.
+- **Fix:** `BrainstormTurnRun.Why` carries the sentence; `PassAsync` keeps it on the pass record (`why`, written only when there is one, so a record without it reads as before), writes `brainstorm.pass` to the machine log once as the pass ends, and `brainstorm show` and the document's pass list print it. The name is still not guessed: the sentence names the adapters this machine has.
+- **Verify:** `BrainstormStartTests` (2) written first and failing to compile against the old code (no `Why`), green after: the install's request, the record's reason, `show`, and an older record reading as before. The brainstorm classes, `MeetingTests` and the four census classes green. Not run: the installed window.
+
+## 2026-11-01 - A request read from the store carried no epoch (LANDNODE1g follow-up)
+
+- **Symptom:** `IntegrationRequestsTests.A_recorded_landing_is_requested_bound_to_its_record_and_its_gate_proof_read_as_recorded` failed: the request the door stamped with an epoch differed from the one `Open()` read back.
+- **Root cause:** the epoch lives in `integration_epochs`, not in `integration_requests`, and `MapRequest` read only the request's own columns, so every store read answered `Epoch = null`; only `RequestEpoch(id)` read it. A request compared by record equality therefore never equalled its read-back.
+- **Fix:** the store's request reads select the epoch as a subquery column beside `RequestColumns` (`Read(version, table)`), only where the store's version is at least step 14, so an older store (no table) reads none and is not queried for it; `MapRequest` takes it when the column is present. `RequestColumns` stays the insert's list. A request written with no epoch reads back as its policy's alone, as `Add` stored it.
+- **Verify:** `IntegrationStoreTests` (a new read-back of every read incl. the queue's alias, and a store dropped to step 13 reading with no epoch), `IntegrationRequestsTests`, `DesktopStoreTests`, `DesktopStoreReaderTests`, `StructureTests`, `SettledReadersCensusTests` and the `Integration*GitTests` green.
+
+## 2026-11-01 - One request's policy governed members queued under another (LANDNODE1g)
+
+- **Symptom:** after a change of the line's rule, requests admitted under different `integrate` keys formed one candidate, and the first request's batch and gates governed all of them.
+- **Root cause:** `IntegrationReplays.RunAsync` read `queued[0].Policy.Batch` and took that many requests, and `IntegrationStore.Form` checked repository and line alone. Promotion took its acceptance from the current configuration (`IntegrationPromotes.VerdictAsync`), not from what the requests were admitted under.
+- **Fix:** an epoch (`IntegrationEpoch`: the resolved shared policy plus the accepted declaration's blob) is kept on each request at admission and on each candidate (`integration_epochs`, store step 14). The replay takes only the leading arrivals of the first's epoch, `Form` enforces equality inside its transaction, and the verdict runs the gates from the candidate's frozen blob. A record with no epoch reads as its own: it forms alone and promotes under the acceptance as it stands.
+- **Verify:** the tests were written before the code and did not compile against the old one (the epoch's members were missing); `IntegrationFormGitTests`, `IntegrationPromoteGitTests` and `IntegrationStoreTests` green under the git settings.
+
+## 2026-11-01 - A session's head listed fifteen identical "not read here" lines (SESSRELATED1)
+
+- **Symptom:** "Beside it in Daoris:" followed by fifteen lines, each "not read here (last read 09:24)".
+- **Root cause:** three together. `ServiceClient.RelatedCandidatesAsync` took every session with a recorded tree from the closed list too (over 600 on the install), so a removed tree's failed `rev-parse` read as `not-read`; `RelatedSessions.LookAsync` marked every other candidate `not-read`, stamped with the asker's own last good read, whenever the asker's own tree could not be read (all fifteen said 09:24); the page drew one line per unread session.
+- **Fix:** `RelatedCandidates.Pick` keeps a session only if its tree folder exists, checked before any git, and answers none where the asker's own tree is gone; `RelatedSessions.AskAsync` answers a top-level `own` once for an unreadable own tree and no per-session marks, a per-session `not-read` staying for a present tree git could not read; the page folds two or more of those into one line with doors and the earliest last read, and words `own` once (en, zh).
+- **Verify:** `RelatedCandidatesTests` (3) and `RelatedSessionsTests` (6, two new) written first and failing to compile against the old code, green after; `RelatedSessions.test.tsx` (10, four new); the census classes green. Not run: the installed window.
+## 2026-11-01 - A reconciler that read the act after another took it said its process still ran (LOADFLAKE4)
+
+- **Symptom:** beside other git classes, `ActRunGitTests.An_act_of_a_live_run_refuses_the_writer_and_two_reconcilers_at_once_close_a_dead_ones_once` found a hold without "another reconciler took it first"; it passed on the rerun.
+- **Root cause:** the race is on the store's claim, read twice. The reconciler lists the checkout's open acts, then hands `ActJournal.Take` the generation it listed. When the loser's listing came after the winner's take and before its close (the winner's git read of the postconditions), the listed generation was the winner's, so it matched, and the winner's live run refused the take as "the Daoris process that runs it still runs". The words depended on which side of the take the listing fell. Under the checkout lock the at-once order is the test's alone, but the same read is reachable in order: a later writer looking at an act a live reconciler still holds was told the act's own process ran.
+- **Fix:** a claim above the opening's generation (1) is a reconciler's, so a live holder of one is refused as "another reconciler took it first", as a moved generation is. No wait changed.
+- **Verify:** red first: `ActJournalTests.A_take_that_read_the_act_after_a_live_reconciler_took_it_is_refused_as_taken_first` and `ActRunGitTests.A_reconciler_that_reads_the_act_after_another_took_it_is_held_as_taken_first_and_the_taker_closes_it` (the take landed by hand, then the loser's look, then the winner's) failed with the old words, the git one in the reported shape; both green after. `ActRunGitTests` 20 of 20 runs (20 tests each) under the git settings beside a load on every core.
+
 ## 2026-11-01 - Each landing started one git more than its ceiling: the symbolic-ref ask before a delete (batch 1031f)
 
 - **Symptom:** `LandGitCountTests` failed all three: the automatic landing 43 starts against 42, the squash press one over 45, the merge press 58 against 57.
@@ -12743,3 +12777,21 @@ mis-rooted instance.
 **Fix.** The test's request waits `Poll.Patience`, as a wait on a signal does (the short-waits census's rule); it returns as soon as the loop honours it.
 
 **Verification.** `SessionsCommandTests`, 70 of 70; the failure was the candidate's alone, the test passing three times in a row run by itself.
+
+## 2026-11-01 — INTEGRATETREE1: a line's integration tree read as an unknown owner's unit
+
+**Symptom.** The install's Needs showed "clean-up is blocked" for the plugins repository's and Lyntai's `i-main-…` and `i-master-…` trees: "its owner is unknown: no record names `HEAD`, so nothing here is cleaned", with no press that could take them.
+
+**Root cause.** The work inventory lists every folder under the trees home (`SessionTrees.ListAsync`) and attaches each to the unit whose branch it is on, else makes it a unit of unknown owner. A line's integration tree (`IntegrationReplays`, INTEGRATE1e e3a) is Daoris's own, kept warm and detached between candidates, so no branch record named it. The stray tidy already passes over the other flows' own folders (`TreeStrays.OthersOwn`); the inventory had no such rule.
+
+**Fix.** `WorkInventory.AttachTrees` passes over a detached tree whose folder carries the integration prefix: no unit, so nothing waits on the person. An `i-` folder with a branch checked out is still judged as before.
+
+**Verified.** `WorkInventoryTests.A_lines_integration_tree_is_no_unit_and_one_on_a_branch_is_still_unknown`.
+
+## 2026-11-01 — FOUNDATION1l-i: against a host with no journal, a conversation's end reached the usage slice only at its period
+
+**Root cause.** FOUNDATION1l-i moved the usage slice's wake from the route's `SESSION_ENDED` to `PART_ENDED`, which only the journal's reader tells. A host from before the journal tells none, so the slice judged a conversation's end only at its 15 s reconciliation; the foundation design's §19.12 keeps each reader's old surface as its adapter against such a host. Its wake test waited for the push and passed by the period too.
+
+**Fix.** `JournalFeed.RunAsync` says after each ask whether the host answered with the journal's place (`heard`), the shell's loop keeps it (`DriverLoop.HearsJournal`), and `UsageStateSlice.WakesOn` wakes on `SESSION_ENDED` while it is false. The wake tests time the push under half the period (`WokenAsync`).
+
+**Verified.** `UsageStateSliceTests.A_conversation_s_end_reaches_the_windows_by_its_route_while_the_host_keeps_no_journal` failed first (pushed after 15.03 s), then passed; `JournalFeedTests.Each_ask_says_whether_the_host_keeps_a_journal` failed with the answer withheld, then passed.

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Daoris.Driver;
 using Shenora.Core.Ipc;
 using static Daoris.Desktop.DriverArguments;
@@ -68,10 +69,9 @@ public sealed class SetupRoutes(DriverContext context)
         var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
         var service = _loop.Service ?? throw NotReady();
         var config = DriverConfig.Load(_loop.ConfigPath);
-        string[] args = plan ? [repository, "--plan"] : [repository];
         return await TerminalSaid.RunAsync(output => SetupCommand.RunAsync(
-            args, output, _context.SetupWorldOf(service), config, _context.Door(config), _loop.Home, DateOnly.FromDateTime(DateTime.Now),
-            cancellationToken)).ConfigureAwait(false);
+            SetupCommand.ArgsOf(repository, Builds(request), plan), output, _context.SetupWorldOf(service), config, _context.Door(config), _loop.Home,
+            DateOnly.FromDateTime(DateTime.Now), cancellationToken)).ConfigureAwait(false);
     }
 
     /// <summary>The press's plan for the payload's repository, against the driver's file and the door its sessions ride.</summary>
@@ -81,9 +81,49 @@ public sealed class SetupRoutes(DriverContext context)
         var service = _loop.Service ?? throw NotReady();
         var config = DriverConfig.Load(_loop.ConfigPath);
         return await SetupPress.PlanAsync(
-            _context.SetupWorldOf(service), config, _context.Door(config), repository, DateOnly.FromDateTime(DateTime.Now), cancellationToken)
+            _context.SetupWorldOf(service), config, _context.Door(config), repository, DateOnly.FromDateTime(DateTime.Now), Builds(request), cancellationToken)
             .ConfigureAwait(false);
     }
+
+    /// <summary>What the repository builds (AGENTSPLACE1a2), which shapes the quest's safe work: one of the four, or none named.</summary>
+    /// <exception cref="DriverException">A word that is none of the four.</exception>
+    private static string? Builds(IpcRequest request) =>
+        Optional(request, "builds") is { } builds ? SetupBuilds.Is(builds) ? builds : throw new DriverException(SetupBuilds.Problem(builds)) : null;
+
+    // A place's quick set-up (AGENTSPLACE1a2, the Agents-place design §4), `daoris-driver place … --plan`'s twin: {repositories, preset,
+    // opinion, look, adoption, builds, drive}. The parts are applied to a copy of driver.json through the doors' own edits and read before and
+    // after through the start's resolvers; every refusal at once, what lowers the person's part, the reach, the work driving releases and each
+    // declaration with its acceptances. It reads the registry, the quests and each line's tip as git objects, and writes and probes nothing.
+    [DriverRoute("PLACE_PLAN")]
+    [ByEvent("PLACE_PLAN", Untold = "the service's registry and quests, driver.json, the saved workflows and each line's tip in its checkout")]
+    private async Task<object?> PlacePlanAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var service = _loop.Service ?? throw NotReady();
+        var ask = new PlaceAsk(Names(request), Optional(request, "preset") ?? "")
+        {
+            Opinion = Flag(request, "opinion"),
+            Look = Flag(request, "look"),
+            Adoption = Flag(request, "adoption"),
+            Builds = Optional(request, "builds"),
+            Drive = Flag(request, "drive"),
+        };
+        var config = DriverConfig.Load(_loop.ConfigPath);
+        var plugins = PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names);
+        var world = new PlaceWorld(service);
+        if (Flag(request, "said"))
+        {
+            return await TerminalSaid.RunAsync(output => PlaceCommand.RunAsync(
+                PlaceCommand.ArgsOf(ask), output, world, config, _loop.Home, plugins, _context.Door(config), instance: null, cancellationToken)).ConfigureAwait(false);
+        }
+
+        return await PlacePlans.PlanAsync(world, config, _loop.Home, plugins, _context.Door(config), ask, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>The repositories a plan is asked for: <c>repositories</c>, a list of names, or one <c>repository</c>.</summary>
+    private static IReadOnlyList<string> Names(IpcRequest request) =>
+        request.Payload is { ValueKind: JsonValueKind.Object } payload && payload.TryGetProperty("repositories", out var listed) && listed.ValueKind == JsonValueKind.Array
+            ? [.. listed.EnumerateArray().Where(each => each.ValueKind == JsonValueKind.String).Select(each => each.GetString()!)]
+            : Optional(request, "repository") is { } one ? [one] : [];
 
     /// <summary>
     /// A plan as the page reads it (LAYOUT8), the page's <c>SetupShown</c>, for the repository's page and Ask Daoris's card:
@@ -113,5 +153,6 @@ public sealed class SetupRoutes(DriverContext context)
         plan.Body,
         Refusals = plan.Refusals.Select(refusal => new { refusal.Code, refusal.Sentence }).ToArray(),
         plan.Pressable,
+        plan.Builds,
     };
 }

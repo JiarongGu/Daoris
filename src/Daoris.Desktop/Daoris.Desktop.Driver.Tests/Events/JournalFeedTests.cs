@@ -26,6 +26,9 @@ public sealed class JournalFeedTests
 
         public bool Journal { get; set; } = true;
 
+        /// <summary>A status the change stream answers in place of its moves, as a host refusing the ask would.</summary>
+        public HttpStatusCode? Refuse { get; init; }
+
         public void Add(long position, string record = "s1", string? stateOld = "Working", string stateNew = "Completed", string? codes = "ended.done", string marks = "driven")
         {
             lock (_gate)
@@ -48,6 +51,7 @@ public sealed class JournalFeedTests
                 var newest = _rows.Count == 0 ? 0 : _rows.Max(row => row["position"]!.GetValue<long>());
                 if (path == "/api/changes")
                 {
+                    if (Refuse is { } refused) return new HttpResponseMessage(refused) { Content = new StringContent("{}", Encoding.UTF8, "application/json") };
                     var body = new JsonObject { ["since"] = "e.1", ["moved"] = new JsonArray() };
                     if (Journal) body["journal"] = new JsonObject { ["store"] = Store, ["floor"] = Floor, ["newest"] = newest };
                     return Answer(body);
@@ -203,5 +207,32 @@ public sealed class JournalFeedTests
         await run;
 
         Assert.Empty(teller.Batches);
+    }
+
+    /// <summary>
+    /// Each ask says whether the host keeps a journal, so a reader keeps its old surface where the journal may tell it nothing: a host that
+    /// answers its place keeps one; one from before it, and one refusing the ask, are heard as none.
+    /// </summary>
+    [Theory]
+    [InlineData(true, null, true)]
+    [InlineData(false, null, false)]
+    [InlineData(true, 503, false)]
+    public async Task Each_ask_says_whether_the_host_keeps_a_journal(bool kept, int? refused, bool heard)
+    {
+        var journal = new StandIn { Journal = kept, Refuse = (HttpStatusCode?)refused };
+        var said = new List<bool>();
+        using var stop = new CancellationTokenSource();
+        var client = new ServiceClient("http://ledger.test", null, new HttpClient(journal));
+        var run = Task.Run(() => JournalFeed.RunAsync(
+            client, [new JournalTeller(new Teller().Told)], null, stop.Token, Hurry, present => { lock (said) said.Add(present); }));
+
+        await Until<bool>(() =>
+        {
+            lock (said) return said.Count > 0 ? true : null;
+        });
+        await stop.CancelAsync();
+        await run;
+
+        lock (said) Assert.All(said, each => Assert.Equal(heard, each));
     }
 }

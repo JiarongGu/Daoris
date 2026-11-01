@@ -627,6 +627,15 @@ internal sealed class ContentHolds(TreeContext context)
             }
         }
 
+        /// <summary>What keeps the tree from an unforced removal, in a clause (CLEANUPADVICE1): its uncommitted paths and <see cref="OwnSaid"/>; null where none.</summary>
+        public string? KeepSaid => (Uncommitted.Count > 0, OwnSaid) switch
+        {
+            (false, null) => null,
+            (true, null) => $"{Uncommitted.Count} uncommitted path(s)",
+            (false, { } own) => own,
+            (true, { } own) => $"{Uncommitted.Count} uncommitted path(s), and {own}",
+        };
+
         /// <summary>Everything no checkout holds that the tree does and nothing re-makes, in a clause; null where it holds none.</summary>
         public string? OwnSaid => (Ignored.Count > 0, WrittenSaid) switch
         {

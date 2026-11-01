@@ -179,8 +179,8 @@ public sealed class NewsTests : IDisposable
             DesktopStore.LocationIn(_home),
             new DesktopStoreOptions
             {
-                Writer = 2, Settled = Settled,
-                Steps = [.. DesktopStore.Steps, new StoreMigration(DesktopStore.Steps.Count + 1, 2, write => write.Execute("CREATE TABLE raised (x TEXT NOT NULL)"))],
+                Writer = DesktopStore.WriterStamp + 1, Settled = Settled,
+                Steps = [.. DesktopStore.Steps, new StoreMigration(DesktopStore.Steps.Count + 1, DesktopStore.WriterStamp + 1, write => write.Execute("CREATE TABLE raised (x TEXT NOT NULL)"))],
             }))
         {
         }

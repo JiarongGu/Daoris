@@ -109,6 +109,19 @@ public sealed class ActJournalTests : IDisposable
     }
 
     [Fact]
+    public void A_take_that_read_the_act_after_a_live_reconciler_took_it_is_refused_as_taken_first()
+    {
+        Journal("run-a").Open(Opening("act-1"));
+        Assert.NotNull(Journal("run-b", DeadAre("run-a")).Take("act-1", 1).Claim);
+
+        // Its read already names run-b's claim, so the generation matches; run-b lives, and took it from the act's own run.
+        var late = Journal("run-c", DeadAre("run-a")).Take("act-1", 2);
+
+        Assert.Equal("another reconciler took it first", late.Refused);
+        Assert.Equal(("run-b", 2L), (Journal("run-a").Act("act-1")!.ClaimRun, Journal("run-a").Act("act-1")!.ClaimGeneration));
+    }
+
+    [Fact]
     public void An_older_build_writes_on_in_a_store_that_holds_the_family_and_never_opens_it()
     {
         Journal("run-a").Open(Opening("act-1"));

@@ -292,6 +292,7 @@ const INTEGRATION_LABEL: Readonly<Record<IntegrationWait['wait'], string>> = {
   decide: 'work.attention.integrationDecide',
   superseded: 'work.attention.integrationSuperseded',
   card: 'work.attention.integrationCard',
+  declaration: 'work.attention.integrationDeclaration',
 };
 
 /** The kinds whose door is an agent's page, named by the agent rather than *Open* (UX6d): the door says where it goes. */
@@ -310,7 +311,8 @@ const DOOR_ONLY: Partial<Record<Attention['kind'], (item: Attention) => [string,
   // KNOWCENTRAL2e: the decisions are made on the session's page, in its Memory section, where each row's words are read first.
   memory: () => ['work.attention.door.open'],
   // INTEGRATE1h: a decide, an answer and a request are pressed on the repository's Integration tab, beside the candidate and its steps.
-  integration: () => ['work.attention.door.integration'],
+  // A declaration owed acceptance is read and accepted on the repository's set-up page instead (§5.8); the row never accepts it.
+  integration: (item) => [item.integration?.wait === 'declaration' ? 'work.attention.door.integrationDeclaration' : 'work.attention.door.integration'],
   // CONFIRMSEEN1: a terminal's press is answered on its card, which shows every value it carries; the row never answers it.
   confirmation: () => ['work.attention.door.confirmation'],
   // KEEP1f: what else goes below the floor is chosen on the *Disk space* card's press, where every unit is listed first.

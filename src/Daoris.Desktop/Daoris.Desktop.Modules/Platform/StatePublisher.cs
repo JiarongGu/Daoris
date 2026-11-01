@@ -101,6 +101,11 @@ public enum StateScopes
 
     /// <summary>Who is at work on a session: told by the read's own judge, naming no session. Declared by no route.</summary>
     AtWork = 1 << 23,
+
+    // GITAPP2h: after COWORKVIEW1a's, which keep their numbers.
+
+    /// <summary>A checkout's index, which the Changes tab reads: moved by a person's stage, unstage or Undo.</summary>
+    Checkouts = 1 << 24,
 }
 
 /// <summary>

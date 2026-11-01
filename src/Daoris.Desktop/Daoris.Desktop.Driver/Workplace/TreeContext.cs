@@ -121,6 +121,24 @@ internal sealed class TreeContext
         }
     }
 
+    /// <summary>
+    /// <see cref="ScratchAsync"/> for a reader with no context (CLEANUPADVICE1): the same declaration, read from the home's choices and git's own guess at the line.
+    /// </summary>
+    internal static async Task<IReadOnlyList<System.Text.RegularExpressions.Regex>> ScratchOfHomeAsync(
+        string home, string root, string repository, string workspace, CancellationToken ct)
+    {
+        try
+        {
+            var config = DriverConfig.Load(DriverConfig.ResolvePath(Environment.GetEnvironmentVariable, home));
+            var line = (await CanonicalLine.ResolveAsync(root, repository, workspace, config, s_gitGuess, ct).ConfigureAwait(false)).Branch;
+            return await TreeScratch.AcceptedAsync(config, root, repository, line, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
+        {
+            return [];
+        }
+    }
+
     /// <summary>The test seam (UIFREEZE1): git's guess at a checkout's line, counted by a test. Production asks git.</summary>
     internal Func<string, CancellationToken, Task<string?>> CheckoutLine { get; set; } = s_gitGuess;
 

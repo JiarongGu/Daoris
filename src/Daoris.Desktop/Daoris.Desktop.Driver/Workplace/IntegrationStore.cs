@@ -49,6 +49,13 @@ public sealed class IntegrationStore(
     /// <summary>The store's step that made the decides, the queue's order and a disposition's answer (INTEGRATE1h): a store before it holds none.</summary>
     private const int ActsSince = 12;
 
+    /// <summary>The store's step that made the epochs' table (LANDNODE1g): a store before it holds none, and every record reads as its own epoch.</summary>
+    private const int EpochsSince = 14;
+
+    private const string RequestSubject = "request";
+
+    private const string CandidateSubject = "candidate";
+
     /// <summary>SQLite's refusal of a row a unique index already holds.</summary>
     private const int UniqueRefused = 2067;
 
@@ -56,6 +63,12 @@ public sealed class IntegrationStore(
         "id, repository, workspace, branch, tip, route, line, requester, door, act, generation, policy_request, policy_commit, policy_batch, "
         + "policy_order, policy_gates, policy_unreached, policy_reached, policy_conflicts, policy_overlap, policy_line, rule_source, unit, session, "
         + "quest, landed_at, proof, at, closed_at, closed_why";
+
+    /// <summary>A request read: its columns and, from the epochs' step, the epoch kept beside it (a store before it reads none).</summary>
+    private static string Read(int version, string table = "integration_requests") =>
+        version < EpochsSince
+            ? RequestColumns
+            : RequestColumns + $", (SELECT e.epoch FROM integration_epochs e WHERE e.subject = '{RequestSubject}' AND e.id = {table}.id) AS epoch";
 
     private const string CandidateColumns =
         "id, repository, workspace, line, base, job, claim_run, claim_generation, formed_at, tip, promoted_at, ended_at, ended_why";
@@ -87,7 +100,7 @@ public sealed class IntegrationStore(
     /// <inheritdoc/>
     public IntegrationRequest? OpenFor(string repository, string branch) =>
         Reading(reader => reader.Query(
-                $"SELECT {RequestColumns} FROM integration_requests WHERE repository = $repository COLLATE NOCASE AND branch = $branch AND closed_at IS NULL",
+                $"SELECT {Read(reader.Version)} FROM integration_requests WHERE repository = $repository COLLATE NOCASE AND branch = $branch AND closed_at IS NULL",
                 MapRequest, ("$repository", repository), ("$branch", branch))
             .FirstOrDefault(), null);
 
@@ -107,6 +120,7 @@ public sealed class IntegrationStore(
                 try
                 {
                     InsertRequest(write, request);
+                    KeepEpoch(write, RequestSubject, request.Id, request.Epoch ?? IntegrationEpoch.Of(request.Policy, null));
                 }
                 catch (SqliteException error) when (error.SqliteExtendedErrorCode == UniqueRefused)
                 {
@@ -124,10 +138,28 @@ public sealed class IntegrationStore(
         }
     }
 
+    /// <summary>The epoch a request was admitted under; null for one admitted before epochs, which reads as its own.</summary>
+    public string? RequestEpoch(string request) => EpochOf(RequestSubject, request);
+
+    /// <summary>The epoch a candidate was formed under, its first member's; null for one formed before epochs.</summary>
+    public string? CandidateEpoch(string candidate) => EpochOf(CandidateSubject, candidate);
+
+    private string? EpochOf(string subject, string id) =>
+        Reading(reader => reader.Query(
+            "SELECT epoch FROM integration_epochs WHERE subject = $subject AND id = $id", row => row.GetString(0), ("$subject", subject), ("$id", id))
+            .FirstOrDefault(), null, EpochsSince);
+
+    private static string? EpochIn(DesktopWrite write, string subject, string id) =>
+        write.Query("SELECT epoch FROM integration_epochs WHERE subject = $subject AND id = $id", row => row.GetString(0), ("$subject", subject), ("$id", id))
+            .FirstOrDefault();
+
+    private static void KeepEpoch(DesktopWrite write, string subject, string id, string epoch) =>
+        write.Execute("INSERT INTO integration_epochs (subject, id, epoch) VALUES ($subject, $id, $epoch)", ("$subject", subject), ("$id", id), ("$epoch", epoch));
+
     /// <inheritdoc/>
     public IntegrationRequest? FindByKey(string unit, string tip) =>
         Reading(reader => reader.Query(
-                $"SELECT {RequestColumns} FROM integration_requests WHERE unit = $unit AND tip = $tip COLLATE NOCASE ORDER BY at DESC, id DESC",
+                $"SELECT {Read(reader.Version)} FROM integration_requests WHERE unit = $unit AND tip = $tip COLLATE NOCASE ORDER BY at DESC, id DESC",
                 MapRequest, ("$unit", unit), ("$tip", tip))
             .FirstOrDefault(), null);
 
@@ -142,29 +174,29 @@ public sealed class IntegrationStore(
 
     /// <summary>A request by its id, open or closed; null where the store holds none.</summary>
     public IntegrationRequest? Request(string id) =>
-        Reading(reader => reader.Query($"SELECT {RequestColumns} FROM integration_requests WHERE id = $id", MapRequest, ("$id", id)).FirstOrDefault(), null);
+        Reading(reader => reader.Query($"SELECT {Read(reader.Version)} FROM integration_requests WHERE id = $id", MapRequest, ("$id", id)).FirstOrDefault(), null);
 
     /// <summary>Every request of a repository's branch, open or closed, in the order admitted.</summary>
     public IReadOnlyList<IntegrationRequest> Of(string repository, string branch) =>
         Reading(reader => reader.Query(
-            $"SELECT {RequestColumns} FROM integration_requests WHERE repository = $repository COLLATE NOCASE AND branch = $branch ORDER BY at, id",
+            $"SELECT {Read(reader.Version)} FROM integration_requests WHERE repository = $repository COLLATE NOCASE AND branch = $branch ORDER BY at, id",
             MapRequest, ("$repository", repository), ("$branch", branch)), []);
 
     /// <summary>Every open request, in the order admitted.</summary>
     public IReadOnlyList<IntegrationRequest> Open() =>
-        Reading(reader => reader.Query($"SELECT {RequestColumns} FROM integration_requests WHERE closed_at IS NULL ORDER BY at, id", MapRequest), []);
+        Reading(reader => reader.Query($"SELECT {Read(reader.Version)} FROM integration_requests WHERE closed_at IS NULL ORDER BY at, id", MapRequest), []);
 
     /// <summary>A repository's most recent closed requests, newest first (the Integration view's history).</summary>
     public IReadOnlyList<IntegrationRequest> Closed(string repository, int most) =>
         Reading(reader => reader.Query(
-            $"SELECT {RequestColumns} FROM integration_requests WHERE repository = $repository COLLATE NOCASE AND closed_at IS NOT NULL "
+            $"SELECT {Read(reader.Version)} FROM integration_requests WHERE repository = $repository COLLATE NOCASE AND closed_at IS NOT NULL "
             + "ORDER BY closed_at DESC, id DESC LIMIT $most",
             MapRequest, ("$repository", repository), ("$most", most)), []);
 
     /// <summary>The newest request a unit made, open or closed; null where it made none.</summary>
     public IntegrationRequest? OfUnit(string unit) =>
         Reading(reader => reader.Query(
-                $"SELECT {RequestColumns} FROM integration_requests WHERE unit = $unit ORDER BY at DESC, id DESC LIMIT 1", MapRequest, ("$unit", unit))
+                $"SELECT {Read(reader.Version)} FROM integration_requests WHERE unit = $unit ORDER BY at DESC, id DESC LIMIT 1", MapRequest, ("$unit", unit))
             .FirstOrDefault(), null);
 
     /// <summary>
@@ -180,7 +212,7 @@ public sealed class IntegrationStore(
             var ordered = reader.Version >= ActsSince;
             return reader.Query(
                 $"""
-                SELECT {RequestColumns}{(ordered ? ", queue_order" : "")} FROM integration_requests r
+                SELECT {Read(reader.Version, "r")}{(ordered ? ", queue_order" : "")} FROM integration_requests r
                 WHERE r.repository = $repository COLLATE NOCASE AND r.line = $line AND r.closed_at IS NULL
                   AND NOT EXISTS (SELECT 1 FROM integration_members m WHERE m.request = r.id AND m.ended_at IS NULL)
                   AND NOT EXISTS (SELECT 1 FROM integration_members h WHERE h.request = r.id AND h.state = $held)
@@ -301,9 +333,17 @@ public sealed class IntegrationStore(
                     throw new Unwritten(new IntegrationFormed(standing, null, null));
                 }
 
+                // The epoch is the first member's; a member of another epoch, or any member of an older record's (its own epoch), is refused.
+                var epoch = EpochIn(write, RequestSubject, forming.Requests[0]);
+                if (epoch is not null) KeepEpoch(write, CandidateSubject, id, epoch);
                 for (var position = 0; position < forming.Requests.Count; position++)
                 {
                     var request = forming.Requests[position];
+                    if (forming.Requests.Count > 1 && !IntegrationEpoch.Shared(epoch, EpochIn(write, RequestSubject, request)))
+                    {
+                        throw new IntegrationRefusedException(id, $"request {request} was not admitted under the epoch of request {forming.Requests[0]}");
+                    }
+
                     var held = RequestIn(write, request) ?? throw new IntegrationRefusedException(id, $"the store holds no request {request}");
                     if (held.ClosedAt is not null) throw new IntegrationRefusedException(id, $"request {request} is closed ({held.ClosedWhy})");
                     if (!string.Equals(held.Repository, forming.Repository, StringComparison.OrdinalIgnoreCase)
@@ -718,12 +758,12 @@ public sealed class IntegrationStore(
 
     private static IntegrationRequest? OpenIn(DesktopWrite write, string repository, string branch) =>
         write.Query(
-                $"SELECT {RequestColumns} FROM integration_requests WHERE repository = $repository COLLATE NOCASE AND branch = $branch AND closed_at IS NULL",
+                $"SELECT {Read(int.MaxValue)} FROM integration_requests WHERE repository = $repository COLLATE NOCASE AND branch = $branch AND closed_at IS NULL",
                 MapRequest, ("$repository", repository), ("$branch", branch))
             .FirstOrDefault();
 
     private static IntegrationRequest? RequestIn(DesktopWrite write, string id) =>
-        write.Query($"SELECT {RequestColumns} FROM integration_requests WHERE id = $id", MapRequest, ("$id", id)).FirstOrDefault();
+        write.Query($"SELECT {Read(int.MaxValue)} FROM integration_requests WHERE id = $id", MapRequest, ("$id", id)).FirstOrDefault();
 
     private static IntegrationCandidate? CandidateIn(DesktopWrite write, string id) =>
         write.Query($"SELECT {CandidateColumns} FROM integration_candidates WHERE id = $id", MapCandidate, ("$id", id)).FirstOrDefault();
@@ -790,6 +830,7 @@ public sealed class IntegrationStore(
             ClosedAt = Moments.Read(Text(row, "closed_at")),
             ClosedWhy = Text(row, "closed_why"),
             Order = Has(row, "queue_order") ? Number(row, "queue_order") : null,
+            Epoch = Has(row, "epoch") ? Text(row, "epoch") : null,
         };
     }
 

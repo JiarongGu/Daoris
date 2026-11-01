@@ -171,7 +171,7 @@ public static class WorkflowNamed
 
     /// <summary>The kinds a verification pipeline's graph never holds: each observes a chain's work, or lands it (the pipeline design §2.1).</summary>
     private static readonly string[] NotVerified =
-        [NodeKinds.Claimed, NodeKinds.Opinion, NodeKinds.Look, NodeKinds.GoAhead, NodeKinds.Handed, NodeKinds.Integrate, NodeKinds.WorkRequests, NodeKinds.QuestClose];
+        [NodeKinds.Claimed, NodeKinds.Opinion, NodeKinds.Look, NodeKinds.GoAhead, NodeKinds.Handed, NodeKinds.Land, NodeKinds.Integrate, NodeKinds.WorkRequests, NodeKinds.QuestClose];
 
     /// <summary>A workflow's or a step's id: lower-case letters, digits and dashes, at most 40.</summary>
     public static bool IsId(string? value) => value is { Length: > 0 and <= 40 } && SafeNames.IsKebabId(value);
@@ -321,7 +321,7 @@ public static class WorkflowNamed
         if (graph.Nodes.FirstOrDefault(node => NotVerified.Contains(node.Kind, StringComparer.Ordinal)) is { } held)
         {
             return $"v{number}: its graph holds `{held.Id}`, a `{held.Kind}`, and a verification pipeline's graph lands nothing and observes no "
-                + "chain's work: it holds no `claimed`, `opinion`, `look`, `go-ahead`, `handed`, `integrate`, `work.requests` or `quest.close`.";
+                + "chain's work: it holds no `claimed`, `opinion`, `look`, `go-ahead`, `handed`, `land`, `integrate`, `work.requests` or `quest.close`.";
         }
 
         return graph.Nodes.Any(node => node.Kind == NodeKinds.Check)

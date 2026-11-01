@@ -39,6 +39,88 @@ internal static class GitConsole
             }
         }
 
+        // A branch or a lightweight tag made (GITAPP2c): planned alone, pressed through the running Daoris's window or, with none, run here as the journal's act.
+        if (GitRefCommand.Answers(args))
+        {
+            try
+            {
+                var configPath = DriverConfig.ResolvePath();
+                var home = DriverConfig.HomeOf(configPath);
+                using var service = ServiceClient.FromEnvironment();
+                using var closing = new CancellationTokenSource();
+                Console.CancelKeyPress += (_, press) => { press.Cancel = true; closing.Cancel(); };
+                var runs = new ActRuns(new ActJournal(home));
+                var world = new GitRefWorld(
+                    async (repository, ct) => (await service.RegistryAsync(ct).ConfigureAwait(false))
+                        .Where(row => string.Equals(row.Repository, repository, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(row.Root))
+                        .Select(row => row.Root).FirstOrDefault(root => Directory.Exists(root)),
+                    () => runs,
+                    async (repository, checkout, ct) => (await CanonicalLine.ResolveAsync(checkout, repository, null, DriverConfig.Load(configPath), ct).ConfigureAwait(false)).Branch);
+                return await GitRefCommand.RunAsync(args, world, InstanceHost.World(home, "git"), closing.Token).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException)
+            {
+                Console.Error.WriteLine($"git: {error.Message}");
+                return 2;
+            }
+        }
+
+        // Origin's branches fetched (GITAPP2f): planned alone, pressed through the running Daoris's window or, with none, run here as the journal's act.
+        if (GitFetchCommand.Answers(args))
+        {
+            try
+            {
+                var configPath = DriverConfig.ResolvePath();
+                var home = DriverConfig.HomeOf(configPath);
+                using var service = ServiceClient.FromEnvironment();
+                using var closing = new CancellationTokenSource();
+                Console.CancelKeyPress += (_, press) => { press.Cancel = true; closing.Cancel(); };
+                var runs = new ActRuns(new ActJournal(home));
+                var world = new GitRefWorld(
+                    async (repository, ct) => (await service.RegistryAsync(ct).ConfigureAwait(false))
+                        .Where(row => string.Equals(row.Repository, repository, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(row.Root))
+                        .Select(row => row.Root).FirstOrDefault(root => Directory.Exists(root)),
+                    () => runs);
+                return await GitFetchCommand.RunAsync(args, world, InstanceHost.World(home, "git"), closing.Token).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException)
+            {
+                Console.Error.WriteLine($"git: {error.Message}");
+                return 2;
+            }
+        }
+
+        // A branch's history edited (GITAPP2m): planned alone, pressed through the running Daoris's window with the plan's ids or, with none, run here as the journal's act.
+        if (GitHistoryCommand.Answers(args))
+        {
+            try
+            {
+                var configPath = DriverConfig.ResolvePath();
+                var home = DriverConfig.HomeOf(configPath);
+                using var service = ServiceClient.FromEnvironment();
+                using var closing = new CancellationTokenSource();
+                Console.CancelKeyPress += (_, press) => { press.Cancel = true; closing.Cancel(); };
+                var runs = new ActRuns(new ActJournal(home));
+                var world = new GitHistoryWorld(
+                    async (repository, ct) => (await service.RegistryAsync(ct).ConfigureAwait(false))
+                        .Where(row => string.Equals(row.Repository, repository, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(row.Root))
+                        .Select(row => row.Root).FirstOrDefault(root => Directory.Exists(root)),
+                    async (repository, root, ct) =>
+                    {
+                        var row = (await service.RegistryAsync(ct).ConfigureAwait(false))
+                            .FirstOrDefault(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase) && each.Root == root);
+                        return (await CanonicalLine.ResolveAsync(root, repository, row?.Workspace, DriverConfig.Load(configPath), ct).ConfigureAwait(false)).Branch;
+                    },
+                    () => runs, home);
+                return await GitHistoryCommand.RunAsync(args, world, InstanceHost.World(home, "git"), closing.Token).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException)
+            {
+                Console.Error.WriteLine($"git: {error.Message}");
+                return 2;
+            }
+        }
+
         // Review's read from a terminal and the bench's verb (GITAPP1a-i): the route's own code, each start counted and timed.
         if (GitReviewCommand.Answers(args))
         {

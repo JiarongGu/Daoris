@@ -314,6 +314,9 @@ public sealed class DriverLoop(
     /// <summary>The landed branches whose integration waits for the owner's card (INTEGRATE1h), for <i>What needs you</i> and the Integration tab; none before a pass.</summary>
     public IReadOnlyList<IntegrationCardWait> CardWaits => _watch?.CardWaits ?? [];
 
+    /// <summary>The repositories whose integration declaration waits for the owner's acceptance (INTEGRATE1h, §5.8), for <i>What needs you</i>; none before a look.</summary>
+    public IReadOnlyList<DeclarationOwed> DeclarationsOwed => _watch?.DeclarationsOwed ?? [];
+
     /// <summary>
     /// Ask the loop's runtime for a whole pass, and wait for it within <paramref name="bound"/> (FABRIC-CUTOVER1d, <see cref="DriverWatch.PassWholeAsync"/>):
     /// a press held by a run's graph for a judgement not made yet. False past the bound, and where no loop runs.
@@ -844,7 +847,7 @@ public sealed class DriverLoop(
                     }),
                     NewsFeed("shell", news, service, row => row.Marks.Contains("chat", StringComparer.Ordinal), ct),
                 ],
-                log, ct),
+                log, ct, heard: present => HearsJournal = present),
             ct);
 
         // Every loop on the home watches the requests a terminal's `sessions stop|finish|decline` writes (SESSUX1g, D126
@@ -1357,6 +1360,18 @@ public sealed class DriverLoop(
     /// slice that follows ends wakes on it rather than on the conversation's route alone.
     /// </summary>
     public const string PartEndedType = "PART_ENDED";
+
+    /// <summary>
+    /// Whether this process's journal reader was last answered by a host that keeps the journal: false before its first answer, against a
+    /// host from before it, and while the host refuses or drops the ask, when a reader of <see cref="PartEndedType"/> keeps its old surface.
+    /// </summary>
+    public bool HearsJournal
+    {
+        get => Volatile.Read(ref _hearsJournal);
+        private set => Volatile.Write(ref _hearsJournal, value);
+    }
+
+    private bool _hearsJournal;
 
     /// <summary>
     /// A conversation's start refused at its open went on in its replacement (MODELROLE1d2, D205 §3.5(b)): <c>{ from, to }</c>, the refused

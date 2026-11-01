@@ -45,16 +45,25 @@ public sealed class DesktopStoreTests : IDisposable
     /// <summary>The schema version this build's own steps leave a store at: the steps a row adds move it, and these cases are of the mechanism, not of the count.</summary>
     private static readonly int Own = DesktopStore.Steps.Count;
 
-    /// <summary>The step after the build's own, which raises the writer stamp to 2: what a newer build's first start would migrate to.</summary>
-    private static readonly StoreMigration Raises = new(Own + 1, 2, write => write.Execute("CREATE TABLE raised (x TEXT NOT NULL)"));
+    /// <summary>The build's own writer stamp, which its steps leave a settled start's store at.</summary>
+    private static readonly int Stamp = DesktopStore.WriterStamp;
+
+    /// <summary>
+    /// The version a store stops at before the build's own first raise (LANDNODE1b's step): where a start whose confirmation is not settled, or
+    /// that was handed no reading of it, leaves the store, its stamp still 1.
+    /// </summary>
+    private static readonly int Unraised = DesktopStore.Steps.TakeWhile(step => step.Writer == DesktopStore.FirstWriter).Count();
+
+    /// <summary>The step after the build's own, which raises the writer stamp past the build's: what a newer build's first start would migrate to.</summary>
+    private static readonly StoreMigration Raises = new(Own + 1, Stamp + 1, write => write.Execute("CREATE TABLE raised (x TEXT NOT NULL)"));
 
     /// <summary>The step after the build's own that adds a table and leaves the stamp where it is.</summary>
-    private static readonly StoreMigration Adds = new(Own + 1, 1, write => write.Execute("CREATE TABLE added (x TEXT NOT NULL)"));
+    private static readonly StoreMigration Adds = new(Own + 1, Stamp, write => write.Execute("CREATE TABLE added (x TEXT NOT NULL)"));
 
     private static DesktopStoreOptions Newer(Func<StoreSettled>? settled = null, string kind = "shell") => new()
     {
         Kind = kind,
-        Writer = 2,
+        Writer = Stamp + 1,
         Steps = [.. DesktopStore.Steps, Raises],
         Settled = settled ?? (() => StoreSettled.Yes),
     };
@@ -76,10 +85,10 @@ public sealed class DesktopStoreTests : IDisposable
         Assert.Equal(DaorisHome.Entry(Home, HomeEntry.DesktopDb), at);
         Assert.Equal("desktop.db", Path.GetFileName(at));
         Assert.Equal("data", Path.GetFileName(Path.GetDirectoryName(at)));
-        var store = Open(at: at);
+        var store = Open(new DesktopStoreOptions { Settled = () => StoreSettled.Yes }, at);
 
         Assert.True(File.Exists(at));
-        Assert.Equal((Own, 1), store.Stamp);
+        Assert.Equal((Own, Stamp), store.Stamp);
         Assert.Null(store.Held);
         Assert.False(store.Newer);
         foreach (var table in new[] { "store_version", "store_revisions", "store_runs", "imports" }) Assert.True(HasTable(store, table), table);
@@ -104,7 +113,7 @@ public sealed class DesktopStoreTests : IDisposable
 
         var second = Open();
 
-        Assert.Equal((Own, 1), second.Stamp);
+        Assert.Equal((Unraised, 1), second.Stamp);
         Assert.Equal(1, Count(second, "imports"));
     }
 
@@ -140,11 +149,10 @@ public sealed class DesktopStoreTests : IDisposable
     {
         var step = Assert.Single(DesktopStore.Steps, each => each.Version == 4);
         Assert.Equal(1, step.Writer);
-        Assert.Equal(1, DesktopStore.WriterStamp);
 
         var store = Open();
 
-        Assert.Equal((Own, 1), store.Stamp);
+        Assert.Equal((Unraised, 1), store.Stamp);
         Assert.True(HasTable(store, "moves"));
         Assert.True(HasTable(store, "move_words"));
         var index = Assert.Single(store.Query("SELECT sql FROM sqlite_master WHERE type = 'index' AND name = 'moves_standing'", reader => reader.GetString(0)));
@@ -204,8 +212,9 @@ public sealed class DesktopStoreTests : IDisposable
 
         var store = Open(new DesktopStoreOptions { Settled = () => StoreSettled.Not("the swap journal is at `started`") });
 
-        Assert.Null(store.Held);
-        Assert.Equal((Own, 1), store.Stamp);
+        // Every step that adds a table runs; the build's own raise alone waits for the confirmation.
+        Assert.StartsWith($"migration {Unraised + 1} raises", store.Held);
+        Assert.Equal((Unraised, 1), store.Stamp);
         Assert.True(HasTable(store, "moves"));
     }
 
@@ -217,7 +226,7 @@ public sealed class DesktopStoreTests : IDisposable
         var older = Open(new DesktopStoreOptions { Steps = [.. DesktopStore.Steps.Take(3)], Settled = () => StoreSettled.Yes });
 
         Assert.False(older.Newer);
-        Assert.Equal((Own, 1), older.Stamp);
+        Assert.Equal((Unraised, 1),older.Stamp);
         older.Write(BindingStore.Family, write => write.Execute(
             "INSERT INTO bindings (session, adapter, conversation, kept) VALUES ('s1', 'claude-code-acp', 'c-1', '2026-10-29T00:00:00.0000000Z')"));
         older.Write(BindingStore.Family, write => write.Execute(
@@ -239,8 +248,9 @@ public sealed class DesktopStoreTests : IDisposable
 
         var store = Open(new DesktopStoreOptions { Settled = () => StoreSettled.Not("the swap journal is at `started`") });
 
-        Assert.Null(store.Held);
-        Assert.Equal((Own, 1), store.Stamp);
+        // Every step that adds a table runs; the build's own raise alone waits for the confirmation.
+        Assert.StartsWith($"migration {Unraised + 1} raises", store.Held);
+        Assert.Equal((Unraised, 1), store.Stamp);
         var added = Columns(store, "moves").Where(column => column.Name is "agent" or "refused_bound" or "quiet_at").ToList();
         Assert.Equal([("agent", false), ("refused_bound", false), ("quiet_at", false)], added);
     }
@@ -281,7 +291,7 @@ public sealed class DesktopStoreTests : IDisposable
 
         var store = Open();
 
-        Assert.Equal((Own, 1), store.Stamp);
+        Assert.Equal((Unraised, 1),store.Stamp);
         foreach (var table in IntegrationTables) Assert.True(HasTable(store, table), table);
         Assert.Contains(
             "CREATE UNIQUE INDEX integration_requests_open ON integration_requests (repository COLLATE NOCASE, branch) WHERE closed_at IS NULL",
@@ -365,8 +375,9 @@ public sealed class DesktopStoreTests : IDisposable
 
         var store = Open(new DesktopStoreOptions { Settled = () => StoreSettled.Not("the swap journal is at `started`") });
 
-        Assert.Null(store.Held);
-        Assert.Equal((Own, 1), store.Stamp);
+        // Every step that adds a table runs; the build's own raise alone waits for the confirmation.
+        Assert.StartsWith($"migration {Unraised + 1} raises", store.Held);
+        Assert.Equal((Unraised, 1), store.Stamp);
         foreach (var table in IntegrationTables) Assert.True(HasTable(store, table), table);
     }
 
@@ -378,7 +389,7 @@ public sealed class DesktopStoreTests : IDisposable
         var older = Open(new DesktopStoreOptions { Steps = [.. DesktopStore.Steps.Take(5)], Settled = () => StoreSettled.Yes });
 
         Assert.False(older.Newer);
-        Assert.Equal((Own, 1), older.Stamp);
+        Assert.Equal((Unraised, 1),older.Stamp);
         older.Write("moves", write => write.Execute(
             """
             INSERT INTO moves (record_left, executor, how, from_why, from_by, phase, claim_run, claim_generation, decided_at)
@@ -399,7 +410,7 @@ public sealed class DesktopStoreTests : IDisposable
 
         var store = Open();
 
-        Assert.Equal((Own, 1), store.Stamp);
+        Assert.Equal((Unraised, 1),store.Stamp);
         Assert.True(HasTable(store, "integration_dispositions"));
         Assert.Equal(
             [
@@ -457,8 +468,9 @@ public sealed class DesktopStoreTests : IDisposable
 
         var store = Open(new DesktopStoreOptions { Settled = () => StoreSettled.Not("the swap journal is at `started`") });
 
-        Assert.Null(store.Held);
-        Assert.Equal((Own, 1), store.Stamp);
+        // Every step that adds a table runs; the build's own raise alone waits for the confirmation.
+        Assert.StartsWith($"migration {Unraised + 1} raises", store.Held);
+        Assert.Equal((Unraised, 1), store.Stamp);
         Assert.True(HasTable(store, "integration_dispositions"));
         foreach (var table in IntegrationTables) Assert.True(HasTable(store, table), table);
     }
@@ -471,7 +483,7 @@ public sealed class DesktopStoreTests : IDisposable
         var older = Open(new DesktopStoreOptions { Steps = [.. DesktopStore.Steps.Take(6)], Settled = () => StoreSettled.Yes });
 
         Assert.False(older.Newer);
-        Assert.Equal((Own, 1), older.Stamp);
+        Assert.Equal((Unraised, 1),older.Stamp);
         older.Write("moves", write => write.Execute(
             """
             INSERT INTO moves (record_left, executor, how, from_why, from_by, phase, claim_run, claim_generation, decided_at)
@@ -493,7 +505,7 @@ public sealed class DesktopStoreTests : IDisposable
 
         var store = Open(new DesktopStoreOptions { Settled = () => StoreSettled.Yes });
 
-        Assert.Equal((Own, 1), store.Stamp);
+        Assert.Equal((Own, Stamp), store.Stamp);
         Assert.Equal([("candidate", true), ("decide", true), ("requester", true), ("at", true)], Columns(store, "integration_decides"));
         const string At = "2026-10-31T00:00:00.0000000+00:00";
         void Decide(string candidate) => store.Write("integration", write => write.Execute(
@@ -523,7 +535,7 @@ public sealed class DesktopStoreTests : IDisposable
         var again = Open(new DesktopStoreOptions { Steps = [.. DesktopStore.Steps.Take(11)], Settled = () => StoreSettled.Yes });
 
         Assert.False(again.Newer);
-        Assert.Equal((Own, 1), again.Stamp);
+        Assert.Equal((Unraised, 1),again.Stamp);
         again.Write("integration", write => write.Execute(
             """
             INSERT INTO integration_requests (id, repository, workspace, branch, tip, route, line, requester, door, policy_request, policy_commit, policy_batch,
@@ -545,7 +557,7 @@ public sealed class DesktopStoreTests : IDisposable
 
         var store = Open(new DesktopStoreOptions { Settled = () => StoreSettled.Yes });
 
-        Assert.Equal((Own, 1), store.Stamp);
+        Assert.Equal((Own, Stamp), store.Stamp);
         Assert.True(HasTable(store, "git_acts"));
         Assert.True(HasTable(store, "git_act_steps"));
         void Act(string id, string? closed = null) => store.Write("acts", write => write.Execute(
@@ -561,6 +573,92 @@ public sealed class DesktopStoreTests : IDisposable
         Assert.Equal(2067, Assert.Throws<SqliteException>(() => Act("a3")).SqliteExtendedErrorCode);
     }
 
+    // ——— Step 15, the delivery record (LANDNODE1b; the land node design §3, §4), the first step to raise the stamp.
+
+    [Fact]
+    public void Step_15_makes_the_deliveries_and_their_phases_and_is_the_first_step_to_raise_the_writer_stamp()
+    {
+        var step = Assert.Single(DesktopStore.Steps, each => each.Version == 15);
+        Assert.Equal((2, 2), (step.Writer, DesktopStore.WriterStamp));
+        Assert.All(DesktopStore.Steps.Where(each => each.Version < 15), each => Assert.Equal(DesktopStore.FirstWriter, each.Writer));
+        Assert.Equal(14, Unraised);
+
+        var store = Open(new DesktopStoreOptions { Settled = () => StoreSettled.Yes });
+
+        Assert.Equal((Own, 2), store.Stamp);
+        Assert.Equal(
+            [
+                ("key", true), ("format", true), ("unit", true), ("repository", true), ("tip", true), ("method", true), ("target", true), ("line", true),
+                ("branch", false), ("ticket", false), ("message", true), ("plugin", false), ("epoch", true), ("authority", true), ("accept", false),
+                ("scope", false), ("revision", true), ("graph", true), ("options", true), ("receipts", true), ("claim_run", true),
+                ("claim_generation", true), ("at", true), ("settled", false), ("settled_at", false), ("said", false),
+            ],
+            Columns(store, "deliveries"));
+        Assert.Equal(
+            [
+                ("delivery", true), ("ordinal", true), ("phase", true), ("intended", false), ("began_at", true), ("ended_at", false), ("outcome", false),
+                ("evidence", false), ("said", false),
+            ],
+            Columns(store, "delivery_phases"));
+        Assert.Contains("CREATE UNIQUE INDEX deliveries_unresolved ON deliveries (unit) WHERE settled_at IS NULL", Indexes(store, "deliveries"));
+        Assert.Contains("CREATE UNIQUE INDEX delivery_phases_open ON delivery_phases (delivery) WHERE ended_at IS NULL", Indexes(store, "delivery_phases"));
+    }
+
+    [Fact]
+    public void A_delivery_s_claim_names_a_run_the_store_holds_its_unit_has_one_unresolved_and_it_has_one_entry_without_its_outcome()
+    {
+        var store = Open(new DesktopStoreOptions { Settled = () => StoreSettled.Yes });
+        const string At = "2026-11-01T00:00:00.0000000+00:00";
+        void Delivery(string key, string run, string? settled = null) => store.Write(DeliveryStore.Family, write => write.Execute(
+            """
+            INSERT INTO deliveries (key, format, unit, repository, tip, method, target, line, message, epoch, authority, accept, revision, graph, options,
+                receipts, claim_run, claim_generation, at, settled, settled_at)
+            VALUES ($key, 1, 'unit-1', 'engine', 'abc', 'branch', 'main', 'main', 'Tidy', 'epoch-1', 'person', 'accept-1', 'r1', 'g', '{}', '[]', $run, 1, $at,
+                $settled, $settledAt)
+            """,
+            ("$key", key), ("$run", run), ("$at", At), ("$settled", settled), ("$settledAt", settled is null ? null : At)));
+        void Entry(string delivery, int ordinal, string? ended = null) => store.Write(DeliveryStore.Family, write => write.Execute(
+            "INSERT INTO delivery_phases (delivery, ordinal, phase, began_at, ended_at) VALUES ($delivery, $ordinal, 'prepared', $at, $ended)",
+            ("$delivery", delivery), ("$ordinal", ordinal), ("$at", At), ("$ended", ended)));
+
+        // 787 is SQLite's foreign-key refusal, 2067 its unique one: a claim names a run the store holds, and a unit has one delivery unresolved.
+        Assert.Equal(787, Assert.Throws<SqliteException>(() => Delivery("k1", "no-such-run")).SqliteExtendedErrorCode);
+        Delivery("k0", store.Run, settled: "delivered");
+        Delivery("k1", store.Run);
+        Assert.Equal(2067, Assert.Throws<SqliteException>(() => Delivery("k2", store.Run)).SqliteExtendedErrorCode);
+        Assert.Equal(2, Count(store, "deliveries"));
+
+        Assert.Equal(787, Assert.Throws<SqliteException>(() => Entry("no-such-delivery", 0)).SqliteExtendedErrorCode);
+        Entry("k1", 0, ended: At);
+        Entry("k1", 1);
+        Assert.Equal(2067, Assert.Throws<SqliteException>(() => Entry("k1", 2)).SqliteExtendedErrorCode);
+    }
+
+    [Fact]
+    public void Step_15_waits_for_the_start_s_confirmation_and_an_older_build_writes_on_until_it_runs_and_never_after()
+    {
+        using var older = Open(new DesktopStoreOptions { Writer = 1, Steps = [.. DesktopStore.Steps.Take(14)], Settled = () => StoreSettled.Yes });
+        older.Write("probe", _ => { });
+        Assert.Equal((14, 1), older.Stamp);
+
+        using (var waiting = Open(new DesktopStoreOptions { Settled = () => StoreSettled.Not("the swap journal is at `started`") }))
+        {
+            Assert.StartsWith("migration 15 raises the store's writer stamp from 1 to 2", waiting.Held);
+            Assert.Equal((14, 1), waiting.Stamp);
+            Assert.False(HasTable(waiting, "deliveries"));
+        }
+
+        older.Write("probe", _ => { });
+
+        var settled = Open(new DesktopStoreOptions { Settled = () => StoreSettled.Yes });
+
+        Assert.Null(settled.Held);
+        Assert.Equal((Own, 2), settled.Stamp);
+        Assert.True(older.Newer);
+        Assert.Throws<DesktopStoreNewerException>(() => older.Write("probe", _ => { }));
+        Assert.Equal(2, older.Revisions()["probe"]);
+    }
+
     // ——— Step 10, the role catalogue (FOUNDATION1w; the foundation design §2.7, §13.3).
 
     [Fact]
@@ -571,7 +669,7 @@ public sealed class DesktopStoreTests : IDisposable
 
         var store = Open();
 
-        Assert.Equal((Own, 1), store.Stamp);
+        Assert.Equal((Unraised, 1),store.Stamp);
         Assert.Equal([("id", true), ("state", true), ("record", true), ("revision", true), ("at", true)], Columns(store, "roles"));
         Assert.Equal(
             [("id", true), ("revision", true), ("state", true), ("record", false), ("at", true)],
@@ -588,7 +686,7 @@ public sealed class DesktopStoreTests : IDisposable
 
         var store = Open();
 
-        Assert.Equal((Own, 1), store.Stamp);
+        Assert.Equal((Unraised, 1),store.Stamp);
         Assert.Equal(
             [("role", true), ("state", true), ("choices", false), ("why", false), ("first_agent", false), ("at", true)],
             Columns(store, "role_staffing"));
@@ -631,8 +729,9 @@ public sealed class DesktopStoreTests : IDisposable
 
         var store = Open(new DesktopStoreOptions { Settled = () => StoreSettled.Not("the swap journal is at `started`") });
 
-        Assert.Null(store.Held);
-        Assert.Equal((Own, 1), store.Stamp);
+        // Every step that adds a table runs; the build's own raise alone waits for the confirmation.
+        Assert.StartsWith($"migration {Unraised + 1} raises", store.Held);
+        Assert.Equal((Unraised, 1), store.Stamp);
         foreach (var table in new[] { "role_staffing", "role_staffing_projection", "role_staffing_found" }) Assert.True(HasTable(store, table), table);
     }
 
@@ -765,7 +864,7 @@ public sealed class DesktopStoreTests : IDisposable
         var ids = await Task.WhenAll(runs);
 
         var read = Open();
-        Assert.Equal((Own, 1), read.Stamp);
+        Assert.Equal((Own, Stamp), read.Stamp);
         Assert.Equal(60, Count(read, "imports"));
         Assert.Equal(kinds.ToDictionary(kind => kind, _ => 20L), read.Revisions());
         Assert.Equal(ids.Order().ToArray(), read.Runs().Select(each => each.Run).Order().ToArray());
@@ -781,11 +880,11 @@ public sealed class DesktopStoreTests : IDisposable
 
         var older = Open(Older());
 
-        Assert.Equal((Own + 1, 2), older.Stamp);
+        Assert.Equal((Own + 1, Stamp + 1), older.Stamp);
         Assert.True(older.Newer);
         Assert.Equal(1, older.Revisions()["settings"]);
         var refused = Assert.Throws<DesktopStoreNewerException>(() => older.Write("settings", _ => { }));
-        Assert.Equal((2, 1), (refused.Stamped, refused.Own));
+        Assert.Equal((Stamp + 1, Stamp), (refused.Stamped, refused.Own));
         Assert.Contains("newer Daoris", refused.Message);
         Assert.Contains("Update Daoris", refused.Message);
         Assert.Equal(1, older.Revisions()["settings"]);
@@ -799,7 +898,7 @@ public sealed class DesktopStoreTests : IDisposable
         Assert.False(older.Newer);
 
         // Another process, a newer build, opens the file after it and migrates it, raising the stamp.
-        using (var newer = DesktopStore.Open(Db, Newer(kind: "host"))) Assert.Equal((Own + 1, 2), newer.Stamp);
+        using (var newer = DesktopStore.Open(Db, Newer(kind: "host"))) Assert.Equal((Own + 1, Stamp + 1), newer.Stamp);
 
         // The older process kept its connection and its idea of the file: its next write meets the stamp in its own transaction.
         Assert.Throws<DesktopStoreNewerException>(() => older.Write("settings", write => write.Execute(
@@ -817,29 +916,32 @@ public sealed class DesktopStoreTests : IDisposable
         var store = Open(Newer(() => settled));
         store.Write("settings", _ => { });
 
-        // The start's confirmation is not settled: the stamp stays where it was and an older build can still write.
+        // The start's confirmation is not settled: the stamp stays where it was and an older build can still write. The first raise to wait
+        // is the build's own, the delivery record's, from 1 to 2, and the newer one waits behind it.
         Assert.False(store.Migrate());
-        Assert.Equal((Own, 1), store.Stamp);
+        Assert.Equal((Unraised, 1), store.Stamp);
         Assert.Contains("raises the store's writer stamp from 1 to 2", store.Held);
         Assert.Contains("`started`", store.Held);
         Assert.False(HasTable(store, "raised"));
-        using (var older = DesktopStore.Open(Db, Older())) older.Write("settings", _ => { });
+        using (var older = DesktopStore.Open(Db, new DesktopStoreOptions { Writer = 1, Steps = [.. DesktopStore.Steps.Take(Unraised)] })) older.Write("settings", _ => { });
 
         settled = StoreSettled.Yes;
 
         Assert.True(store.Migrate());
         Assert.Null(store.Held);
-        Assert.Equal((Own + 1, 2), store.Stamp);
+        Assert.Equal((Own + 1, Stamp + 1), store.Stamp);
         Assert.True(HasTable(store, "raised"));
     }
 
     [Fact]
     public void A_migration_that_adds_a_table_and_leaves_the_stamp_runs_at_the_first_start_whatever_the_confirmation_says()
     {
+        Open(new DesktopStoreOptions { Settled = () => StoreSettled.Yes }).Write("probe", _ => { });
+
         var store = Open(new DesktopStoreOptions { Steps = [.. DesktopStore.Steps, Adds], Settled = () => StoreSettled.Not("started") });
 
         Assert.Null(store.Held);
-        Assert.Equal((Own + 1, 1), store.Stamp);
+        Assert.Equal((Own + 1, Stamp), store.Stamp);
         Assert.True(HasTable(store, "added"));
     }
 
@@ -848,18 +950,19 @@ public sealed class DesktopStoreTests : IDisposable
     {
         var store = Open(new DesktopStoreOptions { Settled = () => StoreSettled.Not("started") });
 
-        Assert.Null(store.Held);
-        Assert.Equal((Own, 1), store.Stamp);
+        // Every step to the build's own raise runs; that one waits, as it waits on a store an older build made.
+        Assert.StartsWith($"migration {Unraised + 1} raises", store.Held);
+        Assert.Equal((Unraised, 1), store.Stamp);
     }
 
     [Fact]
     public void A_store_handed_no_reading_of_the_confirmation_holds_a_raise_and_an_import()
     {
         Open().Write("a", _ => { });
-        var unasked = Open(new DesktopStoreOptions { Writer = 2, Steps = [.. DesktopStore.Steps, Raises] });
+        var unasked = Open(new DesktopStoreOptions { Writer = Stamp + 1, Steps = [.. DesktopStore.Steps, Raises] });
 
         Assert.Contains("no reading", unasked.Held);
-        Assert.Equal((Own, 1), unasked.Stamp);
+        Assert.Equal((Unraised, 1), unasked.Stamp);
         Assert.False(unasked.Import(new StoreImport("settings", "data/driver.json", 1, "x", 0, ImportClass.Left)).Done);
     }
 
@@ -872,19 +975,19 @@ public sealed class DesktopStoreTests : IDisposable
         IReadOnlyList<StoreMigration> Steps(bool fail) =>
         [
             .. DesktopStore.Steps.Select(step => interrupted == 1 && fail ? step with { Apply = write => { step.Apply(write); throw new IOException("killed"); } } : step),
-            new(Own + 1, 1, write =>
+            new(Own + 1, Stamp, write =>
             {
                 write.Execute("CREATE TABLE step_two (x TEXT)");
                 if (interrupted == 2 && fail) throw new IOException("killed");
             }),
-            new(Own + 2, 1, write =>
+            new(Own + 2, Stamp, write =>
             {
                 write.Execute("CREATE TABLE step_three (x TEXT)");
                 if (interrupted == 3 && fail) throw new IOException("killed");
             }),
         ];
 
-        Assert.Throws<IOException>(() => DesktopStore.Open(Db, new DesktopStoreOptions { Steps = Steps(fail: true) }));
+        Assert.Throws<IOException>(() => DesktopStore.Open(Db, new DesktopStoreOptions { Steps = Steps(fail: true), Settled = () => StoreSettled.Yes }));
 
         // The store is as the steps before the interrupted one left it, its tables and its version; the interrupted step's DDL is gone.
         // The first case interrupts the build's own first step, so the store is made by none; the others interrupt the two steps after the build's.
@@ -908,8 +1011,8 @@ public sealed class DesktopStoreTests : IDisposable
         }
 
         // And the next start, whole, goes on from there.
-        var store = Open(new DesktopStoreOptions { Steps = Steps(fail: false) });
-        Assert.Equal((Own + 2, 1), store.Stamp);
+        var store = Open(new DesktopStoreOptions { Steps = Steps(fail: false), Settled = () => StoreSettled.Yes });
+        Assert.Equal((Own + 2, Stamp), store.Stamp);
         Assert.True(HasTable(store, "step_two") && HasTable(store, "step_three"));
     }
 

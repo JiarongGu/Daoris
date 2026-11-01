@@ -41,6 +41,9 @@ internal static class PipeTargetRows
         ["STAFFING_FOUND_ANSWER"] = "answers a found change, which then leaves the list",
         ["SET_ROLE"] = "edits a role's row of the catalogue in place, its revision moving",
         ["WORKFLOW_LANDED"] = "reads the gates at the line's tip and accepts them by their blob",
+        ["WORKFLOW_USE"] = "merges into the place's choice, which keeps its other kinds and its landed route",
+        ["WORKFLOW_KIND"] = "merges into the workspace's kinds, keeping the others",
+        ["WORKFLOW_SAVE"] = "adds a version beside the ones kept, or makes a workflow",
         ["WORKFLOW_VERIFY"] = "starts a run of the accepted gates beside the route, and sets no value",
         ["INTEGRATION_GATES"] = "reads the declaration at the line's tip and accepts it by its blob",
         ["TOOLS_USE"] = "checks a file's version or downloads a managed one",
@@ -166,6 +169,18 @@ internal static class PipeTargetRows
         Row("WITHDRAW_LANDING_BRANCH", new RepositoryGround("repository"), BranchGround.Named("repository", "branch"));
         // INTEGRATE1h: the repository an integration act is on; each act is judged by the store or the door at its press, not a tip here.
         Row("INTEGRATE", new RepositoryGround("repository"));
+        // GITAPP2c: the repository a ref is made in or taken from; the act judges the name, the commit and the ref's id fresh under the checkout's lock.
+        Row("GIT_REF_CREATE", new RepositoryGround("repository", "workspace"));
+        Row("GIT_REF_UNDO", new RepositoryGround("repository", "workspace"));
+        // GITAPP2d: a branch is deleted only at the commit the page showed (`at`), judged fresh under the lock like the rest.
+        Row("GIT_REF_DELETE", new RepositoryGround("repository", "workspace"));
+        // GITAPP2e: a rename judges the commit shown, the new name and its section fresh under the lock; Finish judges the act's journaled steps.
+        Row("GIT_REF_RENAME", new RepositoryGround("repository", "workspace"));
+        Row("GIT_REF_FINISH", new RepositoryGround("repository", "workspace"));
+        // GITAPP2f: a fetch judges origin's settings, the doors and any hold on origin fresh under the lock.
+        Row("GIT_FETCH", new RepositoryGround("repository", "workspace"));
+        // GITAPP2m: the repository a branch's history is edited in; the act refuses where an id its plan pinned moved, read under the checkout's lock.
+        Row("GIT_HISTORY_EDIT", new RepositoryGround("repository", "workspace"));
         Row("RECOVERY_DROP", new RepositoryGround("repository"), new BranchGround(["repository", "refs"], payload =>
             PipeGround.Text(payload, "repository") is { Length: > 0 } repository
                 ? [.. Each(Field(payload, "refs")).Select(each => Text(At(each, "ref"))).OfType<string>().Select(name => (repository, name))]
@@ -214,9 +229,9 @@ internal static class PipeTargetRows
         Row("TRUST_FOLDER", LoopGround.Wait("trust", "folder", "trustFile"));
 
         // The set-up, and a repository's standing choices.
-        Row("SETUP_PRESS", new RepositoryGround("repository"), Plan("SETUP_PLAN", ["repository"], p => new { repository = Text(p, "repository") },
+        Row("SETUP_PRESS", new RepositoryGround("repository"), Plan("SETUP_PLAN", ["repository", "builds"], p => new { repository = Text(p, "repository"), builds = Text(p, "builds") },
             (a, _) => Fp(
-                Pick(a, "repository", "workspace", "line", "layout", "adopted", "declares", "asks", "agent", "lands", "landsWith", "pressable"),
+                Pick(a, "repository", "workspace", "line", "layout", "adopted", "declares", "asks", "agent", "lands", "landsWith", "pressable", "builds"),
                 string.Join(",", Each(At(a, "rules")).Select(each => Text(each)).Order(StringComparer.Ordinal)),
                 string.Join(",", Each(At(a, "refusals")).Select(each => Text(At(each, "code"))).Order(StringComparer.Ordinal))),
             TimeSpan.FromMinutes(2)));
@@ -246,9 +261,16 @@ internal static class PipeTargetRows
             (a, p) => Each(At(Named(At(a, "writeAcross"), "repository", Text(p, "repository")), "to")).Any(each => Same(Text(each), Text(p, "to")))
                 ? "true" : "false",
             p => Raw(Field(p, "allow"))));
-        Row("WORKFLOW_LANDED", new RepositoryGround("repository", "workspace"), Setting("WORKFLOW_CURRENT", ["repository", "workspace", "workflow"],
+        Row("WORKFLOW_LANDED", new RepositoryGround("repository", "workspace"), Setting("WORKFLOW_CURRENT", ["repository", "workspace", "workflow", "gates"],
             p => Text(p, "repository") is { } repository ? new { repository } : new { workspace = Text(p, "workspace") },
             (a, _) => Fp(Pick(At(a, "start", "landed"), "workflow", "level"))));
+        // AGENTSPLACE1c: a place's routes as they stand, so a choice or a kind changed between the ask and the Confirm is never overwritten unseen.
+        Row("WORKFLOW_USE", new RepositoryGround("repository", "workspace"), Setting("WORKFLOW_CURRENT", ["repository", "workspace", "workflow", "kind", "version"],
+            p => Text(p, "repository") is { } repository ? new { repository } : new { workspace = Text(p, "workspace") },
+            (a, _) => Fp(Rows(At(a, "start", "routes"), "kind", "workflow", "level", "label"))));
+        Row("WORKFLOW_KIND", new RepositoryGround("workspace"), Setting("WORKFLOW_CURRENT", ["workspace", "kind", "label", "paths", "drop"],
+            p => new { workspace = Text(p, "workspace") },
+            (a, _) => Fp(Rows(At(a, "start", "routes"), "kind", "workflow", "label", "paths"))));
         // INTEGRATE1d: the blob accepted and the one at the line's tip, so a declaration the line changed between the ask and the Confirm
         // is never accepted unseen.
         // FABRIC-PIPELINE1d: a verification of a branch or a commit, asked under the landed route and the gates accepted at the tip.
@@ -300,6 +322,8 @@ internal static class PipeTargetRows
                 Rows(At(Named(At(a, "plugins"), "id", Text(p, "id")), "helpServers"), ["name"], "state", "accepted", "allow", "writes"))));
         Row("PLUGIN_ADD", LoopGround.Plan("plugin-folder", Page, "folder"));
         Row("PLUGIN_NEW", LoopGround.Plan("plugin-new", Page, "folder", "id"));
+        // AGENTSPLACE1c: the workflow's versions as they stand, so a save confirmed after another one moved the file is refused as moved.
+        Row("WORKFLOW_SAVE", LoopGround.Plan("workflow-file", Page, "id"));
         Row("PLUGIN_TRY", LoopGround.Plan("plugin-try", Page, "id", "folder"));
         Row("PLUGIN_INSTALL", LoopGround.Plan("plugin-offer", Page, "offer"));
         Row("PLUGIN_UPDATE", LoopGround.Plan("plugin-update", Page, "id", "shipped"));

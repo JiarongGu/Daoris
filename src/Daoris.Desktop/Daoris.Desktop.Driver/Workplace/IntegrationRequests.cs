@@ -60,10 +60,13 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
     /// The person's press under a merge rule (INTEGRATE1g): the session's branch at <paramref name="tip"/>, the commit the press merges, admitted
     /// for <paramref name="line"/> under <see cref="Legacy"/> only where the repository's effective rule is a merge rule.
     /// </summary>
-    public IntegrationAdmission Press(string repository, string? workspace, string branch, string tip, string line)
+    /// <param name="delivered">
+    /// A delivery's merge (LANDNODE1b2): its method is its intent's, so the rule is not read and no rule source is kept.
+    /// </param>
+    public IntegrationAdmission Press(string repository, string? workspace, string branch, string tip, string line, bool delivered = false)
     {
-        var landing = LandingRules.Effective(config(), repository, workspace);
-        if (landing.Rule.Form != LandingForm.Merge)
+        var landing = delivered ? null : LandingRules.Effective(config(), repository, workspace);
+        if (landing is { Rule.Form: not LandingForm.Merge })
         {
             return Refuse(IntegrationRefusals.Door, $"`{repository}`'s landing rule is no merge rule, so its press is not carried as one: nothing was requested.");
         }
@@ -71,7 +74,8 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
         var request = new IntegrationRequest(NewId(), repository, RemoteTarget.Workspace(workspace), branch, tip, IntegrationRoutes.Merge, line,
             IntegrationRequester.Press, Legacy, DateTimeOffset.UtcNow)
         {
-            RuleSource = landing.Source,
+            RuleSource = landing?.Source,
+            Epoch = IntegrationEpoch.Of(Legacy, null),
         };
         // An earlier press of the same commit still open (its run held) is this press's request: the press goes on with it.
         return store.Add(request) switch
@@ -265,6 +269,7 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
             LandedAt = entry.LandedAt,
             Proof = proof,
             RuleSource = landing.Source,
+            Epoch = IntegrationEpoch.Of(policy, IntegrationAcceptance.Of(settings, ask.Repository)),
         };
         return Kept(request, $"`{ask.Branch}` at {Short(tip)} is requested for `{line}` from its landing's record, {By(ask.Requester)}.");
     }
@@ -316,6 +321,7 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
             IntegrationRoutes.Records, line!, ask.Requester, policy, DateTimeOffset.UtcNow)
         {
             RuleSource = landing.Source,
+            Epoch = IntegrationEpoch.Of(policy, IntegrationAcceptance.Of(settings, ask.Repository)),
         };
         return Kept(request,
             $"`{ask.Branch}` at {Short(stands!)} is requested for `{line}` as a records branch, {By(ask.Requester)}: it carries no workflow gate.");

@@ -16,6 +16,10 @@ public sealed record BrainstormPassRecord(BrainstormBy By, string Role, string S
     public string? Choice { get; init; }
     public ActorAsked? Asked { get; init; }
     public ActorRan? Ran { get; init; }
+
+    /// <summary>The walk's sentence where the pass could not start: no path and no account name; null for a record written before it, or a pass that started.</summary>
+    public string? Why { get; init; }
+
     public const string Generate = "generate";
     public const string Synthesize = "synthesize";
 
@@ -297,7 +301,8 @@ public static class BrainstormDocuments
             text.Append("- `").Append(pass.By.Pass).Append("` ").Append(pass.Role).Append(" on `").Append(pass.By.Adapter).Append("` (maker ")
                 .Append(pass.By.Maker).Append(pass.By.Account is { } account ? $", account {account}" : "").Append("): ").Append(pass.State)
                 .Append(pass.Turns > 1 ? $" after its repair" : "")
-                .Append(pass.Codes.Count > 0 ? $" ({string.Join(", ", pass.Codes)})" : "").Append('\n');
+                .Append(pass.Codes.Count > 0 ? $" ({string.Join(", ", pass.Codes)})" : "")
+                .Append(pass.Why is { } why ? $": {why}" : "").Append('\n');
         }
 
         return text.ToString();
