@@ -61,13 +61,17 @@ using Daoris.Driver;
 //                 commit of it is on any ref but this machine's local daoris/* branches, the sessions archived, and
 //                 <home>/abandoned.json written with each discarded branch's tip. A step that fails leaves it paused.
 //
-//   setup <repository> [--plan]
+//   setup <repository> [--plan] [--what-it-builds <kind>]
 //                 ask a repository's own session to set it up for every agent (LAYOUT7; D117 §6, D124 §2): take up
 //                 the doctrine on the agents layout, initialise its knowledge, write its brief and declare its
 //                 documents and safe work, on its own branch. Read from its LINE as git objects, every refusal said
 //                 with its door. A press publishes one ask to it, as yours, and adds to its rules the doctrine tool's
 //                 exact verbs; --plan prints what was read, the rule, the landing, the agent and the quest's text,
-//                 and publishes nothing.
+//                 and publishes nothing. --what-it-builds names the checks its safe work declares (D124's 1a2 note).
+//
+//   place <repository>… --preset <id> [--with opinion,look,adoption] [--what-it-builds <kind>] [--drive] --plan
+//                 a quick set-up's plan (AGENTSPLACE1a2), PLACE_PLAN's twin: a delivery preset, its riders, a set-up quest
+//                 and general driving, read before and after, every refusal at once. Writes nothing.
 //
 //   setup --workspace <name> [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]
 //   setup --workspace <name> --pause | --resume | --stop
