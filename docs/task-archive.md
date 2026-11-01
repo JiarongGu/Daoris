@@ -22717,3 +22717,9 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 > **SETUPUX1l — Roles on a place, one role editor** (web; row l of the set-up design). Only the works that differ from the parent as rows, the rest folded; one `RoleEditor` for the place's Roles and All roles (a step's later), keeping the role's scope, revision and typed alternatives; *Back to …* naming the fallback; the two-roles-one-work refusal said in the editor; a shared role edited once with its works named. Proof: the folds, *Back to*, the refusal, a shared role, a typed model saved (`PlaceRoles.test.tsx`, `RoleEditor.test.tsx`); stories at 80, 39 and 25rem, en and zh, both themes.
 
 **Outcome** 2026-11-02: `agents/roles/RoleEditor.tsx` holds the editor (prose behind one ⓘ, a sentence of consequence before *Save*) and `setup/PlaceRoles.tsx` folds the unchanged works. Detail: D221's SETUPUX1l note; `PlaceRoles.stories.tsx`.
+
+## FLOWCHART2a — the chart's components (2026-11-02, D223)
+
+> **FLOWCHART2a — the components** (web; row a of the flowchart design). `FlowCanvas`, `StepNode` per kind, `PortRow`, `Terminal`, `HoldsGroup` and `EdgeChip`; the place's chart and the run view draw through them. Proof: every shipped graph with each kind's variant, each outcome a port, each unrouted outcome a ◎; measured, each `when` leaves its port's box, none crosses a box, crossing ceilings held, the other flows' stories unchanged; no status hue on an edge; stories at 80, 39 and 25rem, en and zh, both themes.
+
+**Outcome** 2026-11-02: the place's chart and a run draw through `workflow/chart/` on `design/FlowCanvas`; a decision's outcomes are ports its routes leave, two outcomes to one step stay two ways, and a `data` wire is drawn only while an end is selected. Detail: D223's FLOWCHART2a note; `graphFlow.test.ts`, `chart.test.tsx`, the measured `graph/*` stories.
