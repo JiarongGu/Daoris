@@ -18,6 +18,9 @@ internal sealed class ChatHandOver(ChatContext context, IChatRunning runner)
     /// <summary>How long a take waits, once its prompt was handed to a turned door, for the door to say it wrote before it tells its end (TAKEWAITS1).</summary>
     internal static readonly TimeSpan WireBound = TimeSpan.FromSeconds(15);
 
+    /// <summary>This hand-over's <see cref="WireBound"/>, which its limit move waits too: a test that stopped its door mid-write, so it never says it wrote, shortens it.</summary>
+    internal TimeSpan WireWait { get; init; } = WireBound;
+
     /// <summary>
     /// The most the closing note's one turn is waited for (SESSCTX1c part B, §2.2): a move never waits more than that turn, and a turn
     /// that hangs past this is the conversation's end's to stop; its note is then said absent.
@@ -277,7 +280,7 @@ internal sealed class ChatHandOver(ChatContext context, IChatRunning runner)
 
             // The move's own reading ends it in the store before the take is told over (TAKEWAITS1), so a word the person said meanwhile and
             // held waits no longer. A turned door tells that it wrote as its turn does, which a door that never writes does not: bounded.
-            if (wired && await Task.WhenAny(wrote.Task, Task.Delay(WireBound)).ConfigureAwait(false) == wrote.Task) await (await wrote.Task).ConfigureAwait(false);
+            if (wired && await Task.WhenAny(wrote.Task, Task.Delay(WireWait)).ConfigureAwait(false) == wrote.Task) await (await wrote.Task).ConfigureAwait(false);
 
             // Ended, nothing listens to them now; refused before its end, the conversation takes words again.
             held?.Release();

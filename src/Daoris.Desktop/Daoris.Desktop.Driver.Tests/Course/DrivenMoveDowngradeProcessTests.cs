@@ -22,7 +22,7 @@ public sealed class DrivenMoveDowngradeProcessTests : IAsyncLifetime
 {
     private readonly DrivenMoveHarness _h = new("driven-move-downgrade");
 
-    public Task InitializeAsync() => Task.CompletedTask;
+    public Task InitializeAsync() => _h.InitializeAsync();
 
     public async Task DisposeAsync() => await _h.DisposeAsync();
 
@@ -67,10 +67,10 @@ public sealed class DrivenMoveDowngradeProcessTests : IAsyncLifetime
 
         // The older build comes up: it takes no move up.
         _h.ComeUp();
-        // Its look, run a fixed while: where the line is held by the standing move it asks its resume again at every look and changes nothing
-        // (an absence the time states); where the destination is not yet named it carries it on, and the part it opens completes.
+        // Its looks, a few whole ones: where the line is held by the standing move it asks its resume again at every look and changes nothing
+        // (an absence the looks state); where the destination is not yet named it carries it on, and the part it opens completes.
         if (cut == Cuts.Answered) await Poll.Until(() => _h.Service.SessionCount == 3 && _h.Service.State("s3") == "completed", _h.Seen);
-        await Task.Delay(TimeSpan.FromSeconds(8));
+        await _h.LooksAsync();
         await _h.StopAsync();
         var standing = _h.MoveFrom("s1")!;
         var seen = _h.Seen();
