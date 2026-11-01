@@ -228,6 +228,16 @@ public sealed class TargetPromptGoldenTests
     internal static string GoldenPath(string file) =>
         Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "golden", "target-prompt", file);
 
+    /// <summary>The standing the judge answers for `console-ui`, declaring two lanes, under the drive and trees <paramref name="standing"/> names.</summary>
+    private static RoutingStanding Routed(string standing)
+    {
+        var config = standing == RoutingStanding.NotDriven ? DriverConfig.Empty : DriverConfig.Empty.WithDrivable("console-ui", true);
+        if (standing == RoutingStanding.Open) config = config.WithTrees("console-ui", true);
+        var told = RoutingStanding.Of(config, new RepoView("console-ui", true, "C:/work/console-ui") { Lanes = ["core", "web"] });
+        Assert.Equal(standing, told.Standing);
+        return told;
+    }
+
     internal static SessionTarget Of(string which) => which switch
     {
         "bare" => Bare,
@@ -242,6 +252,11 @@ public sealed class TargetPromptGoldenTests
         "channel" => Channel,
         // FABRIC-CLOSE1l (CLOSE1g): a quest its closure graph closes, bound at its take: its session says `ready`, never `done`.
         "ready" => Bare with { Ready = true },
+        // COWORKVIEW1e-i: a quest's session in a driven repository that declares lanes and opens trees of its own, told its routing standing
+        // beside the browser's block.
+        "routed" => Bare with { Browser = "Daoris has handed you its browser.", Routing = Routed("open").Words },
+        "routed-one-at-a-time" => Bare with { Routing = Routed("one-at-a-time").Words },
+        "routed-not-driven" => Bare with { Routing = Routed("not-driven").Words },
         // HEAVYRUN1b1: a repository that marks heavy gates, its session told to run them once, at its end, through `run-heavy`.
         "heavy" => Bare with { Heavy = HeavyTold.Words(["build", "test"]) },
         // FABRIC-PIPELINE1b: a light development pipeline, its light gates and its heavy gates as the verification's, refused by the
@@ -288,6 +303,9 @@ public sealed class TargetPromptGoldenTests
     [InlineData("light-said")]
     [InlineData("carry-on-brief")]
     [InlineData("retried")]
+    [InlineData("routed")]
+    [InlineData("routed-one-at-a-time")]
+    [InlineData("routed-not-driven")]
     public void The_quests_instruction_is_its_golden_text(string which)
     {
         // GOLDEN1's switch: DAORIS_GOLDEN_WRITE=1 writes the golden from the render, and without it a difference fails.
@@ -337,12 +355,38 @@ public sealed class TargetPromptGoldenTests
     [InlineData("light-said")]
     [InlineData("carry-on-brief")]
     [InlineData("retried")]
+    [InlineData("routed")]
+    [InlineData("routed-one-at-a-time")]
+    [InlineData("routed-not-driven")]
     public void The_account_beside_it_is_its_golden(string which)
     {
         var account = TargetPrompt.Composed(Of(which)).Account;
 
         HelpRoomGoldenTests.Settle(GoldenPath($"{which}.account.json"), Written(account), HelpRoomGoldenTests.WriteRequested);
         Assert.Equal(TargetPrompt.Compose(Of(which)).Length, account.Chars);
+    }
+
+    /// <summary>
+    /// COWORKVIEW1e-i: the line stands in the instruction's close beside the browser's block, once, for a quest's session of every kind of
+    /// start, and an instruction told none reads as it always did. An intake's instruction is its own, and carries none whatever its
+    /// target holds; the helper's, the partner's and the reviewer's compose from their own packets, which hold no such field.
+    /// </summary>
+    [Fact]
+    public void The_line_rides_a_quest_sessions_close_after_the_browser_and_an_intake_s_instruction_never_carries_it()
+    {
+        const string Head = "Routing standing here: ";
+        var routed = TargetPrompt.Compose(Of("routed"));
+        Assert.Equal(routed.IndexOf(Head, StringComparison.Ordinal), routed.LastIndexOf(Head, StringComparison.Ordinal));
+        Assert.True(routed.IndexOf("Daoris has handed you its browser.", StringComparison.Ordinal) < routed.IndexOf(Head, StringComparison.Ordinal));
+        foreach (var target in new[] { CarryOn, Full, Retried, SetUpStep, OwnTree })
+        {
+            var line = Routed("open").Words;
+            Assert.Contains(line, TargetPrompt.Compose(target with { Routing = line }));
+            Assert.DoesNotContain(Head, TargetPrompt.Compose(target));
+        }
+
+        var intake = Bare with { Prompt = "You are the intake for ask #a1b2c3.", Routing = Routed("open").Words };
+        Assert.DoesNotContain(Head, TargetPrompt.Compose(intake));
     }
 
     /// <summary>The account as the record's JSON spells it, indented and LF, so a golden reads the same on every machine.</summary>

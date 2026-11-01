@@ -691,10 +691,12 @@ export const useHelpSessions = (
    * to a window with no bus. False asks only when the list is stale.
    */
   refetchInterval: number | false = false,
+  /** False asks nothing: a reader that needs a conversation's record only once there is one to read (FLOWCHART2f's proposal bar). */
+  enabled = true,
 ) => {
   // Pushed (PUSH1d2): its record's every move is pushed, so it is never asked again on a clock.
   const { pushed, read } = useSessionsRead(HELP_REPOSITORY, true, null);
-  return useQuery({ ...read, refetchInterval: pushed ? false : refetchInterval });
+  return useQuery({ ...read, refetchInterval: pushed ? false : refetchInterval, enabled });
 };
 
 /**

@@ -4,7 +4,7 @@ import { cn } from '../../lib/cn';
 import { clockOf } from '../../locales/format';
 import { Dot, SectionTitle } from '../../design/ui';
 import type { AtWorkA, AtWorkChild, AtWorkHeld, AtWorkPart, AtWorkSubagents } from './types';
-import { CHILD_STATE_KEY, childTone, LAST_SEEN, partStateKey } from './words';
+import { CHILD_STATE_KEY, childTone, joinedLine, LAST_SEEN, partStateKey, waitLine, waitWhat } from './words';
 
 export type AtWorkViewProps = {
   /** What the read holds; undefined before its first answer, which draws as reading. */
@@ -52,6 +52,7 @@ export function AtWorkView({ held, error, onOpen, onRetry, streamOf, onOpenStrea
         </p>
       )}
       <div className={cn('grid min-w-0 gap-3', stale !== null && 'opacity-60')}>
+        <WaitingOn answer={answer} />
         <Parts answer={answer} onOpen={onOpen} />
         <Subagents answer={answer} quiet={stale !== null} now={now} streamOf={streamOf} onOpenStream={onOpenStream} />
       </div>
@@ -69,34 +70,65 @@ function Failed({ why, onRetry }: { why: string; onRetry?: () => void }) {
   );
 }
 
-/** The entry's parts, each one button opening its part: its agent, its record's own state and its subagents' count. */
+/**
+ * The attended part's own wait, first (the design §R11.3 row 3): *Waiting on #q7 in core (docs lane)*. Where it waits on nothing and the
+ * session published quests, and no part of the entry waits, *published 3, waits on none*.
+ */
+function WaitingOn({ answer }: { answer: AtWorkA }) {
+  const { t } = useTranslation();
+  const wait = answer.parts.find((part) => part.key === answer.attended)?.waits;
+  if (wait) return <p data-wait-line className="m-0 text-small text-ink">{t('work.atWork.waitingOn', { what: waitWhat(t, wait) })}</p>;
+  if (!answer.published || answer.parts.some((part) => part.waits)) return null;
+  return <p className="m-0 text-small text-ink-soft">{t('work.atWork.published', { count: answer.published })}</p>;
+}
+
+/** Whether the list says anything a lone part's page does not: a wait, how it joined, or parts folded away. */
+function worthListing(answer: AtWorkA, t: TFunction): boolean {
+  return answer.parts.some((part) => part.waits || (part.joined && joinedLine(t, part.joined) !== null)) || !!answer.earlier;
+}
+
+/**
+ * The entry's parts, each one button opening its part: its number, agent, its record's own state, what it waits on as the strip places
+ * it, how it joined, and its subagents' count. A waiting part is never folded; the attended part's wait is the line above, not repeated.
+ */
 function Parts({ answer, onOpen }: { answer: AtWorkA; onOpen?: (session: string) => void }) {
   const { t } = useTranslation();
   const more = Object.values(answer.moreParts ?? {}).reduce((sum, count) => sum + count, 0);
-  if (answer.parts.length < 2 && more === 0) return null;
+  if (answer.parts.length < 2 && more === 0 && !worthListing(answer, t)) return null;
   return (
     <section className="grid min-w-0 gap-1">
       <SectionTitle level={3}>{t('work.atWork.group.parts')}</SectionTitle>
       <ol className="m-0 grid list-none gap-0.5 p-0">
-        {answer.parts.map((part) => (
-          <li key={part.key}>
-            <button
-              type="button"
-              aria-current={part.key === answer.attended || undefined}
-              onClick={() => onOpen?.(part.key)}
-              className={cn(
-                'flex w-full min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-control border-l-[3px] px-2 py-1 text-left text-small',
-                'hover:bg-accent-soft/50',
-                part.key === answer.attended ? 'border-l-accent bg-accent-soft text-ink' : 'border-l-transparent text-ink-soft',
-              )}
-            >
-              {part.agent && <span className="font-mono text-meta text-ink-faint">{part.agent}</span>}
-              {part.state && <Dot tone={part.state === 'working' ? 'live' : 'ended'} label={t(partStateKey(part.state))} />}
-              <PartChildren t={t} part={part} />
-            </button>
-          </li>
-        ))}
+        {answer.parts.map((part) => {
+          const joined = part.joined ? joinedLine(t, part.joined) : null;
+          return (
+            <li key={part.key}>
+              <button
+                type="button"
+                aria-current={part.key === answer.attended || undefined}
+                onClick={() => onOpen?.(part.key)}
+                className={cn(
+                  'flex w-full min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-control border-l-[3px] px-2 py-1 text-left text-small',
+                  'hover:bg-accent-soft/50',
+                  part.key === answer.attended ? 'border-l-accent bg-accent-soft text-ink' : 'border-l-transparent text-ink-soft',
+                )}
+              >
+                {part.number !== undefined && <span className="font-mono text-meta text-ink-faint">{part.number}</span>}
+                {part.agent && <span className="font-mono text-meta text-ink-faint">{part.agent}</span>}
+                {part.state && <Dot tone={part.state === 'working' ? 'live' : 'ended'} label={t(partStateKey(part.state))} />}
+                {part.waits && part.key !== answer.attended && <Dot tone="idle" label={waitLine(t, part.waits)} className="whitespace-normal" />}
+                <PartChildren t={t} part={part} />
+                {(joined || part.alongside) && (
+                  <span className="basis-full text-meta text-ink-faint">
+                    {[joined, part.alongside ? t('work.atWork.part.alongside') : null].filter(Boolean).join(' · ')}
+                  </span>
+                )}
+              </button>
+            </li>
+          );
+        })}
       </ol>
+      {(answer.earlier ?? 0) > 0 && <p className="m-0 text-meta text-ink-faint">{t('work.atWork.part.earlier', { count: answer.earlier })}</p>}
       {more > 0 && <p className="m-0 text-meta text-ink-faint">{t('work.atWork.part.more', { count: more })}</p>}
     </section>
   );
@@ -117,7 +149,7 @@ function PartChildren({ t, part }: { t: TFunction; part: AtWorkPart }) {
 /** Whether *Nobody else is working on this* may be said (§5.2, rule 16): only where every source was read and holds nobody. */
 export function nobody(answer: AtWorkA): boolean {
   const { subagents, parts } = answer;
-  return answer.parts.length === 1 && !answer.moreParts
+  return answer.parts.length === 1 && !answer.moreParts && !answer.earlier && !answer.published && !answer.parts[0]!.waits
     && (subagents.read === 'read' || subagents.read === 'none')
     && subagents.children.length === 0 && !subagents.observed && !subagents.unplaced && !subagents.seenByCalls
     && parts.every((part) => !part.children.unreadable && !part.children.elsewhere);

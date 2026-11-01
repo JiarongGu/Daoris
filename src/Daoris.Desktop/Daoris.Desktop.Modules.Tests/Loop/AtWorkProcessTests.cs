@@ -19,6 +19,7 @@ public sealed class AtWorkProcessTests : IDisposable
     private readonly LineageTokens _tokens = new(4243, new DateTime(2026, 10, 31, 0, 0, 0, DateTimeKind.Utc));
     private readonly StateSlice _groups;
     private readonly StateSlice _sessions;
+    private readonly StateSlice _quests;
     private readonly List<Process> _standIns = [];
     private int _woken;
 
@@ -29,6 +30,7 @@ public sealed class AtWorkProcessTests : IDisposable
         var records = new JsonObject { ["s1"] = new JsonObject { ["id"] = "s1", ["state"] = "working", ["note"] = "" } };
         _groups = new StateSlice(GroupsStateSlice.Name, _bus, _ => Task.FromResult<IReadOnlyList<SliceJudged>?>([new(GroupsStateSlice.Entries, entries.DeepClone())]), "g") { Keyed = true };
         _sessions = new StateSlice(SessionsStateSlice.Name, _bus, _ => Task.FromResult<IReadOnlyList<SliceJudged>?>([new("default", records.DeepClone())]), "s") { Keyed = true };
+        _quests = new StateSlice(QuestsStateSlice.Name, _bus, _ => Task.FromResult<IReadOnlyList<SliceJudged>?>([new("default", new JsonObject())]), "q") { Keyed = true };
     }
 
     public void Dispose()
@@ -57,7 +59,7 @@ public sealed class AtWorkProcessTests : IDisposable
     }
 
     private AtWorkHeld Compose() =>
-        AtWorkRead.Compose("s1", _groups, _sessions, record => ChildLineage.Reading(_home, record.Id, record.Kind, _tokens), session => ChildLineage.PathOf(_home, session));
+        AtWorkRead.Compose("s1", _groups, _sessions, _quests, record => ChildLineage.Reading(_home, record.Id, record.Kind, _tokens), session => ChildLineage.PathOf(_home, session));
 
     private string StateOfChild() => Compose().Answer!.Subagents.Children.Single().State;
 
@@ -65,7 +67,8 @@ public sealed class AtWorkProcessTests : IDisposable
     {
         await _groups.JudgeAsync();
         await _sessions.JudgeAsync();
-        var watch = new AtWorkWatch(() => _woken++, _groups, _sessions, _tokens);
+        await _quests.JudgeAsync();
+        var watch = new AtWorkWatch(() => _woken++, _groups, _sessions, _quests, _tokens);
         watch.Register("q", Assert.IsType<AtWorkDependencies>(Compose().Dependencies));
         return watch;
     }
@@ -91,6 +94,7 @@ public sealed class AtWorkProcessTests : IDisposable
         Lines(token, _tokens.Issuer);
         await _groups.JudgeAsync();
         await _sessions.JudgeAsync();
+        await _quests.JudgeAsync();
         Assert.Equal("working", StateOfChild());
         var watch = await HeldAsync();
 
@@ -109,6 +113,7 @@ public sealed class AtWorkProcessTests : IDisposable
         Lines("foreign-proc", "another-daoris");
         await _groups.JudgeAsync();
         await _sessions.JudgeAsync();
+        await _quests.JudgeAsync();
         Assert.Equal("uncertain", StateOfChild());
 
         process.Kill(entireProcessTree: true);

@@ -32,7 +32,7 @@ import { publishedCounts, publishedItems } from './published';
 import { PublishedList } from './PublishedList';
 import type { StarterDoor } from './starters';
 import { type HelpWhere, prefaceOf } from './where';
-import { draftToTell, draftWhere, openDraftNow } from './openDraft';
+import { draftToTell, draftWhere, noteTold, openDraftNow } from './openDraft';
 import { logEvent } from '../bridge/shell';
 import { accountNames } from '../work/accountNames';
 import { namer } from '../settings/accounts/namer';
@@ -368,7 +368,11 @@ export function useAskConversation(
           return;
         }
         if (preface) told.current.set(id, preface);
-        if (draft) toldDraft.current.set(id, draft.fingerprint);
+        if (draft) {
+          toldDraft.current.set(id, draft.fingerprint);
+          // FLOWCHART2f: kept by its fingerprint, which a proposal against it names, and the editor takes its changes against.
+          noteTold(id, draft);
+        }
         // A conversation the history has not listed yet is listed once it is spoken in, and named by its first question: the
         // word said declares the history, which the state hub asks again (HELPHISTORYHUB1, D169).
         // Kept on an ended record (ASKHIST1): the same conversation goes on with them once the driver takes them up, which

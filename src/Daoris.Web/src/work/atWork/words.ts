@@ -1,4 +1,47 @@
-import type { AtWorkChildState } from './types';
+import type { TFunction } from 'i18next';
+import type { AtWorkChildState, AtWorkJoined, AtWorkWait } from './types';
+
+/** A part's wait in the rail's words (the strip places it; the view words it alike): *waits on #q, asked of core*, *awaiting helper*. */
+export function waitLine(t: TFunction, wait: AtWorkWait): string {
+  if (wait.helper) return t('work.shown.awaitingHelper');
+  const quest = wait.quest ?? '';
+  return wait.of ? t('work.rail.awaitsOf', { quest, repository: wait.of }) : t('work.rail.awaits', { quest });
+}
+
+/** What the *Waiting on* line says it waits on: *#q7 in core (docs lane)*, or *its helper*. */
+export function waitWhat(t: TFunction, wait: AtWorkWait): string {
+  if (wait.helper) return t('work.atWork.what.helper');
+  const values = { quest: wait.quest ?? '', repository: wait.of ?? '', lanes: wait.lanes?.join(', ') ?? '', count: wait.lanes?.length ?? 0 };
+  if (wait.lanes?.length) return wait.of ? t('work.atWork.what.questOfLanes', values) : t('work.atWork.what.questLanes', values);
+  return wait.of ? t('work.atWork.what.questOf', values) : t('work.atWork.what.quest', values);
+}
+
+/**
+ * How a part joined, in the design's words (§3.4), by what its record and quest say; the strip's own words where it only began
+ * (retried, resumed, carried on, handed over, moved). Null for a part that simply opened.
+ */
+export function joinedLine(t: TFunction, joined: AtWorkJoined): string | null {
+  const part = (n: number | undefined) => (n === undefined ? t('work.atWork.routed.anotherSession') : t('work.parts.number', { n }));
+  const quest = joined.quest ?? '';
+  if (joined.took) return t('work.atWork.routed.took', { quest });
+  if (joined.ask) return joined.began === 'asked' ? t('work.atWork.routed.askQuest', { quest }) : t('work.atWork.routed.ask', { ask: joined.ask });
+  if (joined.parent) return t('work.atWork.quest.nextStep', { quest: joined.parent });
+  if (joined.lanes?.length && joined.byPart !== undefined) {
+    return t('work.atWork.routed.lane', { lane: joined.lanes.join(', '), by: part(joined.byPart) });
+  }
+  if (joined.byPart !== undefined && joined.of) return t('work.atWork.routed.repository', { repository: joined.of, by: part(joined.byPart) });
+  const after = joined.after === undefined ? '' : t('work.parts.number', { n: joined.after });
+  switch (joined.began) {
+    case 'opened': return null;
+    case 'asked': return joined.askedBy ? t('work.parts.began.asked', { repository: joined.askedBy }) : t('work.parts.began.askedUnnamed');
+    case 'retried': return t('work.parts.began.retried', { after });
+    case 'resumed': return t('work.parts.began.resumed', { after });
+    case 'carried-on': return joined.after === undefined ? t('work.parts.began.carriedOnAlone') : t('work.parts.began.carriedOn', { after });
+    case 'handed-over': return t('work.parts.began.handedOver', { after });
+    case 'moved': return t('work.parts.began.moved', { after });
+    default: return t('work.parts.began.recorded', { began: joined.began });
+  }
+}
 
 /**
  * The one key each child state draws (the cowork view design §5.4, *each state's words*): an end the wire said reads the panel's own

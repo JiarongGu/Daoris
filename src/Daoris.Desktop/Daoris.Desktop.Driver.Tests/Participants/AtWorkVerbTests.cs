@@ -113,6 +113,65 @@ public sealed class AtWorkVerbTests : IDisposable
         Assert.Equal(["s2", "s1"], parts.EnumerateArray().Select(part => part.GetProperty("key").GetString()).ToArray());
     }
 
+    [Fact]
+    public async Task With_no_window_a_lead_that_waits_on_a_question_says_so_and_its_lane_part_says_how_it_joined()
+    {
+        var tree = DaorisHome.Entry(_home, HomeEntry.Trees, "s-1");
+        Directory.CreateDirectory(tree);
+        _ledger.Publish("q2", "core");
+        _ledger.Driven("s1", "q1", tree, state: "completed");
+        _ledger.Awaiting("q1", "q2");
+        _ledger.InEntry("s1", "quest:q1/engine");
+        var text = new StringWriter();
+        var json = new StringWriter();
+
+        Assert.Equal(0, await SessionsCommand.RunAsync(Read("at-work", "s1"), World(), text));
+        Assert.Equal(0, await SessionsCommand.RunAsync(Read("at-work", "s1", "--json"), World(), json));
+
+        Assert.Contains("s1 (attended) · completed · waits on #q2, asked of core", text.ToString(), StringComparison.Ordinal);
+        var part = JsonDocument.Parse(json.ToString()).RootElement.GetProperty("answer").GetProperty("parts")[0];
+        Assert.Equal("q2", part.GetProperty("waits").GetProperty("quest").GetString());
+        Assert.Equal("core", part.GetProperty("waits").GetProperty("of").GetString());
+        Assert.Equal(1, part.GetProperty("number").GetInt32());
+        Assert.Equal("opened", part.GetProperty("joined").GetProperty("began").GetString());
+    }
+
+    [Fact]
+    public async Task With_no_window_a_chat_that_took_a_quest_says_it_took_it_and_what_it_waits_on()
+    {
+        _ledger.Publish("q2", "core");
+        _ledger.Working("c1", "engine", Path.Combine(_home, "engine"));
+        _ledger.Took("c1", "q1");
+        _ledger.Awaiting("q1", "q2");
+        var text = new StringWriter();
+        var json = new StringWriter();
+
+        Assert.Equal(0, await SessionsCommand.RunAsync(Read("at-work", "c1"), World(), text));
+        Assert.Equal(0, await SessionsCommand.RunAsync(Read("at-work", "c1", "--json"), World(), json));
+
+        Assert.Contains("c1 (attended) · working · waits on #q2, asked of core · took #q1", text.ToString(), StringComparison.Ordinal);
+        var part = JsonDocument.Parse(json.ToString()).RootElement.GetProperty("answer").GetProperty("parts")[0];
+        Assert.True(part.GetProperty("joined").GetProperty("took").GetBoolean());
+        Assert.Equal("q1", part.GetProperty("joined").GetProperty("quest").GetString());
+        Assert.Equal("q2", part.GetProperty("waits").GetProperty("quest").GetString());
+    }
+
+    [Fact]
+    public async Task With_no_window_a_session_that_published_and_waits_on_none_says_so()
+    {
+        var tree = DaorisHome.Entry(_home, HomeEntry.Trees, "s-1");
+        Directory.CreateDirectory(tree);
+        _ledger.Driven("s1", "q1", tree, state: "completed");
+        _ledger.Publish("q3", "engine");
+        _ledger.PublishedBy("q3", "s1");
+        _ledger.InEntry("s1", "quest:q1/engine");
+        var text = new StringWriter();
+
+        Assert.Equal(0, await SessionsCommand.RunAsync(Read("at-work", "s1"), World(), text));
+
+        Assert.Contains("published 1, waits on none", text.ToString(), StringComparison.Ordinal);
+    }
+
     private static int Asked(InstanceStandIn standIn) =>
         standIn.Presses.Count(press => press.GetProperty("type").GetString() == "SESSION_AT_WORK");
 

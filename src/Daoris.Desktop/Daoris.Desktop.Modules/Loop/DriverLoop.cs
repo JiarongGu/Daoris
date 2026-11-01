@@ -132,12 +132,12 @@ public sealed class DriverLoop(
     private StateSlices? _slices;
 
     /// <summary>
-    /// The one judge of who is at work (COWORKVIEW1a): each landed composition registered, woken by the two slices, this process's
+    /// The one judge of who is at work (COWORKVIEW1a): each landed composition registered, woken by the three slices, this process's
     /// lineage tokens and the lineage files' topic, telling <see cref="StateScopes.AtWork"/> naming no session.
     /// </summary>
     public AtWorkWatch AtWork => LazyInitializer.EnsureInitialized(ref _atWork, () => new AtWorkWatch(
         () => StatePublisher.Publish(eventBus, StateScopes.AtWork), Slices.Find(GroupsStateSlice.Name), Slices.Find(SessionsStateSlice.Name),
-        LineageTokens.Shared));
+        Slices.Find(QuestsStateSlice.Name), LineageTokens.Shared));
 
     private AtWorkWatch? _atWork;
 

@@ -23,6 +23,7 @@ import * as place from '../src/agents/setup/PlacePage.stories';
 import * as setUpReview from '../src/agents/setup/PlaceReview.stories';
 import * as placeWorkflow from '../src/workflow/place/PlaceWorkflowView.stories';
 import * as editor from '../src/workflow/edit/WorkflowEditor.stories';
+import * as proposal from '../src/workflow/edit/WorkflowEditor.proposal.stories';
 
 // The measured-box checks' page (FLOWCHART1a1; the flowchart design §7, trap 3; UIFIT1, the UI/UX design §5's first trap):
 // one story, composed as Storybook composes it, with the project's decorators, the shipped tokens and catalogues, and drawn
@@ -69,6 +70,8 @@ const books: Record<string, Record<string, ComponentType>> = {
   placeWorkflow: composeStories(placeWorkflow) as unknown as Record<string, ComponentType>,
   // The workflow editor (FLOWCHART2b): its chart drawn at 80 and 39rem with a ＋ on each way, and the rail at 25rem.
   editor: composeStories(editor) as unknown as Record<string, ComponentType>,
+  // Ask Daoris's proposal on the editor's chart (FLOWCHART2f): the union drawn and marked at 80 and 39rem, the rail at 25rem.
+  proposal: composeStories(proposal) as unknown as Record<string, ComponentType>,
 };
 
 const [book = '', name = ''] = (new URLSearchParams(window.location.search).get('story') ?? '').split('/');

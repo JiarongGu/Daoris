@@ -2,7 +2,7 @@ import type { TFunction, i18n as I18n } from 'i18next';
 import { authoredText } from '../../locales/authored';
 import { kindTitle } from '../graphFlow';
 import type { GraphProblem, WorkflowPaletteAnswer } from './answers';
-import type { DraftNode, DraftWire, WayRowKey } from './graphDraft';
+import { askedInputs, type Carried, type DraftNode, type DraftWire, type GraphDraft, type WayRowKey } from './graphDraft';
 
 // The editor's words (FLOWCHART2b): a step's title, a row of *What happens next*, a way on with its target, and a refusal, each from the
 // catalogues, with a plugin's step titled by its manifest's authored words where it declares them (D222). Pure.
@@ -62,3 +62,39 @@ export function waySaid(t: TFunction, wire: DraftWire, to: string): string {
 /** A refusal in the reader's words, or the driver's where this page has none for its code (a rule newer than the page). */
 export const refusalSaid = (t: TFunction, i18n: I18n, problem: GraphProblem) =>
   (i18n.exists(`workflow.edit.refusal.${problem.code}`) ? t(`workflow.edit.refusal.${problem.code}`) : problem.words);
+
+/** An option in the page's words (`workflow.edit.option.‹kind›.‹name›`), its raw name where the page has none. */
+export const optionLabel = (t: TFunction, kind: string, name: string): string =>
+  t(`workflow.edit.option.${kind}.${name}`, { defaultValue: name });
+
+/** One of an option's choices in the page's words, its raw value where the page has none. */
+export const choiceLabel = (t: TFunction, kind: string, name: string, choice: string): string =>
+  t(`workflow.edit.option.${kind}.${name}.${choice}`, { defaultValue: choice });
+
+/** What a branch pattern is tried against in the settings (`LandingKey.Sample`): a quest like the one in the preview. */
+const SAMPLE: Record<string, string> = { quest: '0fda18', session: 's1a2b3c4', ticket: 'ABC-123', slug: 'sample-work', repository: 'engine' };
+
+/** A branch pattern expanded over a sample quest, and any placeholder it says that a pattern cannot (`LandingKey.Placeholders`). */
+export function previewPattern(pattern: string): { name: string; unknown: string[] } {
+  const unknown: string[] = [];
+  const name = pattern.replace(/\{([^{}]*)\}/g, (used, word: string) => {
+    if (word in SAMPLE) return SAMPLE[word]!;
+    unknown.push(used);
+    return used;
+  });
+  return { name, unknown };
+}
+
+/**
+ * What a change that made ways in made of a step's inputs, said once: each input proposed from the step before, and each input two steps
+ * could feed, which its *Carries* asks about. `steps` are the steps whose inputs the change reached.
+ */
+export function carriedSaid(t: TFunction, i18n: I18n, palette: WorkflowPaletteAnswer | null, draft: GraphDraft, carried: Carried[], steps: string[]): string {
+  const title = (id: string) => {
+    const node = draft.nodes.find((each) => each.id === id);
+    return node ? stepTitle(t, i18n, palette, node) : id;
+  };
+  const proposed = carried.map((each) => t('workflow.edit.said.proposed', { step: title(each.step), input: each.input, from: title(each.from), output: each.port }));
+  const asked = [...new Set(steps)].flatMap((id) => askedInputs(draft, id).map((each) => t('workflow.edit.said.asks', { step: title(id), input: each.input })));
+  return [...proposed, ...asked].join(' ');
+}
