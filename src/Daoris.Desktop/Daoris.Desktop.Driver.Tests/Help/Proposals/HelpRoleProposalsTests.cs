@@ -45,8 +45,26 @@ public sealed class HelpRoleProposalsTests : HelpProposalsFixture, IDisposable
 
         Assert.Null(plan.Refusal);
         Assert.Contains("Set the role `designer` (Designer · 设计师): it takes design on this machine, on claude-code · opus · high.", plan.Describe);
-        Assert.Equal("daoris driver role set designer --name \"Designer\" --zh \"设计师\" --takes design --scope machine \"claude-code opus high\"", plan.Terminal);
+        Assert.Equal("daoris driver role set designer --name \"Designer\" --name-in zh=\"设计师\" --takes design --scope machine \"claude-code opus high\"", plan.Terminal);
         Assert.Equal(RoleSuggestion.Designer.Role.Json(), Assert.IsType<RoleChange.SetRole>(plan.Role!.Change).Role.Json());
+    }
+
+    /// <summary>I18NOPEN1 (D222): a role proposed in one language, or in a third, plans, and its card and terminal twin say the name as given.</summary>
+    [Fact]
+    public void A_role_named_in_one_language_or_a_third_plans_and_its_card_says_it()
+    {
+        var one = HelpProposals.Plan(Role("set", "designer", """{ "name": "Designer", "takes": ["design"], "choices": [{ "agent": "claude-code", "model": "opus", "effort": "high" }] }"""), DriverConfig.Empty, Machine);
+        Assert.Null(one.Refusal);
+        Assert.Contains("Set the role `designer` (Designer): it takes design on this machine", one.Describe);
+        Assert.Equal("daoris driver role set designer --name \"Designer\" --takes design --scope machine \"claude-code opus high\"", one.Terminal);
+
+        var third = HelpProposals.Plan(Role("set", "designer", """{ "name": { "fr": "Concepteur" }, "takes": ["design"], "choices": [{ "agent": "claude-code" }] }"""), DriverConfig.Empty, Machine);
+        Assert.Null(third.Refusal);
+        Assert.Contains("(Concepteur)", third.Describe);
+        Assert.StartsWith("daoris driver role set designer --name-in fr=\"Concepteur\" --takes design", third.Terminal);
+        Assert.Equal("""{"fr":"Concepteur"}""", Assert.IsType<RoleChange.SetRole>(third.Role!.Change).Role.Name.Json());
+
+        Assert.NotNull(HelpProposals.Plan(Role("set", "designer", """{ "name": " ", "takes": ["design"], "choices": [{ "agent": "claude-code" }] }"""), DriverConfig.Empty, Machine).Refusal);
     }
 
     [Fact]
@@ -55,7 +73,7 @@ public sealed class HelpRoleProposalsTests : HelpProposalsFixture, IDisposable
         var seeded = RoleCatalog.Of([]);
         Assert.Equal(seeded.Judge(RoleChange.Remove("build"))!.Said, HelpProposals.Plan(Role("remove", "build"), DriverConfig.Empty, Machine).Refusal);
         Assert.Equal(
-            seeded.Judge(RoleChange.Set(new RoleRecord("steward", "S", "S", RoleRecord.Always, ["build"], RoleScope.Everywhere)))!.Said,
+            seeded.Judge(RoleChange.Set(new RoleRecord("steward", AuthoredText.Of("S"), RoleRecord.Always, ["build"], RoleScope.Everywhere)))!.Said,
             HelpProposals.Plan(Role("set", "steward", """{ "name": { "en": "S", "zh": "S" }, "takes": ["build"] }"""), DriverConfig.Empty, Machine).Refusal);
         Assert.Contains("is not a work", HelpProposals.Plan(Role("set", "lead", """{ "name": { "en": "L", "zh": "L" }, "takes": ["gardening"] }"""), DriverConfig.Empty, Machine).Refusal);
         Assert.Contains("cannot be off", HelpProposals.Plan(Role("set", "night", """{ "name": { "en": "N", "zh": "N" }, "takes": ["build"], "scope": { "kind": "workspace", "id": "w1" } }"""), DriverConfig.Empty, Machine).Refusal);

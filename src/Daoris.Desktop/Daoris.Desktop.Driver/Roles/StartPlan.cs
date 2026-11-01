@@ -159,7 +159,7 @@ internal sealed class StartPlan
         var found = role is { Length: > 0 } ? (catalogue ?? RoleCatalog.Of([])).Named(role, work, place) : catalogue?.RoleFor(work, place);
         if (found?.Held is { } held) throw new DriverException(held);
         Role = found?.Role?.Id ?? Seeded;
-        RoleName = found?.Role is { } taken && !ActorChoices.Ids.Contains(taken.Id, StringComparer.Ordinal) ? taken.NameEn : ActorWords.Name(Role);
+        RoleName = found?.Role is { } taken && !ActorChoices.Ids.Contains(taken.Id, StringComparer.Ordinal) ? taken.Name.In("en") :ActorWords.Name(Role);
         Revision = found?.Role is { } kept ? catalogue?.RevisionOf(kept.Id) ?? 0 : 0;
         Order = order ?? (found is { Role: null } ? [] : ActorChoices.Effective(Role, config, fence: fence));
         (_config, _roster, _adapters, _memory) = (config, roster, adapters, memory);

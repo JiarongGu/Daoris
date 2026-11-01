@@ -19,7 +19,7 @@ public static class RoleSuggestion
 
     /// <summary>The Designer: design and decision work, machine-wide, on Claude Code · opus · high.</summary>
     public static SuggestedRole Designer { get; } = new(
-        new RoleRecord("designer", "Designer", "设计师", RoleRecord.Always, [RoleWork.Design], RoleScope.Everywhere),
+        new RoleRecord("designer", AuthoredText.FromTags([new("en", "Designer"), new("zh", "设计师")])!, RoleRecord.Always, [RoleWork.Design], RoleScope.Everywhere),
         [new ActorChoice(ClaudeCode, "opus", "high")]);
 
     /// <summary>What is suggested for <paramref name="catalogue"/>: the Designer while no role takes design and its id is free.</summary>

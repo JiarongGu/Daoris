@@ -6,7 +6,7 @@
     ["partner", "removed", "{}", 1],
     ["aurora-review-a", "set", "{\"id\":\"aurora-review-a\",\"name\":{\"en\":\"Reviewer A\",\"zh\":\"审阅甲\"},\"filled\":\"always\",\"takes\":[\"review\"],\"scope\":{\"kind\":\"workspace\",\"id\":\"aurora\"}}", 1],
     ["aurora-review-b", "set", "{\"id\":\"aurora-review-b\",\"name\":{\"en\":\"Reviewer B\",\"zh\":\"审阅乙\"},\"filled\":\"always\",\"takes\":[\"review\"],\"scope\":{\"kind\":\"workspace\",\"id\":\"aurora\"}}", 1],
-    ["zeta-broken", "set", "{\"id\":\"zeta-broken\",\"name\":{\"en\":\"Broken\"},\"filled\":\"always\",\"takes\":[\"build\"],\"scope\":{\"kind\":\"workspace\",\"id\":\"zeta\"}}", 3]
+    ["zeta-broken", "set", "{\"id\":\"zeta-broken\",\"name\":{},\"filled\":\"always\",\"takes\":[\"build\"],\"scope\":{\"kind\":\"workspace\",\"id\":\"zeta\"}}", 3]
   ],
   "config": "{\"adapter\":\"fake\",\"intakeAdapter\":\"fake\",\"helperAdapter\":\"fake\",\"actors\":{\"build\":[{\"agent\":\"gone\"},{\"agent\":\"fake\",\"model\":\"m1\",\"effort\":\"high\"},{\"agent\":\"fake\",\"model\":\"m2\"}],\"chat\":[{\"agent\":\"fake\"}]},\"helpers\":{\"engine\":{\"mode\":\"ask\",\"agents\":[\"fake\"]}},\"workspaceHelpers\":{\"aurora\":{\"mode\":\"off\"}},\"workspaceHandOver\":{\"aurora\":{\"mode\":\"off\"}}}",
   "staffing": {

@@ -391,7 +391,7 @@ public sealed class DriverRoutes(DriverContext context)
             Kept = RoleStaffing.Of(_loop.ConfigPath) is not null,
             Suggested = RoleSuggestion.For(catalogue).Select(each => new
             {
-                each.Role.Id, each.Role.NameEn, each.Role.NameZh, each.Role.Takes, ScopeKind = each.Role.Scope.Kind, each.Choices,
+                each.Role.Id, each.Role.Name, each.Role.Takes, ScopeKind = each.Role.Scope.Kind, each.Choices,
             }),
             // MODELROLE1g: the choices suggested for the seeded roles, whole; the page leaves out an agent this machine has not set up.
             SuggestedChoices = ActorSuggestion.Table.Select(each => new { each.Role, each.Choices }),
@@ -455,7 +455,7 @@ public sealed class DriverRoutes(DriverContext context)
                     {
                         work.Work,
                         Role = work.Role is { } role
-                            ? new { role.Id, role.NameEn, role.NameZh, Scope = new { role.Scope.Kind, role.Scope.Id }, work.Revision }
+                            ? new { role.Id, role.Name, Scope = new { role.Scope.Kind, role.Scope.Id }, work.Revision }
                             : null,
                         work.Held,
                         Choices = work.Choices.Select(each => new

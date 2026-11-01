@@ -32,7 +32,7 @@ public sealed class RoleCatalogJudgeTests : IDisposable
     [Fact]
     public void An_appointed_record_is_refused_before_anything_else_of_it_is_judged()
     {
-        var appointed = new RoleRecord("supervisor!", "", "", RoleRecord.Appointed, ["gardening"], new RoleScope("planet", "x"), ["answer"]);
+        var appointed = new RoleRecord("supervisor!", AuthoredText.Of(""), RoleRecord.Appointed, ["gardening"], new RoleScope("planet", "x"), ["answer"]);
 
         Assert.Equal("appointed-not-configurable", Code(Seeded.Judge(RoleChange.Set(appointed))));
         Assert.Equal("appointed-not-configurable", Code(Seeded.Judge(RoleChange.Set(appointed with { Id = "steward" }))));
@@ -48,7 +48,7 @@ public sealed class RoleCatalogJudgeTests : IDisposable
         Assert.Equal("reserved-id", Code(Seeded.Judge(RoleChange.Remove("supervisor"))));
         Assert.Equal("bad-record", Code(Seeded.Judge(RoleChange.Set(Working("Bad Id", "design")))));
         Assert.Equal("bad-record", Code(Seeded.Judge(RoleChange.Set(Working("a", "design") with { Takes = [] }))));
-        Assert.Equal("bad-record", Code(Seeded.Judge(RoleChange.Set(Working("a", "design") with { NameZh = " " }))));
+        Assert.Equal("bad-record", Code(Seeded.Judge(RoleChange.Set(Working("a", "design") with { Name = AuthoredText.Of(" ") }))));
         Assert.Equal("bad-record", Code(Seeded.Judge(RoleChange.Set(Working("a", "design", new RoleScope(RoleScope.Workspace))))));
         Assert.Equal("bad-record", Code(Seeded.Judge(RoleChange.Default("nobody"))));
         Assert.Null(Seeded.Judge(RoleChange.Set(Working("designer", "design", Workspace()))));
@@ -62,7 +62,7 @@ public sealed class RoleCatalogJudgeTests : IDisposable
             var seed = RoleCatalog.Seed.Single(role => role.Id == id);
             Assert.Equal("may-not-be-off", Code(Seeded.Judge(RoleChange.Remove(id))));
             Assert.Equal("may-not-be-off", Code(Seeded.Judge(RoleChange.Set(seed with { Scope = Workspace() }))));
-            Assert.Null(Seeded.Judge(RoleChange.Set(seed with { NameEn = "Renamed" })));
+            Assert.Null(Seeded.Judge(RoleChange.Set(seed with { Name = AuthoredText.Of("Renamed") })));
         }
 
         foreach (var id in ActorChoices.Ids.Where(ActorChoices.MayBeOff))
@@ -86,7 +86,7 @@ public sealed class RoleCatalogJudgeTests : IDisposable
         Assert.Equal("two-roles-one-work", Code(catalog.Judge(RoleChange.Set(Working("drafter", ParticipantWork.Design, Workspace())))));
         Assert.Equal("two-roles-one-work", Code(Seeded.Judge(RoleChange.Set(Working("second", ParticipantWork.Chat)))));
         Assert.Null(catalog.Judge(RoleChange.Set(Working("drafter", ParticipantWork.Design, Workspace("w2")))));
-        Assert.Null(catalog.Judge(RoleChange.Set(designer with { NameEn = "Designer" })));
+        Assert.Null(catalog.Judge(RoleChange.Set(designer with { Name = AuthoredText.Of("Designer") })));
         Assert.Null(catalog.Judge(RoleChange.Set(Working("elsewhere", ParticipantWork.Chat, Workspace()))));
     }
 
@@ -144,9 +144,9 @@ public sealed class RoleCatalogJudgeTests : IDisposable
     {
         var settled = () => StoreSettled.Yes;
 
-        RoleCatalog.Write(Db, RoleChange.Set(RoleCatalog.Seed[0] with { NameEn = "Builder" }), settled);
+        RoleCatalog.Write(Db, RoleChange.Set(RoleCatalog.Seed[0] with { Name = AuthoredText.Of("Builder") }), settled);
         var first = Slots().ToDictionary(slot => slot.Id);
-        Assert.Equal((RoleState.Set, 1L, "Builder"), (first["build"].State, first["build"].Revision, first["build"].Role!.NameEn));
+        Assert.Equal((RoleState.Set, 1L, "Builder"), (first["build"].State, first["build"].Revision, first["build"].Role!.Name.AsWritten));
         Assert.All(first.Values.Where(slot => slot.Id != "build"), slot => Assert.Equal(RoleState.Seed, slot.State));
 
         RoleCatalog.Write(Db, RoleChange.Remove("intake"), settled);

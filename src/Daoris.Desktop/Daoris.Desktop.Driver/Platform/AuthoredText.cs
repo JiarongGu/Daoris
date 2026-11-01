@@ -89,9 +89,12 @@ public sealed class AuthoredText : IEquatable<AuthoredText>
     /// <summary>The text written for exactly <paramref name="tag"/>, or null.</summary>
     public string? Find(string tag) => _entries.FirstOrDefault(each => string.Equals(each.Key, tag, StringComparison.OrdinalIgnoreCase)).Value;
 
-    /// <summary>This text with <paramref name="text"/> added or replaced for <paramref name="tag"/>; a plain string becomes the first entry, tagged <paramref name="plainTag"/>.</summary>
-    public AuthoredText With(string tag, string text, string plainTag = "en") =>
-        FromTags([.. _plain is not null ? [new KeyValuePair<string, string>(plainTag, _plain)] : _entries, new(tag, text)]) ?? this;
+    /// <summary>
+    /// This text with <paramref name="text"/> added or replaced for <paramref name="tag"/>; a plain string becomes the first entry, tagged
+    /// <paramref name="plainTag"/>. Null where the tag is no language tag or the text is blank.
+    /// </summary>
+    public AuthoredText? With(string tag, string text, string plainTag = "en") =>
+        FromTags([.. _plain is not null ? [new KeyValuePair<string, string>(plainTag, _plain)] : _entries, new(tag, text)]);
 
     /// <summary>Writes the value as JSON: a plain string, or the object of tags.</summary>
     public void Write(Utf8JsonWriter writer)

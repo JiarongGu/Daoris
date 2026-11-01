@@ -131,9 +131,9 @@ public sealed class HelpProposalBox(string? home)
 
     /// <inheritdoc cref="HelpRoleProposalWriter.Propose"/>
     public (string? Id, string Message) ProposeRole(
-        string change, string id, string? nameEn, string? nameZh, IReadOnlyList<string>? takes, string? scope, IReadOnlyList<string>? choices,
+        string change, string id, string? name, IReadOnlyDictionary<string, string>? nameIn, IReadOnlyList<string>? takes, string? scope, IReadOnlyList<string>? choices,
         long? revision, string why, string? session, DateTimeOffset at) =>
-        new HelpRoleProposalWriter(file).Propose(change, id, nameEn, nameZh, takes, scope, choices, revision, why, session, at);
+        new HelpRoleProposalWriter(file).Propose(change, id, name, nameIn, takes, scope, choices, revision, why, session, at);
 
     /// <inheritdoc cref="HelpRepositoryProposalWriter.Propose"/>
     public (string? Id, string Message) ProposeRepository(string repository, string workspace, string why, string? session, DateTimeOffset at) =>

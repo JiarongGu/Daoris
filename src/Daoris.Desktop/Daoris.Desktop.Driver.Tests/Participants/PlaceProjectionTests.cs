@@ -195,8 +195,7 @@ public sealed class PlaceProjectionTests
             {
                 var role = catalogue.RoleFor(work.Work, place.Item2).Role;
                 Assert.Equal(role?.Id, work.Role);
-                Assert.Equal(role?.NameEn, work.RoleNames?.En);
-                Assert.Equal(role?.NameZh, work.RoleNames?.Zh);
+                Assert.Equal(role?.Name, work.RoleName);
                 Assert.Equal(role?.Scope.Kind, work.RoleScope?.Kind);
                 Assert.Equal(role?.Scope.Id, work.RoleScope?.Id);
             }
