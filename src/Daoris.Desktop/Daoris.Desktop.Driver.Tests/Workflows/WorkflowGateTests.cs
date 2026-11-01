@@ -1096,6 +1096,30 @@ public sealed class WorkflowGateTests : IDisposable
         Assert.Equal((GraphGateStates.Waits, "see"), (waiting.State, waiting.Node));
     }
 
+    /// <summary>
+    /// DECIDE1c: a <c>back</c> wire returns to a node before its source, so the landing's wait is never read along one: a person's task after the
+    /// landing, with a way back to the task before it, holds nothing there.
+    /// </summary>
+    [Fact]
+    public void A_back_wire_into_the_steps_before_the_landing_holds_nothing_there()
+    {
+        var graph = Before with
+        {
+            Nodes = [.. Before.Nodes, new NodeDeclaration("after", NodeKinds.Human, 1, NodeReach.Pressed)],
+            Wires =
+            [
+                .. Before.Wires, new Wire("land>after", WireKinds.After, new WireEnd("land"), new WireEnd("after")),
+                new Wire("after>qa", WireKinds.Back, new WireEnd("after"), new WireEnd("qa")) { On = WireKinds.Rejected },
+            ],
+        };
+        var record = Record(Status("claim", NodeStates.Reached, "quest:q7"), Status("qa", NodeStates.Skipped), Status("see", NodeStates.Reached, "unit-b1"),
+            Status("land", NodeStates.Blocked), Status("after", NodeStates.Active));
+
+        var judged = GraphGate.Judge(Door(record) with { Graph = graph, Digest = NodeGraphs.Digest(graph) });
+
+        Assert.Equal((GraphGateStates.NotJudged, (string?)null), (judged.State, judged.Node));
+    }
+
     [Theory]
     [InlineData("not JSON")]
     [InlineData("{}")]

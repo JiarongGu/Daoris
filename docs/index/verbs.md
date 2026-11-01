@@ -37,7 +37,7 @@ Routed in `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs`, its usage 
 | `roles` | `Program.cs:387` | `Program.cs:387` (inline) | brief `Program.cs:387` |
 | `trace` | `Program.cs:438` | `Daoris.Desktop.Driver.Host/TraceConsole.cs:8` TraceConsole | commit `TraceCommand.cs:6` · session `TraceCommand.cs:7` · quest `TraceCommand.cs:8` |
 | `git` | `Program.cs:444` | `Daoris.Desktop.Driver.Host/GitConsole.cs:10` GitConsole | branches · branch · tag · fetch · pick · revert · rebase · review |
-| `workflow` | `Program.cs:451` | `Daoris.Desktop.Driver.Host/WorkflowConsole.cs:10` WorkflowConsole | run · keep `WorkflowConsole.cs:14` · skip · stop |
+| `workflow` | `Program.cs:451` | `Daoris.Desktop.Driver.Host/WorkflowConsole.cs:10` WorkflowConsole | run · keep `WorkflowConsole.cs:14` · skip · stop · changes |
 | `run-heavy` | `Program.cs:458` | `Daoris.Desktop.Driver.Host/HeavyConsole.cs:8` HeavyConsole | — |
 | `verify` | `Program.cs:465` | `Daoris.Desktop.Driver.Host/VerifyConsole.cs:8` VerifyConsole | — |
 | `integrate` | `Program.cs:471` | `Daoris.Desktop.Driver.Host/IntegrateConsole.cs:7` IntegrateConsole | — |
@@ -74,7 +74,7 @@ Routed in `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs`, its usage 
 | `space` | `Program.cs:860` | `Daoris.Desktop.Driver/Workplace/SpaceCommand.cs:17` SpaceCommand | free `SpaceCommand.cs:54` |
 | `logs` | `Program.cs:869` | `Daoris.Desktop.Driver.Host/LogsConsole.cs:18` LogsConsole | — |
 | `plugins` | `Program.cs:876` | `Daoris.Desktop.Driver/Plugins/PluginsCommand.cs:25` PluginsCommand | install `Program.cs:817` · new `PluginsCommand.cs:90` · try `PluginsCommand.cs:90` · show `PluginsCommand.cs:92` · activity `PluginsCommand.cs:94` · approve `PluginsCommand.cs:62` · withdraw `PluginsCommand.cs:67` |
-| `drive` | `Program.cs:486` | `Daoris.Desktop.Driver/Loop/DriverCommand.cs:398` DriverCommand.Read | — |
+| `drive` | `Program.cs:486` | `Daoris.Desktop.Driver/Loop/DriverCommand.cs:401` DriverCommand.Read | — |
 
 ## `daoris-devkit`
 

@@ -46,7 +46,7 @@ public static class RunNodeWords
     /// <summary>The word is <c>ask-again</c> or <c>go-on</c>, which only a declined <c>request</c> takes.</summary>
     public const string NotRequest = "not-request";
 
-    /// <summary>The word is <c>accept</c>, which only a <c>review</c> takes (LANDNODE1c2).</summary>
+    /// <summary>The word is <c>accept</c> or <c>changes</c>, which only a <c>review</c> takes (LANDNODE1c2, DECIDE1c).</summary>
     public const string NotReview = "not-review";
 
     /// <summary>The run's record holds its end: nothing of its graph moves again until its chain comes back here.</summary>
@@ -82,7 +82,7 @@ public static class RunNodeWords
         if (bound.Version is not { Graph: { } graph, GraphDigest: { } digest }) return Refuse(UnreadVersion) with { Detail = bound.Version.Unreadable };
         if (graph.Nodes.FirstOrDefault(each => each.Id == node) is not { } declared) return Refuse(NotNode);
         if (OfRequests(act) && declared.Kind != NodeKinds.Request) return Refuse(NotRequest);
-        if (act == NodeWordActs.Accept && declared.Kind != NodeKinds.Review) return Refuse(NotReview);
+        if (act is NodeWordActs.Accept or NodeWordActs.Changes && declared.Kind != NodeKinds.Review) return Refuse(NotReview);
 
         var now = (clock ?? (() => DateTimeOffset.UtcNow))();
         var (refused, result) = records.Edit(bound.Unit, record =>
@@ -159,7 +159,8 @@ public static class RunNodeWords
 
     /// <summary>
     /// A word as the one table's move: the person's skip with their words and the run's scope, or their stop; their Accept a review's reach by
-    /// its authority, the person, on the binding <paramref name="status"/> stands on, so one given before the review began is refused.
+    /// its authority, the person, on the binding <paramref name="status"/> stands on, so one given before the review began is refused; their
+    /// changes the review's rejection on that attempt, with their words, which the table needs.
     /// </summary>
     private static NodeMove Move(NodeWord word, NodeScope scope, NodeStatus status) => word.Act switch
     {
@@ -169,6 +170,7 @@ public static class RunNodeWords
         {
             Source = NodeSource.Person, Attempt = status.Attempt, Acceptance = status.Binding,
         },
+        NodeWordActs.Changes => new NodeMove(NodeStates.Rejected, NodeCause.Person) { Attempt = status.Attempt, Words = word.Words },
         _ => new NodeMove(NodeStates.Stopped, NodeCause.Person) { Words = word.Words },
     };
 
@@ -187,6 +189,8 @@ public static class RunNodeWords
     public static IReadOnlyList<string> Acts(NodeDeclaration node, NodeStatus status, bool promoted = false)
     {
         var acts = new List<string>();
+        // DECIDE1c: a review waiting on the person's Accept takes their changes, with their words, beside it.
+        if (node.Kind == NodeKinds.Review && status.State == NodeStates.Active) acts.Add(NodeWordActs.Changes);
         if (status.State is NodeStates.Ready or NodeStates.Active && NodeAuthorities.Of(node)?.PersonSkips == true) acts.Add(NodeWordActs.Skip);
         if (status.State is NodeStates.Ready or NodeStates.Active or NodeStates.Unknown or NodeStates.Invalidated && !promoted) acts.Add(NodeWordActs.Stop);
         // INTEGRATE1p (C33): a request's decline waits on the person, unless its workflow said `declined: stop`.
@@ -204,6 +208,7 @@ public static class RunNodeWords
     public const string Usage =
         "usage: daoris-driver workflow skip <run> <node> \"…\"  ·  daoris-driver workflow stop <run> <node> [\"…\"]\n"
         + "       daoris-driver workflow ask-again <run> <node>  ·  daoris-driver workflow go-on <run> <node> \"…\"  (a declined request)\n"
+        + "       daoris-driver workflow changes <run> <node> \"…\"  (a review: what the work should change before it lands)\n"
         + "       pass a node of a run bound to a graph version over with your words, or stop it, your words if you have any; the run's\n"
         + "       id and its nodes are what `workflow run` prints. Kept on the run's record, and Daoris's next look applies it.";
 
@@ -219,8 +224,13 @@ public static class RunNodeWords
         (UnreadVersion, _) =>
             $"workflow: the graph version run {done.Run} is bound to does not read here ({done.Detail}), so the run is held whole and nothing on it is changed.",
         (NotNode, _) => $"workflow: run {done.Run}'s graph has no node `{done.Node}`; `workflow run` names its nodes.",
-        (NotAct, _) => $"workflow: `{done.Act}` is not a word for a run's node: say skip, stop, ask-again or go-on.",
+        (NotAct, _) => $"workflow: `{done.Act}` is not a word for a run's node: say skip, stop, ask-again, go-on or changes.",
         (NotRequest, _) => $"workflow: `{done.Node}` is no request, and only a declined request is asked again or gone on without.",
+        (NotReview, _) => $"workflow: `{done.Node}` is no review, and only a review is accepted or asked for changes.",
+        (NodeRefusal.NoWords, NodeWordActs.Changes) =>
+            $"workflow: asking for changes on `{done.Node}` sends your words to the work, and none were given: say what should change.",
+        (NodeRefusal.NotInTable, NodeWordActs.Changes) =>
+            $"workflow: `{done.Node}` on run {done.Run} is {done.State} now, so it waits on no Accept to ask changes of.",
         (Ended, _) => $"workflow: run {done.Run} ended at quest #{done.Detail}, so nothing of its graph moves again until its chain comes back here.",
         (Worded, _) => $"workflow: `{done.Node}` on run {done.Run} already has your word, which Daoris's next look applies.",
         (Promoted, _) => $"workflow: `{done.Node}` on run {done.Run} has promoted onto the line, and nothing reverses the line, so there is nothing to stop: its record reads its reach.",

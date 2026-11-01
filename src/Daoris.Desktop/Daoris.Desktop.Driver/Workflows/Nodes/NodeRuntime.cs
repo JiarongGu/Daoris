@@ -237,6 +237,13 @@ public sealed class NodeRuntime(
     /// <summary>The door a run's <c>request</c> publishes its quest through (INTEGRATE1p): none by default, so a runtime nobody wired starts none and its node waits ready.</summary>
     public IRequestPort? Requests { get; set; }
 
+    /// <summary>
+    /// The say door a run's work is told what was sent back to it through (DECIDE1c): Daoris's words on the work's session as its next turn, under
+    /// their key, so a say again is answered with the word kept. Handed the session, the words and the key. None by default: nobody is told, and
+    /// the pass says so.
+    /// </summary>
+    public Func<string, string, string, CancellationToken, Task<SayAnswer>>? Say { get; set; }
+
     private RequestNode Request => _requestNode ??= new RequestNode(records, () => Requests, clock);
 
     private RequestNode? _requestNode;
@@ -918,6 +925,7 @@ public sealed class NodeRuntime(
             {
                 done.AddRange(_performer.Keep(before, evaluated));
                 IntegratedNow(governed, before, evaluated.Statuses, said);
+                await BackToWorkAsync(governed, before, evaluated, said, ct).ConfigureAwait(false);
             }
 
             var started = false;
@@ -1153,7 +1161,9 @@ public sealed class NodeRuntime(
         // INTEGRATE1p (C33): a declined request waits on the person's word, so the run is not over while one stands.
         var held = governed.Graph.Nodes.Any(node => node.Kind == NodeKinds.Request && NodeOptions.Text(node, "declined") != RequestOptions.Stop
             && WorkPerformer.StatusOf(record, node.Id) is { State: NodeStates.Failed, Code: RequestOptions.DeclinedCode });
-        if (!settled || held) return;
+        // DECIDE1c: a review's changes wait on the work's next commit, which runs the review again, so the run is not over while they stand.
+        var changes = governed.Graph.Nodes.Any(node => node.Kind == NodeKinds.Review && WorkPerformer.StatusOf(record, node.Id).State == NodeStates.Rejected);
+        if (!settled || held || changes) return;
 
         var ended = new RunEnd(newest.Id, clock());
         var (refused, _) = records.Edit(unit, current => (current with { Ended = ended }, true));
@@ -1188,6 +1198,15 @@ public sealed class NodeRuntime(
             {
                 done.Add(new WorkPerformed(unit, word.Node, code is null ? PerformedWhat.Resolved : PerformedWhat.Refused, code ?? word.Act));
                 said.Add(RunNodeWords.AppliedSaid(unit, word, code));
+
+                // DECIDE1c (D173's note): the person's changes on a review with no way back on its rejection go to the work all the same, as the
+                // look's not-yet does; one with a way back is told as that wire is taken, and only where it goes back to the work.
+                if (code is null && word.Act == NodeWordActs.Changes && each.Scope is { } run && word.Words is { } words
+                    && !each.Graph.Wires.Any(wire => wire.Kind == WireKinds.Back && wire.From?.Node == word.Node && wire.On == WireKinds.Rejected))
+                {
+                    var attempt = records.Read(unit)?.Statuses.GetValueOrDefault(word.Node)?.Attempt ?? 0;
+                    await TellWorkAsync(each, run, word.Node, attempt, ChangesWords(word.Node, words), said, ct).ConfigureAwait(false);
+                }
             }
 
             // FABRIC-PIPELINE1d (the pipeline design §4.2): the pass that applies the person's stop of a running check tells the executor.
@@ -1195,6 +1214,75 @@ public sealed class NodeRuntime(
         }
 
         return (done, said);
+    }
+
+    /// <summary>
+    /// The <c>back</c> wires an evaluation of a run took into its work (DECIDE1c): each one kept on the record, whose target is <c>claimed</c>,
+    /// tells the work's session what its source sent back, as its next turn: the person's words with their rejection, a failure's code, or the
+    /// outcome reached. A way back to any other step tells nobody: that step runs again on its own.
+    /// </summary>
+    private async Task BackToWorkAsync(
+        GovernedUnit governed, IReadOnlyDictionary<string, NodeStatus> before, WireEvaluated evaluated, List<string> said, CancellationToken ct)
+    {
+        if (governed.Scope is not { } scope || evaluated.Backs.Count == 0) return;
+        var kept = records.Read(governed.Unit.Id)?.Fired.ToHashSet(StringComparer.Ordinal) ?? [];
+        foreach (var back in evaluated.Backs)
+        {
+            if (!kept.Contains(back.Key) || governed.Declared.GetValueOrDefault(back.Node)?.Kind != NodeKinds.Claimed) continue;
+            if (governed.Graph.Wires.FirstOrDefault(wire => wire.Id == back.Wire)?.From?.Node is not { } source || before.GetValueOrDefault(source) is not { } was) continue;
+            var text = was.State switch
+            {
+                NodeStates.Rejected when was.Words is { } words => ChangesWords(source, words),
+                NodeStates.Failed => $"Daoris: `{source}` failed{(was.Code is { } code ? $" (`{code}`)" : "")}, so your work goes back to you: mend what it "
+                    + "found and commit, and what you commit goes through the workflow again.",
+                _ => $"Daoris: `{source}` came to `{was.Current?.Outcome}`, so your work goes back to you: what you commit goes through the workflow again.",
+            };
+            await TellWorkAsync(governed, scope, source, was.Attempt, text, said, ct).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>What a run's work is told of the person's changes (DECIDE1c): Daoris's own sentence, then their words quoted, as a reopen's are.</summary>
+    internal static string ChangesWords(string node, string words)
+    {
+        var quoted = string.Join("\n", words.Trim().ReplaceLineEndings("\n").Split('\n').Select(line => line.Length == 0 ? ">" : "> " + line));
+        return $"Daoris: the person asked for changes at `{node}` before your work lands, so it goes back to you. Make them and commit: what you "
+            + $"commit is reviewed again. Their words:\n\n{quoted}";
+    }
+
+    /// <summary>The key the work is told under (DECIDE1c): the run, the step that sent it back and that step's attempt, so it is said once.</summary>
+    internal static string ChangesKey(string run, string node, int attempt) => $"changes/{run}/{node}/{attempt}";
+
+    /// <summary>
+    /// Tell the run's work, its newest session here, <paramref name="text"/> under its key (DECIDE1c): through <see cref="Say"/>, which keeps one
+    /// word per key. Where no session is known, no say door is wired, or the door refuses, the pass says so and the words stay on the record.
+    /// </summary>
+    private async Task TellWorkAsync(GovernedUnit governed, RunScope scope, string node, int attempt, string text, List<string> said, CancellationToken ct)
+    {
+        var unit = governed.Unit.Id;
+        if ((scope.Quest?.Executors.LastOrDefault() ?? scope.Branch?.Executors.LastOrDefault()) is not { } session)
+        {
+            said.Add($"work  {unit}: no session of its work is known here, so nobody is told what `{node}` sent back; the words stay on its record.");
+            return;
+        }
+
+        if (Say is not { } say)
+        {
+            said.Add($"work  {unit}: session {session} is not told what `{node}` sent back, since this Daoris holds no say door; the words stay on its record.");
+            return;
+        }
+
+        try
+        {
+            var answer = await say(session, text, ChangesKey(scope.Run.Run, node, attempt), ct).ConfigureAwait(false);
+            said.Add(answer.Kept
+                ? $"work  {unit}: session {session} is told what `{node}` sent back, as its next turn."
+                : $"work  {unit}: session {session} was not told what `{node}` sent back: {answer.Message}");
+        }
+        catch (Exception error) when (!ct.IsCancellationRequested
+                                      && error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException or InvalidOperationException)
+        {
+            said.Add($"work  {unit}: session {session} was not told what `{node}` sent back: {error.Message}");
+        }
     }
 
     /// <summary>

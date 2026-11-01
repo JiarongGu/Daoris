@@ -121,8 +121,11 @@ export interface CheckHeldAnswer {
   message?: string | null;
 }
 
-/** What the person may say of a graph run's node (FABRIC-CUTOVER1f): pass it over for the run, or stop it. */
-export type NodeAct = 'skip' | 'stop' | 'ask-again' | 'go-on';
+/**
+ * What the person may say of a graph run's node (FABRIC-CUTOVER1f): pass it over for the run, or stop it; a declined request's ask again and go
+ * on (INTEGRATE1p); a review's changes, with their words (DECIDE1c).
+ */
+export type NodeAct = 'skip' | 'stop' | 'ask-again' | 'go-on' | 'changes';
 
 /** A word kept on a run's node, as the driver answers it: the act, the person's words where given, and when. */
 export interface NodeWordKept {
@@ -150,11 +153,20 @@ export interface NodeWordAnswer {
   message?: string | null;
 }
 
-/** A wire of a graph run's graph: from a node to a node, by its kind (`after`, `failed`, `rejected`, …). */
+/** A wire of a graph run's graph: from a node to a node, by its kind (`after`, `failed`, `rejected`, `when`, …). */
 export interface GraphWire {
   from: string;
   to: string;
   kind: string;
+  /** The outcome a `when` wire follows (DECIDE1c); none on every other kind. */
+  outcome?: string | null;
+}
+
+/** A way back to a node before its source (DECIDE1c), taken `on` the source's `rejected`, its `failed` or one of its outcomes. */
+export interface GraphBack {
+  from: string;
+  to: string;
+  on: string;
 }
 
 /**
@@ -176,6 +188,12 @@ export interface GraphRun {
   unread: boolean;
   /** The quest it ended at, where its record keeps its end. */
   ended?: string | null;
+  /** Its `back` wires, apart from `wires`, which the run is read along (DECIDE1c); none from a shell before it. */
+  backs?: GraphBack[] | null;
+  /** The nodes no route can start any more given the outcomes reached (DECIDE1c); none from a shell before it. */
+  notTaken?: string[] | null;
+  /** Each reached decision's outcome, by node (DECIDE1c); none from a shell before it. */
+  outcomes?: Record<string, string> | null;
 }
 
 /** A chain's work in one repository, read as steps. */

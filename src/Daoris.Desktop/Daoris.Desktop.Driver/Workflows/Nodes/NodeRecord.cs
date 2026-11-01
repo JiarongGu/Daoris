@@ -207,7 +207,13 @@ public static class NodeWordActs
     /// </summary>
     public const string Accept = "accept";
 
-    public static readonly IReadOnlyList<string> All = [Skip, Stop, AskAgain, GoOn, Accept];
+    /// <summary>
+    /// The person's changes asked of the work (DECIDE1c), with their words: a <c>review</c>'s rejection on their word, kept by the same Person
+    /// route as their Accept. An older build reads it as no act it knows and applies nothing.
+    /// </summary>
+    public const string Changes = "changes";
+
+    public static readonly IReadOnlyList<string> All = [Skip, Stop, AskAgain, GoOn, Accept, Changes];
 }
 
 /// <summary>

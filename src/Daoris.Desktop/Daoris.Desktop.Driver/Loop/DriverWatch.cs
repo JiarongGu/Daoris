@@ -595,6 +595,12 @@ public sealed class DriverWatch(
         if (nodes is not null) nodes.Integration = IntegrationDoor ?? NodeRuntime.HomeDoor(home);
         // INTEGRATE1p (§17.5): a run's request publishes its quest through this loop's service client.
         if (nodes is not null) nodes.Requests = service;
+        // DECIDE1c: what a run's review sends back is said on its work's session as Daoris's words, under their key, at its line's head.
+        if (nodes is not null)
+        {
+            nodes.Say = async (session, text, key, ct) =>
+                (await WordsHead.FollowAsync(session, at => service.SayAsync(at, text, null, ct, from: DaorisWords.From, key: key)).ConfigureAwait(false)).Said;
+        }
 
         // FABRIC-PIPELINE1d (the pipeline design §4.2): the heavy executor a check is handed to; its answer asks a pass, which reconciles it.
         HeavyExecutor? executor = null;

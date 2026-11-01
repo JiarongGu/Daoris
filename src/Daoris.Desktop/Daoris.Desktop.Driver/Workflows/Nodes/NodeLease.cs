@@ -14,7 +14,7 @@ internal static class NodeLease
     [ModuleInitializer]
     internal static void Install()
     {
-        VerbLeases.Answer("workflow", new(words => words is ["keep", ..] or [NodeWordActs.Skip, ..] or [NodeWordActs.Stop, ..]));
+        VerbLeases.Answer("workflow", new(words => words is ["keep", ..] or [NodeWordActs.Skip, ..] or [NodeWordActs.Stop, ..] or [NodeWordActs.Changes, ..]));
         VerbLeases.Answer("work", new(words =>
             words is ["recovery", ..] || (words is ["held", ..] && words.Skip(1).Any(word => HeldResolutions.All.Contains(word)))));
     }

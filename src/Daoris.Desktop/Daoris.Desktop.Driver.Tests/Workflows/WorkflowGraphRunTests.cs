@@ -349,6 +349,68 @@ public sealed class WorkflowGraphRunTests
         Assert.All(Derive(Records(Quest("q1")), GoAheadAndADeployAfter, null).Steps, step => Assert.Null(step.Acts));
     }
 
+    /// <summary>
+    /// The work, its review and its landing, then a plugin's find whose <c>release</c> outcome leads to its release; the review's changes go back
+    /// to the work, and the find's <c>none</c> goes back there too, from after the landing (DECIDE1c).
+    /// </summary>
+    private const string ReviewedThenFound = """
+        {"schemaVersion":2,"entries":["work"],"end":"release",
+         "nodes":[{"id":"work","kind":"claimed","version":1,"reach":"observed"},{"id":"review","kind":"review","version":1,"reach":"pressed"},
+                  {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"merge"}},
+                  {"id":"find","kind":"local-release/find","version":1,"reach":"performed","outcomes":["release","none"]},
+                  {"id":"release","kind":"local-release/release","version":1,"reach":"performed"}],
+         "wires":[{"id":"a","kind":"after","from":"work","to":"review"},{"id":"b","kind":"after","from":"review","to":"landing"},
+                  {"id":"c","kind":"after","from":"landing","to":"find"},{"id":"d","kind":"when","from":"find","to":"release","outcome":"release"},
+                  {"id":"e","kind":"back","from":"review","to":"work","on":"rejected"},{"id":"f","kind":"back","from":"find","to":"work","on":"none"}]}
+        """;
+
+    /// <summary>
+    /// DECIDE1c: a run's view says which routes were taken. A decision's outcome is on the graph beside its node, a node its outcome left no route
+    /// to is not taken (and the run stands nowhere once nothing else moves), a <c>when</c> wire names its outcome, and a <c>back</c> wire is drawn
+    /// apart from the wires the run is read along, so neither the landing's subjects nor the drawing walk one. The terminal says each.
+    /// </summary>
+    [Fact]
+    public void A_runs_view_says_its_decisions_outcomes_and_the_routes_not_taken_and_draws_a_back_wire_apart()
+    {
+        var found = Status("find", NodeStates.Reached, "unit-b", LandedTip);
+        found = found with { Acceptance = found.Acceptance! with { Outcome = "none" } };
+        var record = Record(
+            Status("work", NodeStates.Reached, "quest:q1", "q1-moment"), Status("review", NodeStates.Reached, "unit-b", Tip),
+            Status("landing", NodeStates.Reached, "unit-b", Tip), found, Status("release", NodeStates.Blocked));
+
+        var run = Derive(Records(Quest("q1", "Done")), ReviewedThenFound, record);
+        var graph = run.Graph!;
+
+        Assert.Equal(["release"], graph.NotTaken);
+        Assert.Equal(new Dictionary<string, string> { ["find"] = "none" }, graph.Outcomes);
+        Assert.Equal([WireKinds.After, WireKinds.After, WireKinds.After, WireKinds.When], graph.Wires.Select(wire => wire.Kind));
+        Assert.Equal("release", graph.Wires.Single(wire => wire.Kind == WireKinds.When).Outcome);
+        Assert.Equal([("review", "work", "rejected"), ("find", "work", "none")], graph.Backs.Select(wire => (wire.From, wire.To, wire.On!)));
+        Assert.Null(run.At);
+        Assert.Equal(["find", "release"], RunSubjects.AfterHanded(Graph(ReviewedThenFound)).Order(StringComparer.Ordinal));
+
+        var said = WorkflowRunWords.Say([run], null);
+        Assert.Contains("Its outcome: `none`.", said);
+        Assert.Contains("Not taken: the outcomes reached leave no route to it.", said);
+    }
+
+    /// <summary>
+    /// DECIDE1c: a review waiting on the person's Accept offers their changes beside its stop, and the terminal names its command; a review not
+    /// waiting on them offers none.
+    /// </summary>
+    [Fact]
+    public void A_review_waiting_on_your_accept_offers_your_changes_and_the_terminal_names_them()
+    {
+        var waiting = Record(Status("work", NodeStates.Reached, "quest:q1", "q1-moment"), Status("review", NodeStates.Active, "unit-b", Tip));
+
+        var run = Derive(Records(Quest("q1", "Done")), ReviewedThenFound, waiting);
+
+        Assert.Equal([NodeWordActs.Changes, NodeWordActs.Stop], Step(run, "review").Acts);
+        Assert.Contains("`daoris-driver workflow changes q1 review \"…\"` asks for changes in place of your Accept; `daoris-driver workflow stop q1 review` stops it.",
+            WorkflowRunWords.Say([run], null));
+        Assert.Null(Step(Derive(Records(Quest("q1", "Done")), ReviewedThenFound, Record(Status("work", NodeStates.Active, "quest:q1"))), "review").Acts);
+    }
+
     private static WorkflowRunRequest Asked(string id, string state, string to = "tools") =>
         new(WorkflowRunRequestKinds.Quest, id, to, state) { Session = "s1" };
 

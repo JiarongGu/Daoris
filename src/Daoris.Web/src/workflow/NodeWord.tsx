@@ -6,9 +6,11 @@ import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import type { NodeAct, NodeWordAnswer, NodeWordAsk, RunStep } from './run';
 
 /** The refusals of `WORKFLOW_NODE` the page words in the reader's language; any other is the driver's own sentence (D182). */
-const WORDED: ReadonlySet<string> = new Set(['worded', 'ended', 'no-words', 'not-skippable', 'not-in-table', 'not-held', 'promoted', 'not-request']);
+const WORDED: ReadonlySet<string> = new Set([
+  'worded', 'ended', 'no-words', 'not-skippable', 'not-in-table', 'not-held', 'promoted', 'not-request', 'not-review',
+]);
 
-const ACTS: readonly NodeAct[] = ['skip', 'stop', 'ask-again', 'go-on'];
+const ACTS: readonly NodeAct[] = ['skip', 'stop', 'ask-again', 'go-on', 'changes'];
 
 /** What a refused word says, in the reader's language where the page words its code, else in the driver's sentence. */
 export function nodeWordRefused(t: ReturnType<typeof useTranslation>['t'], answer: NodeWordAnswer): string {
@@ -27,7 +29,8 @@ export function nodeWordRefused(t: ReturnType<typeof useTranslation>['t'], answe
  * and a landing is offered its stop alone. Each press goes out with its run and node (`onWord`) and comes back answered: kept closes the ask,
  * a refusal is said in it by its code, in the driver's sentence where the page has no words for the code.
  *
- * **A skip goes on without the node; a stop ends what waits on it**, so the stop asks in danger's hue and the skip in the primary's.
+ * **A skip goes on without the node; a stop ends what waits on it**, so the stop asks in danger's hue and the skip in the primary's. A
+ * review's *Ask for changes…* (DECIDE1c) sends the person's words back to the work in place of their Accept, so it asks for them.
  *
  * A molecule: the step and the press arrive as props.
  */
@@ -68,6 +71,11 @@ export function NodeWord({ run, step, onWord }: {
     <div className="grid min-w-0 gap-1.5">
       {asking === null && (
         <div className="flex flex-wrap items-center gap-1.5">
+          {acts.includes('changes') && (
+            <Button variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => setAsking('changes')}>
+              {t('workflow.run.node.changes')}
+            </Button>
+          )}
           {acts.includes('skip') && (
             <Button variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => setAsking('skip')}>
               {t('workflow.run.node.skip')}
@@ -117,6 +125,27 @@ export function NodeWord({ run, step, onWord }: {
             aria-label={t('workflow.run.node.goOnWords')}
             placeholder={t('workflow.run.node.goOnWords')}
             rows={2}
+            value={words}
+            onChange={(event) => setWords(event.target.value)}
+            className="min-w-0 basis-full resize-y rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
+          />
+        </InlineConfirm>
+      )}
+      {asking === 'changes' && (
+        <InlineConfirm
+          tone="primary"
+          block
+          label={t('workflow.run.node.changesTitle', { node })}
+          says={t('workflow.run.node.changesSays', { node })}
+          meanIt={t('workflow.run.node.changesMeanIt')}
+          ready={words.trim().length > 0}
+          onConfirm={(answered) => send('changes', answered)}
+          onClose={close}
+        >
+          <textarea
+            aria-label={t('workflow.run.node.changesWords')}
+            placeholder={t('workflow.run.node.changesWords')}
+            rows={3}
             value={words}
             onChange={(event) => setWords(event.target.value)}
             className="min-w-0 basis-full resize-y rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"

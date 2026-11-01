@@ -59,6 +59,13 @@ describe('the back edges (trap 1)', () => {
     const layout = layoutFlow(shape(['a', 'b'], [['a', 'b'], ['b', 'b']]));
     expect(layout.paths.find((path) => path.from === 'b')!.back).toBe(true);
   });
+
+  it('takes a way back as a return by its style, whatever the walk meets first (DECIDE1c)', () => {
+    // Entered at the review, the walk would take its way back to the work as a move forward and the work's move on as the return.
+    const layout = layoutFlow(shape(['work', 'review'], [['review', 'work', 'back'], ['work', 'review']], ['review']));
+    expect(layout.paths.filter((path) => path.back).map((path) => `${path.from}>${path.to}`)).toEqual(['review>work']);
+    expect(layout.rank).toEqual({ work: 0, review: 1 });
+  });
 });
 
 describe('the ranks and their waypoints', () => {

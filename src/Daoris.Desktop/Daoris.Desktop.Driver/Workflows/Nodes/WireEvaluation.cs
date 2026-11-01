@@ -222,6 +222,9 @@ public static class WireWhy
     /// <summary>A <c>stop</c> sink reached on the receipt of the path into it: a failure or a rejection its binding rests on (FABRIC-WIRE1g).</summary>
     public const string Path = "path";
 
+    /// <summary>A <c>back</c> wire was taken into it (DECIDE1c): judged again for a new attempt.</summary>
+    public const string Back = "back";
+
     /// <summary>Its wires and inputs are satisfied.</summary>
     public const string Eligible = "eligible";
 
@@ -273,6 +276,12 @@ public sealed record WireEvaluated(
     /// at each evaluation, never stored; an <c>all</c> join counts such a member as settled.
     /// </summary>
     public IReadOnlyList<string> NotTaken { get; init; } = [];
+
+    /// <summary>
+    /// The <c>back</c> wires taken (DECIDE1c), each keyed as a trigger's firing on its source's receipt of its <c>on</c>: its target was invalidated
+    /// for a new attempt, and what rests on the target lapsed after it. The record writer keeps their keys with the moves, so one is taken once.
+    /// </summary>
+    public IReadOnlyList<WireFiring> Backs { get; init; } = [];
 
     /// <summary>
     /// Whether the evaluator moved nothing: evaluated again on the same statuses, it moves nothing. It says nothing of pending starts
@@ -375,8 +384,11 @@ public static class WireEvaluation
 
         // 1. Invalidations, transitively, before anything is observed (FABRIC-WIRE1e): a node whose binding lapsed is invalidated, never
         // observed, so no receipt the same evaluation would invalidate is exposed, and nothing starts on one. Each round takes away the
-        // receipts of what the last one lapsed, so it ends within the nodes.
+        // receipts of what the last one lapsed, so it ends within the nodes. DECIDE1c: a back wire's target goes first, so what rests on it lapses
+        // after it, its source's receipt included.
+        var backs = Backs(declared, now, wires, run);
         var lapsing = new Dictionary<string, (string Why, string? Detail)>(StringComparer.Ordinal);
+        foreach (var back in backs) lapsing.TryAdd(back.Node, (WireWhy.Back, back.Wire));
         for (var found = true; found;)
         {
             found = false;
@@ -506,7 +518,11 @@ public static class WireEvaluation
             });
         }
 
-        return new(now, moves, refused, eligibility, starts, queued) { NotTaken = [.. untaken.Keys.Order(StringComparer.Ordinal)] };
+        return new(now, moves, refused, eligibility, starts, queued)
+        {
+            NotTaken = [.. untaken.Keys.Order(StringComparer.Ordinal)],
+            Backs = [.. backs.Where(back => moves.Any(move => move.Node == back.Node && move.Why == WireWhy.Back))],
+        };
 
         // The dispatched attempts of one reach not settled yet: active, unknown, or unreconciled whatever moved the node off it.
         int Running(string reach) => declared.Count(node => NodeAuthorities.Of(node) is { Dispatches: true } authority && authority.Reach == reach
@@ -656,6 +672,55 @@ public static class WireEvaluation
 
         return closed;
     }
+
+    /// <summary>
+    /// The nodes no route can start any more given the outcomes reached on <paramref name="statuses"/> (DECIDE1c, the run's view): what an
+    /// evaluation reports as <see cref="WireEvaluated.NotTaken"/>, read from a record alone, since a route closes on a reach's outcome, which needs
+    /// no run's scope. A node with no status is not reached yet.
+    /// </summary>
+    public static IReadOnlyList<string> NotTakenOn(
+        IReadOnlyList<NodeDeclaration> nodes, IReadOnlyList<Wire> wires, IReadOnlyDictionary<string, NodeStatus> statuses, string unit)
+    {
+        var declared = nodes.DistinctBy(node => node.Id, StringComparer.Ordinal).ToList();
+        var now = declared.ToDictionary(node => node.Id, node => statuses.GetValueOrDefault(node.Id) ?? NodeLifecycle.Start(unit, node.Id), StringComparer.Ordinal);
+        var reached = new Dictionary<string, WireReceipt>(StringComparer.Ordinal);
+        foreach (var node in declared)
+        {
+            if (now[node.Id] is { State: NodeStates.Reached, Current: { } accepted }) reached[node.Id] = new(accepted.Id, WireReceiptKinds.Reached, node.Id) { Outcome = accepted.Outcome };
+        }
+
+        return [.. NotTaken(declared, now, wires, reached).Keys.Order(StringComparer.Ordinal)];
+    }
+
+    /// <summary>
+    /// The <c>back</c> wires to take now (DECIDE1c): each whose source holds the receipt of its <c>on</c> (its rejection, its spent failure, or its
+    /// reach with that outcome), keyed as a trigger's firing and not taken on that receipt yet, whose target stands bound to an attempt. A target
+    /// not bound (blocked, ready, judged again, passed over or stopped) has no attempt to take back, so the wire waits.
+    /// </summary>
+    private static List<WireFiring> Backs(List<NodeDeclaration> nodes, Dictionary<string, NodeStatus> statuses, IReadOnlyList<Wire> wires, WireRun run)
+    {
+        var taken = new List<WireFiring>();
+        if (!wires.Any(wire => wire.Kind == WireKinds.Back)) return taken;
+        var receipts = Receipts(nodes, statuses, run, []);
+        foreach (var wire in wires.Where(wire => wire.Kind == WireKinds.Back && wire.From is { Unit: null } && wire.To.Unit is null).OrderBy(wire => wire.Id, StringComparer.Ordinal))
+        {
+            if (!statuses.TryGetValue(wire.To.Node, out var target) || !NodeStates.Bound.Contains(target.State)) continue;
+            if (receipts.GetValueOrDefault(wire.From!.Node) is not { } receipt || !Takes(wire, receipt)) continue;
+            var key = FiringKey(run, wire.To.Node, wire.Id, receipt.Id);
+            if (!run.Fired.Contains(key)) taken.Add(new WireFiring(key, wire.Id, receipt.Id, wire.To.Node));
+        }
+
+        return taken;
+    }
+
+    /// <summary>Whether <paramref name="receipt"/> is what a <c>back</c> wire is taken on: a rejection, a spent failure, or a reach with that outcome.</summary>
+    private static bool Takes(Wire wire, WireReceipt receipt) => wire.On switch
+    {
+        WireKinds.Rejected => receipt.Kind == WireReceiptKinds.Rejected,
+        WireKinds.Failed => receipt.Kind == WireReceiptKinds.Failed,
+        { } outcome => receipt is { Kind: WireReceiptKinds.Reached, Outcome: { } reached } && string.Equals(reached, outcome, StringComparison.Ordinal),
+        null => false,
+    };
 
     /// <summary>
     /// The binding of <paramref name="status"/>'s attempt where it was started in this graph and run, by its own rule (FABRIC-RUN1f,

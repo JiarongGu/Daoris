@@ -196,7 +196,8 @@ public static class GraphGate
 
     /// <summary>
     /// The node <c>handed</c> waits on: of the nodes a wire path leads from into it, the first in the graph's order that is not settled and stands
-    /// somewhere a move can come from (not blocked behind another); else the first not settled. Null where none is.
+    /// somewhere a move can come from (not blocked behind another); else the first not settled. Null where none is. A <c>back</c> wire comes from a
+    /// node after its target (DECIDE1c), so no path is read along one.
     /// </summary>
     private static NodeDeclaration? WaitedOn(NodeGraph graph, NodeDeclaration handed, NodeRecord record)
     {
@@ -204,7 +205,7 @@ public static class GraphGate
         var next = new Stack<string>([handed.Id]);
         while (next.TryPop(out var at))
         {
-            foreach (var wire in graph.Wires.Where(wire => wire.To.Unit is null && wire.To.Node == at && wire.From is { Unit: null }))
+            foreach (var wire in graph.Wires.Where(wire => wire.Kind != WireKinds.Back && wire.To.Unit is null && wire.To.Node == at && wire.From is { Unit: null }))
             {
                 if (before.Add(wire.From!.Node)) next.Push(wire.From.Node);
             }
