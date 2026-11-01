@@ -305,6 +305,7 @@ describe('Change… and Edit steps…', () => {
     draw({ editor: bridge });
 
     await userEvent.click(screen.getByRole('button', { name: 'Change…' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Current' }));
     await userEvent.click(screen.getByRole('button', { name: 'Use Current here' }));
 
     expect(bridge.onUse).toHaveBeenCalledWith({ repository: 'engine', workflow: 'current' });
@@ -314,10 +315,39 @@ describe('Change… and Edit steps…', () => {
     draw({ editor: editor() });
 
     await userEvent.click(screen.getByRole('button', { name: 'Change…' }));
+    await userEvent.click(screen.getByRole('tab', { name: 'Presets' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Documents workflow' }));
     await userEvent.click(screen.getByRole('button', { name: 'Edit steps from Documents workflow' }));
 
     expect(screen.getByRole('heading', { name: 'Compose a workflow' })).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Change what its work follows' })).toBeNull();
+  });
+
+  it("choose per route: the selected route's kind goes out with the plan and the press, and the place's own choice is the one it can clear", async () => {
+    const onPlan = vi.fn(async () => ({
+      done: false, plan: true, refused: null, message: null, changed: true, reach: [], lowers: [], places: [], keeps: null, expected: 'use-docs',
+    }));
+    const bridge = { ...editor(), list: { ...LIST, use: ['plan'] }, onPlan };
+    draw({ editor: bridge, current: withRoute(EFFECTIVE_DOCS, SAVED_DEFAULT), first: { route: 'kind:docs' } });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Change…' }));
+    // Documentation follows what the workspace maps, so there is no choice of the repository's own to clear.
+    expect(screen.queryByRole('button', { name: "Use the workspace's" })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Current' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Use Current here' }));
+
+    expect(onPlan).toHaveBeenCalledWith({ repository: 'engine', kind: 'docs', workflow: 'current', plan: true });
+    expect(bridge.onUse).toHaveBeenCalledWith({ repository: 'engine', kind: 'docs', workflow: 'current', expected: 'use-docs' });
+  });
+
+  it("clears the repository's own default through Use the workspace's, asking nothing of the plan where the driver announces none", async () => {
+    const bridge = editor();
+    draw({ editor: bridge, current: withRoute(EFFECTIVE_RELEASE, SAVED_DEFAULT) });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Change…' }));
+    await userEvent.click(screen.getByRole('button', { name: "Use the workspace's" }));
+
+    expect(bridge.onUse).toHaveBeenCalledWith({ repository: 'engine' });
   });
 
   it('are not offered for landed work, which WORKFLOW_USE does not choose', () => {
