@@ -580,4 +580,65 @@ public sealed class WorkPerformerTests : IDisposable
         Assert.Single(_port.Sent);
         Assert.Equal(NodeStates.Ready, Record().Statuses["deploy"].State);
     }
+
+    // ——— PLUGINSTEP1b: a decision's outcome on its acceptance
+
+    private static WorkOutcome Chose(string route) => Reached with { Decision = route };
+
+    [Fact]
+    public async Task A_decisions_reach_carries_its_outcome_onto_the_acceptance()
+    {
+        _deploy = Deploy with { Outcomes = ["release", "none"] };
+        var performer = Performer();
+        await StartAsync(performer);
+        var invocation = Assert.Single(_port.Sent).Call.Invocation;
+
+        var heard = performer.Hear([Heard(invocation, Chose("none"))], Declared, Watched);
+
+        Assert.Equal(PerformedWhat.Applied, Assert.Single(heard).What);
+        Assert.Equal((NodeStates.Reached, "none"), (Status().State, Status().Acceptance!.Outcome));
+    }
+
+    [Fact]
+    public async Task A_done_answer_keeps_the_outcome_through_reconcile()
+    {
+        _deploy = Deploy with { Outcomes = ["release", "none"] };
+        await StartAsync(Performer());
+
+        _port.Answer = _ => new(ReconcileStates.Done, Chose("release"));
+        await Performer().ReconcileAsync(Declared, CancellationToken.None);
+
+        Assert.Equal((NodeStates.Reached, "release"), (Status().State, Status().Acceptance!.Outcome));
+    }
+
+    [Fact]
+    public async Task A_done_answer_without_a_decisions_outcome_is_held_not_reached()
+    {
+        _deploy = Deploy with { Outcomes = ["release", "none"] };
+        await StartAsync(Performer());
+
+        _port.Answer = _ => new(ReconcileStates.Done, Reached);
+        await Performer().ReconcileAsync(Declared, CancellationToken.None);
+
+        Assert.NotEqual(NodeStates.Reached, Status().State);
+    }
+
+    [Fact]
+    public async Task The_persons_it_happened_on_a_held_decision_names_an_outcome_or_is_taken_back()
+    {
+        _deploy = Deploy with { Outcomes = ["release", "none"] };
+        await StartAsync(Performer());
+        _port.Generation = 2;
+        await Performer().ReconcileAsync(Declared, CancellationToken.None);
+        Assert.Equal(AttemptStates.Held, Assert.Single(Record().Attempts).State);
+
+        Assert.Equal(PerformedWhat.Worded, Performer().Word(Unit, "deploy", 1, HeldResolutions.Happened).What);
+        Performer().Resolve(Declared);
+        Assert.NotEqual(NodeStates.Reached, Status().State);
+        Assert.Null(Assert.Single(Record().Attempts).Resolution);
+
+        Assert.Equal(PerformedWhat.Worded, Performer().Word(Unit, "deploy", 1, HeldResolutions.Happened, "release").What);
+        Performer().Resolve(Declared);
+        Assert.Equal((NodeStates.Reached, "release"), (Status().State, Status().Acceptance!.Outcome));
+    }
 }

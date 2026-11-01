@@ -23,7 +23,7 @@ const manifest = JSON.parse(readFileSync(join(folder, 'plugin.json'), 'utf8'));
 
 /**
  * The work points' handlers, built around the author's external calls:
- *   act(call)          does the work once: `{ state: 'reached', evidence, outputs?, resources? }` or `{ state: 'failed', code, evidence? }`
+ *   act(call)          does the work once: `{ state: 'reached', evidence, outputs?, resources?, outcome? }` or `{ state: 'failed', code, evidence? }`
  *   check(attempt)     what became of an attempt an earlier process began: `{ state: 'done' | 'failed', outcome }`, `{ state: 'not-started' }`,
  *                      or null when the platform cannot say
  *   remove(resource)   removes one thing `act` made: `{ disposition: 'removed' | 'already-gone' | 'retained' | 'failed', proof?, message? }`
@@ -195,10 +195,10 @@ export function work({ data, send, say, act, check, remove, observe }) {
   return { points, calls: answers, capabilities: [CAPABILITY] };
 }
 
-/** An outcome as the wire carries it: its state, a failure's code, evidence, outputs and resources, each only where said. */
+/** An outcome as the wire carries it: its state, a failure's code, evidence, outputs, resources and a decision's route, each only where said. */
 function outcomeOf(said) {
   const outcome = { state: said?.state ?? 'unknown' };
-  for (const name of ['code', 'evidence', 'outputs', 'resources']) if (said?.[name] !== undefined && said[name] !== null) outcome[name] = said[name];
+  for (const name of ['code', 'evidence', 'outputs', 'resources', 'outcome']) if (said?.[name] !== undefined && said[name] !== null) outcome[name] = said[name];
   return outcome;
 }
 

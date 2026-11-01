@@ -36,13 +36,14 @@ const RESOURCE = 'local-release/resource@1';
 //   registry/<version>/       the package `publish` copied
 //   staging/<invocation>/     a step's work in progress, its last file `done`: the one temporary thing, removed by work/cleanup
 const steps = {
-  // Looks at the attempt's revision for a pending release and names it. Only reaches or fails; what to do with no release is the graph's.
+  // Looks at the attempt's revision for a pending release and decides: `release` with its output, or `none` with nothing; what to do with
+  // no release is the graph's.
   find: async (call) => {
     const pending = readJson(join(data, 'pending', `${name(call.subjectRevision)}.json`));
-    if (!pending) return failed('no-release', `no release is pending at ${call.subjectRevision}`);
+    if (!pending) return stage(call, `no release is pending at ${call.subjectRevision}`, null, () => {}, 'none');
     const version = name(pending.version);
     const found = { version, notes: String(pending.notes ?? ''), revision: call.subjectRevision };
-    return stage(call, `found ${version}`, version, () => writeJson(join(data, 'found', `${version}.json`), found));
+    return stage(call, `found ${version}`, version, () => writeJson(join(data, 'found', `${version}.json`), found), 'release');
   },
 
   // Records the release it was given: its tag name and notes, kept in the data folder. Pushes no tag.
@@ -100,7 +101,7 @@ const kit = work({
 });
 
 /** Runs a step's effect inside its staging folder: the outcome is written first, `done` last, so a cut-off step is told from a finished one. */
-function stage(call, message, version, effect) {
+function stage(call, message, version, effect, decision) {
   const folder = staging(call.invocation);
   mkdirSync(folder, { recursive: true });
   effect();
@@ -109,6 +110,7 @@ function stage(call, message, version, effect) {
     evidence: { ref: `local-release/receipt@1:${call.invocation}`, message },
     ...(version ? { outputs: { release: { ref: `${RELEASE}:${version}` } } } : {}),
     resources: [{ schema: RESOURCE, id: call.invocation }],
+    ...(decision ? { outcome: decision } : {}),
   };
   writeJson(join(folder, 'outcome.json'), outcome);
   writeFileSync(join(folder, 'done'), `${new Date().toISOString()}\n`);

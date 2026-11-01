@@ -372,6 +372,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
         if (attempt.AskAt is { } askAt) writer.WriteString("askAt", Moments.Write(askAt));
         if (attempt.Resolution is { } resolution) writer.WriteString("resolution", resolution);
         if (attempt.ResolvedAt is { } resolvedAt) writer.WriteString("resolvedAt", Moments.Write(resolvedAt));
+        if (attempt.Decision is { } decision) writer.WriteString("decision", decision);
 
         // FABRIC-CLOSE1b: a close's token and the quests it names, written only on a close's attempt, so every other reads as it did.
         if (attempt.Close is { } close)
@@ -674,6 +675,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
             AskAt = Moments.Read(element, "askAt"),
             Resolution = resolution,
             ResolvedAt = Moments.Read(element, "resolvedAt"),
+            Decision = Text(element, "decision"),
             Close = close,
         };
     }

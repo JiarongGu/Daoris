@@ -34,6 +34,7 @@ public static class WorkBelief
 
         if (unit is null || Other(frame.Repository, unit.Repository) || Other(frame.Branch, unit.Branch)) return WorkRefusals.NotWatched;
         if (Other(frame.Commit, attempt.Call.SubjectRevision)) return WorkRefusals.Stale;
+        if (frame.Outcome.State == WorkStates.Reached && !NodeOutcomes.Fits(node, frame.Outcome.Decision)) return WorkRefusals.NotOutcome;
         return frame.At > now + WorkBounds.Minute ? WorkRefusals.Shape : null;
     }
 

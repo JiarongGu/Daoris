@@ -80,6 +80,9 @@ public sealed record WorkOutcome(
     /// receipts on the unit's resource record before the outcome is applied, so a crash between the two converges on the replay.
     /// </summary>
     public IReadOnlyList<WorkResource> Resources { get; init; } = [];
+
+    /// <summary>The route a reached decision took, on the wire as <c>outcome</c>: one of its step's declared outcomes (DECIDE1a). Null on any other.</summary>
+    public string? Decision { get; init; }
 }
 
 /// <summary>
@@ -448,6 +451,7 @@ public static class WorkWire
             into["outputs"] = written;
         }
 
+        if (outcome.Decision is not null) into["outcome"] = outcome.Decision;
         if (outcome.Resources.Count > 0) into["resources"] = Resources(outcome.Resources);
         return into;
     }
@@ -528,10 +532,18 @@ public static class WorkWire
             }
         }
 
+        field = "outcome";
+        string? decision = null;
+        if (from.TryGetProperty("outcome", out var chosen) && chosen.ValueKind != JsonValueKind.Null)
+        {
+            if (state != WorkStates.Reached || chosen.ValueKind != JsonValueKind.String || chosen.GetString() is not { } route || !NodeOutcomes.Shape.IsMatch(route)) return null;
+            decision = route;
+        }
+
         field = "resources";
         if (ReadResources(from) is not { } resources) return null;
         field = null;
-        return new WorkOutcome(state, code, evidence, outputs) { Resources = resources };
+        return new WorkOutcome(state, code, evidence, outputs) { Resources = resources, Decision = decision };
     }
 
     /// <summary>A step's name: the plugin's own id, or <c>&lt;plugin&gt;/&lt;id&gt;</c> (the kind, as §D6's example names it).</summary>

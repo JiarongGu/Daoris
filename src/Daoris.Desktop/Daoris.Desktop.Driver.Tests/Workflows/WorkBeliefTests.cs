@@ -40,6 +40,20 @@ public sealed class WorkBeliefTests
     }
 
     [Fact]
+    public void A_decisions_reach_is_believed_only_with_one_of_its_declared_outcomes()
+    {
+        var decision = Deploy with { Outcomes = ["release", "none"] };
+        string? Judge(NodeDeclaration node, string? route) => WorkBelief.Completion(
+            new(Plugin, 2, new WorkStepFrame("deploy", new WorkOutcome(WorkStates.Reached) { Decision = route }, Now, "e1", Invocation: "i-1")), Attempt, 2, node, Unit, Now);
+
+        Assert.Null(Judge(decision, "release"));
+        Assert.Equal(WorkRefusals.NotOutcome, Judge(decision, null));
+        Assert.Equal(WorkRefusals.NotOutcome, Judge(decision, "other"));
+        Assert.Equal(WorkRefusals.NotOutcome, Judge(Deploy, "release"));
+        Assert.Null(Judge(Deploy, null));
+    }
+
+    [Fact]
     public void Rule_one_the_sender_is_the_attempts_plugins_current_process_never_what_the_frame_says()
     {
         Assert.Equal(WorkRefusals.NotSender, Judged(Heard(plugin: "other.plugin")));

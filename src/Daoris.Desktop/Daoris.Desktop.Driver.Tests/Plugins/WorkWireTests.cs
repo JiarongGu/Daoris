@@ -127,6 +127,23 @@ public sealed class WorkWireTests
         { ReconcileStates.Unknown, null, null },
     };
 
+    [Fact]
+    public void A_decisions_outcome_round_trips_in_a_completion_and_in_a_reconcile_done_and_only_on_a_reach()
+    {
+        var chosen = new WorkOutcome(WorkStates.Reached) { Decision = "release" };
+        var frame = WorkWire.Step(new WorkStepFrame("find", chosen, DateTimeOffset.UtcNow, "e1", Invocation: "i1"));
+        var read = WorkWire.ReadStep(Parse(frame).GetProperty("params"), out _);
+        Assert.Equal("release", read!.Outcome.Decision);
+
+        var done = WorkWire.ReconcileAnswer(new WorkReconcileAnswer(ReconcileStates.Done, chosen));
+        Assert.Equal("release", WorkWire.ReadReconcileAnswer(Parse(done))!.Outcome!.Decision);
+
+        var failed = """{"step":"find","state":"failed","code":"x","outcome":"release","at":"2026-10-17T09:00:00Z","id":"e1","invocation":"i1"}""";
+        Assert.Null(WorkWire.ReadStep(Parse(failed), out var field));
+        Assert.Equal("outcome", field);
+        Assert.Null(WorkWire.ReadStep(Parse("""{"step":"find","state":"reached","outcome":"Not A Name","at":"2026-10-17T09:00:00Z","id":"e1","invocation":"i1"}"""), out _));
+    }
+
     [Theory]
     [MemberData(nameof(ReconcileAnswers))]
     public void A_reconcile_call_and_each_answer_round_trip(string state, string? outcome, string? code)

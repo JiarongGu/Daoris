@@ -52,7 +52,7 @@
 
 **Files.** `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Nodes/NodeContract.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Nodes/NodeGraphs.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Nodes/NodeWires.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workflows/NodeGraphsTests.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workflows/NodeWiresTests.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workflows/GraphProblemsTable.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/graph-problems.json`, `docs/decisions/D173.md`
 
-## PLUGINSTEP1b — A plugin step reports a decision: the release found or none
+## PLUGINSTEP1b — A plugin step reports a decision: the release found or none (built 2026-11-01)
 
 **Wave** 2; after DECIDE1a, PLUGINSTEP1a; sonnet.
 

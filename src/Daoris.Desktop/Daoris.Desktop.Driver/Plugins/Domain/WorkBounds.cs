@@ -61,6 +61,9 @@ public static class WorkRefusals
     /// <summary>An event not of <see cref="WorkStepFrame"/>'s shape.</summary>
     public const string Shape = "shape";
 
+    /// <summary>A reach whose outcome is not one its step declares, or that names none where the step is a decision (DECIDE1a).</summary>
+    public const string NotOutcome = "not-outcome";
+
     /// <summary>An event read from a process that is no longer the plugin's (§C4's first rule): a generation since restarted or stopped.</summary>
     public const string NotSender = "not-sender";
 }

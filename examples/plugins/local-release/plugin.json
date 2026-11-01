@@ -12,6 +12,7 @@
     {
       "id": "find",
       "reach": "performed",
+      "outcomes": ["release", "none"],
       "outputs": { "release": "local-release/release@1" },
       "evidence": { "schema": "local-release/receipt@1" },
       "perform": { "point": "work/perform", "idempotent": true, "reconcile": "work/reconcile", "transient": ["unavailable", "rate-limited", "timeout"] },

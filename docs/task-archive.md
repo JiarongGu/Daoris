@@ -5,6 +5,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## PLUGINSTEP1b — a plugin step reports a decision (2026-11-01)
+
+A manifest step's `outcomes` read into `NodeDeclaration.Outcomes`; `work/step` and `work/reconcile` done carry `outcome`, believed only if declared (`not-outcome`), put on the acceptance and kept through reconcile; the person's *it happened* on a held decision names one (`NodeAttempt.Decision`); the kit's `act` may return `outcome`, and local-release's `find` declares `release | none`. Proof in `PluginStepsTests`, `WorkWireTests`, `WorkBeliefTests`, `WorkPerformerTests` and `node --test` in the example.
+
 ## PLUGINSTEP1a — publish and release as a plugin's performed steps (2026-11-01)
 
 `examples/plugins/local-release` declares find, release and publish as performed, idempotent, reconciled steps with a temporary staging resource, all inside its data folder and never pushing; proof in `PluginKitTests` and `node --test` there. Outcomes that route the work are PLUGINSTEP1b's.
