@@ -86,6 +86,19 @@
       ]
     },
     {
+      "name": "keeping how it lands, with general driving, writes no landing",
+      "args": ["solo", "--preset", "keep", "--drive", "--plan"],
+      "exit": 0,
+      "lines": [
+        "place: `solo` — Keep how it lands; general driving",
+        "  `solo`: now Not driven · after Merge after you accept · suggested Merge after you accept",
+        "changes, each said once:",
+        "  `solo`: a tree per session, off → on",
+        "  `solo`: general driving, off → on",
+        "--plan: nothing was written, and nothing was asked."
+      ]
+    },
+    {
       "name": "a rider --with does not take is the usage",
       "args": ["engine", "--preset", "merge-after-accept", "--with", "opinions", "--plan"],
       "exit": 2,
