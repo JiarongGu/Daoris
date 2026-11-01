@@ -471,7 +471,7 @@
   "agents.setup.page.confirm.driveLabel": "drive {{name}}",
   "agents.setup.page.confirm.driveSays": "Daoris starts sessions for the work queued in {{name}} on this machine.",
   "agents.setup.page.confirm.drive": "Drive",
-  "agents.setup.page.back": "Back to {{place}} · {{section}}",
+  "agents.setup.page.back": "← Back to {{place}} · {{section}}",
   "agents.setup.page.workspaceFlow": "A workspace's workflow is set on its Repositories page for now.",
   "agents.setup.page.workspaceFlowOpen": "Open it there"
 }

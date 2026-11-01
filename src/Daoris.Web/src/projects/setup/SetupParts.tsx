@@ -53,15 +53,28 @@ export function landingRowSays(
  * One section of a Setup: its name and, folded, the line naming its values; a press opens it to its rows. Its name is
  * the press's name, and the line its description, so a reader hears the section and then what it holds. A section a
  * door asks for after it was drawn opens then (UX6g: a door into a workspace's remote, its page already on Setup).
+ *
+ * Given `open`, it is the holder's to say (SETUPUX1h): a place page holds each section's state above its mounts, so a door out and back
+ * finds it as left; `onOpenChange` is the press.
  */
-export function SetupSection({ title, summary, startsOpen, children }: {
+export function SetupSection({ title, summary, startsOpen, open: held, onOpenChange, id: given, children }: {
   title: string; summary: string; startsOpen: boolean; children: ReactNode;
+  open?: boolean; onOpenChange?: (open: boolean) => void;
+  /** The section's element id, a door's target. */
+  id?: string;
 }) {
-  const [open, setOpen] = useState(startsOpen);
-  useEffect(() => { if (startsOpen) setOpen(true); }, [startsOpen]);
-  const id = useId();
+  const [own, setOwn] = useState(startsOpen);
+  const controlled = held !== undefined;
+  const open = controlled ? held : own;
+  const setOpen = (next: boolean) => {
+    if (!controlled) setOwn(next);
+    onOpenChange?.(next);
+  };
+  useEffect(() => { if (startsOpen && !controlled) setOwn(true); }, [startsOpen, controlled]);
+  const made = useId();
+  const id = given ?? made;
   return (
-    <section aria-labelledby={`${id}-title`} className="border-t border-line first:border-t-0">
+    <section id={given} aria-labelledby={`${id}-title`} className="border-t border-line first:border-t-0">
       <h2 className="m-0 text-body font-normal">
         <button
           type="button"

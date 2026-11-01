@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { PlaceRow, PlaceWork } from '../../data/wiring';
 import i18n from '../../locales/i18n';
-import { firstSection, foldedLines, needOpening, roleNameOf, sectionsOf } from './placeShell';
+import { firstSection, foldedLines, headOf, needOpening, roleNameOf, sectionsOf } from './placeShell';
 
 // SETUPUX1h (the setup-UX design §2.1): a place page's three folds say their values from PLACES alone, each with its source, and the first
 // section by kind of place, and a section that needs the person, open themselves.
@@ -101,6 +101,34 @@ describe('the need that opens a section', () => {
   it('opens nothing where nothing is held', () => {
     expect(needOpening(ENGINE)).toBeNull();
     expect(needOpening({ ...ENGINE, needs: [{ code: 'no-checkout' }] })).toBeNull();
+  });
+});
+
+describe('the head: its pill and the facts under the title', () => {
+  const NOT_DRIVEN: PlaceRow = { ...ENGINE, repository: 'site', driven: false, trees: false, adopted: false, adoption: 'none', works: [] };
+
+  it('says a repository driven, held, and what it lands by', () => {
+    expect(headOf({ kind: 'repository', row: ENGINE }, t)).toEqual({
+      pill: { tone: 'done', label: 'Driven' },
+      facts: ['Merge after you accept, 2 options of its own', 'its own tree per session'],
+    });
+    expect(headOf({ kind: 'repository', row: { ...ENGINE, held: true } }, t).pill).toEqual({ tone: 'taken', label: 'Held' });
+  });
+
+  it('says a repository not driven by its checkout or by its adoption running', () => {
+    expect(headOf({ kind: 'repository', row: NOT_DRIVEN }, t).pill).toEqual({ tone: 'neutral', label: 'Not driven · checkout here' });
+    expect(headOf({ kind: 'repository', row: { ...NOT_DRIVEN, adoption: 'running' } }, t).pill).toEqual({ tone: 'open', label: 'Not driven · adoption running' });
+    expect(headOf({ kind: 'repository', row: { ...NOT_DRIVEN, checkout: false } }, t).pill).toEqual({ tone: 'neutral', label: 'Not driven' });
+  });
+
+  it('counts a workspace\'s driven repositories and how they land, and this machine\'s works and roles', () => {
+    const members = [ENGINE, { ...ENGINE, repository: 'api' }, { ...ENGINE, repository: 'site', values: VALUES({ lands: { preset: 'pull-request', own: [] } }) }];
+    expect(headOf({ kind: 'workspace', row: { ...ENGINE, repository: null }, counts: { driven: 3, notDriven: 17 }, members }, t)).toEqual({
+      pill: null,
+      facts: ['3 of 20 driven', 'Merge after you accept 2 · A pull request 1'],
+    });
+    const machine: PlaceRow = { ...ENGINE, workspace: null, repository: null, works: [work('build'), work('review'), work('chat', { role: 'r-build' })] };
+    expect(headOf({ kind: 'machine', row: machine }, t).facts).toEqual(['3 works · 2 roles']);
   });
 });
 

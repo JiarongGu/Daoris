@@ -126,6 +126,51 @@ function rolesLine(row: PlaceRow, kind: PlaceKind, t: TFunction, language: strin
   ]);
 }
 
+export type HeadFacts = { pill: { tone: 'done' | 'taken' | 'open' | 'neutral'; label: string } | null; facts: string[] };
+
+const landsSaid = (t: TFunction, lands: NonNullable<NonNullable<PlaceRow['values']>['lands']>): string | null => {
+  if (!lands.preset) return null;
+  const how = t(`agents.setup.defaultName.${lands.preset}`, { defaultValue: lands.preset });
+  return lands.own.length > 0 ? t('agents.setup.fold.landsOwn', { how, count: lands.own.length }) : how;
+};
+
+/**
+ * The head's pill and facts, from `PLACES` alone (§2.1): a repository's state and how it lands, a workspace's driven count and how its
+ * driven repositories land, and this machine's works and roles. `members` are the repositories in hand.
+ */
+export function headOf(
+  input: { kind: PlaceKind; row: PlaceRow; counts?: { driven: number; notDriven: number }; members?: readonly PlaceRow[] }, t: TFunction,
+): HeadFacts {
+  const { kind, row } = input;
+  if (kind === 'machine') {
+    const roles = new Set(row.works.map((each) => each.role).filter((each): each is string => Boolean(each)));
+    return { pill: null, facts: [t('agents.setup.page.machineCounts', { works: row.works.length, roles: roles.size })] };
+  }
+  if (kind === 'workspace') {
+    const counts = input.counts;
+    const landing = new Map<string, number>();
+    for (const member of input.members ?? []) {
+      const preset = member.values?.lands?.preset;
+      if (preset) landing.set(preset, (landing.get(preset) ?? 0) + 1);
+    }
+    return {
+      pill: null,
+      facts: [
+        ...(counts ? [t('agents.setup.page.drivenOf', { driven: counts.driven, total: counts.driven + counts.notDriven })] : []),
+        ...(landing.size > 0
+          ? [[...landing].map(([preset, count]) => t('agents.setup.page.landsCount', { how: t(`agents.setup.defaultName.${preset}`, { defaultValue: preset }), count })).join(t('agents.setup.fold.join'))]
+          : []),
+      ],
+    };
+  }
+  const lands = row.values?.lands ? landsSaid(t, row.values.lands) : null;
+  const pill: HeadFacts['pill'] = row.driven
+    ? row.held ? { tone: 'taken', label: t('agents.setup.page.pill.held') } : { tone: 'done', label: t('agents.setup.page.pill.driven') }
+    : row.adoption === 'running' ? { tone: 'open', label: t('agents.setup.page.pill.adoption') }
+      : { tone: 'neutral', label: t(row.checkout ? 'agents.setup.page.pill.checkout' : 'agents.setup.page.pill.notDriven') };
+  return { pill, facts: [...(lands ? [lands] : []), ...(row.driven && row.trees ? [t('agents.setup.page.trees')] : [])] };
+}
+
 /** Where a door leaves the person: a section of a place, and a row of it. */
 export type PlaceAt = { section?: PlaceSection; row?: string | null; back?: PlaceBack | null };
 
