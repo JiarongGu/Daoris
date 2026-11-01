@@ -53,7 +53,12 @@ public static class NodeOptionFields
         ],
         [NodeKinds.Check] = [new("gates", NodeOptionTypes.Names, [], false)],
         [NodeKinds.GoAhead] = [Text("act")],
+        // LANDNODE1k: each hold's switches, on where not written.
+        [NodeKinds.QuestHolds] = [.. HoldNodes.Options[NodeKinds.QuestHolds].Select(Switch)],
+        [NodeKinds.ContentHolds] = [.. HoldNodes.Options[NodeKinds.ContentHolds].Select(Switch)],
     };
+
+    private static NodeOptionField Switch(string name) => new(name, NodeOptionTypes.Switch, [], false);
 
     /// <summary>The options a built-in kind takes, in the order an editor lists them.</summary>
     public static IReadOnlyList<NodeOptionField> Of(string kind) => Table.TryGetValue(kind, out var fields) ? fields : [];
