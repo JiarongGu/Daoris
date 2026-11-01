@@ -22731,7 +22731,7 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 
 > **FLOWCHART2e — a proposal against the draft** (service, driver, modules; row e of the flowchart design, after d). `workflow_propose.draft`, the `draft` door, `WorkflowGraphDiff`, the card's fields; Apply writes nothing; with §8.4's bridge-complete payload and §8.5's diff that hides no execution change. Proof: judged against the told draft; an unknown fingerprint refused; Apply leaves the workflow store and the configuration byte for byte; the diff over the shipped graphs; the tool's description and registration tests.
 
-**Outcome** 2026-11-02: a change to the open draft is judged against the draft the conversation was told and shown as its changes, problems and candidate; its Apply opens the place's Workflow and stands, and settles only when the editor names each change taken or left. Drawing it on the chart is row f's, the editor opener row g's. Detail: D223's FLOWCHART2e note.
+**Outcome** 2026-11-02: a change to the open draft is judged against the draft the conversation was told and shown as its changes, problems and candidate; its Apply opens the place's Workflow and stands, settling only when the editor names each change taken or left. Drawing it is row f's, the opener row g's. Detail: D223's FLOWCHART2e note.
 
 ## FLOWCHART2a — the chart's components (2026-11-02, D223)
 

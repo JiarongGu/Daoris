@@ -1001,7 +1001,11 @@ public sealed class HelpRoutes(DriverContext context)
         {
             change.Id, change.What, change.Change, change.Step, change.Way, change.Was, change.Kind, change.Fields, change.Needs, change.Said,
         }).ToArray(),
-        Problems = card.Problems.Select(problem => new { problem.Code, problem.Node, problem.Wire, problem.Words }).ToArray(),
+        Problems = card.Problems.Select(problem =>
+        {
+            var (code, way, node, words) = problem;
+            return new { Code = code, Node = node, Wire = way, Words = words };
+        }).ToArray(),
         card.Proposed,
     };
 
