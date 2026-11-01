@@ -2,19 +2,16 @@ import type { TFunction } from 'i18next';
 import { type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ActorRow, RoleCatalogue, RoleChangePress, RoleChoice, RoleRow, RoleUse, StaffingFound, SuggestedRole } from '../../data/wiring';
-import { Button, Card, CardHeader, FormField, FormGrid, FormRow, Icon, Inline, Prose, SelectField, SettingList, SettingRow } from '../../design/ui';
+import { Button, Card, CardHeader, Icon, Inline, Prose, SelectField, SettingList, SettingRow } from '../../design/ui';
 import { authoredEntries, authoredText, composeAuthored } from '../../locales/authored';
 import { type Answered, InlineConfirm, Refused } from '../../work/InlineConfirm';
 import type { SettingsChoices } from '../tools';
-import { OfferedField } from './OfferedField';
+import { type Draft, type Editing, RoleEditor } from './RoleEditor';
 import { RowMore } from './RowMore';
 import { SuggestedChoicesCard } from './SuggestedChoicesCard';
 
 /** An entry as `SET_ACTOR` takes it: an agent, and its model and effort in the tool's own words, absent for account default. */
 export type ActorChoice = { agent: string; model?: string | null; effort?: string | null };
-
-/** The most choices a role holds (D205 §3.1, `ActorChoices.Most`). */
-const MOST = 4;
 
 /** How far a role's place reaches: a wider place is what a narrower one falls back to. */
 const REACH: Record<string, number> = { machine: 0, workspace: 1, repository: 2 };
@@ -41,15 +38,7 @@ const CONVERSING = new Set(['ask-daoris', 'chat']);
 const OFF_WORKS = new Set(['intake', 'ask-daoris']);
 const OFF_WORDS: Record<string, string> = { intake: 'settings.ai.intake.off', 'ask-daoris': 'settings.ai.helper.off' };
 
-const FIELD = 'w-full min-w-0 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink placeholder:italic placeholder:text-ink-faint';
-
-type Draft = { key: number; agent: string; model: string; effort: string };
-
-/** `role` is the catalogue's editor over `SET_ROLE`; `staffing` holds a role's order alone, over `SET_ACTOR`. */
-export type Editing = {
-  id: string; mode: 'role' | 'staffing'; isNew: boolean; revision: number | null; name: string; nameIn: [string, string][]; takes: string[]; work: string;
-  place: string; placeId: string; drafts: Draft[];
-};
+export type { Editing } from './RoleEditor';
 
 /** A new role's editor, its place filled where one is given (*Add a role here*); its one empty choice starts on the first agent. */
 export function newRoleEditing(
@@ -196,8 +185,10 @@ function suggestionPress(role: SuggestedRole): RoleChangePress {
  */
 export function RolesCard({
   catalogue, read = catalogue ? 'ok' : 'notOffered', staffing = [], agents, about = {}, busy = false, onSet, onSetAll, onSetActor, found = [], onAnswerFound,
-  editor: held, onEditor, only, editorOnly = false, onDiagram, offers = {}, onOpenPlace, scope: heldScope, onScope,
+  editor: held, onEditor, only, editorOnly = false, onDiagram, offers = {}, onOpenPlace, scope: heldScope, onScope, consequence,
 }: {
+  /** The one sentence of consequence before *Save*, where the page that owns the editor knows more than the editor does. */
+  consequence?: string;
   /** The open editor alone, no card, rows or adding: a place's page opens it from its own rows (AGENTSPLACE1g1). */
   editorOnly?: boolean;
   /** What each agent offers for a model and an effort, by agent; absent or null, the field is a typed name. */
@@ -263,9 +254,6 @@ export function RolesCard({
   const lines = only === undefined ? all : all.filter((line) => line.id === only);
   const lineOf = (id: string) => all.find((line) => line.id === id);
   const nameOfLine = (line: Line) => name(line.row ?? { id: line.id, seeded: true });
-  const draftOf = (entry?: RoleChoice): Draft => ({
-    key: next.current++, agent: entry?.agent ?? agents[0]?.value ?? '', model: entry?.model ?? '', effort: entry?.effort ?? '',
-  });
   const press = (at: string, change: RoleChangePress, done?: () => void) => {
     setRefused(null);
     onSet(change, { done: () => done?.(), refused: (sentence) => setRefused({ at, sentence }) });
@@ -282,15 +270,6 @@ export function RolesCard({
     }
     setEditing(editingOfLine(line, { kept, works: catalogue?.works ?? [], agents, name: nameOfLine(line), key: () => next.current++ }));
   };
-  const set = (patch: Partial<Editing>) => setEditing((now) => now && { ...now, ...patch });
-  const change = (key: number, field: 'agent' | 'model' | 'effort', value: string) =>
-    setEditing((now) => now && { ...now, drafts: now.drafts.map((draft) => (draft.key === key ? { ...draft, [field]: value } : draft)) });
-  const move = (from: number, to: number) => setEditing((now) => {
-    if (!now || to < 0 || to >= now.drafts.length) return now;
-    const moved = [...now.drafts];
-    [moved[from], moved[to]] = [moved[to]!, moved[from]!];
-    return { ...now, drafts: moved };
-  });
   const entries = (now: Editing): ActorChoice[] =>
     now.drafts.map((draft) => ({ agent: draft.agent.trim(), model: draft.model.trim() || null, effort: draft.effort.trim() || null }));
   /** *Save* (the editor's choices) or *Off* (`[]`): over `SET_ROLE` from the catalogue's editor, over `SET_ACTOR` from the order editor. */
@@ -337,131 +316,14 @@ export function RolesCard({
     const mayClear = !now.isNew && seeded && !!actor && actor.state !== 'before';
     const at = now.isNew ? '' : now.id;
     return (
-      <form
-        aria-label={title}
-        className="grid gap-2"
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (busy || (now.mode === 'role' && !kept)) return;
-          save(now);
-        }}
-      >
-        <p className="m-0 text-small font-medium text-ink">{title}</p>
-        {now.mode === 'role' && (
-          <details open={now.isNew} className="grid gap-2">
-            <summary className="cursor-pointer text-small font-medium text-ink-soft">{t('settings.ai.roles.editRole')}</summary>
-          <p className="m-0 mb-2 text-small text-ink-soft">
-            {t('settings.ai.roles.fixedPlace', { place: placeText(t, now.place, now.placeId) })}
-          </p>
-          <FormGrid columns={['name', 'name']}>
-            <FormField label={t('settings.ai.roles.field.name')}>
-              <input aria-label={t('settings.ai.roles.field.name')} value={now.name} onChange={(event) => set({ name: event.target.value })} className={FIELD} />
-            </FormField>
-            {now.nameIn.map(([tag, text], at) => (
-              <FormField key={at} label={t('settings.ai.roles.field.nameIn')}>
-                <span className="flex min-w-0 gap-1.5">
-                  <input
-                    aria-label={t('settings.ai.roles.field.nameInTag')} value={tag} placeholder="fr" className={`${FIELD} !w-20 shrink-0`}
-                    onChange={(event) => set({ nameIn: now.nameIn.map((each, i) => (i === at ? [event.target.value, each[1]] : each)) })}
-                  />
-                  <input
-                    aria-label={t('settings.ai.roles.field.nameInText')} value={text} className={FIELD}
-                    onChange={(event) => set({ nameIn: now.nameIn.map((each, i) => (i === at ? [each[0], event.target.value] : each)) })}
-                  />
-                  <Button variant="ghost" onClick={() => set({ nameIn: now.nameIn.filter((_, i) => i !== at) })}>{t('settings.ai.roles.field.nameInRemove')}</Button>
-                </span>
-              </FormField>
-            ))}
-            <Button variant="ghost" onClick={() => set({ nameIn: [...now.nameIn, ['', '']] })}>{t('settings.ai.roles.field.nameInAdd')}</Button>
-            <FormField label={t('settings.ai.roles.field.work')}>
-              <SelectField value={now.work} onChange={(value) => set({ work: value })} options={works} ariaLabel={t('settings.ai.roles.field.work')} />
-            </FormField>
-          </FormGrid>
-          </details>
-        )}
-        <FormGrid columns={['name', 'name', 'short', 'acts']} floor="40rem">
-          <FormRow head>
-            <span className="text-meta text-ink-faint">{t('settings.ai.actors.field.agent')}</span>
-            <span className="text-meta text-ink-faint">{t('settings.ai.actors.field.model')}</span>
-            <span className="text-meta text-ink-faint">{t('settings.ai.actors.field.effort')}</span>
-            <span />
-          </FormRow>
-          {now.drafts.map((draft, index) => {
-            const n = index + 1;
-            // What is in effect is shown as itself: a name typed at a terminal stays named.
-            const options = draft.agent && !agents.some((agent) => agent.value === draft.agent) ? [...agents, { value: draft.agent, label: draft.agent }] : agents;
-            return (
-              <FormRow key={draft.key}>
-                <FormField label={t('settings.ai.actors.field.agent')} when="stacked">
-                  <SelectField value={draft.agent} onChange={(value) => change(draft.key, 'agent', value)} options={[...options]} ariaLabel={t('settings.ai.actors.agentOf', { n })} />
-                </FormField>
-                <FormField label={t('settings.ai.actors.field.model')} when="stacked">
-                  <OfferedField
-                    key={draft.agent}
-                    value={draft.model}
-                    offered={offers[draft.agent]?.models}
-                    label={t('settings.ai.actors.modelOf', { n })}
-                    otherLabel={t('settings.ai.roles.offers.modelOther', { n })}
-                    onChange={(value) => change(draft.key, 'model', value)}
-                  />
-                </FormField>
-                <FormField label={t('settings.ai.actors.field.effort')} when="stacked">
-                  <OfferedField
-                    key={draft.agent}
-                    value={draft.effort}
-                    offered={offers[draft.agent]?.efforts}
-                    label={t('settings.ai.actors.effortOf', { n })}
-                    otherLabel={t('settings.ai.roles.offers.effortOther', { n })}
-                    onChange={(value) => change(draft.key, 'effort', value)}
-                  />
-                </FormField>
-                <span className="flex items-center">
-                  <Button variant="ghost" disabled={busy || index === 0} aria-label={t('settings.ai.actors.up', { n })} onClick={() => move(index, index - 1)}>
-                    <Icon name="chevronUp" size={12} />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    disabled={busy || index === now.drafts.length - 1}
-                    aria-label={t('settings.ai.actors.down', { n })}
-                    onClick={() => move(index, index + 1)}
-                  >
-                    <Icon name="chevronDown" size={12} />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    disabled={busy || now.drafts.length === 1}
-                    aria-label={t('settings.ai.actors.remove', { n })}
-                    onClick={() => setEditing((was) => was && { ...was, drafts: was.drafts.filter((each) => each.key !== draft.key) })}
-                  >
-                    <Icon name="x" size={12} />
-                  </Button>
-                </span>
-              </FormRow>
-            );
-          })}
-        </FormGrid>
-        <p className="m-0 text-small text-ink-soft">{t('settings.ai.actors.later')}</p>
-        <p className="m-0 text-small text-ink-soft">{t('settings.ai.actors.outranks')}</p>
-        {/* What a running conversation does, said where the order it follows is set (D205 §7, round 4). */}
-        <p className="m-0 text-small text-ink-soft">{t(CONVERSING.has(now.id) ? 'settings.ai.actors.goesOn' : 'settings.ai.actors.neverMoves')}</p>
-        <p className="m-0 text-small text-ink-soft">{t('settings.ai.roles.choicesNote')}</p>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="ghost" disabled={busy || now.drafts.length >= MOST} onClick={() => set({ drafts: [...now.drafts, draftOf()] })}>
-            <Icon name="plus" size={12} />
-            {t('settings.ai.actors.add')}
-          </Button>
-          <Button type="submit" disabled={busy || (now.mode === 'role' && !kept)}>{t('settings.ai.actors.save')}</Button>
-          {mayOff && !isOff && !now.isNew && (
-            <Button variant="ghost" disabled={busy || (now.mode === 'role' && !kept)} onClick={() => save(now, true)}>{t('settings.ai.actors.off')}</Button>
-          )}
-          {mayClear && (
-            <Button variant="ghost" disabled={busy} onClick={() => pressActor(at, now.id, null)}>{t('settings.ai.roles.clear')}</Button>
-          )}
-          <Button variant="ghost" disabled={busy} onClick={() => { setRefused(null); setEditing(null); }}>{t('common.cancel')}</Button>
-        </div>
-        <p className="m-0 text-small text-ink-faint">{t('settings.ai.actors.most', { count: MOST })}</p>
-        {refused && refused.at === at && <Refused sentence={refused.sentence} />}
-      </form>
+      <RoleEditor
+        editing={now} onEditing={(change) => setEditing(typeof change === 'function' ? (was) => was && change(was) : change)}
+        title={title} agents={agents} offers={offers} works={works} busy={busy} held={!kept}
+        placed={t('settings.ai.roles.fixedPlace', { place: placeText(t, now.place, now.placeId) })}
+        consequence={consequence ?? t('settings.ai.roles.editor.then')} conversing={CONVERSING.has(now.id)}
+        mayOff={mayOff} isOff={!!isOff} mayClear={mayClear} refused={refused && refused.at === at ? refused.sentence : null}
+        onSave={(off) => save(now, off)} onClear={() => pressActor(at, now.id, null)} onCancel={() => { setRefused(null); setEditing(null); }}
+      />
     );
   };
 
