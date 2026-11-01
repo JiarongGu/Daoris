@@ -65,6 +65,17 @@ public static class SetupPresets
         .. WorkflowDefaults.All.Where(shipped => shipped.SetUp).Select(shipped => new SetupPreset(shipped.Id, shipped.DeliveryWords.Names.En, shipped.Delivery)),
     ];
 
+    /// <summary>
+    /// The ask that is no delivery: <i>Keep how it lands</i> writes no landing and no workflow choice, so a saved workflow a place follows survives
+    /// a set-up. It is no row of <see cref="Table"/>, which holds the deliveries a set-up can write.
+    /// </summary>
+    public const string Keep = "keep";
+
+    public const string KeepName = "Keep how it lands";
+
+    /// <summary>Every id a place's ask may name as its preset: the deliveries, then <see cref="Keep"/>.</summary>
+    public static IReadOnlyList<string> Asks { get; } = [.. Table.Select(each => each.Id), Keep];
+
     /// <summary>A preset by its id, or null.</summary>
     public static SetupPreset? Of(string? id) => Table.FirstOrDefault(preset => preset.Id == id);
 

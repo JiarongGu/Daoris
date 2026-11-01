@@ -483,9 +483,11 @@ public sealed class DriverRoutes(DriverContext context)
     // The places (AGENTSPLACE1a, the Agents-place design §2 and §3): this machine, each workspace and a page of the driven repositories,
     // each with its driving, its works' roles and rules, the values of its head's line with where each was set, and why it needs a look,
     // by the readers a start uses. The not-driven repositories are counts, and a page of one workspace's when its fold is asked. A read of
-    // driver.json, the role store and the service's registry: it asks no git, process or account, so opening a place probes nothing (D150 point 5).
+    // driver.json, the role store and the service's registry and quests (a set-up quest still open is an adoption running): it asks no git,
+    // process or account, so opening a place probes nothing (D150 point 5). `detail` answers one place whole, driven or not, and `members` a
+    // workspace's whole list (SETUPUX1d).
     [DriverRoute("PLACES")]
-    [ByEvent("PLACES", Untold = "the service's registry, driver.json and the role store")]
+    [ByEvent("PLACES", Untold = "the service's registry and quests, driver.json and the role store")]
     private async Task<object?> PlacesAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var service = _loop.Service ?? throw NotReady();
@@ -493,14 +495,32 @@ public sealed class DriverRoutes(DriverContext context)
         var ask = new PlacesAsk();
         if (request.Payload is { ValueKind: JsonValueKind.Object } payload)
         {
-            string? Text(string name) => payload.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String && value.GetString()!.Trim() is { Length: > 0 } trimmed ? trimmed : null;
+            string? Text(JsonElement from, string name) => from.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String && value.GetString()!.Trim() is { Length: > 0 } trimmed ? trimmed : null;
+            PlaceTarget? target = payload.TryGetProperty("detail", out var detail) && detail.ValueKind == JsonValueKind.Object
+                ? new PlaceTarget(Text(detail, "workspace"), Text(detail, "repository"))
+                : null;
             ask = new PlacesAsk(
-                payload.TryGetProperty("limit", out var limit) && limit.TryGetInt32(out var count) ? count : PlacesAsk.DefaultLimit, Text("after"), Text("search"),
-                payload.TryGetProperty("needsLook", out var look) && look.ValueKind == JsonValueKind.True, Text("fold"), Text("foldAfter"), Text("foldSearch"));
+                payload.TryGetProperty("limit", out var limit) && limit.TryGetInt32(out var count) ? count : PlacesAsk.DefaultLimit, Text(payload, "after"), Text(payload, "search"),
+                payload.TryGetProperty("needsLook", out var look) && look.ValueKind == JsonValueKind.True, Text(payload, "fold"), Text(payload, "foldAfter"), Text(payload, "foldSearch"),
+                target, Text(payload, "members"));
+        }
+
+        // Only a repository not adopted can have an adoption running; an unreachable ledger reads as none running.
+        IReadOnlyList<QuestView>? quests = null;
+        if (registry.Any(known => !known.Adopted))
+        {
+            try
+            {
+                quests = await service.EveryQuestAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is not OperationCanceledException)
+            {
+                quests = null;
+            }
         }
 
         return await Task.Run<object?>(
-            () => PlaceProjection.Of(DriverConfig.Load(_loop.ConfigPath), registry, () => RoleCatalog.ReadHome(_loop.Home), ask, _loop.Home),
+            () => PlaceProjection.Of(DriverConfig.Load(_loop.ConfigPath), registry, () => RoleCatalog.ReadHome(_loop.Home), ask, _loop.Home, quests),
             cancellationToken).ConfigureAwait(false);
     }
 

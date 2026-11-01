@@ -228,6 +228,57 @@ public sealed class PlacePlanTests
         Assert.Equal(new SetupMatch(SetupPresets.NotDriven, []), Assert.Single(plan.Repositories).After.Match);
     }
 
+    /// <summary>A copy of a shipped default saved under <paramref name="id"/> in <paramref name="home"/>, as the editor saves one.</summary>
+    internal static void SaveWorkflow(string home, string id)
+    {
+        var shipped = WorkflowDefaults.Of(SetupPresets.Merge)!;
+        var planned = WorkflowOperations.PlanGraph(home, null, id, null, shipped.Names.En, "terminal", "2026-11-01T09:00:00Z", shipped.Graph(),
+            new WorkflowFrom(shipped.Id, shipped.Digest));
+        WorkflowPorts.Store(home).Write(id, planned.Plan.Result!);
+    }
+
+    [Fact]
+    public async Task Keep_how_it_lands_writes_no_landing_and_no_workflow_choice_and_allows_driving_the_ticks_and_adoption()
+    {
+        SaveWorkflow(_home, "kept");
+        var reviewed = OpinionRules.Apply(Config, new OpinionEdit { Workspace = "aurora", Set = new OpinionSet { Reviewers = ["codex-acp"] } });
+        var chosen = WorkflowSelection.Apply(reviewed.WithDrivable("atlas", false), new WorkflowUse("kept", "atlas", null, null));
+        try
+        {
+            var kept = await PlanAsync(new World(), Ask(SetupPresets.Keep, "atlas") with { Drive = true, Adoption = true, Opinion = true }, chosen);
+            var replaced = await PlanAsync(new World(), Ask(SetupPresets.Merge, "atlas") with { Drive = true }, chosen);
+
+            Assert.Contains("WORKFLOW_USE", replaced.Changes.Select(each => each.Change.Key));
+            Assert.True(kept.Applies, string.Join(" | ", kept.Refusals.Select(each => each.Code + ": " + each.Sentence)));
+            var atlas = Assert.Single(kept.Repositories);
+            Assert.Equal(["SET_TREES", "SET_DRIVABLE", "SETUP_PRESS"], atlas.Changes.Select(change => change.Key));
+            Assert.Equal(atlas.Before.Values.Landing, atlas.After.Values.Landing);
+            Assert.Equal(atlas.Before.Values.Workflow, atlas.After.Values.Workflow);
+            Assert.Equal("kept", WorkflowSelection.Resolve(chosen, "atlas", "aurora", task: null).Workflow);
+            Assert.Equal("daoris-driver place atlas --preset keep --with opinion,adoption --drive --plan", kept.Terminal);
+
+            // The ticks ride the kept workflow: a second opinion unticked is written none, a ticked one stands.
+            var ticks = await PlanAsync(new World(), Ask(SetupPresets.Keep, "engine") with { Opinion = false }, chosen);
+            var standing = await PlanAsync(new World(), Ask(SetupPresets.Keep, "engine") with { Opinion = true }, chosen);
+            Assert.Equal(["SET_OPINION"], Assert.Single(ticks.Repositories).Changes.Select(change => change.Key));
+            Assert.Empty(Assert.Single(standing.Repositories).Changes);
+        }
+        finally
+        {
+            GitSeed.Discard(_home);
+        }
+    }
+
+    [Fact]
+    public async Task Keep_how_it_lands_leaves_a_not_driven_repository_not_driven_unless_driving_is_asked()
+    {
+        var plan = await PlanAsync(new World(), Ask(SetupPresets.Keep, "atlas") with { Adoption = true }, Config.WithTrees("atlas", true));
+
+        Assert.True(plan.Applies, string.Join(" | ", plan.Refusals.Select(each => each.Code + ": " + each.Sentence)));
+        Assert.Equal(["SETUP_PRESS", "SETUP_PRESS"], Assert.Single(plan.Repositories).Changes.Select(change => change.Key));
+        Assert.False(Assert.Single(plan.Repositories).After.Driven);
+    }
+
     /// <summary>The verb's words, case by case, held to <c>fixtures/place-plan.json</c>: the same plan from the same code, and the usage.</summary>
     [Theory]
     [MemberData(nameof(Words))]

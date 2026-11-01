@@ -121,6 +121,86 @@ public sealed class DriverModuleWorkflowTests : DriverModuleBridge
         Assert.False(answer.TryGetProperty("repositories", out var unread) && unread.ValueKind != JsonValueKind.Null);
     }
 
+    /// <summary>
+    /// SETUPUX1b: with a `route` the answer also carries the graph that route follows, and the read writes nothing; without one the answer is
+    /// as it was, and the effective graph is not in it.
+    /// </summary>
+    [Fact]
+    public async Task A_route_asks_for_its_effective_graph_and_a_caller_without_one_is_answered_as_before()
+    {
+        WorkflowStore.Add(Home, new WorkflowVersionAdded("release", "Release for engine", "terminal", "2026-11-01T09:00:00Z", null,
+            WorkflowPresets.GraphTable.First(preset => preset.Id == SetupPresets.Merge).Graph()), kept: []);
+        File.WriteAllText(DriverConfigPath, """{"workflows":{"engine":{"default":"release"}}}""");
+        var (module, _) = await UpAsync();
+        var before = File.ReadAllBytes(DriverConfigPath);
+
+        var plain = await AnswerAsync(module, "WORKFLOW_CURRENT", new { repository = "engine" });
+        Assert.False(plain.TryGetProperty("effective", out _));
+
+        var answer = await AnswerAsync(module, "WORKFLOW_CURRENT", new { repository = "engine", route = "default" });
+
+        var found = WorkflowStore.Load(Home, "release")!;
+        var effective = answer.GetProperty("effective");
+        Assert.Equal("default", effective.GetProperty("route").GetString());
+        Assert.Equal("release", effective.GetProperty("workflow").GetString());
+        Assert.Equal("Release for engine", effective.GetProperty("name").GetString());
+        Assert.Equal(1, effective.GetProperty("version").GetInt32());
+        Assert.Equal(found.Read.Versions[^1].Digest, effective.GetProperty("digest").GetString());
+        Assert.Equal("repository", effective.GetProperty("source").GetProperty("level").GetString());
+        var nodes = effective.GetProperty("graph").GetProperty("nodes").EnumerateArray().Select(each => each.GetProperty("id").GetString()).ToList();
+        Assert.Equal(nodes, effective.GetProperty("cells").EnumerateArray().Select(each => each.GetProperty("node").GetString()));
+        Assert.Equal("repository", effective.GetProperty("cells")[0].GetProperty("step").GetProperty("source").GetProperty("level").GetString());
+        // The old fields are as they were, beside it.
+        Assert.Equal(plain.GetProperty("version").GetString(), answer.GetProperty("version").GetString());
+        Assert.Equal(plain.GetProperty("steps").GetRawText(), answer.GetProperty("steps").GetRawText());
+        Assert.Equal(before, File.ReadAllBytes(DriverConfigPath));
+    }
+
+    /// <summary>Current's effective graph is the handler `new --from current` writes through, its cells Current's, its limits in the driver's words; a workspace's the same over its own rules.</summary>
+    [Fact]
+    public async Task Currents_effective_graph_carries_Currents_cells_and_limits_and_a_workspaces_is_drawn_from_its_own_rules()
+    {
+        File.WriteAllText(DriverConfigPath, """
+            {
+              "workspaceOpinions": { "aurora": { "reviewers": ["codex-acp"], "required": true } },
+              "reviews": { "engine": { "required": true, "environments": [{ "name": "local", "kind": "local", "procedure": "README.md", "address": "http://localhost:4200" }] } }
+            }
+            """);
+        var (module, _) = await UpAsync();
+        var config = DriverConfig.Load(DriverConfigPath);
+
+        var repository = (await AnswerAsync(module, "WORKFLOW_CURRENT", new { repository = "engine", route = "default" })).GetProperty("effective");
+        var drawn = WorkflowCurrent.Derive(config, "engine", "aurora", []);
+        Assert.Equal("current", repository.GetProperty("workflow").GetString());
+        Assert.Equal(drawn.Version, repository.GetProperty("digest").GetString());
+        Assert.Equal(JsonValueKind.Null, repository.GetProperty("version").ValueKind);
+        Assert.Equal(WorkflowWords.GraphOfCurrent(drawn, false, false).ToJsonString(), repository.GetProperty("graph").GetRawText());
+        var look = repository.GetProperty("cells").EnumerateArray().Single(each => each.GetProperty("node").GetString() == "look");
+        Assert.Equal(WorkflowCurrent.ToJson(drawn.Steps.Single(step => step.Id == "look")), look.GetProperty("step").GetRawText());
+        Assert.Equal(WorkflowLimits.Says(WorkflowLimits.LookPartial), repository.GetProperty("limits").GetProperty(WorkflowLimits.LookPartial).GetString());
+
+        var workspace = (await AnswerAsync(module, "WORKFLOW_CURRENT", new { workspace = "aurora", route = "default" })).GetProperty("effective");
+        var shared = WorkflowCurrent.Derive(config, null, "aurora", []);
+        Assert.Equal(WorkflowWords.GraphOfCurrent(shared, false, false).ToJsonString(), workspace.GetProperty("graph").GetRawText());
+        Assert.Equal(shared.Version, workspace.GetProperty("digest").GetString());
+    }
+
+    /// <summary>The landed route under Current is no verification and draws no graph; a route that is none, or a kind the workspace does not declare, is refused.</summary>
+    [Fact]
+    public async Task The_landed_route_under_Current_draws_nothing_and_an_unknown_route_is_refused()
+    {
+        var (module, _) = await UpAsync();
+
+        var landed = (await AnswerAsync(module, "WORKFLOW_CURRENT", new { repository = "engine", route = "landed" })).GetProperty("effective");
+        Assert.Equal("current", landed.GetProperty("workflow").GetString());
+        Assert.False(landed.GetProperty("verifies").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, landed.GetProperty("graph").ValueKind);
+        Assert.Empty(landed.GetProperty("cells").EnumerateArray());
+
+        Assert.Contains("kind:<name>", await RefusalAsync(module, "WORKFLOW_CURRENT", new { repository = "engine", route = "nonsense" }));
+        Assert.Contains("docs", await RefusalAsync(module, "WORKFLOW_CURRENT", new { repository = "engine", route = "kind:docs" }));
+    }
+
     private const string Blob = "3b18e512dba79e4c8300dd08aeb37f8e728b8dad";
 
     /// <summary>A verification pipeline saved here, made so at a terminal (FABRIC-PIPELINE1a).</summary>

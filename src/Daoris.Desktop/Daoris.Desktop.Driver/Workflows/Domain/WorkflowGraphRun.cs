@@ -348,7 +348,8 @@ public static class WorkflowGraphRuns
     /// kind; its options as its settings, the landing's form and press where the graph leaves them to the repository's rule, as that rule says
     /// them.
     /// </summary>
-    private static WorkflowStep Cell(NodeDeclaration node, WorkflowProcess? process)
+    /// <param name="level">The level that chose the workflow where no run's binding says it (<see cref="WorkflowLevels"/>), for a cell read before any run.</param>
+    public static WorkflowStep Cell(NodeDeclaration node, WorkflowProcess? process, string? level = null)
     {
         var settings = node.Options.Select(option => new WorkflowSetting(option.Key, NodeOptions.Value(option.Value))).ToList();
         void Default(string name, object? value)
@@ -384,7 +385,7 @@ public static class WorkflowGraphRuns
             _ => (node.Kind, WorkflowParticipation.Automatic, WorkflowExecutor.Daoris, null),
         };
         return new WorkflowStep(node.Id, kind, participation, executor, press,
-            new WorkflowSource("workflow", process?.Binding?.Level ?? WorkflowLevels.Repository), settings, WorkflowRuntime.Built, null);
+            new WorkflowSource("workflow", process?.Binding?.Level ?? level ?? WorkflowLevels.Repository), settings, WorkflowRuntime.Built, null);
     }
 
     /// <summary>What a node's status is bound to: its reach's acceptance where it is reached, else its attempt's binding, kept as history.</summary>

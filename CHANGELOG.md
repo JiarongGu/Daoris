@@ -5,6 +5,7 @@ with the version and date at release.
 
 ## Unreleased
 
+- `daoris-driver place … --preset keep` plans a set-up that turns driving, a second opinion, your look or adoption on without touching how the place lands: it writes no landing rule and does not change the workflow the place follows, so a saved workflow survives it.
 - A repository that chooses a saved workflow with an automatic `land` (such as a copy of *Merge automatically*) now lands each piece of work through that step: Daoris writes what it will deliver before merging, as it does under Current, so a Daoris stopped part way is settled at its next start, and the run's view reads the landing done and the line's step passed instead of waiting on *What the line holds*.
 - `daoris` at a terminal waits for a slow service whose Daoris is running, as `daoris-driver` does: after the first two seconds it says one line on stderr and asks again each second, each ask up to ten seconds, for thirty in all, before saying nothing answered; a Daoris that is not running is still refused at once (SERVICEPROBE1b).
 - A plugin step that decides may say which of its outcomes carry an output (`outputsOn` in its manifest step and its graph node): a reach with another outcome leaves it out, so the release workflow's `none` route, where Local release's `find` finds nothing pending, now ends after the line instead of being refused. A graph that feeds such an output to a step another outcome's route can start is refused when saved.

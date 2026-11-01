@@ -24,7 +24,8 @@ public sealed class WorkflowRoutes(DriverContext context)
     // A repository's Current, or a workspace's: `{repository}` or `{workspace}`, exactly one. A repository's workspace is the
     // registry's, so it waits for the driver as the lines do; one the registry does not hold is read as in no workspace, and
     // the answer says so. A workspace's Current is the file's alone, and beside it each repository the registry holds there,
-    // with whether a rule of its own makes it follow something else, or none where the registry is not up yet.
+    // with whether a rule of its own makes it follow something else, or none where the registry is not up yet. An optional `route`
+    // (`default`, `kind:<name>` or `landed`) adds `effective`: the graph that route follows (SETUPUX1b, D221), read and never written.
     [DriverRoute("WORKFLOW_CURRENT")]
     private async Task<object?> WorkflowCurrentAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -38,6 +39,7 @@ public sealed class WorkflowRoutes(DriverContext context)
         var config = DriverConfig.Load(_loop.ConfigPath);
         // The plugins beside the file, switched on and sound, as the landing's and the terminal's doors read them.
         var plugins = WorkflowCurrent.PluginsOf(PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names));
+        var route = Optional(request, "route");
 
         if (repository is not null)
         {
@@ -46,7 +48,8 @@ public sealed class WorkflowRoutes(DriverContext context)
             var known = snapshot.Repositories.FirstOrDefault(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase));
             var drawn = WorkflowCurrent.Derive(config, repository, known?.Workspace, plugins);
             var start = await StartAsync(config, repository, known?.Workspace, cancellationToken).ConfigureAwait(false);
-            return Answer(drawn, repository, RemoteTarget.Workspace(known?.Workspace), registered: known is not null, repositories: null, start);
+            var effective = route is null ? null : WorkflowEffectives.Read(config, new WorkflowFiles(_loop.Home), repository, known?.Workspace, route, plugins);
+            return Answer(drawn, repository, RemoteTarget.Workspace(known?.Workspace), registered: known is not null, repositories: null, start, effective);
         }
 
         var shared = WorkflowCurrent.Derive(config, null, workspace, plugins);
@@ -65,7 +68,8 @@ public sealed class WorkflowRoutes(DriverContext context)
         }
 
         return Answer(shared, null, workspace!, registered: null, repositories: here,
-            await StartAsync(config, null, workspace, cancellationToken).ConfigureAwait(false));
+            await StartAsync(config, null, workspace, cancellationToken).ConfigureAwait(false),
+            route is null ? null : WorkflowEffectives.Read(config, new WorkflowFiles(_loop.Home), null, workspace, route, plugins));
     }
 
     /// <summary>
@@ -517,12 +521,31 @@ public sealed class WorkflowRoutes(DriverContext context)
     /// sentence by its code, for a page with no words of its own for one; and the start node (FABRIC-PIPELINE1a).
     /// </summary>
     private static object Answer(
-        CurrentWorkflow drawn, string? repository, string workspace, bool? registered, IReadOnlyList<object>? repositories, object start)
+        CurrentWorkflow drawn, string? repository, string workspace, bool? registered, IReadOnlyList<object>? repositories, object start,
+        WorkflowEffective? effective)
     {
         var limits = new JsonObject();
         foreach (var code in drawn.Steps.Select(step => step.Limit).OfType<string>().Distinct(StringComparer.Ordinal))
         {
             limits[code] = WorkflowLimits.Says(code);
+        }
+
+        // SETUPUX1b: only a caller that asked for a route is answered `effective`; an older one is answered as it was.
+        if (effective is not null)
+        {
+            return new
+            {
+                Repository = repository,
+                Workspace = workspace,
+                Registered = registered,
+                drawn.StartHolds,
+                Steps = drawn.Steps.Select(step => JsonDocument.Parse(WorkflowCurrent.ToJson(step)).RootElement.Clone()).ToArray(),
+                drawn.Version,
+                Limits = limits,
+                Repositories = repositories,
+                Start = start,
+                Effective = EffectiveAnswer(effective),
+            };
         }
 
         return new
@@ -536,6 +559,31 @@ public sealed class WorkflowRoutes(DriverContext context)
             Limits = limits,
             Repositories = repositories,
             Start = start,
+        };
+    }
+
+    /// <summary>
+    /// A route's effective graph (SETUPUX1b): the workflow it follows and how it was chosen, its version or Current's digest, the graph to
+    /// draw, and each node's cell as <c>WORKFLOW_RUN</c> answers a step, with each limit a cell carries in the driver's words.
+    /// </summary>
+    private static object EffectiveAnswer(WorkflowEffective effective)
+    {
+        var limits = new JsonObject();
+        foreach (var code in effective.Limits) limits[code] = WorkflowLimits.Says(code);
+        return new
+        {
+            effective.Route,
+            effective.Workflow,
+            effective.Name,
+            effective.Version,
+            effective.Digest,
+            effective.Schema,
+            Source = new { effective.Source.Level, effective.Source.Kind, effective.Source.Label, effective.Source.Paths },
+            effective.Verifies,
+            effective.Graph,
+            Cells = effective.Cells.Select(cell => new { cell.Node, Step = JsonDocument.Parse(WorkflowCurrent.ToJson(cell.Step)).RootElement.Clone() }).ToArray(),
+            Limits = limits,
+            effective.Problem,
         };
     }
 

@@ -32,8 +32,16 @@ public sealed record PlaceValue(string? Value, string Source);
 /// <summary>Why a place needs a look, judged from the configuration alone: a code the page words, and what it names.</summary>
 public sealed record PlaceNeed(string Code, string? Detail = null);
 
-/// <summary>One work at a place, light: the role a start finds (<see cref="RoleCatalog.RoleFor"/>) and the rule's consent (<see cref="WorkPolicies.Of"/>).</summary>
-public sealed record PlaceWork(string Work, string? Role, string? Held, string? Consent, string Source, string? PolicyFailed);
+/// <summary>A role's names in both languages, as its record holds them.</summary>
+public sealed record PlaceRoleNames(string En, string Zh);
+
+/// <summary>
+/// One work at a place, light: the role a start finds (<see cref="RoleCatalog.RoleFor"/>) with its names and the scope it sits at, and the
+/// rule's consent (<see cref="WorkPolicies.Of"/>). <paramref name="Source"/> is the rule's, never the role's.
+/// </summary>
+public sealed record PlaceWork(
+    string Work, string? Role, string? Held, string? Consent, string Source, string? PolicyFailed,
+    PlaceRoleNames? RoleNames = null, RoleScope? RoleScope = null);
 
 /// <summary>
 /// The default a place follows, by its id, and each option the place says otherwise, as <c>accept `automatic`</c>: under Current
@@ -48,17 +56,26 @@ public sealed record PlaceDefault(string? Default, IReadOnlyList<string> Differs
 
 /// <summary>The values a head's line says, each as its execution reader resolves it.</summary>
 /// <param name="Follows">The default its workflow follows; null where it follows none, or its version is not read here.</param>
+/// <param name="Lands">
+/// How the work it follows lands (<see cref="SetupPresets.Match"/> over <see cref="SetupPresets.LandOf"/> of its steps, read as driven), with
+/// the options of its own; null where the version is not read here.
+/// </param>
+/// <param name="Look">Whether a review environment holds its work for your look: <c>on</c> where one is required, <c>off</c> otherwise; none set reads null.</param>
+/// <param name="Helpers">What a helper its agent asks for does: the helpers rule's mode.</param>
+/// <param name="Answer">The standing answer's words, a repository's own; null for none.</param>
 public sealed record PlaceValues(
     PlaceValue Line, PlaceValue Landing, PlaceValue Workflow, PlaceValue Landed, PlaceValue Commits, PlaceValue Opinion, PlaceValue HandOver,
-    PlaceValue Language, PlaceValue Access, PlaceDefault? Follows);
+    PlaceValue Language, PlaceValue Access, PlaceDefault? Follows, SetupMatch? Lands = null, PlaceValue? Look = null, PlaceValue? Helpers = null,
+    PlaceValue? Answer = null);
 
-/// <summary>A place: this machine (no workspace), a workspace (no repository) or a driven repository.</summary>
+/// <summary>A place: this machine (no workspace), a workspace (no repository) or a repository.</summary>
+/// <param name="Adoption">A repository's set-up: <c>adopted</c>, <c>running</c> (its set-up quest is open or taken) or <c>none</c>; null for the others.</param>
 public sealed record PlaceRow(
     string? Workspace, string? Repository, bool Driven, bool Held, bool Trees, bool Checkout, bool Adopted, PlaceValues? Values,
-    IReadOnlyList<PlaceWork> Works, IReadOnlyList<PlaceNeed> Needs);
+    IReadOnlyList<PlaceWork> Works, IReadOnlyList<PlaceNeed> Needs, string? Adoption = null);
 
-/// <summary>A workspace's row with the counts the fold says.</summary>
-public sealed record PlaceWorkspace(PlaceRow Place, int Driven, int NotDriven);
+/// <summary>A workspace's row with the counts the fold says; <paramref name="Running"/> of the not driven stand among the driven, their adoption running.</summary>
+public sealed record PlaceWorkspace(PlaceRow Place, int Driven, int NotDriven, int Running = 0);
 
 /// <summary>A not-driven repository, named only.</summary>
 public sealed record UndrivenRow(string Workspace, string Repository, bool Checkout);
@@ -66,18 +83,31 @@ public sealed record UndrivenRow(string Workspace, string Repository, bool Check
 /// <summary>One page of a workspace's not-driven repositories.</summary>
 public sealed record UndrivenPage(string Workspace, IReadOnlyList<UndrivenRow> Rows, string? Next, int Total);
 
-/// <summary>What <c>PLACES</c> asks: the page, its search and filter, and the not-driven page when the fold is open.</summary>
+/// <summary>A place asked for whole: a repository of a workspace, or a workspace when no repository is named.</summary>
+public sealed record PlaceTarget(string? Workspace, string? Repository);
+
+/// <summary>One repository of a workspace, as its chooser needs it.</summary>
+public sealed record PlaceMember(string Repository, bool Driven, bool Checkout, string Adoption);
+
+/// <summary>Every repository of a workspace, not the page in hand.</summary>
+public sealed record PlaceMembers(string Workspace, IReadOnlyList<PlaceMember> Rows);
+
+/// <summary>
+/// What <c>PLACES</c> asks: the page, its search and filter, the not-driven page when the fold is open, one place whole
+/// (<paramref name="Detail"/>) and a workspace's members (<paramref name="Members"/>).
+/// </summary>
 public sealed record PlacesAsk(
     int Limit = PlacesAsk.DefaultLimit, string? After = null, string? Search = null, bool NeedsLook = false, string? Fold = null,
-    string? FoldAfter = null, string? FoldSearch = null)
+    string? FoldAfter = null, string? FoldSearch = null, PlaceTarget? Detail = null, string? Members = null)
 {
     public const int DefaultLimit = 50;
     public const int MaxLimit = 200;
 }
 
-/// <summary>This machine, each workspace and a page of the driven repositories.</summary>
+/// <summary>This machine, each workspace and a page of the driven repositories, and the detail and members asked for.</summary>
 public sealed record PlacesRead(
-    PlaceRow Machine, IReadOnlyList<PlaceWorkspace> Workspaces, IReadOnlyList<PlaceRow> Repositories, string? Next, int Matching, UndrivenPage? Undriven);
+    PlaceRow Machine, IReadOnlyList<PlaceWorkspace> Workspaces, IReadOnlyList<PlaceRow> Repositories, string? Next, int Matching, UndrivenPage? Undriven,
+    PlaceRow? Detail = null, PlaceMembers? Members = null);
 
 /// <summary>
 /// The Agents place's effective projection (AGENTSPLACE1a, the design §2 and §3): this machine, each workspace and every driven
@@ -89,9 +119,11 @@ public sealed record PlacesRead(
 /// </summary>
 public static class PlaceProjection
 {
-    /// <param name="home">The home whose saved workflows a place's choice names, read for the default each version follows; null reads none.</param>
+    /// <param name="home">The home whose saved workflows a place's choice names, read for the default each version follows and how it lands; null reads none.</param>
+    /// <param name="quests">The service's quests, read for each set-up that runs (<see cref="SetupQuests.OpenFor"/>, the reader the set-up press refuses a second by); null reads none, so none runs.</param>
     public static PlacesRead Of(
-        DriverConfig config, IReadOnlyList<RepoView> registry, Func<RoleCatalog> catalogue, PlacesAsk ask, string? home = null)
+        DriverConfig config, IReadOnlyList<RepoView> registry, Func<RoleCatalog> catalogue, PlacesAsk ask, string? home = null,
+        IReadOnlyList<QuestView>? quests = null)
     {
         var workflows = home is null ? null : WorkflowPorts.Store(home);
         RoleCatalog? read = null;
@@ -134,7 +166,9 @@ public static class PlaceProjection
                 }
 
                 var level = place.Repository is not null ? PlaceSource.RepositoryLevel : place.Workspace is not null ? PlaceSource.WorkspaceLevel : PlaceSource.Machine;
-                works.Add(new PlaceWork(work, role?.Id, held, policy?.Consent, policy is null ? PlaceSource.Default : PlaceSource.At(policy.Source, level), policyFailed));
+                works.Add(new PlaceWork(
+                    work, role?.Id, held, policy?.Consent, policy is null ? PlaceSource.Default : PlaceSource.At(policy.Source, level), policyFailed,
+                    role is null ? null : new PlaceRoleNames(role.NameEn, role.NameZh), role?.Scope));
             }
 
             return works;
@@ -157,6 +191,24 @@ public static class PlaceProjection
         var machine = new PlaceRow(null, null, false, false, false, false, false, null, machineWorks, machineNeeds);
 
         var rows = registry.OrderBy(known => known.Workspace, StringComparer.Ordinal).ThenBy(known => known.Repository, StringComparer.Ordinal).ToList();
+
+        // A repository's row, the one the list and the detail share: a driven one's needs add its checkout and adoption.
+        PlaceRow RepositoryRow(RepoView known)
+        {
+            var workspace = RemoteTarget.Workspace(known.Workspace);
+            var driven = Named(config.Drivable, known.Repository);
+            var works = WorksAt(new RolePlace(workspace, known.Repository));
+            var needs = NeedsOf(works, unreadRepositories.Where(each => string.Equals(each.Name, known.Repository, StringComparison.OrdinalIgnoreCase)));
+            var checkout = known.Root is { Length: > 0 };
+            if (driven && !checkout) needs.Add(new PlaceNeed("no-checkout"));
+            if (driven && !known.Adopted) needs.Add(new PlaceNeed("not-adopted"));
+            return new PlaceRow(
+                workspace, known.Repository, driven, Named(config.Holds, known.Repository), config.OpensOwnTree(known.Repository), checkout, known.Adopted,
+                ValuesOf(known.Repository, workspace, PlaceSource.RepositoryLevel), works, needs, AdoptionOf(known, quests));
+        }
+
+        bool Stands(RepoView known) => Named(config.Drivable, known.Repository) || AdoptionOf(known, quests) == Running;
+
         var workspaces = new List<PlaceWorkspace>();
         foreach (var group in rows.GroupBy(known => RemoteTarget.Workspace(known.Workspace), StringComparer.Ordinal))
         {
@@ -165,30 +217,53 @@ public static class PlaceProjection
             var unread = unreadWorkspaces.Where(each => string.Equals(each.Name, group.Key, StringComparison.OrdinalIgnoreCase));
             workspaces.Add(new PlaceWorkspace(
                 new PlaceRow(group.Key, null, false, false, false, false, false, ValuesOf("", group.Key, PlaceSource.WorkspaceLevel), works, NeedsOf(works, unread)),
-                driven, group.Count() - driven));
+                driven, group.Count() - driven, group.Count(known => !Named(config.Drivable, known.Repository) && Stands(known))));
         }
 
         var limit = Math.Clamp(ask.Limit, 1, PlacesAsk.MaxLimit);
         var drivenRows = new List<PlaceRow>();
-        foreach (var known in rows.Where(known => Named(config.Drivable, known.Repository)))
+        foreach (var known in rows.Where(Stands))
         {
-            var workspace = RemoteTarget.Workspace(known.Workspace);
             if (ask.Search is { Length: > 0 } search && !known.Repository.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase)) continue;
-            var works = WorksAt(new RolePlace(workspace, known.Repository));
-            var needs = NeedsOf(works, unreadRepositories.Where(each => string.Equals(each.Name, known.Repository, StringComparison.OrdinalIgnoreCase)));
-            var checkout = known.Root is { Length: > 0 };
-            if (!checkout) needs.Add(new PlaceNeed("no-checkout"));
-            if (!known.Adopted) needs.Add(new PlaceNeed("not-adopted"));
-            if (ask.NeedsLook && needs.Count == 0) continue;
-            drivenRows.Add(new PlaceRow(
-                workspace, known.Repository, true, Named(config.Holds, known.Repository), config.OpensOwnTree(known.Repository), checkout, known.Adopted,
-                ValuesOf(known.Repository, workspace, PlaceSource.RepositoryLevel), works, needs));
+            var row = RepositoryRow(known);
+            if (ask.NeedsLook && row.Needs.Count == 0) continue;
+            drivenRows.Add(row);
+        }
+
+        PlaceRow? detail = null;
+        if (ask.Detail is { } target)
+        {
+            if (target.Repository is { Length: > 0 } repository)
+            {
+                var found = rows.FirstOrDefault(known => string.Equals(known.Repository, repository, StringComparison.OrdinalIgnoreCase)
+                    && (target.Workspace is not { Length: > 0 } || RemoteTarget.Workspace(known.Workspace) == RemoteTarget.Workspace(target.Workspace)));
+                detail = found is null ? null : RepositoryRow(found);
+            }
+            else detail = target.Workspace is { Length: > 0 } name ? workspaces.FirstOrDefault(each => each.Place.Workspace == RemoteTarget.Workspace(name))?.Place : machine;
+        }
+
+        PlaceMembers? members = null;
+        if (ask.Members is { Length: > 0 } member)
+        {
+            var name = RemoteTarget.Workspace(member);
+            members = new PlaceMembers(name, [.. rows.Where(known => RemoteTarget.Workspace(known.Workspace) == name)
+                .Select(known => new PlaceMember(known.Repository, Named(config.Drivable, known.Repository), known.Root is { Length: > 0 }, AdoptionOf(known, quests)))]);
         }
 
         var page = drivenRows.Where(row => ask.After is null || string.CompareOrdinal(Cursor(row.Workspace!, row.Repository!), ask.After) > 0).Take(limit + 1).ToList();
         var next = page.Count > limit ? Cursor(page[limit - 1].Workspace!, page[limit - 1].Repository!) : null;
-        return new PlacesRead(machine, workspaces, [.. page.Take(limit)], next, drivenRows.Count, ask.Fold is { Length: > 0 } fold ? Undriven(config, rows, fold, ask, limit) : null);
+        return new PlacesRead(
+            machine, workspaces, [.. page.Take(limit)], next, drivenRows.Count,
+            ask.Fold is { Length: > 0 } fold ? Undriven(config, rows.Where(known => !Stands(known)).ToList(), fold, ask, limit) : null, detail, members);
     }
+
+    private const string Running = "running";
+
+    /// <summary>A repository's set-up: adopted as the registry marks it, else running while its set-up quest is open or taken, else none.</summary>
+    private static string AdoptionOf(RepoView known, IReadOnlyList<QuestView>? quests) =>
+        known.Adopted ? "adopted"
+        : quests is not null && SetupQuests.OpenFor(quests, known.Repository) is not null ? Running
+        : "none";
 
     /// <summary>
     /// The values a place's head says, each as its execution reader resolves it over <paramref name="config"/> and with where it was set,
@@ -210,6 +285,12 @@ public static class PlaceProjection
             : SessionLanguages.OfWorkspace(config, workspace);
         var access = AccessRules.Resolve(config, repository, workspace);
         var sources = access.Pauses.Select(pause => PlaceSource.At(pause.Source, level)).Distinct(StringComparer.Ordinal).ToList();
+        var review = ReviewRules.Resolve(config, repository, workspace);
+        var helpers = HelperRules.Resolve(config, repository, workspace);
+        var standing = level == PlaceSource.RepositoryLevel ? config.StandingFor(repository) : null;
+        var scope = level == PlaceSource.RepositoryLevel ? repository : "";
+        var steps = StepsFollowed(config, scope, workspace, flow.Workflow, workflows);
+        var lands = steps is null ? null : SetupPresets.Match(driven: true, SetupPresets.LandOf(steps));
         return new PlaceValues(
             new(line.Branch, PlaceSource.At(line.Source, level)),
             new(landing.Rule.Form, PlaceSource.At(landing.Source, level)),
@@ -220,21 +301,32 @@ public static class PlaceProjection
             new(handOver.Rule.Mode, PlaceSource.At(handOver.Source, level)),
             language is null ? new(null, PlaceSource.Default) : new(language.Code, PlaceSource.At(language.Source, level)),
             new(access.Full ? "full" : access.Today ? "today" : "custom", sources is [var one] ? one : "mixed"),
-            FollowsOf(config, level == PlaceSource.RepositoryLevel ? repository : "", workspace, flow.Workflow, workflows));
+            FollowsOf(flow.Workflow, lands, workflows),
+            lands,
+            review is null ? new(null, PlaceSource.Default) : new(review.Rule is { IsNone: false, Required: true } ? "on" : "off", PlaceSource.At(review.Source, level)),
+            new(helpers.Rule.Mode, PlaceSource.At(helpers.Source, level)),
+            standing is null ? new(null, PlaceSource.Default) : new(standing.Says, PlaceSource.Here));
+    }
+
+    /// <summary>
+    /// The steps a place's workflow follows, as <c>WorkflowProcesses.Otherwise</c> reads them for a start: Current drawn, or the newest version of
+    /// a saved workflow that reads. Null for a version this build cannot read here.
+    /// </summary>
+    private static IReadOnlyList<NamedStep>? StepsFollowed(DriverConfig config, string repository, string? workspace, string chosen, IWorkflowStore? workflows)
+    {
+        if (chosen == WorkflowSelection.Current) return Involvement.StepsOf(WorkflowCurrent.Derive(config, repository, workspace, []));
+        var newest = WorkflowNamed.IsId(chosen) ? workflows?.Load(chosen)?.Read.Versions.LastOrDefault(each => each.Steps is not null || each.Graph is not null) : null;
+        return newest is null ? null : newest.Steps ?? Involvement.StepsOf(newest.Graph!);
     }
 
     /// <summary>
     /// The default a place's workflow follows: under Current, the one its landing rule's delivery matches
-    /// (<see cref="SetupPresets.Match"/>), with what the rule says otherwise; for a saved workflow, the default its newest version that reads was
+    /// (<paramref name="lands"/>), with what the rule says otherwise; for a saved workflow, the default its newest version that reads was
     /// copied from, with what the copy changed. Null for a version copied from none, or one this build cannot read.
     /// </summary>
-    private static PlaceDefault? FollowsOf(DriverConfig config, string repository, string? workspace, string chosen, IWorkflowStore? workflows)
+    private static PlaceDefault? FollowsOf(string chosen, SetupMatch? lands, IWorkflowStore? workflows)
     {
-        if (chosen == WorkflowSelection.Current)
-        {
-            var match = SetupPresets.Match(driven: true, SetupPresets.LandOf(Involvement.StepsOf(WorkflowCurrent.Derive(config, repository, workspace, []))));
-            return new PlaceDefault(match.Preset, match.Own);
-        }
+        if (chosen == WorkflowSelection.Current) return lands is null ? null : new PlaceDefault(lands.Preset, lands.Own);
 
         var newest = WorkflowNamed.IsId(chosen) ? workflows?.Load(chosen)?.Read.Versions.LastOrDefault(each => each.Steps is not null || each.Graph is not null) : null;
         if (newest?.From is not { } from) return null;

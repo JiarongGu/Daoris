@@ -45,7 +45,7 @@ public static class PlaceApplyRefusals
 /// acceptances against the plan's, the quest found by its key (<see cref="KeyOf"/>, a line of its body). What is found is <c>done</c>; what is
 /// not is <c>pending</c> again, since nothing of it landed, and a press of the same digest goes on from there.</para>
 /// <para><b>No named workflow is saved here:</b> every preset is Current's <c>land</c>, so a plan carries none; the receipt's operations are
-/// open to the step when one does.</para>
+/// open to the step when one does. The <c>keep</c> ask writes a subset of that (no landing, no workflow choice), so a saved workflow survives.</para>
 /// <para><b>The write guard.</b> The configuration is judged again inside the edit, over the file as that edit reads it (each repository's
 /// changes must be the plan's), and written under <see cref="DriverConfig.Save"/>'s own lock, which keeps another writer's keys. The bound is
 /// the lock's: a change made between that read and the rename is kept beside this one, not refused.</para>
