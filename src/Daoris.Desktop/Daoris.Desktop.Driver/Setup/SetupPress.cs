@@ -154,8 +154,7 @@ public static class SetupPress
 
     /// <summary>A set-up already open or taken for <paramref name="repository"/>, refused as the press refuses it; null where none is.</summary>
     public static SetupRefusal? OpenRefusal(IEnumerable<QuestView> quests, string repository) =>
-        quests.FirstOrDefault(quest => string.Equals(quest.To, repository, StringComparison.OrdinalIgnoreCase)
-                && quest.Status is "Open" or "Taken" && SetupQuests.IsSetup(quest.Title)) is { } open
+        SetupQuests.OpenFor(quests, repository) is { } open
             ? new(SetupRefusals.Open, $"a set-up is already {open.Status.ToLowerInvariant()} for `{repository}`: `#{open.Id}`, {open.Title}.")
             : null;
 

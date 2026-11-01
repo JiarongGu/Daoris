@@ -105,7 +105,8 @@ public sealed class DriverModulePlacesTests : DriverModuleBridge
 
         var answer = await AnswerAsync(module, "PLACES");
 
-        Assert.Equal(["/api/registry"], service.Asked.Distinct());
+        // The registry, and the quests only to see whether a set-up runs for a repository not adopted.
+        Assert.Equal(["/api/quests", "/api/registry"], service.Asked.Distinct().Order(StringComparer.Ordinal));
         Assert.Equal(["engine", "game", "site"], answer.GetProperty("repositories").EnumerateArray().Select(row => row.GetProperty("repository").GetString()));
         var borealis = answer.GetProperty("workspaces").EnumerateArray().Single(row => row.GetProperty("place").GetProperty("workspace").GetString() == "borealis");
         Assert.Equal((1, 41), (borealis.GetProperty("driven").GetInt32(), borealis.GetProperty("notDriven").GetInt32()));
@@ -178,8 +179,83 @@ public sealed class DriverModulePlacesTests : DriverModuleBridge
         static string? Name(JsonElement place, string name) => place.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
     }
 
+    private static string SetUpQuest(string repository, string status) =>
+        $$"""{"id":"q{{repository}}","from":"work","to":"{{repository}}","title":"{{SetupQuests.Title(SetupQuests.SetUp, new DateOnly(2026, 11, 1))}}","body":"","status":"{{status}}"}""";
+
+    /// <summary>SETUPUX1d: <c>detail</c> answers a place whole, driven or not, by the readers a start uses, and asks nothing beyond the registry and quests.</summary>
+    [Fact]
+    public async Task A_detail_answers_one_place_whole_equal_to_its_row_and_its_readers_and_probes_nothing()
+    {
+        var service = new StandIn(quests: [SetUpQuest("many-05", "Open")]);
+        var module = await ModuleAsync(service);
+        var config = DriverConfig.Load(DriverConfigPath);
+
+        var listed = await AnswerAsync(module, "PLACES");
+        var driven = (await AnswerAsync(module, "PLACES", new { detail = new { workspace = "aurora", repository = "engine" } })).GetProperty("detail");
+        Assert.Equal(Repository(listed, "engine").GetRawText(), driven.GetRawText());
+        Assert.Equal(JsonValueKind.Null, listed.GetProperty("detail").ValueKind);
+
+        // Not driven: the same row, built by the same readers.
+        var tools = (await AnswerAsync(module, "PLACES", new { detail = new { workspace = "aurora", repository = "tools" } })).GetProperty("detail");
+        Assert.False(tools.GetProperty("driven").GetBoolean());
+        var expected = PlaceProjection.ValuesAt(config, "tools", "aurora", PlaceSource.RepositoryLevel);
+        Assert.Equal(expected.Landing.Value, tools.GetProperty("values").GetProperty("landing").GetProperty("value").GetString());
+        Assert.Null(expected.Lands);
+        Assert.Equal(JsonValueKind.Null, tools.GetProperty("values").GetProperty("lands").ValueKind);
+        Assert.Equal("adopted", tools.GetProperty("adoption").GetString());
+        Assert.Equal(RoleWork.Codes, tools.GetProperty("works").EnumerateArray().Select(work => work.GetProperty("work").GetString()));
+
+        // The site follows Current with no landing rule set: it lands as the merge preset with nothing of its own; the engine's saved
+        // workflow is not in the store, so it lands as nothing known.
+        var site = (await AnswerAsync(module, "PLACES", new { detail = new { repository = "site" } })).GetProperty("detail").GetProperty("values").GetProperty("lands");
+        Assert.Equal("merge-after-accept", site.GetProperty("preset").GetString());
+        Assert.Equal(0, site.GetProperty("own").GetArrayLength());
+        Assert.Equal(JsonValueKind.Null, driven.GetProperty("values").GetProperty("lands").ValueKind);
+
+        // Each work names its role and where it sits, beside the id it always had.
+        var catalogue = RoleCatalog.ReadHome(Home);
+        foreach (var work in driven.GetProperty("works").EnumerateArray())
+        {
+            var role = catalogue.RoleFor(work.GetProperty("work").GetString()!, new RolePlace("aurora", "engine")).Role!;
+            Assert.Equal((role.Id, role.NameEn, role.NameZh), (work.GetProperty("role").GetString(), work.GetProperty("roleNames").GetProperty("en").GetString(), work.GetProperty("roleNames").GetProperty("zh").GetString()));
+            Assert.Equal(role.Scope.Kind, work.GetProperty("roleScope").GetProperty("kind").GetString());
+        }
+
+        var workspace = (await AnswerAsync(module, "PLACES", new { detail = new { workspace = "borealis" } })).GetProperty("detail");
+        Assert.Equal(("borealis", JsonValueKind.Null), (workspace.GetProperty("workspace").GetString(), workspace.GetProperty("repository").ValueKind));
+        Assert.Equal(JsonValueKind.Null, (await AnswerAsync(module, "PLACES", new { detail = new { workspace = "aurora", repository = "nowhere" } })).GetProperty("detail").ValueKind);
+
+        Assert.Equal(["/api/quests", "/api/registry"], service.Asked.Distinct().Order(StringComparer.Ordinal));
+    }
+
+    /// <summary>SETUPUX1d: an adoption running is read from its quest and listed with the driven; <c>members</c> is the workspace's whole list.</summary>
+    [Fact]
+    public async Task An_adoption_running_is_listed_with_the_driven_and_the_members_are_the_whole_workspace()
+    {
+        var module = await ModuleAsync(new StandIn(quests: [SetUpQuest("many-05", "Open"), SetUpQuest("many-06", "Done")]));
+
+        var answer = await AnswerAsync(module, "PLACES", new { members = "borealis" });
+
+        Assert.Equal(["engine", "game", "many-05", "site"], answer.GetProperty("repositories").EnumerateArray().Select(row => row.GetProperty("repository").GetString()).Order(StringComparer.Ordinal));
+        var running = Repository(answer, "many-05");
+        Assert.Equal((false, "running"), (running.GetProperty("driven").GetBoolean(), running.GetProperty("adoption").GetString()));
+        Assert.Equal("adopted", Repository(answer, "engine").GetProperty("adoption").GetString());
+        var borealis = answer.GetProperty("workspaces").EnumerateArray().Single(row => row.GetProperty("place").GetProperty("workspace").GetString() == "borealis");
+        Assert.Equal((1, 41, 1), (borealis.GetProperty("driven").GetInt32(), borealis.GetProperty("notDriven").GetInt32(), borealis.GetProperty("running").GetInt32()));
+
+        var members = answer.GetProperty("members");
+        Assert.Equal(("borealis", 42), (members.GetProperty("workspace").GetString(), members.GetProperty("rows").GetArrayLength()));
+        Assert.Equal(["site"], members.GetProperty("rows").EnumerateArray().Where(row => row.GetProperty("driven").GetBoolean()).Select(row => row.GetProperty("repository").GetString()));
+        Assert.Equal("running", members.GetProperty("rows").EnumerateArray().Single(row => row.GetProperty("repository").GetString() == "many-05").GetProperty("adoption").GetString());
+        Assert.Equal(JsonValueKind.Null, (await AnswerAsync(module, "PLACES")).GetProperty("members").ValueKind);
+
+        // The fold no longer holds it.
+        var fold = (await AnswerAsync(module, "PLACES", new { fold = "borealis" })).GetProperty("undriven");
+        Assert.Equal(40, fold.GetProperty("total").GetInt32());
+    }
+
     /// <summary>The registry a driver reads: aurora's engine, game and tools; borealis' site, docs and forty more not driven.</summary>
-    private sealed class StandIn(string? driven = null) : HttpMessageHandler
+    private sealed class StandIn(string? driven = null, string[]? quests = null) : HttpMessageHandler
     {
         public List<string> Asked { get; } = [];
 
@@ -197,7 +273,9 @@ public sealed class DriverModulePlacesTests : DriverModuleBridge
             };
             rows.AddRange(Enumerable.Range(1, 40).Select(number => $$"""{"repository":"many-{{number:00}}","workspace":"borealis","root":"checkout"}"""));
             if (driven is not null) rows.Add($$"""{"repository":"{{driven}}","workspace":"aurora","adopted":true,"root":"checkout"}""");
-            var body = path == "/api/registry" ? "[" + string.Join(",", rows) + "]" : "[]";
+            var body = path == "/api/registry" ? "[" + string.Join(",", rows) + "]"
+                : path == "/api/quests" && quests is not null ? "[" + string.Join(",", quests) + "]"
+                : "[]";
             return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
             {
                 Content = new StringContent(body, System.Text.Encoding.UTF8, "application/json"),
