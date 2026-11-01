@@ -12842,3 +12842,13 @@ mis-rooted instance.
 **Fix.** `TreeDelivering.DispatchAsync` hands the failed send's message to `ReconcileAsync`, whose unknown sentence now begins with it (`src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/TreeDeliveries.cs`).
 
 **Verified.** Red alone on main, green after: the Process classes `LandingPluginPatienceTests`, `LandingPluginTests` and `DeliveryPluginPhasesTests`, 15 of 15.
+
+## 2026-11-02 — a saved workflow's land merged its work with no delivery, and its run never read the landing
+
+**Symptom.** On the install, with two repositories choosing `dev-line` (a saved copy of *Merge automatically*), each session's work was merged into the line with no press, no row was written to `deliveries`, and `daoris-driver workflow run --quest …` read *What the line holds* working and *The landing* not reached.
+
+**Root cause.** Two. `TreeLands.DeliverAsync` wrote a door's delivery under Current alone (LANDNODE1c3) and returned at once for a run bound to a graph version, so the look, landing once the run's pass readied its `land`, merged with no delivery, admitted by Current's live rule. And where the line had moved, the landing replayed the work and the tree followed to the commit merged: the next pass bound the run's branch nodes there and lapsed the old ones. `content.holds` read only a landing record at its bound commit, which a merge never writes, so it found the line holding the work and held it for ever, and the lapsed `land` attempt, a dispatching node's, stayed unreconciled and refused any new start.
+
+**Fix.** `IWorkplaceProcess.Land` (`WorkflowProcess`) gives the bound `land` for the work, and `CurrentDeliveries.StartAsync` writes its delivery at every door, `TreeDelivery.Land` keeping the version's landing whole with the land's message and a merge admitted by its method (`Workplace/CurrentDeliveries.cs`, `TreeDeliveries.cs`, `TreeLands.cs`); on a run's binding `HoldNodes.LandedAt` reads the merge its session branch records at the bound commit; `LandAttempts` settles a lapsed `land` attempt where no delivery at its commit stands unresolved, before each round of `NodeRuntime.EvaluateAsync` (`Workflows/Nodes/`).
+
+**Verified.** Red first: `GraphRunLandingTests.A_saved_version_s_land_lands_its_work_at_done_through_its_delivery` (no delivery written) and `A_saved_version_s_run_reads_its_landing_done_and_its_line_passed_once_the_look_lands_it(lineMoved: True)` (*What the line holds* active and the landing blocked, the install's reading); green after, with the case where the line stood still.
