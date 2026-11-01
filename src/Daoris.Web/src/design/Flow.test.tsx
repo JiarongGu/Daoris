@@ -81,6 +81,13 @@ describe('one list in reading order (§3.7, trap 5)', () => {
     expect(node('Open')).not.toHaveAttribute('aria-current');
   });
 
+  it('draws a node\'s mark beside its words and tells a reader of it (SETUPUX1n)', () => {
+    draw({ nodes: NODES.map((each) => (each.id === 'Done' ? { ...each, mark: { word: 'Work done here', foot: 'Steps after it still run' } } : each)) });
+    expect(node('Done')).toHaveTextContent('Work done hereSteps after it still run');
+    expect(node('Done')).toHaveAccessibleDescription(/Work done here\. Steps after it still run/);
+    expect(node('Open').querySelector('[data-flow-mark]')).toBeNull();
+  });
+
   it('tells a reader the keys once, beside the list\'s name', () => {
     draw();
     expect(list()).toHaveAccessibleDescription('Arrow keys move between steps, Enter opens one, Tab reaches its controls.');

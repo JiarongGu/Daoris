@@ -37,7 +37,6 @@ docs/index/** -merge linguist-generated
 # `docs/DECISIONS.md` is not union-merged, so a note a branch from before wrote there conflicts, and the
 # check refuses one that lands.
 CHANGELOG.md merge=union
-docs/decisions/*.md merge=union
 docs/task-archive.md merge=union
 docs/FIX-LOG.md merge=union
 .claude/knowledge/twins.md merge=union
@@ -48,3 +47,9 @@ docs/FIX-LOG.md merge=union
 # by the repository's own setup (`npm ci` runs `node tools/merge-rows.mjs --install`); where it is not, git merges the
 # file as ordinary text, which conflicts rather than duplicates.
 docs/README.md merge=rows
+
+# The decisions merge by union plus one thing (NOTEBREAK1): union coalesced the blank line two branches each added before
+# their `**Note, ` line, leaving the second note glued to the line above. `tools/index-hook.mjs --merge-notes` is union
+# followed by a blank line before every glued note; `npm ci` configures it (`--install`). A clone without it merges these
+# files as ordinary text, which conflicts on two notes added at one place (resolve by keeping both) rather than gluing them.
+docs/decisions/*.md merge=notes

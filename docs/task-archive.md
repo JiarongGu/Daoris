@@ -22654,6 +22654,17 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 
 **Outcome** 2026-11-02: `glossary.json` holds the twenty new terms and the twelve amended ones; its `distinct` lists carry the workflow, delivery and step names, and `names-check.mjs` gains the `distinct` rule (strict) and the `reword` rule (reported: a term's `avoid.later` words existing strings still say, for row w). Detail: D221's note; `names.test.ts`.
 
+## SETUPUX1a — presets from the shipped data (2026-11-02, D221)
+
+> **SETUPUX1a — presets from the shipped data** (driver, modules; `docs/2026-11-01-setup-ux-design.md` §5). Contract: `delivery.names`, `delivery.for`; workflows renamed (§2.5); `Table` reads delivery names; `WORKFLOW_LIST` carries `for`, `order`, `setUp`, `delivery`; the suggestion's `why: {code, said}`; twin rows. Proof: `DriverModuleWorkflowTests`; each suggestion fixture's code; no name contains another kind's.
+
+**Outcome** 2026-11-02: each default's `delivery` carries an id, English name and purpose (no per-language field; the page words them by id from `workflow.shipped.json`, with a census of every id) and `SetupPresets.Table` reads them; the workflows are renamed to end in *workflow*; `WORKFLOW_LIST` and `PLACE_PLAN`'s `suggested.why` carry the new fields, typed in `answers.ts` and `placePlan.ts`. Detail: D221's SETUPUX1a note; `ShippedDeliveryWordsTests`, `DriverModuleWorkflowTests`, `PlacePlanTests`, `shippedNames.test.ts`.
+
+## SETUPUX1c — choosing, reviewed (2026-11-02, D221)
+
+> **SETUPUX1c — choosing, reviewed** (modules; `docs/2026-11-01-setup-ux-design.md` §5). Contract: `WORKFLOW_LIST` announces `use: ["plan"]`; `WORKFLOW_USE {plan}` writes nothing and answers reach, lowering, places, what a default-clear's kinds keep, and `expected`; a press with the token is refused `moved` where anything moved; `stale` stays. Proof: plan and moved write nothing; the census keeps the press the person's; the terminal unchanged.
+
+**Outcome** 2026-11-02: `WORKFLOW_USE` reads a choice as a plan of one (`WorkflowOperations.PlanUseAsync`) and refuses a stale token `moved`; the list announces it and `answers.ts` types it. Detail: D221's SETUPUX1c note; `DriverModuleWorkflowWritesTests`.
 ## SETUPUX1b — the effective graph (2026-11-02, D221)
 
 > **SETUPUX1b — the effective graph** (modules, driver; SETUPUX1's row b, the setup design §5). `WORKFLOW_CURRENT` takes an optional `route` (`default`, `kind:‹name›`, `landed`) and answers `effective`: the workflow, its source, version or digest, and graph, with each node's cell as `WORKFLOW_RUN` answers steps, and the limits in the driver's words. Current's graph is the one `workflow new --from current:‹repository›` writes, from one handler; a workspace's comes from the same handler over its own rules. Proof: the read writes nothing; its identity equals `WorkflowSelection.Resolve`'s for a saved default, an inherited kind, explicit Current and a cleared choice; a workspace's Current graph; old callers unchanged.
@@ -22674,3 +22685,14 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 > **SETUPUX1h — the page shell** (web; row h of `docs/2026-11-01-setup-ux-design.md` §5). §2.1's head and its ⋯, the first-screen rule, folded sections whose lines come from `PLACES` alone, the first section by kind of place, Roles' need-opening, state held above the mounts, doors to a section and a row, *Back*, focus after choosing a place, and a not-driven place's sections editable through their existing presses. Proof: each folded value names its source; a folded section reads nothing; a door opens its row; editing a not-driven place never sets driving; stories at 80, 39 and 25 rem; the head and the three lines within the first 400 px at both widths.
 
 **Outcome** 2026-11-02: `placeShell.ts` (the lines, the head's facts, the need, `usePlaceShell`), `PlacePage.tsx` (the molecule), `PlaceDriving.tsx` (the head's driving presses), `SetupMain` over them, the Workflow and Sessions bodies split apart in `PlaceSessions.tsx`, and `placeAt` through `opener.ts`; `SetupSection` takes a controlled `open`. Detail: D221's SETUPUX1h note; `placeShell.test.ts`, `PlacePage.test.tsx`, `SetupPlaces.test.tsx`, `PlaceRoles.test.tsx`, `measured/place.spec.ts`.
+
+## SETUPUX1n — one drawing (2026-11-02, D221)
+
+> **SETUPUX1n — one drawing** (web; row n of the set-up design). `graphFlow.ts` per §2.3's table: always sectioned, the ◎ node, the 14rem track, the holds group, the end's words, the renamed steps' words. Proof: unit tests over every shipped graph, with fixtures equal to `Defaults/workflows/*.json`; measured stories: the release graph down at 80 and 39rem, the rail at 25rem, no crossings.
+
+**Outcome** 2026-11-02: the chart, the editor and a run draw through `workflow/graphFlow.ts`; `Flow` gained a node `mark` and the ◎ glyph, and *Finished* is drawn only from a run's record. Detail: D221's SETUPUX1n note; `graphFlow.test.ts`, the measured `graph/*` stories.
+## NOTEBREAK1 — a decision's dated note never reaches main glued to the line above it (2026-11-02)
+
+> **NOTEBREAK1 — a decision's note never lands glued** (tools). A union merge of `docs/decisions/*.md` coalesced the blank line two branches each added before their `**Note, ` line, and `doc-duplicates` failed the next CI. Proof: `tools/index-hook.test.mjs`.
+
+**Outcome** 2026-11-02: `tools/index-hook.mjs` separates a glued note in every staged decision file before it regenerates the index (pre-commit, which a conflicted merge finishes through), and a `notes` merge driver (`--merge-notes`, set by `--install`, named for `docs/decisions/*.md` in `.gitattributes`) does union and the separation inside the merge itself, since a clean merge runs no pre-commit and git ignores what a `pre-merge-commit` hook stages; no commit is remade. Detail: the FIX-LOG entry of 2026-11-02.

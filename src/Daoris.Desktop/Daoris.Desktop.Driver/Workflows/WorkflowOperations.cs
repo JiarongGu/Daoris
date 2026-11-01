@@ -25,6 +25,16 @@ public sealed record WorkflowReached(IReadOnlyList<string> Lines, IReadOnlyList<
 public sealed record WorkflowUsed(
     WorkflowChoiceEdit? Edit, bool Changed, IReadOnlyList<string> Lines, IReadOnlyList<WorkflowReach> Reach, string? Refusal);
 
+/// <summary>A repository whose workflow a choice changes: what it follows now and after, and what lowers the person's part there.</summary>
+public sealed record WorkflowUsePlace(string Repository, string Was, string Now, IReadOnlyList<string> Lowers);
+
+/// <summary>What clearing a default leaves to the kinds a place still maps: the driver's sentence, and each kind with its workflow.</summary>
+public sealed record WorkflowUseKeeps(string Said, IReadOnlyList<KeyValuePair<string, string>> Kinds);
+
+/// <summary>A choice read as a plan of one (nothing written): the judgement, the places it changes, what lowers, what the kinds keep, and the token a press carries.</summary>
+public sealed record WorkflowUsePlan(
+    WorkflowUsed Used, IReadOnlyList<WorkflowUsePlace> Places, IReadOnlyList<string> Lowers, WorkflowUseKeeps? Keeps, string Expected);
+
 /// <summary>A kind declared or dropped: the edit and its words, or the refusal.</summary>
 public sealed record WorkflowKindSet(WorkflowChoiceEdit? Edit, IReadOnlyList<string> Lines, string? Refusal);
 
@@ -69,8 +79,8 @@ public sealed record WorkflowPresetListed(string Id, string Name, bool Graph, st
     /// <summary>A graph preset's graph as a version saves it, which the step editor starts from; null for one of steps.</summary>
     public JsonNode? Body { get; init; }
 
-    /// <summary>A default's names in English and Chinese, Daoris's own; null for a preset that is no default.</summary>
-    public ShippedWords? Names { get; init; }
+    /// <summary>The default itself, for its purpose, order, whether the set-up offers it and its delivery (SETUPUX1a); null for a preset that is no default.</summary>
+    public WorkflowDefault? Default { get; init; }
 }
 
 /// <summary>One version as saved: its steps or its graph, its composed line, and the graph's problems.</summary>
@@ -207,6 +217,87 @@ public static class WorkflowOperations
         }
 
         return new WorkflowUsed(edit, true, lines, reach.Rows, null);
+    }
+
+    /// <summary>
+    /// A choice read as a plan of one (SETUPUX1c; the setup UX design §2.3), nothing written: <see cref="UseAsync"/>'s judgement, each place whose
+    /// workflow it changes with what lowers the person's part there, the kinds a cleared default leaves mapped, and a token over all of it that a
+    /// press carries to be refused where anything moved since.
+    /// </summary>
+    public static async Task<WorkflowUsePlan> PlanUseAsync(
+        DriverConfig choices, string home, RegistryRead registry, string? chosen, string? repository, string? workspace, string? kind, CancellationToken ct)
+    {
+        var used = await UseAsync(choices, home, registry, chosen, repository, workspace, kind, ct).ConfigureAwait(false);
+        var places = new List<WorkflowUsePlace>();
+        var seen = new List<string>();
+        WorkflowUseKeeps? keeps = null;
+        if (used is { Changed: true, Edit: { } edit })
+        {
+            var edited = WorkflowSelection.Apply(choices, edit);
+            var store = WorkflowPorts.Store(home);
+            var task = kind is null ? null : new WorkflowTaskChoice(kind, null);
+            foreach (var place in await ReachedByAsync(choices, registry, repository, workspace, ct).ConfigureAwait(false))
+            {
+                if (WorkflowSelection.Resolve(choices, place.Repository, place.Workspace, task).Workflow
+                    == WorkflowSelection.Resolve(edited, place.Repository, place.Workspace, task).Workflow)
+                {
+                    continue;
+                }
+
+                var (was, wasSteps) = WorkflowProcesses.Otherwise(store, choices, place.Repository, place.Workspace, kind);
+                var (now, nowSteps) = WorkflowProcesses.Otherwise(store, edited, place.Repository, place.Workspace, kind);
+                IReadOnlyList<string> lowers = wasSteps is null || nowSteps is null
+                    ? [$"what {(wasSteps is null ? was : now)} asks of you could not be read here, so it is taken as more"]
+                    : Involvement.Lowers(nowSteps, wasSteps);
+                places.Add(new WorkflowUsePlace(place.Repository, was, now, lowers));
+                // Current moves with the rules, so a place that follows it before or after is judged at its digest too.
+                if (was == "Current") seen.Add(WorkflowCurrent.Derive(choices, place.Repository, place.Workspace, []).Version);
+                if (now == "Current") seen.Add(WorkflowCurrent.Derive(edited, place.Repository, place.Workspace, []).Version);
+            }
+
+            if (chosen is null && kind is null)
+            {
+                var after = ChoiceAt(repository is not null ? edited.Workflows : edited.WorkspaceWorkflows, (repository ?? workspace)!.Trim());
+                var mapped = after?.Kinds.Where(pair => pair.Value.Workflow is not null)
+                    .Select(pair => new KeyValuePair<string, string>(pair.Key, pair.Value.Workflow!)).ToList();
+                if (mapped is { Count: > 0 })
+                {
+                    var said = string.Join(", ", mapped.Select(pair => $"kind `{pair.Key}` to `{pair.Value}`"));
+                    keeps = new WorkflowUseKeeps(repository is not null
+                        ? $"`{repository}` still maps {said}: while a repository maps a kind of its own, its default work follows Current, not the "
+                            + "workspace's. Clearing a kind's mapping is that kind's own press."
+                        : $"The workspace `{workspace}` still maps {said}: those kinds keep their own workflows, and only its default work changes.",
+                        mapped);
+                }
+            }
+        }
+
+        if (chosen is not null && chosen != WorkflowSelection.Current && WorkflowNamed.IsId(chosen)
+            && WorkflowPorts.Store(home).Load(chosen)?.Read.Versions is [.., var newest])
+        {
+            seen.Add($"{chosen}@{newest.Version}:{newest.Digest}");
+        }
+
+        var lowered = places.SelectMany(place => place.Lowers).Distinct(StringComparer.Ordinal).ToList();
+        var text = string.Join('\n', new[] { used.Refusal ?? "", used.Changed ? "changed" : "same" }
+            .Concat(used.Lines)
+            .Concat(used.Reach.Select(row => $"{row.Repository}|{row.Workflow}|{string.Join(';', row.Cannots)}|{row.NoGates}"))
+            .Concat(places.Select(place => $"{place.Repository}|{place.Was}|{place.Now}|{string.Join(';', place.Lowers)}"))
+            .Append(keeps?.Said ?? "")
+            .Concat(seen));
+        var expected = "use-" + Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(text)))[..16].ToLowerInvariant();
+        return new WorkflowUsePlan(used, places, lowered, keeps, expected);
+    }
+
+    // The repositories a use reaches: the one named, or a workspace's whose own choice does not replace it; the registry unread leaves the one named.
+    private static async Task<IReadOnlyList<(string Repository, string? Workspace, string? Root)>> ReachedByAsync(
+        DriverConfig choices, RegistryRead registry, string? repository, string? workspace, CancellationToken ct)
+    {
+        var read = await registry(ct).ConfigureAwait(false);
+        if (read.Checkouts is not { } checkouts) return repository is null ? [] : [(repository, null, null)];
+        if (repository is null) return InWorkspace(choices, checkouts, workspace!, except: null);
+        var own = checkouts.FirstOrDefault(each => InScope(each.Repository, repository));
+        return [own.Repository is null ? (repository, null, null) : own];
     }
 
     /// <summary>
@@ -720,7 +811,7 @@ public static class WorkflowOperations
                 WorkflowNamed.ElementOf(preset.Steps()), 1, null).Steps!)))
             .Concat(WorkflowPresets.GraphTable.Select(preset => new WorkflowPresetListed(preset.Id, preset.Name, true, WorkflowPresets.GraphLine(preset.Graph()))
             {
-                Body = preset.Graph(), Names = WorkflowDefaults.Of(preset.Id)?.Names,
+                Body = preset.Graph(), Default = WorkflowDefaults.Of(preset.Id),
             }))
             .ToArray();
         return (saved, presets);

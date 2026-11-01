@@ -63,8 +63,9 @@ describe("a repository's Workflow tab", () => {
     const after = screen.getByRole('list', { name: 'After it lands' });
     expect(within(before).getAllByRole('heading', { level: 4 }).map((head) => head.textContent))
       .toEqual(['The work', 'Second opinion', 'Your look in dev', 'Landing on a branch']);
-    expect(within(after).getAllByRole('heading', { level: 4 }).map((head) => head.textContent)).toEqual(['Pull request']);
-    expect(screen.getByText('Finished')).toBeInTheDocument();
+    expect(within(after).getAllByRole('heading', { level: 4 }).map((head) => head.textContent)).toEqual(['Completed on the host']);
+    // Finished is a run's record, never a chart's.
+    expect(screen.queryByText('Finished')).toBeNull();
     // The plugins that may hold a start are drawn above the work, never as a step.
     expect(screen.getByText(/Before the work starts,/)).toHaveTextContent('Before the work starts, example.hold-by-title may hold it.');
     expect(steps()).toHaveLength(5);
@@ -134,7 +135,7 @@ describe("a repository's Workflow tab", () => {
   it("draws a rule's integrate step after the landing, named and said, in English and in 中文", async () => {
     render(<WorkflowTab page="repository" name="engine" current={INTEGRATING} />);
     const after = screen.getByRole('list', { name: 'After it lands' });
-    expect(within(after).getAllByRole('heading', { level: 4 }).map((head) => head.textContent)).toEqual(['The integration']);
+    expect(within(after).getAllByRole('heading', { level: 4 }).map((head) => head.textContent)).toEqual(['The integration request']);
     const [, , integrate] = steps();
 
     expect(integrate).toHaveTextContent('you');
@@ -147,7 +148,7 @@ describe("a repository's Workflow tab", () => {
     expect(screen.getByText(/^Your part:/)).toHaveTextContent('Your part: you accept it.');
 
     await i18n.changeLanguage('zh');
-    expect(screen.getByRole('list', { name: '落地之后' }).textContent).toContain('集成');
+    expect(screen.getByRole('list', { name: '落地之后' }).textContent).toContain('集成请求');
     expect(steps()[2]).toHaveTextContent('尚未集成');
     expect(steps()[2]).toHaveTextContent('把已落地的分支集成进它的主线，由你发起，不跑关卡；冲突退回它的会话。');
   });

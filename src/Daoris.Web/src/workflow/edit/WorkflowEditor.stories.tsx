@@ -20,7 +20,7 @@ const meta: Meta<typeof WorkflowEditor> = {
   args: {
     list: LIST, palette: PALETTE, error: null, roles: ROLES, shown: null, onShow: nothing, judged: HOLDS, judging: false, onJudge: nothing,
     saving: false, onSave: async () => HOLDS, using: false, onUse: async () => ({ done: true, refused: null, message: null, changed: true, reach: [] }),
-    place: { repository: 'engine' }, onClose: nothing, startFrom: { graph: RELEASE_GRAPH, name: 'Release after you accept' },
+    place: { repository: 'engine' }, onClose: nothing, startFrom: { graph: RELEASE_GRAPH, name: 'Release workflow' },
   },
   decorators: [storyWidths.wide],
 };

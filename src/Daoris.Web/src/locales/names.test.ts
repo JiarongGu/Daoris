@@ -609,7 +609,8 @@ describe('the real glossary and catalogues', () => {
       ]);
       expect(names('delivery')).toEqual([
         'Merge after you accept | 你采纳后合并', 'A branch to push | 留给你推送的分支', 'A pull request | 拉取请求',
-        'Integrated into the line | 集成到主线', 'Not driven | 未驱动',
+        'Integrated into the line | 集成到主线', 'Merge with no review | 无需审阅即合并', 'Integrated with no press | 集成到主线，无需按键',
+        'Not driven | 未驱动',
       ]);
       expect(names('step')).toEqual(expect.arrayContaining([
         'Completed on the host | 在托管平台完成', 'The integration request | 集成请求', 'Handed on | 已移交',
@@ -628,7 +629,8 @@ describe('the real glossary and catalogues', () => {
       expect(keys(plant({ en: 'Plain', zh: '拉取请求' }))).toEqual(['distinct:delivery:拉取请求 zh', 'distinct:step:拉取请求 zh']);
       // A step called a bare 集成, which every integration workflow's name holds.
       expect(keys(plant({ en: 'Plain', zh: '集成' }))).toEqual([
-        'distinct:delivery:集成到主线 zh', 'distinct:workflow:免按键集成工作流 zh', 'distinct:workflow:集成工作流 zh',
+        'distinct:delivery:集成到主线 zh', 'distinct:delivery:集成到主线，无需按键 zh', 'distinct:workflow:免按键集成工作流 zh',
+        'distinct:workflow:集成工作流 zh',
       ]);
       // A step whose English is a delivery's whole name.
       expect(keys(plant({ en: 'A pull request', zh: '一步' }))).toEqual(['distinct:delivery:A pull request en', 'distinct:step:A pull request en']);

@@ -2,7 +2,8 @@ import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Inline, Pill, SkeletonRows } from '../../design/ui';
 import { Refused } from '../../work/InlineConfirm';
-import type { PresetWorkflow, SavedWorkflow, WorkflowListAnswer, WorkflowUseAnswer, WorkflowUseAsk } from '../edit/answers';
+import type { SavedWorkflow, WorkflowListAnswer, WorkflowUseAnswer, WorkflowUseAsk } from '../edit/answers';
+import { presetName } from '../edit/presetWords';
 import type { CurrentWorkflow } from '../current';
 
 /** The workflow a preset starts a draft from: its graph as a version holds it, and the name it is offered under. */
@@ -12,8 +13,6 @@ export type PresetStart = { graph: unknown; name: string };
 const CURRENT = 'current';
 
 const nameOf = (saved: SavedWorkflow) => saved.name ?? saved.id;
-
-const presetName = (preset: PresetWorkflow, language: string) => (language.startsWith('zh') ? preset.names?.zh : preset.names?.en) ?? preset.name;
 
 /**
  * **Change…** (AGENTSPLACE1h; the Agents-place design §3): what a place's work follows, chosen from three lists: the presets by the line
@@ -130,7 +129,7 @@ export function ChangeWorkflow({ list, error, current, place, using, onUse, onSt
                 <h4 className="m-0 text-small font-medium text-ink">{t('workflow.place.change.presets')}</h4>
                 <ul className="m-0 grid list-none gap-1.5 p-0">
                   {list.presets.map((preset) => {
-                    const name = presetName(preset, i18n.language);
+                    const name = presetName(t, i18n, preset);
                     return (
                       <li key={preset.id} className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                         <span className="min-w-0 flex-1 basis-48">

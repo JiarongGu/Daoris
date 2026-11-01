@@ -92,8 +92,7 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
         Assert.Equal(
             ["merge-after-accept", "merge-automatic", "documents", "branch-to-push", "pull-request", "integrated", "integrated-no-press", "release"],
             WorkflowDefaults.All.Select(each => each.Id));
-        Assert.Equal(WorkflowDefaults.All.Select(each => (each.Id, each.Names.En)), WorkflowPresets.GraphTable.Select(preset => (preset.Id, preset.Name)));
-        Assert.All(WorkflowDefaults.All, each => Assert.False(string.IsNullOrWhiteSpace(each.Names.Zh) || string.IsNullOrWhiteSpace(each.For.Zh), each.Id));
+        Assert.Equal(WorkflowDefaults.All.Select(each => (each.Id, each.Name)), WorkflowPresets.GraphTable.Select(preset => (preset.Id, preset.Name)));
         Assert.Equal("merge-automatic", WorkflowPresets.GraphOf("merge-no-press")?.Id);
         Assert.DoesNotContain(WorkflowPresets.Table, preset => WorkflowDefaults.Of(preset.Id) is not null);
     }
@@ -248,11 +247,11 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
     public async Task The_defaults_are_listed_one_is_shown_and_its_graph_written_to_a_file()
     {
         Assert.Equal(0, await Run("workflow defaults"));
-        Assert.All(WorkflowDefaults.All, each => Assert.Contains($"`{each.Id}` — {each.Names.En}", _out.ToString()));
+        Assert.All(WorkflowDefaults.All, each => Assert.Contains($"`{each.Id}` — {each.Name}", _out.ToString()));
 
         _out.GetStringBuilder().Clear();
         Assert.Equal(0, await Run("workflow defaults documents"));
-        Assert.StartsWith($"daoris: `documents` — Documents ({WorkflowDefaults.Of("documents")!.Names.Zh})", _out.ToString());
+        Assert.StartsWith($"daoris: `documents` — Documents workflow, a default", _out.ToString());
 
         Assert.Equal((0, ""), (await Run("workflow defaults documents --to documents.json"), _error.ToString()));
         var (graph, _) = NodeGraphs.Read(File.ReadAllText(Path.Combine(_home, "documents.json")));
@@ -314,8 +313,8 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
         await Run("workflow list");
 
         var said = _out.ToString();
-        Assert.Contains("`integrated` — Integrated into the line, a graph.", said);
-        Assert.Contains("`pull-request` — A pull request, a graph.", said);
+        Assert.Contains("`integrated` — Integration workflow, a graph.", said);
+        Assert.Contains("`pull-request` — Hosted merge workflow, a graph.", said);
         Assert.Contains("integrated into the line once its agent is done", said);
     }
 

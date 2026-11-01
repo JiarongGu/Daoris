@@ -2885,15 +2885,16 @@ export function readLanes(root) {
 }
 
 /**
- * The paths `.gitattributes` marks `merge=union`, and the router it marks `merge=rows` (ROUTERMERGE1, `tools/merge-rows.mjs`): the
- * records that resolve themselves. The router stayed a record when its driver changed; read as union alone, a stage stopped
- * forgiving it and its lane placement moved (the CI on 5717fd1, 2026-10-25).
+ * The paths `.gitattributes` marks `merge=union`, the router it marks `merge=rows` (ROUTERMERGE1, `tools/merge-rows.mjs`) and the
+ * decisions it marks `merge=notes` (NOTEBREAK1, `tools/index-hook.mjs`): the records that resolve themselves. The router stayed a
+ * record when its driver changed; read as union alone, a stage stopped forgiving it and its lane placement moved (the CI on
+ * 5717fd1, 2026-10-25).
  */
 export function unionRecords(root) {
   const file = join(root, '.gitattributes');
   if (!existsSync(file)) return [];
   return readFileSync(file, 'utf8').replace(/\r\n/g, '\n').split('\n')
-    .map((line) => /^(\S+)\s(?:.*\s)?merge=(?:union|rows)(?:\s|$)/.exec(line)?.[1])
+    .map((line) => /^(\S+)\s(?:.*\s)?merge=(?:union|rows|notes)(?:\s|$)/.exec(line)?.[1])
     .filter((pattern) => pattern && !pattern.startsWith('#'));
 }
 

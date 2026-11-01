@@ -1,15 +1,18 @@
 import type { TFunction } from 'i18next';
-import type { FlowEdge, FlowNode, FlowSection, PillTone } from '../design/Flow';
+import type { PillTone } from '../design/Flow';
 import type { IconName } from '../design/ui';
-import { aroundTheLanding, textOf, type CurrentWorkflow, type WorkflowStep } from './current';
-import type { GraphBack, GraphRun, GraphWire } from './run';
+import { textOf, type CurrentWorkflow, type WorkflowStep } from './current';
+import { type DrawnNode, type DrawnWire, type DrawOptions, FINISHED, type GraphFlow, graphFlow, WORKFLOW_TRACK } from './graphFlow';
+import type { GraphRun } from './run';
 import { executorSaid, stepTitle } from './said';
 
 // A workflow and its run drawn as flowcharts (FLOWCHART1d; D186 point 5, the flowchart design §2.4, §2.5 and §5.1): what
-// `WORKFLOW_CURRENT` and `WORKFLOW_RUN` answer, read onto `Flow`'s nodes and edges. The page derives nothing the driver did not
-// answer: a Current's answer holds each step's kind, part, executor and settings and no members and no wires (`current.ts:27-42`), so
-// it is drawn as its steps in their version's order. A run bound to a graph version (FABRIC-CUTOVER1e) answers its graph's wires, the
+// `WORKFLOW_CURRENT` and `WORKFLOW_RUN` answer, read onto the one drawing (`graphFlow`, SETUPUX1n). The page derives nothing the driver
+// did not answer: a Current's answer holds each step's kind, part, executor and settings and no members and no wires (`current.ts:27-42`),
+// so it is drawn as its steps in their version's order. A run bound to a graph version (FABRIC-CUTOVER1e) answers its graph's wires, the
 // first read that does, and is drawn by them, a fork and its join included.
+
+export { FINISHED, WORKFLOW_TRACK };
 
 /** A step's kind as its glyph: what it is, beside the person's part by its shape. */
 const GLYPH: Record<string, IconName> = {
@@ -22,16 +25,6 @@ const GLYPH: Record<string, IconName> = {
 /** A step's glyph: its kind's, a landing by its form, and a tool for a kind this page has no glyph for. */
 export const glyphOf = (step: WorkflowStep): IconName =>
   step.kind === 'landing' ? (textOf(step, 'form') === 'branch' ? 'stepBranch' : 'stepMerge') : GLYPH[step.kind] ?? 'tool';
-
-/** The end of the line, a node of its own: an id no step can take, since a step's is lower-case letters, digits and dashes. */
-export const FINISHED = ':finished';
-
-/**
- * A workflow's node track, in rem: a step holds its settings, where they were set and its limit, or its run's facts and doors, so
- * its floor is 19rem (304 px), which leaves the side bar's 300 px floor the rail before its gutters as after them and draws top to
- * bottom from the main area's 400 px floor (376 px inside its gutters), and it reads up to 36rem across.
- */
-export const WORKFLOW_TRACK = { least: 19, most: 36 } as const;
 
 /** A name set as code, read as words: a node's title and a reader's description are plain text. */
 const plain = (text: string) => text.replace(/`/g, '');
@@ -73,7 +66,7 @@ export function outcomeSaid(t: TFunction, outcome: StepOutcome): string {
 export type StepLit = { state: { word: string; tone: PillTone }; reached: boolean; current: boolean; settled: boolean };
 export type FlowLit = { steps: Partial<Record<string, StepLit>>; finished: { word: string; tone: PillTone } | null };
 
-export type WorkflowFlow = { label: string; nodes: FlowNode[]; edges: FlowEdge[]; entries: string[]; sections: FlowSection[] };
+export type WorkflowFlow = GraphFlow;
 
 /**
  * A run bound to a graph version's own graph (FABRIC-CUTOVER1e, the driver's answer's `graph`): its entries, its end and its wires, which the
@@ -82,107 +75,69 @@ export type WorkflowFlow = { label: string; nodes: FlowNode[]; edges: FlowEdge[]
 export type FlowGraph = Pick<GraphRun, 'entries' | 'end' | 'wires'> & Partial<Pick<GraphRun, 'backs'>>;
 
 /**
- * A wire's edge on the drawing (FABRIC-CUTOVER1e): what it waits on, said; a failure's and a refusal's path in their own style; a decision's
- * route (DECIDE1c) a conditional move labelled with its outcome.
- */
-function wireEdge(t: TFunction, wire: GraphWire, from: WorkflowStep | undefined, twice: boolean): FlowEdge {
-  const id = twice ? `${wire.from}>${wire.to}:${wire.kind}` : `${wire.from}>${wire.to}`;
-  switch (wire.kind) {
-    case 'after': return { id, from: wire.from, to: wire.to, says: t(`workflow.flow.move.${from?.press ?? 'automatic'}`) };
-    case 'failed':
-      return { id, from: wire.from, to: wire.to, style: 'failed', says: t('workflow.flow.failed'), label: t('workflow.flow.failedLabel') };
-    case 'rejected':
-      return { id, from: wire.from, to: wire.to, style: 'rejected', says: t('workflow.flow.refused'), label: t('workflow.flow.refusedLabel') };
-    case 'when': {
-      const outcome = wire.outcome ?? '';
-      return { id, from: wire.from, to: wire.to, style: 'conditional', says: t('workflow.run.flow.when', { outcome }), label: outcome };
-    }
-    case 'data':
-    case 'wait':
-    case 'trigger': return { id, from: wire.from, to: wire.to, says: t(`workflow.flow.wire.${wire.kind}`) };
-    default: return { id, from: wire.from, to: wire.to, says: t('workflow.flow.wire.recorded', { kind: wire.kind }) };
-  }
-}
-
-/** A way back's edge (DECIDE1c): always a return, said by what it is taken on, the review's changes in their own words. */
-function backEdge(t: TFunction, back: GraphBack): FlowEdge {
-  const id = `${back.from}<${back.to}:${back.on}`;
-  const says = back.on === 'rejected' ? t('workflow.run.flow.back.rejected')
-    : back.on === 'failed' ? t('workflow.run.flow.back.failed')
-      : t('workflow.run.flow.back.outcome', { outcome: back.on });
-  return { id, from: back.from, to: back.to, style: 'back', says, label: t('workflow.run.flow.back.label') };
-}
-
-/**
- * **A workflow as a flowchart** (FLOWCHART1d): its steps in their version's order and the end of the line, each edge the move the
+ * **A workflow as a flowchart** (FLOWCHART1d), drawn through `graphFlow`: its steps in their version's order, each edge the move the
  * step it leaves names (the person's press, else automatically), a failure path where a step names one, and *Before it lands* and
  * *After it lands* as its sections, the landing their hinge. Lit by a run (§2.5), each step wears its state, the step the run
- * stands at is current, a step not reached is dashed, the end is reached only once the run finished, and no path is drawn: a run
- * keeps where each step stands now, not the order the work went through. A skip says who skipped it in its own words, the run's
- * (`runSaid`), never here.
+ * stands at is current, a step not reached is dashed, and no path is drawn: a run keeps where each step stands now, not the order the
+ * work went through. A run's *Finished* is drawn only once its record says it finished. A skip says who skipped it in its own words,
+ * the run's (`runSaid`), never here.
  *
  * Worded, with no node's lines and no door: the chart adds those, a molecule's.
  *
  * **A graph run's drawing follows its graph** (FABRIC-CUTOVER1e; D186's FLOWCHART1d note): handed `graph`, the edges are its wires and the
- * end of the line follows its end, so a fork and its join, and a failure's path, are drawn as the version holds them; a step no wire
- * names (a look the work added beside the graph, §6 of the cutover design) stands as an entry of its own.
+ * configured end is flagged, so a fork and its join, and a failure's path, are drawn as the version holds them; a step no wire names (a
+ * look the work added beside the graph, §6 of the cutover design) stands as an entry of its own.
  */
 export function workflowFlow(
   t: TFunction, workflow: Pick<CurrentWorkflow, 'steps'>, name: string, lit?: FlowLit, graph?: FlowGraph | null,
+  holds?: DrawOptions['holds'],
 ): WorkflowFlow {
-  const nodes: FlowNode[] = [];
-  const edges: FlowEdge[] = [];
   const { steps } = workflow;
-  const nodeOf = (step: WorkflowStep): FlowNode => {
+  const nodeOf = (step: WorkflowStep): DrawnNode => {
     const on = lit?.steps[step.id];
     return {
       id: step.id,
+      kind: step.kind,
       title: plain(stepTitle(t, step)),
       glyph: glyphOf(step),
       actor: t('workflow.flow.who', { part: t(`workflow.participation.${step.participation}`), executor: plain(executorSaid(t, step)) }),
       ...(on ? { state: on.state, reached: on.reached, current: on.current, settled: on.settled } : {}),
     };
   };
-  const finished = (): FlowNode => ({
-    id: FINISHED,
-    title: t('workflow.finished'),
-    glyph: 'stepFinished',
-    ...(lit ? lit.finished ? { state: lit.finished, reached: true, settled: true } : { reached: false } : {}),
-  });
-  const { after } = aroundTheLanding(steps);
-  const sections: FlowSection[] = [
-    ...(steps[0] ? [{ title: t('workflow.section.before'), from: steps[0].id }] : []),
-    ...(after[0] ? [{ title: t('workflow.section.after'), from: after[0].id }] : []),
-  ];
+  const options: DrawOptions = { label: t('workflow.chart', { name }), ...(holds ? { holds } : {}), ...(lit?.finished ? { finished: lit.finished } : {}) };
+  const move = (step: WorkflowStep | undefined) => t(`workflow.flow.move.${step?.press ?? 'automatic'}`);
 
   if (graph) {
     const byId = new Map(steps.map((step) => [step.id, step]));
     const wires = graph.wires.filter((wire) => byId.has(wire.from) && byId.has(wire.to));
     const named = new Set([...graph.entries, graph.end, ...wires.flatMap((wire) => [wire.from, wire.to])]);
-    nodes.push(...steps.map(nodeOf), finished());
-    edges.push(...wires.map((wire) => wireEdge(t, wire, byId.get(wire.from),
-      wires.some((other) => other !== wire && other.from === wire.from && other.to === wire.to))));
-    edges.push(...(graph.backs ?? []).filter((back) => byId.has(back.from) && byId.has(back.to)).map((back) => backEdge(t, back)));
-    if (byId.has(graph.end)) {
-      edges.push({ id: `${graph.end}>${FINISHED}`, from: graph.end, to: FINISHED, says: t(`workflow.flow.move.${byId.get(graph.end)!.press ?? 'automatic'}`) });
-    }
+    const drawn: DrawnWire[] = wires.map((wire) => {
+      const twice = wires.some((other) => other !== wire && other.from === wire.from && other.to === wire.to);
+      const id = twice ? `${wire.from}>${wire.to}:${wire.kind}` : `${wire.from}>${wire.to}`;
+      return {
+        id, kind: wire.kind, from: wire.from, to: wire.to, outcome: wire.outcome ?? null,
+        ...(wire.kind === 'after' ? { says: move(byId.get(wire.from)) } : {}),
+      };
+    });
+    const backs = (graph.backs ?? []).filter((back) => byId.has(back.from) && byId.has(back.to))
+      .map((back): DrawnWire => ({ id: `${back.from}<${back.to}:${back.on}`, kind: 'back', from: back.from, to: back.to, on: back.on }));
     const entries = [...graph.entries.filter((entry) => byId.has(entry)), ...steps.filter((step) => !named.has(step.id)).map((step) => step.id)];
-    return { label: t('workflow.chart', { name }), nodes, edges, entries: entries.length > 0 ? entries : [FINISHED], sections };
+    return graphFlow(t, { nodes: steps.map(nodeOf), wires: [...drawn, ...backs], entries, end: graph.end }, options);
   }
 
+  const nodes: DrawnNode[] = [];
+  const wires: DrawnWire[] = [];
   steps.forEach((step, index) => {
     nodes.push(nodeOf(step));
-    const next = steps[index + 1]?.id ?? FINISHED;
-    edges.push({ id: `${step.id}>${next}`, from: step.id, to: next, says: t(`workflow.flow.move.${step.press ?? 'automatic'}`) });
+    const next = steps[index + 1];
+    if (next) wires.push({ id: `${step.id}>${next.id}`, kind: 'after', from: step.id, to: next.id, says: move(step) });
     const outcome = outcomeOf(step);
     if (outcome) {
-      nodes.push({ id: outcome.id, title: outcomeTitle(t, outcome), faint: true });
-      edges.push({
-        id: `${step.id}>${outcome.id}`, from: step.id, to: outcome.id, style: outcome.kind === 'failed' ? 'failed' : 'rejected',
-        says: t(`workflow.flow.${outcome.kind}`), label: t(`workflow.flow.${outcome.kind}Label`),
+      nodes.push({ id: outcome.id, kind: outcome.kind, title: outcomeTitle(t, outcome), faint: true });
+      wires.push({
+        id: `${step.id}>${outcome.id}`, kind: outcome.kind === 'failed' ? 'failed' : 'rejected', from: step.id, to: outcome.id,
       });
     }
   });
-  nodes.push(finished());
-  return { label: t('workflow.chart', { name }), nodes, edges, entries: steps[0] ? [steps[0].id] : [FINISHED], sections };
+  return graphFlow(t, { nodes, wires, entries: steps[0] ? [steps[0].id] : [] }, options);
 }

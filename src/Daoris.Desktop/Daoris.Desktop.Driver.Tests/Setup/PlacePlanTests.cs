@@ -36,7 +36,8 @@ public sealed class PlacePlanTests
         var plan = await PlanAsync(new World(), Ask(SetupPresets.Merge, "solo") with { Drive = true });
 
         var solo = Assert.Single(plan.Repositories);
-        Assert.Equal(new PlaceSuggestion(SetupPresets.Merge, Adoption: false), solo.Suggested);
+        Assert.Equal((SetupPresets.Merge, false, SuggestionWhy.Default), (solo.Suggested.Preset, solo.Suggested.Adoption, solo.Suggested.Why.Code));
+        Assert.False(string.IsNullOrWhiteSpace(solo.Suggested.Why.Said));
         Assert.Equal(new SetupMatch(SetupPresets.NotDriven, []), solo.Before.Match);
         Assert.Equal(new SetupMatch(SetupPresets.Merge, []), solo.After.Match);
         // The default rule already merges after the person's Accept, so no landing rule is written.
@@ -52,7 +53,7 @@ public sealed class PlacePlanTests
         var plan = await PlanAsync(new World(), Ask(SetupPresets.Integrated, "engine"));
 
         var engine = Assert.Single(plan.Repositories);
-        Assert.Equal(SetupPresets.Integrated, engine.Suggested.Preset);
+        Assert.Equal((SetupPresets.Integrated, SuggestionWhy.Integration), (engine.Suggested.Preset, engine.Suggested.Why.Code));
         var landing = Assert.Single(engine.Changes);
         Assert.Equal(new PlaceChange("SET_LANDING", PlacePlans.Delivery, "how its work lands", "merged after you accept",
             "on `feature/{quest}-{slug}`, integrated into the line, requested by you"), landing);
@@ -71,7 +72,7 @@ public sealed class PlacePlanTests
         var plan = await PlanAsync(new World(), Ask(SetupPresets.PullRequest, "web"));
 
         var web = Assert.Single(plan.Repositories);
-        Assert.Equal(SetupPresets.PullRequest, web.Suggested.Preset);
+        Assert.Equal((SetupPresets.PullRequest, SuggestionWhy.Plugin), (web.Suggested.Preset, web.Suggested.Why.Code));
         Assert.Equal("on `feature/{quest}-{slug}`, a pull request by `example.github-pull-request`", Assert.Single(web.Changes).After);
         Assert.Equal(new SetupLand("pull-request", "you", Plugin), web.After.Land);
         Assert.True(plan.Applies);
@@ -83,7 +84,7 @@ public sealed class PlacePlanTests
         var plan = await PlanAsync(new World(), Ask(SetupPresets.PullRequest, "docs"));
 
         var docs = Assert.Single(plan.Repositories);
-        Assert.Equal(SetupPresets.Merge, docs.Suggested.Preset);
+        Assert.Equal((SetupPresets.Merge, SuggestionWhy.Default), (docs.Suggested.Preset, docs.Suggested.Why.Code));
         var refusal = Assert.Single(plan.Refusals);
         Assert.Equal(("docs", PlacePlans.NoLandingPlugin), (refusal.Repository, refusal.Code));
         Assert.Contains("`gitlab.com`", refusal.Sentence);
@@ -231,7 +232,7 @@ public sealed class PlacePlanTests
     internal static void SaveWorkflow(string home, string id)
     {
         var shipped = WorkflowDefaults.Of(SetupPresets.Merge)!;
-        var planned = WorkflowOperations.PlanGraph(home, null, id, null, shipped.Names.En, "terminal", "2026-11-01T09:00:00Z", shipped.Graph(),
+        var planned = WorkflowOperations.PlanGraph(home, null, id, null, shipped.Name, "terminal", "2026-11-01T09:00:00Z", shipped.Graph(),
             new WorkflowFrom(shipped.Id, shipped.Digest));
         WorkflowPorts.Store(home).Write(id, planned.Plan.Result!);
     }
