@@ -597,6 +597,7 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("SET_CAP", "driver", null)]
     [InlineData("SET_ACTOR", "driver,harnesses", null)]
     [InlineData("SET_ROLE", "driver,harnesses", null)]
+    [InlineData("SET_ROLES", "driver,harnesses", null)]
     [InlineData("ROLE_STRUCTURE", "", null)]
     [InlineData("PLACES", "", null)]
     [InlineData("PLACE_PLAN", "", null)]

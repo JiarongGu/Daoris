@@ -557,6 +557,7 @@ const readRoles = (raw: unknown): RoleCatalogue | null => {
   return {
     roles: answer.roles, works: answer.works ?? [], kept: answer.kept === true, suggested: answer.suggested ?? [],
     ...(answer.use && Array.isArray(answer.use.roles) ? { use: answer.use } : {}),
+    ...(Array.isArray(answer.suggestedChoices) ? { suggestedChoices: answer.suggestedChoices, suggestedChoicesDated: answer.suggestedChoicesDated } : {}),
   };
 };
 
@@ -659,6 +660,12 @@ export const usePlaces = (ask: PlacesAsk = {}, { enabled = true }: { enabled?: b
  * by the person's press on its card. What starts may move with it, so the route publishes the roster's key too.
  */
 export const useSetRole = () => useDriverChange<RoleChangePress>('SET_ROLE');
+
+/**
+ * Several role changes made as one (AGENTSPLACE1g2): each a `SET_ROLE` press, judged in order and written in one transaction, so the first
+ * refusal refuses them all and nothing is written. The Roles mode's *Use these choices* is its press.
+ */
+export const useSetRoles = () => useDriverChange<{ changes: RoleChangePress[] }>('SET_ROLES');
 
 /**
  * "Look now": a quest just published, or an ask just made, is looked at on the driver's next breath
