@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## LANDNODE1c — Current drawn (2026-11-01)
+
+> **1c, Current drawn** (driver; `docs/2026-11-01-land-node-design.md` §4 and §8 row 9): Current's `land` and its tail, keeping the derived landing node's identifier for old cycles, still inert.
+
+Outcome: `NodeGraphHomes.Landing` draws a `land` with id `handed` (method merge, branch, pull-request or integrate; never push) and the same tail; `land` is begun and read from the landing record as `handed` is until 1c2 performs it, so presets and Current reach their landing as before.
+
 ## LANDNODE1b3 — the reconciliation (2026-11-01)
 
 > **1b3, the reconciliation** (driver; `docs/2026-11-01-land-node-design.md` §3 and §8 row 5): §3's ladder for the git phases; an Accept carrying several sessions, the first performing and the others reached as *brought into*. Proof: a stop at each git boundary ends in one branch; a press and a pass at once land once. After b2.
