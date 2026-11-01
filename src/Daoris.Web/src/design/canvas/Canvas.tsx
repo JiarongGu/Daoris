@@ -70,20 +70,9 @@ function scrollsItself(target: Element | null, stop: Element, dx: number, dy: nu
 }
 
 /**
- * **The canvas** (CANVAS1a; D224, the canvas design §2): a placed world, HTML laid out by CSS, standing in a viewport that pans and zooms.
- * Where it is not offered (below the 36rem floor, the list chosen, or nothing measured) it is the pane as it always was, its tools above it.
- *
- * @remarks
- * The world is transformed, never laid out again: `translate(−k × view) scale(k)` about its top left, the scale said on it for the boxes
- * the drawing measures in world units (`worldBoxes`). A plain wheel pans only while the world overflows that way and is not at that edge,
- * a node's own scrolling content first; Ctrl+wheel and a pinch zoom about the pointer continuously, the wheel's default prevented so the
- * window's zoom leaves it (`zoom.ts`); a drag on the ground, the middle button anywhere and one finger pan, with a threshold, capture and a
- * cancel that puts the view back on Escape. Shift+1, Shift+2 and Shift+0 fit, zoom to the selection and return to 100% from any focus but a
- * field. A node that takes the focus is revealed by the smallest pan inside a 2rem margin, never zooming, and the region never scrolls.
- * The view opens at 100% on the entry and follows the drawing until the person moves it; after that, a relayout keeps the focused node
- * (else the selected, else the one nearest the middle) where it stood on screen.
- *
- * A molecule: the view is its own page state, and every act goes out.
+ * **The canvas** (CANVAS1a; D224, the canvas design §2.4): a placed world, HTML laid out by CSS, transformed in a viewport that pans and
+ * zooms and never lays it out again; its scale is said on the world for the boxes the drawing reads in world units. Where it is not
+ * offered (below the 36rem floor, the list chosen, nothing measured) it is the pane as it always was. A molecule: the view is its own.
  */
 export function Canvas({
   ref, active, options, label, width, rem, pane, paneProps, tools, showTools, entry, selected = null, children,

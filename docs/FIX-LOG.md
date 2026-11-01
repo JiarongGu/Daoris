@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-02 - A flowchart placed by 16 px a rem under the window's zoom (CANVAS1a, trap 12)
+
+- **Symptom:** at the window's 200% a flowchart could choose top to bottom, or a track, its pane could not hold, and at 50% turn to the rail where its drawing fitted: its placement and its node track did not follow the zoom the page was drawn at.
+- **Root cause:** `FlowCanvas` converted its rem floors to pixels with a fixed 16 (`px`, and `placementFor`'s `rem` argument), while the window's zoom (ZOOM1) moves the root's size, so every rem the page draws in was 8 or 32 px and the needs were measured in the wrong unit.
+- **Fix:** `useRootRem` (`design/useWidth.ts`) reads the root's computed size again on each zoom change; `RankedFlow` places and sizes its track by it.
+- **Verify:** `RankedFlow.test.tsx`'s rem case, written before the fix (a 33rem flow in a 560 px pane: drawn at a 16 px root, the rail at a 32 px root); `measured/canvas.spec.ts` at the window's 50, 100 and 200%: every track between its floor and its most in the root's rem.
+
 ## 2026-11-01 - The suggested choices card never showed (AGENTSPLACE1g2)
 
 - **Symptom:** the Roles mode's *Suggested choices for your roles* card (MODELROLE1g) was built and tested, and no window showed it, though `ROLES` answers the table.

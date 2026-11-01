@@ -218,9 +218,9 @@ const PROPOSAL: Record<string, 'drawn' | 'rail'> = {
   'proposal/Proposal': 'drawn', 'proposal/ProposalHalf': 'drawn', 'proposal/ProposalNarrow': 'rail',
   'proposal/ProposalChinese': 'drawn', 'proposal/ProposalChineseHalf': 'drawn', 'proposal/ProposalChineseNarrow': 'rail',
   'proposal/ProposalDark': 'drawn', 'proposal/ProposalDarkHalf': 'drawn', 'proposal/ProposalChineseDarkNarrow': 'rail',
-  // The stale draft's line stands apart from the landing, so its union is wider: drawn at 80rem, the rail where the theme's frame or 39rem
-  // leaves less room.
-  'proposal/Stale': 'drawn', 'proposal/StaleHalf': 'rail', 'proposal/StaleChineseNarrow': 'rail', 'proposal/StaleDark': 'rail',
+  // The stale draft's line stands apart from the landing, so its union is wider: drawn in the canvas from its 36rem floor, panning where the
+  // theme's frame or 39rem leaves less room than it needs (CANVAS1a), and the rail at 25rem.
+  'proposal/Stale': 'drawn', 'proposal/StaleHalf': 'drawn', 'proposal/StaleChineseNarrow': 'rail', 'proposal/StaleDark': 'drawn',
   'proposal/Removes': 'drawn', 'proposal/RemovesHalf': 'drawn', 'proposal/RemovesChineseDark': 'drawn',
 };
 

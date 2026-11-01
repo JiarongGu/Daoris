@@ -146,6 +146,8 @@ test('the ＋ stays a 1.5rem press on screen at the edit floor, a port clear of 
   const footprint = () => page.evaluate(() => [...document.querySelectorAll<HTMLElement>('[data-flow-insert][data-shown]')].map((span) => [span.offsetWidth, span.offsetHeight]));
   const before = await footprint();
   await zoomTo(page, 0.8);
+  // The press grows once the gesture has settled: a scale held while it lasts restyles nothing.
+  await expect.poll(() => page.locator('[data-canvas-world]').first().evaluate((element) => (element as HTMLElement).style.willChange)).toBe('');
   expect(await footprint()).toEqual(before);
   const reach = await page.evaluate(() => {
     const area = document.querySelector('[role="region"][data-flow-pane]')!.getBoundingClientRect();
