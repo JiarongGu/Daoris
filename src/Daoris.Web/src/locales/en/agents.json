@@ -459,5 +459,19 @@
   "agents.setup.page.confirm.drive": "Drive",
   "agents.setup.page.back": "← Back to {{place}} · {{section}}",
   "agents.setup.page.workspaceFlow": "A workspace's workflow is set on its Repositories page for now.",
-  "agents.setup.page.workspaceFlowOpen": "Open it there"
+  "agents.setup.page.workspaceFlowOpen": "Open it there",
+  "agents.setup.allRoles.title": "All roles",
+  "agents.setup.allRoles.fold": "Every role once, by where it is placed · as a list or a diagram",
+  "agents.setup.allRoles.view": "Show the roles as",
+  "agents.setup.allRoles.list": "List",
+  "agents.setup.allRoles.diagram": "Diagram",
+  "agents.setup.allRoles.search": "Search roles",
+  "agents.setup.allRoles.nothing": "No role matches that.",
+  "agents.setup.allRoles.notes": "Staffing to look at",
+  "agents.setup.allRoles.suggested": "Daoris suggests choices for {{count}} role",
+  "agents.setup.allRoles.suggested_other": "Daoris suggests choices for {{count}} roles",
+  "agents.setup.allRoles.found": "{{count}} change found outside Daoris",
+  "agents.setup.allRoles.found_other": "{{count}} changes found outside Daoris",
+  "agents.setup.allRoles.show": "Show",
+  "agents.setup.allRoles.showOf": "Show: {{what}}"
 }

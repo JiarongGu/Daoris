@@ -7,16 +7,14 @@ import { type Authored, authoredText } from '../../locales/authored';
 // one-line summary each folds to, and the state the application holds above the page so a door out and back finds it as left.
 
 export const SECTIONS = ['workflow', 'roles', 'sessions'] as const;
-export type PlaceSection = (typeof SECTIONS)[number];
+/** *All roles* is this machine's alone: every role once, as a list or a diagram, with what Daoris suggests and the changes found. */
+export type PlaceSection = (typeof SECTIONS)[number] | 'allRoles';
 export type PlaceKind = 'machine' | 'workspace' | 'repository';
 
-export const isPlaceSection = (value: string | null | undefined): value is PlaceSection => SECTIONS.some((each) => each === value);
+export const isPlaceSection = (value: string | null | undefined): value is PlaceSection => value === 'allRoles' || SECTIONS.some((each) => each === value);
 
-/**
- * The sections a kind of place draws, in order. *This machine* holds Roles alone for now: its Sessions are Settings' own, reached by a door
- * its page row builds (the design's row m).
- */
-export const sectionsOf = (kind: PlaceKind): readonly PlaceSection[] => (kind === 'machine' ? ['roles'] : SECTIONS);
+/** The sections a kind of place draws, in order. *This machine*'s Sessions are Settings' own, so its page draws Roles and All roles. */
+export const sectionsOf = (kind: PlaceKind): readonly PlaceSection[] => (kind === 'machine' ? ['roles', 'allRoles'] : SECTIONS);
 
 /** The section that opens on arrival: Workflow on a repository and a workspace, Roles on this machine. */
 export const firstSection = (kind: PlaceKind): PlaceSection => sectionsOf(kind)[0]!;
@@ -102,7 +100,7 @@ export function foldedLines(row: PlaceRow, kind: PlaceKind, t: TFunction, langua
     ]);
   }
 
-  return { workflow, roles: rolesLine(row, kind, t, language, say), sessions };
+  return { workflow, roles: rolesLine(row, kind, t, language, say), sessions, allRoles: t('agents.setup.allRoles.fold') };
 }
 
 function rolesLine(row: PlaceRow, kind: PlaceKind, t: TFunction, language: string, say: (segments: (string | null)[]) => string): string {

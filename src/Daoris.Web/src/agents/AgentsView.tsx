@@ -21,7 +21,9 @@ import { AgentList, AgentStrip } from './AgentList';
 import { type AgentActs, AgentMainNotice, AgentPage, type Answered } from './AgentPage';
 import { type AgentPart, accountLabel, agentRows } from './agents';
 import { AgentsModes, AgentsStrip, RoleSectionStrip } from './AgentsModes';
-import { type AgentsMode, isRoleSection, readAgentsMode, type RoleSection, setupLit, storeAgentsMode } from './modes';
+import { type AgentsMode, isRoleSection, MACHINE, readAgentsMode, type RoleSection, setupLit, storeAgentsMode } from './modes';
+import { AllRoles } from './roles/AllRoles';
+import { MachineNotes } from './setup/MachineNotes';
 import { PlaceRoles } from './setup/PlaceRoles';
 import type { PlaceDriving } from './setup/PlacePage';
 import { draftOfAsk, type PlaceAsk, type SetUpPage, type SetUpPlace, useSetUpPage } from './setup/placePlan';
@@ -251,9 +253,14 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
                   onSource={sourceDoor({ id: modes.place!, name }, row.workspace, onGo)}
                 />
               ),
+              // SETUPUX1m: This machine alone draws every role once, its diagram, the suggested choices and the changes found.
+              ...(placed.kind === 'machine' ? { allRoles: <AllRoles notify={notify} page={rolesPage} doors={roleDoors} onGo={onGo} /> } : {}),
               ...(ofBodies ?? {}),
             }
             : {}}
+          notes={placed?.kind === 'machine'
+            ? <MachineNotes onShow={() => { rolesPage.onView('list'); shell.arrive(MACHINE, { section: 'allRoles' }); }} />
+            : undefined}
           drive={driving}
           onGo={onGo}
           setUp={setUp && setUpPlace

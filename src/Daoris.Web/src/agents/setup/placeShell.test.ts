@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { PlaceRow, PlaceWork } from '../../data/wiring';
 import i18n from '../../locales/i18n';
-import { firstSection, foldedLines, headOf, needOpening, roleNameOf, sectionsOf } from './placeShell';
+import { firstSection, foldedLines, headOf, isPlaceSection, needOpening, roleNameOf, sectionsOf } from './placeShell';
 
 // SETUPUX1h (the setup-UX design §2.1): a place page's three folds say their values from PLACES alone, each with its source, and the first
 // section by kind of place, and a section that needs the person, open themselves.
@@ -51,6 +51,15 @@ describe('the first section by kind of place', () => {
     expect(firstSection('machine')).toBe('roles');
     expect(sectionsOf('repository')).toEqual(['workflow', 'roles', 'sessions']);
     expect(sectionsOf('machine')[0]).toBe('roles');
+  });
+
+  // SETUPUX1m: this machine alone draws All roles beside its Roles, and its fold says what is behind it from no read.
+  it("gives this machine All roles after its Roles, and no other place", () => {
+    expect(sectionsOf('machine')).toEqual(['roles', 'allRoles']);
+    expect(sectionsOf('workspace')).not.toContain('allRoles');
+    expect(isPlaceSection('allRoles')).toBe(true);
+    expect(foldedLines(ENGINE, 'machine', t, 'en').allRoles).toBe('Every role once, by where it is placed · as a list or a diagram');
+    expect(foldedLines(ENGINE, 'machine', tz, 'zh').allRoles).toBe('每个角色一次，按所在位置 · 列表或角色图');
   });
 });
 
