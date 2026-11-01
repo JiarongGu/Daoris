@@ -218,6 +218,9 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-11-02-flowchart-reads.md` | Reads: FLOWCHART2, Codex's read, settled in the design's §8
 | `2026-11-02-canvas-brief.md` | Brief: CANVAS1, one proper canvas for every graph Daoris draws
 | `2026-11-02-staff-policy-brief.md` | Brief: STAFFPOLICY1, a role's staffing as weighted choices and the conditions that switch them
+| `2026-11-02-canvas-proposal-opus.md` | Proposal: CANVAS1, Opus, sealed
+| `2026-11-02-canvas-proposal-codex.md` | Proposal: CANVAS1, Codex, sealed
+| `2026-11-02-staff-policy-proposal-codex.md` | Proposal: STAFFPOLICY1, Codex, sealed
 
 ## UI, browser, tools and plugin contracts
 
