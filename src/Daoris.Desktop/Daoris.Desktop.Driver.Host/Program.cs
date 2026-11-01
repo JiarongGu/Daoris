@@ -69,9 +69,12 @@ using Daoris.Driver;
 //                 exact verbs; --plan prints what was read, the rule, the landing, the agent and the quest's text,
 //                 and publishes nothing. --what-it-builds names the checks its safe work declares (D124's 1a2 note).
 //
-//   place <repository>… --preset <id> [--with opinion,look,adoption] [--what-it-builds <kind>] [--drive] --plan
+//   place <repository>… --preset <id> [--with opinion,look,adoption] [--what-it-builds <kind>] [--drive]
+//                 (--plan | --apply [--accept <repository>:landed|integration,…])
 //                 a quick set-up's plan (AGENTSPLACE1a2), PLACE_PLAN's twin: a delivery preset, its riders, a set-up quest
-//                 and general driving, read before and after, every refusal at once. Writes nothing.
+//                 and general driving, read before and after, every refusal at once. --plan writes nothing. --apply
+//                 (AGENTSPLACE1b3) is the person's press, PLACE_APPLY's twin: the running Daoris asks for the Confirm on its
+//                 card; each acceptance is named on its own, and none is made unless named.
 //
 //   setup --workspace <name> [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]
 //   setup --workspace <name> --pause | --resume | --stop

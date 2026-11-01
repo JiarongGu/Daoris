@@ -288,6 +288,9 @@ internal sealed class TreeDelivering
                 End(DeliveryPhases.PluginDispatched, said.Pushed ? DeliveryOutcomes.Done : DeliveryOutcomes.Withdrawn, null, said.Message);
                 return said.Pushed ? Answered(said) : said;
             }
+
+            // The send's own failure (a plugin that did not answer in time, say) is why the dispatch stands without its answer.
+            return await ReconcileAsync(wire, sent, declares, ct, cause: said.Message).ConfigureAwait(false);
         }
 
         return await ReconcileAsync(wire, sent, declares, ct).ConfigureAwait(false);
@@ -344,7 +347,7 @@ internal sealed class TreeDelivering
         return await ReconcileAsync(wire, sent, declares, ct).ConfigureAwait(false);
     }
 
-    private async Task<PluginLanding> ReconcileAsync(IWorkplacePluginWire wire, LandingFrame sent, PluginLandDeclares declares, CancellationToken ct)
+    private async Task<PluginLanding> ReconcileAsync(IWorkplacePluginWire wire, LandingFrame sent, PluginLandDeclares declares, CancellationToken ct, string? cause = null)
     {
         var plugin = Intent.Plugin!;
         PluginLanding? found = null;
@@ -372,7 +375,8 @@ internal sealed class TreeDelivering
 
         if (found is null)
         {
-            var said = $"`{plugin}` was told this delivery and its answer was not kept, and nothing read proves what it did; it is not sent again, and the person's hand-off sends it";
+            var unknown = $"`{plugin}` was told this delivery and its answer was not kept, and nothing read proves what it did; it is not sent again, and the person's hand-off sends it";
+            var said = string.IsNullOrWhiteSpace(cause) ? unknown : $"{cause.Trim().TrimEnd('.')}; {unknown}";
             End(DeliveryPhases.PluginDispatched, DeliveryOutcomes.Unknown, null, said);
             return new PluginLanding(plugin, false, null, said + ".", Failed: true);
         }

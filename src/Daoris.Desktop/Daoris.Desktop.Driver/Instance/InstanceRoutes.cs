@@ -95,7 +95,7 @@ public static class OpenRoutes
         ("opinion show <session|opinion>", OpinionGate, "the gate's reading"),
         ("setup <repository> --plan", SetupPlan, "the plan; without `--plan` the person's press (SETUP_PRESS)"),
         ("setup --workspace <name>", null, "alone: no route sets a workspace up; each repository's press is SETUP_PRESS's"),
-        ("place <repository>… --plan", PlacePlan, "the plan; applying it is PLACE_APPLY's, the window's press; its terminal twin is still to come"),
+        ("place <repository>… --plan", PlacePlan, "the plan; with `--apply` the person's press (PLACE_APPLY)"),
         ("ask channel <id>", null,
             "alone: the read moves the person's own mark (CHANNEL_MARK, the person's), a door of the service, which writes it once whoever "
             + "asks; with words the person's press (CHANNEL_POST)"),
@@ -252,6 +252,12 @@ public static class PersonPresses
     public static InstanceRoute SetupPress { get; } = Person("SETUP_PRESS");
 
     /// <summary>
+    /// <c>place &lt;repository&gt;… --preset &lt;id&gt; … --apply [--accept …]</c> (AGENTSPLACE1b3): a place's plan applied, the configuration's changes and the
+    /// acceptances chosen, and each adoption quest. The plan is the same ask's <c>PLACE_PLAN</c>, open, which the verb reads alone.
+    /// </summary>
+    public static InstanceRoute PlaceApply { get; } = Person("PLACE_APPLY");
+
+    /// <summary>
     /// <c>plugins approve &lt;id&gt; &lt;server&gt;</c> and <c>withdraw</c> (RPC1e): the tools a plugin's server offers Ask Daoris approved,
     /// its reads only or the writes named, or the approval withdrawn.
     /// </summary>
@@ -296,6 +302,7 @@ public static class PersonPresses
         ("opinion myself <session>", OpinionMyself),
         ("ask channel <id> \"…\"", ChannelPost),
         ("setup <repository>", SetupPress),
+        ("place <repository>… --preset <id> … --apply [--accept <repository>:<purpose>,…]", PlaceApply),
         ("plugins approve <id> <server>", PluginAction),
         ("plugins withdraw <id> <server>", PluginAction),
         ("workflow skip <run> <node> \"…\"", WorkflowNode),

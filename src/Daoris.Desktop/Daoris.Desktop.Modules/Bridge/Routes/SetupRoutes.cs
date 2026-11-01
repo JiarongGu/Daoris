@@ -106,7 +106,7 @@ public sealed class SetupRoutes(DriverContext context)
         if (Flag(request, "said"))
         {
             return await TerminalSaid.RunAsync(output => PlaceCommand.RunAsync(
-                PlaceCommand.ArgsOf(ask), output, world, config, _loop.Home, plugins, _context.Door(config), instance: null, cancellationToken)).ConfigureAwait(false);
+                PlaceCommand.ArgsOf(ask), output, world, config, _loop.Home, plugins, _context.Door(config), instance: null, ct: cancellationToken)).ConfigureAwait(false);
         }
 
         return await PlacePlans.PlanAsync(world, config, _loop.Home, plugins, _context.Door(config), ask, cancellationToken).ConfigureAwait(false);
@@ -127,6 +127,17 @@ public sealed class SetupRoutes(DriverContext context)
         var doors = new PlaceApplyDoors(
             new PlaceWorld(service), _context.SetupWorldOf(service), _loop.Home, PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names), _context.Door(config),
             () => DriverConfig.Load(_loop.ConfigPath), _context.Change, DateOnly.FromDateTime(DateTime.Now));
+        // AGENTSPLACE1b3: `daoris-driver place … --apply` in the verb's own words, which plans now and applies that plan; the person's Confirm
+        // on the window's card has already pinned the plan between the terminal's ask and here (`PipeGrounds`).
+        if (Flag(request, "said"))
+        {
+            var said = await TerminalSaid.RunAsync(output => PlaceCommand.RunAsync(
+                PlaceCommand.ApplyArgsOf(PlaceAskOf(request), AcceptedOf(request)), output, doors.Place, config, _loop.Home, doors.Plugins, doors.Door,
+                instance: null, apply: doors, ct: cancellationToken)).ConfigureAwait(false);
+            _loop.Nudge();
+            return said;
+        }
+
         var result = await PlaceApplies.ApplyAsync(doors, PlaceAskOf(request), digest, AcceptedOf(request), cancellationToken).ConfigureAwait(false);
         // The look starts what the configuration now allows, and the quest the press asked.
         _loop.Nudge();

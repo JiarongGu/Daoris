@@ -28,6 +28,12 @@ Outcome: `NodeGraphHomes.Landing` draws a `land` with id `handed` (method merge,
 > **1b3, the reconciliation** (driver; `docs/2026-11-01-land-node-design.md` §3 and §8 row 5): §3's ladder for the git phases; an Accept carrying several sessions, the first performing and the others reached as *brought into*. Proof: a stop at each git boundary ends in one branch; a press and a pass at once land once. After b2.
 
 **Outcome** 2026-11-01: `DeliveryReconciler` settles unresolved deliveries by phase before any new start, writing no git; a landing goes on from its next phase, and a press and a pass land once. One Accept carrying several sessions is the head's unit's delivery, its members brought into it (`DeliveryReach`). Only its tests call it. Detail: D204's and D215's notes of this date.
+## AGENTSPLACE1b3 — the apply's authority (2026-11-01)
+
+> **1b3, the apply's authority** (modules): `PLACE_APPLY` and the terminal twin in every place `bridge-presses.md` names. Proof: the census marks it Person, with no standing cover; a role's act is refused; a stale plan is refused; the two acceptances stay distinct; a terminal card is confirmed once. After 1b2.
+
+**Outcome** 2026-11-01: `PLACE_APPLY`'s census, words, grounds, drain, mark and README rows were 1b2's; 1b3 adds the terminal twin, `daoris-driver place … --apply [--accept <repository>:landed|integration,…]` (`PersonPresses.PlaceApply`, `PlaceCommand`, the route's `said` form), and the proofs: no standing cover and no role act (`PipeStandingTests`), one card confirmed once and a moved plan refused (`PipeConfirmTests`), the two acceptances distinct (`PlaceApplyTests`). The page's hook and its coverage row wait for 1j. Detail: D124's AGENTSPLACE1b3 note.
+
 ## AGENTSPLACE1b2 — the recoverable apply (2026-11-01)
 
 > **1b2, the recoverable apply** (driver, modules): `PLACE_APPLY`'s steps, the receipt's home entry, the quest keyed by the digest, the restart's settling by postconditions. Proof: a stop at every boundary leaves a precise, recoverable outcome; no second quest; no early start. After 1a2 and 1b.

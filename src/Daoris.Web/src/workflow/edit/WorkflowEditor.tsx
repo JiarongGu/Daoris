@@ -238,7 +238,7 @@ export function WorkflowEditor({
       </div>
       <Prose className="text-small">{t('workflow.edit.body')}</Prose>
 
-      <div className="grid min-w-0 max-w-[32rem] gap-1">
+      <div className="grid min-w-0 gap-1">
         <span className="text-meta text-ink-soft">{t('workflow.edit.source.label')}</span>
         <SelectField
           ariaLabel={t('workflow.edit.source.label')}
@@ -278,7 +278,7 @@ export function WorkflowEditor({
         ))}
       </ol>
 
-      <div className="grid min-w-0 max-w-[32rem] gap-1">
+      <div className="grid min-w-0 gap-1">
         <span className="text-meta text-ink-soft">{t('workflow.edit.add.label')}</span>
         {/* Drawn again with each step added, so the choice reads as a press and the same kind can be added twice. */}
         <SelectField

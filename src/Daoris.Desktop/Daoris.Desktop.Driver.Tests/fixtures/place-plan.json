@@ -77,12 +77,12 @@
       ]
     },
     {
-      "name": "no --plan is the usage",
+      "name": "neither --plan nor --apply is the usage",
       "args": ["engine", "--preset", "merge-after-accept"],
       "exit": 2,
       "lines": [
-        "place: `--plan` is required: this build plans a place's set-up, and applying it is the window's, still to come.",
-        "usage: daoris-driver place <repository>… --preset <id> [--with opinion,look,adoption] [--what-it-builds <kind>] [--drive] --plan"
+        "place: name `--plan` to read the plan, or `--apply` to apply it.",
+        "usage: daoris-driver place <repository>… --preset <id> [--with opinion,look,adoption] [--what-it-builds <kind>] [--drive] (--plan | --apply [--accept <repository>:landed|integration,…])"
       ]
     },
     {
@@ -91,7 +91,7 @@
       "exit": 2,
       "lines": [
         "place: `opinions` is not something `--with` takes — `opinion`, `look` or `adoption`.",
-        "usage: daoris-driver place <repository>… --preset <id> [--with opinion,look,adoption] [--what-it-builds <kind>] [--drive] --plan"
+        "usage: daoris-driver place <repository>… --preset <id> [--with opinion,look,adoption] [--what-it-builds <kind>] [--drive] (--plan | --apply [--accept <repository>:landed|integration,…])"
       ]
     }
   ]

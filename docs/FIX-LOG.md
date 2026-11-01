@@ -12832,3 +12832,13 @@ mis-rooted instance.
 **Fix.** `useGitChanges` stamps `askedAt` in its query function, as each ask goes out and before its answer can be read, and returns it; `ChangesRead` reads it (`src/Daoris.Web/src/bridge/repositories/git.ts`, `src/projects/git/RepositoryGitView.tsx`).
 
 **Verified.** The Changes tab cases six times alone, 15 of 15 each; `ProjectsView.git`, `RepositoryGit`, `ChangesActs`, `bridge` and `presentational`, 130 of 130; `tsc --noEmit` clean.
+
+## 2026-11-01 — a landing plugin that timed out was said only as unknown, without why
+
+**Symptom.** `LandingPluginPatienceTests.A_plugin_that_never_answers_times_out_and_the_branch_stands` failed in the CI run on main, and again alone: the landing's message no longer said the plugin "did not answer `hook/work/land`".
+
+**Root cause.** Since the cut-over (LANDNODE1c3) a landing's plugin phase goes through the delivery: a send that failed is reconciled like any dispatch without its answer, and where nothing proves what the plugin did the reconciliation's own sentence ("was told this delivery and its answer was not kept") replaced the send's failure. The standing, unknown and never sent again, is right, since a plugin that timed out may have acted; the cause was lost.
+
+**Fix.** `TreeDelivering.DispatchAsync` hands the failed send's message to `ReconcileAsync`, whose unknown sentence now begins with it (`src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/TreeDeliveries.cs`).
+
+**Verified.** Red alone on main, green after: the Process classes `LandingPluginPatienceTests`, `LandingPluginTests` and `DeliveryPluginPhasesTests`, 15 of 15.
