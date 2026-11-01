@@ -674,6 +674,68 @@
         "nodes": [{ "id": "work", "kind": "claimed", "version": 1, "reach": "observed" }, { "id": "requests", "kind": "work.requests", "version": 1, "reach": "observed" }],
         "wires": [{ "id": "a", "kind": "after", "from": "work", "to": "requests" }] },
       "problems": [{ "code": "cleanup", "wire": null, "node": "requests", "words": "the end `requests` is at or before the line, so its cleanup goes at `held`: the wait is for an end after the line." }] },
+    { "name": "the holds before the landing hold (LANDNODE1k)",
+      "graph": { "entries": ["work"], "end": "line",
+        "nodes": [
+          { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
+          { "id": "holds", "kind": "quest.holds", "version": 1, "reach": "observed", "options": { "yes": true, "evidence": false } },
+          { "id": "content", "kind": "content.holds", "version": 1, "reach": "observed" },
+          { "id": "landing", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "merge" } },
+          { "id": "line", "kind": "line", "version": 1, "reach": "observed" }
+        ],
+        "wires": [
+          { "id": "a", "kind": "after", "from": "work", "to": "holds" }, { "id": "b", "kind": "after", "from": "holds", "to": "content" },
+          { "id": "c", "kind": "after", "from": "content", "to": "landing" }, { "id": "d", "kind": "after", "from": "landing", "to": "line" }
+        ] },
+      "problems": [] },
+    { "name": "a hold after the landing (LANDNODE1k)",
+      "graph": { "entries": ["work"], "end": "line",
+        "nodes": [
+          { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
+          { "id": "landing", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "merge" } },
+          { "id": "content", "kind": "content.holds", "version": 1, "reach": "observed" },
+          { "id": "line", "kind": "line", "version": 1, "reach": "observed" }
+        ],
+        "wires": [
+          { "id": "a", "kind": "after", "from": "work", "to": "landing" }, { "id": "b", "kind": "after", "from": "landing", "to": "content" },
+          { "id": "c", "kind": "after", "from": "content", "to": "line" }
+        ] },
+      "problems": [{ "code": "hold-late", "wire": null, "node": "content", "words": "node `content`: the landing `landing` can start before `content` is reached, and a `content.holds` judges the work before it lands: every way to it passes `content`." }] },
+    { "name": "a hold beside the landing, in a group (LANDNODE1k)",
+      "graph": { "entries": ["work"], "end": "landing",
+        "nodes": [
+          { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
+          { "id": "holds", "kind": "quest.holds", "version": 1, "reach": "observed" },
+          { "id": "landing", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "merge" } }
+        ],
+        "wires": [
+          { "id": "a", "kind": "after", "from": "work", "to": "holds" },
+          { "id": "b", "kind": "after", "from": "holds", "to": "landing", "group": { "id": "g", "mode": "anyOf" } },
+          { "id": "c", "kind": "after", "from": "work", "to": "landing", "group": { "id": "g", "mode": "anyOf" } }
+        ] },
+      "problems": [{ "code": "hold-late", "wire": null, "node": "holds", "words": "node `holds`: the landing `landing` can start before `holds` is reached, and a `quest.holds` judges the work before it lands: every way to it passes `holds`." }] },
+    { "name": "a hold twice (LANDNODE1k)",
+      "graph": { "entries": ["work"], "end": "landing",
+        "nodes": [
+          { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
+          { "id": "holds", "kind": "quest.holds", "version": 1, "reach": "observed" },
+          { "id": "again", "kind": "quest.holds", "version": 1, "reach": "observed" },
+          { "id": "landing", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "merge" } }
+        ],
+        "wires": [
+          { "id": "a", "kind": "after", "from": "work", "to": "holds" }, { "id": "b", "kind": "after", "from": "holds", "to": "again" },
+          { "id": "c", "kind": "after", "from": "again", "to": "landing" }
+        ] },
+      "problems": [{ "code": "hold-twice", "wire": null, "node": "again", "words": "node `again`: `holds` and `again` are both a `quest.holds`, and the graph judges each hold once." }] },
+    { "name": "a hold with no landing to judge (LANDNODE1k)",
+      "graph": { "entries": ["work"], "end": "check",
+        "nodes": [
+          { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
+          { "id": "holds", "kind": "quest.holds", "version": 1, "reach": "observed" },
+          { "id": "check", "kind": "check", "version": 1, "reach": "performed" }
+        ],
+        "wires": [{ "id": "a", "kind": "after", "from": "work", "to": "holds" }, { "id": "b", "kind": "after", "from": "holds", "to": "check" }] },
+      "problems": [{ "code": "hold-unlanded", "wire": null, "node": "holds", "words": "node `holds`: a `quest.holds` judges the work before it lands, and the graph holds no landing." }] },
     { "name": "a cycle through the graph is said beside its other problems", "base": "graphBase",
       "add": { "wires": [{ "id": "x", "kind": "after", "from": "deploy", "to": "dependency" }] },
       "problems": [

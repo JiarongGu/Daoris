@@ -49,4 +49,11 @@ public interface IWorkplaceProcess
     /// acceptance's provenance; null where the version holds no such step, and under Current, whose rule's <c>integrate</c> is read instead.
     /// </summary>
     string? IntegrateRequest => null;
+
+    /// <summary>
+    /// Whether the landing's start judges the quest's holds, D88's proof and what the line holds by content itself (LANDNODE1k): under Current, under
+    /// a steps version and under a graph version that lands by a <c>handed</c>, where they are judged at the start as before; not where a graph
+    /// version lands by a <c>land</c>, whose own steps judge them, or which holds none of them, and lands without.
+    /// </summary>
+    bool JudgesHolds => true;
 }

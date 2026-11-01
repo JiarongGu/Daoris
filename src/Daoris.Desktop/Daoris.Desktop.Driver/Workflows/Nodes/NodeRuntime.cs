@@ -67,6 +67,12 @@ public sealed record NodeRuntimeLook(DriverConfig Config, bool Whole)
         (_, _, _) => Task.FromResult<(OpinionGateState?, ReviewGateState?)>((null, null));
 
     /// <summary>
+    /// What the line and the person's branches hold of a run's branch at the commit its pass read (LANDNODE1k), what its <c>content.holds</c>
+    /// observes: read once a pass, and only where that node waits. Null where it was not read at that commit, and the node waits.
+    /// </summary>
+    public Func<WorkUnit, string, CancellationToken, Task<HoldContent?>> Content { get; init; } = (_, _, _) => Task.FromResult<HoldContent?>(null);
+
+    /// <summary>
     /// The named workflow's version a quest unit's run is bound to (FABRIC-RUN1c; §E7, D157 §5.1: the decoder's read for a run, through
     /// <see cref="WorkflowRunNodes.VersionOf"/>), given the quests the pass read for its chain; null where its run follows Current or has no
     /// binding. A unit bound to one is governed by that version, never by Current's graph (<see cref="NodeRuntime.BoundIn"/> reads the home's).
@@ -781,7 +787,7 @@ public sealed class NodeRuntime(
 
             // FABRIC-RUN1b: the look's git reads for the observed built-ins, each checkout's remote-tracking refs read once a pass, and only where
             // a node waits on them. FABRIC-RUN1c: D157's gates likewise, once a pass for a unit whose opinion or look waits on them.
-            var git = new PassReads(new PassGit(look.Remotes, look.Holds, Pushing(governed.Values)), new PassGates(look.Gates));
+            var git = new PassReads(new PassGit(look.Remotes, look.Holds, Pushing(governed.Values)), new PassGates(look.Gates), Once(look.Content));
 
             // FABRIC-RUN1e: one count of calls for the whole pass, reconciliation's first, so four is the pass's bound and not its starts' alone.
             var sends = new WorkSends(SendsPerPass);
@@ -912,7 +918,8 @@ public sealed class NodeRuntime(
 
             // FABRIC-RUN1b: what git says for the built-ins this round's record holds waiting on it, read once a pass; FABRIC-RUN1c: the gates
             // its opinion and look wait on, likewise.
-            var reads = await GitReadsAsync(governed, record, git.Git, ct).ConfigureAwait(false);
+            var reads = await ContentAsync(governed, record, tip, git.Content, await GitReadsAsync(governed, record, git.Git, ct).ConfigureAwait(false), ct)
+                .ConfigureAwait(false);
             var gates = await GatesAsync(governed, record, tip, git.Gates, ct).ConfigureAwait(false);
             var (before, evaluated) = governed.Scope is null ? Evaluate(governed, record, tipped, tip, reads, gates) : EvaluateRun(governed, record, tip, reads, gates);
             if (evaluated.Refusal is { } refusal)
@@ -1523,8 +1530,33 @@ public sealed class NodeRuntime(
         return governed.Scope.Branch is { } branch && tip is not null ? await gates.OfAsync(branch, tip, ct).ConfigureAwait(false) : default;
     }
 
-    /// <summary>One pass's reads beyond the tips (FABRIC-RUN1b, RUN1c): git's for the observed built-ins, and D157's gates.</summary>
-    private sealed record PassReads(PassGit Git, PassGates Gates);
+    /// <summary>One pass's reads beyond the tips (FABRIC-RUN1b, RUN1c): git's for the observed built-ins, D157's gates, and what the line holds (LANDNODE1k).</summary>
+    private sealed record PassReads(PassGit Git, PassGates Gates, Func<WorkUnit, string, CancellationToken, Task<HoldContent?>> Content);
+
+    /// <summary>
+    /// <paramref name="reads"/> with what the line holds of a run's branch at the tip this pass read (LANDNODE1k), where its <c>content.holds</c> waits
+    /// active or unknown; as they were for every other unit, so a run whose hold is settled, or holds none, asks nothing.
+    /// </summary>
+    private static async Task<NodeGitReads?> ContentAsync(
+        GovernedUnit governed, NodeRecord record, string? tip, Func<WorkUnit, string, CancellationToken, Task<HoldContent?>> content, NodeGitReads? reads,
+        CancellationToken ct)
+    {
+        if (governed.Scope?.Branch is not { } branch || tip is null
+            || !governed.Graph.Nodes.Any(node => node.Kind == NodeKinds.ContentHolds && record.Statuses.GetValueOrDefault(node.Id)?.State is NodeStates.Active or NodeStates.Unknown))
+        {
+            return reads;
+        }
+
+        var read = await content(branch, tip, ct).ConfigureAwait(false);
+        return (reads ?? new NodeGitReads()) with { Content = (unit, at) => unit == branch.Id && at == tip ? read : null };
+    }
+
+    /// <summary>The look's content read, asked once a pass for a branch and a tip however many rounds ask it.</summary>
+    private static Func<WorkUnit, string, CancellationToken, Task<HoldContent?>> Once(Func<WorkUnit, string, CancellationToken, Task<HoldContent?>> content)
+    {
+        var known = new Dictionary<(string Unit, string Tip), Task<HoldContent?>>();
+        return (unit, tip, ct) => known.TryGetValue((unit.Id, tip), out var read) ? read : known[(unit.Id, tip)] = content(unit, tip, ct);
+    }
 
     /// <summary>
     /// What git says for a branch unit's observed built-ins that wait on it (FABRIC-RUN1b; NODE1's choice 8, the look's git reads): a

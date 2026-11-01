@@ -15,13 +15,17 @@
     "nodes": [
       { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
       { "id": "requests", "kind": "work.requests", "version": 1, "reach": "observed" },
+      { "id": "holds", "kind": "quest.holds", "version": 1, "reach": "observed" },
+      { "id": "content", "kind": "content.holds", "version": 1, "reach": "observed" },
       { "id": "review", "kind": "review", "version": 1, "reach": "pressed" },
       { "id": "landing", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "merge" } },
       { "id": "line", "kind": "line", "version": 1, "reach": "observed" }
     ],
     "wires": [
       { "id": "a", "kind": "after", "from": "work", "to": "requests" },
-      { "id": "b", "kind": "after", "from": "requests", "to": "review" },
+      { "id": "h", "kind": "after", "from": "requests", "to": "holds" },
+      { "id": "i", "kind": "after", "from": "holds", "to": "content" },
+      { "id": "b", "kind": "after", "from": "content", "to": "review" },
       { "id": "e", "kind": "after", "from": "review", "to": "landing" },
       { "id": "c", "kind": "after", "from": "landing", "to": "line" }
     ]

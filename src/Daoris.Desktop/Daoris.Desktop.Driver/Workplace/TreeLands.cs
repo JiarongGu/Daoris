@@ -609,9 +609,9 @@ internal sealed class TreeLands(
         }
 
         // SQUASHTIDY1f: the head's own judgement, asked first, since a second opinion or a review of work already on the line
-        // lands nothing either.
+        // lands nothing either. LANDNODE1k: a graph version that lands by a `land` judges it as its `content.holds` step, or holds none.
         var work = await workReads.WorkAsync(full, ct, uncommitted, here).ConfigureAwait(false);
-        if (work is not null && DiscardOffer.Of(full, work) is { } carried)
+        if (work is not null && gate?.Process?.JudgesHolds != false && DiscardOffer.Of(full, work) is { } carried)
         {
             return new(false, carried.NotLanded) { Refusal = AutoLandingCode.Carried };
         }

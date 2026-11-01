@@ -67,6 +67,9 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
         ? IntegrateNodes.RequestOf(integrate)
         : null;
 
+    /// <inheritdoc/>
+    public bool JudgesHolds => Graph is not { } graph || !graph.Nodes.Any(node => node.Kind == NodeKinds.Land);
+
     /// <summary>Rows 5 and 6 of D154's table as the version says them; null under Current, where the rule says them, as today.</summary>
     public WorkflowLook? Look { get; init; }
 
