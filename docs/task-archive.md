@@ -22498,3 +22498,8 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 ## CONSOLEWINDOWS1 — no check shows a console window on the owner's screen (2026-11-01)
 
 **Outcome** 2026-11-01: every Node child start passes `windowsHide: true`, held by `tools/console-windows.mjs` in `npm run verify`; every .NET console start sets `CreateNoWindow = true`, held by `ProcessStartsCensusTests` in the driver and modules tests (`NoConsoleStarts` names the shell-opened and kept-console exemptions with their reasons).
+## LANDNODE1f — the land message (2026-11-01)
+
+> **1f, the message** (driver; `docs/2026-11-01-land-node-design.md` §2 and §8 row 7): a `land` node's `message` template over `{title}`, `{quest}`, `{ticket}`, `{session}`, rendered once into the delivery's intent before the landing and used on the commits the landing makes (the merge commit, a squash commit), the maker's own line kept; a template naming another placeholder is refused where the node is judged. Proof: message tests.
+
+**Outcome** 2026-11-01: `LandNodes.RenderMessage` renders the template in one pass (null for one the node refuses, which `LandNodes.Problem` already did); a delivery's merge says its intent's message with the maker's line (`IntegrationPresses` hands it to the press's own request only), and a squash opens with it above the commits' list and the session line. The intent's producer, which calls `RenderMessage`, is row 1c2's. Tests `LandMessageTests`, `LandDeliveryGitTests`.
