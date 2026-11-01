@@ -10,10 +10,11 @@ namespace Daoris.Driver;
 internal sealed record IntegrationReplayAsk(string Repository, string Workspace, string Root, string Line)
 {
     /// <summary>
-    /// The merge commit's message for a request. Null takes the merge form's own, <c>Merge branch '&lt;branch&gt;'</c>, as the landing's merge
-    /// makes it (<c>TreeLands</c>): the request keeps no composed message yet (§5.2 step 1 freezes it, a later part writes it).
+    /// The merge commit's message for a request, or null for a request it names none of. None takes the merge form's own,
+    /// <c>Merge branch '&lt;branch&gt;'</c>, as the landing's merge makes it (<c>TreeLands</c>): a request keeps no composed message (§5.2 step 1
+    /// freezes it, a later part writes it); a delivery's merge says its intent's (LANDNODE1f, <see cref="IntegrationPresses"/>).
     /// </summary>
-    public Func<IntegrationRequest, string>? Messages { get; init; }
+    public Func<IntegrationRequest, string?>? Messages { get; init; }
 
     /// <summary>
     /// The say door a member's session is told through where its conflict goes to it (§5.4's <c>session</c>, INTEGRATE1e part e3b); null where

@@ -37,19 +37,19 @@ public sealed class NodeGraphHomesTests
 
         var merged = NodeGraphHomes.Current(config, "engine", "shop");
         Assert.Equal((LandingSource.Repository, (string?)null, true), (merged.Source, merged.Cycle, merged.Readable));
-        Assert.Equal(("handed:handed line:line", "handed-after->line", "handed", "line", GraphCleanup.Held), Shape(merged.Graph!));
+        Assert.Equal(("handed:land line:line", "handed-after->line", "handed", "line", GraphCleanup.Held), Shape(merged.Graph!));
 
         var pulled = NodeGraphHomes.Current(config, "orders", "shop");
         Assert.Equal(LandingSource.Workspace, pulled.Source);
         Assert.Equal(
-            ("handed:handed pushed:pushed pull-request:pull-request line:line", "handed-after->pushed pushed-after->pull-request pull-request-after->line",
+            ("handed:land pushed:pushed pull-request:pull-request line:line", "handed-after->pushed pushed-after->pull-request pull-request-after->line",
              "handed", "line", GraphCleanup.Held),
             Shape(pulled.Graph!));
 
         var none = NodeGraphHomes.Current(config, "elsewhere", "another");
         Assert.Equal((LandingSource.Default, true), (none.Source, none.Readable));
         Assert.Equal(NodeGraphs.Digest(merged.Graph!), NodeGraphs.Digest(none.Graph!));
-        Assert.Equal(NodeGraphs.Digest(NodeGraphHomes.Landing(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"))), NodeGraphs.Digest(none.Graph!));
+        Assert.Equal(NodeGraphs.Digest(NodeGraphHomes.Landing(LandingRule.Merge)), NodeGraphs.Digest(none.Graph!));
 
         foreach (var kind in NodeGraphHomes.WorkCycleKinds)
         {
@@ -86,7 +86,7 @@ public sealed class NodeGraphHomesTests
         var cycled = NodeGraphHomes.Current(config, "shell", "shop");
         Assert.Equal((LandingSource.Repository, "qa"), (cycled.Source, cycled.Graph!.End));
         Assert.Equal(
-            ("handed:handed line:line qa:human", "handed-after->line line-after->qa", "handed", "qa", GraphCleanup.Held),
+            ("handed:land line:line qa:human", "handed-after->line line-after->qa", "handed", "qa", GraphCleanup.Held),
             Shape(cycled.Graph!));
     }
 
@@ -142,14 +142,14 @@ public sealed class NodeGraphHomesTests
         var home = NodeGraphHomes.Current(config, "engine", null);
         Assert.True(home.Readable);
         Assert.Equal(
-            ("handed:handed integrate:integrate line:line", "handed-after->integrate integrate-after->line", "handed", "line", GraphCleanup.Held),
+            ("handed:land integrate:integrate line:line","handed-after->integrate integrate-after->line", "handed", "line", GraphCleanup.Held),
             Shape(home.Graph!));
         Assert.Equal(NodeReach.Waited, home.Graph!.Nodes.Single(node => node.Kind == NodeKinds.Integrate).Reach);
         Assert.Empty(NodeGraphs.Problems(home.Graph));
 
         // Without it, today's graph, byte for byte.
         var plain = NodeGraphHomes.Landing(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"));
-        Assert.Equal(("handed:handed line:line", "handed-after->line"), (Shape(plain).Nodes, Shape(plain).Wires));
+        Assert.Equal(("handed:land line:line", "handed-after->line"), (Shape(plain).Nodes, Shape(plain).Wires));
         Assert.NotEqual(NodeGraphs.Digest(plain), NodeGraphs.Digest(home.Graph));
         Assert.Equal(NodeGraphs.Digest(plain), NodeGraphs.Digest(NodeGraphHomes.Landing(Integrating with { Integrate = null })));
         Assert.Equal(NodeGraphs.Digest(NodeGraphHomes.Landing(Integrating)), NodeGraphs.Digest(home.Graph));
@@ -203,7 +203,7 @@ public sealed class NodeGraphHomesTests
         // The older build never reads the key: the rule without it is what it draws, and its graph has no integrate node.
         var older = NodeGraphHomes.OfLanding(rule with { Integrate = null }, LandingSource.Repository);
         Assert.DoesNotContain(older.Graph!.Nodes, node => node.Kind == NodeKinds.Integrate);
-        Assert.Equal("handed:handed line:line", Shape(older.Graph).Nodes);
+        Assert.Equal("handed:land line:line", Shape(older.Graph).Nodes);
 
         // The file the newer build wrote keeps the key through a round trip, and reads back as the same rule.
         Assert.Equal(rule.Integrate, DriverConfig.Parse(config.ToJson()).Landings["engine"].Integrate);
@@ -212,6 +212,36 @@ public sealed class NodeGraphHomesTests
         Assert.True(NodeRuntime.Armed(config));
         Assert.False(NodeRuntime.Armed(config.WithLandingIntegrate("engine", null)));
         Assert.False(NodeRuntime.Armed(DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"))));
+    }
+
+    /// <summary>
+    /// LANDNODE1c (the land node design §4): Current's landing is a <c>land</c> by the method its rule reaches, never <c>push</c>, keeping the
+    /// identifier <c>handed</c> had, so a cycle's wires and evidence bindings to it resolve; a <c>handed</c> still reads as a landing in a version.
+    /// </summary>
+    [Fact]
+    public void Currents_land_keeps_the_handed_identifier_so_an_old_cycle_still_resolves()
+    {
+        var methods = new (LandingRule Rule, string Method)[]
+        {
+            (LandingRule.Merge, LandNodes.Merge),
+            (new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"), LandNodes.Branch),
+            (Pulled, LandNodes.PullRequest),
+            (Integrating, LandNodes.Integrate),
+        };
+        foreach (var (rule, method) in methods)
+        {
+            var land = Assert.Single(NodeGraphHomes.Landing(rule).Nodes, node => node.Kind == NodeKinds.Land);
+            Assert.Equal(("handed", method), (land.Id, NodeOptions.Text(land, "method")));
+            Assert.DoesNotContain(NodeGraphHomes.Landing(rule).Nodes, node => node.Kind == NodeKinds.Handed);
+        }
+
+        var cycle = """{ "nodes": [ { "id": "qa", "kind": "human", "version": 1, "reach": "pressed", "inputs": { "evidence": "daoris/land@1" } } ], "wires": [ { "id": "a", "kind": "after", "from": "handed", "to": "qa" }, { "id": "e", "kind": "data", "from": "handed.evidence", "to": "qa.evidence" } ], "end": "qa" }""";
+        foreach (var (rule, _) in methods)
+        {
+            var home = NodeGraphHomes.OfLanding(rule with { Cycle = cycle }, LandingSource.Repository);
+            Assert.Equal([], home.Problems.Select(problem => problem.Words));
+            Assert.Contains("handed-after->qa", Shape(home.Graph!).Wires);
+        }
     }
 
     [Fact]

@@ -101,7 +101,7 @@ public sealed class HookStateTests
             "engine", "aurora", "D:/fam/engine", "feature/q1-fix", "main", "https://example.test/pr/7", Source,
             "https://dev.azure.com/org/project/_git/engine")));
 
-        Assert.Equal(["repository", "workspace", "root", "branch", "line", "pullRequest", "pushedTip", "origin"],
+        Assert.Equal(["repository", "workspace", "root", "branch", "line", "pullRequest", "pushedTip", "origin", "key"],
             frame.EnumerateObject().Select(property => property.Name));
         Assert.Equal("feature/q1-fix", frame.GetProperty("branch").GetString());
         // GITAUTH1b: origin as the one reader gives it, as the land frame carries it.
@@ -111,6 +111,8 @@ public sealed class HookStateTests
         Assert.Equal(JsonValueKind.Null, none.GetProperty("line").ValueKind);
         Assert.Equal(JsonValueKind.Null, none.GetProperty("pullRequest").ValueKind);
         Assert.Equal(JsonValueKind.Null, none.GetProperty("origin").ValueKind);
+        // LANDNODE1e: the delivery key is null for a plugin that declares no hooks.key.
+        Assert.Equal(JsonValueKind.Null, none.GetProperty("key").ValueKind);
     }
 
     /// <summary>A completed answer, whole: each field read, the target without <c>refs/heads/</c>, the commits made lower-case.</summary>

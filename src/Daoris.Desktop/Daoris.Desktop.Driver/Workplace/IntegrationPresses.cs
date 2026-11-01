@@ -14,9 +14,10 @@ internal static class IntegrationPresses
     /// else the sentence the press is refused with (the conflict or the hook in today's words, or what holds it).
     /// </summary>
     /// <param name="delivered">A delivery's merge (LANDNODE1b2), admitted by its intent's method rather than the rule's.</param>
+    /// <param name="message">A delivery's rendered message (LANDNODE1f), the merge commit's own with the maker's line; null makes today's <c>Merge branch</c>.</param>
     public static async Task<(bool Merged, string? Refused)> MergeAsync(
         string home, DriverConfig config, string root, string repository, string? workspace, string line, string branch, string tip, CancellationToken ct,
-        Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null, bool delivered = false)
+        Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null, bool delivered = false, string? message = null)
     {
         try
         {
@@ -25,7 +26,12 @@ internal static class IntegrationPresses
             if (admitted is not { Admitted: true, Request: { } request }) return (false, $"Nothing was merged: {admitted.Message}");
 
             var asks = new IntegrationSweepAsks(
-                new IntegrationReplayAsk(repository, request.Workspace, root, line) { Config = config },
+                new IntegrationReplayAsk(repository, request.Workspace, root, line)
+                {
+                    Config = config,
+                    // Only this press's request: the line's run may batch others, which keep their own message.
+                    Messages = message is null ? null : made => made.Id == request.Id ? DaorisMaker.Of(message.ReplaceLineEndings("\n").Trim('\n', ' ')) : null,
+                },
                 new IntegrationPromoteAsk(repository, request.Workspace, root, line, config, home) { Beside = beside });
             var run = await new IntegrationLines(store, DaorisHome.Entry(home, HomeEntry.Trees)).RunAsync(asks, ct).ConfigureAwait(false);
             return store.Request(request.Id) switch

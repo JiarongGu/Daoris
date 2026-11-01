@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## LANDNODE1c — Current drawn (2026-11-01)
+
+> **1c, Current drawn** (driver; `docs/2026-11-01-land-node-design.md` §4 and §8 row 9): Current's `land` and its tail, keeping the derived landing node's identifier for old cycles, still inert.
+
+Outcome: `NodeGraphHomes.Landing` draws a `land` with id `handed` (method merge, branch, pull-request or integrate; never push) and the same tail; `land` is begun and read from the landing record as `handed` is until 1c2 performs it, so presets and Current reach their landing as before.
+
 ## LANDNODE1b3 — the reconciliation (2026-11-01)
 
 > **1b3, the reconciliation** (driver; `docs/2026-11-01-land-node-design.md` §3 and §8 row 5): §3's ladder for the git phases; an Accept carrying several sessions, the first performing and the others reached as *brought into*. Proof: a stop at each git boundary ends in one branch; a press and a pass at once land once. After b2.
@@ -87,6 +93,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 ## AGENTSPLACE1g — All roles and the role editor (2026-11-01)
 
 > **AGENTSPLACE1g** (web; row 10 of AGENTSPLACE1). *All roles* in Working roles (the Setup mode's page waits for 1e): scope filter, machine-wide roles set apart, others read-only with *Open at \<place\>*; the editor asks for no id and fixes the place, picks agent, model and effort from the agent's offers with *other…*, and keeps *Off*, *Clear staffing* and *Restore role defaults* apart; *Remove* asks inline naming the fallback; the page's state is held by the place so a door out keeps the selection and scope. Proof: `Roles.test.tsx`, `RolesStructure.test.tsx`, `RolesView.test.tsx`; stories `AllRoles*` and `RoleEditor*`.
+
+## AGENTSPLACE1g1 — Roles on a place (2026-11-01)
+
+> **AGENTSPLACE1g1** (web; row 11 of AGENTSPLACE1). A place's page in the Setup mode lists one row per work from `ROLE_STRUCTURE` for its chain: the role taking it, where it is placed, its first choice and that choice's last reading. *Give \<place\> its own…* on a row taken from a parent, *Edit* and *Back to \<parent\>'s* (an `InlineConfirm` naming the role the work falls back to) on a role placed here, all through `RolesCard`'s editor and `SET_ROLE`; the place's appointed roles are rows under the works, a dark one a quiet line. Proof: `PlaceRoles.test.tsx`; stories `SetupPlaces` (Repository*). The old Roles sections stay until the Setup flag is lit (1e). Not done: the scoped diagram, and the story states beyond a repository's.
 
 ## AGENTSPLACE1a — the effective projection (2026-11-01)
 
@@ -22498,3 +22508,9 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 ## CONSOLEWINDOWS1 — no check shows a console window on the owner's screen (2026-11-01)
 
 **Outcome** 2026-11-01: every Node child start passes `windowsHide: true`, held by `tools/console-windows.mjs` in `npm run verify`; every .NET console start sets `CreateNoWindow = true`, held by `ProcessStartsCensusTests` in the driver and modules tests (`NoConsoleStarts` names the shell-opened and kept-console exemptions with their reasons).
+
+## LANDNODE1f — the land message (2026-11-01)
+
+> **1f, the message** (driver; `docs/2026-11-01-land-node-design.md` §2 and §8 row 7): a `land` node's `message` template over `{title}`, `{quest}`, `{ticket}`, `{session}`, rendered once into the delivery's intent before the landing and used on the commits the landing makes (the merge commit, a squash commit), the maker's own line kept; a template naming another placeholder is refused where the node is judged. Proof: message tests.
+
+**Outcome** 2026-11-01: `LandNodes.RenderMessage` renders the template in one pass (null for one the node refuses, which `LandNodes.Problem` already did); a delivery's merge says its intent's message with the maker's line (`IntegrationPresses` hands it to the press's own request only), and a squash opens with it above the commits' list and the session line. The intent's producer, which calls `RenderMessage`, is row 1c2's. Tests `LandMessageTests`, `LandDeliveryGitTests`.

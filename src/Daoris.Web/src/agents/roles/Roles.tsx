@@ -61,7 +61,34 @@ export function newRoleEditing(
 }
 
 /** One row: the catalogue's role where there is one, and the staffing `ACTORS` answers for the same id. */
-type Line = { id: string; row: RoleRow | null; actor: ActorRow | null };
+export type Line = { id: string; row: RoleRow | null; actor: ActorRow | null };
+
+/** A row whose record is not this home's to change keeps the order editor alone. */
+const staffingOnlyLine = (line: Line, kept: boolean) => !line.row || (!kept && line.row.seeded);
+
+/** Whether a role's editor is offered: a catalogue role this home keeps, or a staffing's order where its editor is built. */
+export const mayEditLine = (line: Line, kept: boolean): boolean => (line.row
+  ? (line.row.state === 'seed' || line.row.state === 'set') && (staffingOnlyLine(line, kept) ? !!line.actor && EDITABLE.has(line.id) : kept)
+  : !!line.actor && EDITABLE.has(line.id));
+
+/** A role's order as drafts: the staffing's where it has one, else the record's, else one empty choice on the first agent. */
+function draftsOf(line: Line, agents: readonly { value: string }[], key: () => number): Draft[] {
+  const draft = (entry?: RoleChoice): Draft => ({ key: key(), agent: entry?.agent ?? agents[0]?.value ?? '', model: entry?.model ?? '', effort: entry?.effort ?? '' });
+  const own = line.actor && line.actor.choices.length > 0 ? line.actor.choices : line.row?.choices ?? [];
+  return own.length > 0 ? own.map(draft) : [draft()];
+}
+
+/** The editor an existing role opens with: its record and its order, in the catalogue's mode or the order editor's alone. */
+export function editingOfLine(
+  line: Line, { kept, works, agents, name, key }: { kept: boolean; works: readonly string[]; agents: readonly { value: string }[]; name: string; key: () => number },
+): Editing {
+  const row = line.row;
+  return {
+    id: line.id, mode: staffingOnlyLine(line, kept) ? 'staffing' : 'role', isNew: false, revision: row?.revision ?? null,
+    nameEn: row?.nameEn ?? name, nameZh: row?.nameZh ?? name, takes: row?.takes ?? [],
+    work: row?.takes[0] ?? works[0] ?? 'build', place: row?.scopeKind ?? 'machine', placeId: row?.scopeId ?? '', drafts: draftsOf(line, agents, key),
+  };
+}
 
 /** An entry's words: agent, model and effort, each in the tool's own words, account default where it names none. */
 export function entryText(t: TFunction, entry: ActorChoice): string {
@@ -97,7 +124,7 @@ export function roleName(t: TFunction, language: string, row: Pick<RoleRow, 'id'
 }
 
 /** Where a role works, in the page's words. */
-function placeText(t: TFunction, kind?: string | null, id?: string | null): string {
+export function placeText(t: TFunction, kind?: string | null, id?: string | null): string {
   return kind === 'workspace' || kind === 'repository' ? t(`settings.ai.roles.place.${kind}`, { id: id ?? '' }) : t('settings.ai.roles.place.machine');
 }
 
@@ -161,8 +188,10 @@ function suggestionPress(role: SuggestedRole): RoleChangePress {
  */
 export function RolesCard({
   catalogue, read = catalogue ? 'ok' : 'notOffered', staffing = [], agents, about = {}, busy = false, onSet, onSetActor, found = [], onAnswerFound,
-  editor: held, onEditor, only, onDiagram, offers = {}, onOpenPlace, scope: heldScope, onScope,
+  editor: held, onEditor, only, editorOnly = false, onDiagram, offers = {}, onOpenPlace, scope: heldScope, onScope,
 }: {
+  /** The open editor alone, no card, rows or adding: a place's page opens it from its own rows (AGENTSPLACE1g1). */
+  editorOnly?: boolean;
   /** What each agent offers for a model and an effort, by agent; absent or null, the field is a typed name. */
   offers?: Readonly<Record<string, SettingsChoices | null | undefined>>;
   /** *Open at \<place\>* on a role placed elsewhere: the place's own page, where it is edited. */
@@ -227,10 +256,6 @@ export function RolesCard({
   const draftOf = (entry?: RoleChoice): Draft => ({
     key: next.current++, agent: entry?.agent ?? agents[0]?.value ?? '', model: entry?.model ?? '', effort: entry?.effort ?? '',
   });
-  const orderOf = (line: Line): Draft[] => {
-    const own = line.actor && line.actor.choices.length > 0 ? line.actor.choices : line.row?.choices ?? [];
-    return own.length > 0 ? own.map(draftOf) : [draftOf()];
-  };
   const press = (at: string, change: RoleChangePress, done?: () => void) => {
     setRefused(null);
     onSet(change, { done: () => done?.(), refused: (sentence) => setRefused({ at, sentence }) });
@@ -239,20 +264,13 @@ export function RolesCard({
     setRefused(null);
     onSetActor(actor, choices, { done: () => setEditing(null), refused: (sentence) => setRefused({ at, sentence }) });
   };
-  /** A seeded row whose record is not this home's to change keeps the order editor alone. */
-  const staffingOnly = (line: Line) => !line.row || (!kept && line.row.seeded);
   const open = (line: Line | null) => {
     setRefused(null);
     if (!line) {
       setEditing(newRoleEditing(catalogue?.works ?? [], agents, null, next.current++));
       return;
     }
-    const row = line.row;
-    setEditing({
-      id: line.id, mode: staffingOnly(line) ? 'staffing' : 'role', isNew: false, revision: row?.revision ?? null,
-      nameEn: row?.nameEn ?? nameOfLine(line), nameZh: row?.nameZh ?? nameOfLine(line), takes: row?.takes ?? [],
-      work: row?.takes[0] ?? catalogue?.works[0] ?? 'build', place: row?.scopeKind ?? 'machine', placeId: row?.scopeId ?? '', drafts: orderOf(line),
-    });
+    setEditing(editingOfLine(line, { kept, works: catalogue?.works ?? [], agents, name: nameOfLine(line), key: () => next.current++ }));
   };
   const set = (patch: Partial<Editing>) => setEditing((now) => now && { ...now, ...patch });
   const change = (key: number, field: 'agent' | 'model' | 'effort', value: string) =>
@@ -442,9 +460,7 @@ export function RolesCard({
           const open_ = editing?.id === line.id && !editing.isNew;
           // One editor per role: in the catalogue a role placed elsewhere is read, and opened at its place.
           const readOnly = only === undefined && placedElsewhere(line);
-          const mayEdit = !readOnly && (row
-            ? (row.state === 'seed' || row.state === 'set') && (staffingOnly(line) ? !!actor && EDITABLE.has(line.id) : kept)
-            : !!actor && EDITABLE.has(line.id));
+          const mayEdit = !readOnly && mayEditLine(line, kept);
           const asking = removing === line.id && row;
           const placeId_ = row?.scopeId ?? '';
           const fallback = row ? fallbackOf(row) : null;
@@ -518,6 +534,7 @@ export function RolesCard({
         })}
     </SettingList>
   );
+  if (editorOnly) return editing ? <div className="min-w-0">{editor(editing)}</div> : null;
   const rows = rowsOf(lines);
   if (only !== undefined) return <div className="min-w-0">{said}{rows}</div>;
 

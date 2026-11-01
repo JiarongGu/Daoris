@@ -969,12 +969,19 @@ public static class NodeGraphHomes
     /// </summary>
     public static NodeGraph Landing(LandingRule rule)
     {
-        var kinds = rule.Form == LandingForm.Branch && rule.Plugin is not null ? Pulled
-            : rule is { Form: LandingForm.Branch, Integrate: not null, Squash: false } ? Integrated
-            : Landed;
+        var (kinds, method) = rule.Form != LandingForm.Branch ? (Landed, LandNodes.Merge)
+            : rule.Plugin is not null ? (Pulled, LandNodes.PullRequest)
+            : rule is { Integrate: not null, Squash: false } ? (Integrated, LandNodes.Integrate)
+            : (Landed, LandNodes.Branch);
+
+        // LANDNODE1c: the `land` keeps the identifier `handed` had, so a cycle's wires and evidence bindings to it resolve. Nothing performs it yet.
+        string[] ids = [NodeKinds.Handed, .. kinds.Skip(1)];
+        NodeDeclaration Declared(int index) => index == 0
+            ? new(ids[0], NodeKinds.Land, 1, NodeAuthorities.BuiltIn[NodeKinds.Land].Reach) { Options = new Dictionary<string, string> { ["method"] = JsonSerializer.Serialize(method) } }
+            : new(ids[index], kinds[index], 1, NodeAuthorities.BuiltIn[kinds[index]].Reach);
         return new NodeGraph(
-            [.. kinds.Select(kind => new NodeDeclaration(kind, kind, 1, NodeAuthorities.BuiltIn[kind].Reach))],
-            [.. kinds.Skip(1).Select((kind, index) => new Wire($"landing/{kinds[index]}-{kind}", WireKinds.After, new(kinds[index]), new(kind)))],
+            [.. ids.Select((_, index) => Declared(index))],
+            [.. ids.Skip(1).Select((id, index) => new Wire($"landing/{ids[index]}-{id}", WireKinds.After, new(ids[index]), new(id)))],
             [NodeKinds.Handed], NodeKinds.Line);
     }
 
@@ -1007,7 +1014,10 @@ public static class NodeGraphHomes
             SchemaVersion = parts.SchemaVersion,
             Cleanup = parts.Cleanup ?? GraphCleanup.Held,
         };
-        problems.AddRange(NodeGraphs.Problems(graph));
+        // One fault is one refusal: a cycle's node already refused as a landing's kind is not refused again by the landing's own rules.
+        var refused = problems.Where(problem => problem.Code == GraphRefusal.LandingKind && problem.Node is not null).Select(problem => problem.Node!).ToHashSet(StringComparer.Ordinal);
+        problems.AddRange(NodeGraphs.Problems(graph).Where(problem =>
+            !(problem.Code == GraphRefusal.LandTail && problem.Node is not null && refused.Contains(problem.Node))));
         return new(WorkUnitKind.Branch, source, rule.Cycle, problems.Count == 0 ? graph : null, problems);
     }
 

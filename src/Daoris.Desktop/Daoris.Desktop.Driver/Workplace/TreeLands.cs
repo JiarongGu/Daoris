@@ -308,7 +308,8 @@ internal sealed class TreeLands(
         // and reads them again before it moves it, and a hold taken here would refuse that one in this very process.
         if (delivering is not null && await delivering.BeginMergeAsync(canonical, frozen).ConfigureAwait(false) is { } unbegun) return new(false, $"Nothing was merged: {unbegun}.");
         var (carried, refused) = await IntegrationPresses.MergeAsync(
-            context.Home, context.Config(), root, repository, workspace, canonical, branch, frozen, ct, beside, delivered: delivering is not null).ConfigureAwait(false);
+            context.Home, context.Config(), root, repository, workspace, canonical, branch, frozen, ct, beside, delivered: delivering is not null,
+            message: delivering?.Intent.Message).ConfigureAwait(false);
         if (delivering is not null) await delivering.MergedAsync(root, canonical, frozen, carried ? null : refused, ct).ConfigureAwait(false);
         if (!carried) return new(false, refused!);
 
@@ -1253,12 +1254,14 @@ internal sealed class TreeLands(
             }
 
             var squashing = replayed?.Landed ?? commits;
-            var (made, why) = await TreeSquashes.SquashAsync(root, tip, mergeBase.Trim(), SquashMessage.Of(squash.SquashTitle, squashing, squash.Session), ct)
+            // LANDNODE1f: a delivery's message, frozen in its intent, is the commit's opening.
+            var said = delivering?.Intent.Message;
+            var (made, why) = await TreeSquashes.SquashAsync(root, tip, mergeBase.Trim(), SquashMessage.Of(squash.SquashTitle, squashing, squash.Session, said), ct)
                 .ConfigureAwait(false);
             if (made is null) return new TreeLanding(false, $"git would not make the squashed commit for `{name}`: {why} Nothing was landed.");
             start = made;
             squashed = tip;
-            carried = [new LandingCommit(made, SquashMessage.Subject(squash.SquashTitle, squashing, squash.Session))];
+            carried = [new LandingCommit(made, SquashMessage.Subject(squash.SquashTitle, squashing, squash.Session, said))];
         }
 
         var (code, _, err) = delivering is null

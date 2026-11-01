@@ -90,6 +90,10 @@ const ORGANISMS = new Set<string>([
   './agents/roles/AppointedRoles.tsx',
   // And the one read behind Work, Accounts, By repository and an agent's *Used by* (COMPANYVIEW1d): a hook, held by the organisms.
   './agents/roles/structureRead.ts',
+  // The Setup mode's list of places and its page (AGENTSPLACE1e): `PLACES` read once, so the list, the fold and the head below hold none.
+  './agents/setup/SetupPlaces.tsx',
+  // A place's Roles section (AGENTSPLACE1g1): its chain's read and the role editor's presses, so its rows below hold none.
+  './agents/setup/PlaceRoles.tsx',
   // A workspace's page's organism (UX6g, D150 §4.3): it holds the driver's answers and every act on a workspace, so the
   // page, its Details and its Setup below it hold none.
   './projects/workspace/WorkspaceView.tsx',

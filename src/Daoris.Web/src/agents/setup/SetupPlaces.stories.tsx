@@ -3,8 +3,9 @@ import { chinese } from '../../design/storyLanguage';
 import { storyWidths } from '../../design/storyWidths';
 import { InTheme } from '../../plugins/storyIcons';
 import { AgentsModes } from '../AgentsModes';
-import { findPlace, repositoryId, SetupList, SetupMain, type SetupState } from './SetupPlaces';
-import { PLACES } from './setupFixtures';
+import { PlaceRolesView } from './PlaceRoles';
+import { findPlace, placeAsk, repositoryId, SetupList, SetupMain, type SetupState } from './SetupPlaces';
+import { AGENTS, CATALOGUE, CHAIN, PLACES } from './setupFixtures';
 
 // The Agents place's Setup mode (AGENTSPLACE1e, the Agents-place design §3): the tree of places beside a place's head, at the widths the
 // frame gives it, 80, 39 and 25 rem, in both languages and both themes.
@@ -16,8 +17,12 @@ const state = (fold: string | null): SetupState => ({
   onMore: nothing, read: PLACES(fold ? { fold } : {}), status: 'ok',
 });
 
+const editor = { agents: AGENTS, offers: {}, staffing: [], catalogue: CATALOGUE, read: 'ok' as const, busy: false, onSet: nothing, onSetActor: nothing };
+
 function Place({ chosen = repositoryId('aurora', 'engine'), fold = null }: { chosen?: string; fold?: string | null }) {
   const now = state(fold);
+  const found = findPlace(now.read, chosen);
+  const ask = found && found.kind !== 'imported' ? placeAsk(found) : null;
   return (
     <div className="flex min-h-[420px] border border-line bg-page">
       <div className="w-[280px] shrink-0 border-r border-line">
@@ -25,7 +30,11 @@ function Place({ chosen = repositoryId('aurora', 'engine'), fold = null }: { cho
         <SetupList state={now} chosen={chosen} onChoose={nothing} />
       </div>
       <div className="min-w-0 flex-1 p-3">
-        <SetupMain found={findPlace(now.read, chosen)} state="ok" />
+        <SetupMain
+          found={found}
+          state="ok"
+          roles={ask && <PlaceRolesView place={ask} read="ok" answer={CHAIN(ask)} editor={editor} appointed={null} />}
+        />
       </div>
     </div>
   );
@@ -36,7 +45,7 @@ export default meta;
 
 type Story = StoryObj<typeof Place>;
 
-/** A repository's head, and the workspace's imported ones folded into one row. */
+/** A repository's head with its Roles (AGENTSPLACE1g1), and the workspace's imported ones folded into one row. */
 export const Repository: Story = {};
 export const RepositoryHalf: Story = { decorators: [storyWidths.half] };
 export const RepositoryNarrow: Story = { decorators: [storyWidths.narrow] };
