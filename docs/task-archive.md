@@ -22575,3 +22575,6 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 ## DEFAULTCONFIG1c — the release workflow, shipped as a default (2026-11-01, FABRIC2)
 
 **Outcome** 2026-11-01: `Defaults/workflows/release.json` (not offered in set-up): work → requests → check → review → land (merge) → line → local-release/find, `when release` → release → publish, `when none` ending at the line, the review sent `back` to the work on its rejection; its plugin nodes declare the manifest's outcomes and ports, and without the plugin none is sent. Tests in `WorkflowGraphPresetsTests`; a refusal at the reach is not built (see the FABRIC2 row).
+## DEFAULTCONFIG1d — a place's page says which default it follows and what differs (2026-11-01, FABRIC2)
+
+**Outcome** 2026-11-01: a place's page names the shipped default its workflow follows (en and zh word per default id in `agents.json`) and the options it differs in, read from `PlaceValues.Follows` through `PlaceRow.values.follows`. Test `SetupPlaces.test.tsx`; stories show it through the fixtures.

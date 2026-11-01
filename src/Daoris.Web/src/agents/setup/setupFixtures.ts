@@ -4,6 +4,7 @@ import { STRUCTURE, WORKS } from '../roles/structureFixtures';
 const value = (text: string, source: 'here' | 'workspace' | 'machine' | 'default') => ({ value: text, source });
 
 const VALUES = (own: number): NonNullable<PlaceRow['values']> => ({
+  follows: own > 0 ? { default: 'merge-after-accept', differs: ['accept `automatic`', 'method `squash`'] } : { default: 'integrated', differs: [] },
   line: value('release', own > 0 ? 'here' : 'default'),
   landing: value('merge', own > 1 ? 'here' : 'workspace'),
   workflow: value('ship', 'machine'),

@@ -85,6 +85,7 @@ describe('The Agents place, Setup mode', () => {
     expect(within(head).getByText('Trees').nextSibling).toHaveTextContent('Its own tree for each session');
     expect(within(head).getByText('Set here').nextSibling).toHaveTextContent('2 changes of your own');
     expect(screen.getByRole('heading', { name: 'engine' })).toBeTruthy();
+    expect(within(head).getByText('Workflow follows').nextSibling).toHaveTextContent('Merge after you accept differing in accept `automatic`, method `squash`');
   });
 
   it('says a place that follows the defaults, and what a place needs a look for', async () => {
@@ -92,6 +93,7 @@ describe('The Agents place, Setup mode', () => {
     await userEvent.click(await screen.findByRole('button', { name: /site/ }));
     const head = (await screen.findByText('Driving')).closest('dl')!;
     expect(within(head).getByText('Set here').nextSibling).toHaveTextContent('Follows the defaults');
+    expect(within(head).getByText('Workflow follows').nextSibling).toHaveTextContent('Integrated into the line with nothing different');
     expect(within(head).getByText('Needs a look').nextSibling).toHaveTextContent('No checkout on this machine');
   });
 

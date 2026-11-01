@@ -112,7 +112,7 @@
 
 **Files.** `src/Daoris.Desktop/Daoris.Desktop.Driver/Defaults/workflows/release.json`, `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workflows/WorkflowGraphPresetsTests.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/workflow-named.json`
 
-## DEFAULTCONFIG1d — A place's page says which default it follows and what differs
+## DEFAULTCONFIG1d — A place's page says which default it follows and what differs (built 2026-11-01)
 
 **Wave** 3; after DEFAULTCONFIG1a; sonnet.
 
