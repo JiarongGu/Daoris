@@ -48,6 +48,18 @@ describe('the places a go may name', () => {
     expect([...PLACE_DOMAINS].sort()).toEqual([...SETTINGS_SECTIONS].filter((domain) => domain !== 'tools').sort());
   });
 
+  // AGENTSPLACE1k: a go carrying a set-up opens what today's set-up opens (a repository's Details, a workspace's page), with the ask along.
+  it('open a place\'s Set up… as a repository\'s Details or a workspace\'s page, the ask carried', () => {
+    const ask = { repositories: ['engine'], preset: 'pull-request', opinion: true, look: false, adoption: true, builds: 'service', drive: false };
+    expect(placeDoor({ view: 'agents', part: 'roles', workspace: 'aurora', repository: 'engine', setup: ask }))
+      .toEqual({ view: 'projects', item: 'engine', tab: 'details', setUp: ask });
+    const several = { ...ask, repositories: ['engine', 'site'] };
+    expect(placeDoor({ view: 'agents', part: 'roles', workspace: 'aurora', repository: null, setup: several }))
+      .toEqual({ view: 'projects', item: 'workspace:aurora', workspaceTab: 'details', setUp: several });
+    // Without an ask it is the Roles mode, as before.
+    expect(placeDoor({ view: 'agents', part: 'roles', workspace: 'aurora' })).toEqual({ view: 'agents', agentsMode: 'setup' });
+  });
+
   it('open where the starters\' doors open: a domain at its card or step, a view, a drawer, a tab, a section', () => {
     expect(placeDoor({ view: 'quests' })).toEqual({ view: 'quests' });
     // UX6e2: Agents is a place the twins name, its parts the agent's page's; with no agent named, the one that has it opens.

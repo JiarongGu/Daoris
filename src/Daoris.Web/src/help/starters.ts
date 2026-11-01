@@ -1,5 +1,6 @@
 import type { AgentPart } from '../agents/agents';
 import type { AgentsMode, RoleSection } from '../agents/modes';
+import type { PlaceAsk } from '../agents/setup/placePlan';
 import type { View } from '../menus/commands';
 import type { KnowledgeMode } from '../knowledge/modes';
 import type { Compose, OpenGroup } from '../app/opener';
@@ -38,6 +39,8 @@ export type StarterDoor = {
   knowledge?: KnowledgeMode;
   /** A group of Sessions' or Quests' list that waits on the person, brought into view (ENTRY1b); no item in it. */
   group?: OpenGroup;
+  /** Ask Daoris's place card (AGENTSPLACE1k): the quick set-up the place's *Set up…* opens on. */
+  setUp?: PlaceAsk;
 };
 
 /**

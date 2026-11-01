@@ -40,6 +40,24 @@ function Place() {
   return <ViewFrame layout={layout} lists={lists} over={over} onOver={setOver} />;
 }
 
+/** The application's side of a seeded door: choose the place and hand over the ask, as `App`'s opener does. */
+function SeededPlace({ ask, place }: { ask: PlaceAsk; place: string }) {
+  const lists = useListPanes();
+  const modes = useAgentsMode(lists);
+  const [chosen, setChosen] = useState<string | null>(null);
+  const [over, setOver] = useState(false);
+  const layout = useAgentsView({
+    active: true, modes, chosen, onChoose: setChosen, notify: () => {},
+    setUp: (found, page) => <PlaceSetUpPanel place={found} page={page} notify={() => {}} />,
+  });
+  return (
+    <>
+      <button type="button" onClick={() => { modes.onPlace(place); modes.onSeed(place, ask); }}>Seed</button>
+      <ViewFrame layout={layout} lists={lists} over={over} onOver={setOver} />
+    </>
+  );
+}
+
 const rows = [
   { ...REGISTRY[0]!, repository: 'engine', workspace: 'aurora' },
   { ...REGISTRY[0]!, repository: 'site', workspace: 'aurora' },
@@ -183,6 +201,20 @@ describe('Set up…, on a place\'s page', () => {
     const asked = await within(changes).findAllByText(/a set-up asked of its own session/);
     expect(asked).toHaveLength(1);
     expect(asked[0]!.closest('li')).toHaveTextContent('(engine, site)');
+  });
+
+  // AGENTSPLACE1k: Ask Daoris's place card hands the application a seeded set-up; the page opens on it, and the plan it reads is that ask's.
+  it('opens seeded from an ask Ask Daoris proposed, and plans that ask rather than the suggestion', async () => {
+    const ask: PlaceAsk = { repositories: ['engine'], preset: 'pull-request', opinion: true, look: false, adoption: true, builds: 'service', drive: false };
+    show(<SeededPlace ask={ask} place="repo:aurora/engine" />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Seed' }));
+
+    expect(await screen.findByRole('heading', { name: 'Set up engine' })).toBeTruthy();
+    expect(await screen.findByRole('radio', { name: /A pull request/ })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Ask its session to set up for agents' })).toBeChecked();
+    await waitFor(() => expect(sent('PLACE_PLAN').at(-1)).toEqual(ask));
+    // Nothing was pressed: the seed plans only, and Apply stays the person's.
+    expect(sent('PLACE_APPLY')).toEqual([]);
   });
 
   it('is found as left after a door out and back', async () => {

@@ -278,6 +278,20 @@ describe('a door into a repository\'s Setup tab or Workflow tab, once the Setup 
     expect(placeOpening(doorOpening({ view: 'projects', tab: 'workflow' }), true, where)).toEqual({ view: 'agents', agentsMode: 'setup' });
   });
 
+  // AGENTSPLACE1k: Ask Daoris's place card opens a repository's Details (a workspace's page for several) with the ask; lit, the place's page.
+  it('opens the place the card names with its ask, and leaves the Details where they are while the mode is dark', () => {
+    const setUp = { repositories: ['engine'], preset: 'integrated', opinion: false, look: false, adoption: false, drive: false };
+    const door = doorOpening({ view: 'projects', item: 'engine', tab: 'details', setUp });
+    expect(door).toMatchObject({ view: 'projects', chosen: { view: 'projects', item: 'engine' }, tab: 'details', setUp });
+    expect(placeOpening(door, true, where)).toEqual({ view: 'agents', agentsMode: 'setup', place: 'repo:studio/engine', setUp });
+    expect(placeOpening(door, false, where)).toEqual(door);
+
+    const several = { ...setUp, repositories: ['engine', 'site'] };
+    const workspace = doorOpening({ view: 'projects', item: workspaceItem('studio'), workspaceTab: 'details', setUp: several });
+    expect(placeOpening(workspace, true, where)).toEqual({ view: 'agents', agentsMode: 'setup', place: 'workspace:studio', setUp: several });
+    expect(placeOpening(workspace, false, where)).toEqual(workspace);
+  });
+
   it('changes nothing while the mode is dark, nor for a door that is not one of those tabs', () => {
     const tab = opening('projects', 'engine', { tab: 'setup' });
     expect(placeOpening(tab, false, where)).toEqual(tab);

@@ -23,7 +23,7 @@ import { type AgentPart, accountLabel, agentRows } from './agents';
 import { AgentsModes, AgentsStrip, RoleSectionStrip } from './AgentsModes';
 import { type AgentsMode, isRoleSection, readAgentsMode, type RoleSection, setupLit, storeAgentsMode } from './modes';
 import { PlaceRoles } from './setup/PlaceRoles';
-import { type SetUpPage, type SetUpPlace, useSetUpPage } from './setup/placePlan';
+import { draftOfAsk, type PlaceAsk, type SetUpPage, type SetUpPlace, useSetUpPage } from './setup/placePlan';
 import { findPlace, placeAsk, SetupList, SetupMain, setUpPlaceOf, useSetupPlaces } from './setup/SetupPlaces';
 import { RoleSectionList } from './roles/RoleSections';
 import { type RoleOpeners, RolesMode, useRolesPage } from './roles/RolesView';
@@ -61,7 +61,11 @@ export function useAgentsMode(lists: ListPanes) {
   // Lit, Setup keeps the place chosen under the same memory, which a section id is never mistaken for.
   const place = kept && !isRoleSection(kept) ? kept : null;
   const onPlace = useCallback((next: string) => choose('roles', next), [choose]);
-  return { mode, onMode, section, onSection, place, onPlace };
+  // AGENTSPLACE1k: an ask Ask Daoris proposed for a place's *Set up…*, held until the place's page has opened on it.
+  const [seeded, setSeeded] = useState<{ place: string; ask: PlaceAsk } | null>(null);
+  const onSeed = useCallback((target: string, ask: PlaceAsk) => setSeeded({ place: target, ask }), []);
+  const onSeeded = useCallback(() => setSeeded(null), []);
+  return { mode, onMode, section, onSection, place, onPlace, seeded, onSeed, onSeeded };
 }
 
 /**
@@ -100,6 +104,8 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
     mode: AgentsMode; onMode: (mode: AgentsMode) => void; section: RoleSection; onSection: (section: RoleSection) => void;
     /** The place Setup has chosen, once lit, and a change of it. */
     place: string | null; onPlace: (place: string) => void;
+    /** The set-up Ask Daoris proposed for a place, which opens on it once (AGENTSPLACE1k), and the word that it has. */
+    seeded?: { place: string; ask: PlaceAsk } | null; onSeeded?: () => void;
   };
   /** The list's chosen item: an agent's id, which the application remembers (`daoris.list.agents.chosen`). */
   chosen: string | null;
@@ -129,6 +135,15 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
   // The Roles page's state lives here, so a door out of it and the way back find the selection and the scope as left.
   const rolesPage = useRolesPage();
   const setUpPage = useSetUpPage();
+  // AGENTSPLACE1k: a place's *Set up…* opens on the ask Ask Daoris proposed. The page plans it on opening, and Apply stays the person's.
+  const seeded = modes?.seeded ?? null;
+  const onSeeded = modes?.onSeeded;
+  const seededHere = active && lit && inSetup && seeded !== null && seeded.place === modes?.place;
+  useEffect(() => {
+    if (!seededHere || !seeded) return;
+    setUpPage.open(seeded.place, seeded.ask.repositories, draftOfAsk(seeded.ask));
+    onSeeded?.();
+  }, [seededHere, seeded, setUpPage, onSeeded]);
   const accounts = useAccounts();
   useErrorNotify(active ? roster.error : null, notify);
 

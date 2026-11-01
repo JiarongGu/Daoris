@@ -1,7 +1,8 @@
 import type { AgentPart } from '../agents/agents';
 import type { View } from '../menus/commands';
 import type { KnowledgeMode } from '../knowledge/modes';
-import { askItem, questsItem, type OpenGroup } from '../app/opener';
+import type { PlaceAsk } from '../agents/setup/placePlan';
+import { askItem, questsItem, type OpenGroup, workspaceItem } from '../app/opener';
 import { offerItem } from '../plugins/catalog';
 import type { SettingsAnchor, SettingsSection } from '../settings/SettingsView';
 import type { StarterDoor } from './starters';
@@ -16,6 +17,8 @@ export type HelpPlace = {
   view: string; domain?: string | null; part?: string | null; item?: string | null; workspace?: string | null;
   /** NEW1d-a: on a go to Sessions → New conversation, the repository the composer chooses and the words it opens with. */
   repository?: string | null; sentence?: string | null;
+  /** AGENTSPLACE1k: on a go to an Agents place's Setup, the quick set-up its *Set up…* opens on; `workspace` and `repository` name the place. */
+  setup?: PlaceAsk | null;
 };
 
 /**
@@ -183,6 +186,14 @@ export function placeDoor(asked: HelpPlace): StarterDoor | null {
     // ENTRY1d2b: Add or Import opens with the go's workspace filled; the folder stays the person's pick (D48 §3/§7).
     const filled = asked.workspace?.trim();
     return { view, drawer: part as 'add' | 'import', ...(filled ? { drawerWorkspace: filled } : {}) };
+  }
+  if (view === 'agents' && part === 'roles' && asked.setup) {
+    // AGENTSPLACE1k: the place's Set up…, as today's set-up is reached: a repository's Details, or the workspace's page for several. The
+    // application sends it to the place's page once that is lit (`placeOpening`), the ask along.
+    const { workspace, repository, setup } = asked;
+    if (repository) return { view: 'projects', item: repository, tab: 'details', setUp: setup };
+    if (workspace) return { view: 'projects', item: workspaceItem(workspace), workspaceTab: 'details', setUp: setup };
+    return null;
   }
   if (view === 'agents') return part === 'roles' ? { view, agentsMode: 'setup' } : { view, agentPart: part as AgentPart };
   if (view === 'knowledge') return { view, knowledge: part as KnowledgeMode };

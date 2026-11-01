@@ -94,6 +94,11 @@ export const freshDraft = (repositories: string[]): SetUpDraft => ({
   repositories, preset: null, opinion: false, look: false, adoption: null, builds: '', drive: false, accept: [], result: null,
 });
 
+/** The draft an ask makes (AGENTSPLACE1k): what Ask Daoris's place card seeds a place's *Set up…* with. */
+export const draftOfAsk = (ask: PlaceAsk): Partial<SetUpDraft> => ({
+  repositories: ask.repositories, preset: ask.preset, opinion: ask.opinion, look: ask.look, adoption: ask.adoption, builds: ask.builds ?? '', drive: ask.drive,
+});
+
 /**
  * The ask a draft makes. Until the suggestion arrives the plan is read as *Not driven* with nothing else asked, which changes nothing and
  * says what to preselect; *Not driven* takes no second opinion, look or driving, so none is sent with it.
@@ -130,7 +135,8 @@ export type SetUpPlace = { id: string; kind: 'repository' | 'workspace'; name: s
 export type SetUpPage = {
   /** The draft of an open place; none where its set-up is closed. */
   draftOf: (place: string) => SetUpDraft | null;
-  open: (place: string, repositories: string[]) => void;
+  /** Opens a place's set-up; a seed (an ask Ask Daoris proposed) replaces the draft the place held, since the person came for it. */
+  open: (place: string, repositories: string[], seed?: Partial<SetUpDraft>) => void;
   close: (place: string) => void;
   /** A change to the draft; any change but the result's own drops the last result, since the plan it came of is gone. */
   change: (place: string, patch: Partial<SetUpDraft>) => void;
@@ -139,7 +145,8 @@ export type SetUpPage = {
 export function useSetUpPage(): SetUpPage {
   const [drafts, setDrafts] = useState<Record<string, SetUpDraft>>({});
   const draftOf = useCallback((place: string) => drafts[place] ?? null, [drafts]);
-  const open = useCallback((place: string, repositories: string[]) => setDrafts((was) => (was[place] ? was : { ...was, [place]: freshDraft(repositories) })), []);
+  const open = useCallback((place: string, repositories: string[], seed?: Partial<SetUpDraft>) =>
+    setDrafts((was) => (was[place] && !seed ? was : { ...was, [place]: { ...freshDraft(repositories), ...seed } })), []);
   const close = useCallback((place: string) => setDrafts(({ [place]: _closed, ...rest }) => rest), []);
   const change = useCallback((place: string, patch: Partial<SetUpDraft>) =>
     setDrafts((was) => (was[place] ? { ...was, [place]: { ...was[place], ...('result' in patch ? {} : { result: null }), ...patch } } : was)), []);

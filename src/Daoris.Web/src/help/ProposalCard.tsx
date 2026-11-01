@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { ago } from '../locales/format';
+import type { PlaceAsk } from '../agents/setup/placePlan';
 import { SetupPlanFacts, type SetupShown } from '../projects/setup/SetUpForAgents';
 import { RequirementItem } from '../quests/Requirements';
 import { Button, Inline } from '../design/ui';
@@ -58,7 +59,37 @@ export type HelpProposal = {
   workflow?: HelpWorkflowShown | null;
   /** A repository set up for every agent (`setup`, LAYOUT8): the press's plan, as the repository's page shows it. */
   setup?: SetupShown | null;
+  /** A place's quick set-up (`setup`'s `place` door, AGENTSPLACE1k): the ask and the plan's changes; Apply opens *Set up…* on the ask. */
+  place?: HelpPlaceShown | null;
 };
+
+/**
+ * What a place's set-up card shows (AGENTSPLACE1k): the ask, the workspace it is of, and each change the plan makes once with the repositories
+ * it reaches. The page *Set up…* opens plans again; the digest only moves the card's revision when the plan moves.
+ */
+export type HelpPlaceShown = {
+  workspace: string;
+  digest: string;
+  asked: PlaceAsk;
+  changes: { key: string; part: string; said: string; before: string; after: string; repositories: string[] }[];
+};
+
+function PlaceChanges({ place }: { place: HelpPlaceShown }) {
+  const { t } = useTranslation();
+  return place.changes.length === 0
+    ? <p className="m-0 mt-2 text-meta text-ink-soft">{t('help.proposal.place.nothing')}</p>
+    : (
+      <ul aria-label={t('help.proposal.place.changes')} className="m-0 mt-2 flex list-none flex-col gap-1 p-0">
+        {place.changes.map((change) => (
+          <li key={`${change.key}:${change.said}:${change.after}`} className="m-0 text-meta text-ink-soft">
+            {/* The plan's words, as the driver says them: content, not chrome. */}
+            <span className="text-ink">{change.said}</span>{': '}{change.before} → {change.after}
+            {' '}<span className="text-ink-faint">({change.repositories.join(', ')})</span>
+          </li>
+        ))}
+      </ul>
+    );
+}
 
 /**
  * What a workflow card will show (design §8.2), as the driver's judge reads the version: the workflow, the version it is
@@ -349,6 +380,7 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
   const departures = accepting ? proposal.accept?.departures ?? [] : [];
   const workflow = proposal.kind === 'workflow' ? proposal.workflow ?? null : null;
   const setup = proposal.kind === 'setup' ? proposal.setup ?? null : null;
+  const place = proposal.kind === 'setup' ? proposal.place ?? null : null;
   // A draft (WORKFLOW1h-b): what is still needed leaves no Apply, only Not now.
   const draft = workflow !== null && workflow.needs.length > 0;
 
@@ -373,6 +405,7 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
       {plugin && <PluginRuns plugin={plugin} />}
       {grant && <GrantTools grant={grant} />}
       {setup && <SetupPlanFacts plan={setup} />}
+      {place && <PlaceChanges place={place} />}
       {departures.length > 0 && (
         <ol aria-label={t('help.proposal.departures')} className="m-0 mt-2 grid list-none gap-2.5 p-0">
           {departures.map((departure) => (
@@ -417,6 +450,7 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
       )}
       {deleting && <p className="m-0 mt-1 text-meta text-ink-danger">{t('help.proposal.deleteNote')}</p>}
       {going && <p className="m-0 mt-1 text-meta text-ink-faint">{t('help.proposal.goNote')}</p>}
+      {place && <p className="m-0 mt-1 text-meta text-ink-soft">{t('help.proposal.place.note')}</p>}
       {handing && <p className="m-0 mt-1 text-meta text-ink-soft">{t('help.proposal.handNote')}</p>}
       {proposal.terminal && (
         <p className="m-0 mt-1 text-meta text-ink-faint"><Inline text={t('help.proposal.command', { command: proposal.terminal })} /></p>
@@ -428,6 +462,7 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
           <Button variant={deleting ? 'danger' : 'primary'} disabled={pending} onClick={() => onApply(proposal.id)}>
             {t(deleting ? 'help.proposal.delete'
               : going ? 'help.proposal.go'
+                : place ? 'help.proposal.place.open'
                 : looking ? 'help.proposal.look'
                   : accepting ? 'help.proposal.accept' : 'help.proposal.apply')}
           </Button>
