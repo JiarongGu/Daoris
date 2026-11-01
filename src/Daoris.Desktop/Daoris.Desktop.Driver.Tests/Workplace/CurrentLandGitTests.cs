@@ -209,6 +209,31 @@ public sealed class CurrentLandGitTests : IDisposable
         Assert.Equal(("feature/taken", DeliverySettlements.Delivered), (delivery.Intent.Branch, delivery.Settled));
     }
 
+    /// <summary>
+    /// A press whose request waits in its line's queue, a session in the checkout holding the promotion: its delivery stays unresolved, and is
+    /// recorded reached when the line's run at a look takes the request, with no start between.
+    /// </summary>
+    [Fact]
+    public async Task A_merge_whose_request_waits_in_its_line_s_queue_is_recorded_when_its_line_takes_it()
+    {
+        var root = await GitSeed.PlainAsync(Path.Combine(_scratch, "engine"), "engine");
+        Save(DriverConfig.Empty.WithLanding("engine", LandingRule.Merge));
+        var (trees, tree, _) = await TreeAsync(root);
+
+        var waits = await trees.LandAsync(tree, Subject, inUse: NoneRunning,
+            beside: _ => Task.FromResult<IReadOnlyList<TreeHolder>>([new TreeHolder(root, "s9")]));
+
+        Assert.False(waits.Landed, waits.Message);
+        Assert.Contains("waits to be merged into `main`", waits.Message);
+        Assert.True(Assert.Single(Store().OfUnit("s1")).Unresolved);
+
+        await using var transport = new IntegrationTransport(_home, new IntegrationTransportWorld { Config = Config, Root = (_, _, _) => Task.FromResult<string?>(root) });
+        await transport.RunAsync(new IntegrationLineSend("engine", "aurora", "main"), CancellationToken.None);
+
+        Assert.Contains("the work", await GitFixture.GitAsync(root, "log", "main", "--oneline"));
+        Assert.Equal(DeliverySettlements.Delivered, Assert.Single(Store().OfUnit("s1")).Settled);
+    }
+
     // ——— The fixture.
 
     private static readonly LandingSubject Subject = new("s1", "0fda18", "Tidy the readme");

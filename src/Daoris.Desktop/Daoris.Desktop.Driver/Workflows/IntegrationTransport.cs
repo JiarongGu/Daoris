@@ -226,6 +226,8 @@ public sealed class IntegrationTransport(string home, IntegrationTransportWorld?
             else _notBefore.Remove(send);
         }
 
+        // LANDNODE1l: a merge whose press left its request waiting is recorded by the run that takes it.
+        if (run.Closed) await DeliveryReconciler.TakenAsync(home, root, send.Repository, send.Line, ct).ConfigureAwait(false);
         foreach (var told in run.Events) _world.Told?.Invoke(told);
         foreach (var line in run.Said) _world.Said?.Invoke($"integration: {line}");
         if (run.Closed) _world.Answered?.Invoke();
