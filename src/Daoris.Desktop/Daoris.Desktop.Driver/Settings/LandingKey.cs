@@ -29,8 +29,8 @@ public static class LandingForm
 /// </param>
 /// <param name="AutoAccept">
 /// <i>Accept automatically</i> (LAND2a, D145): a quest's done lands its work as the person's Accept would, and the rule's
-/// plugin pushes it and opens the pull request with no press, the pull request being the last human step. Only a branch
-/// rule takes it; off, the default, is the press as it always was. It rides the rule, so a repository's own rule replaces
+/// plugin pushes it and opens the pull request with no press, the pull request being the last human step. A merge rule takes it
+/// too, since the workflow decides (D145's note of 2026-11-01); off, the default, is the press as it always was. It rides the rule, so a repository's own rule replaces
 /// its workspace's switch with the rest of it. LAND2b acts on it: a session concluding on a done quest becomes due
 /// (<see cref="AutoLandings"/>), and the next look lands it (<see cref="AutoLander"/>).
 /// </param>
@@ -204,11 +204,8 @@ public static class LandingKey
         LandingForm.Merge when rule.Plugin is not null =>
             "only a branch rule hands its work to a plugin — the plugin pushes the branch Daoris made, and a merge "
             + "makes none. `branch <pattern> --plugin <id>` is the form that does.",
-        // A merge writes into the person's checkout, and with no press nothing would stand between the work and the
-        // line (D145 point 1, D51 rule 6).
-        LandingForm.Merge when rule.AutoAccept =>
-            "only a branch rule accepts automatically — a merge writes into your checkout, and with no press nothing would "
-            + "stand between the work and the line. `branch <pattern> --auto-accept` is the form that does.",
+        // LANDNODE1c3: a merge accepts automatically where its rule says so, since the workflow decides (D145's note of 2026-11-01): Current's
+        // graph then draws no review before its `land`.
         // A ticket's key names a branch (PROCESS1b-i), and a merge makes none.
         LandingForm.Merge when rule.Key is not null =>
             "only a branch rule reads a ticket's key — a merge makes no branch to name. `branch <pattern> --key <shape>` is the form that does.",

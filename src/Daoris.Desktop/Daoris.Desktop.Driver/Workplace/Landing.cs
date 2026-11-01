@@ -902,7 +902,7 @@ public static class LandingRules
     {
         var chosen = Choose(config, repository, workspace);
         var access = WorkplaceAccessSetup.Current.Resolve(config, repository, workspace);
-        if (access.Value(AccessKey.Landing) != AccessKey.Rule || chosen.Rule is { Form: LandingForm.Branch, AutoAccept: true }) return chosen;
+        if (access.Value(AccessKey.Landing) != AccessKey.Rule || chosen.Rule is { AutoAccept: true }) return chosen;
         var source = access.Source(AccessKey.Landing);
         return chosen.Rule.Form == LandingForm.Branch
             ? chosen with { Rule = chosen.Rule with { AutoAccept = true }, Access = source }

@@ -37,7 +37,8 @@ public sealed record AutoChosen(IReadOnlyList<AutoChoice> Chosen, IReadOnlyList<
 /// <see cref="SessionTrees.LandAsync"/> — the branch, its record, the rule's plugin and its tidy — as the press runs it.</para>
 ///
 /// <para><b>Nothing here pushes, merges or writes a quest.</b> The landing is the press's own act with the person's standing
-/// say-so on the rule (D145 point 5): a merge never accepts automatically, the push is the plugin's (D37, D100), and a landing
+/// say-so on the rule (D145 point 5), the graph deciding whether a review comes first, and through the delivery Current's door writes
+/// (LANDNODE1c3, <see cref="CurrentDeliveries"/>): the push is the plugin's (D37, D100), and a landing
 /// writes no quest state (D46).</para>
 ///
 /// <para><b>A refusal is not tried every look.</b> Each try keeps the tree's tip and status it was made at, and the next is
@@ -127,8 +128,9 @@ public sealed class AutoLander(
         // FABRIC-END7b: the run whose binding the gate reads, which the gate's files' watch lists by name.
         LandingJudged.Read(home, entry, process.BoundRun);
         var rule = process.Landing.Rule;
-        // The person's yes stands for the rule's switch (LANDBACK1 part 1); the rule still says how it lands.
-        var offRule = process is { Problem: null, Unread: null } && rule is not { Form: LandingForm.Branch, AutoAccept: true };
+        // The person's yes stands for the rule's switch (LANDBACK1 part 1); the rule still says how it lands. LANDNODE1c3: the graph decides
+        // whether its `land` waits on the person's review, a merge's as a branch's (D145's note of 2026-11-01), so no form is refused here.
+        var offRule = process is { Problem: null, Unread: null } && rule is not { AutoAccept: true };
         if (offRule && carried is null)
         {
             return (Closed(entry, AutoLandingCode.Off), null);

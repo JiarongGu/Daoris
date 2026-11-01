@@ -41,8 +41,8 @@ public static class AutoLandingRules
     /// <param name="state">The state its record concluded in.</param>
     public static string? Concluded(LandingRule rule, string? status, bool ownTree, string state)
     {
-        // A merge never accepts automatically (D145 point 1): the file's reader drops one that says so, and so does this.
-        if (rule is not { Form: LandingForm.Branch, AutoAccept: true } || SessionStates.IsParked(state)) return null;
+        // The workflow decides (D145's note of 2026-11-01): a rule that accepts automatically, a merge's too, is Current's graph with no review.
+        if (rule is not { AutoAccept: true } || SessionStates.IsParked(state)) return null;
         if (status == "Done") return ownTree ? AutoConcluded.Due : AutoConcluded.NoTree;
         return Ends.Contains(state) ? AutoConcluded.NotDone : null;
     }

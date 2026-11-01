@@ -121,10 +121,16 @@ public sealed class AutoLandingRulesTests : IDisposable
         Assert.Contains("no longer accepts automatically", landed.Message);
     }
 
-    /// <summary>A merge never accepts automatically, whatever a hand-written file says (D145 point 1).</summary>
+    /// <summary>
+    /// A merge rule is due as a branch rule is, by its own switch alone, since the workflow decides (LANDNODE1c3, D145's note of 2026-11-01):
+    /// Current's graph draws no review before its `land` where it accepts automatically.
+    /// </summary>
     [Fact]
-    public void A_merge_rule_makes_nothing_due() =>
-        Assert.Null(AutoLandingRules.Concluded(new LandingRule(LandingForm.Merge, AutoAccept: true), "Done", ownTree: true, "completed"));
+    public void A_merge_rule_is_due_by_its_switch_alone()
+    {
+        Assert.Equal(AutoConcluded.Due, AutoLandingRules.Concluded(new LandingRule(LandingForm.Merge, AutoAccept: true), "Done", ownTree: true, "completed"));
+        Assert.Null(AutoLandingRules.Concluded(LandingRule.Merge, "Done", ownTree: true, "completed"));
+    }
 
     // ——— the access setup's landing (AUTONOMY1c2, D184 points 2, 3 and 5)
 

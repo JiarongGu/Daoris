@@ -11,15 +11,18 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>🔴 <b>Keep each row on one line, its cells literals</b>: the CLI's test reads them.</remarks>
 public sealed class LandingAutoAcceptTests
 {
-    /// <summary>The shape: only a branch rule accepts automatically, and a merge naming a plugin is told that first.</summary>
+    /// <summary>
+    /// The shape: either form accepts automatically, since the workflow decides (LANDNODE1c3, D145's note of 2026-11-01), and a merge naming
+    /// a plugin is told it hands nothing to one.
+    /// </summary>
     [Theory]
     [InlineData("branch", "feature/{quest}-{slug}", "example.github-pull-request", true, null)]
     [InlineData("branch", "feature/{quest}-{slug}", null, true, null)]
     [InlineData("branch", "feature/{quest}-{slug}", null, false, null)]
-    [InlineData("merge", null, null, true, "only a branch rule accepts automatically")]
+    [InlineData("merge", null, null, true, null)]
     [InlineData("merge", null, null, false, null)]
     [InlineData("merge", null, "example.github-pull-request", true, "only a branch rule hands its work to a plugin")]
-    public void Only_a_branch_rule_accepts_automatically(string form, string? pattern, string? plugin, bool autoAccept, string? problem)
+    public void Either_form_accepts_automatically(string form, string? pattern, string? plugin, bool autoAccept, string? problem)
     {
         var said = LandingRules.Problem(new LandingRule(form, pattern, Plugin: plugin, AutoAccept: autoAccept));
 
@@ -27,7 +30,7 @@ public sealed class LandingAutoAcceptTests
         else Assert.Contains(problem, said);
     }
 
-    /// <summary>What the file says, read: absent is off, only JSON <c>true</c> is on, and a merge carrying it is not read.</summary>
+    /// <summary>What the file says, read: absent is off, only JSON <c>true</c> is on, a merge's as a branch's.</summary>
     [Theory]
     [InlineData("absent is off", """{"landings":{"engine":{"form":"branch","pattern":"feature/{quest}"}}}""", "landings", "engine", "off")]
     [InlineData("true on a branch rule is on", """{"landings":{"engine":{"form":"branch","pattern":"feature/{quest}","autoAccept":true}}}""", "landings", "engine", "on")]
@@ -35,7 +38,7 @@ public sealed class LandingAutoAcceptTests
     [InlineData("false is off", """{"landings":{"engine":{"form":"branch","pattern":"feature/{quest}","autoAccept":false}}}""", "landings", "engine", "off")]
     [InlineData("text is not true", """{"landings":{"engine":{"form":"branch","pattern":"feature/{quest}","autoAccept":"true"}}}""", "landings", "engine", "off")]
     [InlineData("a number is not true", """{"landings":{"engine":{"form":"branch","pattern":"feature/{quest}","autoAccept":1}}}""", "landings", "engine", "off")]
-    [InlineData("a merge carrying it is not read", """{"landings":{"engine":{"form":"merge","autoAccept":true}}}""", "landings", "engine", "none")]
+    [InlineData("a merge carrying it is on", """{"landings":{"engine":{"form":"merge","autoAccept":true}}}""", "landings", "engine", "on")]
     [InlineData("a merge without it is read", """{"landings":{"engine":{"form":"merge","autoAccept":false}}}""", "landings", "engine", "off")]
     [InlineData("a workspace's rule carries it", """{"workspaceLandings":{"aurora":{"form":"branch","pattern":"review/{session}","autoAccept":true}}}""", "workspaceLandings", "aurora", "on")]
     public void AutoAccept_reads_as_the_cli_reads_it(string name, string file, string map, string key, string expected)
@@ -59,7 +62,8 @@ public sealed class LandingAutoAcceptTests
         Assert.DoesNotContain("autoAccept",
             DriverConfig.Empty.WithWorkspaceLanding("aurora", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}")).ToJson(),
             StringComparison.Ordinal);
-        Assert.Throws<DriverException>(() => DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Merge, AutoAccept: true)));
+        Assert.True(DriverConfig.Parse(DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Merge, AutoAccept: true)).ToJson())
+            .Landings["engine"].AutoAccept);
     }
 
     /// <summary>

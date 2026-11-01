@@ -18,6 +18,22 @@ public sealed record TreeDelivery(DeliveryStore Store, DeliveryClaim Claim)
     /// its first effect: a refusal in words, or null where it stands. Null judges nothing, and an automatic delivery with none lands nothing.
     /// </summary>
     public Func<DeliveryRecord, string?>? Standing { get; init; }
+
+    /// <summary>
+    /// Written by a door from Current's live rule a moment before it lands (LANDNODE1c3, <see cref="CurrentDeliveries"/>): the landing keeps
+    /// that rule whole, its <c>integrate</c> and switch among it, and no land node names a template, so its commits say today's words.
+    /// </summary>
+    public bool Live { get; init; }
+}
+
+/// <summary>The delivery one landing performs, once entered: its reading, and this process's hold on it until the landing ends.</summary>
+internal sealed class DeliveryEntry : IDisposable
+{
+    public TreeDelivering? Delivering { get; set; }
+
+    public IDisposable? Performing { get; set; }
+
+    public void Dispose() => Performing?.Dispose();
 }
 
 /// <summary>
@@ -85,6 +101,12 @@ internal sealed class TreeDelivering
     public DeliveryRecord Record { get; }
 
     public DeliveryIntent Intent => Record.Intent;
+
+    /// <summary>Whether a door wrote it from Current's live rule (<see cref="TreeDelivery.Live"/>).</summary>
+    public bool Live => _delivery.Live;
+
+    /// <summary>The message its commits say, rendered from a land node's template; null under Current, whose commits say today's words.</summary>
+    public string? Template => Live ? null : Intent.Message;
 
     /// <summary>Whether its resolved options squash the work into one commit.</summary>
     public bool Squash { get; }
@@ -202,9 +224,10 @@ internal sealed class TreeDelivering
     /// <summary>
     /// The landing as its delivery lands it: the method's form and squash the intent's; of the rule only what setup keeps (its tidy), the plugin
     /// only of a push or a pull request, and that the intent's, told through <see cref="DispatchAsync"/>; no switch and no integrate, since the
-    /// delivery's authorization and the next node hold those.
+    /// delivery's authorization and the next node hold those. Under Current (<see cref="Live"/>) the intent was read from that very rule a
+    /// moment ago, so the rule stands whole, its <c>integrate</c> the line's policy and its record's provenance (LANDNODE1c3).
     /// </summary>
-    public Landing Over(Landing live) =>
+    public Landing Over(Landing live) => Live ? live with { Rule = live.Rule with { Squash = Squash } } :
         new(live.Rule with
         {
             Form = Intent.Method == DeliveryMethods.Merge ? LandingForm.Merge : LandingForm.Branch,
@@ -423,7 +446,8 @@ internal sealed class TreeDelivering
     public async Task<string?> BeginMergeAsync(string line, string commit)
     {
         await SeamAsync(DeliveryPhases.Prepared).ConfigureAwait(false);
-        End(DeliveryPhases.Prepared, DeliveryOutcomes.Done, commit, $"the commit merged into `{line}` is {commit}");
+        // A merge going on after its press left its request waiting was prepared before (LANDNODE1c3).
+        if (_open == DeliveryPhases.Prepared) End(DeliveryPhases.Prepared, DeliveryOutcomes.Done, commit, $"the commit merged into `{line}` is {commit}");
         return Begin(DeliveryPhases.RefWritten, $"`refs/heads/{line}` to hold {commit}");
     }
 

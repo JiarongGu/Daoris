@@ -114,7 +114,7 @@ internal sealed class TreeSquashes(TreeContext context)
         }
 
         var adds = Commits(added);
-        var said = delivering?.Intent.Message;
+        var said = delivering?.Template;
         var (made, why) = await SquashAsync(root, head, standsAt, SquashMessage.Of(squash.SquashTitle, adds, squash.Session, said), ct).ConfigureAwait(false);
         if (made is null) return new TreeLanding(false, $"git would not make the squashed commit for `{name}`: {why} Nothing was changed.");
 
