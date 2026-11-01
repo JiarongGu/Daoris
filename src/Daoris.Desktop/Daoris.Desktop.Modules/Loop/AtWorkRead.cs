@@ -47,6 +47,17 @@ public sealed record AtWorkDependencies(
     /// </summary>
     public IReadOnlyDictionary<string, string> Standings { get; init; } = new Dictionary<string, string>();
 
+    /// <summary>The ask this read is of, where it is an ask's (COWORKVIEW1d); <see cref="Session"/> is then empty.</summary>
+    public string? Ask { get; init; }
+
+    /// <summary>The asks slice's health, and whether it held the ask: an existence dependency, the ask deleted after opening moving it.</summary>
+    public SliceHealth AsksHealth { get; init; }
+
+    public bool Known { get; init; }
+
+    /// <summary>The ask's lines of work as the groups slice held them, written out.</summary>
+    public string? AskEntries { get; init; }
+
     /// <summary>
     /// The quests half as the composition read it (COWORKVIEW1b-ii): the rows, the rows left out and the asker, written out. It reads the
     /// whole stores, so it is compared as a result, and a write that moves none of it wakes nothing.
@@ -105,6 +116,90 @@ public static class AtWorkRead
         };
     }
 
+    /// <summary>
+    /// Who is at work on an ask (COWORKVIEW1d): its lines of work from the groups slice's entries whose origin is the ask, its quests from the
+    /// quests and sessions slices, and the asks slice as an existence dependency. A different branch from a session's answer: no attended part.
+    /// </summary>
+    public static AtWorkHeld ComposeAsk(
+        string ask, StateSlice? groups, StateSlice? sessions, StateSlice? quests, StateSlice? asks, Func<AtWorkRecord, LineageReading> lineage,
+        Func<string, string>? pathOf = null)
+    {
+        var (groupsSnapshot, groupsHealth) = Taken(groups);
+        var (sessionsSnapshot, sessionsHealth) = Taken(sessions);
+        var (questsSnapshot, questsHealth) = Taken(quests);
+        var (asksSnapshot, asksHealth) = Taken(asks);
+        var records = Records(sessionsSnapshot);
+        var known = AskKnown(asksSnapshot, ask);
+        var entries = AskEntries(groupsSnapshot, ask);
+        var rows = RowsOf(groupsSnapshot);
+        var asked = new Dictionary<string, AtWorkRecord?>(StringComparer.Ordinal);
+        var files = new Dictionary<string, AtWorkFile>(StringComparer.Ordinal);
+        AtWorkAsked? half = null;
+        var held = AtWorkAsk.Compose(ask, known, entries, id => asked[id] = records.GetValueOrDefault(id), record =>
+        {
+            var file = AtWorkFile.Read(pathOf?.Invoke(record.Id) ?? "", () => lineage(record));
+            files[record.Id] = file;
+            return file.Reading;
+        }, groupsHealth, sessionsHealth, questsHealth, asksHealth, () => half = AskQuests(ask, entries, questsSnapshot, sessionsSnapshot, rows));
+        return held with
+        {
+            Dependencies = new AtWorkDependencies("", null, asked, groupsHealth, sessionsHealth, files)
+            {
+                QuestsHealth = questsHealth, Ask = ask, AsksHealth = asksHealth, Known = known, AskEntries = EntriesKey(entries),
+                Asked = half is { } read ? AskedKey(read.Quests, read.More, read.By) : null,
+            },
+        };
+    }
+
+    private static string EntriesKey(IReadOnlyList<AtWorkAskEntryIn> entries) => JsonSerializer.Serialize(entries, Written);
+
+    private static AtWorkAsked AskQuests(string ask, IReadOnlyList<AtWorkAskEntryIn> entries, SliceSnapshot? quests, SliceSnapshot? sessions, IReadOnlyDictionary<string, AtWorkRow> rows)
+    {
+        var (views, records) = Stores(entries.SelectMany(entry => entry.Parts).ToHashSet(StringComparer.Ordinal), quests, sessions);
+        return AtWorkQuests.ForAsk(ask, views, records, id => rows.GetValueOrDefault(id));
+    }
+
+    /// <summary>Whether the asks slice holds the ask, in any workspace's partition.</summary>
+    private static bool AskKnown(SliceSnapshot? asks, string ask) =>
+        asks?.Partitions.Any(partition => Node(partition.Data) is JsonObject keyed && keyed.ContainsKey(ask)) == true;
+
+    /// <summary>The lines of work whose origin is the ask, an intake's left to its own section, each with the part its row opens.</summary>
+    private static IReadOnlyList<AtWorkAskEntryIn> AskEntries(SliceSnapshot? groups, string ask)
+    {
+        var entries = groups?.Partitions.FirstOrDefault(each => each.Partition == GroupsStateSlice.Entries)?.Data;
+        if (Node(entries) is not JsonObject keyed) return [];
+        List<AtWorkAskEntryIn> read = [];
+        foreach (var (key, entry) in keyed)
+        {
+            if (Text(entry, "origin") != $"ask:{ask}" || Text(entry, "repository") is not { } repository || repository == "intake") continue;
+            var parts = (entry?["parts"] as JsonArray ?? []).Select(part => (Id: Text(part, "session"), Shown: Text(part, "shown"))).Where(part => part.Id is not null).ToList();
+            var leading = Text(entry, "leading");
+            var opens = Text(entry, "opens") ?? leading ?? parts.FirstOrDefault().Id;
+            if (opens is null) continue;
+            read.Add(new AtWorkAskEntryIn(Text(entry, "entry") ?? key, repository, opens, parts.FirstOrDefault(part => part.Id == leading).Shown ?? parts.LastOrDefault().Shown ?? "", [.. parts.Select(part => part.Id!)]));
+        }
+
+        return [.. read.OrderBy(entry => entry.Entry, StringComparer.Ordinal)];
+    }
+
+    /// <summary>Whether an ask's read, composed again from the slices now, is what <paramref name="read"/> answered.</summary>
+    private static bool AskStands(AtWorkDependencies read, StateSlice? groups, StateSlice? sessions, StateSlice? quests, StateSlice? asks)
+    {
+        var (groupsSnapshot, groupsHealth) = Taken(groups);
+        var (sessionsSnapshot, sessionsHealth) = Taken(sessions);
+        var (questsSnapshot, questsHealth) = Taken(quests);
+        var (asksSnapshot, asksHealth) = Taken(asks);
+        if (groupsHealth != read.Groups || sessionsHealth != read.Sessions || questsHealth != read.QuestsHealth || asksHealth != read.AsksHealth) return false;
+        if (AskKnown(asksSnapshot, read.Ask!) != read.Known) return false;
+        var entries = AskEntries(groupsSnapshot, read.Ask!);
+        if (EntriesKey(entries) != read.AskEntries) return false;
+        var records = Records(sessionsSnapshot);
+        if (!read.Records.All(each => Equals(records.GetValueOrDefault(each.Key), each.Value))) return false;
+        if (read.Asked is null) return true;
+        var now = AskQuests(read.Ask!, entries, questsSnapshot, sessionsSnapshot, RowsOf(groupsSnapshot));
+        return AskedKey(now.Quests, now.More, now.By) == read.Asked;
+    }
+
     private static readonly JsonSerializerOptions Written = new(JsonSerializerDefaults.Web);
 
     private static string AskedKey(IReadOnlyList<AtWorkAskedQuest>? quests, int more, AtWorkAsker? by) =>
@@ -118,6 +213,14 @@ public static class AtWorkRead
         string session, IReadOnlyList<AtWorkEntryPart>? entry, SliceSnapshot? quests, SliceSnapshot? sessions, IReadOnlyDictionary<string, AtWorkRow> rows)
     {
         var members = (entry?.Select(part => part.Session) ?? []).Append(session).ToHashSet(StringComparer.Ordinal);
+        var (views, records) = Stores(members, quests, sessions);
+        return AtWorkQuests.Reading(views, records, id => rows.GetValueOrDefault(id));
+    }
+
+    /// <summary>Every quest, and the records that serve or took one or belong to <paramref name="members"/>.</summary>
+    private static (IReadOnlyList<QuestView> Quests, IReadOnlyList<SessionRecord> Sessions) Stores(
+        HashSet<string> members, SliceSnapshot? quests, SliceSnapshot? sessions)
+    {
         var views = new Dictionary<string, QuestView>(StringComparer.Ordinal);
         foreach (var partition in quests?.Partitions ?? [])
         {
@@ -158,7 +261,7 @@ public static class AtWorkRead
             }
         }
 
-        return AtWorkQuests.Reading([.. views.Values], [.. records.Values], id => rows.GetValueOrDefault(id));
+        return ([.. views.Values], [.. records.Values]);
     }
 
     /// <summary>Whether the quests half, read again from the slices now, is what <paramref name="read"/> answered.</summary>
@@ -174,8 +277,10 @@ public static class AtWorkRead
     /// What <paramref name="read"/>'s slices hold now, as a composition would read it: whether each part's read fields, the entry, the
     /// rows and quests it looked up and each slice's health stand.
     /// </summary>
-    public static bool SlicesStand(AtWorkDependencies read, StateSlice? groups, StateSlice? sessions, StateSlice? quests, Func<string, string>? standing = null)
+    public static bool SlicesStand(
+        AtWorkDependencies read, StateSlice? groups, StateSlice? sessions, StateSlice? quests, Func<string, string>? standing = null, StateSlice? asks = null)
     {
+        if (read.Ask is not null) return AskStands(read, groups, sessions, quests, asks);
         if (standing is not null && read.Standings.Any(each => standing(each.Key) != each.Value)) return false;
         var (groupsSnapshot, groupsHealth) = Taken(groups);
         var (sessionsSnapshot, sessionsHealth) = Taken(sessions);

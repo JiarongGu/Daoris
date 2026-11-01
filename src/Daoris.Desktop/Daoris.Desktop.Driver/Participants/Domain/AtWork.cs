@@ -68,6 +68,10 @@ public sealed record AtWorkHeld
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public AtWorkWhy? Stale { get; init; }
 
+    /// <summary>An ask's answer (COWORKVIEW1d): a branch of its own, with no attended part, beside the session's <see cref="Answer"/>.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public AtWorkAskAnswer? AskAnswer { get; init; }
+
     /// <summary>What the composition read, each input with the version it read (the design §4.1): kept beside it, never sent.</summary>
     [JsonIgnore]
     public object? Dependencies { get; init; }
@@ -374,7 +378,7 @@ public static class AtWork
     }
 
     /// <summary>A teammate's record, named <c>origin/id</c>: its lineage is on another machine.</summary>
-    private static bool Teammate(string id) => id.Contains('/', StringComparison.Ordinal);
+    internal static bool Teammate(string id) => id.Contains('/', StringComparison.Ordinal);
 
     private static AtWorkCounts Counts(LineageReading reading) => new()
     {
@@ -385,7 +389,7 @@ public static class AtWork
         Unreadable = reading.Outcome == LineageReading.Unreadable ? true : null,
     };
 
-    private static int Working(ChildBindings bindings) => bindings.Children.Count(child => child.State == ChildBindings.Working);
+    internal static int Working(ChildBindings bindings) => bindings.Children.Count(child => child.State == ChildBindings.Working);
 
     private static int? Positive(int count) => count > 0 ? count : null;
 

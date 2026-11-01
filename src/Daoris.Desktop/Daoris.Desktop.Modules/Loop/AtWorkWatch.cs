@@ -22,15 +22,17 @@ public sealed class AtWorkWatch
     private readonly Dictionary<string, AtWorkDependencies> _held = new(StringComparer.Ordinal);
 
     private readonly Func<string, string>? _standing;
+    private readonly StateSlice? _asks;
 
     /// <param name="driver">The driver slice, whose pushes move a repository's drive and trees (COWORKVIEW1e-iii).</param>
-    /// <param name="standing">A repository's routing standing word; the registry's answers reach the judge through <see cref="Judge"/>.</param>
+    /// <param name="standing">A repository's routing standing word; the registry's answers reach the judge through <see cref="JudgeStandings"/>.</param>
+    /// <param name="asks">The asks slice, an ask's read's existence dependency (COWORKVIEW1d).</param>
     public AtWorkWatch(
         Action wake, StateSlice? groups, StateSlice? sessions, StateSlice? quests, LineageTokens tokens, StateSlice? driver = null,
-        Func<string, string>? standing = null)
+        Func<string, string>? standing = null, StateSlice? asks = null)
     {
-        (_wake, _groups, _sessions, _quests, _tokens, _standing) = (wake, groups, sessions, quests, tokens, standing);
-        foreach (var slice in new[] { groups, sessions, quests })
+        (_wake, _groups, _sessions, _quests, _tokens, _standing, _asks) = (wake, groups, sessions, quests, tokens, standing, asks);
+        foreach (var slice in new[] { groups, sessions, quests, asks })
         {
             if (slice is null) continue;
             slice.Pushed += () => Judge();
@@ -107,7 +109,7 @@ public sealed class AtWorkWatch
     /// <summary>Null where nothing moved; else whether it woke, or the read with its files read on past lines that moved nothing.</summary>
     private (bool Woke, AtWorkDependencies Read)? Moved(AtWorkDependencies read)
     {
-        if (!AtWorkRead.SlicesStand(read, _groups, _sessions, _quests, _standing)) return (true, read);
+        if (!AtWorkRead.SlicesStand(read, _groups, _sessions, _quests, _standing, _asks)) return (true, read);
         var files = new Dictionary<string, AtWorkFile>(read.Files, StringComparer.Ordinal);
         var readOn = false;
         foreach (var (part, file) in read.Files)

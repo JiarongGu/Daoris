@@ -137,7 +137,7 @@ public sealed class DriverLoop(
     /// </summary>
     public AtWorkWatch AtWork => LazyInitializer.EnsureInitialized(ref _atWork, () => new AtWorkWatch(
         () => StatePublisher.Publish(eventBus, StateScopes.AtWork), Slices.Find(GroupsStateSlice.Name), Slices.Find(SessionsStateSlice.Name),
-        Slices.Find(QuestsStateSlice.Name), LineageTokens.Shared, Slices.Find(DriverStateSlice.Name), HintStanding.Word));
+        Slices.Find(QuestsStateSlice.Name), LineageTokens.Shared, Slices.Find(DriverStateSlice.Name), HintStanding.Word, Slices.Find(AsksStateSlice.Name)));
 
     private AtWorkWatch? _atWork;
 

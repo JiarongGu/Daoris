@@ -158,7 +158,7 @@ public static class AtWorkVerb
     }
 
     /// <summary>One quest a part asked: its name, where it went and by which lanes, the step it follows, who took it and what it waits on.</summary>
-    private static string Quest(AtWorkAskedQuest quest)
+    internal static string Quest(AtWorkAskedQuest quest)
     {
         List<string> words = [$"#{quest.Id}", quest.Title];
         if (quest.Of is { } of) words.Add($"of {of}");
