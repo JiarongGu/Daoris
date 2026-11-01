@@ -40,8 +40,8 @@ internal static class ActFetchSteps
             return run.End("git fetched origin's branches");
         }
 
-        var failure = GitFailures.Class(run.Stderr, GitAct.Read);
         var workspace = plan["workspace"] is JsonValue value && value.TryGetValue<string>(out var named) ? named : null;
+        var failure = GitMove.Reclass(home, launch.Repository, workspace, "origin", remote, GitFailures.Class(run.Stderr, GitAct.Read));
         if (GitHolds.Hold(home, launch.Root, launch.Repository, workspace, "origin", remote, git, failure, run.Stderr, DateTimeOffset.UtcNow) is { } hold)
         {
             return run.End(GitHolds.Said(hold));

@@ -176,6 +176,7 @@ public static class GitHolds
             "host-unknown" => $"ssh does not know {host}'s key",
             "host-changed" => $"{host}'s key is not the one ssh knows for it",
             "own-input" => OwnInputWhyOf(hold),
+            "no-identity" => $"{host} has no git identity on this machine, and Daoris's git no longer uses your own sign-ins unless you choose them",
             _ => $"{host} refused the sign-in git has here",
         };
         var said = hold.Words.Length == 0 ? "" : $" ({hold.Words})";
