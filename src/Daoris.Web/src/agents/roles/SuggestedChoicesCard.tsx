@@ -32,11 +32,12 @@ function answered(row: RoleRow, staffing: readonly ActorRow[]): boolean {
 
 /**
  * **Daoris suggests a role's choices** (MODELROLE1g, D205 point 7, the actors design §6.2): the head of Working roles at first run, while
- * none of the roles it would change holds an order of the person's own. One press sets each role's suggested choices through `SET_ROLE`,
- * one after the other; nothing is applied by itself, and the words say it can spend more. *Not now* keeps the table's day in this
- * browser, so the card stays away until the table changes. A molecule: its presses go out as the route takes them.
+ * none of the roles it would change holds an order of the person's own. One press sets every role's suggested choices as one change through
+ * `SET_ROLES` (AGENTSPLACE1g2): the driver judges them whole, so a refusal says its own sentence and no role is written. Nothing is
+ * applied by itself, and the words say it can spend more. *Not now* keeps the table's day in this browser, so the card stays away until
+ * the table changes. A molecule: its press goes out as the route takes it.
  */
-export function SuggestedChoicesCard({ catalogue, staffing, agents, busy, name, entry, onSet }: {
+export function SuggestedChoicesCard({ catalogue, staffing, agents, busy, name, entry, onSetAll }: {
   catalogue: RoleCatalogue;
   staffing: readonly ActorRow[];
   /** The agents this machine has set up. */
@@ -45,7 +46,7 @@ export function SuggestedChoicesCard({ catalogue, staffing, agents, busy, name, 
   /** A role's name in the page's language, and a choice in its words. */
   name: (row: RoleRow) => string;
   entry: (choice: RoleChoice) => string;
-  onSet: (press: RoleChangePress, answered: Answered) => void;
+  onSetAll: (presses: RoleChangePress[], answered: Answered) => void;
 }) {
   const { t } = useTranslation();
   const dated = catalogue.suggestedChoicesDated ?? '';
@@ -56,21 +57,17 @@ export function SuggestedChoicesCard({ catalogue, staffing, agents, busy, name, 
   const first = changes.length > 0 && changes.every(({ row }) => !answered(row, staffing));
   if (!catalogue.kept || declined || changes.length === 0 || !(first || running)) return null;
 
-  const apply = (rest: typeof changes) => {
-    const [next, ...more] = rest;
-    if (!next) {
-      setRunning(false);
-      return;
-    }
-    onSet({
-      change: 'set', id: next.row.id, revision: next.row.revision,
+  const apply = () => onSetAll(
+    changes.map(({ row, choices }): RoleChangePress => ({
+      change: 'set', id: row.id, revision: row.revision,
       role: {
-        name: { en: next.row.nameEn ?? '', zh: next.row.nameZh ?? '' }, takes: next.row.takes,
-        scope: { kind: next.row.scopeKind ?? 'machine', id: next.row.scopeId ?? null },
+        name: { en: row.nameEn ?? '', zh: row.nameZh ?? '' }, takes: row.takes,
+        scope: { kind: row.scopeKind ?? 'machine', id: row.scopeId ?? null },
       },
-      choices: next.choices.map((choice) => ({ agent: choice.agent, model: choice.model ?? null, effort: choice.effort ?? null })),
-    }, { done: () => apply(more), refused: (sentence) => { setRunning(false); setRefused(sentence); } });
-  };
+      choices: choices.map((choice) => ({ agent: choice.agent, model: choice.model ?? null, effort: choice.effort ?? null })),
+    })),
+    { done: () => setRunning(false), refused: (sentence) => { setRunning(false); setRefused(sentence); } },
+  );
 
   return (
     <section aria-label={t('settings.ai.roles.suggestedChoices.title')} className="mb-3 rounded-control border border-line p-2">
@@ -87,7 +84,7 @@ export function SuggestedChoicesCard({ catalogue, staffing, agents, busy, name, 
         <p className="m-0 mt-1 text-small text-ink-soft wrap-anywhere">{t('settings.ai.roles.suggestedChoices.left', { agents: left.join(', ') })}</p>
       )}
       <div className="mt-2 flex gap-2">
-        <Button disabled={busy || running} onClick={() => { setRefused(null); setRunning(true); apply(changes); }}>
+        <Button disabled={busy || running} onClick={() => { setRefused(null); setRunning(true); apply(); }}>
           {t('settings.ai.roles.suggestedChoices.use')}
         </Button>
         <Button variant="ghost" disabled={busy || running} onClick={() => { store(DECLINED_KEY, dated); setDeclined(true); }}>

@@ -33,9 +33,12 @@ import { commandForKey } from '../menus/shortcuts';
 import { focusRegion } from '../work/frame/regions';
 import type { StarterDoor } from '../help/starters';
 import {
-  askItem, type Compose, doorOpening, type OpenGroup, type Opening, type OpenPart, opening as plannedOpening, planOpening, questsItem,
+  askItem, type Compose, doorOpening, type OpenGroup, type Opening, type OpenPart, opening as plannedOpening, placeOpening, planOpening, questsItem,
   workspaceItem,
 } from './opener';
+import { setupLit } from '../agents/modes';
+import { PlaceSessions } from '../agents/setup/PlaceSessions';
+import { DEFAULT_WORKSPACE, workspaceOf } from '../data/workspaces';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import { Drawer, failure, Prose, Toasts, useToasts } from '../design/ui';
 import { OverviewView } from '../overview/OverviewView';
@@ -428,6 +431,8 @@ export function App() {
     part: agentPart,
     onAnchored: () => setAgentPart(null),
     onOpenPlugin: (plugin) => open('plugins', plugin),
+    // A place's Sessions (AGENTSPLACE1f): its rows press the driver's hooks, which the application hands in so the place imports none.
+    sessions: (place) => <PlaceSessions place={place} notify={notify} onOpenPlugin={(plugin) => open('plugins', plugin)} />,
     // The Roles mode's doors (COMPANYVIEW1d): each thing's home, the Agents mode at an agent's accounts among them.
     roleDoors: {
       agent: (agent) => open('agents', agent, { agentPart: 'accounts', agentsMode: 'agents' }),
@@ -634,12 +639,18 @@ export function App() {
    * Settings opens at the domain a door names, at the part it names (D75, UX5 U72): the tier opens Daoris's
    * own AI, the remote Workspace, the driver Driver, where each once opened the whole page at its top.
    */
-  const apply = (plan: Opening) => {
+  const apply = (planned: Opening) => {
+    // Lit, a door into a repository's Setup tab opens the place's page instead (AGENTSPLACE1f).
+    const plan = placeOpening(planned, setupLit(), (repository) => {
+      const row = (machineRegistry.data ?? []).find((each) => each.repository === repository);
+      return row ? workspaceOf(row) : DEFAULT_WORKSPACE;
+    });
     // Knowledge's mode first (UX6i): a switch reads that mode's remembered choice again, and an item a door names in it
     // is then chosen now, never a remembered choice.
     if (plan.knowledge) chooseKnowledgeMode(plan.knowledge);
     if (plan.agentsMode) agentsModes.onMode(plan.agentsMode);
     if (plan.roleSection) agentsModes.onSection(plan.roleSection);
+    if (plan.place) agentsModes.onPlace(plan.place);
     if (plan.chosen) lists.choose(plan.chosen.view, plan.chosen.item);
     // A view opened by a door that names nothing reopens what its list chose only while it still waits (UX6b, D150 §8):
     // the list reads it again, and lets go of one that closed or went. A door that names an item has it chosen above.
@@ -969,6 +980,8 @@ export function App() {
     onOpenAppointed: () => open('agents', null, { roleSection: 'appointed' }),
     // A landing rule's plugin opens its page (PLUGUI1c2c).
     onOpenPlugin: (plugin) => open('plugins', plugin),
+    // A repository's Setup is the place's page once the Setup mode is lit, which `apply` opens for a door into the tab (AGENTSPLACE1f).
+    onOpenSetup: (repository) => open('projects', repository, { tab: 'setup' }),
     onSyncNow,
     syncing: syncNow.isPending,
     addRequested,

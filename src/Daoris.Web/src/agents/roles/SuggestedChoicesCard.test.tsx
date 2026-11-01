@@ -6,8 +6,8 @@ import { RolesCard } from './Roles';
 import { DECLINED_KEY } from './SuggestedChoicesCard';
 
 // MODELROLE1g (D205 point 7, the actors design §6.2): Daoris suggests a role's choices in Working roles' head at first run. One press
-// sets each suggested role over SET_ROLE; nothing is applied by itself; its words say it can spend more; it is gone once the roles
-// hold orders of the person's own, or once declined.
+// sets every suggested role as one change over SET_ROLES (AGENTSPLACE1g2), the driver judging them whole; nothing is applied by itself;
+// its words say it can spend more; it is gone once the roles hold orders of the person's own, or once declined.
 
 const seed = (id: string, en: string, zh: string, work: string): RoleRow => ({
   id, state: 'seed', seeded: true, nameEn: en, nameZh: zh, takes: [work], scopeKind: 'machine', revision: 0,
@@ -36,9 +36,9 @@ const AGENTS = [{ value: 'claude-code', label: 'Claude Code' }, { value: 'codex-
 type Props = Partial<Parameters<typeof RolesCard>[0]>;
 
 const card = (props: Props = {}) => {
-  const onSet = vi.fn((_press, answered) => answered.done());
-  render(<RolesCard catalogue={CATALOGUE} staffing={AT_FIRST_RUN} agents={AGENTS} onSet={onSet} onSetActor={() => {}} {...props} />);
-  return { onSet };
+  const onSetAll = vi.fn((_presses, answered) => answered.done());
+  render(<RolesCard catalogue={CATALOGUE} staffing={AT_FIRST_RUN} agents={AGENTS} onSet={() => {}} onSetAll={onSetAll} onSetActor={() => {}} {...props} />);
+  return { onSetAll };
 };
 
 describe('The suggested choices', () => {
@@ -46,20 +46,21 @@ describe('The suggested choices', () => {
   afterEach(() => i18n.changeLanguage('en'));
 
   it('shows at first run in words that say it can spend more, and applies nothing by itself', () => {
-    const { onSet } = card();
+    const { onSetAll } = card();
 
     expect(screen.getByRole('region', { name: 'Suggested choices for your roles' })).toBeTruthy();
     expect(screen.getByText(/can spend more than your roles use now/)).toBeTruthy();
     expect(screen.getByText(/Build: claude-code · sonnet · high, then claude-code · opus · high/)).toBeTruthy();
-    expect(onSet).not.toHaveBeenCalled();
+    expect(onSetAll).not.toHaveBeenCalled();
   });
 
-  it('presses SET_ROLE for each suggested role with the suggested choices, the roles it does not suggest for untouched', () => {
-    const { onSet } = card();
+  it('presses once for every suggested role with the suggested choices, the roles it does not suggest for untouched', () => {
+    const { onSetAll } = card();
 
     fireEvent.click(screen.getByRole('button', { name: 'Use these choices' }));
 
-    expect(onSet.mock.calls.map(([press]) => press)).toEqual([
+    expect(onSetAll).toHaveBeenCalledTimes(1);
+    expect(onSetAll.mock.calls[0]![0]).toEqual([
       {
         change: 'set', id: 'build', revision: 0, role: { name: { en: 'Build', zh: '开发' }, takes: ['build'], scope: { kind: 'machine', id: null } },
         choices: [{ agent: 'claude-code', model: 'sonnet', effort: 'high' }, { agent: 'claude-code', model: 'opus', effort: 'high' }],
@@ -72,11 +73,11 @@ describe('The suggested choices', () => {
   });
 
   it('leaves out the choices of an agent this machine has not set up, and says so', () => {
-    const { onSet } = card({ agents: [AGENTS[0]!] });
+    const { onSetAll } = card({ agents: [AGENTS[0]!] });
 
     expect(screen.getByText('Left out, not set up on this machine: codex-acp.')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Use these choices' }));
-    expect(onSet.mock.calls[1]![0].choices).toEqual([{ agent: 'claude-code', model: 'opus', effort: 'high' }]);
+    expect(onSetAll.mock.calls[0]![0][1].choices).toEqual([{ agent: 'claude-code', model: 'opus', effort: 'high' }]);
   });
 
   it('is gone where the machine has set up no agent it suggests', () => {
@@ -96,14 +97,15 @@ describe('The suggested choices', () => {
     expect(window.localStorage.getItem(DECLINED_KEY)).toBe('2026-10-31');
   });
 
-  it('says the driver\'s sentence under a refused press and stops', () => {
-    const onSet = vi.fn((_press, answered) => answered.refused('the role changed since it was read'));
-    card({ onSet });
+  it('says the driver\'s sentence under the refused press, which refused every role at once', () => {
+    const onSetAll = vi.fn((_presses, answered) => answered.refused('the role changed since it was read'));
+    card({ onSetAll });
 
     fireEvent.click(screen.getByRole('button', { name: 'Use these choices' }));
 
     expect(screen.getByText('the role changed since it was read')).toBeTruthy();
-    expect(onSet).toHaveBeenCalledTimes(1);
+    expect(onSetAll).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('button', { name: 'Use these choices' })).toHaveProperty('disabled', false);
   });
 
   it('reads in Chinese with the same warning', async () => {

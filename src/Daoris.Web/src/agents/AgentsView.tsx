@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sentence } from '../locales/format';
+import type { PlaceRow } from '../data/wiring';
 import { useHarnessRun, WithHarnessRuns } from './harnessRuns';
 import { useSessions } from '../data/queries';
 import { SessionConsole } from '../work/console/SessionConsole';
@@ -77,7 +78,12 @@ export function useAgentsMode(lists: ListPanes) {
  *
  * **Every act has its terminal twin** (D50): `daoris agent …`, named at the page's foot.
  */
-export function useAgentsView({ active, chosen, onChoose, notify, part = null, onAnchored, onOpenPlugin, say, modes, roleDoors }: {
+export function useAgentsView({ active, chosen, onChoose, notify, part = null, onAnchored, onOpenPlugin, say, modes, roleDoors, sessions }: {
+  /**
+   * A place's Sessions (AGENTSPLACE1f), drawn under its Roles and handed in by the application, which holds the presses the rows make: this
+   * place imports none of them, so Ask Daoris's census of what the place presses does not take them for its own.
+   */
+  sessions?: (place: { kind: 'workspace' | 'repository'; row: PlaceRow }) => ReactNode;
   /** The view is in front. */
   active: boolean;
   /**
@@ -161,7 +167,14 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
         chosen: modes.place,
         body: <SetupList state={places} chosen={modes.place} onChoose={modes.onPlace} />,
       },
-      main: <SetupMain found={placed} state={places.status} roles={placed && placed.kind !== 'imported' ? <PlaceRoles place={placeAsk(placed)} notify={notify} /> : null} />,
+      main: (
+        <SetupMain
+          found={placed}
+          state={places.status}
+          roles={placed && placed.kind !== 'imported' ? <PlaceRoles place={placeAsk(placed)} notify={notify} /> : null}
+          after={placed && (placed.kind === 'workspace' || placed.kind === 'repository') ? sessions?.(placed) : null}
+        />
+      ),
     };
   }
   if (modes && inSetup) {

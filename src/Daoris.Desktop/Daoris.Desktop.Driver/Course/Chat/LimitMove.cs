@@ -401,7 +401,7 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
     /// </summary>
     private async Task TellEndedAsync(string sessionId, bool wired, TaskCompletionSource<Task> read)
     {
-        if (wired && await Task.WhenAny(read.Task, Task.Delay(ChatHandOver.WireBound)).ConfigureAwait(false) == read.Task)
+        if (wired && await Task.WhenAny(read.Task, Task.Delay(handOver.WireWait)).ConfigureAwait(false) == read.Task)
         {
             await (await read.Task.ConfigureAwait(false)).ConfigureAwait(false);
         }

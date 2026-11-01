@@ -87,6 +87,8 @@ internal static class OwnerTargetRows
         // GITAPP2m: a branch's history edited in one repository's checkout.
         Row("GIT_HISTORY_EDIT", Repository(), Workspace());
         Row("SETUP_PRESS", Repository());
+        // AGENTSPLACE1b2: a place's apply acts on every repository its plan names.
+        rows.Add("PLACE_APPLY", OwnerTarget.Of(new OwnerField("repositories", OwnerKinds.Repository, Many: true)));
         // GITAPP2h, GITAPP2i, GITAPP2j, GITAPP2k, GITAPP2l: the Changes tab's acts on one repository's checkout.
         foreach (var route in new[] { "GIT_STAGE", "GIT_UNSTAGE", "GIT_UNDO", "GIT_MAKE_COMMIT", "GIT_AMEND", "GIT_RESOLVE", "GIT_MARK_RESOLVED", "GIT_SWITCH", "GIT_STASH", "GIT_STASH_APPLY" })
         {
@@ -133,7 +135,7 @@ internal static class OwnerTargetRows
 
         // The machine's own settings and programs: its plugins, its agents' accounts and its tools.
         None(OwnerNone.MachineSetting,
-            "SET_ACTOR", "STAFFING_FOUND_ANSWER", "SET_ROLE", "SET_AGENT_SETTINGS", "SET_CAP", "SET_COOLOFF", "SET_HELP_MODE", "SET_HELP_GRANT", "SET_KEEP", "SET_NOTIFY", "SET_STRIKES",
+            "SET_ACTOR", "STAFFING_FOUND_ANSWER", "SET_ROLE", "SET_ROLES", "SET_AGENT_SETTINGS", "SET_CAP", "SET_COOLOFF", "SET_HELP_MODE", "SET_HELP_GRANT", "SET_KEEP", "SET_NOTIFY", "SET_STRIKES",
             "TRUST_FOLDER", "ACCOUNT_USE", "HARNESS_ACTION", "HARNESSES_REFRESH", "TOOLS_DELETE", "TOOLS_DOWNLOAD", "TOOLS_LOCATION", "TOOLS_STOP",
             "TOOLS_USE", "TOOLS_GIT", "SYSTEM_DOWNLOADS_CLEAR", "SYSTEM_SPACE_FREE", "SET_STANDING_CONFIRMATION", "PLUGIN_ACTION", "PLUGIN_UPDATE",
             "PLUGIN_NEW", "PLUGIN_TRY", "PLUGIN_ADD", "PLUGIN_INSTALL", "WORKFLOW_SAVE",

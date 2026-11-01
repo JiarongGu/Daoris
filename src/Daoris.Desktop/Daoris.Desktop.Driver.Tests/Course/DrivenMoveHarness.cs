@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text.Json.Nodes;
 using Microsoft.Data.Sqlite;
 using Daoris.Driver;
@@ -47,17 +46,13 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
     {
         Home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", name, Guid.NewGuid().ToString("N")[..8]);
         Repository = Path.Combine(Home, "engine");
-        Directory.CreateDirectory(Repository);
-        Git("init", "-q", "-b", "main");
-        Git("config", "user.email", "driven@example.com");
-        Git("config", "user.name", "FOUNDATION1f");
-        File.WriteAllText(Path.Combine(Repository, "README.md"), "# engine\n");
-        Git("add", "-A");
-        Git("commit", "-qm", "the starting point");
         Service = SessionMessagesTickTests.SaidStandIn.Start(Repository);
         Service.Opens = 2;
         Service.Asks = true;
     }
+
+    /// <summary>The repository <c>engine</c>, a copy of the run's plain seed (<see cref="GitSeed.PlainAsync"/>): no case reads its first commit.</summary>
+    public Task InitializeAsync() => GitSeed.PlainAsync(Repository, "engine");
 
     public string Home { get; }
 
@@ -290,12 +285,19 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
         var watch = new DriverWatch(
             new ServiceClient(Service.Url, null), ConfigPath, Home, new SessionProcesses(), sync: null,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(Home, HomeEntry.Harnesses)));
+        _watch = watch;
         var closing = _closing.Token;
         _watching = Task.Run(async () =>
         {
             try
             {
-                await watch.RunAsync((_, _) => Task.CompletedTask, onError: null, closing);
+                await watch.RunAsync(
+                    (_, _) =>
+                    {
+                        Interlocked.Increment(ref _looks);
+                        return Task.CompletedTask;
+                    },
+                    onError: null, closing);
             }
             catch (OperationCanceledException)
             {
@@ -304,40 +306,73 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
     }
 
     /// <summary>
-    /// Waits for the coming-up loop to have nothing more to do: no record of the quest live, no move standing, and nothing seen to change for a
-    /// while (a second delivery would show in that while), bounded by <see cref="Poll.Patience"/>.
+    /// How many of the coming-up loop's looks a quiet time is. A second delivery, or anything else a loop would do again, is begun
+    /// by a look, as a start it reserves or a record it moves, so a few looks of nothing with no start reserved are the claim. Counted in looks,
+    /// not seconds, since a loaded machine looks less often.
+    /// </summary>
+    public const int QuietLooks = 3;
+
+    private int _looks;
+
+    private DriverWatch? _watch;
+
+    /// <summary>How many looks the coming-up loops have reported since the case began.</summary>
+    public int Looks => Volatile.Read(ref _looks);
+
+    /// <summary>
+    /// Waits for the coming-up loop to report <paramref name="looks"/> looks more, with no start of its own still reserved: the window in which
+    /// a loop that changes nothing is seen to change nothing, bounded by <see cref="Poll.Patience"/>.
+    /// </summary>
+    public async Task LooksAsync(int looks = QuietLooks)
+    {
+        var from = Looks;
+        await Poll.Until(() => Watching() && Looks - from >= looks && Starting() == 0, () => $"{Looks - from} looks, {Starting()} starting: {Seen()}");
+    }
+
+    /// <summary>
+    /// Waits for the coming-up loop to have nothing more to do: no record of the quest live, no move standing, and nothing seen to change across
+    /// <see cref="QuietLooks"/> of its looks (a second delivery would show in them), bounded by <see cref="Poll.Patience"/>.
     /// </summary>
     /// <param name="movesMayStand">The loop leaves a move standing by design (an older build's come-up takes none up), so one standing is no work left.</param>
-    /// <param name="quiet">How long nothing may change.</param>
-    /// <param name="ready">What the case is waiting for the loop to have done, which must hold before the quiet time counts.</param>
+    /// <param name="ready">What the case is waiting for the loop to have done, which must hold before the quiet looks count.</param>
     /// <param name="idle">
     /// Whether no record may be live: a case whose destination a go-on left <c>working</c> (its agent never reached, the dead loop's tree hold
-    /// standing in this one process) waits on <paramref name="ready"/> and the quiet time alone.
+    /// standing in this one process) waits on <paramref name="ready"/> and the quiet looks alone.
     /// </param>
-    public async Task SettleAsync(bool movesMayStand = false, TimeSpan? quiet = null, Func<bool>? ready = null, bool idle = true)
+    public async Task SettleAsync(bool movesMayStand = false, Func<bool>? ready = null, bool idle = true)
     {
         var last = "";
         var changes = 0;
-        var since = Stopwatch.GetTimestamp();
-        var still = quiet ?? TimeSpan.FromSeconds(8);
+        var since = Looks;
         await Poll.Until(
             () =>
             {
-                // What the quiet time watches: the records, the moves and the prompts, never the stub's refused resumes, which a held line
-                // asks again at every look and which send nothing.
+                // What the quiet looks watch: the records, the moves and the prompts, never the stub's refused resumes, which a held line
+                // asks again at every look and which send nothing. A start still reserved is waited out, so a record it opens is seen; it
+                // is read first, so one that opens while this looks is read in the records.
+                var starting = Starting();
                 var now = $"{Fingerprint()} {Prompts().Count}";
                 if (now != last)
                 {
                     last = now;
                     changes++;
-                    since = Stopwatch.GetTimestamp();
+                    since = Looks;
                     return false;
                 }
 
-                return Stopwatch.GetElapsedTime(since) > still && (!idle || !Live(movesMayStand)) && (ready?.Invoke() ?? true);
+                return Watching() && Looks - since >= QuietLooks && starting == 0 && (!idle || !Live(movesMayStand)) && (ready?.Invoke() ?? true);
             },
-            () => $"{Seen()} | changed {changes} times, quiet {Stopwatch.GetElapsedTime(since).TotalSeconds:0}s, live {Live(movesMayStand)}, ready {ready?.Invoke()}");
+            () => $"{Seen()} | changed {changes} times, quiet for {Looks - since} looks, starting {Starting()}, live {Live(movesMayStand)}, ready {ready?.Invoke()}");
     }
+
+    /// <summary>The coming-up loop's starts reserved and not yet open, which a look begins beside itself.</summary>
+    private int Starting() => _watch?.Running.Reserved.Count ?? 0;
+
+    /// <summary>True while the coming-up loop runs; a loop that ended by itself fails the wait with what ended it, as no look counts after it.</summary>
+    private bool Watching() =>
+        _watching is not { IsCompleted: true } ended
+            ? true
+            : throw new InvalidOperationException($"the coming-up loop ended by itself: {ended.Exception?.InnerException?.Message ?? ended.Status.ToString()}; {Seen()}");
 
     private bool Live(bool movesMayStand)
     {
@@ -367,6 +402,7 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
         _closing.Dispose();
         _closing = null;
         _watching = null;
+        _watch = null;
     }
 
     // ——— What the stub heard.
@@ -429,15 +465,6 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
         _gate.Dispose();
         SqliteConnection.ClearAllPools();
         GitSeed.Discard(Home);
-    }
-
-    private void Git(params string[] arguments)
-    {
-        var info = new ProcessStartInfo("git") { WorkingDirectory = Repository, UseShellExecute = false, RedirectStandardOutput = true };
-        foreach (var argument in arguments) info.ArgumentList.Add(argument);
-        using var process = Process.Start(TestGit.Past(info))!;
-        process.StandardOutput.ReadToEnd();
-        process.WaitForExit();
     }
 
     // ——— The stub agents.

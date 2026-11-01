@@ -323,6 +323,9 @@ public sealed class RoleCatalog
         return null;
     }
 
+    /// <summary>The catalogue once <paramref name="change"/> is made, for judging the next change of a batch against it; revisions are not carried.</summary>
+    public RoleCatalog With(RoleChange change) => new(After(change));
+
     private IReadOnlyList<RoleSlot> After(RoleChange change)
     {
         var slots = Slots.Where(slot => slot.Id != change.Id).ToList();
@@ -344,39 +347,53 @@ public sealed class RoleCatalog
     /// </summary>
     /// <returns>The id's new revision.</returns>
     /// <exception cref="DriverException">The judge's refusal; nothing changed.</exception>
-    public static long Write(string location, RoleChange change, Func<StoreSettled>? settled = null)
+    public static long Write(string location, RoleChange change, Func<StoreSettled>? settled = null) => WriteAll(location, [change], settled)[0];
+
+    /// <summary>
+    /// <see cref="Write"/> for a batch (AGENTSPLACE1g2): each change judged in order against the roles the changes before it leave, all in one
+    /// transaction, so the first refusal rolls every one back and nothing is written.
+    /// </summary>
+    /// <returns>Each id's new revision, in the batch's order.</returns>
+    /// <exception cref="DriverException">The first change the judge refused; nothing changed.</exception>
+    public static IReadOnlyList<long> WriteAll(string location, IReadOnlyList<RoleChange> changes, Func<StoreSettled>? settled = null)
     {
         using var store = DesktopStore.Open(location, StoreProcess.Options(settled));
         return store.Write("roles", write =>
         {
-            var current = Of(write.Query("SELECT id, state, record, revision FROM roles", row => new StoredRole(row.GetString(0), row.GetString(1), row.GetString(2), row.GetInt64(3))));
-            if (current.Judge(change) is { } refusal) throw new DriverException(refusal.Said);
+            var revisions = new List<long>();
+            foreach (var change in changes)
+            {
+                var current = Of(write.Query("SELECT id, state, record, revision FROM roles", row => new StoredRole(row.GetString(0), row.GetString(1), row.GetString(2), row.GetInt64(3))));
+                if (current.Judge(change) is { } refusal) throw new DriverException(refusal.Said);
 
-            var revision = write.Scalar<long>("SELECT MAX(revision) FROM role_revisions WHERE id = $id", ("$id", change.Id)) + 1;
-            var at = DateTimeOffset.UtcNow.ToString("O", System.Globalization.CultureInfo.InvariantCulture);
-            var seeded = ActorChoices.Ids.Contains(change.Id, StringComparer.Ordinal);
-            (string State, string? Record) kept = change switch
-            {
-                RoleChange.SetRole set => ("set", set.Role.Json()),
-                RoleChange.RemoveRole when seeded => ("removed", "{}"),
-                RoleChange.RemoveRole => ("deleted", null),
-                _ => (seeded ? "default" : "deleted", null),
-            };
-            write.Execute(
-                "INSERT INTO role_revisions (id, revision, state, record, at) VALUES ($id, $revision, $state, $record, $at)",
-                ("$id", change.Id), ("$revision", revision), ("$state", kept.State), ("$record", kept.Record), ("$at", at));
-            if (kept.State is "set" or "removed")
-            {
+                var revision = write.Scalar<long>("SELECT MAX(revision) FROM role_revisions WHERE id = $id", ("$id", change.Id)) + 1;
+                var at = DateTimeOffset.UtcNow.ToString("O", System.Globalization.CultureInfo.InvariantCulture);
+                var seeded = ActorChoices.Ids.Contains(change.Id, StringComparer.Ordinal);
+                (string State, string? Record) kept = change switch
+                {
+                    RoleChange.SetRole set => ("set", set.Role.Json()),
+                    RoleChange.RemoveRole when seeded => ("removed", "{}"),
+                    RoleChange.RemoveRole => ("deleted", null),
+                    _ => (seeded ? "default" : "deleted", null),
+                };
                 write.Execute(
-                    """
-                    INSERT INTO roles (id, state, record, revision, at) VALUES ($id, $state, $record, $revision, $at)
-                    ON CONFLICT (id) DO UPDATE SET state = $state, record = $record, revision = $revision, at = $at
-                    """,
-                    ("$id", change.Id), ("$state", kept.State), ("$record", kept.Record), ("$revision", revision), ("$at", at));
-            }
-            else write.Execute("DELETE FROM roles WHERE id = $id", ("$id", change.Id));
+                    "INSERT INTO role_revisions (id, revision, state, record, at) VALUES ($id, $revision, $state, $record, $at)",
+                    ("$id", change.Id), ("$revision", revision), ("$state", kept.State), ("$record", kept.Record), ("$at", at));
+                if (kept.State is "set" or "removed")
+                {
+                    write.Execute(
+                        """
+                        INSERT INTO roles (id, state, record, revision, at) VALUES ($id, $state, $record, $revision, $at)
+                        ON CONFLICT (id) DO UPDATE SET state = $state, record = $record, revision = $revision, at = $at
+                        """,
+                        ("$id", change.Id), ("$state", kept.State), ("$record", kept.Record), ("$revision", revision), ("$at", at));
+                }
+                else write.Execute("DELETE FROM roles WHERE id = $id", ("$id", change.Id));
 
-            return revision;
+                revisions.Add(revision);
+            }
+
+            return (IReadOnlyList<long>)revisions;
         });
     }
 

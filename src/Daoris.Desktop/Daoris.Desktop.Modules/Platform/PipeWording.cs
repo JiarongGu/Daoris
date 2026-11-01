@@ -183,6 +183,8 @@ public static class PipeWording
         Row("GIT_FETCH", W("repository", PipeRole.Repository));
         Row("GIT_HISTORY_EDIT", W("repository", PipeRole.Repository), W("branch", PipeRole.Words));
         Row("SETUP_PRESS", W("repository", PipeRole.Repository));
+        // AGENTSPLACE1b2: a place's apply names the repositories, the delivery and what it builds; the digest and the chosen acceptances are listed under it.
+        Row("PLACE_APPLY", W("repositories", PipeRole.Repository), W("preset", PipeRole.Form), W("builds", PipeRole.Form));
         Row("WORKFLOW_LANDED", W("repository", PipeRole.Repository));
         Row("WORKFLOW_USE", W("repository", PipeRole.Repository), W("workflow", PipeRole.Form), W("kind", PipeRole.Form));
         Row("WORKFLOW_KIND", W("kind", PipeRole.Form), W("label", PipeRole.Words));
@@ -213,7 +215,7 @@ public static class PipeWording
             "LAND_ENTRY", "OPINION_ANYWAY", "OPINION_MYSELF", "SWEEP", "HISTORY_CLEAR", "SYSTEM_DOWNLOADS_CLEAR", "WORK_ABANDON", "WORK_PAUSE",
             "INTEGRATE", "WORK_HELD", "HELP_DISMISS", "CHANNEL_MARK", "NOTICES_READ", "NOTICE_DISMISS", "HELP_APPLY", "START_HELP", "HELP_START_FROM",
             "HELP_RENAME", "HELP_PIN",
-            "SET_ACCESS", "SET_ACTOR", "STAFFING_FOUND_ANSWER", "SET_ROLE", "SET_CAP", "SET_COMMITS", "SET_COOLOFF", "SET_HAND_OVER", "SET_HELPERS", "SET_HELP_MODE", "SET_HELP_GRANT", "SET_KEEP",
+            "SET_ACCESS", "SET_ACTOR", "STAFFING_FOUND_ANSWER", "SET_ROLE", "SET_ROLES", "SET_CAP", "SET_COMMITS", "SET_COOLOFF", "SET_HAND_OVER", "SET_HELPERS", "SET_HELP_MODE", "SET_HELP_GRANT", "SET_KEEP",
             "SET_NOTIFY", "SET_OPINION", "SET_REVIEW", "SET_STRIKES", "TRUST_FOLDER", "RULE_ACTION", "RULE_PROPOSAL", "PLUGIN_ACTION",
             "PLUGIN_ADD", "PLUGIN_INSTALL", "PLUGIN_NEW", "PLUGIN_TRY", "TOOLS_DELETE", "TOOLS_DOWNLOAD", "TOOLS_LOCATION", "TOOLS_STOP",
             "TOOLS_USE", "ASK_OPINION",

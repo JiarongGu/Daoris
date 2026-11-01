@@ -17,7 +17,7 @@ public sealed class DrivenMoveOlderBuildProcessTests : IAsyncLifetime
 {
     private readonly DrivenMoveHarness _h = new("driven-move-older");
 
-    public Task InitializeAsync() => Task.CompletedTask;
+    public Task InitializeAsync() => _h.InitializeAsync();
 
     public async Task DisposeAsync() => await _h.DisposeAsync();
 

@@ -54,6 +54,59 @@ public sealed class DriverModuleRoleTests : DriverModuleBridge
         }
     }
 
+    /// <summary>
+    /// AGENTSPLACE1g2 (the Agents-place design §4): <c>SET_ROLES</c> makes several role changes as one. A batch with one refused change, or one
+    /// made against a revision that moved, refuses with that change's own sentence and writes neither the catalogue nor the staffing; a batch
+    /// that is judged whole writes every role with its choices.
+    /// </summary>
+    [Fact]
+    public async Task A_batch_with_one_refused_change_writes_nothing_and_one_judged_whole_writes_every_role()
+    {
+        File.WriteAllText(DriverConfigPath, """{ "adapter": "claude-code", "intakeAdapter": "claude-code" }""");
+        var staffing = RoleStaffing.Wire(Home, () => StoreSettled.Yes);
+        try
+        {
+            Assert.Equal(StaffingImported.Done, staffing.ImportFile().How);
+            var module = Module();
+            var designer = new
+            {
+                change = "set", id = "designer", revision = 0,
+                role = new { name = new { en = "Designer", zh = "设计师" }, takes = new[] { "design" }, scope = new { kind = "machine" } },
+                choices = new object[] { new { agent = "claude-code", model = "opus", effort = "high" } },
+            };
+            var opinion = new
+            {
+                change = "set", id = "opinion", revision = 0,
+                role = new { name = new { en = "Second opinion", zh = "第二意见" }, takes = new[] { "review" }, scope = new { kind = "machine" } },
+                choices = new object[] { new { agent = "claude-code", model = "opus", effort = "high" } },
+            };
+            var before = (await AnswerAsync(module, "ROLES")).GetProperty("roles").GetRawText();
+
+            Assert.Contains(
+                RoleCatalog.Of([]).Judge(RoleChange.Remove("build"))!.Said,
+                await RefusalAsync(module, "SET_ROLES", new { changes = new object[] { designer, opinion, new { change = "remove", id = "build" } } }));
+            Assert.Contains(
+                "changed since", await RefusalAsync(module, "SET_ROLES", new { changes = new object[] { designer, opinion with { revision = 7 } } }));
+            Assert.Contains("more than once", await RefusalAsync(module, "SET_ROLES", new { changes = new object[] { opinion, opinion } }));
+            Assert.Contains("no role changes", await RefusalAsync(module, "SET_ROLES", new { }));
+            Assert.Contains("no role change", await RefusalAsync(module, "SET_ROLES", new { changes = Array.Empty<object>() }));
+
+            Assert.Equal(before, (await AnswerAsync(module, "ROLES")).GetProperty("roles").GetRawText());
+
+            await AnswerAsync(module, "SET_ROLES", new { changes = new object[] { designer, opinion } });
+
+            var roles = (await AnswerAsync(module, "ROLES")).GetProperty("roles").EnumerateArray().ToList();
+            var made = roles.Single(row => row.GetProperty("id").GetString() == "designer");
+            Assert.Equal(("set", 1L, "opus"), (made.GetProperty("state").GetString(), made.GetProperty("revision").GetInt64(), made.GetProperty("choices")[0].GetProperty("model").GetString()));
+            var asked = roles.Single(row => row.GetProperty("id").GetString() == "opinion");
+            Assert.Equal(("set", 1L, "opus"), (asked.GetProperty("state").GetString(), asked.GetProperty("revision").GetInt64(), asked.GetProperty("choices")[0].GetProperty("model").GetString()));
+        }
+        finally
+        {
+            RoleStaffingPort.Unwire(DriverConfigPath);
+        }
+    }
+
     /// <summary>MODELROLE1f: <c>ROLES</c> carries each role's last seven days beside its rows; a home with no start lists none.</summary>
     [Fact]
     public async Task The_roles_answer_carries_each_role_s_week_of_starts_and_none_with_no_history()

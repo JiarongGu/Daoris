@@ -158,6 +158,7 @@
   "settings.ai.roles.suggestedChoices.use": "Use these choices",
   "settings.ai.roles.suggestedChoices.notNow": "Not now",
   "settings.ai.roles.saved": "{{role}} is saved; new work takes it.",
+  "settings.ai.roles.savedAll": "Saved together: {{roles}}; new work takes them.",
   "settings.ai.roles.removedSaved": "{{role}} is removed; its work waits until a role takes it.",
   "settings.ai.roles.defaulted": "{{role}} is the default again.",
   "settings.ai.roles.footnote": "Also `daoris driver role`. An older Daoris runs the default roles and none you add."

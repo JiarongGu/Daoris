@@ -350,5 +350,7 @@
   "agents.setup.roles.backOf": "Back to {{parent}}'s, for {{work}}",
   "agents.setup.roles.backAsk": "Put {{work}} back to {{parent}}'s",
   "agents.setup.roles.backMove": "Use {{parent}}'s",
-  "agents.setup.roles.appointed": "Appointed"
+  "agents.setup.roles.appointed": "Appointed",
+  "agents.setup.sessions.title": "Sessions",
+  "agents.setup.workflow.title": "Workflow"
 }

@@ -350,5 +350,7 @@
   "agents.setup.roles.backOf": "回到{{parent}}的角色，{{work}}",
   "agents.setup.roles.backAsk": "让{{work}}回到{{parent}}的角色",
   "agents.setup.roles.backMove": "改用{{parent}}的角色",
-  "agents.setup.roles.appointed": "委任"
+  "agents.setup.roles.appointed": "委任",
+  "agents.setup.sessions.title": "会话",
+  "agents.setup.workflow.title": "工作流"
 }

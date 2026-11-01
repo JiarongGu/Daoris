@@ -38,6 +38,7 @@ const meta: Meta<typeof RolesCard> = {
     staffing: ['build', 'intake', 'opinion', 'helper', 'partner', 'brainstorm'].map(before),
     agents: [{ value: 'claude-code', label: 'Claude Code — claude-code' }],
     onSet: () => {},
+    onSetAll: () => {},
     onSetActor: () => {},
   },
   decorators: [storyWidths.wide],

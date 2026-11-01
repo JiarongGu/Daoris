@@ -3,7 +3,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// <c>daoris-driver place &lt;repository&gt;… --preset &lt;id&gt; [--with opinion,look,adoption] [--what-it-builds &lt;kind&gt;] [--drive] --plan</c>
 /// (AGENTSPLACE1a2; the Agents-place design §4): <c>PLACE_PLAN</c>'s terminal twin, the same plan from the same code in English. Through the
-/// running Daoris where one answers, alone otherwise. It plans only: applying is <c>PLACE_APPLY</c>'s, which this build does not have.
+/// running Daoris where one answers, alone otherwise. It plans only: applying is <c>PLACE_APPLY</c>'s (AGENTSPLACE1b2), the window's press; its terminal twin is AGENTSPLACE1b3's.
 /// </summary>
 /// <remarks>Exit codes keep the family contract: 0 a plan nothing refuses · 1 refused · 2 the usage.</remarks>
 public static class PlaceCommand

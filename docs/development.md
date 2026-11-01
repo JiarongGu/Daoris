@@ -102,7 +102,11 @@ time, and removes its scratch with `GitSeed.Remove`: git writes its objects read
 Windows (PROCSPEED1). A seed's repositories start no maintenance git behind a commit, a fetch or a push
 (`GitSeed.NoMaintenanceAsync`), and a platform's moves on a bare origin are git's plumbing in the origin, never a clone that
 pushes (`LandedFixture.SquashOnPlatformAsync`, `CommitOnOriginAsync`): on this machine a git start costs about half a second,
-and the git half is its starts (PROCSPEED1b). Rehearsals also run
+and the git half is its starts (PROCSPEED1b). A real-process test that shows a loop or a shell doing nothing more waits on
+what it would act through, never seconds of the clock: the loop's own looks with no start reserved
+(`DrivenMoveHarness.QuietLooks`), or every coming-up shell's work in flight (`LiveLimitHarness.QuietAsync`); and a bound
+the product waits on a stand-in that never answers is the product's seam, shortened by the test (`ChatHandOver.WireWait`,
+TESTSPEED1). Rehearsals also run
 serially, use repository scratch and record transcripts there; the merge tool runs the release, family and deployment
 rehearsals beside the git half, one after the other, each building what the Process halves build only into an output of
 its own (REHLANE1, REHLANE2, REHLANE2b). Do not overlap them with another full gate run.
