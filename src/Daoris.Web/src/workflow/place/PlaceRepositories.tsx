@@ -1,4 +1,3 @@
-import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../design/ui';
 import type { WorkflowRepository } from '../current';
@@ -10,11 +9,9 @@ import type { WorkflowRepository } from '../current';
  */
 export function PlaceRepositories({ repositories, onOpen }: { repositories: WorkflowRepository[] | null; onOpen?: (repository: string) => void }) {
   const { t } = useTranslation();
-  const headId = useId();
   const title = t('workflow.repositories.title');
   return (
-    <section aria-labelledby={headId} className="grid min-w-0 gap-2">
-      <h3 id={headId} className="m-0 text-body font-semibold text-ink">{title}</h3>
+    <div className="grid min-w-0 gap-2">
       {repositories === null
         ? <p className="m-0 text-small text-ink-soft">{t('workflow.repositories.unread')}</p>
         : repositories.length === 0
@@ -49,6 +46,12 @@ export function PlaceRepositories({ repositories, onOpen }: { repositories: Work
               </ul>
             </>
           )}
-    </section>
+    </div>
   );
+}
+
+/** A workspace's repositories in one line: how many, and how many set rules of their own; none read, and it says so. */
+export function repositoriesSummary(t: ReturnType<typeof useTranslation>['t'], repositories: WorkflowRepository[] | null): string {
+  if (repositories === null) return t('workflow.place.repositories.unread');
+  return t('workflow.place.repositories.summary', { count: repositories.length, own: repositories.filter((each) => each.own).length });
 }

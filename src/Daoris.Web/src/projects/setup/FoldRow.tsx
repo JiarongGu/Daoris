@@ -56,7 +56,7 @@ export function FoldRow({ folds, open, again }: { folds: readonly FoldSpec[]; op
                 aria-controls={`${base}-${fold.id}`}
                 aria-describedby={`${base}-${fold.id}-says`}
                 onClick={() => toggle(fold.id)}
-                className="inline-flex min-h-[1.9rem] items-center gap-1 rounded-control text-small text-ink-soft hover:text-ink aria-expanded:font-medium aria-expanded:text-ink"
+                className="inline-flex min-h-[1.5rem] items-center gap-1 rounded-control text-small text-ink-soft hover:text-ink aria-expanded:font-medium aria-expanded:text-ink"
               >
                 <Icon name={shown ? 'chevronDown' : 'chevronRight'} size={12} />
                 {fold.title}

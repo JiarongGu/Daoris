@@ -1,5 +1,7 @@
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { type ReactNode, useContext, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
+import { PlaceAside } from '../../agents/setup/placeAside';
 import type { PlaceView } from '../../agents/setup/placeShell';
 import { cn } from '../../lib/cn';
 import { Button, Inline, Prose, SkeletonRows } from '../../design/ui';
@@ -17,7 +19,7 @@ import type { WorkflowDoors } from '../WorkflowChart';
 import { LandedLines } from '../WorkflowStartNode';
 import { ChangeWorkflow, type PresetStart } from './ChangeWorkflow';
 import { gatesOwed, gatesSummary, PlaceGates } from './PlaceGates';
-import { PlaceRepositories } from './PlaceRepositories';
+import { PlaceRepositories, repositoriesSummary } from './PlaceRepositories';
 
 /** What the folds under the routes are handed: the section a step's door asked to see open (and how many times), and the folds to stand first. */
 export type LandingHand = {
@@ -58,7 +60,7 @@ const DEFAULT_VIEW: PlaceView = { route: 'default', step: null };
 function Routes({ rows, chosen, onChoose }: { rows: readonly RouteRow[]; chosen: string; onChoose: (route: string) => void }) {
   const { t } = useTranslation();
   return (
-    <ul aria-label={t('workflow.start.title')} className="m-0 grid min-w-0 list-none gap-0.5 p-0">
+    <ul aria-label={t('workflow.start.title')} className="m-0 grid min-w-0 list-none gap-0 p-0">
       {rows.map((row) => {
         const here = row.key === chosen;
         return (
@@ -69,7 +71,7 @@ function Routes({ rows, chosen, onChoose }: { rows: readonly RouteRow[]; chosen:
               aria-label={t('workflow.place.route.chosen', { label: row.label, target: row.target, why: row.why })}
               onClick={() => onChoose(row.key)}
               className={cn(
-                'flex w-full min-w-0 flex-wrap items-baseline gap-x-2 border-l-2 py-1 pl-2.5 text-left text-body hover:bg-raised',
+                'flex w-full min-w-0 flex-wrap items-baseline gap-x-2 border-l-2 py-0.5 pl-2.5 text-left text-small hover:bg-raised',
                 here ? 'border-accent' : 'border-transparent',
               )}
             >
@@ -108,6 +110,7 @@ export function PlaceWorkflowView({
   const { t } = useTranslation();
   const pane = useRef<HTMLDivElement>(null);
   const width = useWidth(pane);
+  const aside = useContext(PlaceAside);
   const [local, setLocal] = useState<PlaceView>(DEFAULT_VIEW);
   const [panel, setPanel] = useState<Panel>(null);
   const [chartShown, setChartShown] = useState(false);
@@ -133,7 +136,8 @@ export function PlaceWorkflowView({
     );
   }
 
-  const wide = width !== undefined && width >= TWO_COLUMNS;
+  // Inside a place's page the chart stands in the page's own column where it keeps one; outside a page the section measures its own room.
+  const wide = aside === undefined ? width !== undefined && width >= TWO_COLUMNS : aside !== null;
   const start: WorkflowStart | null | undefined = current.start;
   const rows = start ? routeRows(t, start, { repository: page === 'repository' ? name : null, workspace: current.workspace }) : [];
   const route = rows.find((row) => row.key === shown.route) ?? rows[0];
@@ -218,42 +222,53 @@ export function PlaceWorkflowView({
       </div>
     );
 
+  // A workspace's repositories are its own fold: how many follow it, and how many set rules of their own.
+  const repositories: FoldSpec[] = page === 'workspace'
+    ? [{
+      id: 'repositories',
+      title: t('workflow.repositories.title'),
+      summary: repositoriesSummary(t, current.repositories ?? null),
+      body: <PlaceRepositories repositories={current.repositories ?? null} onOpen={doors?.repository} />,
+    }]
+    : [];
+
   const canChange = editor !== undefined && !landed;
-  const actions = (
-    <div className="flex flex-wrap gap-1.5">
-      {canChange && (
-        <>
-          <Button variant="ghost" className="border border-line" onClick={() => show({ is: 'change' })}>{t('workflow.place.change.open')}</Button>
-          <Button variant="ghost" className="border border-line" onClick={() => show({ is: 'edit' })}>{t('workflow.place.steps.open')}</Button>
-        </>
-      )}
-    </div>
-  );
+  const buttons = 'min-h-0 border border-line py-0.5 text-small';
+  const chartPress = !wide && !panel;
+  const hasActs = chartPress || canChange;
 
   return (
-    <div ref={pane} data-place-workflow="" data-columns={wide ? 'two' : 'one'} className={cn('mt-1 grid min-w-0 gap-4', wide && 'grid-cols-2 items-start gap-6')}>
-      <div className="grid min-w-0 gap-2">
-        <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1">
-          <h3 className="m-0 text-body font-semibold text-ink">{t('workflow.start.title')}</h3>
-          {actions}
-        </div>
+    <div
+      ref={pane}
+      data-place-workflow=""
+      data-columns={wide ? 'two' : 'one'}
+      className={cn('grid min-w-0 gap-4', wide && !aside && 'grid-cols-2 items-start gap-6')}
+    >
+      <div className="grid min-w-0 gap-1.5">
         <Routes rows={rows} chosen={routeKey} onChoose={(next) => choose({ route: next })} />
+        {hasActs && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            {chartPress && (
+              <Button variant="ghost" className={buttons} aria-expanded={chartShown} onClick={() => setChartShown((was) => !was)}>
+                {t(chartShown ? 'workflow.place.chart.hide' : 'workflow.place.chart.show')}
+              </Button>
+            )}
+            {canChange && (
+              <>
+                <Button variant="ghost" className={buttons} onClick={() => show({ is: 'change' })}>{t('workflow.place.change.open')}</Button>
+                <Button variant="ghost" className={buttons} onClick={() => show({ is: 'edit' })}>{t('workflow.place.steps.open')}</Button>
+              </>
+            )}
+          </div>
+        )}
         {landed && start && (
           <LandedLines landed={start.landed} page={page} repository={page === 'repository' ? name : null} onVerify={onVerify} apart />
         )}
         {!editor && <p className="m-0 text-meta text-ink-faint"><Inline text={t('workflow.compose.twin')} /></p>}
-        {!wide && !panel && (
-          <div>
-            <Button variant="ghost" className="border border-line" aria-expanded={chartShown} onClick={() => setChartShown((was) => !was)}>
-              {t(chartShown ? 'workflow.place.chart.hide' : 'workflow.place.chart.show')}
-            </Button>
-          </div>
-        )}
         {!wide && (panel || chartShown) && chart}
-        {landing ? landing({ asked: asked.section, again: asked.n, lead: gates }) : gates.length > 0 && <FoldRow folds={gates} />}
-        {page === 'workspace' && <PlaceRepositories repositories={current.repositories ?? null} onOpen={doors?.repository} />}
+        {landing ? landing({ asked: asked.section, again: asked.n, lead: gates }) : gates.length + repositories.length > 0 && <FoldRow folds={[...gates, ...repositories]} />}
       </div>
-      {wide && <div className="min-w-0">{chart}</div>}
+      {wide && (aside ? createPortal(<div className="min-w-0">{chart}</div>, aside) : <div className="min-w-0">{chart}</div>)}
     </div>
   );
 }

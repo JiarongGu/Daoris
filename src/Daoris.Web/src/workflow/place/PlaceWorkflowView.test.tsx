@@ -5,6 +5,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import { type ReactElement, useState } from 'react';
 import i18n from '../../locales/i18n';
 import { code } from '../../test/code';
+import { PlaceAside } from '../../agents/setup/placeAside';
 import type { PlaceView } from '../../agents/setup/placeShell';
 import type { CurrentWorkflow, WorkflowEffective } from '../current';
 import { LIST, PALETTE } from '../edit/editFixtures';
@@ -155,6 +156,22 @@ describe("the chosen route's chart", () => {
     expect(screen.queryByRole('button', { name: 'Show the chart' })).toBeNull();
     expect(document.querySelector('[data-place-workflow]')).toHaveAttribute('data-columns', 'two');
     expect(screen.getByRole('region', { name: 'The chart of default work' })).toBeInTheDocument();
+  });
+
+  it("stands in the page's own column when the page keeps one, and is one press away when it keeps none, whatever the section's own room", () => {
+    paneWidth = 1232;
+    const column = document.body.appendChild(document.createElement('div'));
+    const { unmount } = render(
+      <PlaceAside.Provider value={column}><PlaceWorkflowView name="engine" current={withRoute(EFFECTIVE_RELEASE, SAVED_DEFAULT)} /></PlaceAside.Provider>,
+    );
+    expect(within(column).getByRole('region', { name: 'The chart of default work' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Show the chart' })).toBeNull();
+    unmount();
+    column.remove();
+
+    render(<PlaceAside.Provider value={null}><PlaceWorkflowView name="engine" current={withRoute(EFFECTIVE_RELEASE, SAVED_DEFAULT)} /></PlaceAside.Provider>);
+    expect(screen.getByRole('button', { name: 'Show the chart' })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'The chart of default work' })).toBeNull();
   });
 
   it('is one press away below it, and the press takes it away again', async () => {
@@ -333,6 +350,9 @@ describe("a workspace's own Workflow", () => {
     const repository = vi.fn();
     draw({ page: 'workspace', name: 'aurora', current: workspace(), doors: { repository } });
 
+    const fold = screen.getByRole('button', { name: 'Repositories here' });
+    expect(fold).toHaveAccessibleDescription('2 repositories, 1 with rules of their own');
+    await userEvent.click(fold);
     const list = screen.getByRole('list', { name: 'Repositories here' });
     expect(within(list).getByText('follows this')).toBeInTheDocument();
     await userEvent.click(within(list).getByRole('button', { name: "Open engine's workflow" }));
