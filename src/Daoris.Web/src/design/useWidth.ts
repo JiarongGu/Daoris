@@ -1,4 +1,19 @@
-import { type RefObject, useEffect, useState } from 'react';
+import { type RefObject, useEffect, useMemo, useState } from 'react';
+import { useZoom } from './zoom';
+
+/** The root's size in px as the page draws it, which the window's zoom moves (trap 12); 16 where nothing says. */
+export function rootRem(): number {
+  if (typeof document === 'undefined') return 16;
+  const size = Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
+  return Number.isFinite(size) && size > 0 ? size : 16;
+}
+
+/** A rem in px, read again when the window's zoom changes: what a drawing places by, never 16 under a zoom (CANVAS1a, D224). */
+export function useRootRem(): number {
+  // The level is what moves the root's size, so it is what the size is read again by.
+  const level = useZoom();
+  return useMemo(() => rootRem(), [level]);
+}
 
 /**
  * How wide an element is, followed as it changes: the room a drawing has in its card (UX5 U44).

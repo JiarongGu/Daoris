@@ -26,6 +26,10 @@ public sealed class DesktopWrite
         return command.ExecuteNonQuery();
     }
 
+    /// <summary>Move <paramref name="family"/>'s revision as the store's own write does for its family, for a transaction that writes several.</summary>
+    public void Moved(string family) => Execute(
+        "INSERT INTO store_revisions (family, revision) VALUES ($family, 1) ON CONFLICT (family) DO UPDATE SET revision = revision + 1", ("$family", family));
+
     /// <summary>The first column of the first row, or <c>default</c> where there is none or it is null.</summary>
     public T? Scalar<T>(string sql, params (string Name, object? Value)[] values)
     {

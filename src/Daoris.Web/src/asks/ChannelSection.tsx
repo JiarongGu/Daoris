@@ -29,7 +29,7 @@ export type ChannelForward = (message: string, repository: string, answered: Cha
 const DOOR = 'cursor-pointer border-0 bg-transparent p-0 text-left text-accent underline-offset-2 hover:underline';
 
 /** Who wrote a message: the person, or a session by its repository and agent (the agent's adapter, never a model), else a session. */
-const whoOf = (t: TFunction, item: ChannelItem) => item.person
+export const whoOf = (t: TFunction, item: ChannelItem) => item.person
   ? t('asks.channel.who.you')
   : [item.repository, item.agent].filter(Boolean).join(' · ') || t('asks.channel.who.session');
 
@@ -375,7 +375,9 @@ function ReceiptRow({ receipt, onForward }: { receipt: ChannelReceipt; onForward
  * A molecule over `ChannelSection`: it counts nothing unread and moves no mark, which the ask's page owns, since this reads a
  * part of the channel and a mark is for all of it.
  */
-export function ChannelPanel({ channel, only, onPost, onForward, onOpenQuest, onOpenAsk, repositories }: {
+export function ChannelPanel({ channel, only, onPost, onForward, onOpenQuest, onOpenAsk, repositories, opened = 0 }: {
+  /** A press elsewhere (the at-work view's *All messages*) asked it open: each new number opens it and brings it into view. */
+  opened?: number;
   channel: Channel | null;
   only: { entry: string; repository: string };
   onPost: (post: ChannelPost, answered: ChannelAnswered) => void;
@@ -388,9 +390,15 @@ export function ChannelPanel({ channel, only, onPost, onForward, onOpenQuest, on
 }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const section = useRef<HTMLElement>(null);
   const count = channel ? forEntry(channel.items, only).length : 0;
+  useEffect(() => {
+    if (opened <= 0) return;
+    setOpen(true);
+    section.current?.scrollIntoView?.({ block: 'nearest' });
+  }, [opened]);
   return (
-    <section aria-label={t('asks.channel.title')} className="min-w-0">
+    <section ref={section} aria-label={t('asks.channel.title')} className="min-w-0">
       <button
         type="button"
         aria-expanded={open}

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Prose, SelectField } from '../../design/ui';
-import type { EditorRole, GraphProblem, WorkflowPaletteAnswer } from './answers';
+import type { EditorRole, GraphProblem, StepStaffing, WorkflowPaletteAnswer } from './answers';
 import { choiceLabel, optionLabel, plain, previewPattern, stepAbout, stepTitle, waySaid } from './editWords';
 import {
   addWire, askedInputs, carryOf, choiceOf, type DraftNode, type GraphDraft, givesOf, inputsOf, joinModeOf, joinOf, landOptionApplies, moreWaysOf, movePlan,
@@ -9,6 +9,7 @@ import {
 } from './graphDraft';
 import { Refusals } from './Refusals';
 import { StepOptions } from './StepOptions';
+import type { RolePlace } from './StepRole';
 import { type WaysActs, WaysOnTable } from './WaysOnTable';
 
 // The inspector (FLOWCHART2b; the flowchart design §2, §3, §8.2; D221 §2.3): the selected step, beside the chart where the editor's region
@@ -35,10 +36,13 @@ const LAND = 'land';
 const METHOD = 'method';
 const text = (value: unknown): string | null => (typeof value === 'string' && value !== '' ? value : null);
 
-export function Inspector({ palette, draft, roles, lines, node, titleOf, problems, confirming, onConfirm, acts }: {
+export function Inspector({ palette, draft, roles, place, staffing, lines, node, titleOf, problems, confirming, onConfirm, acts }: {
   palette: WorkflowPaletteAnswer;
   draft: GraphDraft;
   roles: EditorRole[];
+  /** The place the editor opened from, which a step's role is given and named for, and the role editor's reads and presses (SETUPUX1t). */
+  place?: RolePlace | null;
+  staffing?: StepStaffing;
   /** The lines the place declares, which a landing's target is chosen from. */
   lines?: string[];
   node: DraftNode;
@@ -87,7 +91,7 @@ export function Inspector({ palette, draft, roles, lines, node, titleOf, problem
       <Carries draft={draft} node={node} titleOf={titleOf} onChange={acts.onChange} />
 
       {options.length > 0 && choice && (
-        <StepOptions node={node} fields={options} roleTakes={choice.roleTakes} roles={roles} lines={lines} notes={notes}
+        <StepOptions node={node} fields={options} roleTakes={choice.roleTakes} roles={roles} place={place} staffing={staffing} lines={lines} notes={notes}
           onSet={(option, value) => {
             if (node.kind === LAND && option === METHOD && typeof value === 'string') {
               const made = setLandMethod(palette, draft, id, value);

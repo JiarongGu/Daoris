@@ -320,6 +320,22 @@ describe('a session’s panel', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Open the whole channel' }));
     expect(onOpenAsk).toHaveBeenCalledOnce();
   });
+
+  /** COWORKVIEW1c: the at-work view's *All messages* asks the panel open by a number, and a number seen is not opened again. */
+  it('opens when asked open from elsewhere, once for each new number', async () => {
+    const { rerender } = render(<ChannelPanel channel={CHANNEL()} only={ONLY} onPost={() => {}} opened={0} />);
+    const toggle = screen.getByRole('button', { name: /Channel/ });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+
+    rerender(<ChannelPanel channel={CHANNEL()} only={ONLY} onPost={() => {}} opened={1} />);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+
+    await userEvent.click(toggle);
+    rerender(<ChannelPanel channel={CHANNEL()} only={ONLY} onPost={() => {}} opened={1} />);
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    rerender(<ChannelPanel channel={CHANNEL()} only={ONLY} onPost={() => {}} opened={2} />);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  });
 });
 
 // COWORK1d (D188; the message-urgency design §7, §8.4): each message names its level where it is urgent, says what it reached in each

@@ -171,6 +171,7 @@
   "note.opening.said-projected": "按 Daoris 此后自己的轮次推算，它的{{window}}上限此刻约已用 {{projected}}。",
   "note.opening.said-clear": "它说用量正常。",
   "note.opening.actor": "以{{actor}}的第 {{n}} 个选择运行，{{entry}}：{{passed}}。",
+  "note.opening.chosen": "{{actor}}的策略选择了这一项：{{said}}。",
   "note.opening.design": "设计工作：按{{role}}的顺序运行。",
   "note.opening.moved-off": "同一次启动移到了这里：`{{account}}` 因登录被拒而拒绝了它。",
   "note.opening.moved-off-model": "同一次启动移到了这里：`{{agent}}` 在它运行的账户上拒绝了 `{{model}}`。",

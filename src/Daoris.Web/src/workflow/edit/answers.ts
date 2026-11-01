@@ -2,7 +2,12 @@
 // `WORKFLOW_SHOW`, `WORKFLOW_PALETTE`, `WORKFLOW_SAVE` and `WORKFLOW_USE` as the driver gives them. Kept beside the editor, which a
 // bridge domain may not be imported by, and re-exported by `bridge/repositories/workflowEdit.ts`. A twin of the driver's
 // `WorkflowOperations.Listing`, `Show`, `SaveAsync` and `WorkflowPalette` (.claude/knowledge/twins.md).
+import type { SettingsChoices } from '../../agents/tools';
+import type { ActorRow, RoleCatalogue, RoleChangePress } from '../../data/wiring';
 import type { Authored } from '../../locales/authored';
+
+/** A role's order entry as `SET_ACTOR` takes it. */
+type ActorChoice = { agent: string; model?: string | null; effort?: string | null };
 
 /** A place that chooses a saved workflow: `repository` or `workspace`, its name, and the role it holds there. */
 export type WorkflowChosen = { level: 'repository' | 'workspace'; name: string; role: 'default' | 'kind' | 'landed'; kind: string | null };
@@ -118,5 +123,29 @@ export type WorkflowUseAnswer = {
   plan?: boolean; lowers?: string[]; places?: WorkflowUsePlace[]; keeps?: WorkflowUseKeeps | null; expected?: string;
 };
 
-/** A working role a step may name, from the roles' structure: its id, its names, and the works it takes. */
-export type EditorRole = { id: string; name: Authored | null; takes: string[] };
+/**
+ * A working role a step may name, from the roles' structure: its id, its names, and the works it takes; where it is placed, and whether that
+ * place covers the one the editor opened from (SETUPUX1t). A driver or a test that leaves the place out has a role of this machine, which
+ * covers every place.
+ */
+export type EditorRole = {
+  id: string; name: Authored | null; takes: string[]; scope?: { kind: string; id: string | null }; revision?: number; covers?: boolean;
+};
+
+/** The press of a role's change finished: it landed, or the driver's sentence. */
+export type RoleAnswered = { done: () => void; refused: (sentence: string) => void };
+
+/**
+ * What a step's *Taken by* needs to open the one role editor beside the step (SETUPUX1t): the catalogue and the order of each role, the agents
+ * this machine has and what each offers, and the two presses over `SET_ROLE` and `SET_ACTOR`. Read only once the editor shows (D150).
+ */
+export type StepStaffing = {
+  catalogue: RoleCatalogue | null;
+  read: 'ok' | 'loading' | 'notOffered' | 'failed';
+  actors: readonly ActorRow[];
+  agents: readonly { value: string; label: string }[];
+  offers: Readonly<Record<string, SettingsChoices | null | undefined>>;
+  busy: boolean;
+  onSet: (press: RoleChangePress, answered: RoleAnswered) => void;
+  onSetActor: (actor: string, choices: ActorChoice[] | null, answered: RoleAnswered) => void;
+};

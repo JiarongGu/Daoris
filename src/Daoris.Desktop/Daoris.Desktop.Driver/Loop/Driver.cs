@@ -910,6 +910,7 @@ public sealed class Driver(
             Named = ("quest", quest.Id),
             Log = Log,
             Gate = Gate,
+            Staff = Context.Harnesses.StaffFor(home),
         };
     }
 
@@ -2958,6 +2959,7 @@ public sealed class Driver(
         if (movedOff is not null) RotatedOpening.SayMovedOff(Context.Events, sessionId, AccountNames.Said(AccountNames.Of(home, agent), movedOff));
         if (movedOffModel is { } refusedModel) RotatedOpening.SayMovedOffModel(Context.Events, sessionId, refusedModel.Agent, refusedModel.Model);
         if (chosen is not null) RotatedOpening.SayActor(Context.Events, sessionId, "build", chosen, buildPasses);
+        RotatedOpening.SayStaff(Context.Events, Context.Harnesses.Staff(), sessionId, selection.Number, "build");
         // A quest marked design says whose order it ran on: the role taking design, Build's while none does (FOUNDATION1x, MODELROLE1l).
         if (start.Resumes is null && StartWork(quest) == ParticipantWork.Design && DesignRoleName(start, stepRole) is { } designer)
         {

@@ -137,9 +137,17 @@ public sealed class DriverLoop(
     /// </summary>
     public AtWorkWatch AtWork => LazyInitializer.EnsureInitialized(ref _atWork, () => new AtWorkWatch(
         () => StatePublisher.Publish(eventBus, StateScopes.AtWork), Slices.Find(GroupsStateSlice.Name), Slices.Find(SessionsStateSlice.Name),
-        Slices.Find(QuestsStateSlice.Name), LineageTokens.Shared));
+        Slices.Find(QuestsStateSlice.Name), LineageTokens.Shared, Slices.Find(DriverStateSlice.Name), HintStanding.Word, Slices.Find(AsksStateSlice.Name)));
 
     private AtWorkWatch? _atWork;
+
+    /// <summary>
+    /// The routing standing the at-work view's hint reads (COWORKVIEW1e-iii): the driver slice's drive and trees with the lanes the tick
+    /// last heard from the registry. The first registry answer moves it, and the judge is told (<see cref="RegisteredAsync"/>).
+    /// </summary>
+    public AtWorkStanding HintStanding => LazyInitializer.EnsureInitialized(ref _hintStanding, () => new AtWorkStanding(() => Slices.Find(DriverStateSlice.Name)));
+
+    private AtWorkStanding? _hintStanding;
 
     /// <summary>The rules' reading, shared by their slice and each look, which tells their scope only where it moved (FOUNDATION1s part B).</summary>
     public RulesReading RulesRead { get; } = new();
@@ -1538,6 +1546,8 @@ public sealed class DriverLoop(
             }
 
             _placed = placed;
+            // The first answer, and a lane moving, tell the at-work judge: the hint's standing waits on the registry (COWORKVIEW1e-iii).
+            if (HintStanding.Hear(registry)) AtWork.JudgeStandings();
             return Repositories.Signature(registry);
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)

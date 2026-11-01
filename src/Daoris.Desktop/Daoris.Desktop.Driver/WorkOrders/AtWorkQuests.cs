@@ -14,28 +14,48 @@ public static class AtWorkQuests
 
     private sealed record Stores(IReadOnlyList<QuestView> Quests, IReadOnlyList<SessionRecord> Sessions, Func<string, AtWorkRow?> Row);
 
+    /// <summary>
+    /// The quests an ask asked (COWORKVIEW1d, the design §3.5): those whose sender is the ask, each with its chain's steps after it and its
+    /// taker, as the quests of a session's entry are drawn. None is left out for being executed by a part: the ask's section says who took each.
+    /// </summary>
+    public static AtWorkAsked ForAsk(string ask, IReadOnlyList<QuestView> quests, IReadOnlyList<SessionRecord> sessions, Func<string, AtWorkRow?> row)
+    {
+        var stores = new Stores(quests, sessions, row);
+        var byId = ById(stores);
+        var roots = byId.Values.Where(quest => string.Equals(AskWords.AskOf(quest.From), ask, StringComparison.Ordinal)).ToList();
+        return Built(Chains(roots, quests), stores, byId, repository: null, by: null);
+    }
+
+    private static Dictionary<string, QuestView> ById(Stores stores)
+    {
+        var byId = new Dictionary<string, QuestView>(StringComparer.Ordinal);
+        foreach (var quest in stores.Quests) byId.TryAdd(quest.Id, quest);
+        return byId;
+    }
+
     private static AtWorkAsked Of(string attended, IReadOnlyList<string> ids, IReadOnlyList<AtWorkEntryPart> parts, AtWorkRecord attendedRecord, Stores stores)
     {
         var members = ids.ToHashSet(StringComparer.Ordinal);
-        var byId = new Dictionary<string, QuestView>(StringComparer.Ordinal);
-        foreach (var quest in stores.Quests) byId.TryAdd(quest.Id, quest);
+        var byId = ById(stores);
 
         // The quests the entry's parts execute: the strip names one on a part, and a record names the quest it serves.
         var executing = parts.Select(part => part.Quest).Concat(stores.Sessions.Where(session => members.Contains(session.Id)).Select(session => session.Quest))
             .OfType<string>().ToHashSet(StringComparer.Ordinal);
 
-        // A chain stays whole, and the chains with work still open come before those that are over.
         var chains = Chains(byId.Values.Where(quest => quest.PublishedBy is { } by && members.Contains(by)).ToList(), stores.Quests)
             .Select(chain => chain.Where(quest => !executing.Contains(quest.Id)).ToList()).Where(chain => chain.Count > 0).ToList();
+        return Built(chains, stores, byId, attendedRecord.Repository, AskedBy(attended, parts, attendedRecord, stores, byId));
+    }
+
+    /// <summary>A chain stays whole, and the chains with work still open come before those that are over.</summary>
+    private static AtWorkAsked Built(List<List<QuestView>> chains, Stores stores, Dictionary<string, QuestView> byId, string? repository, AtWorkAsker? by)
+    {
         var drawn = chains.Where(chain => !chain.All(Over)).Concat(chains.Where(chain => chain.All(Over))).SelectMany(chain => chain).ToList();
         var rows = drawn.Take(AtWork.Bound).ToList();
 
         var units = QuestUnits.Read(rows, stores.Sessions).ToDictionary(unit => unit.Records.Quest!.Id, StringComparer.Ordinal);
         var sessions = stores.Sessions.GroupBy(session => session.Id, StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
-        return new AtWorkAsked(
-            [.. rows.Select(quest => Row(quest, units[quest.Id], sessions, stores, byId, attendedRecord.Repository))],
-            drawn.Count - rows.Count,
-            AskedBy(attended, parts, attendedRecord, stores, byId));
+        return new AtWorkAsked([.. rows.Select(quest => Row(quest, units[quest.Id], sessions, stores, byId, repository))], drawn.Count - rows.Count, by);
     }
 
     /// <summary>Each root with, after it, the quests whose <c>parent</c> is one of them, deepest last; a cycle's members once each.</summary>

@@ -10,7 +10,8 @@ import { ClearAsk } from '../work/history/ClearAsk';
 import type { AskLine } from '../work/entries';
 import { AskLines } from './AskLines';
 import { type ChannelAnswered, type ChannelForward, ChannelSection } from './ChannelSection';
-import type { Channel, ChannelPost } from '../work/channel';
+import type { Channel, ChannelItem, ChannelPost } from '../work/channel';
+import { AtWorkAskView, type AtWorkAskViewProps } from '../work/atWork/AtWorkAskView';
 import { clearOffered, type HistoryDoor } from '../work/history/history';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import { askName } from '../work/identity';
@@ -102,8 +103,14 @@ const ASK_ACT: Record<AskAct, { label: string; variant: 'primary' | 'default' | 
  */
 export function AskPage({
   ask, receivers, questTitles, quests, intake = null, onAttend, busy = false, onPublish, onClose, onDelete, onOpenQuest, onAnswerGoAhead,
-  work, history, considered = [], nameOf, environments, onChooseReview, onChooseKind, workflow, lines = [], channel, staleGoAheads,
+  work, history, considered = [], nameOf, environments, onChooseReview, onChooseKind, workflow, lines = [], channel, staleGoAheads, atWork,
 }: {
+  /**
+   * Who is at work on the ask (COWORKVIEW1d, the cowork view design §3.5): its read as the query holds it, and the doors the section
+   * presses. Drawn above the ask's quests and replacing nothing. `words` is the channel's newest three messages, the page's own read
+   * under the channel section, whose *All messages* brings that section into view. Absent in a browser, which has no driver.
+   */
+  atWork?: Omit<AtWorkAskViewProps, 'channel' | 'considered'> & { words?: readonly ChannelItem[] };
   /**
    * Its go-aheads nothing on it could still use, by number, as What needs you's rows say (GOAHEADSTALE1): each marked stale with how
    * long, its refusal the one answer offered. Absent where nothing judges them, a browser.
@@ -278,6 +285,7 @@ export function AskPage({
   const long = !titled && title.length > LONG_TITLE;
   const request = useRef<HTMLParagraphElement>(null);
   const goAheads = useRef<HTMLDivElement>(null);
+  const channelSection = useRef<HTMLDivElement>(null);
   const head = (
     <PageHead
       lead={(
@@ -500,6 +508,30 @@ export function AskPage({
         </PageSection>
       )}
 
+      {atWork && (
+        /* Who is at work on it (COWORKVIEW1d): its lines of work folded to counts that open their own view, and its quests as a
+           session's view draws them; above the work's own list, which it replaces nothing of. */
+        <PageSection title={t('work.atWork.view')}>
+          <AtWorkAskView
+            held={atWork.held}
+            error={atWork.error}
+            onOpenEntry={atWork.onOpenEntry}
+            onOpenQuest={atWork.onOpenQuest ?? onOpenQuest}
+            considered={considered}
+            onRetry={atWork.onRetry}
+            channel={channel && atWork.words
+              ? {
+                words: atWork.words,
+                onOpen: () => {
+                  channelSection.current?.scrollIntoView?.({ block: 'start' });
+                  channelSection.current?.focus();
+                },
+              }
+              : undefined}
+          />
+        </PageSection>
+      )}
+
       {items.length > 0 ? (
         /* What a pause or an abandon reaches, before either is pressed (PAUSE1h, D132 §7.1). */
         <PageSection title={t('asks.record.quests')}>
@@ -542,6 +574,7 @@ export function AskPage({
       {/* Where its sessions and the person talk (SESSONE2c, D167 points 6 to 8): shell-only, so a browser draws none. */}
       {channel && (
         <PageSection title={t('asks.channel.title')}>
+          <div ref={channelSection} tabIndex={-1} className="outline-none" />
           <ChannelSection
             channel={channel.channel}
             repositories={lines.map((line) => line.repository)}

@@ -206,6 +206,23 @@ no placeholder could have supplied.
 needing a tweak will otherwise simply edit it, which is exactly how the copies diverged. The header says
 where the file came from and to use `daoris upstream`; the lock's hash catches the edit either way.
 
+## Lanes
+
+A repository's **lanes** are the domains inside it that work is handed to, each owning its paths. They are declared in a
+`daoris.lanes.json` at the repository's root: an `id` (lower-case letters, digits and dashes; how a quest addresses the lane, as
+`repository:id`), a `title`, a `summary` and path globs, with one **steward** lane that keeps the repository's records (D115).
+With no file the repository has no lanes.
+
+What lanes do for the work, on a machine where the person has opted the repository in to being driven:
+
+- A session of the repository can publish a quest to one of its own lanes, and the driver starts it as a further part of that
+  session's line of work. Without lanes there is nothing to publish to, and a session works its rows itself.
+- **Trees.** A repository that opens a tree for each session (`daoris-driver trees <repository> on`) can run such a part beside the
+  session that published it. One that does not runs it only after the publishing session ends, so a quest to its lanes waits.
+- **Not driven here.** A repository the person has not opted in on this machine starts nothing, lanes or not.
+
+The session view's *At work* tab says which of these holds where a session ran subagents and the way to hand rows on is not open.
+
 ## Extending it
 
 Daoris loads **no code into any host**, and has four seams, each a *declaration* or a *wire*, so none

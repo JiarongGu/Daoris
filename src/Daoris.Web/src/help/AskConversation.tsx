@@ -26,8 +26,8 @@ import { AskHistory } from './AskHistory';
 import { searchable } from '../lib/searchable';
 import { type HelpConversationRow, sameWorkspace } from './history';
 import type { AskConversationSlot } from './AskPanel';
-import { placeDoor } from './places';
-import { ProposalCard } from './ProposalCard';
+import { draftDoor, placeDoor } from './places';
+import { type HelpProposal, ProposalCard } from './ProposalCard';
 import { publishedCounts, publishedItems } from './published';
 import { PublishedList } from './PublishedList';
 import type { StarterDoor } from './starters';
@@ -951,10 +951,12 @@ export function useAskConversation(
   const cards = proposals.data ?? [];
   // What an Apply did beyond the driver's sentence (HELP6): a go opens its place through the starters'
   // door, and an update or a pin is followed by the Agents screen, its console and its end said there.
-  const applied = (answer: HelpSettled) => {
+  const applied = (answer: HelpSettled, proposal?: HelpProposal) => {
     // The plan moved since the card was drawn (HELPAPPLY1): nothing was applied, and the card is drawn again with the new plan.
     if (answer.changed) setRefusal(answer.message);
-    const door = answer.go ? placeDoor(answer.go) : null;
+    // A draft card's go is the place's Workflow, which the page opens with its editor on the draft the card is against (FLOWCHART2g).
+    const draft = proposal?.kind === 'workflow' && proposal.workflow && answer.go ? draftDoor(proposal.workflow, answer.go) : null;
+    const door = draft ?? (answer.go ? placeDoor(answer.go) : null);
     if (door) onGo?.(door);
     if (answer.harnessAction) runs?.follow(answer.harnessAction.harness, answer.harnessAction.action);
   };
@@ -1008,7 +1010,7 @@ export function useAskConversation(
           key={proposal.id}
           proposal={proposal}
           pending={settle.isPending}
-          onApply={(id) => settle.mutate({ id, apply: true }, { onSuccess: applied, onError: (error) => setRefusal(sentence(error)) })}
+          onApply={(id) => settle.mutate({ id, apply: true }, { onSuccess: (answer) => applied(answer, proposal), onError: (error) => setRefusal(sentence(error)) })}
           onDismiss={(id) => settle.mutate({ id, apply: false }, { onError: (error) => setRefusal(sentence(error)) })}
         />
       ))}

@@ -121,12 +121,12 @@ export const useUsage = () => {
   });
 };
 
-export const useHarnesses = () => {
+export const useHarnesses = ({ enabled = true }: { enabled?: boolean } = {}) => {
   const { isAvailable } = useShenora();
   return useQuery({
     queryKey: keys.harnesses,
     queryFn: () => call<HarnessRoster>('HARNESSES'),
-    enabled: isAvailable,
+    enabled: isAvailable && enabled,
     // Detection spawns a process per harness, so this is not something to re-run on every focus. The
     // roster has a refresh, and every action refreshes it — which is when it can actually have changed.
     staleTime: Infinity,

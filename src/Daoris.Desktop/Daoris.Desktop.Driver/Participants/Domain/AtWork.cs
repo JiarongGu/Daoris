@@ -68,6 +68,10 @@ public sealed record AtWorkHeld
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public AtWorkWhy? Stale { get; init; }
 
+    /// <summary>An ask's answer (COWORKVIEW1d): a branch of its own, with no attended part, beside the session's <see cref="Answer"/>.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public AtWorkAskAnswer? AskAnswer { get; init; }
+
     /// <summary>What the composition read, each input with the version it read (the design §4.1): kept beside it, never sent.</summary>
     [JsonIgnore]
     public object? Dependencies { get; init; }
@@ -100,6 +104,13 @@ public sealed record AtWorkAnswer(AtWorkOf Of, string Attended, IReadOnlyList<At
     /// <summary>What asked the attended part's quest.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public AtWorkAsker? AskedBy { get; init; }
+
+    /// <summary>
+    /// Where the attended part's newest generation started at least two subagents and the repository's routing standing is not open
+    /// (COWORKVIEW1e-iii, the design §6.4 point 3): <c>not-driven</c>, <c>no-lanes</c> or <c>one-at-a-time</c>.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Hint { get; init; }
 
     /// <summary>When this process began: the window's memory of what it heard starts here (rule 18).</summary>
     public DateTimeOffset WindowOpened { get; init; } = Opened;
@@ -301,6 +312,7 @@ public static class AtWork
                 Quests = asked is { Quests.Count: > 0 } ? asked.Quests : null,
                 MoreQuests = asked?.More is > 0 and var more ? more : null,
                 AskedBy = asked?.By,
+                Hint = Hint(routing, attended, Teammate(session) ? null : attendedReading),
             },
             Stale = stale is null ? null : new AtWorkWhy(stale),
         };
@@ -356,8 +368,17 @@ public static class AtWork
         }
     }
 
+    /// <summary>The hint: two subagents started by the attended part's newest generation, and a standing that is not open.</summary>
+    private static string? Hint(AtWorkRouting? routing, AtWorkRecord attended, LineageReading? reading)
+    {
+        if (routing?.StandingOf is not { } standingOf || reading is not { Outcome: LineageReading.Found } || reading.Bindings.StartedNewest < 2) return null;
+        if (attended.Repository is not { Length: > 0 } repository) return null;
+        var standing = standingOf(repository);
+        return standing is RoutingStanding.NotDriven or RoutingStanding.NoLanes or RoutingStanding.OneAtATime ? standing : null;
+    }
+
     /// <summary>A teammate's record, named <c>origin/id</c>: its lineage is on another machine.</summary>
-    private static bool Teammate(string id) => id.Contains('/', StringComparison.Ordinal);
+    internal static bool Teammate(string id) => id.Contains('/', StringComparison.Ordinal);
 
     private static AtWorkCounts Counts(LineageReading reading) => new()
     {
@@ -368,7 +389,7 @@ public static class AtWork
         Unreadable = reading.Outcome == LineageReading.Unreadable ? true : null,
     };
 
-    private static int Working(ChildBindings bindings) => bindings.Children.Count(child => child.State == ChildBindings.Working);
+    internal static int Working(ChildBindings bindings) => bindings.Children.Count(child => child.State == ChildBindings.Working);
 
     private static int? Positive(int count) => count > 0 ? count : null;
 

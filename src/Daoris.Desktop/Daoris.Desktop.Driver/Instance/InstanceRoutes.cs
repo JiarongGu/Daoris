@@ -79,6 +79,7 @@ public static class OpenRoutes
         ("trees hand <session|branch> --plan", HandoffPlan, "the plan; the press is the person's and acts alone until its client path is built"),
         ("sessions", SessionGroups, "the list"),
         ("sessions at-work <session>", AtWork, "the read, asked again once a second while it is pending"),
+        ("ask at-work <ask>", AtWork, "the read keyed by the ask, asked again once a second while the slices are pending; an ask the window does not hold is refused at once"),
         ("notices", Notifications, "the read; alone, the notices' record, the live groups said not read"),
         ("sync", SyncNow, "an open press (D156 §3: sync)"),
         ("register", RegistryRefresh, "an open press (D156 §3: refresh)"),

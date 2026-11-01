@@ -38,6 +38,7 @@ import { sessionsSlice } from '../bridge/sessions/sessions';
 /** ASKQUESTS1: the slices a go card's standings are read from, pushed as `ShellSignals` mounts them. */
 const PUSHED_HERE = [questsSlice, asksSlice, sessionsSlice];
 import { code } from '../test/code';
+import { RELEASE_CARD } from '../workflow/edit/proposalFixtures';
 import { AskDaoris } from './AskDaoris';
 import type { HelpWhere } from './where';
 import { registerOpenDraft, toldGraph, toldSessions } from './openDraft';
@@ -1098,6 +1099,32 @@ describe('Ask Daoris, with an agent named', () => {
     await userEvent.click(within(cards).getByRole('button', { name: 'Go there' }));
 
     await waitFor(() => expect(onGo).toHaveBeenCalledWith({ view: 'quests', item: 'ask:a2none00' }));
+    PROPOSALS = [];
+    APPLIED = APPLIED_SETTING;
+  });
+
+  /**
+   * FLOWCHART2g (D223 §4.4): a draft card's Open in the editor takes the person to the place's Workflow with its editor asked on the draft
+   * the card is against, not to the place alone: the driver's go names no repository, so the page names the place from the card.
+   */
+  it("opens the editor on the draft a conversation's draft card is against, for the repository the card names", async () => {
+    SESSIONS = [HELP];
+    PROPOSALS = [{ ...RELEASE_CARD, id: 'd1r2a3f4' }];
+    APPLIED = {
+      message: 'Applied: `#d1r2a3f4` is a change to your workflow draft: it is shown in the draft\'s editor.',
+      applied: true, go: { view: 'projects', domain: null, part: null },
+    };
+    bridge();
+    const onGo = vi.fn();
+    show(undefined, null, onGo);
+
+    const cards = await screen.findByRole('list', { name: 'what Ask Daoris proposes' });
+    await userEvent.click(within(cards).getByRole('button', { name: 'Open in the editor' }));
+
+    // The card is of a new workflow: it names no workflow, no name and no version.
+    await waitFor(() => expect(onGo).toHaveBeenCalledWith({
+      view: 'projects', item: 'engine', tab: 'workflow', placeEdit: { draft: 'g1-0123456789abcdef' },
+    }));
     PROPOSALS = [];
     APPLIED = APPLIED_SETTING;
   });

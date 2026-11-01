@@ -80,7 +80,7 @@ export type KeyBinding = { combo: string; reach: KeyReach };
 
 /** What the frame does with the session attended on Sessions, which only the frame can (D118 §5). */
 export type FrameIntent =
-  | 'start' | 'review' | 'answer' | 'timeline' | 'workflow' | 'console' | 'terminal' | 'newTerminal' | 'archiveEnded';
+  | 'start' | 'review' | 'answer' | 'timeline' | 'workflow' | 'atWork' | 'console' | 'terminal' | 'newTerminal' | 'archiveEnded';
 
 /** What is true now, which decides what applies. Every field a value, so each world is an argument. */
 export type CommandState = {
