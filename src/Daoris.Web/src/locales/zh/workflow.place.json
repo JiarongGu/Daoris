@@ -4,6 +4,7 @@
   "workflow.place.gates.nothing": "这里没有等你采纳的检查：落地的工作没有指定验证，主线也没有声明集成。",
   "workflow.place.gates.declaration": "{{branch}} 最新提交 {{commit}} 上的 daoris.gates.json",
   "workflow.place.gates.pick": "选好要采纳的，再确认。",
+  "workflow.place.gates.cleared": "{{label}}：你勾选之后这份声明变了，所以已取消勾选。",
   "workflow.place.gates.landed.label": "采纳，用于落地验证",
   "workflow.place.gates.landed.purpose": "落地工作的检查会直接运行这些检查项。",
   "workflow.place.gates.landed.waits": "{{branch}} 最新提交 {{commit}} 上的 blob {{blob}}。采纳后，检查才会运行；在此之前，落地的工作不会被验证。",

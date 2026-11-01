@@ -2,13 +2,13 @@ import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { chinese } from '../../design/storyLanguage';
 import { storyWidths } from '../../design/storyWidths';
 import { InTheme } from '../../plugins/storyIcons';
-import { APPLIED, KEPT_ROW, MOVED, planOf, SETUP_PRESETS } from './placeFixtures';
+import { KEPT_ROW, planOf, SETUP_PRESETS } from './placeFixtures';
 import { askOf, deliveriesOf, freshDraft, type SetUpDraft } from './placePlan';
 import { PlaceSetUp } from './PlaceSetUp';
 
 // A place's Set up… (AGENTSPLACE1j, SETUPUX1j; the setup-UX design §2.2): how it lands (Keep, the deliveries by id, Not driven), adoption with
-// what it builds, driving, the refusals under their parts with their doors, the plan read from the driver and one Apply, at the main area's
-// 80, 39 and 25 rem, in 中文 and in dark.
+// what it builds, driving, the refusals under their parts with their doors, the plan's line and *Review the plan*, at the main area's 80, 39 and
+// 25 rem, in 中文 and in dark. The review is `PlaceReview.stories.tsx`.
 
 const nothing = () => {};
 
@@ -25,7 +25,7 @@ const meta: Meta<typeof PlaceSetUp> = {
   component: PlaceSetUp,
   args: {
     place: 'engine', kind: 'repository', choices: [], deliveries: deliveriesOf(SETUP_PRESETS), doorFor: doors, ...plannedFor(draftOf()),
-    reading: false, stale: false, problem: null, applying: false, holding: false,
+    reading: false, stale: false, problem: null, applying: false, holding: false, holds: {},
     onChange: nothing, onApply: nothing, onHold: nothing, onClose: nothing,
   },
   decorators: [storyWidths.wide],
@@ -116,16 +116,6 @@ export const ChooserNarrow: Story = { ...Chooser, decorators: [storyWidths.narro
 export const ChooserChinese: Story = { ...Chooser, decorators: [chinese] };
 export const ChooserDark: Story = { ...Chooser, decorators: [dark] };
 
-/** The integrated delivery offers the declaration's acceptance, unchosen. */
-export const Acceptance: Story = { args: plannedFor(draftOf({ preset: 'integrated', adoption: false })) };
-export const AcceptanceNarrow: Story = { ...Acceptance, decorators: [storyWidths.narrow] };
-export const AcceptanceChinese: Story = { ...Acceptance, decorators: [chinese] };
-export const AcceptanceDark: Story = { ...Acceptance, decorators: [dark] };
-
-/** General driving, with the queued work it releases and the offer to hold it. */
-export const Driving: Story = { args: plannedFor(draftOf({ preset: 'branch-to-push', drive: true })) };
-export const DrivingNarrow: Story = { ...Driving, decorators: [storyWidths.narrow] };
-
 /** Not driven takes no second opinion, look or driving. */
 export const NotDriven: Story = { args: plannedFor(draftOf({ preset: 'not-driven' })) };
 
@@ -139,11 +129,6 @@ export const Workspace: Story = {
 };
 export const WorkspaceNarrow: Story = { ...Workspace, decorators: [storyWidths.narrow] };
 export const WorkspaceChinese: Story = { ...Workspace, decorators: [chinese] };
-
-/** The plan moved since it was read, and what a done apply said. */
-export const Moved: Story = { args: plannedFor(draftOf({ preset: 'integrated', result: MOVED })) };
-export const Applied: Story = { args: plannedFor(draftOf({ result: APPLIED })) };
-export const AppliedNarrow: Story = { ...Applied, decorators: [storyWidths.narrow] };
 
 /** The driver could not be asked. */
 export const Unavailable: Story = { args: { plan: null, problem: 'The driver is still coming up — try again in a moment.' } };

@@ -268,6 +268,9 @@ describe("a place's Workflow, its folds and Gates", () => {
     const onAcceptIntegration = vi.fn((_request: unknown, answered: { done: () => void }) => answered.done());
     draw({ onAcceptGates, onAcceptIntegration });
 
+    // The ticks start empty (SETUPUX1k).
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Accept for landed verification' }));
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Accept for integration' }));
     await userEvent.click(screen.getByRole('button', { name: 'Accept the chosen…' }));
     await userEvent.click(screen.getByRole('button', { name: 'Accept' }));
 

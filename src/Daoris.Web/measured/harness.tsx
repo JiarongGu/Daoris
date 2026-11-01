@@ -20,6 +20,7 @@ import * as zoom from '../src/work/frame/ZoomReadout.stories';
 import * as waitPanel from '../src/work/waits/WaitPanel.stories';
 import * as roles from '../src/agents/roles/RoleDiagram.stories';
 import * as place from '../src/agents/setup/PlacePage.stories';
+import * as setUpReview from '../src/agents/setup/PlaceReview.stories';
 import * as placeWorkflow from '../src/workflow/place/PlaceWorkflowView.stories';
 
 // The measured-box checks' page (FLOWCHART1a1; the flowchart design §7, trap 3; UIFIT1, the UI/UX design §5's first trap):
@@ -61,6 +62,8 @@ const books: Record<string, Record<string, ComponentType>> = {
   roles: composeStories(roles) as unknown as Record<string, ComponentType>,
   // A place's page (SETUPUX1h): the head and the three section lines within the first 400 px at the three widths.
   place: composeStories(place) as unknown as Record<string, ComponentType>,
+  // *Set up…*'s review (SETUPUX1k): two columns at 80rem, one below, and where Apply sits at 680 px (39rem).
+  review: composeStories(setUpReview) as unknown as Record<string, ComponentType>,
   // A place's Workflow section on its own (SETUPUX1o): the chart in its column at 80rem, one press away at 39 and 25rem.
   placeWorkflow: composeStories(placeWorkflow) as unknown as Record<string, ComponentType>,
 };
