@@ -197,8 +197,10 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
     /// by compare-and-swap from the commit the landing judged, switched back. Only while it is clean, on that branch at that commit,
     /// nothing runs in it and its branch is not on its remote. Null where it moved; else why it stays.
     /// </summary>
+    /// <param name="delivering">The delivery whose ref the branch is (LANDNODE1l), moved by its one transaction in its phase; null moves it as before.</param>
     internal async Task<string?> MoveTreeAsync(
-        string full, LandSync sync, string now, string repository, string workspace, IReadOnlySet<string>? inUse, CancellationToken ct)
+        string full, LandSync sync, string now, string repository, string workspace, IReadOnlySet<string>? inUse, CancellationToken ct,
+        TreeDelivering? delivering = null)
     {
         if (!Directory.Exists(full)) return "its tree is gone";
         if (inUse is not null && inUse.Any(tree => SamePath(tree, full))) return "a session still running or waiting holds it";
@@ -213,8 +215,10 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
 
         var (detached, _, detachErr) = await WorkingTree.GitAsync(full, ["switch", "--quiet", "--detach"], ct).ConfigureAwait(false);
         if (detached != 0) return $"git would not detach it: {Failure(detachErr)}";
-        var (moved, _, moveErr) = await WorkingTree.GitAsync(
-            sync.Root, ["update-ref", "-m", $"daoris: {sync.Branch} follows what landed", $"refs/heads/{sync.Branch}", now, sync.Tip], ct).ConfigureAwait(false);
+        var (moved, _, moveErr) = delivering is null
+            ? await WorkingTree.GitAsync(
+                sync.Root, ["update-ref", "-m", $"daoris: {sync.Branch} follows what landed", $"refs/heads/{sync.Branch}", now, sync.Tip], ct).ConfigureAwait(false)
+            : await delivering.WriteAsync(sync.Root, $"refs/heads/{sync.Branch}", sync.Tip, now, ct).ConfigureAwait(false);
         await WorkingTree.GitAsync(full, ["switch", "--quiet", sync.Branch], ct).ConfigureAwait(false);
         if (moved != 0) return $"git would not move `{sync.Branch}`: {Failure(moveErr)}";
 

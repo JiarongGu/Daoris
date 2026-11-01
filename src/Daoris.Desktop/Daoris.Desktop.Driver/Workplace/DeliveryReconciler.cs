@@ -265,8 +265,9 @@ public sealed class DeliveryReconciler(DeliveryStore store, string home, Func<De
 
     /// <summary>
     /// Rule 2, the open entry of <paramref name="phase"/> read: a preparation cut before any ref was written ahead is withdrawn, since nothing of
-    /// it stands; a ref done where it stands at the intended tip, withdrawn where it is absent or stands where its record had it, else unknown; a
-    /// record done where it holds the branch at the tip its ref was written at, else withdrawn, to be written again. Null where git cannot say.
+    /// it stands; a ref done where it stands at the intended tip, withdrawn where it is absent or stands where its record had it or at the tip
+    /// judged, else unknown; a record done where it holds the branch at the tip its ref was written at, else withdrawn, to be written again. Null
+    /// where git cannot say.
     /// </summary>
     private async Task<(string Outcome, string? Evidence, string Said)?> ReadAsync(
         DeliveryRecord delivery, IReadOnlyList<DeliveryPhase> phases, string phase, string root, CancellationToken ct)
@@ -309,10 +310,14 @@ public sealed class DeliveryReconciler(DeliveryStore store, string home, Func<De
             return (DeliveryOutcomes.Done, stands, $"`{reference}` stands at {commit}, read after a stop");
         }
 
-        if (stands is null || string.Equals(stands, recorded, StringComparison.OrdinalIgnoreCase))
+        // A tree's own branch replayed in place is moved from the tip judged (LANDNODE1l), as an advance is from where its record had it.
+        var stood = stands is null ? "absent"
+            : string.Equals(stands, recorded, StringComparison.OrdinalIgnoreCase) ? $"at {stands}, where its landing record had it"
+            : string.Equals(stands, intent.Tip, StringComparison.OrdinalIgnoreCase) ? $"at {stands}, the tip its landing was judged at"
+            : null;
+        if (stood is not null)
         {
-            return (DeliveryOutcomes.Withdrawn, stands ?? "absent",
-                $"`{reference}` stands {(stands is null ? "absent" : $"at {stands}, where its landing record had it")}, read after a stop: nothing of its write stands");
+            return (DeliveryOutcomes.Withdrawn, stands ?? "absent", $"`{reference}` stands {stood}, read after a stop: nothing of its write stands");
         }
 
         return (DeliveryOutcomes.Unknown, stands,
