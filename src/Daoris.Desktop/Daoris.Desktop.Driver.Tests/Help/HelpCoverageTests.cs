@@ -619,6 +619,10 @@ public sealed partial class HelpCoverageTests
             "it is the window's own word that a terminal's press is in front of the person (CONFIRMSEEN1), said by the card as its "
             + "window comes in front, never pressed by the person; it runs nothing and starts the card's two minutes, which an agent "
             + "proposing it would start without anyone looking.")),
+        // AGENTSPLACE1j: *Set up…*'s Apply on a place's page, over PLACE_APPLY.
+        ("agents", "usePlaceApply", null, new Exempt(
+            "a place's Apply is the person's own press, with no standing cover (AGENTSPLACE1b3): Ask Daoris proposes a plan the "
+            + "person reads and applies (AGENTSPLACE1k), and never applies one.")),
 
         // Quests: a quest's own page, and the list's presses, in `quests/QuestsView` (STRUCT5c).
         ("quests", "usePublishQuest", null, Own("quests",
