@@ -312,7 +312,7 @@ describe('Change… and Edit steps…', () => {
     const steps = await screen.findByRole('list', { name: 'How the steps go on' });
     expect(within(steps).getByRole('listitem', { name: 'find by local-release' })).toBeInTheDocument();
     expect(screen.getByText(/^Saving adds v3 to release;/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Save v3' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Review and save' })).toBeInTheDocument();
     expect(openDraftNow()).toMatchObject({ place: 'engine', route: 'default', pipeline: 'development', workflow: 'release', base: 2 });
   });
 

@@ -126,6 +126,14 @@ async function chooseByPointer(name: string, option: string) {
   await user.click(await screen.findByRole('option', { name: option }));
 }
 
+/** The draft reviewed once it is judged to hold, and saved as a new workflow. */
+async function saveNew() {
+  const review = screen.getByRole('button', { name: 'Review and save' });
+  await waitFor(() => expect(review).toBeEnabled());
+  await user.click(review);
+  await user.click(await screen.findByRole('button', { name: 'Save as a new workflow' }));
+}
+
 /** The step picker searched and its first match taken by its keys. */
 async function pickByKeys(search: string, title: string) {
   const box = await screen.findByRole('combobox', { name: 'Find a step' });
@@ -194,7 +202,11 @@ describe('the release workflow composed from the Merge workflow', () => {
 
     await tabTo(screen.getByRole('textbox', { name: 'Its name' }));
     await user.keyboard('Release for engine');
-    await tabTo(screen.getByRole('button', { name: 'Save as new' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Review and save' })).toBeEnabled());
+    await tabTo(screen.getByRole('button', { name: 'Review and save' }));
+    await user.keyboard('{Enter}');
+    // The review takes the focus, and the save is the next stop.
+    await tabTo(await screen.findByRole('button', { name: 'Save as a new workflow' }));
     await user.keyboard('{Enter}');
     await screen.findByText(/v1, a new workflow, from the page\./);
 
@@ -237,7 +249,7 @@ describe('the release workflow composed from the Merge workflow', () => {
     await user.click(screen.getByRole('button', { name: 'Close' }));
 
     await user.type(screen.getByRole('textbox', { name: 'Its name' }), 'Release for engine');
-    await user.click(screen.getByRole('button', { name: 'Save as new' }));
+    await saveNew();
     await screen.findByText(/v1, a new workflow, from the page\./);
     expect(saved().wires.map(said)).toEqual(expect.arrayContaining(RELEASE_WAYS));
   });
@@ -332,7 +344,7 @@ describe('removing, moving, and every change undone', () => {
     await user.click(screen.getByRole('button', { name: 'Close' }));
 
     await user.type(screen.getByRole('textbox', { name: 'Its name' }), 'Moved');
-    await user.click(screen.getByRole('button', { name: 'Save as new' }));
+    await saveNew();
     await screen.findByText(/v1, a new workflow, from the page\./);
     expect(saved().end).toBe('landing');
     expect(saved().wires.map(said)).toEqual(expect.arrayContaining(['after:holds>review', 'after:review>content', 'after:content>landing']));
@@ -453,7 +465,7 @@ describe('the judgement, the inspector beside the chart, and the languages', () 
     await user.click(screen.getByRole('button', { name: 'Close' }));
 
     await user.type(screen.getByRole('textbox', { name: 'Its name' }), 'Hosted');
-    await user.click(screen.getByRole('button', { name: 'Save as new' }));
+    await saveNew();
     await screen.findByText(/v1, a new workflow, from the page\./);
     const graph = saved();
     expect(graph.wires.map(said)).toEqual(expect.arrayContaining(['after:landing>pushed', 'after:pushed>pull-request', 'after:pull-request>line']));
@@ -508,7 +520,7 @@ describe('the judgement, the inspector beside the chart, and the languages', () 
     await chooseByPointer('How it lands', 'Push the branch');
     await user.click(screen.getByRole('button', { name: 'Close' }));
     await user.type(screen.getByRole('textbox', { name: 'Its name' }), 'Kept');
-    await user.click(screen.getByRole('button', { name: 'Save as new' }));
+    await saveNew();
     await screen.findByText(/v1, a new workflow, from the page\./);
     const written = saved() as unknown as { cleanup: unknown; nodes: Record<string, unknown>[]; wires: Record<string, unknown>[] };
     expect(written.cleanup).toEqual({ keep: true });
