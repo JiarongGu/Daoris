@@ -168,6 +168,20 @@ public sealed class HoldNodesTests
         }
     }
 
+    /// <summary>A version that no longer holds a done for your yes, by its `quest.holds` taken away or its `yes` off, asks less of you, and says so.</summary>
+    [Fact]
+    public void Taking_the_quests_holds_away_or_their_yes_off_lowers_your_part()
+    {
+        static NodeGraph Graph(params NodeDeclaration[] holds) => new(
+            [new("work", NodeKinds.Claimed, 1, NodeReach.Observed), .. holds, new("landing", NodeKinds.Land, 1, NodeReach.Performed)], [], ["work"], "landing");
+        var held = Involvement.StepsOf(Graph(Hold(NodeKinds.QuestHolds)));
+
+        Assert.Contains("it lands a done held for your yes", Involvement.Lowers(Involvement.StepsOf(Graph()), held));
+        Assert.Contains("it lands a done held for your yes", Involvement.Lowers(Involvement.StepsOf(Graph(Hold(NodeKinds.QuestHolds, """{"yes":false}"""))), held));
+        Assert.Empty(Involvement.Lowers(held, held));
+        Assert.Empty(Involvement.Lowers(held, Involvement.StepsOf(Graph())));
+    }
+
     /// <summary>The words the person reads of each kind, its options' rows among the step palette's fields.</summary>
     [Fact]
     public void Each_kind_has_its_option_fields()
