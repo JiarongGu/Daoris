@@ -581,11 +581,20 @@ export function RolesCard({
         </>
       ) : rows}
       {catalogue && (editing?.isNew ? <div className="mt-3">{editor(editing)}</div> : (
-        <div className="mt-3">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           <Button variant="ghost" disabled={locked || editing !== null} onClick={() => open(null)}>
             <Icon name="plus" size={12} />
             {t('settings.ai.roles.add')}
           </Button>
+          {kept && catalogue.roles.some((each) => each.seeded && each.state !== 'seed') && (
+            <Button
+              variant="ghost"
+              disabled={locked || editing !== null}
+              onClick={() => press('*', { change: 'default-all', id: '*' })}
+            >
+              {t('settings.ai.roles.defaultAll')}
+            </Button>
+          )}
         </div>
       ))}
       {catalogue?.suggested.map((role) => {

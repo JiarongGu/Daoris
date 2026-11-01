@@ -67,7 +67,7 @@ public static class RoleDoor
         else if (choices is not null) throw new ArgumentException("only a role set carries its choices", nameof(choices));
 
         var revision = RoleCatalog.Write(staffing.Location, change, staffing.Confirmation);
-        if (!seeded && change is not RoleChange.SetRole) staffing.SetAdded(change.Id, null);
+        if (!seeded && change is not (RoleChange.SetRole or RoleChange.DefaultAllRoles)) staffing.SetAdded(change.Id, null);
         staffing.Check(StaffingCheckAt.Write);
         return revision;
     }
@@ -112,7 +112,7 @@ public static class RoleDoor
                 else if (staffed is not null) added.Add((role.Id, staffed));
             }
             else if (choices is not null) throw new ArgumentException("only a role set carries its choices", nameof(batch));
-            else if (!isSeeded) gone.Add((change.Id, null));
+            else if (!isSeeded && change is not RoleChange.DefaultAllRoles) gone.Add((change.Id, null));
         }
 
         // The staffing of a set goes first, as in Apply: a row no record reads until the catalogue's write lands; a removed added role's row goes after.
@@ -139,7 +139,7 @@ public static class RoleDoor
         choices ?? (ActorChoices.Ids.Contains(id, StringComparer.Ordinal) || catalogue.Slots.Any(slot => slot.Id == id && slot.Role is not null) ? null : []);
 
     /// <summary>
-    /// A press's change as <c>SET_ROLE</c>, the verb and a proposal carry it: <c>change</c> (<c>set</c>, <c>remove</c> or <c>default</c>),
+    /// A press's change as <c>SET_ROLE</c>, the verb and a proposal carry it: <c>change</c> (<c>set</c>, <c>remove</c>, <c>default</c> or <c>default-all</c>, which names no id),
     /// <c>id</c>, for a set its <c>role</c> (<c>name.en</c>, <c>name.zh</c>, <c>takes</c>, <c>scope.kind</c>, <c>scope.id</c>) and its
     /// <c>choices</c> as <c>SET_ACTOR</c> takes them, and the <c>revision</c> it was made against, if any.
     /// </summary>
@@ -147,6 +147,7 @@ public static class RoleDoor
     public static (RoleChange Change, IReadOnlyList<ActorChoice>? Choices, long? Read) Read(System.Text.Json.JsonElement? payload)
     {
         if (payload is not { ValueKind: System.Text.Json.JsonValueKind.Object } press) throw new DriverException("the press named no role change.");
+        if (Text(press, "change") == "default-all") return (RoleChange.DefaultAll(), null, null);
         var id = Text(press, "id") ?? throw new DriverException("the press named no role.");
         long? read = press.TryGetProperty("revision", out var revision) && revision.TryGetInt64(out var number) ? number : null;
         switch (Text(press, "change"))
@@ -171,7 +172,7 @@ public static class RoleDoor
                     name.ValueKind == System.Text.Json.JsonValueKind.Object ? Text(name, "zh") ?? "" : "", RoleRecord.Always, takes, scope);
                 return (RoleChange.Set(record), ActorChoices.Payload(press), read);
             default:
-                throw new DriverException("a role's change is `set`, `remove` or `default`.");
+                throw new DriverException("a role's change is `set`, `remove`, `default` or `default-all`.");
         }
     }
 

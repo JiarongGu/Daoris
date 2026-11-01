@@ -94,6 +94,14 @@ describe('The roles', () => {
     }, expect.anything());
   });
 
+  it('restores every role default in one press, offered while a seeded role differs', () => {
+    const { onSet } = card();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Restore all role defaults' }));
+
+    expect(onSet).toHaveBeenCalledWith({ change: 'default-all', id: '*' }, expect.anything());
+  });
+
   it('removes an added role after naming the role it falls back to, gives a seeded one back its seed, and takes the suggested Designer, each by the revision it read', () => {
     const { onSet } = card({ catalogue: { ...CATALOGUE, roles: [...CATALOGUE.roles, { ...CATALOGUE.roles[3]!, id: 'night-2', nameEn: 'Night two', scopeKind: 'machine', scopeId: undefined, revision: 5 }] } });
 

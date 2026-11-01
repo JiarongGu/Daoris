@@ -54,6 +54,37 @@ public sealed class DriverModuleRoleTests : DriverModuleBridge
         }
     }
 
+    /// <summary>DEFAULTCONFIG1b: <c>SET_ROLE</c> <c>default-all</c> gives every seeded role its default and keeps the added roles.</summary>
+    [Fact]
+    public async Task Restoring_every_default_through_the_press_returns_the_seeded_roles_and_keeps_an_added_one()
+    {
+        File.WriteAllText(DriverConfigPath, """{ "adapter": "claude-code", "intakeAdapter": "claude-code" }""");
+        var staffing = RoleStaffing.Wire(Home, () => StoreSettled.Yes);
+        try
+        {
+            Assert.Equal(StaffingImported.Done, staffing.ImportFile().How);
+            var module = Module();
+            await AnswerAsync(module, "SET_ROLE", new
+            {
+                change = "set", id = "designer",
+                role = new { name = new { en = "Designer", zh = "设计师" }, takes = new[] { "design" }, scope = new { kind = "machine" } },
+                choices = new object[] { new { agent = "claude-code", model = "opus", effort = "high" } },
+            });
+            await AnswerAsync(module, "SET_ROLE", new { change = "remove", id = "intake" });
+            Assert.Equal("removed", (await AnswerAsync(module, "ROLES")).GetProperty("roles").EnumerateArray().Single(row => row.GetProperty("id").GetString() == "intake").GetProperty("state").GetString());
+
+            await AnswerAsync(module, "SET_ROLE", new { change = "default-all" });
+
+            var rows = (await AnswerAsync(module, "ROLES")).GetProperty("roles").EnumerateArray().ToList();
+            Assert.Equal("seed", rows.Single(row => row.GetProperty("id").GetString() == "intake").GetProperty("state").GetString());
+            Assert.Equal("set", rows.Single(row => row.GetProperty("id").GetString() == "designer").GetProperty("state").GetString());
+        }
+        finally
+        {
+            RoleStaffingPort.Unwire(DriverConfigPath);
+        }
+    }
+
     /// <summary>
     /// AGENTSPLACE1g2 (the Agents-place design §4): <c>SET_ROLES</c> makes several role changes as one. A batch with one refused change, or one
     /// made against a revision that moved, refuses with that change's own sentence and writes neither the catalogue nor the staffing; a batch

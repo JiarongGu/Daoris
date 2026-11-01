@@ -92,7 +92,7 @@
 
 **Files.** `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Nodes/WireEvaluation.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Nodes/NodeLifecycle.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Nodes/NodeRuntime.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Nodes/BuiltInNodes.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Nodes/RunNodeWords.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Domain/WorkflowGraphRun.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Domain/WorkflowRunWords.cs`, `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/WorkflowRoutes.cs`, `src/Daoris.Web/src/workflow/workflowFlow.ts`, `src/Daoris.Web/src/design/flowLayout.ts`, `src/Daoris.Web/src/workflow/WorkflowRunView.tsx`, `src/Daoris.Web/src/workflow/WorkflowRunView.test.tsx`, `src/Daoris.Web/src/workflow/WorkflowRunView.stories.tsx`, `src/Daoris.Web/src/workflow/NodeWord.tsx`, `src/Daoris.Web/src/workflow/run.ts`, `src/Daoris.Web/src/locales/en/workflow.run.json`, `src/Daoris.Web/src/locales/zh/workflow.run.json`, `src/Daoris.Web/src/locales/glossary.json`, `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workflows/NodeRuntimeRunTests.cs`, `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleWorkflowRunTests.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/structure.json`
 
-## DEFAULTCONFIG1b — The agents' structure's defaults as shipped data, and restoring them whole
+## DEFAULTCONFIG1b — The agents' structure's defaults as shipped data, and restoring them whole (built 2026-11-01)
 
 **Wave** 3; after ROLESTEP1a, DEFAULTCONFIG1a; sonnet.
 

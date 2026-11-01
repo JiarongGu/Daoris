@@ -22569,3 +22569,6 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 ## DECIDE1c — decision steps at run time: a review's changes go back to the work, and a run says which routes were taken (2026-11-01, FABRIC2)
 
 **Outcome** 2026-11-01: a review takes the person's changes with their words (`WORKFLOW_NODE` act `changes`, `daoris-driver workflow changes`) as its rejection; a `back` wire is taken once per receipt, its target judged again for a new attempt, and where that is the work its session is told the words, as it is with no `back` drawn; `WORKFLOW_RUN` and the run view say each decision's outcome and the routes not taken and draw `when` and `back` wires; `RunSubjects.AfterHanded`, `GraphGate.WaitedOn` and the drawn wires read no `back`. Detail: D173's DECIDE1c note, the commits.
+## DEFAULTCONFIG1b — the agents' structure's defaults as shipped data, and restoring them whole (2026-11-01, FABRIC2)
+
+**Outcome** 2026-11-01: the eight seeded roles are read from `Defaults/roles.json` (`RoleCatalog.Seed`); `RoleChange.DefaultAll` gives every seeded role back its default and keeps added ones, through `SET_ROLE {change:'default-all'}` and `daoris driver role default --all`; Working roles has a Restore all role defaults button. Tests `RoleCatalogTests`, `DriverModuleRoleTests`, `Roles.test.tsx`.

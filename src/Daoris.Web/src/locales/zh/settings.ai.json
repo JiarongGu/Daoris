@@ -161,5 +161,7 @@
   "settings.ai.roles.savedAll": "已一并保存：{{roles}}；新的工作会采用它们。",
   "settings.ai.roles.removedSaved": "已移除{{role}}；它的工作会等待，直到有角色承担。",
   "settings.ai.roles.defaulted": "{{role}}已恢复默认。",
+  "settings.ai.roles.defaultAll": "恢复全部角色默认值",
+  "settings.ai.roles.defaultedAll": "所有内置角色已恢复默认；你添加的角色予以保留。",
   "settings.ai.roles.footnote": "也可用 `daoris driver role`。旧版 Daoris 只运行默认角色，不运行你添加的角色。"
 }

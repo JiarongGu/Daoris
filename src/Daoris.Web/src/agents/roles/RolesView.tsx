@@ -84,7 +84,8 @@ export function useRoleEditing(notify: Notify) {
       : roleName(t, i18n.language, row ?? { id: press.id, seeded: false });
     setRole.mutate(press, {
       onSuccess: () => {
-        notify(t(press.change === 'set' ? 'settings.ai.roles.saved' : press.change === 'remove' ? 'settings.ai.roles.removedSaved' : 'settings.ai.roles.defaulted', { role: named }));
+        const said = { set: 'saved', remove: 'removedSaved', default: 'defaulted', 'default-all': 'defaultedAll' }[press.change];
+        notify(t(`settings.ai.roles.${said}`, { role: named }));
         answered.done();
       },
       onError: (error) => answered.refused(sentence(error)),

@@ -274,9 +274,9 @@ export type RoleCatalogue = {
   suggestedChoices?: { role: string; choices: RoleChoice[] }[]; suggestedChoicesDated?: string;
 };
 
-/** A role's change as `SET_ROLE` takes it: set with its record and choices, removed, or given back its seed. */
+/** A role's change as `SET_ROLE` takes it: set with its record and choices, removed, given back its seed, or every seeded role given back (`default-all`, whose id is `*`). */
 export type RoleChangePress = {
-  change: 'set' | 'remove' | 'default'; id: string; revision?: number | null;
+  change: 'set' | 'remove' | 'default' | 'default-all'; id: string; revision?: number | null;
   role?: { name: { en: string; zh: string }; takes: string[]; scope: { kind: string; id?: string | null } };
   choices?: RoleChoice[] | null;
 };

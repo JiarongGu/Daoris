@@ -45,25 +45,23 @@ public sealed class RoleCatalog
     /// <summary>The store's version this family's tables arrive at.</summary>
     private const int Step = 10;
 
-    /// <summary>The roles' English and Chinese names, as the AI screen says them (<c>settings.ai.actors.name.*</c>).</summary>
-    private static readonly Dictionary<string, (string Zh, string Work)> Seeded = new(StringComparer.Ordinal)
-    {
-        ["build"] = ("开发", RoleWork.Build),
-        ["intake"] = ("受理", RoleWork.Intake),
-        ["opinion"] = ("第二意见", RoleWork.Review),
-        ["helper"] = ("助手", RoleWork.Help),
-        ["partner"] = ("搭档", RoleWork.Partner),
-        ["brainstorm"] = ("头脑风暴", RoleWork.Brainstorm),
-        ["ask-daoris"] = ("问道衍", RoleWork.AskDaoris),
-        ["chat"] = ("聊天", RoleWork.Chat),
-    };
-
     /// <summary>The ids no added role may take, which stay the shell's: the supervisor and the steward.</summary>
     public static IReadOnlyList<string> Reserved { get; } = ["supervisor", "steward"];
 
-    /// <summary>The seeded roles, one per id of <see cref="ActorChoices.Ids"/>, in the screen's order.</summary>
-    public static IReadOnlyList<RoleRecord> Seed { get; } =
-        [.. ActorChoices.Ids.Select(id => new RoleRecord(id, ActorWords.Name(id), Seeded[id].Zh, RoleRecord.Always, [Seeded[id].Work], RoleScope.Everywhere))];
+    /// <summary>The seeded roles, one per id of <see cref="ActorChoices.Ids"/>, in the screen's order: Defaults/roles.json, carried in the assembly.</summary>
+    public static IReadOnlyList<RoleRecord> Seed { get; } = ReadSeed();
+
+    private static IReadOnlyList<RoleRecord> ReadSeed()
+    {
+        var assembly = typeof(RoleCatalog).Assembly;
+        using var stream = assembly.GetManifestResourceStream("Daoris.Driver.Defaults/roles.json")
+            ?? throw new InvalidOperationException("the roles this build ships are not carried in it (Defaults/roles.json).");
+        using var document = JsonDocument.Parse(stream);
+        return [.. document.RootElement.GetProperty("roles").EnumerateArray().Select(each => new RoleRecord(
+            each.GetProperty("id").GetString()!, each.GetProperty("name").GetProperty("en").GetString()!, each.GetProperty("name").GetProperty("zh").GetString()!,
+            each.GetProperty("filled").GetString()!, [each.GetProperty("work").GetString()!],
+            new RoleScope(each.GetProperty("place").GetString()!)))];
+    }
 
     private RoleCatalog(IReadOnlyList<RoleSlot> slots) => Slots = slots;
 
@@ -297,6 +295,10 @@ public sealed class RoleCatalog
                 return Refused("unknown-work", $"`{unknown}` is not a work — one of {string.Join(", ", RoleWork.Codes)}.");
             }
         }
+        else if (change is RoleChange.DefaultAllRoles)
+        {
+            // Names no one id: the seed answers for every seeded one.
+        }
         else if (Reserved.Contains(change.Id, StringComparer.Ordinal)) return Refused("reserved-id", $"`{change.Id}` is the shell's: the supervisor and the steward are not configured here.");
         else if (Slots.All(slot => slot.Id != change.Id)) return Refused("bad-record", $"no role `{change.Id}` is in the catalogue.");
 
@@ -328,6 +330,11 @@ public sealed class RoleCatalog
 
     private IReadOnlyList<RoleSlot> After(RoleChange change)
     {
+        if (change is RoleChange.DefaultAllRoles)
+        {
+            return [.. Seed.Select(role => new RoleSlot(role.Id, RoleState.Seed, role, null, 0)), .. Slots.Where(slot => !ActorChoices.Ids.Contains(slot.Id, StringComparer.Ordinal))];
+        }
+
         var slots = Slots.Where(slot => slot.Id != change.Id).ToList();
         var seeded = Seed.FirstOrDefault(role => role.Id == change.Id);
         switch (change)
@@ -361,36 +368,47 @@ public sealed class RoleCatalog
         return store.Write("roles", write =>
         {
             var revisions = new List<long>();
-            foreach (var change in changes)
+            RoleCatalog Current() => Of(write.Query("SELECT id, state, record, revision FROM roles", row => new StoredRole(row.GetString(0), row.GetString(1), row.GetString(2), row.GetInt64(3))));
+            foreach (var asked in changes)
             {
-                var current = Of(write.Query("SELECT id, state, record, revision FROM roles", row => new StoredRole(row.GetString(0), row.GetString(1), row.GetString(2), row.GetInt64(3))));
-                if (current.Judge(change) is { } refusal) throw new DriverException(refusal.Said);
+                var current = Current();
+                if (current.Judge(asked) is { } refusal) throw new DriverException(refusal.Said);
 
-                var revision = write.Scalar<long>("SELECT MAX(revision) FROM role_revisions WHERE id = $id", ("$id", change.Id)) + 1;
-                var at = DateTimeOffset.UtcNow.ToString("O", System.Globalization.CultureInfo.InvariantCulture);
-                var seeded = ActorChoices.Ids.Contains(change.Id, StringComparer.Ordinal);
-                (string State, string? Record) kept = change switch
+                // The whole structure's default is each seeded role not already the seed's, one revision apiece; 0 where none moved.
+                var each = asked is RoleChange.DefaultAllRoles
+                    ? current.Slots.Where(slot => slot.State != RoleState.Seed && ActorChoices.Ids.Contains(slot.Id, StringComparer.Ordinal)).Select(slot => RoleChange.Default(slot.Id)).ToList()
+                    : [asked];
+                var last = 0L;
+                foreach (var change in each)
                 {
-                    RoleChange.SetRole set => ("set", set.Role.Json()),
-                    RoleChange.RemoveRole when seeded => ("removed", "{}"),
-                    RoleChange.RemoveRole => ("deleted", null),
-                    _ => (seeded ? "default" : "deleted", null),
-                };
-                write.Execute(
-                    "INSERT INTO role_revisions (id, revision, state, record, at) VALUES ($id, $revision, $state, $record, $at)",
-                    ("$id", change.Id), ("$revision", revision), ("$state", kept.State), ("$record", kept.Record), ("$at", at));
-                if (kept.State is "set" or "removed")
-                {
+                    var revision = write.Scalar<long>("SELECT MAX(revision) FROM role_revisions WHERE id = $id", ("$id", change.Id)) + 1;
+                    var at = DateTimeOffset.UtcNow.ToString("O", System.Globalization.CultureInfo.InvariantCulture);
+                    var seeded = ActorChoices.Ids.Contains(change.Id, StringComparer.Ordinal);
+                    (string State, string? Record) kept = change switch
+                    {
+                        RoleChange.SetRole set => ("set", set.Role.Json()),
+                        RoleChange.RemoveRole when seeded => ("removed", "{}"),
+                        RoleChange.RemoveRole => ("deleted", null),
+                        _ => (seeded ? "default" : "deleted", null),
+                    };
                     write.Execute(
-                        """
-                        INSERT INTO roles (id, state, record, revision, at) VALUES ($id, $state, $record, $revision, $at)
-                        ON CONFLICT (id) DO UPDATE SET state = $state, record = $record, revision = $revision, at = $at
-                        """,
-                        ("$id", change.Id), ("$state", kept.State), ("$record", kept.Record), ("$revision", revision), ("$at", at));
-                }
-                else write.Execute("DELETE FROM roles WHERE id = $id", ("$id", change.Id));
+                        "INSERT INTO role_revisions (id, revision, state, record, at) VALUES ($id, $revision, $state, $record, $at)",
+                        ("$id", change.Id), ("$revision", revision), ("$state", kept.State), ("$record", kept.Record), ("$at", at));
+                    if (kept.State is "set" or "removed")
+                    {
+                        write.Execute(
+                            """
+                            INSERT INTO roles (id, state, record, revision, at) VALUES ($id, $state, $record, $revision, $at)
+                            ON CONFLICT (id) DO UPDATE SET state = $state, record = $record, revision = $revision, at = $at
+                            """,
+                            ("$id", change.Id), ("$state", kept.State), ("$record", kept.Record), ("$revision", revision), ("$at", at));
+                    }
+                    else write.Execute("DELETE FROM roles WHERE id = $id", ("$id", change.Id));
 
-                revisions.Add(revision);
+                    last = revision;
+                }
+
+                revisions.Add(last);
             }
 
             return (IReadOnlyList<long>)revisions;
