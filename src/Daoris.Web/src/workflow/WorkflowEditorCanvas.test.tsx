@@ -154,7 +154,11 @@ describe('the editor\'s chart in the viewport', () => {
 
     await tabTo(screen.getByRole('textbox', { name: 'Its name' }));
     await user.keyboard('Release for engine');
-    await tabTo(screen.getByRole('button', { name: 'Save as new' }));
+    // The save is reviewed first (SETUPUX1s): the review takes the focus, and the save is its next stop.
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Review and save' })).toBeEnabled());
+    await tabTo(screen.getByRole('button', { name: 'Review and save' }));
+    await user.keyboard('{Enter}');
+    await tabTo(await screen.findByRole('button', { name: 'Save as a new workflow' }));
     await user.keyboard('{Enter}');
     await screen.findByText(/v1, a new workflow, from the page\./);
     expect(saved().wires.map(said)).toEqual(expect.arrayContaining(RELEASE_WAYS));
@@ -186,7 +190,10 @@ describe('the editor\'s chart in the viewport', () => {
     await user.click(await screen.findByRole('option', { name: /^publish by local-release/ }));
 
     await user.type(screen.getByRole('textbox', { name: 'Its name' }), 'Release for engine');
-    await user.click(screen.getByRole('button', { name: 'Save as new' }));
+    const review = screen.getByRole('button', { name: 'Review and save' });
+    await waitFor(() => expect(review).toBeEnabled());
+    await user.click(review);
+    await user.click(await screen.findByRole('button', { name: 'Save as a new workflow' }));
     await screen.findByText(/v1, a new workflow, from the page\./);
     expect(saved().wires.map(said)).toEqual(expect.arrayContaining(RELEASE_WAYS));
   });
