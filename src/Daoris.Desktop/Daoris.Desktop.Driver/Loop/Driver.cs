@@ -3115,13 +3115,15 @@ public sealed class Driver(
                 // What its start did against the line in the tree it goes on in (LANDSYNC2).
                 InSync = inSync?.Told,
                 // Its repository's remotes Daoris holds, so it does not try them (GITAUTH1a): read after its start's own fetch above. And,
-                // where the remote helper is laid out for it, what `git remote -v` shows under the rewrite (GITAUTH1b, the design §5.3).
+                // where the remote helper is laid out for it, what `git remote -v` shows under the rewrite (GITAUTH1b, the design §5.3);
+                // or, on a git older than the doors need, that its remote acts are not Daoris's (GITAUTH1c, §4.1).
                 Git = GitHolds.Told(
                     GitHolds.OfRepository(home, quest.To, RemoteTarget.Workspace(start.Workspace)),
                     rewritten: GitWiring.DoorPath(home, GitWiring.RemoteHelper) is not null,
                     origin: GitWiring.DoorPath(home, GitWiring.RemoteHelper) is null
                         ? null
-                        : await GitRemotes.AddressOf(workTree, "origin", ct: ct).ConfigureAwait(false)),
+                        : await GitRemotes.AddressOf(workTree, "origin", ct: ct).ConfigureAwait(false),
+                    older: await GitWiring.OlderAsync(home, ct).ConfigureAwait(false)),
                 // What its tree's open copied of the checkout's dependencies, so it skips the `npm ci` that would delete them (TREEDEPS1).
                 // And what a tree made again copied the same way (TREELOCAL2), where the session goes on in one.
                 Dependencies = opened?.Dependencies ?? (priorStands?.Told, entryStands?.Told) switch

@@ -1,4 +1,7 @@
 import { type PointerEvent, useRef } from 'react';
+import type { TFunction } from 'i18next';
+import { useTranslation } from 'react-i18next';
+import type { CanvasOptions } from '../../design/canvas/Canvas';
 import { type FlowCanvasProps, type FlowEdge, type FlowPick, FlowCanvas, type LabelContext, type NodeContext } from '../../design/FlowCanvas';
 import { FlowNodeBox } from '../../design/Flow';
 import { EdgeChip } from './EdgeChip';
@@ -45,7 +48,22 @@ function drawLabel({ style, text, count, edge }: LabelContext, edit: ChartEdit |
   return <EdgeChip style={style} text={text} count={count} problem={edge?.problem} {...(mark ? { mark } : {})} />;
 }
 
-export function FlowChart({ edit, ...props }: Omit<FlowCanvasProps, 'renderNode' | 'renderLabel' | 'renderInsert' | 'pick'> & { edit?: ChartEdit }) {
+/**
+ * The workflow's viewport (CANVAS1a; D224, the canvas design §3.1): 80–200% while it is edited, so the ＋ and the ports stay usable, and
+ * 50–200% while it is read, in the workflow's own words for its fit and how it moves.
+ */
+export function workflowViewport(t: TFunction, mode: 'edit' | 'display'): CanvasOptions {
+  return {
+    mode, zoom: mode === 'edit' ? { min: 0.8, max: 2 } : { min: 0.5, max: 2 }, fit: t('workflow.canvas.fit'), moves: t('workflow.canvas.moves'),
+  };
+}
+
+export function FlowChart({ edit, canvas, ...props }: Omit<FlowCanvasProps, 'renderNode' | 'renderLabel' | 'renderInsert' | 'pick' | 'viewport'> & {
+  edit?: ChartEdit;
+  /** Drawn in the canvas's viewport from its floor (CANVAS1a): edited in the editor, read on a place's chart, the tab's and a run's. */
+  canvas?: 'edit' | 'display';
+}) {
+  const { t } = useTranslation();
   // A drag from a port: where it started, read again at the release, where the editor's pick mode has begun.
   const dragged = useRef<string | null>(null);
   const latest = useRef(edit);
@@ -76,15 +94,16 @@ export function FlowChart({ edit, ...props }: Omit<FlowCanvasProps, 'renderNode'
   };
 
   const offerOn = edit?.insertOn;
-  const canvas = (
+  const drawn = (
     <FlowCanvas
       {...props}
       renderNode={(context) => drawNode(context, edit)}
       renderLabel={(context) => drawLabel(context, edit)}
       {...(offerOn ? { renderInsert: (edge: FlowEdge) => { const offer = offerOn(edge); return offer ? <GapInsert offer={offer} /> : null; } } : {})}
       pick={edit?.pick ?? null}
+      viewport={canvas ? workflowViewport(t, canvas) : 'none'}
     />
   );
   // Only the editor's chart hears a drag; the place's and a run's are the canvas alone.
-  return edit ? <div className="min-w-0" onPointerDown={onPointerDown} onPointerUp={onPointerUp}>{canvas}</div> : canvas;
+  return edit ? <div className="min-w-0" onPointerDown={onPointerDown} onPointerUp={onPointerUp}>{drawn}</div> : drawn;
 }

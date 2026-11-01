@@ -188,5 +188,7 @@
   "workflow.compose.title": "你自己的工作流",
   "workflow.compose.body": "从 Daoris 的某个默认工作流或此处保存的某个版本编排它的步骤，边编排边判定，然后保存并在此使用。",
   "workflow.compose.open": "编排步骤…",
-  "workflow.compose.twin": "在终端中：`daoris driver workflow new <id> --from <default>`"
+  "workflow.compose.twin": "在终端中：`daoris driver workflow new <id> --from <default>`",
+  "workflow.canvas.fit": "显示整个工作流",
+  "workflow.canvas.moves": "工作流图：拖动或滚轮移动，Ctrl+滚轮缩放"
 }

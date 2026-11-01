@@ -203,6 +203,30 @@ public sealed class SensitiveGateTests : IDisposable
         Assert.Contains(why, result.Detail);
     }
 
+    /// <summary>
+    /// GITAUTH1c's row (the git-auth design §14 row 3): a file planted with both shapes is refused for each, neither printed, and a file
+    /// naming their prefixes alone, as a document about them does, passes.
+    /// </summary>
+    [Fact]
+    public void A_file_planted_with_both_shapes_is_refused_for_each_and_a_clean_one_passes()
+    {
+        var github = string.Concat("github", "_pat_", "11", new string('C', 22), "_", new string('d', 59));
+        var gitlab = string.Concat("glpat", "-", new string('E', 20));
+        _fx.Write("planted.env", $"GH_TOKEN={github}\nGITLAB_TOKEN={gitlab}\n");
+        _fx.Write("clean.md", "A fine-grained token starts `github_pat_…` and GitLab's `glpat-…`: neither is written here.\n");
+        _fx.Write("local/sensitive-patterns.txt", "# none needed");
+
+        var planted = new SensitiveGate(ScanScope.Tree, new FakeGit("planted.env")).Run(Context());
+        var clean = new SensitiveGate(ScanScope.Tree, new FakeGit("clean.md")).Run(Context());
+
+        Assert.False(planted.Passed);
+        Assert.Contains("planted.env: GitHub fine-grained token", planted.Detail);
+        Assert.Contains("planted.env: GitLab token", planted.Detail);
+        Assert.DoesNotContain(github, planted.Detail);
+        Assert.DoesNotContain(gitlab, planted.Detail);
+        Assert.True(clean.Passed, clean.Detail);
+    }
+
     /// <summary>A binary file is not text and scanning it produces noise, not findings.</summary>
     [Fact]
     public void Binary_files_are_skipped()

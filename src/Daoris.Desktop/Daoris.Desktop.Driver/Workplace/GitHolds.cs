@@ -175,10 +175,13 @@ public static class GitHolds
             "write-refused" => $"{host} refused a push with the sign-in git has here",
             "host-unknown" => $"ssh does not know {host}'s key",
             "host-changed" => $"{host}'s key is not the one ssh knows for it",
-            "own-input" => OwnInputWhy,
+            "own-input" => OwnInputWhyOf(hold),
             _ => $"{host} refused the sign-in git has here",
         };
         var said = hold.Words.Length == 0 ? "" : $" ({hold.Words})";
+        if (hold.Class == "own-input" && Certificate(hold))
+            return $"`{hold.Remote}` is held: {why}. Daoris does not reach it until that setting is removed, or you choose your own git "
+                + "sign-ins for it";
         if (hold.Class == "own-input")
             return $"`{hold.Remote}` is held: {why}. Daoris does not reach it until that setting is removed from this repository";
         return $"`{hold.Remote}` is held: {why}{said}. Daoris does not try it again until you press Try again on its row in What needs "
@@ -197,15 +200,20 @@ public static class GitHolds
     /// <paramref name="origin"/>'s address (as <see cref="GitRemotes.AddressOf"/> reads it) as the example where it is an HTTP or HTTPS
     /// one; then its repository's held remotes. Null where there is neither.
     /// </summary>
-    public static string? Told(IReadOnlyList<GitHold> holds, bool rewritten, string? origin)
+    /// <param name="older">The session's git where it is older than the doors need (<see cref="GitWiring.OlderAsync"/>): then its
+    /// remote acts pass neither door, which is said in place of the rewrite's words (§4.1).</param>
+    public static string? Told(IReadOnlyList<GitHold> holds, bool rewritten, string? origin, Version? older = null)
     {
-        var rewrite = rewritten ? GitRewriteWords.Told(origin) : null;
+        var rewrite = older is not null
+            ? $"The git this session runs is {older}, older than the {GitVersions.Doors} Daoris's git doors need, so its remote acts are not "
+              + "Daoris's: they pass neither of Daoris's doors, and Daoris itself reaches no remote until a newer git is set in Settings → Tools."
+            : rewritten ? GitRewriteWords.Told(origin) : null;
         if (holds.Count == 0) return rewrite is null ? null : "**Git.** " + rewrite;
         var lines = holds.OrderBy(hold => hold.Remote, StringComparer.Ordinal).Select(hold => hold.Holds == Writes
             ? $"`{hold.Remote}` ({hold.Host ?? hold.Address}) refused a push with the sign-in git has on this machine. You may fetch it; "
               + "pushing is not yours in any case."
             : hold.Class == "own-input"
-            ? $"`{hold.Remote}` ({hold.Host ?? hold.Address}) is held: {OwnInputWhy}. Do not fetch, pull or push it, and do not change "
+            ? $"`{hold.Remote}` ({hold.Host ?? hold.Address}) is held: {OwnInputWhyOf(hold)}. Do not fetch, pull or push it, and do not change "
               + $"that setting: work from the line as this checkout has it, and say in your closing note that `{hold.Remote}` was not fetched."
             : $"`{hold.Remote}` ({hold.Host ?? hold.Address}) cannot be reached with the sign-in git has on this machine "
               + $"({Why(hold)}), so neither you nor Daoris can reach it now. Do not fetch, pull or push it: work from the line as this "
@@ -218,6 +226,16 @@ public static class GitHolds
     private const string OwnInputWhy =
         "this repository names its own ssh command (`core.sshCommand`), which git runs in place of Daoris's ssh door on this install, "
         + "since the install's folder holds a space or another character git's shell would read";
+
+    /// <summary>Whether an <c>own-input</c> hold is the certificate's (GITAUTH1c, §3.3): its words name the key.</summary>
+    private static bool Certificate(GitHold hold) => hold.Words.StartsWith("http.", StringComparison.Ordinal);
+
+    /// <summary>Why a remote is held as <c>own-input</c>: its ssh command, or the client certificate or key its words name, never its value.</summary>
+    private static string OwnInputWhyOf(GitHold hold) =>
+        Certificate(hold)
+            ? $"the configuration git reads for it names a client certificate or key (`{hold.Words}`), which git gives no way to clear, so "
+              + "a git identity of Daoris's cannot carry its HTTPS acts"
+            : OwnInputWhy;
 
     private static string Why(GitHold hold) => hold.Class switch
     {

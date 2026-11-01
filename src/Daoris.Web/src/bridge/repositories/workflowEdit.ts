@@ -1,16 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { doorLabel } from '../../agents/tools';
 import { keys } from '../../data/queries';
+import { sentence } from '../../locales/format';
 import { fingerprintOf } from '../../workflow/draftFingerprint';
 import type {
-  EditorRole, WorkflowListAnswer, WorkflowPaletteAnswer, WorkflowSaveAnswer, WorkflowSaveAsk, WorkflowShownAnswer, WorkflowUseAsk,
+  EditorRole, StepStaffing, WorkflowListAnswer, WorkflowPaletteAnswer, WorkflowSaveAnswer, WorkflowSaveAsk, WorkflowShownAnswer, WorkflowUseAsk,
 } from '../../workflow/edit/answers';
 import type { ProposalShown } from '../../workflow/edit/proposalTake';
 import type { WorkflowEditorBridge } from '../../workflow/edit/WorkflowEditor';
+import { useHarnesses } from '../agents/agents';
 import { useDraftProposals, useSettleHelp } from '../help';
 import type { WorkflowPlanBridge } from '../../workflow/place/ChangeWorkflow';
-import { useRoleStructureChain } from '../driver';
+import { useActors, useRoles, useRoleStructureChain, useSetActor, useSetRole } from '../driver';
 import { askHeld, isPending } from '../state/held';
 import { askWorkflowSave, askWorkflowUse } from './workflow';
 
@@ -98,9 +102,47 @@ export const useWorkflowEditor = (place: EditorPlace, { enabled = true }: { enab
   const again = () => client.invalidateQueries({ queryKey: editKey() });
   const save = useMutation({ mutationFn: (ask: WorkflowSaveAsk) => askWorkflowSave(ask), onSuccess: again });
   const use = useMutation({ mutationFn: (ask: WorkflowUseAsk) => askWorkflowUse(ask), onSuccess: again });
+  // A role covers this place when it is placed on this machine, in the place's workspace or in the place itself.
+  const here = 'repository' in place ? { repository: place.repository, workspace: place.workspace ?? null } : { repository: null, workspace: place.workspace };
+  const covers = (kind: string | null | undefined, id: string | null | undefined) =>
+    !kind || kind === 'machine' || (kind === 'workspace' && id === here.workspace) || (kind === 'repository' && id === here.repository);
   const roles: EditorRole[] = (structure.data?.roles ?? [])
     .filter((role) => role.state !== 'removed' && role.state !== 'unreadable')
-    .map((role) => ({ id: role.id, name: role.name ?? null, takes: role.takes }));
+    .map((role) => ({
+      id: role.id, name: role.name ?? null, takes: role.takes, scope: { kind: role.scopeKind ?? 'machine', id: role.scopeId ?? null }, revision: role.revision,
+      covers: covers(role.scopeKind, role.scopeId),
+    }));
+  // The one role editor beside a step (SETUPUX1t): its reads are asked only while the editor shows, its presses are `SET_ROLE` and `SET_ACTOR`.
+  const { t } = useTranslation();
+  const roster = useHarnesses({ enabled: live });
+  const catalogue = useRoles({ enabled: live });
+  const actors = useActors({ enabled: live });
+  const setRole = useSetRole();
+  const setActor = useSetActor();
+  // A role changed changes what the roles' structure, the catalogue and the orders say, and what a step may name.
+  const rolesAgain = () => {
+    void client.invalidateQueries({ queryKey: [...keys.driver, 'roles'] });
+    void client.invalidateQueries({ queryKey: [...keys.driver, 'actors'] });
+  };
+  const harnesses = Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [];
+  const catalogueRead = catalogue.data ? 'ok' : catalogue.isError ? 'failed' : catalogue.isSuccess ? 'notOffered' : 'loading';
+  const staffing: StepStaffing = {
+    catalogue: catalogue.data ?? null,
+    read: catalogueRead,
+    actors: actors.data ?? [],
+    // An agent a person can name is one this machine has: a choice on one not installed would only hold the start.
+    agents: harnesses.filter((door) => door.present).map((door) => ({ value: door.harness, label: doorLabel(t, door) })),
+    offers: Object.fromEntries(harnesses.map((door) => [door.harness, door.settingsChoices ?? null])),
+    busy: setRole.isPending || setActor.isPending,
+    onSet: (press, answered) => setRole.mutate(press, {
+      onSuccess: () => { rolesAgain(); answered.done(); },
+      onError: (error) => answered.refused(sentence(error)),
+    }),
+    onSetActor: (actor, choices, answered) => setActor.mutate({ actor, choices }, {
+      onSuccess: () => { rolesAgain(); answered.done(); },
+      onError: (error) => answered.refused(sentence(error)),
+    }),
+  };
   // FLOWCHART2f: Ask Daoris's newest proposal against a draft of this place, and the presses that settle it, Ask Daoris's own.
   const drafts = useDraftProposals('repository' in place ? place.repository : place.workspace, live);
   const settle = useSettleHelp();
@@ -120,6 +162,7 @@ export const useWorkflowEditor = (place: EditorPlace, { enabled = true }: { enab
     palette: palette.data ?? null,
     error: list.error ?? palette.error ?? null,
     roles,
+    staffing,
     shown: shown.data ?? null,
     onShow: setShownId,
     judged: judge.answer,
