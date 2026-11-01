@@ -9,8 +9,8 @@ version planned, downloaded, verified, unpacked and laid out (§3.6, §3.7), twi
 and `ToolInstall.cs`, `daoris tool download|use … managed|update|delete|locations|look`, and the driver's download as a
 followed action. TOOLS5 is built: one answer for every child (§2.4, §2.6, §2.7), twins in `Tools.cs` and
 `tools.ts`. Daoris's own git, a hook's first word, a pin's `npm` and the tree guard's node are the resolved files, and
-every child the driver and the modules start is handed the tools' `PATH`, held by source scans. `GIT_CONFIG_GLOBAL` is
-TOOLS6's. TOOLS7 is built: Settings → Tools (§4.1), on `DriverModule.Tools.cs` and the page's `bridge/tools.ts`, with the
+every child the driver and the modules start is handed the tools' `PATH`, held by source scans. `GIT_CONFIG_GLOBAL` and the
+version floors are TOOLS6's, built inside GITAUTH1c (D198's 2026-11-02 note), the file at `profiles/git/global.gitconfig`. TOOLS7 is built: Settings → Tools (§4.1), on `DriverModule.Tools.cs` and the page's `bridge/tools.ts`, with the
 glossary's three terms (§4.4); its SSH command is TOOLS6's and its Ask Daoris doors TOOLS8's. D121's notes say what each
 row settled that this document left open. Since PUSH1f2c (D194's note) the CLI's halves of TOOLS3 and TOOLS4 and its writers of
 `tools.json` are gone: `daoris tool` is `daoris-driver tool`, and a download stages under its process's name. The owner, 2026-10-01:

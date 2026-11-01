@@ -115,6 +115,40 @@ public sealed class LandingPluginTests : LandingPluginFixture
     }
 
     /// <summary>
+    /// GITAUTH1c (the git-auth design §4.1): where Daoris's doors are laid out and its git is older than they need, the landing's push is
+    /// one of Daoris's own remote acts and refuses, naming both versions, before its plugin is started; the branch still stands.
+    /// </summary>
+    [Fact]
+    public async Task A_git_older_than_the_doors_need_refuses_the_plugins_push_before_it_starts_and_the_branch_stands()
+    {
+        var (root, _) = await RepositoryWithOriginAsync("engine");
+        InstallManifest();
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Id));
+        var asked = 0;
+        var trees = new SessionTrees(Home, Plugins(_ => { asked++; return Answer(true, null, "pushed"); }));
+        var opened = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(opened.Path, "work.txt", "the session's work", "the work");
+        // The ssh door laid out beside the home (DaorisHome.InstallBin), as an empty file: nothing here starts it.
+        var bin = Path.Combine([Home, .. Tools.InstallBinLayout]);
+        Directory.CreateDirectory(bin);
+        File.WriteAllText(Path.Combine(bin, GitWiring.SshDoor), "");
+
+        TreeLanding landed;
+        using (GitVersions.Pretending(new Version(2, 30, 1)))
+        {
+            landed = await trees.LandAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix"));
+        }
+
+        Assert.True(landed.Landed, landed.Message);
+        Assert.Equal(0, asked);
+        var plugin = Assert.IsType<PluginLanding>(landed.Plugin);
+        Assert.True(plugin.Failed);
+        Assert.Contains("2.30.1", plugin.Message, StringComparison.Ordinal);
+        Assert.Contains("2.31", plugin.Message, StringComparison.Ordinal);
+        Assert.Contains("the work", await GitAsync(root, "log", "feature/0fda18-fix", "--oneline"));
+    }
+
+    /// <summary>
     /// A plugin that fails, refuses, times out or does not push never undoes the branch: the branch
     /// stands, the landing is still a landing, and the sentence says the plugin's step failed and how
     /// the person does it by hand.

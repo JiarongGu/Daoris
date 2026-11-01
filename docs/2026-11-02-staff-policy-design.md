@@ -437,3 +437,11 @@ Codex's read (`docs/2026-11-02-staff-policy-reads.md`) is taken whole; these ame
    the table allows; `TransientRetry`'s bound becomes per run (both ACP retry paths), a driven and a conversation episode tested side by
    side; a budget's attribution goes through the turn's binding (`Agents/UsageTurns.cs`), with last-slot, reorder and continuation
    cases.
+9. **The weighted pick keeps a balance, not a window** (row c, amending §3.2; found building row a). A deficit over a sliding window
+   replays the window: the start that drops out leaves its choice behind by one, so that choice is taken again, and a catch-up's
+   block of ten repeats in every later window. Each entry above weight 0 holds a balance: at each new start every entry gains its
+   weight and the entry taken loses `W`; the highest balance first, ties by the stored order, entries over their share after those
+   under it. Each balance is held within `−W` and `2W` after every step, so a choice back after a day takes a few extra starts, never
+   a window's worth, and one that ran alone pays back as few. The balances are replayed from `role_starts` since `since`, in order,
+   handed to the judge as the sequence taken, so it stays pure, no table is added and a restart keeps them; a row naming a choice
+   the policy no longer holds is skipped. From zero 3:1 still goes 1, 1, 2, 1, repeating. The window of 20 remains for `share`.

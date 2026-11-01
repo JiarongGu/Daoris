@@ -22820,6 +22820,12 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 
 **Outcome** 2026-11-02: built, with the design's §11: step 16 raises the writer stamp to 3, so an older build's staffing write is refused and the policy stays set; only changed choices leave it stale. The role refusals gain `policy`. Detail: D226's STAFFPOLICY1a note; `StaffPolicyTests`, `StaffJudgeTests`, `StaffLedgerTests`, `DesktopStoreTests`' step 16.
 
+## GITAUTH1c — SSH identities' rest: TOOLS6's file and floors, the certificate hold, the real-sshd proof (2026-11-02, D198)
+
+> **GITAUTH1c — SSH identities, from the terminal** (driver, cli; after 1b; D198 points 1, 4, 5; design §3, §4.2, §14 row 3). Takes in TOOLS6 (the intended git configuration: allow-listed ssh, includes and version floors, D121 §2.5, TOOLS7's hand-back). Proof: §14 row 3; owner-permitted, a key added on a real host. Part one built (D198's 1c note): the identities, key folders, import and generation, the pointers and the door handing an identity, host keys trusted at a press, the author rule and the verbs. Left, in that note's order: TOOLS6's file and version floors, the real-sshd proof where `DAORIS_TEST_SSHD` names one, the certificate hold and the sensitive gate's two token shapes, and the owner's real host.
+
+**Outcome** 2026-11-02: built but the owner's real host, which stays on the row with a git setting's window and terminal doors: `GitGlobalFile` and `GitVersions` (driver's `Install/`), `ToolChoices.SetGitAsync`, the 2.31 floor at `TreeRefs`, `GitFetchActs` and `LandingPlugins` with the session's words, and `GitOwnInput`'s certificate case. The sshd proof skipped here, no sshd named. Detail: D198's 2026-11-02 note; `GitGlobalFileTests`, `GitGlobalFileGitTests`, `GitVersionsTests`, `GitDoorsFloorTests`, `GitCertificateHoldTests`, `GitSshdProcessTests`, `SensitiveGateTests`.
+
 ## CANVAS1a — the measured choice, and the workflow's chart and editor in the viewport (2026-11-02, D224)
 
 > **a** the measured choice (the extension against a React Flow spike kept in `_fixtures/`), then the workflow's chart and editor in the viewport (web; first; the read beside it). Contract and proof: the canvas design's §9 row a, with the read's points for row a (the editor's blocking contracts, a fair comparison, scene changes kept apart from refreshes, the 300 px run, the world's whole inventory, usable presses at the floor, the camera's convention, a host check, the interaction's precedence).
