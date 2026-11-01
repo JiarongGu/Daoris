@@ -375,7 +375,7 @@
   "agents.setup.set.line.not-driven": "Daoris 不在此启动任何工作。",
   "agents.setup.set.line.merge-after-accept": "你采纳后，它的工作合并到主线。",
   "agents.setup.set.line.branch-to-push": "它的工作停在一个分支上，等你推送。",
-  "agents.setup.set.line.pull-request": "它的工作被推送，由其远端对应的落地插件发起拉取请求。",
+  "agents.setup.set.line.pull-request": "它的工作被推送，由其远程仓库对应的落地插件发起拉取请求。",
   "agents.setup.set.line.integrated": "它的工作按其声明集成到主线。",
   "agents.setup.set.opinion": "落地前先听第二意见",
   "agents.setup.set.look": "落地前你的查看",
