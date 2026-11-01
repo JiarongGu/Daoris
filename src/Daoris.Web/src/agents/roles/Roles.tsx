@@ -185,8 +185,10 @@ function suggestionPress(role: SuggestedRole): RoleChangePress {
  */
 export function RolesCard({
   catalogue, read = catalogue ? 'ok' : 'notOffered', staffing = [], agents, about = {}, busy = false, onSet, onSetAll, onSetActor, found = [], onAnswerFound,
-  editor: held, onEditor, only, editorOnly = false, onDiagram, offers = {}, onOpenPlace, scope: heldScope, onScope,
+  editor: held, onEditor, only, editorOnly = false, onDiagram, offers = {}, onOpenPlace, scope: heldScope, onScope, consequence,
 }: {
+  /** The one sentence of consequence before *Save*, where the page that owns the editor knows more than the editor does. */
+  consequence?: string;
   /** The open editor alone, no card, rows or adding: a place's page opens it from its own rows (AGENTSPLACE1g1). */
   editorOnly?: boolean;
   /** What each agent offers for a model and an effort, by agent; absent or null, the field is a typed name. */
@@ -318,7 +320,7 @@ export function RolesCard({
         editing={now} onEditing={(change) => setEditing(typeof change === 'function' ? (was) => was && change(was) : change)}
         title={title} agents={agents} offers={offers} works={works} busy={busy} held={!kept}
         placed={t('settings.ai.roles.fixedPlace', { place: placeText(t, now.place, now.placeId) })}
-        consequence={t('settings.ai.roles.editor.then')} conversing={CONVERSING.has(now.id)}
+        consequence={consequence ?? t('settings.ai.roles.editor.then')} conversing={CONVERSING.has(now.id)}
         mayOff={mayOff} isOff={!!isOff} mayClear={mayClear} refused={refused && refused.at === at ? refused.sentence : null}
         onSave={(off) => save(now, off)} onClear={() => pressActor(at, now.id, null)} onCancel={() => { setRefused(null); setEditing(null); }}
       />
