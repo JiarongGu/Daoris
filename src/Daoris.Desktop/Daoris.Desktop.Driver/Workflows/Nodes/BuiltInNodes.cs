@@ -69,7 +69,7 @@ public sealed record NodeObservation(string Unit, string Node, string Kind, stri
 public static class BuiltInNodes
 {
     /// <summary>The kinds observed from records.</summary>
-    public static readonly IReadOnlyList<string> Observed = [NodeKinds.Claimed, NodeKinds.Handed, NodeKinds.Pushed, NodeKinds.PullRequest, NodeKinds.Line];
+    public static readonly IReadOnlyList<string> Observed = [NodeKinds.Claimed, NodeKinds.Handed, NodeKinds.Land, NodeKinds.Pushed, NodeKinds.PullRequest, NodeKinds.Line];
 
     /// <summary>The schema of an observed built-in's evidence, its record's: what a <c>data</c> wire from its evidence port carries (WIRE1a).</summary>
     public static string EvidenceSchema(string kind) => $"daoris/{kind}@1";
@@ -101,7 +101,8 @@ public static class BuiltInNodes
             var accepted = binding with { SubjectRevision = revision, Evidence = null, Outputs = NodeAcceptance.NoPorts };
             return Seen(NodeStates.Reached, said) with
             {
-                Source = source,
+                // A `land`'s reach is the landing record's by its authority (LANDNODE1c), where a `handed`'s is git's.
+                Source = node.Kind == NodeKinds.Land ? NodeSource.Landing : source,
                 Acceptance = accepted with { Evidence = new NodePort(EvidenceSchema(node.Kind), $"{record}#{artifact}", evidenced, accepted.Id) },
             };
         }
@@ -122,7 +123,8 @@ public static class BuiltInNodes
         var branch = unit.Records.Branch;
         switch (node.Kind)
         {
-            case NodeKinds.Handed when binding.Subject is not null:
+            // LANDNODE1c: a `land` is read as `handed` is until the runtime performs it (row 1c2).
+            case NodeKinds.Handed or NodeKinds.Land when binding.Subject is not null:
                 // FABRIC-CUTOVER1a (the cutover design §2.4.4, §11.2): a run's `handed` is its session's work handed on, reached where the
                 // session branch's landing holds the tip it is bound to, made at it or squashing it (LandedBranch.Squashed), so a squash, whose
                 // commit is another, still reaches it. Its acceptance keeps the bound tip, which its binding lapses on and the one table checks;
@@ -139,7 +141,7 @@ public static class BuiltInNodes
                     ? Reached(NodeSource.Git, joined.Tip, SessionBranches.FileName, branch.Branch, $"merged: {WorkInventory.ProofSaid(joined.By, joined.On)}")
                     : Seen(null, "nothing was handed on at the bound commit yet");
 
-            case NodeKinds.Handed:
+            case NodeKinds.Handed or NodeKinds.Land:
                 if (landing is not null)
                 {
                     return Reached(NodeSource.Git, landing.Tip, LandedBranches.FileName, landing.Branch,
