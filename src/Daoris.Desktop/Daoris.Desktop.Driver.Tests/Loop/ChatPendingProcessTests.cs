@@ -87,8 +87,12 @@ public sealed class ChatPendingProcessTests : IDisposable
         $"heard [{string.Join(" | ", StubFile.Lines(Heard))}], records {ledger.Count}, state {ledger.State(id)}, note {ledger.Note(id)}, "
         + $"record [{string.Join(" | ", Events.After(id, 0).Events.Select(e => $"{e.Kind}:{e.Text}"))}]";
 
+    // The routing standing a chat is told with its first message (COWORKVIEW1e-i, the cowork view design §R11.2 point 4) leads the prompt,
+    // ahead of the words (these repositories are not driven); these tests read the words that reached the agent, so it is left out.
     private string[] Prompts(string account) =>
-        [.. StubFile.Lines(Heard).Where(line => line.StartsWith($"{account} prompt: ", StringComparison.Ordinal)).Select(line => line[$"{account} prompt: ".Length..])];
+        [.. StubFile.Lines(Heard).Where(line => line.StartsWith($"{account} prompt: ", StringComparison.Ordinal))
+            .Select(line => System.Text.RegularExpressions.Regex.Replace(
+                line[$"{account} prompt: ".Length..], @"^Routing standing here: not driven\..*? Work your rows yourself\. ", ""))];
 
     /// <summary>
     /// 🔴 A Chat whose first account refuses its entry's model at the open: one press, two records. The refused one ends
