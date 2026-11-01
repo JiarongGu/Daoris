@@ -9,6 +9,10 @@ description: The parent's half of dispatching a subagent to work a branch of thi
 
 This overrides every batch step below.
 - **Branch from main.** Each builder branches from main's current tip (`git merge main` first in its worktree). There are no `parent/batch-*` branches, and no batch is stacked on another.
+- **Keep every branch on fresh main.** Each branch has its own focus, so branches drift from each other.
+  - A builder brings main in (`git merge main`, or a rebase onto it) at each milestone of its work, and again just before it hands back.
+  - It reruns its touched tests after that last merge, so what it hands back is tested against today's main, not the main it started on.
+  - The parent merges handed-back branches the same hour, so main stays fresh for the next one.
 - **Merge into main when it is done.** The parent merges a finished branch straight into main with `git merge --no-ff`. Do it at once, not held for a batch, so branches stay short and conflicts small.
   - Before merging, the builder has run only the tests its change touches, plus the censuses its files need. The parent runs no full pre-merge pass.
   - A conflict goes back to its builder, which merges main and resolves.
