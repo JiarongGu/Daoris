@@ -19,6 +19,8 @@
     <!-- The git a test's own fixture starts, past Git for Windows' launcher (GITSTART1, GITSTART6): the driver tests'
          helper, compiled in, so both projects' fixtures start git one way. -->
     <Compile Include="..\Daoris.Desktop.Driver.Tests\TestGit.cs" Link="TestGit.cs" />
+    <!-- The scan of every console start's window (CONSOLEWINDOWS1), with the named exemptions, held once. -->
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\Platform\NoConsoleStarts.cs" Link="NoConsoleStarts.cs" />
   </ItemGroup>
 
 </Project>

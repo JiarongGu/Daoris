@@ -79,7 +79,7 @@ test('keeplock: a release leaves a lock another holder wrote since', () => {
 
 /** A Node process running `script` as a module, its lines said and its end awaited. */
 function started(script: string, env: Record<string, string>) {
-  const child = spawn(process.execPath, ['--input-type=module', '-e', script], { env: { ...process.env, ...env }, stdio: ['ignore', 'pipe', 'pipe'] });
+  const child = spawn(process.execPath, ['--input-type=module', '-e', script], { env: { ...process.env, ...env }, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
   let out = '';
   let err = '';
   const ended = new Promise<number>((done) => child.on('close', (code) => done(code ?? -1)));

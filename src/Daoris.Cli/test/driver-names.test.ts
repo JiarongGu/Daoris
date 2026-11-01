@@ -40,7 +40,7 @@ test("the driver's sources and tests are found at any depth, and the build's out
 
 /** Every file of the repository a reader may be: tracked, or new and not ignored. */
 const repositoryFiles = (): string[] =>
-  execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard'], { cwd: repoRoot, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
+  execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard'], { cwd: repoRoot, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, windowsHide: true })
     .split('\n').filter(Boolean);
 
 /** What reads the driver's files: the desktop's C# tests, the CLI's tests, the page's sources and the tools. */

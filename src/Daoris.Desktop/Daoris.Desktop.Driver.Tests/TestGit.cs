@@ -43,6 +43,8 @@ internal static class TestGit
     /// </summary>
     public static ProcessStartInfo Ceiling(ProcessStartInfo info)
     {
+        // Every git a fixture starts passes here: none opens a console window on the screen the tests run beside.
+        info.CreateNoWindow = true;
         if (info.Environment.ContainsKey("GIT_DIR")) return info;
         if (NamesGitDir(info.ArgumentList)) return info;
         var folder = Path.GetFullPath(string.IsNullOrEmpty(info.WorkingDirectory) ? Environment.CurrentDirectory : info.WorkingDirectory)

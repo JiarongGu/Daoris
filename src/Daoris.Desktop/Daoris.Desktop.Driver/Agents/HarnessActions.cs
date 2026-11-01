@@ -504,7 +504,8 @@ public static class HarnessActions
         string? home = null)
     {
         var info = terminal
-            ? new ProcessStartInfo { FileName = command[0], UseShellExecute = false }
+            // console-window: the person signs in at the harness's own console, which is the window.
+            ? new ProcessStartInfo { FileName = command[0], UseShellExecute = false, CreateNoWindow = false }
             : new ProcessStartInfo
             {
                 FileName = command[0],

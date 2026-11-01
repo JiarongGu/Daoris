@@ -52,7 +52,7 @@ const {
 };
 
 const cliBin = join(dirname(fileURLToPath(import.meta.url)), '..', 'bin', 'daoris.mjs');
-const version = execFileSync(process.execPath, [cliBin, '--version'], { encoding: 'utf8' }).trim();
+const version = execFileSync(process.execPath, [cliBin, '--version'], { encoding: 'utf8', windowsHide: true }).trim();
 
 // What `SetupCommand` writes, spelled as it writes it: its own lines end as the console's do (CRLF on Windows,
 // so both are held here), while the ask's words keep the `\n` they were composed with.
@@ -382,14 +382,14 @@ test('the launcher this platform writes runs the workspace\'s CLI by the bare na
   assert.ok(existsSync(file));
   // A shell, as a session's own command runs: the bare name found on PATH, nothing else.
   const printed = execSync('daoris --version', {
-    cwd: fx.root, encoding: 'utf8', env: { ...process.env, ...withFirstOnPath(bin) },
+    cwd: fx.root, encoding: 'utf8', env: { ...process.env, ...withFirstOnPath(bin) }, windowsHide: true,
   }).trim();
   assert.equal(printed, version);
   fx.cleanup();
 });
 
 const GIT = ['-c', 'user.name=Setup Kit Test', '-c', 'user.email=setup-kit@example.invalid'];
-const git = (cwd: string, ...args: string[]) => execFileSync('git', [...GIT, ...args], { cwd, encoding: 'utf8' });
+const git = (cwd: string, ...args: string[]) => execFileSync('git', [...GIT, ...args], { cwd, encoding: 'utf8', windowsHide: true });
 
 /** A repository nobody adopted: a README and one commit on `main`. */
 function unadoptedRepository(folder: string): string {
@@ -499,7 +499,7 @@ async function driveTurn({ cwd, env, agent: text = ACP_STUB_AGENT, wait = TURN_W
 }): Promise<{ answer: Frame; updates: Update[]; stderr: string; code: number | null }> {
   const agent = join(cwd, '..', 'acp-agent.mjs');
   writeFileSync(agent, text);
-  const child = spawn(process.execPath, [agent], { cwd, env, stdio: ['pipe', 'pipe', 'pipe'] });
+  const child = spawn(process.execPath, [agent], { cwd, env, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
   let stderr = '';
   child.stderr.on('data', (chunk) => { stderr += chunk; });
   const send = (frame: object) => child.stdin.write(`${JSON.stringify(frame)}\n`);
@@ -661,7 +661,7 @@ async function speak({ cwd, env, frames, agent: text = ACP_STUB_AGENT, wait = ST
 }> {
   const agent = join(cwd, '..', 'acp-agent.mjs');
   writeFileSync(agent, text);
-  const child = spawn(process.execPath, [agent], { cwd, env, stdio: ['pipe', 'pipe', 'pipe'] });
+  const child = spawn(process.execPath, [agent], { cwd, env, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
   let stderr = '';
   child.stderr.on('data', (chunk) => { stderr += chunk; });
   const send = (frame: object) => child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', ...frame })}\n`);

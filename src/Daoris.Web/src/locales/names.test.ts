@@ -432,10 +432,10 @@ describe('the real glossary and catalogues', () => {
     expect(report(found)).toMatch(/budget/);
 
     const script = join(process.cwd(), 'scripts', 'names-check.mjs');
-    const reported = spawnSync(process.execPath, [script], { encoding: 'utf8' });
+    const reported = spawnSync(process.execPath, [script], { encoding: 'utf8', windowsHide: true });
     expect(reported.status, reported.stderr).toBe(0);
     expect(reported.stdout).toMatch(/names-check: \d+ label keys/);
-    const strict = spawnSync(process.execPath, [script, '--strict'], { encoding: 'utf8' });
+    const strict = spawnSync(process.execPath, [script, '--strict'], { encoding: 'utf8', windowsHide: true });
     expect(strict.status, strict.stdout).toBe(0);
     // It runs the check twice in a process of its own: under the CI beside five workers that took past the 20 s default.
   }, 90_000);

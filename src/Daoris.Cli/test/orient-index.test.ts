@@ -582,8 +582,8 @@ test('the check names a missing, stale or stray file, and the write leaves nothi
 
 test('--check exits 1 naming each stale file and the command that writes it, and 0 once it is written', () => {
   const fx = fixtureRepository('orient-index-check');
-  assert.equal(spawnSync('git', ['init', '-q'], { cwd: fx.root }).status, 0);
-  const run = (...args: string[]) => spawnSync(process.execPath, [toolPath, '--root', fx.root, ...args], { encoding: 'utf8' });
+  assert.equal(spawnSync('git', ['init', '-q'], { cwd: fx.root, windowsHide: true }).status, 0);
+  const run = (...args: string[]) => spawnSync(process.execPath, [toolPath, '--root', fx.root, ...args], { encoding: 'utf8', windowsHide: true });
 
   const missing = run('--check');
   assert.equal(missing.status, 1, missing.stdout + missing.stderr);
@@ -605,9 +605,9 @@ test('the files are what git would stage, so an ignored file is not read, and a 
   fx.write('kept.cs', 'public class Kept { }\n');
   fx.write('ignored/skipped.cs', 'public class Skipped { }\n');
   assert.throws(() => tool.listFiles(fx.root), /not the top of a git work tree/);
-  assert.equal(spawnSync('git', ['init', '-q'], { cwd: fx.root }).status, 0);
+  assert.equal(spawnSync('git', ['init', '-q'], { cwd: fx.root, windowsHide: true }).status, 0);
   assert.deepEqual(tool.listFiles(fx.root), ['.gitignore', 'kept.cs']);
-  const refused = spawnSync(process.execPath, [toolPath, '--root', join(fx.root, 'ignored'), '--check'], { encoding: 'utf8' });
+  const refused = spawnSync(process.execPath, [toolPath, '--root', join(fx.root, 'ignored'), '--check'], { encoding: 'utf8', windowsHide: true });
   assert.equal(refused.status, 2, refused.stderr);
   fx.cleanup();
 });

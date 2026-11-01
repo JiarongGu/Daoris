@@ -204,7 +204,7 @@ public sealed class HelperCaptureProcessTests : IDisposable
             return;
         }
 
-        var info = new ProcessStartInfo("cmd.exe") { UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true };
+        var info = new ProcessStartInfo("cmd.exe") { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true };
         foreach (var argument in new[] { "/c", "mklink", "/J", link, target }) info.ArgumentList.Add(argument);
         using var process = Process.Start(info)!;
         var output = process.StandardOutput.ReadToEndAsync();

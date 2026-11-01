@@ -37,10 +37,10 @@ test('the README\'s quickstart runs as written in a fresh repository, and leaves
   try {
     // A machine's own wiring is not the quickstart's: the doctrine commands need none of it.
     const env = Object.fromEntries(Object.entries(process.env).filter(([name]) => !name.startsWith('DAORIS_')));
-    const git = spawnSync('git', ['init', '-q', '.'], { cwd: fx.root, encoding: 'utf8', env });
+    const git = spawnSync('git', ['init', '-q', '.'], { cwd: fx.root, encoding: 'utf8', env, windowsHide: true });
     assert.equal(git.status, 0, git.stderr);
     for (const args of steps) {
-      const run = spawnSync(process.execPath, [entry, ...args], { cwd: fx.root, encoding: 'utf8', env });
+      const run = spawnSync(process.execPath, [entry, ...args], { cwd: fx.root, encoding: 'utf8', env, windowsHide: true });
       assert.equal(run.status, 0, `daoris ${args.join(' ')} exited ${run.status}\n${run.stdout}${run.stderr}`);
     }
     for (const rel of ['daoris.json', 'daoris.lock', 'AGENTS.md', 'CLAUDE.md', '.gitattributes', '.claude/INDEX.md']) {

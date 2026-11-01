@@ -176,7 +176,7 @@ async function questDoor(): Promise<{ url: string; moves: Move[]; close: () => P
 function runDoor(standIn: StandIn, door: Door, env: Record<string, string>, more: string[] = []) {
   const [, ...rest] = doorCommand(standIn, door, join(root, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver'), more);
   const fx = makeFixture(`stand-ins-run-${door.id}`);
-  const child = spawn(process.execPath, rest, { cwd: fx.root, env: { ...unroled(), ...env }, stdio: ['pipe', 'pipe', 'pipe'] });
+  const child = spawn(process.execPath, rest, { cwd: fx.root, env: { ...unroled(), ...env }, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
   let out = '';
   let err = '';
   child.stdout.on('data', (chunk) => { out += chunk; });
