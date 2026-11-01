@@ -950,8 +950,9 @@ public sealed class NodeRuntime(
                 }
                 // FABRIC-CUTOVER1d (the cutover design §3, §4): the doors read a run's record, so its opinion and look are begun as a unit's are,
                 // their gates read on its branch at the tip this pass read.
-                // LANDNODE1c: a `land` is begun, and read from the landing record as `handed` is, until row 1c2 performs it.
-                else if ((node.Reach == NodeReach.Observed && (Begins(node.Kind) || governed.Observable.Contains(node.Id))) || node.Kind == NodeKinds.Land
+                // LANDNODE1c: a `land` is begun, and read from the landing record as `handed` is; LANDNODE1c2: its `review` too, which the door's
+                // Accept reaches in the press that lands it.
+                else if ((node.Reach == NodeReach.Observed && (Begins(node.Kind) || governed.Observable.Contains(node.Id))) || node.Kind is NodeKinds.Land or NodeKinds.Review
                          // FABRIC-CUTOVER1c (§3, a change named): a run's go-ahead is begun though it is pressed, since its answer is D135's record.
                          || (governed.Scope is not null && node.Kind == NodeKinds.GoAhead))
                 {

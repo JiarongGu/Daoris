@@ -1,0 +1,34 @@
+using System.Reflection;
+
+namespace Daoris.Driver;
+
+/// <summary>
+/// The update's door back to an older build (LANDNODE1c2; the land node design §4, <i>Older builds</i>): a staged build whose version is below
+/// this one's is a going back, refused while any delivery is unresolved (<see cref="DeliveryStore.Rollback"/>), so an older door never lands, or
+/// calls a plugin without the key, behind a newer delivery. The launcher's own roll-back before a start confirms meets no delivery, since none
+/// starts in that window.
+/// </summary>
+public static class InstallRollback
+{
+    /// <summary>The version this build carries, as stamped; null where none is.</summary>
+    public static string? This => typeof(InstallRollback).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+
+    /// <summary>
+    /// Why installing <paramref name="staged"/> over <paramref name="running"/> is refused, or null: a version that does not read, or one not
+    /// below this one's, is no going back.
+    /// </summary>
+    public static string? Refusal(string home, string? staged, string? running)
+    {
+        if (!(Numbered(staged) is { } older && Numbered(running) is { } newer && older < newer)) return null;
+        var rollback = new DeliveryStore(home).Rollback();
+        return rollback.Allowed ? null : rollback.Refused;
+    }
+
+    /// <summary>A version's numbered core, a prerelease and a build's metadata left off.</summary>
+    private static Version? Numbered(string? version)
+    {
+        if (string.IsNullOrWhiteSpace(version)) return null;
+        var core = version.Trim().TrimStart('v').Split('-', '+')[0];
+        return Version.TryParse(core, out var parsed) ? parsed : null;
+    }
+}

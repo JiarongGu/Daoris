@@ -104,6 +104,12 @@ public sealed class InstallUpdater(
     /// <summary>How often the loop looks when nothing pokes it.</summary>
     public TimeSpan Pace { get; init; } = TimeSpan.FromSeconds(2);
 
+    /// <summary>The version this application runs, which a staged build below goes back from (<see cref="InstallRollback"/>).</summary>
+    public string? Running { get; init; } = InstallRollback.This;
+
+    /// <summary>The refusal's code for a going back while a delivery is unresolved.</summary>
+    public const string Deliveries = "deliveries";
+
     private DateTimeOffset Now => (clock ?? (() => DateTimeOffset.UtcNow))();
     /// <summary>Hand the close its staged build before closing any window (D206 §3.9).</summary>
     public Action<string>? ClosingForUpdate { get; init; }
@@ -395,6 +401,8 @@ public sealed class InstallUpdater(
         {
             // Checked by the application before it closes for it (D139 §4); the launcher checks again before it moves a file.
             if (StagedBuild.Check(install!) is { } problem) refused = new UpdateProblem(problem.Code, problem.Sentence);
+            // LANDNODE1c2: going back to an older build waits until no delivery is unresolved.
+            else if (InstallRollback.Refusal(home, staged?.Version, Running) is { } back) refused = new UpdateProblem(Deliveries, back);
             // DRAINHOLD1, a review's finding: what began after the look read no work (a turn a press let through opened, a helper the look
             // started, a conversation the window began) is read again now that no press passes, and the drain goes on for it. *Update now*
             // closes whatever runs, so it reads nothing.

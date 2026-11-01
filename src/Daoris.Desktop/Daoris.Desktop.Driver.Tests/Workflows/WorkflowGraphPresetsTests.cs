@@ -64,6 +64,21 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
         Assert.Equal(preset == "pull-request" ? "\"pull-request\"" : "\"integrate\"", land.Options["method"]);
         Assert.Equal(preset == "pull-request", kinds.Contains(NodeKinds.PullRequest) && kinds.Contains(NodeKinds.Pushed));
         Assert.Equal(preset != "pull-request", kinds.Contains(NodeKinds.Integrate));
+        // LANDNODE1c2: the person's Accept is a review before the land, and a preset with no press holds none.
+        Assert.Equal(preset != "integrated-no-press", kinds.Contains(NodeKinds.Review));
+    }
+
+    /// <summary>LANDNODE1c2: <i>Merge with no press</i> is a merge land with no review before it, which a version may hold (D145's press is the flow's).</summary>
+    [Fact]
+    public async Task A_merge_with_no_press_is_a_merge_land_with_no_review()
+    {
+        var exit = await Run("workflow new made --from merge-no-press");
+
+        Assert.Equal((0, ""), (exit, _error.ToString()));
+        var version = Saved("made");
+        Assert.Null(version.Problem);
+        Assert.Equal("\"merge\"", Assert.Single(version.Graph!.Nodes, node => node.Kind == NodeKinds.Land).Options["method"]);
+        Assert.DoesNotContain(version.Graph.Nodes, node => node.Kind == NodeKinds.Review);
     }
 
     /// <summary>LANDNODE1h: <c>new --from current:&lt;repository&gt;</c> writes Current's landing out as a <c>land</c> node and its tail.</summary>
@@ -78,10 +93,25 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
         var graph = Saved("made").Graph!;
         var land = Assert.Single(graph.Nodes, node => node.Kind == NodeKinds.Land);
         Assert.Equal(
-            ["\"pull-request\"", "\"automatic\"", "\"w/{quest}\"", "\"acme.pr\""],
-            [land.Options["method"], land.Options["accept"], land.Options["pattern"], land.Options["plugin"]]);
+            ["\"pull-request\"", "\"w/{quest}\"", "\"acme.pr\""],
+            [land.Options["method"], land.Options["pattern"], land.Options["plugin"]]);
+        Assert.DoesNotContain(LandNodes.AcceptOption, land.Options.Keys);
         Assert.Equal(["claimed", "work.requests", "land", "pushed", "pull-request"], graph.Nodes.Select(node => node.Kind));
         Assert.Equal("pull-request", graph.End);
+    }
+
+    /// <summary>LANDNODE1c2: a rule that waits for the person's Accept is written out with a <c>review</c> before the <c>land</c>.</summary>
+    [Fact]
+    public async Task Current_waiting_for_your_accept_is_written_out_with_a_review_before_the_land()
+    {
+        File.WriteAllText(Config, """{"landings":{"web-app":{"form":"branch","pattern":"w/{quest}","plugin":"acme.pr"}}}""");
+
+        var exit = await Run("workflow new made --from current:web-app", ("web-app", "work", null));
+
+        Assert.Equal((0, ""), (exit, _error.ToString()));
+        var graph = Saved("made").Graph!;
+        Assert.Equal(["claimed", "work.requests", "review", "land", "pushed", "pull-request"], graph.Nodes.Select(node => node.Kind));
+        Assert.Contains(graph.Wires, wire => wire.From?.Node == "review" && wire.To.Node == "landing");
     }
 
     [Fact]

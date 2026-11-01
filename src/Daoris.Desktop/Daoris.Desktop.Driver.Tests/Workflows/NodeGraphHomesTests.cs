@@ -37,14 +37,18 @@ public sealed class NodeGraphHomesTests
 
         var merged = NodeGraphHomes.Current(config, "engine", "shop");
         Assert.Equal((LandingSource.Repository, (string?)null, true), (merged.Source, merged.Cycle, merged.Readable));
-        Assert.Equal(("handed:land line:line", "handed-after->line", "handed", "line", GraphCleanup.Held), Shape(merged.Graph!));
+        // LANDNODE1c2: a rule that does not accept automatically draws the person's Accept before its land, and is entered there.
+        Assert.Equal(("landing-review:review handed:land line:line", "landing-review-after->handed handed-after->line", "landing-review", "line", GraphCleanup.Held),
+            Shape(merged.Graph!));
 
         var pulled = NodeGraphHomes.Current(config, "orders", "shop");
         Assert.Equal(LandingSource.Workspace, pulled.Source);
         Assert.Equal(
-            ("handed:land pushed:pushed pull-request:pull-request line:line", "handed-after->pushed pushed-after->pull-request pull-request-after->line",
-             "handed", "line", GraphCleanup.Held),
+            ("landing-review:review handed:land pushed:pushed pull-request:pull-request line:line",
+             "landing-review-after->handed handed-after->pushed pushed-after->pull-request pull-request-after->line",
+             "landing-review", "line", GraphCleanup.Held),
             Shape(pulled.Graph!));
+        Assert.Equal(("handed:land line:line", "handed"), (Shape(NodeGraphHomes.Landing(LandingRule.Merge with { AutoAccept = true })).Nodes, Shape(NodeGraphHomes.Landing(LandingRule.Merge with { AutoAccept = true })).Entries));
 
         var none = NodeGraphHomes.Current(config, "elsewhere", "another");
         Assert.Equal((LandingSource.Default, true), (none.Source, none.Readable));
@@ -86,7 +90,7 @@ public sealed class NodeGraphHomesTests
         var cycled = NodeGraphHomes.Current(config, "shell", "shop");
         Assert.Equal((LandingSource.Repository, "qa"), (cycled.Source, cycled.Graph!.End));
         Assert.Equal(
-            ("handed:land line:line qa:human", "handed-after->line line-after->qa", "handed", "qa", GraphCleanup.Held),
+            ("landing-review:review handed:land line:line qa:human", "landing-review-after->handed handed-after->line line-after->qa", "landing-review", "qa", GraphCleanup.Held),
             Shape(cycled.Graph!));
     }
 
@@ -111,7 +115,7 @@ public sealed class NodeGraphHomesTests
                 """,
         }, LandingSource.Repository);
         Assert.Empty(waiting.Problems);
-        Assert.Equal(new[] { "handed", "dependency" }, waiting.Graph!.Entries);
+        Assert.Equal(new[] { NodeGraphHomes.Review, "dependency" }, waiting.Graph!.Entries);
         Assert.Equal(new GraphCleanup(GraphCleanupUntil.End, 14), waiting.Graph.Cleanup);
 
         var unreached = NodeGraphHomes.OfLanding(LandingRule.Merge with { Cycle = """{ "end": "pull-request" }""" }, LandingSource.Repository);
@@ -142,14 +146,15 @@ public sealed class NodeGraphHomesTests
         var home = NodeGraphHomes.Current(config, "engine", null);
         Assert.True(home.Readable);
         Assert.Equal(
-            ("handed:land integrate:integrate line:line","handed-after->integrate integrate-after->line", "handed", "line", GraphCleanup.Held),
+            ("landing-review:review handed:land integrate:integrate line:line", "landing-review-after->handed handed-after->integrate integrate-after->line",
+             "landing-review", "line", GraphCleanup.Held),
             Shape(home.Graph!));
         Assert.Equal(NodeReach.Waited, home.Graph!.Nodes.Single(node => node.Kind == NodeKinds.Integrate).Reach);
         Assert.Empty(NodeGraphs.Problems(home.Graph));
 
         // Without it, today's graph, byte for byte.
         var plain = NodeGraphHomes.Landing(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"));
-        Assert.Equal(("handed:land line:line", "handed-after->line"), (Shape(plain).Nodes, Shape(plain).Wires));
+        Assert.Equal(("landing-review:review handed:land line:line", "landing-review-after->handed handed-after->line"), (Shape(plain).Nodes, Shape(plain).Wires));
         Assert.NotEqual(NodeGraphs.Digest(plain), NodeGraphs.Digest(home.Graph));
         Assert.Equal(NodeGraphs.Digest(plain), NodeGraphs.Digest(NodeGraphHomes.Landing(Integrating with { Integrate = null })));
         Assert.Equal(NodeGraphs.Digest(NodeGraphHomes.Landing(Integrating)), NodeGraphs.Digest(home.Graph));
@@ -203,7 +208,7 @@ public sealed class NodeGraphHomesTests
         // The older build never reads the key: the rule without it is what it draws, and its graph has no integrate node.
         var older = NodeGraphHomes.OfLanding(rule with { Integrate = null }, LandingSource.Repository);
         Assert.DoesNotContain(older.Graph!.Nodes, node => node.Kind == NodeKinds.Integrate);
-        Assert.Equal("handed:land line:line", Shape(older.Graph).Nodes);
+        Assert.Equal("landing-review:review handed:land line:line", Shape(older.Graph).Nodes);
 
         // The file the newer build wrote keeps the key through a round trip, and reads back as the same rule.
         Assert.Equal(rule.Integrate, DriverConfig.Parse(config.ToJson()).Landings["engine"].Integrate);

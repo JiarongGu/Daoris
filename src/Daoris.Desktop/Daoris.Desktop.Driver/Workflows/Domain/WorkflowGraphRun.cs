@@ -301,7 +301,7 @@ public static class WorkflowGraphRuns
     {
         NodeStates.Blocked => (WorkflowRunStates.NotReached, WorkflowGraphDetails.Blocked),
         NodeStates.Ready => (WorkflowRunStates.Working, WorkflowGraphDetails.Ready),
-        NodeStates.Active when node.Kind is NodeKinds.GoAhead or NodeKinds.Human or NodeKinds.Look =>
+        NodeStates.Active when node.Kind is NodeKinds.GoAhead or NodeKinds.Human or NodeKinds.Look or NodeKinds.Review =>
             (WorkflowRunStates.WaitingOnYou, WorkflowGraphDetails.Active),
         // INTEGRATE1o part o2 (§17.3): a decline holds `work.requests` active, never failed, and it waits on the person, whose pass lets the flow go on.
         NodeStates.Active when node.Kind == NodeKinds.WorkRequests && code == WorkRequests.DeclinedCode =>
@@ -332,6 +332,8 @@ public static class WorkflowGraphRuns
         }
 
         var rule = process?.Landing.Rule;
+        // LANDNODE1c2: a `land` waits on no press of its own; the person's Accept is its `review`'s.
+        if (node.Kind == NodeKinds.Land) Default("accept", "automatic");
         if (NodeKinds.IsLanding(node.Kind))
         {
             Default("form", rule?.Form);
@@ -352,6 +354,7 @@ public static class WorkflowGraphRuns
             NodeKinds.PullRequest => (WorkflowKinds.PullRequest, WorkflowParticipation.You, WorkflowExecutor.Plugin, WorkflowPress.Merge),
             NodeKinds.GoAhead => (WorkflowKinds.GoAhead, WorkflowParticipation.You, WorkflowExecutor.Daoris, null),
             NodeKinds.Human => (NodeKinds.Human, WorkflowParticipation.You, WorkflowExecutor.Daoris, null),
+            NodeKinds.Review => (NodeKinds.Review, WorkflowParticipation.You, WorkflowExecutor.Daoris, WorkflowPress.Accept),
             _ when NodeKinds.IsPlugin(node.Kind) => (node.Kind, WorkflowParticipation.Automatic, WorkflowExecutor.Plugin, null),
             _ => (node.Kind, WorkflowParticipation.Automatic, WorkflowExecutor.Daoris, null),
         };
