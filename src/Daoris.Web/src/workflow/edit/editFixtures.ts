@@ -1,5 +1,7 @@
+import { fingerprintOf } from '../draftFingerprint';
 import { MERGE_GRAPH } from '../graphFixtures';
 import type { EditorRole, PaletteKind, WorkflowListAnswer, WorkflowPaletteAnswer, WorkflowSaveAnswer } from './answers';
+import { draftOf, graphOf } from './graphDraft';
 
 // The step editor's answers as the driver gives them (WORKFLOWEDIT1b), for its page tests and its stories: a palette of every kind the
 // shipped workflows hold, each with the driver's own authority, and the Local release plugin's three steps; the defaults listed with their
@@ -33,11 +35,15 @@ export const PALETTE: WorkflowPaletteAnswer = {
     kind('review', 'pressed', { reachBy: 'person', personJudges: true, mayEnd: false }),
     kind('land', 'performed', { reachBy: 'landing', failureBy: 'landing', evidenced: true,
       options: [{ name: 'method', type: 'choice', choices: ['merge', 'branch', 'push', 'pull-request', 'integrate'], required: false },
-        { name: 'squash', type: 'switch', choices: [], required: false }] }),
+        { name: 'target', type: 'text', choices: [], required: false }, { name: 'pattern', type: 'text', choices: [], required: false },
+        { name: 'plugin', type: 'text', choices: [], required: false }, { name: 'squash', type: 'switch', choices: [], required: false },
+        { name: 'message', type: 'text', choices: [], required: false }] }),
     kind('line', 'observed', { evidenced: true }),
     kind('pushed', 'observed', { failureBy: 'plugin', personSkips: true, evidenced: true }),
     kind('pull-request', 'observed', { failureBy: 'plugin', personSkips: true, evidenced: true, skipBy: 'landing' }),
-    kind('integrate', 'waited', { failureBy: 'integration', evidenced: true }),
+    kind('integrate', 'waited', { failureBy: 'integration', evidenced: true,
+      options: [{ name: 'request', type: 'choice', choices: ['owner', 'done', 'steward'], required: false },
+        { name: 'conflicts', type: 'choice', choices: ['session', 'hold'], required: false }] }),
   ],
   wires: [
     { kind: 'after', eligibility: true, from: null, to: null },
@@ -138,6 +144,9 @@ export const REFUSED = answer({
     { code: 'a-rule-newer-than-this-page', wire: null, node: null, words: 'a rule this page has no words for refuses `publish`.' },
   ],
 });
+
+/** The fingerprint the editor holds for a draft opened on `graph`: what a judgement of it is keyed by (`judgedOf`). */
+export const judgedFor = (graph: unknown): string => fingerprintOf(graphOf(draftOf(graph)));
 
 /** A plan appended to a saved workflow chosen in two places. */
 export const APPEND = answer({

@@ -175,24 +175,21 @@ describe('the release workflow composed from the Merge workflow', () => {
     await tabTo(screen.getByRole('button', { name: 'Add a new step where release goes from find by local-release' }));
     await user.keyboard('{Enter}');
     await pickByKeys('release by', 'release by local-release');
+    // What each carries is proposed from the step it is routed from: the record takes the find's release, said aloud.
+    expect(live()).toHaveTextContent("Proposed: release by local-release's input release takes find by local-release's release.");
     await user.keyboard('{Enter}');
-    await screen.findByRole('dialog', { name: 'release by local-release' });
+    const recording = await screen.findByRole('dialog', { name: 'release by local-release' });
+    expect(within(recording).getByRole('combobox', { name: "What release by local-release's input release is given" })).toHaveTextContent("find by local-release's release");
     await tabTo(screen.getByRole('button', { name: 'Add a new step where Once done goes from release by local-release' }));
     await user.keyboard('{Enter}');
     await pickByKeys('publish', 'publish by local-release');
 
-    // What each carries: the copy takes the record's release, the record the find's.
+    // The copy takes the record's release, with nothing chosen.
+    expect(live()).toHaveTextContent("Proposed: publish by local-release's input release takes release by local-release's release.");
     await user.keyboard('{Enter}');
-    await screen.findByRole('dialog', { name: 'publish by local-release' });
-    await chooseByKeys("What publish by local-release's input release is given", "release by local-release's release");
-    await user.keyboard('{Escape}');
-    await waitFor(() => expect(focused()).toBe(step('publish by local-release')));
-    // Up past the ◎ of the release's other outcome, which stands beside the record in reading order.
-    for (let presses = 0; presses < 3 && focused() !== step('release by local-release'); presses += 1) await user.keyboard('{ArrowUp}');
-    expect(focused()).toBe(step('release by local-release'));
-    await user.keyboard('{Enter}');
-    await screen.findByRole('dialog', { name: 'release by local-release' });
-    await chooseByKeys("What release by local-release's input release is given", "find by local-release's release");
+    const copying = await screen.findByRole('dialog', { name: 'publish by local-release' });
+    expect(within(copying).getByRole('combobox', { name: "What publish by local-release's input release is given" })).toHaveTextContent("release by local-release's release");
+    expect(within(copying).queryByText('More than one step makes this: choose which one it is given.')).toBeNull();
     await user.keyboard('{Escape}');
 
     await tabTo(screen.getByRole('textbox', { name: 'Its name' }));
@@ -231,11 +228,12 @@ describe('the release workflow composed from the Merge workflow', () => {
     await user.click(await screen.findByRole('button', { name: 'Add a new step where Once done goes from release by local-release' }));
     await user.click(await screen.findByRole('option', { name: /^publish by local-release/ }));
 
+    // Both inputs were proposed as the steps were put in; nothing is chosen.
     await user.click(step('publish by local-release'));
-    await chooseByPointer("What publish by local-release's input release is given", "release by local-release's release");
+    expect(screen.getByRole('combobox', { name: "What publish by local-release's input release is given" })).toHaveTextContent("release by local-release's release");
     await user.click(screen.getByRole('button', { name: 'Close' }));
     await user.click(step('release by local-release'));
-    await chooseByPointer("What release by local-release's input release is given", "find by local-release's release");
+    expect(screen.getByRole('combobox', { name: "What release by local-release's input release is given" })).toHaveTextContent("find by local-release's release");
     await user.click(screen.getByRole('button', { name: 'Close' }));
 
     await user.type(screen.getByRole('textbox', { name: 'Its name' }), 'Release for engine');
@@ -423,6 +421,100 @@ describe('the judgement, the inspector beside the chart, and the languages', () 
     expect(within(inspector).getByText('A way back goes only to a step that comes before this one.')).toBeInTheDocument();
     await user.click(within(inspector).getByRole('button', { name: 'Remove the way If you ask for changes to The landing' }));
     await screen.findByText('These steps hold, and can be saved.');
+  });
+
+  // SETUPUX1r (D221 §2.3): the inspector's options in the page's words, a method's tail, and a pattern's preview.
+  it("words a landing's options, brings a pull request's tail in one change, previews a pattern and keeps the option names under Details", async () => {
+    render(wrap(<Editor />));
+    await user.click(await screen.findByRole('button', { name: 'Begin from Merge workflow' }));
+    await user.click(step('The landing'));
+    const inspector = await screen.findByRole('dialog', { name: 'The landing' });
+
+    // A merge makes no branch to name nor plugin to push it: neither is offered, and the method says what it adds.
+    expect(within(inspector).getByRole('combobox', { name: 'How it lands' })).toHaveTextContent('Merge into the line');
+    expect(within(inspector).getByText('Adds nothing after it.')).toBeInTheDocument();
+    expect(within(inspector).queryByRole('textbox', { name: "The branch's name" })).toBeNull();
+
+    await chooseByPointer('How it lands', 'Push it and open a pull request');
+    expect(live()).toHaveTextContent('The landing now lands by: Push it and open a pull request. Added The push, Completed on the host after it.');
+    expect(within(inspector).getByText('Adds after it: The push, Completed on the host.')).toBeInTheDocument();
+    expect(within(screen.getByRole('list', { name: 'How the steps go on', hidden: true })).getAllByRole('listitem', { name: /^The push|^Completed on the host/, hidden: true })).toHaveLength(2);
+    expect(within(inspector).getByRole('textbox', { name: "The branch's name" })).toBeInTheDocument();
+
+    await user.click(within(inspector).getByRole('textbox', { name: "The branch's name" }));
+    await user.paste('feature/{quest}-{slug}');
+    expect(within(inspector).getByText('For a quest like this one: feature/0fda18-sample-work')).toBeInTheDocument();
+    await user.paste('/{nope}');
+    expect(within(inspector).getByText('A pattern cannot say {nope}.')).toBeInTheDocument();
+
+    // The names the saved step uses sit under Details, not on the controls.
+    await user.click(within(inspector).getByText('Details'));
+    expect(within(inspector).getByText('Its options are saved as:').parentElement).toHaveTextContent('method, target, pattern, plugin, squash, message');
+    await user.click(screen.getByRole('button', { name: 'Close' }));
+
+    await user.type(screen.getByRole('textbox', { name: 'Its name' }), 'Hosted');
+    await user.click(screen.getByRole('button', { name: 'Save as new' }));
+    await screen.findByText(/v1, a new workflow, from the page\./);
+    const graph = saved();
+    expect(graph.wires.map(said)).toEqual(expect.arrayContaining(['after:landing>pushed', 'after:pushed>pull-request', 'after:pull-request>line']));
+    expect((graph.nodes as { id: string; options?: Record<string, unknown> }[]).find((node) => node.id === 'landing')!.options)
+      .toEqual({ method: 'pull-request', pattern: 'feature/{quest}-{slug}/{nope}' });
+    expect(graph.end).toBe('line');
+
+    // And back: the tail goes, and the options a merge refuses with it.
+    await user.click(step('The landing'));
+    await chooseByPointer('How it lands', 'Merge into the line');
+    expect(live()).toHaveTextContent('The landing now lands by: Merge into the line. Took out The push, Completed on the host.');
+    expect(screen.queryByRole('listitem', { name: 'The push' })).toBeNull();
+    await i18n.changeLanguage('zh');
+    expect(await screen.findByRole('combobox', { name: '落地的方式' })).toHaveTextContent('并入主线');
+  });
+
+  it("lists the lines the place declares for a landing's target, and types it where it declares none", async () => {
+    const { unmount } = render(wrap(<Editor lines={['main']} />));
+    await user.click(await screen.findByRole('button', { name: 'Begin from Merge workflow' }));
+    await user.click(step('The landing'));
+    const inspector = await screen.findByRole('dialog', { name: 'The landing' });
+    expect(within(inspector).getByRole('combobox', { name: 'The line it lands on' })).toHaveTextContent("The repository's own line");
+    await chooseByPointer('The line it lands on', 'main');
+    expect(live()).toHaveTextContent("Changed The landing's The line it lands on.");
+    expect(openDraftNow()!.graph.nodes?.find((node) => (node as { id: string }).id === 'landing')).toMatchObject({ options: { method: 'merge', target: 'main' } });
+    unmount();
+
+    render(wrap(<Editor />));
+    await user.click(await screen.findByRole('button', { name: 'Begin from Merge workflow' }));
+    await user.click(step('The landing'));
+    expect(within(await screen.findByRole('dialog', { name: 'The landing' })).getByRole('textbox', { name: 'The line it lands on' })).toHaveValue('');
+  });
+
+  it('asks which output an input takes where two fit, and keeps what the page does not draw through a save', async () => {
+    const graph = {
+      ...SHIPPED_RELEASE, cleanup: { keep: true },
+      nodes: (SHIPPED_RELEASE as { nodes: Record<string, unknown>[] }).nodes.map((node) => (node.id === 'landing' ? { ...node, future: [1], options: { method: 'merge', soon: 'x' } } : node)),
+      wires: (SHIPPED_RELEASE as { wires: Record<string, unknown>[] }).wires.filter((wire) => wire.id !== 'k').map((wire) => (wire.id === 'a' ? { ...wire, delay: 5 } : wire)),
+    };
+    render(wrap(<Editor startFrom={{ graph, name: 'Release workflow' }} />));
+    await screen.findByRole('list', { name: 'How the steps go on' });
+
+    await user.click(step('publish by local-release'));
+    const inspector = await screen.findByRole('dialog', { name: 'publish by local-release' });
+    expect(within(inspector).getByText('More than one step makes this: choose which one it is given.')).toBeInTheDocument();
+    expect(within(inspector).getByRole('combobox', { name: "What publish by local-release's input release is given" })).toHaveTextContent('Nothing yet');
+    await chooseByPointer("What publish by local-release's input release is given", "release by local-release's release");
+    expect(within(inspector).queryByText('More than one step makes this: choose which one it is given.')).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Close' }));
+
+    await user.click(step('The landing'));
+    await chooseByPointer('How it lands', 'Push the branch');
+    await user.click(screen.getByRole('button', { name: 'Close' }));
+    await user.type(screen.getByRole('textbox', { name: 'Its name' }), 'Kept');
+    await user.click(screen.getByRole('button', { name: 'Save as new' }));
+    await screen.findByText(/v1, a new workflow, from the page\./);
+    const written = saved() as unknown as { cleanup: unknown; nodes: Record<string, unknown>[]; wires: Record<string, unknown>[] };
+    expect(written.cleanup).toEqual({ keep: true });
+    expect(written.nodes.find((node) => node.id === 'landing')).toMatchObject({ future: [1], options: { method: 'push', soon: 'x' } });
+    expect(written.wires.find((wire) => wire.id === 'a')).toMatchObject({ delay: 5 });
+    expect(written.wires.find((wire) => wire.kind === 'data' && wire.to === 'publish.release')).toMatchObject({ from: 'release.release' });
   });
 
   it("draws the editor in both languages, Daoris's words translated and a step's authored words as written", async () => {

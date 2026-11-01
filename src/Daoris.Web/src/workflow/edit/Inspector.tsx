@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Prose, SelectField } from '../../design/ui';
 import type { EditorRole, GraphProblem, WorkflowPaletteAnswer } from './answers';
-import { plain, stepAbout, waySaid } from './editWords';
+import { choiceLabel, optionLabel, plain, previewPattern, stepAbout, stepTitle, waySaid } from './editWords';
 import {
-  addWire, carryOf, choiceOf, type DraftNode, type GraphDraft, givesOf, inputsOf, joinModeOf, joinOf, moreWaysOf, movePlan, removeWire, setCarry,
-  setEnd, setJoinMode, setOption, sourcesOf, triggerTargetsOf,
+  addWire, askedInputs, carryOf, choiceOf, type DraftNode, type GraphDraft, givesOf, inputsOf, joinModeOf, joinOf, landOptionApplies, moreWaysOf, movePlan,
+  optionOf, removeWire, setCarry, setEnd, setJoinMode, setLandMethod, setOption, sourcesOf, tailOf, triggerTargetsOf,
 } from './graphDraft';
 import { Refusals } from './Refusals';
 import { StepOptions } from './StepOptions';
@@ -31,11 +31,16 @@ export type InspectorActs = WaysActs & {
 
 const NONE = ':none';
 const ACT = 'min-h-0 border border-line py-0.5 text-small';
+const LAND = 'land';
+const METHOD = 'method';
+const text = (value: unknown): string | null => (typeof value === 'string' && value !== '' ? value : null);
 
-export function Inspector({ palette, draft, roles, node, titleOf, problems, confirming, onConfirm, acts }: {
+export function Inspector({ palette, draft, roles, lines, node, titleOf, problems, confirming, onConfirm, acts }: {
   palette: WorkflowPaletteAnswer;
   draft: GraphDraft;
   roles: EditorRole[];
+  /** The lines the place declares, which a landing's target is chosen from. */
+  lines?: string[];
   node: DraftNode;
   titleOf: (id: string) => string;
   problems: { atStep: GraphProblem[]; atWire: (wire: string) => GraphProblem[] };
@@ -51,6 +56,23 @@ export function Inspector({ palette, draft, roles, node, titleOf, problems, conf
   const earlier = movePlan(draft, id, 'earlier');
   const later = movePlan(draft, id, 'later');
 
+  // A landing shows the options its method means (one it holds is shown wherever it is, for the judge to say why), and says under its
+  // method the tail that method brings and under its pattern the branch it names.
+  const method = node.kind === LAND ? text(optionOf(node, METHOD)) : null;
+  const options = (choice?.options ?? []).filter((field) => node.kind !== LAND || landOptionApplies(method, field.name) || optionOf(node, field.name) !== undefined);
+  const notes: Record<string, string> = {};
+  if (node.kind === LAND && method !== null) {
+    const tail = tailOf(method).map((kind) => stepTitle(t, i18n, palette, { kind }));
+    notes[METHOD] = tail.length > 0 ? t('workflow.edit.option.land.method.tail', { steps: tail.join(t('workflow.listJoin')) }) : t('workflow.edit.option.land.method.noTail');
+  }
+  const pattern = text(optionOf(node, 'pattern'));
+  if (node.kind === LAND && pattern) {
+    const shown = previewPattern(pattern);
+    notes.pattern = shown.unknown.length > 0
+      ? t('workflow.edit.option.land.pattern.unknown', { names: shown.unknown.join(t('workflow.listJoin')) })
+      : t('workflow.edit.option.land.pattern.preview', { name: shown.name });
+  }
+
   return (
     <div className="grid min-w-0 gap-4">
       {(choice?.plugin || about) && (
@@ -64,9 +86,20 @@ export function Inspector({ palette, draft, roles, node, titleOf, problems, conf
       <WaysOnTable palette={palette} draft={draft} step={id} titleOf={titleOf} problemsAt={problems.atWire} acts={acts} />
       <Carries draft={draft} node={node} titleOf={titleOf} onChange={acts.onChange} />
 
-      {choice && choice.options.length > 0 && (
-        <StepOptions node={node} fields={choice.options} roleTakes={choice.roleTakes} roles={roles}
-          onSet={(option, value) => acts.onChange(setOption(draft, id, option, value), t('workflow.edit.said.option', { step: title, option }))} />
+      {options.length > 0 && choice && (
+        <StepOptions node={node} fields={options} roleTakes={choice.roleTakes} roles={roles} lines={lines} notes={notes}
+          onSet={(option, value) => {
+            if (node.kind === LAND && option === METHOD && typeof value === 'string') {
+              const made = setLandMethod(palette, draft, id, value);
+              const steps = (kinds: string[]) => kinds.map((kind) => stepTitle(t, i18n, palette, { kind })).join(t('workflow.listJoin'));
+              const said = made.added.length > 0 && made.removed.length > 0 ? 'methodBoth' : made.added.length > 0 ? 'methodAdded' : made.removed.length > 0 ? 'methodRemoved' : 'method';
+              acts.onChange(made.draft, t(`workflow.edit.said.${said}`, {
+                step: title, method: choiceLabel(t, LAND, METHOD, value), added: steps(made.added), removed: steps(made.removed),
+              }));
+              return;
+            }
+            acts.onChange(setOption(draft, id, option, value), t('workflow.edit.said.option', { step: title, option: optionLabel(t, node.kind, option) }));
+          }} />
       )}
 
       <MoreWays palette={palette} draft={draft} node={node} titleOf={titleOf} onChange={acts.onChange} />
@@ -74,6 +107,12 @@ export function Inspector({ palette, draft, roles, node, titleOf, problems, conf
       <details className="min-w-0 text-small text-ink-soft">
         <summary className="cursor-pointer">{t('workflow.edit.inspector.details')}</summary>
         <p className="m-0 mt-1"><code>{id}</code> · <code>{node.kind}</code>{typeof node.node.version === 'number' ? ` v${node.node.version}` : ''}</p>
+        {options.length > 0 && (
+          <p className="m-0 mt-1 [overflow-wrap:anywhere]">
+            {t('workflow.edit.inspector.keys')}{' '}
+            {options.map((field, at) => <span key={field.name}>{at > 0 && ', '}<code>{field.name}</code></span>)}
+          </p>
+        )}
       </details>
 
       <div className="flex min-w-0 flex-wrap gap-1.5">
@@ -176,6 +215,7 @@ function Carries({ draft, node, titleOf, onChange }: {
   const { t } = useTranslation();
   const inputs = inputsOf(node);
   const gives = givesOf(draft, node.id);
+  const asking = new Set(askedInputs(draft, node.id).map((each) => each.input));
   if (inputs.length === 0 && gives.length === 0) return null;
   const title = titleOf(node.id);
   return (
@@ -208,6 +248,7 @@ function Carries({ draft, node, titleOf, onChange }: {
               ]}
             />
             {sources.length === 0 && <p className="m-0 text-meta text-ink-faint">{t('workflow.edit.carries.none')}</p>}
+            {asking.has(input) && <p className="m-0 text-meta text-ink">{t('workflow.edit.carries.asks')}</p>}
           </div>
         );
       })}

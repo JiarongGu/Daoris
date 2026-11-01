@@ -1,6 +1,6 @@
 # Who is at work on a session: its parts, its subagents, its co-workers and the quests it asked, what each is on and what waits on what, read from the Fabric's records, and how a session hands its work out (COWORKVIEW1, row a accepted 2026-10-26; the routing half proposed)
 
-**Standing:** **row a accepted by the steward on 2026-10-26** (D173's note of that date), after both makers' reads of round 10 and their named changes (§23), and built; **round 11 (2026-11-02) proposes the routing half for the steward's acceptance after one read** (*Round 11*, before §0). Round 10 with both makers' named changes, under D191, with dated notes amending D173 (the Collaboration Fabric), D203 (co-workers), D115
+**Standing:** **row a accepted by the steward on 2026-10-26** (D173's note of that date), after both makers' reads of round 10 and their named changes (§23), and built; **round 11 (2026-11-02), the routing half, accepted by the steward the same day after Codex's read, whose findings its rows carry** (*Round 11*, before §0; §R11.5). Round 10 with both makers' named changes, under D191, with dated notes amending D173 (the Collaboration Fabric), D203 (co-workers), D115
 (lanes) and D167 (sessions and their parts). The design is two scopes with a standing each:
 - **Row a, *a chat's subagents seen*: the scope round 10 settles.** Its whole contract is §7 row a's table, each rule with where
   it is specified and its proof. Both makers have read round 9 at `a30797bce` (`docs/2026-10-24-cowork-view-reads.md`): Codex
@@ -529,6 +529,23 @@ installed window where the row changes it. Words land in both catalogues under `
 - **Not designed here:** DEV6's lane cap and DEV9's steward (both parked); a standing told the moment it moves (§9); the
   *Its workflow →* link, drawn only where the *Workflow* view holds the session's run, until FABRIC-GRAPHVIEW1.
 - **The decision notes** (§10's D115, D167 and D203 lines, as §R11.2 changes them) are written on acceptance.
+
+### R11.5 Codex's read, and the steward's acceptance (2026-11-02)
+
+Codex read round 11 beside its first rows (`local/`-free, read-only); every finding is taken, and the routing half is **accepted by
+the steward** with them, rows e-i and b-i building. The rows carry: **b-i** — a chat's wait holds while its question is `Done` with
+`Held: true` (the planner keeps waiting, `WorkOrders/Domain/Planner.cs:1166`, `QuestUnits.cs:45`, D144's hold); waiting parts take
+priority inside the composer's forty-part limit (`Participants/Domain/AtWork.cs:219`), the overflow worded apart from the
+ended-parts fold; `sessions at-work` (`WorkOrders/AtWorkVerb.cs:90`) carries the waits and how each joined, text and JSON.
+**e-iii** — the registry's readiness is told apart from an answered empty lane list, and the first registry answer wakes the read
+(today it emits no `Registry` scope, `Modules/Loop/DriverLoop.cs:1128`, and the placements start empty, `:1521`), proved by that
+ordering. **b-ii** — a taken lane quest moves to *This session* only when the entry holds its executing part (a chat's take
+writes `took` without changing the entry, `Daoris.Service.Core/Sessions/Sessions.cs:1969`); another chat taking the publisher's lane
+quest is in the proof. **d** — the `asks` snapshot is an existence dependency (its health, fence and wakes; `AsksStateSlice.cs:28`),
+valid-empty, unknown and deleted-after-opening proved apart; the session and ask answers are distinct branches, the ask's carrying
+entry summaries and no attended part (`work/atWork/types.ts:58`). And R11.1's line on `ParticipantWork.Of` is corrected: it returns
+neither `design` nor `brainstorm`, its fallback is `build` (`Participants/Domain/ParticipantWork.cs:73`); the eligibility set still
+covers it.
 
 ## 0. The case
 

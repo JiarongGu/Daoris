@@ -4,8 +4,10 @@ import { Button, Drawer, Inline, Prose, SkeletonRows } from '../../design/ui';
 import { useWidth } from '../../design/useWidth';
 import { isComposing } from '../../lib/composing';
 import { useDebounced } from '../../lib/useDebounced';
+import { fillAskDaoris, useCanFillAsk } from '../../help/askFill';
 import { registerOpenDraft } from '../../help/openDraft';
 import { sentence } from '../../locales/format';
+import { fingerprintOf } from '../draftFingerprint';
 import { EDIT_EVENT } from '../../menus/editing';
 import { isTextField } from '../../menus/press';
 import type { ChartEdit } from '../chart/FlowChart';
@@ -15,14 +17,16 @@ import type {
   WorkflowUseAnswer, WorkflowUseAsk,
 } from './answers';
 import { type Begin, draftFlow, EditCanvas } from './EditCanvas';
-import { refusalSaid, rowSaid, stepTitle } from './editWords';
+import { carriedSaid, rowSaid, stepTitle } from './editWords';
 import {
-  canInsertOn, type Clip, commit, connect, copySteps, draftOf, duplicateStep, emptyDraft, entriesOf, type GraphDraft, graphOf, historyOf,
+  canInsertOn, type Carried, type Clip, commit, connect, copySteps, draftOf, duplicateStep, emptyDraft, entriesOf, type GraphDraft, graphOf, historyOf,
   type InsertAt, insertStep, joinOf, moveInChain, movePlan, pasteSteps, redo, removeStep, removeWire, retarget, type StepChoice, targetsOf,
   undo, type WayRowKey, workflowIdFor,
 } from './graphDraft';
 import { type Confirming, Inspector, type InspectorActs } from './Inspector';
 import { presetName } from './presetWords';
+import { ToPutRight } from './Refusals';
+import { withRefusals } from './refusalMarks';
 import { type SaveTarget, SaveReview } from './SaveReview';
 import { StepPicker } from './StepPicker';
 
@@ -41,6 +45,10 @@ export type WorkflowEditorBridge = {
   onShow: (id: string | null) => void;
   /** The newest planned save's answer, and whether one is on its way. */
   judged: WorkflowSaveAnswer | null;
+  /** The fingerprint of the draft `judged` answered (`draftFingerprint.ts`); absent, the answer is not known to be of any draft. */
+  judgedOf?: string | null;
+  /** The fingerprint of the draft whose newest request failed. */
+  judgeFailed?: string | null;
   judging: boolean;
   onJudge: (ask: WorkflowSaveAsk) => void;
   saving: boolean;
@@ -59,6 +67,8 @@ export type WorkflowEditorProps = WorkflowEditorBridge & {
   /** The route and the pipeline the place opened it for, where the caller knows them: Ask Daoris is told them with the draft. */
   route?: string | null;
   pipeline?: 'development' | 'verification' | null;
+  /** The lines the place declares, which a landing's target is chosen from; none, and the target is typed. */
+  lines?: string[];
   onClose?: () => void;
 };
 
@@ -123,11 +133,12 @@ export function WorkflowEditor(props: WorkflowEditorProps) {
 
 /** The editor once its reads are answered, told whether its region holds the inspector beside the chart. */
 function Composing({
-  list, palette, roles, shown, onShow, judged, judging, onJudge, saving, onSave, using, onUse, place, startFrom, route = null, pipeline = null,
-  onClose, wide,
+  list, palette, roles, shown, onShow, judged, judgedOf = null, judgeFailed = null, judging, onJudge, saving, onSave, using, onUse, place, startFrom,
+  route = null, pipeline = null, lines, onClose, wide,
 }: WorkflowEditorProps & { list: WorkflowListAnswer; palette: WorkflowPaletteAnswer; wide: boolean }) {
   const { t, i18n } = useTranslation();
   const headId = useId();
+  const canAsk = useCanFillAsk();
   const inspectorId = useId();
   const region = useRef<HTMLElement>(null);
   // Where the focus goes back to when the picker is given up: a dialog with no trigger of its own gives back none.
@@ -183,6 +194,7 @@ function Composing({
 
   // Each change judged once it holds still, as the driver would save it, under the id it would be saved as.
   const graph = useMemo(() => graphOf(draft), [draft]);
+  const fingerprint = useMemo(() => fingerprintOf(graph), [graph]);
   const newId = workflowIdFor(target.name, target.from, list?.workflows.map((each) => each.id) ?? []);
   const saveId = target.base === null ? newId : target.id;
   const ask = useMemo((): WorkflowSaveAsk => ({
@@ -255,6 +267,9 @@ function Composing({
   const stepsAt = (id: string): string[] => (nodeOf(id) ? [id] : id.startsWith(HOLDS) ? holdsRun(id) : []);
 
   const words = (from: string, row: WayRowKey, to: string) => t('workflow.edit.said.way', { row: rowSaid(t, row), from: titleOf(from), to: titleOf(to) });
+  /** A change's words, with the inputs it proposed and the ones it leaves to ask about (SETUPUX1r). */
+  const carried = (said: string, next: GraphDraft, proposed: Carried[], steps: string[]) =>
+    [said, carriedSaid(t, i18n, palette, next, proposed, steps)].filter(Boolean).join(' ');
   const select = (id: string) => {
     setChosen(id);
     setConfirming(null);
@@ -279,7 +294,7 @@ function Composing({
     if (!at) return;
     const made = insertStep(palette, draft, choice, at);
     if (made.draft === draft) return;
-    change(made.draft, t('workflow.edit.said.added', { step: stepTitle(t, i18n, palette, choice) }));
+    change(made.draft, carried(t('workflow.edit.said.added', { step: stepTitle(t, i18n, palette, choice) }), made.draft, made.carried, [made.id]));
     setDrawer(false);
     setChosen(made.id);
     focusOn(made.id);
@@ -313,7 +328,7 @@ function Composing({
     const to = takerAt(id);
     const made = to === null ? null : connect(palette, draft, choosing.from, choosing.row, to);
     if (!made || to === null) return;
-    change(made.draft, words(choosing.from, choosing.row, to));
+    change(made.draft, carried(words(choosing.from, choosing.row, to), made.draft, made.carried, [to]));
     setChoosing(null);
   };
   const giveUp = () => {
@@ -392,8 +407,12 @@ function Composing({
     }
   };
 
-  // The judgement: each refusal at the step or the way it names, and a door from the head to that step.
-  const problems = draft.nodes.length > 0 && judged && !judged.done ? judged.problems ?? [] : [];
+  // The judgement (FLOWCHART2c): the newest answer, only while it is of the draft held now. An edit makes it invalid at once, before the
+  // change is asked; a failed request leaves it so; undoing to the draft it judged takes it back.
+  const judgement = judged && judgedOf === fingerprint ? judged : null;
+  const unjudged = judgement === null && judgeFailed === fingerprint && !judging && settled === ask;
+  // Each refusal at the step or the way it names, and a door from the head to that step.
+  const problems = draft.nodes.length > 0 && judgement && !judgement.done ? judgement.problems ?? [] : [];
   const stepOf = (problem: GraphProblem): string | null => {
     const wire = problem.wire ? wireOf(problem.wire) : undefined;
     if (wire?.from && nodeOf(wire.from)) return wire.from;
@@ -411,9 +430,11 @@ function Composing({
   const atStep = (id: string) => problems.filter((problem) => problem.node === id && !(problem.wire && wireOf(problem.wire)));
   const atWire = (id: string) => problems.filter((problem) => problem.wire === id);
   const holdRefused = draft.nodes.some((node) => isHoldKind(node.kind) && problems.some((problem) => stepOf(problem) === node.id));
+  // A refusal inside the holds opens them and they stay open: the judgement goes invalid on the next edit, and the drawing must not jump.
+  useEffect(() => { if (holdRefused) setHoldsOpen(true); }, [holdRefused]);
 
   const flow = draft.nodes.length > 0
-    ? draftFlow(t, i18n, palette, draft, { open: holdsOpen || holdRefused, toggle: () => setHoldsOpen((was) => !was) }, select)
+    ? withRefusals(t, i18n, draftFlow(t, i18n, palette, draft, { open: holdsOpen || holdRefused, toggle: () => setHoldsOpen((was) => !was) }, select), problems)
     : null;
 
   const edit: ChartEdit = {
@@ -468,7 +489,7 @@ function Composing({
     if (first) focusOn(first);
   };
 
-  const scopes = target.base !== null && judged?.appended ? judged.scopes : [];
+  const scopes = target.base !== null && judgement?.appended ? judgement.scopes : [];
   const save = async () => {
     try {
       const answer = await onSave({
@@ -504,11 +525,11 @@ function Composing({
         return;
       }
       const next = retarget(palette, draft, wire.id, to);
-      if (next) change(next, words(id, row, to));
+      if (next) change(next, carried(words(id, row, to), next, [], [to]));
     },
     onAdd: (row, to) => {
       const made = connect(palette, draft, id, row, to);
-      if (made) change(made.draft, words(id, row, to));
+      if (made) change(made.draft, carried(words(id, row, to), made.draft, made.carried, [to]));
     },
     onPick: (row) => choose(id, row),
     onNew: (row) => openPicker({ from: id, row }),
@@ -523,7 +544,7 @@ function Composing({
     onRemove: (options) => remove(id, options),
   });
   const inspector = node && (
-    <Inspector palette={palette} draft={draft} roles={roles} node={node} titleOf={titleOf}
+    <Inspector palette={palette} draft={draft} roles={roles} lines={lines} node={node} titleOf={titleOf}
       problems={{ atStep: atStep(node.id), atWire }} confirming={confirming} onConfirm={setConfirming} acts={acts(node.id)} />
   );
 
@@ -544,33 +565,24 @@ function Composing({
 
       {draft.nodes.length > 0 && (
         <div aria-live="polite" className="grid min-w-0 gap-1">
-          {judging ? <p className="m-0 text-small text-ink-soft">{t('workflow.edit.judge.judging')}</p>
-            : judged?.done ? <p className="m-0 text-small text-ink">{t('workflow.edit.judge.holds')}</p>
-              : judged ? (
-                <>
-                  <p className="m-0 text-small text-ink">{t('workflow.edit.problems.count', { count: problems.length })}</p>
-                  {problems.length > 0 ? (
-                    <ul className="m-0 grid list-none gap-0.5 p-0">
-                      {problems.map((problem, at) => {
-                        const step = stepOf(problem);
-                        const refused = refusalSaid(t, i18n, problem);
-                        return (
-                          <li key={at} className="min-w-0 text-small">
-                            {step
-                              ? (
-                                <button type="button" onClick={() => { select(step); focusOn(step); }}
-                                  className="cursor-pointer border-0 bg-transparent p-0 text-left text-ink-danger underline-offset-2 hover:underline">
-                                  {t('workflow.edit.problems.at', { step: titleOf(step), words: refused })}
-                                </button>
-                              )
-                              : <span className="text-ink-danger"><Inline text={refused} /></span>}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  ) : judged.message && <Prose className="text-small"><Inline text={judged.message} /></Prose>}
-                </>
-              ) : null}
+          {judgement?.done ? <p className="m-0 text-small text-ink">{t('workflow.edit.judge.holds')}</p>
+            : judgement ? (
+              <>
+                <p className="m-0 text-small text-ink">{t('workflow.edit.problems.count', { count: problems.length })}</p>
+                {problems.length > 0 ? (
+                  <ToPutRight
+                    items={problems.map((problem) => {
+                      const step = stepOf(problem);
+                      return { problem, step, title: step ? titleOf(step) : null };
+                    })}
+                    onDoor={(step) => { select(step); focusOn(step); }}
+                    {...(canAsk ? { onAsk: (words: string) => { fillAskDaoris(words); } } : {})}
+                  />
+                ) : judgement.message && <Prose className="text-small"><Inline text={judgement.message} /></Prose>}
+              </>
+            )
+              : unjudged ? <p className="m-0 text-small text-ink">{t('workflow.edit.judge.failed')}</p>
+                : <p className="m-0 text-small text-ink-soft">{t('workflow.edit.judge.judging')}</p>}
         </div>
       )}
 

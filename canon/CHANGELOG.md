@@ -12,6 +12,14 @@ network.
 
 ## Unreleased
 
+- **`co-working` gains a section, *handing work out*, for a lead and a chat.** A roadmap of rows that can each be
+  checked on its own goes to the repository's own lanes as quests, one per row, when the line the service told the
+  session at its start says the way is open (a chat also only where its person asked); told nothing, a session
+  works its rows itself. Work the next step builds on is kept, a question goes to a helper, reads to subagents. After
+  publishing, a lead commits and either finishes its quest naming what it handed on or waits on exactly one quest for
+  its answer; a chat says what it published, ends its turn and never waits. **Adopting repositories:** run
+  `daoris sync`; nothing else. Only the skill's description is loaded unasked.
+
 - **A new knowledge document, `current-knowledge`, says how to keep what is written current.** Write only
   what the code cannot say; give each current fact one home, rewrite it when the fact changes and retire what
   it replaced, in an agent's memory as in files; keep history apart from the present; and make tests pin
