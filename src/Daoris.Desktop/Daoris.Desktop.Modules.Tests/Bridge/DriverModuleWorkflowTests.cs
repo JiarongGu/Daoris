@@ -390,16 +390,17 @@ public sealed class DriverModuleWorkflowTests : DriverModuleBridge
         Assert.Equal(WorkflowDefaults.All.Select(each => each.Id), presets.Select(each => each.GetProperty("id").GetString()));
         foreach (var (shipped, preset) in WorkflowDefaults.All.Zip(presets))
         {
-            Assert.Equal((shipped.For.En, shipped.For.Zh), (preset.GetProperty("for").GetProperty("en").GetString(), preset.GetProperty("for").GetProperty("zh").GetString()));
+            Assert.Equal((shipped.Name, shipped.For), (preset.GetProperty("name").GetString(), preset.GetProperty("for").GetString()));
+            Assert.False(preset.TryGetProperty("names", out _), "the list carries no per-language field");
             Assert.Equal((shipped.Order, shipped.SetUp), (preset.GetProperty("order").GetInt32(), preset.GetProperty("setUp").GetBoolean()));
             var delivery = preset.GetProperty("delivery");
             Assert.Equal((shipped.Delivery.Method, shipped.Delivery.Accept), (delivery.GetProperty("method").GetString(), delivery.GetProperty("accept").GetString()));
             Assert.Equal(shipped.Delivery.Plugin, delivery.TryGetProperty("plugin", out var plugin) ? plugin.GetString() : null);
             Assert.Equal(shipped.Delivery.Request, delivery.TryGetProperty("request", out var request) ? request.GetString() : null);
             Assert.Equal(
-                (shipped.DeliveryWords.Names.En, shipped.DeliveryWords.Names.Zh, shipped.DeliveryWords.For.En, shipped.DeliveryWords.For.Zh),
-                (delivery.GetProperty("names").GetProperty("en").GetString(), delivery.GetProperty("names").GetProperty("zh").GetString(),
-                    delivery.GetProperty("for").GetProperty("en").GetString(), delivery.GetProperty("for").GetProperty("zh").GetString()));
+                (shipped.DeliveryWords.Id, shipped.DeliveryWords.Name, shipped.DeliveryWords.For),
+                (delivery.GetProperty("id").GetString(), delivery.GetProperty("name").GetString(), delivery.GetProperty("for").GetString()));
+            Assert.False(delivery.TryGetProperty("names", out _), "the delivery carries no per-language field");
         }
 
         Assert.Equal(WorkflowDefaults.All.Count, presets.Count);

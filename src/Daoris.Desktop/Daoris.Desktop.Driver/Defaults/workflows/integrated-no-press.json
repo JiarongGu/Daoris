@@ -1,18 +1,12 @@
 {
   "id": "integrated-no-press",
   "order": 7,
-  "names": { "en": "No-press integration workflow", "zh": "免按键集成工作流" },
-  "for": {
-    "en": "For a line whose gates the repository declares and accepted: each piece of work is integrated into the line once its agent is done.",
-    "zh": "适用于仓库已声明并采纳其检查项的主线：每项工作在其智能体完成后即集成到主线。"
-  },
+  "name": "No-press integration workflow",
+  "for": "For a line whose gates the repository declares and accepted: each piece of work is integrated into the line once its agent is done.",
   "delivery": {
-    "method": "integrate", "accept": "automatic", "plugin": "none", "request": "done",
-    "names": { "en": "Integrated with no press", "zh": "集成入主线，无需按键" },
-    "for": {
-      "en": "For a line whose gates the repository declares and accepted: each piece of work is integrated into the line once its agent is done.",
-      "zh": "适用于仓库已声明并采纳其检查项的主线：每项工作在其智能体完成后即集成到主线。"
-    }
+    "id": "integrated-no-press", "method": "integrate", "accept": "automatic", "plugin": "none", "request": "done",
+    "name": "Integrated with no press",
+    "for": "For a line whose gates the repository declares and accepted: each piece of work is integrated into the line once its agent is done."
   },
   "setUp": false,
   "graph": {

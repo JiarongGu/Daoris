@@ -1,18 +1,12 @@
 {
   "id": "integrated",
   "order": 6,
-  "names": { "en": "Reviewed integration workflow", "zh": "审阅集成工作流" },
-  "for": {
-    "en": "For a line that integrates its work: you review the work onto a branch, and you ask for it to be integrated into the line.",
-    "zh": "适用于集成其工作的主线：由你审阅工作并采纳到分支上，再由你请求把它集成到主线。"
-  },
+  "name": "Integration workflow",
+  "for": "For a line that integrates its work: you review the work onto a branch, and you ask for it to be integrated into the line.",
   "delivery": {
-    "method": "integrate", "accept": "you", "plugin": "none", "request": "owner",
-    "names": { "en": "Integrated into the line", "zh": "集成到主线" },
-    "for": {
-      "en": "For a line that integrates its work: you review the work onto a branch, and you ask for it to be integrated into the line.",
-      "zh": "适用于集成其工作的主线：由你审阅工作并采纳到分支上，再由你请求把它集成到主线。"
-    }
+    "id": "integrated", "method": "integrate", "accept": "you", "plugin": "none", "request": "owner",
+    "name": "Integrated into the line",
+    "for": "For a line that integrates its work: you review the work onto a branch, and you ask for it to be integrated into the line."
   },
   "setUp": true,
   "graph": {

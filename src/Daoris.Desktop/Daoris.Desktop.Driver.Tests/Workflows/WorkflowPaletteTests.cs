@@ -75,6 +75,25 @@ public sealed class WorkflowPaletteTests
         Assert.DoesNotContain(WireKinds.Rejected, step.Leaves);
     }
 
+    /// <summary>SETUPUX1f: a step's title and about reach the palette as its manifest wrote them, and a step without them carries none.</summary>
+    [Fact]
+    public void A_step_s_title_and_about_are_carried_and_a_step_without_carries_none()
+    {
+        var titled = new NodeDeclaration("find", "local-release/find", 1, NodeReach.Performed)
+        {
+            Title = new StepWords("Find a pending release", "查找待发版本"), About = new StepWords("Looks for a release.", "查看是否有待发的版本。"),
+        };
+        var bare = new NodeDeclaration("release", "local-release/release", 1, NodeReach.Performed);
+
+        var steps = Assert.Single(WorkflowPalette.Build([("local-release", [titled, bare])]).Plugins).Steps;
+
+        Assert.Equal((titled.Title, titled.About), (steps[0].Title, steps[0].About));
+        Assert.Equal((null, null), (steps[1].Title, steps[1].About));
+        var wire = System.Text.Json.JsonSerializer.SerializeToNode(steps[0], new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase })!;
+        Assert.Equal("查找待发版本", (string?)wire["title"]!["zh"]);
+        Assert.Equal("Looks for a release.", (string?)wire["about"]!["en"]);
+    }
+
     [Fact]
     public void A_plugins_declared_steps_are_listed_under_it()
     {

@@ -79,9 +79,6 @@ public sealed record WorkflowPresetListed(string Id, string Name, bool Graph, st
     /// <summary>A graph preset's graph as a version saves it, which the step editor starts from; null for one of steps.</summary>
     public JsonNode? Body { get; init; }
 
-    /// <summary>A default's names in English and Chinese, Daoris's own; null for a preset that is no default.</summary>
-    public ShippedWords? Names { get; init; }
-
     /// <summary>The default itself, for its purpose, order, whether the set-up offers it and its delivery (SETUPUX1a); null for a preset that is no default.</summary>
     public WorkflowDefault? Default { get; init; }
 }
@@ -814,7 +811,7 @@ public static class WorkflowOperations
                 WorkflowNamed.ElementOf(preset.Steps()), 1, null).Steps!)))
             .Concat(WorkflowPresets.GraphTable.Select(preset => new WorkflowPresetListed(preset.Id, preset.Name, true, WorkflowPresets.GraphLine(preset.Graph()))
             {
-                Body = preset.Graph(), Names = WorkflowDefaults.Of(preset.Id)?.Names, Default = WorkflowDefaults.Of(preset.Id),
+                Body = preset.Graph(), Default = WorkflowDefaults.Of(preset.Id),
             }))
             .ToArray();
         return (saved, presets);

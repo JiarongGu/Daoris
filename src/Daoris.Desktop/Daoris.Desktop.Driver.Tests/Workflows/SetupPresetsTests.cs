@@ -33,7 +33,7 @@ public sealed class SetupPresetsTests
     public void The_presets_after_not_driven_are_the_defaults_the_set_up_offers()
     {
         Assert.Equal(
-            WorkflowDefaults.All.Where(each => each.SetUp).Select(each => (each.Id, each.DeliveryWords.Names.En, (SetupLand?)each.Delivery)),
+            WorkflowDefaults.All.Where(each => each.SetUp).Select(each => (each.Id, each.DeliveryWords.Name, (SetupLand?)each.Delivery)),
             SetupPresets.Table.Skip(1).Select(preset => (preset.Id, preset.Name, preset.Land)));
         Assert.All([SetupPresets.Merge, SetupPresets.Branch, SetupPresets.PullRequest, SetupPresets.Integrated],
             id => Assert.True(WorkflowDefaults.Of(id)?.SetUp, id));

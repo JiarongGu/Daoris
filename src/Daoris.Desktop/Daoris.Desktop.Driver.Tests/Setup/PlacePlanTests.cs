@@ -232,7 +232,7 @@ public sealed class PlacePlanTests
     internal static void SaveWorkflow(string home, string id)
     {
         var shipped = WorkflowDefaults.Of(SetupPresets.Merge)!;
-        var planned = WorkflowOperations.PlanGraph(home, null, id, null, shipped.Names.En, "terminal", "2026-11-01T09:00:00Z", shipped.Graph(),
+        var planned = WorkflowOperations.PlanGraph(home, null, id, null, shipped.Name, "terminal", "2026-11-01T09:00:00Z", shipped.Graph(),
             new WorkflowFrom(shipped.Id, shipped.Digest));
         WorkflowPorts.Store(home).Write(id, planned.Plan.Result!);
     }

@@ -8,7 +8,11 @@
 // - budget: a label is no longer than its kind's budget, English in characters and Chinese in units;
 // - form: case by kind, no closing stop or colon, one ellipsis, no pronoun on a Chinese button, Latin set
 //   apart from Chinese and no Latin punctuation inside it;
-// - door: a door says its destination's name.
+// - door: a door says its destination's name;
+// - distinct: no workflow, delivery or step name holds another kind's whole name, in either language
+//   (SETUPUX1g; the glossary's `distinct` lists, D221 §2.5);
+// - reword: a word a term lists under `avoid.later` is one the Setup design's rewording row (SETUPUX1w) will
+//   forbid. Strings that still say it are reported, so that row has its list; nothing fails on it yet.
 //
 // Alone it REPORTS and exits 0. It exits 2 when the glossary itself is malformed, since a glossary that
 // cannot be read has stopped checking anything. `--strict` exits 1 on a glossary, form or door finding
@@ -37,6 +41,8 @@ const WIDE = /[—…“”⺀-鿿豈-﫿︰-﹏＀-￯]/;
 const HAN = '\\u4e00-\\u9fff';
 const PLACEHOLDER = /\{\{\s*([\w.]+)[^}]*\}\}/g;
 const CODE = /`[^`\n]+`/g;
+/** The kinds of name that never hold one another's (SETUPUX1g, D221 §2.5). */
+const DISTINCT = ['workflow', 'delivery', 'step'];
 
 /** A glossary, both catalogues, read from the web's own locales. */
 export function load(root = LOCALES) {
@@ -129,6 +135,27 @@ export function validate(glossary, en, zh) {
   for (const { door, opens } of glossary.doors ?? []) {
     for (const key of [door, opens]) if (!(key in en) || !(key in zh)) problems.push(`door ${door}: ${key} is not a key in both catalogues`);
   }
+  // The names of workflows, deliveries and steps (SETUPUX1g): each a pair of names, once in a kind and language.
+  for (const [what, names] of Object.entries(glossary.distinct ?? {})) {
+    if (what.startsWith('_')) continue;
+    if (!DISTINCT.includes(what)) problems.push(`distinct: ${what} is not one of ${DISTINCT.join(', ')}`);
+    if (!Array.isArray(names)) {
+      problems.push(`distinct: ${what} is not a list of names`);
+      continue;
+    }
+    for (const language of ['en', 'zh']) {
+      const seen = new Set();
+      for (const name of names) {
+        const said = name?.[language];
+        if (typeof said !== 'string' || !said.trim()) {
+          problems.push(`distinct: the ${what} name ${JSON.stringify(name?.en ?? name?.zh)} has no ${language === 'en' ? 'English' : 'Chinese'} name`);
+          continue;
+        }
+        if (seen.has(said.toLowerCase())) problems.push(`distinct: the ${what} name ${said} is written twice`);
+        seen.add(said.toLowerCase());
+      }
+    }
+  }
   // An acceptance names a label the catalogues hold, the name it accepted in one language or both, and why.
   const kindFor = kindOf({ ...glossary, kinds });
   for (const { key, en: english, zh: chinese, why } of glossary.accepted?.names ?? []) {
@@ -195,6 +222,10 @@ export function check(glossary, en, zh, { all = false } = {}) {
         .sort((a, b) => b.length - a.length);
       const rest = names.reduce((text, name) => text.split(name).join('¤'), chinese);
       for (const word of term.avoid.zh) if (rest.includes(word)) note(key, kind, 'glossary', 'zh', `says ${word} for ${term.term}, which is ${term.zh}`);
+      // A word the rewording row will forbid (SETUPUX1w): reported with its keys, so that row has its list, and it fails nothing yet.
+      for (const word of term.avoid.later?.zh ?? []) {
+        if (rest.includes(word)) note(key, kind, 'reword', 'zh', `says ${word} for ${term.term}, which is ${term.zh}`);
+      }
     }
     for (const term of glossary.terms) {
       const target = term.use ? byTerm.get(term.use) : term;
@@ -269,6 +300,25 @@ export function check(glossary, en, zh, { all = false } = {}) {
       note(door, kind, 'door', 'zh', `opens ${opens} (「${zh[opens]}」) and does not say its name`);
     }
   }
+  // The names of workflows, deliveries and steps: no name holds the whole name of another kind, in either language (SETUPUX1g).
+  for (const [what, names] of Object.entries(glossary.distinct ?? {})) {
+    if (!DISTINCT.includes(what)) continue;
+    for (const [other, others] of Object.entries(glossary.distinct)) {
+      if (other === what || !DISTINCT.includes(other)) continue;
+      for (const language of ['en', 'zh']) {
+        for (const name of names) {
+          for (const inside of others) {
+            if (!name[language].toLowerCase().includes(inside[language].toLowerCase())) continue;
+            const at = `distinct:${what}:${name[language]}|distinct|${language}`;
+            const message = `holds the ${other} name "${inside[language]}"`;
+            const found = findings.get(at);
+            if (found) found.message += `; ${message}`;
+            else findings.set(at, { key: `distinct:${what}:${name[language]}`, kind: what, rule: 'distinct', language, message, value: name[language] });
+          }
+        }
+      }
+    }
+  }
   return [...findings.values()];
 }
 
@@ -277,9 +327,9 @@ export function report(findings, { labels, accepted } = {}) {
   const count = (rule, language) => findings.filter((finding) => finding.rule === rule && (!language || finding.language === language)).length;
   const lines = [
     `names-check: ${labels ?? '?'} label keys; ${findings.length} findings — `
-      + ['glossary', 'budget', 'form', 'door'].map((rule) => `${rule} ${count(rule)} (en ${count(rule, 'en')}, zh ${count(rule, 'zh')})`).join(', ')
+      + ['glossary', 'budget', 'form', 'door', 'distinct', 'reword'].map((rule) => `${rule} ${count(rule)} (en ${count(rule, 'en')}, zh ${count(rule, 'zh')})`).join(', ')
       + (accepted === undefined ? '' : `; ${accepted} budget judgements accepted in the glossary`),
-    'Under --strict (the build runs it) a glossary, form or door finding fails; the budgets are a report and never fail (D54).',
+    'Under --strict (the build runs it) a glossary, form, door or distinct finding fails; the budgets are a report and never fail (D54), and neither does a reword, a word the rewording row (SETUPUX1w) will forbid.',
   ];
   const order = (finding) => `${KINDS.indexOf(finding.kind).toString().padStart(2, '0')}|${finding.key}|${finding.rule}|${finding.language}`;
   for (const finding of [...findings].sort((a, b) => order(a).localeCompare(order(b)))) {
@@ -288,9 +338,9 @@ export function report(findings, { labels, accepted } = {}) {
   return lines.join('\n');
 }
 
-/** The exit code: 1 under --strict when a fact is found (glossary, form, door), never for a budget. */
+/** The exit code: 1 under --strict when a fact is found (glossary, form, door, distinct), never for a budget or a reword. */
 export function verdict(findings, { strict }) {
-  return strict && findings.some((finding) => finding.rule !== 'budget') ? 1 : 0;
+  return strict && findings.some((finding) => finding.rule !== 'budget' && finding.rule !== 'reword') ? 1 : 0;
 }
 
 if (isMain(import.meta.url)) {

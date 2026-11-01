@@ -65,7 +65,7 @@ public static class WorkflowPresets
     /// </summary>
     public static IReadOnlyList<WorkflowGraphPreset> GraphTable { get; } =
     [
-        .. WorkflowDefaults.All.Select(shipped => new WorkflowGraphPreset(shipped.Id, shipped.Names.En, shipped.GraphJson,
+        .. WorkflowDefaults.All.Select(shipped => new WorkflowGraphPreset(shipped.Id, shipped.Name, shipped.GraphJson,
             NoPress: shipped.Delivery is { Method: LandNodes.Integrate, Accept: SetupLand.Automatic })),
     ];
 

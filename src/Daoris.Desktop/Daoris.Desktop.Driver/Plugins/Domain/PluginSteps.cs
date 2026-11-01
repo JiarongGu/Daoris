@@ -215,6 +215,10 @@ public static class PluginSteps
             }
         }
 
+        // SETUPUX1f: the words a person reads the step by; absent is none, so a manifest written before reads as it did.
+        if (!ReadWords(row, "title", StepWords.TitleMost, oneLine: true, out var title)) return Broken("title");
+        if (!ReadWords(row, "about", StepWords.AboutMost, oneLine: false, out var about)) return Broken("about");
+
         NodePerform? perform = null;
         if (row.TryGetProperty("perform", out var declaredPerform))
         {
@@ -253,6 +257,8 @@ public static class PluginSteps
             Perform = perform,
             Outcomes = outcomes,
             OutputsOn = carried,
+            Title = title,
+            About = about,
         };
 
         if (NodeOutcomes.OutputsOnProblem(step) is not null) return Broken("outputsOn");
@@ -278,6 +284,26 @@ public static class PluginSteps
         }
 
         return ports;
+    }
+
+    /// <summary>
+    /// A step's <paramref name="field"/> of words, <c>{ "en": …, "zh": … }</c>: none where absent (true), else both languages as text that is
+    /// not blank, within <paramref name="most"/> characters and, for a title, on one line; false for anything else. Other keys are passed over.
+    /// </summary>
+    private static bool ReadWords(JsonElement row, string field, int most, bool oneLine, out StepWords? words)
+    {
+        words = null;
+        if (!row.TryGetProperty(field, out var declared)) return true;
+        if (declared.ValueKind != JsonValueKind.Object) return false;
+        string? Language(string name) =>
+            declared.TryGetProperty(name, out var text) && text.ValueKind == JsonValueKind.String
+            && text.GetString() is { } said && !string.IsNullOrWhiteSpace(said) && said.Length <= most
+            && !(oneLine && said.AsSpan().ContainsAny('\r', '\n'))
+                ? said
+                : null;
+        if (Language("en") is not { } en || Language("zh") is not { } zh) return false;
+        words = new StepWords(en, zh);
+        return true;
     }
 
     /// <summary>A schema's name (<see cref="IsSchema"/>), or null.</summary>
@@ -368,6 +394,8 @@ public static class PluginSteps
         "rejectable" => $"step `{name}`'s `rejectable` must be `true` or `false`: whether the person may reject it.",
         "outcomes" => $"step `{name}`'s `outcomes` must list the routes it may reach with, {NodeOutcomes.Fewest} to {NodeOutcomes.Most} names in lowercase words joined by dashes, once each and never a state's name.",
         "outputsOn" => $"step `{name}`'s `outputsOn` must name, for an output it declares, the outcomes that carry it, one or more of its `outcomes` once each; an output it leaves out is carried on every reach.",
+        "title" => $"step `{name}`'s `title` must be an object with an `en` and a `zh`, each one line of words, at most {StepWords.TitleMost} characters: the step's name where a person reads it.",
+        "about" => $"step `{name}`'s `about` must be an object with an `en` and a `zh`, each a sentence of what the step does, at most {StepWords.AboutMost} characters.",
         "perform" => $"step `{name}`'s `perform` is a `performed` step's alone: an object whose `point`, where it names one, is `work/perform`.",
         PluginStepCodes.Idempotent => $"step `{name}`'s `idempotent` must be `true` or `false`: whether the plugin deduplicates a redelivered key.",
         PluginStepCodes.Reconcile => $"step `{name}`'s `reconcile` must be `work/reconcile`, the point that answers what became of an attempt.",

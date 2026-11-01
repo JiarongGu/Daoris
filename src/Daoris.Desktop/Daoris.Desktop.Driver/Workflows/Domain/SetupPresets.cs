@@ -62,7 +62,7 @@ public static class SetupPresets
     public static IReadOnlyList<SetupPreset> Table { get; } =
     [
         new(NotDriven, "Not driven", null),
-        .. WorkflowDefaults.All.Where(shipped => shipped.SetUp).Select(shipped => new SetupPreset(shipped.Id, shipped.DeliveryWords.Names.En, shipped.Delivery)),
+        .. WorkflowDefaults.All.Where(shipped => shipped.SetUp).Select(shipped => new SetupPreset(shipped.Id, shipped.DeliveryWords.Name, shipped.Delivery)),
     ];
 
     /// <summary>

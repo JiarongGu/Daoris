@@ -13,20 +13,19 @@ export type SavedWorkflow = {
 };
 
 /**
- * A preset built in, never stored until saved: a graph's `body` as a version saves it, which the step editor starts from, and a default's
- * names in both languages (WORKFLOWEDIT1b); a driver before them leaves both out. A default also says what it is `for`, its `order`,
- * whether the place's set-up offers it (`setUp`) and its `delivery` with the delivery's own names and purpose (SETUPUX1a); a driver
- * before that leaves them out, and a preset that is no default carries them null.
+ * A preset built in, never stored until saved: a graph's `body` as a version saves it, which the step editor starts from. A default's
+ * `name` is the driver's English one (the page words it from its catalogue by `id`, `presetWords.ts`); it also says what it is `for`
+ * (English, likewise), its `order`, whether the place's set-up offers it (`setUp`) and its `delivery` (SETUPUX1a). A driver before that
+ * leaves them out, and a preset that is no default carries them null. The data holds no per-language field.
  */
 export type PresetWorkflow = {
-  id: string; name: string; graph: boolean; line: string; preset: true; body?: unknown; names?: { en: string; zh: string } | null;
-  for?: { en: string; zh: string } | null; order?: number | null; setUp?: boolean | null; delivery?: PresetDelivery | null;
+  id: string; name: string; graph: boolean; line: string; preset: true; body?: unknown;
+  for?: string | null; order?: number | null; setUp?: boolean | null; delivery?: PresetDelivery | null;
 };
 
-/** The `land` options a default's delivery sets, with the delivery's names and purpose, which are not the workflow's. */
+/** The `land` options a default's delivery sets, with its own `id`, English name and purpose, which are not the workflow's. */
 export type PresetDelivery = {
-  method: string; accept: 'you' | 'automatic'; plugin?: string | null; request?: string | null;
-  names: { en: string; zh: string }; for: { en: string; zh: string };
+  id: string; method: string; accept: 'you' | 'automatic'; plugin?: string | null; request?: string | null; name: string; for: string;
 };
 
 /** `use` lists what `WORKFLOW_USE` can be asked beside a plain press (`plan`, SETUPUX1c), absent from a driver before it. */
@@ -58,11 +57,14 @@ export type PaletteWire = { kind: string; eligibility: boolean; from: string[] |
 /**
  * A plugin's step as its manifest declares it, which a graph's node copies, with the wire kinds that may leave it. `outputsOn` (DECIDE1d)
  * names, for an output carried on some outcomes alone, those outcomes; an output it leaves out is carried on every reach, and it is absent
- * from a driver before it.
+ * from a driver before it. `title` and `about` (SETUPUX1f) are the manifest's words in en and zh, null or absent where it declares none.
  */
+export type StepWords = { en: string; zh: string };
+
 export type PaletteStep = {
   kind: string; version: number; reach: string; rejectable: boolean; skippable: boolean; inputs: Record<string, string>;
   outputs: Record<string, string>; evidence: string | null; outcomes: string[]; outputsOn?: Record<string, string[]>; leaves: string[];
+  title?: StepWords | null; about?: StepWords | null;
 };
 
 export type PalettePlugin = { plugin: string; steps: PaletteStep[] };

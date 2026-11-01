@@ -6,6 +6,7 @@ import { Button, CheckField, Inline, Pill, Prose, SelectField, SkeletonRows } fr
 import { useDebounced } from '../../lib/useDebounced';
 import { sentence } from '../../locales/format';
 import { WORKFLOW_TRACK } from '../workflowFlow';
+import { presetName } from './presetWords';
 import type {
   EditorRole, GraphProblem, WorkflowListAnswer, WorkflowPaletteAnswer, WorkflowSaveAnswer, WorkflowSaveAsk, WorkflowScopeRow, WorkflowShownAnswer,
   WorkflowUseAnswer, WorkflowUseAsk,
@@ -197,7 +198,7 @@ export function WorkflowEditor({
     setWaiting(null);
     const preset = value.startsWith(DEFAULT) ? list.presets.find((each) => each.id === value.slice(DEFAULT.length)) : undefined;
     setDraft(preset ? draftOf(preset.body) : emptyDraft());
-    setTarget({ ...NEW, name: preset ? (preset.names ? (i18n.language.startsWith('zh') ? preset.names.zh : preset.names.en) : preset.name) : '' });
+    setTarget({ ...NEW, name: preset ? presetName(t, i18n, preset) : '' });
   };
 
   const scopes: WorkflowScopeRow[] = target.base !== null && judged?.appended ? judged.scopes : [];
@@ -227,7 +228,6 @@ export function WorkflowEditor({
     }
   };
 
-  const language = i18n.language.startsWith('zh') ? 'zh' : 'en';
   const flow = draft.nodes.length > 0 ? draftFlow(t, i18n, draft, t('workflow.edit.step.ends')) : null;
 
   return (
@@ -247,7 +247,7 @@ export function WorkflowEditor({
           options={[
             { value: EMPTY, label: t('workflow.edit.source.empty') },
             ...list.presets.filter((preset) => preset.graph && preset.body).map((preset) => ({
-              value: `${DEFAULT}${preset.id}`, label: preset.names?.[language] ?? preset.name, group: t('workflow.edit.source.defaults'),
+              value: `${DEFAULT}${preset.id}`, label: presetName(t, i18n, preset), group: t('workflow.edit.source.defaults'),
             })),
             ...list.workflows.filter((saved) => saved.schema === 2 && !saved.problem).map((saved) => ({
               value: `${SAVED}${saved.id}`, group: t('workflow.edit.source.saved'),

@@ -1,18 +1,12 @@
 {
   "id": "branch-to-push",
   "order": 4,
-  "names": { "en": "Branch workflow", "zh": "分支工作流" },
-  "for": {
-    "en": "For a repository you push yourself: you review the work, and it lands on a branch of its own for you to push.",
-    "zh": "适用于由你自己推送的仓库：由你审阅工作，它落地到自己的分支上，留给你推送。"
-  },
+  "name": "Branch workflow",
+  "for": "For a repository you push yourself: you review the work, and it lands on a branch of its own for you to push.",
   "delivery": {
-    "method": "branch", "accept": "you", "plugin": "none",
-    "names": { "en": "A branch to push", "zh": "留给你推送的分支" },
-    "for": {
-      "en": "For a repository you push yourself: you review the work, and it lands on a branch of its own for you to push.",
-      "zh": "适用于由你自己推送的仓库：由你审阅工作，它落地到自己的分支上，留给你推送。"
-    }
+    "id": "branch-to-push", "method": "branch", "accept": "you", "plugin": "none",
+    "name": "A branch to push",
+    "for": "For a repository you push yourself: you review the work, and it lands on a branch of its own for you to push."
   },
   "setUp": true,
   "graph": {

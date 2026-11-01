@@ -1,18 +1,12 @@
 {
   "id": "merge-after-accept",
   "order": 1,
-  "names": { "en": "Reviewed merge workflow", "zh": "审阅合并工作流" },
-  "for": {
-    "en": "For a repository whose work you accept: once the work's requests are answered you review it, and it merges into the line.",
-    "zh": "适用于由你采纳工作的仓库：工作的请求答复后由你审阅，然后合并到主线。"
-  },
+  "name": "Merge workflow",
+  "for": "For a repository whose work you accept: once the work's requests are answered you review it, and it merges into the line.",
   "delivery": {
-    "method": "merge", "accept": "you",
-    "names": { "en": "Merge after you accept", "zh": "你采纳后合并" },
-    "for": {
-      "en": "For a repository whose work you accept: once the work's requests are answered you review it, and it merges into the line.",
-      "zh": "适用于由你采纳工作的仓库：工作的请求答复后由你审阅，然后合并到主线。"
-    }
+    "id": "merge-after-accept", "method": "merge", "accept": "you",
+    "name": "Merge after you accept",
+    "for": "For a repository whose work you accept: once the work's requests are answered you review it, and it merges into the line."
   },
   "setUp": true,
   "graph": {
