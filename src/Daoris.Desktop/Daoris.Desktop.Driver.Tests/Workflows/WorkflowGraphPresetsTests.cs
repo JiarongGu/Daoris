@@ -160,7 +160,7 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
     {
         var graph = ReleaseGraph();
         var g = new WireEvaluationTests.Graph([.. graph.Nodes], [.. graph.Wires]);
-        foreach (var id in new[] { "work", "requests", "check", "review", "landing", "line" }) g.Through(id);
+        foreach (var id in new[] { "work", "requests", "holds", "content", "check", "review", "landing", "line" }) g.Through(id);
 
         void ReachAs(string id, string? said, bool port)
         {
@@ -259,7 +259,7 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
             ["\"pull-request\"", "\"w/{quest}\"", "\"acme.pr\""],
             [land.Options["method"], land.Options["pattern"], land.Options["plugin"]]);
         Assert.DoesNotContain(LandNodes.AcceptOption, land.Options.Keys);
-        Assert.Equal(["claimed", "work.requests", "land", "pushed", "pull-request"], graph.Nodes.Select(node => node.Kind));
+        Assert.Equal(["claimed", "work.requests", "quest.holds", "content.holds", "land", "pushed", "pull-request"], graph.Nodes.Select(node => node.Kind));
         Assert.Equal("pull-request", graph.End);
     }
 
@@ -273,7 +273,7 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
 
         Assert.Equal((0, ""), (exit, _error.ToString()));
         var graph = Saved("made").Graph!;
-        Assert.Equal(["claimed", "work.requests", "review", "land", "pushed", "pull-request"], graph.Nodes.Select(node => node.Kind));
+        Assert.Equal(["claimed", "work.requests", "quest.holds", "content.holds", "review", "land", "pushed", "pull-request"], graph.Nodes.Select(node => node.Kind));
         Assert.Contains(graph.Wires, wire => wire.From?.Node == "review" && wire.To.Node == "landing");
     }
 

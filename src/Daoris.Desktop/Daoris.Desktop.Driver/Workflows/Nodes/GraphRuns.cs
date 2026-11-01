@@ -246,12 +246,13 @@ public static class RunSubjects
     /// <summary>The subject <paramref name="node"/> observes, <paramref name="afterHanded"/> being the nodes a wire path leads to from <c>handed</c>.</summary>
     public static RunSubject Of(NodeDeclaration node, IReadOnlySet<string> afterHanded) => node.Kind switch
     {
-        NodeKinds.Claimed or NodeKinds.QuestClose => RunSubject.Quest,
+        // LANDNODE1k: the quest's holds are its newest work quest's; what the line holds, the branch's, as the landing's.
+        NodeKinds.Claimed or NodeKinds.QuestClose or NodeKinds.QuestHolds => RunSubject.Quest,
         // INTEGRATE1o (§17.6 point 2): `work.requests` reads the quests the run's sessions published here, so its subject is the run itself.
         // INTEGRATE1p (§17.5): a `request` binds the run, as `wait.unit` does; the quest it published is named by its attempt's key.
         NodeKinds.GoAhead or NodeKinds.Human or NodeKinds.WaitUnit or NodeKinds.Stop or NodeKinds.All or NodeKinds.WorkRequests
             or NodeKinds.Request => RunSubject.Run,
-        NodeKinds.Opinion or NodeKinds.Look or NodeKinds.Review or NodeKinds.Handed or NodeKinds.Land => RunSubject.Branch,
+        NodeKinds.Opinion or NodeKinds.Look or NodeKinds.Review or NodeKinds.Handed or NodeKinds.Land or NodeKinds.ContentHolds => RunSubject.Branch,
         // INTEGRATE1n (§17.4): the landed branch at the tip `handed` recorded, wherever the graph wires it.
         NodeKinds.Pushed or NodeKinds.PullRequest or NodeKinds.Line or NodeKinds.Integrate => RunSubject.Landing,
         _ => afterHanded.Contains(node.Id) ? RunSubject.Landing : RunSubject.Branch,

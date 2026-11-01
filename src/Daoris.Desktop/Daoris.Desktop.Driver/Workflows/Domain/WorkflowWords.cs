@@ -285,7 +285,8 @@ public static class WorkflowWords
     /// Current copied into a graph with its landing written out as a <c>land</c> node (LANDNODE1h; the land node design §4, <i>Save as a
     /// workflow…</i>): the rule's form, press, pattern and plugin as the node's options, and the tail its method brings. Current never derives
     /// <c>push</c>, so a plugin makes a <c>pull-request</c>, and an <c>integrate</c> step an <c>integrate</c>. The opinion and the look are
-    /// nodes wired straight into the landing (D157 §2.2), the opinion never into the look; the work's requests are held before them.
+    /// nodes wired straight into the landing (D157 §2.2), the opinion never into the look; the work's requests, then the quest's holds and what
+    /// the line holds (LANDNODE1k), are held before them.
     /// </summary>
     public static JsonObject GraphOfCurrent(CurrentWorkflow current, bool opinion, bool look)
     {
@@ -304,6 +305,9 @@ public static class WorkflowWords
 
         Node("work", NodeKinds.Claimed, "observed", Options(steps.First(step => (string?)step!["kind"] == WorkflowKinds.Work)!.AsObject()));
         Node("requests", NodeKinds.WorkRequests, "observed");
+        // LANDNODE1k: the quest's holds and what the line holds, judged before any gate as the landing's start judged them.
+        Node("holds", NodeKinds.QuestHolds, "observed");
+        Node("content", NodeKinds.ContentHolds, "observed");
         var gates = steps.Select(step => step!.AsObject()).Where(step => (string?)step["kind"] is WorkflowKinds.Opinion or WorkflowKinds.Look).ToList();
         foreach (var gate in gates) Node((string)gate["id"]!, (string)gate["kind"]!, "observed", Options(gate));
         var landing = steps.First(step => (string?)step!["kind"] == WorkflowKinds.Landing)!.AsObject();
@@ -322,14 +326,16 @@ public static class WorkflowWords
         Node("landing", NodeKinds.Land, "performed", land);
 
         Wire("work", "requests");
+        Wire("requests", "holds");
+        Wire("holds", "content");
         foreach (var gate in gates.Select(gate => (string)gate["id"]!))
         {
-            Wire("requests", gate);
+            Wire("content", gate);
             if (reviewed) Wire(gate, "review");
             Wire(gate, "landing");
         }
 
-        if (gates.Count == 0) Wire("requests", reviewed ? "review" : "landing");
+        if (gates.Count == 0) Wire("content", reviewed ? "review" : "landing");
         if (reviewed) Wire("review", "landing");
         var end = "landing";
         if (method == LandNodes.PullRequest)

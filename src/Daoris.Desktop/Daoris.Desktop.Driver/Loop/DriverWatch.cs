@@ -722,6 +722,7 @@ public sealed class DriverWatch(
                             .ConfigureAwait(false));
                     }
 
+                    var gates = new NodeGates(home, service);
                     pass = await Stages.TimeAsync("nodes", () => runtime.PassAsync(new NodeRuntimeLook(config, whole)
                     {
                         // INTEGRATE1n part n3 (F51): `integrate` alone arms the runtime, so the read is its repositories' branch units alone.
@@ -736,7 +737,9 @@ public sealed class DriverWatch(
                         Holds = NodeTips.HoldsAsync,
                         // FABRIC-RUN1c: D157's gates for a unit whose opinion or look waits, read as a landing door reads them; and a quest
                         // whose run is bound to a named version left to that version.
-                        Gates = new NodeGates(home, service).ReadAsync,
+                        Gates = gates.ReadAsync,
+                        // LANDNODE1k: what the line holds of a run's branch, where its `content.holds` waits.
+                        Content = gates.ContentAsync,
                         Bound = NodeRuntime.BoundIn(home),
                     }, token), beside: true).ConfigureAwait(false);
                 }
@@ -1115,6 +1118,26 @@ public sealed class DriverWatch(
                                               or UnauthorizedAccessException)
             {
                 return (null, null);
+            }
+        }
+
+        /// <summary>
+        /// What the line holds of a run's branch at <paramref name="tip"/> (LANDNODE1k), read in its newest session's tree as a landing door reads it:
+        /// the head's sentence where the line holds the work by content, and D88's proof. Null where that tree is not here or not at the tip.
+        /// </summary>
+        public async Task<HoldContent?> ContentAsync(WorkUnit unit, string tip, CancellationToken ct)
+        {
+            try
+            {
+                var sessions = await (_sessions ??= service.SessionRecordsAsync(ct)).ConfigureAwait(false);
+                var tree = sessions.Where(session => unit.Executors.Contains(session.Id, StringComparer.Ordinal) && session.Tree is { Length: > 0 } each && Directory.Exists(each))
+                    .MaxBy(session => session.Updated)?.Tree;
+                return tree is null ? null : await HoldReads.ContentAsync(new SessionTrees(home), tree, tip, ct).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException
+                                              or UnauthorizedAccessException)
+            {
+                return null;
             }
         }
     }

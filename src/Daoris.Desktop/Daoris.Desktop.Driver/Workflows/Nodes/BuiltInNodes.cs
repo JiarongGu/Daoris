@@ -6,7 +6,14 @@ namespace Daoris.Driver;
 /// </summary>
 /// <param name="RemoteTip">The commit git's remote-tracking ref holds for a landing's branch, or null where git could not say.</param>
 /// <param name="Holds">Whether the first commit holds the second (is it, or descends from it), or null where git could not say.</param>
-public sealed record NodeGitReads(Func<LandedBranch, string?>? RemoteTip = null, Func<string, string, bool?>? Holds = null);
+public sealed record NodeGitReads(Func<LandedBranch, string?>? RemoteTip = null, Func<string, string, bool?>? Holds = null)
+{
+    /// <summary>
+    /// What the line and the person's branches hold of a branch unit's work at a commit (LANDNODE1k's <c>content.holds</c>), by the unit's id and
+    /// that commit; null where it was not read there.
+    /// </summary>
+    public Func<string, string?, HoldContent?>? Content { get; init; }
+}
 
 /// <summary>
 /// What an observed built-in node's records say (FABRIC-NODE1; §E4): an outcome by its authority, or none yet. Applied through the
@@ -69,7 +76,8 @@ public sealed record NodeObservation(string Unit, string Node, string Kind, stri
 public static class BuiltInNodes
 {
     /// <summary>The kinds observed from records.</summary>
-    public static readonly IReadOnlyList<string> Observed = [NodeKinds.Claimed, NodeKinds.Handed, NodeKinds.Land, NodeKinds.Review, NodeKinds.Pushed, NodeKinds.PullRequest, NodeKinds.Line];
+    public static readonly IReadOnlyList<string> Observed =
+        [NodeKinds.Claimed, NodeKinds.Handed, NodeKinds.Land, NodeKinds.Review, NodeKinds.Pushed, NodeKinds.PullRequest, NodeKinds.Line, NodeKinds.QuestHolds, NodeKinds.ContentHolds];
 
     /// <summary>The schema of an observed built-in's evidence, its record's: what a <c>data</c> wire from its evidence port carries (WIRE1a).</summary>
     public static string EvidenceSchema(string kind) => $"daoris/{kind}@1";
@@ -108,6 +116,8 @@ public static class BuiltInNodes
         }
 
         if (!Observed.Contains(node.Kind)) return Seen(null, "this kind is not observed from records") with { Refused = NodeRefusal.NotObserved };
+        // LANDNODE1k: a hold reads the quest or the branch its run binds it to.
+        if (NodeKinds.IsHold(node.Kind)) return HoldNodes.Observe(unit, node, binding, git);
         if (binding.Observes != unit.Id || binding.Node != node.Id || binding.NodeVersion != node.Version)
         {
             return Seen(null, "its binding names another subject, node or version") with { Refused = NodeRefusal.NotBound };

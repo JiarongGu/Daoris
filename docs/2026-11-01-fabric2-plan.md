@@ -122,7 +122,7 @@
 
 **Files.** `src/Daoris.Web/src/agents/setup/SetupPlaces.tsx`, `src/Daoris.Web/src/agents/setup/SetupPlaces.test.tsx`, `src/Daoris.Web/src/agents/setup/SetupPlaces.stories.tsx`, `src/Daoris.Web/src/agents/setup/setupFixtures.ts`, `src/Daoris.Web/src/data/wiring.ts`, `src/Daoris.Web/src/locales/en/agents.json`, `src/Daoris.Web/src/locales/zh/agents.json`
 
-## LANDNODE1k — A landing's remaining gates as configured fabric steps: no landing logic outside the graph
+## LANDNODE1k — A landing's remaining gates as configured fabric steps: no landing logic outside the graph (built 2026-11-01)
 
 **Wave** 4; after LANDNODE1c2, DECIDE1b, DECIDE1c, DEFAULTCONFIG1a, DEFAULTCONFIG1c, WORKFLOWEDIT1a; opus.
 

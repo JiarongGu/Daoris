@@ -154,6 +154,18 @@ public static class GraphRefusal
     /// <c>pushed</c>, <c>integrate</c> an <c>integrate</c>, and <c>merge</c> and <c>branch</c> nothing. Replaces <see cref="IntegratePlugin"/> for a <c>land</c>.
     /// </summary>
     public const string LandTail = "land-tail";
+
+    /// <summary>A second hold of one kind (LANDNODE1k): the graph judges each hold once.</summary>
+    public const string HoldTwice = "hold-twice";
+
+    /// <summary>
+    /// A landing that can start before a hold is reached (LANDNODE1k): a hold judges the work before it lands, so a way to the landing past it, a hold
+    /// after the landing included, would land the work with the hold unjudged.
+    /// </summary>
+    public const string HoldLate = "hold-late";
+
+    /// <summary>A hold in a graph with no landing (LANDNODE1k): it judges the work before it lands, and nothing lands.</summary>
+    public const string HoldUnlanded = "hold-unlanded";
 }
 
 /// <summary>
@@ -454,6 +466,33 @@ public static class NodeGraphs
                 foreach (var landing in landings.Where(landing => early.Contains(landing.Id)))
                 {
                     Say(GraphRefusal.WorkRequestsLate, null, hold.Id, $"node `{hold.Id}`: the landing `{landing.Id}` can start before `{hold.Id}` is reached, and a `{NodeKinds.WorkRequests}` holds the work before every landing: "
+                        + $"every way to it passes `{hold.Id}`.");
+                }
+            }
+        }
+
+        // LANDNODE1k: each hold once, in a graph that lands, and before every landing by the work.requests reading (StartsWithout), so a hold after
+        // the landing or beside it in an `anyOf` is refused alike. Each is said once, against the hold.
+        foreach (var same in byId.Values.Where(node => NodeKinds.IsHold(node.Kind)).GroupBy(node => node.Kind, StringComparer.Ordinal))
+        {
+            var each = same.ToList();
+            foreach (var again in each.Skip(1))
+            {
+                Say(GraphRefusal.HoldTwice, null, again.Id, $"node `{again.Id}`: `{each[0].Id}` and `{again.Id}` are both a `{again.Kind}`, and the graph judges each hold once.");
+            }
+
+            foreach (var hold in each)
+            {
+                if (landings.Count == 0)
+                {
+                    Say(GraphRefusal.HoldUnlanded, null, hold.Id, $"node `{hold.Id}`: a `{hold.Kind}` judges the work before it lands, and the graph holds no landing.");
+                    continue;
+                }
+
+                var early = StartsWithout(byId, starts, local, node => node.Id == hold.Id);
+                foreach (var landing in landings.Where(landing => early.Contains(landing.Id)))
+                {
+                    Say(GraphRefusal.HoldLate, null, hold.Id, $"node `{hold.Id}`: the landing `{landing.Id}` can start before `{hold.Id}` is reached, and a `{hold.Kind}` judges the work before it lands: "
                         + $"every way to it passes `{hold.Id}`.");
                 }
             }
@@ -987,7 +1026,8 @@ public static class NodeGraphHomes
     /// the integration design §17.4: the forms the key refuses carry none, so a file naming one draws today's), then <c>line</c>, each
     /// after the one before; entered at <c>handed</c>, ended at <c>line</c>, cleaned up at <i>held</i>. A rule with no cycle is this, today's
     /// behaviour (§C2's default). LANDNODE1c2: a rule that does not accept automatically draws the person's Accept, a <c>review</c>
-    /// (<see cref="Review"/>), before the <c>land</c>, and the graph is entered there.
+    /// (<see cref="Review"/>), before the <c>land</c>. LANDNODE1k: the quest's holds and what the line holds come before both, and the graph
+    /// is entered at the first.
     /// </summary>
     public static NodeGraph Landing(LandingRule rule)
     {
@@ -996,12 +1036,13 @@ public static class NodeGraphHomes
             : rule is { Integrate: not null, Squash: false } ? (Integrated, LandNodes.Integrate)
             : (Landed, LandNodes.Branch);
 
-        // LANDNODE1c: the `land` keeps the identifier `handed` had, so a cycle's wires and evidence bindings to it resolve.
-        string[] reviewed = rule.AutoAccept ? [] : [Review];
-        string[] ids = [.. reviewed, NodeKinds.Handed, .. kinds.Skip(1)];
-        var landAt = rule.AutoAccept ? 0 : 1;
+        // LANDNODE1c: the `land` keeps the identifier `handed` had, so a cycle's wires and evidence bindings to it resolve. LANDNODE1k: the quest's
+        // holds and what the line holds come first, the steps a door judges before it lands.
+        (string Id, string Kind)[] before = [(QuestHolds, NodeKinds.QuestHolds), (ContentHolds, NodeKinds.ContentHolds), .. rule.AutoAccept ? [] : new[] { (Review, NodeKinds.Review) }];
+        string[] ids = [.. before.Select(each => each.Id), NodeKinds.Handed, .. kinds.Skip(1)];
+        var landAt = before.Length;
         NodeDeclaration Declared(int index) =>
-            index < landAt ? new(ids[index], NodeKinds.Review, 1, NodeAuthorities.BuiltIn[NodeKinds.Review].Reach)
+            index < landAt ? new(ids[index], before[index].Kind, 1, NodeAuthorities.BuiltIn[before[index].Kind].Reach)
             : index == landAt ? new(ids[index], NodeKinds.Land, 1, NodeAuthorities.BuiltIn[NodeKinds.Land].Reach) { Options = new Dictionary<string, string> { ["method"] = JsonSerializer.Serialize(method) } }
             : new(ids[index], kinds[index - landAt], 1, NodeAuthorities.BuiltIn[kinds[index - landAt]].Reach);
         return new NodeGraph(
@@ -1012,6 +1053,11 @@ public static class NodeGraphHomes
 
     /// <summary>The identifier of the person's Accept Current draws before its <c>land</c> (LANDNODE1c2), apart from any a cycle names.</summary>
     public const string Review = "landing-review";
+
+    /// <summary>The identifiers of the holds Current draws first (LANDNODE1k), apart from any a cycle names.</summary>
+    public const string QuestHolds = "landing-quest-holds";
+
+    public const string ContentHolds = "landing-content-holds";
 
     /// <summary>
     /// A branch's graph under <paramref name="rule"/>: the landing's (<see cref="Landing"/>), and its <c>cycle</c> after it, whose wires

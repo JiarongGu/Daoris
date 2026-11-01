@@ -67,6 +67,9 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
         ? IntegrateNodes.RequestOf(integrate)
         : null;
 
+    /// <inheritdoc/>
+    public bool JudgesHolds => Graph is not { } graph || !graph.Nodes.Any(node => node.Kind == NodeKinds.Land);
+
     /// <summary>Rows 5 and 6 of D154's table as the version says them; null under Current, where the rule says them, as today.</summary>
     public WorkflowLook? Look { get; init; }
 
@@ -138,7 +141,9 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
         LandingRule landing;
         if ((string?)land.Field("form") == LandingForm.Merge)
         {
-            landing = new LandingRule(LandingForm.Merge, Tidy: rule.Tidy);
+            // LANDNODE1k: a graph's merge with no review before its `land` lands with no press (D145's note of 2026-11-01), so the look lands it as
+            // the graph says; a steps version's merge is refused `automatic` where its steps are read, and never reaches here with it.
+            landing = new LandingRule(LandingForm.Merge, Tidy: rule.Tidy, AutoAccept: (string?)land.Field("accept") == "automatic");
         }
         else
         {
@@ -316,6 +321,16 @@ public static class Involvement
             lowered.Add("it no longer holds the work on its requests, nor asks you about one declined");
         }
 
+        // LANDNODE1k: a `quest.holds` the chosen version no longer holds under its node id, or holds with its `yes` off, lands a done held for your
+        // yes; one kept, or added, lowers nothing.
+        foreach (var before in otherwise.Where(step => step.Kind == NodeKinds.QuestHolds && step.Field(HoldNodes.Yes) is not false))
+        {
+            if (chosen.FirstOrDefault(step => step.Kind == NodeKinds.QuestHolds && step.Id == before.Id) is not { } after || after.Field(HoldNodes.Yes) is false)
+            {
+                lowered.Add("it lands a done held for your yes");
+            }
+        }
+
         // INTEGRATE1p (§17.6 point 9, C29): a `request` that sends with no press of yours where, under its node id, it waited for your Send or
         // was not there. Each is named, so of two requests only the one moved is said; one removed, or added with `start: you`, lowers nothing.
         foreach (var after in chosen.Where(step => step.Kind == NodeKinds.Request && StartOf(step) == RequestOptions.Automatic))
@@ -396,6 +411,8 @@ public static class Involvement
                 NodeKinds.Integrate => NodeKinds.Integrate,
                 NodeKinds.WorkRequests => NodeKinds.WorkRequests,
                 NodeKinds.Request => NodeKinds.Request,
+                // LANDNODE1k: the quest's holds, by its node id, whose `yes` the comparison reads.
+                NodeKinds.QuestHolds => NodeKinds.QuestHolds,
                 _ => null,
             };
             // LANDNODE1c2: a `land`'s press is the graph's `review`, so a review taken away lowers as an `accept` moved to automatic did.

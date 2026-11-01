@@ -183,7 +183,8 @@ public sealed class AutoLander(
 
         // Held for the person's yes (D133) or evidence's verdict (D144): kept once, and read again at every look. A set-up step
         // held for its review alone is the gate's below, which says what lets it go (REVIEWENV1c). A submission's holds are the same (§E5).
-        if (quest is { Held: true } && quest.Hold != EvidenceCodes.Unreviewed)
+        // LANDNODE1k: a graph version that lands by a `land` judges them as its `quest.holds` step, which its graph's part waits on, or holds none.
+        if (process.JudgesHolds && quest is { Held: true } && quest.Hold != EvidenceCodes.Unreviewed)
         {
             return (entry.Last?.Code != AutoLandingCode.Held ? Tried(entry, AutoLandingCode.Held, tip: null, status: null) : null, null);
         }
@@ -316,8 +317,9 @@ public sealed class AutoLander(
         using var facts = GitFacts.Within();
 
         // D88's proof, read at that moment (design §2): work no branch of the person's holds. None is a done that made no
-        // commits, or work a branch of theirs already holds, or a squashing landing's record does (PROCESS1b-ii).
-        var unlanded = await trees.UnlandedHereAsync(entry.Tree, ct).ConfigureAwait(false);
+        // commits, or work a branch of theirs already holds, or a squashing landing's record does (PROCESS1b-ii). LANDNODE1k: a graph version
+        // that lands by a `land` judges it as its `content.holds` step, or holds none.
+        var unlanded = choice.Gate?.Process?.JudgesHolds == false ? null : await trees.UnlandedHereAsync(entry.Tree, ct).ConfigureAwait(false);
         if (unlanded == 0)
         {
             var ahead = await trees.AheadOfLineAsync(entry.Tree, ct).ConfigureAwait(false);
@@ -450,6 +452,8 @@ public sealed class AutoLander(
         var later = !string.Equals(last, entry.Session, StringComparison.OrdinalIgnoreCase);
         var earlier = Earlier(landing, entry.Session, last);
         if (!later && earlier.Count == 0 && !waited && !QuestResults.Submitted(choice.Quest)) return null;
+        // LANDNODE1k: the quest's own holds are judged here where the start judges them; a graph's `quest.holds` judged them before its land began.
+        var holds = choice.Gate?.Process?.JudgesHolds != false;
         var fresh = world.Again();
         IReadOnlyList<SessionRecord>? records = null;
         async Task<SessionRecord?> RecordAsync(string session) =>
@@ -464,7 +468,7 @@ public sealed class AutoLander(
                 var quest = await fresh.QuestAsync(id, ct).ConfigureAwait(false);
                 var why = !QuestResults.Judged(quest) ? "its quest was taken back"
                     : !later && !QuestResults.Same(choice.Quest, quest) ? "its quest's submission was made again"
-                    : quest is { Held: true } && quest.Hold != EvidenceCodes.Unreviewed ? "its quest was held for your yes"
+                    : holds && quest is { Held: true } && quest.Hold != EvidenceCodes.Unreviewed ? "its quest was held for your yes"
                     : null;
                 if (why is not null)
                 {
@@ -494,7 +498,7 @@ public sealed class AutoLander(
             var id = carried.TrimStart('#');
             var quest = await fresh.QuestAsync(id, ct).ConfigureAwait(false);
             var why = !QuestResults.Judged(quest) ? "was taken back"
-                : quest is { Held: true } && quest.Hold != EvidenceCodes.Unreviewed ? "was held for your yes"
+                : holds && quest is { Held: true } && quest.Hold != EvidenceCodes.Unreviewed ? "was held for your yes"
                 : null;
             if (why is not null)
             {
@@ -519,9 +523,12 @@ public sealed class AutoLander(
     private static SessionRecord? RecordOf(IReadOnlyList<SessionRecord> records, string session) =>
         records.FirstOrDefault(record => string.Equals(record.Id, session, StringComparison.OrdinalIgnoreCase));
 
-    /// <summary>A quest the look would land on now: its result in, and no hold for the person's yes but the review's own.</summary>
-    private static bool Stands([System.Diagnostics.CodeAnalysis.NotNullWhen(true)] QuestView? quest) =>
-        quest is not null && QuestResults.Judged(quest) && !(quest.Held && quest.Hold != EvidenceCodes.Unreviewed);
+    /// <summary>
+    /// A quest the look would land on now: its result in, and no hold for the person's yes but the review's own, where the start judges the quest's
+    /// holds (LANDNODE1k, <see cref="IWorkplaceProcess.JudgesHolds"/>).
+    /// </summary>
+    private static bool Stands([System.Diagnostics.CodeAnalysis.NotNullWhen(true)] QuestView? quest, bool holds) =>
+        quest is not null && QuestResults.Judged(quest) && !(holds && quest.Held && quest.Hold != EvidenceCodes.Unreviewed);
 
     /// <summary>
     /// A due entry whose push was held back after its branch was made (FABRIC-CLOSE1h2): its quest read as the look reads a hold, then
@@ -542,7 +549,8 @@ public sealed class AutoLander(
         AutoLanding entry, AutoTry held, IWorkplaceLandingWorld world, LookRecords looked, IWorkplaceProcess process, CancellationToken ct)
     {
         var quest = await world.QuestAsync(entry.Quest, ct).ConfigureAwait(false);
-        if (!Stands(quest)) return (null, null);
+        var holds = process.JudgesHolds;
+        if (!Stands(quest, holds)) return (null, null);
 
         // Handed on meanwhile by the person's own `trees hand`, or its record gone with its branch: nothing is handed on twice.
         if (trees.Recorded.Landing(entry.Session) is not { } landing
@@ -556,14 +564,14 @@ public sealed class AutoLander(
         var last = landing.LastSession();
         var later = !string.Equals(last, entry.Session, StringComparison.OrdinalIgnoreCase);
         var record = later ? RecordOf(await looked.ReadAsync(ct).ConfigureAwait(false), last) : null;
-        if (record?.Quest is { } laterQuest && !Stands(await world.QuestAsync(laterQuest, ct).ConfigureAwait(false))) return (null, null);
+        if (record?.Quest is { } laterQuest && !Stands(await world.QuestAsync(laterQuest, ct).ConfigureAwait(false), holds)) return (null, null);
 
         // FABRIC-CLOSE1h11: and every earlier session whose work the hand-on carries unpushed, so a later entry's hand-on never pushes an
         // earlier one's work held back on its quest; it waits as that entry waits, said once already at the push.
         foreach (var work in Earlier(landing, entry.Session, last))
         {
             var carried = work.Quest ?? RecordOf(await looked.ReadAsync(ct).ConfigureAwait(false), work.Session)?.Quest;
-            if (carried is not null && !Stands(await world.QuestAsync(carried, ct).ConfigureAwait(false))) return (null, null);
+            if (carried is not null && !Stands(await world.QuestAsync(carried, ct).ConfigureAwait(false), holds)) return (null, null);
         }
 
         var (tip, status, _) = await ReadTreeAsync(entry.Tree, ct).ConfigureAwait(false);

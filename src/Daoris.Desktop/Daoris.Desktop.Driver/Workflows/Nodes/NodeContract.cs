@@ -85,10 +85,25 @@ public static class NodeKinds
     /// </summary>
     public const string Review = "review";
 
+    /// <summary>
+    /// The quest's own holds as a step before the landing (LANDNODE1k, <see cref="HoldNodes"/>): its done or submission standing, not taken back,
+    /// and not held for the person's yes (D133) or its evidence's verdict (D144). An older build reads it as no kind and holds the run whole.
+    /// </summary>
+    public const string QuestHolds = "quest.holds";
+
+    /// <summary>
+    /// What the line already holds, as a step before the landing (LANDNODE1k, <see cref="HoldNodes"/>): D88's proof that the work holds a commit
+    /// no branch of the person's holds, and that neither the line nor such a branch holds it by content (SQUASHTIDY1f).
+    /// </summary>
+    public const string ContentHolds = "content.holds";
+
     /// <summary>Whether a kind is the graph's one landing: the observed <c>handed</c>, or the performed <c>land</c>.</summary>
     public static bool IsLanding(string kind) => kind is Handed or Land;
 
-    public static readonly IReadOnlyList<string> BuiltIn = [Claimed, Handed, Pushed, PullRequest, Line, Human, Look, GoAhead, WaitUnit, QuestClose, All, Opinion, Stop, Check, Integrate, WorkRequests, Request, Land, Review];
+    /// <summary>Whether a kind is a hold Daoris judges before the landing (LANDNODE1k).</summary>
+    public static bool IsHold(string kind) => kind is QuestHolds or ContentHolds;
+
+    public static readonly IReadOnlyList<string> BuiltIn = [Claimed, Handed, Pushed, PullRequest, Line, Human, Look, GoAhead, WaitUnit, QuestClose, All, Opinion, Stop, Check, Integrate, WorkRequests, Request, Land, Review, QuestHolds, ContentHolds];
 
     /// <summary>Whether a kind is a plugin's own node: <c>&lt;plugin&gt;/&lt;node&gt;</c>, both parts named.</summary>
     public static bool IsPlugin(string kind)
@@ -221,6 +236,12 @@ public static class NodeSource
     /// here done, as the exchange keeps it. A decline reaches nothing and fails nothing: it holds the node active and waiting on the person.
     /// </summary>
     public const string Requests = "requests";
+
+    /// <summary>
+    /// What Daoris reads at the bound tip for a hold before the landing (LANDNODE1k): the quest's record, and git's proof of what the line and the
+    /// person's branches hold. A hold that does not let go reaches nothing and fails nothing: it keeps the node active with its reason.
+    /// </summary>
+    public const string Holds = "holds";
 }
 
 /// <summary>
@@ -328,6 +349,10 @@ public static class NodeAuthorities
         // LANDNODE1c2: the person's Accept reaches it; nothing fails it, and it is never a graph's end. DECIDE1b: the person's changes, with
         // words, are its rejection, so an `after` from it still means on Accept and a `rejected` or `back on: rejected` wire is the changes route.
         [NodeKinds.Review] = new(NodeKinds.Review, NodeReach.Pressed, NodeSource.Person, null, true, PersonSkips: false, MayEnd: false, Evidenced: false),
+        // LANDNODE1k: reached by what Daoris reads at the bound tip; a hold that does not let go keeps it active with its reason, as `work.requests`
+        // is kept, since each can let go later and a failure would be a verdict routed on. The person's pass with words is the way past it.
+        [NodeKinds.QuestHolds] = new(NodeKinds.QuestHolds, NodeReach.Observed, NodeSource.Holds, null, false, PersonSkips: true, MayEnd: false, Evidenced: true),
+        [NodeKinds.ContentHolds] = new(NodeKinds.ContentHolds, NodeReach.Observed, NodeSource.Holds, null, false, PersonSkips: true, MayEnd: false, Evidenced: true),
     };
 
     /// <summary>
@@ -388,6 +413,7 @@ public static class NodeDeclarations
         if (node.Kind == NodeKinds.Integrate && IntegrateOptionProblem(node) is { } option) return option;
         if (node.Kind == NodeKinds.Request && RequestOptions.Problem(node) is { } asked) return asked;
         if (node.Kind == NodeKinds.Land && LandNodes.Problem(node) is { } landed) return landed;
+        if (NodeKinds.IsHold(node.Kind) && HoldNodes.Problem(node) is { } hold) return hold;
         // INTEGRATE1o (§17.6 point 8, C28): the hold on the work's requests is the kind `work.requests`. Written as an option of `claimed`, a build
         // that knows `claimed` would read it and run the work with the hold dropped, so no file may say it there.
         if (node.Kind == NodeKinds.Claimed && node.Options.ContainsKey(WorkRequestsOption)) return WorkRequestsOption;
