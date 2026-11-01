@@ -402,7 +402,7 @@ public sealed class PipeCensus
             "PLUGIN_ACTION", "PLUGIN_ADD", "PLUGIN_INSTALL", "PLUGIN_NEW", "PLUGIN_TRY",
             // ADOSIGNIN1: a plugin's tools checked, and a tool's set-up or sign-in in a console the person sees: the person's alone.
             "PLUGIN_TOOLS", "PLUGIN_TOOL_FIX",
-            "TOOLS_DELETE", "TOOLS_DOWNLOAD", "TOOLS_LOCATION", "TOOLS_STOP", "TOOLS_USE",
+            "TOOLS_DELETE", "TOOLS_DOWNLOAD", "TOOLS_GIT_SET", "TOOLS_LOCATION", "TOOLS_STOP", "TOOLS_USE",
             // Made by the driver, and still the person's (a second agent's review): bringing Daoris's branches up to date
             // fast-forwards the lines and replays and deletes branches, every repository's at once; a second opinion starts a
             // review on one of their accounts; Read again lets a refused account through and ends the tool's own cool-off.
@@ -535,7 +535,7 @@ public sealed class PipeCensus
             // runs the line, which the drain holds.
             "INTEGRATE",
             // A plugin made in a folder, which installs nothing, and a tool's files and location.
-            "PLUGIN_NEW", "TOOLS_DELETE", "TOOLS_LOCATION", "TOOLS_GIT");
+            "PLUGIN_NEW", "TOOLS_DELETE", "TOOLS_LOCATION", "TOOLS_GIT", "TOOLS_GIT_SET");
         return table;
 
         void Add(PipeDrain drain, params string[] routes)

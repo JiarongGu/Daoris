@@ -186,6 +186,7 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   SYSTEM_SPACE_FREE: { scopes: ['harnesses', 'tools', 'wiring'] },
   TOOLS_LOOK: { scopes: ['tools'] },
   TOOLS_LOCATION: { scopes: ['tools'] },
+  TOOLS_GIT_SET: { scopes: ['tools'] },
   START_HELP: { scopes: ['sessions'] },
   HELP_RENAME: { scopes: ['sessions', 'help'], session: 'id' },
   HELP_PIN: { scopes: ['sessions', 'help'], session: 'id' },

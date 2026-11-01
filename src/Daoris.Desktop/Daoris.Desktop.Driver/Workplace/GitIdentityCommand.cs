@@ -7,11 +7,13 @@ namespace Daoris.Driver;
 /// <param name="Checkouts">The registry's checkouts (root, repository, workspace), asked only by <c>git use</c> of a repository.</param>
 /// <param name="WindowRuns">Whether a Daoris with a window runs on this home, asked only before a widening.</param>
 /// <param name="Environment">The variables, read for a session's marker.</param>
+/// <param name="Token">Reads a pasted token from the terminal's standard input, asked only by <c>add-https --token-stdin</c>; never an argument.</param>
 public sealed record GitIdentityWorld(
     string Home,
     Func<Task<IReadOnlyList<(string Root, string Repository, string Workspace)>>> Checkouts,
     Func<Task<bool>> WindowRuns,
-    Func<string, string?> Environment);
+    Func<string, string?> Environment,
+    Func<Task<string?>>? Token = null);
 
 /// <summary>
 /// The terminal's git identities (GITAUTH1c, D198 point 15; the git-auth design §8): <c>git identity</c>, <c>git default</c> and
@@ -33,8 +35,9 @@ public static class GitIdentityCommand
         """
         usage: daoris-driver git identity list [--json]
                daoris-driver git identity add-ssh <host> --label <label> [--name <name> --email <email>] [--import <file>] [--rsa]
+               daoris-driver git identity add-https <host> --label <label> [--user <user>] [--token-stdin] [--name <name> --email <email>]
                daoris-driver git identity public-key <identity>
-               daoris-driver git identity test <identity> [--trust-host <fingerprint>]
+               daoris-driver git identity test <identity> [--trust-host <fingerprint>] [--repo <address>]
                daoris-driver git identity rename <identity> <label>
                daoris-driver git identity commits-as <identity> --name <name> --email <email> | --clear
                daoris-driver git identity read-only <identity> on|off
@@ -85,14 +88,15 @@ public static class GitIdentityCommand
             {
                 ["identity", "list"] => List(world.Home, flags.ContainsKey("--json"), output),
                 ["identity", "add-ssh", var host] => AddAsync(world.Home, host, flags, output, ct),
+                ["identity", "add-https", var host] => AddHttpsAsync(world, host, flags, output, ct),
                 ["identity", "public-key", var name] => Say(output, GitKeys.PublicKey(world.Home, GitIdentityActs.Find(world.Home, name).Id)
                     ?? throw new DriverException($"git: {name} has no public key on this machine (no-key)")),
-                ["identity", "test", var name] => TestAsync(world.Home, name, Flag(flags, "--trust-host"), output, ct),
+                ["identity", "test", var name] => TestAsync(world.Home, name, Flag(flags, "--trust-host"), Flag(flags, "--repo"), output, ct),
                 ["identity", "rename", var name, var label] => Said(output, $"git: {GitIdentityActs.Rename(world.Home, name, label).Label} renamed."),
                 ["identity", "commits-as", var name] => Said(output, CommitsAs(world.Home, name, flags)),
                 ["identity", "read-only", var name, "on" or "off"] => Said(output,
                     $"git: {GitIdentityActs.ReadOnly(world.Home, name, words[3] == "on").Label} is {(words[3] == "on" ? "read only on its host: Daoris never tries a write with it" : "no longer marked read only")}."),
-                ["identity", "remove", var name] => Said(output, Removed(world.Home, name)),
+                ["identity", "remove", var name] => Say(output, await RemovedAsync(world.Home, name, ct).ConfigureAwait(false)),
                 ["default", var host] when flags.ContainsKey("--clear") => Said(output, $"git: {GitIdentityActs.HostOf(host)} has no default identity now.", GitIdentityActs.Default(world.Home, host, null)),
                 ["default", var host, var name] => Said(output, $"git: {GitIdentityActs.Default(world.Home, host, name)!.Label} is {GitIdentityActs.HostOf(host)}'s default."),
                 ["use", ..] => UseAsync(world, words, flags, output, ct),
@@ -130,7 +134,7 @@ public static class GitIdentityCommand
         for (var at = 0; at < args.Count; at++)
         {
             var arg = args[at];
-            if (arg is "--json" or "--rsa" or "--clear" or "--machine") flags[arg] = null;
+            if (arg is "--json" or "--rsa" or "--clear" or "--machine" or "--token-stdin") flags[arg] = null;
             else if (arg.StartsWith("--", StringComparison.Ordinal))
             {
                 if (at + 1 >= args.Count || args[at + 1].StartsWith("--", StringComparison.Ordinal))
@@ -160,9 +164,30 @@ public static class GitIdentityCommand
         return 0;
     }
 
-    private static async Task<int> TestAsync(string home, string name, string? trust, TextWriter output, CancellationToken ct)
+    private static async Task<int> AddHttpsAsync(GitIdentityWorld world, string host, IReadOnlyDictionary<string, string?> flags, TextWriter output, CancellationToken ct)
     {
-        var answer = await GitIdentityActs.TestAsync(home, name, trust, ct).ConfigureAwait(false);
+        var label = Flag(flags, "--label") ?? throw new DriverException("git: name the identity with --label (label)");
+        string? token = null;
+        if (flags.ContainsKey("--token-stdin"))
+        {
+            token = world.Token is null ? null : (await world.Token().ConfigureAwait(false))?.Trim();
+            if (string.IsNullOrEmpty(token)) throw new DriverException("git: --token-stdin reads the token from standard input, and none came (token)");
+        }
+
+        var identity = await GitIdentityHttps.AddHttpsAsync(world.Home, host, label, Flag(flags, "--user"), Flag(flags, "--name"), Flag(flags, "--email"),
+            token, "https", ct).ConfigureAwait(false);
+        await output.WriteLineAsync($"git: {identity.Label} added for {identity.Host}: HTTPS through Git Credential Manager"
+            + (identity.User is null ? "" : $" as {identity.User}") + (identity.Default ? $", {identity.Host}'s default." : ".")).ConfigureAwait(false);
+        await output.WriteLineAsync($"Its sign-in is kept in Windows' store under Daoris's own name, never in a file of Daoris's. Test it: daoris-driver git identity test {identity.Id} --repo https://{identity.Host}/<owner>/<repository>").ConfigureAwait(false);
+        return 0;
+    }
+
+    private static async Task<int> TestAsync(string home, string name, string? trust, string? repo, TextWriter output, CancellationToken ct)
+    {
+        var tested = GitIdentityActs.Find(home, name);
+        var answer = tested.Way == GitIdentity.Https
+            ? await GitIdentityHttps.TestHttpsAsync(home, name, repo ?? throw new DriverException($"git: test an HTTPS identity against a repository on {tested.Host}: --repo <address> (repo)"), ct).ConfigureAwait(false)
+            : await GitIdentityActs.TestAsync(home, name, trust, ct).ConfigureAwait(false);
         var identity = GitIdentityActs.Find(home, name);
         switch (answer.Result)
         {
@@ -194,13 +219,14 @@ public static class GitIdentityCommand
         return $"git: {identity.Label} commits as {identity.CommitsName} <{identity.CommitsEmail}> where a repository names no author.";
     }
 
-    private static string Removed(string home, string name)
+    private static async Task<string> RemovedAsync(string home, string name, CancellationToken ct)
     {
-        var label = GitIdentityActs.Find(home, name).Label;
-        var pointing = GitIdentityActs.Remove(home, name);
+        var identity = GitIdentityActs.Find(home, name);
+        var pointing = await GitIdentityHttps.RemoveAsync(home, name, ct).ConfigureAwait(false);
+        var gone = identity.Way == GitIdentity.Https ? "its stored sign-in erased" : "its key deleted";
         return pointing.Count == 0
-            ? $"git: {label} removed, and its key deleted."
-            : $"git: {label} removed, and its key deleted; these fall to the next step: {string.Join(", ", pointing)}.";
+            ? $"git: {identity.Label} removed, and {gone}."
+            : $"git: {identity.Label} removed, and {gone}; these fall to the next step: {string.Join(", ", pointing)}.";
     }
 
     private static async Task<int> UseAsync(GitIdentityWorld world, IReadOnlyList<string> words, IReadOnlyDictionary<string, string?> flags, TextWriter output, CancellationToken ct)
@@ -282,7 +308,7 @@ public static class GitIdentityCommand
 
         foreach (var each in identities)
         {
-            await output.WriteLineAsync($"{each.Label}  {each.Host} · {each.Way.ToUpperInvariant()} {each.KeyType} {each.Fingerprint}"
+            await output.WriteLineAsync($"{each.Label}  {each.Host} · {each.Way.ToUpperInvariant()}{(each.KeyType is null ? "" : $" {each.KeyType} {each.Fingerprint}")}"
                 + (each.Default ? $" · default for {each.Host}" : "") + (each.ReadOnly ? " · read only on the host" : "") + $"  ({each.Id})").ConfigureAwait(false);
             var test = each.Test is { } tested ? $"{tested.Result}{(tested.User is null ? "" : $" as {tested.User}")} {tested.At:yyyy-MM-dd HH:mm}Z" : "not tested";
             await output.WriteLineAsync($"  {test}" + (each.CommitsName is null ? "" : $" · commits as {each.CommitsName} <{each.CommitsEmail}>")

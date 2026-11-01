@@ -84,7 +84,7 @@ public sealed class ToolWords(string message, int exit = 2) : Exception(message)
 public static class ToolsCommand
 {
     /// <summary>The verbs this program has: every one the CLI's <c>daoris tool</c> had, which it hands on whole.</summary>
-    public static IReadOnlyList<string> Verbs { get; } = ["list", "path", "use", "download", "update", "delete", "locations", "look"];
+    public static IReadOnlyList<string> Verbs { get; } = ["list", "path", "use", "download", "update", "delete", "locations", "look", "git"];
 
     public const string Usage =
         """
@@ -93,6 +93,7 @@ public static class ToolsCommand
                daoris-driver tool use <tool> system | managed [<version>] | file <path>
                daoris-driver tool download <tool> [<version>] · update <tool> · delete <tool> <version>
                daoris-driver tool locations [add|remove <address>] · look
+               daoris-driver tool git ssh <command> | --clear
         `daoris tool …` runs these; the tools are git, node, pwsh, gh and az.
         Each change takes --wait <minutes> (0 to 30, the default 30) or --no-wait: how long to wait on its Confirm in Daoris's window.
         """;
@@ -113,6 +114,7 @@ public static class ToolsCommand
         {
             "use" => words.Count > 2 && words[2] is "system" or "file",
             "delete" or "look" => true,
+            "git" => words.Count > 1 && words[1] == "ssh",
             "locations" => words.Count > 1 && words[1] is "add" or "remove",
             _ => false,
         };
@@ -319,6 +321,29 @@ public static class ToolsCommand
                     answer => answer.ValueKind == JsonValueKind.Object && answer.TryGetProperty(sub == "add" ? "added" : "removed", out var flag)
                               && flag.ValueKind == JsonValueKind.True,
                     Said);
+            }
+
+            case "git":
+            {
+                if (words.Id != "ssh") throw new ToolWords("`tool git` takes `ssh <command>` or `ssh --clear`: the ssh command Daoris's git runs");
+                var home = RequireHome(world);
+                var clear = args.Contains("--clear");
+                if (clear && words.Way is not null) throw new ToolWords("`tool git ssh --clear` takes no command");
+                var command = clear ? null : words.Way ?? throw new ToolWords("`tool git ssh` needs the ssh command to run — or `--clear` to put git's own back");
+                var payload = new JsonObject { ["key"] = "core.sshCommand" };
+                if (command is not null) payload["value"] = command;
+                int Said()
+                {
+                    Say(command is null
+                        ? $"{Prefix}: Daoris's git runs git's own ssh again — written to {DaorisHome.Entry(home, HomeEntry.Tools)}."
+                        : $"{Prefix}: Daoris's git runs `{command}` as its ssh — written to {DaorisHome.Entry(home, HomeEntry.Tools)}; it is read from the next start.");
+                    return 0;
+                }
+
+                // A value is set only on a git new enough to read it (TOOLS6): the refusal names both versions, here as in the window.
+                return new ToolPress("git", ToolRoutes.GitSetting, payload,
+                    async stop => (object?)await ToolChoices.SetGitAsync(home, "core.sshCommand", command, GitVersions.AskAsync, stop).ConfigureAwait(false),
+                    _ => null, _ => Said());
             }
 
             case "look":

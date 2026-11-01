@@ -29,7 +29,8 @@ internal static class GitConsole
                     },
                     async () => (await InstanceDoor.PeekAsync(new InstanceWorld { Home = home, Verb = "git" }).ConfigureAwait(false)).Found
                         is not (InstanceFound.None or InstanceFound.Headless),
-                    Environment.GetEnvironmentVariable);
+                    Environment.GetEnvironmentVariable,
+                    () => Console.In.ReadLineAsync());
                 return await GitIdentityCommand.RunAsync(args, world, Console.Out, Console.Error).ConfigureAwait(false);
             }
             catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException)

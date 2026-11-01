@@ -26,6 +26,9 @@ public static class ToolCodes
     /// <summary>A delete the system refused, since something still holds a file in that version's folder.</summary>
     public const string Held = "TOOL_HELD";
 
+    /// <summary>A git setting on a git older than the one that reads it (TOOLS6, D121 §2.5; GITAUTH1e).</summary>
+    public const string GitTooOld = "TOOL_GIT_TOO_OLD";
+
     /// <summary>The shell's <c>DRIVER_REFUSED</c>: any other refusal, said in its own sentence.</summary>
     public const string Refused = ChoiceCodes.Refused;
 
@@ -38,6 +41,7 @@ public static class ToolCodes
         [ToolRefusal.FileMissing] = FileMissing,
         [ToolRefusal.FileNoVersion] = FileNoVersion,
         [ToolRefusal.Location] = LocationRefused,
+        [ToolRefusal.GitTooOld] = GitTooOld,
     };
 
     /// <summary>Whether a refusal is one an operation says in a code of its own.</summary>
@@ -66,6 +70,9 @@ public static class ToolRoutes
     /// <summary><c>tool locations add|remove &lt;address&gt;</c>: a resource location added or removed.</summary>
     public static InstanceRoute Location { get; } = Person("TOOLS_LOCATION");
 
+    /// <summary><c>tool git ssh &lt;command&gt;|--clear</c>: the ssh command Daoris's git runs, set or cleared.</summary>
+    public static InstanceRoute GitSetting { get; } = Person("TOOLS_GIT_SET");
+
     /// <summary><c>tool look</c>: the driver's own look, so open.</summary>
     public static InstanceRoute Look { get; } = new(InstanceRoute.DriverModule, "TOOLS_LOOK", RouteClass.Open);
 
@@ -76,6 +83,7 @@ public static class ToolRoutes
         ("tool use <tool> file <path>", Use, "the Tools place's way chosen; the file is asked its version before it is written, by the instance or here"),
         ("tool delete <tool> <version>", Delete, "a downloaded version removed"),
         ("tool locations add|remove <address>", Location, "a resource location added or removed"),
+        ("tool git ssh <command>|--clear", GitSetting, "the ssh command Daoris's git runs, set on a git new enough to read it, or cleared"),
         ("tool look", Look, "the look for updates, whose copies the instance keeps"),
         ("tool use <tool> managed [<version>]", null,
             "alone: TOOLS_USE answers once the driver's download starts, and its end is an event the pipe forwards only to a subscription (RPC1g)"),

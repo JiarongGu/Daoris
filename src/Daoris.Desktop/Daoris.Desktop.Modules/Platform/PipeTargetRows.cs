@@ -320,6 +320,10 @@ internal static class PipeTargetRows
         Row("ACCOUNT_USE", Setting("ACCOUNTS", ["harness"], _ => null, (a, _) => Fp(Raw(At(a, "agents")))));
         Row("TOOLS_USE", Setting("TOOLS_LIST", ["tool"], _ => null,
             (a, p) => Fp(Pick(Named(At(a, "tools"), "tool", Text(p, "tool")), "way", "version", "file"))));
+        // A git setting is read in the list's `git` (GITAUTH1e): its value is a command the person wrote, so the grounds hold its key alone.
+        Row("TOOLS_GIT_SET", Setting("TOOLS_LIST", ["key"], _ => null,
+            (a, p) => Fp(Text(At(At(a, "git"), Text(p, "key") ?? "")) ?? ""),
+            p => Fp(Text(p, "value") ?? "")));
         Row("TOOLS_LOCATION", Setting("TOOLS_LIST", ["address"], _ => null,
             (a, _) => Fp(string.Join(",", Each(At(a, "locations")).Select(each => Text(At(each, "address")) ?? Text(each)).Order(StringComparer.Ordinal)))));
         foreach (var route in new[] { "SET", "REMOVE" })

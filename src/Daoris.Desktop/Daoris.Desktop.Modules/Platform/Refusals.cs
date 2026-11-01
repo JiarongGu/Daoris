@@ -398,6 +398,9 @@ public static class Refusals
     /// <summary>A download, or a use that downloads, started while that tool already has one running (TOOLS7, §3.6).</summary>
     public const string ToolBusy = "TOOL_BUSY";
 
+    /// <summary>A git setting on a git older than the one that reads it (TOOLS6, D121): the key, the version and its floor go with it.</summary>
+    public const string ToolGitTooOld = Daoris.Driver.ToolCodes.GitTooOld;
+
     // GIT1d-a (D147): a Git read the driver did not answer. Carried in the answer's `refusal`, not raised, so a page that asks
     // for a commit this repository lacks words it beside what it drew. One code for each `GitReadRefusal`, and the checkout.
 
