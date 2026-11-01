@@ -12812,3 +12812,13 @@ mis-rooted instance.
 **Fix.** Submit to the queue with no `timeout` around it (the submission returns once the runner acknowledges, and "ending this wait leaves it queued"). QUEUEHANG1 holds the tool's side: a runner that outlives its submitter, and a gate whose process died said as lost.
 
 **Verified.** Batch 1031h queued with no wrapper.
+
+## 2026-11-01 — the question bench's timed-out check waited out its program on a loaded machine
+
+**Symptom.** `question-bench.test.mjs:339` (`slow.wallMs < 20_000`) failed in two CI runs on main, at 28.8 s and 28.6 s: a check bounded at one second ended only when the stub's 25-second sleep did.
+
+**Root cause.** The timeout ran `taskkill /T /F` through `spawnSync` and the check then ended at the shell's `exit`. On a loaded machine the kill did not land before the program finished by itself, so the bound meant nothing and the bench waited out every hung check. Both readings are the sleep plus start-up, which is what a kill that never landed looks like.
+
+**Fix.** `runCheck` ends a timed-out check at its bound: the pipes are let go and the record is finished at once, while `taskkill` runs beside the bench, unwaited (`tools/question-bench.mjs`, `stopTree`).
+
+**Verified.** `node --test tools/question-bench.test.mjs tools/console-windows.test.mjs`, 26 of 26; `node tools/console-windows.mjs` clean. The loaded machine's failure was not reproduced on demand; the next CI run on main is its proof.
