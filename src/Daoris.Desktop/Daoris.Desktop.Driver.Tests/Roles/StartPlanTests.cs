@@ -404,7 +404,7 @@ public sealed class StartPlanTests : IDisposable
         Assert.Equal("piped", StartPlan.AgentFor("build",DriverConfig.Empty with { Adapter = "piped", ActorErrors = new Dictionary<string, string> { ["build"] = "unreadable" } }));
     }
 
-    /// <summary>ROLESTEP1a: a plan given a named role walks that role's order and keeps its revision; <c>Seeded</c> stays the work's (O2-3).</summary>
+    /// <summary>A plan given a named role walks that role's order and keeps its revision; <c>Seeded</c> stays the work's (O2-3).</summary>
     [Fact]
     public async Task A_named_role_s_order_is_walked_its_revision_kept_and_Seeded_stays_the_work_s()
     {

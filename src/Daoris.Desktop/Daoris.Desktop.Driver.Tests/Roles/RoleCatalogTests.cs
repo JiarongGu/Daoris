@@ -207,7 +207,7 @@ public sealed class RoleCatalogTests : IDisposable
         Assert.Equal((RoleState.Set, 7L, added.Json()), (read.Slots[^1].State, read.Slots[^1].Revision, read.Slots[^1].Role!.Json()));
     }
 
-    /// <summary>ROLESTEP1a: a step's named role is found by its id at its scope, never by the work, and walks its own order.</summary>
+    /// <summary>A step's named role is found by its id at its scope, never by the work, and walks its own order.</summary>
     [Fact]
     public void A_named_role_is_found_at_its_scope_and_a_design_step_takes_a_role_that_takes_build()
     {

@@ -144,8 +144,8 @@ internal sealed class StartPlan
     /// </param>
     /// <param name="place">Where the start is: its workspace and repository, by which a scoped role is found.</param>
     /// <param name="role">
-    /// The role the start's step names (ROLESTEP1a), found by <see cref="RoleCatalog.Named"/> in place of the work's role, the seed's
-    /// catalogue where none is given; null finds the work's role.
+    /// The role the start's step names, found by <see cref="RoleCatalog.Named"/> in place of the work's role, the seed's catalogue where
+    /// none is given; null finds the work's role.
     /// </param>
     /// <exception cref="DriverException">
     /// A role record that does not read, or two roles taking the work in one scope, hold the start; a named role holds it by its own sentence.

@@ -193,8 +193,8 @@ public sealed class RoleCatalog
     }
 
     /// <summary>
-    /// The role <paramref name="role"/> names, for a start of <paramref name="work"/> at <paramref name="place"/> (ROLESTEP1a): found by its
-    /// id, never by the work. A role that takes build takes a design step, as <see cref="RoleFor"/>'s fallback does. Its <c>Held</c>, said,
+    /// The role <paramref name="role"/> names, for a start of <paramref name="work"/> at <paramref name="place"/>: found by its id, never by
+    /// the work. A role that takes build takes a design step, as <see cref="RoleFor"/>'s fallback does. Its <c>Held</c>, said,
     /// where the id is the shell's, not in the catalogue, appointed or unreadable, or the role does not work here or take the work; no other
     /// role is taken for it.
     /// </summary>
