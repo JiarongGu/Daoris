@@ -100,7 +100,7 @@ function CopyForm({ initial, busy, onSave, onCancel }: { initial: string; busy: 
           id={field}
           value={name}
           onChange={(event) => setName(event.target.value)}
-          className="min-w-0 rounded-control border border-line-strong bg-surface px-2 py-1 text-body text-ink"
+          className="min-h-[1.9rem] min-w-0 rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
         />
       </label>
       <Button type="submit" variant="ghost" className="min-h-0 border border-line px-2 py-0.5 text-small" disabled={busy || !name.trim()}>
