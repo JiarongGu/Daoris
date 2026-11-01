@@ -77,6 +77,8 @@ public sealed class PluginsRoutes(DriverContext context)
                     // FABRIC-UNIT1e (§D9): the steps it declares and what they create, which its page lists.
                     Steps = StepsOf(plugin.Manifest),
                     Resources = ResourcesOf(plugin.Manifest),
+                    // ADOSIGNIN1: its tools as written; nothing is found or run by this read, the person's Check does.
+                    Tools = plugin.Manifest.Tools.Select(tool => ToolStanding.Declared(tool, plugin.Manifest.Tools)).ToArray(),
                     Hook = HookOf(plugin),
                     Listening = health.Listening,
                     // The loop's own record (D119 §2): the state, since when, and its failure while failing.
@@ -417,6 +419,48 @@ public sealed class PluginsRoutes(DriverContext context)
             trial.Summary,
             Steps = trial.Steps.Select(step => new { step.Name, step.Ok, step.Sentence }).ToArray(),
             trial.Said,
+        };
+    }
+
+    // The person's Check of a plugin's tools (ADOSIGNIN1, D150 point 7): each declared tool found, its version and its readiness
+    // checks read. Started only by this press, never at a look, since a check may reach the platform or read another tool's sign-in.
+    // It changes nothing Daoris keeps; it declares the plugins scope so the page's own read of the plugin is asked again with it.
+    [DriverRoute("PLUGIN_TOOLS")]
+    [Publishes("PLUGIN_TOOLS", StateScopes.Plugins)]
+    private async Task<object?> PluginToolsAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var entry = InstalledPlugin(_loop, PayloadHelper.GetRequiredValue<string>(request.Payload, "id"));
+        var tools = entry.Manifest.Tools;
+        var checks = _context.ToolChecks ?? ((home, declared, ct) => PluginToolSetUp.CheckAsync(home, declared, ct));
+        var found = await checks(_loop.Home, tools, cancellationToken).ConfigureAwait(false);
+        return new { Id = entry.Manifest.Id, Tools = found.Select(each => ToolStanding.Of(each, tools)).ToArray() };
+    }
+
+    // A tool's set-up or sign-in, the person's press of a check's `fix` (ADOSIGNIN1): a console the person sees, running exactly
+    // the manifest's command of one of the plugin's own tools, then the tool's checks read again. Daoris never signs in itself; a
+    // fix naming another command, a tool not found (its install words said) and a console that did not start are answered as data.
+    // The answer comes when the console ends, which is as long as the person takes.
+    [DriverRoute("PLUGIN_TOOL_FIX")]
+    [Publishes("PLUGIN_TOOL_FIX", StateScopes.Plugins)]
+    private async Task<object?> PluginToolFixAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var entry = InstalledPlugin(_loop, PayloadHelper.GetRequiredValue<string>(request.Payload, "id"));
+        var toolId = PayloadHelper.GetRequiredValue<string>(request.Payload, "tool");
+        var check = PayloadHelper.GetRequiredValue<int>(request.Payload, "check");
+        var tools = entry.Manifest.Tools;
+        var setUp = _context.ToolSetUps ?? ((home, declared, tool, number, ct) => PluginToolSetUp.RunAsync(home, declared, tool, number, ct));
+        var done = await setUp(_loop.Home, tools, toolId, check, cancellationToken).ConfigureAwait(false);
+        return new
+        {
+            Id = entry.Manifest.Id,
+            Tool = toolId,
+            Check = check,
+            Ran = done.Code is null,
+            Why = done.Code,
+            Message = done.Said,
+            done.ExitCode,
+            done.Install,
+            Standing = done.Found is { } found ? ToolStanding.Of(found, tools) : null,
         };
     }
 

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  usePickFolder, usePluginAction, usePluginInstall, usePluginNew, usePlugins, usePluginTry, usePluginUpdate,
+  usePickFolder, usePluginAction, usePluginInstall, usePluginNew, usePlugins, usePluginToolFix, usePluginTools, usePluginTry,
+  usePluginUpdate,
 } from '../bridge/shell';
 import { sentence } from '../locales/format';
 import { Drawer, failure, type Notify, useErrorNotify } from '../design/ui';
@@ -12,11 +13,12 @@ import { ListMore } from '../work/frame/ListPane';
 import type { ViewLayout } from '../work/frame/ViewFrame';
 import {
   chosenOf, type HelpServerShown, type OfferShown, pluginGroups, type PluginShown, type ResourceShown, type SkillShown,
-  type StepShown, takesShipped,
+  type StepShown, takesShipped, type ToolCheckShown, type ToolShown,
 } from './catalog';
 import { OfferPage } from './OfferPage';
 import { PluginList, PluginStrip } from './PluginList';
 import { type HelpPress, PluginMainNotice, PluginPage } from './PluginPage';
+import type { ToolRefused } from './PluginTools';
 
 /** The driver's word for a plugin this machine does not hold: read by its code, never by its sentence (D48 §6). */
 const UNKNOWN = 'PLUGIN_UNKNOWN';
@@ -69,6 +71,11 @@ const resourcesOf = (raw: unknown): ResourceShown[] =>
   list<ResourceShown>(raw).filter((resource) => typeof resource?.schema === 'string')
     .map((resource) => ({ schema: resource.schema, role: typeof resource.role === 'string' ? resource.role : 'temporary' }));
 
+/** The tools a plugin declares (ADOSIGNIN1), each with its checks; none from an older shell. */
+const toolsOf = (raw: unknown): ToolShown[] =>
+  list<ToolShown>(raw).filter((tool) => typeof tool?.id === 'string')
+    .map((tool) => ({ ...tool, checks: list<ToolCheckShown>(tool.checks) }));
+
 function installedOf(raw: unknown): PluginShown[] {
   return list<PluginShown>(raw).map((plugin) => ({
     ...plugin,
@@ -78,6 +85,7 @@ function installedOf(raw: unknown): PluginShown[] {
     skills: skillsOf(plugin.skills),
     steps: stepsOf(plugin.steps),
     resources: resourcesOf(plugin.resources),
+    tools: toolsOf(plugin.tools),
   }));
 }
 function offersOf(raw: unknown): OfferShown[] {
@@ -127,6 +135,12 @@ export function usePluginsView({ active, chosen, onChoose, notify, onAsk }: {
   const trying = usePluginTry();
   const updating = usePluginUpdate();
   const installing = usePluginInstall();
+  const checking = usePluginTools();
+  const fixing = usePluginToolFix();
+  // Each plugin's tools as its last Check and last console read them, by plugin id and tool id (ADOSIGNIN1); the press the
+  // driver turned down, by plugin id.
+  const [standings, setStandings] = useState<Record<string, Record<string, ToolShown>>>({});
+  const [toolRefused, setToolRefused] = useState<Record<string, ToolRefused>>({});
   // Each plugin's last trial and its update's plan, by id; the plugin whose removal asks.
   const [trials, setTrials] = useState<Record<string, PluginTrialResult>>({});
   const [plans, setPlans] = useState<Record<string, PluginUpdatePlanShown>>({});
@@ -190,6 +204,27 @@ export function usePluginsView({ active, chosen, onChoose, notify, onAsk }: {
     onSuccess: (trial) => setTrials((was) => ({ ...was, [id]: trial })),
     onError: failed,
   });
+  // The person's Check asks the machine; a look at the page asks it nothing. A console's close reads the one tool again.
+  const holdTool = (id: string, tool: ToolShown) =>
+    setStandings((was) => ({ ...was, [id]: { ...was[id], [tool.id]: { ...tool, checks: list<ToolCheckShown>(tool.checks) } } }));
+  const checkTools = (id: string) => checking.mutate({ id }, {
+    onSuccess: (result) => list<ToolShown>(result.tools).forEach((tool) => holdTool(id, tool)),
+    onError: failed,
+  });
+  const fixTool = (id: string, tool: string, check: number) => {
+    setToolRefused((was) => {
+      const kept = { ...was };
+      delete kept[id];
+      return kept;
+    });
+    fixing.mutate({ id, tool, check }, {
+      onSuccess: (result) => {
+        if (result.standing) holdTool(id, result.standing);
+        if (!result.ran) setToolRefused((was) => ({ ...was, [id]: { tool, check, why: result.why ?? '', message: result.message } }));
+      },
+      onError: failed,
+    });
+  };
   const putAway = (id: string) => setPlans((was) => {
     const kept = { ...was };
     delete kept[id];
@@ -245,6 +280,14 @@ export function usePluginsView({ active, chosen, onChoose, notify, onAsk }: {
             onSwitch={switchOne}
             onHelp={helpOne}
             onTry={tryOne}
+            toolStanding={standings[shown.plugin.id]}
+            checkingTools={checking.isPending && checking.variables?.id === shown.plugin.id}
+            fixingTool={fixing.isPending && fixing.variables?.id === shown.plugin.id
+              ? { tool: fixing.variables.tool, check: fixing.variables.check }
+              : null}
+            toolRefused={toolRefused[shown.plugin.id] ?? null}
+            onCheckTools={checkTools}
+            onFixTool={fixTool}
             onAskUpdate={askUpdate}
             onApplyUpdate={update}
             onCancelUpdate={() => putAway(shown.plugin.id)}

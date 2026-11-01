@@ -1,4 +1,5 @@
-import type { AtWorkA, AtWorkChild, AtWorkHeld, AtWorkPart, AtWorkSubagents } from './types';
+import type { Consideration } from '../../data/signals';
+import type { AtWorkA, AtWorkAsker, AtWorkChild, AtWorkHeld, AtWorkPart, AtWorkSubagents } from './types';
 
 // Who is at work (COWORKVIEW1a): the answers the view's stories and tests draw, each a state the cowork view design §5.3 names.
 
@@ -140,6 +141,53 @@ export const JOINED_EACH_WAY = routed([
 export const OVERFLOW_AND_EARLIER = routed(
   [routedPart('s1', 1), routedPart('s2', 2, { waits: { helper: true }, state: 'completed' })],
   { earlier: 2, moreParts: { working: 10 } },
+);
+
+// COWORKVIEW1b-ii: the quests a part asked, and what asked it.
+
+/** The tick's reasons for two untaken quests, as `considered` holds them. */
+export const CONSIDERED: Consideration[] = [
+  { quest: 'q4', repository: 'driver', verdict: 'AtCapacity', reason: 'The concurrency cap (1) is spent.', said: { code: 'cap', cap: 1 } },
+  { quest: 'q8', repository: 'docs', verdict: 'NotDrivable', reason: '`docs` is not driven here.' },
+];
+
+/** Two lane parts alongside the chat that published them, and a third lane quest untaken while the cap is spent. */
+export const LANES_ALONGSIDE_AND_UNTAKEN = routed([
+  routedPart('c1', 1, { state: 'completed' }),
+  routedPart('s2', 2, { joined: { began: 'opened', quest: 'q2', lanes: ['core'], byPart: 1, of: 'driver' }, alongside: true }),
+  routedPart('s3', 3, { joined: { began: 'opened', quest: 'q3', lanes: ['docs'], byPart: 1, of: 'driver' }, alongside: true }),
+], {
+  published: 3,
+  quests: [{ id: 'q4', title: 'Tidy the media lane', status: 'Open', lanes: ['media'], taker: { untaken: true } }],
+});
+
+/** Each taker: a session here, a chat through its connector, another machine, no session recorded here, and nobody yet. */
+export const QUESTS_EACH_TAKER = routed([routedPart('c1', 1, { state: 'completed' })], {
+  published: 6,
+  quests: [
+    { id: 'q1', title: 'Index the changes', status: 'Taken', lanes: ['core'], taker: { session: 's9', agent: 'claude-code', state: 'working' } },
+    { id: 'q2', title: 'Write the notes', status: 'Taken', taker: { conversation: 'c7' } },
+    { id: 'q3', title: 'Check the build', status: 'Taken', of: 'engine', taker: { elsewhere: true } },
+    { id: 'q5', title: 'Update the guide', status: 'Taken', of: 'docs', taker: { unrecorded: true } },
+    { id: 'q4', title: 'Tidy the media lane', status: 'Open', lanes: ['media'], taker: { untaken: true } },
+    { id: 'q6', title: 'Drop the old route', status: 'Declined' },
+  ],
+});
+
+/** A chain: a quest done, its next step taken beneath it, and a quest to another repository whose taker waits on a question. */
+export const CHAIN_AND_QUESTION = routed([routedPart('c1', 1, { state: 'completed' })], {
+  published: 2,
+  quests: [
+    { id: 'q1', title: 'Cut the release', status: 'Done', of: 'engine', taker: { session: 's4', agent: 'codex', state: 'completed' } },
+    { id: 'q2', title: 'Publish the notes', status: 'Taken', of: 'engine', step: 'q1', taker: { session: 's5', agent: 'codex', state: 'awaiting-person' }, waits: { quest: 'q9', of: 'docs', lanes: ['api'] } },
+  ],
+});
+
+/** The attended part's own quest: asked by a session, the step before, an ask, or the person. */
+export const ASKED_BY = (by: AtWorkAsker['by']): AtWorkHeld => routed(
+  [routedPart('s2', 2, { joined: { began: 'opened', quest: 'q1', of: 'driver' } }), routedPart('s1', 1, { state: 'completed' })],
+  { askedBy: { quest: 'q1', by } },
+  's2',
 );
 
 export const EMPTY =answerOf({ read: 'none', working: 0, children: [] });

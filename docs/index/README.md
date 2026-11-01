@@ -43,14 +43,14 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/bridge/driver.ts` | 43 | 790 |
 | `src/Daoris.Web/src/bridge/sessions/sessions.ts` | 54 | 1050 |
 | `src/Daoris.Web/src/data/api.ts` | 56 | 919 |
-| `src/Daoris.Web/src/data/queries.ts` | 52 | 985 |
+| `src/Daoris.Web/src/data/queries.ts` | 52 | 987 |
 | `src/Daoris.Web/src/design/FlowCanvas.tsx` | 55 | 1039 |
 | `src/Daoris.Web/src/design/tokens.test.ts` | 50 | 882 |
 | `src/Daoris.Web/src/design/ui.test.tsx` | 65 | 1295 |
 | `src/Daoris.Web/src/design/ui.tsx` | 97 | 2027 |
-| `src/Daoris.Web/src/help/AskConversation.tsx` | 63 | 1160 |
-| `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 108 | 2136 |
-| `src/Daoris.Web/src/help/ProposalCard.test.tsx` | 44 | 804 |
+| `src/Daoris.Web/src/help/AskConversation.tsx` | 63 | 1164 |
+| `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 108 | 2139 |
+| `src/Daoris.Web/src/help/ProposalCard.test.tsx` | 46 | 848 |
 | `src/Daoris.Web/src/locales/names.test.ts` | 41 | 721 |
 | `src/Daoris.Web/src/menus/commands.ts` | 43 | 831 |
 | `src/Daoris.Web/src/projects/ProjectsView.git.test.tsx` | 82 | 1345 |
@@ -62,7 +62,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/WorkFrame.conversation.test.tsx` | 61 | 1192 |
 | `src/Daoris.Web/src/work/WorkFrame.landed.test.tsx` | 118 | 2053 |
 | `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 97 | 1803 |
-| `src/Daoris.Web/src/work/WorkFrame.tsx` | 169 | 2918 |
+| `src/Daoris.Web/src/work/WorkFrame.tsx` | 169 | 2922 |
 | `src/Daoris.Web/src/work/WorkFrame.words.test.tsx` | 52 | 953 |
 | `src/Daoris.Web/src/work/attention/AttentionBand.test.tsx` | 54 | 879 |
 | `src/Daoris.Web/src/work/attention/AttentionRow.test.tsx` | 46 | 887 |
@@ -114,7 +114,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Course/LimitWaitsProcessTests.cs` | 75 | 1317 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Course/LineCourseTests.cs` | 58 | 804 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Events/NoteCodesTests.cs` | 44 | 828 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 154 | 2336 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 155 | 2342 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpSettingProposalsTests.cs` | 56 | 830 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Install/StagedBuildTests.cs` | 41 | 957 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Install/ToolInstallTests.cs` | 41 | 724 |
@@ -249,7 +249,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/PipeConfirmTests.cs` | 83 | 1536 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/PipeStandingTests.cs` | 49 | 915 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/StandingConfirmationTests.cs` | 59 | 1078 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/StatePublisherTests.cs` | 47 | 883 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/StatePublisherTests.cs` | 47 | 885 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/ConversationRoutes.cs` | 42 | 638 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs` | 58 | 920 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/GitRoutes.cs` | 45 | 680 |
@@ -262,8 +262,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/NeedsAPerson.cs` | 56 | 912 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/SessionWords.cs` | 70 | 1336 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/InstancePipe.cs` | 101 | 1994 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/PipeCensus.cs` | 41 | 545 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/PipeTargetRows.cs` | 40 | 521 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/PipeCensus.cs` | 41 | 547 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/PipeTargetRows.cs` | 40 | 524 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/StandingConfirmation.cs` | 93 | 1710 |
 
 ### Service (`service`)
@@ -433,11 +433,11 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-11-01-setup-ux-design.md` | 67 | 693 |
 | `docs/2026-11-01-setup-ux-proposal-codex.md` | 46 | 622 |
 | `docs/2026-11-01-setup-ux-proposal-opus.md` | 77 | 818 |
-| `docs/2026-11-02-canvas-design.md` | 47 | 418 |
+| `docs/2026-11-02-canvas-design.md` | 49 | 442 |
 | `docs/2026-11-02-canvas-proposal-opus.md` | 42 | 512 |
 | `docs/2026-11-02-flowchart-proposal-codex.md` | 46 | 443 |
 | `docs/2026-11-02-flowchart-proposal-opus.md` | 80 | 736 |
-| `docs/2026-11-02-staff-policy-design.md` | 43 | 411 |
+| `docs/2026-11-02-staff-policy-design.md` | 45 | 439 |
 | `docs/2026-11-02-staff-policy-proposal-codex.md` | 44 | 469 |
 | `docs/2026-11-02-staff-policy-proposal-opus.md` | 47 | 542 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |

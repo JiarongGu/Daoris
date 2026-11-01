@@ -24,11 +24,12 @@ vi.mock('@shenora/react', async (importOriginal) => {
 });
 
 import type { HelpProposal } from '../help/ProposalCard';
+import { draftToTell, noteTold } from '../help/openDraft';
 import { keys } from '../data/queries';
 import { useSetHelpMode } from './driver';
 import {
-  HELP_PROPOSALS, HELP_PUBLISHED, helpModeOf, publishedAnswer, settleBound, useHelpPublished, useHelpWired, useSettleHelp, wiredAnswer,
-  type HelpSettled,
+  HELP_PROPOSALS, HELP_PUBLISHED, helpModeOf, makerOf, publishedAnswer, settleBound, useDraftProposals, useHelpPublished, useHelpWired, useSettleHelp,
+  wiredAnswer, type HelpSettled,
 } from './help';
 import { useStateHub } from './state/stateHub';
 
@@ -126,6 +127,67 @@ describe('what an Apply carries', () => {
 
     const sent = invoke.mock.calls.find(([, type]) => type === 'HELP_APPLY');
     expect((sent?.[2] as { payload?: unknown } | undefined)?.payload).toEqual({ id: 'p13', revision: 'abc123' });
+  });
+
+  /** FLOWCHART2f: a draft card's Apply from its editor names each change taken into the draft and each left, which settles it. */
+  it("sends the editor's changes taken and left beside the revision", async () => {
+    invoke.mockReset();
+    invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER' ? { message: 'Applied.', applied: true } : undefined));
+    const client = new QueryClient();
+    client.setQueryData(['help-proposals', 's1'], [{ id: 'p14', kind: 'workflow', revision: 'def456' }]);
+    const wrapper = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client }, children);
+    const { result } = renderHook(() => useSettleHelp(), { wrapper });
+
+    await act(async () => { await result.current.mutateAsync({ id: 'p14', apply: true, taken: ['step:+find'], left: ['way:+g'] }); });
+
+    const sent = invoke.mock.calls.find(([, type]) => type === 'HELP_APPLY');
+    expect((sent?.[2] as { payload?: unknown } | undefined)?.payload).toEqual({ id: 'p14', revision: 'def456', taken: ['step:+find'], left: ['way:+g'] });
+  });
+});
+
+/** FLOWCHART2f (D223 §4): the proposals against a draft the editor of a place reads, from the conversations told one. */
+describe('the proposals against an open draft', () => {
+  const graph = { schemaVersion: 2, entries: ['work'], end: 'work', nodes: [{ id: 'work', kind: 'claimed' }], wires: [] };
+  const card = (id: string, scope: string, draft: string | null): HelpProposal => ({
+    id, kind: 'workflow', describe: '', terminal: '', why: '',
+    workflow: { id: '', name: '', version: 0, scope, diff: [], yourPart: [], outward: [], needs: [], appliesTo: '', choose: false, draft, changes: [], proposed: graph },
+  });
+
+  it("asks each conversation told a draft for its proposals, and keeps the place's draft cards with the graph each was told", async () => {
+    const sent = draftToTell({ place: 'engine', graph }, undefined)!;
+    noteTold('s9', sent);
+    invoke.mockReset();
+    invoke.mockImplementation(async (module: string, type: string, request: { payload: { session?: string } }) => {
+      if (module !== 'DAORIS.DRIVER' || type !== 'HELP_PROPOSALS') return undefined;
+      return request.payload.session === 's9'
+        ? { session: 's9', proposals: [card('p1', 'engine', sent.fingerprint), card('p2', 'docs', sent.fingerprint), card('p3', 'engine', null), { ...card('p4', 'engine', null), kind: 'setting' }] }
+        : null;
+    });
+    const client = new QueryClient();
+    const wrapper = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client }, children);
+    const { result } = renderHook(() => useDraftProposals('engine', true), { wrapper });
+
+    await waitFor(() => expect(result.current.map((each) => each.proposal.id)).toEqual(['p1']));
+    expect(result.current[0]).toMatchObject({ session: 's9', base: graph });
+    expect(invoke.mock.calls.filter(([, type]) => type === 'HELP_PROPOSALS').map(([, , request]) => (request as { payload: { session: string } }).payload.session))
+      .toEqual(expect.arrayContaining(['s9']));
+  });
+
+  it('asks nothing while the editor is not shown', async () => {
+    invoke.mockReset();
+    const client = new QueryClient();
+    const wrapper = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client }, children);
+    renderHook(() => useDraftProposals('engine', false), { wrapper });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(invoke.mock.calls.filter(([, type]) => type === 'HELP_PROPOSALS')).toEqual([]);
+  });
+
+  it('names who made it by the agent a person calls it and the models its conversation reported', () => {
+    const doors = [{ harness: 'claude', product: 'Claude Code' }] as unknown as Parameters<typeof makerOf>[1];
+    expect(makerOf({ adapter: 'claude', ran: { models: ['claude-opus-5-5'], more: 0, entries: [], entriesMore: 0 } }, doors))
+      .toEqual({ agent: 'Claude Code', models: ['claude-opus-5-5'] });
+    expect(makerOf({ adapter: 'codex', ran: null }, [])).toEqual({ agent: 'codex', models: [] });
+    expect(makerOf(undefined, [])).toBeNull();
   });
 });
 

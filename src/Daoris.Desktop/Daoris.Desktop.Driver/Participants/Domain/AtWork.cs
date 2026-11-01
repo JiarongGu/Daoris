@@ -89,6 +89,18 @@ public sealed record AtWorkAnswer(AtWorkOf Of, string Attended, IReadOnlyList<At
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? Published { get; init; }
 
+    /// <summary>The quests the entry's parts asked that opened no part of it, a chain's steps after each (COWORKVIEW1b-ii); null where none.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<AtWorkAskedQuest>? Quests { get; init; }
+
+    /// <summary>How many of those the bound left out.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? MoreQuests { get; init; }
+
+    /// <summary>What asked the attended part's quest.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public AtWorkAsker? AskedBy { get; init; }
+
     /// <summary>When this process began: the window's memory of what it heard starts here (rule 18).</summary>
     public DateTimeOffset WindowOpened { get; init; } = Opened;
 
@@ -278,6 +290,7 @@ public static class AtWork
         }
 
         var stale = groups.Failing ?? sessions.Failing ?? routing?.Quests.Failing;
+        var asked = routing?.Asking?.Invoke(session, ids, routing.Parts, attended);
         return new AtWorkHeld
         {
             Answer = new AtWorkAnswer(new AtWorkOf(session), session, parts, Subagents(attended, Teammate(session) ? null : attendedReading))
@@ -285,6 +298,9 @@ public static class AtWork
                 MoreParts = moreParts.Count > 0 ? moreParts : null,
                 Earlier = routed?.Folded.Count is > 0 and var earlier ? earlier : null,
                 Published = routed?.Published is > 0 and var published ? published : null,
+                Quests = asked is { Quests.Count: > 0 } ? asked.Quests : null,
+                MoreQuests = asked?.More is > 0 and var more ? more : null,
+                AskedBy = asked?.By,
             },
             Stale = stale is null ? null : new AtWorkWhy(stale),
         };
