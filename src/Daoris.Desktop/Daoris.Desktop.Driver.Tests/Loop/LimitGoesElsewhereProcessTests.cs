@@ -172,6 +172,49 @@ public sealed class LimitGoesElsewhereProcessTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 STAFFPOLICY1d: a conversation of an added role that takes Chat in its workspace, at its agent's limit, goes on with that role's next
+    /// choice, not the seeded Chat's (which lists no other agent): the bound role's order is the one read.
+    /// </summary>
+    [Fact]
+    public async Task A_conversation_of_an_added_role_at_its_agent_s_limit_goes_on_with_that_roles_next_choice()
+    {
+        Git("init", "-q");
+        Git("config", "user.email", "limit@example.invalid");
+        Git("config", "user.name", "STAFFPOLICY1d");
+        File.WriteAllText(Path.Combine(_root, "port.txt"), "8080\n");
+        Git("add", ".");
+        Git("commit", "-q", "-m", "first");
+
+        // Seeded Chat lists one agent; the added role taking Chat in this workspace lists two.
+        var seeded = Config("chat", [new ActorChoice("acp-stub")]);
+        var staffing = new RoleStaffing(_home, () => StoreSettled.Yes);
+        Assert.Equal(StaffingImported.Done, staffing.ImportFile().How);
+        RoleDoor.Apply(staffing, RoleChange.Set(RoleCatalogTests.Working("night", ParticipantWork.Chat, new RoleScope(RoleScope.Workspace, "default"))), Both);
+        var config = seeded with { Actors = new Dictionary<string, IReadOnlyList<ActorChoice>>(seeded.Actors, StringComparer.Ordinal) { ["night"] = Both } };
+
+        var events = Events;
+        var (runner, ledger, client, _, _) = Runner();
+        using var _ = runner;
+        using var __ = client;
+
+        var old = (await runner.StartAsync("engine", "acp-stub", config, order: ActorChoices.Effective("chat", config))).SessionId!;
+        await Poll.Until(() => ledger.State(old) == "working", () => Seen(ledger, events, old));
+        Assert.True(runner.Say(old, "Earlier answered exchange."));
+        await Poll.Until(() => events.After(old, 0).Events.Any(e => e.Kind == SessionEventKind.Turn), () => Seen(ledger, events, old));
+        Assert.True(runner.Say(old, "Make the port configurable."));
+
+        await Poll.Until(() => ledger.Count == 2 && Ended(ledger.State(old)), () => Seen(ledger, events, old));
+        var next = (await client.RecordAsync("c2"))!;
+        Assert.Equal(("acp-second", old), (next.Adapter, next.From));
+
+        // The move runs to its end before the test does, as the seeded Chat's does.
+        await Poll.Until(
+            () => StubFile.Lines(Heard).Any(line => line.StartsWith("prompt[second]: ", StringComparison.Ordinal) && line.Contains("Make the port configurable.")),
+            () => Seen(ledger, events, next.Session));
+        await Poll.Until(() => events.After(next.Session, 0).Events.Any(e => e.Kind == SessionEventKind.Turn), () => Seen(ledger, events, next.Session));
+    }
+
+    /// <summary>
     /// 🔴 Ask Daoris on its first choice: every account of its agent cools mid-turn, and it goes on with its second choice, another agent,
     /// in the same workspace's room, its history linking the two, the brief and the held words delivered once; a person's hand-over of
     /// the new part to another agent is still refused, as Ask Daoris's own conversation.

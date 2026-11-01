@@ -294,7 +294,7 @@ public sealed class StaffLedger(string home, Func<StoreSettled>? settled = null,
     /// </summary>
     public StaffBinding? Opened(HarnessSelection selection, string session, string? condition = null) =>
         Opened(selection.Number, session, condition)
-        ?? (selection.Number <= 0 && selection.Staffed is { } carried ? Written(carried, session, condition) : null);
+        ?? (selection.Number <= 0 && selection.Staffed is StaffBinding carried ? Written(carried, session, condition) : null);
 
     private StaffBinding Written(StaffBinding binding, string session, string? condition)
     {

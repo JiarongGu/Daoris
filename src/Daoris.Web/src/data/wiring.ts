@@ -234,7 +234,11 @@ export type SpaceStarted = {
 export type ActorEntry = { agent: string; model?: string | null; effort?: string | null; from: string };
 
 /** One actor as `ACTORS` answers it (MODELROLE1c, D205 §9.4): set, as before, off, or an entry in driver.json that does not read. */
-export type ActorRow = { id: string; state: 'set' | 'before' | 'off' | 'unreadable'; choices: ActorEntry[]; error?: string | null };
+export type ActorRow = {
+  id: string; state: 'set' | 'before' | 'off' | 'unreadable'; choices: ActorEntry[]; error?: string | null;
+  /** STAFFPOLICY1d: the order a start would walk where the role's policy arranges it otherwise than as stored (Build, Chat); the offer's order. */
+  arranged?: ActorEntry[] | null;
+};
 
 /**
  * A change of driver.json's actors another program made, as `ACTORS` answers it beside the rows (FOUNDATION1w-s, the foundation design

@@ -335,9 +335,21 @@ public sealed class DriverRoutes(DriverContext context)
     [DriverRoute("ACTORS")]
     private object? Actors(IpcRequest request) => new
     {
-        Actors = ActorView.All(DriverConfig.Load(_loop.ConfigPath)),
+        Actors = ArrangedActors(DriverConfig.Load(_loop.ConfigPath)),
         Found = RoleStaffing.Of(_loop.ConfigPath)?.Found().Select(found => new { found.Id, found.At, found.Changes }).ToList() ?? [],
     };
+
+    // Build's and Chat's orders also as their policies arrange them (STAFFPOLICY1d), which the hand-over's offer draws its next choices from.
+    private IReadOnlyList<ActorView> ArrangedActors(DriverConfig config)
+    {
+        var ledger = new StaffLedger(_loop.Home);
+        return [.. ActorView.All(config).Select(view =>
+        {
+            if (view.Id is not ("build" or "chat") || view.State == "unreadable") return view;
+            var arranged = RoleOrders.Arranged(ledger, view.Id, view.Id, config);
+            return arranged.SequenceEqual(view.Choices) ? view : view with { Arranged = arranged };
+        })];
+    }
 
     // A found change answered (FOUNDATION1w-s, §19.15): the person's *Take it*, the actors as that file showed them, a turn-on of Intake or
     // Ask Daoris among them by this press, or *Dismiss*, the actors as they are. Through the staffing's one write, then a nudge.

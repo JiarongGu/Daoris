@@ -9,7 +9,12 @@ namespace Daoris.Driver;
 /// </summary>
 public static class StaffCapabilities
 {
-    /// <summary>The fields the start's walk enforces: the rule, a choice's weight, share, daily budget of starts and works.</summary>
+    /// <summary>
+    /// The fields a build enforces: the rule, a choice's weight, share, daily budget of starts and works. The start's walk enforces them for a
+    /// new start and, since row d, so does every other reader of a role's order (a conversation at its agent's limit, a briefed press, a
+    /// pick's alternatives, a hand-over's offer and its start, a helper's, partner's and reviewer's alternatives within one agent): no
+    /// further field joins the list with them, since the moves and the token budget are row e's.
+    /// </summary>
     public static IReadOnlyList<string> Fields { get; } = ["rule", "weight", "share", "budget.starts", "takes"];
 
     /// <summary>The first field of <paramref name="policy"/> this build does not enforce yet, refused with the fields it does; null where it sets none.</summary>

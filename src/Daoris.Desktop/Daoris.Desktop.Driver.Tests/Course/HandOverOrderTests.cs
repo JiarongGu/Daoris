@@ -80,4 +80,46 @@ public sealed class HandOverOrderTests
                 .SequenceEqual(taken),
             $"{name}: {string.Join(", ", taken.Select(step => $"{step.Harness}/{step.Model}/{step.From}"))}");
     }
+
+    public static TheoryData<string, string, string, string, string, string> ArrangedRows()
+    {
+        var data = new TheoryData<string, string, string, string, string, string>();
+        using var document = JsonDocument.Parse(File.ReadAllText(
+            Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "hand-over-order.json")));
+        foreach (var row in document.RootElement.GetProperty("arrangedRows").EnumerateArray())
+        {
+            data.Add(row[0].GetString()!, row[1].GetString()!, row[2].GetRawText(), row[3].GetRawText(), row[4].GetRawText(), row[5].GetRawText());
+        }
+
+        return data;
+    }
+
+    /// <summary>
+    /// STAFFPOLICY1d: the steps are taken over the order a start would walk (the arranged entries where the role's policy arranges them), kept
+    /// as it is and not the stored one, and the page's <c>nextChoices</c> is held to the same rows.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(ArrangedRows))]
+    public void The_arranged_order_is_the_order_a_hand_over_goes_in(string name, string own, string doors, string stored, string arranged, string steps)
+    {
+        using var listed = JsonDocument.Parse(doors);
+        var roster = listed.RootElement.EnumerateArray()
+            .Select(door => new HandOverDoor(
+                door[0].GetString()!, door[1].GetBoolean(), door[2].ValueKind == JsonValueKind.Null ? null : door[2].GetString()))
+            .ToList();
+        using var kept = JsonDocument.Parse(stored);
+        using var arrangedRow = JsonDocument.Parse(arranged);
+        var order = (arrangedRow.RootElement.ValueKind == JsonValueKind.Null ? kept.RootElement : arrangedRow.RootElement).EnumerateArray()
+            .Select(entry => new ActorEffective(entry[0].GetString()!, entry[1].GetString(), null, entry[2].GetString()!))
+            .ToList();
+        using var expected = JsonDocument.Parse(steps);
+
+        var taken = HandOverOrder.Steps(own, roster, order);
+
+        Assert.True(
+            expected.RootElement.EnumerateArray()
+                .Select(each => new HandOverStep(each[0].GetString()!, each[1].GetString(), null, each[2].GetString()!))
+                .SequenceEqual(taken),
+            $"{name}: {string.Join(", ", taken.Select(step => $"{step.Harness}/{step.Model}/{step.From}"))}");
+    }
 }

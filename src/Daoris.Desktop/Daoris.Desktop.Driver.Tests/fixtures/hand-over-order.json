@@ -21,5 +21,11 @@
     ["the actor limits who: no maker outside its entries is ever a step", "claude-code", [["claude-code", true, null], ["codex-acp", true, "codex"], ["dsh", true, null]], [["claude-code", "opus", "1"]], []],
     ["as before leaves the roster's order, with no model", "claude-code", [["claude-code", true, null], ["codex-acp", true, "codex"]], [["claude-code", null, "before"]], [["codex-acp", null, "roster"]]],
     ["no entries leaves the roster's order", "claude-code", [["claude-code", true, null], ["codex-acp", true, "codex"], ["dsh", true, null]], [], [["codex-acp", null, "roster"], ["dsh", null, "roster"]]]
+  ],
+  "arrangedAbout": "The same order once the actor's role has a policy that arranges it (STAFFPOLICY1d; the staff policy design §3.3): a hand-over goes to the next choice in the order a start would walk, not the stored one. Each row: its name, the session's adapter, the roster's doors as [harness, present, accountOf], the actor's stored entries as [agent, model, from], the arranged entries in the order a start would walk them (null where the policy arranges nothing), and the steps in order as [harness, model, from]. The driver's `HandOverOrder.Steps` over the arranged entries (`HandOverOrderTests`) and the page's `nextChoices` over the row's `arranged` (`handOverOrder.test.ts`) are both held to it.",
+  "arrangedRows": [
+    ["the arranged order is kept, not the stored one", "claude-code", [["claude-code", true, null], ["codex-acp", true, "codex"], ["dsh", true, null]], [["claude-code", "opus", "1"], ["dsh", null, "2"], ["codex-acp", "gpt-5", "3"]], [["codex-acp", "gpt-5", "3"], ["claude-code", "opus", "1"], ["dsh", null, "2"]], [["codex-acp", "gpt-5", "3"], ["dsh", null, "2"]]],
+    ["a choice the arrangement left out is not a step", "claude-code", [["claude-code", true, null], ["codex-acp", true, "codex"], ["dsh", true, null]], [["claude-code", "opus", "1"], ["codex-acp", "gpt-5", "2"], ["dsh", null, "3"]], [["claude-code", "opus", "1"], ["dsh", null, "3"]], [["dsh", null, "3"]]],
+    ["no arrangement leaves the stored order", "claude-code", [["claude-code", true, null], ["codex-acp", true, "codex"], ["dsh", true, null]], [["claude-code", "opus", "1"], ["dsh", null, "2"], ["codex-acp", "gpt-5", "3"]], null, [["dsh", null, "2"], ["codex-acp", "gpt-5", "3"]]]
   ]
 }

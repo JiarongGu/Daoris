@@ -184,6 +184,11 @@ public sealed record MoveDecision(string Left, string Executor, string How, stri
     /// <summary>The agent the new part opens on where the move names one, a hand-over's (part 2, step 5); null for the line's own.</summary>
     public string? Agent { get; init; }
 
+    /// <summary>The model and effort of the choice the hand-over was offered and approved on (STAFFPOLICY1d), with <see cref="Agent"/>; null for the agent's own.</summary>
+    public string? Model { get; init; }
+
+    public string? Effort { get; init; }
+
     /// <summary>A limit's refused turns' bound: how many of the old part's events its refused turns' words are read within (part 2, step 5).</summary>
     public int? RefusedBound { get; init; }
 }
@@ -333,6 +338,11 @@ public sealed record MoveRecord(long Id, string Left, string Executor, string Ph
 
     /// <summary>The agent its new part opens on, where it names one.</summary>
     public string? Agent { get; init; }
+
+    /// <summary>The model and effort of the choice a hand-over was approved on (STAFFPOLICY1d); null for the agent's own.</summary>
+    public string? Model { get; init; }
+
+    public string? Effort { get; init; }
 
     /// <summary>A limit's refused turns' bound.</summary>
     public int? RefusedBound { get; init; }

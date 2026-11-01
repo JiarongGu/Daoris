@@ -2319,7 +2319,10 @@ export function WorkFrame({
           busy={actions.handingOver}
           onGoOn={(told) => actions.handOverNow(
             attended,
-            { agent: offer.agent, account: offer.account ?? '', name: offerTo?.product || offer.agent },
+            {
+              agent: offer.agent, account: offer.account ?? '', name: offerTo?.product || offer.agent,
+              model: offer.choice?.model, effort: offer.choice?.effort,
+            },
             told,
             offer.why,
           )}

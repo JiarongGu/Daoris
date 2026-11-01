@@ -876,10 +876,13 @@ internal sealed class LimitMove(ChatContext context, IChatRunning runner, ChatHa
         if (prior.Choice == "pick") return new(null, LimitNotes.Picked(ranOn), $"`{ranOn}` is the agent you picked, so it never goes on with another.");
 
         var actor = prior.Actor ?? (isHelp ? "ask-daoris" : "chat");
+        // The role its start was bound to (STAFFPOLICY1d), not the seeded role of its work: an added role taking Chat in this workspace has
+        // its own choices. Its order as a start would arrange it now, the policy's passes (a budget, a work) left out.
+        var role = RoleOrders.Bound(context.Conversations.RoleOf(prior.Session)?.Role, actor, RoleCatalog.ReadHome(context.Home), new RolePlace(workspace));
         IReadOnlyList<ActorEffective> order;
         try
         {
-            order = ActorChoices.Effective(actor, config);
+            order = RoleOrders.Arranged(context.Harnesses.StaffFor(context.Home), role, actor, config);
         }
         catch (ActorUnreadableException error)
         {
