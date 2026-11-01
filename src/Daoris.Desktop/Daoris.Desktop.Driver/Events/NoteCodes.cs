@@ -758,6 +758,9 @@ public static class NoteCodes
     // The repository's process a chat in a tree of its own was told at its start (PROCESS1d-ii): its commit rule's mode and where it
     // was set are facts, the words after the lead Daoris's one-copy English.
     public static readonly NoteCode ChatToldProcess = new("chat.told-process", ["mode", "source"]);
+    // The routing standing a chat's agent was told at a start (COWORKVIEW1e-i): the standing is a fact, the words after the lead
+    // Daoris's one-copy English.
+    public static readonly NoteCode ChatToldRouting = new("chat.told-routing", ["standing"]);
     // The workflow draft open in the editor a chat's agent was told beside the person's words (FLOWCHART2d): the lead by its code, then
     // what the agent was handed, the draft's JSON last and whole, which the draft door finds it by again.
     public static readonly NoteCode ChatToldDraft = new("chat.told-draft", []);

@@ -3084,6 +3084,10 @@ public sealed class Driver(
                 Asked = chosen?.Asked ?? (start.Resumes is { } carried ? carried.Asked : ActorAsked.Before(adapter.Name)),
                 Choice = chosen?.From ?? start.Resumes?.Choice,
                 Browser = InAppBrowserServers.Told(browserDrivers),
+                // Its repository's routing standing (COWORKVIEW1e-i), told to a quest's session at each start that composes an instruction.
+                Routing = RoutingStanding.Told(
+                    ParticipantWork.Build, config,
+                    registry.FirstOrDefault(repo => string.Equals(repo.Repository, quest.To, StringComparison.OrdinalIgnoreCase)))?.Words,
                 ReadsAcross = across.Reads,
                 WritesAcross = across.Writes,
                 // Named on its spawn as on its connector, so what it publishes says it did (SESS1).

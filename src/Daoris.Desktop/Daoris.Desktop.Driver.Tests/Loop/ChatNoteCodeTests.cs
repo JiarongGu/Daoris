@@ -188,6 +188,61 @@ public sealed class ChatNoteCodeTests
         Assert.Equal(["chat.told-browser", "chat.told-process", "chat.told-where", "person"], codes);
     }
 
+    private static RoutingStanding Routing() =>
+        RoutingStanding.Of(
+            DriverConfig.Empty.WithDrivable("engine", true), new RepoView("engine", true, "/work/engine") { Lanes = ["core"] });
+
+    /// <summary>
+    /// COWORKVIEW1e-i: the routing standing rides the first prompt after the process and before where the person is, in a field of its own,
+    /// and is kept as a note of its own, its standing a fact, in the prompt's order; a go-on's opening keeps it after its first line.
+    /// </summary>
+    [Fact]
+    public void The_routing_standing_rides_after_the_process_and_is_kept_as_a_note_of_its_own_in_order()
+    {
+        var routing = Routing();
+        var message = new ChatMessage("open the board", [])
+        {
+            Briefing = InAppBrowserServers.Told(["browser"]), Process = Process(), Routing = routing,
+            Preface = "Where the person is now: the Sessions view.",
+        };
+        Assert.Equal(
+            $"{message.Briefing}\n\n{message.Process!.Words}\n\n{routing.Words}\n\nWhere the person is now: the Sessions view.\n\nopen the board", message.Prompt);
+        Assert.Equal($"{routing.Words}\n\nopen the board", new ChatMessage("open the board", []) { Routing = routing }.Prompt);
+
+        var told = ChatRecorded.ToldRouting(routing)!;
+        Assert.Equal(SessionEventKind.Note, told.Kind);
+        Assert.Equal(["chat.told-routing", null], told.Parts!.Select(part => part.Code).ToArray());
+        Assert.Equal(RoutingStanding.OneAtATime, told.Parts![0].Value("standing"));
+        Assert.Equal((routing.Words, NoteBy.Program), (told.Parts![1].Words, told.Parts![1].By));
+        NoteAssert.Holds(told.Text, told.Parts);
+        Assert.Null(ChatRecorded.ToldRouting(null));
+
+        var codes = ChatRunner.Recorded(message).Select(each => each.Parts?[0].Code ?? each.Origin).ToArray();
+        Assert.Equal(["chat.told-browser", "chat.told-process", "chat.told-routing", "chat.told-where", "person"], codes);
+
+        // A hand-over's briefing is Daoris's, never the person's: the note is kept beside the note of where it came from.
+        var handed = new ChatMessage("", []) { TakenOver = Noted.Of(NoteCodes.ChatToldBrowser, "taken over"), Routing = routing };
+        Assert.Contains(ChatRunner.Recorded(handed), each => each.Parts?[0].Code == "chat.told-routing");
+    }
+
+    /// <summary>A go-on is handed the line after its words and its appendix, as one more block, and its opening keeps the note.</summary>
+    [Fact]
+    public void A_go_on_is_handed_the_routing_standing_after_its_words_and_keeps_the_note_after_its_first_line()
+    {
+        var routing = Routing();
+        var words = new[] { new SaidWordView("w1", "Also log the port.", DateTimeOffset.UtcNow, [], Reopens: true) };
+        var ask = new ResumeAsk("conv-1", words, "resumed", appendix: "tree brought up") { Routing = routing };
+
+        Assert.Equal(["Also log the port.", "tree brought up", routing.Words], ask.Blocks);
+        Assert.Equal($"Also log the port.\n\ntree brought up\n\n{routing.Words}", ask.Prompt);
+        Assert.Equal(["resumed", "chat.told-routing"], ask.Opening().Take(2).Select(each => each.Parts?[0].Code ?? each.Text).ToArray());
+
+        var plain = new ResumeAsk("conv-1", words, "resumed");
+        Assert.Equal(["Also log the port."], plain.Blocks);
+        Assert.Equal("Also log the port.", plain.Prompt);
+        Assert.DoesNotContain(plain.Opening(), each => each.Parts?.Any(part => part.Code == "chat.told-routing") == true);
+    }
+
     [Fact]
     public async Task Nothing_withheld_says_nothing_and_the_string_door_reads_the_same_English()
     {
