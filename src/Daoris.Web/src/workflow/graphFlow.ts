@@ -17,6 +17,9 @@ export const FINISHED = ':finished';
 /** The kinds of the declared holds, drawn as one group when two or more follow one another. */
 const HOLD_KINDS: readonly string[] = ['work.requests', 'quest.holds', 'content.holds'];
 
+/** Whether a step's kind is one of the declared holds the drawing groups. */
+export const isHoldKind = (kind: string) => HOLD_KINDS.includes(kind);
+
 /** The kinds of the landing, the hinge between *Before it lands* and *After it lands*. */
 const LANDING_KINDS: readonly string[] = ['land', 'landing'];
 

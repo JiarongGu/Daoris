@@ -27,20 +27,22 @@ const GO_AHEAD = (refused: string): WorkflowStep => ({
 describe('a workflow as a flowchart', () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
-  it('draws its steps in their order and the end of the line, each edge the move its step names, and nothing else', () => {
+  it('draws its steps in their order, each edge the move its step names, and no Finished a record did not say', () => {
     const flow = workflowFlow(t, FULL, 'engine');
     expect(flow.label).toBe('How work in engine moves');
-    expect(flow.nodes.map((node) => node.id)).toEqual(['work', 'opinion', 'look', 'landing', 'pull-request', FINISHED]);
+    expect(flow.nodes.map((node) => node.id)).toEqual(['work', 'opinion', 'look', 'landing', 'pull-request']);
     expect(flow.nodes.map((node) => node.title)).toEqual(
-      ['The work', 'Second opinion', 'Your look in dev', 'Landing on a branch', 'Pull request', 'Finished']);
+      ['The work', 'Second opinion', 'Your look in dev', 'Landing on a branch', 'Completed on the host']);
     expect(flow.entries).toEqual(['work']);
     expect(flow.edges.map((edge) => [edge.from, edge.to, edge.says, edge.style ?? 'next'])).toEqual([
       ['work', 'opinion', 'automatically', 'next'],
       ['opinion', 'look', 'automatically', 'next'],
       ['look', 'landing', 'once you say it is reviewed', 'next'],
       ['landing', 'pull-request', 'automatically', 'next'],
-      ['pull-request', FINISHED, 'once you merge it on the platform', 'next'],
     ]);
+    // A Current names no end, so none is flagged.
+    expect(flow.nodes.some((node) => node.mark)).toBe(false);
+    expect(flow.track).toEqual({ least: 14, most: 36 });
   });
 
   it('says who acts to a reader, the person\'s part and the executor, its names as words', () => {
@@ -92,33 +94,36 @@ describe('a workflow as a flowchart', () => {
       finished: null,
     };
     const flow = workflowFlow(t, NOTHING_SET, 'engine', lit);
+    // Finished is the record's: a run that has not finished draws none.
     expect(flow.nodes).toEqual([
       expect.objectContaining({ id: 'work', state: { word: 'done', tone: 'done' }, reached: true, current: false, settled: true }),
       expect.objectContaining({ id: 'landing', state: { word: 'waiting on you', tone: 'open' }, current: true }),
-      expect.objectContaining({ id: FINISHED, reached: false }),
     ]);
     expect(flow.edges.some((edge) => edge.taken)).toBe(false);
     const ended = workflowFlow(t, NOTHING_SET, 'engine', { ...lit, finished: { word: 'done', tone: 'done' } });
-    expect(ended.nodes.at(-1)).toMatchObject({ id: FINISHED, state: { word: 'done', tone: 'done' }, reached: true, settled: true });
+    expect(ended.nodes.at(-1)).toMatchObject({ id: FINISHED, title: 'Finished', state: { word: 'done', tone: 'done' }, reached: true, settled: true });
+    expect(ended.edges.at(-1)).toMatchObject({ from: 'landing', to: FINISHED });
   });
 
   // FABRIC-CUTOVER1e (D186's FLOWCHART1d note): a run bound to a graph version answers its graph's wires, the first read that does, so its
   // drawing follows them: a fork and its join as the version holds them, a failure's path in its style, the end of the line after its end.
-  it('draws a graph run by its wires, a fork and its join, a failure path, and the end after its end', () => {
+  it('draws a graph run by its wires, a fork and its join, a failure path, and flags its configured end', () => {
     const { graph, steps } = GRAPH_RUN;
     const flow = workflowFlow(t, { steps: steps.map((step) => step.step) }, 'engine', undefined, graph);
     expect(flow.entries).toEqual(['claimed']);
-    expect(flow.nodes.map((node) => node.id)).toEqual(['claimed', 'build', 'lint', 'both', 'halt', 'opinion', 'handed', 'deployed', FINISHED]);
+    expect(flow.nodes.map((node) => node.id)).toEqual(['claimed', 'build', 'lint', 'both', 'halt', 'opinion', 'handed', 'deployed']);
     expect(flow.nodes.map((node) => node.title)).toEqual(
-      ['The work', 'built by acme.ci', 'linted by acme.ci', 'The join', 'Stop', 'Second opinion', 'Landing on a branch', 'deployed by acme.deploy', 'Finished']);
+      ['The work', 'built by acme.ci', 'linted by acme.ci', 'The join', 'Stop', 'Second opinion', 'Landing on a branch', 'deployed by acme.deploy']);
     expect(flow.edges.filter((edge) => edge.from === 'claimed').map((edge) => edge.to)).toEqual(['build', 'lint']);
     expect(flow.edges.filter((edge) => edge.to === 'both').map((edge) => edge.from)).toEqual(['build', 'lint']);
     expect(flow.edges.find((edge) => edge.to === 'halt')).toMatchObject({ from: 'both', style: 'failed', says: 'if it fails', label: 'on failure' });
     expect(flow.edges.find((edge) => edge.from === 'handed')).toMatchObject({ to: 'deployed', says: 'once you accept it' });
-    expect(flow.edges.at(-1)).toMatchObject({ from: 'deployed', to: FINISHED, says: 'automatically' });
+    // The configured end is flagged where the work is done; nothing follows it here, so no foot says steps still run.
+    expect(flow.nodes.find((node) => node.id === 'deployed')!.mark).toEqual({ word: 'Work done here', foot: null });
+    expect(flow.edges.some((edge) => edge.to === FINISHED)).toBe(false);
     expect(flow.sections).toEqual([{ title: 'Before it lands', from: 'claimed' }, { title: 'After it lands', from: 'deployed' }]);
     // No outcome is hung on a node by its options: the graph's own wires draw its failure paths.
-    expect(flow.nodes.filter((node) => node.id !== FINISHED && node.id.includes(':'))).toEqual([]);
+    expect(flow.nodes.filter((node) => node.id.includes(':'))).toEqual([]);
   });
 
   // DECIDE1c: a decision's route is a conditional move named by its outcome, and a way back is drawn as a return, said by what it is taken on.

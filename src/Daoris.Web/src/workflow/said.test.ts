@@ -13,8 +13,8 @@ const stepOf = (kind: string): WorkflowStep => ({
 
 describe('stepTitle', () => {
   it('names the integration step in English and in 中文', () => {
-    expect(stepTitle(i18n.getFixedT('en'), stepOf('integrate'))).toBe('The integration');
-    expect(stepTitle(i18n.getFixedT('zh'), stepOf('integrate'))).toBe('集成');
+    expect(stepTitle(i18n.getFixedT('en'), stepOf('integrate'))).toBe('The integration request');
+    expect(stepTitle(i18n.getFixedT('zh'), stepOf('integrate'))).toBe('集成请求');
   });
 
   // INTEGRATE1p (§17.5): a graph's `request` node, another repository asked as a step, named as the driver's title names it.
@@ -26,8 +26,8 @@ describe('stepTitle', () => {
   // INTEGRATE1r: Current's integrate step is named, said where it was read, and its limit said in the reader's words, not as recorded.
   it("says Current's integrate step: its press, its source and its limit in both languages", () => {
     for (const [language, title, limit] of [
-      ['en', 'The integration', /^Not integrated yet: the rule carries `integrate`/],
-      ['zh', '集成', /^尚未集成/],
+      ['en', 'The integration request', /^Not integrated yet: the rule carries `integrate`/],
+      ['zh', '集成请求', /^尚未集成/],
     ] as const) {
       const t = i18n.getFixedT(language);
       expect(stepTitle(t, INTEGRATE_OWNER)).toBe(title);

@@ -10,8 +10,8 @@ import { WorkflowRunView } from './WorkflowRunView';
 import { WorkflowTab } from './WorkflowTab';
 
 // FLOWCHART1d (D186; the flowchart design §2.4, §2.5, §5.1): the Workflow tab and the side bar's Workflow view draw the workflow and
-// its run on `Flow`, top to bottom where the pane holds a step's 19rem, and the rail, today's list, at the side bar's floor. The
-// rail's words are `WorkflowTab.test.tsx`'s and `WorkflowRunView.test.tsx`'s, unchanged; jsdom lays nothing out, so the pane's width
+// its run on `Flow`, through `graphFlow`: top to bottom where the pane holds a step's 14rem track, and the rail, today's list, below it.
+// The rail's words are `WorkflowTab.test.tsx`'s and `WorkflowRunView.test.tsx`'s, unchanged; jsdom lays nothing out, so the pane's width
 // is stood in for here, and the edges' geometry is the measured-box check's.
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
@@ -55,11 +55,11 @@ const feet = (item: HTMLElement) => within(item).queryAllByRole('button').filter
   .map((button) => button.textContent!.slice(1));
 
 describe("the Workflow tab's flowchart", () => {
-  it('draws the steps top to bottom where the pane holds them, each a node in order and the end of the line, and never left to right', () => {
+  it('draws the steps top to bottom where the pane holds them, each a node in order, no Finished, and never left to right', () => {
     paneWidth = 1232;
     const { container } = render(<WorkflowTab page="repository" name="engine" current={FULL} />);
     expect(placement(container)).toBe('down');
-    expect(ids()).toEqual(['work', 'opinion', 'look', 'landing', 'pull-request', ':finished']);
+    expect(ids()).toEqual(['work', 'opinion', 'look', 'landing', 'pull-request']);
     // The rail is not drawn twice beside it.
     expect(container.querySelector('[data-step]')).toBeNull();
   });
@@ -69,7 +69,8 @@ describe("the Workflow tab's flowchart", () => {
     const { container } = render(<WorkflowTab page="repository" name="engine" current={FULL} />);
     expect(feet(node('The work'))).toEqual(['Second opinion, automatically']);
     expect(feet(node('Your look in dev'))).toEqual(['Landing on a branch, once you say it is reviewed']);
-    expect(feet(node('Pull request'))).toEqual(['Finished, once you merge it on the platform']);
+    // The last step goes on to nothing: Finished is a run's record, never a chart's.
+    expect(feet(node('Completed on the host'))).toEqual([]);
     expect(container.querySelector('[data-edge]')).toBeNull();
   });
 
@@ -91,8 +92,8 @@ describe("the Workflow tab's flowchart", () => {
     expect(screen.getByRole('heading', { name: 'Before it lands' })).toBeInTheDocument();
     expect(screen.getByText(/Before the work starts,/)).toHaveTextContent('Before the work starts, example.hold-by-title may hold it.');
     expect(container.querySelector('[data-flow-section]')).toHaveTextContent('After it lands');
-    expect(node('Pull request')).toHaveAccessibleDescription(
-      'After it lands. you, by example.pull-request. From Landing on a branch: automatically. Next: Finished, once you merge it on the platform.');
+    expect(node('Completed on the host')).toHaveAccessibleDescription(
+      'After it lands. you, by example.pull-request. From Landing on a branch: automatically.');
   });
 
   it('opens the Setup that sets a step with Enter on its node, and its door inside it', async () => {
@@ -110,10 +111,12 @@ describe("the Workflow tab's flowchart", () => {
   it('is the rail at a pane narrower than a step, and Show as list chooses it where the drawing fits', async () => {
     paneWidth = 1232;
     const { container } = render(<WorkflowTab page="repository" name="engine" current={FULL} />);
-    // The side bar's 300 px floor is the rail before its gutters as after them.
+    // The 14rem track (224 px) fits the side bar's 300 px floor before its gutters as after them; below it, the rail.
     resizeTo(300);
-    expect(placement(container)).toBe('rail');
+    expect(placement(container)).toBe('down');
     resizeTo(276);
+    expect(placement(container)).toBe('down');
+    resizeTo(220);
     expect(placement(container)).toBe('rail');
     expect(screen.getByRole('group', { name: 'How work in engine moves' })).toBeInTheDocument();
     expect(container.querySelectorAll('[data-step]')).toHaveLength(5);
@@ -129,18 +132,18 @@ describe("the Workflow tab's flowchart", () => {
     expect(ids()).toContain('checks:failed');
     expect(node('Sent back once, then you').className).toMatch(/border-dashed/);
     // FABRIC-CUTOVER1e: a check is titled as a graph run's check node is, where it was a step this page had no words for.
-    expect(feet(node('The checks'))).toEqual([
-      'Finished, automatically', 'Sent back once, then you, if it fails',
-    ]);
-    // A rank of two, the next step and the outcome beside it: 39.5rem, so the rail at a 680 px window's main area.
+    expect(feet(node('The checks'))).toEqual(['Sent back once, then you, if it fails']);
+    // The outcome follows the check alone, a rank of one: top to bottom at a 680 px window's main area, the rail below the track.
     resizeTo(576);
+    expect(placement(container)).toBe('down');
+    resizeTo(200);
     expect(placement(container)).toBe('rail');
     expect(container.querySelector('[data-step="checks"] [data-failed]')).toHaveTextContent('If it fails, it is sent back once, then waits for you.');
     unmount();
     // Nothing a step does not name: today's Current has no failure path and no group.
     paneWidth = 1232;
     render(<WorkflowTab page="repository" name="engine" current={NOTHING_SET} />);
-    expect(ids()).toEqual(['work', 'landing', ':finished']);
+    expect(ids()).toEqual(['work', 'landing']);
   });
 
   it('is worded in 中文', async () => {
@@ -172,7 +175,8 @@ describe("the Workflow view's run on the flowchart", () => {
     const landing = node('Landing on a branch', run());
     expect(landing.className).toMatch(/border-dashed/);
     expect(container.innerHTML).not.toMatch(/opacity-/);
-    expect(node('Finished', run()).className).toMatch(/border-dashed/);
+    // Finished is only from the record: a run that has not finished draws none, dashed or otherwise.
+    expect(within(run()).queryByRole('listitem', { name: /^Finished/ })).toBeNull();
   });
 
   it('opens a step\'s door with Enter on its node', async () => {
@@ -197,7 +201,7 @@ describe("the Workflow view's run on the flowchart", () => {
     expect(node('Your look in dev', run())).toHaveTextContent('Skipped for this work, by you.');
     // The go-ahead's refusal waits for the person: its failure path, dashed, to its outcome.
     // FABRIC-CUTOVER1e: a go-ahead is titled as a graph run's go-ahead is, where it was a step this page had no words for.
-    expect(feet(node('Your go-ahead', run()))).toEqual(['Finished, automatically', 'Waits for you, if you refuse it']);
+    expect(feet(node('Your go-ahead', run()))).toEqual(['Waits for you, if you refuse it']);
     expect(screen.queryByText(/taken/)).toBeNull();
   });
 
@@ -207,7 +211,7 @@ describe("the Workflow view's run on the flowchart", () => {
     paneWidth = 1232;
     const { container } = render(<WorkflowRunView answer={answerOf(GRAPH_RUN)} />);
     expect(placement(container)).toBe('down');
-    expect(ids()).toEqual(['claimed', 'build', 'lint', 'both', 'halt', 'opinion', 'handed', 'deployed', ':finished']);
+    expect(ids()).toEqual(['claimed', 'build', 'lint', 'both', 'halt', 'opinion', 'handed', 'deployed']);
     expect(feet(node('The work'))).toEqual(['built by acme.ci, automatically', 'linted by acme.ci, automatically']);
     expect(feet(node('The join'))).toEqual(['Stop, if it fails', 'Second opinion, automatically']);
     expect(node('built by acme.ci')).toHaveAttribute('aria-current', 'step');
@@ -222,9 +226,11 @@ describe("the Workflow view's run on the flowchart", () => {
     expect(end.className).not.toMatch(/border-dashed/);
   });
 
-  it('is the rail at the side bar\'s floor', () => {
+  it('is the rail below the 14rem track, and top to bottom at the side bar\'s floor', () => {
     paneWidth = 276;
     const { container } = render(<WorkflowRunView answer={answerOf(IN_REVIEW)} />);
+    expect(placement(container)).toBe('down');
+    resizeTo(200);
     expect(placement(container)).toBe('rail');
     expect(container.querySelectorAll('[data-step]')).toHaveLength(4);
   });
