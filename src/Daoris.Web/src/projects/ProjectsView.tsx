@@ -6,7 +6,6 @@ import { setupLit } from '../agents/modes';
 import { AddProjectDrawer, ImportFolderDrawer, ManageProjectDrawer } from './ProjectManage';
 import { projectsItem, workspaceItem } from '../app/opener';
 import type { WorkflowTabProps } from '../workflow/WorkflowTab';
-import { useWorkflowEditor } from '../bridge/repositories/workflowEdit';
 import { ProjectList, type RepositoryRowFacts, type WorkspaceGroup } from './ProjectList';
 import { ProjectPage, ProjectsMainNotice } from './ProjectPage';
 import { RepositoryBranch, RepositoryBranches, RepositoryChanges, RepositoryHistory } from './git/RepositoryGitView';
@@ -19,6 +18,7 @@ import { sessionTitle } from '../work/identity';
 import { useScope } from '../data/scope';
 import {
   useDriver, useLines, useHeavySlot, useSetupPlan, useSetupPress, useSweepPlan, useWorkflowCurrent, useSetLanded, acceptGatesPress, useVerify,
+  useWorkflowEditor,
 } from '../bridge/shell';
 import type { SetUpForAgentsProps } from './setup/SetUpForAgents';
 import { type Notify, useErrorNotify } from '../design/ui';

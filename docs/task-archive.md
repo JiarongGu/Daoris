@@ -22578,3 +22578,6 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 ## DEFAULTCONFIG1d — a place's page says which default it follows and what differs (2026-11-01, FABRIC2)
 
 **Outcome** 2026-11-01: a place's page names the shipped default its workflow follows (en and zh word per default id in `agents.json`) and the options it differs in, read from `PlaceValues.Follows` through `PlaceRow.values.follows`. Test `SetupPlaces.test.tsx`; stories show it through the fixtures.
+## WORKFLOWEDIT1b — compose a workflow's steps in the window: the step editor (2026-11-01, FABRIC2)
+
+**Outcome** 2026-11-01: a repository's and a workspace's Workflow tab opens *Compose steps…* (`workflow/edit/`) in place of the presets in words: a draft from a default, a saved version or nothing, steps from `WORKFLOW_PALETTE`, ways on of the kinds each step may leave, options and the role from `ROLE_STRUCTURE`, drawn on the flow canvas and judged by a planned `WORKFLOW_SAVE` whose `problems` are worded at their step or wire; saved new or appended with its places authorized, and *Use here*. A role that cannot do its step is refused at save (D173's note). Tests `graphDraft.test.ts`, `WorkflowEditor.test.tsx`, `DriverModuleWorkflowWritesTests`, `WorkflowPaletteTests`.

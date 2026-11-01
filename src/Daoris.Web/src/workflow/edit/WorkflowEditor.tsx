@@ -16,7 +16,7 @@ import {
 } from './graphDraft';
 import { StepOptions } from './StepOptions';
 
-/** What the step editor's bridge hands it (`useWorkflowEditor`): the reads, the roles, the judge, the save and the choice. */
+/** What the step editor's bridge hands it (`bridge/repositories/workflowEdit.ts`): the reads, the roles, the judge, the save and the choice. */
 export type WorkflowEditorBridge = {
   /** The saved workflows and the presets; null while read. */
   list: WorkflowListAnswer | null;

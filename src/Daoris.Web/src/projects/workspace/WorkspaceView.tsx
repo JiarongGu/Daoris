@@ -20,14 +20,13 @@ import {
   useSetReadAcross,
   useSetReview, useStarts, useSyncNow, standingOf,
   useSweep, useSweepLook, useSweepPlan, useTreesSync, useTreesSyncPlan, useTreesSyncScope, useUnwireRemote, useWireRemote, useWorkflowCurrent,
-  useWithdrawLandingBranch, useWorkState,
+  useWithdrawLandingBranch, useWorkState, useWorkflowEditor,
 } from '../../bridge/shell';
 import { byTool } from '../../agents/tools';
 import { failure, type Notify, useErrorNotify } from '../../design/ui';
 import type { KeptDoors } from '../../work/history/ClearAsk';
 import { useHistoryActs } from '../../work/history/historyActs';
 import { WorkflowTab } from '../../workflow/WorkflowTab';
-import { useWorkflowEditor } from '../../bridge/repositories/workflowEdit';
 import { KeptHistory } from './KeptHistory';
 import { WorkspaceBranchGroups } from '../git/RepositoryGitView';
 import { InclusionContext, useInclusion } from './WorkspaceBranches';
