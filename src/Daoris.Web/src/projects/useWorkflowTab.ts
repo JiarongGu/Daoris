@@ -17,16 +17,18 @@ import type { WorkflowTabProps } from '../workflow/WorkflowTab';
  * A hook, so a view that shows the workflow holds it and the molecule stays props. A step its workspace set opens the workspace's
  * Setup through the door the holder hands, which is told the workspace.
  */
-export function useWorkflowTab({ repository, enabled, ready = true, notify }: {
+export function useWorkflowTab({ repository, enabled, ready = true, notify, route }: {
   /** The repository whose Current is read; null reads none. */
   repository: string | null;
   enabled: boolean;
   /** The driver has answered. */
   ready?: boolean;
   notify: Notify;
+  /** The route whose effective graph the answer also carries (SETUPUX1o): `default`, `kind:<name>` or `landed`; none, and the answer is as before. */
+  route?: string | null;
 }): (registration: Registration, doors?: (workspace: string) => WorkflowDoors) => WorkflowTabProps | null {
   const { t } = useTranslation();
-  const current = useWorkflowCurrent(repository === null ? null : { repository }, { enabled });
+  const current = useWorkflowCurrent(repository === null ? null : { repository }, { enabled, route });
   // Its step editor (WORKFLOWEDIT1b), asked only once it opens.
   const editor = useWorkflowEditor({ repository: repository ?? '', workspace: current.data?.workspace ?? null }, { enabled });
   const setLanded = useSetLanded();

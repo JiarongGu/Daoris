@@ -24,10 +24,15 @@ export function roleNameOf(name: Authored | null | undefined, language: string):
   return authoredText(name, language);
 }
 
-/** Where a section opens itself for something that needs the person, and at which row: a held start opens Roles at that work. */
+/**
+ * Where a section opens itself for something that needs the person, and at which row: a held start opens Roles at that work, and a landing
+ * that could not be read opens Workflow at Landing. A declaration owed acceptance opens Gates from the answer Workflow reads, not from here:
+ * a folded section reads nothing.
+ */
 export function needOpening(row: PlaceRow): { section: PlaceSection; row: string } | null {
   const held = row.works.find((each) => each.held);
-  return held ? { section: 'roles', row: held.work } : null;
+  if (held) return { section: 'roles', row: held.work };
+  return row.needs.some((each) => each.code === 'landing-unread') ? { section: 'workflow', row: 'landing' } : null;
 }
 
 const capital = (text: string) => (text ? text[0]!.toLocaleUpperCase() + text.slice(1) : text);
@@ -181,6 +186,11 @@ export type PlaceBack = { place: string; name: string; section: PlaceSection | n
 
 type Folds = Partial<Record<PlaceSection, boolean>>;
 
+/** What a place's Workflow draws: the route whose chart it is (`default`, `kind:<name>` or `landed`), and the step whose cell shows. */
+export type PlaceView = { route: string; step: string | null };
+
+const DEFAULT_VIEW: PlaceView = { route: 'default', step: null };
+
 /**
  * What the application holds for each place's page, so a door out and back finds it as left: the sections the person opened or closed, the
  * row a door asked for, the way back, and a request to bring the focus to the head. Never kept across a restart.
@@ -189,6 +199,10 @@ export type PlaceShell = {
   /** Whether a section is open: as the person left it, else as the page opens it (`itself`). */
   isOpen: (place: string, section: PlaceSection, itself: boolean) => boolean;
   setOpen: (place: string, section: PlaceSection, open: boolean) => void;
+  /** The route and the step a place's Workflow shows, as the person left them. */
+  viewOf: (place: string) => PlaceView;
+  /** Chooses a route (its step is forgotten, since a route's steps are its own) or a step of the one shown. */
+  choose: (place: string, choice: Partial<PlaceView>) => void;
   /** The row a door asked for at the place, until it is brought into view. */
   rowOf: (place: string) => string | null;
   rowBrought: (place: string) => void;
@@ -204,6 +218,7 @@ export type PlaceShell = {
 
 export function usePlaceShell(): PlaceShell {
   const [folds, setFolds] = useState<Record<string, Folds>>({});
+  const [views, setViews] = useState<Record<string, PlaceView>>({});
   const [rows, setRows] = useState<Record<string, string>>({});
   const [back, setBack] = useState<{ place: string; back: PlaceBack } | null>(null);
   const [focusAsked, setFocusAsked] = useState(0);
@@ -211,6 +226,12 @@ export function usePlaceShell(): PlaceShell {
   const isOpen = useCallback((place: string, section: PlaceSection, itself: boolean) => folds[place]?.[section] ?? itself, [folds]);
   const setOpen = useCallback((place: string, section: PlaceSection, open: boolean) =>
     setFolds((was) => ({ ...was, [place]: { ...was[place], [section]: open } })), []);
+  const viewOf = useCallback((place: string) => views[place] ?? DEFAULT_VIEW, [views]);
+  const choose = useCallback((place: string, choice: Partial<PlaceView>) => setViews((was) => {
+    const now = was[place] ?? DEFAULT_VIEW;
+    const route = choice.route ?? now.route;
+    return { ...was, [place]: { route, step: route === now.route ? choice.step === undefined ? now.step : choice.step : choice.step ?? null } };
+  }), []);
   const rowOf = useCallback((place: string) => rows[place] ?? null, [rows]);
   const rowBrought = useCallback((place: string) => setRows(({ [place]: _brought, ...rest }) => rest), []);
   const arrive = useCallback((place: string, at: PlaceAt) => {
@@ -224,7 +245,7 @@ export function usePlaceShell(): PlaceShell {
   const askFocus = useCallback(() => setFocusAsked((was) => was + 1), []);
 
   return useMemo(
-    () => ({ isOpen, setOpen, rowOf, rowBrought, arrive, backTo, clearBack, focusAsked, askFocus }),
-    [isOpen, setOpen, rowOf, rowBrought, arrive, backTo, clearBack, focusAsked, askFocus],
+    () => ({ isOpen, setOpen, viewOf, choose, rowOf, rowBrought, arrive, backTo, clearBack, focusAsked, askFocus }),
+    [isOpen, setOpen, viewOf, choose, rowOf, rowBrought, arrive, backTo, clearBack, focusAsked, askFocus],
   );
 }

@@ -1,10 +1,16 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { cn } from '../../lib/cn';
 import { Button, Icon, Menu, Pill } from '../../design/ui';
+import { useWidth } from '../../design/useWidth';
 import { SetupSection } from '../../projects/setup/SetupParts';
 import { type Answered, InlineConfirm } from '../../work/InlineConfirm';
 import { PageHead } from '../../work/frame/ViewMain';
+import { PlaceAside } from './placeAside';
 import type { HeadFacts, PlaceSection } from './placeShell';
+
+/** The room, in px, where a place's page sets the open Workflow's chart in a column of its own: 64 rem. */
+const TWO_COLUMNS = 64 * 16;
 
 // A place page's shell (SETUPUX1h, the setup-UX design §2.1): the head, and three sections folded to the line that names their values.
 // Molecules: the page's state and every press arrive as props.
@@ -147,12 +153,16 @@ export function PlacePageView({ head, sections, notes, driving, back, row, onRow
   const root = useRef<HTMLDivElement>(null);
   const headRef = useRef<HTMLDivElement>(null);
   const [asking, setAsking] = useState<'drive' | 'stop' | null>(null);
+  // Where the page holds 64 rem its sections stand beside a column for the open Workflow's chart (SETUPUX1o).
+  const width = useWidth(root);
+  const twoColumns = width !== undefined && width >= TWO_COLUMNS;
+  const [aside, setAside] = useState<HTMLElement | null>(null);
   useBringRow(root, row, onRowBrought);
   useHeadFocus(headRef, focusAsked);
   const driven = driving?.drivable === true;
 
   return (
-    <div ref={root}>
+    <div ref={root} data-place-page="">
       {back && (
         <Button variant="ghost" className="mb-2 px-0" onClick={back.onBack}>
           {t('agents.setup.page.back', { place: back.place, section: back.section })}
@@ -199,21 +209,29 @@ export function PlacePageView({ head, sections, notes, driving, back, row, onRow
       </div>
       {notes}
       {/* A tighter header here than a Setup section's own, so the head and the three lines fit the first screen (§2.1). */}
-      <div className="-mt-2 [&>section>h2>button]:py-2">
-        {sections.map((section) => (
-          <SetupSection
-            key={section.id}
-            id={section.id === 'workflow' ? 'place-fold-workflow' : `place-${section.id}`}
-            title={section.title}
-            summary={section.summary}
-            startsOpen={false}
-            open={section.open}
-            onOpenChange={section.onOpenChange}
-          >
-            {section.body}
-          </SetupSection>
-        ))}
-      </div>
+      <PlaceAside.Provider value={twoColumns ? aside : null}>
+        <div
+          data-place-columns={twoColumns ? 'two' : 'one'}
+          className={cn('-mt-2 grid min-w-0 items-start gap-x-6', twoColumns && 'grid-cols-2 has-[[data-place-aside]:empty]:grid-cols-1')}
+        >
+          <div className="min-w-0 [&>section>h2>button]:py-2">
+            {sections.map((section) => (
+              <SetupSection
+                key={section.id}
+                id={section.id === 'workflow' ? 'place-fold-workflow' : `place-${section.id}`}
+                title={section.title}
+                summary={section.summary}
+                startsOpen={false}
+                open={section.open}
+                onOpenChange={section.onOpenChange}
+              >
+                {section.body}
+              </SetupSection>
+            ))}
+          </div>
+          {twoColumns && <div ref={setAside} data-place-aside="" className="mt-2 min-w-0 empty:hidden" />}
+        </div>
+      </PlaceAside.Provider>
     </div>
   );
 }

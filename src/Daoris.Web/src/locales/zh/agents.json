@@ -480,8 +480,6 @@
   "agents.setup.page.confirm.driveSays": "Daoris 会在本机为 {{name}} 中排队的工作启动会话。",
   "agents.setup.page.confirm.drive": "驱动",
   "agents.setup.page.back": "← 返回 {{place}} · {{section}}",
-  "agents.setup.page.workspaceFlow": "工作区的工作流暂时在它的仓库页上设置。",
-  "agents.setup.page.workspaceFlowOpen": "到那里打开",
   "agents.setup.allRoles.title": "全部角色",
   "agents.setup.allRoles.fold": "每个角色一次，按所在位置 · 列表或角色图",
   "agents.setup.allRoles.view": "角色的显示方式",

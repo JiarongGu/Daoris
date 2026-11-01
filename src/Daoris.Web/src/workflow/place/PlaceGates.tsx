@@ -59,6 +59,26 @@ function integrationStanding(t: ReturnType<typeof useTranslation>['t'], integrat
   return { waits: false, blob: null, said: integration.problem ?? t('workflow.place.gates.integration.unread') };
 }
 
+/** Whether either declaration waits for the person: never accepted, or changed since. */
+export const gatesOwed = (landed: WorkflowLanded | null, integration: WorkflowIntegration | null): boolean =>
+  (landed !== null && landed.workflow !== 'current' && (landed.state === 'changed' || landed.state === 'unaccepted'))
+  || (integration !== null && (integration.state === 'changed' || integration.state === 'unaccepted'));
+
+/**
+ * Gates folded to one line: that something waits for the person, where the accepted declarations stand, that a tip could not be read, or
+ * that nothing here asks for an acceptance.
+ */
+export function gatesSummary(t: ReturnType<typeof useTranslation>['t'], landed: WorkflowLanded | null, integration: WorkflowIntegration | null): string {
+  if (gatesOwed(landed, integration)) return t('workflow.place.gates.summary.waits');
+  const verifying = landed !== null && landed.workflow !== 'current' ? landed : null;
+  const blobs = [verifying?.state === 'accepted' ? verifying.gates : null, integration?.state === 'accepted' ? integration.gates : null]
+    .filter((each): each is string => each !== null && each !== 'none');
+  if (blobs.length > 0) return t('workflow.place.gates.summary.accepted', { blob: short(blobs[0]!) });
+  if (verifying?.state === 'accepted' || integration?.state === 'accepted') return t('workflow.place.gates.summary.acceptedNone');
+  if (verifying || integration) return t('workflow.place.gates.summary.unread');
+  return t('workflow.place.gates.summary.none');
+}
+
 /** One acceptance pressed, awaited: its answer is its record's own, never another purpose's. */
 const pressed = (press: (answered: Answered) => void) =>
   new Promise<string | null>((resolve) => press({ done: () => resolve(null), refused: (sentence) => resolve(sentence) }));
@@ -76,10 +96,12 @@ const pressed = (press: (answered: Answered) => void) =>
  *
  * A molecule: the standings arrive as props and each acceptance goes out as its own press.
  */
-export function PlaceGates({ landed, integration, busy = false, onAcceptLanded, onAcceptIntegration }: {
+export function PlaceGates({ landed, integration, busy = false, bare = false, onAcceptLanded, onAcceptIntegration }: {
   landed: WorkflowLanded | null;
   integration: WorkflowIntegration | null;
   busy?: boolean;
+  /** Drawn inside a fold that carries the name *Gates*: no heading of its own. */
+  bare?: boolean;
   /** The landed route's acceptance at the line's tip, by its blob (`WORKFLOW_LANDED`); none, and the choice is not offered. */
   onAcceptLanded?: (answered: Answered) => void;
   /** The integration declaration's acceptance or withdrawal (`INTEGRATION_GATES`); none, and the choice is not offered. */
@@ -135,8 +157,8 @@ export function PlaceGates({ landed, integration, busy = false, onAcceptLanded, 
   };
 
   return (
-    <section aria-labelledby={headId} className="grid min-w-0 gap-2">
-      <h3 id={headId} className="m-0 text-body font-semibold text-ink">{t('workflow.place.gates.title')}</h3>
+    <section aria-labelledby={bare ? undefined : headId} className="grid min-w-0 gap-2">
+      {!bare && <h3 id={headId} className="m-0 text-body font-semibold text-ink">{t('workflow.place.gates.title')}</h3>}
       {rows.length === 0
         ? <p className="m-0 text-small text-ink-soft">{t('workflow.place.gates.nothing')}</p>
         : <p className="m-0 text-small text-ink-soft">{t('workflow.place.gates.body')}</p>}
