@@ -139,10 +139,54 @@ public sealed class LandDeliveryGitTests : IDisposable
         var landed = await trees.LandAsync(tree.Path, Subject, inUse: NoneRunning, delivery: new TreeDelivery(store, claim));
 
         Assert.False(landed.Landed, landed.Message);
-        Assert.True(landed.Refusal is AutoLandingCode.Carried or AutoLandingCode.Nothing, $"{landed.Refusal}: {landed.Message}");
+        Assert.Equal(AutoLandingCode.Nothing, landed.Refusal);
+        Assert.Contains("nothing to land", landed.Message);
         Assert.Null(await RevAsync(root, $"refs/heads/{Named}"));
         var phase = Assert.Single(Reopened().Phases(claim.Key));
         Assert.Equal((DeliveryPhases.Prepared, DeliveryOutcomes.Withdrawn), (phase.Phase, phase.Outcome));
+    }
+
+    /// <summary>Another writer holds the checkout alone: the ref is not written, nothing is written ahead past the preparation, which is withdrawn.</summary>
+    [Fact]
+    public async Task A_checkout_another_writer_holds_writes_no_ref_and_withdraws_the_preparation()
+    {
+        var (root, trees, tree, tip) = await TreeAsync();
+        var (store, claim) = Start(tip, DeliveryMethods.Branch);
+
+        TreeLanding landed;
+        using (TreeLock.TryWriting(_home, root, "engine", TreeLock.Acting))
+        {
+            landed = await trees.LandAsync(tree.Path, Subject, inUse: NoneRunning, delivery: new TreeDelivery(store, claim));
+        }
+
+        Assert.False(landed.Landed, landed.Message);
+        Assert.Contains("a git act was changing `engine`'s checkout", landed.Message);
+        Assert.Null(await RevAsync(root, $"refs/heads/{Named}"));
+        var phase = Assert.Single(Reopened().Phases(claim.Key));
+        Assert.Equal((DeliveryPhases.Prepared, DeliveryOutcomes.Withdrawn), (phase.Phase, phase.Outcome));
+    }
+
+    /// <summary>A later delivery of the unit moves the branch its first made on, from the recorded tip, by the transaction's update.</summary>
+    [Fact]
+    public async Task A_later_delivery_moves_the_branch_its_first_made_on_from_the_recorded_tip()
+    {
+        var (root, trees, tree, first) = await TreeAsync();
+        var (store, claim) = Start(first, DeliveryMethods.Branch);
+        Assert.True((await trees.LandAsync(tree.Path, Subject, inUse: NoneRunning, delivery: new TreeDelivery(store, claim))).Landed);
+        await CommitAsync(tree.Path, "more.txt", "more work", "more work");
+        var second = await RevAsync(tree.Path, "HEAD");
+        var (_, later) = Start(second!, DeliveryMethods.Branch);
+
+        var landed = await trees.LandAsync(tree.Path, Subject, inUse: NoneRunning, delivery: new TreeDelivery(store, later));
+
+        Assert.True(landed.Landed, landed.Message);
+        Assert.Equal(first, landed.AdvancedFrom);
+        Assert.Equal(second, await RevAsync(root, $"refs/heads/{Named}"));
+        Assert.Equal(second, trees.Recorded.Of("engine", Named)?.Tip);
+        var written = Reopened().Phases(later.Key)[1];
+        Assert.Equal((DeliveryPhases.RefWritten, DeliveryOutcomes.Done), (written.Phase, written.Outcome));
+        Assert.Contains($"moved from {first} to {second}", written.Intended);
+        Assert.Equal(DeliverySettlements.Delivered, Reopened().Delivery(later.Key)?.Settled);
     }
 
     /// <summary>The live rule makes a branch; the delivery merges, into the intent's line, through the promotion, and records it so.</summary>
