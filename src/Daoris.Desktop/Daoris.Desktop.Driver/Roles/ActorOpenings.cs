@@ -17,6 +17,18 @@ public static class ActorOpenings
         }
 
         /// <summary>
+        /// A start opened on the account count <paramref name="number"/> (STAFFPOLICY1c): its row of <c>role_starts</c> written by the ledger, and,
+        /// where the role's policy chose it by anything but the order, the opening note says why, in the local record only. Nothing is said for a
+        /// role on <i>First that can run</i>, which says what it said before.
+        /// </summary>
+        internal static void SayStaff(ISessionEvents events, StaffLedger? ledger, string sessionId, long number, string actor)
+        {
+            if (ledger?.Opened(number, sessionId) is not { Reservation: not null } bound || (bound.Rule == StaffRules.Order && bound.By == StaffBy.First)) return;
+            var line = Noted.Of(NoteCodes.OpeningChosen, $"{ActorWords.Name(actor)}'s policy chose this: {bound.Said}.", ("actor", ActorWords.Name(actor)), ("said", bound.Said));
+            events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts }, say: null);
+        }
+
+        /// <summary>
         /// Where a quest marked design started (FOUNDATION1x, MODELROLE1l), whose order it ran on: the role taking <c>design</c> by its name,
         /// or Build while none does; kept in the local conversation's record beside the opening, like the actor line.
         /// </summary>

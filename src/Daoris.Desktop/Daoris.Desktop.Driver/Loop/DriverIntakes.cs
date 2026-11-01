@@ -126,6 +126,7 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
             Subject = $"ask:{ask.Id}",
             Named = ("ask", ask.Id),
             Log = _driver.Log,
+            Staff = _context.Harnesses.StaffFor(_context.Home),
         };
 
     /// <returns>
@@ -237,6 +238,7 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
         RotatedOpening.Say(service, _context.Events, sessionId, adapterName, selection, carried: null);
         // Where a later choice of Intake's order ran, its actor line says which and why (D205 §4.6).
         RotatedOpening.SayActor(_context.Events, sessionId, "intake", chosen, passes);
+        RotatedOpening.SayStaff(_context.Events, _context.Harnesses.Staff(), sessionId, selection.Number, "intake");
 
         SessionStop? stoppedFirst = null;
 

@@ -678,6 +678,9 @@ public static class NoteCodes
     // record only, never the record's note: the actor by its id, the choice's number, the entry that ran and each one passed.
     public static readonly NoteCode OpeningActor = new("opening.actor", ["actor", "n", "entry", "passed"]);
 
+    /// <summary>STAFFPOLICY1c: a role's policy chose the choice that ran, by weight, share, budget or work; the sentence is the judge's, in English.</summary>
+    public static readonly NoteCode OpeningChosen = new("opening.chosen", ["actor", "said"]);
+
     // FOUNDATION1x (MODELROLE1l): a quest marked design ran on the order of the role taking `design`, Build's while none does; the role by
     // its name as written, since an added role has no id the page knows.
     public static readonly NoteCode OpeningDesign = new("opening.design", ["role"]);

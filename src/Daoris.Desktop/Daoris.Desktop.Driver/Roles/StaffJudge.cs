@@ -10,7 +10,7 @@ public sealed record StaffTokens(long Reported, bool Unreported);
 /// </summary>
 public sealed record StaffFacts
 {
-    /// <summary>The choices of the role's last new starts since its policy's <c>since</c>, oldest first; at most <see cref="StaffJudge.Window"/> are read.</summary>
+    /// <summary>The choices of the role's new starts since its policy's <c>since</c>, oldest first: the sequence the balances are replayed from; a share reads the last <see cref="StaffJudge.Window"/>.</summary>
     public IReadOnlyList<StaffKey> Window { get; init; } = [];
 
     /// <summary>This look's reservations by choice: a pending start counts in the window and against a budget.</summary>
@@ -97,11 +97,12 @@ public static class StaffPasses
 /// <c>not-answering</c> and one this line moved off within <see cref="Hold"/> <c>moved-off</c>, each in the stored order and only while
 /// another entry remains; then the rule orders the rest. A design start whose role names design for no choice is served by the choices
 /// taking build, as a design step falls to build's role.</para>
-/// <para><b>The weighted pick</b> (§3.2): over the window's <c>N</c> starts and this look's reservations, an entry of weight <c>w</c> above 0
-/// with <c>n</c> of them scores <c>w × (N + 1) − n × W</c>, <c>W</c> the sum of the role's weights, which is <c>W</c> times the design's
-/// <c>w / W × (N + 1) − n</c> in whole numbers: the highest first, ties by the stored order; weight-0 entries last, in order. Under either
-/// rule an entry with a share is within it where one more start keeps it at most that share, <c>(n + 1) × 100 ≤ share × (N + 1)</c>, and
-/// one over it walks after every entry within.</para>
+/// <para><b>The weighted pick</b> (§3.2, amended by §11 point 9): each entry above weight 0 holds a balance, replayed from the starts since
+/// the policy's <c>since</c> and this look's reservations, in order: every entry gains its weight and the one taken loses <c>W</c>, the sum
+/// of the weights, each held within −W and 2W. The entry with the highest balance plus its weight is first, ties by the stored order;
+/// weight-0 entries last, in order. Under either rule an entry with a share is within it where one more start of the window's last
+/// <see cref="Window"/> keeps it at most that share, <c>(n + 1) × 100 ≤ share × (N + 1)</c>, and one over it walks after every entry
+/// within.</para>
 /// </remarks>
 public static class StaffJudge
 {
@@ -138,7 +139,10 @@ public static class StaffJudge
         var counts = new Dictionary<StaffKey, long>();
         foreach (var key in window) counts[key] = counts.GetValueOrDefault(key) + 1;
         foreach (var (key, reserved) in facts.Reserved) counts[key] = counts.GetValueOrDefault(key) + reserved;
-        var spread = new Spread(policy.Rule, counts, window.Count + facts.Reserved.Values.Sum(), entries.Sum(each => (long)Math.Max(0, each.Choice.Weight)));
+        var weights = entries.Sum(each => (long)Math.Max(0, each.Choice.Weight));
+        var spread = new Spread(
+            policy.Rule, counts, window.Count + facts.Reserved.Values.Sum(), weights,
+            Balances(entries, weights, [.. facts.Window, .. facts.Reserved.SelectMany(pair => Enumerable.Repeat(pair.Key, pair.Value))]));
 
         var passed = new List<(Entry Entry, string Code, string Why)>();
         foreach (var each in served)
@@ -259,7 +263,7 @@ public static class StaffJudge
         if (budget.Starts is { } starts)
         {
             var used = facts.Today.GetValueOrDefault(each.Key) + facts.Reserved.GetValueOrDefault(each.Key);
-            return used >= starts ? $"over its daily budget: {used} of {starts} starts today" : null;
+            return used >= starts ? $"over its daily budget: {used} of {starts} starts today; it takes new work again from the machine's next day" : null;
         }
 
         if (budget.Tokens is not { } tokens || facts.Tokens.GetValueOrDefault(each.Key) is not { } reported) return null;
@@ -272,8 +276,29 @@ public static class StaffJudge
         public StaffKey Key => Choice.Key;
     }
 
-    /// <summary>The window's counts, by which the rule ranks and a share is weighed.</summary>
-    private sealed class Spread(string rule, IReadOnlyDictionary<StaffKey, long> counts, long total, long weights)
+    /// <summary>
+    /// The balances the weighted pick holds (§11 point 9), replayed from the starts taken in order: at each start every entry above weight 0
+    /// gains its weight and the entry taken loses <paramref name="weights"/>, each held within −W and 2W after every step. A start on a choice
+    /// the policy no longer holds, or on one of weight 0, is skipped.
+    /// </summary>
+    private static Dictionary<StaffKey, long> Balances(IReadOnlyList<Entry> entries, long weights, IEnumerable<StaffKey> taken)
+    {
+        var balance = entries.ToDictionary(each => each.Key, _ => 0L);
+        foreach (var key in taken)
+        {
+            if (!balance.ContainsKey(key) || entries.First(each => each.Key == key).Choice.Weight <= 0) continue;
+            foreach (var each in entries.Where(each => each.Choice.Weight > 0))
+            {
+                var next = balance[each.Key] + each.Choice.Weight - (each.Key == key ? weights : 0);
+                balance[each.Key] = Math.Clamp(next, -weights, 2 * weights);
+            }
+        }
+
+        return balance;
+    }
+
+    /// <summary>The window's counts, which a share is weighed by, and the balances, by which the weighted pick ranks.</summary>
+    private sealed class Spread(string rule, IReadOnlyDictionary<StaffKey, long> counts, long total, long weights, IReadOnlyDictionary<StaffKey, long> balances)
     {
         public long Total => total;
 
@@ -281,7 +306,8 @@ public static class StaffJudge
 
         public bool Within(Entry each) => each.Choice.Share is not { } share || (Count(each) + 1) * 100 <= share * (total + 1);
 
-        private long Score(Entry each) => each.Choice.Weight * (total + 1) - Count(each) * weights;
+        /// <summary>The balance with the weight this start would add: the entry highest in it is taken.</summary>
+        private long Score(Entry each) => balances.GetValueOrDefault(each.Key) + each.Choice.Weight;
 
         /// <summary>The rule's order of <paramref name="entries"/>; with the shares, every entry within its share before every one over it.</summary>
         public IReadOnlyList<Entry> Rank(IReadOnlyList<Entry> entries, bool withShare)

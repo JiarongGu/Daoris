@@ -264,6 +264,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'opening.said-clear': { values: [] },
   // MODELROLE1c2 (D205 §4.6 item 1): a later choice of an actor's ran, each choice passed said in the walk's own words.
   'opening.actor': { values: ['actor', 'n', 'entry', 'passed'] },
+  // STAFFPOLICY1c: the role's policy chose the choice that ran; the sentence is the judge's, in English, as `passed` is the walk's.
+  'opening.chosen': { values: ['actor', 'said'] },
   // FOUNDATION1x: a quest marked design ran on the order of the role taking design, Build's while none does; the role's name as written.
   'opening.design': { values: ['role'] },
   // LIMITPICK2: the account a start was refused for its sign-in and moved off, as named.
