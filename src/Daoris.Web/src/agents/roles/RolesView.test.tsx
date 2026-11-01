@@ -261,6 +261,46 @@ describe('The Agents place, Roles mode', () => {
     await waitFor(() => expect(notify).toHaveBeenCalledWith('Designer is saved; new work takes it.'));
   });
 
+  // AGENTSPLACE1g2: *Use these choices* is one press over SET_ROLES, said once; a refusal is the driver's sentence and every role is refused.
+  describe.each([[false], [true]])('the suggested choices pressed, refused %s', (refused) => {
+    it('goes out as one SET_ROLES and says so, or says the driver\'s sentence', async () => {
+      window.localStorage.setItem('daoris.list.agents.mode', 'roles');
+      const answer = invoke.getMockImplementation()!;
+      invoke.mockImplementation(async (module: string, type: string, request?: unknown) => {
+        if (type === 'ROLES') {
+          return {
+            ...ROLES, suggested: [], suggestedChoicesDated: '2026-10-31',
+            suggestedChoices: [{ role: 'build', choices: [{ agent: 'claude-code', model: 'sonnet', effort: 'high' }] }],
+          };
+        }
+        if (type === 'SET_ROLES' && refused) throw new Error('`build` changed since it was read, so nothing was written; read it again.');
+        if (type === 'SET_ROLES') return DRIVER_STATE;
+        return answer(module, type, request);
+      });
+      const notify = vi.fn();
+      show(<Place notify={notify} />);
+      const user = userEvent.setup();
+
+      await user.click(await screen.findByRole('button', { name: 'Use these choices' }));
+
+      expect(invoke.mock.calls.filter(([, type]) => type === 'SET_ROLES' || type === 'SET_ROLE').map(([, type, options]) => [type, options])).toEqual([
+        ['SET_ROLES', {
+          payload: {
+            changes: [{
+              change: 'set', id: 'build', revision: 0,
+              role: { name: { en: 'Build', zh: '开发' }, takes: ['build'], scope: { kind: 'machine', id: null } },
+              choices: [{ agent: 'claude-code', model: 'sonnet', effort: 'high' }],
+            }],
+          },
+        }],
+      ]);
+      if (refused) {
+        expect(await screen.findByText(/nothing was written; read it again/)).toBeTruthy();
+        expect(notify).not.toHaveBeenCalled();
+      } else await waitFor(() => expect(notify).toHaveBeenCalledWith('Saved together: Build; new work takes them.'));
+    });
+  });
+
   it('tells a failed read of the roles from a shell that offers none', async () => {
     window.localStorage.setItem('daoris.list.agents.mode', 'roles');
     const answer = invoke.getMockImplementation()!;

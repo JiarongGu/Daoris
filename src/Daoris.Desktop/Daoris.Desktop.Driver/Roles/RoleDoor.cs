@@ -73,6 +73,58 @@ public static class RoleDoor
     }
 
     /// <summary>
+    /// Several changes made as one (AGENTSPLACE1g2, the Agents-place design §4): each judged in order against the roles the ones before it
+    /// leave, its staffing by its work, and its revision against the one it was made against, <b>before anything is written</b>; the first
+    /// refusal refuses the batch and writes nothing. Then the seeded roles' staffing in one write, the added roles' in one store
+    /// transaction, the catalogue's rows in one transaction, and the staffing's check once.
+    /// </summary>
+    /// <returns>Each id's new revision, in the batch's order.</returns>
+    /// <exception cref="RoleRefusedException">The first judge's refusal; nothing written.</exception>
+    /// <exception cref="DriverException">The batch is empty or names a role twice, a role moved since it was read, or a write refused; said.</exception>
+    public static IReadOnlyList<long> ApplyAll(RoleStaffing staffing, IReadOnlyList<(RoleChange Change, IReadOnlyList<ActorChoice>? Choices, long? Read)> batch)
+    {
+        if (batch.Count == 0) throw new DriverException("the press named no role change.");
+        if (batch.GroupBy(each => each.Change.Id, StringComparer.Ordinal).FirstOrDefault(group => group.Count() > 1) is { } twice)
+        {
+            throw new DriverException($"the press changes the role `{twice.Key}` more than once, so nothing was written.");
+        }
+
+        var catalogue = RoleCatalog.Read(staffing.Location);
+        var judged = catalogue;
+        var seeded = new List<(string Actor, IReadOnlyList<ActorChoice>? Choices)>();
+        var added = new List<(string Role, IReadOnlyList<ActorChoice>? Choices)>();
+        var gone = new List<(string Role, IReadOnlyList<ActorChoice>? Choices)>();
+        foreach (var (change, choices, read) in batch)
+        {
+            if (read is { } seen && catalogue.RevisionOf(change.Id) != seen)
+            {
+                throw new DriverException(
+                    $"the role `{change.Id}` changed since it was read (revision {seen}, now {catalogue.RevisionOf(change.Id)}), so nothing was written; read it again.");
+            }
+
+            if (Judge(judged, change, choices) is { } refused) throw new RoleRefusedException(refused);
+            judged = judged.With(change);
+            var isSeeded = ActorChoices.Ids.Contains(change.Id, StringComparer.Ordinal);
+            if (change is RoleChange.SetRole { Role: var role })
+            {
+                var staffed = Staffed(catalogue, role.Id, choices);
+                if (staffed is not null && isSeeded) seeded.Add((role.Id, staffed));
+                else if (staffed is not null) added.Add((role.Id, staffed));
+            }
+            else if (choices is not null) throw new ArgumentException("only a role set carries its choices", nameof(batch));
+            else if (!isSeeded) gone.Add((change.Id, null));
+        }
+
+        // The staffing of a set goes first, as in Apply: a row no record reads until the catalogue's write lands; a removed added role's row goes after.
+        if (seeded.Count > 0) staffing.Set(seeded);
+        if (added.Count > 0) staffing.SetAdded(added);
+        var revisions = RoleCatalog.WriteAll(staffing.Location, [.. batch.Select(each => each.Change)], staffing.Confirmation);
+        if (gone.Count > 0) staffing.SetAdded(gone);
+        staffing.Check(StaffingCheckAt.Write);
+        return revisions;
+    }
+
+    /// <summary>
     /// Whether <paramref name="change"/> with <paramref name="choices"/> may be made to <paramref name="catalogue"/>: the catalogue's judge,
     /// then a set's staffing by the role's work. Every door asks it before anything is sent or shown, and <see cref="Apply"/> again.
     /// </summary>
@@ -121,6 +173,19 @@ public static class RoleDoor
             default:
                 throw new DriverException("a role's change is `set`, `remove` or `default`.");
         }
+    }
+
+    /// <summary><see cref="Read"/> for <c>SET_ROLES</c>: its <c>changes</c>, each a press as <c>SET_ROLE</c> takes it, in order.</summary>
+    /// <exception cref="DriverException">The press carries no list of changes, or one of them does not read as a change; said.</exception>
+    public static IReadOnlyList<(RoleChange Change, IReadOnlyList<ActorChoice>? Choices, long? Read)> ReadAll(System.Text.Json.JsonElement? payload)
+    {
+        if (payload is not { ValueKind: System.Text.Json.JsonValueKind.Object } press
+            || !press.TryGetProperty("changes", out var changes) || changes.ValueKind != System.Text.Json.JsonValueKind.Array)
+        {
+            throw new DriverException("the press named no role changes.");
+        }
+
+        return [.. changes.EnumerateArray().Select(each => Read(each))];
     }
 
     private static string? Text(System.Text.Json.JsonElement element, string name) =>

@@ -127,6 +127,7 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   SET_ACTOR: { scopes: ['driver', 'harnesses'] },
   STAFFING_FOUND_ANSWER: { scopes: ['driver', 'harnesses'] },
   SET_ROLE: { scopes: ['driver', 'harnesses'] },
+  SET_ROLES: { scopes: ['driver', 'harnesses'] },
   SET_HELP_MODE: { scopes: ['driver'] },
   SET_HELP_GRANT: { scopes: ['driver'] },
   TRUST_FOLDER: { scopes: ['driver'] },

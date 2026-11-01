@@ -40,6 +40,7 @@ internal static class PipeTargetRows
         ["SET_ACTOR"] = "edits an actor's row in place",
         ["STAFFING_FOUND_ANSWER"] = "answers a found change, which then leaves the list",
         ["SET_ROLE"] = "edits a role's row of the catalogue in place, its revision moving",
+        ["SET_ROLES"] = "edits several roles' rows of the catalogue in place, each revision moving, in one transaction",
         ["WORKFLOW_LANDED"] = "reads the gates at the line's tip and accepts them by their blob",
         ["WORKFLOW_USE"] = "merges into the place's choice, which keeps its other kinds and its landed route",
         ["WORKFLOW_KIND"] = "merges into the workspace's kinds, keeping the others",
@@ -306,6 +307,9 @@ internal static class PipeTargetRows
             (a, p) => Fp(Raw(Named(At(a, "actors"), "id", Text(p, "actor"))))));
         Row("STAFFING_FOUND_ANSWER", Setting("ACTORS", ["found", "answer"], _ => null, (a, _) => Fp(Raw(At(a, "found")))));
         Row("SET_ROLE", Setting("ROLES", ["change", "id"], _ => null, (a, p) => Fp(Raw(Named(At(a, "roles"), "id", Text(p, "id"))))));
+        // AGENTSPLACE1g2: the rows of every role the batch names, in the order it names them.
+        Row("SET_ROLES", Setting("ROLES", ["changes"], _ => null,
+            (a, p) => Fp([.. Each(Field(p, "changes")).Select(change => Raw(Named(At(a, "roles"), "id", Text(change, "id"))))])));
         Row("SET_KEEP", Setting("SYSTEM_SPACE", ["kind"], _ => null,
             (a, p) => Fp(Raw(At(Named(At(a, "kinds"), "id", Text(p, "kind")), "rule")), Raw(At(a, "volume", "floor")))));
         Row("SET_AGENT_SETTINGS", Setting("HARNESSES", ["harness", "profile"], _ => null,
