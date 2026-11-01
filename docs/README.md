@@ -212,6 +212,7 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-11-01-setup-ux-design.md` | Design: SETUPUX1, the place page, Set up… as choices then review, one top-to-bottom drawing, the editor's page, one role editor; accepted 2026-11-01 (D221)
 | `2026-11-01-setup-ux-reads.md` | Reads: SETUPUX1, both makers' reads and the steward's settlement
 | `2026-11-02-flowchart-brief.md` | Brief: FLOWCHART2, a proper flowchart for composing and reading workflows, with Ask Daoris composing beside you
+| `2026-11-02-flowchart-proposal-codex.md` | Proposal: FLOWCHART2, Codex, sealed
 
 ## UI, browser, tools and plugin contracts
 
