@@ -84,5 +84,10 @@
   "work.atWork.hint.guide": "About lanes",
   "work.atWork.group.channel": "On the channel",
   "work.atWork.channel.all": "All messages",
-  "work.atWork.channel.none": "Nothing on the channel yet."
+  "work.atWork.channel.none": "Nothing on the channel yet.",
+  "work.atWork.ask.none": "Nothing is at work on this ask yet.",
+  "work.atWork.ask.parts_one": "{{count}} part · {{working}} working",
+  "work.atWork.ask.parts_other": "{{count}} parts · {{working}} working",
+  "work.atWork.ask.moreEntries_one": "{{count}} more line of work not drawn",
+  "work.atWork.ask.moreEntries_other": "{{count}} more lines of work not drawn"
 }

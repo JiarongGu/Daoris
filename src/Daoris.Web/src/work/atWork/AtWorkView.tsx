@@ -63,6 +63,8 @@ export function AtWorkView({ held, error, onOpen, onOpenQuest, considered, onRet
     );
   }
   if ('failed' in held) return <Failed why={held.failed.why || (error ?? '')} onRetry={onRetry} />;
+  // An ask's answer is the ask page's section, not a session's view.
+  if ('askAnswer' in held) return null;
 
   const stale = held.stale?.why ?? error ?? null;
   const { answer } = held;
@@ -87,7 +89,7 @@ export function AtWorkView({ held, error, onOpen, onOpenQuest, considered, onRet
   );
 }
 
-function Failed({ why, onRetry }: { why: string; onRetry?: () => void }) {
+export function Failed({ why, onRetry }: { why: string; onRetry?: () => void }) {
   const { t } = useTranslation();
   return (
     <p role="alert" className="m-0 flex flex-wrap items-baseline gap-2 p-3 text-small text-ink-soft">
@@ -121,7 +123,7 @@ function listsParts(answer: AtWorkA, t: TFunction): boolean {
 }
 
 /** One message of the channel's last words, as the channel draws it: who, when, and the words as written. */
-function Word({ item }: { item: ChannelItem }) {
+export function Word({ item }: { item: ChannelItem }) {
   const { t } = useTranslation();
   const first = (item.text ?? '').trim();
   return (
@@ -278,10 +280,15 @@ function Subagents({ answer, quiet, now, streamOf, onOpenStream }: {
 function Quests({ answer, considered, onOpenQuest }: {
   answer: AtWorkA; considered: readonly Consideration[]; onOpenQuest?: (quest: string) => void;
 }) {
+  return <QuestRows quests={answer.quests} more={answer.moreQuests ?? 0} considered={considered} onOpenQuest={onOpenQuest} />;
+}
+
+/** The quest rows, as a session's view and an ask's section both draw them. */
+export function QuestRows({ quests, more, considered, onOpenQuest }: {
+  quests: readonly AtWorkQuest[] | undefined; more: number; considered: readonly Consideration[]; onOpenQuest?: (quest: string) => void;
+}) {
   const { t } = useTranslation();
-  const quests = answer.quests;
   if (!quests?.length) return null;
-  const more = answer.moreQuests ?? 0;
   return (
     <section className="grid min-w-0 gap-1">
       <SectionTitle level={3}>{t('work.atWork.group.quests')}</SectionTitle>

@@ -2,14 +2,18 @@ import { hashKey, type QueryClient, type QueryKey, useQuery, useQueryClient } fr
 import { useShenora } from '@shenora/react';
 import { call } from '../call';
 import { heldNumbered, isPending } from '../state/held';
-import type { AtWorkA, AtWorkAt, AtWorkHeld } from '../../work/atWork/types';
+import type { AtWorkA, AtWorkAskA, AtWorkAt, AtWorkHeld } from '../../work/atWork/types';
 
 // Who is at work on a session (COWORKVIEW1a, the cowork view design §3.8 and §4.1): the shell's one numbered read, composed from
-// the records Daoris keeps (its parts, its lineage), never from the conversation's text.
+// the records Daoris keeps (its parts, its lineage), never from the conversation's text. On an ask (COWORKVIEW1d) the same route is
+// keyed `{ ask }` and answers a branch of its own.
 
-export type { AtWorkA, AtWorkAt, AtWorkChild, AtWorkHeld } from '../../work/atWork/types';
+export type { AtWorkA, AtWorkAskA, AtWorkAt, AtWorkChild, AtWorkHeld } from '../../work/atWork/types';
 
 export const atWorkKey = (session: string): QueryKey => ['atWork', session];
+
+/** An ask's read, under the same hub key as a session's so one `atWork` wake asks every mounted read again. */
+export const atWorkAskKey = (ask: string): QueryKey => ['atWork', 'ask', ask];
 
 /** Every session's read, as the hub asks it again. */
 export const AT_WORK: QueryKey = ['atWork'];
@@ -33,7 +37,7 @@ const whyOf = (value: unknown): string | undefined => {
 export function readAtWork(wire: unknown): AtWorkHeld | null {
   const at = atOf(wire);
   if (isPending(wire) && !at) return null;
-  const told = wire as { pending?: unknown; failed?: unknown; answer?: unknown; stale?: unknown } | null;
+  const told = wire as { pending?: unknown; failed?: unknown; answer?: unknown; askAnswer?: unknown; stale?: unknown } | null;
   const tagged = <T extends AtWorkHeld>(held: T): T => (at ? { ...held, at } : held);
   if (told?.pending === true) return tagged({ reading: true });
   const failed = whyOf(told?.failed);
@@ -41,6 +45,11 @@ export function readAtWork(wire: unknown): AtWorkHeld | null {
   if (told && typeof told.answer === 'object' && told.answer !== null) {
     const stale = whyOf(told.stale);
     return tagged({ answer: told.answer as AtWorkA, ...(stale !== undefined ? { stale: { why: stale } } : {}) });
+  }
+  // An ask's answer is a branch of its own: its entries, never a session's attended part.
+  if (told && typeof told.askAnswer === 'object' && told.askAnswer !== null) {
+    const stale = whyOf(told.stale);
+    return tagged({ askAnswer: told.askAnswer as AtWorkAskA, ...(stale !== undefined ? { stale: { why: stale } } : {}) });
   }
   return tagged({ failed: { why: '' } });
 }
@@ -77,6 +86,11 @@ function told(client: QueryClient, queryKey: QueryKey, wire: unknown) {
 
 /** The query's own fetch: the fence opened as it begins and closed as it settles, its reply first, then what was held beside it. */
 export async function askAtWork(client: QueryClient, queryKey: QueryKey, session: string): Promise<AtWorkHeld> {
+  return askAtWorkOf(client, queryKey, { session });
+}
+
+/** A session's read or an ask's: the same fence, the same number rule, the route keyed by what is read. */
+export async function askAtWorkOf(client: QueryClient, queryKey: QueryKey, target: { session: string } | { ask: string }): Promise<AtWorkHeld> {
   const held = hashKey(queryKey);
   heldNumbered(held, (answer) => told(client, queryKey, answer));
   const fence: AtWorkHeld[] = [];
@@ -84,7 +98,7 @@ export async function askAtWork(client: QueryClient, queryKey: QueryKey, session
   let settled: AtWorkHeld | undefined = client.getQueryData<AtWorkHeld>(queryKey);
   let another = false;
   try {
-    const reply = readAtWork(await call<unknown>('SESSION_AT_WORK', { session, held }));
+    const reply = readAtWork(await call<unknown>('SESSION_AT_WORK', { ...target, held }));
     if (reply) {
       const taken = byNumber(settled, reply, true);
       if (typeof taken !== 'string') settled = taken;
@@ -110,6 +124,23 @@ function applyHeld(start: AtWorkHeld | undefined, fence: AtWorkHeld[], again: ()
   }
   return now;
 }
+
+/**
+ * Who is at work on an ask (COWORKVIEW1d), held as `AtWorkHeld` like a session's: its lines of work folded to counts and its quests.
+ * Asked only while the ask's page shows (`enabled`), and again at each `atWork` wake.
+ */
+export const useAskAtWork = (ask: string | null | undefined, { enabled = true }: { enabled?: boolean } = {}) => {
+  const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const queryKey = atWorkAskKey(ask ?? '');
+  return useQuery({
+    queryKey,
+    queryFn: () => askAtWorkOf(client, queryKey, { ask: ask ?? '' }),
+    enabled: isAvailable && !!ask && enabled,
+    retry: false,
+    staleTime: 30_000,
+  });
+};
 
 /**
  * Who is at work on `session`: its entry's parts and the attended part's subagents, held as `AtWorkHeld`. The query never rejects

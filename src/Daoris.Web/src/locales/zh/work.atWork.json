@@ -84,5 +84,10 @@
   "work.atWork.hint.guide": "关于泳道",
   "work.atWork.group.channel": "频道上",
   "work.atWork.channel.all": "全部消息",
-  "work.atWork.channel.none": "频道里还没有内容。"
+  "work.atWork.channel.none": "频道里还没有内容。",
+  "work.atWork.ask.none": "这个需求还没有人在工作。",
+  "work.atWork.ask.parts_one": "{{count}} 段 · {{working}} 段在工作",
+  "work.atWork.ask.parts_other": "{{count}} 段 · {{working}} 段在工作",
+  "work.atWork.ask.moreEntries_one": "另有 {{count}} 条工作线未列出",
+  "work.atWork.ask.moreEntries_other": "另有 {{count}} 条工作线未列出"
 }

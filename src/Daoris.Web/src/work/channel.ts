@@ -188,6 +188,12 @@ export function lastWords(channel: Channel | null | undefined, only: { entry: st
   return forEntry(channel.items, only).filter((item) => item.kind === 'message').sort((a, b) => a.at.localeCompare(b.at)).slice(-count);
 }
 
+/** The newest messages of a whole channel, oldest first: the ask page's own read (COWORKVIEW1c, COWORKVIEW1d). */
+export function lastMessages(channel: Channel | null | undefined, count = 3): ChannelItem[] {
+  if (!channel) return [];
+  return channel.items.filter((item) => item.kind === 'message').sort((a, b) => a.at.localeCompare(b.at)).slice(-count);
+}
+
 /** The message a message answers, or null where it answers none or the channel does not hold it. */
 export function repliesTo(items: readonly ChannelItem[], re: string | null | undefined): ChannelItem | null {
   return re ? items.find((item) => item.kind === 'message' && item.id === re) ?? null : null;

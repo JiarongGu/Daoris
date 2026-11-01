@@ -1302,6 +1302,7 @@ export function WorkFrame({
     if (intent === 'start') newConversationPressed();
     else if (intent === 'review') openView('review');
     else if (intent === 'workflow') openView('workflow');
+    else if (intent === 'atWork') openView('atWork');
   }
   if (!intent && taken) setTaken(null);
 

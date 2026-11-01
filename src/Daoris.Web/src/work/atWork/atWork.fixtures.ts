@@ -191,6 +191,33 @@ export const ASKED_BY = (by: AtWorkAsker['by']): AtWorkHeld => routed(
   's2',
 );
 
+// COWORKVIEW1d: an ask's view, a branch of its own.
+
+/** An ask with two lines of work (one with a subagent working, one done) and a quest untaken. */
+export const ASK_TWO_ENTRIES: AtWorkHeld = {
+  askAnswer: {
+    of: { ask: 'a1' },
+    entries: [
+      { entry: 'ask:a1/driver', repository: 'driver', opens: 's2', shown: 'working', parts: 2, working: 1, subagents: 3, subagentsWorking: 1 },
+      { entry: 'ask:a1/docs', repository: 'docs', opens: 's3', shown: 'completed', parts: 1, working: 0, subagents: 0, subagentsWorking: 0 },
+    ],
+    quests: [{ id: 'q4', title: 'Tidy the media lane', status: 'Open', lanes: ['media'], taker: { untaken: true } }],
+  },
+  at: { epoch: 'e1', n: 1 },
+};
+
+/** An ask the slice holds with nothing at work: valid and empty, never reading. */
+export const ASK_EMPTY: AtWorkHeld = { askAnswer: { of: { ask: 'a1' }, entries: [] }, at: { epoch: 'e1', n: 1 } };
+
+/** Its lines of work, a teammate's part among one of them. */
+export const ASK_TEAMMATE: AtWorkHeld = {
+  askAnswer: {
+    of: { ask: 'a1' },
+    entries: [{ entry: 'ask:a1/driver', repository: 'driver', opens: 's2', shown: 'working', parts: 2, working: 1, subagents: 1, subagentsWorking: 1, elsewhere: true }],
+  },
+  at: { epoch: 'e1', n: 1 },
+};
+
 // COWORKVIEW1c: the channel's last words.
 
 const posted = (id: string, at: string, over: Partial<ChannelItem>): ChannelItem => ({ kind: 'message', id, at, ...over });
@@ -200,6 +227,12 @@ export const SAID: ChannelItem[] = [
   posted('m1', '2026-10-31T14:01:00Z', { person: true, text: 'Start with the index, then the notes.' }),
   posted('m2', '2026-10-31T14:03:00Z', { session: 's2', repository: 'driver', agent: 'claude-code', text: 'The core lane is done; the index needs a second look before the notes go in.' }),
   posted('m3', '2026-10-31T14:04:00Z', { session: 'c1', repository: 'game', agent: 'claude-code', text: 'Waiting on the docs lane.' }),
+];
+
+/** The ask's channel: a message a line of work's part posted, and the person's. */
+export const ASK_SAID: ChannelItem[] = [
+  posted('m1', '2026-10-31T14:01:00Z', { person: true, text: 'Start with the index, then the notes.' }),
+  posted('m2', '2026-10-31T14:03:00Z', { entry: 'ask:a1/driver', session: 's2', repository: 'driver', agent: 'claude-code', text: 'The core lane is done; the index needs a second look.' }),
 ];
 
 // COWORKVIEW1e-iii: the hint, where two subagents ran and the way to hand rows on is not open.
