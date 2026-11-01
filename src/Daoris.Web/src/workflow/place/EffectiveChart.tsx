@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Flow, type FlowNode } from '../../design/Flow';
 import { Button, Inline } from '../../design/ui';
+import { FlowChart } from '../chart/FlowChart';
+import type { ChartNode } from '../chart/stepKinds';
 import type { WorkflowEffective } from '../current';
 import { executorSaid, limitSaid } from '../said';
 import { StepSettings, Who, type WorkflowDoors } from '../WorkflowChart';
@@ -49,7 +50,7 @@ export function EffectiveChart({ effective, routeLabel, page, name, workspace, s
   const { flow, cells } = effectiveFlow(t, i18n, effective, {
     label: t('workflow.chart', { name }), holds: { open: holdsOpen, toggle: () => setHoldsOpen((was) => !was) },
   });
-  const nodes = flow.nodes.map((node): FlowNode => {
+  const nodes = flow.nodes.map((node): ChartNode => {
     const step = cells.get(node.id);
     if (!step) return node;
     const here = selected === node.id;
@@ -77,7 +78,15 @@ export function EffectiveChart({ effective, routeLabel, page, name, workspace, s
   return (
     <section aria-label={t('workflow.place.chart.region', { route })} className="grid min-w-0 gap-2">
       <p className="m-0 text-small font-semibold text-ink">{effectiveLabel(t, effective, route)}</p>
-      <Flow label={flow.label} nodes={nodes} edges={flow.edges} entries={flow.entries} sections={flow.sections} track={flow.track} />
+      <FlowChart
+        label={flow.label}
+        nodes={nodes}
+        edges={flow.edges}
+        entries={flow.entries}
+        sections={flow.sections}
+        track={flow.track}
+        selected={selected}
+      />
       {cell && (
         <section aria-label={t('workflow.place.cell.region', { step: title })} className="min-w-0 rounded-control border border-line px-3 py-2">
           <h4 className="m-0 text-body font-semibold text-ink">{title}</h4>

@@ -54,6 +54,13 @@ describe("a route's chart", () => {
     expect(within(node('review')).getByRole('button', { name: 'Its settings' })).toHaveAttribute('aria-pressed', 'false');
   });
 
+  it("draws through the chart's components (FLOWCHART2a): each step its variant, the holds one group", () => {
+    draw(EFFECTIVE_RELEASE);
+    expect(node('review')).toHaveAttribute('data-variant', 'you');
+    expect(node('work')).toHaveAttribute('data-variant', 'work');
+    expect(document.querySelector('[data-variant="holds"]')).toHaveAccessibleName(/^Daoris makes sure/);
+  });
+
   it("shows a step's cell on selection, and takes it away on the same press", async () => {
     const onSelect = vi.fn();
     const { unmount } = draw(EFFECTIVE_CURRENT, { onSelect });
