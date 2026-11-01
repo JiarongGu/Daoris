@@ -1,12 +1,19 @@
 {
   "id": "documents",
   "order": 3,
-  "names": { "en": "Documents", "zh": "文档" },
+  "names": { "en": "Documents workflow", "zh": "文档工作流" },
   "for": {
     "en": "For a kind of task whose paths are documents: the work merges into the line once it is done, with no review.",
     "zh": "适用于路径都是文档的任务类型：工作完成后即合并到主线，无需审阅。"
   },
-  "delivery": { "method": "merge", "accept": "automatic" },
+  "delivery": {
+    "method": "merge", "accept": "automatic",
+    "names": { "en": "Merge with no review", "zh": "无需审阅即合并" },
+    "for": {
+      "en": "For a kind of task whose paths are documents: the work merges into the line once it is done, with no review.",
+      "zh": "适用于路径都是文档的任务类型：工作完成后即合并到主线，无需审阅。"
+    }
+  },
   "setUp": false,
   "graph": {
     "schemaVersion": 2,

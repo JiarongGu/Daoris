@@ -7,7 +7,8 @@ namespace Daoris.Desktop;
 /// <summary>
 /// What the step editor reads (WORKFLOWEDIT1a): the saved workflows with the places that choose them and the presets built in
 /// (<c>WORKFLOW_LIST</c>), one version as saved with its line and problems (<c>WORKFLOW_SHOW</c>), and what a step graph may hold
-/// (<c>WORKFLOW_PALETTE</c>). All three read this machine's home and publish nothing.
+/// (<c>WORKFLOW_PALETTE</c>). All three read this machine's home and publish nothing. The list carries each default's purpose, order,
+/// whether the set-up offers it and its delivery (SETUPUX1a).
 /// </summary>
 public sealed class WorkflowEditRoutes(DriverContext context)
 {
@@ -36,6 +37,17 @@ public sealed class WorkflowEditRoutes(DriverContext context)
             {
                 each.Id, each.Name, each.Graph, each.Line, Preset = true, each.Body,
                 Names = each.Names is { } names ? new { names.En, names.Zh } : null,
+                For = each.Default is { } shipped ? new { shipped.For.En, shipped.For.Zh } : null,
+                Order = each.Default?.Order,
+                SetUp = each.Default?.SetUp,
+                Delivery = each.Default is { } own
+                    ? new
+                    {
+                        own.Delivery.Method, own.Delivery.Accept, own.Delivery.Plugin, own.Delivery.Request,
+                        Names = new { own.DeliveryWords.Names.En, own.DeliveryWords.Names.Zh },
+                        For = new { own.DeliveryWords.For.En, own.DeliveryWords.For.Zh },
+                    }
+                    : null,
             }).ToArray(),
         });
     }

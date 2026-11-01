@@ -252,7 +252,7 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
 
         _out.GetStringBuilder().Clear();
         Assert.Equal(0, await Run("workflow defaults documents"));
-        Assert.StartsWith($"daoris: `documents` — Documents ({WorkflowDefaults.Of("documents")!.Names.Zh})", _out.ToString());
+        Assert.StartsWith($"daoris: `documents` — Documents workflow ({WorkflowDefaults.Of("documents")!.Names.Zh})", _out.ToString());
 
         Assert.Equal((0, ""), (await Run("workflow defaults documents --to documents.json"), _error.ToString()));
         var (graph, _) = NodeGraphs.Read(File.ReadAllText(Path.Combine(_home, "documents.json")));
@@ -314,8 +314,8 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
         await Run("workflow list");
 
         var said = _out.ToString();
-        Assert.Contains("`integrated` — Integrated into the line, a graph.", said);
-        Assert.Contains("`pull-request` — A pull request, a graph.", said);
+        Assert.Contains("`integrated` — Reviewed integration workflow, a graph.", said);
+        Assert.Contains("`pull-request` — Hosted merge workflow, a graph.", said);
         Assert.Contains("integrated into the line once its agent is done", said);
     }
 

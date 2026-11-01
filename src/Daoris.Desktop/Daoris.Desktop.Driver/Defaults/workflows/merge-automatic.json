@@ -2,12 +2,19 @@
   "id": "merge-automatic",
   "order": 2,
   "aliases": ["merge-no-press"],
-  "names": { "en": "Merge automatically", "zh": "自动合并" },
+  "names": { "en": "Automatic merge workflow", "zh": "自动合并工作流" },
   "for": {
     "en": "For a development repository whose main branch is its line: the work merges into the line once its requests are answered, with no review.",
     "zh": "适用于以 main 分支为主线的开发仓库：工作的请求答复后即合并到主线，无需审阅。"
   },
-  "delivery": { "method": "merge", "accept": "automatic" },
+  "delivery": {
+    "method": "merge", "accept": "automatic",
+    "names": { "en": "Merge with no review", "zh": "无需审阅即合并" },
+    "for": {
+      "en": "For a development repository whose main branch is its line: the work merges into the line once its requests are answered, with no review.",
+      "zh": "适用于以 main 分支为主线的开发仓库：工作的请求答复后即合并到主线，无需审阅。"
+    }
+  },
   "setUp": false,
   "graph": {
     "schemaVersion": 2,

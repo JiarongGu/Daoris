@@ -14,10 +14,19 @@ export type SavedWorkflow = {
 
 /**
  * A preset built in, never stored until saved: a graph's `body` as a version saves it, which the step editor starts from, and a default's
- * names in both languages (WORKFLOWEDIT1b); a driver before them leaves both out.
+ * names in both languages (WORKFLOWEDIT1b); a driver before them leaves both out. A default also says what it is `for`, its `order`,
+ * whether the place's set-up offers it (`setUp`) and its `delivery` with the delivery's own names and purpose (SETUPUX1a); a driver
+ * before that leaves them out, and a preset that is no default carries them null.
  */
 export type PresetWorkflow = {
   id: string; name: string; graph: boolean; line: string; preset: true; body?: unknown; names?: { en: string; zh: string } | null;
+  for?: { en: string; zh: string } | null; order?: number | null; setUp?: boolean | null; delivery?: PresetDelivery | null;
+};
+
+/** The `land` options a default's delivery sets, with the delivery's names and purpose, which are not the workflow's. */
+export type PresetDelivery = {
+  method: string; accept: 'you' | 'automatic'; plugin?: string | null; request?: string | null;
+  names: { en: string; zh: string }; for: { en: string; zh: string };
 };
 
 export type WorkflowListAnswer = { workflows: SavedWorkflow[]; presets: PresetWorkflow[] };

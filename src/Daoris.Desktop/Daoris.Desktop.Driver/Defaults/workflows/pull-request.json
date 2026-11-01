@@ -1,12 +1,19 @@
 {
   "id": "pull-request",
   "order": 5,
-  "names": { "en": "A pull request", "zh": "拉取请求" },
+  "names": { "en": "Hosted merge workflow", "zh": "托管合并工作流" },
   "for": {
     "en": "For a repository on a code host: you review the work, and a plugin pushes its branch and opens a pull request for you to merge.",
     "zh": "适用于托管在代码平台上的仓库：由你审阅工作，插件推送其分支并发起拉取请求，由你合并。"
   },
-  "delivery": { "method": "pull-request", "accept": "you" },
+  "delivery": {
+    "method": "pull-request", "accept": "you",
+    "names": { "en": "A pull request", "zh": "拉取请求" },
+    "for": {
+      "en": "For a repository on a code host: you review the work, and a plugin pushes its branch and opens a pull request for you to merge.",
+      "zh": "适用于托管在代码平台上的仓库：由你审阅工作，插件推送其分支并发起拉取请求，由你合并。"
+    }
+  },
   "setUp": true,
   "graph": {
     "schemaVersion": 2,

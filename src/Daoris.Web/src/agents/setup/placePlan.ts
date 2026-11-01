@@ -46,7 +46,8 @@ export type PlaceRepositoryPlan = {
   declaration?: PlaceDeclaration | null;
   /** Why the line's tip could not be read. */
   unread?: string | null;
-  suggested: { preset: string; adoption: boolean };
+  /** `why` is a code the page words (`kept`, `integration`, `plugin`, `default`) with the driver's sentence beside it; a driver before it leaves it out. */
+  suggested: { preset: string; adoption: boolean; why?: { code: 'kept' | 'integration' | 'plugin' | 'default'; said: string } };
 };
 
 export type PlacePlanned = {

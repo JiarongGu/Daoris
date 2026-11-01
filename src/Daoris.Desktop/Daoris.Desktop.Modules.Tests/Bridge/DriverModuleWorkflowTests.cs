@@ -294,6 +294,36 @@ public sealed class DriverModuleWorkflowTests : DriverModuleBridge
         Assert.Equal(["acme.deploy/deploy"], palette.GetProperty("plugins")[0].GetProperty("steps").EnumerateArray().Select(each => each.GetProperty("kind").GetString()));
     }
 
+    /// <summary>
+    /// SETUPUX1a: each default the list carries is the shipped data's, with its purpose, its order, whether the set-up offers it and its
+    /// delivery's land, names and purpose.
+    /// </summary>
+    [Fact]
+    public async Task The_list_carries_each_defaults_purpose_order_set_up_and_delivery()
+    {
+        var module = Module();
+
+        var list = await AnswerAsync(module, "WORKFLOW_LIST", new { });
+
+        var presets = list.GetProperty("presets").EnumerateArray().Where(each => each.TryGetProperty("delivery", out var delivery) && delivery.ValueKind == JsonValueKind.Object).ToList();
+        Assert.Equal(WorkflowDefaults.All.Select(each => each.Id), presets.Select(each => each.GetProperty("id").GetString()));
+        foreach (var (shipped, preset) in WorkflowDefaults.All.Zip(presets))
+        {
+            Assert.Equal((shipped.For.En, shipped.For.Zh), (preset.GetProperty("for").GetProperty("en").GetString(), preset.GetProperty("for").GetProperty("zh").GetString()));
+            Assert.Equal((shipped.Order, shipped.SetUp), (preset.GetProperty("order").GetInt32(), preset.GetProperty("setUp").GetBoolean()));
+            var delivery = preset.GetProperty("delivery");
+            Assert.Equal((shipped.Delivery.Method, shipped.Delivery.Accept), (delivery.GetProperty("method").GetString(), delivery.GetProperty("accept").GetString()));
+            Assert.Equal(shipped.Delivery.Plugin, delivery.TryGetProperty("plugin", out var plugin) ? plugin.GetString() : null);
+            Assert.Equal(shipped.Delivery.Request, delivery.TryGetProperty("request", out var request) ? request.GetString() : null);
+            Assert.Equal(
+                (shipped.DeliveryWords.Names.En, shipped.DeliveryWords.Names.Zh, shipped.DeliveryWords.For.En, shipped.DeliveryWords.For.Zh),
+                (delivery.GetProperty("names").GetProperty("en").GetString(), delivery.GetProperty("names").GetProperty("zh").GetString(),
+                    delivery.GetProperty("for").GetProperty("en").GetString(), delivery.GetProperty("for").GetProperty("zh").GetString()));
+        }
+
+        Assert.Equal(WorkflowDefaults.All.Count, presets.Count);
+    }
+
     /// <summary>The module over a loop come up on a stand-in service holding the registry below, <c>engine</c>'s checkout at <paramref name="root"/> where named.</summary>
     private async Task<(DriverModule Module, DriverLoop Loop)> UpAsync(string? root = null)
     {

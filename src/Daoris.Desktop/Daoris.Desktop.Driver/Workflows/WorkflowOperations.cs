@@ -71,6 +71,9 @@ public sealed record WorkflowPresetListed(string Id, string Name, bool Graph, st
 
     /// <summary>A default's names in English and Chinese, Daoris's own; null for a preset that is no default.</summary>
     public ShippedWords? Names { get; init; }
+
+    /// <summary>The default itself, for its purpose, order, whether the set-up offers it and its delivery (SETUPUX1a); null for a preset that is no default.</summary>
+    public WorkflowDefault? Default { get; init; }
 }
 
 /// <summary>One version as saved: its steps or its graph, its composed line, and the graph's problems.</summary>
@@ -713,7 +716,7 @@ public static class WorkflowOperations
                 WorkflowNamed.ElementOf(preset.Steps()), 1, null).Steps!)))
             .Concat(WorkflowPresets.GraphTable.Select(preset => new WorkflowPresetListed(preset.Id, preset.Name, true, WorkflowPresets.GraphLine(preset.Graph()))
             {
-                Body = preset.Graph(), Names = WorkflowDefaults.Of(preset.Id)?.Names,
+                Body = preset.Graph(), Names = WorkflowDefaults.Of(preset.Id)?.Names, Default = WorkflowDefaults.Of(preset.Id),
             }))
             .ToArray();
         return (saved, presets);

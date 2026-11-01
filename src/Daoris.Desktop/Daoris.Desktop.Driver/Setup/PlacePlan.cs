@@ -56,8 +56,8 @@ public sealed record PlaceDeclaration(string Line, string Commit, string Blob, s
 /// <summary>A queued quest enabling driving would release, by its title.</summary>
 public sealed record PlaceReleased(string Quest, string Title);
 
-/// <summary>What the page preselects: the delivery read from the driver's facts, and adoption for a repository that has not adopted.</summary>
-public sealed record PlaceSuggestion(string Preset, bool Adoption);
+/// <summary>What the page preselects: the delivery read from the driver's facts and why, and adoption for a repository that has not adopted.</summary>
+public sealed record PlaceSuggestion(string Preset, bool Adoption, SuggestionWhy Why);
 
 /// <summary>One repository of a plan: before and after, the changes it makes there, what lowers your part, §17.7's reach, and the rest.</summary>
 public sealed record PlaceRepository(
@@ -337,10 +337,11 @@ public static class PlacePlans
             var plugin = SetupPresets.PluginFor(tip.Host, LandingRules.Choose(config, row.Repository, workspace).Rule.Plugin, plugins);
             // A delivery is the person's choice where it is driven by a rule set somewhere; the default rule chose nothing.
             var chosen = before.Driven && before.Values.Landing.Source != PlaceSource.Default;
+            var (suggested, why) = SetupPresets.Suggestion(before.Match, chosen, declares, plugin);
             rows.Add(new PlaceRepository(
                 row.Repository, workspace, before, after, applied.Changes, LowersOf(store, config, applied, row.Repository, workspace), reach, released,
                 DeclarationOf(tip, applied.After, row.Repository, workspace, after), tip.Problem,
-                new PlaceSuggestion(SetupPresets.Suggest(before.Match, chosen, declares, plugin), !row.Adopted)));
+                new PlaceSuggestion(suggested, !row.Adopted, why)));
             made.AddRange(applied.Changes.Select(change => (change, row.Repository)));
         }
 

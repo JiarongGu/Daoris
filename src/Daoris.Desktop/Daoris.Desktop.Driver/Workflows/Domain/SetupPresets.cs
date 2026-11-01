@@ -14,6 +14,24 @@ public sealed record SetupLand(string Method, string Accept, string? Plugin = nu
 /// <summary>One delivery preset: its id, the name the page shows, and its land; <i>Not driven</i> has none.</summary>
 public sealed record SetupPreset(string Id, string Name, SetupLand? Land);
 
+/// <summary>Why a delivery is suggested (SETUPUX1a): <see cref="Code"/> is for the page to word, <see cref="Said"/> is the driver's own sentence.</summary>
+public sealed record SuggestionWhy(string Code, string Said)
+{
+    public const string Kept = "kept";
+    public const string Integration = "integration";
+    public const string Plugin = "plugin";
+    public const string Default = "default";
+
+    /// <summary>The reason a code stands for, in the driver's words.</summary>
+    public static SuggestionWhy Of(string code) => new(code, code switch
+    {
+        Kept => "It is how this place already lands its work.",
+        Integration => "Its line's declaration declares an integration.",
+        Plugin => "A landing plugin serves its remote's platform.",
+        _ => "Nothing here asks for another, so work merges into the line after you accept.",
+    });
+}
+
 /// <summary>The preset a place's delivery matches, or none, and each option of its own that differs from it.</summary>
 public sealed record SetupMatch(string? Preset, IReadOnlyList<string> Own)
 {
@@ -44,7 +62,7 @@ public static class SetupPresets
     public static IReadOnlyList<SetupPreset> Table { get; } =
     [
         new(NotDriven, "Not driven", null),
-        .. WorkflowDefaults.All.Where(shipped => shipped.SetUp).Select(shipped => new SetupPreset(shipped.Id, shipped.Names.En, shipped.Delivery)),
+        .. WorkflowDefaults.All.Where(shipped => shipped.SetUp).Select(shipped => new SetupPreset(shipped.Id, shipped.DeliveryWords.Names.En, shipped.Delivery)),
     ];
 
     /// <summary>A preset by its id, or null.</summary>
@@ -141,10 +159,14 @@ public static class SetupPresets
     /// <c>integration</c>; else <i>A pull request</i> where a landing plugin serves the remote's platform; else <i>Merge after you accept</i>.
     /// </summary>
     public static string Suggest(SetupMatch match, bool chosen, bool declaresIntegration, string? plugin) =>
-        chosen && match.Preset is { } kept && kept != NotDriven ? kept
-        : declaresIntegration ? Integrated
-        : plugin is not null ? PullRequest
-        : Merge;
+        Suggestion(match, chosen, declaresIntegration, plugin).Preset;
+
+    /// <summary><see cref="Suggest"/> with the reason: a code the page words, and the driver's sentence beside it.</summary>
+    public static (string Preset, SuggestionWhy Why) Suggestion(SetupMatch match, bool chosen, bool declaresIntegration, string? plugin) =>
+        chosen && match.Preset is { } kept && kept != NotDriven ? (kept, SuggestionWhy.Of(SuggestionWhy.Kept))
+        : declaresIntegration ? (Integrated, SuggestionWhy.Of(SuggestionWhy.Integration))
+        : plugin is not null ? (PullRequest, SuggestionWhy.Of(SuggestionWhy.Plugin))
+        : (Merge, SuggestionWhy.Of(SuggestionWhy.Default));
 
     /// <summary>How a rule lands its work, in a few words: the plan's before and after of the landing.</summary>
     public static string Said(LandingRule rule)

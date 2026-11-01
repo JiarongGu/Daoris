@@ -61,6 +61,8 @@ public sealed class DriverModulePlacePlanTests : DriverModuleBridge
         Assert.Equal("workspace", atlas.GetProperty("after").GetProperty("values").GetProperty("opinion").GetProperty("source").GetString());
         Assert.Equal(["Fix the map"], atlas.GetProperty("released").EnumerateArray().Select(each => each.GetProperty("title").GetString()));
         Assert.True(atlas.GetProperty("suggested").GetProperty("adoption").GetBoolean());
+        Assert.Equal(SuggestionWhy.Default, atlas.GetProperty("suggested").GetProperty("why").GetProperty("code").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(atlas.GetProperty("suggested").GetProperty("why").GetProperty("said").GetString()));
         Assert.Contains("has no checkout on this machine to read", atlas.GetProperty("unread").GetString());
         Assert.Equal(JsonValueKind.Null, atlas.GetProperty("declaration").ValueKind);
         var changes = plan.GetProperty("changes").EnumerateArray()
