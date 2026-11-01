@@ -499,4 +499,67 @@ public sealed class WorkflowRunBindingTests : IDisposable
 
         Assert.Contains("names one", planned.Problem);
     }
+
+    /// <summary>A graph whose work and opinion steps name the role that takes each (ROLESTEP1b).</summary>
+    private void SaveStaffed(string work, string opinion) =>
+        WorkflowStore.Add(_home, new WorkflowVersionAdded("staffed", "Staffed steps", "terminal", "2026-11-01T09:00:00Z", null, JsonNode.Parse(
+            $$$"""
+            {"schemaVersion":2,"entries":["work"],"end":"pull-request","nodes":[{"id":"work","kind":"claimed","version":1,"reach":"observed","options":{"role":"{{{work}}}"}},
+              {"id":"second","kind":"opinion","version":1,"reach":"observed","options":{"role":"{{{opinion}}}"}},
+              {"id":"review","kind":"review","version":1,"reach":"pressed"},
+              {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"pull-request"}},
+              {"id":"pushed","kind":"pushed","version":1,"reach":"observed"},{"id":"pull-request","kind":"pull-request","version":1,"reach":"observed"}],
+             "wires":[{"id":"a","kind":"after","from":"work","to":"second"},{"id":"o","kind":"after","from":"second","to":"review"},
+                      {"id":"r","kind":"after","from":"review","to":"landing"},{"id":"l","kind":"after","from":"second","to":"landing"},
+                      {"id":"b","kind":"after","from":"landing","to":"pushed"},{"id":"c","kind":"after","from":"pushed","to":"pull-request"}]}
+            """)), kept: []);
+
+    private static DriverConfig Staffed => Config("""
+        {"workflows":{"web-app":{"default":"staffed"}},"landings":{"web-app":{"form":"branch","pattern":"a/{quest}","plugin":"acme.pr"}}}
+        """);
+
+    private static RoleCatalog Roles(params RoleRecord[] roles) => RoleCatalog.Of([.. roles.Select(role => RoleCatalogTests.Stored(role, 4))]);
+
+    /// <summary>ROLESTEP1b: each agent step's role is judged at the bind and kept with its record's revision, through the run's file.</summary>
+    [Fact]
+    public void A_bound_step_s_role_is_kept_with_its_revision_and_read_back_from_the_run_s_file()
+    {
+        SaveStaffed("frontend", "security");
+        var roles = Roles(
+            RoleCatalogTests.Working("frontend", "build", new RoleScope(RoleScope.Repository, "web-app")), RoleCatalogTests.Working("security", "review"));
+
+        var planned = WorkflowRunBindings.Plan(Staffed, WorkflowPorts.Store(_home), "a1b2c3", "web-app", "work", null, null, [], At, roles: () => roles);
+        Assert.True(WorkflowRunBindings.Bind(_home, planned));
+        var bound = WorkflowRunBindings.Read(_home, "a1b2c3")!;
+
+        Assert.Null(bound.Problem);
+        Assert.Equal([new WorkflowStepRole("work", NodeKinds.Claimed, "frontend", 4), new WorkflowStepRole("second", NodeKinds.Opinion, "security", 4)], bound.Roles);
+        Assert.Equal("frontend", bound.RoleOf(NodeKinds.Claimed)?.Role);
+        Assert.Equal("security", bound.RoleOf(NodeKinds.Opinion)?.Role);
+
+        // A binding whose steps name no role writes none, so every file from before reads and writes as it did.
+        var current = WorkflowRunBindings.Plan(Config("{}"), _home, "d4e5f6", "web-app", "work", null, null, [], At);
+        Assert.Empty(current.Roles);
+        Assert.DoesNotContain("roles", WorkflowRunFiles.ToJson(current), StringComparison.Ordinal);
+    }
+
+    /// <summary>ROLESTEP1b: a role that cannot take its step is the binding's problem, said with why; the step still names it, never another.</summary>
+    [Fact]
+    public void A_step_s_role_that_cannot_take_it_is_the_binding_s_problem_and_no_other_role_is_put_in_its_place()
+    {
+        SaveStaffed("frontend", "security");
+        var roles = Roles(RoleCatalogTests.Working("frontend", "build"), RoleCatalogTests.Working("security", "build"));
+
+        var planned = WorkflowRunBindings.Plan(Staffed, WorkflowPorts.Store(_home), "a1b2c3", "web-app", "work", null, null, [], At, roles: () => roles);
+
+        Assert.Equal(
+            "`staffed` v1's step `second` names the role `security`, which cannot take it: The role `security` does not take `review`, so the starts "
+            + "naming it hold until it does: Agents → Roles, or `daoris driver role`.",
+            planned.Problem);
+        Assert.Equal("security", planned.RoleOf(NodeKinds.Opinion)?.Role);
+
+        var unknown = WorkflowRunBindings.Plan(Staffed, WorkflowPorts.Store(_home), "a1b2c3", "web-app", "work", null, null, [], At, roles: () => RoleCatalog.Of([]));
+        Assert.StartsWith("`staffed` v1's step `work` names the role `frontend`, which cannot take it: No role `frontend` is in the catalogue", unknown.Problem);
+        Assert.Equal("frontend", unknown.RoleOf(NodeKinds.Claimed)?.Role);
+    }
 }

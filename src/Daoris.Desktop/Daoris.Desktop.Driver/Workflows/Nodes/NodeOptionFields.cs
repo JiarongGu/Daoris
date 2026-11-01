@@ -18,12 +18,20 @@ public sealed record NodeOptionField(string Name, string Type, IReadOnlyList<str
 /// </summary>
 public static class NodeOptionFields
 {
+    /// <summary>
+    /// The option an agent step names the role that takes it by (ROLESTEP1b): a role's id, on <c>claimed</c> and <c>opinion</c> alone, since
+    /// no agent session takes Daoris's or a plugin's performed steps.
+    /// </summary>
+    public const string Role = "role";
+
     private static NodeOptionField Choice(string name, IReadOnlyList<string> choices, bool required = false) => new(name, NodeOptionTypes.Choice, choices, required);
 
     private static NodeOptionField Text(string name, bool required = false) => new(name, NodeOptionTypes.Text, [], required);
 
     private static readonly IReadOnlyDictionary<string, IReadOnlyList<NodeOptionField>> Table = new Dictionary<string, IReadOnlyList<NodeOptionField>>(StringComparer.Ordinal)
     {
+        [NodeKinds.Claimed] = [Text(Role)],
+        [NodeKinds.Opinion] = [Text(Role)],
         [NodeKinds.Land] =
         [
             Choice("method", LandNodes.Methods),
