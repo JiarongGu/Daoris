@@ -6,6 +6,7 @@ import { Button, CheckField, Icon } from '../../design/ui';
 import { cn } from '../../lib/cn';
 import { PageHead, ViewMain } from '../../work/frame/ViewMain';
 import { MACHINE, repositoryId, workspaceId } from '../modes';
+import type { SetUpPlace } from './placePlan';
 
 /** A page of driven repositories, and the step "Show more" takes. */
 const PAGE = 50;
@@ -239,13 +240,18 @@ function Fact({ name, children }: { name: string; children: ReactNode }) {
  * Sessions (AGENTSPLACE1f). The preset a place matches is derived by a later row (AGENTSPLACE1a2), and the Workflow section by 1h, so the
  * page says what the configuration already reads.
  */
-export function SetupMain({ found, state, roles, after }: {
+export function SetupMain({ found, state, roles, after, setUp }: {
   found: Found | null;
   state: SetupState['status'];
   /** The place's Roles section, drawn under its head: the application's, which reads the driver. */
   roles?: ReactNode;
   /** What follows Roles (AGENTSPLACE1f): the place's Sessions, and a repository's Driving and Line and landing until their rows build them. */
   after?: ReactNode;
+  /**
+   * The place's *Set up…* (AGENTSPLACE1j), pressed from its head: open, the page replaces the place's sections in the main area, and the
+   * panel is the application's, which reads the plan and presses Apply. None for *This machine*, which has no set-up.
+   */
+  setUp?: { open: boolean; onOpen: () => void; panel: ReactNode };
 }) {
   const { t } = useTranslation();
   if (!found) {
@@ -261,8 +267,20 @@ export function SetupMain({ found, state, roles, after }: {
   const needs = found.kind === 'imported' ? [] : found.row.needs;
   const changes = found.kind === 'imported' || found.kind === 'machine' ? null : ownChanges(found.row);
   const follows = found.kind === 'repository' || found.kind === 'workspace' ? found.row.values?.follows : null;
+  const offersSetUp = setUp !== undefined && found.kind !== 'machine';
+  if (offersSetUp && setUp.open) {
+    return <ViewMain header={<PageHead title={name} line={where ?? undefined} />}>{setUp.panel}</ViewMain>;
+  }
   return (
-    <ViewMain header={<PageHead title={name} line={where ?? undefined} />}>
+    <ViewMain
+      header={(
+        <PageHead
+          title={name}
+          line={where ?? undefined}
+          acts={offersSetUp ? <Button onClick={setUp.onOpen}>{t('agents.setup.set.open')}</Button> : undefined}
+        />
+      )}
+    >
       <dl className="m-0 grid">
         {found.kind === 'imported' && (
           <>
@@ -308,6 +326,18 @@ export function SetupMain({ found, state, roles, after }: {
       {found.kind !== 'imported' && after}
     </ViewMain>
   );
+}
+
+/** The place a *Set up…* is for, from the chosen id and the answer in hand; none for *This machine*, which has no set-up. */
+export function setUpPlaceOf(found: Found | null, id: string | null, read: PlacesRead | null): SetUpPlace | null {
+  if (!found || !id || found.kind === 'machine') return null;
+  if (found.kind === 'workspace') {
+    const workspace = found.row.workspace ?? '';
+    return { id, kind: 'workspace', name: workspace, workspace, driven: (read?.repositories ?? []).filter((row) => row.workspace === workspace).map((row) => row.repository ?? '') };
+  }
+  return found.kind === 'repository'
+    ? { id, kind: 'repository', name: found.row.repository ?? '', workspace: found.row.workspace ?? '', driven: [] }
+    : { id, kind: 'repository', name: found.repository, workspace: found.workspace, driven: [] };
 }
 
 /** The place whose roles are asked: this machine's (neither), a workspace's, or a driven repository's with the workspace it sits in. */

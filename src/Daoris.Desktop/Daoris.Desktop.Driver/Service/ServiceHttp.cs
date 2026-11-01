@@ -31,7 +31,9 @@ public sealed class ServiceHttp : IServiceDoors
 
     /// <summary>URL and key from the environment — the same two names `connect` reads (design §5b) — for this process.</summary>
     public static ServiceHttp FromEnvironment() =>
-        FromEnvironment(Environment.GetEnvironmentVariable, AppContext.BaseDirectory, url => RunningService.Status(url));
+        FromEnvironment(
+            Environment.GetEnvironmentVariable, AppContext.BaseDirectory,
+            (url, timeout) => RunningService.Status(url, timeout: timeout), waiting: Console.Error.WriteLine);
 
     /// <summary>
     /// The service, in the order a terminal finds it (FINDDAORIS1, D171 point 1): the variable, which still wins; else, for a
@@ -46,8 +48,17 @@ public sealed class ServiceHttp : IServiceDoors
     /// <param name="baseDirectory">Where this program runs from, which says whether an install carries it.</param>
     /// <param name="answers">What an address's status door answers as a Daoris host, or null (HOMEID1: its home is checked).</param>
     /// <param name="retryAfter">The wait before a status door that did not answer is asked again (SERVICESTALL1); null is <see cref="RunningService.RetryAfter"/>.</param>
+    /// <param name="waiting">Told once where the home's process runs and its status door has not answered yet (SERVICEPROBE1).</param>
+    /// <param name="total">How long a running service is waited for in all; null is <see cref="RunningService.WaitFor"/>.</param>
     public static ServiceHttp FromEnvironment(
-        Func<string, string?> environment, string baseDirectory, Func<string, ServiceStatus?> answers, TimeSpan? retryAfter = null)
+        Func<string, string?> environment, string baseDirectory, Func<string, ServiceStatus?> answers,
+        TimeSpan? retryAfter = null, Action<string>? waiting = null, TimeSpan? total = null) =>
+        FromEnvironment(environment, baseDirectory, (url, _) => answers(url), retryAfter, waiting, total);
+
+    /// <summary><see cref="FromEnvironment(Func{string, string?}, string, Func{string, ServiceStatus?}, TimeSpan?, Action{string}?, TimeSpan?)"/>, the status door given each ask's bound.</summary>
+    public static ServiceHttp FromEnvironment(
+        Func<string, string?> environment, string baseDirectory, Func<string, TimeSpan, ServiceStatus?> answers,
+        TimeSpan? retryAfter = null, Action<string>? waiting = null, TimeSpan? total = null)
     {
         var url = environment(ServiceClient.UrlVariable);
         if (string.IsNullOrWhiteSpace(url))
@@ -59,7 +70,7 @@ public sealed class ServiceHttp : IServiceDoors
             }
 
             // An address the home left that nothing answered at is not a missing variable: its sentence says what was seen, alone.
-            url = RunningService.Find(home, install, answers, out var why, out var unanswered, retryAfter ?? RunningService.RetryAfter)
+            url = RunningService.Find(home, install, answers, out var why, out var unanswered, retryAfter ?? RunningService.RetryAfter, waiting, total)
                 ?? throw new DriverException(unanswered ? why : $"{NoService} {why}");
         }
 

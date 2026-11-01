@@ -34,22 +34,26 @@ public static class RunningService
     /// <summary>The wait before a status door that did not answer is asked a second time (SERVICESTALL1).</summary>
     public static readonly TimeSpan RetryAfter = TimeSpan.FromSeconds(1);
 
-    /// <summary>
-    /// The address the running desktop holds for <paramref name="home"/>, or null with the sentence that says why there is none:
-    /// that Daoris is not running there and how to start it, or what was found and why it was not taken.
-    /// </summary>
-    /// <param name="install">The install the asking program runs from, whose launcher starts Daoris.</param>
-    /// <param name="status">What an address's status door answers as a Daoris host, or null: <see cref="Status"/>, or a test's.</param>
-    public static string? Find(string home, string install, Func<string, ServiceStatus?> status, out string why) =>
-        Find(home, install, status, out why, out _, RetryAfter);
+    /// <summary>How long a service whose process runs is waited for in all, once the first ask went unanswered (SERVICEPROBE1).</summary>
+    public static readonly TimeSpan WaitFor = TimeSpan.FromSeconds(30);
+
+    /// <summary>The bound of each ask after the first, so a service slow for seconds still answers one.</summary>
+    public static readonly TimeSpan LongWithin = TimeSpan.FromSeconds(10);
 
     /// <summary>
-    /// <see cref="Find(string, string, Func{string, ServiceStatus?}, out string)"/>, saying whether the address came from the home's record
-    /// and nothing answered there (<paramref name="unanswered"/>), which the refusal does not blame on the variable (SERVICESTALL1).
+    /// The address the running desktop holds for <paramref name="home"/>, or null with the sentence that says why there is none:
+    /// that Daoris is not running there and how to start it, or what was found and why it was not taken. Where its process runs
+    /// and the status door does not answer, it is asked again for <paramref name="total"/> (SERVICEPROBE1).
     /// </summary>
-    /// <param name="retryAfter">The wait before the status door is asked once more where it did not answer, so a service busy for a moment is not taken for a missing one.</param>
+    /// <param name="install">The install the asking program runs from, whose launcher starts Daoris.</param>
+    /// <param name="status">What an address's status door answers as a Daoris host within the bound it is given, or null: <see cref="Status"/>, or a test's.</param>
+    /// <param name="unanswered">Whether the address came from the home's record and nothing answered there, which the refusal does not blame on the variable (SERVICESTALL1).</param>
+    /// <param name="retryAfter">The wait between asks, so a service busy for a moment is not taken for a missing one.</param>
+    /// <param name="waiting">Told once, when the first ask went unanswered and the process runs.</param>
+    /// <param name="total">How long to wait in all; null is <see cref="WaitFor"/>.</param>
     public static string? Find(
-        string home, string install, Func<string, ServiceStatus?> status, out string why, out bool unanswered, TimeSpan retryAfter)
+        string home, string install, Func<string, TimeSpan, ServiceStatus?> status, out string why, out bool unanswered,
+        TimeSpan retryAfter, Action<string>? waiting = null, TimeSpan? total = null)
     {
         unanswered = false;
         var start = Path.Combine(install, "Daoris.exe");
@@ -66,19 +70,30 @@ public static class RunningService
             return null;
         }
 
-        var answered = status(entry.Url);
-        if (answered is null)
+        var bound = total ?? WaitFor;
+        var clock = Stopwatch.StartNew();
+        var answered = status(entry.Url, Within);
+        var asks = 1;
+        if (answered is null && bound > TimeSpan.Zero)
         {
-            // A service busy past the bound (a landing, a machine at full load) answers a second try; one that is not there does not.
-            Thread.Sleep(retryAfter);
-            answered = status(entry.Url);
+            // The process runs: a service busy past the bound (a landing, a machine at full load) answers a longer ask.
+            waiting?.Invoke($"Daoris is running on {home} but has not answered yet; waiting up to {Seconds(bound)}.");
+            while (answered is null && clock.Elapsed < bound)
+            {
+                var left = bound - clock.Elapsed;
+                Thread.Sleep(retryAfter < left ? retryAfter : left);
+                left = bound - clock.Elapsed;
+                if (left <= TimeSpan.Zero) break;
+                answered = status(entry.Url, left < LongWithin ? left : LongWithin);
+                asks++;
+            }
         }
 
         if (answered is null)
         {
             unanswered = true;
             why = $"Daoris is running on {home} (pid {entry.Pid}), and nothing answered as its service at {entry.Url} within "
-                + $"{Seconds(Within)}, asked twice, {Seconds(retryAfter)} apart. The address is the one Daoris "
+                + $"{Seconds(bound)}, asked {asks} times. The address is the one Daoris "
                 + $"left in {home}, so {ServiceClient.UrlVariable} is not the cause: the service may be busy. Run this again in a moment, "
                 + $"or start Daoris again ({start}).";
             return null;
@@ -132,17 +147,17 @@ public static class RunningService
         && address.IsLoopback;
 
     /// <summary>
-    /// What <paramref name="url"/>'s status door answers as a Daoris host, within two seconds and with redirects off, or null
-    /// where nothing answers as one.
+    /// What <paramref name="url"/>'s status door answers as a Daoris host, within <paramref name="timeout"/> (<see cref="Within"/>
+    /// when null) and with redirects off, or null where nothing answers as one.
     /// </summary>
     /// <param name="handler">A test's host; null asks over the network.</param>
-    public static ServiceStatus? Status(string url, HttpMessageHandler? handler = null)
+    public static ServiceStatus? Status(string url, HttpMessageHandler? handler = null, TimeSpan? timeout = null)
     {
         // 🔴 HOMEID1: redirects off. An address on this machine that sends its asker elsewhere has not answered.
         using var http = handler is null
             ? new HttpClient(new SocketsHttpHandler { AllowAutoRedirect = false })
             : new HttpClient(handler, disposeHandler: false);
-        http.Timeout = Within;
+        http.Timeout = timeout ?? Within;
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, $"{url.TrimEnd('/')}/api/status");

@@ -54,6 +54,31 @@ public sealed class BrainstormCommandTests : IDisposable
         Assert.Contains("next look", said, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void An_agent_no_adapter_names_is_refused_with_the_names_there_are_and_nothing_is_written()
+    {
+        var (code, said) = Run("Why?", "--agents", "claude,stub");
+
+        Assert.Equal(1, code);
+        Assert.Contains("claude", said, StringComparison.Ordinal);
+        Assert.Contains("claude-code-acp", said, StringComparison.Ordinal);
+        Assert.Contains("codex-acp", said, StringComparison.Ordinal);
+        Assert.Empty(Files.Requests());
+    }
+
+    [Fact]
+    public void A_plugins_adapter_the_set_carries_is_accepted()
+    {
+        var stub = AdapterSet.Built().Resolve("stub");
+        var set = new AdapterSet(new Dictionary<string, ISessionAdapter> { ["stand-agent"] = stub });
+        var output = new StringWriter();
+
+        var code = BrainstormCommand.Run(["Why?", "--agents", "stand-agent"], _home, output, At, _ => set);
+
+        Assert.Equal(0, code);
+        Assert.Equal(["stand-agent"], Assert.Single(Files.Requests()).Agents);
+    }
+
     [Theory]
     [InlineData]
     [InlineData("--agents")]

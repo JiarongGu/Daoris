@@ -570,6 +570,8 @@ node tools/partials.mjs --write
 dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- map
 ```
 
+`npm ci` installs a pre-commit hook (`tools/index-hook.mjs`) that runs the `orient-index` write and stages `docs/index/` in any commit that stages other paths; `DAORIS_INDEX_HOOK=0` skips it, and it skips a commit with a file staged in part.
+
 Moving files: `node tools/move-files.mjs [--plan] from=to ... --expect-moved N --expect-rewritten N` (or `--moves file.json`)
 runs `git mv`, respells every relative import of the moved files and in them, and checks that each still resolves.
 
