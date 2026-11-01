@@ -42,6 +42,11 @@ public static class SetupQuests
     /// <summary>Whether a quest so titled is the index quest (ORIENT2c): a workspace plan paces it after the set-up.</summary>
     public static bool IsIndex(string? title) => Is(title, Index);
 
+    /// <summary>The set-up quest open or taken for <paramref name="repository"/>, the one the press refuses a second beside and an adoption is running by; null where none is.</summary>
+    public static QuestView? OpenFor(IEnumerable<QuestView> quests, string repository) =>
+        quests.FirstOrDefault(quest => string.Equals(quest.To, repository, StringComparison.OrdinalIgnoreCase)
+            && quest.Status is "Open" or "Taken" && IsSetup(quest.Title));
+
     private static bool Is(string? title, string stem) =>
         title is not null
         && (title.Length == stem.Length

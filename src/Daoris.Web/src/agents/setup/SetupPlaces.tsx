@@ -222,7 +222,7 @@ export function findPlace(read: PlacesRead | null, id: string | null): Found | n
 
 /** How many of a place's values were set at the place itself. */
 const ownChanges = (row: PlaceRow) => {
-  const { follows: _follows, ...values } = row.values ?? {};
+  const { follows: _follows, lands: _lands, look: _look, helpers: _helpers, answer: _answer, ...values } = row.values ?? {};
   return Object.values(values).filter((value) => value.source === 'here').length;
 };
 

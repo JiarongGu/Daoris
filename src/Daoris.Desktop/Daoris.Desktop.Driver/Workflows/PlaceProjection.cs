@@ -120,7 +120,7 @@ public sealed record PlacesRead(
 public static class PlaceProjection
 {
     /// <param name="home">The home whose saved workflows a place's choice names, read for the default each version follows and how it lands; null reads none.</param>
-    /// <param name="quests">The service's quests, read for each set-up that runs (<see cref="SetupPress.OpenRefusal"/>'s reader); null reads none, so none runs.</param>
+    /// <param name="quests">The service's quests, read for each set-up that runs (<see cref="SetupQuests.OpenFor"/>, the reader the set-up press refuses a second by); null reads none, so none runs.</param>
     public static PlacesRead Of(
         DriverConfig config, IReadOnlyList<RepoView> registry, Func<RoleCatalog> catalogue, PlacesAsk ask, string? home = null,
         IReadOnlyList<QuestView>? quests = null)
@@ -262,7 +262,7 @@ public static class PlaceProjection
     /// <summary>A repository's set-up: adopted as the registry marks it, else running while its set-up quest is open or taken, else none.</summary>
     private static string AdoptionOf(RepoView known, IReadOnlyList<QuestView>? quests) =>
         known.Adopted ? "adopted"
-        : quests is not null && SetupPress.OpenRefusal(quests, known.Repository) is not null ? Running
+        : quests is not null && SetupQuests.OpenFor(quests, known.Repository) is not null ? Running
         : "none";
 
     /// <summary>

@@ -302,7 +302,7 @@ public sealed class PipeCensus
             "SESSION_MEMORY",
             // COMPANYVIEW1c: the roles' structure, each choice's state from the last readings alone, asking nothing.
             "ROLE_STRUCTURE",
-            // AGENTSPLACE1a: the places, each one's driving, values and where each was set, from the configuration and the registry alone.
+            // AGENTSPLACE1a: the places, each one's driving, values and where each was set, from the configuration, the registry and the set-up quests alone.
             "PLACES",
             // AGENTSPLACE1a2: a place's quick set-up planned on a copy of the configuration, written nowhere.
             "PLACE_PLAN",

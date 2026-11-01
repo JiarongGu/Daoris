@@ -334,10 +334,32 @@ export type PlaceValue = { value?: string | null; source: PlaceSourceCode };
 /** Why a place needs a look, judged in the driver from the configuration alone. */
 export type PlaceNeed = { code: string; detail?: string | null };
 
-export type PlaceWork = { work: string; role?: string | null; held?: string | null; consent?: string | null; source: PlaceSourceCode; policyFailed?: string | null };
+/** A role's scope: where it sits (`machine`, `workspace` or `repository`) and the workspace or repository named, as its record holds it. */
+export type PlaceRoleScope = { kind: 'machine' | 'workspace' | 'repository'; id?: string | null };
+
+/**
+ * One work at a place: the role a start finds, with its names and scope (SETUPUX1d), and the rule's consent. `source` is the rule's, never
+ * the role's.
+ */
+export type PlaceWork = {
+  work: string;
+  role?: string | null;
+  held?: string | null;
+  consent?: string | null;
+  source: PlaceSourceCode;
+  policyFailed?: string | null;
+  roleNames?: { en: string; zh: string } | null;
+  roleScope?: PlaceRoleScope | null;
+};
 
 /** The shipped default a place's workflow follows, by its id, and each option the place says otherwise (DEFAULTCONFIG1d). */
 export type PlaceDefault = { default?: string | null; differs: string[] };
+
+/** How a place's work lands (SETUPUX1d): the delivery preset its land matches, and each option of its own; null where the version is not read. */
+export type PlaceLands = { preset?: string | null; own: string[] };
+
+/** A repository's set-up: `adopted`, `running` (its set-up quest is open or taken) or `none`. */
+export type PlaceAdoption = 'none' | 'running' | 'adopted';
 
 /** A place as `PLACES` answers it: this machine (no workspace), a workspace (no repository) or a driven repository. */
 export type PlaceRow = {
@@ -349,21 +371,54 @@ export type PlaceRow = {
   checkout: boolean;
   adopted: boolean;
   /** The head's line; none for this machine. */
-  values?: (Record<'line' | 'landing' | 'workflow' | 'landed' | 'commits' | 'opinion' | 'handOver' | 'language' | 'access', PlaceValue> & { follows?: PlaceDefault | null }) | null;
+  values?: (Record<'line' | 'landing' | 'workflow' | 'landed' | 'commits' | 'opinion' | 'handOver' | 'language' | 'access', PlaceValue> & {
+    follows?: PlaceDefault | null;
+    /** How the followed workflow lands. */
+    lands?: PlaceLands | null;
+    /** Whether a review environment holds its work for your look: `on` or `off`; none set reads null. */
+    look?: PlaceValue;
+    /** What a helper its agent asks for does: `ask`, `on` or `off`. */
+    helpers?: PlaceValue;
+    /** The standing answer's words, a repository's own. */
+    answer?: PlaceValue;
+  }) | null;
   works: PlaceWork[];
   needs: PlaceNeed[];
+  /** A repository's set-up; absent for this machine and a workspace, and from a driver before it. */
+  adoption?: PlaceAdoption | null;
 };
 
-export type PlacesAsk = { limit?: number; after?: string; search?: string; needsLook?: boolean; fold?: string; foldAfter?: string; foldSearch?: string };
+/** A repository of a workspace, for its chooser: all of them, not the page in hand. */
+export type PlaceMember = { repository: string; driven: boolean; checkout: boolean; adoption: PlaceAdoption };
 
-/** The places (AGENTSPLACE1a, the Agents-place design §3): driven ones a page at a time, the others as counts and a page of one fold. */
+export type PlacesAsk = {
+  limit?: number;
+  after?: string;
+  search?: string;
+  needsLook?: boolean;
+  fold?: string;
+  foldAfter?: string;
+  foldSearch?: string;
+  /** One place whole, driven or not: a repository of a workspace, or the workspace when no repository is named. */
+  detail?: { workspace?: string; repository?: string };
+  /** A workspace's whole member list. */
+  members?: string;
+};
+
+/**
+ * The places (AGENTSPLACE1a, the Agents-place design §3): driven ones a page at a time, with a not-driven one whose adoption runs among them,
+ * the others as counts and a page of one fold. `running` of a workspace's `notDriven` stand among the driven.
+ */
 export type PlacesRead = {
   machine: PlaceRow;
-  workspaces: { place: PlaceRow; driven: number; notDriven: number }[];
+  workspaces: { place: PlaceRow; driven: number; notDriven: number; running?: number }[];
   repositories: PlaceRow[];
   next?: string | null;
   matching: number;
   undriven?: { workspace: string; rows: { workspace: string; repository: string; checkout: boolean }[]; next?: string | null; total: number } | null;
+  /** The place asked for whole; null where none was asked or it is not known. */
+  detail?: PlaceRow | null;
+  members?: { workspace: string; rows: PlaceMember[] } | null;
 };
 
 /** The roles' structure as `ROLE_STRUCTURE` answers it (COMPANYVIEW1c, the company-view design §4). */
