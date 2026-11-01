@@ -33,7 +33,7 @@ public sealed class SetupPresetsTests
     public void The_presets_after_not_driven_are_the_defaults_the_set_up_offers()
     {
         Assert.Equal(
-            WorkflowDefaults.All.Where(each => each.SetUp).Select(each => (each.Id, each.Names.En, (SetupLand?)each.Delivery)),
+            WorkflowDefaults.All.Where(each => each.SetUp).Select(each => (each.Id, each.DeliveryWords.Name, (SetupLand?)each.Delivery)),
             SetupPresets.Table.Skip(1).Select(preset => (preset.Id, preset.Name, preset.Land)));
         Assert.All([SetupPresets.Merge, SetupPresets.Branch, SetupPresets.PullRequest, SetupPresets.Integrated],
             id => Assert.True(WorkflowDefaults.Of(id)?.SetUp, id));
@@ -116,6 +116,25 @@ public sealed class SetupPresetsTests
         Assert.Equal("pull-request", SetupPresets.Suggest(new SetupMatch("not-driven", []), chosen: false, declaresIntegration: false, plugin: Plugin));
         Assert.Equal("branch-to-push", SetupPresets.Suggest(new SetupMatch("branch-to-push", ["accept `automatic`"]), chosen: true, declaresIntegration: true, plugin: Plugin));
         Assert.Equal("merge-after-accept", SetupPresets.Suggest(new SetupMatch(null, ["method `push`"]), chosen: true, declaresIntegration: false, plugin: null));
+    }
+
+    /// <summary>SETUPUX1a: the suggestion says why by a code the page words, with the driver's sentence beside it.</summary>
+    [Fact]
+    public void The_suggestion_says_why_by_a_code_with_the_drivers_sentence()
+    {
+        var merge = new SetupMatch("merge-after-accept", []);
+        (string Preset, string Code) Said(SetupMatch match, bool chosen, bool declares, string? plugin)
+        {
+            var (preset, why) = SetupPresets.Suggestion(match, chosen, declares, plugin);
+            return (preset, why.Code);
+        }
+
+        Assert.Equal(("merge-after-accept", SuggestionWhy.Kept), Said(merge, chosen: true, declares: true, Plugin));
+        Assert.Equal(("integrated", SuggestionWhy.Integration), Said(merge, chosen: false, declares: true, Plugin));
+        Assert.Equal(("pull-request", SuggestionWhy.Plugin), Said(merge, chosen: false, declares: false, Plugin));
+        Assert.Equal(("merge-after-accept", SuggestionWhy.Default), Said(merge, chosen: false, declares: false, plugin: null));
+        Assert.All(new[] { SuggestionWhy.Kept, SuggestionWhy.Integration, SuggestionWhy.Plugin, SuggestionWhy.Default },
+            code => Assert.False(string.IsNullOrWhiteSpace(SuggestionWhy.Of(code).Said), code));
     }
 
     internal sealed record Entry(string Id, IReadOnlyList<string> Points) : IWorkplacePluginEntry

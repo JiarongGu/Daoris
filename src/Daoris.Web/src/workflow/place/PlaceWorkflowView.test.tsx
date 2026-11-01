@@ -106,7 +106,7 @@ describe("a repository place's Workflow", () => {
     draw({ editor: editor() });
 
     await userEvent.click(screen.getByRole('button', { name: 'Change…' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Edit steps from Documents' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Edit steps from Documents workflow' }));
 
     expect(screen.getByRole('heading', { name: 'Compose a workflow' })).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Change what its work follows' })).toBeNull();

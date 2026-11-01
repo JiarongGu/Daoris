@@ -498,6 +498,8 @@
       { "en": "A branch to push", "zh": "留给你推送的分支" },
       { "en": "A pull request", "zh": "拉取请求" },
       { "en": "Integrated into the line", "zh": "集成到主线" },
+      { "en": "Merge with no review", "zh": "无需审阅即合并" },
+      { "en": "Integrated with no press", "zh": "集成到主线，无需按键" },
       { "en": "Not driven", "zh": "未驱动" }
     ],
     "step": [

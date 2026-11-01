@@ -192,7 +192,7 @@ describe('the step editor', () => {
     render(wrap(<Editor />));
 
     await screen.findByRole('combobox', { name: 'Start from' });
-    await choose(document.body, 'Start from', 'Documents');
+    await choose(document.body, 'Start from', 'Documents workflow');
     expect(within(steps()).getAllByRole('heading', { level: 4 }).map((head) => head.textContent)).toEqual(['The work', 'The landing', 'On the line']);
     expect(within(step('On the line')).getByText('ends here')).toBeInTheDocument();
 
