@@ -115,7 +115,7 @@ public sealed class HandOverMoveDowngradeProcessTests : IAsyncLifetime
         // The older build comes up: it takes no move up, and goes on as any ended record's words do; then it leaves its own box.
         await _h.Runner(older: true).TakeUpAsync();
         if (expect.Older) await Poll.Until(() => _h.Heard(LiveLimitHarness.Word) >= 1, _h.Seen);
-        await Task.Delay(1000);
+        await _h.QuietAsync();
         var standing = _h.MoveFrom("c1")!;
         Assert.True(standing.Stands, $"an older build's come-up leaves the move standing under its dead run: {_h.Seen()}");
         Assert.Equal((left.PhaseWord, left.ClaimRun), (standing.PhaseWord, standing.ClaimRun));
@@ -125,7 +125,7 @@ public sealed class HandOverMoveDowngradeProcessTests : IAsyncLifetime
         // This build returns: its come-up ends the killed move by its phase, the box waiting behind it, still in place.
         var runner = _h.Runner();
         await runner.TakeUpAsync();
-        await Task.Delay(1500);
+        await _h.QuietAsync();
         var move = Store().Of("c1").First();
         var seen = _h.Seen();
         Assert.True(expect.Phase == move.PhaseWord, $"the move is {move.PhaseWord}, not {expect.Phase}: {seen}");
@@ -135,7 +135,7 @@ public sealed class HandOverMoveDowngradeProcessTests : IAsyncLifetime
 
         // The next come-up imports the box once, as the record it keeps, and sets it aside, never deleted.
         await runner.TakeUpAsync();
-        await Task.Delay(1500);
+        await _h.QuietAsync();
         var moves = Store().Of("c1");
         Assert.True(expect.Boxed.SequenceEqual(Ended(moves[^1])), $"the box's move is {string.Join("/", Ended(moves[^1]))}, {moves.Count} moves: {_h.Seen()}");
         Assert.Equal(Ended(move), Ended(moves[0]));
@@ -154,7 +154,7 @@ public sealed class HandOverMoveDowngradeProcessTests : IAsyncLifetime
 
         if (word) await Poll.Until(() => _h.Heard(LiveLimitHarness.Word) >= 1, _h.Seen);
         await Poll.Until(() => _h.Waiting().Count == 0, _h.Seen);
-        await Task.Delay(1000);
+        await _h.QuietAsync();
         Assert.Equal(word ? 1 : 0, _h.Heard(LiveLimitHarness.Word));
         Assert.Equal(0, LiveLimitHarness.Wrote(shell, LiveLimitHarness.Word));
         Assert.Equal(0, _h.Events.After("c2", 0).Events.Count(e => e.Code == SessionEventCodes.Lost));
@@ -163,7 +163,7 @@ public sealed class HandOverMoveDowngradeProcessTests : IAsyncLifetime
         var shape = string.Join(" | ", Store().Of("c1").Select(Shape));
         var heard = (_h.Heard(LiveLimitHarness.Word), _h.Ledger.Opened.Count);
         await _h.Runner().TakeUpAsync();
-        await Task.Delay(1000);
+        await _h.QuietAsync();
         Assert.Equal(shape, string.Join(" | ", Store().Of("c1").Select(Shape)));
         Assert.Equal(heard, (_h.Heard(LiveLimitHarness.Word), _h.Ledger.Opened.Count));
     }

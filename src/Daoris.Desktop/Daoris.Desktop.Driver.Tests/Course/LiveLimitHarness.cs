@@ -107,6 +107,12 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
     private sealed class ShellKilled : Exception;
 
     /// <summary>
+    /// The killed shell's wait for its door to say it wrote (<see cref="ChatHandOver.WireWait"/>): a shell stopped at a boundary of the door's
+    /// write never says it, so once let go it waited the product's fifteen seconds before its move ended.
+    /// </summary>
+    private static readonly TimeSpan Wire = TimeSpan.FromSeconds(1);
+
+    /// <summary>
     /// A live conversation <c>c1</c> on account-1, its last turn refused by its limit, the person's word kept on it; the live move run by a shell
     /// of run <see cref="Killed"/> that is stopped for good at <paramref name="cut"/>. Returns once it is there.
     /// </summary>
@@ -123,7 +129,7 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
             new HarnessRoster(adapters, DaorisHome.Entry(Home, HomeEntry.Harnesses)), events);
         var old = Talking(context, "c1", shows: false);
         var runner = new Opening(Client, context, atTheWrite);
-        var limit = new LimitMove(context, runner, new ChatHandOver(context, runner), new NoHelp())
+        var limit = new LimitMove(context, runner, new ChatHandOver(context, runner) { WireWait = Wire }, new NoHelp())
         {
             Moves = new ConversationMoves(Home, Client, events, store: Store(Killed)),
         };
@@ -170,7 +176,7 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
             new HarnessRoster(adapters, DaorisHome.Entry(Home, HomeEntry.Harnesses)) { Clock = () => CurveNow }, events);
         var old = Talking(context, "c1", shows: false);
         var runner = new Opening(Client, context, atTheWrite);
-        var curve = new CurveMove(context, new ChatHandOver(context, runner))
+        var curve = new CurveMove(context, new ChatHandOver(context, runner) { WireWait = Wire })
         {
             Moves = new ConversationMoves(Home, Client, events, store: Store(Killed)),
         };
@@ -215,6 +221,7 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
         var handOver = new ChatHandOver(context, runner)
         {
             Moves = new ConversationMoves(Home, Client, events, store: Store(Killed)),
+            WireWait = Wire,
         };
         var hit = Hook(handOver.Moves, cut, atTheCut);
         _moving = Task.Run(async () => (object?)await handOver.HandOverAsync(
@@ -245,7 +252,7 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
             Client, Home, new SessionProcesses(DaorisHome.Entry(Home, HomeEntry.Sessions)), output: null,
             new HarnessRoster(adapters, DaorisHome.Entry(Home, HomeEntry.Harnesses)), events);
         var runner = new Opening(Client, context, atTheWrite);
-        var limit = new LimitMove(context, runner, new ChatHandOver(context, runner), new NoHelp())
+        var limit = new LimitMove(context, runner, new ChatHandOver(context, runner) { WireWait = Wire }, new NoHelp())
         {
             Moves = new ConversationMoves(Home, Client, events, store: Store(Killed)),
         };
@@ -418,6 +425,32 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
     public string Seen() =>
         $"heard [{string.Join(" | ", StubFile.Lines(HeardFile))}], records {Ledger.Count}, waiting [{string.Join(",", Waiting())}], "
         + $"opened [{string.Join(",", Ledger.Opened.Select(each => each.Key))}], moves [{string.Join(" | ", Store("run-probe").Of("c1").Select(move => $"{move.PhaseWord}/{move.HeldWhy}/{move.ClosedWhy}/{move.FellBackCode}"))}]";
+
+    /// <summary>How many of <see cref="Poll.Until"/>'s polls in a row <see cref="QuietAsync"/> finds the coming-up shells still.</summary>
+    private const int StillPolls = 5;
+
+    /// <summary>
+    /// Waits until every coming-up shell this case made has nothing in flight (<see cref="ChatRunner.InFlight"/>: no start, no go-on, no turn
+    /// taking or opening) and no message queued, with nothing more heard and no record or move changed, for <see cref="StillPolls"/> polls in
+    /// a row: what a come-up began has landed, so a second delivery would have been heard and nothing is left to make one. Bounded by
+    /// <see cref="Poll.Patience"/>, where a fixed second stood, which a start on a loaded machine could outlast.
+    /// </summary>
+    public async Task QuietAsync()
+    {
+        var last = "";
+        var still = 0;
+        await Poll.Until(
+            () =>
+            {
+                var runners = _owned.OfType<ChatRunner>().ToList();
+                var idle = runners.All(runner => runner.InFlight == 0 && runner.Context.Turned.Values.All(chat => chat.Turns.State.Queued.Count == 0));
+                var now = Seen();
+                still = idle && now == last ? still + 1 : 0;
+                last = now;
+                return still >= StillPolls;
+            },
+            () => $"in flight [{string.Join(",", _owned.OfType<ChatRunner>().Select(runner => runner.InFlight))}]: {Seen()}");
+    }
 
     public async ValueTask DisposeAsync()
     {
