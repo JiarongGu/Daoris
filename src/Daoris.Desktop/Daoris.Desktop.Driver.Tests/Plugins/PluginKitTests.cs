@@ -1166,13 +1166,13 @@ public sealed class PluginKitTests : IDisposable
         {
             Assert.NotNull(step.Title);
             Assert.NotNull(step.About);
-            foreach (var words in new[] { step.Title!.En, step.Title.Zh, step.About!.En, step.About.Zh })
+            foreach (var words in step.Title!.Texts.Concat(step.About!.Texts))
             {
                 Assert.DoesNotContain("publish", words, StringComparison.OrdinalIgnoreCase);
                 Assert.DoesNotContain("发布", words, StringComparison.Ordinal);
             }
         });
-        Assert.Contains("registry", manifest.Steps[2].About!.En, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("registry", manifest.Steps[2].About!.In("en"), StringComparison.OrdinalIgnoreCase);
 
         var fixture = PluginCycles.Read(Path.Combine(example, PluginKit.CycleFixture));
         Assert.Equal("publish", fixture.Step);

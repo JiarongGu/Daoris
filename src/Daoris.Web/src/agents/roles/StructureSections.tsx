@@ -42,7 +42,7 @@ const ANY = '*';
 const FIELD = 'min-w-0 rounded-control border border-line-strong bg-raised px-2.5 py-1 text-body text-ink placeholder:italic placeholder:text-ink-faint';
 
 export const nameOf = (t: TFunction, language: string, role: RoleRef) =>
-  roleName(t, language, { id: role.id, seeded: false, nameEn: role.nameEn, nameZh: role.nameZh });
+  roleName(t, language, { id: role.id, seeded: false, name: role.name });
 
 const workName = (t: TFunction, work: string) => t(`settings.ai.roles.work.${work}`, { defaultValue: work });
 

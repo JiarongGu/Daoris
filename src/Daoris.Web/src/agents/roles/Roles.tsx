@@ -3,6 +3,7 @@ import { type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ActorRow, RoleCatalogue, RoleChangePress, RoleChoice, RoleRow, RoleUse, StaffingFound, SuggestedRole } from '../../data/wiring';
 import { Button, Card, CardHeader, FormField, FormGrid, FormRow, Icon, Inline, Prose, SelectField, SettingList, SettingRow } from '../../design/ui';
+import { authoredEntries, authoredText, composeAuthored } from '../../locales/authored';
 import { type Answered, InlineConfirm, Refused } from '../../work/InlineConfirm';
 import type { SettingsChoices } from '../tools';
 import { OfferedField } from './OfferedField';
@@ -46,7 +47,7 @@ type Draft = { key: number; agent: string; model: string; effort: string };
 
 /** `role` is the catalogue's editor over `SET_ROLE`; `staffing` holds a role's order alone, over `SET_ACTOR`. */
 export type Editing = {
-  id: string; mode: 'role' | 'staffing'; isNew: boolean; revision: number | null; nameEn: string; nameZh: string; takes: string[]; work: string;
+  id: string; mode: 'role' | 'staffing'; isNew: boolean; revision: number | null; name: string; nameIn: [string, string][]; takes: string[]; work: string;
   place: string; placeId: string; drafts: Draft[];
 };
 
@@ -55,7 +56,7 @@ export function newRoleEditing(
   works: readonly string[], agents: readonly { value: string }[], place: { kind: 'workspace' | 'repository'; id: string } | null = null, key = 0,
 ): Editing {
   return {
-    id: '', mode: 'role', isNew: true, revision: null, nameEn: '', nameZh: '', takes: [], work: works[0] ?? 'build',
+    id: '', mode: 'role', isNew: true, revision: null, name: '', nameIn: [], takes: [], work: works[0] ?? 'build',
     place: place?.kind ?? 'machine', placeId: place?.id ?? '', drafts: [{ key, agent: agents[0]?.value ?? '', model: '', effort: '' }],
   };
 }
@@ -78,6 +79,14 @@ function draftsOf(line: Line, agents: readonly { value: string }[], key: () => n
   return own.length > 0 ? own.map(draft) : [draft()];
 }
 
+/** A name as the editor holds it: the one text as written (a map's `en`), and the other languages beside it. */
+export function nameFields(authored: RoleRow['name'], shown: string): Pick<Editing, 'name' | 'nameIn'> {
+  if (authored === null || authored === undefined) return { name: shown, nameIn: [] };
+  if (typeof authored === 'string') return { name: authored, nameIn: [] };
+  const entries = authoredEntries(authored);
+  return { name: entries.find(([tag]) => tag.toLowerCase() === 'en')?.[1] ?? '', nameIn: entries.filter(([tag]) => tag.toLowerCase() !== 'en') };
+}
+
 /** The editor an existing role opens with: its record and its order, in the catalogue's mode or the order editor's alone. */
 export function editingOfLine(
   line: Line, { kept, works, agents, name, key }: { kept: boolean; works: readonly string[]; agents: readonly { value: string }[]; name: string; key: () => number },
@@ -85,7 +94,7 @@ export function editingOfLine(
   const row = line.row;
   return {
     id: line.id, mode: staffingOnlyLine(line, kept) ? 'staffing' : 'role', isNew: false, revision: row?.revision ?? null,
-    nameEn: row?.nameEn ?? name, nameZh: row?.nameZh ?? name, takes: row?.takes ?? [],
+    ...nameFields(row?.name, name), takes: row?.takes ?? [],
     work: row?.takes[0] ?? works[0] ?? 'build', place: row?.scopeKind ?? 'machine', placeId: row?.scopeId ?? '', drafts: draftsOf(line, agents, key),
   };
 }
@@ -118,9 +127,8 @@ export function actorSummary(t: TFunction, row: ActorRow): string {
 }
 
 /** A role's name as authored, in the page's language where it has one; a seeded role with no record is its actor's name. */
-export function roleName(t: TFunction, language: string, row: Pick<RoleRow, 'id' | 'seeded' | 'nameEn' | 'nameZh'>): string {
-  const authored = language.startsWith('zh') ? row.nameZh || row.nameEn : row.nameEn || row.nameZh;
-  return authored || (row.seeded ? t(`settings.ai.actors.name.${row.id}`) : row.id);
+export function roleName(t: TFunction, language: string, row: Pick<RoleRow, 'id' | 'seeded' | 'name'>): string {
+  return authoredText(row.name, language) || (row.seeded ? t(`settings.ai.actors.name.${row.id}`) : row.id);
 }
 
 /** Where a role works, in the page's words. */
@@ -168,7 +176,7 @@ export function useLine(t: TFunction, use: RoleUse, days: number): string {
 function suggestionPress(role: SuggestedRole): RoleChangePress {
   return {
     change: 'set', id: role.id, revision: 0,
-    role: { name: { en: role.nameEn, zh: role.nameZh }, takes: role.takes, scope: { kind: role.scopeKind, id: null } },
+    role: { name: role.name, takes: role.takes, scope: { kind: role.scopeKind, id: null } },
     choices: role.choices.map((choice) => ({ agent: choice.agent, model: choice.model ?? null, effort: choice.effort ?? null })),
   };
 }
@@ -247,7 +255,7 @@ export function RolesCard({
   const [removing, setRemoving] = useState<string | null>(null);
   const [refused, setRefused] = useState<{ at: string; sentence: string } | null>(null);
   const [foundRefused, setFoundRefused] = useState<{ id: number; sentence: string } | null>(null);
-  const name = (row: Pick<RoleRow, 'id' | 'seeded' | 'nameEn' | 'nameZh'>) => roleName(t, i18n.language, row);
+  const name = (row: Pick<RoleRow, 'id' | 'seeded' | 'name'>) => roleName(t, i18n.language, row);
   const kept = catalogue?.kept === true;
   const all: Line[] = catalogue
     ? catalogue.roles.map((row) => ({ id: row.id, row, actor: staffing.find((each) => each.id === row.id) ?? null }))
@@ -291,11 +299,11 @@ export function RolesCard({
       pressActor(now.id, now.id, off ? [] : entries(now));
       return;
     }
-    const id = now.id.trim() || roleIdFor(now.nameEn.trim(), now.work, catalogue?.roles.map((row) => row.id) ?? []);
+    const id = now.id.trim() || roleIdFor(now.name.trim(), now.work, catalogue?.roles.map((row) => row.id) ?? []);
     press(now.isNew ? '' : now.id, {
       change: 'set', id, revision: now.revision,
       role: {
-        name: { en: now.nameEn.trim(), zh: now.nameZh.trim() },
+        name: composeAuthored(now.name, now.nameIn) ?? '',
         takes: now.takes[0] === now.work ? now.takes : [now.work],
         scope: { kind: now.place, id: now.place === 'machine' ? null : now.placeId.trim() || null },
       },
@@ -346,12 +354,25 @@ export function RolesCard({
             {t('settings.ai.roles.fixedPlace', { place: placeText(t, now.place, now.placeId) })}
           </p>
           <FormGrid columns={['name', 'name']}>
-            <FormField label={t('settings.ai.roles.field.nameEn')}>
-              <input aria-label={t('settings.ai.roles.field.nameEn')} value={now.nameEn} onChange={(event) => set({ nameEn: event.target.value })} className={FIELD} />
+            <FormField label={t('settings.ai.roles.field.name')}>
+              <input aria-label={t('settings.ai.roles.field.name')} value={now.name} onChange={(event) => set({ name: event.target.value })} className={FIELD} />
             </FormField>
-            <FormField label={t('settings.ai.roles.field.nameZh')}>
-              <input aria-label={t('settings.ai.roles.field.nameZh')} value={now.nameZh} onChange={(event) => set({ nameZh: event.target.value })} className={FIELD} />
-            </FormField>
+            {now.nameIn.map(([tag, text], at) => (
+              <FormField key={at} label={t('settings.ai.roles.field.nameIn')}>
+                <span className="flex min-w-0 gap-1.5">
+                  <input
+                    aria-label={t('settings.ai.roles.field.nameInTag')} value={tag} placeholder="fr" className={`${FIELD} !w-20 shrink-0`}
+                    onChange={(event) => set({ nameIn: now.nameIn.map((each, i) => (i === at ? [event.target.value, each[1]] : each)) })}
+                  />
+                  <input
+                    aria-label={t('settings.ai.roles.field.nameInText')} value={text} className={FIELD}
+                    onChange={(event) => set({ nameIn: now.nameIn.map((each, i) => (i === at ? [each[0], event.target.value] : each)) })}
+                  />
+                  <Button variant="ghost" onClick={() => set({ nameIn: now.nameIn.filter((_, i) => i !== at) })}>{t('settings.ai.roles.field.nameInRemove')}</Button>
+                </span>
+              </FormField>
+            ))}
+            <Button variant="ghost" onClick={() => set({ nameIn: [...now.nameIn, ['', '']] })}>{t('settings.ai.roles.field.nameInAdd')}</Button>
             <FormField label={t('settings.ai.roles.field.work')}>
               <SelectField value={now.work} onChange={(value) => set({ work: value })} options={works} ariaLabel={t('settings.ai.roles.field.work')} />
             </FormField>
@@ -598,7 +619,7 @@ export function RolesCard({
         </div>
       ))}
       {catalogue?.suggested.map((role) => {
-        const named = name({ id: role.id, seeded: false, nameEn: role.nameEn, nameZh: role.nameZh });
+        const named = name({ id: role.id, seeded: false, name: role.name });
         const taken = role.takes.map((work) => t(`settings.ai.roles.work.${work}`)).join(t('settings.ai.actors.and'));
         return (
           <section key={role.id} aria-label={t('settings.ai.roles.suggested.title', { role: named })} className="mt-3 rounded-control border border-line p-2">

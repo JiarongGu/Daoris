@@ -8,7 +8,7 @@ import { RolesCard } from './Roles';
 // can spend more. Each story is one width and one language; the theme is the toolbar's.
 
 const seed = (id: string, en: string, zh: string, work: string): RoleRow => ({
-  id, state: 'seed', seeded: true, nameEn: en, nameZh: zh, takes: [work], scopeKind: 'machine', revision: 0,
+  id, state: 'seed', seeded: true, name: { en, zh }, takes: [work], scopeKind: 'machine', revision: 0,
 });
 
 const OPUS = { agent: 'claude-code', model: 'opus', effort: 'high' };

@@ -3,6 +3,8 @@
 // (`presentational.test.ts`), can name them. The shape is a wire shape: a field is added, never renamed. A fact not read is
 // `null` beside its `…Why` code.
 
+import type { Authored } from '../locales/authored';
+
 /** A fact's why where it is `null`: `window` (only the window knows), `adopted`, `not-measured`, `measuring`, … */
 type Why = string | null;
 
@@ -249,12 +251,12 @@ export type RoleChoice = { agent: string; model?: string | null; effort?: string
  * removed or one whose record does not read; its names as authored, the work it takes, where, and its stored choices.
  */
 export type RoleRow = {
-  id: string; state: 'seed' | 'set' | 'removed' | 'unreadable'; seeded: boolean; nameEn?: string | null; nameZh?: string | null;
+  id: string; state: 'seed' | 'set' | 'removed' | 'unreadable'; seeded: boolean; name?: Authored | null;
   takes: string[]; scopeKind?: string | null; scopeId?: string | null; revision: number; error?: string | null; choices?: RoleChoice[] | null;
 };
 
 /** A role Daoris suggests adding (FOUNDATION1y-i): the Designer while no role takes design, applied only by the person's press. */
-export type SuggestedRole = { id: string; nameEn: string; nameZh: string; takes: string[]; scopeKind: string; choices: RoleChoice[] };
+export type SuggestedRole = { id: string; name: Authored; takes: string[]; scopeKind: string; choices: RoleChoice[] };
 
 /**
  * One role's last seven days as `ROLES` answers it (MODELROLE1f): starts, those on each choice (`1` to `4`, `before`, `rule-default`), how many
@@ -277,7 +279,7 @@ export type RoleCatalogue = {
 /** A role's change as `SET_ROLE` takes it: set with its record and choices, removed, given back its seed, or every seeded role given back (`default-all`, whose id is `*`). */
 export type RoleChangePress = {
   change: 'set' | 'remove' | 'default' | 'default-all'; id: string; revision?: number | null;
-  role?: { name: { en: string; zh: string }; takes: string[]; scope: { kind: string; id?: string | null } };
+  role?: { name: Authored; takes: string[]; scope: { kind: string; id?: string | null } };
   choices?: RoleChoice[] | null;
 };
 
@@ -310,7 +312,7 @@ export type StructureChoice = {
 /** One work at one place: its role or why its starts hold, its choices, its rule and where it was set, each part's failure. */
 export type StructureWork = {
   work: string;
-  role?: { id: string; nameEn: string; nameZh: string; scope: { kind: string; id?: string }; revision: number };
+  role?: { id: string; name: Authored; scope: { kind: string; id?: string }; revision: number };
   held?: string;
   choices: StructureChoice[];
   choicesFailed?: string;
@@ -348,7 +350,7 @@ export type PlaceWork = {
   consent?: string | null;
   source: PlaceSourceCode;
   policyFailed?: string | null;
-  roleNames?: { en: string; zh: string } | null;
+  roleName?: Authored | null;
   roleScope?: PlaceRoleScope | null;
 };
 

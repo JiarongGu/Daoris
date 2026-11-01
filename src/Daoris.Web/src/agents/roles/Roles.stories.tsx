@@ -11,7 +11,7 @@ import { type Editing, RolesCard } from './Roles';
 // Daoris suggests while no role takes design.
 
 const seed = (id: string, en: string, zh: string, work: string): RoleRow => ({
-  id, state: 'seed', seeded: true, nameEn: en, nameZh: zh, takes: [work], scopeKind: 'machine', revision: 0,
+  id, state: 'seed', seeded: true, name: { en, zh }, takes: [work], scopeKind: 'machine', revision: 0,
 });
 
 const CATALOGUE: RoleCatalogue = {
@@ -25,13 +25,13 @@ const CATALOGUE: RoleCatalogue = {
     seed('ask-daoris', 'Ask Daoris', '问道衍', 'ask-daoris'),
     { id: 'chat', state: 'removed', seeded: true, takes: [], revision: 2 },
     {
-      id: 'night', state: 'set', seeded: false, nameEn: 'Night shift', nameZh: '夜班', takes: ['build'], scopeKind: 'workspace',
+      id: 'night', state: 'set', seeded: false, name: { en: 'Night shift', zh: '夜班' }, takes: ['build'], scopeKind: 'workspace',
       scopeId: 'studio', revision: 3, choices: [{ agent: 'codex-acp', model: 'gpt-5', effort: 'high' }, { agent: 'claude-code' }],
     },
   ],
   works: ['build', 'design', 'chat', 'ask-daoris', 'intake', 'help', 'partner', 'review', 'brainstorm'],
   kept: true,
-  suggested: [{ id: 'designer', nameEn: 'Designer', nameZh: '设计师', takes: ['design'], scopeKind: 'machine', choices: [{ agent: 'claude-code', model: 'opus', effort: 'high' }] }],
+  suggested: [{ id: 'designer', name: { en: 'Designer', zh: '设计师' }, takes: ['design'], scopeKind: 'machine', choices: [{ agent: 'claude-code', model: 'opus', effort: 'high' }] }],
 };
 
 const row = (id: string, state: ActorRow['state'], choices: ActorRow['choices'] = [], error?: string): ActorRow => ({ id, state, choices, error });
@@ -121,7 +121,7 @@ export const WeekOfAYoungLog: Story = { args: { catalogue: { ...WEEK, use: { ...
 const OFFERS = { 'claude-code': { models: ['opus', 'sonnet', 'haiku'], efforts: ['low', 'medium', 'high'] }, 'codex-acp': { models: ['gpt-5'], efforts: ['low', 'high'] } };
 
 const EDITING: Editing = {
-  id: 'night', mode: 'role', isNew: false, revision: 3, nameEn: 'Night shift', nameZh: '夜班', takes: ['build'], work: 'build',
+  id: 'night', mode: 'role', isNew: false, revision: 3, name: 'Night shift', nameIn: [['zh', '夜班']], takes: ['build'], work: 'build',
   place: 'workspace', placeId: 'studio',
   drafts: [{ key: 1, agent: 'codex-acp', model: 'gpt-5', effort: 'high' }, { key: 2, agent: 'claude-code', model: 'o-4', effort: '' }],
 };

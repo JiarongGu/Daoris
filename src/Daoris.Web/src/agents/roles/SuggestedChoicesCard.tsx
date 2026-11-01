@@ -61,7 +61,7 @@ export function SuggestedChoicesCard({ catalogue, staffing, agents, busy, name, 
     changes.map(({ row, choices }): RoleChangePress => ({
       change: 'set', id: row.id, revision: row.revision,
       role: {
-        name: { en: row.nameEn ?? '', zh: row.nameZh ?? '' }, takes: row.takes,
+        name: row.name ?? '', takes: row.takes,
         scope: { kind: row.scopeKind ?? 'machine', id: row.scopeId ?? null },
       },
       choices: choices.map((choice) => ({ agent: choice.agent, model: choice.model ?? null, effort: choice.effort ?? null })),

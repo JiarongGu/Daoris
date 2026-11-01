@@ -45,7 +45,7 @@ public sealed class RoleVerbTests : IDisposable
         Assert.Equal(0, await Run("set", "designer", "--name", "Designer", "--zh", "设计师", "--takes", "design", "claude-code-acp opus high"));
 
         var designer = Catalogue().Slots.Single(slot => slot.Id == "designer").Role!;
-        Assert.Equal(("Designer", "设计师", RoleScope.Everywhere), (designer.NameEn, designer.NameZh, designer.Scope));
+        Assert.Equal(("Designer", "设计师", RoleScope.Everywhere), (designer.Name.In("en"), designer.Name.In("zh"), designer.Scope));
         Assert.Equal([new ActorChoice("claude-code-acp", "opus", "high")], DriverConfig.Load(File_).Actors["designer"]);
         Assert.Contains("designer", _out.ToString());
 
@@ -54,6 +54,26 @@ public sealed class RoleVerbTests : IDisposable
 
         Assert.Equal(0, await Run("remove", "designer"));
         Assert.DoesNotContain(Catalogue().Slots, slot => slot.Id == "designer");
+    }
+
+    /// <summary>I18NOPEN1 (D222): <c>--name</c> takes one text with no other language, <c>--name-in</c> adds any language, and <c>--zh</c> stays as <c>--name-in zh=…</c>.</summary>
+    [Fact]
+    public async Task A_role_is_named_by_one_text_with_any_other_languages_added_by_tag()
+    {
+        Assert.Equal(0, await Run("set", "reader", "--name", "Reader", "--takes", "design", "claude-code-acp opus high"));
+        Assert.Equal("\"Reader\"", Catalogue().Slots.Single(slot => slot.Id == "reader").Role!.Name.Json());
+
+        Assert.Equal(0, await Run("set", "reader", "--name-in", "fr=Lecteur", "--name-in", "zh=读者"));
+        Assert.Equal("""{"en":"Reader","fr":"Lecteur","zh":"读者"}""", Catalogue().Slots.Single(slot => slot.Id == "reader").Role!.Name.Json());
+
+        Assert.Equal(0, await Run("set", "lecteur", "--name-in", "fr=Lecteur", "--takes", "design", "--scope", "workspace:w1", "claude-code-acp opus high"));
+        Assert.Equal("""{"fr":"Lecteur"}""", Catalogue().Slots.Single(slot => slot.Id == "lecteur").Role!.Name.Json());
+
+        Assert.Equal(0, await Run("set", "old", "--name", "Old", "--zh", "旧", "--takes", "design", "--scope", "workspace:w2", "claude-code-acp opus high"));
+        Assert.Equal("""{"en":"Old","zh":"旧"}""", Catalogue().Slots.Single(slot => slot.Id == "old").Role!.Name.Json());
+
+        Assert.Equal(2, await Run("set", "bad", "--name", "Bad", "--name-in", "not a tag=x", "--takes", "design", "--scope", "workspace:w3", "claude-code-acp opus high"));
+        Assert.Contains("language tag", _error.ToString());
     }
 
     [Fact]

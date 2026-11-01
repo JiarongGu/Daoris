@@ -161,7 +161,7 @@ describe('A place page, Roles', () => {
     chain = (ask) => {
       const answer = CHAIN(ask);
       const works = answer.places[0]!.works.map((each) => (each.work === 'chat'
-        ? { ...each, role: { id: 'aurora-chat', nameEn: 'Aurora chat', nameZh: '极光对话', scope: { kind: 'workspace', id: 'aurora' }, revision: 2 } }
+        ? { ...each, role: { id: 'aurora-chat', name: { en: 'Aurora chat', zh: '极光对话' }, scope: { kind: 'workspace', id: 'aurora' }, revision: 2 } }
         : each));
       return { ...answer, places: [{ ...answer.places[0]!, works }, ...answer.places.slice(1)] };
     };

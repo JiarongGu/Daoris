@@ -13,19 +13,36 @@ public sealed class HelpRoleProposalTests : HelpProposalBoxFixture
     public void A_set_is_written_with_its_names_work_scope_choices_and_the_revision_read()
     {
         var (id, message) = Box().ProposeRole(
-            "set", " designer ", "Designer", "设计师", ["design"], "workspace:studio", ["claude-code opus high", "codex-acp - -"], 0,
+            "set", " designer ", "Designer", new Dictionary<string, string> { ["zh"] = "设计师" }, ["design"], "workspace:studio", ["claude-code opus high", "codex-acp - -"], 0,
             "the person wants design work on Opus", "h1", Now);
 
         var written = Written(id!);
         Assert.Equal(("role", "set", "designer"), (written.GetProperty("kind").GetString(), written.GetProperty("door").GetString(), written.GetProperty("target").GetString()));
         var press = written.GetProperty("press");
         Assert.Equal(("Designer", "设计师"), (press.GetProperty("name").GetProperty("en").GetString(), press.GetProperty("name").GetProperty("zh").GetString()));
+        Assert.Equal(["en", "zh"], press.GetProperty("name").EnumerateObject().Select(each => each.Name));
         Assert.Equal(["design"], press.GetProperty("takes").EnumerateArray().Select(work => work.GetString()));
         Assert.Equal(("workspace", "studio"), (press.GetProperty("scope").GetProperty("kind").GetString(), press.GetProperty("scope").GetProperty("id").GetString()));
         Assert.Equal("opus", press.GetProperty("choices")[0].GetProperty("model").GetString());
         Assert.Equal(JsonValueKind.Null, press.GetProperty("choices")[1].GetProperty("model").ValueKind);
         Assert.Equal(0, press.GetProperty("revision").GetInt64());
         Assert.Contains($"Proposed `#{id}`", message);
+    }
+
+    /// <summary>I18NOPEN1 (D222): a name is one text as written, or any languages by tag; a name needs no English and no Chinese.</summary>
+    [Fact]
+    public void A_name_is_one_text_or_any_languages_by_tag_and_a_bad_tag_is_refused()
+    {
+        var (one, _) = Box().ProposeRole("set", "designer", "Designer", null, ["design"], null, null, null, "why", "h1", Now);
+        Assert.Equal("Designer", Written(one!).GetProperty("press").GetProperty("name").GetString());
+
+        var (french, _) = Box().ProposeRole("set", "relecteur", null, new Dictionary<string, string> { ["fr"] = "Relecteur" }, ["review"], null, null, null, "why", "h1", Now);
+        var name = Written(french!).GetProperty("press").GetProperty("name");
+        Assert.Equal(("Relecteur", false), (name.GetProperty("fr").GetString(), name.TryGetProperty("en", out _)));
+
+        var (none, message) = Box().ProposeRole("set", "relecteur", null, new Dictionary<string, string> { ["not a tag"] = "x" }, ["review"], null, null, null, "why", "h1", Now);
+        Assert.Null(none);
+        Assert.Contains("is not a language tag", message);
     }
 
     [Fact]

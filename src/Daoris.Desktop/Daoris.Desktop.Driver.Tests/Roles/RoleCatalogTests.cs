@@ -23,7 +23,7 @@ public sealed class RoleCatalogTests : IDisposable
     private static readonly RolePlace InWorkspace = new(Workspace: "w1");
 
     internal static RoleRecord Working(string id, string work, RoleScope? scope = null) =>
-        new(id, id, id, RoleRecord.Always, [work], scope ?? RoleScope.Everywhere);
+        new(id, AuthoredText.Of(id), RoleRecord.Always, [work], scope ?? RoleScope.Everywhere);
 
     internal static StoredRole Stored(RoleRecord role, long revision = 1) => new(role.Id, "set", role.Json(), revision);
 
@@ -58,8 +58,8 @@ public sealed class RoleCatalogTests : IDisposable
         Assert.Equal(
             [("build", "Build", "开发"), ("intake", "Intake", "受理"), ("opinion", "Second opinion", "第二意见"), ("helper", "Helper", "助手"),
                 ("partner", "Partner", "搭档"), ("brainstorm", "Brainstorm", "头脑风暴"), ("ask-daoris", "Ask Daoris", "问道衍"), ("chat", "Chat", "聊天")],
-            RoleCatalog.Seed.Select(role => (role.Id, role.NameEn, role.NameZh)));
-        Assert.All(RoleCatalog.Seed, role => Assert.Equal(ActorWords.Name(role.Id), role.NameEn));
+            RoleCatalog.Seed.Select(role => (role.Id, role.Name.In("en"), role.Name.In("zh"))));
+        Assert.All(RoleCatalog.Seed, role => Assert.Equal(ActorWords.Name(role.Id), role.Name.In("en")));
     }
 
     [Fact]
@@ -67,7 +67,7 @@ public sealed class RoleCatalogTests : IDisposable
     {
         var db = DesktopStore.LocationIn(_home);
         var added = Working("designer", ParticipantWork.Design);
-        var changed = RoleCatalog.Seed[0] with { NameEn = "Maker" };
+        var changed = RoleCatalog.Seed[0] with { Name = AuthoredText.Of("Maker") };
         RoleCatalog.WriteAll(db, [RoleChange.Set(added), RoleChange.Set(changed), RoleChange.Remove("intake")], () => StoreSettled.Yes);
         var before = RoleCatalog.Read(db);
         Assert.Equal([RoleState.Set, RoleState.Removed], before.Slots.Where(slot => slot.Id is "build" or "intake").Select(slot => slot.State));
@@ -113,7 +113,7 @@ public sealed class RoleCatalogTests : IDisposable
     [Fact]
     public void An_id_reads_absent_set_removed_or_unreadable_and_each_keeps_the_others_apart()
     {
-        var edited = Working("build", ParticipantWork.Build, new RoleScope(RoleScope.Workspace, "w1")) with { NameEn = "Builder" };
+        var edited = Working("build", ParticipantWork.Build, new RoleScope(RoleScope.Workspace, "w1")) with { Name = AuthoredText.Of("Builder") };
         var catalog = RoleCatalog.Of(
         [
             Stored(edited, 3),
@@ -122,7 +122,7 @@ public sealed class RoleCatalogTests : IDisposable
         ]);
 
         var slots = catalog.Slots.ToDictionary(slot => slot.Id);
-        Assert.Equal((RoleState.Set, 3L, "Builder"), (slots["build"].State, slots["build"].Revision, slots["build"].Role!.NameEn));
+        Assert.Equal((RoleState.Set, 3L, "Builder"), (slots["build"].State, slots["build"].Revision, slots["build"].Role!.Name.AsWritten));
         Assert.Equal((RoleState.Removed, 2L, null), (slots["intake"].State, slots["intake"].Revision, slots["intake"].Role?.Id));
         Assert.Equal(RoleState.Unreadable, slots["chat"].State);
         Assert.StartsWith("does not read as JSON", slots["chat"].Error);
@@ -168,7 +168,7 @@ public sealed class RoleCatalogTests : IDisposable
         {
             var held = catalog.RoleFor(work, InWorkspace);
             Assert.Null(held.Role);
-            Assert.Contains("`designer` has no name in English and in Chinese", held.Held);
+            Assert.Contains("`designer` has no name", held.Held);
             Assert.Null(catalog.RoleFor(work, Machine).Held);
             Assert.Null(catalog.RoleFor(work, new RolePlace(Workspace: "w2")).Held);
         }

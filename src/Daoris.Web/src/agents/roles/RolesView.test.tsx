@@ -67,10 +67,10 @@ const ACTORS = {
 };
 
 const ROLES = {
-  roles: [{ id: 'build', state: 'seed', seeded: true, nameEn: 'Build', nameZh: '开发', takes: ['build'], scopeKind: 'machine', revision: 0 }],
+  roles: [{ id: 'build', state: 'seed', seeded: true, name: { en: 'Build', zh: '开发' }, takes: ['build'], scopeKind: 'machine', revision: 0 }],
   works: ['build', 'design'],
   kept: true,
-  suggested: [{ id: 'designer', nameEn: 'Designer', nameZh: '设计师', takes: ['design'], scopeKind: 'machine', choices: [{ agent: 'claude-code', model: 'opus', effort: 'high' }] }],
+  suggested: [{ id: 'designer', name: { en: 'Designer', zh: '设计师' }, takes: ['design'], scopeKind: 'machine', choices: [{ agent: 'claude-code', model: 'opus', effort: 'high' }] }],
 };
 
 /** Open the Roles mode from the list's head. */
@@ -335,7 +335,7 @@ describe('The Agents place, Roles mode', () => {
     invoke.mockImplementation(async (module: string, type: string, request?: unknown) => {
       if (module === 'DAORIS.DRIVER' && type === 'STATE') return { ...DRIVER_STATE, helpMode: 'full' };
       if (module === 'DAORIS.DRIVER' && type === 'ROLES') {
-        return { ...ROLES, roles: [{ id: 'ask-daoris', state: 'seed', seeded: true, nameEn: 'Ask Daoris', nameZh: '问道衍', takes: ['ask-daoris'], scopeKind: 'machine', revision: 0 }] };
+        return { ...ROLES, roles: [{ id: 'ask-daoris', state: 'seed', seeded: true, name: { en: 'Ask Daoris', zh: '问道衍' }, takes: ['ask-daoris'], scopeKind: 'machine', revision: 0 }] };
       }
       if (module === 'DAORIS.DRIVER' && type === 'ACTORS') {
         return { actors: [{ id: 'ask-daoris', state: 'set', choices: [{ agent: 'claude-code-acp', from: '1' }] }] };

@@ -344,7 +344,7 @@ describe('The Roles mode, Work, Accounts and By repository', () => {
       expect(within(form).getByText(new RegExp(`Placed in ${kind} ${place}; the place is fixed`))).toBeTruthy();
       expect(within(form).queryByRole('textbox', { name: 'Id' })).toBeNull();
 
-      await user.type(within(form).getByRole('textbox', { name: 'Name in English' }), 'Night shift');
+      await user.type(within(form).getByRole('textbox', { name: 'Name' }), 'Night shift');
       await user.click(within(form).getByRole('button', { name: 'Save' }));
       await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_ROLE', {
         payload: expect.objectContaining({ change: 'set', id: 'night-shift', role: expect.objectContaining({ scope: { kind, id: place } }) }),

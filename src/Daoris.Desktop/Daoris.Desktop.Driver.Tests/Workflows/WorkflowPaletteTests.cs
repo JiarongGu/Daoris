@@ -81,7 +81,8 @@ public sealed class WorkflowPaletteTests
     {
         var titled = new NodeDeclaration("find", "local-release/find", 1, NodeReach.Performed)
         {
-            Title = new StepWords("Find a pending release", "查找待发版本"), About = new StepWords("Looks for a release.", "查看是否有待发的版本。"),
+            Title = AuthoredText.FromTags([new("en", "Find a pending release"), new("zh", "查找待发版本")]),
+            About = AuthoredText.Of("Looks for a release."),
         };
         var bare = new NodeDeclaration("release", "local-release/release", 1, NodeReach.Performed);
 
@@ -91,7 +92,7 @@ public sealed class WorkflowPaletteTests
         Assert.Equal((null, null), (steps[1].Title, steps[1].About));
         var wire = System.Text.Json.JsonSerializer.SerializeToNode(steps[0], new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase })!;
         Assert.Equal("查找待发版本", (string?)wire["title"]!["zh"]);
-        Assert.Equal("Looks for a release.", (string?)wire["about"]!["en"]);
+        Assert.Equal("Looks for a release.", (string?)wire["about"]);
     }
 
     [Fact]

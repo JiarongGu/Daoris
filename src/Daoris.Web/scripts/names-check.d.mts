@@ -2,7 +2,8 @@
 // JavaScript so the build runs it on any Node the package supports; this declares what it exports, and the
 // tests that call every export keep the two in step.
 
-export type Language = 'en' | 'zh';
+/** A language tag: `en` and `zh` beside any other catalogue present (D222). */
+export type Language = string;
 export type Catalogue = Record<string, string>;
 export type KindName =
   'nav' | 'title' | 'tab' | 'section' | 'field' | 'choice' | 'button' | 'status' | 'menu' | 'command'
@@ -50,10 +51,10 @@ export type Finding = {
   value: string;
 };
 
-export function load(root?: string): { glossary: Glossary; en: Catalogue; zh: Catalogue };
+export function load(root?: string): { glossary: Glossary; en: Catalogue; zh: Catalogue; others: Record<string, Catalogue> };
 export function kindOf(glossary: Glossary): (key: string) => string;
 export function measure(text: string, language: Language, rules: Glossary['measure']): number;
-export function validate(glossary: Glossary, en: Catalogue, zh: Catalogue): string[];
-export function check(glossary: Glossary, en: Catalogue, zh: Catalogue, options?: { all?: boolean }): Finding[];
+export function validate(glossary: Glossary, en: Catalogue, zh: Catalogue, others?: Record<string, Catalogue>): string[];
+export function check(glossary: Glossary, en: Catalogue, zh: Catalogue, options?: { all?: boolean; others?: Record<string, Catalogue> }): Finding[];
 export function report(findings: Finding[], options?: { labels?: number; accepted?: number }): string;
 export function verdict(findings: Finding[], options: { strict: boolean }): 0 | 1;

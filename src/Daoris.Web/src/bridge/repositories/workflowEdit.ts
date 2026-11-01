@@ -92,7 +92,7 @@ export const useWorkflowEditor = (place: EditorPlace, { enabled = true }: { enab
   const use = useMutation({ mutationFn: (ask: WorkflowUseAsk) => askWorkflowUse(ask), onSuccess: again });
   const roles: EditorRole[] = (structure.data?.roles ?? [])
     .filter((role) => role.state !== 'removed' && role.state !== 'unreadable')
-    .map((role) => ({ id: role.id, name: role.nameEn && role.nameZh ? { en: role.nameEn, zh: role.nameZh } : null, takes: role.takes }));
+    .map((role) => ({ id: role.id, name: role.name ?? null, takes: role.takes }));
 
   return {
     list: list.data ?? null,

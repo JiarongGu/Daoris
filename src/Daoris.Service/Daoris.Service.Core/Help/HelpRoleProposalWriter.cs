@@ -18,13 +18,17 @@ internal sealed class HelpRoleProposalWriter(HelpProposalFile file)
 
     private const string AllId = "*";
 
+    private static readonly System.Text.RegularExpressions.Regex Tag = new("^[A-Za-z]{2,8}(-[A-Za-z0-9]{1,8})*$");
+
     /// <summary>
     /// Write one proposal to change the role catalogue: <paramref name="change"/> of <paramref name="id"/>; for a set, its names, the work
     /// it takes, its scope (<c>machine</c>, <c>workspace:&lt;id&gt;</c> or <c>repository:&lt;id&gt;</c>) and its choices, each
-    /// <c>"agent [model|-] [effort|-]"</c>; a field a set leaves out keeps the role's own. Shape alone is checked here.
+    /// <c>"agent [model|-] [effort|-]"</c>; a field a set leaves out keeps the role's own. Shape alone is checked here. A name is
+    /// <paramref name="name"/> alone (one text as written), or with <paramref name="nameIn"/> a map of language tags to texts (the text
+    /// kept as <c>en</c>), or the map alone; no language is required (D222).
     /// </summary>
     public (string? Id, string Message) Propose(
-        string change, string id, string? nameEn, string? nameZh, IReadOnlyList<string>? takes, string? scope, IReadOnlyList<string>? choices,
+        string change, string id, string? name, IReadOnlyDictionary<string, string>? nameIn, IReadOnlyList<string>? takes, string? scope, IReadOnlyList<string>? choices,
         long? revision, string why, string? session, DateTimeOffset at)
     {
         if (string.IsNullOrWhiteSpace(why)) return NoReason;
@@ -33,12 +37,15 @@ internal sealed class HelpRoleProposalWriter(HelpProposalFile file)
         var (kind, place) = Scope(Blank(scope));
         var entries = choices?.Select(Entry).ToList();
         var all = door == AllDoor;
-        var refused = door is null || !Doors.Contains(door) ? "a role's change is `set`, `remove`, `default` or `default-all`."
+        var names = (nameIn ?? new Dictionary<string, string>()).Where(each => Blank(each.Value) is not null).ToList();
+        var badTag = names.FirstOrDefault(each => !Tag.IsMatch(each.Key.Trim())).Key;
+        var refused = badTag is not null ? $"`{badTag}` is not a language tag (`en`, `zh-TW`, `fr`)."
+            : door is null || !Doors.Contains(door) ? "a role's change is `set`, `remove`, `default` or `default-all`."
             : named is null ? "a role's change names the role's id."
             : all && named != AllId || !all && named == AllId ? $"`{AllId}` is the id of `{AllDoor}` alone, which names no one role, and `{AllDoor}` takes no other."
             : (all ? null : Word(named, "a role's id"))
               ?? (all && revision is not null ? $"`{AllDoor}` names no one role, so it has no revision to read."
-                  : door != "set" && (nameEn ?? nameZh ?? scope) is not null || door != "set" && (takes?.Count > 0 || choices?.Count > 0)
+                  : door != "set" && (Blank(name) ?? scope) is not null || door != "set" && names.Count > 0 || door != "set" && (takes?.Count > 0 || choices?.Count > 0)
                   ? $"`{door}` names the role alone: only `set` carries its names, work, scope and choices."
                   : scope is not null && kind is null ? $"`{scope}` is not a scope: `machine`, `workspace:<id>` or `repository:<id>`."
                   : entries?.FirstOrDefault(entry => entry is null) is not null || entries?.Count > 4
@@ -55,11 +62,12 @@ internal sealed class HelpRoleProposalWriter(HelpProposalFile file)
             writer.WriteNull("value");
             writer.WriteNull("sentence");
             writer.WriteStartObject("press");
-            if (Blank(nameEn) is not null || Blank(nameZh) is not null)
+            if (names.Count == 0 && Blank(name) is { } alone) writer.WriteString("name", alone);
+            else if (names.Count > 0)
             {
                 writer.WriteStartObject("name");
-                Nullable(writer, "en", Blank(nameEn));
-                Nullable(writer, "zh", Blank(nameZh));
+                if (Blank(name) is { } main && !names.Any(each => each.Key.Trim().Equals("en", StringComparison.OrdinalIgnoreCase))) writer.WriteString("en", main);
+                foreach (var (tag, text) in names) writer.WriteString(tag.Trim(), Blank(text));
                 writer.WriteEndObject();
             }
 

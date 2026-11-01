@@ -267,25 +267,31 @@ public sealed class PluginStepsTests : IDisposable
         }
     }
 
-    /// <summary>SETUPUX1f: a step may declare its <c>title</c> and <c>about</c> in en and zh; read, they change nothing a step is judged or compared by.</summary>
+    /// <summary>SETUPUX1f, I18NOPEN1: a step may declare its <c>title</c> and <c>about</c> as authored text; read, they change nothing a step is judged or compared by.</summary>
     [Fact]
-    public void A_step_may_declare_a_title_and_an_about_in_both_languages_and_a_step_without_keeps_its_kind()
+    public void A_step_may_declare_a_title_and_an_about_as_authored_text_and_a_step_without_keeps_its_kind()
     {
         Plugin("""
             , "steps": [{ "id": "find", "reach": "performed",
               "title": { "en": "Find a pending release", "zh": "查找待发版本" },
               "about": { "en": "Looks for a release waiting at this revision.", "zh": "查看此修订上是否有待发的版本。" } },
-              { "id": "smoke", "reach": "observed" }]
+              { "id": "smoke", "reach": "observed" },
+              { "id": "ship", "reach": "observed", "title": "Ship it", "about": { "fr": "Livre la version." } }]
             """);
 
         var entry = Assert.Single(PluginCatalog.Load(_home).Plugins);
         Assert.Null(entry.Problem);
-        var (find, smoke) = (entry.Manifest.Steps[0], entry.Manifest.Steps[1]);
-        Assert.Equal(new StepWords("Find a pending release", "查找待发版本"), find.Title);
-        Assert.Equal(new StepWords("Looks for a release waiting at this revision.", "查看此修订上是否有待发的版本。"), find.About);
+        var (find, smoke, ship) = (entry.Manifest.Steps[0], entry.Manifest.Steps[1], entry.Manifest.Steps[2]);
+        Assert.Equal("查找待发版本", find.Title!.In("zh"));
+        Assert.Equal("Find a pending release", find.Title.In("en"));
+        Assert.Equal("""{"en":"Looks for a release waiting at this revision.","zh":"查看此修订上是否有待发的版本。"}""", find.About!.Json());
         Assert.Equal(("acme.deploy/find", "acme.deploy/smoke"), (find.Kind, smoke.Kind));
         Assert.Null(smoke.Title);
         Assert.Null(smoke.About);
+
+        // One text, or one in a third language alone: shown in any viewer's language as written.
+        Assert.Equal(("Ship it", "Ship it"), (ship.Title!.In("fr"), ship.Title.In("zh-TW")));
+        Assert.Equal(("Livre la version.", "Livre la version."), (ship.About!.In("fr-CA"), ship.About.In("en")));
 
         // The words are for reading: the same step without them is equal, hashes alike, and is judged alike.
         var bare = find with { Title = null, About = null };
@@ -298,19 +304,21 @@ public sealed class PluginStepsTests : IDisposable
     /// <summary>SETUPUX1f: each refused shape of <c>title</c> and <c>about</c> refuses the plugin by the field's own code.</summary>
     [Theory]
     [InlineData("title", """{ "en": "Find", "zh": "查找" }""", null)]
-    [InlineData("title", "\"Find\"", "title")]
-    [InlineData("title", """{ "en": "Find" }""", "title")]
-    [InlineData("title", """{ "zh": "查找" }""", "title")]
+    [InlineData("title", "\"Find\"", null)]
+    [InlineData("title", """{ "fr": "Trouver" }""", null)]
+    [InlineData("title", "{}", "title")]
+    [InlineData("title", "3", "title")]
+    [InlineData("title", """{ "not a tag": "Find" }""", "title")]
     [InlineData("title", """{ "en": "Find", "zh": "" }""", "title")]
     [InlineData("title", """{ "en": "  ", "zh": "查找" }""", "title")]
     [InlineData("title", """{ "en": 1, "zh": "查找" }""", "title")]
     [InlineData("title", """{ "en": "Find\nit", "zh": "查找" }""", "title")]
     [InlineData("title", """{ "en": "Find a pending release for the next revision of the plugin's package", "zh": "查找" }""", "title")]
     [InlineData("about", """{ "en": "Looks.", "zh": "查看。" }""", null)]
-    [InlineData("about", "\"Looks.\"", "about")]
-    [InlineData("about", """{ "en": "Looks." }""", "about")]
+    [InlineData("about", "\"Looks.\"", null)]
+    [InlineData("about", """{ "en": "Looks." }""", null)]
     [InlineData("about", """{ "en": "Looks.", "zh": null }""", "about")]
-    public void A_title_and_an_about_are_a_line_of_words_in_both_languages_or_the_plugin_is_refused(string field, string value, string? code)
+    public void A_title_and_an_about_are_words_in_one_language_or_more_or_the_plugin_is_refused(string field, string value, string? code)
     {
         Plugin($$"""
             , "steps": [{ "id": "find", "reach": "observed", "{{field}}": {{value}} }]

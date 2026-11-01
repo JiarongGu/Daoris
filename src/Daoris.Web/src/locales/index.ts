@@ -17,22 +17,31 @@
  */
 export type Catalogue = Record<string, string>;
 
-/** An area's name is its file's name: `./en/settings.rules.json` is the area `settings.rules`. */
-const byArea = (files: Record<string, Catalogue>): Record<string, Catalogue> =>
-  Object.fromEntries(Object.entries(files).map(([path, keys]) => [path.replace(/^.*\/(.+)\.json$/, '$1'), keys]));
+const files = import.meta.glob<Catalogue>('./*/*.json', { eager: true, import: 'default' });
 
-/** Each language's areas by name, as the files hold them — what the parity tests read. */
-export const areas: { en: Record<string, Catalogue>; zh: Record<string, Catalogue> } = {
-  en: byArea(import.meta.glob<Catalogue>('./en/*.json', { eager: true, import: 'default' })),
-  zh: byArea(import.meta.glob<Catalogue>('./zh/*.json', { eager: true, import: 'default' })),
-};
+/**
+ * Each language's areas by name, as the files hold them — what the parity tests read. A language is a folder (D222): the catalogues
+ * present are the languages the page offers, so adding a language is adding a folder. An area's name is its file's name:
+ * `./en/settings.rules.json` is the area `settings.rules` of `en`.
+ */
+export const areas: Record<string, Record<string, Catalogue>> = {};
+for (const [path, keys] of Object.entries(files)) {
+  const [, language, area] = /^\.\/([^/]+)\/(.+)\.json$/.exec(path) ?? [];
+  if (language && area) (areas[language] ??= {})[area] = keys;
+}
 
 const merged = (language: Record<string, Catalogue>): Catalogue => Object.assign({}, ...Object.values(language));
 
-/** English, every area merged into the one flat catalogue i18next is given. */
-export const en: Catalogue = merged(areas.en);
-/** 中文, the same. */
-export const zh: Catalogue = merged(areas.zh);
+/** Each language's areas merged into the one flat catalogue i18next is given. */
+export const catalogues: Record<string, Catalogue> = Object.fromEntries(Object.entries(areas).map(([language, each]) => [language, merged(each)]));
+
+/** The languages the page offers: the catalogues present, English (the source) first. */
+export const languages: string[] = Object.keys(catalogues).sort((a, b) => (a === 'en' ? -1 : b === 'en' ? 1 : a.localeCompare(b)));
+
+/** English, the source catalogue. */
+export const en: Catalogue = catalogues.en!;
+/** 中文, the catalogue the page ships beside it. */
+export const zh: Catalogue = catalogues.zh!;
 
 /** The area a key belongs in: the longest of `names` that is the key or a dotted prefix of it, else null. */
 export function homeOf(key: string, names: readonly string[]): string | null {

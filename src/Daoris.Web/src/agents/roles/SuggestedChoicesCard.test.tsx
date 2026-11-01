@@ -10,7 +10,7 @@ import { DECLINED_KEY } from './SuggestedChoicesCard';
 // its words say it can spend more; it is gone once the roles hold orders of the person's own, or once declined.
 
 const seed = (id: string, en: string, zh: string, work: string): RoleRow => ({
-  id, state: 'seed', seeded: true, nameEn: en, nameZh: zh, takes: [work], scopeKind: 'machine', revision: 0,
+  id, state: 'seed', seeded: true, name: { en, zh }, takes: [work], scopeKind: 'machine', revision: 0,
 });
 
 const OPUS = { agent: 'claude-code', model: 'opus', effort: 'high' };

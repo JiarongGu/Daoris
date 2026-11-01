@@ -66,15 +66,13 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
             case "default": change = RoleChange.Default(id); break;
             case "default-all": change = RoleChange.DefaultAll(); break;
             default:
-                var name = press is { } named && named.TryGetProperty("name", out var names) && names.ValueKind == JsonValueKind.Object ? names : default;
+                var name = press is { } named && named.TryGetProperty("name", out var names) ? NameOf(names) : null;
                 var takes = press is { } work && work.TryGetProperty("takes", out var works) && works.ValueKind == JsonValueKind.Array
                     ? [.. works.EnumerateArray().Select(each => each.GetString()).OfType<string>()]
                     : current?.Takes ?? [];
                 var scope = press is { } placed && placed.TryGetProperty("scope", out var place) && place.ValueKind == JsonValueKind.Object
                     ? new RoleScope(Text(place, "kind") ?? RoleScope.Machine, Text(place, "id"))
                     : current?.Scope ?? RoleScope.Everywhere;
-                var en = (name.ValueKind == JsonValueKind.Object ? Text(name, "en") : null) ?? current?.NameEn ?? "";
-                var zh = (name.ValueKind == JsonValueKind.Object ? Text(name, "zh") : null) ?? current?.NameZh ?? en;
                 try
                 {
                     choices = ActorChoices.Payload(press);
@@ -84,7 +82,7 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
                     return Refused(error.Message);
                 }
 
-                change = RoleChange.Set(new RoleRecord(id, en, zh, RoleRecord.Always, takes, scope));
+                change = RoleChange.Set(new RoleRecord(id, name ?? current?.Name ?? AuthoredText.Of(""), RoleRecord.Always, takes, scope));
                 break;
         }
 
@@ -104,7 +102,7 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
     private static string Describe(RoleChange change, IReadOnlyList<ActorChoice>? choices) => change switch
     {
         RoleChange.SetRole { Role: var role } =>
-            $"Set the role `{role.Id}` ({role.NameEn} · {role.NameZh}): it takes {string.Join(", ", role.Takes)} {Place(role.Scope)}"
+            $"Set the role `{role.Id}` ({string.Join(" · ", role.Name.Texts)}): it takes {string.Join(", ", role.Takes)} {Place(role.Scope)}"
             + (choices is null ? ", its choices kept." : choices.Count == 0 ? ", off." : $", on {Choices(choices)}.")
             + " Running work goes on; new work takes it.",
         RoleChange.RemoveRole => $"Remove the role `{change.Id}`: a work no role then takes waits until one is given it; running work goes on.",
@@ -115,13 +113,28 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
     private static string Terminal(RoleChange change, IReadOnlyList<ActorChoice>? choices) => change switch
     {
         RoleChange.SetRole { Role: var role } =>
-            $"daoris driver role set {role.Id} --name \"{role.NameEn}\" --zh \"{role.NameZh}\" --takes {string.Join(",", role.Takes)} "
+            $"daoris driver role set {role.Id} {NameFlags(role.Name)} --takes {string.Join(",", role.Takes)} "
             + $"--scope {(role.Scope.Kind == RoleScope.Machine ? RoleScope.Machine : $"{role.Scope.Kind}:{role.Scope.Id}")}"
             + string.Concat((choices ?? []).Select(choice => $" \"{choice.Agent} {choice.Model ?? "-"} {choice.Effort ?? "-"}\"")),
         RoleChange.RemoveRole => $"daoris driver role remove {change.Id}",
         RoleChange.DefaultAllRoles => "daoris driver role default --all",
         _ => $"daoris driver role default {change.Id}",
     };
+
+    /// <summary>The name a press carries: authored text, where a proposal written before (<c>{ "en": null, "zh": "…" }</c>) leaves a language out as null.</summary>
+    private static AuthoredText? NameOf(JsonElement element) =>
+        element.ValueKind == JsonValueKind.Object
+            ? AuthoredText.FromTags(element.EnumerateObject().Where(each => each.Value.ValueKind == JsonValueKind.String).Select(each => new KeyValuePair<string, string>(each.Name, each.Value.GetString()!)))
+            : AuthoredText.Read(element);
+
+    /// <summary>A name as the terminal takes it: <c>--name</c> the text as written (a map's <c>en</c>), <c>--name-in</c> for each other language.</summary>
+    private static string NameFlags(AuthoredText name)
+    {
+        if (name.Tags.Count == 0) return $"--name \"{name.AsWritten}\"";
+        var main = name.Find("en");
+        return string.Join(" ", (main is null ? [] : new[] { $"--name \"{main}\"" })
+            .Concat(name.Tags.Where(tag => !tag.Equals("en", StringComparison.OrdinalIgnoreCase)).Select(tag => $"--name-in {tag}=\"{name.Find(tag)}\"")));
+    }
 
     private static string Place(RoleScope scope) => scope.Kind == RoleScope.Machine ? "on this machine" : $"in {scope.Kind} `{scope.Id}`";
 

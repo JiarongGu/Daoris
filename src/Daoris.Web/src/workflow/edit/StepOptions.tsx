@@ -1,6 +1,7 @@
 import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CheckField, SelectField } from '../../design/ui';
+import { authoredText } from '../../locales/authored';
 import type { EditorRole, OptionField } from './answers';
 import { type DraftNode, optionOf } from './graphDraft';
 
@@ -16,7 +17,7 @@ export type OptionValue = string | boolean | string[] | undefined;
 const fieldClass = 'min-h-[1.9rem] min-w-0 max-w-full rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink';
 
 /** A role's name in the page's language, or its id where its record names none. */
-const roleName = (role: EditorRole, language: string) => (role.name ? (language.startsWith('zh') ? role.name.zh : role.name.en) : role.id);
+const roleName = (role: EditorRole, language: string) => authoredText(role.name, language) || role.id;
 
 /**
  * **A step's options** (WORKFLOWEDIT1b): each field the palette says its kind reads (`NodeOptionFields`), drawn by its type, a choice
