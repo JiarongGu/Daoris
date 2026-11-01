@@ -2,6 +2,7 @@ import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/rea
 import { useShenora } from '@shenora/react';
 import { keys } from '../../data/queries';
 import type { CurrentWorkflow, WorkflowScope, WorkflowStart } from '../../workflow/current';
+import type { WorkflowSaveAnswer, WorkflowSaveAsk, WorkflowUseAnswer, WorkflowUseAsk } from '../../workflow/edit/answers';
 import type { NodeWordAnswer, NodeWordAsk, RunScope, WorkflowRunAnswer } from '../../workflow/run';
 import { call } from '../call';
 
@@ -136,3 +137,10 @@ export const useRunNodeWord = () => useMutation({
     };
   },
 });
+
+/**
+ * `WORKFLOW_SAVE` and `WORKFLOW_USE` (AGENTSPLACE1c), this domain's writes as `WorkflowRoutes.cs` answers them: a version saved, or
+ * judged unsaved with `plan`, and a version chosen for a place. The step editor's bridge (`workflowEdit.ts`) presses them through these.
+ */
+export const askWorkflowSave = (ask: WorkflowSaveAsk) => call<WorkflowSaveAnswer>('WORKFLOW_SAVE', ask);
+export const askWorkflowUse = (ask: WorkflowUseAsk) => call<WorkflowUseAnswer>('WORKFLOW_USE', ask);

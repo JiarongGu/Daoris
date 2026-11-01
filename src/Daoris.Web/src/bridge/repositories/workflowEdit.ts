@@ -3,12 +3,12 @@ import { useShenora } from '@shenora/react';
 import { useRef, useState } from 'react';
 import { keys } from '../../data/queries';
 import type {
-  EditorRole, WorkflowListAnswer, WorkflowPaletteAnswer, WorkflowSaveAnswer, WorkflowSaveAsk, WorkflowShownAnswer, WorkflowUseAnswer, WorkflowUseAsk,
+  EditorRole, WorkflowListAnswer, WorkflowPaletteAnswer, WorkflowSaveAnswer, WorkflowSaveAsk, WorkflowShownAnswer, WorkflowUseAsk,
 } from '../../workflow/edit/answers';
 import type { WorkflowEditorBridge } from '../../workflow/edit/WorkflowEditor';
-import { call } from '../call';
 import { useRoleStructureChain } from '../driver';
 import { askHeld, isPending } from '../state/held';
+import { askWorkflowSave, askWorkflowUse } from './workflow';
 
 // The step editor's reads (WORKFLOWEDIT1a): the saved workflows with the places that choose them and the presets built in, one
 // version as saved, and what a step graph may hold; and its presses (WORKFLOWEDIT1b): a version judged as it is drawn, saved and used
@@ -88,8 +88,8 @@ export const useWorkflowEditor = (place: EditorPlace, { enabled = true }: { enab
   const [judge, setJudge] = useState<{ answer: WorkflowSaveAnswer | null; judging: boolean }>({ answer: null, judging: false });
   const asked = useRef(0);
   const again = () => client.invalidateQueries({ queryKey: editKey() });
-  const save = useMutation({ mutationFn: (ask: WorkflowSaveAsk) => call<WorkflowSaveAnswer>('WORKFLOW_SAVE', ask), onSuccess: again });
-  const use = useMutation({ mutationFn: (ask: WorkflowUseAsk) => call<WorkflowUseAnswer>('WORKFLOW_USE', ask), onSuccess: again });
+  const save = useMutation({ mutationFn: (ask: WorkflowSaveAsk) => askWorkflowSave(ask), onSuccess: again });
+  const use = useMutation({ mutationFn: (ask: WorkflowUseAsk) => askWorkflowUse(ask), onSuccess: again });
   const roles: EditorRole[] = (structure.data?.roles ?? [])
     .filter((role) => role.state !== 'removed' && role.state !== 'unreadable')
     .map((role) => ({ id: role.id, name: role.nameEn && role.nameZh ? { en: role.nameEn, zh: role.nameZh } : null, takes: role.takes }));
@@ -106,7 +106,7 @@ export const useWorkflowEditor = (place: EditorPlace, { enabled = true }: { enab
     onJudge: (ask) => {
       const mine = ++asked.current;
       setJudge((was) => ({ ...was, judging: true }));
-      call<WorkflowSaveAnswer>('WORKFLOW_SAVE', { ...ask, plan: true }).then(
+      askWorkflowSave({ ...ask, plan: true }).then(
         (answer) => { if (mine === asked.current) setJudge({ answer, judging: false }); },
         () => { if (mine === asked.current) setJudge((was) => ({ ...was, judging: false })); },
       );

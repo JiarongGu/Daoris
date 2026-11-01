@@ -1061,6 +1061,8 @@ public sealed partial class HelpCoverageTests
         ("projects", "useIntegrate", null, new Exempt(IntegrationActs)),
         // FABRIC-PIPELINE1d part 5: *Verify…*, on a repository's Workflow tab beside the landed route's gates.
         ("projects", "useVerify", null, new Exempt(VerifyRun)),
+        // WORKFLOWEDIT1b: the step editor on a repository's or a workspace's Workflow tab, `workflow new`, `edit` and `use`'s twin.
+        ("projects", "useWorkflowEditor", null, new Door("workflow", "edit")),
         // FABRIC-PIPELINE1b: *Sessions' checks*, beside the heavy gates on a repository's Setup.
         ("projects", "useSetSessionChecks", null, new Exempt(ChecksOfSessions)),
         ("projects", "useSetStanding", null, new Door("setting", "standing")),

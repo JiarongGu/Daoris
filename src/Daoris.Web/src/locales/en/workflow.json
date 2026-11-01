@@ -43,6 +43,8 @@
   "workflow.step.integrate": "The integration",
   "workflow.step.workRequests": "The work's requests",
   "workflow.step.request": "The quest to another repository",
+  "workflow.step.questHolds": "The quest's holds",
+  "workflow.step.contentHolds": "What the line holds",
   "workflow.step.pluginNode": "{{node}} by `{{plugin}}`",
   "workflow.participation.agent": "agent alone",
   "workflow.participation.agent-and-you": "agent + you",
