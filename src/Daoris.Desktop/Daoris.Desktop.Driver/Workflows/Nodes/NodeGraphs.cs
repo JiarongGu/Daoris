@@ -1014,7 +1014,10 @@ public static class NodeGraphHomes
             SchemaVersion = parts.SchemaVersion,
             Cleanup = parts.Cleanup ?? GraphCleanup.Held,
         };
-        problems.AddRange(NodeGraphs.Problems(graph));
+        // One fault is one refusal: a cycle's node already refused as a landing's kind is not refused again by the landing's own rules.
+        var refused = problems.Where(problem => problem.Code == GraphRefusal.LandingKind && problem.Node is not null).Select(problem => problem.Node!).ToHashSet(StringComparer.Ordinal);
+        problems.AddRange(NodeGraphs.Problems(graph).Where(problem =>
+            !(problem.Code == GraphRefusal.LandTail && problem.Node is not null && refused.Contains(problem.Node))));
         return new(WorkUnitKind.Branch, source, rule.Cycle, problems.Count == 0 ? graph : null, problems);
     }
 
