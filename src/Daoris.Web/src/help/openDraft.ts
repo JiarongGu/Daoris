@@ -51,6 +51,38 @@ export function draftToTell(draft: OpenDraft | null, told: string | undefined): 
   return fingerprint === told ? undefined : { ...draft, fingerprint };
 }
 
+/** How many drafts told are kept: a proposal against one older is refused as made against a draft this window no longer holds. */
+const TOLD_MOST = 40;
+
+/** Each draft a conversation of this window was told (FLOWCHART2f), its graph by its fingerprint, the newest last. */
+const toldDrafts = new Map<string, OpenDraft['graph']>();
+let toldTo: readonly string[] = [];
+const hearing = new Set<() => void>();
+
+/**
+ * A draft told to a conversation, as `SESSION_INPUT` carried it: a proposal names the draft it was made against by its fingerprint, and the
+ * editor takes its changes against that graph (D223 §8.6).
+ */
+export function noteTold(session: string, sent: DraftSent): void {
+  toldDrafts.delete(sent.fingerprint);
+  toldDrafts.set(sent.fingerprint, sent.graph);
+  while (toldDrafts.size > TOLD_MOST) toldDrafts.delete(toldDrafts.keys().next().value!);
+  toldTo = [...toldTo.filter((each) => each !== session), session];
+  hearing.forEach((each) => each());
+}
+
+/** The graph a conversation of this window was told under `fingerprint`, or null where none is kept. */
+export const toldGraph = (fingerprint: string): OpenDraft['graph'] | null => toldDrafts.get(fingerprint) ?? null;
+
+/** The conversations told a draft, the newest last: the same list until another is told. */
+export const toldSessions = (): readonly string[] => toldTo;
+
+/** Told each time a conversation is told a draft. */
+export function onTold(listener: () => void): () => void {
+  hearing.add(listener);
+  return () => { hearing.delete(listener); };
+}
+
 /** The open draft as where the person is names it: its workflow, its place, how many steps, what is open on it. */
 export function draftWhere(draft: OpenDraft | null): HelpWhere['draft'] {
   if (!draft) return null;
