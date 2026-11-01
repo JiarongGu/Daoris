@@ -39,19 +39,22 @@ const NO_SERVICE =
  */
 export async function endpoint(
   env: NodeJS.ProcessEnv = process.env, get: Get = fetch, install: string | null = THIS_INSTALL,
+  patience: Patience & { pause?: Pause } = {},
 ): Promise<{ url: string; key: string | null }> {
-  const found = await located(env, get, install);
+  const found = await located(env, get, install, patience);
   // An address the home's record gave that nothing answered at is not a missing variable: its sentence says what was seen, alone.
   if ('why' in found) throw new DaorisError(found.unanswered ? found.why : found.why ? `${NO_SERVICE}\n  ${found.why}` : NO_SERVICE);
   return { url: found.url, key: env.DAORIS_SERVICE_KEY ?? null };
 }
 
 /** The service's address: the variable, else (installed) the running desktop's, else why there is none ('' where none was looked for). */
-async function located(env: NodeJS.ProcessEnv, get: Get, install: string | null): Promise<{ url: string } | Unfound> {
+async function located(
+  env: NodeJS.ProcessEnv, get: Get, install: string | null, patience: Patience & { pause?: Pause },
+): Promise<{ url: string } | Unfound> {
   const named = env.DAORIS_SERVICE_URL?.trim().replace(/\/+$/, '');
   if (named) return { url: named };
   const home = install ? daorisHome(env, install) : null;
-  return install && home ? runningService(home, install, get) : { why: '' };
+  return install && home ? runningService(home, install, get, processLives, patience.pause, patience) : { why: '' };
 }
 
 /** Why there is no service to use; `unanswered` where the home's record gave an address and nothing answered there (SERVICESTALL1). */
@@ -66,6 +69,15 @@ export const REQUEST_BOUND_MS = 60_000;
 /** The wait before an idempotent read, or the status door, is asked a second time. */
 export const RETRY_AFTER_MS = 1_000;
 
+/** How long a service whose process runs is waited for in all, once the first ask went unanswered (SERVICEPROBE1b; the driver's `RunningService.WaitFor`). */
+export const WAIT_FOR_MS = 30_000;
+
+/** The bound of each status ask after the first, so a service slow for seconds still answers one (the driver's `RunningService.LongWithin`). */
+export const LONG_BOUND_MS = 10_000;
+
+/** What the probe's wait is made of: a test hands in short bounds, a clock the pause advances and where the waiting line goes (stderr otherwise). */
+export type Patience = { first?: number; long?: number; total?: number; now?: () => number; say?: (line: string) => void };
+
 /** The address file the running desktop leaves in its home (the driver's `RunningAddress.FileName`). */
 export const RUNNING_FILE = 'running.json';
 
@@ -75,10 +87,13 @@ export const RUNNING_FILE = 'running.json';
  * its status door answers as this home's Daoris host: naming its search tier and this home's id (HOMEID1, `home.json`),
  * asked with redirects off, since an address that sends its asker elsewhere has not answered. This CLI cannot read another
  * process's start, so a process id the system gave to another process since lives to it: the id is what tells. Otherwise why
- * not, in a sentence that says how to start Daoris. The driver's `RunningService` holds the same contract in C#.
+ * not, in a sentence that says how to start Daoris. The driver's `RunningService` holds the same contract in C#, the wait too
+ * (SERVICEPROBE1b): where the process lives and the first ask went unanswered, one line on stderr and an ask each second, each
+ * up to `LONG_BOUND_MS`, for `WAIT_FOR_MS` in all; a gone process refuses at once.
  */
 export async function runningService(
   home: string, install: string, get: Get = fetch, lives: (pid: number) => boolean = processLives, pause: Pause = sleep,
+  patience: Patience = {},
 ): Promise<{ url: string } | Unfound> {
   const start = join(install, 'Daoris.exe');
   const entry = runningEntry(home);
@@ -90,23 +105,40 @@ export async function runningService(
     };
   }
 
-  // A service busy past the bound (a landing, a loaded machine) answers a second try; a redirect or a page that is no Daoris is an answer.
-  let answered: { home: string | null } | null = null;
-  let silent = true;
-  let tries = 0;
-  for (let attempt = 1; attempt <= 2 && silent; attempt++) {
-    if (attempt === 2) await pause(RETRY_AFTER_MS);
-    tries = attempt;
+  // A service busy past the bound (a landing, a loaded machine) is waited for (SERVICEPROBE1b, as the driver's SERVICEPROBE1 does): the
+  // first ask is given the status bound, and where nothing replied (no answer, or a 5xx) the line is said once and it is asked again
+  // each second with the longer bound, for the whole of `total`. A redirect or a page that is no Daoris is an answer, not a slow service.
+  const first = patience.first ?? STATUS_BOUND_MS;
+  const total = patience.total ?? WAIT_FOR_MS;
+  const long = patience.long ?? LONG_BOUND_MS;
+  const now = patience.now ?? Date.now;
+  const asking = async (bound: number) => {
     try {
-      const response = await get(`${entry.url}/api/status`, { method: 'GET', redirect: 'manual', signal: AbortSignal.timeout(STATUS_BOUND_MS) });
-      silent = response.status >= 500;
+      const response = await get(`${entry.url}/api/status`, { method: 'GET', redirect: 'manual', signal: AbortSignal.timeout(bound) });
       const status: unknown = await response.json().catch(() => null);
       if (response.ok && typeof status === 'object' && status !== null && typeof (status as Record<string, unknown>).tier === 'string') {
         const named = (status as Record<string, unknown>).home;
-        answered = { home: isHomeId(named) ? named : null };
+        return { silent: false, answered: { home: isHomeId(named) ? named : null } };
       }
+      return { silent: response.status >= 500, answered: null };
     } catch {
-      answered = null;
+      return { silent: true, answered: null };
+    }
+  };
+
+  const began = now();
+  let { silent, answered } = await asking(first);
+  let tries = 1;
+  if (!answered && silent && total > 0) {
+    (patience.say ?? ((line) => { process.stderr.write(`${line}\n`); }))(
+      `Daoris is running on ${home} but has not answered yet; waiting up to ${seconds(total)}.`);
+    while (!answered && silent && now() - began < total) {
+      const left = total - (now() - began);
+      await pause(Math.min(RETRY_AFTER_MS, left));
+      const remaining = total - (now() - began);
+      if (remaining <= 0) break;
+      ({ silent, answered } = await asking(Math.min(remaining, long)));
+      tries++;
     }
   }
 
@@ -114,7 +146,7 @@ export async function runningService(
     return {
       unanswered: true,
       why: `Daoris is running on ${home} (pid ${entry.pid}), and nothing answered as its service at ${entry.url} within `
-        + `${seconds(STATUS_BOUND_MS)}, ${tries === 2 ? `asked twice, ${seconds(RETRY_AFTER_MS)} apart` : "asked once"}. The address is the one Daoris left in ${home}, so `
+        + `${seconds(silent && total > 0 ? total : first)}, ${tries === 1 ? 'asked once' : `asked ${tries} times`}. The address is the one Daoris left in ${home}, so `
         + 'DAORIS_SERVICE_URL is not the cause: the service may be busy. Run this again in a moment, or start Daoris again '
         + `(${start}).`,
     };
