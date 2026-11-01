@@ -104,3 +104,40 @@ keyboard throughout; the installed window where it changes it. Each writes its o
 | **2f** the proposal on the chart (web; b, e) | the union drawing, `ProposalBar`, `ChangeList`, take whole or by change with `needs`, stale refused per change, one undo per take, the card's *Open in the editor* | each state's page test (fresh, partly taken, stale, all taken, discarded, undone); measured diff stories |
 | **2g** asking from a place and a conversation (web, driver; f, SETUPUX1o) | the place's *Ask Daoris*, the conversation's draft card opening the editor | opener tests; a `HelpCoverageTests` row |
 | **2h** the installed window (the steward; all; with SETUPUX1x) | compose the release workflow by pointer, by keyboard and by Ask Daoris; a stale take; a refusal fixed through *Fix it*; a run of each outcome | dated shots in en and zh, both themes, at 1546 and 680 px, and a screen-reader pass |
+
+## 8. Settled after Codex's read
+
+Codex's read (`docs/2026-11-02-flowchart-reads.md`) is taken whole; these amend §2 to §7, and each row carries its part.
+
+1. **Ways keep the graph's whole meaning** (row b). *Earlier* means an ancestor the driver reaches upstream through `after`,
+   `trigger`, `data` or `when` (`Nodes/NodeWires.cs`), never a step drawn above; a row of `WaysOnTable` may hold several targets
+   (*Also to…*), each removable alone; a step's *More ways* holds the advanced connections today's `WayForm` makes (a `trigger`, a
+   group), so removing `WayForm` loses none. The person still names no wire kind.
+2. **Remove and join only a plain chain** (row b): offered where the step's one way in and one way on are plain `after` links, the
+   replacement previewed; every other dependency is kept or removed explicitly, never guessed. *Work is done here* stays an inspector
+   action, and the configured end stays a marker on its own step (as `graphFlow` draws it), not a separate terminal; removing that
+   step asks where the end goes.
+3. **Ask Daoris is told enough to compose** (row d): the compact palette (the kinds, options, outcomes and outputs installed here),
+   sent first and again when its digest changes; the draft's source and save target, base version, route, pipeline, the selected step
+   and the open problems. The context is frozen with the person's submitted message; an edit never starts a turn by itself.
+4. **The draft door is complete through the bridge** (row e, which gains the modules lane): a discriminated `draft` payload carrying
+   the candidate graph and the structured changes; the draft branch is judged and applied before any save or use handling, so a
+   draft can never reach `WorkflowStore.Add`; a draft mixed with `choose`, a route-only use or a saved base is refused; the proof that
+   nothing is saved or chosen runs through the bridge route, not only the proposal class.
+5. **The diff hides no execution change** (row e): every wire field is compared (groups, ports, `outcome`, `on`), and the graph's
+   `entries` and `end`; structural matching may pair wires for reading, but a changed wire id is shown, never folded away.
+6. **Taking by change is a transaction** (row f): a proposal's base and each change's preconditions are fixed when it is drawn; a take
+   applies a change and its dependency closure (incident wires, a landing's tail, groups, a replaced end) atomically, or refuses it by
+   name; the card records what was taken and what was left; one undo step undoes a take and its record; opening the editor settles
+   nothing. A change whose preconditions the draft no longer holds is stale; the rest stay takeable.
+7. **Proof follows prerequisites** (rows b, r, c, d): row b carries basic *Carries* editing so its release-composition proof stands;
+   row c's exact-draft judgement (invalidated at once on an edit, staying invalid after a failed request, out-of-order answers dropped)
+   comes before row d, which sends that fingerprint.
+8. **Kept from the proposals:** the narrow-screen and keyboard contracts (the editor sized by its own region; selection and scroll
+   restored; one drawer at a time; the rail edits at 25rem as the canvas does); insertion and move previews naming the way replaced and
+   transferring no data, group or exception route by guess; a local clipboard that gives pasted steps fresh ids, keeps their internal
+   ways and drops external ones for review; without a helper the editor works whole, a draft proposal never falls back to a saving one,
+   and the proposal bar names the agent and model that made it.
+9. **For the drawing** (row a): two outcomes reaching one step each leave their own port and stay selectable alone (a fixture beside
+   the shipped graphs); an outcome routed `back` draws no ◎; a run's view draws only the outcomes its answer holds, manufacturing none
+   from the palette, and keeps its records, controls, limits and doors; showing a `data` edge on selection never changes the layout.
