@@ -36,7 +36,7 @@ public sealed record PlaceNeed(string Code, string? Detail = null);
 public sealed record PlaceWork(string Work, string? Role, string? Held, string? Consent, string Source, string? PolicyFailed);
 
 /// <summary>
-/// The default a place follows (DEFAULTCONFIG1a), by its id, and each option the place says otherwise, as <c>accept `automatic`</c>: under Current
+/// The default a place follows, by its id, and each option the place says otherwise, as <c>accept `automatic`</c>: under Current
 /// the default its landing rule matches, and for a chosen version the default it was copied from.
 /// </summary>
 public sealed record PlaceDefault(string? Default, IReadOnlyList<string> Differs)
@@ -224,7 +224,7 @@ public static class PlaceProjection
     }
 
     /// <summary>
-    /// The default a place's workflow follows (DEFAULTCONFIG1a): under Current, the one its landing rule's delivery matches
+    /// The default a place's workflow follows: under Current, the one its landing rule's delivery matches
     /// (<see cref="SetupPresets.Match"/>), with what the rule says otherwise; for a saved workflow, the default its newest version that reads was
     /// copied from, with what the copy changed. Null for a version copied from none, or one this build cannot read.
     /// </summary>

@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 public sealed record ShippedWords(string En, string Zh);
 
 /// <summary>
-/// One default workflow Daoris ships (DEFAULTCONFIG1a): its id and the ids it was known by, its names and what it is for, its delivery (the
+/// One default workflow Daoris ships: its id and the ids it was known by, its names and what it is for, its delivery (the
 /// <c>land</c> options a place's quick set-up applies, <see cref="SetupPresets"/>), whether that set-up offers it, and its graph as a version
 /// saves it, compact, with its digest.
 /// </summary>

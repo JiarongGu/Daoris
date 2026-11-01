@@ -132,12 +132,12 @@ public sealed record NamedVersion(
     /// </summary>
     public string? Unrun => Steps is not null || Graph is not null ? null : Problem;
 
-    /// <summary>The default it was copied from (DEFAULTCONFIG1a), or null: one its file does not name, or names in a shape this build does not read.</summary>
+    /// <summary>The default it was copied from, or null: one its file does not name, or names in a shape this build does not read.</summary>
     public WorkflowFrom? From { get; init; }
 }
 
 /// <summary>
-/// Where a version came from (DEFAULTCONFIG1a): the default Daoris ships it was copied from, and that default's digest then. Kept in the version
+/// Where a version came from: the default Daoris ships it was copied from, and that default's digest then. Kept in the version
 /// as <c>from</c>, which a build before it reads past, as it reads no key but its own.
 /// </summary>
 public sealed record WorkflowFrom(string Default, string Digest);
@@ -544,7 +544,7 @@ public static class WorkflowNamed
             }
 
             var step = new NamedStep(node.Id, kind, fields);
-            // DEFAULTCONFIG1a (D145's note of 2026-11-01): a `land` merges with no press where its graph holds no review, the workflow's
+            // D145's note of 2026-11-01: a `land` merges with no press where its graph holds no review, the workflow's
             // choice, and its own options are LandNodes.Problem's; a `handed` keeps the steps' refusal.
             if (node.Kind != NodeKinds.Land && MergeProblem(step) is { } merge) return (null, p + merge);
             steps.Add(step);
@@ -790,7 +790,7 @@ public static class WorkflowNamed
     /// </summary>
     /// <param name="file">The file as it stands, or null for a new workflow.</param>
     /// <param name="kept">The versions a kept run names.</param>
-    /// <param name="from">The default the version is copied from (DEFAULTCONFIG1a), kept in it as <c>from</c>; null writes none.</param>
+    /// <param name="from">The default the version is copied from, kept in it as <c>from</c>; null writes none.</param>
     public static WorkflowAddPlan PlanAdd(JsonNode? file, WorkflowVersionAdded add, IReadOnlyCollection<int> kept, WorkflowFrom? from = null)
     {
         static WorkflowAddPlan Refused(string problem) => new(null, null, problem);

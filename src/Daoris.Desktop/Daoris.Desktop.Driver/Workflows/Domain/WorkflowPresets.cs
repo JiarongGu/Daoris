@@ -24,14 +24,14 @@ public sealed record WorkflowGraphPreset(string Id, string Name, string GraphJso
 /// </summary>
 /// <remarks>
 /// Held to this suite's tests' <c>fixtures/workflow-named.json</c> <c>presets</c>, <c>variants</c> and <c>lines</c>, cell for cell
-/// (the CLI's twin, <c>namedworkflows.ts</c>, left in PUSH1f2b). The graphs are the defaults Daoris ships (DEFAULTCONFIG1a,
-/// <see cref="WorkflowDefaults"/>); the presets of steps left are a pull request's, said from the <c>pull-request</c> default's delivery.
+/// (the CLI's twin, <c>namedworkflows.ts</c>, left in PUSH1f2b). The graphs are the defaults Daoris ships
+/// (<see cref="WorkflowDefaults"/>); the presets of steps left are a pull request's, said from the <c>pull-request</c> default's delivery.
 /// </remarks>
 public static class WorkflowPresets
 {
     /// <summary>
-    /// The presets that are steps (schema 1): a pull request after you accept, and with no press. A merge's and a branch's left this table in
-    /// DEFAULTCONFIG1a, since a default of the same id is a graph, which <c>new --from</c> copies.
+    /// The presets that are steps (schema 1): a pull request after you accept, and with no press. None is a merge's or a branch's, since a
+    /// default of that id is a graph, which <c>new --from</c> copies.
     /// </summary>
     public static IReadOnlyList<WorkflowPreset> Table { get; } =
     [
@@ -59,7 +59,7 @@ public static class WorkflowPresets
     }
 
     /// <summary>
-    /// The presets that are graphs: the defaults Daoris ships (DEFAULTCONFIG1a), each by its id and English name. Each holds no
+    /// The presets that are graphs: the defaults Daoris ships, each by its id and English name. Each holds no
     /// <c>quest.close</c>, so the quest is closed by its agent's done and the flow's end is the work's. <see cref="WorkflowGraphPreset.NoPress"/>
     /// is an integration's with no review, which the line's declared gates must carry.
     /// </summary>
@@ -130,7 +130,6 @@ public static class WorkflowPresets
         }
         else if (Option(Of(NodeKinds.Land), "method") is { } method)
         {
-            // DEFAULTCONFIG1a: a merge's, a branch's and a push's landing are said as a version of steps says each.
             said.Add(method switch
             {
                 LandNodes.Merge => you ? "You accept each piece of work, and it merges into the line." : "Each piece of work merges into the line once its agent is done.",

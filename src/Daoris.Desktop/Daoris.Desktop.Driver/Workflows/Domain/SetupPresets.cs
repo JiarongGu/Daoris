@@ -26,7 +26,7 @@ public sealed record SetupMatch(string? Preset, IReadOnlyList<string> Own)
 /// The delivery presets of a place's quick set-up (AGENTSPLACE1a2; the Agents-place design §2 point 3 and §4, the land node design §7), beside
 /// the workflows' presets: each is a set of `land` options applied to Current through the landing rule, never stored. A place's preset is
 /// derived from what its work follows (<see cref="LandOf"/>, <see cref="Match"/>), or said as the options of its own. After <i>Not driven</i>,
-/// each is a default Daoris ships that the data offers a set-up (DEFAULTCONFIG1a, <see cref="WorkflowDefaults"/>), with its name and delivery.
+/// each is a default Daoris ships that the data offers a set-up (<see cref="WorkflowDefaults"/>), with its name and delivery.
 /// </summary>
 public static class SetupPresets
 {

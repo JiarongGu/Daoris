@@ -173,7 +173,7 @@ public static class DriverWorkflowsCommand
         }
 
         /// <summary>
-        /// <c>defaults [&lt;default&gt; [--to &lt;file&gt;]]</c> (DEFAULTCONFIG1a): the defaults Daoris ships, each with what it is for; one said
+        /// <c>defaults [&lt;default&gt; [--to &lt;file&gt;]]</c>: the defaults Daoris ships, each with what it is for; one said
         /// whole, its names, line, delivery and nodes; or its graph written to a new file, which <c>apply</c> saves as a version. Reads only.
         /// </summary>
         private int Defaults()
