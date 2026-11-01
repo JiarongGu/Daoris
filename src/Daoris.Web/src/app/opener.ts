@@ -1,5 +1,6 @@
 import type { AgentPart } from '../agents/agents';
 import { type AgentsMode, repositoryId, type RoleSection, workspaceId } from '../agents/modes';
+import type { PlaceAsk } from '../agents/setup/placePlan';
 import type { PlanDoor } from '../person/Confirmations';
 import type { View } from '../menus/commands';
 import type { StarterDoor } from '../help/starters';
@@ -59,6 +60,8 @@ export type OpenPart = {
   compose?: Compose;
   /** A landed branch of the repository the door names, whose page opens with how it landed (FLOWCHART1c). */
   branch?: string;
+  /** The quick set-up Ask Daoris proposed for the place the door names (AGENTSPLACE1k): the place's *Set up…* opens on it. */
+  setUp?: PlaceAsk;
 };
 
 /** What opening a view does, as a value. */
@@ -125,6 +128,11 @@ export type Opening = {
    * run's landing step name it. Page state of Repositories', so it is an event its view consumes, as a drawer is.
    */
   branch?: { repository: string; branch: string };
+  /**
+   * The set-up the Agents place's Setup opens on (AGENTSPLACE1k), for the place it chooses. Dark, the Details it names are all a door
+   * opens, and the ask is not carried.
+   */
+  setUp?: PlaceAsk;
 };
 
 const listed =(view: View): view is View & ListView => Object.hasOwn(LIST_BOUNDS, view);
@@ -171,6 +179,7 @@ export function opening(view: View, item?: string | null, part: OpenPart = {}, h
   }
   if (part.group && GROUP_VIEW[part.group] === view) plan.group = part.group;
   if (view === 'sessions' && part.compose) plan.compose = part.compose;
+  if (view === 'projects' && part.setUp) plan.setUp = part.setUp;
   return plan;
 }
 
@@ -186,6 +195,13 @@ export function opening(view: View, item?: string | null, part: OpenPart = {}, h
  */
 export function placeOpening(plan: Opening, lit: boolean, workspaceOfRepository: (repository: string) => string): Opening {
   if (!lit || plan.view !== 'projects') return plan;
+  // AGENTSPLACE1k: Ask Daoris's set-up card opens the place's page with its ask, a repository's or the workspace's the repositories are in.
+  if (plan.setUp && plan.chosen?.view === 'projects') {
+    const named = projectsItem(plan.chosen.item);
+    const place = 'repository' in named ? repositoryId(workspaceOfRepository(named.repository), named.repository) : workspaceId(named.workspace);
+    return { view: 'agents', agentsMode: 'setup', place, setUp: plan.setUp };
+  }
+
   // The help room's door names the tab and no repository: the Setup mode's list is where one is chosen.
   const placed = plan.tab === 'setup' || plan.tab === 'workflow';
   if (placed && !plan.chosen) return { view: 'agents', agentsMode: 'setup' };

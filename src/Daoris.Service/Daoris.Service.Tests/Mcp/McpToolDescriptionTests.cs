@@ -71,6 +71,17 @@ public sealed partial class McpToolDescriptionTests
         Assert.Contains("never its folder", text);
     }
 
+    /// <summary>AGENTSPLACE1k: the set-up tool's place ask says the card opens the page and the person presses Apply there.</summary>
+    [Fact]
+    public void The_setup_tool_says_its_place_ask_opens_the_page_for_the_person_to_apply()
+    {
+        var text = string.Join(" ", Descriptions().Where(d => d.Tool == "setup_propose").Select(d => d.Text));
+
+        Assert.Contains("`preset`", text);
+        Assert.Contains("*Set up…*", text);
+        Assert.Contains("presses Apply there", text);
+    }
+
     /// <summary>WORKFLOW1h-a: the workflow tool says it only proposes, wants whole steps, and names the parts not proposed yet.</summary>
     [Fact]
     public void The_workflow_tool_says_it_only_proposes_whole_steps()

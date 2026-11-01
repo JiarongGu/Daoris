@@ -43,7 +43,8 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "the repository owns and its brief on its own branch (`--plan` shows what was read and the quest, and asks nothing; "
             + "Ask Daoris proposes it)",
             "Repositories → the repository's page → Details → Set up for agents (one not adopted, with a checkout here)",
-            "`daoris-driver setup <repository> [--plan]`"),
+            "`daoris-driver setup <repository> [--plan]`; several at once, with their delivery: "
+                + "`daoris-driver place <repository>… --preset <id> [--with opinion,look,adoption] [--what-it-builds <kind>] [--drive] --plan`"),
         // WSSETUP6: the workspace plan's terminal door; its screen and Ask Daoris's doors are WSSETUP7's, owed meanwhile.
         ("set every repository of a workspace up, one at a time, the ones other work touches first: a plan the loop works, "
             + "pausing after a pilot of two (`--plan` shows the list and each refusal, and writes nothing); pause, resume or stop it",

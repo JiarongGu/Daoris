@@ -708,6 +708,58 @@ describe('a yes to a departure', () => {
 });
 
 /**
+ * AGENTSPLACE1k: a place's set-up card shows the plan's changes, each said once with the repositories it reaches; its Apply opens
+ * *Set up…* seeded and presses nothing, and says so beside the button.
+ */
+describe('a place\'s set-up card', () => {
+  const PLACE: HelpProposal = {
+    id: 'pl1a2b3c', kind: 'setup',
+    describe: 'Open the Agents place\'s Setup for `engine`, `site` in workspace `aurora`, with *Set up…* open on this ask.',
+    terminal: 'daoris-driver place engine site --preset merge-after-accept --plan',
+    why: 'the person asked to set both up',
+    place: {
+      workspace: 'aurora', digest: 'd1',
+      asked: { repositories: ['engine', 'site'], preset: 'merge-after-accept', opinion: false, look: false, adoption: true, builds: 'service', drive: false },
+      changes: [
+        { key: 'SET_TREES', part: 'delivery', said: 'its own tree', before: 'off', after: 'on', repositories: ['engine', 'site'] },
+        { key: 'SETUP_PRESS', part: 'adoption', said: 'the set-up quest', before: 'none', after: 'asked', repositories: ['site'] },
+      ],
+    },
+  };
+
+  it('lists each change with where it is made, and Apply opens the page', async () => {
+    const onApply = vi.fn();
+    render(<ul><ProposalCard proposal={PLACE} onApply={onApply} onDismiss={vi.fn()} /></ul>);
+
+    expect(screen.getByText('Ask Daoris proposes a setup')).toBeInTheDocument();
+    const changes = within(screen.getByRole('list', { name: 'What the plan changes' })).getAllByRole('listitem');
+    expect(changes).toHaveLength(2);
+    expect(changes[0]).toHaveTextContent('its own tree');
+    expect(changes[0]).toHaveTextContent('off → on');
+    expect(changes[0]).toHaveTextContent('engine, site');
+    expect(screen.getByText(/you read the plan there and press Apply yourself/)).toBeInTheDocument();
+    expect(screen.getByText(code(PLACE.terminal))).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Review the plan' }));
+    expect(onApply).toHaveBeenCalledWith('pl1a2b3c');
+  });
+
+  it('speaks 中文 in its chrome and leaves the changes as the plan said them', async () => {
+    const { default: i18n } = await import('../locales/i18n');
+    await i18n.changeLanguage('zh');
+    try {
+      render(<ul><ProposalCard proposal={PLACE} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
+      expect(screen.getByText('问道衍提议配置')).toBeInTheDocument();
+      expect(within(screen.getByRole('list', { name: '计划会改动什么' })).getAllByRole('listitem')[0]).toHaveTextContent('its own tree');
+      expect(screen.getByRole('button', { name: '审阅计划' })).toBeInTheDocument();
+    } finally {
+      cleanup();
+      await i18n.changeLanguage('en');
+    }
+  });
+});
+
+/**
  * LAYOUT8 (D170 point 1): a set-up card shows what the repository page shows before its press, `--plan`'s twin: what was read
  * on the line, the rule the press adds and the quest's whole text. Apply is the press.
  */

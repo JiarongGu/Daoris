@@ -160,6 +160,6 @@ public sealed class HelpProposalBox(string? home)
         new HelpWorkflowProposalWriter(file).Propose(scope, workflow, baseVersion, steps, choose, changes, kind, import, why, session, at, name, graph, route);
 
     /// <inheritdoc cref="HelpSetupProposalWriter.Propose"/>
-    public (string? Id, string Message) ProposeSetup(string repository, string why, string? session, DateTimeOffset at) =>
-        new HelpSetupProposalWriter(file).Propose(repository, why, session, at);
+    public (string? Id, string Message) ProposeSetup(string repository, string why, string? session, DateTimeOffset at, HelpSetupPlace? place = null) =>
+        new HelpSetupProposalWriter(file).Propose(repository, why, session, at, place);
 }

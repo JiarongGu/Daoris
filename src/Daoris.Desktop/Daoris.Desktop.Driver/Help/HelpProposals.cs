@@ -116,6 +116,11 @@ public sealed record HelpProposal(
     /// <summary>A role proposal's own <c>press</c> (FOUNDATION1y-i): its names, work, scope, choices and the revision read; null for every other kind.</summary>
     public System.Text.Json.JsonElement? RolePress { get; init; }
 
+    // The setup kind's.
+
+    /// <summary>The place's quick set-up a <c>place</c> proposal asks (AGENTSPLACE1k), from the file's <c>place</c>; null for every other door and kind.</summary>
+    public PlaceAsk? Place { get; init; }
+
     // The sync kind's.
 
     /// <summary>The rows a sync proposal's look listed (HELP10), kept in its file; null before the person looked.</summary>
@@ -309,6 +314,12 @@ public sealed record HelpMachineFacts(
     /// </summary>
     public IReadOnlyList<SetupPlan> Setups { get; init; } = [];
 
+    /// <summary>
+    /// A place's plan for each <c>place</c> proposal (AGENTSPLACE1k), by the proposal's id: <see cref="PlacePlans.PlanAsync"/> over its ask,
+    /// as <c>daoris-driver place … --plan</c> prints it. Read only for one; nothing is written.
+    /// </summary>
+    public IReadOnlyDictionary<string, PlacePlanned> Places { get; init; } = new Dictionary<string, PlacePlanned>();
+
     // The workflow kind's.
 
     /// <summary>
@@ -442,6 +453,9 @@ public sealed record HelpPlan(string? Refusal, string Describe, string Terminal,
     /// rule and the quest's whole text) and what Apply presses; null for a refusal and for every other kind.
     /// </summary>
     public SetupPlan? Setup { get; init; }
+
+    /// <summary>For a <c>place</c> the plan allows (AGENTSPLACE1k): the ask, the workspace and what the plan changes, for the card; null for a refusal and every other kind.</summary>
+    public HelpPlaceSetUp? Place { get; init; }
 
     // The sync kind's.
 

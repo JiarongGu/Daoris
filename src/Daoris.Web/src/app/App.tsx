@@ -654,6 +654,8 @@ export function App() {
     if (plan.agentsMode) agentsModes.onMode(plan.agentsMode);
     if (plan.roleSection) agentsModes.onSection(plan.roleSection);
     if (plan.place) agentsModes.onPlace(plan.place);
+    // Ask Daoris's place card (AGENTSPLACE1k): the place's *Set up…* opens on the ask, once the Agents place has the place chosen.
+    if (plan.place && plan.setUp) agentsModes.onSeed(plan.place, plan.setUp);
     if (plan.chosen) lists.choose(plan.chosen.view, plan.chosen.item);
     // A view opened by a door that names nothing reopens what its list chose only while it still waits (UX6b, D150 §8):
     // the list reads it again, and lets go of one that closed or went. A door that names an item has it chosen above.
