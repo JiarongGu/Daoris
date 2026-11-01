@@ -23,8 +23,9 @@ without a service. Model-dependent capabilities state the tier that actually ran
   dependencies; management operations use the explicit service/toolchain seams.
 - Machine-local streams, accounts, browser state and filesystem actions stay on the desktop.
   Shared hosts exchange permitted records, serve no UI and answer no machine paths.
-- UI chrome translates in English and Chinese; authored content stays as written. Read the
-  translation and UI contracts before changing visible text or screens.
+- UI chrome translates through a catalogue per shipped language (today English and Chinese); authored content,
+  configuration included, stays as written and asks for no language (D222). Read the translation and UI contracts
+  before changing visible text or screens.
 - Keep project facts in versioned records. Rewrite a present fact where it lives (D220); append
   amendments to decisions as history, and move completed tasks from the backlog to the archive.
 - Do not hand-edit versions or release headings. The release workflow owns their stamping.
