@@ -65,7 +65,11 @@ public sealed record AtWorkQuest(string Id, string Status)
 /// <param name="Quests">The quests slice's health.</param>
 public sealed record AtWorkRouting(
     IReadOnlyList<AtWorkEntryPart> Parts, Func<string, AtWorkRow?> Row, Func<string, AtWorkQuest?> Quest, Func<string, int> Published,
-    SliceHealth Quests);
+    SliceHealth Quests)
+{
+    /// <summary>The whole stores the quests half reads (COWORKVIEW1b-ii); null reads no quests and no asker.</summary>
+    public AtWorkAsking? Asking { get; init; }
+}
 
 /// <summary>What a part waits on, as the strip places it: a quest (with the repository it was asked of and its lanes), or its helper.</summary>
 public sealed record AtWorkWait
