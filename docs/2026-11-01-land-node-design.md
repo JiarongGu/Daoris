@@ -199,7 +199,7 @@ AGENTSPLACE1's row 1a2 (presets and the plan) comes after LANDNODE1a.
 
 ## 9. Open
 
-- **One Accept carrying several sessions** (an entry's, LINESTOGETHER1): the first unit performs, and the others are reached as *brought into*, with no second fence.
+- **One Accept carrying several sessions** (an entry's, LINESTOGETHER1): the first unit performs, and the others are reached as *brought into*, with no second fence. Decided by row 1b3 (D215's note of 2026-11-01): one delivery, the head's unit's; each member brought into it, and bound while its operation is open.
 - **Tree tips read at each pass for due units:** measure under many trees.
 - **A plugin taking minutes behind a bounded press:** the person may see *landing* before the pull request's link.
 - **Undecided:** whether `tidy` becomes the node's, and whether a terminal with no loop runs the fence itself.
