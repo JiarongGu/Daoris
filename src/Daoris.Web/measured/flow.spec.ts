@@ -127,7 +127,8 @@ const PORTED: Record<string, number> = {
   'graph/Release': 2, 'graph/ReleaseDark': 2, 'graph/ReleaseChinese': 2, 'graph/ReleaseChineseDark': 2, 'graph/ReleaseHoldsOpen': 2,
   'graph/TwoOutcomes': 3, 'graph/TwoOutcomesDark': 3, 'graph/TwoOutcomesChinese': 3,
   'graph/ReleaseData': 2, 'graph/ReleaseDataChinese': 2, 'graph/ReleaseDataUnselected': 2,
-  'runview/ReleaseRun': 1, 'runview/NoneRun': 1,
+  // A run's decision draws the outcome it returned and the route it left: the release run one route, the none run both.
+  'runview/ReleaseRun': 1, 'runview/NoneRun': 2,
 };
 
 /** Every drawn flow's edges drawn and holding still. */

@@ -20,6 +20,8 @@ export type FlowNode = {
   id: string;
   title: string;
   glyph?: IconName;
+  /** The outcomes of a decision in the order its ports are drawn (FLOWCHART2a): its routes' targets start the layout in that order. */
+  ports?: readonly string[];
   /** Its state as a pill, in the caller's tone. */
   state?: { word: string; tone: PillTone };
   /** Who acts there: drawn, unless `who` is, and said to a reader. */
@@ -264,8 +266,13 @@ export function FlowCanvas({
 
   // The layout reads the shape alone, so a change of what is lit lays nothing out again (§3.1 step 5): it is kept by the
   // shape's key, not by the arrays a caller makes anew on each render. Folds past 24 nodes are the one exception (§3.6).
-  const shapeKey = JSON.stringify([nodes.map((node) => node.id), edges.map((edge) => [edge.id, edge.from, edge.to, edge.style, edge.port]), entries]);
-  const layout = useMemo(() => layoutFlow({ nodes: nodes.map((node) => ({ id: node.id })), edges, entries }), [shapeKey]);
+  const shapeKey = JSON.stringify([
+    nodes.map((node) => [node.id, node.ports ?? null]), edges.map((edge) => [edge.id, edge.from, edge.to, edge.style, edge.port]), entries,
+  ]);
+  const layout = useMemo(
+    () => layoutFlow({ nodes: nodes.map((node) => ({ id: node.id, ...(node.ports ? { ports: node.ports } : {}) })), edges, entries }),
+    [shapeKey],
+  );
   const least = bounds?.least ?? FLOW_REM.node;
   // The data wires a flow may show keep their lanes free at the right, selected or not, so a selection moves no node.
   const dataLanes = showsData ? dataEdges.filter((edge) => nodes.some((node) => node.id === edge.from) && nodes.some((node) => node.id === edge.to)).length : 0;

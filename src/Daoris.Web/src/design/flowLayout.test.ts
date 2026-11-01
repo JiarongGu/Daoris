@@ -317,6 +317,19 @@ describe('ports and data wires (FLOWCHART2a)', () => {
     expect(paths.map((path) => [path.edges, path.port])).toEqual([[['a'], 'release'], [['b'], 'other'], [['c'], 'none']]);
   });
 
+  it('starts the sweeps from the order of its ports: the targets stand in the order of the outcomes', () => {
+    // `none` is declared first but its ◎ is drawn last, as every ◎ is; the ports' order puts it first and the ranks follow.
+    const layout = layoutFlow({
+      nodes: [{ id: 'find', ports: ['none', 'release'] }, { id: 'record' }, { id: 'find:none:none' }],
+      edges: [
+        { id: 'a', from: 'find', to: 'record', style: 'when', port: 'release' },
+        { id: 'b', from: 'find', to: 'find:none:none', style: 'when', port: 'none' },
+      ],
+      entries: ['find'],
+    });
+    expect(layout.ranks[1]!.map((slot) => (slot.kind === 'node' ? slot.id : '·'))).toEqual(['find:none:none', 'record']);
+  });
+
   it('still merges like edges that leave no port', () => {
     const { paths } = layoutFlow(shape(['a', 'b'], [['a', 'b'], ['a', 'b']]));
     expect(paths.map((path) => [path.edges, path.port])).toEqual([[['e0', 'e1'], null]]);

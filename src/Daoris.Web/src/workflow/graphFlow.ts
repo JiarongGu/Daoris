@@ -243,6 +243,7 @@ export function graphFlow(t: TFunction, graph: DrawnGraph, options: DrawOptions)
     };
     nodes.push({
       ...without(node),
+      ...(own.length > 0 ? { ports: own.map((port) => port.outcome) } : {}),
       ...(first ? {
         lines: node.lines ?? t('workflow.graph.holdsOpen', { count: group.members.length }),
         ...(options.holds?.toggle ? { open: options.holds.toggle } : {}),

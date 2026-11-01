@@ -37,7 +37,7 @@ export type EdgeStyle = 'next' | 'failed' | 'rejected' | 'refused' | 'conditiona
  * it like another for a stack (FLOWCHART1c): a try's code, a kind and its state. Absent, the node never stacks.
  */
 export type FlowShape = {
-  nodes: readonly { id: string; stack?: string }[];
+  nodes: readonly { id: string; stack?: string; ports?: readonly string[] }[];
   edges: readonly { id: string; from: string; to: string; style?: EdgeStyle; port?: string }[];
   entries: readonly string[];
 };
@@ -167,6 +167,19 @@ export function layoutFlow(shape: FlowShape): FlowLayout {
   const count = ids.length === 0 ? 0 : Math.max(...ids.map((id) => rank[id]!)) + 1;
   const ranks: Slot[][] = Array.from({ length: count }, () => []);
   for (const id of ids) ranks[rank[id]!]!.push({ kind: 'node', id });
+
+  // A decision's ports (FLOWCHART2a): the targets it reaches by them take, in the places they already hold, the order of the outcomes,
+  // so the sweeps start from the order the ports are drawn in.
+  for (const node of shape.nodes) {
+    const order = node.ports ?? [];
+    const row = ranks[rank[node.id]! + 1];
+    if (order.length < 2 || !row) continue;
+    const targets = [...new Set(forward.filter((path) => path.from === node.id && path.port !== null && order.includes(path.port))
+      .sort((a, b) => order.indexOf(a.port!) - order.indexOf(b.port!)).map((path) => path.to))];
+    const places = targets.map((id) => row.findIndex((slot) => slot.kind === 'node' && slot.id === id)).filter((at) => at >= 0);
+    const held = places.map((at) => row[at]!);
+    [...places].sort((a, b) => a - b).forEach((at, index) => { row[at] = held[index]!; });
+  }
 
   // 3. Waypoints: a slot in every rank a forward path skips, chained to its neighbours so the sweeps order it.
   const near = new Map<string, Set<string>>(ids.map((id) => [id, new Set()]));
