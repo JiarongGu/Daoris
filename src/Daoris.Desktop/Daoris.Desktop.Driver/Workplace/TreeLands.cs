@@ -695,18 +695,25 @@ internal sealed class TreeLands(
 
         // LANDNODE1c3 (the land node design §3, §4): under Current the door writes the delivery here, the landing judged and nothing of it made,
         // and lands through it; its intent is read from the rule as it stood a moment ago. Null where it lands as before, a refusal in words.
+        // LANDNODE1m: so does a run bound to a graph version that lands by a `land`, its intent the version's; one that lands by a `handed`, and a
+        // steps version, land as before until they end.
         async Task<TreeLanding?> DeliverAsync(string? name)
         {
-            if (fence is null || delivering is not null || named is not null || here is null) return null;
+            var bound = named?.Land(subject);
+            if (fence is null || delivering is not null || (named is not null && bound is null) || here is null) return null;
             var root = Path.GetDirectoryName(here.CommonDir.Trim())!;
             var tree = here.Branch.Trim();
             var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
             var tip = pinned ?? TreeTips.Read(full) ?? await CommitOfAsync(root, $"refs/heads/{tree}", ct).ConfigureAwait(false);
             if (line is null || tip is null || tree is "" or "HEAD") return null;
+            // The standing automatic authority judged again before the first effect: Current's switch as the rule says it now; a version's,
+            // which is never edited, its graph holding no review before its `land`.
+            Func<string?> standing = named is { } version
+                ? () => version.Landing.Rule.AutoAccept ? null : "its workflow's graph holds a review before its landing"
+                : () => LandingRules.Effective(context.Config(), repository, workspace).Rule is { AutoAccept: true } ? null : "its repository's rule no longer accepts automatically";
             var (delivery, refusal) = await CurrentDeliveries.StartAsync(
                 context.Home, context.Plugins, landing, repository, workspace, root, subject, tip, line, tree, name, acceptedBy, hold?.Waited == true,
-                () => LandingRules.Effective(context.Config(), repository, workspace).Rule is { AutoAccept: true } ? null : "its repository's rule no longer accepts automatically",
-                ct).ConfigureAwait(false);
+                standing, ct, bound).ConfigureAwait(false);
             if (refusal is not null || delivery is null) return refusal;
             if (Enter(fence, delivery, repository) is { } notEntered) return notEntered;
             delivering = fence.Delivering!;
@@ -753,7 +760,7 @@ internal sealed class TreeLands(
             var branched = await BranchAsync(full, workspace, repository,
                 delivering?.Intent.Branch ?? name,
                 handedOn: plugin is not null, ct,
-                entered: delivering is not { Live: false } && subject.EnteredName is not null, squash: landing.Rule.Squash ? worked : null, sync: replaying,
+                entered: delivering is not { Door: false } && subject.EnteredName is not null, squash: landing.Rule.Squash ? worked : null, sync: replaying,
                 join: joins ? sync : null, pinned: pinned, uncommitted: uncommitted, here: here, delivering: delivering).ConfigureAwait(false);
             landed = Fetched(branched.Landing, notFetched);
             replayed = landed.Landed ? branched.Replay : null;

@@ -24,6 +24,13 @@ public sealed record TreeDelivery(DeliveryStore Store, DeliveryClaim Claim)
     /// that rule whole, its <c>integrate</c> and switch among it, and no land node names a template, so its commits say today's words.
     /// </summary>
     public bool Live { get; init; }
+
+    /// <summary>
+    /// The bound graph version's <c>land</c> a door wrote it from a moment before it lands (LANDNODE1m, <see cref="CurrentDeliveries"/>): the
+    /// landing keeps the version's landing whole, as Current's keeps its rule, its commits say the land's message where it names one, and its
+    /// merge is admitted by its method, never by the live rule.
+    /// </summary>
+    public BoundLand? Land { get; init; }
 }
 
 /// <summary>The delivery one landing performs, once entered: its reading, and this process's hold on it until the landing ends.</summary>
@@ -105,8 +112,14 @@ internal sealed class TreeDelivering
     /// <summary>Whether a door wrote it from Current's live rule (<see cref="TreeDelivery.Live"/>).</summary>
     public bool Live => _delivery.Live;
 
-    /// <summary>The message its commits say, rendered from a land node's template; null under Current, whose commits say today's words.</summary>
-    public string? Template => Live ? null : Intent.Message;
+    /// <summary>Whether a door wrote it a moment before it lands, from Current's rule or a bound version's <c>land</c> (<see cref="TreeDelivery.Land"/>).</summary>
+    public bool Door => Live || _delivery.Land is not null;
+
+    /// <summary>
+    /// The message its commits say, rendered from a land node's template; null under Current, and for a bound <c>land</c> that names none, whose
+    /// commits say today's words.
+    /// </summary>
+    public string? Template => Live ? null : _delivery.Land is { } land ? land.Message : Intent.Message;
 
     /// <summary>Whether its resolved options squash the work into one commit.</summary>
     public bool Squash { get; }
@@ -225,9 +238,10 @@ internal sealed class TreeDelivering
     /// The landing as its delivery lands it: the method's form and squash the intent's; of the rule only what setup keeps (its tidy), the plugin
     /// only of a push or a pull request, and that the intent's, told through <see cref="DispatchAsync"/>; no switch and no integrate, since the
     /// delivery's authorization and the next node hold those. Under Current (<see cref="Live"/>) the intent was read from that very rule a
-    /// moment ago, so the rule stands whole, its <c>integrate</c> the line's policy and its record's provenance (LANDNODE1c3).
+    /// moment ago, so the rule stands whole, its <c>integrate</c> the line's policy and its record's provenance (LANDNODE1c3); under a bound
+    /// version (LANDNODE1m) the landing its version's steps read stands whole the same way.
     /// </summary>
-    public Landing Over(Landing live) => Live ? live with { Rule = live.Rule with { Squash = Squash } } :
+    public Landing Over(Landing live) => Door ? live with { Rule = live.Rule with { Squash = Squash } } :
         new(live.Rule with
         {
             Form = Intent.Method == DeliveryMethods.Merge ? LandingForm.Merge : LandingForm.Branch,

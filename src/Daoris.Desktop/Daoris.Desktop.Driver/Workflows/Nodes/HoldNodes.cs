@@ -126,19 +126,25 @@ public static class HoldNodes
     }
 
     /// <summary>
-    /// The landing a branch unit's records keep for <paramref name="binding"/>: on a run's binding, the one made at or squashing its bound commit;
-    /// on a unit's own, its newest, or the merge its session branch records. Null where none is kept.
+    /// The landing a branch unit's records keep for <paramref name="binding"/>: on a run's binding, the one made at or squashing its bound commit,
+    /// or the merge its session branch records there; on a unit's own, its newest, or the merge its session branch records. Null where none is kept.
     /// </summary>
     private static LandedBranch? LandedAt(WorkUnit unit, NodeAcceptance binding)
     {
         if (binding.Subject is not null)
         {
-            return binding.SubjectRevision is { } bound ? unit.Records.Landings.LastOrDefault(each => each.Tip == bound || each.Squashed == bound) : null;
+            if (binding.SubjectRevision is not { } bound) return null;
+            // LANDNODE1m: a merge keeps no landing record, and a replayed one leaves its tree on the commit merged, which the run then binds.
+            return unit.Records.Landings.LastOrDefault(each => each.Tip == bound || each.Squashed == bound)
+                ?? (unit.Records.Branch?.Held is { } held && string.Equals(held.Tip, bound, StringComparison.OrdinalIgnoreCase) ? Merged(unit) : null);
         }
 
-        if (BuiltInNodes.LandingOf(unit) is { } landing) return landing;
-        return unit.Records.Branch is { Held: { } merged } branch
+        return BuiltInNodes.LandingOf(unit) ?? Merged(unit);
+    }
+
+    /// <summary>The merge a branch unit's session branch records, read as a landing at the commit the line holds; null where none is held.</summary>
+    private static LandedBranch? Merged(WorkUnit unit) =>
+        unit.Records.Branch is { Held: { } merged } branch
             ? new LandedBranch(unit.Owner.Repository ?? "", unit.Owner.Workspace, branch.Branch, null, merged.Tip, unit.Executors.LastOrDefault() ?? "", null, null, merged.At)
             : null;
-    }
 }

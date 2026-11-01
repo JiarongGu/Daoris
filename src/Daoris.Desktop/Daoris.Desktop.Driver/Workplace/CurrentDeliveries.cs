@@ -9,7 +9,8 @@ namespace Daoris.Driver;
 /// lands through it, so a press and a pass land one delivery once. Its intent is Current's graph read from the live rule (D157 point 6): the
 /// method its <c>land</c> names, the tree's line as target and line, the branch the rule names, today's message, the rule's plugin and its
 /// line's policy epoch. A unit's earlier delivery is settled by phase first (<see cref="DeliveryReconciler.BeforeStartAsync"/>), so a terminal
-/// with no loop runs the same fence.
+/// with no loop runs the same fence. LANDNODE1m: a run bound to a graph version that lands by a <c>land</c> is delivered the same way at every
+/// door, its intent and authorization that version's (<see cref="BoundLand"/>), so nothing lands its work but its graph's own <c>land</c>.
 /// </summary>
 internal static class CurrentDeliveries
 {
@@ -24,12 +25,13 @@ internal static class CurrentDeliveries
     /// <param name="branch">The branch a branch method makes or moves, as the landing names it; null for a merge.</param>
     /// <param name="waited">Whether the landing waited for another of its tree, so a delivery its key names delivered meanwhile is said so.</param>
     /// <param name="standing">Whether the standing automatic authority still stands, asked just before the first effect.</param>
+    /// <param name="bound">The bound graph version's <c>land</c> it is written from (LANDNODE1m); null writes Current's, from the rule.</param>
     public static async Task<(TreeDelivery? Delivery, TreeLanding? Refusal)> StartAsync(
         string home, IWorkplacePluginWire wire, Landing landing, string repository, string workspace, string root, LandingSubject subject, string tip,
-        string line, string tree, string? branch, string acceptedBy, bool waited, Func<string?> standing, CancellationToken ct)
+        string line, string tree, string? branch, string acceptedBy, bool waited, Func<string?> standing, CancellationToken ct, BoundLand? bound = null)
     {
         var rule = landing.Rule;
-        var (method, graph) = WorkplaceWorkflows.Current.CurrentLand(rule);
+        var (method, graph) = bound is null ? WorkplaceWorkflows.Current.CurrentLand(rule) : (bound.Method, bound.Graph);
         TreeLanding Refused(string why) => new(false, $"Nothing was landed: {why}.") { Refusal = AutoLandingCode.Refused };
         // A name git would not take is refused before anything is written: a delivery's key holds no name, so one written for it would stand in
         // the way of the name that takes, whose landing would read the key settled and land with no delivery.
@@ -38,20 +40,22 @@ internal static class CurrentDeliveries
             return (null, Refused(TreeLands.Untaken(branch ?? "", subject.EnteredName is not null).TrimEnd('.')));
         }
 
-        var squash = rule.Squash && method is DeliveryMethods.Branch or DeliveryMethods.PullRequest;
+        var squash = bound?.Squash ?? (rule.Squash && method is DeliveryMethods.Branch or DeliveryMethods.PullRequest);
+        // Today's words where no land names a message: a merge's `Merge branch`, a branch's title.
+        var words = method == DeliveryMethods.Merge ? $"Merge branch '{tree}'" : TextBounds.OneLine(subject.Title is { Length: > 0 } title ? title : subject.Session);
         var intent = new DeliveryIntent(
-            subject.Session, repository, tip, method, line, line, method == DeliveryMethods.Merge ? null : branch, null,
-            method == DeliveryMethods.Merge ? $"Merge branch '{tree}'" : TextBounds.OneLine(subject.Title is { Length: > 0 } title ? title : subject.Session),
-            method == DeliveryMethods.PullRequest ? rule.Plugin : null, IntegrationEpoch.Of((rule.Integrate ?? new LandingIntegrate()).Resolved(), null));
-        var options = JsonSerializer.Serialize(new Dictionary<string, object> { ["method"] = method, ["squash"] = squash });
+            subject.Session, repository, tip, method, bound?.Target ?? line, line, method == DeliveryMethods.Merge ? null : branch, bound?.Ticket,
+            bound?.Message ?? words, method is DeliveryMethods.PullRequest or DeliveryMethods.Push ? rule.Plugin : null,
+            IntegrationEpoch.Of((rule.Integrate ?? new LandingIntegrate()).Resolved(), null));
+        var options = bound?.Options ?? JsonSerializer.Serialize(new Dictionary<string, object> { ["method"] = method, ["squash"] = squash });
         var authorization = acceptedBy == AcceptedBy.Auto
-            ? DeliveryAuthorization.Automatic($"{landing.Source}:{repository}", tip, graph, options, "[]")
+            ? DeliveryAuthorization.Automatic(bound?.Authority ?? $"{landing.Source}:{repository}", tip, graph, options, "[]")
             : DeliveryAuthorization.Person($"{AcceptedBy.Person}:{subject.Session}", tip, graph, options, "[]");
 
         var store = new DeliveryStore(home);
         var reconciler = DeliveryReconciler.Of(store, home, wire, record =>
             string.Equals(record.Intent.Repository, repository, StringComparison.OrdinalIgnoreCase) ? root : DeliveryReconciler.Checkouts(home)(record));
-        TreeDelivery Live(DeliveryClaim claim) => new(store, claim) { Live = true, Standing = _ => standing() };
+        TreeDelivery Live(DeliveryClaim claim) => new(store, claim) { Live = bound is null, Land = bound, Standing = _ => standing() };
         // Its key settled already: one delivered while this landing waited is said so; else it lands as before, read by observation.
         (TreeDelivery?, TreeLanding?) Observed(DeliveryRecord? found) =>
             (null, waited && found is { Settled: DeliverySettlements.Delivered } ? TreeDelivering.Meanwhile(found) : null);

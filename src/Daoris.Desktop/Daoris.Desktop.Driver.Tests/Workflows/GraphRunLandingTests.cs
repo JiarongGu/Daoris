@@ -182,6 +182,84 @@ public sealed class GraphRunLandingTests : AutoLandingFixture
         Assert.Equal(commit, (await GitAsync(root, "merge-base", "main", commit)).Trim());
     }
 
+    /// <summary>
+    /// LANDNODE1m: a saved copy of <i>Merge automatically</i> chosen for the repository, whose session's done its conclusion makes due under the
+    /// version, is landed by the look once a pass readies its <c>land</c>: through a delivery, the standing authority's, bound to the commit the
+    /// pass judged and to the version's digest, as Current's look lands through its own (LANDNODE1c3).
+    /// </summary>
+    [Fact]
+    public async Task A_saved_version_s_land_lands_its_work_at_done_through_its_delivery()
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(LandingRule.Merge);
+        await CopyAsync("merge-automatic");
+        var tree = await NamedDoneAsync(root, "s1", "q1");
+        await PassAsync(root, Assert.Single(new SessionBranches(_home).All()), tree);
+        var commit = await HeadAsync(tree);
+        Assert.Equal(NodeStates.Active, Status("landing").State);
+
+        await LookAsync();
+
+        Assert.Equal(commit, (await GitAsync(root, "merge-base", "main", commit)).Trim());
+        var delivery = Assert.Single(new DeliveryStore(_home).OfUnit("s1"));
+        Assert.Equal((DeliveryMethods.Merge, commit, "main", DeliverySettlements.Delivered),
+            (delivery.Intent.Method, delivery.Intent.Tip, delivery.Intent.Line, delivery.Settled));
+        Assert.Equal((DeliveryAuthorities.Automatic, Status("landing").Binding!.GraphDigest),
+            (delivery.Authorization.Authority, delivery.Authorization.Graph));
+    }
+
+    /// <summary>
+    /// LANDNODE1m: after the look lands a saved version's work, the run read from the home's own records, as the loop's pass reads them once the
+    /// line's move is kept, says its landing reached and the line's step passed, every step before them reached; also where the line moved
+    /// after the pass readied the landing, so the work was replayed onto it and its tree followed the replay to another commit.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_saved_version_s_run_reads_its_landing_done_and_its_line_passed_once_the_look_lands_it(bool lineMoved)
+    {
+        // The loop's process holds the home's lease, whose holder alone keeps what the line holds.
+        using var lease = HomeLease.TryAcquire(_home, LeaseKind.Headless, out _);
+        var root = await RepositoryAsync("engine");
+        Rule(LandingRule.Merge);
+        await CopyAsync("merge-automatic");
+        await NamedDoneAsync(root, "s1", "q1");
+        await InventoryPassAsync(root);
+        Assert.Equal(NodeStates.Active, Status("landing").State);
+        if (lineMoved) await CommitAsync(root, "other.txt", "another session's work", "another session's work");
+
+        await LookAsync();
+        // A pass may come before the ref watch keeps what the line holds, and the one after reads it.
+        await InventoryPassAsync(root);
+        await new SessionTrees(_home).KeepEndsAsync(root, "engine", "aurora");
+        await InventoryPassAsync(root);
+
+        string[] steps = ["work", "requests", "holds", "content", "landing", "line"];
+        Assert.Equal(string.Join(", ", steps.Select(node => $"{node} {NodeStates.Reached}")),
+            string.Join(", ", steps.Select(node => $"{node} {Status(node).State}")));
+    }
+
+    /// <summary>
+    /// One whole pass of the runtime over the units the home's records and the stand-in service name, linked as the loop's pass reads them
+    /// (<see cref="WorkUnits.Linked"/>), and what the line holds read in a unit's newest session's tree, as the loop's gates read it.
+    /// </summary>
+    private async Task InventoryPassAsync(string root)
+    {
+        var sessions = _world.Records;
+        var branches = WorkInventory.Units(await WorkInventories.GatherAsync(_home, new Dictionary<string, string>(), new HashSet<string>(), new List<string>()));
+        var units = WorkUnits.Linked(branches, QuestUnits.Read([.. _world.Quests.Values], sessions), [], sessions);
+        var runtime = new NodeRuntime(new NodeRecordFiles(_home, () => true), new NoPlugins(), () => DateTimeOffset.UtcNow, () => true);
+        var pass = await runtime.PassAsync(new NodeRuntimeLook(Config(), Whole: true)
+        {
+            Units = _ => Task.FromResult(new NodeUnitsRead(units, new Dictionary<string, string> { ["engine"] = root })),
+            Tips = NodeTips.ReadAsync,
+            Content = (unit, tip, ct) => sessions.LastOrDefault(each => unit.Executors.Contains(each.Id, StringComparer.Ordinal) && Directory.Exists(each.Tree))?.Tree is { } tree
+                ? HoldReads.ContentAsync(new SessionTrees(_home), tree, tip, ct)
+                : Task.FromResult<HoldContent?>(null),
+        }, CancellationToken.None);
+        Assert.True(pass.Armed);
+    }
+
     [Theory]
     [InlineData(LandingForm.Branch)]
     [InlineData(LandingForm.Merge)]

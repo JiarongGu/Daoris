@@ -56,4 +56,23 @@ public interface IWorkplaceProcess
     /// version lands by a <c>land</c>, whose own steps judge them, or which holds none of them, and lands without.
     /// </summary>
     bool JudgesHolds => true;
+
+    /// <summary>
+    /// The bound graph version's <c>land</c> for <paramref name="subject"/>'s work (LANDNODE1m), which a door's delivery is written from, as
+    /// Current's is from its rule; null under Current, under a steps version and under a graph version that lands by a <c>handed</c>, which land
+    /// through today's doors until they end (the land node design §4).
+    /// </summary>
+    BoundLand? Land(LandingSubject subject) => null;
 }
+
+/// <summary>A bound graph version's <c>land</c>, as a door's delivery is written from it (LANDNODE1m).</summary>
+/// <param name="Method">Its method, written or derived from the landing step it stands for.</param>
+/// <param name="Target">The line its <c>target</c> names; null lands into the tree's line.</param>
+/// <param name="Squash">Whether it squashes the work into one commit: only a branch, a push and a pull request do.</param>
+/// <param name="Message">Its <c>message</c> template rendered for the work; null where it names none, so its commits say today's words.</param>
+/// <param name="Ticket">The ticket the work is for, where its message names one.</param>
+/// <param name="Options">Its options as the bind resolved them, the JSON its authorization keeps.</param>
+/// <param name="Graph">The digest of the version its run was bound to.</param>
+/// <param name="Authority">The standing authority's scope an automatic delivery names: the workflow, its version and the repository.</param>
+public sealed record BoundLand(
+    string Method, string? Target, bool Squash, string? Message, string? Ticket, string Options, string Graph, string Authority);
