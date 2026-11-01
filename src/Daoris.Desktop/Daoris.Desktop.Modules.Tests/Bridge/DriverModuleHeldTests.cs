@@ -26,6 +26,7 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
         ["ROLES"] = new { },
         ["ROLE_STRUCTURE"] = new { places = new[] { new { workspace = "aurora", repository = "engine" } } },
         ["PLACES"] = new { },
+        ["PLACE_PLAN"] = new { repositories = new[] { "engine" }, preset = "merge-after-accept" },
         ["HELP_PROPOSALS"] =new { session = "a1b2c3d4" },
         ["TOOLS_LIST"] = new { },
         ["SUPERVISOR_WAITING"] = new { },

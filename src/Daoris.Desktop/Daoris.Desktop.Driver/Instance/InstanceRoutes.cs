@@ -61,6 +61,9 @@ public static class OpenRoutes
     /// <summary><c>setup &lt;repository&gt; --plan</c> (RPC1e): what a set-up's press would do today, read and never written.</summary>
     public static InstanceRoute SetupPlan { get; } = Open("SETUP_PLAN");
 
+    /// <summary><c>place &lt;repository&gt;… --plan</c> (AGENTSPLACE1a2): a quick set-up's plan, read and never written.</summary>
+    public static InstanceRoute PlacePlan { get; } = Open("PLACE_PLAN");
+
     /// <summary>
     /// Each verb of RPCOPEN1's and RPC1e's scope, the host's verbs with a window twin (the terminal RPC design §1.2), in the verb's words:
     /// the open route it reads where the instance answers, or null with the reason it stays off the pipe. A person's press is
@@ -92,6 +95,7 @@ public static class OpenRoutes
         ("opinion show <session|opinion>", OpinionGate, "the gate's reading"),
         ("setup <repository> --plan", SetupPlan, "the plan; without `--plan` the person's press (SETUP_PRESS)"),
         ("setup --workspace <name>", null, "alone: no route sets a workspace up; each repository's press is SETUP_PRESS's"),
+        ("place <repository>… --plan", PlacePlan, "the plan; applying it is PLACE_APPLY's, which this build does not have"),
         ("ask channel <id>", null,
             "alone: the read moves the person's own mark (CHANNEL_MARK, the person's), a door of the service, which writes it once whoever "
             + "asks; with words the person's press (CHANNEL_POST)"),

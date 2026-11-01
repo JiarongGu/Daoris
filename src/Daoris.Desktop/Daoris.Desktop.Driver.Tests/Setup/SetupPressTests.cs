@@ -373,6 +373,33 @@ public sealed class SetupPressTests : IDisposable
         Assert.Contains("**The steps**", printed);
     }
 
+    /// <summary>AGENTSPLACE1a2: what it builds rides the plan and shapes the body's safe work, from the route and from the verb alike.</summary>
+    [Fact]
+    public async Task What_it_builds_shapes_the_quests_safe_work_from_the_press_and_the_verb()
+    {
+        var plan = await SetupPress.PlanAsync(new World(), Driven, SessionWire.Acp, "reports", Day, SetupBuilds.Service);
+        var output = new StringWriter();
+
+        var code = await SetupCommand.RunAsync(["reports", "--what-it-builds", "service", "--plan"], output, new World(), Driven, SessionWire.Acp, _home, Day);
+
+        Assert.Equal(SetupBuilds.Service, plan.Builds);
+        Assert.Contains(SetupBuilds.Checks(SetupBuilds.Service), plan.Body);
+        Assert.Equal(0, code);
+        Assert.Contains(SetupBuilds.Checks(SetupBuilds.Service), output.ToString());
+        Assert.Null((await PlanAsync(new World())).Builds);
+    }
+
+    [Theory]
+    [InlineData("reports --what-it-builds game --plan", "`game` is not what a repository builds here")]
+    [InlineData("reports --what-it-builds", "`--what-it-builds` names what the repository builds")]
+    public async Task What_it_builds_that_is_not_one_of_the_four_is_the_usage(string words, string said)
+    {
+        var output = new StringWriter();
+
+        Assert.Equal(2, await SetupCommand.RunAsync(words.Split(' '), output, new World(), Driven, SessionWire.Acp, _home, Day));
+        Assert.Contains(said, output.ToString());
+    }
+
     [Fact]
     public async Task A_refused_plan_says_why_and_exits_one()
     {

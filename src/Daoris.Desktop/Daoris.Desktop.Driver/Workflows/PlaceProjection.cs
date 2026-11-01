@@ -135,31 +135,7 @@ public static class PlaceProjection
             return needs;
         }
 
-        PlaceValues ValuesOf(string repository, string? workspace, string level)
-        {
-            var line = CanonicalLine.Choose(config, repository, workspace, guess: null);
-            var landing = LandingRules.Choose(config, repository, workspace);
-            var flow = WorkflowSelection.Resolve(config, level == PlaceSource.RepositoryLevel ? repository : null, workspace, task: null);
-            var landed = WorkflowSelection.ResolveLanded(config, level == PlaceSource.RepositoryLevel ? repository : null, workspace);
-            var commits = CommitRules.Resolve(config, repository, workspace);
-            var opinion = WorkPolicies.Opinion(config, repository, workspace);
-            var handOver = WorkPolicies.HandOver(config, repository, workspace);
-            var language = level == PlaceSource.RepositoryLevel
-                ? SessionLanguages.Resolve(config, repository, workspace)
-                : SessionLanguages.OfWorkspace(config, workspace);
-            var access = AccessRules.Resolve(config, repository, workspace);
-            var sources = access.Pauses.Select(pause => PlaceSource.At(pause.Source, level)).Distinct(StringComparer.Ordinal).ToList();
-            return new PlaceValues(
-                new(line.Branch, PlaceSource.At(line.Source, level)),
-                new(landing.Rule.Form, PlaceSource.At(landing.Source, level)),
-                new(flow.Workflow, PlaceSource.At(flow.Level, level)),
-                new(landed.Workflow, PlaceSource.At(landed.Level, level)),
-                new(commits.Rule.Mode, PlaceSource.At(commits.Source, level)),
-                opinion is null ? new(null, PlaceSource.Default) : new(opinion.Rule.IsNone ? "none" : string.Join(",", opinion.Rule.Reviewers), PlaceSource.At(opinion.Source, level)),
-                new(handOver.Rule.Mode, PlaceSource.At(handOver.Source, level)),
-                language is null ? new(null, PlaceSource.Default) : new(language.Code, PlaceSource.At(language.Source, level)),
-                new(access.Full ? "full" : access.Today ? "today" : "custom", sources is [var one] ? one : "mixed"));
-        }
+        PlaceValues ValuesOf(string repository, string? workspace, string level) => ValuesAt(config, repository, workspace, level);
 
         var machineWorks = WorksAt(new RolePlace());
         var machineNeeds = NeedsOf(machineWorks, []);
@@ -198,6 +174,37 @@ public static class PlaceProjection
         var page = drivenRows.Where(row => ask.After is null || string.CompareOrdinal(Cursor(row.Workspace!, row.Repository!), ask.After) > 0).Take(limit + 1).ToList();
         var next = page.Count > limit ? Cursor(page[limit - 1].Workspace!, page[limit - 1].Repository!) : null;
         return new PlacesRead(machine, workspaces, [.. page.Take(limit)], next, drivenRows.Count, ask.Fold is { Length: > 0 } fold ? Undriven(config, rows, fold, ask, limit) : null);
+    }
+
+    /// <summary>
+    /// The values a place's head says, each as its execution reader resolves it over <paramref name="config"/> and with where it was set,
+    /// said from <paramref name="level"/>'s page; a workspace's is read with no repository named. A place's plan reads its before and after
+    /// through this (AGENTSPLACE1a2), so the two cannot say another thing.
+    /// </summary>
+    public static PlaceValues ValuesAt(DriverConfig config, string repository, string? workspace, string level)
+    {
+        var line = CanonicalLine.Choose(config, repository, workspace, guess: null);
+        var landing = LandingRules.Choose(config, repository, workspace);
+        var flow = WorkflowSelection.Resolve(config, level == PlaceSource.RepositoryLevel ? repository : null, workspace, task: null);
+        var landed = WorkflowSelection.ResolveLanded(config, level == PlaceSource.RepositoryLevel ? repository : null, workspace);
+        var commits = CommitRules.Resolve(config, repository, workspace);
+        var opinion = WorkPolicies.Opinion(config, repository, workspace);
+        var handOver = WorkPolicies.HandOver(config, repository, workspace);
+        var language = level == PlaceSource.RepositoryLevel
+            ? SessionLanguages.Resolve(config, repository, workspace)
+            : SessionLanguages.OfWorkspace(config, workspace);
+        var access = AccessRules.Resolve(config, repository, workspace);
+        var sources = access.Pauses.Select(pause => PlaceSource.At(pause.Source, level)).Distinct(StringComparer.Ordinal).ToList();
+        return new PlaceValues(
+            new(line.Branch, PlaceSource.At(line.Source, level)),
+            new(landing.Rule.Form, PlaceSource.At(landing.Source, level)),
+            new(flow.Workflow, PlaceSource.At(flow.Level, level)),
+            new(landed.Workflow, PlaceSource.At(landed.Level, level)),
+            new(commits.Rule.Mode, PlaceSource.At(commits.Source, level)),
+            opinion is null ? new(null, PlaceSource.Default) : new(opinion.Rule.IsNone ? "none" : string.Join(",", opinion.Rule.Reviewers), PlaceSource.At(opinion.Source, level)),
+            new(handOver.Rule.Mode, PlaceSource.At(handOver.Source, level)),
+            language is null ? new(null, PlaceSource.Default) : new(language.Code, PlaceSource.At(language.Source, level)),
+            new(access.Full ? "full" : access.Today ? "today" : "custom", sources is [var one] ? one : "mixed"));
     }
 
     private static string Cursor(string workspace, string repository) => workspace + "\u001f" + repository;

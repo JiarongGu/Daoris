@@ -361,6 +361,14 @@ public sealed partial class HelpCoverageTests
     /// TRACE1's <c>daoris-driver trace</c> (D143), a verb of the headless host: exempt, since it reads the records back to an ask
     /// and changes nothing, as <c>driver list</c> is (D110 §4). A screen's door to the same read is a row of its own.
     /// </summary>
+    /// <summary>
+    /// AGENTSPLACE1a2's <c>daoris-driver place … --plan</c>, a verb of the headless host: exempt while it only plans, since a plan changes
+    /// nothing; Ask Daoris's <c>setup</c> kind gains its <c>place</c> door with AGENTSPLACE1k, after the apply exists.
+    /// </summary>
+    private static readonly Exempt PlaceDoor = new(
+        "it plans a place's quick set-up, reads the configuration before and after and changes nothing, so there is nothing to propose; "
+        + "the `setup` kind's `place` door, proposing the plan as a card, waits on its apply (AGENTSPLACE1k).");
+
     private static readonly Exempt TraceDoor = new(
         "it reads from a commit, a session or a quest back to its ask and changes nothing, so there is nothing to propose, as "
         + "`driver list` is exempt (D110 §4); a screen's door to the same read is a row of its own (D143).");
@@ -1312,6 +1320,7 @@ public sealed partial class HelpCoverageTests
             .Append(HelperAskDoor)
             .Append(PartnerAskDoor)
             .Append(TraceDoor)
+            .Append(PlaceDoor)
             .Append(WorkflowRunDoor)
             .Append(WiringDoor)
             .Append(SpaceDoor)
@@ -1709,6 +1718,19 @@ public sealed partial class HelpCoverageTests
         Assert.Null(HelpProposalKinds.Find("trace"));
         Assert.Contains("changes nothing", TraceDoor.Reason);
         Assert.Contains("D143", TraceDoor.Reason);
+    }
+
+    /// <summary>
+    /// AGENTSPLACE1a2: the headless host's <c>place … --plan</c> is exempt from Ask Daoris while its usage spells it and it only plans: a read
+    /// that changes nothing, which the <c>setup</c> kind takes no door for until its apply (AGENTSPLACE1k).
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_place_plan_is_exempt_since_it_changes_nothing()
+    {
+        Assert.Contains("place <repository>… --preset <id> [--with opinion,look,adoption] [--what-it-builds <kind>] [--drive] --plan", DriverCommand.Usage);
+        Assert.DoesNotContain("place", HelpProposalKinds.Find("setup")!.Doors);
+        Assert.Contains("changes nothing", PlaceDoor.Reason);
+        Assert.Contains("AGENTSPLACE1k", PlaceDoor.Reason);
     }
 
     /// <summary>

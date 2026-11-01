@@ -5,6 +5,11 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## AGENTSPLACE1a2 — presets and the plan (2026-11-01)
+
+> **1a2, presets and the plan** (driver, modules): `SetupPresets` beside `WorkflowPresets`; `PLACE_PLAN`; `place --plan`; *What it builds* in the adoption quest's body (`SETUP_PLAN`, `SETUP_PRESS` and their fixture); the released work listed. Proof: a test per preset over fixtures (solo, declares integration, a remote with a plugin, one without refused); nothing written or probed. After 1a, 1c and 1d.
+
+**Outcome** 2026-11-01: `SetupPresets` (`Workflows/Domain`) holds the five deliveries as `land` options, reads a place's land from what its work follows (Current's rule or a version's steps) and matches it, or says its own options; `PlacePlans` (`Setup/PlacePlan.cs`) applies delivery, adoption and general driving to a copy of `driver.json` through the doors' own edits and reads before and after through `PlaceProjection.ValuesAt`, `WorkflowProcesses.Otherwise` and `WorkPolicies.Of`, with every refusal, the lowering, §17.7's reach, the released quests and each declaration's acceptances; `PLACE_PLAN` (Open, by event) and `daoris-driver place … --plan` say it from the same code; `setup --what-it-builds` and `SETUP_PLAN`/`SETUP_PRESS`'s `builds` shape the quest's safe-work step. Detail: D124's note of this date; `PlacePlanTests`, `SetupPresetsTests`, `SetupBuildsTests`, `fixtures/place-plan.json`, `DriverModulePlacePlanTests`. Owed: the apply (1b2), setup-only admission (1b), the page (1j).
 ## LANDNODE1b2 — the git adapter (2026-11-01)
 
 > **1b2, the git adapter** (driver; `docs/2026-11-01-land-node-design.md` §3 and §8 row 4): `TreeLands` from the explicit intent; `RefTransaction` under GITLOCK and LANDRACE1. Proof: moved tips, collisions, squash, containment, and a ref written before its record across a crash. After b.

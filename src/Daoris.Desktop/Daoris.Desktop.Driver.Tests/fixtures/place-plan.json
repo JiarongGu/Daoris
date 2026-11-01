@@ -1,0 +1,99 @@
+{
+  "about": "AGENTSPLACE1a2 (the Agents-place design §4): `daoris-driver place … --plan`'s words, case by case, over PlacePlanTests' stand-in world (solo on its own, engine declaring integration, web on github.com with a landing plugin, docs on gitlab.com with none, atlas not adopted with two queued quests). Each case is the verb's words, its exit code and the lines it prints, PLACE_PLAN's plan said in English from the same code.",
+  "cases": [
+    {
+      "name": "a repository on its own, merged after you accept, with general driving",
+      "args": ["solo", "--preset", "merge-after-accept", "--drive", "--plan"],
+      "exit": 0,
+      "lines": [
+        "place: `solo` — Merge after you accept; general driving",
+        "  `solo`: now Not driven · after Merge after you accept · suggested Merge after you accept",
+        "changes, each said once:",
+        "  `solo`: a tree per session, off → on",
+        "  `solo`: general driving, off → on",
+        "--plan: nothing was written, and nothing was asked."
+      ]
+    },
+    {
+      "name": "two repositories, a pull request refused where no landing plugin serves the remote",
+      "args": ["web", "docs", "--preset", "pull-request", "--plan"],
+      "exit": 1,
+      "lines": [
+        "place: `web`, `docs` — A pull request",
+        "  `web`: now Merge after you accept · after A pull request · suggested A pull request",
+        "  `docs`: now Merge after you accept · after Merge after you accept · suggested Merge after you accept",
+        "changes, each said once:",
+        "  `web`: how its work lands, merged after you accept → on `feature/{quest}-{slug}`, a pull request by `example.github-pull-request`",
+        "refused:",
+        "  - `docs`'s remote is on `gitlab.com`, and no landing plugin here opens a pull request there: a pull request is its platform's plugin's to open. Add one on Plugins, or choose *A branch to push*.",
+        "--plan: nothing was written, and nothing was asked."
+      ]
+    },
+    {
+      "name": "a repository declaring integration, integrated, with its set-up asked for a library",
+      "args": ["engine", "--preset", "integrated", "--with", "adoption", "--what-it-builds", "library", "--plan"],
+      "exit": 0,
+      "lines": [
+        "place: `engine` — Integrated into the line; adoption, for a library or package",
+        "  `engine`: now Merge after you accept · after Integrated into the line · suggested Integrated into the line",
+        "changes, each said once:",
+        "  `engine`: how its work lands, merged after you accept → on `feature/{quest}-{slug}`, integrated into the line, requested by you",
+        "  `engine`: a set-up asked of its own session, not asked → asked, for a library or package",
+        "declarations:",
+        "  `engine`: `daoris.gates.json` at `main` `0123456789ab`, blob `fedcba987654`",
+        "    Accept for integration: the line integrates by this declaration's `integration`, and a changed declaration waits for you while integration goes on under the one last accepted. It is unaccepted now.",
+        "      { \"gates\": [ { \"name\": \"verify\", \"run\": \"npm run verify\" } ], \"integration\": {} }",
+        "--plan: nothing was written, and nothing was asked."
+      ]
+    },
+    {
+      "name": "adoption without driving, refused by the press's own rule",
+      "args": ["atlas", "--preset", "merge-after-accept", "--with", "adoption", "--plan"],
+      "exit": 1,
+      "lines": [
+        "place: `atlas` — Merge after you accept; adoption",
+        "  `atlas`: now Not driven · after Not driven · suggested Merge after you accept, with adoption",
+        "changes, each said once:",
+        "  `atlas`: a tree per session, off → on",
+        "  `atlas`: a set-up asked of its own session, not asked → asked",
+        "refused:",
+        "  - `atlas` is not driven here: it is not opted into driving on this machine, and only a driven session carries a set-up. Drive it under Repositories → the repository's page → Setup → Driving, or with `daoris driver drive atlas`.",
+        "--plan: nothing was written, and nothing was asked."
+      ]
+    },
+    {
+      "name": "adoption with general driving, the queued work it releases listed by title",
+      "args": ["atlas", "--preset", "merge-after-accept", "--with", "adoption", "--drive", "--plan"],
+      "exit": 0,
+      "lines": [
+        "place: `atlas` — Merge after you accept; adoption; general driving",
+        "  `atlas`: now Not driven · after Merge after you accept · suggested Merge after you accept, with adoption",
+        "changes, each said once:",
+        "  `atlas`: a tree per session, off → on",
+        "  `atlas`: general driving, off → on",
+        "  `atlas`: a set-up asked of its own session, not asked → asked",
+        "released when driving starts:",
+        "  `atlas`: #q1 Fix the map; #q2 Draw the coast",
+        "--plan: nothing was written, and nothing was asked."
+      ]
+    },
+    {
+      "name": "no --plan is the usage",
+      "args": ["engine", "--preset", "merge-after-accept"],
+      "exit": 2,
+      "lines": [
+        "place: `--plan` is required: this build plans a place's set-up, and applying it is the window's, still to come.",
+        "usage: daoris-driver place <repository>… --preset <id> [--with opinion,look,adoption] [--what-it-builds <kind>] [--drive] --plan"
+      ]
+    },
+    {
+      "name": "a rider --with does not take is the usage",
+      "args": ["engine", "--preset", "merge-after-accept", "--with", "opinions", "--plan"],
+      "exit": 2,
+      "lines": [
+        "place: `opinions` is not something `--with` takes — `opinion`, `look` or `adoption`.",
+        "usage: daoris-driver place <repository>… --preset <id> [--with opinion,look,adoption] [--what-it-builds <kind>] [--drive] --plan"
+      ]
+    }
+  ]
+}
