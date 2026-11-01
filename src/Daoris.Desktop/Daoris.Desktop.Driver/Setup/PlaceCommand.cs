@@ -198,7 +198,7 @@ public static class PlaceCommand
     {
         var ask = plan.Asked;
         var lines = new List<string>();
-        var delivery = SetupPresets.Of(ask.Preset)?.Name ?? $"`{ask.Preset}`";
+        var delivery = ask.Preset == SetupPresets.Keep ? SetupPresets.KeepName : SetupPresets.Of(ask.Preset)?.Name ?? $"`{ask.Preset}`";
         var riders = new[] { ask.Opinion ? "a second opinion" : null, ask.Look ? "your look" : null }.OfType<string>().ToList();
         lines.Add($"place: {Names(ask.Repositories)} — {delivery}{(riders.Count == 0 ? "" : $", with {string.Join(" and ", riders)}")}"
             + (ask.Adoption ? $"; adoption{(ask.Builds is { } builds && SetupBuilds.Is(builds) ? $", for {SetupBuilds.Named(builds)}" : "")}" : "")
@@ -260,7 +260,7 @@ public static class PlaceCommand
 
     private static string Names(IEnumerable<string> names) => string.Join(", ", names.Select(name => $"`{name}`"));
 
-    private static string Presets() => string.Join(", ", SetupPresets.Table.Select(each => $"`{each.Id}`"));
+    private static string Presets() => string.Join(", ", SetupPresets.Asks.Select(each => $"`{each}`"));
 }
 
 /// <summary>What <c>place</c>'s words ask: the plan's ask, whether to apply it, and the acceptances chosen for an apply.</summary>
