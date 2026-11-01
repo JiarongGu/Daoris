@@ -123,7 +123,6 @@ Co-working (D167, `docs/2026-10-14-co-working-design.md`; the owner's two tasks 
 
 ## Economy, setup and recall
 
-- [ ] **BRAINSTORMSTART1 — a brainstorm's pass starts where the machine's sessions do, and says why where it cannot** (driver; BRAINSTORM1c, D176). The install's brainstorm `1f2a4e0e` (2026-11-01, `--agents claude,codex`) ended `no-agent`: both passes `unavailable`, code `not-started`, `account: null`, while the same agents' sessions ran on that machine that hour. `TurnAsync` (`Loop/DriverBrainstorms.cs:797-808`) turns a `DriverException` from the adapter's resolve or the voice's walk into `not-started` and keeps its sentence only in the turn's words, which neither the pass record nor the log carries. Contract: the pass records the walk's code and sentence; find and fix why the walk found no account. Proof: a test reproducing the install's request; the pass record's reason; a brainstorm on the install that answers.
 knowledge review (D129). WSSETUP14b–e precede owner f/13; WSSETUP7 needs LAYOUT8.
 
 - [ ] **MODELROLE1c4 — row c's installed proof** (the parent with the install; after the install carries MODELROLE1c3). On the install, a Build whose first choice names a model one account does not offer runs it on the other account, and with neither runs its second and says so on the head and in the note; a pipe door's refusal on a silent turn passes that account at the next start, no strike. The branch proof is MODELROLE1c3's (`ModelRefusalTickTests`, the archive's MODELROLE1c3). Proof: the install's records and shots.

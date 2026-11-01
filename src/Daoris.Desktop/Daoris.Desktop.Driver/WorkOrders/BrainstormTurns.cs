@@ -27,7 +27,8 @@ public sealed record BrainstormTurn(
 
 /// <summary>How a turn went: whether it ran, the account it ran as (this machine only), why it did not run, and the look's line.</summary>
 /// <param name="Code">Why it did not run, or how it failed: a fixed code; null for a turn that ran and ended.</param>
-public sealed record BrainstormTurnRun(bool Ran, string? Account, string? Code, string Line);
+/// <param name="Why">The walk's sentence for a turn it did not start, kept on the pass record; no path and no account name.</param>
+public sealed record BrainstormTurnRun(bool Ran, string? Account, string? Code, string Line, string? Why = null);
 
 /// <summary>
 /// The variables a brainstorm turn's spawn carries (BRAINSTORM1a): the brainstorm, the turn, and the file its result tool writes,

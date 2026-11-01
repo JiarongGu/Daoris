@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## BRAINSTORMSTART1 — a brainstorm's pass starts where the machine's sessions do, and says why where it cannot (2026-11-01)
+
+> **BRAINSTORMSTART1** (driver; BRAINSTORM1c, D176). The install's brainstorm `1f2a4e0e` (`--agents claude,codex`) ended `no-agent`: both passes `unavailable`, code `not-started`, `account: null`, while the same agents' sessions ran on that machine that hour. `TurnAsync` turned a `DriverException` from the adapter's resolve or the voice's walk into `not-started` and kept its sentence only in the turn's words. Contract: the pass records the walk's code and sentence; find and fix why the walk found no account.
+
+**Outcome** 2026-11-01: the walk never reached an account: `claude` and `codex` are no adapter's id (the doors are `claude-code`, `claude-code-acp`, `codex-acp`), and an adapter is never guessed. The pass record now keeps the sentence (`why`, added; an older record reads without it), the machine log writes `brainstorm.pass` once, and `brainstorm show` and the document's pass list say it. Cause and proof in `docs/FIX-LOG.md`; `BrainstormStartTests`.
+
 ## LANDNODE1b — the delivery record and its intent (2026-11-01)
 
 > **1b, the delivery record and its intent** (driver, store; `docs/2026-11-01-land-node-design.md` §3, §4 and §8 row 3): the `deliveries` table under the raised writer stamp, the delivery key, the frozen intent with its authorization, and the write-ahead phase entries; the rollback refused while one is unresolved. Proof: concurrent starts make one delivery; an older writer's store write refused; a rollback refused with one open. After a.
