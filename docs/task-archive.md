@@ -94,6 +94,10 @@ Outcome: `NodeGraphHomes.Landing` draws a `land` with id `handed` (method merge,
 
 ---
 
+## AGENTSPLACE1f — a place's Sessions, and the Setup tab's going (2026-11-01)
+
+> **AGENTSPLACE1f** (web; row 12 of AGENTSPLACE1). A place's page in the Setup mode holds *Sessions*, today's rows moved whole from a repository's Setup and a workspace's (access, heavy gates and checks, language, helpers, hand-over, standing answer, reach, rules), each with *Set for this repository* or *Clear*; a repository's page also holds its Driving and *Line and landing* (under Workflow) until the head and 1h build them. Lit by `daoris.agents.setup`, Repositories' Setup tab goes and every door into it opens the place's page through `placeOpening`, the one redirect in `apply`; dark, nothing moves. Proof: `PlaceSessions.test.tsx`, `opener.test.ts` (the door census), `ProjectPage.test.tsx`, `WorkspaceSetup.test.tsx`; `HelpCoverageTests` held by handing the Sessions in from the application. Not done: the head's matched preset and *Set up…* (1j), the Setup flag's lighting, stories at 80, 39 and 25rem. Detail: D150's note.
+
 ## AGENTSPLACE1g — All roles and the role editor (2026-11-01)
 
 > **AGENTSPLACE1g** (web; row 10 of AGENTSPLACE1). *All roles* in Working roles (the Setup mode's page waits for 1e): scope filter, machine-wide roles set apart, others read-only with *Open at \<place\>*; the editor asks for no id and fixes the place, picks agent, model and effort from the agent's offers with *other…*, and keeps *Off*, *Clear staffing* and *Restore role defaults* apart; *Remove* asks inline naming the fallback; the page's state is held by the place so a door out keeps the selection and scope. Proof: `Roles.test.tsx`, `RolesStructure.test.tsx`, `RolesView.test.tsx`; stories `AllRoles*` and `RoleEditor*`.
