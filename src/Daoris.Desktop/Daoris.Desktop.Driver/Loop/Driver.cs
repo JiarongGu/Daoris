@@ -1617,6 +1617,25 @@ public sealed class Driver(
             [.. held.SelectMany(each => each.Came?.SignedOut?.Accounts ?? []).Distinct(StringComparer.OrdinalIgnoreCase)];
     }
 
+    /// <summary>Whether this loop settled the deliveries a stopped run left unresolved (LANDNODE1c3), once, at its first landing look.</summary>
+    private bool _deliveriesSettled;
+
+    /// <summary>
+    /// A restart settles by phase, before any new start (LANDNODE1c3; the land node design §3): every delivery left unresolved, once, by the
+    /// lease's holder, its plugin phases through the landing's plugins. What is held for the person, or could not be read, is said; a
+    /// delivery settled or going on says nothing, since its unit's next landing goes on from it.
+    /// </summary>
+    private async Task SettleDeliveriesAsync(IWorkplacePluginWire plugins, List<string> events, CancellationToken ct)
+    {
+        if (_deliveriesSettled) return;
+        _deliveriesSettled = true;
+        var store = new DeliveryStore(home);
+        foreach (var settled in await DeliveryReconciler.Of(store, home, plugins, DeliveryReconciler.Checkouts(home)).StartAsync(ct).ConfigureAwait(false))
+        {
+            if (settled.Standing is DeliveryStandings.Unknown or DeliveryStandings.Held) events.Add(Lines.Retry("landing", $"landing  {settled.Said}"));
+        }
+    }
+
     /// <summary>
     /// The sessions due to land automatically (LAND2b, D145 point 2, design §2): chosen in this look, landed beside it. One pass
     /// at a time, since a plugin's two minutes may outlast a look; what it says joins a later look's report. A due list or a
@@ -1655,10 +1674,12 @@ public sealed class Driver(
         {
             // The rule's plugin says its lines on the console under its name, as at a press (D100), and what the landing did
             // with it is logged where the loop's hooks are (PLUGUI1d).
-            var lander = new AutoLander(
-                home, new ServiceAutoLandingWorld(service),
-                new SessionTrees(home, new LandingPlugins(home, say: (plugin, line) => output?.Append($"plugin:{plugin}", line), pluginLog: Context.Hooks?.Log)),
-                Context.Events, service.LandingSaid) { Look = Lines, PassAsked = PassAsked };
+            var plugins = new LandingPlugins(home, say: (plugin, line) => output?.Append($"plugin:{plugin}", line), pluginLog: Context.Hooks?.Log);
+            await SettleDeliveriesAsync(plugins, events, ct).ConfigureAwait(false);
+            var lander = new AutoLander(home, new ServiceAutoLandingWorld(service), new SessionTrees(home, plugins), Context.Events, service.LandingSaid)
+            {
+                Look = Lines, PassAsked = PassAsked,
+            };
             if (Context.Beside)
             {
                 SelectBeside(lander, ct);

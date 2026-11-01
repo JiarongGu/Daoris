@@ -307,9 +307,10 @@ internal sealed class TreeLands(
         // GITLOCK1: no hold here. The checkout's checks above are this press's early words; the promotion's effect holds the checkout alone
         // and reads them again before it moves it, and a hold taken here would refuse that one in this very process.
         if (delivering is not null && await delivering.BeginMergeAsync(canonical, frozen).ConfigureAwait(false) is { } unbegun) return new(false, $"Nothing was merged: {unbegun}.");
+        // LANDNODE1c3: Current's delivery is admitted by its rule and says today's message, as the press always was.
         var (carried, refused) = await IntegrationPresses.MergeAsync(
-            context.Home, context.Config(), root, repository, workspace, canonical, branch, frozen, ct, beside, delivered: delivering is not null,
-            message: delivering?.Intent.Message).ConfigureAwait(false);
+            context.Home, context.Config(), root, repository, workspace, canonical, branch, frozen, ct, beside, delivered: delivering is { Live: false },
+            message: delivering?.Template).ConfigureAwait(false);
         if (delivering is not null) await delivering.MergedAsync(root, canonical, frozen, carried ? null : refused, ct).ConfigureAwait(false);
         if (!carried) return new(false, refused!);
 
@@ -430,38 +431,16 @@ internal sealed class TreeLands(
 
         // LANDNODE1b3: a delivery is read under the tree's hold and held in this process while it lands, so a press and a pass of one delivery
         // land it once and a restart's settlement never writes beside it; one delivered while this waited is said so, and nothing more lands.
-        using var performing = delivery is null ? null : DeliveryRuns.Hold(context.Home, delivery.Claim.Key);
-        TreeDelivering? delivering = null;
+        // LANDNODE1c3: and one Current's door writes below, once the landing is judged, is entered the same way and closed here.
+        using var entry = new DeliveryEntry();
         if (delivery is not null)
         {
-            if (performing is null)
-            {
-                return new(false, $"Nothing was landed: its delivery {delivery.Claim.Key[..12]} is being landed or settled here now; accept again once that ends.")
-                {
-                    Refusal = AutoLandingCode.Refused,
-                };
-            }
-
-            if (delivery.Store.Delivery(delivery.Claim.Key) is { Settled: DeliverySettlements.Delivered } delivered) return TreeDelivering.Meanwhile(delivered);
-            var (read, unread) = TreeDelivering.Read(delivery, context.Home, repository);
-            if (read is null) return new(false, $"Nothing was landed: {unread}.") { Refusal = AutoLandingCode.Refused };
-            (delivering, acceptedBy) = (read, read.Accepted);
+            if (Enter(entry, delivery, repository) is { } notEntered) return notEntered;
+            acceptedBy = entry.Delivering!.Accepted;
         }
 
-        // LANDNODE1h: standing automatic authority is judged again before the first effect, as the rule's switch is read again below.
-        if (delivering?.Unauthorized() is { } revoked)
-        {
-            return new(false, $"Nothing was landed: {revoked}; your Accept lands it.") { Refusal = AutoLandingCode.Off };
-        }
-
-        // LANDNODE1b2: the preparation written ahead of all the landing judges and makes, so each refusal from here withdraws it in its words;
-        // LANDNODE1b3: one done before a restart is not written again, and the landing goes on from its next phase.
-        if (delivering is { Next: DeliveryPhases.Prepared } && delivering.Begin(DeliveryPhases.Prepared, delivering.Preparing) is { } notBegun)
-        {
-            return new(false, $"Nothing was landed: {notBegun}.") { Refusal = AutoLandingCode.Refused };
-        }
-
-        TreeLanding Closed(TreeLanding landing) => delivering?.Close(landing) ?? landing;
+        var delivering = entry.Delivering;
+        TreeLanding Closed(TreeLanding landing) => entry.Delivering?.Close(landing) ?? landing;
         var pinned = delivering?.Intent.Tip ?? gate?.Tip;
         if (hold.Before is { } before && await JudgedAsync(path, pinned, ct).ConfigureAwait(false) is { } asked
             && string.Equals(asked, before.Tip, StringComparison.OrdinalIgnoreCase))
@@ -491,7 +470,7 @@ internal sealed class TreeLands(
         using (RepositoryHolds.Hold(context.Home, repository))
         {
             landed = Closed(await LandingAsync(path, subject, ct, inUse, acceptedBy, gate, joins, fetched, hold, beforePush,
-                hold.Waited ? null : uncommitted, beside, delivering).ConfigureAwait(false));
+                hold.Waited ? null : uncommitted, beside, entry).ConfigureAwait(false));
         }
 
         // FABRIC-END3: Accept is Daoris's own ref move; its repository is judged at once by the ref watch, with its echo (§B4).
@@ -531,6 +510,44 @@ internal sealed class TreeLands(
     /// The commit a landing that waited would land (LANDRACE1's review): the tip its door judged, where the door pinned one, else the
     /// tree's head as it stands. Read only after a wait; null where git cannot say, which lands nothing as `already`.
     /// </summary>
+    /// <summary>
+    /// <paramref name="delivery"/> entered for its landing into <paramref name="entry"/> (LANDNODE1b2, 1b3, 1h): held in this process while it
+    /// lands, read from its store, its standing automatic authority judged again, and its preparation written ahead, so each refusal after
+    /// withdraws it in its words; one done before a restart is not written again. Else the landing's refusal, and nothing entered.
+    /// </summary>
+    private TreeLanding? Enter(DeliveryEntry entry, TreeDelivery delivery, string repository)
+    {
+        var performing = DeliveryRuns.Hold(context.Home, delivery.Claim.Key);
+        if (performing is null)
+        {
+            return new(false, $"Nothing was landed: its delivery {delivery.Claim.Key[..12]} is being landed or settled here now; accept again once that ends.")
+            {
+                Refusal = AutoLandingCode.Refused,
+            };
+        }
+
+        TreeDelivering? read = null;
+        var refused = delivery.Store.Delivery(delivery.Claim.Key) is { Settled: DeliverySettlements.Delivered } delivered ? TreeDelivering.Meanwhile(delivered) : null;
+        if (refused is null)
+        {
+            (read, var unread) = TreeDelivering.Read(delivery, context.Home, repository);
+            refused = read is null ? new(false, $"Nothing was landed: {unread}.") { Refusal = AutoLandingCode.Refused }
+                : read.Unauthorized() is { } revoked ? new(false, $"Nothing was landed: {revoked}; your Accept lands it.") { Refusal = AutoLandingCode.Off }
+                : read is { Next: DeliveryPhases.Prepared } && read.Begin(DeliveryPhases.Prepared, read.Preparing) is { } notBegun
+                    ? new(false, $"Nothing was landed: {notBegun}.") { Refusal = AutoLandingCode.Refused }
+                : null;
+        }
+
+        if (refused is not null)
+        {
+            performing.Dispose();
+            return refused;
+        }
+
+        (entry.Delivering, entry.Performing) = (read, performing);
+        return null;
+    }
+
     private static async Task<string?> JudgedAsync(string path, string? pinned, CancellationToken ct)
     {
         if (pinned is not null) return pinned;
@@ -563,13 +580,17 @@ internal sealed class TreeLands(
     /// <param name="hold">The tree's hold (LANDRACE1), which keeps what this landing came to for a door waiting behind it.</param>
     /// <param name="beforePush">The door's judgement just before its plugin is told (FABRIC-CLOSE1h2), as <see cref="LandAsync"/> takes it.</param>
     /// <param name="uncommitted">The tree's uncommitted paths as the door read them, as <see cref="LandAsync"/> takes them.</param>
-    /// <param name="delivering">The delivery it performs, its preparation written ahead (LANDNODE1b2); null lands by the rule.</param>
+    /// <param name="fence">
+    /// The delivery it performs, its preparation written ahead (LANDNODE1b2); empty under Current, whose door writes one into it here once the
+    /// landing is judged (LANDNODE1c3), and null lands by the rule.
+    /// </param>
     private async Task<TreeLanding> LandingAsync(
         string path, LandingSubject subject, CancellationToken ct, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse,
         string acceptedBy, IWorkplaceGate? gate, bool joins, bool fetched, LandingHold? hold,
         Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null, int? uncommitted = null,
-        Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null, TreeDelivering? delivering = null)
+        Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null, DeliveryEntry? fence = null)
     {
+        var delivering = fence?.Delivering;
         // One look (UIFREEZE1, PROC1d-i): the landing and its tidy ask git's guess at the line once.
         using var look = context.OneLook();
         // LANDGIT1: and what a commit's id answers, once, in the planning up to the branch made (GitFacts); closed before the tidy.
@@ -614,10 +635,10 @@ internal sealed class TreeLands(
         // LANDNODE1b2: a delivery lands as its intent says, and keeps of the rule only what setup keeps.
         if (delivering is not null) landing = delivering.Over(landing);
         // 🔴 Read again here, not only where the look chose it (LAND2b): a rule changed between the two must never let a landing
-        // at done merge into the person's checkout with no press (D145 point 1, D51 rule 6), nor land under a switch now off. The switch
-        // is the effective rule's (AUTONOMY1c2): the access setup's `landing: rule` turns a branch rule's on, and never a merge's. A
-        // delivery's authority is its authorization's, judged at its start.
-        if (delivering is null && acceptedBy == AcceptedBy.Auto && landing.Rule is not { Form: LandingForm.Branch, AutoAccept: true })
+        // at done land with no press, nor under a switch now off. The switch is the effective rule's (AUTONOMY1c2): the access setup's
+        // `landing: rule` turns a branch rule's on, and never a merge's; a rule that says so itself is Current's graph with no review before its
+        // `land`, a merge's too, since the workflow decides (D145's note of 2026-11-01). A delivery's authority is its authorization's.
+        if (delivering is null && acceptedBy == AcceptedBy.Auto && landing.Rule is not { AutoAccept: true })
         {
             return new(false, "its repository's rule no longer accepts automatically, so nothing was landed: your Accept lands it.")
             {
@@ -672,11 +693,34 @@ internal sealed class TreeLands(
                 { Refusal = AutoLandingCode.Nothing, LeftOut = replaying.Held.LeftOut }, notFetched);
         }
 
+        // LANDNODE1c3 (the land node design §3, §4): under Current the door writes the delivery here, the landing judged and nothing of it made,
+        // and lands through it; its intent is read from the rule as it stood a moment ago. Null where it lands as before, a refusal in words.
+        async Task<TreeLanding?> DeliverAsync(string? name)
+        {
+            if (fence is null || delivering is not null || named is not null || here is null) return null;
+            var root = Path.GetDirectoryName(here.CommonDir.Trim())!;
+            var tree = here.Branch.Trim();
+            var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
+            var tip = pinned ?? TreeTips.Read(full) ?? await CommitOfAsync(root, $"refs/heads/{tree}", ct).ConfigureAwait(false);
+            if (line is null || tip is null || tree is "" or "HEAD") return null;
+            var (delivery, refusal) = await CurrentDeliveries.StartAsync(
+                context.Home, context.Plugins, landing, repository, workspace, root, subject, tip, line, tree, name, acceptedBy, hold?.Waited == true,
+                () => LandingRules.Effective(context.Config(), repository, workspace).Rule is { AutoAccept: true } ? null : "its repository's rule no longer accepts automatically",
+                ct).ConfigureAwait(false);
+            if (refusal is not null || delivery is null) return refusal;
+            if (Enter(fence, delivery, repository) is { } notEntered) return notEntered;
+            delivering = fence.Delivering!;
+            landing = delivering.Over(landing);
+            pinned = delivering.Intent.Tip;
+            return null;
+        }
+
         // What a replay made, to move the session's tree to (point 7): a merge's here, a branch's from what it made.
         LandReplay? replayed = null;
         var followed = false;
         if (!branchForm)
         {
+            if (await DeliverAsync(null).ConfigureAwait(false) is { } undelivered) return Fetched(undelivered, notFetched);
             // FABRIC-CUTOVER1d (the cutover design §4): pinned, as a graph run's landing is to the commit its `handed` is bound to, the merge lands
             // that commit or nothing, as a pinned branch landing does: the session's branch must stand there before anything is replayed or
             // merged, and the merge takes the commit itself, so one made after the judgement never lands unseen.
@@ -701,10 +745,16 @@ internal sealed class TreeLands(
         {
             // A squash reads the work's subject whatever the pattern reads (ACCEPTFOOT2b): its commit is named by it too.
             var worked = await ForWorkAsync(full, workspace, repository, landing.Rule, subject, ct, always: landing.Rule.Squash).ConfigureAwait(false);
+            var name = delivering?.Intent.Branch ?? BranchNamed(worked, landing.Rule, repository);
+            // TREEFOLLOW1: a tree on a branch of its own lands as that branch, which its delivery names; replayed in place it moves outside a
+            // delivery's ref transaction, so it lands as before.
+            var own = here?.Branch.Trim() is { } onBranch && onBranch is not ("" or "HEAD") && !onBranch.StartsWith(TreeFollows.SessionPrefix, StringComparison.Ordinal)
+                ? onBranch : null;
+            if ((own is null || replaying is null) && await DeliverAsync(own ?? name).ConfigureAwait(false) is { } undelivered) return Fetched(undelivered, notFetched);
             var branched = await BranchAsync(full, workspace, repository,
-                delivering?.Intent.Branch ?? BranchNamed(worked, landing.Rule, repository),
+                delivering?.Intent.Branch ?? name,
                 handedOn: plugin is not null, ct,
-                entered: delivering is null && subject.EnteredName is not null, squash: landing.Rule.Squash ? worked : null, sync: replaying,
+                entered: delivering is not { Live: false } && subject.EnteredName is not null, squash: landing.Rule.Squash ? worked : null, sync: replaying,
                 join: joins ? sync : null, pinned: pinned, uncommitted: uncommitted, here: here, delivering: delivering).ConfigureAwait(false);
             landed = Fetched(branched.Landing, notFetched);
             replayed = landed.Landed ? branched.Replay : null;
@@ -1254,8 +1304,8 @@ internal sealed class TreeLands(
             }
 
             var squashing = replayed?.Landed ?? commits;
-            // LANDNODE1f: a delivery's message, frozen in its intent, is the commit's opening.
-            var said = delivering?.Intent.Message;
+            // LANDNODE1f: a delivery's message, frozen in its intent, is the commit's opening; under Current none is named (LANDNODE1c3).
+            var said = delivering?.Template;
             var (made, why) = await TreeSquashes.SquashAsync(root, tip, mergeBase.Trim(), SquashMessage.Of(squash.SquashTitle, squashing, squash.Session, said), ct)
                 .ConfigureAwait(false);
             if (made is null) return new TreeLanding(false, $"git would not make the squashed commit for `{name}`: {why} Nothing was landed.");

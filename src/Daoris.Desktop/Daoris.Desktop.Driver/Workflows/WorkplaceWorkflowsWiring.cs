@@ -27,6 +27,14 @@ internal sealed class WorkplaceWorkflowsOperations : IWorkplaceWorkflows, IWorkp
 
     public (IReadOnlyList<string> Line, bool Live) ChatPressOf(string session, string recordsJson) => ChatRuns.PressOf(session, recordsJson);
 
+    public (string Method, string Graph) CurrentLand(LandingRule rule)
+    {
+        var graph = NodeGraphHomes.Landing(rule);
+        var land = graph.Nodes.First(node => node.Kind == NodeKinds.Land);
+        var method = land.Options.TryGetValue("method", out var written) ? System.Text.Json.JsonSerializer.Deserialize<string>(written) : null;
+        return (method ?? LandNodes.Merge, NodeGraphs.Digest(graph));
+    }
+
     // The world is the review's IOpinionWorld, which every world the doors and the look hand the gate is (the review's IAutoLandingWorld
     // among them): the second opinion reads its opinions through it.
     public async Task<IWorkplaceGate> GateAsync(

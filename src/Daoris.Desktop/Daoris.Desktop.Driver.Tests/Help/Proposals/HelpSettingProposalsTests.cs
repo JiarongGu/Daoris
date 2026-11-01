@@ -700,15 +700,17 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
 
     /// <summary>A repository's own rule saying off out loud replaces the workspace's switch; a merge and both at once are refused.</summary>
     [Fact]
-    public void A_landing_that_waits_for_the_press_is_said_and_a_merge_that_accepts_automatically_is_refused()
+    public void A_landing_that_waits_for_the_press_is_said_and_a_merge_that_accepts_automatically_is_planned()
     {
         var byHand = HelpProposals.Plan(Setting("landing", "engine", null, "branch feature/{quest}-{slug} --no-auto-accept"), DriverConfig.Empty, Facts);
         Assert.Null(byHand.Refusal);
         Assert.Contains("waits for your Accept", byHand.Describe);
         Assert.False(byHand.Apply!(DriverConfig.Empty).Landings["engine"].AutoAccept);
 
-        Assert.Contains("only a branch rule accepts automatically",
-            HelpProposals.Plan(Setting("landing", "engine", null, "merge --auto-accept"), DriverConfig.Empty, Facts).Refusal);
+        // LANDNODE1c3: the workflow decides (D145's note of 2026-11-01), so a merge's switch is the rule's to hold too.
+        var merge = HelpProposals.Plan(Setting("landing", "engine", null, "merge --auto-accept"), DriverConfig.Empty, Facts);
+        Assert.Null(merge.Refusal);
+        Assert.True(merge.Apply!(DriverConfig.Empty).Landings["engine"].AutoAccept);
         Assert.Contains("`--auto-accept` or `--no-auto-accept`",
             HelpProposals.Plan(Setting("landing", "engine", null, "branch feature/{quest} --auto-accept --no-auto-accept"), DriverConfig.Empty, Facts).Refusal);
     }

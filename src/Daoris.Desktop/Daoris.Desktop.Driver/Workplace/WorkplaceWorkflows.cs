@@ -30,6 +30,9 @@ internal interface IWorkplaceWorkflows
 
     /// <summary>The press's view of a chat run's record: its line's ids, oldest first, and whether it is live (see <c>ChatRuns.PressOf</c>).</summary>
     (IReadOnlyList<string> Line, bool Live) ChatPressOf(string session, string recordsJson);
+
+    /// <summary>Current's landing graph for <paramref name="rule"/>: the method its <c>land</c> names, and the graph's digest (see <c>NodeGraphHomes.Landing</c>).</summary>
+    (string Method, string Graph) CurrentLand(LandingRule rule);
 }
 
 internal static class WorkplaceWorkflows

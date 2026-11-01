@@ -76,6 +76,15 @@ public sealed class DeliveryReconciler(DeliveryStore store, string home, Func<De
     /// <summary>The plugin frame's settlement of a delivery's plugin phases (row 1e), told the delivery and this run's claim; null leaves them.</summary>
     public Func<DeliveryRecord, DeliveryClaim, CancellationToken, Task<DeliveryReconciled>>? Plugin { get; init; }
 
+    /// <summary>The reconciler production builds (LANDNODE1c3): its plugin phases settled through <paramref name="wire"/>'s frame.</summary>
+    public static DeliveryReconciler Of(DeliveryStore store, string home, IWorkplacePluginWire wire, Func<DeliveryRecord, string?> checkout) =>
+        new(store, home, checkout) { Plugin = TreeDelivering.PluginSettlement(store, home, wire, checkout) };
+
+    /// <summary>A delivery's checkout among those the registry last kept for <paramref name="home"/> (<see cref="GitFolders"/>), or null.</summary>
+    public static Func<DeliveryRecord, string?> Checkouts(string home) => record =>
+        GitFolders.Read(home).Where(each => string.Equals(each.Repository, record.Intent.Repository, StringComparison.OrdinalIgnoreCase))
+            .Select(each => each.Root).FirstOrDefault(Directory.Exists);
+
     /// <summary>Every unresolved delivery, oldest first, each settled by phase: the driver's start, and a look before any new start.</summary>
     public async Task<IReadOnlyList<DeliveryReconciled>> StartAsync(CancellationToken ct)
     {

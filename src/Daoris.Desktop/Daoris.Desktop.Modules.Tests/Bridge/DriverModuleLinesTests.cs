@@ -138,10 +138,10 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
 
     /// <summary>
     /// LAND2a (D145): *Accept automatically* rides the rule as the tidy does — written only when on, read back for the
-    /// switch, and a merge carrying it refused in the driver's words with nothing written.
+    /// switch, a merge's as a branch's, since the workflow decides (LANDNODE1c3, D145's note of 2026-11-01).
     /// </summary>
     [Fact]
-    public async Task An_automatic_acceptance_rides_the_rule_and_a_merge_with_it_is_refused()
+    public async Task An_automatic_acceptance_rides_the_rule_a_merge_s_as_a_branch_s()
     {
         var state = await AnswerAsync(Module(), "SET_LANDING",
             new { workspace = "aurora", form = "branch", pattern = "feature/{quest}-{slug}", autoAccept = true });
@@ -149,9 +149,8 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
         Assert.True(DriverConfig.Load(DriverConfigPath).WorkspaceLandings["aurora"].AutoAccept);
         Assert.True(state.GetProperty("workspaceLandings")[0].GetProperty("autoAccept").GetBoolean());
 
-        var merge = await RefusalAsync(Module(), "SET_LANDING", new { repository = "engine", form = "merge", autoAccept = true });
-        Assert.Contains("only a branch rule accepts automatically", merge);
-        Assert.False(DriverConfig.Load(DriverConfigPath).Landings.ContainsKey("engine"));
+        await AnswerAsync(Module(), "SET_LANDING", new { repository = "engine", form = "merge", autoAccept = true });
+        Assert.True(DriverConfig.Load(DriverConfigPath).Landings["engine"].AutoAccept);
     }
 
     /// <summary>

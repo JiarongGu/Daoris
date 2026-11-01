@@ -232,9 +232,12 @@ public sealed class LandGitCountTests : IDisposable
     // GITTXN1: a delete of the landing's branch asks first whether any name the ref transaction holds is a symbolic ref (`for-each-ref
     // --format=%(refname)%09%(symref)`), one start in each of the three, the ceilings 43, 46 and 58. The branch about to go is a fact the
     // proof's holders listing never read (it leaves the branch itself out), and `update-ref -d` on a symbolic ref would delete its target.
-    private const int AutomaticCeiling = 43;
-    private const int SquashCeiling = 46;
-    private const int MergeCeiling = 58;
+    // LANDNODE1c3: every landing under Current performs its delivery, each effect's outcome read after it and never assumed: the branch's ref
+    // made through one ref transaction (its symbolic-ref check and `update-ref --stdin`) and read back, a merge's line read after its press
+    // (`rev-parse`, `merge-base --is-ancestor`), the ceilings 47, 50 and 61.
+    private const int AutomaticCeiling = 47;
+    private const int SquashCeiling = 50;
+    private const int MergeCeiling = 61;
 
     private const string VerifyQuiet = "git rev-parse --verify --quiet ";
 

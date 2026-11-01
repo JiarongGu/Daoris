@@ -217,7 +217,8 @@ public static class WorkflowCurrent
         // The plugin a rule names, as PluginProblem finds it: the first of that id in any case.
         var speaker = plugin is null ? null : plugins.FirstOrDefault(each => string.Equals(each.Id, plugin, StringComparison.OrdinalIgnoreCase));
         var lands = speaker is not null && speaker.Points.Contains(HookPoints.Land, StringComparer.Ordinal);
-        var automatic = rule.Form == LandingForm.Branch && rule.AutoAccept;
+        // LANDNODE1c3: Current's graph draws no review before its `land` where the rule accepts automatically, a merge's as a branch's.
+        var automatic = rule.AutoAccept;
         steps.Add(new(WorkflowKinds.Landing, WorkflowKinds.Landing,
             automatic ? WorkflowParticipation.Automatic : WorkflowParticipation.You, WorkflowExecutor.Daoris,
             automatic ? null : WorkflowPress.Accept, new WorkflowSource(WorkflowRule.Landing, landing.Source),
