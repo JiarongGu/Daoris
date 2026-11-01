@@ -67,7 +67,7 @@ public static class AtWorkVerb
         var routing = new AtWorkRouting(
             parts ?? [], id => rows.GetValueOrDefault(id), id => quests.GetValueOrDefault(id), id => published.GetValueOrDefault(id), new SliceHealth(true))
         {
-            Asking = new AtWorkAsking(look.Quests, look.Records, id => rows.GetValueOrDefault(id)),
+            Asking = AtWorkQuests.Reading(look.Quests, look.Records, id => rows.GetValueOrDefault(id)),
         };
         return AtWork.Compose(
             session, parts?.Select(part => part.Session).ToList(),

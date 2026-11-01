@@ -290,7 +290,7 @@ public static class AtWork
         }
 
         var stale = groups.Failing ?? sessions.Failing ?? routing?.Quests.Failing;
-        var asked = routing?.Asking is { } asking ? AtWorkQuests.Of(session, ids, routing.Parts, attended, asking) : null;
+        var asked = routing?.Asking?.Invoke(session, ids, routing.Parts, attended);
         return new AtWorkHeld
         {
             Answer = new AtWorkAnswer(new AtWorkOf(session), session, parts, Subagents(attended, Teammate(session) ? null : attendedReading))

@@ -67,7 +67,7 @@ public sealed record AtWorkRouting(
     IReadOnlyList<AtWorkEntryPart> Parts, Func<string, AtWorkRow?> Row, Func<string, AtWorkQuest?> Quest, Func<string, int> Published,
     SliceHealth Quests)
 {
-    /// <summary>The whole stores the quests half reads (COWORKVIEW1b-ii); null reads no quests and no asker.</summary>
+    /// <summary>The quests half's port (COWORKVIEW1b-ii); null reads no quests and no asker.</summary>
     public AtWorkAsking? Asking { get; init; }
 }
 

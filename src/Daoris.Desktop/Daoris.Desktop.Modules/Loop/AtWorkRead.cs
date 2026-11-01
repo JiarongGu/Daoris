@@ -149,7 +149,7 @@ public static class AtWorkRead
             }
         }
 
-        return new AtWorkAsking([.. views.Values], [.. records.Values], id => rows.GetValueOrDefault(id));
+        return AtWorkQuests.Reading([.. views.Values], [.. records.Values], id => rows.GetValueOrDefault(id));
     }
 
     /// <summary>Whether the quests half, read again from the slices now, is what <paramref name="read"/> answered.</summary>
@@ -157,7 +157,7 @@ public static class AtWorkRead
     {
         if (read.Asked is null || read.Records.GetValueOrDefault(read.Session) is not { } attended) return true;
         var ids = (read.Entry?.Select(part => part.Session) ?? []).Prepend(read.Session).Distinct(StringComparer.Ordinal).ToList();
-        var now = AtWorkQuests.Of(read.Session, ids, read.Entry ?? [], attended, Asking(read.Session, read.Entry, quests, sessions, rows));
+        var now = Asking(read.Session, read.Entry, quests, sessions, rows)(read.Session, ids, read.Entry ?? [], attended);
         return AskedKey(now.Quests, now.More, now.By) == read.Asked;
     }
 

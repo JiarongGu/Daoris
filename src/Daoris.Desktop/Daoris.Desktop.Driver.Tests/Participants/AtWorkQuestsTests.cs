@@ -20,7 +20,7 @@ public sealed partial class AtWorkTests
     {
         var routing = new AtWorkRouting(parts, _ => null, _ => null, id => quests.Count(quest => quest.PublishedBy == id), Judged)
         {
-            Asking = new AtWorkAsking(quests, sessions, id => rows?.GetValueOrDefault(id)),
+            Asking = AtWorkQuests.Reading(quests, sessions, id => rows?.GetValueOrDefault(id)),
         };
         return AtWork.Compose(
             session, parts.Select(part => part.Session).ToList(), id => records.FirstOrDefault(record => record.Id == id), _ => LineageReading.None,
