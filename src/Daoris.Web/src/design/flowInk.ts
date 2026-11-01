@@ -275,7 +275,9 @@ const INSERT_AT = [0.5, 0.4, 0.6, 0.3, 0.7, 0.2, 0.8] as const;
 export function placeInserts(
   paths: readonly InkPath[], sizes: ReadonlyMap<string, { w: number; h: number }>, nodes: readonly Box[], labels: readonly InkLabel[],
 ): InkLabel[] {
-  const kept: Box[] = labels.filter((label) => label.shown).map((label) => ({ x: label.x - label.w / 2, y: label.y - label.h / 2, w: label.w, h: label.h }));
+  // A label that draws nothing (a chip a caller left empty) takes no room.
+  const kept: Box[] = labels.filter((label) => label.shown && label.w > 0.5 && label.h > 0.5)
+    .map((label) => ({ x: label.x - label.w / 2, y: label.y - label.h / 2, w: label.w, h: label.h }));
   const placed: InkLabel[] = [];
   for (const path of paths) {
     const size = sizes.get(path.id);

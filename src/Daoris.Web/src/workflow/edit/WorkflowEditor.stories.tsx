@@ -2,13 +2,16 @@ import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { InTheme } from '../../plugins/storyIcons';
 import { chinese } from '../../design/storyLanguage';
 import { storyWidths } from '../../design/storyWidths';
-import { APPEND, HOLDS, LIST, PALETTE, REFUSED, REFUSED_GRAPH, RELEASE_GRAPH, ROLES } from './editFixtures';
+import { MERGE_GRAPH, RELEASE_GRAPH, TWO_OUTCOMES_GRAPH } from '../graphFixtures';
+import { APPEND, HOLDS, LIST, PALETTE, REFUSED, REFUSED_GRAPH, ROLES } from './editFixtures';
 import { WorkflowEditor } from './WorkflowEditor';
 
-// The step editor (WORKFLOWEDIT1b), drawn from props: the release default composed and judged sound, the same steps refused at the way
-// back that goes forward and at the work's role, with a rule this page has no words for said in the driver's; a version appended to a
-// workflow two places choose; nothing composed yet; and its reads on their way and refused. In English and 中文, both themes, at the main
-// area's wide, half and narrow widths (80, 39 and 25rem).
+// The workflow editor (WORKFLOWEDIT1b, FLOWCHART2b; D223 §3), drawn from props: the release default on its chart, a ＋ on each way and in
+// each ◎, judged sound; the merge workflow it is composed from; a decision whose two outcomes reach one step; the same release refused at
+// a way back that goes forward, each refusal with a door to its step; a version appended to a workflow two places choose; nothing composed
+// yet, with the presets and saved workflows to begin from; and its reads on their way and refused. In English and 中文, both themes, at the
+// main area's wide, half and narrow widths (80, 39 and 25rem): the inspector stands beside the chart at 80rem and is a drawer below it.
+// The measured-box check draws the canvas stories in a browser: no ＋ over a node, a label or another ＋.
 
 const nothing = () => {};
 
@@ -28,20 +31,28 @@ export default meta;
 
 type Story = StoryObj<typeof WorkflowEditor>;
 
-/** **The release default, composed**: its steps drawn on the canvas and listed, each with where it goes on, judged sound. */
+/** **The release default, on its chart**: a ＋ on each way a step can stand on and in the ◎ of *none*, judged sound. */
 export const Release: Story = {};
 export const ReleaseHalf: Story = { decorators: [storyWidths.half] };
 export const ReleaseNarrow: Story = { decorators: [storyWidths.narrow] };
 export const ReleaseChinese: Story = { decorators: [storyWidths.wide, chinese] };
 export const ReleaseChineseHalf: Story = { decorators: [storyWidths.half, chinese] };
 export const ReleaseChineseNarrow: Story = { decorators: [storyWidths.narrow, chinese] };
-export const ReleaseDark: Story = { decorators: [storyWidths.half, dark] };
+export const ReleaseDark: Story = { decorators: [storyWidths.wide, dark] };
+export const ReleaseDarkHalf: Story = { decorators: [storyWidths.half, dark] };
 export const ReleaseChineseDarkNarrow: Story = { decorators: [storyWidths.narrow, chinese, dark] };
 
-/**
- * **Refused where it is wrong**: the way back from the review into the landing said at that way, the work's role at the work, each in the
- * page's words with the driver's beneath; a rule this page has no words for said above, in the driver's.
- */
+/** **The merge workflow**, which the release workflow is composed from: one chain, a ＋ on each of its ways. */
+export const Merge: Story = { args: { startFrom: { graph: MERGE_GRAPH, name: 'Merge workflow' } } };
+export const MergeHalf: Story = { ...Merge, decorators: [storyWidths.half] };
+export const MergeChineseHalf: Story = { ...Merge, decorators: [storyWidths.half, chinese] };
+export const MergeChineseDark: Story = { ...Merge, decorators: [storyWidths.wide, chinese, dark] };
+
+/** **Two outcomes reaching one step**, each from its own port with its own ＋, the third ending at a ◎ with its ＋. */
+export const TwoOutcomes: Story = { args: { startFrom: { graph: TWO_OUTCOMES_GRAPH } } };
+export const TwoOutcomesHalf: Story = { ...TwoOutcomes, decorators: [storyWidths.half] };
+
+/** **Refused where it is wrong**: *n to put right* in the head, each refusal a door to the step it names. */
 export const Refused: Story = { args: { judged: REFUSED, startFrom: { graph: REFUSED_GRAPH } } };
 export const RefusedNarrow: Story = { ...Refused, decorators: [storyWidths.narrow] };
 export const RefusedChineseHalf: Story = { ...Refused, decorators: [storyWidths.half, chinese] };
@@ -53,9 +64,10 @@ export const Append: Story = {
 };
 export const AppendChineseNarrow: Story = { ...Append, decorators: [storyWidths.narrow, chinese] };
 
-/** **Nothing composed yet**: the source to start from and the palette's steps, and no judgement. */
+/** **Nothing composed yet**: the presets and the saved workflows to begin from, and the picker a press away. */
 export const Empty: Story = { args: { startFrom: undefined, judged: null } };
 export const EmptyChinese: Story = { ...Empty, decorators: [storyWidths.half, chinese] };
+export const EmptyDarkNarrow: Story = { ...Empty, decorators: [storyWidths.narrow, dark] };
 
 /** Its reads on their way, and refused in the driver's words. */
 export const Reading: Story = { args: { palette: null, list: null } };

@@ -181,6 +181,34 @@ for (const [story, ceilings] of Object.entries(TABLE)) {
   });
 }
 
+/**
+ * The workflow editor's stories (FLOWCHART2b; D223 §6): whether each draws its chart or the rail, at the main area's 80, 39 and 25rem in
+ * both languages and themes. Where it draws, every ＋ shown on a way clears every node, every label shown and every other ＋, at least one
+ * is shown, and no edge runs through a box or a label lies over one.
+ */
+const EDITOR: Record<string, 'drawn' | 'rail'> = {
+  'editor/Release': 'drawn', 'editor/ReleaseHalf': 'drawn', 'editor/ReleaseNarrow': 'rail',
+  'editor/ReleaseChinese': 'drawn', 'editor/ReleaseChineseHalf': 'drawn', 'editor/ReleaseChineseNarrow': 'rail',
+  'editor/ReleaseDark': 'drawn', 'editor/ReleaseDarkHalf': 'drawn', 'editor/ReleaseChineseDarkNarrow': 'rail',
+  'editor/Merge': 'drawn', 'editor/MergeHalf': 'drawn', 'editor/MergeChineseHalf': 'drawn', 'editor/MergeChineseDark': 'drawn',
+  'editor/TwoOutcomes': 'drawn', 'editor/TwoOutcomesHalf': 'drawn',
+  'editor/Refused': 'drawn', 'editor/RefusedNarrow': 'rail', 'editor/RefusedChineseHalf': 'drawn', 'editor/RefusedDark': 'drawn',
+};
+
+for (const [story, placed] of Object.entries(EDITOR)) {
+  test(`${story}: ${placed === 'drawn' ? 'no ＋ over a node, a label or another ＋' : 'the rail'} (FLOWCHART2b)`, async ({ page }) => {
+    await open(page, story);
+    const [flow, ...more] = await page.evaluate(measureFlows);
+    expect(more, 'one chart').toEqual([]);
+    expect(flow!.placement === 'rail' ? 'rail' : 'drawn', story).toBe(placed);
+    if (placed === 'rail') return;
+    expect(flow!.inserts, `${story}: the ＋s shown`).toBeGreaterThan(0);
+    expect(flow!.insertOverlaps, story).toEqual([]);
+    expect(flow!.collisions, story).toEqual([]);
+    expect(flow!.overlaps, story).toEqual([]);
+  });
+}
+
 test('a data wire drawn on selection moves no node, and is drawn for each wire the selected step is an end of (FLOWCHART2a)', async ({ page }) => {
   const read = async (story: string) => {
     await open(page, story);
