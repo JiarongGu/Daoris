@@ -1,4 +1,4 @@
-import { type KeyboardEvent, type ReactNode, useId } from 'react';
+import { type KeyboardEvent, type ReactNode, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
 import { Flow, type FlowNode, type PillTone } from '../design/Flow';
@@ -68,7 +68,9 @@ function EndMark() {
  * The rail below a mark: ink, since an edge is content (platform-ux §3), ending in its head where the next step starts, or
  * running on unbroken into a section title that the next step follows.
  */
-function RailLine({ from = 'mark', into = 'step' }: { from?: 'mark' | 'title'; into?: 'step' | 'title' }) {
+function RailLine({ from = 'mark', into = 'step' }: { from?: 'mark' | 'title'; into?: 'step' | 'title' | 'end' }) {
+  // The rail of a chart whose record has not finished stops at its last step: *Finished* is drawn only from a run's record.
+  if (into === 'end') return null;
   return (
     <>
       <span className={cn('w-px flex-1 bg-ink-faint', from === 'mark' && 'mt-1')} />
@@ -122,7 +124,7 @@ function StepRow({ step, first, into, page, workspace, limits, doors, run }: {
   /** The first row the keys stop at: Tab lands here, and ↑ and ↓ go on from it. */
   first: boolean;
   /** What its rail runs into: the next step, or the section title the next step follows. */
-  into: 'step' | 'title';
+  into: 'step' | 'title' | 'end';
   page: 'repository' | 'workspace';
   workspace: string;
   limits: Record<string, string>;
@@ -273,25 +275,28 @@ function Holds({ holds }: { holds: string }) {
  * **For a reader and a keyboard** (design §6.4): each part is a list, each step a row named by its title, its words in the order
  * a reader hears them; ↑ and ↓ move between steps across both lists, and Tab reaches each row's doors.
  */
-function WorkflowRail({ workflow, page, name, doors, run, end }: {
+function WorkflowRail({ workflow, page, name, doors, run, end, finished }: {
   workflow: CurrentWorkflow;
   page: 'repository' | 'workspace';
   name: string;
   doors?: WorkflowDoors;
   run?: RunMarks;
   end?: ReactNode;
+  /** A run's record says it finished: only then is *Finished* drawn. */
+  finished: boolean;
 }) {
   const { t } = useTranslation();
   const beforeId = useId();
   const afterId = useId();
   const { before, after } = aroundTheLanding(workflow.steps);
   const holds = holdsSaid(t, workflow.startHolds);
+  const last = workflow.steps.at(-1);
   const row = (step: WorkflowStep, first: boolean, into: 'step' | 'title') => (
     <StepRow
       key={step.id}
       step={step}
       first={first}
-      into={into}
+      into={step === last && !finished ? 'end' : into}
       page={page}
       workspace={workflow.workspace}
       limits={workflow.limits}
@@ -325,14 +330,16 @@ function WorkflowRail({ workflow, page, name, doors, run, end }: {
           <ol aria-labelledby={afterId} className="m-0 list-none p-0">{after.map((step) => row(step, false, 'step'))}</ol>
         </>
       )}
-      <div className={RAIL_ROW}>
-        <span aria-hidden className="flex h-5 items-center justify-center"><EndMark /></span>
-        <p className="m-0 inline-flex flex-wrap items-baseline gap-1.5 text-body font-semibold text-ink">
-          <Icon name="stepFinished" size={14} className="translate-y-0.5 text-ink-soft" />
-          {t('workflow.finished')}
-          {end}
-        </p>
-      </div>
+      {finished && (
+        <div className={RAIL_ROW}>
+          <span aria-hidden className="flex h-5 items-center justify-center"><EndMark /></span>
+          <p className="m-0 inline-flex flex-wrap items-baseline gap-1.5 text-body font-semibold text-ink">
+            <Icon name="stepFinished" size={14} className="translate-y-0.5 text-ink-soft" />
+            {t('workflow.finished')}
+            {end}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
@@ -376,6 +383,7 @@ export function WorkflowChart({ workflow, page, name, doors, run, end, finished 
   graph?: FlowGraph | null;
 }) {
   const { t } = useTranslation();
+  const [holdsOpen, setHoldsOpen] = useState(false);
   const lit: FlowLit | undefined = run && {
     steps: Object.fromEntries(workflow.steps.flatMap((step) => {
       const mark = run[step.id];
@@ -386,7 +394,7 @@ export function WorkflowChart({ workflow, page, name, doors, run, end, finished 
     })),
     finished: finished ? { word: stateSaid(t, 'done'), tone: 'done' } : null,
   };
-  const flow = workflowFlow(t, workflow, name, lit, graph);
+  const flow = workflowFlow(t, workflow, name, lit, graph, { open: holdsOpen, toggle: () => setHoldsOpen((was) => !was) });
   const steps = new Map(workflow.steps.map((step) => [step.id, step]));
   const nodes = flow.nodes.map((node): FlowNode => {
     const step = steps.get(node.id);
@@ -398,9 +406,14 @@ export function WorkflowChart({ workflow, page, name, doors, run, end, finished 
     return {
       ...node,
       who: <Who step={step} />,
-      lines: mark
-        ? <div className="grid min-w-0">{mark.node ?? mark.mark}<RunLimit limit={limit} /></div>
-        : <StepSettings step={step} page={page} workspace={workflow.workspace} limit={limit} doors={doors} edge={false} />,
+      lines: (
+        <>
+          {node.lines && <p className="m-0 mb-1 text-meta">{node.lines}</p>}
+          {mark
+            ? <div className="grid min-w-0">{mark.node ?? mark.mark}<RunLimit limit={limit} /></div>
+            : <StepSettings step={step} page={page} workspace={workflow.workspace} limit={limit} doors={doors} edge={false} />}
+        </>
+      ),
       ...(open ? { open } : {}),
     };
   });
@@ -415,7 +428,7 @@ export function WorkflowChart({ workflow, page, name, doors, run, end, finished 
       entries={flow.entries}
       sections={sections}
       track={WORKFLOW_TRACK}
-      rail={<WorkflowRail workflow={workflow} page={page} name={name} doors={doors} run={run} end={end} />}
+      rail={<WorkflowRail workflow={workflow} page={page} name={name} doors={doors} run={run} end={end} finished={finished} />}
     />
   );
 }

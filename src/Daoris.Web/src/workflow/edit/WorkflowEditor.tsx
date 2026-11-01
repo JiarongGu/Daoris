@@ -1,11 +1,11 @@
 import type { TFunction, i18n as I18n } from 'i18next';
 import { type ReactNode, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Flow, type FlowEdge, type FlowNode } from '../../design/Flow';
+import { Flow } from '../../design/Flow';
 import { Button, CheckField, Inline, Pill, Prose, SelectField, SkeletonRows } from '../../design/ui';
 import { useDebounced } from '../../lib/useDebounced';
 import { sentence } from '../../locales/format';
-import { WORKFLOW_TRACK } from '../workflowFlow';
+import { type DrawnNode, type DrawnWire, type DrawOptions, graphFlow, type GraphFlow, isHoldKind, kindTitle } from '../graphFlow';
 import { presetName } from './presetWords';
 import type {
   EditorRole, GraphProblem, WorkflowListAnswer, WorkflowPaletteAnswer, WorkflowSaveAnswer, WorkflowSaveAsk, WorkflowScopeRow, WorkflowShownAnswer,
@@ -62,14 +62,6 @@ const SAVED = 'saved:';
 
 const plain = (text: string) => text.replace(/`/g, '');
 
-/** A step's kind in the reader's words: a plugin's step by its plugin, a built-in by its name, a kind this page has none for as spelled. */
-export function kindTitle(t: TFunction, i18n: I18n, kind: string): string {
-  const slash = kind.indexOf('/');
-  if (slash > 0) return t('workflow.edit.kind.plugin', { step: kind.slice(slash + 1), plugin: kind.slice(0, slash) });
-  const key = `workflow.edit.kind.${kind}`;
-  return i18n.exists(key) ? t(key) : t('workflow.edit.unknownKind', { kind });
-}
-
 /** A refusal in the reader's words, or the driver's where this page has none for its code (a rule newer than the page). */
 const refusalSaid = (t: TFunction, i18n: I18n, problem: GraphProblem) =>
   i18n.exists(`workflow.edit.refusal.${problem.code}`) ? t(`workflow.edit.refusal.${problem.code}`) : problem.words;
@@ -97,21 +89,15 @@ function waySaid(t: TFunction, wire: DraftWire, to: string): string {
   }
 }
 
-/** The edge a wire draws (the run view's own styles, `workflowFlow.ts`): a failure's, a refusal's, a decision's and a way back's in theirs. */
-const STYLE: Partial<Record<string, FlowEdge['style']>> = { failed: 'failed', rejected: 'rejected', when: 'conditional', back: 'back' };
-
-/** The draft drawn on the flow canvas: each step a node, each way on between two of them an edge. */
-function draftFlow(t: TFunction, i18n: I18n, draft: GraphDraft, ends: string): { nodes: FlowNode[]; edges: FlowEdge[]; entries: string[] } {
-  const ids = new Set(draft.nodes.map((node) => node.id));
-  const nodes = draft.nodes.map((node): FlowNode => ({
-    id: node.id, title: plain(kindTitle(t, i18n, node.kind)), actor: node.id === draft.end ? ends : null,
+/** The draft drawn through the one drawing (`graphFlow`): each step a node, each way on between two of them an edge, in the editor's words. */
+function draftFlow(t: TFunction, i18n: I18n, draft: GraphDraft, holds: DrawOptions['holds']): GraphFlow {
+  const nodes = draft.nodes.map((node): DrawnNode => ({
+    id: node.id, kind: node.kind, title: plain(kindTitle(t, i18n, node.kind)), outcomes: outcomesOf(node),
   }));
-  const edges = draft.wires.filter((wire) => wire.from !== null && ids.has(wire.from) && ids.has(wire.to)).map((wire): FlowEdge => ({
-    id: wire.id, from: wire.from!, to: wire.to, says: plain(howSaid(t, wire)), style: STYLE[wire.kind],
-    ...(wire.kind === 'when' ? { label: wire.outcome ?? '' } : wire.kind === 'back' ? { label: t('workflow.run.flow.back.label') } : {}),
+  const wires = draft.wires.filter((wire) => wire.from !== null).map((wire): DrawnWire => ({
+    id: wire.id, kind: wire.kind, from: wire.from!, to: wire.to, outcome: wire.outcome, on: wire.on, says: plain(howSaid(t, wire)),
   }));
-  const entries = entriesOf(draft);
-  return { nodes, edges, entries: entries.length > 0 ? entries : [draft.nodes[0]!.id] };
+  return graphFlow(t, { nodes, wires, entries: entriesOf(draft), end: draft.end }, { label: t('workflow.edit.drawing'), holds });
 }
 
 /** What the person is saving to: a new workflow's id and name, or a saved one's id and the version the change is made against. */
@@ -139,6 +125,7 @@ export function WorkflowEditor({
   const [target, setTarget] = useState<Target>(() =>
     (startFrom ? { id: startFrom.id ?? '', name: startFrom.name ?? '', base: startFrom.base ?? null } : NEW));
   const [authorized, setAuthorized] = useState(false);
+  const [holdsOpen, setHoldsOpen] = useState(false);
   const [said, setSaid] = useState<{ saved: WorkflowSaveAnswer | null; used: WorkflowUseAnswer | null; failed: string | null }>(
     { saved: null, used: null, failed: null });
 
@@ -228,7 +215,11 @@ export function WorkflowEditor({
     }
   };
 
-  const flow = draft.nodes.length > 0 ? draftFlow(t, i18n, draft, t('workflow.edit.step.ends')) : null;
+  // A refusal at one of the declared holds opens their group, so its step is in view.
+  const holdRefused = draft.nodes.some((node) => isHoldKind(node.kind) && atNode(node.id).length > 0);
+  const flow = draft.nodes.length > 0
+    ? draftFlow(t, i18n, draft, { open: holdsOpen || holdRefused, toggle: () => setHoldsOpen((was) => !was) })
+    : null;
 
   return (
     <section aria-labelledby={headId} className="grid min-w-0 gap-4">
@@ -258,7 +249,7 @@ export function WorkflowEditor({
         {waiting && <p className="m-0 text-meta text-ink-faint">{t('workflow.edit.source.loading', { id: waiting })}</p>}
       </div>
 
-      {flow && <Flow label={t('workflow.edit.drawing')} nodes={flow.nodes} edges={flow.edges} entries={flow.entries} track={WORKFLOW_TRACK} />}
+      {flow && <Flow label={flow.label} nodes={flow.nodes} edges={flow.edges} entries={flow.entries} sections={flow.sections} track={flow.track} />}
 
       {draft.nodes.length === 0 && <Prose className="text-small">{t('workflow.edit.none')}</Prose>}
       <ol aria-label={t('workflow.edit.steps')} className="m-0 grid list-none gap-3 p-0">

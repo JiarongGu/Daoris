@@ -11,7 +11,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import {
   Archive, ArchiveRestore, ArrowDown, ArrowDownToLine, ArrowUpToLine, ArrowLeft, ArrowLeftRight, ArrowUp, Bell, BookOpen, Bot, Brain, Check, ChevronDown, ChevronRight, ChevronUp,
-  CircleHelp, ClipboardPaste, Cloud, CloudOff, Compass, Copy, Ellipsis, Eye, FileDiff, FilePen, FileText, Flag, FolderOpen, Gauge, GitBranch,
+  CircleDot, CircleHelp, ClipboardPaste, Cloud, CloudOff, Compass, Copy, Ellipsis, Eye, FileDiff, FilePen, FileText, Flag, FolderOpen, Gauge, GitBranch,
   GitMerge, GitPullRequest, Globe, Hand, History, Inbox, Info, Pin, ScanEye,
   Keyboard, KeyRound, Languages, LayoutDashboard, LayoutGrid, Layers, Link, ListTodo, LogIn, Maximize2, Menu as MenuGlyph, Minimize2,
   Monitor, Network,
@@ -155,6 +155,8 @@ const ICONS = {
   stepPullRequest: GitPullRequest,
   stepHold: Hand,
   stepFinished: Flag,
+  // A way on that leads nowhere, drawn and never saved (SETUPUX1n).
+  stepNoFurther: CircleDot,
   // Where a piece of work stands in its workflow (WORKFLOW1c, design §7): the session's side bar view and the doors into it.
   workflow: Workflow,
   // Who is at work on a session (COWORKVIEW1a, the cowork view design §5.1): the side bar view of its parts and subagents.

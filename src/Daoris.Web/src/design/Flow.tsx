@@ -31,6 +31,11 @@ export type FlowNode = {
   who?: ReactNode;
   /** The caller's own lines: its moves, a door. */
   lines?: ReactNode;
+  /**
+   * A flag on the node (SETUPUX1n): the word of a mark the caller draws beside the step, with the foot it adds, such as where a
+   * workflow's work is done and that steps after it still run. Kept apart from `lines`, which a caller fills with its own.
+   */
+  mark?: { word: string; foot?: string | null };
   /** False: not reached, drawn dashed with its words at the soft ink. Absent: the record does not say. */
   reached?: boolean;
   /**
@@ -593,6 +598,13 @@ function FlowNodeBox({ node, stop, feet, description, onFollow, style }: NodePro
         ? <div className="mt-1 min-w-0 text-small text-ink-soft">{node.who}</div>
         : node.actor && <p className="m-0 mt-1 text-small text-ink-soft [overflow-wrap:anywhere]">{node.actor}</p>}
       {node.lines && <div className="mt-1 min-w-0 text-small text-ink-soft">{node.lines}</div>}
+      {node.mark && (
+        <p data-flow-mark className="m-0 mt-1 min-w-0 text-small text-ink-soft [overflow-wrap:anywhere]">
+          <Icon name="stepFinished" size={12} className="mr-1 inline translate-y-px" />
+          <span className="font-semibold">{node.mark.word}</span>
+          {node.mark.foot && <span className="block text-meta">{node.mark.foot}</span>}
+        </p>
+      )}
       {feet.length > 0 && (
         <div className="mt-1.5 grid min-w-0 gap-0.5">
           {feet.map((foot, index) => (
@@ -644,6 +656,7 @@ function describe(
   const sentences: string[] = [...(note?.before ?? [])];
   if (node.state) sentences.push(t('flow.state', { word: node.state.word }));
   if (node.actor) sentences.push(t('flow.actor', { actor: node.actor }));
+  if (node.mark) sentences.push(node.mark.foot ? `${node.mark.word}. ${node.mark.foot}` : node.mark.word);
   if (node.reached === false) sentences.push(t('flow.notReached'));
   for (const edge of edges) if (edge.to === node.id && byId.has(edge.from)) sentences.push(t('flow.from', { node: title(edge.from), says: edge.says }));
   const out = edges.filter((edge) => edge.from === node.id && byId.has(edge.to));
