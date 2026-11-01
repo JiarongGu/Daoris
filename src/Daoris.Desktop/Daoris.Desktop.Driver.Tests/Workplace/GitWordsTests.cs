@@ -71,6 +71,7 @@ public sealed class GitWordsTests
     /// </summary>
     [Theory]
     [InlineData("measured: git, HTTP 401 and no credential", "fatal: could not read Username for 'http://127.0.0.1:50211': terminal prompts disabled", "read", GitFailureClass.Refused)]
+    [InlineData("measured: GCM 2.7, HTTP 401 and no sign-in stored for the identity", "fatal: Cannot prompt because user interactivity has been disabled.\nfatal: unable to get password from user", "read", GitFailureClass.Refused)]
     [InlineData("measured: git, HTTP 401 and a credential refused", "fatal: Authentication failed for 'http://127.0.0.1:50211/org/engine.git/'", "read", GitFailureClass.Refused)]
     [InlineData("measured: git, HTTP 403 on a push", "fatal: unable to access 'http://127.0.0.1:50211/org/engine.git/': The requested URL returned error: 403", "write", GitFailureClass.WriteRefused)]
     [InlineData("measured: git, HTTP 403 on a fetch", "fatal: unable to access 'http://127.0.0.1:50211/org/engine.git/': The requested URL returned error: 403", "read", GitFailureClass.Refused)]

@@ -124,8 +124,13 @@ page's twins of a driver code list). Its brief names them: `node tools/optional-
 start), `CheckoutWritersCensusTests` (any git write: its `Census` row, and a `HeldIn` row with the lock it takes for a writer of
 a checkout), `SettledReadersCensusTests` (a new reader of a keyed answer), `StructureTests` (a new type or a name crossing a
 folder) and `LineCourseTests` (a case added to a ported suite), and for a new code in a list the page copies, the page's twin
-test. Never a whole fast half: the parent runs the halves once per batch, before it queues. A Process or Git class that calls what the builder changed is its own to run too, found by searching the test projects for the
-changed method's name, not by the class's name: batch s's candidate failed `CommandShimTests`, a Process class that prepares a
+test. A brief that reaches the service names `local/lyntai-local.props`, the ignored file without which the service does not
+restore, to copy from the main checkout's `local/` into the worktree's (STAFFPOLICY1b's builder had to find it). A page's brief
+says never to name a non-hook value `use…`: `HelpCoverageTests` reads every such name as a start the page offers (SETUPUX1s's
+merge failed it). Never a whole fast half: the parent runs the halves once per batch, before it queues. A Process or Git class that calls what the builder changed is its own to run too, found by searching the test projects for the
+changed method's name, not by the class's name; a change to what a start, a go-on or a chat's message is told runs the chat
+Process classes (`ChatGoesOnProcessTests`, `ChatPendingProcessTests`, `ProtocolChatTests`, `TurnStopTests` and their kin), since
+COWORKVIEW1e-i's routing line sent 37 of them red on main: batch s's candidate failed `CommandShimTests`, a Process class that prepares a
 driven start, after a member moved that start's prompt onto its input, and two more candidate failures that day were tests reading
 a path or a prompt no builder searched for. A builder that changes a public signature in the driver builds the modules' and the
 app's projects too, which call it: batch u's modules did not compile after one did. Before a batch is queued, the parent runs the driver's, the modules' and the service's fast halves whole on it, and

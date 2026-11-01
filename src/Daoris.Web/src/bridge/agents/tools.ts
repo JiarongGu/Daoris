@@ -107,6 +107,16 @@ export const useToolLocation = () =>
   });
 
 /**
+ * A setting Daoris's git carries, set or cleared (TOOLS6, GITAUTH1e): the screen's half of `daoris tool git ssh`. No `value` clears it;
+ * a git older than the one that reads it refuses as `TOOL_GIT_TOO_OLD`, naming both versions.
+ */
+export const useToolGitSet = () =>
+  useMutation({
+    mutationFn: (change: { key: 'core.sshCommand'; value?: string }) =>
+      call<{ key: string; value: string | null; version: string | null }>('TOOLS_GIT_SET', change),
+  });
+
+/**
  * What a switch of git to `target` changes (§4.1), asked of both gits before the switch applies; null asks nothing.
  * Not retried: a refusal (a version not downloaded, a file not there) is the answer.
  */

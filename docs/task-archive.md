@@ -22875,6 +22875,11 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 
 **Outcome** 2026-11-02: built but the owner's real host, which stays on the row with a git setting's window and terminal doors: `GitGlobalFile` and `GitVersions` (driver's `Install/`), `ToolChoices.SetGitAsync`, the 2.31 floor at `TreeRefs`, `GitFetchActs` and `LandingPlugins` with the session's words, and `GitOwnInput`'s certificate case. The sshd proof skipped here, no sshd named. Detail: D198's 2026-11-02 note; `GitGlobalFileTests`, `GitGlobalFileGitTests`, `GitVersionsTests`, `GitDoorsFloorTests`, `GitCertificateHoldTests`, `GitSshdProcessTests`, `SensitiveGateTests`.
 
+## GITAUTH1d — HTTPS identities through Git Credential Manager, from the terminal (2026-11-02, D198)
+
+> **GITAUTH1d — HTTPS identities through Git Credential Manager, from the terminal** (driver; after 1c; D198 point 4; design §4.3, §14 row 4). Proof: §14 row 4 against a real GCM; owner-permitted, a real browser sign-in.
+
+**Outcome** 2026-11-02: built but the owner's real browser sign-in, and a managed GCM (Git for Windows carries one; where none is found an HTTPS identity cannot be added): the remote helper handing an identity with §3.3's removals, the empty `HOME`, the address's user-info dropped and a password refused; `git identity add-https` (a token on standard input, or a browser sign-in), `test --repo`, and remove as GCM's erase. Proved against the real GCM 2.7.3 on a loopback host that asks Basic. Detail: D198's GITAUTH1d note; `GitHttpsTests`, `GitHttpsProcessTests`, `GitWordsTests`.
 ## CANVAS1a — the measured choice, and the workflow's chart and editor in the viewport (2026-11-02, D224)
 
 > **a** the measured choice (the extension against a React Flow spike kept in `_fixtures/`), then the workflow's chart and editor in the viewport (web; first; the read beside it). Contract and proof: the canvas design's §9 row a, with the read's points for row a (the editor's blocking contracts, a fair comparison, scene changes kept apart from refreshes, the 300 px run, the world's whole inventory, usable presses at the floor, the camera's convention, a host check, the interaction's precedence).

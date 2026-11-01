@@ -194,6 +194,7 @@ export const HOME_ENTRIES = [
   row('git-grants', 'run', 'run/git/grants', 'run/git/grants'),
   row('git-used', 'run', 'run/git/used', 'run/git/used'),
   row('git-checkouts', 'run', 'run/git/checkouts.json', 'run/git/checkouts.json'),
+  row('git-home', 'run', 'run/git/home', 'run/git/home'),
   row('logs', 'logs', 'logs', 'logs'),
 ] as const;
 
