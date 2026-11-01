@@ -2,7 +2,9 @@ import { type ReactNode, useContext, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { PlaceAside } from '../../agents/setup/placeAside';
-import type { PlaceView } from '../../agents/setup/placeShell';
+import type { PlaceEdit, PlaceView } from '../../agents/setup/placeShell';
+import { fillAskDaoris, useCanFillAsk } from '../../help/askFill';
+import { toldGraph } from '../../help/openDraft';
 import { cn } from '../../lib/cn';
 import { Button, Inline, Prose, SkeletonRows } from '../../design/ui';
 import { useWidth } from '../../design/useWidth';
@@ -11,13 +13,13 @@ import type { IntegrationRequest } from '../../settings/repository/IntegrationDe
 import type { Answered } from '../../work/InlineConfirm';
 import type { WorkflowEffective, WorkflowStart } from '../current';
 import { EffectiveChart } from './EffectiveChart';
-import { WorkflowEditor } from '../edit/WorkflowEditor';
+import { WorkflowEditor, type WorkflowEditorProps } from '../edit/WorkflowEditor';
 import { type RouteRow, routeRows } from './effective';
 import { partSaid } from '../said';
 import { type WorkflowTabProps } from '../WorkflowTab';
 import type { WorkflowDoors } from '../WorkflowChart';
 import { LandedLines } from '../WorkflowStartNode';
-import { ChangeWorkflow, type PresetStart, type WorkflowPlanBridge } from './ChangeWorkflow';
+import { ChangeWorkflow, type WorkflowPlanBridge } from './ChangeWorkflow';
 import { gatesOwed, gatesSummary, PlaceGates } from './PlaceGates';
 import { PlaceRepositories, repositoriesSummary } from './PlaceRepositories';
 
@@ -49,9 +51,17 @@ export type PlaceWorkflowProps = WorkflowTabProps & {
   landing?: (hand: LandingHand) => ReactNode;
   /** Opens another section of the place page: a step's standing answer is Sessions'. */
   onOpenSection?: (section: 'sessions') => void;
+  /**
+   * The editor asked open on a draft (FLOWCHART2g): a conversation's draft card's *Open in the editor*. The draft the conversation was told
+   * is the editor's start, so the proposal's changes can be taken; the editor is the page's to open once, and `onOpened` says it has.
+   */
+  opens?: PlaceEdit | null;
+  onOpened?: () => void;
 };
 
-type Panel = { is: 'change' } | { is: 'edit'; from?: PresetStart } | null;
+type EditStart = NonNullable<WorkflowEditorProps['startFrom']>;
+
+type Panel = { is: 'change' } | { is: 'edit'; from?: EditStart } | null;
 
 /**
  * What *Edit steps…* opens the editor on (SETUPUX1r): the graph the selected route follows. A saved workflow's newest version is the version
@@ -120,9 +130,10 @@ function Routes({ rows, chosen, onChoose }: { rows: readonly RouteRow[]; chosen:
  */
 export function PlaceWorkflowView({
   name, page = 'repository', current, reading = false, refusal = null, doors, onAcceptGates, accepting = false, onVerify, editor,
-  view, onView, onAcceptIntegration, landing, onOpenSection,
+  view, onView, onAcceptIntegration, landing, onOpenSection, opens = null, onOpened,
 }: PlaceWorkflowProps) {
   const { t } = useTranslation();
+  const canAsk = useCanFillAsk();
   const pane = useRef<HTMLDivElement>(null);
   const width = useWidth(pane);
   const aside = useContext(PlaceAside);
@@ -141,6 +152,23 @@ export function PlaceWorkflowView({
   useEffect(() => {
     if (asked.section) document.querySelector('[data-place-row="landing"]')?.scrollIntoView?.({ block: 'nearest' });
   }, [asked]);
+
+  // A draft card's door (FLOWCHART2g): once the answer is read, the editor opens on the draft the conversation was told, or on the chart's
+  // graph where that draft is no longer held. Once per ask: the page lets it go when it has opened.
+  const opened = useRef<PlaceEdit | null>(null);
+  const ready = current !== undefined && current !== null && editor !== undefined;
+  useEffect(() => {
+    if (!opens || !ready || opened.current === opens) return;
+    opened.current = opens;
+    const told = opens.draft ? toldGraph(opens.draft) : null;
+    show({
+      is: 'edit',
+      ...(told ? { from: { graph: told, ...(opens.base != null && opens.workflow ? { id: opens.workflow, base: opens.base } : {}), ...(opens.name ? { name: opens.name } : {}) } } : {}),
+    });
+    onOpened?.();
+    // `show` reads this render's editor; the ask and the answer arriving are the reasons to open.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [opens, ready]);
 
   if (!current) {
     return (
@@ -268,6 +296,12 @@ export function PlaceWorkflowView({
     : [];
 
   const canChange = editor !== undefined && !landed;
+  // *Ask Daoris* opens the editor on the chart's graph, so the conversation is told that draft with the person's next words (FLOWCHART2d),
+  // and puts the start of a request in its box. The editor, once open, is not opened again.
+  const askDaoris = () => {
+    if (panel?.is !== 'edit') show({ is: 'edit' });
+    fillAskDaoris(t('workflow.place.ask.fill', { place: name }));
+  };
   const buttons = 'min-h-0 border border-line py-0.5 text-small';
   const chartPress = !wide && !panel;
   const hasActs = chartPress || canChange;
@@ -292,6 +326,7 @@ export function PlaceWorkflowView({
               <>
                 <Button variant="ghost" className={buttons} onClick={() => show({ is: 'change' })}>{t('workflow.place.change.open')}</Button>
                 <Button variant="ghost" className={buttons} onClick={() => show({ is: 'edit' })}>{t('workflow.place.steps.open')}</Button>
+                {canAsk && <Button variant="ghost" className={buttons} onClick={askDaoris}>{t('workflow.place.ask.open')}</Button>}
               </>
             )}
           </div>

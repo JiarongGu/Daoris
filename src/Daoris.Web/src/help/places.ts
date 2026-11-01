@@ -2,6 +2,7 @@ import type { AgentPart } from '../agents/agents';
 import type { View } from '../menus/commands';
 import type { KnowledgeMode } from '../knowledge/modes';
 import type { PlaceAsk } from '../agents/setup/placePlan';
+import type { PlaceEdit } from '../agents/setup/placeShell';
 import { askItem, questsItem, type OpenGroup, workspaceItem } from '../app/opener';
 import { offerItem } from '../plugins/catalog';
 import type { SettingsAnchor, SettingsSection } from '../settings/SettingsView';
@@ -94,6 +95,24 @@ const GROUP_PARTS: Readonly<Record<string, OpenGroup>> = {
   'quests/asks': 'asks',
   'quests/held': 'held',
 };
+
+/**
+ * The door of a conversation's draft card (FLOWCHART2g; D223 §4.4): the place's Workflow, its editor opened on the draft the card is against.
+ * The driver's go for such a card names the workspace's part, or for a repository no part and no repository, so the place is named from
+ * the card's own scope. None for a card that is no draft or names no place.
+ */
+export function draftDoor(
+  card: { draft?: string | null; scope: string; id: string; name: string; base?: number | null }, go: HelpPlace | null,
+): StarterDoor | null {
+  const scope = card.scope.trim();
+  if (!card.draft || !scope) return null;
+  const placeEdit: PlaceEdit = {
+    draft: card.draft, ...(card.id ? { workflow: card.id } : {}), ...(card.name ? { name: card.name } : {}), ...(card.base != null ? { base: card.base } : {}),
+  };
+  return go?.part === 'workspace-workflow'
+    ? { view: 'projects', item: workspaceItem(scope), workspaceTab: 'workflow', placeEdit }
+    : { view: 'projects', item: scope, tab: 'workflow', placeEdit };
+}
 
 const same = (one: HelpPlace, other: HelpPlace) =>
   one.view === other.view && (one.domain ?? null) === (other.domain ?? null) && (one.part ?? null) === (other.part ?? null);

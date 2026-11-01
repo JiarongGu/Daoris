@@ -13,7 +13,7 @@ import { isTextField } from '../../menus/press';
 import type { ChartEdit } from '../chart/FlowChart';
 import { isHoldKind } from '../graphFlow';
 import type {
-  EditorRole, GraphProblem, WorkflowListAnswer, WorkflowPaletteAnswer, WorkflowSaveAnswer, WorkflowSaveAsk, WorkflowShownAnswer,
+  EditorRole, GraphProblem, StepStaffing, WorkflowListAnswer, WorkflowPaletteAnswer, WorkflowSaveAnswer, WorkflowSaveAsk, WorkflowShownAnswer,
   WorkflowUseAnswer, WorkflowUseAsk,
 } from './answers';
 import { type Begin, draftFlow, EditCanvas } from './EditCanvas';
@@ -32,8 +32,11 @@ import {
 } from './proposalTake';
 import { ToPutRight } from './Refusals';
 import { withRefusals } from './refusalMarks';
-import { type SaveTarget, SaveReview } from './SaveReview';
+import { consentKey, changesBetween } from './saveChanges';
+import { type ReviewFacts, type SaveTarget, SaveReview, type UseOffer } from './SaveReview';
 import { StepPicker } from './StepPicker';
+import type { RolePlace } from './StepRole';
+import { usePlan } from './usePlan';
 
 /** What the step editor's bridge hands it (`bridge/repositories/workflowEdit.ts`): the reads, the roles, the judge, the save and the choice. */
 export type WorkflowEditorBridge = {
@@ -45,6 +48,8 @@ export type WorkflowEditorBridge = {
   error: unknown;
   /** The working roles a step may name. */
   roles: EditorRole[];
+  /** The one role editor's reads and presses, for a step's *Taken by* to give the place a role of its own; none, and it offers only the roles there are. */
+  staffing?: StepStaffing;
   /** The saved version last asked for by `onShow`, once it is answered. */
   shown: WorkflowShownAnswer | null;
   onShow: (id: string | null) => void;
@@ -60,6 +65,8 @@ export type WorkflowEditorBridge = {
   onSave: (ask: WorkflowSaveAsk) => Promise<WorkflowSaveAnswer>;
   using: boolean;
   onUse: (ask: WorkflowUseAsk) => Promise<WorkflowUseAnswer>;
+  /** The plan of a choice (`WORKFLOW_USE {plan}`), which writes nothing; none, and *Use here* is today's press (SETUPUX1p). */
+  onPlan?: (ask: WorkflowUseAsk) => Promise<WorkflowUseAnswer>;
   /** Told when the editor opens and closes, so its reads are asked only while it shows. */
   onOpen?: (open: boolean) => void;
   /** Ask Daoris's newest proposal against a draft of this place (FLOWCHART2f), as the bridge read it; none where none waits. */
@@ -150,7 +157,7 @@ export function WorkflowEditor(props: WorkflowEditorProps) {
 
 /** The editor once its reads are answered, told whether its region holds the inspector beside the chart. */
 function Composing({
-  list, palette, roles, shown, onShow, judged, judgedOf = null, judgeFailed = null, judging, onJudge, saving, onSave, using, onUse, place, startFrom,
+  list, palette, roles, staffing, shown, onShow, judged, judgedOf = null, judgeFailed = null, judging, onJudge, saving, onSave, using, onUse, onPlan, place, startFrom,
   route = null, pipeline = null, lines, onClose, wide, proposal: offered = null, onSettleProposal, onDismissProposal,
 }: WorkflowEditorProps & { list: WorkflowListAnswer; palette: WorkflowPaletteAnswer; wide: boolean }) {
   const { t, i18n } = useTranslation();
@@ -174,7 +181,13 @@ function Composing({
   const [target, setTarget] = useState<Target>(() => ({
     id: startFrom?.id ?? '', name: startFrom?.name ?? '', base: startFrom ? startFrom.base ?? null : null, from: startFrom?.id ?? null,
   }));
-  const [authorized, setAuthorized] = useState(false);
+  // The places an append reaches that the person let follow it, as one key (`consentKey`): consent holds for exactly that set.
+  const [consented, setConsented] = useState<string | null>(null);
+  // The steps the draft began from, which a save is reviewed against and *Use here* needs the draft to still be.
+  const [baseline, setBaseline] = useState<unknown>(startFrom?.graph ?? null);
+  const [reviewing, setReviewing] = useState<string | null>(null);
+  const [planning, setPlanning] = useState(false);
+  const [rebasing, setRebasing] = useState(false);
   const [holdsOpen, setHoldsOpen] = useState(false);
   const [said, setSaid] = useState<Said>(QUIET);
   const [focusing, setFocusing] = useState<{ at: string; n: number } | null>(null);
@@ -184,13 +197,29 @@ function Composing({
   // A saved version to begin from, once its answer lands; a version of steps (schema 1) is no graph to compose, and leaves the draft as it was.
   useEffect(() => {
     if (waiting === null || shown?.id !== waiting) return;
+    if (rebasing) {
+      // The newest version read again after a refusal that the base moved: the draft is kept, and is saved against that version. An answer
+      // still at the base is the one read before, and the read that follows it is the one waited for.
+      if (shown.version === target.base) return;
+      setWaiting(null);
+      setRebasing(false);
+      if (shown.schema !== 2) return;
+      setTarget((was) => ({ ...was, base: shown.version }));
+      setBaseline(shown.body);
+      setReviewing(null);
+      setSaid(QUIET);
+      setHeard(t('workflow.edit.save.rebased', { id: shown.id, version: shown.version }));
+      return;
+    }
     setWaiting(null);
     if (shown.schema !== 2) return;
     const words = t('workflow.edit.said.began', { name: shown.name });
     setHistory((was) => commit(was, { ...was.present, draft: draftOf(shown.body), said: words }));
     setHeard(words);
     setTarget({ id: shown.id, name: shown.name, base: shown.version, from: shown.id });
-  }, [waiting, shown, t]);
+    setBaseline(shown.body);
+    setReviewing(null);
+  }, [waiting, rebasing, shown, target.base, t]);
 
   // The focus a change asks for, given once the dialogs it closed have let theirs go: a step by its id, the first that can take the way
   // being chosen, or the control the picker was opened from.
@@ -437,6 +466,7 @@ function Composing({
   };
   // Ask Daoris is told the draft open here (FLOWCHART2d; D223 §8.3), registered while the editor is mounted and let go when it closes.
   const placeName = 'repository' in place ? place.repository : place.workspace;
+  const rolePlace: RolePlace = 'repository' in place ? { kind: 'repository', name: place.repository } : { kind: 'workspace', name: place.workspace };
   const source = target.base !== null ? `${target.id}@v${target.base}` : target.from ? `preset:${target.from}` : 'new';
   const problemsKey = JSON.stringify(problems);
   useEffect(() => registerOpenDraft({
@@ -609,36 +639,88 @@ function Composing({
     const next = draftOf(from.preset.body);
     change(next, t('workflow.edit.said.began', { name }));
     setTarget({ id: '', name: '', base: null, from: from.preset.id });
+    setBaseline(from.preset.body);
     const first = entriesOf(next)[0] ?? next.nodes[0]?.id;
     if (first) focusOn(first);
   };
 
-  const scopes = target.base !== null && judgement?.appended ? judgement.scopes : [];
+  // The review (SETUPUX1s): of this draft, once its judgement holds. Saving is its press, so nothing is saved that was not reviewed.
+  const holds = draft.nodes.length > 0 && judgement?.done === true;
+  const reviewOpen = holds && reviewing === fingerprint;
+  useEffect(() => { setReviewing(null); }, [fingerprint]);
+  const baseDraft = useMemo(() => (baseline === null || baseline === undefined ? null : draftOf(baseline)), [baseline]);
+  const baseFingerprint = useMemo(() => (baseDraft ? fingerprintOf(graphOf(baseDraft)) : null), [baseDraft]);
+  // The places an append reaches are the driver's last word: a save refused for them names the set now, which replaces the plan's.
+  const refusedFor = said.saved?.refused === 'reach' ? said.saved : null;
+  const scopes = target.base !== null ? refusedFor?.scopes ?? (judgement?.appended ? judgement.scopes : []) : [];
+  const reached = refusedFor?.reach ?? judgement?.reach ?? [];
+  const consent = consentKey(scopes);
+  const allowed = scopes.length > 0 && consented === consent;
+  const review = (): ReviewFacts => {
+    const title = (each: { kind: string }) => stepTitle(t, i18n, palette, each);
+    const changes = changesBetween(target.base === null ? null : baseDraft, draft);
+    return {
+      fresh: target.base === null ? draft.nodes.length : null,
+      added: changes.added.map(title),
+      removed: changes.removed.map(title),
+      changed: changes.changed.map(title),
+      ways: changes.ways,
+      part: draft.nodes.filter((each) => palette.kinds.find((kind) => kind.kind === each.kind)?.personJudges).map(title),
+      reach: reached.flatMap((row) => row.cannots.length > 0
+        ? [t('workflow.edit.review.cannot', { repository: row.repository, why: row.said ?? row.cannots.join('; ') })]
+        : row.noGates ? [t('workflow.edit.review.noGates', { repository: row.repository })] : []),
+    };
+  };
   const save = async () => {
+    const sent = graph;
     try {
       const answer = await onSave({
-        id: saveId, graph,
+        id: saveId, graph: sent,
         ...(target.base === null ? (target.name.trim() ? { name: target.name.trim() } : {}) : { base: target.base }),
-        ...(authorized && scopes.length > 0 ? { authorize: scopes.map((scope) => scope.key) } : {}),
+        ...(allowed ? { authorize: scopes.map((scope) => scope.key) } : {}),
       });
       setSaid({ saved: answer, used: null, failed: null });
+      if (answer.done && answer.version !== null) setBaseline(sent);
       if (answer.done && answer.written && answer.version !== null) {
         setTarget((was) => ({ ...was, id: answer.id, base: answer.version }));
-        setAuthorized(false);
+        setConsented(null);
       }
+      if (answer.done) setReviewing(null);
     } catch (refused) {
       setSaid({ saved: null, used: null, failed: sentence(refused) });
     }
   };
+  // *Read it again* after a refusal that the base moved: the newest version is read, and the draft is saved against it.
+  const reread = () => {
+    setRebasing(true);
+    setWaiting(target.id);
+    onShow(target.id);
+  };
+
+  // The choice (SETUPUX1s): only of a version the draft still is, for the route the editor opened for, with the plan's token where one is read.
+  const unchanged = target.base !== null && baseFingerprint === fingerprint;
+  const kindOfRoute = route?.startsWith('kind:') ? route.slice('kind:'.length) : null;
+  const useAsk: WorkflowUseAsk | null = target.base === null ? null : {
+    ...place, ...(kindOfRoute ? { kind: kindOfRoute } : {}), workflow: target.id, version: target.base,
+  };
+  const announced = list.use?.includes('plan') === true && onPlan !== undefined;
+  const read = usePlan(useAsk, announced && planning && unchanged, onPlan);
+  useEffect(() => { if (!unchanged) setPlanning(false); }, [unchanged]);
   const use = async () => {
-    if (target.base === null) return;
+    if (!useAsk) return;
     try {
-      const answer = await onUse({ ...place, workflow: target.id, version: target.base });
+      const answer = await onUse(read.token ? { ...useAsk, expected: read.token } : useAsk);
       setSaid((was) => ({ ...was, used: answer }));
+      if (answer.refused === 'moved') read.again();
+      else if (answer.done) setPlanning(false);
     } catch (refused) {
       setSaid((was) => ({ ...was, failed: sentence(refused) }));
     }
   };
+  const offer: UseOffer = target.base === null || draft.nodes.length === 0 ? { is: 'none' }
+    : !unchanged ? { is: 'unsaved' }
+      : announced ? { is: 'press', announced: true, reading: planning, plan: read.plan, ready: read.token !== null }
+        : { is: 'press', announced: false };
 
   const node = selected ? nodeOf(selected) ?? null : null;
   const acts = (id: string): InspectorActs => ({
@@ -668,7 +750,7 @@ function Composing({
     onRemove: (options) => remove(id, options),
   });
   const inspector = node && (
-    <Inspector palette={palette} draft={draft} roles={roles} lines={lines} node={node} titleOf={titleOf}
+    <Inspector palette={palette} draft={draft} roles={roles} place={rolePlace} staffing={staffing} lines={lines} node={node} titleOf={titleOf}
       problems={{ atStep: atStep(node.id), atWire }} confirming={confirming} onConfirm={setConfirming} acts={acts(node.id)} />
   );
 
@@ -752,14 +834,20 @@ function Composing({
         target={target}
         id={newId}
         onName={(name) => setTarget((was) => ({ ...was, name }))}
-        scopes={scopes}
-        authorized={authorized}
-        onAuthorize={setAuthorized}
         empty={draft.nodes.length === 0}
+        holds={holds}
+        review={reviewOpen ? review() : null}
+        onReview={(open) => setReviewing(open ? fingerprint : null)}
+        scopes={scopes}
+        consented={allowed}
+        onConsent={(on) => setConsented(on ? consent : null)}
         saving={saving}
         using={using}
         said={said}
         onSave={() => void save()}
+        onReread={reread}
+        use={offer}
+        onPlan={() => setPlanning(true)}
         onUse={() => void use()}
       />
 

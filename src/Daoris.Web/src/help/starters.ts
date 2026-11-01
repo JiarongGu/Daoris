@@ -1,6 +1,7 @@
 import type { AgentPart } from '../agents/agents';
 import type { AgentsMode, RoleSection } from '../agents/modes';
 import type { PlaceAsk } from '../agents/setup/placePlan';
+import type { PlaceEdit } from '../agents/setup/placeShell';
 import type { View } from '../menus/commands';
 import type { KnowledgeMode } from '../knowledge/modes';
 import type { Compose, OpenGroup } from '../app/opener';
@@ -41,6 +42,8 @@ export type StarterDoor = {
   group?: OpenGroup;
   /** Ask Daoris's place card (AGENTSPLACE1k): the quick set-up the place's *Set up…* opens on. */
   setUp?: PlaceAsk;
+  /** A conversation's draft card (FLOWCHART2g): the place's Workflow, its editor opened on the draft the card is against. */
+  placeEdit?: PlaceEdit;
 };
 
 /**

@@ -64,6 +64,8 @@
   "workflow.place.change.reading": "Reading the saved workflows…",
   "workflow.place.change.close": "Close",
   "workflow.place.steps.open": "Edit steps…",
+  "workflow.place.ask.open": "Ask Daoris",
+  "workflow.place.ask.fill": "I have {{place}}'s workflow open in the editor, and I want to change it: ",
   "workflow.place.steps.title": "Its steps",
   "workflow.place.steps.body": "Edit a version's steps in the editor, judged as you go. Saved, a version is chosen here and running work keeps the one it started under.",
   "workflow.place.folds": "What shapes this workflow",

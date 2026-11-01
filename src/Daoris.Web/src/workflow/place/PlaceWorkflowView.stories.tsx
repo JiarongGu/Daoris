@@ -1,6 +1,7 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
-import { useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import type { PlaceView } from '../../agents/setup/placeShell';
+import { registerAskFill } from '../../help/askFill';
 import { chinese } from '../../design/storyLanguage';
 import { storyWidths } from '../../design/storyWidths';
 import { InTheme } from '../../plugins/storyIcons';
@@ -128,6 +129,31 @@ export const Reading: Story = { args: { route: undefined, current: null, reading
 export const Refused: Story = {
   args: { route: undefined, current: null, refusal: 'the driver is still coming up — its service is not answering yet. A moment.' },
 };
+
+/** A window with Ask Daoris in it, so the section offers *Ask Daoris* beside *Edit steps…* (FLOWCHART2g). */
+function WithAsk({ children }: { children: ReactNode }) {
+  useEffect(() => registerAskFill(nothing), []);
+  return <>{children}</>;
+}
+const asking: Decorator = (Story) => <WithAsk><Story /></WithAsk>;
+
+/** **With Ask Daoris in the window**: *Ask Daoris* opens *Edit steps…* on the chart's graph and puts the start of a request in its box. */
+export const WithAskDaoris: Story = { decorators: [storyWidths.wide, asking] };
+export const WithAskDaorisHalf: Story = { decorators: [storyWidths.half, asking] };
+export const WithAskDaorisNarrow: Story = { decorators: [storyWidths.narrow, asking] };
+export const WithAskDaorisChinese: Story = { decorators: [storyWidths.wide, chinese, asking] };
+export const WithAskDaorisChineseNarrowDark: Story = { decorators: [storyWidths.narrow, chinese, dark, asking] };
+
+const askAndWait: Story['play'] = async ({ canvasElement }) => {
+  const press = [...canvasElement.querySelectorAll<HTMLElement>('button')].find((each) => /^(Ask Daoris|问道衍)$/.test(each.textContent ?? ''));
+  press?.click();
+  await new Promise((resolve) => setTimeout(resolve, 120));
+};
+
+/** **Ask Daoris pressed**: the editor open on the chart's graph, which the conversation is told with the next words sent. */
+export const AskedDaoris: Story = { decorators: [storyWidths.wide, asking], play: askAndWait };
+export const AskedDaorisHalf: Story = { decorators: [storyWidths.half, asking], play: askAndWait };
+export const AskedDaorisNarrow: Story = { decorators: [storyWidths.narrow, asking], play: askAndWait };
 
 /** No editor handed (a shell before the step editor): the section says the terminal's way alone. */
 export const WithoutTheEditor: Story = { args: { editor: undefined, landing: (hand) => <FoldRow folds={hand.lead} /> } };
