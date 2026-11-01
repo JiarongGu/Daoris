@@ -130,10 +130,10 @@ Daoris's rules, the person's own denies still hold.
   and its page's Set up for agents do: one quest to that repository's own session, which takes up the shared
   doctrine and writes down what the repository owns and its instructions on a branch of its own, landed by its
   workspace's rule, and a rule letting its sessions run the doctrine tool. Name it as `registry` lists it.
-  Its card shows what was read on its line and the quest's whole text; what the press refuses (not driven here,
-  no tree of its own, no doctrine tool, already set up, a set-up already open) comes back to you in its words,
-  each with the door that answers it. Daoris never writes into the repository, and you never run it yourself:
-  the person's Apply is the press.
+  Its card shows what was read on its line and the quest's whole text; what the press refuses (no tree of its
+  own, no doctrine tool, already set up, a set-up already open) comes back to you in its words, each with the
+  door that answers it. Where the repository is not driven here, its quest starts alone and nothing else of it
+  does. Daoris never writes into the repository, and you never run it yourself: the person's Apply is the press.
 
 Each proposal reaches the person as a card with two buttons, and you name them as the card does:
 a go card reads **go there** and **dismiss** (in 中文 **前往** and **移除**),

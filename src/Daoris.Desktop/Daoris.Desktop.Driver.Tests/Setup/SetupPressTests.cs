@@ -183,25 +183,76 @@ public sealed class SetupPressTests : IDisposable
         Assert.Single(plan.Refusals);
     }
 
+    /// <summary>
+    /// 🔴 AGENTSPLACE1b: a repository not driven here is pressed all the same, its quest admitted alone by its id in the driver's
+    /// file, so its session starts while nothing else of the repository does; one driven here is admitted by its driving, as before.
+    /// </summary>
     [Fact]
-    public async Task A_repository_not_driven_here_is_refused_naming_its_setup_and_the_command()
+    public async Task A_repository_not_driven_here_is_pressed_and_its_quest_admitted_alone()
     {
-        var plan = await PlanAsync(new World(), config: Driven.WithDrivable("reports", false));
+        var world = new World();
+        var plan = await PlanAsync(world, config: Driven.WithDrivable("reports", false));
+        var driven = await PlanAsync(new World());
 
-        // HELPSETUP1: driving is the repository's own, on its Setup (UX6f); Settings → Driver never held it.
-        Refused(plan, SetupRefusals.NotDriven, "Repositories → the repository's page → Setup → Driving");
-        Assert.DoesNotContain("Settings → Driver", Find(plan, SetupRefusals.NotDriven).Sentence);
-        Assert.Contains("`daoris driver drive reports`", Find(plan, SetupRefusals.NotDriven).Sentence);
+        var outcome = await SetupPress.ApplyAsync(plan, world, _home);
+
+        Assert.Empty(plan.Refusals);
+        Assert.True(plan.Alone);
+        Assert.False(driven.Alone);
+        Assert.True(outcome.Published);
+        Assert.Equal("q123", outcome.QuestId);
+        var file = DriverConfig.Load(DriverConfig.ResolvePath(_home));
+        Assert.Equal(new Dictionary<string, string> { ["q123"] = "reports" }, file.Admitted);
+        Assert.Empty(file.Drivable);
+        Assert.True(file.Admits(new QuestView("q123", "ask #a1b2c3", "reports", plan.Title!, "", "Open")));
     }
 
-    /// <summary>An unadopted repository is carried only by a session on the protocol door (D70); an adopter rides either.</summary>
+    /// <summary>A press where it is driven writes no admission, and one the service refused admits nothing.</summary>
+    [Fact]
+    public async Task A_driven_press_and_a_refused_one_admit_nothing()
+    {
+        var refused = new World { Answer = new AskAnswer(false, "`reports` cannot be asked: it is not addressable here.", null, null) };
+
+        await SetupPress.ApplyAsync(await PlanAsync(new World()), new World(), _home);
+        await SetupPress.ApplyAsync(await PlanAsync(refused, config: Driven.WithDrivable("reports", false)), refused, _home);
+
+        Assert.False(File.Exists(DriverConfig.ResolvePath(_home)));
+    }
+
+    /// <summary>
+    /// An admission that cannot be written leaves the quest published and says so: it waits, as the repository's other work does, until it
+    /// is driven or the file reads again.
+    /// </summary>
+    [Fact]
+    public async Task An_admission_that_cannot_be_written_is_said_with_the_quest_it_left_waiting()
+    {
+        var path = DriverConfig.ResolvePath(_home);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, "{ not json");
+        var world = new World();
+
+        var outcome = await SetupPress.ApplyAsync(await PlanAsync(world, config: Driven.WithDrivable("reports", false)), world, _home);
+
+        Assert.True(outcome.Published);
+        Assert.Equal("q123", outcome.QuestId);
+        Assert.StartsWith("Asked as `#a1b2c3` in `work`. Its admission could not be written", outcome.Message);
+        Assert.Contains("`#q123` waits as the rest of `reports`'s work does until it is driven here", outcome.Message);
+        Assert.Equal("{ not json", File.ReadAllText(path));
+    }
+
+    /// <summary>
+    /// An unadopted repository is carried only by a session on the protocol door (D70), driven or not; an adopter rides either.
+    /// </summary>
     [Fact]
     public async Task An_unadopted_repository_on_the_pipe_door_is_refused_and_an_adopter_is_not()
     {
         var unadopted = await PlanAsync(new World(), door: SessionWire.Pipe);
+        var alone = await PlanAsync(new World(), config: Driven.WithDrivable("reports", false), door: SessionWire.Pipe);
         var adopted = await PlanAsync(new World { Facts = Adopter("{}", """{"entries":[]}""") }, "billing", door: SessionWire.Pipe);
 
         Refused(unadopted, SetupRefusals.NotDriven, "protocol door");
+        Refused(alone, SetupRefusals.NotDriven, "protocol door");
+        Assert.Single(alone.Refusals);
         Assert.Empty(adopted.Refusals);
     }
 
@@ -278,7 +329,7 @@ public sealed class SetupPressTests : IDisposable
     {
         var plan = await PlanAsync(new World { Tools = Tools() with { Daoris = null } }, config: Driven.WithDrivable("reports", false).WithTrees("reports", false));
 
-        Assert.Equal([SetupRefusals.NotDriven, SetupRefusals.NoOwnTree, SetupRefusals.NoTool], plan.Refusals.Select(refusal => refusal.Code));
+        Assert.Equal([SetupRefusals.NoOwnTree, SetupRefusals.NoTool], plan.Refusals.Select(refusal => refusal.Code));
         Assert.False(plan.Pressable);
     }
 
@@ -421,6 +472,24 @@ public sealed class SetupPressTests : IDisposable
         await SetupCommand.RunAsync(["reports", "--plan"], output, new World(), branch, SessionWire.Acp, _home, Day);
 
         Assert.Contains("as a branch, for your review", output.ToString());
+    }
+
+    /// <summary>AGENTSPLACE1b: where it is not driven, the plan and the press say its quest starts alone, and where it is, nothing of it.</summary>
+    [Fact]
+    public async Task The_plan_and_the_press_say_where_its_quest_starts_alone()
+    {
+        var alone = new StringWriter();
+        var driven = new StringWriter();
+        var pressed = new StringWriter();
+
+        await SetupCommand.RunAsync(["reports", "--plan"], alone, new World(), Driven.WithDrivable("reports", false), SessionWire.Acp, _home, Day);
+        await SetupCommand.RunAsync(["reports", "--plan"], driven, new World(), Driven, SessionWire.Acp, _home, Day);
+        await SetupCommand.RunAsync(["reports"], pressed, new World(), Driven.WithDrivable("reports", false), SessionWire.Acp, _home, Day);
+
+        const string Said = "  starts   its quest alone: `reports` is not driven here, so nothing else of it starts";
+        Assert.Contains(Said + "\n", alone.ToString().ReplaceLineEndings("\n"));
+        Assert.Contains(Said + "\n", pressed.ToString().ReplaceLineEndings("\n"));
+        Assert.DoesNotContain("  starts ", driven.ToString());
     }
 
     [Fact]

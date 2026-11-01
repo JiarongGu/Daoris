@@ -114,6 +114,7 @@ public sealed class HistoryClearingTests : IDisposable
         (DriverConfig.Empty
             .WithForgiven("q1", 3).WithForgiven("q2", 1)
             .WithReleased("q1", "s2")
+            .WithAdmitted("q1", "engine").WithAdmitted("q2", "engine")
             .WithPausedQuest("q1", new WorkPause(At, new Dictionary<string, string>()))).Save(ConfigPath);
 
         var service = new StandIn
@@ -151,6 +152,7 @@ public sealed class HistoryClearingTests : IDisposable
         Assert.Equal(["q2"], config.Forgiven.Keys);
         Assert.Empty(config.Released);
         Assert.Empty(config.PausedQuests);
+        Assert.Equal(["q2"], config.Admitted.Keys);
 
         var line = Assert.Single(log.Lines(), each => each.Contains("\"history.cleared\"", StringComparison.Ordinal));
         Assert.Contains("\"scope\":\"quest\"", line);
@@ -709,7 +711,8 @@ public sealed class HistoryClearingTests : IDisposable
         var room = IntakeRoom.PathOf(_home, "aurora");
         Directory.CreateDirectory(room);
         File.WriteAllText(Path.Combine(room, "AGENTS.md"), "the room");
-        DriverConfig.Empty.WithForgiven("qgone", 4).WithForgiven("q2", 1).Save(ConfigPath);
+        // AGENTSPLACE1b: an admission of a quest no store holds goes with the marks.
+        DriverConfig.Empty.WithForgiven("qgone", 4).WithForgiven("q2", 1).WithAdmitted("qgone2", "engine").WithAdmitted("q3", "engine").Save(ConfigPath);
 
         var service = new StandIn
         {
@@ -759,6 +762,7 @@ public sealed class HistoryClearingTests : IDisposable
         Assert.True(File.Exists(Path.Combine(Sessions, "requests", "r1.json")));
         Assert.False(Directory.Exists(room));
         Assert.Equal(["q2"], DriverConfig.Load(ConfigPath).Forgiven.Keys);
+        Assert.Equal(["q3"], DriverConfig.Load(ConfigPath).Admitted.Keys);
     }
 
     /// <summary>A workspace that keeps an ask keeps its intake's room (§2.2).</summary>

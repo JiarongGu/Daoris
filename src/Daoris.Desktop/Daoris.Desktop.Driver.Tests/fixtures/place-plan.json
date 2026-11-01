@@ -47,17 +47,16 @@
       ]
     },
     {
-      "name": "adoption without driving, refused by the press's own rule",
+      "name": "adoption without driving, its set-up quest started alone (AGENTSPLACE1b)",
       "args": ["atlas", "--preset", "merge-after-accept", "--with", "adoption", "--plan"],
-      "exit": 1,
+      "exit": 0,
       "lines": [
         "place: `atlas` — Merge after you accept; adoption",
         "  `atlas`: now Not driven · after Not driven · suggested Merge after you accept, with adoption",
         "changes, each said once:",
         "  `atlas`: a tree per session, off → on",
         "  `atlas`: a set-up asked of its own session, not asked → asked",
-        "refused:",
-        "  - `atlas` is not driven here: it is not opted into driving on this machine, and only a driven session carries a set-up. Drive it under Repositories → the repository's page → Setup → Driving, or with `daoris driver drive atlas`.",
+        "  `atlas`: what starts here while general driving stays off, nothing → its set-up quest alone",
         "--plan: nothing was written, and nothing was asked."
       ]
     },

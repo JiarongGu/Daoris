@@ -80,8 +80,9 @@ public sealed record PlaceApplied(DriverConfig After, IReadOnlyList<PlaceChange>
 /// copy of the configuration through today's doors' own edits (driving, trees, the workflow choice, the landing rule by
 /// <see cref="LandingRules.Put"/>, the second opinion and the review rule), read before and after through the resolvers a start uses
 /// (<see cref="PlaceProjection.ValuesAt"/>, <see cref="WorkflowProcesses.Otherwise(IWorkflowStore, DriverConfig, string, string?, string?)"/>,
-/// <see cref="WorkPolicies.Of"/>). It says every refusal at once, what lowers the person's part, §17.7's reach, the work driving releases and
-/// each declaration with what accepting it is for. It writes nothing and asks no account, plugin, tool or remote.
+/// <see cref="WorkPolicies.Of"/>). It says every refusal at once, what lowers the person's part, §17.7's reach, the work driving releases or,
+/// with adoption and driving off, that the set-up quest starts alone (AGENTSPLACE1b), and each declaration with what accepting it is for. It
+/// writes nothing and asks no account, plugin, tool or remote.
 /// </summary>
 public static class PlacePlans
 {
@@ -94,6 +95,9 @@ public static class PlacePlans
     public const string Integration = "integration";
 
     public const string NoLandingPlugin = "no-landing-plugin";
+
+    /// <summary>What an adoption part says where general driving stays off: the set-up quest is admitted alone (AGENTSPLACE1b).</summary>
+    public const string AloneSaid = "what starts here while general driving stays off";
 
     /// <summary>The ask's own refusals, said before any repository is read: the delivery, what rides it, and what it builds.</summary>
     public static IReadOnlyList<PlaceRefusal> AskRefusals(PlaceAsk ask)
@@ -188,6 +192,8 @@ public static class PlacePlans
             if (SetupPress.OpenRefusal(quests, name) is { } open) Refuse(Adoption, open.Code, open.Sentence);
             changes.Add(new("SETUP_PRESS", Adoption, "a set-up asked of its own session", "not asked",
                 ask.Builds is { } builds && SetupBuilds.Is(builds) ? $"asked, for {SetupBuilds.Named(builds)}" : "asked"));
+            // AGENTSPLACE1b: not driven after the plan, the press admits its quest alone, and the queued work stays held.
+            if (!Driven(after)) changes.Add(new("SETUP_PRESS", Adoption, AloneSaid, "nothing", "its set-up quest alone"));
         }
 
         return new PlaceApplied(after, changes, refusals);
