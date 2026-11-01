@@ -82,7 +82,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/rail/SessionRail.test.tsx` | 56 | 1103 |
 | `src/Daoris.Web/src/work/rail/SessionRow.test.tsx` | 47 | 859 |
 | `src/Daoris.Web/src/workflow/WorkflowRunView.test.tsx` | 62 | 1008 |
-| `src/Daoris.Web/src/workflow/edit/WorkflowEditor.tsx` | 43 | 855 |
+| `src/Daoris.Web/src/workflow/edit/WorkflowEditor.tsx` | 44 | 859 |
 | `src/Daoris.Web/src/workflow/edit/graphDraft.ts` | 43 | 773 |
 
 ### Web settings (`web-settings`)

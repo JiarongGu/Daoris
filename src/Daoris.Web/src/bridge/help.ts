@@ -162,7 +162,8 @@ export const useDraftProposals = (place: string, enabled: boolean): DraftCard[] 
   const found = sessions.flatMap((session, at) => (lists[at]?.data ?? [])
     .filter((proposal) => proposal.kind === 'workflow' && proposal.workflow?.draft && proposal.workflow.scope === place)
     .map((proposal) => ({ proposal, session })));
-  const roster = useHarnesses();
+  // The roster only names the agent that made a proposal, so it is read once the editor shows and a proposal is there (D150).
+  const roster = useHarnesses({ enabled: enabled && found.length > 0 });
   const records = useHelpSessions(false, enabled && found.length > 0);
   const doors = Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [];
   return found.map(({ proposal, session }) => ({

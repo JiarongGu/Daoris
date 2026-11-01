@@ -22812,6 +22812,11 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 > **SETUPUX1s — save and choose in the editor** (web; row s of the set-up design, as amended by D223; its first clause, judgement by fingerprint, was FLOWCHART2c's). *Review and save* on the draft's holding judgement, an append's consent bound to the scope keys the driver returned and reset when that set changes, a name-only save, *Use here* only on a draft that is the saved version. Proof: out-of-order judgements; a changed reach resets consent; no *Use* on a changed draft; a stale base; *Save* passing while *Use* refuses; stories at 80, 39 and 25rem, en and zh, both themes, keyboard.
 
 **Outcome** 2026-11-02: `SaveReview.tsx` (the review and the choice), `saveChanges.ts`, `usePlan.ts` and `WorkflowEditor.tsx` keep the review, the consent key, the baseline and the plan of a choice; *Save as new* is now *Save as a new workflow* inside the review. Detail: D221's SETUPUX1s note; `saveChanges.test.ts`, `WorkflowEditor.save.test.tsx`, `WorkflowEditor.save.stories.tsx`.
+## SETUPUX1t — staffing a step (2026-11-02, D221)
+
+> **SETUPUX1t — staffing a step** (web; row t of the set-up design, as amended by D223). A step's *Taken by* offers the roles that take its work and cover this place, each named with its place, and *Give this place its own…* opens the one RoleEditor, saves the role through `SET_ROLE` and returns to the intact draft; the role then drawn as the step's who; a refused role save keeps both forms. Proof: add a role, return, choose it, save and use; a refused save keeps both forms; stories at 80, 39 and 25rem, en and zh, both themes, keyboard.
+
+**Outcome** 2026-11-02: `StepRole.tsx` is the step's *Taken by* over `RolesCard`'s editor; `useWorkflowEditor` hands the editor the role catalogue, orders, agents and presses (`staffing`) read only while it shows. Detail: D221's SETUPUX1t note; `WorkflowEditor.staffing.test.tsx`, `WorkflowEditor.staffing.stories.tsx`.
 
 ## COWORKVIEW1b-ii — the quests a part asked, and what asked it (2026-11-02, D173)
 

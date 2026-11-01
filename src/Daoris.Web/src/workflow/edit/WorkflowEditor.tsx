@@ -13,7 +13,7 @@ import { isTextField } from '../../menus/press';
 import type { ChartEdit } from '../chart/FlowChart';
 import { isHoldKind } from '../graphFlow';
 import type {
-  EditorRole, GraphProblem, WorkflowListAnswer, WorkflowPaletteAnswer, WorkflowSaveAnswer, WorkflowSaveAsk, WorkflowShownAnswer,
+  EditorRole, GraphProblem, StepStaffing, WorkflowListAnswer, WorkflowPaletteAnswer, WorkflowSaveAnswer, WorkflowSaveAsk, WorkflowShownAnswer,
   WorkflowUseAnswer, WorkflowUseAsk,
 } from './answers';
 import { type Begin, draftFlow, EditCanvas } from './EditCanvas';
@@ -35,6 +35,7 @@ import { withRefusals } from './refusalMarks';
 import { consentKey, changesBetween } from './saveChanges';
 import { type ReviewFacts, type SaveTarget, SaveReview, type UseOffer } from './SaveReview';
 import { StepPicker } from './StepPicker';
+import type { RolePlace } from './StepRole';
 import { usePlan } from './usePlan';
 
 /** What the step editor's bridge hands it (`bridge/repositories/workflowEdit.ts`): the reads, the roles, the judge, the save and the choice. */
@@ -47,6 +48,8 @@ export type WorkflowEditorBridge = {
   error: unknown;
   /** The working roles a step may name. */
   roles: EditorRole[];
+  /** The one role editor's reads and presses, for a step's *Taken by* to give the place a role of its own; none, and it offers only the roles there are. */
+  staffing?: StepStaffing;
   /** The saved version last asked for by `onShow`, once it is answered. */
   shown: WorkflowShownAnswer | null;
   onShow: (id: string | null) => void;
@@ -154,7 +157,7 @@ export function WorkflowEditor(props: WorkflowEditorProps) {
 
 /** The editor once its reads are answered, told whether its region holds the inspector beside the chart. */
 function Composing({
-  list, palette, roles, shown, onShow, judged, judgedOf = null, judgeFailed = null, judging, onJudge, saving, onSave, using, onUse, onPlan, place, startFrom,
+  list, palette, roles, staffing, shown, onShow, judged, judgedOf = null, judgeFailed = null, judging, onJudge, saving, onSave, using, onUse, onPlan, place, startFrom,
   route = null, pipeline = null, lines, onClose, wide, proposal: offered = null, onSettleProposal, onDismissProposal,
 }: WorkflowEditorProps & { list: WorkflowListAnswer; palette: WorkflowPaletteAnswer; wide: boolean }) {
   const { t, i18n } = useTranslation();
@@ -463,6 +466,7 @@ function Composing({
   };
   // Ask Daoris is told the draft open here (FLOWCHART2d; D223 §8.3), registered while the editor is mounted and let go when it closes.
   const placeName = 'repository' in place ? place.repository : place.workspace;
+  const rolePlace: RolePlace = 'repository' in place ? { kind: 'repository', name: place.repository } : { kind: 'workspace', name: place.workspace };
   const source = target.base !== null ? `${target.id}@v${target.base}` : target.from ? `preset:${target.from}` : 'new';
   const problemsKey = JSON.stringify(problems);
   useEffect(() => registerOpenDraft({
@@ -746,7 +750,7 @@ function Composing({
     onRemove: (options) => remove(id, options),
   });
   const inspector = node && (
-    <Inspector palette={palette} draft={draft} roles={roles} lines={lines} node={node} titleOf={titleOf}
+    <Inspector palette={palette} draft={draft} roles={roles} place={rolePlace} staffing={staffing} lines={lines} node={node} titleOf={titleOf}
       problems={{ atStep: atStep(node.id), atWire }} confirming={confirming} onConfirm={setConfirming} acts={acts(node.id)} />
   );
 
