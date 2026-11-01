@@ -40,5 +40,20 @@
   "workflow.place.change.close": "关闭",
   "workflow.place.steps.open": "编辑步骤…",
   "workflow.place.steps.title": "它的步骤",
-  "workflow.place.steps.body": "在编辑器里编辑某个版本的步骤，边改边检查。保存后，在这里选用这个版本；已在运行的工作沿用它开始时的版本。"
+  "workflow.place.steps.body": "在编辑器里编辑某个版本的步骤，边改边检查。保存后，在这里选用这个版本；已在运行的工作沿用它开始时的版本。",
+  "workflow.place.route.default": "默认工作",
+  "workflow.place.route.defaultWords": "默认工作",
+  "workflow.place.route.landedWords": "落地的工作",
+  "workflow.place.route.chosen": "{{label}}：{{target}}，{{why}}",
+  "workflow.place.chart.current": "现行，按规则现在的样子读出",
+  "workflow.place.chart.saved": "{{name}} v{{version}}，{{route}}所跟随的已保存工作流",
+  "workflow.place.chart.show": "显示流程图",
+  "workflow.place.chart.hide": "收起流程图",
+  "workflow.place.chart.region": "{{route}}的流程图",
+  "workflow.place.chart.reading": "正在读取流程图…",
+  "workflow.place.chart.older": "这个驱动还不会画出路线的图，流程图要等它支持。",
+  "workflow.place.chart.landedNone": "落地的工作在这里不做验证，所以没有流程图可画。",
+  "workflow.place.cell.show": "它的设置",
+  "workflow.place.cell.hide": "收起它的设置",
+  "workflow.place.cell.region": "{{step}}：它的设置"
 }

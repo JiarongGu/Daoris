@@ -40,5 +40,20 @@
   "workflow.place.change.close": "Close",
   "workflow.place.steps.open": "Edit steps…",
   "workflow.place.steps.title": "Its steps",
-  "workflow.place.steps.body": "Edit a version's steps in the editor, judged as you go. Saved, a version is chosen here and running work keeps the one it started under."
+  "workflow.place.steps.body": "Edit a version's steps in the editor, judged as you go. Saved, a version is chosen here and running work keeps the one it started under.",
+  "workflow.place.route.default": "Default work",
+  "workflow.place.route.defaultWords": "default work",
+  "workflow.place.route.landedWords": "landed work",
+  "workflow.place.route.chosen": "{{label}}: {{target}}, {{why}}",
+  "workflow.place.chart.current": "Current, read from the rules as they stand",
+  "workflow.place.chart.saved": "{{name}} v{{version}}, the saved workflow {{route}} follows",
+  "workflow.place.chart.show": "Show the chart",
+  "workflow.place.chart.hide": "Hide the chart",
+  "workflow.place.chart.region": "The chart of {{route}}",
+  "workflow.place.chart.reading": "Reading the chart…",
+  "workflow.place.chart.older": "This driver does not draw a route's graph yet, so the chart waits for it.",
+  "workflow.place.chart.landedNone": "Landed work follows no verification here, so there is no chart to draw.",
+  "workflow.place.cell.show": "Its settings",
+  "workflow.place.cell.hide": "Hide its settings",
+  "workflow.place.cell.region": "{{step}}: its settings"
 }
