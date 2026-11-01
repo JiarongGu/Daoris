@@ -115,6 +115,8 @@ public sealed class ToolsRoutes(DriverContext context)
             Platform = platform,
             // The settings Daoris's git carries (TOOLS6): the page's git card and the press's grounds read them here.
             Git = read.Git,
+            // Settings → Git (GITAUTH1e): the identities and what points at them, from the files alone.
+            Identities = GitIdentityPage.Read(home),
             Tools = rows,
             // The person's locations in order, then the list built in, always last (§3.3).
             Locations = read.Locations.Select((_, at) => ListRow(lists[at], platform)).ToArray(),
@@ -239,6 +241,132 @@ public sealed class ToolsRoutes(DriverContext context)
             GitVersions.AskAsync, cancellationToken);
         return new { Key = key, Value = string.IsNullOrWhiteSpace(value) ? null : value.Trim(), Version = version?.ToString() };
     }
+
+    // Settings → Git (GITAUTH1e, the git-auth design §7.1-§7.2): one act on an identity — add (ssh or https), test, rename, commits-as,
+    // read-only, remove, default — the screen's half of `daoris-driver git identity` and `git default`, over the same typed operations.
+    // The page is the person's own press, so a widening is confirmed in place before it is sent. A change lifts every hold, so each
+    // remote is tried once with what now serves it (§5.2).
+    [DriverRoute("GIT_IDENTITY")]
+    [Publishes("GIT_IDENTITY", StateScopes.Tools)]
+    private async Task<object?> GitIdentityAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var home = _loop.Home;
+        var action = PayloadHelper.GetRequiredValue<string>(request.Payload, "action");
+        var name = Optional(request, "identity");
+
+        switch (action)
+        {
+            case "add-ssh":
+            {
+                var identity = await GitIdentityActs.AddSshAsync(home, Needed(request, "host"), Needed(request, "label"), Optional(request, "name"),
+                    Optional(request, "email"), Optional(request, "import"), Flag(request, "rsa"), cancellationToken).ConfigureAwait(false);
+                GitHolds.LiftAll(home);
+                return GitAdded(home, identity);
+            }
+
+            case "add-https":
+            {
+                var identity = await GitIdentityHttps.AddHttpsAsync(home, Needed(request, "host"), Needed(request, "label"), Optional(request, "user"),
+                    Optional(request, "name"), Optional(request, "email"), Optional(request, "token"), "https", cancellationToken).ConfigureAwait(false);
+                GitHolds.LiftAll(home);
+                return GitAdded(home, identity);
+            }
+
+            case "test":
+            {
+                var target = GitIdentityActs.Find(home, name ?? throw new DriverException("name the git identity."));
+                var answer = target.Way == GitIdentity.Https
+                    ? await GitIdentityHttps.TestHttpsAsync(home, name, Needed(request, "repository"), cancellationToken).ConfigureAwait(false)
+                    : await GitIdentityActs.TestAsync(home, name, Optional(request, "trust"), cancellationToken).ConfigureAwait(false);
+                if (answer.Result == "reached") GitHolds.LiftAll(home, "test");
+                return new
+                {
+                    answer.Result, answer.User, answer.Words,
+                    HostKeys = answer.HostKeys.Select(key => new { Algorithm = key.Key.Split(' ')[0], key.Fingerprint, key.Published }).ToArray(),
+                };
+            }
+
+            case "rename":
+                return GitShown(GitIdentityActs.Rename(home, name ?? throw new DriverException("name the git identity."), Needed(request, "label")));
+
+            case "commits-as":
+                return GitShown(Flag(request, "clear")
+                    ? GitIdentityActs.CommitsAs(home, name ?? throw new DriverException("name the git identity."), null, null)
+                    : GitIdentityActs.CommitsAs(home, name ?? throw new DriverException("name the git identity."), Optional(request, "name"), Optional(request, "email")));
+
+            case "read-only":
+                return GitShown(GitIdentityActs.ReadOnly(home, name ?? throw new DriverException("name the git identity."), Flag(request, "on")));
+
+            case "remove":
+            {
+                var pointing = await GitIdentityHttps.RemoveAsync(home, name ?? throw new DriverException("name the git identity."), cancellationToken).ConfigureAwait(false);
+                GitHolds.LiftAll(home);
+                return new { Pointing = pointing };
+            }
+
+            case "default":
+            {
+                var chosen = GitIdentityActs.Default(home, Needed(request, "host"), name);
+                GitHolds.LiftAll(home);
+                return new { Identity = chosen?.Id };
+            }
+
+            default:
+                throw new DriverException($"`{action}` is not an act on a git identity.");
+        }
+    }
+
+    // A repository's remote, a workspace's host or this machine's host pointed at an identity, at the person's own sign-ins, or cleared
+    // (`daoris-driver git use`). Two remotes at one address must point at one identity: the operation refuses otherwise.
+    [DriverRoute("GIT_USE")]
+    [Publishes("GIT_USE", StateScopes.Tools | StateScopes.Driver)]
+    private async Task<object?> GitUseAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var home = _loop.Home;
+        var scope = PayloadHelper.GetRequiredValue<string>(request.Payload, "scope");
+        var value = Optional(request, "value");
+        switch (scope)
+        {
+            case "machine":
+                if (value is not (null or GitIdentityUse.Own)) throw new DriverException("this machine chooses the person's own sign-ins or nothing for a host; a host's identity is its default.");
+                GitIdentityActs.UseMachine(home, Needed(request, "host"), value is not null);
+                break;
+
+            case "workspace":
+                GitIdentityActs.UseWorkspace(home, Needed(request, "workspace"), Needed(request, "host"), value);
+                break;
+
+            case "repository":
+            {
+                var repository = Needed(request, "repository");
+                var service = _loop.Service ?? throw new DriverException("Daoris is not ready to read its repositories yet.");
+                var rows = LinesRoutes.Checkouts(await service.RegistryAsync(cancellationToken).ConfigureAwait(false), repository, Optional(request, "workspace"));
+                var root = rows.Select(row => row.Root).FirstOrDefault(each => !string.IsNullOrEmpty(each) && Directory.Exists(each))
+                    ?? throw new DriverException($"{repository} has no checkout here.");
+                var addresses = await GitRemoteRows.AddressesAsync(root, cancellationToken).ConfigureAwait(false);
+                GitFolders.Remember(home, rows.Where(row => !string.IsNullOrEmpty(row.Root)).Select(row => (row.Root!, row.Repository, row.Workspace)));
+                GitIdentityActs.UseRepository(home, repository, Optional(request, "remote") ?? "origin", value, addresses);
+                break;
+            }
+
+            default:
+                throw new DriverException($"`{scope}` is not a scope a git identity is chosen for.");
+        }
+
+        GitHolds.LiftAll(home, "pointer");
+        return new { Scope = scope };
+    }
+
+    private static string Needed(IpcRequest request, string name) =>
+        Optional(request, name) ?? throw new DriverException($"`{name}` is needed.");
+
+    private static object GitAdded(string home, GitIdentity identity) => new
+    {
+        Identity = identity.Id, identity.Label, identity.Host, identity.Way,
+        PublicKey = identity.Way == GitIdentity.Ssh ? GitKeys.PublicKey(home, identity.Id) : null,
+    };
+
+    private static object GitShown(GitIdentity identity) => new { Identity = identity.Id, identity.Label };
 
     // What a switch of git changes, said before it applies (§4.1): the checkout keys the git that runs now and the git
     // the switch would run read differently, from each one's own `config --system --list`. Asked of both programs, so

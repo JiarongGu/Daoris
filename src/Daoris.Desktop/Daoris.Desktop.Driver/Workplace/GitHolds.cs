@@ -163,6 +163,13 @@ public static class GitHolds
     }
 
     /// <summary>
+    /// A change to an identity, a pointer or a host's default (§5.2): every hold on the home lifted, so each remote is tried once at its
+    /// next act with what now serves it. How many were.
+    /// </summary>
+    public static int LiftAll(string home, string why = "identity") =>
+        Read(home).Select(each => each.Root).Distinct(StringComparer.OrdinalIgnoreCase).ToList().Sum(root => Lift(home, root, null, why));
+
+    /// <summary>
     /// A held remote in the words an act says in place of trying (the design §5.2): what the transport said, and what lifts it, naming
     /// the row in <i>What needs you</i> rather than repeating it. English, as the terminal's and the instruction's words are; the
     /// screen's row has its own catalogue.

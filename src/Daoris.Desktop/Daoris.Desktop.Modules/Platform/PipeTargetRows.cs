@@ -49,6 +49,8 @@ internal static class PipeTargetRows
         ["INTEGRATION_GATES"] = "reads the declaration at the line's tip and accepts it by its blob",
         ["TOOLS_USE"] = "checks a file's version or downloads a managed one",
         ["TOOLS_LOCATION"] = "edits the list of locations in place",
+        ["GIT_IDENTITY"] = "adds, tests, changes or removes one identity of the machine's set, which holds the secret apart",
+        ["GIT_USE"] = "writes one pointer into the choices of a repository's remote, a workspace's host or the machine's host",
         ["ACCOUNT_USE"] = "signs in or out of an account",
         ["DAORIS.REMOTES.SET"] = "carries a key the read redacts",
         ["DAORIS.REMOTES.REMOVE"] = "removes a workspace's wiring and its key",
@@ -324,6 +326,11 @@ internal static class PipeTargetRows
         Row("TOOLS_GIT_SET", Setting("TOOLS_LIST", ["key"], _ => null,
             (a, p) => Fp(Text(At(At(a, "git"), Text(p, "key") ?? "")) ?? ""),
             p => Fp(Text(p, "value") ?? "")));
+        // GITAUTH1e: a git identity act and a pointer are compared over the identities as the list answers them, which hold no secret.
+        Row("GIT_IDENTITY", Setting("TOOLS_LIST", ["identity"], _ => null,
+            (a, p) => Fp(Raw(Named(At(At(a, "identities"), "identities"), "id", Text(p, "identity"))) ?? "")));
+        Row("GIT_USE", Setting("TOOLS_LIST", ["scope", "repository", "workspace", "host", "remote"], _ => null,
+            (a, _) => Fp(Raw(At(At(a, "identities"), "identities")) ?? "")));
         Row("TOOLS_LOCATION", Setting("TOOLS_LIST", ["address"], _ => null,
             (a, _) => Fp(string.Join(",", Each(At(a, "locations")).Select(each => Text(At(each, "address")) ?? Text(each)).Order(StringComparer.Ordinal)))));
         foreach (var route in new[] { "SET", "REMOVE" })

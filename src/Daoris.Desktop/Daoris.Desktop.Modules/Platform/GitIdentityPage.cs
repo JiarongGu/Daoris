@@ -1,0 +1,40 @@
+using Daoris.Driver;
+
+namespace Daoris.Desktop;
+
+/// <summary>
+/// What Settings → Git and the remote rows read (GITAUTH1e; the git-auth design §7.1), from the files alone, as <c>TOOLS_LIST</c>'s
+/// <c>identities</c>: the identities with what points at them, the hosts, the hosts the person's own sign-ins are chosen for, and whether
+/// the home has moved. No secret by construction: a public key and a fingerprint are the most it holds.
+/// </summary>
+internal static class GitIdentityPage
+{
+    internal static object Read(string home)
+    {
+        var identities = GitIdentities.Read(home);
+        var pointers = GitIdentityUse.Read(home);
+        return new
+        {
+            Problem = GitIdentities.Problem(home),
+            Moved = GitMoved.Moved(home),
+            Identities = identities.Select(each =>
+            {
+                var used = GitSshFiles.LastUsed(home, each.Id);
+                return new
+                {
+                    each.Id, each.Label, each.Host, each.Way, each.User, each.KeyType, each.Fingerprint, each.ReadOnly, each.Default,
+                    each.CommitsName, each.CommitsEmail,
+                    Test = each.Test is { } test ? new { test.Result, test.User, At = Moments.Write(test.At) } : null,
+                    LastUsed = used is { } at ? Moments.Write(at) : null,
+                    PublicKey = each.Way == GitIdentity.Ssh ? GitKeys.PublicKey(home, each.Id) : null,
+                    KeyPage = GitHosts.Known.TryGetValue(each.Host, out var known) ? known.KeyPage : null,
+                    Repositories = pointers.Repository.Sum(repository => repository.Value.Count(pointer => pointer.Value == each.Id)),
+                    Workspaces = pointers.Workspace.Count(workspace => workspace.Value.Any(pointer => pointer.Value == each.Id)),
+                    PointedAt = GitIdentityUse.PointingAt(pointers, each.Id).ToArray(),
+                };
+            }).ToArray(),
+            Own = pointers.Machine.Keys.Order(StringComparer.Ordinal).ToArray(),
+            Hosts = identities.Select(each => each.Host).Concat(pointers.Machine.Keys).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray(),
+        };
+    }
+}
