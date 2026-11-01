@@ -1,14 +1,28 @@
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { cn } from '../../lib/cn';
-import { clockOf } from '../../locales/format';
+import { ago, clockOf } from '../../locales/format';
+import { whoOf } from '../../asks/ChannelSection';
+import type { ChannelItem } from '../channel';
 import { Dot, Inline, SectionTitle } from '../../design/ui';
 import { ExternalLink } from '../../design/links';
 import { type Consideration, sittingBecause, sittingSentence } from '../../data/signals';
 import type { AtWorkA, AtWorkChild, AtWorkHeld, AtWorkPart, AtWorkQuest, AtWorkSubagents } from './types';
 import { askerLine, CHILD_STATE_KEY, childTone, HINT_KEY, joinedLine, LANES_GUIDE, LAST_SEEN, partStateKey, waitLine, waitWhat } from './words';
 
+/**
+ * The newest messages of the page's own channel read (COWORKVIEW1c, the design §3.3): the lines the session's panel already holds, so the
+ * view asks the channel for nothing. Absent for a session with no ask, which has no channel and then no block.
+ */
+export type AtWorkChannel = {
+  words: readonly ChannelItem[];
+  /** *All messages*: opens the panel that holds the channel. */
+  onOpen?: () => void;
+};
+
 export type AtWorkViewProps = {
+  /** The channel's last words, each placed on the part whose session posted it. */
+  channel?: AtWorkChannel;
   /** What the read holds; undefined before its first answer, which draws as reading. */
   held: AtWorkHeld | undefined;
   /** A query in error (the bridge refused): its words, drawn failed where nothing is held and stale over an answer. */
@@ -36,7 +50,7 @@ export type AtWorkViewProps = {
  * attended one first, and its subagents, each with its state and its end, read from Daoris's records and never from the
  * conversation's text. Reading is never *nobody*, a failure says its words, and a stale answer keeps its rows dimmed.
  */
-export function AtWorkView({ held, error, onOpen, onOpenQuest, considered, onRetry, streamOf, onOpenStream, now }: AtWorkViewProps) {
+export function AtWorkView({ held, error, onOpen, onOpenQuest, considered, onRetry, streamOf, onOpenStream, now, channel }: AtWorkViewProps) {
   const { t } = useTranslation();
   if (!held || 'reading' in held) {
     if (!held && error) return <Failed why={error} onRetry={onRetry} />;
@@ -62,10 +76,11 @@ export function AtWorkView({ held, error, onOpen, onOpenQuest, considered, onRet
       )}
       <div className={cn('grid min-w-0 gap-3', stale !== null && 'opacity-60')}>
         <WaitingOn answer={answer} />
-        <Parts answer={answer} onOpen={onOpen} />
+        <Parts answer={answer} onOpen={onOpen} channel={channel} />
         <Subagents answer={answer} quiet={stale !== null} now={now} streamOf={streamOf} onOpenStream={onOpenStream} />
         <Quests answer={answer} considered={considered ?? []} onOpenQuest={onOpenQuest} />
         <AskedBy answer={answer} onOpenQuest={onOpenQuest} />
+        {channel && <ChannelWords channel={channel} parts={listsParts(answer, t) ? answer.parts : []} />}
         <Hint answer={answer} />
       </div>
     </div>
@@ -99,14 +114,57 @@ function worthListing(answer: AtWorkA, t: TFunction): boolean {
   return answer.parts.some((part) => part.waits || (part.joined && joinedLine(t, part.joined) !== null)) || !!answer.earlier;
 }
 
+/** Whether the parts list is drawn: more than the one part, or something the one part's page does not say. */
+function listsParts(answer: AtWorkA, t: TFunction): boolean {
+  const more = Object.values(answer.moreParts ?? {}).reduce((sum, count) => sum + count, 0);
+  return !(answer.parts.length < 2 && more === 0 && !worthListing(answer, t));
+}
+
+/** One message of the channel's last words, as the channel draws it: who, when, and the words as written. */
+function Word({ item }: { item: ChannelItem }) {
+  const { t } = useTranslation();
+  const first = (item.text ?? '').trim();
+  return (
+    <li className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-small text-ink-soft" title={first}>
+      <span className="font-semibold text-ink">{whoOf(t, item)}</span>
+      <span className="text-meta text-ink-faint">{ago(item.at)}</span>
+      <span className="line-clamp-2 min-w-0 flex-1 basis-40 [overflow-wrap:anywhere]">{first}</span>
+    </li>
+  );
+}
+
+/**
+ * The channel's last words that sit on no listed part (COWORKVIEW1c, the design §3.3): the person's, another line of work's, a session's
+ * that this list does not hold; then *All messages*, which opens the panel the whole channel is in.
+ */
+function ChannelWords({ channel, parts }: { channel: AtWorkChannel; parts: readonly AtWorkPart[] }) {
+  const { t } = useTranslation();
+  const keys = new Set(parts.map((part) => part.key));
+  const loose = channel.words.filter((item) => !item.session || !keys.has(item.session));
+  return (
+    <section className="grid min-w-0 gap-1">
+      <SectionTitle level={3}>{t('work.atWork.group.channel')}</SectionTitle>
+      {channel.words.length === 0 && <p className="m-0 text-small text-ink-faint">{t('work.atWork.channel.none')}</p>}
+      {loose.length > 0 && <ol className="m-0 grid list-none gap-1 p-0">{loose.map((item) => <Word key={item.id ?? item.at} item={item} />)}</ol>}
+      {channel.onOpen && (
+        <div>
+          <button type="button" className="text-small text-accent underline underline-offset-2" onClick={channel.onOpen}>
+            {t('work.atWork.channel.all')}
+          </button>
+        </div>
+      )}
+    </section>
+  );
+}
+
 /**
  * The entry's parts, each one button opening its part: its number, agent, its record's own state, what it waits on as the strip places
  * it, how it joined, and its subagents' count. A waiting part is never folded; the attended part's wait is the line above, not repeated.
  */
-function Parts({ answer, onOpen }: { answer: AtWorkA; onOpen?: (session: string) => void }) {
+function Parts({ answer, onOpen, channel }: { answer: AtWorkA; onOpen?: (session: string) => void; channel?: AtWorkChannel }) {
   const { t } = useTranslation();
   const more = Object.values(answer.moreParts ?? {}).reduce((sum, count) => sum + count, 0);
-  if (answer.parts.length < 2 && more === 0 && !worthListing(answer, t)) return null;
+  if (!listsParts(answer, t)) return null;
   return (
     <section className="grid min-w-0 gap-1">
       <SectionTitle level={3}>{t('work.atWork.group.parts')}</SectionTitle>
@@ -136,6 +194,11 @@ function Parts({ answer, onOpen }: { answer: AtWorkA; onOpen?: (session: string)
                   </span>
                 )}
               </button>
+              {(channel?.words ?? []).some((item) => item.session === part.key) && (
+                <ol className="m-0 mt-0.5 grid list-none gap-0.5 p-0 ps-4">
+                  {channel!.words.filter((item) => item.session === part.key).map((item) => <Word key={item.id ?? item.at} item={item} />)}
+                </ol>
+              )}
             </li>
           );
         })}

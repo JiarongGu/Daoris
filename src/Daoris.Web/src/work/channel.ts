@@ -179,6 +179,15 @@ export function forEntry(items: readonly ChannelItem[], { entry, repository }: {
     : item.entry === entry || item.to == null || same(item.to, repository));
 }
 
+/**
+ * The newest messages of what a session's panel holds, oldest first (COWORKVIEW1c, the cowork view design §3.3): the same read as the
+ * panel's, so the at-work view asks the channel for nothing of its own.
+ */
+export function lastWords(channel: Channel | null | undefined, only: { entry: string; repository: string }, count = 3): ChannelItem[] {
+  if (!channel) return [];
+  return forEntry(channel.items, only).filter((item) => item.kind === 'message').sort((a, b) => a.at.localeCompare(b.at)).slice(-count);
+}
+
 /** The message a message answers, or null where it answers none or the channel does not hold it. */
 export function repliesTo(items: readonly ChannelItem[], re: string | null | undefined): ChannelItem | null {
   return re ? items.find((item) => item.kind === 'message' && item.id === re) ?? null : null;

@@ -5,7 +5,7 @@ import { AtWorkView } from './AtWorkView';
 import {
   ASKED_BY, BOUND, CHAIN_AND_QUESTION, CHAT_TOOK_A_QUEST, CODEX, CODEX_NONE, CONSIDERED, CONTINUED, ELSEWHERE, EMPTY, FAILED, HINTED, HISTORY, IDS_ONLY,
   JOINED_EACH_WAY, LANES_ALONGSIDE_AND_UNTAKEN, LEAD_WAITING_ON_HELPER, LEAD_WAITING_ON_LANE, LOST, NO_PARENT, NOW, OVERFLOW_AND_EARLIER, PARTS,
-  PUBLISHED_AND_WAITS_ON_NONE, QUESTS_EACH_TAKER, READING, RESUMED_AND_EARLIER, STALE, THREE, TURN_WAITS, UNCERTAIN, UNREADABLE,
+  PUBLISHED_AND_WAITS_ON_NONE, QUESTS_EACH_TAKER, READING, SAID, RESUMED_AND_EARLIER, STALE, THREE, TURN_WAITS, UNCERTAIN, UNREADABLE,
 } from './atWork.fixtures';
 
 // Who is at work (COWORKVIEW1a, the cowork view design §5.3): each state the view draws, at the side bar's floor (300 px), a roomier
@@ -145,6 +145,15 @@ export const AskedBySession: Story = { args: { held: ASKED_BY({ session: 's1' })
 export const AskedBySessionChinese: Story = { args: { held: ASKED_BY({ session: 's1' }) }, decorators: routingZh };
 export const AskedByYou: Story = { args: { held: ASKED_BY({ person: true }) }, decorators: routingLight };
 export const AskedByYouChinese: Story = { args: { held: ASKED_BY({ person: true }) }, decorators: routingZh };
+
+// COWORKVIEW1c: the channel's last words, each on the part that posted it, the person's in the block, and *All messages*.
+
+/** The channel's newest three: a lane part's on its row, the lead's on its own, and the person's under *On the channel*. */
+export const ChannelLastWords: Story = { args: { held: LANES_ALONGSIDE_AND_UNTAKEN, channel: { words: SAID, onOpen: nothing } }, decorators: routingLight };
+export const ChannelLastWordsChinese: Story = { args: { held: LANES_ALONGSIDE_AND_UNTAKEN, channel: { words: SAID, onOpen: nothing } }, decorators: routingZh };
+
+/** A session with an ask and nothing said on its channel yet. */
+export const ChannelNothingSaid: Story = { args: { held: LANES_ALONGSIDE_AND_UNTAKEN, channel: { words: [], onOpen: nothing } }, decorators: routingLight };
 
 // COWORKVIEW1e-iii: the hint, one story per standing, at the same widths.
 

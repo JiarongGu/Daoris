@@ -1,4 +1,5 @@
 import type { Consideration } from '../../data/signals';
+import type { ChannelItem } from '../channel';
 import type { AtWorkA, AtWorkAsker, AtWorkChild, AtWorkHeld, AtWorkHint, AtWorkPart, AtWorkSubagents } from './types';
 
 // Who is at work (COWORKVIEW1a): the answers the view's stories and tests draw, each a state the cowork view design §5.3 names.
@@ -189,6 +190,17 @@ export const ASKED_BY = (by: AtWorkAsker['by']): AtWorkHeld => routed(
   { askedBy: { quest: 'q1', by } },
   's2',
 );
+
+// COWORKVIEW1c: the channel's last words.
+
+const posted = (id: string, at: string, over: Partial<ChannelItem>): ChannelItem => ({ kind: 'message', id, at, ...over });
+
+/** The newest three messages of the channel the page holds: the person's, a lane part's, and the lead's own. */
+export const SAID: ChannelItem[] = [
+  posted('m1', '2026-10-31T14:01:00Z', { person: true, text: 'Start with the index, then the notes.' }),
+  posted('m2', '2026-10-31T14:03:00Z', { session: 's2', repository: 'driver', agent: 'claude-code', text: 'The core lane is done; the index needs a second look before the notes go in.' }),
+  posted('m3', '2026-10-31T14:04:00Z', { session: 'c1', repository: 'game', agent: 'claude-code', text: 'Waiting on the docs lane.' }),
+];
 
 // COWORKVIEW1e-iii: the hint, where two subagents ran and the way to hand rows on is not open.
 
