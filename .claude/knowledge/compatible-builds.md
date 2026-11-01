@@ -49,10 +49,13 @@ A take-bind's contract was fixed twice before it held against the builds already
   contract can bump the stamp instead of hiding its rows. Builds from before the stamp still read none of
   it, and against them only a shape they cannot see works.
 - **A raise of the desktop store's stamp refuses an older build's every write, to every table** (first
-  taken by the delivery record, LANDNODE1b, D212's note). Each migration step names the stamp it leaves,
-  `DesktopStore.FirstWriter` for every step before that raise, never `WriterStamp`, which moves with the
-  build and would turn every earlier step into a raise. A test that fakes a newer build stamps it
-  `WriterStamp + 1`; a fake at a fixed number becomes this build once the stamp reaches it.
+  taken by the delivery record, LANDNODE1b, D212's note, to 2; then by a role's staffing policy,
+  STAFFPOLICY1a, D226's note, to 3, since an older build still reads the role's choices and would start
+  one the policy holds back). Each migration step names the stamp it leaves by its own constant,
+  `DesktopStore.FirstWriter` before the first raise, `DeliveryWriter` and `PolicyWriter` from each raise,
+  never `WriterStamp`, which moves with the build and would turn every earlier step into a raise. A test
+  that fakes a newer build stamps it `WriterStamp + 1`; a fake at a fixed number becomes this build once
+  the stamp reaches it.
 - **Say what is left.** An older build still acts on its own rows as it always did: CLOSE1w's note keeps
   that its take of a quest this build named takes it unbound and closes by its done. Write the remainder
   into the decision's note, so nobody reads the boundary as wider than it is.

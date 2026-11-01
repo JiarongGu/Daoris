@@ -59,13 +59,19 @@ public sealed record DesktopStoreOptions
 public sealed class DesktopStore : IDisposable
 {
     /// <summary>
-    /// The writer stamp this build writes with: 2 since the delivery record (LANDNODE1b), whose step raised it, so a build before it reads the
-    /// store and writes nothing there.
+    /// The writer stamp this build writes with: 3 since a role's staffing policy (STAFFPOLICY1a), whose step raised it, so a build before it
+    /// reads the store and writes nothing there.
     /// </summary>
-    public const int WriterStamp = 2;
+    public const int WriterStamp = PolicyWriter;
 
     /// <summary>The stamp of the first build that knows the store, which every step before the delivery record's leaves the store at.</summary>
     public const int FirstWriter = 1;
+
+    /// <summary>The stamp the delivery record's step raised the store to (LANDNODE1b), which a build of its fifteen steps writes with.</summary>
+    public const int DeliveryWriter = 2;
+
+    /// <summary>The stamp a role's staffing policy's step raised the store to (STAFFPOLICY1a).</summary>
+    public const int PolicyWriter = 3;
 
     /// <summary>How long a write waits on the file's lock before it is refused, in seconds (§13.4).</summary>
     private const int BusySeconds = 5;
@@ -509,7 +515,7 @@ public sealed class DesktopStore : IDisposable
         // step waits for the start's confirmation as every raise does (§13.3, §13.5). One unresolved delivery per unit by the partial unique
         // index, its key the digest of the unit, the bound tip, the method and the target; one phase entry without its outcome per delivery by
         // its own. What a later phase or a settlement sets is nullable, and no CHECK holds a word, so a newer build's is kept as written.
-        new(15, WriterStamp, write => write.Execute(
+        new(15, DeliveryWriter, write => write.Execute(
             """
             CREATE TABLE deliveries (
               key              TEXT NOT NULL PRIMARY KEY,
@@ -553,6 +559,39 @@ public sealed class DesktopStore : IDisposable
               PRIMARY KEY (delivery, ordinal)
             );
             CREATE UNIQUE INDEX delivery_phases_open ON delivery_phases (delivery) WHERE ended_at IS NULL;
+            """)),
+
+        // STAFFPOLICY1a: a role's staffing policy, its revisions and the role's new starts (the staff policy design §2.1, §11), Roles'. The
+        // second step to raise the writer stamp: an older build reads `role_staffing` and would start a choice past its budget or outside the
+        // works it takes, so from 3 its every write is refused; the step waits for the start's confirmation as every raise does. `staffing` is
+        // the digest of the choices the policy was set for; a revision with no policy is a deletion; `choice` keeps the choice's tuple.
+        new(16, PolicyWriter, write => write.Execute(
+            """
+            CREATE TABLE role_policy (
+              role     TEXT NOT NULL PRIMARY KEY,
+              policy   TEXT NOT NULL,
+              staffing TEXT NOT NULL,
+              revision INTEGER NOT NULL,
+              since    TEXT NOT NULL,
+              at       TEXT NOT NULL
+            );
+            CREATE TABLE role_policy_revisions (
+              role     TEXT NOT NULL,
+              revision INTEGER NOT NULL,
+              policy   TEXT,
+              staffing TEXT,
+              at       TEXT NOT NULL,
+              PRIMARY KEY (role, revision)
+            );
+            CREATE TABLE role_starts (
+              session   TEXT NOT NULL PRIMARY KEY,
+              role      TEXT NOT NULL,
+              choice    TEXT NOT NULL,
+              by        TEXT NOT NULL,
+              condition TEXT,
+              at        TEXT NOT NULL
+            );
+            CREATE INDEX role_starts_role ON role_starts (role, at);
             """)),
     ];
 
