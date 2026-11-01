@@ -700,16 +700,16 @@ function Composing({
   // The choice (SETUPUX1s): only of a version the draft still is, for the route the editor opened for, with the plan's token where one is read.
   const unchanged = target.base !== null && baseFingerprint === fingerprint;
   const kindOfRoute = route?.startsWith('kind:') ? route.slice('kind:'.length) : null;
-  const useAsk: WorkflowUseAsk | null = target.base === null ? null : {
+  const choice: WorkflowUseAsk | null = target.base === null ? null : {
     ...place, ...(kindOfRoute ? { kind: kindOfRoute } : {}), workflow: target.id, version: target.base,
   };
   const announced = list.use?.includes('plan') === true && onPlan !== undefined;
-  const read = usePlan(useAsk, announced && planning && unchanged, onPlan);
+  const read = usePlan(choice, announced && planning && unchanged, onPlan);
   useEffect(() => { if (!unchanged) setPlanning(false); }, [unchanged]);
   const use = async () => {
-    if (!useAsk) return;
+    if (!choice) return;
     try {
-      const answer = await onUse(read.token ? { ...useAsk, expected: read.token } : useAsk);
+      const answer = await onUse(read.token ? { ...choice, expected: read.token } : choice);
       setSaid((was) => ({ ...was, used: answer }));
       if (answer.refused === 'moved') read.again();
       else if (answer.done) setPlanning(false);
