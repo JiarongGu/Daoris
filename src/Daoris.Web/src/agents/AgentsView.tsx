@@ -22,7 +22,7 @@ import { type AgentPart, accountLabel, agentRows } from './agents';
 import { AgentsModes, AgentsStrip, RoleSectionStrip } from './AgentsModes';
 import { type AgentsMode, isRoleSection, readAgentsMode, type RoleSection, storeAgentsMode } from './modes';
 import { RoleSectionList } from './roles/RoleSections';
-import { type RoleOpeners, RolesMode } from './roles/RolesView';
+import { type RoleOpeners, RolesMode, useRolesPage } from './roles/RolesView';
 import { usedByAgent } from './roles/roleStructure';
 import { useStructureMarks, useStructureRead } from './roles/structureRead';
 import type { ListPanes } from '../work/frame/listPanes';
@@ -102,6 +102,8 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
   const roster = useHarnesses();
   // A start held marks its section's row in the Roles list (COMPANYVIEW1d); read only while the Roles mode is in front.
   const marks = useStructureMarks(active && modes?.mode === 'roles');
+  // The Roles page's state lives here, so a door out of it and the way back find the selection and the scope as left.
+  const rolesPage = useRolesPage();
   const accounts = useAccounts();
   useErrorNotify(active ? roster.error : null, notify);
 
@@ -151,7 +153,7 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
         chosen: modes.section,
         body: <RoleSectionList section={modes.section} onSection={modes.onSection} held={{ work: marks.work, repository: marks.repository }} />,
       },
-      main: <RolesMode section={modes.section} notify={notify} doors={{ ...roleDoors, section: modes.onSection }} />,
+      main: <RolesMode section={modes.section} notify={notify} doors={{ ...roleDoors, section: modes.onSection }} page={rolesPage} />,
     };
   }
   return {

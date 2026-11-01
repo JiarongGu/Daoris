@@ -74,6 +74,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## AGENTSPLACE1g — All roles and the role editor (2026-11-01)
+
+> **AGENTSPLACE1g** (web; row 10 of AGENTSPLACE1). *All roles* in Working roles (the Setup mode's page waits for 1e): scope filter, machine-wide roles set apart, others read-only with *Open at \<place\>*; the editor asks for no id and fixes the place, picks agent, model and effort from the agent's offers with *other…*, and keeps *Off*, *Clear staffing* and *Restore role defaults* apart; *Remove* asks inline naming the fallback; the page's state is held by the place so a door out keeps the selection and scope. Proof: `Roles.test.tsx`, `RolesStructure.test.tsx`, `RolesView.test.tsx`; stories `AllRoles*` and `RoleEditor*`.
+
 ## AGENTSPLACE1a — the effective projection (2026-11-01)
 
 > **AGENTSPLACE1a — the effective projection** (driver, modules, web; row 4 of AGENTSPLACE1, `docs/2026-11-01-agents-place-design.md` §2, §3 and §7, the reads in `…-reads.md`). `PLACES` (Open, by event, paged): this machine, each workspace and every driven repository, each with its driving, its works' roles and rules, the values of its head's line with where each was set, and its *Needs a look* reasons judged from the configuration; the not-driven repositories only as a count per workspace and a page of them when the fold opens. `ROLE_STRUCTURE` asked for the chosen place's chain alone; the eager consumer (`structureRead.ts`) replaced. Proof: every value and its source equal to its execution reader's, opening probes nothing, a home with many undriven repositories answers counts, and the Roles mode's tests pass on the scoped read.
