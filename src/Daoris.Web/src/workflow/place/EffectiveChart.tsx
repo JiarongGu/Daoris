@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Flow, type FlowNode } from '../design/Flow';
-import { Button, Inline } from '../design/ui';
-import type { WorkflowEffective } from './current';
+import { Flow, type FlowNode } from '../../design/Flow';
+import { Button, Inline } from '../../design/ui';
+import type { WorkflowEffective } from '../current';
+import { executorSaid, limitSaid } from '../said';
+import { StepSettings, Who, type WorkflowDoors } from '../WorkflowChart';
 import { effectiveFlow, effectiveLabel, routeWords } from './effective';
-import { executorSaid, limitSaid } from './said';
-import { StepSettings, Who, type WorkflowDoors } from './WorkflowChart';
 
 /**
  * **The chart of the chosen route** (SETUPUX1o; D221, the Setup design's §2.3): the graph the driver answers as `effective`, Current drawn

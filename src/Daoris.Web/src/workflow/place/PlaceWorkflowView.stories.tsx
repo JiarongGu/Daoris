@@ -7,7 +7,7 @@ import { InTheme } from '../../plugins/storyIcons';
 import { FoldRow } from '../../projects/setup/FoldRow';
 import { RepositorySetup, FOLD_SECTIONS } from '../../projects/setup/RepositorySetup';
 import { LIST, PALETTE } from '../edit/editFixtures';
-import { EFFECTIVE_CURRENT, EFFECTIVE_LANDED_VERIFIES } from '../effectiveFixtures';
+import { EFFECTIVE_CURRENT, EFFECTIVE_LANDED_VERIFIES } from './effectiveFixtures';
 import { FULL, GATES_CHANGED, INTEGRATION_CHANGED, START, WORKSPACE } from '../fixtures';
 import { answerFor, CURRENT_ANSWER, PLACE_SETUP, SAVED_ROUTES } from './placeWorkflowFixtures';
 import { PlaceWorkflowView, type PlaceWorkflowProps } from './PlaceWorkflowView';

@@ -1,5 +1,5 @@
-import type { WorkflowEffective, WorkflowEffectiveCell, WorkflowStep } from './current';
-import { MERGE_GRAPH, RELEASE_GRAPH } from './graphFixtures';
+import type { WorkflowEffective, WorkflowEffectiveCell, WorkflowStep } from '../current';
+import { MERGE_GRAPH, RELEASE_GRAPH } from '../graphFixtures';
 
 // What `WORKFLOW_CURRENT` answers as `effective` for a route (SETUPUX1b), for the place's stories and tests: Current's graph and a saved
 // workflow's newest version, each node with the cell the driver reads for it (`WorkflowGraphRuns.Cell`, whose step ids are the nodes').
@@ -29,10 +29,16 @@ export function cellOf(node: Node, level = 'repository'): WorkflowStep {
 
 const cellsOf = (graph: { nodes: Node[] }): WorkflowEffectiveCell[] => graph.nodes.map((node) => ({ node: node.id, step: cellOf(node) }));
 
+/** Current's own cells: each step as the rule that sets it says, the work always, its review and landing by the rules as they stand. */
+const currentCells = (): WorkflowEffectiveCell[] => cellsOf(MERGE_GRAPH).map((cell) => {
+  const rule = cell.node === 'review' ? 'review' : cell.node === 'landing' ? 'landing' : null;
+  return rule ? { ...cell, step: { ...cell.step, source: { rule, level: 'repository' as const } } } : { ...cell, step: { ...cell.step, source: { rule: null, level: 'default' as const } } };
+});
+
 /** Default work, read from the rules as they stand: Current's graph, drawn as the Merge workflow's. */
 export const EFFECTIVE_CURRENT: WorkflowEffective = {
   route: 'default', workflow: 'current', name: null, version: null, digest: '4740fb017006', schema: null,
-  source: { level: 'current', kind: null, label: null, paths: [] }, verifies: false, graph: MERGE_GRAPH, cells: cellsOf(MERGE_GRAPH), limits: {}, problem: null,
+  source: { level: 'current', kind: null, label: null, paths: [] }, verifies: false, graph: MERGE_GRAPH, cells: currentCells(), limits: {}, problem: null,
 };
 
 /** Default work following the release workflow's second version, the shipped release graph. */

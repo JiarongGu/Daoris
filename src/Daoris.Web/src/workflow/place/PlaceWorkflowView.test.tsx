@@ -11,7 +11,7 @@ import type { CurrentWorkflow, WorkflowEffective } from '../current';
 import { LIST, PALETTE } from '../edit/editFixtures';
 import {
   cellOf, EFFECTIVE_CURRENT, EFFECTIVE_DOCS, EFFECTIVE_LANDED_NONE, EFFECTIVE_LANDED_VERIFIES, EFFECTIVE_RELEASE,
-} from '../effectiveFixtures';
+} from './effectiveFixtures';
 import { FULL, GATES_CHANGED, INTEGRATION_CHANGED, NO_VERIFICATION, START, WORKSPACE } from '../fixtures';
 import { type LandingHand, PlaceWorkflowView, type PlaceWorkflowProps } from './PlaceWorkflowView';
 

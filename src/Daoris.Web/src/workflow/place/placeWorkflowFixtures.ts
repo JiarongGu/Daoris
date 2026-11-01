@@ -1,7 +1,7 @@
 import { SETUP_DEFAULTS } from '../../projects/fixtures';
 import type { RepositorySetupProps } from '../../projects/setup/RepositorySetup';
 import type { CurrentWorkflow, WorkflowStart } from '../current';
-import { EFFECTIVE_CURRENT, EFFECTIVE_DOCS, EFFECTIVE_LANDED_NONE, EFFECTIVE_RELEASE } from '../effectiveFixtures';
+import { EFFECTIVE_CURRENT, EFFECTIVE_DOCS, EFFECTIVE_LANDED_NONE, EFFECTIVE_RELEASE } from './effectiveFixtures';
 import { FULL, NO_VERIFICATION, START } from '../fixtures';
 
 // A place's Workflow for the stories and the measured check (SETUPUX1o): the engine of the workspace aurora, whose default work follows a

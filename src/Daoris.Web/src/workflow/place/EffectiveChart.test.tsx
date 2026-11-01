@@ -3,12 +3,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import i18n from '../locales/i18n';
+import i18n from '../../locales/i18n';
 import { EffectiveChart } from './EffectiveChart';
 import {
   EFFECTIVE_CURRENT, EFFECTIVE_LANDED_NONE, EFFECTIVE_RELEASE, EFFECTIVE_UNREAD,
 } from './effectiveFixtures';
-import type { WorkflowEffective } from './current';
+import type { WorkflowEffective } from '../current';
 
 // SETUPUX1o (D221; the Setup design's §2.3): the chart of the chosen route, drawn from the driver's effective graph through the one drawing:
 // its label says what is drawn, each step is a title and one fact, and its cell shows on selection. jsdom lays nothing out, so the drawing
