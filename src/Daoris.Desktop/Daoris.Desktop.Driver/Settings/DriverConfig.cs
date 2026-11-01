@@ -211,17 +211,15 @@ public sealed record DriverConfig(
     /// <summary>
     /// The set-up quests admitted alone (AGENTSPLACE1b, the Agents-place design §4), each against the repository it was published to: a
     /// set-up pressed where its repository is not driven starts by its own id, while every other quest of that repository stays held as
-    /// not driven and its driving stays as it was. The admission ends with the quest (<see cref="Admits"/>). Absent is none, written only
-    /// when set; a build before this one reads no key it does not know, so there the quest waits as the rest of its repository does.
+    /// not driven and its driving stays as it was. The admission ends with the quest (<c>SetupAdmission.Admits</c>). Absent is none,
+    /// written only when set; a build before this one reads no key it does not know, so there the quest waits as the rest of its
+    /// repository does.
     /// </summary>
     public IReadOnlyDictionary<string, string> Admitted { get; init; } =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Whether this quest is admitted alone: written here against the repository it is to, and still open or taken.</summary>
-    public bool Admits(QuestView quest) =>
-        quest.Status is "Open" or "Taken"
-        && Admitted.TryGetValue(quest.Id.Trim().TrimStart('#'), out var repository)
-        && string.Equals(repository, quest.To, StringComparison.OrdinalIgnoreCase);
+    /// <summary>The repository this quest is admitted alone in, or null where it is admitted in none.</summary>
+    public string? AdmittedIn(string questId) => Admitted.TryGetValue(questId.Trim().TrimStart('#'), out var repository) ? repository : null;
 
     /// <summary>A set-up quest admitted alone in <paramref name="repository"/>, one per quest, the later replacing the earlier.</summary>
     /// <exception cref="DriverException">A blank quest or repository: an admission names the quest and where it starts.</exception>
