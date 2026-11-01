@@ -18,7 +18,7 @@ public static class CourseDecision
     public static LineCourse Decide(CourseFacts facts, CourseTrigger trigger)
     {
         ArgumentNullException.ThrowIfNull(facts);
-        var answer = NeverOf(facts, trigger) ?? Reserved(facts, trigger) ?? Course(facts, trigger);
+        var answer = NeverOf(facts, trigger) ?? Reserved(facts, trigger) ?? Policied(facts, trigger) ?? Course(facts, trigger);
         if (answer is Move && facts.Standing is { Stands: true, Destination: true }) return Held(facts, CourseHoldWhy.MoveHeld);
         return answer is Move or Start && facts.Boundary == CourseBoundary.WindingUp ? Held(facts, CourseHoldWhy.Stays) : answer;
     }
@@ -45,6 +45,49 @@ public static class CourseDecision
             : trigger == CourseTrigger.HandOver
                 ? Refused(facts, HandOver.Waiting)
                 : Held(facts, CourseHoldWhy.Stays);
+
+    // STAFFPOLICY1e (the staff policy design §4): the role policy's met condition decides what follows a part's end, in the one decision. Only
+    // an automatic trigger is judged (a press, a stop or a pause keeps today's answer), and an action that is today's, or that today's walk
+    // already is (`retry`, `hold`; a limit's `next` and `weighted`, whose arrangement is the executor's), answers nothing here.
+    private static LineCourse? Policied(CourseFacts facts, CourseTrigger trigger)
+    {
+        if (facts.Policy is not { } policy || facts.Press is { Kind: not CoursePressKind.None }) return null;
+        if (trigger is not (CourseTrigger.TransientPastBound or CourseTrigger.CarryOn or CourseTrigger.LimitEnd or CourseTrigger.LimitWake)) return null;
+        var action = policy.Action;
+        var asks = action.Do == StaffActions.Ask;
+        if (asks && !policy.Approved)
+        {
+            return Held(
+                facts, action.MovesBound ? CourseHoldWhy.MovesBound : CourseHoldWhy.PolicyAsk, [CourseDoor.GoOnNow], code: action.MovesBound ? "moves-bound" : action.Condition);
+        }
+
+        if (action.Do == StaffActions.Wait)
+        {
+            // upTo counts from when the line began to wait; past it the line walks by the role's rule, as a move would.
+            var expired = action.UpTo is { } minutes && policy.Since is { } since && policy.Now >= since + TimeSpan.FromMinutes(minutes);
+            if (!expired && policy.Until is { } until && until > policy.Now) return new LineCourse.Wait(until, CourseWaitWhy.PolicyWait, [], ReadOn(facts));
+        }
+        else if (!asks && !StaffActions.Moves(action.Do))
+        {
+            return null;
+        }
+
+        if (action.Condition == StaffConditions.Limit) return null;
+        var persons = Ids(facts.Head.Words.Where(word => word.Persons));
+        return Moved(
+            facts, CourseWhen.Now, new CourseWhere(CourseAccountSource.Settled, facts.Head.Role, null), PolicyWhy(action.Condition), CourseFromBy.Daoris, persons);
+    }
+
+    private static CourseFromWhy PolicyWhy(string condition) => condition switch
+    {
+        StaffConditions.Transient => CourseFromWhy.Transient,
+        StaffConditions.Failed => CourseFromWhy.Failed,
+        StaffConditions.Quiet => CourseFromWhy.Quiet,
+        StaffConditions.Budget => CourseFromWhy.Budget,
+        StaffConditions.ModelRefused => CourseFromWhy.NotOffered,
+        StaffConditions.SignedOut => CourseFromWhy.Retry,
+        _ => CourseFromWhy.Limit,
+    };
 
     private static LineCourse Course(CourseFacts facts, CourseTrigger trigger) => trigger switch
     {

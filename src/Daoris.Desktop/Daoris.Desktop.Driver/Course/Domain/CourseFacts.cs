@@ -256,12 +256,30 @@ public sealed record CourseStanding(CourseMovePhase Phase, bool Destination = fa
 }
 
 /// <summary>
+/// A met condition of the line's role policy (STAFFPOLICY1e, the staff policy design §3.3, §4): what <see cref="StaffJudge.OnCondition"/> answered
+/// for it, read once by the executor with the facts the action needs. Null on the course's facts where the role has no policy that applies, and
+/// then every answer is today's.
+/// </summary>
+/// <param name="Action">The condition and its action; its <see cref="StaffAction.MovesBound"/> makes the ask the bound's.</param>
+/// <param name="Now">The moment the facts are read at.</param>
+/// <param name="Met">The choice that met the condition, said (agent, model, effort).</param>
+/// <param name="Next">The choice the walk would take next, said, for an ask's door; null where the walk names none.</param>
+/// <param name="Until">The met choice's earliest moment back (its accounts' reset, the budget's day, the health mark's end), for <c>wait</c>.</param>
+/// <param name="Since">When the line began to wait on the condition, which a wait's <c>upTo</c> counts from.</param>
+/// <param name="Approved">The person's yes released one move, at an <c>ask</c> or at the bound (one approval, one move).</param>
+/// <param name="Moves">The line's moves to another choice in 24 hours, as the durable count reads them.</param>
+public sealed record CoursePolicy(
+    StaffAction Action, DateTimeOffset Now, string? Met = null, string? Next = null, DateTimeOffset? Until = null, DateTimeOffset? Since = null,
+    bool Approved = false, int Moves = 0);
+
+/// <summary>
 /// Everything the course decides over (the foundation design §3.1's inputs): the line's head, the boundary it stands at, the account
 /// facts, the answers-alone hold, the failure, the person's press, the rules and a move record standing for the line.
 /// </summary>
 /// <param name="Limit">What Daoris's word on a resume is keyed by (FOUNDATION1e part 2).</param>
 /// <param name="CarryOn">Which of the planner's carry-ons asked, with <see cref="CourseTrigger.CarryOn"/> (FOUNDATION1e part 2).</param>
+/// <param name="Policy">The role policy's met condition, where the line's role has one that applies (STAFFPOLICY1e); null for today's answers.</param>
 public sealed record CourseFacts(
     CourseHead Head, CourseBoundary Boundary = CourseBoundary.BetweenTurns, CourseAccount? Account = null, CourseAlone? Alone = null,
     CourseFailure? Failure = null, CoursePress? Press = null, CourseRules? Rules = null, CourseStanding? Standing = null,
-    CourseLimit? Limit = null, CourseCarryOn? CarryOn = null);
+    CourseLimit? Limit = null, CourseCarryOn? CarryOn = null, CoursePolicy? Policy = null);
