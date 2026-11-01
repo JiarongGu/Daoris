@@ -7,6 +7,7 @@ import { AiDomain } from './AiDomain';
 import { AppearanceDomain } from './AppearanceDomain';
 import { BrowserDomain } from './BrowserDomain';
 import { DriverDomain } from './DriverDomain';
+import { GitDomain } from './GitDomain';
 import { LogsDomain } from './LogsDomain';
 import { ToolsDomain } from './ToolsDomain';
 import { WiringDomain } from './WiringDomain';
@@ -60,6 +61,9 @@ export const SETTINGS_DOMAINS = [
   // The programs Daoris runs beside its agents (TOOLS7, D121 §4.1): each a file of this machine's, so a browser is
   // offered no such domain.
   { id: 'tools', label: 'settings.domain.tools', machine: true, component: ToolsDomain },
+  // Who Daoris's git acts as on a code host (GITAUTH1e, the git-auth design §7.1): identities, a host's default and the person's own
+  // sign-ins; the machine's alone, so a browser is offered none.
+  { id: 'git', label: 'settings.domain.git', machine: true, component: GitDomain },
   // Permissions left as Workspace did (UX6g): reading across and a workspace's rules are its page's, a repository's its
   // Setup's, and the rules for every session and the proposals the agent's page's (UX6e). Plugins left for its place
   // (UX6j, D119 §5): nothing about a plugin is set here, and where plugins are looked for is Driver's row.

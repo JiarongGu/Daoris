@@ -91,7 +91,7 @@ const MODES: Record<KnowledgeMode, string> = { search: 'Search', convergence: 'C
 
 // Eight since WIRING1c (seven since UX6j, D150 §2.3): the guide is Get started again, and Plugins is a place, named among the views.
 const DOMAINS: Record<SettingsSection, string> = {
-  start: 'Get started', appearance: 'Appearance', ai: 'AI features', wiring: 'This Daoris', driver: 'Driver', tools: 'Tools',
+  start: 'Get started', appearance: 'Appearance', ai: 'AI features', wiring: 'This Daoris', driver: 'Driver', tools: 'Tools', git: 'Git',
   browser: 'Browser', logs: 'Machine log',
 };
 
