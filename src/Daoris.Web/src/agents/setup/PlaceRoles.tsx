@@ -1,0 +1,194 @@
+import { type ReactNode, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { refusedNoRoute } from '../../bridge/shell';
+import { useRoleStructureChain } from '../../bridge/driver';
+import type { RoleStructure, StructurePlaceAsk, StructureWork } from '../../data/wiring';
+import { Button, type Notify, SettingList, SettingRow } from '../../design/ui';
+import { InlineConfirm } from '../../work/InlineConfirm';
+import { AppointedRoles } from '../roles/AppointedRoles';
+import { type Editing, editingOfLine, entryText, type Line, mayEditLine, newRoleEditing, placeText, roleName, RolesCard } from '../roles/Roles';
+import { useRoleEditing } from '../roles/RolesView';
+import { stateText } from '../roles/StructureSections';
+
+type Kind = 'machine' | 'workspace' | 'repository';
+
+const kindOf = (place: StructurePlaceAsk): Kind => (place.repository ? 'repository' : place.workspace ? 'workspace' : 'machine');
+
+/** The place a role's scope names is this one: this machine's own roles, or a workspace's or repository's by its name. */
+const placedHere = (place: StructurePlaceAsk, scope: { kind: string; id?: string }): boolean => {
+  const kind = kindOf(place);
+  return scope.kind === kind && (kind === 'machine' || scope.id === (kind === 'repository' ? place.repository : place.workspace));
+};
+
+/** A work's first choice as one line: the agent, model and effort in the tool's words, and the last reading it rests on. */
+function ChoiceLine({ work }: { work: StructureWork }) {
+  const { t } = useTranslation();
+  const first = work.choices[0];
+  if (!first) return <p className="m-0 text-small text-ink-faint wrap-anywhere">{work.held ?? t('agents.setup.roles.noChoice')}</p>;
+  return (
+    <p className="m-0 text-small text-ink-soft wrap-anywhere">
+      {entryText(t, { agent: first.agent, model: first.model, effort: first.effort })}
+      {' · '}
+      {stateText(t, first.state)}
+    </p>
+  );
+}
+
+/**
+ * **A place's Roles section** (AGENTSPLACE1g1, the Agents-place design §3): one row per work, read from `ROLE_STRUCTURE` for the place's
+ * chain alone: the role taking it, where that role is placed, its first choice and that choice's last reading, with the appointed roles
+ * of the place under them.
+ *
+ * @remarks
+ * - **A row taken from a parent offers *Give \<place\> its own…***, and a role placed here *Edit* and *Back to \<parent\>'s*, which is the
+ *   role's removal asked in an `InlineConfirm` that names the role the work falls back to. All three are the role editor of All roles
+ *   (`RolesCard`'s editor) and `SET_ROLE`: the place is filled and fixed, the id is made, the page judges nothing.
+ * - **It reads the last readings alone** (D150 point 5): the chain's read probes no account.
+ */
+export function PlaceRoles({ place, notify }: { place: StructurePlaceAsk; notify: Notify }) {
+  const editor = useRoleEditing(notify);
+  const chain = useRoleStructureChain(place);
+  const read = chain.data ? 'ok' : chain.isError ? (refusedNoRoute(chain.error) ? 'notOffered' : 'failed') : 'loading';
+  return <PlaceRolesView place={place} read={read} answer={chain.data ?? null} editor={editor} appointed={<AppointedRoles place={place} />} />;
+}
+
+/** What the section needs of the role editor's hook: the molecule reads no bridge. */
+export type PlaceRoleEditor = Pick<ReturnType<typeof useRoleEditing>, 'agents' | 'offers' | 'staffing' | 'catalogue' | 'read' | 'busy' | 'onSet' | 'onSetActor'>;
+
+/** The section drawn from its reads, and every press out (`SET_ROLE`, `SET_ACTOR`): a molecule, so a story reaches every state by props. */
+export function PlaceRolesView({ place, read, answer, editor, appointed }: {
+  place: StructurePlaceAsk;
+  /** The chain's read: its rows, not read yet, not offered by this shell, or failed. */
+  read: 'ok' | 'loading' | 'notOffered' | 'failed';
+  answer: RoleStructure | null;
+  editor: PlaceRoleEditor;
+  /** The place's appointed roles, drawn under the works. */
+  appointed: ReactNode;
+}) {
+  const { t, i18n } = useTranslation();
+  const [open, setOpen] = useState<{ work: string; editing: Editing } | null>(null);
+  const [backing, setBacking] = useState<string | null>(null);
+  // A draft's key is the editor's own; these count down from -1, as *Add a role here*'s does, so they never meet the card's own count up.
+  const keys = useRef(0);
+  const nextKey = () => --keys.current;
+
+  const kind = kindOf(place);
+  const here = place.repository ?? place.workspace ?? '';
+  const placeName = kind === 'machine' ? t('agents.setup.machine') : here;
+  const parentName = kind === 'repository' ? place.workspace ?? t('agents.setup.machine') : t('agents.setup.machine');
+  const { catalogue, staffing } = editor;
+  const kept = catalogue?.kept === true;
+  const mine = answer?.places[0];
+  const parent = kind === 'machine' ? undefined : answer?.places[1];
+  const name = (role: { id: string; nameEn?: string | null; nameZh?: string | null }) => roleName(t, i18n.language, { ...role, seeded: false });
+  const workName = (work: string) => t(`settings.ai.roles.work.${work}`, { defaultValue: work });
+  const lineOf = (id: string): Line => ({
+    id, row: catalogue?.roles.find((each) => each.id === id) ?? null, actor: staffing.find((each) => each.id === id) ?? null,
+  });
+
+  const give = (work: StructureWork) => {
+    const base = newRoleEditing(catalogue?.works ?? [], editor.agents, kind === 'machine' ? null : { kind, id: here }, nextKey());
+    const named = work.role ? { en: work.role.nameEn, zh: work.role.nameZh } : { en: work.work, zh: workName(work.work) };
+    const choices = work.choices.filter((choice) => /^[1-4]$/.test(choice.from));
+    setOpen({
+      work: work.work,
+      editing: {
+        ...base, work: work.work, takes: [work.work], nameEn: `${named.en} · ${placeName}`, nameZh: `${named.zh} · ${placeName}`,
+        drafts: choices.length > 0
+          ? choices.map((choice) => ({ key: nextKey(), agent: choice.agent, model: choice.model ?? '', effort: choice.effort ?? '' }))
+          : base.drafts,
+      },
+    });
+  };
+  const edit = (work: string, id: string) => {
+    const line = lineOf(id);
+    setOpen({
+      work,
+      editing: editingOfLine(line, { kept, works: catalogue?.works ?? [], agents: editor.agents, name: line.row ? name(line.row) : id, key: nextKey }),
+    });
+  };
+
+  const row = (work: StructureWork): ReactNode => {
+    const role = work.role;
+    const mineHere = role ? placedHere(place, role.scope) : false;
+    const label = workName(work.work);
+    const line = role ? lineOf(role.id) : null;
+    const parentRole = parent?.works.find((each) => each.work === work.work)?.role;
+    const asking = backing === work.work && role !== undefined;
+    const busy = editor.busy;
+    return (
+      <SettingRow
+        key={work.work}
+        label={label}
+        control={!asking && !(open?.work === work.work) && (
+          <>
+            <span className="text-body text-ink wrap-anywhere">
+              {role ? `${name(role)} · ${placeText(t, role.scope.kind, role.scope.id)}` : t('agents.setup.roles.noRole')}
+            </span>
+            {role && mineHere && line && mayEditLine(line, kept) && (
+              <Button variant="ghost" disabled={busy || open !== null} aria-label={t('agents.setup.roles.editOf', { work: label })} onClick={() => edit(work.work, role.id)}>
+                {t('settings.ai.actors.edit')}
+              </Button>
+            )}
+            {role && mineHere && kind !== 'machine' && (
+              <Button
+                variant="ghost" disabled={busy || !kept || open !== null}
+                aria-label={t('agents.setup.roles.backOf', { work: label, parent: parentName })} onClick={() => setBacking(work.work)}
+              >
+                {t('agents.setup.roles.back', { parent: parentName })}
+              </Button>
+            )}
+            {!mineHere && (
+              <Button
+                variant="ghost" disabled={busy || !kept || open !== null}
+                aria-label={t('agents.setup.roles.giveOf', { work: label, place: placeName })} onClick={() => give(work)}
+              >
+                {t('agents.setup.roles.give', { place: placeName })}
+              </Button>
+            )}
+          </>
+        )}
+      >
+        {asking && role && (
+          <InlineConfirm
+            label={t('agents.setup.roles.backAsk', { work: label, parent: parentName })}
+            says={parentRole
+              ? t('settings.ai.roles.removeFallback', {
+                role: name(role), work: label, fallback: name(parentRole), place: placeText(t, parentRole.scope.kind, parentRole.scope.id),
+              })
+              : t('settings.ai.roles.removeNone', { role: name(role), work: label })}
+            meanIt={t('agents.setup.roles.backMove', { parent: parentName })}
+            busy={busy}
+            onConfirm={(answered) => editor.onSet({ change: 'remove', id: role.id, revision: role.revision }, answered)}
+            onClose={() => setBacking(null)}
+          />
+        )}
+        {!asking && open?.work !== work.work && <ChoiceLine work={work} />}
+        {open?.work === work.work && (
+          <RolesCard
+            editorOnly
+            catalogue={catalogue} read={editor.read} staffing={staffing} agents={editor.agents} offers={editor.offers} busy={busy}
+            onSet={editor.onSet} onSetActor={editor.onSetActor}
+            editor={open.editing} onEditor={(next) => setOpen(next ? { work: work.work, editing: next } : null)}
+          />
+        )}
+      </SettingRow>
+    );
+  };
+
+  return (
+    <section aria-labelledby="place-roles" className="mt-5 grid gap-3">
+      <h2 id="place-roles" className="m-0 text-body font-medium text-ink">{t('agents.setup.roles.title')}</h2>
+      {read === 'loading' && <p className="m-0 text-small text-ink-soft">{t('agents.roles.reading')}</p>}
+      {read === 'notOffered' && <p className="m-0 text-small text-ink-soft">{t('agents.roles.notOffered')}</p>}
+      {read === 'failed' && <p role="alert" className="m-0 text-small text-ink-soft">{t('agents.roles.readFailed')}</p>}
+      {answer?.catalogue && <p role="alert" className="m-0 text-small text-ink-soft">{t('agents.roles.catalogueFailed', { why: answer.catalogue.why })}</p>}
+      {catalogue && !kept && <p className="m-0 text-small text-ink-soft">{t('settings.ai.roles.unkept')}</p>}
+      {mine && <SettingList>{mine.works.map(row)}</SettingList>}
+      <div className="grid gap-2">
+        <h3 className="m-0 text-small font-medium text-ink-soft">{t('agents.setup.roles.appointed')}</h3>
+        {appointed}
+      </div>
+    </section>
+  );
+}

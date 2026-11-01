@@ -36,33 +36,17 @@ export type RoleOpeners = {
 type Answered = { done: () => void; refused: (sentence: string) => void };
 
 /**
- * **The Roles mode of the Agents place** (COMPANYVIEW1b, the company-view design §1, §3.1): its chosen section's page and every press on
- * it. Today only Working roles is built, the catalogue and its staffing of COMPANYVIEW1a moved here from AI features.
- *
- * @remarks
- * **The mode's one owner** (D168 point 3): this hook holds the open editor and every pending press, and hands the molecule its
- * answers, so `RolesCard` imports nothing of the bridge. Each press goes out as its route takes it (`SET_ROLE`, `SET_ACTOR`,
- * `STAFFING_FOUND_ANSWER`) and the driver judges; a refusal is its sentence under the press. It is mounted only while the mode is in
- * front, so opening the place asks the driver nothing of roles (D150 point 5).
+ * **The role editor's reads and presses** (COMPANYVIEW1a, AGENTSPLACE1g1): the catalogue over `ROLES`, each order over `ACTORS`, the agents
+ * this machine has and what each offers, and the two presses `SET_ROLE` and `SET_ACTOR` with their toasts. Held once, so the Roles mode's
+ * card and a place's rows press the same acts.
  */
-export function useRolesMode({ notify, section = 'working', doors = {}, page: given }: {
-  notify: Notify; section?: RoleSection; doors?: RoleOpeners; page?: RolesPage;
-}) {
+export function useRoleEditing(notify: Notify) {
   const { t, i18n } = useTranslation();
-  const own = useRolesPage();
-  const page = given ?? own;
-  const driver = useDriver();
   const roster = useHarnesses();
-  const registry = useRegistry('machine');
-  const workspaces = workspacesOf(registry.data ?? []);
-  const starts = useStarts(workspaces);
-  const [editing, setEditing] = useState<Editing | null>(null);
-
   const harnesses = Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [];
   // An agent a person can name here is a way in this machine HAS: one not installed would hold every start, and a choice whose only
   // outcome is a hold is worse than none.
   const agents = harnesses.filter((door) => door.present).map((door) => ({ value: door.harness, label: doorLabel(t, door) }));
-  const startRows = Array.isArray(starts.data?.starts) ? starts.data.starts : [];
   // What each agent itself offers for a model and an effort (the account editor's source), so a choice is picked and not typed.
   const offers = Object.fromEntries(harnesses.map((door) => [door.harness, door.settingsChoices ?? null]));
 
@@ -88,18 +72,6 @@ export function useRolesMode({ notify, section = 'working', doors = {}, page: gi
     });
   };
 
-  // The changes of driver.json's actors another program made, which the driver kept for the person.
-  const found = useStaffingFound();
-  const answerFound = useAnswerStaffingFound();
-  const answerStaffingFound = (id: number, answer: 'take' | 'dismiss', answered: Answered) =>
-    answerFound.mutate({ found: id, answer }, {
-      onSuccess: () => {
-        notify(t(answer === 'take' ? 'settings.ai.actors.found.taken' : 'settings.ai.actors.found.dismissed'));
-        answered.done();
-      },
-      onError: (error) => answered.refused(sentence(error)),
-    });
-
   // The role catalogue, each change the person's press over SET_ROLE, judged by the driver's role door.
   const roles = useRoles();
   // Why there is no catalogue: a shell older than the route says so by NO_ROUTE or by answering nothing; any other refusal is a failed read.
@@ -118,6 +90,47 @@ export function useRolesMode({ notify, section = 'working', doors = {}, page: gi
       onError: (error) => answered.refused(sentence(error)),
     });
   };
+  return {
+    harnesses, agents, offers, staffing, catalogue: roles.data ?? null, read: read as 'ok' | 'loading' | 'notOffered' | 'failed',
+    busy: setRole.isPending || setActor.isPending, onSet: pressRole, onSetActor: saveActor,
+  };
+}
+
+/**
+ * **The Roles mode of the Agents place** (COMPANYVIEW1b, the company-view design §1, §3.1): its chosen section's page and every press on
+ * it. Today only Working roles is built, the catalogue and its staffing of COMPANYVIEW1a moved here from AI features.
+ *
+ * @remarks
+ * **The mode's one owner** (D168 point 3): this hook holds the open editor and every pending press, and hands the molecule its
+ * answers, so `RolesCard` imports nothing of the bridge. Each press goes out as its route takes it (`SET_ROLE`, `SET_ACTOR`,
+ * `STAFFING_FOUND_ANSWER`) and the driver judges; a refusal is its sentence under the press. It is mounted only while the mode is in
+ * front, so opening the place asks the driver nothing of roles (D150 point 5).
+ */
+export function useRolesMode({ notify, section = 'working', doors = {}, page: given }: {
+  notify: Notify; section?: RoleSection; doors?: RoleOpeners; page?: RolesPage;
+}) {
+  const { t } = useTranslation();
+  const own = useRolesPage();
+  const page = given ?? own;
+  const driver = useDriver();
+  const registry = useRegistry('machine');
+  const workspaces = workspacesOf(registry.data ?? []);
+  const starts = useStarts(workspaces);
+  const [editing, setEditing] = useState<Editing | null>(null);
+  const { harnesses, agents, offers, staffing, catalogue, read, busy: editBusy, onSet: pressRole, onSetActor: saveActor } = useRoleEditing(notify);
+  const startRows = Array.isArray(starts.data?.starts) ? starts.data.starts : [];
+
+  // The changes of driver.json's actors another program made, which the driver kept for the person.
+  const found = useStaffingFound();
+  const answerFound = useAnswerStaffingFound();
+  const answerStaffingFound = (id: number, answer: 'take' | 'dismiss', answered: Answered) =>
+    answerFound.mutate({ found: id, answer }, {
+      onSuccess: () => {
+        notify(t(answer === 'take' ? 'settings.ai.actors.found.taken' : 'settings.ai.actors.found.dismissed'));
+        answered.done();
+      },
+      onError: (error) => answered.refused(sentence(error)),
+    });
 
   // Intake's and Ask Daoris's rows say what they do now under their order: Intake's per circle, the driver's own resolution.
   const first = (id: string) => staffing.find((row) => row.id === id)?.choices[0]?.agent ?? null;
@@ -186,11 +199,11 @@ export function useRolesMode({ notify, section = 'working', doors = {}, page: gi
     page.onView('diagram');
   };
 
-  const shown = roles.data || staffing.length > 0 || read === 'failed';
+  const shown = catalogue || staffing.length > 0 || read === 'failed';
   const cardOf = (only?: string) => (
     <RolesCard
-      catalogue={roles.data ?? null} read={read} staffing={staffing} agents={agents} about={about}
-      busy={setRole.isPending || setActor.isPending || answerFound.isPending}
+      catalogue={catalogue} read={read} staffing={staffing} agents={agents} about={about}
+      busy={editBusy || answerFound.isPending}
       onSet={pressRole} onSetActor={saveActor} found={found.data ?? []} onAnswerFound={answerStaffingFound}
       editor={editing} onEditor={(next) => {
         setEditing(next);
@@ -215,7 +228,7 @@ export function useRolesMode({ notify, section = 'working', doors = {}, page: gi
     ...(doors.plugin ? { plugin: doors.plugin } : {}),
     // *Add a role here*: Working roles' editor for a new role, the place filled; it saves over SET_ROLE as any role does.
     addRole: (place) => {
-      setEditing(newRoleEditing(roles.data?.works ?? [], agents, place, -1));
+      setEditing(newRoleEditing(catalogue?.works ?? [], agents, place, -1));
       doors.section?.('working');
       // The new role's editor is the catalogue's, which the list holds: from a node's detail, the list.
       page.onView('list');

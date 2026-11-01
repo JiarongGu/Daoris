@@ -25,9 +25,11 @@ function Group({ id, title, children }: { id: string; title: string; children: R
  *
  * A molecule: drawn from props; the section's container holds the presses.
  */
-export function AppointedList({ steward, workspaces, repositories }: {
+export function AppointedList({ steward, machine = true, workspaces, repositories }: {
   /** The steward's molecule's props, or null where this build does not offer the steward. */
   steward: StewardSetup | null;
+  /** Whether *This Daoris*, the steward's group, is drawn; a workspace's or a repository's page has none (AGENTSPLACE1g1). */
+  machine?: boolean;
   workspaces: { workspace: string; supervisor: SupervisorSetup }[];
   repositories: { repository: string; supervisor: SupervisorSetup }[];
 }) {
@@ -35,19 +37,21 @@ export function AppointedList({ steward, workspaces, repositories }: {
   const supervisor = t('projects.supervisor.label');
   return (
     <div className="grid min-w-0 gap-5" data-appointed-roles="">
-      <Group id="appointed-machine" title={t('agents.roles.appointed.machine')}>
-        <AppointedRow name={`${t('settings.daoris.steward.label')} · ${t('settings.domain.wiring')}`}>
-          {steward
-            ? <WiringSteward steward={steward} />
-            : (
-              <div data-steward-row="" className="grid gap-1 rounded-control border border-line px-3 py-2">
-                <p className="m-0 text-body font-medium text-ink">{t('settings.daoris.steward.label')}</p>
-                <p className="m-0 text-small text-ink-faint">{t('settings.daoris.steward.hint')}</p>
-                <p data-steward-status="" className="m-0 text-small text-ink-soft">{t('agents.roles.appointed.notOffered')}</p>
-              </div>
-            )}
-        </AppointedRow>
-      </Group>
+      {machine && (
+        <Group id="appointed-machine" title={t('agents.roles.appointed.machine')}>
+          <AppointedRow name={`${t('settings.daoris.steward.label')} · ${t('settings.domain.wiring')}`}>
+            {steward
+              ? <WiringSteward steward={steward} />
+              : (
+                <div data-steward-row="" className="grid gap-1 rounded-control border border-line px-3 py-2">
+                  <p className="m-0 text-body font-medium text-ink">{t('settings.daoris.steward.label')}</p>
+                  <p className="m-0 text-small text-ink-faint">{t('settings.daoris.steward.hint')}</p>
+                  <p data-steward-status="" className="m-0 text-small text-ink-soft">{t('agents.roles.appointed.notOffered')}</p>
+                </div>
+              )}
+          </AppointedRow>
+        </Group>
+      )}
       {workspaces.length > 0 && (
         <Group id="appointed-workspaces" title={t('agents.roles.appointed.workspaces')}>
           {workspaces.map((each) => (

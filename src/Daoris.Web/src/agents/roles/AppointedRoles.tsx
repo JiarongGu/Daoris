@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { standingOf, useDriver, useSetAppointment } from '../../bridge/shell';
 import { canBeAsked } from '../../data/api';
+import type { StructurePlaceAsk } from '../../data/wiring';
 import { useRegistry } from '../../data/queries';
 import { workspaceOf, workspacesOf } from '../../data/workspaces';
 import { sentence } from '../../locales/format';
@@ -24,7 +25,13 @@ const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
  * It reads `STATE` and the registry the frame already holds and asks nothing as it opens (D150 point 5). A role this build does not
  * offer is drawn as its home drew it, saying so, with nothing to press: both are dark today (`StandingConfirmation.cs:330`, `:336`).
  */
-export function AppointedRoles() {
+export function AppointedRoles({ place }: {
+  /**
+   * One place's appointments alone (AGENTSPLACE1g1): this machine's steward, a workspace's or a repository's supervisor, each a dark role
+   * one quiet line. Absent, every appointment, as Appointed roles draws them.
+   */
+  place?: StructurePlaceAsk;
+} = {}) {
   const { t } = useTranslation();
   const driver = useDriver();
   const registry = useRegistry('machine');
@@ -114,6 +121,22 @@ export function AppointedRoles() {
       },
     }
     : null;
+
+  if (place) {
+    const machine = !place.workspace && !place.repository;
+    if (!(machine ? standing.stewardOffered : standing.supervisorOffered)) {
+      const role = t(machine ? 'settings.daoris.steward.label' : 'projects.supervisor.label');
+      return <p role="status" data-appointed-dark="" className="m-0 text-small text-ink-faint">{`${role} · ${t('agents.roles.appointed.notOffered')}`}</p>;
+    }
+    return (
+      <AppointedList
+        steward={machine ? steward : null}
+        machine={machine}
+        workspaces={!machine && !place.repository && place.workspace ? [{ workspace: place.workspace, supervisor: supervisorOf({ workspace: place.workspace }) }] : []}
+        repositories={place.repository ? [{ repository: place.repository, supervisor: supervisorOf({ repository: place.repository }) }] : []}
+      />
+    );
+  }
 
   const repositories = rows
     .filter((each) => each.adopted || canBeAsked(each))
