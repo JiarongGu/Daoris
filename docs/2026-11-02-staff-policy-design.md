@@ -409,3 +409,31 @@ Every row writes its own line of D226's note and its own translations; a row tha
   *What needs you* kind or a notification per move** (D205 point 4); **the word *switching*** (D197's account switch).
 - **The budget's mid-session hand-over** and **measured success before its measurement:** filed (row h).
 - **A separate reads round before building:** both makers' reads run beside the first rows and are settled on main.
+
+## 11. Settled after Codex's read
+
+Codex's read (`docs/2026-11-02-staff-policy-reads.md`) is taken whole; these amend §2 to §9, and each row carries its part.
+
+1. **Older builds** (row a): the store step that adds the policy raises the writer stamp, so an older Daoris on the home reads the
+   store and writes nothing, and starts no choice past a policy it cannot read; a write that leaves the choices as they were keeps
+   the policy valid (only a change to them makes it stale). The rejection of the stamp raise in §10 is withdrawn.
+2. **Publication is atomic** (row b): the role, its staffing and its policy are judged at one revision and published in one
+   transaction (today `RoleDoor.Apply` commits the staffing before the catalogue, `Roles/RoleDoor.cs:52-69`, and the catalogue may
+   refuse after); the crash proof crosses that boundary.
+3. **The terminal's `role policy`** (row b) joins `DriverChoicesCommand.Changes` and its route census, reaching `SET_ROLE` with the
+   person's authority, from a session's terminal too.
+4. **A hand-over starts the choice approved** (row d): the offered (agent, model, effort) travels through the approval, the durable
+   request and the start, revalidated, never re-picked (today `HandOverRequest` carries neither model nor effort,
+   `Course/Domain/HandOverRecords.cs:31`); a move between one agent's models, which today's offers exclude, is its own defined press.
+5. **The move count is durable** (row e): a count kept by the line's identity covers in-start model and sign-in replacements (which
+   write no part link, `Loop/Driver.cs:1485`, `:4404`), survives a restart, and is tested with mixed refusals and condition moves
+   against `most`.
+6. **Nothing is offered before it is enforced** (rows b–f): the doors refuse a field whose enforcement has not landed (a capability
+   list the driver answers), and the full editor follows rows d and e; the reviewer's maker-partitioned walk keeps its fence.
+7. **A policy's hold is typed and answerable** (rows e–f): `ask` and `held.moves-bound` extend the session waits' union and the
+   attention read (`Modules/Loop/NeedsAPerson.cs`, `work/waits/waits.ts`) with their own answer; one approval at the bound releases
+   one move, never an unbounded renewal.
+8. **Smaller** (rows a, e, f): the judge stays pure and the ledger reserves; the editor shows the sign-in and model-refusal actions
+   the table allows; `TransientRetry`'s bound becomes per run (both ACP retry paths), a driven and a conversation episode tested side by
+   side; a budget's attribution goes through the turn's binding (`Agents/UsageTurns.cs`), with last-slot, reorder and continuation
+   cases.
