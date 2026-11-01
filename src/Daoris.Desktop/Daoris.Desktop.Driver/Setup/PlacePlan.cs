@@ -110,10 +110,14 @@ public static class PlacePlans
     {
         var refusals = new List<PlaceRefusal>();
         if (ask.Repositories.Count == 0) refusals.Add(new(null, Delivery, "no-place", "name the repositories the plan is for."));
-        if (SetupPresets.Of(ask.Preset) is not { } preset)
+        if (ask.Preset == SetupPresets.Keep)
+        {
+            // Keeping how it lands rides every tick and driving: nothing of the delivery is asked, so nothing of it is refused.
+        }
+        else if (SetupPresets.Of(ask.Preset) is not { } preset)
         {
             refusals.Add(new(null, Delivery, "preset",
-                $"`{ask.Preset}` is not a delivery here — {string.Join(", ", SetupPresets.Table.Select(each => $"`{each.Id}`"))}."));
+                $"`{ask.Preset}` is not a delivery here — {string.Join(", ", SetupPresets.Asks.Select(each => $"`{each}`"))}."));
         }
         else if (preset.Land is null)
         {
@@ -153,7 +157,24 @@ public static class PlacePlans
         bool Driven(DriverConfig each) => each.Drivable.Contains(name, StringComparer.OrdinalIgnoreCase);
 
         var preset = SetupPresets.Of(ask.Preset);
-        if (preset is { Land: null } && Driven(after))
+        if (ask.Preset == SetupPresets.Keep)
+        {
+            // Keeping how it lands is a subset of a delivery: no landing and no workflow choice is written, so a saved workflow survives.
+            if ((ask.Drive || Driven(after)) && !after.OpensOwnTree(name))
+            {
+                after = after.WithTrees(name, true);
+                changes.Add(new("SET_TREES", Delivery, "a tree per session", "off", "on"));
+            }
+
+            after = Opinion(after, name, workspace, ask.Opinion, changes, Refuse);
+            after = Look(after, name, workspace, ask.Look, changes, Refuse);
+            if (ask.Drive && !Driven(after))
+            {
+                after = after.WithDrivable(name, true);
+                changes.Add(new("SET_DRIVABLE", Driving, "general driving", "off", "on"));
+            }
+        }
+        else if (preset is { Land: null } && Driven(after))
         {
             after = after.WithDrivable(name, false);
             changes.Add(new("SET_DRIVABLE", Delivery, "driven here", "on", "off"));
