@@ -18,6 +18,10 @@ internal sealed partial class HelpWorkflowProposalWriter(HelpProposalFile file)
     [GeneratedRegex(@"^[a-z0-9]+(?:-[a-z0-9]+)*\z", RegexOptions.CultureInvariant)]
     private static partial Regex WorkflowIdShape();
 
+    /// <summary>A draft's fingerprint as the driver's <c>WorkflowDraftTold</c> takes it: letters, digits, <c>.</c>, <c>_</c>, <c>:</c> and <c>-</c>, at most 128.</summary>
+    [GeneratedRegex(@"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}\z", RegexOptions.CultureInvariant)]
+    private static partial Regex FingerprintShape();
+
     /// <summary>
     /// Write one proposal of a workflow's whole version. <paramref name="steps"/> is the design's JSON list of step objects;
     /// <paramref name="baseVersion"/> the version an edit is made on, absent for a new workflow; <paramref name="choose"/> asks
@@ -25,15 +29,22 @@ internal sealed partial class HelpWorkflowProposalWriter(HelpProposalFile file)
     /// trimmed and written only when given; the workflow store keeps a name to 60 characters (the driver's
     /// <c>WorkflowNamed.NameProblem</c>), and an edit keeps its workflow's name, so a name beside a base is refused.
     /// </summary>
+    /// <remarks>
+    /// FLOWCHART2e (the flowchart design §4, §8.4): <paramref name="draft"/> is the fingerprint of the draft open in the person's editor, as the
+    /// conversation was told it. With it the proposal is a change to that draft, its whole <paramref name="graph"/>, which saves and chooses
+    /// nothing: the workflow may be none yet, and steps, a base, a choice, a route and a name are refused. The driver judges it against the
+    /// draft the conversation was told.
+    /// </remarks>
     public (string? Id, string Message) Propose(
         string? scope, string? workflow, int? baseVersion, string? steps, bool choose,
         string? changes, string? kind, string? import, string why, string? session, DateTimeOffset at, string? name = null,
-        string? graph = null, string? route = null)
+        string? graph = null, string? route = null, string? draft = null)
     {
         var scopeName = Blank(scope);
         var workflowId = Blank(workflow);
         var workflowName = Blank(name);
         var routeName = Blank(route);
+        var fingerprint = Blank(draft);
         if (string.IsNullOrWhiteSpace(why)) return NoReason;
         var notYet = new (string Name, string? Value)[] { ("changes", changes), ("kind", kind), ("import", import) }
             .FirstOrDefault(field => Blank(field.Value) is not null).Name;
@@ -42,11 +53,20 @@ internal sealed partial class HelpWorkflowProposalWriter(HelpProposalFile file)
         JsonElement graphObject = default;
         var hasSteps = Blank(steps) is not null;
         var hasGraph = Blank(graph) is not null;
+        var mixed = fingerprint is null ? null
+            : !FingerprintShape().IsMatch(fingerprint) ? $"`{fingerprint}` is not a draft's fingerprint: send the one the message told you, as it is."
+            : hasSteps || !hasGraph ? "a change to the open draft carries its whole `graph`, never `steps`."
+            : baseVersion is not null ? "a change to the open draft saves nothing, so it names no `base`: the draft names where it came from."
+            : choose ? "a change to the open draft chooses nothing, so `choose` is left out: the person chooses where the workflow is used."
+            : routeName is not null ? "a change to the open draft chooses nothing, so `route` is left out."
+            : workflowName is not null ? "a change to the open draft names no `name`: the person names the workflow as they save it."
+            : null;
         var refused =
             notYet is not null ? $"`{notYet}` is not proposed yet: propose the whole `steps`."
             : scopeName is null ? "a workflow proposal names its scope: the repository or workspace it applies to."
             : Word(scopeName, "a scope")
-              ?? (workflowId is null ? "a workflow proposal names its workflow, by its id."
+              ?? mixed
+              ?? (workflowId is null ? fingerprint is not null ? Graph(graph, out graphObject) : "a workflow proposal names its workflow, by its id."
                  : !WorkflowIdShape().IsMatch(workflowId) || workflowId.Length > 40
                     ? $"`{workflowId}` is not a workflow's id — lower-case letters, digits and dashes, at most 40, such as `docs-to-pr`."
                  : workflowId == "current" ? "`current` names Current, the workflow drawn from the rules as they stand, so no saved workflow takes it."
@@ -64,7 +84,9 @@ internal sealed partial class HelpWorkflowProposalWriter(HelpProposalFile file)
         {
             writer.WriteString("kind", "workflow");
             writer.WriteString("scope", scopeName);
-            writer.WriteString("workflow", workflowId);
+            writer.WriteString("workflow", workflowId ?? "");
+            // FLOWCHART2e: the draft door's fingerprint, which the driver reads the door from.
+            if (fingerprint is not null) writer.WriteString("draft", fingerprint);
             if (workflowName is not null) writer.WriteString("name", workflowName);
             if (baseVersion is { } baseNumber) writer.WriteNumber("base", baseNumber);
             else writer.WriteNull("base");

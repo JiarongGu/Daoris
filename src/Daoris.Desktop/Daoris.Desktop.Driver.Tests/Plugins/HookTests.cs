@@ -89,7 +89,8 @@ public sealed class HookTests : IDisposable
         frame.TryGetProperty("method", out var m) ? m.GetString() : null;
 
     private static HookPeer Peer(FakePlugin plugin, TimeSpan? patience = null, Action<string>? onLine = null) =>
-        new(plugin.Incoming, plugin.Outgoing, "acme.gate", onLine, patience);
+        // An in-process stand-in waits on the shared patience unless a case times its own bound; ten seconds is a load away (HookStateTests).
+        new(plugin.Incoming, plugin.Outgoing, "acme.gate", onLine, patience ?? Poll.Patience);
 
     private static Consideration Start(string id, string title = "Expose a streaming budget") => new(
         new QuestView(id, "game", "engine", title, "World streaming needs a per-frame cap.", "Open"),

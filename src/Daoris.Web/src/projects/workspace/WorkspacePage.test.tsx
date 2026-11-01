@@ -100,6 +100,63 @@ describe("a workspace's Details", () => {
     expect(onOpenAgent).toHaveBeenCalledWith('codex');
   });
 
+  // SETUPUX1v: the remote's wiring is a row of the workspace's Details, where the Setup tab's Remote row went.
+  describe('its Remote row', () => {
+    const wiring = (over: Partial<NonNullable<NonNullable<Parameters<typeof WorkspaceDetails>[0]['remote']>['wiring']>> = {}) => ({
+      remote: null, fromEnvironment: false, onWire: vi.fn(), onUnwire: vi.fn(), ...over,
+    });
+
+    it('wires the workspace from a form one press away, and lets the key go once it has landed', async () => {
+      const w = wiring();
+      render(<WorkspaceDetails repositories={['engine']} onOpen={() => {}} remote={{ workspace: 'aurora', wiring: w }} />);
+
+      const region = screen.getByRole('region', { name: 'Remote' });
+      expect(within(region).getByText('Local only: nothing is wired for this workspace on this machine.')).toBeInTheDocument();
+      await userEvent.click(within(region).getByRole('button', { name: 'Wire to a remote…' }));
+      await userEvent.type(within(region).getByLabelText('Deployment'), 'https://aurora.example.com');
+      await userEvent.type(within(region).getByLabelText('Key'), 'dk_aurorakey0000');
+      await userEvent.click(within(region).getByRole('button', { name: 'Wire' }));
+      expect(w.onWire).toHaveBeenCalledWith('https://aurora.example.com', 'dk_aurorakey0000', expect.any(Function));
+    });
+
+    it("shows where it syncs with only the key's audit prefix, and unwires", async () => {
+      const w = wiring({ remote: { url: 'https://aurora.example.com', key: 'dk_abcd1234…' } });
+      render(<WorkspaceDetails repositories={['engine']} onOpen={() => {}} remote={{ workspace: 'aurora', wiring: w }} />);
+
+      expect(screen.getByText('dk_abcd1234…')).toBeInTheDocument();
+      await userEvent.click(screen.getByRole('button', { name: 'Unwire' }));
+      expect(w.onUnwire).toHaveBeenCalled();
+    });
+
+    it('opens the form where the header asked to wire it, and takes the focus where a door asked for the row', () => {
+      render(
+        <WorkspaceDetails
+          repositories={['engine']} onOpen={() => {}}
+          remote={{ workspace: 'aurora', wiring: wiring(), startOpen: true, focus: true }}
+        />,
+      );
+      expect(screen.getByLabelText('Deployment')).toBeInTheDocument();
+      expect(screen.getByRole('region', { name: 'Remote' }).querySelector('[data-workspace-row="remote"]')).toHaveFocus();
+    });
+
+    it('is absent where nothing answered the wiring', () => {
+      render(<WorkspaceDetails repositories={['engine']} onOpen={() => {}} />);
+      expect(screen.queryByRole('region', { name: 'Remote' })).toBeNull();
+    });
+
+    it('says it in Chinese', async () => {
+      const { default: i18n } = await import('../../locales/i18n');
+      await i18n.changeLanguage('zh');
+      try {
+        render(<WorkspaceDetails repositories={['engine']} onOpen={() => {}} remote={{ workspace: 'aurora', wiring: wiring() }} />);
+        expect(screen.getByRole('region', { name: '远端' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: '接线到远端…' })).toBeInTheDocument();
+      } finally {
+        await i18n.changeLanguage('en');
+      }
+    });
+  });
+
   it('draws no start and no accounts where a shell did not answer them', () => {
     render(<WorkspaceDetails repositories={['engine']} onOpen={() => {}} />);
 

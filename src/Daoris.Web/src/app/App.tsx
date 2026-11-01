@@ -40,6 +40,7 @@ import { setupLit } from '../agents/modes';
 import { PlaceDrivingScope } from '../agents/setup/PlaceDriving';
 import { PlaceSessions, PlaceWorkflow } from '../agents/setup/PlaceSessions';
 import { PlaceSetUpPanel } from '../agents/setup/PlaceSetUpPanel';
+import { placeIdOf } from '../agents/setup/SetupPlaces';
 import { DEFAULT_WORKSPACE, workspaceOf } from '../data/workspaces';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import { Drawer, failure, Prose, Toasts, useToasts } from '../design/ui';
@@ -440,9 +441,9 @@ export function App() {
       workflow: (
         <PlaceWorkflow
           place={place}
+          landingAsked={place.asked === 'landing'}
           notify={notify}
           onOpenPlugin={(plugin) => open('plugins', plugin)}
-          onOpenWorkspaceFlow={(workspace) => open('projects', workspaceItem(workspace), { workspaceTab: 'workflow' })}
         />
       ),
       sessions: (
@@ -450,7 +451,7 @@ export function App() {
           place={place}
           notify={notify}
           onOpenPlugin={(plugin) => open('plugins', plugin)}
-          onOpenAppointed={() => open('agents', null, { roleSection: 'appointed' })}
+          onOpenAppointed={() => agentsModes.onPlaceAt(placeIdOf(place.row), { section: 'roles', row: 'appointed' })}
         />
       ),
     }),
@@ -459,14 +460,14 @@ export function App() {
       <PlaceDrivingScope
         row={row}
         notify={notify}
-        onOpenAppointed={() => open('agents', null, { roleSection: 'appointed' })}
+        onOpenAppointed={() => agentsModes.onPlaceAt(placeIdOf(row), { section: 'roles', row: 'appointed' })}
         onOpenRepositories={() => open('projects', row.repository)}
       >
         {render}
       </PlaceDrivingScope>
     ),
     // A place's *Set up…* (AGENTSPLACE1j): it reads the plan and presses Apply, which the application hands in for the same reason.
-    setUp: (place, page) => <PlaceSetUpPanel place={place} page={page} notify={notify} />,
+    setUp: (place, page, doorFor) => <PlaceSetUpPanel place={place} page={page} notify={notify} doorFor={doorFor} onOpenQuest={(quest) => open('quests', quest)} />,
     // The Roles mode's doors (COMPANYVIEW1d): each thing's home, the Agents mode at an agent's accounts among them.
     roleDoors: {
       agent: (agent) => open('agents', agent, { agentPart: 'accounts', agentsMode: 'agents' }),
@@ -1019,6 +1020,8 @@ export function App() {
     onOpenPlugin: (plugin) => open('plugins', plugin),
     // A repository's Setup is the place's page once the Setup mode is lit, which `apply` opens for a door into the tab (AGENTSPLACE1f).
     onOpenSetup: (repository) => open('projects', repository, { tab: 'setup' }),
+    // A workspace's Setup sections have their homes once the Setup mode is lit, which `apply` opens for a door into the tab (SETUPUX1v).
+    onOpenWorkspaceSetup: (workspace, section) => open('projects', workspaceItem(workspace), { workspaceTab: 'setup', workspaceSection: section }),
     onSyncNow,
     syncing: syncNow.isPending,
     addRequested,

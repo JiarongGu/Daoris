@@ -154,6 +154,24 @@ describe('where the person is', () => {
       .toContain('looking at quest `abc123`. The right side bar');
   });
 
+  /** FLOWCHART2d: a draft open in the editor is said where the person is, ahead of anything the driver's bound could cut. */
+  it('says a workflow draft is open, early enough that the preface bound keeps it', () => {
+    const draft = { workflow: 'release-flow', place: 'engine', base: 2, steps: 9, problems: 1, selected: 'find' };
+    expect(prefaceOf({ view: 'projects', workspace: 'aurora', item: { kind: 'repository', id: 'engine' }, draft })).toBe(
+      'Where the person is now: the Repositories view, workspace `aurora`, looking at repository `engine`, editing a workflow draft '
+      + 'of `release-flow` from v2 for `engine`, not saved: 9 steps, 1 to put right, step `find` selected; the draft is told beside their words.',
+    );
+    expect(prefaceOf({ view: 'projects', workspace: null, draft: { ...draft, workflow: null, base: null, problems: 0, selected: null } }))
+      .toContain('editing a workflow draft of a new workflow for `engine`, not saved: 9 steps;');
+
+    const crowded = prefaceOf({
+      view: 'sessions', workspace: 'aurora', draft,
+      session: { id: 'p4rk3d00', repository: 'engine', state: 'awaiting-person', note: 'x'.repeat(2000) },
+      layout: { right: ['timeline', 'review', 'ask', 'console'], panel: ['terminal', 'atWork'], rightShown: true, panelShown: true },
+    });
+    expect(crowded.slice(0, 1200)).toContain('the draft is told beside their words');
+  });
+
   it('reads a view\'s choice and standing: live is said, closed is said as closed, anything else is unsaid', () => {
     expect(itemOf('quests', 'abc123', 'live')).toEqual({ kind: 'quest', id: 'abc123' });
     expect(itemOf('quests', 'abc123', 'closed')).toEqual({ kind: 'quest', id: 'abc123', closed: true });

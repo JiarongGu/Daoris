@@ -143,6 +143,50 @@ public sealed class HelpWorkflowProposalTests : HelpProposalBoxFixture
         Assert.Contains("Nothing was proposed", message);
     }
 
+    private const string DraftGraph =
+        """{"schemaVersion":2,"entries":["work"],"end":"line","nodes":[{"id":"work","kind":"claimed","version":1,"reach":"observed"}],"wires":[]}""";
+
+    /// <summary>
+    /// FLOWCHART2e (the flowchart design §4, §8.4): a change to the draft open in the editor is its fingerprint and the whole graph; the
+    /// workflow it names may be none yet, and nothing it carries saves or chooses.
+    /// </summary>
+    [Fact]
+    public void A_change_to_the_open_draft_is_written_with_its_fingerprint_and_its_graph()
+    {
+        var (id, message) = Box().ProposeWorkflow("web-app", "", null, null, false, null, null, null, "add a release", "h1", Now, graph: DraftGraph, draft: " g1-0123456789abcdef ");
+
+        var written = Written(id!);
+        Assert.Equal("g1-0123456789abcdef", written.GetProperty("draft").GetString());
+        Assert.Equal("claimed", written.GetProperty("graph").GetProperty("nodes")[0].GetProperty("kind").GetString());
+        Assert.Equal(System.Text.Json.JsonValueKind.Null, written.GetProperty("base").ValueKind);
+        Assert.False(written.GetProperty("choose").GetBoolean());
+        Assert.False(written.TryGetProperty("steps", out _));
+        Assert.Contains($"Proposed `#{id}`", message);
+
+        var (named, _) = Box().ProposeWorkflow("web-app", "release-flow", null, null, false, null, null, null, "why", "h1", Now, graph: DraftGraph, draft: "g1-1");
+        Assert.Equal("release-flow", Written(named!).GetProperty("workflow").GetString());
+    }
+
+    /// <summary>FLOWCHART2e (§8.4): a draft mixed with what saves or chooses is refused, with nothing written.</summary>
+    [Theory]
+    [InlineData(null, DraftGraph, 2, false, null, null, "g1-1", "`base`")]
+    [InlineData(null, DraftGraph, null, true, null, null, "g1-1", "`choose`")]
+    [InlineData(null, DraftGraph, null, false, "default", null, "g1-1", "`route`")]
+    [InlineData(null, DraftGraph, null, false, null, "Release", "g1-1", "`name`")]
+    [InlineData(Steps, null, null, false, null, null, "g1-1", "`graph`")]
+    [InlineData(null, null, null, false, null, null, "g1-1", "`graph`")]
+    [InlineData(null, DraftGraph, null, false, null, null, "g1 bad", "fingerprint")]
+    public void A_draft_mixed_with_a_save_or_a_choice_is_refused_with_nothing_written(
+        string? steps, string? graph, int? baseVersion, bool choose, string? route, string? name, string draft, string says)
+    {
+        var (id, message) = Box().ProposeWorkflow("web-app", "", baseVersion, steps, choose, null, null, null, "why", "h1", Now, name, graph, route, draft);
+
+        Assert.Null(id);
+        Assert.Contains(says, message);
+        Assert.Contains("Nothing was proposed", message);
+        Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.HelpProposals)));
+    }
+
     [Fact]
     public void Changes_kind_and_import_are_refused_as_not_proposed_yet()
     {

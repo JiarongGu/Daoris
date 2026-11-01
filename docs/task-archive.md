@@ -22701,3 +22701,61 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 > **NOTEBREAK1 — a decision's note never lands glued** (tools). A union merge of `docs/decisions/*.md` coalesced the blank line two branches each added before their `**Note, ` line, and `doc-duplicates` failed the next CI. Proof: `tools/index-hook.test.mjs`.
 
 **Outcome** 2026-11-02: `tools/index-hook.mjs` separates a glued note in every staged decision file before it regenerates the index (pre-commit, which a conflicted merge finishes through), and a `notes` merge driver (`--merge-notes`, set by `--install`, named for `docs/decisions/*.md` in `.gitattributes`) does union and the separation inside the merge itself, since a clean merge runs no pre-commit and git ignores what a `pre-merge-commit` hook stages; no commit is remade. Detail: the FIX-LOG entry of 2026-11-02.
+
+## SETUPUX1o — the Workflow section (2026-11-02, D221)
+
+> **SETUPUX1o — the Workflow section** (web; row o of the set-up design). Route rows as a selection; the chart in its own column and one press away; label and cells; the folds with their owners; the Gates and Landing need-openings; a workspace's own section. Proof: a saved default route draws its own graph and says so; landed Current reads *No verification here*; *Verify…* waits on an accepted landed pipeline; choosing writes nothing; the head and the three section lines within the first screen; stories at 80, 39 and 25rem, en and zh, both themes, keyboard.
+
+**Outcome** 2026-11-02: a place's Workflow draws the chosen route's effective graph through `graphFlow` in the page's own column from 64rem and one press away below it, with its folds as one row (Gates, Landing, Second opinion, Your look, Landed route, The line, More; the heavy gates now in More). Detail: D221's SETUPUX1o note; `PlaceWorkflowView.test.tsx`, `RepositorySetup.folds.test.tsx`, the measured `place/*` and `placeWorkflow/*` stories.
+## SETUPUX1j — the choices (2026-11-02, D221)
+
+> **SETUPUX1j — the choices** (web; row j of `docs/2026-11-01-setup-ux-design.md` §5). §2.2's choices page: *Keep how it lands*, the deliveries and their `why` worded by id from the page's catalogues, *Not driven*'s key, Driving's caption from the plan's sides, each refusal under its part with a door that repairs its cause and returns, the chooser from `members`, and mixed suggestions said per repository. Proof: refusal → repair → return → plan read again; mixed suggestions preselect nothing; `defaultName.*`, `set.line.*` and `PRESETS` gone; stories at 80, 39 and 25rem.
+
+**Outcome** 2026-11-02: `PlaceSetUp.tsx` draws the choices from `WORKFLOW_LIST`'s set-up deliveries, `placePlan.ts` reads the suggestions (Keep, mixed), the driving's sides and each refusal's part, `PlaceChooser.tsx` is the workspace's chooser, a door leaves the set-up with its draft kept (`SetUpPage.leave` and `resume`) and `Back` returns; `setup_propose` names `keep`. Detail: D221's SETUPUX1j note; `placePlan.test.ts`, `PlaceSetUp.test.tsx`, `PlaceSetUpPanel.test.tsx`, `setupKeys.test.ts`.
+## SETUPUX1u — a run's view (2026-11-02, D221)
+
+> **SETUPUX1u — a run's view** (web; row u of the set-up design). §2.3's run view through the one drawing: its head naming the bound version and how it was chosen, one sentence of where the work stands, a selected step's record and its owner's controls, a decision's returned outcome with *route not taken* told apart, *Finished* only from the driver's record. Proof: a release run of each outcome; stories at 300 px, 45% of the window and 25rem; page tests; the measured stories.
+
+**Outcome** 2026-11-02: the run view opens the step the run stands at and shows every other step as its title and state, a decision's outcome and routes are said, and the drawing finishes after the route taken. Detail: D221's SETUPUX1u note; `WorkflowRunView.test.tsx`, `graphFlow.test.ts`, the measured `runview/*` stories. The installed check (changes sent back) stays with row x.
+## SETUPUX1l — Roles on a place, one role editor (2026-11-02, D221)
+
+> **SETUPUX1l — Roles on a place, one role editor** (web; row l of the set-up design). Only the works that differ from the parent as rows, the rest folded; one `RoleEditor` for the place's Roles and All roles (a step's later), keeping the role's scope, revision and typed alternatives; *Back to …* naming the fallback; the two-roles-one-work refusal said in the editor; a shared role edited once with its works named. Proof: the folds, *Back to*, the refusal, a shared role, a typed model saved (`PlaceRoles.test.tsx`, `RoleEditor.test.tsx`); stories at 80, 39 and 25rem, en and zh, both themes.
+
+**Outcome** 2026-11-02: `agents/roles/RoleEditor.tsx` holds the editor (prose behind one ⓘ, a sentence of consequence before *Save*) and `setup/PlaceRoles.tsx` folds the unchanged works. Detail: D221's SETUPUX1l note; `PlaceRoles.stories.tsx`.
+## FLOWCHART2d — Ask Daoris told the open draft (2026-11-02, D223)
+
+> **FLOWCHART2d — Ask Daoris told the open draft** (web, modules, driver; row d of the flowchart design). The `Draft` field, bounded, sent on a fingerprint change, recorded; the preface clause; the room's paragraph; with §8.3's compact palette, the draft's source and save target, base, route, pipeline, selected step and open problems, frozen with the person's message. Proof: the record keeps the draft as told; an oversize draft refused with its sentence; nothing re-sent unchanged; the room's goldens.
+
+**Outcome** 2026-11-02: the page sends the editor's draft beside the words where its fingerprint moved, the host refuses one past 48 KiB whole and hands it with the palette, and the record's `chat.told-draft` note keeps it for the draft door. The editor's registration (`registerOpenDraft`) is the editor rows'. Detail: D223's FLOWCHART2d note.
+## FLOWCHART2e — a proposal against the draft (2026-11-02, D223)
+
+> **FLOWCHART2e — a proposal against the draft** (service, driver, modules; row e of the flowchart design, after d). `workflow_propose.draft`, the `draft` door, `WorkflowGraphDiff`, the card's fields; Apply writes nothing; with §8.4's bridge-complete payload and §8.5's diff that hides no execution change. Proof: judged against the told draft; an unknown fingerprint refused; Apply leaves the workflow store and the configuration byte for byte; the diff over the shipped graphs; the tool's description and registration tests.
+
+**Outcome** 2026-11-02: a change to the open draft is judged against the draft the conversation was told and shown as its changes, problems and candidate; its Apply opens the place's Workflow and stands, settling only when the editor names each change taken or left. Drawing it is row f's, the opener row g's. Detail: D223's FLOWCHART2e note.
+
+## FLOWCHART2a — the chart's components (2026-11-02, D223)
+
+> **FLOWCHART2a — the components** (web; row a of the flowchart design). `FlowCanvas`, `StepNode` per kind, `PortRow`, `Terminal`, `HoldsGroup` and `EdgeChip`; the place's chart and the run view draw through them. Proof: every shipped graph with each kind's variant, each outcome a port, each unrouted outcome a ◎; measured, each `when` leaves its port's box, none crosses a box, crossing ceilings held, the other flows' stories unchanged; no status hue on an edge; stories at 80, 39 and 25rem, en and zh, both themes.
+
+**Outcome** 2026-11-02: the place's chart and a run draw through `workflow/chart/` on `design/FlowCanvas`; a decision's outcomes are ports its routes leave, two outcomes to one step stay two ways, and a `data` wire is drawn only while an end is selected. Detail: D223's FLOWCHART2a note; `graphFlow.test.ts`, `chart.test.tsx`, the measured `graph/*` stories.
+## SETUPUX1m — This machine's page (2026-11-02, D221)
+
+> **SETUPUX1m — This machine's page** (web; row m of the set-up design). *All roles*, the diagram, the *Suggested* line and the found staffing changes, all reachable with the Setup mode lit, so lighting the flag loses none of what the dark Roles mode shows. Proof: a door census and `HelpCoverageTests` re-point every dark Roles door; *All roles* lists every role once with scope filters and search, opens a role placed elsewhere at its place, and edits a machine role in place; stories at 80, 39 and 25rem, en and zh, both themes, keyboard.
+
+**Outcome** 2026-11-02: `agents/roles/AllRoles.tsx` is This machine's *All roles* section over the Roles mode's card and diagram, `setup/MachineNotes.tsx` the two lines above the sections, and `placeOpening` sends the Roles mode's doors to the page. Detail: D221's SETUPUX1m note; `MachineRoles.test.tsx`, `MachineRoles.stories.tsx`.
+
+## SETUPUX1v — the workspace's remaining rows (2026-11-02, D221)
+
+> **SETUPUX1v — the workspace's remaining rows** (web; row v of the set-up design). Remote (wire and unwire to a remote) as a row of Repositories' workspace *Details*; the workspace's allow/ask/deny rules and undeclared-machine retirement into the workspace place's Sessions, the supervisor into its Roles, the line's defaults into its Workflow, before the old Setup tab goes. Proof: a control census of Wire, Unwire, retiring a machine, allow, ask and deny, each with its door; the door census (every door that opened the workspace's Setup tab rows opens the new home); stories at 80, 39 and 25rem, en and zh, both themes, keyboard; the driver's `HelpCoverageTests` re-pointed where a door moves.
+
+**Outcome** 2026-11-02: lit, `WorkspaceDetails` draws the *Remote* row, the place's Sessions *Reach*, its Workflow the line's defaults and its Roles the supervisor's line, and `placeOpening` sends each Setup section's door to its home. Detail: D221's SETUPUX1v note; `WorkspaceHomes.test.tsx`, `opener.test.ts`, `WorkspaceHomes.stories.tsx`.
+## SETUPUX1p — Change… and the plan of one (2026-11-02, D221)
+
+> **SETUPUX1p — Change… and the plan of one** (web; row p of the set-up design). The three tabs, the selected candidate previewed through the place's chart, the plan read only where `WORKFLOW_LIST` announces `use: ["plan"]`, *Use here* carrying the plan's `expected` token and refused `moved` in the driver's words, *Save a copy…* for a preset, and *Use the workspace's* clearing the default alone and saying what its kinds keep; per route. Proof: against today's handler selecting a candidate writes nothing; a stale and a moved *Use*; a default-clear with kinds left says they keep Current; stories at 80, 39 and 25rem, en and zh, both themes, keyboard.
+
+**Outcome** 2026-11-02: `workflow/place/ChangeWorkflow.tsx` holds the tabs, the preview, the copy and the clear over `ChangePlan.tsx`, and `useWorkflowEditor` gains the plan sender `onPlan`. Detail: D221's SETUPUX1p note; `ChangeWorkflow.test.tsx`, `ChangeWorkflow.stories.tsx`.
+## SETUPUX1k — the review and Apply (2026-11-02, D221)
+
+> **SETUPUX1k — the review and Apply** (web; row k of the set-up design). *Set up…*'s review after the choices, in one order: what changes (each identical change once with its repositories, the reach and "the line could not be read" lines), what stops it and what lowers your part, the work it releases with *Hold it after driving* and its per-repository outcomes, and *Acceptances* with ticks bound to each declaration's read identity; *updating* while a plan is re-read with Apply unavailable, the driver's own `moved` sentence, the result's door to the adoption quest, and a seed from Ask Daoris opening on the review. Proof: a changed blob clears its tick; a stale plan offers no *Apply*; partial holds said per repository; flow 1 ends *Not driven · adoption running*; Gates' ticks start empty; a seed opens the review; stories at 80, 39 and 25rem, en and zh, both themes, keyboard; where *Apply* sits at 680 px measured.
+
+**Outcome** 2026-11-02: `setup/PlaceReview.tsx` is the review over the draft's `review` step and `workflow/place/Acceptances.tsx` the molecule Gates draws too, its ticks now empty at the start. Detail: D221's SETUPUX1k note; `PlaceReview.test.tsx`, `PlaceReview.stories.tsx`, `measured/review.spec.ts`.

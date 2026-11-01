@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../../locales/i18n';
@@ -58,14 +58,17 @@ describe("a repository place's Sessions", () => {
 });
 
 describe("a repository place's Workflow", () => {
-  it('holds the route, Gates and the line and landing, and no sessions rows', () => {
+  it('holds the routes, Gates and the folds of the line and landing, and no sessions rows', () => {
     drawWorkflow(SETUP_DEFAULTS);
-    expect(screen.getByRole('button', { name: 'Line and landing' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Gates' })).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'Where work here goes' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Landing' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'The line' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Gates' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Reach' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Line and landing' })).toBeNull();
   });
 
-  it('draws the integration declaration once, in Gates, and not again under Line and landing', () => {
+  it('draws the integration declaration once, in Gates, and not again under the landed route', () => {
     const landed = { start: { ...GATES_CHANGED, integration: INTEGRATION_CHANGED }, workspace: 'aurora', onChoose: vi.fn(), onAcceptIntegration: vi.fn() };
     drawWorkflow({ ...SETUP_OWN, landed });
 
@@ -73,14 +76,25 @@ describe("a repository place's Workflow", () => {
     expect(screen.queryByText('Integration declaration')).toBeNull();
   });
 
-  it('draws no Workflow while the driver has not answered it', () => {
-    drawWorkflow(SETUP_DEFAULTS, null);
-    expect(document.getElementById('place-workflow')).toBeNull();
+  it('keeps the heavy gates in More, which the Sessions section no longer draws', async () => {
+    drawWorkflow({ ...SETUP_DEFAULTS, heavy: { gates: [{ name: 'build', run: 'dotnet build' }], onSave: vi.fn() } });
+    expect(screen.getByRole('button', { name: 'More' })).toHaveAccessibleDescription(/1 heavy gate: build/);
+    expect(screen.queryByRole('button', { name: 'Heavy gates' })).toBeNull();
+
+    cleanup();
+    drawSessions({ ...SETUP_DEFAULTS, heavy: { gates: [{ name: 'build', run: 'dotnet build' }], onSave: vi.fn() } });
+    expect(screen.queryByRole('button', { name: 'Heavy gates' })).toBeNull();
   });
 
-  it('says its headings in Chinese', async () => {
+  it('draws no Workflow while the driver has not answered it', () => {
+    const { container } = drawWorkflow(SETUP_DEFAULTS, null);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('says its names in Chinese', async () => {
     await i18n.changeLanguage('zh');
     drawWorkflow(SETUP_DEFAULTS);
-    expect(document.getElementById('place-workflow')).toHaveTextContent('工作流');
+    expect(screen.getByRole('list', { name: '工作在这里如何分流' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '落地' })).toBeInTheDocument();
   });
 });

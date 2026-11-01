@@ -3,13 +3,14 @@ import { useTranslation } from 'react-i18next';
 import { refusedNoRoute } from '../../bridge/shell';
 import { useRoleStructureChain } from '../../bridge/driver';
 import type { RoleStructure, StructurePlaceAsk, StructureWork } from '../../data/wiring';
-import { Button, type Notify, SettingList, SettingRow } from '../../design/ui';
+import { Button, Icon, type Notify, SettingList, SettingRow } from '../../design/ui';
 import type { Authored } from '../../locales/authored';
 import { InlineConfirm } from '../../work/InlineConfirm';
 import { AppointedRoles } from '../roles/AppointedRoles';
 import { type Editing, editingOfLine, entryText, type Line, mayEditLine, nameFields, newRoleEditing, placeText, roleName, RolesCard } from '../roles/Roles';
 import { useRoleEditing } from '../roles/RolesView';
 import { stateText } from '../roles/StructureSections';
+import { PlaceSupervisor } from './PlaceSupervisor';
 
 type Kind = 'machine' | 'workspace' | 'repository';
 
@@ -20,6 +21,12 @@ const placedHere = (place: StructurePlaceAsk, scope: { kind: string; id?: string
   const kind = kindOf(place);
   return scope.kind === kind && (kind === 'machine' || scope.id === (kind === 'repository' ? place.repository : place.workspace));
 };
+
+/** The states of a first choice that stop the work as it stands (SETUPUX1l): the rest read as the parent's would. */
+const READS_FINE = new Set(['ready', 'unknown', 'not-read']);
+
+/** Whether a work needs a look: its starts hold, a part of it did not read, or its first choice cannot run. */
+const needsLook = (work: StructureWork): boolean => !!work.held || !!work.choicesFailed || work.choices.length === 0 || !READS_FINE.has(work.choices[0]!.state.code);
 
 /** A work's first choice as one line: the agent, model and effort in the tool's words, and the last reading it rests on. */
 function ChoiceLine({ work }: { work: StructureWork }) {
@@ -50,7 +57,22 @@ export function PlaceRoles({ place, notify, onSource }: { place: StructurePlaceA
   const editor = useRoleEditing(notify);
   const chain = useRoleStructureChain(place);
   const read = chain.data ? 'ok' : chain.isError ? (refusedNoRoute(chain.error) ? 'notOffered' : 'failed') : 'loading';
-  return <PlaceRolesView place={place} read={read} answer={chain.data ?? null} editor={editor} appointed={<AppointedRoles place={place} />} onSource={onSource} />;
+  // A workspace's supervisor is a line among its roles (SETUPUX1v, moved from the Setup tab): its door is the Appointed row beneath it.
+  const supervisor = kindOf(place) === 'workspace'
+    ? <PlaceSupervisor workspace={place.workspace!} onOpenAppointed={bringAppointed} />
+    : undefined;
+  return (
+    <PlaceRolesView
+      place={place} read={read} answer={chain.data ?? null} editor={editor} supervisor={supervisor} appointed={<AppointedRoles place={place} />} onSource={onSource}
+    />
+  );
+}
+
+/** Takes the focus to the place's own *Appointed* row, where its supervisor is appointed. */
+function bringAppointed() {
+  const row = document.querySelector<HTMLElement>('[data-place-row="appointed"]');
+  row?.scrollIntoView?.({ block: 'nearest' });
+  row?.focus({ preventScroll: true });
 }
 
 /** The door from a role's source mark to the place that sets it, at the same work (SETUPUX1h): its workspace's page, or this machine's. */
@@ -60,8 +82,10 @@ export type SourceDoor = (scope: { kind: 'workspace' | 'machine'; id?: string },
 export type PlaceRoleEditor = Pick<ReturnType<typeof useRoleEditing>, 'agents' | 'offers' | 'staffing' | 'catalogue' | 'read' | 'busy' | 'onSet' | 'onSetActor'>;
 
 /** The section drawn from its reads, and every press out (`SET_ROLE`, `SET_ACTOR`): a molecule, so a story reaches every state by props. */
-export function PlaceRolesView({ place, read, answer, editor, appointed, onSource }: {
+export function PlaceRolesView({ place, read, answer, editor, supervisor, appointed, onSource }: {
   place: StructurePlaceAsk;
+  /** A workspace's supervisor line and its door to Appointed, between the works and the appointed roles. */
+  supervisor?: ReactNode;
   /** Told where a role placed above the place is pressed: its source mark is a door to the place that sets it. */
   onSource?: SourceDoor;
   /** The chain's read: its rows, not read yet, not offered by this shell, or failed. */
@@ -74,6 +98,7 @@ export function PlaceRolesView({ place, read, answer, editor, appointed, onSourc
   const { t, i18n } = useTranslation();
   const [open, setOpen] = useState<{ work: string; editing: Editing } | null>(null);
   const [backing, setBacking] = useState<string | null>(null);
+  const [unfolded, setUnfolded] = useState(false);
   // A draft's key is the editor's own; these count down from -1, as *Add a role here*'s does, so they never meet the card's own count up.
   const keys = useRef(0);
   const nextKey = () => --keys.current;
@@ -116,12 +141,24 @@ export function PlaceRolesView({ place, read, answer, editor, appointed, onSourc
     });
   };
 
+  // A row is a work this place sets or that differs from the parent's, or that needs a look; a role taking several is one row's worth, so
+  // its works stand together. The rest fold. This machine has no parent, so it folds nothing.
+  const reasons = (work: StructureWork): boolean => {
+    if (!parent) return true;
+    return (work.role !== undefined && placedHere(place, work.role.scope)) || work.role?.id !== parent.works.find((each) => each.work === work.work)?.role?.id || needsLook(work);
+  };
+  const withRole = (work: StructureWork) => (work.role ? (mine?.works ?? []).filter((each) => each.role?.id === work.role!.id) : [work]);
+  const shown = (mine?.works ?? []).filter((work) => withRole(work).some(reasons));
+  const folded = (mine?.works ?? []).filter((work) => !shown.includes(work));
+  const foldedOpen = unfolded || folded.some((work) => work.work === open?.work);
+
   const row = (work: StructureWork): ReactNode => {
     const role = work.role;
     const mineHere = role ? placedHere(place, role.scope) : false;
     const label = workName(work.work);
     const line = role ? lineOf(role.id) : null;
     const parentRole = parent?.works.find((each) => each.work === work.work)?.role;
+    const alongside = role ? withRole(work).filter((each) => each.work !== work.work).map((each) => workName(each.work)).join(t('settings.ai.actors.and')) : '';
     const asking = backing === work.work && role !== undefined;
     const busy = editor.busy;
     return (
@@ -170,11 +207,11 @@ export function PlaceRolesView({ place, read, answer, editor, appointed, onSourc
         {asking && role && (
           <InlineConfirm
             label={t('agents.setup.roles.backAsk', { work: label, parent: parentName })}
-            says={parentRole
+            says={`${parentRole
               ? t('settings.ai.roles.removeFallback', {
                 role: name(role), work: label, fallback: name(parentRole), place: placeText(t, parentRole.scope.kind, parentRole.scope.id),
               })
-              : t('settings.ai.roles.removeNone', { role: name(role), work: label })}
+              : t('settings.ai.roles.removeNone', { role: name(role), work: label })}${alongside ? ` ${t('agents.setup.roles.alsoFalls', { works: alongside })}` : ''}`}
             meanIt={t('agents.setup.roles.backMove', { parent: parentName })}
             busy={busy}
             onConfirm={(answered) => editor.onSet({ change: 'remove', id: role.id, revision: role.revision }, answered)}
@@ -182,9 +219,13 @@ export function PlaceRolesView({ place, read, answer, editor, appointed, onSourc
           />
         )}
         {!asking && open?.work !== work.work && <ChoiceLine work={work} />}
+        {!asking && open?.work !== work.work && alongside && <p className="m-0 text-small text-ink-faint wrap-anywhere">{t('agents.setup.roles.shared', { works: alongside })}</p>}
         {open?.work === work.work && (
           <RolesCard
             editorOnly
+            consequence={open.editing.isNew
+              ? t('agents.setup.roles.thenGive', { place: placeName, works: open.editing.takes.map(workName).join(t('settings.ai.actors.and')) })
+              : undefined}
             catalogue={catalogue} read={editor.read} staffing={staffing} agents={editor.agents} offers={editor.offers} busy={busy}
             onSet={editor.onSet} onSetActor={editor.onSetActor}
             editor={open.editing} onEditor={(next) => setOpen(next ? { work: work.work, editing: next } : null)}
@@ -201,9 +242,29 @@ export function PlaceRolesView({ place, read, answer, editor, appointed, onSourc
       {read === 'failed' && <p role="alert" className="m-0 text-small text-ink-soft">{t('agents.roles.readFailed')}</p>}
       {answer?.catalogue && <p role="alert" className="m-0 text-small text-ink-soft">{t('agents.roles.catalogueFailed', { why: answer.catalogue.why })}</p>}
       {catalogue && !kept && <p className="m-0 text-small text-ink-soft">{t('settings.ai.roles.unkept')}</p>}
-      {mine && <SettingList>{mine.works.map(row)}</SettingList>}
+      {mine && shown.length > 0 && <SettingList>{shown.map(row)}</SettingList>}
+      {mine && folded.length > 0 && (
+        <>
+          <button
+            type="button" aria-expanded={foldedOpen} onClick={() => setUnfolded(!foldedOpen)}
+            className="flex w-full items-start gap-1.5 rounded-control border-0 bg-transparent p-0 text-left text-small text-ink-soft hover:text-ink"
+          >
+            <Icon name={foldedOpen ? 'chevronDown' : 'chevronRight'} size={12} className="mt-1 shrink-0" />
+            <span className="min-w-0 wrap-anywhere">
+              {t('agents.setup.roles.more', { count: folded.length, parent: parentName, works: folded.map((work) => workName(work.work)).join(', ') })}
+            </span>
+          </button>
+          {foldedOpen && <SettingList>{folded.map(row)}</SettingList>}
+        </>
+      )}
+      {supervisor}
       <div className="grid gap-2">
-        <h3 className="m-0 text-small font-medium text-ink-soft">{t('agents.setup.roles.appointed')}</h3>
+        <h3
+          data-place-row="appointed" tabIndex={-1}
+          className="m-0 text-small font-medium text-ink-soft outline-none focus-visible:outline-2 focus-visible:outline-accent"
+        >
+          {t('agents.setup.roles.appointed')}
+        </h3>
         {appointed}
       </div>
     </div>

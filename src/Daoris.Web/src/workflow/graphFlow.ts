@@ -1,12 +1,14 @@
 import type { i18n as I18n, TFunction } from 'i18next';
 import type { FlowEdge, FlowNode, FlowSection, PillTone } from '../design/Flow';
 import type { IconName } from '../design/ui';
+import { type ChartNode, type ChartPort, type ChartStep, variantOf } from './chart/stepKinds';
 
 // One drawing of a workflow graph for the place, the editor and a run (SETUPUX1n; D221, the Setup design's §2.3): a graph's steps and
 // ways on read onto `Flow`'s nodes and edges. Always in sections, so top to bottom or as the rail and never left to right; its
 // endings drawn as they are: the configured end flagged where the work is done, a ◎ node for an outcome with no route, and *Finished*
 // only from a run's record. The declared checks, requests and holds are one group. Pure and worded: it adds no node's lines or door,
-// which are the caller's.
+// which are the caller's. It hands the chart's components (FLOWCHART2a) what each node is: its variant, its ports, a terminal or a
+// group, and the data wires apart from the ways on.
 
 /** A workflow's node track, in rem: a step's title and one fact, with its cell on selection (the Setup design's §2.3). */
 export const WORKFLOW_TRACK = { least: 14, most: 36 } as const;
@@ -24,11 +26,18 @@ export const isHoldKind = (kind: string) => HOLD_KINDS.includes(kind);
 const LANDING_KINDS: readonly string[] = ['land', 'landing'];
 
 /** A step to draw: `Flow`'s node, worded by the caller, and the kind and declared outcomes the drawing reads. */
-export type DrawnNode = FlowNode & { kind: string; outcomes?: readonly string[] };
+export type DrawnNode = FlowNode & {
+  kind: string;
+  outcomes?: readonly string[];
+  /** The outcome a run's decision returned: its route is reached, and an outcome it did not return is not taken. */
+  outcome?: string | null;
+};
 
 /** A way on to draw: a graph's wire, by its kind, with the words of its cause where the caller has its own. */
 export type DrawnWire = {
   id: string; kind: string; from: string; to: string; outcome?: string | null; on?: string | null; says?: string; label?: string;
+  /** A data wire's output on its source: what it carries, named for its chip. */
+  output?: string | null;
 };
 
 export type DrawnGraph = { nodes: DrawnNode[]; wires: DrawnWire[]; entries: readonly string[]; end?: string | null };
@@ -44,7 +53,7 @@ export type DrawOptions = {
 
 export type GraphFlow = {
   label: string;
-  nodes: FlowNode[];
+  nodes: ChartNode[];
   edges: FlowEdge[];
   entries: string[];
   sections: FlowSection[];
@@ -89,7 +98,9 @@ export function drawnFromJson(t: TFunction, i18n: I18n, json: unknown): DrawnGra
     const kind = text(wire.kind) ?? '';
     // A data wire names its ports after a dot; it is no way on and is not drawn, but its ends read as steps.
     const end = (named: string | null) => (named === null ? '' : kind === 'data' && named.includes('.') ? named.slice(0, named.lastIndexOf('.')) : named);
-    return { id: text(wire.id) ?? '', kind, from: end(text(wire.from)), to: end(text(wire.to)), outcome: text(wire.outcome), on: text(wire.on) };
+    const source = text(wire.from);
+    const output = kind === 'data' && source?.includes('.') ? source.slice(source.lastIndexOf('.') + 1) : null;
+    return { id: text(wire.id) ?? '', kind, from: end(source), to: end(text(wire.to)), outcome: text(wire.outcome), on: text(wire.on), output };
   });
   return { nodes, wires, entries: names(graph.entries), end: text(graph.end) };
 }
@@ -105,8 +116,9 @@ function wireEdge(t: TFunction, wire: DrawnWire): FlowEdge {
       case 'rejected': return { ...base, style: 'rejected', says: t('workflow.flow.refused'), label: t('workflow.flow.refusedLabel') };
       case 'when': {
         const outcome = wire.outcome ?? '';
-        return { ...base, style: 'conditional', says: t('workflow.run.flow.when', { outcome }), label: outcome };
+        return { ...base, style: 'when', port: outcome, says: t('workflow.run.flow.when', { outcome }), label: outcome };
       }
+      case 'data': return { ...base, style: 'data', says: t('workflow.flow.wire.data'), ...(wire.output ? { label: wire.output } : {}) };
       case 'back': {
         const on = wire.on ?? '';
         const says = on === 'rejected' ? t('workflow.run.flow.back.rejected') : on === 'failed' ? t('workflow.run.flow.back.failed')
@@ -171,7 +183,22 @@ function groupLit(members: DrawnNode[]): Pick<FlowNode, 'state' | 'reached' | 'c
   };
 }
 
-const without = ({ kind: _kind, outcomes: _outcomes, ...node }: DrawnNode): FlowNode => node;
+const without = ({ kind: _kind, outcomes: _outcomes, outcome: _outcome, ...node }: DrawnNode): FlowNode => node;
+
+/**
+ * A node's ports: each outcome it declares, then any a way on names that it does not (a run's answer holds only the outcome its decision
+ * returned). An outcome is routed where a `when` wire follows it or a `back` wire returns on it; else it ends at a ◎.
+ */
+function portsOf(node: DrawnNode, wires: DrawnWire[]): ChartPort[] {
+  const own = wires.filter((wire) => wire.from === node.id);
+  const named = own.flatMap((wire) => (wire.kind === 'when' && wire.outcome ? [wire.outcome] : []));
+  const declared = [...new Set([...(node.outcomes ?? []), ...named])];
+  return declared.map((outcome) => ({
+    outcome,
+    routed: own.some((wire) => (wire.kind === 'when' && wire.outcome === outcome) || (wire.kind === 'back' && wire.on === outcome)),
+    ...(node.outcome == null ? {} : { taken: node.outcome === outcome }),
+  }));
+}
 
 /**
  * **A workflow graph as a flowchart**: its steps and ways on, the declared holds folded to one group (or opened), the configured end
@@ -182,35 +209,46 @@ export function graphFlow(t: TFunction, graph: DrawnGraph, options: DrawOptions)
   const known = new Set(graph.nodes.map((node) => node.id));
   // A data wire carries what a step made and is no way on; a wire to a step this graph does not hold is not drawn.
   const wires = graph.wires.filter((wire) => wire.kind !== 'data' && known.has(wire.from) && known.has(wire.to));
+  const dataWires = graph.wires.filter((wire) => wire.kind === 'data' && known.has(wire.from) && known.has(wire.to));
   const groups = holdGroups(graph, wires);
   const folded = options.holds?.open !== true;
+  const ports = new Map(graph.nodes.map((node) => [node.id, portsOf(node, wires)]));
 
   const groupOf = new Map<string, { id: string; members: DrawnNode[] }>();
   for (const members of groups) for (const member of members) groupOf.set(member.id, { id: `holds:${members[0]!.id}`, members });
   const rep = (id: string) => (folded ? groupOf.get(id)?.id ?? id : id);
 
-  const nodes: FlowNode[] = [];
+  const nodes: ChartNode[] = [];
   const seen = new Set<string>();
   for (const node of graph.nodes) {
     const group = groupOf.get(node.id);
     if (group && folded) {
       if (seen.has(group.id)) continue;
       seen.add(group.id);
+      const members = group.members.map((member) => member.title);
       nodes.push({
         id: group.id, title: t('workflow.graph.holds', { count: group.members.length }), glyph: 'stepHold',
-        lines: t('workflow.graph.holdsMembers', { members: group.members.map((member) => member.title).join(t('workflow.listJoin')) }),
+        lines: t('workflow.graph.holdsMembers', { members: members.join(t('workflow.listJoin')) }),
         ...(options.holds?.toggle ? { open: options.holds.toggle } : {}),
         ...groupLit(group.members),
+        step: { kind: 'holds', variant: 'holds', ports: [], group: { count: group.members.length, open: false, members } },
       });
       continue;
     }
     const first = group && group.members[0] === node;
+    const own = ports.get(node.id) ?? [];
+    const step: ChartStep = {
+      kind: node.kind, variant: variantOf(node.kind, own.map((port) => port.outcome)), ports: own,
+      ...(first ? { group: { count: group.members.length, open: true, members: group.members.map((member) => member.title) } } : {}),
+    };
     nodes.push({
       ...without(node),
+      ...(own.length > 0 ? { ports: own.map((port) => port.outcome) } : {}),
       ...(first ? {
         lines: node.lines ?? t('workflow.graph.holdsOpen', { count: group.members.length }),
         ...(options.holds?.toggle ? { open: options.holds.toggle } : {}),
       } : {}),
+      step,
     });
   }
 
@@ -219,7 +257,16 @@ export function graphFlow(t: TFunction, graph: DrawnGraph, options: DrawOptions)
     const from = rep(wire.from);
     const to = rep(wire.to);
     if (from === to && wire.from !== wire.to) continue;
-    edges.push(wireEdge(t, { ...wire, from, to }));
+    const edge = wireEdge(t, { ...wire, from, to });
+    // A return on one of the step's own outcomes leaves by that outcome's route, so the outcome is a routed port, not a ◎.
+    const returns = wire.kind === 'back' && wire.on != null && ports.get(wire.from)?.some((port) => port.outcome === wire.on);
+    edges.push(returns ? { ...edge, port: wire.on! } : edge);
+  }
+  // The data wires: what a step made, carried to another. No way on, so no layout reads them.
+  for (const wire of dataWires) {
+    const from = rep(wire.from);
+    const to = rep(wire.to);
+    if (from !== to) edges.push(wireEdge(t, { ...wire, from, to }));
   }
 
   // The end the configuration names: flagged where the work is done, and the foot says so where steps still follow it.
@@ -230,27 +277,37 @@ export function graphFlow(t: TFunction, graph: DrawnGraph, options: DrawOptions)
     : node));
 
   // A declared outcome nothing follows: a drawing-only node, never saved and never a success.
-  const nowhere: FlowNode[] = [];
+  const nowhere: ChartNode[] = [];
   for (const node of graph.nodes) {
-    for (const outcome of node.outcomes ?? []) {
-      if (wires.some((wire) => wire.kind === 'when' && wire.from === node.id && wire.outcome === outcome)) continue;
+    for (const { outcome, routed } of ports.get(node.id) ?? []) {
+      if (routed) continue;
       const id = `${node.id}:none:${outcome}`;
-      nowhere.push({ id, title: t('workflow.graph.noFurther'), glyph: 'stepNoFurther', faint: true });
+      // A run that knows which outcome came: that route is reached, any other is not taken (never *not reached*).
+      const lit: Partial<FlowNode> = node.outcome == null ? {}
+        : node.outcome === outcome ? { reached: true }
+          : { reached: false, state: { word: t('workflow.run.notTaken.state'), tone: 'neutral' } };
+      nowhere.push({
+        id, title: t('workflow.graph.noFurther'), glyph: 'stepNoFurther', faint: true, ...lit,
+        step: { kind: 'none', variant: 'other', ports: [], terminal: 'none' },
+      });
       edges.push({
-        id: `${node.id}>${id}`, from: rep(node.id), to: id, style: 'conditional', label: outcome, says: t('workflow.graph.noFurtherSays', { outcome }),
+        id: `${node.id}>${id}`, from: rep(node.id), to: id, style: 'when', port: outcome, label: outcome, says: t('workflow.graph.noFurtherSays', { outcome }),
       });
     }
   }
 
   // Finished is the record's: drawn after the steps nothing follows, those the run reached where it says which.
-  const finished: FlowNode[] = [];
+  const finished: ChartNode[] = [];
   if (options.finished) {
-    const sinks = marked.filter((node) => !edges.some((edge) => edge.from === node.id && edge.style !== 'back'));
+    const sinks = [...marked, ...nowhere].filter((node) => !edges.some((edge) => edge.from === node.id && edge.style !== 'back' && edge.style !== 'data'));
     const reached = sinks.filter((node) => node.reached !== false);
     for (const node of reached.length > 0 ? reached : sinks) {
       edges.push({ id: `${node.id}>${FINISHED}`, from: node.id, to: FINISHED, says: t('workflow.flow.move.automatic') });
     }
-    finished.push({ id: FINISHED, title: t('workflow.finished'), glyph: 'stepFinished', state: options.finished, reached: true, settled: true });
+    finished.push({
+      id: FINISHED, title: t('workflow.finished'), glyph: 'stepFinished', state: options.finished, reached: true, settled: true,
+      step: { kind: 'finished', variant: 'other', ports: [], terminal: 'finished' },
+    });
   }
 
   // The sections: the landing divides before from after; a graph with none is one section of steps.

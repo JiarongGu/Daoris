@@ -87,10 +87,13 @@ public sealed class WorkflowEditRoutes(DriverContext context)
 
     [DriverRoute("WORKFLOW_PALETTE")]
     [ByEvent("WORKFLOW_PALETTE", Untold = "the plugins' manifests under the home")]
-    private Task<object?> WorkflowPaletteAsync(IpcRequest request, CancellationToken cancellationToken)
+    private Task<object?> WorkflowPaletteAsync(IpcRequest request, CancellationToken cancellationToken) =>
+        Task.FromResult<object?>(PaletteOf(_loop.Home));
+
+    /// <summary>What a step graph may hold under <paramref name="home"/>: the built-in kinds and the steps its plugins contribute.</summary>
+    internal static WorkflowPalette PaletteOf(string home)
     {
-        var catalog = PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names);
-        var palette = WorkflowPalette.Build(catalog.Contributing.Select(entry => (entry.Manifest.Id, entry.Manifest.Steps)));
-        return Task.FromResult<object?>(palette);
+        var catalog = PluginCatalog.Load(home, AdapterSet.Built().Names);
+        return WorkflowPalette.Build(catalog.Contributing.Select(entry => (entry.Manifest.Id, entry.Manifest.Steps)));
     }
 }

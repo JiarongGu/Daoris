@@ -61,7 +61,8 @@ public sealed class HookStateTests
             "hook/work/state" => Ok(frame, answer),
             _ => null,
         });
-        var peer = new HookPeer(plugin.Incoming, plugin.Outgoing, "acme.asks");
+        // The stand-in answers in-process; the peer's own ten-second bound is a machine's load away from failing it.
+        var peer = new HookPeer(plugin.Incoming, plugin.Outgoing, "acme.asks", patience: Poll.Patience);
         await peer.InitializeAsync("h", "d", [HookPoints.State], CancellationToken.None);
         return peer;
     }
@@ -77,7 +78,7 @@ public sealed class HookStateTests
     {
         var said = new List<string>();
         var grown = new FakePlugin(frame => Ok(frame, """{"protocolVersion":1,"points":["work/land","work/review"]}"""));
-        var peer = new HookPeer(grown.Incoming, grown.Outgoing, "acme.grown", said.Add);
+        var peer = new HookPeer(grown.Incoming, grown.Outgoing, "acme.grown", said.Add, Poll.Patience);
 
         await peer.InitializeAsync("h", "d", ["work/land", "work/review"], CancellationToken.None);
 
@@ -88,7 +89,7 @@ public sealed class HookStateTests
 
         var beyond = new FakePlugin(frame => Ok(frame, """{"protocolVersion":1,"points":["session/ended"]}"""));
         var refused = await Assert.ThrowsAsync<DriverException>(() =>
-            new HookPeer(beyond.Incoming, beyond.Outgoing, "acme.gate").InitializeAsync("h", "d", ["quest/consider"], CancellationToken.None));
+            new HookPeer(beyond.Incoming, beyond.Outgoing, "acme.gate", patience: Poll.Patience).InitializeAsync("h", "d", ["quest/consider"], CancellationToken.None));
         Assert.Contains("manifest does not declare", refused.Message);
     }
 

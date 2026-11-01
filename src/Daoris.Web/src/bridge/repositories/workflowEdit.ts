@@ -6,6 +6,7 @@ import type {
   EditorRole, WorkflowListAnswer, WorkflowPaletteAnswer, WorkflowSaveAnswer, WorkflowSaveAsk, WorkflowShownAnswer, WorkflowUseAsk,
 } from '../../workflow/edit/answers';
 import type { WorkflowEditorBridge } from '../../workflow/edit/WorkflowEditor';
+import type { WorkflowPlanBridge } from '../../workflow/place/ChangeWorkflow';
 import { useRoleStructureChain } from '../driver';
 import { askHeld, isPending } from '../state/held';
 import { askWorkflowSave, askWorkflowUse } from './workflow';
@@ -73,9 +74,10 @@ export type EditorPlace = { repository: string; workspace?: string | null } | { 
 /**
  * **The step editor's bridge** (WORKFLOWEDIT1b): its three reads, the working roles a step may name from the roles' structure at the
  * place it opened from, a planned save judging each change (the newest asked is the one answered), the save, and *Use here*. Every read
- * is asked only while the editor shows; a save and a choice ask the reads again.
+ * is asked only while the editor shows; a save and a choice ask the reads again. `onPlan` (SETUPUX1p) reads the plan of a choice and
+ * writes nothing; *Change…* sends it only where `WORKFLOW_LIST` announces it.
  */
-export const useWorkflowEditor = (place: EditorPlace, { enabled = true }: { enabled?: boolean } = {}): WorkflowEditorBridge => {
+export const useWorkflowEditor = (place: EditorPlace, { enabled = true }: { enabled?: boolean } = {}): WorkflowEditorBridge & WorkflowPlanBridge => {
   const client = useQueryClient();
   const [open, setOpen] = useState(false);
   const live = enabled && open;
@@ -115,6 +117,8 @@ export const useWorkflowEditor = (place: EditorPlace, { enabled = true }: { enab
     onSave: (ask) => save.mutateAsync({ ...ask, plan: false }),
     using: use.isPending,
     onUse: (ask) => use.mutateAsync(ask),
+    // A plan writes nothing, so it asks no read again.
+    onPlan: (ask) => askWorkflowUse({ ...ask, plan: true }),
     onOpen: setOpen,
   };
 };

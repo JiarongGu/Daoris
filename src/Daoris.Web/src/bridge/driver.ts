@@ -635,6 +635,8 @@ const readPlaces = (raw: unknown): PlacesRead | null => {
     next: answer.next ?? null,
     matching: answer.matching ?? answer.repositories.length,
     undriven: answer.undriven ?? null,
+    detail: answer.detail ? place(answer.detail) : null,
+    members: answer.members ?? null,
   };
 };
 

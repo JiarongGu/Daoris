@@ -160,6 +160,21 @@ public sealed record HelpProposal(
     /// null where it names none, and <see cref="Choose"/> asks the default.
     /// </summary>
     public string? Route { get; init; }
+
+    /// <summary>
+    /// The fingerprint of the draft open in the person's editor a workflow proposal changes (FLOWCHART2e), as the box wrote it: the
+    /// <c>draft</c> door; null for every other.
+    /// </summary>
+    public string? Draft { get; init; }
+
+    /// <summary>
+    /// The changes of a <c>draft</c> card the person's press says were taken into the draft, and those left (FLOWCHART2e, the flowchart
+    /// design §8.6), by their ids: the press's, never the file's; null where the press names none, which opens the editor.
+    /// </summary>
+    public IReadOnlyList<string>? Taken { get; init; }
+
+    /// <inheritdoc cref="Taken"/>
+    public IReadOnlyList<string>? Left { get; init; }
 }
 
 /// <summary>What the machine holds that a proposal is judged against: names only.</summary>
@@ -340,6 +355,12 @@ public sealed record HelpMachineFacts(
     /// only for one; a repository with no entry was not read, and the card holds on that.
     /// </summary>
     public IReadOnlyDictionary<string, AcceptedGates> AcceptedGates { get; init; } = new Dictionary<string, AcceptedGates>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// The workflow drafts the proposing conversation's record says it was told (FLOWCHART2d), by fingerprint (<see cref="WorkflowDraftTold.Told"/>):
+    /// what a <c>draft</c> proposal is judged against. Read only for one.
+    /// </summary>
+    public IReadOnlyDictionary<string, WorkflowDraftTold> Drafts { get; init; } = new Dictionary<string, WorkflowDraftTold>(StringComparer.Ordinal);
 }
 
 /// <summary>One door as the Agents screen reads it (HELP6): what its Update does, whether it pins, whose accounts it runs as.</summary>
