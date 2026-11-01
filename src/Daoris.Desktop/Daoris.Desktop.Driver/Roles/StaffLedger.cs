@@ -209,6 +209,9 @@ public sealed class StaffLedger(string home, Func<StoreSettled>? settled = null,
     /// <summary>The store's file in this home.</summary>
     public string Location => DesktopStore.LocationIn(home);
 
+    /// <summary>The lines' moves to another choice, kept beside the starts (STAFFPOLICY1e).</summary>
+    public StaffMoves Moves => new(home, settled, clock);
+
     /// <summary><paramref name="role"/>'s policy as the store holds it; default where there is no store or it is before the policy's step.</summary>
     public StaffPolicyRead Policy(string role)
     {

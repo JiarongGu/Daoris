@@ -138,6 +138,25 @@ public sealed class ToolsCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task The_ssh_command_is_set_and_cleared_from_the_terminal_and_a_session_s_terminal_is_refused()
+    {
+        Offered();
+
+        Assert.Equal(0, await ToolsCommand.RunAsync(["git", "ssh", "ssh -o Compression=no"], World(), CancellationToken.None));
+        Assert.Equal("ssh -o Compression=no", Tools.Read(Home).Git["core.sshCommand"]);
+        Assert.Contains("Daoris's git runs `ssh -o Compression=no` as its ssh", _out.ToString(), StringComparison.Ordinal);
+
+        Assert.Equal(1, await ToolsCommand.RunAsync(["git", "ssh", "--clear"], World(marker: "s-1"), CancellationToken.None));
+        Assert.Equal("ssh -o Compression=no", Tools.Read(Home).Git["core.sshCommand"]);
+
+        Assert.Equal(0, await ToolsCommand.RunAsync(["git", "ssh", "--clear"], World(), CancellationToken.None));
+        Assert.Empty(Tools.Read(Home).Git);
+
+        Assert.Equal(2, await ToolsCommand.RunAsync(["git", "proxy", "x"], World(), CancellationToken.None));
+        Assert.Equal(2, await ToolsCommand.RunAsync(["git", "ssh"], World(), CancellationToken.None));
+    }
+
+    [Fact]
     public async Task An_open_look_and_a_read_are_not_refused_from_a_session_s_terminal()
     {
         Offered();
@@ -260,6 +279,9 @@ public sealed class ToolsCommandTests : IDisposable
     [InlineData("locations add https://lists.example/r.json", true)]
     [InlineData("locations remove https://lists.example/r.json", true)]
     [InlineData("look", true)]
+    [InlineData("git ssh ssh", true)]
+    [InlineData("git ssh --clear", true)]
+    [InlineData("git", false)]
     [InlineData("list", false)]
     [InlineData("path git", false)]
     [InlineData("locations", false)]

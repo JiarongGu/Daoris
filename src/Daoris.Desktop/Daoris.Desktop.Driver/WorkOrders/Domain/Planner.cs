@@ -148,6 +148,12 @@ public sealed record SittingFact(string Code)
     /// <summary><see cref="StartVerdict.TransientHeld"/>: its last session's provider kept failing past its bound (AGENTERRORS1a).</summary>
     public const string Transient = "transient";
 
+    /// <summary><see cref="StartVerdict.PolicyHeld"/>: its role's policy asks before it moves the quest to another choice.</summary>
+    public const string PolicyAsk = "policy-ask";
+
+    /// <summary><see cref="StartVerdict.PolicyHeld"/>: the quest made its role's policy's bound of moves in 24 hours.</summary>
+    public const string MovesBound = "moves-bound";
+
     /// <summary><see cref="StartVerdict.Stopped"/>: the steward stopped its last session (STEWARDROLE1b, D209 §5.1).</summary>
     public const string Steward = "steward";
 
@@ -197,6 +203,15 @@ public sealed record Snapshot(
 
     public IReadOnlyDictionary<string, int> Strikes { get; init; } =
         Strikes ?? new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// The quests whose last session ended past its transient bound and whose role's policy moved them to another choice (STAFFPOLICY1e), by
+    /// quest: the session left, so the planner carries the line on from it as <i>Try again</i> would, and the start walks past the choice it left.
+    /// </summary>
+    public IReadOnlyDictionary<string, StaffMoving> PolicyMoving { get; init; } = new Dictionary<string, StaffMoving>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>The quests a role's policy holds for the person's yes (STAFFPOLICY1e), by quest: <c>policy-ask</c> or <c>moves-bound</c>.</summary>
+    public IReadOnlyDictionary<string, string> PolicyHolds { get; init; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// How many active sessions take a place under the machine's cap (CAPCOUNT1, <see cref="ActiveSessions.HoldsSlot"/>): the ones the
@@ -441,6 +456,12 @@ public enum StartVerdict
     /// after that end, or a hand-over from that record; never a loop with nobody between. No strike and no slot.
     /// </summary>
     TransientHeld,
+
+    /// <summary>
+    /// Held for the person by its role's policy (STAFFPOLICY1e, D226, §11 point 7): the policy asks before it moves the line to another
+    /// choice, or the line made the policy's bound of moves in 24 hours. <i>Try again</i> is the yes: one approval releases one move.
+    /// </summary>
+    PolicyHeld,
 }
 
 /// <param name="Quest">The quest considered.</param>
@@ -709,7 +730,15 @@ public static class Planner
             // no fresh start and no resume until their word (WordsOn above, by the hold's word rule) or a hand-over from that record.
             if (TransientHolding(quest) is { } exhausted)
             {
-                considerations.Add(TransientHeld(quest, exhausted));
+                considerations.Add(snapshot.PolicyHolds.TryGetValue(quest.Id, out var policyHold) ? PolicyHeld(quest, exhausted, policyHold) : TransientHeld(quest, exhausted));
+                continue;
+            }
+
+            // STAFFPOLICY1e: a line an account's limit cut off whose role's policy asks, or whose bound of moves is reached, waits for the person's yes.
+            if (snapshot.PolicyHolds.TryGetValue(quest.Id, out var limitHold) && quest.Status is "Open" or "Taken"
+                && snapshot.LastRun.TryGetValue(quest.Id, out var limitedHeld) && limitedHeld.Limit)
+            {
+                considerations.Add(PolicyHeld(quest, limitedHeld, limitHold));
                 continue;
             }
 
@@ -868,7 +897,20 @@ public static class Planner
                 : null;
 
         // Try again's release of this record's end (AGENTERRORS1a2, the design §5.1): its session and its `updated` both the release's.
-        bool TransientReleased(QuestView quest, PriorSession last) => config.ReleasesTransient(quest.Id, last.Session, last.Updated);
+        // STAFFPOLICY1e: or the role's policy moved the line to another choice at that end, which the line is carried on by.
+        bool TransientReleased(QuestView quest, PriorSession last) =>
+            config.ReleasesTransient(quest.Id, last.Session, last.Updated)
+            || (snapshot.PolicyMoving.TryGetValue(quest.Id, out var moving) && string.Equals(moving.Session, last.Session, StringComparison.Ordinal));
+
+        // The role policy's ask, or its bound of moves, holds the quest for the person's yes (STAFFPOLICY1e, §11 point 7).
+        static Consideration PolicyHeld(QuestView quest, PriorSession exhausted, string code) =>
+            new(quest, StartVerdict.PolicyHeld, code == SittingFact.PolicyAsk
+                ? "Its role's policy asks before it moves this quest to another choice: it waits for your yes."
+                : "This quest made its role's policy's moves to another choice for today: it waits for your yes.")
+            {
+                HeldBy = exhausted,
+                Said = new(code == SittingFact.PolicyAsk ? SittingFact.PolicyAsk : SittingFact.MovesBound) { Session = exhausted.Session },
+            };
 
         // Held for the person (the design §5.1, §8's `held.transient`): no slot; the record is its HeldBy, as a stop's verdict names its stop.
         static Consideration TransientHeld(QuestView quest, PriorSession exhausted) =>

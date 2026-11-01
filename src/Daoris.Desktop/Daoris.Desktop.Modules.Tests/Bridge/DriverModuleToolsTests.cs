@@ -363,6 +363,29 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// A git setting set on the screen is the one the terminal's `daoris tool git ssh` sets (GITAUTH1e): the list reads it back, no
+    /// value clears it, and a key off the allow-list is refused with nothing written.
+    /// </summary>
+    [Fact]
+    public async Task The_ssh_command_is_set_and_cleared_in_the_file_and_a_key_off_the_allow_list_is_refused()
+    {
+        var module = Module();
+
+        var set = await AnswerAsync(module, "TOOLS_GIT_SET", new { key = "core.sshCommand", value = "ssh -o Compression=no" });
+        Assert.Equal("core.sshCommand", set.GetProperty("key").GetString());
+        Assert.Equal("ssh -o Compression=no", Tools.Read(Home).Git["core.sshCommand"]);
+        var listed = await AnswerAsync(module, "TOOLS_LIST", new { });
+        Assert.Equal("ssh -o Compression=no", listed.GetProperty("git").GetProperty("core.sshCommand").GetString());
+
+        var refused = await RefusalAsync(module, "TOOLS_GIT_SET", new { key = "http.proxy", value = "http://proxy.example" });
+        Assert.Contains("http.proxy", refused);
+        Assert.False(Tools.Read(Home).Git.ContainsKey("http.proxy"));
+
+        await AnswerAsync(module, "TOOLS_GIT_SET", new { key = "core.sshCommand" });
+        Assert.Empty(Tools.Read(Home).Git);
+    }
+
+    /// <summary>
     /// Look for updates (§3.7) fetches each location on the person's press, keeps the copy of a list that reads and says
     /// what it added, and says a location that could not be fetched rather than failing the look.
     /// </summary>

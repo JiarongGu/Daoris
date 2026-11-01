@@ -67,7 +67,7 @@ public sealed class MoveStore(
         + string.Join(", ", Moments.Select(each => each.Column));
 
     /// <summary>The store's step that added the offered choice's model and effort (STAFFPOLICY1d).</summary>
-    private const int EntryColumnsSince = 17;
+    private const int EntryColumnsSince = 18;
 
     private static readonly string Columns = StepFourColumns + ", agent, refused_bound, quiet_at, model, effort";
 

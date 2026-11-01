@@ -594,10 +594,30 @@ public sealed class DesktopStore : IDisposable
             CREATE INDEX role_starts_role ON role_starts (role, at);
             """)),
 
+        // STAFFPOLICY1e: a line's moves to another choice and the person's approvals of a policy's ask (the staff policy design §4.2, §11 point 5),
+        // Roles'. Keyed by the line's identity (a quest's id, a conversation's), so a restart keeps the count and an in-start replacement, which
+        // writes no part link, is counted beside a part's. No raise: an older build reads no table it does not know.
+        new(17, PolicyWriter, write => write.Execute(
+            """
+            CREATE TABLE role_moves (
+              id        INTEGER PRIMARY KEY AUTOINCREMENT,
+              line      TEXT NOT NULL,
+              role      TEXT NOT NULL,
+              kind      TEXT NOT NULL,
+              session   TEXT,
+              from_choice TEXT,
+              to_choice TEXT,
+              condition TEXT,
+              action    TEXT,
+              at        TEXT NOT NULL
+            );
+            CREATE INDEX role_moves_line ON role_moves (line, at);
+            """)),
+
         // STAFFPOLICY1d (the staff policy design §11 point 4): the model and effort of the choice a hand-over was offered and approved on, kept
         // with the move so a restart takes it as approved and never picks again. Each nullable, added to the table a step-16 build already
         // writes, which names its own columns and leaves these empty, so the stamp stays where it is and the step runs at the first start.
-        new(17, PolicyWriter, write => write.Execute(
+        new(18, PolicyWriter, write => write.Execute(
             """
             ALTER TABLE moves ADD COLUMN model TEXT;
             ALTER TABLE moves ADD COLUMN effort TEXT;

@@ -1121,6 +1121,11 @@ public sealed class Driver(
         // stands read for the planner, which reads the stop that handed one over as released.
         var read = snapshot;
         snapshot = await Stages.TimeAsync("handovers", () => HandOversAsync(read, events, ct)).ConfigureAwait(false);
+        // STAFFPOLICY1e: a quest whose last session ended past its transient bound under a role that moves on it: the course decides once, and
+        // the move is written down before the planner reads it, so a restart or a second look reads the one decision.
+        var (policyMoving, policyHolds) = StaffCourse.Look(Context.Harnesses.StaffFor(home), snapshot, config, DateTimeOffset.UtcNow);
+        var limitHolds = StaffCourse.LimitHolds(Context.Harnesses.StaffFor(home), snapshot);
+        snapshot = snapshot with { PolicyMoving = policyMoving, PolicyHolds = limitHolds.Count == 0 ? policyHolds : policyHolds.Concat(limitHolds).ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase) };
         // RETRYWORK1: the commits a failed session left beyond its start, for each open quest it failed before taking, so the planner
         // carries the quest on in that tree rather than building its work again in a new one. No git starts where no such quest is.
         var handed = snapshot;
@@ -2275,7 +2280,15 @@ public sealed class Driver(
         // walks the choices as a new start does (below), each asking its own model and effort. A handed quest and an actor as before keep
         // their agent and wait, as D206 point 6 has them.
         var limitWalks = false;
-        if (limitedLine is { Limit: true } cut && handedQuest is null)
+        // STAFFPOLICY1e: the move the role's policy decided at that record's end: the line walks as at a limit, the choice it left passed
+        // (the agent marked not answering), and its own conversation is not resumed.
+        var policyMove = start.Resumes is { } leaving && handedQuest is null
+                         && Context.Harnesses.StaffFor(home).Moves.Moving().TryGetValue(quest.Id, out var decidedMove)
+                         && string.Equals(decidedMove.Session, leaving.Session, StringComparison.Ordinal)
+            ? decidedMove
+            : null;
+        var cutLine = limitedLine is { Limit: true } ? limitedLine : policyMove is not null ? start.Resumes : null;
+        if (cutLine is { } cut && handedQuest is null)
         {
             try
             {
@@ -2284,7 +2297,14 @@ public sealed class Driver(
                 {
                     agent = role.FirstOrDefault(entry => string.Equals(entry.Agent, cut.Adapter, StringComparison.OrdinalIgnoreCase))?.Agent
                             ?? role[0].Agent;
-                    limitWalks = role.Count > 1 || !string.Equals(role[0].Agent, cut.Adapter, StringComparison.OrdinalIgnoreCase);
+                    limitWalks = policyMove is not null || role.Count > 1 || !string.Equals(role[0].Agent, cut.Adapter, StringComparison.OrdinalIgnoreCase);
+                    // STAFFPOLICY1e: a role that waits on a limit keeps the choice and waits for its accounts' reset (D197's walk of its
+                    // accounts stays inside the choice), until its `upTo` has passed.
+                    if (limitWalks && policyMove is null && cut.Limit
+                        && StaffCourse.LimitWait(Context.Harnesses.StaffFor(home), stepRole ?? RoleWork.Build, cut, DateTimeOffset.UtcNow) is LineCourse.Wait)
+                    {
+                        limitWalks = false;
+                    }
                 }
             }
             catch (DriverException error)
@@ -2314,7 +2334,7 @@ public sealed class Driver(
                 chosen = movedTo = QuestOrder(start, handed: agent, role: stepRole)[0];
             }
 
-            if (GoOns.ResumesOwn(start, agent) is { } words)
+            if (policyMove is null && GoOns.ResumesOwn(start, agent) is { } words)
             {
                 // A resume asks for its record's own account (MSG1g, D137 §2.2): its conversation lives in that account's
                 // configuration home (D131 §1), so the walk that chooses a start's account never chooses a resume's. A limited record's
@@ -2335,7 +2355,7 @@ public sealed class Driver(
                 selection = resume.Selection;
                 limitResume = limitedWords && resume.Own == NextHold.Ready && selection.Allowed;
             }
-            else if (!start.GoesOn && limitedLine is not null && GoOns.LimitResumes(limitedLine, agent)
+            else if (policyMove is null && !start.GoesOn && limitedLine is not null && GoOns.LimitResumes(limitedLine, agent)
                      && await Context.Harnesses
                              .ResumeAsync(agent, config, start.Workspace, limitedLine.Profile, StartKind.Driven, line: LineKind.DrivenLimit, ct: ct, limited: true,
                                  model: CarriedModel(limitedLine))
@@ -2364,6 +2384,11 @@ public sealed class Driver(
                 var walked = await WalkBuildPassesAsync(start, registry, ct, role: stepRole).ConfigureAwait(false);
                 (selection, chosen, buildPasses) = (walked.Selection, walked.Chosen, walked.Passes);
                 agent = chosen?.Agent ?? agent;
+                // STAFFPOLICY1e: a limit's move to another choice counts against the line's bound, and spends the yes that released it.
+                if (limitedLine is { Limit: true } leftLimit && selection.Allowed)
+                {
+                    StaffCourse.LimitMoved(Context.Harnesses.StaffFor(home), stepRole ?? RoleWork.Build, quest.Id, leftLimit, chosen);
+                }
             }
             else
             {
@@ -2841,7 +2866,9 @@ public sealed class Driver(
             handedQuest, carryingOn ? start.Resumes : null, selection.Profile, selection.Steps?.FirstOrDefault()?.Why,
             retried: fellBack is not null,
             pressed: start.BroughtForward is not null || (start.Resumes?.PersonStopped == true && !handedFrom),
-            agent: limitWalks ? agent : null, decided: Decided);
+            agent: limitWalks ? agent : null, decided: Decided,
+            // STAFFPOLICY1e: the move the role's policy made at that end, which the link names (`transient`).
+            policy: policyMove is { } policied ? new CoursePolicy(new StaffAction(policied.Condition, StaffActions.Next, null, null, false, false), DateTimeOffset.UtcNow) : null);
 
         // 🔴 FOUNDATION1d-ii part 5 (the foundation design §3.4 rule 3): a carry-on that hands the new session the words of the record it goes on
         // from, its fallback's or a resume's asker's, opens it through the keyed door, which moves them in the open's own step, the words named and
@@ -4423,7 +4450,9 @@ public sealed class Driver(
         var retry = adapter.Wire == SessionWire.Acp && transientWanted is not null && target.QuestId is { } retried
             ? TransientRetries.For(
                 Context.Adapters, adapter, Context.Harnesses, service, Context.Events, output, Watch, Log, sessionId, retried,
-                prior?.Profile, RetryClock, transientWanted)
+                prior?.Profile, RetryClock, transientWanted,
+                // STAFFPOLICY1e: a driven run's bound is its role's `after` where the role moves on `transient`, else D210's five.
+                tries: StaffCourse.Tries(Context.Harnesses.StaffFor(home), actor))
             : null;
         var acp = adapter.Wire == SessionWire.Acp
             // The posture rides with it, because it is the ADAPTER's (ACP3): three harnesses name the
@@ -5385,7 +5414,7 @@ public sealed class Driver(
     /// </param>
     internal static ContinuedFrom? ContinuesFrom(
         HandedQuest? handed, PriorSession? carried, string? profile, string? walked = null, bool retried = false, bool pressed = false,
-        string? agent = null, Action<LineCourse>? decided = null) =>
+        string? agent = null, Action<LineCourse>? decided = null, CoursePolicy? policy = null) =>
         // FOUNDATION1i path 3: the link is the course's move, its why and who asked, over the readings this has always made.
-        carried is null ? null : DrivenCourse.From(handed, carried, profile, walked, retried, pressed, agent, decided);
+        carried is null ? null : DrivenCourse.From(handed, carried, profile, walked, retried, pressed, agent, decided, policy);
 }

@@ -693,6 +693,13 @@ public sealed class DriverRoutes(DriverContext context)
         // pause or a quest neither parked nor held is its coded refusal (ChoiceCodes), raised here by the module's one mapping.
         var decision = QuestRetry.Decide(quest, considered);
         _context.Change(decision.Change);
+        // STAFFPOLICY1e: the yes to a role policy's ask or bound is one approval beside the line's moves, which the next look reads.
+        if (decision.Approve is { } role && !new StaffMoves(_loop.Home).Approve(quest, role))
+        {
+            throw new DriverException("this machine's store would not take your yes, so nothing was approved; try again.");
+        }
+
+        if (decision.Approve is not null) _loop.Nudge();
         return State(_loop, new { Quest = quest, decision.Did, decision.Session });
     }
 
