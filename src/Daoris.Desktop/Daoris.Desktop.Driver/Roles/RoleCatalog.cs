@@ -251,9 +251,9 @@ public sealed class RoleCatalog
         return narrowed;
     }
 
-    /// <summary>The judge's refusal codes, the closed set every door answers.</summary>
+    /// <summary>The judge's refusal codes, the closed set every door answers; <c>policy</c> is a staffing policy's (<see cref="StaffPolicy.Judge"/>).</summary>
     public static IReadOnlyList<string> Codes { get; } =
-        ["appointed-not-configurable", "mixed-shape", "unknown-work", "reserved-id", "bad-record", "may-not-be-off", "two-roles-one-work", "choices"];
+        ["appointed-not-configurable", "mixed-shape", "unknown-work", "reserved-id", "bad-record", "may-not-be-off", "two-roles-one-work", "choices", StaffPolicy.Code];
 
     /// <summary>
     /// Whether <paramref name="choices"/> may be the staffing of a role taking <paramref name="work"/>: today's <see cref="ActorChoices.Judge"/>

@@ -3,8 +3,9 @@ import type { TFunction } from 'i18next';
 import { cn } from '../../lib/cn';
 import { clockOf } from '../../locales/format';
 import { Dot, SectionTitle } from '../../design/ui';
-import type { AtWorkA, AtWorkChild, AtWorkHeld, AtWorkPart, AtWorkSubagents } from './types';
-import { CHILD_STATE_KEY, childTone, joinedLine, LAST_SEEN, partStateKey, waitLine, waitWhat } from './words';
+import { type Consideration, sittingBecause, sittingSentence } from '../../data/signals';
+import type { AtWorkA, AtWorkChild, AtWorkHeld, AtWorkPart, AtWorkQuest, AtWorkSubagents } from './types';
+import { askerLine, CHILD_STATE_KEY, childTone, joinedLine, LAST_SEEN, partStateKey, waitLine, waitWhat } from './words';
 
 export type AtWorkViewProps = {
   /** What the read holds; undefined before its first answer, which draws as reading. */
@@ -13,6 +14,13 @@ export type AtWorkViewProps = {
   error?: string | null;
   /** Open a part's page. */
   onOpen?: (session: string) => void;
+  /** Open a quest's page. */
+  onOpenQuest?: (quest: string) => void;
+  /**
+   * Why each open quest is sitting, as the driver's last look said it (the `considerations` slice): read beside the answer, never
+   * composed into it. Empty before the first look, when an untaken quest says only that it is not taken yet.
+   */
+  considered?: readonly Consideration[];
   onRetry?: () => void;
   /** The console stream the window holds for a child, by its native id; a child with none offers no console. */
   streamOf?: (child: string) => string | undefined;
@@ -27,7 +35,7 @@ export type AtWorkViewProps = {
  * attended one first, and its subagents, each with its state and its end, read from Daoris's records and never from the
  * conversation's text. Reading is never *nobody*, a failure says its words, and a stale answer keeps its rows dimmed.
  */
-export function AtWorkView({ held, error, onOpen, onRetry, streamOf, onOpenStream, now }: AtWorkViewProps) {
+export function AtWorkView({ held, error, onOpen, onOpenQuest, considered, onRetry, streamOf, onOpenStream, now }: AtWorkViewProps) {
   const { t } = useTranslation();
   if (!held || 'reading' in held) {
     if (!held && error) return <Failed why={error} onRetry={onRetry} />;
@@ -55,6 +63,8 @@ export function AtWorkView({ held, error, onOpen, onRetry, streamOf, onOpenStrea
         <WaitingOn answer={answer} />
         <Parts answer={answer} onOpen={onOpen} />
         <Subagents answer={answer} quiet={stale !== null} now={now} streamOf={streamOf} onOpenStream={onOpenStream} />
+        <Quests answer={answer} considered={considered ?? []} onOpenQuest={onOpenQuest} />
+        <AskedBy answer={answer} onOpenQuest={onOpenQuest} />
       </div>
     </div>
   );
@@ -149,7 +159,7 @@ function PartChildren({ t, part }: { t: TFunction; part: AtWorkPart }) {
 /** Whether *Nobody else is working on this* may be said (§5.2, rule 16): only where every source was read and holds nobody. */
 export function nobody(answer: AtWorkA): boolean {
   const { subagents, parts } = answer;
-  return answer.parts.length === 1 && !answer.moreParts && !answer.earlier && !answer.published && !answer.parts[0]!.waits
+  return answer.parts.length === 1 && !answer.moreParts && !answer.earlier && !answer.published && !answer.quests?.length && !answer.parts[0]!.waits
     && (subagents.read === 'read' || subagents.read === 'none')
     && subagents.children.length === 0 && !subagents.observed && !subagents.unplaced && !subagents.seenByCalls
     && parts.every((part) => !part.children.unreadable && !part.children.elsewhere);
@@ -191,6 +201,89 @@ function Subagents({ answer, quiet, now, streamOf, onOpenStream }: {
           {moreWorking > 0 ? t('work.atWork.moreWorking', { count: more, working: moreWorking }) : t('work.atWork.more', { count: more })}
         </p>
       )}
+    </section>
+  );
+}
+
+/**
+ * The quests the entry's parts asked that opened no part of it (the design §3.1): one button each, opening the quest, with who took it
+ * and what the taker waits on. An untaken quest says why beside it from the driver's last look, none before the first. A chain's step
+ * is set in under the quest before it.
+ */
+function Quests({ answer, considered, onOpenQuest }: {
+  answer: AtWorkA; considered: readonly Consideration[]; onOpenQuest?: (quest: string) => void;
+}) {
+  const { t } = useTranslation();
+  const quests = answer.quests;
+  if (!quests?.length) return null;
+  const more = answer.moreQuests ?? 0;
+  return (
+    <section className="grid min-w-0 gap-1">
+      <SectionTitle level={3}>{t('work.atWork.group.quests')}</SectionTitle>
+      <ol className="m-0 grid list-none gap-0.5 p-0">
+        {quests.map((quest) => (
+          <li key={quest.id} style={quest.step ? { paddingInlineStart: '12px' } : undefined}>
+            <button
+              type="button"
+              onClick={() => onOpenQuest?.(quest.id)}
+              className="flex w-full min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-control border-l-[3px] border-l-transparent px-2 py-1 text-left text-small text-ink-soft hover:bg-accent-soft/50"
+            >
+              <span className="font-mono text-meta text-ink-faint">#{quest.id}</span>
+              <span className="min-w-0 text-ink [overflow-wrap:anywhere]">{quest.title}</span>
+              {quest.of && <span className="text-meta text-ink-faint">{t('work.atWork.quest.of', { repository: quest.of })}</span>}
+              {quest.lanes?.length ? (
+                <span className="text-meta text-ink-faint">{t('work.atWork.quest.lanes', { lanes: quest.lanes.join(', '), count: quest.lanes.length })}</span>
+              ) : null}
+              <QuestTaker t={t} quest={quest} considered={considered} />
+            </button>
+          </li>
+        ))}
+      </ol>
+      {more > 0 && <p className="m-0 text-meta text-ink-faint">{t('work.atWork.quest.more', { count: more })}</p>}
+    </section>
+  );
+}
+
+/** Who took a quest and how it stands: its own line under the quest's name. */
+function QuestTaker({ t, quest, considered }: { t: TFunction; quest: AtWorkQuest; considered: readonly Consideration[] }) {
+  const { taker } = quest;
+  const sitting = taker?.untaken ? sittingBecause(considered, quest.id) : null;
+  return (
+    <span className="flex basis-full flex-wrap items-baseline gap-x-2 gap-y-0.5 text-meta text-ink-faint">
+      {taker?.session !== undefined && (
+        <>
+          {taker.agent && <span className="font-mono">{taker.agent}</span>}
+          {taker.state && <Dot tone={taker.state === 'working' ? 'live' : 'ended'} label={t(partStateKey(taker.state))} />}
+        </>
+      )}
+      {taker?.conversation !== undefined && <span>{t('work.atWork.quest.takenBy', { conversation: taker.conversation })}</span>}
+      {taker?.elsewhere && <span>{t('work.atWork.quest.elsewhere')}</span>}
+      {taker?.unrecorded && <span>{t('work.atWork.quest.unrecorded')}</span>}
+      {taker?.untaken && (
+        <span>{sitting ? t('work.atWork.quest.untakenWhy', { why: sittingSentence(sitting) }) : t('work.atWork.quest.untaken')}</span>
+      )}
+      {!taker && quest.status === 'Declined' && <span>{t('work.atWork.quest.declined')}</span>}
+      {quest.waits && <Dot tone="idle" label={waitLine(t, quest.waits)} className="whitespace-normal" />}
+      {quest.step && <span>{t('work.atWork.quest.nextStep', { quest: quest.step })}</span>}
+    </span>
+  );
+}
+
+/** What asked the attended part's quest (the design §3.1): one row, opening that quest. */
+function AskedBy({ answer, onOpenQuest }: { answer: AtWorkA; onOpenQuest?: (quest: string) => void }) {
+  const { t } = useTranslation();
+  const { askedBy } = answer;
+  if (!askedBy) return null;
+  return (
+    <section className="grid min-w-0 gap-1">
+      <SectionTitle level={3}>{t('work.atWork.group.askedBy')}</SectionTitle>
+      <button
+        type="button"
+        onClick={() => onOpenQuest?.(askedBy.quest)}
+        className="w-full min-w-0 rounded-control border-l-[3px] border-l-transparent px-2 py-1 text-left text-small text-ink-soft hover:bg-accent-soft/50"
+      >
+        {askerLine(t, askedBy, answer.parts)}
+      </button>
     </section>
   );
 }

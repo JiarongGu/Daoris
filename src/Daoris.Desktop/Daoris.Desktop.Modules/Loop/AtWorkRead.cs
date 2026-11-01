@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Daoris.Driver;
@@ -39,6 +40,12 @@ public sealed record AtWorkDependencies(
     public IReadOnlyDictionary<string, int> Published { get; init; } = new Dictionary<string, int>();
 
     public SliceHealth QuestsHealth { get; init; }
+
+    /// <summary>
+    /// The quests half as the composition read it (COWORKVIEW1b-ii): the rows, the rows left out and the asker, written out. It reads the
+    /// whole stores, so it is compared as a result, and a write that moves none of it wakes nothing.
+    /// </summary>
+    public string? Asked { get; init; }
 }
 
 /// <summary>
@@ -69,7 +76,10 @@ public static class AtWorkRead
         var files = new Dictionary<string, AtWorkFile>(StringComparer.Ordinal);
         var routing = new AtWorkRouting(
             entry ?? [], id => askedRows[id] = rows.GetValueOrDefault(id), id => askedQuests[id] = index.ById.GetValueOrDefault(id),
-            id => askedPublished[id] = index.Published.GetValueOrDefault(id), questsHealth);
+            id => askedPublished[id] = index.Published.GetValueOrDefault(id), questsHealth)
+        {
+            Asking = Asking(session, entry, questsSnapshot, sessionsSnapshot, rows),
+        };
         var held = AtWork.Compose(session, entry?.Select(part => part.Session).ToList(), id => asked[id] = records.GetValueOrDefault(id), record =>
         {
             var file = AtWorkFile.Read(pathOf?.Invoke(record.Id) ?? "", () => lineage(record));
@@ -81,8 +91,74 @@ public static class AtWorkRead
             Dependencies = new AtWorkDependencies(session, entry, asked, groupsHealth, sessionsHealth, files)
             {
                 Rows = askedRows, Quests = askedQuests, Published = askedPublished, QuestsHealth = questsHealth,
+                Asked = held.Answer is { } answer ? AskedKey(answer.Quests, answer.MoreQuests ?? 0, answer.AskedBy) : null,
             },
         };
+    }
+
+    private static readonly JsonSerializerOptions Written = new(JsonSerializerDefaults.Web);
+
+    private static string AskedKey(IReadOnlyList<AtWorkAskedQuest>? quests, int more, AtWorkAsker? by) =>
+        JsonSerializer.Serialize(new { quests = quests is { Count: > 0 } ? quests : null, more, by }, Written);
+
+    /// <summary>
+    /// The stores the quests half reads, as the two slices hold them: every quest, and the records that serve or took one or belong to the
+    /// entry. The units are built over these by the driver's function, never by a service call.
+    /// </summary>
+    private static AtWorkAsking Asking(
+        string session, IReadOnlyList<AtWorkEntryPart>? entry, SliceSnapshot? quests, SliceSnapshot? sessions, IReadOnlyDictionary<string, AtWorkRow> rows)
+    {
+        var members = (entry?.Select(part => part.Session) ?? []).Append(session).ToHashSet(StringComparer.Ordinal);
+        var views = new Dictionary<string, QuestView>(StringComparer.Ordinal);
+        foreach (var partition in quests?.Partitions ?? [])
+        {
+            if (Node(partition.Data) is not JsonObject keyed) continue;
+            foreach (var (id, quest) in keyed)
+            {
+                if (Text(quest, "status") is not { } status || views.ContainsKey(id)) continue;
+                views[id] = new QuestView(id, Text(quest, "from") ?? "", Text(quest, "to") ?? "", Text(quest, "title") ?? "", "", status)
+                {
+                    Short = Text(quest, "short"),
+                    Parent = Text(quest, "parent"),
+                    Awaits = Text(quest, "awaits"),
+                    PublishedBy = Text(quest, "publishedBy"),
+                    Holder = Text(quest, "holder"),
+                    Here = Text(quest, "here"),
+                    Held = quest?["held"] is JsonValue held && held.TryGetValue<bool>(out var value) && value,
+                    Lanes = quest?["lanes"] is JsonArray { Count: > 0 } lanes ? [.. lanes.Select(lane => lane?.GetValue<string>()).OfType<string>()] : [],
+                };
+            }
+        }
+
+        var records = new Dictionary<string, SessionRecord>(StringComparer.Ordinal);
+        foreach (var partition in sessions?.Partitions ?? [])
+        {
+            if (Node(partition.Data) is not JsonObject keyed) continue;
+            foreach (var (id, record) in keyed)
+            {
+                var (serves, took) = (Text(record, "quest"), Text(record, "tookQuest"));
+                if (records.ContainsKey(id) || (serves is null && took is null && !members.Contains(id))) continue;
+                records[id] = new SessionRecord(id, Text(record, "repository") ?? "", Text(record, "state") ?? "")
+                {
+                    Quest = serves,
+                    TookQuest = took,
+                    Kind = Text(record, "kind") ?? "driven",
+                    Adapter = Text(record, "adapter"),
+                    Created = DateTimeOffset.TryParse(Text(record, "created"), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var created) ? created : default,
+                };
+            }
+        }
+
+        return AtWorkQuests.Reading([.. views.Values], [.. records.Values], id => rows.GetValueOrDefault(id));
+    }
+
+    /// <summary>Whether the quests half, read again from the slices now, is what <paramref name="read"/> answered.</summary>
+    private static bool AskedStands(AtWorkDependencies read, SliceSnapshot? quests, SliceSnapshot? sessions, IReadOnlyDictionary<string, AtWorkRow> rows)
+    {
+        if (read.Asked is null || read.Records.GetValueOrDefault(read.Session) is not { } attended) return true;
+        var ids = (read.Entry?.Select(part => part.Session) ?? []).Prepend(read.Session).Distinct(StringComparer.Ordinal).ToList();
+        var now = Asking(read.Session, read.Entry, quests, sessions, rows)(read.Session, ids, read.Entry ?? [], attended);
+        return AskedKey(now.Quests, now.More, now.By) == read.Asked;
     }
 
     /// <summary>
@@ -103,7 +179,8 @@ public static class AtWorkRead
         if (!read.Rows.All(each => Equals(rows.GetValueOrDefault(each.Key), each.Value))) return false;
         var index = QuestIndex.Of(questsSnapshot);
         return read.Quests.All(each => Equals(index.ById.GetValueOrDefault(each.Key), each.Value))
-            && read.Published.All(each => index.Published.GetValueOrDefault(each.Key) == each.Value);
+            && read.Published.All(each => index.Published.GetValueOrDefault(each.Key) == each.Value)
+            && AskedStands(read, questsSnapshot, sessionsSnapshot, rows);
     }
 
     /// <summary>The quests by id, and how many each session published.</summary>
