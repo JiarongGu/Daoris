@@ -299,3 +299,34 @@ describe('stacks (FLOWCHART1c; the flowchart design §3.5, §3.6 step 1)', () =>
     expect(findStacks(graph)).toEqual(findStacks(graph));
   });
 });
+
+// FLOWCHART2a (D223): a decision's outcomes are ports, each its own path; a data wire is no way on and never ranks or crosses.
+describe('ports and data wires (FLOWCHART2a)', () => {
+  const decided = (): FlowShape => ({
+    nodes: [{ id: 'find' }, { id: 'record' }, { id: 'none' }],
+    edges: [
+      { id: 'a', from: 'find', to: 'record', style: 'when', port: 'release' },
+      { id: 'b', from: 'find', to: 'record', style: 'when', port: 'other' },
+      { id: 'c', from: 'find', to: 'none', style: 'when', port: 'none' },
+    ],
+    entries: ['find'],
+  });
+
+  it('keeps two outcomes that go to one step as two paths, each from its port', () => {
+    const { paths } = layoutFlow(decided());
+    expect(paths.map((path) => [path.edges, path.port])).toEqual([[['a'], 'release'], [['b'], 'other'], [['c'], 'none']]);
+  });
+
+  it('still merges like edges that leave no port', () => {
+    const { paths } = layoutFlow(shape(['a', 'b'], [['a', 'b'], ['a', 'b']]));
+    expect(paths.map((path) => [path.edges, path.port])).toEqual([[['e0', 'e1'], null]]);
+  });
+
+  it('ranks and orders by the ways on alone: a data edge changes nothing', () => {
+    const plain = layoutFlow(shape(['a', 'b', 'c'], [['a', 'b'], ['b', 'c']]));
+    const withData = layoutFlow(shape(['a', 'b', 'c'], [['a', 'b'], ['b', 'c'], ['a', 'c', 'data'], ['c', 'a', 'data']]));
+    expect(withData.ranks).toEqual(plain.ranks);
+    expect(withData.paths).toEqual(plain.paths);
+    expect(withData.lanes).toBe(0);
+  });
+});

@@ -47,8 +47,15 @@ type Segment = { kind: 'L'; to: Point } | { kind: 'C'; c1: Point; c2: Point; to:
 
 const round = (value: number) => Math.round(value * 2) / 2;
 
+/**
+ * What a drawing adds to the routing (FLOWCHART2a): the boxes of the ports a decision's outcomes stand in, by `node:outcome`, which a
+ * `when` path leaves top to bottom instead of a spot spread along its node's edge; and the data wires to draw, each outside the nodes
+ * on a lane of its own at the right.
+ */
+export type InkExtras = { ports?: ReadonlyMap<string, Box>; data?: readonly { id: string; from: string; to: string }[] };
+
 /** Route every path of a drawn layout through the boxes of its nodes and waypoint slots, by id and slot key. */
-export function routeInk(layout: FlowLayout, placement: 'across' | 'down', boxes: ReadonlyMap<string, Box>): InkPath[] {
+export function routeInk(layout: FlowLayout, placement: 'across' | 'down', boxes: ReadonlyMap<string, Box>, extras: InkExtras = {}): InkPath[] {
   const down = placement === 'down';
   const at = (cross: number, main: number): Point => (down ? { x: cross, y: main } : { x: main, y: cross });
   const c0 = (box: Box) => (down ? box.x : box.y);
@@ -74,12 +81,17 @@ export function routeInk(layout: FlowLayout, placement: 'across' | 'down', boxes
   const forward = layout.paths.filter((path) => !path.back);
   const back = layout.paths.filter((path) => path.back).sort((a, b) => a.lane! - b.lane!);
 
+  // A decision's route leaves its outcome's port where one was measured; only top to bottom, where the ports stand on the lower edge.
+  const anchorOf = (path: FlowLayout['paths'][number]): Box | undefined =>
+    down && path.port !== null ? extras.ports?.get(`${path.from}:${path.port}`) : undefined;
+
   // Where each path meets each node: spread along the side, in the order of what is at each path's other end.
   const nextCross = (path: FlowLayout['paths'][number]) => centre(box(path.ways[0] ?? path.to));
   const lastCross = (path: FlowLayout['paths'][number]) => centre(box(path.ways[path.ways.length - 1] ?? path.from));
   const ports = new Map<string, number>();
   const spread = (node: string, side: 'out' | 'in', forwards: FlowLayout['paths'], returns: FlowLayout['paths']) => {
-    const sorted = [...forwards].sort((a, b) => (side === 'out' ? nextCross(a) - nextCross(b) : lastCross(a) - lastCross(b)));
+    const sorted = [...forwards].filter((path) => side === 'in' || !anchorOf(path))
+      .sort((a, b) => (side === 'out' ? nextCross(a) - nextCross(b) : lastCross(a) - lastCross(b)));
     // The returns on the lanes' side, the innermost lane nearest them, so their runs nest at the node's edge too.
     const inner = [...returns].sort((a, b) => a.lane! - b.lane!);
     const along = down ? [...inner, ...sorted] : [...sorted, ...inner.reverse()];
@@ -102,7 +114,8 @@ export function routeInk(layout: FlowLayout, placement: 'across' | 'down', boxes
   for (const path of forward) {
     const source = box(path.from);
     const target = box(path.to);
-    let here = at(ports.get(`out:${path.id}`)!, m0(source) + mLen(source));
+    const anchor = anchorOf(path);
+    let here = anchor ? at(centre(anchor), m0(anchor) + mLen(anchor)) : at(ports.get(`out:${path.id}`)!, m0(source) + mLen(source));
     const start = here;
     const segments: Segment[] = [];
     const gaps: [Point, Point][] = [];
@@ -145,6 +158,29 @@ export function routeInk(layout: FlowLayout, placement: 'across' | 'down', boxes
     ];
     drawn.push(finish(path, corners[0]!, orthogonal(corners), at(lane, (out + into) / 2)));
   }
+
+  // Data wires (FLOWCHART2a), drawn top to bottom only and to a later rank: out of the source's foot at its right end, along the gap
+  // after its rank to a lane right of every node, down it, and in along the gap before the target's rank, set apart from the returns'
+  // runs there. The layout never saw them, so no node, rank or lane moved for them.
+  const dataOut = new Map<number, number>();
+  const dataIn = new Map<number, number>();
+  const wires = down ? (extras.data ?? []).filter((wire) => (layout.rank[wire.to] ?? -1) > (layout.rank[wire.from] ?? Infinity)) : [];
+  wires.forEach((wire, index) => {
+    const source = box(wire.from);
+    const target = box(wire.to);
+    const from = layout.rank[wire.from]!;
+    const to = layout.rank[wire.to]!;
+    const out = after(from).start + RUN.edge + ((outRuns.get(from)?.length ?? 0) + (dataOut.get(from) ?? 0)) * RUN.step;
+    const into = before(to).end - RUN.edge - ((inRuns.get(to)?.length ?? 0) + (dataIn.get(to) ?? 0)) * RUN.step;
+    dataOut.set(from, (dataOut.get(from) ?? 0) + 1);
+    dataIn.set(to, (dataIn.get(to) ?? 0) + 1);
+    const lane = crossHigh + RUN.laneInset + index * RUN.lane;
+    const leave = c0(source) + cLen(source) - RUN.port;
+    const enter = c0(target) + cLen(target) - RUN.port;
+    const corners = [at(leave, m0(source) + mLen(source)), at(leave, out), at(lane, out), at(lane, into), at(enter, into), at(enter, m0(target))];
+    const path: FlowLayout['paths'][number] = { id: wire.id, from: wire.from, to: wire.to, style: 'data', port: null, edges: [wire.id], back: false, ways: [], lane: null };
+    drawn.push(finish(path, corners[0]!, orthogonal(corners), at(lane, (out + into) / 2)));
+  });
   return drawn;
 }
 

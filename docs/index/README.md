@@ -44,7 +44,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/bridge/sessions/sessions.ts` | 54 | 1050 |
 | `src/Daoris.Web/src/data/api.ts` | 55 | 914 |
 | `src/Daoris.Web/src/data/queries.ts` | 52 | 983 |
-| `src/Daoris.Web/src/design/Flow.tsx` | 46 | 903 |
+| `src/Daoris.Web/src/design/FlowCanvas.tsx` | 46 | 903 |
 | `src/Daoris.Web/src/design/tokens.test.ts` | 48 | 856 |
 | `src/Daoris.Web/src/design/ui.test.tsx` | 65 | 1295 |
 | `src/Daoris.Web/src/design/ui.tsx` | 96 | 2019 |
