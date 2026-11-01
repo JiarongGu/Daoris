@@ -373,7 +373,7 @@ public sealed class IntegrationRequestsTests : IDisposable
     {
         var store = Fresh();
         var first = new IntegrationRequest("r1", "engine", "aurora", Branch, Tip, IntegrationRoutes.Recorded, "main", IntegrationRequester.Card,
-            new LandingIntegrate().Resolved(), At);
+            new LandingIntegrate().Resolved(), At) { Epoch = IntegrationEpoch.Of(new LandingIntegrate().Resolved(), null) };
 
         Assert.Null(store.Add(first));
         Assert.Equal(first, store.Add(first with { Id = "r2", Repository = "ENGINE", Tip = Next }));

@@ -41,8 +41,8 @@ public sealed record IntegrationRequest(
     public string? ClosedWhy { get; init; }
 
     /// <summary>
-    /// The epoch it is admitted under (<see cref="IntegrationEpoch"/>); the store keeps it beside the request and reads it back as
-    /// <see cref="IntegrationStore.RequestEpoch"/>, so a request read from the store carries none here. Null on a write keeps the policy alone.
+    /// The epoch it is admitted under (<see cref="IntegrationEpoch"/>); the store keeps it beside the request and reads it back with the request
+    /// (<see cref="IntegrationStore.RequestEpoch"/> is the same read by id); null from a store before epochs. Null on a write keeps the policy alone.
     /// </summary>
     public string? Epoch { get; init; }
 
