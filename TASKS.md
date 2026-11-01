@@ -113,8 +113,6 @@ steward under D191; Codex's read of the final text owed when its credits return)
 
 ## Sessions
 
-- [ ] **SERVICEPROBE1 — the terminal waits for a slow service whose process runs, rather than refusing** (driver; 2026-11-01). On a machine at full CPU (the merge queue's rehearsals and builders), the install's service answered in 1.3 to 5 s and `/api/sessions` in more than 15, and `daoris-driver trees land` refused with "nothing answered as its service … within 2 seconds, asked twice" (`RunningService.Within`, `Service/RunningService.cs:32`) though Daoris's pid was alive. Contract: where the home's lease names a live process, the probe waits longer, bounded, and says it is waiting; a dead or absent one still refuses at once. Proof: a unit test with a stand-in that answers after 4 s and one whose pid is gone.
-
 pause-and-clean-up (D132), D133/D136. Installed canaries follow completed build rows.
 
 - [ ] **TERMTRUST1a — a terminal's standing confirmation for stop, finish, hold and resume** (driver, modules, service, web; D201, accepted 2026-10-23; the terminal-trust design §9 row 1). Parts (i) and (ii) are built; the grant remains unoffered pending part (i)'s installed proof, §8 case 4, every door checked against D201's note, then activation and case 14. The owner renewed the request for management without repeated clicks on 2026-10-27 after confirming the stuck Codex session's stop; finish the existing containment proof and activation rather than adding another grant mechanism.
