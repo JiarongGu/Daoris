@@ -9,7 +9,7 @@ import { useWidth } from '../../design/useWidth';
 import { FoldRow, type FoldSpec } from '../../projects/setup/FoldRow';
 import type { IntegrationRequest } from '../../settings/repository/IntegrationDeclaration';
 import type { Answered } from '../../work/InlineConfirm';
-import type { WorkflowStart } from '../current';
+import type { WorkflowEffective, WorkflowStart } from '../current';
 import { EffectiveChart } from './EffectiveChart';
 import { WorkflowEditor } from '../edit/WorkflowEditor';
 import { type RouteRow, routeRows } from './effective';
@@ -52,6 +52,19 @@ export type PlaceWorkflowProps = WorkflowTabProps & {
 };
 
 type Panel = { is: 'change' } | { is: 'edit'; from?: PresetStart } | null;
+
+/**
+ * What *Edit steps…* opens the editor on (SETUPUX1r): the graph the selected route follows. A saved workflow's newest version is the version
+ * the edit appends to; Current's, or a version of steps drawn as the graph it decodes to, begins a workflow of its own. None where the
+ * route draws no graph, or is still being read: the editor begins empty.
+ */
+function editStart(effective: WorkflowEffective | null): { graph: unknown; id?: string; name?: string; base?: number | null } | undefined {
+  if (effective === null || effective.graph === null || effective.graph === undefined) return undefined;
+  if (effective.workflow !== 'current' && effective.version !== null && effective.schema === 2) {
+    return { graph: effective.graph, id: effective.workflow, name: effective.name ?? effective.workflow, base: effective.version };
+  }
+  return { graph: effective.graph, ...(effective.name ? { name: effective.name } : {}) };
+}
 
 /** The page holds 64 rem or more: the chart stands in a column of its own. */
 const TWO_COLUMNS = 64 * 16;
@@ -189,7 +202,17 @@ export function PlaceWorkflowView({
 
   const chart = panel && editor
     ? panel.is === 'edit'
-      ? <WorkflowEditor {...editor} place={place} startFrom={panel.from} onClose={() => show(null)} />
+      ? (
+        <WorkflowEditor
+          {...editor}
+          place={place}
+          startFrom={panel.from ?? editStart(answered)}
+          route={routeKey}
+          pipeline="development"
+          lines={page === 'repository' && start?.landed.tip?.line ? [start.landed.tip.line] : undefined}
+          onClose={() => show(null)}
+        />
+      )
       : (
         <ChangeWorkflow
           list={editor.list}

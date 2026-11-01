@@ -457,7 +457,7 @@ describe('the judgement, the inspector beside the chart, and the languages', () 
     await screen.findByText(/v1, a new workflow, from the page\./);
     const graph = saved();
     expect(graph.wires.map(said)).toEqual(expect.arrayContaining(['after:landing>pushed', 'after:pushed>pull-request', 'after:pull-request>line']));
-    expect((graph as Graph & { nodes: { id: string; options?: Record<string, unknown> }[] }).nodes.find((node) => node.id === 'landing')!.options)
+    expect((graph.nodes as { id: string; options?: Record<string, unknown> }[]).find((node) => node.id === 'landing')!.options)
       .toEqual({ method: 'pull-request', pattern: 'feature/{quest}-{slug}/{nope}' });
     expect(graph.end).toBe('line');
 
@@ -468,6 +468,23 @@ describe('the judgement, the inspector beside the chart, and the languages', () 
     expect(screen.queryByRole('listitem', { name: 'The push' })).toBeNull();
     await i18n.changeLanguage('zh');
     expect(await screen.findByRole('combobox', { name: '落地的方式' })).toHaveTextContent('并入主线');
+  });
+
+  it("lists the lines the place declares for a landing's target, and types it where it declares none", async () => {
+    const { unmount } = render(wrap(<Editor lines={['main']} />));
+    await user.click(await screen.findByRole('button', { name: 'Begin from Merge workflow' }));
+    await user.click(step('The landing'));
+    const inspector = await screen.findByRole('dialog', { name: 'The landing' });
+    expect(within(inspector).getByRole('combobox', { name: 'The line it lands on' })).toHaveTextContent("The repository's own line");
+    await chooseByPointer('The line it lands on', 'main');
+    expect(live()).toHaveTextContent("Changed The landing's The line it lands on.");
+    expect(openDraftNow()!.graph.nodes.find((node) => (node as { id: string }).id === 'landing')).toMatchObject({ options: { method: 'merge', target: 'main' } });
+    unmount();
+
+    render(wrap(<Editor />));
+    await user.click(await screen.findByRole('button', { name: 'Begin from Merge workflow' }));
+    await user.click(step('The landing'));
+    expect(within(await screen.findByRole('dialog', { name: 'The landing' })).getByRole('textbox', { name: 'The line it lands on' })).toHaveValue('');
   });
 
   it('asks which output an input takes where two fit, and keeps what the page does not draw through a save', async () => {
