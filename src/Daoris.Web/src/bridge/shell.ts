@@ -45,4 +45,5 @@ export * from './update';
 export * from './windows';
 export * from './sessions/work';
 export * from './repositories/workflow';
+export * from './repositories/workflowEdit';
 export * from './repositories/integrate';
