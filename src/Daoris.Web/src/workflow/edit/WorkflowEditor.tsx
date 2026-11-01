@@ -44,6 +44,8 @@ export type WorkflowEditorBridge = {
 export type WorkflowEditorProps = WorkflowEditorBridge & {
   /** Where *Use here* chooses the saved version: the page the editor opened from. */
   place: { repository: string } | { workspace: string };
+  /** The steps it opens on, a graph as a version holds it, and the saved workflow and version they are, where they are one. */
+  startFrom?: { graph: unknown; id?: string; name?: string; base?: number | null };
   onClose?: () => void;
 };
 
@@ -126,14 +128,15 @@ const NEW: Target = { id: '', name: '', base: null };
  * A molecule: the answers arrive as props, the draft is page state, and every press goes out.
  */
 export function WorkflowEditor({
-  list, palette, error, roles, shown, onShow, judged, judging, onJudge, saving, onSave, using, onUse, place, onClose,
+  list, palette, error, roles, shown, onShow, judged, judging, onJudge, saving, onSave, using, onUse, place, startFrom, onClose,
 }: WorkflowEditorProps) {
   const { t, i18n } = useTranslation();
   const headId = useId();
-  const [source, setSource] = useState(EMPTY);
+  const [source, setSource] = useState(startFrom?.id ? `${SAVED}${startFrom.id}` : EMPTY);
   const [waiting, setWaiting] = useState<string | null>(null);
-  const [draft, setDraft] = useState<GraphDraft>(emptyDraft);
-  const [target, setTarget] = useState<Target>(NEW);
+  const [draft, setDraft] = useState<GraphDraft>(() => (startFrom ? draftOf(startFrom.graph) : emptyDraft()));
+  const [target, setTarget] = useState<Target>(() =>
+    (startFrom ? { id: startFrom.id ?? '', name: startFrom.name ?? '', base: startFrom.base ?? null } : NEW));
   const [authorized, setAuthorized] = useState(false);
   const [said, setSaid] = useState<{ saved: WorkflowSaveAnswer | null; used: WorkflowUseAnswer | null; failed: string | null }>(
     { saved: null, used: null, failed: null });
@@ -180,7 +183,7 @@ export function WorkflowEditor({
   const atWire = (id: string) => problems.filter((problem) => problem.wire === id);
   const general = problems.filter((problem) => !(problem.wire && wireIds.has(problem.wire)) && !(problem.node && nodeIds.has(problem.node)));
 
-  const startFrom = (value: string) => {
+  const chooseSource = (value: string) => {
     setSource(value);
     setAuthorized(false);
     setSaid({ saved: null, used: null, failed: null });
@@ -240,7 +243,7 @@ export function WorkflowEditor({
         <SelectField
           ariaLabel={t('workflow.edit.source.label')}
           value={source}
-          onChange={startFrom}
+          onChange={chooseSource}
           options={[
             { value: EMPTY, label: t('workflow.edit.source.empty') },
             ...list.presets.filter((preset) => preset.graph && preset.body).map((preset) => ({

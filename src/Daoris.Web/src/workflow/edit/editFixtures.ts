@@ -49,6 +49,42 @@ export const DOCUMENTS_GRAPH = {
   wires: [{ id: 'a', kind: 'after', from: 'work', to: 'landing' }, { id: 'c', kind: 'after', from: 'landing', to: 'line' }],
 };
 
+/** The release default's graph (DEFAULTCONFIG1c): the work checked and reviewed, landed, then Local release's find, release and publish. */
+export const RELEASE_GRAPH = {
+  schemaVersion: 2, entries: ['work'], end: 'line',
+  nodes: [
+    { id: 'work', kind: 'claimed', version: 1, reach: 'observed' },
+    { id: 'requests', kind: 'work.requests', version: 1, reach: 'observed' },
+    { id: 'check', kind: 'check', version: 1, reach: 'performed' },
+    { id: 'review', kind: 'review', version: 1, reach: 'pressed' },
+    { id: 'landing', kind: 'land', version: 1, reach: 'performed', options: { method: 'merge' } },
+    { id: 'line', kind: 'line', version: 1, reach: 'observed' },
+    { id: 'find', kind: 'local-release/find', version: 1, reach: 'performed', outcomes: ['release', 'none'], outputs: { release: RELEASE }, evidence: RECEIPT },
+    { id: 'release', kind: 'local-release/release', version: 1, reach: 'performed', inputs: { release: RELEASE }, outputs: { release: RELEASE }, evidence: RECEIPT },
+    { id: 'publish', kind: 'local-release/publish', version: 1, reach: 'performed', inputs: { release: RELEASE }, evidence: RECEIPT },
+  ],
+  wires: [
+    { id: 'a', kind: 'after', from: 'work', to: 'requests' },
+    { id: 'b', kind: 'after', from: 'requests', to: 'check' },
+    { id: 'c', kind: 'after', from: 'check', to: 'review' },
+    { id: 'd', kind: 'after', from: 'review', to: 'landing' },
+    { id: 'e', kind: 'after', from: 'landing', to: 'line' },
+    { id: 'f', kind: 'back', from: 'review', on: 'rejected', to: 'work' },
+    { id: 'g', kind: 'after', from: 'line', to: 'find' },
+    { id: 'h', kind: 'when', from: 'find', outcome: 'release', to: 'release' },
+    { id: 'i', kind: 'data', from: 'find.release', to: 'release.release' },
+    { id: 'j', kind: 'after', from: 'release', to: 'publish' },
+    { id: 'k', kind: 'data', from: 'release.release', to: 'publish.release' },
+  ],
+};
+
+/** The release default with the work naming a role that only reviews, and a way back from the review into the landing, which goes forward. */
+export const REFUSED_GRAPH = {
+  ...RELEASE_GRAPH,
+  nodes: RELEASE_GRAPH.nodes.map((node) => (node.id === 'work' ? { ...node, options: { role: 'opinion' } } : node)),
+  wires: [...RELEASE_GRAPH.wires, { id: 'l', kind: 'back', from: 'review', on: 'rejected', to: 'landing' }],
+};
+
 export const LIST: WorkflowListAnswer = {
   workflows: [{ id: 'docs-release', name: 'Docs release', problem: null, versions: [1, 2], schema: 2, digest: 'ab', line: 'x', pipeline: null,
     chosen: [{ level: 'repository', name: 'engine', role: 'default', kind: null }] }],
@@ -72,14 +108,14 @@ const answer = (more: Partial<WorkflowSaveAnswer>): WorkflowSaveAnswer => ({
 /** A plan of steps that hold. */
 export const HOLDS = answer({ message: '`docs` v1, a new workflow, from the page.' });
 
-/** A plan refused at a way back that goes forward, and at a step no way reaches. */
+/** `REFUSED_GRAPH`'s plan: refused at the way back that goes forward and at the work's role, and by a rule this page has no words for. */
 export const REFUSED = answer({
   done: false, refused: 'refused', version: null,
-  message: 'v1: its graph does not hold: the back wire `i` goes to `landing`, which `review` does not come after.',
+  message: 'v1: its graph does not hold: the back wire `l` goes to `landing`, which `review` does not come after.',
   problems: [
-    { code: 'back-forward', wire: 'i', node: null, words: 'the back wire `i` goes to `landing`, which `review` does not come after.' },
-    { code: 'unreachable', wire: null, node: 'line', words: 'no entry reaches `line`.' },
-    { code: 'a-code-this-page-has-no-words-for', wire: null, node: null, words: 'something the page cannot word.' },
+    { code: 'back-forward', wire: 'l', node: null, words: 'the back wire `l` goes to `landing`, which `review` does not come after.' },
+    { code: 'role', wire: null, node: 'work', words: 'the step `work` names the role `opinion`, which cannot take it: The role `opinion` does not take `design`.' },
+    { code: 'a-rule-newer-than-this-page', wire: null, node: null, words: 'a rule this page has no words for refuses `publish`.' },
   ],
 });
 
