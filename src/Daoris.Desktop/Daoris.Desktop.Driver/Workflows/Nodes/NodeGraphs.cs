@@ -240,8 +240,9 @@ public static class NodeGraphs
 
         var byId = new Dictionary<string, NodeDeclaration>(StringComparer.Ordinal);
         foreach (var node in graph.Nodes) byId.TryAdd(node.Id, node);
+        // DECIDE1b: a `back` is a way back, which NodeWires judges; no rule below reads it, as an entry's wire, a reach or an order.
         var local = graph.Wires
-            .Where(wire => wire.Kind != WireKinds.Wait && WireKinds.All.Contains(wire.Kind) && wire.From is { Unit: null } from && byId.ContainsKey(from.Node)
+            .Where(wire => wire.Kind is not (WireKinds.Wait or WireKinds.Back) && WireKinds.All.Contains(wire.Kind) && wire.From is { Unit: null } from && byId.ContainsKey(from.Node)
                 && wire.To.Unit is null && byId.ContainsKey(wire.To.Node))
             .ToList();
 
@@ -261,6 +262,7 @@ public static class NodeGraphs
             }
         }
 
+        // DECIDE1b: the end need not lie on every route; a run whose routes not taken leave nothing to start has ended (NodeRuntime.End).
         var end = !string.IsNullOrWhiteSpace(graph.End) && byId.TryGetValue(graph.End, out var named) ? named : null;
         if (end is null)
         {
@@ -287,7 +289,8 @@ public static class NodeGraphs
         // and the look are nodes (§E4), so each must be reached before every landing starts: through wires a reach satisfies, never a
         // failure's or a rejection's path. The holds stay the rules' gate at the landing, no node yet. FABRIC-CUTOVER1b (the cutover design
         // §5.1): the opinion is not asked to reach a look, whose set-up the review gate holds while an agent reads the opinion.
-        var ordered = local.Where(wire => wire.Kind is WireKinds.After or WireKinds.Trigger or WireKinds.Data).ToList();
+        // DECIDE1b: a decision's route is an order too, so a landing on one outcome's route is judged by the gates on that route.
+        var ordered = local.Where(wire => WireKinds.Ordered.Contains(wire.Kind)).ToList();
         // LANDNODE1a: a `land` is a landing as a `handed` is, for every rule below that counts one.
         var landings = byId.Values.Where(node => node.Kind is NodeKinds.Handed or NodeKinds.Land).ToList();
         var lands = landings.Where(node => node.Kind == NodeKinds.Land).ToList();
@@ -548,26 +551,40 @@ public static class NodeGraphs
         var started = new HashSet<string>(starts, StringComparer.Ordinal);
         var failing = new HashSet<string>(StringComparer.Ordinal);
         var mayFail = MayFail(byId, local);
+        // A reach's wire, a `when` among them (DECIDE1b): met by its source's reach, with that outcome, never by its failure.
         bool Met(Wire wire) => wire.Kind switch
         {
             WireKinds.Failed => mayFail.Contains(wire.From!.Node) && (started.Contains(wire.From.Node) || failing.Contains(wire.From.Node)),
             WireKinds.Rejected => started.Contains(wire.From!.Node) || failing.Contains(wire.From!.Node),
             _ => started.Contains(wire.From!.Node) && !gate(byId[wire.From.Node]),
         };
+
+        // DECIDE1b: the nodes a route may leave untaken, as WireEvaluation's NotTaken closes them: behind a `when` from a decision that starts
+        // (another outcome closes it), or a wire from such a node, by a data input, an `allOf` member or every member of an `anyOf`. A join's
+        // members never close it, and settle it as skips do, so whichever outcome a run takes, a join on its route starts.
+        var untaken = new HashSet<string>(StringComparer.Ordinal);
+        bool Closes(Wire wire) => untaken.Contains(wire.From!.Node) || (wire.Kind == WireKinds.When && started.Contains(wire.From.Node));
         for (var moved = true; moved;)
         {
             moved = false;
-            foreach (var node in byId.Values.Where(node => !started.Contains(node.Id)))
+            foreach (var node in byId.Values)
             {
                 var join = node.Kind == NodeKinds.All;
                 var members = join ? local.Where(wire => wire.Kind == WireKinds.After && wire.To.Node == node.Id).ToList() : [];
                 var groups = NodeWires.Groups(node.Id, join ? [.. local.Where(wire => !members.Contains(wire))] : local);
                 var inputs = local.Where(wire => wire.Kind == WireKinds.Data && wire.To.Node == node.Id).ToList();
-                if (groups.Count + inputs.Count + members.Count == 0 || !inputs.All(Met)) continue;
                 // A wire id twice is refused above (`wire-twice`); its first is read here, as a group reads it.
-                bool MetBy(string id) => Met(local.First(wire => wire.Id == id && wire.To.Node == node.Id));
+                Wire Into(string id) => local.First(wire => wire.Id == id && wire.To.Node == node.Id);
+                if (!untaken.Contains(node.Id) && (inputs.Any(Closes)
+                    || groups.Any(group => group.Mode == WireGroupModes.AnyOf ? group.Wires.All(id => Closes(Into(id))) : group.Wires.Any(id => Closes(Into(id))))))
+                {
+                    moved = untaken.Add(node.Id) || moved;
+                }
+
+                if (started.Contains(node.Id) || groups.Count + inputs.Count + members.Count == 0 || !inputs.All(Met)) continue;
+                bool MetBy(string id) => Met(Into(id));
                 if (!groups.All(group => group.Mode == WireGroupModes.AnyOf ? group.Wires.Any(MetBy) : group.Wires.All(MetBy))) continue;
-                if (members.All(Met)) moved = started.Add(node.Id) || moved;
+                if (members.All(member => Met(member) || untaken.Contains(member.From!.Node))) moved = started.Add(node.Id) || moved;
                 else if (members.Any(member => mayFail.Contains(member.From!.Node) && (started.Contains(member.From.Node) || failing.Contains(member.From.Node))))
                 {
                     moved = failing.Add(node.Id) || moved;
@@ -698,6 +715,11 @@ public static class NodeGraphs
             Map(node.Inputs);
             Map(node.Outputs);
             Map(node.Options);
+            // DECIDE1b: written only where declared, so a graph that names none digests, and places its nodes, as it did.
+            if (node.Outcomes.Count == 0) return;
+            Line("outcomes");
+            Line(node.Outcomes.Count);
+            foreach (var outcome in node.Outcomes) Line(outcome);
         }
 
         public void Wire(Wire wire)
@@ -714,6 +736,17 @@ public static class NodeGraphs
             Line(wire.Waits?.Commitment);
             Line(wire.Group?.Id);
             Line(wire.Group?.Mode);
+            if (wire.Outcome is not null)
+            {
+                Line("outcome");
+                Line(wire.Outcome);
+            }
+
+            if (wire.On is not null)
+            {
+                Line("on");
+                Line(wire.On);
+            }
         }
 
         public string Hash(string prefix) => prefix + Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(text.ToString())))[..32];
@@ -840,6 +873,7 @@ public static class NodeGraphs
             TimeoutSeconds = Number(node, "timeoutSeconds", where),
             Rejectable = Flag(node, "rejectable", where) ?? false,
             Skippable = Flag(node, "skippable", where) ?? true,
+            Outcomes = [.. List(node, "outcomes", where).Select(outcome => outcome.ValueKind == JsonValueKind.String ? outcome.GetString()! : throw new Unread($"{where}'s `outcomes`", "outcome's name"))],
         };
     }
 
@@ -880,7 +914,10 @@ public static class NodeGraphs
             group = new WireGroup(Text(declared, "id", $"{where}'s `group`") ?? "", Text(declared, "mode", $"{where}'s `group`") ?? "");
         }
 
-        return new Wire(Text(wire, "id", where) ?? "", kind, from, EndOf(to, kind)) { Waits = waits, Group = group };
+        return new Wire(Text(wire, "id", where) ?? "", kind, from, EndOf(to, kind))
+        {
+            Waits = waits, Group = group, Outcome = Text(wire, "outcome", where), On = Text(wire, "on", where),
+        };
     }
 
     /// <summary>A wire's end as the file names it: a node, or on a <c>data</c> wire its port after the last dot (<c>qa.evidence</c>).</summary>

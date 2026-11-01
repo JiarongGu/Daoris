@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The seven wire kinds (FABRIC-WIRE1a; the fabric events design §E3; DECIDE1a's <c>when</c>). A wire is typed and carries no expression,
-/// script or command (§E9): its kind, and a <c>when</c>'s named outcome, is its condition.
+/// The eight wire kinds (FABRIC-WIRE1a; the fabric events design §E3; DECIDE1a's <c>when</c>, DECIDE1b's <c>back</c>). A wire is typed and
+/// carries no expression, script or command (§E9): its kind, and a <c>when</c>'s outcome or a <c>back</c>'s <c>on</c>, is its condition.
 /// </summary>
 public static class WireKinds
 {
@@ -33,7 +33,19 @@ public static class WireKinds
     /// </summary>
     public const string When = "when";
 
-    public static readonly IReadOnlyList<string> All = [After, Data, Wait, Trigger, Failed, Rejected, When];
+    /// <summary>
+    /// A way back to a node its source comes after (DECIDE1b), taken <see cref="Wire.On"/> the source's rejection, its spent failure or one of
+    /// its outcomes. It makes no node eligible and closes no cycle.
+    /// </summary>
+    public const string Back = "back";
+
+    public static readonly IReadOnlyList<string> All = [After, Data, Wait, Trigger, Failed, Rejected, When, Back];
+
+    /// <summary>
+    /// The kinds a graph's order is read along (D157 §2.2's, and where a <c>back</c> may return to): a reach's, an input's and a decision's
+    /// route, never a failure's or a rejection's path.
+    /// </summary>
+    public static readonly IReadOnlyList<string> Ordered = [After, Trigger, Data, When];
 
     /// <summary>
     /// The kinds that make a node eligible, which its <c>allOf</c> and <c>anyOf</c> groups gather. A <c>data</c> or <c>wait</c> wire is an
@@ -111,6 +123,9 @@ public sealed record Wire(string Id, string Kind, WireEnd? From, WireEnd To)
 
     /// <summary>The source's outcome a <c>when</c> wire follows (DECIDE1a), one its source declares; null on every other kind.</summary>
     public string? Outcome { get; init; }
+
+    /// <summary>What a <c>back</c> wire is taken on (DECIDE1b): <c>rejected</c>, <c>failed</c> or one of its source's outcomes; null on every other kind.</summary>
+    public string? On { get; init; }
 }
 
 /// <summary>One thing a save refuses (§E3, <i>refused when saved</i>): a stable code, the wire or node it is about, and its words.</summary>
@@ -138,11 +153,12 @@ public static class WireRefusal
     /// <summary>Two nodes with one id: a wire's reference to it would name either.</summary>
     public const string NodeTwice = "node-twice";
 
-    /// <summary>A kind that is none of the seven.</summary>
+    /// <summary>A kind that is none of the eight.</summary>
     public const string UnknownKind = "unknown-kind";
 
     /// <summary>
-    /// The ends do not fit the kind: a source, a wait target, a port or an outcome where the kind has none, or none where it needs one.
+    /// The ends do not fit the kind: a source, a wait target, a port, an outcome or an <c>on</c> where the kind has none, or none where it
+    /// needs one; or a <c>back</c> in a group.
     /// </summary>
     public const string Shape = "shape";
 
@@ -205,6 +221,18 @@ public static class WireRefusal
 
     /// <summary>A local dependency cycle, a node's own <c>trigger</c> loop included.</summary>
     public const string Cycle = "cycle";
+
+    /// <summary>A <c>back</c> wire to a node its source does not come after through ordered wires (DECIDE1b), its source itself included.</summary>
+    public const string BackForward = "back-forward";
+
+    /// <summary>A second <c>back</c> wire on one source and one <c>on</c>: each of its results goes back one way.</summary>
+    public const string BackTwice = "back-twice";
+
+    /// <summary>
+    /// A <c>back</c> wire on what its source never comes to, as <see cref="NeverFails"/> and <see cref="NeverRejected"/> judge: a rejection no
+    /// person may give, a failure nothing gives, or an outcome it does not declare.
+    /// </summary>
+    public const string BackNever = "back-never";
 }
 
 /// <summary>
@@ -216,7 +244,8 @@ public static class NodeWires
 {
     /// <summary>
     /// Everything a save refuses in <paramref name="wires"/> over <paramref name="nodes"/>, in a stable order; empty when it holds. The
-    /// nodes' ids first; then each wire in the order given, by its first problem (its id, kind, shape, ends, ports, source and group);
+    /// nodes' ids first; then each wire in the order given, by its first problem (its id, kind, shape, ends, ports, source and group, or a
+    /// <c>back</c>'s way);
     /// then each node's inputs and wait, in the order given; then each local cycle, by its first node.
     /// </summary>
     public static IReadOnlyList<WireProblem> Problems(IReadOnlyList<NodeDeclaration> nodes, IReadOnlyList<Wire> wires)
@@ -232,9 +261,14 @@ public static class NodeWires
 
         var ids = new HashSet<string>(StringComparer.Ordinal);
         var groups = new Dictionary<string, Wire>(StringComparer.Ordinal);
+        // DECIDE1b: what each node comes after through ordered wires, which a `back` returns to, and each source's result already gone back.
+        var before = wires.Where(wire => WireKinds.Ordered.Contains(wire.Kind) && wire.From is { Unit: null } from && byId.ContainsKey(from.Node)
+                && wire.To.Unit is null && byId.ContainsKey(wire.To.Node))
+            .ToLookup(wire => wire.To.Node, wire => wire.From!.Node, StringComparer.Ordinal);
+        var backs = new Dictionary<(string Node, string On), string>();
         foreach (var wire in wires)
         {
-            if (Problem(wire, byId, ids, groups) is { } problem) problems.Add(problem);
+            if (Problem(wire, byId, ids, groups, before, backs) is { } problem) problems.Add(problem);
         }
 
         foreach (var node in distinct)
@@ -298,7 +332,8 @@ public static class NodeWires
     private static bool Into(Wire wire, string node) => wire.To is { Unit: null } to && to.Node == node;
 
     /// <summary>One wire's first problem, or null; a sound grouped wire's group is noted at its first wire, for the next to agree with.</summary>
-    private static WireProblem? Problem(Wire wire, Dictionary<string, NodeDeclaration> nodes, HashSet<string> ids, Dictionary<string, Wire> groups)
+    private static WireProblem? Problem(Wire wire, Dictionary<string, NodeDeclaration> nodes, HashSet<string> ids, Dictionary<string, Wire> groups,
+        ILookup<string, string> before, Dictionary<(string Node, string On), string> backs)
     {
         var id = wire.Id;
         WireProblem Refuse(string code, string? node, string words) => new(code, id, node, $"wire `{id}`: {words}");
@@ -307,7 +342,7 @@ public static class NodeWires
         if (!ids.Add(id)) return Refuse(WireRefusal.WireTwice, null, "another wire has this id; each wire's id is its own.");
         if (!WireKinds.All.Contains(wire.Kind))
         {
-            return Refuse(WireRefusal.UnknownKind, null, $"`{wire.Kind}` is no wire kind; a wire is `after`, `data`, `wait`, `trigger`, `failed`, `rejected` or `when`.");
+            return Refuse(WireRefusal.UnknownKind, null, $"`{wire.Kind}` is no wire kind; a wire is `after`, `data`, `wait`, `trigger`, `failed`, `rejected`, `when` or `back`.");
         }
 
         if (Shape(wire) is { } shape) return Refuse(WireRefusal.Shape, null, shape);
@@ -323,6 +358,7 @@ public static class NodeWires
 
         var to = nodes[wire.To.Node];
         var from = wire.From is { } source ? nodes[source.Node] : null;
+        if (wire.Kind == WireKinds.Back) return BackProblem(wire, from!, to, before, backs, Refuse);
         switch (wire.Kind)
         {
             case WireKinds.Wait:
@@ -368,9 +404,7 @@ public static class NodeWires
                 return Refuse(WireRefusal.NoOutcomes, from.Id, $"`{from.Id}`, a `{from.Kind}`, declares no outcomes, so no `when` wire follows it.");
 
             case WireKinds.When when !from!.Outcomes.Contains(wire.Outcome!, StringComparer.Ordinal):
-                var named = from.Outcomes.Select(outcome => $"`{outcome}`").ToList();
-                return Refuse(WireRefusal.UnknownOutcome, from.Id,
-                    $"`{from.Id}` is reached with {string.Join(", ", named.SkipLast(1))}{(named.Count > 1 ? " or " : "")}{named[^1]}, never `{wire.Outcome}`.");
+                return Refuse(WireRefusal.UnknownOutcome, from.Id, $"`{from.Id}` is reached with {OneOf(from.Outcomes)}, never `{wire.Outcome}`.");
         }
 
         if (wire.Group is not { } group) return null;
@@ -411,12 +445,14 @@ public static class NodeWires
     /// <summary>What does not fit the kind in a wire's ends, or null.</summary>
     private static string? Shape(Wire wire)
     {
+        const string OnlyBackOn = "only a `back` wire names what it is taken `on`.";
         if (wire.Kind == WireKinds.Wait)
         {
             return wire.From is not null ? "a `wait` wire waits on another unit's work, never on a node of this graph."
                 : wire.Waits is null ? "a `wait` wire names what it waits on."
                 : wire.To.Port is not null ? "only a `data` wire names ports."
                 : wire.Outcome is not null ? "only a `when` wire names an outcome."
+                : wire.On is not null ? OnlyBackOn
                 : null;
         }
 
@@ -428,6 +464,13 @@ public static class NodeWires
             return wire.Kind == WireKinds.When ? "a `when` wire names the outcome of its source it follows." : "only a `when` wire names an outcome.";
         }
 
+        // DECIDE1b: a `back` names the result of its source it is taken on and joins no group, and no other kind names one.
+        if (wire.Kind == WireKinds.Back ? string.IsNullOrWhiteSpace(wire.On) : wire.On is not null)
+        {
+            return wire.Kind == WireKinds.Back ? "a `back` wire names what it is taken `on`: its source's `rejected`, its `failed` or one of its outcomes." : OnlyBackOn;
+        }
+
+        if (wire.Kind == WireKinds.Back && wire.Group is not null) return "a `back` wire returns to an earlier node and joins no group.";
         if (wire.Kind == WireKinds.Data)
         {
             return string.IsNullOrWhiteSpace(wire.From.Port) || string.IsNullOrWhiteSpace(wire.To.Port)
@@ -439,13 +482,61 @@ public static class NodeWires
     }
 
     /// <summary>
+    /// A <c>back</c> wire's first problem past its shape and ends (DECIDE1b): an <c>on</c> its source never comes to, a target its source does
+    /// not come after through <paramref name="before"/>, or a result of its source gone back already, noted in <paramref name="backs"/>.
+    /// </summary>
+    private static WireProblem? BackProblem(Wire wire, NodeDeclaration from, NodeDeclaration to, ILookup<string, string> before,
+        Dictionary<(string Node, string On), string> backs, Func<string, string?, string, WireProblem> refuse)
+    {
+        var on = wire.On!;
+        var authority = NodeAuthorities.Of(from);
+        var never = on switch
+        {
+            NodeStates.Failed => authority is { FailureBy: null } ? $"nothing can fail `{from.Id}`, a `{from.Kind}`, so this way back is never taken." : null,
+            NodeStates.Rejected => authority is { PersonJudges: false } ? $"no person may reject `{from.Id}`, a `{from.Kind}`, so this way back is never taken." : null,
+            _ when from.Outcomes.Contains(on, StringComparer.Ordinal) => null,
+            _ when from.Outcomes.Count == 0 => $"`{from.Id}`, a `{from.Kind}`, declares no outcomes, so it is never `{on}`, and this way back is never taken.",
+            _ => $"`{from.Id}` is reached with {OneOf(from.Outcomes)}, never `{on}`, so this way back is never taken.",
+        };
+        if (never is not null) return refuse(WireRefusal.BackNever, from.Id, never);
+
+        var upstream = new HashSet<string>(StringComparer.Ordinal);
+        var queue = new Queue<string>([from.Id]);
+        while (queue.TryDequeue(out var at))
+        {
+            foreach (var earlier in before[at])
+            {
+                if (upstream.Add(earlier)) queue.Enqueue(earlier);
+            }
+        }
+
+        if (!upstream.Contains(to.Id))
+        {
+            return refuse(WireRefusal.BackForward, to.Id, to.Id == from.Id
+                ? $"a `back` wire returns to a node `{from.Id}` comes after through its wires, never to `{from.Id}` itself."
+                : $"`{to.Id}` does not come before `{from.Id}`: a `back` wire returns to a node its source comes after through its wires.");
+        }
+
+        return backs.TryAdd((from.Id, on), wire.Id) ? null
+            : refuse(WireRefusal.BackTwice, from.Id, $"`{from.Id}` goes back on `{on}` through `{backs[(from.Id, on)]}` already; each of its results goes back one way.");
+    }
+
+    /// <summary>A decision's outcomes as a sentence names them: <c>`a` or `b`</c>, <c>`a`, `b` or `c`</c>.</summary>
+    private static string OneOf(IReadOnlyList<string> outcomes)
+    {
+        var named = outcomes.Select(outcome => $"`{outcome}`").ToList();
+        return named.Count > 1 ? $"{string.Join(", ", named.SkipLast(1))} or {named[^1]}" : named[0];
+    }
+
+    /// <summary>
     /// The local dependency cycles (§E3), a node's own loop included: over every wire of a kind with a source, both of whose ends are this
-    /// graph's nodes. A <c>wait</c> wire's source is other work, so it closes none here. Each cycle once, named by its nodes in id order.
+    /// graph's nodes. A <c>wait</c> wire's source is other work, so it closes none here, nor does a <c>back</c>, which is a way back and no
+    /// dependency (DECIDE1b). Each cycle once, named by its nodes in id order.
     /// </summary>
     private static IEnumerable<WireProblem> Cycles(Dictionary<string, NodeDeclaration> nodes, IReadOnlyList<Wire> wires)
     {
         var edges = wires
-            .Where(wire => WireKinds.All.Contains(wire.Kind) && wire.Kind != WireKinds.Wait && wire.From is { Unit: null } from && nodes.ContainsKey(from.Node)
+            .Where(wire => WireKinds.All.Contains(wire.Kind) && wire.Kind is not (WireKinds.Wait or WireKinds.Back) && wire.From is { Unit: null } from && nodes.ContainsKey(from.Node)
                 && wire.To.Unit is null && nodes.ContainsKey(wire.To.Node))
             .ToList();
         var next = edges.ToLookup(wire => wire.From!.Node, wire => wire.To.Node, StringComparer.Ordinal);

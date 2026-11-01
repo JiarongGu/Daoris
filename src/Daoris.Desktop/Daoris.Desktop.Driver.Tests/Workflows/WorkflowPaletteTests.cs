@@ -36,7 +36,8 @@ public sealed class WorkflowPaletteTests
         Assert.DoesNotContain(NodeKinds.Claimed, failed);
         Assert.Contains(NodeKinds.Check, failed);
         var rejected = Bare.Wires.Single(each => each.Kind == WireKinds.Rejected).From!;
-        Assert.Equal([NodeKinds.Human, NodeKinds.Look, NodeKinds.GoAhead], rejected);
+        // DECIDE1b: a review's changes are its rejection.
+        Assert.Equal([NodeKinds.Human, NodeKinds.Look, NodeKinds.GoAhead, NodeKinds.Review], rejected);
         Assert.Null(Bare.Wires.Single(each => each.Kind == WireKinds.After).From);
         Assert.Equal(NodeKinds.WaitUnit, Bare.Wires.Single(each => each.Kind == WireKinds.Wait).To);
     }

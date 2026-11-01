@@ -42,7 +42,7 @@
 
 **Files.** `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/WorkflowPalette.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Nodes/NodeOptionFields.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/WorkflowOperations.cs`, `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/WorkflowEditRoutes.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workflows/WorkflowPaletteTests.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/structure.json`, `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/fixtures/structure.json`, `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleWorkflowTests.cs`, `src/Daoris.Web/src/bridge/repositories/workflowEdit.ts`, `src/Daoris.Web/src/bridge/repositories/workflowEdit.test.ts`, `.claude/knowledge/twins.md`
 
-## DECIDE1b — Decision steps in files and in the graph rules: `when` read and digested, the review's two routes, and the `back` route
+## DECIDE1b — Decision steps in files and in the graph rules: `when` read and digested, the review's two routes, and the `back` route (built 2026-11-01)
 
 **Wave** 2; after DECIDE1a, LANDNODE1c2; opus.
 

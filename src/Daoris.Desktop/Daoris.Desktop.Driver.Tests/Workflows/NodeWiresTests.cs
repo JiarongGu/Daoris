@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-WIRE1a (the fabric events design §E3): the wires' validation when a graph is saved. The six kinds, each with what it may
+/// FABRIC-WIRE1a (the fabric events design §E3): the wires' validation when a graph is saved. The kinds, each with what it may
 /// connect; <c>allOf</c> and <c>anyOf</c> groups on a node's eligibility wires; every data input mandatory and fed once, at its schema;
 /// and every refusal §E3 names, each with a stable code and words. Pure: nothing evaluated, nothing stored. The refusals are rows of the
 /// shared table the CLI's twin reads too (FABRIC-GRAPH1c, <see cref="GraphProblemsTable"/>).
@@ -63,8 +63,8 @@ public sealed class NodeWiresTests
     public void The_designs_example_with_each_kind_holds()
     {
         Assert.Empty(NodeWires.Problems(Nodes, Wires));
-        // DECIDE1a: a file holds no outcome until DECIDE1b reads one, so the table's example has no `when`; A_when_wire_follows_... holds it.
-        Assert.Equal(WireKinds.All.Except([WireKinds.When]).Order(), Wires.Select(wire => wire.Kind).Distinct().Order());
+        // DECIDE1b: a `when` and a `back` need a decision and an earlier node, so the table's own rows hold them, not this example.
+        Assert.Equal(WireKinds.All.Except([WireKinds.When, WireKinds.Back]).Order(), Wires.Select(wire => wire.Kind).Distinct().Order());
         Assert.All(Nodes, node => Assert.Null(NodeDeclarations.Problem(node)));
         var read = GraphProblemsTable.Graph(GraphProblemsTable.Row("wires", "the design's example with every kind holds"));
         Assert.Equal(Nodes, read.Nodes);
@@ -94,8 +94,23 @@ public sealed class NodeWiresTests
     {
         var codes = typeof(WireRefusal).GetFields(BindingFlags.Public | BindingFlags.Static).Select(field => (string)field.GetValue(null)!).ToList();
         Assert.Equal(codes.Count, codes.Distinct().Count());
-        // DECIDE1a: the two outcome codes need an outcome a file cannot say yet, so A_when_wire_follows_... holds them until DECIDE1b.
-        Assert.Empty(codes.Except(GraphProblemsTable.Codes()).Except([WireRefusal.NoOutcomes, WireRefusal.UnknownOutcome]));
+        Assert.Empty(codes.Except(GraphProblemsTable.Codes()));
+    }
+
+    /// <summary>
+    /// DECIDE1b: a <c>back</c> wire is no eligibility wire, so no group gathers it and the run takes none, and it closes no cycle: a node it
+    /// returns to waits on nothing more. The table's rows hold its refusals.
+    /// </summary>
+    [Fact]
+    public void A_back_wire_is_gathered_by_no_group_and_closes_no_cycle()
+    {
+        Wire[] wires = [.. Wires, new("x", WireKinds.Back, new("qa"), new("line")) { On = NodeStates.Rejected }];
+
+        Assert.Empty(NodeWires.Problems(Nodes, wires));
+        Assert.Empty(NodeWires.Groups("line", wires));
+        Assert.Contains(WireKinds.Back, WireKinds.All);
+        Assert.DoesNotContain(WireKinds.Back, WireKinds.Eligibility);
+        Assert.DoesNotContain(WireKinds.Back, WireKinds.Ordered);
     }
 
     private static Wire When(string id, string from, string outcome, string to) => new(id, WireKinds.When, new(from), new(to)) { Outcome = outcome };
