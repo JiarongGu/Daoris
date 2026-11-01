@@ -5,6 +5,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## PLUGINSTEP1a — publish and release as a plugin's performed steps (2026-11-01)
+
+`examples/plugins/local-release` declares find, release and publish as performed, idempotent, reconciled steps with a temporary staging resource, all inside its data folder and never pushing; proof in `PluginKitTests` and `node --test` there. Outcomes that route the work are PLUGINSTEP1b's.
+
 ## LANDNODE1c — Current drawn (2026-11-01)
 
 > **1c, Current drawn** (driver; `docs/2026-11-01-land-node-design.md` §4 and §8 row 9): Current's `land` and its tail, keeping the derived landing node's identifier for old cycles, still inert.
