@@ -47,7 +47,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/design/FlowCanvas.tsx` | 55 | 1039 |
 | `src/Daoris.Web/src/design/tokens.test.ts` | 50 | 882 |
 | `src/Daoris.Web/src/design/ui.test.tsx` | 65 | 1295 |
-| `src/Daoris.Web/src/design/ui.tsx` | 97 | 2025 |
+| `src/Daoris.Web/src/design/ui.tsx` | 97 | 2027 |
 | `src/Daoris.Web/src/help/AskConversation.tsx` | 63 | 1160 |
 | `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 108 | 2136 |
 | `src/Daoris.Web/src/help/ProposalCard.test.tsx` | 44 | 804 |
