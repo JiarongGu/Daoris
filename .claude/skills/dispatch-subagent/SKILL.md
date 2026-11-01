@@ -5,6 +5,19 @@ description: The parent's half of dispatching a subagent to work a branch of thi
 
 # dispatch-subagent
 
+## The workflow: main is the development branch (the owner's direction, 2026-11-01)
+
+This overrides every batch step below.
+- **Branch from main.** Each builder branches from main's current tip (`git merge main` first in its worktree). There are no `parent/batch-*` branches, and no batch is stacked on another.
+- **Merge into main when it is done.** The parent merges a finished branch straight into main with `git merge --no-ff`. Do it at once, not held for a batch, so branches stay short and conflicts small.
+  - Before merging, the builder has run only the tests its change touches, plus the censuses its files need. The parent runs no full pre-merge pass.
+  - A conflict goes back to its builder, which merges main and resolves.
+- **Test after the merge, once.** After merges land, run CI on main in the background: `node tools/merge-branch.mjs --ci --stage <main>`. Fix a red forward on main with its own small branch.
+  - The install is staged only from a green CI (`npm run publish:desktop -- … --stage --from-gated <commit>`).
+- **Never wrap a queue or CI command in `timeout`.** Git Bash's timeout kills the detached runner and its gates (FIX-LOG, 2026-11-01).
+- **Clean up as you go.** Remove a builder's worktree and branch once its work is on main; `node tools/merge-branch.mjs --prune` removes what main holds.
+- **Briefs ask for code first:** the fewest tests that prove the contract, and a one-line archive outcome.
+
 A feature is built by two agents: a **branch-scout** orients it and returns an orientation pack, and a
 **branch-worker** builds it from the pack on its own branch, end to end across the lanes it needs (D160, D187).
 The unit is a feature a person can see working, named by its outcome; the backlog rows it covers become one
