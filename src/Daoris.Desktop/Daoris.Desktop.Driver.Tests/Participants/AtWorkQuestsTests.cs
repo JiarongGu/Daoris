@@ -6,8 +6,15 @@ namespace Daoris.Desktop.Driver.Tests;
 /// COWORKVIEW1b-ii's composition (the design §R11.3 row 4, §3.1): the quests a part published that opened no part of the entry, each
 /// chain's steps under it, who took each and what asked the attended part's own quest, read by <see cref="QuestUnits.Read"/>.
 /// </summary>
-public sealed partial class AtWorkTests
+public sealed class AtWorkQuestsTests
 {
+    private static readonly DateTimeOffset T0 = new(2026, 10, 16, 8, 30, 0, TimeSpan.Zero);
+    private static readonly SliceHealth Judged = AtWorkTests.Judged;
+
+    private static AtWorkEntryPart Part(string session, string shown, string began = "opened", string? quest = null) => new(session, quest, shown, began);
+
+    private static AtWorkAnswer Answered(AtWorkHeld held) => AtWorkTests.Answered(held);
+
     private static QuestView Q(string id, string status = "Open", string to = "core", string? by = "lead", string? parent = null, string from = "game") =>
         new(id, from, to, $"Title of {id}", "", status) { PublishedBy = by, Parent = parent };
 
@@ -238,7 +245,9 @@ public sealed partial class AtWorkTests
     public void Open_and_taken_quests_come_before_those_that_ended_and_a_routing_with_no_asking_reads_no_quests()
     {
         var answer = Asked("lead", LeadOnly, LeadRecord, [Q("old", "Done"), Q("new", "Open")], [S("t", "completed", quest: "old")]);
-        var unasked = RoutedHeld("lead", LeadOnly, LeadRecord, [Quest("q1")]);
+        var unasked = AtWork.Compose(
+            "lead", ["lead"], id => LeadRecord.FirstOrDefault(record => record.Id == id), _ => LineageReading.None, Judged, Judged,
+            new AtWorkRouting(LeadOnly, _ => null, _ => null, _ => 1, Judged));
 
         Assert.Equal(["new", "old"], answer.Quests!.Select(quest => quest.Id));
         Assert.Null(Answered(unasked).Quests);
