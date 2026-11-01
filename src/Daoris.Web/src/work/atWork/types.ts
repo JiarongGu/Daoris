@@ -81,6 +81,40 @@ export type AtWorkPart = {
   alongside?: true;
 };
 
+/** Who took a quest (COWORKVIEW1b-ii): a session here, a chat through its connector, another machine, no session recorded here, or nobody yet. */
+export type AtWorkTaker = {
+  session?: string;
+  /** The taking session's agent and its record's own state. */
+  agent?: string;
+  state?: string;
+  conversation?: string;
+  elsewhere?: true;
+  unrecorded?: true;
+  untaken?: true;
+};
+
+/** A quest a part of the entry published that opened no part of it, or a step of its chain (the cowork view design §3.1). */
+export type AtWorkQuest = {
+  id: string;
+  title: string;
+  /** The service's status: Open, Taken, Done or Declined. */
+  status: string;
+  /** The repository it was sent to, where that is not the attended part's own. */
+  of?: string;
+  lanes?: string[];
+  /** The quest whose close published this one: the chain's step before it. */
+  step?: string;
+  waits?: AtWorkWait;
+  /** Absent for a quest declined that nobody took. */
+  taker?: AtWorkTaker;
+};
+
+/** What asked the attended part's quest: the publishing session, the step before, the ask, or the person. */
+export type AtWorkAsker = {
+  quest: string;
+  by: { session?: string; step?: string; ask?: string; person?: true };
+};
+
 export type AtWorkA = {
   of: { session: string };
   attended: string;
@@ -90,6 +124,11 @@ export type AtWorkA = {
   earlier?: number;
   /** How many quests the entry's parts published. */
   published?: number;
+  /** The quests the entry's parts asked that opened no part of it, a chain's steps after each; absent from a host before the quests half. */
+  quests?: AtWorkQuest[];
+  /** How many more the bound left out. */
+  moreQuests?: number;
+  askedBy?: AtWorkAsker;
   subagents: AtWorkSubagents;
   /** When the shell's process began; absent from an older host. */
   windowOpened?: string;
