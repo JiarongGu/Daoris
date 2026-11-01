@@ -536,7 +536,7 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     /// while it is still held and has no word, under the record's lock with the lease asked inside it, so only the lease's holder records it.
     /// Applied by <see cref="Resolve"/> under the node's declaration, which only the runtime holds.
     /// </summary>
-    public WorkPerformed Word(string unit, string node, int attempt, string resolution)
+    public WorkPerformed Word(string unit, string node, int attempt, string resolution, string? outcome = null)
     {
         if (!HeldResolutions.All.Contains(resolution, StringComparer.Ordinal)) return new(unit, node, PerformedWhat.Refused, NotResolution);
         var now = clock();
@@ -571,7 +571,8 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
             // FABRIC-CLOSE1q: each attempt takes its own words. A close's outcome is its door's answer, so a plugin's words are never taken on
             // it, and `record` only where that answer is kept; a plugin's attempt keeps its three.
             if (WordRefused(held, resolution) is { } code) return (null, new WorkPerformed(unit, node, PerformedWhat.Refused, code));
-            return (With(record, held, held with { Resolution = resolution, ResolvedAt = now }), new WorkPerformed(unit, node, PerformedWhat.Worded, resolution));
+            return (With(record, held, held with { Resolution = resolution, ResolvedAt = now, Decision = resolution == HeldResolutions.Happened ? outcome : null }),
+                new WorkPerformed(unit, node, PerformedWhat.Worded, resolution));
         });
     }
 
@@ -709,7 +710,11 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
             {
                 Source = NodeSource.Person, Attempt = attempt.Attempt,
                 Acceptance = status.Binding is { } binding
-                    ? binding with { Evidence = new NodePort(NodeSource.Person, $"{NodeSource.Person}:{attempt.Call.Invocation}", binding.SubjectRevision, null) }
+                    ? binding with
+                    {
+                        Evidence = new NodePort(NodeSource.Person, $"{NodeSource.Person}:{attempt.Call.Invocation}", binding.SubjectRevision, null),
+                        Outcome = node.Outcomes.Count > 0 ? attempt.Decision : null,
+                    }
                     : null,
             }
             : new NodeMove(NodeStates.Failed, NodeCause.Person) { Source = NodeSource.Person, Attempt = attempt.Attempt, Code = HeldResolutions.DidNot };
@@ -717,7 +722,7 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
         if (!moved.Moved)
         {
             // The word cannot be taken (the one table's refusal): the attempt stays held, saying why, and the word is taken back for another.
-            return (With(record, attempt, attempt with { Code = moved.Refused, Resolution = null, ResolvedAt = null }), new(unit, node.Id, PerformedWhat.Refused, moved.Refused));
+            return (With(record, attempt, attempt with { Code = moved.Refused, Resolution = null, ResolvedAt = null, Decision = null }), new(unit, node.Id, PerformedWhat.Refused, moved.Refused));
         }
 
         record = Kept(record, moved, "person-" + word, now);
@@ -954,6 +959,7 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     internal static NodeAcceptance Accepted(NodeDeclaration node, string word, NodeAcceptance binding, WorkOutcome outcome) => binding with
     {
         Evidence = WorkBelief.Evidence(node, word, binding.SubjectRevision, outcome.Evidence),
+        Outcome = outcome.Decision,
         Outputs = (outcome.Outputs ?? new Dictionary<string, WorkOutput>()).ToDictionary(
             output => output.Key,
             output => new NodePort(WorkBelief.SchemaOf(output.Value.Ref) ?? "", output.Value.Ref, output.Value.Revision ?? binding.SubjectRevision, null),

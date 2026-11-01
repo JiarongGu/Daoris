@@ -209,6 +209,33 @@ public sealed class PluginStepsTests : IDisposable
         Assert.Equal((NodeReach.Performed, NodeSource.Plugin, true, false, true), (authority.Reach, authority.ReachBy, authority.PersonJudges, authority.PersonSkips, authority.Dispatches));
     }
 
+    [Theory]
+    [InlineData("""["release", "none"]""", null)]
+    [InlineData("""["only"]""", "outcomes")]
+    [InlineData("""["a", "a"]""", "outcomes")]
+    [InlineData("""["reached", "none"]""", "outcomes")]
+    [InlineData("""["Release", "none"]""", "outcomes")]
+    [InlineData("""[1, 2]""", "outcomes")]
+    [InlineData("\"release\"", "outcomes")]
+    public void A_steps_outcomes_are_read_into_its_declaration_and_each_refused_shape_is_said(string outcomes, string? code)
+    {
+        Plugin($$"""
+            , "hooks": { "command": ["node", "deploy.mjs"], "points": ["work/perform"] },
+            "steps": [{ "id": "find", "reach": "performed", "outcomes": {{outcomes}}, "perform": { "idempotent": true } }]
+            """);
+
+        var entry = Assert.Single(PluginCatalog.Load(_home).Plugins);
+        if (code is null)
+        {
+            Assert.Null(entry.Problem);
+            Assert.Equal(["release", "none"], Assert.Single(entry.Manifest.Steps).Outcomes);
+        }
+        else
+        {
+            Assert.Contains("`outcomes`", entry.Problem);
+        }
+    }
+
     /// <summary>A manifest written before steps reads exactly as it did: no steps, no resources, nothing else moved.</summary>
     [Fact]
     public void A_manifest_without_steps_reads_as_before()

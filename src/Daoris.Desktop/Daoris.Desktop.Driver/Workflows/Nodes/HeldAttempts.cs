@@ -192,8 +192,8 @@ public static class HeldAttempts
     /// The person's word on a held attempt, from either door (<see cref="WorkPerformer.Word"/>): recorded under the record's lock, the lease
     /// asked inside it, and applied by the loop holding the lease at its next pass.
     /// </summary>
-    public static WorkPerformed Word(NodeRecordFiles records, string unit, string node, int attempt, string word, Func<DateTimeOffset>? clock = null) =>
-        new WorkPerformer(records, new Unperformed(), clock ?? (() => DateTimeOffset.UtcNow)).Word(unit, node, attempt, word);
+    public static WorkPerformed Word(NodeRecordFiles records, string unit, string node, int attempt, string word, Func<DateTimeOffset>? clock = null, string? outcome = null) =>
+        new WorkPerformer(records, new Unperformed(), clock ?? (() => DateTimeOffset.UtcNow)).Word(unit, node, attempt, word, outcome);
 
     /// <summary>A terminal sends nothing to a plugin: the word is recorded, and the loop holding the lease applies it.</summary>
     private sealed class Unperformed : IWorkPerformPort

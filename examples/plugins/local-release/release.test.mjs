@@ -81,6 +81,7 @@ test('find, release and publish run the tail: a version found, its tag recorded,
   await plugin.ask('hook/work/perform', attempt('find', 1));
   const found = await plugin.until('i-1');
   assert.equal(found.params.state, 'reached');
+  assert.equal(found.params.outcome, 'release');
   assert.deepEqual(found.params.outputs, { release: { ref: REF } });
 
   await plugin.ask('hook/work/perform', attempt('release', 2, [REF]));
@@ -100,13 +101,14 @@ test('find, release and publish run the tail: a version found, its tag recorded,
   assert.ok(existsSync(join(data, 'registry', '1.2.0')), 'cleanup leaves what was published');
 });
 
-test('a step with nothing to do fails with its own code, and publish never copies what was not released', async (t) => {
+test('find says release when one is pending and none when not, and publish never copies what was not released', async (t) => {
   const { data, plugin } = await ready(t);
 
   await plugin.ask('hook/work/perform', attempt('find', 1));
   const none = await plugin.until('i-1');
-  assert.equal(none.params.state, 'failed');
-  assert.equal(none.params.code, 'no-release');
+  assert.equal(none.params.state, 'reached');
+  assert.equal(none.params.outcome, 'none');
+  assert.equal(none.params.outputs, undefined);
 
   await plugin.ask('hook/work/perform', attempt('publish', 2, [REF]));
   assert.equal((await plugin.until('i-2')).params.code, 'not-released');

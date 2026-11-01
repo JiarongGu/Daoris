@@ -24,12 +24,13 @@ Each step is `performed`, `idempotent` and reconciled (`work/reconcile`), with t
 
 | Step | Takes | Does | Outputs |
 |---|---|---|---|
-| `find` | nothing | reads `pending/<revision>.json` (`{ "version", "notes" }`) for the attempt's revision and records it as found | `release: local-release/release@1:<version>` |
+| `find` | nothing | reads `pending/<revision>.json` (`{ "version", "notes" }`) for the attempt's revision and records it as found | `release: local-release/release@1:<version>` on `release`; none on `none` |
 | `release` | `release` | records the release, its tag name `v<version>` and its notes, in `releases/<version>.json` | the same `release` reference |
 | `publish` | `release` | copies the built package `incoming/<version>/` into `registry/<version>/`, whole or not at all | none |
 
-`find` only reaches or fails: with no pending release it fails `no-release`, which no retry changes, and
-what a graph does then is its own. `release` fails `unknown-release` for a version `find` never recorded;
+`find` is a decision (`outcomes`: `release` | `none`): it reaches with `release` and the output where a
+release is pending, and with `none` and no output where not. What a graph does on `none` is its own
+(a `when` wire on each route). `release` fails `unknown-release` for a version `find` never recorded;
 `publish` fails `not-released` for one not recorded as released and `no-package` for one with no built
 package.
 

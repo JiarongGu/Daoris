@@ -190,6 +190,19 @@ public static class PluginSteps
         if (Flag(row, "skippable", true) is not { } skippable) return Broken("skippable");
         if (Flag(row, "rejectable", false) is not { } rejectable) return Broken("rejectable");
 
+        var outcomes = new List<string>();
+        if (row.TryGetProperty("outcomes", out var declaredOutcomes))
+        {
+            if (declaredOutcomes.ValueKind != JsonValueKind.Array) return Broken("outcomes");
+            foreach (var outcome in declaredOutcomes.EnumerateArray())
+            {
+                if (outcome.ValueKind != JsonValueKind.String) return Broken("outcomes");
+                outcomes.Add(outcome.GetString()!);
+            }
+
+            if (NodeOutcomes.Problem(outcomes) is not null) return Broken("outcomes");
+        }
+
         NodePerform? perform = null;
         if (row.TryGetProperty("perform", out var declaredPerform))
         {
@@ -226,6 +239,7 @@ public static class PluginSteps
             Skippable = skippable,
             Rejectable = rejectable,
             Perform = perform,
+            Outcomes = outcomes,
         };
 
         // The one model's own checks, whose code is the field the words name.
@@ -305,6 +319,7 @@ public static class PluginSteps
         if (step.TimeoutSeconds is { } timeout) parts.Add($"timeout {timeout} seconds");
         if (!step.Skippable) parts.Add("not skippable");
         if (step.Rejectable) parts.Add("rejectable");
+        if (step.Outcomes.Count > 0) parts.Add($"decides {string.Join(" | ", step.Outcomes)}");
         if (step.Perform is { } perform)
         {
             var said = new List<string>();
@@ -335,6 +350,7 @@ public static class PluginSteps
         "timeoutSeconds" => $"step `{name}`'s `timeoutSeconds` must be a whole number of seconds, above 0.",
         "skippable" => $"step `{name}`'s `skippable` must be `true` or `false`: whether the person may pass it over.",
         "rejectable" => $"step `{name}`'s `rejectable` must be `true` or `false`: whether the person may reject it.",
+        "outcomes" => $"step `{name}`'s `outcomes` must list the routes it may reach with, {NodeOutcomes.Fewest} to {NodeOutcomes.Most} names in lowercase words joined by dashes, once each and never a state's name.",
         "perform" => $"step `{name}`'s `perform` is a `performed` step's alone: an object whose `point`, where it names one, is `work/perform`.",
         PluginStepCodes.Idempotent => $"step `{name}`'s `idempotent` must be `true` or `false`: whether the plugin deduplicates a redelivered key.",
         PluginStepCodes.Reconcile => $"step `{name}`'s `reconcile` must be `work/reconcile`, the point that answers what became of an attempt.",

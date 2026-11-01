@@ -77,6 +77,9 @@ public sealed record NodeAttempt(string Node, int Attempt, string Plugin, WorkPe
 
     /// <summary>When the person gave <see cref="Resolution"/>.</summary>
     public DateTimeOffset? ResolvedAt { get; init; }
+
+    /// <summary>The outcome the person named with <i>it happened</i> on a held decision (PLUGINSTEP1b); null on every other word and attempt.</summary>
+    public string? Decision { get; init; }
 }
 
 /// <summary>
