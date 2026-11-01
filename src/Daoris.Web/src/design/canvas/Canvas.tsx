@@ -126,6 +126,7 @@ export function Canvas({
   const focused = useRef<string | null>(null);
   const element = useRef<HTMLDivElement>(null);
   const settle = useRef(0);
+  const hitScale = useRef(1);
 
   const heightAt = (k: number, size: Size | null = worldRef.current) => Math.min(cap, Math.max(least, size === null ? least : size.h * k + 2 * pad));
   const viewport = (k: number): Size => ({ w: width ?? 0, h: heightAt(k) });
@@ -182,8 +183,8 @@ export function Canvas({
   // A gesture holds `will-change` only while it lasts: kept on, a zoomed text stays blurred at its old raster (trap 9).
   const gesture = (lasting: boolean) => {
     window.clearTimeout(settle.current);
-    if (lasting) setMoving(true);
-    else settle.current = window.setTimeout(() => setMoving(false), SETTLE_MS);
+    setMoving(true);
+    if (!lasting) settle.current = window.setTimeout(() => setMoving(false), SETTLE_MS);
   };
   useEffect(() => () => window.clearTimeout(settle.current), []);
 
@@ -351,12 +352,15 @@ export function Canvas({
   }
 
   const shift = translation(view);
+  // What an edited world's presses grow by below 100% (a ＋'s, `GapInsert`): held while a gesture lasts, since a custom property is
+  // inherited and every change of it styles the whole world again, so a zoom frame stays the compositor's.
+  if (!moving) hitScale.current = Math.min(1, Math.round(view.k * 20) / 20);
   const worldStyle = {
     transform: `translate(${shift.x}px, ${shift.y}px) scale(${view.k})`,
     transformOrigin: '0 0',
     minWidth: width,
     willChange: moving ? 'transform' : undefined,
-    '--canvas-k': view.k,
+    ...(options.mode === 'edit' ? { '--canvas-k': hitScale.current } : {}),
   } as CSSProperties;
   return (
     <div className="min-w-0" onKeyDown={onKeyDown}>

@@ -23,6 +23,8 @@ import * as place from '../src/agents/setup/PlacePage.stories';
 import * as setUpReview from '../src/agents/setup/PlaceReview.stories';
 import * as placeWorkflow from '../src/workflow/place/PlaceWorkflowView.stories';
 import * as editor from '../src/workflow/edit/WorkflowEditor.stories';
+import * as canvas from '../src/design/canvas/Canvas.stories';
+import { applyZoom } from '../src/design/zoom';
 
 // The measured-box checks' page (FLOWCHART1a1; the flowchart design §7, trap 3; UIFIT1, the UI/UX design §5's first trap):
 // one story, composed as Storybook composes it, with the project's decorators, the shipped tokens and catalogues, and drawn
@@ -69,11 +71,19 @@ const books: Record<string, Record<string, ComponentType>> = {
   placeWorkflow: composeStories(placeWorkflow) as unknown as Record<string, ComponentType>,
   // The workflow editor (FLOWCHART2b): its chart drawn at 80 and 39rem with a ＋ on each way, and the rail at 25rem.
   editor: composeStories(editor) as unknown as Record<string, ComponentType>,
+  // The canvas (CANVAS1a): a flow in the viewport at the three widths, the dense graph whole, and the synthetic worlds measured for frames.
+  canvas: composeStories(canvas) as unknown as Record<string, ComponentType>,
 };
 
-const [book = '', name = ''] = (new URLSearchParams(window.location.search).get('story') ?? '').split('/');
+const query = new URLSearchParams(window.location.search);
+// `?zoom=200` draws the story at a window zoom, the root's size as the window applies it (trap 12).
+const level = Number(query.get('zoom'));
+if (level > 0) applyZoom(level);
+const [book = '', name = ''] = (query.get('story') ?? '').split('/');
 const Story = books[book]?.[name];
 const root = document.getElementById('root')!;
+// The moment the story's props are handed to React, from which a drawing's first usable frame is timed (the canvas design §4.1).
+performance.mark('story-render');
 if (Story) createRoot(root).render(<Story />);
 else root.textContent = `No story ${book}/${name}. Stories: ${Object.entries(books).flatMap(([at, stories]) => Object.keys(stories).map((each) => `${at}/${each}`)).join(', ')}`;
 

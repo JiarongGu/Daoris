@@ -1,9 +1,12 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { createRef, useRef } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../../locales/i18n';
+import { Menu } from '../ui';
 import { zoomBy, zoomLevel, zoomWheel } from '../zoom';
 import { Canvas, type CanvasHandle, type CanvasOptions } from './Canvas';
 import type { WorldRead } from './worldBoxes';
@@ -239,6 +242,84 @@ describe('a drag', () => {
     fireEvent.pointerMove(region(), { clientX: 250, clientY: 100, pointerId: 2 });
     fireEvent.pointerUp(region(), { pointerId: 2 });
     expect(view()).toEqual({ ...start, x: start.x + 50 });
+  });
+});
+
+describe('a relayout', () => {
+  const moved = (read: WorldRead, id: string, dx: number, dy: number): WorldRead => ({
+    ...read, nodes: new Map([...read.nodes].map(([key, box]) => [key, key === id ? { ...box, x: box.x + dx, y: box.y + dy } : box])),
+  });
+  const onScreen = (id: string, read: WorldRead) => {
+    const box = read.nodes.get(id)!;
+    const { x, y, k } = view();
+    return { x: (box.x - x) * k, y: (box.y - y) * k };
+  };
+
+  it('keeps the focused node where it stood on screen once the person has moved the view (trap 7)', () => {
+    const handle = createRef<CanvasHandle>();
+    render(<Drawn handle={handle} />);
+    act(() => handle.current!.measured(WORLD));
+    wheel({ deltaY: 120 });
+    act(() => { (document.querySelector('[data-flow-node="b"]') as HTMLElement).focus({ preventScroll: true }); });
+    const before = onScreen('b', WORLD);
+    const after = moved(WORLD, 'b', -150, 200);
+    act(() => handle.current!.measured(after));
+    expect(onScreen('b', after)).toEqual(before);
+  });
+
+  it('leaves the view as it was when the same world is measured again, moved or not: a refresh refits nothing (trap 17)', () => {
+    const handle = createRef<CanvasHandle>();
+    render(<Drawn handle={handle} />);
+    act(() => handle.current!.measured(WORLD));
+    const opened = view();
+    act(() => handle.current!.measured(WORLD));
+    expect(view()).toEqual(opened);
+    wheel({ deltaY: 120 });
+    const panned = view();
+    act(() => handle.current!.measured({ ...WORLD, nodes: new Map(WORLD.nodes) }));
+    expect(view()).toEqual(panned);
+  });
+});
+
+describe('what stands in the world', () => {
+  it('opens a node\'s menu outside the transform, in the page\'s portal (trap 10)', async () => {
+    render(
+      <Tooltip.Provider>
+        <Canvas active options={OPTIONS} label="How the steps go on" width={800} rem={16} pane={{ current: null }} paneProps={{}} tools={null}
+          showTools={false} entry={null}>
+          <div data-flow-node="a">
+            <Menu.Root>
+              <Menu.Trigger asChild><button type="button">Its acts</button></Menu.Trigger>
+              <Menu.Content><Menu.Item onSelect={() => {}}>Copy</Menu.Item></Menu.Content>
+            </Menu.Root>
+          </div>
+        </Canvas>
+      </Tooltip.Provider>,
+    );
+    screen.getByRole('button', { name: 'Its acts' }).focus();
+    await user.keyboard('{Enter}');
+    const item = await screen.findByRole('menuitem', { name: 'Copy' });
+    expect(item.closest('[data-canvas-world]')).toBeNull();
+  });
+
+  it('is never the spike: no @xyflow import under src/ and no graph dependency in the web package (trap 21)', () => {
+    const sources = import.meta.glob('/src/**/*.{ts,tsx}', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
+    const own = Object.entries(sources).filter(([path]) => !path.endsWith('Canvas.test.tsx'));
+    expect(own.filter(([, text]) => /from ['"]@xyflow|import\(['"]@xyflow/.test(text)).map(([path]) => path)).toEqual([]);
+    const manifest = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf8')) as Record<string, Record<string, string> | undefined>;
+    const named = [...Object.keys(manifest.dependencies ?? {}), ...Object.keys(manifest.devDependencies ?? {})];
+    expect(named.filter((name) => /xyflow|reactflow|cytoscape|sigma|graphology|d3-zoom|elkjs|dagre/.test(name))).toEqual([]);
+  });
+
+  it('leaves no listener or observer behind across twenty opens and closes (trap 22)', () => {
+    const added = vi.spyOn(HTMLElement.prototype, 'addEventListener');
+    const removed = vi.spyOn(HTMLElement.prototype, 'removeEventListener');
+    for (let open = 0; open < 20; open += 1) render(<Drawn />).unmount();
+    // The region's own: React's root keeps its wheel listeners on the container a test renders into.
+    const wheels = (spy: typeof added) => spy.mock.calls
+      .filter(([type], index) => type === 'wheel' && (spy.mock.contexts[index] as HTMLElement).hasAttribute('data-flow-pane')).length;
+    expect(wheels(added)).toBeGreaterThan(0);
+    expect(wheels(removed)).toBe(wheels(added));
   });
 });
 

@@ -6,6 +6,12 @@ import { cn } from '../../lib/cn';
 /** What a ＋ says and does: its name, which says between which steps or at which outcome, and its press. */
 export type InsertOffer = { label: string; onPress: () => void };
 
+/**
+ * The press is 1.5rem on screen at every scale a canvas draws it at (CANVAS1a): it grows as the world shrinks (`--canvas-k`), and its
+ * negative margin keeps the 1.25rem footprint the ink places it by, so a zoom moves nothing. The circle it draws is the inner mark.
+ */
+const PRESS = 'size-[max(1.5rem,calc(1.5rem/var(--canvas-k,1)))] -m-[calc((max(1.5rem,calc(1.5rem/var(--canvas-k,1)))_-_1.25rem)/2)]';
+
 export function GapInsert({ offer, className }: { offer: InsertOffer; className?: string }) {
   return (
     <button
@@ -18,15 +24,17 @@ export function GapInsert({ offer, className }: { offer: InsertOffer; className?
         event.stopPropagation();
         offer.onPress();
       }}
-      className={cn(
-        'relative inline-flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full border border-line-strong bg-page p-0',
-        // Its press is 1.5rem on screen at every scale a canvas draws it at: the hit area grows as the world shrinks, never its box.
-        "before:absolute before:content-[''] before:-inset-[max(2px,calc((1.5rem/var(--canvas-k,1)_-_1.25rem)/2))]",
-        'text-small leading-none text-ink-soft hover:border-ink-soft hover:text-ink',
-        className,
-      )}
+      className={cn('group inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0', PRESS, className)}
     >
-      <span aria-hidden>＋</span>
+      <span
+        aria-hidden
+        className={cn(
+          'inline-flex size-5 items-center justify-center rounded-full border border-line-strong bg-page',
+          'text-small leading-none text-ink-soft group-hover:border-ink-soft group-hover:text-ink',
+        )}
+      >
+        ＋
+      </span>
     </button>
   );
 }
