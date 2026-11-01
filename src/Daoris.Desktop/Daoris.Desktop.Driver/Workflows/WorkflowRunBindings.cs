@@ -125,9 +125,22 @@ public static class WorkflowRunBindings
         // FABRIC-PIPELINE1a (the pipeline design §2.1): a route naming a verification pipeline is judged at its bind, kept with why.
         if (found.Read.Verifies) return binding with { Version = newest.Version, Problem = WorkflowSelection.VerificationElsewhere(selected.Workflow) };
         // A graph version (schema 2) binds its graph's digest (FABRIC-GRAPH1b); it is held as unrun where the process reads it.
-        return newest.Steps is null && newest.Graph is null
-            ? binding with { Version = newest.Version, Problem = $"`{selected.Workflow}` v{newest.Version} cannot be read here: {newest.Problem}" }
-            : binding with { Version = newest.Version, Digest = newest.Digest };
+        if (newest.Steps is null && newest.Graph is null)
+        {
+            return binding with { Version = newest.Version, Problem = $"`{selected.Workflow}` v{newest.Version} cannot be read here: {newest.Problem}" };
+        }
+
+        // LANDNODE1h (the land node design §4): a `land` the version leaves open is resolved over the repository's rule now, once, and kept.
+        var resolved = newest.Graph?.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land) is { } land
+            ? LandNodes.Resolve(land, LandingRules.Effective(config, repository, workspace).Rule)
+            : LandNodes.NoResolved;
+        var unplugged = newest.Graph?.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land) is { } open && !open.Options.ContainsKey("plugin")
+            && NodeOptions.Text(open, "method") is LandNodes.Push or LandNodes.PullRequest && !resolved.ContainsKey("plugin");
+        return binding with
+        {
+            Version = newest.Version, Digest = newest.Digest, Land = resolved,
+            Problem = unplugged ? $"`{selected.Workflow}` v{newest.Version} lands by a plugin, and neither it nor `{repository}`'s landing rule names one." : null,
+        };
     }
 
     /// <summary>

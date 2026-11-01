@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
@@ -29,6 +30,47 @@ public static class LandNodes
 
     private static readonly Regex Placeholder = new(@"\{([^{}]*)\}", RegexOptions.CultureInvariant);
 
+    /// <summary>The name a ticket key takes among a run's resolved options: no node option, since the rule's is all there is of it.</summary>
+    public const string KeyOption = "key";
+
+    /// <summary>No option resolved: one instance, so a binding with none reads equal to one that never had any.</summary>
+    public static readonly IReadOnlyDictionary<string, string> NoResolved = new Dictionary<string, string>();
+
+    /// <summary>
+    /// The options a version's <paramref name="land"/> leaves open, resolved over the repository's <paramref name="rule"/> (LANDNODE1h; the land
+    /// node design §4): the <c>pattern</c> and the <c>plugin</c> a branch rule names, and the rule's ticket key where the pattern says
+    /// <c>{ticket}</c>. A merge has none to resolve, and an integrate no plugin. Called once, at the run's bind, and kept; a written option stands.
+    /// </summary>
+    public static IReadOnlyDictionary<string, string> Resolve(NodeDeclaration land, LandingRule rule)
+    {
+        var method = Written(land, "method");
+        if (method == Merge || rule.Form != LandingForm.Branch) return NoResolved;
+        var resolved = new Dictionary<string, string>(StringComparer.Ordinal);
+        var pattern = Written(land, "pattern");
+        if (pattern is null && rule.Pattern is { } fromRule) resolved["pattern"] = pattern = fromRule;
+        if (method != Integrate && Written(land, "plugin") is null && rule.Plugin is { } plugin) resolved["plugin"] = plugin;
+        if (pattern?.Contains("{ticket}", StringComparison.Ordinal) == true && rule.Key is { } key) resolved[KeyOption] = key;
+        return resolved.Count == 0 ? NoResolved : resolved;
+    }
+
+    /// <summary>
+    /// A <c>land</c> node's options as the landing step they stand for reads them (<c>form</c>, <c>accept</c>, <c>pattern</c>, <c>plugin</c>), the
+    /// open ones taken from <paramref name="resolved"/>; an option left out stays left out. JSON texts, as a node's options are.
+    /// </summary>
+    public static IReadOnlyDictionary<string, string> AsLanding(NodeDeclaration land, IReadOnlyDictionary<string, string>? resolved)
+    {
+        var options = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (Written(land, "method") is { } method) options["form"] = JsonSerializer.Serialize(method == Merge ? LandingForm.Merge : LandingForm.Branch);
+        if (land.Options.TryGetValue("accept", out var accept)) options["accept"] = accept;
+        foreach (var name in new[] { "pattern", "plugin" })
+        {
+            if (land.Options.TryGetValue(name, out var written)) options[name] = written;
+            else if (resolved is not null && resolved.TryGetValue(name, out var bound)) options[name] = JsonSerializer.Serialize(bound);
+        }
+
+        return options;
+    }
+
     /// <summary>The first option that does not hold, by its name, or null.</summary>
     public static string? Problem(NodeDeclaration node)
     {
@@ -47,7 +89,8 @@ public static class LandNodes
         var plugin = Written(node, "plugin");
         if (node.Options.ContainsKey("plugin") && (plugin is null || (plugin != NoPlugin && !PluginIds.IsId(plugin)))) return "plugin";
         var named = plugin is not null && plugin != NoPlugin;
-        if (method is Push or PullRequest && node.Options.ContainsKey("method") && !named) return "plugin";
+        // A plugin left open is the repository's, resolved at the bind (LANDNODE1h), which refuses a run whose rule names none; `none` is refused here.
+        if (method is Push or PullRequest && plugin == NoPlugin) return "plugin";
         if (method is Merge or Integrate && named) return "plugin";
 
         if (node.Options.TryGetValue("squash", out var squash))

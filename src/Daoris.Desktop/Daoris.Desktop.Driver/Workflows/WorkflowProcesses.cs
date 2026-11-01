@@ -122,7 +122,7 @@ public static class WorkflowProcesses
     {
         var claimed = graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Claimed)?.Options ?? new Dictionary<string, string>();
         held = held with { Claimed = claimed, Graph = graph };
-        var (steps, problem) = WorkflowNamed.GateSteps(graph, number, held.Landing.Rule);
+        var (steps, problem) = WorkflowNamed.GateSteps(graph, number, held.Landing.Rule, binding.Land);
         if (steps is null) return held with { Problem = $"`{binding.Workflow}` v{number} cannot be read here: {problem}" };
         if (!steps.Any(step => step.Kind == WorkflowKinds.Landing))
         {

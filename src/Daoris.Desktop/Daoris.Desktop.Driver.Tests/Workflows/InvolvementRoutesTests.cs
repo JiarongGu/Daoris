@@ -87,6 +87,20 @@ public sealed class InvolvementRoutesTests
         Assert.True(lowered == string.Join("; ", said), $"{name}: {string.Join("; ", said)}");
     }
 
+    /// <summary>LANDNODE1h: a <c>land</c> moved from <c>you</c> to <c>automatic</c> lowers the person's part, as a landing's press does.</summary>
+    [Fact]
+    public void A_land_moved_from_you_to_automatic_lowers_and_the_other_way_lowers_nothing()
+    {
+        static NodeGraph Land(string accept) => NodeGraphs.Read($$$"""
+            {"schemaVersion":2,"entries":["work"],"end":"landing","nodes":[{"id":"work","kind":"claimed","version":1,"reach":"observed"},
+              {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"branch","accept":"{{{accept}}}"}}],
+             "wires":[{"id":"a","kind":"after","from":"work","to":"landing"}]}
+            """).Graph!;
+
+        Assert.Equal(["it lands with no press of yours"], Involvement.Lowers(Involvement.StepsOf(Land("automatic")), Involvement.StepsOf(Land("you"))));
+        Assert.Empty(Involvement.Lowers(Involvement.StepsOf(Land("you")), Involvement.StepsOf(Land("automatic"))));
+    }
+
     /// <summary>D157 point 10: an agent's choice that lowers the person's part is kept as a proposal; the person's press applies it.</summary>
     [Fact]
     public void An_agents_choice_that_lowers_is_kept_as_a_proposal_and_the_persons_press_applies_it()

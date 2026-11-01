@@ -447,6 +447,12 @@ internal sealed class TreeLands(
             (delivering, acceptedBy) = (read, read.Accepted);
         }
 
+        // LANDNODE1h: standing automatic authority is judged again before the first effect, as the rule's switch is read again below.
+        if (delivering?.Unauthorized() is { } revoked)
+        {
+            return new(false, $"Nothing was landed: {revoked}; your Accept lands it.") { Refusal = AutoLandingCode.Off };
+        }
+
         // LANDNODE1b2: the preparation written ahead of all the landing judges and makes, so each refusal from here withdraws it in its words;
         // LANDNODE1b3: one done before a restart is not written again, and the landing goes on from its next phase.
         if (delivering is { Next: DeliveryPhases.Prepared } && delivering.Begin(DeliveryPhases.Prepared, delivering.Preparing) is { } notBegun)

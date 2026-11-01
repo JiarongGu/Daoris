@@ -281,6 +281,74 @@ public static class WorkflowWords
         return steps;
     }
 
+    /// <summary>
+    /// Current copied into a graph with its landing written out as a <c>land</c> node (LANDNODE1h; the land node design §4, <i>Save as a
+    /// workflow…</i>): the rule's form, press, pattern and plugin as the node's options, and the tail its method brings. Current never derives
+    /// <c>push</c>, so a plugin makes a <c>pull-request</c>, and an <c>integrate</c> step an <c>integrate</c>. The opinion and the look are
+    /// nodes wired straight into the landing (D157 §2.2), the opinion never into the look; the work's requests are held before them.
+    /// </summary>
+    public static JsonObject GraphOfCurrent(CurrentWorkflow current, bool opinion, bool look)
+    {
+        var steps = WorkflowPresets.WithGates(StepsOfCurrent(current), opinion, look);
+        var nodes = new JsonArray();
+        var wires = new JsonArray();
+        void Node(string id, string kind, string reach, JsonObject? options = null)
+        {
+            var node = new JsonObject { ["id"] = id, ["kind"] = kind, ["version"] = 1, ["reach"] = reach };
+            if (options is { Count: > 0 }) node["options"] = options;
+            nodes.Add(node);
+        }
+
+        void Wire(string from, string to) => wires.Add(new JsonObject { ["id"] = $"w{wires.Count + 1}", ["kind"] = "after", ["from"] = from, ["to"] = to });
+        JsonObject Options(JsonObject step) => new([.. step.Where(each => each.Key is not ("id" or "kind") && each.Value is not null).Select(each => KeyValuePair.Create(each.Key, each.Value!.DeepClone()))]);
+
+        Node("work", NodeKinds.Claimed, "observed", Options(steps.First(step => (string?)step!["kind"] == WorkflowKinds.Work)!.AsObject()));
+        Node("requests", NodeKinds.WorkRequests, "observed");
+        var gates = steps.Select(step => step!.AsObject()).Where(step => (string?)step["kind"] is WorkflowKinds.Opinion or WorkflowKinds.Look).ToList();
+        foreach (var gate in gates) Node((string)gate["id"]!, (string)gate["kind"]!, "observed", Options(gate));
+        var landing = steps.First(step => (string?)step!["kind"] == WorkflowKinds.Landing)!.AsObject();
+        var integrate = current.Steps.FirstOrDefault(step => step.Kind == NodeKinds.Integrate);
+        var plugin = (string?)landing["plugin"];
+        var method = (string?)landing["form"] == LandingForm.Merge ? LandNodes.Merge
+            : integrate is not null ? LandNodes.Integrate
+            : plugin is not null && plugin != LandNodes.NoPlugin ? LandNodes.PullRequest
+            : LandNodes.Branch;
+        var land = new JsonObject { ["method"] = method, ["accept"] = (string?)landing["accept"] };
+        if (method != LandNodes.Merge && (string?)landing["pattern"] is { } pattern) land["pattern"] = pattern;
+        if (method is LandNodes.PullRequest or LandNodes.Branch && plugin is not null) land["plugin"] = plugin;
+        Node("landing", NodeKinds.Land, "performed", land);
+
+        Wire("work", "requests");
+        foreach (var gate in gates.Select(gate => (string)gate["id"]!))
+        {
+            Wire("requests", gate);
+            Wire(gate, "landing");
+        }
+
+        if (gates.Count == 0) Wire("requests", "landing");
+        var end = "landing";
+        if (method == LandNodes.PullRequest)
+        {
+            Node("pushed", NodeKinds.Pushed, "observed");
+            Node("pull-request", NodeKinds.PullRequest, "observed");
+            end = "pull-request";
+            Wire("landing", "pushed");
+            Wire("pushed", "pull-request");
+        }
+        else if (method == LandNodes.Integrate)
+        {
+            var request = integrate!.Settings.FirstOrDefault(setting => setting.Name == "request")?.Value as string ?? LandingIntegrate.Owner;
+            var conflicts = integrate.Settings.FirstOrDefault(setting => setting.Name == "conflicts")?.Value as string ?? LandingIntegrate.Session;
+            Node("integrate", NodeKinds.Integrate, "waited", new JsonObject { ["request"] = request, ["conflicts"] = conflicts });
+            Node("line", NodeKinds.Line, "observed");
+            end = "line";
+            Wire("landing", "integrate");
+            Wire("integrate", "line");
+        }
+
+        return new JsonObject { ["schemaVersion"] = 2, ["entries"] = new JsonArray("work"), ["end"] = end, ["nodes"] = nodes, ["wires"] = wires };
+    }
+
     private static JsonArray Names(object? value) => new([.. (value as IEnumerable<string> ?? []).Select(name => (JsonNode?)JsonValue.Create(name))]);
 
     private static string Count(int count, string what) => $"{count} {what}{(count == 1 ? "" : "s")}";
