@@ -50,6 +50,27 @@ public static class PluginToolSetUp
         }
     }
 
+    /// <summary>
+    /// Each declared tool found and checked, on the person's press of <i>Check</i>: the plugin page's read of where its tools stand.
+    /// Never at a look (§7.2); a check may reach the platform or read another tool's sign-in.
+    /// </summary>
+    public static async Task<IReadOnlyList<PluginToolFound>> CheckAsync(string home, IReadOnlyList<PluginTool> tools, CancellationToken ct = default)
+    {
+        var scratch = PluginKitFiles.ScratchIn(PluginTrials.TrialsOf(home));
+        try
+        {
+            var root = Path.Combine(scratch, "root");
+            PluginFolders.Make(root);
+            var found = new List<PluginToolFound>();
+            foreach (var tool in tools) found.Add(await PluginToolChecks.CheckAsync(home, tool, root, ct).ConfigureAwait(false));
+            return found;
+        }
+        finally
+        {
+            PluginKitFiles.Remove(scratch);
+        }
+    }
+
     /// <param name="check">The check's number, from 1, in the manifest's order.</param>
     /// <param name="path">The <c>PATH</c> the system's tools are found on; null for this process's own.</param>
     /// <param name="console">What starts the window.</param>
