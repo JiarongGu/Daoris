@@ -22578,3 +22578,6 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 ## DEFAULTCONFIG1d — a place's page says which default it follows and what differs (2026-11-01, FABRIC2)
 
 **Outcome** 2026-11-01: a place's page names the shipped default its workflow follows (en and zh word per default id in `agents.json`) and the options it differs in, read from `PlaceValues.Follows` through `PlaceRow.values.follows`. Test `SetupPlaces.test.tsx`; stories show it through the fixtures.
+## DECIDE1d — a declared output is required only on the outcomes that carry it, and the help doors for this wave's acts (2026-11-01, FABRIC2)
+
+**Outcome** 2026-11-01: a decision's `outputsOn` (graph node and manifest step, `NodeDeclaration.OutputsOn`) names the outcomes that carry an output; `no-output` asks for it on those alone, so local-release's `find` and the release default reach `none` with no release, and a `data` wire into a step another outcome's route can start is refused `uncarried-output`. The room names `daoris-driver workflow changes` (exempt, as skip and stop) and `daoris driver role default --all`. Detail: D173's DECIDE1d note, the rows of `graph-problems.json`, the commits.
