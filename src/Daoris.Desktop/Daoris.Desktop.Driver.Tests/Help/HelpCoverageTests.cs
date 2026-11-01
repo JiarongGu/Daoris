@@ -364,6 +364,13 @@ public sealed partial class HelpCoverageTests
     private static readonly Door PlaceDoor = new("setup", "place");
 
     /// <summary>
+    /// FLOWCHART2e (D223): the workflow editor's open draft, which Ask Daoris is told beside the person's words (FLOWCHART2d), is the
+    /// <c>workflow</c> kind's <c>draft</c> door: a change to the draft as a card, whose Apply opens the editor's place and saves and chooses
+    /// nothing. The editor's own <i>Save</i> stays <c>workflow edit</c>'s twin; its opener is FLOWCHART2g's.
+    /// </summary>
+    private static readonly Door DraftDoor = new("workflow", "draft");
+
+    /// <summary>
     /// TRACE1's <c>daoris-driver trace</c> (D143), a verb of the headless host: exempt, since it reads the records back to an ask
     /// and changes nothing, as <c>driver list</c> is (D110 §4). A screen's door to the same read is a row of its own.
     /// </summary>
@@ -1329,6 +1336,7 @@ public sealed partial class HelpCoverageTests
             .Append(PartnerAskDoor)
             .Append(TraceDoor)
             .Append(PlaceDoor)
+            .Append(DraftDoor)
             .Append(WorkflowRunDoor)
             .Append(WiringDoor)
             .Append(SpaceDoor)
@@ -1738,6 +1746,18 @@ public sealed partial class HelpCoverageTests
         Assert.Contains("place <repository>… --preset <id> [--with opinion,look,adoption] [--what-it-builds <kind>] [--drive] --plan", DriverCommand.Usage);
         Assert.Contains(PlaceDoor.Name, HelpProposalKinds.Find(PlaceDoor.Kind)!.Doors);
         Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver place <repository>… --preset <id>", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// FLOWCHART2e: the open draft is the <c>workflow</c> kind's <c>draft</c> door, beside the doors that save and choose, which stay, and the
+    /// room names the door it is told to propose against.
+    /// </summary>
+    [Fact]
+    public void The_editors_open_draft_is_the_workflow_kinds_draft_door_and_the_room_says_it()
+    {
+        Assert.Equal(["new", "edit", "use", DraftDoor.Name], HelpProposalKinds.Find(DraftDoor.Kind)!.Doors);
+        var room = new HelpRoomMayPropose().Render(HelpRoomFixture.Machine);
+        Assert.Contains("send `draft` its fingerprint and `graph` the whole changed draft", room);
     }
 
     /// <summary>

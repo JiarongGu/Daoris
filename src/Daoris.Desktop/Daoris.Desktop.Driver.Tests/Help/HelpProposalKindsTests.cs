@@ -50,6 +50,8 @@ public sealed partial class HelpProposalKindsTests
         ["new"] = """WriteNull("base")""",
         ["edit"] = """WriteNumber("base",""",
         ["use"] = """WriteBoolean("choose",""",
+        // FLOWCHART2e: the draft door from the draft's fingerprint, written only with one.
+        ["draft"] = """WriteString("draft",""",
     };
 
     /// <summary>WORKFLOW1h-name: the workflow file's optional <c>name</c> is read by the judge, so its twin is held to writing it.</summary>

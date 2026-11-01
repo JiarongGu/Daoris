@@ -72,6 +72,49 @@ public sealed record WorkflowPalette(IReadOnlyList<PaletteKind> Kinds, IReadOnly
     }
 
     /// <summary>
+    /// The palette as Ask Daoris is handed it beside an open draft (FLOWCHART2d; the flowchart design §8.3), one line a kind: each built-in
+    /// kind's reach, its options with their choices and the ways that may leave it, then each plugin step's version, reach, outcomes,
+    /// inputs, outputs (and the outcomes that carry each), evidence and ways. Agent-facing English, never shown.
+    /// </summary>
+    public string Compact()
+    {
+        static string Names(IEnumerable<string> names) => string.Join(", ", names.Select(name => $"`{name}`"));
+        static string Ports(IReadOnlyDictionary<string, string> ports) => string.Join(", ", ports.Select(port => $"`{port.Key}` ({port.Value})"));
+        var text = new System.Text.StringBuilder("Built-in kinds:\n");
+        foreach (var kind in Kinds)
+        {
+            var options = kind.Options.Select(option =>
+                $"`{option.Name}` ({option.Type}{(option.Choices.Count > 0 ? $": {string.Join("|", option.Choices)}" : "")}{(option.Required ? ", required" : "")})");
+            text.Append($"- `{kind.Kind}`: {kind.Reach}");
+            if (kind.Options.Count > 0) text.Append($"; options {string.Join(", ", options)}");
+            text.Append($"; ways on {string.Join(", ", kind.Leaves)}{(kind.MayEnd ? "; may end the work" : "")}\n");
+        }
+
+        if (Plugins.Count > 0) text.Append("Plugins' steps:\n");
+        foreach (var step in Plugins.SelectMany(plugin => plugin.Steps))
+        {
+            text.Append($"- `{step.Kind}` v{step.Version}: {step.Reach}");
+            if (step.Outcomes.Count > 0) text.Append($"; outcomes {Names(step.Outcomes)}");
+            if (step.Inputs.Count > 0) text.Append($"; inputs {Ports(step.Inputs)}");
+            if (step.Outputs.Count > 0)
+            {
+                text.Append("; outputs ").Append(string.Join(", ", step.Outputs.Select(port => step.OutputsOn.TryGetValue(port.Key, out var on)
+                    ? $"`{port.Key}` ({port.Value}, on {Names(on)})"
+                    : $"`{port.Key}` ({port.Value})")));
+            }
+
+            if (step.Evidence is { } evidence) text.Append($"; evidence {evidence}");
+            text.Append($"; ways on {string.Join(", ", step.Leaves)}\n");
+        }
+
+        return text.ToString().TrimEnd('\n');
+    }
+
+    /// <summary>The digest a compact palette is told under: its first 16 hex digits of SHA-256, prefixed <c>p1-</c>.</summary>
+    public static string DigestOf(string compact) =>
+        "p1-" + Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(compact)))[..16].ToLowerInvariant();
+
+    /// <summary>
     /// The wire kinds a node with <paramref name="authority"/> may be the source of, as the graph rules judge a wire's source: a failure's
     /// and a rejection's path where something can fail or reject it, a decision's route from a decision, and a way back where it has any of these.
     /// </summary>

@@ -32,6 +32,7 @@ import { publishedCounts, publishedItems } from './published';
 import { PublishedList } from './PublishedList';
 import type { StarterDoor } from './starters';
 import { type HelpWhere, prefaceOf } from './where';
+import { draftToTell, draftWhere, openDraftNow } from './openDraft';
 import { logEvent } from '../bridge/shell';
 import { accountNames } from '../work/accountNames';
 import { namer } from '../settings/accounts/namer';
@@ -337,8 +338,10 @@ export function useAskConversation(
   // wait in the box meanwhile, and a new conversation from an earlier one's words waits by that one's id.
   const [choosing, setChoosing] = useState<{ from?: string; unknown?: boolean } | null>(null);
 
-  // The last preface each conversation was handed, so an unchanged screen is not said again.
+  // The last preface each conversation was handed, so an unchanged screen is not said again; and the fingerprint of the last workflow
+  // draft it was told (FLOWCHART2d), so an unchanged draft is not sent again.
   const told = useRef(new Map<string, string>());
+  const toldDraft = useRef(new Map<string, string>());
   /**
    * The person's words to one conversation. Words to the one running are shown at once, as sending; first words are shown as
    * opening it already, and `lost` lets them go. 🔴 A send the page stopped waiting on (the bridge's TIMEOUT) may still be taken
@@ -346,14 +349,17 @@ export function useAskConversation(
    * (SENDLOST1). They settle by the conversation's own record or the list's next read.
    */
   const deliver = (id: string, text: string, files: File[], lost?: () => void) => {
-    const now = where ? prefaceOf(where) : undefined;
+    // The draft open as these words are sent: what the conversation is told of it is frozen with them.
+    const open = openDraftNow();
+    const now = where ? prefaceOf({ ...where, draft: draftWhere(open) }) : undefined;
     const preface = now && told.current.get(id) !== now ? now : undefined;
+    const draft = draftToTell(open, toldDraft.current.get(id));
     const n = ++sends.current;
     const words: ChatMessage = { text, files: files.map((file) => file.name) };
     const at = Date.now();
     if (!lost) setSent((all) => [...all, { n, words, files, session: id, at, late: false }]);
     const done = () => setSent((all) => all.filter((each) => each.n !== n));
-    send.mutate({ id, text, files, ...(preface ? { preface } : {}) }, {
+    send.mutate({ id, text, files, ...(preface ? { preface } : {}), ...(draft ? { draft } : {}) }, {
       onSuccess: (answer) => {
         done();
         if (!answer.sent) {
@@ -362,6 +368,7 @@ export function useAskConversation(
           return;
         }
         if (preface) told.current.set(id, preface);
+        if (draft) toldDraft.current.set(id, draft.fingerprint);
         // A conversation the history has not listed yet is listed once it is spoken in, and named by its first question: the
         // word said declares the history, which the state hub asks again (HELPHISTORYHUB1, D169).
         // Kept on an ended record (ASKHIST1): the same conversation goes on with them once the driver takes them up, which

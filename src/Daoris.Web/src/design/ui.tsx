@@ -13,11 +13,11 @@ import {
   Archive, ArchiveRestore, ArrowDown, ArrowDownToLine, ArrowUpToLine, ArrowLeft, ArrowLeftRight, ArrowUp, Bell, BookOpen, Bot, Brain, Check, ChevronDown, ChevronRight, ChevronUp,
   CircleDot, CircleHelp, ClipboardPaste, Cloud, CloudOff, Compass, Copy, Ellipsis, Eye, FileDiff, FilePen, FileText, Flag, FolderOpen, Gauge, GitBranch,
   GitMerge, GitPullRequest, Globe, Hand, History, Inbox, Info, Pin, ScanEye,
-  Keyboard, KeyRound, Languages, LayoutDashboard, LayoutGrid, Layers, Link, ListTodo, LogIn, Maximize2, Menu as MenuGlyph, Minimize2,
+  Keyboard, KeyRound, Languages, LayoutDashboard, LayoutGrid, Layers, Link, ListChecks, ListTodo, LogIn, Maximize2, Menu as MenuGlyph, Minimize2,
   Monitor, Network,
-  PanelBottom, PanelLeft, PanelLeftClose, PanelLeftOpen, PanelRight, PanelRightClose, Paperclip, Pause, Play, Plug, Plus, Redo2, Reply,
-  RotateCw, Scissors, Search, Settings, Shield, Square, SquareArrowOutUpRight, SquareTerminal, Terminal, TextSelect, Trash2, TriangleAlert,
-  Undo2, Users, Workflow, Wrench, WrapText, X, ZoomIn, ZoomOut,
+  PanelBottom, PanelLeft, PanelLeftClose, PanelLeftOpen, PanelRight, PanelRightClose, Paperclip, Pause, Play, Plug, Plus, Puzzle, Redo2, Reply,
+  RotateCw, Route, Scissors, Search, Settings, Shield, Split, Square, SquareArrowOutUpRight, SquareTerminal, Terminal, TextSelect, Trash2, TriangleAlert,
+  Undo2, UserCheck, Users, Workflow, Wrench, WrapText, X, ZoomIn, ZoomOut,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { type Quest, SESSION_ACTIVE, type SessionState } from '../data/api';
@@ -157,6 +157,12 @@ const ICONS = {
   stepFinished: Flag,
   // A way on that leads nowhere, drawn and never saved (SETUPUX1n).
   stepNoFurther: CircleDot,
+  // The rest of the step kinds' glyphs (FLOWCHART2a): a decision with its outcomes, a plugin's step, the checks, the line, your review.
+  stepDecision: Split,
+  stepPlugin: Puzzle,
+  stepCheck: ListChecks,
+  stepLine: Route,
+  stepReview: UserCheck,
   // Where a piece of work stands in its workflow (WORKFLOW1c, design §7): the session's side bar view and the doors into it.
   workflow: Workflow,
   // Who is at work on a session (COWORKVIEW1a, the cowork view design §5.1): the side bar view of its parts and subagents.

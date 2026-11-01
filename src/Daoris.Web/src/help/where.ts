@@ -34,6 +34,11 @@ export type HelpWhere = {
    * repository's or a workspace's or an agent's name, a plugin's id. `closed` is a choice that is done, still shown.
    */
   item?: { kind: ItemKind; id: string; closed?: boolean } | null;
+  /**
+   * A workflow draft open in the editor (FLOWCHART2d), as `draftWhere` names it: its workflow (none for a new one), its place, the version
+   * it was opened from, how many steps, how many problems, the step selected. The draft itself goes beside the words.
+   */
+  draft?: { workflow: string | null; place: string; base: number | null; steps: number; problems: number; selected: string | null } | null;
 };
 
 /** The kinds an item may be, one row each; a view that gains items (PLUGUI1h's offers) adds a row, not a shape. */
@@ -121,6 +126,14 @@ export function prefaceOf(where: HelpWhere): string {
 
   if (where.item) {
     parts.push(`looking at ${where.item.kind} \`${where.item.id}\`${where.item.closed ? ', which is closed' : ''}`);
+  }
+
+  // Said before the session and the layout, so the driver's bound on a preface never cuts it.
+  const draft = where.draft;
+  if (draft) {
+    const of = draft.workflow ? `\`${draft.workflow}\`${draft.base ? ` from v${draft.base}` : ''}` : 'a new workflow';
+    const open = [`${draft.steps} steps`, ...(draft.problems > 0 ? [`${draft.problems} to put right`] : []), ...(draft.selected ? [`step \`${draft.selected}\` selected`] : [])];
+    parts.push(`editing a workflow draft of ${of} for \`${draft.place}\`, not saved: ${open.join(', ')}; the draft is told beside their words`);
   }
 
   const session = where.view === 'sessions' ? where.session : null;
