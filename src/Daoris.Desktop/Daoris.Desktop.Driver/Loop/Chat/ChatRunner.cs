@@ -747,6 +747,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             _service, _events, sessionId, resolved.Name, selection, from is { Why: HandOverWhy.Limit } ? LimitCarried(from.Session) : null);
         // Where a later choice of Chat's order ran, its actor line says which and why (D205 §4.6), in the local conversation only.
         if (chosen is not null) RotatedOpening.SayActor(_events, sessionId, "chat", chosen, passes);
+        RotatedOpening.SayStaff(_events, _harnesses.Staff(), sessionId, selection.Number, "chat");
 
         // MODELROLE1d2 (D205 §3.5(b)): a new conversation that asks its actor's entry on the protocol door owns its attempt from here until it
         // is dispatched or exhausted; a replacement goes on under the pending start it opens for, its issued id the press's.
@@ -981,6 +982,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         RotatedOpening.Say(_service, _events, sessionId, resolved.Name, selection, LimitCarried(carries));
         // Where a later choice of Ask Daoris's order ran, its actor line says which and why (D205 §4.6).
         if (chosen is not null) RotatedOpening.SayActor(_events, sessionId, "ask-daoris", chosen, passes);
+        RotatedOpening.SayStaff(_events, _harnesses.Staff(), sessionId, selection.Number, "ask-daoris");
 
         // MODELROLE1d2 (D205 §3.5(b)): owned from its placement until dispatched or exhausted; its run says how a replacement runs.
         if (pending is not null)
@@ -1050,7 +1052,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
                 actor, config, _harnesses, _harnesses.Adapters, _passed, order: order, catalogue: RoleCatalog.ReadHome(_home), place: new RolePlace(workspace))
             {
                 Workspace = workspace, Kind = StartKind.Conversation, Subject = $"conversation:{actor}:{workspace}:{profile}", Log = log,
-                Pinned = profile, WalksOne = true,
+                Pinned = profile, WalksOne = true, Staff = _harnesses.StaffFor(_home), OwnOrder = true,
                 Gate = (_, adapter) => !adapter.Interactive ? (StartPasses.Unavailable, $"`{adapter.Name}` does not hold conversations")
                     : actor == "ask-daoris" && HelpAccess.For(config.HelpMode, adapter).Refusal is { } unposed ? (StartPasses.NoPosture, unposed)
                     : null,

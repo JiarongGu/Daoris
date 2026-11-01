@@ -49,6 +49,20 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
 
     private static string AccountKey(string owner, string? profile) => $"{owner}/{profile ?? ""}";
 
+    private IStartLedger? _startLedger;
+
+    /// <summary>
+    /// The ledger this process's starts are written to (<c>StaffFor</c>, STAFFPOLICY1c): held here, beside the roster, because
+    /// <see cref="Release"/> gives a refused start's reservation back with its account count. Set once, by the roles above this layer.
+    /// </summary>
+    public IStartLedger StartLedger(Func<IStartLedger> make)
+    {
+        lock (_load) return _startLedger ??= make();
+    }
+
+    /// <summary>The ledger when one was made; null before any start asked for it.</summary>
+    public IStartLedger? StartLedgerMade => _startLedger;
+
     /// <summary>
     /// Hold further starts on an account its provider refused (AGT3b), with the sentence that says
     /// why and what fixes it.
@@ -1981,6 +1995,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// <param name="session">The record it opened, or null where none opened.</param>
     public void Release(long number, string? session = null)
     {
+        if (number > 0) _startLedger?.ReleaseBound(number);
         lock (_load)
         {
             if (number > 0) _chosen.RemoveAll(start => start.Number == number);

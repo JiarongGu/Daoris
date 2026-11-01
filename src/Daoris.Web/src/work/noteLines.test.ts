@@ -192,6 +192,12 @@ describe('noteLines', () => {
       expect(noteLines(zh, { parts: design }, 'zh')).toEqual([{ kind: 'said', text: '设计工作：按Designer的顺序运行。' }]);
     });
 
+    it('words the policy line where a role’s policy chose the choice that ran', () => {
+      const chosen = [coded('opening.chosen', 'Build’s policy chose this: …', { actor: 'Build', said: 'by weight: 0 of the last 2 were choice 2, aim 1 in 4' })];
+      expect(noteLines(t, { parts: chosen }, 'en')).toEqual([{ kind: 'said', text: "Build's policy chose this: by weight: 0 of the last 2 were choice 2, aim 1 in 4." }]);
+      expect(noteLines(zh, { parts: chosen }, 'zh')).toEqual([{ kind: 'said', text: 'Build的策略选择了这一项：by weight: 0 of the last 2 were choice 2, aim 1 in 4。' }]);
+    });
+
     it('words the actor line where a later choice ran', () => {
       const actor = [
         coded('opening.actor', 'Ran as Build’s choice 2, …', {

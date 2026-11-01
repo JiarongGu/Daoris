@@ -124,7 +124,7 @@ public static class ChoiceRoutes
         ("driver keep <kind> …", Keep, "the Disk space card's rule of that kind"),
         ("driver actor <actor> …", Actor, "an actor's order (D205 §9.4)"),
         ("driver adapter <name>", Actor, "Build's order, one choice at account default (D205 §6.4)"),
-        ("driver role set|remove|default <id> …", Role, "a working role of the catalogue, its record and its choices (FOUNDATION1y-i)"),
+        ("driver role set|remove|default|policy <id> …", Role, "a working role of the catalogue, its record, its choices and its policy (FOUNDATION1y-i, STAFFPOLICY1b)"),
         ("driver actor import <file>", null, "alone: no route takes a file of the terminal's; the staffing's lock serializes it with the window's presses"),
         ("driver actor found take|dismiss <n>", null, "alone: the staffing's lock serializes it with the window's Take it and Dismiss"),
         ("driver timeout <minutes>", null, "alone: no route sets a session's timeout"),
@@ -252,7 +252,7 @@ public static class DriverChoicesCommand
             // `actor` naming one actor, or none, says its order, a read (MODELROLE1c).
             "actor" => args.Count > 2,
             // `role` naming one role, or none, says it, a read (FOUNDATION1y-i).
-            "role" => args.Count > 1 && args[1] is "set" or "remove" or "default",
+            "role" => args.Count > 1 && args[1] is "set" or "remove" or "default" or "policy",
             _ => Verbs.Contains(verb, StringComparer.Ordinal),
         };
     }

@@ -51,7 +51,6 @@ public sealed class StaffJudgeTests
             var top = arranged.Walk[0].Entry;
             picks.Add(int.Parse(top.From, CultureInfo.InvariantCulture));
             window.Add(StaffKey.Of(top));
-            if (window.Count > StaffJudge.Window) window.RemoveAt(0);
             today[StaffKey.Of(top)] = today.GetValueOrDefault(StaffKey.Of(top)) + 1;
         }
 
@@ -96,13 +95,13 @@ public sealed class StaffJudgeTests
     }
 
     [Fact]
-    public void The_window_is_read_at_most_twenty_starts_deep()
+    public void The_balance_forgets_an_old_run_and_a_share_reads_the_last_twenty_starts()
     {
         var row = StaffPolicyFixture.Row("sequences", "1:1 from an empty window alternates, ties by order");
         var one = StaffPolicyFixture.Key(1);
         var two = StaffPolicyFixture.Key(2);
 
-        // Thirty starts on choice 2 and then twenty on choice 1: only the last twenty count, so choice 2 is first.
+        // Thirty starts on choice 2 and then twenty on choice 1: the balance is held within -W and 2W, so choice 2 is first.
         var arranged = StaffJudge.Arrange(StaffPolicyFixture.Policy(row), RoleWork.Build, StaffPolicyFixture.Order(row),
             new StaffFacts { Now = StaffPolicyFixture.Now, Window = [.. Enumerable.Repeat(two, 30), .. Enumerable.Repeat(one, 20)] });
 

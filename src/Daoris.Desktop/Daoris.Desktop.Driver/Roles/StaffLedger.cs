@@ -94,6 +94,25 @@ public static class StaffPolicies
         return true;
     }
 
+    /// <summary>Whether the store this write is in has the policy's tables: a store held before <see cref="Step"/>, by a start not yet settled, has none.</summary>
+    public static bool Has(DesktopWrite write) =>
+        write.Scalar<long>("SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'role_policy'") > 0;
+
+    /// <summary>
+    /// Bind <paramref name="policy"/> to <paramref name="choices"/>, the staffing a write of Daoris's own just made (§2.1): the digest set and the
+    /// record re-keyed in the revision it has, which is rewritten to say the same. Nothing where the digest is already the choices'.
+    /// </summary>
+    public static void Rekey(DesktopWrite write, string role, StaffPolicy policy, IReadOnlyList<ActorChoice> choices)
+    {
+        var digest = StaffPolicy.Digest(choices);
+        if (write.Scalar<string>("SELECT staffing FROM role_policy WHERE role = $role", ("$role", role)) == digest) return;
+        var text = policy.Rekeyed(choices).Write();
+        write.Execute("UPDATE role_policy SET policy = $policy, staffing = $staffing WHERE role = $role", ("$role", role), ("$policy", text), ("$staffing", digest));
+        write.Execute(
+            "UPDATE role_policy_revisions SET policy = $policy, staffing = $staffing WHERE role = $role AND revision = (SELECT revision FROM role_policy WHERE role = $role)",
+            ("$role", role), ("$policy", text), ("$staffing", digest));
+    }
+
     private sealed record Stored(string? Policy, string? Staffing, long? Revision, string? Since, string? State, string? Choices, long? Last);
 
     private static Stored Raw(SqliteDataReader row) => new(
@@ -122,11 +141,15 @@ public static class StaffPolicies
 /// <summary>A start's hold on a choice in this process (§3.2): the role and the choice it counts on until the start opens or is refused.</summary>
 public sealed class StaffReservation
 {
-    internal StaffReservation(string role, StaffKey choice)
+    internal StaffReservation(string role, StaffKey choice, DateTimeOffset at)
     {
         Role = role;
         Choice = choice;
+        At = at;
     }
+
+    /// <summary>When it was taken, by which a reservation no open or refusal ever answered is dropped (<see cref="StaffLedger.ReservationLife"/>).</summary>
+    internal DateTimeOffset At { get; }
 
     public string Role { get; }
 
@@ -139,6 +162,12 @@ public sealed class StaffReservation
 /// where the look takes one (<see cref="StaffLedger.Take"/>); a preview takes none.
 /// </summary>
 public sealed record StaffTake(StaffPolicyRead Policy, StaffFacts Facts, StaffArrangement Arrangement, StaffReservation? Reservation);
+
+/// <summary>
+/// What a start that took an account count holds until it opens or is refused (STAFFPOLICY1c): the role and choice, the rule and why
+/// (<see cref="StaffBy"/>) with that said, and the reservation where a set policy arranged the walk.
+/// </summary>
+public sealed record StaffBinding(string Role, StaffKey Choice, string Rule, string By, string Said, StaffReservation? Reservation);
 
 /// <summary>A new start's row of <c>role_starts</c> (§3.2): its session, role, choice, why it was chosen, and the condition where it moved.</summary>
 public sealed record StaffStart(string Session, string Role, StaffKey Choice, string By, string? Condition = null);
@@ -158,13 +187,16 @@ public sealed record StaffStart(string Session, string Role, StaffKey Choice, st
 /// <param name="settled">The reading of the start's confirmation a write opens the store under; null reads this install's swap journal.</param>
 /// <param name="clock">The clock of every moment read and written.</param>
 /// <param name="zone">The zone the day is read in; null for the machine's.</param>
-public sealed class StaffLedger(string home, Func<StoreSettled>? settled = null, TimeProvider? clock = null, TimeZoneInfo? zone = null)
+public sealed class StaffLedger(string home, Func<StoreSettled>? settled = null, TimeProvider? clock = null, TimeZoneInfo? zone = null) : IStartLedger
 {
     /// <summary>The family a start's write moves.</summary>
     public const string Family = "role_starts";
 
     /// <summary>How long an agent marked not answering stays marked, unless a prompt on it answers sooner (§4.2).</summary>
     public static readonly TimeSpan Mark = TimeSpan.FromMinutes(15);
+
+    /// <summary>How many of the latest starts since a policy's <c>since</c> the balances are replayed from; held within −W and 2W they forget the rest.</summary>
+    private const int Sequence = 1000;
 
     private readonly Lock _gate = new();
 
@@ -204,12 +236,67 @@ public sealed class StaffLedger(string home, Func<StoreSettled>? settled = null,
             StaffReservation? reservation = null;
             if (reserve && policy.Applied is not null && arranged.Walk.Count > 0)
             {
-                reservation = new StaffReservation(role, StaffKey.Of(arranged.Walk[0].Entry));
+                reservation = new StaffReservation(role, StaffKey.Of(arranged.Walk[0].Entry), facts.Now);
                 _reserved.Add(reservation);
             }
 
             return new StaffTake(policy, facts, arranged, reservation);
         }
+    }
+
+    /// <summary>How long a reservation stands unanswered by an open or a refusal (an agent with no account count has no release): past it, it counts no more.</summary>
+    public static readonly TimeSpan ReservationLife = TimeSpan.FromMinutes(10);
+
+    private readonly Dictionary<long, StaffBinding> _bound = [];
+
+    /// <summary>
+    /// Hold <paramref name="binding"/> on the account count (<see cref="HarnessSelection.Number"/>) the start took: the roster's <c>Release</c> gives
+    /// it back with the count (<see cref="ReleaseBound"/>), and the open writes it down (<see cref="Opened"/>). A start with no count (0) is not bound.
+    /// </summary>
+    public void Bind(long number, StaffBinding binding)
+    {
+        if (number <= 0) return;
+        lock (_gate)
+        {
+            _bound[number] = binding;
+            if (_bound.Count > 256) _bound.Remove(_bound.Keys.Min());
+        }
+    }
+
+    /// <summary>The start's account count was given back: its reservation goes with it, once.</summary>
+    public void ReleaseBound(long number)
+    {
+        lock (_gate)
+        {
+            if (_bound.Remove(number, out var binding) && binding.Reservation is { } reservation) _reserved.Remove(reservation);
+        }
+    }
+
+    /// <summary>
+    /// The start on account count <paramref name="number"/> opened as <paramref name="session"/>: its row of <c>role_starts</c> is written, once
+    /// for the session, and its reservation dropped. A store that will not take the row does not fail the start; the binding is answered all the same.
+    /// Null where nothing was bound.
+    /// </summary>
+    public StaffBinding? Opened(long number, string session, string? condition = null)
+    {
+        StaffBinding? binding;
+        lock (_gate)
+        {
+            if (!_bound.Remove(number, out binding)) return null;
+        }
+
+        // A start under no policy is written down where the home keeps a store already, never made for it.
+        if (binding.Reservation is null && !File.Exists(Location)) return binding;
+        try
+        {
+            Record(new StaffStart(session, binding.Role, binding.Choice, binding.By, condition), binding.Reservation);
+        }
+        catch (Exception error) when (error is DesktopStoreException or SqliteException or IOException or UnauthorizedAccessException)
+        {
+            lock (_gate) if (binding.Reservation is { } reservation) _reserved.Remove(reservation);
+        }
+
+        return binding;
     }
 
     /// <summary>Move <paramref name="reservation"/> to the entry the settled selection took.</summary>
@@ -280,7 +367,7 @@ public sealed class StaffLedger(string home, Func<StoreSettled>? settled = null,
             {
                 window = [.. store.Query(
                         "SELECT choice FROM role_starts WHERE role = $role AND at >= $since ORDER BY at DESC, rowid DESC LIMIT $most",
-                        row => StaffKey.Read(row.GetString(0)), ("$role", role), ("$since", policy.Since), ("$most", StaffJudge.Window))
+                        row => StaffKey.Read(row.GetString(0)), ("$role", role), ("$since", policy.Since), ("$most", Sequence))
                     .OfType<StaffKey>().Reverse()];
                 foreach (var (key, count) in store.Query(
                              "SELECT choice, COUNT(*) FROM role_starts WHERE role = $role AND at >= $day GROUP BY choice",
@@ -292,6 +379,7 @@ public sealed class StaffLedger(string home, Func<StoreSettled>? settled = null,
         }
 
         var reserved = new Dictionary<StaffKey, int>();
+        _reserved.RemoveAll(each => now - each.At >= ReservationLife);
         foreach (var each in _reserved.Where(each => each.Role == role)) reserved[each.Choice] = reserved.GetValueOrDefault(each.Choice) + 1;
         return line with
         {

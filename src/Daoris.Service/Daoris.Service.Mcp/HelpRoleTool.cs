@@ -26,9 +26,17 @@ public sealed class HelpRoleTool(IntakeScope? intake = null, HelpProposalBox? he
         [Description("A set's scope: `machine`, `workspace:<id>` or `repository:<id>`; left out keeps the role's own.")] string? scope = null,
         [Description("A set's choices in order, each one quoted `agent [model|-] [effort|-]`, at most four; left out keeps the role's own.")]
         string[]? choices = null,
-        [Description("The revision of the role you read, so a change made since is refused rather than overwritten.")] long? revision = null)
+        [Description("The revision of the role you read, so a change made since is refused rather than overwritten.")] long? revision = null,
+        [Description(
+            "A set's staffing policy, for a role with choices of its own: how its choices share new starts. A preset's name — `first` (the choices "
+            + "in order, as before), `even` or `weighted` — or the record as JSON "
+            + "(`{ \"rule\": \"weight\", \"choices\": [{ \"agent\": \"claude-code\", \"model\": \"sonnet\", \"effort\": \"high\", \"weight\": 3, \"share\": 60, "
+            + "\"budget\": { \"starts\": 6 }, \"takes\": [\"design\"] }] }`), or `none` to go back to no policy. This build enforces the rule, weights, "
+            + "shares, daily budgets of starts and works; a field it does not enforce yet is refused. A change of spending: say so. Left out keeps the role's own.")]
+        string? policy = null,
+        [Description("The policy revision you read (`ROLES`' `policies`), so a policy changed since is refused rather than overwritten.")] long? policy_revision = null)
     {
         var box = help ?? HelpProposalBox.FromEnvironment();
-        return box.ProposeRole(change, id, name, name_in, takes, scope, choices, revision, why, intake?.Session, DateTimeOffset.UtcNow).Message;
+        return box.ProposeRole(change, id, name, name_in, takes, scope, choices, revision, why, intake?.Session, DateTimeOffset.UtcNow, policy, policy_revision).Message;
     }
 }

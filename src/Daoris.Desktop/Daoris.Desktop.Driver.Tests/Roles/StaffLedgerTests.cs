@@ -226,7 +226,7 @@ public sealed class StaffLedgerTests : IDisposable
     // ——— The ledger: new starts, the window, the day and the reservations (§3.2).
 
     [Fact]
-    public void The_window_is_the_last_twenty_new_starts_since_the_policy_and_a_session_is_counted_once()
+    public void The_facts_hold_the_new_starts_since_the_policy_in_order_and_a_session_is_counted_once()
     {
         Import();
         Start("before", Opus);
@@ -241,8 +241,10 @@ public sealed class StaffLedgerTests : IDisposable
         Start("s0", Sonnet);
 
         var facts = Ledger().Take("build", RoleWork.Build, Order).Facts;
-        Assert.Equal(20, facts.Window.Count);
-        Assert.All(facts.Window, key => Assert.Equal(StaffKey.Of(Sonnet), key));
+        // The sequence the balances are replayed from (§11 point 9); a share reads its last twenty.
+        Assert.Equal(22, facts.Window.Count);
+        Assert.Equal([StaffKey.Of(Opus), StaffKey.Of(Opus)], facts.Window.Take(2));
+        Assert.All(facts.Window.Skip(2), key => Assert.Equal(StaffKey.Of(Sonnet), key));
         using var reader = DesktopStoreReader.Open(Db)!;
         Assert.Equal(23L, reader.Query("SELECT COUNT(*) FROM role_starts", row => row.GetInt64(0))[0]);
         Assert.Equal(("build", StaffKey.Of(Opus).Text, StaffBy.Weight), reader.Query(
