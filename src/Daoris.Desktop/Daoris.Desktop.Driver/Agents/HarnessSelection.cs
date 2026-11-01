@@ -697,6 +697,12 @@ public sealed record HarnessSelection(
     /// the start counted nothing.
     /// </summary>
     public long Number { get; init; }
+
+    /// <summary>
+    /// The role's policy binding the start took (STAFFPOLICY1c2), carried with the selection so an agent with no account count (<see cref="Number"/>
+    /// 0) still writes its start's row at the open; null where the plan arranged nothing.
+    /// </summary>
+    public StaffBinding? Staffed { get; init; }
 }
 
 /// <summary>Why an agent itself cannot run (XAGENT1b): what <see cref="HarnessSelection.Absent"/> says.</summary>

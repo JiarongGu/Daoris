@@ -429,6 +429,8 @@ export const SESSION_ACTIVE: ReadonlySet<SessionState> =
 /** D205 §9.3: what a start asked for, tagged so an explicit `default` differs from an account default. */
 export type ActorValue = { source: 'entry' | 'account-default' | 'command' | 'environment'; value?: string | null; carried: boolean };
 export type ActorAsked = { agent: string; model: ActorValue; effort: ActorValue };
+/** STAFFPOLICY1c2: why a role's policy chose a start's choice; machine-local, absent under no policy, on a mirror and on an old record. */
+export type ActorChosen = { rule: string; by: string; condition?: string | null; from?: string | null };
 export type ActorRan = { models: string[]; more: number; entries: { at: string; acknowledged?: string | null; effort?: string | null }[]; entriesMore: number };
 export type ActorOverride = { model?: string; effort?: string };
 /**
@@ -445,6 +447,7 @@ export type Session = {
   asked?: ActorAsked | null;
   override?: ActorOverride | null;
   ran?: ActorRan | null;
+  chosen?: ActorChosen | null;
   id: string; quest?: string | null; repository: string; adapter: string; state: SessionState;
   kind?: 'driven' | 'chat';
   note?: string; evidence?: string; created: string; updated: string; workspace?: string;

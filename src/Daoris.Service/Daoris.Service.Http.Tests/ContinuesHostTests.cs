@@ -21,7 +21,7 @@ public sealed class ContinuesHostTests(LocalHost host) : IClassFixture<LocalHost
         var kept = await host.PostAsync($"/api/sessions/{id}/actor", new
         {
             choice = "before", asked = new { agent = "stub", model = new { source = "account-default", carried = false }, effort = new { source = "account-default", carried = false } },
-            @override = new { model = "alias" }, ran = new { models = new[] { "reported" }, more = 0, entries = Array.Empty<object>(), entriesMore = 0 },
+            @override = new { model = "alias" }, chosen = new { rule = "weight", by = "weight" }, ran =new { models = new[] { "reported" }, more = 0, entries = Array.Empty<object>(), entriesMore = 0 },
         });
         Assert.Equal(200, kept.Status);
         var local = (await ListedAsync(id))!.Value;
@@ -30,8 +30,9 @@ public sealed class ContinuesHostTests(LocalHost host) : IClassFixture<LocalHost
         Assert.Equal("stub", local.GetProperty("asked").GetProperty("agent").GetString());
         Assert.Equal("alias", local.GetProperty("override").GetProperty("model").GetString());
         Assert.Equal("reported", local.GetProperty("ran").GetProperty("models")[0].GetString());
+        Assert.Equal("weight", local.GetProperty("chosen").GetProperty("by").GetString());
         var remote = (await ListedAsync(id, DaorisHost.OffMachine))!.Value;
-        foreach (var key in new[] { "actor", "choice", "asked", "override", "ran" })
+        foreach (var key in new[] { "actor", "choice", "asked", "override", "ran", "chosen" })
             Assert.True(!remote.TryGetProperty(key, out var value) || value.ValueKind == JsonValueKind.Null, key);
     }
 

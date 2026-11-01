@@ -287,9 +287,10 @@ internal sealed class StartPlan
             if (take is null || !counts) return settled;
             var arranged = take.Arrangement.Walk.FirstOrDefault(each => each.Entry == chosen);
             if (take.Reservation is { } held) Staff!.Settle(held, chosen);
-            Staff!.Bind(settled.Selection.Number, new StaffBinding(
-                Role, StaffKey.Of(chosen), take.Arrangement.Rule, arranged?.By ?? StaffBy.First, arranged?.Said ?? "", take.Reservation));
-            return settled;
+            var binding = new StaffBinding(
+                Role, StaffKey.Of(chosen), take.Arrangement.Rule, arranged?.By ?? StaffBy.First, arranged?.Said ?? "", take.Reservation);
+            Staff!.Bind(settled.Selection.Number, binding);
+            return settled with { Selection = settled.Selection with { Staffed = binding } };
         }
 
         if (order.Count == 1 && !WalksOne && staffed.Count == 0)

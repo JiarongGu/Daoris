@@ -2959,7 +2959,7 @@ public sealed class Driver(
         if (movedOff is not null) RotatedOpening.SayMovedOff(Context.Events, sessionId, AccountNames.Said(AccountNames.Of(home, agent), movedOff));
         if (movedOffModel is { } refusedModel) RotatedOpening.SayMovedOffModel(Context.Events, sessionId, refusedModel.Agent, refusedModel.Model);
         if (chosen is not null) RotatedOpening.SayActor(Context.Events, sessionId, "build", chosen, buildPasses);
-        RotatedOpening.SayStaff(Context.Events, Context.Harnesses.Staff(), sessionId, selection.Number, "build");
+        await RotatedOpening.SayStaffAsync(Context.Events, Context.Harnesses.Staff(), service, Log, sessionId, selection, "build").ConfigureAwait(false);
         // A quest marked design says whose order it ran on: the role taking design, Build's while none does (FOUNDATION1x, MODELROLE1l).
         if (start.Resumes is null && StartWork(quest) == ParticipantWork.Design && DesignRoleName(start, stepRole) is { } designer)
         {
@@ -4411,8 +4411,12 @@ public sealed class Driver(
                 var ranEntry = new ActorEffective(adapter.Name, later.Asked.NamedModel, later.Asked.Effort.Value, later.Choice);
                 var why = $"`{offers.Account ?? "its own sign-in"}` did not offer `{refusal.Value}`";
                 RotatedOpening.SayActor(Context.Events, sessionId, actor, ranEntry, [new BuildPass(refusedEntry, refusal.Code, why)]);
+                ActorMoves.Write(Log, actor, sessionId, refusedEntry.From, later.Choice, "model-refused");
                 choice = later.Choice;
-                await service.TryKeepActorAsync(sessionId, Log, choice, later.Asked, ct: CancellationToken.None).ConfigureAwait(false);
+                await service.TryKeepActorAsync(
+                        sessionId, Log, choice, later.Asked, ct: CancellationToken.None,
+                        chosen: new ActorChosen(prior?.Chosen?.Rule ?? StaffRules.Order, StaffBy.Moved, "model-refused", refusedEntry.From))
+                    .ConfigureAwait(false);
                 return later.Asked;
             };
         // AGENTERRORS1a (D210 §5.1): a driven quest session's protocol door is handed the transient retry, its waits on the driver's clock.

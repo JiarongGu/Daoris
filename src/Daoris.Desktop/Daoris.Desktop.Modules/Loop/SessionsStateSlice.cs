@@ -43,7 +43,7 @@ public static class SessionsStateSlice
         // An account's limit made its failure: every list words it limited (LIMITRESUME1a, D206 point 1).
         "limit",
         // D205 §9.3: the machine-local provenance, absent on a mirror and a sync.
-        "actor", "choice", "asked", "override", "ran",
+        "actor", "choice", "asked", "override", "ran", "chosen",
         // FOUNDATION1c (D212): the work its marks read as, judged in .NET and answered on loopback, beside the kind; absent on a record a
         // host answers none for, and then the page reads today's predicates.
         "work",

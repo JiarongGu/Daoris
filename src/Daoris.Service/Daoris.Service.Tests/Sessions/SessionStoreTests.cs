@@ -29,11 +29,13 @@ public sealed class SessionStoreTests : IAsyncLifetime
         var through = (await _sessions.OwnChangedSinceAsync(0, Workspaces.Default)).Single().Revision;
         var asked = JsonSerializer.SerializeToElement(new { agent = "stub", model = new { source = "entry", value = "default", carried = true } });
         var ran = JsonSerializer.SerializeToElement(new { models = new[] { "z-model", "a-model" }, more = 0, entries = Array.Empty<object>(), entriesMore = 0 });
-        Assert.True(await _sessions.KeepActorAsync(own.Id, "before", asked, asked, ran));
+        var chosen = JsonSerializer.SerializeToElement(new { rule = "weight", by = "weight" });
+        Assert.True(await _sessions.KeepActorAsync(own.Id, "before", asked, asked, ran, chosen));
         Assert.Empty(await _sessions.OwnChangedSinceAsync(through, Workspaces.Default));
         var read = (await _sessions.FindAsync(own.Id))!;
         Assert.Equal("build", read.Actor);
         Assert.Equal("before", read.Choice);
+        Assert.Equal(chosen.GetRawText(), read.Chosen!.Value.GetRawText());
         Assert.Equal(asked.GetRawText(), read.Asked!.Value.GetRawText());
         Assert.Equal(asked.GetRawText(), read.Override!.Value.GetRawText());
         Assert.Equal(ran.GetRawText(), read.Ran!.Value.GetRawText());
@@ -46,8 +48,9 @@ public sealed class SessionStoreTests : IAsyncLifetime
         Assert.Null(mirror.Asked);
         Assert.Null(mirror.Override);
         Assert.Null(mirror.Ran);
-        Assert.False(await _sessions.KeepActorAsync(mirror.Id, "pick", asked, asked, ran));
-        foreach (var field in new[] { "Actor", "Choice", "Asked", "Override", "Ran" })
+        Assert.Null(mirror.Chosen);
+        Assert.False(await _sessions.KeepActorAsync(mirror.Id, "pick", asked, asked, ran, chosen));
+        foreach (var field in new[] { "Actor", "Choice", "Asked", "Override", "Ran", "Chosen" })
             Assert.Null(typeof(FedSessionRecord).GetProperty(field));
         var old = await Create();
         Assert.Null(old.Actor);
@@ -866,6 +869,7 @@ public sealed class SessionSchemaUpgradeTests : IAsyncLifetime
         Assert.Null(elder.Asked);
         Assert.Null(elder.Override);
         Assert.Null(elder.Ran);
+        Assert.Null(elder.Chosen);
         // …and it is answered its work from its marks by a host that has the reading (FOUNDATION1c): a quest's driven session is build.
         Assert.Equal(ParticipantWork.Build, ParticipantWork.Of(elder));
 

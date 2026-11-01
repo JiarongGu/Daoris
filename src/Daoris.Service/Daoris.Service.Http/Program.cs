@@ -1428,7 +1428,7 @@ if (mode == ServiceMode.Local)
         if (!MachineLocal(http)) return Results.NotFound();
         try
         {
-            var kept = await s.Ledger.KeepActorAsync(id, body.Choice, body.Asked, body.Override, body.Ran, ct);
+            var kept = await s.Ledger.KeepActorAsync(id, body.Choice, body.Asked, body.Override, body.Ran, body.Chosen, ct);
             return kept is null ? Results.NotFound(new ErrorResponse("no session of this machine's"))
                 : Results.Ok(new SessionActionResponse(await ToSessionAsync(s, kept, true), "Actor provenance kept."));
         }
@@ -3086,7 +3086,8 @@ static SessionResponse ToSession(Session s, bool loopback) => new(
     Actor: loopback ? s.Actor : null, Choice: loopback ? s.Choice : null,
     Asked: loopback ? s.Asked : null, Override: loopback ? s.Override : null, Ran: loopback ? s.Ran : null,
     // The work its marks read as (FOUNDATION1c): this machine's, like the opinion, so answered to it only; a mirror reads none.
-    Work: loopback ? ParticipantWork.Of(s) : null);
+    Work: loopback ? ParticipantWork.Of(s) : null,
+    Chosen: loopback ? s.Chosen : null);
 
 // A word with whose it is (XAGENT1c): `by` names the second opinion whose findings these are, and is absent for the person's.
 static SaidWordResponse ToSaid(SaidWord word) =>
