@@ -1124,7 +1124,8 @@ public sealed class Driver(
         // STAFFPOLICY1e: a quest whose last session ended past its transient bound under a role that moves on it: the course decides once, and
         // the move is written down before the planner reads it, so a restart or a second look reads the one decision.
         var (policyMoving, policyHolds) = StaffCourse.Look(Context.Harnesses.StaffFor(home), snapshot, config, DateTimeOffset.UtcNow);
-        snapshot = snapshot with { PolicyMoving = policyMoving, PolicyHolds = policyHolds };
+        var limitHolds = StaffCourse.LimitHolds(Context.Harnesses.StaffFor(home), snapshot);
+        snapshot = snapshot with { PolicyMoving = policyMoving, PolicyHolds = limitHolds.Count == 0 ? policyHolds : policyHolds.Concat(limitHolds).ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase) };
         // RETRYWORK1: the commits a failed session left beyond its start, for each open quest it failed before taking, so the planner
         // carries the quest on in that tree rather than building its work again in a new one. No git starts where no such quest is.
         var handed = snapshot;
@@ -2297,6 +2298,13 @@ public sealed class Driver(
                     agent = role.FirstOrDefault(entry => string.Equals(entry.Agent, cut.Adapter, StringComparison.OrdinalIgnoreCase))?.Agent
                             ?? role[0].Agent;
                     limitWalks = policyMove is not null || role.Count > 1 || !string.Equals(role[0].Agent, cut.Adapter, StringComparison.OrdinalIgnoreCase);
+                    // STAFFPOLICY1e: a role that waits on a limit keeps the choice and waits for its accounts' reset (D197's walk of its
+                    // accounts stays inside the choice), until its `upTo` has passed.
+                    if (limitWalks && policyMove is null && cut.Limit
+                        && StaffCourse.LimitWait(Context.Harnesses.StaffFor(home), stepRole ?? RoleWork.Build, cut, DateTimeOffset.UtcNow) is LineCourse.Wait)
+                    {
+                        limitWalks = false;
+                    }
                 }
             }
             catch (DriverException error)
@@ -2376,6 +2384,11 @@ public sealed class Driver(
                 var walked = await WalkBuildPassesAsync(start, registry, ct, role: stepRole).ConfigureAwait(false);
                 (selection, chosen, buildPasses) = (walked.Selection, walked.Chosen, walked.Passes);
                 agent = chosen?.Agent ?? agent;
+                // STAFFPOLICY1e: a limit's move to another choice counts against the line's bound, and spends the yes that released it.
+                if (limitedLine is { Limit: true } leftLimit && selection.Allowed)
+                {
+                    StaffCourse.LimitMoved(Context.Harnesses.StaffFor(home), stepRole ?? RoleWork.Build, quest.Id, leftLimit, chosen);
+                }
             }
             else
             {

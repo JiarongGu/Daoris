@@ -734,6 +734,14 @@ public static class Planner
                 continue;
             }
 
+            // STAFFPOLICY1e: a line an account's limit cut off whose role's policy asks, or whose bound of moves is reached, waits for the person's yes.
+            if (snapshot.PolicyHolds.TryGetValue(quest.Id, out var limitHold) && quest.Status is "Open" or "Taken"
+                && snapshot.LastRun.TryGetValue(quest.Id, out var limitedHeld) && limitedHeld.Limit)
+            {
+                considerations.Add(PolicyHeld(quest, limitedHeld, limitHold));
+                continue;
+            }
+
             // The hand-over made from that held record (round 3's read, R3-O3): an Open quest is carried on from it in its tree, as
             // D206's step 0 carries a limited one, whatever its tree holds, never started afresh with no brief.
             if (quest.Status == "Open" && TransientReleasedFrom(quest) is { } released)
@@ -896,12 +904,12 @@ public static class Planner
 
         // The role policy's ask, or its bound of moves, holds the quest for the person's yes (STAFFPOLICY1e, §11 point 7).
         static Consideration PolicyHeld(QuestView quest, PriorSession exhausted, string code) =>
-            new(quest, StartVerdict.PolicyHeld, code == StaffCourse.HoldAsk
+            new(quest, StartVerdict.PolicyHeld, code == SittingFact.PolicyAsk
                 ? "Its role's policy asks before it moves this quest to another choice: it waits for your yes."
                 : "This quest made its role's policy's moves to another choice for today: it waits for your yes.")
             {
                 HeldBy = exhausted,
-                Said = new(code == StaffCourse.HoldAsk ? SittingFact.PolicyAsk : SittingFact.MovesBound) { Session = exhausted.Session },
+                Said = new(code == SittingFact.PolicyAsk ? SittingFact.PolicyAsk : SittingFact.MovesBound) { Session = exhausted.Session },
             };
 
         // Held for the person (the design §5.1, §8's `held.transient`): no slot; the record is its HeldBy, as a stop's verdict names its stop.

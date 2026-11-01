@@ -76,9 +76,57 @@ internal static class StaffCourse
         return (moving, holds);
     }
 
-    /// <summary>The typed hold a policy's <c>ask</c> leaves (<c>held.policy-ask</c>).</summary>
-    internal const string HoldAsk = "policy-ask";
+    /// <summary>
+    /// Whether a driven line an account's limit cut off waits for the choice's own reset rather than walking the role's choices: its role's
+    /// policy says <c>wait</c> for a limit, and the <c>upTo</c> minutes after the cut-off it names have not passed. D206's own resume is
+    /// asked first either way, and the accounts of the choice's agent are still walked inside the choice (D197).
+    /// </summary>
+    internal static LineCourse? LimitWait(StaffLedger? staff, string role, PriorSession cut, DateTimeOffset now)
+    {
+        if (staff?.Policy(role).Applied is not { } policy || !policy.Moves.TryGetValue(StaffConditions.Limit, out var move) || move.Do != StaffActions.Wait) return null;
+        var action = StaffJudge.OnCondition(policy, StaffConditions.Limit, new StaffLine(true, 0));
+        return CourseDecision.Decide(
+            new CourseFacts(
+                DrivenCourse.HeadOf(cut, "Taken") with { Protocol = true }, CourseBoundary.ProcessExited,
+                Policy: new CoursePolicy(action, now, Until: now.AddYears(1), Since: cut.Updated ?? now)),
+            CourseTrigger.LimitEnd);
+    }
 
-    /// <summary>The typed hold the policy's bound of moves leaves (<c>held.moves-bound</c>).</summary>
-    internal const string HoldMovesBound = "moves-bound";
+    /// <summary>
+    /// A limit's walk took <paramref name="taken"/>, another choice than the record <paramref name="cut"/> ran: the move is counted against
+    /// the line's bound, and one approval standing is spent by it. Nothing is written for a role whose policy sets no move on a limit.
+    /// </summary>
+    internal static void LimitMoved(StaffLedger? staff, string role, string line, PriorSession cut, ActorEffective? taken)
+    {
+        if (staff is null || taken is null || ChoiceOf(cut) is not { } was || was == StaffKey.Of(taken)) return;
+        if (staff.Policy(role).Applied is not { } policy || !policy.Moves.TryGetValue(StaffConditions.Limit, out var move)) return;
+        staff.Moves.Record(line, role, cut.Session, StaffConditions.Limit, move.Do, was.Text);
+    }
+
+    /// <summary>
+    /// The quests an account's limit cut off whose role's policy holds them for the person's yes (STAFFPOLICY1e): an <c>ask</c> on a limit, or the
+    /// bound of moves a limit's move would pass. The same typed hold a transient end leaves; a yes (one approval) lets the line walk.
+    /// </summary>
+    internal static IReadOnlyDictionary<string, string> LimitHolds(StaffLedger? staff, Snapshot snapshot)
+    {
+        var holds = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (staff is null) return holds;
+        foreach (var quest in snapshot.Quests)
+        {
+            if (quest.Status is not ("Open" or "Taken") || !snapshot.LastRun.TryGetValue(quest.Id, out var last) || !last.Limit || last.State != "failed") continue;
+            if (snapshot.Handed.ContainsKey(quest.Id)) continue;
+            var role = last.Actor is { Length: > 0 } kept ? kept : RoleWork.Build;
+            if (staff.Policy(role).Applied is not { } policy || !policy.Moves.ContainsKey(StaffConditions.Limit)) continue;
+            var moved = staff.Moves.Of(quest.Id);
+            var action = StaffJudge.OnCondition(policy, StaffConditions.Limit, new StaffLine(true, moved.Moves));
+            if (action.Do == StaffActions.Ask && !moved.Approved) holds[quest.Id] = action.MovesBound ? HoldMovesBound : HoldAsk;
+        }
+
+        return holds;
+    }
+
+    // The typed holds a policy leaves (held.policy-ask, held.moves-bound), as the planner says them.
+    private const string HoldAsk = SittingFact.PolicyAsk;
+
+    private const string HoldMovesBound = SittingFact.MovesBound;
 }

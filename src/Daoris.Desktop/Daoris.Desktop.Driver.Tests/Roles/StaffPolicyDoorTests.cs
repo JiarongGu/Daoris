@@ -239,7 +239,7 @@ public sealed class StaffPolicyDoorTests : IDisposable
     {
         var before = Snapshot();
         var good = new RolePress(RoleChange.Set(Role("build") with { Name = AuthoredText.Of("Renamed") }), null, null, new RolePolicyPress(ThreeToOne()));
-        var bad = new RolePress(RoleChange.Set(Role("intake")), null, null, new RolePolicyPress(Policy("order", [(Codex, "")], ",\"most\":3")));
+        var bad = new RolePress(RoleChange.Set(Role("intake")), null, null, new RolePolicyPress(Policy("order", [(Codex, "")], ",\"moves\":{\"failed\":\"next\"}")));
 
         var refused = Assert.Throws<RoleRefusedException>(() => RoleDoor.ApplyAll(Staffing, [good, bad]));
 
