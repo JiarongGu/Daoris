@@ -14,7 +14,7 @@ public sealed class WorkplaceRolesBoundaryTests : IDisposable
         Assert.Equal(["SSH_ASKPASS", "SSH_ASKPASS_REQUIRE", "GIT_TRACE_CURL", "GIT_CURL_VERBOSE", "GCM_TRACE", "GCM_TRACE_SECRETS", "DAORIS_ROLE_KEY"], GitWiring.Removed);
         foreach (var tool in new[] { false, true })
         {
-            var start = new ProcessStartInfo("unused") { UseShellExecute = false };
+            var start = new ProcessStartInfo("unused") { UseShellExecute = false, CreateNoWindow = true };
             start.Environment["DAORIS_ROLE_KEY"] = new string('1', 64);
             start.Environment["WORKPLACE_TEST_VALUE"] = "retained";
             if (tool) Tools.Hand(start, _home);

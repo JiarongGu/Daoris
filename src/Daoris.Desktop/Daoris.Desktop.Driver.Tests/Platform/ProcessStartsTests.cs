@@ -35,7 +35,7 @@ public sealed class ProcessStartsTests
             if (info.FileName == "holder") held.Wait(Poll.Patience);
             return null;
         });
-        holder = starts.StartAsync(new ProcessStartInfo("holder") { UseShellExecute = false }, CancellationToken.None);
+        holder = starts.StartAsync(new ProcessStartInfo("holder") { UseShellExecute = false, CreateNoWindow = true }, CancellationToken.None);
         return starts;
     }
 
@@ -214,7 +214,7 @@ public sealed class ProcessStartsTests
         var git = Enumerable.Range(0, 4).Select(_ => starts.StartAsync(Info(), StartClass.Background, CancellationToken.None)).ToList();
         Assert.True(SpinWait.SpinUntil(() => Volatile.Read(ref inside) == 3, Poll.Patience), "three background starts never ran");
 
-        var agent = starts.StartAsync(new ProcessStartInfo("agent") { UseShellExecute = false }, CancellationToken.None);
+        var agent = starts.StartAsync(new ProcessStartInfo("agent") { UseShellExecute = false, CreateNoWindow = true }, CancellationToken.None);
 
         Assert.Null(await agent.WaitAsync(Poll.Patience));
         // Every git is still held or waiting, and the fourth never went in: the person's place is never the background's.
@@ -274,7 +274,7 @@ public sealed class ProcessStartsTests
             return null;
         });
         Task<Process?> Start(string name, StartClass whose) =>
-            starts.StartAsync(new ProcessStartInfo(name) { UseShellExecute = false }, whose, CancellationToken.None);
+            starts.StartAsync(new ProcessStartInfo(name) { UseShellExecute = false, CreateNoWindow = true }, whose, CancellationToken.None);
 
         try
         {

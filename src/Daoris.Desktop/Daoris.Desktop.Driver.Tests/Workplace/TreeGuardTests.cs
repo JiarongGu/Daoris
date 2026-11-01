@@ -541,6 +541,7 @@ public sealed class TreeGuardTests : IDisposable
         var info = new ProcessStartInfo("node")
         {
             UseShellExecute = false,
+            CreateNoWindow = true,
             RedirectStandardInput = true,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -575,6 +576,7 @@ public sealed class TreeGuardTests : IDisposable
         var info = new ProcessStartInfo("node", [harness])
         {
             UseShellExecute = false,
+            CreateNoWindow = true,
             RedirectStandardInput = true,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -596,7 +598,7 @@ public sealed class TreeGuardTests : IDisposable
 
     private static void Run(string file, params string[] arguments)
     {
-        var info = new ProcessStartInfo(file) { UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true };
+        var info = new ProcessStartInfo(file) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true };
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
         using var process = Process.Start(info)!;
         process.StandardOutput.ReadToEnd();

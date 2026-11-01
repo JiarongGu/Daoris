@@ -58,6 +58,7 @@ public static class Process
             StandardOutputEncoding = new UTF8Encoding(false),
             StandardErrorEncoding = new UTF8Encoding(false),
             UseShellExecute = false,
+            CreateNoWindow = true,
         };
         foreach (var argument in arguments) start.ArgumentList.Add(argument);
         foreach (var (name, value) in environment ?? new Dictionary<string, string>()) start.Environment[name] = value;
@@ -140,7 +141,8 @@ public static class Process
             ? ("cmd.exe", new[] { "/d", "/c", commandLine })
             : ("/bin/sh", ["-c", commandLine]);
 
-        var start = new ProcessStartInfo { FileName = file, WorkingDirectory = workingDirectory, UseShellExecute = false };
+        // inherits its console: a gate's output is the person's, shown where the verb runs, so the child takes this process's console.
+        var start = new ProcessStartInfo { FileName = file, WorkingDirectory = workingDirectory, UseShellExecute = false, CreateNoWindow = false };
         foreach (var argument in arguments) start.ArgumentList.Add(argument);
 
         using var process = System.Diagnostics.Process.Start(start)

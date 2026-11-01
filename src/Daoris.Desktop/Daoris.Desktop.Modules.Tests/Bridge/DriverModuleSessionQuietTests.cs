@@ -73,7 +73,7 @@ public sealed class DriverModuleSessionQuietTests : DriverModuleBridge
     {
         var loop = Loop();
         var module = new DriverModule(Bus, loop);
-        using var process = Process.Start(new ProcessStartInfo("node", ["-e", "setInterval(() => {}, 1000)"]) { UseShellExecute = false })!;
+        using var process = Process.Start(new ProcessStartInfo("node", ["-e", "setInterval(() => {}, 1000)"]) { UseShellExecute = false, CreateNoWindow = true })!;
         using var tracked = loop.Processes.Track("s1", process);
         var (watch, run) = Quiet(loop, "s1");
         using var _ = run;

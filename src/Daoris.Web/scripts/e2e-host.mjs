@@ -35,6 +35,7 @@ for (const name of ['engine', 'game']) {
 
 const host = spawn('dotnet', [dll], {
   stdio: 'inherit',
+  windowsHide: true,
   // Content root is the working directory, and the static bundle lives at <content root>/wwwroot —
   // beside the project, where vite builds it. Spawned from anywhere else the API answers and the
   // page is a 404, which reads as "the app is broken" rather than "the cwd was wrong".

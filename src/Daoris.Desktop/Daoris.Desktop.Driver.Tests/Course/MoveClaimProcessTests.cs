@@ -158,7 +158,7 @@ public sealed class MoveClaimProcessTests(MoveClaimProcessTests.Child child) : I
         File.WriteAllText(Path.Combine(source, "Directory.Build.props"), "<Project />");
         File.WriteAllText(Path.Combine(source, "Directory.Packages.props"), "<Project />");
         var output = Path.Combine(root, "built");
-        var info = new ProcessStartInfo("dotnet") { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false };
+        var info = new ProcessStartInfo("dotnet") { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false, CreateNoWindow = true };
         foreach (var word in new[] { "build", Path.Combine(source, "MoveClaim.csproj"), "-nodeReuse:false", "-v", "q", "-o", output }) info.ArgumentList.Add(word);
         using var build = Process.Start(info)!;
         var said = build.StandardOutput.ReadToEndAsync();

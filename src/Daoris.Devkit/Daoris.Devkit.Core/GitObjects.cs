@@ -81,6 +81,7 @@ public sealed class CommandLineGitObjects(string repositoryRoot) : IGitObjects
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
+            CreateNoWindow = true,
         };
         foreach (var argument in new[] { "cat-file", "--batch-all-objects", "--batch", "--buffer" })
         {

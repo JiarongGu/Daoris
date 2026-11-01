@@ -44,7 +44,7 @@ async function packed(): Promise<string> {
 
   // The build's tsc and @types/node are the workspace's: the copy has no node_modules of its own.
   const env = { ...process.env, PATH: `${join(repoRoot, 'node_modules', '.bin')}${delimiter}${process.env.PATH ?? ''}` };
-  const out = execSync(`npm pack --pack-destination "${scratch}"`, { cwd: cli, env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  const out = execSync(`npm pack --pack-destination "${scratch}"`, { cwd: cli, env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
   const tarball = join(scratch, out.trim().split('\n').pop()!.trim());
   assert.ok(existsSync(tarball), `npm pack made no tarball: ${out}`);
   assert.ok(!existsSync(join(cli, 'dist')) && !existsSync(join(cli, 'README.md')), 'postpack left the staged files behind');
