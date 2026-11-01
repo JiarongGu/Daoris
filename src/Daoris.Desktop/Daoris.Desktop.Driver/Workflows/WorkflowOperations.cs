@@ -51,7 +51,11 @@ public sealed record WorkflowPlanned(WorkflowAddPlan Plan, NamedVersion? Next, I
 /// <summary>What a save did, or why it did not.</summary>
 public sealed record WorkflowSaved(
     string Id, bool Done, string? Refused, string? Message, int? Version, bool Written, bool Appended,
-    IReadOnlyList<WorkflowScope> Scopes, IReadOnlyList<WorkflowReach> Reach);
+    IReadOnlyList<WorkflowScope> Scopes, IReadOnlyList<WorkflowReach> Reach)
+{
+    /// <summary>Each refusal of a graph refused, by its code at the step or wire it names (WORKFLOWEDIT1b); empty for every other answer.</summary>
+    public IReadOnlyList<WireProblem> Problems { get; init; } = [];
+}
 
 /// <summary>One saved workflow as the step editor lists it: the newest version's schema, digest and line, and the places that choose it.</summary>
 /// <param name="Schema">1 for steps, 2 for a graph; null where the newest version does not read here.</param>
@@ -60,7 +64,14 @@ public sealed record WorkflowListed(
     IReadOnlyList<WorkflowScope> Chosen);
 
 /// <summary>A preset built in, with the line composed from its steps or graph.</summary>
-public sealed record WorkflowPresetListed(string Id, string Name, bool Graph, string Line);
+public sealed record WorkflowPresetListed(string Id, string Name, bool Graph, string Line)
+{
+    /// <summary>A graph preset's graph as a version saves it, which the step editor starts from; null for one of steps.</summary>
+    public JsonNode? Body { get; init; }
+
+    /// <summary>A default's names in English and Chinese, Daoris's own; null for a preset that is no default.</summary>
+    public ShippedWords? Names { get; init; }
+}
 
 /// <summary>One version as saved: its steps or its graph, its composed line, and the graph's problems.</summary>
 public sealed record WorkflowShown(
@@ -505,7 +516,66 @@ public static class WorkflowOperations
         var versions = plan.Result!["versions"]!.AsArray();
         var next = WorkflowNamed.ReadVersion(WorkflowNamed.ElementOf(versions[^1]!), plan.Version!.Value, [],
             found?.Read.Pipeline ?? WorkflowPipelines.Development, onSave: true);
+        if (next.Graph is { } read && RoleProblems(home, read) is [var role, ..]) throw new ChoiceWords($"v{plan.Version}: {role.Words}", 1);
         return new(plan, next, null, @base?.Graph is not null && @base.Digest == next.Digest);
+    }
+
+    /// <summary>The code a step's role refused at save is said by (WORKFLOWEDIT1b), beside the graph's and the wires' own.</summary>
+    public const string RoleRefused = "role";
+
+    /// <summary>
+    /// Everything a save refuses in <paramref name="graph"/>, each at the step or wire it names: the graph rules' refusals as a save judges
+    /// them, and where those hold, each step whose role cannot take it (<see cref="RoleProblems"/>). Empty where the graph would be saved.
+    /// </summary>
+    public static IReadOnlyList<WireProblem> GraphProblems(string home, JsonNode graph)
+    {
+        var (read, problems) = NodeGraphs.Read(graph.ToJsonString(), onSave: true);
+        return read is null ? problems : RoleProblems(home, read);
+    }
+
+    /// <summary>
+    /// Each agent step whose role cannot take it (ROLESTEP1b's <c>role</c>, judged at save by WORKFLOWEDIT1b): the role named, by the home's
+    /// catalogue, for the step's work at the role's own scope. Where it works is the bind's to judge, since a version is chosen for its places
+    /// after it is saved. The catalogue is read only where a step names a role.
+    /// </summary>
+    public static IReadOnlyList<WireProblem> RoleProblems(string home, NodeGraph graph)
+    {
+        var problems = new List<WireProblem>();
+        RoleCatalog? catalogue = null;
+        foreach (var node in graph.Nodes)
+        {
+            if (WorkflowPalette.RoleTakesOf(node.Kind) is not [var work, ..]) continue;
+            if (!node.Options.TryGetValue(NodeOptionFields.Role, out var written) || NodeOptions.Value(written) is null or "") continue;
+            if (NodeOptions.Value(written) is not string role)
+            {
+                problems.Add(new(RoleRefused, null, node.Id, $"the step `{node.Id}` names its role by something other than a role's id."));
+                continue;
+            }
+
+            try
+            {
+                catalogue ??= RoleCatalog.ReadHome(home);
+            }
+            catch (DriverException unread)
+            {
+                problems.Add(new(RoleRefused, null, node.Id, $"the step `{node.Id}` names the role `{role}`, and {unread.Message}"));
+                continue;
+            }
+
+            var scope = catalogue.Slots.FirstOrDefault(slot => slot.Id == role)?.Role?.Scope;
+            var place = scope?.Kind switch
+            {
+                RoleScope.Repository => new RolePlace(Repository: scope.Id),
+                RoleScope.Workspace => new RolePlace(Workspace: scope.Id),
+                _ => new RolePlace(),
+            };
+            if (catalogue.Named(role, work, place).Held is { } held)
+            {
+                problems.Add(new(RoleRefused, null, node.Id, $"the step `{node.Id}` names the role `{role}`, which cannot take it: {held}"));
+            }
+        }
+
+        return problems;
     }
 
     /// <summary>
@@ -584,7 +654,7 @@ public static class WorkflowOperations
         }
         catch (ChoiceWords refused)
         {
-            return Refuse("refused", refused.Message);
+            return Refuse("refused", refused.Message) with { Problems = graph is null ? [] : GraphProblems(home, graph) };
         }
     }
 
@@ -641,7 +711,10 @@ public static class WorkflowOperations
         var presets = WorkflowPresets.Table
             .Select(preset => new WorkflowPresetListed(preset.Id, preset.Name, false, WorkflowPresets.Line(WorkflowNamed.ReadSteps(
                 WorkflowNamed.ElementOf(preset.Steps()), 1, null).Steps!)))
-            .Concat(WorkflowPresets.GraphTable.Select(preset => new WorkflowPresetListed(preset.Id, preset.Name, true, WorkflowPresets.GraphLine(preset.Graph()))))
+            .Concat(WorkflowPresets.GraphTable.Select(preset => new WorkflowPresetListed(preset.Id, preset.Name, true, WorkflowPresets.GraphLine(preset.Graph()))
+            {
+                Body = preset.Graph(), Names = WorkflowDefaults.Of(preset.Id)?.Names,
+            }))
             .ToArray();
         return (saved, presets);
     }

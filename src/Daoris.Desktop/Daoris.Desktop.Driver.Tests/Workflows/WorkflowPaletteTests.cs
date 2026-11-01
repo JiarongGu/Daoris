@@ -40,6 +40,35 @@ public sealed class WorkflowPaletteTests
         Assert.Equal([NodeKinds.Human, NodeKinds.Look, NodeKinds.GoAhead, NodeKinds.Review], rejected);
         Assert.Null(Bare.Wires.Single(each => each.Kind == WireKinds.After).From);
         Assert.Equal(NodeKinds.WaitUnit, Bare.Wires.Single(each => each.Kind == WireKinds.Wait).To);
+        // WORKFLOWEDIT1b: no built-in kind is a decision, and a wait's source is another unit's, never a node of this graph.
+        Assert.Empty(Bare.Wires.Single(each => each.Kind == WireKinds.When).From!);
+        Assert.Empty(Bare.Wires.Single(each => each.Kind == WireKinds.Wait).From!);
+    }
+
+    [Fact]
+    public void Each_kind_and_step_says_the_wires_that_may_leave_it_and_the_work_a_role_takes_it_by()
+    {
+        PaletteKind Kind(string kind) => Bare.Kinds.Single(each => each.Kind == kind);
+        Assert.Equal([RoleWork.Design, RoleWork.Build], Kind(NodeKinds.Claimed).RoleTakes);
+        Assert.Equal([RoleWork.Review], Kind(NodeKinds.Opinion).RoleTakes);
+        Assert.Empty(Kind(NodeKinds.Land).RoleTakes);
+        Assert.Contains(WireKinds.Rejected, Kind(NodeKinds.Review).Leaves);
+        Assert.Contains(WireKinds.Back, Kind(NodeKinds.Review).Leaves);
+        Assert.Contains(WireKinds.Failed, Kind(NodeKinds.Check).Leaves);
+        Assert.DoesNotContain(WireKinds.Rejected, Kind(NodeKinds.Claimed).Leaves);
+        Assert.All(Bare.Kinds, each => Assert.DoesNotContain(WireKinds.When, each.Leaves));
+        Assert.All(Bare.Kinds, each => Assert.DoesNotContain(WireKinds.Wait, each.Leaves));
+
+        var find = new NodeDeclaration("find", "local-release/find", 1, NodeReach.Performed)
+        {
+            Outcomes = ["release", "none"], Outputs = new Dictionary<string, string> { ["release"] = "local-release/release@1" }, Evidence = "local-release/receipt@1",
+        };
+        var step = Assert.Single(Assert.Single(WorkflowPalette.Build([("local-release", [find])]).Plugins).Steps);
+        Assert.Equal((1, "local-release/receipt@1"), (step.Version, step.Evidence));
+        Assert.Equal(["release", "none"], step.Outcomes);
+        Assert.Contains(WireKinds.When, step.Leaves);
+        Assert.Contains(WireKinds.Failed, step.Leaves);
+        Assert.DoesNotContain(WireKinds.Rejected, step.Leaves);
     }
 
     [Fact]

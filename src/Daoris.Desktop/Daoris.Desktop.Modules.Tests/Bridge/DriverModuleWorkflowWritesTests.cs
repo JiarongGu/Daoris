@@ -226,6 +226,50 @@ public sealed class DriverModuleWorkflowWritesTests : DriverModuleBridge
         Assert.Equal(1, NewestOnDisk("line"));
     }
 
+    /// <summary>The documents default's steps with the work step naming <paramref name="role"/>, and a <c>when</c> wire where asked.</summary>
+    private static JsonObject Documents(string? role = null, bool when = false)
+    {
+        var graph = WorkflowPresets.GraphOf("documents")!.Graph();
+        if (role is not null) graph["nodes"]![0]!["options"] = new JsonObject { ["role"] = role };
+        if (when) graph["wires"]!.AsArray().Add(new JsonObject { ["id"] = "z", ["kind"] = "when", ["from"] = "work", ["outcome"] = "release", ["to"] = "line" });
+        return graph;
+    }
+
+    private static List<(string? Code, string? Wire, string? Node)> Problems(JsonElement answer) =>
+        [.. answer.GetProperty("problems").EnumerateArray().Select(each => (each.GetProperty("code").GetString(), each.GetProperty("wire").GetString(), each.GetProperty("node").GetString()))];
+
+    [Fact]
+    public async Task A_save_refuses_a_role_that_cannot_take_its_step_at_that_step_and_writes_nothing()
+    {
+        var (module, _) = await UpAsync();
+
+        var reviewer = await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", graph = Documents(role: "opinion"), plan = true });
+        Assert.Equal((false, "refused"), (reviewer.GetProperty("done").GetBoolean(), reviewer.GetProperty("refused").GetString()));
+        Assert.Equal([("role", null, "work")], Problems(reviewer));
+        Assert.Contains("does not take `design`", reviewer.GetProperty("message").GetString());
+
+        var unknown = await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", graph = Documents(role: "nobody") });
+        Assert.Equal([("role", null, "work")], Problems(unknown));
+        Assert.Null(WorkflowStore.Load(Home, "docs"));
+
+        var builder = await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", graph = Documents(role: "build") });
+        Assert.True(builder.GetProperty("done").GetBoolean(), builder.GetProperty("message").GetString());
+        Assert.Empty(Problems(builder));
+        Assert.Equal(1, NewestOnDisk("docs"));
+    }
+
+    [Fact]
+    public async Task A_plan_of_steps_that_do_not_hold_answers_each_refusal_by_its_code_at_its_wire()
+    {
+        var (module, _) = await UpAsync();
+
+        var planned = await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", graph = Documents(when: true), plan = true });
+
+        Assert.Equal((false, "refused"), (planned.GetProperty("done").GetBoolean(), planned.GetProperty("refused").GetString()));
+        Assert.Contains(("no-outcomes", "z", (string?)null), Problems(planned).Select(each => (each.Code, each.Wire, (string?)null)));
+        Assert.Null(WorkflowStore.Load(Home, "docs"));
+    }
+
     /// <summary>The three routes are the person's: the census classes them so, no standing press is one of them and no role's act names one.</summary>
     [Theory]
     [InlineData("WORKFLOW_SAVE")]

@@ -32,7 +32,11 @@ public sealed class WorkflowEditRoutes(DriverContext context)
                 each.Pipeline,
                 Chosen = each.Chosen.Select(scope => new { scope.Level, scope.Name, scope.Role, scope.Kind }).ToArray(),
             }).ToArray(),
-            Presets = presets.Select(each => new { each.Id, each.Name, each.Graph, each.Line, Preset = true }).ToArray(),
+            Presets = presets.Select(each => new
+            {
+                each.Id, each.Name, each.Graph, each.Line, Preset = true, each.Body,
+                Names = each.Names is { } names ? new { names.En, names.Zh } : null,
+            }).ToArray(),
         });
     }
 
