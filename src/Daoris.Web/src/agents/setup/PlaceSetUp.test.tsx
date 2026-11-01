@@ -214,6 +214,27 @@ describe('Set up…, a place\'s quick set-up', () => {
     expect(opened).toEqual(['no-reviewers', 'no-review-environment']);
   });
 
+  it('is worked by keyboard alone: a choice by the arrow keys, a tick by the space bar, a door and the plan\'s jump by Enter', async () => {
+    const draft = draftOf({ repositories: ['site'], preset: 'branch-to-push', opinion: true });
+    const opened: string[] = [];
+    const on = show({ draft, plan: planOf(askOf(draft)), doorFor: (refusal) => (refusal.code === 'no-reviewers' ? () => { opened.push(refusal.code); } : null) });
+    screen.getByRole('radio', { name: /A branch to push/ }).focus();
+    await userEvent.keyboard('{ArrowDown}');
+    // The suggestion leads the deliveries, so the next after the branch is the integration.
+    expect(on.onChange).toHaveBeenLastCalledWith({ preset: 'integrated' });
+    screen.getByRole('checkbox', { name: 'Your look before it lands' }).focus();
+    await userEvent.keyboard(' ');
+    expect(on.onChange).toHaveBeenLastCalledWith({ look: true });
+    const door = screen.getByRole('button', { name: 'Name them: Workflow › Second opinion' });
+    door.focus();
+    await userEvent.keyboard('{Enter}');
+    expect(opened).toEqual(['no-reviewers']);
+    const jump = within(screen.getByRole('region', { name: 'The plan' })).getByRole('button', { name: '↑ How it lands' });
+    jump.focus();
+    await userEvent.keyboard('{Enter}');
+    expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'How it lands' }));
+  });
+
   it('shows each declaration once, offers its acceptances unchosen, and sends the ones the person ticks', async () => {
     const draft = draftOf({ preset: 'integrated' });
     const on = show({ draft, plan: planOf(askOf(draft)) });

@@ -2,14 +2,17 @@ import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { chinese } from '../../design/storyLanguage';
 import { storyWidths } from '../../design/storyWidths';
 import { InTheme } from '../../plugins/storyIcons';
-import { APPLIED, MOVED, planOf } from './placeFixtures';
-import { askOf, freshDraft, type SetUpDraft } from './placePlan';
+import { APPLIED, KEPT_ROW, MOVED, planOf, SETUP_PRESETS } from './placeFixtures';
+import { askOf, deliveriesOf, freshDraft, type SetUpDraft } from './placePlan';
 import { PlaceSetUp } from './PlaceSetUp';
 
-// A place's Set up… (AGENTSPLACE1j; the Agents-place design §4): delivery, adoption with what it builds, general driving, the plan read from
-// the driver and one Apply, at the main area's 80, 39 and 25 rem, in 中文 and in dark.
+// A place's Set up… (AGENTSPLACE1j, SETUPUX1j; the setup-UX design §2.2): how it lands (Keep, the deliveries by id, Not driven), adoption with
+// what it builds, driving, the refusals under their parts with their doors, the plan read from the driver and one Apply, at the main area's
+// 80, 39 and 25 rem, in 中文 and in dark.
 
 const nothing = () => {};
+
+const doors = () => nothing;
 
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
@@ -21,7 +24,8 @@ const meta: Meta<typeof PlaceSetUp> = {
   title: 'Agents/PlaceSetUp',
   component: PlaceSetUp,
   args: {
-    place: 'engine', kind: 'repository', choices: [], ...plannedFor(draftOf()), reading: false, stale: false, problem: null, applying: false, holding: false,
+    place: 'engine', kind: 'repository', choices: [], deliveries: deliveriesOf(SETUP_PRESETS), doorFor: doors, ...plannedFor(draftOf()),
+    reading: false, stale: false, problem: null, applying: false, holding: false,
     onChange: nothing, onApply: nothing, onHold: nothing, onClose: nothing,
   },
   decorators: [storyWidths.wide],
@@ -49,6 +53,68 @@ export const Reading: Story = { args: { plan: null, reading: true } };
 export const Refused: Story = { args: plannedFor(draftOf({ repositories: ['site'], preset: 'pull-request' })) };
 export const RefusedNarrow: Story = { ...Refused, decorators: [storyWidths.narrow] };
 export const RefusedChinese: Story = { ...Refused, decorators: [chinese] };
+
+/** Each refusal under the part it is about, a door beside the ones whose cause is put right elsewhere, and the plan's line jumping to each part. */
+export const RefusedWithDoors: Story = {
+  args: plannedFor(draftOf({ repositories: ['site'], preset: 'branch-to-push', opinion: true, look: true, adoption: true, drive: false })),
+};
+export const RefusedWithDoorsHalf: Story = { ...RefusedWithDoors, decorators: [storyWidths.half] };
+export const RefusedWithDoorsNarrow: Story = { ...RefusedWithDoors, decorators: [storyWidths.narrow] };
+export const RefusedWithDoorsChinese: Story = { ...RefusedWithDoors, decorators: [chinese] };
+export const RefusedWithDoorsChineseNarrow: Story = { ...RefusedWithDoors, decorators: [storyWidths.narrow, chinese] };
+export const RefusedWithDoorsDark: Story = { ...RefusedWithDoors, decorators: [dark] };
+
+/** Keep how it lands, suggested where the landing was chosen or a saved workflow is followed, saying what it follows. */
+export const Keep: Story = { args: { ...plannedFor(draftOf({ preset: 'keep', adoption: false })), plan: planOf(askOf(draftOf({ preset: 'keep', adoption: false })), { engine: KEPT_ROW }) } };
+export const KeepHalf: Story = { ...Keep, decorators: [storyWidths.half] };
+export const KeepNarrow: Story = { ...Keep, decorators: [storyWidths.narrow] };
+export const KeepChinese: Story = { ...Keep, decorators: [chinese] };
+export const KeepDark: Story = { ...Keep, decorators: [dark] };
+
+/** The suggestion with its why worded by code and the driver's sentence beneath. */
+export const SuggestedWhy: Story = { args: plannedFor(draftOf({ repositories: ['site'], preset: 'pull-request', adoption: false })) };
+export const SuggestedWhyNarrow: Story = { ...SuggestedWhy, decorators: [storyWidths.narrow] };
+export const SuggestedWhyChinese: Story = { ...SuggestedWhy, decorators: [chinese] };
+
+/** A workspace whose repositories suggest different things: nothing is preselected, and each choice names the repositories it suits. */
+export const Mixed: Story = {
+  args: {
+    place: 'aurora', kind: 'workspace',
+    choices: [{ repository: 'engine', driven: true }, { repository: 'site', driven: true }],
+    ...plannedFor(draftOf({ repositories: ['engine', 'site'], preset: null, adoption: null })),
+  },
+};
+export const MixedHalf: Story = { ...Mixed, decorators: [storyWidths.half] };
+export const MixedNarrow: Story = { ...Mixed, decorators: [storyWidths.narrow] };
+export const MixedChinese: Story = { ...Mixed, decorators: [chinese] };
+export const MixedDark: Story = { ...Mixed, decorators: [dark] };
+
+/** Driving captioned from the plan's own sides, repository by repository. */
+export const DrivingCaption: Story = {
+  args: {
+    place: 'aurora', kind: 'workspace',
+    choices: [{ repository: 'engine', driven: true }, { repository: 'site', driven: false }],
+    ...plannedFor(draftOf({ repositories: ['engine', 'site'], preset: 'keep', adoption: true, drive: false })),
+  },
+};
+export const DrivingCaptionNarrow: Story = { ...DrivingCaption, decorators: [storyWidths.narrow] };
+export const DrivingCaptionChinese: Story = { ...DrivingCaption, decorators: [chinese] };
+
+/** A workspace's whole list of repositories: All, Driven, Not driven or None, a count and a search. */
+export const Chooser: Story = {
+  args: {
+    place: 'aurora', kind: 'workspace',
+    choices: [
+      { repository: 'engine', driven: true }, { repository: 'site', driven: true },
+      ...Array.from({ length: 41 }, (_, at) => ({ repository: `archive-${at + 1}`, driven: false })),
+    ],
+    ...plannedFor(draftOf({ repositories: ['engine', 'site'], preset: 'branch-to-push' })),
+  },
+};
+export const ChooserHalf: Story = { ...Chooser, decorators: [storyWidths.half] };
+export const ChooserNarrow: Story = { ...Chooser, decorators: [storyWidths.narrow] };
+export const ChooserChinese: Story = { ...Chooser, decorators: [chinese] };
+export const ChooserDark: Story = { ...Chooser, decorators: [dark] };
 
 /** The integrated delivery offers the declaration's acceptance, unchosen. */
 export const Acceptance: Story = { args: plannedFor(draftOf({ preset: 'integrated', adoption: false })) };
