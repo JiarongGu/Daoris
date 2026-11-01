@@ -18,6 +18,9 @@ internal sealed class HelpRoleProposalWriter(HelpProposalFile file)
 
     private const string AllId = "*";
 
+    /// <summary>The staffing policy's presets, as the driver's role door fills them (STAFFPOLICY1b).</summary>
+    private static readonly string[] Presets = ["first", "even", "weighted"];
+
     private static readonly System.Text.RegularExpressions.Regex Tag = new("^[A-Za-z]{2,8}(-[A-Za-z0-9]{1,8})*$");
 
     /// <summary>
@@ -29,10 +32,23 @@ internal sealed class HelpRoleProposalWriter(HelpProposalFile file)
     /// </summary>
     public (string? Id, string Message) Propose(
         string change, string id, string? name, IReadOnlyDictionary<string, string>? nameIn, IReadOnlyList<string>? takes, string? scope, IReadOnlyList<string>? choices,
-        long? revision, string why, string? session, DateTimeOffset at)
+        long? revision, string why, string? session, DateTimeOffset at, string? policy = null, long? policyRevision = null)
     {
         if (string.IsNullOrWhiteSpace(why)) return NoReason;
         var door = Blank(change);
+        var policyText = Blank(policy);
+        System.Text.Json.JsonElement? record = null;
+        if (policyText is not null && policyText.StartsWith('{'))
+        {
+            try
+            {
+                record = System.Text.Json.JsonDocument.Parse(policyText).RootElement.Clone();
+            }
+            catch (System.Text.Json.JsonException)
+            {
+                return (null, "The policy record is not JSON. Nothing was proposed.");
+            }
+        }
         var named = Blank(id);
         var (kind, place) = Scope(Blank(scope));
         var entries = choices?.Select(Entry).ToList();
@@ -45,8 +61,10 @@ internal sealed class HelpRoleProposalWriter(HelpProposalFile file)
             : all && named != AllId || !all && named == AllId ? $"`{AllId}` is the id of `{AllDoor}` alone, which names no one role, and `{AllDoor}` takes no other."
             : (all ? null : Word(named, "a role's id"))
               ?? (all && revision is not null ? $"`{AllDoor}` names no one role, so it has no revision to read."
-                  : door != "set" && (Blank(name) ?? scope) is not null || door != "set" && names.Count > 0 || door != "set" && (takes?.Count > 0 || choices?.Count > 0)
-                  ? $"`{door}` names the role alone: only `set` carries its names, work, scope and choices."
+                  : door != "set" && (Blank(name) ?? scope) is not null || door != "set" && names.Count > 0 || door != "set" && (takes?.Count > 0 || choices?.Count > 0 || policyText is not null)
+                  ? $"`{door}` names the role alone: only `set` carries its names, work, scope, choices and policy."
+                  : policyText is not null && record is null && policyText != "none" && !Presets.Contains(policyText) ? $"`{policyText}` is not a policy: a preset ({string.Join(", ", Presets)}), `none`, or the record as JSON."
+                  : policyRevision is not null && policyText is null ? "a policy revision is read for a policy; name the policy."
                   : scope is not null && kind is null ? $"`{scope}` is not a scope: `machine`, `workspace:<id>` or `repository:<id>`."
                   : entries?.FirstOrDefault(entry => entry is null) is not null || entries?.Count > 4
                     ? "each choice is one quoted `agent [model|-] [effort|-]`, at most four."
@@ -101,6 +119,14 @@ internal sealed class HelpRoleProposalWriter(HelpProposalFile file)
                 writer.WriteEndArray();
             }
 
+            if (record is { } given)
+            {
+                writer.WritePropertyName("policy");
+                given.WriteTo(writer);
+            }
+            else if (policyText == "none") writer.WriteNull("policy");
+            else if (policyText is not null) writer.WriteString("policy", policyText);
+            if (policyRevision is { } policyRead) writer.WriteNumber("policyRevision", policyRead);
             if (revision is { } read) writer.WriteNumber("revision", read);
             writer.WriteEndObject();
         }, why, session, at);

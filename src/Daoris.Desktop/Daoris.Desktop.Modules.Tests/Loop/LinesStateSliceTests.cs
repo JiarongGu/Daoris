@@ -407,6 +407,37 @@ public sealed class LinesStateSliceTests : DriverModuleBridge
         await running;
     }
 
+    /// <summary>
+    /// COWORKVIEW1e-i (the cowork view design §R11.2 point 2): a lanes-only registration moves the registry's signature the tick compares, so
+    /// it is heard as any registry change is and has the service's answers judged again; the same lanes in another order are no change.
+    /// </summary>
+    [Fact]
+    public async Task A_registration_that_changes_a_repository_s_lanes_alone_is_heard_and_judges_the_service_s_answers_again()
+    {
+        _service.Registry = Registry(("alpha", "w1", true));
+        var (loop, _, slice) = await UpAsync();
+        using var stop = new CancellationTokenSource();
+        var running = slice.RunAsync(stop.Token);
+        await LandedAsync(loop);
+        await UntilAsync(() => Branch("alpha") == "main");
+        var asked = _service.RegistryReads;
+
+        static string Signed(params string[] lanes) =>
+            Repositories.Signature([new RepoView("alpha", Adopted: true, Root: "checkouts/alpha", Workspace: "w1") { Lanes = lanes }]);
+        string[] signs = [Signed(), Signed("core"), Signed("core", "web"), Signed("web", "core")];
+        Assert.NotEqual(signs[0], signs[1]);
+        Assert.NotEqual(signs[1], signs[2]);
+        Assert.Equal(signs[2], signs[3]);
+        Assert.False(DriverLoop.RegistryHeard(loop.Facts, signs[3], signs[2]));
+        await Task.Delay(300);
+        Assert.Equal(asked, _service.RegistryReads);
+
+        Assert.True(DriverLoop.RegistryHeard(loop.Facts, signs[1], signs[0]));
+        await UntilAsync(() => _service.RegistryReads > asked);
+        await stop.CancelAsync();
+        await running;
+    }
+
     /// <summary>The facts' other topics land often (the sessions, the history, the work) and move nothing here, so they wake nothing.</summary>
     [Fact]
     public async Task The_slice_hears_the_service_s_answers_and_the_lines_land_and_no_other_fact()

@@ -92,6 +92,10 @@ commit the pull request merged. A reading that is wrong keeps the branch.
 - **The tools its `plugin.json` declares under `tools`**, each at the version it names or newer, with Azure
   CLI's devops extension added, `az extension add --name azure-devops`, and Azure CLI signed in, `az login`.
   `daoris-driver plugins try azure-devops-pull-request` checks them on this machine.
+  The plugin's page in Daoris shows each and, on *Check*, where it stands: *Set up* adds the devops extension and *Sign in* runs
+  `az login`, each in a console you see, only on your press. Daoris never signs in for you. Where `az` is not found the page says how to get
+  it, from the manifest's `install`: `winget install -e --id Microsoft.AzureCLI` on Windows, `brew install azure-cli` on macOS, and
+  [Microsoft's page](https://learn.microsoft.com/cli/azure/install-azure-cli-linux) on Linux.
 - **`origin`** pointing at the Azure Repos repository, with push access for whoever `git` pushes as.
 
 ## Why each version

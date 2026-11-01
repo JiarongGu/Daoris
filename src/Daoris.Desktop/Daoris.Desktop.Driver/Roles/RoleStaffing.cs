@@ -322,7 +322,15 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
     /// check. Before the import the file is the staffing, and is written as today under the same lock.
     /// </summary>
     /// <exception cref="DriverException">The judge's refusal, a lock held past its wait, or a write not done; said.</exception>
-    public IReadOnlyList<string> Set(IReadOnlyList<(string Actor, IReadOnlyList<ActorChoice>? Choices)> changes)
+    public IReadOnlyList<string> Set(IReadOnlyList<(string Actor, IReadOnlyList<ActorChoice>? Choices)> changes) => Set(changes, also: null);
+
+    /// <summary>
+    /// <see cref="Set(IReadOnlyList{ValueTuple{string, IReadOnlyList{ActorChoice}}})"/> with <paramref name="also"/> run in the commit's
+    /// transaction (STAFFPOLICY1b): the role's record and policy are published with the staffing or not at all. Before the import, where the
+    /// file is the staffing, it runs in a transaction of its own after the file's write. A policy bound to a changed role's choices is
+    /// re-keyed in the same transaction, or deleted where the role is left with none (§2.1).
+    /// </summary>
+    internal IReadOnlyList<string> Set(IReadOnlyList<(string Actor, IReadOnlyList<ActorChoice>? Choices)> changes, Action<DesktopWrite>? also)
     {
         foreach (var (actor, choices) in changes) ActorChoices.Judged(actor, choices);
         using var held = Lock();
@@ -330,11 +338,57 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
         if (Read() is not { } read)
         {
             StandingChoices.Write(FileOfHome, config => Changed(config, changes, kept));
+            // The file is the staffing before the import: the record and the policy follow it in a transaction of their own.
+            if (also is not null) Publishing(also);
             return kept;
         }
 
-        Commit(read, Changed(StaffingProjection.Config(read), changes, kept), read.AsFound, also: null);
+        Commit(read, Changed(StaffingProjection.Config(read), changes, kept), read.AsFound, also, [.. changes.Select(change => change.Actor)]);
         return kept;
+    }
+
+    /// <summary>
+    /// A transaction that writes <paramref name="rows"/> (the added roles' staffing) and <paramref name="also"/> together, under the staffing's
+    /// lock, with no seeded role's staffing among them (STAFFPOLICY1b): the catalogue, the policy and the staffing of added roles published as one.
+    /// </summary>
+    /// <exception cref="DriverException">The staffing is not in the store yet and <paramref name="rows"/> names a role; a lock held past its wait; a write not done.</exception>
+    internal void Publish(IReadOnlyList<(string Role, IReadOnlyList<ActorChoice>? Choices)> rows, Action<DesktopWrite> also)
+    {
+        foreach (var (role, _) in rows)
+        {
+            if (ActorChoices.Ids.Contains(role, StringComparer.Ordinal)) throw new ArgumentException($"`{role}` is a seeded role, whose staffing is Set's.", nameof(rows));
+        }
+
+        using var held = Lock();
+        if (rows.Count > 0 && Read() is null) throw NotInStore();
+        Publishing(write =>
+        {
+            AddedRows(write, rows);
+            also(write);
+        });
+    }
+
+    private void Publishing(Action<DesktopWrite> work)
+    {
+        using var store = DesktopStore.Open(Location, StoreProcess.Options(Settled));
+        store.Write(Family, write =>
+        {
+            work(write);
+            BeforeCommit?.Invoke();
+        });
+    }
+
+    internal static DriverException NotInStore() =>
+        new("the roles' staffing is not in this home's store yet (its first start imports it), so an added role's choices are not kept; nothing was written.");
+
+    /// <summary>This home's ledger of role starts, which reads the policies and the day's counts a preview arranges by.</summary>
+    public StaffLedger Ledger => new(home, settled);
+
+    /// <summary><paramref name="role"/>'s policy as the store holds it: the default where there is none, or no store.</summary>
+    public StaffPolicyRead Policy(string role)
+    {
+        using var store = DesktopStoreReader.Open(Location);
+        return store is null ? new StaffPolicyRead(StaffPolicyRead.Default, null, 0, null) : StaffPolicies.Read(store, role);
     }
 
     /// <summary>
@@ -355,23 +409,49 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
         }
 
         using var held = Lock();
-        if (Read() is null)
+        if (Read() is null) throw NotInStore();
+        Publishing(write => AddedRows(write, changes));
+    }
+
+    /// <summary>The added roles' rows written inside a transaction; a policy bound to one is re-keyed to its new choices, or deleted where it has none.</summary>
+    internal static void AddedRows(DesktopWrite write, IReadOnlyList<(string Role, IReadOnlyList<ActorChoice>? Choices)> changes)
+    {
+        var bound = StaffPolicies.Has(write) ? BoundPolicies(write, changes.Select(change => change.Role)) : [];
+        foreach (var (role, choices) in changes)
         {
-            throw new DriverException("the roles' staffing is not in this home's store yet (its first start imports it), so an added role's choices are not kept; nothing was written.");
+            write.Execute("DELETE FROM role_staffing WHERE role = $role", ("$role", role));
+            if (choices is null) continue;
+            write.Execute(
+                "INSERT INTO role_staffing (role, state, choices, why, first_agent, at) VALUES ($role, 'set', $choices, NULL, NULL, $at)",
+                ("$role", role), ("$choices", Write(choices)), ("$at", Now()));
         }
 
-        using var store = DesktopStore.Open(Location, StoreProcess.Options(Settled));
-        store.Write(Family, write =>
+        Rekeyed(write, bound);
+    }
+
+    /// <summary>The policies of <paramref name="roles"/> that stand set against the staffing as it is, to be re-keyed once their staffing is rewritten.</summary>
+    private static IReadOnlyList<(string Role, StaffPolicy Policy)> BoundPolicies(DesktopWrite write, IEnumerable<string> roles) =>
+        [.. roles.Distinct(StringComparer.Ordinal).Select(role => (Role: role, Read: StaffPolicies.Read(write, role)))
+            .Where(each => each.Read is { State: StaffPolicyRead.Set, Policy: not null })
+            .Select(each => (each.Role, each.Read.Policy!))];
+
+    /// <summary>The policies read before a write, bound to the choices it left: re-keyed to them, or deleted where the role has none now.</summary>
+    private static void Rekeyed(DesktopWrite write, IReadOnlyList<(string Role, StaffPolicy Policy)> bound)
+    {
+        foreach (var (role, policy) in bound)
         {
-            foreach (var (role, choices) in changes)
+            var row = write.Query(
+                "SELECT state, choices FROM role_staffing WHERE role = $role", read => (State: read.GetString(0), Choices: Text(read, 1)), ("$role", role)).FirstOrDefault();
+            var choices = row.State == "set" ? Choices(row.Choices) : null;
+            if (choices is not { Count: > 0 })
             {
-                write.Execute("DELETE FROM role_staffing WHERE role = $role", ("$role", role));
-                if (choices is null) continue;
-                write.Execute(
-                    "INSERT INTO role_staffing (role, state, choices, why, first_agent, at) VALUES ($role, 'set', $choices, NULL, NULL, $at)",
-                    ("$role", role), ("$choices", Write(choices)), ("$at", Now()));
+                if (StaffPolicies.Delete(write, role, Now())) write.Moved(StaffPolicies.Family);
+                continue;
             }
-        });
+
+            StaffPolicies.Rekey(write, role, policy, choices);
+            write.Moved(StaffPolicies.Family);
+        }
     }
 
     /// <summary>
@@ -491,7 +571,8 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
     /// staffing and sets <c>written</c>, then the check. A file whose paths moved, or whose lock was taken, is not written and the press is
     /// not done; the check runs then too.
     /// </summary>
-    private void Commit(StaffingRead read, DriverConfig after, IReadOnlyDictionary<string, string> asFound, Action<DesktopWrite>? also)
+    private void Commit(
+        StaffingRead read, DriverConfig after, IReadOnlyDictionary<string, string> asFound, Action<DesktopWrite>? also, IReadOnlyList<string>? rekey = null)
     {
         var projection = StaffingProjection.Project(after, asFound, read.Written.Actors, Narrowing(after));
         var filed = StaffingFile.Project(FileOfHome, read.Written, projection, FileWait, Seams);
@@ -509,8 +590,10 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
             store.Write(Family, write =>
             {
                 var at = Now();
+                var bound = rekey is { Count: > 0 } && StaffPolicies.Has(write) ? BoundPolicies(write, rekey) : [];
                 StaffingProjection.Rows(write, after, asFound, at);
                 StaffingProjection.Written(write, projection, at);
+                Rekeyed(write, bound);
                 also?.Invoke(write);
                 BeforeCommit?.Invoke();
             });
@@ -719,8 +802,8 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
         return Encoding.UTF8.GetString(stream.GetBuffer(), 0, (int)stream.Length);
     }
 
-    /// <summary>The choices a stored list holds, or null where the text is not one the store wrote.</summary>
-    private static IReadOnlyList<ActorChoice>? Choices(string? text)
+    /// <summary>The choices a stored list holds, or null where the text is not one the store wrote; a policy's digest reads them too.</summary>
+    internal static IReadOnlyList<ActorChoice>? Choices(string? text)
     {
         if (text is null) return null;
         try

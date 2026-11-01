@@ -190,7 +190,7 @@ describe('The Roles mode, Work, Accounts and By repository', () => {
     it('keeps *Needs a look* to the works that cannot run or hold, and says nothing matches otherwise', async () => {
       const user = await open();
       await screen.findByRole('button', { name: 'Show building' });
-      await user.click(screen.getByRole('checkbox', { name: 'Needs a look' }));
+      await user.click(screen.getByRole('checkbox', { name: 'Needs attention' }));
       const rows = [...document.querySelectorAll('[data-structure-row^="work:"]')].map((row) => row.getAttribute('data-structure-row'));
       expect(rows).toEqual(['work:review']);
       await user.type(screen.getByRole('searchbox', { name: 'Name' }), 'zzz');
@@ -234,7 +234,7 @@ describe('The Roles mode, Work, Accounts and By repository', () => {
       const user = userEvent.setup();
       await user.click(await screen.findByRole('button', { name: new RegExp(`^${i18n.t('nav.roles.work')}$`) }));
       expect((await screen.findAllByRole('button', { name: /^展开/ })).length).toBe(9);
-      expect(screen.getByRole('checkbox', { name: '需要看一下' })).toBeTruthy();
+      expect(screen.getByRole('checkbox', { name: '需要留意' })).toBeTruthy();
     });
   });
 
@@ -267,7 +267,7 @@ describe('The Roles mode, Work, Accounts and By repository', () => {
 
     it('says a named agent not installed and one this build does not know, each needing a look', async () => {
       const user = await open();
-      await user.click(await screen.findByRole('checkbox', { name: 'Needs a look' }));
+      await user.click(await screen.findByRole('checkbox', { name: 'Needs attention' }));
       const dsh = (await screen.findByRole('button', { name: 'Show DeepSeek Harness' })).closest('li')!;
       expect(within(dsh).getByText(/not installed/)).toBeTruthy();
       await user.click(screen.getByRole('button', { name: 'Show ghost-agent' }));

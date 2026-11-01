@@ -251,9 +251,9 @@ public sealed class RoleCatalog
         return narrowed;
     }
 
-    /// <summary>The judge's refusal codes, the closed set every door answers.</summary>
+    /// <summary>The judge's refusal codes, the closed set every door answers; <c>policy</c> is a staffing policy's (<see cref="StaffPolicy.Judge"/>).</summary>
     public static IReadOnlyList<string> Codes { get; } =
-        ["appointed-not-configurable", "mixed-shape", "unknown-work", "reserved-id", "bad-record", "may-not-be-off", "two-roles-one-work", "choices"];
+        ["appointed-not-configurable", "mixed-shape", "unknown-work", "reserved-id", "bad-record", "may-not-be-off", "two-roles-one-work", "choices", StaffPolicy.Code];
 
     /// <summary>
     /// Whether <paramref name="choices"/> may be the staffing of a role taking <paramref name="work"/>: today's <see cref="ActorChoices.Judge"/>
@@ -365,7 +365,13 @@ public sealed class RoleCatalog
     public static IReadOnlyList<long> WriteAll(string location, IReadOnlyList<RoleChange> changes, Func<StoreSettled>? settled = null)
     {
         using var store = DesktopStore.Open(location, StoreProcess.Options(settled));
-        return store.Write("roles", write =>
+        return store.Write("roles", write => WriteIn(write, changes));
+    }
+
+    /// <summary><see cref="WriteAll"/> inside a transaction the caller holds, so a role, its staffing and its policy are published in one (STAFFPOLICY1b).</summary>
+    /// <exception cref="DriverException">The first change the judge refused; the caller's transaction rolls back.</exception>
+    public static IReadOnlyList<long> WriteIn(DesktopWrite write, IReadOnlyList<RoleChange> changes)
+    {
         {
             var revisions = new List<long>();
             RoleCatalog Current() => Of(write.Query("SELECT id, state, record, revision FROM roles", row => new StoredRole(row.GetString(0), row.GetString(1), row.GetString(2), row.GetInt64(3))));
@@ -411,8 +417,8 @@ public sealed class RoleCatalog
                 revisions.Add(last);
             }
 
-            return (IReadOnlyList<long>)revisions;
-        });
+            return revisions;
+        }
     }
 
     private static RoleRefusal Refused(string code, string said) => new(code, said);

@@ -162,8 +162,29 @@ internal sealed class StartPlan
         RoleName = found?.Role is { } taken && !ActorChoices.Ids.Contains(taken.Id, StringComparer.Ordinal) ? taken.Name.In("en") :ActorWords.Name(Role);
         Revision = found?.Role is { } kept ? catalogue?.RevisionOf(kept.Id) ?? 0 : 0;
         Order = order ?? (found is { Role: null } ? [] : ActorChoices.Effective(Role, config, fence: fence));
+        _staffed = order is null && found is not { Role: null };
         (_config, _roster, _adapters, _memory) = (config, roster, adapters, memory);
     }
+
+    /// <summary>
+    /// Whether an order the caller holds is the role's own effective order (a new conversation's), which a policy then arranges as it does
+    /// the order read here; an order the caller holds for another reason (a helper's, a recheck's) is walked as given.
+    /// </summary>
+    public bool OwnOrder { get; init; }
+
+    private bool Arranging => Staff is not null && (_staffed || OwnOrder) && Order.Count > 0;
+
+    /// <summary>Whether the order is the role's own, read here, which a policy may arrange: an order the caller holds is walked as given.</summary>
+    private readonly bool _staffed;
+
+    /// <summary>
+    /// The ledger of role starts by which a set policy arranges the role's own order and writes the start down (STAFFPOLICY1c, D226): null for
+    /// a walk that arranges nothing (a reviewer's, a helper's, a partner's, a brainstorm's), which walks its order as given.
+    /// </summary>
+    public StaffLedger? Staff { get; init; }
+
+    /// <summary>The line's own facts a policy arranges by (§3.1): the choices it moved off, the tokens reported; none for a new start.</summary>
+    public StaffFacts? LineFacts { get; init; }
 
     /// <summary>The start's work.</summary>
     public string Work { get; }
@@ -242,34 +263,80 @@ internal sealed class StartPlan
     {
         IReadOnlyCollection<string>? PassedFor(ActorEffective entry) =>
             refused is { Entry: var at, Account: { } account } && at == entry ? [account] : null;
-        if (Order.Count == 1 && !WalksOne)
+
+        // STAFFPOLICY1c: the role's own order arranged by its set policy, over the facts read once under the ledger's lock; a start that
+        // counts also reserves its top pick there, so a second start in the same look is arranged beside it (PARALLEL1c).
+        var order = Order;
+        StaffTake? take = null;
+        IReadOnlyList<BuildPass> staffed = [];
+        if (Arranging)
         {
-            var only = await AccountsAsync(Order[0].Agent, Order[0].Model, PassedFor(Order[0]), ct, counts, except).ConfigureAwait(false);
-            return new SettledSelection(Role, only, Order[0], []) { Revision = Revision };
+            take = counts ? Staff!.Take(Role, Work, Order, LineFacts) : Staff!.Preview(Role, Work, Order, LineFacts);
+            order = [.. take.Arrangement.Walk.Select(each => each.Entry)];
+            staffed = take.Arrangement.Passed;
+        }
+
+        var policy = take?.Policy.Applied is not null;
+        void GiveBack()
+        {
+            if (take?.Reservation is { } held) Staff!.Release(held);
+        }
+
+        SettledSelection Taken(SettledSelection settled, ActorEffective chosen)
+        {
+            if (take is null || !counts) return settled;
+            var arranged = take.Arrangement.Walk.FirstOrDefault(each => each.Entry == chosen);
+            if (take.Reservation is { } held) Staff!.Settle(held, chosen);
+            Staff!.Bind(settled.Selection.Number, new StaffBinding(
+                Role, StaffKey.Of(chosen), take.Arrangement.Rule, arranged?.By ?? StaffBy.First, arranged?.Said ?? "", take.Reservation));
+            return settled;
+        }
+
+        if (order.Count == 1 && !WalksOne && staffed.Count == 0)
+        {
+            var only = await AccountsAsync(order[0].Agent, order[0].Model, PassedFor(order[0]), ct, counts, except).ConfigureAwait(false);
+            return Taken(new SettledSelection(Role, only, order[0], []) { Revision = Revision }, order[0]);
         }
 
         using var walk = _memory.Walk(Subject, counts);
+        foreach (var pass in staffed)
+        {
+            if (walk.Fresh(pass)) Log?.Write("info", "actor.passed", Line(("choice", pass.Entry.From), ("agent", pass.Entry.Agent), ("code", pass.Code)));
+        }
+
         var walked = await LoopAsync(
-                Order, entry => entry, entry => TryAsync(entry, PassedFor(entry), counts, except, ct),
+                order, entry => entry, entry => TryAsync(entry, PassedFor(entry), counts, except, ct),
                 said: pass =>
                 {
                     if (walk.Fresh(pass)) Log?.Write("info", "actor.passed", Line(("choice", pass.Entry.From), ("agent", pass.Entry.Agent), ("code", pass.Code)));
                 })
             .ConfigureAwait(false);
+        IReadOnlyList<BuildPass> passes = [.. staffed, .. walked.Passes];
         if (walked.Taken is { } taken)
         {
             if (counts)
             {
-                Log?.Write("info", "actor.chose", Line(("choice", taken.From), ("agent", taken.Agent), ("model", taken.Model),
-                    ("passed", walked.Passes.Select(pass => pass.Word).ToList())));
+                var chose = new List<(string Key, object? Value)>
+                {
+                    ("choice", taken.From), ("agent", taken.Agent), ("model", taken.Model), ("passed", passes.Select(pass => pass.Word).ToList()),
+                };
+                if (policy)
+                {
+                    chose.Add(("rule", take!.Arrangement.Rule));
+                    chose.Add(("by", take.Arrangement.Walk.FirstOrDefault(each => each.Entry == taken)?.By));
+                }
+
+                Log?.Write("info", "actor.chose", Line([.. chose]));
             }
 
-            return new SettledSelection(Role, walked.Selection!, taken, walked.Passes) { Adapter = _adapters.Resolve(taken.Agent), Revision = Revision };
+            return Taken(new SettledSelection(Role, walked.Selection!, taken, passes) { Adapter = _adapters.Resolve(taken.Agent), Revision = Revision }, taken);
         }
 
+        GiveBack();
+
         // The wait's sentence (D205 §4.5): judged again at every look, the first choice that can run, in order, taken.
-        var wait = $"{RoleName} waits: none of its choices can run now. {string.Join("; ", walked.Passes.Select(pass => pass.Said))}.";
-        return new SettledSelection(Role, (walked.Held ?? new HarnessSelection(wait)) with { Refusal = wait, Cooling = walked.Soonest }, null, walked.Passes);
+        var wait = $"{RoleName} waits: none of its choices can run now. {string.Join("; ", passes.Select(pass => pass.Said))}.";
+        return new SettledSelection(Role, (walked.Held ?? new HarnessSelection(wait)) with { Refusal = wait, Cooling = walked.Soonest }, null, passes);
     }
 
     /// <summary>

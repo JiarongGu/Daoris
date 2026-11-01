@@ -1,12 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { doorLabel } from '../../agents/tools';
 import { keys } from '../../data/queries';
+import { sentence } from '../../locales/format';
+import { fingerprintOf } from '../../workflow/draftFingerprint';
 import type {
-  EditorRole, WorkflowListAnswer, WorkflowPaletteAnswer, WorkflowSaveAnswer, WorkflowSaveAsk, WorkflowShownAnswer, WorkflowUseAsk,
+  EditorRole, StepStaffing, WorkflowListAnswer, WorkflowPaletteAnswer, WorkflowSaveAnswer, WorkflowSaveAsk, WorkflowShownAnswer, WorkflowUseAsk,
 } from '../../workflow/edit/answers';
+import type { ProposalShown } from '../../workflow/edit/proposalTake';
 import type { WorkflowEditorBridge } from '../../workflow/edit/WorkflowEditor';
-import { useRoleStructureChain } from '../driver';
+import { useHarnesses } from '../agents/agents';
+import { useDraftProposals, useSettleHelp } from '../help';
+import type { WorkflowPlanBridge } from '../../workflow/place/ChangeWorkflow';
+import { useActors, useRoles, useRoleStructureChain, useSetActor, useSetRole } from '../driver';
 import { askHeld, isPending } from '../state/held';
 import { askWorkflowSave, askWorkflowUse } from './workflow';
 
@@ -73,9 +81,10 @@ export type EditorPlace = { repository: string; workspace?: string | null } | { 
 /**
  * **The step editor's bridge** (WORKFLOWEDIT1b): its three reads, the working roles a step may name from the roles' structure at the
  * place it opened from, a planned save judging each change (the newest asked is the one answered), the save, and *Use here*. Every read
- * is asked only while the editor shows; a save and a choice ask the reads again.
+ * is asked only while the editor shows; a save and a choice ask the reads again. `onPlan` (SETUPUX1p) reads the plan of a choice and
+ * writes nothing; *Change…* sends it only where `WORKFLOW_LIST` announces it.
  */
-export const useWorkflowEditor = (place: EditorPlace, { enabled = true }: { enabled?: boolean } = {}): WorkflowEditorBridge => {
+export const useWorkflowEditor = (place: EditorPlace, { enabled = true }: { enabled?: boolean } = {}): WorkflowEditorBridge & WorkflowPlanBridge => {
   const client = useQueryClient();
   const [open, setOpen] = useState(false);
   const live = enabled && open;
@@ -85,36 +94,100 @@ export const useWorkflowEditor = (place: EditorPlace, { enabled = true }: { enab
   const shown = useWorkflowShown(shownId, undefined, { enabled: live });
   const chain = 'repository' in place ? { repository: place.repository, ...(place.workspace ? { workspace: place.workspace } : {}) } : { workspace: place.workspace };
   const structure = useRoleStructureChain(chain, undefined, { enabled: live });
-  const [judge, setJudge] = useState<{ answer: WorkflowSaveAnswer | null; judging: boolean }>({ answer: null, judging: false });
+  // The newest judgement is of one draft, by its fingerprint (FLOWCHART2c): the editor reads it only while the draft it holds is that one.
+  const [judge, setJudge] = useState<{ answer: WorkflowSaveAnswer | null; of: string | null; failed: string | null; judging: boolean }>({
+    answer: null, of: null, failed: null, judging: false,
+  });
   const asked = useRef(0);
   const again = () => client.invalidateQueries({ queryKey: editKey() });
   const save = useMutation({ mutationFn: (ask: WorkflowSaveAsk) => askWorkflowSave(ask), onSuccess: again });
   const use = useMutation({ mutationFn: (ask: WorkflowUseAsk) => askWorkflowUse(ask), onSuccess: again });
+  // A role covers this place when it is placed on this machine, in the place's workspace or in the place itself.
+  const here = 'repository' in place ? { repository: place.repository, workspace: place.workspace ?? null } : { repository: null, workspace: place.workspace };
+  const covers = (kind: string | null | undefined, id: string | null | undefined) =>
+    !kind || kind === 'machine' || (kind === 'workspace' && id === here.workspace) || (kind === 'repository' && id === here.repository);
   const roles: EditorRole[] = (structure.data?.roles ?? [])
     .filter((role) => role.state !== 'removed' && role.state !== 'unreadable')
-    .map((role) => ({ id: role.id, name: role.name ?? null, takes: role.takes }));
+    .map((role) => ({
+      id: role.id, name: role.name ?? null, takes: role.takes, scope: { kind: role.scopeKind ?? 'machine', id: role.scopeId ?? null }, revision: role.revision,
+      covers: covers(role.scopeKind, role.scopeId),
+    }));
+  // The one role editor beside a step (SETUPUX1t): its reads are asked only while the editor shows, its presses are `SET_ROLE` and `SET_ACTOR`.
+  const { t } = useTranslation();
+  const roster = useHarnesses({ enabled: live });
+  const catalogue = useRoles({ enabled: live });
+  const actors = useActors({ enabled: live });
+  const setRole = useSetRole();
+  const setActor = useSetActor();
+  // A role changed changes what the roles' structure, the catalogue and the orders say, and what a step may name.
+  const rolesAgain = () => {
+    void client.invalidateQueries({ queryKey: [...keys.driver, 'roles'] });
+    void client.invalidateQueries({ queryKey: [...keys.driver, 'actors'] });
+  };
+  const harnesses = Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [];
+  const catalogueRead = catalogue.data ? 'ok' : catalogue.isError ? 'failed' : catalogue.isSuccess ? 'notOffered' : 'loading';
+  const staffing: StepStaffing = {
+    catalogue: catalogue.data ?? null,
+    read: catalogueRead,
+    actors: actors.data ?? [],
+    // An agent a person can name is one this machine has: a choice on one not installed would only hold the start.
+    agents: harnesses.filter((door) => door.present).map((door) => ({ value: door.harness, label: doorLabel(t, door) })),
+    offers: Object.fromEntries(harnesses.map((door) => [door.harness, door.settingsChoices ?? null])),
+    busy: setRole.isPending || setActor.isPending,
+    onSet: (press, answered) => setRole.mutate(press, {
+      onSuccess: () => { rolesAgain(); answered.done(); },
+      onError: (error) => answered.refused(sentence(error)),
+    }),
+    onSetActor: (actor, choices, answered) => setActor.mutate({ actor, choices }, {
+      onSuccess: () => { rolesAgain(); answered.done(); },
+      onError: (error) => answered.refused(sentence(error)),
+    }),
+  };
+  // FLOWCHART2f: Ask Daoris's newest proposal against a draft of this place, and the presses that settle it, Ask Daoris's own.
+  const drafts = useDraftProposals('repository' in place ? place.repository : place.workspace, live);
+  const settle = useSettleHelp();
+  const newest = drafts.at(-1);
+  const card = newest?.proposal ?? null;
+  const base = newest?.base ?? null;
+  const made = newest?.maker ? JSON.stringify(newest.maker) : null;
+  // One proposal object while its card, its base and its maker hold: the editor reckons its changes' closures from it.
+  const proposal = useMemo((): ProposalShown | null => (card?.workflow ? {
+    id: card.id, base, proposed: card.workflow.proposed ?? {}, changes: card.workflow.changes ?? [], why: card.why,
+    problems: card.workflow.problems?.length ?? 0,
+    maker: made === null ? null : JSON.parse(made) as ProposalShown['maker'],
+  } : null), [card, base, made]);
 
   return {
     list: list.data ?? null,
     palette: palette.data ?? null,
     error: list.error ?? palette.error ?? null,
     roles,
+    staffing,
     shown: shown.data ?? null,
     onShow: setShownId,
     judged: judge.answer,
+    judgedOf: judge.of,
+    judgeFailed: judge.failed,
     judging: judge.judging,
     onJudge: (ask) => {
       const mine = ++asked.current;
-      setJudge((was) => ({ ...was, judging: true }));
+      const of = fingerprintOf(ask.graph);
+      setJudge((was) => ({ ...was, failed: null, judging: true }));
+      // Only the newest request is heard: an older answer arriving late is dropped, whether it answered or failed.
       askWorkflowSave({ ...ask, plan: true }).then(
-        (answer) => { if (mine === asked.current) setJudge({ answer, judging: false }); },
-        () => { if (mine === asked.current) setJudge((was) => ({ ...was, judging: false })); },
+        (answer) => { if (mine === asked.current) setJudge({ answer, of, failed: null, judging: false }); },
+        () => { if (mine === asked.current) setJudge((was) => ({ ...was, failed: of, judging: false })); },
       );
     },
     saving: save.isPending,
     onSave: (ask) => save.mutateAsync({ ...ask, plan: false }),
     using: use.isPending,
     onUse: (ask) => use.mutateAsync(ask),
+    // A plan writes nothing, so it asks no read again.
+    onPlan: (ask) => askWorkflowUse({ ...ask, plan: true }),
     onOpen: setOpen,
+    proposal,
+    onSettleProposal: (id, taken, left) => settle.mutateAsync({ id, apply: true, taken, left }),
+    onDismissProposal: (id) => settle.mutateAsync({ id, apply: false }),
   };
 };

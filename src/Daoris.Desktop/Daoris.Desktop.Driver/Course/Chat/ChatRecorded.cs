@@ -37,6 +37,8 @@ internal static class ChatRecorded
             // SESSCTX1c part B (the session-context design §2): a part that goes on from a lost conversation is handed the person's
             // words that waited there after the brief, in the same prompt; they are the person's, as they said them. FOUNDATION1d-ii part 4:
             // the words a keyed open moved are each shown under its id, so each word shown waiting pairs with where it was asked.
+            // COWORKVIEW1e-i: the routing standing a hand-over's briefing carries, noted beside the brief it rides with.
+            if (ToldRouting(message.Routing) is { } routed) yield return routed;
             if (shown is not null)
             {
                 foreach (var each in shown) yield return each;
@@ -79,7 +81,9 @@ internal static class ChatRecorded
 
         if (ToldBrowser(message) is { } toldBrowser) yield return toldBrowser;
         if (ToldProcess(message) is { } toldProcess) yield return toldProcess;
+        if (ToldRouting(message.Routing) is { } toldRouting) yield return toldRouting;
         if (Told(message) is { } told) yield return told;
+        if (ToldDraft(message) is { } toldDraft) yield return toldDraft;
         if (shown is null)
         {
             yield return Asked(message);
@@ -111,6 +115,13 @@ internal static class ChatRecorded
     }
 
     /// <summary>
+    /// The workflow draft the agent was told beside the person's words (FLOWCHART2d), as the record keeps it: a note of its own, its lead by
+    /// code, then what the agent was handed as the program's words, the draft's JSON last and whole, so the draft door finds it by its
+    /// fingerprint (<see cref="WorkflowDraftTold.Told"/>).
+    /// </summary>
+    internal static SessionEvent? ToldDraft(ChatMessage message) => message.Draft?.ToldNote();
+
+    /// <summary>
     /// The browser the agent was handed and told of beside the person's first words (BRWHINT1a), as the record keeps it: a note of
     /// its own, so the person sees what Daoris told the agent. The line is Daoris's one-copy English (D142 point 6), shown as written.
     /// </summary>
@@ -118,6 +129,16 @@ internal static class ChatRecorded
     {
         if (message.Briefing is not { Length: > 0 } line) return null;
         var told = Noted.Of(NoteCodes.ChatToldBrowser, "told the agent:").Then(" ", Noted.Said(line, NoteBy.Program));
+        return new SessionEvent { Kind = SessionEventKind.Note, Text = told.Note, Parts = told.Parts };
+    }
+
+    /// <summary>
+    /// The routing standing the agent was told at a start (COWORKVIEW1e-i), as the record keeps it: a note of its own under its own lead,
+    /// the standing a fact, the words Daoris's one-copy English (D142 point 6), shown as written. Null where none was told.
+    /// </summary>
+    internal static SessionEvent? ToldRouting(RoutingStanding? routing)
+    {
+        if (routing?.Note() is not { } told) return null;
         return new SessionEvent { Kind = SessionEventKind.Note, Text = told.Note, Parts = told.Parts };
     }
 

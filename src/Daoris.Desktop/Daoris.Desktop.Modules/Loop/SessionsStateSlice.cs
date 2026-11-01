@@ -47,16 +47,18 @@ public static class SessionsStateSlice
         // FOUNDATION1c (D212): the work its marks read as, judged in .NET and answered on loopback, beside the kind; absent on a record a
         // host answers none for, and then the page reads today's predicates.
         "work",
+        // COWORKVIEW1b-i: the quest a chat took through its own connector, which the at-work view reads a chat's wait by.
+        "tookQuest",
     ];
 
     /// <summary>
     /// What the service answers of a record that is never pushed: the transcript's path, the words waiting, and what no view reads
     /// from the list (whether its quest was taken by its connector, a stop's cause, its delete, its line of work, its mode, and why
     /// its take's bind lapsed, which the driver's end line reads, CLOSETAKE1; and the downloaded versions its starts were handed,
-    /// which the downloads' rule reads, KEEP1b; and the quest a chat took, which the run's reader reads, CHATFLOW1a; and the part its line ends at, which the groups slice's entries carry for the page, LINESTOGETHER1a).
+    /// which the downloads' rule reads, KEEP1b; and the part its line ends at, which the groups slice's entries carry for the page, LINESTOGETHER1a).
     /// </summary>
     public static readonly IReadOnlyList<string> PulledOnly =
-        ["transcript", "took", "interrupted", "deletable", "said", "entry", "helpMode", "tookBind", "resolved", "tookQuest", "head"];
+        ["transcript", "took", "interrupted", "deletable", "said", "entry", "helpMode", "tookBind", "resolved", "head"];
 
     /// <summary>
     /// What wakes it on the kit's bus: a change declared to the sessions, a conversation's end and the service coming up. The

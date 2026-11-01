@@ -525,6 +525,11 @@ export type Session = {
    * then draws by the marks themselves.
    */
   work?: string | null;
+  /**
+   * The quest a chat took through its own connector (CHATFLOW1a), its `quest` staying null; pushed for the at-work view, which words a
+   * chat's wait by it (COWORKVIEW1b-i). Absent for every other record.
+   */
+  tookQuest?: string | null;
 };
 
 /**

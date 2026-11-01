@@ -14,6 +14,7 @@ import { AttentionBand } from '../work/attention/AttentionBand';
 import { needsListed, placeCounts } from '../work/attention/attention';
 import { useScope } from '../data/scope';
 import { AskDaoris } from '../help/AskDaoris';
+import { registerAskFill } from '../help/askFill';
 import type { AskOpening } from '../help/AskConversation';
 import { QuickAsk } from '../help/QuickAsk';
 import { ContextMenus } from '../menus/ContextMenu';
@@ -40,6 +41,7 @@ import { setupLit } from '../agents/modes';
 import { PlaceDrivingScope } from '../agents/setup/PlaceDriving';
 import { PlaceSessions, PlaceWorkflow } from '../agents/setup/PlaceSessions';
 import { PlaceSetUpPanel } from '../agents/setup/PlaceSetUpPanel';
+import { placeIdOf } from '../agents/setup/SetupPlaces';
 import { DEFAULT_WORKSPACE, workspaceOf } from '../data/workspaces';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import { Drawer, failure, Prose, Toasts, useToasts } from '../design/ui';
@@ -440,9 +442,9 @@ export function App() {
       workflow: (
         <PlaceWorkflow
           place={place}
+          landingAsked={place.asked === 'landing'}
           notify={notify}
           onOpenPlugin={(plugin) => open('plugins', plugin)}
-          onOpenWorkspaceFlow={(workspace) => open('projects', workspaceItem(workspace), { workspaceTab: 'workflow' })}
         />
       ),
       sessions: (
@@ -450,7 +452,7 @@ export function App() {
           place={place}
           notify={notify}
           onOpenPlugin={(plugin) => open('plugins', plugin)}
-          onOpenAppointed={() => open('agents', null, { roleSection: 'appointed' })}
+          onOpenAppointed={() => agentsModes.onPlaceAt(placeIdOf(place.row), { section: 'roles', row: 'appointed' })}
         />
       ),
     }),
@@ -459,14 +461,14 @@ export function App() {
       <PlaceDrivingScope
         row={row}
         notify={notify}
-        onOpenAppointed={() => open('agents', null, { roleSection: 'appointed' })}
+        onOpenAppointed={() => agentsModes.onPlaceAt(placeIdOf(row), { section: 'roles', row: 'appointed' })}
         onOpenRepositories={() => open('projects', row.repository)}
       >
         {render}
       </PlaceDrivingScope>
     ),
     // A place's *Set up…* (AGENTSPLACE1j): it reads the plan and presses Apply, which the application hands in for the same reason.
-    setUp: (place, page) => <PlaceSetUpPanel place={place} page={page} notify={notify} />,
+    setUp: (place, page, doorFor) => <PlaceSetUpPanel place={place} page={page} notify={notify} doorFor={doorFor} onOpenQuest={(quest) => open('quests', quest)} />,
     // The Roles mode's doors (COMPANYVIEW1d): each thing's home, the Agents mode at an agent's accounts among them.
     roleDoors: {
       agent: (agent) => open('agents', agent, { agentPart: 'accounts', agentsMode: 'agents' }),
@@ -795,6 +797,7 @@ export function App() {
       record: live.includes('copy'),
       find: findTarget(document, view) !== null,
       field: fields.current?.field() != null,
+      history: fields.current?.history() != null,
       refreshing: refresh.isPending,
       zoom,
     };
@@ -822,7 +825,7 @@ export function App() {
     // At a domain the row names, or at the one Settings' list remembers (D75).
     settings: (section) => (section ? openSettings(section as SettingsSection) : open('settings')),
     edit: (act) => {
-      void runEdit(act, fields.current?.field() ?? null).then((done) => {
+      void runEdit(act, fields.current?.field() ?? fields.current?.history() ?? null).then((done) => {
         if (!done && act === 'paste') notify(t('menu.pasteRefused'), 'error');
       });
     },
@@ -955,6 +958,8 @@ export function App() {
   const openInWork = (session: string) => open('sessions', session);
   // A door into a run (WORKFLOW1c, the workflow design §7): its session attended in Sessions, the Workflow view opened on it.
   const openRun = (session: string) => { open('sessions', session); setWorkIntent('workflow'); };
+  // A line of work of an ask folded to a count (COWORKVIEW1d): its own view, the session attended with *At work* open on it.
+  const openAtWork = (session: string) => { open('sessions', session); setWorkIntent('atWork'); };
   // A quest's record and an ask's, where quests are read: an ask is named as one, since Quests' list holds both.
   const openQuest = (id: string) => open('quests', id);
   // A row in Overview's band is a door into whatever is waiting, wherever that exists. A parked
@@ -991,6 +996,7 @@ export function App() {
     notify,
     onAttend: attached ? openInWork : undefined,
     onOpenRun: attached ? openRun : undefined,
+    onOpenAtWork: attached ? openAtWork : undefined,
     opening,
     onOpened: () => setOpening(null),
     asking,
@@ -1019,6 +1025,8 @@ export function App() {
     onOpenPlugin: (plugin) => open('plugins', plugin),
     // A repository's Setup is the place's page once the Setup mode is lit, which `apply` opens for a door into the tab (AGENTSPLACE1f).
     onOpenSetup: (repository) => open('projects', repository, { tab: 'setup' }),
+    // A workspace's Setup sections have their homes once the Setup mode is lit, which `apply` opens for a door into the tab (SETUPUX1v).
+    onOpenWorkspaceSetup: (workspace, section) => open('projects', workspaceItem(workspace), { workspaceTab: 'setup', workspaceSection: section }),
     onSyncNow,
     syncing: syncNow.isPending,
     addRequested,
@@ -1195,6 +1203,10 @@ export function App() {
       openInBrowser: (address: string) => openBrowser.mutate(address, { onError: failure(notify) }),
     } : {}),
   };
+  // A page that composes words for Ask Daoris (the workflow editor's *Ask why* and *Fix it*, FLOWCHART2c) fills Quick Ask's box through this door.
+  const fillAsk = useRef(askQuickly);
+  fillAsk.current = askQuickly;
+  useEffect(() => (attached ? registerAskFill((text) => fillAsk.current(text, true)) : undefined), [attached]);
   // Edit › Copy ID copies what a page's own *Copy … ID* would, and says so the same way (UX7a).
   copyText.current = contextDoors.copy;
   const renderView = (): ViewLayout => listedLayouts[view] ?? {

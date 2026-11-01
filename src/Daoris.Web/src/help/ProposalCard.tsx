@@ -124,6 +124,37 @@ export type HelpWorkflowShown = {
    * an older driver, which said it in the plan's text alone. What a repository cannot carry stays in `needs`, as the driver sent it.
    */
   noGates?: string[];
+  /**
+   * FLOWCHART2e: on a change to the draft open in the editor (the `draft` door), the fingerprint of the draft it is against; null on every
+   * other card, which saves or chooses, and absent from an older driver. A draft card saves nothing: its `version` is 0.
+   */
+  draft?: string | null;
+  /** FLOWCHART2e: a draft card's changes against its draft, in the driver's order, each with the changes it needs taken with it. */
+  changes?: WorkflowGraphChange[];
+  /** FLOWCHART2e: what a save of a draft card's graph would refuse, each at its step or way, for the person to put right. */
+  problems?: { code: string; node?: string | null; wire?: string | null; words: string }[];
+  /** FLOWCHART2e: a draft card's candidate graph, whole, which the editor takes changes from and nothing saves. */
+  proposed?: Record<string, unknown> | null;
+};
+
+/**
+ * One change a draft card makes to its draft (FLOWCHART2e, the driver's `WorkflowGraphDiff`): a step, a way or a field of the graph, added,
+ * removed or changed. `id` is `step:`, `way:` or `graph:`, then `+`, `-` or `~`, then the step's or way's id or the field; `said` is the
+ * driver's English.
+ */
+export type WorkflowGraphChange = {
+  id: string;
+  what: 'step' | 'way' | 'graph';
+  change: 'added' | 'removed' | 'changed';
+  step?: string | null;
+  /** The way's id: the proposal's, or the draft's for a way removed. */
+  way?: string | null;
+  /** A changed way's id in the draft, where the proposal moved it. */
+  was?: string | null;
+  kind?: string | null;
+  fields: string[];
+  needs: string[];
+  said: string;
 };
 
 /**
@@ -285,6 +316,33 @@ function WorkflowChange({ workflow }: { workflow: HelpWorkflowShown }) {
 }
 
 /**
+ * A change to the draft open in the editor (FLOWCHART2f; D223 §4.4): the place whose draft it is, its changes in the driver's lines as sent,
+ * what a save of it would refuse (in the catalogue's words where the page has the code), and that nothing is saved or chosen: its one press
+ * opens the editor, where the person takes its changes, and only their Save there saves.
+ */
+function DraftChange({ workflow }: { workflow: HelpWorkflowShown }) {
+  const { t, i18n } = useTranslation();
+  const problems = (workflow.problems ?? []).map((problem) =>
+    (i18n.exists(`workflow.edit.refusal.${problem.code}`) ? t(`workflow.edit.refusal.${problem.code}`) : problem.words));
+  const section = (heading: string, lines: string[], key: string, tone: string) => (
+    <section aria-label={heading} className="mt-2">
+      <h4 className="m-0 text-meta font-semibold text-ink">{heading}</h4>
+      <ul className="m-0 mt-0.5 flex list-none flex-col gap-0.5 p-0">
+        {lines.map((each, at) => <li key={`${key}-${at}`} className={`m-0 break-words text-meta ${tone}`}><Inline text={each} /></li>)}
+      </ul>
+    </section>
+  );
+  return (
+    <>
+      <p className="m-0 mt-1 text-small text-ink">{t('help.proposal.workflow.draftOf', { scope: workflow.scope })}</p>
+      {section(t('help.proposal.workflow.draftChanges'), workflow.diff, 'change', 'text-ink-soft')}
+      {problems.length > 0 && section(t('help.proposal.workflow.draftProblems'), problems, 'problem', 'text-ink-danger')}
+      <p className="m-0 mt-1 text-meta text-ink-soft">{t('help.proposal.workflow.draftNote')}</p>
+    </>
+  );
+}
+
+/**
  * What a sync card's look did not fetch (LEFT3 b, WSR7), said once, after the rows, as the screen's note says it: how
  * many of the lines it looked at, grouped by git's reason, when each last heard from origin — which its row is judged
  * against — and what the git Daoris runs needs to reach an origin over SSH or HTTPS. Git's words are content.
@@ -357,7 +415,8 @@ function SyncApart({ apart }: { apart: string[] }) {
  * so the person reads what they say yes to; its press is *accept*, the quest page's word.
  *
  * **A workflow version reads in the design's order** (WORKFLOW1h-d, §8.2): *Your part* first, then the steps' diff, the acts that
- * become standing, what is needed first and who it applies to. A draft (needs present) offers only *Not now*.
+ * become standing, what is needed first and who it applies to. A draft (needs present) offers only *Not now*. A change to the draft open in
+ * the editor (FLOWCHART2f) lists its changes and what to put right, and its press, *Open in the editor*, saves and settles nothing.
  *
  * **A set-up shows its plan first** (LAYOUT8, D170 point 1): what was read on the repository's line, the rule its press adds
  * and the quest's whole text, drawn as the repository's page draws them before its own press (`SetupPlanFacts`).
@@ -383,6 +442,8 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
   const place = proposal.kind === 'setup' ? proposal.place ?? null : null;
   // A draft (WORKFLOW1h-b): what is still needed leaves no Apply, only Not now.
   const draft = workflow !== null && workflow.needs.length > 0;
+  // A change to the draft open in the editor (FLOWCHART2f): its press opens the editor, and settles nothing.
+  const composing = workflow !== null && typeof workflow.draft === 'string';
 
   return (
     <li className={deleting
@@ -396,11 +457,11 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
             : proposal.kind === 'plugin' ? 'help.proposal.titlePlugin'
               : handing ? 'help.proposal.titleHand'
                 : syncing ? 'help.proposal.titleSync'
-                  : accepting ? 'help.proposal.titleAccept' : workflow ? 'help.proposal.titleWorkflow'
+                  : accepting ? 'help.proposal.titleAccept' : composing ? 'help.proposal.titleDraft' : workflow ? 'help.proposal.titleWorkflow'
                     : proposal.kind === 'setup' ? 'help.proposal.titleSetup' : 'help.proposal.title')}
       </p>
       {workflow
-        ? <WorkflowChange workflow={workflow} />
+        ? composing ? <DraftChange workflow={workflow} /> : <WorkflowChange workflow={workflow} />
         : <p className="m-0 mt-1 text-small text-ink"><Inline text={proposal.describe} /></p>}
       {plugin && <PluginRuns plugin={plugin} />}
       {grant && <GrantTools grant={grant} />}
@@ -463,6 +524,7 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
             {t(deleting ? 'help.proposal.delete'
               : going ? 'help.proposal.go'
                 : place ? 'help.proposal.place.open'
+                : composing ? 'help.proposal.workflow.openEditor'
                 : looking ? 'help.proposal.look'
                   : accepting ? 'help.proposal.accept' : 'help.proposal.apply')}
           </Button>

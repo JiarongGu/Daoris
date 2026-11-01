@@ -32,6 +32,8 @@ public sealed partial class SessionsStateSliceTests : DriverModuleBridge
         ["override"] = null, ["ran"] = new JsonObject { ["models"] = new JsonArray("reported-model"), ["more"] = 0, ["entries"] = new JsonArray(), ["entriesMore"] = 0 },
         // FOUNDATION1c: the work its marks read as, beside the kind, which stays driven or chat.
         ["work"] = "build",
+        // COWORKVIEW1b-i: the quest a chat took, pushed for the at-work view.
+        ["tookQuest"] = null,
     };
 
     private static string Records(params JsonObject[] records) => new JsonArray([.. records.Select(record => record.DeepClone())]).ToJsonString();
@@ -143,6 +145,28 @@ public sealed partial class SessionsStateSliceTests : DriverModuleBridge
         Assert.False(pushed["teammate/s2"]!.AsObject().ContainsKey("work"));
         Assert.False(pushed["s3"]!.AsObject().ContainsKey("work"));
         Assert.Equal("driven", pushed["s3"]!["kind"]!.GetValue<string>());
+    }
+
+    /// <summary>COWORKVIEW1b-i: the quest a chat took is pushed, so the at-work view words a chat's wait by it with no pull.</summary>
+    [Fact]
+    public async Task The_quest_a_chat_took_is_pushed_and_a_record_that_took_none_is_pushed_with_none()
+    {
+        var chat = Record("s1", "default", "working");
+        chat["kind"] = "chat";
+        chat["quest"] = null;
+        chat["tookQuest"] = "t1";
+        var driven = Record("s2", "default");
+        driven.Remove("tookQuest");
+        _service.Sessions = Records(chat, driven);
+        var (_, slice) = await UpAsync();
+
+        await slice.JudgeAsync();
+        var pushed = Written(slice.Snapshot().Partitions.Single().Data);
+
+        Assert.Contains("tookQuest", SessionsStateSlice.Fields);
+        Assert.DoesNotContain("tookQuest", SessionsStateSlice.PulledOnly);
+        Assert.Equal("t1", pushed["s1"]!["tookQuest"]!.GetValue<string>());
+        Assert.False(pushed["s2"]!.AsObject().ContainsKey("tookQuest"));
     }
 
     [Fact]

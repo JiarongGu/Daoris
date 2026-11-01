@@ -510,6 +510,13 @@ try
         return await Daoris.Driver.Host.ChannelConsole.RunAsync(channelArgs[1..]);
     }
 
+    // Who is at work on an ask (COWORKVIEW1d): the ask page's *At work* section, beside its channel and for the same reason before the
+    // ask's other words.
+    if (args is ["ask", .. var atWorkArgs] && AskAtWorkVerb.Asks(atWorkArgs))
+    {
+        return await Daoris.Driver.Host.AskAtWorkConsole.RunAsync(atWorkArgs[1..]);
+    }
+
     // Pausing, resuming and abandoning an ask's work from a terminal (PAUSE1b, PAUSE1d, D132 §7.2, D50): the ask's page is the
     // other door. Asked for before the ask's other words, which would take `--pause` as the words of a new ask.
     if (args is ["ask", .. var workArgs] && WorkCommand.Asks(WorkScope.Ask, workArgs))

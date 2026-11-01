@@ -364,6 +364,13 @@ public sealed partial class HelpCoverageTests
     private static readonly Door PlaceDoor = new("setup", "place");
 
     /// <summary>
+    /// FLOWCHART2e (D223): the workflow editor's open draft, which Ask Daoris is told beside the person's words (FLOWCHART2d), is the
+    /// <c>workflow</c> kind's <c>draft</c> door: a change to the draft as a card, whose Apply opens the editor's place and saves and chooses
+    /// nothing. The editor's own <i>Save</i> stays <c>workflow edit</c>'s twin; its opener is FLOWCHART2g's.
+    /// </summary>
+    private static readonly Door DraftDoor = new("workflow", "draft");
+
+    /// <summary>
     /// TRACE1's <c>daoris-driver trace</c> (D143), a verb of the headless host: exempt, since it reads the records back to an ask
     /// and changes nothing, as <c>driver list</c> is (D110 §4). A screen's door to the same read is a row of its own.
     /// </summary>
@@ -1117,6 +1124,7 @@ public sealed partial class HelpCoverageTests
             "retiring takes a repository off this machine's registry and its entries out of the index, a removal, which stays "
             + "the person's own press (D89), as a plugin's removal does; registering it again is the person's Add repository, "
             + "which Ask Daoris's go opens with the workspace filled.")),
+        // SETUPUX1v: with the Setup mode lit, *Wire* and *Unwire* are the Remote row of a workspace's Details, the same presses as its tab's.
         ("projects", "useWireRemote", null, new Exempt("wiring a workspace to a remote takes that remote's key; " + Key)),
         ("projects", "useUnwireRemote", null, new Exempt(
             "unwiring drops the remote's key from this machine, which only the person can give back (D89).")),
@@ -1124,7 +1132,7 @@ public sealed partial class HelpCoverageTests
         ("projects", "useRetireMachine", null, new Exempt(
             "retiring a machine at a workspace's remote is the person's word that it left the workspace or lost its store, which "
             + "lets binds through the remote that it held off; only they know it, so it is a person-only door pressed under the "
-            + "workspace's remote, and nothing is proposed.")),
+            + "workspace's remote, or with the Setup mode lit in its place's Sessions beside its rules (SETUPUX1v), and nothing is proposed.")),
         // The status bar's *Sync now* is answered here too: a domain's control answers the same act on every page (FABRIC-CLOSE1i2).
         ("projects", "useSyncNow", null, new Exempt(
             "it runs now the pass with the workspace's remote that the loop's next tick runs anyway (SYNC6b), and changes nothing "
@@ -1149,6 +1157,12 @@ public sealed partial class HelpCoverageTests
             + "kit's first files are the person's own start, in a folder they chose.")),
         ("plugins", "usePluginTry", null, new Exempt(
             "a trial runs the plugin's code as the person to show what it answers (PLUG8), and changes nothing to propose.")),
+        ("plugins", "usePluginTools", null, new Exempt(
+            "a check may read another tool's sign-in, and that is the person's to ask for (ADOSIGNIN1); Ask Daoris may only take the "
+            + "person to the plugin's page, where they press Check.")),
+        ("plugins", "usePluginToolFix", null, new Exempt(
+            "it opens a console the person sees and signs in at (ADOSIGNIN1): the person's alone, a Person route no role or agent presses; "
+            + "Ask Daoris may only take the person to the plugin's page.")),
         ("plugins", "usePickFolder", null, new Exempt("it is the system's folder picker, for the person's own choice.")),
 
         ("browser", "useSetBrowser", null, new Door("browser", "use")),
@@ -1328,6 +1342,7 @@ public sealed partial class HelpCoverageTests
             .Append(PartnerAskDoor)
             .Append(TraceDoor)
             .Append(PlaceDoor)
+            .Append(DraftDoor)
             .Append(WorkflowRunDoor)
             .Append(WiringDoor)
             .Append(SpaceDoor)
@@ -1737,6 +1752,18 @@ public sealed partial class HelpCoverageTests
         Assert.Contains("place <repository>… --preset <id> [--with opinion,look,adoption] [--what-it-builds <kind>] [--drive] --plan", DriverCommand.Usage);
         Assert.Contains(PlaceDoor.Name, HelpProposalKinds.Find(PlaceDoor.Kind)!.Doors);
         Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver place <repository>… --preset <id>", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// FLOWCHART2e: the open draft is the <c>workflow</c> kind's <c>draft</c> door, beside the doors that save and choose, which stay, and the
+    /// room names the door it is told to propose against.
+    /// </summary>
+    [Fact]
+    public void The_editors_open_draft_is_the_workflow_kinds_draft_door_and_the_room_says_it()
+    {
+        Assert.Equal(["new", "edit", "use", DraftDoor.Name], HelpProposalKinds.Find(DraftDoor.Kind)!.Doors);
+        var room = new HelpRoomMayPropose().Render(HelpRoomFixture.Machine);
+        Assert.Contains("send `draft` its fingerprint and `graph` the whole changed draft", room);
     }
 
     /// <summary>

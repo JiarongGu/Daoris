@@ -49,6 +49,29 @@ const TABLE: Record<string, Record<number, number>> = {
   'graph/ReleaseHoldsOpen': { 1280: 0, 624: 0 },
   'graph/Merge': { 1280: 0, 624: 0, 400: 0 },
   'graph/MergeChinese': { 1280: 0, 624: 0, 400: 0 },
+  // Two outcomes that reach one step (FLOWCHART2a), each from its own port, the third going nowhere; and the data wires drawn dotted at the
+  // right while a step is selected (they cross the ways on in the gaps they pass), with the lanes kept free when none is.
+  'graph/TwoOutcomes': { 1280: 0, 624: 0 },
+  'graph/TwoOutcomesDark': { 1280: 0, 624: 0 },
+  'graph/TwoOutcomesChinese': { 1280: 0, 624: 0 },
+  'graph/ReleaseData': { 1280: 1, 624: 1 },
+  'graph/ReleaseDataChinese': { 1280: 1, 624: 1 },
+  'graph/ReleaseDataUnselected': { 1280: 0, 624: 0 },
+  // A run's view (SETUPUX1u): a run draws the route its decision took, so the release outcome is one chain that draws from the side bar's
+  // floor, like a review's; the none outcome keeps the route not taken beside *No further step*, a two-way branch that needs 31rem, so the
+  // 300 px and 25rem frames are the rail and 45% of the window (696 px) draws it. A selected step's record makes its node taller, never wider.
+  'runview/ReleaseRun': { 300: 0, 400: 0, 696: 0 },
+  'runview/ReleaseRunDark': { 300: 0, 400: 0, 696: 0 },
+  'runview/ReleaseRunChinese': { 300: 0, 400: 0, 696: 0 },
+  'runview/ReleaseRunChineseDark': { 300: 0, 400: 0, 696: 0 },
+  'runview/NoneRun': { 696: 0 },
+  'runview/NoneRunDark': { 696: 0 },
+  'runview/NoneRunChinese': { 696: 0 },
+  'runview/NoneRunChineseDark': { 696: 0 },
+  'runview/ReviewRun': { 300: 0, 400: 0, 696: 0 },
+  'runview/ReviewRunDark': { 300: 0, 400: 0, 696: 0 },
+  'runview/ReviewRunChinese': { 300: 0, 400: 0, 696: 0 },
+  'runview/ReviewRunChineseDark': { 300: 0, 400: 0, 696: 0 },
   // Unequal boxes in both languages, left to right and top to bottom.
   'flow/Unequal': { 570: 0, 1200: 0 },
   'flow/UnequalChinese': { 570: 0, 1200: 0 },
@@ -96,6 +119,18 @@ const TABLE: Record<string, Record<number, number>> = {
   'landing/MergedIntoTheLine': { 300: 0, 400: 0, 544: 0, 1200: 0 },
 };
 
+/**
+ * The paths that leave a decision's port in each drawn frame of these stories (FLOWCHART2a): the release workflow's two outcomes, and the
+ * three of the decision whose two outcomes reach one step. Each leaves its own port's box, and a story that drew none fails.
+ */
+const PORTED: Record<string, number> = {
+  'graph/Release': 2, 'graph/ReleaseDark': 2, 'graph/ReleaseChinese': 2, 'graph/ReleaseChineseDark': 2, 'graph/ReleaseHoldsOpen': 2,
+  'graph/TwoOutcomes': 3, 'graph/TwoOutcomesDark': 3, 'graph/TwoOutcomesChinese': 3,
+  'graph/ReleaseData': 2, 'graph/ReleaseDataChinese': 2, 'graph/ReleaseDataUnselected': 2,
+  // A run's decision draws the outcome it returned and the route it left: the release run one route, the none run both.
+  'runview/ReleaseRun': 1, 'runview/NoneRun': 2,
+};
+
 /** Every drawn flow's edges drawn and holding still. */
 async function drawn(page: Page) {
   await page.waitForFunction(() => [...document.querySelectorAll<HTMLElement>('[data-flow-pane]')]
@@ -135,6 +170,8 @@ for (const [story, ceilings] of Object.entries(TABLE)) {
       expect(flow.paths, at).toBeGreaterThan(0);
       expect(flow.collisions, at).toEqual([]);
       expect(flow.overlaps, at).toEqual([]);
+      expect(flow.portMisses, at).toEqual([]);
+      if (PORTED[story] !== undefined) expect(flow.ported, `${at}: the paths that leave a port`).toBe(PORTED[story]);
       expect(flow.crossings, at).toBeLessThanOrEqual(ceilings[flow.frame]!);
     }
     // Drawn, the edges hold still: nothing measured loops back into what is measured.
@@ -143,6 +180,81 @@ for (const [story, ceilings] of Object.entries(TABLE)) {
     expect(await drawnCounts(page)).toEqual(counts);
   });
 }
+
+/**
+ * The workflow editor's stories (FLOWCHART2b; D223 §6): whether each draws its chart or the rail, at the main area's 80, 39 and 25rem in
+ * both languages and themes. Where it draws, every ＋ shown on a way clears every node, every label shown and every other ＋, at least one
+ * is shown, and no edge runs through a box or a label lies over one.
+ */
+const EDITOR: Record<string, 'drawn' | 'rail'> = {
+  'editor/Release': 'drawn', 'editor/ReleaseHalf': 'drawn', 'editor/ReleaseNarrow': 'rail',
+  'editor/ReleaseChinese': 'drawn', 'editor/ReleaseChineseHalf': 'drawn', 'editor/ReleaseChineseNarrow': 'rail',
+  'editor/ReleaseDark': 'drawn', 'editor/ReleaseDarkHalf': 'drawn', 'editor/ReleaseChineseDarkNarrow': 'rail',
+  'editor/Merge': 'drawn', 'editor/MergeHalf': 'drawn', 'editor/MergeChineseHalf': 'drawn', 'editor/MergeChineseDark': 'drawn',
+  'editor/TwoOutcomes': 'drawn', 'editor/TwoOutcomesHalf': 'drawn',
+  'editor/Refused': 'drawn', 'editor/RefusedNarrow': 'rail', 'editor/RefusedChineseHalf': 'drawn', 'editor/RefusedDark': 'drawn',
+};
+
+for (const [story, placed] of Object.entries(EDITOR)) {
+  test(`${story}: ${placed === 'drawn' ? 'no ＋ over a node, a label or another ＋' : 'the rail'} (FLOWCHART2b)`, async ({ page }) => {
+    await open(page, story);
+    const [flow, ...more] = await page.evaluate(measureFlows);
+    expect(more, 'one chart').toEqual([]);
+    expect(flow!.placement === 'rail' ? 'rail' : 'drawn', story).toBe(placed);
+    if (placed === 'rail') return;
+    expect(flow!.inserts, `${story}: the ＋s shown`).toBeGreaterThan(0);
+    expect(flow!.insertOverlaps, story).toEqual([]);
+    expect(flow!.collisions, story).toEqual([]);
+    expect(flow!.overlaps, story).toEqual([]);
+  });
+}
+
+/**
+ * Ask Daoris's proposal on the editor's chart (FLOWCHART2f; D223 §4.3): whether each story draws the union of the draft and the proposal
+ * or the rail, at 80, 39 and 25rem in both languages and themes. Where it draws, no edge runs through a box, no label or ＋ lies over one,
+ * and each way the proposal marks wears its word in a chip; at the rail, the marks are the words of each way's cause.
+ */
+const PROPOSAL: Record<string, 'drawn' | 'rail'> = {
+  'proposal/Proposal': 'drawn', 'proposal/ProposalHalf': 'drawn', 'proposal/ProposalNarrow': 'rail',
+  'proposal/ProposalChinese': 'drawn', 'proposal/ProposalChineseHalf': 'drawn', 'proposal/ProposalChineseNarrow': 'rail',
+  'proposal/ProposalDark': 'drawn', 'proposal/ProposalDarkHalf': 'drawn', 'proposal/ProposalChineseDarkNarrow': 'rail',
+  // The stale draft's line stands apart from the landing, so its union is wider: drawn in the canvas from its 36rem floor, panning where the
+  // theme's frame or 39rem leaves less room than it needs (CANVAS1a), and the rail at 25rem.
+  'proposal/Stale': 'drawn', 'proposal/StaleHalf': 'drawn', 'proposal/StaleChineseNarrow': 'rail', 'proposal/StaleDark': 'drawn',
+  'proposal/Removes': 'drawn', 'proposal/RemovesHalf': 'drawn', 'proposal/RemovesChineseDark': 'drawn',
+};
+
+for (const [story, placed] of Object.entries(PROPOSAL)) {
+  test(`${story}: ${placed === 'drawn' ? "the union drawn, each marked way's chip shown, nothing over a box" : 'the rail'} (FLOWCHART2f)`, async ({ page }) => {
+    await open(page, story);
+    const [flow, ...more] = await page.evaluate(measureFlows);
+    expect(more, 'one chart').toEqual([]);
+    expect(flow!.placement === 'rail' ? 'rail' : 'drawn', story).toBe(placed);
+    if (placed === 'rail') return;
+    expect(flow!.collisions, story).toEqual([]);
+    expect(flow!.overlaps, story).toEqual([]);
+    expect(flow!.insertOverlaps, story).toEqual([]);
+    expect(await page.locator('[data-flow-change]').count(), `${story}: the marked ways' chips`).toBeGreaterThan(0);
+  });
+}
+
+test('a data wire drawn on selection moves no node, and is drawn for each wire the selected step is an end of (FLOWCHART2a)', async ({ page }) => {
+  const read = async (story: string) => {
+    await open(page, story);
+    const frame = page.locator('[data-frame="1280"]');
+    return {
+      boxes: await frame.locator('[data-flow-node]').evaluateAll((nodes) => nodes.map((node) => {
+        const rect = node.getBoundingClientRect();
+        return [node.getAttribute('data-flow-node'), rect.left, rect.top, rect.width, rect.height];
+      })),
+      paths: await frame.locator('path[data-flow-edge]').count(),
+    };
+  };
+  const selected = await read('graph/ReleaseData');
+  const unselected = await read('graph/ReleaseDataUnselected');
+  expect(selected.boxes).toEqual(unselected.boxes);
+  expect(selected.paths).toBe(unselected.paths + 2);
+});
 
 test('drawing the edges takes no room, so it moves no node, and a resize draws them once (trap 14)', async ({ page }) => {
   await open(page, 'flow/SeveralCurrent');

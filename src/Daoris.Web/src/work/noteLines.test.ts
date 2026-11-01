@@ -192,6 +192,12 @@ describe('noteLines', () => {
       expect(noteLines(zh, { parts: design }, 'zh')).toEqual([{ kind: 'said', text: '设计工作：按Designer的顺序运行。' }]);
     });
 
+    it('words the policy line where a role’s policy chose the choice that ran', () => {
+      const chosen = [coded('opening.chosen', 'Build’s policy chose this: …', { actor: 'Build', said: 'by weight: 0 of the last 2 were choice 2, aim 1 in 4' })];
+      expect(noteLines(t, { parts: chosen }, 'en')).toEqual([{ kind: 'said', text: "Build's policy chose this: by weight: 0 of the last 2 were choice 2, aim 1 in 4." }]);
+      expect(noteLines(zh, { parts: chosen }, 'zh')).toEqual([{ kind: 'said', text: 'Build的策略选择了这一项：by weight: 0 of the last 2 were choice 2, aim 1 in 4。' }]);
+    });
+
     it('words the actor line where a later choice ran', () => {
       const actor = [
         coded('opening.actor', 'Ran as Build’s choice 2, …', {
@@ -560,6 +566,24 @@ describe('noteLines', () => {
       // A source this page does not know, or a part missing its mode, shows as recorded rather than guessed.
       expect(noteLines(t, { parts: [told('elsewhere')] }, 'en')[0].kind).toBe('recorded');
       expect(noteLines(t, { parts: [coded('chat.told-process', '…', { source: 'default' })] }, 'en')[0].kind).toBe('recorded');
+    });
+
+    it('words the routing standing a conversation was told by the judge’s four, under its own lead, in both languages', () => {
+      // COWORKVIEW1e-i: the words after the lead are Daoris's English to the agent, shown as written.
+      const told = (standing: string) => coded('chat.told-routing', "told the agent this repository's routing standing, …:", { standing });
+      const routing = words('Routing standing here: open. This repository is driven on this machine, …', 'program');
+      expect(noteLines(t, { parts: [told('one-at-a-time'), routing] }, 'en')).toEqual([
+        { kind: 'said', text: "The agent was told this repository's routing standing, one at a time:" },
+        { kind: 'words', text: routing.words, by: 'program' },
+      ]);
+      expect(noteLines(t, { parts: [told('not-driven')] }, 'en')[0].text).toBe("The agent was told this repository's routing standing, not driven here:");
+      expect(noteLines(t, { parts: [told('no-lanes')] }, 'en')[0].text).toContain('no lanes');
+      expect(noteLines(t, { parts: [told('open')] }, 'en')[0].text).toContain('standing, open:');
+      expect(noteLines(zh, { parts: [told('not-driven')] }, 'zh')[0].text).toBe('已告知智能体这个仓库的分派状态：不在本机驱动：');
+      expect(noteLines(zh, { parts: [told('one-at-a-time')] }, 'zh')[0].text).toBe('已告知智能体这个仓库的分派状态：一次一个：');
+      // A standing this page does not know, or a part missing it, shows as recorded rather than guessed.
+      expect(noteLines(t, { parts: [told('elsewhere')] }, 'en')[0].kind).toBe('recorded');
+      expect(noteLines(t, { parts: [coded('chat.told-routing', '…')] }, 'en')[0].kind).toBe('recorded');
     });
 
     it('words a withheld server by name and why, an exception’s words as written', () => {
@@ -1193,8 +1217,8 @@ describe('noteLines', () => {
     );
     expect(failed.text).toBe('`local/big.bin` was not copied from your checkout, since the copy failed:');
     const [copiedZh, missingZh, refusedZh, failedZh] = noteLines(zh, { parts }, 'zh');
-    expect(copiedZh.text).toMatch(/^仓库的检查读取的本机文件已从你的检出以只读方式复制进来：`local\/sensitive-patterns\.txt`.+`local\/hosts\.txt`。$/);
-    expect(missingZh.text).toBe('`local/allowed.txt` 没有复制：仓库的检查会读取它，而你的检出里没有它。');
+    expect(copiedZh.text).toMatch(/^仓库的检查项读取的本机文件已从你的检出以只读方式复制进来：`local\/sensitive-patterns\.txt`.+`local\/hosts\.txt`。$/);
+    expect(missingZh.text).toBe('`local/allowed.txt` 没有复制：仓库的检查项会读取它，而你的检出里没有它。');
     expect(refusedZh.text).toBe('`secrets/token.txt` 没有复制：Daoris 只把 `local/` 下、git 在工作树中忽略的文件复制进工作树，而它不是这样的文件。');
     expect(failedZh.text).toBe('`local/big.bin` 没有从你的检出复制，因为复制失败了：');
     for (const line of [copied, missing, refused, failed, copiedZh, missingZh, refusedZh, failedZh]) expect(line.kind).toBe('said');

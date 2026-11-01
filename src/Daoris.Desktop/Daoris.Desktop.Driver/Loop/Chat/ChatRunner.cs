@@ -396,6 +396,10 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
 
     // The process a new conversation in a tree of its own is told with its first message (PROCESS1d-ii), held until then. A map of
     // its own, never the browser's, which a hand-over's briefing appends: a conversation handed over is told Daoris's record instead.
+    // COWORKVIEW1e-i: the routing standing a new conversation is told with its first message, taken by it like its process.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, RoutingStanding> _toldRouting =
+        new(StringComparer.OrdinalIgnoreCase);
+
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, ProcessBriefing> _toldProcess =
         new(StringComparer.OrdinalIgnoreCase);
 
@@ -743,6 +747,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             _service, _events, sessionId, resolved.Name, selection, from is { Why: HandOverWhy.Limit } ? LimitCarried(from.Session) : null);
         // Where a later choice of Chat's order ran, its actor line says which and why (D205 §4.6), in the local conversation only.
         if (chosen is not null) RotatedOpening.SayActor(_events, sessionId, "chat", chosen, passes);
+        RotatedOpening.SayStaff(_events, _harnesses.Staff(), sessionId, selection.Number, "chat");
 
         // MODELROLE1d2 (D205 §3.5(b)): a new conversation that asks its actor's entry on the protocol door owns its attempt from here until it
         // is dispatched or exhausted; a replacement goes on under the pending start it opens for, its issued id the press's.
@@ -804,7 +809,11 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         finally
         {
             // A start that failed, or was cancelled, has no first message to tell it with.
-            if (started?.SessionId is null) _toldProcess.TryRemove(sessionId, out _);
+            if (started?.SessionId is null)
+            {
+                _toldProcess.TryRemove(sessionId, out _);
+                _toldRouting.TryRemove(sessionId, out _);
+            }
         }
     }
 
@@ -831,6 +840,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         {
             Also = [.. across.Writes.Select(target => target.Path)],
             Keeps = true,
+            Routing = RoutingStanding.Told(ParticipantWork.Chat, config, known),
         };
     }
 
@@ -972,6 +982,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         RotatedOpening.Say(_service, _events, sessionId, resolved.Name, selection, LimitCarried(carries));
         // Where a later choice of Ask Daoris's order ran, its actor line says which and why (D205 §4.6).
         if (chosen is not null) RotatedOpening.SayActor(_events, sessionId, "ask-daoris", chosen, passes);
+        RotatedOpening.SayStaff(_events, _harnesses.Staff(), sessionId, selection.Number, "ask-daoris");
 
         // MODELROLE1d2 (D205 §3.5(b)): owned from its placement until dispatched or exhausted; its run says how a replacement runs.
         if (pending is not null)
@@ -1041,7 +1052,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
                 actor, config, _harnesses, _harnesses.Adapters, _passed, order: order, catalogue: RoleCatalog.ReadHome(_home), place: new RolePlace(workspace))
             {
                 Workspace = workspace, Kind = StartKind.Conversation, Subject = $"conversation:{actor}:{workspace}:{profile}", Log = log,
-                Pinned = profile, WalksOne = true,
+                Pinned = profile, WalksOne = true, Staff = _harnesses.StaffFor(_home), OwnOrder = true,
                 Gate = (_, adapter) => !adapter.Interactive ? (StartPasses.Unavailable, $"`{adapter.Name}` does not hold conversations")
                     : actor == "ask-daoris" && HelpAccess.For(config.HelpMode, adapter).Refusal is { } unposed ? (StartPasses.NoPosture, unposed)
                     : null,
@@ -1472,6 +1483,14 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
                 HarnessProbe.Apply(
                     info, toolchain, selection.ProfileHome, selection.Binary, selection.ClaudeExecutable,
                     selection.Environment);
+            }
+
+            // COWORKVIEW1e-i: its repository's routing standing, told with a new conversation's first message and at each go-on, since a
+            // drive may have moved since it began.
+            if (place.Routing is { } routing)
+            {
+                if (goOn is null) _toldRouting[sessionId] = routing;
+                else goOn.Ask.Routing = routing;
             }
 
             // KEEP1b: what this run is handed of the downloads, on its record before it is spawned, a go-on as a first start.
@@ -2406,13 +2425,31 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
 
         // The browser it was handed is told once, ahead of the first message's words (BRWHINT1a).
         var briefing = held && _context.Browsers.TryRemove(sessionId, out var browserLine) ? browserLine : null;
-        var composed = new ChatMessage(message, kept) { Preface = ChatMessage.Bound(preface), Briefing = briefing };
+        var composed = new ChatMessage(message, kept) { Preface = ChatMessage.Bound(preface), Briefing = briefing, Draft = held ? DraftOf(sessionId) : null };
         return held ? WithProcess(sessionId, composed) : composed;
     }
 
+    /// <summary>
+    /// Hand a conversation the workflow draft open in the person's editor with the message it was sent with (FLOWCHART2d): taken by that
+    /// message as it is composed, its palette handed whole only where this conversation was not told it under the same digest.
+    /// </summary>
+    public void HandDraft(string sessionId, WorkflowDraftTold draft) => _context.Drafts[_context.Pending.Current(sessionId)] = draft;
+
+    private WorkflowDraftTold? DraftOf(string sessionId)
+    {
+        if (!_context.Drafts.TryRemove(sessionId, out var draft)) return null;
+        if (draft.Palette is not { } palette) return draft;
+        var told = _context.Palettes.TryGetValue(sessionId, out var digest) && digest == palette.Digest;
+        _context.Palettes[sessionId] = palette.Digest;
+        return told ? draft with { Palette = palette with { Text = null } } : draft;
+    }
+
     /// <summary>The start's process and maker, consumed by the first ordinary or handed-over message.</summary>
-    internal ChatMessage WithProcess(string sessionId, ChatMessage message) =>
-        _toldProcess.TryRemove(sessionId, out var told) ? message with { Process = told } : message;
+    internal ChatMessage WithProcess(string sessionId, ChatMessage message)
+    {
+        if (_toldRouting.TryRemove(sessionId, out var routing)) message = message with { Routing = routing };
+        return _toldProcess.TryRemove(sessionId, out var told) ? message with { Process = told } : message;
+    }
 
     /// <summary>
     /// A text-only door keeps the person's words where it keeps the agent's — the console. In the record they would be half a
@@ -2873,7 +2910,10 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             ForgetAccess(sessionId);
             _context.Handing.TryRemove(sessionId, out _);
             _context.Browsers.TryRemove(sessionId, out _);
+            _context.Drafts.TryRemove(sessionId, out _);
+            _context.Palettes.TryRemove(sessionId, out _);
             _toldProcess.TryRemove(sessionId, out _);
+            _toldRouting.TryRemove(sessionId, out _);
             // Nothing waiting will be sent now, and the page is told its queue emptied. COWORK1c: words kept on its record wait there for
             // it to go on, unless the person stopped it, which ends them with it.
             var personStopped = _processes.StopMade(sessionId) is { Reason: null };

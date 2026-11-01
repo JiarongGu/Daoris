@@ -565,29 +565,32 @@ describe('the real glossary and catalogues', () => {
     });
 
     /**
-     * A word the catalogues still say for a new name is one the rewording row (SETUPUX1w) rewords last: it is listed under the
-     * term's `avoid.later`, reported as a reword with its keys, and fails nothing until that row moves it to `avoid`.
+     * The words the rewording row (SETUPUX1w) moved from `avoid.later` into `avoid`: no catalogue string says them for their
+     * term, and a planted one fails the glossary rule, which `--strict` gates.
      */
-    it('reports the words the rewording row will forbid, with the strings that say them, and fails nothing on them', () => {
-      const later = Object.fromEntries(glossary.terms.filter((term) => term.avoid.later).map((term) => [term.term, term.avoid.later!.zh]));
-      expect(later).toEqual({
-        setup: ['打开设置'], hold: ['搁置'], appoint: ['委任'], place: ['范围'], gates: ['检查', '关卡'],
-      });
-      const found = check(glossary, en, zh, { all: true }).filter((finding) => finding.rule === 'reword');
-      expect(found.length).toBeGreaterThan(0);
-      expect(found.find((finding) => finding.key === 'agents.roles.diagram.column.place')!.message).toBe('says 范围 for place, which is 位置');
-      expect(verdict(found, { strict: true })).toBe(0);
-      expect(check(glossary, en, zh, { all: true }).filter((finding) => finding.rule === 'glossary' && finding.kind !== 'sentence')).toEqual([]);
+    it('forbids the words of the old Setup names, in the catalogues and on a planted string', () => {
+      expect(glossary.terms.filter((term) => term.avoid.later)).toEqual([]);
+      const unsaid = ['打开设置', '搁置', '委任', '范围', '关卡', '检查', '关口', '交付', '当前', '回到前面的步骤'];
+      const held = new Set(glossary.terms.flatMap((term) => term.avoid.zh));
+      expect(unsaid.filter((word) => !held.has(word))).toEqual([]);
+      const wording = check(glossary, en, zh, { all: true })
+        .filter((finding) => finding.rule === 'glossary' && finding.language === 'zh' && unsaid.some((word) => finding.message.startsWith(`says ${word} for`)));
+      expect(wording).toEqual([]);
 
-      // Moved to `avoid`, the same strings fail --strict where they are labels, and --all where they are sentences.
-      const forbidden: Glossary = {
-        ...glossary,
-        terms: glossary.terms.map((term) => (term.avoid.later
-          ? { ...term, avoid: { ...term.avoid, zh: [...term.avoid.zh, ...term.avoid.later.zh], later: undefined } }
-          : term)),
+      const planted: Record<string, string> = {
+        'agents.setup.set.lands': '交付方式',
+        'agents.setup.page.hold': '搁置',
+        'agents.setup.roles.appointed': '委任',
+        'workflow.place.gates.title': '关卡',
+        'workflow.place.chart.current': '当前，按现有规则推导',
+        'agents.roles.door.setup': '打开设置',
+        'workflow.edit.how.back': '回到前面的步骤',
       };
-      const failed = check(forbidden, en, zh, { all: true }).filter((finding) => finding.rule === 'glossary');
-      expect(failed.map(({ key }) => key)).toEqual(expect.arrayContaining(['agents.roles.diagram.column.place', 'workflow.place.gates.title']));
+      // *Back to …* is the glossary's whole-label match, which no English string says until the editor is reworded: plant it.
+      const found = check(glossary, { ...en, 'workflow.edit.how.back': 'Back to …' }, { ...zh, ...planted }, { all: true }).filter((finding) => finding.rule === 'glossary' && finding.language === 'zh');
+      const keys = found.map(({ key }) => key);
+      for (const key of Object.keys(planted)) expect(keys, key).toContain(key);
+      expect(verdict(found, { strict: true })).toBe(1);
     });
 
     it('says in the amended terms what the design amends them to', () => {
@@ -613,7 +616,7 @@ describe('the real glossary and catalogues', () => {
         'Not driven | 未驱动',
       ]);
       expect(names('step')).toEqual(expect.arrayContaining([
-        'Completed on the host | 在托管平台完成', 'The integration request | 集成请求', 'Handed on | 已移交',
+        'Completed on the host | 在托管平台完成', 'The integration request | 集成请求', 'Handed on | 已交接',
         'Find a pending release | 查找待发版本', 'Record the release | 记录发版', 'Copy to its registry | 复制到它的登记目录',
       ]));
       expect(check(glossary, en, zh).filter((finding) => finding.rule === 'distinct')).toEqual([]);

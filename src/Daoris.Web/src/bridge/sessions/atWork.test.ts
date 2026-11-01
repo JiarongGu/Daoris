@@ -7,7 +7,7 @@ const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
 vi.mock('@shenora/react', () => ({ getBridge: () => ({ isAvailable: true, invoke }) }));
 
 import { answered } from '../state/held';
-import { askAtWork, atWorkKey, type AtWorkHeld } from './atWork';
+import { askAtWork, askAtWorkOf, AT_WORK, atWorkAskKey, atWorkKey, type AtWorkHeld, readAtWork } from './atWork';
 
 const key = atWorkKey('s1');
 const held = hashKey(key);
@@ -141,5 +141,36 @@ describe('who is at work, a numbered read (COWORKVIEW1a)', () => {
     await fetch(client);
 
     expect(working(client)).toBe(1);
+  });
+});
+
+// COWORKVIEW1d: an ask's read is the same route keyed `{ ask }`, and its answer a branch of its own.
+describe('who is at work on an ask (COWORKVIEW1d)', () => {
+  afterEach(() => invoke.mockReset());
+
+  const askKey = atWorkAskKey('a1');
+  const asked = { askAnswer: { of: { ask: 'a1' }, entries: [{ entry: 'ask:a1/db', repository: 'db', opens: 's1', shown: 'working', parts: 1, working: 1, subagents: 0, subagentsWorking: 0 }] }, at: { epoch: 'e1', n: 1 } };
+
+  it('asks the route by the ask and holds its answer as the ask branch, never a session’s answer', async () => {
+    const client = new QueryClient();
+    invoke.mockResolvedValue(asked);
+
+    const read = await client.fetchQuery({ queryKey: askKey, queryFn: () => askAtWorkOf(client, askKey, { ask: 'a1' }), retry: false });
+
+    expect(invoke.mock.calls[0]![1]).toBe('SESSION_AT_WORK');
+    expect(invoke.mock.calls[0]![2]).toMatchObject({ payload: { ask: 'a1' } });
+    expect(invoke.mock.calls[0]![2].payload).not.toHaveProperty('session');
+    expect('askAnswer' in read && read.askAnswer.entries[0]!.repository).toBe('db');
+    expect('answer' in read).toBe(false);
+  });
+
+  it('reads an ask the slice does not hold as reading, and a failure as its words', () => {
+    expect(readAtWork({ pending: true, waits: 'ask', at: { epoch: 'e1', n: 2 } })).toEqual({ reading: true, at: { epoch: 'e1', n: 2 } });
+    expect(readAtWork({ failed: { why: 'refused' } })).toEqual({ failed: { why: 'refused' } });
+  });
+
+  it('is under the hub’s atWork key, so one wake asks every mounted read again', () => {
+    expect(askKey.slice(0, AT_WORK.length)).toEqual(AT_WORK);
+    expect(atWorkKey('s1').slice(0, AT_WORK.length)).toEqual(AT_WORK);
   });
 });

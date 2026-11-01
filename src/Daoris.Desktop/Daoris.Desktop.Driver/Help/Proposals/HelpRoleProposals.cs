@@ -59,6 +59,7 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
 
         var current = catalogue.Slots.FirstOrDefault(slot => slot.Id == id)?.Role;
         IReadOnlyList<ActorChoice>? choices = null;
+        RolePolicyPress? policy = null;
         RoleChange change;
         switch (proposal.Door)
         {
@@ -76,8 +77,9 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
                 try
                 {
                     choices = ActorChoices.Payload(press);
+                    policy = press is { } carried ? RolePolicyPress.FromPayload(carried) : null;
                 }
-                catch (DriverException error)
+                catch (Exception error) when (error is DriverException or RoleRefusedException)
                 {
                     return Refused(error.Message);
                 }
@@ -87,15 +89,34 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
         }
 
         if (RoleDoor.Judge(catalogue, change, choices) is { } refused) return Refused(refused.Said);
+        if (policy is not null && change is RoleChange.SetRole { Role: var set })
+        {
+            var staffing = new RoleStaffing(home);
+            var effective = choices ?? (config.Actors.TryGetValue(id, out var own) ? own : null);
+            var (resolved, notTaken) = StaffPolicyDoor.Judge(set, effective, policy, staffing.Policy(id), staffing.InUse());
+            if (notTaken is not null) return Refused(notTaken.Said);
+            policy = policy with { Policy = resolved, Preset = null, Clear = resolved is null };
+            return new HelpPlan(null, Describe(change, choices) + PolicyDescribe(resolved, effective), Terminal(change, choices) + PolicyTerminal(id, resolved, effective), null)
+            {
+                Role = new HelpRoleChange(change, choices, read, policy),
+            };
+        }
+
         return new HelpPlan(null, Describe(change, choices), Terminal(change, choices), null) { Role = new HelpRoleChange(change, choices, read) };
     }
+
+    private static string PolicyDescribe(StaffPolicy? policy, IReadOnlyList<ActorChoice>? choices) =>
+        policy is null ? " Its policy is cleared: its choices run in order." : $" Its policy: {StaffPolicyFlags.Said(policy, choices ?? [])}. This can spend differently.";
+
+    private static string PolicyTerminal(string id, StaffPolicy? policy, IReadOnlyList<ActorChoice>? choices) =>
+        $" && daoris driver role policy {id} " + (policy is null ? "--clear" : StaffPolicyFlags.Terminal(policy, choices ?? []));
 
     public Task<HelpApplied> ApplyAsync(HelpApplying applying, CancellationToken ct)
     {
         var role = applying.Plan.Role!;
         var staffing = RoleStaffing.Of(DaorisHome.Entry(applying.Home, HomeEntry.DriverConfig))
             ?? throw new DriverException("this home's actors are the file's own (not this home's store), so its roles are not set here.");
-        RoleDoor.Apply(staffing, role.Change, role.Choices, role.Read);
+        RoleDoor.Apply(staffing, role.Change, role.Choices, role.Read, role.Policy);
         return Task.FromResult(applying.Settled(true, $"Applied: `#{applying.Id}` — {applying.Plan.Describe} (`{applying.Plan.Terminal}`)", null));
     }
 
@@ -146,4 +167,4 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
 }
 
 /// <summary>A role change a proposal makes (FOUNDATION1y-i): applied as <c>SET_ROLE</c> applies it, through the role door.</summary>
-public sealed record HelpRoleChange(RoleChange Change, IReadOnlyList<ActorChoice>? Choices, long? Read);
+public sealed record HelpRoleChange(RoleChange Change, IReadOnlyList<ActorChoice>? Choices, long? Read, RolePolicyPress? Policy = null);

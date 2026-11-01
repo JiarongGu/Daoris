@@ -69,8 +69,60 @@ public sealed class RoleVerb : ChoiceVerb
         }
     }
 
+    private const string PolicyGrammar =
+        "`driver role policy <id> [--preset first|even|weighted] [--rule order|weight] [--weight <n>=<0-10>]… [--share <n>=<1-99>]… "
+        + "[--budget <n>=<starts>/day]… [--takes <n>=<work,…>]… [--on <condition>=<action>[:<after>|:<minutes>]]… [--most <1-8>] [--clear]` "
+        + "(<n> is a choice's number in the role's staffing)";
+
+    /// <summary>
+    /// <c>role policy &lt;id&gt; …</c> (STAFFPOLICY1b, the staff policy design §6.4): the role's policy set through the role door's
+    /// <c>SET_ROLE</c>, the draft being the stored policy (or today's order) with the flags laid over a preset; judged before anything is sent.
+    /// </summary>
+    private ChoicePress PolicyPlan(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world)
+    {
+        if (args.Count < 3) throw new ChoiceWords($"{PolicyGrammar}.");
+        var staffing = RoleStaffing.Of(world.ConfigPath) ?? throw new ChoiceWords(Unkept(world));
+        var catalogue = RoleCatalog.Read(staffing.Location);
+        var id = args[2];
+        var role = catalogue.Slots.FirstOrDefault(slot => slot.Id == id && slot.Role is not null)?.Role ?? throw new ChoiceWords($"no role `{id}` is in the catalogue.");
+        var existing = staffing.Policy(id);
+        var choices = before.Actors.TryGetValue(id, out var staffed) ? staffed : [];
+        if (choices.Count == 0) throw new ChoiceWords($"`{id}` has no choices of its own, so it keeps no policy: give it its choices first.");
+
+        var press = StaffPolicyFlags.Read(args.Skip(3).ToList(), choices, existing, PolicyGrammar);
+        var (policy, refused) = StaffPolicyDoor.Judge(role, choices, press, existing, kept: true);
+        if (refused is not null) throw new ChoiceWords($"`driver role policy`: {refused.Said}");
+
+        var payload = new JsonObject
+        {
+            ["change"] = "set",
+            ["id"] = id,
+            ["role"] = new JsonObject
+            {
+                ["name"] = JsonNode.Parse(role.Name.Json()),
+                ["takes"] = new JsonArray([.. role.Takes.Select(work => (JsonNode)JsonValue.Create(work))]),
+                ["scope"] = new JsonObject { ["kind"] = role.Scope.Kind, ["id"] = role.Scope.Id },
+            },
+            ["policy"] = policy is null ? null : JsonNode.Parse(policy.Write()),
+            ["policyRevision"] = existing.Revision,
+        };
+        return new(Word, ChoiceRoutes.Role, payload, _ =>
+        {
+            RoleDoor.Apply(staffing, RoleChange.Set(role), null, null, press with { Read = existing.Revision });
+            return Task.FromResult<object?>(null);
+        }, _ => null, _ =>
+        {
+            world.Instance.Out.WriteLine(policy is null
+                ? $"daoris: role `{id}` goes back to its choices in order, as before."
+                : $"daoris: role `{id}` policy set: {StaffPolicyFlags.Said(policy, choices)}.");
+            world.Instance.Out.WriteLine("  New work takes it; work already running keeps its choice.");
+            return 0;
+        });
+    }
+
     public override ChoicePress Plan(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world)
     {
+        if (args.Count > 1 && args[1] == "policy") return PolicyPlan(args, before, world);
         if (args.Count < 3 || args[1] is not ("set" or "remove" or "default")) throw new ChoiceWords($"{Grammar}.");
         var staffing = RoleStaffing.Of(world.ConfigPath) ?? throw new ChoiceWords(Unkept(world));
         var catalogue = RoleCatalog.Read(staffing.Location);
@@ -126,11 +178,13 @@ public sealed class RoleVerb : ChoiceVerb
     {
         var said = world.Instance.Out;
         if (args.Count > 1 && args[1] is "set" or "remove" or "default") throw new ChoiceWords($"{Grammar}.");
+        if (args.Count > 1 && args[1] == "policy") throw new ChoiceWords($"{PolicyGrammar}.");
         var staffing = RoleStaffing.Of(world.ConfigPath);
         var catalogue = staffing is null ? RoleCatalog.Of([]) : RoleCatalog.Read(staffing.Location);
         var rows = RoleDoor.Rows(catalogue, choices).Where(row => args.Count < 2 || row.Id == args[1]).ToList();
         if (args.Count > 1 && rows.Count == 0) throw new ChoiceWords($"no role `{args[1]}` is in the catalogue.");
 
+        var policies = staffing is null ? [] : RolePolicyRow.Of(staffing.Ledger, catalogue, choices);
         said.WriteLine("daoris: the roles that take this machine's work");
         foreach (var row in rows)
         {
@@ -143,6 +197,10 @@ public sealed class RoleVerb : ChoiceVerb
                     + (row.State == "seed" ? " (the seed)" : $" (revision {row.Revision})"),
             };
             said.WriteLine($"  {row.Id,-12}{shape}");
+            if (policies.FirstOrDefault(each => each.Role == row.Id) is { } policy && (policy.PolicyState != StaffPolicyRead.Default || args.Count > 1))
+            {
+                said.WriteLine($"  {"",-12}{PolicySaid(policy, row.Choices)}");
+            }
         }
 
         foreach (var work in RoleWork.Codes.Where(work => catalogue.RoleFor(work, new RolePlace()).Held is { } held && held == RoleCatalog.NoRole(work)))
@@ -152,7 +210,21 @@ public sealed class RoleVerb : ChoiceVerb
 
         if (staffing is null) said.WriteLine($"  {Unkept(world)}");
         said.WriteLine($"  Change one: {Grammar}.");
+        said.WriteLine($"  Set how a role's choices share new starts: {PolicyGrammar}.");
         return 0;
+    }
+
+    /// <summary>A role's policy line (§6.4): its state and the rule said, why it is stale, and the next new start; the roles with no policy say they run in order.</summary>
+    private static string PolicySaid(RolePolicyRow row, IReadOnlyList<ActorChoice>? choices)
+    {
+        var rule = row.PolicyState switch
+        {
+            StaffPolicyRead.Default => "policy: none, its choices in order",
+            StaffPolicyRead.Stale => $"policy (revision {row.Revision}) is stale: {row.Why}",
+            _ => $"policy (revision {row.Revision}): "
+                + (row.StaffPolicy is { } node && StaffPolicy.Parse(node.ToJsonString()).Policy is { } policy ? StaffPolicyFlags.Said(policy, choices ?? []) : "set"),
+        };
+        return rule + (row.Next is { } next ? $" · next new start: choice {next.Choice}, {next.Said}" : "");
     }
 
     private static (RoleChange, IReadOnlyList<ActorChoice>?) Set(string id, IReadOnlyList<string> rest, RoleCatalog catalogue)

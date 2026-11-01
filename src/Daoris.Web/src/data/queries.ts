@@ -81,9 +81,11 @@ export const keys = {
   calls: ['driver', 'calls'] as const,
   /**
    * A repository's or a workspace's Current workflow (WORKFLOW1b) — shell-only, like the lines, and under their key, since
-   * Current is drawn from the rules they resolve: every change that asks the lines again asks it again.
+   * Current is drawn from the rules they resolve: every change that asks the lines again asks it again. A route asked for is a read
+   * of its own (SETUPUX1o), under the same prefix.
    */
-  workflow: (scope: 'repository' | 'workspace', name: string) => ['driver', 'lines', 'workflow', scope, name] as const,
+  workflow: (scope: 'repository' | 'workspace', name: string, route?: string | null) =>
+    (route ? ['driver', 'lines', 'workflow', scope, name, route] : ['driver', 'lines', 'workflow', scope, name]) as readonly string[],
   /**
    * The process a session's own tree runs under (PROCESS1e) — shell-only, and under the lines' key, since it is the rules they
    * resolve: every change that asks the lines again asks it again.
@@ -689,10 +691,12 @@ export const useHelpSessions = (
    * to a window with no bus. False asks only when the list is stale.
    */
   refetchInterval: number | false = false,
+  /** False asks nothing: a reader that needs a conversation's record only once there is one to read (FLOWCHART2f's proposal bar). */
+  enabled = true,
 ) => {
   // Pushed (PUSH1d2): its record's every move is pushed, so it is never asked again on a clock.
   const { pushed, read } = useSessionsRead(HELP_REPOSITORY, true, null);
-  return useQuery({ ...read, refetchInterval: pushed ? false : refetchInterval });
+  return useQuery({ ...read, refetchInterval: pushed ? false : refetchInterval, enabled });
 };
 
 /**

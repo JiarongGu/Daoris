@@ -82,6 +82,17 @@ public sealed partial class McpToolDescriptionTests
         Assert.Contains("presses Apply there", text);
     }
 
+    /// <summary>SETUPUX1j: the set-up tool's preset ask names `keep`, which writes no landing and no workflow choice, beside the deliveries.</summary>
+    [Fact]
+    public void The_setup_tool_names_keep_how_it_lands_beside_the_deliveries()
+    {
+        var text = string.Join(" ", Descriptions().Where(d => d.Tool == "setup_propose").Select(d => d.Text));
+
+        Assert.Contains("`keep`", text);
+        Assert.Contains("no landing and no workflow choice", text);
+        Assert.Contains("`merge-after-accept`", text);
+    }
+
     /// <summary>WORKFLOW1h-a: the workflow tool says it only proposes, wants whole steps, and names the parts not proposed yet.</summary>
     [Fact]
     public void The_workflow_tool_says_it_only_proposes_whole_steps()
@@ -103,6 +114,20 @@ public sealed partial class McpToolDescriptionTests
         Assert.Contains("graph", text);
         Assert.Contains("`kind:<id>`", text);
         Assert.Contains("saving nothing", text);
+    }
+
+    /// <summary>FLOWCHART2e: the workflow tool says a change to the open draft goes by its fingerprint with the whole graph, saving and choosing nothing.</summary>
+    [Fact]
+    public void The_workflow_tool_says_a_change_to_the_open_draft_saves_nothing()
+    {
+        var parameter = typeof(HelpWorkflowTool).GetMethod(nameof(HelpWorkflowTool.ProposeWorkflow))!.GetParameters().Single(each => each.Name == "draft");
+        var said = parameter.GetCustomAttribute<DescriptionAttribute>()!.Description;
+        var text = string.Join(" ", Descriptions().Where(d => d.Tool == "workflow_propose").Select(d => d.Text));
+
+        Assert.Contains("fingerprint", said);
+        Assert.Contains("whole", said);
+        Assert.Contains("nothing is saved or chosen", said);
+        Assert.Contains("open in the person's editor", text);
     }
 
     /// <summary>WORKFLOW1h-name: the workflow tool says a new workflow is named by the person's words, and an edit keeps its name.</summary>

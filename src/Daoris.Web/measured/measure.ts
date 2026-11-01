@@ -20,8 +20,16 @@ export type FlowMeasure = {
   collisions: string[];
   overlaps: string[];
   crossings: number;
+  /** The paths a decision's outcome sends from its port (FLOWCHART2a), counted. */
+  ported: number;
+  /** A port's path that does not leave the bottom of its port's box (FLOWCHART2a). */
+  portMisses: string[];
   /** How many times the flow drew its edges (trap 14). */
   drawn: number;
+  /** An editor's ＋ on a way shown (FLOWCHART2b), counted. */
+  inserts: number;
+  /** A ＋ shown over a node, a shown label or another ＋ shown (FLOWCHART2b). */
+  insertOverlaps: string[];
 };
 
 export function measureFlows(): FlowMeasure[] {
@@ -64,8 +72,23 @@ export function measureFlows(): FlowMeasure[] {
       const last = element.getPointAtLength(total);
       const end = new DOMPoint(last.x, last.y).matrixTransform(matrix);
       points.push({ x: end.x, y: end.y });
-      return { id: element.dataset.flowEdge!, from: element.dataset.from!, to: element.dataset.to!, points };
+      return { id: element.dataset.flowEdge!, from: element.dataset.from!, to: element.dataset.to!, port: element.dataset.port ?? null, points };
     });
+    const portBoxes = new Map([...pane.querySelectorAll<HTMLElement>('[data-flow-port]')].map((element) => [element.dataset.flowPort!, boxOf(element)] as const));
+
+    // Each path of a port starts at the bottom of its own port's box, within its width: it leaves the port, not a spot along the node.
+    const portMisses: string[] = [];
+    let ported = 0;
+    for (const path of paths) {
+      if (path.port === null) continue;
+      const box = portBoxes.get(`${path.from}:${path.port}`);
+      if (!box) continue;
+      ported += 1;
+      const first = path.points[0]!;
+      if (first.x < box.x - 0.5 || first.x > box.x + box.w + 0.5 || Math.abs(first.y - (box.y + box.h)) > 1.5) {
+        portMisses.push(`${path.id} starts at ${Math.round(first.x)},${Math.round(first.y)}, outside the bottom of the port ${path.from}:${path.port}`);
+      }
+    }
 
     const collisions: string[] = [];
     for (const path of paths) {
@@ -83,6 +106,16 @@ export function measureFlows(): FlowMeasure[] {
     labels.forEach((label, index) => {
       for (const node of nodes) if (overlap(label.box, node.box)) overlaps.push(`the label of ${label.id} lies over the node ${node.id}`);
       for (const other of labels.slice(index + 1)) if (overlap(label.box, other.box)) overlaps.push(`the labels of ${label.id} and ${other.id} overlap`);
+    });
+
+    // An editor's ＋ on a way stands clear of every node, every label shown and every other ＋ shown; one in the rail stands in its row.
+    const inserts = placement === 'rail' ? []
+      : [...pane.querySelectorAll<HTMLElement>('[data-flow-insert][data-shown]')].map((element) => ({ id: element.dataset.flowInsert!, box: boxOf(element) }));
+    const insertOverlaps: string[] = [];
+    inserts.forEach((insert, index) => {
+      for (const node of nodes) if (overlap(insert.box, node.box)) insertOverlaps.push(`the ＋ on ${insert.id} lies over the node ${node.id}`);
+      for (const label of labels) if (overlap(insert.box, label.box)) insertOverlaps.push(`the ＋ on ${insert.id} lies over the label of ${label.id}`);
+      for (const other of inserts.slice(index + 1)) if (overlap(insert.box, other.box)) insertOverlaps.push(`the ＋s on ${insert.id} and ${other.id} overlap`);
     });
 
     // Crossings, by chunks of each path's samples whose boxes meet first, so a dense graph is counted in time.
@@ -118,8 +151,9 @@ export function measureFlows(): FlowMeasure[] {
     }
 
     results.push({
-      frame, placement, nodes: nodes.length, paths: paths.length, labels: labels.length, collisions, overlaps, crossings,
+      frame, placement, nodes: nodes.length, paths: paths.length, labels: labels.length, collisions, overlaps, crossings, ported, portMisses,
       drawn: Number(pane.querySelector('[data-drawn]')?.getAttribute('data-drawn') ?? 0),
+      inserts: inserts.length, insertOverlaps,
     });
   }
   return results;

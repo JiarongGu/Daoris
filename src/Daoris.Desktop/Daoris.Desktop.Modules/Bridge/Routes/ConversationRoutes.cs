@@ -131,6 +131,16 @@ public sealed class ConversationRoutes(DriverContext context)
             choice = QuestionWords.Pressed(asked, text);
         }
 
+        // FLOWCHART2d (D223): the workflow draft open in the person's editor, which the page sends where its fingerprint moved since this
+        // conversation was told: refused whole past its bound before anything is kept, else handed with these words beside the palette it is
+        // composed from, which the room has no reader of.
+        if (request.Payload is { } sent && sent.TryGetProperty("draft", out var drafted) && drafted.ValueKind != JsonValueKind.Null)
+        {
+            var draft = WorkflowDraftTold.Read(drafted);
+            var palette = WorkflowEditRoutes.PaletteOf(_loop.Home).Compact();
+            _loop.Chat?.HandDraft(id, draft with { Palette = new WorkflowDraftPalette(WorkflowPalette.DigestOf(palette), palette) });
+        }
+
         // What the person attached, kept for its session before the words go (CONV4c).
         var files = request.Payload is { } payload ? FilesOf(payload) : [];
         // Where the person is (HELP1b), which a conversation's agent is handed ahead of the words; absent for most. `now` is the

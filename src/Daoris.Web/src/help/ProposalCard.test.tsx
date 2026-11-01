@@ -1,9 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import '../locales/i18n';
+import i18n from '../locales/i18n';
 import { code } from '../test/code';
 import { NEWBIE_SETUP } from '../projects/fixtures';
+import { RELEASE_CARD } from '../workflow/edit/proposalFixtures';
 import { type HelpProposal, ProposalCard } from './ProposalCard';
 
 // HELP1c (D89): a change Ask Daoris proposes, and the person's two presses.
@@ -327,6 +328,49 @@ describe('the kinds that reach every door', () => {
     expect(screen.getByRole('button', { name: 'Not now' })).toBeInTheDocument();
   });
 
+  // FLOWCHART2f (D223 §4.4): a change to the draft open in the editor saves and chooses nothing: its changes, what to put right before it
+  // saves, and one press, which opens the editor and settles nothing there.
+  const DRAFTED: HelpProposal = {
+    ...RELEASE_CARD,
+    workflow: {
+      ...RELEASE_CARD.workflow!,
+      problems: [
+        { code: 'land-tail', node: 'landing', wire: null, words: 'node `landing`: a `merge` land brings no `pushed`.' },
+        { code: 'a-rule-newer-than-this-page', node: null, wire: null, words: 'a rule this page has no words for refuses `publish`.' },
+      ],
+    },
+  };
+
+  it('a change to the open draft lists its changes and what to put right, saves nothing, and its one press opens the editor', async () => {
+    const onApply = vi.fn();
+    render(<ul><ProposalCard proposal={DRAFTED} onApply={onApply} onDismiss={vi.fn()} /></ul>);
+
+    expect(screen.getByText('A change to your draft')).toBeInTheDocument();
+    expect(screen.getByText('For the workflow draft open for engine')).toBeInTheDocument();
+    expect(headings()).toEqual(['Its changes', 'To put right before it saves']);
+    expect(within(screen.getByRole('region', { name: 'Its changes' })).getAllByRole('listitem')).toHaveLength(16);
+    expect(screen.getByText('The steps after the landing are not what its method brings.')).toBeInTheDocument();
+    expect(screen.getByText(/a rule this page has no words for refuses/)).toBeInTheDocument();
+    expect(screen.getByText(/^Nothing is saved or chosen: you take its changes into the draft in its editor/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Apply' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/^v0 of/)).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Open in the editor' }));
+    expect(onApply).toHaveBeenCalledWith('p7');
+    expect(screen.getByRole('button', { name: 'Not now' })).toBeInTheDocument();
+  });
+
+  it('a change to the open draft in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      render(<ul><ProposalCard proposal={DRAFTED} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
+      expect(screen.getByText('对你草稿的更改')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '在编辑器中打开' })).toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
   // INTEGRATE1r part r3 (the integration design §17.7, F42): a graph chosen for a repository whose landing rule declares no gates says so,
   // each repository by its name as code, the sentence the page's own words (it is no refusal); a cannot is a need, the driver's sentence
   // as sent, since it names the Setup row to run.
@@ -345,10 +389,10 @@ describe('the kinds that reach every door', () => {
 
       await i18n.changeLanguage('zh');
       render(<ul><ProposalCard proposal={{ ...WORKFLOW, workflow: chosen }} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
-      expect(headings()).toEqual(['你的部分', '步骤', '不再每次询问你', '集成不跑关卡', '适用于']);
-      const said = screen.getAllByRole('listitem').map((each) => each.textContent).filter((text) => /^\w+ 集成时不跑关卡/.test(text ?? ''));
+      expect(headings()).toEqual(['你的部分', '步骤', '不再每次询问你', '集成不跑检查项', '适用于']);
+      const said = screen.getAllByRole('listitem').map((each) => each.textContent).filter((text) => /^\w+ 集成时不跑检查项/.test(text ?? ''));
       expect(said).toHaveLength(2);
-      expect(said[0]).toMatch(/^engine 集成时不跑关卡：/);
+      expect(said[0]).toMatch(/^engine 集成时不跑检查项：/);
     } finally {
       cleanup();
       await i18n.changeLanguage('en');

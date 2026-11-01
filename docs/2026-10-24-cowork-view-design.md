@@ -1,6 +1,6 @@
 # Who is at work on a session: its parts, its subagents, its co-workers and the quests it asked, what each is on and what waits on what, read from the Fabric's records, and how a session hands its work out (COWORKVIEW1, row a accepted 2026-10-26; the routing half proposed)
 
-**Standing:** **row a accepted by the steward on 2026-10-26** (D173's note of that date), after both makers' reads of round 10 and their named changes (§23); the routing half proposed. Round 10 with both makers' named changes, under D191, with dated notes amending D173 (the Collaboration Fabric), D203 (co-workers), D115
+**Standing:** **row a accepted by the steward on 2026-10-26** (D173's note of that date), after both makers' reads of round 10 and their named changes (§23), and built; **round 11 (2026-11-02), the routing half, accepted by the steward the same day after Codex's read, whose findings its rows carry** (*Round 11*, before §0; §R11.5). Round 10 with both makers' named changes, under D191, with dated notes amending D173 (the Collaboration Fabric), D203 (co-workers), D115
 (lanes) and D167 (sessions and their parts). The design is two scopes with a standing each:
 - **Row a, *a chat's subagents seen*: the scope round 10 settles.** Its whole contract is §7 row a's table, each rule with where
   it is specified and its proof. Both makers have read round 9 at `a30797bce` (`docs/2026-10-24-cowork-view-reads.md`): Codex
@@ -21,7 +21,8 @@
   *(O10-Fn)*, the Opus read's finding n, and **the steward accepted row a on them on 2026-10-26**, each named change checked in
   the passage §23 names. Row a is built after the FOUNDATION1 moves that hold its files (Agents, Participants, Context, Loop),
   its new files in their subdomains' folders.
-- **The routing half (rows e, b, c, d and f, and the sections marked *routing half*): proposed for a later round**, under its own
+- *(Round 11: settled in the round 11 section before §0, which proposes it for the steward's acceptance after one read.)*
+  **The routing half (rows e, b, c, d and f, and the sections marked *routing half*): proposed for a later round**, under its own
   reads, unchanged by rounds 5 to 10. Round 4 corrected what the reads found in it and settled none of it. Nothing of it is built or
   filed until that round accepts it, which FOUNDATION1's §5.1 has written after its rows c, d and f land.
 
@@ -321,6 +322,231 @@ is `src/Daoris.Service/Daoris.Service.Core/`, `Mcp/` is `src/Daoris.Service/Daor
 `Dnn` is `docs/decisions/Dnn.md`. Every fact in §1 was read in the code its round names (the *Standing* above). A fact this design could not find is said as *not found*,
 with what was searched. Backlog rows are cited by id, not by line.
 
+## Round 11: the routing half, settled against today's code
+
+*(Round 11, 2026-11-02, written by Claude Opus 5.5 from the code on main at `90360ca54`.)* Row a is built (the backlog's
+COWORKVIEW1 row; D173's notes). This round settles the routing half, rows e, b, c, d and f and every section marked *routing
+half*: what moved since round 10, with each citation corrected (§R11.1); the corrections round 4 carried, each settled by one
+choice and its reason (§R11.2); the rows in build order, each with its contract, proof and lanes (§R11.3); and what stays open
+(§R11.4). Where this section and §3.1 to §3.5, §3.8's routing type, §3.9, §4.2, §5.2's and §5.3's routing parts, §6 or §7's
+rows e to f differ, this section holds, and each paragraph it supersedes says so in place. It changes nothing of row a's
+contract (§7's table). Nothing of the routing half is built, filed or staged until the steward accepts it after one read.
+
+### R11.1 What moved since round 10, and the citations corrected
+
+**FOUNDATION1 is built** but its rows n and v (the backlog's FOUNDATION1 row, state of 2026-10-31; D212's notes). Every driver
+subdomain has moved (`Driver.Tests/fixtures/structure.json:2-24`, each `moved: true`), so every `Driver/` path the routing half
+cites has changed. Five of its rows change what the routing half reads:
+- **The participant's work** (row 1c): `ParticipantWork.Of` (`Driver/Participants/Domain/ParticipantWork.cs:73`) reads a record's
+  work, `build`, `design`, `chat`, `ask-daoris`, `intake`, `help`, `partner`, `review` or `brainstorm`, from its marks, and the
+  `sessions` slice pushes it as `work` (`Modules/Loop/SessionsStateSlice.cs:47-49`). It is the foundation design's
+  `Participant.Of` (its §5.1).
+- **The connector by work** (row 1r): the call table refuses `quest_publish` and `quest_respond` to a partner, a reviewer and a
+  helper alike (`Mcp/CallTable.cs:95-108`, `:126-133`). Round 4's "reviewers only once COWORKUX1c lands" (O3-F6, C3-1.3) is past.
+- **Push only** (row 1s): why a quest sits is the `considerations` slice (`Modules/Loop/ConsiderationsStateSlice.cs`), read by
+  `useConsidered` (`Web/bridge/driver.ts:389`), no longer `DRIVER_TICK`'s data; and a registry the tick heard move is told as the
+  `Registry` scope (`Modules/Platform/StatePublisher.cs:63`; `Modules/Loop/DriverLoop.cs:1126-1139`), which the hub answers
+  (`Web/bridge/state/stateHub.ts:50`).
+- **The line's head** (rows 1d-i, 1d-ii): `Lines.WalkAsync` (`Core/Sessions/Lines.cs:41-63`) walks forward by `from` and, for a
+  driven part with no successor, to its quest's newest local record (`LastOwnIdForQuestAsync`, `Core/Sessions/Sessions.cs:1125-1131`),
+  skipping no stood-down or refused record. The service answers it as `head`, pulled and never pushed (`SessionsStateSlice.cs:58-59`).
+- **The journal's ends** (rows 1k, 1l): `part.ended` takes its reason from the record's own `ended.*` code
+  (`Driver/Events/PartEnds.cs:43-47`). A teller reads the journal; a state read reads the record.
+
+**The quests are a pushed slice** (PUSH1d3): every quest, closed ones included, with `awaits`, `publishedBy`, `lanes`, `parent`,
+`from`, `status`, `held`, `holder` and `here` (`Modules/Loop/QuestsStateSlice.cs:9-12`, `:35-45`). Round 3's whole-store service
+reads (§4.2) were written before it. **The rows the routing half follows are parked** (`docs/backlog-parked.md`, 2026-10-30):
+COWORKUX1 (1a's exchange read, 1b's thread), BRAINSTORM1d, AGENTROOM1b, MEETUX1, DEV6, DEV9, FABRIC-GRAPHVIEW1 and FABRIC-C1b.
+
+**Row a as built**, which the routing half extends: `AtWork.Compose` (`Driver/Participants/Domain/AtWork.cs`), the window's read
+(`Modules/Loop/AtWorkRead.cs`), the route (`Modules/Bridge/Routes/AtWorkRoutes.cs:16-17`), the watch (`HomeWatch.ForWork`,
+`Driver/Events/HomeWatch.cs:216`), the verb (`Driver/WorkOrders/SessionsCommand.cs:356-360`), the hub's `atWork`
+(`stateHub.ts:71`), and the page (`Web/bridge/sessions/atWork.ts`, `Web/work/atWork/AtWorkView.tsx`, `placements.ts:9`, `:25`).
+
+| The routing half's fact | Rounds 3 and 4 cited | At `90360ca54` |
+|---|---|---|
+| the planner's last session | `ServiceClient.cs:2134-2150` | `Driver/Service/ServiceClient.cs:2387-2406`; read for the strip as `SessionLook.LastRun` (`Driver/WorkOrders/SessionGroups.cs:255-256`, `:337`), which places a row by the planner's verdict on its quest's last run (`:1037-1043`) |
+| the strip's waits | not cited | `awaiting-reply` with `awaits` and `awaitsOf` (`SessionGroups.cs:952-960`), `awaiting-helper` (`:945`), and `answered`, an answered park (`:894`); worded on the rail (`Web/work/rail/SessionRow.tsx:340-343`); each entry part's `shown`, `group`, `began`, `after`, `askedBy` (`Modules/Bridge/Routes/SessionsRoutes.cs:909-919`; `Driver/Workplace/SessionEntries.cs:4-55`) |
+| the registry's signature | `Planner.cs:722-736` | `Driver/WorkOrders/Domain/Planner.cs:175-178`, still name, adoption, workspace and root; `RepoView` holds no lanes (`Driver/Service/Domain/RepoViews.cs:9-10`, `ReadRegistry` `ServiceClient.cs:2203`), though `/api/registry` answers them (`DeclarationsAsync`, `:1228-1252`) |
+| the registry heard | `DriverLoop.cs:1019`, `:1321-1326`, `:1343` | `Modules/Loop/DriverLoop.cs:1515-1520` (`RegistryHeard`), `:1529-1546` (`RegisteredAsync`), its placements kept at `:1522-1527` |
+| a further part alongside; a helper's tree | `Planner.cs:1716-1767`; `HelperWaits.cs:36-38` | `Planner.cs:1108-1139` (`Joining`), `:1598` (`WaitingInTree`); `Driver/Participants/Domain/HelperWaits.cs:28-36` |
+| drive, the holder, one at a time, the cap | `Planner.cs:1889-1891`, `:1290-1292`, `:2010-2021`, `:2048` | `Planner.cs:1277`, `:645-647` (a chat holds its repository), `:1411-1419`, `:1450`; `ResumedOnAnswer` `:912` |
+| a wait's end codes; the park | `Observation.cs:104-111`, `:164-174` | `Driver/Events/Domain/Observation.cs:71-77` (`ended.awaits`), `:131-132` (`ended.awaits-helper`), `:136-141` (the park) |
+| the role filter | `Mcp/RoleFilter.cs:58`, `:77`, `:114` | `Mcp/CallTable.cs:95-108` |
+| BRWHINT1's places | `ChatRunner.cs:1380-1382`; `Adapters.cs:334-339` | `Driver/Agents/Adapters.cs:335-339`, `:516` (a driven start); `Driver/Course/Domain/ChatMessage.cs:88`, `Driver/Course/Chat/ChatContext.cs:98` (a chat's first message); its note `Driver/Course/Chat/ChatRecorded.cs:122-128`, `chat.told-browser` (`Driver/Events/NoteCodes.cs:757`) |
+| self-asking: the refusal, the registry's row | `QuestExchange.cs:539-552`, `:759-761`; `KnowledgeSearchTools.cs:326-330` | `Core/Quests/QuestExchange.cs:577-584`, `:773`, `NoLanesWay` `:811-812`; `Mcp/KnowledgeSearchTools.cs:326-338` |
+| a quest's fields; the quest tools | `Quests.cs:96-117`; `QuestTools.cs:37-40`, `:366-374`, `:395-403` | `Core/Quests/Quests.cs:120`, `:127`, `:135`; `Mcp/QuestTools.cs:34-41` (publish), `:406-458` (`quest_respond`, its handback `:415-418`, a take marked `:450-455`) |
+| units | `Driver/Quests/QuestUnits.cs:20` | `Driver/WorkOrders/QuestUnits.cs:20`; `Driver/WorkOrders/Inventory/WorkUnit.cs` |
+| the channel; the ask's page | `AttendedSession.tsx:323-324`; `AskWork.tsx:56` | `Web/work/AttendedSession.tsx:342`; `Web/asks/AskPage.tsx:506` (`AskWork`), its `ChannelSection` |
+| `ask channel`; meetings | `Driver.Host/Program.cs:474-479`; `MeetingFiles.cs:9`, `:76` | `Driver.Host/Program.cs:508`; `Driver/WorkOrders/MeetingFiles.cs:9`, `:80`, `BrainstormFiles.cs:9-10`, neither request naming its caller |
+
+### R11.2 The open corrections, settled
+
+1. **The current executor's selector: none of the view's own; the strip's placement** (O3-F4, C3-1.1, C3-5.3). Whether a part
+   waits is read as the `groups` slice holds it: each entry part's `shown` and `group`, and its row's `awaits` and `awaitsOf`,
+   which `SessionGroups` derives once from the planner's `ReadLastRun` and its last look's verdicts. A part waits on a quest where
+   the strip says `awaiting-reply`, on its helper where it says `awaiting-helper`, and a chat that waited on a quest it took
+   while that quest's `awaits` names a question neither `Done` nor `Declined` (no planner verdict reads a chat's take). *Why:*
+   round 4 asked for "`LastRun`'s own rule as one shared function", and the strip already reads that function once per look; a
+   selector of the view's own would be a second derivation of the rail's *awaits #q of repo* beside it, free to disagree. The line's head, which the
+   foundation design's §5.1 proposed, is declined: it skips no stood-down or refused-before-prompt record, so it names a record
+   the planner will not resume from, the very cases O3-F4 named, and it is never pushed. *Answered* (§3.1) is withdrawn: the
+   strip's `answered` is an answered park, and a question closed whose resume sits reads as the strip places that record, with
+   its quest's sentence from `useConsidered` beside it; the resumed record, once opened, is a newer part. **The lead rule is
+   withdrawn too**: the attended part is first, as row a draws it, and the page attends what the entry opens (`SessionEntry.Opens`);
+   a waiting part is live and never folded, which is what R2-O3 needed of the lead.
+2. **Lanes in the registry's signature** (O3-F3, C3-1.2, C3-5.2). `RepoView` gains `Lanes`, the declared ids `ReadRegistry` reads
+   from the answer `DeclarationsAsync` already reads them from, and `Repositories.Signature` appends them, sorted. A lanes-only
+   registration then moves `RegistryHeard`, which tells the `Registry` scope. *Why:* one string the tick already compares, on the
+   one read it already makes; round 4's second way, the hint's read comparing lanes at each tick, is withdrawn, since the scope's
+   telling now reaches the page. The standing a composition read stays a dependency its source fence compares (§4.1).
+3. **A burst's inputs: none from the service** (C3-1.4). The routing half reads pushed slices' snapshots in memory, as row a does:
+   `groups` (its `entries` and `rows`), `sessions`, `quests`, the driver slice's `drivable` and `trees`
+   (`Modules/Loop/DriverStateSlice.cs:36`), and the lanes the tick last read, kept beside its placements. The `sessions` slice
+   gains `tookQuest`, moved from `PulledOnly` to `Fields` (`SessionsStateSlice.cs:39-59`). Each slice is a dependency with its
+   health, waking the judge by its `Pushed` and `HealthMoved` as §4.1 has row a's two. *Why:* §4.2's two whole-store reads per
+   burst, and round 4's owner to keep them past their flight, existed only because no slice held the closed quests; PUSH1d3's
+   does. The tick's reason, the channel and the co-workers stay read beside, on the page (§3.9).
+4. **Routing eligibility observable** (C3.1, C3.2, O3-F10). One judge, `RoutingStanding.Of`, in `Participants/Domain/` beside
+   `WorkPolicy` (`WorkPolicy.cs:64`, which names `DriverConfig` downward as this does `RepoView`): `not-driven`, `no-lanes`,
+   `one-at-a-time`, else `open`, in §6.4's order, each a fixed sentence naming the lanes where there are some. It is told only to
+   a record whose work is `build`, `design` or `chat`, at each start that composes an instruction or a briefing: a driven start's
+   handed sections beside the browser's block, set on the target as `Browser` is; a new conversation's `Briefing`; a hand-over's
+   briefing; a chat's go-on (`Driver/Course/Chat/ChatGoOn.cs`). It is recorded as an event note of its own beside
+   `chat.told-browser`, so the person sees in the conversation what the agent was told. *Why:* the work is the participant's one
+   rule, and the connector already refuses the serving works the quest tools, so no work is told a way its connector refuses;
+   `Participants` holds that rule and sits below Course and Loop, which name it downward. ***told: {standing}*** **is
+   withdrawn**: it needs a reader of the events for a fact the conversation already shows, and the hint states the standing now,
+   never what was told.
+5. **What each kind of session does after publishing** (R2-O2, C3-3.1). A **lead** (`build` or `design`) commits, then either
+   finishes its own quest (`done`, or `ready` where its graph closes it) naming the quests it handed on in its handback, which
+   `quest_respond` keeps as the quest's record, or waits on exactly one (`quest_respond wait`, one `on`) and ends its turn, for
+   that quest's answer, never its code. Ending a turn that holds its quest with neither parks it on the person
+   (`Observation.cs:136-141`). Told *one at a time*, a lead may still hand rows on and finish, since they start once it ends
+   (tested apart from a chat's, C3-3.1). A **chat** says what it published and ends its turn, and never waits: a quest's
+   outcome is never a message to it (the urgency design's §5, its *A quest* row; D188 point 2), so it reads `quest_list` at the
+   person's next turn, and its view shows each part's end. **Told nothing**, any kind works its rows itself. *Why:* each is what today's doors do, so the doctrine
+   asks no new door; the chat's no-wait follows from no D79 resume reaching a chat (`ReadLastRun` reads `quest` alone).
+
+Smaller, settled with them: the *Co-workers* block and the helper's name on a wait come from COWORKUX1a's exchange read
+(D203's round-3 note), which is parked, so row c draws the channel alone and a wait on a helper reads the strip's own *awaiting
+helper* (`work.shown.awaitingHelper`), unnamed (§R11.4). A wait is no move, so the foundation's move records (its §5.1's row f) are read for nothing here; the parts' links are
+the entry's own `began` and `after`. The read's type grows as below, `of` taking an ask in row d; every new field is absent
+where its row is not built.
+
+```ts
+type AtWorkPart = RowAPart & {
+  waits?: { quest: string; of?: string; lanes?: string[] } | { helper: true }; // R11.2 point 1: the strip's placement
+  joined?: { began: string; lanes?: string[]; by?: string; quest?: string };    // §3.4's words, from the entry part
+  alongside?: true;                                                              // its tree no earlier part worked in (R2-O2)
+};
+type AtWorkA = RowAA & {
+  of: { session: string } | { ask: string };          // row d
+  earlier?: number;                                   // ended parts that wait on nothing, past the newest three (row b-i)
+  quests?: AtWorkQuest[]; askedBy?: AtWorkAsker;      // row b-ii
+  hint?: 'not-driven' | 'no-lanes' | 'one-at-a-time'; // row e-iii, where two subagents ran
+};
+type AtWorkQuest = { id: string; title: string; lanes?: string[]; step?: string; waits?: string;
+  taker?: { session: string } | { conversation: string } | { elsewhere: true } | { unrecorded: true } | { untaken: true } };
+type AtWorkAsker = { quest: string; by: { session: string } | { step: string } | { ask: string } | { person: true } };
+```
+
+### R11.3 The rows, in build order
+
+Each row is one builder's sitting, driver to page (D187). *Lanes* are this repository's (`daoris.lanes.json`). Every row with a
+screen proves itself by page tests; stories at 80, 39 and 25rem (`Web/design/storyWidths.tsx`), and for the side bar view at
+its 300 px floor (`DOCK.floor`) as row a's are, in en and zh and both themes; the keyboard's order matching the eye's; and the
+installed window where the row changes it. Words land in both catalogues under `i18n:check` and `names:check -- --strict`.
+
+1. **COWORKVIEW1e-i — the routing standing, judged and told** (driver, modules; web-shell for its note's words). Now.
+   *Contract:* §R11.2 points 2 and 4: `RepoView.Lanes` and the signature; `RoutingStanding.Of`; the line told to `build`,
+   `design` and `chat` at each start named there, never to `help`, `partner`, `review`, `intake`, `ask-daoris` or a brainstorm's
+   pass; the told note. *Proof:* `RoutingStandingTests`, the judge's table in §6.4's order with and without lanes and trees and
+   undriven with lanes; `TargetPromptGoldenTests` carrying the line for a quest's session and none for a helper, a partner, a
+   reviewer and an intake; a chat's first message and its note; a go-on after `driver.json` undrives the repository telling
+   `not-driven`; `Repositories.Signature` and `RegistryHeard` moved by lanes alone (`LinesStateSliceTests`' cases); the note's
+   words in en and zh. *Installed:* a new chat in a driven repository with lanes shows its told note.
+2. **COWORKVIEW1e-ii — the skill's *handing work out*** (the doctrine: `canon/`, synced to `.claude/` and both examples). After
+   e-i. *Contract:* §6.2's section as §R11.2 points 4 and 5 settle it: who it is for first; the way read from the line told,
+   and a chat's only where its person asked too; what goes where (rows checked on their own to the lanes, a question to a
+   helper, reads to subagents, work the next step builds on kept); after publishing, by kind; told nothing, work it yourself.
+   Project-agnostic, under the canon-authoring rules. *Proof:* the canon's tests; `daoris check` clean here and in both examples
+   after the sync; `npm run verify`.
+3. **COWORKVIEW1b-i — each part's wait, and how it joined** (driver, modules, web-shell). After a.
+   *Contract:* §R11.2 points 1 and 3: the composition takes the `groups` rows, the `quests` slice and `tookQuest` as
+   dependencies; each part carries its wait as the strip places it, never folded, worded as the rail words it, and how it joined
+   (§3.4's `routed.*` words from `began`, `askedBy`, `lanes` and `publishedBy`), *alongside* read from its tree; the attended
+   part's own wait is the *Waiting on* line, first; *published {{count}}, waits on none* where it published and waits on
+   nothing; ended parts that wait on nothing fold behind *{{count}} earlier parts* past the newest three. *Proof:* `AtWorkTests`,
+   each `shown` word to its wait, a resumed record beside the record that waited, a stood-down newest record leaving the wait the
+   strip draws, a chat's take; `stripVersusView.test.tsx` widened: every part the strip draws waiting the view draws waiting and
+   unfolded; the stories of §5.3's routing list that this row draws. *Installed:* §7 row b's cap-2 run, a driven lead waiting on
+   its own lane part, then that part done and the resumed record first.
+4. **COWORKVIEW1b-ii — the quests a part asked, and what asked it** (driver, modules, web-shell). After b-i.
+   *Contract:* *Asked through quests* and *Asked by* as §3.1's table has them, built by `QuestUnits.Read` over the two slices'
+   snapshots: a quest a part published that opened no part of the entry, its chain's steps under it by `parent`; its taker, a
+   session here, *taken by {conversation}* by `tookQuest`, *taken on another machine* where `holder` is not `here`, else *taken,
+   by no session recorded here*; an `Open` quest *not taken yet: {why}* with the `considerations` slice's sentence read beside it
+   on the page, and none before the first look; a lane quest moving to *This session* once taken, never in both. *Proof:* the
+   read's cases (a chain's step under its parent, never *by you*; an ask's quest; a chat's take; another machine's `holder`);
+   a consideration that moves with no session or quest written changing the row's words; the stories (two lane parts alongside
+   and one untaken with its reason; each taker; a quest to another repository waiting on a question). *Installed:* §7 row b's
+   cap-1 run, a chat publishing to a repository not driven here and then to two lanes.
+5. **COWORKVIEW1e-iii — the hint** (driver, modules, web-shell). After e-i and b-i. *Contract:* §6.4 point 3: drawn where the
+   attended part's newest generation started at least two subagents, by row a's fold, as `RoutingStanding.Of` answers unless
+   `open`, linking to the guide's lanes section; the standing a dependency, woken by the driver slice's `Pushed` and by the
+   `Registry` scope, whose hub entry names `AT_WORK` too. *Proof:* each hint at two subagents in one generation, none at one or
+   where open; `no-lanes` for a driven repository with no lanes and no trees; the hint moving when `driver.json` undrives the
+   repository and at a lanes-only registration, nothing else written; a story per hint. *Installed:* an undriven repository's
+   chat that ran two subagents shows `hint.notDriven`.
+6. **COWORKVIEW1c — the channel's last words** (web-shell). After b-i. *Contract:* §3.3: the newest three messages of the page's
+   own channel read (`ChannelPanel`'s; the ask page's section's), each placed on the part whose `session` posted it, *All
+   messages* opening the panel; no field in the read and no wake. *Proof:* one channel query, the panel's own; a message placed
+   by its session and one by the person; no block for a session with no ask; stories. *Installed:* a lane part's post on its row.
+7. **COWORKVIEW1d — an ask's view, and its terminal twin** (modules, driver, web-shell). After b-ii and c. *Contract:* §3.5:
+   `SESSION_AT_WORK` keyed `{ ask }`, its entries (`groups` entries whose origin is `ask:{id}`) folded each to a count that
+   opens its own view, and its quests (`from` `ask #{id}`) as b-ii draws them, a section above *Quests* replacing nothing;
+   `daoris-driver ask at-work <ask> [--json]`, routed beside `ask channel`, printing the answer's groups and waits and one line
+   naming what it leaves out (the tick's reason; `ask channel` for the channel). *Proof:* the section's stories (an ask with two
+   entries and a channel) at the three rem widths; page tests; the verb's words and JSON with a window and with none, and an
+   unknown ask refused by name. *Installed:* an ask with two entries.
+8. **COWORKVIEW1f — brainstorms and meetings on their caller's view** (driver, web-shell). After BRAINSTORM1d and AGENTROOM1b,
+   both parked: §7 row f stands as specified, and it is filed only once both are taken up again.
+
+### R11.4 What stays open
+
+- **The co-workers' rows, and a helper wait's name**, until COWORKUX1a's exchange read is taken up from `docs/backlog-parked.md`
+  (D203's round-3 note: the view reads co-workers from it and from nothing else); then row c gains them, opening the member's
+  session page until COWORKUX1b's thread.
+- **Row f**, until BRAINSTORM1d and AGENTROOM1b are taken up.
+- **A chain of resumes has no answers-alone bound.** D188 point 4's count reads words alone (`AnswersAlone.Solicited`,
+  `Driver/Course/Domain/AnswersAlone.cs:28`), so a lead that hands a row on, waits, resumes and hands on again is bounded by
+  drive, cap and strikes only (§6.5). Whether a quest's D79 resume counts as an answer going on alone is the owner's question.
+- **The line's head and the planner's last run differ** on a stood-down or refused-before-prompt newest record (§R11.2 point 1).
+  It is FOUNDATION1 row d-ii's to judge for the say door, and this design files nothing for it.
+- **What a chat's `wait` on a quest it took leads to** once answered is unread here; the doctrine tells a chat not to wait.
+- **Unmeasured:** whether agents told *open* hand rows out (§9); the hint's rate on the install; zh at 300 px.
+- **Not designed here:** DEV6's lane cap and DEV9's steward (both parked); a standing told the moment it moves (§9); the
+  *Its workflow →* link, drawn only where the *Workflow* view holds the session's run, until FABRIC-GRAPHVIEW1.
+- **The decision notes** (§10's D115, D167 and D203 lines, as §R11.2 changes them) are written on acceptance.
+
+### R11.5 Codex's read, and the steward's acceptance (2026-11-02)
+
+Codex read round 11 beside its first rows (`local/`-free, read-only); every finding is taken, and the routing half is **accepted by
+the steward** with them, rows e-i and b-i building. The rows carry: **b-i** — a chat's wait holds while its question is `Done` with
+`Held: true` (the planner keeps waiting, `WorkOrders/Domain/Planner.cs:1166`, `QuestUnits.cs:45`, D144's hold); waiting parts take
+priority inside the composer's forty-part limit (`Participants/Domain/AtWork.cs:219`), the overflow worded apart from the
+ended-parts fold; `sessions at-work` (`WorkOrders/AtWorkVerb.cs:90`) carries the waits and how each joined, text and JSON.
+**e-iii** — the registry's readiness is told apart from an answered empty lane list, and the first registry answer wakes the read
+(today it emits no `Registry` scope, `Modules/Loop/DriverLoop.cs:1128`, and the placements start empty, `:1521`), proved by that
+ordering. **b-ii** — a taken lane quest moves to *This session* only when the entry holds its executing part (a chat's take
+writes `took` without changing the entry, `Daoris.Service.Core/Sessions/Sessions.cs:1969`); another chat taking the publisher's lane
+quest is in the proof. **d** — the `asks` snapshot is an existence dependency (its health, fence and wakes; `AsksStateSlice.cs:28`),
+valid-empty, unknown and deleted-after-opening proved apart; the session and ask answers are distinct branches, the ask's carrying
+entry summaries and no attended part (`work/atWork/types.ts:58`). And R11.1's line on `ParticipantWork.Of` is corrected: it returns
+neither `design` nor `brainstorm`, its fallback is `build` (`Participants/Domain/ParticipantWork.cs:73`); the eligibility set still
+covers it.
+
 ## 0. The case
 
 The row COWORKVIEW1 in `TASKS.md` carries it. On the install, a kit's chat was moved to another account into a fresh conversation
@@ -576,7 +802,8 @@ restarts.
 - **Who took it** *(C1.2; read at `972b17577`)*. A quest's answer names the machine whose take holds it, `Holder`, beside this
   machine's `Here` (`Planner.cs:33-37`). The planner tells a take made here after a session ended, *by a chat or by work outside
   Daoris*, from another machine's (`:1746-1765`). A taken quest with no executor here is therefore not always another machine's.
-- *(Routing half; O3-F3, O3-F4, C3-1.1, C3-1.2; read at `b4f096cc0`.)* **The planner's last session of a quest** (`ReadLastRun`,
+- *(Round 11: these lines re-cited at `90360ca54` in §R11.1, and the selector settled in §R11.2 point 1.)*
+  *(Routing half; O3-F3, O3-F4, C3-1.1, C3-1.2; read at `b4f096cc0`.)* **The planner's last session of a quest** (`ReadLastRun`,
   `Driver/Service/ServiceClient.cs:2134-2150`) reads `quest` only, never `tookQuest`, and skips a teammate's record, a stood-down
   one and one its agent refused the choice of before any prompt (D205 §3.5(c)); on equal `created` it keeps list order. **The
   registry's signature**, which the tick compares (`DriverLoop.cs:1027`, `RegisteredAsync` `:1343`), is each repository's name,
@@ -801,6 +1028,7 @@ executor, *live*, *waiting*, *answered*, the lead rule, the fold of ended parts,
 The read is asked for a session: its entry (D167), whose parts the *Parts* strip draws. For an ask, it is the union of its entries'
 reads and its quests (§3.5; routing half).
 
+*(Round 11: superseded by §R11.2 point 1, the strip's placement; no selector of the view's own.)*
 **Current responsibility** *(C2.1; routing half)*. A quest has at most one **current executor** here: the newest record, by `created` then id,
 whose `Quest ?? TookQuest` names it, the record the planner reads as the quest's last session here (`LastRun`,
 `Planner.cs:1577-1581` at `972b17577`). Every earlier record of the same quest is history, whatever its end says: a D79 resume opens
@@ -812,6 +1040,7 @@ record of the quest is newer. A part is read as waiting or answered only where i
 `Here`, where the host answers both). The routing half's rows test a refused resume and a stood-down replacement leaving the
 earlier responsibility in place, and a chat's take.
 
+*(Round 11: waiting read from the strip, and *answered* withdrawn, §R11.2 point 1.)*
 **Live** *(R2-O3, made current by C2.1)* is a part that is active (`queued`, `starting`, `working` or `awaiting-person`, the page's
 `SESSION_ACTIVE`, `Web/data/api.ts:423-424`), or one that is its quest's current executor, ended `completed` with a wait code
 (`ended.awaits` or `ended.awaits-helper`, `Observation.cs:104-111`, `:164-165`) with its quest still taken. Such a part is:
@@ -826,6 +1055,7 @@ its own right. A waiting lead is `completed`, which the page's active set leaves
 lead to the very lane part it waits on, and the fold would hide the wait among the earlier parts. A waiting part is read as waiting,
 never as ended: it is never folded, and its own wait is the *Waiting on* line (§3.2).
 
+*(Round 11: the lead rule withdrawn; the attended part is first, §R11.2 point 1.)*
 **The lead** is the part the page attends where it is live. Otherwise it is the entry's newest live part that no other live part
 waits on, by `created` and then id, the order `SessionEntries.Read` lists and `EntryParts.Earlier` finds the newest by; so a lead
 waiting on its lane part stays the lead. Where no part is live, the lead is the newest part. Other live parts are drawn *working
@@ -871,6 +1101,7 @@ Waits are edges, each from a record, never inferred from moments:
 | a quest waits to be taken | its status `Open` (R2-O6: a unit's executors miss a chat's take and another machine's, `QuestUnits.cs:36-37`); *(C2.5)* the driver's tick's verdict and sentence for it (`sittingBecause`: not driven here, the repository busy, the cap spent, waiting for an account) are read on the page from the tick's own `considered`, beside the answer, never composed into it (§3.9) |
 | a child runs under its parent | the lineage's `Parent`; an edge *inside*, not a wait |
 
+*(Round 11: a wait is the strip's placement, a helper's unnamed until COWORKUX1a; no lead or answered state, §R11.2 point 1.)*
 The read answers the edges, and the view draws them as words on the waiting row: *waits on Codex · helper*, *waits on #a1b2 in
 driver*, *not taken yet: the concurrency cap (3) is spent*. The session's own wait is drawn once at the top, first: **Waiting on** /
 在等 *#a1b2 (driver lane)*. A session that published quests and waits on none says so: *published 3, waits on none*. That is the
@@ -1589,6 +1820,7 @@ type AtWorkChild = {
 };
 ```
 
+*(Round 11: superseded by §R11.2's type, which extends row a's as built.)*
 **The routing half's type**, as round 3 wrote it, which the later round extends row a's with:
 
 ```ts
@@ -1639,6 +1871,7 @@ O3-F2, C3-2.4).
 
 ### 3.9 What the view reads beside the read (routing half)
 
+*(Round 11: the tick's reason is the `considerations` slice now, and the co-workers wait on COWORKUX1a, §R11.1, §R11.4.)*
 *(C6.1, C2.5.)* Each of these already has a reader, a wake and a presentation, and the view composes them with the read's answer
 rather than reading the same records again:
 
@@ -1933,6 +2166,7 @@ the routing judge's (§6.4). The page renders them.
 
 ### 4.2 Round 3's text: the routing half's draft (a later round)
 
+*(Round 11: superseded; the routing half reads slices alone and wakes as row a's read does, §R11.2 points 2 and 3.)*
 Kept as round 3 wrote it, for the routing half to start from, with round 4's corrections marked. It settles nothing for row a.
 
 - **One read, `SESSION_AT_WORK`, marked `[ByEvent]`**, keyed by its payload (a session or an ask), as NOBLOCK1 settles for reads
@@ -2145,6 +2379,7 @@ ask's section, the co-workers' rows and the *Workflow* link are the routing half
    heading, where there are any, *(O6-F8)* *{{count}} agent ids it named could not be tied to a process*, after the unmatched
    ids' count; *(O5-F6)* and for an attended teammate's part, *its subagents are not visible on this machine* in the group's place.
 
+*(Round 11: items 1 and 2 read the attended part first, with no lead or answered state; item 4 waits on COWORKUX1a, §R11.2.)*
 **The routing half's view**, as round 3 wrote it, from top to bottom (each block absent where it has nothing to say):
 
 1. **Waiting on** (§3.2): one line, the lead's current wait; *nothing* is not drawn, nor a wait already answered (C2.1).
@@ -2232,6 +2467,7 @@ lays out by its own width (`docs/2026-09-19-platform-ux.md:304-311`).
   - *(O10-F1)* a child whose agent's exit this window saw before its `end` landed, *its agent ended · last seen 14:05* /
     *其智能体已结束 · 最后出现于 14:05*, neutral, beside one *lost when its agent ended*, the heading counting neither.
 
+  *(Round 11: §R11.3 places each story below in its row, at its widths; the *answered* story is withdrawn, §R11.2 point 1.)*
   The routing half's, for its round:
   - a session with two lane parts alongside and one untaken lane quest with its reason;
   - a lead waiting on its own lane part, drawn as the lead and never folded (R2-O3);
@@ -2293,7 +2529,7 @@ of the child's agent's process.
 | `part.alongside` | alongside, in a tree of its own | 并行，在自己的工作树中 |
 | `part.children` | {{count}} subagents · {{working}} working | {{count}} 个子智能体 · {{working}} 个在工作 |
 | `part.earlier` | {{count}} earlier parts | 更早的 {{count}} 段 |
-| `part.answered` | its question is answered: it resumes next | 它的问题已答复：接下来继续 |
+| `part.answered` | *(withdrawn in round 11, §R11.2 point 1)* its question is answered: it resumes next | 它的问题已答复：接下来继续 |
 | `quest.untaken` | not taken yet: {{why}} | 尚未接手：{{why}} |
 | `quest.tookBy` | taken by {{conversation}} | 由{{conversation}}接手 |
 | `quest.elsewhere` | taken on another machine | 已在另一台机器上接手 |
@@ -2385,6 +2621,7 @@ and *lead* / 主导 as D203 point 9 names them, *alongside* / 并行 as point 9 
 
 ## 6. The routing half (a later round)
 
+*(Round 11: §R11.2 points 4 and 5 settle §6.2's who, when and after-publishing, and §R11.4 amends §6.5's chain of resumes.)*
 *(Round 4.)* All of §6 is the routing half's, proposed for a later round under its own reads. Round 4 corrects in it what the
 reads of round 3 found, and settles none of it.
 
@@ -2411,13 +2648,15 @@ gains a section, *handing work out*. It is project-agnostic, written under the c
 the agent's words. It decides nothing: the agent chooses within the person's rules, and Daoris never splits a session's work itself
 (D193's rejection of agents directing agents; D24).
 
-- **Who it is for** *(C3.2)*: a **lead**, a driven session serving the quest it was started for, and a **chat**, a conversation the
+- *(Round 11: by the participant's work, `build`, `design` or `chat`; every serving work is refused the quest tools today, §R11.2 point 4.)*
+  **Who it is for** *(C3.2)*: a **lead**, a driven session serving the quest it was started for, and a **chat**, a conversation the
   person started in a repository. Not a helper, a partner or a reviewer, nor Ask Daoris, an intake or a brainstorm's pass, each of
   which has its own room's rules. The section says so in its first line. *(O3-F6, C3-1.3: round 3 said the connector refuses all
   three roles.)* It refuses `quest_publish` and `quest_respond` to a record with `serves` (`Mcp/RoleFilter.cs:58`, `:77`, read at
   `:114`), so to helpers and partners today; a reviewer's record carries `opinion` and no `serves` (`Core/Review/OpinionDesk.cs:128-131`)
   until COWORKUX1c gives it one. Until then a reviewer is excluded by the section's words alone, and is told no standing.
-- **When it applies** (§6.5's preconditions), *(C3.1)* **read from what Daoris told the agent, never assumed.** The repository's
+- *(Round 11: the places re-cited and *told: {standing}* withdrawn, the told line recorded as a note, §R11.2 point 4.)*
+  **When it applies** (§6.5's preconditions), *(C3.1)* **read from what Daoris told the agent, never assumed.** The repository's
   routing standing is desktop-owned: the service's `registry` answers its lanes but never this machine's drive or trees
   (`Mcp/KnowledgeSearchTools.cs:288-330`). So the driver tells each lead and each chat it starts, in one line of Daoris's fixed
   words, its repository's **routing standing** here, judged once in .NET (§6.4): *open* (driven here, lanes declared, trees of its
@@ -2445,7 +2684,8 @@ the agent's words. It decides nothing: the agent chooses within the person's rul
   - A question goes to a helper.
   - A piece goes to a partner, where the door exists.
   - Subagents are for reads and searches the agent needs before it goes on.
-- **After publishing, by kind of session.**
+- *(Round 11: superseded by §R11.2 point 5, which adds the handback and a chat's never waiting.)*
+  **After publishing, by kind of session.**
   - **A chat** says what it published and ends its turn. Its view shows each part and quest and its end. A quest's outcome is an
     ordinary message and never starts a turn (D188 point 2), so the chat is told at its next turn.
   - **A driven session** never ends a turn while it still holds its quest with nothing named: that parks it on the person
@@ -2501,7 +2741,8 @@ Three places say how, each in Daoris's fixed words:
   spent*, `Planner.cs:2048`), which holds today. DEV6's lane cap adds to it once built. *(R2-O13e; round 2 counted trees among the
   bounds.)* Drive and cap bound whether a quest starts. Trees of its own (`config.OpensOwnTree`) decide only whether it runs
   alongside or after: a lane quest to a driven repository without them still starts, one at a time (`Planner.cs:2010-2021`).
-  - *(R2-O2)* **The chain of resumes.** A lead resumed after its lane part's `done` comes through D79's quest door, unchanged by
+  - *(Round 11: D188 point 4's count reads no D79 resume, so this bound is open for the owner, §R11.4.)*
+    *(R2-O2)* **The chain of resumes.** A lead resumed after its lane part's `done` comes through D79's quest door, unchanged by
     D188 point 5; drive, cap and strikes bound how far such a chain goes.
   - **Why no rule shaped like `helpers`.** A quest to a driven repository already starts under exactly these conditions, whoever
     publishes it: an ask, the person, or another repository's session. A session publishing to its own lanes gains no power that
@@ -2598,6 +2839,7 @@ They are filed in `TASKS.md` when this design is accepted; until then COWORKVIEW
      *(C5-2.2)* moving *last seen* at a line after the one that closed its run; *(C6-2.5)* an event written into a query while its own first fetch is out; *(O5-F2, C5-2.3)* a number kept beside the query's
      data, or an event of another epoch installed.
 
+*(Round 11: rows 2 to 6 below are superseded by §R11.3's rows e-i to f, which keep their proofs' runs and narrow row c.)*
 **The routing half's rows, for a later round** *(round 4)*. Rows e, b, c, d and f stay proposed under their own standing (the
 design's *Standing*): round 4 corrects in them what the reads found, marked below, and settles none of them. Their order holds:
 e, then b after a, then c, d and f.
@@ -3034,6 +3276,7 @@ when this is accepted, since row a meets both its halves.
 
 ## 10. What it amends, once accepted
 
+*(Round 11: §R11.2 changes the D115, D167 and D203 lines below, whose notes are written on the routing half's acceptance.)*
 *(Round 4.)* Row a's acceptance amends D173 alone, and D118's frame by its side bar view. The D203, D115, D167, D176 and D177
 amendments below come with the routing half's acceptance.
 

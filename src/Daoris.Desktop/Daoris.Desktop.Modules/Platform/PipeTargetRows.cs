@@ -340,6 +340,9 @@ internal static class PipeTargetRows
         // AGENTSPLACE1c: the workflow's versions as they stand, so a save confirmed after another one moved the file is refused as moved.
         Row("WORKFLOW_SAVE", LoopGround.Plan("workflow-file", Page, "id"));
         Row("PLUGIN_TRY", LoopGround.Plan("plugin-try", Page, "id", "folder"));
+        // ADOSIGNIN1: what a check runs and a fix opens rests on the plugin's own files, its manifest among them.
+        Row("PLUGIN_TOOLS", LoopGround.Plan("plugin-try", Page, "id"));
+        Row("PLUGIN_TOOL_FIX", LoopGround.Plan("plugin-try", Page, "id"));
         Row("PLUGIN_INSTALL", LoopGround.Plan("plugin-offer", Page, "offer"));
         Row("PLUGIN_UPDATE", LoopGround.Plan("plugin-update", Page, "id", "shipped"));
         Row("TOOLS_DELETE", Tool());

@@ -153,7 +153,7 @@ describe("the Workflow tab's flowchart", () => {
     expect(screen.getByRole('heading', { name: '落地之前' })).toBeInTheDocument();
     const list = chart('engine 中的工作如何推进');
     expect(feet(node('工作本身', list))).toEqual(['第二意见，自动继续']);
-    expect(node('你在 dev 中审阅', list)).toHaveTextContent('智能体与你');
+    expect(node('你的查看（dev）', list)).toHaveTextContent('智能体与你');
   });
 });
 
@@ -179,25 +179,31 @@ describe("the Workflow view's run on the flowchart", () => {
     expect(within(run()).queryByRole('listitem', { name: /^Finished/ })).toBeNull();
   });
 
-  it('opens a step\'s door with Enter on its node', async () => {
+  // SETUPUX1u: Enter on a node opens its record, where its door stands; the step the run stands at is open already.
+  it('opens a step\'s record with Enter on its node, and its door is in the record', async () => {
     paneWidth = 672;
     const doors = { session: vi.fn(), quest: vi.fn(), ask: vi.fn(), review: vi.fn() };
     render(<WorkflowRunView answer={answerOf(IN_REVIEW)} doors={doors} />);
+    expect(within(node('Your look in dev', run())).getByRole('button', { name: 'Open quest #q2' })).toBeInTheDocument();
+    expect(within(node('The work', run())).queryByRole('button', { name: 'Open its session' })).toBeNull();
     node('The work', run()).focus();
     await userEvent.keyboard('{Enter}');
+    await userEvent.click(within(node('The work', run())).getByRole('button', { name: 'Open its session' }));
     expect(doors.session).toHaveBeenCalledWith('s1');
-    node('Your look in dev', run()).focus();
-    await userEvent.keyboard('{Enter}');
-    expect(doors.quest).toHaveBeenCalledWith('q2');
+    expect(within(node('Your look in dev', run())).queryByRole('button', { name: 'Open quest #q2' })).toBeNull();
   });
 
-  it('says who passed a step over as its record names them, never "by you" on every skip, and draws no path', () => {
+  it('says who passed a step over as its record names them, never "by you" on every skip, and draws no path', async () => {
     paneWidth = 1232;
     render(<WorkflowRunView answer={answerOf(GO_AHEAD_REFUSAL)} />);
+    node('Second opinion', run()).focus();
+    await userEvent.keyboard('{Enter}');
     const opinion = node('Second opinion', run());
     expect(opinion).toHaveTextContent('skipped');
     expect(opinion).toHaveTextContent('No second opinion is asked before this work lands.');
     expect(opinion).not.toHaveTextContent(/by you/);
+    node('Your look in dev', run()).focus();
+    await userEvent.keyboard('{Enter}');
     expect(node('Your look in dev', run())).toHaveTextContent('Skipped for this work, by you.');
     // The go-ahead's refusal waits for the person: its failure path, dashed, to its outcome.
     // FABRIC-CUTOVER1e: a go-ahead is titled as a graph run's go-ahead is, where it was a step this page had no words for.

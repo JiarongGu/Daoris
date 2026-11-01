@@ -1,7 +1,7 @@
 import type { AgentPart } from '../agents/agents';
-import { type AgentsMode, repositoryId, type RoleSection, workspaceId } from '../agents/modes';
+import { type AgentsMode, MACHINE, repositoryId, type RoleSection, workspaceId } from '../agents/modes';
 import type { PlaceAsk } from '../agents/setup/placePlan';
-import type { PlaceAt, PlaceSection } from '../agents/setup/placeShell';
+import type { PlaceAt, PlaceEdit, PlaceSection } from '../agents/setup/placeShell';
 import type { PlanDoor } from '../person/Confirmations';
 import type { View } from '../menus/commands';
 import type { StarterDoor } from '../help/starters';
@@ -66,6 +66,8 @@ export type OpenPart = {
   /** The section of a place's page a door into the repository opens, and its row (SETUPUX1h): lit, `placeOpening` carries them to the page. */
   placeSection?: PlaceSection;
   placeRow?: string;
+  /** A place's Workflow with its editor opened on a draft (FLOWCHART2g): a conversation's draft card's door. */
+  placeEdit?: PlaceEdit;
 };
 
 /** What opening a view does, as a value. */
@@ -190,6 +192,8 @@ export function opening(view: View, item?: string | null, part: OpenPart = {}, h
   if (view === 'sessions' && part.compose) plan.compose = part.compose;
   if (view === 'projects' && part.setUp) plan.setUp = part.setUp;
   if (view === 'projects' && part.placeSection) plan.placeAt = { section: part.placeSection, ...(part.placeRow ? { row: part.placeRow } : {}) };
+  // The place's Workflow with its editor asked on a draft: the section opens, and the page opens the editor once it has the draft's graph.
+  if (view === 'projects' && part.placeEdit) plan.placeAt = { section: 'workflow', edit: part.placeEdit };
   return plan;
 }
 
@@ -197,13 +201,20 @@ export function opening(view: View, item?: string | null, part: OpenPart = {}, h
  * **Every door into a repository's Setup tab or its Workflow tab, once the Setup mode is lit, opens the place's page** (AGENTSPLACE1f and
  * 1h, the Agents-place design §6): What needs you's declaration wait, Get started's and the help room's steps, Settings' doors, a Roles
  * section's door to the workflow and a workflow step's. They all end in
- * `apply`, so one redirect there holds them all, where a census of the doors cannot miss one. A workspace's *Sessions' access* is the
- * workspace place's too; the rest of a workspace's Setup stays its tab until its own row moves. A door naming the tab and no repository
+ * `apply`, so one redirect there holds them all, where a census of the doors cannot miss one. Each section of a workspace's Setup has
+ * its home (SETUPUX1v, `WORKSPACE_HOMES`); a door naming the workspace's tab and no section stays on the tab until it goes. A door naming the tab and no repository
  * (the help room's) opens the mode, whose list chooses one. Dark, the plan is unchanged.
  *
  * `workspaceOfRepository` answers the workspace a repository sits in, as the registry holds it.
  */
 export function placeOpening(plan: Opening, lit: boolean, workspaceOfRepository: (repository: string) => string): Opening {
+  // SETUPUX1m: the Roles mode's doors name This machine's page. Appointed roles is its Roles section's row; the lists of Working roles, Work,
+  // Accounts and By repository are All roles; a door naming the mode alone opens the page at Roles.
+  if (lit && plan.view === 'agents' && plan.agentsMode === 'setup' && !plan.place) {
+    const { roleSection: _section, ...rest } = plan;
+    const at: PlaceAt = plan.roleSection === 'appointed' ? { section: 'roles', row: 'appointed' } : plan.roleSection ? { section: 'allRoles' } : { section: 'roles' };
+    return { ...rest, place: MACHINE, placeAt: at };
+  }
   if (!lit || plan.view !== 'projects') return plan;
   // AGENTSPLACE1k: Ask Daoris's set-up card opens the place's page with its ask, a repository's or the workspace's the repositories are in.
   if (plan.setUp && plan.chosen?.view === 'projects') {
@@ -222,11 +233,25 @@ export function placeOpening(plan: Opening, lit: boolean, workspaceOfRepository:
     const at: PlaceAt | undefined = plan.placeAt ?? (plan.tab === 'workflow' ? { section: 'workflow' } : undefined);
     return { view: 'agents', agentsMode: 'setup', place: repositoryId(workspaceOfRepository(named.repository), named.repository), ...(at ? { placeAt: at } : {}) };
   }
-  if (plan.workspaceTab === 'setup' && plan.workspaceSection === 'access' && 'workspace' in named) {
-    return { view: 'agents', agentsMode: 'setup', place: workspaceId(named.workspace) };
+  // FLOWCHART2g: a conversation's draft card opens the workspace's Workflow with its editor asked on the draft.
+  if (plan.workspaceTab === 'workflow' && plan.placeAt?.edit && 'workspace' in named) {
+    return { view: 'agents', agentsMode: 'setup', place: workspaceId(named.workspace), placeAt: plan.placeAt };
+  }
+  if (plan.workspaceTab === 'setup' && plan.workspaceSection && 'workspace' in named) {
+    // SETUPUX1v: each section of a workspace's Setup tab has its home. The remote stays Repositories', as a row of its Details.
+    if (plan.workspaceSection === 'remote') return { ...plan, workspaceTab: 'details' };
+    return { view: 'agents', agentsMode: 'setup', place: workspaceId(named.workspace), placeAt: WORKSPACE_HOMES[plan.workspaceSection] };
   }
   return plan;
 }
+
+/** Where each section of a workspace's Setup tab went on the workspace's place: its section and the row of it (SETUPUX1v). */
+const WORKSPACE_HOMES: Record<Exclude<WorkspaceSection, 'remote'>, PlaceAt> = {
+  defaults: { section: 'workflow', row: 'defaults' },
+  access: { section: 'sessions', row: 'access' },
+  reach: { section: 'sessions', row: 'reach' },
+  supervisor: { section: 'roles', row: 'supervisor' },
+};
 
 /**
  * Where a starter's, a setup step's or Ask Daoris's door leads (HELP1d, SETUP1a, HELP6): its view and the

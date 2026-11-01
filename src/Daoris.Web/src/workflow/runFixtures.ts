@@ -234,17 +234,38 @@ export const GRAPH_RUN_DECIDED = run([
     { node: 'local-release/find', on: 'landing', branch: BRANCH, commit: COMMIT }),
   at(nodeCell('release', 'local-release/release', 'automatic', 'plugin', null, { plugin: 'local-release' }), 'not-reached', 'blocked',
     { node: 'local-release/release' }),
+  at(nodeCell('publish', 'local-release/publish', 'automatic', 'plugin', null, { plugin: 'local-release' }), 'not-reached', 'blocked',
+    { node: 'local-release/publish' }),
 ], {
   at: null,
-  workflow: { version: 'gph-7e1d3c5b9a2f4e6d', startHolds: [], limits: {}, id: 'release', boundVersion: 2 },
+  workflow: { version: 'gph-7e1d3c5b9a2f4e6d', startHolds: [], limits: {}, id: 'release', boundVersion: 2, route: { level: 'repository' } },
   graph: {
-    run: 'q1', entries: ['work'], end: 'release',
+    run: 'q1', entries: ['work'], end: 'publish',
     wires: [
       { from: 'work', to: 'review', kind: 'after' }, { from: 'review', to: 'landing', kind: 'after' }, { from: 'landing', to: 'find', kind: 'after' },
-      { from: 'find', to: 'release', kind: 'when', outcome: 'release' },
+      { from: 'find', to: 'release', kind: 'when', outcome: 'release' }, { from: 'release', to: 'publish', kind: 'after' },
     ],
     backs: [{ from: 'review', to: 'work', on: 'rejected' }],
-    quest: 'q1', branch: BRANCH, judged: true, unread: false, ended: null, notTaken: ['release'], outcomes: { find: 'none' },
+    quest: 'q1', branch: BRANCH, judged: true, unread: false, ended: null, notTaken: ['release', 'publish'], outcomes: { find: 'none' },
+  },
+});
+
+/**
+ * SETUPUX1u: the same run when the find came to `release`: the release is recorded and copied, and the run finished there, with the
+ * find saying its outcome and the route it took.
+ */
+export const GRAPH_RUN_RELEASED = run([
+  ...GRAPH_RUN_DECIDED.steps.filter((step) => !['release', 'publish'].includes(step.step.id)),
+  at(nodeCell('release', 'local-release/release', 'automatic', 'plugin', null, { plugin: 'local-release' }), 'done', 'reached',
+    { node: 'local-release/release', on: 'landing', branch: BRANCH, commit: COMMIT }),
+  at(nodeCell('publish', 'local-release/publish', 'automatic', 'plugin', null, { plugin: 'local-release' }), 'done', 'reached',
+    { node: 'local-release/publish', on: 'landing', branch: BRANCH, commit: COMMIT }),
+], {
+  at: null,
+  workflow: GRAPH_RUN_DECIDED.workflow,
+  graph: {
+    ...GRAPH_RUN_DECIDED.graph!,
+    notTaken: [], outcomes: { find: 'release' },
   },
 });
 

@@ -103,6 +103,9 @@ public sealed class LandingPlugins(
         // makes on the person's yes carries a grant for origin's push address, through the door, once, within the bound.
         frame = frame with { Origin = frame.Origin ?? await GitRemotes.AddressOf(frame.Root, "origin", ct: ct).ConfigureAwait(false) };
         var pushTo = await GitRemotes.AddressOf(frame.Root, "origin", push: true, ct: ct).ConfigureAwait(false) ?? frame.Origin;
+        // GITAUTH1c (§4.1): on a git older than the doors need, the push would pass round them, so the plugin is not started for it.
+        if (await GitWiring.RefusesAsync(home, frame.Repository, "origin", pushTo, GitAct.Write, ct).ConfigureAwait(false) is { } older)
+            return Failed(plugin, $"{char.ToUpperInvariant(older[0])}{older[1..]}, so {id} was not started to push the branch.");
         var grant = pushTo is null ? null : GitGrants.Write(home, pushTo, _clock());
         // The person's press, or the rule that accepts automatically, standing for it (§6.7, §11).
         if (grant is not null) GitLog.Granted(home, frame.Repository, "origin", frame.Session, frame.AcceptedBy == AcceptedBy.Auto ? "standing" : "press");

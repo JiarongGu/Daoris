@@ -500,7 +500,7 @@ export type { ActorEntry, ActorRow, StaffingFound } from '../data/wiring';
  * Each actor's order, where it came from (MODELROLE1c): a read of `driver.json`'s `actors`, the same `daoris driver actor` says. Kept
  * under the driver's key, so every press that changes the driver's state asks it again. Empty in a browser.
  */
-export const useActors = () => {
+export const useActors = ({ enabled = true }: { enabled?: boolean } = {}) => {
   const { isAvailable } = useShenora();
   return useQuery({
     queryKey: [...keys.driver, 'actors'] as const,
@@ -508,7 +508,7 @@ export const useActors = () => {
       const answer = await call<{ actors?: ActorRow[] } | null>('ACTORS');
       return Array.isArray(answer?.actors) ? answer.actors : [];
     },
-    enabled: isAvailable,
+    enabled: isAvailable && enabled,
   });
 };
 
@@ -561,7 +561,7 @@ const readRoles = (raw: unknown): RoleCatalogue | null => {
   };
 };
 
-export const useRoles = () => {
+export const useRoles = ({ enabled = true }: { enabled?: boolean } = {}) => {
   const { isAvailable } = useShenora();
   const client = useQueryClient();
   const queryKey = [...keys.driver, 'roles'] as const;
@@ -569,7 +569,7 @@ export const useRoles = () => {
     queryKey,
     // Told by event (NOBLOCK1): the shell answers what it holds, and its read of the store and `driver.json` comes as `ANSWERED`.
     queryFn: () => askHeld('ROLES', client, queryKey, {}, readRoles),
-    enabled: isAvailable,
+    enabled: isAvailable && enabled,
   });
 };
 
@@ -635,6 +635,8 @@ const readPlaces = (raw: unknown): PlacesRead | null => {
     next: answer.next ?? null,
     matching: answer.matching ?? answer.repositories.length,
     undriven: answer.undriven ?? null,
+    detail: answer.detail ? place(answer.detail) : null,
+    members: answer.members ?? null,
   };
 };
 

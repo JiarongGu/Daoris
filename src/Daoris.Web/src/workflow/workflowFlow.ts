@@ -72,7 +72,7 @@ export type WorkflowFlow = GraphFlow;
  * A run bound to a graph version's own graph (FABRIC-CUTOVER1e, the driver's answer's `graph`): its entries, its end and its wires, which the
  * drawing follows in place of the steps' order, so a fork and its join are drawn as the graph holds them.
  */
-export type FlowGraph = Pick<GraphRun, 'entries' | 'end' | 'wires'> & Partial<Pick<GraphRun, 'backs'>>;
+export type FlowGraph = Pick<GraphRun, 'entries' | 'end' | 'wires'> & Partial<Pick<GraphRun, 'backs' | 'outcomes'>>;
 
 /**
  * **A workflow as a flowchart** (FLOWCHART1d), drawn through `graphFlow`: its steps in their version's order, each edge the move the
@@ -93,11 +93,20 @@ export function workflowFlow(
   holds?: DrawOptions['holds'],
 ): WorkflowFlow {
   const { steps } = workflow;
+  // A decision the run reached returned an outcome; one with no route of its own is drawn as ◎ *No further step*, reached. A run's record
+  // declares no outcome beyond the one it returned, so none other is drawn.
+  const returned = (step: WorkflowStep): Pick<DrawnNode, 'outcome' | 'outcomes'> => {
+    const outcome = graph?.outcomes?.[step.id];
+    const routes = graph?.wires.filter((wire) => wire.kind === 'when' && wire.from === step.id) ?? [];
+    if (!outcome || routes.length === 0) return {};
+    return { outcome, ...(routes.some((wire) => wire.outcome === outcome) ? {} : { outcomes: [outcome] }) };
+  };
   const nodeOf = (step: WorkflowStep): DrawnNode => {
     const on = lit?.steps[step.id];
     return {
       id: step.id,
       kind: step.kind,
+      ...returned(step),
       title: plain(stepTitle(t, step)),
       glyph: glyphOf(step),
       actor: t('workflow.flow.who', { part: t(`workflow.participation.${step.participation}`), executor: plain(executorSaid(t, step)) }),

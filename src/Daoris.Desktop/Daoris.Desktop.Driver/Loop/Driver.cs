@@ -910,6 +910,7 @@ public sealed class Driver(
             Named = ("quest", quest.Id),
             Log = Log,
             Gate = Gate,
+            Staff = Context.Harnesses.StaffFor(home),
         };
     }
 
@@ -2958,6 +2959,7 @@ public sealed class Driver(
         if (movedOff is not null) RotatedOpening.SayMovedOff(Context.Events, sessionId, AccountNames.Said(AccountNames.Of(home, agent), movedOff));
         if (movedOffModel is { } refusedModel) RotatedOpening.SayMovedOffModel(Context.Events, sessionId, refusedModel.Agent, refusedModel.Model);
         if (chosen is not null) RotatedOpening.SayActor(Context.Events, sessionId, "build", chosen, buildPasses);
+        RotatedOpening.SayStaff(Context.Events, Context.Harnesses.Staff(), sessionId, selection.Number, "build");
         // A quest marked design says whose order it ran on: the role taking design, Build's while none does (FOUNDATION1x, MODELROLE1l).
         if (start.Resumes is null && StartWork(quest) == ParticipantWork.Design && DesignRoleName(start, stepRole) is { } designer)
         {
@@ -3084,6 +3086,10 @@ public sealed class Driver(
                 Asked = chosen?.Asked ?? (start.Resumes is { } carried ? carried.Asked : ActorAsked.Before(adapter.Name)),
                 Choice = chosen?.From ?? start.Resumes?.Choice,
                 Browser = InAppBrowserServers.Told(browserDrivers),
+                // Its repository's routing standing (COWORKVIEW1e-i), told to a quest's session at each start that composes an instruction.
+                Routing = RoutingStanding.Told(
+                    ParticipantWork.Build, config,
+                    registry.FirstOrDefault(repo => string.Equals(repo.Repository, quest.To, StringComparison.OrdinalIgnoreCase)))?.Words,
                 ReadsAcross = across.Reads,
                 WritesAcross = across.Writes,
                 // Named on its spawn as on its connector, so what it publishes says it did (SESS1).
@@ -3109,13 +3115,15 @@ public sealed class Driver(
                 // What its start did against the line in the tree it goes on in (LANDSYNC2).
                 InSync = inSync?.Told,
                 // Its repository's remotes Daoris holds, so it does not try them (GITAUTH1a): read after its start's own fetch above. And,
-                // where the remote helper is laid out for it, what `git remote -v` shows under the rewrite (GITAUTH1b, the design §5.3).
+                // where the remote helper is laid out for it, what `git remote -v` shows under the rewrite (GITAUTH1b, the design §5.3);
+                // or, on a git older than the doors need, that its remote acts are not Daoris's (GITAUTH1c, §4.1).
                 Git = GitHolds.Told(
                     GitHolds.OfRepository(home, quest.To, RemoteTarget.Workspace(start.Workspace)),
                     rewritten: GitWiring.DoorPath(home, GitWiring.RemoteHelper) is not null,
                     origin: GitWiring.DoorPath(home, GitWiring.RemoteHelper) is null
                         ? null
-                        : await GitRemotes.AddressOf(workTree, "origin", ct: ct).ConfigureAwait(false)),
+                        : await GitRemotes.AddressOf(workTree, "origin", ct: ct).ConfigureAwait(false),
+                    older: await GitWiring.OlderAsync(home, ct).ConfigureAwait(false)),
                 // What its tree's open copied of the checkout's dependencies, so it skips the `npm ci` that would delete them (TREEDEPS1).
                 // And what a tree made again copied the same way (TREELOCAL2), where the session goes on in one.
                 Dependencies = opened?.Dependencies ?? (priorStands?.Told, entryStands?.Told) switch

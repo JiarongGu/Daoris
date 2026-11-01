@@ -21,6 +21,9 @@ public sealed record SessionRecord(string Id, string Repository, string State)
     /// <summary>The quest it serves, or null for a conversation's or an intake's.</summary>
     public string? Quest { get; init; }
 
+    /// <summary>The quest a chat took through its own connector (CHATFLOW1a), its <c>Quest</c> staying null; null for every other record.</summary>
+    public string? TookQuest { get; init; }
+
     /// <summary><c>driven</c> or <c>chat</c>, as the record says.</summary>
     public string Kind { get; init; } = "driven";
 

@@ -168,7 +168,7 @@ export const command: CliCommand = {
     '                                                   agents and models; off for',
     '                                                   intake|ask-daoris; --clear',
     '                                                   goes back to as before',
-    '                         role [<id>] · role set|remove|default <id> …',
+    '                         role [<id>] · role set|remove|default|policy <id> …',
     '                                                   the role catalogue: a role',
     '                                                   takes a kind of work in a',
     '                                                   place, on its choices',

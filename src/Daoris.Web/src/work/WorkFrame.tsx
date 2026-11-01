@@ -17,7 +17,7 @@ import {
   useEntryLanding, useLandEntry, useSessionHelpers, useSessionPartners, useUnderWaySubject, useSessionProcess, useWorkState, usePushedCalls, withCall,
   useAnswerPermission, usePermissionWaits, useSessionHandOverAsk, useApproveHandOver, useDeclineHandOver, type HandOverWord,
   useAnswerWaits, useAnswerAlone, useRunNodeWord, useResolveHeld, useSessionQuestion, useStopWaiting,
-  useBringTogether, useTogether, useTogetherAct,
+  useBringTogether, useTogether, useTogetherAct, useConsidered,
 } from '../bridge/shell';
 import { handOverRefused, type HandOverAskWait } from './waits/HandOverAgentAsk';
 import { permissionSaid, type PermissionWaits } from './waits/PermissionAsks';
@@ -56,6 +56,7 @@ import {
 import { SessionBox } from './conversation/SessionBox';
 import { askOf, pauseAsk, wiredFor, type WorkTarget } from './pausing/pausing';
 import type { GoAheadAnswer } from '../asks/GoAheadList';
+import { lastWords } from './channel';
 import { goAheadsAsked, goAheadToast } from './waits/parkGoAheads';
 import { afterPress, choiceWords, openGoAheads } from './waits/parkQuestion';
 import { PauseAsk } from './pausing/WorkAsks';
@@ -477,6 +478,8 @@ export function WorkFrame({
   const decideMemory = useDecideSessionMemory();
   const sessionRecord = useSessionRecord(attended?.id ?? null, attended ? where[attended.id]?.treeGone === true : false);
   const channel = useChannel(channelAsk);
+  // *All messages* in the At work view asks the session page's panel open (COWORKVIEW1c): a number, each new one a press.
+  const [channelOpened, setChannelOpened] = useState(0);
   const postChannel = usePostChannel();
   const forwardChannel = useForwardChannel();
   const editQueued = useEditQueued(attended?.id ?? null);
@@ -1175,6 +1178,8 @@ export function WorkFrame({
   // Also asked while the followed session works, for the head's *working with it* (§3.7), at its mount and each wake.
   const atWork = useSessionAtWork(atWorkShown || (following !== null && following.state === 'working') ? following?.id : null);
   const atWorkHeld = atWork.data;
+  // Why an untaken quest sits is the driver's last look's, read beside the answer from memory (COWORKVIEW1b-ii).
+  const considered = useConsidered().data;
   const withIt = atWorkHeld && 'answer' in atWorkHeld
     ? atWorkHeld.answer.subagents.working + atWorkHeld.answer.parts.filter((part) => part.key !== atWorkHeld.answer.attended && part.state === 'working').length
     : 0;
@@ -1297,6 +1302,7 @@ export function WorkFrame({
     if (intent === 'start') newConversationPressed();
     else if (intent === 'review') openView('review');
     else if (intent === 'workflow') openView('workflow');
+    else if (intent === 'atWork') openView('atWork');
   }
   if (!intent && taken) setTaken(null);
 
@@ -1481,6 +1487,17 @@ export function WorkFrame({
             held={atWork.data}
             error={atWork.error ? sentence(atWork.error) : null}
             onOpen={(id) => { attend(id); if (elsewhere) onOpenSessions?.(); }}
+            onOpenQuest={onOpenQuest}
+            considered={considered}
+            // The newest three messages of the page's own channel read, the panel's (COWORKVIEW1c); none for a session with no ask.
+            channel={attendedEntry && channelAsk && channel.available && channel.channel ? {
+              words: lastWords(channel.channel, { entry: attendedEntry.entry, repository: attendedEntry.repository }),
+              onOpen: () => {
+                setChannelOpened((n) => n + 1);
+                // Under 768 px the view replaces the conversation: leaving it shows the panel it opened.
+                if (layout.dock.mode === 'full') closeDock(true);
+              },
+            } : undefined}
             onRetry={() => { void atWork.refetch(); }}
             // A child's console tab, while the window holds its stream (the harness's agent id ends the stream's key).
             streamOf={(child) => streams.find((row) => row.key.endsWith(`/${child}`))?.key}
@@ -2580,6 +2597,7 @@ export function WorkFrame({
               }),
               onOpenQuest,
               onOpenAsk: onAnswerAsk ? () => onAnswerAsk(channelAsk) : undefined,
+              opened: channelOpened,
             } : undefined}
             chain={quest ? buildChain(quest.id, quests.data ?? [], sessions.data ?? []) : []}
             relations={attended ? relationsOf(attended, quest, quests.data ?? [], sessions.data ?? []) : undefined}

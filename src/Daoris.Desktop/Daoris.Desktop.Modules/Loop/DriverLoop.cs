@@ -132,14 +132,22 @@ public sealed class DriverLoop(
     private StateSlices? _slices;
 
     /// <summary>
-    /// The one judge of who is at work (COWORKVIEW1a): each landed composition registered, woken by the two slices, this process's
+    /// The one judge of who is at work (COWORKVIEW1a): each landed composition registered, woken by the three slices, this process's
     /// lineage tokens and the lineage files' topic, telling <see cref="StateScopes.AtWork"/> naming no session.
     /// </summary>
     public AtWorkWatch AtWork => LazyInitializer.EnsureInitialized(ref _atWork, () => new AtWorkWatch(
         () => StatePublisher.Publish(eventBus, StateScopes.AtWork), Slices.Find(GroupsStateSlice.Name), Slices.Find(SessionsStateSlice.Name),
-        LineageTokens.Shared));
+        Slices.Find(QuestsStateSlice.Name), LineageTokens.Shared, Slices.Find(DriverStateSlice.Name), HintStanding.Word, Slices.Find(AsksStateSlice.Name)));
 
     private AtWorkWatch? _atWork;
+
+    /// <summary>
+    /// The routing standing the at-work view's hint reads (COWORKVIEW1e-iii): the driver slice's drive and trees with the lanes the tick
+    /// last heard from the registry. The first registry answer moves it, and the judge is told (<see cref="RegisteredAsync"/>).
+    /// </summary>
+    public AtWorkStanding HintStanding => LazyInitializer.EnsureInitialized(ref _hintStanding, () => new AtWorkStanding(() => Slices.Find(DriverStateSlice.Name)));
+
+    private AtWorkStanding? _hintStanding;
 
     /// <summary>The rules' reading, shared by their slice and each look, which tells their scope only where it moved (FOUNDATION1s part B).</summary>
     public RulesReading RulesRead { get; } = new();
@@ -1538,6 +1546,8 @@ public sealed class DriverLoop(
             }
 
             _placed = placed;
+            // The first answer, and a lane moving, tell the at-work judge: the hint's standing waits on the registry (COWORKVIEW1e-iii).
+            if (HintStanding.Hear(registry)) AtWork.JudgeStandings();
             return Repositories.Signature(registry);
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)

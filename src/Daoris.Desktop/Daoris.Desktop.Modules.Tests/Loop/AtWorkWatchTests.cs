@@ -17,7 +17,15 @@ public sealed class AtWorkWatchTests : IDisposable
     private readonly LineageTokens _tokens = new(4242, new DateTime(2026, 10, 31, 0, 0, 0, DateTimeKind.Utc));
     private readonly StateSlice _groups;
     private readonly StateSlice _sessions;
+    private readonly StateSlice _quests;
     private JsonObject _records = new() { ["s1"] = Record("s1", "working"), ["s2"] = Record("s2", "working") };
+    private JsonObject _rows = new() { ["s1"] = new JsonObject { ["awaits"] = "q9", ["awaitsOf"] = "core", ["updated"] = "1" } };
+    private JsonObject _questsHeld = new()
+    {
+        ["q9"] = new JsonObject { ["id"] = "q9", ["status"] = "Open", ["to"] = "core", ["title"] = "a" },
+        ["q1"] = new JsonObject { ["id"] = "q1", ["status"] = "Open", ["publishedBy"] = "s1" },
+        ["q2"] = new JsonObject { ["id"] = "q2", ["status"] = "Open" },
+    };
     private int _woken;
 
     public AtWorkWatchTests()
@@ -28,10 +36,17 @@ public sealed class AtWorkWatchTests : IDisposable
         _tokens.Hand(P1, System.Diagnostics.Process.GetCurrentProcess());
         var entries = new JsonObject
         {
-            ["s1"] = new JsonObject { ["parts"] = new JsonArray(new JsonObject { ["session"] = "s1" }, new JsonObject { ["session"] = "s2" }) },
+            ["s1"] = new JsonObject
+            {
+                ["parts"] = new JsonArray(
+                    new JsonObject { ["session"] = "s1", ["shown"] = "awaiting-reply" }, new JsonObject { ["session"] = "s2", ["shown"] = "working" }),
+            },
         };
-        _groups = new StateSlice(GroupsStateSlice.Name, _bus, _ => Task.FromResult<IReadOnlyList<SliceJudged>?>([new(GroupsStateSlice.Entries, entries.DeepClone())]), "g") { Keyed = true };
+        _groups = new StateSlice(GroupsStateSlice.Name, _bus,
+            _ => Task.FromResult<IReadOnlyList<SliceJudged>?>([new(GroupsStateSlice.Entries, entries.DeepClone()), new(GroupsStateSlice.Rows, _rows.DeepClone())]), "g")
+        { Keyed = true };
         _sessions = new StateSlice(SessionsStateSlice.Name, _bus, _ => Task.FromResult<IReadOnlyList<SliceJudged>?>([new("default", _records.DeepClone())]), "s") { Keyed = true };
+        _quests = new StateSlice(QuestsStateSlice.Name, _bus, _ => Task.FromResult<IReadOnlyList<SliceJudged>?>([new("default", _questsHeld.DeepClone())]), "q") { Keyed = true };
     }
 
     public void Dispose()
@@ -55,13 +70,14 @@ public sealed class AtWorkWatchTests : IDisposable
     {
         await _groups.JudgeAsync();
         await _sessions.JudgeAsync();
-        var watch = new AtWorkWatch(() => _woken++, _groups, _sessions, _tokens);
+        await _quests.JudgeAsync();
+        var watch = new AtWorkWatch(() => _woken++, _groups, _sessions, _quests, _tokens);
         Land(watch);
         return watch;
     }
 
     private AtWorkHeld Compose() =>
-        AtWorkRead.Compose("s1", _groups, _sessions, record => ChildLineage.Reading(_home, record.Id, record.Kind, _tokens), PathOf);
+        AtWorkRead.Compose("s1", _groups, _sessions, _quests, record => ChildLineage.Reading(_home, record.Id, record.Kind, _tokens), PathOf);
 
     private void Land(AtWorkWatch watch) => watch.Register("q", Assert.IsType<AtWorkDependencies>(Compose().Dependencies));
 
@@ -135,6 +151,89 @@ public sealed class AtWorkWatchTests : IDisposable
         await _sessions.JudgeAsync();
         Assert.Equal(1, _woken);
         Assert.Equal(0, watch.Holding);
+    }
+
+    [Fact]
+    public async Task The_wait_a_part_is_read_by_is_a_dependency_and_a_row_field_the_read_never_asked_for_is_not()
+    {
+        var watch = await HeldAsync();
+        var wait = Compose().Answer!.Parts.Single(part => part.Key == "s1").Waits;
+        Assert.Equal(("q9", "core"), (wait?.Quest, wait?.Of));
+
+        // The row's other fields move at every look: nothing woken.
+        _rows = new JsonObject { ["s1"] = new JsonObject { ["awaits"] = "q9", ["awaitsOf"] = "core", ["updated"] = "2" } };
+        await _groups.JudgeAsync();
+        Assert.Equal(0, _woken);
+
+        _rows = new JsonObject { ["s1"] = new JsonObject { ["awaits"] = "q8", ["awaitsOf"] = "core" } };
+        await _groups.JudgeAsync();
+        Assert.Equal(1, _woken);
+        Assert.Equal(0, watch.Holding);
+    }
+
+    [Fact]
+    public async Task A_quest_the_read_looked_up_moving_wakes_and_one_it_never_looked_up_does_not()
+    {
+        await HeldAsync();
+
+        _questsHeld["q2"] = new JsonObject { ["id"] = "q2", ["status"] = "Taken" };
+        await _quests.JudgeAsync();
+        Assert.Equal(0, _woken);
+
+        _questsHeld["q9"] = new JsonObject { ["id"] = "q9", ["status"] = "Open", ["to"] = "core", ["lanes"] = new JsonArray("docs") };
+        await _quests.JudgeAsync();
+        Assert.Equal(1, _woken);
+    }
+
+    [Fact]
+    public async Task A_session_s_published_count_moving_wakes_the_read()
+    {
+        var watch = await HeldAsync();
+        Assert.Equal(1, Compose().Answer!.Published);
+
+        _questsHeld["q2"] = new JsonObject { ["id"] = "q2", ["status"] = "Open", ["publishedBy"] = "s1" };
+        await _quests.JudgeAsync();
+        Assert.Equal(1, _woken);
+
+        Land(watch);
+        Assert.Equal(2, Compose().Answer!.Published);
+    }
+
+    [Fact]
+    public async Task What_the_quests_half_reads_of_a_taker_wakes_the_read_and_what_it_does_not_read_does_not()
+    {
+        var watch = await HeldAsync();
+        Assert.True(Compose().Answer!.Quests!.Single().Taker!.Untaken);
+
+        // A session that serves nothing the entry asked, and a record's note, move nothing the row says.
+        _records["s7"] = Record("s7", "working", "elsewhere");
+        _records["s2"] = Record("s2", "working", "a note that moved");
+        await _sessions.JudgeAsync();
+        Assert.Equal(0, _woken);
+
+        // An open quest is untaken whoever's record names it; the take that moves the row is the quest's own status.
+        _records["s3"] = new JsonObject { ["id"] = "s3", ["state"] = "working", ["quest"] = "q1", ["adapter"] = "claude-code" };
+        await _sessions.JudgeAsync();
+        Assert.Equal(0, _woken);
+
+        _questsHeld["q1"] = new JsonObject { ["id"] = "q1", ["status"] = "Taken", ["publishedBy"] = "s1" };
+        await _quests.JudgeAsync();
+        Assert.Equal(1, _woken);
+        Land(watch);
+        Assert.Equal("s3", Compose().Answer!.Quests!.Single().Taker!.Session);
+    }
+
+    [Fact]
+    public async Task A_taker_s_state_moving_wakes_the_read_once_it_is_on_the_row()
+    {
+        _questsHeld["q1"] = new JsonObject { ["id"] = "q1", ["status"] = "Taken", ["publishedBy"] = "s1" };
+        _records["s3"] = new JsonObject { ["id"] = "s3", ["state"] = "working", ["quest"] = "q1" };
+        await HeldAsync();
+
+        _records["s3"] = new JsonObject { ["id"] = "s3", ["state"] = "completed", ["quest"] = "q1" };
+        await _sessions.JudgeAsync();
+
+        Assert.Equal(1, _woken);
     }
 
     [Fact]

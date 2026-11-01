@@ -212,6 +212,25 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-11-01-setup-ux-design.md` | Design: SETUPUX1, the place page, Set up… as choices then review, one top-to-bottom drawing, the editor's page, one role editor; accepted 2026-11-01 (D221)
 | `2026-11-01-setup-ux-reads.md` | Reads: SETUPUX1, both makers' reads and the steward's settlement
 | `2026-11-02-flowchart-brief.md` | Brief: FLOWCHART2, a proper flowchart for composing and reading workflows, with Ask Daoris composing beside you
+| `2026-11-02-flowchart-proposal-opus.md` | Proposal: FLOWCHART2, Opus, sealed
+| `2026-11-02-flowchart-proposal-codex.md` | Proposal: FLOWCHART2, Codex, sealed
+| `2026-11-02-flowchart-design.md` | Design: FLOWCHART2, one component set on Flow's layout, editing on the chart, Ask Daoris's draft door; accepted 2026-11-02 (D223)
+| `2026-11-02-flowchart-reads.md` | Reads: FLOWCHART2, Codex's read, settled in the design's §8
+| `2026-11-02-canvas-brief.md` | Brief: CANVAS1, one proper canvas for every graph Daoris draws
+| `2026-11-02-staff-policy-brief.md` | Brief: STAFFPOLICY1, a role's staffing as weighted choices and the conditions that switch them
+| `2026-11-02-canvas-proposal-opus.md` | Proposal: CANVAS1, Opus, sealed
+| `2026-11-02-canvas-proposal-codex.md` | Proposal: CANVAS1, Codex, sealed
+| `2026-11-02-canvas-design.md` | Design: CANVAS1, one canvas platform, placed and positioned worlds, the engine chosen by measurement; accepted 2026-11-02 (D224)
+| `2026-11-02-canvas-reads.md` | Reads: CANVAS1, Codex's read, settled in the design's §11
+| `2026-11-02-staff-policy-proposal-opus.md` | Proposal: STAFFPOLICY1, Opus, sealed
+| `2026-11-02-staff-policy-proposal-codex.md` | Proposal: STAFFPOLICY1, Codex, sealed
+| `2026-11-02-staff-policy-design.md` | Design: STAFFPOLICY1, a policy beside a role's choices, order or weight, conditions that move a line; accepted 2026-11-02 (D226)
+| `2026-11-02-staff-policy-reads.md` | Reads: STAFFPOLICY1, Codex's read, settled in the design's §11
+| `2026-11-02-comms-brief.md` | Brief: COMMS1, one model for how sessions, agents and the person talk and hand work to each other
+| `2026-11-02-comms-proposal-opus.md` | Proposal: COMMS1, Opus, sealed
+| `2026-11-02-comms-proposal-codex.md` | Proposal: COMMS1, Codex, sealed
+| `2026-11-02-comms-design.md` | Design: COMMS1, communication as a read over its records, one door for answers to the line's head, parts that address each other; accepted 2026-11-02 (D225)
+| `2026-11-02-comms-reads.md` | Reads: COMMS1, Opus's read, settled in the design's §13; Codex's owed
 
 ## UI, browser, tools and plugin contracts
 

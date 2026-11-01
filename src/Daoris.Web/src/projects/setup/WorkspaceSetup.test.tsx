@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render as rtlRender, screen, within } from '@testing-library/react';
+import { act, render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../../locales/i18n';
@@ -64,6 +64,64 @@ describe("a workspace's Setup", () => {
     at({ rows: 'rest' });
     expect(section('Defaults')).toHaveAccessibleDescription("each checkout's own line (Daoris's default) · lands into its line (Daoris's default)");
     expect(section('Remote and reach')).toHaveAccessibleDescription('local only · no rules of its own');
+  });
+
+  // SETUPUX1v: the workspace place's Workflow takes the line's defaults, its Sessions the rules and the machines its remote counts undeclared,
+  // so each row has one home among them and the tab's, and a section a door names is found by its row.
+  it("draws the line's defaults alone for the place's Workflow", () => {
+    const { acts } = at({ rows: 'defaults' });
+    expect(section('Defaults')).toHaveAccessibleDescription("each checkout's own line (Daoris's default) · lands into its line (Daoris's default)");
+    expect(screen.queryByRole('button', { name: 'Reach' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Remote and reach' })).toBeNull();
+    expect(screen.queryByText('Session language')).toBeNull();
+    expect(section('Defaults')).toHaveAttribute('data-place-row', 'defaults');
+    expect(acts.line).not.toHaveBeenCalled();
+  });
+
+  it("holds the rules and the machines its remote counts undeclared under the place's Sessions' Reach, and no wiring", async () => {
+    const onRetire = vi.fn();
+    const onRemove = vi.fn();
+    at({
+      rows: 'sessions',
+      remote: {
+        wiring: { remote: null, fromEnvironment: false, onWire: vi.fn(), onUnwire: vi.fn() },
+        rules: { lists: { allow: ['Bash(make:*)'], ask: [], deny: ['Bash(rm:*)'] }, onAdd: vi.fn(), onRemove },
+        machines: { undeclared: ['m-gone'], onRetire },
+      },
+    });
+    expect(section('Reach')).toHaveAttribute('data-place-row', 'reach');
+    expect(screen.queryByRole('button', { name: 'Remote and reach' })).toBeNull();
+    expect(screen.queryByText('Its deployment')).toBeNull();
+    // It sets rules, so it opens on its own, folds to its line, and offers the machine's retirement beside the rules.
+    expect(section('Reach')).toHaveAttribute('aria-expanded', 'true');
+    await userEvent.click(section('Reach'));
+    expect(section('Reach')).toHaveAccessibleDescription('2 rules of its own · 1 machine not declared');
+    await userEvent.click(section('Reach'));
+    await userEvent.click(screen.getByRole('button', { name: 'Retire' }));
+    expect(onRetire).toHaveBeenCalledWith('m-gone');
+    await userEvent.click(screen.getByRole('button', { name: 'remove Bash(rm:*)' }));
+    expect(onRemove).toHaveBeenCalledWith('Bash(rm:*)');
+  });
+
+  it("adds a rule to any of the three lists from Reach", async () => {
+    const onAdd = vi.fn();
+    at({ rows: 'sessions', open: 'reach', remote: { rules: { lists: { allow: [], ask: [], deny: [] }, onAdd, onRemove: vi.fn() } } });
+    expect(section('Reach')).toHaveAttribute('aria-expanded', 'true');
+    const user = userEvent.setup();
+    for (const list of ['allow', 'ask', 'deny']) {
+      await user.click(screen.getByRole('button', { name: 'Add a rule' }));
+      screen.getByRole('combobox', { name: 'the list' }).focus();
+      await user.keyboard('{Enter}');
+      await user.click(await screen.findByRole('option', { name: list }));
+      await user.type(screen.getByRole('textbox', { name: 'the rule' }), `Bash(${list}:*){Enter}`);
+      expect(onAdd).toHaveBeenLastCalledWith(list, `Bash(${list}:*)`, expect.any(Function));
+      act(() => onAdd.mock.calls.at(-1)![2]());
+    }
+  });
+
+  it('has no Reach where it holds no rule answer and no machine', () => {
+    at({ rows: 'sessions', remote: {} });
+    expect(screen.queryByRole('button', { name: 'Reach' })).toBeNull();
   });
 
   // SUPERVISOR1e (D208 §5, §6.3): the workspace's supervisor, its own section, folded while none is appointed, open once one is.

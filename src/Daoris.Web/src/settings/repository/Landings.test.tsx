@@ -316,7 +316,7 @@ describe("the landing rule's integrate form", () => {
       drawIntegrating({ form: 'branch', pattern: 'work/{quest}', integrate: {} });
       expect(screen.getByRole('checkbox', { name: '集成到主线' })).toBeChecked();
       expect(screen.getByRole('group', { name: '工作如何集成到 forge 的主线' })).toBeInTheDocument();
-      expect(landingIntegrateSays(i18n.t.bind(i18n), says)).toEqual(['集成到主线：每个候选 4 个成员，先到先集成，按声明运行关卡。']);
+      expect(landingIntegrateSays(i18n.t.bind(i18n), says)).toEqual(['集成到主线：每个候选 4 个成员，先到先集成，按声明运行检查项。']);
     } finally {
       await i18n.changeLanguage('en');
     }

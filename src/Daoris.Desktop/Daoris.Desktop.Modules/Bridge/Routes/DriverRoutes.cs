@@ -377,16 +377,22 @@ public sealed class DriverRoutes(DriverContext context)
     // stored choices, and the work codes a role may take; a read, the same `daoris driver role` says. Beside them, the roles Daoris
     // suggests adding (the Designer while no role takes design), each the person's press alone.
     [DriverRoute("ROLES")]
-    [ByEvent("ROLES", Untold = "the store's roles and driver.json's staffing, and the machine log's starts that Use sums")]
+    [ByEvent("ROLES", Untold = "the store's roles, role policies and starts, driver.json's staffing, and the machine log's starts that Use sums")]
     private Task<object?> RolesAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var catalogue = RoleCatalog.ReadHome(_loop.Home);
         // Each role's last seven days (MODELROLE1f): names and counts from the machine log's actor.chose lines; a role with no start is not listed.
         var use = RoleUse.Of(_loop.Home, DateTimeOffset.UtcNow);
+        var config = DriverConfig.Load(_loop.ConfigPath);
         return Task.FromResult<object?>(new
         {
             Use = new { use.Days, use.Roles },
-            Roles = RoleDoor.Rows(catalogue, DriverConfig.Load(_loop.ConfigPath)),
+            Roles = RoleDoor.Rows(catalogue, config),
+            // STAFFPOLICY1b: each role's policy (default, set or stale), its record and its next new start; a probe that reserves nothing and
+            // asks no account. The fields this build enforces, and the presets, are what the doors take.
+            Policies = RolePolicyRow.Of(new StaffLedger(_loop.Home), catalogue, config),
+            PolicyFields = StaffCapabilities.Fields,
+            PolicyPresets = StaffPresets.Names,
             Works = RoleWork.Codes,
             Kept = RoleStaffing.Of(_loop.ConfigPath) is not null,
             Suggested = RoleSuggestion.For(catalogue).Select(each => new
@@ -544,8 +550,8 @@ public sealed class DriverRoutes(DriverContext context)
     {
         var staffing = RoleStaffing.Of(_loop.ConfigPath)
             ?? throw new DriverException("this home's actors are the file's own (not this home's store), so its roles are not set here.");
-        var (change, choices, read) = RoleDoor.Read(request.Payload);
-        RoleDoor.Apply(staffing, change, choices, read);
+        var press = RoleDoor.ReadPress(request.Payload);
+        RoleDoor.Apply(staffing, press.Change, press.Choices, press.Read, press.Policy);
         _loop.Nudge();
         return State(_loop);
     }
@@ -559,7 +565,7 @@ public sealed class DriverRoutes(DriverContext context)
     {
         var staffing = RoleStaffing.Of(_loop.ConfigPath)
             ?? throw new DriverException("this home's actors are the file's own (not this home's store), so its roles are not set here.");
-        RoleDoor.ApplyAll(staffing, RoleDoor.ReadAll(request.Payload));
+        RoleDoor.ApplyAll(staffing, RoleDoor.ReadPresses(request.Payload));
         _loop.Nudge();
         return State(_loop);
     }

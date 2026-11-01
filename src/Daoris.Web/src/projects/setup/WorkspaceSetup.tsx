@@ -104,11 +104,12 @@ export type WorkspaceSetupProps = {
   /** The header's *Wire to a remote…*: the wiring form starts open. */
   wiring?: boolean;
   /**
-   * Which rows are drawn (AGENTSPLACE1f): the workspace place's Sessions hold the access and the session language, helpers, hand-over and
-   * reading rows; everything else (its line, landing, commits, review, opinion, supervisor, remote and rules) stays here until its row moves.
-   * Absent, all.
+   * Which rows are drawn, by the home they have on the workspace place (AGENTSPLACE1f, SETUPUX1v): its Sessions hold the access, the session
+   * language, helpers, hand-over and reading rows, and *Reach* (the rules and the machines its remote counts undeclared); its Workflow the line's
+   * defaults (line, landing, commits, review, opinion); the remote's wiring is Repositories' Details and the supervisor the place's Roles.
+   * `rest` is what the old tab keeps until it goes: everything but the session rows. Absent, all.
    */
-  rows?: 'all' | 'sessions' | 'rest';
+  rows?: 'all' | 'sessions' | 'defaults' | 'rest';
   /** Open a plugin's page: the landing rule's plugin is a door (PLUGUI1c2c); absent, its name stays words. */
   onOpenPlugin?: (plugin: string) => void;
 };
@@ -140,9 +141,10 @@ export function WorkspaceSetup({
 }: WorkspaceSetupProps) {
   const { t } = useTranslation();
   const daoris = (value: string) => t('projects.setup.marked.daoris', { value });
-  const mine = rows !== 'rest';
-  const rest = rows !== 'sessions';
-  const { line, landing, review, opinion, commits } = rest ? defaults : ({} as WorkspaceDefaults);
+  const mine = rows === 'all' || rows === 'sessions';
+  const ofLine = rows !== 'sessions';
+  const rest = rows === 'all' || rows === 'rest';
+  const { line, landing, review, opinion, commits } = ofLine ? defaults : ({} as WorkspaceDefaults);
   const { language, read, helpers, handOver } = mine ? defaults : ({} as WorkspaceDefaults);
   const access = mine ? accessAnswered : null;
   const supervisor = rest ? supervisorLine : null;
@@ -170,12 +172,33 @@ export function WorkspaceSetup({
   const wired = remote.wiring?.remote ?? null;
   const rules = remote.rules?.lists;
   const ruleCount = rules ? rules.allow.length + rules.ask.length + rules.deny.length : 0;
+  const rulesSays = rules ? [ruleCount > 0 ? t('projects.setup.summary.rules', { count: ruleCount }) : t('projects.setup.summary.noRules')] : [];
   const remoteParts = !rest ? [] : [
     ...(remote.wiring
       ? [wired ? t('projects.workspace.page.syncs', { host: hostOf(wired.url) }) : t('projects.workspace.page.local')]
       : []),
-    ...(rules ? [ruleCount > 0 ? t('projects.setup.summary.rules', { count: ruleCount }) : t('projects.setup.summary.noRules')] : []),
+    ...rulesSays,
   ];
+  // The place's Sessions hold the rules and the retirement of an undeclared machine under Reach; the wiring is Details' (SETUPUX1v).
+  const undeclared = remote.machines?.undeclared.length ?? 0;
+  const reachParts = rows !== 'sessions' ? [] : [
+    ...rulesSays,
+    ...(undeclared > 0 ? [t('projects.workspace.machines.summary', { count: undeclared })] : []),
+  ];
+  const rulesRow = remote.rules && (
+    <SettingRow
+      label={t('projects.setup.rules')}
+      hint={t('projects.workspace.twin.rules', { workspace: shellWord(workspace, '<workspace>') })}
+    >
+      <RepositoryRules
+        rules={remote.rules.lists}
+        busy={busy}
+        none={t('projects.workspace.rulesNone')}
+        onAdd={remote.rules.onAdd}
+        onRemove={remote.rules.onRemove}
+      />
+    </SettingRow>
+  );
 
   // Sessions' access (AUTONOMY1d): the same rows as a repository's, one level up.
   const accessShown = access && access.pauses.length > 0 ? access : null;
@@ -184,6 +207,7 @@ export function WorkspaceSetup({
     defaults: Boolean(line?.set || landing?.set || landing?.unread || language?.set || read?.set !== undefined || review?.set || opinion?.set
       || commits?.set || helpers?.set || handOver?.set),
     access: Boolean(accessShown?.pauses.some((each) => each.source === 'workspace')),
+    reach: ruleCount > 0 || undeclared > 0,
     // An appointment the person made opens it, as a value they set does.
     supervisor: Boolean(supervisor?.appointment),
     remote: Boolean(wired) || ruleCount > 0 || startWiring,
@@ -371,6 +395,18 @@ export function WorkspaceSetup({
       ),
     });
   }
+  if (reachParts.length > 0) {
+    sections.push({
+      id: 'reach',
+      summary: reachParts.join(JOIN),
+      body: (
+        <>
+          {rulesRow}
+          {remote.machines && <Undeclared machines={remote.machines} busy={busy} />}
+        </>
+      ),
+    });
+  }
   if (supervisor) {
     const appointed = supervisor.appointment;
     sections.push({
@@ -393,20 +429,7 @@ export function WorkspaceSetup({
             <Wiring workspace={workspace} wiring={remote.wiring} busy={busy} startOpen={startWiring} />
           )}
           {wired && remote.machines && <Undeclared machines={remote.machines} busy={busy} />}
-          {remote.rules && (
-            <SettingRow
-              label={t('projects.setup.rules')}
-              hint={t('projects.workspace.twin.rules', { workspace: shellWord(workspace, '<workspace>') })}
-            >
-              <RepositoryRules
-                rules={remote.rules.lists}
-                busy={busy}
-                none={t('projects.workspace.rulesNone')}
-                onAdd={remote.rules.onAdd}
-                onRemove={remote.rules.onRemove}
-              />
-            </SettingRow>
-          )}
+          {rulesRow}
         </>
       ),
     });
@@ -421,6 +444,8 @@ export function WorkspaceSetup({
           title={t(`projects.setup.section.${section.id}`)}
           summary={section.summary}
           startsOpen={opensItself[section.id] || open === section.id}
+          // A place's page finds the row a door named by this (SETUPUX1v); Sessions' own Defaults is not Workflow's.
+          row={rows === 'defaults' ? section.id : rows === 'sessions' ? (section.id === 'defaults' ? 'sessionDefaults' : section.id) : undefined}
         >
           {section.body}
         </SetupSection>
@@ -485,7 +510,7 @@ function LandingDefault({ workspace, landing, busy, onOpenPlugin }: {
  * which opens the form one press away, since wiring is done once per machine per deployment. With the environment naming
  * the remote, the file is not read, and the row says which source decided.
  */
-function Wiring({ workspace, wiring, busy, startOpen }: {
+export function Wiring({ workspace, wiring, busy, startOpen }: {
   workspace: string;
   wiring: NonNullable<WorkspaceRemote['wiring']>;
   busy: boolean;

@@ -1,27 +1,49 @@
+import { fingerprintOf } from '../draftFingerprint';
+import { MERGE_GRAPH } from '../graphFixtures';
 import type { EditorRole, PaletteKind, WorkflowListAnswer, WorkflowPaletteAnswer, WorkflowSaveAnswer } from './answers';
+import { draftOf, graphOf } from './graphDraft';
 
-// The step editor's answers as the driver gives them (WORKFLOWEDIT1b), for its page tests and its stories: a palette of the kinds the
-// documents and release workflows hold with the Local release plugin's three steps, the defaults listed with their graphs, and roles.
+// The step editor's answers as the driver gives them (WORKFLOWEDIT1b), for its page tests and its stories: a palette of every kind the
+// shipped workflows hold, each with the driver's own authority, and the Local release plugin's three steps; the defaults listed with their
+// graphs, and roles.
 
-const kind = (name: string, reach: string, more: Partial<PaletteKind> = {}): PaletteKind => ({
-  kind: name, reach, reachBy: 'daoris', failureBy: null, personJudges: false, personSkips: false, mayEnd: true, evidenced: false, skipBy: null,
-  options: [], leaves: ['after', 'data', 'trigger'], roleTakes: [], ...more,
-});
+/** The wire kinds that may leave a node, as the driver's palette says them (`WorkflowPalette.Leaving`). */
+const leaving = (fails: boolean, judged: boolean, decision = false): string[] => [
+  'after', 'data', 'trigger', ...(fails ? ['failed'] : []), ...(judged ? ['rejected'] : []), ...(decision ? ['when'] : []),
+  ...(fails || judged || decision ? ['back'] : []),
+];
+
+/** A built-in kind as the driver's palette answers it (`NodeAuthorities.BuiltIn`): who fails it, whether a person judges it, whether it may end. */
+const kind = (name: string, reach: string, more: Partial<PaletteKind> = {}): PaletteKind => {
+  const answered: PaletteKind = {
+    kind: name, reach, reachBy: 'daoris', failureBy: null, personJudges: false, personSkips: false, mayEnd: true, evidenced: false, skipBy: null,
+    options: [], leaves: [], roleTakes: [], ...more,
+  };
+  return { ...answered, leaves: more.leaves ?? leaving(answered.failureBy !== null, answered.personJudges) };
+};
 
 const RELEASE = 'local-release/release@1';
 const RECEIPT = 'local-release/receipt@1';
 
 export const PALETTE: WorkflowPaletteAnswer = {
   kinds: [
-    kind('claimed', 'observed', { reachBy: 'agent', mayEnd: false, options: [{ name: 'role', type: 'text', choices: [], required: false }], roleTakes: ['design', 'build'] }),
-    kind('work.requests', 'observed'),
-    kind('check', 'performed', { failureBy: 'daoris', mayEnd: false, leaves: ['after', 'data', 'trigger', 'failed', 'back'],
-      options: [{ name: 'gates', type: 'names', choices: [], required: false }] }),
-    kind('review', 'pressed', { reachBy: 'person', personJudges: true, leaves: ['after', 'data', 'trigger', 'rejected', 'back'] }),
-    kind('land', 'performed', { reachBy: 'landing', failureBy: 'landing', evidenced: true, leaves: ['after', 'data', 'trigger', 'failed', 'back'],
+    kind('claimed', 'observed', { reachBy: 'agent', mayEnd: false, evidenced: true, options: [{ name: 'role', type: 'text', choices: [], required: false }], roleTakes: ['design', 'build'] }),
+    kind('work.requests', 'observed', { personSkips: true, evidenced: true }),
+    kind('quest.holds', 'observed', { personSkips: true, mayEnd: false, evidenced: true }),
+    kind('content.holds', 'observed', { personSkips: true, mayEnd: false, evidenced: true }),
+    kind('check', 'performed', { failureBy: 'gates', evidenced: true, options: [{ name: 'gates', type: 'names', choices: [], required: false }] }),
+    kind('review', 'pressed', { reachBy: 'person', personJudges: true, mayEnd: false }),
+    kind('land', 'performed', { reachBy: 'landing', failureBy: 'landing', evidenced: true,
       options: [{ name: 'method', type: 'choice', choices: ['merge', 'branch', 'push', 'pull-request', 'integrate'], required: false },
-        { name: 'squash', type: 'switch', choices: [], required: false }] }),
-    kind('line', 'observed'),
+        { name: 'target', type: 'text', choices: [], required: false }, { name: 'pattern', type: 'text', choices: [], required: false },
+        { name: 'plugin', type: 'text', choices: [], required: false }, { name: 'squash', type: 'switch', choices: [], required: false },
+        { name: 'message', type: 'text', choices: [], required: false }] }),
+    kind('line', 'observed', { evidenced: true }),
+    kind('pushed', 'observed', { failureBy: 'plugin', personSkips: true, evidenced: true }),
+    kind('pull-request', 'observed', { failureBy: 'plugin', personSkips: true, evidenced: true, skipBy: 'landing' }),
+    kind('integrate', 'waited', { failureBy: 'integration', evidenced: true,
+      options: [{ name: 'request', type: 'choice', choices: ['owner', 'done', 'steward'], required: false },
+        { name: 'conflicts', type: 'choice', choices: ['session', 'hold'], required: false }] }),
   ],
   wires: [
     { kind: 'after', eligibility: true, from: null, to: null },
@@ -89,6 +111,9 @@ export const LIST: WorkflowListAnswer = {
   workflows: [{ id: 'docs-release', name: 'Docs release', problem: null, versions: [1, 2], schema: 2, digest: 'ab', line: 'x', pipeline: null,
     chosen: [{ level: 'repository', name: 'engine', role: 'default', kind: null }] }],
   presets: [
+    { id: 'merge-after-accept', name: 'Merge workflow', graph: true, line: 'You review the work, and it merges into the line.', preset: true, body: MERGE_GRAPH,
+      for: 'For a repository whose work you accept: once the work\'s requests are answered you review it, and it merges into the line.', order: 1, setUp: true,
+      delivery: { id: 'merge-after-accept', method: 'merge', accept: 'you', name: 'Merge after you accept', for: 'For a repository whose work you accept.' } },
     { id: 'documents', name: 'Documents workflow', graph: true, line: 'The work merges into the line.', preset: true, body: DOCUMENTS_GRAPH,
       for: 'For a kind of task whose paths are documents: the work merges into the line once it is done, with no review.', order: 3, setUp: false,
       delivery: { id: 'merge-automatic', method: 'merge', accept: 'automatic', name: 'Merge with no review', for: 'For a development repository.' } },
@@ -119,6 +144,9 @@ export const REFUSED = answer({
     { code: 'a-rule-newer-than-this-page', wire: null, node: null, words: 'a rule this page has no words for refuses `publish`.' },
   ],
 });
+
+/** The fingerprint the editor holds for a draft opened on `graph`: what a judgement of it is keyed by (`judgedOf`). */
+export const judgedFor = (graph: unknown): string => fingerprintOf(graphOf(draftOf(graph)));
 
 /** A plan appended to a saved workflow chosen in two places. */
 export const APPEND = answer({

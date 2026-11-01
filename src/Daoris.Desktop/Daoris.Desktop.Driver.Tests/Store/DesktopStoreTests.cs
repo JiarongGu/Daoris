@@ -579,13 +579,13 @@ public sealed class DesktopStoreTests : IDisposable
     public void Step_15_makes_the_deliveries_and_their_phases_and_is_the_first_step_to_raise_the_writer_stamp()
     {
         var step = Assert.Single(DesktopStore.Steps, each => each.Version == 15);
-        Assert.Equal((2, 2), (step.Writer, DesktopStore.WriterStamp));
+        Assert.Equal((2, 2), (step.Writer, DesktopStore.DeliveryWriter));
         Assert.All(DesktopStore.Steps.Where(each => each.Version < 15), each => Assert.Equal(DesktopStore.FirstWriter, each.Writer));
         Assert.Equal(14, Unraised);
 
         var store = Open(new DesktopStoreOptions { Settled = () => StoreSettled.Yes });
 
-        Assert.Equal((Own, 2), store.Stamp);
+        Assert.Equal((Own, Stamp), store.Stamp);
         Assert.Equal(
             [
                 ("key", true), ("format", true), ("unit", true), ("repository", true), ("tip", true), ("method", true), ("target", true), ("line", true),
@@ -653,10 +653,100 @@ public sealed class DesktopStoreTests : IDisposable
         var settled = Open(new DesktopStoreOptions { Settled = () => StoreSettled.Yes });
 
         Assert.Null(settled.Held);
-        Assert.Equal((Own, 2), settled.Stamp);
+        Assert.Equal((Own, Stamp), settled.Stamp);
         Assert.True(older.Newer);
         Assert.Throws<DesktopStoreNewerException>(() => older.Write("probe", _ => { }));
         Assert.Equal(2, older.Revisions()["probe"]);
+    }
+
+    // ——— Step 16, a role's staffing policy, its revisions and the role's new starts (STAFFPOLICY1a; the staff policy design §2.1, §11),
+    // the second step to raise the stamp: an older build reads the role's choices and could start one past its budget or outside its works.
+
+    [Fact]
+    public void Step_16_makes_the_policy_its_revisions_and_the_starts_and_raises_the_writer_stamp_from_2_to_3()
+    {
+        var step = Assert.Single(DesktopStore.Steps, each => each.Version == 16);
+        Assert.Equal((3, 3), (step.Writer, DesktopStore.PolicyWriter));
+        Assert.Equal(DesktopStore.PolicyWriter, DesktopStore.WriterStamp);
+        Assert.Equal(2, DesktopStore.DeliveryWriter);
+        Assert.Equal(DesktopStore.DeliveryWriter, Assert.Single(DesktopStore.Steps, each => each.Version == 15).Writer);
+
+        var store = Open(new DesktopStoreOptions { Settled = () => StoreSettled.Yes });
+
+        Assert.Equal((Own, 3), store.Stamp);
+        Assert.Equal(
+            [("role", true), ("policy", true), ("staffing", true), ("revision", true), ("since", true), ("at", true)],
+            Columns(store, "role_policy"));
+        Assert.Equal(
+            [("role", true), ("revision", true), ("policy", false), ("staffing", false), ("at", true)],
+            Columns(store, "role_policy_revisions"));
+        Assert.Equal(
+            [("session", true), ("role", true), ("choice", true), ("by", true), ("condition", false), ("at", true)],
+            Columns(store, "role_starts"));
+
+        // 1555 is SQLite's primary key refusal: one policy a role, one revision of each number, one start a session.
+        const string At = "2026-11-02T00:00:00.0000000+00:00";
+        void Policy() => store.Write("role_policy", write => write.Execute(
+            "INSERT INTO role_policy (role, policy, staffing, revision, since, at) VALUES ('build', '{}', 'digest', 1, $at, $at)", ("$at", At)));
+        void Revision() => store.Write("role_policy", write => write.Execute(
+            "INSERT INTO role_policy_revisions (role, revision, policy, staffing, at) VALUES ('build', 1, NULL, NULL, $at)", ("$at", At)));
+        void Start() => store.Write("role_starts", write => write.Execute(
+            "INSERT INTO role_starts (session, role, choice, by, condition, at) VALUES ('s1', 'build', '{}', 'weight', NULL, $at)", ("$at", At)));
+        Policy();
+        Revision();
+        Start();
+        Assert.Equal(1555, Assert.Throws<SqliteException>(Policy).SqliteExtendedErrorCode);
+        Assert.Equal(1555, Assert.Throws<SqliteException>(Revision).SqliteExtendedErrorCode);
+        Assert.Equal(1555, Assert.Throws<SqliteException>(Start).SqliteExtendedErrorCode);
+    }
+
+    [Fact]
+    public void Step_16_waits_for_the_start_s_confirmation_and_the_build_of_the_fifteen_steps_writes_on_until_it_runs_and_never_after()
+    {
+        using var older = Open(new DesktopStoreOptions { Writer = DesktopStore.DeliveryWriter, Steps = [.. DesktopStore.Steps.Take(15)], Settled = () => StoreSettled.Yes });
+        older.Write("probe", _ => { });
+        Assert.Equal((15, 2), older.Stamp);
+
+        using (var waiting = Open(new DesktopStoreOptions { Settled = () => StoreSettled.Not("the swap journal is at `started`") }))
+        {
+            Assert.StartsWith("migration 16 raises the store's writer stamp from 2 to 3", waiting.Held);
+            Assert.Equal((15, 2), waiting.Stamp);
+            Assert.False(HasTable(waiting, "role_policy"));
+        }
+
+        older.Write("probe", _ => { });
+
+        var settled = Open(new DesktopStoreOptions { Settled = () => StoreSettled.Yes });
+
+        Assert.Null(settled.Held);
+        Assert.Equal((Own, 3), settled.Stamp);
+        Assert.True(older.Newer);
+        var refused = Assert.Throws<DesktopStoreNewerException>(() => older.Write("probe", _ => { }));
+        Assert.Equal((3, 2), (refused.Stamped, refused.Own));
+        Assert.Equal(2, older.Revisions()["probe"]);
+    }
+
+    [Fact]
+    public void A_store_an_older_build_left_before_both_raises_stops_before_them_and_takes_both_in_one_open_once_settled()
+    {
+        using (var older = Open(new DesktopStoreOptions { Writer = 1, Steps = [.. DesktopStore.Steps.Take(14)], Settled = () => StoreSettled.Yes }))
+        {
+            Assert.Equal((14, 1), older.Stamp);
+        }
+
+        using (var waiting = Open(new DesktopStoreOptions { Settled = () => StoreSettled.Not("the swap journal is at `started`") }))
+        {
+            Assert.Equal((14, 1), waiting.Stamp);
+            Assert.False(HasTable(waiting, "role_policy"));
+            Assert.False(HasTable(waiting, "role_starts"));
+        }
+
+        var settled = Open(new DesktopStoreOptions { Settled = () => StoreSettled.Yes });
+
+        Assert.Equal((Own, 3), settled.Stamp);
+        Assert.True(HasTable(settled, "deliveries"));
+        Assert.True(HasTable(settled, "role_policy_revisions"));
+        Assert.True(HasTable(settled, "role_starts"));
     }
 
     // ——— Step 10, the role catalogue (FOUNDATION1w; the foundation design §2.7, §13.3).

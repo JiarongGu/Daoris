@@ -5,7 +5,7 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// The one judge of who is at work (COWORKVIEW1a, the design §4.1, rules 11 to 13): each landed composition registers what it read,
-/// and the judge, asked by the lineage files' topic, the two slices' pushes and health and the token set's moves, compares each read's
+/// and the judge, asked by the lineage files' topic, the three slices' pushes and health and the token set's moves, compares each read's
 /// own versions and tells <paramref name="wake"/> once where any moved, that read then leaving the union until it is asked again and
 /// lands. A line wakes only where it moves what its reading holds (<see cref="ChildBindings.Wakes"/>).
 /// </summary>
@@ -16,21 +16,43 @@ public sealed class AtWorkWatch
     private readonly Action _wake;
     private readonly StateSlice? _groups;
     private readonly StateSlice? _sessions;
+    private readonly StateSlice? _quests;
     private readonly LineageTokens _tokens;
     private readonly Lock _gate = new();
     private readonly Dictionary<string, AtWorkDependencies> _held = new(StringComparer.Ordinal);
 
-    public AtWorkWatch(Action wake, StateSlice? groups, StateSlice? sessions, LineageTokens tokens)
+    private readonly Func<string, string>? _standing;
+    private readonly StateSlice? _asks;
+
+    /// <param name="driver">The driver slice, whose pushes move a repository's drive and trees (COWORKVIEW1e-iii).</param>
+    /// <param name="standing">A repository's routing standing word; the registry's answers reach the judge through <see cref="JudgeStandings"/>.</param>
+    /// <param name="asks">The asks slice, an ask's read's existence dependency (COWORKVIEW1d).</param>
+    public AtWorkWatch(
+        Action wake, StateSlice? groups, StateSlice? sessions, StateSlice? quests, LineageTokens tokens, StateSlice? driver = null,
+        Func<string, string>? standing = null, StateSlice? asks = null)
     {
-        (_wake, _groups, _sessions, _tokens) = (wake, groups, sessions, tokens);
-        foreach (var slice in new[] { groups, sessions })
+        (_wake, _groups, _sessions, _quests, _tokens, _standing, _asks) = (wake, groups, sessions, quests, tokens, standing, asks);
+        foreach (var slice in new[] { groups, sessions, quests, asks })
         {
             if (slice is null) continue;
             slice.Pushed += () => Judge();
             slice.HealthMoved += () => Judge();
         }
 
+        // The driver slice pushes at each look; only a read that consulted a standing is judged by it.
+        if (driver is not null) driver.Pushed += () => JudgeStandings();
         tokens.Moved += _ => Judge();
+    }
+
+    /// <summary>The standing moved (the driver's choices, or the registry's answer): the reads that consulted one are judged.</summary>
+    public bool JudgeStandings()
+    {
+        lock (_gate)
+        {
+            if (!_held.Values.Any(read => read.Standings.Count > 0)) return false;
+        }
+
+        return Judge();
     }
 
     /// <summary>How many reads the union holds.</summary>
@@ -87,7 +109,7 @@ public sealed class AtWorkWatch
     /// <summary>Null where nothing moved; else whether it woke, or the read with its files read on past lines that moved nothing.</summary>
     private (bool Woke, AtWorkDependencies Read)? Moved(AtWorkDependencies read)
     {
-        if (!AtWorkRead.SlicesStand(read, _groups, _sessions)) return (true, read);
+        if (!AtWorkRead.SlicesStand(read, _groups, _sessions, _quests, _standing, _asks)) return (true, read);
         var files = new Dictionary<string, AtWorkFile>(read.Files, StringComparer.Ordinal);
         var readOn = false;
         foreach (var (part, file) in read.Files)

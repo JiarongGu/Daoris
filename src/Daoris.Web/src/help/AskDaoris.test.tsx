@@ -38,8 +38,11 @@ import { sessionsSlice } from '../bridge/sessions/sessions';
 /** ASKQUESTS1: the slices a go card's standings are read from, pushed as `ShellSignals` mounts them. */
 const PUSHED_HERE = [questsSlice, asksSlice, sessionsSlice];
 import { code } from '../test/code';
+import { RELEASE_CARD } from '../workflow/edit/proposalFixtures';
 import { AskDaoris } from './AskDaoris';
 import type { HelpWhere } from './where';
+import { registerOpenDraft, toldGraph, toldSessions } from './openDraft';
+import { fingerprintOf } from '../workflow/draftFingerprint';
 
 const HELP = {
   id: 'h1e1p000', quest: null, repository: 'daoris:help', adapter: 'claude-code-acp', state: 'working',
@@ -738,6 +741,44 @@ describe('Ask Daoris, with an agent named', () => {
     }));
   });
 
+  /**
+   * FLOWCHART2d: the workflow draft open in the editor goes beside the words with its fingerprint, frozen with them, where that moved since
+   * the conversation was told it, and never again unchanged; where the person is says a draft is open.
+   */
+  it('hands the conversation the open draft beside the words, and not again while it is unchanged', async () => {
+    SESSIONS = [HELP];
+    bridge();
+    const graph = { schemaVersion: 2, entries: ['work'], end: 'work', nodes: [{ id: 'work', kind: 'claimed', version: 1, reach: 'observed' }], wires: [] };
+    const draft = { place: 'engine', graph, workflow: 'release-flow', base: 2 };
+    const unregister = [registerOpenDraft(draft)];
+    try {
+      show({ view: 'projects', workspace: null });
+      const box = await screen.findByLabelText('Message');
+      const sentDraft = () => invoke.mock.calls.filter(([, type]) => type === 'SESSION_INPUT').map(([, , request]) => request.payload.draft);
+
+      await userEvent.type(box, 'add a release');
+      await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+      await waitFor(() => expect(sentDraft()).toEqual([{ ...draft, fingerprint: fingerprintOf(graph) }]));
+      const first = invoke.mock.calls.find(([, type]) => type === 'SESSION_INPUT')![2].payload;
+      expect(first.preface).toContain('editing a workflow draft of `release-flow` from v2 for `engine`, not saved: 1 steps;');
+      // FLOWCHART2f: kept as told, by its fingerprint, for a proposal against it to be taken against that graph.
+      await waitFor(() => expect(toldGraph(fingerprintOf(graph))).toEqual(graph));
+      expect(toldSessions().at(-1)).toBe(HELP.id);
+
+      await userEvent.type(box, 'and then?');
+      await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+      await waitFor(() => expect(sentDraft()).toEqual([expect.objectContaining({ place: 'engine' }), undefined]));
+
+      unregister.push(registerOpenDraft({ ...draft, graph: { ...graph, end: 'line' } }));
+      await userEvent.type(box, 'now?');
+      await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+      await waitFor(() => expect(sentDraft()).toHaveLength(3));
+      expect(sentDraft()[2].fingerprint).toBe(fingerprintOf({ ...graph, end: 'line' }));
+    } finally {
+      unregister.reverse().forEach((each) => each());
+    }
+  });
+
   /** FRAME1i-a: the chosen item is part of where the person is, so a change of it is said again and a same one is not. */
   it('hands the conversation the item again when it changed', async () => {
     SESSIONS = [HELP];
@@ -1058,6 +1099,32 @@ describe('Ask Daoris, with an agent named', () => {
     await userEvent.click(within(cards).getByRole('button', { name: 'Go there' }));
 
     await waitFor(() => expect(onGo).toHaveBeenCalledWith({ view: 'quests', item: 'ask:a2none00' }));
+    PROPOSALS = [];
+    APPLIED = APPLIED_SETTING;
+  });
+
+  /**
+   * FLOWCHART2g (D223 §4.4): a draft card's Open in the editor takes the person to the place's Workflow with its editor asked on the draft
+   * the card is against, not to the place alone: the driver's go names no repository, so the page names the place from the card.
+   */
+  it("opens the editor on the draft a conversation's draft card is against, for the repository the card names", async () => {
+    SESSIONS = [HELP];
+    PROPOSALS = [{ ...RELEASE_CARD, id: 'd1r2a3f4' }];
+    APPLIED = {
+      message: 'Applied: `#d1r2a3f4` is a change to your workflow draft: it is shown in the draft\'s editor.',
+      applied: true, go: { view: 'projects', domain: null, part: null },
+    };
+    bridge();
+    const onGo = vi.fn();
+    show(undefined, null, onGo);
+
+    const cards = await screen.findByRole('list', { name: 'what Ask Daoris proposes' });
+    await userEvent.click(within(cards).getByRole('button', { name: 'Open in the editor' }));
+
+    // The card is of a new workflow: it names no workflow, no name and no version.
+    await waitFor(() => expect(onGo).toHaveBeenCalledWith({
+      view: 'projects', item: 'engine', tab: 'workflow', placeEdit: { draft: 'g1-0123456789abcdef' },
+    }));
     PROPOSALS = [];
     APPLIED = APPLIED_SETTING;
   });

@@ -138,7 +138,7 @@ describe("a Workflow tab's start node", () => {
     expect(screen.getByRole('heading', { name: '工作在这里如何分流' })).toBeInTheDocument();
     const list = screen.getByRole('list', { name: '工作在这里如何分流' });
     expect(within(list).getByRole('listitem', { name: '起点' })).toBeInTheDocument();
-    expect(within(list).getByRole('listitem', { name: '落地的工作' })).toHaveTextContent('这些检查在你采纳之后变了：在你再次采纳之前，什么都不会运行。');
-    expect(screen.getByRole('button', { name: '采纳这些检查' })).toBeInTheDocument();
+    expect(within(list).getByRole('listitem', { name: '落地的工作' })).toHaveTextContent('这些检查项在你采纳之后变了：在你再次采纳之前，什么都不会运行。');
+    expect(screen.getByRole('button', { name: '采纳这些检查项' })).toBeInTheDocument();
   });
 });

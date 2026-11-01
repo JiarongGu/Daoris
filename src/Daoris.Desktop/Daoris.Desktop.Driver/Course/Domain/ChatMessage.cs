@@ -106,6 +106,18 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files) : I
     public ProcessBriefing? Process { get; init; }
 
     /// <summary>
+    /// The routing standing a conversation is told at its start (COWORKVIEW1e-i, the cowork view design §R11.2 point 4), after the
+    /// process: a field of its own, so the record keeps it as its own note. Null for every other message.
+    /// </summary>
+    public RoutingStanding? Routing { get; init; }
+
+    /// <summary>
+    /// The workflow draft open in the person's editor (FLOWCHART2d, D223), handed after where the person is: a field of its own, bounded as
+    /// a whole, never the preface, which is a few lines. The record keeps it as told. Null for every other message.
+    /// </summary>
+    public WorkflowDraftTold? Draft { get; init; }
+
+    /// <summary>
     /// The line a conversation handed over from another agent opens with (MIXAGENT1a-i, D163 §3): its first message is Daoris's
     /// briefing, never the person's words, so the record keeps this note in place of the person's message and of the browser's
     /// line. Null for every other message.
@@ -190,9 +202,9 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files) : I
     /// </summary>
     internal bool Said { get; init; }
 
-    /// <summary>What the agent is handed: the brief, the briefing, the process, the preface, then the person's words, each after a blank line.</summary>
+    /// <summary>What the agent is handed: the brief, the briefing, the process, the routing, the preface, the draft, then the person's words, each after a blank line.</summary>
     public string Prompt => string.Join(
-        "\n\n", new[] { Brief?.Text, Briefing, Process?.Words, Preface }.Where(part => !string.IsNullOrEmpty(part)).Append(Text));
+        "\n\n", new[] { Brief?.Text, Briefing, Process?.Words, Routing?.Words, Preface, Draft?.Words }.Where(part => !string.IsNullOrEmpty(part)).Append(Text));
 
     /// <summary>A preface as a message carries it: trimmed, bounded, and null when there is none.</summary>
     public static string? Bound(string? preface) =>

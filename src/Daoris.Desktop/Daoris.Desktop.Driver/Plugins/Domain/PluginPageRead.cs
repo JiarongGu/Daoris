@@ -94,4 +94,13 @@ public sealed record PluginPageRead(
 
     /// <summary>What its steps create (FABRIC-UNIT1e, §D3).</summary>
     public IReadOnlyList<PluginResource> Resources { get; init; } = [];
+
+    /// <summary>
+    /// The tools it declares as its manifest says them (ADOSIGNIN1): nothing is found or checked by reading, so each is
+    /// <see cref="ToolStanding.Found"/> null until the person asks.
+    /// </summary>
+    public IReadOnlyList<ToolStanding> Tools { get; init; } = [];
+
+    /// <summary>Why <c>tools</c> as a whole is not read, where it is not an array.</summary>
+    public string? ToolsProblem { get; init; }
 }

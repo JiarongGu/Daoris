@@ -1,7 +1,8 @@
 import { beforeAll, describe, expect, it } from 'vitest';
+import { act, renderHook } from '@testing-library/react';
 import type { PlaceRow, PlaceWork } from '../../data/wiring';
 import i18n from '../../locales/i18n';
-import { firstSection, foldedLines, headOf, needOpening, roleNameOf, sectionsOf } from './placeShell';
+import { firstSection, foldedLines, headOf, isPlaceSection, needOpening, roleNameOf, sectionsOf, usePlaceShell } from './placeShell';
 
 // SETUPUX1h (the setup-UX design §2.1): a place page's three folds say their values from PLACES alone, each with its source, and the first
 // section by kind of place, and a section that needs the person, open themselves.
@@ -52,6 +53,15 @@ describe('the first section by kind of place', () => {
     expect(sectionsOf('repository')).toEqual(['workflow', 'roles', 'sessions']);
     expect(sectionsOf('machine')[0]).toBe('roles');
   });
+
+  // SETUPUX1m: this machine alone draws All roles beside its Roles, and its fold says what is behind it from no read.
+  it("gives this machine All roles after its Roles, and no other place", () => {
+    expect(sectionsOf('machine')).toEqual(['roles', 'allRoles']);
+    expect(sectionsOf('workspace')).not.toContain('allRoles');
+    expect(isPlaceSection('allRoles')).toBe(true);
+    expect(foldedLines(ENGINE, 'machine', t, 'en').allRoles).toBe('Every role once, by where it is placed · as a list or a diagram');
+    expect(foldedLines(ENGINE, 'machine', tz, 'zh').allRoles).toBe('每个角色一次，按所在位置 · 列表或角色图');
+  });
 });
 
 describe('a folded value names its source, from PLACES alone', () => {
@@ -101,6 +111,62 @@ describe('the need that opens a section', () => {
   it('opens nothing where nothing is held', () => {
     expect(needOpening(ENGINE)).toBeNull();
     expect(needOpening({ ...ENGINE, needs: [{ code: 'no-checkout' }] })).toBeNull();
+  });
+
+  // SETUPUX1o: a landing rule that reads as none opens Workflow at its Landing fold.
+  it('opens Workflow at Landing on a landing that could not be read, after a held start', () => {
+    const unread: PlaceRow = { ...ENGINE, needs: [{ code: 'landing-unread', detail: 'no form' }] };
+    expect(needOpening(unread)).toEqual({ section: 'workflow', row: 'landing' });
+
+    const both: PlaceRow = { ...unread, works: [work('chat', { held: 'no role' })] };
+    expect(needOpening(both)).toEqual({ section: 'roles', row: 'chat' });
+  });
+});
+
+// SETUPUX1o: the route the person chose to read, and the step whose cell shows, are held above the mounts for each place.
+describe('the route and step a place shows', () => {
+  const held = () => renderHook(() => usePlaceShell());
+
+  it('are the default work and no step until chosen, and are kept for each place apart', () => {
+    const { result } = held();
+    expect(result.current.viewOf('p1')).toEqual({ route: 'default', step: null });
+
+    act(() => result.current.choose('p1', { route: 'kind:docs' }));
+    act(() => result.current.choose('p1', { step: 'landing' }));
+    expect(result.current.viewOf('p1')).toEqual({ route: 'kind:docs', step: 'landing' });
+    expect(result.current.viewOf('p2')).toEqual({ route: 'default', step: null });
+  });
+
+  it('forget the step when another route is chosen, whose steps are its own', () => {
+    const { result } = held();
+    act(() => result.current.choose('p1', { route: 'landed', step: 'review' }));
+    act(() => result.current.choose('p1', { route: 'default' }));
+    expect(result.current.viewOf('p1')).toEqual({ route: 'default', step: null });
+  });
+});
+
+// FLOWCHART2g: a draft card's door asks a place's Workflow editor to open on a draft, once, for that place alone.
+describe('the editor a door asked a place to open', () => {
+  const held = () => renderHook(() => usePlaceShell());
+  const edit = { draft: 'g1-0123456789abcdef', workflow: 'release', base: 2 };
+
+  it('is the draft the door named, held until the editor has opened, and for that place alone', () => {
+    const { result } = held();
+    expect(result.current.editOf('p1')).toBeNull();
+
+    act(() => result.current.arrive('p1', { section: 'workflow', edit }));
+    expect(result.current.editOf('p1')).toEqual(edit);
+    expect(result.current.editOf('p2')).toBeNull();
+    expect(result.current.isOpen('p1', 'workflow', false)).toBe(true);
+
+    act(() => result.current.editOpened('p1'));
+    expect(result.current.editOf('p1')).toBeNull();
+  });
+
+  it('is not asked by a door that names none', () => {
+    const { result } = held();
+    act(() => result.current.arrive('p1', { section: 'workflow', row: 'defaults' }));
+    expect(result.current.editOf('p1')).toBeNull();
   });
 });
 
