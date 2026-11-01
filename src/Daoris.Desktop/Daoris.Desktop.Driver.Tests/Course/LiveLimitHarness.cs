@@ -108,7 +108,7 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
 
     /// <summary>
     /// The killed shell's wait for its door to say it wrote (<see cref="ChatHandOver.WireWait"/>): a shell stopped at a boundary of the door's
-    /// write never says it, so once let go it waited the product's fifteen seconds before its move ended.
+    /// write never says it, so once let go it waits the whole bound before its move ends.
     /// </summary>
     private static readonly TimeSpan Wire = TimeSpan.FromSeconds(1);
 
@@ -432,8 +432,8 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
     /// <summary>
     /// Waits until every coming-up shell this case made has nothing in flight (<see cref="ChatRunner.InFlight"/>: no start, no go-on, no turn
     /// taking or opening) and no message queued, with nothing more heard and no record or move changed, for <see cref="StillPolls"/> polls in
-    /// a row: what a come-up began has landed, so a second delivery would have been heard and nothing is left to make one. Bounded by
-    /// <see cref="Poll.Patience"/>, where a fixed second stood, which a start on a loaded machine could outlast.
+    /// a row: what a come-up began has landed, so a second delivery would have been heard and nothing is left to make one, however long a
+    /// loaded machine takes to start it. Bounded by <see cref="Poll.Patience"/>.
     /// </summary>
     public async Task QuietAsync()
     {

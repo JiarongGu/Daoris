@@ -307,8 +307,8 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
 
     /// <summary>
     /// How many of the coming-up loop's looks a quiet time is. A second delivery, or anything else a loop would do again, is begun
-    /// by a look, as a start it reserves or a record it moves, so a few looks of nothing with no start reserved are the claim; eight seconds of
-    /// the clock were eight looks on a quiet machine and fewer on a loaded one.
+    /// by a look, as a start it reserves or a record it moves, so a few looks of nothing with no start reserved are the claim. Counted in looks,
+    /// not seconds, since a loaded machine looks less often.
     /// </summary>
     public const int QuietLooks = 3;
 
