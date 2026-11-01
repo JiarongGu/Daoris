@@ -1,5 +1,7 @@
+import { fingerprintOf } from '../draftFingerprint';
 import { MERGE_GRAPH } from '../graphFixtures';
 import type { EditorRole, PaletteKind, WorkflowListAnswer, WorkflowPaletteAnswer, WorkflowSaveAnswer } from './answers';
+import { draftOf, graphOf } from './graphDraft';
 
 // The step editor's answers as the driver gives them (WORKFLOWEDIT1b), for its page tests and its stories: a palette of every kind the
 // shipped workflows hold, each with the driver's own authority, and the Local release plugin's three steps; the defaults listed with their
@@ -142,6 +144,9 @@ export const REFUSED = answer({
     { code: 'a-rule-newer-than-this-page', wire: null, node: null, words: 'a rule this page has no words for refuses `publish`.' },
   ],
 });
+
+/** The fingerprint the editor holds for a draft opened on `graph`: what a judgement of it is keyed by (`judgedOf`). */
+export const judgedFor = (graph: unknown): string => fingerprintOf(graphOf(draftOf(graph)));
 
 /** A plan appended to a saved workflow chosen in two places. */
 export const APPEND = answer({

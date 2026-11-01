@@ -49,6 +49,8 @@ export type ChartStep = {
   terminal?: 'none' | 'finished';
   /** The declared holds, folded to one node or opened (the first member carrying the press that folds them again). */
   group?: { count: number; open: boolean; members: string[] };
+  /** What the driver's judgement refused at this step, in the reader's words (FLOWCHART2c): drawn as words, never a border alone. */
+  refused?: string[];
 };
 
 /** A node of the chart: `Flow`'s node, and what the workflow's components read of it. A node of the canvas's own (a fold) carries none. */

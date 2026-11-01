@@ -26,6 +26,7 @@ export function StepNode({ context, step, edit }: { context: NodeContext; step: 
       context={context}
       data={{ 'data-variant': step.variant }}
       {...(edit ? { press: () => edit.onSelect(node.id), selected: edit.selected === node.id } : {})}
+      refused={step.refused ?? []}
     >
       {(ids) => (
         <>
@@ -40,6 +41,11 @@ export function StepNode({ context, step, edit }: { context: NodeContext; step: 
             ? <div className="mt-1 min-w-0 text-small text-ink-soft">{node.who}</div>
             : node.actor && <p className="m-0 mt-1 text-small text-ink-soft [overflow-wrap:anywhere]">{node.actor}</p>}
           {node.lines && <div className="mt-1 min-w-0 text-small text-ink-soft">{node.lines}</div>}
+          {step.refused?.map((words, at) => (
+            <p key={at} data-flow-refusal="" className="m-0 mt-1 min-w-0 text-small text-ink-danger [overflow-wrap:anywhere]">
+              <span aria-hidden>⚠ </span>{words}
+            </p>
+          ))}
           {step.group?.open && <div className="mt-1.5"><HoldsPress count={step.group.count} open onPress={node.open} /></div>}
           {node.mark && (
             <p data-flow-mark className="m-0 mt-1 min-w-0 text-small text-ink-soft [overflow-wrap:anywhere]">

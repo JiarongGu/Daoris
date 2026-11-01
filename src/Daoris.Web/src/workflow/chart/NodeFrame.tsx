@@ -15,7 +15,7 @@ export type FrameIds = { title: string; state: string };
 const onControl = (event: MouseEvent) => (event.target as HTMLElement).closest('button, a, input, select, textarea') !== null;
 
 /** A node's frame: `box` for a step, `pill` for a terminal. */
-export function NodeFrame({ context, shape = 'box', data, press, selected = false, children }: {
+export function NodeFrame({ context, shape = 'box', data, press, selected = false, refused = [], children }: {
   context: NodeContext;
   shape?: 'box' | 'pill';
   /** Attributes of the component, such as its variant. */
@@ -23,6 +23,8 @@ export function NodeFrame({ context, shape = 'box', data, press, selected = fals
   /** The editor's press on the node, its controls apart. */
   press?: () => void;
   selected?: boolean;
+  /** What the judgement refused here: the border takes declined's hue, and each refusal is said to a reader (FLOWCHART2c). */
+  refused?: readonly string[];
   children: (ids: FrameIds) => ReactNode;
 }) {
   const { t } = useTranslation();
@@ -33,6 +35,7 @@ export function NodeFrame({ context, shape = 'box', data, press, selected = fals
   const faint = node.reached === false || node.faint === true;
   const said = [
     description,
+    ...refused.map((words) => t('workflow.edit.chart.refusedStep', { words })),
     selected ? t('workflow.edit.chart.selected') : '',
     picking === undefined ? '' : t(picking ? 'workflow.edit.pick.can' : 'workflow.edit.pick.cannot'),
   ].filter(Boolean).join(' ');
@@ -42,6 +45,7 @@ export function NodeFrame({ context, shape = 'box', data, press, selected = fals
       data-flow-node={node.id}
       {...data}
       data-selected={selected ? 'true' : undefined}
+      data-refused={refused.length > 0 ? 'true' : undefined}
       data-picking={picking === undefined ? undefined : String(picking)}
       tabIndex={stop ? 0 : -1}
       aria-current={node.current ? 'step' : undefined}
@@ -52,7 +56,7 @@ export function NodeFrame({ context, shape = 'box', data, press, selected = fals
       className={cn(
         'min-w-0 bg-raised',
         shape === 'pill' ? 'rounded-full px-3 py-1.5' : 'rounded-card px-3 py-2',
-        node.current ? 'border-2 border-ink-soft' : faint ? 'border border-dashed border-line-strong' : 'border border-line',
+        refused.length > 0 ? 'border-2 border-st-declined' : node.current ? 'border-2 border-ink-soft' : faint ? 'border border-dashed border-line-strong' : 'border border-line',
         press && 'cursor-pointer',
         selected && 'outline outline-2 outline-offset-2 outline-accent',
         picking === true && !selected && 'outline outline-2 outline-offset-2 outline-dashed outline-accent',
