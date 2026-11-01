@@ -85,10 +85,12 @@ function Routes({ routes }: { routes: Route[] }) {
   return (
     <ul aria-label={t('workflow.run.routes')} className="m-0 grid list-none gap-0.5 p-0 text-meta text-ink-soft">
       {routes.map((route, index) => (
-        <li key={route.outcome} className="m-0 flex min-w-0 flex-wrap items-baseline gap-x-1.5">
+        <li key={route.outcome} className="m-0 grid min-w-0 grid-cols-[1.25ch_minmax(0,1fr)] gap-x-1.5">
           <span aria-hidden className="font-mono text-ink-faint">{index === routes.length - 1 ? '└' : '├'}</span>
-          <span className="min-w-0"><Inline text={t('workflow.run.routeTo', { outcome: route.outcome, to: route.to })} /></span>
-          {route.notTaken && <span className="text-ink-faint">{t('workflow.run.notTaken.state')}</span>}
+          <span className="min-w-0">
+            <Inline text={t('workflow.run.routeTo', { outcome: route.outcome, to: route.to })} />
+            {route.notTaken && <span className="ml-1.5 text-ink-faint">{t('workflow.run.notTaken.state')}</span>}
+          </span>
         </li>
       ))}
     </ul>

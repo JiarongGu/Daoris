@@ -15,6 +15,7 @@ import * as landing from '../src/projects/git/LandingFlow.stories';
 import * as head from '../src/work/AttendedSession.head.stories';
 import * as workflow from '../src/workflow/WorkflowFlow.stories';
 import * as graph from '../src/workflow/GraphFlow.stories';
+import * as runView from '../src/workflow/WorkflowRunFlow.stories';
 import * as zoom from '../src/work/frame/ZoomReadout.stories';
 import * as waitPanel from '../src/work/waits/WaitPanel.stories';
 import * as roles from '../src/agents/roles/RoleDiagram.stories';
@@ -40,6 +41,8 @@ const books: Record<string, Record<string, ComponentType>> = {
   workflow: composeStories(workflow) as unknown as Record<string, ComponentType>,
   // One drawing of a workflow graph (SETUPUX1n): the release graph down at 80 and 39rem, the rail at 25rem.
   graph: composeStories(graph) as unknown as Record<string, ComponentType>,
+  // A run's view (SETUPUX1u): a release run of each outcome and a review waiting on you, at 300 px, 25rem and 45% of the window.
+  runview: composeStories(runView) as unknown as Record<string, ComponentType>,
   // Settings' rows on their tracks (UIFIT1): the atoms' story, This Daoris, Driver and AI features whole, and a workspace's Setup.
   ui: composeStories(ui) as unknown as Record<string, ComponentType>,
   wiring: composeStories(wiring) as unknown as Record<string, ComponentType>,

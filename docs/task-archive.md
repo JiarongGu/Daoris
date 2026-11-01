@@ -22691,3 +22691,9 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 > **NOTEBREAK1 — a decision's note never lands glued** (tools). A union merge of `docs/decisions/*.md` coalesced the blank line two branches each added before their `**Note, ` line, and `doc-duplicates` failed the next CI. Proof: `tools/index-hook.test.mjs`.
 
 **Outcome** 2026-11-02: `tools/index-hook.mjs` separates a glued note in every staged decision file before it regenerates the index (pre-commit, which a conflicted merge finishes through), and a `notes` merge driver (`--merge-notes`, set by `--install`, named for `docs/decisions/*.md` in `.gitattributes`) does union and the separation inside the merge itself, since a clean merge runs no pre-commit and git ignores what a `pre-merge-commit` hook stages; no commit is remade. Detail: the FIX-LOG entry of 2026-11-02.
+
+## SETUPUX1u — a run's view (2026-11-02, D221)
+
+> **SETUPUX1u — a run's view** (web; row u of the set-up design). §2.3's run view through the one drawing: its head naming the bound version and how it was chosen, one sentence of where the work stands, a selected step's record and its owner's controls, a decision's returned outcome with *route not taken* told apart, *Finished* only from the driver's record. Proof: a release run of each outcome; stories at 300 px, 45% of the window and 25rem; page tests; the measured stories.
+
+**Outcome** 2026-11-02: the run view opens the step the run stands at and shows every other step as its title and state, a decision's outcome and routes are said, and the drawing finishes after the route taken. Detail: D221's SETUPUX1u note; `WorkflowRunView.test.tsx`, `graphFlow.test.ts`, the measured `runview/*` stories. The installed check (changes sent back) stays with row x.
