@@ -100,6 +100,9 @@ const ORGANISMS = new Set<string>([
   './agents/setup/PlaceSetUpPanel.tsx',
   // A repository's driving for its page head (SETUPUX1h): the hold and the ⋯'s drive and trees, so the page's molecule holds none.
   './agents/setup/PlaceDriving.tsx',
+  // This machine's All roles and its notes (SETUPUX1m): the Roles mode's read and the found changes' answer, so the cards below hold none.
+  './agents/roles/AllRoles.tsx',
+  './agents/setup/MachineNotes.tsx',
   './projects/setup/useRepositorySetup.ts',
   // A repository's Workflow as its molecules take it (AGENTSPLACE1h): its Current, the acceptance and the step editor's bridge, held by the
   // Repositories view and a place's Sessions, so the Workflow tab and the place's Workflow below hold none.

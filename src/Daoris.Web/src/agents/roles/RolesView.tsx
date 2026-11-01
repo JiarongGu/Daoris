@@ -124,8 +124,10 @@ export function useRoleEditing(notify: Notify) {
  * `STAFFING_FOUND_ANSWER`) and the driver judges; a refusal is its sentence under the press. It is mounted only while the mode is in
  * front, so opening the place asks the driver nothing of roles (D150 point 5).
  */
-export function useRolesMode({ notify, section = 'working', doors = {}, page: given }: {
+export function useRolesMode({ notify, section = 'working', doors = {}, page: given, placed = false }: {
   notify: Notify; section?: RoleSection; doors?: RoleOpeners; page?: RolesPage;
+  /** Drawn in a section of This machine's page (SETUPUX1m), which names it: the catalogue's card has no title of its own. */
+  placed?: boolean;
 }) {
   const { t } = useTranslation();
   const own = useRolesPage();
@@ -228,7 +230,7 @@ export function useRolesMode({ notify, section = 'working', doors = {}, page: gi
         if (next && !next.isNew) page.onSelected(roleId(next.id));
       }}
       only={only} onDiagram={(role) => toDiagram(roleId(role))}
-      offers={offers} scope={page.scope} onScope={page.onScope}
+      offers={offers} scope={page.scope} onScope={page.onScope} search={page.search} onSearch={page.onSearch} bare={placed && only === undefined}
       onOpenPlace={(kind, id) => {
         // The selection and the scope stay on the page; a repository role opens its own tab, a workspace role its Setup.
         if (kind === 'repository') doors.repository?.(id, 'setup');
@@ -294,6 +296,9 @@ export type RolesPage = {
   /** Which of All roles' rows are shown, by where the role is placed. */
   scope: RoleScope;
   onScope: (scope: RoleScope) => void;
+  /** The words All roles' rows are narrowed by. */
+  search: string;
+  onSearch: (search: string) => void;
 };
 
 /** The person's choice of the diagram over the list, remembered on this machine. */
@@ -305,6 +310,7 @@ const VIEW_KEY = 'daoris.roles.view';
  */
 export function useRolesPage(): RolesPage {
   const [scope, onScope] = useState<RoleScope>('all');
+  const [search, onSearch] = useState('');
   const [view, setView] = useState<RolesView>(() => (stored(VIEW_KEY) === 'diagram' ? 'diagram' : 'list'));
   const [selected, onSelected] = useState<string | null>(null);
   const [filters, onFilters] = useState<StructureFilters>(NO_FILTERS);
@@ -313,7 +319,7 @@ export function useRolesPage(): RolesPage {
     store(VIEW_KEY, next === 'diagram' ? 'diagram' : null);
     setView(next);
   };
-  return { view, onView, selected, onSelected, filters, onFilters, opened, onOpened, scope, onScope };
+  return { view, onView, selected, onSelected, filters, onFilters, opened, onOpened, scope, onScope, search, onSearch };
 }
 
 /**

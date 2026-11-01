@@ -1,9 +1,10 @@
 import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, CheckField, Inline } from '../../design/ui';
+import { Button } from '../../design/ui';
 import type { IntegrationRequest } from '../../settings/repository/IntegrationDeclaration';
 import { type Answered, InlineConfirm, Refused } from '../../work/InlineConfirm';
 import type { WorkflowIntegration, WorkflowLanded } from '../current';
+import { Acceptances } from './Acceptances';
 
 const short = (id: string) => id.slice(0, 7);
 
@@ -59,6 +60,26 @@ function integrationStanding(t: ReturnType<typeof useTranslation>['t'], integrat
   return { waits: false, blob: null, said: integration.problem ?? t('workflow.place.gates.integration.unread') };
 }
 
+/** Whether either declaration waits for the person: never accepted, or changed since. */
+export const gatesOwed = (landed: WorkflowLanded | null, integration: WorkflowIntegration | null): boolean =>
+  (landed !== null && landed.workflow !== 'current' && (landed.state === 'changed' || landed.state === 'unaccepted'))
+  || (integration !== null && (integration.state === 'changed' || integration.state === 'unaccepted'));
+
+/**
+ * Gates folded to one line: that something waits for the person, where the accepted declarations stand, that a tip could not be read, or
+ * that nothing here asks for an acceptance.
+ */
+export function gatesSummary(t: ReturnType<typeof useTranslation>['t'], landed: WorkflowLanded | null, integration: WorkflowIntegration | null): string {
+  if (gatesOwed(landed, integration)) return t('workflow.place.gates.summary.waits');
+  const verifying = landed !== null && landed.workflow !== 'current' ? landed : null;
+  const blobs = [verifying?.state === 'accepted' ? verifying.gates : null, integration?.state === 'accepted' ? integration.gates : null]
+    .filter((each): each is string => each !== null && each !== 'none');
+  if (blobs.length > 0) return t('workflow.place.gates.summary.accepted', { blob: short(blobs[0]!) });
+  if (verifying?.state === 'accepted' || integration?.state === 'accepted') return t('workflow.place.gates.summary.acceptedNone');
+  if (verifying || integration) return t('workflow.place.gates.summary.unread');
+  return t('workflow.place.gates.summary.none');
+}
+
 /** One acceptance pressed, awaited: its answer is its record's own, never another purpose's. */
 const pressed = (press: (answered: Answered) => void) =>
   new Promise<string | null>((resolve) => press({ done: () => resolve(null), refused: (sentence) => resolve(sentence) }));
@@ -76,10 +97,12 @@ const pressed = (press: (answered: Answered) => void) =>
  *
  * A molecule: the standings arrive as props and each acceptance goes out as its own press.
  */
-export function PlaceGates({ landed, integration, busy = false, onAcceptLanded, onAcceptIntegration }: {
+export function PlaceGates({ landed, integration, busy = false, bare = false, onAcceptLanded, onAcceptIntegration }: {
   landed: WorkflowLanded | null;
   integration: WorkflowIntegration | null;
   busy?: boolean;
+  /** Drawn inside a fold that carries the name *Gates*: no heading of its own. */
+  bare?: boolean;
   /** The landed route's acceptance at the line's tip, by its blob (`WORKFLOW_LANDED`); none, and the choice is not offered. */
   onAcceptLanded?: (answered: Answered) => void;
   /** The integration declaration's acceptance or withdrawal (`INTEGRATION_GATES`); none, and the choice is not offered. */
@@ -87,7 +110,8 @@ export function PlaceGates({ landed, integration, busy = false, onAcceptLanded, 
 }) {
   const { t } = useTranslation();
   const headId = useId();
-  const [chosen, setChosen] = useState<Record<Purpose, boolean>>({ landed: true, integration: true });
+  // A tick is the key of what it was made at (purpose, line and blob), and starts empty.
+  const [ticks, setTicks] = useState<Partial<Record<Purpose, string>>>({});
   const [asking, setAsking] = useState(false);
   const [withdrawn, setWithdrawn] = useState<string | null>(null);
 
@@ -109,11 +133,10 @@ export function PlaceGates({ landed, integration, busy = false, onAcceptLanded, 
     });
   }
 
-  // The declaration is shown once: a text two purposes share is drawn a single time, under the tip it was read at.
-  const shown = rows.filter((row) => row.standing.waits && row.text);
-  const texts = [...new Map(shown.map((row) => [row.text!, row.tip])).entries()];
+  const keyOf = (row: (typeof rows)[number]) => `${row.purpose}|${row.tip?.line ?? ''}|${row.standing.blob ?? ''}`;
   const offered = rows.filter((row) => row.standing.waits && row.press);
-  const picked = offered.filter((row) => chosen[row.purpose]);
+  const picked = offered.filter((row) => ticks[row.purpose] === keyOf(row));
+  const cleared = offered.filter((row) => ticks[row.purpose] !== undefined && ticks[row.purpose] !== keyOf(row)).map((row) => t('workflow.place.gates.cleared', { label: row.label }));
   const kept = integration !== null && integration.gates !== null && (integration.state === 'accepted' || integration.state === 'changed');
 
   const confirm = async (answered: Answered) => {
@@ -124,6 +147,7 @@ export function PlaceGates({ landed, integration, busy = false, onAcceptLanded, 
     }
     if (refusals.length === 0) {
       answered.done();
+      setTicks({});
       setAsking(false);
     } else answered.refused(refusals.join(' '));
   };
@@ -135,41 +159,35 @@ export function PlaceGates({ landed, integration, busy = false, onAcceptLanded, 
   };
 
   return (
-    <section aria-labelledby={headId} className="grid min-w-0 gap-2">
-      <h3 id={headId} className="m-0 text-body font-semibold text-ink">{t('workflow.place.gates.title')}</h3>
+    <section aria-labelledby={bare ? undefined : headId} className="grid min-w-0 gap-2">
+      {!bare && <h3 id={headId} className="m-0 text-body font-semibold text-ink">{t('workflow.place.gates.title')}</h3>}
       {rows.length === 0
         ? <p className="m-0 text-small text-ink-soft">{t('workflow.place.gates.nothing')}</p>
         : <p className="m-0 text-small text-ink-soft">{t('workflow.place.gates.body')}</p>}
-      {texts.map(([text, tip]) => (
-        <pre
-          key={text}
-          aria-label={t('workflow.place.gates.declaration', at(tip) ?? { branch: '', commit: '' })}
-          className="m-0 max-h-48 overflow-auto rounded-control border border-line bg-raised px-2 py-1 font-mono text-meta text-ink"
-        >
-          {text}
-        </pre>
-      ))}
-      <ul className="m-0 grid list-none gap-2 p-0">
-        {rows.map((row) => {
-          const offer = row.standing.waits && row.press;
-          return (
-            <li key={row.purpose} data-purpose={row.purpose} className="grid min-w-0 gap-0.5 rounded-control border border-line px-2.5 py-1.5">
-              {offer
-                ? <CheckField checked={chosen[row.purpose]} onChange={(on) => setChosen((was) => ({ ...was, [row.purpose]: on }))} label={row.label} disabled={busy || asking} className="whitespace-normal font-medium text-ink" />
-                : <span className="text-body font-medium text-ink">{row.label}</span>}
-              <span className="text-small text-ink-soft"><Inline text={row.why} /></span>
-              <span className="text-small text-ink"><Inline text={row.standing.said} /></span>
-              {row.purpose === 'integration' && kept && onAcceptIntegration && (
-                <span className="flex flex-wrap gap-1.5 pt-0.5">
-                  <Button variant="ghost" className="min-h-0 border border-line px-2 py-0.5 text-small" disabled={busy} onClick={withdraw}>
-                    {t('workflow.place.gates.withdraw')}
-                  </Button>
-                </span>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+      <Acceptances
+        rows={rows.map((row) => ({
+          id: row.purpose,
+          label: row.label,
+          why: row.why,
+          said: row.standing.said,
+          offered: Boolean(row.standing.waits && row.press),
+          text: row.standing.waits ? row.text : null,
+          textLabel: t('workflow.place.gates.declaration', at(row.tip) ?? { branch: '', commit: '' }),
+          extra: row.purpose === 'integration' && kept && onAcceptIntegration
+            ? (
+              <span className="flex flex-wrap gap-1.5 pt-0.5">
+                <Button variant="ghost" className="min-h-0 border border-line px-2 py-0.5 text-small" disabled={busy} onClick={withdraw}>
+                  {t('workflow.place.gates.withdraw')}
+                </Button>
+              </span>
+            )
+            : undefined,
+        }))}
+        ticked={picked.map((row) => row.purpose)}
+        onTick={(purpose, on) => setTicks((was) => ({ ...was, [purpose]: on ? keyOf(rows.find((row) => row.purpose === purpose)!) : undefined }))}
+        disabled={busy || asking}
+        cleared={cleared}
+      />
       {withdrawn && <Refused sentence={withdrawn} />}
       {offered.length > 0 && !asking && (
         <div className="flex flex-wrap items-center gap-1.5">

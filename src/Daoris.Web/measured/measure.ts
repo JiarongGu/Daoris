@@ -20,6 +20,10 @@ export type FlowMeasure = {
   collisions: string[];
   overlaps: string[];
   crossings: number;
+  /** The paths a decision's outcome sends from its port (FLOWCHART2a), counted. */
+  ported: number;
+  /** A port's path that does not leave the bottom of its port's box (FLOWCHART2a). */
+  portMisses: string[];
   /** How many times the flow drew its edges (trap 14). */
   drawn: number;
 };
@@ -64,8 +68,23 @@ export function measureFlows(): FlowMeasure[] {
       const last = element.getPointAtLength(total);
       const end = new DOMPoint(last.x, last.y).matrixTransform(matrix);
       points.push({ x: end.x, y: end.y });
-      return { id: element.dataset.flowEdge!, from: element.dataset.from!, to: element.dataset.to!, points };
+      return { id: element.dataset.flowEdge!, from: element.dataset.from!, to: element.dataset.to!, port: element.dataset.port ?? null, points };
     });
+    const portBoxes = new Map([...pane.querySelectorAll<HTMLElement>('[data-flow-port]')].map((element) => [element.dataset.flowPort!, boxOf(element)] as const));
+
+    // Each path of a port starts at the bottom of its own port's box, within its width: it leaves the port, not a spot along the node.
+    const portMisses: string[] = [];
+    let ported = 0;
+    for (const path of paths) {
+      if (path.port === null) continue;
+      const box = portBoxes.get(`${path.from}:${path.port}`);
+      if (!box) continue;
+      ported += 1;
+      const first = path.points[0]!;
+      if (first.x < box.x - 0.5 || first.x > box.x + box.w + 0.5 || Math.abs(first.y - (box.y + box.h)) > 1.5) {
+        portMisses.push(`${path.id} starts at ${Math.round(first.x)},${Math.round(first.y)}, outside the bottom of the port ${path.from}:${path.port}`);
+      }
+    }
 
     const collisions: string[] = [];
     for (const path of paths) {
@@ -118,7 +137,7 @@ export function measureFlows(): FlowMeasure[] {
     }
 
     results.push({
-      frame, placement, nodes: nodes.length, paths: paths.length, labels: labels.length, collisions, overlaps, crossings,
+      frame, placement, nodes: nodes.length, paths: paths.length, labels: labels.length, collisions, overlaps, crossings, ported, portMisses,
       drawn: Number(pane.querySelector('[data-drawn]')?.getAttribute('data-drawn') ?? 0),
     });
   }
