@@ -30,7 +30,7 @@ export const PALETTE: WorkflowPaletteAnswer = {
   ],
   plugins: [{ plugin: 'local-release', steps: [
     { kind: 'local-release/find', version: 1, reach: 'performed', rejectable: false, skippable: true, inputs: {}, outputs: { release: RELEASE },
-      evidence: RECEIPT, outcomes: ['release', 'none'], leaves: ['after', 'data', 'trigger', 'failed', 'when', 'back'] },
+      evidence: RECEIPT, outcomes: ['release', 'none'], outputsOn: { release: ['release'] }, leaves: ['after', 'data', 'trigger', 'failed', 'when', 'back'] },
     { kind: 'local-release/release', version: 1, reach: 'performed', rejectable: false, skippable: true, inputs: { release: RELEASE },
       outputs: { release: RELEASE }, evidence: RECEIPT, outcomes: [], leaves: ['after', 'data', 'trigger', 'failed', 'back'] },
     { kind: 'local-release/publish', version: 1, reach: 'performed', rejectable: false, skippable: true, inputs: { release: RELEASE },

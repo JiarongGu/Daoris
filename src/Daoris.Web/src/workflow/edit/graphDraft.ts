@@ -7,8 +7,8 @@ import type { OptionField, WorkflowPaletteAnswer } from './answers';
 
 /** A step the palette offers, a built-in kind's or a plugin's declared step, in one shape. */
 export type StepChoice = {
-  kind: string; version: number; reach: string; plugin: string | null; outcomes: string[]; inputs: Record<string, string>;
-  outputs: Record<string, string>; evidence: string | null; rejectable: boolean; skippable: boolean; leaves: string[];
+  kind: string; version: number; reach: string; plugin: string | null; outcomes: string[]; outputsOn: Record<string, string[]>;
+  inputs: Record<string, string>; outputs: Record<string, string>; evidence: string | null; rejectable: boolean; skippable: boolean; leaves: string[];
   options: OptionField[]; roleTakes: string[]; mayEnd: boolean;
 };
 
@@ -52,11 +52,12 @@ export const emptyDraft = (): GraphDraft => ({ nodes: [], wires: [], end: '', re
 export function stepChoices(palette: WorkflowPaletteAnswer): StepChoice[] {
   return [
     ...palette.kinds.map((kind): StepChoice => ({
-      kind: kind.kind, version: 1, reach: kind.reach, plugin: null, outcomes: [], inputs: {}, outputs: {}, evidence: null, rejectable: false,
+      kind: kind.kind, version: 1, reach: kind.reach, plugin: null, outcomes: [], outputsOn: {}, inputs: {}, outputs: {}, evidence: null, rejectable: false,
       skippable: true, leaves: kind.leaves ?? [], options: kind.options, roleTakes: kind.roleTakes ?? [], mayEnd: kind.mayEnd,
     })),
     ...palette.plugins.flatMap(({ plugin, steps }) => steps.map((step): StepChoice => ({
-      kind: step.kind, version: step.version ?? 1, reach: step.reach, plugin, outcomes: step.outcomes ?? [], inputs: step.inputs, outputs: step.outputs,
+      kind: step.kind, version: step.version ?? 1, reach: step.reach, plugin, outcomes: step.outcomes ?? [], outputsOn: step.outputsOn ?? {},
+      inputs: step.inputs, outputs: step.outputs,
       evidence: step.evidence ?? null, rejectable: step.rejectable, skippable: step.skippable, leaves: step.leaves ?? [], options: [], roleTakes: [],
       mayEnd: true,
     }))),
@@ -136,7 +137,8 @@ function wireId(draft: GraphDraft): string {
 }
 
 /**
- * A step added from the palette, its declaration copied as the palette says it (a plugin's outcomes, inputs, outputs and evidence), and
+ * A step added from the palette, its declaration copied as the palette says it (a plugin's outcomes, the outcomes that carry an output,
+ * inputs, outputs and evidence), and
  * the draft's end where none is set yet and the kind may end a workflow.
  */
 export function addStep(draft: GraphDraft, choice: StepChoice): { draft: GraphDraft; id: string } {
@@ -144,6 +146,7 @@ export function addStep(draft: GraphDraft, choice: StepChoice): { draft: GraphDr
   const node: Record<string, unknown> = {
     id, kind: choice.kind, version: choice.version, reach: choice.reach,
     ...(choice.outcomes.length > 0 ? { outcomes: [...choice.outcomes] } : {}),
+    ...(Object.keys(choice.outputsOn).length > 0 ? { outputsOn: Object.fromEntries(Object.entries(choice.outputsOn).map(([output, on]) => [output, [...on]])) } : {}),
     ...(Object.keys(choice.inputs).length > 0 ? { inputs: { ...choice.inputs } } : {}),
     ...(Object.keys(choice.outputs).length > 0 ? { outputs: { ...choice.outputs } } : {}),
     ...(choice.evidence ? { evidence: choice.evidence } : {}),

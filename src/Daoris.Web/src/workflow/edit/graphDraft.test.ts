@@ -21,7 +21,7 @@ const PALETTE: WorkflowPaletteAnswer = {
   plugins: [{ plugin: 'local-release', steps: [
     { kind: 'local-release/find', version: 1, reach: 'performed', rejectable: false, skippable: true, inputs: {},
       outputs: { release: 'local-release/release@1' }, evidence: 'local-release/receipt@1', outcomes: ['release', 'none'],
-      leaves: ['after', 'data', 'trigger', 'failed', 'when', 'back'] },
+      outputsOn: { release: ['release'] }, leaves: ['after', 'data', 'trigger', 'failed', 'when', 'back'] },
     { kind: 'local-release/release', version: 1, reach: 'performed', rejectable: false, skippable: true, inputs: { release: 'local-release/release@1' },
       outputs: { release: 'local-release/release@1' }, evidence: 'local-release/receipt@1', outcomes: [], leaves: ['after', 'data', 'trigger', 'failed', 'back'] },
   ] }],
@@ -64,7 +64,7 @@ describe("the step editor's draft", () => {
 
     const graph = graphOf(draft);
     expect(graph.nodes[1]).toEqual({
-      id: 'find', kind: 'local-release/find', version: 1, reach: 'performed', outcomes: ['release', 'none'],
+      id: 'find', kind: 'local-release/find', version: 1, reach: 'performed', outcomes: ['release', 'none'], outputsOn: { release: ['release'] },
       outputs: { release: 'local-release/release@1' }, evidence: 'local-release/receipt@1',
     });
     expect(graph.wires).toEqual([
@@ -75,6 +75,20 @@ describe("the step editor's draft", () => {
     ]);
     // A way back goes into an entry, which stays one.
     expect(entriesOf(draft)).toEqual(['review']);
+  });
+
+  it("keeps an output a plugin's step carries on some outcomes alone on those outcomes (DECIDE1d), a copy the palette is not shared through", () => {
+    const { draft, id } = addStep(emptyDraft(), choice('local-release/find'));
+    const carried = (graphOf(draft).nodes[0] as { outputsOn: Record<string, string[]> }).outputsOn;
+
+    expect(carried).toEqual({ release: ['release'] });
+    carried.release.push('none');
+    expect(choice('local-release/find').outputsOn).toEqual({ release: ['release'] });
+    // A step that names no outputsOn, and a palette from a driver before DECIDE1d, write none: every output stays carried on every reach.
+    expect(graphOf(addStep(emptyDraft(), choice('local-release/release')).draft).nodes[0]).not.toHaveProperty('outputsOn');
+    const older = { ...PALETTE, plugins: [{ plugin: 'local-release', steps: [{ ...PALETTE.plugins[0].steps[0], outputsOn: undefined }] }] };
+    expect(graphOf(addStep(emptyDraft(), stepChoices(older).find((each) => each.kind === 'local-release/find')!).draft).nodes[0]).not.toHaveProperty('outputsOn');
+    expect(id).toBe('find');
   });
 
   it('reads a saved graph back to what it was, the fields it does not draw kept as written', () => {
