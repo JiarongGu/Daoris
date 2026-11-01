@@ -224,6 +224,41 @@ public static class Tools
         return new ToolsRead(path, exists, entries, unknown, git, locations, notes, null);
     }
 
+    /// <summary>
+    /// A setting Daoris's git carries (rule 4), or null to clear it: a key off the allow-list refused, every other key of the file kept.
+    /// Whether the git runs new enough to read it is <see cref="ToolChoices.SetGitAsync"/>'s judgement.
+    /// </summary>
+    /// <exception cref="DriverException">A key off the allow-list, or a file this build cannot read; nothing is written.</exception>
+    public static void SetGit(string home, string key, string? value)
+    {
+        if (GitKeyProblem(key) is { } problem) throw new DriverException($"{problem} — nothing was written.");
+        using var locked = KeepLock.Take(DaorisHome.Entry(home, HomeEntry.Tools));
+        var (path, root, understood) = Writable(home);
+        if (root["git"] is { } held && held is not JsonObject)
+        {
+            throw new DriverException($"{path}'s `git` is not an object, so nothing was written — fix it, or delete the key to start from nothing.");
+        }
+
+        if (root["git"] is not JsonObject git)
+        {
+            if (value is null) return;
+            git = new JsonObject();
+            root["git"] = git;
+        }
+
+        if (value is null)
+        {
+            if (!git.Remove(key)) return;
+            if (git.Count == 0) root.Remove("git");
+        }
+        else
+        {
+            git[key] = value;
+        }
+
+        Keep(path, understood, root);
+    }
+
     /// <summary>A key off git's allow-list, refused on a write (rule 4); null for a key on it.</summary>
     public static string? GitKeyProblem(string key) =>
         GitSettings.Contains(key, StringComparer.Ordinal)
@@ -589,7 +624,8 @@ public static class Tools
     //   while sessions start is the trap the modules' serialized tests already know (§2.4).
     // - An install's app/bin/ beside the home comes first of all (WSSETUP3, D124 §1.3): the doctrine tool's launchers,
     //   so every child finds daoris by its bare name. A home with no install beside it builds what it built before.
-    // GIT_CONFIG_GLOBAL, the other variable §2.4 names, is TOOLS6's: it joins ChildEnvironment with the git file it names.
+    // GIT_CONFIG_GLOBAL, the other variable §2.4 names (TOOLS6), is handed by Hand alone (GitGlobalFile), never in ChildEnvironment:
+    // the terminal's shells take that, and they are the person's own git (the git-auth design §4.5).
 
     /// <summary>The variable a child's <c>PATH</c> is. Windows reads it in any case, and a start's environment there is case-blind.</summary>
     public const string PathVariable = CommandPresence.PathVariable;
@@ -678,6 +714,7 @@ public static class Tools
         ChildGit.Current.Hand(info, home);
         var inherited = info.Environment.TryGetValue(PathVariable, out var path) ? path : null;
         foreach (var (name, value) in ChildEnvironment(read, home, inherited)) info.Environment[name] = value;
+        GitGlobalFile.Hand(info, read, home);
     }
 
     /// <summary>

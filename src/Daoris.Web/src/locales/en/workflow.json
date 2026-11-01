@@ -188,5 +188,7 @@
   "workflow.compose.title": "A workflow of your own",
   "workflow.compose.body": "Compose its steps from one of Daoris's defaults or a version saved here, judged as you go, then save it and use it here.",
   "workflow.compose.open": "Compose steps…",
-  "workflow.compose.twin": "In a terminal: `daoris driver workflow new <id> --from <default>`"
+  "workflow.compose.twin": "In a terminal: `daoris driver workflow new <id> --from <default>`",
+  "workflow.canvas.fit": "Show the whole workflow",
+  "workflow.canvas.moves": "a workflow's drawing: drag or the wheel to move, Ctrl+wheel to zoom"
 }

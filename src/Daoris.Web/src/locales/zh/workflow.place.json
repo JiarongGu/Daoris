@@ -64,6 +64,8 @@
   "workflow.place.change.reading": "正在读取已保存的工作流…",
   "workflow.place.change.close": "关闭",
   "workflow.place.steps.open": "编辑步骤…",
+  "workflow.place.ask.open": "问道衍",
+  "workflow.place.ask.fill": "我在编辑器里打开了 {{place}} 的工作流，想修改它：",
   "workflow.place.steps.title": "它的步骤",
   "workflow.place.steps.body": "在编辑器里编辑某个版本的步骤，边改边检查。保存后，在这里选用这个版本；已在运行的工作沿用它开始时的版本。",
   "workflow.place.folds": "塑造这条工作流的设置",

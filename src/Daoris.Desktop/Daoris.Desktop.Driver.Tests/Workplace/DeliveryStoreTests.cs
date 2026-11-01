@@ -449,14 +449,14 @@ public sealed class DeliveryStoreTests : IDisposable
         using var older = DesktopStore.Open(Db, new DesktopStoreOptions { Writer = 1, Steps = [.. DesktopStore.Steps.Take(DeliveryStore.Since - 1)], Settled = () => StoreSettled.Yes });
 
         Assert.True(older.Newer);
-        Assert.Equal((DesktopStore.Steps.Count, 2), older.Stamp);
+        Assert.Equal((DesktopStore.Steps.Count, DesktopStore.WriterStamp), older.Stamp);
         Assert.Equal(1L, older.Query("SELECT COUNT(*) FROM deliveries", row => row.GetInt64(0))[0]);
         var refused = Assert.Throws<DesktopStoreNewerException>(() => older.Write("moves", write => write.Execute(
             """
             INSERT INTO moves (record_left, executor, how, from_why, from_by, phase, claim_run, claim_generation, decided_at)
             VALUES ('s1', 'conversation', 'brief', 'limit', 'daoris', 'decided', 'run-a', 1, '2026-11-01T00:00:00.0000000+00:00')
             """)));
-        Assert.Equal((2, 1), (refused.Stamped, refused.Own));
+        Assert.Equal((DesktopStore.WriterStamp, 1), (refused.Stamped, refused.Own));
         Assert.Throws<DesktopStoreNewerException>(older.Enter);
         Assert.Equal(0L, older.Query("SELECT COUNT(*) FROM moves", row => row.GetInt64(0))[0]);
         Assert.True(Store("run-a").Delivery(key)!.Unresolved);

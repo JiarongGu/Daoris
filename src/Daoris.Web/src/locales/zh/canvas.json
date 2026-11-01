@@ -1,0 +1,9 @@
+{
+  "canvas.sizing": "缩放（Ctrl+滚轮）",
+  "canvas.size": "缩放：{{percent}}%",
+  "canvas.sizes": "缩放比例",
+  "canvas.zoomIn": "放大",
+  "canvas.zoomOut": "缩小",
+  "canvas.actual": "实际大小",
+  "canvas.toSelection": "缩放到所选"
+}

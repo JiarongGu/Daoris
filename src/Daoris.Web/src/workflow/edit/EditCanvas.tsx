@@ -43,7 +43,7 @@ export function EditCanvas({ flow, selected, edit, list, waiting, onBegin }: {
   if (flow) {
     return (
       <FlowChart label={flow.label} nodes={flow.nodes} edges={flow.edges} entries={flow.entries} sections={flow.sections} track={flow.track}
-        selected={selected} edit={edit} />
+        selected={selected} edit={edit} canvas="edit" />
     );
   }
   const presets = list.presets.filter((preset) => preset.graph && preset.body);
