@@ -142,9 +142,19 @@
 
 **Files.** `src/Daoris.Web/src/workflow/edit/WorkflowEditor.tsx`, `src/Daoris.Web/src/workflow/edit/WorkflowEditor.test.tsx`, `src/Daoris.Web/src/workflow/edit/WorkflowEditor.stories.tsx`, `src/Daoris.Web/src/workflow/edit/graphDraft.ts`, `src/Daoris.Web/src/workflow/edit/graphDraft.test.ts`, `src/Daoris.Web/src/workflow/edit/StepOptions.tsx`, `src/Daoris.Web/src/workflow/WorkflowTab.tsx`, `src/Daoris.Web/src/workflow/WorkflowTab.test.tsx`, `src/Daoris.Web/src/bridge/repositories/workflowEdit.ts`, `src/Daoris.Web/src/locales/en/workflow.edit.json`, `src/Daoris.Web/src/locales/zh/workflow.edit.json`, `src/Daoris.Web/src/locales/en/workflow.json`, `src/Daoris.Web/src/locales/zh/workflow.json`, `src/Daoris.Web/src/locales/glossary.json`, `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/WorkflowOperations.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/WorkflowPalette.cs`, `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/WorkflowEditRoutes.cs`, `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleWorkflowWritesTests.cs`
 
+## DECIDE1d — A declared output is required only on the outcomes that carry it, and the help doors for this wave's acts
+
+**Wave** 4; after DECIDE1c, DEFAULTCONFIG1b, DEFAULTCONFIG1c; opus. Filed at wave 3's merge, from DEFAULTCONFIG1c's handback.
+
+**Contract.** (1) Today `NodeLifecycle.Outputs` (Workflows/Nodes/NodeLifecycle.cs:469) refuses a reach that lacks any declared output (`no-output`), so local-release's `find` saying `none`, which has no release to carry, is refused, and the release default's `none` route can never be taken in production. A declared output becomes required only on the outcomes that carry it: a reach with no outcome, or with an outcome that carries the output, still needs it; a reach with another outcome may leave it out. Choose where that is declared (the node's declaration or the plugin manifest's outputs, read by NodeDeclaration), keep it read past by an older build or held whole as NodeContract does for unknown shapes, and say which in a line of D173's note. A `data` wire from an output to a step reached only through another outcome's `when` is judged sound when saved (NodeGraphs.Problems); one from an output the reached route needs but does not carry is refused there. Leave `Defaults/workflows/*.json` alone unless the shape requires it, since LANDNODE1k edits every one this wave. (2) Ask Daoris's help doors gain `workflow changes <run> <node> "…"` (DECIDE1c) and `role default --all` (DEFAULTCONFIG1b), with their goldens and HelpCoverageTests rows.
+
+**Proof.** NodeLifecycle tests: find says `none` with no release port and is reached; find says `release` without it and is refused `no-output`. The release default's run under WireEvaluation, `none` without the port, ends after the line. GraphProblemsTable: the sound and the refused data wire. The help goldens.
+
+**Files.** `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Nodes/NodeLifecycle.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Nodes/NodeDeclaration.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Nodes/NodeGraphs.cs`, `examples/plugins/local-release/`, `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workflows/WorkflowGraphPresetsTests.cs`, the help doors' sources and goldens.
+
 ## WORKFLOWEDIT1c — The installed window: workflows composed and run, with decisions, roles and defaults (the steward)
 
-**Wave** 5; after WORKFLOWEDIT1b, LANDNODE1k, DEFAULTCONFIG1b, DEFAULTCONFIG1c, DEFAULTCONFIG1d; opus.
+**Wave** 5; after WORKFLOWEDIT1b, LANDNODE1k, DECIDE1d, DEFAULTCONFIG1b, DEFAULTCONFIG1c, DEFAULTCONFIG1d; opus.
 
 **Contract.** On the installed window, against one staged build (INSTALLPROOF1's batch), with installed-window proof kept distinct from stories: a documents workflow and a release workflow are composed in the editor, saved, used for a repository and run. The release reaches publish through local-release, and its none route ends after the line. Merge, automatic lands a session with no press. A review's changes go back to the work, which lands after the next Accept. A work step naming an added role starts on that role. A fresh home's places say the default they follow. A version without LANDNODE1k's steps lands without them. Move the rows to the archive with their outcomes.
 
@@ -154,7 +164,7 @@
 
 ## Notes
 
-The plan has 15 slices in five waves. Wave 1 is four slices that can start now; waves 2 to 4 wait on earlier slices and on LANDNODE1c2; wave 5 is the installed-window proof.
+The plan has 16 slices in five waves; DECIDE1d was filed at wave 3's merge. Wave 1 is four slices that can start now; waves 2 to 4 wait on earlier slices and on LANDNODE1c2; wave 5 is the installed-window proof.
 
 **What LANDNODE1c2 actually holds.** I read its live worktree diff on branch feat/landnode1c2. It has one empty start commit, and its base is 6f97ea7, which is behind main. Its uncommitted changes touch:
 - Workflows/Nodes: NodeContract.cs, NodeGraphs.cs, NodeRuntime.cs, BuiltInNodes.cs, GraphRuns.cs, LandNodes.cs
