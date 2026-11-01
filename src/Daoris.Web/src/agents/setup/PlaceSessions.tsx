@@ -77,7 +77,7 @@ export function PlaceWorkflow({ place, notify, onOpenPlugin, landingAsked = fals
   landingAsked?: boolean;
   onOpenPlugin?: (plugin: string) => void;
 }) {
-  if (place.kind === 'workspace') return <WorkspaceWorkflow place={place} />;
+  if (place.kind === 'workspace') return <WorkspaceWorkflow place={place} notify={notify} onOpenPlugin={onOpenPlugin} />;
   return <RepositoryWorkflow place={place} notify={notify} onOpenPlugin={onOpenPlugin} landingAsked={landingAsked} />;
 }
 
@@ -107,25 +107,39 @@ function RepositoryWorkflow({ place, notify, onOpenPlugin, landingAsked }: {
   );
 }
 
-/** A workspace's own Workflow: its routes and chart, and the repositories that follow it or set their own. */
-function WorkspaceWorkflow({ place }: { place: PlaceHold }) {
+/**
+ * A workspace's own Workflow: its routes and chart, and the repositories that follow it or set their own, then the line's defaults it
+ * gives each repository that sets none (SETUPUX1v, moved from the Setup tab): its line, landing, commits, review and second opinion.
+ */
+function WorkspaceWorkflow({ place, notify, onOpenPlugin }: { place: PlaceHold; notify: Notify; onOpenPlugin?: (plugin: string) => void }) {
   const workspace = place.row.workspace ?? '';
   const answer = useWorkflowCurrent({ workspace }, { route: place.view.route });
   const editor = useWorkflowEditor({ workspace });
   // The route chosen before it, kept drawn while the next is read, is this workspace's alone.
   const current = answer.data?.workspace === workspace ? answer.data : null;
   return (
-    <PlaceWorkflowView
-      page="workspace"
-      name={workspace}
-      current={current}
-      reading={answer.isPending}
-      refusal={answer.error ? sentence(answer.error) : null}
-      doors={{ repository: (repository) => place.onGo(repositoryId(workspace, repository), { section: 'workflow' }) }}
-      editor={editor}
-      view={place.view}
-      onView={place.onView}
-    />
+    <>
+      <PlaceWorkflowView
+        page="workspace"
+        name={workspace}
+        current={current}
+        reading={answer.isPending}
+        refusal={answer.error ? sentence(answer.error) : null}
+        doors={{ repository: (repository) => place.onGo(repositoryId(workspace, repository), { section: 'workflow' }) }}
+        editor={editor}
+        view={place.view}
+        onView={place.onView}
+      />
+      <div className="mt-3">
+        <WorkspaceSetupPart
+          workspace={workspace}
+          notify={notify}
+          rows="defaults"
+          open={place.asked === 'defaults' ? 'defaults' : undefined}
+          onOpenPlugin={onOpenPlugin}
+        />
+      </div>
+    </>
   );
 }
 
@@ -135,7 +149,7 @@ function WorkspaceWorkflow({ place }: { place: PlaceHold }) {
  * An organism: it holds the bridge's hooks, so the molecules above hold none. It mounts only while its section is open.
  */
 export function PlaceSessions({ place, notify, onOpenPlugin, onOpenAppointed }: {
-  place: Pick<PlaceHold, 'kind' | 'row'>;
+  place: Pick<PlaceHold, 'kind' | 'row' | 'asked'>;
   notify: Notify;
   onOpenPlugin?: (plugin: string) => void;
   onOpenAppointed?: () => void;
@@ -143,7 +157,17 @@ export function PlaceSessions({ place, notify, onOpenPlugin, onOpenAppointed }: 
   if (place.kind === 'repository') {
     return <RepositorySessions place={place.row} notify={notify} onOpenPlugin={onOpenPlugin} onOpenAppointed={onOpenAppointed} />;
   }
-  return <WorkspaceSetupPart workspace={place.row.workspace ?? ''} notify={notify} rows="sessions" onOpenPlugin={onOpenPlugin} onOpenAppointed={onOpenAppointed} />;
+  // A workspace's Sessions hold its access and session rows and, since SETUPUX1v, Reach: its rules and the machines its remote counts undeclared.
+  return (
+    <WorkspaceSetupPart
+      workspace={place.row.workspace ?? ''}
+      notify={notify}
+      rows="sessions"
+      open={place.asked === 'access' || place.asked === 'reach' ? place.asked : undefined}
+      onOpenPlugin={onOpenPlugin}
+      onOpenAppointed={onOpenAppointed}
+    />
+  );
 }
 
 function RepositorySessions({ place, notify, onOpenPlugin, onOpenAppointed }: {

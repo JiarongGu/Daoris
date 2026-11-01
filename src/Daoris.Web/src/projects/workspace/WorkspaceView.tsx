@@ -23,7 +23,7 @@ import {
   useWithdrawLandingBranch, useWorkState, useWorkflowEditor,
 } from '../../bridge/shell';
 import { byTool } from '../../agents/tools';
-import { failure, type Notify, useErrorNotify } from '../../design/ui';
+import { failure, type Notify, SettingList, useErrorNotify } from '../../design/ui';
 import type { KeptDoors } from '../../work/history/ClearAsk';
 import { useHistoryActs } from '../../work/history/historyActs';
 import { WorkflowTab } from '../../workflow/WorkflowTab';
@@ -35,6 +35,7 @@ import { WorkspaceTidied } from './WorkspaceTidied';
 import type { WorkspaceSection, WorkspaceTab } from '../tabs';
 import { accountsHere, hostOf } from './workspace';
 import { WorkspaceDetails, WorkspacePage } from './WorkspacePage';
+import { SupervisorDoor } from '../setup/SupervisorDoor';
 import { WorkspaceSetup, type WorkspaceSetupProps } from '../setup/WorkspaceSetup';
 import { setupLit } from '../../agents/modes';
 
@@ -73,6 +74,7 @@ const ruleOf = ({ form, pattern, tidy, plugin, autoAccept, key, squash, integrat
 export function WorkspaceView({
   workspace, repositories, attached, tab, onTab, asked = null, notify, onOpenRepository, onOpenRepositoryWorkflow, onOpenBranch,
   onOpenRepositoryHistory, onOpenAgent, onOpenAppointed, onOpenPlugin, onSyncNow, syncing = false, onOpenQuest, onOpenAsk, onAttend,
+  onOpenSetupSection,
 }: {
   workspace: string;
   /** Its repositories in the list's registry, by name. */
@@ -104,12 +106,17 @@ export function WorkspaceView({
   onOpenQuest?: (id: string) => void;
   onOpenAsk?: (id: string) => void;
   onAttend?: (session: string) => void;
+  /** Open a section of the workspace's Setup, which the application sends to its new home once the Setup mode is lit (SETUPUX1v). */
+  onOpenSetupSection?: (workspace: string, section: WorkspaceSection) => void;
 }) {
   const remotes = useRemotes();
+  const lit = setupLit();
   // Where it syncs, for a browser, from this machine's own host: wired or not, never where (D48 §5).
   const standing = useSyncStanding(attached ? null : workspace);
-  // The header's *Wire to a remote…*: Setup at its remote, the form open.
+  // The header's *Wire to a remote…*: Setup at its remote, the form open. Lit, the Remote row of Details with its form open: a count, so
+  // each press opens it afresh.
   const [wiring, setWiring] = useState(false);
+  const [wireAsk, setWireAsk] = useState(0);
   // A Workflow step's door: Setup at its defaults, where the workspace's rules are set (WORKFLOW1b).
   const [askedHere, setAskedHere] = useState<WorkspaceSection | null>(null);
   const map = remotes.data && Array.isArray(remotes.data.remotes) ? remotes.data : null;
@@ -120,6 +127,7 @@ export function WorkspaceView({
 
   const chooseTab = (next: WorkspaceTab) => {
     setWiring(false);
+    setWireAsk(0);
     setAskedHere(null);
     onTab(next);
   };
@@ -142,7 +150,11 @@ export function WorkspaceView({
         ? (
           <WorkflowPart
             workspace={workspace}
-            onSetup={() => { setWiring(false); setAskedHere('defaults'); onTab('setup'); }}
+            // Lit, the defaults are the workspace place's Workflow (SETUPUX1v): the application opens it.
+            onSetup={() => {
+              if (lit && onOpenSetupSection) { onOpenSetupSection(workspace, 'defaults'); return; }
+              setWiring(false); setAskedHere('defaults'); onTab('setup');
+            }}
             onOpenRepository={onOpenRepositoryWorkflow}
           />
         )
@@ -166,6 +178,8 @@ export function WorkspaceView({
             notify={notify}
             onOpenRepository={onOpenRepository}
             onOpenAgent={onOpenAgent}
+            // Lit, the remote's wiring is a row of Details (SETUPUX1v).
+            remote={lit ? { startOpen: wireAsk > 0, focus: wireAsk > 0 || asked === 'remote', ask: wireAsk } : undefined}
             doors={{ branches: () => chooseTab('branches'), sync: onSync, quest: onOpenQuest, ask: onOpenAsk, session: onAttend }}
           />
         );
@@ -179,7 +193,11 @@ export function WorkspaceView({
       onTab={attached ? chooseTab : undefined}
       syncing={syncing}
       onSync={onSync}
-      onWire={attached && map && !wired ? () => { setWiring(true); onTab('setup'); } : undefined}
+      onWire={attached && map && !wired
+        ? () => {
+            if (lit) { setWireAsk((was) => was + 1); onTab('details'); } else { setWiring(true); onTab('setup'); }
+          }
+        : undefined}
     >
       {body}
     </WorkspacePage>
@@ -191,12 +209,14 @@ export function WorkspaceView({
  * machine keeps of its finished work with its clear (HIST1e, D153 §6.1), read only while Details shows, since the reading
  * walks the home's files.
  */
-function DetailsPart({ workspace, repositories, notify, onOpenRepository, onOpenAgent, doors }: {
+function DetailsPart({ workspace, repositories, notify, onOpenRepository, onOpenAgent, remote, doors }: {
   workspace: string;
   repositories: string[];
   notify: Notify;
   onOpenRepository: (repository: string) => void;
   onOpenAgent?: (agent: string) => void;
+  /** Draws the Remote row (SETUPUX1v), with its form open or the focus on it where a press or a door asked. */
+  remote?: { startOpen: boolean; focus: boolean; ask: number };
   /** The doors that free a unit the clear keeps. */
   doors: KeptDoors;
 }) {
@@ -206,7 +226,9 @@ function DetailsPart({ workspace, repositories, notify, onOpenRepository, onOpen
   const answer = useStarts([workspace]);
   const history = useHistoryPlan({ scope: 'workspace', id: workspace });
   const historyActs = useHistoryActs({ notify });
+  const wiring = useWorkspaceWiring(workspace, notify);
   useErrorNotify(answer.error, notify);
+  useErrorNotify(remote ? wiring.error : null, notify);
   const harnesses = Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [];
   const nameOf = namer(t, harnesses);
   // An older shell has never heard of the question: the section is absent rather than the page blank.
@@ -219,6 +241,7 @@ function DetailsPart({ workspace, repositories, notify, onOpenRepository, onOpen
         starts={starts && { list: starts, nameOf }}
         accounts={roster.data ? accountsHere(byTool(harnesses), accounts.data, nameOf) : null}
         onOpenAgent={onOpenAgent}
+        remote={remote && wiring.wiring ? { workspace, wiring: wiring.wiring, busy: wiring.busy, ...remote } : undefined}
       />
       <KeptHistory
         workspace={workspace}
@@ -389,12 +412,71 @@ function WorkflowPart({ workspace, onSetup, onOpenRepository }: {
   );
 }
 
+/** The supervisor's appointment for the workspace (SUPERVISOR1e, D208 §5), which a line says; it is appointed among the appointed roles. */
+function supervisorOf(confirmation: unknown, workspace: string): WorkspaceSetupProps['supervisor'] {
+  const standingNow = standingOf(confirmation);
+  return standingNow && {
+    offered: standingNow.supervisorOffered,
+    appointment: standingNow.appointments.find((each) => each.role === 'supervisor' && same(each.workspace, workspace)) ?? null,
+  };
+}
+
+/**
+ * **The workspace's supervisor, for the place's Roles** (SETUPUX1v, moved from the Setup tab's Supervisor section): where its appointment
+ * stands in one sentence and a door to where it is appointed, which on the place's page is its own *Appointed* row. It appoints nothing.
+ */
+export function WorkspaceSupervisor({ workspace, onOpenAppointed }: { workspace: string; onOpenAppointed?: () => void }) {
+  const driver = useDriver();
+  const supervisor = supervisorOf(driver.data?.standingConfirmation, workspace);
+  if (!supervisor) return null;
+  return (
+    <div data-place-row="supervisor" tabIndex={-1} className="outline-none focus-visible:outline-2 focus-visible:outline-accent">
+      <SettingList>
+        <SupervisorDoor workspace={workspace} supervisor={supervisor} onOpen={onOpenAppointed} />
+      </SettingList>
+    </div>
+  );
+}
+
+/**
+ * This machine's wiring of a workspace to a remote and the presses that change it (D48 §5, `daoris remote add|remove`): *Wire* and *Unwire*,
+ * each said as the toast Settings' cards said it. Null until `remotes.json` is answered. Held once, for Details' Remote row and the old tab's.
+ */
+function useWorkspaceWiring(workspace: string, notify: Notify) {
+  const { t } = useTranslation();
+  const remotes = useRemotes();
+  const wire = useWireRemote();
+  const unwire = useUnwireRemote();
+  const onError = failure(notify);
+  const map = remotes.data && Array.isArray(remotes.data.remotes) ? remotes.data : null;
+  const wiring: NonNullable<WorkspaceSetupProps['remote']['wiring']> | null = map && {
+    remote: map.remotes.find((row) => same(row.workspace, workspace)) ?? null,
+    fromEnvironment: map.fromEnvironment,
+    onWire: (url, key, done) => wire.mutate({ workspace, url, key }, {
+      onSuccess: (wiringState) => {
+        // "Wired" and "in effect" come apart only here: with the environment pair set no loader reads the file (D48
+        // §5), so the sentence says what happened, by the answer's own flag.
+        notify(t(wiringState.fromEnvironment ? 'settings.wiring.wiredButOverridden' : 'settings.wiring.wired', { workspace }));
+        // The key never lingers in the form once it has landed in the file.
+        done();
+      },
+      onError,
+    }),
+    onUnwire: () => unwire.mutate({ workspace }, {
+      onSuccess: () => notify(t('settings.wiring.unwired', { workspace })),
+      onError,
+    }),
+  };
+  return { wiring, busy: wire.isPending || unwire.isPending, error: remotes.error };
+}
+
 /**
  * Setup: its defaults (WSR1, WSR2, LANG1c, READ1) and its remote and rules (D48 §5, PERM1), each from the answer the driver
  * gives every door and each change said as the toast Settings' cards said it.
  *
- * Exported for the Agents place (AGENTSPLACE1f): a workspace's page there draws `rows="sessions"` under its Sessions, and this tab, once the
- * Setup mode is lit, the rows that have not moved.
+ * Exported for the Agents place: a workspace's page there draws `rows="sessions"` under its Sessions (AGENTSPLACE1f, with its rules and the
+ * machines its remote counts undeclared, SETUPUX1v) and `rows="defaults"` under its Workflow; this tab, once the Setup mode is lit, keeps the
+ * rest until row y takes it away.
  */
 export function WorkspaceSetupPart({ workspace, notify, open, wiring = false, rows, onOpenPlugin, onOpenAppointed }: {
   workspace: string;
@@ -410,9 +492,7 @@ export function WorkspaceSetupPart({ workspace, notify, open, wiring = false, ro
   const across = useAcross();
   const rules = useRules();
   const catalog = usePlugins();
-  const remotes = useRemotes();
-  const wire = useWireRemote();
-  const unwire = useUnwireRemote();
+  const { wiring: wiringRow, busy: wiringBusy, error: wiringError } = useWorkspaceWiring(workspace, notify);
   // FABRIC-CLOSE1i2: the machines its remote counts undeclared, as the last pass heard them, and the person's retirement of one. The pass
   // after it hears the remote for itself, and its end pushes where the circle stands to every window.
   const standing = useSyncStanding(workspace);
@@ -429,7 +509,7 @@ export function WorkspaceSetupPart({ workspace, notify, open, wiring = false, ro
   const setAccess = useSetAccess();
   const setRead = useSetReadAcross();
   const act = useRuleAction();
-  useErrorNotify(remotes.error ?? across.error ?? rules.error, notify);
+  useErrorNotify(wiringError ?? across.error ?? rules.error, notify);
   const onError = failure(notify);
 
   const state = driver.data;
@@ -440,17 +520,10 @@ export function WorkspaceSetupPart({ workspace, notify, open, wiring = false, ro
     .map((plugin) => plugin.id);
   const landingSet = ofWorkspace(state?.workspaceLandings);
   const table = state?.languageTable;
-  const map = remotes.data && Array.isArray(remotes.data.remotes) ? remotes.data : null;
   const answered = rules.data && Array.isArray(rules.data.defaults) && Array.isArray(rules.data.scopes) ? rules.data : null;
   const scope = answered?.scopes.find((row) => row.scope === 'workspace' && row.name !== undefined && same(row.name, workspace));
   const where = t('settings.rules.where.workspace', { name: workspace });
-  const standingNow = standingOf(state?.standingConfirmation);
-
-  /** The supervisor's appointment for the workspace (SUPERVISOR1e, D208 §5), which Setup says in a line; it is appointed in Agents → Roles. */
-  const supervisor: WorkspaceSetupProps['supervisor'] = standingNow && {
-    offered: standingNow.supervisorOffered,
-    appointment: standingNow.appointments.find((each) => each.role === 'supervisor' && same(each.workspace, workspace)) ?? null,
-  };
+  const supervisor = supervisorOf(state?.standingConfirmation, workspace);
 
   const setup: WorkspaceSetupProps = {
     workspace,
@@ -458,8 +531,8 @@ export function WorkspaceSetupPart({ workspace, notify, open, wiring = false, ro
     wiring,
     onOpenAppointed,
     busy: setLine.isPending || setLanding.isPending || setLanguage.isPending || setReview.isPending || setOpinion.isPending
-      || setCommits.isPending || setHelpers.isPending || setHandOver.isPending || setAccess.isPending || setRead.isPending || act.isPending || wire.isPending
-      || unwire.isPending || retire.isPending,
+      || setCommits.isPending || setHelpers.isPending || setHandOver.isPending || setAccess.isPending || setRead.isPending || act.isPending || wiringBusy
+      || retire.isPending,
     supervisor,
     // The access its repositories' sessions start under (AUTONOMY1d): the workspace's over this machine's, resolved on the page from
     // the levels as set, since the driver resolves only a repository's; a shell older than it answers none, and nothing is drawn.
@@ -587,24 +660,7 @@ export function WorkspaceSetupPart({ workspace, notify, open, wiring = false, ro
         : null,
     },
     remote: {
-      wiring: map && {
-        remote: map.remotes.find((row) => same(row.workspace, workspace)) ?? null,
-        fromEnvironment: map.fromEnvironment,
-        onWire: (url, key, done) => wire.mutate({ workspace, url, key }, {
-          onSuccess: (wiringState) => {
-            // "Wired" and "in effect" come apart only here: with the environment pair set no loader reads the file (D48
-            // §5), so the sentence says what happened, by the answer's own flag.
-            notify(t(wiringState.fromEnvironment ? 'settings.wiring.wiredButOverridden' : 'settings.wiring.wired', { workspace }));
-            // The key never lingers in the form once it has landed in the file.
-            done();
-          },
-          onError,
-        }),
-        onUnwire: () => unwire.mutate({ workspace }, {
-          onSuccess: () => notify(t('settings.wiring.unwired', { workspace })),
-          onError,
-        }),
-      },
+      wiring: wiringRow,
       machines: standing.data?.wired && Array.isArray(standing.data.undeclared)
         ? {
             undeclared: standing.data.undeclared,

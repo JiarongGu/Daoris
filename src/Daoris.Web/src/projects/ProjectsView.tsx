@@ -58,7 +58,7 @@ import { buttonNamed, returnFocus } from '../lib/returnFocus';
  */
 export function useProjectsView({
   active, chosen, onChoose, tab = 'details', onTab, workspaceTab = 'details', onWorkspaceTab, workspaceSection = null, notify,
-  onOpenCode, onOpenAgent, onOpenAppointed, onOpenPlugin, onOpenSetup, onSyncNow, syncing = false, addRequested = false, onAddOpened, importRequested = false, onImportOpened,
+  onOpenCode, onOpenAgent, onOpenAppointed, onOpenPlugin, onOpenSetup, onOpenWorkspaceSetup, onSyncNow, syncing = false, addRequested = false, onAddOpened, importRequested = false, onImportOpened,
   drawerWorkspace = null, onOpenQuest, onOpenAsk, onAttend, branchAsked = null, onBranchOpened,
 }: {
   /** The view is in front: only then are its errors said. */
@@ -87,6 +87,8 @@ export function useProjectsView({
   onOpenPlugin?: (plugin: string) => void;
   /** Open a repository's Setup, which is the Agents place's page once its Setup mode is lit (AGENTSPLACE1f): the door its page offers in place of the tab. */
   onOpenSetup?: (repository: string) => void;
+  /** Open a section of a workspace's Setup, which is the workspace place's once the Setup mode is lit (SETUPUX1v): the door its Workflow tab's steps offer. */
+  onOpenWorkspaceSetup?: (workspace: string, section: WorkspaceSection) => void;
   /** Sync a workspace with its remote, the status bar's pass (SYNC6b), which the application says. */
   onSyncNow?: (workspace: string) => void;
   syncing?: boolean;
@@ -293,6 +295,7 @@ export function useProjectsView({
           onOpenAgent={onOpenAgent}
           onOpenAppointed={onOpenAppointed}
           onOpenPlugin={onOpenPlugin}
+          onOpenSetupSection={onOpenWorkspaceSetup}
           onSyncNow={onSyncNow}
           syncing={syncing}
           onOpenQuest={onOpenQuest}
