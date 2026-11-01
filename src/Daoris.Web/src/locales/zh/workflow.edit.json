@@ -203,7 +203,7 @@
   "workflow.edit.option.request.until": "工作等到",
   "workflow.edit.option.request.until.done": "委托完成",
   "workflow.edit.option.request.until.taken": "委托被接下",
-  "workflow.edit.option.request.declined": "委托被拒绝时",
+  "workflow.edit.option.request.declined": "委托被谢绝时",
   "workflow.edit.option.request.declined.wait": "等待",
   "workflow.edit.option.request.declined.stop": "停止运行",
   "workflow.edit.option.check.gates": "要运行的检查项",

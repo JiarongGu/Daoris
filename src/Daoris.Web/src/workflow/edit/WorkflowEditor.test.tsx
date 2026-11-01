@@ -478,7 +478,7 @@ describe('the judgement, the inspector beside the chart, and the languages', () 
     expect(within(inspector).getByRole('combobox', { name: 'The line it lands on' })).toHaveTextContent("The repository's own line");
     await chooseByPointer('The line it lands on', 'main');
     expect(live()).toHaveTextContent("Changed The landing's The line it lands on.");
-    expect(openDraftNow()!.graph.nodes.find((node) => (node as { id: string }).id === 'landing')).toMatchObject({ options: { method: 'merge', target: 'main' } });
+    expect(openDraftNow()!.graph.nodes?.find((node) => (node as { id: string }).id === 'landing')).toMatchObject({ options: { method: 'merge', target: 'main' } });
     unmount();
 
     render(wrap(<Editor />));
