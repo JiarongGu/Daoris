@@ -607,9 +607,11 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         // design §4): its answer kept, a run's graph that holds it for a judgement not made yet asks the loop for that pass and waits for it
         // within a bound, so it lands at this press where the pass makes it ready; past the bound it is refused as read.
         var shown = gate;
+        // LANDNODE1c2: where the run's graph waits on its review, this press is the person's Accept, kept on the run's record for the pass.
         gate = await GraphPasses.PressAsync(
             token => new OpinionPresses(_loop.Home, service).PressedAsync(id, shown, Optional(request, "answers"), tree, questId, token),
-            token => trees.GateAsync(tree, questId, new ServiceReviewWorld(service), id, token, run: chatRun), _loop.PassWholeAsync, cancellationToken);
+            token => trees.GateAsync(tree, questId, new ServiceReviewWorld(service), id, token, run: chatRun), _loop.PassWholeAsync, cancellationToken,
+            (review, _) => Task.FromResult(RunNodeWords.Word(new NodeRecordFiles(_loop.Home), review.Run, review.Node!, NodeWordActs.Accept, null).Done));
         // FABRIC-CLOSE1h3 (D173's note): the result the press is made on, its quest as read for its name, judged again under the tree's
         // hold and before the push, so a press that waited behind another landing makes nothing where that result moved meanwhile.
         var pressed = await quests.PressedAsync(id, questId, ct: cancellationToken);

@@ -398,8 +398,12 @@ public static class Involvement
                 NodeKinds.Request => NodeKinds.Request,
                 _ => null,
             };
+            // LANDNODE1c2: a `land`'s press is the graph's `review`, so a review taken away lowers as an `accept` moved to automatic did.
+            IEnumerable<WorkflowSetting> pressed = node.Kind == NodeKinds.Land
+                ? [new WorkflowSetting(LandNodes.AcceptOption, LandNodes.Reviewed(graph) ? "you" : "automatic")]
+                : [];
             return kind is null ? null
-                : new NamedStep(node.Id, kind, [.. node.Options.Select(option => new WorkflowSetting(option.Key, NodeOptions.Value(option.Value)))]);
+                : new NamedStep(node.Id, kind, [.. node.Options.Select(option => new WorkflowSetting(option.Key, NodeOptions.Value(option.Value))), .. pressed]);
         }).OfType<NamedStep>(),
     ];
 

@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class LandNodeKindTests
 {
-    private static NodeDeclaration Land(string options = """{"method":"merge","accept":"you"}""") => Node("land", NodeKinds.Land, options);
+    private static NodeDeclaration Land(string options = """{"method":"merge"}""") => Node("land", NodeKinds.Land, options);
 
     private static NodeDeclaration Node(string id, string kind, string? options = null)
     {
@@ -61,13 +61,15 @@ public sealed class LandNodeKindTests
     [InlineData("""{"method":"merge"}""", null)]
     [InlineData("""{"method":"branch","pattern":"feature/{quest}-{slug}"}""", null)]
     [InlineData("""{"method":"push","plugin":"acme.pr"}""", null)]
-    [InlineData("""{"method":"pull-request","plugin":"acme.pr","accept":"automatic"}""", null)]
-    [InlineData("""{"method":"integrate","target":"release/1","accept":"you"}""", null)]
+    [InlineData("""{"method":"pull-request","plugin":"acme.pr"}""", null)]
+    [InlineData("""{"method":"integrate","target":"release/1"}""", null)]
     [InlineData("""{}""", null)]
     [InlineData("""{"method":"rebase"}""", "method")]
     [InlineData("""{"method":"Merge"}""", "method")]
     [InlineData("""{"method":true}""", "method")]
-    [InlineData("""{"accept":"later"}""", "accept")]
+    // LANDNODE1c2: the Accept is a `review` before the land, so a land saved with the option is held rather than landed with no press.
+    [InlineData("""{"method":"merge","accept":"you"}""", "accept")]
+    [InlineData("""{"method":"pull-request","plugin":"acme.pr","accept":"automatic"}""", "accept")]
     [InlineData("""{"accept":null}""", "accept")]
     [InlineData("""{"target":"has space"}""", "target")]
     [InlineData("""{"target":""}""", "target")]
@@ -186,30 +188,47 @@ public sealed class LandNodeKindTests
         Assert.Empty(Codes(Chain(Claimed(), Land("""{"method":"branch","pattern":"x/{quest}"}"""), Line())));
     }
 
+    /// <summary>
+    /// LANDNODE1c2: a land with no review before it lands with no press, a merge and an integrate under any request alike; one with a review
+    /// waits for the person's Accept, which the review is wired straight into the land to hold.
+    /// </summary>
     [Theory]
-    [InlineData("""{"method":"merge","accept":"automatic"}""", null, true)]
-    [InlineData("""{"method":"merge","accept":"you"}""", null, false)]
-    [InlineData("""{"method":"branch","accept":"automatic","pattern":"x/{quest}"}""", null, false)]
-    [InlineData("""{"method":"pull-request","accept":"automatic","plugin":"acme.pr"}""", null, false)]
-    [InlineData("""{"method":"integrate","accept":"automatic"}""", null, true)]
-    [InlineData("""{"method":"integrate","accept":"automatic"}""", """{"request":"owner"}""", true)]
-    [InlineData("""{"method":"integrate","accept":"automatic"}""", """{"request":"steward"}""", true)]
-    [InlineData("""{"method":"integrate","accept":"automatic"}""", """{"request":"done"}""", false)]
-    [InlineData("""{"method":"integrate","accept":"you"}""", """{"request":"owner"}""", false)]
-    public void Automatic_is_refused_on_a_merge_and_on_an_integrate_but_under_request_done(string land, string? integrate, bool refused)
+    [InlineData("""{"method":"merge"}""", null)]
+    [InlineData("""{"method":"branch","pattern":"x/{quest}"}""", null)]
+    [InlineData("""{"method":"pull-request","plugin":"acme.pr"}""", null)]
+    [InlineData("""{"method":"integrate"}""", """{"request":"owner"}""")]
+    [InlineData("""{"method":"integrate"}""", """{"request":"steward"}""")]
+    [InlineData("""{"method":"integrate"}""", """{"request":"done"}""")]
+    public void A_land_with_or_without_a_review_before_it_holds_whatever_its_method(string land, string? integrate)
     {
-        var tail = method(land) switch
+        NodeDeclaration[] tail = JsonDocument.Parse(land).RootElement.GetProperty("method").GetString() switch
         {
-            "merge" => Chain(Claimed(), Land(land), Line()),
-            "integrate" => Chain(Claimed(), Land(land), Node("merge", NodeKinds.Integrate, integrate), Line()),
-            "branch" => Chain(Claimed(), Land(land), Line()),
-            _ => Chain(Claimed(), Land(land), Node("push", NodeKinds.Pushed), Node("pr", NodeKinds.PullRequest), Line()),
+            "integrate" => [Node("merge", NodeKinds.Integrate, integrate), Line()],
+            "pull-request" => [Node("push", NodeKinds.Pushed), Node("pr", NodeKinds.PullRequest), Line()],
+            _ => [Line()],
         };
 
-        Assert.Equal(refused, Codes(tail).Contains(GraphRefusal.LandAutomatic));
-        Assert.Equal(refused ? [GraphRefusal.LandAutomatic] : [], Codes(tail));
+        Assert.Empty(Codes(Chain([Claimed(), Land(land), .. tail])));
+        Assert.Empty(Codes(Chain([Claimed(), Node("review", NodeKinds.Review), Land(land), .. tail])));
+    }
 
-        static string method(string json) => JsonDocument.Parse(json).RootElement.GetProperty("method").GetString()!;
+    [Fact]
+    public void A_review_is_the_persons_accept_before_every_landing_and_never_skipped()
+    {
+        var authority = NodeAuthorities.BuiltIn[NodeKinds.Review];
+        Assert.Equal((NodeReach.Pressed, NodeSource.Person, (string?)null), (authority.Reach, authority.ReachBy, authority.FailureBy));
+        Assert.Equal((false, false, false), (authority.PersonSkips, authority.MayEnd, authority.Evidenced));
+
+        var review = Node("review", NodeKinds.Review);
+        var beside = new NodeGraph(
+            [Claimed(), review, Land(), Line()],
+            [new("a", WireKinds.After, new("work"), new("review")), new("b", WireKinds.After, new("work"), new("land")), new("c", WireKinds.After, new("land"), new("line"))],
+            ["work"], "line");
+        Assert.Contains(GraphRefusal.ProtectedOrder, Codes(beside));
+        Assert.Contains(GraphRefusal.ProtectedWire, Codes(Chain(Claimed(), review, Node("qa", NodeKinds.Human), Land(), Line())));
+
+        var older = NodeAuthorities.BuiltIn.Where(pair => pair.Key != NodeKinds.Review).ToDictionary(pair => pair.Key, pair => pair.Value);
+        Assert.Equal(NodeRefusal.UnknownKind, NodeDeclarations.Problem(review, older));
     }
 
     [Fact]

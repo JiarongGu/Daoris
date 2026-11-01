@@ -448,10 +448,11 @@ public sealed class WorkflowRunBindingTests : IDisposable
         WorkflowStore.Add(_home, new WorkflowVersionAdded("open-land", "An open land", "terminal", "2026-11-01T09:00:00Z", null, JsonNode.Parse(
             """
             {"schemaVersion":2,"entries":["work"],"end":"pull-request","nodes":[{"id":"work","kind":"claimed","version":1,"reach":"observed"},
-              {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"pull-request","accept":"you"}},
+              {"id":"review","kind":"review","version":1,"reach":"pressed"},
+              {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"pull-request"}},
               {"id":"pushed","kind":"pushed","version":1,"reach":"observed"},{"id":"pull-request","kind":"pull-request","version":1,"reach":"observed"}],
-             "wires":[{"id":"a","kind":"after","from":"work","to":"landing"},{"id":"b","kind":"after","from":"landing","to":"pushed"},
-                      {"id":"c","kind":"after","from":"pushed","to":"pull-request"}]}
+             "wires":[{"id":"a","kind":"after","from":"work","to":"review"},{"id":"r","kind":"after","from":"review","to":"landing"},
+                      {"id":"b","kind":"after","from":"landing","to":"pushed"},{"id":"c","kind":"after","from":"pushed","to":"pull-request"}]}
             """)), kept: []);
         var before = Config("""
             {"workflows":{"web-app":{"default":"open-land"}},

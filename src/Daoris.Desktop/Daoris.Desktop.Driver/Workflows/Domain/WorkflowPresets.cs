@@ -56,25 +56,38 @@ public static class WorkflowPresets
     /// </summary>
     public static IReadOnlyList<WorkflowGraphPreset> GraphTable { get; } =
     [
-        new("integrated", "Integrated into the line", Integrated(accept: "you", request: "owner")),
-        new("integrated-no-press", "Integrated into the line with no press", Integrated(accept: "automatic", request: "done"), NoPress: true),
+        new("integrated", "Integrated into the line", Integrated(reviewed: true, request: "owner")),
+        new("integrated-no-press", "Integrated into the line with no press", Integrated(reviewed: false, request: "done"), NoPress: true),
         new("pull-request", "A pull request",
             $$$"""
-            {"schemaVersion":2,"entries":["work"],"end":"pull-request","nodes":[{{{Claimed}}},{{{Requests}}},
-              {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"pull-request","accept":"you"}},
+            {"schemaVersion":2,"entries":["work"],"end":"pull-request","nodes":[{{{Claimed}}},{{{Requests}}},{{{Review}}},
+              {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"pull-request"}},
               {"id":"pushed","kind":"pushed","version":1,"reach":"observed"},
               {"id":"pull-request","kind":"pull-request","version":1,"reach":"observed"}],
-             "wires":[{{{Wires}}},{"id":"c","kind":"after","from":"landing","to":"pushed"},{"id":"d","kind":"after","from":"pushed","to":"pull-request"}]}
+             "wires":[{{{Reviewed}}},{"id":"c","kind":"after","from":"landing","to":"pushed"},{"id":"d","kind":"after","from":"pushed","to":"pull-request"}]}
             """),
+        // LANDNODE1c2: a merge with no review starts once the work's requests are done; D145's press is the workflow's to place.
+        new("merge-no-press", "Merge with no press",
+            $$$"""
+            {"schemaVersion":2,"entries":["work"],"end":"line","nodes":[{{{Claimed}}},{{{Requests}}},
+              {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"merge"}},
+              {"id":"line","kind":"line","version":1,"reach":"observed"}],
+             "wires":[{{{Wires}}},{"id":"c","kind":"after","from":"landing","to":"line"}]}
+            """, NoPress: true),
     ];
 
-    private static string Integrated(string accept, string request) =>
+    /// <summary>The person's Accept before the landing (LANDNODE1c2), and the wires that put it between the work's requests and the `land`.</summary>
+    private const string Review = """{"id":"review","kind":"review","version":1,"reach":"pressed"}""";
+    private const string Reviewed =
+        """{"id":"a","kind":"after","from":"work","to":"requests"},{"id":"b","kind":"after","from":"requests","to":"review"},{"id":"e","kind":"after","from":"review","to":"landing"}""";
+
+    private static string Integrated(bool reviewed, string request) =>
         $$$"""
-        {"schemaVersion":2,"entries":["work"],"end":"line","nodes":[{{{Claimed}}},{{{Requests}}},
-          {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"integrate","accept":"{{{accept}}}"}},
+        {"schemaVersion":2,"entries":["work"],"end":"line","nodes":[{{{Claimed}}},{{{Requests}}},{{{(reviewed ? Review + "," : "")}}}
+          {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"integrate"}},
           {"id":"integrate","kind":"integrate","version":1,"reach":"waited","options":{"request":"{{{request}}}","conflicts":"session"}},
           {"id":"line","kind":"line","version":1,"reach":"observed"}],
-         "wires":[{{{Wires}}},{"id":"c","kind":"after","from":"landing","to":"integrate"},{"id":"d","kind":"after","from":"integrate","to":"line"}]}
+         "wires":[{{{(reviewed ? Reviewed : Wires)}}},{"id":"c","kind":"after","from":"landing","to":"integrate"},{"id":"d","kind":"after","from":"integrate","to":"line"}]}
         """;
 
     /// <summary>A graph preset by its id, or null.</summary>
@@ -91,18 +104,22 @@ public static class WorkflowPresets
         var wires = next["wires"]!.AsArray();
         bool Has(string kind) => nodes.Any(node => (string?)node!["kind"] == kind);
         var landing = (string)nodes.First(node => (string?)node!["kind"] == WorkflowKinds.Landing || NodeKinds.IsLanding((string)node!["kind"]!))!["id"]!;
-        var lead = wires.First(wire => (string?)wire!["to"] == landing)!;
+        // LANDNODE1c2: the gates come before the person's Accept where a `review` stands before the landing, and each is wired into the landing too.
+        var review = (string?)nodes.FirstOrDefault(node => (string?)node!["kind"] == NodeKinds.Review)?["id"];
+        var into = review ?? landing;
+        var lead = wires.First(wire => (string?)wire!["to"] == into)!;
         var from = (string)lead["from"]!;
         wires.Remove(lead);
         var gates = new List<string>();
         if (opinion && !Has(WorkflowKinds.Opinion)) gates.Add(WorkflowKinds.Opinion);
         if (look && !Has(WorkflowKinds.Look)) gates.Add(WorkflowKinds.Look);
-        if (gates.Count == 0) wires.Add(new JsonObject { ["id"] = lead["id"]!.DeepClone(), ["kind"] = "after", ["from"] = from, ["to"] = landing });
+        if (gates.Count == 0) wires.Add(new JsonObject { ["id"] = lead["id"]!.DeepClone(), ["kind"] = "after", ["from"] = from, ["to"] = into });
         foreach (var gate in gates)
         {
             nodes.Add(new JsonObject { ["id"] = gate, ["kind"] = gate, ["version"] = 1, ["reach"] = "observed" });
             wires.Add(new JsonObject { ["id"] = $"{gate}-in", ["kind"] = "after", ["from"] = from, ["to"] = gate });
-            wires.Add(new JsonObject { ["id"] = $"{gate}-out", ["kind"] = "after", ["from"] = gate, ["to"] = landing });
+            wires.Add(new JsonObject { ["id"] = $"{gate}-out", ["kind"] = "after", ["from"] = gate, ["to"] = into });
+            if (review is not null) wires.Add(new JsonObject { ["id"] = $"{gate}-land", ["kind"] = "after", ["from"] = gate, ["to"] = landing });
         }
 
         return next;
@@ -117,7 +134,8 @@ public static class WorkflowPresets
         var said = new List<string>();
         if (Of(WorkflowKinds.Opinion) is not null) said.Add("Another agent reads the work first.");
         if (Of(WorkflowKinds.Look) is not null) said.Add("You look at it running before it lands.");
-        var you = Option(Of(NodeKinds.Land) ?? Of(NodeKinds.Handed), "accept") == "you";
+        // LANDNODE1c2: a `land` waits on the person where a `review` comes before it; a `handed` by its own `accept`.
+        var you = Of(NodeKinds.Land) is not null ? Of(NodeKinds.Review) is not null : Option(Of(NodeKinds.Handed), "accept") == "you";
         if (Of("pull-request") is not null)
         {
             said.Add(you ? "You accept; the plugin pushes and opens a pull request; you merge it."
@@ -130,7 +148,6 @@ public static class WorkflowPresets
                 : you ? "You accept each piece of work onto a branch, and you ask for it to be integrated into the line."
                     : "Each piece of work lands on a branch, and you ask for it to be integrated into the line.");
         }
-
         said.Add("Its agent's done closes the quest; the flow's end is the work's.");
         return string.Join(' ', said);
     }
