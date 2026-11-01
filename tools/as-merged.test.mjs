@@ -50,7 +50,7 @@ const day = (n) => {
 const CHECK = join(scratch, 'docs-check.mjs');
 writeFileSync(CHECK, [
   "import { spawnSync } from 'node:child_process';",
-  "const at = (path) => spawnSync('git', ['log', '-1', '--format=%aI', '--', path], { encoding: 'utf8' }).stdout.trim().slice(0, 10);",
+  "const at = (path) => spawnSync('git', ['log', '-1', '--format=%aI', '--', path], { encoding: 'utf8', windowsHide: true }).stdout.trim().slice(0, 10);",
   "const [document, described] = [at('README.md'), at('src')];",
   'const behind = (Date.parse(described) - Date.parse(document)) / 86400000;',
   'if (behind > 0) {',

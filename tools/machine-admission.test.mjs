@@ -160,7 +160,7 @@ describe('a holder that dies releases', () => {
 
   test('a process killed outright stops counting at once', async () => {
     const home = newHome();
-    const child = spawn(process.execPath, ['--input-type=module', '-e', holderScript(home)], { stdio: ['ignore', 'pipe', 'inherit'] });
+    const child = spawn(process.execPath, ['--input-type=module', '-e', holderScript(home)], { stdio: ['ignore', 'pipe', 'inherit'], windowsHide: true });
     await new Promise((done, fail) => {
       child.stdout.on('data', (data) => (String(data).includes('held') ? done() : fail(new Error(String(data)))));
       child.on('error', fail);
@@ -182,7 +182,7 @@ describe('a holder that dies releases', () => {
 
   test('a record whose process is gone, or that stopped beating, holds nothing', async () => {
     const home = newHome();
-    const gone = spawnSync(process.execPath, ['-e', '']).pid ?? 99_999_999;
+    const gone = spawnSync(process.execPath, ['-e', ''], { windowsHide: true }).pid ?? 99_999_999;
     const file = admissionFile(home);
     mkdirSync(dirname(file), { recursive: true });
     const record = (id, pid, beatAgoMs) => ({ id, kind: 'session', pid, what: 'a dotnet test run', since: new Date(Date.now() - 600_000).toISOString(), beat: new Date(Date.now() - beatAgoMs).toISOString() });

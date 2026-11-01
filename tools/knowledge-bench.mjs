@@ -748,7 +748,7 @@ function childEnv() {
 function runClaude(claude, cwd, args, timeoutMs) {
   return new Promise((done) => {
     const t0 = Date.now();
-    const child = spawn(claude, args, { cwd, env: childEnv(), stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = spawn(claude, args, { cwd, env: childEnv(), stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
     let stdout = '';
     let stderr = '';
     child.stdout.setEncoding('utf8').on('data', (c) => { stdout += c; });

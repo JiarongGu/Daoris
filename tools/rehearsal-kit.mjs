@@ -176,6 +176,7 @@ export function capture(command, cwd, { env = {}, timeout = 0, input } = {}) {
     cwd,
     encoding: 'utf8',
     shell: true,
+    windowsHide: true,
     // stdin stays closed unless a check hands the command something to read (`agent key`, AGT3).
     stdio: [input === undefined ? 'ignore' : 'pipe', 'pipe', 'pipe'],
     ...(input === undefined ? {} : { input }),
@@ -290,7 +291,7 @@ export function portHolder(port) {
       `Get-NetTCPConnection -LocalPort ${port} -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique | `
       + `ForEach-Object { $p = Get-CimInstance Win32_Process -Filter "ProcessId = $_" -ErrorAction SilentlyContinue; "pid $_ $($p.Name) $($p.CommandLine)" }`],
     { encoding: 'utf8', windowsHide: true, timeout: 120_000 })
-    : spawnSync('lsof', ['-nP', `-iTCP:${port}`, '-sTCP:LISTEN', '-Fpc'], { encoding: 'utf8', timeout: 120_000 });
+    : spawnSync('lsof', ['-nP', `-iTCP:${port}`, '-sTCP:LISTEN', '-Fpc'], { encoding: 'utf8', timeout: 120_000, windowsHide: true });
   const said = String(ran.stdout ?? '').trim();
   if (!said) return 'a process the system did not name';
   if (process.platform === 'win32') return said.split(/\r?\n/).map((line) => line.trim()).join('; ');
@@ -429,14 +430,14 @@ const commitHere = async (author, message) => {
   };
   let toplevel = '';
   try {
-    toplevel = execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+    toplevel = execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], windowsHide: true }).trim();
   } catch { /* not a repository */ }
   if (!toplevel || real(toplevel) !== real(process.cwd())) {
     throw new Error('refused to commit in ' + process.cwd() + ': '
       + (toplevel ? 'git would commit in the repository at ' + toplevel : 'it is not a git repository') + ' (REHEARSEGIT1)');
   }
   const git = (...args) => execFileSync('git', ['-c', 'user.name=' + author.name, '-c', 'user.email=' + author.email, ...args],
-    { stdio: 'ignore' });
+    { stdio: 'ignore', windowsHide: true });
   git('add', '-A');
   git('commit', '-q', '-m', message);
 };
@@ -548,7 +549,7 @@ async function setUp(sessionId) {
     update(sessionId, { sessionUpdate: 'tool_call', toolCallId, title: command, kind: 'execute', status: 'in_progress' });
     let printed;
     try {
-      printed = execSync(command, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+      printed = execSync(command, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
     } catch (error) {
       update(sessionId, { sessionUpdate: 'tool_call_update', toolCallId, status: 'failed' });
       const said = (String(error.stdout ?? '') + String(error.stderr ?? '')).trim().split('\\n')[0];
@@ -657,7 +658,7 @@ function connector(tool, args) {
   const env = { ...process.env };
   for (const pair of server.env ?? []) env[pair.name] = pair.value;
   return new Promise((resolve, reject) => {
-    const child = spawn(server.command, server.args ?? [], { env, stdio: ['pipe', 'pipe', 'ignore'] });
+    const child = spawn(server.command, server.args ?? [], { env, stdio: ['pipe', 'pipe', 'ignore'], windowsHide: true });
     const timer = setTimeout(() => { child.kill(); reject(new Error(tool + ' was answered nothing within a minute')); }, 60000);
     const write = (frame) => child.stdin.write(JSON.stringify(frame) + '\\n');
     child.on('error', (error) => { clearTimeout(timer); reject(error); });

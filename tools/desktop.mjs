@@ -392,7 +392,7 @@ const fail = (message, code = 2) => {
 };
 
 const run = (command, args, options = {}) => {
-  const result = spawnSync(command, args, { stdio: 'inherit', shell: false, ...options });
+  const result = spawnSync(command, args, { stdio: 'inherit', shell: false, windowsHide: true, ...options });
   if (result.error) fail(`${command} did not start: ${result.error.message}`);
   if (result.status !== 0) fail(`${command} ${args[0] ?? ''} exited ${result.status}`, result.status ?? 2);
 };
@@ -782,6 +782,7 @@ async function start(command, args) {
   const env = { ...process.env, ...environment };
   if (!real) for (const name of CLEARED) delete env[name];
 
+  // console-window: the desktop's own window, which a person is meant to see
   const child = spawn(exe, extra, { env, detached: true, stdio: 'ignore' });
   // Heard while `run` waits for the port below, so an application that ended is said at once.
   let ended = null;
@@ -1016,7 +1017,7 @@ async function main(command, args) {
         // Thrown, not exited: `run` would end the process inside the capture and skip putting the
         // viewer's theme choice back (LOOK1).
         const capture = async () => {
-          const result = spawnSync('powershell', captureArgs, { stdio: 'inherit', shell: false });
+          const result = spawnSync('powershell', captureArgs, { stdio: 'inherit', shell: false, windowsHide: true });
           if (result.error) throw new Error(`powershell did not start: ${result.error.message}`);
           if (result.status !== 0) throw new Error(`the capture exited ${result.status}`);
         };

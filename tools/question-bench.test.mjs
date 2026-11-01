@@ -405,17 +405,17 @@ test('the command line runs the fixture by default, takes the harness from a fla
   const out = join(here, '..', 'local', 'scratch', 'question-bench', label);
   rmSync(out, { recursive: true, force: true });
   const script = join(here, 'question-bench.mjs');
-  const floor = spawnSync(process.execPath, [script, 'run', '--label', label], { encoding: 'utf8' });
+  const floor = spawnSync(process.execPath, [script, 'run', '--label', label], { encoding: 'utf8', windowsHide: true });
   assert.equal(floor.status, 0, floor.stderr);
   assert.match(floor.stdout, /The model tier: not run/);
 
   const harness = stubHarness('cli', FIXTURE_REPLIES);
   const env = { ...process.env, QUESTION_BENCH_HARNESS: harness };
-  const model = spawnSync(process.execPath, [script, 'run', '--label', label], { encoding: 'utf8', env });
+  const model = spawnSync(process.execPath, [script, 'run', '--label', label], { encoding: 'utf8', env, windowsHide: true });
   assert.equal(model.status, 0, model.stderr);
   assert.match(model.stdout, /\| Model \| 2 of 3 \| 1 of 1 \| 2 \| 0 \|/);
 
-  const usage = spawnSync(process.execPath, [script], { encoding: 'utf8' });
+  const usage = spawnSync(process.execPath, [script], { encoding: 'utf8', windowsHide: true });
   assert.equal(usage.status, 2);
   assert.match(usage.stderr, /--harness/);
   rmSync(out, { recursive: true, force: true });

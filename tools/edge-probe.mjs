@@ -57,6 +57,7 @@ const cdpPort = await freePort(9500);
 
 /** Start this probe's Edge, and wait for its debug port to answer. */
 async function start() {
+  // console-window: the probe's browser is a window, and the probe measures it as a person sees it
   const edge = spawn(EDGE, [
     `--user-data-dir=${profile}`, `--remote-debugging-port=${cdpPort}`,
     '--no-first-run', '--no-default-browser-check',
@@ -104,7 +105,7 @@ function visibleTabs(pid) {
     $root.FindAll([System.Windows.Automation.TreeScope]::Children, $mine) | ForEach-Object {
       $_.FindAll([System.Windows.Automation.TreeScope]::Descendants, $tab) | ForEach-Object { $_.Current.Name }
     }`;
-  return spawnSync('powershell', ['-NoProfile', '-Command', script], { encoding: 'utf8' }).stdout.trim().split(/\r?\n/).filter(Boolean);
+  return spawnSync('powershell', ['-NoProfile', '-Command', script], { encoding: 'utf8', windowsHide: true }).stdout.trim().split(/\r?\n/).filter(Boolean);
 }
 
 /** Playwright MCP over this Edge's endpoint: the calls given, each answer's first lines. */
@@ -116,7 +117,7 @@ function playwright(calls) {
   ];
   return new Promise((resolve) => {
     const mcp = spawn('npx', ['-y', '@playwright/mcp@0.0.82', '--cdp-endpoint', `http://127.0.0.1:${cdpPort}`,
-      '--output-dir', join(scratch, 'playwright')], { shell: true, stdio: ['pipe', 'pipe', 'ignore'] });
+      '--output-dir', join(scratch, 'playwright')], { shell: true, stdio: ['pipe', 'pipe', 'ignore'], windowsHide: true });
     let buffered = '';
     const answers = new Map();
     mcp.stdout.on('data', (chunk) => {
@@ -155,7 +156,7 @@ async function closeWindow(edge) {
     $root.FindAll([System.Windows.Automation.TreeScope]::Children, $mine) | ForEach-Object {
       $_.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern).Close()
     }`;
-  spawnSync('powershell', ['-NoProfile', '-Command', script], { encoding: 'utf8' });
+  spawnSync('powershell', ['-NoProfile', '-Command', script], { encoding: 'utf8', windowsHide: true });
   for (let i = 0; i < 60 && edge.exitCode === null; i++) await sleep(250);
   await sleep(1500);
 }
@@ -164,7 +165,7 @@ async function closeWindow(edge) {
 function capture(edge, name) {
   const out = join(scratch, `${name}.png`);
   spawnSync('powershell', ['-NoProfile', '-File', join(repoRoot, 'tools', 'shot-window.ps1'),
-    '-OutFile', out, '-ProcessName', 'msedge', '-ProcessId', String(edge.pid)], { encoding: 'utf8' });
+    '-OutFile', out, '-ProcessName', 'msedge', '-ProcessId', String(edge.pid)], { encoding: 'utf8', windowsHide: true });
   return out;
 }
 

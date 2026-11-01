@@ -63,7 +63,7 @@ export function publishCommand(host, rid, folder, artifacts = null) {
  */
 export function publishHost(repoRoot, host, rid, folder, said = 'service-publish', artifacts = null) {
   try {
-    execSync(publishCommand(host, rid, folder, artifacts), { cwd: repoRoot, stdio: ['ignore', 'pipe', 'inherit'], maxBuffer: 64 * 1024 * 1024 });
+    execSync(publishCommand(host, rid, folder, artifacts), { cwd: repoRoot, stdio: ['ignore', 'pipe', 'inherit'], maxBuffer: 64 * 1024 * 1024, windowsHide: true });
     return true;
   } catch (error) {
     process.stdout.write(error.stdout ?? '');

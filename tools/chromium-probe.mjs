@@ -38,7 +38,7 @@ const exe = join(bin, 'chromium-probe.exe');
 
 // 0. The host, built into scratch.
 const build = spawnSync('dotnet', ['build', join(repoRoot, 'tools', 'chromium-probe'), '-c', 'Release', '-o', bin, '-v', 'q', '-nologo'],
-  { encoding: 'utf8', shell: true });
+  { encoding: 'utf8', shell: true, windowsHide: true });
 if (build.status !== 0) {
   console.error(build.stdout, build.stderr);
   process.exit(2);
@@ -112,6 +112,7 @@ async function start(name, { page, browser, port = 0, persist = false, style = '
   if (port) args.push('--port', String(port));
   if (persist) args.push('--persist');
   if (global) args.push('--browser-global');
+  // console-window: the probe's host is a window, and the probe measures it as a person sees it
   const child = spawn(exe, args, { stdio: 'ignore' });
   const host = { name, child, root, log, port, events: () => readEvents(log) };
   for (let i = 0; i < 120; i++) {
@@ -137,7 +138,7 @@ function windowsOf(pid) {
     $root = [System.Windows.Automation.AutomationElement]::RootElement
     $mine = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ProcessIdProperty, ${pid})
     $root.FindAll([System.Windows.Automation.TreeScope]::Children, $mine) | ForEach-Object { "[" + $_.Current.Name + "]" }`;
-  return spawnSync('powershell', ['-NoProfile', '-Command', script], { encoding: 'utf8' }).stdout.trim().split(/\r?\n/).filter(Boolean);
+  return spawnSync('powershell', ['-NoProfile', '-Command', script], { encoding: 'utf8', windowsHide: true }).stdout.trim().split(/\r?\n/).filter(Boolean);
 }
 
 /** Close every window of this host as a person does, and wait for the process to end. */
@@ -150,7 +151,7 @@ async function close(host) {
       try { $_.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern).Close() } catch {}
     }`;
   for (let attempt = 0; attempt < 3 && host.child.exitCode === null; attempt++) {
-    spawnSync('powershell', ['-NoProfile', '-Command', script], { encoding: 'utf8' });
+    spawnSync('powershell', ['-NoProfile', '-Command', script], { encoding: 'utf8', windowsHide: true });
     for (let i = 0; i < 40 && host.child.exitCode === null; i++) await sleep(250);
   }
   if (host.child.exitCode === null) {
@@ -163,7 +164,7 @@ async function close(host) {
 function capture(host, label) {
   const out = join(scratch, `${label}.png`);
   spawnSync('powershell', ['-NoProfile', '-File', join(repoRoot, 'tools', 'shot-window.ps1'),
-    '-OutFile', out, '-ProcessName', 'chromium-probe', '-ProcessId', String(host.child.pid)], { encoding: 'utf8' });
+    '-OutFile', out, '-ProcessName', 'chromium-probe', '-ProcessId', String(host.child.pid)], { encoding: 'utf8', windowsHide: true });
   return out;
 }
 
@@ -213,7 +214,7 @@ function playwright(port, calls) {
   ];
   return new Promise((resolve) => {
     const mcp = spawn('npx', ['-y', '@playwright/mcp@0.0.82', '--cdp-endpoint', `http://127.0.0.1:${port}`,
-      '--output-dir', join(scratch, 'playwright')], { shell: true, stdio: ['pipe', 'pipe', 'ignore'] });
+      '--output-dir', join(scratch, 'playwright')], { shell: true, stdio: ['pipe', 'pipe', 'ignore'], windowsHide: true });
     let buffered = '';
     const answers = new Map();
     mcp.stdout.on('data', (chunk) => {

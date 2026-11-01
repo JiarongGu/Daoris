@@ -1182,7 +1182,7 @@ async function main() {
       }
       for (const line of stageReport(source.home, source.commit)) console.log(`desktop-publish: ${line}`);
       console.log(`desktop-publish: building ${sha} from the gate tree (${GATE_TREE}), not from this checkout; it holds the tree until its build ends.`);
-      built = spawnSync(process.execPath, [join(source.tree, 'tools', 'desktop-publish.mjs'), ...childArgs(argv, to)], { cwd: source.tree, stdio: 'inherit' });
+      built = spawnSync(process.execPath, [join(source.tree, 'tools', 'desktop-publish.mjs'), ...childArgs(argv, to)], { cwd: source.tree, stdio: 'inherit', windowsHide: true });
     } finally {
       source.release();
     }
@@ -1198,7 +1198,7 @@ async function main() {
 
   const WEB = 'src/Daoris.Web';
 
-  const run = (command) => execSync(command, { cwd: repoRoot, stdio: ['ignore', 'inherit', 'inherit'] });
+  const run = (command) => execSync(command, { cwd: repoRoot, stdio: ['ignore', 'inherit', 'inherit'], windowsHide: true });
 
   // `--stage` (UPDATE1, D139 §1): the same build, written beside the install into `update/staged/` instead of over it, for
   // the desktop to install when its work allows. Everything below writes under `root`, which is the install or the staging.
@@ -1279,12 +1279,12 @@ async function main() {
   // `postpack` removes what the pack staged, and this removes it again whatever happened, as the release
   // rehearsal does: a `dist/` outliving a pack shadows the sources for every later bin-driven run (FIX-LOG
   // 2026-09-20).
-  const unstagePackage = () => execSync(`node "${join(repoRoot, 'tools', 'stage-package.mjs')}" --clean`, { stdio: 'ignore' });
+  const unstagePackage = () => execSync(`node "${join(repoRoot, 'tools', 'stage-package.mjs')}" --clean`, { stdio: 'ignore', windowsHide: true });
   let cliTarball;
   try {
     // The tarball's name is the last line npm prints; the build `prepack` runs prints above it.
     const packed = execSync(`npm pack --pack-destination "${cliStage}"`, {
-      cwd: join(repoRoot, 'src', 'Daoris.Cli'), encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
+      cwd: join(repoRoot, 'src', 'Daoris.Cli'), encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true,
     }).trim().split('\n').pop().trim();
     cliTarball = join(cliStage, packed);
   } catch (error) {
@@ -1482,7 +1482,7 @@ async function main() {
 /** The commit this workspace is at, short, or null where git cannot say: what tells two builds at one version apart. */
 function commitOf(repoRoot) {
   try {
-    return execSync('git rev-parse --short HEAD', { cwd: repoRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim() || null;
+    return execSync('git rev-parse --short HEAD', { cwd: repoRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], windowsHide: true }).trim() || null;
   } catch {
     return null;
   }

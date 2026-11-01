@@ -34,7 +34,7 @@ const driverExe = join(dirname(driverDll), process.platform === 'win32' ? 'daori
  */
 export function agentWhich(agent) {
   if (!existsSync(driverExe)) return null;
-  const answer = spawnSync(driverExe, ['agent', 'which', agent, '--json'], { encoding: 'utf8', timeout: 60_000 });
+  const answer = spawnSync(driverExe, ['agent', 'which', agent, '--json'], { encoding: 'utf8', timeout: 60_000, windowsHide: true });
   if (answer.status !== 0) {
     if (answer.stderr) process.stderr.write(answer.stderr);
     return null;
@@ -229,7 +229,7 @@ export function openProof(name, { label, port }) {
       DAORIS_REMOTE_CONFIG: join(scratch, 'no-remote.json'),
     };
 
-    host = spawn('dotnet', [httpDll], { cwd: scratch, env: { ...process.env, ...env }, stdio: 'ignore' });
+    host = spawn('dotnet', [httpDll], { cwd: scratch, env: { ...process.env, ...env }, stdio: 'ignore', windowsHide: true });
     // 🔴 A live child keeps Node's event loop alive, and the only thing that kills this one runs on
     // `beforeExit` — which therefore never fires. Every early `return` then sat forever with its last
     // check printed and nothing following it, which is indistinguishable from a hung driver.
