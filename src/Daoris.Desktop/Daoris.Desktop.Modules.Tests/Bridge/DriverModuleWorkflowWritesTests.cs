@@ -270,6 +270,96 @@ public sealed class DriverModuleWorkflowWritesTests : DriverModuleBridge
         Assert.Null(WorkflowStore.Load(Home, "docs"));
     }
 
+    private static string[] Strings(JsonElement list) => [.. list.EnumerateArray().Select(each => each.GetString()!)];
+
+    /// <summary>
+    /// SETUPUX1c (D221; the setup UX design §2.3): <c>plan: true</c> reads a choice as a plan of one and writes nothing. It answers the reach, what
+    /// lowers the person's part, each place whose workflow changes (a workspace's choice reaching its repositories), and a token.
+    /// </summary>
+    [Fact]
+    public async Task A_plan_of_a_choice_writes_nothing_and_says_the_places_what_it_lowers_and_a_token()
+    {
+        var (module, _) = await UpAsync();
+        await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "auto", from = "merge-automatic" });
+        var before = File.Exists(DriverConfigPath) ? File.ReadAllBytes(DriverConfigPath) : null;
+
+        var plan = await AnswerAsync(module, "WORKFLOW_USE", new { repository = "engine", workflow = "auto", plan = true });
+
+        Assert.True(plan.TryGetProperty("plan", out _), plan.GetRawText());
+        Assert.Equal((false, true, true, JsonValueKind.Null), (plan.GetProperty("done").GetBoolean(), plan.GetProperty("plan").GetBoolean(),
+            plan.GetProperty("changed").GetBoolean(), plan.GetProperty("refused").ValueKind));
+        var place = Assert.Single(plan.GetProperty("places").EnumerateArray());
+        Assert.Equal(("engine", "Current", "`auto` v1"), (place.GetProperty("repository").GetString(), place.GetProperty("was").GetString(), place.GetProperty("now").GetString()));
+        Assert.Equal(["it lands with no press of yours"], Strings(plan.GetProperty("lowers")));
+        Assert.Equal(["it lands with no press of yours"], Strings(place.GetProperty("lowers")));
+        Assert.False(string.IsNullOrWhiteSpace(plan.GetProperty("expected").GetString()));
+        Assert.Contains("now chooses `auto` as its default", plan.GetProperty("message").GetString());
+        Assert.Equal(before, File.Exists(DriverConfigPath) ? File.ReadAllBytes(DriverConfigPath) : null);
+
+        var workspace = await AnswerAsync(module, "WORKFLOW_USE", new { workspace = "aurora", workflow = "auto", plan = true });
+        Assert.Equal(["engine", "game"], workspace.GetProperty("places").EnumerateArray().Select(each => each.GetProperty("repository").GetString()));
+        Assert.Equal(before, File.Exists(DriverConfigPath) ? File.ReadAllBytes(DriverConfigPath) : null);
+
+        var refused = await AnswerAsync(module, "WORKFLOW_USE", new { repository = "engine", workflow = "nope", plan = true });
+        Assert.Equal((false, "refused"), (refused.GetProperty("done").GetBoolean(), refused.GetProperty("refused").GetString()));
+    }
+
+    /// <summary>
+    /// SETUPUX1c: a press carrying the plan's token acts where nothing moved, and is refused <c>moved</c>, writing nothing, where anything did;
+    /// a press without one acts as it did, and <c>stale</c> still answers a version that moved.
+    /// </summary>
+    [Fact]
+    public async Task A_press_carrying_the_token_acts_where_nothing_moved_and_is_refused_moved_where_something_did()
+    {
+        var (module, _) = await UpAsync();
+        await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "auto", from = "merge-automatic" });
+        var ask = new { repository = "engine", workflow = "auto" };
+        var token = (await AnswerAsync(module, "WORKFLOW_USE", new { ask.repository, ask.workflow, plan = true })).GetProperty("expected").GetString();
+
+        // Something the plan reads moves: a newer version of the workflow, which the choice would bind.
+        var appended = await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "auto", graph = WorkflowDefaults.Of("merge-after-accept")!.Graph(), @base = 1 });
+        Assert.True(appended.GetProperty("written").GetBoolean(), appended.GetRawText());
+        var moved = await AnswerAsync(module, "WORKFLOW_USE", new { ask.repository, ask.workflow, expected = token });
+        Assert.Equal((false, "moved", false), (moved.GetProperty("done").GetBoolean(), moved.GetProperty("refused").GetString(), moved.GetProperty("changed").GetBoolean()));
+        Assert.False(File.Exists(DriverConfigPath) && File.ReadAllText(DriverConfigPath).Contains("\"workflows\"", StringComparison.Ordinal));
+
+        var again = (await AnswerAsync(module, "WORKFLOW_USE", new { ask.repository, ask.workflow, plan = true })).GetProperty("expected").GetString();
+        Assert.NotEqual(token, again);
+        var stale = await AnswerAsync(module, "WORKFLOW_USE", new { ask.repository, ask.workflow, version = 1, expected = again });
+        Assert.Equal("stale", stale.GetProperty("refused").GetString());
+
+        var done = await AnswerAsync(module, "WORKFLOW_USE", new { ask.repository, ask.workflow, version = 2, expected = again });
+        Assert.Equal((true, true), (done.GetProperty("done").GetBoolean(), done.GetProperty("changed").GetBoolean()));
+        Assert.Equal("auto", DriverConfig.Load(DriverConfigPath).Workflows["engine"].Default);
+
+        var plain = await AnswerAsync(module, "WORKFLOW_USE", new { workspace = "aurora", workflow = "auto" });
+        Assert.True(plain.GetProperty("done").GetBoolean());
+    }
+
+    /// <summary>SETUPUX1c (the reads' Codex 2): clearing a default says what the kinds the place still maps keep.</summary>
+    [Fact]
+    public async Task A_plan_that_clears_a_default_says_what_the_kinds_the_place_still_maps_keep()
+    {
+        var (module, _) = await UpAsync();
+        await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", steps = Parse(Steps) });
+        await AnswerAsync(module, "WORKFLOW_KIND", new { workspace = "aurora", kind = "docs", label = "Documentation", paths = new[] { "docs/**" } });
+        await AnswerAsync(module, "WORKFLOW_USE", new { repository = "engine", workflow = "docs", kind = "docs" });
+        await AnswerAsync(module, "WORKFLOW_USE", new { repository = "engine", workflow = "docs" });
+        var before = File.ReadAllBytes(DriverConfigPath);
+
+        var plan = await AnswerAsync(module, "WORKFLOW_USE", new { repository = "engine", plan = true });
+
+        Assert.True(plan.GetProperty("changed").GetBoolean());
+        var keeps = plan.GetProperty("keeps");
+        var kind = Assert.Single(keeps.GetProperty("kinds").EnumerateArray());
+        Assert.Equal(("docs", "docs"), (kind.GetProperty("kind").GetString(), kind.GetProperty("workflow").GetString()));
+        Assert.Contains("follows Current, not the workspace's", keeps.GetProperty("said").GetString());
+        Assert.Equal(before, File.ReadAllBytes(DriverConfigPath));
+
+        var clearsAKind = await AnswerAsync(module, "WORKFLOW_USE", new { repository = "engine", workflow = "docs", plan = true });
+        Assert.Equal(JsonValueKind.Null, clearsAKind.GetProperty("keeps").ValueKind);
+    }
+
     /// <summary>The three routes are the person's: the census classes them so, no standing press is one of them and no role's act names one.</summary>
     [Theory]
     [InlineData("WORKFLOW_SAVE")]

@@ -14,14 +14,23 @@ export type SavedWorkflow = {
 };
 
 /**
- * A preset built in, never stored until saved: a graph's `body` as a version saves it, which the step editor starts from, and a default's
- * names in both languages (WORKFLOWEDIT1b); a driver before them leaves both out.
+ * A preset built in, never stored until saved: a graph's `body` as a version saves it, which the step editor starts from. A default's
+ * `name` is the driver's English one (the page words it from its catalogue by `id`, `presetWords.ts`); it also says what it is `for`
+ * (English, likewise), its `order`, whether the place's set-up offers it (`setUp`) and its `delivery` (SETUPUX1a). A driver before that
+ * leaves them out, and a preset that is no default carries them null. The data holds no per-language field.
  */
 export type PresetWorkflow = {
-  id: string; name: string; graph: boolean; line: string; preset: true; body?: unknown; names?: { en: string; zh: string } | null;
+  id: string; name: string; graph: boolean; line: string; preset: true; body?: unknown;
+  for?: string | null; order?: number | null; setUp?: boolean | null; delivery?: PresetDelivery | null;
 };
 
-export type WorkflowListAnswer = { workflows: SavedWorkflow[]; presets: PresetWorkflow[] };
+/** The `land` options a default's delivery sets, with its own `id`, English name and purpose, which are not the workflow's. */
+export type PresetDelivery = {
+  id: string; method: string; accept: 'you' | 'automatic'; plugin?: string | null; request?: string | null; name: string; for: string;
+};
+
+/** `use` lists what `WORKFLOW_USE` can be asked beside a plain press (`plan`, SETUPUX1c), absent from a driver before it. */
+export type WorkflowListAnswer = { workflows: SavedWorkflow[]; presets: PresetWorkflow[]; use?: string[] };
 
 /** A problem the graph has, by its code, with the wire or node it is about. */
 export type GraphProblem = { code: string; wire: string | null; node: string | null; words: string };
@@ -85,10 +94,29 @@ export type WorkflowSaveAnswer = {
   scopes: WorkflowScopeRow[]; reach: WorkflowReachRow[]; problems?: GraphProblem[];
 };
 
-/** A place's choice of a saved workflow (`WORKFLOW_USE`): `version` is the newest the person read, refused `stale` once it moved. */
-export type WorkflowUseAsk = ({ repository: string } | { workspace: string }) & { workflow: string; version?: number };
+/**
+ * A place's choice of a saved workflow (`WORKFLOW_USE`): `version` is the newest the person read, refused `stale` once it moved. `plan: true`
+ * reads the choice and writes nothing, only where `WORKFLOW_LIST` announces `use: ['plan']`; `expected`, the plan's token, is refused `moved`
+ * where anything the plan says has changed since (SETUPUX1c). `workflow` is absent to clear the default.
+ */
+export type WorkflowUseAsk = ({ repository: string } | { workspace: string }) & {
+  workflow?: string; version?: number; kind?: string; plan?: boolean; expected?: string;
+};
 
-export type WorkflowUseAnswer = { done: boolean; refused: string | null; message: string | null; changed: boolean; reach: WorkflowReachRow[] };
+/** A repository whose workflow a choice changes: what it follows now and after, and what lowers the person's part there. */
+export type WorkflowUsePlace = { repository: string; was: string; now: string; lowers: string[] };
+
+/** What clearing a default leaves to the kinds the place still maps: the driver's sentence, and each kind with its workflow. */
+export type WorkflowUseKeeps = { said: string; kinds: { kind: string; workflow: string }[] };
+
+/**
+ * What `WORKFLOW_USE` answers. A plan (`plan: true`) adds what it would do: `lowers`, the `places` it changes, what a cleared default's kinds
+ * `keeps`, and the `expected` token a press carries; `done` is false, since nothing was written. A driver before it leaves these out.
+ */
+export type WorkflowUseAnswer = {
+  done: boolean; refused: string | null; message: string | null; changed: boolean; reach: WorkflowReachRow[];
+  plan?: boolean; lowers?: string[]; places?: WorkflowUsePlace[]; keeps?: WorkflowUseKeeps | null; expected?: string;
+};
 
 /** A working role a step may name, from the roles' structure: its id, its names, and the works it takes. */
 export type EditorRole = { id: string; name: Authored | null; takes: string[] };

@@ -3,17 +3,20 @@ using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
 
-/// <summary>Words Daoris ships in English and Chinese: chrome, since a default is Daoris's own.</summary>
-public sealed record ShippedWords(string En, string Zh);
+/// <summary>
+/// A delivery's id, name and purpose in English (SETUPUX1a): the terminal's words and the page's fallback. The page names a delivery from its
+/// own catalogue by <paramref name="Id"/>, in every locale it ships; the workflow's name is another thing.
+/// </summary>
+public sealed record ShippedDelivery(string Id, string Name, string For);
 
 /// <summary>
-/// One default workflow Daoris ships: its id and the ids it was known by, its names and what it is for, its delivery (the
-/// <c>land</c> options a place's quick set-up applies, <see cref="SetupPresets"/>), whether that set-up offers it, and its graph as a version
-/// saves it, compact, with its digest.
+/// One default workflow Daoris ships: its id and the ids it was known by, its name and what it is for in English (the page names it from its
+/// own catalogue by the id), its delivery (the <c>land</c> options a place's quick set-up applies, <see cref="SetupPresets"/>) with its id, name
+/// and purpose, whether that set-up offers it, and its graph as a version saves it, compact, with its digest.
 /// </summary>
 public sealed record WorkflowDefault(
-    string Id, int Order, IReadOnlyList<string> Aliases, ShippedWords Names, ShippedWords For, SetupLand Delivery, bool SetUp, string GraphJson,
-    string Digest)
+    string Id, int Order, IReadOnlyList<string> Aliases, string Name, string For, SetupLand Delivery, ShippedDelivery DeliveryWords,
+    bool SetUp, string GraphJson, string Digest)
 {
     /// <summary>The graph as saved, fresh each time, for a version to take.</summary>
     public JsonObject Graph() => JsonNode.Parse(GraphJson)!.AsObject();
@@ -108,13 +111,13 @@ public static class WorkflowDefaults
         string? Optional(JsonElement at, string name) => at.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
         JsonElement Object(string name) =>
             root.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Object ? value : throw Broken($"its `{name}` is an object.");
-        ShippedWords Words(string name) => new(Text(Object(name), "en"), Text(Object(name), "zh"));
 
         var id = Text(root, "id");
         if (id != file) throw Broken("its `id` is its file's name.");
         if (!(root.TryGetProperty("order", out var order) && order.TryGetInt32(out var place))) throw Broken("its `order` is a whole number.");
         var delivery = Object("delivery");
         var land = new SetupLand(Text(delivery, "method"), Text(delivery, "accept"), Optional(delivery, "plugin"), Optional(delivery, "request"));
+        var deliveryWords = new ShippedDelivery(Text(delivery, "id"), Text(delivery, "name"), Text(delivery, "for"));
         var graph = JsonNode.Parse(Object("graph").GetRawText())!.ToJsonString();
         var (read, problems) = NodeGraphs.Read(graph, onSave: true);
         if (read is null) throw Broken(problems[0].Words);
@@ -123,6 +126,6 @@ public static class WorkflowDefaults
             ? [.. listed.EnumerateArray().Select(each => each.GetString() ?? throw Broken("each of its `aliases` is an id."))]
             : [];
         var setUp = root.TryGetProperty("setUp", out var offered) && offered.ValueKind == JsonValueKind.True;
-        return new WorkflowDefault(id, place, aliases, Words("names"), Words("for"), land, setUp, graph, NodeGraphs.Digest(read));
+        return new WorkflowDefault(id, place, aliases, Text(root, "name"), Text(root, "for"), land, deliveryWords, setUp, graph, NodeGraphs.Digest(read));
     }
 }

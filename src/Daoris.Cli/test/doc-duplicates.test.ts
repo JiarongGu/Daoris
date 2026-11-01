@@ -52,12 +52,13 @@ test('quoted examples do not duplicate live records, while repeated live records
   }
 });
 
-// The router merges by its rows (ROUTERMERGE1), not by union, and is still checked: a side can carry a row twice.
-test('the records the attributes mark union or rows are exactly the ones checked', async () => {
+// The router merges by its rows (ROUTERMERGE1), and the decisions by their notes (NOTEBREAK1), not by union, and both are still
+// checked: a side can carry a row or a note twice.
+test('the records the attributes mark union, rows or notes are exactly the ones checked', async () => {
   const { readFileSync } = await import('node:fs');
   const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
   const attributes = readFileSync(join(root, '.gitattributes'), 'utf8');
-  const union = attributes.split('\n').filter((line) => /\smerge=(?:union|rows)\s*$/.test(line)).map((line) => line.split(/\s+/)[0]);
+  const union = attributes.split('\n').filter((line) => /\smerge=(?:union|rows|notes)\s*$/.test(line)).map((line) => line.split(/\s+/)[0]);
   assert.deepEqual(union.sort(), records(root).map((record) => record.file).sort());
 });
 

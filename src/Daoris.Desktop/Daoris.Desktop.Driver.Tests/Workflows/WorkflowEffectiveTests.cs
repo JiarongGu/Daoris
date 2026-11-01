@@ -214,7 +214,7 @@ public sealed class WorkflowEffectiveTests : IDisposable
     private string WriteConfig(string json)
     {
         Directory.CreateDirectory(_home);
-        var path = Path.Combine(_home, "driver.json");
+        var path = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         File.WriteAllText(path, json);
         return path;
     }

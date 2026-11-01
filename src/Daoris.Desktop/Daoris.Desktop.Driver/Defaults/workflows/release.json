@@ -1,12 +1,13 @@
 {
   "id": "release",
   "order": 8,
-  "names": { "en": "Release after you accept", "zh": "你采纳后发布" },
-  "for": {
-    "en": "For a repository that releases: the work is checked, you review it, it merges into the line, and the Local release plugin finds a pending release, records it and publishes the built package; with none pending the run ends at the line.",
-    "zh": "适用于需要发布的仓库：工作经检查、由你审阅后合并到主线，再由本地发布插件查找待发布的版本、记录并发布已构建的包；没有待发布版本时，流程止于主线。"
+  "name": "Release workflow",
+  "for": "For a repository that releases: the work is checked, you review it, it merges into the line, and the Local release plugin finds a pending release, records it and copies the built package into its own registry folder; with none pending the run ends at the line.",
+  "delivery": {
+    "id": "merge-after-accept", "method": "merge", "accept": "you",
+    "name": "Merge after you accept",
+    "for": "For a repository whose work you accept: once the work's requests are answered you review it, and it merges into the line."
   },
-  "delivery": { "method": "merge", "accept": "you" },
   "setUp": false,
   "graph": {
     "schemaVersion": 2,

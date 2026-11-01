@@ -374,6 +374,38 @@ public sealed class DriverModuleWorkflowTests : DriverModuleBridge
         Assert.Equal(["acme.deploy/deploy"], palette.GetProperty("plugins")[0].GetProperty("steps").EnumerateArray().Select(each => each.GetProperty("kind").GetString()));
     }
 
+    /// <summary>
+    /// SETUPUX1a: each default the list carries is the shipped data's, with its purpose, its order, whether the set-up offers it and its
+    /// delivery's land, names and purpose; SETUPUX1c: and the list announces that a choice can be read as a plan.
+    /// </summary>
+    [Fact]
+    public async Task The_list_carries_each_defaults_purpose_order_set_up_and_delivery_and_announces_the_plan_of_one()
+    {
+        var module = Module();
+
+        var list = await AnswerAsync(module, "WORKFLOW_LIST", new { });
+
+        Assert.Equal(["plan"], list.GetProperty("use").EnumerateArray().Select(each => each.GetString()));
+        var presets = list.GetProperty("presets").EnumerateArray().Where(each => each.TryGetProperty("delivery", out var delivery) && delivery.ValueKind == JsonValueKind.Object).ToList();
+        Assert.Equal(WorkflowDefaults.All.Select(each => each.Id), presets.Select(each => each.GetProperty("id").GetString()));
+        foreach (var (shipped, preset) in WorkflowDefaults.All.Zip(presets))
+        {
+            Assert.Equal((shipped.Name, shipped.For), (preset.GetProperty("name").GetString(), preset.GetProperty("for").GetString()));
+            Assert.False(preset.TryGetProperty("names", out _), "the list carries no per-language field");
+            Assert.Equal((shipped.Order, shipped.SetUp), (preset.GetProperty("order").GetInt32(), preset.GetProperty("setUp").GetBoolean()));
+            var delivery = preset.GetProperty("delivery");
+            Assert.Equal((shipped.Delivery.Method, shipped.Delivery.Accept), (delivery.GetProperty("method").GetString(), delivery.GetProperty("accept").GetString()));
+            Assert.Equal(shipped.Delivery.Plugin, delivery.TryGetProperty("plugin", out var plugin) ? plugin.GetString() : null);
+            Assert.Equal(shipped.Delivery.Request, delivery.TryGetProperty("request", out var request) ? request.GetString() : null);
+            Assert.Equal(
+                (shipped.DeliveryWords.Id, shipped.DeliveryWords.Name, shipped.DeliveryWords.For),
+                (delivery.GetProperty("id").GetString(), delivery.GetProperty("name").GetString(), delivery.GetProperty("for").GetString()));
+            Assert.False(delivery.TryGetProperty("names", out _), "the delivery carries no per-language field");
+        }
+
+        Assert.Equal(WorkflowDefaults.All.Count, presets.Count);
+    }
+
     /// <summary>The module over a loop come up on a stand-in service holding the registry below, <c>engine</c>'s checkout at <paramref name="root"/> where named.</summary>
     private async Task<(DriverModule Module, DriverLoop Loop)> UpAsync(string? root = null)
     {
