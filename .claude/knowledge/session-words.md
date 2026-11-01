@@ -38,6 +38,20 @@ itself loses it at a restart, and two producers that each hold their own word on
 - A door that observes a receipt records it as a `receipt` event under the word's id (`Receipts.Sent`, `Receipts.Answered`); *taken*
   is the word's own event as the turn's ask, written only once the agent did something for it.
 
+## What a message is told beside the words
+
+The preface, the browser's line, the process and the open workflow draft (FLOWCHART2d) are each a field of `ChatMessage` of
+its own, never the person's words, and each goes into the same four places:
+
+- **The field and `Prompt`'s order** (`Course/Domain/ChatMessage.cs`), bounded where it is the agent's to read.
+- **How it reaches the message**: what the page sends rides the say's own arguments (the preface), or is handed to
+  `ChatContext` by its session and taken by `ChatRunner.Compose` for the next message it composes (the browser's line, the draft).
+- **Its own note on the record** (`Course/Chat/ChatRecorded.Recorded`, in the prompt's order): a code in `NoteCodes`, its
+  entry in both catalogues and `work/noteLines.ts`, the told text as the program's words. A field a judge reads back keeps its
+  machine-readable form as the note's last part (`WorkflowDraftTold.Told`).
+- **A member the provider census reads** (`.Wire` and its kin) is named apart or deconstructed: `ProviderCensusTests` counts
+  it as an unnamed site in any file of the driver or the modules.
+
 ## The come-up
 
 - A word a shell before attempted is uncertain: `UncertainWords` takes it back and says so with the `lost` note, at the loop's first

@@ -461,7 +461,7 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
             Proposed = candidate,
         };
 
-        // The place's Workflow, where the editor opens; FLOWCHART2g opens the editor itself with the proposal shown.
+        // The place's Workflow, where its editor is.
         return new HelpPlan(null, string.Join('\n', said), "", null)
         {
             Workflow = card,
