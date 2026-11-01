@@ -518,10 +518,13 @@ internal sealed class TreeDelivering
 
     private Task SeamAsync(string phase) => _delivery.Seam?.Invoke(phase) ?? Task.CompletedTask;
 
-    /// <summary>Where <paramref name="reference"/> stands: read and absent (null), read at a commit, or not read.</summary>
+    /// <summary>
+    /// Where <paramref name="reference"/> stands: read and absent (null), read at a commit, or not read. Asked as its commit, the one spelling
+    /// the landing reads a branch by (LANDGIT1c).
+    /// </summary>
     private static async Task<(bool Read, string? At)> StandsAsync(string root, string reference, CancellationToken ct)
     {
-        var (code, at, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", reference], ct).ConfigureAwait(false);
+        var (code, at, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"{reference}^{{commit}}"], ct).ConfigureAwait(false);
         return code switch { 0 => (true, at.Trim()), 1 => (true, null), _ => (false, null) };
     }
 

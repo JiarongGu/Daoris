@@ -31,7 +31,8 @@ internal static class CurrentDeliveries
         var rule = landing.Rule;
         var graph = NodeGraphHomes.Landing(rule);
         var method = Method(graph);
-        if (method != DeliveryMethods.Merge && branch is null) return (null, null);
+        // A name git would not take is the landing's to refuse in its own words, before anything is written.
+        if (method != DeliveryMethods.Merge && !(branch is { } named && BranchName.IsValid(named))) return (null, null);
         var squash = rule.Squash && method is DeliveryMethods.Branch or DeliveryMethods.PullRequest;
         var intent = new DeliveryIntent(
             subject.Session, repository, tip, method, line, line, method == DeliveryMethods.Merge ? null : branch, null,
