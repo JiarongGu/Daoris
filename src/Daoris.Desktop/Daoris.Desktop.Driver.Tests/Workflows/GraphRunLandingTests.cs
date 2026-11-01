@@ -57,21 +57,80 @@ public sealed class GraphRunLandingTests : AutoLandingFixture
         return (root, tree, Assert.Single(new SessionBranches(_home).All()));
     }
 
-    /// <summary>One whole pass of the runtime over the run's quest, done, and its session's branch, whose tip is read from git.</summary>
-    private async Task PassAsync(string root, GrownBranch branch)
+    /// <summary>
+    /// One whole pass of the runtime over the run's quest, done (held for the person's yes where <paramref name="held"/>), and its session's branch,
+    /// whose tip is read from git; what the line holds of it (LANDNODE1k) read in <paramref name="tree"/>, where given.
+    /// </summary>
+    private async Task PassAsync(string root, GrownBranch branch, string? tree = null, bool held = false)
     {
         var runtime = new NodeRuntime(new NodeRecordFiles(_home, () => true), new NoPlugins(), () => DateTimeOffset.UtcNow, () => true);
         var pass = await runtime.PassAsync(new NodeRuntimeLook(Config(), Whole: true)
         {
             Units = _ => Task.FromResult(new NodeUnitsRead(
-                [RunHome.QuestUnit(RunHome.Quest("q1", "Done")), RunHome.Branch(branch.Unit!, branch.Branch, branch.At, ["q1"])],
+                [RunHome.QuestUnit(RunHome.Quest("q1", "Done") with { Held = held }), RunHome.Branch(branch.Unit!, branch.Branch, branch.At, ["q1"])],
                 new Dictionary<string, string> { ["engine"] = root })),
             Tips = NodeTips.ReadAsync,
+            Content = (_, tip, ct) => tree is null ? Task.FromResult<HoldContent?>(null) : HoldReads.ContentAsync(new SessionTrees(_home), tree, tip, ct),
         }, CancellationToken.None);
         Assert.True(pass.Armed);
     }
 
-    private NodeStatus Handed() => new NodeRecordFiles(_home, () => false).Read(RunUnits.IdOf("q1"))!.Statuses["handed"];
+    private NodeStatus Handed() => Status("handed");
+
+    private NodeStatus Status(string node) => new NodeRecordFiles(_home, () => false).Read(RunUnits.IdOf("q1"))!.Statuses[node];
+
+    /// <summary>A version copied from the default <paramref name="from"/>, as <c>new --from</c> copies it, saved, and the run bound to it.</summary>
+    private async Task<NodeGraph> CopyAsync(string from)
+    {
+        var source = await WorkflowOperations.SourceAsync(Config(), _home, _ => Task.FromResult(new ChoicesRegistry(null, "unread")),
+            from, opinion: false, look: false, CancellationToken.None);
+        var copied = WorkflowOperations.PlanGraph(_home, null, "docs", null, source.Name, "terminal", "2026-11-01T09:00:00Z", source.Graph, source.From);
+        WorkflowPorts.Store(_home).Write("docs", copied.Plan.Result!);
+        RunHome.Bind(_home, "q1", copied.Next!.Digest!, DateTimeOffset.UtcNow);
+        return copied.Next.Graph!;
+    }
+
+    /// <summary>
+    /// LANDNODE1k: the quest's own holds are a step of the default, which the run's pass keeps active while the done is held for the person's yes;
+    /// the look's automatic landing judges nothing of the quest itself and holds at the graph, in the step's words, landing nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_held_done_holds_a_defaults_run_at_its_quest_holds_step_and_the_look_says_it()
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(LandingRule.Merge with { AutoAccept = true });
+        var tree = await DoneSessionAsync(root, "s1", "q1", held: true);
+        await CopyAsync("merge-automatic");
+        var line = await HeadAsync(root);
+
+        await PassAsync(root, Assert.Single(new SessionBranches(_home).All()), tree, held: true);
+        Assert.Equal((NodeStates.Active, NodeStates.Blocked), (Status("holds").State, Status("landing").State));
+
+        var said = await LookAsync();
+        Assert.Contains(said, each => each.Contains("waits on `holds` (quest.holds)", StringComparison.Ordinal));
+        Assert.Equal(line, await HeadAsync(root));
+    }
+
+    /// <summary>LANDNODE1k: a version that holds no `quest.holds` lands a done held for the person's yes, as it is configured to: the look judges none.</summary>
+    [Fact]
+    public async Task A_version_without_the_holds_lands_a_held_done_with_no_press()
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(LandingRule.Merge with { AutoAccept = true });
+        var tree = await DoneSessionAsync(root, "s1", "q1", held: true);
+        RunHome.Bind(_home, "q1", RunHome.SaveGraph(_home, """
+            {"schemaVersion":2,"entries":["claimed"],"end":"landing",
+             "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"merge"}}],
+             "wires":[{"id":"c>l","kind":"after","from":"claimed","to":"landing"}]}
+            """), DateTimeOffset.UtcNow);
+
+        await PassAsync(root, Assert.Single(new SessionBranches(_home).All()), tree, held: true);
+        var commit = await HeadAsync(tree);
+        Assert.Equal(NodeStates.Active, Status("landing").State);
+
+        await LookAsync();
+        Assert.Equal(commit, (await GitAsync(root, "merge-base", "main", commit)).Trim());
+    }
 
     [Fact]
     public async Task The_door_lands_where_the_pass_made_handed_active_and_holds_before_any_pass()
@@ -108,16 +167,12 @@ public sealed class GraphRunLandingTests : AutoLandingFixture
         var root = await RepositoryAsync("engine");
         Rule(LandingRule.Merge);
         var tree = await DoneSessionAsync(root, "s1", "q1");
-        var source = await WorkflowOperations.SourceAsync(Config(), _home, _ => Task.FromResult(new ChoicesRegistry(null, "unread")),
-            "merge-automatic", opinion: false, look: false, CancellationToken.None);
-        var copied = WorkflowOperations.PlanGraph(_home, null, "docs", null, source.Name, "terminal", "2026-11-01T09:00:00Z", source.Graph, source.From);
-        WorkflowPorts.Store(_home).Write("docs", copied.Plan.Result!);
-        Assert.DoesNotContain(copied.Next!.Graph!.Nodes, node => node.Kind == NodeKinds.Review);
-        RunHome.Bind(_home, "q1", copied.Next.Digest!, DateTimeOffset.UtcNow);
+        Assert.DoesNotContain((await CopyAsync("merge-automatic")).Nodes, node => node.Kind == NodeKinds.Review);
         var branch = Assert.Single(new SessionBranches(_home).All());
         var trees = new SessionTrees(_home);
 
-        await PassAsync(root, branch);
+        // LANDNODE1k: its holds are steps the pass judges, what the line holds read in the session's tree.
+        await PassAsync(root, branch, tree);
         var commit = await HeadAsync(tree);
         var gate = await trees.GateAsync(tree, "q1", _world, "s1");
         Assert.Equal((GraphGateStates.Lands, commit), (gate.Graph!.State, gate.Tip));

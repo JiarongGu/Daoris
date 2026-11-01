@@ -141,7 +141,9 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
         LandingRule landing;
         if ((string?)land.Field("form") == LandingForm.Merge)
         {
-            landing = new LandingRule(LandingForm.Merge, Tidy: rule.Tidy);
+            // LANDNODE1k: a graph's merge with no review before its `land` lands with no press (D145's note of 2026-11-01), so the look lands it as
+            // the graph says; a steps version's merge is refused `automatic` where its steps are read, and never reaches here with it.
+            landing = new LandingRule(LandingForm.Merge, Tidy: rule.Tidy, AutoAccept: (string?)land.Field("accept") == "automatic");
         }
         else
         {
