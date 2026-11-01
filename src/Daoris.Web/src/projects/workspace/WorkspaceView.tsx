@@ -36,6 +36,7 @@ import type { WorkspaceSection, WorkspaceTab } from '../tabs';
 import { accountsHere, hostOf } from './workspace';
 import { WorkspaceDetails, WorkspacePage } from './WorkspacePage';
 import { WorkspaceSetup, type WorkspaceSetupProps } from '../setup/WorkspaceSetup';
+import { setupLit } from '../../agents/modes';
 
 /** Matched without case, as the driver matches a workspace's name. */
 const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
@@ -146,7 +147,18 @@ export function WorkspaceView({
           />
         )
       : tab === 'setup'
-        ? <SetupPart workspace={workspace} notify={notify} open={wiring ? 'remote' : askedHere ?? asked ?? undefined} wiring={wiring} onOpenPlugin={onOpenPlugin} onOpenAppointed={onOpenAppointed} />
+        ? (
+          <WorkspaceSetupPart
+            workspace={workspace}
+            notify={notify}
+            open={wiring ? 'remote' : askedHere ?? asked ?? undefined}
+            wiring={wiring}
+            // Lit, the session rows are the workspace place's (AGENTSPLACE1f); this tab keeps the rest.
+            rows={setupLit() ? 'rest' : 'all'}
+            onOpenPlugin={onOpenPlugin}
+            onOpenAppointed={onOpenAppointed}
+          />
+        )
         : (
           <DetailsPart
             workspace={workspace}
@@ -378,14 +390,18 @@ function WorkflowPart({ workspace, onSetup, onOpenRepository }: {
 /**
  * Setup: its defaults (WSR1, WSR2, LANG1c, READ1) and its remote and rules (D48 §5, PERM1), each from the answer the driver
  * gives every door and each change said as the toast Settings' cards said it.
+ *
+ * Exported for the Agents place (AGENTSPLACE1f): a workspace's page there draws `rows="sessions"` under its Sessions, and this tab, once the
+ * Setup mode is lit, the rows that have not moved.
  */
-function SetupPart({ workspace, notify, open, wiring, onOpenPlugin, onOpenAppointed }: {
+export function WorkspaceSetupPart({ workspace, notify, open, wiring = false, rows, onOpenPlugin, onOpenAppointed }: {
   workspace: string;
   onOpenPlugin?: (plugin: string) => void;
   onOpenAppointed?: () => void;
   notify: Notify;
   open?: WorkspaceSection;
-  wiring: boolean;
+  wiring?: boolean;
+  rows?: WorkspaceSetupProps['rows'];
 }) {
   const { t } = useTranslation();
   const driver = useDriver();
@@ -617,5 +633,5 @@ function SetupPart({ workspace, notify, open, wiring, onOpenPlugin, onOpenAppoin
     },
   };
 
-  return <WorkspaceSetup {...setup} onOpenPlugin={onOpenPlugin} />;
+  return <WorkspaceSetup {...setup} rows={rows} onOpenPlugin={onOpenPlugin} />;
 }

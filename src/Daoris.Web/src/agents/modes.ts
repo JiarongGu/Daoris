@@ -38,6 +38,11 @@ export function readAgentsMode(): AgentsMode {
  */
 export const setupLit = (): boolean => stored('daoris.agents.setup') === 'on';
 
+/** The ids of Setup's places, as its list chooses them and a door names them (AGENTSPLACE1e, 1f): this machine, a workspace, a repository. */
+export const MACHINE = 'machine';
+export const workspaceId = (workspace: string) => `workspace:${workspace}`;
+export const repositoryId = (workspace: string | null | undefined, repository: string) => `repo:${workspace ?? ''}/${repository}`;
+
 /** Remember the mode chosen; Agents, the first, is what nothing kept means. */
 export function storeAgentsMode(mode: AgentsMode): void {
   store(KEY, mode === 'agents' ? null : mode);

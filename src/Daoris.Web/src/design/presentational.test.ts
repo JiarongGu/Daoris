@@ -94,6 +94,9 @@ const ORGANISMS = new Set<string>([
   './agents/setup/SetupPlaces.tsx',
   // A place's Roles section (AGENTSPLACE1g1): its chain's read and the role editor's presses, so its rows below hold none.
   './agents/setup/PlaceRoles.tsx',
+  // A place's Sessions (AGENTSPLACE1f): the registry's row and the one reading of a repository's setup behind it, so the molecules below hold none.
+  './agents/setup/PlaceSessions.tsx',
+  './projects/setup/useRepositorySetup.ts',
   // A workspace's page's organism (UX6g, D150 §4.3): it holds the driver's answers and every act on a workspace, so the
   // page, its Details and its Setup below it hold none.
   './projects/workspace/WorkspaceView.tsx',

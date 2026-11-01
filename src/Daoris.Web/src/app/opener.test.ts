@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { askItem, doorOpening, opening, planOpening, projectsItem, questsItem, workspaceItem } from './opener';
+import { askItem, doorOpening, opening, placeOpening, planOpening, projectsItem, questsItem, workspaceItem } from './opener';
 
 // One opener (D118 §3i): every door into a view says what it opens, and the view's chosen item takes it.
 // Pure, so what each door does is an assertion, and `App` only applies it.
@@ -244,5 +244,38 @@ describe("a press's plan door", () => {
       .toEqual({ opening: opening('quests', '7eb1d7ba71fe') });
     expect(planOpening({ plan: 'clear', scope: 'ask', id: '77ea1a000000' }, 'forge', holding))
       .toEqual({ opening: opening('quests', askItem('77ea1a000000')) });
+  });
+});
+
+/** AGENTSPLACE1f: every door into a repository's Setup tab ends in `apply`, so one redirect there is the door census. */
+describe('a door into a repository\'s Setup tab, once the Setup mode is lit', () => {
+  const where = () => 'studio';
+
+  it("opens the repository's place in the Setup mode, whichever door named the tab", () => {
+    const place = { view: 'agents', agentsMode: 'setup', place: 'repo:studio/engine' };
+    // What needs you's declaration wait, a Roles section's door and a workflow step's all say `open('projects', repository, { tab: 'setup' })`.
+    expect(placeOpening(opening('projects', 'engine', { tab: 'setup' }), true, where)).toEqual(place);
+    // Get started's and the help room's steps name the repository by `doorOpening`.
+    expect(placeOpening(doorOpening({ view: 'projects', item: 'engine', tab: 'setup' }), true, where)).toEqual(place);
+  });
+
+  it('opens the mode, whose list chooses one, for a door naming the tab and no repository', () => {
+    expect(placeOpening(doorOpening({ view: 'projects', tab: 'setup' }), true, where)).toEqual({ view: 'agents', agentsMode: 'setup' });
+  });
+
+  it("opens a workspace's Sessions' access at the workspace's place, and leaves the rest of its Setup where it is", () => {
+    expect(placeOpening(opening('projects', workspaceItem('studio'), { workspaceTab: 'setup', workspaceSection: 'access' }), true, where))
+      .toEqual({ view: 'agents', agentsMode: 'setup', place: 'workspace:studio' });
+    const remote = opening('projects', workspaceItem('studio'), { workspaceTab: 'setup', workspaceSection: 'remote' });
+    expect(placeOpening(remote, true, where)).toEqual(remote);
+  });
+
+  it('changes nothing while the mode is dark, nor for a door that is not the Setup tab', () => {
+    const tab = opening('projects', 'engine', { tab: 'setup' });
+    expect(placeOpening(tab, false, where)).toEqual(tab);
+    const workflow = opening('projects', 'engine', { tab: 'workflow' });
+    expect(placeOpening(workflow, true, where)).toEqual(workflow);
+    const agents = opening('agents', 'claude-code');
+    expect(placeOpening(agents, true, where)).toEqual(agents);
   });
 });

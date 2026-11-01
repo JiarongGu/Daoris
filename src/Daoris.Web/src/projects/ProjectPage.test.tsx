@@ -64,6 +64,23 @@ describe("a repository's page on a right-click", () => {
 describe("a repository's tabs", () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
+  // AGENTSPLACE1f: lit, a repository's Setup is the Agents place's page, so its tab goes, and a remembered one shows Details.
+  it("has no Setup tab where the place's page holds it, and its line's door opens that page", async () => {
+    const onOpenSetup = vi.fn();
+    render(
+      <ProjectPage
+        registration={ENGINE} counts={COUNTS.engine} line={LINE} setup={null} onOpenSetup={onOpenSetup}
+        workflow={{ current: FULL }} tab="setup" onTab={vi.fn()}
+      />,
+    );
+
+    const tabs = screen.getByRole('tablist', { name: "engine's pages" });
+    expect(within(tabs).getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Details', 'Workflow']);
+    expect(screen.getByRole('tabpanel', { name: 'Details' })).toHaveTextContent('Owns');
+    await userEvent.click(screen.getByRole('button', { name: 'Change in Setup' }));
+    expect(onOpenSetup).toHaveBeenCalledOnce();
+  });
+
   it('shows Details, then Setup on its tab, each the tab its holder chose', async () => {
     const onTab = vi.fn();
     const { rerender } = render(<ProjectPage registration={ENGINE} counts={COUNTS.engine} line={LINE} setup={SETUP_DEFAULTS} tab="details" onTab={onTab} />);
