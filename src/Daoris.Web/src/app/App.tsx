@@ -14,6 +14,7 @@ import { AttentionBand } from '../work/attention/AttentionBand';
 import { needsListed, placeCounts } from '../work/attention/attention';
 import { useScope } from '../data/scope';
 import { AskDaoris } from '../help/AskDaoris';
+import { registerAskFill } from '../help/askFill';
 import type { AskOpening } from '../help/AskConversation';
 import { QuickAsk } from '../help/QuickAsk';
 import { ContextMenus } from '../menus/ContextMenu';
@@ -1199,6 +1200,10 @@ export function App() {
       openInBrowser: (address: string) => openBrowser.mutate(address, { onError: failure(notify) }),
     } : {}),
   };
+  // A page that composes words for Ask Daoris (the workflow editor's *Ask why* and *Fix it*, FLOWCHART2c) fills Quick Ask's box through this door.
+  const fillAsk = useRef(askQuickly);
+  fillAsk.current = askQuickly;
+  useEffect(() => (attached ? registerAskFill((text) => fillAsk.current(text, true)) : undefined), [attached]);
   // Edit › Copy ID copies what a page's own *Copy … ID* would, and says so the same way (UX7a).
   copyText.current = contextDoors.copy;
   const renderView = (): ViewLayout => listedLayouts[view] ?? {

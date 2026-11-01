@@ -59,6 +59,27 @@ describe('StepNode', () => {
     expect(onFollow).toHaveBeenCalledWith('a', 'b');
   });
 
+  it('wears a refusal as declined\'s border and its words in the danger ink, and says it in the description (FLOWCHART2c)', () => {
+    const node: ChartNode = { id: 'a', title: 'The work', step: step({ refused: ['Its role does not do this step\'s work.'] }) };
+    render(<StepNode context={context(node, { description: 'Next: Review.' })} step={node.step!} />);
+    const item = screen.getByRole('listitem', { name: 'The work' });
+    expect(item.className).toContain('border-st-declined');
+    expect(item).toHaveAttribute('data-refused', 'true');
+    const words = within(item).getByText('Its role does not do this step\'s work.');
+    expect(words.closest('[data-flow-refusal]')?.className).toContain('text-ink-danger');
+    expect(item).toHaveAccessibleDescription('Next: Review. To put right: Its role does not do this step\'s work.');
+  });
+
+  it('wears no refusal mark on a step the judgement holds, and one line for each refusal it has', () => {
+    const plain: ChartNode = { id: 'a', title: 'The work', step: step({ refused: [] }) };
+    const { container, rerender } = render(<StepNode context={context(plain)} step={plain.step!} />);
+    expect(container.querySelector('[data-flow-refusal]')).toBeNull();
+    expect(screen.getByRole('listitem').className).not.toContain('border-st-declined');
+    const two: ChartNode = { id: 'a', title: 'The work', step: step({ refused: ['First.', 'Second.'] }) };
+    rerender(<StepNode context={context(two)} step={two.step!} />);
+    expect(container.querySelectorAll('[data-flow-refusal]')).toHaveLength(2);
+  });
+
   const decision = (): [ChartNode, NodeContext] => {
     const node: ChartNode = {
       id: 'find', title: 'Find a release',
@@ -179,6 +200,12 @@ describe('EdgeChip', () => {
     const { container } = render(<EdgeChip style="next" text="" count={1} problem="needs a role" />);
     expect(container).toHaveTextContent('⚠ needs a role');
     expect(container.innerHTML).toContain('text-ink-danger');
+  });
+
+  it('says the problem\'s short word beside the ⚠, never the mark alone', () => {
+    const { container } = render(<EdgeChip style="next" text="" count={1} problem="Refused" />);
+    expect(container.querySelector('[data-flow-refusal-chip]')).toHaveTextContent('⚠ Refused');
+    expect(container.querySelector('[data-flow-refusal-chip]')?.className).toContain('text-ink-danger');
   });
 
   it('wears no status hue in any kind', () => {
