@@ -841,6 +841,32 @@ describe('the regions', () => {
   });
 });
 
+/**
+ * **An edge is ink and never a status hue** (D186 point 6; FLOWCHART2a). A flowchart's edge is content, its cause said in the source's
+ * foot or port and to a reader; a hue on it would say a state the record may not hold. A way the driver found a problem in wears a ⚠
+ * chip in the danger ink beside its ordinary line, so the line itself is read from what draws it: the canvas's paths and markers and
+ * the chip a way wears.
+ */
+const EDGE_DRAWING = ['./design/FlowCanvas.tsx', './workflow/chart/EdgeChip.tsx'];
+const STATUS_HUE_CLASS = /(?<![\w-])(?:stroke|fill|text|bg|border|ring|outline|decoration)-st-[a-z]+|var\(--st-[a-z]+\)/g;
+
+export function edgeHues(files: [path: string, source: string][]): string[] {
+  return files.flatMap(([path, source]) => (source.match(STATUS_HUE_CLASS) ?? []).map((hit) => `${path} draws an edge in a status hue: ${hit}`));
+}
+
+describe('an edge wears no status hue', () => {
+  it('catches a path, a marker and a chip in one, and leaves the inks', () => {
+    expect(edgeHues([['./a.tsx', 'className="stroke-st-done"'], ['./b.tsx', 'fill="var(--st-declined)"'], ['./c.tsx', 'className="text-st-open"']])).toHaveLength(3);
+    expect(edgeHues([['./a.tsx', 'className="stroke-ink-faint stroke-ink-soft text-ink-danger fill-ink-faint"']])).toEqual([]);
+  });
+
+  it('holds: what draws the canvas\'s edges and their chips uses the inks alone', () => {
+    const drawing = EDGE_DRAWING.map((path) => [path, sources[path]] as [string, string]);
+    for (const [path, source] of drawing) expect(source, `${path} is there`).toBeDefined();
+    expect(edgeHues(drawing)).toEqual([]);
+  });
+});
+
 describe('the form controls', () => {
   it('catches a native select, checkbox or radio, and leaves ui.tsx its own', () => {
     expect(nativeChoices([['./work/Start.tsx', '<select value={x}>']])).toHaveLength(1);

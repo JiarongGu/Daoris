@@ -1,8 +1,10 @@
 import { type KeyboardEvent, type ReactNode, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
-import { Flow, type FlowNode, type PillTone } from '../design/Flow';
+import type { PillTone } from '../design/Flow';
 import { Button, Icon, Inline, Tip } from '../design/ui';
+import { FlowChart } from './chart/FlowChart';
+import type { ChartNode } from './chart/stepKinds';
 import { aroundTheLanding, setupDoorOf, textOf, type CurrentWorkflow, type WorkflowParticipation, type WorkflowStep } from './current';
 import { stateSaid } from './runSaid';
 import { edgeSaid, executorSaid, holdsSaid, limitSaid, sourceSaid, stepSet, stepTitle } from './said';
@@ -396,7 +398,7 @@ export function WorkflowChart({ workflow, page, name, doors, run, end, finished 
   };
   const flow = workflowFlow(t, workflow, name, lit, graph, { open: holdsOpen, toggle: () => setHoldsOpen((was) => !was) });
   const steps = new Map(workflow.steps.map((step) => [step.id, step]));
-  const nodes = flow.nodes.map((node): FlowNode => {
+  const nodes = flow.nodes.map((node): ChartNode => {
     const step = steps.get(node.id);
     if (!step) return node;
     const limit = limitSaid(t, step, workflow.limits);
@@ -421,7 +423,7 @@ export function WorkflowChart({ workflow, page, name, doors, run, end, finished 
   const sections = flow.sections.map((section, index) => (index === 0 && holds ? { ...section, note: <Holds holds={holds} /> } : section));
 
   return (
-    <Flow
+    <FlowChart
       label={flow.label}
       nodes={nodes}
       edges={flow.edges}

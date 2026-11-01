@@ -44,10 +44,10 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/bridge/sessions/sessions.ts` | 54 | 1050 |
 | `src/Daoris.Web/src/data/api.ts` | 55 | 914 |
 | `src/Daoris.Web/src/data/queries.ts` | 52 | 985 |
-| `src/Daoris.Web/src/design/Flow.tsx` | 46 | 903 |
-| `src/Daoris.Web/src/design/tokens.test.ts` | 48 | 856 |
+| `src/Daoris.Web/src/design/FlowCanvas.tsx` | 49 | 925 |
+| `src/Daoris.Web/src/design/tokens.test.ts` | 50 | 882 |
 | `src/Daoris.Web/src/design/ui.test.tsx` | 65 | 1295 |
-| `src/Daoris.Web/src/design/ui.tsx` | 96 | 2019 |
+| `src/Daoris.Web/src/design/ui.tsx` | 97 | 2025 |
 | `src/Daoris.Web/src/help/AskConversation.tsx` | 62 | 1153 |
 | `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 106 | 2099 |
 | `src/Daoris.Web/src/help/ProposalCard.test.tsx` | 44 | 804 |

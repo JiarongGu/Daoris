@@ -22723,6 +22723,11 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 
 **Outcome** 2026-11-02: `agents/roles/RoleEditor.tsx` holds the editor (prose behind one ⓘ, a sentence of consequence before *Save*) and `setup/PlaceRoles.tsx` folds the unchanged works. Detail: D221's SETUPUX1l note; `PlaceRoles.stories.tsx`.
 
+## FLOWCHART2a — the chart's components (2026-11-02, D223)
+
+> **FLOWCHART2a — the components** (web; row a of the flowchart design). `FlowCanvas`, `StepNode` per kind, `PortRow`, `Terminal`, `HoldsGroup` and `EdgeChip`; the place's chart and the run view draw through them. Proof: every shipped graph with each kind's variant, each outcome a port, each unrouted outcome a ◎; measured, each `when` leaves its port's box, none crosses a box, crossing ceilings held, the other flows' stories unchanged; no status hue on an edge; stories at 80, 39 and 25rem, en and zh, both themes.
+
+**Outcome** 2026-11-02: the place's chart and a run draw through `workflow/chart/` on `design/FlowCanvas`; a decision's outcomes are ports its routes leave, two outcomes to one step stay two ways, and a `data` wire is drawn only while an end is selected. Detail: D223's FLOWCHART2a note; `graphFlow.test.ts`, `chart.test.tsx`, the measured `graph/*` stories.
 ## SETUPUX1m — This machine's page (2026-11-02, D221)
 
 > **SETUPUX1m — This machine's page** (web; row m of the set-up design). *All roles*, the diagram, the *Suggested* line and the found staffing changes, all reachable with the Setup mode lit, so lighting the flag loses none of what the dark Roles mode shows. Proof: a door census and `HelpCoverageTests` re-point every dark Roles door; *All roles* lists every role once with scope filters and search, opens a role placed elsewhere at its place, and edits a machine role in place; stories at 80, 39 and 25rem, en and zh, both themes, keyboard.

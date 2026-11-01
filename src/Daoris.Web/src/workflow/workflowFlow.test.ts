@@ -126,12 +126,12 @@ describe('a workflow as a flowchart', () => {
     expect(flow.nodes.filter((node) => node.id.includes(':'))).toEqual([]);
   });
 
-  // DECIDE1c: a decision's route is a conditional move named by its outcome, and a way back is drawn as a return, said by what it is taken on.
+  // DECIDE1c: a decision's route leaves the port of its outcome (FLOWCHART2a), and a way back is drawn as a return, said by what it is taken on.
   it("draws a decision's route by its outcome and a way back as a return", () => {
     const { graph, steps } = GRAPH_RUN_DECIDED;
     const flow = workflowFlow(t, { steps: steps.map((step) => step.step) }, 'engine', undefined, graph);
     expect(flow.edges.find((edge) => edge.from === 'find' && edge.to === 'release'))
-      .toMatchObject({ style: 'conditional', says: 'when it comes to `release`', label: 'release' });
+      .toMatchObject({ style: 'when', port: 'release', says: 'when it comes to `release`', label: 'release' });
     expect(flow.edges.find((edge) => edge.from === 'review' && edge.to === 'work'))
       .toMatchObject({ style: 'back', says: 'back to it when you ask for changes', label: 'sent back' });
     expect(flow.entries).toEqual(['work']);
