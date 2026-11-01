@@ -325,8 +325,9 @@ public static class NodeAuthorities
         // LANDNODE1a (land node design §2): reached when the landing record holds the bound tip, failed by the landing's own refusal. Never
         // skipped, since a skip would read as landed; the person's doors are stop and Try again, and their Accept is a `review`'s.
         [NodeKinds.Land] = new(NodeKinds.Land, NodeReach.Performed, NodeSource.Landing, NodeSource.Landing, false, PersonSkips: false, true, true),
-        // LANDNODE1c2: the person's Accept reaches it; nothing fails it, and it is never a graph's end.
-        [NodeKinds.Review] = new(NodeKinds.Review, NodeReach.Pressed, NodeSource.Person, null, false, PersonSkips: false, MayEnd: false, Evidenced: false),
+        // LANDNODE1c2: the person's Accept reaches it; nothing fails it, and it is never a graph's end. DECIDE1b: the person's changes, with
+        // words, are its rejection, so an `after` from it still means on Accept and a `rejected` or `back on: rejected` wire is the changes route.
+        [NodeKinds.Review] = new(NodeKinds.Review, NodeReach.Pressed, NodeSource.Person, null, true, PersonSkips: false, MayEnd: false, Evidenced: false),
     };
 
     /// <summary>
@@ -353,7 +354,8 @@ public static class NodeDeclarations
     /// What does not hold, by its field, or null: a kind this build does not know (<see cref="NodeRefusal.UnknownKind"/>), a reach not
     /// the kind's (a plugin's is observed or performed), a version below 1, a retry of fewer than one attempt or on a kind nothing can
     /// fail, a timeout not above zero, an output named <c>evidence</c> (the evidence port's name, <see cref="WireEnd.Evidence"/>), or a
-    /// rejection a built-in's declaration tries to grant or a skip it tries to forbid (the kind's own, never a declaration's). Then
+    /// rejection a built-in's declaration tries to grant or a skip it tries to forbid (the kind's own, never a declaration's), or outcomes on a
+    /// built-in or a plugin's that break <see cref="NodeOutcomes.Problem"/> (DECIDE1b). Then
     /// FABRIC-UNIT1d's (§D6): a <c>perform</c> on any node but a plugin's performed one, a transient code not of
     /// <see cref="NodePerform.CodeShape"/> or named twice, transient codes with no retry to take them, and a plugin's retry of more
     /// than one attempt that nothing could take: a transient code, on a node that is idempotent or reconciled. Then INTEGRATE1n's: an
@@ -381,6 +383,8 @@ public static class NodeDeclarations
         if (node.Outputs.ContainsKey(WireEnd.Evidence)) return "outputs";
         if (builtIn && node.Rejectable) return "rejectable";
         if (builtIn && !node.Skippable) return "skippable";
+        // DECIDE1b: no built-in kind is a decision, and a plugin's outcomes keep the names a route is followed by.
+        if (node.Outcomes.Count > 0 && (builtIn || NodeOutcomes.Problem(node.Outcomes) is not null)) return "outcomes";
         if (node.Kind == NodeKinds.Integrate && IntegrateOptionProblem(node) is { } option) return option;
         if (node.Kind == NodeKinds.Request && RequestOptions.Problem(node) is { } asked) return asked;
         if (node.Kind == NodeKinds.Land && LandNodes.Problem(node) is { } landed) return landed;

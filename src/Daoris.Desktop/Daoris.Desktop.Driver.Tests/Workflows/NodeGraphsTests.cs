@@ -306,6 +306,13 @@ public sealed class NodeGraphsTests
             WithWire("b", wire => wire with { Waits = new WaitTarget("u2", "r3") { End = true, Commitment = "q2/take-7" } }),
             WithWire("b", wire => wire with { Waits = new WaitTarget("u2", "r2") { End = true } }),
             WithWire("b", wire => wire with { Waits = new WaitTarget("u2", "r2") { Node = "deploy" } }),
+            // DECIDE1b: a decision's outcomes in their order, a `when`'s outcome and what a `back` is taken on.
+            WithNode("deploy", node => node with { Outcomes = ["shipped", "held"] }),
+            WithNode("deploy", node => node with { Outcomes = ["held", "shipped"] }),
+            WithWire("a", wire => wire with { Kind = WireKinds.When, Outcome = "shipped" }),
+            WithWire("a", wire => wire with { Kind = WireKinds.When, Outcome = "held" }),
+            WithWire("a", wire => wire with { Kind = WireKinds.Back, On = NodeStates.Rejected }),
+            WithWire("a", wire => wire with { Kind = WireKinds.Back, On = NodeStates.Failed }),
             Example with { Entries = ["line"] },
             Example with { End = "deploy" },
             Example with { Cleanup = new(GraphCleanupUntil.End, 14) },
@@ -316,6 +323,71 @@ public sealed class NodeGraphsTests
         var digests = changed.Select(NodeGraphs.Digest).ToList();
         Assert.DoesNotContain(NodeGraphs.Digest(Example), digests);
         Assert.Equal(digests.Count, digests.Distinct().Count());
+    }
+
+    /// <summary>A decision's routes as a file holds them: two outcomes, a <c>when</c> on each and a <c>back</c> on one, read and judged whole.</summary>
+    private const string RoutesJson = """
+        { "schemaVersion": 2, "entries": ["work"], "end": "line",
+          "nodes": [
+            { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
+            { "id": "find", "kind": "acme.release/find", "version": 1, "reach": "performed", "outcomes": ["release", "none"] },
+            { "id": "review", "kind": "review", "version": 1, "reach": "pressed" },
+            { "id": "land", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "merge" } },
+            { "id": "line", "kind": "line", "version": 1, "reach": "observed" },
+            { "id": "note", "kind": "human", "version": 1, "reach": "pressed" } ],
+          "wires": [
+            { "id": "a", "kind": "after", "from": "work", "to": "find" },
+            { "id": "b", "kind": "when", "from": "find", "outcome": "release", "to": "review" },
+            { "id": "c", "kind": "after", "from": "review", "to": "land" },
+            { "id": "d", "kind": "after", "from": "land", "to": "line" },
+            { "id": "e", "kind": "when", "from": "find", "outcome": "none", "to": "note" },
+            { "id": "f", "kind": "back", "from": "review", "on": "rejected", "to": "work" } ] }
+        """;
+
+    /// <summary>
+    /// DECIDE1b: a file's <c>outcomes</c>, a <c>when</c>'s <c>outcome</c> and a <c>back</c>'s <c>on</c> are read and digested, each moving the
+    /// digest and the place of the node it is about; a graph that says none of them digests as it did, so every stored graph keeps its digest
+    /// and its places (the version fixtures hold them too).
+    /// </summary>
+    [Fact]
+    public void A_decisions_routes_are_read_and_digested_and_a_graph_naming_none_digests_as_before()
+    {
+        var (graph, problems) = NodeGraphs.Read(RoutesJson, onSave: true);
+        Assert.Empty(problems);
+        Assert.NotNull(graph);
+        Assert.Equal(["release", "none"], graph.Nodes.Single(node => node.Id == "find").Outcomes);
+        Assert.Equal(("release", (string?)null), (graph.Wires.Single(wire => wire.Id == "b").Outcome, graph.Wires.Single(wire => wire.Id == "b").On));
+        Assert.Equal(((string?)null, NodeStates.Rejected), (graph.Wires.Single(wire => wire.Id == "f").Outcome, graph.Wires.Single(wire => wire.Id == "f").On));
+
+        var digest = NodeGraphs.Digest(graph);
+        var places = NodeGraphs.Places(graph);
+        NodeGraph Other(string from, string to) => NodeGraphs.Read(RoutesJson.Replace(from, to, StringComparison.Ordinal)).Graph!;
+        var outcome = Other("\"outcome\": \"none\"", "\"outcome\": \"release\"");
+        Assert.NotEqual(digest, NodeGraphs.Digest(outcome));
+        Assert.NotEqual(places["note"], NodeGraphs.Places(outcome)["note"]);
+        Assert.Equal(places["review"], NodeGraphs.Places(outcome)["review"]);
+        var declared = Other("[\"release\", \"none\"]", "[\"none\", \"release\"]");
+        Assert.NotEqual(digest, NodeGraphs.Digest(declared));
+        Assert.NotEqual(places["find"], NodeGraphs.Places(declared)["find"]);
+
+        Assert.Equal(NodeGraphs.Digest(Example), NodeGraphs.Digest(Example with { Nodes = [.. Nodes.Select(node => node with { Outcomes = [] })] }));
+        Assert.Equal(NodeGraphs.Digest(Example), NodeGraphs.Digest(NodeGraphs.Read(ExampleJson).Graph!));
+    }
+
+    /// <summary>
+    /// A graph naming a kind this build does not know is held whole, as before DECIDE1b: a wire kind outside the eight, which is how a build
+    /// before this one holds a version naming <c>when</c> or <c>back</c>, and a node kind none of the built-ins nor a plugin's.
+    /// </summary>
+    [Fact]
+    public void A_graph_naming_a_kind_this_build_does_not_know_is_held_whole()
+    {
+        var (wired, wires) = NodeGraphs.Read(RoutesJson.Replace("\"kind\": \"back\"", "\"kind\": \"unless\"", StringComparison.Ordinal));
+        Assert.Null(wired);
+        Assert.Equal([(WireRefusal.UnknownKind, "f")], wires.Select(problem => (problem.Code, problem.Wire!)));
+
+        var (named, nodes) = NodeGraphs.Read(RoutesJson.Replace("\"kind\": \"human\"", "\"kind\": \"note\"", StringComparison.Ordinal));
+        Assert.Null(named);
+        Assert.Equal([(GraphRefusal.Declaration, "note")], nodes.Select(problem => (problem.Code, problem.Node!)));
     }
 
     /// <summary>

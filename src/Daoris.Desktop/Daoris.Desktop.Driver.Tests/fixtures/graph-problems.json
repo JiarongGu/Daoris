@@ -92,8 +92,8 @@
       "problems": [{ "code": "wire-twice", "wire": "a", "node": null, "words": "wire `a`: another wire has this id; each wire's id is its own." }] },
     { "name": "two nodes, one id", "base": "wireBase", "add": { "nodes": [{ "id": "qa", "kind": "human", "version": 1, "reach": "pressed" }] },
       "problems": [{ "code": "node-twice", "wire": null, "node": "qa", "words": "node `qa`: another node has this id, so a wire naming it would name either." }] },
-    { "name": "a kind none of the seven", "base": "wireBase", "add": { "wires": [{ "id": "x", "kind": "unless", "from": "line", "to": "rollback" }] },
-      "problems": [{ "code": "unknown-kind", "wire": "x", "node": null, "words": "wire `x`: `unless` is no wire kind; a wire is `after`, `data`, `wait`, `trigger`, `failed`, `rejected` or `when`." }] },
+    { "name": "a kind none of the eight", "base": "wireBase", "add": { "wires": [{ "id": "x", "kind": "unless", "from": "line", "to": "rollback" }] },
+      "problems": [{ "code": "unknown-kind", "wire": "x", "node": null, "words": "wire `x`: `unless` is no wire kind; a wire is `after`, `data`, `wait`, `trigger`, `failed`, `rejected`, `when` or `back`." }] },
     { "name": "a wait from a node", "base": "wireBase", "replace": { "wires": [{ "id": "b", "kind": "wait", "from": "line", "to": "dependency" }] },
       "problems": [{ "code": "shape", "wire": "b", "node": null, "words": "wire `b`: a `wait` wire waits on another unit's work, never on a node of this graph." }] },
     { "name": "a wait waiting on nothing", "base": "wireBase", "replace": { "wires": [{ "id": "b", "kind": "wait", "to": "dependency" }] },
@@ -189,7 +189,78 @@
     { "name": "two nodes after each other", "base": "wireBase", "add": { "wires": [{ "id": "x", "kind": "after", "from": "deploy", "to": "dependency" }] },
       "problems": [{ "code": "cycle", "wire": null, "node": "dependency", "words": "nodes `dependency`, `deploy`: they wait on each other through `c`, `x`; a graph's wires never come back, and a return is its adapter's, bounded." }] },
     { "name": "a failure path back to a producer", "base": "wireBase", "add": { "wires": [{ "id": "x", "kind": "failed", "from": "deploy", "to": "qa" }] },
-      "problems": [{ "code": "cycle", "wire": null, "node": "deploy", "words": "nodes `deploy`, `qa`: they wait on each other through `d`, `x`; a graph's wires never come back, and a return is its adapter's, bounded." }] }
+      "problems": [{ "code": "cycle", "wire": null, "node": "deploy", "words": "nodes `deploy`, `qa`: they wait on each other through `d`, `x`; a graph's wires never come back, and a return is its adapter's, bounded." }] },
+    { "name": "a when follows a decision's outcome, and a back returns to an earlier node on each result its source can take, closing no cycle (DECIDE1b)", "base": "wireBase",
+      "add": {
+        "nodes": [
+          { "id": "find", "kind": "acme.release/find", "version": 1, "reach": "performed", "outcomes": ["release", "none"] },
+          { "id": "publish", "kind": "human", "version": 1, "reach": "pressed" }
+        ],
+        "wires": [
+          { "id": "j", "kind": "after", "from": "line", "to": "find" },
+          { "id": "k", "kind": "when", "from": "find", "outcome": "release", "to": "publish" },
+          { "id": "l", "kind": "back", "from": "find", "on": "none", "to": "line" },
+          { "id": "m", "kind": "back", "from": "qa", "on": "rejected", "to": "line" },
+          { "id": "n", "kind": "back", "from": "deploy", "on": "failed", "to": "dependency" }
+        ]
+      },
+      "problems": [] },
+    { "name": "a when from a node that declares no outcomes (DECIDE1b)", "base": "wireBase",
+      "add": { "wires": [{ "id": "x", "kind": "when", "from": "line", "outcome": "release", "to": "rollback" }] },
+      "problems": [{ "code": "no-outcomes", "wire": "x", "node": "line", "words": "wire `x`: `line`, a `line`, declares no outcomes, so no `when` wire follows it." }] },
+    { "name": "a when naming an outcome its decision does not declare (DECIDE1b)", "base": "wireBase",
+      "add": {
+        "nodes": [{ "id": "find", "kind": "acme.release/find", "version": 1, "reach": "performed", "outcomes": ["release", "none"] }],
+        "wires": [{ "id": "x", "kind": "when", "from": "find", "outcome": "merged", "to": "rollback" }]
+      },
+      "problems": [{ "code": "unknown-outcome", "wire": "x", "node": "find", "words": "wire `x`: `find` is reached with `release` or `none`, never `merged`." }] },
+    { "name": "a when naming no outcome (DECIDE1b)", "base": "wireBase",
+      "add": {
+        "nodes": [{ "id": "find", "kind": "acme.release/find", "version": 1, "reach": "performed", "outcomes": ["release", "none"] }],
+        "wires": [{ "id": "x", "kind": "when", "from": "find", "to": "rollback" }]
+      },
+      "problems": [{ "code": "shape", "wire": "x", "node": null, "words": "wire `x`: a `when` wire names the outcome of its source it follows." }] },
+    { "name": "an after naming an outcome (DECIDE1b)", "base": "wireBase",
+      "add": { "wires": [{ "id": "x", "kind": "after", "from": "line", "outcome": "release", "to": "rollback" }] },
+      "problems": [{ "code": "shape", "wire": "x", "node": null, "words": "wire `x`: only a `when` wire names an outcome." }] },
+    { "name": "a back naming nothing it is taken on (DECIDE1b)", "base": "wireBase",
+      "add": { "wires": [{ "id": "x", "kind": "back", "from": "qa", "to": "line" }] },
+      "problems": [{ "code": "shape", "wire": "x", "node": null, "words": "wire `x`: a `back` wire names what it is taken `on`: its source's `rejected`, its `failed` or one of its outcomes." }] },
+    { "name": "an after naming what it is taken on (DECIDE1b)", "base": "wireBase",
+      "add": { "wires": [{ "id": "x", "kind": "after", "from": "line", "on": "rejected", "to": "rollback" }] },
+      "problems": [{ "code": "shape", "wire": "x", "node": null, "words": "wire `x`: only a `back` wire names what it is taken `on`." }] },
+    { "name": "a back in a group (DECIDE1b)", "base": "wireBase",
+      "add": { "wires": [{ "id": "x", "kind": "back", "from": "qa", "on": "rejected", "to": "line", "group": { "id": "g", "mode": "anyOf" } }] },
+      "problems": [{ "code": "shape", "wire": "x", "node": null, "words": "wire `x`: a `back` wire returns to an earlier node and joins no group." }] },
+    { "name": "a back to a node its source does not come after (DECIDE1b)", "base": "wireBase",
+      "add": { "wires": [{ "id": "x", "kind": "back", "from": "qa", "on": "rejected", "to": "deploy" }] },
+      "problems": [{ "code": "back-forward", "wire": "x", "node": "deploy", "words": "wire `x`: `deploy` does not come before `qa`: a `back` wire returns to a node its source comes after through its wires." }] },
+    { "name": "a back to its own source (DECIDE1b)", "base": "wireBase",
+      "add": { "wires": [{ "id": "x", "kind": "back", "from": "qa", "on": "rejected", "to": "qa" }] },
+      "problems": [{ "code": "back-forward", "wire": "x", "node": "qa", "words": "wire `x`: a `back` wire returns to a node `qa` comes after through its wires, never to `qa` itself." }] },
+    { "name": "two backs on one source and one result (DECIDE1b)", "base": "wireBase",
+      "add": {
+        "wires": [
+          { "id": "x", "kind": "back", "from": "qa", "on": "rejected", "to": "line" },
+          { "id": "y", "kind": "back", "from": "qa", "on": "rejected", "to": "line" }
+        ]
+      },
+      "problems": [{ "code": "back-twice", "wire": "y", "node": "qa", "words": "wire `y`: `qa` goes back on `rejected` through `x` already; each of its results goes back one way." }] },
+    { "name": "a back on a rejection no person may give (DECIDE1b)", "base": "wireBase",
+      "add": { "wires": [{ "id": "x", "kind": "back", "from": "deploy", "on": "rejected", "to": "dependency" }] },
+      "problems": [{ "code": "back-never", "wire": "x", "node": "deploy", "words": "wire `x`: no person may reject `deploy`, a `acme.deploy/deploy`, so this way back is never taken." }] },
+    { "name": "a back on a failure nothing gives (DECIDE1b)", "base": "wireBase",
+      "add": { "wires": [{ "id": "x", "kind": "back", "from": "qa", "on": "failed", "to": "line" }] },
+      "problems": [{ "code": "back-never", "wire": "x", "node": "qa", "words": "wire `x`: nothing can fail `qa`, a `human`, so this way back is never taken." }] },
+    { "name": "a back on an outcome from a node that declares none (DECIDE1b)", "base": "wireBase",
+      "add": { "wires": [{ "id": "x", "kind": "back", "from": "deploy", "on": "release", "to": "dependency" }] },
+      "problems": [{ "code": "back-never", "wire": "x", "node": "deploy", "words": "wire `x`: `deploy`, a `acme.deploy/deploy`, declares no outcomes, so it is never `release`, and this way back is never taken." }] },
+    { "name": "a back on an outcome its decision does not declare (DECIDE1b)", "base": "wireBase",
+      "add": {
+        "nodes": [{ "id": "find", "kind": "acme.release/find", "version": 1, "reach": "performed", "outcomes": ["release", "none"] }],
+        "wires": [{ "id": "j", "kind": "after", "from": "line", "to": "find" }, { "id": "x", "kind": "back", "from": "find", "on": "merged", "to": "line" }]
+      },
+      "problems": [{ "code": "back-never", "wire": "x", "node": "find", "words": "wire `x`: `find` is reached with `release` or `none`, never `merged`, so this way back is never taken." }] }
   ],
   "graphs": [
     { "name": "the design's example holds", "base": "graphBase", "problems": [] },
@@ -608,7 +679,107 @@
       "problems": [
         { "code": "cycle", "wire": null, "node": "dependency", "words": "nodes `dependency`, `deploy`: they wait on each other through `c`, `x`; a graph's wires never come back, and a return is its adapter's, bounded." },
         { "code": "entry-wired", "wire": "x", "node": "dependency", "words": "wire `x`: `dependency` is an entry, which starts the graph and waits on nothing in it." }
-      ] }
+      ] },
+    { "name": "a review's changes: its rejected wire and a back on rejected to the work hold, a cycle the back alone closes (DECIDE1b)",
+      "graph": { "entries": ["work"], "end": "line",
+        "nodes": [
+          { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
+          { "id": "review", "kind": "review", "version": 1, "reach": "pressed" },
+          { "id": "land", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "merge" } },
+          { "id": "line", "kind": "line", "version": 1, "reach": "observed" },
+          { "id": "rework", "kind": "human", "version": 1, "reach": "pressed" }
+        ],
+        "wires": [
+          { "id": "a", "kind": "after", "from": "work", "to": "review" }, { "id": "b", "kind": "after", "from": "review", "to": "land" },
+          { "id": "c", "kind": "after", "from": "land", "to": "line" }, { "id": "d", "kind": "rejected", "from": "review", "to": "rework" },
+          { "id": "e", "kind": "back", "from": "review", "on": "rejected", "to": "work" }
+        ] },
+      "problems": [] },
+    { "name": "a back from the review to the landing after it (DECIDE1b)",
+      "graph": { "entries": ["work"], "end": "line",
+        "nodes": [
+          { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
+          { "id": "review", "kind": "review", "version": 1, "reach": "pressed" },
+          { "id": "land", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "merge" } },
+          { "id": "line", "kind": "line", "version": 1, "reach": "observed" }
+        ],
+        "wires": [
+          { "id": "a", "kind": "after", "from": "work", "to": "review" }, { "id": "b", "kind": "after", "from": "review", "to": "land" },
+          { "id": "c", "kind": "after", "from": "land", "to": "line" }, { "id": "e", "kind": "back", "from": "review", "on": "rejected", "to": "land" }
+        ] },
+      "problems": [{ "code": "back-forward", "wire": "e", "node": "land", "words": "wire `e`: `land` does not come before `review`: a `back` wire returns to a node its source comes after through its wires." }] },
+    { "name": "a decision's routes: the review and the landing on one outcome's route, the end on that route alone (DECIDE1b)",
+      "graph": { "entries": ["work"], "end": "line",
+        "nodes": [
+          { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
+          { "id": "find", "kind": "acme.release/find", "version": 1, "reach": "performed", "outcomes": ["release", "none"] },
+          { "id": "review", "kind": "review", "version": 1, "reach": "pressed" },
+          { "id": "land", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "merge" } },
+          { "id": "line", "kind": "line", "version": 1, "reach": "observed" },
+          { "id": "note", "kind": "human", "version": 1, "reach": "pressed" }
+        ],
+        "wires": [
+          { "id": "a", "kind": "after", "from": "work", "to": "find" }, { "id": "b", "kind": "when", "from": "find", "outcome": "release", "to": "review" },
+          { "id": "c", "kind": "after", "from": "review", "to": "land" }, { "id": "d", "kind": "after", "from": "land", "to": "line" },
+          { "id": "e", "kind": "when", "from": "find", "outcome": "none", "to": "note" }
+        ] },
+      "problems": [] },
+    { "name": "the landing on another outcome's route past the review (DECIDE1b)",
+      "graph": { "entries": ["work"], "end": "line",
+        "nodes": [
+          { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
+          { "id": "find", "kind": "acme.release/find", "version": 1, "reach": "performed", "outcomes": ["release", "none"] },
+          { "id": "review", "kind": "review", "version": 1, "reach": "pressed" },
+          { "id": "land", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "merge" } },
+          { "id": "line", "kind": "line", "version": 1, "reach": "observed" }
+        ],
+        "wires": [
+          { "id": "a", "kind": "after", "from": "work", "to": "find" }, { "id": "b", "kind": "when", "from": "find", "outcome": "release", "to": "review" },
+          { "id": "c", "kind": "after", "from": "review", "to": "land", "group": { "id": "g", "mode": "anyOf" } },
+          { "id": "d", "kind": "after", "from": "land", "to": "line" },
+          { "id": "e", "kind": "when", "from": "find", "outcome": "none", "to": "land", "group": { "id": "g", "mode": "anyOf" } }
+        ] },
+      "problems": [{ "code": "protected-wire", "wire": null, "node": "review", "words": "the review `review` is not wired into the landing `land`: a skip of a gate between them would let an `after` wire pass while `review` is unsettled, so wire `review` into `land` (D157 §2.2's order: holds, opinion, look, landing)." }] },
+    { "name": "a landing on one outcome's route past the requests, through a join that settles the route not taken (DECIDE1b)",
+      "graph": { "entries": ["work"], "end": "landing",
+        "nodes": [
+          { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
+          { "id": "find", "kind": "acme.release/find", "version": 1, "reach": "performed", "outcomes": ["held", "open"] },
+          { "id": "requests", "kind": "work.requests", "version": 1, "reach": "observed" },
+          { "id": "other", "kind": "human", "version": 1, "reach": "pressed" },
+          { "id": "both", "kind": "all", "version": 1, "reach": "observed" },
+          { "id": "landing", "kind": "handed", "version": 1, "reach": "observed" }
+        ],
+        "wires": [
+          { "id": "a", "kind": "after", "from": "work", "to": "find" }, { "id": "b", "kind": "when", "from": "find", "outcome": "held", "to": "requests" },
+          { "id": "c", "kind": "when", "from": "find", "outcome": "open", "to": "other" }, { "id": "d", "kind": "after", "from": "requests", "to": "both" },
+          { "id": "e", "kind": "after", "from": "other", "to": "both" }, { "id": "f", "kind": "after", "from": "both", "to": "landing" }
+        ] },
+      "problems": [{ "code": "work-requests-late", "wire": null, "node": "requests", "words": "node `requests`: the landing `landing` can start before `requests` is reached, and a `work.requests` holds the work before every landing: every way to it passes `requests`." }] },
+    { "name": "the requests before the decision hold the landing on every route, through a join (DECIDE1b)",
+      "graph": { "entries": ["work"], "end": "landing",
+        "nodes": [
+          { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
+          { "id": "requests", "kind": "work.requests", "version": 1, "reach": "observed" },
+          { "id": "find", "kind": "acme.release/find", "version": 1, "reach": "performed", "outcomes": ["held", "open"] },
+          { "id": "one", "kind": "human", "version": 1, "reach": "pressed" },
+          { "id": "other", "kind": "human", "version": 1, "reach": "pressed" },
+          { "id": "both", "kind": "all", "version": 1, "reach": "observed" },
+          { "id": "landing", "kind": "handed", "version": 1, "reach": "observed" }
+        ],
+        "wires": [
+          { "id": "a", "kind": "after", "from": "work", "to": "requests" }, { "id": "b", "kind": "after", "from": "requests", "to": "find" },
+          { "id": "c", "kind": "when", "from": "find", "outcome": "held", "to": "one" }, { "id": "d", "kind": "when", "from": "find", "outcome": "open", "to": "other" },
+          { "id": "e", "kind": "after", "from": "one", "to": "both" }, { "id": "f", "kind": "after", "from": "other", "to": "both" },
+          { "id": "g", "kind": "after", "from": "both", "to": "landing" }
+        ] },
+      "problems": [] },
+    { "name": "a built-in declaring outcomes (DECIDE1b)", "base": "graphBase",
+      "replace": { "nodes": [{ "id": "qa", "kind": "human", "version": 1, "reach": "pressed", "evidence": "qa-proof@1", "outcomes": ["passed", "returned"] }] },
+      "problems": [{ "code": "declaration", "wire": null, "node": "qa", "words": "node `qa`: its `outcomes` does not hold for a `human`." }] },
+    { "name": "a decision naming one outcome (DECIDE1b)", "base": "graphBase",
+      "replace": { "nodes": [{ "id": "deploy", "kind": "acme.deploy/deploy", "version": 1, "reach": "performed", "evidence": "acme.deploy/receipt@1", "inputs": { "approval": "qa-proof@1" }, "outcomes": ["shipped"] }] },
+      "problems": [{ "code": "declaration", "wire": null, "node": "deploy", "words": "node `deploy`: its `outcomes` does not hold for a `acme.deploy/deploy`." }] }
   ],
   "fragments": [
     { "name": "a person's task after the line holds", "rule": { "form": "merge" },
@@ -673,6 +844,8 @@
     { "name": "the first place that does not read is said, in the reader's order: the nodes before the cleanup", "value": { "cleanup": 5, "nodes": 3 },
       "problems": [{ "code": "unreadable", "wire": null, "node": null, "words": "the graph's `nodes` is not a graph's shape: it holds no list there." }] },
     { "name": "a node's fields in the reader's order: its inputs before its evidence", "value": { "nodes": [{ "id": "a", "kind": "human", "version": 1, "reach": "pressed", "evidence": 3, "inputs": 3 }], "entries": ["a"], "end": "a" },
-      "problems": [{ "code": "unreadable", "wire": null, "node": null, "words": "nodes[0]'s `inputs` is not a graph's shape: it holds no object there." }] }
+      "problems": [{ "code": "unreadable", "wire": null, "node": null, "words": "nodes[0]'s `inputs` is not a graph's shape: it holds no object there." }] },
+    { "name": "a decision's outcome that is no name (DECIDE1b)", "value": { "nodes": [{ "id": "a", "kind": "acme.release/find", "version": 1, "reach": "performed", "outcomes": ["release", 2] }], "entries": ["a"], "end": "a" },
+      "problems": [{ "code": "unreadable", "wire": null, "node": null, "words": "nodes[0]'s `outcomes` is not a graph's shape: it holds no outcome's name there." }] }
   ]
 }
