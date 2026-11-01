@@ -428,5 +428,5 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-11-01-fabric2-plan.md` | 49 | 207 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `docs/backlog-parked.md` | 179 | 946 |
-| `docs/development.md` | 55 | 603 |
+| `docs/development.md` | 55 | 605 |
 | `src/Daoris.Desktop/README.md` | 279 | 1290 |
