@@ -262,6 +262,23 @@ export function runTone(state: string): 'open' | 'done' | 'declined' | 'neutral'
 /** The step a run stands at, or null where it finished. */
 export const standsAt = (run: WorkflowRun): RunStep | null => run.steps.find((step) => step.step.id === run.at) ?? null;
 
+/**
+ * Whether the driver's record says the run finished (SETUPUX1u): it has no step to stand at, and nothing in it is unread or held, or a graph
+ * Daoris has not judged. *Finished* is drawn from this alone, never from a step's being done.
+ */
+export const finishedBy = (run: WorkflowRun): boolean =>
+  (run.at ?? null) === null && !run.problem && !run.workflowGate?.holds
+  && !(run.graph && (run.graph.unread || (!run.graph.judged && !run.graph.ended)));
+
+/** The step a run's view opens when the person has chosen none: the one it stands at, else the last the work came to. */
+export function openedBy(run: WorkflowRun): string | null {
+  if (run.at) return run.at;
+  return [...run.steps].reverse().find((step) => step.state !== 'not-reached')?.step.id ?? null;
+}
+
+/** Whether the outcomes a graph run reached leave no route to this step (DECIDE1c, the driver's `notTaken`). */
+export const notTakenBy = (run: WorkflowRun, step: RunStep): boolean => run.graph?.notTaken?.includes(step.step.id) ?? false;
+
 /** Whether a run waits on the person now: the step it stands at waits for their press. */
 export const waitsOnYou = (run: WorkflowRun): boolean => standsAt(run)?.state === 'waiting-on-you';
 

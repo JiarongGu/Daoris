@@ -7,7 +7,8 @@ import i18n from '../locales/i18n';
 import { code } from '../test/code';
 import type { RunStep, WorkflowRun } from './run';
 import {
-  answerOf, CHAT_RUN, CHECK_UNKNOWN_HELD, checkRun, FAILED, GRAPH_RUN, GRAPH_RUN_ADDED_LOOK, GRAPH_RUN_DECIDED, GRAPH_RUN_GO_AHEAD, GRAPH_RUN_GO_AHEAD_KEPT, GRAPH_RUN_INTEGRATE, GRAPH_RUN_REQUESTS, GRAPH_RUN_REVIEW, GRAPH_RUN_UNJUDGED, HELD_FOR_OPINION, IN_REVIEW, LANDED, MERGED, OPINION_DISPUTED,
+  answerOf, CHAT_RUN, CHECK_UNKNOWN_HELD, checkRun, FAILED, GO_AHEAD_REFUSAL, GRAPH_RUN, GRAPH_RUN_ADDED_LOOK, GRAPH_RUN_DECIDED, GRAPH_RUN_GO_AHEAD, GRAPH_RUN_GO_AHEAD_KEPT, GRAPH_RUN_INTEGRATE, GRAPH_RUN_RELEASED,
+  GRAPH_RUN_REQUESTS, GRAPH_RUN_REVIEW, GRAPH_RUN_UNJUDGED, HELD_FOR_OPINION, IN_REVIEW, LANDED, MERGED, OPINION_DISPUTED,
   OPINION_SETTLED, PULL_REQUEST_OPEN, SEVERAL, WAITING_ON_YOU, WORKING,
 } from './runFixtures';
 import { WorkflowLine } from './WorkflowLine';
@@ -22,13 +23,20 @@ const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Toolt
 /** The step rows, in order, as a reader meets them. */
 const steps = () => screen.getAllByRole('listitem').filter((item) => item.hasAttribute('data-step'));
 const row = (id: string) => steps().find((item) => item.getAttribute('data-step') === id)!;
+/** The press that opens a step's record (SETUPUX1u): none on the step already open, and none on one the work has not come to. */
+const detailsOf = (id: string) => within(row(id)).queryByRole('button', { name: /^Details of |的详情$/ });
+/** Opens a step's record, unless it is open already. */
+const open = async (id: string) => {
+  const details = detailsOf(id);
+  if (details) await userEvent.click(details);
+};
 
 describe("the session's Workflow view", () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
   it('names the bound version beside its graph', () => {
     render(<WorkflowRunView answer={answerOf({ ...IN_REVIEW, workflow: { ...IN_REVIEW.workflow, id: 'release', boundVersion: 1 } })} />);
-    expect(screen.getByText('engine · release workflow, version 1')).toBeInTheDocument();
+    expect(screen.getByText('Release workflow v1')).toBeInTheDocument();
     expect(screen.queryByText(/Current workflow/)).toBeNull();
   });
 
@@ -37,21 +45,21 @@ describe("the session's Workflow view", () => {
     const routed = (route: NonNullable<WorkflowRun['workflow']['route']>) =>
       answerOf({ ...IN_REVIEW, workflow: { ...IN_REVIEW.workflow, id: 'release', boundVersion: 1, route } });
     const { unmount } = render(<WorkflowRunView answer={routed({ level: 'workspace-kind', kind: 'docs', label: 'Documentation' })} />);
-    expect(screen.getByText('Its route: chosen by the workspace aurora for Documentation.')).toBeInTheDocument();
+    expect(screen.getByText('Release workflow v1 · chosen by the workspace aurora for Documentation')).toBeInTheDocument();
     unmount();
 
     const chosen = render(<WorkflowRunView answer={routed({ level: 'task' })} />);
-    expect(screen.getByText('Its route: chosen by its ask.')).toBeInTheDocument();
+    expect(screen.getByText('Release workflow v1 · chosen by its ask')).toBeInTheDocument();
     chosen.unmount();
 
     await i18n.changeLanguage('zh');
     render(<WorkflowRunView answer={routed({ level: 'repository' })} />);
-    expect(screen.getByText('它的路线：engine 的默认。')).toBeInTheDocument();
+    expect(screen.getByText('发版工作流 v1 · engine 的默认')).toBeInTheDocument();
   });
 
   it('says no route where a driver before it keeps none', () => {
     render(<WorkflowRunView answer={answerOf(IN_REVIEW)} />);
-    expect(screen.queryByText(/^Its route:/)).toBeNull();
+    expect(screen.queryByText(/ · (chosen|since)/)).toBeNull();
   });
 
   it('shows an unread binding without a completed diagram', () => {
@@ -66,7 +74,7 @@ describe("the session's Workflow view", () => {
   it('names a bound run in Chinese', async () => {
     await i18n.changeLanguage('zh');
     render(<WorkflowRunView answer={answerOf({ ...IN_REVIEW, workflow: { ...IN_REVIEW.workflow, id: 'release', boundVersion: 1 } })} />);
-    expect(screen.getByText('engine · release 工作流，版本 1')).toBeInTheDocument();
+    expect(screen.getByText('发版工作流 v1')).toBeInTheDocument();
   });
 
   it('shows a kind-path hold beside the bound graph instead of claiming it only waits for Accept', () => {
@@ -86,7 +94,7 @@ describe("the session's Workflow view", () => {
   it('draws the run on the chart: each step, its part, where it stands, and where the run stands in a few words', () => {
     render(<WorkflowRunView answer={answerOf(IN_REVIEW)} here="work" />);
 
-    expect(screen.getByText('Workflow: waits for your look')).toBeInTheDocument();
+    expect(document.body).toHaveTextContent('At Your look in dev · waiting on you');
     expect(screen.getByText('engine · Current workflow, version 06e90f358edc')).toBeInTheDocument();
     expect(steps().map((item) => item.getAttribute('data-step'))).toEqual(['work', 'look', 'landing', 'pull-request']);
 
@@ -95,7 +103,6 @@ describe("the session's Workflow view", () => {
     expect(work).toHaveTextContent('agent alone');
     expect(work).toHaveTextContent('done');
     expect(work).toHaveTextContent('this session');
-    expect(work).toHaveTextContent('The agent finished: 1 quest here is done.');
 
     const look = row('look');
     expect(look).toHaveAttribute('aria-current', 'step');
@@ -125,7 +132,7 @@ describe("the session's Workflow view", () => {
 
     render(<WorkflowRunView answer={answerOf(FAILED)} />);
     expect(within(row('work')).getByText('failed')).toHaveClass('text-ink-danger');
-    expect(screen.getByText('Workflow: its last session failed')).toBeInTheDocument();
+    expect(document.body).toHaveTextContent('At The work · failed');
   });
 
   it("keeps the person's part the rail's shape and its word, never a hue", () => {
@@ -138,11 +145,12 @@ describe("the session's Workflow view", () => {
   it('opens each step where its record is', async () => {
     const doors = { session: vi.fn(), quest: vi.fn(), ask: vi.fn(), review: vi.fn() };
     const { unmount } = render(<WorkflowRunView answer={answerOf(IN_REVIEW)} doors={doors} />);
-    await userEvent.click(within(row('work')).getByRole('button', { name: 'Open its session' }));
-    expect(doors.session).toHaveBeenCalledWith('s1');
-    // The set-up step's page, where the review is answered.
+    // The set-up step's page, where the review is answered; the step the run stands at is open.
     await userEvent.click(within(row('look')).getByRole('button', { name: 'Open quest #q2' }));
     expect(doors.quest).toHaveBeenCalledWith('q2');
+    await userEvent.click(detailsOf('work')!);
+    await userEvent.click(within(row('work')).getByRole('button', { name: 'Open its session' }));
+    expect(doors.session).toHaveBeenCalledWith('s1');
     unmount();
 
     const again = render(<WorkflowRunView answer={answerOf(WAITING_ON_YOU)} doors={doors} />);
@@ -158,15 +166,17 @@ describe("the session's Workflow view", () => {
 
     render(<WorkflowRunView answer={answerOf(PULL_REQUEST_OPEN)} doors={doors} />);
     expect(within(row('pull-request')).getByRole('link', { name: /Open pull request/ })).toHaveAttribute('href', 'https://example.test/pull/7');
-    expect(row('landing')).toHaveTextContent('Landed on work/q1-fix-the-header, accepted automatically.');
     expect(row('pull-request')).toHaveTextContent('Open: waits for you to merge it on the platform.');
-    expect(screen.getByText('Workflow: landed; pull request open')).toBeInTheDocument();
+    await userEvent.click(detailsOf('landing')!);
+    expect(row('landing')).toHaveTextContent('Landed on work/q1-fix-the-header, accepted automatically.');
+    expect(document.body).toHaveTextContent('· waiting on you');
   });
 
   // FLOWCHART1c: a landing that made a branch opens that branch's page, with how it landed; one into the line keeps no branch to open.
   it("opens a landed branch's page from its landing step, and nothing from a landing into the line", async () => {
     const branch = vi.fn();
     const { unmount } = render(<WorkflowRunView answer={answerOf(PULL_REQUEST_OPEN)} doors={{ branch }} />);
+    await userEvent.click(detailsOf('landing')!);
     await userEvent.click(within(row('landing')).getByRole('button', { name: 'How work/q1-fix-the-header landed' }));
     expect(branch).toHaveBeenCalledWith('engine', 'work/q1-fix-the-header');
     unmount();
@@ -182,16 +192,17 @@ describe("the session's Workflow view", () => {
     expect(screen.queryByRole('button', { name: 'Never' })).toBeNull();
   });
 
-  it("stands at the second opinion while its gate holds, in the gate's words, and past it once settled", () => {
+  it("stands at the second opinion while its gate holds, in the gate's words, and past it once settled", async () => {
     const { unmount } = render(<WorkflowRunView answer={answerOf(HELD_FOR_OPINION)} />);
     expect(row('opinion')).toHaveAttribute('aria-current', 'step');
     expect(row('opinion')).toHaveTextContent('waiting on an agent');
     expect(row('opinion')).toHaveTextContent('The working session is answering its 3 findings.');
     expect(row('landing')).toHaveTextContent('not reached');
-    expect(screen.getByText('Workflow: answering a second opinion')).toBeInTheDocument();
+    expect(document.body).toHaveTextContent('At Second opinion · waiting on an agent');
     unmount();
 
     const settled = render(<WorkflowRunView answer={answerOf(OPINION_SETTLED)} />);
+    await userEvent.click(detailsOf('opinion')!);
     expect(row('opinion')).toHaveTextContent('Settled: read by Codex (OpenAI), with nothing left disputed.');
     expect(row('landing')).toHaveAttribute('aria-current', 'step');
     settled.unmount();
@@ -209,7 +220,7 @@ describe("the session's Workflow view", () => {
     expect(opinion).toHaveTextContent('daoris-driver opinion anyway s1 "…" goes on without it');
     await userEvent.click(within(opinion).getByRole('button', { name: 'Open its review' }));
     expect(review).toHaveBeenCalledWith('s1');
-    expect(screen.getByText('Workflow: a second opinion waits for you')).toBeInTheDocument();
+    expect(document.body).toHaveTextContent('At Second opinion · waiting on you');
   });
 
   /** XAGENT1g (WORKFLOW1c3's remainder): the gate's own control draws *Go on anyway…* under the step, in the twin's place. */
@@ -223,31 +234,33 @@ describe("the session's Workflow view", () => {
     expect(opinion).not.toHaveTextContent('daoris-driver opinion anyway');
   });
 
-  it("words each of the gate's states", () => {
+  it("words each of the gate's states", async () => {
     const step = (detail: string, state: string, facts: Partial<RunStep> = {}): WorkflowRun => ({
       ...OPINION_SETTLED, steps: [OPINION_SETTLED.steps[0]!, { ...OPINION_SETTLED.steps[1]!, state, detail, ...facts }, OPINION_SETTLED.steps[2]!],
     });
-    const said = (run: WorkflowRun) => {
+    const said = async (run: WorkflowRun) => {
       const { unmount } = render(<WorkflowRunView answer={answerOf(run)} />);
+      const details = detailsOf('opinion');
+      if (details) await userEvent.click(details);
       const text = row('opinion').textContent;
       unmount();
       return text;
     };
 
-    expect(said(step('not-asked', 'working'))).toContain("Asked at the driver's next look.");
-    expect(said(step('reading', 'working'))).toContain('Being read by Codex (OpenAI).');
-    expect(said(step('read-again', 'working'))).toContain('Read again by Codex (OpenAI): the commits made in answer.');
-    expect(said(step('commits-since', 'waiting-on-you', { count: 2 }))).toContain('2 commits since were not read by another agent');
-    expect(said(step('unavailable', 'waiting-on-you', { code: 'no-reviewer' })))
+    expect(await said(step('not-asked', 'working'))).toContain("Asked at the driver's next look.");
+    expect(await said(step('reading', 'working'))).toContain('Being read by Codex (OpenAI).');
+    expect(await said(step('read-again', 'working'))).toContain('Read again by Codex (OpenAI): the commits made in answer.');
+    expect(await said(step('commits-since', 'waiting-on-you', { count: 2 }))).toContain('2 commits since were not read by another agent');
+    expect(await said(step('unavailable', 'waiting-on-you', { code: 'no-reviewer' })))
       .toContain('No second opinion could be had: no listed reviewer of another maker is installed. The rule requires one');
-    expect(said(step('unavailable', 'skipped', { code: 'out-of-time' }))).toContain('The rule does not require one, so nothing waits for it.');
-    expect(said(step('anyway', 'done', { words: 'a typo' }))).toContain('You went on without a settled second opinion.');
-    expect(said(step('myself', 'done'))).toContain("You looked at it yourself in place of another agent's reading.");
-    expect(said(step('answered', 'done', { code: 'reviewed' }))).toContain('Your Reviewed answered the second opinion.');
-    expect(said(step('answered', 'done', { code: 'press' }))).toContain('Your Accept answered the second opinion.');
-    expect(said(step('none', 'skipped'))).toContain('No second opinion is asked before this work lands.');
-    expect(said(step('landed', 'done'))).toContain('It let the work go when the work landed.');
-    expect(said(step('unread', 'not-known', { words: 'the service did not answer' })))
+    expect(await said(step('unavailable', 'skipped', { code: 'out-of-time' }))).toContain('The rule does not require one, so nothing waits for it.');
+    expect(await said(step('anyway', 'done', { words: 'a typo' }))).toContain('You went on without a settled second opinion.');
+    expect(await said(step('myself', 'done'))).toContain("You looked at it yourself in place of another agent's reading.");
+    expect(await said(step('answered', 'done', { code: 'reviewed' }))).toContain('Your Reviewed answered the second opinion.');
+    expect(await said(step('answered', 'done', { code: 'press' }))).toContain('Your Accept answered the second opinion.');
+    expect(await said(step('none', 'skipped'))).toContain('No second opinion is asked before this work lands.');
+    expect(await said(step('landed', 'done'))).toContain('It let the work go when the work landed.');
+    expect(await said(step('unread', 'not-known', { words: 'the service did not answer' })))
       .toContain('Whether a second opinion holds it could not be read: the service did not answer');
   });
 
@@ -266,8 +279,8 @@ describe("the session's Workflow view", () => {
   it("draws an ask's runs apart, each named by its repository", () => {
     render(<WorkflowRunView answer={SEVERAL} />);
 
-    expect(screen.getByText('engine: waits for your look')).toBeInTheDocument();
-    expect(screen.getByText('game: landed; pull request open')).toBeInTheDocument();
+    expect(document.body).toHaveTextContent('engine: At Your look in dev · waiting on you');
+    expect(document.body).toHaveTextContent(/game: At .* · waiting on you/);
     expect(screen.getAllByRole('group')).toHaveLength(2);
   });
 
@@ -403,15 +416,17 @@ describe("the session's Workflow view", () => {
       const { rerender } = render(<WorkflowRunView answer={answerOf(CHAT_RUN)} here="work" />);
       expect(screen.getByText(/are not yet enforced for a conversation, so its tree is not held to them/)).toBeInTheDocument();
       expect(screen.getByText(code('light'))).toBeInTheDocument();
+      await open('opinion');
       expect(row('opinion')).toHaveTextContent('A second opinion from codex-acp is asked when you press Accept.');
+      await open('work');
       expect(row('work')).toHaveTextContent('2 commits beyond the line wait for you to accept them.');
-      expect(screen.getByText(/waits for you to accept it/)).toBeInTheDocument();
 
       await i18n.changeLanguage('zh');
       rerender(<Tooltip.Provider><WorkflowRunView answer={answerOf(CHAT_RUN)} here="work" /></Tooltip.Provider>);
       expect(screen.getByText(/还没有对对话强制执行，所以它的工作树不受其约束/)).toBeInTheDocument();
-      expect(row('opinion')).toHaveTextContent('你按下采纳时，会征询 codex-acp 的第二意见。');
       expect(row('work')).toHaveTextContent('超出主线的 2 个提交等你采纳。');
+      await open('opinion');
+      expect(row('opinion')).toHaveTextContent('你按下采纳时，会征询 codex-acp 的第二意见。');
     });
 
     it("draws no mark where its checks are enforced, where its repository sets none, and on a quest's run", () => {
@@ -428,10 +443,10 @@ describe("the session's Workflow view", () => {
     await i18n.changeLanguage('zh');
     render(<WorkflowRunView answer={answerOf(IN_REVIEW)} here="work" />);
 
-    expect(screen.getByText('工作流：等你审阅')).toBeInTheDocument();
     expect(row('look')).toHaveTextContent('等你处理');
     expect(row('look')).toHaveTextContent('智能体与你');
     expect(row('work')).toHaveTextContent('本会话');
+    await open('work');
     expect(row('work')).toHaveTextContent('智能体已完成：这里的 1 个委托已完成。');
     expect(row('landing')).toHaveTextContent('未到达');
   });
@@ -443,32 +458,34 @@ describe("the session's Workflow view", () => {
 describe("a graph run's Workflow view", () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
-  it("says what its graph observes and that its branches are its graph's, above its nodes", () => {
+  it("says what its graph observes and that its branches are its graph's, above its nodes", async () => {
     render(<WorkflowRunView answer={answerOf(GRAPH_RUN)} />);
 
-    expect(screen.getByText('engine · docs workflow, version 1')).toBeInTheDocument();
-    expect(screen.getByText('Workflow: working')).toBeInTheDocument();
+    expect(screen.getByText("docs v1 · engine's default")).toBeInTheDocument();
+    expect(document.body).toHaveTextContent('· working');
     const head = screen.getByRole('list', { name: 'What its graph says' });
     expect(within(head).getAllByRole('listitem').map((item) => item.textContent)).toEqual([
       'Its graph observes quest #q1, its newest work here, and daoris/q1-fix-the-header, the branch its newest session worked.',
       'Its branches are its graph\'s, not the landing rule\'s: a push, a pull request or a deploy happens for this work only where its graph holds one.',
     ]);
     expect(steps().map((item) => item.getAttribute('data-step'))).toEqual(['claimed', 'build', 'lint', 'both', 'halt', 'opinion', 'handed', 'deployed']);
-    expect(row('claimed')).toHaveTextContent('Reached on quest #q1.');
     expect(row('build')).toHaveTextContent('built by acme.ci');
     expect(row('build')).toHaveTextContent('Observed on daoris/q1-fix-the-header at 01234567.');
     expect(row('both')).toHaveTextContent('The join');
     expect(row('opinion')).toHaveTextContent('not reached');
     expect(row('opinion')).not.toHaveTextContent('Not begun');
     expect(row('build')).toHaveAttribute('aria-current', 'step');
+    await open('claimed');
+    expect(row('claimed')).toHaveTextContent('Reached on quest #q1.');
   });
 
-  it('draws a look the work added beside its graph, and a go-ahead that waits on you with its act', () => {
+  it('draws a look the work added beside its graph, and a go-ahead that waits on you with its act', async () => {
     render(<WorkflowRunView answer={answerOf(GRAPH_RUN_ADDED_LOOK)} />);
-    expect(row('look')).toHaveTextContent("A look added for this work by its chain's choice.");
     expect(row('release')).toHaveTextContent('Your go-ahead');
     expect(row('release')).toHaveTextContent('Waits for your go-ahead: release to prod');
-    expect(screen.getByText('Workflow: waiting on you')).toBeInTheDocument();
+    expect(document.body).toHaveTextContent('At Your go-ahead · waiting on you');
+    await open('look');
+    expect(row('look')).toHaveTextContent("A look added for this work by its chain's choice.");
   });
 
   it('says a run Daoris has not judged yet, and that no session of it has worked a branch', () => {
@@ -484,10 +501,11 @@ describe("a graph run's Workflow view", () => {
     const session = vi.fn();
     const ask = vi.fn();
     const { unmount } = render(<WorkflowRunView answer={answerOf(GRAPH_RUN)} doors={{ quest, session }} />);
-    await userEvent.click(within(row('claimed')).getByRole('button', { name: 'Open quest #q1' }));
-    expect(quest).toHaveBeenCalledWith('q1');
     await userEvent.click(within(row('build')).getByRole('button', { name: 'Open its session' }));
     expect(session).toHaveBeenCalledWith('s1');
+    await open('claimed');
+    await userEvent.click(within(row('claimed')).getByRole('button', { name: 'Open quest #q1' }));
+    expect(quest).toHaveBeenCalledWith('q1');
     unmount();
 
     render(<WorkflowRunView answer={answerOf(GRAPH_RUN_ADDED_LOOK)} doors={{ ask }} />);
@@ -601,7 +619,6 @@ describe("a graph run's routes and a review's changes", () => {
     render(<WorkflowRunView answer={answerOf(GRAPH_RUN_DECIDED)} />);
     expect(row('find')).toHaveTextContent('Its outcome: none.');
     expect(row('release')).toHaveTextContent('route not taken');
-    expect(row('release')).toHaveTextContent('Not taken: the outcomes reached leave no route to it.');
     expect(row('release')).not.toHaveTextContent('not reached');
     expect(steps().some((item) => item.getAttribute('aria-current') === 'step')).toBe(false);
   });
@@ -673,8 +690,9 @@ describe('the integrate node', () => {
 describe("the work's requests", () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
-  it('draws each quest the sessions published inside the work, and a helper beside them as a request to an agent', () => {
+  it('draws each quest the sessions published inside the work, and a helper beside them as a request to an agent', async () => {
     render(<WorkflowRunView answer={answerOf(GRAPH_RUN_REQUESTS)} />);
+    await open('claimed');
     const requests = within(within(row('claimed')).getByRole('list', { name: 'Requests the work made' })).getAllByRole('listitem');
     expect(requests).toHaveLength(4);
     expect(requests[0]).toHaveTextContent('Quest #q8 to tools');
@@ -729,6 +747,7 @@ describe("the work's requests", () => {
   it('opens a quest request where a door is handed in, and draws no list for a run with none', async () => {
     const quest = vi.fn();
     const { unmount } = render(<WorkflowRunView answer={answerOf(GRAPH_RUN_REQUESTS)} doors={{ quest }} />);
+    await open('claimed');
     await userEvent.click(within(row('claimed')).getByRole('button', { name: 'Open quest #q8' }));
     expect(quest).toHaveBeenCalledWith('q8');
     unmount();
@@ -742,6 +761,7 @@ describe("the work's requests", () => {
     render(<WorkflowRunView answer={answerOf(GRAPH_RUN_REQUESTS)} onNodeWord={vi.fn()} />);
     expect(row('requests')).toHaveTextContent('工作的请求');
     expect(row('requests')).toHaveTextContent('工作的会话发布的一个委托被谢绝了');
+    await open('claimed');
     const requests = within(within(row('claimed')).getByRole('list', { name: '工作发出的请求' })).getAllByRole('listitem');
     expect(requests[0]).toHaveTextContent('发给 tools 的委托 #q8');
     expect(requests[0]).toHaveTextContent('已谢绝');
@@ -843,5 +863,146 @@ describe("a check's verdict on the run's view", () => {
     render(<WorkflowRunView answer={answerOf(CHECK_UNKNOWN_HELD)} onHeld={onHeld} />);
     await userEvent.click(within(row('gates')).getByRole('button', { name: 'Run again' }));
     expect(await within(row('gates')).findByRole('alert')).toHaveTextContent('work held: nothing is held there.');
+  });
+});
+
+// SETUPUX1u (D221; the Setup design's §2.3 run view): a run's view of where its work stands, through the one drawing.
+describe("a run's view of where its work stands", () => {
+  afterEach(async () => { await i18n.changeLanguage('en'); });
+
+  it('heads with the bound version and how it was chosen, in one line, and names no return count', () => {
+    const { unmount } = render(<WorkflowRunView answer={answerOf(GRAPH_RUN_RELEASED)} />);
+    expect(screen.getByText("Release workflow v2 · engine's default")).toBeInTheDocument();
+    expect(screen.queryByText(/^Its route:/)).toBeNull();
+    expect(document.body).not.toHaveTextContent(/sent back \d+ times?/i);
+    unmount();
+
+    // A saved workflow the page has no name for is named by its id; a binding that keeps no route names none.
+    const saved = render(<WorkflowRunView answer={answerOf({ ...GRAPH_RUN_RELEASED,
+      workflow: { ...GRAPH_RUN_RELEASED.workflow, id: 'release-for-engine', boundVersion: 1, route: { level: 'task' } } })} />);
+    expect(screen.getByText('release-for-engine v1 · chosen by its ask')).toBeInTheDocument();
+    saved.unmount();
+    render(<WorkflowRunView answer={answerOf({ ...GRAPH_RUN_RELEASED, workflow: { ...GRAPH_RUN_RELEASED.workflow, route: null } })} />);
+    expect(screen.getByText('Release workflow v2')).toBeInTheDocument();
+  });
+
+  it('names a bound run and how it was chosen in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    render(<WorkflowRunView answer={answerOf(GRAPH_RUN_RELEASED)} />);
+    expect(screen.getByText('发版工作流 v2 · engine 的默认')).toBeInTheDocument();
+  });
+
+  it('heads a Current run by its version, as it always did', () => {
+    render(<WorkflowRunView answer={answerOf(IN_REVIEW)} />);
+    expect(screen.getByText('engine · Current workflow, version 06e90f358edc')).toBeInTheDocument();
+  });
+
+  it('says where the work stands in one sentence: the step, and its state', async () => {
+    const { unmount } = render(<WorkflowRunView answer={answerOf(IN_REVIEW)} />);
+    expect(document.body).toHaveTextContent('At Your look in dev · waiting on you');
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    render(<WorkflowRunView answer={answerOf(IN_REVIEW)} />);
+    expect(document.body).toHaveTextContent('停在：你在 dev 中审阅 · 等你处理');
+  });
+
+  it("opens the step the run stands at, with its owner's control, and every other step as its title and one fact", async () => {
+    render(<WorkflowRunView answer={answerOf(IN_REVIEW)} here="work" doors={{ session: vi.fn(), quest: vi.fn() }} controls={{ look: <button type="button">Reviewed</button> }} />);
+
+    expect(row('look')).toHaveTextContent('Waits for your look in dev: shown at 01234567.');
+    expect(within(row('look')).getByRole('button', { name: 'Open quest #q2' })).toBeInTheDocument();
+    expect(within(row('look')).getByRole('button', { name: 'Reviewed' })).toBeInTheDocument();
+    expect(detailsOf('look')).toBeNull();
+
+    // The others say their state and, for the attended one, that it is this session; their record waits for a press.
+    expect(row('work')).toHaveTextContent('done');
+    expect(row('work')).toHaveTextContent('this session');
+    expect(row('work')).not.toHaveTextContent('The agent finished');
+    expect(row('landing')).toHaveTextContent('not reached');
+    expect(within(row('work')).queryByRole('button', { name: 'Open its session' })).toBeNull();
+
+    await userEvent.click(detailsOf('work')!);
+    expect(row('work')).toHaveTextContent('The agent finished: 1 quest here is done.');
+    expect(within(row('work')).getByRole('button', { name: 'Open its session' })).toBeInTheDocument();
+    // The selection moved: the look is its title and its state again, and its control goes with its record.
+    expect(row('look')).toHaveTextContent('waiting on you');
+    expect(row('look')).not.toHaveTextContent('Waits for your look in');
+    expect(screen.queryByRole('button', { name: 'Reviewed' })).toBeNull();
+    expect(detailsOf('work')).toBeNull();
+    expect(detailsOf('look')).not.toBeNull();
+  });
+
+  it("selects a step from the keyboard, and keeps the person's choice while the run moves on", async () => {
+    const { rerender } = render(<WorkflowRunView answer={answerOf(IN_REVIEW)} />);
+    detailsOf('work')!.focus();
+    await userEvent.keyboard('{Enter}');
+    expect(row('work')).toHaveTextContent('The agent finished: 1 quest here is done.');
+
+    rerender(<Tooltip.Provider><WorkflowRunView answer={answerOf(OPINION_SETTLED)} /></Tooltip.Provider>);
+    expect(row('work')).toHaveTextContent('The agent finished: 1 quest here is done.');
+    expect(detailsOf('landing')).not.toBeNull();
+  });
+
+  it('opens the last step reached once the run has no step it stands at', () => {
+    render(<WorkflowRunView answer={answerOf(LANDED)} />);
+    expect(row('landing')).toHaveTextContent('Landed');
+    expect(detailsOf('landing')).toBeNull();
+    expect(detailsOf('work')).not.toBeNull();
+  });
+
+  it('says what a decision came to, its route not taken apart from the steps not reached, and finishes at the route its outcome took', () => {
+    render(<WorkflowRunView answer={answerOf(GRAPH_RUN_DECIDED)} />);
+
+    const find = row('find');
+    expect(find).toHaveTextContent('Its outcome: none.');
+    const [release, none] = within(within(find).getByRole('list', { name: 'Routes' })).getAllByRole('listitem');
+    expect(release).toHaveTextContent(/release → .*route not taken$/);
+    expect(none).toHaveTextContent('none → No further step');
+    expect(none).not.toHaveTextContent('route not taken');
+
+    // The steps no route reaches say it, in place of not reached.
+    for (const id of ['release', 'publish']) {
+      expect(row(id)).toHaveTextContent('route not taken');
+      expect(row(id)).not.toHaveTextContent('not reached');
+    }
+    expect(screen.getByText('Finished')).toBeInTheDocument();
+  });
+
+  it('says the route a decision took when its outcome is routed, and names no outcome it never declared', () => {
+    render(<WorkflowRunView answer={answerOf(GRAPH_RUN_RELEASED)} />);
+    expect(row('find')).toHaveTextContent('Its outcome: release.');
+    const routes = within(row('find')).getByRole('list', { name: 'Routes' });
+    expect(within(routes).getAllByRole('listitem')).toHaveLength(1);
+    expect(routes).not.toHaveTextContent('route not taken');
+    expect(routes).not.toHaveTextContent('No further step');
+    expect(row('release')).toHaveTextContent('done');
+    expect(row('publish')).toHaveTextContent('done');
+    expect(screen.getByText('Finished')).toBeInTheDocument();
+  });
+
+  it("draws Finished only from the driver's record: not while a hold stays, a graph is unread, or a step is still to come", () => {
+    const { unmount } = render(<WorkflowRunView answer={answerOf(GRAPH_RUN_RELEASED)} />);
+    expect(screen.getByText('Finished')).toBeInTheDocument();
+    unmount();
+
+    const held = render(<WorkflowRunView answer={answerOf({ ...GRAPH_RUN_RELEASED, workflowGate: { state: 'kind-paths', holds: true, says: 'Holds.' } })} />);
+    expect(screen.queryByText('Finished')).toBeNull();
+    held.unmount();
+
+    const unread = render(<WorkflowRunView answer={answerOf({ ...GRAPH_RUN_RELEASED, graph: { ...GRAPH_RUN_RELEASED.graph!, unread: true } })} />);
+    expect(screen.queryByText('Finished')).toBeNull();
+    unread.unmount();
+
+    render(<WorkflowRunView answer={answerOf(IN_REVIEW)} />);
+    expect(screen.queryByText('Finished')).toBeNull();
+  });
+
+  it('says a step skipped apart from one not taken, and one not reached', () => {
+    render(<WorkflowRunView answer={answerOf(GO_AHEAD_REFUSAL)} />);
+    expect(row('opinion')).toHaveTextContent('skipped');
+    expect(row('look')).toHaveTextContent('skipped');
+    expect(row('release')).toHaveTextContent('not reached');
+    expect(row('release')).not.toHaveTextContent('route not taken');
   });
 });
