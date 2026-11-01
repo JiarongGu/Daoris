@@ -7,7 +7,9 @@
   "description": "Once a branch rule's landing has made its branch, pushes it to origin and opens a pull request with the gh CLI.",
   "hooks": {
     "command": ["node", "${plugin}/land.mjs"],
-    "points": ["work/land"]
+    "points": ["work/land", "work/state"],
+    "key": true,
+    "modes": ["push"]
   },
   "tools": [
     { "id": "node", "versions": ">=16.6.0", "for": "Runs the plugin's land.mjs." },
