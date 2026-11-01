@@ -327,7 +327,7 @@ async function standInService() {
 function stubTurn(stub, { cwd, env, opening, words }) {
   return new Promise((resolve, reject) => {
     const ambient = Object.fromEntries(Object.entries(process.env).filter(([name]) => !name.toUpperCase().startsWith('DAORIS_')));
-    const child = spawn(process.execPath, [stub], { cwd, env: { ...ambient, ...env }, stdio: ['pipe', 'pipe', 'pipe'] });
+    const child = spawn(process.execPath, [stub], { cwd, env: { ...ambient, ...env }, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
     let buffered = '';
     let said = '';
     let answer = null;
@@ -358,7 +358,7 @@ function stubTurn(stub, { cwd, env, opening, words }) {
 }
 
 const git = (cwd, ...args) => execFileSync('git', ['-c', 'user.name=Kit Test', '-c', 'user.email=kit@example.invalid', ...args], {
-  cwd, encoding: 'utf8',
+  cwd, encoding: 'utf8', windowsHide: true,
 }).trim();
 
 test("a set-up step's stub says what it showed through its connector and closes done, committing nothing; the person's not yet "
@@ -669,7 +669,7 @@ test("a refusal's words are inert to a shell, since a phase may put a print into
   ];
 
   // The words, the folders named aside: a folder is the run's own, as git or Node spells it.
-  const enclosing = execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd: here, encoding: 'utf8' }).trim();
+  const enclosing = execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd: here, encoding: 'utf8', windowsHide: true }).trim();
   const folders = [scratch, scratch.replace(/\\/g, '/'), enclosing];
   for (const refusal of refusals) {
     assert.ok(refusal, 'every one is refused');
@@ -687,12 +687,12 @@ test("a stub commits in the repository it was started in, and refuses to commit 
   git(own, 'init', '-q');
   writeFileSync(join(own, 'answered-q1.md'), 'Answered by the stub session.\n');
 
-  execFileSync(process.execPath, [stub], { cwd: own, encoding: 'utf8', stdio: 'pipe' });
+  execFileSync(process.execPath, [stub], { cwd: own, encoding: 'utf8', stdio: 'pipe', windowsHide: true });
   assert.equal(git(own, 'log', '-1', '--format=%an: %s'), 'Stub Session: stub: answer quest q1');
 
   let refused = '';
   try {
-    execFileSync(process.execPath, [stub], { cwd: inner, encoding: 'utf8', stdio: 'pipe' });
+    execFileSync(process.execPath, [stub], { cwd: inner, encoding: 'utf8', stdio: 'pipe', windowsHide: true });
   } catch (error) {
     refused = String(error.stderr);
   }
@@ -805,7 +805,7 @@ test('a command that ends answers as it always did: standard output alone on suc
 function acpExchange(script, { cwd, env = {}, frames, allow = true }) {
   return new Promise((resolve, reject) => {
     const ambient = Object.fromEntries(Object.entries(process.env).filter(([name]) => !name.toUpperCase().startsWith('DAORIS_')));
-    const child = spawn(process.execPath, [script], { cwd, env: { ...ambient, ...env }, stdio: ['pipe', 'pipe', 'pipe'] });
+    const child = spawn(process.execPath, [script], { cwd, env: { ...ambient, ...env }, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
     const heard = [];
     let buffered = '';
     let said = '';

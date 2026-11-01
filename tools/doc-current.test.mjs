@@ -301,7 +301,7 @@ test('sinceDiff reads the paths a diff deleted or renamed and the identifiers it
     GIT_CONFIG_KEY_1: 'user.email', GIT_CONFIG_VALUE_1: 'f@example.invalid', GIT_CONFIG_KEY_2: 'core.autocrlf', GIT_CONFIG_VALUE_2: 'false' };
   for (const key of ['GIT_DIR', 'GIT_WORK_TREE', 'GIT_INDEX_FILE']) delete env[key];
   const git = (...args) => {
-    const r = spawnSync('git', args, { cwd: repo, env, encoding: 'utf8' });
+    const r = spawnSync('git', args, { cwd: repo, env, encoding: 'utf8', windowsHide: true });
     assert.equal(r.status, 0, r.stderr);
   };
   git('init', '-q', '-b', 'main');

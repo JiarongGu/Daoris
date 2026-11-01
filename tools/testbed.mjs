@@ -119,7 +119,7 @@ function claimRoot() {
   }
 }
 
-const run = (command, cwd) => execSync(command, { cwd, env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+const run = (command, cwd) => execSync(command, { cwd, env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
 const daoris = (args, cwd) => run(`node "${cli}" ${args}`, cwd);
 const git = (where, args) => execGit(args, { cwd: where, encoding: 'utf8' });
 

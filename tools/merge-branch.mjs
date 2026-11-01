@@ -3373,7 +3373,7 @@ function listProcesses() {
   const windows = process.platform === 'win32';
   const result = windows
     ? spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', PROCESS_QUERY], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, windowsHide: true })
-    : spawnSync('ps', ['-A', '-o', 'pid=', '-o', 'args='], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+    : spawnSync('ps', ['-A', '-o', 'pid=', '-o', 'args='], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, windowsHide: true });
   const what = windows ? 'the process query' : 'ps';
   if (result.error) return { error: `${what} could not start: ${result.error.message}` };
   if (result.status !== 0) return { error: `${what} failed: ${gitSays(result.stderr || result.stdout || '')}` };

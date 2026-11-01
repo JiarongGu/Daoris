@@ -9,7 +9,7 @@ import { spawnSync } from 'node:child_process';
 
 /** Run a PowerShell script and answer its standard output — empty when it wrote none. */
 export const powershell = (script) =>
-  spawnSync('powershell', ['-NoProfile', '-Command', script], { encoding: 'utf8' }).stdout ?? '';
+  spawnSync('powershell', ['-NoProfile', '-Command', script], { encoding: 'utf8', windowsHide: true }).stdout ?? '';
 
 /**
  * Text as a PowerShell single-quoted literal. Backslashes stay literal there (doubling them makes a

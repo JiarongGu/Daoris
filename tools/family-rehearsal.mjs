@@ -127,6 +127,7 @@ const driverInBackground = ({ serviceUrl, config, remote = {}, harness = {}, mod
     const started = Date.now();
     const child = spawn('dotnet', [driverDll, 'drive', ...(mode ? [mode] : [])], {
       cwd: scratch,
+      windowsHide: true,
       env: {
         ...process.env,
         DAORIS_SERVICE_URL: serviceUrl,
@@ -236,6 +237,7 @@ async function startServer(env, base) {
   const child = spawn('dotnet', [httpDll], {
     cwd: repoRoot,
     stdio: 'ignore',
+    windowsHide: true,
     env: { ...process.env, ...NO_REMOTE, ...env },
   });
   children.push(child);
@@ -4661,6 +4663,7 @@ check(
 const stopChat = await new Promise((resolve) => {
   const child = spawn('dotnet', [driverDll, 'chat', '--repository', 'newcomer', '--adapter', 'acp-stub'], {
     cwd: scratch,
+    windowsHide: true,
     env: { ...process.env, DAORIS_SERVICE_URL: BASE, DAORIS_DRIVER_CONFIG: acpConfig, ...NO_REMOTE, ...NO_HARNESS },
   });
   children.push(child);

@@ -208,7 +208,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/WorkOrders/SessionGroups.cs` | 62 | 1074 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/WorkOrders/SessionsCommand.cs` | 103 | 1903 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/WorkOrders/Work/WorkAbandoning.cs` | 43 | 765 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Domain/WorkflowNamed.cs` | 47 | 838 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Domain/WorkflowNamed.cs` | 48 | 843 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Domain/WorkflowRun.cs` | 64 | 1108 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/DriverWorkflowsCommand.cs` | 53 | 928 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Nodes/NodeGraphs.cs` | 67 | 1117 |
@@ -226,7 +226,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/Landing.cs` | 52 | 888 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/SessionTrees.cs` | 63 | 990 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/SpaceFree.cs` | 50 | 1007 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/TreeLands.cs` | 98 | 1446 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/TreeLands.cs` | 99 | 1452 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/TreeSetAside.cs` | 62 | 1100 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/WorkingTree.cs` | 72 | 1368 |
 
@@ -309,16 +309,16 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `tools/deployment-rehearsal.mjs` | 107 | 1843 |
+| `tools/deployment-rehearsal.mjs` | 108 | 1846 |
 | `tools/desktop-publish.mjs` | 86 | 1493 |
-| `tools/desktop.mjs` | 54 | 1097 |
-| `tools/family-rehearsal.mjs` | 371 | 6427 |
+| `tools/desktop.mjs` | 54 | 1098 |
+| `tools/family-rehearsal.mjs` | 371 | 6430 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
 | `tools/merge-branch.mjs` | 499 | 8404 |
 | `tools/merge-queue.mjs` | 65 | 1033 |
 | `tools/orient-index.mjs` | 70 | 1505 |
 | `tools/process-reach.mjs` | 43 | 906 |
-| `tools/rehearsal-kit.mjs` | 55 | 1076 |
+| `tools/rehearsal-kit.mjs` | 56 | 1077 |
 | `tools/rehearsal-kit.test.mjs` | 45 | 921 |
 | `tools/usage-report.mjs` | 69 | 1483 |
 
