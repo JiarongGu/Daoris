@@ -165,7 +165,10 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         // MODELROLE1c (D205 §8.3): who does each kind of work, with which model, in order; its proposal door is owed (MODELROLE1h).
         ("choose who does each kind of work, and with which model", "Agents → Roles → Working roles", "`daoris driver actor <actor> …`"),
         // FOUNDATION1y-i (§2.7): the role catalogue, a role added, changed, removed or given back its seed; `role_propose` proposes it.
-        ("add, change or remove a role that takes a kind of work", "Agents → Roles → Working roles", "`daoris driver role set|remove|default <id> …`"),
+        // DEFAULTCONFIG1b: every seeded role given back its default at once, added roles kept.
+        ("add, change or remove a role that takes a kind of work, give a seeded one back its default, or every seeded one at once, "
+            + "added roles kept", "Agents → Roles → Working roles, and its *Restore all role defaults*",
+            "`daoris driver role set|remove|default <id> …`, `daoris driver role default --all`"),
         ("park a quest after failed sessions", "Settings → Driver", "`daoris driver strikes <n>`"),
         // SESSUX1b: FRAME1d made the quest's drawer a page. A stop's release names its session, since the terminal cannot
         // see which hold a quest is under (D50); the page's Try again on a stopped quest is the web shell's to add.
@@ -349,6 +352,12 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "Daoris's next look applies it)",
             "Sessions → the session's *Workflow* view, *Pass over…* and *Stop…* under the step",
             "`daoris-driver workflow skip <run> <node> \"…\"`, `daoris-driver workflow stop <run> <node> [\"…\"]`"),
+        // DECIDE1c: the person's changes on a run's review, its rejection with their words. Exempt from Ask Daoris as skip and stop are (HelpCoverageTests).
+        ("ask for changes on a run's review in place of your Accept, with your words: the work's session is told them as its next "
+            + "turn, and what it commits is reviewed again before anything lands (yours alone: Ask Daoris never proposes it; kept on "
+            + "the run's record, and Daoris's next look applies it)",
+            "Sessions → the session's *Workflow* view, *Ask for changes…* under the review",
+            "`daoris-driver workflow changes <run> <node> \"…\"`"),
         // XAGENT1f4 (D155 point 10, design §8.5, §9): the person's presses at the second opinion's gate, the terminal's
         // `daoris-driver opinion` and the screen's (XAGENT1g). Each is exempt from Ask Daoris (HelpCoverageTests): a pass spends an
         // account at the person's choice and a stop is theirs, and going on, or reading it themselves, is their judgement (D110).

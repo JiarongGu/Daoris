@@ -142,7 +142,7 @@
 
 **Files.** `src/Daoris.Web/src/workflow/edit/WorkflowEditor.tsx`, `src/Daoris.Web/src/workflow/edit/WorkflowEditor.test.tsx`, `src/Daoris.Web/src/workflow/edit/WorkflowEditor.stories.tsx`, `src/Daoris.Web/src/workflow/edit/graphDraft.ts`, `src/Daoris.Web/src/workflow/edit/graphDraft.test.ts`, `src/Daoris.Web/src/workflow/edit/StepOptions.tsx`, `src/Daoris.Web/src/workflow/WorkflowTab.tsx`, `src/Daoris.Web/src/workflow/WorkflowTab.test.tsx`, `src/Daoris.Web/src/bridge/repositories/workflowEdit.ts`, `src/Daoris.Web/src/locales/en/workflow.edit.json`, `src/Daoris.Web/src/locales/zh/workflow.edit.json`, `src/Daoris.Web/src/locales/en/workflow.json`, `src/Daoris.Web/src/locales/zh/workflow.json`, `src/Daoris.Web/src/locales/glossary.json`, `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/WorkflowOperations.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/WorkflowPalette.cs`, `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/WorkflowEditRoutes.cs`, `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleWorkflowWritesTests.cs`
 
-## DECIDE1d — A declared output is required only on the outcomes that carry it, and the help doors for this wave's acts
+## DECIDE1d — A declared output is required only on the outcomes that carry it, and the help doors for this wave's acts (built 2026-11-01)
 
 **Wave** 4; after DECIDE1c, DEFAULTCONFIG1b, DEFAULTCONFIG1c; opus. Filed at wave 3's merge, from DEFAULTCONFIG1c's handback.
 

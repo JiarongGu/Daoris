@@ -149,6 +149,26 @@ public sealed record NodeDeclaration(string Id, string Kind, int Version, string
         init => outcomes = ImmutableArray.CreateRange(value ?? throw new ArgumentNullException(nameof(value)));
     }
 
+    /// <summary>No output carried on some outcomes alone: what a declaration names before any.</summary>
+    public static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> NoneCarriedOn =
+        ImmutableSortedDictionary.Create<string, IReadOnlyList<string>>(StringComparer.Ordinal);
+
+    private readonly IReadOnlyDictionary<string, IReadOnlyList<string>> outputsOn = NoneCarriedOn;
+
+    /// <summary>
+    /// A decision's outputs each carried on some of its outcomes alone, with those outcomes (DECIDE1d): a reach with another outcome may leave
+    /// it out. An output not named is carried on every reach. Its names keep <see cref="NodeOutcomes.OutputsOnProblem"/>. A copy of what
+    /// was set, by output, each one's outcomes in name order.
+    /// </summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<string>> OutputsOn
+    {
+        get => outputsOn;
+        init => outputsOn = (value ?? throw new ArgumentNullException(nameof(value))).ToImmutableSortedDictionary(
+            each => each.Key,
+            each => (IReadOnlyList<string>)ImmutableArray.CreateRange((each.Value ?? throw new ArgumentNullException(nameof(value))).Order(StringComparer.Ordinal)),
+            StringComparer.Ordinal);
+    }
+
     /// <summary>
     /// Made by decoding a D157 version (a sink, a person's task or a join, §E7), never authored: counted apart from a graph's 24-node
     /// bound (FABRIC-GRAPH1, <see cref="NodeGraphs.MaxNodes"/>). A graph read from a person's file declares none.
@@ -167,7 +187,9 @@ public sealed record NodeDeclaration(string Id, string Kind, int Version, string
         && string.Equals(Evidence, other.Evidence, StringComparison.Ordinal) && Equals(Retry, other.Retry)
         && TimeoutSeconds == other.TimeoutSeconds && Rejectable == other.Rejectable && Skippable == other.Skippable
         && Equals(Perform, other.Perform) && Same(Options, other.Options) && Synthetic == other.Synthetic
-        && Outcomes.SequenceEqual(other.Outcomes, StringComparer.Ordinal);
+        && Outcomes.SequenceEqual(other.Outcomes, StringComparer.Ordinal)
+        && OutputsOn.Count == other.OutputsOn.Count && OutputsOn.Zip(other.OutputsOn).All(pair =>
+            string.Equals(pair.First.Key, pair.Second.Key, StringComparison.Ordinal) && pair.First.Value.SequenceEqual(pair.Second.Value, StringComparer.Ordinal));
 
     public override int GetHashCode()
     {
@@ -190,6 +212,12 @@ public sealed record NodeDeclaration(string Id, string Kind, int Version, string
         hash.Add(Perform);
         hash.Add(Synthetic);
         foreach (var outcome in Outcomes) hash.Add(outcome, StringComparer.Ordinal);
+        foreach (var (output, on) in OutputsOn)
+        {
+            hash.Add(output, StringComparer.Ordinal);
+            foreach (var outcome in on) hash.Add(outcome, StringComparer.Ordinal);
+        }
+
         return hash.ToHashCode();
     }
 
@@ -235,4 +263,30 @@ public static class NodeOutcomes
     /// <summary>Whether a reach's <paramref name="outcome"/> fits <paramref name="node"/>: one of a decision's outcomes, and none on any other node.</summary>
     public static bool Fits(NodeDeclaration node, string? outcome) =>
         node.Outcomes.Count == 0 ? outcome is null : outcome is not null && node.Outcomes.Contains(outcome, StringComparer.Ordinal);
+
+    /// <summary>
+    /// Whether a reach of <paramref name="node"/> with <paramref name="outcome"/> must carry <paramref name="output"/> (DECIDE1d): a reach with
+    /// no outcome, or with one its <see cref="NodeDeclaration.OutputsOn"/> names for it, does, as does every reach where it names none.
+    /// </summary>
+    public static bool Carries(NodeDeclaration node, string output, string? outcome) =>
+        outcome is null || !node.OutputsOn.TryGetValue(output, out var on) || on.Contains(outcome, StringComparer.Ordinal);
+
+    /// <summary>
+    /// What a declaration's <see cref="NodeDeclaration.OutputsOn"/> breaks, in a sentence with names in backticks, or null: only a decision
+    /// names it, each name one of its outputs and each with one or more of its outcomes, once each.
+    /// </summary>
+    public static string? OutputsOnProblem(NodeDeclaration node)
+    {
+        if (node.OutputsOn.Count == 0) return null;
+        if (node.Outcomes.Count == 0) return "only a decision names the outcomes that carry an output, and this step declares no outcomes.";
+        foreach (var (output, on) in node.OutputsOn)
+        {
+            if (!node.Outputs.ContainsKey(output)) return $"`{output}` is no output this step declares.";
+            if (on.Count == 0) return $"`{output}` is carried on no outcome: name the outcomes that carry it, or leave it out to carry it on every reach.";
+            if (on.FirstOrDefault(outcome => !node.Outcomes.Contains(outcome, StringComparer.Ordinal)) is { } other) return $"`{other}` is not one of this step's outcomes.";
+            if (on.Distinct(StringComparer.Ordinal).Count() != on.Count) return $"`{output}` names one of its outcomes twice.";
+        }
+
+        return null;
+    }
 }

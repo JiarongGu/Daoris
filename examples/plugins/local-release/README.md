@@ -29,8 +29,9 @@ Each step is `performed`, `idempotent` and reconciled (`work/reconcile`), with t
 | `publish` | `release` | copies the built package `incoming/<version>/` into `registry/<version>/`, whole or not at all | none |
 
 `find` is a decision (`outcomes`: `release` | `none`): it reaches with `release` and the output where a
-release is pending, and with `none` and no output where not. What a graph does on `none` is its own
-(a `when` wire on each route). `release` fails `unknown-release` for a version `find` never recorded;
+release is pending, and with `none` and no output where not. Its `outputsOn` (`{ "release": ["release"] }`)
+says so: Daoris requires the `release` output on `release` alone, and a graph is refused where a step that
+takes it can start after `none`. What a graph does on `none` is its own (a `when` wire on each route). `release` fails `unknown-release` for a version `find` never recorded;
 `publish` fails `not-released` for one not recorded as released and `no-package` for one with no built
 package.
 
