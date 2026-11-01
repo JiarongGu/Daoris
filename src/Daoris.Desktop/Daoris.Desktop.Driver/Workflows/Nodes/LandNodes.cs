@@ -107,6 +107,23 @@ public static class LandNodes
     private static string? Written(NodeDeclaration node, string name) =>
         node.Options.TryGetValue(name, out var raw) && raw.TrimStart().StartsWith('"') ? NodeOptions.Value(raw) as string : null;
 
+    /// <summary>
+    /// A <c>message</c> template rendered once (LANDNODE1f; the land node design §2), for the delivery's intent to freeze before the landing: each
+    /// placeholder replaced in one pass, so a title that says <c>{quest}</c> stays as written. The title is taken onto one line; a ticket the
+    /// subject has none of is empty. Null where the template is not one <see cref="MessageProblem"/> accepts, which the node's judgement refused.
+    /// </summary>
+    public static string? RenderMessage(string template, string? title, string? quest, string? ticket, string session)
+    {
+        if (MessageProblem(template) is not null) return null;
+        return Placeholder.Replace(template, used => used.Groups[1].Value switch
+        {
+            "title" => TextBounds.Fold(title),
+            "quest" => quest ?? "",
+            "ticket" => ticket ?? "",
+            _ => session,
+        });
+    }
+
     /// <summary>What is wrong with a commit message template, or null: some words, and only the names a landing has.</summary>
     public static string? MessageProblem(string message)
     {
