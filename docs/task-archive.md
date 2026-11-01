@@ -22701,3 +22701,9 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 > **NOTEBREAK1 — a decision's note never lands glued** (tools). A union merge of `docs/decisions/*.md` coalesced the blank line two branches each added before their `**Note, ` line, and `doc-duplicates` failed the next CI. Proof: `tools/index-hook.test.mjs`.
 
 **Outcome** 2026-11-02: `tools/index-hook.mjs` separates a glued note in every staged decision file before it regenerates the index (pre-commit, which a conflicted merge finishes through), and a `notes` merge driver (`--merge-notes`, set by `--install`, named for `docs/decisions/*.md` in `.gitattributes`) does union and the separation inside the merge itself, since a clean merge runs no pre-commit and git ignores what a `pre-merge-commit` hook stages; no commit is remade. Detail: the FIX-LOG entry of 2026-11-02.
+
+## SETUPUX1l — Roles on a place, one role editor (2026-11-02, D221)
+
+> **SETUPUX1l — Roles on a place, one role editor** (web; row l of the set-up design). Only the works that differ from the parent as rows, the rest folded; one `RoleEditor` for the place's Roles and All roles (a step's later), keeping the role's scope, revision and typed alternatives; *Back to …* naming the fallback; the two-roles-one-work refusal said in the editor; a shared role edited once with its works named. Proof: the folds, *Back to*, the refusal, a shared role, a typed model saved (`PlaceRoles.test.tsx`, `RoleEditor.test.tsx`); stories at 80, 39 and 25rem, en and zh, both themes.
+
+**Outcome** 2026-11-02: `agents/roles/RoleEditor.tsx` holds the editor (prose behind one ⓘ, a sentence of consequence before *Save*) and `setup/PlaceRoles.tsx` folds the unchanged works. Detail: D221's SETUPUX1l note; `PlaceRoles.stories.tsx`.

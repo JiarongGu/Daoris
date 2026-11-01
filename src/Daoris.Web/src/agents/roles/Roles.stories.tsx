@@ -1,5 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { chinese } from '../../design/storyLanguage';
+import { InTheme } from '../../plugins/storyIcons';
 import { storyWidths } from '../../design/storyWidths';
 import type { ActorRow, RoleCatalogue, RoleRow } from '../../data/wiring';
 import type { StartWiring } from '../../map/wiring';
@@ -46,6 +47,8 @@ const STAFFING: ActorRow[] = [
   row('ask-daoris', 'before', [{ agent: 'claude-code-acp', from: 'before' }]),
   row('chat', 'set', [{ agent: 'claude-code', from: '1' }]),
 ];
+
+const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
 const meta: Meta<typeof RolesCard> = {
   title: 'Agents/Roles',
@@ -158,6 +161,10 @@ export const RoleEditorChinese: Story = { args: EDIT, decorators: [chinese] };
 
 /** The same in 中文 at the floor. */
 export const RoleEditorChineseNarrow: Story = { args: EDIT, decorators: [storyWidths.narrow, chinese] };
+
+/** The same in dark, and in 中文 in dark at the floor (SETUPUX1l: one editor in both themes). */
+export const RoleEditorDark: Story = { args: EDIT, decorators: [dark] };
+export const RoleEditorChineseDarkNarrow: Story = { args: EDIT, decorators: [storyWidths.narrow, chinese, dark] };
 
 /** A home whose driver.json is the file's own: each seeded row keeps its order editor, and Add a role and Remove are held. */
 export const NotKept: Story = { args: { catalogue: { ...CATALOGUE, kept: false, suggested: [] } } };
