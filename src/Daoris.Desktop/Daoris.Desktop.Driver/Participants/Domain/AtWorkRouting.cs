@@ -69,6 +69,19 @@ public sealed record AtWorkRouting(
 {
     /// <summary>The quests half's port (COWORKVIEW1b-ii); null reads no quests and no asker.</summary>
     public AtWorkAsking? Asking { get; init; }
+
+    /// <summary>
+    /// The routing standing word of a repository on this machine (COWORKVIEW1e-iii): <see cref="RoutingStanding"/>'s, or <see cref="Unheard"/>
+    /// before the registry or the driver's choices have answered, or <see cref="Unnamed"/> for a repository the registry does not name.
+    /// Asked only where the hint can be drawn; null reads no hint.
+    /// </summary>
+    public Func<string, string>? StandingOf { get; init; }
+
+    /// <summary>The registry (its lanes) or the driver's choices have not answered yet: not an answer of no lanes.</summary>
+    public const string Unheard = "unheard";
+
+    /// <summary>The registry answered and does not name the repository.</summary>
+    public const string Unnamed = "unnamed";
 }
 
 /// <summary>What a part waits on, as the strip places it: a quest (with the repository it was asked of and its lanes), or its helper.</summary>

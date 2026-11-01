@@ -21,7 +21,8 @@ public sealed class AtWorkRoutes(DriverContext context)
         await Task.CompletedTask;
         var slices = _loop.Slices;
         AtWorkHeld Compose() => AtWorkRead.Compose(session, slices.Find(GroupsStateSlice.Name), slices.Find(SessionsStateSlice.Name),
-            slices.Find(QuestsStateSlice.Name), record => ChildLineage.Reading(_loop.Home, record.Id, record.Kind, LineageTokens.Shared), id => ChildLineage.PathOf(_loop.Home, id));
+            slices.Find(QuestsStateSlice.Name), record => ChildLineage.Reading(_loop.Home, record.Id, record.Kind, LineageTokens.Shared), id => ChildLineage.PathOf(_loop.Home, id),
+            _loop.HintStanding.Word);
 
         // The source fence (rule 11): an input moved while it composed is composed again, at most three times; the last lands.
         var held = Compose();

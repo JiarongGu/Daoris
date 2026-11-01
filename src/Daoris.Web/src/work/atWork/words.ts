@@ -1,5 +1,15 @@
 import type { TFunction } from 'i18next';
-import type { AtWorkAsker, AtWorkChildState, AtWorkJoined, AtWorkPart, AtWorkWait } from './types';
+import type { AtWorkAsker, AtWorkChildState, AtWorkHint, AtWorkJoined, AtWorkPart, AtWorkWait } from './types';
+
+/** The hint's words, by the standing the driver's judge answered. */
+export const HINT_KEY: Record<AtWorkHint, string> = {
+  'not-driven': 'work.atWork.hint.notDriven',
+  'no-lanes': 'work.atWork.hint.noLanes',
+  'one-at-a-time': 'work.atWork.hint.oneAtATime',
+};
+
+/** The guide's lanes section, which the hint links to. */
+export const LANES_GUIDE = 'https://github.com/JiarongGu/Daoris/blob/main/docs/guide/README.md#lanes';
 
 /** A part's wait in the rail's words (the strip places it; the view words it alike): *waits on #q, asked of core*, *awaiting helper*. */
 export function waitLine(t: TFunction, wait: AtWorkWait): string {

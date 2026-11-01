@@ -2,10 +2,11 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { cn } from '../../lib/cn';
 import { clockOf } from '../../locales/format';
-import { Dot, SectionTitle } from '../../design/ui';
+import { Dot, Inline, SectionTitle } from '../../design/ui';
+import { ExternalLink } from '../../design/links';
 import { type Consideration, sittingBecause, sittingSentence } from '../../data/signals';
 import type { AtWorkA, AtWorkChild, AtWorkHeld, AtWorkPart, AtWorkQuest, AtWorkSubagents } from './types';
-import { askerLine, CHILD_STATE_KEY, childTone, joinedLine, LAST_SEEN, partStateKey, waitLine, waitWhat } from './words';
+import { askerLine, CHILD_STATE_KEY, childTone, HINT_KEY, joinedLine, LANES_GUIDE, LAST_SEEN, partStateKey, waitLine, waitWhat } from './words';
 
 export type AtWorkViewProps = {
   /** What the read holds; undefined before its first answer, which draws as reading. */
@@ -65,6 +66,7 @@ export function AtWorkView({ held, error, onOpen, onOpenQuest, considered, onRet
         <Subagents answer={answer} quiet={stale !== null} now={now} streamOf={streamOf} onOpenStream={onOpenStream} />
         <Quests answer={answer} considered={considered ?? []} onOpenQuest={onOpenQuest} />
         <AskedBy answer={answer} onOpenQuest={onOpenQuest} />
+        <Hint answer={answer} />
       </div>
     </div>
   );
@@ -285,6 +287,22 @@ function AskedBy({ answer, onOpenQuest }: { answer: AtWorkA; onOpenQuest?: (ques
         {askerLine(t, askedBy, answer.parts)}
       </button>
     </section>
+  );
+}
+
+/**
+ * Where the repository's way to hand rows on is not open (the design §6.4 point 3): the standing the driver judged, said where the
+ * session ran subagents, with the guide's lanes section behind it. A fact about the repository and this machine, never a verdict on
+ * the agent's choice.
+ */
+function Hint({ answer }: { answer: AtWorkA }) {
+  const { t } = useTranslation();
+  if (!answer.hint) return null;
+  return (
+    <p data-hint={answer.hint} className="m-0 text-small text-ink-soft">
+      <Inline text={t(HINT_KEY[answer.hint])} />{' '}
+      <ExternalLink href={LANES_GUIDE} className="text-accent underline underline-offset-2">{t('work.atWork.hint.guide')}</ExternalLink>
+    </p>
   );
 }
 

@@ -77,5 +77,9 @@
   "work.atWork.failed": "Who is at work could not be read: {{why}}",
   "work.atWork.stale": "Could not read again: {{why}}",
   "work.atWork.retry": "Try again",
-  "work.atWork.child.console": "Console"
+  "work.atWork.child.console": "Console",
+  "work.atWork.hint.notDriven": "This repository is not driven here, so no quest to it starts on this machine, and its work runs inside this conversation.",
+  "work.atWork.hint.noLanes": "This repository declares no lanes, so its work runs inside this conversation. A `daoris.lanes.json` lets it hand rows to further parts of this session.",
+  "work.atWork.hint.oneAtATime": "This repository's sessions run one at a time here, so a quest to its lanes would wait for this one.",
+  "work.atWork.hint.guide": "About lanes"
 }

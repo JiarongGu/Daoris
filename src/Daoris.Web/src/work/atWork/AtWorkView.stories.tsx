@@ -3,7 +3,7 @@ import { atWidths, inDark, inLight } from '../../design/flowFrames';
 import { chinese } from '../../design/storyLanguage';
 import { AtWorkView } from './AtWorkView';
 import {
-  ASKED_BY, BOUND, CHAIN_AND_QUESTION, CHAT_TOOK_A_QUEST, CODEX, CODEX_NONE, CONSIDERED, CONTINUED, ELSEWHERE, EMPTY, FAILED, HISTORY, IDS_ONLY,
+  ASKED_BY, BOUND, CHAIN_AND_QUESTION, CHAT_TOOK_A_QUEST, CODEX, CODEX_NONE, CONSIDERED, CONTINUED, ELSEWHERE, EMPTY, FAILED, HINTED, HISTORY, IDS_ONLY,
   JOINED_EACH_WAY, LANES_ALONGSIDE_AND_UNTAKEN, LEAD_WAITING_ON_HELPER, LEAD_WAITING_ON_LANE, LOST, NO_PARENT, NOW, OVERFLOW_AND_EARLIER, PARTS,
   PUBLISHED_AND_WAITS_ON_NONE, QUESTS_EACH_TAKER, READING, RESUMED_AND_EARLIER, STALE, THREE, TURN_WAITS, UNCERTAIN, UNREADABLE,
 } from './atWork.fixtures';
@@ -145,6 +145,20 @@ export const AskedBySession: Story = { args: { held: ASKED_BY({ session: 's1' })
 export const AskedBySessionChinese: Story = { args: { held: ASKED_BY({ session: 's1' }) }, decorators: routingZh };
 export const AskedByYou: Story = { args: { held: ASKED_BY({ person: true }) }, decorators: routingLight };
 export const AskedByYouChinese: Story = { args: { held: ASKED_BY({ person: true }) }, decorators: routingZh };
+
+// COWORKVIEW1e-iii: the hint, one story per standing, at the same widths.
+
+/** Two subagents ran in a repository that is not driven here. */
+export const HintNotDriven: Story = { args: { held: HINTED('not-driven') }, decorators: routingLight };
+export const HintNotDrivenChinese: Story = { args: { held: HINTED('not-driven') }, decorators: routingZh };
+
+/** Two subagents ran in a driven repository that declares no lanes. */
+export const HintNoLanes: Story = { args: { held: HINTED('no-lanes') }, decorators: routingLight };
+export const HintNoLanesChinese: Story = { args: { held: HINTED('no-lanes') }, decorators: routingZh };
+
+/** Two subagents ran in a repository whose sessions run one at a time here. */
+export const HintOneAtATime: Story = { args: { held: HINTED('one-at-a-time') }, decorators: routingLight };
+export const HintOneAtATimeChinese: Story = { args: { held: HINTED('one-at-a-time') }, decorators: routingZh };
 
 /** An ended first process's child *ended with its agent* beside its continuation's child working. */
 export const EndedBesideItsContinuation: Story = { args: { held: CONTINUED }, decorators: light };

@@ -42,6 +42,12 @@ public sealed record AtWorkDependencies(
     public SliceHealth QuestsHealth { get; init; }
 
     /// <summary>
+    /// The routing standing word each repository the hint consulted had when it was read (COWORKVIEW1e-iii): a dependency the driver
+    /// slice's pushes and the registry's answers move, nothing else written.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> Standings { get; init; } = new Dictionary<string, string>();
+
+    /// <summary>
     /// The quests half as the composition read it (COWORKVIEW1b-ii): the rows, the rows left out and the asker, written out. It reads the
     /// whole stores, so it is compared as a result, and a write that moves none of it wakes nothing.
     /// </summary>
@@ -58,9 +64,10 @@ public static class AtWorkRead
 {
     /// <param name="lineage">A part's lineage reading, this window's tokens in it.</param>
     /// <param name="pathOf">Where a part's lineage file is, whose stamp is taken before the read; none keeps no file's.</param>
+    /// <param name="standing">A repository's routing standing word for the hint; none draws no hint.</param>
     public static AtWorkHeld Compose(
         string session, StateSlice? groups, StateSlice? sessions, StateSlice? quests, Func<AtWorkRecord, LineageReading> lineage,
-        Func<string, string>? pathOf = null)
+        Func<string, string>? pathOf = null, Func<string, string>? standing = null)
     {
         var (groupsSnapshot, groupsHealth) = Taken(groups);
         var (sessionsSnapshot, sessionsHealth) = Taken(sessions);
@@ -74,11 +81,13 @@ public static class AtWorkRead
         var askedQuests = new Dictionary<string, AtWorkQuest?>(StringComparer.Ordinal);
         var askedPublished = new Dictionary<string, int>(StringComparer.Ordinal);
         var files = new Dictionary<string, AtWorkFile>(StringComparer.Ordinal);
+        var standings = new Dictionary<string, string>(StringComparer.Ordinal);
         var routing = new AtWorkRouting(
             entry ?? [], id => askedRows[id] = rows.GetValueOrDefault(id), id => askedQuests[id] = index.ById.GetValueOrDefault(id),
             id => askedPublished[id] = index.Published.GetValueOrDefault(id), questsHealth)
         {
             Asking = Asking(session, entry, questsSnapshot, sessionsSnapshot, rows),
+            StandingOf = standing is null ? null : repository => standings[repository] = standing(repository),
         };
         var held = AtWork.Compose(session, entry?.Select(part => part.Session).ToList(), id => asked[id] = records.GetValueOrDefault(id), record =>
         {
@@ -90,7 +99,7 @@ public static class AtWorkRead
         {
             Dependencies = new AtWorkDependencies(session, entry, asked, groupsHealth, sessionsHealth, files)
             {
-                Rows = askedRows, Quests = askedQuests, Published = askedPublished, QuestsHealth = questsHealth,
+                Rows = askedRows, Quests = askedQuests, Published = askedPublished, QuestsHealth = questsHealth, Standings = standings,
                 Asked = held.Answer is { } answer ? AskedKey(answer.Quests, answer.MoreQuests ?? 0, answer.AskedBy) : null,
             },
         };
@@ -165,8 +174,9 @@ public static class AtWorkRead
     /// What <paramref name="read"/>'s slices hold now, as a composition would read it: whether each part's read fields, the entry, the
     /// rows and quests it looked up and each slice's health stand.
     /// </summary>
-    public static bool SlicesStand(AtWorkDependencies read, StateSlice? groups, StateSlice? sessions, StateSlice? quests)
+    public static bool SlicesStand(AtWorkDependencies read, StateSlice? groups, StateSlice? sessions, StateSlice? quests, Func<string, string>? standing = null)
     {
+        if (standing is not null && read.Standings.Any(each => standing(each.Key) != each.Value)) return false;
         var (groupsSnapshot, groupsHealth) = Taken(groups);
         var (sessionsSnapshot, sessionsHealth) = Taken(sessions);
         var (questsSnapshot, questsHealth) = Taken(quests);

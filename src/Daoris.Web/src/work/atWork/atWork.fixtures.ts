@@ -1,5 +1,5 @@
 import type { Consideration } from '../../data/signals';
-import type { AtWorkA, AtWorkAsker, AtWorkChild, AtWorkHeld, AtWorkPart, AtWorkSubagents } from './types';
+import type { AtWorkA, AtWorkAsker, AtWorkChild, AtWorkHeld, AtWorkHint, AtWorkPart, AtWorkSubagents } from './types';
 
 // Who is at work (COWORKVIEW1a): the answers the view's stories and tests draw, each a state the cowork view design §5.3 names.
 
@@ -188,6 +188,14 @@ export const ASKED_BY = (by: AtWorkAsker['by']): AtWorkHeld => routed(
   [routedPart('s2', 2, { joined: { began: 'opened', quest: 'q1', of: 'driver' } }), routedPart('s1', 1, { state: 'completed' })],
   { askedBy: { quest: 'q1', by } },
   's2',
+);
+
+// COWORKVIEW1e-iii: the hint, where two subagents ran and the way to hand rows on is not open.
+
+/** Two subagents working in one generation, and the standing the driver's judge answered. */
+export const HINTED = (hint: AtWorkHint): AtWorkHeld => answerOf(
+  subagents([child('a1', 'working', { label: { text: 'Read the parser', claim: true } }), child('a2', 'working')]),
+  { hint },
 );
 
 export const EMPTY =answerOf({ read: 'none', working: 0, children: [] });

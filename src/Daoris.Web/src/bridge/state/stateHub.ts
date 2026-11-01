@@ -47,7 +47,8 @@ const scopes = new Map<string, (sessions: string[] | null) => QueryKey[]>([
   ['history', () => [ALL_HISTORY]],
   ['sync', () => [keys.allSync]],
   // The workspaces and repositories registered: the registry, and the repositories the service lists from it (STATEHUB1h).
-  ['registry', () => [keys.allRegistry, keys.allRepositories]],
+  // COWORKVIEW1e-iii: and who is at work, whose hint reads a repository's lanes from the registry.
+  ['registry', () => [keys.allRegistry, keys.allRepositories, AT_WORK]],
   ['plugins', () => [keys.plugins]],
   // The agents' roster, with what each start would run on and the accounts, which sit under its key.
   ['harnesses', () => [keys.harnesses]],

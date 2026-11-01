@@ -115,6 +115,9 @@ export type AtWorkAsker = {
   by: { session?: string; step?: string; ask?: string; person?: true };
 };
 
+/** The routing standing the hint says: the driver's judge, in its own words. */
+export type AtWorkHint = 'not-driven' | 'no-lanes' | 'one-at-a-time';
+
 export type AtWorkA = {
   of: { session: string };
   attended: string;
@@ -129,6 +132,8 @@ export type AtWorkA = {
   /** How many more the bound left out. */
   moreQuests?: number;
   askedBy?: AtWorkAsker;
+  /** Where its newest generation started two subagents and the repository's routing standing is not open (the design §6.4 point 3). */
+  hint?: AtWorkHint;
   subagents: AtWorkSubagents;
   /** When the shell's process began; absent from an older host. */
   windowOpened?: string;
