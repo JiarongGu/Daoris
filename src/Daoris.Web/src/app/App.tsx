@@ -97,6 +97,7 @@ import { ZoomReadout } from '../work/frame/ZoomReadout';
 import { rememberedDomain, SETTINGS_DOMAINS } from '../settings/domains';
 import { store, stored } from '../lib/stored';
 import { figure } from '../locales/format';
+import { pageLanguage } from '../locales/languages';
 import { HarnessRuns } from '../agents/harnessRuns';
 import { usePluginsView } from '../plugins/PluginsView';
 import { useAgentsMode, useAgentsView } from '../agents/AgentsView';
@@ -747,7 +748,7 @@ export function App() {
       circle,
       wired: Boolean(wired),
       theme,
-      language: i18n.language.startsWith('zh') ? 'zh' : 'en',
+      language: pageLanguage(i18n.language),
       // Each agent installed here, as the Agents place lists it (UX6e): the palette goes to each one's page.
       agents: byTool(Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [])
         .filter((tool) => tool.present)

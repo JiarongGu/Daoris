@@ -44,16 +44,21 @@ const CODE = /`[^`\n]+`/g;
 /** The kinds of name that never hold one another's (SETUPUX1g, D221 §2.5). */
 const DISTINCT = ['workflow', 'delivery', 'step'];
 
-/** A glossary, both catalogues, read from the web's own locales. */
+/**
+ * A glossary and every catalogue present, read from the web's own locales (D222): English and Chinese beside the rest, `others`
+ * by language tag, so a language added as a folder is held by the same checks.
+ */
 export function load(root = LOCALES) {
   const catalogue = (language) => Object.assign({}, ...readdirSync(join(root, language))
     .filter((file) => file.endsWith('.json'))
     .sort()
     .map((file) => JSON.parse(readFileSync(join(root, language, file), 'utf8'))));
+  const present = readdirSync(root, { withFileTypes: true }).filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
   return {
     glossary: JSON.parse(readFileSync(join(root, 'glossary.json'), 'utf8')),
     en: catalogue('en'),
     zh: catalogue('zh'),
+    others: Object.fromEntries(present.filter((language) => language !== 'en' && language !== 'zh').map((language) => [language, catalogue(language)])),
   };
 }
 
@@ -91,7 +96,7 @@ const escape = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const says = (text, word) => new RegExp(`(^|[^\\p{L}])${escape(word)}(?![\\p{L}])`, 'iu').test(text);
 
 /** Problems that make the glossary unreadable as an authority. Empty when it can be trusted. */
-export function validate(glossary, en, zh) {
+export function validate(glossary, en, zh, others = {}) {
   const problems = [];
   const keys = Object.keys(en);
   const kinds = glossary.kinds ?? {};
@@ -164,6 +169,15 @@ export function validate(glossary, en, zh) {
     if (english === undefined && chinese === undefined) problems.push(`accepted: ${key} names neither language's name`);
     if (!why || !String(why).trim()) problems.push(`accepted: ${key} gives no reason`);
   }
+  // Every other catalogue present holds the keys the glossary names (D222): the exact keys of a kind, a door's two and an acceptance's.
+  const heldKeys = new Set([
+    ...Object.values(kinds).flatMap(({ keys: patterns = [] }) => patterns.filter((pattern) => !pattern.endsWith('.*'))),
+    ...(glossary.doors ?? []).flatMap(({ door, opens }) => [door, opens]),
+    ...(glossary.accepted?.names ?? []).map(({ key }) => key),
+  ]);
+  for (const [language, catalogue] of Object.entries(others)) {
+    for (const key of heldKeys) if (!(key in catalogue)) problems.push(`${key} is not a key in the ${language} catalogue`);
+  }
   return problems;
 }
 
@@ -177,8 +191,11 @@ function acceptances(glossary) {
   return held;
 }
 
+/** The terms whose pattern the English `text` matches. */
+const said_ = (matchers, text) => matchers.filter(({ pattern }) => pattern.test(text)).map(({ term }) => term);
+
 /** Everything the glossary finds in the catalogues: one finding a key, a rule and a language. */
-export function check(glossary, en, zh, { all = false } = {}) {
+export function check(glossary, en, zh, { all = false, others = {} } = {}) {
   const kindFor = kindOf(glossary);
   const byTerm = new Map(glossary.terms.map((term) => [term.term, term]));
   const named = glossary.terms.filter((term) => !term.use);
@@ -193,7 +210,7 @@ export function check(glossary, en, zh, { all = false } = {}) {
   const findings = new Map();
   const note = (key, kind, rule, language, message) => {
     const at = `${key}|${rule}|${language}`;
-    const value = language === 'en' ? en[key] : zh[key];
+    const value = language === 'en' ? en[key] : language === 'zh' ? zh[key] : others[language]?.[key];
     const found = findings.get(at);
     if (found) found.message += `; ${message}`;
     else findings.set(at, { key, kind, rule, language, message, value });
@@ -231,6 +248,23 @@ export function check(glossary, en, zh, { all = false } = {}) {
       const target = term.use ? byTerm.get(term.use) : term;
       for (const word of term.avoid.en) if (says(english, word)) note(key, kind, 'glossary', 'en', `says "${word}"; the name is ${target.en}`);
       if (term.use) for (const word of term.avoid.zh) if (chinese.includes(word)) note(key, kind, 'glossary', 'zh', `says ${word}; the name is ${target.zh}`);
+    }
+    // Every other catalogue present (D222): the key is there, and the label names a term in it where the glossary gives that term's name
+    // in that language (`term.<tag>`); the rest of the rules are English's and Chinese's own.
+    if (label || all) {
+      for (const [language, catalogue] of Object.entries(others)) {
+        if (!(key in catalogue)) {
+          note(key, kind, 'glossary', language, `is not in the ${language} catalogue`);
+          continue;
+        }
+        const said = plain(catalogue[key]).toLowerCase();
+        for (const term of said_(matchers, english)) {
+          const own = term[language];
+          if (label && typeof own === 'string' && own.trim() && !said.includes(own.toLowerCase())) {
+            note(key, kind, 'glossary', language, `names ${term.term} in English, and says ${own} nowhere`);
+          }
+        }
+      }
     }
     if (!label) continue;
 
@@ -345,13 +379,13 @@ export function verdict(findings, { strict }) {
 
 if (isMain(import.meta.url)) {
   const flags = new Set(process.argv.slice(2));
-  const { glossary, en, zh } = load();
-  const problems = validate(glossary, en, zh);
+  const { glossary, en, zh, others } = load();
+  const problems = validate(glossary, en, zh, others);
   if (problems.length) {
     console.error(`names-check: the glossary is malformed:\n  ${problems.join('\n  ')}`);
     process.exit(2);
   }
-  const findings = check(glossary, en, zh, { all: flags.has('--all') });
+  const findings = check(glossary, en, zh, { all: flags.has('--all'), others });
   const kindFor = kindOf(glossary);
   const labels = Object.keys(en).filter((key) => LABELS.has(kindFor(key)) && !PLURAL.test(key)).length;
   const accepted = acceptances(glossary).size;

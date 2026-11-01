@@ -1,6 +1,8 @@
 import type { KnowledgeMode } from '../knowledge/modes';
 import type { ThemeChoice } from '../design/theme';
 import type { IconName } from '../design/ui';
+import { languages } from '../locales/index';
+import { languageName } from '../locales/languages';
 import { ZOOM_DEFAULT, ZOOM_LEVELS } from '../design/zoom';
 
 // The one table of verbs (UX7a, D152 §2; SURF9 before it). The menus, the palette, the key handler and the *Keyboard
@@ -101,7 +103,7 @@ export type CommandState = {
   /** Whether the workspace in view is wired to a remote. */
   wired: boolean;
   theme: ThemeChoice;
-  language: 'en' | 'zh';
+  language: string;
   /** Each agent installed here, by its id and its product's name: the palette goes to each one's page. */
   agents: readonly { name: string; label: string }[];
   /** Settings' domains this window offers, by id and their name's key: the palette opens each. */
@@ -155,7 +157,7 @@ export type CommandDoors = {
   monitor: () => void;
   browser: () => void;
   theme: (choice: ThemeChoice) => void;
-  language: (language: 'en' | 'zh') => void;
+  language: (language: string) => void;
   /** The window's zoom a step in, a step out, or back to 100% (ZOOM1). */
   zoom: (step: 'in' | 'out' | 'reset') => void;
   refresh: () => void;
@@ -594,8 +596,8 @@ const FAMILIES: readonly (CommandFamily & { after: string })[] = [
     // View's *Language ▸*. With two languages the palette's row is the switch it always was. The activity bar's own switch
     // left for these and Settings → Appearance (UX6j, D150 §2.1); each remembers the choice as i18n's `daoris.language`.
     family: 'view.language', menu: 'view', group: 'look', after: 'view.browser',
-    rows: (state, t) => (['en', 'zh'] as const).map((language) => ({
-      id: `view.language:${language}`, label: t(`language.${language}`), title: t('command.language'), submenu: 'menu.language',
+    rows: (state, t) => languages.map((language) => ({
+      id: `view.language:${language}`, label: languageName(language), title: t('command.language'), submenu: 'menu.language',
       checked: state.language === language, radio: true as const, keywords: '中文 chinese english language 语言',
       run: (doors: CommandDoors) => doors.language(language),
     })),

@@ -666,6 +666,41 @@ describe('the real glossary and catalogues', () => {
   });
 });
 
+/** D222: the page's languages are the catalogues present, so the names check holds a third one beside English and Chinese. */
+describe('a third catalogue', () => {
+  const base = catalogues({
+    'area.new': ['New quest', '新建委托'], 'nav.quests': ['Quests', '委托'], 'area.title': ['Area', '区域'], 'menu.go': ['Go to quests', '前往委托'],
+    'area.state.open': ['open', '打开'], 'palette.open': ['Open quests', '打开委托'],
+  });
+  const whole = { 'area.new': 'Nouvelle tâche', 'nav.quests': 'Quêtes', 'area.title': 'Zone', 'menu.go': 'Aller aux quêtes', 'area.state.open': 'ouvert', 'palette.open': 'Ouvrir les quêtes' };
+  const withFrench = (): Glossary => {
+    const glossary = fixture();
+    (glossary.terms[0] as Record<string, unknown>).fr = 'quête';
+    return glossary;
+  };
+
+  it('is held to the glossary where the glossary names a term in it, and a label missing from it is a finding', () => {
+    const found = check(withFrench(), base.en, base.zh, { others: { fr: whole } });
+    expect(rules(found, 'area.new')).toEqual(['glossary:fr']);
+    expect(found.find((finding) => finding.language === 'fr')!.message).toMatch(/quête/);
+
+    expect(check(withFrench(), base.en, base.zh, { others: { fr: { ...whole, 'area.new': 'Nouvelle quête' } } })).toEqual([]);
+
+    const { 'area.new': _gone, ...lacking } = whole;
+    const missing = check(withFrench(), base.en, base.zh, { others: { fr: lacking } });
+    expect(rules(missing, 'area.new')).toEqual(['glossary:fr']);
+    expect(missing[0]!.message).toMatch(/not in the fr catalogue/);
+  });
+
+  it('is asked nothing of a term the glossary does not name in it, and a glossary key it lacks makes the glossary unreadable', () => {
+    expect(check(fixture(), base.en, base.zh, { others: { fr: whole } })).toEqual([]);
+
+    expect(validate(fixture(), base.en, base.zh, { fr: whole })).toEqual([]);
+    const { 'menu.go': _door, ...lacking } = whole;
+    expect(validate(fixture(), base.en, base.zh, { fr: lacking }).join('\n')).toContain('menu.go is not a key in the fr catalogue');
+  });
+});
+
 describe('what the check answers', () => {
   const finding = (rule: Finding['rule']): Finding =>
     ({ key: 'k', kind: 'button', rule, language: 'en', message: 'm', value: 'v' });
