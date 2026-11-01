@@ -42,9 +42,9 @@ A new built-in kind, reach **performed**, with Daoris as its executor, like `che
 **What stays the line's:** history shape (`commit`), `batch`, `order`, `gates`, `unconfirmed`, `overlap` and the promotion fence. One candidate holds units of several flows, so these cannot be the node's. The node chooses *which* line, and asks the line's integration under its policy. Setup keeps `key`, `tidy`, the installed plugins and the defaults.
 
 **What precedes it:** `work.requests`, `opinion`, `look`, `go-ahead`, `human` or `check`, wired in D157's protected order. The quest's holds, the content holds and D88's proof stay the gate's first parts, judged inside the start at the bound tip.
-- `accept: automatic` is refused on `merge` (D145).
-- On `integrate`, it is refused except under `request: done` with the gates declared and accepted.
-- Lowering to `automatic` counts in `InvolvementRoutes.Lowers`.
+- **The workflow decides** (the owner's direction, 2026-11-01, D145's note). `accept: you` waits for the person's Accept; `accept: automatic` lands with no press, a merge into the line included. No rule outside the workflow refuses what it is configured to do.
+- Lowering to `automatic` counts in `InvolvementRoutes.Lowers`, so the plan that sets it says so.
+- What still judges a landing outside the graph (the quest's holds, the content holds, D88's proof) becomes configured fabric steps (LANDNODE1k).
 
 ## 3. How it performs
 
@@ -123,7 +123,7 @@ Neither a timeout nor another Accept authorizes repeating an uncertain effect. S
 
 - **`landing-kind`:** reworded to "the graph holds one landing; under Current, the rule's `land`". A cycle may not declare `land`.
 - **`into-landing`:** stands.
-- **New:** `land-once` (one `land` or one `handed`); `land-tail` (the method matches its tail, replacing `integrate-plugin`); `land-automatic` (§2's refusals).
+- **New:** `land-once` (one `land` or one `handed`); `land-tail` (the method matches its tail, replacing `integrate-plugin`). The `land-automatic` refusals were withdrawn on 2026-11-01: the workflow decides.
 - **Existing:** `before-landing`, `integrate-unlanded`, `work-requests-late`, `protected-order` and `protected-wire` count `land` as a landing.
 - **Verification graphs** hold no landing performer.
 
