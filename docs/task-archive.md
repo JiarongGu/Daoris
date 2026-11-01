@@ -22680,3 +22680,9 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 > **SETUPUX1e — keep how it lands** (driver, modules; row e of the set-up design). `PLACE_PLAN`'s keep ask writes no landing and no workflow choice, and allows driving, the ticks and adoption; `PLACE_APPLY` applies a subset of what it writes today and stays the person's alone. Proof: no `SET_LANDING` or `WORKFLOW_USE` in a keep plan; a saved workflow survives; Apply stays the person's (the bridge-press census); a restart settles as today (the receipt's postconditions).
 
 **Outcome** 2026-11-02: the preset `keep` (`SetupPresets.Keep`, the terminal's `--preset keep`) plans a place's tree, driving, ticks and adoption and nothing of its landing or workflow, so the apply and the receipt's settling needed no change, and the routes none. Detail: D221's SETUPUX1e note; `PlacePlanTests`, `PlaceApplyTests`.
+
+## NOTEBREAK1 — a decision's dated note never reaches main glued to the line above it (2026-11-02)
+
+> **NOTEBREAK1 — a decision's note never lands glued** (tools). A union merge of `docs/decisions/*.md` coalesced the blank line two branches each added before their `**Note, ` line, and `doc-duplicates` failed the next CI. Proof: `tools/index-hook.test.mjs`.
+
+**Outcome** 2026-11-02: `tools/index-hook.mjs` separates a glued note in every staged decision file before it regenerates the index (pre-commit, which a conflicted merge finishes through), and a new `post-merge` hook (`--merged`) remakes a clean merge commit that holds one, since git ignores what a `pre-merge-commit` hook stages. Detail: the FIX-LOG entry of 2026-11-02.

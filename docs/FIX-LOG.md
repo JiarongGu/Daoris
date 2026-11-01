@@ -12852,3 +12852,13 @@ mis-rooted instance.
 **Fix.** `IWorkplaceProcess.Land` (`WorkflowProcess`) gives the bound `land` for the work, and `CurrentDeliveries.StartAsync` writes its delivery at every door, `TreeDelivery.Land` keeping the version's landing whole with the land's message and a merge admitted by its method (`Workplace/CurrentDeliveries.cs`, `TreeDeliveries.cs`, `TreeLands.cs`); on a run's binding `HoldNodes.LandedAt` reads the merge its session branch records at the bound commit; `LandAttempts` settles a lapsed `land` attempt where no delivery at its commit stands unresolved, before each round of `NodeRuntime.EvaluateAsync` (`Workflows/Nodes/`).
 
 **Verified.** Red first: `GraphRunLandingTests.A_saved_version_s_land_lands_its_work_at_done_through_its_delivery` (no delivery written) and `A_saved_version_s_run_reads_its_landing_done_and_its_line_passed_once_the_look_lands_it(lineMoved: True)` (*What the line holds* active and the landing blocked, the install's reading); green after, with the case where the line stood still.
+
+## 2026-11-02 — a decision's note landed glued to the line above it after a union merge
+
+**Symptom.** `doc-duplicates` ("a note label after a non-blank line") failed the CI after four merges on 2026-11-01 and 2026-11-02.
+
+**Root cause.** `docs/decisions/*.md` merge with `merge=union`; two branches each appended a blank line and a `**Note, ` line at the same place, and the union kept one blank line for both, so the second note followed a text line directly.
+
+**Fix.** `tools/index-hook.mjs` puts a blank line before each glued `**Note, ` line in every staged decision file and re-stages it, before the index is regenerated (pre-commit, which also finishes a conflicted merge); a file staged in part is left with a note. A clean merge commits without pre-commit, and git ignores what a `pre-merge-commit` hook stages (the tree is fixed before it runs), so `--install` also writes a `post-merge` hook (`--merged`) that remakes the merge commit with the same parents, message and author.
+
+**Verified.** Red first: the five new `index-hook.test.mjs` cases (clean union merge, conflicted merge finished by `git commit`, glued note separated and a clean file untouched, a partly staged decision, the post-merge hook installed) failed; all pass after.

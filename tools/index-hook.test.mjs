@@ -50,7 +50,7 @@ test('install writes the hook, and leaves a hook that is not its own', () => {
   writeFileSync(hook, '#!/bin/sh\necho mine\n');
   install({ out: (line) => lines.push(line), err() {}, cwd: dir, env: clean(), script });
   assert.equal(readFileSync(hook, 'utf8'), '#!/bin/sh\necho mine\n');
-  assert.match(lines.at(-1), /not its own/);
+  assert.match(lines.at(-2), /not its own/);
 });
 
 test('install outside a work tree exits 0 and writes nothing', () => {
@@ -119,4 +119,82 @@ test('a tool failure aborts the commit with its message', () => {
   assert.notEqual(made.status, 0);
   assert.match(made.stderr, /index-hook|orient-index/);
   assert.equal(existsSync(join(dir, 'docs', 'index')), true);
+});
+
+// NOTEBREAK1: a union merge coalesces the blank line two branches each add before their note.
+const noteRepository = () => {
+  const dir = repository();
+  mkdirSync(join(dir, 'docs', 'decisions'), { recursive: true });
+  writeFileSync(join(dir, '.gitattributes'), 'docs/decisions/*.md merge=union\n');
+  writeFileSync(join(dir, 'docs', 'decisions', 'D1.md'), '# D1\n\nBody.\n');
+  git(dir, 'add', '-A');
+  assert.equal(git(dir, 'commit', '-q', '-m', 'first').status, 0);
+  git(dir, 'branch', '-M', 'main');
+  return dir;
+};
+const addNote = (dir, branch, label) => {
+  git(dir, 'checkout', '-q', '-b', branch, 'main');
+  const file = join(dir, 'docs', 'decisions', 'D1.md');
+  writeFileSync(file, `${readFileSync(file, 'utf8')}\n**Note, ${label}**\nText ${label}.\n`);
+  git(dir, 'commit', '-q', '-am', label);
+};
+const glued = /[^\n]\n\*\*Note, /;
+
+test('a clean union merge commits the blank line before each note', () => {
+  const dir = noteRepository();
+  addNote(dir, 'a', 'a');
+  addNote(dir, 'b', 'b');
+  git(dir, 'checkout', '-q', 'a');
+  const merged = git(dir, 'merge', '-q', '--no-edit', 'b');
+  assert.equal(merged.status, 0, merged.stderr);
+  assert.equal(git(dir, 'rev-list', '--parents', '-n', '1', 'HEAD').stdout.trim().split(' ').length, 3);
+  const text = show(dir, 'HEAD:docs/decisions/D1.md');
+  assert.match(text, /\*\*Note, a\*\*/);
+  assert.match(text, /\*\*Note, b\*\*/);
+  assert.doesNotMatch(text, glued);
+  assert.equal(git(dir, 'status', '--porcelain').stdout.trim(), '');
+});
+
+test('a conflicted merge finished by git commit gets the blank line too', () => {
+  const dir = noteRepository();
+  addNote(dir, 'a', 'a');
+  writeFileSync(join(dir, 'src', 'a.ts'), 'export function a() { return 1; }\n');
+  git(dir, 'commit', '-q', '-am', 'a change');
+  addNote(dir, 'b', 'b');
+  writeFileSync(join(dir, 'src', 'a.ts'), 'export function a() { return 2; }\n');
+  git(dir, 'commit', '-q', '-am', 'b change');
+  git(dir, 'checkout', '-q', 'a');
+  assert.notEqual(git(dir, 'merge', '-q', '--no-edit', 'b').status, 0);
+  writeFileSync(join(dir, 'src', 'a.ts'), 'export function a() { return 3; }\n');
+  git(dir, 'add', '-A');
+  const made = git(dir, 'commit', '-q', '--no-edit');
+  assert.equal(made.status, 0, made.stderr);
+  assert.doesNotMatch(show(dir, 'HEAD:docs/decisions/D1.md'), glued);
+});
+
+test('a glued note in a staged decision is separated, and one without is untouched', () => {
+  const dir = noteRepository();
+  writeFileSync(join(dir, 'docs', 'decisions', 'D1.md'), '# D1\n\nBody.\n**Note, x**\nText.\n');
+  writeFileSync(join(dir, 'docs', 'decisions', 'D2.md'), '# D2\n\nBody.\n\n**Note, y**\nText.\n');
+  git(dir, 'add', '-A');
+  assert.equal(git(dir, 'commit', '-q', '-m', 'notes').status, 0);
+  assert.equal(show(dir, 'HEAD:docs/decisions/D1.md'), '# D1\n\nBody.\n\n**Note, x**\nText.\n');
+  assert.equal(show(dir, 'HEAD:docs/decisions/D2.md'), '# D2\n\nBody.\n\n**Note, y**\nText.\n');
+});
+
+test('a decision staged in part is left alone with a note', () => {
+  const dir = noteRepository();
+  const file = join(dir, 'docs', 'decisions', 'D1.md');
+  writeFileSync(file, '# D1\n\nBody.\n**Note, x**\nText.\n');
+  git(dir, 'add', '-A');
+  writeFileSync(file, '# D1\n\nBody.\n**Note, x**\nText.\nMore.\n');
+  const made = git(dir, 'commit', '-m', 'partial');
+  assert.equal(made.status, 0, made.stderr);
+  assert.match(made.stdout + made.stderr, /D1\.md/);
+  assert.match(show(dir, 'HEAD:docs/decisions/D1.md'), /Body\.\n\*\*Note, x/);
+});
+
+test('install writes the post-merge hook that mends a clean merge', () => {
+  const dir = repository();
+  assert.match(readFileSync(join(dir, '.git', 'hooks', 'post-merge'), 'utf8'), /index-hook\.mjs" --merged/);
 });
