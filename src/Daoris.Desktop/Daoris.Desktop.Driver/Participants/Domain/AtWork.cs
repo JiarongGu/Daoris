@@ -250,11 +250,14 @@ public static class AtWork
         var parts = new List<AtWorkPart>();
         var moreParts = new Dictionary<string, int>(StringComparer.Ordinal);
         LineageReading? attendedReading = null;
+        // Inside the limit the attended part and the waiting parts come first, the rest in the strip's order; the list keeps the strip's order.
+        var drawn = routed is null ? null : ids.Where(id => !routed.Folded.Contains(id))
+            .OrderBy(id => id == session ? 0 : routed.Waits(id) ? 1 : 2).Take(Bound).ToHashSet(StringComparer.Ordinal);
         foreach (var id in ids)
         {
             if (routed?.Folded.Contains(id) == true) continue;
             var held = Held(id);
-            if (parts.Count >= Bound)
+            if (drawn is null ? parts.Count >= Bound : !drawn.Contains(id))
             {
                 var state = held?.State ?? "unknown";
                 moreParts[state] = moreParts.GetValueOrDefault(state) + 1;
@@ -319,6 +322,8 @@ public static class AtWork
         }
 
         public HashSet<string> Folded { get; }
+
+        public bool Waits(string id) => _waits.GetValueOrDefault(id) is not null;
 
         public int Published { get; }
 

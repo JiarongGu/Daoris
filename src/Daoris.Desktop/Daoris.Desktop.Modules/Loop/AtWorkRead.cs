@@ -134,7 +134,9 @@ public static class AtWorkRead
             PublishedBy = Text(quest, "publishedBy"),
             Parent = Text(quest, "parent"),
             Lanes = quest["lanes"] is JsonArray { Count: > 0 } lanes ? string.Join('+', lanes.Select(lane => lane?.GetValue<string>()).OfType<string>()) : null,
-            Here = quest["here"] is JsonValue here && here.TryGetValue<bool>(out var value) ? value : null,
+            Holder = Text(quest, "holder"),
+            Here = Text(quest, "here"),
+            Held = quest["held"] is JsonValue held && held.TryGetValue<bool>(out var value) && value,
         };
     }
 

@@ -36,10 +36,19 @@ public sealed record AtWorkQuest(string Id, string Status)
     /// <summary>The lanes it addresses, sorted and joined with <c>+</c> as an address writes them; null for the whole repository.</summary>
     public string? Lanes { get; init; }
 
-    /// <summary>Whether its take is this machine's; null where the slice says none, which reads as here.</summary>
-    public bool? Here { get; init; }
+    /// <summary>The machine whose take holds it, and this machine's id where the list answers it as the page's.</summary>
+    public string? Holder { get; init; }
 
-    public bool Closed => Status is Done or Declined;
+    public string? Here { get; init; }
+
+    /// <summary>A done held for the person's yes or its evidence (D133 §4, D144 §6): it stays on the open list, and what waits on it waits.</summary>
+    public bool Held { get; init; }
+
+    /// <summary>Whether its take is this machine's; a list that names no holder or no machine reads as here.</summary>
+    public bool Mine => Holder is null || Here is null || string.Equals(Holder, Here, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Closed as the planner reads a question: declined, or done and held by nothing.</summary>
+    public bool Closed => Status is Declined || (Status is Done && !Held);
 
     public IReadOnlyList<string>? LaneList => Lanes is { Length: > 0 } lanes ? lanes.Split('+', StringSplitOptions.RemoveEmptyEntries) : null;
 }
@@ -131,7 +140,7 @@ internal static class AtWorkParts
         }
 
         // No planner verdict reads a chat's take: its quest names a question the chat waits on while that question stands.
-        if (held?.TookQuest is not { Length: > 0 } took || routing.Quest(took) is not { Status: AtWorkQuest.Taken, Here: not false } taken) return null;
+        if (held?.TookQuest is not { Length: > 0 } took || routing.Quest(took) is not { Status: AtWorkQuest.Taken, Mine: true } taken) return null;
         if (taken.Awaits is not { Length: > 0 } question) return null;
         var asked = routing.Quest(question);
         return asked is { Closed: true } ? null : new AtWorkWait { Quest = question, Of = asked?.To, Lanes = asked?.LaneList };

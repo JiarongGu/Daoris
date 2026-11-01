@@ -164,9 +164,9 @@ public sealed class AtWorkReadTests
         _rows = new JsonObject { ["lead"] = new JsonObject { ["awaits"] = "q1", ["awaitsOf"] = "core" } };
         _questsHeld = new JsonObject
         {
-            ["q1"] = new JsonObject { ["id"] = "q1", ["status"] = "Taken", ["publishedBy"] = "lead", ["lanes"] = new JsonArray("core", "docs"), ["here"] = true },
+            ["q1"] = new JsonObject { ["id"] = "q1", ["status"] = "Taken", ["publishedBy"] = "lead", ["lanes"] = new JsonArray("core", "docs"), ["holder"] = "desk", ["here"] = "desk" },
             ["t1"] = new JsonObject { ["id"] = "t1", ["status"] = "Taken", ["awaits"] = "q2" },
-            ["q2"] = new JsonObject { ["id"] = "q2", ["status"] = "Open", ["to"] = "docs" },
+            ["q2"] = new JsonObject { ["id"] = "q2", ["status"] = "Done", ["held"] = true, ["to"] = "docs" },
         };
         var (groups, sessions, quests) = await JudgedAsync();
 

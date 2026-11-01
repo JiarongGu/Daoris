@@ -631,6 +631,22 @@ internal sealed class StandInLedger : HttpMessageHandler
         }
     }
 
+    /// <summary>The session whose connector published <paramref name="quest"/> (SESS1), as the service lists it.</summary>
+    public void PublishedBy(string quest, string session)
+    {
+        lock (_gate) _quests.Single(q => q["id"]!.GetValue<string>() == quest)["publishedBy"] = session;
+    }
+
+    /// <summary>A chat took <paramref name="quest"/> through its own connector (CHATFLOW1a): the quest taken, the record naming it, its <c>quest</c> still null.</summary>
+    public void Took(string session, string quest)
+    {
+        lock (_gate)
+        {
+            _quests.Single(q => q["id"]!.GetValue<string>() == quest)["status"] = "Taken";
+            _sessions.Single(s => s["id"]!.GetValue<string>() == session)["tookQuest"] = quest;
+        }
+    }
+
     /// <summary>The record's note, its one coded part, as the ledger keeps the driver's (HELPERWAIT1: <c>ended.awaits-helper</c>).</summary>
     public void Noted(string session, string code)
     {

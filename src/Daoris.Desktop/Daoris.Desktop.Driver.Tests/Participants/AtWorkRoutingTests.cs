@@ -106,10 +106,15 @@ public sealed partial class AtWorkTests
         var standing = Routed("chat", parts, records, [taken, new AtWorkQuest("q9", "Open") { To = "core" }]);
         var answered = Routed("chat", parts, records, [taken, new AtWorkQuest("q9", "Done")]);
         var declined = Routed("chat", parts, records, [taken, new AtWorkQuest("q9", "Declined")]);
-        var elsewhere = Routed("chat", parts, records, [taken with { Here = false }, new AtWorkQuest("q9", "Open")]);
+        var elsewhere = Routed("chat", parts, records, [taken with { Holder = "laptop", Here = "desk" }, new AtWorkQuest("q9", "Open")]);
+        var here = Routed("chat", parts, records, [taken with { Holder = "desk", Here = "desk" }, new AtWorkQuest("q9", "Open")]);
         var closedTake = Routed("chat", parts, records, [taken with { Status = "Done" }, new AtWorkQuest("q9", "Open")]);
+        // A done held for the person's yes or its evidence stays on the open list, and the planner keeps waiting on it (D144 §6).
+        var held = Routed("chat", parts, records, [taken, new AtWorkQuest("q9", "Done") { Held = true }]);
 
         Assert.Equal(("q9", "core"), (PartOf(standing, "chat").Waits!.Quest, PartOf(standing, "chat").Waits!.Of));
+        Assert.Equal("q9", PartOf(held, "chat").Waits!.Quest);
+        Assert.Equal("q9", PartOf(here, "chat").Waits!.Quest);
         Assert.All(new[] { answered, declined, elsewhere, closedTake }, each => Assert.Null(PartOf(each, "chat").Waits));
         Assert.True(PartOf(standing, "chat").Joined!.Took);
         Assert.Equal("t1", PartOf(standing, "chat").Joined!.Quest);
@@ -186,6 +191,28 @@ public sealed partial class AtWorkTests
 
         Assert.Equal(["p1", "p2", "p5", "p6", "p7", "p8"], answer.Parts.Select(part => part.Key));
         Assert.Equal(2, answer.Earlier);
+    }
+
+    [Fact]
+    public void Inside_the_forty_part_limit_the_attended_and_the_waiting_parts_come_first_and_the_overflow_is_counted_apart_from_the_fold()
+    {
+        // 52 parts: p1 attended and ended, p2..p45 working, p46 waits on its helper, p47..p51 ended, p52 ended and waits.
+        var ids = Enumerable.Range(1, 52).Select(i => $"p{i}").ToList();
+        bool Ended(string id) => id == "p1" || int.Parse(id[1..]) >= 47;
+        var parts = ids.Select(id => Part(id, id is "p46" or "p52" ? "awaiting-helper" : Ended(id) ? "completed" : "working")).ToList();
+        var records = ids.Select(id => new AtWorkRecord(id, Ended(id) ? "completed" : "working")).ToList();
+
+        var answer = Routed("p1", parts, records);
+
+        // p47 and p48 fold (the newest three of the ended parts that wait on nothing stay); fifty remain for forty places.
+        Assert.Equal(2, answer.Earlier);
+        Assert.Equal(AtWork.Bound, answer.Parts.Count);
+        Assert.Equal("p1", answer.Parts[0].Key);
+        Assert.Contains(answer.Parts, part => part.Key == "p46" && part.Waits is not null);
+        Assert.Contains(answer.Parts, part => part.Key == "p52" && part.Waits is not null);
+        Assert.Equal(answer.Parts.Skip(1).Select(part => part.Number), answer.Parts.Skip(1).Select(part => part.Number).Order());
+        Assert.Equal(10, answer.MoreParts!.Values.Sum());
+        Assert.DoesNotContain(answer.Parts, part => part.Key is "p47" or "p48" or "p49");
     }
 
     [Fact]

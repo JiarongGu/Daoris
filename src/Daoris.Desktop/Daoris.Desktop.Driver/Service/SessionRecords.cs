@@ -22,6 +22,7 @@ public static class SessionRecords
             records.Add(new SessionRecord(id, Text(session, "repository") ?? "", Text(session, "state") ?? "")
             {
                 Quest = Text(session, "quest") is { Length: > 0 } quest ? quest : null,
+                TookQuest = Text(session, "tookQuest") is { Length: > 0 } tookQuest ? tookQuest : null,
                 Kind = Text(session, "kind") ?? "driven",
                 Adapter = Text(session, "adapter") is { Length: > 0 } adapter ? adapter : null,
                 Tree = Text(session, "tree") is { Length: > 0 } tree ? tree : null,
