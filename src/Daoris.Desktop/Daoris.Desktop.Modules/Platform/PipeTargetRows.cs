@@ -229,9 +229,9 @@ internal static class PipeTargetRows
         Row("TRUST_FOLDER", LoopGround.Wait("trust", "folder", "trustFile"));
 
         // The set-up, and a repository's standing choices.
-        Row("SETUP_PRESS", new RepositoryGround("repository"), Plan("SETUP_PLAN", ["repository"], p => new { repository = Text(p, "repository") },
+        Row("SETUP_PRESS", new RepositoryGround("repository"), Plan("SETUP_PLAN", ["repository", "builds"], p => new { repository = Text(p, "repository"), builds = Text(p, "builds") },
             (a, _) => Fp(
-                Pick(a, "repository", "workspace", "line", "layout", "adopted", "declares", "asks", "agent", "lands", "landsWith", "pressable"),
+                Pick(a, "repository", "workspace", "line", "layout", "adopted", "declares", "asks", "agent", "lands", "landsWith", "pressable", "builds"),
                 string.Join(",", Each(At(a, "rules")).Select(each => Text(each)).Order(StringComparer.Ordinal)),
                 string.Join(",", Each(At(a, "refusals")).Select(each => Text(At(each, "code"))).Order(StringComparer.Ordinal))),
             TimeSpan.FromMinutes(2)));
