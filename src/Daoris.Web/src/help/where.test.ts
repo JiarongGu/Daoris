@@ -143,8 +143,8 @@ describe('where the person is', () => {
     expect(at('projects', 'repository', 'engine')).toContain(', looking at repository `engine`.');
     expect(at('projects', 'workspace', 'aurora')).toContain(', looking at workspace `aurora`.');
     expect(at('agents', 'agent', 'claude')).toContain(', looking at agent `claude`.');
-    // COMPANYVIEW1b: the Agents place's Roles mode is told as Knowledge's modes are.
-    expect(prefaceOf({ view: 'agents', workspace: null, agents: 'roles' })).toBe('Where the person is now: the Agents view, showing Roles, every workspace.');
+    // The Agents place's Setup mode is told as Knowledge's modes are.
+    expect(prefaceOf({ view: 'agents', workspace: null, agents: 'setup' })).toBe('Where the person is now: the Agents view, showing Setup, every workspace.');
     expect(prefaceOf({ view: 'agents', workspace: null, agents: 'agents' })).toBe('Where the person is now: the Agents view, every workspace.');
     expect(at('plugins', 'plugin', 'acme.gate')).toContain(', looking at plugin `acme.gate`.');
     expect(prefaceOf({ view: 'quests', workspace: null, item: { kind: 'quest', id: 'abc123', closed: true } }))

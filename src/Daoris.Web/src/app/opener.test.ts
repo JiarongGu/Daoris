@@ -8,19 +8,19 @@ describe('the opener', () => {
   /** COMPANYVIEW1b: a door into Roles names the mode; a door naming an agent or a part of its page names Agents; the place alone names none. */
   it("names the Agents place's mode only where the door needs one", () => {
     expect(opening('agents')).toEqual({ view: 'agents' });
-    expect(opening('agents', null, { agentsMode: 'roles' })).toEqual({ view: 'agents', agentsMode: 'roles' });
+    expect(opening('agents', null, { agentsMode: 'setup' })).toEqual({ view: 'agents', agentsMode: 'setup' });
     expect(opening('agents', 'claude-code')).toEqual({
       view: 'agents', agentsMode: 'agents', chosen: { view: 'agents', item: 'claude-code' },
     });
     expect(opening('agents', null, { agentPart: 'accounts' })).toEqual({ view: 'agents', agentPart: 'accounts', agentsMode: 'agents' });
-    expect(doorOpening({ view: 'agents', agentsMode: 'roles' })).toEqual({ view: 'agents', agentsMode: 'roles' });
-    expect(opening('quests', null, { agentsMode: 'roles' })).toEqual({ view: 'quests' });
+    expect(doorOpening({ view: 'agents', agentsMode: 'setup' })).toEqual({ view: 'agents', agentsMode: 'setup' });
+    expect(opening('quests', null, { agentsMode: 'setup' })).toEqual({ view: 'quests' });
   });
 
   /** COMPANYVIEW1e: Setup's and This Daoris's lines open Roles on Appointed roles. */
   it("opens a Roles section a door names, in Roles' mode, and only in the Agents place", () => {
-    expect(opening('agents', null, { roleSection: 'appointed' })).toEqual({ view: 'agents', agentsMode: 'roles', roleSection: 'appointed' });
-    expect(doorOpening({ view: 'agents', roleSection: 'appointed' })).toEqual({ view: 'agents', agentsMode: 'roles', roleSection: 'appointed' });
+    expect(opening('agents', null, { roleSection: 'appointed' })).toEqual({ view: 'agents', agentsMode: 'setup', roleSection: 'appointed' });
+    expect(doorOpening({ view: 'agents', roleSection: 'appointed' })).toEqual({ view: 'agents', agentsMode: 'setup', roleSection: 'appointed' });
     expect(opening('quests', null, { roleSection: 'appointed' })).toEqual({ view: 'quests' });
   });
 

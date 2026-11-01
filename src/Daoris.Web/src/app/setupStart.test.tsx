@@ -141,12 +141,12 @@ describe('the setup guide, at start', () => {
     expect(within(await domains()).getByRole('button', { name: 'Get started' })).toHaveAttribute('aria-current', 'page');
     expect(await screen.findByRole('list', { name: 'setup steps' })).toBeInTheDocument();
     const bar = screen.getByRole('contentinfo', { name: 'state of this machine' });
-    expect(await within(bar).findByText('setup: 0 of 5')).toBeInTheDocument();
+    expect(await within(bar).findByText('start: 0 of 5')).toBeInTheDocument();
 
     // The count leads back to it from wherever the person went.
     await userEvent.click(screen.getByRole('button', { name: 'Repositories' }));
     await waitFor(() => expect(screen.queryByRole('navigation', { name: 'Settings domains' })).toBeNull());
-    await userEvent.click(within(bar).getByRole('button', { name: 'setup' }));
+    await userEvent.click(within(bar).getByRole('button', { name: 'start' }));
     expect(within(await domains()).getByRole('button', { name: 'Get started' })).toHaveAttribute('aria-current', 'page');
   });
 
@@ -155,7 +155,7 @@ describe('the setup guide, at start', () => {
     start();
 
     const bar = screen.getByRole('contentinfo', { name: 'state of this machine' });
-    expect(await within(bar).findByText('setup: 0 of 5')).toBeInTheDocument();
+    expect(await within(bar).findByText('start: 0 of 5')).toBeInTheDocument();
     expect(screen.queryByRole('navigation', { name: 'Settings domains' })).toBeNull();
   });
 
