@@ -28,6 +28,17 @@ public sealed class SetupPresetsTests
             SetupPresets.Table.Select(preset => (preset.Id, preset.Name, preset.Land)));
     }
 
+    /// <summary>DEFAULTCONFIG1a: a place's quick set-up offers the defaults the data marks for it, each with the delivery the data says.</summary>
+    [Fact]
+    public void The_presets_after_not_driven_are_the_defaults_the_set_up_offers()
+    {
+        Assert.Equal(
+            WorkflowDefaults.All.Where(each => each.SetUp).Select(each => (each.Id, each.Names.En, (SetupLand?)each.Delivery)),
+            SetupPresets.Table.Skip(1).Select(preset => (preset.Id, preset.Name, preset.Land)));
+        Assert.All([SetupPresets.Merge, SetupPresets.Branch, SetupPresets.PullRequest, SetupPresets.Integrated],
+            id => Assert.True(WorkflowDefaults.Of(id)?.SetUp, id));
+    }
+
     [Fact]
     public void Current_s_land_is_read_from_its_rule_as_the_land_node_design_derives_it()
     {

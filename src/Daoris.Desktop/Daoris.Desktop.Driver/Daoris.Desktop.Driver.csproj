@@ -50,4 +50,10 @@
     <EmbeddedResource Include="Plugins\plugin-kit\*.template" LogicalName="Daoris.Driver.plugin-kit.%(Filename)%(Extension)" />
   </ItemGroup>
 
+  <!-- The defaults Daoris ships (DEFAULTCONFIG1): the fabric's workflows and the agents' structure, one file each, carried inside the
+       assembly so every build reads the same. A name keeps its folder, its separator whatever the machine's; the reader makes it `/`. -->
+  <ItemGroup>
+    <EmbeddedResource Include="Defaults\**\*.json" LogicalName="Daoris.Driver.Defaults/%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
 </Project>

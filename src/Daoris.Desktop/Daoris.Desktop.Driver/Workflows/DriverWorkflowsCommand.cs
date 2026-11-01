@@ -28,9 +28,9 @@ public static class DriverWorkflowsCommand
     public static IReadOnlySet<string> Writes { get; } = ChoiceGrammar.WorkflowWrites;
 
     /// <summary>The sub-verbs, each the CLI's.</summary>
-    public static IReadOnlyList<string> Verbs { get; } = ["list", "show", "use", "kind", "new", "edit", "apply", "export", "import"];
+    public static IReadOnlyList<string> Verbs { get; } = ["list", "defaults", "show", "use", "kind", "new", "edit", "apply", "export", "import"];
 
-    public const string Usage = "`driver workflow` takes list; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; "
+    public const string Usage = "`driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; "
         + "new <id> --from <preset>|current:<repository>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; "
         + "edit <id> [--base <version>] <change>…; apply <id> <file>|--as-graph [--base <version>]; export <id> [--to <file>]; import <file>; "
         + "use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]; "
@@ -71,6 +71,8 @@ public static class DriverWorkflowsCommand
                 case "list":
                     Flags("list", 2, [], []);
                     return Task.FromResult(List());
+                case "defaults":
+                    return Task.FromResult(Defaults());
                 case "show":
                     return argv.Contains("--repository") || argv.Contains("--workspace") ? ShowChosenAsync() : Task.FromResult(Show());
                 case "use":
@@ -167,6 +169,54 @@ public static class DriverWorkflowsCommand
             }
 
             Say(WorkflowWords.WhatChooses);
+            return 0;
+        }
+
+        /// <summary>
+        /// <c>defaults [&lt;default&gt; [--to &lt;file&gt;]]</c>: the defaults Daoris ships, each with what it is for; one said
+        /// whole, its names, line, delivery and nodes; or its graph written to a new file, which <c>apply</c> saves as a version. Reads only.
+        /// </summary>
+        private int Defaults()
+        {
+            var named = argv.ElementAtOrDefault(2) is { } token && !token.StartsWith("--", StringComparison.Ordinal) ? token : null;
+            Flags("defaults", named is null ? 2 : 3, ["--to"], []);
+            if (named is null && argv.Count > 2) throw new ChoiceWords(Usage);
+            if (named is null)
+            {
+                Say("daoris: the defaults Daoris ships, each a graph `daoris driver workflow new <id> --from <default>` copies (`--with-opinion`, `--with-look`):");
+                foreach (var each in WorkflowDefaults.All) Say($"  `{each.Id}` — {each.Names.En}. {each.For.En}");
+                Say("  `daoris driver workflow defaults <default>` says one whole, and `--to <file>` writes its graph to a file.");
+                return 0;
+            }
+
+            var shipped = WorkflowDefaults.Of(named) ?? throw new ChoiceWords(
+                $"`{named}` is no default Daoris ships — `daoris driver workflow defaults` names them, and `show {named}` shows a workflow saved here.");
+            if (FlagValue("--to") is { } to)
+            {
+                var path = FileOperand(to);
+                if (File.Exists(path) || Directory.Exists(path)) throw new ChoiceWords($"`{to}` exists already: a default is written to a new file, and never over one.");
+                AtomicFile.WriteText(path, JsonFile.Serialize(shipped.Graph()));
+                Say($"daoris: the default `{shipped.Id}`'s graph written to {path}: `daoris driver workflow apply <id> {to}` saves it as a version.");
+                return 0;
+            }
+
+            var graph = NodeGraphs.Read(shipped.GraphJson).Graph!;
+            var delivery = shipped.Delivery;
+            Say($"daoris: `{shipped.Id}` — {shipped.Names.En} ({shipped.Names.Zh}), a default Daoris ships: {WorkflowWords.GraphSaid(new NamedVersion(1, null, null, null, null, shipped.Digest, graph))}");
+            if (shipped.Aliases.Count > 0) Say($"  Also named {string.Join(", ", shipped.Aliases.Select(alias => $"`{alias}`"))}.");
+            Say($"  {shipped.For.En}");
+            Say($"  {WorkflowPresets.GraphLine(shipped.Graph())}");
+            Say($"  Its delivery: method `{delivery.Method}`, accept `{delivery.Accept}`{(delivery.Plugin is { } plugin ? $", plugin `{plugin}`" : "")}"
+                + $"{(delivery.Request is { } request ? $", request `{request}`" : "")}{(shipped.SetUp ? "; a place's quick set-up offers it" : "")}.");
+            Say("  Nodes, by id:");
+            foreach (var node in graph.Nodes)
+            {
+                var options = string.Join("; ", node.Options.Select(option => $"{option.Key} `{NodeOptions.Value(option.Value)}`"));
+                Say($"    {node.Id} · {node.Kind}{(options.Length > 0 ? $": {options}" : "")}");
+            }
+
+            Say($"  Wires: {string.Join(", ", graph.Wires.Select(wire => $"{wire.From?.Node} → {wire.To.Node}"))}.");
+            Say($"  `daoris driver workflow new <id> --from {shipped.Id}` copies it, and the copy keeps where it came from.");
             return 0;
         }
 
@@ -626,10 +676,11 @@ public static class DriverWorkflowsCommand
             var also = gated.Length > 0 ? $", {gated}" : "";
             if (source.Graph is { } graph)
             {
-                var planned = WorkflowOperations.PlanGraph(_home, null, id, null, name, "terminal", Moment(), graph);
+                var planned = WorkflowOperations.PlanGraph(_home, null, id, null, name, "terminal", Moment(), graph, source.From);
                 Say($"daoris: `{id}` v1, a new workflow — {(string?)planned.Plan.Result!["name"]}, from {source.Description}{also}, a graph:");
                 Say($"  {WorkflowPresets.GraphLine(graph)}");
                 if (source.GraphPreset?.NoPress == true) Say("  With no press: choosing it is refused for a repository whose line does not declare its gates and have them accepted.");
+                if (source.From is { } copied) Say($"  A copy of the default `{copied.Default}` (digest {copied.Digest}): the version keeps where it came from.");
                 return Saved(id, planned.Plan.Result);
             }
 

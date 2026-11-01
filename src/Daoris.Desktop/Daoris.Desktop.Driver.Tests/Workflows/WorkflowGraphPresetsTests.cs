@@ -68,7 +68,10 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
         Assert.Equal(preset != "integrated-no-press", kinds.Contains(NodeKinds.Review));
     }
 
-    /// <summary>LANDNODE1c2: <i>Merge with no press</i> is a merge land with no review before it, which a version may hold (D145's press is the flow's).</summary>
+    /// <summary>
+    /// LANDNODE1c2: <i>Merge with no press</i> is a merge land with no review before it, which a version may hold (D145's press is the flow's);
+    /// DEFAULTCONFIG1a: its id is an alias of <i>Merge automatically</i>, which the copy names.
+    /// </summary>
     [Fact]
     public async Task A_merge_with_no_press_is_a_merge_land_with_no_review()
     {
@@ -79,6 +82,74 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
         Assert.Null(version.Problem);
         Assert.Equal("\"merge\"", Assert.Single(version.Graph!.Nodes, node => node.Kind == NodeKinds.Land).Options["method"]);
         Assert.DoesNotContain(version.Graph.Nodes, node => node.Kind == NodeKinds.Review);
+        Assert.Equal("merge-automatic", version.From?.Default);
+    }
+
+    /// <summary>DEFAULTCONFIG1a: the defaults Daoris ships, in their order, each the graph preset of its id.</summary>
+    [Fact]
+    public void The_defaults_are_shipped_data_and_the_graph_presets_read_them()
+    {
+        Assert.Equal(
+            ["merge-after-accept", "merge-automatic", "documents", "branch-to-push", "pull-request", "integrated", "integrated-no-press"],
+            WorkflowDefaults.All.Select(each => each.Id));
+        Assert.Equal(WorkflowDefaults.All.Select(each => (each.Id, each.Names.En)), WorkflowPresets.GraphTable.Select(preset => (preset.Id, preset.Name)));
+        Assert.All(WorkflowDefaults.All, each => Assert.False(string.IsNullOrWhiteSpace(each.Names.Zh) || string.IsNullOrWhiteSpace(each.For.Zh), each.Id));
+        Assert.Equal("merge-automatic", WorkflowPresets.GraphOf("merge-no-press")?.Id);
+        Assert.DoesNotContain(WorkflowPresets.Table, preset => WorkflowDefaults.Of(preset.Id) is not null);
+    }
+
+    /// <summary>DEFAULTCONFIG1a: each default is judged by the graph rules, its delivery is what its graph says, and its line is composed from it.</summary>
+    [Theory]
+    [InlineData("merge-after-accept", "You accept each piece of work, and it merges into the line.")]
+    [InlineData("merge-automatic", "Each piece of work merges into the line once its agent is done.")]
+    [InlineData("documents", "Each piece of work merges into the line once its agent is done.")]
+    [InlineData("branch-to-push", "You accept each piece of work onto a branch, and push it yourself.")]
+    [InlineData("pull-request", "You accept; the plugin pushes and opens a pull request; you merge it.")]
+    [InlineData("integrated", "You accept each piece of work onto a branch, and you ask for it to be integrated into the line.")]
+    [InlineData("integrated-no-press", "Each piece of work is integrated into the line once its agent is done, on gates the repository accepted.")]
+    public void Each_default_is_sound_says_its_delivery_and_has_its_line(string id, string landing)
+    {
+        var shipped = WorkflowDefaults.Of(id)!;
+
+        var (graph, problems) = NodeGraphs.Read(shipped.GraphJson, onSave: true);
+        Assert.True(graph is not null, string.Join(" ", problems.Select(problem => problem.Words)));
+        Assert.Empty(NodeGraphs.Problems(graph!));
+        Assert.Equal(shipped.Digest, NodeGraphs.Digest(graph!));
+        Assert.Equal(shipped.Delivery, SetupPresets.LandOf(Involvement.StepsOf(graph!)));
+        Assert.Equal($"{landing} Its agent's done closes the quest; the flow's end is the work's.", WorkflowPresets.GraphLine(shipped.Graph()));
+    }
+
+    /// <summary>DEFAULTCONFIG1a: a version copied from a default keeps where it came from in its file, the default's id and its digest.</summary>
+    [Fact]
+    public async Task A_version_copied_from_a_default_keeps_the_default_s_id_and_digest()
+    {
+        var exit = await Run("workflow new made --from documents --with-opinion");
+
+        Assert.Equal((0, ""), (exit, _error.ToString()));
+        var shipped = WorkflowDefaults.Of("documents")!;
+        Assert.Equal(new WorkflowFrom("documents", shipped.Digest), Saved("made").From);
+        var file = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(WorkflowStore.PathOf(_home, "made")))!;
+        Assert.Equal(shipped.Digest, (string?)file["versions"]![0]!["from"]!["digest"]);
+        Assert.Contains("A copy of the default `documents`", _out.ToString());
+    }
+
+    /// <summary>DEFAULTCONFIG1a: <c>defaults</c> lists what Daoris ships, shows one, and writes one's graph to a file that <c>apply</c> reads.</summary>
+    [Fact]
+    public async Task The_defaults_are_listed_one_is_shown_and_its_graph_written_to_a_file()
+    {
+        Assert.Equal(0, await Run("workflow defaults"));
+        Assert.All(WorkflowDefaults.All, each => Assert.Contains($"`{each.Id}` — {each.Names.En}", _out.ToString()));
+
+        _out.GetStringBuilder().Clear();
+        Assert.Equal(0, await Run("workflow defaults documents"));
+        Assert.StartsWith($"daoris: `documents` — Documents ({WorkflowDefaults.Of("documents")!.Names.Zh})", _out.ToString());
+
+        Assert.Equal((0, ""), (await Run("workflow defaults documents --to documents.json"), _error.ToString()));
+        var (graph, _) = NodeGraphs.Read(File.ReadAllText(Path.Combine(_home, "documents.json")));
+        Assert.Equal(WorkflowDefaults.Of("documents")!.Digest, NodeGraphs.Digest(graph!));
+
+        Assert.Equal(2, await Run("workflow defaults nothing"));
+        Assert.Contains("`nothing` is no default Daoris ships", _error.ToString());
     }
 
     /// <summary>LANDNODE1h: <c>new --from current:&lt;repository&gt;</c> writes Current's landing out as a <c>land</c> node and its tail.</summary>

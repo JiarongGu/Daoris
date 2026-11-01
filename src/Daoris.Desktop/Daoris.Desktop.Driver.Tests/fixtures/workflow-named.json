@@ -867,24 +867,22 @@
     }
   ],
   "presets": [
-    {"id": "merge-after-accept", "name": "Merge after you accept", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}], "line": "You accept each piece of work, and it merges into the line."},
-    {"id": "branch-to-push", "name": "A branch for you to push", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "you", "plugin": "none"}], "line": "You accept each piece of work onto a branch, and push it yourself."},
     {"id": "pull-request-after-accept", "name": "A pull request after you accept", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "you"}, {"id": "pull-request", "kind": "pull-request"}], "line": "You accept; the plugin pushes and opens a pull request; you merge it."},
     {"id": "pull-request-no-press", "name": "A pull request with no press", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "automatic"}, {"id": "pull-request", "kind": "pull-request"}], "line": "A pull request opens once its quest is done; you merge it."}
   ],
   "variants": [
-    {"preset": "merge-after-accept", "opinion": true, "look": false,
-      "steps": [{"id": "work", "kind": "work"}, {"id": "opinion", "kind": "opinion"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}],
-      "line": "Another agent reads the work first. You accept each piece of work, and it merges into the line."},
+    {"preset": "pull-request-no-press", "opinion": true, "look": false,
+      "steps": [{"id": "work", "kind": "work"}, {"id": "opinion", "kind": "opinion"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "automatic"}, {"id": "pull-request", "kind": "pull-request"}],
+      "line": "Another agent reads the work first. A pull request opens once its quest is done; you merge it."},
     {"preset": "pull-request-no-press", "opinion": false, "look": true,
       "steps": [{"id": "work", "kind": "work"}, {"id": "look", "kind": "look"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "automatic"}, {"id": "pull-request", "kind": "pull-request"}],
       "line": "You look at it running before it lands. A pull request opens once its quest is done; you merge it."},
     {"preset": "pull-request-after-accept", "opinion": true, "look": true,
       "steps": [{"id": "work", "kind": "work"}, {"id": "opinion", "kind": "opinion"}, {"id": "look", "kind": "look"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "you"}, {"id": "pull-request", "kind": "pull-request"}],
       "line": "Another agent reads the work first. You look at it running before it lands. You accept; the plugin pushes and opens a pull request; you merge it."},
-    {"preset": "branch-to-push", "opinion": false, "look": false,
-      "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "you", "plugin": "none"}],
-      "line": "You accept each piece of work onto a branch, and push it yourself."}
+    {"preset": "pull-request-after-accept", "opinion": false, "look": false,
+      "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "you"}, {"id": "pull-request", "kind": "pull-request"}],
+      "line": "You accept; the plugin pushes and opens a pull request; you merge it."}
   ],
   "lines": [
     {"name": "a branch with no press and no plugin", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "automatic", "plugin": "none"}],
