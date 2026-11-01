@@ -80,6 +80,7 @@ internal static class ChatRecorded
         if (ToldBrowser(message) is { } toldBrowser) yield return toldBrowser;
         if (ToldProcess(message) is { } toldProcess) yield return toldProcess;
         if (Told(message) is { } told) yield return told;
+        if (ToldDraft(message) is { } toldDraft) yield return toldDraft;
         if (shown is null)
         {
             yield return Asked(message);
@@ -109,6 +110,13 @@ internal static class ChatRecorded
         var told = Noted.Of(NoteCodes.ChatToldWhere, "told where the person is:").Then(" ", Noted.Said(preface, NoteBy.Program));
         return new SessionEvent { Kind = SessionEventKind.Note, Text = told.Note, Parts = told.Parts };
     }
+
+    /// <summary>
+    /// The workflow draft the agent was told beside the person's words (FLOWCHART2d), as the record keeps it: a note of its own, its lead by
+    /// code, then what the agent was handed as the program's words, the draft's JSON last and whole, so the draft door finds it by its
+    /// fingerprint (<see cref="WorkflowDraftTold.Told"/>).
+    /// </summary>
+    internal static SessionEvent? ToldDraft(ChatMessage message) => message.Draft?.ToldNote();
 
     /// <summary>
     /// The browser the agent was handed and told of beside the person's first words (BRWHINT1a), as the record keeps it: a note of

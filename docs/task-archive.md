@@ -22722,6 +22722,16 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 > **SETUPUX1l — Roles on a place, one role editor** (web; row l of the set-up design). Only the works that differ from the parent as rows, the rest folded; one `RoleEditor` for the place's Roles and All roles (a step's later), keeping the role's scope, revision and typed alternatives; *Back to …* naming the fallback; the two-roles-one-work refusal said in the editor; a shared role edited once with its works named. Proof: the folds, *Back to*, the refusal, a shared role, a typed model saved (`PlaceRoles.test.tsx`, `RoleEditor.test.tsx`); stories at 80, 39 and 25rem, en and zh, both themes.
 
 **Outcome** 2026-11-02: `agents/roles/RoleEditor.tsx` holds the editor (prose behind one ⓘ, a sentence of consequence before *Save*) and `setup/PlaceRoles.tsx` folds the unchanged works. Detail: D221's SETUPUX1l note; `PlaceRoles.stories.tsx`.
+## FLOWCHART2d — Ask Daoris told the open draft (2026-11-02, D223)
+
+> **FLOWCHART2d — Ask Daoris told the open draft** (web, modules, driver; row d of the flowchart design). The `Draft` field, bounded, sent on a fingerprint change, recorded; the preface clause; the room's paragraph; with §8.3's compact palette, the draft's source and save target, base, route, pipeline, selected step and open problems, frozen with the person's message. Proof: the record keeps the draft as told; an oversize draft refused with its sentence; nothing re-sent unchanged; the room's goldens.
+
+**Outcome** 2026-11-02: the page sends the editor's draft beside the words where its fingerprint moved, the host refuses one past 48 KiB whole and hands it with the palette, and the record's `chat.told-draft` note keeps it for the draft door. The editor's registration (`registerOpenDraft`) is the editor rows'. Detail: D223's FLOWCHART2d note.
+## FLOWCHART2e — a proposal against the draft (2026-11-02, D223)
+
+> **FLOWCHART2e — a proposal against the draft** (service, driver, modules; row e of the flowchart design, after d). `workflow_propose.draft`, the `draft` door, `WorkflowGraphDiff`, the card's fields; Apply writes nothing; with §8.4's bridge-complete payload and §8.5's diff that hides no execution change. Proof: judged against the told draft; an unknown fingerprint refused; Apply leaves the workflow store and the configuration byte for byte; the diff over the shipped graphs; the tool's description and registration tests.
+
+**Outcome** 2026-11-02: a change to the open draft is judged against the draft the conversation was told and shown as its changes, problems and candidate; its Apply opens the place's Workflow and stands, settling only when the editor names each change taken or left. Drawing it is row f's, the opener row g's. Detail: D223's FLOWCHART2e note.
 
 ## FLOWCHART2a — the chart's components (2026-11-02, D223)
 

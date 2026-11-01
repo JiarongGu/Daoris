@@ -38,6 +38,12 @@ public static class DriverArguments
             ? value.ValueKind switch { JsonValueKind.True => true, JsonValueKind.False => false, _ => null }
             : null;
 
+    /// <summary>A list of strings the page may send, or null where it sends none; an item that is not a string is left out.</summary>
+    internal static IReadOnlyList<string>? Listed(IpcRequest request, string name) =>
+        request.Payload is { } payload && payload.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Array
+            ? [.. value.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString()!)]
+            : null;
+
     /// <summary>A whole number the page may send, or null.</summary>
     internal static long? Number(IpcRequest request, string name) =>
         request.Payload is { } payload

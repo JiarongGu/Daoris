@@ -100,6 +100,12 @@ internal sealed class ChatContext(
     /// </summary>
     public ConcurrentDictionary<string, string> Browsers { get; } = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>The workflow draft open in the person's editor, held for the message it was sent with (FLOWCHART2d).</summary>
+    public ConcurrentDictionary<string, WorkflowDraftTold> Drafts { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>The palette's digest each conversation was last told under (FLOWCHART2d), so an unchanged palette is not handed again.</summary>
+    public ConcurrentDictionary<string, string> Palettes { get; } = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>
     /// What a new part's first message shows of the words a keyed open moved to it (FOUNDATION1d-ii part 4, the foundation design §3.4 rule 3,
     /// O6-F2): one <c>User</c> event per moved word under its id, held from the move's hand until the door that writes that message records

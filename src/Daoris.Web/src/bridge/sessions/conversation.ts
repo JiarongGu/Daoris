@@ -6,6 +6,7 @@ import { type ChatMessage, type EventPage, type Level, levelOf, mergeEvents, typ
 import type { SessionOption } from '../../work/conversation/SessionOptions';
 import type { Reach } from '../../work/say';
 import { toUpload } from '../../compose/attachments';
+import type { DraftSent } from '../../help/openDraft';
 import { call } from '../call';
 import { notPushed } from '../state/slices';
 
@@ -522,11 +523,13 @@ export const useSendMessage = () =>
   useMutation({
     // A preface (HELP1b) is where the person is, handed to the agent ahead of the words; absent for most.
     // `level` (COWORK1a, D188) is when the words should reach a working session; none is the person's default, urgent.
-    mutationFn: async (message: { id: string; text: string; files?: File[]; preface?: string; level?: Level }) => {
+    // `draft` (FLOWCHART2d) is the workflow draft open in the editor, sent where its fingerprint moved since the conversation was told.
+    mutationFn: async (message: { id: string; text: string; files?: File[]; preface?: string; draft?: DraftSent; level?: Level }) => {
       const files = message.files?.length ? await Promise.all(message.files.map(toUpload)) : [];
       return wordsOf(await call<unknown>('SESSION_INPUT', {
         id: message.id, text: message.text, ...(files.length > 0 ? { files } : {}),
         ...(message.preface ? { preface: message.preface } : {}),
+        ...(message.draft ? { draft: message.draft } : {}),
         ...levelPayload(message.level),
       }));
     },

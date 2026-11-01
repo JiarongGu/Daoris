@@ -545,6 +545,8 @@ public sealed class HelpRoutes(DriverContext context)
         // The winner may have settled it between the read above and the claim.
         proposal = HelpProposals.Find(_loop.Home, id) ?? proposal;
         if (proposal.State != "proposed") throw new DriverException($"proposal `#{id}` is already {proposal.State}.");
+        // FLOWCHART2e (the flowchart design §8.6): the editor's press on a draft card names each change it took into the draft and each it left.
+        proposal = proposal with { Taken = Listed(request, "taken"), Left = Listed(request, "left") };
 
         var (config, facts) = await HelpFactsAsync(service, [proposal], cancellationToken).ConfigureAwait(false);
         var plan = HelpProposals.Plan(proposal, config, facts);
@@ -947,6 +949,13 @@ public sealed class HelpRoutes(DriverContext context)
     public static bool JudgedAgainstWorkflows(IEnumerable<HelpProposal> proposals) => proposals.Any(proposal => proposal.Kind == "workflow");
 
     /// <summary>
+    /// Whether a pending proposal is a change to the open workflow draft (FLOWCHART2e), judged against the drafts its conversation's record
+    /// says it was told, so the record is read for those only then. Public so the fast half holds the gate without a service.
+    /// </summary>
+    public static bool JudgedAgainstDrafts(IEnumerable<HelpProposal> proposals) =>
+        proposals.Any(proposal => proposal.Kind == "workflow" && proposal.Door == "draft");
+
+    /// <summary>
     /// Whether a pending proposal is a set-up (LAYOUT8), judged by the press's own plan for the repository it names, which reads
     /// the line with git and asks the doctrine tool its version, so that is read only then. Public so the fast half holds the gate.
     /// </summary>
@@ -980,12 +989,24 @@ public sealed class HelpRoutes(DriverContext context)
     /// Null for every other kind.
     /// </summary>
     /// <remarks>FABRIC-PIPELINE1i: the route it chooses for, whether it saves a version, whether it is a verification pipeline, and what it
-    /// asks less of the person.</remarks>
+    /// asks less of the person. FLOWCHART2e: a draft card's fingerprint, its changes with what each needs, what a save would refuse and its
+    /// candidate graph whole, which the editor takes changes from and nothing saves; null and empty on every other card.</remarks>
     public static object? WorkflowShown(HelpWorkflowCard? card) => card is null ? null : new
     {
         card.Id, card.Name, card.Base, card.Version, card.Scope,
         card.Diff, card.YourPart, card.Outward, card.Needs, card.AppliesTo, card.Choose,
         card.Route, card.Saves, card.Verifies, card.Lowers, card.NoGates,
+        card.Draft,
+        Changes = card.Changes.Select(change => new
+        {
+            change.Id, change.What, change.Change, change.Step, change.Way, change.Was, change.Kind, change.Fields, change.Needs, change.Said,
+        }).ToArray(),
+        Problems = card.Problems.Select(problem =>
+        {
+            var (code, way, node, words) = problem;
+            return new { Code = code, Node = node, Wire = way, Words = words };
+        }).ToArray(),
+        card.Proposed,
     };
 
     // A go naming an item on the view, read as the judge reads its view (`HelpGoProposals.Plan`); an item on any other view
@@ -1173,6 +1194,13 @@ public sealed class HelpRoutes(DriverContext context)
                 // A graph that asks with done or steward is judged by the gates the accepted declaration names (INTEGRATE1r part r2).
                 AcceptedGates = await IntegrateChoice.ReadForCardsAsync(config, workflows, facts.Registered, ct).ConfigureAwait(false),
             };
+        }
+
+        // FLOWCHART2e: a change to the open draft is judged against the drafts its conversation's own record says it was told (FLOWCHART2d),
+        // read from this machine's record only for one.
+        if (JudgedAgainstDrafts(proposals) && conversation is not null && SessionEventText.IsLocalId(conversation))
+        {
+            facts = facts with { Drafts = WorkflowDraftTold.Told(_loop.Events.After(conversation, 0).Events) };
         }
 
         // A set-up proposal is judged by the press's plan for the repository it names, as `daoris-driver setup <repository> --plan`
