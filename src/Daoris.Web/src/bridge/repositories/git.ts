@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../../data/queries';
@@ -428,20 +429,26 @@ const readChanges = (raw: unknown): GitAnswer<CheckoutChanges> | null => {
 /**
  * A checkout's changes, read again at every open, window focus and *Refresh* (GITAPP2b, the git-writes design §1): never fresh
  * enough to keep, so a mount asks again whatever it held, and what the shell holds until its fresh read lands carries its own `readAt`.
+ * `askedAt` is stamped as each ask goes out, before its answer can be read, so a read older than it is the held one and never the
+ * fresh read itself.
  */
 export const useGitChanges = (repository: string | null, workspace = '', enabled = true) => {
   const { isAvailable } = useShenora();
   const client = useQueryClient();
+  const [askedAt, setAskedAt] = useState(() => Date.now());
   const queryKey = keys.gitChanges(repository ?? '', workspace);
   const query = useQuery({
     queryKey,
-    queryFn: () => askHeld('GIT_CHANGES', client, queryKey, { repository, ...(workspace ? { workspace } : {}) }, readChanges),
+    queryFn: () => {
+      setAskedAt(Date.now());
+      return askHeld('GIT_CHANGES', client, queryKey, { repository, ...(workspace ? { workspace } : {}) }, readChanges);
+    },
     enabled: isAvailable && Boolean(repository) && enabled,
     staleTime: 0,
     refetchOnMount: 'always',
     refetchOnWindowFocus: 'always',
   });
-  return { available: isAvailable, query };
+  return { available: isAvailable, query, askedAt };
 };
 
 /** One line of a hunk: `' '` context, `'+'` added, `'-'` removed, `'\\'` git's no-newline marker. */
