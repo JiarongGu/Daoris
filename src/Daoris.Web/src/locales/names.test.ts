@@ -297,6 +297,57 @@ describe('the doors', () => {
   });
 });
 
+/**
+ * SETUPUX1g (D221, the design's §2.5): no workflow, delivery or step name contains another kind's whole name, in either
+ * language. The glossary's `distinct` lists hold the names, a pair of languages each, and the check reports a name that
+ * holds another kind's.
+ */
+describe('the names of workflows, deliveries and steps', () => {
+  const withNames = (distinct: Glossary['distinct']): Glossary => ({ ...fixture(), distinct });
+  const clean: NonNullable<Glossary['distinct']> = {
+    workflow: [{ en: 'Merge workflow', zh: '合并工作流' }, { en: 'Automatic merge workflow', zh: '自动合并工作流' }],
+    delivery: [{ en: 'A pull request', zh: '拉取请求' }],
+    step: [{ en: 'Completed on the host', zh: '在托管平台完成' }],
+  };
+  const none = catalogues({});
+  const distinct = (glossary: Glossary) => check(glossary, none.en, none.zh).filter((finding) => finding.rule === 'distinct');
+
+  it('finds nothing where no kind holds another kind\'s name, and a kind may hold its own', () => {
+    expect(distinct(withNames(clean))).toEqual([]);
+    expect(distinct(fixture())).toEqual([]);
+  });
+
+  it('reports a workflow, delivery or step name that holds another kind\'s whole name, in the language it does', () => {
+    const found = distinct(withNames({
+      ...clean,
+      step: [...clean.step!, { en: 'Pull request', zh: '合并' }],
+    }));
+    expect(found.map(({ key, language }) => `${key} ${language}`).sort()).toEqual([
+      'distinct:delivery:A pull request en', 'distinct:workflow:合并工作流 zh', 'distinct:workflow:自动合并工作流 zh',
+    ]);
+    expect(found.find(({ key }) => key === 'distinct:delivery:A pull request')!.message).toBe('holds the step name "Pull request"');
+  });
+
+  it('fails --strict on such a name, as a glossary, form or door finding does, and never without it', () => {
+    const planted = withNames({ ...clean, delivery: [...clean.delivery!, { en: 'A merge workflow of its own', zh: '自己的拉取请求' }] });
+    const found = distinct(planted);
+    expect(found.map(({ key, language, message }) => `${key} ${language}: ${message}`)).toEqual([
+      'distinct:delivery:A merge workflow of its own en: holds the workflow name "Merge workflow"',
+    ]);
+    expect(verdict(found, { strict: true })).toBe(1);
+    expect(verdict(found, { strict: false })).toBe(0);
+    expect(report(found)).toMatch(/distinct 1 \(en 1, zh 0\)/);
+  });
+
+  it('is malformed, and so refused, where the lists are not pairs of names', () => {
+    const broken = withNames({ workflow: [{ en: 'Merge workflow', zh: '' }], step: [{ en: 'Find', zh: '查找' }, { en: 'find', zh: '查找' }] });
+    const problems = validate(broken, none.en, none.zh).join('\n');
+    expect(problems).toMatch(/workflow.*Merge workflow.*Chinese/);
+    expect(problems).toMatch(/step.*twice/);
+    expect(validate(withNames(clean), none.en, none.zh).filter((problem) => problem.startsWith('distinct'))).toEqual([]);
+  });
+});
+
 describe('a malformed glossary', () => {
   it('is a list of problems, since a glossary that cannot be read has stopped checking anything', () => {
     const broken = fixture();
@@ -427,7 +478,7 @@ describe('the real glossary and catalogues', () => {
    */
   it('find no glossary, form or door finding, so --strict passes, while the budgets still report', () => {
     const found = check(glossary, en, zh);
-    expect(found.filter((finding) => finding.rule !== 'budget').map(({ key, rule, language }) => `${key} ${rule}:${language}`))
+    expect(found.filter((finding) => finding.rule !== 'budget' && finding.rule !== 'reword').map(({ key, rule, language }) => `${key} ${rule}:${language}`))
       .toEqual([]);
     expect(report(found)).toMatch(/budget/);
 
@@ -453,6 +504,137 @@ describe('the real glossary and catalogues', () => {
       .map(({ key }) => key).filter((key) => [...labels, sentence].includes(key)).sort();
     expect(found).toEqual([...labels, sentence].sort());
     expect(check(glossary, en, zh, { all: true }).filter((finding) => [...labels, sentence].includes(finding.key))).toEqual([]);
+  });
+
+  /**
+   * SETUPUX1g (D221, the design's §2.5): the glossary holds every name the Setup mode's rows will write before a visible row
+   * writes one. Each row is a term with its two names and the words it must not be called, or an amended term; the names of
+   * workflows, deliveries and steps are the `distinct` lists.
+   */
+  describe('hold the Setup design\'s words (SETUPUX1g)', () => {
+    type Row = { term: string; en: string; zh: string; zhForms?: string[]; avoidZh?: string[] };
+    const rows: Row[] = [
+      { term: 'setup', en: 'setup', zh: '配置', avoidZh: ['开始使用', '打开设置'] },
+      { term: 'place', en: 'place', zh: '位置', avoidZh: ['范围'] },
+      { term: 'how it lands', en: 'how it lands', zh: '落地方式', avoidZh: ['交付'] },
+      { term: 'preset', en: 'preset', zh: '预设', avoidZh: ['默认工作流'] },
+      { term: 'current', en: 'Current', zh: '现行', avoidZh: ['当前'] },
+      { term: 'Use here', en: 'Use here', zh: '在此使用', avoidZh: ['在这里使用'] },
+      { term: 'change', en: 'Change…', zh: '更改…' },
+      { term: 'use the workspace\'s', en: 'Use the workspace\'s', zh: '沿用工作区的' },
+      { term: 'edit steps', en: 'Edit steps…', zh: '编辑步骤…', avoidZh: ['编排工作流', '编排步骤'] },
+      { term: 'compose', en: 'compose', zh: '编排', avoidZh: ['撰写'] },
+      { term: 'step', en: 'step', zh: '步骤', avoidZh: ['节点'] },
+      { term: 'way on', en: 'way on', zh: '去向', avoidZh: ['连线', '接线'] },
+      { term: 'decision step', en: 'decision step', zh: '决策步骤', avoidZh: ['节点'] },
+      { term: 'outcome', en: 'outcome', zh: '结果' },
+      { term: 'back to', en: 'Back to …', zh: '退回到…', avoidZh: ['回到前面的步骤', '回退'] },
+      { term: 'changes', en: 'changes', zh: '修改', avoidZh: ['改动', '你拒绝时'] },
+      { term: 'not yet', en: 'not yet', zh: '还不行', zhForms: ['还没有'] },
+      { term: 'your review', en: 'Your review', zh: '你的审阅' },
+      { term: 'your look', en: 'Your look', zh: '你的查看', avoidZh: ['需要查看'] },
+      { term: 'needs attention', en: 'Needs attention', zh: '需要留意', avoidZh: ['需要查看'] },
+      { term: 'gates', en: 'gates', zh: '检查项', avoidZh: ['检查', '关卡', '关口'] },
+      { term: 'work done here', en: 'Work done here', zh: '工作在此完成', avoidZh: ['结束'] },
+      { term: 'no further step', en: 'No further step', zh: '无后续步骤', avoidZh: ['结束'] },
+      { term: 'daoris makes sure', en: 'Daoris makes sure', zh: 'Daoris 核实' },
+      { term: 'adopt', en: 'adopt', zh: '采用', avoidZh: ['加入', '接入', '为智能体配置', '通用驱动'] },
+      { term: 'hold', en: 'hold', zh: '暂停', avoidZh: ['搁置'] },
+      { term: 'appoint', en: 'appoint', zh: '任命', avoidZh: ['指派', '委任'] },
+      { term: 'turn off', en: 'turn off', zh: '停用', avoidZh: ['关闭', '禁用'] },
+      { term: 'staffing', en: 'staffing', zh: '人选', avoidZh: ['清除顺序'] },
+      { term: 'plan', en: 'plan', zh: '计划' },
+      { term: 'apply', en: 'apply', zh: '应用' },
+    ];
+
+    it('names each row in both languages with the words it must not be called', () => {
+      const byTerm = new Map(glossary.terms.map((term) => [term.term, term]));
+      const wrong = rows.flatMap(({ term, en: english, zh: chinese, zhForms, avoidZh }) => {
+        const held = byTerm.get(term);
+        if (!held) return [`${term}: no such term`];
+        const problems: string[] = [];
+        if (held.en?.toLowerCase() !== english.toLowerCase()) problems.push(`${term}: en is ${held.en}`);
+        if (held.zh !== chinese) problems.push(`${term}: zh is ${held.zh}`);
+        for (const form of zhForms ?? []) if (!held.zhForms?.includes(form)) problems.push(`${term}: no form ${form}`);
+        for (const word of avoidZh ?? []) {
+          if (!held.avoid.zh.includes(word) && !held.avoid.later?.zh.includes(word)) problems.push(`${term}: does not avoid ${word}`);
+        }
+        return problems;
+      });
+      expect(wrong).toEqual([]);
+    });
+
+    /**
+     * A word the catalogues still say for a new name is one the rewording row (SETUPUX1w) rewords last: it is listed under the
+     * term's `avoid.later`, reported as a reword with its keys, and fails nothing until that row moves it to `avoid`.
+     */
+    it('reports the words the rewording row will forbid, with the strings that say them, and fails nothing on them', () => {
+      const later = Object.fromEntries(glossary.terms.filter((term) => term.avoid.later).map((term) => [term.term, term.avoid.later!.zh]));
+      expect(later).toEqual({
+        setup: ['打开设置'], hold: ['搁置'], appoint: ['委任'], place: ['范围'], gates: ['检查', '关卡'],
+      });
+      const found = check(glossary, en, zh, { all: true }).filter((finding) => finding.rule === 'reword');
+      expect(found.length).toBeGreaterThan(0);
+      expect(found.find((finding) => finding.key === 'agents.roles.diagram.column.place')!.message).toBe('says 范围 for place, which is 位置');
+      expect(verdict(found, { strict: true })).toBe(0);
+      expect(check(glossary, en, zh, { all: true }).filter((finding) => finding.rule === 'glossary' && finding.kind !== 'sentence')).toEqual([]);
+
+      // Moved to `avoid`, the same strings fail --strict where they are labels, and --all where they are sentences.
+      const forbidden: Glossary = {
+        ...glossary,
+        terms: glossary.terms.map((term) => (term.avoid.later
+          ? { ...term, avoid: { ...term.avoid, zh: [...term.avoid.zh, ...term.avoid.later.zh], later: undefined } }
+          : term)),
+      };
+      const failed = check(forbidden, en, zh, { all: true }).filter((finding) => finding.rule === 'glossary');
+      expect(failed.map(({ key }) => key)).toEqual(expect.arrayContaining(['agents.roles.diagram.column.place', 'workflow.place.gates.title']));
+    });
+
+    it('says in the amended terms what the design amends them to', () => {
+      const means = (term: string) => glossary.terms.find((each) => each.term === term)!.means;
+      expect(means('version')).toMatch(/saved workflow/);
+      expect(means('landing')).toMatch(/five methods/);
+      expect(means('publish')).toMatch(/never a copy into a plugin's own registry folder/);
+      expect(means('ends here')).toMatch(/Work done here/);
+      expect(means('apply')).toMatch(/Setup/);
+      expect(means('adopt')).toMatch(/not driven/i);
+    });
+
+    it('lists the names of workflows, deliveries and steps, so no kind holds another\'s', () => {
+      const names = (kind: 'workflow' | 'delivery' | 'step') => glossary.distinct![kind]!.map(({ en: english, zh: chinese }) => `${english} | ${chinese}`);
+      expect(names('workflow')).toEqual([
+        'Merge workflow | 合并工作流', 'Automatic merge workflow | 自动合并工作流', 'Documents workflow | 文档工作流',
+        'Branch workflow | 分支工作流', 'Hosted merge workflow | 托管合并工作流', 'Integration workflow | 集成工作流',
+        'No-press integration workflow | 免按键集成工作流', 'Release workflow | 发版工作流',
+      ]);
+      expect(names('delivery')).toEqual([
+        'Merge after you accept | 你采纳后合并', 'A branch to push | 留给你推送的分支', 'A pull request | 拉取请求',
+        'Integrated into the line | 集成到主线', 'Not driven | 未驱动',
+      ]);
+      expect(names('step')).toEqual(expect.arrayContaining([
+        'Completed on the host | 在托管平台完成', 'The integration request | 集成请求', 'Handed on | 已移交',
+        'Find a pending release | 查找待发版本', 'Record the release | 记录发版', 'Copy to its registry | 复制到它的登记目录',
+      ]));
+      expect(check(glossary, en, zh).filter((finding) => finding.rule === 'distinct')).toEqual([]);
+    });
+
+    it('fails --strict on a planted name that holds another kind\'s, in either language', () => {
+      const plant = (name: { en: string; zh: string }): Glossary =>
+        ({ ...glossary, distinct: { ...glossary.distinct, step: [...glossary.distinct!.step!, name] } });
+      const keys = (planted: Glossary) => check(planted, en, zh).filter((finding) => finding.rule === 'distinct')
+        .map(({ key, language }) => `${key} ${language}`).sort();
+
+      // A step called what a delivery is called in Chinese: the pull request's bare 拉取请求.
+      expect(keys(plant({ en: 'Plain', zh: '拉取请求' }))).toEqual(['distinct:delivery:拉取请求 zh', 'distinct:step:拉取请求 zh']);
+      // A step called a bare 集成, which every integration workflow's name holds.
+      expect(keys(plant({ en: 'Plain', zh: '集成' }))).toEqual([
+        'distinct:delivery:集成到主线 zh', 'distinct:workflow:免按键集成工作流 zh', 'distinct:workflow:集成工作流 zh',
+      ]);
+      // A step whose English is a delivery's whole name.
+      expect(keys(plant({ en: 'A pull request', zh: '一步' }))).toEqual(['distinct:delivery:A pull request en', 'distinct:step:A pull request en']);
+      expect(verdict(check(plant({ en: 'Plain', zh: '拉取请求' }), en, zh), { strict: true })).toBe(1);
+      expect(verdict(check(glossary, en, zh), { strict: true })).toBe(0);
+    });
   });
 
   it('are gated by the build: --strict runs beside the parity check, before the bundle is built', () => {

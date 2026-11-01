@@ -22648,3 +22648,8 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 > **SETUPUX1f — step titles** (plugin contract, driver). A manifest step may declare `title` and `about` (en, zh); the palette carries them; the example's words say it records a release and copies the package into its own registry folder. Proof: schema tests; an old manifest keeps its kind; no *publish* in the example.
 
 **Outcome** 2026-11-02: `PluginSteps.Read` reads `title` and `about` into `NodeDeclaration.Title` and `About` (`StepWords`, outside equality and the digest), refused by the field's own code; `PaletteStep` carries them; the `local-release` example names its three steps and says its copy stays in its own registry folder. Detail: D221's note; `PluginStepsTests`, `WorkflowPaletteTests`, `PluginKitTests`.
+## SETUPUX1g — the glossary rows (2026-11-02, D221)
+
+> **SETUPUX1g — the glossary rows** (web, glossary). §2.5's new and amended rows, before any visible row's words. Proof: `names:check --strict` knows each row, and fails on a name containing another kind's.
+
+**Outcome** 2026-11-02: `glossary.json` holds the twenty new terms and the twelve amended ones; its `distinct` lists carry the workflow, delivery and step names, and `names-check.mjs` gains the `distinct` rule (strict) and the `reword` rule (reported: a term's `avoid.later` words existing strings still say, for row w). Detail: D221's note; `names.test.ts`.

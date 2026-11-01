@@ -29,8 +29,11 @@ export type Glossary = {
     match?: string;
     pair?: boolean;
     use?: string;
-    avoid: { en: string[]; zh: string[] };
+    /** `later.zh`: words the rewording row will forbid; strings that still say them are reported as rewords and fail nothing. */
+    avoid: { en: string[]; zh: string[]; later?: { zh: string[] } };
   }[];
+  /** The names of workflows, deliveries and steps (SETUPUX1g): none holds another kind's whole name, in either language. */
+  distinct?: Partial<Record<'workflow' | 'delivery' | 'step', { en: string; zh: string }[]>> & { _why?: string };
   /** Budget judgements looked at and kept (NAME2): each holds the name it accepted, per language, and why. */
   accepted?: {
     _why?: string;
@@ -41,7 +44,7 @@ export type Glossary = {
 export type Finding = {
   key: string;
   kind: string;
-  rule: 'glossary' | 'budget' | 'form' | 'door';
+  rule: 'glossary' | 'budget' | 'form' | 'door' | 'distinct' | 'reword';
   language: Language;
   message: string;
   value: string;
