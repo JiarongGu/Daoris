@@ -27,6 +27,7 @@ import { failure, type Notify, useErrorNotify } from '../../design/ui';
 import type { KeptDoors } from '../../work/history/ClearAsk';
 import { useHistoryActs } from '../../work/history/historyActs';
 import { WorkflowTab } from '../../workflow/WorkflowTab';
+import { useWorkflowEditor } from '../../bridge/repositories/workflowEdit';
 import { KeptHistory } from './KeptHistory';
 import { WorkspaceBranchGroups } from '../git/RepositoryGitView';
 import { InclusionContext, useInclusion } from './WorkspaceBranches';
@@ -375,6 +376,7 @@ function WorkflowPart({ workspace, onSetup, onOpenRepository }: {
   onOpenRepository?: (repository: string) => void;
 }) {
   const answer = useWorkflowCurrent({ workspace });
+  const editor = useWorkflowEditor({ workspace });
   return (
     <WorkflowTab
       page="workspace"
@@ -383,6 +385,7 @@ function WorkflowPart({ workspace, onSetup, onOpenRepository }: {
       reading={answer.isPending}
       refusal={answer.error ? sentence(answer.error) : null}
       doors={{ setup: onSetup, repository: onOpenRepository }}
+      editor={editor}
     />
   );
 }
