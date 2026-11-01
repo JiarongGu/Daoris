@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -14,26 +15,65 @@ public sealed record TreeDelivery(DeliveryStore Store, DeliveryClaim Claim)
 }
 
 /// <summary>
+/// The deliveries this process is landing or settling now (LANDNODE1b3), one at a time each, by home and key: a restart's settlement never
+/// writes beside a landing of the delivery here, and a second starter of it lands only once the first has ended.
+/// </summary>
+internal static class DeliveryRuns
+{
+    private static readonly ConcurrentDictionary<string, byte> Here = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>The delivery held by this process until the answer is disposed; null where this process holds it already.</summary>
+    public static IDisposable? Hold(string home, string key)
+    {
+        var name = $"{Path.TrimEndingDirectorySeparator(Path.GetFullPath(home))}|{key}";
+        return Here.TryAdd(name, 0) ? new Held(name) : null;
+    }
+
+    private sealed class Held(string name) : IDisposable
+    {
+        private int _released;
+
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _released, 1) == 0) Here.TryRemove(name, out _);
+        }
+    }
+}
+
+/// <summary>
 /// A landing performing its delivery (LANDNODE1b2): the intent read once, and each git effect's entry written ahead of it and its outcome
 /// after, read back and never assumed: <i>prepared</i> from the start of the landing's judgement to the commit its ref is written at,
 /// <i>ref written</i>, <i>recorded</i>. The branch's ref goes through one <see cref="RefTransaction"/> under the checkout's lock held alone
 /// (GITLOCK1), inside the tree's landing hold (LANDRACE1) the landing took first; a merge's line is moved by the promotion's effect, which
-/// takes that lock itself. The landing's ownership is its landing record: no act-journal mark is made.
+/// takes that lock itself. The landing's ownership is its landing record: no act-journal mark is made. A delivery a restart settled by phase
+/// (LANDNODE1b3) goes on from its next phase: a done preparation is not written ahead again, and a ref it wrote is read, never written twice.
 /// </summary>
 internal sealed class TreeDelivering
 {
     private static readonly Regex FullId = new("^(?:[0-9a-f]{40}|[0-9a-f]{64})$", RegexOptions.CultureInvariant);
 
+    /// <summary>The git phases, in their order: what a landing writes ahead, and goes on from after a restart.</summary>
+    internal static IReadOnlyList<string> GitPhases { get; } = [DeliveryPhases.Prepared, DeliveryPhases.RefWritten, DeliveryPhases.Recorded];
+
     private readonly TreeDelivery _delivery;
     private readonly string _home;
     private readonly string _repository;
     private readonly HashSet<string> _done = new(StringComparer.Ordinal);
+    private readonly string? _wrote;
     private string? _open;
 
-    private TreeDelivering(TreeDelivery delivery, DeliveryRecord record, string home, string repository, bool squash)
+    private TreeDelivering(TreeDelivery delivery, DeliveryRecord record, IReadOnlyList<DeliveryPhase> phases, string home, string repository, bool squash)
     {
         (_delivery, Record, _home, _repository, Squash) = (delivery, record, home, repository, squash);
+        foreach (var each in phases.Where(each => each.Outcome == DeliveryOutcomes.Done)) _done.Add(each.Phase);
+        _wrote = phases.LastOrDefault(each => each.Phase == DeliveryPhases.RefWritten && each.Outcome == DeliveryOutcomes.Done)?.Evidence;
     }
+
+    /// <summary>The git phase this landing goes on from: the first not done (the land node design §3, a restart's rule 1).</summary>
+    public string? Next => GitPhases.FirstOrDefault(each => !_done.Contains(each));
+
+    /// <summary>Where this delivery's own ref write left <c>refs/heads/<paramref name="name"/></c>, read back done before it stopped; null where it wrote none.</summary>
+    public string? Wrote(string name) => string.Equals(name, Intent.Branch, StringComparison.Ordinal) ? _wrote : null;
 
     /// <summary>The delivery as the store held it when the landing began.</summary>
     public DeliveryRecord Record { get; }
@@ -53,7 +93,8 @@ internal sealed class TreeDelivering
 
     /// <summary>
     /// The delivery <paramref name="delivery"/>'s claim names, read for a landing of <paramref name="repository"/>'s tree; or why it does not
-    /// land: none, held, settled or claimed by another run, of another repository, or an intent or option this build does not land.
+    /// land: none, held, settled or claimed by another run, of another repository, an intent or option this build does not land, or phases a
+    /// landing cannot go on from (<see cref="Standing"/>).
     /// </summary>
     public static (TreeDelivering? Delivering, string? Refused) Read(TreeDelivery delivery, string home, string repository)
     {
@@ -83,9 +124,63 @@ internal sealed class TreeDelivering
             _ => null,
         };
 
+        var phases = why is null ? delivery.Store.Phases(delivery.Claim.Key) : [];
+        why ??= Standing(intent!, phases);
+
         return why is null
-            ? (new TreeDelivering(delivery, record!, home, repository, squash!.Value), null)
+            ? (new TreeDelivering(delivery, record!, phases, home, repository, squash!.Value), null)
             : (null, $"delivery {delivery.Claim.Key[..12]}: {why}");
+    }
+
+    /// <summary>
+    /// Why no landing goes on from these phases now, or null: an entry a newer build wrote, one written ahead without its outcome or read as
+    /// unknown, every git effect recorded already, or a merge its line holds, which a restart's settlement records (<see cref="DeliveryReconciler"/>).
+    /// </summary>
+    private static string? Standing(DeliveryIntent intent, IReadOnlyList<DeliveryPhase> phases)
+    {
+        if (phases.FirstOrDefault(each => !DeliveryPhases.All.Contains(each.Phase, StringComparer.Ordinal)
+                || each.Outcome is { } outcome && !DeliveryOutcomes.All.Contains(outcome, StringComparer.Ordinal)) is { } newer)
+        {
+            return $"its entry {newer.Ordinal} was written by a newer Daoris, which lands it";
+        }
+
+        if (phases.FirstOrDefault(each => each.Open) is { } open)
+        {
+            return $"its `{open.Phase}` entry was written ahead at {Moments.Write(open.BeganAt)} and has no outcome: a restart settles it by phase";
+        }
+
+        if (phases.FirstOrDefault(each => each.Outcome == DeliveryOutcomes.Unknown) is { } unknown)
+        {
+            return $"its `{unknown.Phase}` was read as unknown, which the person settles before any later phase";
+        }
+
+        var done = phases.Where(each => each.Outcome == DeliveryOutcomes.Done).Select(each => each.Phase).ToHashSet(StringComparer.Ordinal);
+        if (GitPhases.All(done.Contains))
+        {
+            return intent.Plugin is null
+                ? "its effects are recorded, and a restart's settlement delivers it"
+                : "its branch is made and recorded, and what follows is its plugin's, which the plugin frame settles";
+        }
+
+        return intent.Method == DeliveryMethods.Merge && done.Contains(DeliveryPhases.RefWritten)
+            ? $"`{intent.Line}` holds its merge, which a restart's settlement records"
+            : null;
+    }
+
+    /// <summary>
+    /// What a landing says that waited for its tree behind its delivery's other starter, which delivered it meanwhile (a press and a pass at
+    /// once): where the work is, and that nothing more was landed. Kept as <see cref="AutoLandingCode.Already"/>, as LANDRACE1's is.
+    /// </summary>
+    public static TreeLanding Meanwhile(DeliveryRecord delivered)
+    {
+        var intent = delivered.Intent;
+        var merge = intent.Method == DeliveryMethods.Merge;
+        return new TreeLanding(false,
+            $"its delivery {delivered.Key[..12]} was delivered while this landing waited for its tree: its work at {TextBounds.ShortCommit(intent.Tip, 8)} is "
+            + (merge ? $"merged into `{intent.Line}`" : $"on `{intent.Branch}`") + ". Nothing more was landed.", merge ? null : intent.Branch)
+        {
+            Refusal = AutoLandingCode.Already,
+        };
     }
 
     /// <summary>
@@ -123,12 +218,22 @@ internal sealed class TreeDelivering
     /// <param name="old">The tip judged, which the ref moves from; null makes it where it is absent; equal to <paramref name="value"/>, it is verified there.</param>
     public async Task<(int Code, string Stdout, string Stderr)> WriteAsync(string root, string reference, string? old, string value, CancellationToken ct)
     {
+        // LANDNODE1b3: the ref this delivery wrote and read back before it stopped is read again where it stands, and never written twice.
+        if (_done.Contains(DeliveryPhases.RefWritten))
+        {
+            var (known, at) = await StandsAsync(root, reference, ct).ConfigureAwait(false);
+            return known && at is not null && string.Equals(at, _wrote, StringComparison.OrdinalIgnoreCase) && string.Equals(at, value, StringComparison.OrdinalIgnoreCase)
+                ? (0, "", "")
+                : (1, "", $"`{reference}` stands at {at ?? "nothing"}, not at {_wrote}, where this delivery wrote it before it stopped");
+        }
+
         using var held = TreeLock.TryWriting(_home, root, _repository, TreeLock.Landing);
         if (held is null) return (1, "", $"{TreeLock.Held(_repository, TreeLock.HolderOf(_home, root))}, so the branch was not written; accept again once it is done");
 
         var (transaction, intended) = old is null ? (new RefTransaction().Create(reference, value), $"`{reference}` made at {value}")
             : old == value ? (new RefTransaction().Verify(reference, value), $"`{reference}` standing at {value}")
             : (new RefTransaction().Update(reference, old, value), $"`{reference}` moved from {old} to {value}");
+        await SeamAsync(DeliveryPhases.Prepared).ConfigureAwait(false);
         End(DeliveryPhases.Prepared, DeliveryOutcomes.Done, value, $"the commit `{reference}` is written at is {value}");
         if (Begin(DeliveryPhases.RefWritten, intended) is { } refused) return (1, "", refused);
 
@@ -144,8 +249,9 @@ internal sealed class TreeDelivering
     }
 
     /// <summary>A merge's press about to move the line: the preparation done at the commit merged, the line's entry written ahead.</summary>
-    public string? BeginMerge(string line, string commit)
+    public async Task<string?> BeginMergeAsync(string line, string commit)
     {
+        await SeamAsync(DeliveryPhases.Prepared).ConfigureAwait(false);
         End(DeliveryPhases.Prepared, DeliveryOutcomes.Done, commit, $"the commit merged into `{line}` is {commit}");
         return Begin(DeliveryPhases.RefWritten, $"`refs/heads/{line}` to hold {commit}");
     }
@@ -225,7 +331,7 @@ internal sealed class TreeDelivering
     }
 
     /// <summary>The <c>squash</c> of the resolved options: false where they name none, null where they are not an object or it is no boolean.</summary>
-    private static bool? SquashOf(string options)
+    internal static bool? SquashOf(string options)
     {
         try
         {

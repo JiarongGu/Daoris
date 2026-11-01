@@ -7,7 +7,11 @@ public sealed record TogetherBrought(string Operation, string Session, string Tr
 /// <param name="Head">The entry's part whose tree is the head's.</param>
 /// <param name="Members">The members' sessions: those among the entry's parts are brought into the head, never landed.</param>
 public sealed record EntryTogether(
-    string Operation, string Head, IReadOnlyDictionary<string, IWorkplaceGate?> Gates, IReadOnlySet<string> Members);
+    string Operation, string Head, IReadOnlyDictionary<string, IWorkplaceGate?> Gates, IReadOnlySet<string> Members)
+{
+    /// <summary>The head's unit's delivery the combined Accept performs (LANDNODE1b3), its members brought into it; null lands by the rule, as before.</summary>
+    public TreeDelivery? Delivery { get; init; }
+}
 
 /// <summary>
 /// The inclusion record of every form (LINESTOGETHER1d, the review-flow design §4): a landed operation, not a landing record, says what
@@ -68,22 +72,36 @@ public static class TogetherInclusion
 /// anything is made, the head at its checked tip, every member at its bound tip and every member change accounted again; then the attempt
 /// is written; then the landing, its record listing the members; again before the push; then what came of it.
 /// </summary>
+/// <remarks>
+/// Under a delivery (LANDNODE1b3; the land node design §9's first question): one Accept carrying several sessions is one delivery, the head's
+/// unit's, bound at the checked tip, whose intent chooses the form and the target; each member is brought into it and starts none of its own
+/// (<see cref="DeliveryReach"/>), so there is no second fence.
+/// </remarks>
 internal sealed class TogetherAccepts(TreeContext context, TreeLands lands)
 {
     /// <param name="memberGates">Each member's gate by session; a member with none is held by nothing.</param>
     /// <param name="judged">The head's own judgement again under the hold, as its press makes it.</param>
     /// <param name="beforePush">The head's own judgement before its push.</param>
+    /// <param name="delivery">The head's unit's delivery this Accept performs; null lands by the rule, as before.</param>
     public async Task<TreeLanding> LandAsync(
         string operationId, LandingSubject subject, IReadOnlyDictionary<string, IWorkplaceGate?> memberGates, CancellationToken ct = default,
         Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null, IWorkplaceGate? gate = null,
         Func<bool, CancellationToken, Task<TreeLanding?>>? judged = null, Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null,
-        Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null)
+        Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null, TreeDelivery? delivery = null)
     {
         var store = new TogetherOperations(context.Home);
         if (store.Of(operationId) is not { } operation) return Refused("nothing is being brought together under that operation");
         if (operation.Phase != TogetherPhase.Ready || operation.Checked is not { } checkedTip)
         {
             return Refused($"its sessions are being brought together and are not ready to accept ({operation.Phase})");
+        }
+
+        var delivered = delivery?.Store.Delivery(delivery.Claim.Key);
+        if (delivery is not null && delivered is null) return Refused($"its delivery {delivery.Claim.Key[..12]} is not in the store");
+        if (delivered is not null && !string.Equals(delivered.Intent.Tip, checkedTip, StringComparison.OrdinalIgnoreCase))
+        {
+            return Refused($"its delivery lands {TextBounds.ShortCommit(delivered.Intent.Tip, 8)}, and its sessions were checked together at "
+                + TextBounds.ShortCommit(checkedTip, 8));
         }
 
         foreach (var member in operation.Members)
@@ -97,30 +115,43 @@ internal sealed class TogetherAccepts(TreeContext context, TreeLands lands)
         if (await TreeGates.CheckoutOfTreeAsync(operation.Head.Tree, ct).ConfigureAwait(false) is not { } root) return Refused("the head's tree is not here");
         var (workspace, repository) = context.OwnerOf(Path.GetFullPath(operation.Head.Tree));
         if ((await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch is not { } line) return Refused("its line is not known");
-        var plan = await lands.PlanAsync(operation.Head.Tree, subject, ct, gate?.Process).ConfigureAwait(false);
-        var rule = LandingRules.Effective(context.Config(), repository, workspace).Rule;
-        var form = plan.Form == LandingForm.Merge ? TogetherForms.Merge : rule.Squash ? TogetherForms.Squash : TogetherForms.Branch;
+        var (form, target) = delivered is not null ? FormOf(delivered) : await RuleFormAsync(operation, subject, gate, repository, workspace, ct).ConfigureAwait(false);
         var brought = operation.Members.Select(member => new LandedWork(member.Session, member.Tip) { Quest = member.Quest, Unit = member.Unit }).ToList();
 
         var landed = await lands.LandAsync(operation.Head.Tree, subject with { Brought = brought }, ct, inUse, AcceptedBy.Person,
             gate?.WithTip(checkedTip) ?? gate, joins: false, judged: async (waited, token) =>
             {
                 if (judged is not null && await judged(waited, token).ConfigureAwait(false) is { } refused) return refused;
-                if (await RecheckAsync(context.Config(), root, operation, checkedTip, line, token).ConfigureAwait(false) is { } why) return Refused(why);                var expected = (await TogetherSettle.RefAsync(root, plan.Target, token).ConfigureAwait(false)).Tip;
-                return store.Landing(operation.Id, new TogetherAttempt(form, plan.Target, expected, checkedTip, context.Clock())) is null
+                if (await RecheckAsync(context.Config(), root, operation, checkedTip, line, token).ConfigureAwait(false) is { } why) return Refused(why);
+                var expected = (await TogetherSettle.RefAsync(root, target, token).ConfigureAwait(false)).Tip;
+                return store.Landing(operation.Id, new TogetherAttempt(form, target, expected, checkedTip, context.Clock())) is null
                     ? Refused("it is no longer ready to accept")
                     : null;
             },
             beforePush: async (landing, waited, token) =>
                 (beforePush is null ? null : await beforePush(landing, waited, token).ConfigureAwait(false))
                 ?? await RecheckAsync(context.Config(), root, operation, checkedTip, line, token).ConfigureAwait(false),
-            together: operation.Id, beside: beside).ConfigureAwait(false);
+            together: operation.Id, beside: beside, delivery: delivery).ConfigureAwait(false);
 
-        await SettleAsync(store, root, operation.Id, landed, plan.Target, (workspace, line), ct).ConfigureAwait(false);
+        await SettleAsync(store, root, operation.Id, landed, target, (workspace, line), ct).ConfigureAwait(false);
         return landed.Landed
             ? landed with { Message = $"{landed.Message} Brought in with it: {string.Join(", ", operation.Members.Select(each => $"`{each.Session}`"))}." }
             : landed;
     }
+
+    /// <summary>The form and the target the live rule lands the head by, as its press plans them.</summary>
+    private async Task<(string Form, string Target)> RuleFormAsync(
+        TogetherOperation operation, LandingSubject subject, IWorkplaceGate? gate, string repository, string workspace, CancellationToken ct)
+    {
+        var plan = await lands.PlanAsync(operation.Head.Tree, subject, ct, gate?.Process).ConfigureAwait(false);
+        var rule = LandingRules.Effective(context.Config(), repository, workspace).Rule;
+        return (plan.Form == LandingForm.Merge ? TogetherForms.Merge : rule.Squash ? TogetherForms.Squash : TogetherForms.Branch, plan.Target);
+    }
+
+    /// <summary>The form and the target a delivery's intent lands the head by: its line for a merge, else its branch, squashed as its options say.</summary>
+    private static (string Form, string Target) FormOf(DeliveryRecord delivered) => delivered.Intent.Method == DeliveryMethods.Merge
+        ? (TogetherForms.Merge, delivered.Intent.Line)
+        : (TreeDelivering.SquashOf(delivered.Authorization.Options) == true ? TogetherForms.Squash : TogetherForms.Branch, delivered.Intent.Branch ?? "");
 
     /// <summary>What came of the attempt: landed where the landing says so, else settled by its git effects as a restart settles it.</summary>
     private async Task SettleAsync(

@@ -332,7 +332,7 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
             // a part whose result moved while an earlier one landed or waited makes nothing (D173's note).
             var landed = together is not null && string.Equals(part.Session, together.Head, StringComparison.Ordinal)
                 ? await new TogetherAccepts(context, lands).LandAsync(together.Operation, named, together.Gates, ct, inUse, part.Gate,
-                    part.Pressed?.Judged, part.Pressed?.BeforePush, beside).ConfigureAwait(false)
+                    part.Pressed?.Judged, part.Pressed?.BeforePush, beside, together.Delivery).ConfigureAwait(false)
                 : await lands.LandAsync(part.Tree, named,
                     ct, inUse, AcceptedBy.Person, part.Gate,
                     joins: form == LandingForm.Branch, fetched: true,
