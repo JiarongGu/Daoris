@@ -1,6 +1,6 @@
 import {
-  type ComponentProps, type CSSProperties, type FocusEvent, type KeyboardEvent, type ReactNode, useCallback, useId, useLayoutEffect, useMemo,
-  useRef, useState,
+  type ComponentProps, type CSSProperties, Fragment, type FocusEvent, type KeyboardEvent, type ReactNode, useCallback, useId, useLayoutEffect,
+  useMemo, useRef, useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
@@ -9,7 +9,7 @@ import { store, stored } from '../lib/stored';
 import { type Fold, largeFolds, WHOLE_MOST } from './flowFolds';
 import { type Box, type InkLabel, type InkPath, placeLabels, routeInk, RUN } from './flowInk';
 import { type EdgeStyle, findStacks, FLOW_REM, type FlowLayout, layoutFlow, type Placement, placementFor, type Slot, type Stack } from './flowLayout';
-import { Button, Icon, type IconName, Pill } from './ui';
+import { Button, type IconName, Pill } from './ui';
 import { useWidth } from './useWidth';
 
 /** A pill's tone, from the caller's own table (`QUEST_TONE`, `SESSION_TONE`): the flow adds none. */
@@ -74,6 +74,16 @@ export type FlowEdge = {
    * words, for the rail and a reader. What is lit lays nothing out again: the layout never reads it.
    */
   taken?: boolean;
+  /**
+   * The outcome of a decision this edge is the route of (FLOWCHART2a): it leaves that outcome's port, which the caller's node draws
+   * with `data-flow-port="<node>:<port>"`, and each port is a path of its own even where two go to one step.
+   */
+  port?: string;
+  /**
+   * A problem the driver's judgement found in this way on (FLOWCHART2a): said in a chip beside the edge, which never changes the edge's
+   * ink, since an edge wears no status hue (D186 point 6).
+   */
+  problem?: string;
 };
 
 export type FlowProps = {
@@ -101,6 +111,35 @@ export type FlowProps = {
    */
   track?: { least?: number; most?: number };
   className?: string;
+};
+
+/** One press in a node's foot: the edge out of it, said in words, and the port it leaves where it is a decision's route. */
+export type NodeFoot = { to: string; back: boolean; text: string; port?: string };
+
+/** What the canvas hands the node a caller draws (FLOWCHART2a): the node whole, its stop, its feet and its description, in reading order. */
+export type NodeContext = {
+  node: FlowNode;
+  /** Whether it holds the flow's one Tab stop. */
+  stop: boolean;
+  feet: NodeFoot[];
+  description: string;
+  onFollow: (from: string, to: string) => void;
+  style?: CSSProperties;
+};
+
+/** What the canvas hands the chip a caller draws on a path: what it would say by default, the edge it carries, and how many are merged. */
+export type LabelContext = { id: string; style: EdgeStyle; text: string; count: number; edge: FlowEdge | undefined };
+
+export type FlowCanvasProps = FlowProps & {
+  /** Draws a node where `Flow`'s own box is not wanted: it must set `data-flow-node` on its element and take the stop's `tabIndex`. */
+  renderNode: (context: NodeContext) => ReactNode;
+  /** Draws the chip on a path, or none (null): the default is the path's text. */
+  renderLabel?: (context: LabelContext) => ReactNode;
+  /**
+   * The node selected, or none (null) (FLOWCHART2a): the data wires of a flow that is given this prop are drawn while one of their ends is
+   * selected, and their lanes are kept free at the right whether or not one is. A flow not given it draws no data wire.
+   */
+  selected?: string | null;
 };
 
 /**
@@ -147,10 +186,20 @@ type Ink = { paths: InkPath[]; labels: InkLabel[]; width: number; height: number
  * - **Sections** (FLOWCHART1d): a caller's titles, each from a node's rank, the first heading the flow and each later one a divider
  *   before its rank; a flow in sections is never left to right.
  *
+ * - **Ports and data** (FLOWCHART2a): the canvas draws the layout, the ink and the keys and a caller draws the nodes (`renderNode`) and
+ *   the chips (`renderLabel`). A `when` edge with a `port` leaves the box of that port, which the caller's node draws; a `data` edge
+ *   is read by neither the layout nor the folds, and is drawn only while a flow given `selected` has an end selected.
+ *
  * A molecule: the flow arrives worded and its doors go out.
  */
-export function Flow({ label, nodes: given, edges: givenEdges, entries: givenEntries, end, rail, sections, track: bounds, className }: FlowProps) {
+export function FlowCanvas({
+  label, nodes: given, edges: allEdges, entries: givenEntries, end, rail, sections, track: bounds, className, renderNode, renderLabel, selected,
+}: FlowCanvasProps) {
   const { t } = useTranslation();
+  // A data wire is no way on: the layout, the stacks and the folds never read it (FLOWCHART2a).
+  const givenEdges = useMemo(() => allEdges.filter((edge) => edge.style !== 'data'), [allEdges]);
+  const dataEdges = useMemo(() => allEdges.filter((edge) => edge.style === 'data'), [allEdges]);
+  const showsData = selected !== undefined;
   const keysId = useId();
   const marks = useId().replace(/[^\w-]/g, '');
   const pane = useRef<HTMLDivElement>(null);
@@ -215,10 +264,13 @@ export function Flow({ label, nodes: given, edges: givenEdges, entries: givenEnt
 
   // The layout reads the shape alone, so a change of what is lit lays nothing out again (§3.1 step 5): it is kept by the
   // shape's key, not by the arrays a caller makes anew on each render. Folds past 24 nodes are the one exception (§3.6).
-  const shapeKey = JSON.stringify([nodes.map((node) => node.id), edges.map((edge) => [edge.id, edge.from, edge.to, edge.style]), entries]);
+  const shapeKey = JSON.stringify([nodes.map((node) => node.id), edges.map((edge) => [edge.id, edge.from, edge.to, edge.style, edge.port]), entries]);
   const layout = useMemo(() => layoutFlow({ nodes: nodes.map((node) => ({ id: node.id })), edges, entries }), [shapeKey]);
   const least = bounds?.least ?? FLOW_REM.node;
-  const fits = placementFor(layout, width, false, 16, { least, across: !sections || sections.length === 0 });
+  // The data wires a flow may show keep their lanes free at the right, selected or not, so a selection moves no node.
+  const dataLanes = showsData ? dataEdges.filter((edge) => nodes.some((node) => node.id === edge.from) && nodes.some((node) => node.id === edge.to)).length : 0;
+  const roomed = useMemo(() => ({ ...layout, lanes: layout.lanes + dataLanes }), [layout, dataLanes]);
+  const fits = placementFor(roomed, width, false, 16, { least, across: !sections || sections.length === 0 });
   const placement: Placement = asList ? 'rail' : fits;
 
   const byId = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
@@ -319,7 +371,12 @@ export function Flow({ label, nodes: given, edges: givenEdges, entries: givenEnt
 
   // A node's track: one width for every node, the most its widest rank leaves each, between the floor and 16rem, or the caller's.
   const most = bounds?.most ?? TRACK_MOST;
-  const track = useMemo(() => trackFor(layout, placement, width, least, most), [layout, placement, width, least, most]);
+  const track = useMemo(() => trackFor(roomed, placement, width, least, most), [roomed, placement, width, least, most]);
+
+  // The data wires drawn: those with an end selected, between nodes that are drawn.
+  const shownData = useMemo(() => (selected == null ? [] : dataEdges.filter((edge) => (edge.from === selected || edge.to === selected)
+    && byId.has(edge.from) && byId.has(edge.to))), [dataEdges, selected, byId]);
+  const dataKey = JSON.stringify(shownData.map((edge) => [edge.id, edge.from, edge.to]));
 
   // The edges, drawn from the measured boxes, again on each resize of the drawing or of a node; nothing drawn moves a box.
   // The resizes of one frame are drawn once, on the next (trap 14), and a geometry that came out the same is not drawn.
@@ -328,7 +385,7 @@ export function Flow({ label, nodes: given, edges: givenEdges, entries: givenEnt
     const element = drawing.current;
     if (!element || placement === 'rail') { setInk(null); return undefined; }
     const draw = () => {
-      const next = measure(element, layout, placement);
+      const next = measure(element, layout, placement, shownData);
       setInk((was) => {
         if (!next) return was === null ? was : null;
         if (was && same(was, next)) return was;
@@ -344,14 +401,14 @@ export function Flow({ label, nodes: given, edges: givenEdges, entries: givenEnt
     draw();
     const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(later) : null;
     observer?.observe(element);
-    element.querySelectorAll('[data-flow-node]').forEach((node) => observer?.observe(node));
+    element.querySelectorAll('[data-flow-node], [data-flow-port]').forEach((node) => observer?.observe(node));
     return () => {
       if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(pending);
       observer?.disconnect();
     };
-  }, [layout, placement, track]);
+  }, [layout, placement, track, dataKey]);
 
-  const nodeProps = (id: string): NodeProps => ({
+  const nodeProps = (id: string): NodeContext => ({
     node: byId.get(id)!,
     stop: tabStop === id,
     feet: edges.filter((edge) => edge.from === id && byId.has(edge.to)).map((edge) => ({
@@ -359,6 +416,7 @@ export function Flow({ label, nodes: given, edges: givenEdges, entries: givenEnt
       text: backs.has(edge.id)
         ? t('flow.footBack', { node: byId.get(edge.to)!.title, says: edge.says })
         : t('flow.move', { node: byId.get(edge.to)!.title, says: edge.says }),
+      ...(edge.port === undefined ? {} : { port: edge.port }),
     })),
     description: describe(t, byId.get(id)!, edges, byId, backs, {
       before: [...(divided.get(id) ?? []).map((title) => t('flow.section', { title })), ...(notes.get(id)?.before ?? [])],
@@ -392,11 +450,18 @@ export function Flow({ label, nodes: given, edges: givenEdges, entries: givenEnt
     </div>
   );
 
-  const labelText = (path: FlowLayout['paths'][number]): string | null => {
-    if (path.back) return path.edges.length > 1 ? `↺ ×${path.edges.length}` : '↺';
-    if (path.edges.length > 1) return `×${path.edges.length}`;
-    return edges.find((edge) => edge.id === path.edges[0])?.label ?? null;
+  // A path's chip: what it says by default, else what the caller draws in its place (none, where the caller says so).
+  const labelOf = (id: string, style: EdgeStyle, edgeIds: string[], back: boolean): ReactNode => {
+    const found = edgeIds.length === 1 ? [...edges, ...dataEdges].find((edge) => edge.id === edgeIds[0]) : undefined;
+    const text = back ? (edgeIds.length > 1 ? `↺ ×${edgeIds.length}` : '↺')
+      : edgeIds.length > 1 ? `×${edgeIds.length}` : found?.label ?? null;
+    if (renderLabel) return renderLabel({ id, style, text: text ?? '', count: edgeIds.length, edge: found });
+    return text;
   };
+  const labels: { id: string; content: ReactNode }[] = [
+    ...layout.paths.map((path) => ({ id: path.id, content: labelOf(path.id, path.style, path.edges, path.back) })),
+    ...shownData.map((edge) => ({ id: edge.id, content: labelOf(edge.id, 'data', [edge.id], false) })),
+  ];
 
   return (
     <div className={cn('min-w-0', className)}>
@@ -441,7 +506,7 @@ export function Flow({ label, nodes: given, edges: givenEdges, entries: givenEnt
                     const row = (
                       <div key={id} className="grid min-w-0 grid-cols-[1rem_minmax(0,1fr)] gap-x-2">
                         <RailMark node={byId.get(id)!} last={index === layout.order.length - 1} />
-                        <div className="min-w-0 pb-2"><FlowNodeBox {...nodeProps(id)} /></div>
+                        <div className="min-w-0 pb-2">{renderNode(nodeProps(id))}</div>
                       </div>
                     );
                     const titles = divided.get(id);
@@ -455,7 +520,7 @@ export function Flow({ label, nodes: given, edges: givenEdges, entries: givenEnt
                 ref={drawing}
                 data-drawn={ink?.drawn ?? 0}
                 className="relative w-max min-w-full"
-                style={padding(layout, placement)}
+                style={padding(layout, placement, dataLanes)}
               >
                 {heading && (
                   <div className="flex justify-center">
@@ -477,7 +542,11 @@ export function Flow({ label, nodes: given, edges: givenEdges, entries: givenEnt
                         style={placement === 'down' ? { columnGap: rem(FLOW_REM.gap) } : { rowGap: rem(FLOW_REM.gap), width: track }}
                       >
                         {slots.map((slot) => (slot.kind === 'node'
-                          ? <FlowNodeBox key={slot.id} {...nodeProps(slot.id)} style={placement === 'down' ? { width: track, flex: 'none' } : undefined} />
+                          ? (
+                            <Fragment key={slot.id}>
+                              {renderNode({ ...nodeProps(slot.id), ...(placement === 'down' ? { style: { width: track, flex: 'none' } } : {}) })}
+                            </Fragment>
+                          )
                           : (
                             <span
                               key={slot.key}
@@ -522,20 +591,19 @@ export function Flow({ label, nodes: given, edges: givenEdges, entries: givenEnt
                       fill="none"
                       className={taken.has(path.id) ? 'stroke-ink-soft' : 'stroke-ink-faint'}
                       strokeWidth={taken.has(path.id) ? 2 : 1}
-                      strokeDasharray={path.style === 'next' ? undefined : '4 3'}
+                      strokeDasharray={DASHES[path.style]}
                       markerEnd={`url(#${marks}-${path.style === 'refused' ? 'refused' : 'arrow'})`}
                     />
                   ))}
                 </svg>
-                {layout.paths.map((path) => {
-                  const text = labelText(path);
-                  if (!text) return null;
-                  const placed = ink?.labels.find((each) => each.id === path.id);
+                {labels.map(({ id, content }) => {
+                  if (content === null || content === undefined || content === false || content === '') return null;
+                  const placed = ink?.labels.find((each) => each.id === id);
                   return (
                     <span
-                      key={path.id}
+                      key={id}
                       aria-hidden
-                      data-flow-label={path.id}
+                      data-flow-label={id}
                       data-shown={placed?.shown ? '' : undefined}
                       className="pointer-events-none absolute whitespace-nowrap rounded-control bg-page px-1 text-meta leading-tight text-ink-soft"
                       style={{
@@ -544,7 +612,7 @@ export function Flow({ label, nodes: given, edges: givenEdges, entries: givenEnt
                         visibility: placed?.shown ? 'visible' : 'hidden',
                       }}
                     >
-                      {text}
+                      {content}
                     </span>
                   );
                 })}
@@ -553,74 +621,6 @@ export function Flow({ label, nodes: given, edges: givenEdges, entries: givenEnt
         </div>
       </div>
       {end}
-    </div>
-  );
-}
-
-type NodeProps = {
-  node: FlowNode;
-  /** Whether it holds the flow's one Tab stop. */
-  stop: boolean;
-  feet: { to: string; back: boolean; text: string }[];
-  description: string;
-  onFollow: (from: string, to: string) => void;
-  style?: CSSProperties;
-};
-
-/** One node (§3.3): its words in reading order, and its foot's presses. */
-function FlowNodeBox({ node, stop, feet, description, onFollow, style }: NodeProps) {
-  const titleId = useId();
-  const stateId = useId();
-  const descriptionId = useId();
-  const faint = node.reached === false || node.faint === true;
-  return (
-    <div
-      role="listitem"
-      data-flow-node={node.id}
-      tabIndex={stop ? 0 : -1}
-      aria-current={node.current ? 'step' : undefined}
-      aria-labelledby={node.state ? `${titleId} ${stateId}` : titleId}
-      aria-describedby={descriptionId}
-      style={style}
-      className={cn(
-        'min-w-0 rounded-card bg-raised px-3 py-2',
-        node.current ? 'border-2 border-ink-soft' : faint ? 'border border-dashed border-line-strong' : 'border border-line',
-      )}
-    >
-      <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
-        <span id={titleId} className={cn('min-w-0 text-body font-semibold [overflow-wrap:anywhere]', faint ? 'text-ink-soft' : 'text-ink')}>
-          {node.glyph && <Icon name={node.glyph} size={14} className="mr-1.5 inline translate-y-0.5 text-ink-soft" />}
-          {node.title}
-        </span>
-        {node.state && <span id={stateId}><Pill tone={node.state.tone}>{node.state.word}</Pill></span>}
-      </div>
-      {node.who
-        ? <div className="mt-1 min-w-0 text-small text-ink-soft">{node.who}</div>
-        : node.actor && <p className="m-0 mt-1 text-small text-ink-soft [overflow-wrap:anywhere]">{node.actor}</p>}
-      {node.lines && <div className="mt-1 min-w-0 text-small text-ink-soft">{node.lines}</div>}
-      {node.mark && (
-        <p data-flow-mark className="m-0 mt-1 min-w-0 text-small text-ink-soft [overflow-wrap:anywhere]">
-          <Icon name="stepFinished" size={12} className="mr-1 inline translate-y-px" />
-          <span className="font-semibold">{node.mark.word}</span>
-          {node.mark.foot && <span className="block text-meta">{node.mark.foot}</span>}
-        </p>
-      )}
-      {feet.length > 0 && (
-        <div className="mt-1.5 grid min-w-0 gap-0.5">
-          {feet.map((foot, index) => (
-            <button
-              key={index}
-              type="button"
-              tabIndex={-1}
-              onClick={() => onFollow(node.id, foot.to)}
-              className="cursor-pointer border-0 bg-transparent p-0 text-left text-meta text-ink-soft [overflow-wrap:anywhere] hover:text-ink"
-            >
-              <span aria-hidden className="mr-1">{foot.back ? '↺' : '→'}</span>{foot.text}
-            </button>
-          ))}
-        </div>
-      )}
-      <span id={descriptionId} hidden>{description}</span>
     </div>
   );
 }
@@ -839,14 +839,21 @@ function foldRanges(t: Translate, flow: Folded, folds: Fold[], open: (fold: Fold
 }
 
 /** The room a drawn placement keeps outside its nodes for the returns: their lanes, and their runs past the end ranks. */
-function padding(layout: FlowLayout, placement: Placement): CSSProperties {
-  if (layout.lanes === 0) return {};
-  const lanes = rem(layout.lanes * (FLOW_REM.lane + FLOW_REM.laneGap));
+function padding(layout: FlowLayout, placement: Placement, dataLanes: number): CSSProperties {
   const run = `${RUN.pad}px`;
+  // The data wires' lanes stand right of the nodes, kept free whether or not one is drawn (FLOWCHART2a).
+  const right = dataLanes > 0 && placement === 'down' ? { paddingRight: rem(dataLanes * (FLOW_REM.lane + FLOW_REM.laneGap) + 1) } : {};
+  if (layout.lanes === 0) return dataLanes > 0 && placement === 'down' ? { paddingTop: run, paddingBottom: run, ...right } : {};
+  const lanes = rem(layout.lanes * (FLOW_REM.lane + FLOW_REM.laneGap));
   return placement === 'down'
-    ? { paddingLeft: lanes, paddingTop: run, paddingBottom: run }
+    ? { paddingLeft: lanes, paddingTop: run, paddingBottom: run, ...right }
     : { paddingBottom: `calc(${lanes} + 0.5rem)`, paddingLeft: run, paddingRight: run };
 }
+
+/** How each style's path is dashed: a move and a decision's route are solid, a data wire dotted, the rest dashed. */
+const DASHES: Record<EdgeStyle, string | undefined> = {
+  next: undefined, when: undefined, data: '1.5 3', failed: '4 3', rejected: '4 3', refused: '4 3', conditional: '4 3', back: '4 3',
+};
 
 /** A node track's most, in rem (§3.2): a caller's node that holds more may take more (FLOWCHART1d). */
 const TRACK_MOST = 16;
@@ -871,7 +878,9 @@ function trackFor(layout: FlowLayout, placement: Placement, width: number | unde
 }
 
 /** The drawn geometry from the boxes the page laid out, or null where nothing was laid out (a unit test's DOM). */
-function measure(element: HTMLElement, layout: FlowLayout, placement: 'across' | 'down'): Omit<Ink, 'drawn'> | null {
+function measure(
+  element: HTMLElement, layout: FlowLayout, placement: 'across' | 'down', data: readonly { id: string; from: string; to: string }[],
+): Omit<Ink, 'drawn'> | null {
   const frame = element.getBoundingClientRect();
   if (frame.width === 0) return null;
   const boxes = new Map<string, Box>();
@@ -882,7 +891,12 @@ function measure(element: HTMLElement, layout: FlowLayout, placement: 'across' |
   element.querySelectorAll<HTMLElement>('[data-flow-node]').forEach((node) => boxes.set(node.dataset.flowNode!, boxOf(node)));
   element.querySelectorAll<HTMLElement>('[data-flow-way]').forEach((way) => boxes.set(way.dataset.flowWay!, boxOf(way)));
   if ([...boxes.values()].some((box) => box.w === 0 && box.h === 0)) return null;
-  const paths = routeInk(layout, placement, boxes);
+  const ports = new Map<string, Box>();
+  element.querySelectorAll<HTMLElement>('[data-flow-port]').forEach((port) => {
+    const box = boxOf(port);
+    if (box.w > 0 && box.h > 0) ports.set(port.dataset.flowPort!, box);
+  });
+  const paths = routeInk(layout, placement, boxes, { ports, data });
   const sizes = new Map<string, { w: number; h: number }>();
   element.querySelectorAll<HTMLElement>('[data-flow-label]').forEach((label) => {
     sizes.set(label.dataset.flowLabel!, { w: label.offsetWidth, h: label.offsetHeight });
