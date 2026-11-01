@@ -10,6 +10,11 @@ the per-task record. Entries preserve their original wording so the archive stay
 > **1b3, the reconciliation** (driver; `docs/2026-11-01-land-node-design.md` §3 and §8 row 5): §3's ladder for the git phases; an Accept carrying several sessions, the first performing and the others reached as *brought into*. Proof: a stop at each git boundary ends in one branch; a press and a pass at once land once. After b2.
 
 **Outcome** 2026-11-01: `DeliveryReconciler` settles unresolved deliveries by phase before any new start, writing no git; a landing goes on from its next phase, and a press and a pass land once. One Accept carrying several sessions is the head's unit's delivery, its members brought into it (`DeliveryReach`). Only its tests call it. Detail: D204's and D215's notes of this date.
+## AGENTSPLACE1b — setup-only admission (2026-11-01)
+
+> **1b, setup-only admission** (driver): the adoption quest admitted alone while general driving stays off. Proof: queued and newly arriving unrelated work held through apply and restart.
+
+**Outcome** 2026-11-01: the set-up press no longer refuses an undriven repository: it publishes, then admits the quest it named, by id, in `driver.json`'s `admitted`, and the planner starts that quest alone while the rest sits `not-drivable`, until the quest ends. `PLACE_PLAN`'s adoption without driving applies, saying so. Detail: D124's AGENTSPLACE1b note; `SetupAdmissionTests`. The family rehearsal's set-up check was rewritten, not run.
 
 ## AGENTSPLACE1a2 — presets and the plan (2026-11-01)
 

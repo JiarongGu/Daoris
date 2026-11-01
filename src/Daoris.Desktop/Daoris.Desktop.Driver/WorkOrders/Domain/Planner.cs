@@ -597,6 +597,14 @@ public static class Considerations
     public const string CheckoutHeld = "Its earlier work is in your checkout, so carrying it on is yours.";
 }
 
+/// <summary>A set-up admitted alone (AGENTSPLACE1b, <see cref="DriverConfig.Admitted"/>), read against the quest the planner considers.</summary>
+public static class SetupAdmission
+{
+    /// <summary>Whether this quest is admitted alone: written against the repository it is to, and still open or taken.</summary>
+    public static bool Admits(this DriverConfig config, QuestView quest) =>
+        quest.Status is "Open" or "Taken" && string.Equals(config.AdmittedIn(quest.Id), quest.To, StringComparison.OrdinalIgnoreCase);
+}
+
 /// <summary>
 /// The decision half of a tick: which open quests start, and why every other one is sitting.
 /// </summary>
@@ -1265,7 +1273,8 @@ public static class Planner
                 }
             }
 
-            if (!config.Drivable.Contains(quest.To, StringComparer.OrdinalIgnoreCase))
+            // A set-up admitted alone (AGENTSPLACE1b) starts by its own id where its repository is not driven; nothing else there does.
+            if (!config.Drivable.Contains(quest.To, StringComparer.OrdinalIgnoreCase) && !config.Admits(quest))
             {
                 return new(quest, StartVerdict.NotDrivable,
                     $"`{quest.To}` has not been opted into driving on this machine.");

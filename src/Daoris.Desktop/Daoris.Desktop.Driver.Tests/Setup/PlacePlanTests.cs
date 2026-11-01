@@ -158,19 +158,32 @@ public sealed class PlacePlanTests
         Assert.Empty(typeof(IPlaceWorld).GetMethods().Where(method => !method.Name.EndsWith("Async", StringComparison.Ordinal)));
     }
 
-    /// <summary>Adoption is refused by the press's own rules over the configuration the plan would leave: drive it in the same plan, or it is not driven.</summary>
+    /// <summary>
+    /// 🔴 AGENTSPLACE1b: adoption without driving applies, and the plan says its set-up quest starts alone while general driving stays off,
+    /// with no queued work released; driven in the same plan, it says nothing of the kind and lists what driving releases. Either is
+    /// judged by the press's own rules over the configuration the plan leaves, which still refuse it with no tree of its own.
+    /// </summary>
     [Fact]
-    public async Task Adoption_is_judged_by_the_presss_rules_over_the_configuration_the_plan_leaves()
+    public async Task Adoption_without_driving_starts_its_quest_alone_and_is_judged_by_the_presss_rules()
     {
         var alone = await PlanAsync(new World(), Ask(SetupPresets.Merge, "atlas") with { Adoption = true, Builds = SetupBuilds.Library });
         var driven = await PlanAsync(new World(), Ask(SetupPresets.Merge, "atlas") with { Adoption = true, Drive = true, Builds = SetupBuilds.Library });
+        var treeless = await PlanAsync(new World(), Ask(SetupPresets.NotDriven, "atlas") with { Adoption = true });
 
-        Assert.Equal([SetupRefusals.NotDriven], alone.Refusals.Select(refusal => refusal.Code));
-        Assert.Equal(PlacePlans.Adoption, alone.Refusals[0].Part);
+        var admitted = new PlaceChange("SETUP_PRESS", PlacePlans.Adoption, "what starts here while general driving stays off", "nothing", "its set-up quest alone");
+        Assert.True(alone.Applies);
+        var atlas = Assert.Single(alone.Repositories);
+        Assert.Contains(admitted, atlas.Changes);
+        Assert.False(atlas.After.Driven);
+        Assert.Empty(atlas.Released);
         Assert.True(driven.Applies);
         Assert.Contains(new PlaceChange("SETUP_PRESS", PlacePlans.Adoption, "a set-up asked of its own session", "not asked", "asked, for a library or package"),
             Assert.Single(driven.Repositories).Changes);
+        Assert.DoesNotContain(admitted, Assert.Single(driven.Repositories).Changes);
+        Assert.Equal(["q1", "q2"], Assert.Single(driven.Repositories).Released.Select(each => each.Quest));
         Assert.True(Assert.Single(driven.Repositories).Suggested.Adoption);
+        Assert.Equal([SetupRefusals.NoOwnTree], treeless.Refusals.Select(refusal => refusal.Code));
+        Assert.Equal(PlacePlans.Adoption, treeless.Refusals[0].Part);
     }
 
     [Fact]

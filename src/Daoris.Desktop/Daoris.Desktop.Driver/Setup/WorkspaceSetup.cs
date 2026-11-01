@@ -245,7 +245,7 @@ public static class WorkspaceSetup
                     var indexing = press.Case == SetupCase.Index;
                     var outcome = indexing
                         ? await SetupPress.ApplyAsync(press, world, home, ct).ConfigureAwait(false)
-                        : await SetupPress.PublishAsync(press, world, ct).ConfigureAwait(false);
+                        : await SetupPress.PublishAsync(press, world, home, ct).ConfigureAwait(false);
                     if (outcome is { Published: true, QuestId: { Length: > 0 } quest })
                     {
                         WorkspaceSetupFile.Update(home, workspace, current => indexing

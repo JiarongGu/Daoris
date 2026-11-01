@@ -209,14 +209,49 @@ public sealed record DriverConfig(
     }
 
     /// <summary>
-    /// This quest's releases and its restart mark dropped (PAUSE1d, D132 §3.4 step 7): once a quest is closed it is never
-    /// planned again (D46 §3), so none says anything any more. Unchanged where it has none.
+    /// The set-up quests admitted alone (AGENTSPLACE1b, the Agents-place design §4), each against the repository it was published to: a
+    /// set-up pressed where its repository is not driven starts by its own id, while every other quest of that repository stays held as
+    /// not driven and its driving stays as it was. The admission ends with the quest (<c>SetupAdmission.Admits</c>). Absent is none,
+    /// written only when set; a build before this one reads no key it does not know, so there the quest waits as the rest of its
+    /// repository does.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> Admitted { get; init; } =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>The repository this quest is admitted alone in, or null where it is admitted in none.</summary>
+    public string? AdmittedIn(string questId) => Admitted.TryGetValue(questId.Trim().TrimStart('#'), out var repository) ? repository : null;
+
+    /// <summary>A set-up quest admitted alone in <paramref name="repository"/>, one per quest, the later replacing the earlier.</summary>
+    /// <exception cref="DriverException">A blank quest or repository: an admission names the quest and where it starts.</exception>
+    public DriverConfig WithAdmitted(string questId, string repository)
+    {
+        if (string.IsNullOrWhiteSpace(questId) || string.IsNullOrWhiteSpace(repository))
+        {
+            throw new DriverException("an admission names the set-up quest and the repository it starts in.");
+        }
+
+        var quest = questId.Trim().TrimStart('#');
+        var next = new Dictionary<string, string>(Admitted, StringComparer.OrdinalIgnoreCase);
+        var key = next.Keys.FirstOrDefault(k => string.Equals(k, quest, StringComparison.OrdinalIgnoreCase)) ?? quest;
+        next[key] = repository.Trim();
+        return this with { Admitted = next };
+    }
+
+    /// <summary>
+    /// This quest's releases, its restart mark and its admission dropped (PAUSE1d, D132 §3.4 step 7): once a quest is closed it is never
+    /// planned again (D46 §3), so none says anything any more. Unchanged where it has none. A quest-keyed entry added to this file joins
+    /// here and <c>HistoryHome</c>'s purge of quests no store holds, and one that starts work joins <c>InstallUpdate.Drained</c>.
     /// </summary>
     public DriverConfig WithoutQuest(string questId)
     {
         var quest = questId.Trim().TrimStart('#');
         bool Same(string key) => string.Equals(key, quest, StringComparison.OrdinalIgnoreCase);
-        if (!Released.Keys.Any(Same) && !Forgiven.Keys.Any(Same) && !TransientReleased.Keys.Any(Same) && !RoleReleases.Keys.Any(Same)) return this;
+        if (!Released.Keys.Any(Same) && !Forgiven.Keys.Any(Same) && !TransientReleased.Keys.Any(Same) && !RoleReleases.Keys.Any(Same)
+            && !Admitted.Keys.Any(Same))
+        {
+            return this;
+        }
+
         return this with
         {
             Released = Released.Where(pair => !Same(pair.Key)).ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase),
@@ -224,6 +259,7 @@ public sealed record DriverConfig(
             TransientReleased = TransientReleased.Where(pair => !Same(pair.Key))
                 .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase),
             RoleReleases = RoleReleases.Where(pair => !Same(pair.Key)).ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase),
+            Admitted = Admitted.Where(pair => !Same(pair.Key)).ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase),
         };
     }
 
@@ -1092,6 +1128,8 @@ public sealed record DriverConfig(
             // Written only when set (AGENTERRORS1a2): absent is no transient release.
             WriteTransientReleases(writer, TransientReleased);
             WriteRoleReleases(writer, RoleReleases);
+            // Written only when set (AGENTSPLACE1b): absent is no set-up admitted alone.
+            WriteMap(writer, "admitted", Admitted);
             // Written only when set (PAUSE1a), as the CLI keeps them: absent is no pause.
             WritePauses(writer, "pausedAsks", PausedAsks);
             WritePauses(writer, "pausedQuests", PausedQuests);
@@ -1559,6 +1597,8 @@ public sealed record DriverConfig(
             Released = SessionMap(root, "released"),
             TransientReleased = TransientReleaseMap(root, "transientReleased"),
             RoleReleases = RoleReleaseMap(root, "roleReleases"),
+            // Each set-up quest against its repository, read as a release's session is (AGENTSPLACE1b).
+            Admitted = SessionMap(root, "admitted"),
             PausedAsks = PauseMap(root, "pausedAsks"),
             PausedQuests = PauseMap(root, "pausedQuests"),
             Standing = StandingMap(root, "standing"),
@@ -1608,8 +1648,8 @@ public sealed record DriverConfig(
 
     /// <summary>
     /// The releases (SESSUX1b), and a pause's stops (PAUSE1a): each quest against a session's id, read without the spaces
-    /// around it. A blank session, one that is not text, a map that is not one, and a quest written again in another case
-    /// are not read.
+    /// around it; the admissions (AGENTSPLACE1b) against a repository's name alike. A blank value, one that is not text, a map
+    /// that is not one, and a quest written again in another case are not read.
     /// </summary>
     private static IReadOnlyDictionary<string, string> SessionMap(JsonElement container, string name)
     {

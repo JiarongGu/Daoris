@@ -67,14 +67,14 @@ public sealed class WorkspaceSetupCommandTests : IDisposable
         world.Quest("q1", "cargo", "Say what the tariff is", "Done", from: "billing");
         var output = new StringWriter();
 
-        var code = await RunAsync(["--workspace", "work", "--plan"], output, world, Config.WithDrivable("billing", false));
+        var code = await RunAsync(["--workspace", "work", "--plan"], output, world, Config.WithTrees("billing", false));
 
         var said = output.ToString().ReplaceLineEndings("\n");
         Assert.Equal(0, code);
         Assert.Contains("setup: workspace `work`, 3 repositories with a checkout here, the ones other work touches first", said, StringComparison.Ordinal);
         Assert.Contains("\n  1  cargo          1     0         0  to go\n", said, StringComparison.Ordinal);
         Assert.Contains("\n  2  atlas          0     0         0  to go\n", said, StringComparison.Ordinal);
-        Assert.Contains("\n  3  billing        0     0         0  to go\n       refused: `billing` is not driven here", said, StringComparison.Ordinal);
+        Assert.Contains("\n  3  billing        0     0         0  to go\n       refused: `billing`'s sessions run in its checkout, not a tree of their own", said, StringComparison.Ordinal);
         Assert.Contains("  at once   1 (at most 1 while the cap is 2, so other work keeps a slot)", said, StringComparison.Ordinal);
         Assert.Contains("  pilot     2: once the first 2 have closed, the plan pauses until you resume it", said, StringComparison.Ordinal);
         Assert.Contains("a press adds to workspace `work`'s rules, once, so each set-up's session may run the doctrine tool:", said, StringComparison.Ordinal);
