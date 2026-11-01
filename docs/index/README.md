@@ -44,7 +44,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/bridge/sessions/sessions.ts` | 54 | 1050 |
 | `src/Daoris.Web/src/data/api.ts` | 56 | 919 |
 | `src/Daoris.Web/src/data/queries.ts` | 52 | 987 |
-| `src/Daoris.Web/src/design/RankedFlow.tsx` | 55 | 1056 |
+| `src/Daoris.Web/src/design/RankedFlow.tsx` | 61 | 1150 |
 | `src/Daoris.Web/src/design/tokens.test.ts` | 50 | 882 |
 | `src/Daoris.Web/src/design/ui.test.tsx` | 65 | 1295 |
 | `src/Daoris.Web/src/design/ui.tsx` | 97 | 2027 |
@@ -82,7 +82,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/rail/SessionRail.test.tsx` | 56 | 1103 |
 | `src/Daoris.Web/src/work/rail/SessionRow.test.tsx` | 47 | 859 |
 | `src/Daoris.Web/src/workflow/WorkflowRunView.test.tsx` | 62 | 1008 |
-| `src/Daoris.Web/src/workflow/edit/WorkflowEditor.tsx` | 44 | 860 |
+| `src/Daoris.Web/src/workflow/edit/WorkflowEditor.tsx` | 46 | 896 |
 | `src/Daoris.Web/src/workflow/edit/graphDraft.ts` | 43 | 773 |
 
 ### Web settings (`web-settings`)

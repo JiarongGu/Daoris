@@ -33,7 +33,8 @@ export function FlowNodeBox({ node, stop, feet, description, onFollow, style }: 
       style={style}
       className={cn(
         'min-w-0 rounded-card bg-raised px-3 py-2',
-        node.current ? 'border-2 border-ink-soft' : faint ? 'border border-dashed border-line-strong' : 'border border-line',
+        // A state never changes the box: the current node's second pixel is an inset ring, not a wider border (CANVAS1b, trap 8).
+        node.current ? 'border border-ink-soft ring-1 ring-inset ring-ink-soft' : faint ? 'border border-dashed border-line-strong' : 'border border-line',
       )}
     >
       <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">

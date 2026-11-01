@@ -6,6 +6,8 @@ import { cn } from '../../lib/cn';
 import { isComposing } from '../../lib/composing';
 import { useTall } from '../useWidth';
 import { CanvasToolbar, type SizingActs } from './CanvasToolbar';
+import { boxSelect, worldRect } from './gesture';
+import { type Connect, useConnection } from './useConnection';
 import {
   type Box, clampScale, clampView, fitView, keepAnchor, panBy, type Point, reveal, type Size, translation, type View, wheelPan, wheelTravel,
   zoomAbout, zoomByWheel, type ZoomBounds,
@@ -21,6 +23,18 @@ export type CanvasOptions = {
   fit: string;
   /** How to move it, said as the region's role. */
   moves: string;
+};
+
+/**
+ * What a feature does with a selection beyond a press on a node (CANVAS1b; the canvas design §2.4): a press on the ground (which
+ * releases the selection in display, does nothing in edit and chooses open ground in pick mode), and, where many may be chosen, a
+ * Shift+drag box on the ground.
+ */
+export type CanvasSelection = {
+  many: boolean;
+  onGround: () => void;
+  /** The nodes a drawn box touched, in reading order. */
+  onBox: (ids: string[]) => void;
 };
 
 /** What the drawing tells the canvas each time it measured its world. */
@@ -39,7 +53,7 @@ const THRESHOLD = 3;
 /** How long a wheel's gesture holds `will-change` on after its last event. */
 const SETTLE_MS = 160;
 /** What a press starts no pan on: a node, a port, a ＋ and every control. */
-const CONTROLS = '[data-flow-node], [data-flow-port], [data-flow-insert], button, a, input, select, textarea, label, [role="button"], [contenteditable]';
+const CONTROLS = '[data-flow-node], [data-flow-port], [data-flow-insert], [data-flow-edge-hit], button, a, input, select, textarea, label, [role="button"], [contenteditable]';
 const TYPED = 'textarea, select, [contenteditable=""], [contenteditable="true"], [contenteditable="plaintext-only"]';
 /** The inputs a key is no character in, so a canvas key pressed there is still the canvas's. */
 const PRESSED = new Set(['checkbox', 'radio', 'button', 'submit', 'reset', 'range', 'color', 'file']);
@@ -75,7 +89,7 @@ function scrollsItself(target: Element | null, stop: Element, dx: number, dy: nu
  * offered (below the 36rem floor, the list chosen, nothing measured) it is the pane as it always was. A molecule: the view is its own.
  */
 export function Canvas({
-  ref, active, options, label, width, rem, pane, paneProps, tools, showTools, entry, selected = null, children,
+  ref, active, options, label, width, rem, pane, paneProps, tools, showTools, entry, selected = null, selection = null, connect = null, children,
 }: {
   ref?: Ref<CanvasHandle>;
   /** Whether the viewport is offered: from the floor, the drawing chosen and measured. */
@@ -94,6 +108,9 @@ export function Canvas({
   /** The node the view opens on. */
   entry: string | null;
   selected?: string | null;
+  selection?: CanvasSelection | null;
+  /** The connection line, where the feature's ports are dragged from; it works with or without the viewport. */
+  connect?: Connect | null;
   children: ReactNode;
 }) {
   const on = active && options !== null && width !== undefined;
@@ -208,17 +225,22 @@ export function Canvas({
   });
 
   // A pan by the pointer: the ground with the first button, anywhere with the middle one, one finger; two fingers pinch.
-  const drag = useRef<{ id: number; from: Point; start: View; going: boolean } | null>(null);
+  // A Shift+drag on the ground, where many may be chosen, draws a box instead (`lasso`), and selects what it touches.
+  const drag = useRef<{ id: number; from: Point; start: View; going: boolean; box: boolean; ground: boolean } | null>(null);
   const touches = useRef(new Map<number, Point>());
   const pinch = useRef<{ distance: number; start: View } | null>(null);
+  const [lasso, setLasso] = useState<Box | null>(null);
+  const connection = useConnection(connect, pane, (dx, dy) => commit(panBy(viewRef.current, dx, dy)));
   const end = (restore: boolean) => {
-    if (restore && drag.current?.going) commit(drag.current.start);
+    if (restore && drag.current?.going && !drag.current.box) commit(drag.current.start);
     drag.current = null;
     pinch.current = null;
+    setLasso(null);
     window.clearTimeout(settle.current);
     setMoving(false);
   };
   const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    connection.down(event);
     if (!on) return;
     if (event.pointerType === 'touch') {
       touches.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
@@ -232,10 +254,14 @@ export function Canvas({
     const ground = !(event.target as Element).closest(CONTROLS);
     if (event.button === 1 || (event.button === 0 && ground)) {
       if (event.button === 1) event.preventDefault();
-      drag.current = { id: event.pointerId, from: { x: event.clientX, y: event.clientY }, start: viewRef.current, going: false };
+      const box = event.button === 0 && event.shiftKey && selection !== null && selection.many;
+      drag.current = {
+        id: event.pointerId, from: { x: event.clientX, y: event.clientY }, start: viewRef.current, going: false, box, ground: event.button === 0 && ground,
+      };
     }
   };
   const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    connection.move(event);
     if (event.pointerType === 'touch' && touches.current.has(event.pointerId)) {
       touches.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
       if (pinch.current && touches.current.size >= 2) {
@@ -255,15 +281,30 @@ export function Canvas({
       if (Math.hypot(dx, dy) < THRESHOLD) return;
       going.going = true;
       event.currentTarget.setPointerCapture?.(event.pointerId);
-      gesture(true);
+      if (!going.box) gesture(true);
+    }
+    if (going.box) {
+      const rect = event.currentTarget.getBoundingClientRect();
+      const [ax, ay] = [going.from.x - rect.left, going.from.y - rect.top];
+      setLasso({ x: Math.min(ax, ax + dx), y: Math.min(ay, ay + dy), w: Math.abs(dx), h: Math.abs(dy) });
+      return;
     }
     commit(panBy(going.start, -dx, -dy));
   };
   const onPointerUp = (event: PointerEvent<HTMLDivElement>) => {
+    connection.up(event);
     touches.current.delete(event.pointerId);
-    if (drag.current?.id === event.pointerId || pinch.current) end(false);
+    const was = drag.current;
+    if (was?.id === event.pointerId && was.box && was.going && selection) {
+      const rect = event.currentTarget.getBoundingClientRect();
+      const [ax, ay] = [was.from.x - rect.left, was.from.y - rect.top];
+      const ids = boxSelect(worldRect(viewRef.current, { x: ax, y: ay }, { x: event.clientX - rect.left, y: event.clientY - rect.top }), boxes.current);
+      selection.onBox(ids);
+    } else if (was?.id === event.pointerId && was.ground && !was.going && selection) selection.onGround();
+    if (was?.id === event.pointerId || pinch.current) end(false);
   };
   const onPointerCancel = (event: PointerEvent<HTMLDivElement>) => {
+    connection.lost();
     touches.current.delete(event.pointerId);
     end(false);
   };
@@ -333,7 +374,14 @@ export function Canvas({
   // One wrapper and one pane in both modes, so the pane the width is followed on is never drawn anew.
   if (!on) {
     return (
-      <div className="min-w-0">
+      <div
+        className="min-w-0"
+        onPointerDown={connection.down}
+        onPointerMove={connection.move}
+        onPointerUp={connection.up}
+        onPointerCancel={connection.lost}
+        onLostPointerCapture={connection.lost}
+      >
         {showTools && <div className="mb-2 flex flex-wrap justify-end gap-x-1">{tools}</div>}
         <div ref={pane} {...paneProps} className="min-w-0 overflow-x-auto">{children}</div>
       </div>
@@ -374,6 +422,10 @@ export function Canvas({
         <div ref={element} {...{ [WORLD]: '', [SCALE]: String(view.k) }} className="absolute left-0 top-0 w-max" style={worldStyle}>
           {children}
         </div>
+        {lasso && (
+          <div aria-hidden="true" data-canvas-box="" className="pointer-events-none absolute border border-dashed border-accent" style={{ left: lasso.x, top: lasso.y, width: lasso.w, height: lasso.h }} />
+        )}
+        {connection.overlay}
       </div>
     </div>
   );

@@ -59,25 +59,39 @@ describe('StepNode', () => {
     expect(onFollow).toHaveBeenCalledWith('a', 'b');
   });
 
-  it('wears a refusal as declined\'s border and its words in the danger ink, and says it in the description (FLOWCHART2c)', () => {
+  it('wears a refusal as declined\'s outline and says it in the description, adding no line or border width to the step (FLOWCHART2c, CANVAS1b)', () => {
     const node: ChartNode = { id: 'a', title: 'The work', step: step({ refused: ['Its role does not do this step\'s work.'] }) };
     render(<StepNode context={context(node, { description: 'Next: Review.' })} step={node.step!} />);
     const item = screen.getByRole('listitem', { name: 'The work' });
     expect(item.className).toContain('border-st-declined');
+    expect(item.className).toContain('ring-st-declined');
+    expect(item.className).not.toContain('border-2');
     expect(item).toHaveAttribute('data-refused', 'true');
-    const words = within(item).getByText('Its role does not do this step\'s work.');
-    expect(words.closest('[data-flow-refusal]')?.className).toContain('text-ink-danger');
+    expect(item.querySelector('[data-flow-refusal]')).toBeNull();
     expect(item).toHaveAccessibleDescription('Next: Review. To put right: Its role does not do this step\'s work.');
   });
 
-  it('wears no refusal mark on a step the judgement holds, and one line for each refusal it has', () => {
+  it('wears no refusal mark on a step the judgement holds, and says each refusal it has in the description', () => {
     const plain: ChartNode = { id: 'a', title: 'The work', step: step({ refused: [] }) };
-    const { container, rerender } = render(<StepNode context={context(plain)} step={plain.step!} />);
-    expect(container.querySelector('[data-flow-refusal]')).toBeNull();
+    const { rerender } = render(<StepNode context={context(plain)} step={plain.step!} />);
     expect(screen.getByRole('listitem').className).not.toContain('border-st-declined');
     const two: ChartNode = { id: 'a', title: 'The work', step: step({ refused: ['First.', 'Second.'] }) };
     rerender(<StepNode context={context(two)} step={two.step!} />);
-    expect(container.querySelectorAll('[data-flow-refusal]')).toHaveLength(2);
+    expect(screen.getByRole('listitem')).toHaveAccessibleDescription('To put right: First. To put right: Second.');
+  });
+
+  it('keeps one border width in every state, so no state or mark moves a box (CANVAS1b, trap 8)', () => {
+    const states: ChartNode[] = [
+      { id: 'a', title: 'Plain', step: step() }, { id: 'a', title: 'Current', current: true, step: step() },
+      { id: 'a', title: 'Faint', reached: false, step: step() }, { id: 'a', title: 'Refused', step: step({ refused: ['No.'] }) },
+    ];
+    for (const node of states) {
+      const { unmount } = render(<StepNode context={context(node)} step={node.step!} />);
+      const className = screen.getByRole('listitem').className;
+      expect(className, node.title).toMatch(/(^| )border( |$)/);
+      expect(className, node.title).not.toMatch(/border-[2-9]\b/);
+      unmount();
+    }
   });
 
   const decision = (): [ChartNode, NodeContext] => {

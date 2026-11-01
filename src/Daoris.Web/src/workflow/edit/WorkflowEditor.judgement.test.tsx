@@ -147,11 +147,14 @@ describe('a refusal where it is', () => {
     await answered(1, REFUSED);
     expect(await screen.findByText('3 to put right')).toBeInTheDocument();
 
-    // The role at its step: declined's border, the sentence at the step, said in its description.
+    // The role at its step: declined's outline and a chip beside it (the rail's, here, since jsdom lays nothing out), the sentence said in
+    // its description and never as a line that would move the ranks below (CANVAS1b).
     const work = step('The work');
     expect(work).toHaveAttribute('data-refused', 'true');
     expect(work.className).toContain('border-st-declined');
-    expect(within(work).getByText('Its role does not do this step\'s work.').closest('[data-flow-refusal]')?.className).toContain('text-ink-danger');
+    expect(work.className).not.toContain('border-2');
+    expect(work.querySelector('[data-flow-refusal]')).toBeNull();
+    expect(work.parentElement!.querySelector('[data-flow-mark-kind="refused"]')).toHaveTextContent('To put right');
     expect(work).toHaveAccessibleDescription(/To put right: Its role does not do this step's work\./);
 
     // The way back at its way: the source's foot says it, and the chip wears a word beside the ⚠.
@@ -170,9 +173,9 @@ describe('a refusal where it is', () => {
     await answered(1, REFUSED);
     await screen.findByText('3 to put right');
     for (const marked of refusedSteps()) {
-      const words = [...marked.querySelectorAll('[data-flow-refusal]')].map((each) => each.textContent?.replace('⚠', '').trim() ?? '');
-      expect(words.length).toBeGreaterThan(0);
-      for (const each of words) expect(each.length).toBeGreaterThan(3);
+      expect(marked.parentElement!.querySelector('[data-flow-mark-kind="refused"]')?.textContent).toMatch(/\S{3,}/);
+      expect(marked.getAttribute('aria-describedby')).not.toBeNull();
+      expect(marked).toHaveAccessibleDescription(/To put right: \S/);
     }
     for (const chip of document.querySelectorAll('[data-flow-refusal-chip]')) expect(chip.textContent?.replace('⚠', '').trim().length).toBeGreaterThan(0);
   });
@@ -200,7 +203,7 @@ describe('a refusal where it is', () => {
     const inside = document.querySelector('[data-flow-node="content"]');
     expect(inside).not.toBeNull();
     expect(inside).toHaveAttribute('data-refused', 'true');
-    expect(within(inside as HTMLElement).getByText('No way from the start reaches this step.')).toBeInTheDocument();
+    expect(inside).toHaveAccessibleDescription(/No way from the start reaches this step\./);
   });
 
   it('says it in Chinese, as the page words it', async () => {

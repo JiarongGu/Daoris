@@ -6,7 +6,9 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
 import { store, stored } from '../lib/stored';
-import { Canvas, CANVAS_FLOOR, type CanvasHandle, type CanvasOptions } from './canvas/Canvas';
+import { Canvas, CANVAS_FLOOR, type CanvasHandle, type CanvasOptions, type CanvasSelection } from './canvas/Canvas';
+import { type ChipPlaced, placeChips } from './canvas/marks';
+import type { Connect } from './canvas/useConnection';
 import { observeWorld, readWorld, type WorldRead } from './canvas/worldBoxes';
 import { type Fold, largeFolds, WHOLE_MOST } from './flowFolds';
 import { type Box, type InkLabel, type InkPath, placeInserts, placeLabels, routeInk, RUN } from './flowInk';
@@ -16,6 +18,13 @@ import { useRootRem, useWidth } from './useWidth';
 
 /** A pill's tone, from the caller's own table (`QUEST_TONE`, `SESSION_TONE`): the flow adds none. */
 export type PillTone = NonNullable<ComponentProps<typeof Pill>['tone']>;
+
+/**
+ * A mark on a node (CANVAS1b; the canvas design §2.3): a short word the caller says about it, such as a refusal's *To put right* or a
+ * proposal's *New*. It is drawn as an outline on the node (the caller's, which takes no room) and a chip beside it where one clears
+ * every box; the caller keeps the words in the node's description. A mark never adds a line or a border's width to a node.
+ */
+export type FlowMark = { word: string; kind: 'refused' | 'new' | 'remove' | 'changed' };
 
 /** One place in the flow, worded by its caller (the flowchart design §4.1). */
 export type FlowNode = {
@@ -40,6 +49,8 @@ export type FlowNode = {
    * workflow's work is done and that steps after it still run. Kept apart from `lines`, which a caller fills with its own.
    */
   mark?: { word: string; foot?: string | null };
+  /** The marks on it (CANVAS1b): each a chip placed beside the node, its outline the caller's. */
+  marks?: readonly FlowMark[];
   /** False: not reached, drawn dashed with its words at the soft ink. Absent: the record does not say. */
   reached?: boolean;
   /**
@@ -165,6 +176,15 @@ export type FlowCanvasProps = FlowProps & {
    * none is given (`'none'`, an inline flow in a scrolling page), the flow is placed as it always was.
    */
   viewport?: 'none' | CanvasOptions;
+  /** What a press on the ground and a Shift+drag box do (CANVAS1b); the node's own press is the caller's. */
+  selection?: CanvasSelection | null;
+  /** The connection line from a port (CANVAS1b), which works with or without the viewport. */
+  connect?: Connect | null;
+  /**
+   * A press on a way (CANVAS1b), for a flow whose edges are pressable: each path wears a wide invisible stroke that takes the press,
+   * under nodes and controls. The workflow's edges are inert but for their ＋.
+   */
+  onEdge?: (edge: FlowEdge) => void;
 };
 
 /**
@@ -180,7 +200,7 @@ const LIST_KEY = 'daoris.flow.list';
 const rem = (value: number) => `${value}rem`;
 
 /** The drawn geometry: its paths, labels and ＋s, the drawing's size, and how many times it was drawn (trap 14). */
-type Ink = { paths: InkPath[]; labels: InkLabel[]; inserts: InkLabel[]; width: number; height: number; drawn: number };
+type Ink = { paths: InkPath[]; labels: InkLabel[]; inserts: InkLabel[]; chips: ChipPlaced[]; width: number; height: number; drawn: number };
 
 /**
  * **A flowchart** (FLOWCHART1a1; D186, the flowchart design §3 and §4): one process drawn from its record, laid out in
@@ -225,7 +245,7 @@ type Ink = { paths: InkPath[]; labels: InkLabel[]; inserts: InkLabel[]; width: n
  */
 export function RankedFlow({
   label, nodes: given, edges: allEdges, entries: givenEntries, end, rail, sections, track: bounds, className, renderNode, renderLabel, selected,
-  renderInsert, pick = null, viewport = 'none',
+  renderInsert, pick = null, viewport = 'none', selection = null, connect = null, onEdge,
 }: FlowCanvasProps) {
   const { t } = useTranslation();
   // A data wire is no way on: the layout, the stacks and the folds never read it (FLOWCHART2a).
@@ -477,14 +497,19 @@ export function RankedFlow({
   const insertPaths = layout.paths.filter((path) => !path.back && path.edges.length === 1 && inserts.has(path.edges[0]!));
   const railInserts = (id: string) => {
     const own = edges.filter((edge) => edge.from === id && inserts.has(edge.id));
-    if (own.length === 0) return null;
+    const marked = byId.get(id)?.marks ?? [];
+    if (own.length === 0 && marked.length === 0) return null;
     return (
-      <div className="mt-1 flex min-w-0 flex-wrap gap-1">
+      <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1">
+        {marked.map((mark, at) => <MarkChip key={at} mark={mark} className="shrink-0" />)}
         {own.map((edge) => <span key={edge.id} data-flow-insert={edge.id} className="inline-flex">{inserts.get(edge.id)}</span>)}
       </div>
     );
   };
 
+  // The marks' chips, each placed once the drawing is measured; one arriving or going is measured again though no node moved.
+  const chipsOf = nodes.flatMap((node) => (node.marks ?? []).map((mark, at) => ({ key: `${node.id}:${at}`, node: node.id, mark })));
+  const chipKey = JSON.stringify(chipsOf.map(({ key, mark }) => [key, mark.word, mark.kind]));
   const [ink, setInk] = useState<Ink | null>(null);
   const insertKey = JSON.stringify(insertPaths.map((path) => [path.id, path.edges[0]]));
   useLayoutEffect(() => {
@@ -502,7 +527,7 @@ export function RankedFlow({
         return { ...next, drawn: (was?.drawn ?? 0) + 1 };
       });
     });
-  }, [layout, placement, track, dataKey, insertKey, inViewport]);
+  }, [layout, placement, track, dataKey, insertKey, chipKey, inViewport]);
 
   const nodeProps = (id: string): NodeContext => ({
     node: byId.get(id)!,
@@ -611,6 +636,8 @@ export function RankedFlow({
         showTools={fits !== 'rail' || showWhole || foldAgain}
         entry={layout.order[0] ?? null}
         selected={selected ?? null}
+        selection={selection}
+        connect={connect}
       >
         <span id={keysId} hidden>{t('flow.keys')}</span>
         <div ref={root} onKeyDown={onKeyDown} onFocus={onFocus} onBlur={onBlur} onMouseDown={onMouseDown} className="min-w-0">
@@ -697,6 +724,23 @@ export function RankedFlow({
                       <path d="M1 1 7 7M7 1 1 7" className="stroke-ink-faint" strokeWidth="1.2" fill="none" />
                     </marker>
                   </defs>
+                  {onEdge && ink?.paths.map((path) => {
+                    const ids = layout.paths.find((each) => each.id === path.id)?.edges ?? [];
+                    const edge = ids.length === 1 ? edges.find((each) => each.id === ids[0]) : undefined;
+                    return edge ? (
+                      <path
+                        key={`hit:${path.id}`}
+                        data-flow-edge-hit={path.id}
+                        d={path.d}
+                        fill="none"
+                        stroke="transparent"
+                        strokeWidth={14}
+                        vectorEffect="non-scaling-stroke"
+                        style={{ pointerEvents: 'stroke', cursor: 'pointer' }}
+                        onClick={() => onEdge(edge)}
+                      />
+                    ) : null;
+                  })}
                   {ink?.paths.map((path) => (
                     <path
                       key={path.id}
@@ -753,12 +797,49 @@ export function RankedFlow({
                     </span>
                   );
                 })}
+                {chipsOf.map(({ key, node, mark }) => {
+                  const placed = ink?.chips.find((each) => each.id === key);
+                  return (
+                    <MarkChip
+                      key={key}
+                      mark={mark}
+                      data={{ 'data-flow-chip': key, 'data-chip-node': node, 'data-shown': placed?.shown ? '' : undefined }}
+                      className="pointer-events-none absolute"
+                      style={{ left: placed?.x ?? 0, top: placed?.y ?? 0, visibility: placed?.shown ? 'visible' : 'hidden' }}
+                    />
+                  );
+                })}
               </div>
             )}
         </div>
       </Canvas>
       {end}
     </div>
+  );
+}
+
+/** How each kind of mark's chip is drawn: the border's style as well as its word, so no kind is told by hue alone (D223 §4.3). */
+const CHIP: Record<FlowMark['kind'], string> = {
+  refused: 'border-st-declined text-ink-danger',
+  new: 'border-accent text-ink',
+  remove: 'border-dashed border-line-strong text-ink-soft',
+  changed: 'border-dotted border-accent text-ink',
+};
+
+/** A mark's chip: its word, hidden from a reader (the node's description says it) and taking no part in any layout. */
+function MarkChip({ mark, data, className, style }: {
+  mark: FlowMark; data?: Record<`data-${string}`, string | undefined>; className?: string; style?: CSSProperties;
+}) {
+  return (
+    <span
+      aria-hidden
+      data-flow-mark-kind={mark.kind}
+      {...data}
+      className={cn('whitespace-nowrap rounded-control border bg-raised px-1.5 text-meta leading-tight', CHIP[mark.kind], className)}
+      style={style}
+    >
+      {mark.kind === 'refused' ? '⚠ ' : ''}{mark.word}
+    </span>
   );
 }
 
@@ -1040,7 +1121,16 @@ function measure(
     const path = onPaths.get(insert.dataset.flowInsert!);
     if (path) insertSizes.set(path, { w: insert.offsetWidth, h: insert.offsetHeight });
   });
-  return { paths, labels, inserts: placeInserts(paths, insertSizes, nodes, labels), width: world.width, height: world.height };
+  const inserts = placeInserts(paths, insertSizes, nodes, labels);
+  // A mark's chip clears every node, divider, label and ＋ shown, and every point of ink (CANVAS1b).
+  const asks = [...element.querySelectorAll<HTMLElement>('[data-flow-chip]')].flatMap((chip) => {
+    const node = boxes.get(chip.dataset.chipNode!);
+    return node ? [{ id: chip.dataset.flowChip!, node, w: chip.offsetWidth, h: chip.offsetHeight }] : [];
+  });
+  const shown = [...labels, ...inserts].filter((each) => each.shown && each.w > 0.5 && each.h > 0.5)
+    .map((each) => ({ x: each.x - each.w / 2, y: each.y - each.h / 2, w: each.w, h: each.h }));
+  const chips = placeChips(asks, [...nodes, ...shown], paths.flatMap((path) => path.points));
+  return { paths, labels, inserts, chips, width: world.width, height: world.height };
 }
 
 const sameBoxes = (a: readonly InkLabel[], b: readonly InkLabel[]) => a.length === b.length
@@ -1052,5 +1142,9 @@ const sameBoxes = (a: readonly InkLabel[], b: readonly InkLabel[]) => a.length =
 function same(a: Omit<Ink, 'drawn'>, b: Omit<Ink, 'drawn'>): boolean {
   return a.width === b.width && a.height === b.height
     && a.paths.length === b.paths.length && a.paths.every((path, index) => path.d === b.paths[index]!.d)
-    && sameBoxes(a.labels, b.labels) && sameBoxes(a.inserts, b.inserts);
+    && sameBoxes(a.labels, b.labels) && sameBoxes(a.inserts, b.inserts)
+    && a.chips.length === b.chips.length && a.chips.every((chip, index) => {
+      const other = b.chips[index]!;
+      return chip.id === other.id && chip.x === other.x && chip.y === other.y && chip.shown === other.shown;
+    });
 }
