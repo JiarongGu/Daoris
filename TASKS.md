@@ -114,6 +114,8 @@ steward under D191; Codex's read of the final text owed when its credits return)
 
 ## Sessions
 
+- [ ] **SERVICEPROBE1b — the CLI waits for a slow service whose process runs, as the driver does** (cli; SERVICEPROBE1's other half, 2026-11-01). `runningService` (`src/Daoris.Cli/src/service/service.ts:80`) still gives up after two asks of two seconds where the lease's process lives, while the driver's `RunningService.Find` now says one waiting line and asks again, each ask up to ten seconds, for thirty in all. Contract: the CLI's probe holds the driver's contract (its comment says they share one); a gone process still refuses at once. Proof: a test with a stand-in that answers only after the first bound, and the gone-process case.
+
 pause-and-clean-up (D132), D133/D136. Installed canaries follow completed build rows.
 
 - [ ] **TERMTRUST1a — a terminal's standing confirmation for stop, finish, hold and resume** (driver, modules, service, web; D201, accepted 2026-10-23; the terminal-trust design §9 row 1). Parts (i) and (ii) are built; the grant remains unoffered pending part (i)'s installed proof, §8 case 4, every door checked against D201's note, then activation and case 14. The owner renewed the request for management without repeated clicks on 2026-10-27 after confirming the stuck Codex session's stop; finish the existing containment proof and activation rather than adding another grant mechanism.
