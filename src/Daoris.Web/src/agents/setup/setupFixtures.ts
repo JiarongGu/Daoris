@@ -66,6 +66,15 @@ export function PLACES(ask: PlacesAsk): PlacesRead {
     matching: driven.length,
     undriven: ask.fold ? { workspace: ask.fold, rows: page, next: after + 2 < ARCHIVE.length ? `aurora/${page.at(-1)!.repository}` : null, total: ARCHIVE.length } : null,
     detail: ask.detail?.repository ? importedRow(ask.detail.repository) : null,
+    members: ask.members
+      ? {
+        workspace: ask.members,
+        rows: [
+          ...[ENGINE, SITE].map((each) => ({ repository: each.repository!, driven: true, checkout: each.checkout, adoption: 'adopted' as const })),
+          ...ARCHIVE.map((each) => ({ repository: each.repository, driven: false, checkout: each.checkout, adoption: 'none' as const })),
+        ],
+      }
+      : null,
   };
 }
 

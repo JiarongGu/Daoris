@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // AGENTSPLACE1j (the Agents-place design §4, §5's first flows): *Set up…* on a place's page reads one plan from the driver, says every
 // refusal in place, and presses Apply as the person's own with the plan's digest and the acceptances chosen. Seen failing first.
+// SETUPUX1j (the setup-UX design §2.2): Keep how it lands is offered and sent, mixed suggestions preselect nothing, and a refusal's door
+// repairs its cause and returns, the plan read again.
 
 const { invoke, notifyReady } = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -23,10 +25,17 @@ import { DRIVER_STATE, REGISTRY, show, WIRING } from '../../test/shellHarness';
 import { useListPanes } from '../../work/frame/listPanes';
 import { ViewFrame } from '../../work/frame/ViewFrame';
 import { useAgentsMode, useAgentsView } from '../AgentsView';
-import { APPLIED, MOVED, planOf } from './placeFixtures';
-import type { PlaceApplied, PlaceAsk } from './placePlan';
+import { APPLIED, KEPT_ROW, MOVED, planOf, SETUP_PRESETS } from './placeFixtures';
+import type { PlaceApplied, PlaceAsk, PlaceRepositoryPlan } from './placePlan';
 import { PlaceSetUpPanel } from './PlaceSetUpPanel';
 import { PLACES } from './setupFixtures';
+
+/** The row a door asked for at a page's Workflow section, as the body the application hands in sees it. */
+const asked: (string | null)[] = [];
+function WorkflowBody({ at }: { at: string | null }) {
+  useEffect(() => { asked.push(at); }, [at]);
+  return <p data-place-row="landing" tabIndex={-1}>The landing rows</p>;
+}
 
 function Place() {
   const lists = useListPanes();
@@ -35,7 +44,8 @@ function Place() {
   const [over, setOver] = useState(false);
   const layout = useAgentsView({
     active: true, modes, chosen, onChoose: setChosen, notify: () => {},
-    setUp: (place, page) => <PlaceSetUpPanel place={place} page={page} notify={() => {}} />,
+    bodies: (place) => ({ workflow: <WorkflowBody at={place.asked ?? null} />, sessions: <p>Sessions body</p> }),
+    setUp: (place, page, doorFor) => <PlaceSetUpPanel place={place} page={page} notify={() => {}} doorFor={doorFor} />,
   });
   return <ViewFrame layout={layout} lists={lists} over={over} onOver={setOver} />;
 }
@@ -48,7 +58,7 @@ function SeededPlace({ ask, place }: { ask: PlaceAsk; place: string }) {
   const [over, setOver] = useState(false);
   const layout = useAgentsView({
     active: true, modes, chosen, onChoose: setChosen, notify: () => {},
-    setUp: (found, page) => <PlaceSetUpPanel place={found} page={page} notify={() => {}} />,
+    setUp: (found, page, doorFor) => <PlaceSetUpPanel place={found} page={page} notify={() => {}} doorFor={doorFor} />,
   });
   return (
     <>
@@ -67,9 +77,15 @@ const sent = (route: string) => invoke.mock.calls.filter(([, type]) => type === 
 
 describe('Set up…, on a place\'s page', () => {
   let apply: PlaceApplied = APPLIED;
+  let mix: Record<string, Partial<PlaceRepositoryPlan>> = {};
+  /** Whether the reviewers have been named since: the plan then refuses no second opinion. */
+  let named = false;
 
   beforeEach(() => {
     apply = APPLIED;
+    mix = {};
+    named = false;
+    asked.length = 0;
     window.localStorage.clear();
     window.localStorage.setItem('daoris.agents.setup', 'on');
     window.localStorage.setItem('daoris.list.agents.mode', 'setup');
@@ -84,7 +100,12 @@ describe('Set up…, on a place\'s page', () => {
       if (type === 'STATE' || type === 'SET_HOLD') return DRIVER_STATE;
       if (type === 'HARNESSES') return { settingsPath: 'x', adapter: 'claude-code', harnesses: [] };
       if (type === 'PLACES') return PLACES(options?.payload ?? {});
-      if (type === 'PLACE_PLAN') return planOf(options!.payload as unknown as PlaceAsk);
+      if (type === 'WORKFLOW_LIST') return { workflows: [], presets: SETUP_PRESETS };
+      if (type === 'PLACE_PLAN') {
+        const plan = planOf(options!.payload as unknown as PlaceAsk, mix);
+        const refusals = named ? plan.refusals.filter((each) => each.code !== 'no-reviewers') : plan.refusals;
+        return { ...plan, refusals, applies: refusals.length === 0 };
+      }
       if (type === 'PLACE_APPLY') return apply;
       return undefined;
     });
@@ -132,11 +153,17 @@ describe('Set up…, on a place\'s page', () => {
   it('says every refusal in place and offers no Apply for a plan that refuses', async () => {
     show(<Place />);
     await open(/^site/);
-    const refusals = await screen.findByRole('list', { name: 'It cannot be applied yet' });
+    const part = (title: string) => screen.getByRole('heading', { name: title }).closest('section')!;
+    const refusals = await within(part('How it lands')).findByRole('list', { name: 'It cannot be applied yet' });
     expect(within(refusals).getByText(/no landing plugin here opens a pull request there/)).toBeTruthy();
+    // The adoption suggested for it is refused for its own cause, under its own part.
+    expect(within(part('Adoption')).getByText(/has no checkout on this machine/)).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Apply' })).toBeDisabled();
-    // Choosing another delivery reads the plan again, and the refusal goes with it.
+    // Choosing another delivery reads the plan again, and that refusal goes with it; leaving adoption out takes the other.
     await userEvent.click(screen.getByRole('radio', { name: /A branch to push/ }));
+    await waitFor(() => expect(within(part('How it lands')).queryByRole('list', { name: 'It cannot be applied yet' })).toBeNull());
+    expect(within(part('Adoption')).getByText(/has no checkout on this machine/)).toBeTruthy();
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Ask its session to adopt Daoris' }));
     await waitFor(() => expect(screen.queryByRole('list', { name: 'It cannot be applied yet' })).toBeNull());
     await waitFor(() => expect(screen.getByRole('button', { name: 'Apply' })).toBeEnabled());
   });
@@ -180,7 +207,7 @@ describe('Set up…, on a place\'s page', () => {
   it('holds a repository driving would release work from, then reads the plan again', async () => {
     show(<Place />);
     await open(/^engine/);
-    await userEvent.click(await screen.findByRole('checkbox', { name: 'Enable general driving' }));
+    await userEvent.click(await screen.findByRole('checkbox', { name: 'Drive all its work' }));
     const released = await screen.findByRole('list', { name: 'Driving releases this queued work' });
     expect(within(released).getByText('Tidy the docs')).toBeTruthy();
     const before = sent('PLACE_PLAN').length;
@@ -195,7 +222,9 @@ describe('Set up…, on a place\'s page', () => {
     const group = await screen.findByRole('group', { name: 'Repositories' });
     expect(within(group).getByRole('checkbox', { name: 'engine' })).toBeChecked();
     expect(within(group).getByRole('checkbox', { name: 'site' })).toBeChecked();
-    await userEvent.click(await screen.findByRole('checkbox', { name: 'Ask its session to set up for agents' }));
+    // Their suggestions differ, so one is chosen before the plan is read.
+    await userEvent.click(await screen.findByRole('radio', { name: /A branch to push/ }));
+    await userEvent.click(await screen.findByRole('checkbox', { name: 'Ask its session to adopt Daoris' }));
     await waitFor(() => expect(sent('PLACE_PLAN').at(-1)).toMatchObject({ repositories: ['engine', 'site'], adoption: true }));
     const changes = await screen.findByRole('list', { name: 'What it changes' });
     const asked = await within(changes).findAllByText(/a set-up asked of its own session/);
@@ -211,7 +240,7 @@ describe('Set up…, on a place\'s page', () => {
 
     expect(await screen.findByRole('heading', { name: 'Set up engine' })).toBeTruthy();
     expect(await screen.findByRole('radio', { name: /A pull request/ })).toBeChecked();
-    expect(screen.getByRole('checkbox', { name: 'Ask its session to set up for agents' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Ask its session to adopt Daoris' })).toBeChecked();
     await waitFor(() => expect(sent('PLACE_PLAN').at(-1)).toEqual(ask));
     // Nothing was pressed: the seed plans only, and Apply stays the person's.
     expect(sent('PLACE_APPLY')).toEqual([]);
@@ -225,5 +254,88 @@ describe('Set up…, on a place\'s page', () => {
     expect(await screen.findByRole('button', { name: 'Set up…' })).toBeTruthy();
     await userEvent.click(screen.getByRole('button', { name: /^engine/ }));
     expect(await screen.findByRole('radio', { name: /A branch to push/ })).toBeChecked();
+  });
+
+  it('preselects Keep how it lands where the landing was chosen, and offers and sends a keep plan with driving and a tick', async () => {
+    mix = { engine: KEPT_ROW };
+    show(<Place />);
+    await open(/^engine/);
+    const keep = await screen.findByRole('radio', { name: 'Keep how it lands' });
+    await waitFor(() => expect(keep).toBeChecked());
+    await waitFor(() => expect(sent('PLACE_PLAN').at(-1)).toEqual({ repositories: ['engine'], preset: 'keep', opinion: false, look: false, adoption: false, drive: false }));
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Your look before it lands' }));
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Ask its session to adopt Daoris' }));
+    await waitFor(() => expect(sent('PLACE_PLAN').at(-1)).toMatchObject({ preset: 'keep', look: true, adoption: true }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Apply' })).toBeEnabled());
+    await userEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    const ask: PlaceAsk = { repositories: ['engine'], preset: 'keep', opinion: false, look: true, adoption: true, drive: false };
+    await waitFor(() => expect(sent('PLACE_APPLY')).toEqual([{ ...ask, digest: planOf(ask, mix).digest, accept: [] }]));
+  });
+
+  it('preselects nothing where a workspace\'s repositories suggest different deliveries, and reads the plan once one is chosen', async () => {
+    show(<Place />);
+    await open(/aurora\s*2 driven/);
+    await screen.findByText(/What suits these repositories differs/);
+    const lands = screen.getByRole('radiogroup', { name: 'How it lands' });
+    expect(within(lands).queryAllByRole('radio').filter((each) => (each as HTMLInputElement).checked)).toEqual([]);
+    expect(within(screen.getByRole('radio', { name: /A pull request/ }).closest('label')!).getByText('Suits site')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Apply' })).toBeDisabled();
+    // Nothing but the read of the choices has been asked of the driver.
+    expect(sent('PLACE_PLAN').every((one) => one.preset === 'not-driven')).toBe(true);
+    await userEvent.click(screen.getByRole('radio', { name: /A branch to push/ }));
+    await waitFor(() => expect(sent('PLACE_PLAN').at(-1)).toMatchObject({ repositories: ['engine', 'site'], preset: 'branch-to-push' }));
+    expect(await screen.findByRole('list', { name: 'What it changes' })).toBeTruthy();
+  });
+
+  it('chooses a workspace\'s repositories from its whole list, with the driving each has', async () => {
+    show(<Place />);
+    await open(/aurora\s*2 driven/);
+    const group = await screen.findByRole('group', { name: 'Repositories' });
+    expect(await within(group).findByText('2 of 43 chosen')).toBeTruthy();
+    expect(within(group).getByRole('checkbox', { name: 'archive-1 · Not driven' })).not.toBeChecked();
+    await userEvent.click(within(group).getByRole('button', { name: 'None' }));
+    expect(await screen.findByText('Choose at least one repository.')).toBeTruthy();
+    await userEvent.click(within(group).getByRole('button', { name: 'Driven' }));
+    await waitFor(() => expect(within(group).getByText('2 of 43 chosen')).toBeTruthy());
+  });
+
+  it('repairs a refusal at its door and returns: the draft as left, the plan read again, the refusal gone', async () => {
+    show(<Place />);
+    await open(/^site/);
+    await userEvent.click(await screen.findByRole('checkbox', { name: 'A second opinion before it lands' }));
+    const door = await screen.findByRole('button', { name: 'Name them: Workflow › Second opinion' });
+    expect(within(screen.getByRole('heading', { name: 'How it lands' }).closest('section')!).getByText(/names the agents that read/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Apply' })).toBeDisabled();
+
+    // The door leaves the set-up, opens Workflow at the landing rows and keeps the way back.
+    await userEvent.click(door);
+    expect(await screen.findByRole('heading', { level: 1, name: 'site' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Workflow' })).toHaveAttribute('aria-expanded', 'true');
+    expect(await screen.findByText('The landing rows')).toBeTruthy();
+    expect(asked).toContain('landing');
+    expect(screen.queryByRole('radiogroup', { name: 'How it lands' })).toBeNull();
+
+    // The reviewers are named there; the way back finds the draft as left and reads the plan again.
+    named = true;
+    const before = sent('PLACE_PLAN').length;
+    await userEvent.click(screen.getByRole('button', { name: '← Back to site · Set up…' }));
+    expect(await screen.findByRole('heading', { name: 'Set up site' })).toBeTruthy();
+    expect(screen.getByRole('checkbox', { name: 'A second opinion before it lands' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: /A pull request/ })).toBeChecked();
+    await waitFor(() => expect(sent('PLACE_PLAN').length).toBeGreaterThan(before));
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Name them: Workflow › Second opinion' })).toBeNull());
+    expect(screen.queryByRole('button', { name: /← Back/ })).toBeNull();
+  });
+
+  it('opens a repository\'s page from a workspace\'s refusal, and returns to the workspace\'s set-up', async () => {
+    show(<Place />);
+    await open(/aurora\s*2 driven/);
+    await userEvent.click(await screen.findByRole('radio', { name: /A branch to push/ }));
+    await userEvent.click(screen.getByRole('checkbox', { name: 'A second opinion before it lands' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Name them: Workflow › Second opinion' }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'site' })).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: '← Back to aurora · Set up…' }));
+    expect(await screen.findByRole('heading', { name: 'Set up aurora' })).toBeTruthy();
+    expect(screen.getByRole('checkbox', { name: 'A second opinion before it lands' })).toBeChecked();
   });
 });

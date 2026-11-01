@@ -174,6 +174,19 @@ public sealed class HelpSetupProposalsTests : HelpProposalsFixture
         Assert.Equal(("aurora", "engine"), (go.Workspace, go.Repository));
     }
 
+    /// <summary>SETUPUX1j: Ask Daoris proposes keeping how a place lands, and the page opens on it with the ask carried whole.</summary>
+    [Fact]
+    public async Task A_place_door_proposes_keeping_how_it_lands_and_hands_that_ask_to_the_page()
+    {
+        var (proposal, facts) = await PlacedAsync(new PlaceAsk(["engine"], SetupPresets.Keep) { Opinion = false, Drive = true });
+
+        var plan = HelpProposals.Plan(proposal, DriverConfig.Empty, facts);
+
+        Assert.Null(plan.Refusal);
+        Assert.Equal("daoris-driver place engine --preset keep --drive --plan", plan.Terminal);
+        Assert.Equal((SetupPresets.Keep, true), (plan.Go!.Setup!.Preset, plan.Go.Setup.Drive));
+    }
+
     /// <summary>The plan's own refusals, every one at once and in its words; a refused plan opens nothing.</summary>
     [Fact]
     public async Task A_place_the_plan_refuses_is_refused_in_the_plans_words()

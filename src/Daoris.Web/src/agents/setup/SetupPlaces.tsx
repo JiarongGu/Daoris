@@ -268,7 +268,7 @@ export function SetupMain({ found, state, id, row, counts, members, shell, bodie
    * The place's *Set up…* (AGENTSPLACE1j), pressed from its head: open, the page replaces the place's sections in the main area, and the
    * panel is the application's, which reads the plan and presses Apply. None for *This machine*, which has no set-up.
    */
-  setUp?: { open: boolean; onOpen: () => void; panel: ReactNode };
+  setUp?: { open: boolean; onOpen: () => void; panel: ReactNode; /** Returns to a place's set-up left through a refusal's door (SETUPUX1j). */ onResume: (place: string) => void };
   /** A door to another place at a section and row; the page names itself as the way back. */
   onGo: (target: string, at: PlaceAt) => void;
 }) {
@@ -314,7 +314,17 @@ export function SetupMain({ found, state, id, row, counts, members, shell, bodie
       sections={sections}
       notes={notes}
       driving={driving}
-      back={back ? { place: back.name, section: back.section ? t(SECTION_TITLE[back.section]) : '', onBack: () => { shell.clearBack(); onGo(back.place, { section: back.section ?? undefined }); } } : null}
+      back={back
+        ? {
+          place: back.name,
+          section: back.setUp ? t('agents.setup.set.open') : back.section ? t(SECTION_TITLE[back.section]) : '',
+          onBack: () => {
+            shell.clearBack();
+            if (back.setUp) setUp?.onResume(back.place);
+            onGo(back.place, { section: back.section ?? undefined });
+          },
+        }
+        : null}
       row={shell.rowOf(id) ?? need?.row ?? null}
       onRowBrought={() => shell.rowBrought(id)}
       focusAsked={shell.focusAsked}
