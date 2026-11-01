@@ -252,7 +252,7 @@ test('started with no build anywhere, it speaks the protocol on its standard str
 
   const env = { ...process.env };
   delete env[tool.DRIVEN];
-  const child = spawn(process.execPath, [join(fx.root, 'tools', 'knowledge-server.mjs')], { cwd: fx.root, env });
+  const child = spawn(process.execPath, [join(fx.root, 'tools', 'knowledge-server.mjs')], { cwd: fx.root, env, windowsHide: true });
   let out = '';
   let err = '';
   child.stdout.on('data', (chunk) => { out += String(chunk); });

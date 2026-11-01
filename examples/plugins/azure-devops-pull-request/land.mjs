@@ -60,9 +60,9 @@ function run(command, args, cwd, env = process.env) {
     }
     const line = [found, ...args].map((arg) => `"${arg.replace(/(\\+)$/, '$1$1')}"`).join(' ');
     result = spawnSync(process.env.ComSpec ?? 'cmd.exe', ['/d', '/s', '/c', `"${line}"`],
-      { cwd, encoding: 'utf8', windowsVerbatimArguments: true, env });
+      { cwd, encoding: 'utf8', windowsVerbatimArguments: true, windowsHide: true, env });
   } else {
-    result = spawnSync(found, args, { cwd, encoding: 'utf8', env });
+    result = spawnSync(found, args, { cwd, encoding: 'utf8', windowsHide: true, env });
   }
 
   if (result.error) return { ok: false, out: '', why: `\`${command}\` could not run: ${result.error.message}` };

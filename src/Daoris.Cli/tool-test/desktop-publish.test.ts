@@ -224,7 +224,7 @@ test('the stage refuses an ungated commit, as the merge tool\'s gates record rea
     GIT_COMMITTER_NAME: 'Fixture', GIT_COMMITTER_EMAIL: 'fixture@example.test',
   };
   const git = (...args: string[]): string => {
-    const result = spawnSync('git', args, { cwd: repo, encoding: 'utf8', env });
+    const result = spawnSync('git', args, { cwd: repo, encoding: 'utf8', env, windowsHide: true });
     assert.equal(result.status, 0, `git ${args.join(' ')}: ${result.stderr}`);
     return result.stdout.trim();
   };
@@ -281,7 +281,7 @@ test('a stage from the gate tree builds the commit it holds, refuses another or 
     GIT_COMMITTER_NAME: 'Fixture', GIT_COMMITTER_EMAIL: 'fixture@example.test',
   };
   const git = (...args: string[]): string => {
-    const result = spawnSync('git', args, { cwd: repo, encoding: 'utf8', env });
+    const result = spawnSync('git', args, { cwd: repo, encoding: 'utf8', env, windowsHide: true });
     assert.equal(result.status, 0, `git ${args.join(' ')}: ${result.stderr}`);
     return result.stdout.trim();
   };
@@ -359,7 +359,7 @@ test('the stage history survives a prune and another CI run, a later stage reads
     GIT_COMMITTER_NAME: 'Fixture', GIT_COMMITTER_EMAIL: 'fixture@example.test',
   };
   const git = (...args: string[]): string => {
-    const result = spawnSync('git', args, { cwd: repo, encoding: 'utf8', env });
+    const result = spawnSync('git', args, { cwd: repo, encoding: 'utf8', env, windowsHide: true });
     assert.equal(result.status, 0, `git ${args.join(' ')}: ${result.stderr}`);
     return result.stdout.trim();
   };
@@ -412,7 +412,7 @@ test('a stage from the gate tree holds its lock through the build, so no CI run 
     GIT_COMMITTER_NAME: 'Fixture', GIT_COMMITTER_EMAIL: 'fixture@example.test',
   };
   const git = (...args: string[]): string => {
-    const result = spawnSync('git', args, { cwd: repo, encoding: 'utf8', env });
+    const result = spawnSync('git', args, { cwd: repo, encoding: 'utf8', env, windowsHide: true });
     assert.equal(result.status, 0, `git ${args.join(' ')}: ${result.stderr}`);
     return result.stdout.trim();
   };
@@ -1382,8 +1382,8 @@ test('the launcher this platform’s shell finds runs the package from any folde
 
   const ran = process.platform === 'win32'
     ? spawnSync(process.env.ComSpec ?? 'cmd.exe', ['/d /s /c "daoris "two words" --exit 3"'],
-      { cwd: elsewhere, env, encoding: 'utf8', windowsVerbatimArguments: true })
-    : spawnSync('sh', ['-c', 'daoris "two words" --exit 3'], { cwd: elsewhere, env, encoding: 'utf8' });
+      { cwd: elsewhere, env, encoding: 'utf8', windowsVerbatimArguments: true, windowsHide: true })
+    : spawnSync('sh', ['-c', 'daoris "two words" --exit 3'], { cwd: elsewhere, env, encoding: 'utf8', windowsHide: true });
 
   assert.equal(ran.stdout.trim(), JSON.stringify(['two words', '--exit', '3']), ran.stderr);
   assert.equal(ran.status, 3, 'the exit code is the tool’s');

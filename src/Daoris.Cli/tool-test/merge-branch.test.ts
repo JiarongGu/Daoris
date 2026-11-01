@@ -3143,7 +3143,7 @@ test("this repository's lanes each carry an id, a title and a one-line summary, 
 
 // A declaration, so the lane table's tests above can use it.
 function trackedFiles(): string[] {
-  const listed = spawnSync('git', ['ls-files'], { cwd: repoRoot, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  const listed = spawnSync('git', ['ls-files'], { cwd: repoRoot, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, windowsHide: true });
   assert.equal(listed.status, 0, listed.stderr);
   return listed.stdout.split('\n').filter(Boolean);
 }
@@ -5651,7 +5651,7 @@ const GIT_ENV = {
 };
 
 function git(cwd: string, ...args: string[]): string {
-  const result = spawnSync('git', args, { cwd, encoding: 'utf8', env: { ...process.env, ...GIT_ENV } });
+  const result = spawnSync('git', args, { cwd, encoding: 'utf8', env: { ...process.env, ...GIT_ENV }, windowsHide: true });
   assert.equal(result.status, 0, `git ${args.join(' ')}: ${result.stderr}`);
   return result.stdout.trim();
 }
@@ -5851,7 +5851,7 @@ function scratch(name: string, gates: { name: string; run: string }[], files: Re
       const named = args.some((arg) => ['--full', '--rerun', '--stale', '--passed', '--prune', '--gated', '--ci'].includes(arg));
       const given = named || extra['BY_DEFAULT'] !== undefined ? args : [...args, '--gated'];
       // MEMGATE1: a scratch's heavy gates never read the machine's memory, so no test here waits on what the machine holds.
-      const child = spawn(process.execPath, [TOOL, ...given], { cwd, env: { ...env, ...GIT_ENV, MERGE_BRANCH_MEMORY: 'off', MERGE_BRANCH_CI_NIGHT_HOUR: 'off', ...extra } });
+      const child = spawn(process.execPath, [TOOL, ...given], { cwd, env: { ...env, ...GIT_ENV, MERGE_BRANCH_MEMORY: 'off', MERGE_BRANCH_CI_NIGHT_HOUR: 'off', ...extra }, windowsHide: true });
       let out = '';
       child.stdout.on('data', (chunk) => { out += String(chunk); });
       child.stderr.on('data', (chunk) => { out += String(chunk); });
@@ -5874,7 +5874,7 @@ function branch(root: string, name: string, files: Record<string, string>, { tra
   git(root, 'checkout', '--quiet', 'main');
 }
 
-const merging = (root: string) => spawnSync('git', ['rev-parse', '-q', '--verify', 'MERGE_HEAD'], { cwd: root }).status === 0;
+const merging = (root: string) => spawnSync('git', ['rev-parse', '-q', '--verify', 'MERGE_HEAD'], { cwd: root, windowsHide: true }).status === 0;
 
 // Four repositories side by side, each carrying several scenarios in turn. Every git and node start
 // costs tens of milliseconds on Windows, and more under the rest of the suite's load, so what needs no
@@ -5967,7 +5967,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
       "import { spawnSync } from 'node:child_process';",
       "import { appendFileSync } from 'node:fs';",
       "appendFileSync('local/ran.txt', 'web-types\\n');",
-      `const run = spawnSync(process.execPath, [${JSON.stringify(tsc)}, '--noEmit', '-p', 'src/Daoris.Web'], { stdio: 'inherit' });`,
+      `const run = spawnSync(process.execPath, [${JSON.stringify(tsc)}, '--noEmit', '-p', 'src/Daoris.Web'], { stdio: 'inherit', windowsHide: true });`,
       'process.exit(run.status ?? 2);',
       '',
     ].join('\n');
@@ -6233,7 +6233,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
       'shared.md': 'base\n',
     });
     const file = () => readFileSync(join(repo.root, 'docs', 'decisions', 'D1.md'), 'utf8');
-    const duplicates = () => spawnSync(process.execPath, ['tools/doc-duplicates.mjs'], { cwd: repo.root, encoding: 'utf8' });
+    const duplicates = () => spawnSync(process.execPath, ['tools/doc-duplicates.mjs'], { cwd: repo.root, encoding: 'utf8', windowsHide: true });
 
     // Main took one branch's note; a branch from before it appended its own to the same decision.
     branch(repo.root, 'right', { 'docs/decisions/D1.md': decision + note('UX6f', 'right') });
@@ -6866,7 +6866,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     const holders: ChildProcess[] = [];
     // A process that names `named` in its command line, as the two `node land.mjs` a test left running named theirs.
     const hold = (named: string, cwd = dirname(repo.root), args = [join(named, 'held')]): ChildProcess => {
-      const child = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)', ...args], { cwd, stdio: 'ignore' });
+      const child = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)', ...args], { cwd, stdio: 'ignore', windowsHide: true });
       holders.push(child);
       return child;
     };
@@ -7640,8 +7640,8 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
       "mkdirSync('node_modules', { recursive: true });",
       'const main = process.env.MAIN_CHECKOUT;',
       "writeFileSync(join(main, 'landed.txt'), 'landed\\n');",
-      "execFileSync('git', ['add', '-A'], { cwd: main });",
-      `execFileSync('git', ['commit', '--quiet', '-m', ${JSON.stringify(`landed${TRAILER}`)}], { cwd: main });`,
+      "execFileSync('git', ['add', '-A'], { cwd: main, windowsHide: true });",
+      `execFileSync('git', ['commit', '--quiet', '-m', ${JSON.stringify(`landed${TRAILER}`)}], { cwd: main, windowsHide: true });`,
       '',
     ].join('\n'));
     if (process.platform === 'win32') writeFileSync(join(npmBin, 'npm.cmd'), '@echo off\r\nnode "%~dp0fake-npm.mjs" %*\r\n');

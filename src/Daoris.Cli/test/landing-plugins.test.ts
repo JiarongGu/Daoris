@@ -21,7 +21,7 @@ const examples = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..',
 const BRANCH = 'feature/0fda18-fix-the-api-gap';
 
 function git(cwd: string, ...args: string[]): string {
-  const result = spawnSync('git', args, { cwd, encoding: 'utf8', env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } });
+  const result = spawnSync('git', args, { cwd, encoding: 'utf8', env: { ...process.env, GIT_TERMINAL_PROMPT: '0' }, windowsHide: true });
   assert.equal(result.status, 0, `git ${args.join(' ')}: ${result.stderr}`);
   return result.stdout.trim();
 }
@@ -109,7 +109,7 @@ async function speak(
     GIT_TERMINAL_PROMPT: '0',
     ...extra,
   };
-  const child = spawn(process.execPath, [join(examples, plugin, 'land.mjs')], { cwd: join(examples, plugin), env });
+  const child = spawn(process.execPath, [join(examples, plugin, 'land.mjs')], { cwd: join(examples, plugin), env, windowsHide: true });
   let stderr = '';
   child.stderr.on('data', (chunk) => { stderr += String(chunk); });
 

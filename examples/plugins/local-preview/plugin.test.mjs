@@ -315,6 +315,7 @@ test('it answers the handshake, one frame at every point it declares, and leaves
   const [command, ...args] = (manifest.hooks?.command ?? []).map(expand);
   const child = spawn(command, args, {
     cwd: folder,
+    windowsHide: true,
     env: {
       ...process.env,
       DAORIS_PLUGIN_ID: manifest.id,
