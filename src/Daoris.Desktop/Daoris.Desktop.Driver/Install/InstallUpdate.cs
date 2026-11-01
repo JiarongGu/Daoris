@@ -49,15 +49,21 @@ public static class InstallUpdate
     public static string ModeFor(UpdateRequest? request, string? staged) => UpdateRequests.ModeFor(request, staged);
 
     /// <summary>
-    /// The config a draining look plans with (D139 §2): every drivable repository held, so no quest starts, resumes or
-    /// carries on and no answered park goes on; and no intake, which a hold does not reach. The cap is left, since a
-    /// workspace's set-up plan reads it to publish, which starts nothing. An Intake actor that is set is turned off in what
-    /// <see cref="ActorChoices.Effective"/> reads too (D205 §6.4), so the drain's <i>intakes too</i> reaches it.
+    /// The config a draining look plans with (D139 §2): every drivable repository held, and every one a set-up is admitted alone in
+    /// (AGENTSPLACE1b), so no quest starts, resumes or carries on and no answered park goes on; and no intake, which a hold does not
+    /// reach. The cap is left, since a workspace's set-up plan reads it to publish, which starts nothing. An Intake actor that is set is
+    /// turned off in what <see cref="ActorChoices.Effective"/> reads too (D205 §6.4), so the drain's <i>intakes too</i> reaches it.
     /// </summary>
     public static DriverConfig Drained(DriverConfig config) => config with
     {
         Draining = true,
-        Holds = [.. config.Holds, .. config.Drivable.Where(repository => !config.Holds.Contains(repository, StringComparer.OrdinalIgnoreCase))],
+        Holds =
+        [
+            .. config.Holds,
+            .. config.Drivable.Concat(config.Admitted.OrderBy(pair => pair.Key, StringComparer.Ordinal).Select(pair => pair.Value))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Where(repository => !config.Holds.Contains(repository, StringComparer.OrdinalIgnoreCase)),
+        ],
         IntakeAdapter = null,
         Actors = new Dictionary<string, IReadOnlyList<ActorChoice>>(config.Actors, StringComparer.Ordinal) { ["intake"] = [] },
     };

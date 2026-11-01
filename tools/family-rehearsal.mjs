@@ -5140,8 +5140,8 @@ const sessionStarts = (out) => out.split(/\r?\n/).filter((line) => line.trim()).
   }
 });
 
-// Every refusal that applies is said at once, each with its door (LAYOUT7): here, not opted into driving and no
-// tree of its own, read by the same binary from the same line.
+// Each refusal that applies is said with its door (LAYOUT7): here, no tree of its own, read by the same binary from the
+// same line. Not being driven is none: the set-up's quest would be admitted alone (AGENTSPLACE1b).
 const unreadyConfig = join(scratch, 'driver-setup-unready.json');
 writeFileSync(unreadyConfig, `${JSON.stringify({
   drivable: [], adapter: 'acp-stub', cap: 1, timeoutMinutes: 2, commands: { 'acp-stub': ['node', acpAgent] },
@@ -5149,10 +5149,9 @@ writeFileSync(unreadyConfig, `${JSON.stringify({
 const unready = onSetupMachine('setup atlas --plan', { config: unreadyConfig });
 const unreadyRead = readSetup(unready.out);
 check(
-  '`daoris-driver setup --plan` refuses a repository not driven here and with no tree of its own, saying both and each door',
-  atlasAdded.status === 200 && unready.code === 1 && unreadyRead.refusals.length === 2
-    && /is not driven here/.test(unreadyRead.refusals[0]) && /`daoris driver drive atlas`/.test(unreadyRead.refusals[0])
-    && /`daoris driver trees atlas on`/.test(unreadyRead.refusals[1])
+  '`daoris-driver setup --plan` refuses a repository with no tree of its own, saying its door, and not for being undriven',
+  atlasAdded.status === 200 && unready.code === 1 && unreadyRead.refusals.length === 1
+    && /`daoris driver trees atlas on`/.test(unreadyRead.refusals[0]) && !/is not driven here/.test(unready.out)
     && unreadyRead.nothingPublished && unreadyRead.title === null,
   `${atlasAdded.text}\n${unready.out}`,
 );

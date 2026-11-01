@@ -107,6 +107,20 @@ public sealed class InstallUpdateTests : IDisposable
         Assert.Equal(config.Drivable, drained.Drivable);
     }
 
+    /// <summary>AGENTSPLACE1b: a repository not driven whose set-up quest is admitted alone is held by the drain too, once.</summary>
+    [Fact]
+    public void A_draining_look_holds_a_repository_whose_set_up_is_admitted_alone()
+    {
+        var config = (DriverConfig.Empty with { Drivable = ["engine"] }).WithAdmitted("q1", "atlas").WithAdmitted("q2", "Engine").WithAdmitted("q3", "ATLAS");
+
+        var drained = InstallUpdate.Drained(config);
+
+        Assert.Equal(["engine", "atlas"], drained.Holds);
+        Assert.Equal(StartVerdict.Held, Assert.Single(Planner.Plan(
+            new Snapshot([new QuestView("q1", "ask #a1", "atlas", "Set up", "", "Open")], [new RepoView("atlas", false, "D:/fam/atlas")], []),
+            drained, SessionWire.Acp)).Verdict);
+    }
+
     /// <summary>DRAINHOLD1 (the driver follow-up): the drained config says it drains, so each start the look makes on its own reads one view.</summary>
     [Fact]
     public void The_drained_config_says_it_drains_and_the_one_it_came_from_does_not()

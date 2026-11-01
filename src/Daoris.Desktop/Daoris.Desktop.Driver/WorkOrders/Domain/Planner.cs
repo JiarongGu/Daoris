@@ -1265,7 +1265,8 @@ public static class Planner
                 }
             }
 
-            if (!config.Drivable.Contains(quest.To, StringComparer.OrdinalIgnoreCase))
+            // A set-up admitted alone (AGENTSPLACE1b) starts by its own id where its repository is not driven; nothing else there does.
+            if (!config.Drivable.Contains(quest.To, StringComparer.OrdinalIgnoreCase) && !config.Admits(quest))
             {
                 return new(quest, StartVerdict.NotDrivable,
                     $"`{quest.To}` has not been opted into driving on this machine.");

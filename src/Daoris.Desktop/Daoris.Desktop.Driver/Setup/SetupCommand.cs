@@ -143,6 +143,11 @@ public static class SetupCommand
             : ""));
         if (setup.Landing is { } landing) output.WriteLine($"  lands    {SetupPressRules.LandsAs(landing)}");
         if (setup.Builds is { } builds) output.WriteLine($"  builds   {SetupBuilds.Named(builds)}, which shapes the checks its safe work declares");
+        if (setup is { Alone: true, Pressable: true })
+        {
+            output.WriteLine($"  starts   its quest alone: `{setup.Repository}` is not driven here, so nothing else of it starts");
+        }
+
         if (setup.Tools is { } tools)
         {
             output.WriteLine($"  tools    node {tools.NodeVersion?.Trim() ?? "not found"} · daoris {(SetupPressRules.IsVersion(tools.DaorisVersion) ? tools.DaorisVersion!.Trim() : "not found")}");

@@ -67,6 +67,12 @@ public sealed record SetupPlan(string Repository)
     /// <summary>What it builds (<see cref="SetupBuilds"/>), which shaped the body's safe work; null where none was said.</summary>
     public string? Builds { get; init; }
 
+    /// <summary>
+    /// Whether its quest is admitted alone (AGENTSPLACE1b): the repository is not driven here, so the press admits the quest it publishes
+    /// by its id, and nothing else of the repository starts.
+    /// </summary>
+    public bool Alone { get; init; }
+
     /// <summary>The ask's words: the title its first line, so the quest the service makes is titled by it, then the body.</summary>
     public string? Sentence => Title is null ? null : $"{Title}\n\n{Body}";
 
