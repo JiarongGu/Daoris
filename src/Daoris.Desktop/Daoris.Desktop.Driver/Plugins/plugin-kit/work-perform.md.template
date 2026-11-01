@@ -16,6 +16,8 @@ promises of it:
   and answers `already-gone` when it is asked again.
 - **`outcomes`**: a step that decides lists the routes it may reach with in `plugin.json` (2 to 8 lowercase-dash names), and
   `act()` then returns `outcome: '<one of them>'` with `state: 'reached'`. A reach naming none of them is not believed.
+  An output only some outcomes carry is named in `outputsOn` (`{ "<output>": ["<outcome>", …] }`): a reach with another
+  outcome leaves it out, and one that carries it is refused without it.
 
 So you write three external calls in `plugin.mjs` and nothing else: `act()`, the work; `check()`, what became of an
 attempt an earlier process began; `remove()`, one thing `act()` made. Daoris supplies the ordering, the references,

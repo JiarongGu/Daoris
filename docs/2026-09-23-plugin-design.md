@@ -132,7 +132,8 @@ repository names one, and a scratch run redirects it with everything else.
 - *(D173, FABRIC-UNIT1d)* **`steps`** declares the plugin's steps, each read into the one node declaration a built-in step
   is, of the kind `<plugin>/<id>`: `id`, `version` (1 when absent), `reach` (`observed` or `performed`), `inputs` and
   `outputs` (each a name and its schema, like `acme.deploy/preview@1`), `evidence: { schema }`, `retry: { maxAttempts,
-  delaysSeconds }`, `timeoutSeconds`, `skippable`, `rejectable`, and on a performed step `perform: { point: "work/perform",
+  delaysSeconds }`, `timeoutSeconds`, `skippable`, `rejectable`, on a step that decides `outcomes` (the routes it may reach
+  with) and `outputsOn` (an output only some of them carry, with those outcomes), and on a performed step `perform: { point: "work/perform",
   idempotent, reconcile: "work/reconcile", transient: [codes] }`. **`resources`** names what the steps create, each
   `{ schema, role: "temporary" | "result", cleanup: "work/cleanup" }`. A problem in either refuses the plugin, naming the field.
   Reading a manifest starts nothing; the fabric events design's §D6 and §D9 are their contract. *(FABRIC-PERFORM1a)* A
