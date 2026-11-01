@@ -306,3 +306,62 @@ built and merged as one wave, after REVIEW2 by the chunks' order. Each row write
 - **`partner_ask` in this design** (Opus): it would offer a start whose confinement is unmeasured.
 - **Retiring the boxes into one file**: each box has one writer per file and its own admission (`Svc/Sessions/HelperBox.cs:6-10`).
 - **A chat waiting on a quest** (R11.2 point 5 stands); **an agent summoning a reviewer** (D155 point 5).
+
+## 13. Settled after Opus's read
+
+Opus's read (`docs/2026-11-02-comms-reads.md`) is taken whole; Codex's read is owed (its run stopped at the workspace's spend cap)
+and is settled here when it lands. These amend §3 to §10, and each row carries its part.
+
+1. **Row b goes through the looks, not only the desks** (B1): the opinion deliverer's and the partner look's pre-checks
+   (`Drv/Loop/OpinionDeliverer.cs:174-179`, `Drv/Loop/DriverPartners.cs:471-472`) read the line's head and whether its park was
+   answered, as the helper look does (`Drv/Loop/DriverHelpers.cs:766`); the proof runs through `OpinionDeliveryTests` and the partner
+   look.
+2. **An opinion's answerer follows its word** (B2): when a keyed open moves a waiting findings word, `handed_to` moves with it, so
+   the part that continues the line answers the opinion. This is an authority change, said in D225's note: the record allowed to
+   call `opinion_answer` is the one holding the findings, never one the line has left. CHATFLOW1e's second hand keeps its own key
+   (`opinion:<id>:again`). Proof: a hand-over after the keep and before the take, for every case.
+3. **A retry is bounded, and the old guards are still written** (B3): `SolicitedHand` retries only while its attempt is inside
+   `SaidKeys.Horizon` and the line reads whole; past it the hand settles *uncertain* and goes to the person. The helper state's and
+   the partner receipt's `Attempted` and `Handed` keep being written, so a rolled-back driver or a host that drops its mark hands
+   nothing twice.
+4. **"Already waiting" finishes the dispatch** (B4): the door's answer names the holder and the word, and the driver dispatches it
+   there idempotently before it marks the ask handed, as `HandedBefore` does today; the helper desk answers a waiting word as the
+   partner desk does, rather than refusing it.
+5. **Row b carries the web lane** (B5): the page's helper reads (`Web/work/identity.ts:82`, `Web/work/rail/SessionRow.tsx:217`,
+   `Web/work/head/headFacts.ts:140`) and the helper desk's guards (`Svc/Sessions/HelperDesk.cs:144`, `Svc/Sessions/HelperBox.cs:101`)
+   check the opinion mark before `serves`, so a reviewer is never drawn or taken as a helper.
+6. **Row c is service and driver, every ask reader moved** (B6): `AskWords` (`Drv/WorkOrders/Domain/AskWords.cs:68-73`), the helper
+   wait's go-ahead check (`DriverHelpers.cs:193`, `:201-207`), the workflow go-ahead node (`Drv/Workflows/Nodes/NodeRuntime.cs:618`),
+   `KeepOnAskAsync` and the supervisor's open-go-ahead guard (`Svc/Sessions/SessionLedger.cs:1855`, `:1378-1391`) read the entry's
+   origin. The authority change is said in D225's note: a go-ahead the person approved on an ask covers the same act from every
+   session the ask's entry holds, a sibling-published quest's included. Proof: the answer handed at the next start; the helper wait
+   parking on it; the supervisor refusing while it is open.
+7. **Row e moves today's check into the say step** (B7): the modules already refuse a stale press before the say
+   (`Mod/Bridge/Routes/ConversationRoutes.cs:118-132`). The row lifts the say door's supervisor-only refusal for the person's press
+   (`SessionLedger.cs:1060-1066`), checks the press inside the step against the head's question as `SupervisedParkAsync` does
+   (`:1362`), carries the question id on a held word and its file (`Mod/Loop/SessionWords.cs:194-196`), and sends it under a host
+   mark; against an older host the modules' check stands alone. Proof: a press held across a hand-over refused when forwarded.
+8. **Row g, the count's key, reset and seed** (B8): the admission is keyed by the line's first record as the door's walk reaches it
+   (`Lines.WalkAsync`, the quest hop included). **D188's reset stands**: the person's words and Daoris's own fact words
+   (`from: daoris`) reset the count; an answer carried in any wrapper, a brief, a retry or a hand-over never does. A line with no
+   admission is seeded from the legacy count on first read, where no events count zero (D188's steward choice 2), so §5.3's
+   *unknown* is withdrawn. `supervisor-bound` reads the same count. The step adds a table that no older build reads and leaves the
+   writer stamp at 3; after a rollback, a line re-seeds from the legacy count at its next read.
+9. **The exchanges' value stays in work orders** (B9): Loop composes `Exchanges.Of` and hands each lower reader the plain values it
+   needs (`holds`, the brief's open lines), as `Observation` takes `awaitsHelper` as a value today; no structure edge is added.
+10. **Row f widens the brief's open asks** (B10): `BriefLine.Open` (`Drv/Context/Domain/ContextBrief.cs:59`, drawn at `:569`) takes
+    every case (the request's owner, where its answer will go, its delivery) in place of a new piece. An answer kept but not yet
+    handed is open, as `HelperWaits.Open` reads it (`Drv/Context/Events/ContextBriefs.cs:266` changes).
+11. **Row a's twins read their own shapes** (B11): events carry no key (`Drv/Events/Domain/SessionEvents.cs:211-250`), so the driver
+    and page twins tell a partner from a helper by the named record's piece and work, as Opus's proposal had it; the fixture names
+    the shape each twin reads.
+12. **The smaller points** (non-blocking 1 to 11): §4.2's refused row keeps *a teammate's*; CHATFLOW1e's tree guard and the driver's
+    `to` stay, the door walking from `to`; the read's *where its answer will go* uses the door's walk, never `HeadOfLineAsync`;
+    exchange ids are `hand-over:<id>`, and an answered question's outcome is read from the said word's `question` id, since the file
+    goes at the next open; §8's D188 row adds point 7's *Answered* receipt becoming *taken, turn ended*; the `answers: 1` mark promises
+    the head walk to the store's bound, answered parks, *already waiting*, the opinion key and `serves`, and the driver's own paths
+    stand aside under it alone; row b's partner proofs run on stand-ins, row n shows none; row k refuses a part that lives elsewhere,
+    keeps every non-ask origin's rows in `channel_addressed` so none travels, delivers only where the driver says it reads that table,
+    and keeps a person's post to one part as that part's alone; row l's bound counts live callers, a dead caller's requests reading
+    *interrupted*; row i takes the helper, piece, question and hand-over files as inputs with their health; §1's citations read
+    `PartnerDesk.cs:182` and `PartnerMeasurements.cs:44`.
