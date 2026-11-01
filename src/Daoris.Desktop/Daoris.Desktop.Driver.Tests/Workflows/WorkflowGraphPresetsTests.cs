@@ -90,7 +90,7 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
     public void The_defaults_are_shipped_data_and_the_graph_presets_read_them()
     {
         Assert.Equal(
-            ["merge-after-accept", "merge-automatic", "documents", "branch-to-push", "pull-request", "integrated", "integrated-no-press"],
+            ["merge-after-accept", "merge-automatic", "documents", "branch-to-push", "pull-request", "integrated", "integrated-no-press", "release"],
             WorkflowDefaults.All.Select(each => each.Id));
         Assert.Equal(WorkflowDefaults.All.Select(each => (each.Id, each.Names.En)), WorkflowPresets.GraphTable.Select(preset => (preset.Id, preset.Name)));
         Assert.All(WorkflowDefaults.All, each => Assert.False(string.IsNullOrWhiteSpace(each.Names.Zh) || string.IsNullOrWhiteSpace(each.For.Zh), each.Id));
@@ -107,6 +107,7 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
     [InlineData("pull-request", "You accept; the plugin pushes and opens a pull request; you merge it.")]
     [InlineData("integrated", "You accept each piece of work onto a branch, and you ask for it to be integrated into the line.")]
     [InlineData("integrated-no-press", "Each piece of work is integrated into the line once its agent is done, on gates the repository accepted.")]
+    [InlineData("release", "You accept each piece of work, and it merges into the line.")]
     public void Each_default_is_sound_says_its_delivery_and_has_its_line(string id, string landing)
     {
         var shipped = WorkflowDefaults.Of(id)!;
@@ -117,6 +118,97 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
         Assert.Equal(shipped.Digest, NodeGraphs.Digest(graph!));
         Assert.Equal(shipped.Delivery, SetupPresets.LandOf(Involvement.StepsOf(graph!)));
         Assert.Equal($"{landing} Its agent's done closes the quest; the flow's end is the work's.", WorkflowPresets.GraphLine(shipped.Graph()));
+    }
+
+    private static NodeGraph ReleaseGraph() => NodeGraphs.Read(WorkflowDefaults.Of("release")!.GraphJson, onSave: true).Graph!;
+
+    private static IReadOnlyList<NodeDeclaration> LocalReleaseSteps()
+    {
+        var (manifest, problem) = PluginCatalog.ReadFolder(Path.Combine(GitSeed.RepoRoot(), "examples", "plugins", "local-release"));
+        Assert.Null(problem);
+        return manifest.Steps;
+    }
+
+    /// <summary>DEFAULTCONFIG1c: the release default's plugin nodes declare what local-release's manifest says, outcomes and ports included.</summary>
+    [Fact]
+    public void The_release_default_declares_what_the_local_release_manifest_says()
+    {
+        var graph = ReleaseGraph();
+        Assert.Empty(NodeGraphs.Problems(graph));
+        foreach (var step in LocalReleaseSteps())
+        {
+            var node = Assert.Single(graph.Nodes, each => each.Kind == step.Kind);
+            Assert.Equal((step.Reach, step.Evidence), (node.Reach, node.Evidence));
+            Assert.Equal(step.Outcomes.ToList(), node.Outcomes.ToList());
+            Assert.Equal(step.Inputs.OrderBy(each => each.Key), node.Inputs.OrderBy(each => each.Key));
+            Assert.Equal(step.Outputs.OrderBy(each => each.Key), node.Outputs.OrderBy(each => each.Key));
+        }
+
+        Assert.Equal(["release", "none"], graph.Nodes.Single(node => node.Id == "find").Outcomes);
+        Assert.Contains(graph.Wires, wire => wire is { Kind: WireKinds.Back, On: NodeStates.Rejected } && wire.From?.Node == "review" && wire.To.Node == "work");
+        Assert.Equal("local-release/find", graph.Nodes.Single(node => node.Id == "find").Kind);
+    }
+
+    /// <summary>
+    /// DEFAULTCONFIG1c: a run of the release default after the line: find saying none ends the run there, release and publish not taken;
+    /// find saying release takes both.
+    /// </summary>
+    [Theory]
+    [InlineData("none")]
+    [InlineData("release")]
+    public void A_release_run_ends_at_the_line_when_find_says_none_and_publishes_when_it_says_release(string outcome)
+    {
+        var graph = ReleaseGraph();
+        var g = new WireEvaluationTests.Graph([.. graph.Nodes], [.. graph.Wires]);
+        foreach (var id in new[] { "work", "requests", "check", "review", "landing", "line" }) g.Through(id);
+
+        void ReachAs(string id, string? said, bool port)
+        {
+            var node = graph.Nodes.Single(each => each.Id == id);
+            var status = g.Statuses[id];
+            g.Move(id, new NodeMove(NodeStates.Reached, NodeCause.Authority)
+            {
+                Source = NodeAuthorities.Of(node)!.ReachBy,
+                Attempt = status.Attempt,
+                Acceptance = status.Binding! with
+                {
+                    Evidence = new NodePort(node.Evidence!, $"{id}#{status.Attempt}", status.Binding.SubjectRevision, null),
+                    Outputs = port ? new Dictionary<string, NodePort> { ["release"] = new("local-release/release@1", $"{id}.release", "tip-1", null) } : NodeAcceptance.NoPorts,
+                    Outcome = said,
+                },
+            });
+        }
+
+        g.Start(g.Evaluate(), "find");
+        // The lifecycle takes a reach only with every output its node declares, so find's `none` carries the port too.
+        ReachAs("find", outcome, true);
+        var decided = g.Evaluate();
+        if (outcome == "none")
+        {
+            Assert.Empty(decided.Starts);
+            Assert.Equal(["publish", "release"], decided.NotTaken);
+            return;
+        }
+
+        Assert.Equal(["release"], decided.Starts.Select(start => start.Node));
+        g.Start(decided, "release");
+        ReachAs("release", null, true);
+        Assert.Equal(["publish"], g.Evaluate().Starts.Select(start => start.Node));
+    }
+
+    /// <summary>DEFAULTCONFIG1c: where local-release is not installed, its nodes are declared as the graph has them and none is ever sent.</summary>
+    [Fact]
+    public void Without_the_local_release_plugin_none_of_its_nodes_is_sent()
+    {
+        var config = DriverConfig.Parse("{ \"workCycles\": { \"engine\": { \"quest\": " + WorkflowDefaults.Of("release")!.GraphJson + " } } }");
+        var unit = new WorkUnit("quest:q7", WorkUnitKind.Quest, new WorkOwner("engine", "default", WorkRecord.Quests, WorkRecord.ServiceWriter),
+            new WorkSubject("#q7", null), new MilestoneEnd(WorkEndState.NotEnded, null, null, null, null, "open"), []);
+        var read = new NodeUnitsRead([unit], new Dictionary<string, string>());
+
+        var without = Assert.Single(NodeRuntime.Govern(config, read, []));
+        Assert.Equal(["check"], without.Dispatchable.Order());
+        var with = Assert.Single(NodeRuntime.Govern(config, read, LocalReleaseSteps()));
+        Assert.Equal(["check", "find", "publish", "release"], with.Dispatchable.Order());
     }
 
     /// <summary>DEFAULTCONFIG1a: a version copied from a default keeps where it came from in its file, the default's id and its digest.</summary>

@@ -22572,3 +22572,6 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 ## DEFAULTCONFIG1b — the agents' structure's defaults as shipped data, and restoring them whole (2026-11-01, FABRIC2)
 
 **Outcome** 2026-11-01: the eight seeded roles are read from `Defaults/roles.json` (`RoleCatalog.Seed`); `RoleChange.DefaultAll` gives every seeded role back its default and keeps added ones, through `SET_ROLE {change:'default-all'}` and `daoris driver role default --all`; Working roles has a Restore all role defaults button. Tests `RoleCatalogTests`, `DriverModuleRoleTests`, `Roles.test.tsx`.
+## DEFAULTCONFIG1c — the release workflow, shipped as a default (2026-11-01, FABRIC2)
+
+**Outcome** 2026-11-01: `Defaults/workflows/release.json` (not offered in set-up): work → requests → check → review → land (merge) → line → local-release/find, `when release` → release → publish, `when none` ending at the line, the review sent `back` to the work on its rejection; its plugin nodes declare the manifest's outcomes and ports, and without the plugin none is sent. Tests in `WorkflowGraphPresetsTests`; a refusal at the reach is not built (see the FABRIC2 row).
