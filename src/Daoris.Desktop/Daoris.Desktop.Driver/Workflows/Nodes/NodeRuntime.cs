@@ -916,6 +916,16 @@ public sealed class NodeRuntime(
                 break;
             }
 
+            // LANDNODE1m: a `land` attempt a lapse left unreconciled is settled by its deliveries before anything new starts on it; the store is
+            // read only where one is held.
+            if (LandAttempts.Holds(governed.Graph, record))
+            {
+                var deliveries = new DeliveryStore(records.Home);
+                var repository = governed.Watched.Repository;
+                records.Edit(unit, now => (LandAttempts.Settled(governed.Graph, now, tip => deliveries.At(repository, tip).Any(each => each.Unresolved)), 0));
+                if (records.Read(unit) is { } settled) record = settled;
+            }
+
             // FABRIC-RUN1b: what git says for the built-ins this round's record holds waiting on it, read once a pass; FABRIC-RUN1c: the gates
             // its opinion and look wait on, likewise.
             var reads = await ContentAsync(governed, record, tip, git.Content, await GitReadsAsync(governed, record, git.Git, ct).ConfigureAwait(false), ct)

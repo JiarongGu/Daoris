@@ -70,6 +70,35 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
     /// <inheritdoc/>
     public bool JudgesHolds => Graph is not { } graph || !graph.Nodes.Any(node => node.Kind == NodeKinds.Land);
 
+    /// <inheritdoc/>
+    public BoundLand? Land(LandingSubject subject)
+    {
+        if (Graph?.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land) is not { } land
+            || Binding is not { IsCurrent: false, Digest: { } digest } binding || Problem is not null || Unread is not null)
+        {
+            return null;
+        }
+
+        string? Text(string name) => land.Options.TryGetValue(name, out var raw) ? NodeOptions.Value(raw) as string : null;
+        var rule = Landing.Rule;
+        // A method left open is the landing step's it stands for, as Current derives its own from the rule.
+        var method = Text("method") ?? (rule.Form == LandingForm.Merge ? LandNodes.Merge : rule.Plugin is not null ? LandNodes.PullRequest : LandNodes.Branch);
+        var squash = (land.Options.TryGetValue("squash", out var written) ? NodeOptions.Value(written) as bool? : null) ?? rule.Squash;
+        squash &= method is LandNodes.Branch or LandNodes.Push or LandNodes.PullRequest;
+        var template = Text("message");
+        var ticket = template?.Contains("{ticket}", StringComparison.Ordinal) == true ? LandingRules.Ticket(subject, rule.Key) : null;
+
+        // Its options as the bind resolved them: what the version wrote, the bind's resolutions where it left them open, the method and the squash.
+        var options = new System.Text.Json.Nodes.JsonObject();
+        foreach (var (name, raw) in land.Options) options[name] = System.Text.Json.Nodes.JsonNode.Parse(raw);
+        foreach (var (name, value) in binding.Land) options[name] ??= value;
+        options["method"] = method;
+        options["squash"] = squash;
+        return new BoundLand(method, Text("target"), squash,
+            template is null ? null : LandNodes.RenderMessage(template, subject.Title, subject.Quest, ticket, subject.Session), ticket,
+            options.ToJsonString(), digest, $"workflow:{binding.Workflow}@{binding.Version}:{Repository}");
+    }
+
     /// <summary>Rows 5 and 6 of D154's table as the version says them; null under Current, where the rule says them, as today.</summary>
     public WorkflowLook? Look { get; init; }
 
