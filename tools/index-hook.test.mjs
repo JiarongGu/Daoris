@@ -27,7 +27,7 @@ const clean = () => {
   return env;
 };
 const git = (cwd, ...args) => spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'core.autocrlf=false', ...args],
-  { cwd, encoding: 'utf8', env: { ...clean(), ...(git.env ?? {}) } });
+  { cwd, encoding: 'utf8', env: { ...clean(), ...(git.env ?? {}) }, windowsHide: true });
 const show = (cwd, spec) => git(cwd, 'show', spec).stdout;
 
 let serial = 0;
@@ -69,7 +69,7 @@ test('a source commit carries its regenerated outline', () => {
   writeFileSync(join(dir, 'src', 'a.ts'), 'export function a() {}\nexport function b() {}\n');
   git(dir, 'add', 'src/a.ts');
   assert.equal(git(dir, 'commit', '-q', '-m', 'second').status, 0);
-  const check = spawnSync('node', [join(here, 'orient-index.mjs'), '--check', '--root', dir], { encoding: 'utf8', env: clean() });
+  const check = spawnSync('node', [join(here, 'orient-index.mjs'), '--check', '--root', dir], { encoding: 'utf8', env: clean(), windowsHide: true });
   assert.equal(check.status, 0, check.stderr);
   assert.equal(git(dir, 'status', '--porcelain').stdout.trim(), '');
 });

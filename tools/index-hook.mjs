@@ -63,14 +63,14 @@ export function run({ out, err, cwd, env }) {
   delete hookEnv.GIT_DIR;
   delete hookEnv.GIT_WORK_TREE;
   const git = (args) => spawnGit(args, { cwd, env: hookEnv, encoding: 'utf8' });
-  const staged = git(['diff', '--cached', '--name-only', '-z']);
+  const staged = git(['--no-optional-locks', 'diff', '--cached', '--name-only', '-z']);
   if (staged.status !== 0) {
     err(`index-hook: git diff --cached failed: ${staged.stderr?.trim()}`);
     return 1;
   }
   const outside = names(staged).filter((path) => !path.startsWith(INDEX));
   if (outside.length === 0) return 0;
-  const unstaged = new Set(names(git(['diff', '--name-only', '-z'])));
+  const unstaged = new Set(names(git(['--no-optional-locks', 'diff', '--name-only', '-z'])));
   if (outside.some((path) => unstaged.has(path))) {
     out('index-hook: a file is partially staged; docs/index/ not regenerated (orient-index --check still gates)');
     return 0;
