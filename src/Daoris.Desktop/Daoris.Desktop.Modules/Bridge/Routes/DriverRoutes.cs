@@ -500,7 +500,8 @@ public sealed class DriverRoutes(DriverContext context)
         }
 
         return await Task.Run<object?>(
-            () => PlaceProjection.Of(DriverConfig.Load(_loop.ConfigPath), registry, () => RoleCatalog.ReadHome(_loop.Home), ask), cancellationToken).ConfigureAwait(false);
+            () => PlaceProjection.Of(DriverConfig.Load(_loop.ConfigPath), registry, () => RoleCatalog.ReadHome(_loop.Home), ask, _loop.Home),
+            cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>A work's typed requirement on the wire, its kind beside its fields; none where the work has none.</summary>

@@ -24,74 +24,54 @@ public sealed record WorkflowGraphPreset(string Id, string Name, string GraphJso
 /// </summary>
 /// <remarks>
 /// Held to this suite's tests' <c>fixtures/workflow-named.json</c> <c>presets</c>, <c>variants</c> and <c>lines</c>, cell for cell
-/// (the CLI's twin, <c>namedworkflows.ts</c>, left in PUSH1f2b).
+/// (the CLI's twin, <c>namedworkflows.ts</c>, left in PUSH1f2b). The graphs are the defaults Daoris ships (DEFAULTCONFIG1a,
+/// <see cref="WorkflowDefaults"/>); the presets of steps left are a pull request's, said from the <c>pull-request</c> default's delivery.
 /// </remarks>
 public static class WorkflowPresets
 {
-    private const string Work = """{"id":"work","kind":"work"}""";
-    private const string PullRequest = """{"id":"pull-request","kind":"pull-request"}""";
-
+    /// <summary>
+    /// The presets that are steps (schema 1): a pull request after you accept, and with no press. A merge's and a branch's left this table in
+    /// DEFAULTCONFIG1a, since a default of the same id is a graph, which <c>new --from</c> copies.
+    /// </summary>
     public static IReadOnlyList<WorkflowPreset> Table { get; } =
     [
-        new("merge-after-accept", "Merge after you accept", $$"""[{{Work}},{"id":"landing","kind":"landing","form":"merge","accept":"you"}]"""),
-        new("branch-to-push", "A branch for you to push",
-            $$"""[{{Work}},{"id":"landing","kind":"landing","form":"branch","accept":"you","plugin":"none"}]"""),
-        new("pull-request-after-accept", "A pull request after you accept",
-            $$"""[{{Work}},{"id":"landing","kind":"landing","form":"branch","accept":"you"},{{PullRequest}}]"""),
-        new("pull-request-no-press", "A pull request with no press",
-            $$"""[{{Work}},{"id":"landing","kind":"landing","form":"branch","accept":"automatic"},{{PullRequest}}]"""),
+        new("pull-request-after-accept", "A pull request after you accept", StepsOf(PullRequestLand)),
+        new("pull-request-no-press", "A pull request with no press", StepsOf(PullRequestLand with { Accept = SetupLand.Automatic })),
     ];
 
     /// <summary>A preset by its id, or null.</summary>
     public static WorkflowPreset? Of(string id) => Table.FirstOrDefault(preset => preset.Id == id);
 
-    private const string Claimed = """{"id":"work","kind":"claimed","version":1,"reach":"observed"}""";
-    private const string Requests = """{"id":"requests","kind":"work.requests","version":1,"reach":"observed"}""";
-    private const string Wires = """{"id":"a","kind":"after","from":"work","to":"requests"},{"id":"b","kind":"after","from":"requests","to":"landing"}""";
+    private static SetupLand PullRequestLand => WorkflowDefaults.Of(SetupPresets.PullRequest)!.Delivery;
+
+    /// <summary>A delivery said as steps: the work, then its landing, then the pull request it opens.</summary>
+    private static string StepsOf(SetupLand land)
+    {
+        var landing = new JsonObject
+        {
+            ["id"] = "landing", ["kind"] = WorkflowKinds.Landing, ["form"] = land.Method == LandNodes.Merge ? LandingForm.Merge : LandingForm.Branch,
+            ["accept"] = land.Accept,
+        };
+        if (land.Plugin is { } plugin) landing["plugin"] = plugin;
+        var steps = new JsonArray(new JsonObject { ["id"] = "work", ["kind"] = WorkflowKinds.Work }, landing);
+        if (land.Method == LandNodes.PullRequest) steps.Add(new JsonObject { ["id"] = "pull-request", ["kind"] = WorkflowKinds.PullRequest });
+        return steps.ToJsonString();
+    }
 
     /// <summary>
-    /// The two presets that are graphs (INTEGRATE1q; the integration design §17.7), beside the four of steps: <i>Integrated into the line</i> with
-    /// its variant <i>with no press</i>, and <i>A pull request</i>. Each holds <c>work.requests</c>, and neither holds <c>quest.close</c>, so the
-    /// quest is closed by its agent's done and the flow's end is the work's.
+    /// The presets that are graphs: the defaults Daoris ships (DEFAULTCONFIG1a), each by its id and English name. Each holds no
+    /// <c>quest.close</c>, so the quest is closed by its agent's done and the flow's end is the work's. <see cref="WorkflowGraphPreset.NoPress"/>
+    /// is an integration's with no review, which the line's declared gates must carry.
     /// </summary>
     public static IReadOnlyList<WorkflowGraphPreset> GraphTable { get; } =
     [
-        new("integrated", "Integrated into the line", Integrated(reviewed: true, request: "owner")),
-        new("integrated-no-press", "Integrated into the line with no press", Integrated(reviewed: false, request: "done"), NoPress: true),
-        new("pull-request", "A pull request",
-            $$$"""
-            {"schemaVersion":2,"entries":["work"],"end":"pull-request","nodes":[{{{Claimed}}},{{{Requests}}},{{{Review}}},
-              {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"pull-request"}},
-              {"id":"pushed","kind":"pushed","version":1,"reach":"observed"},
-              {"id":"pull-request","kind":"pull-request","version":1,"reach":"observed"}],
-             "wires":[{{{Reviewed}}},{"id":"c","kind":"after","from":"landing","to":"pushed"},{"id":"d","kind":"after","from":"pushed","to":"pull-request"}]}
-            """),
-        // LANDNODE1c2: a merge with no review starts once the work's requests are done; D145's press is the workflow's to place.
-        new("merge-no-press", "Merge with no press",
-            $$$"""
-            {"schemaVersion":2,"entries":["work"],"end":"line","nodes":[{{{Claimed}}},{{{Requests}}},
-              {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"merge"}},
-              {"id":"line","kind":"line","version":1,"reach":"observed"}],
-             "wires":[{{{Wires}}},{"id":"c","kind":"after","from":"landing","to":"line"}]}
-            """, NoPress: true),
+        .. WorkflowDefaults.All.Select(shipped => new WorkflowGraphPreset(shipped.Id, shipped.Names.En, shipped.GraphJson,
+            NoPress: shipped.Delivery is { Method: LandNodes.Integrate, Accept: SetupLand.Automatic })),
     ];
 
-    /// <summary>The person's Accept before the landing (LANDNODE1c2), and the wires that put it between the work's requests and the `land`.</summary>
-    private const string Review = """{"id":"review","kind":"review","version":1,"reach":"pressed"}""";
-    private const string Reviewed =
-        """{"id":"a","kind":"after","from":"work","to":"requests"},{"id":"b","kind":"after","from":"requests","to":"review"},{"id":"e","kind":"after","from":"review","to":"landing"}""";
-
-    private static string Integrated(bool reviewed, string request) =>
-        $$$"""
-        {"schemaVersion":2,"entries":["work"],"end":"line","nodes":[{{{Claimed}}},{{{Requests}}},{{{(reviewed ? Review + "," : "")}}}
-          {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"integrate"}},
-          {"id":"integrate","kind":"integrate","version":1,"reach":"waited","options":{"request":"{{{request}}}","conflicts":"session"}},
-          {"id":"line","kind":"line","version":1,"reach":"observed"}],
-         "wires":[{{{(reviewed ? Reviewed : Wires)}}},{"id":"c","kind":"after","from":"landing","to":"integrate"},{"id":"d","kind":"after","from":"integrate","to":"line"}]}
-        """;
-
-    /// <summary>A graph preset by its id, or null.</summary>
-    public static WorkflowGraphPreset? GraphOf(string id) => GraphTable.FirstOrDefault(preset => preset.Id == id);
+    /// <summary>A graph preset by its id or an id its default was known by (LANDNODE1c2's <c>merge-no-press</c>), or null.</summary>
+    public static WorkflowGraphPreset? GraphOf(string id) =>
+        WorkflowDefaults.Of(id) is { } shipped ? GraphTable.FirstOrDefault(preset => preset.Id == shipped.Id) : null;
 
     /// <summary>
     /// A graph with a second opinion and your look added where it holds none: each a node wired from what led into the landing and straight into
@@ -148,6 +128,19 @@ public static class WorkflowPresets
                 : you ? "You accept each piece of work onto a branch, and you ask for it to be integrated into the line."
                     : "Each piece of work lands on a branch, and you ask for it to be integrated into the line.");
         }
+        else if (Option(Of(NodeKinds.Land), "method") is { } method)
+        {
+            // DEFAULTCONFIG1a: a merge's, a branch's and a push's landing are said as a version of steps says each.
+            said.Add(method switch
+            {
+                LandNodes.Merge => you ? "You accept each piece of work, and it merges into the line." : "Each piece of work merges into the line once its agent is done.",
+                LandNodes.Push => you ? "You accept each piece of work onto a branch, and its plugin pushes it."
+                    : "Each piece of work lands on a branch once its agent is done, and its plugin pushes it.",
+                _ => you ? "You accept each piece of work onto a branch, and push it yourself."
+                    : "Each piece of work lands on a branch once its agent is done, and you push it yourself.",
+            });
+        }
+
         said.Add("Its agent's done closes the quest; the flow's end is the work's.");
         return string.Join(' ', said);
     }

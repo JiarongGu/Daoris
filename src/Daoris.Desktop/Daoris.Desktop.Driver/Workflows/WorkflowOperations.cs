@@ -39,7 +39,11 @@ public sealed record WorkflowScope(string Level, string Name, string Role, strin
 
 /// <summary>Where a new version comes from, resolved: steps or a graph, its name, and how the terminal says its source.</summary>
 public sealed record WorkflowVersionSource(
-    string Description, string Name, JsonArray? Steps, JsonObject? Graph, WorkflowGraphPreset? GraphPreset, CurrentWorkflow? Drawn);
+    string Description, string Name, JsonArray? Steps, JsonObject? Graph, WorkflowGraphPreset? GraphPreset, CurrentWorkflow? Drawn)
+{
+    /// <summary>The default it copies (DEFAULTCONFIG1a), which the version keeps as <c>from</c>; null for every other source.</summary>
+    public WorkflowFrom? From { get; init; }
+}
 
 /// <summary>A version planned against its base: the file after it, the version read back, and whether it says what the base does.</summary>
 public sealed record WorkflowPlanned(WorkflowAddPlan Plan, NamedVersion? Next, IReadOnlyList<NamedStep>? NextSteps, bool Same);
@@ -298,6 +302,12 @@ public static class WorkflowOperations
                 ? $"  It maps to `{workflow}` there."
                 : $"  It maps to no workflow there: `daoris driver workflow use <id> --workspace {workspace} --kind {id}` maps one, and "
                     + "`--repository <name>` maps it for one repository.");
+            // DEFAULTCONFIG1a: the documents default is for such a kind; it is offered, never chosen for it.
+            if (declared?.Workflow is null && WorkflowDefaults.AreDocuments(paths) && WorkflowDefaults.Of("documents") is { } documents)
+            {
+                lines.Add($"  Its paths are documents: the default `{documents.Id}` merges such work into the line with no review, and "
+                    + $"`daoris driver workflow new <id> --from {documents.Id}` copies it.");
+            }
         }
 
         return new WorkflowKindSet(edit, lines, null);
@@ -375,10 +385,13 @@ public static class WorkflowOperations
                 null, WorkflowWords.GraphOfCurrent(drawn, opinion, look), null, drawn);
         }
 
-        if (!from.Contains('@', StringComparison.Ordinal) && WorkflowPresets.GraphOf(from) is { } graphPreset)
+        if (!from.Contains('@', StringComparison.Ordinal) && WorkflowDefaults.Of(from) is { } shipped && WorkflowPresets.GraphOf(shipped.Id) is { } graphPreset)
         {
             var name = $"{graphPreset.Name}{(opinion ? " + second opinion" : "")}{(look ? " + your look" : "")}";
-            return new($"the preset `{graphPreset.Id}`", name, null, WorkflowPresets.WithGraphGates(graphPreset.Graph(), opinion, look), graphPreset, null);
+            return new($"the default `{shipped.Id}`", name, null, WorkflowPresets.WithGraphGates(graphPreset.Graph(), opinion, look), graphPreset, null)
+            {
+                From = shipped.From,
+            };
         }
 
         if (!from.Contains('@', StringComparison.Ordinal) && WorkflowPresets.Of(from) is { } preset)
@@ -481,11 +494,13 @@ public static class WorkflowOperations
     }
 
     /// <summary>A new graph version, judged whole as the driver judges it, against the base: planned, read back and compared; nothing is written.</summary>
+    /// <param name="from">The default it copies, kept in the version (DEFAULTCONFIG1a); null for a graph from anywhere else.</param>
     /// <exception cref="ChoiceWords">Where the plan refuses.</exception>
-    public static WorkflowPlanned PlanGraph(string home, WorkflowFileFound? found, string id, NamedVersion? @base, string? name, string door, string at, JsonNode? graph)
+    public static WorkflowPlanned PlanGraph(
+        string home, WorkflowFileFound? found, string id, NamedVersion? @base, string? name, string door, string at, JsonNode? graph, WorkflowFrom? from = null)
     {
         var plan = WorkflowNamed.PlanAdd(found?.File, new WorkflowVersionAdded(id, name, door, at, null, graph?.DeepClone()),
-            found is null ? [] : WorkflowRunBindings.KeptVersions(home, id).ToList());
+            found is null ? [] : WorkflowRunBindings.KeptVersions(home, id).ToList(), from);
         if (plan.Problem is not null) throw new ChoiceWords(plan.Problem, 1);
         var versions = plan.Result!["versions"]!.AsArray();
         var next = WorkflowNamed.ReadVersion(WorkflowNamed.ElementOf(versions[^1]!), plan.Version!.Value, [],
@@ -522,7 +537,7 @@ public static class WorkflowOperations
                 {
                     var source = await SourceAsync(choices, home, registry, from, opinion, look, ct).ConfigureAwait(false);
                     planned = source.Graph is not null
-                        ? PlanGraph(home, null, id, null, name ?? source.Name, "screen", at, source.Graph)
+                        ? PlanGraph(home, null, id, null, name ?? source.Name, "screen", at, source.Graph, source.From)
                         : PlanSteps(home, null, id, null, name ?? source.Name, "screen", at, source.Steps);
                     made = source.Description;
                 }

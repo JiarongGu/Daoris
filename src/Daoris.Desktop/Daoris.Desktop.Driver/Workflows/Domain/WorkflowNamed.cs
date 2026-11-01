@@ -131,7 +131,16 @@ public sealed record NamedVersion(
     /// point 4), the node runtime governing its run and its gates read from its nodes (<see cref="WorkflowProcesses"/>).
     /// </summary>
     public string? Unrun => Steps is not null || Graph is not null ? null : Problem;
+
+    /// <summary>The default it was copied from (DEFAULTCONFIG1a), or null: one its file does not name, or names in a shape this build does not read.</summary>
+    public WorkflowFrom? From { get; init; }
 }
+
+/// <summary>
+/// Where a version came from (DEFAULTCONFIG1a): the default Daoris ships it was copied from, and that default's digest then. Kept in the version
+/// as <c>from</c>, which a build before it reads past, as it reads no key but its own.
+/// </summary>
+public sealed record WorkflowFrom(string Default, string Digest);
 
 /// <summary>A workflow file as read: its id and name and every version, each readable or not; or the file's own first problem.</summary>
 public sealed record NamedWorkflowRead(string? Id, string? Name, IReadOnlyList<NamedVersion> Versions, string? Problem)
@@ -274,7 +283,7 @@ public static class WorkflowNamed
                 var shape = pipeline == WorkflowPipelines.Verification ? VerificationProblem(graph, number) : OneLandingProblem(graph, number);
                 return shape is { } landing
                     ? Unread(landing)
-                    : new NamedVersion(number, at, door, null, null, NodeGraphs.Digest(graph), graph);
+                    : new NamedVersion(number, at, door, null, null, NodeGraphs.Digest(graph), graph) { From = FromOf(version) };
             }
         }
 
@@ -285,8 +294,15 @@ public static class WorkflowNamed
         }
 
         var (steps, problem) = ReadSteps(hasSteps ? raw : null, number, prior);
-        return steps is null ? Unread(problem!) : new NamedVersion(number, at, door, steps, null, Digest(steps));
+        return steps is null ? Unread(problem!) : new NamedVersion(number, at, door, steps, null, Digest(steps)) { From = FromOf(version) };
     }
+
+    /// <summary>A version's <c>from</c>, or null where it names none or names one in another shape: where it came from never makes it unreadable.</summary>
+    private static WorkflowFrom? FromOf(JsonElement version) =>
+        version.TryGetProperty("from", out var from) && from.ValueKind == JsonValueKind.Object
+        && Json.Text(from, "default") is { } named && IsId(named) && Json.Text(from, "digest") is { Length: > 0 } digest
+            ? new WorkflowFrom(named, digest)
+            : null;
 
     /// <summary>
     /// Why a named version's graph is not one landing, or null (FABRIC-CUTOVER1b; D190 point 4, the cutover design §4): it holds one
@@ -528,7 +544,9 @@ public static class WorkflowNamed
             }
 
             var step = new NamedStep(node.Id, kind, fields);
-            if (MergeProblem(step) is { } merge) return (null, p + merge);
+            // DEFAULTCONFIG1a (D145's note of 2026-11-01): a `land` merges with no press where its graph holds no review, the workflow's
+            // choice, and its own options are LandNodes.Problem's; a `handed` keeps the steps' refusal.
+            if (node.Kind != NodeKinds.Land && MergeProblem(step) is { } merge) return (null, p + merge);
             steps.Add(step);
         }
 
@@ -772,11 +790,13 @@ public static class WorkflowNamed
     /// </summary>
     /// <param name="file">The file as it stands, or null for a new workflow.</param>
     /// <param name="kept">The versions a kept run names.</param>
-    public static WorkflowAddPlan PlanAdd(JsonNode? file, WorkflowVersionAdded add, IReadOnlyCollection<int> kept)
+    /// <param name="from">The default the version is copied from (DEFAULTCONFIG1a), kept in it as <c>from</c>; null writes none.</param>
+    public static WorkflowAddPlan PlanAdd(JsonNode? file, WorkflowVersionAdded add, IReadOnlyCollection<int> kept, WorkflowFrom? from = null)
     {
         static WorkflowAddPlan Refused(string problem) => new(null, null, problem);
         // A graph is the version's schema 2 and its steps are none: both is refused whole, by the reader below, with the number it would take.
         var version = new JsonObject { ["version"] = 0, ["at"] = add.At, ["door"] = add.Door };
+        if (from is not null) version["from"] = new JsonObject { ["default"] = from.Default, ["digest"] = from.Digest };
         if (add.Graph is not null)
         {
             version["schema"] = GraphSchema;

@@ -98,6 +98,35 @@ public sealed class GraphRunLandingTests : AutoLandingFixture
         Assert.Equal(commit, (await GitAsync(root, "rev-parse", PushBranch)).Trim());
     }
 
+    /// <summary>
+    /// DEFAULTCONFIG1a: a version copied from <i>Merge automatically</i>, as <c>new --from</c> copies it, holds no review, so once its work's
+    /// requests are answered a pass readies its landing with no Accept, and the door merges the session's work into the line.
+    /// </summary>
+    [Fact]
+    public async Task A_version_copied_from_merge_automatically_lands_the_session_with_no_press()
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(LandingRule.Merge);
+        var tree = await DoneSessionAsync(root, "s1", "q1");
+        var source = await WorkflowOperations.SourceAsync(Config(), _home, _ => Task.FromResult(new ChoicesRegistry(null, "unread")),
+            "merge-automatic", opinion: false, look: false, CancellationToken.None);
+        var copied = WorkflowOperations.PlanGraph(_home, null, "docs", null, source.Name, "terminal", "2026-11-01T09:00:00Z", source.Graph, source.From);
+        WorkflowPorts.Store(_home).Write("docs", copied.Plan.Result!);
+        Assert.DoesNotContain(copied.Next!.Graph!.Nodes, node => node.Kind == NodeKinds.Review);
+        RunHome.Bind(_home, "q1", copied.Next.Digest!, DateTimeOffset.UtcNow);
+        var branch = Assert.Single(new SessionBranches(_home).All());
+        var trees = new SessionTrees(_home);
+
+        await PassAsync(root, branch);
+        var commit = await HeadAsync(tree);
+        var gate = await trees.GateAsync(tree, "q1", _world, "s1");
+        Assert.Equal((GraphGateStates.Lands, commit), (gate.Graph!.State, gate.Tip));
+        var landed = await trees.LandAsync(tree, Work, gate: gate);
+
+        Assert.True(landed.Landed, landed.Message);
+        Assert.Equal(commit, (await GitAsync(root, "merge-base", "main", commit)).Trim());
+    }
+
     [Theory]
     [InlineData(LandingForm.Branch)]
     [InlineData(LandingForm.Merge)]

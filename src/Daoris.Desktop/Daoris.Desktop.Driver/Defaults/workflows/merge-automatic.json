@@ -1,0 +1,28 @@
+{
+  "id": "merge-automatic",
+  "order": 2,
+  "aliases": ["merge-no-press"],
+  "names": { "en": "Merge automatically", "zh": "自动合并" },
+  "for": {
+    "en": "For a development repository whose main branch is its line: the work merges into the line once its requests are answered, with no review.",
+    "zh": "适用于以 main 分支为主线的开发仓库：工作的请求答复后即合并到主线，无需审阅。"
+  },
+  "delivery": { "method": "merge", "accept": "automatic" },
+  "setUp": false,
+  "graph": {
+    "schemaVersion": 2,
+    "entries": ["work"],
+    "end": "line",
+    "nodes": [
+      { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
+      { "id": "requests", "kind": "work.requests", "version": 1, "reach": "observed" },
+      { "id": "landing", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "merge" } },
+      { "id": "line", "kind": "line", "version": 1, "reach": "observed" }
+    ],
+    "wires": [
+      { "id": "a", "kind": "after", "from": "work", "to": "requests" },
+      { "id": "b", "kind": "after", "from": "requests", "to": "landing" },
+      { "id": "c", "kind": "after", "from": "landing", "to": "line" }
+    ]
+  }
+}

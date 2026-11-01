@@ -1045,6 +1045,7 @@
     "Workflows/WorkflowRunStart.cs": "Workflows",
     "Workflows/WorkflowStore.cs": "Workflows",
     "Workflows/WorkflowPalette.cs": "Workflows",
+    "Workflows/WorkflowDefaults.cs": "Workflows",
     "Workflows/Nodes/NodeOptionFields.cs": "Workflows",
     "Workflows/WorkflowObligations.cs": "Workflows",
     "Workflows/WorkOrdersWorkflowsWiring.cs": "Workflows",

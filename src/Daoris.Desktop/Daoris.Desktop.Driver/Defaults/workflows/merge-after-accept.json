@@ -1,0 +1,29 @@
+{
+  "id": "merge-after-accept",
+  "order": 1,
+  "names": { "en": "Merge after you accept", "zh": "你采纳后合并" },
+  "for": {
+    "en": "For a repository whose work you accept: once the work's requests are answered you review it, and it merges into the line.",
+    "zh": "适用于由你采纳工作的仓库：工作的请求答复后由你审阅，然后合并到主线。"
+  },
+  "delivery": { "method": "merge", "accept": "you" },
+  "setUp": true,
+  "graph": {
+    "schemaVersion": 2,
+    "entries": ["work"],
+    "end": "line",
+    "nodes": [
+      { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
+      { "id": "requests", "kind": "work.requests", "version": 1, "reach": "observed" },
+      { "id": "review", "kind": "review", "version": 1, "reach": "pressed" },
+      { "id": "landing", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "merge" } },
+      { "id": "line", "kind": "line", "version": 1, "reach": "observed" }
+    ],
+    "wires": [
+      { "id": "a", "kind": "after", "from": "work", "to": "requests" },
+      { "id": "b", "kind": "after", "from": "requests", "to": "review" },
+      { "id": "e", "kind": "after", "from": "review", "to": "landing" },
+      { "id": "c", "kind": "after", "from": "landing", "to": "line" }
+    ]
+  }
+}

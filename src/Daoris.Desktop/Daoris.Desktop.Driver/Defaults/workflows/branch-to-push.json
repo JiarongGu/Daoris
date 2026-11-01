@@ -1,0 +1,27 @@
+{
+  "id": "branch-to-push",
+  "order": 4,
+  "names": { "en": "A branch to push", "zh": "留给你推送的分支" },
+  "for": {
+    "en": "For a repository you push yourself: you review the work, and it lands on a branch of its own for you to push.",
+    "zh": "适用于由你自己推送的仓库：由你审阅工作，它落地到自己的分支上，留给你推送。"
+  },
+  "delivery": { "method": "branch", "accept": "you", "plugin": "none" },
+  "setUp": true,
+  "graph": {
+    "schemaVersion": 2,
+    "entries": ["work"],
+    "end": "landing",
+    "nodes": [
+      { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
+      { "id": "requests", "kind": "work.requests", "version": 1, "reach": "observed" },
+      { "id": "review", "kind": "review", "version": 1, "reach": "pressed" },
+      { "id": "landing", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "branch", "plugin": "none" } }
+    ],
+    "wires": [
+      { "id": "a", "kind": "after", "from": "work", "to": "requests" },
+      { "id": "b", "kind": "after", "from": "requests", "to": "review" },
+      { "id": "e", "kind": "after", "from": "review", "to": "landing" }
+    ]
+  }
+}

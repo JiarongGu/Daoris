@@ -35,10 +35,22 @@ public sealed record PlaceNeed(string Code, string? Detail = null);
 /// <summary>One work at a place, light: the role a start finds (<see cref="RoleCatalog.RoleFor"/>) and the rule's consent (<see cref="WorkPolicies.Of"/>).</summary>
 public sealed record PlaceWork(string Work, string? Role, string? Held, string? Consent, string Source, string? PolicyFailed);
 
+/// <summary>
+/// The default a place follows (DEFAULTCONFIG1a), by its id, and each option the place says otherwise, as <c>accept `automatic`</c>: under Current
+/// the default its landing rule matches, and for a chosen version the default it was copied from.
+/// </summary>
+public sealed record PlaceDefault(string? Default, IReadOnlyList<string> Differs)
+{
+    public bool Equals(PlaceDefault? other) => other is not null && Default == other.Default && Differs.SequenceEqual(other.Differs);
+
+    public override int GetHashCode() => HashCode.Combine(Default, Differs.Count);
+}
+
 /// <summary>The values a head's line says, each as its execution reader resolves it.</summary>
+/// <param name="Follows">The default its workflow follows; null where it follows none, or its version is not read here.</param>
 public sealed record PlaceValues(
     PlaceValue Line, PlaceValue Landing, PlaceValue Workflow, PlaceValue Landed, PlaceValue Commits, PlaceValue Opinion, PlaceValue HandOver,
-    PlaceValue Language, PlaceValue Access);
+    PlaceValue Language, PlaceValue Access, PlaceDefault? Follows);
 
 /// <summary>A place: this machine (no workspace), a workspace (no repository) or a driven repository.</summary>
 public sealed record PlaceRow(
@@ -77,9 +89,11 @@ public sealed record PlacesRead(
 /// </summary>
 public static class PlaceProjection
 {
+    /// <param name="home">The home whose saved workflows a place's choice names, read for the default each version follows; null reads none.</param>
     public static PlacesRead Of(
-        DriverConfig config, IReadOnlyList<RepoView> registry, Func<RoleCatalog> catalogue, PlacesAsk ask)
+        DriverConfig config, IReadOnlyList<RepoView> registry, Func<RoleCatalog> catalogue, PlacesAsk ask, string? home = null)
     {
+        var workflows = home is null ? null : WorkflowPorts.Store(home);
         RoleCatalog? read = null;
         string? failed = null;
         try
@@ -135,7 +149,7 @@ public static class PlaceProjection
             return needs;
         }
 
-        PlaceValues ValuesOf(string repository, string? workspace, string level) => ValuesAt(config, repository, workspace, level);
+        PlaceValues ValuesOf(string repository, string? workspace, string level) => ValuesAt(config, repository, workspace, level, workflows);
 
         var machineWorks = WorksAt(new RolePlace());
         var machineNeeds = NeedsOf(machineWorks, []);
@@ -181,7 +195,8 @@ public static class PlaceProjection
     /// said from <paramref name="level"/>'s page; a workspace's is read with no repository named. A place's plan reads its before and after
     /// through this (AGENTSPLACE1a2), so the two cannot say another thing.
     /// </summary>
-    public static PlaceValues ValuesAt(DriverConfig config, string repository, string? workspace, string level)
+    /// <param name="workflows">Where a chosen workflow's versions are read, for the default it follows; null reads none, and it follows none known.</param>
+    public static PlaceValues ValuesAt(DriverConfig config, string repository, string? workspace, string level, IWorkflowStore? workflows = null)
     {
         var line = CanonicalLine.Choose(config, repository, workspace, guess: null);
         var landing = LandingRules.Choose(config, repository, workspace);
@@ -204,7 +219,27 @@ public static class PlaceProjection
             opinion is null ? new(null, PlaceSource.Default) : new(opinion.Rule.IsNone ? "none" : string.Join(",", opinion.Rule.Reviewers), PlaceSource.At(opinion.Source, level)),
             new(handOver.Rule.Mode, PlaceSource.At(handOver.Source, level)),
             language is null ? new(null, PlaceSource.Default) : new(language.Code, PlaceSource.At(language.Source, level)),
-            new(access.Full ? "full" : access.Today ? "today" : "custom", sources is [var one] ? one : "mixed"));
+            new(access.Full ? "full" : access.Today ? "today" : "custom", sources is [var one] ? one : "mixed"),
+            FollowsOf(config, level == PlaceSource.RepositoryLevel ? repository : "", workspace, flow.Workflow, workflows));
+    }
+
+    /// <summary>
+    /// The default a place's workflow follows (DEFAULTCONFIG1a): under Current, the one its landing rule's delivery matches
+    /// (<see cref="SetupPresets.Match"/>), with what the rule says otherwise; for a saved workflow, the default its newest version that reads was
+    /// copied from, with what the copy changed. Null for a version copied from none, or one this build cannot read.
+    /// </summary>
+    private static PlaceDefault? FollowsOf(DriverConfig config, string repository, string? workspace, string chosen, IWorkflowStore? workflows)
+    {
+        if (chosen == WorkflowSelection.Current)
+        {
+            var match = SetupPresets.Match(driven: true, SetupPresets.LandOf(Involvement.StepsOf(WorkflowCurrent.Derive(config, repository, workspace, []))));
+            return new PlaceDefault(match.Preset, match.Own);
+        }
+
+        var newest = WorkflowNamed.IsId(chosen) ? workflows?.Load(chosen)?.Read.Versions.LastOrDefault(each => each.Steps is not null || each.Graph is not null) : null;
+        if (newest?.From is not { } from) return null;
+        if (WorkflowDefaults.Of(from.Default) is not { } shipped) return new PlaceDefault(from.Default, ["unknown here"]);
+        return new PlaceDefault(shipped.Id, newest.Graph is { } graph ? WorkflowDefaults.Differs(shipped, graph) : ["steps"]);
     }
 
     private static string Cursor(string workspace, string repository) => workspace + "\u001f" + repository;

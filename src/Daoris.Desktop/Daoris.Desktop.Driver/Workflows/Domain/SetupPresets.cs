@@ -25,11 +25,14 @@ public sealed record SetupMatch(string? Preset, IReadOnlyList<string> Own)
 /// <summary>
 /// The delivery presets of a place's quick set-up (AGENTSPLACE1a2; the Agents-place design §2 point 3 and §4, the land node design §7), beside
 /// the workflows' presets: each is a set of `land` options applied to Current through the landing rule, never stored. A place's preset is
-/// derived from what its work follows (<see cref="LandOf"/>, <see cref="Match"/>), or said as the options of its own.
+/// derived from what its work follows (<see cref="LandOf"/>, <see cref="Match"/>), or said as the options of its own. After <i>Not driven</i>,
+/// each is a default Daoris ships that the data offers a set-up (DEFAULTCONFIG1a, <see cref="WorkflowDefaults"/>), with its name and delivery.
 /// </summary>
 public static class SetupPresets
 {
     public const string NotDriven = "not-driven";
+
+    /// <summary>The defaults the suggestion names (<see cref="Suggest"/>), each a shipped default's id.</summary>
     public const string Merge = "merge-after-accept";
     public const string Branch = "branch-to-push";
     public const string PullRequest = "pull-request";
@@ -41,10 +44,7 @@ public static class SetupPresets
     public static IReadOnlyList<SetupPreset> Table { get; } =
     [
         new(NotDriven, "Not driven", null),
-        new(Merge, "Merge after you accept", new(LandNodes.Merge, SetupLand.You)),
-        new(Branch, "A branch to push", new(LandNodes.Branch, SetupLand.You, LandNodes.NoPlugin)),
-        new(PullRequest, "A pull request", new(LandNodes.PullRequest, SetupLand.You)),
-        new(Integrated, "Integrated into the line", new(LandNodes.Integrate, SetupLand.You, LandNodes.NoPlugin, LandingIntegrate.Owner)),
+        .. WorkflowDefaults.All.Where(shipped => shipped.SetUp).Select(shipped => new SetupPreset(shipped.Id, shipped.Names.En, shipped.Delivery)),
     ];
 
     /// <summary>A preset by its id, or null.</summary>
