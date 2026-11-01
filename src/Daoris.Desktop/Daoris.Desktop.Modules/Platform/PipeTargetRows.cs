@@ -40,6 +40,7 @@ internal static class PipeTargetRows
         ["SET_ACTOR"] = "edits an actor's row in place",
         ["STAFFING_FOUND_ANSWER"] = "answers a found change, which then leaves the list",
         ["SET_ROLE"] = "edits a role's row of the catalogue in place, its revision moving",
+        ["SET_ROLES"] = "edits several roles' rows of the catalogue in place, each revision moving, in one transaction",
         ["WORKFLOW_LANDED"] = "reads the gates at the line's tip and accepts them by their blob",
         ["WORKFLOW_USE"] = "merges into the place's choice, which keeps its other kinds and its landed route",
         ["WORKFLOW_KIND"] = "merges into the workspace's kinds, keeping the others",
@@ -235,6 +236,17 @@ internal static class PipeTargetRows
                 string.Join(",", Each(At(a, "rules")).Select(each => Text(each)).Order(StringComparer.Ordinal)),
                 string.Join(",", Each(At(a, "refusals")).Select(each => Text(At(each, "code"))).Order(StringComparer.Ordinal))),
             TimeSpan.FromMinutes(2)));
+        // AGENTSPLACE1b2: the plan the person read, by its digest, which pins each repository's changes, its declaration's blob and the acceptances
+        // offered, read at the press's ask and again at its Confirm; a plan that moved between them is refused.
+        Row("PLACE_APPLY", Plan("PLACE_PLAN",
+            ["repositories", "preset", "opinion", "look", "adoption", "builds", "drive", "digest", "accept"],
+            p => new
+            {
+                repositories = Field(p, "repositories"), preset = Text(p, "preset"), opinion = Field(p, "opinion"), look = Field(p, "look"),
+                adoption = Field(p, "adoption"), builds = Text(p, "builds"), drive = Field(p, "drive"),
+            },
+            (a, _) => Fp(Text(At(a, "digest"))),
+            TimeSpan.FromMinutes(2)));
         Row("SET_DRIVABLE", new RepositoryGround("repository"), Listed("drivable", "drivable"));
         Row("SET_HOLD", new RepositoryGround("repository"), Listed("holds", "held"));
         Row("SET_TREES", new RepositoryGround("repository"), Listed("trees", "ownTree"));
@@ -295,6 +307,9 @@ internal static class PipeTargetRows
             (a, p) => Fp(Raw(Named(At(a, "actors"), "id", Text(p, "actor"))))));
         Row("STAFFING_FOUND_ANSWER", Setting("ACTORS", ["found", "answer"], _ => null, (a, _) => Fp(Raw(At(a, "found")))));
         Row("SET_ROLE", Setting("ROLES", ["change", "id"], _ => null, (a, p) => Fp(Raw(Named(At(a, "roles"), "id", Text(p, "id"))))));
+        // AGENTSPLACE1g2: the rows of every role the batch names, in the order it names them.
+        Row("SET_ROLES", Setting("ROLES", ["changes"], _ => null,
+            (a, p) => Fp([.. Each(Field(p, "changes")).Select(change => Raw(Named(At(a, "roles"), "id", Text(change, "id"))))])));
         Row("SET_KEEP", Setting("SYSTEM_SPACE", ["kind"], _ => null,
             (a, p) => Fp(Raw(At(Named(At(a, "kinds"), "id", Text(p, "kind")), "rule")), Raw(At(a, "volume", "floor")))));
         Row("SET_AGENT_SETTINGS", Setting("HARNESSES", ["harness", "profile"], _ => null,

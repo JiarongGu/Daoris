@@ -375,6 +375,8 @@ public sealed class PipeCensus
             "STAFFING_FOUND_ANSWER",
             // FOUNDATION1y-i: a working role of the catalogue added, changed, removed or given back its seed.
             "SET_ROLE",
+            // AGENTSPLACE1g2: several roles' changes made as one, the Roles mode's suggested choices.
+            "SET_ROLES",
             "SETUP_PRESS", "SET_ACCESS", "SET_ACTOR", "SET_AGENT_SETTINGS", "SET_CAP", "SET_COMMITS", "SET_COOLOFF", "SET_DRIVABLE", "SET_HAND_OVER", "SET_HELPERS", "SET_HELP_MODE",
             // HELPMODE1c2b: what Ask Daoris's housekeeping may do, the person's grant alone.
             "SET_HELP_GRANT",
@@ -382,6 +384,8 @@ public sealed class PipeCensus
             "WORKFLOW_LANDED",
             // AGENTSPLACE1c: a workflow saved, a place's choice of one, and a workspace's kinds, which decide the process every new start binds.
             "WORKFLOW_SAVE", "WORKFLOW_USE", "WORKFLOW_KIND",
+            // AGENTSPLACE1b2: a place's plan applied, by its digest: the configuration's changes and acceptances, and each adoption quest.
+            "PLACE_APPLY",
             // INTEGRATE1d: a repository's integration declaration, what integration runs and a tidy removes, accepted by its blob (D215 point 10).
             "INTEGRATION_GATES",
             // HEAVYRUN1b2b: the commands this machine runs for a repository's heavy gates, which the person writes.
@@ -484,9 +488,9 @@ public sealed class PipeCensus
             // answer over the gate. A workflow node's word and a run's accepted gates; a pause's release, which reaches more than its
             // quests. The keeping rule, whose pass removes set-aside trees. A start held for a folder's trust, and a plugin, which may
             // hold a start.
-            "SET_HELPERS", "SET_CAP", "SET_ACTOR", "STAFFING_FOUND_ANSWER", "SET_ROLE", "SET_COOLOFF", "ACCOUNT_USE", "HARNESSES_REFRESH", "SET_HAND_OVER", "SET_OPINION",
+            "SET_HELPERS", "SET_CAP", "SET_ACTOR", "STAFFING_FOUND_ANSWER", "SET_ROLE", "SET_ROLES", "SET_COOLOFF", "ACCOUNT_USE", "HARNESSES_REFRESH", "SET_HAND_OVER", "SET_OPINION",
             "SET_LANDING", "SET_REVIEW", "SET_LINE", "OPINION_ANYWAY", "OPINION_MYSELF", "WORK_HELD", "WORKFLOW_NODE", "WORK_RESUME",
-            "WORKFLOW_LANDED", "WORKFLOW_SAVE", "WORKFLOW_USE", "WORKFLOW_KIND", "WORKFLOW_VERIFY", "SET_KEEP", "TRUST_FOLDER", "PLUGIN_ACTION", "PLUGIN_ADD", "PLUGIN_INSTALL", "PLUGIN_UPDATE",
+            "PLACE_APPLY", "WORKFLOW_LANDED", "WORKFLOW_SAVE", "WORKFLOW_USE", "WORKFLOW_KIND", "WORKFLOW_VERIFY", "SET_KEEP", "TRUST_FOLDER", "PLUGIN_ACTION", "PLUGIN_ADD", "PLUGIN_INSTALL", "PLUGIN_UPDATE",
             // A process of its own that runs on past its answer, which the drain counts not and the close would cut: a plugin's try, a
             // harness's installer, updater or sign-in, and a tool's download (a managed use downloads first).
             "PLUGIN_TRY", "HARNESS_ACTION", "TOOLS_DOWNLOAD", "TOOLS_USE",

@@ -1,5 +1,5 @@
 import type { AgentPart } from '../agents/agents';
-import type { AgentsMode, RoleSection } from '../agents/modes';
+import { type AgentsMode, repositoryId, type RoleSection, workspaceId } from '../agents/modes';
 import type { PlanDoor } from '../person/Confirmations';
 import type { View } from '../menus/commands';
 import type { StarterDoor } from '../help/starters';
@@ -111,6 +111,8 @@ export type Opening = {
   agentsMode?: AgentsMode;
   /** The Roles section a door opens (COMPANYVIEW1e): it names Roles' mode, and the section is chosen in Roles' list. */
   roleSection?: RoleSection;
+  /** The place the Setup mode opens at (AGENTSPLACE1f), by the id its list chooses it under (`repositoryId`, `workspaceId`). */
+  place?: string;
   /**
    * The group of Sessions' or Quests' list to bring into view (ENTRY1b, D161's ENTRY1 note): what waits on the person there,
    * with no item in it chosen. The list brings it once it has answered, then lets it go (`useBringGroup`).
@@ -169,6 +171,30 @@ export function opening(view: View, item?: string | null, part: OpenPart = {}, h
   }
   if (part.group && GROUP_VIEW[part.group] === view) plan.group = part.group;
   if (view === 'sessions' && part.compose) plan.compose = part.compose;
+  return plan;
+}
+
+/**
+ * **Every door into a repository's Setup tab, once the Setup mode is lit, opens the place's page** (AGENTSPLACE1f, the Agents-place design
+ * §6): What needs you's declaration wait, Get started's and the help room's steps, Settings' doors and a workflow step's. They all end in
+ * `apply`, so one redirect there holds them all, where a census of the doors cannot miss one. A workspace's *Sessions' access* is the
+ * workspace place's too; the rest of a workspace's Setup stays its tab until its own row moves. A door naming the tab and no repository
+ * (the help room's) opens the mode, whose list chooses one. Dark, the plan is unchanged.
+ *
+ * `workspaceOfRepository` answers the workspace a repository sits in, as the registry holds it.
+ */
+export function placeOpening(plan: Opening, lit: boolean, workspaceOfRepository: (repository: string) => string): Opening {
+  if (!lit || plan.view !== 'projects') return plan;
+  // The help room's door names the tab and no repository: the Setup mode's list is where one is chosen.
+  if (plan.tab === 'setup' && !plan.chosen) return { view: 'agents', agentsMode: 'setup' };
+  if (plan.chosen?.view !== 'projects') return plan;
+  const named = projectsItem(plan.chosen.item);
+  if (plan.tab === 'setup' && 'repository' in named) {
+    return { view: 'agents', agentsMode: 'setup', place: repositoryId(workspaceOfRepository(named.repository), named.repository) };
+  }
+  if (plan.workspaceTab === 'setup' && plan.workspaceSection === 'access' && 'workspace' in named) {
+    return { view: 'agents', agentsMode: 'setup', place: workspaceId(named.workspace) };
+  }
   return plan;
 }
 

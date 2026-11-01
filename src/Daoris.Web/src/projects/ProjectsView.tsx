@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { canBeAsked, type Registration, SESSION_ACTIVE } from '../data/api';
+import { canBeAsked, type Registration } from '../data/api';
 import { sentence } from '../locales/format';
-import { stewardSetAt } from '../person/standing';
+import { setupLit } from '../agents/modes';
 import { AddProjectDrawer, ImportFolderDrawer, ManageProjectDrawer } from './ProjectManage';
 import { projectsItem, workspaceItem } from '../app/opener';
 import type { WorkflowTabProps } from '../workflow/WorkflowTab';
@@ -10,35 +10,21 @@ import { ProjectList, type RepositoryRowFacts, type WorkspaceGroup } from './Pro
 import { ProjectPage, ProjectsMainNotice } from './ProjectPage';
 import { RepositoryBranch, RepositoryBranches, RepositoryChanges, RepositoryHistory } from './git/RepositoryGitView';
 import { RepositoryIntegration } from './integration/RepositoryIntegration';
-import type { Driving, RepositorySetupProps } from './setup/RepositorySetup';
+import { useRepositorySetup } from './setup/useRepositorySetup';
 import type { ProjectTab, WorkspaceSection, WorkspaceTab } from './tabs';
 import { WorkspaceView } from './workspace/WorkspaceView';
 import { useQuests, useRegistry, useRepositories, useSessions } from '../data/queries';
 import { sessionTitle } from '../work/identity';
 import { useScope } from '../data/scope';
-import { type AccessEdit, accessToast, isFull, resolveAccess } from '../settings/repository/Access';
-import { type CommitEdit, commitToast } from '../settings/repository/Commits';
-import { heavyToast } from '../settings/repository/HeavyGates';
-import { type HelperEdit, helperToast } from '../settings/repository/Helpers';
-import { type HandOverEdit, handOverToast } from '../settings/repository/HandOver';
-import type { LandingRule } from '../settings/repository/Landings';
-import { type OpinionEdit, opinionToast } from '../settings/repository/Opinions';
-import { type ReviewEdit, reviewToast } from '../settings/repository/Reviews';
-import { sessionChecksToast, type SessionChecksValue } from '../settings/repository/SessionChecks';
 import {
-  useAcross, useDriver, useHarnesses, useLines, usePlugins, useRuleAction, useRules, useSetAccess, useSetCommits, useHeavyMarks, useHeavySlot, useSetDrivable, useSetHeavyGates, useSetHelpers,
-  useSetHandOver, useSetHold, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross, useSetReview, useSetSessionChecks, useSetStanding, useSetTrees, useSetCheckoutWrites,
-  useSetupPlan, useSetupPress, useSetWriteAcross, useSweepPlan, useWorkflowCurrent, useSetLanded, acceptGatesPress, useAcceptIntegration, useVerify, standingOf,
+  useDriver, useLines, useHeavySlot, useSetupPlan, useSetupPress, useSweepPlan, useWorkflowCurrent, useSetLanded, acceptGatesPress, useVerify,
 } from '../bridge/shell';
 import type { SetUpForAgentsProps } from './setup/SetUpForAgents';
-import { doorOf } from '../agents/tools';
-import { failure, type Notify, useErrorNotify } from '../design/ui';
+import { type Notify, useErrorNotify } from '../design/ui';
 import { ListMore } from '../work/frame/ListPane';
 import type { ViewLayout } from '../work/frame/ViewFrame';
 import { workspaceOf, workspacesOf } from '../data/workspaces';
 import { buttonNamed, returnFocus } from '../lib/returnFocus';
-
-const list = <T,>(value: unknown): T[] => (Array.isArray(value) ? value as T[] : []);
 
 /**
  * **The Repositories view** (D38; FRAME1e, D118 §2): what it hands the frame (D118 §5), its list pane and its main
@@ -72,7 +58,7 @@ const list = <T,>(value: unknown): T[] => (Array.isArray(value) ? value as T[] :
  */
 export function useProjectsView({
   active, chosen, onChoose, tab = 'details', onTab, workspaceTab = 'details', onWorkspaceTab, workspaceSection = null, notify,
-  onOpenCode, onOpenAgent, onOpenAppointed, onOpenPlugin, onSyncNow, syncing = false, addRequested = false, onAddOpened, importRequested = false, onImportOpened,
+  onOpenCode, onOpenAgent, onOpenAppointed, onOpenPlugin, onOpenSetup, onSyncNow, syncing = false, addRequested = false, onAddOpened, importRequested = false, onImportOpened,
   drawerWorkspace = null, onOpenQuest, onOpenAsk, onAttend, branchAsked = null, onBranchOpened,
 }: {
   /** The view is in front: only then are its errors said. */
@@ -99,6 +85,8 @@ export function useProjectsView({
   onOpenAppointed?: () => void;
   /** Open a plugin's page, from the plugin a landing rule names in a Setup (PLUGUI1c2c). */
   onOpenPlugin?: (plugin: string) => void;
+  /** Open a repository's Setup, which is the Agents place's page once its Setup mode is lit (AGENTSPLACE1f): the door its page offers in place of the tab. */
+  onOpenSetup?: (repository: string) => void;
   /** Sync a workspace with its remote, the status bar's pass (SYNC6b), which the application says. */
   onSyncNow?: (workspace: string) => void;
   syncing?: boolean;
@@ -142,69 +130,16 @@ export function useProjectsView({
   const { workspace } = useScope();
   const repositories = useRepositories();
   const driver = useDriver();
-  const roster = useHarnesses();
-  const setDrivable = useSetDrivable();
-  const setHold = useSetHold();
-  const setTrees = useSetTrees();
-  const setCheckoutWrites = useSetCheckoutWrites();
-  const setStanding = useSetStanding();
-  const setLanguage = useSetLanguage();
-  const setLine = useSetLine();
-  const setLanding = useSetLanding();
-  const setReview = useSetReview();
-  const setOpinion = useSetOpinion();
-  const setCommits = useSetCommits();
-  const setHelpers = useSetHelpers();
-  const setHandOver = useSetHandOver();
-  const setAccess = useSetAccess();
-  const setHeavy = useSetHeavyGates();
-  const setChecks = useSetSessionChecks();
-  const setRead = useSetReadAcross();
-  const setWrite = useSetWriteAcross();
-  const ruleAction = useRuleAction();
   // Each repository's line as the driver resolves it (WSR2) — shell-only, and absent in a browser.
   const lines = useLines();
-  const resolvedLine = (repository: string) => (Array.isArray(lines.data?.lines) ? lines.data.lines : [])
-    .find((line) => line.repository === repository);
   const lineOf = (repository: string) => {
-    const line = resolvedLine(repository);
+    const line = (Array.isArray(lines.data?.lines) ? lines.data.lines : []).find((one) => one.repository === repository);
     return line?.branch ? line : undefined;
   };
-  // And its session language (LANG1c), the driver's resolution, read rather than recomputed.
-  const languageOf = (repository: string) => (Array.isArray(lines.data?.languages) ? lines.data.languages : [])
-    .find((one) => one.repository === repository);
-  // And where its work is reviewed before it lands (REVIEWENV1a), the driver's resolution.
-  const reviewOf = (repository: string) => (Array.isArray(lines.data?.reviews) ? lines.data.reviews : [])
-    .find((one) => one.repository === repository);
-  // And which other agent reads its work before it lands (XAGENT1a), the driver's resolution.
-  const opinionOf = (repository: string) => (Array.isArray(lines.data?.opinions) ? lines.data.opinions : [])
-    .find((one) => one.repository === repository);
-  // And how its work is committed and what a helper its agent asks for does (DOORS1b), the driver's resolution.
-  const commitsOf = (repository: string) => (Array.isArray(lines.data?.commits) ? lines.data.commits : [])
-    .find((one) => one.repository === repository);
-  const helpersOf = (repository: string) => (Array.isArray(lines.data?.helpers) ? lines.data.helpers : [])
-    .find((one) => one.repository === repository);
-  // And what an agent's ask to hand its session over does (MIXAGENT1c), with where it was set: the driver's resolution.
-  const handOverOf = (repository: string) => (Array.isArray(lines.data?.handOver) ? lines.data.handOver : [])
-    .find((one) => one.repository === repository);
-  // And the access setup its sessions start under (AUTONOMY1d), each pause with where it was set: the driver's resolution.
-  const accessOf = (repository: string) => (Array.isArray(lines.data?.access) ? lines.data.access : [])
-    .find((one) => one.repository === repository);
-  // And how its work lands (WSR1), the driver's choice.
-  const landingOf = (repository: string) => (Array.isArray(lines.data?.landings) ? lines.data.landings : [])
-    .find((one) => one.repository === repository);
-  // What only Setup reads is asked only while it shows (UX6f): reading across, and the plugins that land work. The rules
-  // are the application's on every view already.
-  const setupShown = active && driver.data !== undefined && tab === 'setup' && chosenRepository !== null;
-  const across = useAcross({ enabled: setupShown });
-  // GITAPP2b: the sessions the service lists, asked only while Setup shows a repository whose switch is on, to say which already run
-  // in its checkout (a session with no tree of its own runs in the registered root).
-  const checkoutOn = chosenRepository !== null && (driver.data?.checkoutWrites ?? []).some((name) => name.toLowerCase() === chosenRepository.toLowerCase());
-  const checkoutSessions = useSessions(chosenRepository, false, setupShown && checkoutOn);
-  const rules = useRules();
-  // Whether its own daoris.gates.json marks heavy gates, so wins over this machine's list (HEAVYRUN1b2c): the driver's reading, asked
-  // for the chosen repository only while its Setup shows.
-  const heavyMarks = useHeavyMarks(chosenRepository ?? '', { enabled: setupShown });
+  // A repository's Setup is the Agents place's page once its Setup mode is lit (AGENTSPLACE1f): its tab goes, and every door into it
+  // opens that page (`placeOpening`). Dark, the tab stays, so nothing usable is lost.
+  const setupLives = !setupLit();
+  const setupShown = active && driver.data !== undefined && tab === 'setup' && chosenRepository !== null && setupLives;
   // Who holds its heavy-run slot and who waits (HEAVYSLOT1), for its Details' row, asked while its Details shows; the sessions and
   // quests that name them are the rail's own reads, asked only while someone holds or waits.
   const detailsShown = active && driver.data !== undefined && tab === 'details' && chosenRepository !== null;
@@ -216,16 +151,10 @@ export function useProjectsView({
     const session = (heavySessions.data ?? []).find((row) => row.id === id);
     return session ? sessionTitle(session, session.quest ? (heavyQuests.data ?? []).find((row) => row.id === session.quest) : null) : id;
   };
-  const catalog = usePlugins({ enabled: setupShown });
-  const landers = (catalog.data?.plugins ?? [])
-    .filter((plugin) => plugin.enabled && !plugin.problem && plugin.points.includes('work/land'))
-    .map((plugin) => plugin.id);
-  // How its work moves (WORKFLOW1b): its Current, asked only while its Workflow tab shows, as Setup's own answers are.
+  // How its work moves (WORKFLOW1b): its Current, asked only while its Workflow tab shows.
   const workflowShown = active && driver.data !== undefined && tab === 'workflow' && chosenRepository !== null;
-  // FABRIC-PIPELINE1a: Setup's route row reads the same answer's start node, so it is asked while Setup shows too.
-  const current = useWorkflowCurrent(chosenRepository === null ? null : { repository: chosenRepository }, { enabled: workflowShown || setupShown });
+  const current = useWorkflowCurrent(chosenRepository === null ? null : { repository: chosenRepository }, { enabled: workflowShown });
   const setLanded = useSetLanded();
-  const acceptIntegration = useAcceptIntegration();
   const verify = useVerify();
   // Session branches holding work no branch of the person's holds (WSR3, D88) — named on the repository,
   // so work is not lost in a pile nobody reads. A workspace's Branches lists them one by one (UX6g).
@@ -241,8 +170,6 @@ export function useProjectsView({
   // The driver bridge included: a STATE that fails silently reads as a machine with no driver. Said once, while the
   // view is in front (D118 §3h).
   useErrorNotify(active ? registry.error ?? repositories.error ?? driver.error : null, notify);
-  // What Setup alone asks is said while Setup shows.
-  useErrorNotify(setupShown ? across.error : null, notify);
 
   const attached = driver.data !== undefined;
   // A repository's *Set up for agents* (LAYOUT8, D117 §6.1, §6.5): the repository whose plan the person asked to see, read
@@ -283,10 +210,14 @@ export function useProjectsView({
   const indexed = (name: string) => (repositories.data ?? []).find((r) => r.name === name);
   const named = (names: string[] | undefined, repository: string) =>
     (names ?? []).some((name) => name.toLowerCase() === repository.toLowerCase());
-  const onDriverError = failure(notify);
-  // Which door this machine's starts ride (INT3c): an unadopted repository is carried by the protocol door only
-  // (D70), so on a direct one its page says a quest there will sit. Unknown says nothing.
-  const door = doorOf(roster.data?.adapter, list(roster.data?.harnesses));
+  // Its Setup tab's props, dark only (AGENTSPLACE1f): lit, the Agents place's page reads them.
+  const setupProps = useRepositorySetup({
+    registration: chosenRepository ? rows.find((row) => row.repository === chosenRepository) : undefined,
+    enabled: setupShown,
+    notify,
+    onOpenPlugin,
+    onOpenAppointed,
+  });
 
   /** Its standing on this machine: the driver's choices and whether a checkout is here, where a shell answers. */
   const standing = (registration: Registration) => driver.data && {
@@ -306,323 +237,6 @@ export function useProjectsView({
     const held = rows.filter((row) => workspaceOf(row) === name);
     return { workspace: name, adopted: held.filter((row) => row.adopted).map(facts), outside: held.filter((row) => !row.adopted).map(facts) };
   });
-
-  /**
-   * This machine's driving for one repository — the same wherever it can be driven: every adopter, and since INT3c one
-   * not adopted with a root here (D70). One with no root has nowhere to start, and gets none.
-   */
-  const drivingOf = (registration: Registration): Driving | null => {
-    if (!driver.data || (!registration.adopted && !canBeAsked(registration))) return null;
-    const { repository } = registration;
-    return {
-      drivable: named(driver.data.drivable, repository),
-      held: named(driver.data.holds, repository),
-      ownTree: named(driver.data.trees, repository),
-      onDrive: (next) => setDrivable.mutate({ repository, drivable: next }, { onError: onDriverError }),
-      onHold: (next) => setHold.mutate({ repository, held: next }, { onError: onDriverError }),
-      onTrees: (next) => setTrees.mutate({ repository, ownTree: next }, { onError: onDriverError }),
-      note: !registration.adopted && door === 'pipe' ? t('projects.outside.directDoor') : undefined,
-      // TERMTRUST1a: a hold a terminal made under the person's standing confirmation, as this run remembers it.
-      heldStanding: named(standingOf(driver.data.standingConfirmation)?.held, repository),
-      supervisor: supervisorOf(repository, workspaceOf(registration)),
-      onOpenAppointed,
-      // STEWARDROLE1b (D209 §5.1): what the steward set here, from this run's memory, where the build offers the steward.
-      stewardSet: stewardSetOf(repository),
-    };
-  };
-
-  /** When the steward last set this repository's driving and it still stands, where the build offers the steward; else null. */
-  const stewardSetOf = (repository: string): string | null => {
-    const standing = standingOf(driver.data?.standingConfirmation);
-    return standing?.stewardOffered ? stewardSetAt(standing.stewardActs, repository) : null;
-  };
-
-  /**
-   * The supervisor's appointment here (SUPERVISOR1a-ii, D208 §5): the record's, live or dormant, which Setup says in a line. It is
-   * appointed under Agents → Roles → Appointed roles (COMPANYVIEW1e). SUPERVISOR1e: with none of its own, the line says its
-   * workspace's appointment that covers it; its own, once made, wins over it.
-   */
-  const supervisorOf = (repository: string, workspace: string): Driving['supervisor'] => {
-    const standing = standingOf(driver.data?.standingConfirmation);
-    if (!standing) return undefined;
-    const lower = repository.toLowerCase();
-    const supervising = standing.appointments.filter((each) => each.role === 'supervisor');
-    return {
-      // STEWARDROLE1a-i (D209 §2.4): the supervisor's own flag, never the steward's nor D201's.
-      offered: standing.supervisorOffered,
-      appointment: supervising.find((each) => each.repository.toLowerCase() === lower) ?? null,
-      covering: supervising.find((each) => each.workspace !== '' && each.workspace.toLowerCase() === workspace.toLowerCase()) ?? null,
-    };
-  };
-
-  /** Which of the driver's rows by workspace is this repository's workspace's, matched without case as the driver does. */
-  const ofWorkspace = <R extends { workspace: string }>(rows: R[] | undefined, workspace: string) =>
-    (rows ?? []).find((row) => row.workspace.toLowerCase() === workspace.toLowerCase());
-
-  /**
-   * Its session language (LANG1c, D142 point 7): the driver's resolution from the lines, its workspace's by the table's name,
-   * and the table. A shell older than it answers no table, and nothing is offered rather than a field whose save is refused.
-   */
-  const languageOfPage = (registration: Registration): NonNullable<RepositorySetupProps['sessions']>['language'] => {
-    const table = driver.data?.languageTable;
-    if (!Array.isArray(table)) return undefined;
-    const { repository } = registration;
-    const resolved = languageOf(repository) ?? null;
-    const shared = ofWorkspace(driver.data?.workspaceLanguages, resolved?.workspace ?? registration.workspace ?? 'default')?.language;
-    return {
-      resolved: resolved?.language ? resolved : null,
-      inherited: table.find((row) => row.code === shared)?.name,
-      table,
-      onSet: (language) => setLanguage.mutate(language === null ? { repository } : { repository, language }, {
-        onSuccess: () => {
-          const name = table.find((row) => row.code === language)?.name;
-          notify(name
-            ? t('settings.sessionLanguage.saved', { name: repository, language: name })
-            : t('settings.sessionLanguage.cleared', { name: repository }));
-        },
-        onError: onDriverError,
-      }),
-    };
-  };
-
-  /**
-   * **Its Setup** (UX6f, D150 §4.2): every setting it holds on this machine, each with the press its terminal twin makes,
-   * and each change said as the toast Settings' lists said it. A section the driver did not answer is absent, never a
-   * control whose save would be refused; Reach waits for reading across, so it opens on what it holds.
-   */
-  const setupOf = (registration: Registration): RepositorySetupProps | null => {
-    if (!driver.data) return null;
-    const { repository } = registration;
-    const same = (name: string) => name.toLowerCase() === repository.toLowerCase();
-    const driving = drivingOf(registration);
-    const line = resolvedLine(repository);
-    const landing = landingOf(repository);
-    const workspace = line?.workspace ?? landing?.workspace ?? registration.workspace ?? 'default';
-    const above = ofWorkspace(driver.data.workspaceLandings, workspace);
-
-    const work: RepositorySetupProps['work'] = lines.data === undefined ? null : {
-      line: line ?? null,
-      onLine: (branch) => setLine.mutate(branch ? { repository, branch } : { repository }, {
-        onSuccess: () => notify(branch
-          ? t('settings.lines.saved', { name: repository, branch })
-          : t('settings.lines.cleared', { name: repository })),
-        onError: onDriverError,
-      }),
-      landing: landing ?? null,
-      landingAbove: above ? { ...above } : { form: 'merge' },
-      landers,
-      // FABRIC-GRAPH1d: a rule the file keeps that reads as no rule, its own, else its workspace's where Daoris's merge stands.
-      landingUnread: (() => {
-        const own = (driver.data.unreadLandings ?? []).find((row) => same(row.repository));
-        if (own) return { name: own.repository, why: own.why, said: own.said };
-        const shared = landing?.source === 'default' ? ofWorkspace(driver.data.workspaceUnreadLandings, workspace) : undefined;
-        return shared ? { name: shared.workspace, why: shared.why, said: shared.said } : null;
-      })(),
-      onLanding: (rule?: LandingRule) => setLanding.mutate(rule ? { repository, ...rule } : { repository }, {
-        onSuccess: () => notify(!rule
-          ? t('settings.landing.cleared', { name: repository })
-          : rule.form === 'branch'
-            ? rule.plugin
-              ? t('settings.landing.savedBranchPlugin', { name: repository, pattern: rule.pattern, plugin: rule.plugin })
-              : t('settings.landing.savedBranch', { name: repository, pattern: rule.pattern })
-            : t('settings.landing.savedMerge', { name: repository })),
-        // A rule the driver refuses is said under *Save*, in LandingKey's sentence (AGENTSPLACE1d); a clear has no such place.
-        onError: rule ? undefined : onDriverError,
-      }),
-      landingRefusal: setLanding.error ? sentence(setLanding.error) : null,
-      // Where its work is reviewed before it lands (REVIEWENV1a); a shell older than it answers no reviews, and no row is offered.
-      review: Array.isArray(lines.data?.reviews) ? reviewOf(repository) ?? { repository, workspace } : undefined,
-      onReview: Array.isArray(lines.data?.reviews)
-        ? (edit: ReviewEdit) => setReview.mutate({ repository, ...edit }, {
-            onSuccess: (state) => notify(reviewToast(t, repository, edit, state.reviewed)),
-            onError: onDriverError,
-          })
-        : undefined,
-      // Which other agent reads its work before it lands (XAGENT1a); a shell older than it answers no opinions, and no row is offered.
-      opinion: Array.isArray(lines.data?.opinions) ? opinionOf(repository) ?? { repository, workspace } : undefined,
-      onOpinion: Array.isArray(lines.data?.opinions)
-        ? (edit: OpinionEdit) => setOpinion.mutate({ repository, ...edit }, {
-            onSuccess: () => notify(opinionToast(t, repository, edit)),
-            onError: onDriverError,
-          })
-        : undefined,
-      // How its work is committed (DOORS1b); a shell older than it answers no commits, and no row is offered.
-      commits: Array.isArray(lines.data?.commits) ? commitsOf(repository) ?? { repository, workspace } : undefined,
-      onCommits: Array.isArray(lines.data?.commits)
-        ? (edit: CommitEdit) => setCommits.mutate({ repository, ...edit }, {
-            onSuccess: () => notify(commitToast(t, repository, edit)),
-            onError: onDriverError,
-          })
-        : undefined,
-    };
-
-    // Its sessions' access (AUTONOMY1d), where it can be driven; a shell older than it answers no access, and no section is drawn.
-    // What stands above it is its workspace's over this machine's, as set, so turning off a full access from above sets today's
-    // pauses here rather than clearing back into it. Full access answers its ask: done, or refused in the driver's sentence.
-    const resolvedAccess = accessOf(repository);
-    const access: RepositorySetupProps['access'] = driving && resolvedAccess && Array.isArray(resolvedAccess.pauses) ? {
-      workspace: resolvedAccess.workspace,
-      pauses: resolvedAccess.pauses,
-      aboveFull: isFull(resolveAccess([
-        { setting: ofWorkspace(driver.data.workspaceAccess, workspace)?.setting, source: 'workspace' },
-        { setting: driver.data.machineAccess, source: 'machine' },
-      ])),
-      onChange: (edit: AccessEdit, answered) => setAccess.mutate({ repository, ...edit }, {
-        onSuccess: () => {
-          notify(accessToast(t, repository, edit, false));
-          answered?.done();
-        },
-        onError: (error) => (answered ? answered.refused(sentence(error)) : onDriverError(error)),
-      }),
-    } : null;
-
-    // This machine's heavy gates for it (HEAVYRUN1b2b), where it can be driven, matched without case as the driver keys them; a shell
-    // older than them answers none, and no section is drawn. The whole list goes out, and a refusal is said where Save was pressed.
-    const heavyGates = driver.data.heavyGates;
-    const heavy: RepositorySetupProps['heavy'] = driving && Array.isArray(heavyGates) ? {
-      gates: heavyGates.find((row) => same(row.repository))?.gates ?? [],
-      // Until the driver has answered (or on a shell older than the read) the section says only the general rule.
-      marks: heavyMarks.data && typeof heavyMarks.data.marks !== 'undefined' ? heavyMarks.data : null,
-      onSave: (gates, answered) => setHeavy.mutate({ repository, gates }, {
-        onSuccess: () => {
-          notify(heavyToast(t, repository, gates));
-          answered.done();
-        },
-        onError: (error) => answered.refused(sentence(error)),
-      }),
-      // Which checks its sessions run (FABRIC-PIPELINE1b), matched without case as the driver keys them; a shell older than it answers
-      // none, and no row is drawn. A press goes out at once, and a refusal is said in the row.
-      checks: Array.isArray(driver.data.sessionChecks) ? {
-        set: (driver.data.sessionChecks.find((row) => same(row.repository))?.checks as SessionChecksValue | undefined) ?? null,
-        onChange: (checks, answered) => setChecks.mutate({ repository, checks }, {
-          onSuccess: () => {
-            notify(sessionChecksToast(t, repository, checks));
-            answered.done();
-          },
-          onError: (error) => answered.refused(sentence(error)),
-        }),
-      } : null,
-    } : null;
-
-    // Its standing answer (KNOWUSE1b), matched without case as the driver matches it; a shell older than it answers no
-    // `standing`, and nothing is offered rather than a field whose save would be refused.
-    const sessions: RepositorySetupProps['sessions'] = driving && {
-      language: languageOfPage(registration),
-      // What a helper its agent asks for does (DOORS1b); a shell older than it answers no helpers, and no row is offered.
-      helpers: Array.isArray(lines.data?.helpers) ? helpersOf(repository) ?? { repository, workspace } : undefined,
-      onHelpers: Array.isArray(lines.data?.helpers)
-        ? (edit: HelperEdit) => setHelpers.mutate({ repository, ...edit }, {
-            onSuccess: () => notify(helperToast(t, repository, edit)),
-            onError: onDriverError,
-          })
-        : undefined,
-      // What an agent's ask to hand its session over does (MIXAGENT1c); a shell older than it answers none, and no row is offered.
-      handOver: Array.isArray(lines.data?.handOver) ? handOverOf(repository) ?? { repository, workspace } : undefined,
-      onHandOver: Array.isArray(lines.data?.handOver)
-        ? (edit: HandOverEdit) => setHandOver.mutate({ repository, ...edit }, {
-            onSuccess: () => notify(handOverToast(t, repository, edit)),
-            onError: onDriverError,
-          })
-        : undefined,
-      standing: (driver.data.standing ?? []).find((row) => same(row.repository)) ?? null,
-      onStanding: driver.data.standing === undefined
-        ? undefined
-        : (says) => setStanding.mutate(says === null ? { repository } : { repository, says }, { onError: onDriverError }),
-    };
-
-    const acrossRows = Array.isArray(across.data?.repositories) ? across.data.repositories : null;
-    const mine = acrossRows?.find((row) => same(row.repository)) ?? null;
-    const scope = rules.data && Array.isArray(rules.data.scopes)
-      ? rules.data.scopes.find((row) => row.scope === 'repository' && row.name !== undefined && same(row.name))
-      : undefined;
-    const where = t('settings.rules.where.repository', { name: repository });
-    const reach: RepositorySetupProps['reach'] = across.data === undefined && !across.error ? null : {
-      // GITAPP2b: the switch, where the shell answers it; on, it says which sessions already run in the checkout.
-      checkout: driver.data.checkoutWrites === undefined ? undefined : {
-        on: named(driver.data.checkoutWrites, repository),
-        running: checkoutSessions.error ? null
-          : checkoutSessions.data === undefined ? undefined
-          : checkoutSessions.data.filter((one) =>
-            !one.tree && SESSION_ACTIVE.has(one.state) && !one.id.includes('/') && one.repository.toLowerCase() === repository.toLowerCase()).length,
-        onChange: (allow) => setCheckoutWrites.mutate({ repository, allow }, { onError: onDriverError }),
-      },
-      across: mine,
-      candidates: mine && acrossRows
-        ? acrossRows
-          .filter((other) => other.workspace === mine.workspace && !same(other.repository)
-            && !mine.writesTo.some((to) => to.toLowerCase() === other.repository.toLowerCase()))
-          .map((other) => other.repository)
-        : [],
-      onRead: (read) => setRead.mutate(read === undefined ? { repository } : { repository, read }, {
-        onSuccess: () => notify(read === undefined
-          ? t('settings.across.cleared', { name: repository })
-          : t(read ? 'settings.across.savedOn' : 'settings.across.savedOff', { name: repository })),
-        onError: onDriverError,
-      }),
-      onWrite: (to, allow) => setWrite.mutate({ repository, to, allow }, {
-        onSuccess: () => notify(t(allow ? 'settings.across.declared' : 'settings.across.withdrawn', { repository, to })),
-        onError: onDriverError,
-      }),
-      // The rules this repository's scope holds, by the name the registry holds it under; none where it holds none, and
-      // the row absent where the rules were not answered.
-      rules: rules.data && Array.isArray(rules.data.scopes)
-        ? { allow: scope?.allow ?? [], ask: scope?.ask ?? [], deny: scope?.deny ?? [] }
-        : null,
-      onAddRule: (list, rule, added) => ruleAction.mutate({ action: 'add', list, rule, scope: 'repository', name: repository }, {
-        onSuccess: () => {
-          notify(t('settings.rules.added', { rule, list: t(`settings.rules.list.${list}`), where }));
-          added();
-        },
-        onError: onDriverError,
-      }),
-      onRemoveRule: (rule) => ruleAction.mutate({ action: 'remove', rule, scope: 'repository', name: repository }, {
-        onSuccess: () => notify(t('settings.rules.removed', { rule, where })),
-        onError: onDriverError,
-      }),
-    };
-
-    // The landed route (FABRIC-PIPELINE1a): what verifies the work that lands, read from its Workflow answer's start node, which a
-    // driver before it does not answer; the choice is the person's press, and accepts the declaration at its line's tip.
-    const start = current.data?.repository === repository ? current.data.start ?? null : null;
-    const landed: RepositorySetupProps['landed'] = start ? {
-      start,
-      workspace: current.data!.workspace,
-      onChoose: (workflow, answered) => setLanded.mutate({ repository, workflow }, {
-        onSuccess: (answer) => {
-          notify(answer.lowered.length > 0
-            ? t('projects.landed.lowered', { repository, lowered: answer.lowered.join('; ') })
-            : t('projects.landed.set', { repository }));
-          answered.done();
-        },
-        onError: (error) => answered.refused(sentence(error)),
-      }),
-      // INTEGRATE1d: the person's Accept of the declaration they read, by its blob, or a withdrawal; a refusal comes back as an answer.
-      onAcceptIntegration: (request, answered) => acceptIntegration.mutate({ repository, ...request }, {
-        onSuccess: (answer) => {
-          if (answer.done) {
-            notify('clear' in request ? t('projects.integration.withdrawn', { repository }) : t('projects.integration.accepted', { repository }));
-            answered.done();
-          } else answered.refused(answer.message ?? t('projects.integration.refused', { repository }));
-        },
-        onError: (error) => answered.refused(sentence(error)),
-      }),
-    } : null;
-
-    return {
-      repository,
-      driving,
-      work,
-      access,
-      heavy,
-      landed,
-      sessions,
-      reach,
-      onOpenPlugin,
-      busy: setLine.isPending || setLanding.isPending || setReview.isPending || setOpinion.isPending || setLanguage.isPending
-        || setCommits.isPending || setHelpers.isPending || setHandOver.isPending || setAccess.isPending || setHeavy.isPending || setStanding.isPending
-        || setRead.isPending || setWrite.isPending || ruleAction.isPending || setLanded.isPending || acceptIntegration.isPending,
-    };
-  };
 
   /**
    * **Set up for agents** (LAYOUT8, D117 §6.1, §6.5; D170 point 1): for one not adopted that can be asked, on a shell. Its plan,
@@ -765,7 +379,8 @@ export function useProjectsView({
           here={attached ? Boolean(shown.root) : undefined}
           drivable={driver.data ? named(driver.data.drivable, shown.repository) : undefined}
           held={driver.data ? named(driver.data.holds, shown.repository) : undefined}
-          setup={setupOf(shown)}
+          setup={setupLives ? setupProps : null}
+          onOpenSetup={!setupLives && onOpenSetup ? () => onOpenSetup(shown.repository) : undefined}
           setUp={setUpOf(shown)}
           workflow={workflowOf(shown)}
           // Its branches and its line's history (UX6h1): a shell's, each read only while its tab shows (D147 §6).

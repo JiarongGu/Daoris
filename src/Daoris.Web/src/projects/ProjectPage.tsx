@@ -54,8 +54,10 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
  */
 export function ProjectPage({
   registration, counts, line, unlanded = 0, here, drivable, held, setup, setUp, workflow, branches, history, changes, integration, tab = 'details', onTab,
-  onManage, onOpenCode, heavy,
+  onManage, onOpenCode, onOpenSetup, heavy,
 }: {
+  /** Open its page in the Agents place's Setup mode, where its Setup is once that mode is lit (AGENTSPLACE1f); then it has no Setup tab. */
+  onOpenSetup?: () => void;
   /**
    * Its heavy-run slot (HEAVYSLOT1): who holds it at which gate and who waits, each session named by `titleOf` and opened by `onOpen`.
    * A shell's, once the driver answered; absent, no row.
@@ -155,7 +157,7 @@ export function ProjectPage({
   );
 
   // The line's door opens Setup at Line and landing, where the line is set.
-  const toSetup = setup?.work?.onLine && onTab ? () => { setAsked('work'); onTab('setup'); } : undefined;
+  const toSetup = setup?.work?.onLine && onTab ? () => { setAsked('work'); onTab('setup'); } : !setup ? onOpenSetup : undefined;
 
   const details = (
     <>
@@ -264,18 +266,21 @@ export function ProjectPage({
   // A remembered tab on a page handed no body for it (a Workflow an older shell has none of, Branches or History where no
   // shell answers) shows Details, never a tab with no panel.
   const bodiless = (tab === 'workflow' && !workflow) || (tab === 'branches' && !branches) || (tab === 'history' && !history)
-    || (tab === 'changes' && !changes) || (tab === 'integration' && !integration);
+    || (tab === 'changes' && !changes) || (tab === 'integration' && !integration) || (tab === 'setup' && !setup);
   const shown: ProjectTab = bodiless ? 'details' : tab;
   // A step's door into its own Setup opens the section that sets it, as the line's door opens Line and landing.
   const toSection = (section: 'work' | 'sessions' | 'defaults') => {
     if (section === 'defaults' || !onTab) return;
+    // No Setup tab here: the place's page holds it (AGENTSPLACE1f), which the holder opens.
+    if (!setup) return onOpenSetup?.();
     setAsked(section);
     onTab('setup');
   };
 
   return (
     <ViewMain header={head} menu={menu}>
-      {setup && onTab
+      {/* Its Setup is a tab while the Setup mode is dark, and the Agents place's page once it is lit (AGENTSPLACE1f). */}
+      {onTab && (setup || branches || history || changes || integration || workflow)
         ? (
           <PageTabs<ProjectTab>
             label={t('projects.tab.list', { repository })}
@@ -286,13 +291,13 @@ export function ProjectPage({
               ...(changes ? [{ id: 'changes' as const, label: t('projects.tab.changes') }] : []),
               ...(integration ? [{ id: 'integration' as const, label: t('projects.tab.integration') }] : []),
               ...(workflow ? [{ id: 'workflow' as const, label: t('projects.tab.workflow') }] : []),
-              { id: 'setup', label: t('projects.tab.setup') },
+              ...(setup ? [{ id: 'setup' as const, label: t('projects.tab.setup') }] : []),
             ]}
             chosen={shown}
             // A tab chosen by its own press opens Setup as it opens itself; only a door asks for a section.
             onChoose={(next) => { setAsked(null); onTab(next); }}
           >
-            {shown === 'setup'
+            {shown === 'setup' && setup
               ? <RepositorySetup {...setup} open={asked ?? setup.open} />
               : shown === 'workflow' && workflow
                 ? <WorkflowTab page="repository" name={repository} {...workflow} doors={{ ...workflow.doors, setup: toSection }} />

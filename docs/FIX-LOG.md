@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-01 - The suggested choices card never showed (AGENTSPLACE1g2)
+
+- **Symptom:** the Roles mode's *Suggested choices for your roles* card (MODELROLE1g) was built and tested, and no window showed it, though `ROLES` answers the table.
+- **Root cause:** `readRoles` (`bridge/driver.ts`) copies the answer field by field and never copied `suggestedChoices` or `suggestedChoicesDated`; the card's own test handed the catalogue in whole, so nothing read through the hook.
+- **Fix:** `readRoles` carries both when the answer has a list.
+- **Verify:** `RolesView.test.tsx` presses the card through the page, with the answer read by the hook, and sees one `SET_ROLES`; it failed on "Use these choices" not found before the fix.
+
 ## 2026-11-01 - A brainstorm's pass ended `not-started` and the reason was nowhere (BRAINSTORMSTART1)
 
 - **Symptom:** `daoris-driver brainstorm "..." --agents claude,codex` ended `no-agent`; both passes `unavailable (not-started)` with `account: null`, while sessions of both agents ran that hour. Neither the pass record, `brainstorm show` nor the machine log said why.

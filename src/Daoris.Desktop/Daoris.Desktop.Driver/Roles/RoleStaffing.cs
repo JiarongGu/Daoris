@@ -344,9 +344,16 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
     /// catalogue is written, since an added role taking Intake or Ask Daoris moves the projection's narrowing.
     /// </summary>
     /// <exception cref="DriverException">The staffing is not in the store yet, a lock held past its wait, or a write not done; said.</exception>
-    public void SetAdded(string role, IReadOnlyList<ActorChoice>? choices)
+    public void SetAdded(string role, IReadOnlyList<ActorChoice>? choices) => SetAdded([(role, choices)]);
+
+    /// <summary><see cref="SetAdded(string, IReadOnlyList{ActorChoice})"/> for several added roles, all in the one transaction (AGENTSPLACE1g2).</summary>
+    public void SetAdded(IReadOnlyList<(string Role, IReadOnlyList<ActorChoice>? Choices)> changes)
     {
-        if (ActorChoices.Ids.Contains(role, StringComparer.Ordinal)) throw new ArgumentException($"`{role}` is a seeded role, whose staffing is Set's.", nameof(role));
+        foreach (var (role, _) in changes)
+        {
+            if (ActorChoices.Ids.Contains(role, StringComparer.Ordinal)) throw new ArgumentException($"`{role}` is a seeded role, whose staffing is Set's.", nameof(changes));
+        }
+
         using var held = Lock();
         if (Read() is null)
         {
@@ -356,11 +363,14 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
         using var store = DesktopStore.Open(Location, StoreProcess.Options(Settled));
         store.Write(Family, write =>
         {
-            write.Execute("DELETE FROM role_staffing WHERE role = $role", ("$role", role));
-            if (choices is null) return;
-            write.Execute(
-                "INSERT INTO role_staffing (role, state, choices, why, first_agent, at) VALUES ($role, 'set', $choices, NULL, NULL, $at)",
-                ("$role", role), ("$choices", Write(choices)), ("$at", Now()));
+            foreach (var (role, choices) in changes)
+            {
+                write.Execute("DELETE FROM role_staffing WHERE role = $role", ("$role", role));
+                if (choices is null) continue;
+                write.Execute(
+                    "INSERT INTO role_staffing (role, state, choices, why, first_agent, at) VALUES ($role, 'set', $choices, NULL, NULL, $at)",
+                    ("$role", role), ("$choices", Write(choices)), ("$at", Now()));
+            }
         });
     }
 

@@ -149,7 +149,7 @@ public sealed class HandOverMoveCrashProcessTests : IAsyncLifetime
         await Poll.Until(() => _h.Waiting().Count == 0, _h.Seen);
 
         // Nothing more is sent after the come-up settles: a second delivery would be heard here.
-        await Task.Delay(1500);
+        await _h.QuietAsync();
         var move = _h.MoveFrom("c1")!;
         var seen = _h.Seen();
         Assert.True(expect.Phase == move.PhaseWord, $"the move is {move.PhaseWord}, not {expect.Phase}: {seen}");

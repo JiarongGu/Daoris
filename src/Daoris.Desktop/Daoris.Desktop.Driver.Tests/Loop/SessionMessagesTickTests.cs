@@ -20,26 +20,22 @@ namespace Daoris.Desktop.Driver.Tests;
 /// scratch home under <c>_fixtures/</c>.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
-public sealed class SessionMessagesTickTests : IDisposable
+public sealed class SessionMessagesTickTests : IAsyncLifetime
 {
     private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "msg-tick", Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _repository;
 
-    public SessionMessagesTickTests()
-    {
-        Directory.CreateDirectory(_home);
-        _repository = Path.Combine(_home, "engine");
-        Directory.CreateDirectory(_repository);
-        Git("init", "-q", "-b", "main");
-        Git("config", "user.email", "msg@example.com");
-        Git("config", "user.name", "MSG1");
-        File.WriteAllText(Path.Combine(_repository, "README.md"), "# engine\n");
-        Git("add", "-A");
-        Git("commit", "-qm", "the starting point");
-    }
+    public SessionMessagesTickTests() => _repository = Path.Combine(_home, "engine");
 
-    public void Dispose() => GitSeed.Discard(_home);
+    /// <summary>The repository <c>engine</c>, a copy of the run's plain seed (<see cref="GitSeed.PlainAsync"/>): no case reads its first commit.</summary>
+    public Task InitializeAsync() => GitSeed.PlainAsync(_repository, "engine");
+
+    public Task DisposeAsync()
+    {
+        GitSeed.Discard(_home);
+        return Task.CompletedTask;
+    }
 
     private string Log => Path.Combine(_home, "agent.log");
 

@@ -1343,6 +1343,29 @@ public sealed class DriverLoop(
             var stopping = _stopping.Token;
             _ = Task.Run(() => chat.TakeUpAsync(stopping), stopping);
         }
+
+        // AGENTSPLACE1b2: a place's apply that a stop left uncertain is read by its postcondition, in the background, asking and writing nothing
+        // but the receipt: what it found is the receipt's, and a press of the same plan goes on from there.
+        Settling = Task.Run(() => SettlePlacesAsync(service, _stopping.Token));
+    }
+
+    /// <summary>The come-up's reading of the receipts of places' applies (AGENTSPLACE1b2); complete where it ended or was not begun, so a test holds it.</summary>
+    public Task Settling { get; private set; } = Task.CompletedTask;
+
+    private async Task SettlePlacesAsync(ServiceClient service, CancellationToken ct)
+    {
+        try
+        {
+            var config = DriverConfig.Load(ConfigPath);
+            var doors = new PlaceApplyDoors(
+                new PlaceWorld(service), new SetupWorld(service, Home), Home, PluginCatalog.Load(Home, AdapterSet.Built().Names), DriverContext.DoorOf(this, config),
+                () => DriverConfig.Load(ConfigPath), _ => throw new InvalidOperationException("settling writes no configuration"), DateOnly.FromDateTime(DateTime.Now));
+            await PlaceApplies.SettleAllAsync(doors, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            // Unread, and left as it was: the receipt keeps what it said, and a press of its plan reads again.
+        }
     }
 
     /// <summary>

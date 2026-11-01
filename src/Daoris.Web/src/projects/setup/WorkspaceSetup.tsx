@@ -103,6 +103,12 @@ export type WorkspaceSetupProps = {
   open?: WorkspaceSection;
   /** The header's *Wire to a remote…*: the wiring form starts open. */
   wiring?: boolean;
+  /**
+   * Which rows are drawn (AGENTSPLACE1f): the workspace place's Sessions hold the access and the session language, helpers, hand-over and
+   * reading rows; everything else (its line, landing, commits, review, opinion, supervisor, remote and rules) stays here until its row moves.
+   * Absent, all.
+   */
+  rows?: 'all' | 'sessions' | 'rest';
   /** Open a plugin's page: the landing rule's plugin is a door (PLUGUI1c2c); absent, its name stays words. */
   onOpenPlugin?: (plugin: string) => void;
 };
@@ -129,11 +135,17 @@ const plain = (text: string) => text.replace(/`/g, '');
  * A molecule: every state is reached by its props, and every press goes out.
  */
 export function WorkspaceSetup({
-  workspace, defaults, access, supervisor, onOpenAppointed, remote, busy = false, open, wiring: startWiring = false, onOpenPlugin,
+  workspace, defaults, access: accessAnswered, supervisor: supervisorLine, onOpenAppointed, remote, busy = false, open, wiring: startWiring = false,
+  rows = 'all', onOpenPlugin,
 }: WorkspaceSetupProps) {
   const { t } = useTranslation();
   const daoris = (value: string) => t('projects.setup.marked.daoris', { value });
-  const { line, landing, language, read, review, opinion, commits, helpers, handOver } = defaults;
+  const mine = rows !== 'rest';
+  const rest = rows !== 'sessions';
+  const { line, landing, review, opinion, commits } = rest ? defaults : ({} as WorkspaceDefaults);
+  const { language, read, helpers, handOver } = mine ? defaults : ({} as WorkspaceDefaults);
+  const access = mine ? accessAnswered : null;
+  const supervisor = rest ? supervisorLine : null;
 
   const defaultsParts = [
     ...(line ? [line.set ? t('projects.setup.summary.line', { branch: line.set }) : daoris(t('projects.workspace.summary.noLine'))] : []),
@@ -158,7 +170,7 @@ export function WorkspaceSetup({
   const wired = remote.wiring?.remote ?? null;
   const rules = remote.rules?.lists;
   const ruleCount = rules ? rules.allow.length + rules.ask.length + rules.deny.length : 0;
-  const remoteParts = [
+  const remoteParts = !rest ? [] : [
     ...(remote.wiring
       ? [wired ? t('projects.workspace.page.syncs', { host: hostOf(wired.url) }) : t('projects.workspace.page.local')]
       : []),

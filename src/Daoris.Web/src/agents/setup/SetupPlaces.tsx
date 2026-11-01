@@ -5,13 +5,12 @@ import type { PlaceNeed, PlaceRow, PlacesAsk, PlacesRead, StructurePlaceAsk } fr
 import { Button, CheckField, Icon } from '../../design/ui';
 import { cn } from '../../lib/cn';
 import { PageHead, ViewMain } from '../../work/frame/ViewMain';
+import { MACHINE, repositoryId, workspaceId } from '../modes';
 
 /** A page of driven repositories, and the step "Show more" takes. */
 const PAGE = 50;
 
-export const MACHINE = 'machine';
-export const workspaceId = (workspace: string) => `workspace:${workspace}`;
-export const repositoryId = (workspace: string | null | undefined, repository: string) => `repo:${workspace ?? ''}/${repository}`;
+export { MACHINE, repositoryId, workspaceId };
 
 /** The place a row stands for, as the list's chosen item names it. */
 export const placeIdOf = (row: PlaceRow): string =>
@@ -233,15 +232,17 @@ function Fact({ name, children }: { name: string; children: ReactNode }) {
 }
 
 /**
- * **A place's page** (AGENTSPLACE1e): its head, driving, held, trees, and *n changes of your own*, then its Roles (AGENTSPLACE1g1). The
- * preset a place matches is derived by a later row (AGENTSPLACE1a2), and the Workflow and Sessions sections by 1f and 1h, so the page
- * says what the configuration already reads.
+ * **A place's page** (AGENTSPLACE1e): its head, driving, held, trees, and *n changes of your own*, then its Roles (AGENTSPLACE1g1) and its
+ * Sessions (AGENTSPLACE1f). The preset a place matches is derived by a later row (AGENTSPLACE1a2), and the Workflow section by 1h, so the
+ * page says what the configuration already reads.
  */
-export function SetupMain({ found, state, roles }: {
+export function SetupMain({ found, state, roles, after }: {
   found: Found | null;
   state: SetupState['status'];
   /** The place's Roles section, drawn under its head: the application's, which reads the driver. */
   roles?: ReactNode;
+  /** What follows Roles (AGENTSPLACE1f): the place's Sessions, and a repository's Driving and Line and landing until their rows build them. */
+  after?: ReactNode;
 }) {
   const { t } = useTranslation();
   if (!found) {
@@ -293,6 +294,7 @@ export function SetupMain({ found, state, roles }: {
         )}
       </dl>
       {found.kind !== 'imported' && roles}
+      {found.kind !== 'imported' && after}
     </ViewMain>
   );
 }

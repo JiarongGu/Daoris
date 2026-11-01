@@ -20,6 +20,12 @@ Outcome: `NodeGraphHomes.Landing` draws a `land` with id `handed` (method merge,
 > **1b3, the reconciliation** (driver; `docs/2026-11-01-land-node-design.md` §3 and §8 row 5): §3's ladder for the git phases; an Accept carrying several sessions, the first performing and the others reached as *brought into*. Proof: a stop at each git boundary ends in one branch; a press and a pass at once land once. After b2.
 
 **Outcome** 2026-11-01: `DeliveryReconciler` settles unresolved deliveries by phase before any new start, writing no git; a landing goes on from its next phase, and a press and a pass land once. One Accept carrying several sessions is the head's unit's delivery, its members brought into it (`DeliveryReach`). Only its tests call it. Detail: D204's and D215's notes of this date.
+## AGENTSPLACE1b2 — the recoverable apply (2026-11-01)
+
+> **1b2, the recoverable apply** (driver, modules): `PLACE_APPLY`'s steps, the receipt's home entry, the quest keyed by the digest, the restart's settling by postconditions. Proof: a stop at every boundary leaves a precise, recoverable outcome; no second quest; no early start. After 1a2 and 1b.
+
+**Outcome** 2026-11-01: `PlaceApplies` (`Setup/PlaceApply.cs`) plans again and refuses `moved` on a changed digest or a chosen blob no longer the tip's, writes a receipt (`data/place-receipts/<digest>.json`, a new home entry in the three twins) before its first effect, then every configuration change and acceptance in one `DriverContext.Change`, judged first, then each adoption quest, its body's last line keyed by the digest so a retry finds it. `PLACE_APPLY` (the person's; its drain word is Waits) is the route, with its census rows; the loop's come-up settles what a stop left uncertain. Owed: the terminal twin and the authority's proofs (1b3), the page (1j). Detail: D124's AGENTSPLACE1b2 note; `PlaceApplyTests`, `DriverModulePlaceApplyTests`.
+
 ## AGENTSPLACE1b — setup-only admission (2026-11-01)
 
 > **1b, setup-only admission** (driver): the adoption quest admitted alone while general driving stays off. Proof: queued and newly arriving unrelated work held through apply and restart.
@@ -94,6 +100,10 @@ Outcome: `NodeGraphHomes.Landing` draws a `land` with id `handed` (method merge,
 
 ---
 
+## AGENTSPLACE1f — a place's Sessions, and the Setup tab's going (2026-11-01)
+
+> **AGENTSPLACE1f** (web; row 12 of AGENTSPLACE1). A place's page in the Setup mode holds *Sessions*, today's rows moved whole from a repository's Setup and a workspace's (access, heavy gates and checks, language, helpers, hand-over, standing answer, reach, rules), each with *Set for this repository* or *Clear*; a repository's page also holds its Driving and *Line and landing* (under Workflow) until the head and 1h build them. Lit by `daoris.agents.setup`, Repositories' Setup tab goes and every door into it opens the place's page through `placeOpening`, the one redirect in `apply`; dark, nothing moves. Proof: `PlaceSessions.test.tsx`, `opener.test.ts` (the door census), `ProjectPage.test.tsx`, `WorkspaceSetup.test.tsx`; `HelpCoverageTests` held by handing the Sessions in from the application. Not done: the head's matched preset and *Set up…* (1j), the Setup flag's lighting, stories at 80, 39 and 25rem. Detail: D150's note.
+
 ## AGENTSPLACE1g — All roles and the role editor (2026-11-01)
 
 > **AGENTSPLACE1g** (web; row 10 of AGENTSPLACE1). *All roles* in Working roles (the Setup mode's page waits for 1e): scope filter, machine-wide roles set apart, others read-only with *Open at \<place\>*; the editor asks for no id and fixes the place, picks agent, model and effort from the agent's offers with *other…*, and keeps *Off*, *Clear staffing* and *Restore role defaults* apart; *Remove* asks inline naming the fallback; the page's state is held by the place so a door out keeps the selection and scope. Proof: `Roles.test.tsx`, `RolesStructure.test.tsx`, `RolesView.test.tsx`; stories `AllRoles*` and `RoleEditor*`.
@@ -101,6 +111,10 @@ Outcome: `NodeGraphHomes.Landing` draws a `land` with id `handed` (method merge,
 ## AGENTSPLACE1g1 — Roles on a place (2026-11-01)
 
 > **AGENTSPLACE1g1** (web; row 11 of AGENTSPLACE1). A place's page in the Setup mode lists one row per work from `ROLE_STRUCTURE` for its chain: the role taking it, where it is placed, its first choice and that choice's last reading. *Give \<place\> its own…* on a row taken from a parent, *Edit* and *Back to \<parent\>'s* (an `InlineConfirm` naming the role the work falls back to) on a role placed here, all through `RolesCard`'s editor and `SET_ROLE`; the place's appointed roles are rows under the works, a dark one a quiet line. Proof: `PlaceRoles.test.tsx`; stories `SetupPlaces` (Repository*). The old Roles sections stay until the Setup flag is lit (1e). Not done: the scoped diagram, and the story states beyond a repository's.
+
+## AGENTSPLACE1g2 — The suggestion as one change (2026-11-01)
+
+> **AGENTSPLACE1g2** (driver, modules, web; row 15 of AGENTSPLACE1). `SET_ROLES` (Person; `changes`, each a `SET_ROLE` press) applies several role changes as one: `RoleDoor.ApplyAll` judges each in order against the roles the ones before it leave (and its staffing, and its revision), before anything is written, then writes the seeded staffing, the added staffing and the catalogue's rows (`RoleCatalog.WriteAll`, one transaction) once each; the first refusal refuses the batch and writes nothing. The Roles card's *Use these choices* (`SuggestedChoicesCard`) presses it once and a refusal is one sentence. `useRoles` had dropped the suggested table the card reads, so the card never showed in the window; it carries it now. Proof: `DriverModuleRoleTests` (a batch with a refused, a stale, a repeated and an empty change leaves `ROLES` as it was; one judged whole writes every role), `SuggestedChoicesCard.test.tsx`, `RolesView.test.tsx` (one `SET_ROLES`, one toast or the driver's sentence), and the census classes the route is held by. The Designer's *Add* stays one `SET_ROLE`. Not done: the staffing's and the catalogue's rows are two store transactions (the staffing's file step comes first), so only an I/O failure between them can leave the batch half-written.
 
 ## AGENTSPLACE1a — the effective projection (2026-11-01)
 
@@ -22533,3 +22547,6 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 ## DEFAULTCONFIG1a — the fabric's defaults as shipped data, copied by a person, and the default each place follows (2026-11-01, D173)
 
 **Outcome** 2026-11-01: seven defaults ship as files under the driver's `Defaults/workflows/` (`WorkflowDefaults`), read by the graph presets and the quick set-up's deliveries; `daoris driver workflow defaults [<default> [--to <file>]]` reads them, `new --from <default>` keeps `from` in the version, and `PlaceValues.Follows` names the default a place follows and what differs. Detail in D173's note of this date and the commits.
+## TESTSPEED1 — the slowest real-process classes cut (2026-11-01)
+
+**Outcome** 2026-11-01: the six slowest driver Process classes cut, each run alone at the final tip: `DrivenMoveDowngradeProcessTests` 13 m 17 s → 4 m 10 s, `DrivenMoveCrashProcessTests` 10 m 54 s → 3 m 40 s, `SessionMessagesTickTests` 4 m 35 s → 3 m 3 s, `HandOverMoveDowngradeProcessTests` 4 m 24 s → 1 m 36 s, `HandOverMoveCrashProcessTests` 1 m 57 s → 57 s; `TransientRetryTickTests` showed no clear gain. Quiet is counted in the loop's own looks or the shells' in-flight work, a killed shell's wire wait is the seam `ChatHandOver.WireWait`, and repositories are copied from seeds (`GitSeed.PlainAsync`); no assertion weakened, no case removed. Real driver looks and agent starts are kept where they are what a case proves. The row's clause on the queue's scoped run picking classes by reach is dropped with the batch queue (main is the development branch).

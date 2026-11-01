@@ -2,7 +2,7 @@ import { type ComponentType, type Dispatch, type SetStateAction, useEffect, useS
 import { useTranslation } from 'react-i18next';
 import {
   helpModeOf, refusedNoRoute, standingOf, useAccounts, useActors, useAnswerStaffingFound, useDriver, useHarnesses, useLines, usePlugins, useRoles,
-  useSetActor, useSetRole, useStaffingFound, useStarts, useWorkflowCurrents, type RoleChangePress,
+  useSetActor, useSetRole, useSetRoles, useStaffingFound, useStarts, useWorkflowCurrents, type RoleChangePress,
 } from '../../bridge/shell';
 import { useRegistry } from '../../data/queries';
 import { workspacesOf } from '../../data/workspaces';
@@ -90,9 +90,26 @@ export function useRoleEditing(notify: Notify) {
       onError: (error) => answered.refused(sentence(error)),
     });
   };
+  // Several changes as one over SET_ROLES (the suggested choices): the driver judges them whole, so one toast says them and a refusal writes none.
+  const setRoles = useSetRoles();
+  const pressRoles = (presses: RoleChangePress[], answered: Answered) => {
+    const named = presses.map((press) => {
+      const row = roles.data?.roles.find((each) => each.id === press.id);
+      return roleName(t, i18n.language, {
+        id: press.id, seeded: row?.seeded ?? false, nameEn: press.role?.name.en ?? row?.nameEn, nameZh: press.role?.name.zh ?? row?.nameZh,
+      });
+    });
+    setRoles.mutate({ changes: presses }, {
+      onSuccess: () => {
+        notify(t('settings.ai.roles.savedAll', { roles: named.join(t('settings.ai.actors.and')) }));
+        answered.done();
+      },
+      onError: (error) => answered.refused(sentence(error)),
+    });
+  };
   return {
     harnesses, agents, offers, staffing, catalogue: roles.data ?? null, read: read as 'ok' | 'loading' | 'notOffered' | 'failed',
-    busy: setRole.isPending || setActor.isPending, onSet: pressRole, onSetActor: saveActor,
+    busy: setRole.isPending || setRoles.isPending || setActor.isPending, onSet: pressRole, onSetAll: pressRoles, onSetActor: saveActor,
   };
 }
 
@@ -117,7 +134,7 @@ export function useRolesMode({ notify, section = 'working', doors = {}, page: gi
   const workspaces = workspacesOf(registry.data ?? []);
   const starts = useStarts(workspaces);
   const [editing, setEditing] = useState<Editing | null>(null);
-  const { harnesses, agents, offers, staffing, catalogue, read, busy: editBusy, onSet: pressRole, onSetActor: saveActor } = useRoleEditing(notify);
+  const { harnesses, agents, offers, staffing, catalogue, read, busy: editBusy, onSet: pressRole, onSetAll: pressRoles, onSetActor: saveActor } = useRoleEditing(notify);
   const startRows = Array.isArray(starts.data?.starts) ? starts.data.starts : [];
 
   // The changes of driver.json's actors another program made, which the driver kept for the person.
@@ -204,7 +221,7 @@ export function useRolesMode({ notify, section = 'working', doors = {}, page: gi
     <RolesCard
       catalogue={catalogue} read={read} staffing={staffing} agents={agents} about={about}
       busy={editBusy || answerFound.isPending}
-      onSet={pressRole} onSetActor={saveActor} found={found.data ?? []} onAnswerFound={answerStaffingFound}
+      onSet={pressRole} onSetAll={pressRoles} onSetActor={saveActor} found={found.data ?? []} onAnswerFound={answerStaffingFound}
       editor={editing} onEditor={(next) => {
         setEditing(next);
         if (next && !next.isNew) page.onSelected(roleId(next.id));

@@ -904,6 +904,8 @@ public sealed partial class HelpCoverageTests
         ("agents", "useSetActor", null, new Owed(HelpRoomOwed.Actor)),
         // FOUNDATION1y-i: the role catalogue's Add, Edit, Remove, Back to the default and the suggested Designer's Add, over SET_ROLE.
         ("agents", "useSetRole", null, new Door("role", "set")),
+        // AGENTSPLACE1g2: the Roles mode's suggested choices, several of those sets made as one over SET_ROLES.
+        ("agents", "useSetRoles", null, new Door("role", "set")),
         // COMPANYVIEW1e: the supervisor's and the steward's Appoint… and Turn off moved from Setup and This Daoris to the Roles mode's
         // Appointed roles section (`agents/roles/AppointedRoles.tsx`); the owner's press alone (D208 §2.1 point 1, D209 §2.3).
         ("agents", "useSetAppointment", null, new Exempt(Appointment)),

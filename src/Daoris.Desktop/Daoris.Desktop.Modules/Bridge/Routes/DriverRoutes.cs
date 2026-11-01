@@ -530,6 +530,20 @@ public sealed class DriverRoutes(DriverContext context)
         return State(_loop);
     }
 
+    // Several role changes made as one (AGENTSPLACE1g2, the Agents-place design §4): the Roles mode's suggested choices. Each change is
+    // a `SET_ROLE` press in `changes`, judged in order by `RoleDoor.ApplyAll` before anything is written; the first refusal refuses
+    // the batch with nothing written.
+    [DriverRoute("SET_ROLES")]
+    [Publishes("SET_ROLES", StateScopes.Driver | StateScopes.Harnesses)]
+    private object? SetRoles(IpcRequest request)
+    {
+        var staffing = RoleStaffing.Of(_loop.ConfigPath)
+            ?? throw new DriverException("this home's actors are the file's own (not this home's store), so its roles are not set here.");
+        RoleDoor.ApplyAll(staffing, RoleDoor.ReadAll(request.Payload));
+        _loop.Nudge();
+        return State(_loop);
+    }
+
     // Ask Daoris's access mode (HELPMODE1a2, D183 point 2): `restricted` or `full`, the person's press alone, over the same key
     // `daoris-driver help mode` sets: one truth, two doors (D50). Each start reads it, and a conversation running under another ends
     // at its turn's end, its next words resuming it under the mode chosen (ACCESSSWAP1): nothing it runs with changes while it runs.

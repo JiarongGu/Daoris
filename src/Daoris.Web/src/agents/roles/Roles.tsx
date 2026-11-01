@@ -187,7 +187,7 @@ function suggestionPress(role: SuggestedRole): RoleChangePress {
  * A molecule: every state is reached by its props, and every press goes out.
  */
 export function RolesCard({
-  catalogue, read = catalogue ? 'ok' : 'notOffered', staffing = [], agents, about = {}, busy = false, onSet, onSetActor, found = [], onAnswerFound,
+  catalogue, read = catalogue ? 'ok' : 'notOffered', staffing = [], agents, about = {}, busy = false, onSet, onSetAll, onSetActor, found = [], onAnswerFound,
   editor: held, onEditor, only, editorOnly = false, onDiagram, offers = {}, onOpenPlace, scope: heldScope, onScope,
 }: {
   /** The open editor alone, no card, rows or adding: a place's page opens it from its own rows (AGENTSPLACE1g1). */
@@ -219,6 +219,8 @@ export function RolesCard({
   busy?: boolean;
   /** A role's change over `SET_ROLE`; the answer says whether it landed or the driver's sentence. */
   onSet: (press: RoleChangePress, answered: Answered) => void;
+  /** Several roles' changes as one over `SET_ROLES`, judged whole by the driver; where none is given there is no suggested-choices card. */
+  onSetAll?: (presses: RoleChangePress[], answered: Answered) => void;
   /** A role's whole order over `SET_ACTOR`, or null back to as before. */
   onSetActor: (actor: string, choices: ActorChoice[] | null, answered: Answered) => void;
   /** The changes the driver kept for the person, oldest first. */
@@ -552,10 +554,10 @@ export function RolesCard({
     <Card>
       <CardHeader title={t('settings.ai.roles.all.title')} />
       <Prose className="mb-3 mt-0 text-small text-ink-soft">{t('settings.ai.roles.body')}</Prose>
-      {catalogue && (
+      {catalogue && onSetAll && (
         <SuggestedChoicesCard
           catalogue={catalogue} staffing={staffing} agents={agents.map((agent) => agent.value)} busy={busy}
-          name={(row) => name(row)} entry={(choice) => entryText(t, choice)} onSet={(press, done) => { setRefused(null); onSet(press, done); }}
+          name={(row) => name(row)} entry={(choice) => entryText(t, choice)} onSetAll={(presses, done) => { setRefused(null); onSetAll(presses, done); }}
         />
       )}
       {said}
