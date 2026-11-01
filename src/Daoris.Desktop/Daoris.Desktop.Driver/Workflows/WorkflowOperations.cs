@@ -49,6 +49,20 @@ public sealed record WorkflowSaved(
     string Id, bool Done, string? Refused, string? Message, int? Version, bool Written, bool Appended,
     IReadOnlyList<WorkflowScope> Scopes, IReadOnlyList<WorkflowReach> Reach);
 
+/// <summary>One saved workflow as the step editor lists it: the newest version's schema, digest and line, and the places that choose it.</summary>
+/// <param name="Schema">1 for steps, 2 for a graph; null where the newest version does not read here.</param>
+public sealed record WorkflowListed(
+    string Id, string? Name, string? Problem, IReadOnlyList<int> Versions, int? Schema, string? Digest, string? Line, string? Pipeline,
+    IReadOnlyList<WorkflowScope> Chosen);
+
+/// <summary>A preset built in, with the line composed from its steps or graph.</summary>
+public sealed record WorkflowPresetListed(string Id, string Name, bool Graph, string Line);
+
+/// <summary>One version as saved: its steps or its graph, its composed line, and the graph's problems.</summary>
+public sealed record WorkflowShown(
+    string Id, string Name, int Version, bool Newest, IReadOnlyList<int> Versions, string? At, string? Door, string? Digest, int Schema,
+    string Line, JsonNode Body, IReadOnlyList<WireProblem> Problems);
+
 /// <summary>
 /// The typed operations behind <c>daoris-driver workflow new|edit|use|kind</c> (D194 point 4; AGENTSPLACE1c): the terminal's verb and the
 /// window's <c>WORKFLOW_SAVE</c>, <c>WORKFLOW_USE</c> and <c>WORKFLOW_KIND</c> call these and differ only in how they say the result, so a
@@ -584,6 +598,62 @@ public static class WorkflowOperations
 
         return await RowsAsync(choices, id, planned.Next.Version, graph,
             [.. reached.DistinctBy(each => each.Repository, StringComparer.OrdinalIgnoreCase)], [], ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Every workflow saved under the home, as <c>driver workflow list</c> reads them, and the presets built in. Reads only.
+    /// </summary>
+    public static (IReadOnlyList<WorkflowListed> Saved, IReadOnlyList<WorkflowPresetListed> Presets) Listing(string home, DriverConfig choices)
+    {
+        var saved = new List<WorkflowListed>();
+        foreach (var found in WorkflowStore.List(home))
+        {
+            var read = found.Read;
+            if (read.Problem is not null)
+            {
+                saved.Add(new(found.Id, null, read.Problem, [], null, null, null, null, ScopesOf(choices, found.Id)));
+                continue;
+            }
+
+            var newest = read.Versions[^1];
+            var line = newest.Steps is not null ? WorkflowPresets.Line(newest.Steps)
+                : newest.Graph is not null ? WorkflowPresets.GraphLine(RawOf(found, read.Versions.Count - 1).AsObject()) : null;
+            saved.Add(new(found.Id, read.Name, newest.Unrun, [.. read.Versions.Select(each => each.Version)],
+                newest.Steps is not null ? 1 : newest.Graph is not null ? WorkflowNamed.GraphSchema : null, newest.Digest, line, read.Pipeline,
+                ScopesOf(choices, found.Id)));
+        }
+
+        var presets = WorkflowPresets.Table
+            .Select(preset => new WorkflowPresetListed(preset.Id, preset.Name, false, WorkflowPresets.Line(WorkflowNamed.ReadSteps(
+                WorkflowNamed.ElementOf(preset.Steps()), 1, null).Steps!)))
+            .Concat(WorkflowPresets.GraphTable.Select(preset => new WorkflowPresetListed(preset.Id, preset.Name, true, WorkflowPresets.GraphLine(preset.Graph()))))
+            .ToArray();
+        return (saved, presets);
+    }
+
+    private static JsonNode RawOf(WorkflowFileFound found, int index)
+    {
+        var version = found.File!["versions"]![index]!;
+        return (version["graph"] ?? version["steps"])!;
+    }
+
+    /// <summary>One version of a saved workflow as the file keeps it (the newest where none is named), with its line and, for a graph, its problems.</summary>
+    /// <exception cref="ChoiceWords">Naming why it cannot be shown.</exception>
+    public static WorkflowShown Show(string home, string id, int? wanted)
+    {
+        if (!WorkflowNamed.IsId(id)) throw new ChoiceWords(WorkflowNamed.IdProblem(id)!, 1);
+        var found = WorkflowStore.Load(home, id) ?? throw new ChoiceWords($"no workflow `{id}` here.");
+        if (found.Read.Problem is not null) throw new ChoiceWords($"`{id}` cannot be read: {found.Read.Problem}", 1);
+        var versions = found.Read.Versions;
+        var index = wanted is null ? versions.Count - 1 : versions.ToList().FindIndex(each => each.Version == wanted);
+        if (index < 0) throw new ChoiceWords($"`{id}` keeps no v{wanted} — it keeps {string.Join(", ", versions.Select(each => $"v{each.Version}"))}.");
+        var shown = versions[index];
+        if (shown.Unrun is { } unrun) throw new ChoiceWords($"`{id}` v{shown.Version} cannot be read here: {unrun}", 1);
+        var body = RawOf(found, index).DeepClone();
+        var line = shown.Steps is not null ? WorkflowPresets.Line(shown.Steps) : WorkflowPresets.GraphLine(body.AsObject());
+        return new(id, found.Read.Name!, shown.Version, index == versions.Count - 1, [.. versions.Select(each => each.Version)], shown.At, shown.Door,
+            shown.Digest, shown.Steps is not null ? 1 : WorkflowNamed.GraphSchema, line, body,
+            shown.Graph is null ? [] : NodeGraphs.Problems(shown.Graph));
     }
 
     /// <summary>Whether a checkout is the repository named, in any case.</summary>

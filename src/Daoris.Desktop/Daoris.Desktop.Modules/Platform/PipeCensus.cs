@@ -306,6 +306,8 @@ public sealed class PipeCensus
             "PLACES",
             // AGENTSPLACE1a2: a place's quick set-up planned on a copy of the configuration, written nowhere.
             "PLACE_PLAN",
+            // WORKFLOWEDIT1a: the step editor's reads of the saved workflows and what a step graph may hold; they write nothing.
+            "WORKFLOW_LIST", "WORKFLOW_SHOW", "WORKFLOW_PALETTE",
             "STATE", "STATE_SLICE", "SWEEP_PLAN", "SYSTEM_DOWNLOADS", "SYSTEM_SPACE", "SYSTEM_WIRING", "TAIL_SESSION", "TOOLS_LIST", "TRACE", "TREES_SYNC_PLAN", "TREES_SYNC_SCOPE",
             "UNDER_WAY", "USAGE", "WORKFLOW_CURRENT", "WORKFLOW_RUN", "WORK_PLAN", "WORK_STATE",
             // NOTIFY2i: what came to the person, a press by its act and session alone, never a value, so a terminal answers none of it.
