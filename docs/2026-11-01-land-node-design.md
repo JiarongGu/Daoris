@@ -26,7 +26,6 @@ A new built-in kind, reach **performed**, with Daoris as its executor, like `che
 | Option | Values |
 |---|---|
 | `method` | `merge`, `branch`, `push`, `pull-request`, `integrate` |
-| `accept` | `you`, `automatic` |
 | `target` | a line the repository declares; for now another than the tree's base only for `integrate` (the Opus open question, taken) |
 | `pattern` | `LandingKey`'s placeholders and validation, previewed expanded |
 | `plugin` | one declaring `work/land`, or `none`; a pull request needs one; credentials stay machine-local |
@@ -42,15 +41,15 @@ A new built-in kind, reach **performed**, with Daoris as its executor, like `che
 **What stays the line's:** history shape (`commit`), `batch`, `order`, `gates`, `unconfirmed`, `overlap` and the promotion fence. One candidate holds units of several flows, so these cannot be the node's. The node chooses *which* line, and asks the line's integration under its policy. Setup keeps `key`, `tidy`, the installed plugins and the defaults.
 
 **What precedes it:** `work.requests`, `opinion`, `look`, `go-ahead`, `human` or `check`, wired in D157's protected order. The quest's holds, the content holds and D88's proof stay the gate's first parts, judged inside the start at the bound tip.
-- **The workflow decides** (the owner's direction, 2026-11-01, D145's note). `accept: you` waits for the person's Accept; `accept: automatic` lands with no press, a merge into the line included. No rule outside the workflow refuses what it is configured to do.
-- Lowering to `automatic` counts in `InvolvementRoutes.Lowers`, so the plan that sets it says so.
+- **The workflow decides** (the owner's direction, 2026-11-01, D145's note). `land` has no `accept` option. Review is a step of its own, a review node before `land`, whose completion is the person's Accept. `land` performs once its incoming wires hold and completes at its end, a merge into the line included. No rule outside the workflow refuses what it is configured to do.
+- Removing a review step counts in `InvolvementRoutes.Lowers`, so the plan that removes it says so.
 - What still judges a landing outside the graph (the quest's holds, the content holds, D88's proof) becomes configured fabric steps (LANDNODE1k).
 
 ## 3. How it performs
 
-**One performer, two starters.**
-- Under `accept: automatic`, the runtime starts `land` once its wires hold, its subject is due and the gate holds nothing.
-- Under `accept: you`, the person's Accept is the last precondition. The press keeps the word on the unit's record (a Person route that no agent, role or standing confirmation writes), asks for a whole pass, and waits within its bound. Past the bound it says *accepted; landing*.
+**One performer, one starter.**
+- The runtime starts `land` once its incoming wires hold, its subject is due and the gate holds nothing.
+- Review, where a workflow wants it, is a review step before `land`. The person's Accept completes that step: the press keeps the word on the unit's record (a Person route that no agent, role or standing confirmation writes), asks for a whole pass, and waits within its bound. Past the bound it says *accepted; landing*.
 - The press never calls the performer: one writer of the record.
 
 **What authorization freezes.**
