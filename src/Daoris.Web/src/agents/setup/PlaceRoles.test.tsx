@@ -57,10 +57,12 @@ const rowOf = (work: string) => within(screen.getByText(work, { selector: 'span'
 
 describe('A place page, Roles', () => {
   let refuse = false;
+  let held = false;
   let chain: (ask: StructurePlaceAsk) => ReturnType<typeof CHAIN>;
 
   beforeEach(() => {
     refuse = false;
+    held = false;
     chain = CHAIN;
     window.localStorage.clear();
     window.localStorage.setItem('daoris.agents.setup', 'on');
@@ -72,7 +74,14 @@ describe('A place page, Roles', () => {
       if (type === 'SET_ROLE' && refuse) throw new Error('`build` is held by another change: read it again.');
       if (type === 'STATE' || type === 'SET_ROLE') return { ...DRIVER_STATE, standingConfirmation: STANDING };
       if (type === 'HARNESSES') return ROSTER;
-      if (type === 'PLACES') return PLACES({});
+      if (type === 'PLACES') {
+        const read = PLACES((options?.payload ?? {}) as Parameters<typeof PLACES>[0]);
+        // A start held at `site`: its review has no role, which opens its Roles.
+        if (held) read.repositories = read.repositories.map((each) => (each.repository === 'site'
+          ? { ...each, works: each.works.map((one) => (one.work === 'review' ? { ...one, held: 'No role takes review here.', role: null, roleNames: null, roleScope: null } : one)) }
+          : each));
+        return read;
+      }
       if (type === 'ROLES') return CATALOGUE;
       if (type === 'ACTORS') return { actors: [] };
       if (type === 'ROLE_STRUCTURE') return chain(options?.payload?.chain ?? {});
@@ -89,7 +98,8 @@ describe('A place page, Roles', () => {
   const openEngine = async () => {
     show(<Place />);
     await userEvent.click(await screen.findByRole('button', { name: /engine/ }));
-    await screen.findByRole('heading', { name: 'Roles' });
+    // A repository's page opens on Workflow; Roles is folded to its line until pressed (SETUPUX1h).
+    await userEvent.click(await screen.findByRole('button', { name: 'Roles' }));
     return await screen.findByText('Engine build · in repository engine');
   };
 
@@ -99,8 +109,46 @@ describe('A place page, Roles', () => {
     const build = rowOf('building');
     expect(build.getByText(/claude-code · sonnet · high · cannot run: signed out/)).toBeTruthy();
     const design = rowOf('design and decisions');
-    expect(design.getByText('Build · on this machine')).toBeTruthy();
+    // A role placed above the place says where, and its source mark is a door to that place (SETUPUX1h).
+    expect(design.getByRole('button', { name: 'on this machine' })).toBeTruthy();
     expect(design.getByText(/claude-code · opus · high · can run/)).toBeTruthy();
+  });
+
+  it('opens the place that sets a role from its source mark, at the same work, with Back', async () => {
+    await openEngine();
+    await userEvent.click(rowOf('design and decisions').getByRole('button', { name: 'on this machine' }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'This machine' })).toBeTruthy();
+    await waitFor(() => expect(document.activeElement).toHaveAttribute('data-place-row', 'design'));
+    expect(screen.getByRole('button', { name: 'Roles' })).toHaveAttribute('aria-expanded', 'true');
+    await userEvent.click(screen.getByRole('button', { name: '← Back to engine · Roles' }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'engine' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Roles' })).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('opens Roles by itself at the work whose start is held, and for no other reason', async () => {
+    held = true;
+    show(<Place />);
+    await userEvent.click(await screen.findByRole('button', { name: /site/ }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'site' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Roles' })).toHaveAttribute('aria-expanded', 'true');
+    await waitFor(() => expect(document.activeElement).toHaveAttribute('data-place-row', 'review'));
+    expect(screen.getByRole('button', { name: 'Sessions' })).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('edits an imported, not-driven place\'s roles through the same presses, and never sets driving', async () => {
+    show(<Place />);
+    await userEvent.click(await screen.findByRole('button', { name: /41 imported, not driven/ }));
+    await userEvent.click(await screen.findByRole('button', { name: /archive-1/ }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Roles' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Give archive-1 its own… for design and decisions' }));
+    const editor = await screen.findByRole('form', { name: 'A new role' });
+    await userEvent.click(within(editor).getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(sent()).toHaveLength(1));
+    expect(sent()[0]).toMatchObject({ change: 'set', role: { scope: { kind: 'repository', id: 'archive-1' } } });
+    const types = invoke.mock.calls.map(([, type]) => type);
+    expect(types).not.toContain('SET_DRIVABLE');
+    expect(types).not.toContain('SET_HOLD');
+    expect(types).not.toContain('PLACE_APPLY');
   });
 
   it('offers Give its own on a row taken from a parent, and Edit and Back on a role placed here', async () => {
@@ -167,6 +215,7 @@ describe('A place page, Roles', () => {
     };
     show(<Place />);
     await userEvent.click(await screen.findByRole('button', { name: /aurora\s*2 driven/ }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Roles' }));
     await screen.findByText('Aurora chat · in workspace aurora');
     expect(asked().at(-1)).toEqual({ workspace: 'aurora' });
     const chat = rowOf('chat');
@@ -212,6 +261,7 @@ describe('A place page, Roles', () => {
     i18n.changeLanguage('zh');
     show(<Place />);
     await userEvent.click(await screen.findByRole('button', { name: /engine/ }));
+    await userEvent.click(await screen.findByRole('button', { name: '角色' }));
     expect(await screen.findByRole('heading', { name: '角色' })).toBeTruthy();
     const design = rowOf('设计与决策');
     expect(design.getByRole('button', { name: '为engine设置专属角色…，设计与决策' })).toBeTruthy();

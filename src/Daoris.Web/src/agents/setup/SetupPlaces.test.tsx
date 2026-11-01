@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -25,14 +25,25 @@ import { DRIVER_STATE, respond, show, WIRING } from '../../test/shellHarness';
 import { useListPanes } from '../../work/frame/listPanes';
 import { ViewFrame } from '../../work/frame/ViewFrame';
 import { useAgentsMode, useAgentsView } from '../AgentsView';
-import { PLACES } from './setupFixtures';
+import type { StructurePlaceAsk } from '../../data/wiring';
+import { CATALOGUE, CHAIN, PLACES } from './setupFixtures';
+
+/** A section's body as the application hands it: it says when it is drawn, which only an open section does. */
+const mounted: string[] = [];
+function Mount({ name }: { name: string }) {
+  useEffect(() => { mounted.push(name); }, [name]);
+  return <p>{name} body</p>;
+}
 
 function Place() {
   const lists = useListPanes();
   const modes = useAgentsMode(lists);
   const [chosen, setChosen] = useState<string | null>(null);
   const [over, setOver] = useState(false);
-  const layout = useAgentsView({ active: true, modes, chosen, onChoose: setChosen, notify: () => {} });
+  const layout = useAgentsView({
+    active: true, modes, chosen, onChoose: setChosen, notify: () => {},
+    bodies: () => ({ workflow: <Mount name="workflow" />, sessions: <Mount name="sessions" /> }),
+  });
   return <ViewFrame layout={layout} lists={lists} over={over} onOver={setOver} />;
 }
 
@@ -40,6 +51,9 @@ type Asked = { limit?: number; search?: string; needsLook?: boolean; fold?: stri
 const asked = (): Asked[] => invoke.mock.calls
   .filter(([, type]) => type === 'PLACES')
   .map(([, , options]) => (options as { payload: Asked }).payload);
+const asks = (type: string): Record<string, unknown>[] => invoke.mock.calls
+  .filter(([, called]) => called === type)
+  .map(([, , options]) => (options as { payload: Record<string, unknown> }).payload);
 
 describe('The Agents place, Setup mode', () => {
   beforeEach(() => {
@@ -48,11 +62,15 @@ describe('The Agents place, Setup mode', () => {
     window.localStorage.setItem('daoris.list.agents.mode', 'setup');
     i18n.changeLanguage('en');
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
-    invoke.mockImplementation(async (module: string, type: string, options?: { payload?: Asked }) => {
+    mounted.length = 0;
+    invoke.mockImplementation(async (module: string, type: string, options?: { payload?: Asked & { chain?: StructurePlaceAsk } }) => {
       if (module !== 'DAORIS.DRIVER') return WIRING;
       if (type === 'STATE') return DRIVER_STATE;
       if (type === 'HARNESSES') return { settingsPath: 'x', adapter: 'claude-code', harnesses: [] };
       if (type === 'PLACES') return PLACES(options?.payload ?? {});
+      if (type === 'ROLE_STRUCTURE') return CHAIN(options?.payload?.chain ?? {});
+      if (type === 'ROLES') return CATALOGUE;
+      if (type === 'ACTORS') return { actors: [] };
       return undefined;
     });
   });
@@ -75,26 +93,80 @@ describe('The Agents place, Setup mode', () => {
     expect(within(workspace).getByRole('button', { name: /site.*No checkout on this machine/ })).toBeTruthy();
   });
 
-  it("shows a repository's head: driving, held, trees, and the changes of its own", async () => {
+  it("shows a repository's page: its head, and three sections folded to lines naming their values and where each stands", async () => {
     show(<Place />);
     await userEvent.click(await screen.findByRole('button', { name: /engine/ }));
-    const facts = await screen.findByText('Driving');
-    const head = facts.closest('dl')!;
-    expect(within(head).getByText('Driving').nextSibling).toHaveTextContent('Yes');
-    expect(within(head).getByText('Held').nextSibling).toHaveTextContent('No');
-    expect(within(head).getByText('Trees').nextSibling).toHaveTextContent('Its own tree for each session');
-    expect(within(head).getByText('Set here').nextSibling).toHaveTextContent('2 changes of your own');
-    expect(screen.getByRole('heading', { name: 'engine' })).toBeTruthy();
-    expect(within(head).getByText('Workflow follows').nextSibling).toHaveTextContent('Merge after you accept differing in accept `automatic`, method `squash`');
+    expect(await screen.findByRole('heading', { level: 1, name: 'engine' })).toBeTruthy();
+    expect(screen.getByText('Driven')).toBeTruthy();
+    expect(screen.getByText(/Merge after you accept, 2 options of its own · its own tree per session/)).toBeTruthy();
+    // Workflow first on a repository, open on arrival; the others folded to their lines.
+    expect(screen.getByRole('button', { name: 'Workflow' })).toHaveAttribute('aria-expanded', 'true');
+    const roles = screen.getByRole('button', { name: 'Roles' });
+    expect(roles).toHaveAttribute('aria-expanded', 'false');
+    expect(roles).toHaveAccessibleDescription('Building: Engine build · 8 more as aurora has');
+    const sessions = screen.getByRole('button', { name: 'Sessions' });
+    expect(sessions).toHaveAttribute('aria-expanded', 'false');
+    expect(sessions).toHaveAccessibleDescription('Pauses as today (default) · English (from this machine) · helpers ask you (from aurora)');
   });
 
-  it('says a place that follows the defaults, and what a place needs a look for', async () => {
+  it('says a place that follows the defaults, and what it needs a look for', async () => {
     show(<Place />);
     await userEvent.click(await screen.findByRole('button', { name: /site/ }));
-    const head = (await screen.findByText('Driving')).closest('dl')!;
-    expect(within(head).getByText('Set here').nextSibling).toHaveTextContent('Follows the defaults');
-    expect(within(head).getByText('Workflow follows').nextSibling).toHaveTextContent('Integrated into the line with nothing different');
-    expect(within(head).getByText('Needs a look').nextSibling).toHaveTextContent('No checkout on this machine');
+    expect(await screen.findByText(/Integrated into the line/)).toBeTruthy();
+    expect(screen.getByText(/⚠ No checkout on this machine/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Roles' })).toHaveAccessibleDescription('All 9 works as aurora has');
+  });
+
+  it('reads nothing for a folded section: its body is not drawn, so it asks no route until it is opened', async () => {
+    show(<Place />);
+    await userEvent.click(await screen.findByRole('button', { name: /engine/ }));
+    await screen.findByRole('heading', { level: 1, name: 'engine' });
+    expect(mounted).toEqual(['workflow']);
+    expect(asks('ROLE_STRUCTURE')).toEqual([]);
+    await userEvent.click(screen.getByRole('button', { name: 'Roles' }));
+    await waitFor(() => expect(asks('ROLE_STRUCTURE').length).toBeGreaterThan(0));
+    expect(asks('ROLE_STRUCTURE').at(-1)).toMatchObject({ chain: { workspace: 'aurora', repository: 'engine' } });
+    expect(mounted).toEqual(['workflow']);
+    await userEvent.click(screen.getByRole('button', { name: 'Sessions' }));
+    await waitFor(() => expect(mounted).toEqual(['workflow', 'sessions']));
+  });
+
+  it('keeps the sections as the person left them, across a visit to another place', async () => {
+    show(<Place />);
+    await userEvent.click(await screen.findByRole('button', { name: /engine/ }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Roles' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Workflow' }));
+    expect(screen.getByRole('button', { name: 'Roles' })).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('button', { name: 'Workflow' })).toHaveAttribute('aria-expanded', 'false');
+    await userEvent.click(screen.getByRole('button', { name: /site/ }));
+    await waitFor(() => expect(screen.getByRole('heading', { level: 1, name: 'site' })).toBeTruthy());
+    expect(screen.getByRole('button', { name: 'Workflow' })).toHaveAttribute('aria-expanded', 'true');
+    await userEvent.click(screen.getByRole('button', { name: /engine/ }));
+    await waitFor(() => expect(screen.getByRole('heading', { level: 1, name: 'engine' })).toBeTruthy());
+    expect(screen.getByRole('button', { name: 'Roles' })).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('button', { name: 'Workflow' })).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it("opens the parent's page through the head's door, and Back returns to the page it came from", async () => {
+    show(<Place />);
+    await userEvent.click(await screen.findByRole('button', { name: /engine/ }));
+    await userEvent.click(await screen.findByRole('button', { name: /aurora ›/ }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'aurora' })).toBeTruthy();
+    expect(screen.getByText(/2 of 43 driven/)).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: '← Back to engine · Workflow' }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'engine' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /← Back/ })).toBeNull();
+  });
+
+  it('opens an imported repository on its detail, as a page not driven, with the same three sections', async () => {
+    show(<Place />);
+    await userEvent.click(await screen.findByRole('button', { name: /41 imported, not driven/ }));
+    await userEvent.click(await screen.findByRole('button', { name: /archive-1/ }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'archive-1' })).toBeTruthy();
+    expect(await screen.findByText('Not driven · checkout here')).toBeTruthy();
+    expect(asks('PLACES').at(-1)).toMatchObject({ detail: { workspace: 'aurora', repository: 'archive-1' } });
+    for (const name of ['Workflow', 'Roles', 'Sessions']) expect(screen.getByRole('button', { name })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Hold' })).toBeNull();
   });
 
   it("opens a workspace's imported repositories as a paged read", async () => {
@@ -111,8 +183,7 @@ describe('The Agents place, Setup mode', () => {
     await waitFor(() => expect(screen.queryByRole('button', { name: /archive-3/ })).toBeNull());
 
     await userEvent.click(screen.getByRole('button', { name: /archive-1/ }));
-    const head = (await screen.findByText('Driving')).closest('dl')!;
-    expect(within(head).getByText('Driving').nextSibling).toHaveTextContent('No');
+    expect(await screen.findByText('Not driven · checkout here')).toBeTruthy();
   });
 
   it('narrows by a search and by Needs a look, asked of the driver', async () => {

@@ -51,6 +51,8 @@ export type PlaceSectionSpec = {
 
 /** Brings the row a door asked for into view once its section has drawn it, and says so. */
 function useBringRow(root: React.RefObject<HTMLElement | null>, row: string | null | undefined, onBrought: (() => void) | undefined) {
+  const brought = useRef(onBrought);
+  brought.current = onBrought;
   useEffect(() => {
     const node = root.current;
     if (!row || !node) return undefined;
@@ -59,14 +61,14 @@ function useBringRow(root: React.RefObject<HTMLElement | null>, row: string | nu
       if (!target) return false;
       target.scrollIntoView?.({ block: 'nearest' });
       target.focus({ preventScroll: true });
-      onBrought?.();
+      brought.current?.();
       return true;
     };
     if (find()) return undefined;
     const observer = new MutationObserver(() => { if (find()) observer.disconnect(); });
     observer.observe(node, { childList: true, subtree: true });
     return () => observer.disconnect();
-  }, [root, row, onBrought]);
+  }, [root, row]);
 }
 
 /** Takes the focus to the head when a choice asks and nothing else has taken it (a list laid over the page has gone). */

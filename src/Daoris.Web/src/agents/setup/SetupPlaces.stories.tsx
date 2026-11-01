@@ -4,7 +4,8 @@ import { storyWidths } from '../../design/storyWidths';
 import { InTheme } from '../../plugins/storyIcons';
 import { AgentsModes } from '../AgentsModes';
 import { PlaceRolesView } from './PlaceRoles';
-import { findPlace, placeAsk, repositoryId, SetupList, SetupMain, type SetupState } from './SetupPlaces';
+import { usePlaceShell } from './placeShell';
+import { findPlace, placeAsk, repositoryId, rowOfFound, SetupList, SetupMain, type SetupState } from './SetupPlaces';
 import { AGENTS, CATALOGUE, CHAIN, PLACES } from './setupFixtures';
 
 // The Agents place's Setup mode (AGENTSPLACE1e, the Agents-place design §3): the tree of places beside a place's head, at the widths the
@@ -22,6 +23,7 @@ const editor = { agents: AGENTS, offers: {}, staffing: [], catalogue: CATALOGUE,
 function Place({ chosen = repositoryId('aurora', 'engine'), fold = null }: { chosen?: string; fold?: string | null }) {
   const now = state(fold);
   const found = findPlace(now.read, chosen);
+  const shell = usePlaceShell();
   const ask = found && found.kind !== 'imported' ? placeAsk(found) : null;
   return (
     <div className="flex min-h-[420px] border border-line bg-page">
@@ -33,7 +35,11 @@ function Place({ chosen = repositoryId('aurora', 'engine'), fold = null }: { cho
         <SetupMain
           found={found}
           state="ok"
-          roles={ask && <PlaceRolesView place={ask} read="ok" answer={CHAIN(ask)} editor={editor} appointed={null} />}
+          id={chosen}
+          row={rowOfFound(found, null)}
+          shell={shell}
+          bodies={{ roles: ask && <PlaceRolesView place={ask} read="ok" answer={CHAIN(ask)} editor={editor} appointed={null} /> }}
+          onGo={nothing}
         />
       </div>
     </div>

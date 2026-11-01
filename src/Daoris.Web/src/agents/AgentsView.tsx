@@ -6,7 +6,7 @@ import { useHarnessRun, WithHarnessRuns } from './harnessRuns';
 import { useSessions } from '../data/queries';
 import { SessionConsole } from '../work/console/SessionConsole';
 import {
-  useAccountUse, useAccounts, useHarnessAction, useHarnesses, useReadAccounts, useRefreshHarnesses, useRuleAction, useRules,
+  useAccountUse, useAccounts, useHarnessAction, useHarnesses, usePlaces, useReadAccounts, useRefreshHarnesses, useRuleAction, useRules,
   useSetAgentSettings, useUsage,
 } from '../bridge/shell';
 import { ruleHearing, useRuleAnswer } from '../work/waits/ruleAnswer';
@@ -23,8 +23,10 @@ import { type AgentPart, accountLabel, agentRows } from './agents';
 import { AgentsModes, AgentsStrip, RoleSectionStrip } from './AgentsModes';
 import { type AgentsMode, isRoleSection, readAgentsMode, type RoleSection, setupLit, storeAgentsMode } from './modes';
 import { PlaceRoles } from './setup/PlaceRoles';
+import type { PlaceDriving } from './setup/PlacePage';
 import { draftOfAsk, type PlaceAsk, type SetUpPage, type SetUpPlace, useSetUpPage } from './setup/placePlan';
-import { findPlace, placeAsk, SetupList, SetupMain, setUpPlaceOf, useSetupPlaces } from './setup/SetupPlaces';
+import { type PlaceAt, usePlaceShell } from './setup/placeShell';
+import { findPlace, placeAsk, rowOfFound, SetupList, SetupMain, setUpPlaceOf, sourceDoor, useSetupPlaces } from './setup/SetupPlaces';
 import { RoleSectionList } from './roles/RoleSections';
 import { type RoleOpeners, RolesMode, useRolesPage } from './roles/RolesView';
 import { usedByAgent } from './roles/roleStructure';
@@ -65,7 +67,14 @@ export function useAgentsMode(lists: ListPanes) {
   const [seeded, setSeeded] = useState<{ place: string; ask: PlaceAsk } | null>(null);
   const onSeed = useCallback((target: string, ask: PlaceAsk) => setSeeded({ place: target, ask }), []);
   const onSeeded = useCallback(() => setSeeded(null), []);
-  return { mode, onMode, section, onSection, place, onPlace, seeded, onSeed, onSeeded };
+  // SETUPUX1h: a door to a place at a section and a row (and the way back), held until the place's page has opened on it.
+  const [arrival, setArrival] = useState<{ place: string; at: PlaceAt } | null>(null);
+  const onPlaceAt = useCallback((next: string, at: PlaceAt) => {
+    choose('roles', next);
+    setArrival(at.section || at.row || at.back ? { place: next, at } : null);
+  }, [choose]);
+  const onArrived = useCallback(() => setArrival(null), []);
+  return { mode, onMode, section, onSection, place, onPlace, onPlaceAt, arrival, onArrived, seeded, onSeed, onSeeded };
 }
 
 /**
@@ -83,17 +92,20 @@ export function useAgentsMode(lists: ListPanes) {
  *
  * **Every act has its terminal twin** (D50): `daoris agent …`, named at the page's foot.
  */
-export function useAgentsView({ active, chosen, onChoose, notify, part = null, onAnchored, onOpenPlugin, say, modes, roleDoors, sessions, setUp }: {
+export function useAgentsView({ active, chosen, onChoose, notify, part = null, onAnchored, onOpenPlugin, say, modes, roleDoors, bodies, driving, setUp }: {
   /**
    * A place's *Set up…* (AGENTSPLACE1j), opened in its main area and handed in by the application for the same reason: it reads the plan and
    * presses Apply, the person's own act. The set-up's draft per place is held here, so a door out of it and back finds it as left.
    */
   setUp?: (place: SetUpPlace, page: SetUpPage) => ReactNode;
   /**
-   * A place's Sessions (AGENTSPLACE1f), drawn under its Roles and handed in by the application, which holds the presses the rows make: this
-   * place imports none of them, so Ask Daoris's census of what the place presses does not take them for its own.
+   * A place's Workflow and Sessions sections' bodies (AGENTSPLACE1f, 1h), handed in by the application, which holds the presses the rows
+   * make: this place imports none of them, so Ask Daoris's census of what the place presses does not take them for its own. A section
+   * mounts its body only while it is open, so a folded one reads nothing.
    */
-  sessions?: (place: { kind: 'workspace' | 'repository'; row: PlaceRow }) => ReactNode;
+  bodies?: (place: { kind: 'workspace' | 'repository'; row: PlaceRow }) => { workflow: ReactNode; sessions: ReactNode };
+  /** A repository's driving for its page head (SETUPUX1h): the organism holds the hooks and renders the page with what it made. */
+  driving?: (row: PlaceRow, render: (driving: PlaceDriving) => ReactNode) => ReactNode;
   /** The view is in front. */
   active: boolean;
   /**
@@ -104,6 +116,9 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
     mode: AgentsMode; onMode: (mode: AgentsMode) => void; section: RoleSection; onSection: (section: RoleSection) => void;
     /** The place Setup has chosen, once lit, and a change of it. */
     place: string | null; onPlace: (place: string) => void;
+    /** A door's section and row at a place, and the way back (SETUPUX1h), which the page opens on once. */
+    onPlaceAt?: (place: string, at: PlaceAt) => void;
+    arrival?: { place: string; at: PlaceAt } | null; onArrived?: () => void;
     /** The set-up Ask Daoris proposed for a place, which opens on it once (AGENTSPLACE1k), and the word that it has. */
     seeded?: { place: string; ask: PlaceAsk } | null; onSeeded?: () => void;
   };
@@ -144,6 +159,23 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
     setUpPage.open(seeded.place, seeded.ask.repositories, draftOfAsk(seeded.ask));
     onSeeded?.();
   }, [seededHere, seeded, setUpPage, onSeeded]);
+  // SETUPUX1h: the page's state (the sections open, the row a door asked for, the way back) is held here, above the sections' mounts.
+  const shell = usePlaceShell();
+  const arrival = modes?.arrival ?? null;
+  const onArrived = modes?.onArrived;
+  const arrivedHere = active && lit && inSetup && arrival !== null && arrival.place === modes?.place;
+  const { arrive } = shell;
+  useEffect(() => {
+    if (!arrivedHere || !arrival) return;
+    arrive(arrival.place, arrival.at);
+    onArrived?.();
+  }, [arrivedHere, arrival, arrive, onArrived]);
+  // A not-driven repository's row is not in the list's page: its own, read whole (`detail`), once it is chosen.
+  const chosenPlace = active && lit && inSetup ? findPlace(places.read, modes?.place ?? null) : null;
+  const importedDetail = usePlaces(
+    chosenPlace?.kind === 'imported' ? { detail: { workspace: chosenPlace.workspace, repository: chosenPlace.repository } } : {},
+    { enabled: chosenPlace?.kind === 'imported' },
+  );
   const accounts = useAccounts();
   useErrorNotify(active ? roster.error : null, notify);
 
@@ -179,6 +211,16 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
   if (modes && inSetup && lit) {
     const placed = findPlace(places.read, modes.place);
     const setUpPlace = setUp ? setUpPlaceOf(placed, modes.place, places.read) : null;
+    const row = rowOfFound(placed, importedDetail.data?.detail ?? null);
+    // A door to another place at a section and row: the shell holds it, and the list chooses the place.
+    const onGo = (target: string, at: PlaceAt) => {
+      shell.arrive(target, at);
+      modes.onPlace(target);
+    };
+    const name = !placed || !row ? '' : placed.kind === 'machine' ? t('agents.setup.machine') : placed.kind === 'workspace' ? row.workspace ?? '' : row.repository ?? '';
+    const counts = placed?.kind === 'workspace' ? { driven: placed.driven, notDriven: placed.notDriven } : undefined;
+    const members = placed?.kind === 'workspace' ? (places.read?.repositories ?? []).filter((each) => each.workspace === placed.row.workspace) : undefined;
+    const ofBodies = placed && placed.kind !== 'machine' && row ? bodies?.({ kind: placed.kind === 'workspace' ? 'workspace' : 'repository', row }) : undefined;
     return {
       list: {
         view: 'agents',
@@ -188,14 +230,32 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
         head: <AgentsModes mode={modes.mode} onMode={modes.onMode} />,
         strip: <AgentsStrip mode={modes.mode} onMode={modes.onMode} />,
         chosen: modes.place,
-        body: <SetupList state={places} chosen={modes.place} onChoose={modes.onPlace} />,
+        // A choice is the head's to be read from: the list laid over the page goes, and the focus returns to the head (SETUPUX1h).
+        body: <SetupList state={places} chosen={modes.place} onChoose={(next) => { shell.clearBack(); modes.onPlace(next); shell.askFocus(); }} />,
       },
       main: (
         <SetupMain
           found={placed}
           state={places.status}
-          roles={placed && placed.kind !== 'imported' ? <PlaceRoles place={placeAsk(placed)} notify={notify} /> : null}
-          after={placed && (placed.kind === 'workspace' || placed.kind === 'repository') ? sessions?.(placed) : null}
+          id={modes.place}
+          row={row}
+          counts={counts}
+          members={members}
+          shell={shell}
+          bodies={placed && row
+            ? {
+              roles: (
+                <PlaceRoles
+                  place={placed.kind === 'imported' ? { workspace: placed.workspace, repository: placed.repository } : placeAsk(placed)}
+                  notify={notify}
+                  onSource={sourceDoor({ id: modes.place!, name }, row.workspace, onGo)}
+                />
+              ),
+              ...(ofBodies ?? {}),
+            }
+            : {}}
+          drive={driving}
+          onGo={onGo}
           setUp={setUp && setUpPlace
             ? {
               open: setUpPage.draftOf(setUpPlace.id) !== null,

@@ -7,37 +7,29 @@ import { SETUP_DEFAULTS, SETUP_OWN } from '../../projects/fixtures';
 import type { RepositorySetupProps } from '../../projects/setup/RepositorySetup';
 import { FULL, GATES_CHANGED, INTEGRATION_CHANGED } from '../../workflow/fixtures';
 import type { PlaceWorkflowProps } from '../../workflow/place/PlaceWorkflowView';
-import { PlaceRepositorySetupView } from './PlaceSessions';
+import { PlaceSessionsBodyView, PlaceWorkflowBodyView } from './PlaceSessions';
 
 // AGENTSPLACE1f (the Agents-place design §3): a repository place's Sessions hold today's rows moved whole from Repositories' Setup tab, each
-// with *Set for this repository* or *Clear*, drawn from the one molecule; its Driving and Line and landing follow until their rows build them.
+// with *Set for this repository* or *Clear*, drawn from the one molecule. SETUPUX1h: its Driving is the page head's, and each section's body
+// is drawn apart, inside the fold that names it.
 
 // AGENTSPLACE1h: its Workflow, handed in as the application hands it, holds the route, Gates and the line's landing rows.
 const WORKFLOW: PlaceWorkflowProps = { name: 'engine', current: { ...FULL, start: { ...GATES_CHANGED, integration: INTEGRATION_CHANGED } } };
 
-const draw = (setup: RepositorySetupProps | null, workflow: PlaceWorkflowProps | null = WORKFLOW) =>
-  render(<Tooltip.Provider><PlaceRepositorySetupView setup={setup} workflow={workflow} /></Tooltip.Provider>);
-
-/** A part of the page, found by its heading's id: a section inside it is titled *Sessions* too. */
-const part = (name: 'Sessions' | 'Workflow') => document.getElementById(`place-${name.toLowerCase()}`)!.closest('section')!;
+const drawSessions = (setup: RepositorySetupProps | null) =>
+  render(<Tooltip.Provider><PlaceSessionsBodyView setup={setup} /></Tooltip.Provider>);
+const drawWorkflow = (setup: RepositorySetupProps | null, workflow: PlaceWorkflowProps | null = WORKFLOW) =>
+  render(<Tooltip.Provider><PlaceWorkflowBodyView setup={setup} workflow={workflow} /></Tooltip.Provider>);
 
 afterEach(async () => { await i18n.changeLanguage('en'); });
 
 describe("a repository place's Sessions", () => {
-  it('holds the sessions, the reach and the rules under Sessions, and the route, Gates and the line and landing under Workflow', () => {
-    draw(SETUP_DEFAULTS);
-
-    expect(document.getElementById('place-sessions')).toHaveTextContent('Sessions');
-    expect(document.getElementById('place-workflow')).toHaveTextContent('Workflow');
-    const sessions = within(part('Sessions'));
-    expect(sessions.getByRole('button', { name: 'Sessions' })).toBeInTheDocument();
-    expect(sessions.getByRole('button', { name: 'Reach' })).toBeInTheDocument();
-    expect(sessions.queryByRole('button', { name: 'Line and landing' })).toBeNull();
-    expect(sessions.queryByRole('button', { name: 'Driving' })).toBeNull();
-    expect(within(part('Workflow')).getByRole('button', { name: 'Line and landing' })).toBeInTheDocument();
-    expect(within(part('Workflow')).getByRole('heading', { name: 'Gates' })).toBeInTheDocument();
-    // Driving keeps its section above them.
-    expect(screen.getByRole('button', { name: 'Driving' })).toBeInTheDocument();
+  it('holds the sessions, the reach and the rules, and neither the line and landing nor the driving', () => {
+    drawSessions(SETUP_DEFAULTS);
+    expect(screen.getByRole('button', { name: 'Sessions' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Reach' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Line and landing' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Driving' })).toBeNull();
   });
 
   it('offers *Set for this repository* on a value from above and *Clear* on one set here, as the tab did', async () => {
@@ -50,39 +42,45 @@ describe("a repository place's Sessions", () => {
         language: { ...SETUP_OWN.sessions!.language!, onSet: (language) => (language === null ? onClear() : onSet(language)) },
       },
     };
-    draw(setup);
+    drawSessions(setup);
 
     // The session language is set here: its section opens on its own, and its row carries *Clear*.
-    const sessions = within(part('Sessions'));
-    expect(sessions.getByRole('button', { name: 'Sessions' })).toHaveAttribute('aria-expanded', 'true');
-    await userEvent.click(sessions.getAllByRole('button', { name: 'Clear' })[0]!);
+    expect(screen.getByRole('button', { name: 'Sessions' })).toHaveAttribute('aria-expanded', 'true');
+    await userEvent.click(screen.getAllByRole('button', { name: 'Clear' })[0]!);
     expect(onClear).toHaveBeenCalledOnce();
     expect(onSet).not.toHaveBeenCalled();
   });
 
+  it('draws nothing for a repository the driver has not answered', () => {
+    drawSessions(null);
+    expect(screen.queryByRole('heading', { level: 2 })).toBeNull();
+  });
+});
+
+describe("a repository place's Workflow", () => {
+  it('holds the route, Gates and the line and landing, and no sessions rows', () => {
+    drawWorkflow(SETUP_DEFAULTS);
+    expect(screen.getByRole('button', { name: 'Line and landing' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Gates' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Reach' })).toBeNull();
+  });
+
   it('draws the integration declaration once, in Gates, and not again under Line and landing', () => {
     const landed = { start: { ...GATES_CHANGED, integration: INTEGRATION_CHANGED }, workspace: 'aurora', onChoose: vi.fn(), onAcceptIntegration: vi.fn() };
-    draw({ ...SETUP_OWN, landed });
+    drawWorkflow({ ...SETUP_OWN, landed });
 
-    expect(within(part('Workflow')).getAllByText('Accept for integration')).toHaveLength(1);
+    expect(within(document.body).getAllByText('Accept for integration')).toHaveLength(1);
     expect(screen.queryByText('Integration declaration')).toBeNull();
   });
 
   it('draws no Workflow while the driver has not answered it', () => {
-    draw(SETUP_DEFAULTS, null);
+    drawWorkflow(SETUP_DEFAULTS, null);
     expect(document.getElementById('place-workflow')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Driving' })).toBeInTheDocument();
-  });
-
-  it('draws nothing for a repository the driver has not answered', () => {
-    draw(null);
-    expect(screen.queryByRole('heading', { level: 2 })).toBeNull();
   });
 
   it('says its headings in Chinese', async () => {
     await i18n.changeLanguage('zh');
-    draw(SETUP_DEFAULTS);
-    expect(document.getElementById('place-sessions')).toHaveTextContent('会话');
+    drawWorkflow(SETUP_DEFAULTS);
     expect(document.getElementById('place-workflow')).toHaveTextContent('工作流');
   });
 });
