@@ -369,6 +369,8 @@ export function FlowCanvas({
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (isComposing(event)) return;
+    // A key with Ctrl, Alt or the system key is the page's around the flow, such as an editor's move or undo (FLOWCHART2b).
+    if (event.ctrlKey || event.altKey || event.metaKey) return;
     const target = event.target as HTMLElement;
     const holder = target.closest<HTMLElement>('[data-flow-node]');
     if (!holder) return;

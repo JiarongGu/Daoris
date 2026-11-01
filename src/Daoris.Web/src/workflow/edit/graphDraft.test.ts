@@ -6,8 +6,8 @@ import { PALETTE } from './editFixtures';
 import {
   addStep, addWire, carryOf, choiceOf, commit, connect, copySteps, type DraftWire, draftOf, duplicateStep, earlierThan, emptyDraft, entriesOf,
   type GraphDraft, type GraphJson, graphOf, historyOf, insertStep, joinModeOf, joinOf, leavesOf, moveInChain, movePlan, moreWaysOf, pasteSteps,
-  redo, removeStep, removeWire, retarget, rowsOf, setCarry, setEnd, setJoinMode, setOption, sourcesOf, stepChoices, targetsOf, undo,
-  type WayRowKey, wayTo, workflowIdFor,
+  redo, removeStep, removeWire, retarget, rowsOf, setCarry, setEnd, setJoinMode, setOption, sourcesOf, stepChoices, targetsOf, triggerTargetsOf,
+  undo, type WayRowKey, wayTo, workflowIdFor,
 } from './graphDraft';
 
 // WORKFLOWEDIT1b, FLOWCHART2b (D223): the step editor's draft, the inverse of the run view's drawing (workflowFlow.ts): a schema-2 graph
@@ -214,6 +214,8 @@ describe('What happens next: the rows of a step, and the kind of way the row and
     const more = addWire(addWire(release, { kind: 'trigger', from: 'line', to: 'find' }), { kind: 'wait', from: 'line', to: 'find' });
     expect(moreWaysOf(PALETTE, more, 'line').map(said)).toEqual(['trigger:line>find', 'wait:line>find']);
     expect(moreWaysOf(PALETTE, release, 'find')).toEqual([]);
+    // A trigger starts a step the source does not wait on, once.
+    expect(triggerTargetsOf(more, 'line')).toEqual(['release', 'publish']);
   });
 
   it('reads earlier as an ancestor upstream through after, trigger, data and when, never a step drawn above', () => {

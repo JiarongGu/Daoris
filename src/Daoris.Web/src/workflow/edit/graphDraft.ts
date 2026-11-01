@@ -356,6 +356,13 @@ export function targetsOf(palette: WorkflowPaletteAnswer, draft: GraphDraft, fro
   });
 }
 
+/** The steps a trigger from `from` may start each time it is reached (*More ways*): any it does not wait on, but itself and one it starts already. */
+export function triggerTargetsOf(draft: GraphDraft, from: string): string[] {
+  const waits = dependsOn(draft, from);
+  return draft.nodes.map((node) => node.id)
+    .filter((id) => id !== from && !waits.has(id) && !draft.wires.some((wire) => wire.kind === 'trigger' && wire.from === from && wire.to === id));
+}
+
 /** A row's way to `to`, by the kind the row and the target give, and its wire's id; null where no way can go there. */
 export function connect(palette: WorkflowPaletteAnswer, draft: GraphDraft, from: string, row: WayRowKey, to: string): { draft: GraphDraft; wire: string } | null {
   const ask = wayTo(palette, draft, from, row, to);

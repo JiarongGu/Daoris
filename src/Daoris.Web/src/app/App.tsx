@@ -796,6 +796,7 @@ export function App() {
       record: live.includes('copy'),
       find: findTarget(document, view) !== null,
       field: fields.current?.field() != null,
+      history: fields.current?.history() != null,
       refreshing: refresh.isPending,
       zoom,
     };
@@ -823,7 +824,7 @@ export function App() {
     // At a domain the row names, or at the one Settings' list remembers (D75).
     settings: (section) => (section ? openSettings(section as SettingsSection) : open('settings')),
     edit: (act) => {
-      void runEdit(act, fields.current?.field() ?? null).then((done) => {
+      void runEdit(act, fields.current?.field() ?? fields.current?.history() ?? null).then((done) => {
         if (!done && act === 'paste') notify(t('menu.pasteRefused'), 'error');
       });
     },

@@ -124,6 +124,11 @@ export type CommandState = {
   /** Whether a field is there to undo, cut, paste in and select. */
   field: boolean;
   /**
+   * Whether a region with a history of its own holds the focus outside a field (FLOWCHART2b): the workflow editor's draft, whose undo,
+   * redo, copy and paste Edit's are. Absent, none.
+   */
+  history?: boolean;
+  /**
    * Whether a refresh of the index is running: View's *Refresh the index* says so and takes no second press, as the
    * activity bar's button did before UX6j moved it here (D150 §2.1).
    */
@@ -351,11 +356,11 @@ export const COMMANDS: readonly CommandSpec[] = [
   },
 
   // Edit: a field's own six, shown with their keys and never taken; then Find, Search knowledge and Copy ID.
-  editAct('undo', 'Ctrl+Z', 'undo', 'undo', (state) => state.field),
-  editAct('redo', 'Ctrl+Y', 'undo', 'redo', (state) => state.field),
+  editAct('undo', 'Ctrl+Z', 'undo', 'undo', (state) => state.field || state.history === true),
+  editAct('redo', 'Ctrl+Y', 'undo', 'redo', (state) => state.field || state.history === true),
   editAct('cut', 'Ctrl+X', 'clipboard', 'cut', (state) => state.field),
   editAct('copy', 'Ctrl+C', 'clipboard', 'copy'),
-  editAct('paste', 'Ctrl+V', 'clipboard', 'paste', (state) => state.field),
+  editAct('paste', 'Ctrl+V', 'clipboard', 'paste', (state) => state.field || state.history === true),
   editAct('selectAll', 'Ctrl+A', 'clipboard', 'selectAll', (state) => state.field),
   {
     id: 'edit.find', menu: 'edit', group: 'find', label: 'menu.edit.find', icon: 'search',
