@@ -16,6 +16,7 @@ This overrides every batch step below.
 - **Merge into main when it is done.** The parent merges a finished branch straight into main with `git merge --no-ff`. Do it at once, not held for a batch, so branches stay short and conflicts small.
   - Before merging, the builder has run only the tests its change touches, plus the censuses its files need. The parent runs no full pre-merge pass.
   - A conflict goes back to its builder, which merges main and resolves.
+- **CI and development run on separate cycles.** Development never waits for a CI run. The CI runs over main's tip in the background, its reds come back as small fixes on main, and the install updates whenever a run is green.
 - **Test after the merge, once.** After merges land, run CI on main in the background: `node tools/merge-branch.mjs --ci --stage <main>`. Fix a red forward on main with its own small branch.
   - The install is staged only from a green CI (`npm run publish:desktop -- … --stage --from-gated <commit>`).
 - **Never wrap a queue or CI command in `timeout`.** Git Bash's timeout kills the detached runner and its gates (FIX-LOG, 2026-11-01).
