@@ -507,6 +507,8 @@ public sealed class PipeCensusTests
     [InlineData("SESSION_PARTNER_ASK", PipeDrain.Waits)]
     [InlineData("ASK_OPINION", PipeDrain.Waits)]
     [InlineData("PLUGIN_TRY", PipeDrain.Waits)]
+    [InlineData("PLUGIN_TOOLS", PipeDrain.Waits)]
+    [InlineData("PLUGIN_TOOL_FIX", PipeDrain.Waits)]
     [InlineData("TOOLS_DOWNLOAD", PipeDrain.Waits)]
     [InlineData("LAND_SESSION_TREE", PipeDrain.Waits)]
     [InlineData("LAND_ASK", PipeDrain.Waits)]

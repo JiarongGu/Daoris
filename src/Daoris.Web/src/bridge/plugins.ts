@@ -3,7 +3,7 @@ import { useShenora } from '@shenora/react';
 import { keys } from '../data/queries';
 import type { KitPoint, NewPlugin, PluginTrialResult } from '../plugins/PluginKit';
 import type {
-  HelpServerShown, PluginOfferShown, PluginShippedShown, ResourceShown, SkillShown, StepShown,
+  HelpServerShown, PluginOfferShown, PluginShippedShown, ResourceShown, SkillShown, StepShown, ToolShown,
 } from '../plugins/catalog';
 import type { PluginSourceShown, PluginUpdatePlanShown } from '../plugins/PluginUpdate';
 import { call } from './call';
@@ -55,6 +55,8 @@ export type PluginEntry = {
   /** The steps it declares and what they create (FABRIC-UNIT1e, §D9); an older shell sends none. */
   steps?: StepShown[];
   resources?: ResourceShown[];
+  /** The tools it declares as its manifest says them (ADOSIGNIN1); nothing is found by reading. An older shell sends none. */
+  tools?: ToolShown[];
 };
 export type PluginCatalog = {
   folder: string;
@@ -123,6 +125,41 @@ export const usePluginNew = () =>
   useMutation({
     mutationFn: (plugin: NewPlugin) =>
       call<{ id: string; folder: string; points: string[]; files: string[] }>('PLUGIN_NEW', plugin),
+  });
+
+/**
+ * The person's *Check* of a plugin's declared tools (ADOSIGNIN1, D150 point 7): each found, its version against its range, and
+ * each readiness check run. Only this press asks the machine; a look at the page reads the manifest alone.
+ */
+export const usePluginTools = () =>
+  useMutation({
+    mutationFn: (plugin: { id: string }) => call<{ id: string; tools: ToolShown[] }>('PLUGIN_TOOLS', plugin),
+  });
+
+/** What the person's press of a check's fix came to (`PLUGIN_TOOL_FIX`): refused with a `why` code, or run with the tool read again. */
+export type PluginToolFixed = {
+  id: string;
+  tool: string;
+  check: number;
+  ran: boolean;
+  /** The code of a refusal: `fix_not_declared`, `not_found`, `not_started`, `refused`, `unknown_tool`, `unknown_check`, `no_fix`. */
+  why?: string | null;
+  message: string;
+  exitCode?: number | null;
+  install?: string | null;
+  /** The tool as its checks read it again after the console closed. */
+  standing?: ToolShown | null;
+};
+
+/**
+ * The person's *Set up* or *Sign in* beside an unmet check (ADOSIGNIN1): opens a console they see, running exactly the
+ * manifest's `fix` for one of the plugin's own tools, and answers when it closes with the tool read again. Daoris never signs in.
+ * It may take as long as the person does at the console.
+ */
+export const usePluginToolFix = () =>
+  useMutation({
+    mutationFn: (press: { id: string; tool: string; check: number }) =>
+      call<PluginToolFixed>('PLUGIN_TOOL_FIX', press, { timeoutMs: 30 * 60_000 }),
   });
 
 /**

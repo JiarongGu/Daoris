@@ -28,6 +28,9 @@ public sealed class NoConsoleWindowTests
             + "over the stdio the driver handed the launcher",
     };
 
+    /// <summary>The spawns that open a console the person is meant to see, marked <c>// console-window:</c> where taken (ADOSIGNIN1).</summary>
+    private static readonly HashSet<string> Windowed = new(StringComparer.Ordinal) { "Daoris.Desktop.Driver/Plugins/PluginToolSetUp.cs" };
+
     [Fact]
     public void Every_process_the_desktop_starts_is_started_without_a_console_window()
     {
@@ -62,6 +65,16 @@ public sealed class NoConsoleWindowTests
                         && initializer.Contains("// inherits its console:", StringComparison.Ordinal))
                     {
                         inherits.Add(Path.GetRelativePath(root, file).Replace('\\', '/'));
+                        continue;
+                    }
+
+                    // A console the person is meant to see (ADOSIGNIN1): marked where it is taken, and named with its reason in the other
+                    // census's list of windows (`NoConsoleStarts.Windows`).
+                    var before = source[Math.Max(0, spawn.Index - 200)..spawn.Index];
+                    if (initializer.Contains("CreateNoWindow = false", StringComparison.Ordinal)
+                        && before.Contains("// console-window:", StringComparison.Ordinal)
+                        && Windowed.Contains(Path.GetRelativePath(root, file).Replace('\\', '/')))
+                    {
                         continue;
                     }
 

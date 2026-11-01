@@ -87,6 +87,8 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   // helpGrants draws Ask Daoris's browser grant from the plugin's approval.
   PLUGIN_ACTION: { scopes: ['driver', 'plugins', 'harnesses'] },
   PLUGIN_UPDATE: { scopes: ['driver', 'plugins', 'harnesses'] },
+  PLUGIN_TOOLS: { scopes: ['plugins'] },
+  PLUGIN_TOOL_FIX: { scopes: ['plugins'] },
   PLUGIN_INSTALL: { scopes: ['driver', 'plugins', 'harnesses'] },
   PLUGIN_ADD: { scopes: ['driver', 'plugins', 'harnesses'] },
   // The remaining presses (STATEHUB1h): the standing choices, a go-ahead, a turn stopped and a word taken back, and what the
