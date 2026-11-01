@@ -433,7 +433,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-11-01-setup-ux-design.md` | 67 | 693 |
 | `docs/2026-11-01-setup-ux-proposal-codex.md` | 46 | 622 |
 | `docs/2026-11-01-setup-ux-proposal-opus.md` | 77 | 818 |
-| `docs/2026-11-02-canvas-design.md` | 47 | 418 |
+| `docs/2026-11-02-canvas-design.md` | 49 | 442 |
 | `docs/2026-11-02-canvas-proposal-opus.md` | 42 | 512 |
 | `docs/2026-11-02-flowchart-proposal-codex.md` | 46 | 443 |
 | `docs/2026-11-02-flowchart-proposal-opus.md` | 80 | 736 |

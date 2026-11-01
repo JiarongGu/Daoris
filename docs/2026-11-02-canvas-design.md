@@ -416,3 +416,27 @@ the installed window where it changes it; its own line of D224's note and its ow
 21. **The spike leaking into the product.** *Test:* no `@xyflow` import under `src/` and no web dependency unless D224's note chose it.
 22. **Growth across opens, and work at rest.** *Test:* twenty opens and closes retain no node, observer, listener or worker; at rest,
     no frame.
+
+## 11. Settled after Codex's read
+
+Codex's read (`docs/2026-11-02-canvas-reads.md`) is taken whole; these amend §2 to §10, and each row carries its part.
+
+- **Row a's gate carries the editor and is fair.** React 19, ports, custom routes, insertion controls, pick mode and pointer capture
+  are blocking contracts; if both candidates fail one, the row stops and hands back its evidence. The 12 KB and 150 KiB figures are
+  each candidate's own target, not a common gate; common requirements score both alike; equivalent fully adapted scenes are measured,
+  startup, parse and measurement costs and lazy loading included. A small installed-host check of wheel, focus and the reader comes
+  before the lock; row g keeps the integrated journeys.
+- **A state change keeps the boxes only while the scene holds.** The folds that follow current, settled and reached states and a
+  refusal opening the holds group are explicit scene changes, with the anchor kept; stability is tested with the scene fixed.
+- **The narrow readings stay as built.** Below 36rem a drawing that fits at 100% is drawn (release and review runs at 300 px), else
+  the feature's rail.
+- **The geometry inventory** includes waypoint boxes and section dividers; **the camera** keeps the map's convention (the world point
+  at the top left; the transform's translation is −k × origin); **controls at the 80% floor** are measured as effective targets and
+  given enlarged hit areas or a readable-scale editing step; **the interaction precedence** keeps a scrollable node's own scroll, Escape's
+  order and a release outside cancelling.
+- **Row c carries the appointment model:** an appointment is drawn per place it applies to, each occurrence mapped to the one
+  selection and detail identity, its dormancy per place; offered roles without an appointment are named where they appear; the
+  workspace fold takes a band-aware projection (today's `diagramShape` assigns workspaces to place nodes only).
+- **Row e defines edge navigation before the shared API is fixed:** every incident line is a stop (cycling, order and the way back
+  stated, asks and knowledge links included), replacing today's focusable line buttons.
+- **Find keeps a selectable list of named results** beside stepping with the focus kept in the field.
