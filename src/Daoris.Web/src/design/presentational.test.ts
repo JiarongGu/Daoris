@@ -94,6 +94,8 @@ const ORGANISMS = new Set<string>([
   './agents/setup/SetupPlaces.tsx',
   // A place's Roles section (AGENTSPLACE1g1): its chain's read and the role editor's presses, so its rows below hold none.
   './agents/setup/PlaceRoles.tsx',
+  // A workspace's supervisor line among its place's Roles (SETUPUX1v): the standing confirmation's read, so its door below holds none.
+  './agents/setup/PlaceSupervisor.tsx',
   // A place's Sessions (AGENTSPLACE1f): the registry's row and the one reading of a repository's setup behind it, so the molecules below hold none.
   './agents/setup/PlaceSessions.tsx',
   // A place's Set up… (AGENTSPLACE1j): the plan's read and the person's Apply, so the page below it holds neither.

@@ -116,6 +116,20 @@ public sealed partial class McpToolDescriptionTests
         Assert.Contains("saving nothing", text);
     }
 
+    /// <summary>FLOWCHART2e: the workflow tool says a change to the open draft goes by its fingerprint with the whole graph, saving and choosing nothing.</summary>
+    [Fact]
+    public void The_workflow_tool_says_a_change_to_the_open_draft_saves_nothing()
+    {
+        var parameter = typeof(HelpWorkflowTool).GetMethod(nameof(HelpWorkflowTool.ProposeWorkflow))!.GetParameters().Single(each => each.Name == "draft");
+        var said = parameter.GetCustomAttribute<DescriptionAttribute>()!.Description;
+        var text = string.Join(" ", Descriptions().Where(d => d.Tool == "workflow_propose").Select(d => d.Text));
+
+        Assert.Contains("fingerprint", said);
+        Assert.Contains("whole", said);
+        Assert.Contains("nothing is saved or chosen", said);
+        Assert.Contains("open in the person's editor", text);
+    }
+
     /// <summary>WORKFLOW1h-name: the workflow tool says a new workflow is named by the person's words, and an edit keeps its name.</summary>
     [Fact]
     public void The_workflow_tool_says_a_new_workflow_takes_the_persons_name()

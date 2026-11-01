@@ -10,6 +10,7 @@ import { AppointedRoles } from '../roles/AppointedRoles';
 import { type Editing, editingOfLine, entryText, type Line, mayEditLine, nameFields, newRoleEditing, placeText, roleName, RolesCard } from '../roles/Roles';
 import { useRoleEditing } from '../roles/RolesView';
 import { stateText } from '../roles/StructureSections';
+import { PlaceSupervisor } from './PlaceSupervisor';
 
 type Kind = 'machine' | 'workspace' | 'repository';
 
@@ -56,7 +57,22 @@ export function PlaceRoles({ place, notify, onSource }: { place: StructurePlaceA
   const editor = useRoleEditing(notify);
   const chain = useRoleStructureChain(place);
   const read = chain.data ? 'ok' : chain.isError ? (refusedNoRoute(chain.error) ? 'notOffered' : 'failed') : 'loading';
-  return <PlaceRolesView place={place} read={read} answer={chain.data ?? null} editor={editor} appointed={<AppointedRoles place={place} />} onSource={onSource} />;
+  // A workspace's supervisor is a line among its roles (SETUPUX1v, moved from the Setup tab): its door is the Appointed row beneath it.
+  const supervisor = kindOf(place) === 'workspace'
+    ? <PlaceSupervisor workspace={place.workspace!} onOpenAppointed={bringAppointed} />
+    : undefined;
+  return (
+    <PlaceRolesView
+      place={place} read={read} answer={chain.data ?? null} editor={editor} supervisor={supervisor} appointed={<AppointedRoles place={place} />} onSource={onSource}
+    />
+  );
+}
+
+/** Takes the focus to the place's own *Appointed* row, where its supervisor is appointed. */
+function bringAppointed() {
+  const row = document.querySelector<HTMLElement>('[data-place-row="appointed"]');
+  row?.scrollIntoView?.({ block: 'nearest' });
+  row?.focus({ preventScroll: true });
 }
 
 /** The door from a role's source mark to the place that sets it, at the same work (SETUPUX1h): its workspace's page, or this machine's. */
@@ -66,8 +82,10 @@ export type SourceDoor = (scope: { kind: 'workspace' | 'machine'; id?: string },
 export type PlaceRoleEditor = Pick<ReturnType<typeof useRoleEditing>, 'agents' | 'offers' | 'staffing' | 'catalogue' | 'read' | 'busy' | 'onSet' | 'onSetActor'>;
 
 /** The section drawn from its reads, and every press out (`SET_ROLE`, `SET_ACTOR`): a molecule, so a story reaches every state by props. */
-export function PlaceRolesView({ place, read, answer, editor, appointed, onSource }: {
+export function PlaceRolesView({ place, read, answer, editor, supervisor, appointed, onSource }: {
   place: StructurePlaceAsk;
+  /** A workspace's supervisor line and its door to Appointed, between the works and the appointed roles. */
+  supervisor?: ReactNode;
   /** Told where a role placed above the place is pressed: its source mark is a door to the place that sets it. */
   onSource?: SourceDoor;
   /** The chain's read: its rows, not read yet, not offered by this shell, or failed. */
@@ -239,6 +257,7 @@ export function PlaceRolesView({ place, read, answer, editor, appointed, onSourc
           {foldedOpen && <SettingList>{folded.map(row)}</SettingList>}
         </>
       )}
+      {supervisor}
       <div className="grid gap-2">
         <h3
           data-place-row="appointed" tabIndex={-1}

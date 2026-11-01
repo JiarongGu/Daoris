@@ -20,8 +20,10 @@ import { effectiveFlow, effectiveLabel, routeWords } from './effective';
  *
  * A molecule: the selection is its holder's, and every press goes out.
  */
-export function EffectiveChart({ effective, routeLabel, page, name, workspace, selected, onSelect, doors }: {
+export function EffectiveChart({ effective, routeLabel, page, name, workspace, selected, onSelect, doors, caption }: {
   effective: WorkflowEffective;
+  /** What the chart is of, where it is not what the route follows: *Change…*'s preview of a candidate says so. */
+  caption?: string;
   /** The route's kind as the person named it, where it is a kind's. */
   routeLabel: string | null;
   page: 'repository' | 'workspace';
@@ -77,7 +79,7 @@ export function EffectiveChart({ effective, routeLabel, page, name, workspace, s
 
   return (
     <section aria-label={t('workflow.place.chart.region', { route })} className="grid min-w-0 gap-2">
-      <p className="m-0 text-small font-semibold text-ink">{effectiveLabel(t, effective, route)}</p>
+      <p className="m-0 text-small font-semibold text-ink">{caption ?? effectiveLabel(t, effective, route)}</p>
       <FlowChart
         label={flow.label}
         nodes={nodes}

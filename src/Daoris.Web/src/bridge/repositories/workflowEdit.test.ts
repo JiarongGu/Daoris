@@ -13,7 +13,7 @@ vi.mock('@shenora/react', async (original) => ({
   useShenora: () => ({ isAvailable: true }),
 }));
 
-import { useWorkflowList, useWorkflowPalette, useWorkflowShown } from './workflowEdit';
+import { useWorkflowEditor, useWorkflowList, useWorkflowPalette, useWorkflowShown } from './workflowEdit';
 
 const wrapper = ({ children }: { children: ReactNode }) =>
   createElement(QueryClientProvider, { client: new QueryClient({ defaultOptions: { queries: { retry: false } } }) }, children);
@@ -47,6 +47,19 @@ describe('the step editor reads', () => {
     invoke.mockClear();
     renderHook(() => useWorkflowShown(null), { wrapper });
     expect(invoke).not.toHaveBeenCalled();
+  });
+
+  it('reads the plan of a choice with `plan: true`, writing nothing and asking no read again', async () => {
+    invoke.mockResolvedValue({ done: false, plan: true, refused: null, message: null, changed: true, reach: [], expected: 'use-1' });
+    const { result } = renderHook(() => useWorkflowEditor({ repository: 'engine' }), { wrapper });
+
+    const answer = await result.current.onPlan!({ repository: 'engine', workflow: 'verify-docs', version: 2 });
+
+    expect(answer.expected).toBe('use-1');
+    expect(invoke).toHaveBeenCalledTimes(1);
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_USE', expect.objectContaining({
+      payload: expect.objectContaining({ repository: 'engine', workflow: 'verify-docs', version: 2, plan: true }),
+    }));
   });
 
   it('reads the palette: kinds with their options, wire kinds, and plugin steps', async () => {

@@ -320,6 +320,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // The repository's process a chat in a tree of its own was told (PROCESS1d-ii): its commit rule's mode and where it was set,
   // the words following as a program's.
   'chat.told-process': { values: ['mode', 'source'] },
+  // The workflow draft open in the editor a chat's agent was told (FLOWCHART2d): what it was handed follows as a program's words.
+  'chat.told-draft': { values: [] },
   // A conversation handed to another agent (MIXAGENT1a-i): where the old one went, and where the new one came from and why.
   'chat.handed-over': { values: ['agent', 'session'] },
   'chat.taken-over': { values: ['agent', 'session', 'why'], why: 'handed' },

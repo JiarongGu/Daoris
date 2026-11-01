@@ -1021,6 +1021,8 @@ export function App() {
     onOpenPlugin: (plugin) => open('plugins', plugin),
     // A repository's Setup is the place's page once the Setup mode is lit, which `apply` opens for a door into the tab (AGENTSPLACE1f).
     onOpenSetup: (repository) => open('projects', repository, { tab: 'setup' }),
+    // A workspace's Setup sections have their homes once the Setup mode is lit, which `apply` opens for a door into the tab (SETUPUX1v).
+    onOpenWorkspaceSetup: (workspace, section) => open('projects', workspaceItem(workspace), { workspaceTab: 'setup', workspaceSection: section }),
     onSyncNow,
     syncing: syncNow.isPending,
     addRequested,

@@ -263,11 +263,35 @@ describe('a door into a repository\'s Setup tab or Workflow tab, once the Setup 
     expect(placeOpening(doorOpening({ view: 'projects', tab: 'setup' }), true, where)).toEqual({ view: 'agents', agentsMode: 'setup' });
   });
 
-  it("opens a workspace's Sessions' access at the workspace's place, and leaves the rest of its Setup where it is", () => {
-    expect(placeOpening(opening('projects', workspaceItem('studio'), { workspaceTab: 'setup', workspaceSection: 'access' }), true, where))
-      .toEqual({ view: 'agents', agentsMode: 'setup', place: 'workspace:studio' });
-    const remote = opening('projects', workspaceItem('studio'), { workspaceTab: 'setup', workspaceSection: 'remote' });
-    expect(placeOpening(remote, true, where)).toEqual(remote);
+  // SETUPUX1v (the setup-UX design §4, row v): the census of the doors that opened a section of a workspace's Setup tab. Each ends in `apply`, so
+  // this one redirect holds them: a section the place took opens the place's page at its row, and the remote, the deployment's wiring, opens
+  // Repositories' workspace at Details. Dark, nothing moves.
+  it("opens each section of a workspace's Setup tab at its new home, whichever door named it", () => {
+    const door = (workspaceSection: 'access' | 'reach' | 'defaults' | 'supervisor' | 'remote') =>
+      opening('projects', workspaceItem('studio'), { workspaceTab: 'setup', workspaceSection });
+    const place = (section: string, row: string) => ({ view: 'agents', agentsMode: 'setup', place: 'workspace:studio', placeAt: { section, row } });
+    expect(placeOpening(door('access'), true, where)).toEqual(place('sessions', 'access'));
+    expect(placeOpening(door('reach'), true, where)).toEqual(place('sessions', 'reach'));
+    expect(placeOpening(door('defaults'), true, where)).toEqual(place('workflow', 'defaults'));
+    expect(placeOpening(door('supervisor'), true, where)).toEqual(place('roles', 'supervisor'));
+    expect(placeOpening(door('remote'), true, where)).toEqual({
+      view: 'projects', chosen: { view: 'projects', item: 'workspace:studio' }, workspaceTab: 'details', workspaceSection: 'remote',
+    });
+    for (const section of ['access', 'reach', 'defaults', 'supervisor', 'remote'] as const) {
+      expect(placeOpening(door(section), false, where)).toEqual(door(section));
+    }
+  });
+
+  it("leaves a door naming the workspace's Setup tab and no section where it is, until the tab goes", () => {
+    const tab = opening('projects', workspaceItem('studio'), { workspaceTab: 'setup' });
+    expect(placeOpening(tab, true, where)).toEqual(tab);
+  });
+
+  it("names a workspace's home from the help room's and Ask Daoris's doors too", () => {
+    expect(placeOpening(doorOpening({ view: 'projects', workspaceSection: 'defaults' }, 'studio'), true, where))
+      .toEqual({ view: 'agents', agentsMode: 'setup', place: 'workspace:studio', placeAt: { section: 'workflow', row: 'defaults' } });
+    expect(placeOpening(doorOpening({ view: 'projects', workspaceSection: 'remote' }, 'studio'), true, where))
+      .toMatchObject({ view: 'projects', workspaceTab: 'details', workspaceSection: 'remote' });
   });
 
   // AGENTSPLACE1h: What needs you's, the Roles sections' and a workflow step's doors to a repository's workflow all name the tab.

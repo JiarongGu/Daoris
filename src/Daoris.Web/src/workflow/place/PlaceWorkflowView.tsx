@@ -17,7 +17,7 @@ import { partSaid } from '../said';
 import { type WorkflowTabProps } from '../WorkflowTab';
 import type { WorkflowDoors } from '../WorkflowChart';
 import { LandedLines } from '../WorkflowStartNode';
-import { ChangeWorkflow, type PresetStart } from './ChangeWorkflow';
+import { ChangeWorkflow, type PresetStart, type WorkflowPlanBridge } from './ChangeWorkflow';
 import { gatesOwed, gatesSummary, PlaceGates } from './PlaceGates';
 import { PlaceRepositories, repositoriesSummary } from './PlaceRepositories';
 
@@ -31,6 +31,8 @@ export type LandingHand = {
 
 /** What the section draws under the routes: the line's landing rows, handed in by the page that holds the settings. */
 export type PlaceWorkflowProps = WorkflowTabProps & {
+  /** The step editor's bridge, with the sender of a choice's plan where the shell has one. */
+  editor?: WorkflowTabProps['editor'] & WorkflowPlanBridge;
   /** The repository or the workspace whose place it is. */
   name: string;
   /** A repository's place, or a workspace's. */
@@ -148,6 +150,9 @@ export function PlaceWorkflowView({
   // The answer of the route before it stays drawn while the next is read, so one that is not this route's is being read.
   const answered = effective !== null && effective.route === routeKey ? effective : null;
   const steps = answered?.cells.map((cell) => cell.step) ?? current.steps;
+  // The repository's own choice for the route, which *Use the workspace's* clears; a workspace's has none above it.
+  const ownChoice = page === 'repository'
+    && (start?.routes.find((each) => (each.kind === null ? 'default' : `kind:${each.kind}`) === routeKey)?.level ?? '').startsWith('repository');
 
   const openSessions = () => {
     if (onOpenSection) onOpenSection('sessions');
@@ -191,8 +196,15 @@ export function PlaceWorkflowView({
           error={editor.error}
           current={current}
           place={place}
+          route={{ key: routeKey, kind: routeKey.startsWith('kind:') ? routeKey.slice('kind:'.length) : null, label: kind, own: ownChoice }}
+          effective={answered}
+          shown={editor.shown}
+          onShow={editor.onShow}
           using={editor.using}
+          saving={editor.saving}
           onUse={editor.onUse}
+          onPlan={editor.onPlan}
+          onSave={editor.onSave}
           onStartFrom={(from) => show({ is: 'edit', from })}
           onClose={() => show(null)}
         />

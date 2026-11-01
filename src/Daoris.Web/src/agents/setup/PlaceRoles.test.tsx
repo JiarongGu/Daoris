@@ -320,6 +320,27 @@ describe('A place page, Roles', () => {
     expect(rowOf('building').getByRole('button', { name: 'Give aurora its own… for building' })).toBeTruthy();
   });
 
+  // SETUPUX1v: a workspace's supervisor, which the Setup tab held, is a line of its place's Roles, with a door to the Appointed row beneath it.
+  it("holds a workspace's supervisor among its roles, its door the place's own Appointed row, and a repository's place none", async () => {
+    show(<Place />);
+    await userEvent.click(await screen.findByRole('button', { name: /aurora\s*2 driven/ }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Roles' }));
+    const row = await waitFor(() => {
+      const found = document.querySelector<HTMLElement>('[data-place-row="supervisor"]');
+      expect(found).not.toBeNull();
+      return found!;
+    });
+    expect(within(row).getByText('Supervisor')).toBeTruthy();
+    expect(within(row).getByText(/Not offered yet: the supervisor's appointment waits/)).toBeTruthy();
+    await userEvent.click(within(row).getByRole('button', { name: 'Open Appointed roles' }));
+    await waitFor(() => expect(document.activeElement).toHaveAttribute('data-place-row', 'appointed'));
+  });
+
+  it("gives a repository's Roles no supervisor line of the workspace's", async () => {
+    await openEngine();
+    expect(document.querySelector('[data-place-row="supervisor"]')).toBeNull();
+  });
+
   it("gives this machine's roles an Edit and nothing to go back to", async () => {
     show(<Place />);
     await userEvent.click(await screen.findByRole('button', { name: /This machine/ }));
