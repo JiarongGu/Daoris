@@ -30,6 +30,9 @@ public sealed class ToolRefusal(string check, string message, params (string Key
     /// <summary>A resource location that is no address Daoris reads from (PUSH1f2c).</summary>
     public const string Location = "location";
 
+    /// <summary>A git setting on a git older than the one that reads it (TOOLS6, D121 §2.5).</summary>
+    public const string GitTooOld = "git-too-old";
+
     public string Check { get; } = check;
 
     public IReadOnlyList<(string Key, string Value)> Facts { get; } = facts;

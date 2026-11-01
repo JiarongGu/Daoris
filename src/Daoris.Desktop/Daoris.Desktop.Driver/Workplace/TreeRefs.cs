@@ -107,6 +107,12 @@ internal static class TreeRefs
         if (await GitRemotes.AddressOf(root, "origin", ct: ct).ConfigureAwait(false) is not { } address)
             return ("there is no `origin` remote here", null);
         var home = DaorisHome.Resolve();
+        // GITAUTH1c: a git older than the doors need reaches no remote of Daoris's (the git-auth design §4.1).
+        if (home is not null && await GitWiring.RefusesAsync(home, repository, "origin", address, GitAct.Read, ct).ConfigureAwait(false) is { } older)
+        {
+            return (older, GitWords.Redact(address));
+        }
+
         var git = home is null ? null : WorkingTree.GitInUse(home);
         // GITAUTH1b: a repository whose own ssh command would pass round the door is held before it connects (the git-auth design §4.2).
         if (home is not null && await GitOwnInput.HeldAsync(home, root, repository, workspace, "origin", address, git, ct).ConfigureAwait(false) is { } own)

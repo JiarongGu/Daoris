@@ -74,6 +74,22 @@ public sealed class GitHeldToldTests
     }
 
     [Fact]
+    public void A_git_older_than_the_doors_need_is_told_as_passing_neither_and_the_rewrite_is_not()
+    {
+        var told = GitHolds.Told([], rewritten: true, origin: "https://github.com/org-a/engine.git", older: new Version(2, 30, 1))!;
+
+        Assert.Equal(
+            "**Git.** The git this session runs is 2.30.1, older than the 2.31 Daoris's git doors need, so its remote acts are not "
+            + "Daoris's: they pass neither of Daoris's doors, and Daoris itself reaches no remote until a newer git is set in Settings → Tools.",
+            told);
+        Assert.DoesNotContain("daoris::", told, StringComparison.Ordinal);
+
+        var both = GitHolds.Told([Held()], rewritten: false, origin: null, older: new Version(2, 30, 1))!;
+        Assert.StartsWith("**Git.** The git this session runs is 2.30.1", both, StringComparison.Ordinal);
+        Assert.Contains("`origin` (ssh.dev.azure.com) cannot be reached", both, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Nothing_held_is_nothing_told()
     {
         Assert.Null(GitHolds.Told([]));
