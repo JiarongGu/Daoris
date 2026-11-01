@@ -184,6 +184,31 @@ public sealed class CurrentLandGitTests : IDisposable
         Assert.NotEqual(tip, second.Intent.Tip);
     }
 
+    /// <summary>
+    /// A name git would not take is refused at its delivery's start, nothing written: a delivery's key holds no name, so one written for it would
+    /// stand in the way of the name that takes, which then lands through its own.
+    /// </summary>
+    [Fact]
+    public async Task A_branch_name_git_would_not_take_is_refused_at_its_delivery_s_start_and_the_one_that_takes_lands_through_its_own()
+    {
+        var root = await GitSeed.PlainAsync(Path.Combine(_scratch, "engine"), "engine");
+        Save(DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}")));
+        var (trees, tree, _) = await TreeAsync(root);
+
+        var refused = await trees.LandAsync(tree, Subject with { Entered = "two..dots" }, inUse: NoneRunning);
+
+        Assert.False(refused.Landed, refused.Message);
+        Assert.Equal(AutoLandingCode.Refused, refused.Refusal);
+        Assert.Contains("`two..dots`, is not a branch name git would take", refused.Message);
+        Assert.Empty(Store().OfUnit("s1"));
+
+        var landed = await trees.LandAsync(tree, Subject with { Entered = "feature/taken" }, inUse: NoneRunning);
+
+        Assert.True(landed.Landed, landed.Message);
+        var delivery = Assert.Single(Store().OfUnit("s1"));
+        Assert.Equal(("feature/taken", DeliverySettlements.Delivered), (delivery.Intent.Branch, delivery.Settled));
+    }
+
     // ——— The fixture.
 
     private static readonly LandingSubject Subject = new("s1", "0fda18", "Tidy the readme");

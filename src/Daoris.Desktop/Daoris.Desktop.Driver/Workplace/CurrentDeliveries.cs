@@ -30,8 +30,14 @@ internal static class CurrentDeliveries
     {
         var rule = landing.Rule;
         var (method, graph) = WorkplaceWorkflows.Current.CurrentLand(rule);
-        // A name git would not take is the landing's to refuse in its own words, before anything is written.
-        if (method != DeliveryMethods.Merge && !(branch is { } named && BranchName.IsValid(named))) return (null, null);
+        TreeLanding Refused(string why) => new(false, $"Nothing was landed: {why}.") { Refusal = AutoLandingCode.Refused };
+        // A name git would not take is refused before anything is written: a delivery's key holds no name, so one written for it would stand in
+        // the way of the name that takes, whose landing would read the key settled and land with no delivery.
+        if (method != DeliveryMethods.Merge && !(branch is { } named && BranchName.IsValid(named)))
+        {
+            return (null, Refused(TreeLands.Untaken(branch ?? "", subject.EnteredName is not null).TrimEnd('.')));
+        }
+
         var squash = rule.Squash && method is DeliveryMethods.Branch or DeliveryMethods.PullRequest;
         var intent = new DeliveryIntent(
             subject.Session, repository, tip, method, line, line, method == DeliveryMethods.Merge ? null : branch, null,
@@ -46,7 +52,6 @@ internal static class CurrentDeliveries
         var reconciler = DeliveryReconciler.Of(store, home, wire, record =>
             string.Equals(record.Intent.Repository, repository, StringComparison.OrdinalIgnoreCase) ? root : DeliveryReconciler.Checkouts(home)(record));
         TreeDelivery Live(DeliveryClaim claim) => new(store, claim) { Live = true, Standing = _ => standing() };
-        TreeLanding Refused(string why) => new(false, $"Nothing was landed: {why}.") { Refusal = AutoLandingCode.Refused };
         // Its key settled already: one delivered while this landing waited is said so; else it lands as before, read by observation.
         (TreeDelivery?, TreeLanding?) Observed(DeliveryRecord? found) =>
             (null, waited && found is { Settled: DeliverySettlements.Delivered } ? TreeDelivering.Meanwhile(found) : null);

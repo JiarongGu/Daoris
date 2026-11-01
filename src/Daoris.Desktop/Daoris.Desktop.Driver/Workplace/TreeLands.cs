@@ -1188,12 +1188,7 @@ internal sealed class TreeLands(
                 root, line, commits, follows.BranchOfTree(full)?.Branch);
         }
 
-        if (!BranchName.IsValid(name))
-        {
-            return new TreeLanding(false, entered ? EnteredInvalid(name)
-                : $"the landing rule names `{name}` for this session, which is not a branch name git "
-                + "would take. Change the pattern with `daoris driver landing`.");
-        }
+        if (!BranchName.IsValid(name)) return new TreeLanding(false, Untaken(name, entered));
 
         // PROCESS1b-ii (point 1): the squash is a commit Daoris makes, so git's own identity here makes it, asked before anything is.
         if (squash is not null && await TreeSquashes.IdentityProblemAsync(root, repository, ct).ConfigureAwait(false) is { } nobody)
@@ -1445,6 +1440,10 @@ internal sealed class TreeLands(
     /// <summary>What a pattern is expanded from: the quest, or the session where there is none; the quest's name's words (LANDNAME1).</summary>
     private static string EnteredInvalid(string name) =>
         $"the branch name you entered, `{name}`, is not a branch name git would take. Enter another, or leave it blank for the rule's.";
+
+    /// <summary>What a branch name git would not take is refused with: the name the person entered, or the one the rule makes.</summary>
+    internal static string Untaken(string name, bool entered) => entered ? EnteredInvalid(name)
+        : $"the landing rule names `{name}` for this session, which is not a branch name git would take. Change the pattern with `daoris driver landing`.";
 
     /// <summary>An entered name that is already a branch Daoris did not make (LANDNAME1a): the press's refusal, which the plan says first.</summary>
     private static string EnteredStands(string name, string repository) =>
