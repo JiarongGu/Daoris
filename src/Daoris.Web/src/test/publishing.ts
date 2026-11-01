@@ -173,6 +173,7 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   CHANNEL_FORWARD: { scopes: ['asks'] },
   REGISTRY_REFRESH: { scopes: ['registry'] },
   // A set-up's press (LAYOUT8): one ask and its quest, and the repository's rule.
+  PLACE_APPLY: { scopes: ['quests', 'asks', 'driver', 'rules'] },
   SETUP_PRESS: { scopes: ['quests', 'asks', 'rules'] },
   TOOLS_USE: { scopes: ['tools'] },
   TOOLS_DOWNLOAD: { scopes: ['tools'] },

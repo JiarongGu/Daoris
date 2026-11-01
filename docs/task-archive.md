@@ -20,6 +20,12 @@ Outcome: `NodeGraphHomes.Landing` draws a `land` with id `handed` (method merge,
 > **1b3, the reconciliation** (driver; `docs/2026-11-01-land-node-design.md` §3 and §8 row 5): §3's ladder for the git phases; an Accept carrying several sessions, the first performing and the others reached as *brought into*. Proof: a stop at each git boundary ends in one branch; a press and a pass at once land once. After b2.
 
 **Outcome** 2026-11-01: `DeliveryReconciler` settles unresolved deliveries by phase before any new start, writing no git; a landing goes on from its next phase, and a press and a pass land once. One Accept carrying several sessions is the head's unit's delivery, its members brought into it (`DeliveryReach`). Only its tests call it. Detail: D204's and D215's notes of this date.
+## AGENTSPLACE1b2 — the recoverable apply (2026-11-01)
+
+> **1b2, the recoverable apply** (driver, modules): `PLACE_APPLY`'s steps, the receipt's home entry, the quest keyed by the digest, the restart's settling by postconditions. Proof: a stop at every boundary leaves a precise, recoverable outcome; no second quest; no early start. After 1a2 and 1b.
+
+**Outcome** 2026-11-01: `PlaceApplies` (`Setup/PlaceApply.cs`) plans again and refuses `moved` on a changed digest or a chosen blob no longer the tip's, writes a receipt (`data/place-receipts/<digest>.json`, a new home entry in the three twins) before its first effect, then every configuration change and acceptance in one `DriverContext.Change`, judged first, then each adoption quest, its body's last line keyed by the digest so a retry finds it. `PLACE_APPLY` (the person's; its drain word is Waits) is the route, with its census rows; the loop's come-up settles what a stop left uncertain. Owed: the terminal twin and the authority's proofs (1b3), the page (1j). Detail: D124's AGENTSPLACE1b2 note; `PlaceApplyTests`, `DriverModulePlaceApplyTests`.
+
 ## AGENTSPLACE1b — setup-only admission (2026-11-01)
 
 > **1b, setup-only admission** (driver): the adoption quest admitted alone while general driving stays off. Proof: queued and newly arriving unrelated work held through apply and restart.
