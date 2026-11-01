@@ -7,7 +7,10 @@ namespace Daoris.Driver;
 /// <summary>The kinds of a typed transition receipt (§E3): the one transition of its source that an eligibility wire reads.</summary>
 public static class WireReceiptKinds
 {
-    /// <summary>A current <c>reached</c> acceptance: read by <c>after</c>, <c>data</c> and <c>trigger</c> wires. Its id is the acceptance's.</summary>
+    /// <summary>
+    /// A current <c>reached</c> acceptance: read by <c>after</c>, <c>data</c> and <c>trigger</c> wires, its id the acceptance's; and by a
+    /// <c>when</c> wire on its outcome alone, through <see cref="WireEvaluation.OutcomeReceipt"/> (DECIDE1a).
+    /// </summary>
     public const string Reached = "reached";
 
     /// <summary>The person's skip for this graph and run: read by <c>after</c> wires alone, since a skipped node produces no outputs (§E2).</summary>
@@ -34,6 +37,9 @@ public sealed record WireReceipt(string Id, string Kind, string Node)
 {
     /// <summary>A reach's acceptance, whose evidence and outputs a <c>data</c> wire passes on; null on every other kind.</summary>
     public NodeAcceptance? Acceptance { get; init; }
+
+    /// <summary>A reached decision's outcome, which a <c>when</c> wire follows (DECIDE1a); null on every other receipt.</summary>
+    public string? Outcome { get; init; }
 }
 
 /// <summary>
@@ -262,6 +268,13 @@ public sealed record WireEvaluated(
     public IReadOnlyList<string> Missing { get; init; } = [];
 
     /// <summary>
+    /// The nodes no route can start any more given the outcomes reached (DECIDE1a), in node-id order: one behind a <c>when</c> of another
+    /// outcome, an <c>allOf</c> group with such a wire, an <c>anyOf</c> group all of whose wires are, or a data input, transitively. Derived
+    /// at each evaluation, never stored; an <c>all</c> join counts such a member as settled.
+    /// </summary>
+    public IReadOnlyList<string> NotTaken { get; init; } = [];
+
+    /// <summary>
     /// Whether the evaluator moved nothing: evaluated again on the same statuses, it moves nothing. It says nothing of pending starts
     /// (<see cref="Starts"/>, <see cref="Queued"/>) nor of execution finished (FABRIC-WIRE1e), and a refused evaluation moved nothing too:
     /// read <see cref="Refusal"/> first.
@@ -290,7 +303,7 @@ public sealed record WireEvaluated(
 /// lapses as <see cref="NodeLapse.Subject"/> once the subject moves; a named subject not found or not read withholds its own nodes alone.</para>
 /// <para><b>Receipts</b> (<see cref="WireReceipt"/>): a reach's acceptance; this run's skip; a failure whose declared retries are spent
 /// and a rejection, each of an attempt started in this graph and run. Each wire kind reads its own: <c>after</c> a reach or a skip,
-/// <c>data</c> and <c>trigger</c> a reach, <c>failed</c> a failure, <c>rejected</c> a rejection.</para>
+/// <c>data</c> and <c>trigger</c> a reach, <c>failed</c> a failure, <c>rejected</c> a rejection, <c>when</c> a decision's reach with its outcome.</para>
 /// <para><b>A trigger fires once per receipt</b>: it makes a blocked or invalidated target eligible only on a receipt it has not fired on
 /// (<see cref="WireRun.Fired"/>, or the receipt in the target's binding), keeps a ready target eligible (a declared retry or the
 /// person's new attempt is no second firing), and holds a started attempt that rests on it.</para>
@@ -367,7 +380,7 @@ public static class WireEvaluation
         for (var found = true; found;)
         {
             found = false;
-            var current = Receipts(declared, now, run, lapsing.Keys).Values.Select(receipt => receipt.Id).ToHashSet(StringComparer.Ordinal);
+            var current = Receipts(declared, now, run, lapsing.Keys).Values.SelectMany(Named).ToHashSet(StringComparer.Ordinal);
             foreach (var node in declared)
             {
                 if (lapsing.ContainsKey(node.Id) || Lapse(node, now[node.Id], run, current, subjects[node.Id]) is not { } lapse) continue;
@@ -439,13 +452,14 @@ public static class WireEvaluation
                 WireWhy.Members, failure);
         }
 
-        // 4. Eligibility, on the receipts as they now stand.
+        // 4. Eligibility, on the receipts as they now stand, with the routes the outcomes reached leave untaken (DECIDE1a).
         receipts = Receipts(declared, now, run, []);
+        var untaken = NotTaken(declared, now, wires, receipts);
         var eligibility = new List<WireEligibility>();
         foreach (var node in declared)
         {
             var status = now[node.Id];
-            var judged = Eligible(node, status, wires, receipts, run, subjects[node.Id]);
+            var judged = Eligible(node, status, wires, receipts, run, subjects[node.Id], untaken);
             eligibility.Add(judged);
             if (moved.Contains(node.Id)) continue;
             var to = status.State switch
@@ -492,7 +506,7 @@ public static class WireEvaluation
             });
         }
 
-        return new(now, moves, refused, eligibility, starts, queued);
+        return new(now, moves, refused, eligibility, starts, queued) { NotTaken = [.. untaken.Keys.Order(StringComparer.Ordinal)] };
 
         // The dispatched attempts of one reach not settled yet: active, unknown, or unreconciled whatever moved the node off it.
         int Running(string reach) => declared.Count(node => NodeAuthorities.Of(node) is { Dispatches: true } authority && authority.Reach == reach
@@ -566,7 +580,8 @@ public static class WireEvaluation
             var (ours, bound) = Ours(node, status, run);
             WireReceipt? receipt = status.State switch
             {
-                NodeStates.Reached when status.Current is { } accepted => new(accepted.Id, WireReceiptKinds.Reached, node.Id) { Acceptance = accepted },
+                NodeStates.Reached when status.Current is { } accepted =>
+                    new(accepted.Id, WireReceiptKinds.Reached, node.Id) { Acceptance = accepted, Outcome = accepted.Outcome },
                 NodeStates.Skipped when NodeLifecycle.Skips(status, skipped) =>
                     new(Digest("skp-", skipped.GraphDigest, skipped.Run, status.Unit, node.Id), WireReceiptKinds.Skipped, node.Id),
                 NodeStates.Failed when ours is not null && !Retries(node, status) =>
@@ -579,6 +594,67 @@ public static class WireEvaluation
         }
 
         return receipts;
+    }
+
+    /// <summary>
+    /// The receipt a <c>when</c> wire consumes (DECIDE1a): a digest of the decision's acceptance and its outcome (<c>out-</c>), so what rests on
+    /// one route lapses once that outcome is lost or another attempt chooses another, while an <c>after</c> rests on the acceptance alone.
+    /// </summary>
+    public static string OutcomeReceipt(string acceptance, string outcome) => Digest("out-", acceptance, outcome);
+
+    /// <summary>The ids a receipt is current under: its own, and a reached decision's outcome receipt beside it.</summary>
+    private static IEnumerable<string> Named(WireReceipt receipt) =>
+        receipt.Outcome is { } outcome ? [receipt.Id, OutcomeReceipt(receipt.Id, outcome)] : [receipt.Id];
+
+    /// <summary>
+    /// The nodes no route can start any more (DECIDE1a), each with the outcome receipts that closed it: not started, behind a <c>when</c> whose
+    /// decision reached another outcome, or behind a wire from such a node, by an <c>allOf</c> member, every member of an <c>anyOf</c>, or a data
+    /// input; an <c>all</c> join's members never close it. Grown to a fixpoint, so it ends within the nodes.
+    /// </summary>
+    private static Dictionary<string, IReadOnlyList<string>> NotTaken(
+        List<NodeDeclaration> nodes, Dictionary<string, NodeStatus> statuses, IReadOnlyList<Wire> wires, Dictionary<string, WireReceipt> receipts)
+    {
+        var closed = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
+        IReadOnlyList<string>? Closing(Wire wire)
+        {
+            if (wire.From is not { Unit: null } from) return null;
+            if (closed.TryGetValue(from.Node, out var by)) return by;
+            if (wire.Kind != WireKinds.When || receipts.GetValueOrDefault(from.Node) is not { Kind: WireReceiptKinds.Reached, Outcome: { } outcome } receipt) return null;
+            return string.Equals(outcome, wire.Outcome, StringComparison.Ordinal) ? null : [OutcomeReceipt(receipt.Id, outcome)];
+        }
+
+        IReadOnlyList<string>? ClosedBy(NodeDeclaration node)
+        {
+            var into = wires.Where(wire => wire.To is { Unit: null } to && to.Node == node.Id).OrderBy(wire => wire.Id, StringComparer.Ordinal).ToList();
+            if (into.Where(wire => wire.Kind == WireKinds.Data).Select(Closing).FirstOrDefault(each => each is not null) is { } input) return input;
+            foreach (var group in NodeWires.Groups(node.Id, wires))
+            {
+                var members = into.Where(wire => group.Wires.Contains(wire.Id, StringComparer.Ordinal) && !(node.Kind == NodeKinds.All && wire.Kind == WireKinds.After))
+                    .Select(Closing).ToList();
+                if (members.Count == 0) continue;
+                if (group.Mode != WireGroupModes.AnyOf && members.FirstOrDefault(each => each is not null) is { } member) return member;
+                if (group.Mode == WireGroupModes.AnyOf && members.All(each => each is not null))
+                {
+                    return [.. members.SelectMany(each => each!).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)];
+                }
+            }
+
+            return null;
+        }
+
+        for (var found = true; found;)
+        {
+            found = false;
+            foreach (var node in nodes)
+            {
+                if (closed.ContainsKey(node.Id) || statuses[node.Id].State is not (NodeStates.Blocked or NodeStates.Ready or NodeStates.Invalidated)) continue;
+                if (ClosedBy(node) is not { } by) continue;
+                closed[node.Id] = by;
+                found = true;
+            }
+        }
+
+        return closed;
     }
 
     /// <summary>
@@ -632,7 +708,10 @@ public static class WireEvaluation
         if (NodeAcceptances.Lapsed(binding, subject, revision, own.GraphDigest, node.Version) is { } why) return (WireWhy.Lapsed, why);
         var lost = binding.PrerequisiteReceipts.FirstOrDefault(receipt => !current.Contains(receipt))
             ?? binding.Inputs.Values.Select(port => port.Acceptance).FirstOrDefault(acceptance => acceptance is not null && !current.Contains(acceptance));
-        return lost is null ? null : (WireWhy.Upstream, lost);
+        if (lost is not null) return (WireWhy.Upstream, lost);
+
+        // DECIDE1a: a reached decision whose outcome no longer reads as one of its own is judged again, never routed on a guess.
+        return status.Current is { } reached && !NodeOutcomes.Fits(node, reached.Outcome) ? (WireWhy.Lapsed, NodeLapse.Outcome) : null;
     }
 
     /// <summary>The revision a node is bound to and lapses on: its own where the caller gives one (FABRIC-PERFORM1m), else its unit's.</summary>
@@ -645,7 +724,8 @@ public static class WireEvaluation
     /// reach as any is: the producer's acceptance was judged on its own subject in step 1.
     /// </summary>
     private static WireEligibility Eligible(
-        NodeDeclaration node, NodeStatus status, IReadOnlyList<Wire> wires, Dictionary<string, WireReceipt> receipts, WireRun run, Subjected subjected)
+        NodeDeclaration node, NodeStatus status, IReadOnlyList<Wire> wires, Dictionary<string, WireReceipt> receipts, WireRun run, Subjected subjected,
+        Dictionary<string, IReadOnlyList<string>> untaken)
     {
         var join = node.Kind == NodeKinds.All;
         var into = wires.Where(wire => wire.To is { Unit: null } to && to.Node == node.Id).OrderBy(wire => wire.Id, StringComparer.Ordinal).ToList();
@@ -667,7 +747,8 @@ public static class WireEvaluation
             else waiting.Add(wire.Id);
         }
 
-        // An all join's members are its after wires' sources: every one reached or skipped, or one failed (§E7, the group's policy).
+        // An all join's members are its after wires' sources: every one reached or skipped, or one failed (§E7, the group's policy). DECIDE1a: a
+        // member no route takes is settled as a skip, on the outcome receipts that closed it, so another outcome lapses the join.
         if (join)
         {
             var members = into.Where(wire => wire.Kind == WireKinds.After).ToList();
@@ -678,6 +759,7 @@ public static class WireEvaluation
                 foreach (var member in members)
                 {
                     if (From(member) is { Kind: WireReceiptKinds.Reached or WireReceiptKinds.Skipped } settled) consumed.Add(settled.Id);
+                    else if (member.From is { Unit: null } from && untaken.TryGetValue(from.Node, out var closing)) consumed.AddRange(closing);
                     else waiting.Add(member.Id);
                 }
             }
@@ -692,6 +774,10 @@ public static class WireEvaluation
                 case WireKinds.Failed when receipt?.Kind == WireReceiptKinds.Failed:
                 case WireKinds.Rejected when receipt?.Kind == WireReceiptKinds.Rejected:
                     return (receipt!.Id, null);
+
+                // DECIDE1a: a reached decision's chosen outcome alone, on its own receipt; a lost outcome never routes.
+                case WireKinds.When when receipt is { Kind: WireReceiptKinds.Reached, Outcome: { } outcome } && string.Equals(outcome, wire.Outcome, StringComparison.Ordinal):
+                    return (OutcomeReceipt(receipt.Id, outcome), null);
 
                 case WireKinds.Trigger when receipt?.Kind == WireReceiptKinds.Reached:
                     // FABRIC-RUN1f: a firing kept before was keyed by the graph and the run's old name, so it is looked for under both rules.

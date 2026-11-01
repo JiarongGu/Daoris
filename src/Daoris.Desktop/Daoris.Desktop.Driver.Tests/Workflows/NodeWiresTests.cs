@@ -63,7 +63,8 @@ public sealed class NodeWiresTests
     public void The_designs_example_with_each_kind_holds()
     {
         Assert.Empty(NodeWires.Problems(Nodes, Wires));
-        Assert.Equal(WireKinds.All.Order(), Wires.Select(wire => wire.Kind).Distinct().Order());
+        // DECIDE1a: a file holds no outcome until DECIDE1b reads one, so the table's example has no `when`; A_when_wire_follows_... holds it.
+        Assert.Equal(WireKinds.All.Except([WireKinds.When]).Order(), Wires.Select(wire => wire.Kind).Distinct().Order());
         Assert.All(Nodes, node => Assert.Null(NodeDeclarations.Problem(node)));
         var read = GraphProblemsTable.Graph(GraphProblemsTable.Row("wires", "the design's example with every kind holds"));
         Assert.Equal(Nodes, read.Nodes);
@@ -93,7 +94,54 @@ public sealed class NodeWiresTests
     {
         var codes = typeof(WireRefusal).GetFields(BindingFlags.Public | BindingFlags.Static).Select(field => (string)field.GetValue(null)!).ToList();
         Assert.Equal(codes.Count, codes.Distinct().Count());
-        Assert.Empty(codes.Except(GraphProblemsTable.Codes()));
+        // DECIDE1a: the two outcome codes need an outcome a file cannot say yet, so A_when_wire_follows_... holds them until DECIDE1b.
+        Assert.Empty(codes.Except(GraphProblemsTable.Codes()).Except([WireRefusal.NoOutcomes, WireRefusal.UnknownOutcome]));
+    }
+
+    private static Wire When(string id, string from, string outcome, string to) => new(id, WireKinds.When, new(from), new(to)) { Outcome = outcome };
+
+    /// <summary>
+    /// DECIDE1a: a <c>when</c> wire follows one of its source's declared outcomes, grouped like any eligibility wire and counted in a cycle.
+    /// A source declaring none, an outcome it does not declare, a <c>when</c> naming none and another kind naming one are refused; the
+    /// names a decision's outcomes keep are <see cref="NodeOutcomes.Problem"/>'s.
+    /// </summary>
+    [Fact]
+    public void A_when_wire_follows_one_of_its_sources_declared_outcomes()
+    {
+        var either = new WireGroup("either", WireGroupModes.AnyOf);
+        NodeDeclaration[] nodes =
+        [
+            Node("review", "acme.review/review") with { Outcomes = ["approved", "changes-asked"] },
+            Node("land", NodeKinds.Human), Node("rework", NodeKinds.Human), Node("tell", NodeKinds.Human), Node("line", NodeKinds.Line),
+        ];
+        Wire[] wires =
+        [
+            When("a", "review", "approved", "land"), When("b", "review", "changes-asked", "rework"),
+            When("c", "review", "approved", "tell") with { Group = either }, After("d", "line", "tell") with { Group = either },
+        ];
+        Assert.Empty(NodeWires.Problems(nodes, wires));
+        Assert.Equal(["c", "d"], Assert.Single(NodeWires.Groups("tell", wires)).Wires);
+
+        WireProblem One(Wire more) => Assert.Single(NodeWires.Problems(nodes, [.. wires, more]));
+        Assert.Equal(new WireProblem(WireRefusal.NoOutcomes, "x", "line", "wire `x`: `line`, a `line`, declares no outcomes, so no `when` wire follows it."),
+            One(When("x", "line", "approved", "rework")));
+        Assert.Equal(new WireProblem(WireRefusal.UnknownOutcome, "x", "review", "wire `x`: `review` is reached with `approved` or `changes-asked`, never `merged`."),
+            One(When("x", "review", "merged", "rework")));
+        Assert.Equal(new WireProblem(WireRefusal.Shape, "x", null, "wire `x`: a `when` wire names the outcome of its source it follows."),
+            One(new Wire("x", WireKinds.When, new("review"), new("rework"))));
+        Assert.Equal(new WireProblem(WireRefusal.Shape, "x", null, "wire `x`: only a `when` wire names an outcome."),
+            One(After("x", "review", "rework") with { Outcome = "approved" }));
+        Assert.Equal(WireRefusal.Cycle, One(When("x", "review", "changes-asked", "review")).Code);
+
+        Assert.Null(NodeOutcomes.Problem([]));
+        Assert.Null(NodeOutcomes.Problem(["approved", "changes-asked"]));
+        Assert.All(
+            new IReadOnlyList<string>[]
+            {
+                ["approved"], [.. Enumerable.Range(1, 9).Select(route => $"route-{route}")], ["approved", "Approved"], ["approved", "changes_asked"],
+                ["approved", "-asked"], ["approved", "approved"], ["approved", "reached"], ["failed", "approved"], ["rejected", "skipped"], ["stopped", "approved"],
+            },
+            outcomes => Assert.NotNull(NodeOutcomes.Problem(outcomes)));
     }
 
     /// <summary>

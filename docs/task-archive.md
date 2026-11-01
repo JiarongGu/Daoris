@@ -5,6 +5,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## PLUGINSTEP1a — publish and release as a plugin's performed steps (2026-11-01)
+
+`examples/plugins/local-release` declares find, release and publish as performed, idempotent, reconciled steps with a temporary staging resource, all inside its data folder and never pushing; proof in `PluginKitTests` and `node --test` there. Outcomes that route the work are PLUGINSTEP1b's.
+
 ## LANDNODE1c — Current drawn (2026-11-01)
 
 > **1c, Current drawn** (driver; `docs/2026-11-01-land-node-design.md` §4 and §8 row 9): Current's `land` and its tail, keeping the derived landing node's identifier for old cycles, still inert.
@@ -22505,6 +22509,10 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 
 **Outcome** 2026-11-01: the graph presets hold `land` with their tails; a run's binding resolves a version's open `land` options (pattern, plugin, ticket key) once at the bind and keeps them (`WorkflowRunBinding.Land`); `--from current` writes Current's landing out as a `land`; `accept` to `automatic` lowers; standing automatic authority is judged again before a delivery's first effect. Known gap until LANDNODE1c2: nothing performs `land` yet, so a run bound to a preset waits at its landing.
 
+## ROLESTEP1a — a role named by id: the catalogue's lookup and the start plan that walks it (2026-11-01, FABRIC2)
+
+**Outcome** 2026-11-01: `RoleCatalog.Named` finds a step's role by id (a build role takes a design step) or holds the start by its own sentence, never taking another role; `Order`, `StartPlan` and `AgentFor` take the named role, `Seeded` staying the work's. No caller passes one yet (ROLESTEP1b).
+
 ## CONSOLEWINDOWS1 — no check shows a console window on the owner's screen (2026-11-01)
 
 **Outcome** 2026-11-01: every Node child start passes `windowsHide: true`, held by `tools/console-windows.mjs` in `npm run verify`; every .NET console start sets `CreateNoWindow = true`, held by `ProcessStartsCensusTests` in the driver and modules tests (`NoConsoleStarts` names the shell-opened and kept-console exemptions with their reasons).
@@ -22514,3 +22522,10 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 > **1f, the message** (driver; `docs/2026-11-01-land-node-design.md` §2 and §8 row 7): a `land` node's `message` template over `{title}`, `{quest}`, `{ticket}`, `{session}`, rendered once into the delivery's intent before the landing and used on the commits the landing makes (the merge commit, a squash commit), the maker's own line kept; a template naming another placeholder is refused where the node is judged. Proof: message tests.
 
 **Outcome** 2026-11-01: `LandNodes.RenderMessage` renders the template in one pass (null for one the node refuses, which `LandNodes.Problem` already did); a delivery's merge says its intent's message with the maker's line (`IntegrationPresses` hands it to the press's own request only), and a squash opens with it above the commits' list and the session line. The intent's producer, which calls `RenderMessage`, is row 1c2's. Tests `LandMessageTests`, `LandDeliveryGitTests`.
+
+## DECIDE1a — decision steps, the model: a reach's named outcome and the `when` wire that follows it (2026-11-01, D173)
+
+**Outcome** 2026-11-01: a step declares `Outcomes` and its reach names one, outside the acceptance's id (D173's note); a `when` wire follows it on an `out-` receipt, so another outcome lapses the route, and `WireEvaluated.NotTaken` names what no route starts, settled in an `all` join. Inert in files and outside `NodeGraphs`' digest until DECIDE1b. Detail: the commits.
+## WORKFLOWEDIT1a — the step editor's reads (2026-11-01)
+
+**Outcome** 2026-11-01: `WORKFLOW_LIST`, `WORKFLOW_SHOW` and `WORKFLOW_PALETTE` (`WorkflowEditRoutes`, told by event, publishing nothing) read the saved workflows, one version as saved and what a step graph may hold; `WorkflowPalette` and `NodeOptionFields` build the palette from `NodeAuthorities`, `WireKinds` and the land, integrate and request choices, never from land's `accept`; the page's `bridge/repositories/workflowEdit.ts` types them. Tests `WorkflowPaletteTests`, `DriverModuleWorkflowTests`, `workflowEdit.test.ts`.

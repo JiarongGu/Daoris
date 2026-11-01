@@ -137,6 +137,18 @@ public sealed record NodeDeclaration(string Id, string Kind, int Version, string
     /// </summary>
     public IReadOnlyDictionary<string, string> Options { get => options; init => options = Frozen(value); }
 
+    private readonly IReadOnlyList<string> outcomes = ImmutableArray<string>.Empty;
+
+    /// <summary>
+    /// The outcomes it may be reached with, in order (DECIDE1a): a decision's named routes, each followed by a <c>when</c> wire. Empty, as on
+    /// every built-in kind, means it is no decision. Its names keep <see cref="NodeOutcomes.Problem"/>. A copy of what was set.
+    /// </summary>
+    public IReadOnlyList<string> Outcomes
+    {
+        get => outcomes;
+        init => outcomes = ImmutableArray.CreateRange(value ?? throw new ArgumentNullException(nameof(value)));
+    }
+
     /// <summary>
     /// Made by decoding a D157 version (a sink, a person's task or a join, §E7), never authored: counted apart from a graph's 24-node
     /// bound (FABRIC-GRAPH1, <see cref="NodeGraphs.MaxNodes"/>). A graph read from a person's file declares none.
@@ -154,7 +166,8 @@ public sealed record NodeDeclaration(string Id, string Kind, int Version, string
         && Same(Inputs, other.Inputs) && Same(Outputs, other.Outputs)
         && string.Equals(Evidence, other.Evidence, StringComparison.Ordinal) && Equals(Retry, other.Retry)
         && TimeoutSeconds == other.TimeoutSeconds && Rejectable == other.Rejectable && Skippable == other.Skippable
-        && Equals(Perform, other.Perform) && Same(Options, other.Options) && Synthetic == other.Synthetic;
+        && Equals(Perform, other.Perform) && Same(Options, other.Options) && Synthetic == other.Synthetic
+        && Outcomes.SequenceEqual(other.Outcomes, StringComparer.Ordinal);
 
     public override int GetHashCode()
     {
@@ -176,6 +189,7 @@ public sealed record NodeDeclaration(string Id, string Kind, int Version, string
         hash.Add(Skippable);
         hash.Add(Perform);
         hash.Add(Synthetic);
+        foreach (var outcome in Outcomes) hash.Add(outcome, StringComparer.Ordinal);
         return hash.ToHashCode();
     }
 
@@ -184,4 +198,41 @@ public sealed record NodeDeclaration(string Id, string Kind, int Version, string
         ports.Count == others.Count && ports.Zip(others).All(pair =>
             string.Equals(pair.First.Key, pair.Second.Key, StringComparison.Ordinal)
             && string.Equals(pair.First.Value, pair.Second.Value, StringComparison.Ordinal));
+}
+
+/// <summary>The names a decision's outcomes keep (DECIDE1a), and whether a reach's outcome fits its node.</summary>
+public static class NodeOutcomes
+{
+    /// <summary>The fewest outcomes a decision names: one route is no decision.</summary>
+    public const int Fewest = 2;
+
+    /// <summary>The most outcomes a decision names.</summary>
+    public const int Most = 8;
+
+    /// <summary>An outcome's name: lowercase words of letters and digits joined by dashes (<c>approved</c>, <c>changes-asked</c>), at most 40.</summary>
+    public static readonly System.Text.RegularExpressions.Regex Shape =
+        new(@"^(?=.{1,40}\z)[a-z0-9]+(?:-[a-z0-9]+)*\z", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
+    /// <summary>The state names no outcome takes, so a route never reads as a state.</summary>
+    public static readonly IReadOnlyList<string> States = ["reached", "failed", "rejected", "skipped", "stopped"];
+
+    /// <summary>What a declaration's outcomes break of the rule, in a sentence with names in backticks, or null; none is no decision.</summary>
+    public static string? Problem(IReadOnlyList<string> outcomes)
+    {
+        if (outcomes.Count == 0) return null;
+        if (outcomes.Count is < Fewest or > Most) return $"a decision names from {Fewest} to {Most} outcomes, and this one names {outcomes.Count}.";
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var outcome in outcomes)
+        {
+            if (outcome is null || !Shape.IsMatch(outcome)) return $"`{outcome}` is no outcome's name: lowercase words joined by dashes.";
+            if (States.Contains(outcome, StringComparer.Ordinal)) return $"`{outcome}` is a state's name, never an outcome's.";
+            if (!seen.Add(outcome)) return $"`{outcome}` is named twice.";
+        }
+
+        return null;
+    }
+
+    /// <summary>Whether a reach's <paramref name="outcome"/> fits <paramref name="node"/>: one of a decision's outcomes, and none on any other node.</summary>
+    public static bool Fits(NodeDeclaration node, string? outcome) =>
+        node.Outcomes.Count == 0 ? outcome is null : outcome is not null && node.Outcomes.Contains(outcome, StringComparer.Ordinal);
 }

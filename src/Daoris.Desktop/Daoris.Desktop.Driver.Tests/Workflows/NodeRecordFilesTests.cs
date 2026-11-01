@@ -111,6 +111,29 @@ public sealed class NodeRecordFilesTests : IDisposable
     }
 
     /// <summary>
+    /// DECIDE1a: a decision's outcome is kept on its acceptance and read back with it, written only where set, so a record written before
+    /// reads with none and writes again byte for byte.
+    /// </summary>
+    [Fact]
+    public void An_outcome_is_kept_on_its_acceptance_and_a_record_written_before_reads_unchanged()
+    {
+        var before = Full();
+        var json = NodeRecordFiles.ToJson(before);
+        var old = NodeRecordFiles.Parse(json)!;
+        Assert.Null(old.Statuses["deploy"].Acceptance!.Outcome);
+        Assert.Equal(json, NodeRecordFiles.ToJson(old));
+
+        var status = before.Statuses["deploy"];
+        var decided = status with { Acceptance = status.Acceptance! with { Outcome = "changes-asked" } };
+        Files().Write(before with { Statuses = new Dictionary<string, NodeStatus>(before.Statuses) { ["deploy"] = decided } });
+
+        var read = Files().Read(Unit)!.Statuses["deploy"];
+        Assert.Equal(("changes-asked", (string?)null), (read.Acceptance!.Outcome, read.Binding!.Outcome));
+        Assert.Equal(status.Acceptance.Id, read.Acceptance.Id);
+        Assert.True(decided.Acceptance.SameResult(read.Acceptance));
+    }
+
+    /// <summary>
     /// FABRIC-CUTOVER1c (the cutover design §2.4.1, §3): a run's record keeps its end and each kept observation's subject, each written only where
     /// set, and an attempt whose call names the subject it was sent for reads on a run's record alone; a unit's own record holding one still does
     /// not read, and a record written before reads with no end.

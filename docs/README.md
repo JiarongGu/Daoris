@@ -30,6 +30,8 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `../examples/README.md` | Adoption and routing; family rehearsal
 | `../examples/engine/README.md` | Example engine adopter
 | `../examples/game/README.md` | Example game adopter
+| `../examples/plugins/README.md` | Example plugins index
+| `../examples/plugins/local-release/README.md` | Publish and release performed steps plugin example
 | `../examples/plugins/hold-by-title/README.md` | Family rehearsal plugin fixture
 | `../examples/plugins/browser/README.md` | Standalone browser plugin example
 | `../examples/plugins/in-app-browser/README.md` | Browser connection plugin example
@@ -203,6 +205,7 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-11-01-land-node-proposal-codex.md` | Proposal: LANDNODE1, Codex, sealed
 | `2026-11-01-land-node-design.md` | Design: LANDNODE1, a performed `land` node, the rule as Current's options, the line's epoch; accepted 2026-11-01
 | `2026-11-01-land-node-reads.md` | Reads: LANDNODE1, both makers' reads and the steward's settlement
+| `2026-11-01-fabric2-plan.md` | Plan: FABRIC2, dynamic workflows, fifteen slices in five waves with their contracts
 
 ## UI, browser, tools and plugin contracts
 

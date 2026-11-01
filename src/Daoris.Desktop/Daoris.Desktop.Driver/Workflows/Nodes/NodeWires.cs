@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The six wire kinds (FABRIC-WIRE1a; the fabric events design §E3). A wire is typed and carries no expression, script or command
-/// (§E9): its kind is its condition.
+/// The seven wire kinds (FABRIC-WIRE1a; the fabric events design §E3; DECIDE1a's <c>when</c>). A wire is typed and carries no expression,
+/// script or command (§E9): its kind, and a <c>when</c>'s named outcome, is its condition.
 /// </summary>
 public static class WireKinds
 {
@@ -27,13 +27,19 @@ public static class WireKinds
     /// <summary>The path taken on the person's recorded rejection of the source.</summary>
     public const string Rejected = "rejected";
 
-    public static readonly IReadOnlyList<string> All = [After, Data, Wait, Trigger, Failed, Rejected];
+    /// <summary>
+    /// The path a decision's named outcome takes (DECIDE1a): the source's current <c>reached</c> acceptance with that outcome. Another
+    /// outcome, or none read, never takes it.
+    /// </summary>
+    public const string When = "when";
+
+    public static readonly IReadOnlyList<string> All = [After, Data, Wait, Trigger, Failed, Rejected, When];
 
     /// <summary>
     /// The kinds that make a node eligible, which its <c>allOf</c> and <c>anyOf</c> groups gather. A <c>data</c> or <c>wait</c> wire is an
     /// input, mandatory whatever the groups say (§E3).
     /// </summary>
-    public static readonly IReadOnlyList<string> Eligibility = [After, Trigger, Failed, Rejected];
+    public static readonly IReadOnlyList<string> Eligibility = [After, Trigger, Failed, Rejected, When];
 }
 
 /// <summary>How a group of a node's incoming eligibility wires is satisfied (§E3). Groups combine by all.</summary>
@@ -102,6 +108,9 @@ public sealed record Wire(string Id, string Kind, WireEnd? From, WireEnd To)
 
     /// <summary>The group it joins at its target, on an eligibility wire; none is a group of its own, satisfied by it alone.</summary>
     public WireGroup? Group { get; init; }
+
+    /// <summary>The source's outcome a <c>when</c> wire follows (DECIDE1a), one its source declares; null on every other kind.</summary>
+    public string? Outcome { get; init; }
 }
 
 /// <summary>One thing a save refuses (§E3, <i>refused when saved</i>): a stable code, the wire or node it is about, and its words.</summary>
@@ -129,11 +138,19 @@ public static class WireRefusal
     /// <summary>Two nodes with one id: a wire's reference to it would name either.</summary>
     public const string NodeTwice = "node-twice";
 
-    /// <summary>A kind that is none of the six.</summary>
+    /// <summary>A kind that is none of the seven.</summary>
     public const string UnknownKind = "unknown-kind";
 
-    /// <summary>The ends do not fit the kind: a source, a wait target or a port where the kind has none, or none where it needs one.</summary>
+    /// <summary>
+    /// The ends do not fit the kind: a source, a wait target, a port or an outcome where the kind has none, or none where it needs one.
+    /// </summary>
     public const string Shape = "shape";
+
+    /// <summary>A <c>when</c> wire from a node that declares no outcomes (DECIDE1a): no reach of it names one, so the path is never taken.</summary>
+    public const string NoOutcomes = "no-outcomes";
+
+    /// <summary>A <c>when</c> wire naming an outcome its source does not declare (DECIDE1a).</summary>
+    public const string UnknownOutcome = "unknown-outcome";
 
     /// <summary>An end on another unit's node: a dependency on other work ends at a local <c>wait.unit</c>, through a commitment.</summary>
     public const string ForeignNode = "foreign-node";
@@ -290,7 +307,7 @@ public static class NodeWires
         if (!ids.Add(id)) return Refuse(WireRefusal.WireTwice, null, "another wire has this id; each wire's id is its own.");
         if (!WireKinds.All.Contains(wire.Kind))
         {
-            return Refuse(WireRefusal.UnknownKind, null, $"`{wire.Kind}` is no wire kind; a wire is `after`, `data`, `wait`, `trigger`, `failed` or `rejected`.");
+            return Refuse(WireRefusal.UnknownKind, null, $"`{wire.Kind}` is no wire kind; a wire is `after`, `data`, `wait`, `trigger`, `failed`, `rejected` or `when`.");
         }
 
         if (Shape(wire) is { } shape) return Refuse(WireRefusal.Shape, null, shape);
@@ -346,13 +363,21 @@ public static class NodeWires
 
             case WireKinds.Rejected when NodeAuthorities.Of(from!) is { PersonJudges: false }:
                 return Refuse(WireRefusal.NeverRejected, from!.Id, $"no person may reject `{from.Id}`, a `{from.Kind}`, so this path is never taken.");
+
+            case WireKinds.When when from!.Outcomes.Count == 0:
+                return Refuse(WireRefusal.NoOutcomes, from.Id, $"`{from.Id}`, a `{from.Kind}`, declares no outcomes, so no `when` wire follows it.");
+
+            case WireKinds.When when !from!.Outcomes.Contains(wire.Outcome!, StringComparer.Ordinal):
+                var named = from.Outcomes.Select(outcome => $"`{outcome}`").ToList();
+                return Refuse(WireRefusal.UnknownOutcome, from.Id,
+                    $"`{from.Id}` is reached with {string.Join(", ", named.SkipLast(1))}{(named.Count > 1 ? " or " : "")}{named[^1]}, never `{wire.Outcome}`.");
         }
 
         if (wire.Group is not { } group) return null;
         if (!WireKinds.Eligibility.Contains(wire.Kind))
         {
             return Refuse(WireRefusal.GroupedInput, to.Id,
-                $"a `{wire.Kind}` wire is `{to.Id}`'s input, mandatory whatever the groups say; only `after`, `trigger`, `failed` and `rejected` wires are grouped.");
+                $"a `{wire.Kind}` wire is `{to.Id}`'s input, mandatory whatever the groups say; only `after`, `trigger`, `failed`, `rejected` and `when` wires are grouped.");
         }
 
         // FABRIC-WIRE1d: WIRE1b reads every `after` wire into a join as a member whatever its group, so a group there says nothing it keeps.
@@ -391,11 +416,18 @@ public static class NodeWires
             return wire.From is not null ? "a `wait` wire waits on another unit's work, never on a node of this graph."
                 : wire.Waits is null ? "a `wait` wire names what it waits on."
                 : wire.To.Port is not null ? "only a `data` wire names ports."
+                : wire.Outcome is not null ? "only a `when` wire names an outcome."
                 : null;
         }
 
         if (wire.Waits is not null) return "only a `wait` wire names what it waits on.";
         if (wire.From is null) return $"a `{wire.Kind}` wire needs its source node.";
+        // DECIDE1a: a `when` names the outcome it follows, and no other kind names one.
+        if (wire.Kind == WireKinds.When ? string.IsNullOrWhiteSpace(wire.Outcome) : wire.Outcome is not null)
+        {
+            return wire.Kind == WireKinds.When ? "a `when` wire names the outcome of its source it follows." : "only a `when` wire names an outcome.";
+        }
+
         if (wire.Kind == WireKinds.Data)
         {
             return string.IsNullOrWhiteSpace(wire.From.Port) || string.IsNullOrWhiteSpace(wire.To.Port)

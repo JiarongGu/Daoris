@@ -1132,6 +1132,46 @@ public sealed class PluginKitTests : IDisposable
         Assert.True(cycle.Passed, Describe(cycle));
     }
 
+    /// <summary>
+    /// PLUGINSTEP1a: <c>examples/plugins/local-release</c> keeps the kit's files as the kit writes them (its cycle fixture is its own, naming
+    /// the tail), and declares find, release and publish as three performed, idempotent, reconciled steps.
+    /// </summary>
+    [Fact]
+    public async Task The_release_example_keeps_the_kit_s_files_and_declares_three_performed_steps()
+    {
+        var example = Path.Combine(GitSeed.RepoRoot(), "examples", "plugins", "local-release");
+        var made = PluginKit.Plan("local-release", [HookPoints.Perform], _scratch);
+
+        foreach (var name in new[] { PluginKit.WorkScript, PluginKit.Test, PluginKit.ContractTest })
+        {
+            Assert.Equal(made.Files.Single(file => file.Name == name).Content, File.ReadAllText(Path.Combine(example, name)).Replace("\r\n", "\n"));
+        }
+
+        var (manifest, problem) = PluginCatalog.ReadFolder(example);
+        Assert.Null(problem);
+        Assert.Equal(["local-release/find", "local-release/release", "local-release/publish"], manifest.Steps.Select(step => step.Kind));
+        Assert.All(manifest.Steps, step =>
+        {
+            Assert.Equal("performed", step.Reach);
+            Assert.True(step.Perform!.Idempotent);
+            Assert.True(step.Perform.Reconcile);
+            Assert.Equal("local-release/receipt@1", step.Evidence);
+        });
+        Assert.Equal("local-release/release@1", manifest.Steps[0].Outputs["release"]);
+        Assert.Equal("local-release/release@1", manifest.Steps[1].Inputs["release"]);
+        Assert.Equal("local-release/release@1", manifest.Steps[2].Inputs["release"]);
+
+        var fixture = PluginCycles.Read(Path.Combine(example, PluginKit.CycleFixture));
+        Assert.Equal("publish", fixture.Step);
+
+        // Copied out, so the cycle's journal never lands in the repository's folder.
+        var copy = Path.Combine(_scratch, "local-release");
+        Directory.CreateDirectory(copy);
+        foreach (var file in Directory.GetFiles(example)) File.Copy(file, Path.Combine(copy, Path.GetFileName(file)));
+        var cycle = await PluginCycles.TryAsync(Home, copy, PluginCycles.Read(Path.Combine(copy, PluginKit.CycleFixture)) with { Deadline = TimeSpan.FromSeconds(1) });
+        Assert.True(cycle.Passed, Describe(cycle));
+    }
+
     // ——— helpers
 
     private static void Sabotage(string folder, string file, string from, string to)

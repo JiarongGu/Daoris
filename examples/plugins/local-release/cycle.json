@@ -1,0 +1,8 @@
+{
+  "tail": ["land", "line", "find", "release", "publish"],
+  "step": "publish",
+  "unit": "u-cycle",
+  "revisions": ["r1", "r2"],
+  "inputs": ["local-release/release@1:1.0.0"],
+  "deadlineSeconds": 3
+}

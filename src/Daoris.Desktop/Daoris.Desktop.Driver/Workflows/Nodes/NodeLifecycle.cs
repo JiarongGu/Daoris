@@ -158,6 +158,9 @@ public static class NodeRefusal
     /// </summary>
     public const string NotBound = "not-bound";
 
+    /// <summary>A decision reached without one of its declared outcomes, or a reach naming an outcome on a node that declares none (DECIDE1a).</summary>
+    public const string NotOutcome = "not-outcome";
+
     /// <summary>A start that brings no binding, or a reach on a status that holds none.</summary>
     public const string NoBinding = "no-binding";
 
@@ -352,6 +355,7 @@ public static class NodeLifecycle
                 if (move.Acceptance is not { } worded) return Refuse(NodeRefusal.NoAcceptance);
                 if (status.Binding is not { } bound) return Refuse(NodeRefusal.NoBinding);
                 if (worded.Id != bound.Id) return Refuse(NodeRefusal.NotBound);
+                if (!NodeOutcomes.Fits(node, worded.Outcome)) return Refuse(NodeRefusal.NotOutcome);
                 if (worded.Evidence?.Schema != NodeSource.Person || worded.Outputs.Count > 0) return Refuse(NodeRefusal.NoEvidence);
                 return To(next with { Acceptance = Owned(worded), By = NodeSource.Person, Code = null, Transient = false, Unreconciled = null });
 
@@ -362,6 +366,7 @@ public static class NodeLifecycle
                 if (status.Binding is not { } expected) return Refuse(NodeRefusal.NoBinding);
                 // The id is the whole binding: unit, revision, graph, node, version, inputs, receipts and attempt.
                 if (accepted.Id != expected.Id) return Refuse(NodeRefusal.NotBound);
+                if (!NodeOutcomes.Fits(node, accepted.Outcome)) return Refuse(NodeRefusal.NotOutcome);
                 if (authority.Evidenced && accepted.Evidence is null) return Refuse(NodeRefusal.NoEvidence);
                 if (node.Evidence is { } schema && accepted.Evidence?.Schema != schema) return Refuse(NodeRefusal.NoEvidence);
                 if (Outputs(node, accepted) is { } outputs) return Refuse(outputs);
@@ -426,7 +431,7 @@ public static class NodeLifecycle
                 {
                     Attempt = status.Attempt + 1,
                     Tries = status.Tries + 1,
-                    Binding = binding with { Evidence = null, Outputs = NodeAcceptance.NoPorts },
+                    Binding = binding with { Evidence = null, Outputs = NodeAcceptance.NoPorts, Outcome = null },
                     Scope = scope,
                     Unreconciled = authority.Dispatches ? status.Attempt + 1 : null,
                 });

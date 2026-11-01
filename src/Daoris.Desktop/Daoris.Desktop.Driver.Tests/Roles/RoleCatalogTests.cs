@@ -206,4 +206,62 @@ public sealed class RoleCatalogTests : IDisposable
         Assert.Equal(["build", "intake", "opinion", "helper", "partner", "brainstorm", "ask-daoris", "chat", "designer"], read.Slots.Select(slot => slot.Id));
         Assert.Equal((RoleState.Set, 7L, added.Json()), (read.Slots[^1].State, read.Slots[^1].Revision, read.Slots[^1].Role!.Json()));
     }
+
+    /// <summary>A step's named role is found by its id at its scope, never by the work, and walks its own order.</summary>
+    [Fact]
+    public void A_named_role_is_found_at_its_scope_and_a_design_step_takes_a_role_that_takes_build()
+    {
+        var checker = Working("checker", ParticipantWork.Review, new RoleScope(RoleScope.Workspace, "w1"));
+        var maker = Working("maker", ParticipantWork.Build, new RoleScope(RoleScope.Workspace, "w1"));
+        var catalog = RoleCatalog.Of([Stored(checker, 2), Stored(maker)]);
+
+        Assert.Equal(("checker", null), (catalog.Named("checker", ParticipantWork.Review, InWorkspace).Role?.Id, catalog.Named("checker", ParticipantWork.Review, InWorkspace).Held));
+        Assert.Equal("opinion", catalog.Named("opinion", ParticipantWork.Review, InWorkspace).Role?.Id);
+        Assert.Equal("maker", catalog.Named("maker", ParticipantWork.Design, InWorkspace).Role?.Id);
+        Assert.Equal("build", catalog.Named("build", ParticipantWork.Design, Machine).Role?.Id);
+
+        var config = DriverConfig.Empty with
+        {
+            Adapter = "claude",
+            Actors = new Dictionary<string, IReadOnlyList<ActorChoice>> { ["checker"] = [new ActorChoice("codex", "gpt"), new ActorChoice("claude")] },
+        };
+        Assert.Equal(ActorChoices.Effective("checker", config), catalog.Order("checker", ParticipantWork.Review, InWorkspace, config));
+        Assert.Equal(ActorChoices.Effective("checker", config, fence: ["claude"]), catalog.Order("checker", ParticipantWork.Review, InWorkspace, config, fence: ["claude"]));
+    }
+
+    [Fact]
+    public void A_named_role_that_cannot_take_the_step_holds_it_said_and_never_falls_to_another_role()
+    {
+        const string Here = "Agents → Roles, or `daoris driver role`";
+        var appointed = """{"id":"lead","name":{"en":"Lead","zh":"Lead"},"filled":"appointed","authority":["answer"],"scope":{"kind":"machine"}}""";
+        var catalog = RoleCatalog.Of(
+        [
+            Stored(Working("checker", ParticipantWork.Review, new RoleScope(RoleScope.Workspace, "w1"))),
+            new StoredRole("broken", "set", "{", 1),
+            new StoredRole("lead", "set", appointed, 1),
+            new StoredRole("intake", "removed", "{}", 2),
+        ]);
+
+        (string Role, string Work, RolePlace Place, string Said)[] held =
+        [
+            ("nobody", ParticipantWork.Build, Machine, $"No role `nobody` is in the catalogue, so the starts naming it hold until it is added: {Here}."),
+            ("intake", ParticipantWork.Intake, Machine, $"No role `intake` is in the catalogue, so the starts naming it hold until it is added: {Here}."),
+            ("broken", ParticipantWork.Build, Machine, $"The role `broken` {catalog.Slots.Single(slot => slot.Id == "broken").Error}, so the starts naming it hold until it reads or is deleted."),
+            ("supervisor", ParticipantWork.Build, Machine, "`supervisor` is the shell's: the supervisor and the steward are not configured here, so the starts naming it hold until they name a working role."),
+            ("lead", ParticipantWork.Build, Machine, "`lead` is an appointed role: this build configures working roles alone, so the starts naming it hold until they name a working role."),
+            ("checker", ParticipantWork.Review, new RolePlace(Workspace: "w2"), $"The role `checker` does not work here: its scope is the workspace `w1`, so the starts naming it hold until it is scoped here: {Here}."),
+            ("checker", ParticipantWork.Build, InWorkspace, $"The role `checker` does not take `build`, so the starts naming it hold until it does: {Here}."),
+            ("opinion", ParticipantWork.Design, Machine, $"The role `opinion` does not take `design`, so the starts naming it hold until it does: {Here}."),
+        ];
+
+        foreach (var (role, work, place, said) in held)
+        {
+            Assert.Equal((null, said), (catalog.Named(role, work, place).Role, catalog.Named(role, work, place).Held));
+            Assert.Equal(said, Assert.Throws<DriverException>(() => catalog.Order(role, work, place, DriverConfig.Empty with { Adapter = "claude" })).Message);
+        }
+
+        // Another role's record that does not read holds the work's own search, never a step naming a role that reads.
+        Assert.NotNull(catalog.RoleFor(ParticipantWork.Review, Machine).Held);
+        Assert.Equal("opinion", catalog.Named("opinion", ParticipantWork.Review, Machine).Role?.Id);
+    }
 }
