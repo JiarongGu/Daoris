@@ -22744,6 +22744,11 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 
 **Outcome** 2026-11-02: `agents/roles/AllRoles.tsx` is This machine's *All roles* section over the Roles mode's card and diagram, `setup/MachineNotes.tsx` the two lines above the sections, and `placeOpening` sends the Roles mode's doors to the page. Detail: D221's SETUPUX1m note; `MachineRoles.test.tsx`, `MachineRoles.stories.tsx`.
 
+## SETUPUX1v — the workspace's remaining rows (2026-11-02, D221)
+
+> **SETUPUX1v — the workspace's remaining rows** (web; row v of the set-up design). Remote (wire and unwire to a remote) as a row of Repositories' workspace *Details*; the workspace's allow/ask/deny rules and undeclared-machine retirement into the workspace place's Sessions, the supervisor into its Roles, the line's defaults into its Workflow, before the old Setup tab goes. Proof: a control census of Wire, Unwire, retiring a machine, allow, ask and deny, each with its door; the door census (every door that opened the workspace's Setup tab rows opens the new home); stories at 80, 39 and 25rem, en and zh, both themes, keyboard; the driver's `HelpCoverageTests` re-pointed where a door moves.
+
+**Outcome** 2026-11-02: lit, `WorkspaceDetails` draws the *Remote* row, the place's Sessions *Reach*, its Workflow the line's defaults and its Roles the supervisor's line, and `placeOpening` sends each Setup section's door to its home. Detail: D221's SETUPUX1v note; `WorkspaceHomes.test.tsx`, `opener.test.ts`, `WorkspaceHomes.stories.tsx`.
 ## SETUPUX1p — Change… and the plan of one (2026-11-02, D221)
 
 > **SETUPUX1p — Change… and the plan of one** (web; row p of the set-up design). The three tabs, the selected candidate previewed through the place's chart, the plan read only where `WORKFLOW_LIST` announces `use: ["plan"]`, *Use here* carrying the plan's `expected` token and refused `moved` in the driver's words, *Save a copy…* for a preset, and *Use the workspace's* clearing the default alone and saying what its kinds keep; per route. Proof: against today's handler selecting a candidate writes nothing; a stale and a moved *Use*; a default-clear with kinds left says they keep Current; stories at 80, 39 and 25rem, en and zh, both themes, keyboard.

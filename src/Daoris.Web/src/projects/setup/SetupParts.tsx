@@ -57,11 +57,13 @@ export function landingRowSays(
  * Given `open`, it is the holder's to say (SETUPUX1h): a place page holds each section's state above its mounts, so a door out and back
  * finds it as left; `onOpenChange` is the press.
  */
-export function SetupSection({ title, summary, startsOpen, open: held, onOpenChange, id: given, children }: {
+export function SetupSection({ title, summary, startsOpen, open: held, onOpenChange, id: given, row, children }: {
   title: string; summary: string; startsOpen: boolean; children: ReactNode;
   open?: boolean; onOpenChange?: (open: boolean) => void;
   /** The section's element id, a door's target. */
   id?: string;
+  /** The row of a place's page this section is, which a door asks for and the page brings into view (SETUPUX1v). */
+  row?: string;
 }) {
   const [own, setOwn] = useState(startsOpen);
   const controlled = held !== undefined;
@@ -82,6 +84,7 @@ export function SetupSection({ title, summary, startsOpen, open: held, onOpenCha
           aria-controls={`${id}-body`}
           aria-labelledby={`${id}-title`}
           aria-describedby={open ? undefined : `${id}-summary`}
+          data-place-row={row}
           onClick={() => setOpen(!open)}
           className="flex w-full flex-wrap items-baseline gap-x-4 gap-y-0.5 py-2.5 text-left"
         >

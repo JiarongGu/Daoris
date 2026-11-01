@@ -1,6 +1,7 @@
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StartWiringList } from '../../map/StartWiring';
+import { Wiring, type WorkspaceRemote } from '../setup/WorkspaceSetup';
 import type { StartWiring } from '../../map/wiring';
 import { Button, Icon, Prose } from '../../design/ui';
 import { PageHead, PageSection, PageTabs, ViewMain } from '../../work/frame/ViewMain';
@@ -83,15 +84,39 @@ export function WorkspacePage({ workspace, repositories, remote, tab = 'details'
   );
 }
 
+/** The remote's wiring as one row, a door's target: it takes the focus when a door asked for it. */
+function RemoteRow({ workspace, wiring, busy = false, startOpen = false, focus = false }: {
+  workspace: string; wiring: NonNullable<WorkspaceRemote['wiring']>; busy?: boolean; startOpen?: boolean; focus?: boolean;
+}) {
+  const row = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!focus) return;
+    row.current?.scrollIntoView?.({ block: 'nearest' });
+    row.current?.focus({ preventScroll: true });
+  }, [focus]);
+  return (
+    <div ref={row} tabIndex={-1} data-workspace-row="remote" className="outline-none focus-visible:outline-2 focus-visible:outline-accent">
+      <Wiring workspace={workspace} wiring={wiring} busy={busy} startOpen={startOpen} />
+    </div>
+  );
+}
+
 /**
  * **A workspace's Details** (§4.3): its repositories, each a door to its page; what a start in it runs on, a row per job
- * with the setting that chose each part and a held start's sentence whole (MAP1b, moved from Settings → Workspace); and
- * the accounts each agent's work may run on here, read-only, each with a door to its agent (D130 §3.2, set on the agent's
- * page since UX6e). A browser is handed the repositories alone.
+ * with the setting that chose each part and a held start's sentence whole (MAP1b, moved from Settings → Workspace); where
+ * it syncs, wired or not (SETUPUX1v); and the accounts each agent's work may run on here, read-only, each with a door to its
+ * agent (D130 §3.2, set on the agent's page since UX6e). A browser is handed the repositories alone.
  */
-export function WorkspaceDetails({ repositories, onOpen, starts, accounts, onOpenAgent }: {
+export function WorkspaceDetails({ repositories, onOpen, starts, accounts, onOpenAgent, remote }: {
   repositories: string[];
   onOpen: (repository: string) => void;
+  /**
+   * Where it syncs, wired or not, with *Wire to a remote…* and *Unwire* (SETUPUX1v, moved from the Setup tab's Remote row): a shell's.
+   * `startOpen` opens the form (the header's press, counted by `ask` so each press opens it afresh); `focus` takes the focus to the row (a door's).
+   */
+  remote?: {
+    workspace: string; wiring: NonNullable<WorkspaceRemote['wiring']>; busy?: boolean; startOpen?: boolean; focus?: boolean; ask?: number;
+  } | null;
   /** What a start in it would run on, as the driver answered, and what a person calls each account: a shell's. */
   starts?: { list: StartWiring[]; nameOf: (owner: string, profile?: string | null) => string } | null;
   /** The accounts each installed agent's work may run on here: a shell's. */
@@ -121,6 +146,11 @@ export function WorkspaceDetails({ repositories, onOpen, starts, accounts, onOpe
         <PageSection title={t('wiring.title')}>
           <Prose className="mb-3 mt-0 text-small text-ink-soft">{t('projects.workspace.startsBody')}</Prose>
           <StartWiringList starts={starts.list} nameOf={starts.nameOf} />
+        </PageSection>
+      )}
+      {remote && (
+        <PageSection title={t('projects.workspace.section.remote')}>
+          <RemoteRow key={remote.ask ?? 0} workspace={remote.workspace} wiring={remote.wiring} busy={remote.busy} startOpen={remote.startOpen} focus={remote.focus} />
         </PageSection>
       )}
       {accounts && accounts.length > 0 && (

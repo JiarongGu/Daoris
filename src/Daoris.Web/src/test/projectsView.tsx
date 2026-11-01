@@ -16,8 +16,12 @@ import { useDoor } from './door';
 
 export function ProjectsView({
   notify, onOpenCode, onOpenAgent, onSyncNow, addRequested, onAddOpened, importRequested, onImportOpened, drawerWorkspace, door,
-  section = null, onOpenQuest, onOpenAsk, onAttend, branchAsked = null, onBranchOpened, onOpenSetup,
+  section = null, onOpenQuest, onOpenAsk, onAttend, branchAsked = null, onBranchOpened, onOpenSetup, onOpenWorkspaceSetup, tab: opensAt,
 }: {
+  /** The workspace tab a door's plan opened (`placeOpening`), where it names one; else the Setup tab for a section, else the one remembered. */
+  tab?: WorkspaceTab;
+  /** The application's door from a workspace's Workflow tab to a section of its Setup (SETUPUX1v). */
+  onOpenWorkspaceSetup?: (workspace: string, section: WorkspaceSection) => void;
   notify: Notify;
   onOpenCode?: (repository: string) => void;
   onOpenAgent?: (agent: string) => void;
@@ -45,7 +49,7 @@ export function ProjectsView({
   const [over, setOver] = useState(false);
   // The page's tab, held as `App` holds it, so a relaunch reopens the tab a test chose (UX6f); a workspace's apart (UX6g).
   const [tab, setTab] = useState<ProjectTab>(() => (branchAsked ? 'branches' : readProjectTab()));
-  const [workspaceTab, setWorkspaceTab] = useState<WorkspaceTab>(() => (section ? 'setup' : readWorkspaceTab()));
+  const [workspaceTab, setWorkspaceTab] = useState<WorkspaceTab>(() => opensAt ?? (section ? 'setup' : readWorkspaceTab()));
   useDoor(lists, 'projects', door);
   const layout = useProjectsView({
     active: true,
@@ -57,7 +61,7 @@ export function ProjectsView({
     onWorkspaceTab: (next) => { setWorkspaceTab(next); storeWorkspaceTab(next); },
     workspaceSection: section,
     notify, onOpenCode, onOpenAgent, onSyncNow, addRequested, onAddOpened, importRequested, onImportOpened, drawerWorkspace,
-    onOpenQuest, onOpenAsk, onAttend, branchAsked, onBranchOpened, onOpenSetup,
+    onOpenQuest, onOpenAsk, onAttend, branchAsked, onBranchOpened, onOpenSetup, onOpenWorkspaceSetup,
   });
   return <ViewFrame layout={layout} lists={lists} over={over} onOver={setOver} />;
 }

@@ -159,5 +159,20 @@ describe('the Workflow tab', () => {
       expect(onOpenSetup).toHaveBeenCalledWith('engine');
       expect(asked('WORKFLOW_CURRENT').filter(([, , options]) => options?.payload?.repository === 'engine')).toEqual([]);
     });
+
+    // SETUPUX1v: the defaults a step of the workspace's Current names are the place's Workflow rows, so the door asks the application, not the tab.
+    it("opens the workspace's defaults at their new home from a step its rules set, and keeps the tab on Workflow", async () => {
+      const onOpenWorkspaceSetup = vi.fn();
+      answering(() => WORKSPACE);
+      show(<ProjectsView notify={() => {}} onOpenWorkspaceSetup={onOpenWorkspaceSetup} />);
+      const page = await chooseWorkspace('aurora');
+      await userEvent.click(within(page).getByRole('tab', { name: 'Workflow' }));
+      const landing = await waitFor(() => within(repositoryMain()).getAllByRole('listitem')
+        .find((item) => item.getAttribute('data-step') === 'landing')!);
+      await userEvent.click(within(landing).getByRole('button', { name: 'Change in Setup' }));
+
+      expect(onOpenWorkspaceSetup).toHaveBeenCalledWith('aurora', 'defaults');
+      expect(within(repositoryMain()).getByRole('tab', { name: 'Workflow' })).toHaveAttribute('aria-selected', 'true');
+    });
   });
 });
