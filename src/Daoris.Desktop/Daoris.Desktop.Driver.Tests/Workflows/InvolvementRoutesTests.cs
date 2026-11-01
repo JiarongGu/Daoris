@@ -87,18 +87,25 @@ public sealed class InvolvementRoutesTests
         Assert.True(lowered == string.Join("; ", said), $"{name}: {string.Join("; ", said)}");
     }
 
-    /// <summary>LANDNODE1h: a <c>land</c> moved from <c>you</c> to <c>automatic</c> lowers the person's part, as a landing's press does.</summary>
+    /// <summary>LANDNODE1c2: the review before a <c>land</c> taken away lowers the person's part, as a landing's press moved to automatic did.</summary>
     [Fact]
-    public void A_land_moved_from_you_to_automatic_lowers_and_the_other_way_lowers_nothing()
+    public void A_review_taken_from_before_the_land_lowers_and_one_added_lowers_nothing()
     {
-        static NodeGraph Land(string accept) => NodeGraphs.Read($$$"""
-            {"schemaVersion":2,"entries":["work"],"end":"landing","nodes":[{"id":"work","kind":"claimed","version":1,"reach":"observed"},
-              {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"branch","accept":"{{{accept}}}"}}],
-             "wires":[{"id":"a","kind":"after","from":"work","to":"landing"}]}
-            """).Graph!;
+        static NodeGraph Land(bool reviewed) => NodeGraphs.Read(reviewed
+            ? """
+              {"schemaVersion":2,"entries":["work"],"end":"landing","nodes":[{"id":"work","kind":"claimed","version":1,"reach":"observed"},
+                {"id":"review","kind":"review","version":1,"reach":"pressed"},
+                {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"branch"}}],
+               "wires":[{"id":"a","kind":"after","from":"work","to":"review"},{"id":"b","kind":"after","from":"review","to":"landing"}]}
+              """
+            : """
+              {"schemaVersion":2,"entries":["work"],"end":"landing","nodes":[{"id":"work","kind":"claimed","version":1,"reach":"observed"},
+                {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"branch"}}],
+               "wires":[{"id":"a","kind":"after","from":"work","to":"landing"}]}
+              """).Graph!;
 
-        Assert.Equal(["it lands with no press of yours"], Involvement.Lowers(Involvement.StepsOf(Land("automatic")), Involvement.StepsOf(Land("you"))));
-        Assert.Empty(Involvement.Lowers(Involvement.StepsOf(Land("you")), Involvement.StepsOf(Land("automatic"))));
+        Assert.Equal(["it lands with no press of yours"], Involvement.Lowers(Involvement.StepsOf(Land(false)), Involvement.StepsOf(Land(true))));
+        Assert.Empty(Involvement.Lowers(Involvement.StepsOf(Land(true)), Involvement.StepsOf(Land(false))));
     }
 
     /// <summary>D157 point 10: an agent's choice that lowers the person's part is kept as a proposal; the person's press applies it.</summary>

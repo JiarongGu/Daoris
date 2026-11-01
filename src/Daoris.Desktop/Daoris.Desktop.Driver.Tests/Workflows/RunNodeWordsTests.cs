@@ -91,6 +91,38 @@ public sealed class RunNodeWordsTests : NodeRunFixture
         Assert.Equal(NodeStates.Active, RunStatus("handed").State);
     }
 
+    /// <summary>
+    /// LANDNODE1c2: a run's <c>review</c> waits on the person, and its <c>land</c> behind it. Their Accept, kept on the run's record by the press,
+    /// reaches the review at the next pass, as the person's at the binding it stood on, and the land begins; the land takes no Accept of its own,
+    /// and no skip passes the review over.
+    /// </summary>
+    [Fact]
+    public async Task The_persons_accept_reaches_the_review_and_the_land_begins()
+    {
+        BoundTo("""
+            {"schemaVersion":2,"entries":["claimed"],"end":"land",
+             "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
+                      {"id":"review","kind":"review","version":1,"reach":"pressed"},
+                      {"id":"land","kind":"land","version":1,"reach":"performed","options":{"method":"branch","pattern":"w/{quest}"}}],
+             "wires":[{"id":"c>r","kind":"after","from":"claimed","to":"review"},{"id":"r>l","kind":"after","from":"review","to":"land"}]}
+            """);
+        _branchTips["daoris/s1"] = Tip1;
+        _units = [RunHome.QuestUnit(RunHome.Quest(RunId, "Done")), RunHome.Branch("unit-b1", "daoris/s1", Opened, [RunId])];
+        var runtime = Runtime();
+        await RunPassAsync(runtime);
+        Assert.Equal((NodeStates.Active, NodeStates.Blocked), (RunStatus("review").State, RunStatus("land").State));
+
+        Assert.Equal(RunNodeWords.NotReview, Word("land", NodeWordActs.Accept, null).Refused);
+        Assert.Equal(NodeRefusal.NotSkippable, Word("review", NodeWordActs.Skip, "no need").Refused);
+        var worded = Word("review", NodeWordActs.Accept, null);
+        Assert.True(worded.Done, worded.Refused);
+        await RunPassAsync(runtime, whole: false);
+
+        var review = RunStatus("review");
+        Assert.Equal((NodeStates.Reached, NodeSource.Person), (review.State, review.By));
+        Assert.Equal((NodeStates.Active, "unit-b1"), (RunStatus("land").State, RunStatus("land").Binding!.Subject));
+    }
+
     /// <summary>A skip passes a node over with the person's words, and none were given: refused at the door, nothing kept.</summary>
     [Theory]
     [InlineData(null)]

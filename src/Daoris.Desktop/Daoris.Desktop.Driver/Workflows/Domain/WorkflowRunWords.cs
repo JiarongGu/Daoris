@@ -64,6 +64,7 @@ public static class WorkflowRunWords
         WorkflowKinds.Landing => "The landing",
         WorkflowKinds.PullRequest => "The pull request",
         NodeKinds.Human => "Your task",
+        NodeKinds.Review => "Your Accept",
         NodeKinds.Pushed => "The push",
         NodeKinds.Line => "On the line",
         NodeKinds.QuestClose => "The quest's close",
@@ -265,6 +266,7 @@ public static class WorkflowRunWords
             {
                 NodeKinds.GoAhead => step.Words is { Length: > 0 } act ? $"Waits for your go-ahead: {act}" : "Waits for your go-ahead.",
                 NodeKinds.Human => "Waits for your task.",
+                NodeKinds.Review => "Waits for your Accept.",
                 // INTEGRATE1o part o2: the run's view reads a decline from the quests (its code); the landing gate, which reads the record alone, says both ways.
                 NodeKinds.WorkRequests => step.Code == WorkRequests.DeclinedCode
                     ? "A quest the work's sessions published was declined: it waits on you, and passing it over lets the work go on."

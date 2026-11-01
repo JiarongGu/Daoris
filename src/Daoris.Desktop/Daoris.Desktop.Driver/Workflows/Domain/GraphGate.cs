@@ -242,11 +242,21 @@ public static class GraphPasses
     /// made yet, after which the gate is read again (<paramref name="read"/>). A press with no loop to ask (a terminal's alone) is refused as read.
     /// </summary>
     /// <param name="pass">Asks the loop for a whole pass and waits for it within the bound given (none: asks and waits for nothing); true where it came.</param>
+    /// <param name="accept">
+    /// The person's Accept kept on the run's record for the <c>review</c> the graph waits on (LANDNODE1c2), true where it was kept: the press is
+    /// that Accept, so it never lands past the review itself, and the pass it then asks reaches the review and readies the landing.
+    /// </param>
     public static async Task<LandingGate> PressAsync(
         Func<CancellationToken, Task<LandingGate>> answer, Func<CancellationToken, Task<LandingGate>> read,
-        Func<TimeSpan, CancellationToken, Task<bool>>? pass, CancellationToken ct)
+        Func<TimeSpan, CancellationToken, Task<bool>>? pass, CancellationToken ct, Func<GraphGateState, CancellationToken, Task<bool>>? accept = null)
     {
         var gate = await answer(ct).ConfigureAwait(false);
+        if (pass is not null && accept is not null && gate.GraphHolds
+            && gate.GraphPart() is { State: GraphGateStates.Waits, Kind: NodeKinds.Review } review && await accept(review, ct).ConfigureAwait(false))
+        {
+            return await pass(Bound, ct).ConfigureAwait(false) ? await read(ct).ConfigureAwait(false) : gate;
+        }
+
         if (pass is null || !gate.GraphHolds || gate.GraphPart() is not { AsksPass: true } graph) return gate;
         if (!graph.PressWaits)
         {

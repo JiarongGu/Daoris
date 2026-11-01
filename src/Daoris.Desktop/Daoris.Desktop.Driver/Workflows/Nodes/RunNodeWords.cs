@@ -46,6 +46,9 @@ public static class RunNodeWords
     /// <summary>The word is <c>ask-again</c> or <c>go-on</c>, which only a declined <c>request</c> takes.</summary>
     public const string NotRequest = "not-request";
 
+    /// <summary>The word is <c>accept</c>, which only a <c>review</c> takes (LANDNODE1c2).</summary>
+    public const string NotReview = "not-review";
+
     /// <summary>The run's record holds its end: nothing of its graph moves again until its chain comes back here.</summary>
     public const string Ended = "ended";
 
@@ -79,6 +82,7 @@ public static class RunNodeWords
         if (bound.Version is not { Graph: { } graph, GraphDigest: { } digest }) return Refuse(UnreadVersion) with { Detail = bound.Version.Unreadable };
         if (graph.Nodes.FirstOrDefault(each => each.Id == node) is not { } declared) return Refuse(NotNode);
         if (OfRequests(act) && declared.Kind != NodeKinds.Request) return Refuse(NotRequest);
+        if (act == NodeWordActs.Accept && declared.Kind != NodeKinds.Review) return Refuse(NotReview);
 
         var now = (clock ?? (() => DateTimeOffset.UtcNow))();
         var (refused, result) = records.Edit(bound.Unit, record =>
@@ -87,7 +91,7 @@ public static class RunNodeWords
             if (record.Pending.Any(each => each.Node == node)) return (null, Refuse(Worded));
             if (act == NodeWordActs.Stop && promoted?.Contains(node) == true) return (null, Refuse(Promoted));
             var status = WorkPerformer.StatusOf(record, node);
-            var judged = NodeLifecycle.Apply(declared, status, Move(new NodeWord(node, act, words, now), new NodeScope(digest, bound.Run)));
+            var judged = NodeLifecycle.Apply(declared, status, Move(new NodeWord(node, act, words, now), new NodeScope(digest, bound.Run), status));
             if (!judged.Moved) return (null, Refuse(judged.Refused!) with { State = status.State });
             return (record with { Pending = [.. record.Pending, new NodeWord(node, act, words, now)] }, new NodeWorded(run, node, act, null));
         });
@@ -138,7 +142,8 @@ public static class RunNodeWords
                 continue;
             }
 
-            var moved = NodeLifecycle.Apply(node, WorkPerformer.StatusOf(next, node.Id), Move(word, scope));
+            var standing = WorkPerformer.StatusOf(next, node.Id);
+            var moved = NodeLifecycle.Apply(node, standing, Move(word, scope, standing));
             if (!moved.Moved)
             {
                 applied.Add((word, moved.Refused));
@@ -152,11 +157,18 @@ public static class RunNodeWords
         return (next with { Pending = [] }, applied);
     }
 
-    /// <summary>A word as the one table's move: the person's skip with their words and the run's scope, or their stop.</summary>
-    private static NodeMove Move(NodeWord word, NodeScope scope) => word.Act switch
+    /// <summary>
+    /// A word as the one table's move: the person's skip with their words and the run's scope, or their stop; their Accept a review's reach by
+    /// its authority, the person, on the binding <paramref name="status"/> stands on, so one given before the review began is refused.
+    /// </summary>
+    private static NodeMove Move(NodeWord word, NodeScope scope, NodeStatus status) => word.Act switch
     {
         NodeWordActs.Skip or NodeWordActs.GoOn => new NodeMove(NodeStates.Skipped, NodeCause.Person) { Words = word.Words, Scope = scope },
         NodeWordActs.AskAgain => new NodeMove(NodeStates.Ready, NodeCause.Person),
+        NodeWordActs.Accept => new NodeMove(NodeStates.Reached, NodeCause.Authority)
+        {
+            Source = NodeSource.Person, Attempt = status.Attempt, Acceptance = status.Binding,
+        },
         _ => new NodeMove(NodeStates.Stopped, NodeCause.Person) { Words = word.Words },
     };
 
