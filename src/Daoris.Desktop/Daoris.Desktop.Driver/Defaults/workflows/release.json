@@ -23,6 +23,7 @@
         "id": "find", "kind": "local-release/find", "version": 1, "reach": "performed",
         "outcomes": ["release", "none"],
         "outputs": { "release": "local-release/release@1" },
+        "outputsOn": { "release": ["release"] },
         "evidence": "local-release/receipt@1"
       },
       {

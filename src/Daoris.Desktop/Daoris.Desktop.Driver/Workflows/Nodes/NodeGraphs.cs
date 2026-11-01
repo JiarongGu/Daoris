@@ -89,6 +89,9 @@ public static class GraphRefusal
     /// <summary>A node no entry reaches.</summary>
     public const string Unreachable = "unreachable";
 
+    /// <summary>A <c>data</c> wire into a step that can start on a route of an outcome that does not carry the output it takes (DECIDE1d).</summary>
+    public const string UncarriedOutput = "uncarried-output";
+
     /// <summary>
     /// D157 §2.2's protected order broken: the opinion and the look come before the landing. Since FABRIC-CUTOVER1b the opinion is not asked
     /// to come before the look (the cutover design §5.1), whose set-up the review gate holds while an agent reads it.
@@ -234,6 +237,8 @@ public static class NodeGraphs
         foreach (var node in graph.Nodes)
         {
             if (NodeDeclarations.Problem(node) is { } field) Say(GraphRefusal.Declaration, null, node.Id, $"node `{node.Id}`: its `{field}` does not hold for a `{node.Kind}`.");
+            // DECIDE1d: judged with the graph, so the declarations' own checks are left as they were.
+            else if (NodeOutcomes.OutputsOnProblem(node) is not null) Say(GraphRefusal.Declaration, null, node.Id, $"node `{node.Id}`: its `outputsOn` does not hold for a `{node.Kind}`.");
         }
 
         problems.AddRange(NodeWires.Problems(graph.Nodes, graph.Wires));
@@ -282,6 +287,22 @@ public static class NodeGraphs
             foreach (var node in byId.Values.Where(node => !reached.Contains(node.Id)))
             {
                 Say(GraphRefusal.Unreachable, null, node.Id, $"node `{node.Id}`: no entry reaches it, so it would never start.");
+            }
+
+            // DECIDE1d: a `data` wire takes an output its decision may carry on some outcomes alone. Each other outcome is judged as the run takes it,
+            // its decision's `when` wires of the rest never passing: a target that can start so would wait for ever on an output never carried.
+            foreach (var wire in local.Where(wire => wire.Kind == WireKinds.Data))
+            {
+                var source = byId[wire.From!.Node];
+                if (wire.From.Port is not { } port || !source.OutputsOn.TryGetValue(port, out var carried)) continue;
+                bool Closed(string outcome, Wire other) => other.Kind == WireKinds.When && other.From!.Node == source.Id && other.Outcome != outcome;
+                if (source.Outcomes.FirstOrDefault(outcome => !carried.Contains(outcome, StringComparer.Ordinal)
+                    && StartsWithout(byId, starts, local, _ => false, other => Closed(outcome, other)).Contains(wire.To.Node)) is { } uncarried)
+                {
+                    var on = string.Join(" or ", carried.Select(outcome => $"`{outcome}`"));
+                    Say(GraphRefusal.UncarriedOutput, wire.Id, wire.To.Node, $"wire `{wire.Id}`: `{source.Id}` carries `{port}` only when it says {on}, and `{wire.To.Node}` can start "
+                        + $"after it says `{uncarried}`, with no `{port}` to take: put `{wire.To.Node}` on the route of a `when` naming {on}.");
+                }
             }
         }
 
@@ -543,16 +564,17 @@ public static class NodeGraphs
 
     /// <summary>
     /// The nodes that can start while no node <paramref name="gate"/> names has passed: <see cref="StartsWithNoLook"/>'s reading, whichever node
-    /// is the gate (the look's, and INTEGRATE1o's <c>work.requests</c>, whose own id is the gate it names).
+    /// is the gate (the look's, and INTEGRATE1o's <c>work.requests</c>, whose own id is the gate it names). A wire <paramref name="closed"/> names
+    /// is never met, and closes its target as a route not taken does (DECIDE1d: a decision's other outcomes' <c>when</c> wires).
     /// </summary>
     private static HashSet<string> StartsWithout(
-        Dictionary<string, NodeDeclaration> byId, IReadOnlyList<string> starts, IReadOnlyList<Wire> local, Func<NodeDeclaration, bool> gate)
+        Dictionary<string, NodeDeclaration> byId, IReadOnlyList<string> starts, IReadOnlyList<Wire> local, Func<NodeDeclaration, bool> gate, Func<Wire, bool>? closed = null)
     {
         var started = new HashSet<string>(starts, StringComparer.Ordinal);
         var failing = new HashSet<string>(StringComparer.Ordinal);
         var mayFail = MayFail(byId, local);
         // A reach's wire, a `when` among them (DECIDE1b): met by its source's reach, with that outcome, never by its failure.
-        bool Met(Wire wire) => wire.Kind switch
+        bool Met(Wire wire) => closed?.Invoke(wire) != true && wire.Kind switch
         {
             WireKinds.Failed => mayFail.Contains(wire.From!.Node) && (started.Contains(wire.From.Node) || failing.Contains(wire.From.Node)),
             WireKinds.Rejected => started.Contains(wire.From!.Node) || failing.Contains(wire.From!.Node),
@@ -563,7 +585,7 @@ public static class NodeGraphs
         // (another outcome closes it), or a wire from such a node, by a data input, an `allOf` member or every member of an `anyOf`. A join's
         // members never close it, and settle it as skips do, so whichever outcome a run takes, a join on its route starts.
         var untaken = new HashSet<string>(StringComparer.Ordinal);
-        bool Closes(Wire wire) => untaken.Contains(wire.From!.Node) || (wire.Kind == WireKinds.When && started.Contains(wire.From.Node));
+        bool Closes(Wire wire) => closed?.Invoke(wire) == true || untaken.Contains(wire.From!.Node) || (wire.Kind == WireKinds.When && started.Contains(wire.From.Node));
         for (var moved = true; moved;)
         {
             moved = false;
@@ -716,10 +738,23 @@ public static class NodeGraphs
             Map(node.Outputs);
             Map(node.Options);
             // DECIDE1b: written only where declared, so a graph that names none digests, and places its nodes, as it did.
-            if (node.Outcomes.Count == 0) return;
-            Line("outcomes");
-            Line(node.Outcomes.Count);
-            foreach (var outcome in node.Outcomes) Line(outcome);
+            if (node.Outcomes.Count > 0)
+            {
+                Line("outcomes");
+                Line(node.Outcomes.Count);
+                foreach (var outcome in node.Outcomes) Line(outcome);
+            }
+
+            // DECIDE1d: the same, for the outcomes that carry an output.
+            if (node.OutputsOn.Count == 0) return;
+            Line("outputsOn");
+            Line(node.OutputsOn.Count);
+            foreach (var (output, on) in node.OutputsOn)
+            {
+                Line(output);
+                Line(on.Count);
+                foreach (var outcome in on) Line(outcome);
+            }
         }
 
         public void Wire(Wire wire)
@@ -874,7 +909,24 @@ public static class NodeGraphs
             Rejectable = Flag(node, "rejectable", where) ?? false,
             Skippable = Flag(node, "skippable", where) ?? true,
             Outcomes = [.. List(node, "outcomes", where).Select(outcome => outcome.ValueKind == JsonValueKind.String ? outcome.GetString()! : throw new Unread($"{where}'s `outcomes`", "outcome's name"))],
+            OutputsOn = CarriedOn(node, where),
         };
+    }
+
+    /// <summary>DECIDE1d: a node's <c>outputsOn</c>, each output with the outcomes that carry it; absent is none.</summary>
+    private static Dictionary<string, IReadOnlyList<string>> CarriedOn(JsonElement node, string where)
+    {
+        var map = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
+        if (!node.TryGetProperty("outputsOn", out var value) || value.ValueKind == JsonValueKind.Null) return map;
+        if (value.ValueKind != JsonValueKind.Object) throw new Unread($"{where}'s `outputsOn`", "object");
+        foreach (var output in value.EnumerateObject())
+        {
+            map[output.Name] = output.Value.ValueKind == JsonValueKind.Array && output.Value.EnumerateArray().All(outcome => outcome.ValueKind == JsonValueKind.String)
+                ? [.. output.Value.EnumerateArray().Select(outcome => outcome.GetString()!)]
+                : throw new Unread($"{where}'s `outputsOn.{output.Name}`", "list of outcomes");
+        }
+
+        return map;
     }
 
     private static NodeRetry RetryOf(JsonElement retry, string where)

@@ -464,12 +464,13 @@ public static class NodeLifecycle
     /// <summary>
     /// FABRIC-NODE1e: what a reach's outputs break of its declaration, or null: an output it does not declare, a declared one at another
     /// schema, a declared one missing. A <c>data</c> wire's schema is checked when saved (WIRE1a), so the outputs a reach exposes are the
-    /// declared ones exactly, or that check means nothing at run time.
+    /// declared ones exactly, or that check means nothing at run time. DECIDE1d: a declared one is missing only where the reach's outcome
+    /// carries it (<see cref="NodeOutcomes.Carries"/>).
     /// </summary>
     private static string? Outputs(NodeDeclaration node, NodeAcceptance accepted) =>
         accepted.Outputs.Keys.Any(name => !node.Outputs.ContainsKey(name)) ? NodeRefusal.UndeclaredOutput
         : accepted.Outputs.Any(output => !string.Equals(output.Value.Schema, node.Outputs[output.Key], StringComparison.Ordinal)) ? NodeRefusal.OutputSchema
-        : node.Outputs.Keys.Any(name => !accepted.Outputs.ContainsKey(name)) ? NodeRefusal.NoOutput
+        : node.Outputs.Keys.Any(name => !accepted.Outputs.ContainsKey(name) && NodeOutcomes.Carries(node, name, accepted.Outcome)) ? NodeRefusal.NoOutput
         : null;
 
     /// <summary>The acceptance with every port naming it: one the authority handed in without its acceptance is this reach's.</summary>

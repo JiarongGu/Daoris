@@ -774,6 +774,41 @@
           { "id": "g", "kind": "after", "from": "both", "to": "landing" }
         ] },
       "problems": [] },
+    { "name": "a data wire from an output carried on one outcome, into a step that outcome's route alone starts (DECIDE1d)",
+      "graph": { "entries": ["work"], "end": "publish",
+        "nodes": [
+          { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
+          { "id": "find", "kind": "acme.release/find", "version": 1, "reach": "performed", "outcomes": ["release", "none"],
+            "outputs": { "release": "acme.release/release@1" }, "outputsOn": { "release": ["release"] } },
+          { "id": "publish", "kind": "acme.release/publish", "version": 1, "reach": "performed", "inputs": { "release": "acme.release/release@1" } },
+          { "id": "note", "kind": "human", "version": 1, "reach": "pressed" }
+        ],
+        "wires": [
+          { "id": "a", "kind": "after", "from": "work", "to": "find" }, { "id": "b", "kind": "when", "from": "find", "outcome": "release", "to": "publish" },
+          { "id": "c", "kind": "data", "from": "find.release", "to": "publish.release" }, { "id": "d", "kind": "when", "from": "find", "outcome": "none", "to": "note" }
+        ] },
+      "problems": [] },
+    { "name": "a data wire from an output carried on one outcome, into a step another outcome's route starts (DECIDE1d)",
+      "graph": { "entries": ["work"], "end": "publish",
+        "nodes": [
+          { "id": "work", "kind": "claimed", "version": 1, "reach": "observed" },
+          { "id": "find", "kind": "acme.release/find", "version": 1, "reach": "performed", "outcomes": ["release", "none"],
+            "outputs": { "release": "acme.release/release@1" }, "outputsOn": { "release": ["release"] } },
+          { "id": "publish", "kind": "acme.release/publish", "version": 1, "reach": "performed", "inputs": { "release": "acme.release/release@1" } }
+        ],
+        "wires": [
+          { "id": "a", "kind": "after", "from": "work", "to": "find" }, { "id": "b", "kind": "after", "from": "find", "to": "publish" },
+          { "id": "c", "kind": "data", "from": "find.release", "to": "publish.release" }
+        ] },
+      "problems": [{ "code": "uncarried-output", "wire": "c", "node": "publish", "words": "wire `c`: `find` carries `release` only when it says `release`, and `publish` can start after it says `none`, with no `release` to take: put `publish` on the route of a `when` naming `release`." }] },
+    { "name": "an output carried on an outcome its decision does not declare (DECIDE1d)", "base": "graphBase",
+      "replace": { "nodes": [{ "id": "deploy", "kind": "acme.deploy/deploy", "version": 1, "reach": "performed", "evidence": "acme.deploy/receipt@1", "inputs": { "approval": "qa-proof@1" },
+        "outcomes": ["shipped", "held"], "outputs": { "preview": "acme.deploy/preview@1" }, "outputsOn": { "preview": ["merged"] } }] },
+      "problems": [{ "code": "declaration", "wire": null, "node": "deploy", "words": "node `deploy`: its `outputsOn` does not hold for a `acme.deploy/deploy`." }] },
+    { "name": "an output carried on some outcomes of a step that is no decision (DECIDE1d)", "base": "graphBase",
+      "replace": { "nodes": [{ "id": "deploy", "kind": "acme.deploy/deploy", "version": 1, "reach": "performed", "evidence": "acme.deploy/receipt@1", "inputs": { "approval": "qa-proof@1" },
+        "outputs": { "preview": "acme.deploy/preview@1" }, "outputsOn": { "preview": ["shipped"] } }] },
+      "problems": [{ "code": "declaration", "wire": null, "node": "deploy", "words": "node `deploy`: its `outputsOn` does not hold for a `acme.deploy/deploy`." }] },
     { "name": "a built-in declaring outcomes (DECIDE1b)", "base": "graphBase",
       "replace": { "nodes": [{ "id": "qa", "kind": "human", "version": 1, "reach": "pressed", "evidence": "qa-proof@1", "outcomes": ["passed", "returned"] }] },
       "problems": [{ "code": "declaration", "wire": null, "node": "qa", "words": "node `qa`: its `outcomes` does not hold for a `human`." }] },
@@ -845,6 +880,8 @@
       "problems": [{ "code": "unreadable", "wire": null, "node": null, "words": "the graph's `nodes` is not a graph's shape: it holds no list there." }] },
     { "name": "a node's fields in the reader's order: its inputs before its evidence", "value": { "nodes": [{ "id": "a", "kind": "human", "version": 1, "reach": "pressed", "evidence": 3, "inputs": 3 }], "entries": ["a"], "end": "a" },
       "problems": [{ "code": "unreadable", "wire": null, "node": null, "words": "nodes[0]'s `inputs` is not a graph's shape: it holds no object there." }] },
+    { "name": "an output's carrying outcomes that are no list (DECIDE1d)", "value": { "nodes": [{ "id": "a", "kind": "acme.release/find", "version": 1, "reach": "performed", "outcomes": ["release", "none"], "outputs": { "release": "acme.release/release@1" }, "outputsOn": { "release": "release" } }], "entries": ["a"], "end": "a" },
+      "problems": [{ "code": "unreadable", "wire": null, "node": null, "words": "nodes[0]'s `outputsOn.release` is not a graph's shape: it holds no list of outcomes there." }] },
     { "name": "a decision's outcome that is no name (DECIDE1b)", "value": { "nodes": [{ "id": "a", "kind": "acme.release/find", "version": 1, "reach": "performed", "outcomes": ["release", 2] }], "entries": ["a"], "end": "a" },
       "problems": [{ "code": "unreadable", "wire": null, "node": null, "words": "nodes[0]'s `outcomes` is not a graph's shape: it holds no outcome's name there." }] }
   ]

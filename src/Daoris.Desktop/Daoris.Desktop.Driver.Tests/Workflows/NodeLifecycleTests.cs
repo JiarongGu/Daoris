@@ -1061,6 +1061,36 @@ public sealed class NodeLifecycleTests
         Assert.Equal(NodeStates.Reached, Reach(bare, Moved(bare, At(NodeStates.Ready, attempt: 0, tries: 0), Start(1)), []).Status.State);
     }
 
+    /// <summary>
+    /// DECIDE1d: a decision's output is required only on the outcomes that carry it, as local-release's <c>find</c> carries its release on
+    /// <c>release</c> alone: <c>none</c> reaches with no release, <c>release</c> without one is refused, and an output named for no outcome is
+    /// required on every reach, as before.
+    /// </summary>
+    [Fact]
+    public void A_decisions_output_is_required_only_on_the_outcomes_that_carry_it()
+    {
+        var find = Declared("local-release/find") with
+        {
+            Evidence = "acme/receipt@1",
+            Outcomes = ["release", "none"],
+            Outputs = new Dictionary<string, string> { ["release"] = "local-release/release@1" },
+            OutputsOn = new Dictionary<string, IReadOnlyList<string>> { ["release"] = ["release"] },
+        };
+        var release = new NodePort("local-release/release@1", "local-release/release@1:1.2.0", "tip-1", null);
+        NodeMoved Reach(NodeDeclaration declared, string outcome, Dictionary<string, NodePort> outputs) =>
+            NodeLifecycle.Apply(declared, Moved(declared, At(NodeStates.Ready, attempt: 0, tries: 0), Start(1)), new NodeMove(NodeStates.Reached, NodeCause.Authority)
+            {
+                Source = NodeSource.Plugin, Attempt = 1, Acceptance = Accept(1) with { Outputs = outputs, Outcome = outcome },
+            });
+
+        Assert.Equal((NodeStates.Reached, 0), (Reach(find, "none", []).Status.State, Reach(find, "none", []).Status.Current!.Outputs.Count));
+        Assert.Equal(NodeRefusal.NoOutput, Reach(find, "release", []).Refused);
+        Assert.Equal(NodeStates.Reached, Reach(find, "release", new() { ["release"] = release }).Status.State);
+
+        var everywhere = find with { OutputsOn = new Dictionary<string, IReadOnlyList<string>>() };
+        Assert.Equal(NodeRefusal.NoOutput, Reach(everywhere, "none", []).Refused);
+    }
+
     /// <summary>Choice 3, changed: a plugin's declaration may forbid a skip; a built-in's skip is its kind's, never a declaration's.</summary>
     [Fact]
     public void A_plugins_declaration_may_forbid_a_skip()

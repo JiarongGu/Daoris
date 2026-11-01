@@ -14,6 +14,7 @@
       "reach": "performed",
       "outcomes": ["release", "none"],
       "outputs": { "release": "local-release/release@1" },
+      "outputsOn": { "release": ["release"] },
       "evidence": { "schema": "local-release/receipt@1" },
       "perform": { "point": "work/perform", "idempotent": true, "reconcile": "work/reconcile", "transient": ["unavailable", "rate-limited", "timeout"] },
       "retry": { "maxAttempts": 3, "delaysSeconds": [5, 30] },

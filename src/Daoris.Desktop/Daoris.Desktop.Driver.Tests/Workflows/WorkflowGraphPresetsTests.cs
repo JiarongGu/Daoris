@@ -129,6 +129,22 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
         return manifest.Steps;
     }
 
+    /// <summary>A declaration's outputs carried on some outcomes alone, each as <c>output=outcome|outcome</c>.</summary>
+    private static List<string> Carried(NodeDeclaration node) => [.. node.OutputsOn.Select(each => $"{each.Key}={string.Join('|', each.Value)}")];
+
+    /// <summary>DECIDE1d: which outcomes carry an output is digested where a graph names it, so the release default's digest moves without it.</summary>
+    [Fact]
+    public void Which_outcomes_carry_an_output_is_digested_where_it_is_named()
+    {
+        var graph = ReleaseGraph();
+        var without = graph with
+        {
+            Nodes = [.. graph.Nodes.Select(node => node.Id == "find" ? node with { OutputsOn = new Dictionary<string, IReadOnlyList<string>>() } : node)],
+        };
+
+        Assert.NotEqual(NodeGraphs.Digest(graph), NodeGraphs.Digest(without));
+    }
+
     /// <summary>DEFAULTCONFIG1c: the release default's plugin nodes declare what local-release's manifest says, outcomes and ports included.</summary>
     [Fact]
     public void The_release_default_declares_what_the_local_release_manifest_says()
@@ -142,9 +158,11 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
             Assert.Equal(step.Outcomes.ToList(), node.Outcomes.ToList());
             Assert.Equal(step.Inputs.OrderBy(each => each.Key), node.Inputs.OrderBy(each => each.Key));
             Assert.Equal(step.Outputs.OrderBy(each => each.Key), node.Outputs.OrderBy(each => each.Key));
+            Assert.Equal(Carried(step), Carried(node));
         }
 
         Assert.Equal(["release", "none"], graph.Nodes.Single(node => node.Id == "find").Outcomes);
+        Assert.Equal(["release=release"], Carried(graph.Nodes.Single(node => node.Id == "find")));
         Assert.Contains(graph.Wires, wire => wire is { Kind: WireKinds.Back, On: NodeStates.Rejected } && wire.From?.Node == "review" && wire.To.Node == "work");
         Assert.Equal("local-release/find", graph.Nodes.Single(node => node.Id == "find").Kind);
     }
@@ -180,8 +198,8 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
         }
 
         g.Start(g.Evaluate(), "find");
-        // The lifecycle takes a reach only with every output its node declares, so find's `none` carries the port too.
-        ReachAs("find", outcome, true);
+        // DECIDE1d: find carries its release on `release` alone, so `none` reaches with no release port.
+        ReachAs("find", outcome, outcome == "release");
         var decided = g.Evaluate();
         if (outcome == "none")
         {

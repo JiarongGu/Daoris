@@ -203,6 +203,18 @@ public static class PluginSteps
             if (NodeOutcomes.Problem(outcomes) is not null) return Broken("outcomes");
         }
 
+        // DECIDE1d: each output carried on some outcomes alone, judged once the declaration is whole.
+        var carried = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
+        if (row.TryGetProperty("outputsOn", out var declaredOn))
+        {
+            if (declaredOn.ValueKind != JsonValueKind.Object) return Broken("outputsOn");
+            foreach (var output in declaredOn.EnumerateObject())
+            {
+                if (output.Value.ValueKind != JsonValueKind.Array || output.Value.EnumerateArray().Any(outcome => outcome.ValueKind != JsonValueKind.String)) return Broken("outputsOn");
+                carried[output.Name] = [.. output.Value.EnumerateArray().Select(outcome => outcome.GetString()!)];
+            }
+        }
+
         NodePerform? perform = null;
         if (row.TryGetProperty("perform", out var declaredPerform))
         {
@@ -240,7 +252,10 @@ public static class PluginSteps
             Rejectable = rejectable,
             Perform = perform,
             Outcomes = outcomes,
+            OutputsOn = carried,
         };
+
+        if (NodeOutcomes.OutputsOnProblem(step) is not null) return Broken("outputsOn");
 
         // The one model's own checks, whose code is the field the words name.
         return PluginStepRules.Current.Problem(step) is { } problem ? Broken(problem) : (step, null, name);
@@ -320,6 +335,7 @@ public static class PluginSteps
         if (!step.Skippable) parts.Add("not skippable");
         if (step.Rejectable) parts.Add("rejectable");
         if (step.Outcomes.Count > 0) parts.Add($"decides {string.Join(" | ", step.Outcomes)}");
+        foreach (var (output, on) in step.OutputsOn) parts.Add($"{output} only on {string.Join(" | ", on)}");
         if (step.Perform is { } perform)
         {
             var said = new List<string>();
@@ -351,6 +367,7 @@ public static class PluginSteps
         "skippable" => $"step `{name}`'s `skippable` must be `true` or `false`: whether the person may pass it over.",
         "rejectable" => $"step `{name}`'s `rejectable` must be `true` or `false`: whether the person may reject it.",
         "outcomes" => $"step `{name}`'s `outcomes` must list the routes it may reach with, {NodeOutcomes.Fewest} to {NodeOutcomes.Most} names in lowercase words joined by dashes, once each and never a state's name.",
+        "outputsOn" => $"step `{name}`'s `outputsOn` must name, for an output it declares, the outcomes that carry it, one or more of its `outcomes` once each; an output it leaves out is carried on every reach.",
         "perform" => $"step `{name}`'s `perform` is a `performed` step's alone: an object whose `point`, where it names one, is `work/perform`.",
         PluginStepCodes.Idempotent => $"step `{name}`'s `idempotent` must be `true` or `false`: whether the plugin deduplicates a redelivered key.",
         PluginStepCodes.Reconcile => $"step `{name}`'s `reconcile` must be `work/reconcile`, the point that answers what became of an attempt.",

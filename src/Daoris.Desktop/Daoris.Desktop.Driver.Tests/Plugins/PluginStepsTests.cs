@@ -236,6 +236,37 @@ public sealed class PluginStepsTests : IDisposable
         }
     }
 
+    /// <summary>DECIDE1d: a decision's output carried on some outcomes alone is read into its declaration, and each refused shape is said.</summary>
+    [Theory]
+    [InlineData("""["release", "none"]""", """{ "release": ["release"] }""", null)]
+    [InlineData("""["release", "none"]""", """{ "release": ["merged"] }""", "outputsOn")]
+    [InlineData("""["release", "none"]""", """{ "notes": ["release"] }""", "outputsOn")]
+    [InlineData("""["release", "none"]""", """{ "release": [] }""", "outputsOn")]
+    [InlineData("""["release", "none"]""", """{ "release": ["release", "release"] }""", "outputsOn")]
+    [InlineData("""["release", "none"]""", """{ "release": "release" }""", "outputsOn")]
+    [InlineData("[]", """{ "release": ["release"] }""", "outputsOn")]
+    public void A_steps_outputs_carried_on_some_outcomes_are_read_and_each_refused_shape_is_said(string outcomes, string outputsOn, string? code)
+    {
+        Plugin($$"""
+            , "hooks": { "command": ["node", "deploy.mjs"], "points": ["work/perform"] },
+            "steps": [{ "id": "find", "reach": "performed", "outcomes": {{outcomes}}, "outputs": { "release": "acme.release/release@1" },
+              "outputsOn": {{outputsOn}}, "perform": { "idempotent": true } }]
+            """);
+
+        var entry = Assert.Single(PluginCatalog.Load(_home).Plugins);
+        if (code is null)
+        {
+            Assert.Null(entry.Problem);
+            var step = Assert.Single(entry.Manifest.Steps);
+            Assert.Equal(["release"], step.OutputsOn["release"]);
+            Assert.Contains("release only on release", PluginSteps.Said(step));
+        }
+        else
+        {
+            Assert.Contains("`outputsOn`", entry.Problem);
+        }
+    }
+
     /// <summary>A manifest written before steps reads exactly as it did: no steps, no resources, nothing else moved.</summary>
     [Fact]
     public void A_manifest_without_steps_reads_as_before()
