@@ -111,6 +111,49 @@ export interface WorkflowStart {
   verifications: { id: string; name: string }[];
 }
 
+/** A route the page asks the effective graph of: default work, a kind the workspace declares, or work that has landed. */
+export type WorkflowRouteAsk = 'default' | 'landed' | `kind:${string}`;
+
+/** The choice that made a route follow its workflow: the level, and the kind with its label and paths where the route is a kind's. */
+export interface WorkflowEffectiveSource {
+  level: string;
+  kind: string | null;
+  label: string | null;
+  paths: string[];
+}
+
+/** One node of an effective graph with the cell a run answers for it (`WORKFLOW_RUN`'s `steps[].step`). */
+export interface WorkflowEffectiveCell {
+  node: string;
+  step: WorkflowStep;
+}
+
+/**
+ * The graph a route actually follows (SETUPUX1b, D221): Current drawn from the rules as they stand, or a saved workflow's newest version.
+ * `graph` is a version's graph as saved; it is null for the landed route under Current (no verification) and for a workflow that does not
+ * read, which `problem` says in the driver's words.
+ */
+export interface WorkflowEffective {
+  route: string;
+  /** A saved workflow's id, or `current`. */
+  workflow: string;
+  name: string | null;
+  /** The saved version followed; null under Current. */
+  version: number | null;
+  /** The version's digest, or under Current the digest of what it draws. */
+  digest: string | null;
+  /** 2 for a graph, 1 for a version of steps drawn as the graph it decodes to; null under Current. */
+  schema: number | null;
+  source: WorkflowEffectiveSource;
+  /** The landed route follows a verification workflow. */
+  verifies: boolean;
+  graph: unknown;
+  cells: WorkflowEffectiveCell[];
+  /** Each limit a cell carries, by its code, in the driver's own words. */
+  limits: Record<string, string>;
+  problem: string | null;
+}
+
 /** What `WORKFLOW_CURRENT` answers. */
 export interface CurrentWorkflow {
   /** The repository drawn, or none for a workspace's Current: a host may leave a null out. */
@@ -133,6 +176,8 @@ export interface CurrentWorkflow {
   repositories?: WorkflowRepository[] | null;
   /** The start node (FABRIC-PIPELINE1a); none from a driver before it, and for a run's chart. */
   start?: WorkflowStart | null;
+  /** The graph the asked `route` follows; present only where the page asked for a route, and from a driver with SETUPUX1b. */
+  effective?: WorkflowEffective | null;
 }
 
 /** What the page asks for: a repository's Current, or a workspace's. */

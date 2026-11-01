@@ -391,9 +391,7 @@ public static class WorkflowOperations
             var repository = from["current:".Length..];
             if (repository.Length == 0) throw new ChoiceWords($"`current:` names a repository, such as `current:web-app` — {DriverWorkflowsCommand.Usage}");
             var drawn = (await CurrentOfAsync(choices, home, registry, repository, ct).ConfigureAwait(false));
-            // LANDNODE1h: Current's landing is written out as a `land` node, so what is saved is a graph.
-            return new($"`{repository}`'s Current (version {drawn.Version})", $"{repository}'s Current",
-                null, WorkflowWords.GraphOfCurrent(drawn, opinion, look), null, drawn);
+            return CurrentSource(drawn, repository, opinion, look);
         }
 
         if (!from.Contains('@', StringComparison.Ordinal) && WorkflowDefaults.Of(from) is { } shipped && WorkflowPresets.GraphOf(shipped.Id) is { } graphPreset)
@@ -423,6 +421,15 @@ public static class WorkflowOperations
         var (shown, raw) = VersionOf(found, wanted);
         return new($"`{sourceId}` v{shown.Version}", found.Read.Name!, WorkflowPresets.WithGates(raw, opinion, look), null, null, null);
     }
+
+    /// <summary>
+    /// Current as a workflow's source, the one handler behind <c>new --from current:&lt;repository&gt;</c> and the effective graph a place's chart
+    /// draws (SETUPUX1b): <paramref name="drawn"/> is a repository's Current, or a workspace's from <see cref="WorkflowCurrent.Derive"/> over
+    /// its own rules. LANDNODE1h: Current's landing is written out as a <c>land</c> node, so what is saved is a graph.
+    /// </summary>
+    /// <param name="name">The repository, or the workspace, <paramref name="drawn"/> was drawn for.</param>
+    public static WorkflowVersionSource CurrentSource(CurrentWorkflow drawn, string name, bool opinion, bool look) =>
+        new($"`{name}`'s Current (version {drawn.Version})", $"{name}'s Current", null, WorkflowWords.GraphOfCurrent(drawn, opinion, look), null, drawn);
 
     /// <summary>A repository's Current, drawn as <c>review</c> reads it, for a workflow made from it.</summary>
     public static async Task<CurrentWorkflow> CurrentOfAsync(DriverConfig choices, string home, RegistryRead registry, string name, CancellationToken ct)
