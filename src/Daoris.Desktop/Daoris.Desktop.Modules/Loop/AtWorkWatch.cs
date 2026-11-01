@@ -5,7 +5,7 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// The one judge of who is at work (COWORKVIEW1a, the design §4.1, rules 11 to 13): each landed composition registers what it read,
-/// and the judge, asked by the lineage files' topic, the two slices' pushes and health and the token set's moves, compares each read's
+/// and the judge, asked by the lineage files' topic, the three slices' pushes and health and the token set's moves, compares each read's
 /// own versions and tells <paramref name="wake"/> once where any moved, that read then leaving the union until it is asked again and
 /// lands. A line wakes only where it moves what its reading holds (<see cref="ChildBindings.Wakes"/>).
 /// </summary>
@@ -16,14 +16,15 @@ public sealed class AtWorkWatch
     private readonly Action _wake;
     private readonly StateSlice? _groups;
     private readonly StateSlice? _sessions;
+    private readonly StateSlice? _quests;
     private readonly LineageTokens _tokens;
     private readonly Lock _gate = new();
     private readonly Dictionary<string, AtWorkDependencies> _held = new(StringComparer.Ordinal);
 
-    public AtWorkWatch(Action wake, StateSlice? groups, StateSlice? sessions, LineageTokens tokens)
+    public AtWorkWatch(Action wake, StateSlice? groups, StateSlice? sessions, StateSlice? quests, LineageTokens tokens)
     {
-        (_wake, _groups, _sessions, _tokens) = (wake, groups, sessions, tokens);
-        foreach (var slice in new[] { groups, sessions })
+        (_wake, _groups, _sessions, _quests, _tokens) = (wake, groups, sessions, quests, tokens);
+        foreach (var slice in new[] { groups, sessions, quests })
         {
             if (slice is null) continue;
             slice.Pushed += () => Judge();
@@ -87,7 +88,7 @@ public sealed class AtWorkWatch
     /// <summary>Null where nothing moved; else whether it woke, or the read with its files read on past lines that moved nothing.</summary>
     private (bool Woke, AtWorkDependencies Read)? Moved(AtWorkDependencies read)
     {
-        if (!AtWorkRead.SlicesStand(read, _groups, _sessions)) return (true, read);
+        if (!AtWorkRead.SlicesStand(read, _groups, _sessions, _quests)) return (true, read);
         var files = new Dictionary<string, AtWorkFile>(read.Files, StringComparer.Ordinal);
         var readOn = false;
         foreach (var (part, file) in read.Files)
