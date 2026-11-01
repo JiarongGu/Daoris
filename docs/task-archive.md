@@ -22565,3 +22565,7 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 ## ROLESTEP1b — a step names the role that takes it, and the start plan takes that role (2026-11-01, FABRIC2)
 
 **Outcome** 2026-11-01: `claimed` and `opinion` take an option `role`; the bind judges it by `RoleCatalog.Named`, keeps it with its revision (`WorkflowRunBinding.Roles`, `roles` in the run's file) or makes it the binding's problem; the quest's start walks the work step's role and the second opinion's reviewer the opinion step's. An older build runs such a version on each work's own role (D173's note). Tests `WorkflowRunBindingTests`, `StartRoleTests`, `ReviewerChoiceTests`.
+
+## DEFAULTCONFIG1b — the agents' structure's defaults as shipped data, and restoring them whole (2026-11-01, FABRIC2)
+
+**Outcome** 2026-11-01: the eight seeded roles are read from `Defaults/roles.json` (`RoleCatalog.Seed`); `RoleChange.DefaultAll` gives every seeded role back its default and keeps added ones, through `SET_ROLE {change:'default-all'}` and `daoris driver role default --all`; Working roles has a Restore all role defaults button. Tests `RoleCatalogTests`, `DriverModuleRoleTests`, `Roles.test.tsx`.
