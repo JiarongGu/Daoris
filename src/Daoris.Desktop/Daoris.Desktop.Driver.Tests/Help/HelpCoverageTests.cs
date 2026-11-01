@@ -358,17 +358,15 @@ public sealed partial class HelpCoverageTests
         + "is not yet one of Ask Daoris's `setting` doors, by the row that built it (MIXAGENT1c, D191's settling).");
 
     /// <summary>
+    /// AGENTSPLACE1a2's <c>daoris-driver place … --plan</c>, a verb of the headless host, is the <c>setup</c> kind's <c>place</c> door
+    /// (AGENTSPLACE1k): the plan as a card, whose Apply opens the place's Setup with <i>Set up…</i> seeded and presses nothing.
+    /// </summary>
+    private static readonly Door PlaceDoor = new("setup", "place");
+
+    /// <summary>
     /// TRACE1's <c>daoris-driver trace</c> (D143), a verb of the headless host: exempt, since it reads the records back to an ask
     /// and changes nothing, as <c>driver list</c> is (D110 §4). A screen's door to the same read is a row of its own.
     /// </summary>
-    /// <summary>
-    /// AGENTSPLACE1a2's <c>daoris-driver place … --plan</c>, a verb of the headless host: exempt while it only plans, since a plan changes
-    /// nothing; Ask Daoris's <c>setup</c> kind gains its <c>place</c> door with AGENTSPLACE1k, after the apply exists.
-    /// </summary>
-    private static readonly Exempt PlaceDoor = new(
-        "it plans a place's quick set-up, reads the configuration before and after and changes nothing, so there is nothing to propose; "
-        + "the `setup` kind's `place` door, proposing the plan as a card, waits on its apply (AGENTSPLACE1k).");
-
     private static readonly Exempt TraceDoor = new(
         "it reads from a commit, a session or a quest back to its ask and changes nothing, so there is nothing to propose, as "
         + "`driver list` is exempt (D110 §4); a screen's door to the same read is a row of its own (D143).");
@@ -621,8 +619,8 @@ public sealed partial class HelpCoverageTests
             + "proposing it would start without anyone looking.")),
         // AGENTSPLACE1j: *Set up…*'s Apply on a place's page, over PLACE_APPLY.
         ("agents", "usePlaceApply", null, new Exempt(
-            "a place's Apply is the person's own press, with no standing cover (AGENTSPLACE1b3): Ask Daoris proposes a plan the "
-            + "person reads and applies (AGENTSPLACE1k), and never applies one.")),
+            "a place's Apply is the person's own press, with no standing cover (AGENTSPLACE1b3): Ask Daoris proposes the plan through the "
+            + "`setup` kind's `place` door (AGENTSPLACE1k), whose Apply only opens this page seeded, and never applies one.")),
 
         // Quests: a quest's own page, and the list's presses, in `quests/QuestsView` (STRUCT5c).
         ("quests", "usePublishQuest", null, Own("quests",
@@ -1730,16 +1728,15 @@ public sealed partial class HelpCoverageTests
     }
 
     /// <summary>
-    /// AGENTSPLACE1a2: the headless host's <c>place … --plan</c> is exempt from Ask Daoris while its usage spells it and it only plans: a read
-    /// that changes nothing, which the <c>setup</c> kind takes no door for until its apply (AGENTSPLACE1k).
+    /// AGENTSPLACE1k: the headless host's <c>place … --plan</c> is the <c>setup</c> kind's <c>place</c> door while its usage spells it, and the
+    /// room names the verb beside the screen it is the page of.
     /// </summary>
     [Fact]
-    public void The_headless_hosts_place_plan_is_exempt_since_it_changes_nothing()
+    public void The_headless_hosts_place_plan_is_the_setup_kinds_place_door()
     {
         Assert.Contains("place <repository>… --preset <id> [--with opinion,look,adoption] [--what-it-builds <kind>] [--drive] --plan", DriverCommand.Usage);
-        Assert.DoesNotContain("place", HelpProposalKinds.Find("setup")!.Doors);
-        Assert.Contains("changes nothing", PlaceDoor.Reason);
-        Assert.Contains("AGENTSPLACE1k", PlaceDoor.Reason);
+        Assert.Contains(PlaceDoor.Name, HelpProposalKinds.Find(PlaceDoor.Kind)!.Doors);
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver place <repository>… --preset <id>", StringComparison.Ordinal));
     }
 
     /// <summary>

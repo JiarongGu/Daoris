@@ -3,8 +3,17 @@ using static Daoris.Knowledge.HelpProposalFile;
 namespace Daoris.Knowledge;
 
 /// <summary>
+/// A place's quick set-up a <c>place</c> proposal asks (AGENTSPLACE1k): the delivery preset, the other repositories beside the proposal's own,
+/// the second opinion and the person's look, adoption with what it builds, and general driving. Shape alone is checked in the box.
+/// </summary>
+public sealed record HelpSetupPlace(
+    string Preset, IReadOnlyList<string>? Repositories = null, bool Opinion = false, bool Look = false, bool Adoption = false, string? Builds = null,
+    bool Drive = false);
+
+/// <summary>
 /// The <c>setup</c> kind's writer (LAYOUT8, D170 point 1, D117 §6.1): a registered repository set up for every agent, by the
-/// registry's name, its one door <c>setup</c>.
+/// registry's name, its door <c>setup</c>; or, with a place ask, a place's quick set-up of several repositories, its door <c>place</c>
+/// (AGENTSPLACE1k).
 /// </summary>
 /// <remarks>
 /// The file keeps its <c>door</c> and its common <c>workspace</c>, written null, so the doors WSSETUP7 adds to this kind
@@ -17,26 +26,45 @@ internal sealed class HelpSetupProposalWriter(HelpProposalFile file)
     /// person to apply — what <c>daoris-driver setup &lt;repository&gt;</c> and the repository page's *Set up for agents* do: one
     /// quest to its own session, and the rule its session needs to run the doctrine tool. A set-up needs no path, so none is
     /// written. Whether the press would publish (registered here, driven, a tree of its own, the doctrine tool found, not set up
-    /// already, none open) is the driver's to judge, by the press's own refusals.
+    /// already, none open) is the driver's to judge, by the press's own refusals. With <paramref name="place"/> it is a place's set-up
+    /// instead: the repository and the place's others make the ask, which the person's page plans and applies.
     /// </summary>
-    public (string? Id, string Message) Propose(string repository, string why, string? session, DateTimeOffset at)
+    public (string? Id, string Message) Propose(string repository, string why, string? session, DateTimeOffset at, HelpSetupPlace? place = null)
     {
         var named = Blank(repository);
         if (string.IsNullOrWhiteSpace(why)) return NoReason;
+        var repositories = new[] { named }.Concat(place?.Repositories ?? []).Select(Blank).OfType<string>()
+            .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        var preset = Blank(place?.Preset);
         var refused = named is null ? "a set-up names the repository to set up, as Repositories lists it."
-            : named.IndexOfAny(['/', '\\']) >= 0 || Path.IsPathRooted(named)
+            : place is not null && preset is null ? "a place's set-up names its delivery, the `preset`."
+            : place is not null && Word(preset!, "a delivery") is { } delivery ? delivery
+            : place is not null && Blank(place.Builds) is { } builds && Word(builds, "what it builds") is { } shape ? shape
+            : repositories.Any(each => each.IndexOfAny(['/', '\\']) >= 0 || Path.IsPathRooted(each))
                 ? "a repository is named as Repositories lists it, never by its folder: a set-up needs no path."
-            : Word(named, "a repository");
+            : repositories.Select(each => Word(each, "a repository")).FirstOrDefault(problem => problem is not null);
         if (refused is not null) return (null, $"{Capital(refused)} Nothing was proposed.");
 
         return file.Write(writer =>
         {
             writer.WriteString("kind", "setup");
-            writer.WriteString("door", "setup");
+            writer.WriteString("door", place is null ? "setup" : "place");
             writer.WriteString("target", named);
             writer.WriteNull("workspace");
             writer.WriteNull("value");
             writer.WriteNull("sentence");
+            if (place is null) return;
+            writer.WriteStartObject("place");
+            writer.WriteString("preset", preset);
+            writer.WriteStartArray("repositories");
+            foreach (var each in repositories) writer.WriteStringValue(each);
+            writer.WriteEndArray();
+            writer.WriteBoolean("opinion", place.Opinion);
+            writer.WriteBoolean("look", place.Look);
+            writer.WriteBoolean("adoption", place.Adoption);
+            Nullable(writer, "builds", Blank(place.Builds));
+            writer.WriteBoolean("drive", place.Drive);
+            writer.WriteEndObject();
         }, why, session, at);
     }
 }

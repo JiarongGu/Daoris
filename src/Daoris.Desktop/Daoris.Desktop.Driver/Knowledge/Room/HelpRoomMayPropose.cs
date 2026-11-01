@@ -157,7 +157,13 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  Its card shows what was read on its line and the quest's whole text; what the press refuses (no tree of its\n");
         text.Append("  own, no doctrine tool, already set up, a set-up already open) comes back to you in its words, each with the\n");
         text.Append("  door that answers it. Where the repository is not driven here, its quest starts alone and nothing else of it\n");
-        text.Append("  does. Daoris never writes into the repository, and you never run it yourself: the person's Apply is the press.\n\n");
+        text.Append("  does. Daoris never writes into the repository, and you never run it yourself: the person's Apply is the press.\n");
+        // AGENTSPLACE1k: the place door proposes a quick set-up of a workspace's repositories; its Apply opens the page, never presses.
+        text.Append("  Asked to set one or several repositories up (their delivery, a second opinion and the person's look, the adoption\n");
+        text.Append("  quest and what it builds, general driving), give the preset and the repositories to `setup_propose`'s place ask. The\n");
+        text.Append("  card shows the plan `daoris-driver place <repository>… --preset <id> --plan` prints, every refusal in its words; its\n");
+        text.Append("  Apply opens the Agents place's Setup with *Set up…* open on your ask, where the person reads the plan and presses\n");
+        text.Append("  Apply themselves. Nothing is written by your card; the repositories must be in one workspace.\n\n");
         // HELP7: the real helper said *press Apply* of a card whose button reads *go there*. HELP10: a delete's
         // press was *delete* all along, and a bring-up-to-date card's first is the look. ASKDISMISS1: a go card's second
         // press only takes it away, and is told to nobody, so the helper never waits on it or reads anything into it.

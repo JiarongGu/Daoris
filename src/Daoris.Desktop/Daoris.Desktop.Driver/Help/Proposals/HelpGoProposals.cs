@@ -307,6 +307,12 @@ public sealed record HelpPlace(string View, string? Domain, string? Part)
 
     /// <summary>The words New conversation's composer opens with (NEW1d-a), as written, trimmed; null for any other go, and none.</summary>
     public string? Sentence { get; init; }
+
+    /// <summary>
+    /// The quick set-up the Agents place's Setup page opens with (AGENTSPLACE1k): its ask, which the page plans again when it opens; null
+    /// for any other go. With it, <see cref="Workspace"/> and <see cref="Repository"/> name the place.
+    /// </summary>
+    public PlaceAsk? Setup { get; init; }
 }
 
 /// <summary>

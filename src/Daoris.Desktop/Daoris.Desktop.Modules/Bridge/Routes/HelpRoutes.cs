@@ -472,6 +472,18 @@ public sealed class HelpRoutes(DriverContext context)
             Workflow = WorkflowShown(plan.Workflow),
             // A set-up's plan (LAYOUT8), as the repository's page shows it before its press.
             Setup = plan.Setup is { } setup ? SetupRoutes.Shown(setup) : null,
+            // A place's quick set-up (AGENTSPLACE1k): the ask, its workspace, each change once, and the plan's digest, so a plan that moved
+            // draws the card again. Never the plan whole: the page it opens plans again.
+            Place = plan.Place is { } place
+                ? new
+                {
+                    place.Asked, place.Workspace, place.Digest,
+                    Changes = place.Changes.Select(each => new
+                    {
+                        each.Change.Key, each.Change.Part, each.Change.Said, each.Change.Before, each.Change.After, each.Repositories,
+                    }).ToArray(),
+                }
+                : null,
         };
 
     /// <summary>
@@ -587,9 +599,9 @@ public sealed class HelpRoutes(DriverContext context)
         applied.Applied,
         // Where a go takes the person: the page navigates, as its starters' doors do (HELP6), to the one quest or ask a go
         // names in it, the driver's judged spelling (ENTRY1f1), and opens Add repository or Import a folder with the workspace
-        // the driver judged filled (ENTRY1d2a), or New conversation with the repository and words it judged (NEW1d-a); each
-        // null on any other go.
-        Go = applied.Go is { } place ? new { place.View, place.Domain, place.Part, place.Item, place.Workspace, place.Repository, place.Sentence } : null,
+        // the driver judged filled (ENTRY1d2a), or New conversation with the repository and words it judged (NEW1d-a), or an Agents
+        // place's Setup with its set-up open on the ask (AGENTSPLACE1k); each null on any other go.
+        Go = applied.Go is { } place ? new { place.View, place.Domain, place.Part, place.Item, place.Workspace, place.Repository, place.Sentence, place.Setup } : null,
         // The action an update or a pin started, so the Agents screen follows its console and its end. A default
         // (HELP10) is a file edit that starts nothing, so there is nothing to follow.
         HarnessAction = applied.Applied && proposal.Kind == "agent" && proposal.Door is "update" or "pin"
@@ -938,7 +950,11 @@ public sealed class HelpRoutes(DriverContext context)
     /// Whether a pending proposal is a set-up (LAYOUT8), judged by the press's own plan for the repository it names, which reads
     /// the line with git and asks the doctrine tool its version, so that is read only then. Public so the fast half holds the gate.
     /// </summary>
-    public static bool JudgedAgainstSetups(IEnumerable<HelpProposal> proposals) => proposals.Any(proposal => proposal.Kind == "setup");
+    public static bool JudgedAgainstSetups(IEnumerable<HelpProposal> proposals) => proposals.Any(proposal => proposal.Kind == "setup" && proposal.Door != "place");
+
+    /// <summary>Whether any proposal is a place's set-up (AGENTSPLACE1k), judged by the place's plan.</summary>
+    public static bool JudgedAgainstPlaces(IEnumerable<HelpProposal> proposals) =>
+        proposals.Any(proposal => proposal.Kind == "setup" && proposal.Door == "place" && proposal.Place is not null);
 
     /// <summary>
     /// The runs bound on this machine, each as its file under the bindings folder reads (WORKFLOW1h-c): a card says how many keep the
@@ -1165,7 +1181,7 @@ public sealed class HelpRoutes(DriverContext context)
         {
             var world = _context.SetupWorldOf(service);
             var plans = new List<SetupPlan>();
-            foreach (var named in proposals.Where(each => each.Kind == "setup").Select(each => each.Target?.Trim() ?? "")
+            foreach (var named in proposals.Where(each => each.Kind == "setup" && each.Door != "place").Select(each => each.Target?.Trim() ?? "")
                 .Where(named => named.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase))
             {
                 plans.Add(await SetupPress.PlanAsync(world, config, _context.Door(config), named, DateOnly.FromDateTime(DateTime.Now), ct)
@@ -1173,6 +1189,21 @@ public sealed class HelpRoutes(DriverContext context)
             }
 
             facts = facts with { Setups = plans };
+        }
+
+        // A place proposal is judged by its quick set-up's plan, as `daoris-driver place … --plan` and PLACE_PLAN read it (AGENTSPLACE1k): the
+        // registry, the quests and each line's tip as git objects; written and probed nowhere.
+        if (JudgedAgainstPlaces(proposals))
+        {
+            var world = new PlaceWorld(service);
+            var plugins = PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names);
+            var places = new Dictionary<string, PlacePlanned>(StringComparer.Ordinal);
+            foreach (var proposal in proposals.Where(each => each.Kind == "setup" && each.Door == "place" && each.Place is not null))
+            {
+                places[proposal.Id] = await PlacePlans.PlanAsync(world, config, _loop.Home, plugins, _context.Door(config), proposal.Place!, ct).ConfigureAwait(false);
+            }
+
+            facts = facts with { Places = places };
         }
 
         // Daoris's browser's files as the Browser screen reads them (HELP10), read only when a browser change is pending.
