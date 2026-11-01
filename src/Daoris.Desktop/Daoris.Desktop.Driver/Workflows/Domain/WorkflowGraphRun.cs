@@ -72,7 +72,14 @@ public static class WorkflowGraphSubjects
 }
 
 /// <summary>One wire of a graph run's graph, as the page draws it: from a node to a node, by its kind (<c>after</c>, <c>failed</c>, …).</summary>
-public sealed record WorkflowGraphWire(string From, string To, string Kind);
+public sealed record WorkflowGraphWire(string From, string To, string Kind)
+{
+    /// <summary>The outcome a <c>when</c> wire follows (DECIDE1c); null on every other kind.</summary>
+    public string? Outcome { get; init; }
+
+    /// <summary>What a <c>back</c> wire is taken on: <c>rejected</c>, <c>failed</c> or an outcome (DECIDE1c); null on every other kind.</summary>
+    public string? On { get; init; }
+}
 
 /// <summary>
 /// A run bound to a graph version, drawn from its record (FABRIC-CUTOVER1e; D190 points 2, 3 and 7, the cutover design §2, §3, §6): its
@@ -80,8 +87,18 @@ public sealed record WorkflowGraphWire(string From, string To, string Kind);
 /// (<see cref="WorkflowRun.Steps"/>), each with <see cref="WorkflowRunStep.Node"/>.
 /// </summary>
 /// <param name="Run">The run's id: its chain's first quest in its repository, whose record is <c>run:&lt;run&gt;</c>.</param>
+/// <param name="Wires">The wires the run is read along, every kind but <c>back</c>, which <see cref="Backs"/> holds apart (DECIDE1c).</param>
 public sealed record WorkflowGraphRun(string Run, IReadOnlyList<string> Entries, string End, IReadOnlyList<WorkflowGraphWire> Wires)
 {
+    /// <summary>Its <c>back</c> wires (DECIDE1c): each a way back to a node before its source, drawn as a return and never read as an order.</summary>
+    public IReadOnlyList<WorkflowGraphWire> Backs { get; init; } = [];
+
+    /// <summary>The nodes no route can start any more given the outcomes reached (DECIDE1c, <see cref="WireEvaluated.NotTaken"/>), in node-id order.</summary>
+    public IReadOnlyList<string> NotTaken { get; init; } = [];
+
+    /// <summary>Each reached decision's outcome, by node (DECIDE1c): what its <c>when</c> wires were taken on.</summary>
+    public IReadOnlyDictionary<string, string> Outcomes { get; init; } = new Dictionary<string, string>(StringComparer.Ordinal);
+
     /// <summary><c>claimed</c>'s subject: its newest work quest here; null where none was read.</summary>
     public string? Quest { get; init; }
 
@@ -217,15 +234,23 @@ public static class WorkflowGraphRuns
         }
 
         var record = facts.Record;
-        var part = new WorkflowGraphRun(
-            facts.RunId, graph.Entries, graph.End,
-            [.. graph.Wires.Where(wire => wire.From is { Unit: null } && wire.To.Unit is null).Select(wire => new WorkflowGraphWire(wire.From!.Node, wire.To.Node, wire.Kind))])
+        // DECIDE1c: a `back` wire is drawn apart, so nothing that reads the run's order walks it; a `when` names its outcome.
+        var drawn = graph.Wires.Where(wire => wire.From is { Unit: null } && wire.To.Unit is null)
+            .Select(wire => new WorkflowGraphWire(wire.From!.Node, wire.To.Node, wire.Kind) { Outcome = wire.Outcome, On = wire.On })
+            .ToList();
+        var part = new WorkflowGraphRun(facts.RunId, graph.Entries, graph.End, [.. drawn.Where(wire => wire.Kind != WireKinds.Back)])
         {
             Quest = work.LastOrDefault()?.Id,
             Branch = runBranch,
             Judged = record is { Statuses.Count: > 0 },
             Unread = record is null,
             Ended = record?.Ended?.Quest,
+            Backs = [.. drawn.Where(wire => wire.Kind == WireKinds.Back)],
+            NotTaken = WireEvaluation.NotTakenOn(graph.Nodes, graph.Wires, statuses, self),
+            Outcomes = graph.Nodes
+                .Select(node => (node.Id, Outcome: StatusOf(node.Id) is { State: NodeStates.Reached, Current.Outcome: { } outcome } ? outcome : null))
+                .Where(each => each.Outcome is not null)
+                .ToDictionary(each => each.Id, each => each.Outcome!, StringComparer.Ordinal),
         };
 
         return new WorkflowRun(run.Repository, workspace, new CurrentWorkflow(run.Current.StartHolds, cells, run.Current.Version),
@@ -382,13 +407,13 @@ public static class WorkflowGraphRuns
         return branches.LastOrDefault(entry => entry.Branch == name)?.Now ?? name;
     }
 
-    /// <summary>Where a graph run stands (<see cref="WorkflowGraphRun.At"/>).</summary>
+    /// <summary>Where a graph run stands (<see cref="WorkflowGraphRun.At"/>): never at a node no route takes (DECIDE1c).</summary>
     private static string? At(WorkflowGraphRun part, IReadOnlyList<WorkflowRunStep> steps, string end)
     {
         if (part.Ended is not null) return null;
         if (steps.FirstOrDefault(step => step.State != WorkflowRunStates.NotReached && !WorkflowRunStates.Settled(step.State)) is { } moving) return moving.Step.Id;
         if (end is NodeStates.Reached or NodeStates.Skipped) return null;
         if (!part.Judged) return part.Entries.FirstOrDefault();
-        return steps.FirstOrDefault(step => !WorkflowRunStates.Settled(step.State))?.Step.Id;
+        return steps.FirstOrDefault(step => !WorkflowRunStates.Settled(step.State) && !part.NotTaken.Contains(step.Step.Id, StringComparer.Ordinal))?.Step.Id;
     }
 }

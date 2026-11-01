@@ -542,10 +542,11 @@ public sealed class WorkflowRoutes(DriverContext context)
     // `daoris-driver workflow skip|stop`. Both doors end in RunNodeWords.Word, which keeps the word on the run's record under its lock with the
     // lease asked inside it; the loop's runtime applies it at its next pass, which the nudge wakes.
     /// <summary>
-    /// Keep the person's `act` (`skip` with their `words`, or `stop`, words where given) on `node` of `run`, a run bound to a graph version, for
-    /// the next look. Answers `{ run, node, act, done, refused, message }`, a refusal as an answer with its code (`not-run`, `unread-version`,
-    /// `not-node`, `not-act`, `ended`, `worded`, the one table's `no-words`, `not-skippable` and `not-in-table`, `not-held`, `unreadable`) and the
-    /// terminal's sentence. Asked for its words (`said: true`) by the terminal's verb over the pipe, it runs that verb's own path here.
+    /// Keep the person's `act` (`skip` with their `words`, or `stop`, words where given; a review's `changes`, with their words, DECIDE1c) on
+    /// `node` of `run`, a run bound to a graph version, for the next look. Answers `{ run, node, act, done, refused, message }`, a refusal as an
+    /// answer with its code (`not-run`, `unread-version`, `not-node`, `not-act`, `not-review`, `ended`, `worded`, the one table's `no-words`,
+    /// `not-skippable` and `not-in-table`, `not-held`, `unreadable`) and the terminal's sentence. Asked for its words (`said: true`) by the
+    /// terminal's verb over the pipe, it runs that verb's own path here.
     /// </summary>
     [DriverRoute("WORKFLOW_NODE")]
     [Publishes("WORKFLOW_NODE", StateScopes.Driver)]
@@ -643,12 +644,18 @@ public sealed class WorkflowRoutes(DriverContext context)
                 }).ToArray(),
             }).ToArray(),
             // FABRIC-CUTOVER1e: a run bound to a graph version, drawn from its record: its graph's wires and what its record says of it.
+            // DECIDE1c, additive: a `when` wire's outcome on it alone, the `back` wires apart, the nodes no route takes and each decision's outcome.
             Graph = run.Graph is { } graph
                 ? new
                 {
                     graph.Run, graph.Entries, graph.End,
-                    Wires = graph.Wires.Select(wire => new { wire.From, wire.To, wire.Kind }).ToArray(),
+                    Wires = graph.Wires.Select(wire => wire.Outcome is { } outcome
+                        ? (object)new { wire.From, wire.To, wire.Kind, Outcome = outcome }
+                        : new { wire.From, wire.To, wire.Kind }).ToArray(),
                     graph.Quest, graph.Branch, graph.Judged, graph.Unread, graph.Ended,
+                    Backs = graph.Backs.Select(wire => new { wire.From, wire.To, wire.On }).ToArray(),
+                    graph.NotTaken,
+                    graph.Outcomes,
                 }
                 : null,
         };

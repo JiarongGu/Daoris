@@ -444,6 +444,124 @@ public sealed class NodeRuntimeRunTests : NodeRunFixture
         Assert.Empty(_port.Sent);
     }
 
+    /// <summary>The work, the person's review, then the landing (DECIDE1c); with <c>back</c>, the review's changes go back to the work.</summary>
+    private static string Reviewed(bool back) => """
+        {"schemaVersion":2,"entries":["work"],"end":"handed",
+         "nodes":[{"id":"work","kind":"claimed","version":1,"reach":"observed"},{"id":"review","kind":"review","version":1,"reach":"pressed"},
+                  {"id":"handed","kind":"handed","version":1,"reach":"observed"}],
+         "wires":[{"id":"w>r","kind":"after","from":"work","to":"review"},{"id":"r>h","kind":"after","from":"review","to":"handed"}
+        """ + (back ? """,{"id":"r<w","kind":"back","from":"review","to":"work","on":"rejected"}""" : "") + "]}";
+
+    /// <summary>What the runtime told the work's sessions (DECIDE1c): the session, the words and their key.</summary>
+    private readonly List<(string Session, string Text, string Key)> _told = [];
+
+    private NodeRuntime Telling()
+    {
+        var runtime = Runtime();
+        runtime.Say = (session, text, key, _) =>
+        {
+            _told.Add((session, text, key));
+            return Task.FromResult(new SayAnswer(true, "kept"));
+        };
+        return runtime;
+    }
+
+    /// <summary>The run's quest done by session <c>s-work</c>, and its branch.</summary>
+    private void ReviewedUnits(params LandedBranch[] landings) => _units =
+    [
+        RunHome.QuestUnit(RunHome.Quest(RunId, "Done")) with { Executors = ["s-work"] },
+        RunHome.Branch("unit-b1", "daoris/s1", Opened, [RunId], landings),
+    ];
+
+    /// <summary>
+    /// DECIDE1c: the person's changes on a review need their words, and an agent's terminal and an agent's report never make them. With words, the
+    /// next look applies them as the review's rejection, the landing waits, and the work's session is told them as its next turn, under their key,
+    /// even with no way back drawn (D173's note). The session's next commit runs the review again; the next Accept lets the landing go, and it lands.
+    /// </summary>
+    [Fact]
+    public async Task Changes_with_words_tell_the_work_and_its_next_commit_is_reviewed_and_landed_again()
+    {
+        BoundTo(Reviewed(back: false));
+        _branchTips["daoris/s1"] = Tip1;
+        ReviewedUnits();
+        var runtime = Telling();
+
+        await RunPassAsync(runtime);
+        Assert.Equal((NodeStates.Reached, NodeStates.Active, Tip1), (RunStatus("work").State, RunStatus("review").State, RunStatus("review").Binding!.SubjectRevision));
+
+        Assert.Equal(NodeRefusal.NoWords, RunNodeWords.Word(Files, RunId, "review", NodeWordActs.Changes, "  ", () => _now).Refused);
+        Assert.Equal(RunNodeWords.NotReview, RunNodeWords.Word(Files, RunId, "handed", NodeWordActs.Changes, "shorter", () => _now).Refused);
+        var agent = new StringWriter();
+        Assert.Equal(1, await WorkflowNodeCommand.RunAsync(new(NodeWordActs.Changes, RunId, "review", "shorter"), Files, agent, instance: null,
+            name => name == DriverChoicesCommand.SessionVariable ? "s-agent" : null, () => _now));
+        Assert.Empty(Files.Read(RunUnit)!.Pending);
+        var review = Assert.Single(ReadGraph(Reviewed(back: false)).Nodes, node => node.Id == "review");
+        Assert.Equal(NodeRefusal.NotCause, NodeLifecycle.Apply(review, RunStatus("review"),
+            new NodeMove(NodeStates.Rejected, NodeCause.Authority) { Attempt = 1, Words = "an agent's verdict" }).Refused);
+
+        Assert.True(RunNodeWords.Word(Files, RunId, "review", NodeWordActs.Changes, "Make the title shorter.", () => _now).Done);
+        var applied = await RunPassAsync(runtime);
+        Assert.Equal((NodeStates.Rejected, "Make the title shorter."), (RunStatus("review").State, RunStatus("review").Words));
+        Assert.Equal(NodeStates.Blocked, RunStatus("handed").State);
+        Assert.Null(Files.Read(RunUnit)!.Ended);
+        var told = Assert.Single(_told);
+        Assert.Equal(("s-work", "changes/q7/review/1"), (told.Session, told.Key));
+        Assert.EndsWith("> Make the title shorter.", told.Text, StringComparison.Ordinal);
+        Assert.Contains($"work  {RunUnit}: session s-work is told what `review` sent back, as its next turn.", applied.Said);
+
+        // The session's next commit: the review runs again on it, and the landing still waits.
+        _branchTips["daoris/s1"] = Tip2;
+        await RunPassAsync(runtime);
+        Assert.Equal((NodeStates.Active, Tip2), (RunStatus("review").State, RunStatus("review").Binding!.SubjectRevision));
+        Assert.Equal(NodeStates.Blocked, RunStatus("handed").State);
+
+        Assert.True(RunNodeWords.Word(Files, RunId, "review", NodeWordActs.Accept, null, () => _now).Done);
+        await RunPassAsync(runtime);
+        Assert.Equal((NodeStates.Reached, NodeStates.Active, Tip2), (RunStatus("review").State, RunStatus("handed").State, RunStatus("handed").Binding!.SubjectRevision));
+
+        ReviewedUnits(RunHome.Landing("unit-b1", "feature/q7", Tip2, _now, RunId));
+        await RunPassAsync(runtime);
+        Assert.Equal(NodeStates.Reached, RunStatus("handed").State);
+        Assert.Single(_told);
+    }
+
+    /// <summary>
+    /// DECIDE1c: a <c>back</c> wire on the review's rejection is taken once, on that rejection's receipt: the work gets a new attempt, what rested on it
+    /// is judged again, the work's session is told the person's words, and the firing is kept, so later passes take nothing again.
+    /// </summary>
+    [Fact]
+    public async Task A_back_route_is_taken_once_per_receipt_and_tells_the_work()
+    {
+        BoundTo(Reviewed(back: true));
+        _branchTips["daoris/s1"] = Tip1;
+        ReviewedUnits();
+        var runtime = Telling();
+        await RunPassAsync(runtime);
+        Assert.Equal((1, NodeStates.Active), (RunStatus("work").Attempt, RunStatus("review").State));
+
+        Assert.True(RunNodeWords.Word(Files, RunId, "review", NodeWordActs.Changes, "Name the flag after what it does.", () => _now).Done);
+        await RunPassAsync(runtime);
+
+        Assert.Equal((2, NodeStates.Reached), (RunStatus("work").Attempt, RunStatus("work").State));
+        Assert.Equal((2, NodeStates.Active), (RunStatus("review").Attempt, RunStatus("review").State));
+        var fired = Assert.Single(Files.Read(RunUnit)!.Fired);
+        var told = Assert.Single(_told);
+        Assert.Equal(("s-work", "changes/q7/review/1"), (told.Session, told.Key));
+        Assert.Contains("Name the flag after what it does.", told.Text, StringComparison.Ordinal);
+
+        foreach (var whole in new[] { true, false, true }) await RunPassAsync(runtime, whole: whole);
+        Assert.Equal(2, RunStatus("work").Attempt);
+        Assert.Equal([fired], Files.Read(RunUnit)!.Fired);
+        Assert.Single(_told);
+    }
+
+    private static NodeGraph ReadGraph(string json)
+    {
+        var (graph, problems) = NodeGraphs.Read(json);
+        Assert.True(graph is not null, string.Join("; ", problems.Select(problem => problem.Words)));
+        return graph;
+    }
+
     /// <summary>The gates each run's branch is read at, by branch unit and tip, and what they answer (FABRIC-CUTOVER1d).</summary>
     private readonly List<(string Unit, string? Tip)> _gatesAt = [];
 

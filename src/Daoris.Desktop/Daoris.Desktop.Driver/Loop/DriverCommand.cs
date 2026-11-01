@@ -323,6 +323,9 @@ public static class DriverCommand
           workflow stop <run> <node> ["…"]
               pass a node of a run bound to a graph version over, with your words, or stop it: kept on the run's record,
               and Daoris's next look applies it. `workflow run` names the run and its nodes. Daoris's window confirms it.
+          workflow changes <run> <node> "…"
+              ask for changes on a run's review in place of its Accept, with your words: the work's session is told
+              them as its next turn, and what it commits is reviewed again. Daoris's window confirms it.
           git branches [--repository <name>] [--all] [--json]
               each repository's line and branches: the sessions', the landed (on origin or not, their pull
               request), yours, and how many only origin holds, each against the line; and the git each read

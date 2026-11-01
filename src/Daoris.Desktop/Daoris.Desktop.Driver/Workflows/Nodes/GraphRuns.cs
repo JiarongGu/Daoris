@@ -257,14 +257,17 @@ public static class RunSubjects
         _ => afterHanded.Contains(node.Id) ? RunSubject.Landing : RunSubject.Branch,
     };
 
-    /// <summary>The nodes a wire path leads to from <c>handed</c> (the cutover design §2.2): what observes the run's branch at its landing.</summary>
+    /// <summary>
+    /// The nodes a wire path leads to from <c>handed</c> (the cutover design §2.2): what observes the run's branch at its landing. A <c>back</c>
+    /// wire leads to a node before it (DECIDE1c), so no path is read along one.
+    /// </summary>
     public static HashSet<string> AfterHanded(NodeGraph graph)
     {
         var after = new HashSet<string>(StringComparer.Ordinal);
         var next = new Queue<string>(graph.Nodes.Where(node => NodeKinds.IsLanding(node.Kind)).Select(node => node.Id));
         while (next.TryDequeue(out var from))
         {
-            foreach (var wire in graph.Wires.Where(wire => wire.From is { Unit: null } source && source.Node == from && wire.To is { Unit: null }))
+            foreach (var wire in graph.Wires.Where(wire => wire.Kind != WireKinds.Back && wire.From is { Unit: null } source && source.Node == from && wire.To is { Unit: null }))
             {
                 if (after.Add(wire.To.Node)) next.Enqueue(wire.To.Node);
             }

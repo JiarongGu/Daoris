@@ -148,6 +148,7 @@
     { "node": "handed", "kind": "landing", "state": "failed", "detail": "failed", "code": "refused", "said": "Failed: `refused`." },
     { "node": "handed", "kind": "landing", "state": "failed", "detail": "failed", "said": "Failed." },
     { "node": "go-ahead", "kind": "go-ahead", "state": "stopped", "detail": "rejected", "said": "You refused it." },
+    { "node": "review", "kind": "review", "state": "stopped", "detail": "rejected", "said": "You asked for changes: the work's session is told your words, and what it commits is reviewed again." },
     { "node": "claimed", "kind": "work", "state": "stopped", "detail": "stopped", "said": "You stopped it." },
     { "node": "acme.deploy/deploy", "kind": "acme.deploy/deploy", "state": "not-known", "detail": "unknown", "said": "Its outcome could not be established yet; Daoris asks after it before it starts anything new." },
     { "node": "handed", "kind": "landing", "detail": "invalidated", "said": "What it rested on moved, so Daoris judges it again at its next look." },

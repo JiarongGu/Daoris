@@ -485,6 +485,67 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
         Assert.Equal(1, code);
     }
 
+    /// <summary>
+    /// DECIDE1c, additive: <c>WORKFLOW_RUN</c> says which routes were taken: a decision's outcome on the graph, the nodes its outcome left no route
+    /// to, a <c>when</c> wire's outcome, and a <c>back</c> wire apart from the wires; a review waiting on the person offers their changes, and
+    /// <c>WORKFLOW_NODE</c> keeps them only with words.
+    /// </summary>
+    [Fact]
+    public async Task A_graph_run_says_its_routes_not_taken_and_a_reviews_changes_are_kept_with_words()
+    {
+        WorkflowStore.Add(Home, new WorkflowVersionAdded("docs", "Docs", "terminal", T.ToString("O"), null, System.Text.Json.Nodes.JsonNode.Parse("""
+            {"schemaVersion":2,"entries":["work"],"end":"release",
+             "nodes":[{"id":"work","kind":"claimed","version":1,"reach":"observed"},
+                      {"id":"find","kind":"local-release/find","version":1,"reach":"performed","outcomes":["release","none"]},
+                      {"id":"review","kind":"review","version":1,"reach":"pressed"},
+                      {"id":"handed","kind":"handed","version":1,"reach":"observed"},
+                      {"id":"release","kind":"local-release/release","version":1,"reach":"performed"}],
+             "wires":[{"id":"a","kind":"after","from":"work","to":"find"},{"id":"b","kind":"after","from":"find","to":"review"},
+                      {"id":"c","kind":"after","from":"review","to":"handed"},{"id":"d","kind":"when","from":"find","to":"release","outcome":"release"},
+                      {"id":"e","kind":"back","from":"review","to":"work","on":"rejected"}]}
+            """)), kept: []);
+        var binding = WorkflowRunBindings.Plan(DriverConfig.Empty, Home, "q1", "engine", "aurora", null, new WorkflowTaskChoice(null, "docs"), [], T);
+        Assert.True(WorkflowRunBindings.Bind(Home, binding));
+        var unit = RunUnits.IdOf("q1");
+        NodeStatus Reached(string node, string? outcome = null) => new(unit, node, NodeStates.Reached)
+        {
+            Attempt = 1, Acceptance = new NodeAcceptance(unit, "moment", binding.Digest!, node, 1, 1) { Subject = "quest:q1", Outcome = outcome },
+        };
+        var files = new NodeRecordFiles(Home, () => true);
+        files.Write(new NodeRecord(unit)
+        {
+            Statuses = new Dictionary<string, NodeStatus>
+            {
+                ["work"] = Reached("work"), ["find"] = Reached("find", "none"),
+                ["review"] = new(unit, "review", NodeStates.Active) { Attempt = 1, Binding = new NodeAcceptance(unit, null, binding.Digest!, "review", 1, 1) },
+            },
+        });
+        var (module, _) = await UpAsync();
+
+        var run = Assert.Single((await AnswerAsync(module, "WORKFLOW_RUN", new { quest = "q1" })).GetProperty("runs").EnumerateArray());
+
+        var graph = run.GetProperty("graph");
+        Assert.Equal(["release"], graph.GetProperty("notTaken").EnumerateArray().Select(node => node.GetString()));
+        Assert.Equal("none", graph.GetProperty("outcomes").GetProperty("find").GetString());
+        var wires = graph.GetProperty("wires").EnumerateArray().ToList();
+        Assert.Equal(["after", "after", "after", "when"], wires.Select(wire => wire.GetProperty("kind").GetString()));
+        Assert.Equal("release", wires[3].GetProperty("outcome").GetString());
+        Assert.False(wires[0].TryGetProperty("outcome", out _));
+        var back = Assert.Single(graph.GetProperty("backs").EnumerateArray());
+        Assert.Equal(("review", "work", "rejected"), (back.GetProperty("from").GetString(), back.GetProperty("to").GetString(), back.GetProperty("on").GetString()));
+        var review = run.GetProperty("steps").EnumerateArray().Single(step => step.GetProperty("step").GetProperty("id").GetString() == "review");
+        Assert.Equal(["changes", "stop"], review.GetProperty("acts").EnumerateArray().Select(act => act.GetString()));
+
+        using var lease = HomeLease.TryAcquire(Home, LeaseKind.Desktop, out _);
+        Assert.NotNull(lease);
+        var unworded = await AnswerAsync(module, "WORKFLOW_NODE", new { run = "q1", node = "review", act = "changes" });
+        Assert.Equal((false, "no-words"), (unworded.GetProperty("done").GetBoolean(), unworded.GetProperty("refused").GetString()));
+        var kept = await AnswerAsync(module, "WORKFLOW_NODE", new { run = "q1", node = "review", act = "changes", words = "Shorter, please." });
+        Assert.True(kept.GetProperty("done").GetBoolean());
+        var word = Assert.Single(files.Read(unit)!.Pending);
+        Assert.Equal(("review", NodeWordActs.Changes, "Shorter, please."), (word.Node, word.Act, word.Words));
+    }
+
     [Fact]
     public async Task A_refusal_names_what_to_name_and_a_run_waits_for_the_driver()
     {

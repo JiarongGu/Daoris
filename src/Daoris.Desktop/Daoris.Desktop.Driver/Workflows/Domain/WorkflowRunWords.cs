@@ -279,6 +279,8 @@ public static class WorkflowRunWords
             WorkflowGraphDetails.Failed when node == NodeKinds.Request && step.Code == RequestOptions.DeclinedCode =>
                 "The repository it asked declined the quest: ask again, or go on without it with your words.",
             WorkflowGraphDetails.Failed => step.Code is { Length: > 0 } code ? $"Failed: `{code}`." : "Failed.",
+            // DECIDE1c: a review's rejection is the person's changes, which went to the work.
+            WorkflowGraphDetails.Rejected when node == NodeKinds.Review => "You asked for changes: the work's session is told your words, and what it commits is reviewed again.",
             WorkflowGraphDetails.Rejected => "You refused it.",
             WorkflowGraphDetails.Stopped => "You stopped it.",
             WorkflowGraphDetails.Unknown => "Its outcome could not be established yet; Daoris asks after it before it starts anything new.",
@@ -368,7 +370,7 @@ public static class WorkflowRunWords
                 }
 
                 said.Append(line).Append('\n');
-                foreach (var under in Under(step, run.Graph?.Run)) said.Append(Indent).Append(under).Append('\n');
+                foreach (var under in Under(step, run.Graph)) said.Append(Indent).Append(under).Append('\n');
             }
         }
 
@@ -393,11 +395,12 @@ public static class WorkflowRunWords
 
     /// <summary>
     /// The lines under a step: the person's words, why it is here, the opinion's presses in this terminal, the pull request; and on a graph run's
-    /// node (FABRIC-CUTOVER1f), the person's word kept and not applied yet, or the skip and stop it offers as this terminal's commands on
-    /// <paramref name="run"/>.
+    /// node (FABRIC-CUTOVER1f), the person's word kept and not applied yet, or the skip, the stop and a review's changes it offers as this
+    /// terminal's commands on <paramref name="graph"/>'s run, a decision's outcome and a route not taken (DECIDE1c).
     /// </summary>
-    private static IEnumerable<string> Under(WorkflowRunStep step, string? run)
+    private static IEnumerable<string> Under(WorkflowRunStep step, WorkflowGraphRun? graph)
     {
+        var run = graph?.Run;
         if (step.Asked is { } asked)
         {
             yield return $"Your {asked.Act} is kept, and Daoris's next look applies it{(asked.Words is { } kept ? $": “{kept}”" : ".")}";
@@ -406,9 +409,15 @@ public static class WorkflowRunWords
         {
             var node = step.Step.Id;
             var stop = $"`daoris-driver workflow stop {run} {node}` stops it.";
-            yield return acts.Contains(NodeWordActs.Skip)
-                ? $"`daoris-driver workflow skip {run} {node} \"…\"` passes it over for this run; {stop}"
+            yield return acts.Contains(NodeWordActs.Skip) ? $"`daoris-driver workflow skip {run} {node} \"…\"` passes it over for this run; {stop}"
+                : acts.Contains(NodeWordActs.Changes) ? $"`daoris-driver workflow changes {run} {node} \"…\"` asks for changes in place of your Accept; {stop}"
                 : stop;
+        }
+
+        if (graph is not null && step.Node is not null)
+        {
+            if (graph.Outcomes.TryGetValue(step.Step.Id, out var outcome)) yield return $"Its outcome: `{outcome}`.";
+            if (graph.NotTaken.Contains(step.Step.Id, StringComparer.Ordinal)) yield return "Not taken: the outcomes reached leave no route to it.";
         }
 
         var kind = step.Step.Kind;

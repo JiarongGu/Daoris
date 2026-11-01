@@ -235,6 +235,7 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
                 var said = new List<WorkPerformed>();
                 var statuses = new Dictionary<string, NodeStatus>(record.Statuses, StringComparer.Ordinal);
                 var history = record.History.ToList();
+                var fired = record.Fired.ToList();
                 var changed = false;
                 foreach (var (node, status) in evaluated.Statuses.Where(each => each.Value.Unit == unit))
                 {
@@ -252,9 +253,12 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
                     {
                         history.Add(new NodeHistory(now, move.Why, move.Moved.Cleared!));
                     }
+
+                    // DECIDE1c: a back wire taken into this node is kept with its move, so it is taken once on its receipt.
+                    fired.AddRange(evaluated.Backs.Where(back => back.Node == node && !fired.Contains(back.Key, StringComparer.Ordinal)).Select(back => back.Key));
                 }
 
-                return (changed ? record with { Statuses = statuses, History = history } : null, said);
+                return (changed ? record with { Statuses = statuses, History = history, Fired = fired } : null, said);
             });
             if (refused is not null) done.Add(new(unit, "", PerformedWhat.Refused, refused));
             else done.AddRange(kept!);
