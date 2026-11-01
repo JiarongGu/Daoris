@@ -1,13 +1,13 @@
 import {
-  type ComponentProps, type CSSProperties, Fragment, type FocusEvent, type KeyboardEvent, type ReactNode, useCallback, useId, useLayoutEffect,
-  useMemo, useRef, useState,
+  type ComponentProps, type CSSProperties, Fragment, type FocusEvent, type KeyboardEvent, type MouseEvent, type ReactNode, useCallback, useId,
+  useLayoutEffect, useMemo, useRef, useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
 import { store, stored } from '../lib/stored';
 import { type Fold, largeFolds, WHOLE_MOST } from './flowFolds';
-import { type Box, type InkLabel, type InkPath, placeLabels, routeInk, RUN } from './flowInk';
+import { type Box, type InkLabel, type InkPath, placeInserts, placeLabels, routeInk, RUN } from './flowInk';
 import { type EdgeStyle, findStacks, FLOW_REM, type FlowLayout, layoutFlow, type Placement, placementFor, type Slot, type Stack } from './flowLayout';
 import { Button, type IconName, Pill } from './ui';
 import { useWidth } from './useWidth';
@@ -127,7 +127,15 @@ export type NodeContext = {
   description: string;
   onFollow: (from: string, to: string) => void;
   style?: CSSProperties;
+  /** In pick mode (FLOWCHART2b), whether this node can take the way being chosen; absent outside it. */
+  picking?: boolean;
 };
+
+/**
+ * Pick mode (FLOWCHART2b; D223 §3): choosing where a way goes on the chart. The keys walk only the nodes that `can` take it, the first of
+ * them taking the focus when the mode starts (a new `key`); Enter picks the node, Escape cancels, and a press never focuses one that cannot.
+ */
+export type FlowPick = { key: string; can: (id: string) => boolean; onPick: (id: string) => void; onCancel: () => void };
 
 /** What the canvas hands the chip a caller draws on a path: what it would say by default, the edge it carries, and how many are merged. */
 export type LabelContext = { id: string; style: EdgeStyle; text: string; count: number; edge: FlowEdge | undefined };
@@ -142,6 +150,13 @@ export type FlowCanvasProps = FlowProps & {
    * selected, and their lanes are kept free at the right whether or not one is. A flow not given it draws no data wire.
    */
   selected?: string | null;
+  /**
+   * The ＋ an editor puts on a way (FLOWCHART2b), or none (null): drawn on the edge's path where it clears every node, label and other ＋
+   * (`placeInserts`), and under its source in the rail. A way back and a path that merges several edges take none.
+   */
+  renderInsert?: (edge: FlowEdge) => ReactNode | null;
+  /** Pick mode, while a way's target is being chosen on the chart. */
+  pick?: FlowPick | null;
 };
 
 /**
@@ -157,8 +172,8 @@ const LIST_KEY = 'daoris.flow.list';
 const rem = (value: number) => `${value}rem`;
 const px = (value: number) => value * 16;
 
-/** The drawn geometry: its paths and labels, the drawing's size, and how many times it was drawn (trap 14). */
-type Ink = { paths: InkPath[]; labels: InkLabel[]; width: number; height: number; drawn: number };
+/** The drawn geometry: its paths, labels and ＋s, the drawing's size, and how many times it was drawn (trap 14). */
+type Ink = { paths: InkPath[]; labels: InkLabel[]; inserts: InkLabel[]; width: number; height: number; drawn: number };
 
 /**
  * **A flowchart** (FLOWCHART1a1; D186, the flowchart design §3 and §4): one process drawn from its record, laid out in
@@ -191,11 +206,14 @@ type Ink = { paths: InkPath[]; labels: InkLabel[]; width: number; height: number
  * - **Ports and data** (FLOWCHART2a): the canvas draws the layout, the ink and the keys and a caller draws the nodes (`renderNode`) and
  *   the chips (`renderLabel`). A `when` edge with a `port` leaves the box of that port, which the caller's node draws; a `data` edge
  *   is read by neither the layout nor the folds, and is drawn only while a flow given `selected` has an end selected.
+ * - **Editing** (FLOWCHART2b): an editor's ＋ on a way (`renderInsert`), placed as a label is and under its source in the rail, and pick
+ *   mode (`pick`), in which the keys walk only the nodes that can take the way being chosen. What a press does is the caller's.
  *
  * A molecule: the flow arrives worded and its doors go out.
  */
 export function FlowCanvas({
   label, nodes: given, edges: allEdges, entries: givenEntries, end, rail, sections, track: bounds, className, renderNode, renderLabel, selected,
+  renderInsert, pick = null,
 }: FlowCanvasProps) {
   const { t } = useTranslation();
   // A data wire is no way on: the layout, the stacks and the folds never read it (FLOWCHART2a).
@@ -302,10 +320,13 @@ export function FlowCanvas({
     if (rank !== undefined) dividedAt.set(rank, [...(dividedAt.get(rank) ?? []), ...titles]);
   }
 
-  // The roving stop: the node the person was last on, else the current one, else the first in reading order.
-  const tabStop = stop !== null && byId.has(drawnOf(stop))
+  // The roving stop: the node the person was last on, else the current one, else the first in reading order; in pick mode, a node that
+  // can take the way (FLOWCHART2b).
+  const roving = stop !== null && byId.has(drawnOf(stop))
     ? drawnOf(stop)
     : layout.order.find((id) => byId.get(id)?.current) ?? layout.order[0] ?? null;
+  const pickable = pick ? layout.order.filter((id) => pick.can(id)) : [];
+  const tabStop = pick && pickable.length > 0 && (roving === null || !pick.can(roving)) ? pickable[0]! : roving;
 
   const root = useRef<HTMLDivElement>(null);
   const cameBy = useRef(new Map<string, string>());
@@ -313,6 +334,14 @@ export function FlowCanvas({
     const element = [...(root.current?.querySelectorAll<HTMLElement>('[data-flow-node]') ?? [])].find((each) => each.dataset.flowNode === id);
     element?.focus();
   }, []);
+
+  // Pick mode started: the focus goes to the first node that can take the way, so the keys start among them.
+  const pickKey = pick?.key ?? null;
+  useLayoutEffect(() => {
+    if (pickKey === null || pickable.length === 0) return;
+    focused.current = pickable[0]!;
+    focusNode(pickable[0]!);
+  }, [pickKey, focusNode]);
 
   // The focus kept by node id (§3.7): a node the new placement or layout drew anew takes back the focus its old one had, and one
   // folded away gives it to its fold, which keeps the id so the fold opened gives it back.
@@ -352,6 +381,31 @@ export function FlowCanvas({
       }
       return;
     }
+    if (pick) {
+      // Pick mode walks only the nodes that can take the way; Enter picks, Escape gives the way up.
+      const at = pickable.indexOf(id);
+      let next: string | undefined;
+      if (event.key === 'ArrowDown') next = at < 0 ? pickable[0] : pickable[at + 1];
+      else if (event.key === 'ArrowUp') next = at < 0 ? pickable[0] : pickable[at - 1];
+      else if (event.key === 'Home') next = pickable[0];
+      else if (event.key === 'End') next = pickable[pickable.length - 1];
+      else if (event.key === 'Enter') {
+        event.preventDefault();
+        if (pick.can(id)) pick.onPick(id);
+        return;
+      } else if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        pick.onCancel();
+        return;
+      } else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+        event.preventDefault();
+        return;
+      } else return;
+      event.preventDefault();
+      if (next) focusNode(next);
+      return;
+    }
     const at = layout.order.indexOf(id);
     let next: string | undefined;
     if (event.key === 'ArrowDown') next = layout.order[at + 1];
@@ -387,12 +441,34 @@ export function FlowCanvas({
 
   // The edges, drawn from the measured boxes, again on each resize of the drawing or of a node; nothing drawn moves a box.
   // The resizes of one frame are drawn once, on the next (trap 14), and a geometry that came out the same is not drawn.
+  // The ＋ an editor offers on each way: none on a way back, and on the drawing none on a path that merges several edges (FLOWCHART2b).
+  const inserts = new Map<string, ReactNode>();
+  if (renderInsert) {
+    for (const edge of edges) {
+      if (backs.has(edge.id)) continue;
+      const content = renderInsert(edge);
+      if (content !== null && content !== undefined) inserts.set(edge.id, content);
+    }
+  }
+  const insertPaths = layout.paths.filter((path) => !path.back && path.edges.length === 1 && inserts.has(path.edges[0]!));
+  const railInserts = (id: string) => {
+    const own = edges.filter((edge) => edge.from === id && inserts.has(edge.id));
+    if (own.length === 0) return null;
+    return (
+      <div className="mt-1 flex min-w-0 flex-wrap gap-1">
+        {own.map((edge) => <span key={edge.id} data-flow-insert={edge.id} className="inline-flex">{inserts.get(edge.id)}</span>)}
+      </div>
+    );
+  };
+
   const [ink, setInk] = useState<Ink | null>(null);
+  const insertKey = JSON.stringify(insertPaths.map((path) => [path.id, path.edges[0]]));
   useLayoutEffect(() => {
     const element = drawing.current;
     if (!element || placement === 'rail') { setInk(null); return undefined; }
+    const onPaths = new Map(insertPaths.map((path) => [path.edges[0]!, path.id]));
     const draw = () => {
-      const next = measure(element, layout, placement, shownData);
+      const next = measure(element, layout, placement, shownData, onPaths);
       setInk((was) => {
         if (!next) return was === null ? was : null;
         if (was && same(was, next)) return was;
@@ -413,7 +489,7 @@ export function FlowCanvas({
       if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(pending);
       observer?.disconnect();
     };
-  }, [layout, placement, track, dataKey]);
+  }, [layout, placement, track, dataKey, insertKey]);
 
   const nodeProps = (id: string): NodeContext => ({
     node: byId.get(id)!,
@@ -430,7 +506,14 @@ export function FlowCanvas({
       after: notes.get(id)?.after ?? [],
     }),
     onFollow: follow,
+    ...(pick ? { picking: pick.can(id) } : {}),
   });
+
+  // In pick mode a press on a node that cannot take the way leaves the focus where it is (FLOWCHART2b).
+  const onMouseDown = (event: MouseEvent<HTMLDivElement>) => {
+    const holder = (event.target as HTMLElement).closest<HTMLElement>('[data-flow-node]');
+    if (pick && holder && !pick.can(holder.dataset.flowNode!)) event.preventDefault();
+  };
 
   // *Show whole* where a flow past 24 nodes draws a fold, *Fold again* once one was opened (§3.6).
   const anyFold = folds.length > 0 || (!whole && stacks.some((stack) => !opened.has(stack.id)));
@@ -503,7 +586,7 @@ export function FlowCanvas({
       )}
       <div ref={pane} data-flow-pane="" data-placement={placement} className="min-w-0 overflow-x-auto">
         <span id={keysId} hidden>{t('flow.keys')}</span>
-        <div ref={root} onKeyDown={onKeyDown} onFocus={onFocus} onBlur={onBlur} className="min-w-0">
+        <div ref={root} onKeyDown={onKeyDown} onFocus={onFocus} onBlur={onBlur} onMouseDown={onMouseDown} className="min-w-0">
           {placement === 'rail'
             ? (rail ?? (
               <>
@@ -513,7 +596,7 @@ export function FlowCanvas({
                     const row = (
                       <div key={id} className="grid min-w-0 grid-cols-[1rem_minmax(0,1fr)] gap-x-2">
                         <RailMark node={byId.get(id)!} last={index === layout.order.length - 1} />
-                        <div className="min-w-0 pb-2">{renderNode(nodeProps(id))}</div>
+                        <div className="min-w-0 pb-2">{renderNode(nodeProps(id))}{railInserts(id)}</div>
                       </div>
                     );
                     const titles = divided.get(id);
@@ -621,6 +704,25 @@ export function FlowCanvas({
                       }}
                     >
                       {content}
+                    </span>
+                  );
+                })}
+                {insertPaths.map((path) => {
+                  const edge = path.edges[0]!;
+                  const placed = ink?.inserts.find((each) => each.id === path.id);
+                  return (
+                    <span
+                      key={`insert:${edge}`}
+                      data-flow-insert={edge}
+                      data-shown={placed?.shown ? '' : undefined}
+                      className="absolute inline-flex"
+                      style={{
+                        left: placed ? placed.x - placed.w / 2 : 0,
+                        top: placed ? placed.y - placed.h / 2 : 0,
+                        visibility: placed?.shown ? 'visible' : 'hidden',
+                      }}
+                    >
+                      {inserts.get(edge)}
                     </span>
                   );
                 })}
@@ -888,6 +990,7 @@ function trackFor(layout: FlowLayout, placement: Placement, width: number | unde
 /** The drawn geometry from the boxes the page laid out, or null where nothing was laid out (a unit test's DOM). */
 function measure(
   element: HTMLElement, layout: FlowLayout, placement: 'across' | 'down', data: readonly { id: string; from: string; to: string }[],
+  onPaths: ReadonlyMap<string, string> = new Map(),
 ): Omit<Ink, 'drawn'> | null {
   const frame = element.getBoundingClientRect();
   if (frame.width === 0) return null;
@@ -911,15 +1014,24 @@ function measure(
   });
   // A label clears every node and every section's divider (FLOWCHART1d), which stands in a rank gap as a label does.
   const nodes = [...layout.order.map((id) => boxes.get(id)!), ...[...element.querySelectorAll('[data-flow-section]')].map(boxOf)];
-  return { paths, labels: placeLabels(paths, sizes, nodes), width: frame.width, height: frame.height };
+  const labels = placeLabels(paths, sizes, nodes);
+  // An editor's ＋ on a way clears every node, every label shown and every ＋ placed before it (FLOWCHART2b).
+  const insertSizes = new Map<string, { w: number; h: number }>();
+  element.querySelectorAll<HTMLElement>('[data-flow-insert]').forEach((insert) => {
+    const path = onPaths.get(insert.dataset.flowInsert!);
+    if (path) insertSizes.set(path, { w: insert.offsetWidth, h: insert.offsetHeight });
+  });
+  return { paths, labels, inserts: placeInserts(paths, insertSizes, nodes, labels), width: frame.width, height: frame.height };
 }
+
+const sameBoxes = (a: readonly InkLabel[], b: readonly InkLabel[]) => a.length === b.length
+  && a.every((label, index) => {
+    const other = b[index]!;
+    return label.x === other.x && label.y === other.y && label.shown === other.shown && label.w === other.w;
+  });
 
 function same(a: Omit<Ink, 'drawn'>, b: Omit<Ink, 'drawn'>): boolean {
   return a.width === b.width && a.height === b.height
     && a.paths.length === b.paths.length && a.paths.every((path, index) => path.d === b.paths[index]!.d)
-    && a.labels.length === b.labels.length
-    && a.labels.every((label, index) => {
-      const other = b.labels[index]!;
-      return label.x === other.x && label.y === other.y && label.shown === other.shown && label.w === other.w;
-    });
+    && sameBoxes(a.labels, b.labels) && sameBoxes(a.inserts, b.inserts);
 }

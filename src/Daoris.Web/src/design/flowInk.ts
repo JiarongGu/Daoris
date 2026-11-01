@@ -263,3 +263,29 @@ export function placeLabels(paths: readonly InkPath[], sizes: ReadonlyMap<string
   }
   return placed;
 }
+
+/** Where along its path an editor's ＋ is tried, from its middle outward. */
+const INSERT_AT = [0.5, 0.4, 0.6, 0.3, 0.7, 0.2, 0.8] as const;
+
+/**
+ * Place an editor's ＋ on each path given one (FLOWCHART2b; D223 §6): at the first point along its length, from the middle outward, whose
+ * box clears every node, every label shown and every ＋ placed before it; one that fits nowhere is not shown, the way keeping its ＋ in the
+ * step's inspector. The measured-box check holds that none lies over a node, a label or another ＋.
+ */
+export function placeInserts(
+  paths: readonly InkPath[], sizes: ReadonlyMap<string, { w: number; h: number }>, nodes: readonly Box[], labels: readonly InkLabel[],
+): InkLabel[] {
+  const kept: Box[] = labels.filter((label) => label.shown).map((label) => ({ x: label.x - label.w / 2, y: label.y - label.h / 2, w: label.w, h: label.h }));
+  const placed: InkLabel[] = [];
+  for (const path of paths) {
+    const size = sizes.get(path.id);
+    if (!size || path.points.length === 0) continue;
+    const boxAt = (point: Point) => ({ x: point.x - size.w / 2, y: point.y - size.h / 2, w: size.w, h: size.h });
+    const fits = INSERT_AT.map((at) => path.points[Math.round(at * (path.points.length - 1))]!)
+      .find((point) => nodes.every((node) => !overlaps(boxAt(point), node, 2)) && kept.every((other) => !overlaps(boxAt(point), other, 2)));
+    const at = fits ?? path.points[Math.round((path.points.length - 1) / 2)]!;
+    if (fits) kept.push(boxAt(fits));
+    placed.push({ id: path.id, x: at.x, y: at.y, w: size.w, h: size.h, shown: fits !== undefined });
+  }
+  return placed;
+}

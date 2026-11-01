@@ -6,7 +6,7 @@ import type { NodeContext } from '../../design/FlowCanvas';
 import { drawnFromJson, graphFlow } from '../graphFlow';
 import { RELEASE_GRAPH, TWO_OUTCOMES_GRAPH } from '../graphFixtures';
 import { EdgeChip } from './EdgeChip';
-import { FlowChart } from './FlowChart';
+import { type ChartEdit, FlowChart } from './FlowChart';
 import { HoldsGroup } from './HoldsGroup';
 import { StepNode } from './StepNode';
 import { Terminal } from './Terminal';
@@ -206,5 +206,52 @@ describe('the release workflow through the components', () => {
     render(<FlowChart label={flow.label} nodes={flow.nodes} edges={flow.edges} entries={flow.entries} sections={flow.sections} track={flow.track} />);
     const ports = [...document.querySelectorAll('[data-flow-port]')].map((port) => port.getAttribute('data-flow-port'));
     expect(ports).toEqual(['find:release', 'find:again', 'find:none']);
+  });
+});
+
+// FLOWCHART2b (D223 §3): the chart as the editor draws it. A step pressed is selected; a port pressed or dragged from starts its way, which a
+// step that can take it picks or open ground gives a new step; a ◎ and each way the editor offers one wear a ＋.
+describe('the chart in the editor', () => {
+  const edit = (more: Partial<ChartEdit> = {}): ChartEdit => ({
+    selected: null, onSelect: vi.fn(), onPort: vi.fn(), onGround: vi.fn(),
+    insertOn: (edge) => (edge.style === undefined ? { label: `Add a step between ${edge.from} and ${edge.to}`, onPress: vi.fn() } : null),
+    insertAt: (node) => ({ label: `Add a step at ${node.id}`, onPress: vi.fn() }),
+    ...more,
+  });
+  const drawRelease = (chart: ChartEdit) => {
+    const flow = graphFlow(t, drawnFromJson(t, i18n, RELEASE_GRAPH), { label: 'How work moves' });
+    return render(<FlowChart label={flow.label} nodes={flow.nodes} edges={flow.edges} entries={flow.entries} sections={flow.sections} track={flow.track} edit={chart} />);
+  };
+
+  it('selects a step pressed, marks the one selected, and leaves a press on its foot to the foot', async () => {
+    const chart = edit({ selected: 'review' });
+    drawRelease(chart);
+    const review = screen.getByRole('listitem', { name: 'Your review' });
+    expect(review).toHaveAttribute('data-selected', 'true');
+    await userEvent.click(screen.getByRole('listitem', { name: 'The checks' }));
+    expect(chart.onSelect).toHaveBeenCalledWith('check');
+    await userEvent.click(within(review).getAllByRole('button')[0]!);
+    expect(chart.onSelect).not.toHaveBeenCalledWith('review');
+  });
+
+  it("starts a decision's way from its port, never following it, and offers a ＋ on each way it is given one and in each ◎", async () => {
+    const chart = edit();
+    drawRelease(chart);
+    await userEvent.click(document.querySelector<HTMLElement>('[data-flow-port="find:none"]')!);
+    expect(chart.onPort).toHaveBeenCalledWith('find', 'none');
+    expect(screen.getByRole('button', { name: 'Add a step between review and landing' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Add a step at find:none:none' })).toBeInTheDocument();
+  });
+
+  it('picks the step a port is dragged to where it can take the way, and gives open ground a new step', async () => {
+    const pick = { key: 'find:none', can: (id: string) => id === 'publish', onPick: vi.fn(), onCancel: vi.fn() };
+    const chart = edit({ pick });
+    const { container } = drawRelease(chart);
+    const port = container.querySelector<HTMLElement>('[data-flow-port="find:none"]')!;
+    const user = userEvent.setup();
+    await user.pointer([{ keys: '[MouseLeft>]', target: port }, { target: screen.getByRole('listitem', { name: /^publish by/ }) }, { keys: '[/MouseLeft]' }]);
+    expect(pick.onPick).toHaveBeenCalledWith('publish');
+    await user.pointer([{ keys: '[MouseLeft>]', target: port }, { target: container.querySelector<HTMLElement>('[data-flow-pane]')! }, { keys: '[/MouseLeft]' }]);
+    expect(chart.onGround).toHaveBeenCalledOnce();
   });
 });
