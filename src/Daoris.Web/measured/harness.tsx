@@ -18,6 +18,7 @@ import * as graph from '../src/workflow/GraphFlow.stories';
 import * as zoom from '../src/work/frame/ZoomReadout.stories';
 import * as waitPanel from '../src/work/waits/WaitPanel.stories';
 import * as roles from '../src/agents/roles/RoleDiagram.stories';
+import * as place from '../src/agents/setup/PlacePage.stories';
 
 // The measured-box checks' page (FLOWCHART1a1; the flowchart design §7, trap 3; UIFIT1, the UI/UX design §5's first trap):
 // one story, composed as Storybook composes it, with the project's decorators, the shipped tokens and catalogues, and drawn
@@ -54,6 +55,8 @@ const books: Record<string, Record<string, ComponentType>> = {
   waitPanel: composeStories(waitPanel) as unknown as Record<string, ComponentType>,
   // The roles' diagram (COMPANYVIEW1f): across at 80rem with its detail beside, its list at 39 and 25rem.
   roles: composeStories(roles) as unknown as Record<string, ComponentType>,
+  // A place's page (SETUPUX1h): the head and the three section lines within the first 400 px at the three widths.
+  place: composeStories(place) as unknown as Record<string, ComponentType>,
 };
 
 const [book = '', name = ''] = (new URLSearchParams(window.location.search).get('story') ?? '').split('/');

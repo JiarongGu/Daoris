@@ -1,6 +1,7 @@
 import type { AgentPart } from '../agents/agents';
 import { type AgentsMode, repositoryId, type RoleSection, workspaceId } from '../agents/modes';
 import type { PlaceAsk } from '../agents/setup/placePlan';
+import type { PlaceAt, PlaceSection } from '../agents/setup/placeShell';
 import type { PlanDoor } from '../person/Confirmations';
 import type { View } from '../menus/commands';
 import type { StarterDoor } from '../help/starters';
@@ -62,6 +63,9 @@ export type OpenPart = {
   branch?: string;
   /** The quick set-up Ask Daoris proposed for the place the door names (AGENTSPLACE1k): the place's *Set up…* opens on it. */
   setUp?: PlaceAsk;
+  /** The section of a place's page a door into the repository opens, and its row (SETUPUX1h): lit, `placeOpening` carries them to the page. */
+  placeSection?: PlaceSection;
+  placeRow?: string;
 };
 
 /** What opening a view does, as a value. */
@@ -116,6 +120,11 @@ export type Opening = {
   roleSection?: RoleSection;
   /** The place the Setup mode opens at (AGENTSPLACE1f), by the id its list chooses it under (`repositoryId`, `workspaceId`). */
   place?: string;
+  /**
+   * Where a place's page opens (SETUPUX1h): the section a door names, and the row of it, with the page the door came from for *Back*.
+   * Set by a door into a repository's page or by the page's own doors; the Workflow tab names Workflow.
+   */
+  placeAt?: PlaceAt;
   /**
    * The group of Sessions' or Quests' list to bring into view (ENTRY1b, D161's ENTRY1 note): what waits on the person there,
    * with no item in it chosen. The list brings it once it has answered, then lets it go (`useBringGroup`).
@@ -180,6 +189,7 @@ export function opening(view: View, item?: string | null, part: OpenPart = {}, h
   if (part.group && GROUP_VIEW[part.group] === view) plan.group = part.group;
   if (view === 'sessions' && part.compose) plan.compose = part.compose;
   if (view === 'projects' && part.setUp) plan.setUp = part.setUp;
+  if (view === 'projects' && part.placeSection) plan.placeAt = { section: part.placeSection, ...(part.placeRow ? { row: part.placeRow } : {}) };
   return plan;
 }
 
@@ -208,7 +218,9 @@ export function placeOpening(plan: Opening, lit: boolean, workspaceOfRepository:
   if (plan.chosen?.view !== 'projects') return plan;
   const named = projectsItem(plan.chosen.item);
   if (placed && 'repository' in named) {
-    return { view: 'agents', agentsMode: 'setup', place: repositoryId(workspaceOfRepository(named.repository), named.repository) };
+    // SETUPUX1h: a door names the page's section and row; the Workflow tab's names Workflow.
+    const at: PlaceAt | undefined = plan.placeAt ?? (plan.tab === 'workflow' ? { section: 'workflow' } : undefined);
+    return { view: 'agents', agentsMode: 'setup', place: repositoryId(workspaceOfRepository(named.repository), named.repository), ...(at ? { placeAt: at } : {}) };
   }
   if (plan.workspaceTab === 'setup' && plan.workspaceSection === 'access' && 'workspace' in named) {
     return { view: 'agents', agentsMode: 'setup', place: workspaceId(named.workspace) };

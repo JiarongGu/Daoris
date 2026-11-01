@@ -117,7 +117,7 @@ describe('Set up…, on a place\'s page', () => {
   it('offers no Set up… on This machine', async () => {
     show(<Place />);
     await userEvent.click(await screen.findByRole('button', { name: /This machine/ }));
-    await screen.findByText('Works');
+    await screen.findByRole('heading', { level: 1, name: 'This machine' });
     expect(screen.queryByRole('button', { name: 'Set up…' })).toBeNull();
   });
 
