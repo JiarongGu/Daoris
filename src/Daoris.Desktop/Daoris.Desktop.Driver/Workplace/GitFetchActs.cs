@@ -108,6 +108,8 @@ public static class GitFetchActs
         var offer = await OfferedAsync(home, ask.Checkout, ct).ConfigureAwait(false);
         if (!offer.Offered) return $"{Capital(offer.Why!)}, so nothing was fetched.";
         var address = (await GitRemotes.AddressOf(ask.Checkout, "origin", ct: ct).ConfigureAwait(false))!;
+        if (await GitWiring.RefusesAsync(home, ask.Repository, "origin", address, GitAct.Read, ct).ConfigureAwait(false) is { } older)
+            return $"{Capital(older)}, so nothing was fetched.";
         var git = WorkingTree.GitInUse(home);
         if (await GitOwnInput.HeldAsync(home, ask.Checkout, ask.Repository, ask.Workspace, "origin", address, git, ct).ConfigureAwait(false) is { } own)
         {
