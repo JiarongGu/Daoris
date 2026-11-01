@@ -9,9 +9,12 @@
  * skips the hook. A hook that is not this one's is never overwritten.
  *
  * NOTEBREAK1: before the index, a blank line goes before each `**Note, ` line glued to the line above in a staged
- * `docs/decisions/*.md`, which is re-staged; one staged in part is left, saying so. A conflicted merge finishes through
- * `git commit`, so pre-commit covers it. A clean merge commits without pre-commit and ignores a `pre-merge-commit` hook's
- * staging, so `--merged` (the `post-merge` hook) mends the merge commit just made and amends it.
+ * `docs/decisions/*.md`, which is re-staged; one staged in part is left, saying so (a conflicted merge finishes through
+ * `git commit`, so this covers it). A clean merge commits without pre-commit and git ignores what a `pre-merge-commit`
+ * hook stages, so `--install` also sets the `notes` merge driver (`merge.notes.*`, the repository's own configuration)
+ * that `.gitattributes` names for `docs/decisions/*.md`: `--merge-notes <base> <ours> <theirs>` merges by union and
+ * separates the notes, so the merge's own result is right. A clone without the driver merges those files as ordinary
+ * text, which conflicts on two notes added at one place rather than gluing them.
  */
 import { spawnSync } from 'node:child_process';
 import { chmodSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
@@ -23,14 +26,13 @@ const here = dirname(fileURLToPath(import.meta.url));
 const MARK = '# daoris index-hook';
 const INDEX = 'docs/index/';
 
-function hookText(script, arg) {
-  if (script) return `#!/bin/sh\n${MARK}\nexec node "${script.replaceAll('\\', '/')}"${arg}\n`;
-  return `#!/bin/sh\n${MARK}\nroot=$(git rev-parse --show-toplevel) || exit 0\n[ -f "$root/tools/index-hook.mjs" ] || exit 0\nexec node "$root/tools/index-hook.mjs"${arg}\n`;
+function hookText(script) {
+  if (script) return `#!/bin/sh\n${MARK}\nexec node "${script.replaceAll('\\', '/')}"\n`;
+  return `#!/bin/sh\n${MARK}\nroot=$(git rev-parse --show-toplevel) || exit 0\n[ -f "$root/tools/index-hook.mjs" ] || exit 0\nexec node "$root/tools/index-hook.mjs"\n`;
 }
 
-// git computes a clean merge's tree before `pre-merge-commit` runs and ignores what that hook stages, so the clean path is mended
-// after the commit by `post-merge`, which amends the merge commit that was just made.
-const HOOKS = { 'pre-commit': '', 'post-merge': ' --merged' };
+/** The notes merge driver's command as `--install` configures it, run by git from the work tree's top. */
+export const NOTES_DRIVER = 'node tools/index-hook.mjs --merge-notes %O %A %B';
 
 /** Writes the pre-commit hook into the repository's hooks folder; `script` names the tool by absolute path (tests). */
 export function install({ out, err, cwd, env, script }) {
@@ -47,20 +49,43 @@ export function install({ out, err, cwd, env, script }) {
   const folder = resolve(cwd, found.stdout.trim());
   try {
     mkdirSync(folder, { recursive: true });
-    for (const [name, arg] of Object.entries(HOOKS)) {
-      const file = join(folder, name);
-      if (existsSync(file) && !readFileSync(file, 'utf8').includes(MARK)) {
-        out(`index-hook: ${file} is not its own; left as it is`);
-        continue;
-      }
-      writeAtomic(file, hookText(script, arg));
+    const file = join(folder, 'pre-commit');
+    if (existsSync(file) && !readFileSync(file, 'utf8').includes(MARK)) {
+      out(`index-hook: ${file} is not its own; left as it is`);
+    } else {
+      writeAtomic(file, hookText(script));
       chmodSync(file, 0o755);
+      out('index-hook: pre-commit hook installed');
     }
   } catch (error) {
     err(`index-hook: ${error.message}`);
     return 2;
   }
-  out('index-hook: pre-commit and post-merge hooks installed');
+  const driver = script ? `node "${script.replaceAll('\\', '/')}" --merge-notes %O %A %B` : NOTES_DRIVER;
+  for (const [key, value] of [['merge.notes.name', 'notes: union, a blank line before each decision note (NOTEBREAK1)'], ['merge.notes.driver', driver]]) {
+    const set = spawnGit(['config', '--local', key, value], { cwd, env, encoding: 'utf8' });
+    if (set.status !== 0) {
+      err(`index-hook: git config ${key} failed: ${set.stderr?.trim() ?? set.error?.message}`);
+      return 2;
+    }
+  }
+  return 0;
+}
+
+/** The `notes` merge driver: git's union merge into ours (%A), then each glued note separated. 0 merged, 2 a tool error. */
+export function mergeNotes([base, ours, theirs], { err, cwd, env }) {
+  if (!base || !ours || !theirs) {
+    err('usage: node tools/index-hook.mjs --merge-notes <base> <ours> <theirs>');
+    return 2;
+  }
+  const merged = spawnGit(['merge-file', '--union', ours, base, theirs], { cwd, env, encoding: 'utf8' });
+  if (merged.status !== 0) {
+    err(`index-hook: git merge-file failed: ${merged.stderr?.trim() ?? merged.error?.message}`);
+    return 2;
+  }
+  const text = readFileSync(ours, 'utf8');
+  const fixed = separateNotes(text);
+  if (fixed !== text) writeAtomic(ours, fixed);
   return 0;
 }
 
@@ -93,38 +118,6 @@ function mendNotes({ paths, unstaged, git, cwd, out, err }) {
     mended += 1;
   }
   return mended;
-}
-
-/** The `post-merge` run: a clean merge commit holding a glued note is amended with the blank line (a squash or a fast-forward has no second parent). */
-export function runMerged({ out, err, cwd, env }) {
-  if (env.DAORIS_INDEX_HOOK === '0') return 0;
-  const hookEnv = { ...env };
-  delete hookEnv.GIT_DIR;
-  delete hookEnv.GIT_WORK_TREE;
-  const git = (args) => spawnGit(args, { cwd, env: hookEnv, encoding: 'utf8' });
-  const parents = git(['--no-optional-locks', 'rev-list', '--parents', '-n', '1', 'HEAD']);
-  if (parents.status !== 0 || parents.stdout.trim().split(/\s+/).length < 3) return 0;
-  if (git(['--no-optional-locks', 'diff', '--cached', '--quiet']).status !== 0) return 0;
-  const changed = git(['--no-optional-locks', 'diff', '--name-only', '-z', 'HEAD^1', 'HEAD', '--', 'docs/decisions']);
-  if (changed.status !== 0) return 0;
-  const unstaged = new Set(names(git(['--no-optional-locks', 'diff', '--name-only', '-z'])));
-  const mended = mendNotes({ paths: names(changed), unstaged, git, cwd, out, err });
-  if (mended === null) return 1;
-  if (mended === 0) return 0;
-  // `git commit --amend` refuses while MERGE_HEAD still stands, so the commit is rebuilt with the same parents, message and author.
-  const [head, ...parentIds] = parents.stdout.trim().split(/\s+/);
-  const tree = git(['write-tree']).stdout.trim();
-  const meta = git(['--no-optional-locks', 'log', '-1', '--format=%an%x00%ae%x00%aI%x00%B', 'HEAD']).stdout.split('\0');
-  const authorEnv = { ...hookEnv, GIT_AUTHOR_NAME: meta[0], GIT_AUTHOR_EMAIL: meta[1], GIT_AUTHOR_DATE: meta[2] };
-  const made = spawnGit(['commit-tree', tree, ...parentIds.flatMap((id) => ['-p', id]), '-F', '-'],
-    { cwd, env: authorEnv, input: `${meta.slice(3).join('\0').trimEnd()}\n`, encoding: 'utf8' });
-  const created = made.stdout?.trim();
-  const moved = made.status === 0 && created ? git(['update-ref', '-m', 'index-hook: blank line before a note', 'HEAD', created, head]) : made;
-  if (moved.status !== 0) {
-    err(`index-hook: remaking the merge commit failed: ${moved.stderr?.trim()}`);
-    return 1;
-  }
-  return 0;
 }
 
 /** The hook's run, in `cwd` (the work tree's top, where git starts a hook). */
@@ -162,9 +155,9 @@ export function run({ out, err, cwd, env }) {
 
 export function main(argv, { out = console.log, err = console.error, cwd = process.cwd(), env = process.env } = {}) {
   if (argv[0] === '--install' && argv.length === 1) return install({ out, err, cwd, env });
-  if (argv[0] === '--merged' && argv.length === 1) return runMerged({ out, err, cwd, env });
+  if (argv[0] === '--merge-notes') return mergeNotes(argv.slice(1), { err, cwd, env });
   if (argv.length > 0) {
-    err('usage: node tools/index-hook.mjs [--install | --merged]');
+    err('usage: node tools/index-hook.mjs [--install]');
     return 2;
   }
   return run({ out, err, cwd, env });

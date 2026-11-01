@@ -50,7 +50,7 @@ test('install writes the hook, and leaves a hook that is not its own', () => {
   writeFileSync(hook, '#!/bin/sh\necho mine\n');
   install({ out: (line) => lines.push(line), err() {}, cwd: dir, env: clean(), script });
   assert.equal(readFileSync(hook, 'utf8'), '#!/bin/sh\necho mine\n');
-  assert.match(lines.at(-2), /not its own/);
+  assert.match(lines.at(-1), /not its own/);
 });
 
 test('install outside a work tree exits 0 and writes nothing', () => {
@@ -125,7 +125,7 @@ test('a tool failure aborts the commit with its message', () => {
 const noteRepository = () => {
   const dir = repository();
   mkdirSync(join(dir, 'docs', 'decisions'), { recursive: true });
-  writeFileSync(join(dir, '.gitattributes'), 'docs/decisions/*.md merge=union\n');
+  writeFileSync(join(dir, '.gitattributes'), 'docs/decisions/*.md merge=notes\n');
   writeFileSync(join(dir, 'docs', 'decisions', 'D1.md'), '# D1\n\nBody.\n');
   git(dir, 'add', '-A');
   assert.equal(git(dir, 'commit', '-q', '-m', 'first').status, 0);
@@ -194,7 +194,23 @@ test('a decision staged in part is left alone with a note', () => {
   assert.match(show(dir, 'HEAD:docs/decisions/D1.md'), /Body\.\n\*\*Note, x/);
 });
 
-test('install writes the post-merge hook that mends a clean merge', () => {
-  const dir = repository();
-  assert.match(readFileSync(join(dir, '.git', 'hooks', 'post-merge'), 'utf8'), /index-hook\.mjs" --merged/);
+test('install configures the notes driver, and the merge commit is the one git made', () => {
+  const dir = noteRepository();
+  assert.match(git(dir, 'config', '--local', 'merge.notes.driver').stdout, /index-hook\.mjs" --merge-notes %O %A %B/);
+  addNote(dir, 'a', 'a');
+  addNote(dir, 'b', 'b');
+  git(dir, 'checkout', '-q', 'a');
+  assert.equal(git(dir, 'merge', '-q', '--no-edit', 'b').status, 0);
+  assert.deepEqual(git(dir, 'reflog', 'HEAD', '--format=%gs').stdout.trim().split('\n').filter((line) => /index-hook|update-ref/.test(line)), []);
+  assert.match(git(dir, 'log', '-1', '--format=%s').stdout, /^Merge branch 'b'/);
+});
+
+test('a clone without the driver merges the decisions as plain text and conflicts rather than gluing', () => {
+  const dir = noteRepository();
+  git(dir, 'config', '--local', '--unset', 'merge.notes.driver');
+  addNote(dir, 'a', 'a');
+  addNote(dir, 'b', 'b');
+  git(dir, 'checkout', '-q', 'a');
+  assert.notEqual(git(dir, 'merge', '-q', '--no-edit', 'b').status, 0);
+  assert.doesNotMatch(readFileSync(join(dir, 'docs', 'decisions', 'D1.md'), 'utf8'), glued);
 });

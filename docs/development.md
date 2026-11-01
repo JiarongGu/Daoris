@@ -570,7 +570,7 @@ node tools/partials.mjs --write
 dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- map
 ```
 
-`npm ci` installs a pre-commit hook (`tools/index-hook.mjs`) that runs the `orient-index` write and stages `docs/index/` in any commit that stages other paths; `DAORIS_INDEX_HOOK=0` skips it, and it skips a commit with a file staged in part. The same tool, as the pre-commit and post-merge hooks, puts a blank line before a `**Note, ` line glued to the line above in a decision file, which a union merge of two branches' notes would leave.
+`npm ci` installs a pre-commit hook (`tools/index-hook.mjs`) that runs the `orient-index` write and stages `docs/index/` in any commit that stages other paths; `DAORIS_INDEX_HOOK=0` skips it, and it skips a commit with a file staged in part. The same tool puts a blank line before a `**Note, ` line glued to the line above in a staged decision file, and its `notes` merge driver (set by `npm ci`, named in `.gitattributes`) does the same inside the merge of two branches' notes; a clone without the driver conflicts there rather than gluing.
 
 Moving files: `node tools/move-files.mjs [--plan] from=to ... --expect-moved N --expect-rewritten N` (or `--moves file.json`)
 runs `git mv`, respells every relative import of the moved files and in them, and checks that each still resolves.
