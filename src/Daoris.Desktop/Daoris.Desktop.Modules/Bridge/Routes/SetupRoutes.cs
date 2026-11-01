@@ -99,14 +99,7 @@ public sealed class SetupRoutes(DriverContext context)
     private async Task<object?> PlacePlanAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var service = _loop.Service ?? throw NotReady();
-        var ask = new PlaceAsk(Names(request), Optional(request, "preset") ?? "")
-        {
-            Opinion = Flag(request, "opinion"),
-            Look = Flag(request, "look"),
-            Adoption = Flag(request, "adoption"),
-            Builds = Optional(request, "builds"),
-            Drive = Flag(request, "drive"),
-        };
+        var ask = PlaceAskOf(request);
         var config = DriverConfig.Load(_loop.ConfigPath);
         var plugins = PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names);
         var world = new PlaceWorld(service);
@@ -118,6 +111,53 @@ public sealed class SetupRoutes(DriverContext context)
 
         return await PlacePlans.PlanAsync(world, config, _loop.Home, plugins, _context.Door(config), ask, cancellationToken).ConfigureAwait(false);
     }
+
+    // A place's apply (AGENTSPLACE1b2, the Agents-place design §4), the plan's press: the plan's payload and its `digest`, and `accept`, the
+    // acceptances chosen, each `{repository, purpose}`. It plans again and refuses `moved` where the digest differs, reads the tips against the
+    // chosen blobs, writes every change and acceptance in one edit of driver.json, and asks each adoption quest last, keyed by the digest, its
+    // receipt written before the first effect (`PlaceApplies`). A press of a digest that holds a receipt goes on from it. Answers `{ done, refused,
+    // message, digest, operations }`, each operation `{ id, kind, repository, said, outcome, note, quest }`; a refusal is an answer, nothing written.
+    [DriverRoute("PLACE_APPLY")]
+    [Publishes("PLACE_APPLY", StateScopes.Driver | StateScopes.Quests | StateScopes.Asks | StateScopes.Rules)]
+    private async Task<object?> PlaceApplyAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var service = _loop.Service ?? throw NotReady();
+        var digest = Optional(request, "digest") ?? "";
+        var config = DriverConfig.Load(_loop.ConfigPath);
+        var doors = new PlaceApplyDoors(
+            new PlaceWorld(service), _context.SetupWorldOf(service), _loop.Home, PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names), _context.Door(config),
+            () => DriverConfig.Load(_loop.ConfigPath), _context.Change, DateOnly.FromDateTime(DateTime.Now));
+        var result = await PlaceApplies.ApplyAsync(doors, PlaceAskOf(request), digest, AcceptedOf(request), cancellationToken).ConfigureAwait(false);
+        // The look starts what the configuration now allows, and the quest the press asked.
+        _loop.Nudge();
+        return new
+        {
+            result.Done,
+            result.Refused,
+            result.Message,
+            result.Digest,
+            Operations = result.Operations.Select(each => new { each.Id, each.Kind, each.Repository, each.Said, each.Outcome, each.Note, each.Quest }).ToArray(),
+        };
+    }
+
+    private static PlaceAsk PlaceAskOf(IpcRequest request) =>
+        new(Names(request), Optional(request, "preset") ?? "")
+        {
+            Opinion = Flag(request, "opinion"),
+            Look = Flag(request, "look"),
+            Adoption = Flag(request, "adoption"),
+            Builds = Optional(request, "builds"),
+            Drive = Flag(request, "drive"),
+        };
+
+    /// <summary>The acceptances a place's apply is asked to make: <c>accept</c>, a list of <c>{repository, purpose}</c>.</summary>
+    private static IReadOnlyList<PlaceAccept> AcceptedOf(IpcRequest request) =>
+        request.Payload is { ValueKind: JsonValueKind.Object } payload && payload.TryGetProperty("accept", out var listed) && listed.ValueKind == JsonValueKind.Array
+            ? [.. listed.EnumerateArray().Where(each => each.ValueKind == JsonValueKind.Object)
+                .Select(each => new PlaceAccept(
+                    each.TryGetProperty("repository", out var repository) && repository.ValueKind == JsonValueKind.String ? repository.GetString()! : "",
+                    each.TryGetProperty("purpose", out var purpose) && purpose.ValueKind == JsonValueKind.String ? purpose.GetString()! : ""))]
+            : [];
 
     /// <summary>The repositories a plan is asked for: <c>repositories</c>, a list of names, or one <c>repository</c>.</summary>
     private static IReadOnlyList<string> Names(IpcRequest request) =>

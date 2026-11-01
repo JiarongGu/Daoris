@@ -323,6 +323,16 @@ public sealed class DaorisHomeTests
     }
 
     /// <summary>
+    /// AGENTSPLACE1b2 (the Agents-place design §4): a place's apply receipts, a data folder the service's table names as its twins do.
+    /// </summary>
+    [Fact]
+    public void The_place_receipts_are_a_data_folder()
+    {
+        Assert.Same(HomeEntry.PlaceReceipts, HomeEntry.Named("place-receipts"));
+        Assert.Equal((HomeCategory.Data, "data/place-receipts"), (HomeEntry.PlaceReceipts.Category, HomeEntry.PlaceReceipts.New));
+    }
+
+    /// <summary>
     /// CONFIRMWAIT1 (the confirm-wait design §15.2 item 6): the keys of a terminal's sent presses, a profiles folder the service's table names
     /// as its twins do, and never reads; a sign-in's place, never under <c>run/</c>.
     /// </summary>

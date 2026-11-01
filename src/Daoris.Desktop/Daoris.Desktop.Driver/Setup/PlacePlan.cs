@@ -70,6 +70,9 @@ public sealed record PlacePlanned(
 {
     /// <summary>Whether nothing is refused: an apply could take it.</summary>
     public bool Applies => Refusals.Count == 0;
+
+    /// <summary>What an apply is pinned to (<see cref="PlaceDigests.Of"/>): the plan's changes and declarations, said once.</summary>
+    public string Digest => PlaceDigests.Of(this);
 }
 
 /// <summary>The parts applied to one repository's copy of the configuration: the copy, what each part changes there, and its refusals.</summary>
@@ -89,6 +92,9 @@ public static class PlacePlans
     public const string Delivery = "delivery";
     public const string Driving = "driving";
     public const string Adoption = "adoption";
+
+    /// <summary>The key of the changes an adoption part makes: the set-up press's, which writes no configuration.</summary>
+    public const string SetupPressKey = "SETUP_PRESS";
 
     /// <summary>The purposes an acceptance is chosen for, each kept by its own record.</summary>
     public const string Landed = "landed";
@@ -190,10 +196,10 @@ public static class PlacePlans
             // The press's own rules over the configuration the plan would leave, so the two refuse alike.
             foreach (var refusal in SetupPress.ConfigurationRefusals(after, door, row)) Refuse(Adoption, refusal.Code, refusal.Sentence);
             if (SetupPress.OpenRefusal(quests, name) is { } open) Refuse(Adoption, open.Code, open.Sentence);
-            changes.Add(new("SETUP_PRESS", Adoption, "a set-up asked of its own session", "not asked",
+            changes.Add(new(SetupPressKey, Adoption, "a set-up asked of its own session", "not asked",
                 ask.Builds is { } builds && SetupBuilds.Is(builds) ? $"asked, for {SetupBuilds.Named(builds)}" : "asked"));
             // AGENTSPLACE1b: not driven after the plan, the press admits its quest alone, and the queued work stays held.
-            if (!Driven(after)) changes.Add(new("SETUP_PRESS", Adoption, AloneSaid, "nothing", "its set-up quest alone"));
+            if (!Driven(after)) changes.Add(new(SetupPressKey, Adoption, AloneSaid, "nothing", "its set-up quest alone"));
         }
 
         return new PlaceApplied(after, changes, refusals);

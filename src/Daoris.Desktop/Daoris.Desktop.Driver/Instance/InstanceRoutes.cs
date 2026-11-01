@@ -95,7 +95,7 @@ public static class OpenRoutes
         ("opinion show <session|opinion>", OpinionGate, "the gate's reading"),
         ("setup <repository> --plan", SetupPlan, "the plan; without `--plan` the person's press (SETUP_PRESS)"),
         ("setup --workspace <name>", null, "alone: no route sets a workspace up; each repository's press is SETUP_PRESS's"),
-        ("place <repository>… --plan", PlacePlan, "the plan; applying it is PLACE_APPLY's, which this build does not have"),
+        ("place <repository>… --plan", PlacePlan, "the plan; applying it is PLACE_APPLY's, the window's press; its terminal twin is still to come"),
         ("ask channel <id>", null,
             "alone: the read moves the person's own mark (CHANNEL_MARK, the person's), a door of the service, which writes it once whoever "
             + "asks; with words the person's press (CHANNEL_POST)"),
