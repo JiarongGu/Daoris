@@ -77,6 +77,23 @@ describe('the place page', () => {
     expect(screen.getByRole('button', { name: 'Roles' })).toHaveAttribute('aria-expanded', 'false');
   });
 
+  it('reaches every press by the keyboard: a section toggles on Enter and on Space, in order after the head\'s acts', async () => {
+    draw({ driving: DRIVING() });
+    await userEvent.tab();
+    const order: string[] = [];
+    for (let at = 0; at < 8; at += 1) {
+      order.push(document.activeElement?.getAttribute('aria-label') ?? document.activeElement?.textContent?.trim().slice(0, 14) ?? '');
+      await userEvent.tab();
+    }
+    // The head's acts and menu come first, then the three sections in order.
+    expect(order.slice(0, 7).map((each) => each.replace(/^(Roles|Sessions).*/, '$1')))
+      .toEqual(['aurora ›', 'Set up…', 'Hold', 'More actions', 'Workflow', 'Roles', 'Sessions']);
+    screen.getByRole('button', { name: 'Roles' }).focus();
+    await userEvent.keyboard('{Enter}');
+    await userEvent.keyboard(' ');
+    expect(SECTIONS[1]!.onOpenChange).toHaveBeenCalledTimes(2);
+  });
+
   it('opens the parent\'s place through the head\'s fact door', async () => {
     draw();
     await userEvent.click(screen.getByRole('button', { name: /aurora/ }));

@@ -195,7 +195,8 @@ export function PlacePageView({ head, sections, driving, back, row, onRowBrought
           />
         )}
       </div>
-      <div>
+      {/* A tighter header here than a Setup section's own, so the head and the three lines fit the first screen (§2.1). */}
+      <div className="-mt-2 [&>section>h2>button]:py-2">
         {sections.map((section) => (
           <SetupSection
             key={section.id}
