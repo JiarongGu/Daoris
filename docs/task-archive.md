@@ -22529,3 +22529,7 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 ## WORKFLOWEDIT1a — the step editor's reads (2026-11-01)
 
 **Outcome** 2026-11-01: `WORKFLOW_LIST`, `WORKFLOW_SHOW` and `WORKFLOW_PALETTE` (`WorkflowEditRoutes`, told by event, publishing nothing) read the saved workflows, one version as saved and what a step graph may hold; `WorkflowPalette` and `NodeOptionFields` build the palette from `NodeAuthorities`, `WireKinds` and the land, integrate and request choices, never from land's `accept`; the page's `bridge/repositories/workflowEdit.ts` types them. Tests `WorkflowPaletteTests`, `DriverModuleWorkflowTests`, `workflowEdit.test.ts`.
+
+## DEFAULTCONFIG1a — the fabric's defaults as shipped data, copied by a person, and the default each place follows (2026-11-01, D173)
+
+**Outcome** 2026-11-01: seven defaults ship as files under the driver's `Defaults/workflows/` (`WorkflowDefaults`), read by the graph presets and the quick set-up's deliveries; `daoris driver workflow defaults [<default> [--to <file>]]` reads them, `new --from <default>` keeps `from` in the version, and `PlaceValues.Follows` names the default a place follows and what differs. Detail in D173's note of this date and the commits.

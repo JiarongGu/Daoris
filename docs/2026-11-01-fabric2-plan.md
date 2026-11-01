@@ -72,7 +72,7 @@
 
 **Files.** `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Domain/WorkflowRunBinding.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/WorkflowRunBindings.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Nodes/NodeOptionFields.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/OpinionGateLook.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver/Participants/Domain/ReviewerChoice.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workflows/WorkflowRunBindingTests.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Roles/StartRoleTests.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Review/ReviewerChoiceTests.cs`
 
-## DEFAULTCONFIG1a — The fabric's defaults as shipped data, copied by a person, and the default each place follows
+## DEFAULTCONFIG1a — The fabric's defaults as shipped data, copied by a person, and the default each place follows (built 2026-11-01)
 
 **Wave** 2; after LANDNODE1c2, WORKFLOWEDIT1a; opus.
 
