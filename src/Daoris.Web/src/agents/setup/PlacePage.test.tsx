@@ -62,6 +62,23 @@ describe('the place page', () => {
     expect(screen.getByRole('button', { name: 'Roles' })).toHaveAccessibleDescription('roles summary (from aurora)');
   });
 
+  // SETUPUX1o: from 64 rem the sections stand beside a column the open Workflow's chart is drawn into; below it there is none.
+  it('keeps a column for the open Workflow\'s chart from 64 rem, and none below', () => {
+    const measure = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      const width = this.hasAttribute('data-place-page') ? 1232 : 0;
+      return { width, height: 0, top: 0, left: 0, right: width, bottom: 0, x: 0, y: 0, toJSON: () => ({}) } as DOMRect;
+    });
+    const wide = draw();
+    expect(document.querySelector('[data-place-columns]')).toHaveAttribute('data-place-columns', 'two');
+    expect(document.querySelector('[data-place-aside]')).not.toBeNull();
+    wide.unmount();
+    measure.mockRestore();
+
+    draw();
+    expect(document.querySelector('[data-place-columns]')).toHaveAttribute('data-place-columns', 'one');
+    expect(document.querySelector('[data-place-aside]')).toBeNull();
+  });
+
   it('mounts the open section alone: a folded section reads nothing', () => {
     draw();
     expect(mounts.mock.calls.map(([name]) => name)).toEqual(['workflow']);

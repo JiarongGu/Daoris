@@ -186,7 +186,13 @@ function suggestionPress(role: SuggestedRole): RoleChangePress {
 export function RolesCard({
   catalogue, read = catalogue ? 'ok' : 'notOffered', staffing = [], agents, about = {}, busy = false, onSet, onSetAll, onSetActor, found = [], onAnswerFound,
   editor: held, onEditor, only, editorOnly = false, onDiagram, offers = {}, onOpenPlace, scope: heldScope, onScope, consequence,
+  bare = false, search: heldSearch, onSearch,
 }: {
+  /** Drawn inside a section that names it (This machine's *All roles*): no card and no title of its own. */
+  bare?: boolean;
+  /** The words All roles' rows are narrowed by, held by the page that owns the section; with none given the card holds its own. */
+  search?: string;
+  onSearch?: (search: string) => void;
   /** The one sentence of consequence before *Save*, where the page that owns the editor knows more than the editor does. */
   consequence?: string;
   /** The open editor alone, no card, rows or adding: a place's page opens it from its own rows (AGENTSPLACE1g1). */
@@ -243,6 +249,9 @@ export function RolesCard({
   const [ownScope, setOwnScope] = useState<RoleScope>('all');
   const scope = heldScope ?? ownScope;
   const setScope = (next: RoleScope) => (onScope ?? setOwnScope)(next);
+  const [ownSearch, setOwnSearch] = useState('');
+  const search = heldSearch ?? ownSearch;
+  const setSearch = (next: string) => (onSearch ?? setOwnSearch)(next);
   const [removing, setRemoving] = useState<string | null>(null);
   const [refused, setRefused] = useState<{ at: string; sentence: string } | null>(null);
   const [foundRefused, setFoundRefused] = useState<{ id: number; sentence: string } | null>(null);
@@ -423,7 +432,15 @@ export function RolesCard({
   const rows = rowsOf(lines);
   if (only !== undefined) return <div className="min-w-0">{said}{rows}</div>;
 
-  const shownLines = scope === 'all' ? lines : lines.filter((line) => (line.row?.scopeKind ?? 'machine') === scope);
+  const words = search.trim().toLocaleLowerCase();
+  const matches = (line: Line) => {
+    if (!words) return true;
+    const works = (line.row?.takes ?? [line.id]).map((work) => t(`settings.ai.roles.work.${work}`, { defaultValue: work }));
+    const hay = [nameOfLine(line), line.id, ...works, line.row?.scopeId ?? '', ...(line.row?.choices ?? []).map((each) => each.agent)];
+    return hay.join('\n').toLocaleLowerCase().includes(words);
+  };
+  const inScope = scope === 'all' ? lines : lines.filter((line) => (line.row?.scopeKind ?? 'machine') === scope);
+  const shownLines = inScope.filter(matches);
   const machineWide = shownLines.filter((line) => !placedElsewhere(line));
   const elsewhere = shownLines.filter(placedElsewhere);
   const group = (title: string, list: readonly Line[]) => list.length > 0 && (
@@ -433,10 +450,10 @@ export function RolesCard({
     </section>
   );
 
-  return (
-    <Card>
-      <CardHeader title={t('settings.ai.roles.all.title')} />
-      <Prose className="mb-3 mt-0 text-small text-ink-soft">{t('settings.ai.roles.body')}</Prose>
+  const body = (
+    <>
+      {!bare &&<CardHeader title={t('settings.ai.roles.all.title')} />}
+      {!bare && <Prose className="mb-3 mt-0 text-small text-ink-soft">{t('settings.ai.roles.body')}</Prose>}
       {catalogue && onSetAll && (
         <SuggestedChoicesCard
           catalogue={catalogue} staffing={staffing} agents={agents.map((agent) => agent.value)} busy={busy}
@@ -454,13 +471,26 @@ export function RolesCard({
             ariaLabel={t('settings.ai.roles.all.filter')}
             options={SCOPES.map((each) => ({ value: each, label: each === 'all' ? t('settings.ai.roles.all.every') : t(`settings.ai.roles.where.${each}`) }))}
           />
+          <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-control border border-line-strong bg-raised py-0.5 pl-2 pr-0.5 text-ink-faint focus-within:border-accent">
+            <Icon name="search" size={12} className="shrink-0" />
+            <input
+              type="search"
+              value={search}
+              aria-label={t('agents.setup.allRoles.search')}
+              placeholder={t('agents.setup.allRoles.search')}
+              onChange={(event) => setSearch(event.target.value)}
+              className="min-h-6 min-w-0 flex-1 bg-transparent text-small text-ink outline-none placeholder:text-ink-faint"
+            />
+          </div>
         </div>
       )}
       {catalogue ? (
         <>
           {group(t('settings.ai.roles.all.machineWide'), machineWide)}
           {group(t('settings.ai.roles.all.elsewhere'), elsewhere)}
-          {shownLines.length === 0 && catalogue.roles.length > 0 && <p className="m-0 text-small text-ink-soft">{t('settings.ai.roles.all.nothing')}</p>}
+          {shownLines.length === 0 && catalogue.roles.length > 0 && (
+            <p className="m-0 text-small text-ink-soft">{t(words ? 'agents.setup.allRoles.nothing' : 'settings.ai.roles.all.nothing')}</p>
+          )}
         </>
       ) : rows}
       {catalogue && (editing?.isNew ? <div className="mt-3">{editor(editing)}</div> : (
@@ -523,6 +553,7 @@ export function RolesCard({
         </section>
       )}
       <p className="m-0 mt-3 text-small text-ink-faint"><Inline text={t('settings.ai.roles.footnote')} /></p>
-    </Card>
+    </>
   );
+  return bare ? <div className="min-w-0">{body}</div> : <Card>{body}</Card>;
 }

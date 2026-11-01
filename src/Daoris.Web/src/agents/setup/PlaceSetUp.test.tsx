@@ -1,11 +1,13 @@
+import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // AGENTSPLACE1j (the Agents-place design §4) and SETUPUX1j (the setup-UX design §2.2): a place's quick set-up as a molecule, its choices page.
+// SETUPUX1k: the choices end at the plan's line and *Review the plan*, which opens the review (`PlaceReview.test.tsx`) over the same draft.
 
 import i18n from '../../locales/i18n';
-import { APPLIED, KEPT_ROW, MOVED, planOf, SETUP_PRESETS } from './placeFixtures';
+import { KEPT_ROW, planOf, SETUP_PRESETS } from './placeFixtures';
 import { askOf, deliveriesOf, freshDraft, type SetUpDraft } from './placePlan';
 import { PlaceSetUp, type PlaceSetUpProps } from './PlaceSetUp';
 
@@ -27,12 +29,39 @@ const show = (props: Partial<PlaceSetUpProps> = {}) => {
       problem={null}
       applying={false}
       holding={false}
+      holds={{}}
       {...on}
       {...props}
     />,
   );
   return on;
 };
+
+/** The page as the application holds it: the draft kept above, a change replacing what it names. */
+function Held({ start, ...props }: { start: SetUpDraft } & Partial<PlaceSetUpProps>) {
+  const [draft, setDraft] = useState(start);
+  return (
+    <PlaceSetUp
+      place="aurora"
+      kind="workspace"
+      choices={[]}
+      deliveries={deliveriesOf(SETUP_PRESETS)}
+      draft={draft}
+      onChange={(patch) => setDraft((was) => ({ ...was, ...patch }))}
+      plan={planOf(askOf(draft))}
+      reading={false}
+      stale={false}
+      problem={null}
+      applying={false}
+      holding={false}
+      holds={{}}
+      onApply={() => {}}
+      onHold={() => {}}
+      onClose={() => {}}
+      {...props}
+    />
+  );
+}
 
 /** The names of the choices of a radio group, in the order drawn. */
 const names = (group: HTMLElement) => within(group).getAllByRole('radio').map((each) => document.getElementById(each.getAttribute('aria-labelledby')!)!.textContent);
@@ -124,7 +153,7 @@ describe('Set up…, a place\'s quick set-up', () => {
     // Neither wears Suggested, and the plan waits on the person's choice.
     expect(screen.queryByText('Suggested')).toBeNull();
     expect(screen.getByText(/What suits these repositories differs, so nothing is chosen yet/)).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Apply' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Review the plan' })).toBeDisabled();
   });
 
   it('offers Not driven from its own words, with no second opinion, look or driving', () => {
@@ -158,18 +187,55 @@ describe('Set up…, a place\'s quick set-up', () => {
     expect(screen.getByText('engine, a1, a2 and 2 more: driven now, and after.')).toBeTruthy();
   });
 
-  it('reads the plan: the changes said once for the repositories they are made at, what it lowers, and the terminal twin', () => {
-    const draft = draftOf({ repositories: ['engine', 'site'], preset: 'branch-to-push', adoption: true, builds: 'service' });
-    show({ place: 'aurora', kind: 'workspace', draft, plan: planOf(askOf(draft)) });
+  it('ends at the plan\'s line and Review the plan, which opens the review and writes nothing', async () => {
+    const on = show({ draft: draftOf({ adoption: true }) });
     const plan = screen.getByRole('region', { name: 'The plan' });
-    const changes = within(plan).getByRole('list', { name: 'What it changes' });
-    // The adoption is asked of both repositories: said once, at both.
-    const asked = within(changes).getAllByRole('listitem').find((each) => /set-up asked of its own session/.test(each.textContent ?? ''))!;
-    expect(asked.textContent).toContain('asked, for service');
-    expect(asked.textContent).toContain('engine, site');
-    expect(within(changes).getAllByText(/a set-up asked of its own session/)).toHaveLength(1);
-    expect(within(plan).getAllByText(/your part in what lands/).length).toBeGreaterThan(0);
-    expect(within(plan).getByText(/daoris-driver place engine site --preset branch-to-push/)).toBeTruthy();
+    expect(within(plan).getByText('1 change · nothing stops it')).toBeTruthy();
+    // The review's own parts and its Apply are not on this page.
+    expect(screen.queryByRole('list', { name: 'What it changes' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Apply/ })).toBeNull();
+    await userEvent.click(within(plan).getByRole('button', { name: 'Review the plan' }));
+    expect(on.onChange).toHaveBeenLastCalledWith({ review: true });
+    expect(on.onApply).not.toHaveBeenCalled();
+  });
+
+  it('offers Review the plan only for a plan read of a choice made', () => {
+    show({ plan: null, problem: null });
+    expect(screen.getByRole('button', { name: 'Review the plan' })).toBeDisabled();
+    cleanup();
+    show({ draft: draftOf({ repositories: [] }), plan: null });
+    expect(screen.getByRole('button', { name: 'Review the plan' })).toBeDisabled();
+    cleanup();
+    // A plan that refuses is reviewed too: the review lists what stops it.
+    const refusing = draftOf({ repositories: ['site'], preset: 'pull-request', adoption: true });
+    show({ draft: refusing, plan: planOf(askOf(refusing)) });
+    expect(screen.getByRole('button', { name: 'Review the plan' })).toBeEnabled();
+  });
+
+  it('opens on the review where the draft is on it, and goes back to the choices at the part a refusal names, the draft kept', async () => {
+    const start = draftOf({ repositories: ['engine', 'site'], preset: 'pull-request', adoption: true, review: true });
+    render(<Held start={start} />);
+    expect(screen.getByRole('heading', { name: 'Review: set up aurora' })).toBeTruthy();
+    expect(screen.queryByRole('radiogroup', { name: 'How it lands' })).toBeNull();
+    await userEvent.click(within(screen.getByRole('region', { name: 'What stops it' })).getByRole('button', { name: '↑ Adoption' }));
+    expect(screen.getByRole('radiogroup', { name: 'How it lands' })).toBeTruthy();
+    expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Adoption' }));
+    expect(screen.getByRole('radio', { name: /A pull request/ })).toBeChecked();
+    // And the review again from there.
+    await userEvent.click(screen.getByRole('button', { name: 'Review the plan' }));
+    await userEvent.click(screen.getByRole('button', { name: '← Back to the choices' }));
+    expect(screen.getByRole('radiogroup', { name: 'How it lands' })).toBeTruthy();
+  });
+
+  it('leaves a repository out of a workspace\'s plan from the review: a change of selection', async () => {
+    const on = show({
+      place: 'aurora',
+      kind: 'workspace',
+      draft: draftOf({ repositories: ['engine', 'site'], preset: 'pull-request', adoption: true, review: true }),
+      plan: planOf(askOf(draftOf({ repositories: ['engine', 'site'], preset: 'pull-request', adoption: true }))),
+    });
+    await userEvent.click(screen.getByRole('button', { name: 'Leave site out' }));
+    expect(on.onChange).toHaveBeenLastCalledWith({ repositories: ['engine'] });
   });
 
   it('counts the plan\'s changes and what stops it in one line, with a jump to each part that refuses', async () => {
@@ -195,7 +261,7 @@ describe('Set up…, a place\'s quick set-up', () => {
     expect(delivery.textContent).toMatch(/^site/);
     expect(within(part('Adoption')).getByText(/has no checkout on this machine/)).toBeTruthy();
     expect(within(part('Driving')).queryByRole('list', { name: 'It cannot be applied yet' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Apply' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: /^Apply/ })).toBeNull();
     cleanup();
     const driving = draftOf({ preset: 'not-driven', drive: true });
     show({ draft: driving, plan: planOf({ ...askOf(driving), drive: true }) });
@@ -235,52 +301,17 @@ describe('Set up…, a place\'s quick set-up', () => {
     expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'How it lands' }));
   });
 
-  it('shows each declaration once, offers its acceptances unchosen, and sends the ones the person ticks', async () => {
-    const draft = draftOf({ preset: 'integrated' });
+  it('hands the review\'s ticks, Apply and hold to the application, a tick clearing the reasons said before it', async () => {
+    const draft = draftOf({ preset: 'integrated', review: true, drive: true, cleared: [{ repository: 'engine', purpose: 'integration', line: 'main', blob: 'x' }] });
     const on = show({ draft, plan: planOf(askOf(draft)) });
-    const declaration = screen.getByRole('group', { name: /^The declaration of engine/ });
-    expect(within(declaration).getAllByText(/gates: \[lint, tests\]/)).toHaveLength(1);
-    const tick = within(declaration).getByRole('checkbox', { name: /Accept for integration/ });
-    expect(tick).not.toBeChecked();
-    await userEvent.click(tick);
-    expect(on.onChange).toHaveBeenLastCalledWith({ accept: [{ repository: 'engine', purpose: 'integration' }] });
-  });
-
-  it('presses Apply once the plan applies, and not while it is read again or applied', async () => {
-    // Adoption is a change the plan makes; a plan that changes nothing offers none.
-    const draft = draftOf({ adoption: true });
-    const on = show({ draft, plan: planOf(askOf(draft)) });
-    await userEvent.click(screen.getByRole('button', { name: 'Apply' }));
-    expect(on.onApply).toHaveBeenCalledTimes(1);
-    cleanup();
-    show({ draft, plan: planOf(askOf(draft)), reading: true, stale: true });
-    expect(screen.getByRole('button', { name: 'Apply' })).toBeDisabled();
-    cleanup();
-    show({ draft, plan: planOf(askOf(draft)), applying: true });
-    expect(screen.getByRole('button', { name: 'Applying…' })).toBeDisabled();
-    cleanup();
-    show();
-    expect(screen.getByRole('button', { name: 'Apply' })).toBeDisabled();
-    expect(screen.getByText('Nothing to change: it is set so already.')).toBeTruthy();
-  });
-
-  it('lists the queued work driving releases by title, and offers to hold it after driving', async () => {
-    const draft = draftOf({ drive: true });
-    const on = show({ draft, plan: planOf(askOf(draft)) });
-    const released = screen.getByRole('list', { name: 'Driving releases this queued work' });
-    expect(within(released).getAllByRole('listitem').map((each) => each.textContent)).toEqual(['Tidy the docs', 'Add the retry']);
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Accept for integration' }));
+    expect(on.onChange).toHaveBeenLastCalledWith({
+      accept: [{ repository: 'engine', purpose: 'integration', line: 'main', blob: '3b18e512dba79e4c8300dd08aeb37f8e728b8dad' }], cleared: [],
+    });
     await userEvent.click(screen.getByRole('button', { name: 'Hold it after driving' }));
     expect(on.onHold).toHaveBeenCalledWith(['engine']);
-  });
-
-  it('says a plan that moved in place, and what an apply came to', () => {
-    show({ draft: draftOf({ result: MOVED }) });
-    expect(screen.getByRole('alert')).toHaveTextContent('The plan moved while you read it');
-    cleanup();
-    show({ draft: draftOf({ result: APPLIED }) });
-    const done = screen.getByRole('status');
-    expect(done).toHaveTextContent('configuration applied; adoption pending');
-    expect(done).toHaveTextContent('the set-up quest asked of engine');
+    await userEvent.click(screen.getByRole('button', { name: 'Apply to 1 repository' }));
+    expect(on.onApply).toHaveBeenCalledTimes(1);
   });
 
   it('chooses a workspace\'s repositories from its whole list: All, Driven, Not driven or None among those a search matches, with a count', async () => {
@@ -318,6 +349,6 @@ describe('Set up…, a place\'s quick set-up', () => {
     i18n.changeLanguage('zh');
     show();
     expect(screen.getByRole('radiogroup', { name: '落地方式' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: '应用' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: '审阅计划' })).toBeTruthy();
   });
 });

@@ -10,9 +10,37 @@ const { invoke } = vi.hoisted(() => ({ invoke: vi.fn(async (): Promise<unknown> 
 vi.mock('@shenora/react', async (original) => ({
   ...(await original<typeof import('@shenora/react')>()),
   getBridge: () => ({ invoke }),
+  useShenora: () => ({ isAvailable: true }),
 }));
 
-import { acceptGatesPress, useAcceptIntegration, useRunNodeWord, useSetLanded, useVerify } from './workflow';
+import { waitFor } from '@testing-library/react';
+import { keys } from '../../data/queries';
+import { acceptGatesPress, useAcceptIntegration, useRunNodeWord, useSetLanded, useVerify, useWorkflowCurrent } from './workflow';
+
+// SETUPUX1o: the place's chart asks the effective graph of the route the person chose, and a read of another route is another answer.
+describe("a repository's Current asked for a route", () => {
+  afterEach(() => invoke.mockReset());
+  const wrapper = ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>
+  );
+
+  it('sends the route beside the repository, and sends none when none is asked, as before', async () => {
+    invoke.mockResolvedValue({ repository: 'engine', steps: [] });
+    const { result, rerender } = renderHook(({ route }: { route?: string }) => useWorkflowCurrent({ repository: 'engine' }, { route }), {
+      wrapper, initialProps: { route: 'kind:docs' } as { route?: string },
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(invoke).toHaveBeenLastCalledWith('DAORIS.DRIVER', 'WORKFLOW_CURRENT', { payload: { repository: 'engine', route: 'kind:docs' } });
+
+    rerender({ route: undefined });
+    await waitFor(() => expect(invoke).toHaveBeenLastCalledWith('DAORIS.DRIVER', 'WORKFLOW_CURRENT', { payload: { repository: 'engine' } }));
+  });
+
+  it('keeps each route under a key of its own, under the prefix the writes ask again by', () => {
+    expect(keys.workflow('repository', 'engine', 'landed')).not.toEqual(keys.workflow('repository', 'engine'));
+    expect(keys.workflow('repository', 'engine', 'landed').slice(0, 3)).toEqual(keys.workflow('repository', '').slice(0, 3));
+  });
+});
 
 // FABRIC-PIPELINE1d part 5: *Verify…*, `daoris-driver verify`'s twin, binds a person's verification of a branch or a commit.
 describe("the person's verification of a branch or a commit", () => {

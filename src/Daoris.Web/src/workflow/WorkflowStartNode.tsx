@@ -18,8 +18,11 @@ export const verifyAsk = (named: string): VerifyAsk => {
 /** A blob's or a commit's short name, as git abbreviates one. */
 const short = (id: string) => id.slice(0, 7);
 
-/** Where the landed route's gates stand against the line's tip, the declaration to accept, and the person's press. */
-function LandedLines({ landed, page, repository, onAccept, accepting, onVerify, apart }: {
+/**
+ * Where the landed route's gates stand against the line's tip, the declaration to accept, and the person's press. *Verify…* is offered only
+ * once the pipeline's gates are accepted (N17): the place's Workflow draws it under the landed route (SETUPUX1o).
+ */
+export function LandedLines({ landed, page, repository, onAccept, accepting, onVerify, apart }: {
   landed: WorkflowLanded;
   page: 'repository' | 'workspace';
   repository: string | null;
