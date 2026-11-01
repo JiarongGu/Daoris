@@ -78,6 +78,12 @@ public sealed class LandingPlugins(
     /// <summary>Why <paramref name="plugin"/> cannot land work here now, or null (<see cref="LandingRules.PluginProblem"/>).</summary>
     public string? Problem(string plugin) => LandingRules.PluginProblem(plugin, Catalog());
 
+    /// <summary>What the plugin's manifest declares of landing (LANDNODE1e).</summary>
+    public PluginLandDeclares LandDeclared(string plugin) =>
+        Catalog().Plugins.FirstOrDefault(p => string.Equals(p.Manifest.Id, plugin, StringComparison.OrdinalIgnoreCase))?.Manifest.Hooks is { } hooks
+            ? new PluginLandDeclares(hooks.Key, hooks.Modes ?? [])
+            : PluginLandDeclares.None;
+
     /// <summary>Speak the one frame and hear the answer — or the sentence saying why there is none.</summary>
     public Task<PluginLanding> LandAsync(string plugin, LandingFrame frame, CancellationToken ct = default) =>
         SpeakAsync(plugin, frame, PluginEvents.ByLanding, ct);

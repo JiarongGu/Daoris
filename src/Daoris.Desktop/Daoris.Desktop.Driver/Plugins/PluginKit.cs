@@ -150,7 +150,10 @@ public static class PluginKit
             + "to the branch (`<tip>:refs/heads/<branch>`), not the branch as it stands then: a commit made after the "
             + "judgement must not ride the push. Where `pullRequest` is set, that pull "
             + "request is already open from the branch, which has moved on since: read its state, push only while "
-            + "it is open, and open no second one. `acceptedBy` is `person` or `auto`.",
+            + "it is open, and open no second one. `acceptedBy` is `person` or `auto`. `mode` is `pull-request` (push, then open or "
+            + "grow the pull request) or `push` (push only, sent only to a plugin whose manifest `hooks.modes` names it). `key`, sent "
+            + "only to a plugin whose manifest says `hooks.key: true`, names one delivery: keep the answer you give under it and give "
+            + "the same answer, with no second effect, when it comes again; `work/state` is asked with the same `key` when a reply is lost.",
             """`{ "pushed": true, "pullRequest": "https://…", "message": "…" }`. `pushed` is required; the pull """
             + "request is an absolute web address, or null; the message is the plugin's own sentence, or null. "
             + "The branch stands whatever it answers.",

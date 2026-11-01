@@ -159,12 +159,15 @@ internal sealed class TreeDelivering
             return $"its entry {newer.Ordinal} was written by a newer Daoris, which lands it";
         }
 
-        if (phases.FirstOrDefault(each => each.Open) is { } open)
+        // The plugin's phases (LANDNODE1e) are read by DispatchAsync, which reconciles a dispatch left standing and never sends it again.
+        var plugin = intent.Plugin is not null && intent.Method is DeliveryMethods.Push or DeliveryMethods.PullRequest;
+        bool Theirs(DeliveryPhase each) => plugin && each.Phase is DeliveryPhases.PluginDispatched or DeliveryPhases.PluginAnswered;
+        if (phases.FirstOrDefault(each => each.Open && !Theirs(each)) is { } open)
         {
             return $"its `{open.Phase}` entry was written ahead at {Moments.Write(open.BeganAt)} and has no outcome: a restart settles it by phase";
         }
 
-        if (phases.FirstOrDefault(each => each.Outcome == DeliveryOutcomes.Unknown) is { } unknown)
+        if (phases.FirstOrDefault(each => each.Outcome == DeliveryOutcomes.Unknown && !Theirs(each)) is { } unknown)
         {
             return $"its `{unknown.Phase}` was read as unknown, which the person settles before any later phase";
         }
@@ -172,9 +175,7 @@ internal sealed class TreeDelivering
         var done = phases.Where(each => each.Outcome == DeliveryOutcomes.Done).Select(each => each.Phase).ToHashSet(StringComparer.Ordinal);
         if (GitPhases.All(done.Contains))
         {
-            return intent.Plugin is null
-                ? "its effects are recorded, and a restart's settlement delivers it"
-                : "its branch is made and recorded, and what follows is its plugin's, which the plugin frame settles";
+            return plugin ? null : "its effects are recorded, and a restart's settlement delivers it";
         }
 
         return intent.Method == DeliveryMethods.Merge && done.Contains(DeliveryPhases.RefWritten)
@@ -199,15 +200,170 @@ internal sealed class TreeDelivering
     }
 
     /// <summary>
-    /// The landing as its delivery lands it: the method's form and squash the intent's; of the rule only what setup keeps (its tidy), no plugin
-    /// (none is told here, row 1e), no switch and no integrate, since the delivery's authorization and the next node hold those.
+    /// The landing as its delivery lands it: the method's form and squash the intent's; of the rule only what setup keeps (its tidy), the plugin
+    /// only of a push or a pull request, and that the intent's, told through <see cref="DispatchAsync"/>; no switch and no integrate, since the
+    /// delivery's authorization and the next node hold those.
     /// </summary>
     public Landing Over(Landing live) =>
         new(live.Rule with
         {
             Form = Intent.Method == DeliveryMethods.Merge ? LandingForm.Merge : LandingForm.Branch,
-            Pattern = null, Plugin = null, AutoAccept = false, Squash = Squash, Integrate = null,
+            Pattern = null, AutoAccept = false, Squash = Squash, Integrate = null,
+            Plugin = Intent.Method is DeliveryMethods.Push or DeliveryMethods.PullRequest ? Intent.Plugin : null,
         }, live.Source);
+
+    /// <summary>
+    /// The plugin told this delivery (LANDNODE1e; the land node design §3 step 4 and the restart ladder): the frame carries the delivery key where
+    /// the plugin declares one and the mode of its method, <c>push</c> only to a plugin that declares it. <i>Plugin dispatched</i> is written
+    /// ahead of the send and <i>plugin answered</i> after the answer; where a dispatch stands without its answer, or the reply is lost, the
+    /// plugin is never sent again: a remote-tracking ref proves a push (never a pull request), <c>work/state</c> asked with the key proves a pull
+    /// request, and anything else is read as unknown, for the person's hand-off. A keyless plugin is reconciled by the ref alone.
+    /// </summary>
+    public async Task<PluginLanding> DispatchAsync(IWorkplacePluginWire wire, LandingFrame frame, CancellationToken ct)
+    {
+        var plugin = Intent.Plugin!;
+        var declares = wire.LandDeclared(plugin);
+        var mode = Intent.Method == DeliveryMethods.Push ? LandingModes.Push : LandingModes.PullRequest;
+        PluginLanding Refused(string why) => new(plugin, false, null, why, Failed: true);
+        if (mode == LandingModes.Push && !declares.Modes.Contains(LandingModes.Push, StringComparer.Ordinal))
+        {
+            return Refused($"plugin `{plugin}` does not declare the `push` mode, so nothing was sent to it: the branch stands, and its manifest names the mode once it serves it.");
+        }
+
+        var sent = frame with { Key = declares.Key ? Record.Key : null, Mode = mode };
+        var phases = _delivery.Store.Phases(Record.Key);
+        if (phases.LastOrDefault(each => each.Phase == DeliveryPhases.PluginAnswered && each.Outcome == DeliveryOutcomes.Done) is { Evidence: { } kept }
+            && JsonSerializer.Deserialize<PluginLanding>(kept) is { } already)
+        {
+            _done.Add(DeliveryPhases.PluginAnswered);
+            return already;
+        }
+
+        // An answer cut while being written is withdrawn, and the dispatch before it is reconciled like any without its answer.
+        if (phases.FirstOrDefault(each => each.Open && each.Phase == DeliveryPhases.PluginAnswered) is not null)
+        {
+            End(DeliveryPhases.PluginAnswered, DeliveryOutcomes.Withdrawn, null, "its entry stood without an outcome");
+        }
+
+        var dispatch = phases.LastOrDefault(each => each.Phase == DeliveryPhases.PluginDispatched);
+        if (dispatch is { Outcome: DeliveryOutcomes.Unknown })
+        {
+            return Refused($"its dispatch to `{plugin}` was read as unknown, which the person settles (a hand-off sends it again).");
+        }
+
+        if (dispatch is null || dispatch.Outcome == DeliveryOutcomes.Withdrawn)
+        {
+            if (Begin(DeliveryPhases.PluginDispatched, JsonSerializer.Serialize(new { key = sent.Key, mode, tip = Intent.Tip })) is { } unbegun)
+            {
+                return Refused(unbegun);
+            }
+
+            var said = await wire.LandAsync(plugin, sent, ct).ConfigureAwait(false);
+            await SeamAsync(DeliveryPhases.PluginDispatched).ConfigureAwait(false);
+            if (!said.Failed)
+            {
+                End(DeliveryPhases.PluginDispatched, said.Pushed ? DeliveryOutcomes.Done : DeliveryOutcomes.Withdrawn, null, said.Message);
+                return said.Pushed ? Answered(said) : said;
+            }
+        }
+
+        return await ReconcileAsync(wire, sent, declares, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// <see cref="DeliveryReconciler.Plugin"/> (LANDNODE1e): a delivery whose git phases are done settled by its plugin phases at a restart.
+    /// Nothing is ever sent: a dispatch standing without its answer is reconciled as <see cref="DispatchAsync"/> does, one never sent is left
+    /// to its landing or the person's hand-off, and a plugin answer proved settles it delivered.
+    /// </summary>
+    public static Func<DeliveryRecord, DeliveryClaim, CancellationToken, Task<DeliveryReconciled>> PluginSettlement(
+        DeliveryStore store, string home, IWorkplacePluginWire wire, Func<DeliveryRecord, string?> checkout) =>
+        async (record, claim, ct) =>
+        {
+            DeliveryReconciled Said(string standing, string said) => new(record.Key, standing, said) { Claim = claim };
+            var intent = record.Intent;
+            if (intent.Plugin is null || intent.Method is not (DeliveryMethods.Push or DeliveryMethods.PullRequest))
+            {
+                return Said(DeliveryStandings.Plugin, "it names no plugin phase");
+            }
+
+            if (checkout(record) is not { } root) return Said(DeliveryStandings.Held, $"`{intent.Repository}`'s checkout is not here, so its plugin phases are read at the next look");
+            var delivering = new TreeDelivering(new TreeDelivery(store, claim), record, store.Phases(record.Key), home, intent.Repository, squash: false);
+            var frame = new LandingFrame(intent.Repository, "", root, intent.Branch!, intent.Line, null, null, "", []);
+            var settled = await delivering.SettleAsync(wire, frame, ct).ConfigureAwait(false);
+            if (settled is null) return Said(DeliveryStandings.Plugin, "its plugin was not sent it yet: its landing or the person's hand-off sends it");
+            if (!settled.Pushed) return Said(DeliveryStandings.Unknown, settled.Message);
+            store.Settle(claim, DeliverySettlements.Delivered, $"{intent.Method} of {intent.Tip} delivered, settled by phase");
+            return Said(DeliveryStandings.Delivered, $"its plugin phases are done: {settled.Message}");
+        };
+
+    /// <summary>The plugin phases read without sending: null where nothing was dispatched, else the reconciliation's answer.</summary>
+    public async Task<PluginLanding?> SettleAsync(IWorkplacePluginWire wire, LandingFrame frame, CancellationToken ct)
+    {
+        var plugin = Intent.Plugin!;
+        var declares = wire.LandDeclared(plugin);
+        var mode = Intent.Method == DeliveryMethods.Push ? LandingModes.Push : LandingModes.PullRequest;
+        var sent = frame with { Key = declares.Key ? Record.Key : null, Mode = mode };
+        var phases = _delivery.Store.Phases(Record.Key);
+        if (phases.LastOrDefault(each => each.Phase == DeliveryPhases.PluginAnswered && each.Outcome == DeliveryOutcomes.Done) is { Evidence: { } kept }
+            && JsonSerializer.Deserialize<PluginLanding>(kept) is { } already)
+        {
+            return already;
+        }
+
+        if (phases.FirstOrDefault(each => each.Open && each.Phase == DeliveryPhases.PluginAnswered) is not null)
+        {
+            End(DeliveryPhases.PluginAnswered, DeliveryOutcomes.Withdrawn, null, "its entry stood without an outcome");
+        }
+
+        var dispatch = phases.LastOrDefault(each => each.Phase == DeliveryPhases.PluginDispatched);
+        if (dispatch is null || dispatch.Outcome == DeliveryOutcomes.Withdrawn) return null;
+        if (dispatch.Outcome == DeliveryOutcomes.Unknown) return new PluginLanding(plugin, false, null, dispatch.Said ?? "its dispatch was read as unknown", Failed: true);
+        return await ReconcileAsync(wire, sent, declares, ct).ConfigureAwait(false);
+    }
+
+    private async Task<PluginLanding> ReconcileAsync(IWorkplacePluginWire wire, LandingFrame sent, PluginLandDeclares declares, CancellationToken ct)
+    {
+        var plugin = Intent.Plugin!;
+        PluginLanding? found = null;
+        if (sent.Mode == LandingModes.Push)
+        {
+            var (code, at, _) = await WorkingTree.GitAsync(sent.Root, ["rev-parse", "--verify", "--quiet", $"refs/remotes/origin/{sent.Branch}"], ct).ConfigureAwait(false);
+            if (code == 0 && string.Equals(at.Trim(), Intent.Tip, StringComparison.OrdinalIgnoreCase))
+            {
+                found = new(plugin, true, null, $"origin's remote-tracking `{sent.Branch}` holds {Intent.Tip}, so the push was made");
+            }
+        }
+        else if (declares.Key)
+        {
+            var entry = new LandedBranch(sent.Repository, sent.Workspace, sent.Branch, sent.Base, Intent.Tip, sent.Session, sent.Quest, sent.Title, DateTimeOffset.UtcNow)
+            {
+                Plugin = plugin,
+            };
+            var frame = new StateFrame(sent.Repository, sent.Workspace, sent.Root, sent.Branch, Intent.Line, sent.PullRequest, Intent.Tip, sent.Origin, sent.Key);
+            var asked = await wire.AskStatesAsync([new StateAsk(entry, plugin, frame)], ct).ConfigureAwait(false);
+            if (asked.Count == 1 && asked[0].Answer is { PullRequest: { } address, State: PullRequestStates.Open or PullRequestStates.Completed })
+            {
+                found = new(plugin, true, address, $"`work/state` with the delivery key found its pull request {address}");
+            }
+        }
+
+        if (found is null)
+        {
+            var said = $"`{plugin}` was told this delivery and its answer was not kept, and nothing read proves what it did; it is not sent again, and the person's hand-off sends it";
+            End(DeliveryPhases.PluginDispatched, DeliveryOutcomes.Unknown, null, said);
+            return new PluginLanding(plugin, false, null, said + ".", Failed: true);
+        }
+
+        End(DeliveryPhases.PluginDispatched, DeliveryOutcomes.Done, found.PullRequest, found.Message);
+        return Answered(found);
+    }
+
+    private PluginLanding Answered(PluginLanding said)
+    {
+        if (Begin(DeliveryPhases.PluginAnswered, "the plugin's answer kept") is not null) return said;
+        End(DeliveryPhases.PluginAnswered, DeliveryOutcomes.Done, JsonSerializer.Serialize(said), said.Message);
+        return said;
+    }
 
     /// <summary>Write the phase's entry ahead of its effect; the store's refusal in its words where it may not be.</summary>
     public string? Begin(string phase, string intended)

@@ -268,10 +268,33 @@ public sealed record LandingCommit(string Sha, string Subject);
 /// git shows under the doors, so the plugin names its repository from this. Filled by the landing before the plugin starts; null where
 /// the checkout has no <c>origin</c>.
 /// </param>
+/// <param name="Key">
+/// The delivery key (LANDNODE1e, the land node design §3), told only to a plugin that declares it keeps one: a plugin keyed by it makes no
+/// second effect for a key it has answered, and <c>work/state</c> is asked with it. Null for a landing no delivery performs, and for a
+/// plugin that declares no key.
+/// </param>
+/// <param name="Mode">
+/// What the plugin is asked to do, one of <see cref="LandingModes"/>: <c>pull-request</c> pushes and opens (or grows) the pull request,
+/// as every plugin did before; <c>push</c> only pushes, and is told only to a plugin that declares it.
+/// </param>
 public sealed record LandingFrame(
     string Repository, string Workspace, string Root, string Branch, string? Base, string? Title,
     string? Quest, string Session, IReadOnlyList<LandingCommit> Commits, string? PullRequest = null,
-    string AcceptedBy = Daoris.Driver.AcceptedBy.Person, string? Tip = null, string? Origin = null);
+    string AcceptedBy = Daoris.Driver.AcceptedBy.Person, string? Tip = null, string? Origin = null,
+    string? Key = null, string Mode = LandingModes.PullRequest);
+
+/// <summary>What a <c>work/land</c> frame asks of its plugin (LANDNODE1e).</summary>
+public static class LandingModes
+{
+    public const string PullRequest = "pull-request";
+    public const string Push = "push";
+}
+
+/// <summary>What a plugin's manifest declares of landing (LANDNODE1e): that it keeps a delivery key, and the modes beyond a pull request it serves.</summary>
+public sealed record PluginLandDeclares(bool Key, IReadOnlyList<string> Modes)
+{
+    public static PluginLandDeclares None { get; } = new(false, []);
+}
 
 /// <summary>
 /// What an advance of a standing branch is judged by (LAND2c, D149 points 2–3), read from git at the press or the look: the

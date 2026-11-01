@@ -211,12 +211,10 @@ public sealed class LandDeliveryGitTests : IDisposable
     }
 
     /// <summary>
-    /// A push, a pull request and an integrate prepare and record the branch and stop there, no plugin told: the first two wait unresolved
-    /// for the plugin's phases (row 1e), the integrate is delivered, its line's admission the next node's.
+    /// An integrate prepares and records the branch and stops there, no plugin told, delivered, its line's admission the next node's. A push
+    /// and a pull request go on to their plugin's phases (<see cref="DeliveryPluginPhasesTests"/>).
     /// </summary>
     [Theory]
-    [InlineData(DeliveryMethods.Push)]
-    [InlineData(DeliveryMethods.PullRequest)]
     [InlineData(DeliveryMethods.Integrate)]
     public async Task A_push_a_pull_request_and_an_integrate_stop_once_the_branch_is_prepared_and_recorded(string method)
     {
