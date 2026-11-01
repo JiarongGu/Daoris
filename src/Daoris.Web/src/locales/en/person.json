@@ -197,6 +197,7 @@
   "person.route.PLUGIN_UPDATE": "update a plugin",
   "person.route.TOOLS_DELETE": "delete a version of a tool",
   "person.route.TOOLS_DOWNLOAD": "download a version of a tool",
+  "person.route.TOOLS_GIT_SET": "change the ssh command Daoris's git runs",
   "person.route.TOOLS_LOCATION": "change where tools are downloaded from",
   "person.route.TOOLS_STOP": "stop a tool's download",
   "person.route.TOOLS_USE": "change which version of a tool Daoris runs",

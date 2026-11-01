@@ -959,6 +959,53 @@
       "versions": {}
     },
     {
+      "name": "git ssh",
+      "argv": [
+        "git",
+        "ssh",
+        "ssh -o Compression=no"
+      ],
+      "before": null,
+      "exit": 0,
+      "out": [
+        "daoris: Daoris's git runs `ssh -o Compression=no` as its ssh — written to <home>/data/tools.json; it is read from the next start."
+      ],
+      "err": [],
+      "after": "{\n  \"git\": {\n    \"core.sshCommand\": \"ssh -o Compression=no\"\n  }\n}",
+      "versions": {}
+    },
+    {
+      "name": "git ssh, cleared",
+      "argv": [
+        "git",
+        "ssh",
+        "--clear"
+      ],
+      "before": "{\"git\":{\"core.sshCommand\":\"ssh -o Compression=no\"}}",
+      "exit": 0,
+      "out": [
+        "daoris: Daoris's git runs git's own ssh again — written to <home>/data/tools.json."
+      ],
+      "err": [],
+      "after": "{}",
+      "versions": {}
+    },
+    {
+      "name": "git, a setting it does not take",
+      "argv": [
+        "git",
+        "proxy"
+      ],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `tool git` takes `ssh <command>` or `ssh --clear`: the ssh command Daoris's git runs"
+      ],
+      "after": null,
+      "versions": {}
+    },
+    {
       "name": "a verb it does not have",
       "argv": [
         "frobnicate"
@@ -967,7 +1014,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: unknown tool verb 'frobnicate' — one of: list, path, use, download, update, delete, locations, look"
+        "daoris: unknown tool verb 'frobnicate' — one of: list, path, use, download, update, delete, locations, look, git"
       ],
       "after": null,
       "versions": {}

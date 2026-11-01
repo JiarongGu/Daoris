@@ -21,13 +21,23 @@ internal sealed class GitHttpBackendHost : IAsyncDisposable
     private readonly string _backend;
     private readonly string _projects;
     private readonly List<string> _requests = [];
+    private readonly List<string> _authorizations = [];
+    private readonly string? _expected;
+
+    /// <summary>The user each request authenticated as (<c>-</c> for none), in order; the token itself is never kept.</summary>
+    public IReadOnlyList<string> Users
+    {
+        get { lock (_authorizations) return [.. _authorizations]; }
+    }
 
     /// <param name="backend">git's <c>git-http-backend</c> program.</param>
     /// <param name="projects">The folder whose bare repositories are served, by their paths under it.</param>
-    public GitHttpBackendHost(string backend, string projects)
+    /// <param name="basic">A user and token the host asks (HTTP Basic) before it serves anything, for GITAUTH1d's proof; null asks none.</param>
+    public GitHttpBackendHost(string backend, string projects, (string User, string Token)? basic = null)
     {
         _backend = backend;
         _projects = projects;
+        _expected = basic is null ? null : "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes(basic.Value.User + ":" + basic.Value.Token));
         _listener.Start();
         _serving = ServeAsync();
     }
@@ -75,6 +85,16 @@ internal sealed class GitHttpBackendHost : IAsyncDisposable
                 .GroupBy(pair => pair.Name, StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(group => group.Key, group => group.Last().Value, StringComparer.OrdinalIgnoreCase);
             var body = ReadBody(stream, headers);
+            var presented = headers.GetValueOrDefault("Authorization");
+            lock (_authorizations) _authorizations.Add(UserOf(presented));
+            if (_expected is not null && presented != _expected)
+            {
+                await stream.WriteAsync(Encoding.ASCII.GetBytes(
+                    "HTTP/1.1 401 Unauthorized\r\nWWW-Authenticate: Basic realm=\"fixture\"\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"));
+                await stream.FlushAsync();
+                return;
+            }
+
             if (headers.TryGetValue("Content-Encoding", out var encoding) && encoding.Equals("gzip", StringComparison.OrdinalIgnoreCase))
             {
                 using var gzip = new GZipStream(new MemoryStream(body), CompressionMode.Decompress);
@@ -133,6 +153,20 @@ internal sealed class GitHttpBackendHost : IAsyncDisposable
         catch (Exception error) when (error is IOException or SocketException or ObjectDisposedException)
         {
             // The client went first; the next request is its own.
+        }
+    }
+
+    private static string UserOf(string? authorization)
+    {
+        if (authorization is null || !authorization.StartsWith("Basic ", StringComparison.Ordinal)) return "-";
+        try
+        {
+            var text = Encoding.UTF8.GetString(Convert.FromBase64String(authorization[6..]));
+            return text[..Math.Max(text.IndexOf(':'), 0)];
+        }
+        catch (FormatException)
+        {
+            return "-";
         }
     }
 

@@ -113,6 +113,8 @@ public sealed class ToolsRoutes(DriverContext context)
             read.Problem,
             read.Notes,
             Platform = platform,
+            // The settings Daoris's git carries (TOOLS6): the page's git card and the press's grounds read them here.
+            Git = read.Git,
             Tools = rows,
             // The person's locations in order, then the list built in, always last (§3.3).
             Locations = read.Locations.Select((_, at) => ListRow(lists[at], platform)).ToArray(),
@@ -223,6 +225,19 @@ public sealed class ToolsRoutes(DriverContext context)
             default:
                 throw new DriverException($"`{action}` is not a change to the resource locations — one of: add, remove.");
         }
+    }
+
+    // A setting Daoris's git carries, set or cleared (TOOLS6, D121 §2.5; GITAUTH1e): the key on the allow-list, and a value only on a git
+    // that reads it, else `TOOL_GIT_TOO_OLD` naming both versions. No value clears it. The file it travels in is written at the next start.
+    [DriverRoute("TOOLS_GIT_SET")]
+    [Publishes("TOOLS_GIT_SET", StateScopes.Tools)]
+    private async Task<object?> ToolsGitSetAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var key = PayloadHelper.GetRequiredValue<string>(request.Payload, "key");
+        var value = Optional(request, "value");
+        var version = await ToolChoices.SetGitAsync(_loop.Home, key, string.IsNullOrWhiteSpace(value) ? null : value.Trim(),
+            GitVersions.AskAsync, cancellationToken);
+        return new { Key = key, Value = string.IsNullOrWhiteSpace(value) ? null : value.Trim(), Version = version?.ToString() };
     }
 
     // What a switch of git changes, said before it applies (§4.1): the checkout keys the git that runs now and the git

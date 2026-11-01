@@ -19,7 +19,7 @@ public static class Program
         {
             using var input = Console.OpenStandardInput();
             using var output = Console.OpenStandardOutput();
-            return GitDoors.Helper(args, Environment.GetEnvironmentVariable, input, output, Console.Error);
+            return GitDoors.Helper(args, Environment.GetEnvironmentVariable, input, output, Console.Error, folder: folder);
         }
 
         return GitDoors.Ssh(args, Environment.GetEnvironmentVariable, Console.Error, folder);
