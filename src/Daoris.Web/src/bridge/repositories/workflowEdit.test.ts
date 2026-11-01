@@ -56,7 +56,9 @@ describe('the step editor reads', () => {
     const answer = await result.current.onPlan!({ repository: 'engine', workflow: 'verify-docs', version: 2 });
 
     expect(answer.expected).toBe('use-1');
-    expect(invoke).toHaveBeenCalledTimes(1);
+    // The editor's own reads on mount (Ask Daoris's draft proposals, FLOWCHART2f) are not the plan's; the plan is one call and no workflow read.
+    const workflowCalls = invoke.mock.calls.map((call) => (call as unknown[])[1]).filter((route) => String(route).startsWith('WORKFLOW_'));
+    expect(workflowCalls).toEqual(['WORKFLOW_USE']);
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_USE', expect.objectContaining({
       payload: expect.objectContaining({ repository: 'engine', workflow: 'verify-docs', version: 2, plan: true }),
     }));
