@@ -6,6 +6,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../locales/i18n';
 import { code } from '../test/code';
 import { FULL, INTEGRATING, NOTHING_SET, PLUGIN_UNREADY, WORK, WORKSPACE } from './fixtures';
+import { LIST, PALETTE } from './edit/editFixtures';
 import { WorkflowTab } from './WorkflowTab';
 
 // WORKFLOW1b (D157 point 12; the workflow design §6.1, §6.2, §6.4): the Workflow tab draws Current read-only, a vertical
@@ -32,19 +33,27 @@ describe("a repository's Workflow tab", () => {
     expect(screen.getByText(code('daoris driver workflow show --repository engine'))).toBeInTheDocument();
   });
 
-  it('offers the two graph presets with their line and the terminal way to save each, in both languages', async () => {
-    render(<WorkflowTab page="repository" name="engine" current={FULL} />);
+  // WORKFLOWEDIT1b: the step editor in place of INTEGRATE1q's presets in words, opened from the tab and told so its reads wait for it.
+  it("opens the step editor for a workflow of one's own, and says the terminal's way where no editor is handed", async () => {
+    const onOpen = vi.fn();
+    const editor = {
+      list: LIST, palette: PALETTE, error: null, roles: [], shown: null, onShow: vi.fn(), judged: null, judging: false, onJudge: vi.fn(),
+      saving: false, onSave: vi.fn(), using: false, onUse: vi.fn(), onOpen,
+    };
+    const { rerender } = render(<WorkflowTab page="repository" name="engine" current={FULL} editor={editor} />);
 
-    const offer = screen.getByRole('list', { name: 'Start from a preset' });
-    expect(within(offer).getAllByRole('listitem').map((item) => within(item).getByText(/^(Integrated|A pull)/).textContent))
-      .toEqual(['Integrated into the line', 'Integrated into the line, with no press', 'A pull request']);
-    expect(within(offer).getByText(code('daoris driver workflow new <id> --from integrated-no-press'))).toBeInTheDocument();
-    expect(within(offer).getByText(/refused where the line declares none/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'A workflow of your own' })).toBeInTheDocument();
+    expect(screen.getByText(code('daoris driver workflow new <id> --from <default>'))).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Compose steps…' }));
+    expect(onOpen).toHaveBeenLastCalledWith(true);
+    expect(screen.getByRole('heading', { name: 'Compose a workflow' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Never mind' }));
+    expect(onOpen).toHaveBeenLastCalledWith(false);
 
+    rerender(<Tooltip.Provider><WorkflowTab page="repository" name="engine" current={FULL} /></Tooltip.Provider>);
+    expect(screen.queryByRole('button', { name: 'Compose steps…' })).not.toBeInTheDocument();
     await i18n.changeLanguage('zh');
-    const zh = screen.getByRole('list', { name: '从预设开始' });
-    expect(within(zh).getAllByRole('listitem')).toHaveLength(3);
-    expect(within(zh).getByText('拉取请求')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '你自己的工作流' })).toBeInTheDocument();
   });
 
   it('draws each step in order, the landing the hinge between before and after it lands', () => {

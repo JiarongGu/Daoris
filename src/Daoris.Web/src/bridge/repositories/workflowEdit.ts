@@ -1,53 +1,25 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
+import { useRef, useState } from 'react';
 import { keys } from '../../data/queries';
+import type {
+  EditorRole, WorkflowListAnswer, WorkflowPaletteAnswer, WorkflowSaveAnswer, WorkflowSaveAsk, WorkflowShownAnswer, WorkflowUseAnswer, WorkflowUseAsk,
+} from '../../workflow/edit/answers';
+import type { WorkflowEditorBridge } from '../../workflow/edit/WorkflowEditor';
+import { call } from '../call';
+import { useRoleStructureChain } from '../driver';
 import { askHeld, isPending } from '../state/held';
 
 // The step editor's reads (WORKFLOWEDIT1a): the saved workflows with the places that choose them and the presets built in, one
-// version as saved, and what a step graph may hold. The driver composes each from its own tables; the page lists and types them and
-// derives nothing. A twin of the driver's `WorkflowOperations.Listing`, `Show` and `WorkflowPalette` (.claude/knowledge/twins.md).
+// version as saved, and what a step graph may hold; and its presses (WORKFLOWEDIT1b): a version judged as it is drawn, saved and used
+// for a place. The driver composes each from its own tables; the page lists and types them and derives nothing. The answers' types
+// are the editor's own (`workflow/edit/answers.ts`), a twin of the driver's (.claude/knowledge/twins.md).
 
-/** A place that chooses a saved workflow: `repository` or `workspace`, its name, and the role it holds there. */
-export type WorkflowChosen = { level: 'repository' | 'workspace'; name: string; role: 'default' | 'kind' | 'landed'; kind: string | null };
-
-/** A saved workflow: its versions, and the newest version's schema (1 steps, 2 graph), digest and composed line. */
-export type SavedWorkflow = {
-  id: string; name: string | null; problem: string | null; versions: number[]; schema: 1 | 2 | null;
-  digest: string | null; line: string | null; pipeline: string | null; chosen: WorkflowChosen[];
-};
-
-/** A preset built in, never stored until saved. */
-export type PresetWorkflow = { id: string; name: string; graph: boolean; line: string; preset: true };
-
-export type WorkflowListAnswer = { workflows: SavedWorkflow[]; presets: PresetWorkflow[] };
-
-/** A problem the graph has as saved, by its code, with the wire or node it is about. */
-export type GraphProblem = { code: string; wire: string | null; node: string | null; words: string };
-
-/** One version as saved: `body` is its steps (schema 1) or its graph (schema 2) exactly as the file keeps it. */
-export type WorkflowShownAnswer = {
-  id: string; name: string; version: number; newest: boolean; versions: number[]; at: string | null; door: string | null;
-  digest: string | null; schema: 1 | 2; line: string; body: unknown; problems: GraphProblem[];
-};
-
-export type OptionField = { name: string; type: 'choice' | 'text' | 'switch' | 'names'; choices: string[]; required: boolean };
-
-/** A built-in kind with who reaches and fails it, what the person may do to it, and its options. */
-export type PaletteKind = {
-  kind: string; reach: string; reachBy: string; failureBy: string | null; personJudges: boolean; personSkips: boolean; mayEnd: boolean;
-  evidenced: boolean; skipBy: string | null; options: OptionField[];
-};
-
-/** A wire kind: whether it makes its target eligible, and the kinds that may leave it (null: any node). */
-export type PaletteWire = { kind: string; eligibility: boolean; from: string[] | null; to: string | null };
-
-export type PaletteStep = {
-  kind: string; reach: string; rejectable: boolean; skippable: boolean; inputs: Record<string, string>; outputs: Record<string, string>;
-};
-
-export type PalettePlugin = { plugin: string; steps: PaletteStep[] };
-
-export type WorkflowPaletteAnswer = { kinds: PaletteKind[]; wires: PaletteWire[]; plugins: PalettePlugin[] };
+export type {
+  EditorRole, GraphProblem, OptionField, PaletteKind, PalettePlugin, PaletteStep, PaletteWire, PresetWorkflow, SavedWorkflow, WorkflowChosen,
+  WorkflowListAnswer, WorkflowPaletteAnswer, WorkflowReachRow, WorkflowSaveAnswer, WorkflowSaveAsk, WorkflowScopeRow, WorkflowShownAnswer,
+  WorkflowUseAnswer, WorkflowUseAsk,
+} from '../../workflow/edit/answers';
 
 const readList = (answer: unknown): WorkflowListAnswer =>
   isPending(answer) ? { workflows: [], presets: [] } : (answer as WorkflowListAnswer);
@@ -93,4 +65,56 @@ export const useWorkflowPalette = ({ enabled = true }: { enabled?: boolean } = {
     enabled: isAvailable && enabled,
     staleTime: 0,
   });
+};
+
+/** The place the step editor opened from: a repository, with its workspace where known, or a workspace. */
+export type EditorPlace = { repository: string; workspace?: string | null } | { workspace: string };
+
+/**
+ * **The step editor's bridge** (WORKFLOWEDIT1b): its three reads, the working roles a step may name from the roles' structure at the
+ * place it opened from, a planned save judging each change (the newest asked is the one answered), the save, and *Use here*. Every read
+ * is asked only while the editor shows; a save and a choice ask the reads again.
+ */
+export const useWorkflowEditor = (place: EditorPlace, { enabled = true }: { enabled?: boolean } = {}): WorkflowEditorBridge => {
+  const client = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const live = enabled && open;
+  const [shownId, setShownId] = useState<string | null>(null);
+  const list = useWorkflowList({ enabled: live });
+  const palette = useWorkflowPalette({ enabled: live });
+  const shown = useWorkflowShown(shownId, undefined, { enabled: live });
+  const chain = 'repository' in place ? { repository: place.repository, ...(place.workspace ? { workspace: place.workspace } : {}) } : { workspace: place.workspace };
+  const structure = useRoleStructureChain(chain, undefined, { enabled: live });
+  const [judge, setJudge] = useState<{ answer: WorkflowSaveAnswer | null; judging: boolean }>({ answer: null, judging: false });
+  const asked = useRef(0);
+  const again = () => client.invalidateQueries({ queryKey: editKey() });
+  const save = useMutation({ mutationFn: (ask: WorkflowSaveAsk) => call<WorkflowSaveAnswer>('WORKFLOW_SAVE', ask), onSuccess: again });
+  const use = useMutation({ mutationFn: (ask: WorkflowUseAsk) => call<WorkflowUseAnswer>('WORKFLOW_USE', ask), onSuccess: again });
+  const roles: EditorRole[] = (structure.data?.roles ?? [])
+    .filter((role) => role.state !== 'removed' && role.state !== 'unreadable')
+    .map((role) => ({ id: role.id, name: role.nameEn && role.nameZh ? { en: role.nameEn, zh: role.nameZh } : null, takes: role.takes }));
+
+  return {
+    list: list.data ?? null,
+    palette: palette.data ?? null,
+    error: list.error ?? palette.error ?? null,
+    roles,
+    shown: shown.data ?? null,
+    onShow: setShownId,
+    judged: judge.answer,
+    judging: judge.judging,
+    onJudge: (ask) => {
+      const mine = ++asked.current;
+      setJudge((was) => ({ ...was, judging: true }));
+      call<WorkflowSaveAnswer>('WORKFLOW_SAVE', { ...ask, plan: true }).then(
+        (answer) => { if (mine === asked.current) setJudge({ answer, judging: false }); },
+        () => { if (mine === asked.current) setJudge((was) => ({ ...was, judging: false })); },
+      );
+    },
+    saving: save.isPending,
+    onSave: (ask) => save.mutateAsync({ ...ask, plan: false }),
+    using: use.isPending,
+    onUse: (ask) => use.mutateAsync(ask),
+    onOpen: setOpen,
+  };
 };

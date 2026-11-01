@@ -102,7 +102,8 @@
         "workflow.step.look", "workflow.step.lookAnywhere", "workflow.step.landingMerge", "workflow.step.landingBranch",
         "workflow.step.pullRequest", "workflow.step.goAhead", "workflow.step.task", "workflow.step.pushed", "workflow.step.line",
         "workflow.step.questClose", "workflow.step.join", "workflow.step.stop", "workflow.step.waitUnit", "workflow.step.check",
-        "workflow.step.integrate", "workflow.step.workRequests", "workflow.step.request", "workflow.step.pluginNode", "workflow.repositories.title", "settings.daoris.card.*", "quests.flow.title"
+        "workflow.step.integrate", "workflow.step.workRequests", "workflow.step.request", "workflow.step.pluginNode", "workflow.repositories.title", "settings.daoris.card.*", "quests.flow.title",
+        "workflow.compose.title", "workflow.edit.title", "workflow.edit.kind.*", "workflow.edit.save.title"
       ]
     },
     "field": {
@@ -111,6 +112,9 @@
       "budget": { "en": 36, "zh": 14 },
       "case": "sentence",
       "keys": [
+        "workflow.edit.source.label", "workflow.edit.add.label", "workflow.edit.how.label", "workflow.edit.to.label", "workflow.edit.outcome.label",
+        "workflow.edit.on.label", "workflow.edit.port.from", "workflow.edit.port.to", "workflow.edit.role.label", "workflow.edit.save.id",
+        "workflow.edit.save.name",
         "settings.daoris.label.*", "person.also", "person.role.*", "about.index", "about.surface", "asks.channel.compose.to", "asks.channel.compose.reply", "asks.compose.circle", "asks.compose.sentence", "asks.compose.to",
         "agents.col.account", "agents.col.state", "agents.col.now", "agents.add.name",
         "asks.record.abandonedAt", "asks.record.asked", "asks.record.asker", "asks.record.circle", "asks.record.closedBecause",
@@ -292,7 +296,9 @@
         "workflow.door.setup", "workflow.door.workspaceSetup", "workflow.run.door.*",
         "workflow.run.node.skip", "workflow.run.node.stop", "workflow.run.node.skipMeanIt", "workflow.run.node.stopMeanIt",
         "workflow.run.node.askAgain", "workflow.run.node.goOn", "workflow.run.node.askAgainMeanIt", "workflow.run.node.goOnMeanIt",
-        "workflow.run.node.changes", "workflow.run.node.changesMeanIt"
+        "workflow.run.node.changes", "workflow.run.node.changesMeanIt",
+        "workflow.compose.open", "workflow.edit.step.remove", "workflow.edit.step.endHere", "workflow.edit.way.remove", "workflow.edit.way.add",
+        "workflow.edit.save.new", "workflow.edit.save.append", "workflow.edit.use"
       ]
     },
     "status": {
@@ -340,7 +346,8 @@
         "review.state.*", "review.pill", "work.attention.set-up",
         "opinion.state.*", "opinion.weight.*", "opinion.sure.*", "opinion.disputed", "opinion.session.kind", "work.attention.opinion",
         "workflow.participation.*", "workflow.runtime.*", "workflow.repositories.follows", "workflow.repositories.own",
-        "workflow.run.state.*", "workflow.run.thisSession", "workflow.run.notTaken.state", "work.start.busyMark", "work.level.*"
+        "workflow.run.state.*", "workflow.run.thisSession", "workflow.run.notTaken.state", "work.start.busyMark", "work.level.*",
+        "workflow.edit.step.ends"
       ]
     },
     "menu": {
@@ -571,6 +578,10 @@
     { "term": "outcome", "en": "outcome", "zh": "结果", "means": "The named result a decision step reached (a plugin's find: release or none), which chooses the route a run's work takes next (DECIDE1).", "why": "结果 is what a step came to; 状态 is where it stands, which a reached step's outcome is not.", "match": "\\b(its|the|an?) outcome\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "route", "en": "route", "zh": "路线", "means": "One way through a workflow's steps: the wires a decision's outcome leads along. A run takes the route its outcomes choose, and the others are not taken (DECIDE1).", "why": "路线 is a way taken among others; 路径 is a file's path.", "match": "\\broutes? not taken\\b", "avoid": { "en": [], "zh": ["路径"] } },
     { "term": "not taken", "en": "not taken", "zh": "未走", "means": "A step of a run that no route can start any more, given the outcomes its decisions reached: never a failure, and it holds nothing up (DECIDE1c).", "why": "未走 says the run went another way; 跳过 is the person's skip, which this is not.", "match": "\\broutes? not taken\\b", "avoid": { "en": [], "zh": ["跳过"] } },
+    { "term": "compose", "en": "compose", "zh": "编排", "means": "Build a workflow's version step by step in the window: add a step from what the driver offers, say where each goes on, set its options and the role that takes it, judged as it changes (WORKFLOWEDIT1b).", "why": "编排 is arranging steps into an order, as a workflow tool's editor does; 撰写 is writing words, which a quest's composer is.", "match": "\\bcompos(e|es|ed|ing) (a |the |its )?(workflow|steps)\\b", "avoid": { "en": [], "zh": ["撰写"] } },
+    { "term": "add a step", "en": "add a step", "zh": "添加步骤", "means": "Put one more step into a workflow being composed, of a kind the driver offers: its own kinds and each installed plugin's steps (WORKFLOWEDIT1b).", "match": "\\badd a step\\b", "avoid": { "en": [], "zh": [] } },
+    { "term": "ends here", "en": "ends here", "zh": "止于", "means": "The step whose reach ends a workflow's work, its graph's end; a route whose decision went another way may end before it (WORKFLOWEDIT1b, DECIDE1b).", "why": "止于 says where the work stops, as the release default's own words say it stops at the line; 结束 is a session's or a quest's done.", "match": "\\b(ends|end the work) here\\b|\\bend the work at\\b", "avoid": { "en": [], "zh": ["结束"] } },
+    { "term": "Use here", "en": "Use here", "zh": "在此使用", "means": "Choose a saved workflow's version for the place whose page the step editor was opened from, `daoris driver workflow use`'s twin (WORKFLOWEDIT1b).", "match": "^Use here$", "avoid": { "en": [], "zh": [] } },
     { "term": "discard", "en": "discard", "zh": "丢弃", "means": "Throw away a session's tree and the work in it.", "match": "\\bdiscard(s|ed|ing)?\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "hand off", "en": "hand off", "zh": "交接", "zhForms": ["交给"], "means": "Give a landed branch to a plugin, which pushes it and opens the pull request.", "match": "\\bhand(s|ed|ing)?[ -]off\\b|\\bhand(s|ed|ing)? (it )?(on|to)\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "hand over", "en": "hand over", "zh": "转交", "means": "Go on with a conversation in a new one with another agent, handed what Daoris kept of it (not hand off, which gives a landed branch to a plugin).", "match": "\\bhand(s|ed|ing)? over\\b", "avoid": { "en": [], "zh": ["交接"] } },

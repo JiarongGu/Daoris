@@ -18,6 +18,7 @@ import { sessionTitle } from '../work/identity';
 import { useScope } from '../data/scope';
 import {
   useDriver, useLines, useHeavySlot, useSetupPlan, useSetupPress, useSweepPlan, useWorkflowCurrent, useSetLanded, acceptGatesPress, useVerify,
+  useWorkflowEditor,
 } from '../bridge/shell';
 import type { SetUpForAgentsProps } from './setup/SetUpForAgents';
 import { type Notify, useErrorNotify } from '../design/ui';
@@ -154,6 +155,8 @@ export function useProjectsView({
   // How its work moves (WORKFLOW1b): its Current, asked only while its Workflow tab shows.
   const workflowShown = active && driver.data !== undefined && tab === 'workflow' && chosenRepository !== null;
   const current = useWorkflowCurrent(chosenRepository === null ? null : { repository: chosenRepository }, { enabled: workflowShown });
+  // Its step editor (WORKFLOWEDIT1b), asked only once the tab opens it.
+  const editor = useWorkflowEditor({ repository: chosenRepository ?? '', workspace: current.data?.workspace ?? null }, { enabled: workflowShown });
   const setLanded = useSetLanded();
   const verify = useVerify();
   // Session branches holding work no branch of the person's holds (WSR3, D88) — named on the repository,
@@ -303,6 +306,7 @@ export function useProjectsView({
         },
         onError: (error) => answered.refused(sentence(error)),
       }),
+      editor,
     };
   };
 

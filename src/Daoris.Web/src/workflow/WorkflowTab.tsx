@@ -1,9 +1,10 @@
-import { useId } from 'react';
+import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Inline, Prose, SkeletonRows, Tip } from '../design/ui';
 import { PageSection } from '../work/frame/ViewMain';
 import type { CurrentWorkflow, WorkflowRepository } from './current';
 import type { Answered } from '../work/InlineConfirm';
+import { type WorkflowEditorBridge, WorkflowEditor } from './edit/WorkflowEditor';
 import { partSaid } from './said';
 import { type WorkflowDoors, WorkflowChart } from './WorkflowChart';
 import { type VerifyAsk, WorkflowStartNode } from './WorkflowStartNode';
@@ -28,6 +29,8 @@ export type WorkflowTabProps = {
   accepting?: boolean;
   /** The person's *Verify…* of a branch or a commit under the accepted gates (FABRIC-PIPELINE1d); none, and the start offers no press. */
   onVerify?: (ask: VerifyAsk, answered: Answered) => void;
+  /** The step editor's bridge (WORKFLOWEDIT1b); none, and the tab says the terminal's way to start a workflow of one's own. */
+  editor?: WorkflowEditorBridge;
 };
 
 /**
@@ -42,9 +45,12 @@ export type WorkflowTabProps = {
  * refusal is said in its place, in the driver's words (the platform language §4: a page never goes blank).
  *
  * **The start node comes first** (FABRIC-PIPELINE1a, `WorkflowStartNode`), where the answer carries one: each route, each kind
- * among them, wired to the workflow it names, named or Current. The chart below it draws Current; the editor is WORKFLOW1g's.
+ * among them, wired to the workflow it names, named or Current. The chart below it draws Current; *Compose steps…* opens the step
+ * editor (WORKFLOWEDIT1b) below it, whose *Use here* chooses a saved version for this page's place.
  */
-export function WorkflowTab({ page, name, current, reading = false, refusal = null, doors, onAcceptGates, accepting = false, onVerify }: WorkflowTabProps & {
+export function WorkflowTab({
+  page, name, current, reading = false, refusal = null, doors, onAcceptGates, accepting = false, onVerify, editor,
+}: WorkflowTabProps & {
   page: 'repository' | 'workspace';
   /** The repository or the workspace whose page it is. */
   name: string;
@@ -101,7 +107,7 @@ export function WorkflowTab({ page, name, current, reading = false, refusal = nu
 
       <WorkflowChart workflow={current} page={page} name={name} doors={doors} />
 
-      <GraphPresets />
+      <Compose editor={editor} place={page === 'repository' ? { repository: name } : { workspace: name }} />
 
       {/* A host may leave a null out of its answer, so none answered is the registry not read. */}
       {page === 'workspace' && <Repositories repositories={current.repositories ?? null} onOpen={doors?.repository} />}
@@ -109,28 +115,27 @@ export function WorkflowTab({ page, name, current, reading = false, refusal = nu
   );
 }
 
-/** The graph presets the driver offers (`WorkflowPresets.GraphTable`, INTEGRATE1q), each saved by `workflow new --from`. */
-export const GRAPH_PRESETS = ['integrated', 'integrated-no-press', 'pull-request'] as const;
-
 /**
- * The two ways to start a workflow of one's own that integrate or open a pull request (INTEGRATE1q, the integration design §17.7): each with the
- * line it says, composed by the driver from its nodes, and the terminal's way to save it, which the choice then names in Setup.
+ * A workflow of one's own (WORKFLOWEDIT1b, in place of INTEGRATE1q's presets in words): *Compose steps…* opens the step editor, told so its
+ * reads are asked only while it shows, and the terminal's twin stands beside it. With no editor handed, only the twin.
  */
-function GraphPresets() {
+function Compose({ editor, place }: { editor?: WorkflowEditorBridge; place: { repository: string } | { workspace: string } }) {
   const { t } = useTranslation();
-  const title = t('workflow.presets.title');
+  const [open, setOpen] = useState(false);
+  const show = (next: boolean) => { setOpen(next); editor?.onOpen?.(next); };
   return (
-    <PageSection title={title}>
-      <Prose className="mb-2 text-small">{t('workflow.presets.body')}</Prose>
-      <ul aria-label={title} className="m-0 grid list-none gap-2 p-0">
-        {GRAPH_PRESETS.map((id) => (
-          <li key={id} className="grid min-w-0 gap-0.5">
-            <span className="text-small font-semibold text-ink">{t(`workflow.presets.${id}.name`)}</span>
-            <Prose className="text-small"><Inline text={t(`workflow.presets.${id}.line`)} /></Prose>
-            <p className="m-0 text-meta text-ink-faint"><Inline text={t('workflow.presets.twin', { preset: id })} /></p>
-          </li>
-        ))}
-      </ul>
+    <PageSection title={t('workflow.compose.title')}>
+      {editor && open
+        ? <WorkflowEditor {...editor} place={place} onClose={() => show(false)} />
+        : (
+          <div className="grid min-w-0 gap-2">
+            <Prose className="text-small">{t('workflow.compose.body')}</Prose>
+            {editor && (
+              <Button variant="ghost" className="justify-self-start border border-line" onClick={() => show(true)}>{t('workflow.compose.open')}</Button>
+            )}
+            <p className="m-0 text-meta text-ink-faint"><Inline text={t('workflow.compose.twin')} /></p>
+          </div>
+        )}
     </PageSection>
   );
 }

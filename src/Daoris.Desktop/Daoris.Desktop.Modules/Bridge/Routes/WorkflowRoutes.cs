@@ -355,7 +355,8 @@ public sealed class WorkflowRoutes(DriverContext context)
     /// <c>graph</c>. Under a fresh id it makes v1. Onto a saved one it appends, against <c>base</c>, the version the caller read: a newer one is
     /// refused <c>stale</c>; and since a new start binds the newest version, it first answers every place that chooses the workflow, and writes
     /// only when <c>authorize</c> lists exactly those places' keys (refused <c>reach</c> otherwise, also where the graph's reach cannot start).
-    /// <c>plan: true</c> says all of it and writes nothing. Answers <c>{ id, done, refused, message, version, written, appended, scopes, reach }</c>.
+    /// <c>plan: true</c> says all of it and writes nothing. Answers <c>{ id, done, refused, message, version, written, appended, scopes, reach,
+    /// problems }</c>, the problems a refused graph's, each by its code at its step or wire (WORKFLOWEDIT1b).
     /// </summary>
     [DriverRoute("WORKFLOW_SAVE")]
     [Publishes("WORKFLOW_SAVE", StateScopes.Driver)]
@@ -383,6 +384,7 @@ public sealed class WorkflowRoutes(DriverContext context)
             saved.Appended,
             Scopes = saved.Scopes.Select(each => new { each.Level, each.Name, each.Role, each.Kind, each.Key }).ToArray(),
             Reach = ReachRows(saved.Reach),
+            Problems = saved.Problems.Select(each => new { each.Code, each.Wire, each.Node, each.Words }).ToArray(),
         };
     }
 

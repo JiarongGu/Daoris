@@ -20,7 +20,7 @@ import {
   useSetReadAcross,
   useSetReview, useStarts, useSyncNow, standingOf,
   useSweep, useSweepLook, useSweepPlan, useTreesSync, useTreesSyncPlan, useTreesSyncScope, useUnwireRemote, useWireRemote, useWorkflowCurrent,
-  useWithdrawLandingBranch, useWorkState,
+  useWithdrawLandingBranch, useWorkState, useWorkflowEditor,
 } from '../../bridge/shell';
 import { byTool } from '../../agents/tools';
 import { failure, type Notify, useErrorNotify } from '../../design/ui';
@@ -375,6 +375,7 @@ function WorkflowPart({ workspace, onSetup, onOpenRepository }: {
   onOpenRepository?: (repository: string) => void;
 }) {
   const answer = useWorkflowCurrent({ workspace });
+  const editor = useWorkflowEditor({ workspace });
   return (
     <WorkflowTab
       page="workspace"
@@ -383,6 +384,7 @@ function WorkflowPart({ workspace, onSetup, onOpenRepository }: {
       reading={answer.isPending}
       refusal={answer.error ? sentence(answer.error) : null}
       doors={{ setup: onSetup, repository: onOpenRepository }}
+      editor={editor}
     />
   );
 }
