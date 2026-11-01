@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { useRef, useState } from 'react';
 import { keys } from '../../data/queries';
+import { fingerprintOf } from '../../workflow/draftFingerprint';
 import type {
   EditorRole, WorkflowListAnswer, WorkflowPaletteAnswer, WorkflowSaveAnswer, WorkflowSaveAsk, WorkflowShownAnswer, WorkflowUseAsk,
 } from '../../workflow/edit/answers';
@@ -87,7 +88,10 @@ export const useWorkflowEditor = (place: EditorPlace, { enabled = true }: { enab
   const shown = useWorkflowShown(shownId, undefined, { enabled: live });
   const chain = 'repository' in place ? { repository: place.repository, ...(place.workspace ? { workspace: place.workspace } : {}) } : { workspace: place.workspace };
   const structure = useRoleStructureChain(chain, undefined, { enabled: live });
-  const [judge, setJudge] = useState<{ answer: WorkflowSaveAnswer | null; judging: boolean }>({ answer: null, judging: false });
+  // The newest judgement is of one draft, by its fingerprint (FLOWCHART2c): the editor reads it only while the draft it holds is that one.
+  const [judge, setJudge] = useState<{ answer: WorkflowSaveAnswer | null; of: string | null; failed: string | null; judging: boolean }>({
+    answer: null, of: null, failed: null, judging: false,
+  });
   const asked = useRef(0);
   const again = () => client.invalidateQueries({ queryKey: editKey() });
   const save = useMutation({ mutationFn: (ask: WorkflowSaveAsk) => askWorkflowSave(ask), onSuccess: again });
@@ -104,13 +108,17 @@ export const useWorkflowEditor = (place: EditorPlace, { enabled = true }: { enab
     shown: shown.data ?? null,
     onShow: setShownId,
     judged: judge.answer,
+    judgedOf: judge.of,
+    judgeFailed: judge.failed,
     judging: judge.judging,
     onJudge: (ask) => {
       const mine = ++asked.current;
-      setJudge((was) => ({ ...was, judging: true }));
+      const of = fingerprintOf(ask.graph);
+      setJudge((was) => ({ ...was, failed: null, judging: true }));
+      // Only the newest request is heard: an older answer arriving late is dropped, whether it answered or failed.
       askWorkflowSave({ ...ask, plan: true }).then(
-        (answer) => { if (mine === asked.current) setJudge({ answer, judging: false }); },
-        () => { if (mine === asked.current) setJudge((was) => ({ ...was, judging: false })); },
+        (answer) => { if (mine === asked.current) setJudge({ answer, of, failed: null, judging: false }); },
+        () => { if (mine === asked.current) setJudge((was) => ({ ...was, failed: of, judging: false })); },
       );
     },
     saving: save.isPending,
