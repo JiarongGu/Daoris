@@ -48,6 +48,32 @@ public sealed class DriverModulePlaceApplyTests : DriverModuleBridge
         Assert.Equal(PlaceOutcomes.Done, new PlaceReceipts(Home).Read(digest)!.Of(PlaceOperations.Configuration)!.Outcome);
     }
 
+    /// <summary>
+    /// AGENTSPLACE1b3 (RPC1e): a terminal's apply, <c>said</c>, plans now and applies that plan in the verb's own lines, the alone path's: the
+    /// plan's lines without the <c>--plan</c> closing line, then the outcome, exit 0; and the configuration is written.
+    /// </summary>
+    [Fact]
+    public async Task A_terminals_apply_says_the_plan_then_the_outcome_in_the_verbs_own_lines()
+    {
+        var module = await ModuleAsync();
+        var plan = await PlaceCommandPlan(module);
+
+        var answer = (await AnswerAsync(module, "PLACE_APPLY", new { repositories = new[] { "atlas" }, preset = SetupPresets.Merge, said = true, accept = Array.Empty<object>() })).GetProperty("said");
+
+        var lines = answer.GetProperty("out").EnumerateArray().Select(line => line.GetString()).ToList();
+        Assert.Equal(0, answer.GetProperty("code").GetInt32());
+        Assert.Equal(plan, lines.Take(plan.Count));
+        Assert.Equal("place: configuration applied.", lines[^1]);
+        Assert.DoesNotContain(lines, line => line!.StartsWith("--plan:", StringComparison.Ordinal));
+        Assert.True(DriverConfig.Load(DriverConfigPath).OpensOwnTree("atlas"));
+    }
+
+    private async Task<List<string?>> PlaceCommandPlan(DriverModule module)
+    {
+        var said = (await AnswerAsync(module, "PLACE_PLAN", new { repositories = new[] { "atlas" }, preset = SetupPresets.Merge, said = true })).GetProperty("said");
+        return [.. said.GetProperty("out").EnumerateArray().Select(line => line.GetString()).SkipLast(1)];
+    }
+
     [Fact]
     public async Task A_digest_the_plan_no_longer_has_is_refused_moved_and_nothing_is_written()
     {

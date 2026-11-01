@@ -211,6 +211,64 @@ public sealed class PipeStandingTests : Bridge
         Assert.Equal(0, driver.Ran);
     }
 
+    /// <summary>
+    /// AGENTSPLACE1b3 (the Agents-place design §7 row 8): applying a place's plan is the person's alone. The census marks it Person; from an
+    /// agent's job with the standing confirmation granted it is never covered, so it waits for the person's Confirm, runs nothing meanwhile and
+    /// is refused by their no; and no role's act reaches it, the steward's table naming none and a <c>ROLE_ACT</c> for it refused as no act.
+    /// </summary>
+    [Fact]
+    public async Task A_place_apply_is_the_persons_alone_no_standing_cover_and_no_role_act()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        Assert.Equal(PipeClass.Person, PipeCensus.Daoris.Of(DriverModule.Name, "PLACE_APPLY"));
+        Assert.DoesNotContain("PLACE_APPLY", StewardActs.Offered);
+        Assert.DoesNotContain("PLACE_APPLY", StewardActs.TableOf(Roles.Steward).Keys);
+
+        using var log = new MachineLog(Home, "desktop");
+        var driver = new HeldModule(DriverModule.Name);
+        driver.Let.SetResult();
+        var (dispatcher, services) = Compose(log, driver);
+        using var composed = services;
+        var (pipe, caller) = Pipe(dispatcher, log);
+        using var served = pipe;
+        caller.Answer = StandingPlace.InAgentJob;
+        await using var client = await PipeClient.ConnectAsync(pipe.Name!);
+        await client.HelloAsync(HomeId);
+
+        var id = await client.SendAsync(DriverModule.Name, "PLACE_APPLY", new { repositories = new[] { "engine" }, preset = SetupPresets.Merge, digest = new string('a', 64) });
+        await Until(() => pipe.Confirmations.Now().Waiting.Count == 1, () => "the press was not asked");
+
+        Assert.Equal("PLACE_APPLY", Assert.Single(pipe.Confirmations.Now().Waiting).Route);
+        Assert.Equal(0, driver.Ran);
+        Assert.Equal(0, pipe.StandingConfirmation.Now().Used);
+        await pipe.Confirmations.AnswerAsync(pipe.Confirmations.Now().Waiting[0].Id, confirm: false);
+        Assert.False((await client.AnswerAsync(id)).GetProperty("success").GetBoolean());
+        Assert.Equal(0, driver.Ran);
+    }
+
+    /// <summary>AGENTSPLACE1b3: a steward's <c>ROLE_ACT</c> naming <c>PLACE_APPLY</c> is no act of its table, so it is refused and runs nothing.</summary>
+    [Fact]
+    public async Task A_role_act_naming_a_place_apply_is_refused_as_no_act_and_runs_nothing()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var log = new MachineLog(Home, "desktop");
+        var driver = new RoleActModule();
+        var probe = new RoleKit.Probe();
+        var (dispatcher, services) = Compose(log, driver);
+        using var composed = services;
+        var (pipe, _, key, generation) = Stewarded(dispatcher, log, probe);
+        using var served = pipe;
+        driver.Pipe = pipe;
+        await using var client = await PipeClient.ConnectAsync(pipe.Name!);
+        var nonce = NonceOf(await client.HelloAsync(HomeId))!;
+
+        var answer = await client.AnswerAsync(await client.SendAsync(DriverModule.Name, RoleRoutes.Act, RoleKit.Act(key, nonce, generation, act: "PLACE_APPLY")));
+
+        Assert.Equal(RoleWhy.NotRole, CodeOf(answer));
+        Assert.Equal(0, probe.Ran);
+        Assert.Empty(pipe.Confirmations.Now().Waiting);
+    }
+
     /// <summary>§4.1, §8 case 9: a terminal cannot grant it, nor ask for a card that would; refused before it is dispatched.</summary>
     [Fact]
     public async Task A_terminal_is_refused_the_grant_before_it_is_dispatched()
