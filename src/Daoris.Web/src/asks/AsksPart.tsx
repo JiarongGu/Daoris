@@ -34,7 +34,8 @@ import { AskComposer, type AskDraft } from './AskComposer';
 import { AskPage } from './AskPage';
 import { askEnded, asksInOrder } from './AskRow';
 import { type ChannelAnswered } from './ChannelSection';
-import type { ChannelPost } from '../work/channel';
+import { type ChannelPost, lastMessages } from '../work/channel';
+import { useAskAtWork } from '../bridge/sessions/atWork';
 
 const EMPTY_DRAFT: AskDraft = { circle: '', sentence: '', to: '', review: '', reviewWords: '', short: '', ...NO_CARRY };
 
@@ -78,13 +79,15 @@ export type AsksPart = {
  * The organism: it holds the hooks so the row, the page and the composer below it hold none (components §2).
  */
 export function useAsksPart({
-  active, closed, chosen, quests, onChoose, notify, onAttend, onOpenRun, composing, onComposingChange,
+  active, closed, chosen, quests, onChoose, notify, onAttend, onOpenRun, onOpenAtWork, composing, onComposingChange,
 }: {
   /**
    * The door into a run (WORKFLOW1c, the workflow design §7): its session attended, the side bar on its *Workflow*. Absent where
    * Sessions is not, a browser, which reads no run.
    */
   onOpenRun?: (session: string) => void;
+  /** A line of work folded to a count opens its own *At work* view (COWORKVIEW1d). Absent in a browser. */
+  onOpenAtWork?: (session: string) => void;
   /** Quests is in front: only then is an error said. */
   active: boolean;
   /** Closed and done asks are listed too, as closed quests are. */
@@ -150,6 +153,8 @@ export function useAsksPart({
   // The chosen ask's channel (SESSONE2c, D167 points 6 to 8) and what is unread on each live ask's, the same reads under one key.
   // Shell-only: a browser has no driver, so none is asked and no section or count is drawn.
   const channel = useChannel(chosen, { enabled: active });
+  // Who is at work on the chosen ask (COWORKVIEW1d): shell-only like the channel, and asked again at each `atWork` wake.
+  const atWork = useAskAtWork(chosen, { enabled: active && channel.available });
   const unreads = useChannelUnreads((asks.data ?? []).filter((item) => !askEnded(item)).map((item) => item.id), { enabled: active });
   const postChannel = usePostChannel();
   const markChannel = useMarkChannel();
@@ -340,6 +345,15 @@ export function useAsksPart({
           intake={intakeOf(shown)}
           lines={askLines(entries, shown.id)}
           channel={channelDoor(shown)}
+          atWork={channel.available
+            ? {
+              held: atWork.data,
+              error: atWork.error ? sentence(atWork.error) : null,
+              onOpenEntry: onOpenAtWork ?? onAttend,
+              onRetry: () => { void atWork.refetch(); },
+              words: channel.channel ? lastMessages(channel.channel) : undefined,
+            }
+            : undefined}
           onAttend={onAttend}
           busy={busy}
           onPublish={(to) => onPublish(shown.id, to)}

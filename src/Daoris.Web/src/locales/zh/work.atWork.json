@@ -77,5 +77,17 @@
   "work.atWork.failed": "读不到谁在工作：{{why}}",
   "work.atWork.stale": "无法重新读取：{{why}}",
   "work.atWork.retry": "重试",
-  "work.atWork.child.console": "控制台"
+  "work.atWork.child.console": "控制台",
+  "work.atWork.hint.notDriven": "这个仓库不在本机驱动，所以发给它的委托不会在本机开始，它的工作都在这个对话里进行。",
+  "work.atWork.hint.noLanes": "这个仓库没有声明泳道，所以它的工作都在这个对话里进行。有了 `daoris.lanes.json`，它就能把条目交给本会话的后续段。",
+  "work.atWork.hint.oneAtATime": "这个仓库的会话在本机一次只运行一个，所以发给它泳道的委托会等这一个结束。",
+  "work.atWork.hint.guide": "关于泳道",
+  "work.atWork.group.channel": "频道上",
+  "work.atWork.channel.all": "全部消息",
+  "work.atWork.channel.none": "频道里还没有内容。",
+  "work.atWork.ask.none": "这个需求还没有人在工作。",
+  "work.atWork.ask.parts_one": "{{count}} 段 · {{working}} 段在工作",
+  "work.atWork.ask.parts_other": "{{count}} 段 · {{working}} 段在工作",
+  "work.atWork.ask.moreEntries_one": "另有 {{count}} 条工作线未列出",
+  "work.atWork.ask.moreEntries_other": "另有 {{count}} 条工作线未列出"
 }

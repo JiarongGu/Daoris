@@ -56,6 +56,10 @@ public static class DriverCommand
               read an ask's channel, where its sessions and you talk, with each message's level where it is urgent
               and what it reached, and mark it read; or with words post them as yours, to everyone on the ask or
               one of its repositories, which each session reads at its next step, or with --ordinary when its turn ends.
+          ask at-work <id> [--json]
+              who is at work on an ask: each line of work counted by its parts and subagents, with the session
+              that opens it, and the quests the ask asked with who took each; --json prints the answer whole. The
+              channel and why a quest is not taken yet are not in it.
           ask --pause <id>  ·  ask --resume <id>  ·  quest pause <id>  ·  quest resume <id>
               stop what of an ask's work, or a quest's, runs on this machine and start nothing of it until
               you resume it, which carries it on where it stood.

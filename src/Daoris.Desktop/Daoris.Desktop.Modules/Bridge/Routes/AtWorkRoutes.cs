@@ -17,11 +17,17 @@ public sealed class AtWorkRoutes(DriverContext context)
     [ByEvent("SESSION_AT_WORK", Numbered = true, Untold = "each part's lineage file and this window's lineage tokens, which the read's own judge watches")]
     private async Task<object?> SessionAtWorkAsync(IpcRequest request, CancellationToken cancellationToken)
     {
-        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
+        // An ask's view (COWORKVIEW1d) is keyed `{ ask }`, a session's `{ session }`.
+        var ask = PayloadHelper.GetOptionalValue<string>(request.Payload, "ask");
+        var session = ask is { Length: > 0 } ? "" : PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
         await Task.CompletedTask;
         var slices = _loop.Slices;
-        AtWorkHeld Compose() => AtWorkRead.Compose(session, slices.Find(GroupsStateSlice.Name), slices.Find(SessionsStateSlice.Name),
-            slices.Find(QuestsStateSlice.Name), record => ChildLineage.Reading(_loop.Home, record.Id, record.Kind, LineageTokens.Shared), id => ChildLineage.PathOf(_loop.Home, id));
+        AtWorkHeld Compose() => ask is { Length: > 0 }
+            ? AtWorkRead.ComposeAsk(ask, slices.Find(GroupsStateSlice.Name), slices.Find(SessionsStateSlice.Name), slices.Find(QuestsStateSlice.Name),
+                slices.Find(AsksStateSlice.Name), record => ChildLineage.Reading(_loop.Home, record.Id, record.Kind, LineageTokens.Shared), id => ChildLineage.PathOf(_loop.Home, id))
+            : AtWorkRead.Compose(session, slices.Find(GroupsStateSlice.Name), slices.Find(SessionsStateSlice.Name),
+                slices.Find(QuestsStateSlice.Name), record => ChildLineage.Reading(_loop.Home, record.Id, record.Kind, LineageTokens.Shared), id => ChildLineage.PathOf(_loop.Home, id),
+                _loop.HintStanding.Word);
 
         // The source fence (rule 11): an input moved while it composed is composed again, at most three times; the last lands.
         var held = Compose();

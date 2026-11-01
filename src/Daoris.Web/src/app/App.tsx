@@ -958,6 +958,8 @@ export function App() {
   const openInWork = (session: string) => open('sessions', session);
   // A door into a run (WORKFLOW1c, the workflow design §7): its session attended in Sessions, the Workflow view opened on it.
   const openRun = (session: string) => { open('sessions', session); setWorkIntent('workflow'); };
+  // A line of work of an ask folded to a count (COWORKVIEW1d): its own view, the session attended with *At work* open on it.
+  const openAtWork = (session: string) => { open('sessions', session); setWorkIntent('atWork'); };
   // A quest's record and an ask's, where quests are read: an ask is named as one, since Quests' list holds both.
   const openQuest = (id: string) => open('quests', id);
   // A row in Overview's band is a door into whatever is waiting, wherever that exists. A parked
@@ -994,6 +996,7 @@ export function App() {
     notify,
     onAttend: attached ? openInWork : undefined,
     onOpenRun: attached ? openRun : undefined,
+    onOpenAtWork: attached ? openAtWork : undefined,
     opening,
     onOpened: () => setOpening(null),
     asking,

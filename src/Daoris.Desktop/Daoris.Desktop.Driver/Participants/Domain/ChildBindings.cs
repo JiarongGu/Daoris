@@ -170,6 +170,12 @@ public sealed record ChildBindings
     /// <summary>The agent ids named only by lines tied to no process: never children, rows or states.</summary>
     public int Unplaced { get; init; }
 
+    /// <summary>
+    /// How many children have a run in the newest generation: the subagents the part's current agent process started (COWORKVIEW1e-iii,
+    /// the design §6.4 point 3). A child of an earlier process counts nowhere.
+    /// </summary>
+    public int StartedNewest { get; init; }
+
     /// <summary>The tokens this window read its generations by, each with the reading the fold took (COWORKVIEW1a, rule 12).</summary>
     public IReadOnlyDictionary<string, TokenReading> Readings { get; private init; } = new Dictionary<string, TokenReading>();
 
@@ -427,8 +433,10 @@ public sealed record ChildBindings
         HashSet<string> rootIds = [.. roots];
         if (claudeRoot is not null) rootIds.Add(claudeRoot);
         if (codexRoot is not null) rootIds.Add(codexRoot);
+        var newest = Math.Max(starts.Values.Select(each => each.Order).DefaultIfEmpty(-1).Max(), history?.Order ?? -1);
         return new ChildBindings
         {
+            StartedNewest = children.Count(child => child.Runs.Any(run => run.Generation.Order == newest)),
             Harness = harness,
             Root = root,
             RootCalls = rootCalls,
