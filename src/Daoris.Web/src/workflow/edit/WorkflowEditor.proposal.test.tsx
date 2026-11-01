@@ -155,7 +155,7 @@ describe('a proposal drawn on the chart', () => {
     // The union: the new steps drawn beside the draft's, each marked *new* in words; the renumbered way drawn to remove and new.
     expect(within(within(chart()).getByRole('listitem', { name: /^find by local-release/ })).getByText('new')).toBeInTheDocument();
     expect(within(within(chart()).getByRole('listitem', { name: /^The checks/ })).getByText('new')).toBeInTheDocument();
-    expect(within(within(chart()).getByRole('listitem', { name: /^The work's requests/ })).queryByText('new')).toBeNull();
+    expect(within(within(chart()).getByRole('listitem', { name: /^The landing/ })).queryByText('new')).toBeNull();
     await waitFor(() => expect(asked('WORKFLOW_SAVE').length).toBeGreaterThan(0));
     // Drawn, the draft is unchanged: what is judged is the Merge workflow still.
     expect(canon(judgedGraph())).toBe(canon(MERGE_GRAPH));

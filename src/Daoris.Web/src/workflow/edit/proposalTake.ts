@@ -270,7 +270,13 @@ export function unionOf(draft: GraphDraft, proposal: DraftProposal, open: readon
   for (const change of changes) {
     if (change.what !== 'way' || !change.way) continue;
     const old = change.was ?? change.way;
-    if (change.change !== 'added' && draft.wires.some((wire) => wire.id === old)) ways.set(old, 'removed');
+    const held = draft.wires.find((wire) => wire.id === old);
+    // A way that keeps its ends (its id, its group or what it is taken on changed) is the one drawn, marked changed, never drawn twice.
+    if (change.change === 'changed' && held && !change.fields.some((field) => field === 'from' || field === 'to')) {
+      ways.set(old, 'changed');
+      continue;
+    }
+    if (change.change !== 'added' && held) ways.set(old, 'removed');
     if (change.change === 'removed') continue;
     const json = proposed.wires.get(change.way);
     if (!json) continue;

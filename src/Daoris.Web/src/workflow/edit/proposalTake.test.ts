@@ -190,6 +190,16 @@ describe('the union drawing', () => {
     expect(meaning(graphOf(draft))).toBe(meaning(proposal.base!));
   });
 
+  it('draws a way that keeps its ends once, marked changed, and one that moves to remove and new', () => {
+    const proposal = proposalOf(shipped('merge-after-accept'), shipped('release'));
+    const union = unionOf(draftOf(proposal.base), proposal, ids(proposal));
+    // `h` renumbered `l` keeps its ends; `b` goes on to the new checks instead of the review.
+    expect(union.ways.get('h')).toBe('changed');
+    expect(union.draft.wires.some((wire) => wire.id === '+l')).toBe(false);
+    expect(union.ways.get('b')).toBe('removed');
+    expect(union.ways.get('+b')).toBe('added');
+  });
+
   it('draws only the changes still open', () => {
     const proposal = proposalOf(shipped('merge-after-accept'), shipped('release'));
     const union = unionOf(draftOf(proposal.base), proposal, ['step:+check']);
