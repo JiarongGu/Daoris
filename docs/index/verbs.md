@@ -98,7 +98,7 @@ Each a `case` in `tools/desktop.mjs`: `build` 895 · `run` 899 · `restart` 900 
 
 | Script | Line | Runs |
 |---|---|---|
-| `prepare` | 14 | `node tools/merge-rows.mjs --install` |
+| `prepare` | 14 | `node tools/merge-rows.mjs --install && node tools/index-hook.mjs…` |
 | `test` | 15 | `npm test -w daoris` |
 | `verify` | 16 | `npm run typecheck -w daoris && npm test -w daoris && node…` |
 | `tooltests` | 17 | `npm run tooltests -w daoris` |
