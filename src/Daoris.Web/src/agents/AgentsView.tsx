@@ -21,7 +21,8 @@ import { type AgentActs, AgentMainNotice, AgentPage, type Answered } from './Age
 import { type AgentPart, accountLabel, agentRows } from './agents';
 import { AgentsModes, AgentsStrip, RoleSectionStrip } from './AgentsModes';
 import { type AgentsMode, isRoleSection, readAgentsMode, type RoleSection, setupLit, storeAgentsMode } from './modes';
-import { findPlace, SetupList, SetupMain, useSetupPlaces } from './setup/SetupPlaces';
+import { PlaceRoles } from './setup/PlaceRoles';
+import { findPlace, placeAsk, SetupList, SetupMain, useSetupPlaces } from './setup/SetupPlaces';
 import { RoleSectionList } from './roles/RoleSections';
 import { type RoleOpeners, RolesMode, useRolesPage } from './roles/RolesView';
 import { usedByAgent } from './roles/roleStructure';
@@ -148,6 +149,7 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
   // A first answer still on its way; an answer that is no roster (a shell older than this place) lists nothing.
   const loading = active && roster.data === undefined && roster.isPending;
   if (modes && inSetup && lit) {
+    const placed = findPlace(places.read, modes.place);
     return {
       list: {
         view: 'agents',
@@ -159,7 +161,7 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
         chosen: modes.place,
         body: <SetupList state={places} chosen={modes.place} onChoose={modes.onPlace} />,
       },
-      main: <SetupMain found={findPlace(places.read, modes.place)} state={places.status} />,
+      main: <SetupMain found={placed} state={places.status} roles={placed && placed.kind !== 'imported' ? <PlaceRoles place={placeAsk(placed)} notify={notify} /> : null} />,
     };
   }
   if (modes && inSetup) {

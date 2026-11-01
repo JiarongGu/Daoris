@@ -339,5 +339,16 @@
   "agents.setup.need.policy-failed": "无法读取某项工作的规则",
   "agents.setup.need.catalogue-unread": "无法读取角色",
   "agents.setup.need.no-checkout": "本机没有它的检出",
-  "agents.setup.need.not-adopted": "尚未为智能体配置"
+  "agents.setup.need.not-adopted": "尚未为智能体配置",
+  "agents.setup.roles.title": "角色",
+  "agents.setup.roles.noRole": "这里没有角色承担它",
+  "agents.setup.roles.noChoice": "还没有选择",
+  "agents.setup.roles.editOf": "编辑，承担{{work}}的角色",
+  "agents.setup.roles.give": "为{{place}}设置专属角色…",
+  "agents.setup.roles.giveOf": "为{{place}}设置专属角色…，{{work}}",
+  "agents.setup.roles.back": "回到{{parent}}的角色",
+  "agents.setup.roles.backOf": "回到{{parent}}的角色，{{work}}",
+  "agents.setup.roles.backAsk": "让{{work}}回到{{parent}}的角色",
+  "agents.setup.roles.backMove": "改用{{parent}}的角色",
+  "agents.setup.roles.appointed": "委任"
 }

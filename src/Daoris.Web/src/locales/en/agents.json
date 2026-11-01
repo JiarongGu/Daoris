@@ -339,5 +339,16 @@
   "agents.setup.need.policy-failed": "A work's rule could not be read",
   "agents.setup.need.catalogue-unread": "The roles could not be read",
   "agents.setup.need.no-checkout": "No checkout on this machine",
-  "agents.setup.need.not-adopted": "Not set up for agents"
+  "agents.setup.need.not-adopted": "Not set up for agents",
+  "agents.setup.roles.title": "Roles",
+  "agents.setup.roles.noRole": "No role takes it here",
+  "agents.setup.roles.noChoice": "No choice yet",
+  "agents.setup.roles.editOf": "Edit, the role taking {{work}}",
+  "agents.setup.roles.give": "Give {{place}} its own…",
+  "agents.setup.roles.giveOf": "Give {{place}} its own… for {{work}}",
+  "agents.setup.roles.back": "Back to {{parent}}'s",
+  "agents.setup.roles.backOf": "Back to {{parent}}'s, for {{work}}",
+  "agents.setup.roles.backAsk": "Put {{work}} back to {{parent}}'s",
+  "agents.setup.roles.backMove": "Use {{parent}}'s",
+  "agents.setup.roles.appointed": "Appointed"
 }

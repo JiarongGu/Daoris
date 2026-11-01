@@ -1,4 +1,5 @@
-import type { PlaceRow, PlacesAsk, PlacesRead } from '../../data/wiring';
+import type { PlaceRow, PlacesAsk, PlacesRead, RoleCatalogue, RoleStructure, StructurePlaceAsk } from '../../data/wiring';
+import { STRUCTURE, WORKS } from '../roles/structureFixtures';
 
 const value = (text: string, source: 'here' | 'workspace' | 'machine' | 'default') => ({ value: text, source });
 
@@ -44,3 +45,17 @@ export function PLACES(ask: PlacesAsk): PlacesRead {
     undriven: ask.fold ? { workspace: ask.fold, rows: page, next: after + 2 < ARCHIVE.length ? `aurora/${page.at(-1)!.repository}` : null, total: ARCHIVE.length } : null,
   };
 }
+
+const at = (workspace?: string, repository?: string) => STRUCTURE.places.find((place) => place.workspace === workspace && place.repository === repository)!;
+
+/** The roles' structure for a chosen place's chain, nearest first, as `ROLE_STRUCTURE` answers it (AGENTSPLACE1a): the place, its workspace, this machine. */
+export function CHAIN(ask: StructurePlaceAsk): RoleStructure {
+  const chain = [...(ask.repository ? [at(ask.workspace, ask.repository)] : []), ...(ask.workspace ? [at(ask.workspace)] : []), at()];
+  return { ...STRUCTURE, places: chain };
+}
+
+/** The catalogue those roles are from: this machine's seeds and the engine's own building role. */
+export const CATALOGUE: RoleCatalogue = { roles: STRUCTURE.roles, works: WORKS, kept: true, suggested: [] };
+
+/** The agents this machine has, as the editor names them. */
+export const AGENTS = STRUCTURE.agents.filter((each) => each.installed).map((each) => ({ value: each.agent, label: each.agent }));

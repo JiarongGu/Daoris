@@ -1,7 +1,7 @@
 import { type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePlaces } from '../../bridge/shell';
-import type { PlaceNeed, PlaceRow, PlacesAsk, PlacesRead } from '../../data/wiring';
+import type { PlaceNeed, PlaceRow, PlacesAsk, PlacesRead, StructurePlaceAsk } from '../../data/wiring';
 import { Button, CheckField, Icon } from '../../design/ui';
 import { cn } from '../../lib/cn';
 import { PageHead, ViewMain } from '../../work/frame/ViewMain';
@@ -233,11 +233,16 @@ function Fact({ name, children }: { name: string; children: ReactNode }) {
 }
 
 /**
- * **A place's page, its head only** (AGENTSPLACE1e): driving, held, trees, and *n changes of your own*. The preset a place matches is
- * derived by a later row (AGENTSPLACE1a2), and the Roles, Workflow and Sessions sections by 1f to 1h, so the head says what the
- * configuration already reads.
+ * **A place's page** (AGENTSPLACE1e): its head, driving, held, trees, and *n changes of your own*, then its Roles (AGENTSPLACE1g1). The
+ * preset a place matches is derived by a later row (AGENTSPLACE1a2), and the Workflow and Sessions sections by 1f and 1h, so the page
+ * says what the configuration already reads.
  */
-export function SetupMain({ found, state }: { found: Found | null; state: SetupState['status'] }) {
+export function SetupMain({ found, state, roles }: {
+  found: Found | null;
+  state: SetupState['status'];
+  /** The place's Roles section, drawn under its head: the application's, which reads the driver. */
+  roles?: ReactNode;
+}) {
   const { t } = useTranslation();
   if (!found) {
     return (
@@ -287,6 +292,13 @@ export function SetupMain({ found, state }: { found: Found | null; state: SetupS
           </Fact>
         )}
       </dl>
+      {found.kind !== 'imported' && roles}
     </ViewMain>
   );
 }
+
+/** The place whose roles are asked: this machine's (neither), a workspace's, or a driven repository's with the workspace it sits in. */
+export const placeAsk = (found: Exclude<Found, { kind: 'imported' }>): StructurePlaceAsk =>
+  found.kind === 'machine' ? {}
+    : found.kind === 'workspace' ? { workspace: found.row.workspace ?? '' }
+      : { ...(found.row.workspace ? { workspace: found.row.workspace } : {}), repository: found.row.repository ?? '' };
