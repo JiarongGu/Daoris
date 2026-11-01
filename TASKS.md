@@ -123,6 +123,7 @@ Co-working (D167, `docs/2026-10-14-co-working-design.md`; the owner's two tasks 
 
 ## Economy, setup and recall
 
+- [ ] **BRAINSTORMAGENTS1 — a brainstorm asked of an agent no adapter names is refused when asked** (driver; BRAINSTORMSTART1's follow-up). `daoris-driver brainstorm … --agents claude,codex` was accepted, sent and run, and its passes ended `not-started` minutes later, since the adapters are `claude-code`, `claude-code-acp` and `codex-acp` (`Agents/Adapters.cs:2580-2594`). Contract: `BrainstormCommand.Ask` resolves each named agent through the same adapter set the driver resolves turns by (the built ones and the catalogue's), refusing an unknown one with the names it has, exit 1, nothing written; `meeting ask` the same. Proof: a verb test for an unknown name, a plugin's adapter accepted, and the usage line naming the real ids.
 knowledge review (D129). WSSETUP14b–e precede owner f/13; WSSETUP7 needs LAYOUT8.
 
 - [ ] **MODELROLE1c4 — row c's installed proof** (the parent with the install; after the install carries MODELROLE1c3). On the install, a Build whose first choice names a model one account does not offer runs it on the other account, and with neither runs its second and says so on the head and in the note; a pipe door's refusal on a silent turn passes that account at the next start, no strike. The branch proof is MODELROLE1c3's (`ModelRefusalTickTests`, the archive's MODELROLE1c3). Proof: the install's records and shots.
