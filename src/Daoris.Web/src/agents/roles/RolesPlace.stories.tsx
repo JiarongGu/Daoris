@@ -30,7 +30,7 @@ const AGENTS = [{ value: 'claude-code', label: 'Claude Code' }, { value: 'codex-
 function List({ section = 'working' }: { section?: RoleSection }) {
   return (
     <div className="w-[280px] border border-line bg-page">
-      <AgentsModes mode="roles" onMode={nothing} />
+      <AgentsModes mode="setup" onMode={nothing} />
       <RoleSectionList section={section} onSection={nothing} />
     </div>
   );
@@ -39,7 +39,7 @@ function List({ section = 'working' }: { section?: RoleSection }) {
 function Strip() {
   return (
     <div className="w-[56px] border border-line bg-page">
-      <AgentsStrip mode="roles" onMode={nothing}>
+      <AgentsStrip mode="setup" onMode={nothing}>
         <RoleSectionStrip section="working" onSection={nothing} />
       </AgentsStrip>
     </div>

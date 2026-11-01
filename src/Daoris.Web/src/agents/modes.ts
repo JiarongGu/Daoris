@@ -1,10 +1,10 @@
 import { store, stored } from '../lib/stored';
 
 /**
- * The Agents place's two modes (COMPANYVIEW1b, the company-view design §1), in the order its list's head draws them: Agents, each
- * agent this machine knows, and Roles, the positions those agents fill. One place whose list switches between them, as Knowledge's does.
+ * The Agents place's two modes (the Agents-place design §3), in the order its list's head draws them: Agents, each agent this machine
+ * knows, and Setup, the tree of places. One place whose list switches between them, as Knowledge's does.
  */
-export const AGENTS_MODES = ['agents', 'roles'] as const;
+export const AGENTS_MODES = ['agents', 'setup'] as const;
 
 export type AgentsMode = (typeof AGENTS_MODES)[number];
 
@@ -25,11 +25,18 @@ export const isAgentsMode = (value: string | null | undefined): value is AgentsM
 export const isRoleSection = (value: string | null | undefined): value is RoleSection =>
   ROLE_SECTIONS.some((section) => section === value);
 
-/** The mode the place last showed, or Agents, the first, where nothing readable is kept. */
+/** The mode the place last showed, or Agents, the first, where nothing readable is kept. A stored `roles` is Setup, which replaced it. */
 export function readAgentsMode(): AgentsMode {
   const kept = stored(KEY);
+  if (kept === 'roles') return 'setup';
   return isAgentsMode(kept) ? kept : 'agents';
 }
+
+/**
+ * Whether Setup shows its tree of places. Dark until the places' pages carry the Roles, Workflow and Sessions sections (AGENTSPLACE1g):
+ * until then the mode shows the Roles sections, so nothing usable is lost. Lit by `daoris.agents.setup` set to `on`.
+ */
+export const setupLit = (): boolean => stored('daoris.agents.setup') === 'on';
 
 /** Remember the mode chosen; Agents, the first, is what nothing kept means. */
 export function storeAgentsMode(mode: AgentsMode): void {

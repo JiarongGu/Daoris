@@ -372,14 +372,14 @@ describe('StatusBar', () => {
       <StatusBar driver="running" sessions={0} workspace={null} remote={null} setup={{ done: 2, of: 5 }} onSetup={onSetup} />,
     );
 
-    await userEvent.click(screen.getByRole('button', { name: /setup/ }));
+    await userEvent.click(screen.getByRole('button', { name: /start/ }));
     expect(onSetup).toHaveBeenCalledOnce();
-    expect(screen.getByText('setup: 2 of 5')).toBeTruthy();
+    expect(screen.getByText('start: 2 of 5')).toBeTruthy();
 
     rerender(<StatusBar driver="running" sessions={0} workspace={null} remote={null} setup={{ done: 5, of: 5 }} onSetup={onSetup} />);
-    expect(screen.queryByText(/setup:/)).toBeNull();
+    expect(screen.queryByText(/start:/)).toBeNull();
     rerender(<StatusBar driver="running" sessions={0} workspace={null} remote={null} onSetup={onSetup} />);
-    expect(screen.queryByText(/setup:/)).toBeNull();
+    expect(screen.queryByText(/start:/)).toBeNull();
   });
 
   /**

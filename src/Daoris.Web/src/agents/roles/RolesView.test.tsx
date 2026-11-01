@@ -74,7 +74,7 @@ const ROLES = {
 };
 
 /** Open the Roles mode from the list's head. */
-const openRoles = async () => userEvent.click(await screen.findByRole('radio', { name: 'Roles' }));
+const openRoles = async () => userEvent.click(await screen.findByRole('radio', { name: 'Setup' }));
 
 describe('The Agents place, Roles mode', () => {
   let refuseActor = false;
@@ -115,9 +115,9 @@ describe('The Agents place, Roles mode', () => {
     expect(await screen.findByRole('list', { name: 'Agents' })).toBeTruthy();
 
     await openRoles();
-    expect(screen.getByRole('radio', { name: 'Roles' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Setup' })).toBeChecked();
     expect(await screen.findByRole('list', { name: 'Roles' })).toBeTruthy();
-    expect(window.localStorage.getItem('daoris.list.agents.mode')).toBe('roles');
+    expect(window.localStorage.getItem('daoris.list.agents.mode')).toBe('setup');
 
     await user.click(screen.getByRole('radio', { name: 'Agents' }));
     expect(await screen.findByRole('list', { name: 'Agents' })).toBeTruthy();
@@ -125,9 +125,10 @@ describe('The Agents place, Roles mode', () => {
   });
 
   it('opens in the mode it was left in', async () => {
+    // A stored `roles` is Setup, which replaced it.
     window.localStorage.setItem('daoris.list.agents.mode', 'roles');
     show(<Place />);
-    expect(await screen.findByRole('radio', { name: 'Roles' })).toBeChecked();
+    expect(await screen.findByRole('radio', { name: 'Setup' })).toBeChecked();
   });
 
   it('lists the five sections, every one built', async () => {
