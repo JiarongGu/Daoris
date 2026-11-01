@@ -404,6 +404,37 @@ public sealed class StartPlanTests : IDisposable
         Assert.Equal("piped", StartPlan.AgentFor("build",DriverConfig.Empty with { Adapter = "piped", ActorErrors = new Dictionary<string, string> { ["build"] = "unreadable" } }));
     }
 
+    /// <summary>A plan given a named role walks that role's order and keeps its revision; <c>Seeded</c> stays the work's (O2-3).</summary>
+    [Fact]
+    public async Task A_named_role_s_order_is_walked_its_revision_kept_and_Seeded_stays_the_work_s()
+    {
+        var catalogue = RoleCatalog.Of([RoleCatalogTests.Stored(RoleCatalogTests.Working("checker", ParticipantWork.Review, new RoleScope(RoleScope.Workspace, "w1")) with { NameEn = "Checker" }, 5)]);
+        var config = DriverConfig.Empty with
+        {
+            Adapter = "cool",
+            Actors = new Dictionary<string, IReadOnlyList<ActorChoice>> { ["opinion"] = [new ActorChoice("piped")], ["checker"] = [new ActorChoice("gone"), new ActorChoice("fine", "opus")] },
+        };
+        StartPlan Named(string role, RolePlace place) =>
+            new(ParticipantWork.Review, config, _roster, _adapters, _memory, catalogue: catalogue, place: place, role: role) { Workspace = "default", Subject = "quest:q1" };
+
+        var plan = Named("checker", new RolePlace(Workspace: "w1"));
+
+        Assert.Equal(("checker", "Checker", 5L, "opinion"), (plan.Role, plan.RoleName, plan.Revision, plan.Seeded));
+        Assert.Equal([new ActorEffective("gone", null, null, "1"), new ActorEffective("fine", "opus", null, "2")], plan.Order);
+        var settled = await plan.ResolveAsync(CancellationToken.None);
+        Assert.Equal(("checker", "fine", 5L), (settled.Role, settled.Chosen!.Agent, settled.Revision));
+        Assert.Equal("gone", StartPlan.AgentFor(ParticipantWork.Review, config, catalogue: catalogue, place: new RolePlace(Workspace: "w1"), role: "checker"));
+        Assert.Equal("piped", StartPlan.AgentFor(ParticipantWork.Review, config, catalogue: catalogue, place: new RolePlace(Workspace: "w1"), role: "opinion"));
+
+        var seeded = new StartPlan(ParticipantWork.Design, config, _roster, _adapters, _memory, role: "build") { Subject = "quest:q1" };
+        Assert.Equal(("build", "build", 0L), (seeded.Role, seeded.Seeded, seeded.Revision));
+
+        var held = Assert.Throws<DriverException>(() => Named("checker", new RolePlace(Workspace: "w2")));
+        Assert.Equal(catalogue.Named("checker", ParticipantWork.Review, new RolePlace(Workspace: "w2")).Held, held.Message);
+        Assert.Equal(catalogue.Named("nobody", ParticipantWork.Review, default).Held, Assert.Throws<DriverException>(() => Named("nobody", default)).Message);
+        Assert.Equal("cool", StartPlan.AgentFor(ParticipantWork.Review, config, catalogue: catalogue, role: "nobody"));
+    }
+
     /// <summary>
     /// An intake's plan waits in Intake's own words (D205 §4.5), each choice named and the soonest cool-off beside it, and its machine log's
     /// lines name the ask, keyed as the intake's walk always wrote them.

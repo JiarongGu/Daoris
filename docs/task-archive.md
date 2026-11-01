@@ -22505,6 +22505,10 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 
 **Outcome** 2026-11-01: the graph presets hold `land` with their tails; a run's binding resolves a version's open `land` options (pattern, plugin, ticket key) once at the bind and keeps them (`WorkflowRunBinding.Land`); `--from current` writes Current's landing out as a `land`; `accept` to `automatic` lowers; standing automatic authority is judged again before a delivery's first effect. Known gap until LANDNODE1c2: nothing performs `land` yet, so a run bound to a preset waits at its landing.
 
+## ROLESTEP1a — a role named by id: the catalogue's lookup and the start plan that walks it (2026-11-01, FABRIC2)
+
+**Outcome** 2026-11-01: `RoleCatalog.Named` finds a step's role by id (a build role takes a design step) or holds the start by its own sentence, never taking another role; `Order`, `StartPlan` and `AgentFor` take the named role, `Seeded` staying the work's. No caller passes one yet (ROLESTEP1b).
+
 ## CONSOLEWINDOWS1 — no check shows a console window on the owner's screen (2026-11-01)
 
 **Outcome** 2026-11-01: every Node child start passes `windowsHide: true`, held by `tools/console-windows.mjs` in `npm run verify`; every .NET console start sets `CreateNoWindow = true`, held by `ProcessStartsCensusTests` in the driver and modules tests (`NoConsoleStarts` names the shell-opened and kept-console exemptions with their reasons).
