@@ -211,7 +211,7 @@ public sealed class BrainstormFiles(string home)
                 {
                     Actor = Text(element, "actor"), Choice = Text(element, "choice"),
                     Asked = ServiceClient.ActorRead<ActorAsked>(element, "asked"),
-                    Ran = ServiceClient.ActorRead<ActorRan>(element, "ran"),
+                    Ran = ServiceClient.ActorRead<ActorRan>(element, "ran"), Why = Text(element, "why"),
                 });
             }
         }
@@ -240,6 +240,7 @@ public sealed class BrainstormFiles(string home)
             writer.WriteStartArray("codes");
             foreach (var code in pass.Codes) writer.WriteStringValue(code);
             writer.WriteEndArray();
+            if (pass.Why is not null) writer.WriteString("why", pass.Why);
             writer.WriteEndObject();
         });
 

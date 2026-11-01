@@ -159,6 +159,16 @@ public static partial class BrainstormCommand
             BrainstormStates.Running => "Sent, and running.",
             _ => $"Ended ({state.Code ?? "no document"}): {(state.Code == BrainstormStates.NoAgent ? "no agent could answer, and the packet is kept" : "no document was kept")}.",
         });
+        // Where no document was kept, the passes are what there is to read: each with its state, its codes and the walk's sentence.
+        if (state.State == BrainstormStates.Ended)
+        {
+            foreach (var pass in files.ReadPasses(id))
+            {
+                output.WriteLine($"  {pass.By.Pass} on `{pass.By.Adapter}` (maker {pass.By.Maker}): {pass.State}"
+                    + (pass.Codes.Count > 0 ? $" ({string.Join(", ", pass.Codes)})" : "") + (pass.Why is { } why ? $": {why}" : ""));
+            }
+        }
+
         _ = request;
         return 0;
     }
