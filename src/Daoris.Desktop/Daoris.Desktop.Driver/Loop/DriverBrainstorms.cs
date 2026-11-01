@@ -600,12 +600,12 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
         string? account = null;
         // The accounts this voice passed for its model (D205 §4.4): its one bounded restart leaves them out, never a cool-off.
         var passedAccounts = new List<string>();
-        (BrainstormPassRecord, T?) Ended(string state, IReadOnlyList<string> codes, int turns, T? valid = null)
+        (BrainstormPassRecord, T?) Ended(string state, IReadOnlyList<string> codes, int turns, T? valid = null, string? why = null)
         {
             var prior = files.ReadPasses(id).FirstOrDefault(each => each.By.Pass == pass);
             var record = new BrainstormPassRecord(new BrainstormBy(pass, maker, agent, account), role, state, codes, turns)
             {
-                Actor = "brainstorm", Choice = entry?.From ?? "before", Asked = entry?.Asked ?? ActorAsked.Before(agent), Ran = prior?.Ran,
+                Actor = "brainstorm", Choice = entry?.From ?? "before", Asked = entry?.Asked ?? ActorAsked.Before(agent), Ran = prior?.Ran, Why = why,
             };
             files.WritePass(id, record);
             return (record, valid);
@@ -673,7 +673,11 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                 account = ran.Account ?? account;
                 if (!ran.Ran)
                 {
-                    return Ended(BrainstormPassRecord.Unavailable, restart ? [Limit, ran.Code ?? "not-started"] : [ran.Code ?? "not-started"], turns);
+                    // The walk's sentence is kept on the record and written to the machine log once, here, where the pass ends.
+                    _driver.Log?.Warn(
+                        "brainstorm.pass", ("brainstorm", id), ("pass", pass), ("agent", agent), ("code", ran.Code ?? "not-started"), ("why", ran.Why ?? ""));
+                    return Ended(
+                        BrainstormPassRecord.Unavailable, restart ? [Limit, ran.Code ?? "not-started"] : [ran.Code ?? "not-started"], turns, why: ran.Why);
                 }
 
                 if (ran.Code is Limit or AgentOffers.NotOffered && !restart && !cut)
@@ -837,7 +841,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
         }
         catch (DriverException error)
         {
-            return new BrainstormTurnRun(false, null, "not-started", $"held  brainstorm turn {turn.Turn}: {error.Message}");
+            return new BrainstormTurnRun(false, null, "not-started", $"held  brainstorm turn {turn.Turn}: {error.Message}", error.Message);
         }
 
         if (!selection.Allowed)

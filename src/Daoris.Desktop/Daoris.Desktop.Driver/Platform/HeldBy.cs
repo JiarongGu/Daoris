@@ -17,4 +17,7 @@ public static class HeldBy
 
     /// <summary>A git act of the person's, or the act journal's reconciliation of one (GITAPP2a).</summary>
     public const string Acting = "acting";
+
+    /// <summary>A delivery's landing writing its branch's ref (LANDNODE1b2).</summary>
+    public const string Landing = "landing";
 }
