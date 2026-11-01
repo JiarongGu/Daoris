@@ -19,13 +19,15 @@ export const verifyAsk = (named: string): VerifyAsk => {
 const short = (id: string) => id.slice(0, 7);
 
 /** Where the landed route's gates stand against the line's tip, the declaration to accept, and the person's press. */
-function LandedLines({ landed, page, repository, onAccept, accepting, onVerify }: {
+function LandedLines({ landed, page, repository, onAccept, accepting, onVerify, apart }: {
   landed: WorkflowLanded;
   page: 'repository' | 'workspace';
   repository: string | null;
   onAccept?: (answered: Answered) => void;
   accepting?: boolean;
   onVerify?: (ask: VerifyAsk, answered: Answered) => void;
+  /** The declaration and its acceptance are drawn apart, in the place page's Gates (AGENTSPLACE1h): the node says where the route stands only. */
+  apart?: boolean;
 }) {
   const { t } = useTranslation();
   const [refused, setRefused] = useState<string | null>(null);
@@ -53,7 +55,7 @@ function LandedLines({ landed, page, repository, onAccept, accepting, onVerify }
   return (
     <div className="grid min-w-0 gap-1">
       <p className="m-0 text-small text-ink-soft"><Inline text={said} /></p>
-      {waits && landed.declaration && at && (
+      {!apart && waits && landed.declaration && at && (
         <pre
           aria-label={t('workflow.start.landed.declaration', at)}
           className="m-0 max-h-48 overflow-auto rounded-control border border-line bg-raised px-2 py-1 font-mono text-meta text-ink"
@@ -61,7 +63,7 @@ function LandedLines({ landed, page, repository, onAccept, accepting, onVerify }
           {landed.declaration}
         </pre>
       )}
-      {waits && onAccept && (
+      {!apart && waits && onAccept && (
         <div className="flex flex-wrap items-center gap-1.5">
           <Button
             variant="ghost"
@@ -119,7 +121,7 @@ function LandedLines({ landed, page, repository, onAccept, accepting, onVerify }
  *
  * A molecule: the answer arrives as a prop, and the one press goes out.
  */
-export function WorkflowStartNode({ start, page, scope, onAccept, accepting = false, onVerify }: {
+export function WorkflowStartNode({ start, page, scope, onAccept, accepting = false, onVerify, gatesApart = false }: {
   start: WorkflowStart;
   page: 'repository' | 'workspace';
   scope: RouteScope;
@@ -128,6 +130,8 @@ export function WorkflowStartNode({ start, page, scope, onAccept, accepting = fa
   accepting?: boolean;
   /** The person's *Verify…* (FABRIC-PIPELINE1d): a branch or a commit verified under the accepted gates; offered once they are accepted. */
   onVerify?: (ask: VerifyAsk, answered: Answered) => void;
+  /** The declaration and its acceptance are the page's Gates (AGENTSPLACE1h): the node draws neither. */
+  gatesApart?: boolean;
 }) {
   const { t } = useTranslation();
   const headId = useId();
@@ -162,7 +166,7 @@ export function WorkflowStartNode({ start, page, scope, onAccept, accepting = fa
   wire(
     'route:landed',
     t('workflow.start.landed.title'),
-    <LandedLines landed={landed} page={page} repository={scope.repository} onAccept={onAccept} accepting={accepting} onVerify={onVerify} />,
+    <LandedLines landed={landed} page={page} repository={scope.repository} onAccept={onAccept} accepting={accepting} onVerify={onVerify} apart={gatesApart} />,
     t('workflow.start.edge.landed'),
     landed.workflow === 'current' ? { id: 'to:none', title: t('workflow.start.noVerification') } : named(landed),
     whySaid(t, landed.level, scope, null, true),

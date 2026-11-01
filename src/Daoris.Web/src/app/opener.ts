@@ -175,8 +175,9 @@ export function opening(view: View, item?: string | null, part: OpenPart = {}, h
 }
 
 /**
- * **Every door into a repository's Setup tab, once the Setup mode is lit, opens the place's page** (AGENTSPLACE1f, the Agents-place design
- * §6): What needs you's declaration wait, Get started's and the help room's steps, Settings' doors and a workflow step's. They all end in
+ * **Every door into a repository's Setup tab or its Workflow tab, once the Setup mode is lit, opens the place's page** (AGENTSPLACE1f and
+ * 1h, the Agents-place design §6): What needs you's declaration wait, Get started's and the help room's steps, Settings' doors, a Roles
+ * section's door to the workflow and a workflow step's. They all end in
  * `apply`, so one redirect there holds them all, where a census of the doors cannot miss one. A workspace's *Sessions' access* is the
  * workspace place's too; the rest of a workspace's Setup stays its tab until its own row moves. A door naming the tab and no repository
  * (the help room's) opens the mode, whose list chooses one. Dark, the plan is unchanged.
@@ -186,10 +187,11 @@ export function opening(view: View, item?: string | null, part: OpenPart = {}, h
 export function placeOpening(plan: Opening, lit: boolean, workspaceOfRepository: (repository: string) => string): Opening {
   if (!lit || plan.view !== 'projects') return plan;
   // The help room's door names the tab and no repository: the Setup mode's list is where one is chosen.
-  if (plan.tab === 'setup' && !plan.chosen) return { view: 'agents', agentsMode: 'setup' };
+  const placed = plan.tab === 'setup' || plan.tab === 'workflow';
+  if (placed && !plan.chosen) return { view: 'agents', agentsMode: 'setup' };
   if (plan.chosen?.view !== 'projects') return plan;
   const named = projectsItem(plan.chosen.item);
-  if (plan.tab === 'setup' && 'repository' in named) {
+  if (placed && 'repository' in named) {
     return { view: 'agents', agentsMode: 'setup', place: repositoryId(workspaceOfRepository(named.repository), named.repository) };
   }
   if (plan.workspaceTab === 'setup' && plan.workspaceSection === 'access' && 'workspace' in named) {

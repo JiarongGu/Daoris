@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../locales/i18n';
 import { GATES_CHANGED, NO_VERIFICATION, ROUTED, START, WORKSPACE } from './fixtures';
+import { WorkflowStartNode } from './WorkflowStartNode';
 import { WorkflowTab } from './WorkflowTab';
 
 // FABRIC-PIPELINE1a (D192 point 2, the pipeline design §1.3): a Workflow tab draws its start node first, each route (the default,
@@ -88,6 +89,15 @@ describe("a Workflow tab's start node", () => {
     expect(within(landed).getByLabelText("daoris.gates.json at main's tip aa11bb2")).toHaveTextContent('"run": "npm test"');
     await userEvent.click(within(landed).getByRole('button', { name: 'Accept the gates' }));
     expect(onAcceptGates).toHaveBeenCalledOnce();
+  });
+
+  // AGENTSPLACE1h: a place's Gates holds the declaration and its acceptance, so its start node says where the route stands and draws neither.
+  it("draws neither the declaration nor Accept the gates where the page's Gates are apart, and keeps what the route says", () => {
+    render(<WorkflowStartNode start={GATES_CHANGED} page="repository" scope={{ repository: 'engine', workspace: 'aurora' }} onAccept={vi.fn()} gatesApart />);
+
+    expect(node('Landed work')).toHaveTextContent('The gates changed since you accepted them');
+    expect(screen.queryByLabelText("daoris.gates.json at main's tip aa11bb2")).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Accept the gates' })).not.toBeInTheDocument();
   });
 
   it('offers no Accept where no door is handed, and says why the tip was not read in the driver\'s words', () => {

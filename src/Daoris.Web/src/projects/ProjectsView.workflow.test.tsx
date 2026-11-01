@@ -132,4 +132,32 @@ describe('the Workflow tab', () => {
     expect(within(repositoryMain()).getByRole('tab', { name: 'Setup' })).toHaveAttribute('aria-selected', 'true');
     expect(await within(repositoryMain()).findByRole('button', { name: 'Defaults' })).toHaveAttribute('aria-expanded', 'true');
   });
+
+  // AGENTSPLACE1h: once the Setup mode is lit, a repository's Workflow is the Agents place's page (the Workflow section), so the tab goes,
+  // its Current is not asked here, and a workspace's door to a repository's own workflow opens that place.
+  describe('once the Setup mode is lit', () => {
+    beforeEach(() => window.localStorage.setItem('daoris.agents.setup', 'on'));
+
+    it("draws no Workflow tab on a repository's page and asks no Current for it", async () => {
+      answering(() => FULL);
+      show(<ProjectsView notify={() => {}} />);
+      const page = await chooseRepository('engine');
+
+      expect(within(page).queryByRole('tab', { name: 'Workflow' })).toBeNull();
+      expect(asked('WORKFLOW_CURRENT')).toEqual([]);
+    });
+
+    it("opens the repository's place, not its tab, from a workspace's door to a repository with rules of its own", async () => {
+      const onOpenSetup = vi.fn();
+      answering((payload) => (payload.workspace ? WORKSPACE : FULL));
+      show(<ProjectsView notify={() => {}} onOpenSetup={onOpenSetup} />);
+      const page = await chooseWorkspace('aurora');
+      await userEvent.click(within(page).getByRole('tab', { name: 'Workflow' }));
+
+      await userEvent.click(await within(repositoryMain()).findByRole('button', { name: "Open engine's workflow" }));
+
+      expect(onOpenSetup).toHaveBeenCalledWith('engine');
+      expect(asked('WORKFLOW_CURRENT').filter(([, , options]) => options?.payload?.repository === 'engine')).toEqual([]);
+    });
+  });
 });

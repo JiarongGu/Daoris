@@ -5,6 +5,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## AGENTSPLACE1h — Workflow on a place (2026-11-01)
+
+> **AGENTSPLACE1h** (web; row 13 of AGENTSPLACE1). A repository's page in the Setup mode holds *Workflow*: the head, the start node and chart, *Gates* (the declaration shown once, with *Accept for landed verification* and *Accept for integration*, one confirmation pressing each by its blob and the integration's withdrawal kept apart), the line's landing rows with `integrate`, and *Change…* (presets by composed line, saved workflows, Current) and *Edit steps…* on FABRIC2's step editor. Lit by `daoris.agents.setup`, Repositories' Workflow tab goes and every door into it opens the place through `placeOpening`; a workspace's door to a repository's workflow opens it too. Proof: `PlaceGates.test.tsx`, `ChangeWorkflow.test.tsx`, `PlaceWorkflowView.test.tsx`, `PlaceSessions.test.tsx`, `opener.test.ts` (the door census), `ProjectsView.workflow.test.tsx`; stories `PlaceWorkflowView` and `ChangeWorkflow` at 80, 39 and 25 rem. Not done: a workspace place's Workflow (its tab stays), the driver's words that still say *Workflow tab*, the installed window (1l). Detail: D157's note.
+
 ## PLUGINSTEP1b — a plugin step reports a decision (2026-11-01)
 
 A manifest step's `outcomes` read into `NodeDeclaration.Outcomes`; `work/step` and `work/reconcile` done carry `outcome`, believed only if declared (`not-outcome`), put on the acceptance and kept through reconcile; the person's *it happened* on a held decision names one (`NodeAttempt.Decision`); the kit's `act` may return `outcome`, and local-release's `find` declares `release | none`. Proof in `PluginStepsTests`, `WorkWireTests`, `WorkBeliefTests`, `WorkPerformerTests` and `node --test` in the example.

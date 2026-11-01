@@ -30,6 +30,10 @@ default, each kind by its label and paths, and the landed work, wired to the wor
 gates stand against the line's tip and offers the person's *Accept the gates* (`WORKFLOW_LANDED`). A repository's Setup holds
 the same route as a row of *Line and landing* (`settings/repository/LandedRoute.tsx`), with the repository's integration
 declaration beside it, read as written and accepted or withdrawn by blob (`settings/repository/IntegrationDeclaration.tsx`).
+Once the Setup mode is lit, a repository's Workflow is its place's page in the Agents place (`workflow/place/PlaceWorkflowView.tsx`,
+AGENTSPLACE1h) and Repositories loses the tab: the head, the start node and the chart, *Gates* (`PlaceGates.tsx`: the declaration once, with
+*Accept for landed verification* and *Accept for integration*, one confirmation pressing each by its blob), the line's landing rows, and
+*Change…* (`ChangeWorkflow.tsx`) and *Edit steps…*, which mount the step editor. `projects/useWorkflowTab.ts` builds the tab's props for both.
 A second opinion's reviewer is a row of its own in Sessions' list, and says whose work it reads (XAGENT1g4c): the rail
 joins it to the working session through `GET /api/opinions`, asked only when the list holds a reviewer, and an unanswered
 read claims nothing. A session that continues another, and a helper, say so (MIXAGENT3a-i): the head's facts name the agent

@@ -204,6 +204,8 @@ export type RepositorySetupProps = {
    * under Workflow and the rest under Sessions (AGENTSPLACE1f), each from the one molecule.
    */
   only?: readonly SetupSectionId[];
+  /** The integration declaration and its acceptance are the place page's Gates (AGENTSPLACE1h), drawn once there: this section draws neither. */
+  gatesApart?: boolean;
   /** Open a plugin's page: the landing rule's plugin is a door (PLUGUI1c2c); absent, its name stays words. */
   onOpenPlugin?: (plugin: string) => void;
 };
@@ -236,7 +238,7 @@ const JOIN = ' · ';
  *
  * A molecule: every state is reached by its props, and every press goes out.
  */
-export function RepositorySetup({ repository, driving, work, access, heavy, landed, sessions, reach, busy = false, open, only, onOpenPlugin }: RepositorySetupProps) {
+export function RepositorySetup({ repository, driving, work, access, heavy, landed, sessions, reach, busy = false, open, only, gatesApart = false, onOpenPlugin }: RepositorySetupProps) {
   const { t, i18n } = useTranslation();
   const marked = (value: string, source: 'repository' | 'workspace' | 'daoris') =>
     source === 'repository' ? value : t(`projects.setup.marked.${source}`, { value });
@@ -265,7 +267,7 @@ export function RepositorySetup({ repository, driving, work, access, heavy, land
   const commitsOwn = commits?.source === 'repository';
   const landedOwn = landed?.start.landed.level === 'repository-landed';
   // The integration declaration at the line's tip waits for the person's acceptance (D215): never accepted, or changed since.
-  const integrationOwed = Boolean(landed?.onAcceptIntegration) && (landed?.start.integration?.state === 'unaccepted' || landed?.start.integration?.state === 'changed');
+  const integrationOwed = !gatesApart && Boolean(landed?.onAcceptIntegration) && (landed?.start.integration?.state === 'unaccepted' || landed?.start.integration?.state === 'changed');
   const workParts = work && [
     ...(line
       ? [marked(
@@ -505,7 +507,7 @@ export function RepositorySetup({ repository, driving, work, access, heavy, land
           {landed && (
             <LandedRoute repository={repository} workspace={landed.workspace} start={landed.start} busy={busy} onChoose={landed.onChoose} />
           )}
-          {landed?.start.integration && landed.onAcceptIntegration && (
+          {!gatesApart && landed?.start.integration && landed.onAcceptIntegration && (
             <IntegrationDeclaration repository={repository} integration={landed.start.integration} busy={busy} onAccept={landed.onAcceptIntegration} />
           )}
         </>
