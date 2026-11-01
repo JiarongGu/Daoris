@@ -29,17 +29,26 @@ const TABLE: Record<string, Record<number, number>> = {
   'flow/TooLargeChinese': { 544: 0, 1200: 0 },
   'flow/TooLargeThreeCurrent': { 544: 0, 1200: 0 },
   'flow/TooLargeNoneCurrent': { 544: 0, 1200: 0 },
-  // A workflow and its run (FLOWCHART1d): a step a rank under its sections from 400 px, the rail at the side bar's floor; a failure
-  // path is a rank of two, drawn at 1200 alone.
-  'workflow/Current': { 400: 0, 544: 0, 1200: 0 },
-  'workflow/CurrentChinese': { 400: 0, 544: 0, 1200: 0 },
-  'workflow/NothingSet': { 400: 0, 544: 0, 1200: 0 },
-  'workflow/AFailurePath': { 1200: 0 },
-  'workflow/AFailurePathChinese': { 1200: 0 },
-  'workflow/RunInReview': { 400: 0, 544: 0, 1200: 0 },
-  'workflow/RunInReviewChinese': { 400: 0, 544: 0, 1200: 0 },
-  'workflow/RunPassedOver': { 1200: 0 },
-  'workflow/RunLanded': { 400: 0, 544: 0, 1200: 0 },
+  // A workflow and its run (FLOWCHART1d), through the one drawing (SETUPUX1n): a step a rank under its sections from the side bar's
+  // 300 px, since its 14rem track fits there; a failure path follows its step alone, so it draws at every width too.
+  'workflow/Current': { 300: 0, 400: 0, 544: 0, 1200: 0 },
+  'workflow/CurrentChinese': { 300: 0, 400: 0, 544: 0, 1200: 0 },
+  'workflow/NothingSet': { 300: 0, 400: 0, 544: 0, 1200: 0 },
+  'workflow/AFailurePath': { 300: 0, 400: 0, 544: 0, 1200: 0 },
+  'workflow/AFailurePathChinese': { 300: 0, 400: 0, 544: 0, 1200: 0 },
+  'workflow/RunInReview': { 300: 0, 400: 0, 544: 0, 1200: 0 },
+  'workflow/RunInReviewChinese': { 300: 0, 400: 0, 544: 0, 1200: 0 },
+  'workflow/RunPassedOver': { 300: 0, 400: 0, 544: 0, 1200: 0 },
+  'workflow/RunLanded': { 300: 0, 400: 0, 544: 0, 1200: 0 },
+  // One drawing of a workflow graph (SETUPUX1n): always in sections, so top to bottom at 80 and 39rem (1280 and 624 px) and the rail at
+  // 25rem, whose two-way branch needs 29.5rem; the way back on its lane, the holds one group, and no crossing at all.
+  'graph/Release': { 1280: 0, 624: 0 },
+  'graph/ReleaseDark': { 1280: 0, 624: 0 },
+  'graph/ReleaseChinese': { 1280: 0, 624: 0 },
+  'graph/ReleaseChineseDark': { 1280: 0, 624: 0 },
+  'graph/ReleaseHoldsOpen': { 1280: 0, 624: 0 },
+  'graph/Merge': { 1280: 0, 624: 0, 400: 0 },
+  'graph/MergeChinese': { 1280: 0, 624: 0, 400: 0 },
   // Unequal boxes in both languages, left to right and top to bottom.
   'flow/Unequal': { 570: 0, 1200: 0 },
   'flow/UnequalChinese': { 570: 0, 1200: 0 },

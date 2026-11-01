@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { layoutFlow, placementFor, slotCrossings } from '../design/flowLayout';
 import i18n from '../locales/i18n';
 import { drawnFromJson, FINISHED, graphFlow, WORKFLOW_TRACK } from './graphFlow';
+import { MERGE_GRAPH, RELEASE_GRAPH } from './graphFixtures';
 
 // SETUPUX1n (D221; the Setup design's §2.3 and §5 row n): one drawing of a workflow graph for the place, the editor and a run, always
 // top to bottom in sections and never left to right, its endings drawn as they are, its holds in one group, on a 14rem track. The
@@ -35,6 +36,11 @@ describe('the shipped workflows, read from the driver\'s own data', () => {
     ]);
     const release = shipped('release').graph as { nodes: unknown[]; wires: unknown[]; end: string };
     expect([release.nodes.length, release.wires.length, release.end]).toEqual([11, 13, 'line']);
+  });
+
+  it('are what the stories draw: their fixtures equal the files', () => {
+    expect(RELEASE_GRAPH).toEqual(shipped('release').graph);
+    expect(MERGE_GRAPH).toEqual(shipped('merge-after-accept').graph);
   });
 
   it('are drawn in sections, so never left to right, at any width', () => {

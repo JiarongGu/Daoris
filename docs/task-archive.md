@@ -22669,3 +22669,9 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 > **SETUPUX1e — keep how it lands** (driver, modules; row e of the set-up design). `PLACE_PLAN`'s keep ask writes no landing and no workflow choice, and allows driving, the ticks and adoption; `PLACE_APPLY` applies a subset of what it writes today and stays the person's alone. Proof: no `SET_LANDING` or `WORKFLOW_USE` in a keep plan; a saved workflow survives; Apply stays the person's (the bridge-press census); a restart settles as today (the receipt's postconditions).
 
 **Outcome** 2026-11-02: the preset `keep` (`SetupPresets.Keep`, the terminal's `--preset keep`) plans a place's tree, driving, ticks and adoption and nothing of its landing or workflow, so the apply and the receipt's settling needed no change, and the routes none. Detail: D221's SETUPUX1e note; `PlacePlanTests`, `PlaceApplyTests`.
+
+## SETUPUX1n — one drawing (2026-11-02, D221)
+
+> **SETUPUX1n — one drawing** (web; row n of the set-up design). `graphFlow.ts` per §2.3's table: always sectioned, the ◎ node, the 14rem track, the holds group, the end's words, the renamed steps' words. Proof: unit tests over every shipped graph, with fixtures equal to `Defaults/workflows/*.json`; measured stories: the release graph down at 80 and 39rem, the rail at 25rem, no crossings.
+
+**Outcome** 2026-11-02: the chart, the editor and a run draw through `workflow/graphFlow.ts`; `Flow` gained a node `mark` and the ◎ glyph, and *Finished* is drawn only from a run's record. Detail: D221's SETUPUX1n note; `graphFlow.test.ts`, the measured `graph/*` stories.

@@ -31,6 +31,8 @@
   "workflow.edit.kind.check": "The checks",
   "workflow.edit.kind.integrate": "The integration request",
   "workflow.edit.kind.work.requests": "The work's requests",
+  "workflow.edit.kind.quest.holds": "The quest's holds",
+  "workflow.edit.kind.content.holds": "What the line holds",
   "workflow.edit.kind.request": "The quest to another repository",
   "workflow.edit.kind.land": "The landing",
   "workflow.edit.kind.review": "Your review",
