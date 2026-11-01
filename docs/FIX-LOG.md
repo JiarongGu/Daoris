@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-01 - A brainstorm's pass ended `not-started` and the reason was nowhere (BRAINSTORMSTART1)
+
+- **Symptom:** `daoris-driver brainstorm "..." --agents claude,codex` ended `no-agent`; both passes `unavailable (not-started)` with `account: null`, while sessions of both agents ran that hour. Neither the pass record, `brainstorm show` nor the machine log said why.
+- **Root cause:** two together. `--agents` names adapters (`claude-code`, `claude-code-acp`, `codex-acp`), and `claude`/`codex` are agent names no adapter answers to, so `Adapters.Resolve` threw before any account was walked; an adapter is added deliberately and never guessed. And `DriverBrainstorms.TurnAsync` turned that `DriverException` into the code `not-started` and kept the sentence only in the turn's own words, which nothing stored.
+- **Fix:** `BrainstormTurnRun.Why` carries the sentence; `PassAsync` keeps it on the pass record (`why`, written only when there is one, so a record without it reads as before), writes `brainstorm.pass` to the machine log once as the pass ends, and `brainstorm show` and the document's pass list print it. The name is still not guessed: the sentence names the adapters this machine has.
+- **Verify:** `BrainstormStartTests` (2) written first and failing to compile against the old code (no `Why`), green after: the install's request, the record's reason, `show`, and an older record reading as before. The brainstorm classes, `MeetingTests` and the four census classes green. Not run: the installed window.
+
 ## 2026-11-01 - One request's policy governed members queued under another (LANDNODE1g)
 
 - **Symptom:** after a change of the line's rule, requests admitted under different `integrate` keys formed one candidate, and the first request's batch and gates governed all of them.
