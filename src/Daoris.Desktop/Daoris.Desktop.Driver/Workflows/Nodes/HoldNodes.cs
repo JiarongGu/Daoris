@@ -129,16 +129,12 @@ public static class HoldNodes
     /// The landing a branch unit's records keep for <paramref name="binding"/>: on a run's binding, the one made at or squashing its bound commit,
     /// or the merge its session branch records there; on a unit's own, its newest, or the merge its session branch records. Null where none is kept.
     /// </summary>
-    /// <remarks>
-    /// LANDNODE1m: a merge keeps no landing record, so the line holding the session branch, as the end's keeper wrote it, is its record. A run's
-    /// landing that replayed the work onto a moved line leaves its tree on the commit merged, which the run then binds; read at that commit, the
-    /// hold keeps the landing's reading rather than finding the line holding the work and holding it for ever.
-    /// </remarks>
     private static LandedBranch? LandedAt(WorkUnit unit, NodeAcceptance binding)
     {
         if (binding.Subject is not null)
         {
             if (binding.SubjectRevision is not { } bound) return null;
+            // LANDNODE1m: a merge keeps no landing record, and a replayed one leaves its tree on the commit merged, which the run then binds.
             return unit.Records.Landings.LastOrDefault(each => each.Tip == bound || each.Squashed == bound)
                 ?? (unit.Records.Branch?.Held is { } held && string.Equals(held.Tip, bound, StringComparison.OrdinalIgnoreCase) ? Merged(unit) : null);
         }

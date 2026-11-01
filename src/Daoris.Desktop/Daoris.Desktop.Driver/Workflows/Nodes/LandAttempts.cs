@@ -1,11 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A <c>land</c> attempt left unreconciled by its binding's lapse (LANDNODE1m), settled by the deliveries its doors land through. A landing
-/// that replayed the work onto a moved line leaves its tree on the commit it merged, so the run's next pass binds that commit and lapses the
-/// attempt that landed; and a commit made while <c>land</c> was active lapses it with nothing landed. Its effect is a delivery at the commit it
-/// was bound to (the land node design §3): where none stands unresolved there, what it did is known, delivered, withdrawn or stopped, with git
-/// holding what it made, so it holds no new attempt back. One unresolved there still does, until the settlement by phase reads it.
+/// A <c>land</c> attempt left unreconciled by its binding's lapse (LANDNODE1m: a replayed merge's tree moved to the commit merged, or a commit
+/// made while it was active), settled by the deliveries its doors land through: where none bound at its commit stands unresolved, what it did is
+/// known, so it holds no new attempt back; one unresolved there still does, until the settlement by phase reads it.
 /// </summary>
 public static class LandAttempts
 {
