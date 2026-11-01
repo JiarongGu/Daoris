@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (371)
+## Files over 40 KB (372)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -394,7 +394,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-24-ci-scope-reads.md` | 195 | 1757 |
 | `docs/2026-10-24-confirm-wait-design.md` | 123 | 1035 |
 | `docs/2026-10-24-confirm-wait-reads.md` | 77 | 812 |
-| `docs/2026-10-24-cowork-view-design.md` | 568 | 4233 |
+| `docs/2026-10-24-cowork-view-design.md` | 570 | 4250 |
 | `docs/2026-10-24-cowork-view-reads.md` | 266 | 2405 |
 | `docs/2026-10-24-event-hook-design.md` | 183 | 1333 |
 | `docs/2026-10-24-event-hook-reads.md` | 118 | 1099 |
@@ -434,6 +434,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-11-01-setup-ux-proposal-opus.md` | 77 | 818 |
 | `docs/2026-11-02-flowchart-proposal-codex.md` | 46 | 443 |
 | `docs/2026-11-02-flowchart-proposal-opus.md` | 80 | 736 |
+| `docs/2026-11-02-staff-policy-proposal-codex.md` | 44 | 469 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `docs/backlog-parked.md` | 176 | 934 |
 | `docs/development.md` | 55 | 605 |
