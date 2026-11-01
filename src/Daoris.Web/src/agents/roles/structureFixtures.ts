@@ -13,7 +13,7 @@ export const READ_AT = '2026-10-31T08:00:00.000Z';
 export const WORKS = ['build', 'design', 'chat', 'ask-daoris', 'intake', 'help', 'partner', 'review', 'brainstorm'];
 
 const roleOf = (id: string, nameEn: string, nameZh: string, scope: { kind: string; id?: string } = { kind: 'machine' }, revision = 0) =>
-  ({ id, nameEn, nameZh, scope, revision });
+  ({ id, name: { en: nameEn, zh: nameZh }, scope, revision });
 
 const BUILD = roleOf('build', 'Build', '开发');
 const ENGINE = roleOf('engine-build', 'Engine build', '引擎开发', { kind: 'repository', id: 'engine' }, 3);
@@ -64,9 +64,9 @@ const TOOLS_WORKS = withWork(
 export const STRUCTURE: RoleStructure = {
   works: WORKS,
   roles: [
-    { id: 'build', state: 'seed', seeded: true, nameEn: 'Build', nameZh: '开发', takes: ['build'], scopeKind: 'machine', revision: 0 },
-    { id: 'engine-build', state: 'set', seeded: false, nameEn: 'Engine build', nameZh: '引擎开发', takes: ['build'], scopeKind: 'repository', scopeId: 'engine', revision: 3 },
-    { id: 'chat', state: 'seed', seeded: true, nameEn: 'Chat', nameZh: '对话', takes: ['chat'], scopeKind: 'machine', revision: 0 },
+    { id: 'build', state: 'seed', seeded: true, name: { en: 'Build', zh: '开发' }, takes: ['build'], scopeKind: 'machine', revision: 0 },
+    { id: 'engine-build', state: 'set', seeded: false, name: { en: 'Engine build', zh: '引擎开发' }, takes: ['build'], scopeKind: 'repository', scopeId: 'engine', revision: 3 },
+    { id: 'chat', state: 'seed', seeded: true, name: { en: 'Chat', zh: '对话' }, takes: ['chat'], scopeKind: 'machine', revision: 0 },
   ],
   places: [
     { works: MACHINE_WORKS },
@@ -122,9 +122,9 @@ export function largeStructure(): { structure: RoleStructure; registry: { reposi
     structure: {
       works: ['build'],
       roles: [
-        { id: 'build', state: 'seed', seeded: true, nameEn: 'Build', nameZh: '开发', takes: ['build'], scopeKind: 'machine', revision: 0 },
+        { id: 'build', state: 'seed', seeded: true, name: { en: 'Build', zh: '开发' }, takes: ['build'], scopeKind: 'machine', revision: 0 },
         ...own.map(([, repository]) => ({
-          id: `${repository}-build`, state: 'set' as const, seeded: false, nameEn: `${repository} build`, nameZh: `${repository} 开发`, takes: ['build'],
+          id: `${repository}-build`, state: 'set' as const, seeded: false, name: { en: `${repository} build`, zh: `${repository} 开发` }, takes: ['build'],
           scopeKind: 'repository', scopeId: repository, revision: 1,
         })),
       ],

@@ -15,7 +15,7 @@ import { RolesCard } from './Roles';
 const nothing = () => {};
 
 const seed = (id: string, en: string, zh: string, work: string): RoleRow => ({
-  id, state: 'seed', seeded: true, nameEn: en, nameZh: zh, takes: [work], scopeKind: 'machine', revision: 0,
+  id, state: 'seed', seeded: true, name: { en, zh }, takes: [work], scopeKind: 'machine', revision: 0,
 });
 
 const CATALOGUE: RoleCatalogue = {

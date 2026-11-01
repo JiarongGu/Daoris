@@ -80,7 +80,7 @@ export function useRoleEditing(notify: Notify) {
   const pressRole = (press: RoleChangePress, answered: Answered) => {
     const row = roles.data?.roles.find((each) => each.id === press.id);
     const named = press.role
-      ? roleName(t, i18n.language, { id: press.id, seeded: row?.seeded ?? false, nameEn: press.role.name.en, nameZh: press.role.name.zh })
+      ? roleName(t, i18n.language, { id: press.id, seeded: row?.seeded ?? false, name: press.role.name })
       : roleName(t, i18n.language, row ?? { id: press.id, seeded: false });
     setRole.mutate(press, {
       onSuccess: () => {
@@ -97,7 +97,7 @@ export function useRoleEditing(notify: Notify) {
     const named = presses.map((press) => {
       const row = roles.data?.roles.find((each) => each.id === press.id);
       return roleName(t, i18n.language, {
-        id: press.id, seeded: row?.seeded ?? false, nameEn: press.role?.name.en ?? row?.nameEn, nameZh: press.role?.name.zh ?? row?.nameZh,
+        id: press.id, seeded: row?.seeded ?? false, name: press.role?.name ?? row?.name,
       });
     });
     setRoles.mutate({ changes: presses }, {

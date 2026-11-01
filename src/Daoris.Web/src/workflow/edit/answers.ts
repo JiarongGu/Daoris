@@ -2,6 +2,7 @@
 // `WORKFLOW_SHOW`, `WORKFLOW_PALETTE`, `WORKFLOW_SAVE` and `WORKFLOW_USE` as the driver gives them. Kept beside the editor, which a
 // bridge domain may not be imported by, and re-exported by `bridge/repositories/workflowEdit.ts`. A twin of the driver's
 // `WorkflowOperations.Listing`, `Show`, `SaveAsync` and `WorkflowPalette` (.claude/knowledge/twins.md).
+import type { Authored } from '../../locales/authored';
 
 /** A place that chooses a saved workflow: `repository` or `workspace`, its name, and the role it holds there. */
 export type WorkflowChosen = { level: 'repository' | 'workspace'; name: string; role: 'default' | 'kind' | 'landed'; kind: string | null };
@@ -48,9 +49,10 @@ export type PaletteWire = { kind: string; eligibility: boolean; from: string[] |
 /**
  * A plugin's step as its manifest declares it, which a graph's node copies, with the wire kinds that may leave it. `outputsOn` (DECIDE1d)
  * names, for an output carried on some outcomes alone, those outcomes; an output it leaves out is carried on every reach, and it is absent
- * from a driver before it. `title` and `about` (SETUPUX1f) are the manifest's words in en and zh, null or absent where it declares none.
+ * from a driver before it. `title` and `about` (SETUPUX1f) are the manifest's words as authored text (D222): one text, or language tags
+ * to text; null or absent where it declares none. A page shows them with `authoredText`.
  */
-export type StepWords = { en: string; zh: string };
+export type StepWords = Authored;
 
 export type PaletteStep = {
   kind: string; version: number; reach: string; rejectable: boolean; skippable: boolean; inputs: Record<string, string>;
@@ -89,4 +91,4 @@ export type WorkflowUseAsk = ({ repository: string } | { workspace: string }) & 
 export type WorkflowUseAnswer = { done: boolean; refused: string | null; message: string | null; changed: boolean; reach: WorkflowReachRow[] };
 
 /** A working role a step may name, from the roles' structure: its id, its names, and the works it takes. */
-export type EditorRole = { id: string; name: { en: string; zh: string } | null; takes: string[] };
+export type EditorRole = { id: string; name: Authored | null; takes: string[] };

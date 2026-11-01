@@ -27,8 +27,8 @@ type Graph = { nodes: { id: string }[]; wires: { id: string; kind: string; from:
 const STRUCTURE = {
   works: [], places: [], agents: [],
   roles: [
-    { id: 'build', state: 'seed', seeded: true, nameEn: 'Build', nameZh: '开发', takes: ['build'], revision: 0 },
-    { id: 'opinion', state: 'seed', seeded: true, nameEn: 'Second opinion', nameZh: '第二意见', takes: ['review'], revision: 0 },
+    { id: 'build', state: 'seed', seeded: true, name: { en: 'Build', zh: '开发' }, takes: ['build'], revision: 0 },
+    { id: 'opinion', state: 'seed', seeded: true, name: { en: 'Second opinion', zh: '第二意见' }, takes: ['review'], revision: 0 },
   ],
 };
 

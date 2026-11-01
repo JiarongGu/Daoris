@@ -4,9 +4,10 @@ import { refusedNoRoute } from '../../bridge/shell';
 import { useRoleStructureChain } from '../../bridge/driver';
 import type { RoleStructure, StructurePlaceAsk, StructureWork } from '../../data/wiring';
 import { Button, type Notify, SettingList, SettingRow } from '../../design/ui';
+import type { Authored } from '../../locales/authored';
 import { InlineConfirm } from '../../work/InlineConfirm';
 import { AppointedRoles } from '../roles/AppointedRoles';
-import { type Editing, editingOfLine, entryText, type Line, mayEditLine, newRoleEditing, placeText, roleName, RolesCard } from '../roles/Roles';
+import { type Editing, editingOfLine, entryText, type Line, mayEditLine, nameFields, newRoleEditing, placeText, roleName, RolesCard } from '../roles/Roles';
 import { useRoleEditing } from '../roles/RolesView';
 import { stateText } from '../roles/StructureSections';
 
@@ -80,7 +81,7 @@ export function PlaceRolesView({ place, read, answer, editor, appointed }: {
   const kept = catalogue?.kept === true;
   const mine = answer?.places[0];
   const parent = kind === 'machine' ? undefined : answer?.places[1];
-  const name = (role: { id: string; nameEn?: string | null; nameZh?: string | null }) => roleName(t, i18n.language, { ...role, seeded: false });
+  const name = (role: { id: string; name?: Authored | null }) => roleName(t, i18n.language, { ...role, seeded: false });
   const workName = (work: string) => t(`settings.ai.roles.work.${work}`, { defaultValue: work });
   const lineOf = (id: string): Line => ({
     id, row: catalogue?.roles.find((each) => each.id === id) ?? null, actor: staffing.find((each) => each.id === id) ?? null,
@@ -88,12 +89,14 @@ export function PlaceRolesView({ place, read, answer, editor, appointed }: {
 
   const give = (work: StructureWork) => {
     const base = newRoleEditing(catalogue?.works ?? [], editor.agents, kind === 'machine' ? null : { kind, id: here }, nextKey());
-    const named = work.role ? { en: work.role.nameEn, zh: work.role.nameZh } : { en: work.work, zh: workName(work.work) };
+    const beside = (text: string) => (text ? `${text} · ${placeName}` : '');
+    const named = work.role ? nameFields(work.role.name, '') : { name: workName(work.work), nameIn: [] };
     const choices = work.choices.filter((choice) => /^[1-4]$/.test(choice.from));
     setOpen({
       work: work.work,
       editing: {
-        ...base, work: work.work, takes: [work.work], nameEn: `${named.en} · ${placeName}`, nameZh: `${named.zh} · ${placeName}`,
+        ...base, work: work.work, takes: [work.work], name: beside(named.name) || (named.nameIn.length > 0 ? '' : beside(workName(work.work))),
+        nameIn: named.nameIn.map(([tag, text]): [string, string] => [tag, beside(text)]),
         drafts: choices.length > 0
           ? choices.map((choice) => ({ key: nextKey(), agent: choice.agent, model: choice.model ?? '', effort: choice.effort ?? '' }))
           : base.drafts,
