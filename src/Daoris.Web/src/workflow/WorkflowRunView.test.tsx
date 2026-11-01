@@ -904,7 +904,7 @@ describe("a run's view of where its work stands", () => {
 
     await i18n.changeLanguage('zh');
     render(<WorkflowRunView answer={answerOf(IN_REVIEW)} />);
-    expect(document.body).toHaveTextContent('停在：你在 dev 中审阅 · 等你处理');
+    expect(document.body).toHaveTextContent('停在：你的查看（dev） · 等你处理');
   });
 
   it("opens the step the run stands at, with its owner's control, and every other step as its title and one fact", async () => {

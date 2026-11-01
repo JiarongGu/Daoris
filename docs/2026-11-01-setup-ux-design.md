@@ -495,7 +495,7 @@ The part is *How it lands*: *delivery* is also the land node's record, and 交�
 | Set up…'s first part; keeping it | How it lands; Keep how it lands | 落地方式; 保持现有落地方式 | Delivery, 交付 | new; avoid 交付 |
 | A delivery | Merge after you accept · A branch to push · A pull request · Integrated into the line · Not driven | 你采纳后合并 · 留给你推送的分支 · 拉取请求 · 集成到主线 · 未驱动 | the same names on workflows; `defaultName.*` | the data's `delivery.names`; *Not driven* a chrome key |
 | A shipped workflow | preset; Merge, Automatic merge, Documents, Branch, Hosted merge, Integration, No-press integration and Release workflow | 预设; 合并, 自动合并, 文档, 分支, 托管合并, 集成, 免按键集成, 发版工作流 | 默认工作流; "Pull request workflow" | new `preset`; the data's `names`; 发版, since 发布 is a quest's (`:520`) |
-| Renamed steps | `pull-request`: Completed on the host; `integrate`: The integration request; `handed`: Handed on | 在托管平台完成; 集成请求; 已移交 | 拉取请求; 集成; 落地 | new |
+| Renamed steps | `pull-request`: Completed on the host; `integrate`: The integration request; `handed`: Handed on | 在托管平台完成; 集成请求; 已交接 | 拉取请求; 集成; 落地 | new |
 | The workflow of the rules | Current; *from Current* | 现行; 来自现行 | 当前; "from Merge workflow (Current)" | new; avoid 当前 |
 | A saved version | version, v2 | 版本 | a digest shown as a version | amend `version` (`:644`) |
 | Choose; compose | Change… · Use here · Use the workspace's; Edit steps… | 更改… · 在此使用 · 沿用工作区的; 编辑步骤… | 在这里使用; 编排工作流, 编排步骤… | `Use here` (`:584`); `compose` (`:581`) keeps 编排 |

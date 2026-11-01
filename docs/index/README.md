@@ -51,7 +51,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/help/AskConversation.tsx` | 63 | 1160 |
 | `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 108 | 2136 |
 | `src/Daoris.Web/src/help/ProposalCard.test.tsx` | 44 | 804 |
-| `src/Daoris.Web/src/locales/names.test.ts` | 41 | 718 |
+| `src/Daoris.Web/src/locales/names.test.ts` | 41 | 721 |
 | `src/Daoris.Web/src/menus/commands.ts` | 43 | 831 |
 | `src/Daoris.Web/src/projects/ProjectsView.git.test.tsx` | 82 | 1345 |
 | `src/Daoris.Web/src/projects/ProjectsView.test.tsx` | 109 | 1901 |

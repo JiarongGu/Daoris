@@ -414,6 +414,6 @@ describe('the answer on its way', () => {
     await act(async () => { await i18n.changeLanguage('zh'); });
     draw();
     expect(screen.getByRole('list', { name: '工作在这里如何分流' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '检查' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '检查项' })).toBeInTheDocument();
   });
 });
