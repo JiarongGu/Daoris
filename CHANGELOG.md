@@ -5,6 +5,7 @@ with the version and date at release.
 
 ## Unreleased
 
+- Once this build has started and confirmed on a home, an older Daoris run on that home reads the desktop's store but writes nothing in it, saying it was written by a newer Daoris: update it to write again. A start that is rolled back before it confirms leaves the store writable by the build before it.
 - A branch landing rule, on a repository's or a workspace's Setup, has *Integrate into the line*: tick it to choose who asks, how each member lands, the batch, the order, the gates, what an unconfirmed failure does, where a conflict goes, an overlap and the line. Nothing is judged on the page: the driver's sentence for a policy it refuses stands under *Save*, and unticking withdraws it.
 - A repository's *Accept the gates* now sends the declaration it showed you, and is refused (nothing accepted) if the line's tip no longer holds that one: read it again, then accept it, as an integration's acceptance already did.
 - Workflows can now be saved, chosen and given kinds of task from Daoris's window, not only at the terminal: saving onto a workflow that is already saved says every place that chooses it (each new start there takes the newest version) and waits for your yes to those places, a version made on an older one is refused, and every choice says which repositories would integrate with no gates or could not start at all.

@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## LANDNODE1b — the delivery record and its intent (2026-11-01)
+
+> **1b, the delivery record and its intent** (driver, store; `docs/2026-11-01-land-node-design.md` §3, §4 and §8 row 3): the `deliveries` table under the raised writer stamp, the delivery key, the frozen intent with its authorization, and the write-ahead phase entries; the rollback refused while one is unresolved. Proof: concurrent starts make one delivery; an older writer's store write refused; a rollback refused with one open. After a.
+
+**Outcome** 2026-11-01: store step 15 makes `deliveries` and `delivery_phases` and raises the writer stamp to 2 once the start is settled; `Workplace/DeliveryStore` keeps each delivery under its key with its intent, authorization, claim and phases, and answers `Rollback`. The landing path does not use it yet (rows 1b2, 1b3, 1e, 1c2). Detail: D212's note of this date; `DeliveryStoreTests`, `DesktopStoreTests`' step 15.
+
 ## LANDNODE1a — the `land` kind and its rules (2026-11-01)
 
 > **LANDNODE1a — the kind and its rules** (driver; the land node design §8 row 1). `land` (落地), a built-in kind, performed with Daoris as its executor, its authority and options (`method`, `accept`, `target`, `pattern`, `plugin`, `squash`, `message`) each held to their choices, and §6's graph rules. Proof: a test per refusal; an older table reads `land` as unknown; stored versions read unchanged.

@@ -162,7 +162,8 @@ public sealed class DeliveryRefusedException(string key, string why) : Exception
 
 /// <summary>
 /// The delivery record (LANDNODE1b; the land node design §3, §4): a desktop-store family, Workplace's, in <c>deliveries</c> and
-/// <c>delivery_phases</c>, machine-local and never synced. The git adapter and the plugin write its phases; nothing of the landing path does yet.
+/// <c>delivery_phases</c>, machine-local and never synced: a landing's frozen intent, its authorization, and each of its effects written
+/// ahead and its outcome after.
 /// </summary>
 /// <remarks>
 /// <para><b>One delivery per key, one unresolved per unit</b>: a start inside the store's write lock answers the delivery its key names, or is
