@@ -53,7 +53,12 @@ public sealed class DriverModulePluginToolsTests : DriverModuleBridge
         Install();
         var asked = new List<string>();
 
-        var page = await AnswerAsync(Standin(asked), "PLUGIN", new { id = "acme.land" });
+        var module = Standin(asked);
+        var listed = (await AnswerAsync(module, "PLUGINS")).GetProperty("plugins").EnumerateArray().Single();
+        Assert.Equal("az", listed.GetProperty("tools")[0].GetProperty("id").GetString());
+        Assert.Equal(JsonValueKind.Null, listed.GetProperty("tools")[0].GetProperty("found").ValueKind);
+
+        var page = await AnswerAsync(module, "PLUGIN", new { id = "acme.land" });
 
         var tool = Assert.Single(page.GetProperty("tools").EnumerateArray());
         Assert.Equal("az", tool.GetProperty("id").GetString());

@@ -77,6 +77,8 @@ public sealed class PluginsRoutes(DriverContext context)
                     // FABRIC-UNIT1e (§D9): the steps it declares and what they create, which its page lists.
                     Steps = StepsOf(plugin.Manifest),
                     Resources = ResourcesOf(plugin.Manifest),
+                    // ADOSIGNIN1: its tools as written; nothing is found or run by this read, the person's Check does.
+                    Tools = plugin.Manifest.Tools.Select(tool => ToolStanding.Declared(tool, plugin.Manifest.Tools)).ToArray(),
                     Hook = HookOf(plugin),
                     Listening = health.Listening,
                     // The loop's own record (D119 §2): the state, since when, and its failure while failing.
