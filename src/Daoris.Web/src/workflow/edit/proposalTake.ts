@@ -17,6 +17,12 @@ export type DraftProposal = {
   changes: readonly WorkflowGraphChange[];
 };
 
+/** Who made a proposal: the agent, and the models its conversation reported running. */
+export type ProposalMaker = { agent: string; models: readonly string[] };
+
+/** A proposal as the editor shows it: its agent's reason, how many problems a save of it whole would meet, and who made it, where known. */
+export type ProposalShown = DraftProposal & { why: string; problems: number; maker: ProposalMaker | null };
+
 /** Which of a proposal's changes the person took into the draft, and which they left. */
 export type Decided = { taken: readonly string[]; left: readonly string[] };
 

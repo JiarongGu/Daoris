@@ -42,7 +42,7 @@
   "workflow.edit.proposal.said.end": "The work is done at {{step}}, not {{was}}",
   "workflow.edit.proposal.said.entries": "The work starts at {{steps}}",
   "workflow.edit.proposal.said.cleanup": "How it is cleaned up",
-  "workflow.edit.proposal.heard.took": "Took into the draft: {{changes}}.",
+  "workflow.edit.proposal.heard.took": "Took into the draft: {{changes}}. The draft is judged again.",
   "workflow.edit.proposal.heard.left": "Left: {{changes}}.",
   "workflow.edit.proposal.heard.refused": "Not taken: {{change}} no longer fits your draft.",
   "workflow.edit.proposal.heard.dismissed": "Ask Daoris's proposal is set aside.",

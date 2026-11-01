@@ -2,14 +2,12 @@ import type { ReactNode } from 'react';
 import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Inline } from '../../design/ui';
+import type { ProposalMaker } from './proposalTake';
 
 // Ask Daoris's proposal above the editor's chart (FLOWCHART2f; D223 §4, §8.8): what it proposes, the agent and the model that made it, its
 // reason in the agent's words, how it would judge taken whole, how many of its changes are taken, left and still to decide, and the presses
 // over it whole: *Take all*, and *Not now* while nothing is taken or *Leave the rest* once something is. Its changes stand below it, one by
 // one. A molecule: what it says arrives as props, and every press goes out.
-
-/** Who made a proposal: the agent, and the models its conversation reported running. */
-export type ProposalMaker = { agent: string; models: readonly string[] };
 
 export type ProposalBarProps = {
   maker: ProposalMaker | null;
@@ -27,7 +25,8 @@ export type ProposalBarProps = {
   onTakeAll: () => void;
   onLeaveRest: () => void;
   onDismiss: () => void;
-  onAskAgain: () => void;
+  /** Ask Daoris filled in with what no longer fits; absent where this window has no Ask Daoris. */
+  onAskAgain?: () => void;
   /** The list of its changes. */
   children: ReactNode;
 };
@@ -70,7 +69,7 @@ export function ProposalBar({
               {counts.taken > 0
                 ? counts.open > 0 && <Button variant="ghost" className={press} disabled={busy} onClick={onLeaveRest}>{t('workflow.edit.proposal.act.leaveRest')}</Button>
                 : <Button variant="ghost" className={press} disabled={busy} onClick={onDismiss}>{t('workflow.edit.proposal.act.dismiss')}</Button>}
-              {unknownBase && <Button variant="ghost" className={press} disabled={busy} onClick={onAskAgain}>{t('workflow.edit.proposal.act.askAgain')}</Button>}
+              {unknownBase && onAskAgain && <Button variant="ghost" className={press} disabled={busy} onClick={onAskAgain}>{t('workflow.edit.proposal.act.askAgain')}</Button>}
             </div>
             <p className="m-0 text-meta text-ink-faint">{t('workflow.edit.proposal.note')}</p>
             {!unknownBase && children}

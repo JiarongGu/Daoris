@@ -42,7 +42,7 @@
   "workflow.edit.proposal.said.end": "工作在 {{step}} 完成，而不是 {{was}}",
   "workflow.edit.proposal.said.entries": "工作从 {{steps}} 开始",
   "workflow.edit.proposal.said.cleanup": "它如何清理",
-  "workflow.edit.proposal.heard.took": "已接入草稿：{{changes}}。",
+  "workflow.edit.proposal.heard.took": "已接入草稿：{{changes}}。草稿将重新判定。",
   "workflow.edit.proposal.heard.left": "不接：{{changes}}。",
   "workflow.edit.proposal.heard.refused": "未接入：{{change}} 已不适合你的草稿。",
   "workflow.edit.proposal.heard.dismissed": "已搁置问道衍的提议。",

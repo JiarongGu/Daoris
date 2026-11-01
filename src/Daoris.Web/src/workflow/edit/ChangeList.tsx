@@ -3,10 +3,11 @@ import { useTranslation } from 'react-i18next';
 import type { WorkflowGraphChange } from '../../help/ProposalCard';
 import { cn } from '../../lib/cn';
 import { Button, Inline, Pill } from '../../design/ui';
+import type { GraphFlow } from '../graphFlow';
 import type { WorkflowPaletteAnswer } from './answers';
 import { howSaid, stepTitle } from './editWords';
 import { draftOf } from './graphDraft';
-import type { DraftProposal, Mark } from './proposalTake';
+import type { DraftProposal, Mark, Union } from './proposalTake';
 
 // Ask Daoris's proposal listed change by change (FLOWCHART2f; D223 §4.3, §8.6): each change in the page's words, marked as the chart marks
 // it, with a door to its step, what taking it brings with it, and *Take* and *Leave*; a change the draft no longer holds the base of says
@@ -90,12 +91,34 @@ const TONE = { added: 'open', removed: 'declined', changed: 'taken' } as const;
 /** The sign a mark wears beside its word: added, removed, changed. */
 export const MARK_SIGN: Record<Mark, string> = { added: '+', removed: '−', changed: '~' };
 
+/**
+ * The union drawn as the proposal marks it (D223 §4.3): a step new, to remove or changed wears the word in a pill, a step to remove drawn
+ * dashed besides; a way new or to remove says so in its cause, which the rail and a reader hear, and the chart's chip shows beside it.
+ */
+export function withChanges(t: TFunction, flow: GraphFlow, union: Union | null): GraphFlow {
+  if (!union || (union.steps.size === 0 && union.ways.size === 0)) return flow;
+  return {
+    ...flow,
+    nodes: flow.nodes.map((node) => {
+      const mark = union.steps.get(node.id);
+      return mark
+        ? { ...node, state: { word: t(`workflow.edit.proposal.mark.${mark}`), tone: TONE[mark] }, ...(mark === 'removed' ? { faint: true } : {}) }
+        : node;
+    }),
+    edges: flow.edges.map((edge) => {
+      const mark = union.ways.get(edge.id);
+      return mark ? { ...edge, says: t('workflow.edit.proposal.waySays', { says: edge.says, mark: t(`workflow.edit.proposal.mark.${mark}`) }) } : edge;
+    }),
+  };
+}
+
 export function ChangeList({ rows, busy = false, onTake, onLeave, onAskAgain, onShow }: {
   rows: readonly ChangeRow[];
   busy?: boolean;
   onTake: (id: string) => void;
   onLeave: (id: string) => void;
-  onAskAgain: () => void;
+  /** Ask Daoris filled in with what no longer fits; absent where this window has no Ask Daoris. */
+  onAskAgain?: () => void;
   onShow: (step: string) => void;
 }) {
   const { t } = useTranslation();
@@ -142,7 +165,7 @@ export function ChangeList({ rows, busy = false, onTake, onLeave, onAskAgain, on
                 {t('workflow.edit.proposal.act.leave')}
               </Button>
             )}
-            {row.state === 'stale' && (
+            {row.state === 'stale' && onAskAgain && (
               <Button variant="ghost" className={small} disabled={busy} onClick={onAskAgain}>{t('workflow.edit.proposal.act.askAgain')}</Button>
             )}
           </div>
