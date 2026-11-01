@@ -210,6 +210,7 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-11-01-setup-ux-proposal-opus.md` | Proposal: SETUPUX1, Opus, sealed
 | `2026-11-01-setup-ux-proposal-codex.md` | Proposal: SETUPUX1, Codex, sealed
 | `2026-11-01-setup-ux-design.md` | Design: SETUPUX1, the place page, Set up… as choices then review, one top-to-bottom drawing, the editor's page, one role editor; proposed, reads owed
+| `2026-11-01-setup-ux-reads.md` | Reads: SETUPUX1, both makers' reads and the steward's settlement
 
 ## UI, browser, tools and plugin contracts
 
