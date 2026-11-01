@@ -1,0 +1,9 @@
+{
+  "canvas.sizing": "Sizing (Ctrl+wheel)",
+  "canvas.size": "Sizing: {{percent}}%",
+  "canvas.sizes": "Size",
+  "canvas.zoomIn": "Zoom in",
+  "canvas.zoomOut": "Zoom out",
+  "canvas.actual": "Actual size",
+  "canvas.toSelection": "Zoom to the selection"
+}

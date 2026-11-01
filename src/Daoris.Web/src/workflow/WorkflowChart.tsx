@@ -431,6 +431,7 @@ export function WorkflowChart({ workflow, page, name, doors, run, end, finished 
       sections={sections}
       track={WORKFLOW_TRACK}
       rail={<WorkflowRail workflow={workflow} page={page} name={name} doors={doors} run={run} end={end} finished={finished} />}
+      canvas="display"
     />
   );
 }

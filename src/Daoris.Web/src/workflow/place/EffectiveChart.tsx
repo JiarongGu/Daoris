@@ -88,6 +88,7 @@ export function EffectiveChart({ effective, routeLabel, page, name, workspace, s
         sections={flow.sections}
         track={flow.track}
         selected={selected}
+        canvas="display"
       />
       {cell && (
         <section aria-label={t('workflow.place.cell.region', { step: title })} className="min-w-0 rounded-control border border-line px-3 py-2">
