@@ -559,7 +559,7 @@ public sealed class MoveStoreTests : IDisposable
         // A newer Daoris raised the stamp past this build's.
         using (DesktopStore.Open(Db, new DesktopStoreOptions
                {
-                   Writer = 2, Steps = [.. DesktopStore.Steps, new(DesktopStore.Steps.Count + 1, 2, write => write.Execute("CREATE TABLE raised (x TEXT NOT NULL)"))],
+                   Writer = DesktopStore.WriterStamp + 1, Steps = [.. DesktopStore.Steps, new(DesktopStore.Steps.Count + 1, DesktopStore.WriterStamp + 1, write => write.Execute("CREATE TABLE raised (x TEXT NOT NULL)"))],
                    Settled = () => StoreSettled.Yes,
                }))
         {

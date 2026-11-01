@@ -84,9 +84,7 @@ public sealed class DeliveryStoreTests : IDisposable
         var key = DeliveryStore.KeyOf("unit-1", "tip", "branch", "main");
 
         Assert.Matches("^[0-9a-f]{64}$", key);
-        Assert.Equal(key, Intent("tip") with { Message = "another message", Line = "release", Plugin = "forge", Epoch = "epoch-8" } is var other
-            ? DeliveryStore.KeyOf(other.Unit, other.Tip, other.Method, other.Target) : null);
-        Assert.Equal(key, (Intent("tip") with { Message = "another message", Line = "release" }).Key);
+        Assert.Equal(key, (Intent("tip") with { Message = "another message", Line = "release", Plugin = "forge", Epoch = "epoch-8", Branch = null }).Key);
         Assert.Equal(4, new[]
         {
             DeliveryStore.KeyOf("unit-2", "tip", "branch", "main"), DeliveryStore.KeyOf("unit-1", "tip2", "branch", "main"),
@@ -392,7 +390,7 @@ public sealed class DeliveryStoreTests : IDisposable
 
         var refused = store.Rollback();
         Assert.False(refused.Allowed);
-        Assert.Equal([one.Key, two.Key], refused.Unresolved.Select(each => each.Key).Order().SequenceEqual(new[] { one.Key, two.Key }.Order()) ? [one.Key, two.Key] : refused.Unresolved.Select(each => each.Key));
+        Assert.Equal(new[] { one.Key, two.Key }.Order(), refused.Unresolved.Select(each => each.Key).Order());
         Assert.Contains("2 deliveries", refused.Refused);
         Assert.Contains("`unit-1` by branch at a1b2c3d4", refused.Refused);
         Assert.Contains("`unit-2` by merge", refused.Refused);

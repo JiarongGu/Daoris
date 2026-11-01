@@ -42,14 +42,17 @@ public sealed class StartConfirmationTests : IDisposable
         return store;
     }
 
-    /// <summary>A newer build's options: stamp 2, a step that raises it, and the reading of this install's journal at each ask.</summary>
+    /// <summary>A newer build's options: a stamp past this build's, a step that raises it, and the reading of this install's journal at each ask.</summary>
     private DesktopStoreOptions Newer(string kind = "shell") => new()
     {
         Kind = kind,
-        Writer = 2,
-        Steps = [.. DesktopStore.Steps, new StoreMigration(DesktopStore.Steps.Count + 1, 2, write => write.Execute("CREATE TABLE raised (x TEXT NOT NULL)"))],
+        Writer = DesktopStore.WriterStamp + 1,
+        Steps = [.. DesktopStore.Steps, new StoreMigration(DesktopStore.Steps.Count + 1, DesktopStore.WriterStamp + 1, write => write.Execute("CREATE TABLE raised (x TEXT NOT NULL)"))],
         Settled = () => StartConfirmation.Read(_install),
     };
+
+    /// <summary>The version a start that is not settled leaves the store at: every step before this build's own first raise (LANDNODE1b's).</summary>
+    private static readonly int Unraised = DesktopStore.Steps.TakeWhile(step => step.Writer == DesktopStore.FirstWriter).Count();
 
     // ——— The reading (§19.7).
 
@@ -141,7 +144,7 @@ public sealed class StartConfirmationTests : IDisposable
 
         Assert.False(outcome.Done);
         Assert.False(loaded);
-        Assert.Equal((DesktopStore.Steps.Count, 1), store.Stamp);
+        Assert.Equal((Unraised, 1), store.Stamp);
         Assert.Empty(store.Query("SELECT 1 FROM imports", row => 1));
         Assert.Empty(store.Revisions());
     }
@@ -157,7 +160,7 @@ public sealed class StartConfirmationTests : IDisposable
 
         Assert.False(outcome.Done);
         Assert.Contains("does not read", outcome.Said);
-        Assert.Equal((DesktopStore.Steps.Count, 1), store.Stamp);
+        Assert.Equal((Unraised, 1), store.Stamp);
         Assert.Empty(store.Query("SELECT 1 FROM imports", row => 1));
     }
 
@@ -168,7 +171,7 @@ public sealed class StartConfirmationTests : IDisposable
         var store = Open(Newer());
 
         Assert.Null(store.Held);
-        Assert.Equal((DesktopStore.Steps.Count + 1, 2), store.Stamp);
+        Assert.Equal((DesktopStore.Steps.Count + 1, DesktopStore.WriterStamp + 1), store.Stamp);
         Assert.True(store.Import(new StoreImport("settings", "data/driver.json", 1, "x", 1, ImportClass.Left)).Done);
     }
 
@@ -179,7 +182,7 @@ public sealed class StartConfirmationTests : IDisposable
         var loop = Open(Newer("host"));
         Assert.False(loop.Import(new StoreImport("settings", "data/driver.json", 1, "x", 1, ImportClass.Left)).Done);
         Assert.False(loop.Migrate());
-        Assert.Equal((DesktopStore.Steps.Count, 1), loop.Stamp);
+        Assert.Equal((Unraised, 1), loop.Stamp);
 
         // The swap goes on and the new application confirms: the launcher's journal moves, and the loop's next look reads it.
         Journal(SwapPhase.Started);
@@ -187,7 +190,7 @@ public sealed class StartConfirmationTests : IDisposable
         Journal(SwapPhase.Confirmed);
 
         Assert.True(loop.Migrate());
-        Assert.Equal((DesktopStore.Steps.Count + 1, 2), loop.Stamp);
+        Assert.Equal((DesktopStore.Steps.Count + 1, DesktopStore.WriterStamp + 1), loop.Stamp);
         Assert.True(loop.Import(new StoreImport("settings", "data/driver.json", 1, "x", 1, ImportClass.Left)).Done);
         Assert.Equal(1, loop.Revisions()["settings"]);
     }
@@ -221,13 +224,16 @@ public sealed class StartConfirmationTests : IDisposable
         newer.Migrate();
         newer.Dispose();
 
-        // The launcher rolls it back: the journal says so, and the older build starts on the same home.
+        // The launcher rolls it back: the journal says so, and the older build, one before this build's own raise, starts on the same home.
         Journal(SwapPhase.RolledBack, reason: "exited");
-        var older = Open(new DesktopStoreOptions { Kind = "shell", Settled = () => StartConfirmation.Read(_install) });
+        var older = Open(new DesktopStoreOptions
+        {
+            Kind = "shell", Writer = DesktopStore.FirstWriter, Steps = [.. DesktopStore.Steps.Take(Unraised)], Settled = () => StartConfirmation.Read(_install),
+        });
 
         Assert.Equal(before, files.Keys.ToDictionary(path => path, path => Hash(Path.Combine(_install, path))));
         Assert.All(files.Keys, path => Assert.False(File.Exists(Path.Combine(_install, path + ".imported"))));
-        Assert.Equal((DesktopStore.Steps.Count, 1), older.Stamp);
+        Assert.Equal((Unraised, 1), older.Stamp);
         Assert.False(older.Newer);
         older.Write("settings", _ => { });   // a store it can still write
         Assert.Equal(1, older.Revisions()["settings"]);
