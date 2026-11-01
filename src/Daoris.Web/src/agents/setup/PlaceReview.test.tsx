@@ -168,7 +168,7 @@ describe('Set up…, the review', () => {
         cleared: [{ repository: 'engine', purpose: 'integration', line: 'main', blob: '3b18e512dba79e4c8300dd08aeb37f8e728b8dad' }],
       }),
     });
-    expect(screen.getByRole('status')).toHaveTextContent('engine: the declaration changed to blob 3b18e51 at main since you ticked Accept for integration, so the tick was cleared.');
+    expect(screen.getByRole('status')).toHaveTextContent('engine: the declaration changed to blob 3b18e51 at main since you chose Accept for integration, so the choice was cleared.');
   });
 
   it('keeps the last plan marked updating while a plan is read, and offers no Apply until it has been', () => {

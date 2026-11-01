@@ -242,7 +242,7 @@ describe('Set up…, on a place\'s page', () => {
     await userEvent.click(screen.getByRole('button', { name: '← Back to the choices' }));
     await userEvent.click(screen.getByRole('checkbox', { name: 'Your look before it lands' }));
     await review();
-    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('the declaration changed to blob fffffff at main since you ticked Accept for integration, so the tick was cleared.'));
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('the declaration changed to blob fffffff at main since you chose Accept for integration, so the choice was cleared.'));
     expect(screen.getByRole('checkbox', { name: /Accept for integration/ })).not.toBeChecked();
     await waitFor(() => expect(applyButton()).toBeEnabled());
     await userEvent.click(applyButton());

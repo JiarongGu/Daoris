@@ -442,7 +442,7 @@
   "agents.setup.set.consequence.landed.changed": "Changed landed gates stop verification until you accept them.",
   "agents.setup.set.consequence.integration.unaccepted": "Until accepted, none of it is used.",
   "agents.setup.set.consequence.integration.changed": "Integration goes on under its last accepted blob until you accept this one.",
-  "agents.setup.set.cleared": "{{repository}}: the declaration changed to blob {{blob}} at {{line}} since you ticked {{purpose}}, so the tick was cleared.",
+  "agents.setup.set.cleared": "{{repository}}: the declaration changed to blob {{blob}} at {{line}} since you chose {{purpose}}, so the choice was cleared.",
   "agents.setup.set.applyTo": "Apply to {{count}} repository",
   "agents.setup.set.applyTo_other": "Apply to {{count}} repositories",
   "agents.setup.set.applying": "Applying…",

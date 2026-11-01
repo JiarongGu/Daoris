@@ -88,7 +88,7 @@ describe("a place's Gates", () => {
     rerender(<PlaceGates {...props} integration={{ ...INTEGRATION_CHANGED, tip: { ...INTEGRATION_CHANGED.tip!, gates: 'ffffffffffffffffffffffffffffffffffffffff' } }} />);
 
     expect(screen.getByRole('checkbox', { name: 'Accept for integration' })).not.toBeChecked();
-    expect(screen.getByRole('status')).toHaveTextContent('Accept for integration: the declaration changed since you ticked it, so the tick was cleared.');
+    expect(screen.getByRole('status')).toHaveTextContent('Accept for integration: the declaration changed since you chose it, so the choice was cleared.');
     expect(screen.getByRole('button', { name: 'Accept the chosen…' })).toBeDisabled();
   });
 

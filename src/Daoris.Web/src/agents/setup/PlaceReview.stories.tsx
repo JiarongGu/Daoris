@@ -103,13 +103,17 @@ export const MovedNarrow: Story = { ...Moved, decorators: [storyWidths.narrow] }
 
 /** Flow 1's end: configuration applied, adoption pending, each repository where it stands, and the door to the adoption quest. */
 export const Applied: Story = {
-  args: plannedFor(draftOf({
-    repositories: ['engine'],
-    preset: 'not-driven',
-    drive: false,
-    result: { ...APPLIED, operations: [{ id: 'quest:engine', kind: 'quest', repository: 'engine', said: 'the set-up quest asked of `engine`', outcome: 'done', quest: 'q-77' }] },
-    ended: [{ state: 'adoptionOnly', repositories: ['engine'] }],
-  })),
+  args: {
+    place: 'archive',
+    kind: 'repository',
+    ...plannedFor(draftOf({
+      repositories: ['archive'],
+      preset: 'not-driven',
+      drive: false,
+      result: { ...APPLIED, operations: [{ id: 'quest:archive', kind: 'quest', repository: 'archive', said: 'the set-up quest asked of `archive`', outcome: 'done', quest: 'q-77' }] },
+      ended: [{ state: 'adoptionOnly', repositories: ['archive'] }],
+    }), {}),
+  },
 };
 export const AppliedHalf: Story = { ...Applied, decorators: [storyWidths.half] };
 export const AppliedNarrow: Story = { ...Applied, decorators: [storyWidths.narrow] };
