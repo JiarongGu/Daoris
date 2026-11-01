@@ -68,6 +68,8 @@ public static class HookFrames
         acceptedBy = frame.AcceptedBy,
         tip = frame.Tip,
         origin = frame.Origin,
+        key = frame.Key,
+        mode = frame.Mode,
     };
 
     /// <summary>
@@ -85,6 +87,7 @@ public static class HookFrames
         pullRequest = frame.PullRequest,
         pushedTip = frame.PushedTip,
         origin = frame.Origin,
+        key = frame.Key,
     };
 
     /// <summary>

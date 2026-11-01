@@ -4,7 +4,7 @@ import { Icon, type IconName, Segmented, StripMark } from '../design/ui';
 import { AGENTS_MODES, type AgentsMode, ROLE_SECTIONS, type RoleSection } from './modes';
 
 /** Each mode's glyph on the strip. */
-const MODE_GLYPH: Record<AgentsMode, IconName> = { agents: 'terminal', roles: 'workflow' };
+const MODE_GLYPH: Record<AgentsMode, IconName> = { agents: 'terminal', setup: 'workflow' };
 
 /** Each section's glyph on the strip, one no neighbour wears. */
 const SECTION_GLYPH: Record<RoleSection, IconName> = {
@@ -12,7 +12,7 @@ const SECTION_GLYPH: Record<RoleSection, IconName> = {
 };
 
 /**
- * **The Agents place's list head** (COMPANYVIEW1b, the company-view design §1): a two-way choice, *Agents · Roles*, over the mode's own
+ * **The Agents place's list head** (COMPANYVIEW1b, the company-view design §1): a two-way choice, *Agents · Setup*, over the mode's own
  * list, as Knowledge's head is. It stays in reach above the list's rows, outside their scroll.
  *
  * A molecule: the mode in front arrives, and each choice goes out.

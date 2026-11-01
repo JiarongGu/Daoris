@@ -79,6 +79,9 @@ public static class NodeKinds
     /// </summary>
     public const string Land = "land";
 
+    /// <summary>Whether a kind is the graph's one landing: the observed <c>handed</c>, or the performed <c>land</c>.</summary>
+    public static bool IsLanding(string kind) => kind is Handed or Land;
+
     public static readonly IReadOnlyList<string> BuiltIn = [Claimed, Handed, Pushed, PullRequest, Line, Human, Look, GoAhead, WaitUnit, QuestClose, All, Opinion, Stop, Check, Integrate, WorkRequests, Request, Land];
 
     /// <summary>Whether a kind is a plugin's own node: <c>&lt;plugin&gt;/&lt;node&gt;</c>, both parts named.</summary>

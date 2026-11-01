@@ -90,7 +90,9 @@ const POINTS = {
       "pullRequest": null,
       "acceptedBy": "person",
       "tip": "3f2a9c1e5b7d4a6f8e0c2b4d6f8a0c2e4b6d8f0a",
-      "origin": null
+      "origin": null,
+      "key": null,
+      "mode": "pull-request"
     }
   },
   "work/state": {
@@ -104,7 +106,8 @@ const POINTS = {
       "line": "main",
       "pullRequest": "https://example.test/example-org/engine/pull/7",
       "pushedTip": "3f2a9c1e5b7d4a6f8e0c2b4d6f8a0c2e4b6d8f0a",
-      "origin": null
+      "origin": null,
+      "key": null
     }
   },
   "state/changed": {

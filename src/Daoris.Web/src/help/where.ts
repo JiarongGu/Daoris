@@ -114,8 +114,8 @@ export function prefaceOf(where: HelpWhere): string {
     ? `Settings → ${DOMAINS[where.settings]}`
     : where.view === 'knowledge' && where.knowledge
       ? `the ${VIEWS.knowledge} view, showing ${MODES[where.knowledge]}`
-      : where.view === 'agents' && where.agents === 'roles'
-        ? `the ${VIEWS.agents} view, showing Roles`
+      : where.view === 'agents' && where.agents === 'setup'
+        ? `the ${VIEWS.agents} view, showing Setup`
         : `the ${VIEWS[where.view]} view`;
   const parts = [place, where.workspace ? `workspace \`${where.workspace}\`` : 'every workspace'];
 

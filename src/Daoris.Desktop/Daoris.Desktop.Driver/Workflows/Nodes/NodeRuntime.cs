@@ -1122,7 +1122,7 @@ public sealed class NodeRuntime(
                 : null;
         }
 
-        if (governed.Graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Handed) is not { } handed
+        if (governed.Graph.Nodes.FirstOrDefault(node => NodeKinds.IsLanding(node.Kind)) is not { } handed
             || statuses.GetValueOrDefault(handed.Id) is not { State: NodeStates.Reached, Acceptance.Evidence.Revision: { } tip })
         {
             return null;
@@ -1321,7 +1321,7 @@ public sealed class NodeRuntime(
     /// </summary>
     private static (WorkUnit Unit, string Tip)? Landed(GovernedUnit governed, IReadOnlyDictionary<string, NodeStatus> statuses)
     {
-        if (governed.Scope is not { } scope || governed.Graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Handed) is not { } handed) return null;
+        if (governed.Scope is not { } scope || governed.Graph.Nodes.FirstOrDefault(node => NodeKinds.IsLanding(node.Kind)) is not { } handed) return null;
         if (statuses.GetValueOrDefault(handed.Id) is not { State: NodeStates.Reached, Acceptance: { Subject: { } subject, Evidence.Revision: { } tip } }) return null;
         var unit = scope.Branch?.Id == subject ? scope.Branch : scope.Branches.FirstOrDefault(each => each.Id == subject);
         return unit is null ? null : (unit, tip);

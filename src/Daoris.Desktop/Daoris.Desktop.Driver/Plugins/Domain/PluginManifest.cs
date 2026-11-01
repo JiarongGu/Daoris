@@ -35,8 +35,12 @@ public sealed record PluginHarness(
     string? Maker = null,
     bool OwnHome = false);
 
-/// <summary>What a plugin speaks (D64 §4): the process, and the points it listens on.</summary>
-public sealed record PluginHooks(IReadOnlyList<string> Command, IReadOnlyList<string> Points);
+/// <summary>
+/// What a plugin speaks (D64 §4): the process, and the points it listens on. <paramref name="Key"/> is the plugin's word (JSON <c>true</c>)
+/// that it keeps the delivery key a <c>work/land</c> frame carries (LANDNODE1e); <paramref name="Modes"/> the landing modes beyond a pull
+/// request it serves (<c>push</c>).
+/// </summary>
+public sealed record PluginHooks(IReadOnlyList<string> Command, IReadOnlyList<string> Points, bool Key = false, IReadOnlyList<string>? Modes = null);
 
 /// <summary>
 /// An MCP server a plugin hands to sessions (D65 §1f) — a browser, a ticket system, whatever the session should be able to

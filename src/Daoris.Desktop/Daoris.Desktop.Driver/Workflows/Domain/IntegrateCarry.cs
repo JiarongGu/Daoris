@@ -35,7 +35,7 @@ public static class IntegrateCarry
     {
         var integrate = graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Integrate);
         var pushes = graph.Nodes.Where(node => node.Kind is NodeKinds.Pushed or NodeKinds.PullRequest).ToList();
-        if (graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Handed) is not { } land || (integrate is null && pushes.Count == 0)) return [];
+        if (graph.Nodes.FirstOrDefault(node => NodeKinds.IsLanding(node.Kind)) is not { } land || (integrate is null && pushes.Count == 0)) return [];
 
         var said = new List<string>();
         if (integrate is not null)

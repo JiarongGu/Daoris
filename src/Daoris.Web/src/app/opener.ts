@@ -163,7 +163,7 @@ export function opening(view: View, item?: string | null, part: OpenPart = {}, h
   if (view === 'map' && part.code) plan.code = part.code;
   if (view === 'agents' && part.agentPart) plan.agentPart = part.agentPart;
   if (view === 'agents') {
-    const mode = part.agentsMode ?? (part.roleSection ? 'roles' : named || part.agentPart ? 'agents' : undefined);
+    const mode = part.agentsMode ?? (part.roleSection ? 'setup' : named || part.agentPart ? 'agents' : undefined);
     if (mode) plan.agentsMode = mode;
     if (part.roleSection) plan.roleSection = part.roleSection;
   }

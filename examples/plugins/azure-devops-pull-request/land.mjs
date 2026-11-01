@@ -20,7 +20,7 @@
 // Self-contained on purpose: a plugin is a folder copied into the Daoris home, so it imports nothing
 // from beside it. The GitHub example carries the same two helpers.
 import { spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { delimiter, join } from 'node:path';
 import { createInterface } from 'node:readline';
 
@@ -250,7 +250,9 @@ class Failed extends Error {}
  * commit on the line, so a reading of Azure DevOps that is wrong keeps the branch rather than losing it.
  */
 function query(p) {
-  let id = typeof p.pullRequest === 'string' ? /\/pullrequest\/(\d+)\/?$/i.exec(p.pullRequest)?.[1] : undefined;
+  // LANDNODE1e: a delivery key this plugin answered names the pull request it opened, read as any other.
+  if (!p.pullRequest && kept(p.key)?.pullRequest) p = { ...p, pullRequest: kept(p.key).pullRequest };
+  let id =typeof p.pullRequest === 'string' ? /\/pullrequest\/(\d+)\/?$/i.exec(p.pullRequest)?.[1] : undefined;
   if (id === undefined) {
     const listed = run('az', ['repos', 'pr', 'list', '--source-branch', p.branch, '--status', 'all', '--output', 'json', ...azure(p, true).args], p.root, azure(p, true).env);
     if (!listed.ok) throw new Failed(listed.why);
@@ -294,6 +296,46 @@ function query(p) {
   };
 }
 
+/**
+ * The delivery key (LANDNODE1e): a frame carrying `key` is one delivery, and a key this plugin has answered makes no second effect. The
+ * answer is kept under the plugin's data folder when it pushed, and a repeated key is answered with it unchanged.
+ */
+const keptFile = (key) => (typeof key === 'string' && process.env.DAORIS_PLUGIN_DATA
+  ? join(process.env.DAORIS_PLUGIN_DATA, 'deliveries', `${key.replace(/[^A-Za-z0-9._-]/g, '-')}.json`)
+  : null);
+
+function kept(key) {
+  const file = keptFile(key);
+  try {
+    return file && existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : null;
+  } catch {
+    return null;
+  }
+}
+
+function remember(key, answer) {
+  const file = keptFile(key);
+  if (!file || !answer.pushed) return;
+  mkdirSync(join(file, '..'), { recursive: true });
+  writeFileSync(file, JSON.stringify(answer));
+}
+
+/** The frame's mode: `push` only pushes, anything else pushes and opens the pull request. */
+function deliver(p) {
+  const already = kept(p.key);
+  if (already) return { ...already, message: `${already.message} (the delivery ${p.key} was answered before; nothing was done again)` };
+  const answer = p.mode === 'push'
+    ? (() => {
+      const pushed = push(p);
+      return pushed.ok
+        ? { pushed: true, message: `pushed \`${p.branch}\` to origin.` }
+        : { pushed: false, message: `git push to origin failed — ${pushed.why}` };
+    })()
+    : land(p);
+  remember(p.key, answer);
+  return answer;
+}
+
 /** The landing: push, then open the pull request. Each failure is the answer's own sentence. */
 function land(p) {
   if (p.pullRequest) return advance(p);
@@ -335,7 +377,7 @@ for await (const line of createInterface({ input: process.stdin })) {
     }
 
     case 'hook/work/land': {
-      const answer = land(frame.params);
+      const answer = deliver(frame.params);
       say(answer.message);
       send({ jsonrpc: '2.0', id: frame.id, result: answer });
       break;

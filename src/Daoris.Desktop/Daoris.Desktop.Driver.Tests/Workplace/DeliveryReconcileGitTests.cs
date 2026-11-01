@@ -284,7 +284,9 @@ public sealed class DeliveryReconcileGitTests : IDisposable
     {
         var (root, trees, tree, tip) = await TreeAsync();
         var (store, claim) = Start(tip, DeliveryMethods.Push);
-        await Assert.ThrowsAsync<Crash>(() => trees.LandAsync(tree.Path, Subject, inUse: NoneRunning, delivery: Stopping(store, claim, DeliveryPhases.Recorded)));
+        // LANDNODE1e: a push delivery tells its plugin, so the landing needs one the stand-in wire answers for.
+        var told = new SessionTrees(_home, new DeliveryPluginPhasesTests.Wire());
+        await Assert.ThrowsAsync<Crash>(() => told.LandAsync(tree.Path, Subject, inUse: NoneRunning, delivery: Stopping(store, claim, DeliveryPhases.Recorded)));
 
         var reconciled = Assert.Single(await Reconciler("run-b", root, DeadAre("run-a")).StartAsync(CancellationToken.None));
 

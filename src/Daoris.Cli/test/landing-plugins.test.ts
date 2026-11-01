@@ -187,6 +187,44 @@ test('the GitHub plugin pushes the branch to origin and opens the pull request w
   fx.cleanup();
 });
 
+// ——— LANDNODE1e (the land node design §3): the delivery key and the mode
+
+for (const plugin of ['github-pull-request', 'azure-devops-pull-request']) {
+  test(`the ${plugin} plugin makes no second effect for a delivery key it answered, and work/state with the key finds its pull request`, async () => {
+    const fx = makeFixture(`landing-key-${plugin}`);
+    const { root } = repository(fx);
+    const bin = fakes(fx);
+    const keyed = { ...frame(root), key: 'k1', mode: 'pull-request' };
+
+    const first = await land(plugin, fx, bin, keyed);
+    const effects = calls(fx).length;
+    const again = await land(plugin, fx, bin, keyed);
+    const asked = await ask(plugin, fx, bin, { ...stateFrame(root, null), key: 'k1' });
+
+    assert.equal(first.answer.pushed, true, String(first.answer.message));
+    assert.equal(again.answer.pushed, true);
+    assert.equal(again.answer.pullRequest, first.answer.pullRequest);
+    assert.equal(calls(fx).length - effects, 1, 'only the state read, no second push or pull request');
+    assert.equal(asked.answer.state, 'open');
+    assert.equal(asked.answer.pullRequest, first.answer.pullRequest);
+    fx.cleanup();
+  });
+
+  test(`the ${plugin} plugin in push mode pushes the branch and opens no pull request`, async () => {
+    const fx = makeFixture(`landing-push-${plugin}`);
+    const { root, origin } = repository(fx);
+    const bin = fakes(fx);
+
+    const spoken = await land(plugin, fx, bin, { ...frame(root), key: 'k2', mode: 'push' });
+
+    assert.equal(spoken.answer.pushed, true, String(spoken.answer.message));
+    assert.equal(spoken.answer.pullRequest ?? null, null);
+    assert.equal(git(origin, 'rev-parse', `refs/heads/${BRANCH}`), git(root, 'rev-parse', BRANCH));
+    assert.equal(calls(fx).length, 0);
+    fx.cleanup();
+  });
+}
+
 test('the Azure DevOps plugin pushes the branch and opens the pull request with az, and answers with its web address', async () => {
   const fx = makeFixture('landing-plugin-azure');
   const { root, origin } = repository(fx);
@@ -348,12 +386,14 @@ test('the description each plugin writes says who accepted the work', async () =
 });
 
 test('each example plugin declares only points the loop never asks, so installing one runs nothing until a rule names it or a look asks', () => {
-  // PLUGHOOK1a: the Azure DevOps plugin also answers the query; the GitHub one learns it in PLUGHOOK1b.
-  const points = { 'github-pull-request': ['work/land'], 'azure-devops-pull-request': ['work/land', 'work/state'] };
+  // PLUGHOOK1a: the Azure DevOps plugin also answers the query; LANDNODE1e: the GitHub one answers it for a delivery key.
+  const points = { 'github-pull-request': ['work/land', 'work/state'], 'azure-devops-pull-request': ['work/land', 'work/state'] };
   for (const [plugin, declared] of Object.entries(points)) {
     const manifest = JSON.parse(readFileSync(join(examples, plugin, 'plugin.json'), 'utf8'));
     assert.equal(manifest.id, plugin);
     assert.deepEqual(manifest.hooks.points, declared);
+    assert.equal(manifest.hooks.key, true);
+    assert.deepEqual(manifest.hooks.modes, ['push']);
     assert.ok(existsSync(join(examples, plugin, 'README.md')), `${plugin} has a README`);
   }
 });

@@ -447,6 +447,12 @@ internal sealed class TreeLands(
             (delivering, acceptedBy) = (read, read.Accepted);
         }
 
+        // LANDNODE1h: standing automatic authority is judged again before the first effect, as the rule's switch is read again below.
+        if (delivering?.Unauthorized() is { } revoked)
+        {
+            return new(false, $"Nothing was landed: {revoked}; your Accept lands it.") { Refusal = AutoLandingCode.Off };
+        }
+
         // LANDNODE1b2: the preparation written ahead of all the landing judges and makes, so each refusal from here withdraws it in its words;
         // LANDNODE1b3: one done before a restart is not written again, and the landing goes on from its next phase.
         if (delivering is { Next: DeliveryPhases.Prepared } && delivering.Begin(DeliveryPhases.Prepared, delivering.Preparing) is { } notBegun)
@@ -822,9 +828,13 @@ internal sealed class TreeLands(
                     GitFacts.Dropped();
                     // LANDPIN2 (D173's FABRIC-END7 note): the commit the branch was judged and put at, which the plugin pushes, so a commit
                     // made after the judgement on a tree's own branch, for which no ref is made, never rides the push unseen.
-                    said = await context.Plugins.LandAsync(plugin, new LandingFrame(
+                    var told = new LandingFrame(
                         repository, workspace, branched.Root, landed.Branch!, branched.Base, subject.Title, subject.Quest,
-                        subject.Session, branched.Commits, open, acceptedBy, tip), ct).ConfigureAwait(false);
+                        subject.Session, branched.Commits, open, acceptedBy, tip);
+                    // LANDNODE1e: a delivery's plugin phases go through its record, and the plugin is told its key.
+                    said = delivering is not null && delivering.Intent.Method is DeliveryMethods.Push or DeliveryMethods.PullRequest
+                        ? await delivering.DispatchAsync(context.Plugins, told, ct).ConfigureAwait(false)
+                        : await context.Plugins.LandAsync(plugin, told, ct).ConfigureAwait(false);
                     GitFacts.Dropped();
                     if (tip is not null) pushing.Keep(new LandingAttempt(landed.Branch!, tip, acceptedBy) { Plugin = plugin, Said = said });
                 }

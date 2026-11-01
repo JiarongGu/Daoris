@@ -797,10 +797,10 @@ describe('the groups', () => {
 
     expect(words(kept).detail).toBe(
       'Blocked: tree s-e0a8e0fd, its session recorded it, but no branch record follows daoris/s-e0a8e0fd, so the look never cleans it up, and the clean-up on '
-      + 'its workspace’s Branches keeps it too, since its tree holds 2 path(s) only it has, such as gate.log, local/notes.md; '
+      + 'its workspace’s Branches keeps it too, since its tree holds 2 paths only it has, such as gate.log, local/notes.md; '
       + `\`daoris-driver trees remove ${tree} --force\` removes it, and what it holds with it`);
     expect(words(unfollowed({ tree, keeps: 'x', uncommitted: '3', own: '1', paths: 'gate.log' })).detail)
-      .toContain('since its tree holds 3 uncommitted path(s), and 1 path(s) only it has, such as gate.log;');
+      .toContain('since its tree holds 3 uncommitted paths, and 1 path only it has: gate.log;');
     const unread = words(unfollowed({ unread: 'true', tree })).detail ?? '';
     expect(unread).toContain('could not tell what its tree holds');
     expect(unread).not.toContain('trees remove');

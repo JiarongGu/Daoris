@@ -198,7 +198,7 @@ describe('each step: its state, its doors and its commands', () => {
       commands: ['daoris agent install <agent>', 'daoris agent login <agent>'],
     });
     expect(steps.helper).toMatchObject({
-      doors: [{ view: 'settings', section: 'ai' }, { view: 'agents', agentsMode: 'roles' }],
+      doors: [{ view: 'settings', section: 'ai' }, { view: 'agents', agentsMode: 'setup' }],
       commands: ['daoris driver helper <agent>', 'daoris driver intake <agent>'],
     });
     expect(steps.repositories).toMatchObject({

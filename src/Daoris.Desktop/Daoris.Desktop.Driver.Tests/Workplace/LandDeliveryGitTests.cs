@@ -211,12 +211,10 @@ public sealed class LandDeliveryGitTests : IDisposable
     }
 
     /// <summary>
-    /// A push, a pull request and an integrate prepare and record the branch and stop there, no plugin told: the first two wait unresolved
-    /// for the plugin's phases (row 1e), the integrate is delivered, its line's admission the next node's.
+    /// An integrate prepares and records the branch and stops there, no plugin told, delivered, its line's admission the next node's. A push
+    /// and a pull request go on to their plugin's phases (<see cref="DeliveryPluginPhasesTests"/>).
     /// </summary>
     [Theory]
-    [InlineData(DeliveryMethods.Push)]
-    [InlineData(DeliveryMethods.PullRequest)]
     [InlineData(DeliveryMethods.Integrate)]
     public async Task A_push_a_pull_request_and_an_integrate_stop_once_the_branch_is_prepared_and_recorded(string method)
     {
@@ -264,6 +262,32 @@ public sealed class LandDeliveryGitTests : IDisposable
         Assert.True(Reopened().Delivery(claim.Key)!.Unresolved);
     }
 
+    /// <summary>
+    /// LANDNODE1h (the land node design §3): the standing automatic authority is judged again just before the first effect. Revoked, or judged
+    /// by nothing, it refuses with no phase written ahead and no branch made; standing, it lands as the person's Accept does.
+    /// </summary>
+    [Fact]
+    public async Task A_standing_automatic_authority_is_judged_again_before_the_first_effect()
+    {
+        var (root, trees, tree, tip) = await TreeAsync();
+        var (store, claim) = Start(tip, DeliveryMethods.Branch, automatic: true);
+
+        var revoked = await trees.LandAsync(tree.Path, Subject, inUse: NoneRunning,
+            delivery: new TreeDelivery(store, claim) { Standing = _ => "its repository's rule no longer accepts automatically" });
+        var unjudged = await trees.LandAsync(tree.Path, Subject, inUse: NoneRunning, delivery: new TreeDelivery(store, claim));
+
+        Assert.False(revoked.Landed, revoked.Message);
+        Assert.Contains("no longer accepts automatically", revoked.Message);
+        Assert.False(unjudged.Landed, unjudged.Message);
+        Assert.Empty(Reopened().Phases(claim.Key));
+        Assert.Null(await RevAsync(root, $"refs/heads/{Named}"));
+
+        var standing = await trees.LandAsync(tree.Path, Subject, inUse: NoneRunning, delivery: new TreeDelivery(store, claim) { Standing = _ => null });
+
+        Assert.True(standing.Landed, standing.Message);
+        Assert.Equal(tip, await RevAsync(root, $"refs/heads/{Named}"));
+    }
+
     // ——— The fixture.
 
     private static readonly LandingSubject Subject = new("s1", "0fda18", "Tidy the readme");
@@ -274,13 +298,15 @@ public sealed class LandDeliveryGitTests : IDisposable
 
     private DeliveryStore Reopened() => new(_home, () => StoreSettled.Yes, null, "run-a", StoreProcess.Shell);
 
-    private (DeliveryStore Store, DeliveryClaim Claim) Start(string tip, string method, string options = """{"method":"branch"}""")
+    private (DeliveryStore Store, DeliveryClaim Claim) Start(string tip, string method, string options = """{"method":"branch"}""", bool automatic = false)
     {
         var store = Reopened();
         var intent = new DeliveryIntent(
             "unit-1", "engine", tip, method, "main", "main", method == DeliveryMethods.Merge ? null : Named, method == DeliveryMethods.Merge ? null : "ENG-12",
             "Tidy the readme (ENG-12)", method is DeliveryMethods.Push or DeliveryMethods.PullRequest ? "forge" : null, "epoch-7");
-        var start = store.Start(intent, DeliveryAuthorization.Person("accept-3", "r3", "graph-digest", options, "[]"));
+        var start = store.Start(intent, automatic
+            ? DeliveryAuthorization.Automatic("repository:engine", "r3", "graph-digest", options, "[]")
+            : DeliveryAuthorization.Person("accept-3", "r3", "graph-digest", options, "[]"));
         Assert.True(start.Started, start.Refused ?? start.Held);
         return (store, start.Claim!);
     }

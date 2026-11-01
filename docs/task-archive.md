@@ -26,6 +26,11 @@ the per-task record. Entries preserve their original wording so the archive stay
 > **1b2, the git adapter** (driver; `docs/2026-11-01-land-node-design.md` §3 and §8 row 4): `TreeLands` from the explicit intent; `RefTransaction` under GITLOCK and LANDRACE1. Proof: moved tips, collisions, squash, containment, and a ref written before its record across a crash. After b.
 
 **Outcome** 2026-11-01: `TreeLands.LandAsync` lands a `TreeDelivery` by its intent's method, branch, line and pinned tip, each effect written ahead and read back after (`Workplace/TreeDeliveries.cs`). A refusal withdraws the preparation; merge, branch and integrate settle delivered; push and pull request stop at the record. Only `LandDeliveryGitTests` calls it. Detail: D204's note of this date.
+## LANDNODE1e — the plugin frame and its reconciliation (2026-11-01)
+
+> **1e, the plugin frame and its reconciliation** (driver, kit, examples; `docs/2026-11-01-land-node-design.md` §3 and §8 row 6): `key` and `mode`; `work/state` asked with the key; a keyless plugin sent again only by `HANDOFF`. Proof: duplicate keys, a lost reply, and success before the reply make no second effect; the kit's tests and both example landing plugins.
+
+**Outcome** 2026-11-01: the `work/land` frame carries `key` (to a plugin whose manifest says `hooks.key: true`) and `mode` (`pull-request`, or `push` only to a plugin whose `hooks.modes` names it); `TreeDelivering.DispatchAsync` writes plugin dispatched and answered, and reconciles a dispatch left without its answer by the remote-tracking ref (a push only) or `work/state` with the key, else unknown, never sending again. Both example plugins keep their answer under the key. Proof: `DeliveryPluginPhasesTests`, `landing-plugins.test.ts`.
 ## BRAINSTORMSTART1 — a brainstorm's pass starts where the machine's sessions do, and says why where it cannot (2026-11-01)
 
 > **BRAINSTORMSTART1** (driver; BRAINSTORM1c, D176). The install's brainstorm `1f2a4e0e` (`--agents claude,codex`) ended `no-agent`: both passes `unavailable`, code `not-started`, `account: null`, while the same agents' sessions ran on that machine that hour. `TurnAsync` turned a `DriverException` from the adapter's resolve or the voice's walk into `not-started` and kept its sentence only in the turn's words. Contract: the pass records the walk's code and sentence; find and fix why the walk found no account.
@@ -78,6 +83,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 **Outcome** 2026-11-01: `WORKFLOW_LANDED` takes an optional `gates`; a blob that is not the tip's is refused `moved`, and an unreadable tip `unread`, as the driver's sentence (a refusal, as the route's others are, so its answer's shape is unchanged) with `driver.json` untouched. A caller naming none accepts the tip as it stands. `acceptGatesPress` builds the web's press from the route and the tip it showed, and `ProjectsView` sends it. `PipeTargetRows` lists `gates` among the route's fields. Proof: `DriverModuleWorkflowTests.The_landed_route_refuses_a_blob_the_tip_no_longer_holds_and_an_older_caller_naming_none_is_unchanged` (a Process test), `workflow.test.tsx`. No decision note: the behaviour is the one D215 point 10 gave `INTEGRATION_GATES`.
 
 ---
+
+## AGENTSPLACE1g — All roles and the role editor (2026-11-01)
+
+> **AGENTSPLACE1g** (web; row 10 of AGENTSPLACE1). *All roles* in Working roles (the Setup mode's page waits for 1e): scope filter, machine-wide roles set apart, others read-only with *Open at \<place\>*; the editor asks for no id and fixes the place, picks agent, model and effort from the agent's offers with *other…*, and keeps *Off*, *Clear staffing* and *Restore role defaults* apart; *Remove* asks inline naming the fallback; the page's state is held by the place so a door out keeps the selection and scope. Proof: `Roles.test.tsx`, `RolesStructure.test.tsx`, `RolesView.test.tsx`; stories `AllRoles*` and `RoleEditor*`.
 
 ## AGENTSPLACE1a — the effective projection (2026-11-01)
 
@@ -22481,3 +22490,7 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 > **LOADFLAKE4 — two reconcilers at once lose their race under load** (driver tests; 2026-11-01). `ActRunGitTests.An_act_of_a_live_run_refuses_the_writer_and_two_reconcilers_at_once_close_a_dead_ones_once` failed once beside other git classes ("another reconciler took it first" not found) and passed on the rerun, all 19 of its class green. Find what the two reconcilers race on (the store's claim, the step's read, a clock), red first under a forced interleaving, fixed with no larger wait; a race in `ActReconciler` itself is the product's and gets a FIX-LOG entry. Proof: 20 runs beside a load on every core.
 
 **Outcome** 2026-11-01: the store's claim, read twice. A loser that listed the act after the winner's take handed `ActJournal.Take` the winner's generation and was refused as the act's own process still running; a live claim above the opening's generation is now refused as taken first. Red first under the take landed by hand, 20 of 20 runs beside a load on every core. Detail in the FIX-LOG entry.
+
+## LANDNODE1h — presets, the bind, Save as a workflow… and lowering (2026-11-01, D215)
+
+**Outcome** 2026-11-01: the graph presets hold `land` with their tails; a run's binding resolves a version's open `land` options (pattern, plugin, ticket key) once at the bind and keeps them (`WorkflowRunBinding.Land`); `--from current` writes Current's landing out as a `land`; `accept` to `automatic` lowers; standing automatic authority is judged again before a delivery's first effect. Known gap until LANDNODE1c2: nothing performs `land` yet, so a run bound to a preset waits at its landing.

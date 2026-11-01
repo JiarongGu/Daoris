@@ -140,6 +140,9 @@ public sealed class WorkflowRunFiles(string home) : IWorkflowRunStore
                 CurrentSteps = root.TryGetProperty("current", out var steps) && steps.ValueKind == JsonValueKind.Array
                     ? [.. steps.EnumerateArray().Select(step => step.GetRawText())]
                     : [],
+                Land = root.TryGetProperty("land", out var land) && land.ValueKind == JsonValueKind.Object
+                    ? land.EnumerateObject().Where(each => each.Value.ValueKind == JsonValueKind.String).ToDictionary(each => each.Name, each => each.Value.GetString()!)
+                    : LandNodes.NoResolved,
                 // WORKFLOW1f: the person's Keep, whole or none; a binding from before has none.
                 Kept = root.TryGetProperty("kept", out var kept) && kept.ValueKind == JsonValueKind.Object && Text(kept, "door") is { } door
                        && Moments.Read(Text(kept, "at")) is { } keptAt
@@ -182,6 +185,13 @@ public sealed class WorkflowRunFiles(string home) : IWorkflowRunStore
             writer.WriteStartArray("current");
             foreach (var step in binding.CurrentSteps) writer.WriteRawValue(step);
             writer.WriteEndArray();
+        }
+
+        if (binding.Land.Count > 0)
+        {
+            writer.WriteStartObject("land");
+            foreach (var (name, value) in binding.Land.OrderBy(each => each.Key, StringComparer.Ordinal)) writer.WriteString(name, value);
+            writer.WriteEndObject();
         }
 
         if (binding.Kept is { } kept)

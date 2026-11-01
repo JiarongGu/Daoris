@@ -1064,6 +1064,15 @@ describe('the scoped set', () => {
     assert.deepEqual(set.deferred.map((each) => each.name), ['web', 'rehearse-family']);
   });
 
+  test('a reached Process or git half is deferred to the CI run on main, and runs before the landing only when it holds a known red', () => {
+    const set = q.scopedSet({ gates, reached: new Set(['driver-process', 'driver-process-git']) });
+    assert.deepEqual(set.run.map((each) => each.name), ['universal']);
+    assert.deepEqual(set.deferred.map((each) => each.name), ['driver-process', 'driver-process-git']);
+    assert.match(set.deferred[0]!.why, /CI run on main/);
+    const red = q.scopedSet({ gates, reached: new Set(['driver-process', 'driver-process-git']), knownRed: new Set(['driver-process-git']) });
+    assert.deepEqual(red.run.map((each) => each.name), ['universal', 'driver-process-git']);
+  });
+
   test('a known-red unit the scoped run may run runs in every candidate, whatever it reaches', () => {
     const set = q.scopedSet({ gates, reached: new Set(), knownRed: new Set(['modules']) });
     assert.deepEqual(set.run.map((each) => each.name), ['universal', 'modules']);

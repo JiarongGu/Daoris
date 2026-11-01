@@ -61,28 +61,25 @@ public sealed class IntegrationPresetsGitTests : LandedFixture, IAsyncLifetime
         Lines = Transport(root),
     };
 
-    /// <summary>The preset saved by the terminal's own verb into the home, then read back as the version the run binds.</summary>
-    private async Task<WorkflowProcess> SavedPresetAsync(string preset)
+    /// <summary>
+    /// The preset's graph saved into the home with its <c>land</c> read as the observed <c>handed</c> it replaces, then read back as the version
+    /// the run binds: nothing performs a <c>land</c> yet (LANDNODE1h; the performer is the land node design's row 1c2), and the terminal's own
+    /// verb saving the preset is held by <see cref="WorkflowGraphPresetsTests"/>.
+    /// </summary>
+    private Task<WorkflowProcess> SavedPresetAsync(string preset)
     {
-        var output = new StringWriter();
-        var error = new StringWriter();
-        var exit = await DriverChoicesCommand.RunAsync(["workflow", "new", "made", "--from", preset], new DriverChoicesWorld
-        {
-            Verbs = DriverChoiceVerbs.All,
-            Instance = new InstanceWorld { Home = Home, Environment = _ => null, Out = output, Error = error, Verb = "daoris" },
-            ConfigPath = ConfigPath,
-            Folder = Home,
-            Now = () => new DateTimeOffset(2026, 10, 31, 9, 0, 0, TimeSpan.Zero),
-            Registry = _ => Task.FromResult(new ChoicesRegistry([], null)),
-        }, CancellationToken.None);
-        Assert.True(exit == 0, error.ToString());
+        var graph = WorkflowPresets.GraphOf(preset)!.GraphJson.Replace(
+            "\"kind\":\"land\",\"version\":1,\"reach\":\"performed\",\"options\":{\"method\":\"integrate\"",
+            "\"kind\":\"handed\",\"version\":1,\"reach\":\"observed\",\"options\":{\"form\":\"branch\"", StringComparison.Ordinal);
+        Assert.DoesNotContain("\"land\"", graph);
+        WorkflowStore.Add(Home, new WorkflowVersionAdded("made", "Integrated", "terminal", "2026-10-31T09:00:00Z", null, System.Text.Json.Nodes.JsonNode.Parse(graph)), kept: []);
         var version = Assert.Single(new WorkflowFiles(Home).Load("made")!.Read.Versions);
         Assert.True(version.Problem is null, version.Problem);
         Assert.True(WorkflowRunBindings.Bind(Home,
             new WorkflowRunBinding("q1", "engine", "aurora", "made", WorkflowLevels.Repository, DateTimeOffset.UnixEpoch) { Version = 1, Digest = version.Digest }));
         var process = WorkflowProcesses.Read(Home, Config, "engine", "aurora", "q1", new AcceptedGates(["unit"]));
         Assert.True(process is { Problem: null, Named: true }, process.Problem);
-        return process;
+        return Task.FromResult(process);
     }
 
     private static LandingGate Following(WorkflowProcess process) =>

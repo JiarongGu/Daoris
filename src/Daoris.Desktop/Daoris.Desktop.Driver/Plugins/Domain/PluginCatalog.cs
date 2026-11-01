@@ -451,7 +451,10 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
                     return (PluginManifest.Empty(id), "`hooks` needs a `command` and the `points` it listens on.");
                 }
 
-                hooks = new PluginHooks(command, points);
+                // LANDNODE1e: only JSON true says it keeps the delivery key; the modes are read as strings, anything else is none.
+                hooks = new PluginHooks(command, points,
+                    spoken.TryGetProperty("key", out var keyed) && keyed.ValueKind == JsonValueKind.True,
+                    Strings(spoken, "modes", expanded) ?? []);
             }
 
             var servers = new List<PluginServer>();
