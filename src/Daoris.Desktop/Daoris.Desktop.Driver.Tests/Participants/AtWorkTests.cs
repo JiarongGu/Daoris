@@ -7,12 +7,12 @@ namespace Daoris.Desktop.Driver.Tests;
 /// COWORKVIEW1a's composition (the design §3.8, §4.1, rules 9, 10, 14, 16 and 17): who is at work on a session, from the entry's
 /// parts, their records' read fields, each part's lineage reading and the two input slices' health, all handed as plain values.
 /// </summary>
-public sealed partial class AtWorkTests
+public sealed class AtWorkTests
 {
     private const string P1 = "a000000000000001";
     private const string Issuer = "4242 638000000000000000";
     private static readonly DateTimeOffset T0 = new(2026, 10, 16, 8, 30, 0, TimeSpan.Zero);
-    private static readonly SliceHealth Judged = new(true);
+    internal static readonly SliceHealth Judged = new(true);
 
     private static string Moment(int second) =>
         T0.AddSeconds(second).ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", System.Globalization.CultureInfo.InvariantCulture);
@@ -37,12 +37,12 @@ public sealed partial class AtWorkTests
     private static LineageReading Read(IEnumerable<string> lines, string? kind = null, TokenReading? reading = TokenReading.Watched) =>
         LineageReading.Of(ChildBindings.Fold(lines, kind, (_, _) => reading));
 
-    private static AtWorkHeld Compose(
+    internal static AtWorkHeld Compose(
         string session, IReadOnlyList<string>? entry, IReadOnlyList<AtWorkRecord> records, Func<AtWorkRecord, LineageReading> lineage,
         SliceHealth? groups = null, SliceHealth? sessions = null) =>
         AtWork.Compose(session, entry, id => records.FirstOrDefault(record => record.Id == id), lineage, groups ?? Judged, sessions ?? Judged);
 
-    private static AtWorkAnswer Answered(AtWorkHeld held) => Assert.IsType<AtWorkAnswer>(held.Answer);
+    internal static AtWorkAnswer Answered(AtWorkHeld held) => Assert.IsType<AtWorkAnswer>(held.Answer);
 
     /// <summary>Rule 18: the answer says when this process began, the moment <i>nothing heard</i> counts from, and it never changes.</summary>
     [Fact]

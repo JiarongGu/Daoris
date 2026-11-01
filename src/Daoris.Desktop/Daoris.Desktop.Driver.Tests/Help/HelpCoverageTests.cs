@@ -1157,6 +1157,12 @@ public sealed partial class HelpCoverageTests
             + "kit's first files are the person's own start, in a folder they chose.")),
         ("plugins", "usePluginTry", null, new Exempt(
             "a trial runs the plugin's code as the person to show what it answers (PLUG8), and changes nothing to propose.")),
+        ("plugins", "usePluginTools", null, new Exempt(
+            "a check may read another tool's sign-in, and that is the person's to ask for (ADOSIGNIN1); Ask Daoris may only take the "
+            + "person to the plugin's page, where they press Check.")),
+        ("plugins", "usePluginToolFix", null, new Exempt(
+            "it opens a console the person sees and signs in at (ADOSIGNIN1): the person's alone, a Person route no role or agent presses; "
+            + "Ask Daoris may only take the person to the plugin's page.")),
         ("plugins", "usePickFolder", null, new Exempt("it is the system's folder picker, for the person's own choice.")),
 
         ("browser", "useSetBrowser", null, new Door("browser", "use")),

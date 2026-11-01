@@ -98,6 +98,7 @@ public sealed class ProcessStartsCensusTests
     [InlineData("Daoris.Desktop.Driver/Platform/AgentStarts.cs", "ProcessStarts.Shared.StartAsync(info, whose, ct)")]
     [InlineData("Daoris.Desktop.Driver/Agents/HarnessActions.cs", "ProcessStarts.Shared.StartAsync(")]
     [InlineData("Daoris.Desktop.Driver/Agents/CodexUsage.cs", "ProcessStarts.Shared.StartAsync(")]
+    [InlineData("Daoris.Desktop.Driver/Plugins/PluginToolSetUp.cs", "ProcessStarts.Shared.StartAsync(")]
     [InlineData("Daoris.Desktop.Driver/Plugins/PluginTrialProcess.cs", "AgentStarts.StartAsync(")]
     [InlineData("Daoris.Desktop.Modules/Loop/HostSupervisor.cs", "ProcessStarts.Shared.StartAsync(")]
     [InlineData("Daoris.Desktop.App/EngineBrowserHost.cs", "ProcessStarts.Shared.StartAsync(")]
@@ -137,6 +138,7 @@ public sealed class ProcessStartsCensusTests
         ["Daoris.Desktop.Driver/Agents/TransportRun.cs"] = StartClass.Person,
         ["Daoris.Desktop.Driver/Agents/HarnessActions.cs"] = StartClass.Person,
         ["Daoris.Desktop.Driver/Plugins/PluginTrialProcess.cs"] = StartClass.Person,
+        ["Daoris.Desktop.Driver/Plugins/PluginToolSetUp.cs"] = StartClass.Person,
         ["Daoris.Desktop.Modules/Loop/HostSupervisor.cs"] = StartClass.Person,
         ["Daoris.Desktop.App/EngineBrowserHost.cs"] = StartClass.Person,
         ["Daoris.Desktop.Modules/Update/UpdateLauncher.cs"] = StartClass.Person,
@@ -206,6 +208,8 @@ public sealed class ProcessStartsCensusTests
         ["Daoris.Desktop.Driver/Workplace/GitIdentityActs.cs"] = "a git identity's key made, or its host's keys read, at the person's own verb: ssh-keygen and ssh",
         ["Daoris.Desktop.Driver/Agents/HarnessActions.cs"] = "an agent's install or sign-in at the person's press: Daoris's start of the agent's own tool, never a session (§3.4)",
         ["Daoris.Desktop.Driver/Agents/CodexUsage.cs"] = "a usage read: Daoris's own probe of an account (§3.4)",
+        ["Daoris.Desktop.Driver/Plugins/PluginToolSetUp.cs"] =
+            "a plugin tool's set-up or sign-in at the person's press, in a console they see: its own tool's command, never a session (ADOSIGNIN1)",
         ["Daoris.Desktop.Modules/Loop/HostSupervisor.cs"] = "the HTTP host the window waits on",
         ["Daoris.Desktop.App/EngineBrowserHost.cs"] = "Daoris's own browser",
         ["Daoris.Desktop.Modules/Update/UpdateLauncher.cs"] = "the update's launcher, which outlives this process by design",

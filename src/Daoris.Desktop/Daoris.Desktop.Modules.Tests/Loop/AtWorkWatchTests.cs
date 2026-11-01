@@ -200,6 +200,43 @@ public sealed class AtWorkWatchTests : IDisposable
     }
 
     [Fact]
+    public async Task What_the_quests_half_reads_of_a_taker_wakes_the_read_and_what_it_does_not_read_does_not()
+    {
+        var watch = await HeldAsync();
+        Assert.True(Compose().Answer!.Quests!.Single().Taker!.Untaken);
+
+        // A session that serves nothing the entry asked, and a record's note, move nothing the row says.
+        _records["s7"] = Record("s7", "working", "elsewhere");
+        _records["s2"] = Record("s2", "working", "a note that moved");
+        await _sessions.JudgeAsync();
+        Assert.Equal(0, _woken);
+
+        // An open quest is untaken whoever's record names it; the take that moves the row is the quest's own status.
+        _records["s3"] = new JsonObject { ["id"] = "s3", ["state"] = "working", ["quest"] = "q1", ["adapter"] = "claude-code" };
+        await _sessions.JudgeAsync();
+        Assert.Equal(0, _woken);
+
+        _questsHeld["q1"] = new JsonObject { ["id"] = "q1", ["status"] = "Taken", ["publishedBy"] = "s1" };
+        await _quests.JudgeAsync();
+        Assert.Equal(1, _woken);
+        Land(watch);
+        Assert.Equal("s3", Compose().Answer!.Quests!.Single().Taker!.Session);
+    }
+
+    [Fact]
+    public async Task A_taker_s_state_moving_wakes_the_read_once_it_is_on_the_row()
+    {
+        _questsHeld["q1"] = new JsonObject { ["id"] = "q1", ["status"] = "Taken", ["publishedBy"] = "s1" };
+        _records["s3"] = new JsonObject { ["id"] = "s3", ["state"] = "working", ["quest"] = "q1" };
+        await HeldAsync();
+
+        _records["s3"] = new JsonObject { ["id"] = "s3", ["state"] = "completed", ["quest"] = "q1" };
+        await _sessions.JudgeAsync();
+
+        Assert.Equal(1, _woken);
+    }
+
+    [Fact]
     public async Task A_token_s_reading_moving_wakes_the_read_holding_its_generation_once_with_no_line()
     {
         var token = _tokens.Issue();

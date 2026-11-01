@@ -15,8 +15,37 @@ public enum PluginToolKind
 }
 
 /// <summary>One readiness check (§7.2): a command whose exit 0 means ready, what that means, and what a person runs when it is not.</summary>
-/// <param name="Fix">Shown for the person to run. 🔴 Daoris never runs it.</param>
-public sealed record ReadyCheck(IReadOnlyList<string> Run, string Says, string? Fix);
+/// <param name="Fix">
+/// The command the person's press runs in a console they see (ADOSIGNIN1), one of the plugin's own tools' (<see cref="PluginTools.FixWords"/>).
+/// 🔴 Daoris never runs it unpressed, and never signs in itself.
+/// </param>
+public sealed record ReadyCheck(IReadOnlyList<string> Run, string Says, string? Fix)
+{
+    /// <summary>Whether the fix signs the person in, so the press reads <i>Sign in</i> and not <i>Set up</i>.</summary>
+    public bool SignIn { get; init; }
+}
+
+/// <summary>
+/// What a plugin says to a person whose machine lacks a tool, per platform: the words they read (a package id, a command, the
+/// vendor's page), never run by Daoris.
+/// </summary>
+public sealed record ToolInstallHint(string? Windows, string? Macos, string? Linux)
+{
+    /// <summary>The platforms a manifest names them by.</summary>
+    public static readonly IReadOnlyList<string> Platforms = ["windows", "macos", "linux"];
+
+    /// <summary>The hint for a platform (<c>windows</c>, <c>macos</c>, <c>linux</c>), or null where the plugin wrote none.</summary>
+    public string? For(string platform) => platform switch
+    {
+        "windows" => Windows,
+        "macos" => Macos,
+        "linux" => Linux,
+        _ => null,
+    };
+
+    /// <summary>The hint for the platform this machine runs.</summary>
+    public string? Here => For(OperatingSystem.IsWindows() ? "windows" : OperatingSystem.IsMacOS() ? "macos" : "linux");
+}
 
 /// <summary>
 /// A tool a plugin declares (PLUGTOOL1a, D150 point 7), as its manifest writes it. A known id takes its name from Daoris
@@ -36,6 +65,9 @@ public sealed record PluginTool(
     IReadOnlyList<ReadyCheck> Ready,
     string? Problem)
 {
+    /// <summary>What a person reads to get the tool where it is not found (ADOSIGNIN1); null where the plugin wrote none.</summary>
+    public ToolInstallHint? Install { get; init; }
+
     internal static PluginTool NotRead(string? id, string problem) => new(id, null, null, null, null, null, null, [], problem);
 }
 
@@ -151,6 +183,26 @@ public static class PluginTools
 
         if (Given("for") && Filled(row, "for") is null) return PluginTool.NotRead(id, $"{tool}'s `for` must be one sentence: why the plugin runs it.");
 
+        ToolInstallHint? install = null;
+        if (Given("install"))
+        {
+            var written = Field("install");
+            if (written.ValueKind != JsonValueKind.Object)
+            {
+                return PluginTool.NotRead(id, $"{tool}'s `install` must be an object of text per platform: `windows`, `macos` and `linux`.");
+            }
+
+            foreach (var platform in ToolInstallHint.Platforms)
+            {
+                if (written.TryGetProperty(platform, out var hint) && hint.ValueKind != JsonValueKind.Null && Filled(written, platform) is null)
+                {
+                    return PluginTool.NotRead(id, $"{tool}'s `install`'s `{platform}` must be text: what a person reads to get the tool there.");
+                }
+            }
+
+            install = new ToolInstallHint(Filled(written, "windows"), Filled(written, "macos"), Filled(written, "linux"));
+        }
+
         var ready = new List<ReadyCheck>();
         if (Given("ready"))
         {
@@ -179,7 +231,18 @@ public static class PluginTools
                     return PluginTool.NotRead(id, $"{tool}'s check {m} has a `fix` that is not text: the command a person runs when it does not pass.");
                 }
 
-                ready.Add(new ReadyCheck(run, says, fix));
+                var signIn = false;
+                if (check.TryGetProperty("signin", out var flag) && flag.ValueKind != JsonValueKind.Null)
+                {
+                    if (flag.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
+                    {
+                        return PluginTool.NotRead(id, $"{tool}'s check {m}'s `signin` must be true or false: whether its `fix` signs the person in.");
+                    }
+
+                    signIn = flag.GetBoolean();
+                }
+
+                ready.Add(new ReadyCheck(run, says, fix) { SignIn = signIn });
             }
         }
 
@@ -192,7 +255,57 @@ public static class PluginTools
             versions,
             Filled(row, "for"),
             ready,
-            null);
+            null)
+        {
+            Install = install,
+        };
+    }
+
+    /// <summary>The install hint a tool carries for this machine's platform, or null.</summary>
+    public static string? InstallHere(PluginTool tool) => tool.Install?.Here;
+
+    /// <summary>
+    /// The words a check's <c>fix</c> runs (ADOSIGNIN1): split on spaces, a double-quoted run one word, nothing else read, so
+    /// no shell sees it. Only a command of the plugin's own <paramref name="tools"/> may be a fix's first word: the tool's
+    /// <c>command</c>, or its id where it names none. No fix is no words and no problem.
+    /// </summary>
+    /// <returns>The words, or null with the problem said where the fix is not one a press may run.</returns>
+    public static (IReadOnlyList<string>? Words, string? Problem) FixWords(IReadOnlyList<PluginTool> tools, ReadyCheck check)
+    {
+        if (string.IsNullOrWhiteSpace(check.Fix)) return (null, null);
+
+        var words = new List<string>();
+        var word = new System.Text.StringBuilder();
+        var quoted = false;
+        var started = false;
+        foreach (var c in check.Fix)
+        {
+            if (c == '"')
+            {
+                quoted = !quoted;
+                started = true;
+            }
+            else if (char.IsWhiteSpace(c) && !quoted)
+            {
+                if (started) words.Add(word.ToString());
+                word.Clear();
+                started = false;
+            }
+            else
+            {
+                word.Append(c);
+                started = true;
+            }
+        }
+
+        if (quoted) return (null, $"`fix` `{check.Fix}` has an unclosed quote, so it is not run.");
+        if (started) words.Add(word.ToString());
+
+        var first = words[0];
+        var named = tools.Any(each => each.Problem is null && each.Id is not null && string.Equals(each.Command ?? each.Id, first, StringComparison.Ordinal));
+        return named
+            ? (words, null)
+            : (null, $"`{first}` is not a tool this plugin declares in `tools`, so its `fix` `{check.Fix}` is not run: Daoris runs only the commands of a plugin's own tools.");
     }
 
     /// <summary>A field that is text and not blank, as written; null for anything else.</summary>

@@ -8,9 +8,10 @@ import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import { PageHead, PageSection, ViewMain } from '../work/frame/ViewMain';
 import {
   type HelpServerShown, type PluginShown, pluginState, type ResourceShown, shippedChanged, type SkillShown, speaks, type StepShown,
-  takesShipped, updateWaits,
+  takesShipped, type ToolShown, updateWaits,
 } from './catalog';
 import { PluginIcon } from './PluginIcon';
+import { PluginTools, type ToolFixing, type ToolRefused } from './PluginTools';
 import { STATE_WORD } from './PluginList';
 
 // The main area's page header and its sections are every page's since FRAME1d (`work/frame/ViewMain`).
@@ -264,6 +265,7 @@ export function NameRows({ names }: { names: string[] }) {
  */
 export function PluginPage({
   plugin, kitPoints, canTry = false, trial, trying = false, plan, updating = false, acting = false, asking = false,
+  toolStanding, checkingTools = false, fixingTool = null, toolRefused = null, onCheckTools, onFixTool,
   onSwitch, onHelp, onTry, onAskUpdate, onApplyUpdate, onCancelUpdate, onAskRemove, onRemove, onCancelRemove,
 }: {
   plugin: PluginShown;
@@ -282,6 +284,18 @@ export function PluginPage({
   acting?: boolean;
   /** *Remove…*'s first press was made, and the page asks. */
   asking?: boolean;
+  /** Its tools as the person's last Check and console read them, by tool id; absent until they have asked (ADOSIGNIN1). */
+  toolStanding?: Record<string, ToolShown>;
+  /** A Check of its tools is on its way. */
+  checkingTools?: boolean;
+  /** A console is open for this check, and every press waits for it. */
+  fixingTool?: ToolFixing | null;
+  /** The press the driver turned down, said beside its check. */
+  toolRefused?: ToolRefused | null;
+  /** The person's Check of its tools; none offers none. */
+  onCheckTools?: (id: string) => void;
+  /** The person's *Set up* or *Sign in* on a check, by its tool and its number from 1; none offers none. */
+  onFixTool?: (id: string, tool: string, check: number) => void;
   onSwitch: (id: string, action: 'enable' | 'disable') => void;
   /**
    * The person's approval of what a server offers Ask Daoris, with the writes they ticked (HELPPLUG1c), or its withdrawal
@@ -414,6 +428,17 @@ export function PluginPage({
       <HelpServers plugin={plugin.id} servers={plugin.helpServers} onHelp={onHelp} />
       <SkillRows skills={plugin.skills} />
       <StepRows plugin={plugin.id} steps={plugin.steps} resources={plugin.resources} />
+      {onCheckTools && onFixTool && (
+        <PluginTools
+          plugin={plugin.id}
+          tools={plugin.tools?.map((tool) => toolStanding?.[tool.id] ?? tool)}
+          checking={checkingTools}
+          fixing={fixingTool}
+          refused={toolRefused}
+          onCheck={onCheckTools}
+          onFix={onFixTool}
+        />
+      )}
 
       <PageSection title={t('plugin.section.tests')}>
         <h3 className="m-0 mb-1.5 text-small font-medium text-ink-soft">{t('plugin.tests.trial')}</h3>

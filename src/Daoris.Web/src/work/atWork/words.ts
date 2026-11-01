@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next';
-import type { AtWorkChildState, AtWorkJoined, AtWorkWait } from './types';
+import type { AtWorkAsker, AtWorkChildState, AtWorkJoined, AtWorkPart, AtWorkWait } from './types';
 
 /** A part's wait in the rail's words (the strip places it; the view words it alike): *waits on #q, asked of core*, *awaiting helper*. */
 export function waitLine(t: TFunction, wait: AtWorkWait): string {
@@ -41,6 +41,23 @@ export function joinedLine(t: TFunction, joined: AtWorkJoined): string | null {
     case 'moved': return t('work.parts.began.moved', { after });
     default: return t('work.parts.began.recorded', { began: joined.began });
   }
+}
+
+/**
+ * What asked the attended part's quest, in words (the design §3.1): the publishing session by its place in the strip, the step before,
+ * the ask, or the person.
+ */
+export function askerLine(t: TFunction, asker: AtWorkAsker, parts: readonly AtWorkPart[]): string {
+  const { quest, by } = asker;
+  if (by.session !== undefined) {
+    const number = parts.find((part) => part.key === by.session)?.number;
+    return t('work.atWork.askedBy.session', {
+      quest, by: number === undefined ? t('work.atWork.askedBy.anotherSession') : t('work.parts.number', { n: number }),
+    });
+  }
+  if (by.step !== undefined) return t('work.atWork.askedBy.step', { quest, step: by.step });
+  if (by.ask !== undefined) return t('work.atWork.askedBy.ask', { quest, ask: by.ask });
+  return t('work.atWork.askedBy.person', { quest });
 }
 
 /**

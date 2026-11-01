@@ -94,6 +94,33 @@ public sealed partial class ExamplePluginToolsTests
         }
     }
 
+    /// <summary>ADOSIGNIN1: every fix of the Azure DevOps plugin is a press (a command of its own tools), and its sign-in says it is one.</summary>
+    [Fact]
+    public void The_azure_plugin_s_fix_is_a_press_of_a_command_of_its_own_tools_and_its_sign_in_is_marked()
+    {
+        var manifest = Read("azure-devops-pull-request");
+
+        foreach (var check in manifest.Tools.SelectMany(tool => tool.Ready).Where(check => check.Fix is not null))
+        {
+            var (words, problem) = PluginTools.FixWords(manifest.Tools, check);
+            Assert.True(words is not null, problem);
+        }
+
+        var signIn = Assert.Single(manifest.Tools.Single(tool => tool.Id == "az").Ready, check => check.SignIn);
+        Assert.Equal("az login", signIn.Fix);
+    }
+
+    /// <summary>ADOSIGNIN1: the Azure DevOps plugin words how to get <c>az</c> on each platform, since it is not found otherwise.</summary>
+    [Fact]
+    public void The_azure_plugin_says_how_to_get_az_on_each_platform()
+    {
+        var az = Read("azure-devops-pull-request").Tools.Single(tool => tool.Id == "az");
+
+        Assert.Equal("winget install -e --id Microsoft.AzureCLI", az.Install!.For("windows"));
+        Assert.Equal("brew install azure-cli", az.Install.For("macos"));
+        Assert.StartsWith("https://learn.microsoft.com/", az.Install.For("linux"));
+    }
+
     /// <summary>A program <c>land.mjs</c> starts: its <c>run('&lt;program&gt;'</c> calls.</summary>
     [GeneratedRegex(@"\brun\('([^']+)'")]
     private static partial Regex Started();

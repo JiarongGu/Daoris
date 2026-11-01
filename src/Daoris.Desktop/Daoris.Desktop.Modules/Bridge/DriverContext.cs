@@ -62,6 +62,18 @@ public sealed class DriverContext(IEventBus events, DriverLoop loop, OpenFolder?
     /// </summary>
     public Func<ServiceClient, ISetupWorld>? SetupWorlds { get; set; }
 
+    /// <summary>
+    /// A plugin's tools found and checked (ADOSIGNIN1): null is the real one, which starts each tool's checks; a test names a
+    /// stand-in, since the fast half starts no process. Set by <see cref="DriverModule"/>'s initializer, as <see cref="Offers"/> is.
+    /// </summary>
+    public Func<string, IReadOnlyList<PluginTool>, CancellationToken, Task<IReadOnlyList<PluginToolFound>>>? ToolChecks { get; set; }
+
+    /// <summary>
+    /// A plugin tool's fix run in the person's console (ADOSIGNIN1): null is the real one, which opens a window; a test names a
+    /// stand-in that starts none. Set as <see cref="ToolChecks"/> is.
+    /// </summary>
+    public Func<string, IReadOnlyList<PluginTool>, string, int, CancellationToken, Task<ToolSetUp>>? ToolSetUps { get; set; }
+
     /// <summary>The set-up press's world over <paramref name="service"/>: the one named, else the real one under the home.</summary>
     public ISetupWorld SetupWorldOf(ServiceClient service) => SetupWorlds?.Invoke(service) ?? new SetupWorld(service, Loop.Home);
 
