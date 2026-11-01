@@ -2,7 +2,7 @@ import type { TFunction } from 'i18next';
 import type { FlowEdge, FlowNode, FlowSection, PillTone } from '../design/Flow';
 import type { IconName } from '../design/ui';
 import { aroundTheLanding, textOf, type CurrentWorkflow, type WorkflowStep } from './current';
-import type { GraphRun, GraphWire } from './run';
+import type { GraphBack, GraphRun, GraphWire } from './run';
 import { executorSaid, stepTitle } from './said';
 
 // A workflow and its run drawn as flowcharts (FLOWCHART1d; D186 point 5, the flowchart design §2.4, §2.5 and §5.1): what
@@ -79,9 +79,12 @@ export type WorkflowFlow = { label: string; nodes: FlowNode[]; edges: FlowEdge[]
  * A run bound to a graph version's own graph (FABRIC-CUTOVER1e, the driver's answer's `graph`): its entries, its end and its wires, which the
  * drawing follows in place of the steps' order, so a fork and its join are drawn as the graph holds them.
  */
-export type FlowGraph = Pick<GraphRun, 'entries' | 'end' | 'wires'>;
+export type FlowGraph = Pick<GraphRun, 'entries' | 'end' | 'wires'> & Partial<Pick<GraphRun, 'backs'>>;
 
-/** A wire's edge on the drawing (FABRIC-CUTOVER1e): what it waits on, said; a failure's and a refusal's path in their own style. */
+/**
+ * A wire's edge on the drawing (FABRIC-CUTOVER1e): what it waits on, said; a failure's and a refusal's path in their own style; a decision's
+ * route (DECIDE1c) a conditional move labelled with its outcome.
+ */
 function wireEdge(t: TFunction, wire: GraphWire, from: WorkflowStep | undefined, twice: boolean): FlowEdge {
   const id = twice ? `${wire.from}>${wire.to}:${wire.kind}` : `${wire.from}>${wire.to}`;
   switch (wire.kind) {
@@ -90,11 +93,24 @@ function wireEdge(t: TFunction, wire: GraphWire, from: WorkflowStep | undefined,
       return { id, from: wire.from, to: wire.to, style: 'failed', says: t('workflow.flow.failed'), label: t('workflow.flow.failedLabel') };
     case 'rejected':
       return { id, from: wire.from, to: wire.to, style: 'rejected', says: t('workflow.flow.refused'), label: t('workflow.flow.refusedLabel') };
+    case 'when': {
+      const outcome = wire.outcome ?? '';
+      return { id, from: wire.from, to: wire.to, style: 'conditional', says: t('workflow.run.flow.when', { outcome }), label: outcome };
+    }
     case 'data':
     case 'wait':
     case 'trigger': return { id, from: wire.from, to: wire.to, says: t(`workflow.flow.wire.${wire.kind}`) };
     default: return { id, from: wire.from, to: wire.to, says: t('workflow.flow.wire.recorded', { kind: wire.kind }) };
   }
+}
+
+/** A way back's edge (DECIDE1c): always a return, said by what it is taken on, the review's changes in their own words. */
+function backEdge(t: TFunction, back: GraphBack): FlowEdge {
+  const id = `${back.from}<${back.to}:${back.on}`;
+  const says = back.on === 'rejected' ? t('workflow.run.flow.back.rejected')
+    : back.on === 'failed' ? t('workflow.run.flow.back.failed')
+      : t('workflow.run.flow.back.outcome', { outcome: back.on });
+  return { id, from: back.from, to: back.to, style: 'back', says, label: t('workflow.run.flow.back.label') };
 }
 
 /**
@@ -146,6 +162,7 @@ export function workflowFlow(
     nodes.push(...steps.map(nodeOf), finished());
     edges.push(...wires.map((wire) => wireEdge(t, wire, byId.get(wire.from),
       wires.some((other) => other !== wire && other.from === wire.from && other.to === wire.to))));
+    edges.push(...(graph.backs ?? []).filter((back) => byId.has(back.from) && byId.has(back.to)).map((back) => backEdge(t, back)));
     if (byId.has(graph.end)) {
       edges.push({ id: `${graph.end}>${FINISHED}`, from: graph.end, to: FINISHED, says: t(`workflow.flow.move.${byId.get(graph.end)!.press ?? 'automatic'}`) });
     }

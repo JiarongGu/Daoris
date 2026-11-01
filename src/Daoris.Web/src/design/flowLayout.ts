@@ -24,11 +24,11 @@
  */
 
 /**
- * How an edge is drawn: a move, a failure's or a rejection's short dashes, a refused move (a conflict), or a conditional one
- * (FLOWCHART1b): a move made only on a guard, or one that has not happened, such as going on or where Accept would land. Dashed,
- * like the failures; the cause is in words, never the ink.
+ * How an edge is drawn: a move, a failure's or a rejection's short dashes, a refused move (a conflict), a conditional one
+ * (FLOWCHART1b): a move made only on a guard, or one that has not happened, such as going on or where Accept would land; or a way
+ * back (DECIDE1c), always a return, whatever the walk finds. Dashed, like the failures; the cause is in words, never the ink.
  */
-export type EdgeStyle = 'next' | 'failed' | 'rejected' | 'refused' | 'conditional';
+export type EdgeStyle = 'next' | 'failed' | 'rejected' | 'refused' | 'conditional' | 'back';
 
 /**
  * What the layout reads of a flow: its nodes in declared order, its edges, and where it is entered. A node's `stack` is what makes
@@ -121,7 +121,8 @@ export function layoutFlow(shape: FlowShape): FlowLayout {
     const key = pathKey(edge.from, edge.to, style);
     const found = byKey.get(key);
     if (found) { found.edges.push(edge.id); continue; }
-    const path: FlowPath = { id: key, from: edge.from, to: edge.to, style, edges: [edge.id], back: false, ways: [], lane: null };
+    // A way back is a return by what it is, so the walk below never ranks it as a move forward.
+    const path: FlowPath = { id: key, from: edge.from, to: edge.to, style, edges: [edge.id], back: style === 'back', ways: [], lane: null };
     byKey.set(key, path);
     paths.push(path);
   }
@@ -133,6 +134,7 @@ export function layoutFlow(shape: FlowShape): FlowLayout {
   const walk = (id: string) => {
     state.set(id, 'on');
     for (const path of out.get(id)!) {
+      if (path.back) continue;
       const there = state.get(path.to);
       if (there === 'on') path.back = true;
       else if (there === undefined) walk(path.to);

@@ -7,7 +7,7 @@ import i18n from '../locales/i18n';
 import { code } from '../test/code';
 import type { RunStep, WorkflowRun } from './run';
 import {
-  answerOf, CHAT_RUN, CHECK_UNKNOWN_HELD, checkRun, FAILED, GRAPH_RUN, GRAPH_RUN_ADDED_LOOK, GRAPH_RUN_GO_AHEAD, GRAPH_RUN_GO_AHEAD_KEPT, GRAPH_RUN_INTEGRATE, GRAPH_RUN_REQUESTS, GRAPH_RUN_UNJUDGED, HELD_FOR_OPINION, IN_REVIEW, LANDED, MERGED, OPINION_DISPUTED,
+  answerOf, CHAT_RUN, CHECK_UNKNOWN_HELD, checkRun, FAILED, GRAPH_RUN, GRAPH_RUN_ADDED_LOOK, GRAPH_RUN_DECIDED, GRAPH_RUN_GO_AHEAD, GRAPH_RUN_GO_AHEAD_KEPT, GRAPH_RUN_INTEGRATE, GRAPH_RUN_REQUESTS, GRAPH_RUN_REVIEW, GRAPH_RUN_UNJUDGED, HELD_FOR_OPINION, IN_REVIEW, LANDED, MERGED, OPINION_DISPUTED,
   OPINION_SETTLED, PULL_REQUEST_OPEN, SEVERAL, WAITING_ON_YOU, WORKING,
 } from './runFixtures';
 import { WorkflowLine } from './WorkflowLine';
@@ -589,6 +589,67 @@ describe("the person's skip and stop of a graph run's node", () => {
     unmount();
     render(<WorkflowRunView answer={answerOf(GRAPH_RUN_GO_AHEAD_KEPT)} />);
     expect(row('release')).toHaveTextContent('你的跳过已保存，Daoris 下次查看时会应用它。');
+  });
+});
+
+// DECIDE1c: a graph run says which routes were taken, a decision's outcome on its node and a route its outcome left untaken said so, and a
+// review waiting on the person offers their changes in place of their Accept, which asks for their words before it sends them.
+describe("a graph run's routes and a review's changes", () => {
+  afterEach(async () => { await i18n.changeLanguage('en'); });
+
+  it('says a decision\'s outcome and a route not taken, and stands nowhere once nothing else moves', () => {
+    render(<WorkflowRunView answer={answerOf(GRAPH_RUN_DECIDED)} />);
+    expect(row('find')).toHaveTextContent('Its outcome: none.');
+    expect(row('release')).toHaveTextContent('route not taken');
+    expect(row('release')).toHaveTextContent('Not taken: the outcomes reached leave no route to it.');
+    expect(row('release')).not.toHaveTextContent('not reached');
+    expect(steps().some((item) => item.getAttribute('aria-current') === 'step')).toBe(false);
+  });
+
+  it('asks for the words changes send before it is pressed, then sends the run, the review, the act and the words', async () => {
+    const onNodeWord = vi.fn().mockResolvedValue({ run: 'q1', node: 'review', act: 'changes', done: true });
+    render(<WorkflowRunView answer={answerOf(GRAPH_RUN_REVIEW)} onNodeWord={onNodeWord} />);
+
+    await userEvent.click(within(row('review')).getByRole('button', { name: 'Ask for changes…' }));
+    const ask = screen.getByRole('group', { name: 'Ask for changes at review' });
+    expect(within(ask).getByText(/your words go to the work's session as its next turn/)).toBeInTheDocument();
+    expect(within(ask).getByRole('button', { name: 'Ask for changes' })).toBeDisabled();
+    await userEvent.type(within(ask).getByRole('textbox', { name: 'what should change' }), 'Name the flag after what it does.');
+    await userEvent.click(within(ask).getByRole('button', { name: 'Ask for changes' }));
+
+    expect(onNodeWord).toHaveBeenCalledWith({ run: 'q1', node: 'review', act: 'changes', words: 'Name the flag after what it does.' });
+    expect(within(row('landing')).queryByRole('button', { name: 'Ask for changes…' })).toBeNull();
+  });
+
+  it('draws changes kept on the review until they are applied, and says a refusal by its code', async () => {
+    const kept: WorkflowRun = {
+      ...GRAPH_RUN_REVIEW,
+      steps: GRAPH_RUN_REVIEW.steps.map((step) => step.step.id === 'review'
+        ? { ...step, acts: null, asked: { node: 'review', act: 'changes', words: 'Shorter, please.', at: '2026-11-01T09:00:00Z' } }
+        : step),
+    };
+    const { unmount } = render(<WorkflowRunView answer={answerOf(kept)} />);
+    expect(row('review')).toHaveTextContent("Your changes are kept, and Daoris's next look sends them to the work.");
+    expect(row('review')).toHaveTextContent('“Shorter, please.”');
+    unmount();
+
+    const onNodeWord = vi.fn().mockResolvedValue({ run: 'q1', node: 'review', act: 'changes', done: false, refused: 'not-review', message: 'workflow: no review.' });
+    render(<WorkflowRunView answer={answerOf(GRAPH_RUN_REVIEW)} onNodeWord={onNodeWord} />);
+    await userEvent.click(within(row('review')).getByRole('button', { name: 'Ask for changes…' }));
+    const ask = screen.getByRole('group', { name: 'Ask for changes at review' });
+    await userEvent.type(within(ask).getByRole('textbox', { name: 'what should change' }), 'Shorter.');
+    await userEvent.click(within(ask).getByRole('button', { name: 'Ask for changes' }));
+    expect(await within(ask).findByRole('alert')).toHaveTextContent('review is no review, and only a review is accepted or asked for changes.');
+  });
+
+  it('is worded in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    const { unmount } = render(<WorkflowRunView answer={answerOf(GRAPH_RUN_DECIDED)} />);
+    expect(row('find')).toHaveTextContent('它的结果：none。');
+    expect(row('release')).toHaveTextContent('未走此路线');
+    unmount();
+    render(<WorkflowRunView answer={answerOf(GRAPH_RUN_REVIEW)} onNodeWord={vi.fn()} />);
+    expect(within(row('review')).getByRole('button', { name: '要求修改…' })).toBeInTheDocument();
   });
 });
 

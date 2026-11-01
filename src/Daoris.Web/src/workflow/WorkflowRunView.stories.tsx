@@ -3,7 +3,8 @@ import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../design/storyLanguage';
 import { Button } from '../design/ui';
 import {
-  answerOf, CHAT_RUN, CHECK_UNKNOWN_HELD, checkRun, FAILED, GO_AHEAD_REFUSAL, GRAPH_RUN, GRAPH_RUN_ADDED_LOOK, GRAPH_RUN_GO_AHEAD, GRAPH_RUN_GO_AHEAD_KEPT, GRAPH_RUN_REQUESTS, GRAPH_RUN_UNJUDGED,
+  answerOf, CHAT_RUN, CHECK_UNKNOWN_HELD, checkRun, FAILED, GO_AHEAD_REFUSAL, GRAPH_RUN, GRAPH_RUN_ADDED_LOOK, GRAPH_RUN_DECIDED, GRAPH_RUN_GO_AHEAD, GRAPH_RUN_GO_AHEAD_KEPT,
+  GRAPH_RUN_REQUESTS, GRAPH_RUN_REVIEW, GRAPH_RUN_UNJUDGED,
   HELD_FOR_OPINION, IN_REVIEW, LANDED, MERGED, OPINION_DISPUTED, OPINION_SETTLED, PULL_REQUEST_OPEN, SEVERAL, WAITING_ON_YOU, WORKING,
 } from './runFixtures';
 import type { NodeWordAsk } from './run';
@@ -269,6 +270,31 @@ export const GraphRunPassOverAGoAheadAtTheFloorChineseDark: Story = { ...GraphRu
 
 /** The person's skip kept on the go-ahead and not applied yet: said with their words in place of the presses. */
 export const GraphRunWordKept: Story = { args: { answer: answerOf(GRAPH_RUN_GO_AHEAD_KEPT), here: null, onNodeWord: kept } };
+
+/** A width in rem as the side bar's px at the stories' 16 px root. */
+const rem = (width: number) => sideAt(width * 16);
+
+/**
+ * **A decision's routes** (DECIDE1c): the plugin's find came to `none`, so its `when release` route is not taken and the run stands
+ * nowhere; the review's way back to the work is drawn as a return. At 80, 39 and 25rem, in English and 中文, light and dark.
+ */
+export const GraphRunDecided: Story = { args: { answer: answerOf(GRAPH_RUN_DECIDED), here: null }, decorators: [rem(80)] };
+export const GraphRunDecidedChineseDark: Story = { ...GraphRunDecided, decorators: [rem(80), chinese, dark] };
+export const GraphRunDecidedAt39remDark: Story = { ...GraphRunDecided, decorators: [rem(39), dark] };
+export const GraphRunDecidedAt39remChinese: Story = { ...GraphRunDecided, decorators: [rem(39), chinese] };
+export const GraphRunDecidedAt25rem: Story = { ...GraphRunDecided, decorators: [rem(25)] };
+export const GraphRunDecidedAt25remChineseDark: Story = { ...GraphRunDecided, decorators: [rem(25), chinese, dark] };
+
+/**
+ * **A review's changes** (DECIDE1c): the review waiting on your Accept offers *Ask for changes…* beside its stop, which asks for your words
+ * and sends them to the work in place of your Accept. At 80, 39 and 25rem, in English and 中文, light and dark.
+ */
+export const GraphRunReviewChanges: Story = { args: { answer: answerOf(GRAPH_RUN_REVIEW), here: null, onNodeWord: kept }, decorators: [rem(80)] };
+export const GraphRunReviewChangesChineseDark: Story = { ...GraphRunReviewChanges, decorators: [rem(80), chinese, dark] };
+export const GraphRunReviewChangesAt39remChinese: Story = { ...GraphRunReviewChanges, decorators: [rem(39), chinese] };
+export const GraphRunReviewChangesAt39remDark: Story = { ...GraphRunReviewChanges, decorators: [rem(39), dark] };
+export const GraphRunReviewChangesAt25rem: Story = { ...GraphRunReviewChanges, decorators: [rem(25)] };
+export const GraphRunReviewChangesAt25remChineseDark: Story = { ...GraphRunReviewChanges, decorators: [rem(25), chinese, dark] };
 
 // INTEGRATE1o part o2: the work's requests drawn inside its node, a decline holding the work's requests waiting on you, with Pass over….
 export const GraphRunDeclinedRequest: Story = { args: { answer: answerOf(GRAPH_RUN_REQUESTS), here: null, doors, onNodeWord: kept } };

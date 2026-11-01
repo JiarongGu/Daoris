@@ -36,6 +36,9 @@ export const runWorkflow = (run: WorkflowRun): CurrentWorkflow => ({
   limits: run.workflow.limits,
 });
 
+/** Whether the outcomes a graph run reached leave no route to this step (DECIDE1c, the driver's `notTaken`). */
+const notTakenIn = (run: WorkflowRun, step: RunStep): boolean => run.graph?.notTaken?.includes(step.step.id) ?? false;
+
 /** The person's words a step keeps, shown as written: a skip's and a *not yet*'s (D154). */
 const QUOTES: ReadonlySet<string> = new Set(['look.skip', 'look.not-yet']);
 
@@ -59,7 +62,10 @@ function StepMark({ run, step, here, doors, control, pill = true, onNodeWord, on
   onHeld?: (ask: CheckHeldAsk) => Promise<CheckHeldAnswer>;
 }) {
   const { t } = useTranslation();
-  const said = runSaid(t, step);
+  // DECIDE1c: a node the outcomes reached leave no route to says so in place of its state's words; a decision says the outcome it reached.
+  const notTaken = notTakenIn(run, step);
+  const outcome = run.graph?.outcomes?.[step.step.id] ?? null;
+  const said = notTaken ? t('workflow.run.notTaken.said') : runSaid(t, step);
   const added = addedSaid(t, step);
   const kind = step.step.kind;
   // A graph run's node keeps the person's words of a skip, a refusal or a stop (FABRIC-CUTOVER1e); a go-ahead's act is its sentence's.
@@ -77,7 +83,7 @@ function StepMark({ run, step, here, doors, control, pill = true, onNodeWord, on
     <div className="mt-1 grid min-w-0 gap-1">
       {(pill || here || when) && (
         <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-          {pill && <Pill tone={runTone(step.state)}>{stepWord(t, step)}</Pill>}
+          {pill && <Pill tone={notTaken ? 'neutral' : runTone(step.state)}>{notTaken ? t('workflow.run.notTaken.state') : stepWord(t, step)}</Pill>}
           {here && (
             <span className="rounded-full border border-line-strong px-2 py-px text-meta text-ink-soft">{t('workflow.run.thisSession')}</span>
           )}
@@ -85,6 +91,7 @@ function StepMark({ run, step, here, doors, control, pill = true, onNodeWord, on
         </p>
       )}
       {said && <p className="m-0 text-small text-ink-soft"><Inline text={said} /></p>}
+      {outcome && <p className="m-0 text-small text-ink-soft"><Inline text={t('workflow.run.outcome', { outcome })} /></p>}
       {/* INTEGRATE1o part o2: the requests the work's sessions made, inside the work: each quest they published and each helper they asked. */}
       {step.requests && step.requests.length > 0 && (
         <ul aria-label={t('workflow.run.requests.title')} className="m-0 grid list-none gap-1 p-0">
@@ -239,8 +246,10 @@ function Run({ run, here, doors, controls, named, onNodeWord, onHeld }: {
       at: step.step.id === at,
       mark: mark(true),
       // Its node on the flowchart (FLOWCHART1d): its state's word in `runTone`'s tone, done only where it is (a skip stays in view
-      // when a long run folds), its lines without the pill the node draws, and its door for Enter.
-      state: { word: stepWord(t, step), tone: runTone(step.state) },
+      // when a long run folds), its lines without the pill the node draws, and its door for Enter. DECIDE1c: a route not taken says so.
+      state: notTakenIn(run, step)
+        ? { word: t('workflow.run.notTaken.state'), tone: 'neutral' as const }
+        : { word: stepWord(t, step), tone: runTone(step.state) },
       settled: step.state === 'done',
       node: mark(false),
       ...(door && 'open' in door ? { open: door.open } : {}),

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import i18n from '../locales/i18n';
 import type { WorkflowStep } from './current';
 import { BRANCH_AUTOMATIC, FULL, NOTHING_SET, WORK } from './fixtures';
-import { GRAPH_RUN, GRAPH_RUN_ADDED_LOOK } from './runFixtures';
+import { GRAPH_RUN, GRAPH_RUN_ADDED_LOOK, GRAPH_RUN_DECIDED } from './runFixtures';
 import { FINISHED, outcomeOf, workflowFlow } from './workflowFlow';
 
 // FLOWCHART1d (D186; the flowchart design §2.4, §2.5, §5.1): a workflow drawn as a flowchart, from what `WORKFLOW_CURRENT` and
@@ -119,6 +119,17 @@ describe('a workflow as a flowchart', () => {
     expect(flow.sections).toEqual([{ title: 'Before it lands', from: 'claimed' }, { title: 'After it lands', from: 'deployed' }]);
     // No outcome is hung on a node by its options: the graph's own wires draw its failure paths.
     expect(flow.nodes.filter((node) => node.id !== FINISHED && node.id.includes(':'))).toEqual([]);
+  });
+
+  // DECIDE1c: a decision's route is a conditional move named by its outcome, and a way back is drawn as a return, said by what it is taken on.
+  it("draws a decision's route by its outcome and a way back as a return", () => {
+    const { graph, steps } = GRAPH_RUN_DECIDED;
+    const flow = workflowFlow(t, { steps: steps.map((step) => step.step) }, 'engine', undefined, graph);
+    expect(flow.edges.find((edge) => edge.from === 'find' && edge.to === 'release'))
+      .toMatchObject({ style: 'conditional', says: 'when it comes to `release`', label: 'release' });
+    expect(flow.edges.find((edge) => edge.from === 'review' && edge.to === 'work'))
+      .toMatchObject({ style: 'back', says: 'back to it when you ask for changes', label: 'sent back' });
+    expect(flow.entries).toEqual(['work']);
   });
 
   it('draws a look the work added beside a graph as an entry of its own, joined to nothing', () => {

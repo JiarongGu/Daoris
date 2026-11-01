@@ -216,7 +216,8 @@ function nodeSaid(t: TFunction, step: RunStep, node: string): string | null {
     case 'failed':
       if (node === 'request' && step.code === DECLINED) return t('workflow.run.graph.said.requestDeclined');
       return step.code ? t('workflow.run.graph.said.failed', { code: step.code }) : t('workflow.run.graph.said.failedNone');
-    case 'rejected': return t('workflow.run.graph.said.rejected');
+    // DECIDE1c: a review's rejection is the person's changes, which went to the work.
+    case 'rejected': return t(node === 'review' ? 'workflow.run.graph.said.changes' : 'workflow.run.graph.said.rejected');
     case 'stopped': return t('workflow.run.graph.said.stopped');
     case 'unknown': return t('workflow.run.graph.said.unknown');
     case 'invalidated': return t('workflow.run.graph.said.invalidated');

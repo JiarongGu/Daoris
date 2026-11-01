@@ -201,6 +201,53 @@ export const GRAPH_RUN_GO_AHEAD = run([
   },
 });
 
+/**
+ * DECIDE1c: a graph run whose review waits on the person's Accept, which offers their changes beside its stop; its changes go back to the work.
+ */
+export const GRAPH_RUN_REVIEW = run([
+  at(nodeCell('work', 'work', 'agent', 'agent'), 'done', 'reached', { node: 'claimed', on: 'quest', quest: 'q1' }),
+  at(nodeCell('review', 'review', 'you', 'daoris', 'accept'), 'waiting-on-you', 'active',
+    { node: 'review', on: 'branch', branch: BRANCH, commit: COMMIT, session: 's1', acts: ['changes', 'stop'] }),
+  at(nodeCell('landing', 'landing', 'automatic', 'daoris', null, { method: 'merge', accept: 'automatic' }), 'not-reached', 'blocked',
+    { node: 'land', on: 'branch', branch: BRANCH, session: 's1' }),
+], {
+  at: 'review',
+  workflow: { version: 'gph-7e1d3c5b9a2f4e6d', startHolds: [], limits: {}, id: 'release', boundVersion: 2 },
+  graph: {
+    run: 'q1', entries: ['work'], end: 'landing',
+    wires: [{ from: 'work', to: 'review', kind: 'after' }, { from: 'review', to: 'landing', kind: 'after' }],
+    backs: [{ from: 'review', to: 'work', on: 'rejected' }],
+    quest: 'q1', branch: BRANCH, judged: true, unread: false, ended: null, notTaken: [], outcomes: {},
+  },
+});
+
+/**
+ * DECIDE1c: a graph run past its landing whose plugin's find came to `none`, so its release is not taken and the run stands nowhere: the
+ * find's `when release` route and the review's way back to the work are drawn, and the find says its outcome.
+ */
+export const GRAPH_RUN_DECIDED = run([
+  at(nodeCell('work', 'work', 'agent', 'agent'), 'done', 'reached', { node: 'claimed', on: 'quest', quest: 'q1' }),
+  at(nodeCell('review', 'review', 'you', 'daoris', 'accept'), 'done', 'reached', { node: 'review', on: 'branch', branch: BRANCH, commit: COMMIT, session: 's1' }),
+  at(nodeCell('landing', 'landing', 'automatic', 'daoris', null, { method: 'merge', accept: 'automatic' }), 'done', 'reached',
+    { node: 'land', on: 'branch', branch: BRANCH, commit: COMMIT, session: 's1' }),
+  at(nodeCell('find', 'local-release/find', 'automatic', 'plugin', null, { plugin: 'local-release' }), 'done', 'reached',
+    { node: 'local-release/find', on: 'landing', branch: BRANCH, commit: COMMIT }),
+  at(nodeCell('release', 'local-release/release', 'automatic', 'plugin', null, { plugin: 'local-release' }), 'not-reached', 'blocked',
+    { node: 'local-release/release' }),
+], {
+  at: null,
+  workflow: { version: 'gph-7e1d3c5b9a2f4e6d', startHolds: [], limits: {}, id: 'release', boundVersion: 2 },
+  graph: {
+    run: 'q1', entries: ['work'], end: 'release',
+    wires: [
+      { from: 'work', to: 'review', kind: 'after' }, { from: 'review', to: 'landing', kind: 'after' }, { from: 'landing', to: 'find', kind: 'after' },
+      { from: 'find', to: 'release', kind: 'when', outcome: 'release' },
+    ],
+    backs: [{ from: 'review', to: 'work', on: 'rejected' }],
+    quest: 'q1', branch: BRANCH, judged: true, unread: false, ended: null, notTaken: ['release'], outcomes: { find: 'none' },
+  },
+});
+
 /** The same run once the person passed its go-ahead over: their word kept, which the driver's next look applies. */
 export const GRAPH_RUN_GO_AHEAD_KEPT: WorkflowRun = {
   ...GRAPH_RUN_GO_AHEAD,
