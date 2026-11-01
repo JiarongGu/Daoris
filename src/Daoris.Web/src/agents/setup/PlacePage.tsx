@@ -135,9 +135,11 @@ function HeadMenu({ driving, onAsk }: { driving: PlaceDriving; onAsk: (act: 'dri
  *
  * A molecule: every state is reached by props, and every press goes out.
  */
-export function PlacePageView({ head, sections, driving, back, row, onRowBrought, focusAsked }: {
+export function PlacePageView({ head, sections, notes, driving, back, row, onRowBrought, focusAsked }: {
   head: PlaceHeadProps;
   sections: readonly PlaceSectionSpec[];
+  /** What waits on the person, a line or two between the head and the sections (This machine's staffing). */
+  notes?: ReactNode;
   /** A repository's driving, in the head's acts and ⋯; none where the place has none. */
   driving?: PlaceDriving | null;
   /** The page a door came from, once: *← Back to engine · Roles*. */
@@ -205,6 +207,7 @@ export function PlacePageView({ head, sections, driving, back, row, onRowBrought
           />
         )}
       </div>
+      {notes}
       {/* A tighter header here than a Setup section's own, so the head and the three lines fit the first screen (§2.1). */}
       <PlaceAside.Provider value={twoColumns ? aside : null}>
         <div

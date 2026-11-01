@@ -82,6 +82,17 @@ public sealed partial class McpToolDescriptionTests
         Assert.Contains("presses Apply there", text);
     }
 
+    /// <summary>SETUPUX1j: the set-up tool's preset ask names `keep`, which writes no landing and no workflow choice, beside the deliveries.</summary>
+    [Fact]
+    public void The_setup_tool_names_keep_how_it_lands_beside_the_deliveries()
+    {
+        var text = string.Join(" ", Descriptions().Where(d => d.Tool == "setup_propose").Select(d => d.Text));
+
+        Assert.Contains("`keep`", text);
+        Assert.Contains("no landing and no workflow choice", text);
+        Assert.Contains("`merge-after-accept`", text);
+    }
+
     /// <summary>WORKFLOW1h-a: the workflow tool says it only proposes, wants whole steps, and names the parts not proposed yet.</summary>
     [Fact]
     public void The_workflow_tool_says_it_only_proposes_whole_steps()

@@ -49,6 +49,21 @@ const TABLE: Record<string, Record<number, number>> = {
   'graph/ReleaseHoldsOpen': { 1280: 0, 624: 0 },
   'graph/Merge': { 1280: 0, 624: 0, 400: 0 },
   'graph/MergeChinese': { 1280: 0, 624: 0, 400: 0 },
+  // A run's view (SETUPUX1u): a run draws the route its decision took, so the release outcome is one chain that draws from the side bar's
+  // floor, like a review's; the none outcome keeps the route not taken beside *No further step*, a two-way branch that needs 31rem, so the
+  // 300 px and 25rem frames are the rail and 45% of the window (696 px) draws it. A selected step's record makes its node taller, never wider.
+  'runview/ReleaseRun': { 300: 0, 400: 0, 696: 0 },
+  'runview/ReleaseRunDark': { 300: 0, 400: 0, 696: 0 },
+  'runview/ReleaseRunChinese': { 300: 0, 400: 0, 696: 0 },
+  'runview/ReleaseRunChineseDark': { 300: 0, 400: 0, 696: 0 },
+  'runview/NoneRun': { 696: 0 },
+  'runview/NoneRunDark': { 696: 0 },
+  'runview/NoneRunChinese': { 696: 0 },
+  'runview/NoneRunChineseDark': { 696: 0 },
+  'runview/ReviewRun': { 300: 0, 400: 0, 696: 0 },
+  'runview/ReviewRunDark': { 300: 0, 400: 0, 696: 0 },
+  'runview/ReviewRunChinese': { 300: 0, 400: 0, 696: 0 },
+  'runview/ReviewRunChineseDark': { 300: 0, 400: 0, 696: 0 },
   // Unequal boxes in both languages, left to right and top to bottom.
   'flow/Unequal': { 570: 0, 1200: 0 },
   'flow/UnequalChinese': { 570: 0, 1200: 0 },

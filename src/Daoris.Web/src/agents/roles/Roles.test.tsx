@@ -1,5 +1,7 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import * as Tooltip from '@radix-ui/react-tooltip';
+import { fireEvent, render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ActorRow, RoleCatalogue, RoleRow, StaffingFound } from '../../data/wiring';
 import i18n from '../../locales/i18n';
@@ -9,6 +11,9 @@ import { RolesCard, roleIdFor, roleName } from './Roles';
 // person adds, changes and removes a working role (its names, work, place and choices), turns it off, puts its order back to as before,
 // gives a seeded one back its seed, and takes the Designer Daoris suggests. Each press goes by its door: Save and Off over `SET_ROLE`,
 // Clear order over `SET_ACTOR` only; the page judges nothing, and a refusal is the driver's sentence under its press.
+
+// The editor's ⓘ is a tip, which needs the provider the application mounts.
+const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
 
 const seed = (id: string, en: string, zh: string, work: string): RoleRow => ({
   id, state: 'seed', seeded: true, name: { en, zh }, takes: [work], scopeKind: 'machine', revision: 0,

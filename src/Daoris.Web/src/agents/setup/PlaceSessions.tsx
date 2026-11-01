@@ -17,14 +17,28 @@ import { repositoryId } from '../modes';
  * chosen route's chart, Gates, the folds of the line and its landing from the one molecule Setup draws them with, and Change… and Edit steps….
  * A molecule: the setup and the workflow arrive as props, and every press goes out.
  */
-export function PlaceWorkflowBodyView({ setup, workflow = null }: { setup: RepositorySetupProps | null; workflow?: PlaceWorkflowProps | null }) {
+export function PlaceWorkflowBodyView({ setup, workflow = null, landingAsked = false }: {
+  setup: RepositorySetupProps | null;
+  workflow?: PlaceWorkflowProps | null;
+  /** A door asked for the landing rows (a refusal of *Set up…* whose cause is put right there): they open, and take the focus. */
+  landingAsked?: boolean;
+}) {
   if (!setup || !workflow) return null;
   return (
     <PlaceWorkflowView
       {...workflow}
       onAcceptIntegration={setup.landed?.onAcceptIntegration}
       landing={(hand) => (setup.work
-        ? <RepositorySetup {...setup} only={FOLD_SECTIONS} lead={hand.lead} gatesApart open={hand.asked ?? setup.open} openAgain={hand.again} />
+        ? (
+          <RepositorySetup
+            {...setup}
+            only={FOLD_SECTIONS}
+            lead={hand.lead}
+            gatesApart
+            open={hand.asked ?? (landingAsked ? 'landing' : undefined)}
+            openAgain={hand.again}
+          />
+        )
         : <FoldRow folds={hand.lead} />)}
     />
   );
@@ -56,16 +70,20 @@ function useRepositoryPlace({ place, notify, onOpenPlugin, onOpenAppointed }: {
  * **A place's Workflow section**: a repository's or a workspace's, from its Workflow answer for the route the person chose, read only
  * while the section is open. The route and the step are the shell's, held above the mounts.
  */
-export function PlaceWorkflow({ place, notify, onOpenPlugin }: {
+export function PlaceWorkflow({ place, notify, onOpenPlugin, landingAsked = false }: {
   place: PlaceHold;
   notify: Notify;
+  /** A door asked for the landing rows (a refusal of *Set up…* whose cause is put right there): the Landing fold opens and takes the focus. */
+  landingAsked?: boolean;
   onOpenPlugin?: (plugin: string) => void;
 }) {
   if (place.kind === 'workspace') return <WorkspaceWorkflow place={place} />;
-  return <RepositoryWorkflow place={place} notify={notify} onOpenPlugin={onOpenPlugin} />;
+  return <RepositoryWorkflow place={place} notify={notify} onOpenPlugin={onOpenPlugin} landingAsked={landingAsked} />;
 }
 
-function RepositoryWorkflow({ place, notify, onOpenPlugin }: { place: PlaceHold; notify: Notify; onOpenPlugin?: (plugin: string) => void }) {
+function RepositoryWorkflow({ place, notify, onOpenPlugin, landingAsked }: {
+  place: PlaceHold; notify: Notify; onOpenPlugin?: (plugin: string) => void; landingAsked: boolean;
+}) {
   const { registration, setup } = useRepositoryPlace({ place: place.row, notify, onOpenPlugin });
   const workflowOf = useWorkflowTab({
     repository: registration?.repository ?? null, enabled: setup !== null, ready: setup !== null, notify, route: place.view.route,
@@ -84,6 +102,7 @@ function RepositoryWorkflow({ place, notify, onOpenPlugin }: { place: PlaceHold;
         onView: place.onView,
         onOpenSection: place.onOpenSection,
       }}
+      landingAsked={landingAsked}
     />
   );
 }

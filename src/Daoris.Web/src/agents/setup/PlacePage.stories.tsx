@@ -81,6 +81,7 @@ function Page({ row = ENGINE, kind = 'repository', opened, driving = DRIVING, ba
     workflow: <WorkflowBody workspace={kind === 'workspace'} />,
     roles: <PlaceRolesView place={ask} read="ok" answer={CHAIN(ask)} editor={editor} appointed={null} onSource={nothing} />,
     sessions: <p className="m-0 pb-3 pl-3 text-small text-ink-soft">Access, language, helpers and the reach.</p>,
+    allRoles: <p className="m-0 pb-3 pl-3 text-small text-ink-soft">Every role once; drawn in full by MachineRoles' stories.</p>,
   };
   const name = kind === 'machine' ? t('agents.setup.machine') : kind === 'workspace' ? row.workspace ?? '' : row.repository ?? '';
   return (

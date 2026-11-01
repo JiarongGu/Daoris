@@ -237,6 +237,7 @@ export const rowOfFound = (found: Found | null, detail: PlaceRow | null): PlaceR
 
 const SECTION_TITLE: Record<PlaceSection, string> = {
   workflow: 'agents.setup.workflow.title', roles: 'agents.setup.roles.title', sessions: 'agents.setup.sessions.title',
+  allRoles: 'agents.setup.allRoles.title',
 };
 
 /**
@@ -246,7 +247,7 @@ const SECTION_TITLE: Record<PlaceSection, string> = {
  *
  * A molecule: the driver's answer arrives, and each press goes out.
  */
-export function SetupMain({ found, state, id, row, counts, members, shell, bodies, drive, setUp, onGo }: {
+export function SetupMain({ found, state, id, row, counts, members, shell, bodies, notes, drive, setUp, onGo }: {
   found: Found | null;
   state: SetupState['status'];
   /** The chosen place's id, which the shell's state is held under. */
@@ -259,13 +260,15 @@ export function SetupMain({ found, state, id, row, counts, members, shell, bodie
   shell: PlaceShell;
   /** Each section's body, an organism of the application's: Workflow and Sessions press its hooks, Roles reads the driver. */
   bodies: Partial<Record<PlaceSection, ReactNode>>;
+  /** What waits on the person between the head and the sections: This machine's suggested choices and found changes. */
+  notes?: ReactNode;
   /** A repository's driving for its head: the organism holds the hooks, and renders the page with what it made. */
   drive?: (row: PlaceRow, render: (driving: PlaceDriving) => ReactNode) => ReactNode;
   /**
    * The place's *Set up…* (AGENTSPLACE1j), pressed from its head: open, the page replaces the place's sections in the main area, and the
    * panel is the application's, which reads the plan and presses Apply. None for *This machine*, which has no set-up.
    */
-  setUp?: { open: boolean; onOpen: () => void; panel: ReactNode };
+  setUp?: { open: boolean; onOpen: () => void; panel: ReactNode; /** Returns to a place's set-up left through a refusal's door (SETUPUX1j). */ onResume: (place: string) => void };
   /** A door to another place at a section and row; the page names itself as the way back. */
   onGo: (target: string, at: PlaceAt) => void;
 }) {
@@ -309,8 +312,19 @@ export function SetupMain({ found, state, id, row, counts, members, shell, bodie
         setUp: offersSetUp ? { onOpen: setUp.onOpen } : undefined,
       }}
       sections={sections}
+      notes={notes}
       driving={driving}
-      back={back ? { place: back.name, section: back.section ? t(SECTION_TITLE[back.section]) : '', onBack: () => { shell.clearBack(); onGo(back.place, { section: back.section ?? undefined }); } } : null}
+      back={back
+        ? {
+          place: back.name,
+          section: back.setUp ? t('agents.setup.set.open') : back.section ? t(SECTION_TITLE[back.section]) : '',
+          onBack: () => {
+            shell.clearBack();
+            if (back.setUp) setUp?.onResume(back.place);
+            onGo(back.place, { section: back.section ?? undefined });
+          },
+        }
+        : null}
       row={shell.rowOf(id) ?? need?.row ?? null}
       onRowBrought={() => shell.rowBrought(id)}
       focusAsked={shell.focusAsked}

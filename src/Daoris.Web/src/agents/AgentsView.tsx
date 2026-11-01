@@ -21,10 +21,12 @@ import { AgentList, AgentStrip } from './AgentList';
 import { type AgentActs, AgentMainNotice, AgentPage, type Answered } from './AgentPage';
 import { type AgentPart, accountLabel, agentRows } from './agents';
 import { AgentsModes, AgentsStrip, RoleSectionStrip } from './AgentsModes';
-import { type AgentsMode, isRoleSection, readAgentsMode, type RoleSection, setupLit, storeAgentsMode } from './modes';
+import { type AgentsMode, isRoleSection, MACHINE, readAgentsMode, repositoryId, type RoleSection, setupLit, storeAgentsMode } from './modes';
+import { AllRoles } from './roles/AllRoles';
+import { MachineNotes } from './setup/MachineNotes';
 import { PlaceRoles } from './setup/PlaceRoles';
 import type { PlaceDriving } from './setup/PlacePage';
-import { draftOfAsk, type PlaceAsk, type SetUpPage, type SetUpPlace, useSetUpPage } from './setup/placePlan';
+import { doorOf, draftOfAsk, type PlaceAsk, type SetUpDoor, type SetUpPage, type SetUpPlace, useSetUpPage } from './setup/placePlan';
 import { type PlaceAt, type PlaceSection, type PlaceView, usePlaceShell } from './setup/placeShell';
 import { findPlace, placeAsk, rowOfFound, SetupList, SetupMain, setUpPlaceOf, sourceDoor, useSetupPlaces } from './setup/SetupPlaces';
 import { RoleSectionList } from './roles/RoleSections';
@@ -84,6 +86,8 @@ export function useAgentsMode(lists: ListPanes) {
 export type PlaceHold = {
   kind: 'workspace' | 'repository';
   row: PlaceRow;
+  /** The row a door asked for here, until it is brought into view. */
+  asked?: string | null;
   view: PlaceView;
   onView: (choice: Partial<PlaceView>) => void;
   onOpenSection: (section: PlaceSection) => void;
@@ -110,7 +114,7 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
    * A place's *Set up…* (AGENTSPLACE1j), opened in its main area and handed in by the application for the same reason: it reads the plan and
    * presses Apply, the person's own act. The set-up's draft per place is held here, so a door out of it and back finds it as left.
    */
-  setUp?: (place: SetUpPlace, page: SetUpPage) => ReactNode;
+  setUp?: (place: SetUpPlace, page: SetUpPage, doorFor: SetUpDoor) => ReactNode;
   /**
    * A place's Workflow and Sessions sections' bodies (AGENTSPLACE1f, 1h), handed in by the application, which holds the presses the rows
    * make: this place imports none of them, so Ask Daoris's census of what the place presses does not take them for its own. A section
@@ -237,12 +241,26 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
       ? bodies?.({
         kind: placed.kind === 'workspace' ? 'workspace' : 'repository',
         row,
+        asked: shell.rowOf(modes.place),
         view: shell.viewOf(modes.place),
         onView: (choice) => shell.choose(modes.place!, choice),
         onOpenSection: (section) => shell.setOpen(modes.place!, section, true),
         onGo,
       })
       : undefined;
+    // SETUPUX1j: a refusal's door leaves the set-up with its draft kept, opens the page where the cause is put right (the place's own, or for a
+    // workspace the refusing repository's) and returns by *Back*, which finds the draft as left and the plan read again.
+    const doorFor: SetUpDoor = (refusal) => {
+      if (!setUpPlace || !doorOf(refusal.code)) return null;
+      const target = setUpPlace.kind === 'workspace'
+        ? (refusal.repository ? repositoryId(setUpPlace.workspace, refusal.repository) : null)
+        : setUpPlace.id;
+      if (!target || (target !== setUpPlace.id && !findPlace(places.read, target))) return null;
+      return () => {
+        setUpPage.leave(setUpPlace.id);
+        onGo(target, { section: 'workflow', row: 'landing', back: { place: setUpPlace.id, name: setUpPlace.name, section: null, setUp: true } });
+      };
+    };
     return {
       list: {
         view: 'agents',
@@ -273,16 +291,22 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
                   onSource={sourceDoor({ id: modes.place!, name }, row.workspace, onGo)}
                 />
               ),
+              // SETUPUX1m: This machine alone draws every role once, its diagram, the suggested choices and the changes found.
+              ...(placed.kind === 'machine' ? { allRoles: <AllRoles notify={notify} page={rolesPage} doors={roleDoors} onGo={onGo} /> } : {}),
               ...(ofBodies ?? {}),
             }
             : {}}
+          notes={placed?.kind === 'machine'
+            ? <MachineNotes onShow={() => { rolesPage.onView('list'); shell.arrive(MACHINE, { section: 'allRoles' }); }} />
+            : undefined}
           drive={driving}
           onGo={onGo}
           setUp={setUp && setUpPlace
             ? {
-              open: setUpPage.draftOf(setUpPlace.id) !== null,
+              open: setUpPage.shown(setUpPlace.id),
               onOpen: () => setUpPage.open(setUpPlace.id, setUpPlace.kind === 'workspace' ? setUpPlace.driven : [setUpPlace.name]),
-              panel: setUp(setUpPlace, setUpPage),
+              onResume: setUpPage.resume,
+              panel: setUp(setUpPlace, setUpPage, doorFor),
             }
             : undefined}
         />

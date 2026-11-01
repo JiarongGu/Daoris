@@ -7,16 +7,14 @@ import { type Authored, authoredText } from '../../locales/authored';
 // one-line summary each folds to, and the state the application holds above the page so a door out and back finds it as left.
 
 export const SECTIONS = ['workflow', 'roles', 'sessions'] as const;
-export type PlaceSection = (typeof SECTIONS)[number];
+/** *All roles* is this machine's alone: every role once, as a list or a diagram, with what Daoris suggests and the changes found. */
+export type PlaceSection = (typeof SECTIONS)[number] | 'allRoles';
 export type PlaceKind = 'machine' | 'workspace' | 'repository';
 
-export const isPlaceSection = (value: string | null | undefined): value is PlaceSection => SECTIONS.some((each) => each === value);
+export const isPlaceSection = (value: string | null | undefined): value is PlaceSection => value === 'allRoles' || SECTIONS.some((each) => each === value);
 
-/**
- * The sections a kind of place draws, in order. *This machine* holds Roles alone for now: its Sessions are Settings' own, reached by a door
- * its page row builds (the design's row m).
- */
-export const sectionsOf = (kind: PlaceKind): readonly PlaceSection[] => (kind === 'machine' ? ['roles'] : SECTIONS);
+/** The sections a kind of place draws, in order. *This machine*'s Sessions are Settings' own, so its page draws Roles and All roles. */
+export const sectionsOf = (kind: PlaceKind): readonly PlaceSection[] => (kind === 'machine' ? ['roles', 'allRoles'] : SECTIONS);
 
 /** The section that opens on arrival: Workflow on a repository and a workspace, Roles on this machine. */
 export const firstSection = (kind: PlaceKind): PlaceSection => sectionsOf(kind)[0]!;
@@ -38,6 +36,10 @@ export function needOpening(row: PlaceRow): { section: PlaceSection; row: string
 }
 
 const capital = (text: string) => (text ? text[0]!.toLocaleUpperCase() + text.slice(1) : text);
+
+/** A delivery preset's name from the page's catalogue by its id (SETUPUX1a); *Not driven* is chrome; an id the catalogue lacks reads as itself. */
+const deliveryNameOf = (t: TFunction, preset: string): string =>
+  preset === 'not-driven' ? t('agents.setup.set.notDriven') : t(`workflow.shipped.delivery.${preset}.name`, { defaultValue: preset });
 
 const sourceMark = (t: TFunction, source: string, workspace?: string | null): string | null =>
   source === 'workspace'
@@ -89,7 +91,7 @@ export function foldedLines(row: PlaceRow, kind: PlaceKind, t: TFunction, langua
   if (values) {
     const lands = values.lands;
     const landing: Value = values.landing;
-    const how = lands?.preset ? t(`agents.setup.defaultName.${lands.preset}`, { defaultValue: lands.preset }) : null;
+    const how = lands?.preset ? deliveryNameOf(t, lands.preset) : null;
     workflow = say([
       lands
         ? marked(t, how ? (lands.own.length > 0 ? t('agents.setup.fold.landsOwn', { how, count: lands.own.length }) : how) : t('agents.setup.fold.landsOwnWay'), landing?.source ?? 'default', workspace)
@@ -107,7 +109,7 @@ export function foldedLines(row: PlaceRow, kind: PlaceKind, t: TFunction, langua
     ]);
   }
 
-  return { workflow, roles: rolesLine(row, kind, t, language, say), sessions };
+  return { workflow, roles: rolesLine(row, kind, t, language, say), sessions, allRoles: t('agents.setup.allRoles.fold') };
 }
 
 function rolesLine(row: PlaceRow, kind: PlaceKind, t: TFunction, language: string, say: (segments: (string | null)[]) => string): string {
@@ -135,7 +137,7 @@ export type HeadFacts = { pill: { tone: 'done' | 'taken' | 'open' | 'neutral'; l
 
 const landsSaid = (t: TFunction, lands: NonNullable<NonNullable<PlaceRow['values']>['lands']>): string | null => {
   if (!lands.preset) return null;
-  const how = t(`agents.setup.defaultName.${lands.preset}`, { defaultValue: lands.preset });
+  const how = deliveryNameOf(t, lands.preset);
   return lands.own.length > 0 ? t('agents.setup.fold.landsOwn', { how, count: lands.own.length }) : how;
 };
 
@@ -163,7 +165,7 @@ export function headOf(
       facts: [
         ...(counts ? [t('agents.setup.page.drivenOf', { driven: counts.driven, total: counts.driven + counts.notDriven })] : []),
         ...(landing.size > 0
-          ? [[...landing].map(([preset, count]) => t('agents.setup.page.landsCount', { how: t(`agents.setup.defaultName.${preset}`, { defaultValue: preset }), count })).join(t('agents.setup.fold.join'))]
+          ? [[...landing].map(([preset, count]) => t('agents.setup.page.landsCount', { how: deliveryNameOf(t, preset), count })).join(t('agents.setup.fold.join'))]
           : []),
       ],
     };
@@ -179,8 +181,8 @@ export function headOf(
 /** Where a door leaves the person: a section of a place, and a row of it. */
 export type PlaceAt = { section?: PlaceSection; row?: string | null; back?: PlaceBack | null };
 
-/** The page a door came from, to return to: its place and section. */
-export type PlaceBack = { place: string; name: string; section: PlaceSection | null };
+/** The page a door came from, to return to: its place and section, or the place's *Set up…* (SETUPUX1j), which keeps its draft. */
+export type PlaceBack = { place: string; name: string; section: PlaceSection | null; setUp?: boolean };
 
 type Folds = Partial<Record<PlaceSection, boolean>>;
 

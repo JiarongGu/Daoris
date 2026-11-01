@@ -18,7 +18,8 @@ public sealed class HelpSetupTool(IntakeScope? intake = null, HelpProposalBox? h
         + "published until the person presses Apply, and what the press would refuse (not registered here, not driven, no "
         + "tree of its own, no doctrine tool, already set up, a set-up already open) comes back to you in its words. Propose "
         + "it when the person asks to include, adopt or set up a repository registered here. Give a `preset` instead to propose "
-        + "a quick set-up of one workspace's repositories (`repository` and `repositories`): their delivery, a second opinion, "
+        + "a quick set-up of one workspace's repositories (`repository` and `repositories`): how their work lands (`keep` where "
+        + "they follow a saved workflow or the person only wants to turn driving or a tick on), a second opinion, "
         + "the person's look, adoption with what it builds, and general driving. The card shows the plan `daoris-driver place "
         + "<repository>… --preset <id> --plan` prints, and its Apply opens the Agents place's Setup with *Set up…* open on your ask, "
         + "where the person reads the plan and presses Apply there; your card writes nothing.")]
@@ -27,7 +28,10 @@ public sealed class HelpSetupTool(IntakeScope? intake = null, HelpProposalBox? h
         string repository,
         [Description("Why: what the person asked. The person decides on this.")]
         string why,
-        [Description("A place's delivery: `not-driven`, `merge-after-accept`, `branch-to-push`, `pull-request` or `integrated`. Leaving it out proposes the press above.")]
+        [Description(
+            "How a place's work lands: `keep` (keep how it lands: writes no landing and no workflow choice, so a saved workflow it "
+            + "follows survives, and driving, the ticks and adoption stay open), or a delivery: `not-driven`, `merge-after-accept`, "
+            + "`branch-to-push`, `pull-request` or `integrated`. Leaving it out proposes the press above.")]
         string? preset = null,
         [Description("A place's other repositories, as `registry` names them, in the same workspace as `repository`.")]
         string[]? repositories = null,
