@@ -532,6 +532,12 @@ try
         return await Daoris.Driver.Host.SetupConsole.RunAsync(setupArgs, log);
     }
 
+    // A place's quick set-up planned from a terminal (AGENTSPLACE1a2): PLACE_PLAN's twin, the same plan in English, writing nothing.
+    if (args is ["place", .. var placeArgs])
+    {
+        return await Daoris.Driver.Host.PlaceConsole.RunAsync(placeArgs);
+    }
+
     // Registration followed from each line when the person asks (WSSETUP5, D124 §3.1, D50): the repository row's
     // *Refresh* is the other door. A start and a line Daoris moves follow on their own.
     if (args is ["register", .. var registerArgs])

@@ -62,10 +62,16 @@ public static class DriverCommand
           ask --abandon <id> [--reason "…" --yes]  ·  quest abandon <id> [--reason "…" --yes]
               list what abandoning it would decline, discard and archive, and what it keeps and why; with
               --reason and --yes, give up what the list holds, each quest declined with your reason.
-          setup <repository> [--plan]
+          setup <repository> [--plan] [--what-it-builds <kind>]
               ask a repository's own session to set it up for every agent: the doctrine, its knowledge, its
               brief, on its own branch. The press adds the doctrine tool's exact verbs to its rules; --plan
-              prints what was read, the rule and the quest, and publishes nothing.
+              prints what was read, the rule and the quest, and publishes nothing. --what-it-builds library,
+              service, desktop or tooling names the checks its session is asked to declare.
+          place <repository>… --preset <id> [--with opinion,look,adoption] [--what-it-builds <kind>] [--drive] --plan
+              a quick set-up's plan: a delivery preset (not-driven, merge-after-accept, branch-to-push,
+              pull-request, integrated), its second opinion and your look, a set-up quest and general
+              driving, read before and after through the driver's own readers, every refusal at once, what
+              lowers your part, the work driving releases and each declaration to accept. Writes nothing.
           setup --workspace <name> [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]
           setup --workspace <name> --pause | --resume | --stop
               set a workspace up one repository at a time, the ones other work touches first: a press

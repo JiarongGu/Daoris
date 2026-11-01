@@ -30,10 +30,11 @@ public enum SetupCase
 /// <param name="Entries">The path of each entry the workspace's index holds for it, once per entry.</param>
 /// <param name="Neighbours">The names the workspace knows its other repositories by.</param>
 /// <param name="Index">The generator the index quest names (<see cref="IndexForms"/>); required for <see cref="SetupCase.Index"/> alone.</param>
+/// <param name="Builds">What it builds (<see cref="SetupBuilds"/>), which shapes the safe work's checks; null for none said.</param>
 public sealed record SetupBriefInput(
     SetupCase Case, DateOnly Day, string Repository, LayoutFacts Facts, string Version,
     RepositoryDescription? Description, IReadOnlyList<string> Entries, IReadOnlyList<string> Neighbours,
-    IndexForm? Index = null);
+    IndexForm? Index = null, string? Builds = null);
 
 /// <summary>
 /// The set-up quest's words (LAYOUT7; D117 §6.2–§6.3 as D124 §2.2–§2.7 amends them): a title from
@@ -174,7 +175,7 @@ public static class SetupBrief
         {
             steps.Add(Brief(facts));
             steps.Add(Documents(facts));
-            steps.Add(SafeWork());
+            steps.Add(SafeWork(input.Builds));
         }
 
         steps.Add(input.Case == SetupCase.Declare ? VerifyDeclared() : Verify());
@@ -309,12 +310,13 @@ public static class SetupBrief
         + (facts.Rooms.Count == 0 ? "" : $"; these folders hold one already: {Names(facts.Rooms)}")
         + ". The knowledge documents need no declaring: the index lists them from the files.";
 
-    private static string SafeWork() =>
+    private static string SafeWork(string? builds) =>
         "**Declare the safe work**: what this repository's sessions may run without asking, the checks that are a "
         + "session's to run, the build and test commands, the install from the lockfile. Exact commands, one per entry, "
         + "in `daoris.gates.json`'s `safe`, beside `gates`, and the file where there is none. Never in the brief's prose: "
         + "a sentence shapes what an agent tries, not what it is allowed. Nothing is widened by writing it: the person "
-        + "accepts it once, after it lands, and your close says it waits for them.";
+        + "accepts it once, after it lands, and your close says it waits for them."
+        + (builds is null ? "" : " " + SetupBuilds.Checks(builds));
 
     private static string Verify() =>
         "**Verify.** Run `daoris sync`, `daoris check` and `daoris status --json`, then this repository's own build and "
