@@ -340,6 +340,34 @@ describe('removing, moving, and every change undone', () => {
     expect(saved().wires.map(said)).toEqual(expect.arrayContaining(['after:holds>review', 'after:review>content', 'after:content>landing']));
   });
 
+  it('moves a step by Alt+↑ and its preview, duplicates one, and starts a step each time another is reached, by keyboard alone', async () => {
+    render(wrap(<Editor />));
+    await tabTo(await screen.findByRole('button', { name: 'Begin from Merge workflow' }));
+    await user.keyboard('{Enter}');
+    await waitFor(() => expect(focused()).toBe(step('The work')));
+    for (let presses = 0; presses < 4 && focused() !== step('Your review'); presses += 1) await user.keyboard('{ArrowDown}');
+
+    await user.keyboard('{Alt>}{ArrowUp}{/Alt}');
+    await screen.findByText(/^Your review comes before What the line holds/);
+    await tabTo(screen.getByRole('button', { name: 'Move' }));
+    await user.keyboard('{Enter}');
+    expect(live()).toHaveTextContent('Moved Your review.');
+
+    await tabTo(screen.getByRole('button', { name: 'Duplicate' }));
+    await user.keyboard('{Enter}');
+    expect(live()).toHaveTextContent('Duplicated Your review.');
+    await waitFor(() => expect(focused()).toHaveAttribute('data-flow-node', 'review-2'));
+
+    // More ways: a trigger, which no row of What happens next draws.
+    await user.keyboard('{Enter}');
+    await screen.findByRole('dialog', { name: 'Your review' });
+    await tabTo(screen.getByText('More ways'));
+    await user.keyboard('{Enter}');
+    await chooseByKeys('Start a step each time Your review is reached', 'On the line');
+    expect(live()).toHaveTextContent('Each time Your review is reached, On the line starts.');
+    expect(screen.getByRole('button', { name: 'Remove the way on from Your review: On the line, each time it is reached' })).toBeInTheDocument();
+  });
+
   it('duplicates a step, and copies one and pastes it unconnected under a fresh id', async () => {
     render(wrap(<Editor />));
     await user.click(await screen.findByRole('button', { name: 'Begin from Merge workflow' }));
