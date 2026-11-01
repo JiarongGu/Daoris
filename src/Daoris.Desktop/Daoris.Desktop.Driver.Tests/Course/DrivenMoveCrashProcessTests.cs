@@ -32,7 +32,7 @@ public sealed class DrivenMoveCrashProcessTests : IAsyncLifetime
 {
     private readonly DrivenMoveHarness _h = new("driven-move-crash");
 
-    public Task InitializeAsync() => Task.CompletedTask;
+    public Task InitializeAsync() => _h.InitializeAsync();
 
     public async Task DisposeAsync() => await _h.DisposeAsync();
 
