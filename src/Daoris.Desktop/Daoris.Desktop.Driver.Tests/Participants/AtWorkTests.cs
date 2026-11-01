@@ -7,7 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// COWORKVIEW1a's composition (the design §3.8, §4.1, rules 9, 10, 14, 16 and 17): who is at work on a session, from the entry's
 /// parts, their records' read fields, each part's lineage reading and the two input slices' health, all handed as plain values.
 /// </summary>
-public sealed class AtWorkTests
+public sealed partial class AtWorkTests
 {
     private const string P1 = "a000000000000001";
     private const string Issuer = "4242 638000000000000000";

@@ -10,7 +10,7 @@ public sealed class AtWorkRoutes(DriverContext context)
 
     /// <summary>
     /// Who is at work on a session (COWORKVIEW1a, the design §4.1): its entry's parts and the attended part's subagents, composed from
-    /// the groups and sessions slices in memory and each part's lineage file, this window's tokens read where it issued them. Numbered,
+    /// the groups, sessions and quests slices in memory and each part's lineage file, this window's tokens read where it issued them. Numbered,
     /// so a failure is answered with its words and an older delivery never replaces a newer one.
     /// </summary>
     [DriverRoute("SESSION_AT_WORK")]
@@ -21,7 +21,7 @@ public sealed class AtWorkRoutes(DriverContext context)
         await Task.CompletedTask;
         var slices = _loop.Slices;
         AtWorkHeld Compose() => AtWorkRead.Compose(session, slices.Find(GroupsStateSlice.Name), slices.Find(SessionsStateSlice.Name),
-            record => ChildLineage.Reading(_loop.Home, record.Id, record.Kind, LineageTokens.Shared), id => ChildLineage.PathOf(_loop.Home, id));
+            slices.Find(QuestsStateSlice.Name), record => ChildLineage.Reading(_loop.Home, record.Id, record.Kind, LineageTokens.Shared), id => ChildLineage.PathOf(_loop.Home, id));
 
         // The source fence (rule 11): an input moved while it composed is composed again, at most three times; the last lands.
         var held = Compose();

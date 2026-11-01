@@ -42,7 +42,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/app/pushedState.test.tsx` | 69 | 1463 |
 | `src/Daoris.Web/src/bridge/driver.ts` | 43 | 790 |
 | `src/Daoris.Web/src/bridge/sessions/sessions.ts` | 54 | 1050 |
-| `src/Daoris.Web/src/data/api.ts` | 55 | 914 |
+| `src/Daoris.Web/src/data/api.ts` | 56 | 919 |
 | `src/Daoris.Web/src/data/queries.ts` | 52 | 985 |
 | `src/Daoris.Web/src/design/FlowCanvas.tsx` | 55 | 1039 |
 | `src/Daoris.Web/src/design/tokens.test.ts` | 50 | 882 |
@@ -143,7 +143,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Review/OpinionResumeTickTests.cs` | 42 | 755 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Service/RemoteSyncTests.cs` | 72 | 1451 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Setup/WorkspaceSetupTests.cs` | 41 | 848 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/StandInLedger.cs` | 65 | 1278 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/StandInLedger.cs` | 66 | 1294 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Store/DesktopStoreTests.cs` | 56 | 1108 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/StructureTests.cs` | 58 | 969 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/WorkOrders/AbandonTests.cs` | 46 | 827 |
