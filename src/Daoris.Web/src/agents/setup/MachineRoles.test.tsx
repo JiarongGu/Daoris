@@ -36,7 +36,14 @@ function Place() {
   const [chosen, setChosen] = useState<string | null>(null);
   const [over, setOver] = useState(false);
   const layout = useAgentsView({ active: true, modes, chosen, onChoose: setChosen, notify: () => {} });
-  return <ViewFrame layout={layout} lists={lists} over={over} onOver={setOver} />;
+  return (
+    <>
+      {/* What the application's opener does with a lit door to Appointed roles (`placeOpening`, then `apply`). */}
+      <button type="button" onClick={() => modes.onPlaceAt('machine', { section: 'roles', row: 'appointed' })}>Door to Appointed</button>
+      <button type="button" onClick={() => modes.onPlaceAt('machine', { section: 'allRoles' })}>Door to All roles</button>
+      <ViewFrame layout={layout} lists={lists} over={over} onOver={setOver} />
+    </>
+  );
 }
 
 const ROSTER = {
@@ -189,6 +196,18 @@ describe('This machine\'s page, lit', () => {
     const list = within(await screen.findByRole('list', { name: 'Changed outside Daoris' }));
     await userEvent.click(list.getByRole('button', { name: 'Take it' }));
     await waitFor(() => expect(asks('STAFFING_FOUND_ANSWER')).toEqual([{ found: 7, answer: 'take' }]));
+  });
+
+  it('opens at the Appointed row of Roles, or at All roles, for the doors that opened the Roles mode', async () => {
+    show(<Place />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Door to Appointed' }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'This machine' })).toBeTruthy();
+    await waitFor(() => expect(document.activeElement).toHaveAttribute('data-place-row', 'appointed'));
+    expect(screen.getByRole('button', { name: 'Roles' })).toHaveAttribute('aria-expanded', 'true');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Door to All roles' }));
+    expect(screen.getByRole('button', { name: 'All roles' })).toHaveAttribute('aria-expanded', 'true');
+    expect(await screen.findByRole('searchbox', { name: 'Search roles' })).toBeTruthy();
   });
 
   it('says nothing above the sections where nothing is suggested or found', async () => {

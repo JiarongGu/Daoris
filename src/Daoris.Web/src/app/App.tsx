@@ -40,6 +40,7 @@ import { setupLit } from '../agents/modes';
 import { PlaceDrivingScope } from '../agents/setup/PlaceDriving';
 import { PlaceSessions, PlaceWorkflow } from '../agents/setup/PlaceSessions';
 import { PlaceSetUpPanel } from '../agents/setup/PlaceSetUpPanel';
+import { placeIdOf } from '../agents/setup/SetupPlaces';
 import { DEFAULT_WORKSPACE, workspaceOf } from '../data/workspaces';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import { Drawer, failure, Prose, Toasts, useToasts } from '../design/ui';
@@ -450,7 +451,7 @@ export function App() {
           place={place}
           notify={notify}
           onOpenPlugin={(plugin) => open('plugins', plugin)}
-          onOpenAppointed={() => open('agents', null, { roleSection: 'appointed' })}
+          onOpenAppointed={() => agentsModes.onPlaceAt(placeIdOf(place.row), { section: 'roles', row: 'appointed' })}
         />
       ),
     }),
@@ -459,7 +460,7 @@ export function App() {
       <PlaceDrivingScope
         row={row}
         notify={notify}
-        onOpenAppointed={() => open('agents', null, { roleSection: 'appointed' })}
+        onOpenAppointed={() => agentsModes.onPlaceAt(placeIdOf(row), { section: 'roles', row: 'appointed' })}
         onOpenRepositories={() => open('projects', row.repository)}
       >
         {render}
