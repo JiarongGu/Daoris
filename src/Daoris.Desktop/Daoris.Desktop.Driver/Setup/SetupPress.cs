@@ -131,8 +131,7 @@ public static class SetupPress
         }
 
         var refusals = new List<SetupRefusal>();
-        // HELPSETUP1: a tree per session is the repository's own, on its Setup → Driving since UX6f (D150 §4.2). The code stays
-        // `not-driven`, a stored shape the machine log's `setup.skipped` keeps.
+        // Its code stays `not-driven`, a stored shape the machine log's `setup.skipped` keeps.
         if (!row.Adopted && door != SessionWire.Acp)
         {
             refusals.Add(new(SetupRefusals.NotDriven,
@@ -141,6 +140,7 @@ public static class SetupPress
                 + "which rides the pipe. Choose an ACP agent with `daoris driver adapter <agent>`, in Settings → Driver."));
         }
 
+        // HELPSETUP1: a tree per session is the repository's own, on its Setup → Driving since UX6f (D150 §4.2).
         if (!config.OpensOwnTree(row.Repository))
         {
             refusals.Add(new(SetupRefusals.NoOwnTree,

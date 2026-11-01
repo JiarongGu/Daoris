@@ -239,7 +239,8 @@ public sealed record DriverConfig(
 
     /// <summary>
     /// This quest's releases, its restart mark and its admission dropped (PAUSE1d, D132 §3.4 step 7): once a quest is closed it is never
-    /// planned again (D46 §3), so none says anything any more. Unchanged where it has none.
+    /// planned again (D46 §3), so none says anything any more. Unchanged where it has none. A quest-keyed entry added to this file joins
+    /// here and <c>HistoryHome</c>'s purge of quests no store holds, and one that starts work joins <c>InstallUpdate.Drained</c>.
     /// </summary>
     public DriverConfig WithoutQuest(string questId)
     {
