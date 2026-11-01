@@ -33,7 +33,7 @@ export function PortRow({ node, ported, onFollow, edit }: {
 }) {
   if (ported.length === 0) return null;
   return (
-    <div className="-mx-3 -mb-2 mt-2 grid overflow-hidden rounded-b-card border-t border-line" style={{ gridTemplateColumns: `repeat(${ported.length}, minmax(0, 1fr))` }}>
+    <div className="-mx-3 -mb-2 mt-2 grid rounded-b-card border-t border-line" style={{ gridTemplateColumns: `repeat(${ported.length}, minmax(0, 1fr))` }}>
       {ported.map(({ port, foot }, index) => (
         <button
           key={port.outcome}
@@ -49,7 +49,9 @@ export function PortRow({ node, ported, onFollow, edit }: {
             else if (foot) onFollow(node, foot.to);
           }}
           className={cn(
-            'flex min-w-0 cursor-pointer items-baseline gap-1 border-0 bg-transparent px-2 py-1 text-left text-meta text-ink-soft hover:text-ink',
+            'relative flex min-w-0 cursor-pointer items-baseline gap-1 border-0 bg-transparent px-2 py-1 text-left text-meta text-ink-soft hover:text-ink',
+            // In a canvas zoomed below 100% the press reaches below the port, so it stays 1.5rem tall on screen; its box never grows.
+            "before:absolute before:inset-x-0 before:top-0 before:content-[''] before:-bottom-[max(0px,calc(1.5rem/var(--canvas-k,1)_-_100%))]",
             index > 0 && 'border-l border-line',
             port.taken ? 'font-semibold text-ink' : '',
           )}

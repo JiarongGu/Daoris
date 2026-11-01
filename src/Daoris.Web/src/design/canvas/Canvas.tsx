@@ -40,8 +40,17 @@ const THRESHOLD = 3;
 const SETTLE_MS = 160;
 /** What a press starts no pan on: a node, a port, a ＋ and every control. */
 const CONTROLS = '[data-flow-node], [data-flow-port], [data-flow-insert], button, a, input, select, textarea, label, [role="button"], [contenteditable]';
-const FIELDS = 'textarea, select, [contenteditable=""], [contenteditable="true"], [contenteditable="plaintext-only"], input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="range"])';
+const TYPED = 'textarea, select, [contenteditable=""], [contenteditable="true"], [contenteditable="plaintext-only"]';
+/** The inputs a key is no character in, so a canvas key pressed there is still the canvas's. */
+const PRESSED = new Set(['checkbox', 'radio', 'button', 'submit', 'reset', 'range', 'color', 'file']);
 const EPSILON = 1e-6;
+
+/** Whether a key aimed here types: a field keeps Shift+1's `!` (trap 13). */
+function isField(target: Element): boolean {
+  if (target.closest(TYPED)) return true;
+  const input = target.closest('input');
+  return input !== null && !PRESSED.has(input.type);
+}
 
 const same = (a: View, b: View) => Math.abs(a.x - b.x) < EPSILON && Math.abs(a.y - b.y) < EPSILON && Math.abs(a.k - b.k) < EPSILON;
 const coarse = () => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
@@ -299,7 +308,7 @@ export function Canvas({
       return;
     }
     if (!event.shiftKey || event.ctrlKey || event.altKey || event.metaKey) return;
-    if ((event.target as Element).closest(FIELDS)) return;
+    if (isField(event.target as Element)) return;
     const run = { Digit1: fitAll, Digit2: toTarget, Digit0: acts.actual }[event.code];
     if (!run) return;
     event.preventDefault();

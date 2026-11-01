@@ -19,7 +19,9 @@ export function GapInsert({ offer, className }: { offer: InsertOffer; className?
         offer.onPress();
       }}
       className={cn(
-        'inline-flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full border border-line-strong bg-page p-0',
+        'relative inline-flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full border border-line-strong bg-page p-0',
+        // Its press is 1.5rem on screen at every scale a canvas draws it at: the hit area grows as the world shrinks, never its box.
+        "before:absolute before:content-[''] before:-inset-[max(2px,calc((1.5rem/var(--canvas-k,1)_-_1.25rem)/2))]",
         'text-small leading-none text-ink-soft hover:border-ink-soft hover:text-ink',
         className,
       )}

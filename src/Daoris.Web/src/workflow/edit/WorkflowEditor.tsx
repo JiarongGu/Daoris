@@ -186,7 +186,8 @@ function Composing({
       }
       const nodes = [...(region.current?.querySelectorAll<HTMLElement>('[data-flow-node]') ?? [])];
       const found = focusing.at === PICKABLE ? nodes.find((node) => node.dataset.picking === 'true') : nodes.find((node) => node.dataset.flowNode === focusing.at);
-      found?.focus();
+      // In the canvas's viewport the canvas reveals the step, so the focus scrolls nothing (CANVAS1a, trap 2).
+      found?.focus(found.closest('[data-canvas-world]') ? { preventScroll: true } : undefined);
     }, 0);
     return () => window.clearTimeout(timer);
   }, [focusing]);
