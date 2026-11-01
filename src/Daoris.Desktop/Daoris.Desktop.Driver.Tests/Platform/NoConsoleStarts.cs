@@ -29,6 +29,8 @@ internal static class NoConsoleStarts
             "the harness speaks its protocol over the stdio the launcher was handed, on the console the launcher made with no window",
         ["Daoris.Desktop/Daoris.Desktop.Driver/Agents/HarnessActions.cs"] =
             "a terminal action: the person signs in at the harness's own console, which is the window",
+        ["Daoris.Desktop/Daoris.Desktop.Driver/Plugins/PluginToolSetUp.cs"] =
+            "a plugin tool's set-up or sign-in: the person sees the program's own console, which is where they act",
         ["Daoris.Devkit/Daoris.Devkit.Core/Process.cs"] =
             "a gate's output is the person's, shown where the verb runs: the child takes the verb's console",
     };

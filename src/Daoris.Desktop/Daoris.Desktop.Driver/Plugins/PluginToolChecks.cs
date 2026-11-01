@@ -25,7 +25,7 @@ internal delegate Task<CheckRun> CheckRunner(ProcessStartInfo info, TimeSpan pat
 /// resolves, which never falls back to <c>PATH</c>; one Daoris does not know is its <c>command</c> on the tools'
 /// <c>PATH</c>. A check's first word is found as a hook's is: the tool's file where a tool answers for it, else the
 /// <c>PATH</c>'s. Every start is handed the tools' environment, runs in the folder it is given with git told no repository
-/// is there (git walks up), and is typed nothing. 🔴 <b>Daoris never runs <c>fix</c></b>: it is the person's.</para>
+/// is there (git walks up), and is typed nothing. 🔴 <b>Checking never runs <c>fix</c></b>: it is the person's press, in a console they see (<see cref="PluginToolSetUp"/>).</para>
 /// </remarks>
 public static partial class PluginToolChecks
 {
