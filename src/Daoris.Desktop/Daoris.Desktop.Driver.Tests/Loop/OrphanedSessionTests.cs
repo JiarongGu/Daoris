@@ -47,6 +47,7 @@ public sealed class OrphanedSessionTests : IDisposable
         var process = Process.Start(new ProcessStartInfo("node", ["-e", "setTimeout(() => {}, 60000)"])
         {
             UseShellExecute = false,
+            CreateNoWindow = true,
         })!;
         _spawned.Add(process);
         return process;

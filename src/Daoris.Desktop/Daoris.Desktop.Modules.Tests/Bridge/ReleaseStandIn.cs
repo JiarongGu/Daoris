@@ -90,7 +90,7 @@ public sealed class ReleaseStandInTests() : Bridge("release-stand-in"), IDisposa
     private Process StandIn(int owner, TimeSpan bound, out string released)
     {
         released = Path.Combine(Home, "released");
-        var git = new ProcessStartInfo("git", ["--version"]) { UseShellExecute = false, RedirectStandardOutput = true };
+        var git = new ProcessStartInfo("git", ["--version"]) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true };
         return Start(ReleaseStandIn.For(git, released, owner, bound));
     }
 

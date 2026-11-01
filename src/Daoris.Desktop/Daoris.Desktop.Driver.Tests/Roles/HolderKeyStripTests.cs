@@ -53,12 +53,12 @@ public sealed partial class HolderKeyStripTests
     public void Every_start_s_hand_drops_the_key()
     {
         Assert.Contains(HolderKey.Variable, GitWiring.Removed);
-        var started = new ProcessStartInfo("git") { UseShellExecute = false };
+        var started = new ProcessStartInfo("git") { UseShellExecute = false, CreateNoWindow = true };
         started.Environment[HolderKey.Variable] = Sentinel;
         GitWiring.Hand(started);
         Assert.False(started.Environment.ContainsKey(HolderKey.Variable));
 
-        var tool = new ProcessStartInfo("node") { UseShellExecute = false };
+        var tool = new ProcessStartInfo("node") { UseShellExecute = false, CreateNoWindow = true };
         tool.Environment[HolderKey.Variable] = Sentinel;
         Tools.Hand(tool, Path.Combine(Path.GetTempPath(), "daoris-holder-strip-" + Guid.NewGuid().ToString("N")[..8]));
         Assert.False(tool.Environment.ContainsKey(HolderKey.Variable));
@@ -72,7 +72,7 @@ public sealed partial class HolderKeyStripTests
     public async Task An_agent_of_a_Daoris_started_with_the_key_set_holds_no_key_and_presents_no_proof()
     {
         // What the agent's verb reads: Daoris's environment stripped, its start's dropped.
-        var agent = new ProcessStartInfo("daoris-driver") { UseShellExecute = false };
+        var agent = new ProcessStartInfo("daoris-driver") { UseShellExecute = false, CreateNoWindow = true };
         agent.Environment[HolderKey.Variable] = Sentinel;
         GitWiring.Hand(agent);
         var inherited = agent.Environment.TryGetValue(HolderKey.Variable, out var value) ? value : null;

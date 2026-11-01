@@ -105,7 +105,7 @@ public sealed class LineageExitProcessTests : IDisposable
     /// <summary>A stand-in agent that runs until it is ended.</summary>
     private Process StandIn()
     {
-        var info = new ProcessStartInfo("node") { UseShellExecute = false, RedirectStandardOutput = true };
+        var info = new ProcessStartInfo("node") { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true };
         info.ArgumentList.Add("-e");
         info.ArgumentList.Add("setInterval(() => {}, 1000)");
         var process = Process.Start(info)!;
