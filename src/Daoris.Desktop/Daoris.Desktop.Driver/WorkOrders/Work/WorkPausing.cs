@@ -75,6 +75,8 @@ public static class WorkPausing
         StartVerdict.TakenElsewhere,
         // AGENTERRORS1a: a line past its transient bound, held for the person's word.
         StartVerdict.TransientHeld,
+        // STAFFPOLICY1e: a line held for the person's yes by its role's policy.
+        StartVerdict.PolicyHeld,
     ];
 
     /// <summary>

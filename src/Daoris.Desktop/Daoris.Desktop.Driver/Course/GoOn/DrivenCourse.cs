@@ -72,7 +72,7 @@ internal static class DrivenCourse
     /// </summary>
     internal static ContinuedFrom From(
         HandedQuest? handed, PriorSession carried, string? profile, string? walked, bool retried, bool pressed, string? agent,
-        Action<LineCourse>? decided)
+        Action<LineCourse>? decided, CoursePolicy? policy = null)
     {
         var handing = handed is not null && string.Equals(carried.Session, handed.From, StringComparison.Ordinal);
         // The agent counts as another's only where the record names one it did not run on (AccountIdentity.OnAnotherAccount).
@@ -95,7 +95,7 @@ internal static class DrivenCourse
             : retried
                 ? CourseDecision.Decide(
                     new CourseFacts(head with { Judged = ContinueWhy.Account }, CourseBoundary.ProcessExited, account), CourseTrigger.WordsKept)
-                : CourseDecision.Decide(new CourseFacts(head, CourseBoundary.ProcessExited, account, CarryOn: kind), CourseTrigger.CarryOn);
+                : CourseDecision.Decide(new CourseFacts(head, CourseBoundary.ProcessExited, account, CarryOn: kind, Policy: policy), CourseTrigger.CarryOn);
         decided?.Invoke(course);
         return course is LineCourse.Move move
             ? new ContinuedFrom(carried.Session, CourseFrom.Code(move.Why), CourseFrom.Code(move.By))
@@ -121,11 +121,11 @@ internal static class DrivenCourse
     /// What follows a record's end past its transient bound (path N, AGENTERRORS1a): it waits for a word of the person's said after the end or
     /// for <i>Try again</i>, whose release is the press, which goes on by the limit resume's step 1.
     /// </summary>
-    internal static LineCourse PastBound(PriorSession record, string questStatus, bool released) =>
+    internal static LineCourse PastBound(PriorSession record, string questStatus, bool released, CoursePolicy? policy = null) =>
         CourseDecision.Decide(
             new CourseFacts(
                 HeadOf(record, questStatus), CourseBoundary.ProcessExited, Failure: new CourseFailure(PastBound: true),
-                Press: released ? new CoursePress(CoursePressKind.TryAgain) : null, Limit: new CourseLimit(Ended: record.Updated)),
+                Press: released ? new CoursePress(CoursePressKind.TryAgain) : null, Limit: new CourseLimit(Ended: record.Updated), Policy: policy),
             CourseTrigger.TransientPastBound);
 
     /// <summary>

@@ -91,12 +91,13 @@ public sealed class StaffPolicyDoorTests : IDisposable
     }
 
     [Fact]
-    public void A_preset_fills_the_record_for_the_roles_choices_with_the_moves_this_build_does_not_enforce_left_out()
+    public void A_preset_fills_the_record_for_the_roles_choices_with_its_moves_and_bound_now_that_the_course_enforces_them()
     {
         RoleDoor.Apply(Staffing, RoleChange.Set(Role("build")), null, null, new RolePolicyPress(Preset: "even"));
 
         var read = Staffing.Policy("build");
-        Assert.Equal((StaffRules.Weight, 0, null), (read.Policy!.Rule, read.Policy.Moves.Count, read.Policy.Most));
+        Assert.Equal((StaffRules.Weight, 1, 3), (read.Policy!.Rule, read.Policy.Moves.Count, read.Policy.Most));
+        Assert.Equal(StaffActions.Weighted, read.Policy.Moves[StaffConditions.Limit].Do);
         Assert.All(read.Policy.Choices, choice => Assert.Equal(1, choice.Weight));
 
         RoleDoor.Apply(Staffing, RoleChange.Set(Role("build")), null, null, new RolePolicyPress(Preset: "first", Read: read.Revision));
@@ -131,8 +132,8 @@ public sealed class StaffPolicyDoorTests : IDisposable
         { "a count of tries out of range", """{"rule":"order","choices":[],"moves":{"transient":{"do":"next","after":9}}}""" },
         { "a bound out of range", """{"rule":"order","choices":[],"most":9}""" },
         { "a daily budget of reported tokens, not enforced yet", """{"rule":"order","choices":[{"agent":"claude","model":"sonnet","effort":"high","budget":{"tokens":1000}}]}""" },
-        { "a move on a condition, not enforced yet", """{"rule":"order","choices":[],"moves":{"limit":"next"}}""" },
-        { "a bound of moves, not enforced yet", """{"rule":"order","choices":[],"most":3}""" },
+        { "a move a fatal error's condition does not enforce yet", """{"rule":"order","choices":[],"moves":{"failed":"next"}}""" },
+        { "a quiet stop moved to the next choice, not enforced yet", """{"rule":"order","choices":[],"moves":{"quiet":"next"}}""" },
     };
 
     [Theory]
@@ -153,10 +154,10 @@ public sealed class StaffPolicyDoorTests : IDisposable
     public void A_field_this_build_does_not_enforce_says_what_it_does_enforce()
     {
         var refused = Assert.Throws<RoleRefusedException>(
-            () => SetBuildPolicy(Policy("order", [(Sonnet, ""), (Opus, "")], ",\"moves\":{\"limit\":\"next\"}")));
+            () => SetBuildPolicy(Policy("order", [(Sonnet, ""), (Opus, "")], ",\"moves\":{\"failed\":\"next\"}")));
 
-        Assert.Contains("`moves`", refused.Message);
-        Assert.Equal(["rule", "weight", "share", "budget.starts", "takes"], StaffCapabilities.Fields);
+        Assert.Contains("`moves.failed` as `next`", refused.Message);
+        Assert.Equal(["rule", "weight", "share", "budget.starts", "takes", "moves.limit", "moves.transient", "most"], StaffCapabilities.Fields);
     }
 
     [Fact]
