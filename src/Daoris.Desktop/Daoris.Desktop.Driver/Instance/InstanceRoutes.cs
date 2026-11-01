@@ -264,8 +264,8 @@ public static class PersonPresses
     public static InstanceRoute PluginAction { get; } = Person("PLUGIN_ACTION");
 
     /// <summary>
-    /// <c>workflow skip &lt;run&gt; &lt;node&gt; "…"</c> and <c>workflow stop &lt;run&gt; &lt;node&gt;</c> (FABRIC-CUTOVER1f): the person's word on a node
-    /// of a run bound to a graph version, kept on the run's record for Daoris's next look.
+    /// <c>workflow skip &lt;run&gt; &lt;node&gt; "…"</c>, <c>workflow stop &lt;run&gt; &lt;node&gt;</c> (FABRIC-CUTOVER1f) and <c>workflow changes &lt;run&gt; &lt;node&gt; "…"</c>
+    /// (DECIDE1c): the person's word on a node of a run bound to a graph version, kept on the run's record for Daoris's next look.
     /// </summary>
     public static InstanceRoute WorkflowNode { get; } = Person("WORKFLOW_NODE");
 
@@ -307,6 +307,7 @@ public static class PersonPresses
         ("plugins withdraw <id> <server>", PluginAction),
         ("workflow skip <run> <node> \"…\"", WorkflowNode),
         ("workflow stop <run> <node> [\"…\"]", WorkflowNode),
+        ("workflow changes <run> <node> \"…\"", WorkflowNode),
         ("sessions archive <id>…", SessionArchive),
         ("sessions unarchive <id>…", SessionArchive),
         ("sessions stop <id>", SessionStop),

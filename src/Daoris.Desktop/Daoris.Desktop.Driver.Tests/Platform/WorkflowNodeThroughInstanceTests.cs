@@ -12,6 +12,7 @@ public sealed class WorkflowNodeThroughInstanceTests
     [Theory]
     [InlineData("skip", "nobody raises it", """{"run":"q7","node":"go","act":"skip","words":"nobody raises it","said":true}""")]
     [InlineData("stop", null, """{"run":"q7","node":"go","act":"stop","said":true}""")]
+    [InlineData("changes", "split it", """{"run":"q7","node":"go","act":"changes","words":"split it","said":true}""")]
     public async Task A_word_through_the_instance_waits_for_the_window_and_prints_the_lines_it_answers(string act, string? words, string payload)
     {
         if (!OperatingSystem.IsWindows()) return;
