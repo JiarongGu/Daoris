@@ -25,6 +25,7 @@ import type { SupervisorLine } from './SupervisorRow';
 import { SupervisorDoor } from './SupervisorDoor';
 import type { Answered } from '../../work/InlineConfirm';
 import { RepositoryRules, type RuleLists } from './RepositoryRules';
+import { type FoldSpec, FoldRow } from './FoldRow';
 import { Inheritable, landingRowSays, landingSays, SetupSection, type UnreadLanding, UnreadLandingNote } from './SetupParts';
 import { StandingAnswer } from './StandingAnswer';
 
@@ -202,11 +203,15 @@ export type RepositorySetupProps = {
   busy?: boolean;
   /** A section a door asked to see open, beside those that open on their own. */
   open?: SetupSectionId;
+  /** A count the door raises each time it asks: a section the person folded since opens again (SETUPUX1o). */
+  openAgain?: number;
   /**
    * The sections drawn, in the page's order; absent, all of them. The place's page draws its Driving in its head, its Line and landing
    * under Workflow and the rest under Sessions (AGENTSPLACE1f), each from the one molecule.
    */
   only?: readonly SetupSectionId[];
+  /** The folds that stand before the others where `only` names the Workflow's folds alone: the place page's Gates (SETUPUX1o). */
+  lead?: readonly FoldSpec[];
   /** The integration declaration and its acceptance are the place page's Gates (AGENTSPLACE1h), drawn once there: this section draws neither. */
   gatesApart?: boolean;
   /** Open a plugin's page: the landing rule's plugin is a door (PLUGUI1c2c); absent, its name stays words. */
@@ -247,7 +252,7 @@ const JOIN = ' · ';
  *
  * A molecule: every state is reached by its props, and every press goes out.
  */
-export function RepositorySetup({ repository, driving, work, access, heavy, landed, sessions, reach, busy = false, open, only, gatesApart = false, onOpenPlugin }: RepositorySetupProps) {
+export function RepositorySetup({ repository, driving, work, access, heavy, landed, sessions, reach, busy = false, open, openAgain, only, lead = [], gatesApart = false, onOpenPlugin }: RepositorySetupProps) {
   const { t, i18n } = useTranslation();
   const marked = (value: string, source: 'repository' | 'workspace' | 'daoris') =>
     source === 'repository' ? value : t(`projects.setup.marked.${source}`, { value });
@@ -732,25 +737,28 @@ export function RepositorySetup({ repository, driving, work, access, heavy, land
   ];
   for (const [id, summary, body] of folds) if (summary !== null && body) sections.push({ id, summary, body });
 
+  // The place's Workflow draws its folds as one row of names (`FoldRow`), Gates first, to keep the first screen.
+  if (only && only.length > 0 && only.every((id) => FOLD_SECTIONS.includes(id))) {
+    const drawn = sections.filter((section) => only.includes(section.id)).map((section): FoldSpec => ({
+      id: section.id, title: t(`projects.setup.section.${section.id}`), summary: section.summary, body: section.body, opens: opensItself[section.id],
+    }));
+    // Keyed by the repository, so another repository's page opens its own folds afresh.
+    return <FoldRow key={repository} folds={[...lead, ...drawn]} open={open} again={openAgain} />;
+  }
+
   return (
     <div className="grid">
-      {sections.filter((section) => (only ? only.includes(section.id) : !FOLD_SECTIONS.includes(section.id))).map((section) => {
-        const fold = (
-          <SetupSection
-            // Keyed by the repository, so another repository's page opens its own sections afresh.
-            key={`${repository}:${section.id}`}
-            title={t(`projects.setup.section.${section.id}`)}
-            summary={section.summary}
-            startsOpen={opensItself[section.id] || open === section.id}
-          >
-            {section.body}
-          </SetupSection>
-        );
-        // A fold is a row of the place a door can bring into view (the place page's `data-place-row`).
-        return FOLD_SECTIONS.includes(section.id)
-          ? <div key={section.id} data-place-row={section.id} tabIndex={-1} className="outline-none focus-visible:outline-2 focus-visible:outline-accent">{fold}</div>
-          : fold;
-      })}
+      {sections.filter((section) => (only ? only.includes(section.id) : !FOLD_SECTIONS.includes(section.id))).map((section) => (
+        <SetupSection
+          // Keyed by the repository, so another repository's page opens its own sections afresh.
+          key={`${repository}:${section.id}`}
+          title={t(`projects.setup.section.${section.id}`)}
+          summary={section.summary}
+          startsOpen={opensItself[section.id] || open === section.id}
+        >
+          {section.body}
+        </SetupSection>
+      ))}
     </div>
   );
 }

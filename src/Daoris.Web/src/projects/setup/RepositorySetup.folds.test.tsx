@@ -7,10 +7,14 @@ import { NO_VERIFICATION, START } from '../../workflow/fixtures';
 import { SETUP_DEFAULTS } from '../fixtures';
 import { FOLD_SECTIONS, RepositorySetup, type RepositorySetupProps } from './RepositorySetup';
 
-// SETUPUX1o (D221; the Setup design's §2.3): the place's Workflow section draws the rows a repository's Setup holds as folds, each with its
-// owner: Landing, Second opinion, Your look, Landed route, The line and More (commits, and the heavy gates moved from Sessions). Props only.
+// SETUPUX1o (D221; the Setup design's §2.3): the place's Workflow draws the rows a repository's Setup holds as one row of folds, each with its
+// owner: Landing, Second opinion, Your look, Landed route, The line and More (commits, and the heavy gates moved from Sessions). The names
+// are one wrapped row so the head and the three section lines keep the first screen; each says its values to a reader. Props only.
 
-const draw = (props: RepositorySetupProps) => render(<Tooltip.Provider><RepositorySetup {...props} only={FOLD_SECTIONS} gatesApart /></Tooltip.Provider>);
+const element = (props: RepositorySetupProps) => (
+  <Tooltip.Provider><RepositorySetup {...props} only={FOLD_SECTIONS} gatesApart /></Tooltip.Provider>
+);
+const draw = (props: RepositorySetupProps) => render(element(props));
 const head = (name: string) => screen.getByRole('button', { name });
 
 const WITH_EVERYTHING: RepositorySetupProps = {
@@ -31,7 +35,7 @@ const WITH_EVERYTHING: RepositorySetupProps = {
 afterEach(async () => { await i18n.changeLanguage('en'); });
 
 describe("a repository's Workflow folds", () => {
-  it('draws the landing, the second opinion, your look, the landed route, the line and more, in that order, each folded to its values', () => {
+  it('draws the landing, the second opinion, your look, the landed route, the line and more, in that order, each folded and saying its values', () => {
     draw(WITH_EVERYTHING);
 
     const names = ['Landing', 'Second opinion', 'Your look', 'Landed route', 'The line', 'More'];
@@ -48,7 +52,7 @@ describe("a repository's Workflow folds", () => {
     expect(head('More')).toHaveAccessibleDescription("commits as it goes (Daoris's default) · 1 heavy gate: build");
   });
 
-  it('draws none of the whole Setup\'s sections, and keeps the landed route\'s choices where they were', async () => {
+  it("draws none of the whole Setup's sections, and keeps the landed route's choices where they were", async () => {
     const choose = vi.fn();
     draw({ ...WITH_EVERYTHING, landed: { start: START, workspace: 'aurora', onChoose: choose } });
 
@@ -84,9 +88,28 @@ describe("a repository's Workflow folds", () => {
     expect(head('Landing')).toHaveAttribute('aria-expanded', 'true');
   });
 
+  it('opens again for a door that asks twice, after the person folded it', async () => {
+    const props = { ...WITH_EVERYTHING, open: 'landing' as const, openAgain: 1 };
+    const { rerender } = draw(props);
+    await userEvent.click(head('Landing'));
+    expect(head('Landing')).toHaveAttribute('aria-expanded', 'false');
+
+    rerender(element({ ...props, openAgain: 2 }));
+    expect(head('Landing')).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('stands the folds it is given first, as the page puts Gates before the others, opened by its own need', () => {
+    draw({ ...WITH_EVERYTHING, lead: [{ id: 'gates', title: 'Gates', summary: 'Waits for your acceptance', body: <p>the declaration</p>, opens: true }] });
+
+    const heads = screen.getAllByRole('button').map((each) => each.textContent);
+    expect(heads.slice(0, 2)).toEqual(['Gates', 'Landing']);
+    expect(head('Gates')).toHaveAttribute('aria-expanded', 'true');
+    expect(within(screen.getByRole('region', { name: 'Gates' })).getByText('the declaration')).toBeInTheDocument();
+  });
+
   it('marks each fold as a row of the place a door can bring into view', () => {
     draw(WITH_EVERYTHING);
-    expect(document.querySelector('[data-place-row="landing"]')).toContainElement(head('Landing'));
+    expect(document.querySelector('[data-place-row="landing"]')).toBe(head('Landing'));
   });
 
   it('names its folds in Chinese', async () => {
