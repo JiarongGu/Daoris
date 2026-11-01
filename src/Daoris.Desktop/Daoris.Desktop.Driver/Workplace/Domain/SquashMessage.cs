@@ -19,11 +19,20 @@ public static class SquashMessage
     /// <summary>The whole message: the subject, a blank line, the list where there is one and another blank line, and the ending.</summary>
     /// <param name="title">The quest's title, or a conversation's own: its opening.</param>
     /// <param name="commits">The commits squashed, oldest first: at a chain's later landing, only those added since the last.</param>
-    public static string Of(string? title, IReadOnlyList<LandingCommit> commits, string session)
+    /// <param name="message">A delivery's rendered message (LANDNODE1f), which takes the title's place as the commit's opening; null names it by the title.</param>
+    public static string Of(string? title, IReadOnlyList<LandingCommit> commits, string session, string? message = null)
     {
         var body = Body(commits);
-        return DaorisMaker.Of(Subject(title, commits, session) + "\n\n" + (body.Length > 0 ? body + "\n\n" : "") + Ending(session));
+        return DaorisMaker.Of(Opening(title, commits, session, message) + "\n\n" + (body.Length > 0 ? body + "\n\n" : "") + Ending(session));
     }
+
+    /// <summary>The message's own words where a delivery froze one, line endings made LF and no blank line at either end; else the subject.</summary>
+    private static string Opening(string? title, IReadOnlyList<LandingCommit> commits, string session, string? message) =>
+        string.IsNullOrWhiteSpace(message) ? Subject(title, commits, session) : message.ReplaceLineEndings("\n").Trim('\n', ' ');
+
+    /// <summary>The first line of the commit <see cref="Of"/> makes: the message's first line where a delivery froze one, else <see cref="Subject(string?, IReadOnlyList{LandingCommit}, string)"/>.</summary>
+    public static string Subject(string? title, IReadOnlyList<LandingCommit> commits, string session, string? message) =>
+        Opening(title, commits, session, message).Split('\n')[0].Trim();
 
     /// <summary>The last line, naming the session the commit was squashed from.</summary>
     public static string Ending(string session) => $"Squashed by Daoris from session `{session}`";

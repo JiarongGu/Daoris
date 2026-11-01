@@ -128,6 +128,40 @@ public sealed class LandDeliveryGitTests : IDisposable
         Assert.Equal(DeliverySettlements.Delivered, Reopened().Delivery(claim.Key)?.Settled);
     }
 
+    /// <summary>
+    /// LANDNODE1f: the node's template rendered into the intent opens the squash commit, over the commits' list, and the maker's line stays.
+    /// </summary>
+    [Fact]
+    public async Task A_squash_delivery_s_commit_opens_with_its_intent_s_rendered_message_and_keeps_the_makers_line()
+    {
+        var (root, trees, tree, tip) = await TreeAsync();
+        var message = LandNodes.RenderMessage("feat: {title} ({ticket}) [{session}]", "Tidy the readme", "0fda18", "ENG-12", "s1")!;
+        var (store, claim) = Start(tip, DeliveryMethods.Branch, options: """{"method":"branch","squash":true}""", message: message);
+
+        var landed = await trees.LandAsync(tree.Path, Subject, inUse: NoneRunning, delivery: new TreeDelivery(store, claim));
+
+        Assert.True(landed.Landed, landed.Message);
+        Assert.Equal("feat: Tidy the readme (ENG-12) [s1]", (await GitFixture.GitAsync(root, "log", "-1", "--format=%s", Named)).Trim());
+        var body = await GitFixture.GitAsync(root, "log", "-1", "--format=%B", Named);
+        Assert.Contains("- the work", body);
+        Assert.Contains(DaorisMaker.Trailer, body);
+    }
+
+    /// <summary>LANDNODE1f: the merge commit says the intent's message, with the maker's line, where the line's own is <c>Merge branch</c>.</summary>
+    [Fact]
+    public async Task A_merge_delivery_s_merge_commit_says_its_intent_s_rendered_message()
+    {
+        var (root, trees, tree, tip) = await TreeAsync();
+        var (store, claim) = Start(tip, DeliveryMethods.Merge, message: "Land the readme tidy (ENG-12)");
+
+        var landed = await trees.LandAsync(tree.Path, Subject, inUse: NoneRunning, delivery: new TreeDelivery(store, claim), beside: NoSessions);
+
+        Assert.True(landed.Landed, landed.Message);
+        Assert.Equal("Land the readme tidy (ENG-12)", (await GitFixture.GitAsync(root, "log", "-1", "--format=%s", "main")).Trim());
+        Assert.Contains(DaorisMaker.Trailer, await GitFixture.GitAsync(root, "log", "-1", "--format=%B", "main"));
+        Assert.Equal(2, (await GitFixture.GitAsync(root, "log", "-1", "--format=%P", "main")).Trim().Split(' ').Length);
+    }
+
     /// <summary>The line already holds the work: nothing lands, nothing is written past the preparation, which is withdrawn.</summary>
     [Fact]
     public async Task Work_the_line_already_holds_is_refused_and_its_preparation_withdrawn()
@@ -298,12 +332,13 @@ public sealed class LandDeliveryGitTests : IDisposable
 
     private DeliveryStore Reopened() => new(_home, () => StoreSettled.Yes, null, "run-a", StoreProcess.Shell);
 
-    private (DeliveryStore Store, DeliveryClaim Claim) Start(string tip, string method, string options = """{"method":"branch"}""", bool automatic = false)
+    private (DeliveryStore Store, DeliveryClaim Claim) Start(
+        string tip, string method, string options = """{"method":"branch"}""", bool automatic = false, string message = "Tidy the readme (ENG-12)")
     {
         var store = Reopened();
         var intent = new DeliveryIntent(
             "unit-1", "engine", tip, method, "main", "main", method == DeliveryMethods.Merge ? null : Named, method == DeliveryMethods.Merge ? null : "ENG-12",
-            "Tidy the readme (ENG-12)", method is DeliveryMethods.Push or DeliveryMethods.PullRequest ? "forge" : null, "epoch-7");
+            message, method is DeliveryMethods.Push or DeliveryMethods.PullRequest ? "forge" : null, "epoch-7");
         var start = store.Start(intent, automatic
             ? DeliveryAuthorization.Automatic("repository:engine", "r3", "graph-digest", options, "[]")
             : DeliveryAuthorization.Person("accept-3", "r3", "graph-digest", options, "[]"));
