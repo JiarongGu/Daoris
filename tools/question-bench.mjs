@@ -50,7 +50,7 @@
  *
  * The helpers are tested by `node --test tools/question-bench.test.mjs`. What it found is D135's KNOWUSE2 note.
  */
-import { spawn, spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -383,10 +383,16 @@ function runFailure(record) {
   return null;
 }
 
-/** The process tree of a check that ran too long. */
+/**
+ * The process tree of a check that ran too long. On Windows `taskkill` runs beside the bench, never waited on: on a loaded
+ * machine it can take longer to end the tree than the check's own program takes to finish.
+ */
 function stopTree(child) {
-  if (process.platform === 'win32') spawnSync('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true });
-  else {
+  if (process.platform === 'win32') {
+    const kill = spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true });
+    kill.on('error', () => { /* the tree ended already, or taskkill could not start: either way the check is over */ });
+    kill.unref();
+  } else {
     try { process.kill(-child.pid, 'SIGKILL'); } catch { child.kill('SIGKILL'); }
   }
 }
@@ -434,17 +440,17 @@ export function runCheck(commandLine, prompt, { cwd, timeoutMs = 300_000 } = {})
       clearTimeout(timer);
       done({ stdout, stderr, code: timedOut ? null : code, timedOut, wallMs: Date.now() - t0, ...(error ? { error } : {}) });
     };
-    const timer = setTimeout(() => { timedOut = true; stopTree(child); }, timeoutMs);
-    child.on('error', (err) => { error = err.message; });
-    child.on('close', finish);
-    // A check that timed out ends when its shell does: a program the shell started as the kill landed may still hold
-    // the output pipes, and waiting on them would wait out the program (KNOWUSE2).
-    child.on('exit', (code) => {
-      if (!timedOut) return;
+    // A check that timed out ends at its bound: the tree's kill runs on, and waiting for the shell or its pipes would
+    // wait out the program whenever the kill is slow to land (KNOWUSE2).
+    const timer = setTimeout(() => {
+      timedOut = true;
+      stopTree(child);
       child.stdout.destroy();
       child.stderr.destroy();
-      finish(code);
-    });
+      finish(null);
+    }, timeoutMs);
+    child.on('error', (err) => { error = err.message; });
+    child.on('close', finish);
   });
 }
 
