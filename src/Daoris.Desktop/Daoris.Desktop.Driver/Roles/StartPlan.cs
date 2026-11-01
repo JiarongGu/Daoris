@@ -143,18 +143,24 @@ internal sealed class StartPlan
     /// role of the work, which a catalogue of the seed alone answers the same.
     /// </param>
     /// <param name="place">Where the start is: its workspace and repository, by which a scoped role is found.</param>
-    /// <exception cref="DriverException">A role record that does not read, or two roles taking the work in one scope, hold the start.</exception>
+    /// <param name="role">
+    /// The role the start's step names (ROLESTEP1a), found by <see cref="RoleCatalog.Named"/> in place of the work's role, the seed's
+    /// catalogue where none is given; null finds the work's role.
+    /// </param>
+    /// <exception cref="DriverException">
+    /// A role record that does not read, or two roles taking the work in one scope, hold the start; a named role holds it by its own sentence.
+    /// </exception>
     public StartPlan(
         string work, DriverConfig config, HarnessRoster roster, AdapterSet adapters, PassMemory memory, IReadOnlyList<string>? fence = null,
-        IReadOnlyList<ActorEffective>? order = null, RoleCatalog? catalogue = null, RolePlace place = default)
+        IReadOnlyList<ActorEffective>? order = null, RoleCatalog? catalogue = null, RolePlace place = default, string? role = null)
     {
         Work = work;
         Seeded = RoleOf(work);
-        var found = catalogue?.RoleFor(work, place);
+        var found = role is { Length: > 0 } ? (catalogue ?? RoleCatalog.Of([])).Named(role, work, place) : catalogue?.RoleFor(work, place);
         if (found?.Held is { } held) throw new DriverException(held);
         Role = found?.Role?.Id ?? Seeded;
         RoleName = found?.Role is { } taken && !ActorChoices.Ids.Contains(taken.Id, StringComparer.Ordinal) ? taken.NameEn : ActorWords.Name(Role);
-        Revision = found?.Role is { } kept ? catalogue!.RevisionOf(kept.Id) : 0;
+        Revision = found?.Role is { } kept ? catalogue?.RevisionOf(kept.Id) ?? 0 : 0;
         Order = order ?? (found is { Role: null } ? [] : ActorChoices.Effective(Role, config, fence: fence));
         (_config, _roster, _adapters, _memory) = (config, roster, adapters, memory);
     }
@@ -366,17 +372,19 @@ internal sealed class StartPlan
     /// The agent a start of <paramref name="work"/> is named for before its walk runs, for the look's report of a wait and a hold the walk
     /// has not yet answered (the design §2.4's second row): a hand-over's, else a continuation's (<see cref="ContinuedOn"/>), else its role's
     /// first entry; the machine's own key only where that entry does not read or the role is off, which the walk then holds for itself.
+    /// A step's named <paramref name="role"/> is its first entry's, and the machine's own key where it holds, never another role's.
     /// </summary>
     public static string AgentFor(
         string work, DriverConfig config, PriorSession? record = null, string? handed = null, RoleCatalog? catalogue = null, RolePlace place = default,
-        string? bound = null)
+        string? bound = null, string? role = null)
     {
         if (handed is { Length: > 0 }) return handed;
         try
         {
             if (record is not null) return ContinuedOn(record, config, work, bound, catalogue, place);
-            var role = catalogue is null ? RoleOf(work) : catalogue.RoleFor(work, place).Role?.Id ?? RoleOf(work);
-            return ActorChoices.FirstAgent(role, config) ?? ActorKey.Before(RoleOf(work), config) ?? config.Adapter;
+            var taken = role is { Length: > 0 } ? (catalogue ?? RoleCatalog.Of([])).Named(role, work, place).Role?.Id
+                : catalogue is null ? RoleOf(work) : catalogue.RoleFor(work, place).Role?.Id ?? RoleOf(work);
+            return (taken is null ? null : ActorChoices.FirstAgent(taken, config)) ?? ActorKey.Before(RoleOf(work), config) ?? config.Adapter;
         }
         catch (DriverException)
         {

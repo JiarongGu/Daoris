@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace Daoris.Driver;
 
 /// <summary>A row of <c>roles</c>: the role id, its <c>state</c> (<c>set</c> or <c>removed</c>), its record's JSON and its revision.</summary>
@@ -21,7 +23,8 @@ public enum RoleState
 
 /// <summary>One id as the catalogue reads it: its role where it has one, its revision (0 for the seed) and, where it does not read, why.</summary>
 /// <param name="Scope">What an unreadable record still shows of its scope; none where it shows none, which holds every start.</param>
-public sealed record RoleSlot(string Id, RoleState State, RoleRecord? Role, string? Error, long Revision, RoleScope? Scope = null);
+/// <param name="Appointed">An unreadable record whose <c>filled</c> is <c>appointed</c>, which this build does not configure.</param>
+public sealed record RoleSlot(string Id, RoleState State, RoleRecord? Role, string? Error, long Revision, RoleScope? Scope = null, bool Appointed = false);
 
 /// <summary>The role a work has at a place, or why its start holds; neither where no role takes the work there (it is off).</summary>
 public sealed record RoleFound(RoleRecord? Role, string? Held);
@@ -136,10 +139,25 @@ public sealed class RoleCatalog
             case "set":
                 var (role, why) = RoleRecord.Parse(row.Id, row.Record);
                 return role is null
-                    ? new RoleSlot(row.Id, RoleState.Unreadable, null, why, row.Revision, RoleRecord.ScopeOf(row.Record))
+                    ? new RoleSlot(row.Id, RoleState.Unreadable, null, why, row.Revision, RoleRecord.ScopeOf(row.Record), FilledAppointed(row.Record))
                     : new RoleSlot(row.Id, RoleState.Set, role, null, row.Revision);
             default:
                 return new RoleSlot(row.Id, RoleState.Unreadable, null, "has a state this build does not know", row.Revision);
+        }
+    }
+
+    /// <summary>Whether <paramref name="json"/> says <c>filled: appointed</c>, read before anything else of it, as the judge reads it.</summary>
+    private static bool FilledAppointed(string json)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(json);
+            return document.RootElement.ValueKind == JsonValueKind.Object && document.RootElement.TryGetProperty("filled", out var filled)
+                && filled.ValueKind == JsonValueKind.String && filled.GetString() == RoleRecord.Appointed;
+        }
+        catch (JsonException)
+        {
+            return false;
         }
     }
 
@@ -156,8 +174,7 @@ public sealed class RoleCatalog
             var seededId = ActorChoices.Ids.Contains(slot.Id, StringComparer.Ordinal);
             if (seededId ? slot.Id == seeded : slot.Scope is null || slot.Scope.Covers(place))
             {
-                var reach = seededId ? $"the starts of {work}" : "every start in its scope";
-                return new RoleFound(null, $"The role `{slot.Id}` {slot.Error}, so {reach} hold until it reads or is deleted.");
+                return Unreadable(slot, seededId ? $"the starts of {work}" : "every start in its scope");
             }
         }
 
@@ -176,11 +193,44 @@ public sealed class RoleCatalog
     }
 
     /// <summary>
+    /// The role <paramref name="role"/> names, for a start of <paramref name="work"/> at <paramref name="place"/> (ROLESTEP1a): found by its
+    /// id, never by the work. A role that takes build takes a design step, as <see cref="RoleFor"/>'s fallback does. Its <c>Held</c>, said,
+    /// where the id is the shell's, not in the catalogue, appointed or unreadable, or the role does not work here or take the work; no other
+    /// role is taken for it.
+    /// </summary>
+    public RoleFound Named(string role, string work, RolePlace place)
+    {
+        const string Hold = "so the starts naming it hold";
+        if (Reserved.Contains(role, StringComparer.Ordinal))
+        {
+            return new RoleFound(null, $"`{role}` is the shell's: the supervisor and the steward are not configured here, {Hold} until they name a working role.");
+        }
+
+        var slot = Slots.FirstOrDefault(slot => slot.Id == role);
+        if (slot is null or { State: RoleState.Removed }) return new RoleFound(null, $"No role `{role}` is in the catalogue, {Hold} until it is added: {Configured}.");
+        if (slot.Appointed) return new RoleFound(null, $"`{role}` is an appointed role: this build configures working roles alone, {Hold} until they name a working role.");
+        if (slot.Role is not { } found) return Unreadable(slot, "the starts naming it");
+        if (!found.Scope.Covers(place))
+        {
+            return new RoleFound(null, $"The role `{role}` does not work here: its scope is the {found.Scope.Kind} `{found.Scope.Id}`, {Hold} until it is scoped here: {Configured}.");
+        }
+
+        var takes = found.Takes.Contains(work, StringComparer.Ordinal) || (work == RoleWork.Design && found.Takes.Contains(RoleWork.Build, StringComparer.Ordinal));
+        return takes ? new RoleFound(found, null) : new RoleFound(null, $"The role `{role}` does not take `{work}`, {Hold} until it does: {Configured}.");
+    }
+
+    private static RoleFound Unreadable(RoleSlot slot, string reach) =>
+        new(null, $"The role `{slot.Id}` {slot.Error}, so {reach} hold until it reads or is deleted.");
+
+    /// <summary>Where the person gives a work its role, named in every hold that waits for one.</summary>
+    private const string Configured = "Agents → Roles, or `daoris driver role`";
+
+    /// <summary>
     /// What a start of <paramref name="work"/> says where no role takes it (FOUNDATION1y-i): its role was removed or scoped elsewhere, so it
     /// holds until the person gives the work a role. A work that is off has its role, with no choices, and is not this.
     /// </summary>
     public static string NoRole(string work) =>
-        $"No role takes `{work}` here, so its starts hold until one is given it: Agents → Roles, or `daoris driver role`.";
+        $"No role takes `{work}` here, so its starts hold until one is given it: {Configured}.";
 
     /// <summary>
     /// The roles whose entry in <c>driver.json</c> the projection narrows for an older build (§19.15, <i>C6-1.7</i>): Intake and Ask Daoris
@@ -346,5 +396,15 @@ public sealed class RoleCatalog
         var found = RoleFor(work, place);
         if (found.Held is { } held) throw new DriverException(held);
         return found.Role is { } role ? ActorChoices.Effective(role.Id, config, fence, pick, handed) : [];
+    }
+
+    /// <summary>The order a start of <paramref name="work"/> walks when its step names <paramref name="role"/> (<see cref="Named"/>).</summary>
+    /// <exception cref="DriverException">The named role holds the start (<see cref="Named"/>'s sentences).</exception>
+    /// <exception cref="ActorUnreadableException">The role's stored staffing does not read.</exception>
+    public IReadOnlyList<ActorEffective> Order(
+        string role, string work, RolePlace place, DriverConfig config, IReadOnlyList<string>? fence = null, string? pick = null, string? handed = null)
+    {
+        var found = Named(role, work, place);
+        return found.Role is { } named ? ActorChoices.Effective(named.Id, config, fence, pick, handed) : throw new DriverException(found.Held!);
     }
 }
