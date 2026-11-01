@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { renderHook, act } from '@testing-library/react';
 import { KEPT_ROW, planOf } from './placeFixtures';
-import { askOf, deliveriesOf, doorOf, drivingOf, freshDraft, refusalsOf, suggestionsOf } from './placePlan';
+import {
+  acceptOf, askOf, deliveriesOf, doorOf, draftOfAsk, drivingOf, freshDraft, offered, type PlacePlanned, reconcileTicks, refusalsOf, suggestionsOf, useSetUpPage,
+} from './placePlan';
 import { SETUP_PRESETS } from './placeFixtures';
 
 // SETUPUX1j (the setup-UX design §2.2): what the choices page reads of a plan: the suggestion each repository makes, with Keep where its landing
@@ -65,5 +68,58 @@ describe('a plan\'s refusals', () => {
   it('sends a Keep ask with its ticks and driving, as a delivery does', () => {
     const draft = { ...freshDraft(['engine']), preset: 'keep', opinion: true, look: true, adoption: false, drive: true };
     expect(askOf(draft)).toEqual({ repositories: ['engine'], preset: 'keep', opinion: true, look: true, adoption: false, drive: true });
+  });
+});
+
+// SETUPUX1k (the setup-UX design §2.2's review): a tick is bound to the declaration it was made at, and a changed blob clears it with a reason.
+
+const integrated = () => plan(['engine'], 'integrated');
+const moved = (read: PlacePlanned, blob: string): PlacePlanned => ({
+  ...read,
+  repositories: read.repositories.map((row) => (row.declaration ? { ...row, declaration: { ...row.declaration, blob } } : row)),
+});
+
+describe('the acceptances a plan offers, bound to what was read', () => {
+  it('carry the repository, purpose, line and blob of the declaration', () => {
+    expect(offered(integrated())).toEqual([{ repository: 'engine', purpose: 'integration', line: 'main', blob: '3b18e512dba79e4c8300dd08aeb37f8e728b8dad' }]);
+    expect(offered(plan(['engine']))).toEqual([]);
+  });
+
+  it('keep a tick while the declaration read is the one it was made at', () => {
+    const read = integrated();
+    const kept = reconcileTicks(offered(read), read);
+    expect(kept.accept).toHaveLength(1);
+    expect(kept.cleared).toEqual([]);
+  });
+
+  it('clear a tick whose blob changed, saying which and what it is now; the others stand', () => {
+    const read = integrated();
+    const ticks = [...offered(read), { repository: 'site', purpose: 'landed', line: 'main', blob: 'f00' }];
+    const after = reconcileTicks(ticks, moved(read, 'ffffffffffffffffffffffffffffffffffffffff'));
+    expect(after.accept).toEqual([{ repository: 'site', purpose: 'landed', line: 'main', blob: 'f00' }]);
+    expect(after.cleared).toEqual([{ repository: 'engine', purpose: 'integration', line: 'main', blob: 'ffffffffffffffffffffffffffffffffffffffff' }]);
+  });
+
+  it('are sent only for the ones still offered at the blob ticked, without the identity the page keeps', () => {
+    const read = integrated();
+    const ticks = [...offered(read), { repository: 'engine', purpose: 'landed', line: 'main', blob: 'x' }];
+    expect(acceptOf(ticks, read)).toEqual([{ repository: 'engine', purpose: 'integration' }]);
+    expect(acceptOf(offered(read), moved(read, 'ffffffffffffffffffffffffffffffffffffffff'))).toEqual([]);
+  });
+});
+
+describe('where a set-up stands', () => {
+  it('opens a fresh draft on the choices and a seeded one on the review', () => {
+    expect(freshDraft(['engine']).review).toBe(false);
+    expect(draftOfAsk({ repositories: ['engine'], preset: 'integrated', opinion: false, look: false, adoption: false, drive: false }).review).toBe(true);
+  });
+
+  it('drops the last result and the state it ended in at any change but its own', () => {
+    const { result } = renderHook(() => useSetUpPage());
+    act(() => result.current.open('p', ['engine']));
+    act(() => result.current.change('p', { result: { done: true, message: 'x', digest: 'd', operations: [] }, ended: [{ state: 'driven', repositories: ['engine'] }] }));
+    expect(result.current.draftOf('p')).toMatchObject({ result: { done: true }, ended: [{ state: 'driven' }] });
+    act(() => result.current.change('p', { review: false }));
+    expect(result.current.draftOf('p')).toMatchObject({ result: null, ended: null });
   });
 });

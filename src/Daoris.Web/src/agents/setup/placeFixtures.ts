@@ -63,6 +63,11 @@ const REPOSITORIES: Record<string, Omit<PlaceRepositoryPlan, 'changes' | 'after'
     repository: 'archive', workspace: 'aurora', before: side(false), lowers: [], reach: [], adopted: false,
     suggested: { preset: 'not-driven', adoption: true, why: WHY.default },
   },
+  // An imported repository of the list's 41, not driven.
+  'archive-1': {
+    repository: 'archive-1', workspace: 'aurora', before: side(false), lowers: [], reach: [], adopted: false,
+    suggested: { preset: 'not-driven', adoption: true, why: WHY.default },
+  },
 };
 
 /** A repository whose landing was chosen and whose work follows a saved workflow: the driver suggests the preset it matches, for `kept`. */

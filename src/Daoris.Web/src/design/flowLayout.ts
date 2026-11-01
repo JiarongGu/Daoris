@@ -27,16 +27,18 @@
  * How an edge is drawn: a move, a failure's or a rejection's short dashes, a refused move (a conflict), a conditional one
  * (FLOWCHART1b): a move made only on a guard, or one that has not happened, such as going on or where Accept would land; or a way
  * back (DECIDE1c), always a return, whatever the walk finds. Dashed, like the failures; the cause is in words, never the ink.
+ * A `when` (FLOWCHART2a) is a decision's route, solid from the outcome's port; a `data` wire carries what a step made, is no way on
+ * and is never laid out: it is drawn only while an end is selected.
  */
-export type EdgeStyle = 'next' | 'failed' | 'rejected' | 'refused' | 'conditional' | 'back';
+export type EdgeStyle = 'next' | 'failed' | 'rejected' | 'refused' | 'conditional' | 'back' | 'when' | 'data';
 
 /**
  * What the layout reads of a flow: its nodes in declared order, its edges, and where it is entered. A node's `stack` is what makes
  * it like another for a stack (FLOWCHART1c): a try's code, a kind and its state. Absent, the node never stacks.
  */
 export type FlowShape = {
-  nodes: readonly { id: string; stack?: string }[];
-  edges: readonly { id: string; from: string; to: string; style?: EdgeStyle }[];
+  nodes: readonly { id: string; stack?: string; ports?: readonly string[] }[];
+  edges: readonly { id: string; from: string; to: string; style?: EdgeStyle; port?: string }[];
   entries: readonly string[];
 };
 
@@ -69,6 +71,8 @@ export type FlowPath = {
   from: string;
   to: string;
   style: EdgeStyle;
+  /** The outcome's port it leaves, where it is a decision's route (FLOWCHART2a): each port is a path of its own. */
+  port: string | null;
   /** The edges it draws, in declared order. */
   edges: string[];
   /** A return (§3.5), drawn on a lane of its own. */
@@ -104,25 +108,27 @@ export const FLOW_REM = { node: 10, way: 1, gap: 1.5, lane: 1, laneGap: 0.5, ran
 const ACROSS_MOST = 3;
 const SWEEPS = 4;
 
-/** The key a path is known by: its two ends and its style. */
-const pathKey = (from: string, to: string, style: EdgeStyle) => `${from}>${to}:${style}`;
+/** The key a path is known by: its two ends, its style and the port it leaves. */
+const pathKey = (from: string, to: string, style: EdgeStyle, port: string | undefined) => `${from}>${to}:${style}${port === undefined ? '' : `:${port}`}`;
 
 /** Lay a flow out. Deterministic: the same shape gives the same layout, whatever else its nodes and edges carry. */
 export function layoutFlow(shape: FlowShape): FlowLayout {
   const ids = shape.nodes.map((node) => node.id);
   const known = new Set(ids);
-  const edges = shape.edges.filter((edge) => known.has(edge.from) && known.has(edge.to));
+  const edges = shape.edges.filter((edge) => known.has(edge.from) && known.has(edge.to) && edge.style !== 'data');
 
-  // The paths: one per two ends and a style, in the order of their first edge.
+  // The paths: one per two ends, a style and a port, in the order of their first edge.
   const paths: FlowPath[] = [];
   const byKey = new Map<string, FlowPath>();
   for (const edge of edges) {
     const style = edge.style ?? 'next';
-    const key = pathKey(edge.from, edge.to, style);
+    const key = pathKey(edge.from, edge.to, style, edge.port);
     const found = byKey.get(key);
     if (found) { found.edges.push(edge.id); continue; }
     // A way back is a return by what it is, so the walk below never ranks it as a move forward.
-    const path: FlowPath = { id: key, from: edge.from, to: edge.to, style, edges: [edge.id], back: style === 'back', ways: [], lane: null };
+    const path: FlowPath = {
+      id: key, from: edge.from, to: edge.to, style, port: edge.port ?? null, edges: [edge.id], back: style === 'back', ways: [], lane: null,
+    };
     byKey.set(key, path);
     paths.push(path);
   }
@@ -161,6 +167,19 @@ export function layoutFlow(shape: FlowShape): FlowLayout {
   const count = ids.length === 0 ? 0 : Math.max(...ids.map((id) => rank[id]!)) + 1;
   const ranks: Slot[][] = Array.from({ length: count }, () => []);
   for (const id of ids) ranks[rank[id]!]!.push({ kind: 'node', id });
+
+  // A decision's ports (FLOWCHART2a): the targets it reaches by them take, in the places they already hold, the order of the outcomes,
+  // so the sweeps start from the order the ports are drawn in.
+  for (const node of shape.nodes) {
+    const order = node.ports ?? [];
+    const row = ranks[rank[node.id]! + 1];
+    if (order.length < 2 || !row) continue;
+    const targets = [...new Set(forward.filter((path) => path.from === node.id && path.port !== null && order.includes(path.port))
+      .sort((a, b) => order.indexOf(a.port!) - order.indexOf(b.port!)).map((path) => path.to))];
+    const places = targets.map((id) => row.findIndex((slot) => slot.kind === 'node' && slot.id === id)).filter((at) => at >= 0);
+    const held = places.map((at) => row[at]!);
+    [...places].sort((a, b) => a - b).forEach((at, index) => { row[at] = held[index]!; });
+  }
 
   // 3. Waypoints: a slot in every rank a forward path skips, chained to its neighbours so the sweeps order it.
   const near = new Map<string, Set<string>>(ids.map((id) => [id, new Set()]));
@@ -217,7 +236,7 @@ export function findStacks(shape: FlowShape): Stack[] {
   const into = new Map<string, string[]>();
   const out = new Map<string, { id: string; to: string }[]>();
   for (const edge of shape.edges) {
-    if (!known.has(edge.from) || !known.has(edge.to)) continue;
+    if (!known.has(edge.from) || !known.has(edge.to) || edge.style === 'data') continue;
     into.set(edge.to, [...(into.get(edge.to) ?? []), edge.id]);
     out.set(edge.from, [...(out.get(edge.from) ?? []), { id: edge.id, to: edge.to }]);
   }

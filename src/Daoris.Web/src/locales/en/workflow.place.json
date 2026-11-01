@@ -4,6 +4,7 @@
   "workflow.place.gates.nothing": "No gates here ask for your acceptance: the work that lands names no verification, and the line declares no integration.",
   "workflow.place.gates.declaration": "daoris.gates.json at {{branch}}'s tip {{commit}}",
   "workflow.place.gates.pick": "Choose what to accept, then confirm.",
+  "workflow.place.gates.cleared": "{{label}}: the declaration changed since you chose it, so the choice was cleared.",
   "workflow.place.gates.landed.label": "Accept for landed verification",
   "workflow.place.gates.landed.purpose": "The checks of the work that lands run these gates unasked.",
   "workflow.place.gates.landed.waits": "Blob {{blob}} at {{branch}}'s tip {{commit}}. Accepted, its checks run them; until then nothing verifies the work that lands.",

@@ -51,6 +51,34 @@ export const RELEASE_GRAPH = {
   ],
 };
 
+/**
+ * A decision whose two outcomes reach one step (FLOWCHART2a; the flowchart design's §8.9): each leaves its own port and stays a way of
+ * its own, and the third goes nowhere. Not shipped; it stands beside the shipped graphs for the drawing's proof.
+ */
+export const TWO_OUTCOMES_GRAPH = {
+  schemaVersion: 2,
+  entries: ['work'],
+  end: 'line',
+  nodes: [
+    { id: 'work', kind: 'claimed', version: 1, reach: 'observed' },
+    {
+      id: 'find', kind: 'local-release/find', version: 1, reach: 'performed',
+      outcomes: ['release', 'again', 'none'],
+      outputs: { release: 'local-release/release@1' },
+      outputsOn: { release: ['release', 'again'] },
+      evidence: 'local-release/receipt@1',
+    },
+    { id: 'record', kind: 'local-release/release', version: 1, reach: 'performed', evidence: 'local-release/receipt@1' },
+    { id: 'line', kind: 'line', version: 1, reach: 'observed' },
+  ],
+  wires: [
+    { id: 'a', kind: 'after', from: 'work', to: 'find' },
+    { id: 'b', kind: 'when', from: 'find', outcome: 'release', to: 'record' },
+    { id: 'c', kind: 'when', from: 'find', outcome: 'again', to: 'record' },
+    { id: 'd', kind: 'after', from: 'record', to: 'line' },
+  ],
+};
+
 /** `merge-after-accept.json`: the work, its holds, your review, the landing and the line. */
 export const MERGE_GRAPH = {
   schemaVersion: 2,
