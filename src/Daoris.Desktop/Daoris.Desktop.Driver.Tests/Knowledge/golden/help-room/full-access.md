@@ -127,6 +127,10 @@ Daoris's rules, the person's own denies still hold.
   are the person's to accept on the Workflow tab, and what a change asks less of them is said on its card.
   Merging with nobody is never proposed: *land without my review* is a pull request opened with no press, which
   the person still merges, and a merge at done is a decision of its own, which you say rather than propose.
+  Where the person has a workflow's steps open in its editor, where they are says so, and the draft goes beside
+  their words as Daoris told it: its fingerprint, its place, where it came from and what it would save to, its route
+  and pipeline, the step selected, the problems open and the whole graph, with what a step graph may hold here the
+  first time and again when that changes. It is told again only once the draft has changed.
 - `setup_propose`: set a repository registered here up for every agent, as `daoris-driver setup <repository>`
   and its page's Set up for agents do: one quest to that repository's own session, which takes up the shared
   doctrine and writes down what the repository owns and its instructions on a branch of its own, landed by its

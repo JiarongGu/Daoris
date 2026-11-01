@@ -80,6 +80,7 @@ internal static class ChatRecorded
         if (ToldBrowser(message) is { } toldBrowser) yield return toldBrowser;
         if (ToldProcess(message) is { } toldProcess) yield return toldProcess;
         if (Told(message) is { } told) yield return told;
+        if (ToldDraft(message) is { } toldDraft) yield return toldDraft;
         if (shown is null)
         {
             yield return Asked(message);
@@ -107,6 +108,20 @@ internal static class ChatRecorded
         if (message.Preface is not { Length: > 0 } preface) return null;
         // CONVNOTE2c: the lead by its code; the preface is Daoris's one-copy English to the agent (D142 point 6), shown as written.
         var told = Noted.Of(NoteCodes.ChatToldWhere, "told where the person is:").Then(" ", Noted.Said(preface, NoteBy.Program));
+        return new SessionEvent { Kind = SessionEventKind.Note, Text = told.Note, Parts = told.Parts };
+    }
+
+    /// <summary>
+    /// The workflow draft the agent was told beside the person's words (FLOWCHART2d), as the record keeps it: a note of its own, its lead by
+    /// code, then what the agent was handed as the program's words, the draft's JSON last and whole, so the draft door finds it by its
+    /// fingerprint (<see cref="WorkflowDraftTold.Told"/>).
+    /// </summary>
+    internal static SessionEvent? ToldDraft(ChatMessage message)
+    {
+        if (message.Draft is not { } draft) return null;
+        var told = Noted.Of(NoteCodes.ChatToldDraft, "told the agent the open workflow draft:")
+            .Then(" ", Noted.Said(draft.Lead, NoteBy.Program))
+            .Then("\n", Noted.Said(draft.Json, NoteBy.Program));
         return new SessionEvent { Kind = SessionEventKind.Note, Text = told.Note, Parts = told.Parts };
     }
 

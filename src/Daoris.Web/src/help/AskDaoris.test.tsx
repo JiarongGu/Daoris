@@ -40,6 +40,8 @@ const PUSHED_HERE = [questsSlice, asksSlice, sessionsSlice];
 import { code } from '../test/code';
 import { AskDaoris } from './AskDaoris';
 import type { HelpWhere } from './where';
+import { registerOpenDraft } from './openDraft';
+import { fingerprintOf } from '../workflow/draftFingerprint';
 
 const HELP = {
   id: 'h1e1p000', quest: null, repository: 'daoris:help', adapter: 'claude-code-acp', state: 'working',
@@ -736,6 +738,41 @@ describe('Ask Daoris, with an agent named', () => {
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
       payload: { id: HELP.id, text: 'and then?' },
     }));
+  });
+
+  /**
+   * FLOWCHART2d: the workflow draft open in the editor goes beside the words with its fingerprint, frozen with them, where that moved since
+   * the conversation was told it, and never again unchanged; where the person is says a draft is open.
+   */
+  it('hands the conversation the open draft beside the words, and not again while it is unchanged', async () => {
+    SESSIONS = [HELP];
+    bridge();
+    const graph = { schemaVersion: 2, entries: ['work'], end: 'work', nodes: [{ id: 'work', kind: 'claimed', version: 1, reach: 'observed' }], wires: [] };
+    const draft = { place: 'engine', graph, workflow: 'release-flow', base: 2 };
+    const unregister = [registerOpenDraft(draft)];
+    try {
+      show({ view: 'projects', workspace: null });
+      const box = await screen.findByLabelText('Message');
+      const sentDraft = () => invoke.mock.calls.filter(([, type]) => type === 'SESSION_INPUT').map(([, , request]) => request.payload.draft);
+
+      await userEvent.type(box, 'add a release');
+      await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+      await waitFor(() => expect(sentDraft()).toEqual([{ ...draft, fingerprint: fingerprintOf(graph) }]));
+      const first = invoke.mock.calls.find(([, type]) => type === 'SESSION_INPUT')![2].payload;
+      expect(first.preface).toContain('editing a workflow draft of `release-flow` from v2 for `engine`, not saved: 1 steps;');
+
+      await userEvent.type(box, 'and then?');
+      await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+      await waitFor(() => expect(sentDraft()).toEqual([expect.objectContaining({ place: 'engine' }), undefined]));
+
+      unregister.push(registerOpenDraft({ ...draft, graph: { ...graph, end: 'line' } }));
+      await userEvent.type(box, 'now?');
+      await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+      await waitFor(() => expect(sentDraft()).toHaveLength(3));
+      expect(sentDraft()[2].fingerprint).toBe(fingerprintOf({ ...graph, end: 'line' }));
+    } finally {
+      unregister.reverse().forEach((each) => each());
+    }
   });
 
   /** FRAME1i-a: the chosen item is part of where the person is, so a change of it is said again and a same one is not. */

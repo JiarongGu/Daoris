@@ -2406,8 +2406,23 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
 
         // The browser it was handed is told once, ahead of the first message's words (BRWHINT1a).
         var briefing = held && _context.Browsers.TryRemove(sessionId, out var browserLine) ? browserLine : null;
-        var composed = new ChatMessage(message, kept) { Preface = ChatMessage.Bound(preface), Briefing = briefing };
+        var composed = new ChatMessage(message, kept) { Preface = ChatMessage.Bound(preface), Briefing = briefing, Draft = held ? DraftOf(sessionId) : null };
         return held ? WithProcess(sessionId, composed) : composed;
+    }
+
+    /// <summary>
+    /// Hand a conversation the workflow draft open in the person's editor with the message it was sent with (FLOWCHART2d): taken by that
+    /// message as it is composed, its palette handed whole only where this conversation was not told it under the same digest.
+    /// </summary>
+    public void HandDraft(string sessionId, WorkflowDraftTold draft) => _context.Drafts[_context.Pending.Current(sessionId)] = draft;
+
+    private WorkflowDraftTold? DraftOf(string sessionId)
+    {
+        if (!_context.Drafts.TryRemove(sessionId, out var draft)) return null;
+        if (draft.Palette is not { } palette) return draft;
+        var told = _context.Palettes.TryGetValue(sessionId, out var digest) && digest == palette.Digest;
+        _context.Palettes[sessionId] = palette.Digest;
+        return told ? draft with { Palette = palette with { Text = null } } : draft;
     }
 
     /// <summary>The start's process and maker, consumed by the first ordinary or handed-over message.</summary>
@@ -2873,6 +2888,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             ForgetAccess(sessionId);
             _context.Handing.TryRemove(sessionId, out _);
             _context.Browsers.TryRemove(sessionId, out _);
+            _context.Drafts.TryRemove(sessionId, out _);
+            _context.Palettes.TryRemove(sessionId, out _);
             _toldProcess.TryRemove(sessionId, out _);
             // Nothing waiting will be sent now, and the page is told its queue emptied. COWORK1c: words kept on its record wait there for
             // it to go on, unless the person stopped it, which ends them with it.
