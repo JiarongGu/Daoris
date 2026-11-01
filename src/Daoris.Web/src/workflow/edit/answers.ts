@@ -29,7 +29,8 @@ export type PresetDelivery = {
   names: { en: string; zh: string }; for: { en: string; zh: string };
 };
 
-export type WorkflowListAnswer = { workflows: SavedWorkflow[]; presets: PresetWorkflow[] };
+/** `use` lists what `WORKFLOW_USE` can be asked beside a plain press (`plan`, SETUPUX1c), absent from a driver before it. */
+export type WorkflowListAnswer = { workflows: SavedWorkflow[]; presets: PresetWorkflow[]; use?: string[] };
 
 /** A problem the graph has, by its code, with the wire or node it is about. */
 export type GraphProblem = { code: string; wire: string | null; node: string | null; words: string };
@@ -89,10 +90,29 @@ export type WorkflowSaveAnswer = {
   scopes: WorkflowScopeRow[]; reach: WorkflowReachRow[]; problems?: GraphProblem[];
 };
 
-/** A place's choice of a saved workflow (`WORKFLOW_USE`): `version` is the newest the person read, refused `stale` once it moved. */
-export type WorkflowUseAsk = ({ repository: string } | { workspace: string }) & { workflow: string; version?: number };
+/**
+ * A place's choice of a saved workflow (`WORKFLOW_USE`): `version` is the newest the person read, refused `stale` once it moved. `plan: true`
+ * reads the choice and writes nothing, only where `WORKFLOW_LIST` announces `use: ['plan']`; `expected`, the plan's token, is refused `moved`
+ * where anything the plan says has changed since (SETUPUX1c). `workflow` is absent to clear the default.
+ */
+export type WorkflowUseAsk = ({ repository: string } | { workspace: string }) & {
+  workflow?: string; version?: number; kind?: string; plan?: boolean; expected?: string;
+};
 
-export type WorkflowUseAnswer = { done: boolean; refused: string | null; message: string | null; changed: boolean; reach: WorkflowReachRow[] };
+/** A repository whose workflow a choice changes: what it follows now and after, and what lowers the person's part there. */
+export type WorkflowUsePlace = { repository: string; was: string; now: string; lowers: string[] };
+
+/** What clearing a default leaves to the kinds the place still maps: the driver's sentence, and each kind with its workflow. */
+export type WorkflowUseKeeps = { said: string; kinds: { kind: string; workflow: string }[] };
+
+/**
+ * What `WORKFLOW_USE` answers. A plan (`plan: true`) adds what it would do: `lowers`, the `places` it changes, what a cleared default's kinds
+ * `keeps`, and the `expected` token a press carries; `done` is false, since nothing was written. A driver before it leaves these out.
+ */
+export type WorkflowUseAnswer = {
+  done: boolean; refused: string | null; message: string | null; changed: boolean; reach: WorkflowReachRow[];
+  plan?: boolean; lowers?: string[]; places?: WorkflowUsePlace[]; keeps?: WorkflowUseKeeps | null; expected?: string;
+};
 
 /** A working role a step may name, from the roles' structure: its id, its names, and the works it takes. */
 export type EditorRole = { id: string; name: { en: string; zh: string } | null; takes: string[] };

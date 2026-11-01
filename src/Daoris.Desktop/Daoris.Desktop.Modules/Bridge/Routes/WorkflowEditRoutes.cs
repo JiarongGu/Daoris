@@ -49,6 +49,8 @@ public sealed class WorkflowEditRoutes(DriverContext context)
                     }
                     : null,
             }).ToArray(),
+            // What WORKFLOW_USE can be asked beside a plain press (SETUPUX1c); a driver before it leaves this out.
+            Use = new[] { "plan" },
         });
     }
 

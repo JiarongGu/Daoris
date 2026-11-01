@@ -22649,3 +22649,9 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 > **SETUPUX1a — presets from the shipped data** (driver, modules; `docs/2026-11-01-setup-ux-design.md` §5). Contract: `delivery.names`, `delivery.for`; workflows renamed (§2.5); `Table` reads delivery names; `WORKFLOW_LIST` carries `for`, `order`, `setUp`, `delivery`; the suggestion's `why: {code, said}`; twin rows. Proof: `DriverModuleWorkflowTests`; each suggestion fixture's code; no name contains another kind's.
 
 **Outcome** 2026-11-02: each default's `delivery` carries its names and purpose and `SetupPresets.Table` reads them; the workflows are renamed to end in *workflow*; `WORKFLOW_LIST` and `PLACE_PLAN`'s `suggested.why` carry the new fields, typed in `answers.ts` and `placePlan.ts`. Detail: D221's SETUPUX1a note; `ShippedDeliveryWordsTests`, `DriverModuleWorkflowTests`, `PlacePlanTests`, `SetupPresetsTests`.
+
+## SETUPUX1c — choosing, reviewed (2026-11-02, D221)
+
+> **SETUPUX1c — choosing, reviewed** (modules; `docs/2026-11-01-setup-ux-design.md` §5). Contract: `WORKFLOW_LIST` announces `use: ["plan"]`; `WORKFLOW_USE {plan}` writes nothing and answers reach, lowering, places, what a default-clear's kinds keep, and `expected`; a press with the token is refused `moved` where anything moved; `stale` stays. Proof: plan and moved write nothing; the census keeps the press the person's; the terminal unchanged.
+
+**Outcome** 2026-11-02: `WORKFLOW_USE` reads a choice as a plan of one (`WorkflowOperations.PlanUseAsync`) and refuses a stale token `moved`; the list announces it and `answers.ts` types it. Detail: D221's SETUPUX1c note; `DriverModuleWorkflowWritesTests`.

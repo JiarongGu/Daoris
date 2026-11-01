@@ -296,15 +296,16 @@ public sealed class DriverModuleWorkflowTests : DriverModuleBridge
 
     /// <summary>
     /// SETUPUX1a: each default the list carries is the shipped data's, with its purpose, its order, whether the set-up offers it and its
-    /// delivery's land, names and purpose.
+    /// delivery's land, names and purpose; SETUPUX1c: and the list announces that a choice can be read as a plan.
     /// </summary>
     [Fact]
-    public async Task The_list_carries_each_defaults_purpose_order_set_up_and_delivery()
+    public async Task The_list_carries_each_defaults_purpose_order_set_up_and_delivery_and_announces_the_plan_of_one()
     {
         var module = Module();
 
         var list = await AnswerAsync(module, "WORKFLOW_LIST", new { });
 
+        Assert.Equal(["plan"], list.GetProperty("use").EnumerateArray().Select(each => each.GetString()));
         var presets = list.GetProperty("presets").EnumerateArray().Where(each => each.TryGetProperty("delivery", out var delivery) && delivery.ValueKind == JsonValueKind.Object).ToList();
         Assert.Equal(WorkflowDefaults.All.Select(each => each.Id), presets.Select(each => each.GetProperty("id").GetString()));
         foreach (var (shipped, preset) in WorkflowDefaults.All.Zip(presets))

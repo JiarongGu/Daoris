@@ -393,7 +393,9 @@ public sealed class WorkflowRoutes(DriverContext context)
     /// <c>WORKFLOW_LANDED</c>): <c>{repository}</c> or <c>{workspace}</c>, <c>workflow</c> (a saved id, <c>current</c>, or absent to clear), and
     /// <c>kind</c> for a kind of task instead of the default; <c>version</c>, the newest the caller read, is refused <c>stale</c> when it moved.
     /// One change, judged first as the terminal judges it: a graph whose reach cannot start somewhere is refused <c>reach</c>, nothing written.
-    /// Answers <c>{ done, refused, message, changed, reach, start }</c>, the start node as it now stands.
+    /// Answers <c>{ done, refused, message, changed, reach, start }</c>, the start node as it now stands. <c>plan: true</c> reads the choice as a
+    /// plan of one and writes nothing (<see cref="PlanAnswer"/>); <c>expected</c>, a plan's token, is refused <c>moved</c> where anything moved
+    /// since, and <c>stale</c> stays for a <c>version</c> that did. A press with neither acts as it always did.
     /// </summary>
     [DriverRoute("WORKFLOW_USE")]
     [Publishes("WORKFLOW_USE", StateScopes.Driver)]
@@ -409,6 +411,7 @@ public sealed class WorkflowRoutes(DriverContext context)
         var workflow = Optional(request, "workflow");
         var kind = Optional(request, "kind");
         var config = DriverConfig.Load(_loop.ConfigPath);
+        var expected = Optional(request, "expected");
         WorkflowUsed used;
         try
         {
@@ -418,7 +421,21 @@ public sealed class WorkflowRoutes(DriverContext context)
                 return Refused("stale", $"`{named}` is at v{newest} now, not v{read}: read it again and choose that. Nothing was written.");
             }
 
-            used = await WorkflowOperations.UseAsync(config, _loop.Home, Registry, workflow, repository, workspace, kind, cancellationToken).ConfigureAwait(false);
+            if (Flag(request, "plan") || expected is not null)
+            {
+                var planned = await WorkflowOperations.PlanUseAsync(config, _loop.Home, Registry, workflow, repository, workspace, kind, cancellationToken).ConfigureAwait(false);
+                if (Flag(request, "plan")) return PlanAnswer(planned);
+                if (planned.Expected != expected)
+                {
+                    return Refused("moved", "What this choice does has moved since you read its plan: read the plan again and choose then. Nothing was written.");
+                }
+
+                used = planned.Used;
+            }
+            else
+            {
+                used = await WorkflowOperations.UseAsync(config, _loop.Home, Registry, workflow, repository, workspace, kind, cancellationToken).ConfigureAwait(false);
+            }
         }
         catch (ChoiceWords refused)
         {
@@ -439,6 +456,24 @@ public sealed class WorkflowRoutes(DriverContext context)
             Start = await StartAsync(DriverConfig.Load(_loop.ConfigPath), repository, inWorkspace, cancellationToken).ConfigureAwait(false),
         };
     }
+
+    /// <summary>
+    /// A choice read as a plan of one and nothing written (SETUPUX1c): <c>{ done: false, plan: true, refused, message, changed, reach, lowers,
+    /// places, keeps, expected }</c>. A press carrying <c>expected</c> is refused <c>moved</c> where anything the plan says has changed.
+    /// </summary>
+    private static object PlanAnswer(WorkflowUsePlan plan) => new
+    {
+        Done = false,
+        Plan = true,
+        Refused = plan.Used.Refusal is null ? null : plan.Used.Reach.Any(each => each.Cannots.Count > 0) ? "reach" : "refused",
+        Message = plan.Used.Refusal ?? string.Join('\n', plan.Used.Lines),
+        plan.Used.Changed,
+        Reach = ReachRows(plan.Used.Reach),
+        plan.Lowers,
+        Places = plan.Places.Select(each => new { each.Repository, each.Was, each.Now, each.Lowers }).ToArray(),
+        Keeps = plan.Keeps is null ? null : new { plan.Keeps.Said, Kinds = plan.Keeps.Kinds.Select(each => new { Kind = each.Key, Workflow = each.Value }).ToArray() },
+        plan.Expected,
+    };
 
     /// <summary>
     /// The person's declaration of a kind of task for a workspace (AGENTSPLACE1c; <c>daoris-driver workflow kind</c>'s twin): <c>{workspace, kind,
