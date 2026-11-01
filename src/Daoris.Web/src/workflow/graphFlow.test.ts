@@ -4,7 +4,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { layoutFlow, placementFor, slotCrossings } from '../design/flowLayout';
 import i18n from '../locales/i18n';
 import { drawnFromJson, FINISHED, graphFlow, WORKFLOW_TRACK } from './graphFlow';
-import { MERGE_GRAPH, RELEASE_GRAPH } from './graphFixtures';
+import type { ChartNode } from './chart/stepKinds';
+import { MERGE_GRAPH, RELEASE_GRAPH, TWO_OUTCOMES_GRAPH } from './graphFixtures';
 
 // SETUPUX1n (D221; the Setup design's §2.3 and §5 row n): one drawing of a workflow graph for the place, the editor and a run, always
 // top to bottom in sections and never left to right, its endings drawn as they are, its holds in one group, on a 14rem track. The
@@ -119,9 +120,9 @@ describe('the shipped workflows, read from the driver\'s own data', () => {
     const none = release.nodes.filter((node) => node.title === 'No further step');
     expect(none).toHaveLength(1);
     expect(none[0]).toMatchObject({ glyph: 'stepNoFurther', faint: true });
-    expect(release.edges.find((edge) => edge.to === none[0]!.id)).toMatchObject({ from: 'find', style: 'conditional', label: 'none' });
+    expect(release.edges.find((edge) => edge.to === none[0]!.id)).toMatchObject({ from: 'find', style: 'when', port: 'none', label: 'none' });
     // The routed outcome stays an edge to its step.
-    expect(release.edges.find((edge) => edge.from === 'find' && edge.to === 'release')).toMatchObject({ style: 'conditional', label: 'release' });
+    expect(release.edges.find((edge) => edge.from === 'find' && edge.to === 'release')).toMatchObject({ style: 'when', port: 'release', label: 'release' });
     for (const each of SHIPPED.filter((one) => one.id !== 'release')) {
       expect(draw(each.graph).nodes.some((node) => node.title === 'No further step'), each.id).toBe(false);
     }
@@ -236,5 +237,114 @@ describe('a graph drawn through the module', () => {
       : each.id === 'requests' ? { ...each, reached: true, state: { word: 'done', tone: 'done' as const }, settled: true } : each));
     const group = graphFlow(t, { ...graph, nodes: lit }, { label: 'x' }).nodes.find((each) => each.title.startsWith('Daoris makes sure'))!;
     expect(group).toMatchObject({ current: true, reached: true, state: { word: 'waiting', tone: 'open' } });
+  });
+});
+
+// FLOWCHART2a (D223): the components are handed what to draw: each step's variant, a decision's outcomes as ports, each unrouted
+// outcome a ◎, the terminals and the group for what they are, and the data wires apart from the ways on.
+describe('a graph handed to the chart\'s components (FLOWCHART2a)', () => {
+  const stepOf = (flow: ReturnType<typeof draw>, id: string) => (flow.nodes.find((each) => each.id === id) as ChartNode).step!;
+  const kindOf = (each: { graph: Record<string, unknown> }) => new Map((each.graph.nodes as { id: string; kind: string }[]).map((node) => [node.id, node.kind]));
+
+  it('draws every step of every shipped graph with a variant its kind has, none unknown', () => {
+    for (const each of SHIPPED) {
+      const flow = draw(each.graph, { holds: { open: true } });
+      const kinds = kindOf(each);
+      for (const node of flow.nodes) {
+        const step = (node as ChartNode).step;
+        expect(step, `${each.id}: ${node.id}`).toBeDefined();
+        if (step!.terminal) continue;
+        expect(step!.variant, `${each.id}: ${node.id} (${kinds.get(node.id)})`).not.toBe('unknown');
+      }
+    }
+  });
+
+  it('gives the release graph each kind its variant', () => {
+    const flow = draw(shipped('release').graph, { holds: { open: true } });
+    const variants = Object.fromEntries(flow.nodes.map((node) => [node.id, (node as ChartNode).step!.variant]));
+    expect(variants).toMatchObject({
+      work: 'work', requests: 'holds', check: 'check', review: 'you', landing: 'landing', line: 'line',
+      find: 'decision', release: 'plugin', publish: 'plugin',
+    });
+  });
+
+  it('draws each outcome of a decision as a port, in the declared order, and each route from its own', () => {
+    for (const each of SHIPPED) {
+      const flow = draw(each.graph);
+      const outcomes = new Map((each.graph.nodes as { id: string; outcomes?: string[] }[]).map((node) => [node.id, node.outcomes ?? []]));
+      for (const [id, declared] of outcomes) {
+        const drawn = flow.nodes.find((node) => node.id === id);
+        if (!drawn) continue;
+        expect((drawn as ChartNode).step!.ports.map((port) => port.outcome), `${each.id}: ${id}`).toEqual(declared);
+      }
+      for (const edge of flow.edges.filter((one) => one.style === 'when')) {
+        expect(stepOf(flow, edge.from).ports.map((port) => port.outcome), `${each.id}: ${edge.id}`).toContain(edge.port);
+      }
+    }
+    const find = stepOf(draw(shipped('release').graph), 'find');
+    expect(find.ports).toEqual([{ outcome: 'release', routed: true }, { outcome: 'none', routed: false }]);
+  });
+
+  it('ends each unrouted outcome at a ◎ terminal, one for each, and no other node is one', () => {
+    for (const each of SHIPPED) {
+      const flow = draw(each.graph);
+      const unrouted = flow.nodes.flatMap((node) => (node as ChartNode).step!.ports.filter((port) => !port.routed).map((port) => `${node.id}:${port.outcome}`));
+      const ends = flow.nodes.filter((node) => (node as ChartNode).step!.terminal === 'none');
+      expect(ends.map((node) => node.id).sort(), each.id).toEqual(unrouted.map((one) => one.replace(':', ':none:')).sort());
+      for (const end of ends) expect(flow.edges.filter((edge) => edge.to === end.id), end.id).toHaveLength(1);
+    }
+  });
+
+  it('draws the data wires beside the ways on, named by what they carry, and no shipped graph but the release one has any', () => {
+    const release = draw(shipped('release').graph);
+    expect(release.edges.filter((edge) => edge.style === 'data')).toEqual([
+      { id: 'i', from: 'find', to: 'release', style: 'data', says: 'with what it made', label: 'release' },
+      { id: 'k', from: 'release', to: 'publish', style: 'data', says: 'with what it made', label: 'release' },
+    ]);
+    for (const each of SHIPPED.filter((one) => one.id !== 'release')) {
+      expect(draw(each.graph).edges.some((edge) => edge.style === 'data'), each.id).toBe(false);
+    }
+  });
+
+  it('flags Finished and the group for what they are', () => {
+    const flow = draw(shipped('release').graph, { finished: { word: 'done', tone: 'done' } });
+    expect(stepOf(flow, FINISHED)).toMatchObject({ terminal: 'finished' });
+    expect(stepOf(flow, 'holds:requests')).toMatchObject({ variant: 'holds', group: { count: 3, open: false } });
+    expect(stepOf(draw(shipped('release').graph, { holds: { open: true } }), 'requests').group).toMatchObject({ count: 3, open: true });
+  });
+
+  const node = (id: string, kind: string, extra: object = {}) => ({ id, kind, version: 1, reach: 'performed', ...extra });
+
+  it('draws two outcomes that reach one step each from its own port, as two edges', () => {
+    const flow = draw(TWO_OUTCOMES_GRAPH);
+    const edges = flow.edges.filter((edge) => edge.from === 'find');
+    expect(edges.map((edge) => [edge.to, edge.port, edge.style])).toEqual([['record', 'release', 'when'], ['record', 'again', 'when'], [expect.stringContaining('none'), 'none', 'when']]);
+    expect(new Set(edges.map((edge) => edge.id)).size).toBe(3);
+    expect(stepOf(flow, 'find').ports.map((port) => [port.outcome, port.routed])).toEqual([['release', true], ['again', true], ['none', false]]);
+    const layout = layoutFlow({ nodes: flow.nodes.map((each) => ({ id: each.id })), edges: flow.edges, entries: flow.entries });
+    expect(layout.paths.filter((path) => path.from === 'find' && path.to === 'record').map((path) => path.port)).toEqual(['release', 'again']);
+  });
+
+  it('draws an outcome routed back as a routed port with its way, and no ◎', () => {
+    const flow = draw({
+      entries: ['start'], end: 'check',
+      nodes: [node('start', 'claimed'), node('decide', 'p/decide', { outcomes: ['again', 'done'] }), node('check', 'check')],
+      wires: [
+        { id: 'w1', kind: 'after', from: 'start', to: 'decide' },
+        { id: 'w2', kind: 'when', from: 'decide', outcome: 'done', to: 'check' },
+        { id: 'w3', kind: 'back', from: 'decide', on: 'again', to: 'start' },
+      ],
+    });
+    expect(flow.nodes.some((each) => (each as ChartNode).step!.terminal === 'none')).toBe(false);
+    expect(stepOf(flow, 'decide').ports).toEqual([{ outcome: 'again', routed: true }, { outcome: 'done', routed: true }]);
+    expect(flow.edges.find((edge) => edge.id === 'w3')).toMatchObject({ style: 'back', port: 'again' });
+  });
+
+  it('draws a run\'s decision with the outcomes its answer holds and no others', () => {
+    const graph = drawnFromJson(t, i18n, shipped('release').graph);
+    const returned = { ...graph, nodes: graph.nodes.map((each) => (each.id === 'find' ? { id: each.id, kind: each.kind, title: each.title, outcome: 'release' } : each)) };
+    const flow = graphFlow(t, returned, { label: 'x' });
+    expect(stepOf(flow, 'find').ports).toEqual([{ outcome: 'release', routed: true, taken: true }]);
+    expect(flow.nodes.some((each) => (each as ChartNode).step!.terminal === 'none')).toBe(false);
   });
 });
