@@ -271,6 +271,33 @@ public sealed class NodeLifecycleTests
         Assert.Equal(Accept(2).Id, reached.Status.Current?.Id);
     }
 
+    /// <summary>
+    /// DECIDE1a: a decision is reached with one of its declared outcomes, by its authority or on the person's word, and any other node with
+    /// none. The outcome is no part of the binding, so a start's binding carries none.
+    /// </summary>
+    [Fact]
+    public void A_decision_is_reached_with_one_of_its_outcomes_and_any_other_node_with_none()
+    {
+        var node = Declared("acme.deploy/deploy");
+        var decision = node with { Outcomes = ["approved", "changes-asked"] };
+        var reach = new NodeMove(NodeStates.Reached, NodeCause.Authority) { Source = NodeSource.Plugin, Attempt = 1 };
+
+        Assert.Equal(NodeRefusal.NotOutcome, NodeLifecycle.Apply(decision, At(NodeStates.Active), reach with { Acceptance = Accept(1) }).Refused);
+        Assert.Equal(NodeRefusal.NotOutcome, NodeLifecycle.Apply(decision, At(NodeStates.Active), reach with { Acceptance = Accept(1) with { Outcome = "merged" } }).Refused);
+        Assert.Equal(NodeRefusal.NotOutcome, NodeLifecycle.Apply(node, At(NodeStates.Active), reach with { Acceptance = Accept(1) with { Outcome = "approved" } }).Refused);
+        var reached = NodeLifecycle.Apply(decision, At(NodeStates.Active), reach with { Acceptance = Accept(1) with { Outcome = "changes-asked" } });
+        Assert.Equal((NodeStates.Reached, "changes-asked", Bind(1).Id), (reached.Status.State, reached.Status.Current!.Outcome, reached.Status.Current.Id));
+
+        var held = At(NodeStates.Unknown, unreconciled: 1);
+        var word = new NodeMove(NodeStates.Reached, NodeCause.Person) { Source = NodeSource.Person, Attempt = 1 };
+        Assert.Equal(NodeRefusal.NotOutcome, NodeLifecycle.Apply(decision, held, word with { Acceptance = OnWord(1) }).Refused);
+        Assert.Equal(NodeRefusal.NotOutcome, NodeLifecycle.Apply(node, held, word with { Acceptance = OnWord(1) with { Outcome = "approved" } }).Refused);
+        Assert.Equal("approved", NodeLifecycle.Apply(decision, held, word with { Acceptance = OnWord(1) with { Outcome = "approved" } }).Status.Current!.Outcome);
+
+        var started = Moved(decision, At(NodeStates.Ready, attempt: 0, tries: 0), Start(1) with { Binding = Bind(1) with { Outcome = "approved" } });
+        Assert.Null(started.Binding!.Outcome);
+    }
+
     /// <summary>A person rejects only a node whose kind lets a person judge it, a plugin's only where it declares so, and always with words.</summary>
     [Fact]
     public void A_rejection_is_a_persons_with_words_on_a_node_a_person_may_judge()
@@ -740,6 +767,16 @@ public sealed class NodeLifecycleTests
         Assert.NotEqual(Made(), Made() with { Perform = null });
         Assert.NotEqual(Made(), Made() with { Skippable = false });
         Assert.NotEqual(Made(), Made() with { Version = 2 });
+
+        // DECIDE1a: a decision's outcomes, copied when set, in their order.
+        var outcomes = new List<string> { "approved", "changes-asked" };
+        var decision = Made() with { Outcomes = outcomes };
+        outcomes.Add("merged");
+        Assert.Equal(["approved", "changes-asked"], decision.Outcomes);
+        Assert.Equal(decision, Made() with { Outcomes = ["approved", "changes-asked"] });
+        Assert.Equal(decision.GetHashCode(), (Made() with { Outcomes = ["approved", "changes-asked"] }).GetHashCode());
+        Assert.NotEqual(decision, Made());
+        Assert.NotEqual(decision, Made() with { Outcomes = ["changes-asked", "approved"] });
     }
 
     // ---- FABRIC-NODE1c: a second maker's review

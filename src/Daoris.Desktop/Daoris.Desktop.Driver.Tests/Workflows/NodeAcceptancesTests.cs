@@ -204,4 +204,21 @@ public sealed class NodeAcceptancesTests
         var next = NodeAcceptances.Keep(kept.Kept, Result("deploy#r2") with { Attempt = 2 });
         Assert.Equal(((string?)null, 2), (next.Refused, next.Kept.Count));
     }
+
+    /// <summary>
+    /// DECIDE1a: a decision's outcome is outside the binding, as its evidence is, so a start's binding and every id naming it stand whichever
+    /// outcome its reach names; and inside the result, so a second reach of that binding naming another outcome is refused.
+    /// </summary>
+    [Fact]
+    public void An_outcome_is_outside_the_binding_and_inside_the_result()
+    {
+        var binding = new NodeAcceptance("unit-a", "tip-1", "graph-1", "review", 1, 1);
+        var approved = binding with { Outcome = "approved" };
+
+        Assert.Equal(binding.Id, approved.Id);
+        Assert.True(approved.SameResult(binding with { Outcome = "approved" }));
+        Assert.False(approved.SameResult(binding with { Outcome = "changes-asked" }));
+        Assert.False(approved.SameResult(binding));
+        Assert.Equal(NodeRefusal.OtherResult, NodeAcceptances.Keep([approved], binding with { Outcome = "changes-asked" }).Refused);
+    }
 }

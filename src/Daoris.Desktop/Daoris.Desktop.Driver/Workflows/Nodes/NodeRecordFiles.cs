@@ -316,6 +316,8 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
             WritePort(writer, evidence);
         }
 
+        // DECIDE1a: written only where set, so every record of acceptances naming none is written as before.
+        if (acceptance.Outcome is { } outcome) writer.WriteString("outcome", outcome);
         WritePorts(writer, "outputs", acceptance.Outputs);
         writer.WriteEndObject();
     }
@@ -621,6 +623,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
             PrerequisiteReceipts = receipts,
             Evidence = evidence,
             Outputs = outputs,
+            Outcome = Text(element, "outcome"),
         };
     }
 
