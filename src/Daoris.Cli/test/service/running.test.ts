@@ -117,7 +117,8 @@ test('an address is taken only while its process lives, on this machine, answeri
       && silent.why.startsWith(`Daoris is running on ${fx.data} (pid 4242), and nothing answered as its service at http://localhost:5181`),
     JSON.stringify(silent));
     const down = host(() => { throw new TypeError('fetch failed'); });
-    assert.ok('why' in await runningService(fx.data, fx.root, down.get, () => true));
+    // (Asked once, with no wait: the wait for a service that does not answer is SERVICEPROBE1b's, in stall.test.ts.)
+    assert.ok('why' in await runningService(fx.data, fx.root, down.get, () => true, undefined, { total: 0 }));
 
     // Another machine's address is never followed: a terminal's verbs send this machine's paths (D46).
     leave(fx, fx.data, 'https://team.example.com');
