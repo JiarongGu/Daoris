@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
+using Shenora.Core.Ipc;
 
 namespace Daoris.Desktop.Modules.Tests;
 
@@ -249,6 +250,48 @@ public sealed class DriverModuleWorkflowTests : DriverModuleBridge
             hooks = new { command = new[] { "node", "${plugin}/hook.mjs" }, points },
         }));
         PluginState.Enable(Home, id);
+    }
+
+    /// <summary>
+    /// WORKFLOWEDIT1a: the step editor's three reads answer from the home alone, with no service up, and declare no change: the saved
+    /// workflows with the places that choose them and the presets, one version as saved with its line, and the palette with a plugin's step.
+    /// </summary>
+    [Fact]
+    public async Task The_step_editors_reads_answer_from_the_home_and_publish_nothing()
+    {
+        Verification("web-verify");
+        File.WriteAllText(DriverConfigPath, """{ "workflows": { "engine": { "default": "web-verify" } } }""");
+        var folder = DaorisHome.Entry(Home, HomeEntry.Plugins, "acme.deploy");
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName), """
+            { "id": "acme.deploy", "hooks": { "command": ["node", "deploy.mjs"], "points": ["work/perform", "work/reconcile"] },
+              "steps": [ { "id": "deploy", "version": 1, "reach": "performed" } ] }
+            """);
+        PluginState.Enable(Home, "acme.deploy");
+        var module = Module();
+
+        foreach (var route in new[] { "WORKFLOW_LIST", "WORKFLOW_SHOW", "WORKFLOW_PALETTE" })
+        {
+            Assert.Null(DriverModule.Declared(new IpcRequest { Id = "t", Module = DriverModule.Name, Type = route }));
+        }
+
+        var list = await AnswerAsync(module, "WORKFLOW_LIST", new { });
+        var saved = Assert.Single(list.GetProperty("workflows").EnumerateArray());
+        Assert.Equal(("web-verify", 2, 1), (saved.GetProperty("id").GetString(), saved.GetProperty("schema").GetInt32(), saved.GetProperty("versions").GetArrayLength()));
+        var chosen = Assert.Single(saved.GetProperty("chosen").EnumerateArray());
+        Assert.Equal(("repository", "engine", "default"), (chosen.GetProperty("level").GetString(), chosen.GetProperty("name").GetString(), chosen.GetProperty("role").GetString()));
+        var presets = list.GetProperty("presets").EnumerateArray().ToList();
+        Assert.Equal(WorkflowPresets.Table.Count + WorkflowPresets.GraphTable.Count, presets.Count);
+        Assert.All(presets, each => Assert.True(each.GetProperty("preset").GetBoolean()));
+
+        var shown = await AnswerAsync(module, "WORKFLOW_SHOW", new { id = "web-verify" });
+        Assert.Equal((1, true, 2), (shown.GetProperty("version").GetInt32(), shown.GetProperty("newest").GetBoolean(), shown.GetProperty("schema").GetInt32()));
+        Assert.Equal("gates", shown.GetProperty("body").GetProperty("entries")[0].GetString());
+        Assert.Contains("keeps no v9", (await RefusalAsync(module, "WORKFLOW_SHOW", new { id = "web-verify", version = 9 })));
+
+        var palette = await AnswerAsync(module, "WORKFLOW_PALETTE", new { });
+        Assert.Equal(NodeKinds.BuiltIn.Count, palette.GetProperty("kinds").GetArrayLength());
+        Assert.Equal(["acme.deploy/deploy"], palette.GetProperty("plugins")[0].GetProperty("steps").EnumerateArray().Select(each => each.GetProperty("kind").GetString()));
     }
 
     /// <summary>The module over a loop come up on a stand-in service holding the registry below, <c>engine</c>'s checkout at <paramref name="root"/> where named.</summary>
