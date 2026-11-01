@@ -282,6 +282,22 @@ describe('a door into a repository\'s Setup tab or Workflow tab, once the Setup 
     }
   });
 
+  // FLOWCHART2g: a conversation's draft card opens the place's Workflow with its editor on the draft the conversation was told.
+  it("opens the place's Workflow with the editor asked on a draft, for a repository and for a workspace, lit only", () => {
+    const edit = { draft: 'g1-0123456789abcdef', workflow: 'release', name: 'Release for engine', base: 2 };
+    const repository = doorOpening({ view: 'projects', item: 'engine', tab: 'workflow', placeEdit: edit });
+    expect(placeOpening(repository, true, where)).toEqual({
+      view: 'agents', agentsMode: 'setup', place: 'repo:studio/engine', placeAt: { section: 'workflow', edit },
+    });
+    const workspace = doorOpening({ view: 'projects', item: workspaceItem('studio'), workspaceTab: 'workflow', placeEdit: edit });
+    expect(placeOpening(workspace, true, where)).toEqual({
+      view: 'agents', agentsMode: 'setup', place: 'workspace:studio', placeAt: { section: 'workflow', edit },
+    });
+    // Dark, the legacy Workflow tab opens and nothing asks its editor.
+    expect(placeOpening(repository, false, where)).toEqual(repository);
+    expect(placeOpening(workspace, false, where)).toEqual(workspace);
+  });
+
   it("leaves a door naming the workspace's Setup tab and no section where it is, until the tab goes", () => {
     const tab = opening('projects', workspaceItem('studio'), { workspaceTab: 'setup' });
     expect(placeOpening(tab, true, where)).toEqual(tab);

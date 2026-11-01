@@ -178,8 +178,14 @@ export function headOf(
   return { pill, facts: [...(lands ? [lands] : []), ...(row.driven && row.trees ? [t('agents.setup.page.trees')] : [])] };
 }
 
-/** Where a door leaves the person: a section of a place, and a row of it. */
-export type PlaceAt = { section?: PlaceSection; row?: string | null; back?: PlaceBack | null };
+/** Where a door leaves the person: a section of a place, and a row of it; and the editor of its Workflow asked on a draft (FLOWCHART2g). */
+export type PlaceAt = { section?: PlaceSection; row?: string | null; back?: PlaceBack | null; edit?: PlaceEdit };
+
+/**
+ * The editor of a place's Workflow asked on a draft (FLOWCHART2g): the fingerprint of the draft a conversation was told, which the card
+ * of its proposal is against, with the saved workflow and version it came from where it came from one.
+ */
+export type PlaceEdit = { draft: string | null; workflow?: string; name?: string; base?: number };
 
 /** The page a door came from, to return to: its place and section, or the place's *Set up…* (SETUPUX1j), which keeps its draft. */
 export type PlaceBack = { place: string; name: string; section: PlaceSection | null; setUp?: boolean };
@@ -206,6 +212,9 @@ export type PlaceShell = {
   /** The row a door asked for at the place, until it is brought into view. */
   rowOf: (place: string) => string | null;
   rowBrought: (place: string) => void;
+  /** The draft a door asked the place's Workflow editor to open on, until the editor has opened (FLOWCHART2g). */
+  editOf: (place: string) => PlaceEdit | null;
+  editOpened: (place: string) => void;
   /** A door to a place: its section opens, its row is asked for, and the way back is kept once. */
   arrive: (place: string, at: PlaceAt) => void;
   /** The way back, where the chosen place was reached from another. */
@@ -220,6 +229,7 @@ export function usePlaceShell(): PlaceShell {
   const [folds, setFolds] = useState<Record<string, Folds>>({});
   const [views, setViews] = useState<Record<string, PlaceView>>({});
   const [rows, setRows] = useState<Record<string, string>>({});
+  const [edits, setEdits] = useState<Record<string, PlaceEdit>>({});
   const [back, setBack] = useState<{ place: string; back: PlaceBack } | null>(null);
   const [focusAsked, setFocusAsked] = useState(0);
 
@@ -238,14 +248,18 @@ export function usePlaceShell(): PlaceShell {
     if (at.section) setFolds((was) => ({ ...was, [place]: { ...was[place], [at.section!]: true } }));
     const row = at.row;
     if (row) setRows((was) => ({ ...was, [place]: row }));
+    const edit = at.edit;
+    if (edit) setEdits((was) => ({ ...was, [place]: edit }));
     setBack(at.back ? { place, back: at.back } : null);
   }, []);
+  const editOf = useCallback((place: string) => edits[place] ?? null, [edits]);
+  const editOpened = useCallback((place: string) => setEdits(({ [place]: _opened, ...rest }) => rest), []);
   const backTo = useCallback((place: string) => (back?.place === place ? back.back : null), [back]);
   const clearBack = useCallback(() => setBack(null), []);
   const askFocus = useCallback(() => setFocusAsked((was) => was + 1), []);
 
   return useMemo(
-    () => ({ isOpen, setOpen, viewOf, choose, rowOf, rowBrought, arrive, backTo, clearBack, focusAsked, askFocus }),
-    [isOpen, setOpen, viewOf, choose, rowOf, rowBrought, arrive, backTo, clearBack, focusAsked, askFocus],
+    () => ({ isOpen, setOpen, viewOf, choose, rowOf, rowBrought, editOf, editOpened, arrive, backTo, clearBack, focusAsked, askFocus }),
+    [isOpen, setOpen, viewOf, choose, rowOf, rowBrought, editOf, editOpened, arrive, backTo, clearBack, focusAsked, askFocus],
   );
 }

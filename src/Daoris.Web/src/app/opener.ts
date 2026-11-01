@@ -1,7 +1,7 @@
 import type { AgentPart } from '../agents/agents';
 import { type AgentsMode, MACHINE, repositoryId, type RoleSection, workspaceId } from '../agents/modes';
 import type { PlaceAsk } from '../agents/setup/placePlan';
-import type { PlaceAt, PlaceSection } from '../agents/setup/placeShell';
+import type { PlaceAt, PlaceEdit, PlaceSection } from '../agents/setup/placeShell';
 import type { PlanDoor } from '../person/Confirmations';
 import type { View } from '../menus/commands';
 import type { StarterDoor } from '../help/starters';
@@ -66,6 +66,8 @@ export type OpenPart = {
   /** The section of a place's page a door into the repository opens, and its row (SETUPUX1h): lit, `placeOpening` carries them to the page. */
   placeSection?: PlaceSection;
   placeRow?: string;
+  /** A place's Workflow with its editor opened on a draft (FLOWCHART2g): a conversation's draft card's door. */
+  placeEdit?: PlaceEdit;
 };
 
 /** What opening a view does, as a value. */
@@ -190,6 +192,8 @@ export function opening(view: View, item?: string | null, part: OpenPart = {}, h
   if (view === 'sessions' && part.compose) plan.compose = part.compose;
   if (view === 'projects' && part.setUp) plan.setUp = part.setUp;
   if (view === 'projects' && part.placeSection) plan.placeAt = { section: part.placeSection, ...(part.placeRow ? { row: part.placeRow } : {}) };
+  // The place's Workflow with its editor asked on a draft: the section opens, and the page opens the editor once it has the draft's graph.
+  if (view === 'projects' && part.placeEdit) plan.placeAt = { section: 'workflow', edit: part.placeEdit };
   return plan;
 }
 
@@ -228,6 +232,10 @@ export function placeOpening(plan: Opening, lit: boolean, workspaceOfRepository:
     // SETUPUX1h: a door names the page's section and row; the Workflow tab's names Workflow.
     const at: PlaceAt | undefined = plan.placeAt ?? (plan.tab === 'workflow' ? { section: 'workflow' } : undefined);
     return { view: 'agents', agentsMode: 'setup', place: repositoryId(workspaceOfRepository(named.repository), named.repository), ...(at ? { placeAt: at } : {}) };
+  }
+  // FLOWCHART2g: a conversation's draft card opens the workspace's Workflow with its editor asked on the draft.
+  if (plan.workspaceTab === 'workflow' && plan.placeAt?.edit && 'workspace' in named) {
+    return { view: 'agents', agentsMode: 'setup', place: workspaceId(named.workspace), placeAt: plan.placeAt };
   }
   if (plan.workspaceTab === 'setup' && plan.workspaceSection && 'workspace' in named) {
     // SETUPUX1v: each section of a workspace's Setup tab has its home. The remote stays Repositories', as a row of its Details.

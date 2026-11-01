@@ -22817,6 +22817,11 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 > **SETUPUX1t — staffing a step** (web; row t of the set-up design, as amended by D223). A step's *Taken by* offers the roles that take its work and cover this place, each named with its place, and *Give this place its own…* opens the one RoleEditor, saves the role through `SET_ROLE` and returns to the intact draft; the role then drawn as the step's who; a refused role save keeps both forms. Proof: add a role, return, choose it, save and use; a refused save keeps both forms; stories at 80, 39 and 25rem, en and zh, both themes, keyboard.
 
 **Outcome** 2026-11-02: `StepRole.tsx` is the step's *Taken by* over `RolesCard`'s editor; `useWorkflowEditor` hands the editor the role catalogue, orders, agents and presses (`staffing`) read only while it shows. Detail: D221's SETUPUX1t note; `WorkflowEditor.staffing.test.tsx`, `WorkflowEditor.staffing.stories.tsx`.
+## FLOWCHART2g — asking from a place and a conversation (2026-11-02, D223)
+
+> **FLOWCHART2g — asking from a place and a conversation** (web; row g of the flowchart design). The place's Workflow has *Ask Daoris* opening *Edit steps…* on the chart's graph with the conversation told; a conversation's draft card's *Open in the editor* opens the editor with the proposal shown, not only the place's Workflow. Proof: opener tests; stories at 80, 39 and 25rem, en and zh, both themes, keyboard. The driver half (a go that names the place, a `HelpCoverageTests` row) was not taken: the page names the place from the card.
+
+**Outcome** 2026-11-02: `PlaceWorkflowView` offers *Ask Daoris* and opens its editor once on an asked draft (`opens`); `draftDoor`, `placeEdit` and `PlaceAt.edit` carry a draft card's Apply through the opener and the place shell to it. Detail: D223's FLOWCHART2g note; `PlaceWorkflowView.test.tsx`, `opener.test.ts`, `places.test.ts`, `placeShell.test.ts`, `AskDaoris.test.tsx`.
 
 ## COWORKVIEW1b-ii — the quests a part asked, and what asked it (2026-11-02, D173)
 

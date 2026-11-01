@@ -27,7 +27,7 @@ import { MachineNotes } from './setup/MachineNotes';
 import { PlaceRoles } from './setup/PlaceRoles';
 import type { PlaceDriving } from './setup/PlacePage';
 import { doorOf, draftOfAsk, type PlaceAsk, type SetUpDoor, type SetUpPage, type SetUpPlace, useSetUpPage } from './setup/placePlan';
-import { type PlaceAt, type PlaceSection, type PlaceView, usePlaceShell } from './setup/placeShell';
+import { type PlaceAt, type PlaceEdit, type PlaceSection, type PlaceView, usePlaceShell } from './setup/placeShell';
 import { findPlace, placeAsk, rowOfFound, SetupList, SetupMain, setUpPlaceOf, sourceDoor, useSetupPlaces } from './setup/SetupPlaces';
 import { RoleSectionList } from './roles/RoleSections';
 import { type RoleOpeners, RolesMode, useRolesPage } from './roles/RolesView';
@@ -73,7 +73,7 @@ export function useAgentsMode(lists: ListPanes) {
   const [arrival, setArrival] = useState<{ place: string; at: PlaceAt } | null>(null);
   const onPlaceAt = useCallback((next: string, at: PlaceAt) => {
     choose('roles', next);
-    setArrival(at.section || at.row || at.back ? { place: next, at } : null);
+    setArrival(at.section || at.row || at.back || at.edit ? { place: next, at } : null);
   }, [choose]);
   const onArrived = useCallback(() => setArrival(null), []);
   return { mode, onMode, section, onSection, place, onPlace, onPlaceAt, arrival, onArrived, seeded, onSeed, onSeeded };
@@ -88,6 +88,9 @@ export type PlaceHold = {
   row: PlaceRow;
   /** The row a door asked for here, until it is brought into view. */
   asked?: string | null;
+  /** The draft a door asked the Workflow's editor to open on (FLOWCHART2g), and the word that it has. */
+  edit?: PlaceEdit | null;
+  onEdited?: () => void;
   view: PlaceView;
   onView: (choice: Partial<PlaceView>) => void;
   onOpenSection: (section: PlaceSection) => void;
@@ -242,6 +245,8 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
         kind: placed.kind === 'workspace' ? 'workspace' : 'repository',
         row,
         asked: shell.rowOf(modes.place),
+        edit: shell.editOf(modes.place),
+        onEdited: () => shell.editOpened(modes.place!),
         view: shell.viewOf(modes.place),
         onView: (choice) => shell.choose(modes.place!, choice),
         onOpenSection: (section) => shell.setOpen(modes.place!, section, true),

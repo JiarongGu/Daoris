@@ -12,7 +12,11 @@ import { LIST, PALETTE } from '../edit/editFixtures';
 import {
   cellOf, EFFECTIVE_CURRENT, EFFECTIVE_DOCS, EFFECTIVE_LANDED_NONE, EFFECTIVE_LANDED_VERIFIES, EFFECTIVE_RELEASE, EFFECTIVE_UNREAD,
 } from './effectiveFixtures';
-import { openDraftNow } from '../../help/openDraft';
+import { registerAskFill } from '../../help/askFill';
+import { noteTold, openDraftNow } from '../../help/openDraft';
+import { MERGE_GRAPH } from '../graphFixtures';
+import { RELEASE_PROPOSAL } from '../edit/proposalFixtures';
+import { fingerprintOf } from '../draftFingerprint';
 import { FULL, GATES_CHANGED, INTEGRATION_CHANGED, NO_VERIFICATION, START, WORKSPACE } from '../fixtures';
 import { type LandingHand, PlaceWorkflowView, type PlaceWorkflowProps } from './PlaceWorkflowView';
 
@@ -446,5 +450,72 @@ describe('the answer on its way', () => {
     draw();
     expect(screen.getByRole('list', { name: '工作在这里如何分流' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '检查项' })).toBeInTheDocument();
+  });
+});
+
+// FLOWCHART2g (D223 §4.4): asking from a place, and from a conversation's draft card.
+describe('Ask Daoris from a place and from a conversation', () => {
+  const fingerprint = () => fingerprintOf(MERGE_GRAPH);
+
+  it("is offered only where the window has Ask Daoris: it opens Edit steps… on the chart's graph and puts the words in Ask Daoris's box", async () => {
+    const onOpen = vi.fn();
+    draw({ editor: editor(onOpen), current: withRoute(EFFECTIVE_RELEASE, SAVED_DEFAULT) });
+    expect(screen.queryByRole('button', { name: 'Ask Daoris' })).toBeNull();
+
+    const fill = vi.fn();
+    let release = () => {};
+    act(() => { release = registerAskFill(fill); });
+    await userEvent.click(await screen.findByRole('button', { name: 'Ask Daoris' }));
+
+    expect(onOpen).toHaveBeenLastCalledWith(true);
+    const steps = await screen.findByRole('list', { name: 'How the steps go on' });
+    expect(within(steps).getByRole('listitem', { name: 'find by local-release' })).toBeInTheDocument();
+    // The editor registers its draft, which the conversation is told with the person's next words (FLOWCHART2d).
+    expect(openDraftNow()).toMatchObject({ place: 'engine', workflow: 'release', base: 2 });
+    expect(fill).toHaveBeenCalledTimes(1);
+    expect(fill.mock.calls[0]![0]).toContain('engine');
+    act(() => release());
+  });
+
+  it('is not offered for landed work, which Change… and Edit steps… are not either', () => {
+    const release = registerAskFill(vi.fn());
+    draw({ editor: editor(), current: withRoute(EFFECTIVE_LANDED_VERIFIES), first: { route: 'landed' } });
+    expect(screen.queryByRole('button', { name: 'Ask Daoris' })).toBeNull();
+    release();
+  });
+
+  it("opens the editor on the draft a conversation was told, once, for the card's Open in the editor, with the proposal shown", async () => {
+    noteTold('s1', { place: 'engine', graph: MERGE_GRAPH, fingerprint: fingerprint() });
+    const onOpened = vi.fn();
+    const proposal = { ...RELEASE_PROPOSAL, why: 'A release after the line.', problems: 0, maker: { agent: 'Claude Code', models: ['claude-opus-5-5'] } };
+    draw({
+      editor: { ...editor(), proposal }, current: withRoute(EFFECTIVE_RELEASE, SAVED_DEFAULT), onOpened,
+      opens: { draft: fingerprint(), workflow: 'release', name: 'Release for engine', base: 2 },
+    });
+
+    // The draft told, not the chart's graph, so the proposal's changes can be taken; the proposal stands above it.
+    expect(await screen.findByText('Ask Daoris proposes a change')).toBeInTheDocument();
+    expect(openDraftNow()!.graph.nodes).toHaveLength(MERGE_GRAPH.nodes.length);
+    expect(openDraftNow()).toMatchObject({ workflow: 'release', base: 2 });
+    expect(onOpened).toHaveBeenCalledTimes(1);
+  });
+
+  it("falls back to the chart's graph when the draft told is no longer held", async () => {
+    const onOpened = vi.fn();
+    draw({
+      editor: editor(), current: withRoute(EFFECTIVE_RELEASE, SAVED_DEFAULT), onOpened,
+      opens: { draft: 'g1-0000000000000000', workflow: 'release', name: 'Release for engine', base: 2 },
+    });
+    const steps = await screen.findByRole('list', { name: 'How the steps go on' });
+    expect(within(steps).getByRole('listitem', { name: 'find by local-release' })).toBeInTheDocument();
+    expect(onOpened).toHaveBeenCalledTimes(1);
+  });
+
+  it('says it in Chinese', async () => {
+    await act(async () => { await i18n.changeLanguage('zh'); });
+    const release = registerAskFill(vi.fn());
+    draw({ editor: editor(), current: withRoute(EFFECTIVE_RELEASE, SAVED_DEFAULT) });
+    expect(await screen.findByRole('button', { name: '问道衍' })).toBeInTheDocument();
+    release();
   });
 });
