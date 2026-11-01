@@ -191,6 +191,8 @@
   "person.route.PLUGIN_ADD": "add a plugin from a folder",
   "person.route.PLUGIN_INSTALL": "install a plugin",
   "person.route.PLUGIN_NEW": "make a new plugin's folder",
+  "person.route.PLUGIN_TOOLS": "check the tools a plugin needs",
+  "person.route.PLUGIN_TOOL_FIX": "set up or sign in to a tool a plugin needs",
   "person.route.PLUGIN_TRY": "try a plugin",
   "person.route.PLUGIN_UPDATE": "update a plugin",
   "person.route.TOOLS_DELETE": "delete a version of a tool",

@@ -39,6 +39,41 @@ export type StepShown = {
 /** What a plugin's steps create (FABRIC-UNIT1e, §D3): its schema, and its role, `temporary` or `result`. */
 export type ResourceShown = { schema: string; role: string };
 
+/**
+ * One readiness check of a tool a plugin declares (ADOSIGNIN1), as the driver's `PLUGINS` answers it and as `PLUGIN_TOOLS` and
+ * `PLUGIN_TOOL_FIX` read it again. `ready` and `sentence` are absent until the person has pressed *Check*.
+ */
+export type ToolCheckShown = {
+  says: string;
+  /** The command the check's press runs, as the manifest wrote it. */
+  fix?: string | null;
+  /** The press reads *Sign in*, not *Set up*. */
+  signIn: boolean;
+  /** The fix names a command of the plugin's own tools, so it may be pressed. */
+  press: boolean;
+  /** Why it may not be pressed, in the driver's own sentence. */
+  refusal?: string | null;
+  ready?: boolean | null;
+  sentence?: string | null;
+};
+
+/** A tool a plugin declares, as the manifest says it; `found` and what follows it are absent until it is checked. */
+export type ToolShown = {
+  id: string;
+  name: string;
+  for?: string | null;
+  /** The range as written, like `>=2.60`. */
+  versions?: string | null;
+  /** The plugin's own words for getting the tool on this platform. */
+  install?: string | null;
+  problem?: string | null;
+  found?: boolean | null;
+  ok?: boolean | null;
+  version?: string | null;
+  sentence?: string | null;
+  checks: ToolCheckShown[];
+};
+
 // The Plugins view's list and page as values (PLUGUI1b, D119 §3.1): a plugin's state, its group, and what the list's
 // chosen item names. Pure, so every machine a person could have is an argument, and the list, the strip and the page
 // read one answer.
@@ -121,6 +156,8 @@ export type PluginShown = {
   /** The steps it declares and what they create (FABRIC-UNIT1e); an older shell sends none. */
   steps?: StepShown[];
   resources?: ResourceShown[];
+  /** The tools it declares as its manifest says them (ADOSIGNIN1); nothing is found by reading. An older shell sends none. */
+  tools?: ToolShown[];
 };
 
 /** One of Daoris's own plugins the install carries (D103), with what its manifest declares and its README needs. */

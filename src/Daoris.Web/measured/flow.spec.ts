@@ -209,6 +209,35 @@ for (const [story, placed] of Object.entries(EDITOR)) {
   });
 }
 
+/**
+ * Ask Daoris's proposal on the editor's chart (FLOWCHART2f; D223 §4.3): whether each story draws the union of the draft and the proposal
+ * or the rail, at 80, 39 and 25rem in both languages and themes. Where it draws, no edge runs through a box, no label or ＋ lies over one,
+ * and each way the proposal marks wears its word in a chip; at the rail, the marks are the words of each way's cause.
+ */
+const PROPOSAL: Record<string, 'drawn' | 'rail'> = {
+  'proposal/Proposal': 'drawn', 'proposal/ProposalHalf': 'drawn', 'proposal/ProposalNarrow': 'rail',
+  'proposal/ProposalChinese': 'drawn', 'proposal/ProposalChineseHalf': 'drawn', 'proposal/ProposalChineseNarrow': 'rail',
+  'proposal/ProposalDark': 'drawn', 'proposal/ProposalDarkHalf': 'drawn', 'proposal/ProposalChineseDarkNarrow': 'rail',
+  // The stale draft's line stands apart from the landing, so its union is wider: drawn at 80rem, the rail where the theme's frame or 39rem
+  // leaves less room.
+  'proposal/Stale': 'drawn', 'proposal/StaleHalf': 'rail', 'proposal/StaleChineseNarrow': 'rail', 'proposal/StaleDark': 'rail',
+  'proposal/Removes': 'drawn', 'proposal/RemovesHalf': 'drawn', 'proposal/RemovesChineseDark': 'drawn',
+};
+
+for (const [story, placed] of Object.entries(PROPOSAL)) {
+  test(`${story}: ${placed === 'drawn' ? "the union drawn, each marked way's chip shown, nothing over a box" : 'the rail'} (FLOWCHART2f)`, async ({ page }) => {
+    await open(page, story);
+    const [flow, ...more] = await page.evaluate(measureFlows);
+    expect(more, 'one chart').toEqual([]);
+    expect(flow!.placement === 'rail' ? 'rail' : 'drawn', story).toBe(placed);
+    if (placed === 'rail') return;
+    expect(flow!.collisions, story).toEqual([]);
+    expect(flow!.overlaps, story).toEqual([]);
+    expect(flow!.insertOverlaps, story).toEqual([]);
+    expect(await page.locator('[data-flow-change]').count(), `${story}: the marked ways' chips`).toBeGreaterThan(0);
+  });
+}
+
 test('a data wire drawn on selection moves no node, and is drawn for each wire the selected step is an end of (FLOWCHART2a)', async ({ page }) => {
   const read = async (story: string) => {
     await open(page, story);

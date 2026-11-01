@@ -48,6 +48,20 @@ public sealed class DriverModule : ModuleBase
         init => _context.SetupWorlds = value;
     }
 
+    /// <summary>A plugin's tools found and checked (ADOSIGNIN1): null is the real one; a test names a stand-in that starts no process.</summary>
+    public Func<string, IReadOnlyList<PluginTool>, CancellationToken, Task<IReadOnlyList<PluginToolFound>>>? ToolChecks
+    {
+        get => _context.ToolChecks;
+        init => _context.ToolChecks = value;
+    }
+
+    /// <summary>A plugin tool's fix run in the person's console (ADOSIGNIN1): null is the real one; a test names a stand-in that opens none.</summary>
+    public Func<string, IReadOnlyList<PluginTool>, string, int, CancellationToken, Task<ToolSetUp>>? ToolSetUps
+    {
+        get => _context.ToolSetUps;
+        init => _context.ToolSetUps = value;
+    }
+
     /// <summary>
     /// What This Daoris's read is handed, changed (WIRING1b): null is the window's own; a test names the account's and the
     /// machine's variables and sizes of its own. Held by the context, which the system domain reads at each request.

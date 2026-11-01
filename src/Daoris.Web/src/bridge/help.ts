@@ -1,7 +1,11 @@
-import { type InfiniteData, type QueryClient, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { type InfiniteData, type QueryClient, useInfiniteQuery, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
-import { keys } from '../data/queries';
+import { useSyncExternalStore } from 'react';
+import { byTool, type ToolDoor } from '../agents/tools';
+import type { Session } from '../data/api';
+import { keys, useHelpSessions } from '../data/queries';
 import { type HelpListing, joinPages, listingPage, sameWorkspace } from '../help/history';
+import { onTold, toldGraph, toldSessions } from '../help/openDraft';
 import type { HelpProposal } from '../help/ProposalCard';
 import type { HelpPlace } from '../help/places';
 import type { HelpPublishedEntry } from '../help/published';
@@ -10,6 +14,7 @@ import { syncLookBound } from './repositories/lines';
 import { logEvent } from './log';
 import { usePollUnlessTold } from './state/published';
 import { askHeld } from './state/held';
+import { useHarnesses } from './agents/agents';
 
 // Ask Daoris (MOD3): its conversation, the one readied ahead, and what it proposes (D89).
 
@@ -105,17 +110,65 @@ export const useHelpProposals = (session: string | null, live: boolean) => {
   const { isAvailable } = useShenora();
   const every = usePollUnlessTold(4000);
   const client = useQueryClient();
-  const queryKey = [...HELP_PROPOSALS, session];
   return useQuery({
-    queryKey,
-    // Told by event (NOBLOCK1): the shell answers what it holds, and its judgement of each proposal comes as `ANSWERED`.
-    queryFn: () => askHeld('HELP_PROPOSALS', client, queryKey, { session: session! }, (answer) => {
-      const proposals = (answer as { proposals?: unknown } | null)?.proposals;
-      return Array.isArray(proposals) ? proposals as HelpProposal[] : [];
-    }),
+    queryKey: [...HELP_PROPOSALS, session],
+    queryFn: () => readProposals(client, session!),
     enabled: isAvailable && session !== null,
     refetchInterval: live ? every : false,
   });
+};
+
+/** One conversation's proposals. Told by event (NOBLOCK1): the shell answers what it holds, and its judgement of each comes as `ANSWERED`. */
+const readProposals = (client: QueryClient, session: string) =>
+  askHeld('HELP_PROPOSALS', client, [...HELP_PROPOSALS, session], { session }, (answer) => {
+    const proposals = (answer as { proposals?: unknown } | null)?.proposals;
+    return Array.isArray(proposals) ? proposals as HelpProposal[] : [];
+  });
+
+/** A proposal against a draft, as the editor reads it (FLOWCHART2f): the card, its conversation, the draft it was told and who made it. */
+export type DraftCard = {
+  proposal: HelpProposal;
+  session: string;
+  /** The graph the conversation was told under the card's fingerprint; null where this window keeps none. */
+  base: Record<string, unknown> | null;
+  maker: { agent: string; models: string[] } | null;
+};
+
+/** Who made a proposal: the conversation's agent as a person calls it, its product else its tool's else its id, and the models it reported. */
+export function makerOf(session: Pick<Session, 'adapter' | 'ran'> | undefined, doors: readonly ToolDoor[]): DraftCard['maker'] {
+  if (!session) return null;
+  const found = byTool(doors).flatMap((tool) => tool.doors.map((door) => ({ tool, door }))).find((each) => each.door.harness === session.adapter);
+  return { agent: found?.door.product || found?.tool.product || session.adapter, models: [...(session.ran?.models ?? [])] };
+}
+
+/**
+ * Ask Daoris's proposals against a draft of `place` (FLOWCHART2f; D223 §4): each conversation of this window that was told a draft asked
+ * for its proposals, under the key Ask Daoris's own list reads, and the `draft` door's cards kept, the newest last, each with the graph it
+ * was told and the agent and models of its conversation. Asked only while `enabled`, the editor showing.
+ */
+export const useDraftProposals = (place: string, enabled: boolean): DraftCard[] => {
+  const { isAvailable } = useShenora();
+  const every = usePollUnlessTold(4000);
+  const client = useQueryClient();
+  const sessions = useSyncExternalStore(onTold, toldSessions);
+  const lists = useQueries({
+    queries: sessions.map((session) => ({
+      queryKey: [...HELP_PROPOSALS, session],
+      queryFn: () => readProposals(client, session),
+      enabled: isAvailable && enabled,
+      refetchInterval: enabled ? every : false as const,
+    })),
+  });
+  const found = sessions.flatMap((session, at) => (lists[at]?.data ?? [])
+    .filter((proposal) => proposal.kind === 'workflow' && proposal.workflow?.draft && proposal.workflow.scope === place)
+    .map((proposal) => ({ proposal, session })));
+  const roster = useHarnesses();
+  const records = useHelpSessions(false, enabled && found.length > 0);
+  const doors = Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [];
+  return found.map(({ proposal, session }) => ({
+    proposal, session, base: toldGraph(proposal.workflow!.draft!),
+    maker: makerOf((records.data ?? []).find((record) => record.id === session), doors),
+  }));
 };
 
 /**
@@ -343,9 +396,12 @@ export const useHelpStartFrom = () =>
 export const useSettleHelp = () => {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (settle: { id: string; apply: boolean }) =>
+    // A draft card's Apply from its editor names each change taken into the draft and each left (FLOWCHART2e, 2f): that settles it.
+    mutationFn: (settle: { id: string; apply: boolean; taken?: readonly string[]; left?: readonly string[] }) =>
       call<HelpSettled>(settle.apply ? 'HELP_APPLY' : 'HELP_DISMISS',
-        settle.apply ? { id: settle.id, revision: shownRevision(client, settle.id) } : { id: settle.id },
+        settle.apply
+          ? { id: settle.id, revision: shownRevision(client, settle.id), ...(settle.taken ? { taken: settle.taken, left: settle.left ?? [] } : {}) }
+          : { id: settle.id },
         settle.apply ? { timeoutMs: settleBound(client, settle.id) } : undefined),
     // An Apply the page stopped waiting for may still be at work on the host: it is said, never pressed again.
     retry: false,

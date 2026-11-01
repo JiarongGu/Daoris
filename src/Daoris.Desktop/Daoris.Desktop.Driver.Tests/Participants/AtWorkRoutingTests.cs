@@ -6,7 +6,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// COWORKVIEW1b-i's composition (the design §R11.2 points 1 and 3): each part's wait as the strip places it, how it joined, where it
 /// runs, and the ended parts that wait on nothing folded past the newest three, all from the groups rows, the quests and the records.
 /// </summary>
-public sealed partial class AtWorkTests
+public sealed class AtWorkRoutingTests
 {
     private static AtWorkEntryPart Part(string session, string shown, string began = "opened", string? quest = null, string? after = null) =>
         new(session, quest, shown, began) { After = after };
@@ -16,7 +16,7 @@ public sealed partial class AtWorkTests
     private static AtWorkAnswer Routed(
         string session, IReadOnlyList<AtWorkEntryPart> parts, IReadOnlyList<AtWorkRecord> records, IReadOnlyList<AtWorkQuest>? quests = null,
         IReadOnlyDictionary<string, AtWorkRow>? rows = null, SliceHealth? health = null) =>
-        Answered(RoutedHeld(session, parts, records, quests, rows, health));
+        AtWorkTests.Answered(RoutedHeld(session, parts, records, quests, rows, health));
 
     private static AtWorkHeld RoutedHeld(
         string session, IReadOnlyList<AtWorkEntryPart> parts, IReadOnlyList<AtWorkRecord> records, IReadOnlyList<AtWorkQuest>? quests = null,
@@ -25,10 +25,10 @@ public sealed partial class AtWorkTests
         quests ??= [];
         var routing = new AtWorkRouting(
             parts, id => rows?.GetValueOrDefault(id), id => quests.FirstOrDefault(quest => quest.Id == id),
-            id => quests.Count(quest => quest.PublishedBy == id), health ?? Judged);
+            id => quests.Count(quest => quest.PublishedBy == id), health ?? AtWorkTests.Judged);
         return AtWork.Compose(
             session, parts.Select(part => part.Session).ToList(), id => records.FirstOrDefault(record => record.Id == id), _ => LineageReading.None,
-            Judged, Judged, routing);
+            AtWorkTests.Judged, AtWorkTests.Judged, routing);
     }
 
     private static AtWorkPart PartOf(AtWorkAnswer answer, string key) => answer.Parts.Single(part => part.Key == key);
@@ -223,7 +223,7 @@ public sealed partial class AtWorkTests
         var records = ids.Select(id => new AtWorkRecord(id, "completed")).ToList();
 
         var few = Routed("p1", parts.Take(4).ToList(), records.Take(4).ToList());
-        var unrouted = Answered(Compose("p1", ids, records, _ => LineageReading.None));
+        var unrouted = AtWorkTests.Answered(AtWorkTests.Compose("p1", ids, records, _ => LineageReading.None));
 
         Assert.Equal((4, null), (few.Parts.Count, few.Earlier));
         Assert.Equal((6, null), (unrouted.Parts.Count, unrouted.Earlier));
