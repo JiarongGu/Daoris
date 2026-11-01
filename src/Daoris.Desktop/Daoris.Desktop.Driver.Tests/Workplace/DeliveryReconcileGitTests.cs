@@ -127,26 +127,68 @@ public sealed class DeliveryReconcileGitTests : IDisposable
         Assert.Equal(DeliverySettlements.Delivered, Store("run-b").Delivery(later.Key)?.Settled);
     }
 
-    /// <summary>A merge stopped after the promotion moved its line, before its outcome: the restart reads the line holding it, records it and delivers it, merged once.</summary>
-    [Fact]
-    public async Task A_merge_stopped_after_its_line_moved_is_reached_by_the_restart_and_merged_once()
+    /// <summary>
+    /// A merge stopped at each git boundary, then a restart: cut while prepared, nothing was pressed, the preparation is withdrawn and the
+    /// merge goes on; cut after the promotion moved its line, or after its record, the line read holding the commit settles it delivered. Merged once.
+    /// </summary>
+    [Theory]
+    [InlineData(DeliveryPhases.Prepared)]
+    [InlineData(DeliveryPhases.RefWritten)]
+    [InlineData(DeliveryPhases.Recorded)]
+    public async Task A_merge_stopped_at_each_git_boundary_is_merged_once_after_a_restart(string cut)
     {
         var (root, trees, tree, tip) = await TreeAsync();
         var (store, claim) = Start(tip, DeliveryMethods.Merge);
-        await Assert.ThrowsAsync<Crash>(() =>
-            trees.LandAsync(tree.Path, Subject, inUse: NoneRunning, delivery: Stopping(store, claim, DeliveryPhases.RefWritten), beside: NoSessions));
+        await Assert.ThrowsAsync<Crash>(() => trees.LandAsync(tree.Path, Subject, inUse: NoneRunning, delivery: Stopping(store, claim, cut), beside: NoSessions));
 
         var reconciled = Assert.Single(await Reconciler("run-b", root, DeadAre("run-a")).StartAsync(CancellationToken.None));
 
-        Assert.Equal(DeliveryStandings.Delivered, reconciled.Standing);
+        if (cut == DeliveryPhases.Prepared)
+        {
+            Assert.Equal((DeliveryStandings.GoesOn, DeliveryPhases.Prepared), (reconciled.Standing, reconciled.Next));
+            Assert.Equal(1, (await GitFixture.RunAsync(root, "merge-base", "--is-ancestor", tip, "refs/heads/main")).ExitCode);
+            var landed = await new SessionTrees(_home).LandAsync(tree.Path, Subject, inUse: NoneRunning,
+                delivery: new TreeDelivery(Store("run-b"), reconciled.Claim!), beside: NoSessions);
+            Assert.True(landed.Landed, landed.Message);
+        }
+        else
+        {
+            Assert.Equal(DeliveryStandings.Delivered, reconciled.Standing);
+        }
+
         Assert.Equal(0, (await GitFixture.RunAsync(root, "merge-base", "--is-ancestor", tip, "refs/heads/main")).ExitCode);
         Assert.Equal("1", (await GitFixture.GitAsync(root, "rev-list", "--merges", "--count", "main")).Trim());
         Assert.Empty(await BranchesAsync(root));
         var phases = Store("run-b").Phases(claim.Key);
-        Assert.Equal([DeliveryPhases.Prepared, DeliveryPhases.RefWritten, DeliveryPhases.Recorded], phases.Select(each => each.Phase));
-        Assert.All(phases, each => Assert.Equal(DeliveryOutcomes.Done, each.Outcome));
-        Assert.Equal(await RevAsync(root, "refs/heads/main"), phases[1].Evidence);
+        Assert.Equal([DeliveryPhases.Prepared, DeliveryPhases.RefWritten, DeliveryPhases.Recorded], phases.TakeLast(3).Select(each => each.Phase));
+        Assert.All(phases.TakeLast(3), each => Assert.Equal(DeliveryOutcomes.Done, each.Outcome));
+        Assert.Single(phases, each => each.Phase == DeliveryPhases.RefWritten);
+        Assert.Equal(await RevAsync(root, "refs/heads/main"), phases[^2].Evidence);
         Assert.Equal(DeliverySettlements.Delivered, Store("run-b").Delivery(claim.Key)?.Settled);
+    }
+
+    /// <summary>Two restarts at once over one stopped delivery: one takes it up and settles it, the other holds it, and each phase is written once.</summary>
+    [Fact]
+    public async Task Two_restarts_at_once_settle_a_stopped_delivery_once()
+    {
+        var (root, trees, tree, tip) = await TreeAsync();
+        var (store, claim) = Start(tip, DeliveryMethods.Branch);
+        await Assert.ThrowsAsync<Crash>(() => trees.LandAsync(tree.Path, Subject, inUse: NoneRunning, delivery: Stopping(store, claim, DeliveryPhases.Recorded)));
+        var dead = DeadAre("run-a");
+
+        var both = await Task.WhenAll(
+            Task.Run(() => Reconciler("run-b", root, dead).StartAsync(CancellationToken.None)),
+            Task.Run(() => Reconciler("run-c", root, dead).StartAsync(CancellationToken.None)));
+
+        var answers = both.SelectMany(each => each).ToList();
+        Assert.Single(answers, each => each.Standing == DeliveryStandings.Delivered);
+        Assert.All(answers.Where(each => each.Standing != DeliveryStandings.Delivered),
+            each => Assert.Contains(each.Standing, new[] { DeliveryStandings.Held, DeliveryStandings.Settled }));
+        var phases = Store("run-b").Phases(claim.Key);
+        Assert.Equal(3, phases.Count);
+        Assert.All(phases, each => Assert.Equal(DeliveryOutcomes.Done, each.Outcome));
+        Assert.Equal(DeliverySettlements.Delivered, Store("run-b").Delivery(claim.Key)?.Settled);
+        Assert.Equal([Named], await BranchesAsync(root));
     }
 
     /// <summary>
