@@ -1,4 +1,4 @@
-import type { AtWorkA, AtWorkChild, AtWorkHeld, AtWorkSubagents } from './types';
+import type { AtWorkA, AtWorkChild, AtWorkHeld, AtWorkPart, AtWorkSubagents } from './types';
 
 // Who is at work (COWORKVIEW1a): the answers the view's stories and tests draw, each a state the cowork view design §5.3 names.
 
@@ -83,7 +83,66 @@ export const PARTS = answerOf(subagents([child('a1', 'working')]), {
   moreParts: { completed: 2 },
 });
 
-export const EMPTY = answerOf({ read: 'none', working: 0, children: [] });
+const quiet: AtWorkSubagents = { read: 'none', working: 0, children: [] };
+
+/** A part of the routing half's entries: numbered, its children counted. */
+export const routedPart = (key: string, number: number, extra: Partial<AtWorkPart> = {}): AtWorkPart => ({
+  key, number, agent: 'claude-code', state: 'working', children: { count: 0, working: 0 }, ...extra,
+});
+
+const routed = (parts: AtWorkPart[], extra: Partial<AtWorkA> = {}, attended = parts[0]!.key): AtWorkHeld =>
+  answerOf(quiet, { attended, parts, ...extra });
+
+/** A lead waiting on its own lane part, drawn as the lead and never folded; the lane part alongside, in a tree of its own. */
+export const LEAD_WAITING_ON_LANE = routed([
+  routedPart('s1', 1, { state: 'completed', waits: { quest: 'q7', of: 'driver', lanes: ['core'] } }),
+  routedPart('s2', 2, {
+    joined: { began: 'opened', quest: 'q7', lanes: ['core'], byPart: 1, of: 'driver' }, alongside: true,
+  }),
+]);
+
+/** A lead waiting on its helper, which the strip words *awaiting helper*. */
+export const LEAD_WAITING_ON_HELPER = routed([
+  routedPart('s1', 1, { state: 'completed', waits: { helper: true } }),
+  routedPart('s2', 2, { state: 'completed', joined: { began: 'retried', after: 1 } }),
+]);
+
+/** A chat that took a quest and waits on the question the quest asked. */
+export const CHAT_TOOK_A_QUEST = routed([
+  routedPart('c1', 1, { state: 'completed', joined: { began: 'opened', quest: 'q1', took: true, of: 'driver' }, waits: { quest: 'q9', of: 'docs' } }),
+]);
+
+/** A session that published three quests and waits on none: two lane parts alongside it. */
+export const PUBLISHED_AND_WAITS_ON_NONE = routed([
+  routedPart('s1', 1, { state: 'completed' }),
+  routedPart('s2', 2, { joined: { began: 'opened', quest: 'q2', lanes: ['core'], byPart: 1, of: 'driver' }, alongside: true }),
+  routedPart('s3', 3, { joined: { began: 'opened', quest: 'q3', lanes: ['docs'], byPart: 1, of: 'driver' }, alongside: true }),
+], { published: 3 });
+
+/** The resumed record first, the record that waited among the earlier parts, and four earlier parts folded. */
+export const RESUMED_AND_EARLIER = routed([
+  routedPart('s5', 5, { joined: { began: 'resumed', after: 4, quest: 'q1', of: 'driver' } }),
+  routedPart('s2', 2, { state: 'failed', joined: { began: 'retried', after: 1 } }),
+  routedPart('s3', 3, { state: 'completed', joined: { began: 'carried-on', after: 2 } }),
+  routedPart('s4', 4, { state: 'completed', joined: { began: 'handed-over', after: 3 } }),
+], { earlier: 4 });
+
+/** Parts that joined by each of §3.4's other doors. */
+export const JOINED_EACH_WAY = routed([
+  routedPart('s1', 1, { joined: { began: 'asked', quest: 'q4', ask: 'a7' } }),
+  routedPart('s2', 2, { joined: { began: 'opened', quest: 'q5', ask: 'a7' } }),
+  routedPart('s3', 3, { joined: { began: 'carried-on', quest: 'q6', parent: 'q5', after: 2 } }),
+  routedPart('s4', 4, { joined: { began: 'opened', quest: 'q8', byPart: 1, of: 'driver' } }),
+  routedPart('s5', 5, { joined: { began: 'asked', askedBy: 'core' } }),
+]);
+
+/** More parts than the limit holds: overflow counted apart from the three-ended-parts fold. */
+export const OVERFLOW_AND_EARLIER = routed(
+  [routedPart('s1', 1), routedPart('s2', 2, { waits: { helper: true }, state: 'completed' })],
+  { earlier: 2, moreParts: { working: 10 } },
+);
+
+export const EMPTY =answerOf({ read: 'none', working: 0, children: [] });
 
 export const ELSEWHERE = answerOf({ read: 'elsewhere', working: 0, children: [] });
 

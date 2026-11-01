@@ -46,12 +46,39 @@ export type AtWorkSubagents = {
   more?: Record<string, number>;
 };
 
+/** What a part waits on as the strip places it (COWORKVIEW1b-i): a quest, with the repository it was asked of and its lanes, or its helper. */
+export type AtWorkWait = { quest?: string; of?: string; lanes?: string[]; helper?: true };
+
+/** How a part joined the entry (the design §3.4): the strip's word for its start and what its record and quest say of the routing. */
+export type AtWorkJoined = {
+  began: string;
+  /** The strip's number of the part it follows. */
+  after?: number;
+  quest?: string;
+  lanes?: string[];
+  /** The strip's number of the part that published its quest. */
+  byPart?: number;
+  askedBy?: string;
+  ask?: string;
+  /** The quest whose close published its quest: it is that chain's next step. */
+  parent?: string;
+  took?: true;
+  /** The repository it ran in. */
+  of?: string;
+};
+
 export type AtWorkPart = {
   key: string;
   agent?: string;
   /** The record's own state, never the strip's shown word. */
   state?: string;
   children: { count?: number; working?: number; observed?: number; unplaced?: number; unreadable?: boolean; elsewhere?: boolean };
+  /** Its place in the strip, from one. Absent from a host before the routing half. */
+  number?: number;
+  waits?: AtWorkWait;
+  joined?: AtWorkJoined;
+  /** It runs in a tree no earlier part of the entry worked in. */
+  alongside?: true;
 };
 
 export type AtWorkA = {
@@ -59,6 +86,10 @@ export type AtWorkA = {
   attended: string;
   parts: AtWorkPart[];
   moreParts?: Record<string, number>;
+  /** Ended parts that wait on nothing, past the newest three, which the list leaves out. */
+  earlier?: number;
+  /** How many quests the entry's parts published. */
+  published?: number;
   subagents: AtWorkSubagents;
   /** When the shell's process began; absent from an older host. */
   windowOpened?: string;
