@@ -22602,3 +22602,9 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 ## WORKFLOWEDIT1d — the palette and the draft carry outputsOn, the press census lists workflow changes, and Ask Daoris proposes default-all (2026-11-01, FABRIC2)
 
 **Outcome** 2026-11-01: `PaletteStep.OutputsOn` and the draft's `StepChoice.outputsOn` copy a plugin step's `outputsOn` into the node `addStep` writes, so a release workflow composed in the window keeps `release` on `release` only; `PersonPresses.Presses` lists `workflow changes` over `WORKFLOW_NODE`; the `role` kind has a `default-all` door (id `*`, no revision) in the driver's judge, the service's writer and `role_propose`, with the room's text and goldens. Tests `WorkflowPaletteTests`, `graphDraft.test.ts`, `WorkflowNodeThroughInstanceTests`, `HelpRoleProposalsTests`, `HelpRoleProposalTests`.
+
+## AGENTSPLACE1j — *Set up…* (2026-11-01, D191)
+
+> **AGENTSPLACE1j** (web; row 14 of AGENTSPLACE1). *Set up…* in the head of a repository's and a workspace's place page: delivery, adoption with *What it builds*, general driving, the plan, the acceptances and Apply; one plan over several repositories; refusals in place.
+
+**Outcome** 2026-11-01: lit by `daoris.agents.setup`, *Set up…* opens in the place's main area (`PlaceSetUp`, `PlaceSetUpPanel`, its draft held by `useSetUpPage`): the suggested delivery preselected from `PLACE_PLAN`, every refusal said in place, the acceptances unchosen until ticked, and `PLACE_APPLY` pressed with the plan's digest (a `moved` refusal said and the plan read again); a workspace ticks its repositories into one plan. Tests `PlaceSetUp.test.tsx`, `PlaceSetUpPanel.test.tsx`, `setup.test.tsx`; stories `PlaceSetUp`.
