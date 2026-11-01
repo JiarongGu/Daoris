@@ -2212,7 +2212,13 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
                 Text(repo, "root"),
                 // The machine's own wiring (D48 §2). An older host that does not answer it leaves the
                 // default, which is what an unwired machine has always meant.
-                RemoteTarget.Workspace(Text(repo, "workspace"))));
+                RemoteTarget.Workspace(Text(repo, "workspace")))
+            {
+                // The lanes it declares, by id (D115 §2.2), from the answer DeclarationsAsync reads their words from; absent is none.
+                Lanes = repo.TryGetProperty("lanes", out var lanes) && lanes.ValueKind == JsonValueKind.Array
+                    ? [.. lanes.EnumerateArray().Where(lane => lane.ValueKind == JsonValueKind.Object).Select(lane => Text(lane, "id")).OfType<string>().Where(id => id.Length > 0)]
+                    : [],
+            });
         }
 
         return repositories;
