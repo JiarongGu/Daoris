@@ -426,9 +426,10 @@ public sealed partial class HelpCoverageTests
     /// </summary>
     private static readonly Exempt WorkflowNodeDoor = new(
         "passing a step of a run over, with your words, or stopping it is your word on that work, standing in for a go-ahead or a step's "
-        + "proof nobody gave (D190 point 6), a judgement Ask Daoris cannot have made, as the word on a held attempt is; it can name "
-        + "`daoris-driver workflow skip` and `stop`, and the run's Workflow view; the row for a run held at a request the receiver declined "
-        + "(\"What needs you\") presses the same word, so it is the person's too.");
+        + "proof nobody gave (D190 point 6), a judgement Ask Daoris cannot have made, as the word on a held attempt is, and so is asking for "
+        + "changes on its review in place of your Accept (DECIDE1c); it can name `daoris-driver workflow skip`, `stop` and `changes`, and the "
+        + "run's Workflow view; the row for a run held at a request the receiver declined (\"What needs you\") presses the same word, so it is "
+        + "the person's too.");
 
     /// <summary>
     /// EVID1b's <c>daoris-driver quest check</c> (D144 §5), a verb of the headless host: a door Ask Daoris owes, until EVID1c
@@ -1813,6 +1814,32 @@ public sealed partial class HelpCoverageTests
         Assert.DoesNotContain("skip", HelpProposalKinds.Find("workflow")?.Doors ?? []);
         Assert.Contains("your word", WorkflowNodeDoor.Reason);
         Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver workflow skip <run> <node> \"…\"`", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// DECIDE1d: DECIDE1c's <c>workflow changes</c> is exempt from Ask Daoris as <c>skip</c> and <c>stop</c> are (D190 point 6, D110) while the host's
+    /// usage spells it and the room names it with the run view's <i>Ask for changes…</i>: the person's word on the work, never a card's.
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_workflow_changes_is_exempt_since_it_is_the_persons_word()
+    {
+        Assert.Contains("workflow changes <run> <node> \"…\"", DriverCommand.Usage);
+        Assert.DoesNotContain("changes", HelpProposalKinds.Find("workflow")?.Doors ?? []);
+        Assert.Contains("asking for changes", WorkflowNodeDoor.Reason);
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver workflow changes <run> <node> \"…\"`", StringComparison.Ordinal)
+            && door.Screen.Contains("*Ask for changes…*", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// DECIDE1d: DEFAULTCONFIG1b's <c>driver role default --all</c>, a form of the <c>role</c> verb (the <c>role</c> kind's door, <see cref="Verbs"/>),
+    /// is named by the room beside the verb's others, with Working roles' <i>Restore all role defaults</i>.
+    /// </summary>
+    [Fact]
+    public void The_role_verbs_restore_of_every_default_is_named_by_the_room()
+    {
+        Assert.Contains(Verbs, row => row.Verb == "role" && row.Answer is Door { Kind: "role" });
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris driver role default --all`", StringComparison.Ordinal)
+            && door.Screen.Contains("*Restore all role defaults*", StringComparison.Ordinal));
     }
 
     /// <summary>
