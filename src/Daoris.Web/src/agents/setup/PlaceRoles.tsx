@@ -5,12 +5,12 @@ import { useRoleStructureChain } from '../../bridge/driver';
 import type { RoleStructure, StructurePlaceAsk, StructureWork } from '../../data/wiring';
 import { Button, Icon, type Notify, SettingList, SettingRow } from '../../design/ui';
 import type { Authored } from '../../locales/authored';
-import { WorkspaceSupervisor } from '../../projects/workspace/WorkspaceView';
 import { InlineConfirm } from '../../work/InlineConfirm';
 import { AppointedRoles } from '../roles/AppointedRoles';
 import { type Editing, editingOfLine, entryText, type Line, mayEditLine, nameFields, newRoleEditing, placeText, roleName, RolesCard } from '../roles/Roles';
 import { useRoleEditing } from '../roles/RolesView';
 import { stateText } from '../roles/StructureSections';
+import { PlaceSupervisor } from './PlaceSupervisor';
 
 type Kind = 'machine' | 'workspace' | 'repository';
 
@@ -59,7 +59,7 @@ export function PlaceRoles({ place, notify, onSource }: { place: StructurePlaceA
   const read = chain.data ? 'ok' : chain.isError ? (refusedNoRoute(chain.error) ? 'notOffered' : 'failed') : 'loading';
   // A workspace's supervisor is a line among its roles (SETUPUX1v, moved from the Setup tab): its door is the Appointed row beneath it.
   const supervisor = kindOf(place) === 'workspace'
-    ? <WorkspaceSupervisor workspace={place.workspace!} onOpenAppointed={bringAppointed} />
+    ? <PlaceSupervisor workspace={place.workspace!} onOpenAppointed={bringAppointed} />
     : undefined;
   return (
     <PlaceRolesView

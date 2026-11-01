@@ -1117,6 +1117,7 @@ public sealed partial class HelpCoverageTests
             "retiring takes a repository off this machine's registry and its entries out of the index, a removal, which stays "
             + "the person's own press (D89), as a plugin's removal does; registering it again is the person's Add repository, "
             + "which Ask Daoris's go opens with the workspace filled.")),
+        // SETUPUX1v: with the Setup mode lit, *Wire* and *Unwire* are the Remote row of a workspace's Details, the same presses as its tab's.
         ("projects", "useWireRemote", null, new Exempt("wiring a workspace to a remote takes that remote's key; " + Key)),
         ("projects", "useUnwireRemote", null, new Exempt(
             "unwiring drops the remote's key from this machine, which only the person can give back (D89).")),
@@ -1124,7 +1125,7 @@ public sealed partial class HelpCoverageTests
         ("projects", "useRetireMachine", null, new Exempt(
             "retiring a machine at a workspace's remote is the person's word that it left the workspace or lost its store, which "
             + "lets binds through the remote that it held off; only they know it, so it is a person-only door pressed under the "
-            + "workspace's remote, and nothing is proposed.")),
+            + "workspace's remote, or with the Setup mode lit in its place's Sessions beside its rules (SETUPUX1v), and nothing is proposed.")),
         // The status bar's *Sync now* is answered here too: a domain's control answers the same act on every page (FABRIC-CLOSE1i2).
         ("projects", "useSyncNow", null, new Exempt(
             "it runs now the pass with the workspace's remote that the loop's next tick runs anyway (SYNC6b), and changes nothing "

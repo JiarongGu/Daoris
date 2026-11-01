@@ -18,12 +18,13 @@ import {
   stoppedWaiting, useAccounts, useAcross, useDriver, useHarnesses, useHistoryPlan, usePlugins, useRemotes, useRuleAction, useRules,
   useDiscardSessionBranch, useDropRecoveries, useSetAccess, useSetCommits, useSetHandOver, useSetHelpers, useSetLanding, useSetLanguage, useSetLine, useSetOpinion,
   useSetReadAcross,
-  useSetReview, useStarts, useSyncNow, standingOf,
+  useSetReview, useStarts, useSyncNow,
   useSweep, useSweepLook, useSweepPlan, useTreesSync, useTreesSyncPlan, useTreesSyncScope, useUnwireRemote, useWireRemote, useWorkflowCurrent,
   useWithdrawLandingBranch, useWorkState, useWorkflowEditor,
 } from '../../bridge/shell';
+import { supervisorOf } from '../../agents/setup/PlaceSupervisor';
 import { byTool } from '../../agents/tools';
-import { failure, type Notify, SettingList, useErrorNotify } from '../../design/ui';
+import { failure, type Notify, useErrorNotify } from '../../design/ui';
 import type { KeptDoors } from '../../work/history/ClearAsk';
 import { useHistoryActs } from '../../work/history/historyActs';
 import { WorkflowTab } from '../../workflow/WorkflowTab';
@@ -35,7 +36,6 @@ import { WorkspaceTidied } from './WorkspaceTidied';
 import type { WorkspaceSection, WorkspaceTab } from '../tabs';
 import { accountsHere, hostOf } from './workspace';
 import { WorkspaceDetails, WorkspacePage } from './WorkspacePage';
-import { SupervisorDoor } from '../setup/SupervisorDoor';
 import { WorkspaceSetup, type WorkspaceSetupProps } from '../setup/WorkspaceSetup';
 import { setupLit } from '../../agents/modes';
 
@@ -409,32 +409,6 @@ function WorkflowPart({ workspace, onSetup, onOpenRepository }: {
       doors={{ setup: onSetup, repository: onOpenRepository }}
       editor={editor}
     />
-  );
-}
-
-/** The supervisor's appointment for the workspace (SUPERVISOR1e, D208 §5), which a line says; it is appointed among the appointed roles. */
-function supervisorOf(confirmation: unknown, workspace: string): WorkspaceSetupProps['supervisor'] {
-  const standingNow = standingOf(confirmation);
-  return standingNow && {
-    offered: standingNow.supervisorOffered,
-    appointment: standingNow.appointments.find((each) => each.role === 'supervisor' && same(each.workspace, workspace)) ?? null,
-  };
-}
-
-/**
- * **The workspace's supervisor, for the place's Roles** (SETUPUX1v, moved from the Setup tab's Supervisor section): where its appointment
- * stands in one sentence and a door to where it is appointed, which on the place's page is its own *Appointed* row. It appoints nothing.
- */
-export function WorkspaceSupervisor({ workspace, onOpenAppointed }: { workspace: string; onOpenAppointed?: () => void }) {
-  const driver = useDriver();
-  const supervisor = supervisorOf(driver.data?.standingConfirmation, workspace);
-  if (!supervisor) return null;
-  return (
-    <div data-place-row="supervisor" tabIndex={-1} className="outline-none focus-visible:outline-2 focus-visible:outline-accent">
-      <SettingList>
-        <SupervisorDoor workspace={workspace} supervisor={supervisor} onOpen={onOpenAppointed} />
-      </SettingList>
-    </div>
   );
 }
 

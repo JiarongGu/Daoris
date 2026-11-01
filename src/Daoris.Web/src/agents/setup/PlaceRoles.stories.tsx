@@ -2,7 +2,10 @@ import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { chinese } from '../../design/storyLanguage';
 import { storyWidths } from '../../design/storyWidths';
 import type { RoleCatalogue, RoleStructure } from '../../data/wiring';
+import { SettingList } from '../../design/ui';
+import type { AppointmentNow } from '../../person/standing';
 import { InTheme } from '../../plugins/storyIcons';
+import { SupervisorDoor } from '../../projects/setup/SupervisorDoor';
 import type { Answered } from '../../work/InlineConfirm';
 import { PlaceRolesView } from './PlaceRoles';
 import { AGENTS, CATALOGUE, CHAIN } from './setupFixtures';
@@ -36,10 +39,34 @@ const OWN: RoleCatalogue = {
   ...CATALOGUE, roles: CATALOGUE.roles.map((each) => (each.id === 'engine-build' ? { ...each, choices: [{ agent: 'claude-code', model: 'sonnet', effort: 'high' }] } : each)),
 };
 
-type Args = { shared?: boolean; refuse?: string };
+type Args = { shared?: boolean; refuse?: string; supervisor?: 'off' | 'appointed' };
 
-function Roles({ shared = false, refuse }: Args) {
+const AURORA = { workspace: 'aurora' };
+const APPOINTMENT: AppointmentNow = {
+  role: 'supervisor', repository: '', holder: 'terminal', since: new Date(Date.now() - 7_200_000).toISOString(), dormant: false, answers: 3,
+  scope: 'workspace:aurora', holderId: 'h1', acts: [], setup: false, workspace: 'aurora', window: 15,
+};
+
+function Roles({ shared = false, refuse, supervisor }: Args) {
   const catalogue = shared ? SHARED : OWN;
+  if (supervisor) {
+    // A workspace's Roles hold its supervisor's line between the works and the appointed roles (SETUPUX1v).
+    const editor = { agents: AGENTS, offers: {}, staffing: [], catalogue, read: 'ok' as const, busy: false, onSet: nothing, onSetActor: nothing };
+    return (
+      <PlaceRolesView
+        place={AURORA} read="ok" answer={CHAIN(AURORA)} editor={editor} onSource={nothing}
+        supervisor={(
+          <SettingList>
+            <SupervisorDoor
+              workspace="aurora" onOpen={nothing}
+              supervisor={{ offered: true, appointment: supervisor === 'appointed' ? APPOINTMENT : null }}
+            />
+          </SettingList>
+        )}
+        appointed={null}
+      />
+    );
+  }
   const editor = {
     agents: AGENTS, offers: { 'claude-code': { models: ['opus', 'sonnet', 'haiku'], efforts: ['low', 'medium', 'high'] } }, staffing: [], catalogue, read: 'ok' as const, busy: false,
     onSet: refuse ? (_press: unknown, answered: Answered) => answered.refused(refuse) : nothing,
@@ -132,3 +159,19 @@ const REFUSAL = '`engine-review` already takes `review` in that scope: at most o
 /** The driver's two-roles-one-work refusal, said under the editor, which stays open. */
 export const TwoRolesOneWork: Story = { args: { refuse: REFUSAL }, play: refused };
 export const TwoRolesOneWorkNarrowDark: Story = { args: { refuse: REFUSAL }, play: refused, decorators: [storyWidths.narrow, dark] };
+
+/** A workspace's Roles hold its supervisor's line (SETUPUX1v): not appointed, with the door to the Appointed row beneath it. */
+export const WorkspaceSupervisor: Story = { args: { supervisor: 'off' } };
+export const WorkspaceSupervisorHalf: Story = { args: { supervisor: 'off' }, decorators: [storyWidths.half] };
+export const WorkspaceSupervisorNarrow: Story = { args: { supervisor: 'off' }, decorators: [storyWidths.narrow] };
+export const WorkspaceSupervisorChinese: Story = { args: { supervisor: 'appointed' }, decorators: [chinese] };
+export const WorkspaceSupervisorChineseNarrow: Story = { args: { supervisor: 'off' }, decorators: [storyWidths.narrow, chinese] };
+export const WorkspaceSupervisorAppointedDark: Story = { args: { supervisor: 'appointed' }, decorators: [dark] };
+
+/** Keyboard: the focus rests on the door to Appointed roles, whose ring shows. */
+export const WorkspaceSupervisorFocused: Story = {
+  args: { supervisor: 'off' },
+  play: async ({ canvasElement }) => {
+    [...canvasElement.querySelectorAll<HTMLButtonElement>('button')].find((each) => /Appointed roles|任命的角色/.test(each.textContent ?? ''))?.focus();
+  },
+};
