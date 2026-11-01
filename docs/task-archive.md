@@ -22653,3 +22653,14 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 > **SETUPUX1g — the glossary rows** (web, glossary). §2.5's new and amended rows, before any visible row's words. Proof: `names:check --strict` knows each row, and fails on a name containing another kind's.
 
 **Outcome** 2026-11-02: `glossary.json` holds the twenty new terms and the twelve amended ones; its `distinct` lists carry the workflow, delivery and step names, and `names-check.mjs` gains the `distinct` rule (strict) and the `reword` rule (reported: a term's `avoid.later` words existing strings still say, for row w). Detail: D221's note; `names.test.ts`.
+
+## SETUPUX1b — the effective graph (2026-11-02, D221)
+
+> **SETUPUX1b — the effective graph** (modules, driver; SETUPUX1's row b, the setup design §5). `WORKFLOW_CURRENT` takes an optional `route` (`default`, `kind:‹name›`, `landed`) and answers `effective`: the workflow, its source, version or digest, and graph, with each node's cell as `WORKFLOW_RUN` answers steps, and the limits in the driver's words. Current's graph is the one `workflow new --from current:‹repository›` writes, from one handler; a workspace's comes from the same handler over its own rules. Proof: the read writes nothing; its identity equals `WorkflowSelection.Resolve`'s for a saved default, an inherited kind, explicit Current and a cleared choice; a workspace's Current graph; old callers unchanged.
+
+**Outcome** 2026-11-02: `WorkflowEffectives.Read` (driver) resolves the route by `Resolve` or `ResolveLanded` and draws Current through `WorkflowOperations.CurrentSource`, the handler `SourceAsync` now calls too, or a saved workflow's newest version that reads (a steps version as the graph it decodes to); each node's cell is Current's own step where it draws one, else `WorkflowGraphRuns.Cell`, and landed `current` draws no graph. `WORKFLOW_CURRENT` adds `effective` only for a caller that sent `route`; the web's `current.ts` types it. Tests `WorkflowEffectiveTests`, `DriverModuleWorkflowTests`; the line is D221's note.
+## SETUPUX1e — keep how it lands (2026-11-02, D221)
+
+> **SETUPUX1e — keep how it lands** (driver, modules; row e of the set-up design). `PLACE_PLAN`'s keep ask writes no landing and no workflow choice, and allows driving, the ticks and adoption; `PLACE_APPLY` applies a subset of what it writes today and stays the person's alone. Proof: no `SET_LANDING` or `WORKFLOW_USE` in a keep plan; a saved workflow survives; Apply stays the person's (the bridge-press census); a restart settles as today (the receipt's postconditions).
+
+**Outcome** 2026-11-02: the preset `keep` (`SetupPresets.Keep`, the terminal's `--preset keep`) plans a place's tree, driving, ticks and adoption and nothing of its landing or workflow, so the apply and the receipt's settling needed no change, and the routes none. Detail: D221's SETUPUX1e note; `PlacePlanTests`, `PlaceApplyTests`.
