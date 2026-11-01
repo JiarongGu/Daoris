@@ -5,6 +5,11 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## LANDNODE1b2 — the git adapter (2026-11-01)
+
+> **1b2, the git adapter** (driver; `docs/2026-11-01-land-node-design.md` §3 and §8 row 4): `TreeLands` from the explicit intent; `RefTransaction` under GITLOCK and LANDRACE1. Proof: moved tips, collisions, squash, containment, and a ref written before its record across a crash. After b.
+
+**Outcome** 2026-11-01: `TreeLands.LandAsync` lands a `TreeDelivery` by its intent's method, branch, line and pinned tip, each effect written ahead and read back after (`Workplace/TreeDeliveries.cs`). A refusal withdraws the preparation; merge, branch and integrate settle delivered; push and pull request stop at the record. Only `LandDeliveryGitTests` calls it. Detail: D204's note of this date.
 ## BRAINSTORMSTART1 — a brainstorm's pass starts where the machine's sessions do, and says why where it cannot (2026-11-01)
 
 > **BRAINSTORMSTART1** (driver; BRAINSTORM1c, D176). The install's brainstorm `1f2a4e0e` (`--agents claude,codex`) ended `no-agent`: both passes `unavailable`, code `not-started`, `account: null`, while the same agents' sessions ran on that machine that hour. `TurnAsync` turned a `DriverException` from the adapter's resolve or the voice's walk into `not-started` and kept its sentence only in the turn's words. Contract: the pass records the walk's code and sentence; find and fix why the walk found no account.

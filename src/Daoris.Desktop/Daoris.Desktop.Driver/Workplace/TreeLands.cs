@@ -193,9 +193,13 @@ internal sealed class TreeLands(
     /// The ledger's sessions and their trees (GITLOCK2, <see cref="BranchTidying.HoldersAsync"/>), which the promotion reads inside the
     /// checkout's hold, so the merge waits for a session working in that checkout. Null asks nothing and merges as before.
     /// </param>
+    /// <param name="delivering">
+    /// The delivery this merge performs (LANDNODE1b2): the line's entry written ahead of the press, which the promotion's effect makes under the
+    /// checkout's lock, and its outcome read from the line after. Null merges as before.
+    /// </param>
     internal async Task<TreeMerge> MergeAsync(
         string path, CancellationToken ct = default, LandReplay? replay = null, int? uncommitted = null, CommonDirAndBranch? here = null,
-        string? pinned = null, Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null)
+        string? pinned = null, Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null, TreeDelivering? delivering = null)
     {
         var full = Path.GetFullPath(path);
         if (!context.Holds(full))
@@ -302,8 +306,10 @@ internal sealed class TreeLands(
         if (frozen is null) return new(false, $"git could not read where `{branch}` stands, so nothing was merged.");
         // GITLOCK1: no hold here. The checkout's checks above are this press's early words; the promotion's effect holds the checkout alone
         // and reads them again before it moves it, and a hold taken here would refuse that one in this very process.
+        if (delivering?.BeginMerge(canonical, frozen) is { } unbegun) return new(false, $"Nothing was merged: {unbegun}.");
         var (carried, refused) = await IntegrationPresses.MergeAsync(
-            context.Home, context.Config(), root, repository, workspace, canonical, branch, frozen, ct, beside).ConfigureAwait(false);
+            context.Home, context.Config(), root, repository, workspace, canonical, branch, frozen, ct, beside, delivered: delivering is not null).ConfigureAwait(false);
+        if (delivering is not null) await delivering.MergedAsync(root, canonical, frozen, carried ? null : refused, ct).ConfigureAwait(false);
         if (!carried) return new(false, refused!);
 
         var landed = ahead.Trim().Split('\n').Length;
@@ -398,13 +404,27 @@ internal sealed class TreeLands(
     /// </param>
     /// <param name="together">The operation bringing sessions together whose combined Accept this is: the one door a tree it binds lands by.</param>
     /// <param name="beside">The ledger's sessions and their trees (GITLOCK2), read inside the checkout's hold by a merge rule's move; see <see cref="MergeAsync"/>.</param>
+    /// <param name="delivery">
+    /// The delivery this landing performs (LANDNODE1b2; the land node design §3 step 4), its intent read from its store: the method, the branch,
+    /// the line and the pinned tip are its, never the live rule's, and each git effect is written ahead in its phases and its outcome after
+    /// (<see cref="TreeDelivering"/>). Who accepted it is its authorization's. Null lands by the rule, as before.
+    /// </param>
     internal async Task<TreeLanding> LandAsync(
         string path, LandingSubject subject, CancellationToken ct = default, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null,
         string acceptedBy = AcceptedBy.Person, IWorkplaceGate? gate = null, bool joins = false, bool fetched = false,
         Func<bool, CancellationToken, Task<TreeLanding?>>? judged = null, Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null,
-        int? uncommitted = null, string? together = null, Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null)
+        int? uncommitted = null, string? together = null, Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null,
+        TreeDelivery? delivery = null)
     {
         var repository = context.OwnerOf(Path.GetFullPath(path)).Repository;
+        TreeDelivering? delivering = null;
+        if (delivery is not null)
+        {
+            var (read, unread) = TreeDelivering.Read(delivery, context.Home, repository);
+            if (read is null) return new(false, $"Nothing was landed: {unread}.") { Refusal = AutoLandingCode.Refused };
+            (delivering, acceptedBy) = (read, read.Accepted);
+        }
+
         // LANDRACE1 (D145 point 2, D173's FABRIC-END7 note and its review): one landing of one session's tree at a time, whichever door
         // lands it. The second to come waits for the first, and where the first landed the very commit this one would land, says what
         // came of it, its plugin's answer included, and lands nothing more. A later commit lands as any landing does; a landing that
@@ -413,35 +433,43 @@ internal sealed class TreeLands(
         using var hold = await LandingHolds.TakeAsync(context.Home, path, ct, by: new LandingHolder(subject.Session, TreeTips.Branch(path)))
             .ConfigureAwait(false);
         if (hold is null) return new(false, StillLanding) { Refusal = AutoLandingCode.Refused };
-        if (hold.Before is { } before && await JudgedAsync(path, gate, ct).ConfigureAwait(false) is { } asked
+        // LANDNODE1b2: the preparation written ahead of all the landing judges and makes, so each refusal from here withdraws it in its words.
+        if (delivering?.Begin(DeliveryPhases.Prepared, delivering.Preparing) is { } notBegun)
+        {
+            return new(false, $"Nothing was landed: {notBegun}.") { Refusal = AutoLandingCode.Refused };
+        }
+
+        TreeLanding Closed(TreeLanding landing) => delivering?.Close(landing) ?? landing;
+        var pinned = delivering?.Intent.Tip ?? gate?.Tip;
+        if (hold.Before is { } before && await JudgedAsync(path, pinned, ct).ConfigureAwait(false) is { } asked
             && string.Equals(asked, before.Tip, StringComparison.OrdinalIgnoreCase))
         {
-            return LandedMeanwhile(before, subject.Session);
+            return Closed(LandedMeanwhile(before, subject.Session));
         }
 
         // LINESTOGETHER1d: a tree bound into an operation bringing sessions together lands only by its combined Accept, read under the
         // record lock while this holds the tree, so a press binding it waits for this landing to end.
         if (TogetherGuard.Refusal(context.Home, path, together) is { } bound)
         {
-            return new(false, $"Nothing was landed: {bound}.") { Refusal = AutoLandingCode.Refused };
+            return Closed(new(false, $"Nothing was landed: {bound}.") { Refusal = AutoLandingCode.Refused });
         }
 
         // A member a combined Accept brought in lands that work no second time; a later commit is its own.
-        if (together is null && await TogetherGuard.BroughtAsync(context.Home, path, gate?.Tip, ct).ConfigureAwait(false) is { } brought)
+        if (together is null && await TogetherGuard.BroughtAsync(context.Home, path, pinned, ct).ConfigureAwait(false) is { } brought)
         {
-            return new(false, $"Nothing was landed: {brought}.") { Refusal = AutoLandingCode.Already };
+            return Closed(new(false, $"Nothing was landed: {brought}.") { Refusal = AutoLandingCode.Already });
         }
 
         // FABRIC-CLOSE1h: what the door judged before it took the hold may have moved while it waited, so it judges again here, under the
         // hold and before anything is made. A refusal now stops the landing whole: no branch, no advance, no push.
-        if (judged is not null && await judged(hold.Waited, ct).ConfigureAwait(false) is { } refusedNow) return refusedNow;
+        if (judged is not null && await judged(hold.Waited, ct).ConfigureAwait(false) is { } refusedNow) return Closed(refusedNow);
 
         TreeLanding landed;
         // FABRIC-END6c: a landing holds its repository for the due moments, which skip it until it is let go, then ask.
         using (RepositoryHolds.Hold(context.Home, repository))
         {
-            landed = await LandingAsync(path, subject, ct, inUse, acceptedBy, gate, joins, fetched, hold, beforePush,
-                hold.Waited ? null : uncommitted, beside).ConfigureAwait(false);
+            landed = Closed(await LandingAsync(path, subject, ct, inUse, acceptedBy, gate, joins, fetched, hold, beforePush,
+                hold.Waited ? null : uncommitted, beside, delivering).ConfigureAwait(false));
         }
 
         // FABRIC-END3: Accept is Daoris's own ref move; its repository is judged at once by the ref watch, with its echo (§B4).
@@ -481,9 +509,9 @@ internal sealed class TreeLands(
     /// The commit a landing that waited would land (LANDRACE1's review): the tip its door judged, where the door pinned one, else the
     /// tree's head as it stands. Read only after a wait; null where git cannot say, which lands nothing as `already`.
     /// </summary>
-    private static async Task<string?> JudgedAsync(string path, IWorkplaceGate? gate, CancellationToken ct)
+    private static async Task<string?> JudgedAsync(string path, string? pinned, CancellationToken ct)
     {
-        if (gate?.Tip is { } pinned) return pinned;
+        if (pinned is not null) return pinned;
         var (code, head, _) = await WorkingTree.GitAsync(Path.GetFullPath(path), ["rev-parse", "--verify", "--quiet", "HEAD^{commit}"], ct).ConfigureAwait(false);
         return code == 0 ? head.Trim() : null;
     }
@@ -513,11 +541,12 @@ internal sealed class TreeLands(
     /// <param name="hold">The tree's hold (LANDRACE1), which keeps what this landing came to for a door waiting behind it.</param>
     /// <param name="beforePush">The door's judgement just before its plugin is told (FABRIC-CLOSE1h2), as <see cref="LandAsync"/> takes it.</param>
     /// <param name="uncommitted">The tree's uncommitted paths as the door read them, as <see cref="LandAsync"/> takes them.</param>
+    /// <param name="delivering">The delivery it performs, its preparation written ahead (LANDNODE1b2); null lands by the rule.</param>
     private async Task<TreeLanding> LandingAsync(
         string path, LandingSubject subject, CancellationToken ct, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse,
         string acceptedBy, IWorkplaceGate? gate, bool joins, bool fetched, LandingHold? hold,
         Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null, int? uncommitted = null,
-        Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null)
+        Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null, TreeDelivering? delivering = null)
     {
         // One look (UIFREEZE1, PROC1d-i): the landing and its tidy ask git's guess at the line once.
         using var look = context.OneLook();
@@ -558,12 +587,15 @@ internal sealed class TreeLands(
         // Under a named workflow the run's bound version decides how it lands, read with the gate (WORKFLOW1f): a version is never
         // edited, so nothing changes under it. Under Current the rule is read again here, as before.
         var process = gate?.Process;
-        var named = process is { Named: true } ? process : null;
+        var named = delivering is null && process is { Named: true } ? process : null;
         var landing = named?.Landing ?? LandingRules.Effective(context.Config(), repository, workspace);
+        // LANDNODE1b2: a delivery lands as its intent says, and keeps of the rule only what setup keeps.
+        if (delivering is not null) landing = delivering.Over(landing);
         // 🔴 Read again here, not only where the look chose it (LAND2b): a rule changed between the two must never let a landing
         // at done merge into the person's checkout with no press (D145 point 1, D51 rule 6), nor land under a switch now off. The switch
-        // is the effective rule's (AUTONOMY1c2): the access setup's `landing: rule` turns a branch rule's on, and never a merge's.
-        if (acceptedBy == AcceptedBy.Auto && landing.Rule is not { Form: LandingForm.Branch, AutoAccept: true })
+        // is the effective rule's (AUTONOMY1c2): the access setup's `landing: rule` turns a branch rule's on, and never a merge's. A
+        // delivery's authority is its authorization's, judged at its start.
+        if (delivering is null && acceptedBy == AcceptedBy.Auto && landing.Rule is not { Form: LandingForm.Branch, AutoAccept: true })
         {
             return new(false, "its repository's rule no longer accepts automatically, so nothing was landed: your Accept lands it.")
             {
@@ -571,14 +603,28 @@ internal sealed class TreeLands(
             };
         }
 
+        // LANDNODE1b2: a delivery lands into the line its intent names, or nothing; an integrate's is the next node's, its branch made from
+        // the tree's own line as any branch is.
+        if (delivering is { Intent.Method: not DeliveryMethods.Integrate } && here is not null
+            && (await context.LineAsync(Path.GetDirectoryName(here.CommonDir.Trim())!, repository, workspace, ct).ConfigureAwait(false)).Branch is var stands
+            && !string.Equals(stands, delivering.Intent.Line, StringComparison.Ordinal))
+        {
+            return new(false, $"Nothing was landed: its delivery lands into `{delivering.Intent.Line}`, and `{repository}`'s line is "
+                + (stands is null ? "none git can name" : $"`{stands}`") + " now.") { Refusal = AutoLandingCode.Refused };
+        }
+
+        // The commit the door judged, or the delivery pinned: what lands is that commit or nothing.
+        var pinned = delivering?.Intent.Tip ?? gate?.Tip;
+
         TreeLanding landed;
         // The session tip a squash made the branch's commit from (PROCESS1b-ii): the tidy's proof of what the landing holds; and the
         // commit the squash made, which binds the branch the tidy reads to this landing (FABRIC-END4a, fourth review).
         string? squashedTip = null;
         string? squashedInto = null;
         var branchForm = landing.Rule.Form == LandingForm.Branch;
-        // A name entered where nothing is branched is refused, not ignored (LANDNAME1a): the person would think it was used.
-        if (!branchForm && subject.EnteredName is not null) return new(false, EnteredMerge);
+        // A name entered where nothing is branched is refused, not ignored (LANDNAME1a): the person would think it was used. A delivery's
+        // name is its intent's.
+        if (delivering is null && !branchForm && subject.EnteredName is not null) return new(false, EnteredMerge);
         var plugin = branchForm ? landing.Rule.Plugin : null;
         var unready = plugin is null ? null : context.Plugins.Problem(plugin);
         if (unready is not null && acceptedBy != AcceptedBy.Auto)
@@ -612,10 +658,10 @@ internal sealed class TreeLands(
             // FABRIC-CUTOVER1d (the cutover design §4): pinned, as a graph run's landing is to the commit its `handed` is bound to, the merge lands
             // that commit or nothing, as a pinned branch landing does: the session's branch must stand there before anything is replayed or
             // merged, and the merge takes the commit itself, so one made after the judgement never lands unseen.
-            if (gate?.Tip is { } pin && here is not null && await CommitOfAsync(full, $"refs/heads/{here.Branch.Trim()}", ct).ConfigureAwait(false) is { } stands
-                && !string.Equals(stands, pin, StringComparison.OrdinalIgnoreCase))
+            if (pinned is { } pin && here is not null && await CommitOfAsync(full, $"refs/heads/{here.Branch.Trim()}", ct).ConfigureAwait(false) is { } standsAt
+                && !string.Equals(standsAt, pin, StringComparison.OrdinalIgnoreCase))
             {
-                return Fetched(Moved(here.Branch.Trim(), stands, pin), notFetched);
+                return Fetched(Moved(here.Branch.Trim(), standsAt, pin), notFetched);
             }
 
             if (replaying is not null)
@@ -625,7 +671,7 @@ internal sealed class TreeLands(
                 replayed = made;
             }
 
-            var merged = await MergeAsync(path, ct, replayed, uncommitted, here, pinned: gate?.Tip, beside: beside).ConfigureAwait(false);
+            var merged = await MergeAsync(path, ct, replayed, uncommitted, here, pinned: pinned, beside: beside, delivering: delivering).ConfigureAwait(false);
             landed = new(merged.Merged, merged.Message) { LeftOut = merged.Merged ? replayed?.LeftOut : null, Refusal = merged.Refusal };
             landed = Fetched(landed, notFetched);
         }
@@ -634,10 +680,10 @@ internal sealed class TreeLands(
             // A squash reads the work's subject whatever the pattern reads (ACCEPTFOOT2b): its commit is named by it too.
             var worked = await ForWorkAsync(full, workspace, repository, landing.Rule, subject, ct, always: landing.Rule.Squash).ConfigureAwait(false);
             var branched = await BranchAsync(full, workspace, repository,
-                BranchNamed(worked, landing.Rule, repository),
+                delivering?.Intent.Branch ?? BranchNamed(worked, landing.Rule, repository),
                 handedOn: plugin is not null, ct,
-                entered: subject.EnteredName is not null, squash: landing.Rule.Squash ? worked : null, sync: replaying,
-                join: joins ? sync : null, pinned: gate?.Tip, uncommitted: uncommitted, here: here).ConfigureAwait(false);
+                entered: delivering is null && subject.EnteredName is not null, squash: landing.Rule.Squash ? worked : null, sync: replaying,
+                join: joins ? sync : null, pinned: pinned, uncommitted: uncommitted, here: here, delivering: delivering).ConfigureAwait(false);
             landed = Fetched(branched.Landing, notFetched);
             replayed = landed.Landed ? branched.Replay : null;
             // ACCEPTALL1: a part that joined its entry's branch by a replay follows it as a replay onto the line does (point 7).
@@ -648,11 +694,15 @@ internal sealed class TreeLands(
             // because this line wrote it down, at the commit it was made at.
             var tip = branched.Commits.Count > 0 ? branched.Commits[^1].Sha : null;
             squashedInto = squashedTip is null ? null : tip;
+            // LANDNODE1b2: a delivery's record is written ahead in its phase, and read back after.
+            Task<TreeLanding> RecordedAsync(TreeLanding was, string at, Action write) => delivering is null
+                ? Task.FromResult(Remember(was, write))
+                : delivering.RecordAsync(was, was.Branch!, at, () => Remember(was, write), () => context.Recorded.Of(repository, was.Branch!));
             if (landed.Landed && tip is not null && landed.AdvancedFrom is { } advancedFrom)
             {
                 // Moved on (LAND2c): the entry's tip is the new commit, and the advance is kept with who accepted it (D143).
                 var unit = UnitOf(full, repository);
-                landed = Remember(landed, () => context.Recorded.Advanced(repository, landed.Branch!,
+                landed = await RecordedAsync(landed, tip, () => context.Recorded.Advanced(repository, landed.Branch!,
                     new LandedAdvance(advancedFrom, tip, DateTimeOffset.UtcNow, subject.Session)
                     {
                         AcceptedBy = acceptedBy, Review = review, Opinion = gate?.OpinionLanding, Workflow = named?.Record,
@@ -662,7 +712,7 @@ internal sealed class TreeLands(
                         Squashed = branched.Squashed,
                         // FABRIC-UNITLINK1, FABRIC-CLOSE1h13: whose work this is, its unit, and the submission it was accepted on.
                         Quest = subject.Served, Unit = unit, Submission = subject.Submission, Brought = subject.Brought,
-                    }, unit));
+                    }, unit)).ConfigureAwait(false);
             }
             else if (landed.Landed && tip is not null)
             {
@@ -670,7 +720,7 @@ internal sealed class TreeLands(
                 // commit a replay was made onto (LANDSYNC1).
                 var from = branched.Replay is not null && replaying is not null ? replaying.Onto
                     : branched.Source is { } source ? context.Grown.Of(repository, source)?.From : null;
-                landed = Remember(landed, () => context.Recorded.Record(new LandedBranch(
+                landed = await RecordedAsync(landed, tip, () => context.Recorded.Record(new LandedBranch(
                     repository, workspace, landed.Branch!, branched.Base, tip, subject.Session, subject.Quest, subject.Title,
                     DateTimeOffset.UtcNow)
                 {
@@ -697,7 +747,7 @@ internal sealed class TreeLands(
                     Submission = subject.Submission,
                     // LINESTOGETHER1d: the sessions its combined Accept brought in, in the same write.
                     Brought = subject.Brought,
-                }));
+                })).ConfigureAwait(false);
             }
 
             // LANDRACE1's review: kept for a door waiting behind this one the moment the work is on its branch, by the session's tip it
@@ -931,10 +981,14 @@ internal sealed class TreeLands(
     /// The tree's uncommitted paths as the landing's judgement counted them a moment before (LANDGIT1c); null asks git.
     /// </param>
     /// <param name="here">The tree's repository and branch as its landing read them a moment ago (LANDGIT1b); null reads them here.</param>
+    /// <param name="delivering">
+    /// The delivery it performs (LANDNODE1b2): <paramref name="name"/> is its intent's, and the branch's ref is written by its one transaction under
+    /// the checkout's lock, each in its phase, the tree's own branch verified standing at the tip. Null writes the ref as before.
+    /// </param>
     private async Task<Branched> BranchAsync(
         string full, string workspace, string repository, string name, bool handedOn, CancellationToken ct, bool entered = false,
         LandingSubject? squash = null, LandSync? sync = null, LandSync? join = null, string? pinned = null, int? uncommitted = null,
-        CommonDirAndBranch? here = null)
+        CommonDirAndBranch? here = null, TreeDelivering? delivering = null)
     {
         if (!context.Holds(full))
         {
@@ -1000,6 +1054,13 @@ internal sealed class TreeLands(
         if (!branch.StartsWith(TreeFollows.SessionPrefix, StringComparison.Ordinal))
         {
             if (entered) return new TreeLanding(false, EnteredOwn(branch));
+            // LANDNODE1b2: a delivery lands the branch it names; the tree's own is landed only where it is that one.
+            if (delivering is not null && !string.Equals(branch, name, StringComparison.Ordinal))
+            {
+                return new TreeLanding(false, $"Nothing was landed: this session's tree is on its own branch, `{branch}`, and its delivery lands `{name}`.")
+                { Refusal = AutoLandingCode.Refused };
+            }
+
             var pushOwn = handedOn ? "" : $" Push it and open the pull request from there: `git push -u origin {branch}`.";
             // LANDSYNC1 (point 3): where the line holds some of its commits, the branch is replayed in place and keeps its name; one on its
             // remote is never rewritten (D109), and is refused as a conflict is. LANDREBASE1: so is one whose line only moved, unless it is
@@ -1008,6 +1069,14 @@ internal sealed class TreeLands(
             if (sync is not null && !(pushed && sync.Held.HoldsNone))
             {
                 if (pushed) return TreeLandSyncs.OwnOnRemote(sync);
+                // LANDNODE1b2: replayed in place, the branch its tree has out would move outside the delivery's ref transaction.
+                if (delivering is not null)
+                {
+                    return new TreeLanding(false, $"Nothing was landed: `{branch}`, the session's own branch, would be replayed in place onto "
+                        + $"`{sync.OntoName}`, which a delivery does not do yet. The tree and its branch are as they were.")
+                    { Refusal = AutoLandingCode.Refused, LeftOut = sync.Held.LeftOut };
+                }
+
                 var (made, refused) = await syncs.ReplayAsync(sync, repository, workspace, sync.Onto, sync.Held.Kept, ct).ConfigureAwait(false);
                 if (refused is not null) return refused;
                 if (await syncs.MoveTreeAsync(full, sync, made!.Now, repository, workspace, inUse: null, ct).ConfigureAwait(false) is { } stays)
@@ -1025,6 +1094,14 @@ internal sealed class TreeLands(
                         branch) { LeftOut = made.LeftOut },
                     root, line, made.Landed, follows.BranchOfTree(full)?.Branch)
                 { Replay = made, Followed = true };
+            }
+
+            // LANDNODE1b2: the delivery's ref is the tree's own branch, verified standing at the tip it pinned.
+            if (delivering is not null && await delivering.WriteAsync(root, $"refs/heads/{branch}", commits[^1].Sha, commits[^1].Sha, ct).ConfigureAwait(false)
+                    is { Code: not 0 } unverified)
+            {
+                return new TreeLanding(false, $"Nothing was landed: `{branch}` was not read standing at {TextBounds.ShortCommit(commits[^1].Sha, 8)}: "
+                    + $"{FirstLine(unverified.Stderr)}") { Refusal = AutoLandingCode.Refused };
             }
 
             return new Branched(
@@ -1071,7 +1148,8 @@ internal sealed class TreeLands(
             var onto = holding ?? (join is not null && !await IsAncestorAsync(root, grown, join.Tip, ct).ConfigureAwait(false) ? join : null);
             if (onto is null)
             {
-                return await AdvanceAsync(root, repository, name, standsAt, branch, line, commits, handedOn, ct, against, squash, pinned: pinned).ConfigureAwait(false);
+                return await AdvanceAsync(root, repository, name, standsAt, branch, line, commits, handedOn, ct, against, squash, pinned: pinned, delivering: delivering)
+                    .ConfigureAwait(false);
             }
 
             // LANDSYNC1 (point 3): what neither the branch nor the line holds, replayed onto the branch's tip, which then moves by D145
@@ -1088,7 +1166,7 @@ internal sealed class TreeLands(
                 .ConfigureAwait(false);
             if (refusedOn is not null) return refusedOn;
             var holds = await LineHolds.CommitsAsync(root, $"{against}..{onBranch!.Now}", ct).ConfigureAwait(false) ?? onBranch.Landed;
-            var advanced = await AdvanceAsync(root, repository, name, standsAt, branch, line, holds, handedOn, ct, against, squash, onBranch.Now)
+            var advanced = await AdvanceAsync(root, repository, name, standsAt, branch, line, holds, handedOn, ct, against, squash, onBranch.Now, delivering: delivering)
                 .ConfigureAwait(false);
             // A part that joined with nothing the line holds left nothing out: said as a landing of the commits as made says it.
             var joined = holding is null;
@@ -1141,7 +1219,9 @@ internal sealed class TreeLands(
             carried = [new LandingCommit(made, SquashMessage.Subject(squash.SquashTitle, squashing, squash.Session))];
         }
 
-        var (code, _, err) = await WorkingTree.GitAsync(root, ["branch", name, start], ct).ConfigureAwait(false);
+        var (code, _, err) = delivering is null
+            ? await WorkingTree.GitAsync(root, ["branch", name, start], ct).ConfigureAwait(false)
+            : await delivering.WriteAsync(root, $"refs/heads/{name}", null, start, ct).ConfigureAwait(false);
         if (code != 0)
         {
             return new TreeLanding(false, $"git would not make `{name}`: {FirstLine(err)}");
@@ -1190,10 +1270,11 @@ internal sealed class TreeLands(
     /// null moves it to the session's tip, as before.
     /// </param>
     /// <param name="pinned">The session's tip the door judged (FABRIC-END7's review), which the branch moves to in place of the tip read now.</param>
+    /// <param name="delivering">The delivery it performs (LANDNODE1b2), whose transaction moves the branch in its phase; null moves it as before.</param>
     private async Task<Branched> AdvanceAsync(
         string root, string repository, string name, string standsAt, string branch, string? line,
         IReadOnlyList<LandingCommit> commits, bool handedOn, CancellationToken ct, string? against = null, LandingSubject? squash = null,
-        string? replayed = null, string? pinned = null)
+        string? replayed = null, string? pinned = null, TreeDelivering? delivering = null)
     {
         var recorded = context.Recorded.Of(repository, name);
         var (_, headOut, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}^{{commit}}"], ct)
@@ -1240,13 +1321,15 @@ internal sealed class TreeLands(
 
         if (squash is not null)
         {
-            return await TreeSquashes.AdvanceSquashedAsync(root, name, standsAt, branch, line, head, grewFrom!, handedOn, against, squash, ct)
+            return await TreeSquashes.AdvanceSquashedAsync(root, name, standsAt, branch, line, head, grewFrom!, handedOn, against, squash, ct, delivering)
                 .ConfigureAwait(false);
         }
 
         // Compare-and-swap from the tip judged: git refuses where the branch moved since, and nothing is forced.
-        var (moved, _, moveErr) = await WorkingTree.GitAsync(
-            root, ["update-ref", "-m", $"daoris: {branch} moves {name} on", $"refs/heads/{name}", head, standsAt], ct).ConfigureAwait(false);
+        var (moved, _, moveErr) = delivering is null
+            ? await WorkingTree.GitAsync(
+                root, ["update-ref", "-m", $"daoris: {branch} moves {name} on", $"refs/heads/{name}", head, standsAt], ct).ConfigureAwait(false)
+            : await delivering.WriteAsync(root, $"refs/heads/{name}", standsAt, head, ct).ConfigureAwait(false);
         if (moved != 0)
         {
             return new TreeLanding(false, $"git would not move `{name}` on from {TextBounds.ShortCommit(standsAt, 8)}: "
