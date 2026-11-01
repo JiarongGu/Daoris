@@ -5,6 +5,11 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## LANDNODE1b3 — the reconciliation (2026-11-01)
+
+> **1b3, the reconciliation** (driver; `docs/2026-11-01-land-node-design.md` §3 and §8 row 5): §3's ladder for the git phases; an Accept carrying several sessions, the first performing and the others reached as *brought into*. Proof: a stop at each git boundary ends in one branch; a press and a pass at once land once. After b2.
+
+**Outcome** 2026-11-01: `DeliveryReconciler` settles unresolved deliveries by phase before any new start, writing no git; a landing goes on from its next phase, and a press and a pass land once. One Accept carrying several sessions is the head's unit's delivery, its members brought into it (`DeliveryReach`). Only its tests call it. Detail: D204's and D215's notes of this date.
 ## AGENTSPLACE1b — setup-only admission (2026-11-01)
 
 > **1b, setup-only admission** (driver): the adoption quest admitted alone while general driving stays off. Proof: queued and newly arriving unrelated work held through apply and restart.
@@ -78,6 +83,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 **Outcome** 2026-11-01: `WORKFLOW_LANDED` takes an optional `gates`; a blob that is not the tip's is refused `moved`, and an unreadable tip `unread`, as the driver's sentence (a refusal, as the route's others are, so its answer's shape is unchanged) with `driver.json` untouched. A caller naming none accepts the tip as it stands. `acceptGatesPress` builds the web's press from the route and the tip it showed, and `ProjectsView` sends it. `PipeTargetRows` lists `gates` among the route's fields. Proof: `DriverModuleWorkflowTests.The_landed_route_refuses_a_blob_the_tip_no_longer_holds_and_an_older_caller_naming_none_is_unchanged` (a Process test), `workflow.test.tsx`. No decision note: the behaviour is the one D215 point 10 gave `INTEGRATION_GATES`.
 
 ---
+
+## AGENTSPLACE1g — All roles and the role editor (2026-11-01)
+
+> **AGENTSPLACE1g** (web; row 10 of AGENTSPLACE1). *All roles* in Working roles (the Setup mode's page waits for 1e): scope filter, machine-wide roles set apart, others read-only with *Open at \<place\>*; the editor asks for no id and fixes the place, picks agent, model and effort from the agent's offers with *other…*, and keeps *Off*, *Clear staffing* and *Restore role defaults* apart; *Remove* asks inline naming the fallback; the page's state is held by the place so a door out keeps the selection and scope. Proof: `Roles.test.tsx`, `RolesStructure.test.tsx`, `RolesView.test.tsx`; stories `AllRoles*` and `RoleEditor*`.
 
 ## AGENTSPLACE1a — the effective projection (2026-11-01)
 

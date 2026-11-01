@@ -257,3 +257,5 @@ Every row's proof includes page tests; stories at 80, 39 and 25rem (`design/stor
 9. **1i: what a work may call** (service, driver, web). The call table's answer per work, read-only, in Work's opened row; its read is named by the row (the call table lives in the service). After 1d.
 
 **Settled at reading:** `SET_ROLE` writes a seeded role's first agent through (§3.1); `STARTS` cannot give a choice's state without probing, so the read composes from the last readings (§4); the widths are arithmetic, held by 1f's measured stories; *account default* is `rule-default` in the code (§3.3). Whether `STARTS` asks a signed-out account when a view opens is STARTSPROBE1's to check.
+
+**Note (2026-11-01, AGENTSPLACE1g):** the five sections are reversed as `2026-11-01-agents-place-design.md` §6 says. Working roles becomes *All roles* and the role editor (one editor per role, no typed id, the agent's own offers, three acts). Work, By repository, Accounts and Appointed roles become place pages and rows as that design's later rows build them. Until Roles on a place merges the section list stays, with *All roles* drawn in Working roles.

@@ -20,9 +20,10 @@ import { AgentList, AgentStrip } from './AgentList';
 import { type AgentActs, AgentMainNotice, AgentPage, type Answered } from './AgentPage';
 import { type AgentPart, accountLabel, agentRows } from './agents';
 import { AgentsModes, AgentsStrip, RoleSectionStrip } from './AgentsModes';
-import { type AgentsMode, isRoleSection, readAgentsMode, type RoleSection, storeAgentsMode } from './modes';
+import { type AgentsMode, isRoleSection, readAgentsMode, type RoleSection, setupLit, storeAgentsMode } from './modes';
+import { findPlace, SetupList, SetupMain, useSetupPlaces } from './setup/SetupPlaces';
 import { RoleSectionList } from './roles/RoleSections';
-import { type RoleOpeners, RolesMode } from './roles/RolesView';
+import { type RoleOpeners, RolesMode, useRolesPage } from './roles/RolesView';
 import { usedByAgent } from './roles/roleStructure';
 import { useStructureMarks, useStructureRead } from './roles/structureRead';
 import type { ListPanes } from '../work/frame/listPanes';
@@ -54,7 +55,10 @@ export function useAgentsMode(lists: ListPanes) {
   const kept = lists.pane('roles').chosen;
   const section: RoleSection = isRoleSection(kept) ? kept : 'working';
   const onSection = useCallback((next: RoleSection) => choose('roles', next), [choose]);
-  return { mode, onMode, section, onSection };
+  // Lit, Setup keeps the place chosen under the same memory, which a section id is never mistaken for.
+  const place = kept && !isRoleSection(kept) ? kept : null;
+  const onPlace = useCallback((next: string) => choose('roles', next), [choose]);
+  return { mode, onMode, section, onSection, place, onPlace };
 }
 
 /**
@@ -79,7 +83,11 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
    * The Roles mode beside Agents (COMPANYVIEW1b, the company-view design §1), on a desktop only: the mode in front and a change of it,
    * and the section chosen in the Roles mode and a change of it. Absent, the place is the Agents list alone, as a browser's is.
    */
-  modes?: { mode: AgentsMode; onMode: (mode: AgentsMode) => void; section: RoleSection; onSection: (section: RoleSection) => void };
+  modes?: {
+    mode: AgentsMode; onMode: (mode: AgentsMode) => void; section: RoleSection; onSection: (section: RoleSection) => void;
+    /** The place Setup has chosen, once lit, and a change of it. */
+    place: string | null; onPlace: (place: string) => void;
+  };
   /** The list's chosen item: an agent's id, which the application remembers (`daoris.list.agents.chosen`). */
   chosen: string | null;
   onChoose: (item: string | null) => void;
@@ -101,7 +109,12 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
   const { t } = useTranslation();
   const roster = useHarnesses();
   // A start held marks its section's row in the Roles list (COMPANYVIEW1d); read only while the Roles mode is in front.
-  const marks = useStructureMarks(active && modes?.mode === 'roles');
+  const lit = setupLit();
+  const inSetup = modes?.mode === 'setup';
+  const marks = useStructureMarks(active && inSetup && !lit);
+  const places = useSetupPlaces(active && inSetup && lit);
+  // The Roles page's state lives here, so a door out of it and the way back find the selection and the scope as left.
+  const rolesPage = useRolesPage();
   const accounts = useAccounts();
   useErrorNotify(active ? roster.error : null, notify);
 
@@ -134,7 +147,22 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
 
   // A first answer still on its way; an answer that is no roster (a shell older than this place) lists nothing.
   const loading = active && roster.data === undefined && roster.isPending;
-  if (modes?.mode === 'roles') {
+  if (modes && inSetup && lit) {
+    return {
+      list: {
+        view: 'agents',
+        chosenIn: 'roles',
+        name: t('nav.agents'),
+        labels: { open: t('agents.list.open'), close: t('agents.list.close'), resize: t('agents.list.resize') },
+        head: <AgentsModes mode={modes.mode} onMode={modes.onMode} />,
+        strip: <AgentsStrip mode={modes.mode} onMode={modes.onMode} />,
+        chosen: modes.place,
+        body: <SetupList state={places} chosen={modes.place} onChoose={modes.onPlace} />,
+      },
+      main: <SetupMain found={findPlace(places.read, modes.place)} state={places.status} />,
+    };
+  }
+  if (modes && inSetup) {
     return {
       list: {
         view: 'agents',
@@ -151,7 +179,7 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
         chosen: modes.section,
         body: <RoleSectionList section={modes.section} onSection={modes.onSection} held={{ work: marks.work, repository: marks.repository }} />,
       },
-      main: <RolesMode section={modes.section} notify={notify} doors={{ ...roleDoors, section: modes.onSection }} />,
+      main: <RolesMode section={modes.section} notify={notify} doors={{ ...roleDoors, section: modes.onSection }} page={rolesPage} />,
     };
   }
   return {

@@ -4,7 +4,7 @@ import { storyWidths } from '../../design/storyWidths';
 import type { ActorRow, RoleCatalogue, RoleRow } from '../../data/wiring';
 import type { StartWiring } from '../../map/wiring';
 import { AskDaorisAbout, IntakeAbout } from '../../settings/ai/ActorAbout';
-import { RolesCard } from './Roles';
+import { type Editing, RolesCard } from './Roles';
 
 // The roles on AI features (FOUNDATION1y-i, MODELROLE1c, COMPANYVIEW1a), one row for each, in the shapes `ROLES` and `ACTORS` answer
 // with: the seeded roles with their staffing, Chat removed and waiting, an added role in a workspace with its choices, and the Designer
@@ -115,6 +115,49 @@ export const WeekShownChineseNarrow: Story = { args: { catalogue: WEEK }, decora
 
 /** A log of three days says its span instead of seven. */
 export const WeekOfAYoungLog: Story = { args: { catalogue: { ...WEEK, use: { ...WEEK.use!, days: 3 } } }, decorators: [storyWidths.narrow] };
+
+// AGENTSPLACE1g: All roles with *Open at <place>* on the role placed elsewhere, and the editor open on the added role of a workspace with
+// the agent's own offers (a model picked, an effort typed after other…); it asks for no id and its place is fixed.
+const OFFERS = { 'claude-code': { models: ['opus', 'sonnet', 'haiku'], efforts: ['low', 'medium', 'high'] }, 'codex-acp': { models: ['gpt-5'], efforts: ['low', 'high'] } };
+
+const EDITING: Editing = {
+  id: 'night', mode: 'role', isNew: false, revision: 3, nameEn: 'Night shift', nameZh: '夜班', takes: ['build'], work: 'build',
+  place: 'workspace', placeId: 'studio',
+  drafts: [{ key: 1, agent: 'codex-acp', model: 'gpt-5', effort: 'high' }, { key: 2, agent: 'claude-code', model: 'o-4', effort: '' }],
+};
+
+const ALL = { offers: OFFERS, onOpenPlace: () => {} };
+const EDIT = { offers: OFFERS, editor: EDITING, onEditor: () => {}, only: 'night' };
+
+/** All roles: the machine-wide roles apart from those placed elsewhere, which are read and opened at their place. */
+export const AllRoles: Story = { args: ALL };
+
+/** The same at the half width. */
+export const AllRolesHalf: Story = { args: ALL, decorators: [storyWidths.half] };
+
+/** The same at the 400 px floor. */
+export const AllRolesNarrow: Story = { args: ALL, decorators: [storyWidths.narrow] };
+
+/** The same in 中文. */
+export const AllRolesChinese: Story = { args: ALL, decorators: [chinese] };
+
+/** The same in 中文 at the floor. */
+export const AllRolesChineseNarrow: Story = { args: ALL, decorators: [storyWidths.narrow, chinese] };
+
+/** The role editor with the agent's own offers; *Edit role* folds the name, work and place. */
+export const RoleEditor: Story = { args: EDIT };
+
+/** The same at the half width. */
+export const RoleEditorHalf: Story = { args: EDIT, decorators: [storyWidths.half] };
+
+/** The same at the 400 px floor. */
+export const RoleEditorNarrow: Story = { args: EDIT, decorators: [storyWidths.narrow] };
+
+/** The same in 中文. */
+export const RoleEditorChinese: Story = { args: EDIT, decorators: [chinese] };
+
+/** The same in 中文 at the floor. */
+export const RoleEditorChineseNarrow: Story = { args: EDIT, decorators: [storyWidths.narrow, chinese] };
 
 /** A home whose driver.json is the file's own: each seeded row keeps its order editor, and Add a role and Remove are held. */
 export const NotKept: Story = { args: { catalogue: { ...CATALOGUE, kept: false, suggested: [] } } };

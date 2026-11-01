@@ -713,8 +713,8 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
         string operation, LandingSubject subject, IReadOnlyDictionary<string, IWorkplaceGate?> memberGates, CancellationToken ct = default,
         Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null, IWorkplaceGate? gate = null,
         Func<bool, CancellationToken, Task<TreeLanding?>>? judged = null, Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null,
-        Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null) =>
-        new TogetherAccepts(_context, Lands).LandAsync(operation, subject, memberGates, ct, inUse, gate, judged, beforePush, beside);
+        Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null, TreeDelivery? delivery = null) =>
+        new TogetherAccepts(_context, Lands).LandAsync(operation, subject, memberGates, ct, inUse, gate, judged, beforePush, beside, delivery);
 
     /// <inheritdoc cref="EntryLands.LandAsync"/>
     public Task<EntryLanding> LandEntryAsync(

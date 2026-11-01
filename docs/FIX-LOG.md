@@ -12795,3 +12795,13 @@ mis-rooted instance.
 **Fix.** `JournalFeed.RunAsync` says after each ask whether the host answered with the journal's place (`heard`), the shell's loop keeps it (`DriverLoop.HearsJournal`), and `UsageStateSlice.WakesOn` wakes on `SESSION_ENDED` while it is false. The wake tests time the push under half the period (`WokenAsync`).
 
 **Verified.** `UsageStateSliceTests.A_conversation_s_end_reaches_the_windows_by_its_route_while_the_host_keeps_no_journal` failed first (pushed after 15.03 s), then passed; `JournalFeedTests.Each_ask_says_whether_the_host_keeps_a_journal` failed with the answer withheld, then passed.
+
+## 2026-11-01 — the merge queue's runner killed by the submitting command's timeout
+
+**Symptom.** Three runs of batches 1031g and 1031h failed in the queue: the service and driver halves' test hosts crashed or exited 143, MSBuild's child nodes "exited prematurely", code-map threw from `Console.set_OutputEncoding`, and the runner itself vanished, leaving `--queue` saying *running* with no runner.
+
+**Root cause.** The steward submitted the batch through the queue as `timeout <seconds> node tools/merge-branch.mjs <batch> --message …` in Git Bash. When the timeout expired it sent SIGTERM (exit 143) to the whole process tree it had started, which included the runner the tool spawns detached and every gate under it. Each failure landed at the timeout: about ten minutes, then one, then two.
+
+**Fix.** Submit to the queue with no `timeout` around it (the submission returns once the runner acknowledges, and "ending this wait leaves it queued"). QUEUEHANG1 holds the tool's side: a runner that outlives its submitter, and a gate whose process died said as lost.
+
+**Verified.** Batch 1031h queued with no wrapper.

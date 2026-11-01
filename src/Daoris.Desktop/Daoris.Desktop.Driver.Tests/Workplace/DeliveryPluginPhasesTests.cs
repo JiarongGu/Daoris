@@ -162,6 +162,22 @@ public sealed class DeliveryPluginPhasesTests : IDisposable
         Assert.DoesNotContain(store.Phases(claim.Key), each => each.Phase == DeliveryPhases.PluginDispatched);
     }
 
+    /// <summary>The reconciler's plugin seam settles a dispatch left without its answer from work/state, and sends nothing.</summary>
+    [Fact]
+    public async Task The_reconcilers_plugin_seam_settles_a_dispatch_without_its_answer_and_sends_nothing()
+    {
+        var (_, store, claim) = Reached(DeliveryMethods.PullRequest);
+        store.Begin(claim, DeliveryPhases.PluginDispatched, "{}");
+        var wire = new Wire { Declares = new(true, []), State = _ => new PullRequestState(PullRequestStates.Open) { PullRequest = Address } };
+        var reconciler = new DeliveryReconciler(store, _home, _ => _scratch) { Plugin = TreeDelivering.PluginSettlement(store, _home, wire, _ => _scratch) };
+
+        var settled = Assert.Single(await reconciler.StartAsync(default));
+
+        Assert.Equal(DeliveryStandings.Delivered, settled.Standing);
+        Assert.Empty(wire.Lands);
+        Assert.Equal(DeliverySettlements.Delivered, store.Delivery(claim.Key)?.Settled);
+    }
+
     // ——— The fixture.
 
     private DeliveryStore Reopened() => new(_home, () => StoreSettled.Yes, null, "run-a", StoreProcess.Shell);
@@ -199,7 +215,7 @@ public sealed class DeliveryPluginPhasesTests : IDisposable
     private LandingFrame Frame(string? root = null) => new(
         "engine", "default", root ?? Path.Combine(_scratch, "engine"), Named, "main", "Tidy the readme", "0fda18", "s1", []);
 
-    private sealed class Wire : IWorkplacePluginWire
+    internal sealed class Wire : IWorkplacePluginWire
     {
         public PluginLandDeclares Declares { get; init; } = PluginLandDeclares.None;
 

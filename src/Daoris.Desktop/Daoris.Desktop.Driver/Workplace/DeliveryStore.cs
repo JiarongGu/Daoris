@@ -234,6 +234,16 @@ public sealed class DeliveryStore(
         Reading(reader => reader.Query($"SELECT {DeliveryColumns} FROM deliveries WHERE unit = $unit AND settled_at IS NULL", MapDelivery, ("$unit", unit))
             .FirstOrDefault(), null);
 
+    /// <summary>Every delivery of <paramref name="unit"/>, newest first.</summary>
+    public IReadOnlyList<DeliveryRecord> OfUnit(string unit) =>
+        Reading(reader => reader.Query($"SELECT {DeliveryColumns} FROM deliveries WHERE unit = $unit ORDER BY at DESC, key", MapDelivery, ("$unit", unit)), []);
+
+    /// <summary>Every delivery of <paramref name="repository"/> bound at <paramref name="tip"/>, newest first: what an Accept carrying several sessions delivered.</summary>
+    public IReadOnlyList<DeliveryRecord> At(string repository, string tip) =>
+        Reading(reader => reader.Query(
+            $"SELECT {DeliveryColumns} FROM deliveries WHERE repository = $repository COLLATE NOCASE AND tip = $tip COLLATE NOCASE ORDER BY at DESC, key",
+            MapDelivery, ("$repository", repository), ("$tip", tip)), []);
+
     /// <summary>
     /// Whether this home may go back to a build older than the delivery record (the land node design §4): refused while any delivery is
     /// unresolved, so an older door never lands, or calls a plugin without the key, behind a newer delivery.

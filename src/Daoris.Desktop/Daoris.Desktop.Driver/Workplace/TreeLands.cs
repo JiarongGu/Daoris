@@ -306,7 +306,7 @@ internal sealed class TreeLands(
         if (frozen is null) return new(false, $"git could not read where `{branch}` stands, so nothing was merged.");
         // GITLOCK1: no hold here. The checkout's checks above are this press's early words; the promotion's effect holds the checkout alone
         // and reads them again before it moves it, and a hold taken here would refuse that one in this very process.
-        if (delivering?.BeginMerge(canonical, frozen) is { } unbegun) return new(false, $"Nothing was merged: {unbegun}.");
+        if (delivering is not null && await delivering.BeginMergeAsync(canonical, frozen).ConfigureAwait(false) is { } unbegun) return new(false, $"Nothing was merged: {unbegun}.");
         var (carried, refused) = await IntegrationPresses.MergeAsync(
             context.Home, context.Config(), root, repository, workspace, canonical, branch, frozen, ct, beside, delivered: delivering is not null).ConfigureAwait(false);
         if (delivering is not null) await delivering.MergedAsync(root, canonical, frozen, carried ? null : refused, ct).ConfigureAwait(false);
@@ -417,13 +417,6 @@ internal sealed class TreeLands(
         TreeDelivery? delivery = null)
     {
         var repository = context.OwnerOf(Path.GetFullPath(path)).Repository;
-        TreeDelivering? delivering = null;
-        if (delivery is not null)
-        {
-            var (read, unread) = TreeDelivering.Read(delivery, context.Home, repository);
-            if (read is null) return new(false, $"Nothing was landed: {unread}.") { Refusal = AutoLandingCode.Refused };
-            (delivering, acceptedBy) = (read, read.Accepted);
-        }
 
         // LANDRACE1 (D145 point 2, D173's FABRIC-END7 note and its review): one landing of one session's tree at a time, whichever door
         // lands it. The second to come waits for the first, and where the first landed the very commit this one would land, says what
@@ -433,8 +426,30 @@ internal sealed class TreeLands(
         using var hold = await LandingHolds.TakeAsync(context.Home, path, ct, by: new LandingHolder(subject.Session, TreeTips.Branch(path)))
             .ConfigureAwait(false);
         if (hold is null) return new(false, StillLanding) { Refusal = AutoLandingCode.Refused };
-        // LANDNODE1b2: the preparation written ahead of all the landing judges and makes, so each refusal from here withdraws it in its words.
-        if (delivering?.Begin(DeliveryPhases.Prepared, delivering.Preparing) is { } notBegun)
+
+        // LANDNODE1b3: a delivery is read under the tree's hold and held in this process while it lands, so a press and a pass of one delivery
+        // land it once and a restart's settlement never writes beside it; one delivered while this waited is said so, and nothing more lands.
+        using var performing = delivery is null ? null : DeliveryRuns.Hold(context.Home, delivery.Claim.Key);
+        TreeDelivering? delivering = null;
+        if (delivery is not null)
+        {
+            if (performing is null)
+            {
+                return new(false, $"Nothing was landed: its delivery {delivery.Claim.Key[..12]} is being landed or settled here now; accept again once that ends.")
+                {
+                    Refusal = AutoLandingCode.Refused,
+                };
+            }
+
+            if (delivery.Store.Delivery(delivery.Claim.Key) is { Settled: DeliverySettlements.Delivered } delivered) return TreeDelivering.Meanwhile(delivered);
+            var (read, unread) = TreeDelivering.Read(delivery, context.Home, repository);
+            if (read is null) return new(false, $"Nothing was landed: {unread}.") { Refusal = AutoLandingCode.Refused };
+            (delivering, acceptedBy) = (read, read.Accepted);
+        }
+
+        // LANDNODE1b2: the preparation written ahead of all the landing judges and makes, so each refusal from here withdraws it in its words;
+        // LANDNODE1b3: one done before a restart is not written again, and the landing goes on from its next phase.
+        if (delivering is { Next: DeliveryPhases.Prepared } && delivering.Begin(DeliveryPhases.Prepared, delivering.Preparing) is { } notBegun)
         {
             return new(false, $"Nothing was landed: {notBegun}.") { Refusal = AutoLandingCode.Refused };
         }
@@ -1134,6 +1149,23 @@ internal sealed class TreeLands(
         if (exists == 0 && entered && context.Recorded.Of(repository, name) is null)
         {
             return new TreeLanding(false, EnteredStands(name, repository)) { Refusal = AutoLandingCode.Exists };
+        }
+
+        // LANDNODE1b3: the branch this delivery wrote and read back before Daoris stopped goes on to its record (the land node design §3, a
+        // restart's rule 1): never judged as a branch another made, never written twice; an advance from where the record had it.
+        if (exists == 0 && delivering?.Wrote(name) is { } wrote && string.Equals(wrote, standing.Trim(), StringComparison.OrdinalIgnoreCase))
+        {
+            var was = context.Recorded.Of(repository, name)?.Tip;
+            var from = was is not null && !string.Equals(was, wrote, StringComparison.OrdinalIgnoreCase) ? was : null;
+            var holds = await LineHolds.CommitsAsync(root, $"{against}..{wrote}", ct).ConfigureAwait(false) ?? commits;
+            var pushOn = handedOn ? "" : $" Push it and open the pull request from there: `git push -u origin {name}`.";
+            return new Branched(
+                new TreeLanding(true,
+                    $"put the work on `{name}` — {holds.Count} commit(s) from `{line ?? "HEAD"}`, the branch its delivery wrote before Daoris stopped, "
+                    + $"recorded now and not written again.{pushOn} Nothing was merged and the checkout was not touched.{TreeStays}",
+                    name) { AdvancedFrom = from },
+                root, line, holds, branch)
+            { Squashed = squash is null ? null : pinned ?? commits[^1].Sha };
         }
 
         if (exists == 0)

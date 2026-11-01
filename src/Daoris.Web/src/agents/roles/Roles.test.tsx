@@ -1,8 +1,9 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ActorRow, RoleCatalogue, RoleRow, StaffingFound } from '../../data/wiring';
 import i18n from '../../locales/i18n';
-import { RolesCard } from './Roles';
+import { RolesCard, roleIdFor } from './Roles';
 
 // FOUNDATION1y-i (the foundation design §2.7), COMPANYVIEW1a (the company-view design §3.1): the roles on AI features, one row each. The
 // person adds, changes and removes a working role (its names, work, place and choices), turns it off, puts its order back to as before,
@@ -35,6 +36,13 @@ const actor = (id: string, state: ActorRow['state'], ...agents: string[]): Actor
 const STAFFING: ActorRow[] = [actor('build', 'set', 'claude-code', 'codex-acp'), actor('intake', 'before', 'claude-code'), actor('chat', 'before', 'claude-code')];
 
 const AGENTS = [{ value: 'claude-code', label: 'Claude Code' }, { value: 'codex-acp', label: 'Codex' }];
+
+async function choose(name: string, option: string) {
+  const user = userEvent.setup();
+  screen.getByRole('combobox', { name }).focus();
+  await user.keyboard('{Enter}');
+  await user.click(await screen.findByRole('option', { name: option }));
+}
 
 type Props = Partial<Parameters<typeof RolesCard>[0]>;
 
@@ -72,27 +80,34 @@ describe('The roles', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add a role' }));
     const form = within(screen.getByRole('form', { name: 'A new role' }));
 
-    fireEvent.change(form.getByLabelText('Id'), { target: { value: 'reviewer-2' } });
+    expect(form.queryByLabelText('Id')).toBeNull();
+    expect(form.queryByLabelText('Where')).toBeNull();
     fireEvent.change(form.getByLabelText('Name in English'), { target: { value: 'Night review' } });
     fireEvent.change(form.getByLabelText('Name in Chinese'), { target: { value: '夜审' } });
     fireEvent.change(form.getByLabelText("choice 1's model"), { target: { value: 'opus' } });
     fireEvent.click(form.getByRole('button', { name: 'Save' }));
 
     expect(onSet).toHaveBeenCalledWith({
-      change: 'set', id: 'reviewer-2', revision: null,
+      change: 'set', id: 'night-review', revision: null,
       role: { name: { en: 'Night review', zh: '夜审' }, takes: ['build'], scope: { kind: 'machine', id: null } },
       choices: [{ agent: 'claude-code', model: 'opus', effort: null }],
     }, expect.anything());
   });
 
-  it('removes an added role, gives a seeded one back its seed, and takes the suggested Designer, each by the revision it read', () => {
-    const { onSet } = card();
+  it('removes an added role after naming the role it falls back to, gives a seeded one back its seed, and takes the suggested Designer, each by the revision it read', () => {
+    const { onSet } = card({ catalogue: { ...CATALOGUE, roles: [...CATALOGUE.roles, { ...CATALOGUE.roles[3]!, id: 'night-2', nameEn: 'Night two', scopeKind: 'machine', scopeId: undefined, revision: 5 }] } });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Remove Night shift' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Back to the default: Chat' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Night two' }));
+    expect(onSet).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Never mind' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Night two' }));
+    expect(within(screen.getByRole('group', { name: 'Remove Night two' })).getByText(/building waits until a role takes it/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Remove role' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Restore role defaults: Chat' }));
     fireEvent.click(screen.getByRole('button', { name: 'Add the Designer' }));
 
-    expect(onSet).toHaveBeenNthCalledWith(1, { change: 'remove', id: 'night', revision: 3 }, expect.anything());
+    expect(onSet).toHaveBeenNthCalledWith(1, { change: 'remove', id: 'night-2', revision: 5 }, expect.anything());
     expect(onSet).toHaveBeenNthCalledWith(2, { change: 'default', id: 'chat', revision: 2 }, expect.anything());
     expect(onSet).toHaveBeenNthCalledWith(3, {
       change: 'set', id: 'designer', revision: 0,
@@ -103,13 +118,72 @@ describe('The roles', () => {
   });
 
   it("says the driver's refusal under Save, the editor still open", () => {
-    card({ onSet: vi.fn((_press, answered) => answered.refused('`night` already takes `build` in that scope.')) });
+    card({ only: 'night', onSet: vi.fn((_press, answered) => answered.refused('`night` already takes `build` in that scope.')) });
     fireEvent.click(screen.getByRole('button', { name: 'Edit Night shift' }));
     const form = within(screen.getByRole('form', { name: 'Night shift' }));
     fireEvent.click(form.getByRole('button', { name: 'Save' }));
 
     expect(form.getByText(/in that scope/)).toBeTruthy();
     expect(screen.getByRole('form', { name: 'Night shift' })).toBeTruthy();
+  });
+
+  // AGENTSPLACE1g: All roles sets the machine-wide roles apart, reads the others and opens them at their place; the editor asks for no id
+  // and picks from what the agent offers.
+  describe('All roles', () => {
+    it('sets the roles placed machine-wide apart from those placed elsewhere, and reads the others', () => {
+      const onOpenPlace = vi.fn();
+      card({ onOpenPlace });
+
+      const machine = within(screen.getByRole('region', { name: 'Placed machine-wide' }));
+      const elsewhere = within(screen.getByRole('region', { name: 'Placed elsewhere' }));
+      expect(machine.getByText('Build')).toBeTruthy();
+      expect(elsewhere.getByText('Night shift')).toBeTruthy();
+      expect(elsewhere.queryByRole('button', { name: 'Edit Night shift' })).toBeNull();
+      expect(elsewhere.queryByRole('button', { name: 'Remove Night shift' })).toBeNull();
+
+      fireEvent.click(elsewhere.getByRole('button', { name: 'Open Night shift at studio' }));
+      expect(onOpenPlace).toHaveBeenCalledWith('workspace', 'studio');
+    });
+
+    it('filters by where a role is placed, and says so when none is', async () => {
+      card();
+      await choose('Roles placed', 'A workspace');
+      expect(screen.queryByRole('region', { name: 'Placed machine-wide' })).toBeNull();
+      expect(screen.getByText('Night shift')).toBeTruthy();
+
+      await choose('Roles placed', 'A repository');
+      expect(screen.getByText('No role is placed there.')).toBeTruthy();
+    });
+
+    it('names the role a removed one falls back to', () => {
+      const { onSet } = card({ only: 'night' });
+      fireEvent.click(screen.getByRole('button', { name: 'Remove Night shift' }));
+
+      expect(within(screen.getByRole('group', { name: 'Remove Night shift' })).getByText(/building falls back to Build, placed on this machine/)).toBeTruthy();
+      fireEvent.click(screen.getByRole('button', { name: 'Remove role' }));
+      expect(onSet).toHaveBeenCalledWith({ change: 'remove', id: 'night', revision: 3 }, expect.anything());
+    });
+
+    it("picks a model from the agent's own offers, and types a name after other…", async () => {
+      const { onSet } = card({ offers: { 'claude-code': { models: ['opus', 'sonnet'], efforts: ['low', 'high'] } } });
+      fireEvent.click(screen.getByRole('button', { name: 'Add a role' }));
+      const form = within(screen.getByRole('form', { name: 'A new role' }));
+
+      await choose("choice 1's model", 'sonnet');
+      await choose("choice 1's effort", 'other…');
+      fireEvent.change(form.getByLabelText("choice 1's effort name"), { target: { value: 'ultra' } });
+      fireEvent.change(form.getByLabelText('Name in English'), { target: { value: 'Quick' } });
+      fireEvent.click(form.getByRole('button', { name: 'Save' }));
+
+      expect(onSet).toHaveBeenCalledWith(expect.objectContaining({
+        id: 'quick', choices: [{ agent: 'claude-code', model: 'sonnet', effort: 'ultra' }],
+      }), expect.anything());
+    });
+
+    it('makes an id that no role holds yet', () => {
+      expect(roleIdFor('Build', 'build', ['build'])).toBe('build-2');
+      expect(roleIdFor('夜审', 'review', [])).toBe('review');
+    });
   });
 
   describe('the doors, per press', () => {
@@ -148,6 +222,7 @@ describe('The roles', () => {
 
     it('turns an added role off by SET_ROLE when its work allows it', () => {
       const { onSet } = card({
+        only: 'desk',
         catalogue: {
           ...CATALOGUE,
           roles: [{ id: 'desk', state: 'set', seeded: false, nameEn: 'Desk', nameZh: '前台', takes: ['intake'], scopeKind: 'workspace', scopeId: 'studio', revision: 4, choices: [{ agent: 'claude-code' }] }],
@@ -159,23 +234,27 @@ describe('The roles', () => {
       expect(onSet).toHaveBeenCalledWith(expect.objectContaining({ change: 'set', id: 'desk', revision: 4, choices: [] }), expect.anything());
     });
 
-    it("clears a seeded role's order by SET_ACTOR only, and offers Clear to an added role never", () => {
+    it("clears a seeded role's staffing by SET_ACTOR only, and offers Clear staffing to an added role never", () => {
       const { onSet, onSetActor } = card();
       fireEvent.click(screen.getByRole('button', { name: 'Edit Build' }));
-      fireEvent.click(within(screen.getByRole('form', { name: 'Build' })).getByRole('button', { name: 'Clear order' }));
+      fireEvent.click(within(screen.getByRole('form', { name: 'Build' })).getByRole('button', { name: 'Clear staffing' }));
 
       expect(onSetActor).toHaveBeenCalledWith('build', null, expect.anything());
       expect(onSet).not.toHaveBeenCalled();
-
-      fireEvent.click(screen.getByRole('button', { name: 'Edit Night shift' }));
-      expect(within(screen.getByRole('form', { name: 'Night shift' })).queryByRole('button', { name: 'Clear order' })).toBeNull();
     });
 
-    it('offers no Clear to a role already as before, and words Clear order apart from Back to the default', () => {
+    it('offers an added role no Clear staffing', () => {
+      card({ only: 'night' });
+      fireEvent.click(screen.getByRole('button', { name: 'Edit Night shift' }));
+      expect(within(screen.getByRole('form', { name: 'Night shift' })).queryByRole('button', { name: 'Clear staffing' })).toBeNull();
+    });
+
+    it('offers no Clear to a role already as before, and words the three acts apart', () => {
       card();
       fireEvent.click(screen.getByRole('button', { name: 'Edit Intake' }));
 
-      expect(within(screen.getByRole('form', { name: 'Intake' })).queryByRole('button', { name: 'Clear order' })).toBeNull();
+      expect(within(screen.getByRole('form', { name: 'Intake' })).queryByRole('button', { name: 'Clear staffing' })).toBeNull();
+      expect(new Set([i18n.t('settings.ai.actors.off'), i18n.t('settings.ai.roles.clear'), i18n.t('settings.ai.roles.default')]).size).toBe(3);
       expect(i18n.t('settings.ai.roles.clear')).not.toBe(i18n.t('settings.ai.roles.default'));
     });
 
@@ -183,7 +262,7 @@ describe('The roles', () => {
       card({ onSetActor: vi.fn((_actor, _choices, answered) => answered.refused('`build` has nothing to clear.')) });
       fireEvent.click(screen.getByRole('button', { name: 'Edit Build' }));
       const form = within(screen.getByRole('form', { name: 'Build' }));
-      fireEvent.click(form.getByRole('button', { name: 'Clear order' }));
+      fireEvent.click(form.getByRole('button', { name: 'Clear staffing' }));
 
       expect(form.getByText(/nothing to clear/)).toBeTruthy();
     });
@@ -216,7 +295,7 @@ describe('The roles', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Edit Intake' }));
       fireEvent.click(within(screen.getByRole('form', { name: 'Intake: your order' })).getByRole('button', { name: 'Off' }));
       fireEvent.click(screen.getByRole('button', { name: 'Edit Build' }));
-      fireEvent.click(within(screen.getByRole('form', { name: 'Build: your order' })).getByRole('button', { name: 'Clear order' }));
+      fireEvent.click(within(screen.getByRole('form', { name: 'Build: your order' })).getByRole('button', { name: 'Clear staffing' }));
 
       expect(onSetActor).toHaveBeenNthCalledWith(1, 'intake', [], expect.anything());
       expect(onSetActor).toHaveBeenNthCalledWith(2, 'build', null, expect.anything());
