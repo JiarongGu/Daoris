@@ -442,7 +442,6 @@ export function App() {
           place={place}
           notify={notify}
           onOpenPlugin={(plugin) => open('plugins', plugin)}
-          onOpenWorkspaceFlow={(workspace) => open('projects', workspaceItem(workspace), { workspaceTab: 'workflow' })}
         />
       ),
       sessions: (

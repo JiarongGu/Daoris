@@ -1,18 +1,21 @@
-import { useTranslation } from 'react-i18next';
 import { useRegistry } from '../../data/queries';
 import { workspaceOf } from '../../data/workspaces';
-import { Button, type Notify } from '../../design/ui';
-import { RepositorySetup, type RepositorySetupProps, SESSIONS_SECTIONS } from '../../projects/setup/RepositorySetup';
+import { type Notify } from '../../design/ui';
+import { sentence } from '../../locales/format';
+import { useWorkflowCurrent, useWorkflowEditor } from '../../bridge/shell';
+import { FoldRow } from '../../projects/setup/FoldRow';
+import { FOLD_SECTIONS, RepositorySetup, type RepositorySetupProps, SESSIONS_SECTIONS } from '../../projects/setup/RepositorySetup';
 import { useRepositorySetup } from '../../projects/setup/useRepositorySetup';
 import { useWorkflowTab } from '../../projects/useWorkflowTab';
 import { type PlaceWorkflowProps, PlaceWorkflowView } from '../../workflow/place/PlaceWorkflowView';
 import { WorkspaceSetupPart } from '../../projects/workspace/WorkspaceView';
-import type { PlaceRow } from '../../data/wiring';
+import type { PlaceHold } from '../AgentsView';
+import { repositoryId } from '../modes';
 
 /**
- * **A repository place's Workflow section** (AGENTSPLACE1h; the section's body on the place page, SETUPUX1h): its route and chart, Gates,
- * the line's landing rows from the one molecule Setup draws them with, and Change… and Edit steps…. A molecule: the setup and the workflow
- * arrive as props, and every press goes out.
+ * **A repository place's Workflow section** (AGENTSPLACE1h; the section's body on the place page, SETUPUX1h, SETUPUX1o): its routes and the
+ * chosen route's chart, Gates, the folds of the line and its landing from the one molecule Setup draws them with, and Change… and Edit steps….
+ * A molecule: the setup and the workflow arrive as props, and every press goes out.
  */
 export function PlaceWorkflowBodyView({ setup, workflow = null }: { setup: RepositorySetupProps | null; workflow?: PlaceWorkflowProps | null }) {
   if (!setup || !workflow) return null;
@@ -20,14 +23,16 @@ export function PlaceWorkflowBodyView({ setup, workflow = null }: { setup: Repos
     <PlaceWorkflowView
       {...workflow}
       onAcceptIntegration={setup.landed?.onAcceptIntegration}
-      landing={(asked) => (setup.work ? <RepositorySetup {...setup} only={['work']} gatesApart open={asked ?? setup.open} /> : null)}
+      landing={(hand) => (setup.work
+        ? <RepositorySetup {...setup} only={FOLD_SECTIONS} lead={hand.lead} gatesApart open={hand.asked ?? setup.open} openAgain={hand.again} />
+        : <FoldRow folds={hand.lead} />)}
     />
   );
 }
 
 /**
- * **A repository place's Sessions section**: the access, the heavy gates and checks, the language, helpers, hand-over and standing answer,
- * and the reach and rules, today's rows moved whole from Repositories' Setup tab, each with *Set for this repository* or *Clear*.
+ * **A repository place's Sessions section**: the access, the language, helpers, hand-over and standing answer, and the reach and rules,
+ * today's rows moved whole from Repositories' Setup tab, each with *Set for this repository* or *Clear*. The heavy gates went to Workflow's *More*.
  */
 export function PlaceSessionsBodyView({ setup }: { setup: RepositorySetupProps | null }) {
   if (!setup) return null;
@@ -36,7 +41,7 @@ export function PlaceSessionsBodyView({ setup }: { setup: RepositorySetupProps |
 
 /** A repository place's setup, from the registry's row and the driver's answers; read only while the section that draws it is open. */
 function useRepositoryPlace({ place, notify, onOpenPlugin, onOpenAppointed }: {
-  place: PlaceRow;
+  place: PlaceHold['row'];
   notify: Notify;
   onOpenPlugin?: (plugin: string) => void;
   onOpenAppointed?: () => void;
@@ -47,37 +52,62 @@ function useRepositoryPlace({ place, notify, onOpenPlugin, onOpenAppointed }: {
   return { registration, setup };
 }
 
-type PlaceOf = { kind: 'workspace'; row: PlaceRow } | { kind: 'repository'; row: PlaceRow };
-
 /**
- * **A place's Workflow section**: a repository's, from its Workflow answer; a workspace's is the Repositories page's tab until the
- * workspace's own section is built, so it says so and holds a door there.
+ * **A place's Workflow section**: a repository's or a workspace's, from its Workflow answer for the route the person chose, read only
+ * while the section is open. The route and the step are the shell's, held above the mounts.
  */
-export function PlaceWorkflow({ place, notify, onOpenPlugin, onOpenWorkspaceFlow }: {
-  place: PlaceOf;
+export function PlaceWorkflow({ place, notify, onOpenPlugin }: {
+  place: PlaceHold;
   notify: Notify;
   onOpenPlugin?: (plugin: string) => void;
-  onOpenWorkspaceFlow?: (workspace: string) => void;
 }) {
-  const { t } = useTranslation();
-  if (place.kind === 'workspace') {
-    return (
-      <div className="flex flex-wrap items-center gap-2 py-1 text-small text-ink-soft">
-        <span>{t('agents.setup.page.workspaceFlow')}</span>
-        {onOpenWorkspaceFlow && (
-          <Button variant="ghost" onClick={() => onOpenWorkspaceFlow(place.row.workspace ?? '')}>{t('agents.setup.page.workspaceFlowOpen')}</Button>
-        )}
-      </div>
-    );
-  }
-  return <RepositoryWorkflow place={place.row} notify={notify} onOpenPlugin={onOpenPlugin} />;
+  if (place.kind === 'workspace') return <WorkspaceWorkflow place={place} />;
+  return <RepositoryWorkflow place={place} notify={notify} onOpenPlugin={onOpenPlugin} />;
 }
 
-function RepositoryWorkflow({ place, notify, onOpenPlugin }: { place: PlaceRow; notify: Notify; onOpenPlugin?: (plugin: string) => void }) {
-  const { registration, setup } = useRepositoryPlace({ place, notify, onOpenPlugin });
-  const workflowOf = useWorkflowTab({ repository: registration?.repository ?? null, enabled: setup !== null, ready: setup !== null, notify });
+function RepositoryWorkflow({ place, notify, onOpenPlugin }: { place: PlaceHold; notify: Notify; onOpenPlugin?: (plugin: string) => void }) {
+  const { registration, setup } = useRepositoryPlace({ place: place.row, notify, onOpenPlugin });
+  const workflowOf = useWorkflowTab({
+    repository: registration?.repository ?? null, enabled: setup !== null, ready: setup !== null, notify, route: place.view.route,
+  });
   const workflow = registration ? workflowOf(registration) : null;
-  return <PlaceWorkflowBodyView setup={setup} workflow={workflow && { ...workflow, name: registration!.repository }} />;
+  // The route chosen before it, kept drawn while the next is read, is this repository's alone.
+  const current = workflow?.current?.repository === registration?.repository ? workflow?.current : undefined;
+  return (
+    <PlaceWorkflowBodyView
+      setup={setup}
+      workflow={workflow && {
+        ...workflow,
+        current,
+        name: registration!.repository,
+        view: place.view,
+        onView: place.onView,
+        onOpenSection: place.onOpenSection,
+      }}
+    />
+  );
+}
+
+/** A workspace's own Workflow: its routes and chart, and the repositories that follow it or set their own. */
+function WorkspaceWorkflow({ place }: { place: PlaceHold }) {
+  const workspace = place.row.workspace ?? '';
+  const answer = useWorkflowCurrent({ workspace }, { route: place.view.route });
+  const editor = useWorkflowEditor({ workspace });
+  // The route chosen before it, kept drawn while the next is read, is this workspace's alone.
+  const current = answer.data?.workspace === workspace ? answer.data : null;
+  return (
+    <PlaceWorkflowView
+      page="workspace"
+      name={workspace}
+      current={current}
+      reading={answer.isPending}
+      refusal={answer.error ? sentence(answer.error) : null}
+      doors={{ repository: (repository) => place.onGo(repositoryId(workspace, repository), { section: 'workflow' }) }}
+      editor={editor}
+      view={place.view}
+      onView={place.onView}
+    />
+  );
 }
 
 /**
@@ -86,7 +116,7 @@ function RepositoryWorkflow({ place, notify, onOpenPlugin }: { place: PlaceRow; 
  * An organism: it holds the bridge's hooks, so the molecules above hold none. It mounts only while its section is open.
  */
 export function PlaceSessions({ place, notify, onOpenPlugin, onOpenAppointed }: {
-  place: PlaceOf;
+  place: Pick<PlaceHold, 'kind' | 'row'>;
   notify: Notify;
   onOpenPlugin?: (plugin: string) => void;
   onOpenAppointed?: () => void;
@@ -98,7 +128,7 @@ export function PlaceSessions({ place, notify, onOpenPlugin, onOpenAppointed }: 
 }
 
 function RepositorySessions({ place, notify, onOpenPlugin, onOpenAppointed }: {
-  place: PlaceRow;
+  place: PlaceHold['row'];
   notify: Notify;
   onOpenPlugin?: (plugin: string) => void;
   onOpenAppointed?: () => void;

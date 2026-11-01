@@ -1,49 +1,248 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import type { ReactElement } from 'react';
+import { type ReactElement, useState } from 'react';
 import i18n from '../../locales/i18n';
 import { code } from '../../test/code';
+import type { PlaceView } from '../../agents/setup/placeShell';
+import type { CurrentWorkflow, WorkflowEffective } from '../current';
 import { LIST, PALETTE } from '../edit/editFixtures';
-import { FULL, GATES_CHANGED, INTEGRATION_CHANGED, START } from '../fixtures';
-import { PlaceWorkflowView, type PlaceWorkflowProps } from './PlaceWorkflowView';
+import {
+  cellOf, EFFECTIVE_CURRENT, EFFECTIVE_DOCS, EFFECTIVE_LANDED_NONE, EFFECTIVE_LANDED_VERIFIES, EFFECTIVE_RELEASE,
+} from '../effectiveFixtures';
+import { FULL, GATES_CHANGED, INTEGRATION_CHANGED, NO_VERIFICATION, START, WORKSPACE } from '../fixtures';
+import { type LandingHand, PlaceWorkflowView, type PlaceWorkflowProps } from './PlaceWorkflowView';
 
-// AGENTSPLACE1h (the Agents-place design §3, §5): a repository place's Workflow draws the route and the chart with its start node, Gates
-// with its two choices, Landing, and Change… and Edit steps…, which mount the FABRIC2 step editor. A molecule: every state is reached by its props.
+// SETUPUX1o (D221; the Setup design's §2.3): a place's Workflow draws its routes as a selection, the chosen route's chart (in its own column
+// from 64 rem, one press away below), the folds with their owners, and Gates; choosing a route writes nothing. A molecule: every state is
+// reached by its props.
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
 
-const WAITING = { ...FULL, start: { ...GATES_CHANGED, integration: INTEGRATION_CHANGED } };
-const SETTLED = { ...FULL, start: START };
+const SAVED_DEFAULT: typeof START = {
+  ...START,
+  routes: [{ kind: null, label: null, paths: [], workflow: 'release', level: 'repository', name: 'Release for engine' }, START.routes[1]!],
+};
+const WAITING = { ...FULL, start: { ...GATES_CHANGED, integration: INTEGRATION_CHANGED }, effective: EFFECTIVE_CURRENT };
+const withRoute = (effective: WorkflowEffective, start: typeof START = START): CurrentWorkflow => ({ ...FULL, start, effective });
 
 const editor = (onOpen = vi.fn()) => ({
   list: LIST, palette: PALETTE, error: null, roles: [], shown: null, onShow: vi.fn(), judged: null, judging: false, onJudge: vi.fn(),
   saving: false, onSave: vi.fn(), using: false, onUse: vi.fn(async () => ({ done: true, refused: null, message: null, changed: true, reach: [] })), onOpen,
 });
 
-const draw = (props: Partial<PlaceWorkflowProps> = {}) => render(<PlaceWorkflowView name="engine" current={WAITING} {...props} />);
+/** The width the page's pane is, as a browser would measure it. */
+let paneWidth: number | undefined;
+beforeEach(() => {
+  paneWidth = undefined;
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+    const width = this.hasAttribute('data-place-workflow') ? paneWidth ?? 0 : 0;
+    return { width, height: 0, top: 0, left: 0, right: width, bottom: 0, x: 0, y: 0, toJSON: () => ({}) } as DOMRect;
+  });
+  vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} });
+});
 
 // The language goes back inside `act`, with the page still drawn (FRAMEACT1).
-afterEach(async () => { await act(async () => { await i18n.changeLanguage('en'); }); });
+afterEach(async () => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+  await act(async () => { await i18n.changeLanguage('en'); });
+});
 
-describe("a repository place's Workflow", () => {
-  it('draws the head, the route with its start node, the chart and Gates under one Workflow heading', () => {
-    draw();
+/** Holds the route and the step, as the application's shell does above the mounts. */
+function Held(props: Partial<PlaceWorkflowProps> & { onView?: (choice: Partial<PlaceView>) => void; first?: Partial<PlaceView> }) {
+  const [view, setView] = useState<PlaceView>({ route: 'default', step: null, ...props.first });
+  return (
+    <PlaceWorkflowView
+      name="engine"
+      current={WAITING}
+      {...props}
+      view={view}
+      onView={(choice) => {
+        props.onView?.(choice);
+        setView((was) => ({ route: choice.route ?? was.route, step: choice.route && choice.route !== was.route ? choice.step ?? null : choice.step === undefined ? was.step : choice.step }));
+      }}
+    />
+  );
+}
 
-    expect(screen.getByRole('heading', { level: 2, name: 'Workflow' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Current workflow' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Where work here goes' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Gates' })).toBeInTheDocument();
-    expect(screen.getByRole('list', { name: 'Before it lands' })).toBeInTheDocument();
+const draw = (props: Partial<Parameters<typeof Held>[0]> = {}) => render(<Held {...props} />);
+const routeRow = (label: RegExp | string) => screen.getByRole('button', { name: label });
+
+describe("a place's routes", () => {
+  it('are drawn as a selection of rows, the chosen one marked, and not as radios', () => {
+    draw({ current: withRoute(EFFECTIVE_CURRENT) });
+
+    const list = screen.getByRole('list', { name: 'Where work here goes' });
+    expect(within(list).getAllByRole('listitem')).toHaveLength(3);
+    expect(screen.queryAllByRole('radio')).toHaveLength(0);
+    expect(routeRow(/^Default work: Current/)).toHaveAttribute('aria-current', 'true');
+    expect(routeRow(/^Documentation: Documentation to a pull request/)).not.toHaveAttribute('aria-current');
+    expect(routeRow(/^Landed work: Verify the line/)).not.toHaveAttribute('aria-current');
+  });
+
+  it('read a saved default as the workflow it follows, and draw its own graph, labelled as the saved workflow default work follows', async () => {
+    paneWidth = 1232;
+    draw({ current: withRoute(EFFECTIVE_RELEASE, SAVED_DEFAULT) });
+
+    expect(routeRow(/^Default work: Release for engine, /)).toBeInTheDocument();
+    expect(screen.getByText('Release for engine v2, the saved workflow default work follows')).toBeInTheDocument();
+    // The release graph's own steps, not Current's.
+    expect(document.querySelector('[data-flow-node="find"]')).not.toBeNull();
+  });
+
+  it('write nothing when one is chosen: the choice is a read of its graph, and no press goes out', async () => {
+    const onView = vi.fn();
+    const presses = {
+      onAcceptGates: vi.fn(), onAcceptIntegration: vi.fn(), onVerify: vi.fn(), editor: editor(),
+    };
+    draw({ current: withRoute(EFFECTIVE_CURRENT), onView, ...presses });
+
+    await userEvent.click(routeRow(/^Documentation:/));
+    await userEvent.click(routeRow(/^Landed work:/));
+
+    expect(onView).toHaveBeenNthCalledWith(1, { route: 'kind:docs' });
+    expect(onView).toHaveBeenNthCalledWith(2, { route: 'landed' });
+    expect(presses.onAcceptGates).not.toHaveBeenCalled();
+    expect(presses.onAcceptIntegration).not.toHaveBeenCalled();
+    expect(presses.onVerify).not.toHaveBeenCalled();
+    expect(presses.editor.onUse).not.toHaveBeenCalled();
+    expect(presses.editor.onOpen).not.toHaveBeenCalled();
+  });
+
+  it('draw the kind chosen once its own graph is answered, and say it is being read until then', () => {
+    paneWidth = 1232;
+    const { unmount } = draw({ current: withRoute(EFFECTIVE_CURRENT), first: { route: 'kind:docs' } });
+    expect(screen.getByText('Reading the chart…')).toBeInTheDocument();
+    unmount();
+
+    paneWidth = 1232;
+    draw({ current: withRoute(EFFECTIVE_DOCS), first: { route: 'kind:docs' } });
+    expect(screen.getByText('Documents workflow v1, the saved workflow Documentation follows')).toBeInTheDocument();
+  });
+
+  it('read landed Current as *No verification here* and draw no chart for it', () => {
+    paneWidth = 1232;
+    draw({ current: withRoute(EFFECTIVE_LANDED_NONE, { ...NO_VERIFICATION }), first: { route: 'landed' } });
+
+    expect(routeRow(/^Landed work: No verification here/)).toHaveAttribute('aria-current', 'true');
+    expect(screen.getByText('Landed work follows no verification here, so there is no chart to draw.')).toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: /moves/ })).toBeNull();
+  });
+
+  it('offer *Verify…* only once the landed pipeline is accepted, and only on the landed route', () => {
+    const accepted = withRoute(EFFECTIVE_LANDED_VERIFIES, START);
+    const { unmount } = draw({ current: accepted, first: { route: 'landed' }, onVerify: vi.fn() });
+    expect(screen.getByRole('button', { name: 'Verify…' })).toBeInTheDocument();
+    unmount();
+
+    const waiting = withRoute(EFFECTIVE_LANDED_VERIFIES, GATES_CHANGED);
+    const second = draw({ current: waiting, first: { route: 'landed' }, onVerify: vi.fn() });
+    expect(screen.queryByRole('button', { name: 'Verify…' })).toBeNull();
+    second.unmount();
+
+    draw({ current: accepted, onVerify: vi.fn() });
+    expect(screen.queryByRole('button', { name: 'Verify…' })).toBeNull();
+  });
+});
+
+describe("the chosen route's chart", () => {
+  it('stands in its own column where the page holds 64 rem, with no press to show it', () => {
+    paneWidth = 1232;
+    draw({ current: withRoute(EFFECTIVE_RELEASE, SAVED_DEFAULT) });
+
+    expect(screen.queryByRole('button', { name: 'Show the chart' })).toBeNull();
+    expect(document.querySelector('[data-place-workflow]')).toHaveAttribute('data-columns', 'two');
+    expect(screen.getByRole('region', { name: 'The chart of default work' })).toBeInTheDocument();
+  });
+
+  it('is one press away below it, and the press takes it away again', async () => {
+    paneWidth = 624;
+    draw({ current: withRoute(EFFECTIVE_RELEASE, SAVED_DEFAULT) });
+
+    expect(document.querySelector('[data-place-workflow]')).toHaveAttribute('data-columns', 'one');
+    expect(screen.queryByRole('region', { name: 'The chart of default work' })).toBeNull();
+    const show = screen.getByRole('button', { name: 'Show the chart' });
+    expect(show).toHaveAttribute('aria-expanded', 'false');
+
+    await userEvent.click(show);
+    expect(screen.getByRole('region', { name: 'The chart of default work' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Hide the chart' }));
+    expect(screen.queryByRole('region', { name: 'The chart of default work' })).toBeNull();
+  });
+
+  it("shows a step's cell on selection and tells the holder, and the holder keeps it", async () => {
+    paneWidth = 1232;
+    const onView = vi.fn();
+    draw({ current: withRoute(EFFECTIVE_CURRENT), onView });
+
+    await userEvent.click(within(document.querySelector<HTMLElement>('[data-flow-node="review"]')!).getByRole('button', { name: 'Its settings' }));
+
+    expect(onView).toHaveBeenCalledWith({ step: 'review' });
+    expect(screen.getByRole('region', { name: 'Your review: its settings' })).toBeInTheDocument();
+  });
+
+  it("opens Landing from a step's door, and the Sessions section from the standing answer's", async () => {
+    paneWidth = 1232;
+    const onOpenSection = vi.fn();
+    const landing = vi.fn((hand: LandingHand) => <p data-testid="landing">{hand.asked ?? 'folded'}</p>);
+    // Asked twice, it is told twice.
+    const lastAgain = () => landing.mock.calls.at(-1)![0].again;
+    const work = cellOf({ id: 'work', kind: 'claimed' });
+    const current = withRoute({
+      ...EFFECTIVE_CURRENT,
+      cells: EFFECTIVE_CURRENT.cells.map((cell) => (cell.node === 'work'
+        ? { ...cell, step: { ...work, settings: { standing: 'prod only on a yes' }, source: { rule: null, level: 'default' as const } } }
+        : cell.node === 'landing' ? { ...cell, step: { ...cell.step, source: { rule: 'landing' as const, level: 'repository' as const } } } : cell)),
+    });
+    draw({ current, landing, onOpenSection, first: { step: 'landing' } });
+
+    expect(screen.getByTestId('landing')).toHaveTextContent('folded');
+    await userEvent.click(within(screen.getByRole('region', { name: 'The landing: its settings' })).getByRole('button', { name: 'Change in Setup' }));
+    expect(screen.getByTestId('landing')).toHaveTextContent('landing');
+    expect(lastAgain()).toBe(1);
+    await userEvent.click(within(screen.getByRole('region', { name: 'The landing: its settings' })).getByRole('button', { name: 'Change in Setup' }));
+    expect(lastAgain()).toBe(2);
+    expect(onOpenSection).not.toHaveBeenCalled();
+  });
+
+  it('opens the Sessions section, which only scrolled before', async () => {
+    paneWidth = 1232;
+    const onOpenSection = vi.fn();
+    const work = cellOf({ id: 'work', kind: 'claimed' });
+    const current = withRoute({
+      ...EFFECTIVE_CURRENT,
+      cells: EFFECTIVE_CURRENT.cells.map((cell) => (cell.node === 'work'
+        ? { ...cell, step: { ...work, settings: { standing: 'prod only on a yes' }, source: { rule: null, level: 'default' as const } } } : cell)),
+    });
+    draw({ current, onOpenSection, first: { step: 'work' } });
+
+    await userEvent.click(within(screen.getByRole('region', { name: 'The work: its settings' })).getByRole('button', { name: 'Change in Setup' }));
+    expect(onOpenSection).toHaveBeenCalledWith('sessions');
+  });
+});
+
+describe("a place's Workflow, its folds and Gates", () => {
+  it('draws Gates as a fold that opens for an acceptance owed, with both choices, and folds once it is settled', () => {
+    draw({ onAcceptGates: vi.fn(), onAcceptIntegration: vi.fn() });
+
+    expect(screen.getByRole('button', { name: 'Gates' })).toHaveAttribute('aria-expanded', 'true');
+    expect(within(screen.getByRole('region', { name: 'Gates' })).getAllByRole('checkbox')).toHaveLength(2);
+  });
+
+  it('keeps Gates folded and names where it stands once accepted', () => {
+    draw({ current: { ...FULL, start: START, effective: EFFECTIVE_CURRENT } });
+
+    const gates = screen.getByRole('button', { name: 'Gates' });
+    expect(gates).toHaveAttribute('aria-expanded', 'false');
+    expect(gates).toHaveAccessibleDescription('Accepted, blob 3b18e51');
   });
 
   it('draws the declaration once, in Gates, and not again on the landed route', () => {
-    draw({ onAcceptGates: vi.fn(), onAcceptIntegration: vi.fn() });
+    draw({ onAcceptGates: vi.fn(), onAcceptIntegration: vi.fn(), first: { route: 'landed' } });
 
-    // The start node says where the route stands; the declaration and its press are Gates'.
     expect(document.querySelectorAll('pre')).toHaveLength(2);
-    expect(within(screen.getByRole('heading', { name: 'Gates' }).closest('section')!).getAllByRole('checkbox')).toHaveLength(2);
     expect(screen.queryByRole('button', { name: 'Accept the gates' })).toBeNull();
   });
 
@@ -59,23 +258,15 @@ describe("a repository place's Workflow", () => {
     expect(onAcceptIntegration).toHaveBeenCalledWith({ gates: '0e5751c026e543b2e8ab2eb06099daa1d1e5df47' }, expect.anything());
   });
 
-  it("keeps *Verify…* on the route, beside the landed route's standing", () => {
-    draw({ current: SETTLED, onVerify: vi.fn() });
-    expect(screen.getByRole('button', { name: 'Verify…' })).toBeInTheDocument();
-  });
-
-  it('draws the line and landing rows it is handed, and opens them from a chart step that names its setting', async () => {
-    const landing = vi.fn((asked: 'work' | null) => <p data-testid="landing">{asked ?? 'folded'}</p>);
+  it('hands the line and landing folds Gates to stand before them, and draws what they draw', () => {
+    const landing = vi.fn((hand: LandingHand) => <p data-testid="landing">{hand.lead.map((fold) => fold.title).join()}</p>);
     draw({ landing });
-
-    expect(screen.getByTestId('landing')).toHaveTextContent('folded');
-    const step = screen.getAllByRole('listitem').find((item) => item.getAttribute('data-step') === 'look')!;
-    await userEvent.click(within(step).getByRole('button', { name: 'Change in Setup' }));
-
-    expect(screen.getByTestId('landing')).toHaveTextContent('work');
+    expect(screen.getByTestId('landing')).toHaveTextContent('Gates');
   });
+});
 
-  it('opens Change… and Edit steps… in place, each told so the editor reads wait for them', async () => {
+describe('Change… and Edit steps…', () => {
+  it('open in place of the chart, each told so the editor reads wait for them', async () => {
     const onOpen = vi.fn();
     draw({ editor: editor(onOpen) });
 
@@ -112,16 +303,46 @@ describe("a repository place's Workflow", () => {
     expect(screen.queryByRole('region', { name: 'Change what its work follows' })).toBeNull();
   });
 
+  it('are not offered for landed work, which WORKFLOW_USE does not choose', () => {
+    draw({ editor: editor(), first: { route: 'landed' } });
+    expect(screen.queryByRole('button', { name: 'Change…' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Edit steps…' })).toBeNull();
+  });
+
   it("says the terminal's way where no editor is handed", () => {
     draw();
     expect(screen.queryByRole('button', { name: 'Change…' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Edit steps…' })).toBeNull();
     expect(screen.getByText(code('daoris driver workflow new <id> --from <default>'))).toBeInTheDocument();
   });
+});
 
+describe("a workspace's own Workflow", () => {
+  const workspace = (): CurrentWorkflow => ({ ...WORKSPACE, start: { ...START, integration: null }, effective: { ...EFFECTIVE_CURRENT, route: 'default' } });
+
+  it('draws its routes and chart, and no Gates, which stay each repository\'s', () => {
+    paneWidth = 1232;
+    draw({ page: 'workspace', name: 'aurora', current: workspace() });
+
+    expect(screen.getByRole('list', { name: 'Where work here goes' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'The chart of default work' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Gates' })).toBeNull();
+  });
+
+  it('lists its repositories, each following it or setting its own, with a door to the one that sets its own', async () => {
+    const repository = vi.fn();
+    draw({ page: 'workspace', name: 'aurora', current: workspace(), doors: { repository } });
+
+    const list = screen.getByRole('list', { name: 'Repositories here' });
+    expect(within(list).getByText('follows this')).toBeInTheDocument();
+    await userEvent.click(within(list).getByRole('button', { name: "Open engine's workflow" }));
+    expect(repository).toHaveBeenCalledWith('engine');
+  });
+});
+
+describe('the answer on its way', () => {
   it('says it is reading, and a refusal in the driver\'s words, in place of the body', () => {
     const { unmount } = draw({ current: null, reading: true });
-    expect(screen.getByRole('heading', { level: 2, name: 'Workflow' })).toBeInTheDocument();
     expect(screen.getByText('Reading how work moves here…')).toBeInTheDocument();
     unmount();
 
@@ -129,10 +350,17 @@ describe("a repository place's Workflow", () => {
     expect(screen.getByText('the driver is still coming up — try again in a moment.')).toBeInTheDocument();
   });
 
-  it('says its heading in Chinese', async () => {
+  it('says a driver that answers no graph for a route, and keeps the routes', () => {
+    paneWidth = 1232;
+    draw({ current: { ...FULL, start: START } });
+    expect(screen.getByText("This driver does not draw a route's graph yet, so the chart waits for it.")).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'Where work here goes' })).toBeInTheDocument();
+  });
+
+  it('says its words in Chinese', async () => {
     await act(async () => { await i18n.changeLanguage('zh'); });
     draw();
-    expect(screen.getByRole('heading', { level: 2, name: '工作流' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '检查' })).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: '工作在这里如何分流' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '检查' })).toBeInTheDocument();
   });
 });
