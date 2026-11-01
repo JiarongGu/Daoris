@@ -1,9 +1,11 @@
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useRegistry } from '../../data/queries';
 import { workspaceOf } from '../../data/workspaces';
 import { type Notify, Segmented } from '../../design/ui';
 import { MACHINE, repositoryId, workspaceId } from '../modes';
 import type { PlaceAt } from '../setup/placeShell';
+import type { RolesView } from './RoleSections';
 import { type RoleOpeners, type RolesPage, useRolesMode } from './RolesView';
 
 /**
@@ -38,21 +40,26 @@ export function AllRoles({ notify, page, doors, onGo }: {
     workspace: (workspace) => onGo(workspaceId(workspace), { section: 'roles', back }),
   };
   const mode = useRolesMode({ notify, section: 'working', doors: openAtPlace, page, placed: true });
-  const body = page.view === 'diagram' ? mode.diagram : mode.card;
+  return <AllRolesView view={page.view} onView={page.onView}>{page.view === 'diagram' ? mode.diagram : mode.card}</AllRolesView>;
+}
+
+/** The section's body: the choice of the list or the diagram, and the one chosen. A molecule: the view arrives, and its change goes out. */
+export function AllRolesView({ view, onView, children }: { view: RolesView; onView: (view: RolesView) => void; children?: ReactNode }) {
+  const { t } = useTranslation();
   return (
     <div className="grid min-w-0 gap-3">
       <div>
         <Segmented
           label={t('agents.setup.allRoles.view')}
-          value={page.view}
+          value={view}
           options={[
             { value: 'list', label: t('agents.setup.allRoles.list') },
             { value: 'diagram', label: t('agents.setup.allRoles.diagram') },
           ]}
-          onChange={page.onView}
+          onChange={onView}
         />
       </div>
-      {body ?? <p className="m-0 text-small text-ink-soft">{t('agents.roles.reading')}</p>}
+      {children ?? <p className="m-0 text-small text-ink-soft">{t('agents.roles.reading')}</p>}
     </div>
   );
 }
