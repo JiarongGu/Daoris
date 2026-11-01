@@ -184,7 +184,7 @@ export function placeDoor(asked: HelpPlace): StarterDoor | null {
     const filled = asked.workspace?.trim();
     return { view, drawer: part as 'add' | 'import', ...(filled ? { drawerWorkspace: filled } : {}) };
   }
-  if (view === 'agents') return part === 'roles' ? { view, agentsMode: 'roles' } : { view, agentPart: part as AgentPart };
+  if (view === 'agents') return part === 'roles' ? { view, agentsMode: 'setup' } : { view, agentPart: part as AgentPart };
   if (view === 'knowledge') return { view, knowledge: part as KnowledgeMode };
   // NEW1d-b: the composer opens, with the repository chosen and the words in where the go named them; neither is sent.
   if (view === 'sessions' && part === 'new') {

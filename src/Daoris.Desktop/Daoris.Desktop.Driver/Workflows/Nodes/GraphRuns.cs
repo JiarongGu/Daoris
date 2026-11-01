@@ -261,7 +261,7 @@ public static class RunSubjects
     public static HashSet<string> AfterHanded(NodeGraph graph)
     {
         var after = new HashSet<string>(StringComparer.Ordinal);
-        var next = new Queue<string>(graph.Nodes.Where(node => node.Kind == NodeKinds.Handed).Select(node => node.Id));
+        var next = new Queue<string>(graph.Nodes.Where(node => NodeKinds.IsLanding(node.Kind)).Select(node => node.Id));
         while (next.TryDequeue(out var from))
         {
             foreach (var wire in graph.Wires.Where(wire => wire.From is { Unit: null } source && source.Node == from && wire.To is { Unit: null }))

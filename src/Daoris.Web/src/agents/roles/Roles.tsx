@@ -3,7 +3,9 @@ import { type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ActorRow, RoleCatalogue, RoleChangePress, RoleChoice, RoleRow, RoleUse, StaffingFound, SuggestedRole } from '../../data/wiring';
 import { Button, Card, CardHeader, FormField, FormGrid, FormRow, Icon, Inline, Prose, SelectField, SettingList, SettingRow } from '../../design/ui';
-import { type Answered, Refused } from '../../work/InlineConfirm';
+import { type Answered, InlineConfirm, Refused } from '../../work/InlineConfirm';
+import type { SettingsChoices } from '../tools';
+import { OfferedField } from './OfferedField';
 import { RowMore } from './RowMore';
 import { SuggestedChoicesCard } from './SuggestedChoicesCard';
 
@@ -13,8 +15,20 @@ export type ActorChoice = { agent: string; model?: string | null; effort?: strin
 /** The most choices a role holds (D205 §3.1, `ActorChoices.Most`). */
 const MOST = 4;
 
-/** The places a role works in (§2.7's scope kinds). */
-const PLACES = ['machine', 'workspace', 'repository'] as const;
+/** How far a role's place reaches: a wider place is what a narrower one falls back to. */
+const REACH: Record<string, number> = { machine: 0, workspace: 1, repository: 2 };
+
+/** Which of All roles' rows are shown, by where the role is placed. */
+export type RoleScope = 'all' | 'machine' | 'workspace' | 'repository';
+const SCOPES: readonly RoleScope[] = ['all', 'machine', 'workspace', 'repository'];
+
+/** An id made from a name, unique among the ids the catalogue holds; a name with no letters falls back to its work. */
+export function roleIdFor(name: string, work: string, taken: readonly string[]): string {
+  const base = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || work;
+  let id = base;
+  for (let n = 2; taken.includes(id); n++) id = `${base}-${n}`;
+  return id;
+}
 
 /** The roles whose staffing editor over `SET_ACTOR` this build offers (MODELROLE1c, 1d; the rest come with MODELROLE1e). */
 const EDITABLE = new Set(['build', 'intake', 'ask-daoris', 'chat']);
@@ -25,9 +39,6 @@ const CONVERSING = new Set(['ask-daoris', 'chat']);
 /** The work a role may be off for, and an actor's own words for off (D205 §2.1: they keep their cards' words on the folded rows). */
 const OFF_WORKS = new Set(['intake', 'ask-daoris']);
 const OFF_WORDS: Record<string, string> = { intake: 'settings.ai.intake.off', 'ask-daoris': 'settings.ai.helper.off' };
-
-/** What the efforts' field suggests: the pipe door's words (D205 §3.1); a protocol agent's own come with its offers. */
-const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'];
 
 const FIELD = 'w-full min-w-0 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink placeholder:italic placeholder:text-ink-faint';
 
@@ -150,8 +161,15 @@ function suggestionPress(role: SuggestedRole): RoleChangePress {
  */
 export function RolesCard({
   catalogue, read = catalogue ? 'ok' : 'notOffered', staffing = [], agents, about = {}, busy = false, onSet, onSetActor, found = [], onAnswerFound,
-  editor: held, onEditor, only, onDiagram,
+  editor: held, onEditor, only, onDiagram, offers = {}, onOpenPlace, scope: heldScope, onScope,
 }: {
+  /** What each agent offers for a model and an effort, by agent; absent or null, the field is a typed name. */
+  offers?: Readonly<Record<string, SettingsChoices | null | undefined>>;
+  /** *Open at \<place\>* on a role placed elsewhere: the place's own page, where it is edited. */
+  onOpenPlace?: (kind: 'workspace' | 'repository', id: string) => void;
+  /** Which roles All roles shows by where they are placed, held by the page that owns the section; with none given the card holds its own. */
+  scope?: RoleScope;
+  onScope?: (scope: RoleScope) => void;
   /** One role's row alone, as the diagram's detail draws it (COMPANYVIEW1f): no card, no adding, no suggestion. */
   only?: string;
   /** A row's ⋯ *On the diagram*, its role chosen there. */
@@ -192,6 +210,10 @@ export function RolesCard({
     if (controlled) onEditor(next);
     else setOwn(next);
   };
+  const [ownScope, setOwnScope] = useState<RoleScope>('all');
+  const scope = heldScope ?? ownScope;
+  const setScope = (next: RoleScope) => (onScope ?? setOwnScope)(next);
+  const [removing, setRemoving] = useState<string | null>(null);
   const [refused, setRefused] = useState<{ at: string; sentence: string } | null>(null);
   const [foundRefused, setFoundRefused] = useState<{ id: number; sentence: string } | null>(null);
   const name = (row: Pick<RoleRow, 'id' | 'seeded' | 'nameEn' | 'nameZh'>) => roleName(t, i18n.language, row);
@@ -249,7 +271,7 @@ export function RolesCard({
       pressActor(now.id, now.id, off ? [] : entries(now));
       return;
     }
-    const id = now.id.trim();
+    const id = now.id.trim() || roleIdFor(now.nameEn.trim(), now.work, catalogue?.roles.map((row) => row.id) ?? []);
     press(now.isNew ? '' : now.id, {
       change: 'set', id, revision: now.revision,
       role: {
@@ -265,9 +287,15 @@ export function RolesCard({
     onAnswerFound?.(id, said, { done: () => {}, refused: (sentence) => setFoundRefused({ id, sentence }) });
   };
   const works = (catalogue?.works ?? []).map((work) => ({ value: work, label: t(`settings.ai.roles.work.${work}`) }));
-  const places = PLACES.map((place) => ({ value: place, label: t(`settings.ai.roles.where.${place}`) }));
   /** The catalogue's own presses, held where this home's file is its own. */
   const locked = busy || !kept;
+  /** The role a removed one's work falls back to: the nearest wider place that has one taking the same work. */
+  const fallbackOf = (row: RoleRow) => {
+    const reach = REACH[row.scopeKind ?? 'machine'] ?? 0;
+    return (catalogue?.roles ?? [])
+      .filter((each) => each.id !== row.id && (each.state === 'seed' || each.state === 'set') && each.takes[0] === row.takes[0] && (REACH[each.scopeKind ?? 'machine'] ?? 0) < reach)
+      .sort((a, b) => (REACH[b.scopeKind ?? 'machine'] ?? 0) - (REACH[a.scopeKind ?? 'machine'] ?? 0))[0] ?? null;
+  };
 
   const editor = (now: Editing) => {
     const line = lineOf(now.id);
@@ -292,12 +320,12 @@ export function RolesCard({
       >
         <p className="m-0 text-small font-medium text-ink">{title}</p>
         {now.mode === 'role' && (
+          <details open={now.isNew} className="grid gap-2">
+            <summary className="cursor-pointer text-small font-medium text-ink-soft">{t('settings.ai.roles.editRole')}</summary>
+          <p className="m-0 mb-2 text-small text-ink-soft">
+            {t('settings.ai.roles.fixedPlace', { place: placeText(t, now.place, now.placeId) })}
+          </p>
           <FormGrid columns={['name', 'name']}>
-            {now.isNew && (
-              <FormField label={t('settings.ai.roles.field.id')}>
-                <input aria-label={t('settings.ai.roles.field.id')} value={now.id} spellCheck={false} onChange={(event) => set({ id: event.target.value })} className={FIELD} />
-              </FormField>
-            )}
             <FormField label={t('settings.ai.roles.field.nameEn')}>
               <input aria-label={t('settings.ai.roles.field.nameEn')} value={now.nameEn} onChange={(event) => set({ nameEn: event.target.value })} className={FIELD} />
             </FormField>
@@ -307,21 +335,8 @@ export function RolesCard({
             <FormField label={t('settings.ai.roles.field.work')}>
               <SelectField value={now.work} onChange={(value) => set({ work: value })} options={works} ariaLabel={t('settings.ai.roles.field.work')} />
             </FormField>
-            <FormField label={t('settings.ai.roles.field.where')}>
-              <SelectField value={now.place} onChange={(value) => set({ place: value })} options={places} ariaLabel={t('settings.ai.roles.field.where')} />
-            </FormField>
-            {now.place !== 'machine' && (
-              <FormField label={t('settings.ai.roles.field.placeId')}>
-                <input
-                  aria-label={t('settings.ai.roles.field.placeId')}
-                  value={now.placeId}
-                  spellCheck={false}
-                  onChange={(event) => set({ placeId: event.target.value })}
-                  className={FIELD}
-                />
-              </FormField>
-            )}
           </FormGrid>
+          </details>
         )}
         <FormGrid columns={['name', 'name', 'short', 'acts']} floor="40rem">
           <FormRow head>
@@ -340,24 +355,23 @@ export function RolesCard({
                   <SelectField value={draft.agent} onChange={(value) => change(draft.key, 'agent', value)} options={[...options]} ariaLabel={t('settings.ai.actors.agentOf', { n })} />
                 </FormField>
                 <FormField label={t('settings.ai.actors.field.model')} when="stacked">
-                  <input
-                    aria-label={t('settings.ai.actors.modelOf', { n })}
+                  <OfferedField
+                    key={draft.agent}
                     value={draft.model}
-                    spellCheck={false}
-                    placeholder={t('settings.ai.actors.accountDefault')}
-                    onChange={(event) => change(draft.key, 'model', event.target.value)}
-                    className={FIELD}
+                    offered={offers[draft.agent]?.models}
+                    label={t('settings.ai.actors.modelOf', { n })}
+                    otherLabel={t('settings.ai.roles.offers.modelOther', { n })}
+                    onChange={(value) => change(draft.key, 'model', value)}
                   />
                 </FormField>
                 <FormField label={t('settings.ai.actors.field.effort')} when="stacked">
-                  <input
-                    aria-label={t('settings.ai.actors.effortOf', { n })}
+                  <OfferedField
+                    key={draft.agent}
                     value={draft.effort}
-                    spellCheck={false}
-                    list="role-efforts"
-                    placeholder={t('settings.ai.actors.accountDefault')}
-                    onChange={(event) => change(draft.key, 'effort', event.target.value)}
-                    className={FIELD}
+                    offered={offers[draft.agent]?.efforts}
+                    label={t('settings.ai.actors.effortOf', { n })}
+                    otherLabel={t('settings.ai.roles.offers.effortOther', { n })}
+                    onChange={(value) => change(draft.key, 'effort', value)}
                   />
                 </FormField>
                 <span className="flex items-center">
@@ -385,9 +399,6 @@ export function RolesCard({
             );
           })}
         </FormGrid>
-        <datalist id="role-efforts">
-          {EFFORTS.map((effort) => <option key={effort} value={effort} />)}
-        </datalist>
         <p className="m-0 text-small text-ink-soft">{t('settings.ai.actors.later')}</p>
         <p className="m-0 text-small text-ink-soft">{t('settings.ai.actors.outranks')}</p>
         {/* What a running conversation does, said where the order it follows is set (D205 §7, round 4). */}
@@ -420,22 +431,30 @@ export function RolesCard({
       {read === 'failed' && <p role="alert" className="m-0 mb-2 text-small text-ink-soft">{t('settings.ai.roles.readFailed')}</p>}
     </>
   );
-  const rows = (
+  /** A role placed at a workspace or a repository, which All roles shows and its own place's page edits. */
+  const placedElsewhere = (line: Line) => line.row?.scopeKind === 'workspace' || line.row?.scopeKind === 'repository';
+  const rowsOf = (list: readonly Line[]) => (
     <SettingList>
-        {lines.map((line) => {
+        {list.map((line) => {
           const { row, actor } = line;
           const named = nameOfLine(line);
           const used = catalogue?.use?.roles.find((each) => each.role === line.id);
           const open_ = editing?.id === line.id && !editing.isNew;
-          const mayEdit = row
+          // One editor per role: in the catalogue a role placed elsewhere is read, and opened at its place.
+          const readOnly = only === undefined && placedElsewhere(line);
+          const mayEdit = !readOnly && (row
             ? (row.state === 'seed' || row.state === 'set') && (staffingOnly(line) ? !!actor && EDITABLE.has(line.id) : kept)
-            : !!actor && EDITABLE.has(line.id);
+            : !!actor && EDITABLE.has(line.id));
+          const asking = removing === line.id && row;
+          const placeId_ = row?.scopeId ?? '';
+          const fallback = row ? fallbackOf(row) : null;
+          const work = t(`settings.ai.roles.work.${row?.takes[0] ?? line.id}`, { defaultValue: row?.takes[0] ?? line.id });
           return (
             <SettingRow
               key={line.id}
               label={named}
               why={about[line.id]?.why}
-              control={!open_ && (
+              control={!open_ && !asking && (
                 <>
                   <span className="text-body text-ink wrap-anywhere">{row ? roleSummary(t, row, actor) : actorSummary(t, actor!)}</span>
                   {mayEdit && (
@@ -443,17 +462,26 @@ export function RolesCard({
                       {t('settings.ai.actors.edit')}
                     </Button>
                   )}
-                  {row && row.state !== 'removed' && (
+                  {readOnly && onOpenPlace && row && (
+                    <Button
+                      variant="ghost"
+                      aria-label={t('settings.ai.roles.openAtOf', { role: named, place: placeId_ })}
+                      onClick={() => onOpenPlace(row.scopeKind as 'workspace' | 'repository', placeId_)}
+                    >
+                      {t('settings.ai.roles.openAt', { place: placeId_ })}
+                    </Button>
+                  )}
+                  {!readOnly && row && row.state !== 'removed' && (
                     <Button
                       variant="ghost"
                       disabled={locked || editing !== null}
                       aria-label={t('settings.ai.roles.removeOf', { role: named })}
-                      onClick={() => press(line.id, { change: 'remove', id: line.id, revision: row.revision })}
+                      onClick={() => { setRefused(null); setRemoving(line.id); }}
                     >
                       {t('settings.ai.roles.remove')}
                     </Button>
                   )}
-                  {row && row.seeded && row.state !== 'seed' && (
+                  {!readOnly && row && row.seeded && row.state !== 'seed' && (
                     <Button
                       variant="ghost"
                       disabled={locked || editing !== null}
@@ -467,6 +495,20 @@ export function RolesCard({
                 </>
               )}
             >
+              {asking && row && (
+                <InlineConfirm
+                  label={t('settings.ai.roles.removeAsk', { role: named })}
+                  says={fallback
+                    ? t('settings.ai.roles.removeFallback', {
+                      role: named, work, fallback: name(fallback), place: placeText(t, fallback.scopeKind, fallback.scopeId),
+                    })
+                    : t('settings.ai.roles.removeNone', { role: named, work })}
+                  meanIt={t('settings.ai.roles.removeMove')}
+                  busy={busy}
+                  onConfirm={(answered) => onSet({ change: 'remove', id: line.id, revision: row.revision }, answered)}
+                  onClose={() => setRemoving(null)}
+                />
+              )}
               {!open_ && used && <p className="m-0 text-small text-ink-faint wrap-anywhere">{useLine(t, used, catalogue!.use!.days)}</p>}
               {!open_ && about[line.id]?.below}
               {open_ && editing && editor(editing)}
@@ -476,11 +518,22 @@ export function RolesCard({
         })}
     </SettingList>
   );
+  const rows = rowsOf(lines);
   if (only !== undefined) return <div className="min-w-0">{said}{rows}</div>;
+
+  const shownLines = scope === 'all' ? lines : lines.filter((line) => (line.row?.scopeKind ?? 'machine') === scope);
+  const machineWide = shownLines.filter((line) => !placedElsewhere(line));
+  const elsewhere = shownLines.filter(placedElsewhere);
+  const group = (title: string, list: readonly Line[]) => list.length > 0 && (
+    <section aria-label={title} className="mt-2">
+      <p className="m-0 mb-1 text-meta font-medium text-ink-faint">{title}</p>
+      {rowsOf(list)}
+    </section>
+  );
 
   return (
     <Card>
-      <CardHeader title={t('settings.ai.roles.title')} />
+      <CardHeader title={t('settings.ai.roles.all.title')} />
       <Prose className="mb-3 mt-0 text-small text-ink-soft">{t('settings.ai.roles.body')}</Prose>
       {catalogue && (
         <SuggestedChoicesCard
@@ -490,7 +543,24 @@ export function RolesCard({
       )}
       {said}
       {catalogue && catalogue.roles.length === 0 && <p className="m-0 mb-2 text-small text-ink-soft">{t('settings.ai.roles.none')}</p>}
-      {rows}
+      {catalogue && (
+        <div className="mb-1 flex flex-wrap items-center gap-2">
+          <span className="text-small font-medium text-ink-soft">{t('settings.ai.roles.all.filter')}</span>
+          <SelectField
+            value={scope}
+            onChange={(value) => setScope(value as RoleScope)}
+            ariaLabel={t('settings.ai.roles.all.filter')}
+            options={SCOPES.map((each) => ({ value: each, label: each === 'all' ? t('settings.ai.roles.all.every') : t(`settings.ai.roles.where.${each}`) }))}
+          />
+        </div>
+      )}
+      {catalogue ? (
+        <>
+          {group(t('settings.ai.roles.all.machineWide'), machineWide)}
+          {group(t('settings.ai.roles.all.elsewhere'), elsewhere)}
+          {shownLines.length === 0 && catalogue.roles.length > 0 && <p className="m-0 text-small text-ink-soft">{t('settings.ai.roles.all.nothing')}</p>}
+        </>
+      ) : rows}
       {catalogue && (editing?.isNew ? <div className="mt-3">{editor(editing)}</div> : (
         <div className="mt-3">
           <Button variant="ghost" disabled={locked || editing !== null} onClick={() => open(null)}>

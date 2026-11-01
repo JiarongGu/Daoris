@@ -13,7 +13,7 @@ import { namer } from '../../settings/accounts/namer';
 import { AskDaorisAbout, IntakeAbout } from '../../settings/ai/ActorAbout';
 import { byTool, doorLabel } from '../tools';
 import type { RoleSection } from '../modes';
-import { type ActorChoice, type Editing, newRoleEditing, RolesCard, roleName } from './Roles';
+import { type ActorChoice, type Editing, newRoleEditing, RolesCard, roleName, type RoleScope } from './Roles';
 import { AppointedRoles } from './AppointedRoles';
 import { DiagramSection } from './RoleDiagram';
 import { RoleSectionMain, type RolesView } from './RoleSections';
@@ -63,6 +63,8 @@ export function useRolesMode({ notify, section = 'working', doors = {}, page: gi
   // outcome is a hold is worse than none.
   const agents = harnesses.filter((door) => door.present).map((door) => ({ value: door.harness, label: doorLabel(t, door) }));
   const startRows = Array.isArray(starts.data?.starts) ? starts.data.starts : [];
+  // What each agent itself offers for a model and an effort (the account editor's source), so a choice is picked and not typed.
+  const offers = Object.fromEntries(harnesses.map((door) => [door.harness, door.settingsChoices ?? null]));
 
   // Each order as the driver reads it, set through SET_ACTOR, the person's press. A change of Build's agent keeps Chat and Brainstorm,
   // still as before, on the agent they ran, written for them, and says so.
@@ -195,6 +197,12 @@ export function useRolesMode({ notify, section = 'working', doors = {}, page: gi
         if (next && !next.isNew) page.onSelected(roleId(next.id));
       }}
       only={only} onDiagram={(role) => toDiagram(roleId(role))}
+      offers={offers} scope={page.scope} onScope={page.onScope}
+      onOpenPlace={(kind, id) => {
+        // The selection and the scope stay on the page; a repository role opens its own tab, a workspace role its Setup.
+        if (kind === 'repository') doors.repository?.(id, 'setup');
+        else doors.workspace?.(id);
+      }}
     />
   );
   const card = shown ? cardOf() : null;
@@ -212,6 +220,7 @@ export function useRolesMode({ notify, section = 'working', doors = {}, page: gi
       // The new role's editor is the catalogue's, which the list holds: from a node's detail, the list.
       page.onView('list');
     },
+    // The page's state is the place's (RolesPage), so the selection, the scope and the filters are as they were on coming back.
     setting: (work) => {
       if (work === 'intake' || work === 'ask-daoris') doors.section?.('working');
       else if (filters.workspace && doors.workspace) doors.workspace(filters.workspace);
@@ -251,12 +260,20 @@ export type RolesPage = {
   onFilters: (filters: StructureFilters) => void;
   opened: ReadonlySet<string>;
   onOpened: Dispatch<SetStateAction<ReadonlySet<string>>>;
+  /** Which of All roles' rows are shown, by where the role is placed. */
+  scope: RoleScope;
+  onScope: (scope: RoleScope) => void;
 };
 
 /** The person's choice of the diagram over the list, remembered on this machine. */
 const VIEW_KEY = 'daoris.roles.view';
 
-function useRolesPage(): RolesPage {
+/**
+ * The page's state, held by the place beside its list (`useAgentsView`) and not by the mode's main area, which is drawn anew each time
+ * the place is in front: opening a policy, an account or a session from here and coming back finds the selection and the scope as left.
+ */
+export function useRolesPage(): RolesPage {
+  const [scope, onScope] = useState<RoleScope>('all');
   const [view, setView] = useState<RolesView>(() => (stored(VIEW_KEY) === 'diagram' ? 'diagram' : 'list'));
   const [selected, onSelected] = useState<string | null>(null);
   const [filters, onFilters] = useState<StructureFilters>(NO_FILTERS);
@@ -265,15 +282,16 @@ function useRolesPage(): RolesPage {
     store(VIEW_KEY, next === 'diagram' ? 'diagram' : null);
     setView(next);
   };
-  return { view, onView, selected, onSelected, filters, onFilters, opened, onOpened };
+  return { view, onView, selected, onSelected, filters, onFilters, opened, onOpened, scope, onScope };
 }
 
 /**
  * The Roles mode's main area: the chosen section, and for Working roles the catalogue and its staffing; or the diagram, whichever section
  * is chosen (COMPANYVIEW1f). The page's state is held here, so the toggle and a section that holds its own keep it.
  */
-export function RolesMode({ section, notify, doors = {} }: { section: RoleSection; notify: Notify; doors?: RoleOpeners }) {
-  const page = useRolesPage();
+export function RolesMode({ section, notify, doors = {}, page: held }: { section: RoleSection; notify: Notify; doors?: RoleOpeners; page?: RolesPage }) {
+  const own = useRolesPage();
+  const page = held ?? own;
   const Own = OWN_MAINS[section];
   return Own && page.view === 'list'
     ? <RoleSectionMain section={section} view={page.view} onView={page.onView}><Own /></RoleSectionMain>

@@ -235,9 +235,10 @@ public sealed record StateAsk(LandedBranch Entry, string Plugin, StateFrame Fram
 /// reads remotes is named the repository from it, since under Daoris's doors the checkout's remotes read <c>daoris::https://…</c>.
 /// Null where there is no <c>origin</c>.
 /// </param>
+/// <param name="Key">The delivery key (LANDNODE1e), asked of a plugin that declares one to settle a dispatch left without its answer; null otherwise.</param>
 public sealed record StateFrame(
     string Repository, string Workspace, string Root, string Branch, string? Line, string? PullRequest, string? PushedTip,
-    string? Origin = null);
+    string? Origin = null, string? Key = null);
 
 /// <summary>What came of one ask: the answer, or the failure's code and Daoris's sentence, or not asked this time.</summary>
 /// <param name="Failure">One of <see cref="PluginEvents"/>' failure kinds, or <see cref="PullRequestCodes.NotAsked"/>; null where it answered.</param>

@@ -107,6 +107,7 @@ if (drive && missing.length === 0 && totals.failures === 0) {
 async function acpHandshake(configDir) {
   const result = { initialized: false, sessionId: null, modes: [], problem: null };
   const child = spawn(acpAdapter?.where ?? BINARY, [], {
+    windowsHide: true,
     cwd: repoRoot,
     stdio: ['pipe', 'pipe', 'pipe'],
     env: { ...process.env, CLAUDE_CONFIG_DIR: configDir },

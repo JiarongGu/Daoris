@@ -85,7 +85,7 @@ describe('AI features on Settings', () => {
     expect(screen.queryByRole('button', { name: /^Edit / })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Add a role' })).toBeNull();
     await user.click(screen.getByRole('button', { name: 'Open Roles' }));
-    expect(onGo).toHaveBeenCalledWith({ view: 'agents', agentsMode: 'roles' });
+    expect(onGo).toHaveBeenCalledWith({ view: 'agents', agentsMode: 'setup' });
     // It asks the driver nothing of roles.
     const asked = invoke.mock.calls.map((call) => call[1]);
     expect(asked).not.toContain('ROLES');

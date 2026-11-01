@@ -160,7 +160,7 @@ public static class WorkflowGraphRuns
             .OrderBy(session => session.Created ?? DateTimeOffset.MinValue)
             .ToList();
         var newestHere = sessions.LastOrDefault(session => !session.Teammate);
-        var handed = graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Handed);
+        var handed = graph.Nodes.FirstOrDefault(node => NodeKinds.IsLanding(node.Kind));
         NodeStatus StatusOf(string node) => statuses.GetValueOrDefault(node) ?? NodeLifecycle.Start(self, node);
 
         // The run's branch: the one its newest session here worked, as its tree is named and this machine's records follow it (TREEFOLLOW1);
@@ -332,7 +332,7 @@ public static class WorkflowGraphRuns
         }
 
         var rule = process?.Landing.Rule;
-        if (node.Kind == NodeKinds.Handed)
+        if (NodeKinds.IsLanding(node.Kind))
         {
             Default("form", rule?.Form);
             Default("accept", rule is null ? null : rule.AutoAccept ? "automatic" : "you");
@@ -347,7 +347,7 @@ public static class WorkflowGraphRuns
             NodeKinds.Claimed => (WorkflowKinds.Work, WorkflowParticipation.Agent, WorkflowExecutor.Agent, (string?)null),
             NodeKinds.Opinion => (WorkflowKinds.Opinion, WorkflowParticipation.Agent, WorkflowExecutor.Agent, null),
             NodeKinds.Look => (WorkflowKinds.Look, WorkflowParticipation.AgentAndYou, WorkflowExecutor.Agent, WorkflowPress.Reviewed),
-            NodeKinds.Handed => (WorkflowKinds.Landing, automatic ? WorkflowParticipation.Automatic : WorkflowParticipation.You, WorkflowExecutor.Daoris,
+            NodeKinds.Handed or NodeKinds.Land => (WorkflowKinds.Landing, automatic ? WorkflowParticipation.Automatic : WorkflowParticipation.You, WorkflowExecutor.Daoris,
                 automatic ? null : WorkflowPress.Accept),
             NodeKinds.PullRequest => (WorkflowKinds.PullRequest, WorkflowParticipation.You, WorkflowExecutor.Plugin, WorkflowPress.Merge),
             NodeKinds.GoAhead => (WorkflowKinds.GoAhead, WorkflowParticipation.You, WorkflowExecutor.Daoris, null),

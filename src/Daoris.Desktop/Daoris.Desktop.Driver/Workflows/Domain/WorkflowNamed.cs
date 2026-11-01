@@ -297,9 +297,11 @@ public static class WorkflowNamed
     private static string? OneLandingProblem(NodeGraph graph, int number)
     {
         string Named(string kind) => string.Join(" and ", graph.Nodes.Where(node => node.Kind == kind).Select(node => $"`{node.Id}`"));
-        var landings = graph.Nodes.Count(node => node.Kind == NodeKinds.Handed);
+        // LANDNODE1h: a `land` is the landing as a `handed` is; a graph holding both is the graph rules' to refuse (land-once).
+        var landings = graph.Nodes.Count(node => NodeKinds.IsLanding(node.Kind));
+        var land = graph.Nodes.Any(node => node.Kind == NodeKinds.Land) ? NodeKinds.Land : NodeKinds.Handed;
         if (landings == 0) return $"v{number}: its graph holds no landing (`{NodeKinds.Handed}`), and a named workflow's graph lands its work once.";
-        if (landings > 1) return $"v{number}: its graph holds {landings} landings, {Named(NodeKinds.Handed)}, and a named workflow's graph lands its work once.";
+        if (landings > 1) return $"v{number}: its graph holds {landings} landings, {Named(land)}, and a named workflow's graph lands its work once.";
         foreach (var (kind, what) in new[] { (NodeKinds.Opinion, "opinions"), (NodeKinds.Look, "looks") })
         {
             var count = graph.Nodes.Count(node => node.Kind == kind);
@@ -474,7 +476,9 @@ public static class WorkflowNamed
     /// is the node's own and not read here. The first option that does not read is said with the node's id, and nothing is read in its place.
     /// </summary>
     /// <param name="landing">The landing rule a <c>handed</c> that leaves its form or its press out lands by: the declared rule, composed.</param>
-    public static (IReadOnlyList<NamedStep>? Steps, string? Problem) GateSteps(NodeGraph graph, int number, LandingRule landing)
+    /// <param name="bound">The open options a <c>land</c> node's run resolved at its bind (<see cref="WorkflowRunBinding.Land"/>), which stand for the rule's.</param>
+    public static (IReadOnlyList<NamedStep>? Steps, string? Problem) GateSteps(
+        NodeGraph graph, int number, LandingRule landing, IReadOnlyDictionary<string, string>? bound = null)
     {
         var steps = new List<NamedStep>();
         foreach (var node in graph.Nodes)
@@ -484,16 +488,17 @@ public static class WorkflowNamed
                 NodeKinds.Claimed => WorkflowKinds.Work,
                 NodeKinds.Opinion => WorkflowKinds.Opinion,
                 NodeKinds.Look => WorkflowKinds.Look,
-                NodeKinds.Handed => WorkflowKinds.Landing,
+                NodeKinds.Handed or NodeKinds.Land => WorkflowKinds.Landing,
                 _ => null,
             };
             if (kind is null) continue;
 
             var p = $"v{number}, node `{node.Id}`: ";
             var fields = new List<WorkflowSetting>();
+            var options = node.Kind == NodeKinds.Land ? LandNodes.AsLanding(node, bound) : node.Options;
             foreach (var field in WorkflowKindTable.Of(kind)!.Fields)
             {
-                var text = node.Options.TryGetValue(field.Name, out var written) ? written
+                var text = options.TryGetValue(field.Name, out var written) ? written
                     : kind != WorkflowKinds.Landing ? null
                     : field.Name switch
                     {

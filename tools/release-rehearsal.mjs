@@ -58,6 +58,7 @@ mkdirSync(scratch, { recursive: true });
 const packed = execSync(`npm pack --pack-destination "${scratch}"`, {
   cwd: cliRoot,
   encoding: 'utf8',
+  windowsHide: true,
   stdio: ['ignore', 'pipe', 'ignore'], // npm writes its file listing to stderr
 }).trim().split('\n').pop().trim();
 const tarball = join(scratch, packed);
@@ -74,7 +75,7 @@ check(`tarball is named for version ${version}`, packed.includes(version), packe
 const shipped = new Set(
   JSON.parse(
     execSync('npm pack --dry-run --json', {
-      cwd: cliRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'],
+      cwd: cliRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], windowsHide: true,
     }),
   )[0].files.map((f) => f.path),
 );
@@ -94,7 +95,7 @@ check('test fixtures do not ship', ![...shipped].some((p) => p.startsWith('_fixt
 // Belt and braces beyond postpack: whatever the pack lifecycle staged is removed here too, and the
 // removal is ASSERTED — a `dist/` outliving a pack is exactly how DRV5's remote landing ran month-old
 // code through every bin-driven gate while the source-level suites stayed green (FIX-LOG 2026-09-20).
-execSync(`node "${join(repoRoot, 'tools', 'stage-package.mjs')}" --clean`, { stdio: 'pipe' });
+execSync(`node "${join(repoRoot, 'tools', 'stage-package.mjs')}" --clean`, { stdio: 'pipe', windowsHide: true });
 check(
   'nothing staged outlives the pack — no dist/ to shadow the sources, no canon to shadow the tree',
   !existsSync(join(cliRoot, 'dist')) && !existsSync(join(cliRoot, 'canon')),
@@ -109,7 +110,7 @@ writeFileSync(
   join(consumer, 'package.json'),
   `${JSON.stringify({ name: 'rehearsal-consumer', version: '1.0.0', private: true }, null, 2)}\n`,
 );
-execSync(`npm install --no-audit --no-fund "${tarball}"`, { cwd: consumer, stdio: 'pipe' });
+execSync(`npm install --no-audit --no-fund "${tarball}"`, { cwd: consumer, stdio: 'pipe', windowsHide: true });
 check('npm install succeeded', existsSync(join(consumer, 'node_modules', 'daoris')));
 
 const versionRun = daoris('--version');

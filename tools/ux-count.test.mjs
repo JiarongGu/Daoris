@@ -207,7 +207,7 @@ test('the window’s path gives the same answer: the same expression, through th
     const terms = join(scratch, 'terms.json');
     writeFileSync(terms, JSON.stringify(TERMS));
     const written = spawnSync(process.execPath, [join(here, 'ux-count.mjs'), '--window', '--out', script, '--terms', terms],
-      { encoding: 'utf8' });
+      { encoding: 'utf8', windowsHide: true });
     assert.equal(written.status, 0, written.stderr);
     assert.match(written.stdout, /npm run --silent desktop -- eval --file .*window\.js > .*<screen>\.json/);
     assert.match(written.stdout, /node tools\/ux-count\.mjs --window --read .*<screen>\.json/);
@@ -282,7 +282,7 @@ test('--window --read prints each answer as a screen named by its file, and one 
   const overview = join(scratch, 'overview.json');
   const banner = '\n> daoris-workspace@0.0.0 desktop\n> node tools/desktop.mjs eval --file x.js\n\n';
   writeFileSync(overview, Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from(banner + JSON.stringify(PAGE, null, 2), 'utf16le')]));
-  const read = spawnSync(process.execPath, [join(here, 'ux-count.mjs'), '--window', '--read', overview], { encoding: 'utf8' });
+  const read = spawnSync(process.execPath, [join(here, 'ux-count.mjs'), '--window', '--read', overview], { encoding: 'utf8', windowsHide: true });
   assert.equal(read.status, 0, read.stderr);
   assert.match(read.stdout, /overview\s+en-light\s+1546x1013\s+main\s+3\s+8\s+23\s+2\.5\s+0/);
   assert.match(read.stdout, /overview en-light 1546x1013: en, light; 1546x1013; place Overview/);
@@ -290,7 +290,7 @@ test('--window --read prints each answer as a screen named by its file, and one 
 
   const threw = join(scratch, 'threw.json');
   writeFileSync(threw, 'the expression threw: boom\n');
-  const refused = spawnSync(process.execPath, [join(here, 'ux-count.mjs'), '--window', '--read', overview, threw], { encoding: 'utf8' });
+  const refused = spawnSync(process.execPath, [join(here, 'ux-count.mjs'), '--window', '--read', overview, threw], { encoding: 'utf8', windowsHide: true });
   assert.equal(refused.status, 1);
   assert.match(refused.stdout, /threw\s+refused: .*threw\.json holds no answer: the expression threw: boom/);
 });
@@ -331,7 +331,7 @@ test('the tasks are declared, and none is measured', () => {
   const tasks = readTasks();
   assert.equal(tasks.length, 6);
   assert.ok(tasks.every((task) => task.task && task.before && task.after && task.measured === null));
-  const printed = spawnSync(process.execPath, [join(here, 'ux-count.mjs'), '--tasks'], { encoding: 'utf8' });
+  const printed = spawnSync(process.execPath, [join(here, 'ux-count.mjs'), '--tasks'], { encoding: 'utf8', windowsHide: true });
   assert.equal(printed.status, 0, printed.stderr);
   assert.match(printed.stdout, /Publish an ask its declarations proposed/);
   assert.match(printed.stdout, /not measured/);

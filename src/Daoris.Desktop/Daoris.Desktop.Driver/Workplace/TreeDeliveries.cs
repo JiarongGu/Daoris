@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -11,6 +12,38 @@ public sealed record TreeDelivery(DeliveryStore Store, DeliveryClaim Claim)
 {
     /// <summary>The test seam: run with a phase's name after its effect and before its outcome is written. Null in production.</summary>
     internal Func<string, Task>? Seam { get; init; }
+
+    /// <summary>
+    /// Whether the standing automatic authority still stands (LANDNODE1h; the land node design §3), asked of an automatic delivery just before
+    /// its first effect: a refusal in words, or null where it stands. Null judges nothing, and an automatic delivery with none lands nothing.
+    /// </summary>
+    public Func<DeliveryRecord, string?>? Standing { get; init; }
+}
+
+/// <summary>
+/// The deliveries this process is landing or settling now (LANDNODE1b3), one at a time each, by home and key: a restart's settlement never
+/// writes beside a landing of the delivery here, and a second starter of it lands only once the first has ended.
+/// </summary>
+internal static class DeliveryRuns
+{
+    private static readonly ConcurrentDictionary<string, byte> Here = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>The delivery held by this process until the answer is disposed; null where this process holds it already.</summary>
+    public static IDisposable? Hold(string home, string key)
+    {
+        var name = $"{Path.TrimEndingDirectorySeparator(Path.GetFullPath(home))}|{key}";
+        return Here.TryAdd(name, 0) ? new Held(name) : null;
+    }
+
+    private sealed class Held(string name) : IDisposable
+    {
+        private int _released;
+
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _released, 1) == 0) Here.TryRemove(name, out _);
+        }
+    }
 }
 
 /// <summary>
@@ -18,22 +51,35 @@ public sealed record TreeDelivery(DeliveryStore Store, DeliveryClaim Claim)
 /// after, read back and never assumed: <i>prepared</i> from the start of the landing's judgement to the commit its ref is written at,
 /// <i>ref written</i>, <i>recorded</i>. The branch's ref goes through one <see cref="RefTransaction"/> under the checkout's lock held alone
 /// (GITLOCK1), inside the tree's landing hold (LANDRACE1) the landing took first; a merge's line is moved by the promotion's effect, which
-/// takes that lock itself. The landing's ownership is its landing record: no act-journal mark is made.
+/// takes that lock itself. The landing's ownership is its landing record: no act-journal mark is made. A delivery a restart settled by phase
+/// (LANDNODE1b3) goes on from its next phase: a done preparation is not written ahead again, and a ref it wrote is read, never written twice.
 /// </summary>
 internal sealed class TreeDelivering
 {
     private static readonly Regex FullId = new("^(?:[0-9a-f]{40}|[0-9a-f]{64})$", RegexOptions.CultureInvariant);
 
+    /// <summary>The git phases, in their order: what a landing writes ahead, and goes on from after a restart.</summary>
+    internal static IReadOnlyList<string> GitPhases { get; } = [DeliveryPhases.Prepared, DeliveryPhases.RefWritten, DeliveryPhases.Recorded];
+
     private readonly TreeDelivery _delivery;
     private readonly string _home;
     private readonly string _repository;
     private readonly HashSet<string> _done = new(StringComparer.Ordinal);
+    private readonly string? _wrote;
     private string? _open;
 
-    private TreeDelivering(TreeDelivery delivery, DeliveryRecord record, string home, string repository, bool squash)
+    private TreeDelivering(TreeDelivery delivery, DeliveryRecord record, IReadOnlyList<DeliveryPhase> phases, string home, string repository, bool squash)
     {
         (_delivery, Record, _home, _repository, Squash) = (delivery, record, home, repository, squash);
+        foreach (var each in phases.Where(each => each.Outcome == DeliveryOutcomes.Done)) _done.Add(each.Phase);
+        _wrote = phases.LastOrDefault(each => each.Phase == DeliveryPhases.RefWritten && each.Outcome == DeliveryOutcomes.Done)?.Evidence;
     }
+
+    /// <summary>The git phase this landing goes on from: the first not done (the land node design §3, a restart's rule 1).</summary>
+    public string? Next => GitPhases.FirstOrDefault(each => !_done.Contains(each));
+
+    /// <summary>Where this delivery's own ref write left <c>refs/heads/<paramref name="name"/></c>, read back done before it stopped; null where it wrote none.</summary>
+    public string? Wrote(string name) => string.Equals(name, Intent.Branch, StringComparison.Ordinal) ? _wrote : null;
 
     /// <summary>The delivery as the store held it when the landing began.</summary>
     public DeliveryRecord Record { get; }
@@ -46,6 +92,15 @@ internal sealed class TreeDelivering
     /// <summary>Who accepted it, as the landing record keeps it: the standing automatic authority, or the person.</summary>
     public string Accepted => Record.Authorization.Authority == DeliveryAuthorities.Automatic ? AcceptedBy.Auto : AcceptedBy.Person;
 
+    /// <summary>
+    /// Why the delivery's authority no longer holds, or null: the person's Accept stands as recorded; the standing automatic authority is
+    /// judged again, here, before anything is written ahead.
+    /// </summary>
+    public string? Unauthorized() =>
+        Record.Authorization.Authority != DeliveryAuthorities.Automatic ? null
+        : _delivery.Standing is null ? "nothing judges whether its automatic authority still stands"
+        : _delivery.Standing(Record);
+
     /// <summary>The preparation's intended effect, as its entry says it.</summary>
     public string Preparing => Intent.Method == DeliveryMethods.Merge
         ? $"merge {Intent.Tip} into `{Intent.Line}`"
@@ -53,7 +108,8 @@ internal sealed class TreeDelivering
 
     /// <summary>
     /// The delivery <paramref name="delivery"/>'s claim names, read for a landing of <paramref name="repository"/>'s tree; or why it does not
-    /// land: none, held, settled or claimed by another run, of another repository, or an intent or option this build does not land.
+    /// land: none, held, settled or claimed by another run, of another repository, an intent or option this build does not land, or phases a
+    /// landing cannot go on from (<see cref="Standing"/>).
     /// </summary>
     public static (TreeDelivering? Delivering, string? Refused) Read(TreeDelivery delivery, string home, string repository)
     {
@@ -83,21 +139,231 @@ internal sealed class TreeDelivering
             _ => null,
         };
 
+        var phases = why is null ? delivery.Store.Phases(delivery.Claim.Key) : [];
+        why ??= Standing(intent!, phases);
+
         return why is null
-            ? (new TreeDelivering(delivery, record!, home, repository, squash!.Value), null)
+            ? (new TreeDelivering(delivery, record!, phases, home, repository, squash!.Value), null)
             : (null, $"delivery {delivery.Claim.Key[..12]}: {why}");
     }
 
     /// <summary>
-    /// The landing as its delivery lands it: the method's form and squash the intent's; of the rule only what setup keeps (its tidy), no plugin
-    /// (none is told here, row 1e), no switch and no integrate, since the delivery's authorization and the next node hold those.
+    /// Why no landing goes on from these phases now, or null: an entry a newer build wrote, one written ahead without its outcome or read as
+    /// unknown, every git effect recorded already, or a merge its line holds, which a restart's settlement records (<see cref="DeliveryReconciler"/>).
+    /// </summary>
+    private static string? Standing(DeliveryIntent intent, IReadOnlyList<DeliveryPhase> phases)
+    {
+        if (phases.FirstOrDefault(each => !DeliveryPhases.All.Contains(each.Phase, StringComparer.Ordinal)
+                || each.Outcome is { } outcome && !DeliveryOutcomes.All.Contains(outcome, StringComparer.Ordinal)) is { } newer)
+        {
+            return $"its entry {newer.Ordinal} was written by a newer Daoris, which lands it";
+        }
+
+        // The plugin's phases (LANDNODE1e) are read by DispatchAsync, which reconciles a dispatch left standing and never sends it again.
+        var plugin = intent.Plugin is not null && intent.Method is DeliveryMethods.Push or DeliveryMethods.PullRequest;
+        bool Theirs(DeliveryPhase each) => plugin && each.Phase is DeliveryPhases.PluginDispatched or DeliveryPhases.PluginAnswered;
+        if (phases.FirstOrDefault(each => each.Open && !Theirs(each)) is { } open)
+        {
+            return $"its `{open.Phase}` entry was written ahead at {Moments.Write(open.BeganAt)} and has no outcome: a restart settles it by phase";
+        }
+
+        if (phases.FirstOrDefault(each => each.Outcome == DeliveryOutcomes.Unknown && !Theirs(each)) is { } unknown)
+        {
+            return $"its `{unknown.Phase}` was read as unknown, which the person settles before any later phase";
+        }
+
+        var done = phases.Where(each => each.Outcome == DeliveryOutcomes.Done).Select(each => each.Phase).ToHashSet(StringComparer.Ordinal);
+        if (GitPhases.All(done.Contains))
+        {
+            return plugin ? null : "its effects are recorded, and a restart's settlement delivers it";
+        }
+
+        return intent.Method == DeliveryMethods.Merge && done.Contains(DeliveryPhases.RefWritten)
+            ? $"`{intent.Line}` holds its merge, which a restart's settlement records"
+            : null;
+    }
+
+    /// <summary>
+    /// What a landing says that waited for its tree behind its delivery's other starter, which delivered it meanwhile (a press and a pass at
+    /// once): where the work is, and that nothing more was landed. Kept as <see cref="AutoLandingCode.Already"/>, as LANDRACE1's is.
+    /// </summary>
+    public static TreeLanding Meanwhile(DeliveryRecord delivered)
+    {
+        var intent = delivered.Intent;
+        var merge = intent.Method == DeliveryMethods.Merge;
+        return new TreeLanding(false,
+            $"its delivery {delivered.Key[..12]} was delivered while this landing waited for its tree: its work at {TextBounds.ShortCommit(intent.Tip, 8)} is "
+            + (merge ? $"merged into `{intent.Line}`" : $"on `{intent.Branch}`") + ". Nothing more was landed.", merge ? null : intent.Branch)
+        {
+            Refusal = AutoLandingCode.Already,
+        };
+    }
+
+    /// <summary>
+    /// The landing as its delivery lands it: the method's form and squash the intent's; of the rule only what setup keeps (its tidy), the plugin
+    /// only of a push or a pull request, and that the intent's, told through <see cref="DispatchAsync"/>; no switch and no integrate, since the
+    /// delivery's authorization and the next node hold those.
     /// </summary>
     public Landing Over(Landing live) =>
         new(live.Rule with
         {
             Form = Intent.Method == DeliveryMethods.Merge ? LandingForm.Merge : LandingForm.Branch,
-            Pattern = null, Plugin = null, AutoAccept = false, Squash = Squash, Integrate = null,
+            Pattern = null, AutoAccept = false, Squash = Squash, Integrate = null,
+            Plugin = Intent.Method is DeliveryMethods.Push or DeliveryMethods.PullRequest ? Intent.Plugin : null,
         }, live.Source);
+
+    /// <summary>
+    /// The plugin told this delivery (LANDNODE1e; the land node design §3 step 4 and the restart ladder): the frame carries the delivery key where
+    /// the plugin declares one and the mode of its method, <c>push</c> only to a plugin that declares it. <i>Plugin dispatched</i> is written
+    /// ahead of the send and <i>plugin answered</i> after the answer; where a dispatch stands without its answer, or the reply is lost, the
+    /// plugin is never sent again: a remote-tracking ref proves a push (never a pull request), <c>work/state</c> asked with the key proves a pull
+    /// request, and anything else is read as unknown, for the person's hand-off. A keyless plugin is reconciled by the ref alone.
+    /// </summary>
+    public async Task<PluginLanding> DispatchAsync(IWorkplacePluginWire wire, LandingFrame frame, CancellationToken ct)
+    {
+        var plugin = Intent.Plugin!;
+        var declares = wire.LandDeclared(plugin);
+        var mode = Intent.Method == DeliveryMethods.Push ? LandingModes.Push : LandingModes.PullRequest;
+        PluginLanding Refused(string why) => new(plugin, false, null, why, Failed: true);
+        if (mode == LandingModes.Push && !declares.Modes.Contains(LandingModes.Push, StringComparer.Ordinal))
+        {
+            return Refused($"plugin `{plugin}` does not declare the `push` mode, so nothing was sent to it: the branch stands, and its manifest names the mode once it serves it.");
+        }
+
+        var sent = frame with { Key = declares.Key ? Record.Key : null, Mode = mode };
+        var phases = _delivery.Store.Phases(Record.Key);
+        if (phases.LastOrDefault(each => each.Phase == DeliveryPhases.PluginAnswered && each.Outcome == DeliveryOutcomes.Done) is { Evidence: { } kept }
+            && JsonSerializer.Deserialize<PluginLanding>(kept) is { } already)
+        {
+            _done.Add(DeliveryPhases.PluginAnswered);
+            return already;
+        }
+
+        // An answer cut while being written is withdrawn, and the dispatch before it is reconciled like any without its answer.
+        if (phases.FirstOrDefault(each => each.Open && each.Phase == DeliveryPhases.PluginAnswered) is not null)
+        {
+            End(DeliveryPhases.PluginAnswered, DeliveryOutcomes.Withdrawn, null, "its entry stood without an outcome");
+        }
+
+        var dispatch = phases.LastOrDefault(each => each.Phase == DeliveryPhases.PluginDispatched);
+        if (dispatch is { Outcome: DeliveryOutcomes.Unknown })
+        {
+            return Refused($"its dispatch to `{plugin}` was read as unknown, which the person settles (a hand-off sends it again).");
+        }
+
+        if (dispatch is null || dispatch.Outcome == DeliveryOutcomes.Withdrawn)
+        {
+            if (Begin(DeliveryPhases.PluginDispatched, JsonSerializer.Serialize(new { key = sent.Key, mode, tip = Intent.Tip })) is { } unbegun)
+            {
+                return Refused(unbegun);
+            }
+
+            var said = await wire.LandAsync(plugin, sent, ct).ConfigureAwait(false);
+            await SeamAsync(DeliveryPhases.PluginDispatched).ConfigureAwait(false);
+            if (!said.Failed)
+            {
+                End(DeliveryPhases.PluginDispatched, said.Pushed ? DeliveryOutcomes.Done : DeliveryOutcomes.Withdrawn, null, said.Message);
+                return said.Pushed ? Answered(said) : said;
+            }
+        }
+
+        return await ReconcileAsync(wire, sent, declares, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// <see cref="DeliveryReconciler.Plugin"/> (LANDNODE1e): a delivery whose git phases are done settled by its plugin phases at a restart.
+    /// Nothing is ever sent: a dispatch standing without its answer is reconciled as <see cref="DispatchAsync"/> does, one never sent is left
+    /// to its landing or the person's hand-off, and a plugin answer proved settles it delivered.
+    /// </summary>
+    public static Func<DeliveryRecord, DeliveryClaim, CancellationToken, Task<DeliveryReconciled>> PluginSettlement(
+        DeliveryStore store, string home, IWorkplacePluginWire wire, Func<DeliveryRecord, string?> checkout) =>
+        async (record, claim, ct) =>
+        {
+            DeliveryReconciled Said(string standing, string said) => new(record.Key, standing, said) { Claim = claim };
+            var intent = record.Intent;
+            if (intent.Plugin is null || intent.Method is not (DeliveryMethods.Push or DeliveryMethods.PullRequest))
+            {
+                return Said(DeliveryStandings.Plugin, "it names no plugin phase");
+            }
+
+            if (checkout(record) is not { } root) return Said(DeliveryStandings.Held, $"`{intent.Repository}`'s checkout is not here, so its plugin phases are read at the next look");
+            var delivering = new TreeDelivering(new TreeDelivery(store, claim), record, store.Phases(record.Key), home, intent.Repository, squash: false);
+            var frame = new LandingFrame(intent.Repository, "", root, intent.Branch!, intent.Line, null, null, "", []);
+            var settled = await delivering.SettleAsync(wire, frame, ct).ConfigureAwait(false);
+            if (settled is null) return Said(DeliveryStandings.Plugin, "its plugin was not sent it yet: its landing or the person's hand-off sends it");
+            if (!settled.Pushed) return Said(DeliveryStandings.Unknown, settled.Message);
+            store.Settle(claim, DeliverySettlements.Delivered, $"{intent.Method} of {intent.Tip} delivered, settled by phase");
+            return Said(DeliveryStandings.Delivered, $"its plugin phases are done: {settled.Message}");
+        };
+
+    /// <summary>The plugin phases read without sending: null where nothing was dispatched, else the reconciliation's answer.</summary>
+    public async Task<PluginLanding?> SettleAsync(IWorkplacePluginWire wire, LandingFrame frame, CancellationToken ct)
+    {
+        var plugin = Intent.Plugin!;
+        var declares = wire.LandDeclared(plugin);
+        var mode = Intent.Method == DeliveryMethods.Push ? LandingModes.Push : LandingModes.PullRequest;
+        var sent = frame with { Key = declares.Key ? Record.Key : null, Mode = mode };
+        var phases = _delivery.Store.Phases(Record.Key);
+        if (phases.LastOrDefault(each => each.Phase == DeliveryPhases.PluginAnswered && each.Outcome == DeliveryOutcomes.Done) is { Evidence: { } kept }
+            && JsonSerializer.Deserialize<PluginLanding>(kept) is { } already)
+        {
+            return already;
+        }
+
+        if (phases.FirstOrDefault(each => each.Open && each.Phase == DeliveryPhases.PluginAnswered) is not null)
+        {
+            End(DeliveryPhases.PluginAnswered, DeliveryOutcomes.Withdrawn, null, "its entry stood without an outcome");
+        }
+
+        var dispatch = phases.LastOrDefault(each => each.Phase == DeliveryPhases.PluginDispatched);
+        if (dispatch is null || dispatch.Outcome == DeliveryOutcomes.Withdrawn) return null;
+        if (dispatch.Outcome == DeliveryOutcomes.Unknown) return new PluginLanding(plugin, false, null, dispatch.Said ?? "its dispatch was read as unknown", Failed: true);
+        return await ReconcileAsync(wire, sent, declares, ct).ConfigureAwait(false);
+    }
+
+    private async Task<PluginLanding> ReconcileAsync(IWorkplacePluginWire wire, LandingFrame sent, PluginLandDeclares declares, CancellationToken ct)
+    {
+        var plugin = Intent.Plugin!;
+        PluginLanding? found = null;
+        if (sent.Mode == LandingModes.Push)
+        {
+            var (code, at, _) = await WorkingTree.GitAsync(sent.Root, ["rev-parse", "--verify", "--quiet", $"refs/remotes/origin/{sent.Branch}"], ct).ConfigureAwait(false);
+            if (code == 0 && string.Equals(at.Trim(), Intent.Tip, StringComparison.OrdinalIgnoreCase))
+            {
+                found = new(plugin, true, null, $"origin's remote-tracking `{sent.Branch}` holds {Intent.Tip}, so the push was made");
+            }
+        }
+        else if (declares.Key)
+        {
+            var entry = new LandedBranch(sent.Repository, sent.Workspace, sent.Branch, sent.Base, Intent.Tip, sent.Session, sent.Quest, sent.Title, DateTimeOffset.UtcNow)
+            {
+                Plugin = plugin,
+            };
+            var frame = new StateFrame(sent.Repository, sent.Workspace, sent.Root, sent.Branch, Intent.Line, sent.PullRequest, Intent.Tip, sent.Origin, sent.Key);
+            var asked = await wire.AskStatesAsync([new StateAsk(entry, plugin, frame)], ct).ConfigureAwait(false);
+            if (asked.Count == 1 && asked[0].Answer is { PullRequest: { } address, State: PullRequestStates.Open or PullRequestStates.Completed })
+            {
+                found = new(plugin, true, address, $"`work/state` with the delivery key found its pull request {address}");
+            }
+        }
+
+        if (found is null)
+        {
+            var said = $"`{plugin}` was told this delivery and its answer was not kept, and nothing read proves what it did; it is not sent again, and the person's hand-off sends it";
+            End(DeliveryPhases.PluginDispatched, DeliveryOutcomes.Unknown, null, said);
+            return new PluginLanding(plugin, false, null, said + ".", Failed: true);
+        }
+
+        End(DeliveryPhases.PluginDispatched, DeliveryOutcomes.Done, found.PullRequest, found.Message);
+        return Answered(found);
+    }
+
+    private PluginLanding Answered(PluginLanding said)
+    {
+        if (Begin(DeliveryPhases.PluginAnswered, "the plugin's answer kept") is not null) return said;
+        End(DeliveryPhases.PluginAnswered, DeliveryOutcomes.Done, JsonSerializer.Serialize(said), said.Message);
+        return said;
+    }
 
     /// <summary>Write the phase's entry ahead of its effect; the store's refusal in its words where it may not be.</summary>
     public string? Begin(string phase, string intended)
@@ -123,12 +389,22 @@ internal sealed class TreeDelivering
     /// <param name="old">The tip judged, which the ref moves from; null makes it where it is absent; equal to <paramref name="value"/>, it is verified there.</param>
     public async Task<(int Code, string Stdout, string Stderr)> WriteAsync(string root, string reference, string? old, string value, CancellationToken ct)
     {
+        // LANDNODE1b3: the ref this delivery wrote and read back before it stopped is read again where it stands, and never written twice.
+        if (_done.Contains(DeliveryPhases.RefWritten))
+        {
+            var (known, at) = await StandsAsync(root, reference, ct).ConfigureAwait(false);
+            return known && at is not null && string.Equals(at, _wrote, StringComparison.OrdinalIgnoreCase) && string.Equals(at, value, StringComparison.OrdinalIgnoreCase)
+                ? (0, "", "")
+                : (1, "", $"`{reference}` stands at {at ?? "nothing"}, not at {_wrote}, where this delivery wrote it before it stopped");
+        }
+
         using var held = TreeLock.TryWriting(_home, root, _repository, TreeLock.Landing);
         if (held is null) return (1, "", $"{TreeLock.Held(_repository, TreeLock.HolderOf(_home, root))}, so the branch was not written; accept again once it is done");
 
         var (transaction, intended) = old is null ? (new RefTransaction().Create(reference, value), $"`{reference}` made at {value}")
             : old == value ? (new RefTransaction().Verify(reference, value), $"`{reference}` standing at {value}")
             : (new RefTransaction().Update(reference, old, value), $"`{reference}` moved from {old} to {value}");
+        await SeamAsync(DeliveryPhases.Prepared).ConfigureAwait(false);
         End(DeliveryPhases.Prepared, DeliveryOutcomes.Done, value, $"the commit `{reference}` is written at is {value}");
         if (Begin(DeliveryPhases.RefWritten, intended) is { } refused) return (1, "", refused);
 
@@ -144,8 +420,9 @@ internal sealed class TreeDelivering
     }
 
     /// <summary>A merge's press about to move the line: the preparation done at the commit merged, the line's entry written ahead.</summary>
-    public string? BeginMerge(string line, string commit)
+    public async Task<string?> BeginMergeAsync(string line, string commit)
     {
+        await SeamAsync(DeliveryPhases.Prepared).ConfigureAwait(false);
         End(DeliveryPhases.Prepared, DeliveryOutcomes.Done, commit, $"the commit merged into `{line}` is {commit}");
         return Begin(DeliveryPhases.RefWritten, $"`refs/heads/{line}` to hold {commit}");
     }
@@ -225,7 +502,7 @@ internal sealed class TreeDelivering
     }
 
     /// <summary>The <c>squash</c> of the resolved options: false where they name none, null where they are not an object or it is no boolean.</summary>
-    private static bool? SquashOf(string options)
+    internal static bool? SquashOf(string options)
     {
         try
         {

@@ -13,6 +13,9 @@ public interface IWorkplacePluginWire
     /// <summary>Why <paramref name="plugin"/> cannot land work here now, or null (<see cref="LandingRules.PluginProblem"/>).</summary>
     string? Problem(string plugin);
 
+    /// <summary>What <paramref name="plugin"/>'s manifest declares of landing: its key and its modes (LANDNODE1e). None where it declares nothing.</summary>
+    PluginLandDeclares LandDeclared(string plugin) => PluginLandDeclares.None;
+
     /// <summary>Speak the one frame and hear the answer — or the sentence saying why there is none.</summary>
     Task<PluginLanding> LandAsync(string plugin, LandingFrame frame, CancellationToken ct = default);
 

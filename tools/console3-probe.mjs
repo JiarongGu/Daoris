@@ -42,17 +42,17 @@ const env = Object.fromEntries(Object.entries(process.env)
 rmSync(scratch, { recursive: true, force: true });
 const room = join(scratch, 'room');
 mkdirSync(room, { recursive: true });
-spawnSync('git', ['init', '-q', '-b', 'main'], { cwd: room });
-spawnSync('git', ['config', 'user.email', 'probe@example.com'], { cwd: room });
-spawnSync('git', ['config', 'user.name', 'CONSOLE3 probe'], { cwd: room });
+spawnSync('git', ['init', '-q', '-b', 'main'], { cwd: room, windowsHide: true });
+spawnSync('git', ['config', 'user.email', 'probe@example.com'], { cwd: room, windowsHide: true });
+spawnSync('git', ['config', 'user.name', 'CONSOLE3 probe'], { cwd: room, windowsHide: true });
 writeFileSync(join(room, 'README.md'), '# console3 room\n\nA scratch room for the CONSOLE3 probe.\n');
-spawnSync('git', ['add', '-A'], { cwd: room });
-spawnSync('git', ['commit', '-q', '-m', 'room'], { cwd: room });
+spawnSync('git', ['add', '-A'], { cwd: room, windowsHide: true });
+spawnSync('git', ['commit', '-q', '-m', 'room'], { cwd: room, windowsHide: true });
 
 const settingsFile = join(scratch, 'settings.json');
 writeFileSync(settingsFile, `${JSON.stringify({ permissions: { allow: ['Bash(node:*)', 'Read'], ask: [], deny: [] } }, null, 2)}\n`);
 
-const version = spawnSync('claude', ['--version'], { env, encoding: 'utf8' });
+const version = spawnSync('claude', ['--version'], { env, encoding: 'utf8', windowsHide: true });
 console.log(`CONSOLE3c — ${(version.stdout || version.stderr || '?').trim()}`);
 
 const PROMPT = [
@@ -72,7 +72,7 @@ const child = spawn('claude', [
   '-p', PROMPT, '--permission-mode', 'acceptEdits',
   '--output-format', 'stream-json', '--verbose', '--include-partial-messages',
   '--settings', settingsFile,
-], { cwd: room, env, stdio: ['ignore', 'pipe', 'pipe'] });
+], { cwd: room, env, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
 child.stderr.on('data', (chunk) => appendFileSync(stderrPath, chunk));
 
 const lines = [];
@@ -105,7 +105,7 @@ console.log(`exited: ${exit} after ${Math.round((Date.now() - started) / 1000)}s
 // Is the background command still running, now the binary has gone?
 const ticking = () => spawnSync('powershell', ['-NoProfile', '-Command',
   "Get-CimInstance Win32_Process -Filter \"Name = 'node.exe'\" | Where-Object { $_.CommandLine -like '*console3 bg tick*' } | ForEach-Object { $_.ProcessId }"],
-{ encoding: 'utf8' }).stdout.trim();
+{ encoding: 'utf8', windowsHide: true }).stdout.trim();
 const afterExit = ticking();
 await sleep(LINGER_MS);
 const later = ticking();

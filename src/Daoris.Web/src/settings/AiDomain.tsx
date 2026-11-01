@@ -112,7 +112,7 @@ function MachineAi({ search, notify, onGo }: { search?: SearchTier; notify: Noti
     <Card>
       <CardHeader title={t('settings.ai.roles.title')} />
       <Prose className="mb-3 mt-0 text-small text-ink-soft">{t('settings.ai.roles.moved')}</Prose>
-      {onGo && <Button variant="ghost" onClick={() => onGo({ view: 'agents', agentsMode: 'roles' })}>{t('settings.ai.roles.open')}</Button>}
+      {onGo && <Button variant="ghost" onClick={() => onGo({ view: 'agents', agentsMode: 'setup' })}>{t('settings.ai.roles.open')}</Button>}
     </Card>
     </CardStack>
   );

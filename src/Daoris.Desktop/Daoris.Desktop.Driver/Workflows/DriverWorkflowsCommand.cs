@@ -629,7 +629,7 @@ public static class DriverWorkflowsCommand
                 var planned = WorkflowOperations.PlanGraph(_home, null, id, null, name, "terminal", Moment(), graph);
                 Say($"daoris: `{id}` v1, a new workflow — {(string?)planned.Plan.Result!["name"]}, from {source.Description}{also}, a graph:");
                 Say($"  {WorkflowPresets.GraphLine(graph)}");
-                if (source.GraphPreset!.NoPress) Say("  With no press: choosing it is refused for a repository whose line does not declare its gates and have them accepted.");
+                if (source.GraphPreset?.NoPress == true) Say("  With no press: choosing it is refused for a repository whose line does not declare its gates and have them accepted.");
                 return Saved(id, planned.Plan.Result);
             }
 

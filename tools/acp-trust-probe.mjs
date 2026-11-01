@@ -65,9 +65,9 @@ function room(name, allow) {
   const where = join(scratch, name);
   rmSync(where, { recursive: true, force: true });
   mkdirSync(where, { recursive: true });
-  execFileSync('git', ['init', '-q', '-b', 'main'], { cwd: where });
-  execFileSync('git', ['config', 'user.email', 'probe@example.com'], { cwd: where });
-  execFileSync('git', ['config', 'user.name', 'DEPLOY1 probe'], { cwd: where });
+  execFileSync('git', ['init', '-q', '-b', 'main'], { cwd: where, windowsHide: true });
+  execFileSync('git', ['config', 'user.email', 'probe@example.com'], { cwd: where, windowsHide: true });
+  execFileSync('git', ['config', 'user.name', 'DEPLOY1 probe'], { cwd: where, windowsHide: true });
   writeFileSync(join(where, 'README.md'), `# ${name}\n\nA scratch room for DEPLOY1's measurement.\n`);
   if (allow) {
     mkdirSync(join(where, '.claude'), { recursive: true });
@@ -85,7 +85,7 @@ function room(name, allow) {
 async function probe(cwd, meta = null) {
   const seen = { permissions: [], tools: new Map(), text: '', stop: null, problem: null };
   const child = spawn(adapter, [], {
-    cwd, stdio: ['pipe', 'pipe', 'pipe'], env: process.env, shell: process.platform === 'win32',
+    cwd, stdio: ['pipe', 'pipe', 'pipe'], env: process.env, shell: process.platform === 'win32', windowsHide: true,
   });
 
   let buffered = '';

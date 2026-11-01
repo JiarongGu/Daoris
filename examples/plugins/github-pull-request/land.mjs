@@ -18,7 +18,7 @@
 // Self-contained on purpose: a plugin is a folder copied into the Daoris home, so it imports nothing
 // from beside it. The Azure DevOps example carries the same two helpers.
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { delimiter, join } from 'node:path';
 import { createInterface } from 'node:readline';
 
@@ -174,6 +174,60 @@ function advance(p) {
   };
 }
 
+/**
+ * The delivery key (LANDNODE1e): a frame carrying `key` is one delivery, and a key this plugin has answered makes no second effect. The
+ * answer is kept under the plugin's data folder when it pushed, and a repeated key is answered with it unchanged.
+ */
+const keptFile = (key) => (typeof key === 'string' && process.env.DAORIS_PLUGIN_DATA
+  ? join(process.env.DAORIS_PLUGIN_DATA, 'deliveries', `${key.replace(/[^A-Za-z0-9._-]/g, '-')}.json`)
+  : null);
+
+function kept(key) {
+  const file = keptFile(key);
+  try {
+    return file && existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : null;
+  } catch {
+    return null;
+  }
+}
+
+function remember(key, answer) {
+  const file = keptFile(key);
+  if (!file || !answer.pushed) return;
+  mkdirSync(join(file, '..'), { recursive: true });
+  writeFileSync(file, JSON.stringify(answer));
+}
+
+/** The frame's mode: `push` only pushes, anything else pushes and opens the pull request. */
+function deliver(p) {
+  const already = kept(p.key);
+  if (already) return { ...already, message: `${already.message} (the delivery ${p.key} was answered before; nothing was done again)` };
+  const answer = p.mode === 'push'
+    ? (() => {
+      const pushed = push(p);
+      return pushed.ok
+        ? { pushed: true, message: `pushed \`${p.branch}\` to origin.` }
+        : { pushed: false, message: `git push to origin failed — ${pushed.why}` };
+    })()
+    : land(p);
+  remember(p.key, answer);
+  return answer;
+}
+
+/**
+ * The query, only for a delivery key (LANDNODE1e): the pull request this plugin opened for that key, read as `gh` reports it. Open is
+ * the one state it can vouch for; any other, or a key it never answered, is unknown, which proves nothing.
+ */
+function query(p) {
+  const answered = kept(p.key)?.pullRequest;
+  if (!answered) return { state: 'unknown', pullRequest: null, message: 'no pull request is kept for that delivery.' };
+  const read = state({ ...p, pullRequest: answered });
+  if (read.error) throw new Error(read.error);
+  return read.open
+    ? { state: 'open', pullRequest: answered, message: `pull request ${answered} is open.` }
+    : { state: 'unknown', pullRequest: answered, message: `pull request ${answered} is ${read.word}.` };
+}
+
 /** The landing: push, then open the pull request. Each failure is the answer's own sentence. */
 function land(p) {
   if (p.pullRequest) return advance(p);
@@ -213,14 +267,29 @@ for await (const line of createInterface({ input: process.stdin })) {
 
   switch (frame.method) {
     // The handshake: the points this process actually listens on, a subset of what the manifest declared.
-    case 'initialize':
-      send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1, points: ['work/land'] } });
+    case 'initialize': {
+      const declared = Array.isArray(frame.params?.points) ? frame.params.points : [];
+      send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1, points: ['work/land', 'work/state'].filter((point) => declared.includes(point)) } });
       break;
+    }
 
     case 'hook/work/land': {
-      const answer = land(frame.params);
+      const answer = deliver(frame.params);
       say(answer.message);
       send({ jsonrpc: '2.0', id: frame.id, result: answer });
+      break;
+    }
+
+    case 'hook/work/state': {
+      try {
+        const answer = query(frame.params);
+        say(answer.message);
+        send({ jsonrpc: '2.0', id: frame.id, result: answer });
+      } catch (error) {
+        const why = `could not read the pull request: ${error?.message ?? error}`;
+        say(why);
+        send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: why } });
+      }
       break;
     }
 

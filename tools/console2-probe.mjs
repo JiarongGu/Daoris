@@ -53,25 +53,25 @@ const env = Object.fromEntries(Object.entries(process.env)
 rmSync(scratch, { recursive: true, force: true });
 const room = join(scratch, 'room');
 mkdirSync(room, { recursive: true });
-spawnSync('git', ['init', '-q', '-b', 'main'], { cwd: room });
-spawnSync('git', ['config', 'user.email', 'probe@example.com'], { cwd: room });
-spawnSync('git', ['config', 'user.name', 'CONSOLE2 probe'], { cwd: room });
+spawnSync('git', ['init', '-q', '-b', 'main'], { cwd: room, windowsHide: true });
+spawnSync('git', ['config', 'user.email', 'probe@example.com'], { cwd: room, windowsHide: true });
+spawnSync('git', ['config', 'user.name', 'CONSOLE2 probe'], { cwd: room, windowsHide: true });
 writeFileSync(join(room, 'README.md'), '# console2 room\n\nA scratch room for the CONSOLE2 probe.\n');
-spawnSync('git', ['add', '-A'], { cwd: room });
-spawnSync('git', ['commit', '-q', '-m', 'room'], { cwd: room });
+spawnSync('git', ['add', '-A'], { cwd: room, windowsHide: true });
+spawnSync('git', ['commit', '-q', '-m', 'room'], { cwd: room, windowsHide: true });
 
 // The rules carrier the driver hands every session (PERM1), outside the room.
 const settingsFile = join(scratch, 'settings.json');
 writeFileSync(settingsFile, `${JSON.stringify({ permissions: { allow: ['Bash(node:*)', 'Read'], ask: [], deny: [] } }, null, 2)}\n`);
 
 const version = JSON.parse(readFileSync(join(adapterRoot, 'package.json'), 'utf8')).version;
-const cli = spawnSync(process.execPath, [entry, '--cli', '--version'], { env, encoding: 'utf8' });
+const cli = spawnSync(process.execPath, [entry, '--cli', '--version'], { env, encoding: 'utf8', windowsHide: true });
 console.log(`CONSOLE2a — claude-agent-acp ${version}, Claude Code ${(cli.stdout || cli.stderr || '?').trim()}`);
 
 const started = Date.now();
 const log = (record) => appendFileSync(framesPath, `${JSON.stringify({ ms: Date.now() - started, ...record })}\n`);
 
-const child = spawn(process.execPath, [entry], { cwd: room, stdio: ['pipe', 'pipe', 'pipe'], env });
+const child = spawn(process.execPath, [entry], { cwd: room, stdio: ['pipe', 'pipe', 'pipe'], env, windowsHide: true });
 child.stderr.on('data', (chunk) => appendFileSync(stderrPath, chunk));
 
 const pending = new Map();
@@ -174,7 +174,7 @@ try {
   child.stdin.end();
   await sleep(1500);
   // The whole tree, as the driver's job object would: a background command must not outlive the probe.
-  if (child.exitCode === null) spawnSync('taskkill', ['/pid', String(child.pid), '/T', '/F']);
+  if (child.exitCode === null) spawnSync('taskkill', ['/pid', String(child.pid), '/T', '/F'], { windowsHide: true });
   log({ dir: 'meta', event: 'ended', exitCode: child.exitCode });
 }
 

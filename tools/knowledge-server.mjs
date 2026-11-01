@@ -563,7 +563,7 @@ function build(checkout, { force }) {
   // stdout kept and shown on failure: MSBuild writes its errors there (service-publish's lesson, REV3).
   // Framework-dependent: a machine that builds the workspace has the runtime, and `dotnet` runs the result.
   const run = spawnSync('dotnet', ['publish', PROJECT, '-c', 'Release', '-r', rid(), '--self-contained', 'false', '-o', out, '--nologo'],
-    { cwd: checkout, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+    { cwd: checkout, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, windowsHide: true });
   if (run.status !== 0 || !existsSync(join(out, ENTRY))) {
     process.stdout.write(run.stdout ?? '');
     process.stderr.write(run.stderr ?? (run.error ? String(run.error) : ''));

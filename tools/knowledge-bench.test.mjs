@@ -162,7 +162,7 @@ test('the generated hook reads the prompt on stdin and prints the top titles and
     writeFileSync(join(dir, path), text);
   }
   const out = spawnSync(process.execPath, ['.claude/hooks/rank.mjs'], {
-    cwd: dir, input: JSON.stringify({ prompt: 'my access token was committed and pushed: how do I clean it?' }), encoding: 'utf8',
+    cwd: dir, input: JSON.stringify({ prompt: 'my access token was committed and pushed: how do I clean it?' }), encoding: 'utf8', windowsHide: true,
   });
   assert.equal(out.status, 0, out.stderr);
   const lines = out.stdout.trim().split('\n');

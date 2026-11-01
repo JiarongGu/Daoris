@@ -35,7 +35,7 @@ const log = (record) => {
 }
 const say = (text) => console.log(`[${String(Date.now() - started).padStart(6)}ms] ${text}`)
 
-const child = spawn(cmd, cmdArgs, { cwd, stdio: ['pipe', 'pipe', 'pipe'], env: process.env, shell: false })
+const child = spawn(cmd, cmdArgs, { cwd, stdio: ['pipe', 'pipe', 'pipe'], env: process.env, shell: false, windowsHide: true })
 log({ dir: 'meta', event: 'spawned', cmd, args: cmdArgs, pid: child.pid })
 
 let nextId = 1

@@ -14,7 +14,7 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 const guard = join(dirname(fileURLToPath(import.meta.url)), 'shell-edit-guard.mjs');
-const run = (call) => spawnSync(process.execPath, [guard], { input: JSON.stringify(call), encoding: 'utf8' });
+const run = (call) => spawnSync(process.execPath, [guard], { input: JSON.stringify(call), encoding: 'utf8', windowsHide: true });
 const bash = (command) => ({ tool_name: 'Bash', tool_input: { command } });
 const statusIs = (answered, expected, label) => assert.equal(answered.status, expected,
   `${label}: pid=${answered.pid}, node=${process.version}, status=${answered.status}, signal=${answered.signal ?? 'none'}, error=${answered.error?.message ?? 'none'}\n${answered.stderr}`);
@@ -45,7 +45,7 @@ test('reading, searching, gates and scratch pass', () => {
 });
 
 test('a call it cannot read passes, so a broken input never blocks the work', () => {
-  const answered = spawnSync(process.execPath, [guard], { input: 'not json', encoding: 'utf8' });
+  const answered = spawnSync(process.execPath, [guard], { input: 'not json', encoding: 'utf8', windowsHide: true });
   statusIs(answered, 0, 'malformed input');
 });
 
@@ -63,8 +63,8 @@ const hook = (() => {
   return { shell, command };
 })();
 const viaShell = (call) => hook.shell === 'powershell'
-  ? spawnSync('powershell', ['-NoProfile', '-NonInteractive', '-Command', hook.command], { cwd: root, input: JSON.stringify(call), encoding: 'utf8' })
-  : spawnSync('bash', ['-c', hook.command], { cwd: root, input: JSON.stringify(call), encoding: 'utf8' });
+  ? spawnSync('powershell', ['-NoProfile', '-NonInteractive', '-Command', hook.command], { cwd: root, input: JSON.stringify(call), encoding: 'utf8', windowsHide: true })
+  : spawnSync('bash', ['-c', hook.command], { cwd: root, input: JSON.stringify(call), encoding: 'utf8', windowsHide: true });
 
 test('the definition\'s hook refuses through its own shell, with exit 2', { skip: hook.shell === 'powershell' && process.platform !== 'win32' }, () => {
   assert.ok(hook.command, 'the branch-worker definition names the guard as a command');

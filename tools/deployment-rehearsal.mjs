@@ -923,6 +923,7 @@ async function main() {
   const standalone = spawn(installedHost, {
     cwd: join(install, ...HOST_HOME),
     stdio: 'ignore',
+    windowsHide: true,
     env: {
       ...process.env,
       ...HERMETIC,
@@ -1110,6 +1111,7 @@ if (!done.ok) throw new Error(done.text);
   // Started the way a person starts it: the launcher at the root, which hands over and exits. Only on ports nobody holds.
   await startsClear(shellPort);
   await startsClear(cdpPort);
+  // console-window: the installed launcher opens the application's window, which the rehearsal drives as a person sees it
   shell = spawn(launcherExe, { cwd: install, env: environment, detached: true, stdio: 'ignore' });
   shell.unref();
 
@@ -1445,7 +1447,7 @@ if (!done.ok) throw new Error(done.text);
     DAORIS_KNOWLEDGE_ROOT: family,
   };
   for (const name of CLEARED) delete readerEnvironment[name];
-  const reader = spawn(installedHost, { cwd: join(install, ...HOST_HOME), stdio: 'ignore', env: readerEnvironment });
+  const reader = spawn(installedHost, { cwd: join(install, ...HOST_HOME), stdio: 'ignore', env: readerEnvironment, windowsHide: true });
   children.push(reader);
   check('the install’s host answers again, over the store the shell left', await answers(readerBase, 120));
 
@@ -1495,7 +1497,7 @@ if (!done.ok) throw new Error(done.text);
   /** A program run with its arguments as given, in `cwd`, under the tool's environment: exit code and output. */
   const shellRun = (file, args, cwd = doctrine, verbatim = false) => {
     const ran = spawnSync(file, args, {
-      cwd, env: toolEnvironment, encoding: 'utf8', timeout: 120_000, windowsVerbatimArguments: verbatim,
+      cwd, env: toolEnvironment, encoding: 'utf8', timeout: 120_000, windowsVerbatimArguments: verbatim, windowsHide: true,
     });
     return { code: ran.status ?? -1, out: `${ran.stdout ?? ''}${ran.stderr ?? ''}${ran.error ? `\n${ran.error.message}` : ''}` };
   };
@@ -1557,7 +1559,7 @@ if (!done.ok) throw new Error(done.text);
   mkdirSync(driverHome, { recursive: true });
   const driverEnvironment = { ...toolEnvironment, DAORIS_HOME: driverHome };
   const driverPrompt = spawnSync(process.env.ComSpec ?? 'cmd.exe', ['/d /s /c "daoris-driver trees list"'], {
-    cwd: doctrine, env: driverEnvironment, encoding: 'utf8', timeout: 120_000, windowsVerbatimArguments: true,
+    cwd: doctrine, env: driverEnvironment, encoding: 'utf8', timeout: 120_000, windowsVerbatimArguments: true, windowsHide: true,
   });
   const driverOut = `${driverPrompt.stdout ?? ''}${driverPrompt.stderr ?? ''}`;
   check(`Command Prompt runs \`daoris-driver trees list\` from ${CLI_BIN.join('/')}/ and it answers (exit 0)`,
@@ -1626,7 +1628,7 @@ if (!done.ok) throw new Error(done.text);
       // Who holds the debug port, by process, so a page that never answers says whether the port is bound at all.
       const holders = spawnSync('powershell', ['-NoProfile', '-Command',
         `Get-NetTCPConnection -LocalPort ${cdpPort} -ErrorAction SilentlyContinue | ForEach-Object { $p = Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue; "$($_.State) pid $($_.OwningProcess) $($p.Path)" }`],
-      { encoding: 'utf8' }).stdout?.trim();
+      { encoding: 'utf8', windowsHide: true }).stdout?.trim();
       lastUpdateRead = `${found}; the port: ${holders || 'nothing bound'}`;
       return null;
     }
@@ -1670,6 +1672,7 @@ if (!done.ok) throw new Error(done.text);
   // Started the way a person starts it, on the same environment as phase 4, its debug port included, and its ports clear.
   await startsClear(shellPort);
   await startsClear(cdpPort);
+  // console-window: the installed launcher opens the application's window, which the rehearsal drives as a person sees it
   shell = spawn(launcherExe, { cwd: install, env: environment, detached: true, stdio: 'ignore' });
   shell.unref();
   check('the install starts again, for its update', await answers(base, 200));
