@@ -37,6 +37,15 @@ it. Today's pieces:
    whether `workflow_propose` gains a draft mode (a proposal against the open draft's fingerprint, not a saved base) or a new door,
    what the room is told of the draft, how a stale proposal is refused, and how Ask Daoris explains a step or a refusal.
 5. **What D221's rows q to t become,** and what of `graphFlow`, `Flow` and the editor is kept, moved or removed.
+6. **The established patterns of flow editors, taken in.** Complex flow design has a common vocabulary that people already know:
+   workflow and automation builders (n8n, Node-RED, Zapier, Make, Azure Logic Apps, Power Automate, GitHub Actions' run graph),
+   process modellers (BPMN tools such as bpmn.io/Camunda Modeler), node-graph editors (React Flow's examples, Unreal Blueprints,
+   ComfyUI) and canvases (Figma, Miro). Name the patterns the design takes and why — for example a step palette or quick-add search,
+   a *+* between steps and at an outcome, connection handles drag-to-connect, auto-layout with *tidy*, fit and zoom, a minimap on
+   large graphs, a side inspector for the selected step, inline validation marks on the step and the wire that are wrong, a run's
+   states painted on the same chart, decision gateways with labelled branches, grouping and collapsing, copy and paste, and an
+   assistant that proposes a change as a diff on the canvas (as today's workflow builders' copilots do) — and the patterns it rejects
+   for this product, with the reason.
 
 ## 3. Constraints
 
