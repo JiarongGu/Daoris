@@ -43,13 +43,13 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/bridge/driver.ts` | 43 | 790 |
 | `src/Daoris.Web/src/bridge/sessions/sessions.ts` | 54 | 1050 |
 | `src/Daoris.Web/src/data/api.ts` | 55 | 914 |
-| `src/Daoris.Web/src/data/queries.ts` | 52 | 985 |
+| `src/Daoris.Web/src/data/queries.ts` | 52 | 987 |
 | `src/Daoris.Web/src/design/FlowCanvas.tsx` | 55 | 1039 |
 | `src/Daoris.Web/src/design/tokens.test.ts` | 50 | 882 |
 | `src/Daoris.Web/src/design/ui.test.tsx` | 65 | 1295 |
 | `src/Daoris.Web/src/design/ui.tsx` | 97 | 2027 |
-| `src/Daoris.Web/src/help/AskConversation.tsx` | 63 | 1160 |
-| `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 108 | 2136 |
+| `src/Daoris.Web/src/help/AskConversation.tsx` | 63 | 1164 |
+| `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 108 | 2139 |
 | `src/Daoris.Web/src/help/ProposalCard.test.tsx` | 44 | 804 |
 | `src/Daoris.Web/src/locales/names.test.ts` | 41 | 721 |
 | `src/Daoris.Web/src/menus/commands.ts` | 43 | 831 |

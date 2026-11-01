@@ -5,10 +5,13 @@ import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { registerAskFill } from '../../help/askFill';
+import { draftToTell, noteTold } from '../../help/openDraft';
+import type { HelpProposal } from '../../help/ProposalCard';
 import i18n from '../../locales/i18n';
 import { MERGE_GRAPH, RELEASE_GRAPH } from '../graphFixtures';
 import { LIST, PALETTE } from './editFixtures';
-import { proposalOf, RELEASE_PROPOSAL } from './proposalFixtures';
+import { draftOf, graphOf } from './graphDraft';
+import { proposalOf, RELEASE_CARD, RELEASE_PROPOSAL } from './proposalFixtures';
 import { canon, type ProposalShown } from './proposalTake';
 
 // FLOWCHART2f (D223 §4, §7 row f, §8.6): Ask Daoris's proposal drawn on the editor's chart and taken whole or change by change, through a
@@ -100,6 +103,42 @@ async function open(props: Partial<WorkflowEditorProps> = {}) {
   render(wrap(<Editor proposal={PROPOSAL} onSettleProposal={settle} onDismissProposal={dismiss} {...props} />));
   await screen.findByRole('region', { name: /Ask Daoris proposes a change|问道衍提议一项更改/ });
 }
+
+describe('a proposal through the bridge', () => {
+  /** The Merge workflow told to conversation `s1` as the editor holds it, and the card Ask Daoris drew against it. */
+  function told() {
+    const sent = draftToTell({ place: 'engine', graph: graphOf(draftOf(MERGE_GRAPH)) }, undefined)!;
+    noteTold('s1', sent);
+    const card: HelpProposal = { ...RELEASE_CARD, workflow: { ...RELEASE_CARD.workflow!, draft: sent.fingerprint } };
+    invoke.mockImplementation(async (_module, type, options) => {
+      const payload = (options as { payload: Record<string, unknown> }).payload;
+      if (type === 'HELP_PROPOSALS') return payload.session === 's1' ? { session: 's1', proposals: [card, { ...card, id: 'p8', workflow: { ...card.workflow!, scope: 'docs' } }] } : null;
+      if (type === 'HELP_APPLY' || type === 'HELP_DISMISS') return { message: 'Applied.', applied: type === 'HELP_APPLY' };
+      return answer(type as string, payload);
+    });
+  }
+
+  it("reads the place's proposal against a draft it told, and presses HELP_APPLY naming every change taken or left, once", async () => {
+    told();
+    render(wrap(<Editor />));
+    await screen.findByRole('region', { name: /Ask Daoris proposes a change/ });
+    counts(0, 0, 16);
+    await user.click(within(bar()).getByRole('button', { name: 'Take all' }));
+    await waitFor(() => expect(asked('HELP_APPLY')).toHaveLength(1));
+    expect(asked('HELP_APPLY')[0]).toEqual({ id: 'p7', revision: 'r7', taken: RELEASE_PROPOSAL.changes.map((change) => change.id), left: [] });
+    expect(asked('HELP_DISMISS')).toEqual([]);
+    nothingSaved();
+  });
+
+  it('presses HELP_DISMISS for *Not now*', async () => {
+    told();
+    render(wrap(<Editor />));
+    await screen.findByRole('region', { name: /Ask Daoris proposes a change/ });
+    await user.click(within(bar()).getByRole('button', { name: 'Not now' }));
+    await waitFor(() => expect(asked('HELP_DISMISS')).toEqual([{ id: 'p7' }]));
+    expect(asked('HELP_APPLY')).toEqual([]);
+  });
+});
 
 describe('a proposal drawn on the chart', () => {
   it('fresh: names who made it, marks its steps and ways in words, lists each change, and settles nothing by being opened', async () => {

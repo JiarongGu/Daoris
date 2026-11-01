@@ -40,7 +40,7 @@ const PUSHED_HERE = [questsSlice, asksSlice, sessionsSlice];
 import { code } from '../test/code';
 import { AskDaoris } from './AskDaoris';
 import type { HelpWhere } from './where';
-import { registerOpenDraft } from './openDraft';
+import { registerOpenDraft, toldGraph, toldSessions } from './openDraft';
 import { fingerprintOf } from '../workflow/draftFingerprint';
 
 const HELP = {
@@ -760,6 +760,9 @@ describe('Ask Daoris, with an agent named', () => {
       await waitFor(() => expect(sentDraft()).toEqual([{ ...draft, fingerprint: fingerprintOf(graph) }]));
       const first = invoke.mock.calls.find(([, type]) => type === 'SESSION_INPUT')![2].payload;
       expect(first.preface).toContain('editing a workflow draft of `release-flow` from v2 for `engine`, not saved: 1 steps;');
+      // FLOWCHART2f: kept as told, by its fingerprint, for a proposal against it to be taken against that graph.
+      await waitFor(() => expect(toldGraph(fingerprintOf(graph))).toEqual(graph));
+      expect(toldSessions().at(-1)).toBe(HELP.id);
 
       await userEvent.type(box, 'and then?');
       await userEvent.click(screen.getByRole('button', { name: 'Send' }));
