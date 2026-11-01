@@ -217,7 +217,7 @@ public sealed class DriverModulePlacesTests : DriverModuleBridge
         foreach (var work in driven.GetProperty("works").EnumerateArray())
         {
             var role = catalogue.RoleFor(work.GetProperty("work").GetString()!, new RolePlace("aurora", "engine")).Role!;
-            Assert.Equal((role.Id, role.NameEn, role.NameZh), (work.GetProperty("role").GetString(), work.GetProperty("roleNames").GetProperty("en").GetString(), work.GetProperty("roleNames").GetProperty("zh").GetString()));
+            Assert.Equal((role.Id, role.Name), (work.GetProperty("role").GetString(), AuthoredText.Read(work.GetProperty("roleName"))));
             Assert.Equal(role.Scope.Kind, work.GetProperty("roleScope").GetProperty("kind").GetString());
         }
 

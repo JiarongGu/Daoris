@@ -11,7 +11,7 @@ public sealed class RoleRefusedException(RoleRefusal refusal) : DriverException(
 /// <param name="State"><c>seed</c>, <c>set</c>, <c>removed</c> or <c>unreadable</c>.</param>
 /// <param name="Choices">Its stored staffing; null where none is stored (a seeded role <i>as before</i>, a removed one).</param>
 public sealed record RoleRow(
-    string Id, string State, bool Seeded, string? NameEn, string? NameZh, IReadOnlyList<string> Takes, string? ScopeKind, string? ScopeId,
+    string Id, string State, bool Seeded, AuthoredText? Name, IReadOnlyList<string> Takes, string? ScopeKind, string? ScopeId,
     long Revision, string? Error, IReadOnlyList<ActorChoice>? Choices);
 
 /// <summary>
@@ -34,7 +34,7 @@ public static class RoleDoor
             slot.Id,
             slot.State switch { RoleState.Seed => "seed", RoleState.Set => "set", RoleState.Removed => "removed", _ => "unreadable" },
             ActorChoices.Ids.Contains(slot.Id, StringComparer.Ordinal),
-            slot.Role?.NameEn, slot.Role?.NameZh, slot.Role?.Takes ?? [], slot.Role?.Scope.Kind ?? slot.Scope?.Kind, slot.Role?.Scope.Id ?? slot.Scope?.Id,
+            slot.Role?.Name, slot.Role?.Takes ?? [], slot.Role?.Scope.Kind ?? slot.Scope?.Kind, slot.Role?.Scope.Id ?? slot.Scope?.Id,
             slot.Revision, slot.Error,
             slot.State == RoleState.Removed ? null : config.Actors.TryGetValue(slot.Id, out var choices) ? choices : null)),
     ];
@@ -160,16 +160,14 @@ public static class RoleDoor
                     throw new DriverException($"the press sets `{id}` and carries no role.");
                 }
 
-                var name = role.TryGetProperty("name", out var names) && names.ValueKind == System.Text.Json.JsonValueKind.Object ? names : default;
+                var name = role.TryGetProperty("name", out var names) ? AuthoredText.Read(names) : null;
                 var takes = role.TryGetProperty("takes", out var works) && works.ValueKind == System.Text.Json.JsonValueKind.Array
                     ? works.EnumerateArray().Where(work => work.ValueKind == System.Text.Json.JsonValueKind.String).Select(work => work.GetString()!).ToList()
                     : [];
                 var scope = role.TryGetProperty("scope", out var place) && place.ValueKind == System.Text.Json.JsonValueKind.Object
                     ? new RoleScope(Text(place, "kind") ?? RoleScope.Machine, Text(place, "id"))
                     : RoleScope.Everywhere;
-                var record = new RoleRecord(
-                    id, name.ValueKind == System.Text.Json.JsonValueKind.Object ? Text(name, "en") ?? "" : "",
-                    name.ValueKind == System.Text.Json.JsonValueKind.Object ? Text(name, "zh") ?? "" : "", RoleRecord.Always, takes, scope);
+                var record = new RoleRecord(id, name ?? AuthoredText.Of(""), RoleRecord.Always, takes, scope);
                 return (RoleChange.Set(record), ActorChoices.Payload(press), read);
             default:
                 throw new DriverException("a role's change is `set`, `remove`, `default` or `default-all`.");

@@ -32,7 +32,7 @@ public sealed class RoleDoorTests : IDisposable
     private string File_ => DaorisHome.Entry(_home, HomeEntry.DriverConfig);
 
     internal static RoleRecord Designer(RoleScope? scope = null) =>
-        new("designer", "Designer", "设计师", RoleRecord.Always, [RoleWork.Design], scope ?? RoleScope.Everywhere);
+        new("designer", AuthoredText.FromTags([new("en", "Designer"), new("zh", "设计师")])!, RoleRecord.Always, [RoleWork.Design], scope ?? RoleScope.Everywhere);
 
     private static readonly IReadOnlyList<ActorChoice> Opus = [new ActorChoice("claude", "opus", "high")];
 
@@ -70,17 +70,43 @@ public sealed class RoleDoorTests : IDisposable
         Assert.Equal(staffed, Config().Actors.Keys.Order(StringComparer.Ordinal).ToList());
     }
 
+    /// <summary>I18NOPEN1 (D222): a role is named in one language, or in a third, and an old pair reads unchanged; each is shown in the viewer's language, else as written.</summary>
+    [Fact]
+    public void A_role_named_in_one_language_or_a_third_is_saved_and_read_back_and_an_old_pair_reads_unchanged()
+    {
+        RoleDoor.Apply(Staffing, RoleChange.Set(Designer() with { Name = AuthoredText.Of("Architect") }), Opus);
+        RoleDoor.Apply(Staffing, RoleChange.Set(Designer(new RoleScope(RoleScope.Workspace, "w1")) with { Id = "relecteur", Name = AuthoredText.FromTags([new("fr", "Relecteur")])! }), Opus);
+
+        var rows = RoleDoor.Rows(Catalogue(), Config()).ToDictionary(row => row.Id);
+        Assert.Equal(("Architect", "Architect"), (rows["designer"].Name!.In("zh"), rows["designer"].Name!.In("fr")));
+        Assert.Equal(("Relecteur", "Relecteur", """{"fr":"Relecteur"}"""), (rows["relecteur"].Name!.In("fr"), rows["relecteur"].Name!.In("en"), rows["relecteur"].Name!.Json()));
+
+        // The record a build before this wrote, { en, zh } both, is a valid record as it stands.
+        var (old, why) = RoleRecord.Parse("designer", """{"id":"designer","name":{"en":"Designer","zh":"设计师"},"filled":"always","takes":["design"],"scope":{"kind":"machine"}}""");
+        Assert.Null(why);
+        Assert.Equal(("设计师", "Designer"), (old!.Name.In("zh-TW"), old.Name.In("en")));
+        Assert.Contains("\"name\":{\"en\":\"Designer\",\"zh\":\"设计师\"}", old.Json());
+
+        // A press carries the name as the page sends it: one text, or a map of tags to texts.
+        using var press = System.Text.Json.JsonDocument.Parse("""{"change":"set","id":"lecteur","role":{"name":{"fr":"Lecteur"},"takes":["review"]}}""");
+        var (change, _, _) = RoleDoor.Read(press.RootElement);
+        Assert.Equal("""{"fr":"Lecteur"}""", Assert.IsType<RoleChange.SetRole>(change).Role.Name.Json());
+        using var blank = System.Text.Json.JsonDocument.Parse("""{"change":"set","id":"lecteur","role":{"name":"  ","takes":["review"]}}""");
+        var refused = Assert.Throws<RoleRefusedException>(() => RoleDoor.Apply(Staffing, RoleDoor.Read(blank.RootElement).Change, null));
+        Assert.Equal("bad-record", refused.Code);
+    }
+
     [Fact]
     public void An_added_role_keeps_its_record_and_its_staffing_a_change_a_new_revision_and_its_removal_both_gone()
     {
         Assert.Equal(1L, RoleDoor.Apply(Staffing, RoleChange.Set(Designer()), Opus));
 
         var slot = Catalogue().Slots.Single(each => each.Id == "designer");
-        Assert.Equal((RoleState.Set, "设计师"), (slot.State, slot.Role!.NameZh));
+        Assert.Equal((RoleState.Set, "设计师"), (slot.State, slot.Role!.Name.In("zh")));
         Assert.Equal([new ActorEffective("claude", "opus", "high", "1")], Catalogue().Order(RoleWork.Design, new RolePlace(), Config()));
 
-        Assert.Equal(2L, RoleDoor.Apply(Staffing, RoleChange.Set(Designer() with { NameEn = "Architect" }), null, read: 1));
-        Assert.Equal("Architect", Catalogue().Slots.Single(each => each.Id == "designer").Role!.NameEn);
+        Assert.Equal(2L, RoleDoor.Apply(Staffing, RoleChange.Set(Designer() with { Name = AuthoredText.Of("Architect") }), null, read: 1));
+        Assert.Equal("Architect", Catalogue().Slots.Single(each => each.Id == "designer").Role!.Name.AsWritten);
         Assert.Equal(Opus, Config().Actors["designer"]);
 
         var stale = Assert.Throws<DriverException>(() => RoleDoor.Apply(Staffing, RoleChange.Remove("designer"), read: 1));

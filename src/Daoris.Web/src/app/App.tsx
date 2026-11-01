@@ -37,7 +37,8 @@ import {
   workspaceItem,
 } from './opener';
 import { setupLit } from '../agents/modes';
-import { PlaceSessions } from '../agents/setup/PlaceSessions';
+import { PlaceDrivingScope } from '../agents/setup/PlaceDriving';
+import { PlaceSessions, PlaceWorkflow } from '../agents/setup/PlaceSessions';
 import { PlaceSetUpPanel } from '../agents/setup/PlaceSetUpPanel';
 import { DEFAULT_WORKSPACE, workspaceOf } from '../data/workspaces';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
@@ -97,6 +98,7 @@ import { ZoomReadout } from '../work/frame/ZoomReadout';
 import { rememberedDomain, SETTINGS_DOMAINS } from '../settings/domains';
 import { store, stored } from '../lib/stored';
 import { figure } from '../locales/format';
+import { pageLanguage } from '../locales/languages';
 import { HarnessRuns } from '../agents/harnessRuns';
 import { usePluginsView } from '../plugins/PluginsView';
 import { useAgentsMode, useAgentsView } from '../agents/AgentsView';
@@ -432,8 +434,37 @@ export function App() {
     part: agentPart,
     onAnchored: () => setAgentPart(null),
     onOpenPlugin: (plugin) => open('plugins', plugin),
-    // A place's Sessions (AGENTSPLACE1f): its rows press the driver's hooks, which the application hands in so the place imports none.
-    sessions: (place) => <PlaceSessions place={place} notify={notify} onOpenPlugin={(plugin) => open('plugins', plugin)} />,
+    // A place's Workflow and Sessions (AGENTSPLACE1f, 1h; SETUPUX1h): their rows press the driver's hooks, which the application hands in so
+    // the place imports none. Each is an element, mounted only while its section is open.
+    bodies: (place) => ({
+      workflow: (
+        <PlaceWorkflow
+          place={place}
+          notify={notify}
+          onOpenPlugin={(plugin) => open('plugins', plugin)}
+          onOpenWorkspaceFlow={(workspace) => open('projects', workspaceItem(workspace), { workspaceTab: 'workflow' })}
+        />
+      ),
+      sessions: (
+        <PlaceSessions
+          place={place}
+          notify={notify}
+          onOpenPlugin={(plugin) => open('plugins', plugin)}
+          onOpenAppointed={() => open('agents', null, { roleSection: 'appointed' })}
+        />
+      ),
+    }),
+    // A repository's driving, for its page head (SETUPUX1h): the hold, and the ⋯'s drive and trees.
+    driving: (row, render) => (
+      <PlaceDrivingScope
+        row={row}
+        notify={notify}
+        onOpenAppointed={() => open('agents', null, { roleSection: 'appointed' })}
+        onOpenRepositories={() => open('projects', row.repository)}
+      >
+        {render}
+      </PlaceDrivingScope>
+    ),
     // A place's *Set up…* (AGENTSPLACE1j): it reads the plan and presses Apply, which the application hands in for the same reason.
     setUp: (place, page) => <PlaceSetUpPanel place={place} page={page} notify={notify} />,
     // The Roles mode's doors (COMPANYVIEW1d): each thing's home, the Agents mode at an agent's accounts among them.
@@ -653,7 +684,8 @@ export function App() {
     if (plan.knowledge) chooseKnowledgeMode(plan.knowledge);
     if (plan.agentsMode) agentsModes.onMode(plan.agentsMode);
     if (plan.roleSection) agentsModes.onSection(plan.roleSection);
-    if (plan.place) agentsModes.onPlace(plan.place);
+    // SETUPUX1h: a door to a place names the section and the row it opens at.
+    if (plan.place) agentsModes.onPlaceAt(plan.place, plan.placeAt ?? {});
     // Ask Daoris's place card (AGENTSPLACE1k): the place's *Set up…* opens on the ask, once the Agents place has the place chosen.
     if (plan.place && plan.setUp) agentsModes.onSeed(plan.place, plan.setUp);
     if (plan.chosen) lists.choose(plan.chosen.view, plan.chosen.item);
@@ -747,7 +779,7 @@ export function App() {
       circle,
       wired: Boolean(wired),
       theme,
-      language: i18n.language.startsWith('zh') ? 'zh' : 'en',
+      language: pageLanguage(i18n.language),
       // Each agent installed here, as the Agents place lists it (UX6e): the palette goes to each one's page.
       agents: byTool(Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [])
         .filter((tool) => tool.present)

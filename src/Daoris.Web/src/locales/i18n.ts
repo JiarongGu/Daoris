@@ -2,7 +2,7 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 // One file per area, merged into one catalogue per language before i18next sees it (MOD2).
-import { en, zh } from './index';
+import { catalogues, languages } from './index';
 
 // UI chrome is translated; DATA is not (D42). Quest content, registry declarations, knowledge bodies
 // and the service's own sentences render verbatim — machine-translating a refusal would break the
@@ -12,12 +12,10 @@ void i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
-    resources: {
-      en: { translation: en },
-      zh: { translation: zh },
-    },
+    // The languages are the catalogues present (D222), English the source and the fallback.
+    resources: Object.fromEntries(languages.map((language) => [language, { translation: catalogues[language] }])),
     fallbackLng: 'en',
-    supportedLngs: ['en', 'zh'],
+    supportedLngs: languages,
     // Flat dotted keys, the bilingual sibling's proven convention: every key greps from code
     // straight to the catalog line, with no nesting to mentally re-join.
     keySeparator: false,

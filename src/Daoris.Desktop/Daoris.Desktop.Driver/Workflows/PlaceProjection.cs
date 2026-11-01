@@ -32,16 +32,13 @@ public sealed record PlaceValue(string? Value, string Source);
 /// <summary>Why a place needs a look, judged from the configuration alone: a code the page words, and what it names.</summary>
 public sealed record PlaceNeed(string Code, string? Detail = null);
 
-/// <summary>A role's names in both languages, as its record holds them.</summary>
-public sealed record PlaceRoleNames(string En, string Zh);
-
 /// <summary>
-/// One work at a place, light: the role a start finds (<see cref="RoleCatalog.RoleFor"/>) with its names and the scope it sits at, and the
-/// rule's consent (<see cref="WorkPolicies.Of"/>). <paramref name="Source"/> is the rule's, never the role's.
+/// One work at a place, light: the role a start finds (<see cref="RoleCatalog.RoleFor"/>) with its name as its record holds it and the scope
+/// it sits at, and the rule's consent (<see cref="WorkPolicies.Of"/>). <paramref name="Source"/> is the rule's, never the role's.
 /// </summary>
 public sealed record PlaceWork(
     string Work, string? Role, string? Held, string? Consent, string Source, string? PolicyFailed,
-    PlaceRoleNames? RoleNames = null, RoleScope? RoleScope = null);
+    AuthoredText? RoleName = null, RoleScope? RoleScope = null);
 
 /// <summary>
 /// The default a place follows, by its id, and each option the place says otherwise, as <c>accept `automatic`</c>: under Current
@@ -168,7 +165,7 @@ public static class PlaceProjection
                 var level = place.Repository is not null ? PlaceSource.RepositoryLevel : place.Workspace is not null ? PlaceSource.WorkspaceLevel : PlaceSource.Machine;
                 works.Add(new PlaceWork(
                     work, role?.Id, held, policy?.Consent, policy is null ? PlaceSource.Default : PlaceSource.At(policy.Source, level), policyFailed,
-                    role is null ? null : new PlaceRoleNames(role.NameEn, role.NameZh), role?.Scope));
+                    role?.Name, role?.Scope));
             }
 
             return works;

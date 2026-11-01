@@ -7,6 +7,11 @@ import { cn } from '../../lib/cn';
 import { PageHead, ViewMain } from '../../work/frame/ViewMain';
 import { MACHINE, repositoryId, workspaceId } from '../modes';
 import type { SetUpPlace } from './placePlan';
+import { type PlaceDriving, PlacePageView } from './PlacePage';
+import type { SourceDoor } from './PlaceRoles';
+import {
+  firstSection, foldedLines, headOf, needOpening, type PlaceAt, type PlaceKind, type PlaceSection, type PlaceShell, sectionsOf,
+} from './placeShell';
 
 /** A page of driven repositories, and the step "Show more" takes. */
 const PAGE = 50;
@@ -220,112 +225,107 @@ export function findPlace(read: PlacesRead | null, id: string | null): Found | n
   return imported ? { kind: 'imported', ...imported } : null;
 }
 
-/** How many of a place's values were set at the place itself. */
-const ownChanges = (row: PlaceRow) => {
-  const { follows: _follows, lands: _lands, look: _look, helpers: _helpers, answer: _answer, ...values } = row.values ?? {};
-  return Object.values(values).filter((value) => value.source === 'here').length;
+/** The row an imported repository is read as until its detail arrives: not driven, with what the registry says of its checkout. */
+const importedRow = (found: Extract<Found, { kind: 'imported' }>): PlaceRow => ({
+  workspace: found.workspace, repository: found.repository, driven: false, held: false, trees: false, checkout: found.checkout, adopted: false,
+  works: [], needs: [],
+});
+
+/** The `PLACES` row of the place a chosen id names: its own, or for an imported repository its detail once read. */
+export const rowOfFound = (found: Found | null, detail: PlaceRow | null): PlaceRow | null =>
+  !found ? null : found.kind === 'imported' ? detail ?? importedRow(found) : found.row;
+
+const SECTION_TITLE: Record<PlaceSection, string> = {
+  workflow: 'agents.setup.workflow.title', roles: 'agents.setup.roles.title', sessions: 'agents.setup.sessions.title',
 };
 
-function Fact({ name, children }: { name: string; children: ReactNode }) {
-  return (
-    <div className="flex flex-wrap gap-x-3 gap-y-0.5 py-1">
-      <dt className="w-32 shrink-0 text-small text-ink-faint">{name}</dt>
-      <dd className="m-0 min-w-0 flex-1 text-body text-ink">{children}</dd>
-    </div>
-  );
-}
-
 /**
- * **A place's page** (AGENTSPLACE1e): its head, driving, held, trees, and *n changes of your own*, then its Roles (AGENTSPLACE1g1) and its
- * Sessions (AGENTSPLACE1f). The preset a place matches is derived by a later row (AGENTSPLACE1a2), and the Workflow section by 1h, so the
- * page says what the configuration already reads.
+ * **A place's page** (SETUPUX1h, the setup-UX design §2.1): its head and three sections folded to the line that names their values, from
+ * the place's `PLACES` row alone. The page's state (the sections open, the row a door asked for, the way back) is the application's
+ * (`PlaceShell`); the sections' bodies are handed in, and a folded section mounts none, so it reads nothing.
+ *
+ * A molecule: the driver's answer arrives, and each press goes out.
  */
-export function SetupMain({ found, state, roles, after, setUp }: {
+export function SetupMain({ found, state, id, row, counts, members, shell, bodies, drive, setUp, onGo }: {
   found: Found | null;
   state: SetupState['status'];
-  /** The place's Roles section, drawn under its head: the application's, which reads the driver. */
-  roles?: ReactNode;
-  /** What follows Roles (AGENTSPLACE1f): the place's Sessions, and a repository's Driving and Line and landing until their rows build them. */
-  after?: ReactNode;
+  /** The chosen place's id, which the shell's state is held under. */
+  id: string | null;
+  /** The place's `PLACES` row; for an imported repository, its detail once read. */
+  row: PlaceRow | null;
+  /** A workspace's driven and not driven repositories, and those of its repositories in hand. */
+  counts?: { driven: number; notDriven: number };
+  members?: readonly PlaceRow[];
+  shell: PlaceShell;
+  /** Each section's body, an organism of the application's: Workflow and Sessions press its hooks, Roles reads the driver. */
+  bodies: Partial<Record<PlaceSection, ReactNode>>;
+  /** A repository's driving for its head: the organism holds the hooks, and renders the page with what it made. */
+  drive?: (row: PlaceRow, render: (driving: PlaceDriving) => ReactNode) => ReactNode;
   /**
    * The place's *Set up…* (AGENTSPLACE1j), pressed from its head: open, the page replaces the place's sections in the main area, and the
    * panel is the application's, which reads the plan and presses Apply. None for *This machine*, which has no set-up.
    */
   setUp?: { open: boolean; onOpen: () => void; panel: ReactNode };
+  /** A door to another place at a section and row; the page names itself as the way back. */
+  onGo: (target: string, at: PlaceAt) => void;
 }) {
-  const { t } = useTranslation();
-  if (!found) {
+  const { t, i18n } = useTranslation();
+  if (!found || !id || !row) {
     return (
       <ViewMain state={state === 'loading' ? 'loading' : 'none'} none={{ headline: t('agents.setup.none.headline'), body: t('agents.setup.none.body') }}>
         {null}
       </ViewMain>
     );
   }
-  const yes = (on: boolean) => t(on ? 'agents.setup.yes' : 'agents.setup.no');
-  const name = found.kind === 'machine' ? t('agents.setup.machine') : found.kind === 'workspace' ? found.row.workspace ?? '' : found.kind === 'repository' ? found.row.repository ?? '' : found.repository;
-  const where = found.kind === 'repository' ? found.row.workspace : found.kind === 'imported' ? found.workspace : undefined;
-  const needs = found.kind === 'imported' ? [] : found.row.needs;
-  const changes = found.kind === 'imported' || found.kind === 'machine' ? null : ownChanges(found.row);
-  const follows = found.kind === 'repository' || found.kind === 'workspace' ? found.row.values?.follows : null;
-  const offersSetUp = setUp !== undefined && found.kind !== 'machine';
+  const kind: PlaceKind = found.kind === 'imported' ? 'repository' : found.kind;
+  const name = kind === 'machine' ? t('agents.setup.machine') : kind === 'workspace' ? row.workspace ?? '' : row.repository ?? '';
+  const offersSetUp = setUp !== undefined && kind !== 'machine';
   if (offersSetUp && setUp.open) {
-    return <ViewMain header={<PageHead title={name} line={where ?? undefined} />}>{setUp.panel}</ViewMain>;
+    return <ViewMain header={<PageHead title={name} line={kind === 'repository' ? row.workspace ?? undefined : undefined} />}>{setUp.panel}</ViewMain>;
   }
-  return (
-    <ViewMain
-      header={(
-        <PageHead
-          title={name}
-          line={where ?? undefined}
-          acts={offersSetUp ? <Button onClick={setUp.onOpen}>{t('agents.setup.set.open')}</Button> : undefined}
-        />
-      )}
-    >
-      <dl className="m-0 grid">
-        {found.kind === 'imported' && (
-          <>
-            <Fact name={t('agents.setup.driving')}>{yes(false)}</Fact>
-            <Fact name={t('agents.setup.checkout')}>{yes(found.checkout)}</Fact>
-          </>
-        )}
-        {found.kind === 'repository' && (
-          <>
-            <Fact name={t('agents.setup.driving')}>{yes(found.row.driven)}</Fact>
-            <Fact name={t('agents.setup.held')}>{yes(found.row.held)}</Fact>
-            <Fact name={t('agents.setup.trees')}>{t(found.row.trees ? 'agents.setup.treesOwn' : 'agents.setup.treesNone')}</Fact>
-          </>
-        )}
-        {found.kind === 'workspace' && (
-          <>
-            <Fact name={t('agents.setup.driving')}>{t('agents.setup.drivenCount', { count: found.driven })}</Fact>
-            <Fact name={t('agents.setup.imported_label')}>{t('agents.setup.imported', { count: found.notDriven })}</Fact>
-          </>
-        )}
-        {found.kind === 'machine' && <Fact name={t('agents.setup.works')}>{t('agents.setup.worksCount', { count: found.row.works.length })}</Fact>}
-        {changes !== null && (
-          <Fact name={t('agents.setup.changes')}>{changes === 0 ? t('agents.setup.followsDefaults') : t('agents.setup.changesOwn', { count: changes })}</Fact>
-        )}
-        {follows?.default && (
-          <Fact name={t('agents.setup.followsDefault')}>
-            {t(`agents.setup.defaultName.${follows.default}`, { defaultValue: follows.default })}
-            {' '}
-            {follows.differs.length === 0 ? t('agents.setup.differsNone') : t('agents.setup.differsIn', { options: follows.differs.join(', ') })}
-          </Fact>
-        )}
-        {needs.length > 0 && (
-          <Fact name={t('agents.setup.needsLook')}>
-            <ul className="m-0 list-none p-0 text-warn">
-              {needs.map((need, at) => (
-                <li key={`${need.code}${at}`}>{t(`agents.setup.need.${need.code}`, { defaultValue: need.code })}{need.detail ? `: ${need.detail}` : ''}</li>
-              ))}
-            </ul>
-          </Fact>
-        )}
-      </dl>
-      {found.kind !== 'imported' && roles}
-      {found.kind !== 'imported' && after}
-    </ViewMain>
+
+  const first = firstSection(kind);
+  const need = needOpening(row);
+  const lines = foldedLines(row, kind, t, i18n.language);
+  const facts = headOf({ kind, row, counts, members }, t);
+  const back = shell.backTo(id);
+  const from = (section: PlaceSection) => ({ place: id, name, section });
+  const sections = sectionsOf(kind).map((section) => ({
+    id: section,
+    title: t(SECTION_TITLE[section]),
+    summary: lines[section],
+    open: shell.isOpen(id, section, section === first || need?.section === section),
+    onOpenChange: (open: boolean) => shell.setOpen(id, section, open),
+    body: bodies[section] ?? null,
+  }));
+  const workspace = row.workspace;
+  const page = (driving: PlaceDriving | null) => (
+    <PlacePageView
+      head={{
+        title: name,
+        pill: facts.pill,
+        facts: [...facts.facts, ...row.needs.map((each) => `⚠ ${t(`agents.setup.need.${each.code}`, { defaultValue: each.code })}${each.detail ? `: ${each.detail}` : ''}`)],
+        parent: kind === 'repository' && workspace ? { name: workspace, onOpen: () => onGo(workspaceId(workspace), { section: firstSection('workspace'), back: from(first) }) } : undefined,
+        setUp: offersSetUp ? { onOpen: setUp.onOpen } : undefined,
+      }}
+      sections={sections}
+      driving={driving}
+      back={back ? { place: back.name, section: back.section ? t(SECTION_TITLE[back.section]) : '', onBack: () => { shell.clearBack(); onGo(back.place, { section: back.section ?? undefined }); } } : null}
+      row={shell.rowOf(id) ?? need?.row ?? null}
+      onRowBrought={() => shell.rowBrought(id)}
+      focusAsked={shell.focusAsked}
+    />
   );
+  return <ViewMain>{drive && kind === 'repository' ? drive(row, page) : page(null)}</ViewMain>;
+}
+
+/** A door from a role's source mark: the place that sets it, at the work's row of Roles, with the way back to this page. */
+export function sourceDoor(
+  from: { id: string; name: string }, workspace: string | null | undefined, onGo: (target: string, at: PlaceAt) => void,
+): SourceDoor {
+  return (scope, work) => onGo(scope.kind === 'workspace' ? workspaceId(scope.id ?? workspace ?? '') : MACHINE, {
+    section: 'roles', row: work, back: { place: from.id, name: from.name, section: 'roles' },
+  });
 }
 
 /** The place a *Set up…* is for, from the chosen id and the answer in hand; none for *This machine*, which has no set-up. */

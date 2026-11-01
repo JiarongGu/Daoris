@@ -133,10 +133,10 @@ public sealed record NodeDeclaration(string Id, string Kind, int Version, string
     /// A plugin's step's name as a person reads it (SETUPUX1f), or null: none declared. Words for reading only, so they are left out of
     /// equality, the hash and a graph's digest, and changing them lapses no acceptance.
     /// </summary>
-    public StepWords? Title { get; init; }
+    public AuthoredText? Title { get; init; }
 
     /// <summary>A sentence of what the step does (SETUPUX1f), or null; read like <see cref="Title"/>.</summary>
-    public StepWords? About { get; init; }
+    public AuthoredText? About { get; init; }
 
     private readonly IReadOnlyDictionary<string, string> options = NoPorts;
 
@@ -237,8 +237,8 @@ public sealed record NodeDeclaration(string Id, string Kind, int Version, string
             && string.Equals(pair.First.Value, pair.Second.Value, StringComparison.Ordinal));
 }
 
-/// <summary>Words a manifest gives in both chrome languages (SETUPUX1f): a step's <c>title</c> or <c>about</c>, each as the author wrote it.</summary>
-public sealed record StepWords(string En, string Zh)
+/// <summary>The bounds of the words a manifest gives (SETUPUX1f): a step's <c>title</c> or <c>about</c> is <see cref="AuthoredText"/>, each text within them.</summary>
+public static class StepWords
 {
     /// <summary>The longest title, in characters: one line a graph's card can hold.</summary>
     public const int TitleMost = 60;

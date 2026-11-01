@@ -1,8 +1,7 @@
-import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useRegistry } from '../../data/queries';
 import { workspaceOf } from '../../data/workspaces';
-import type { Notify } from '../../design/ui';
+import { Button, type Notify } from '../../design/ui';
 import { RepositorySetup, type RepositorySetupProps, SESSIONS_SECTIONS } from '../../projects/setup/RepositorySetup';
 import { useRepositorySetup } from '../../projects/setup/useRepositorySetup';
 import { useWorkflowTab } from '../../projects/useWorkflowTab';
@@ -10,50 +9,33 @@ import { type PlaceWorkflowProps, PlaceWorkflowView } from '../../workflow/place
 import { WorkspaceSetupPart } from '../../projects/workspace/WorkspaceView';
 import type { PlaceRow } from '../../data/wiring';
 
-/** A titled section of a place's page, as Roles' is: its heading, then what it holds. */
-function PageSection({ id, title, children }: { id: string; title: string; children: ReactNode }) {
+/**
+ * **A repository place's Workflow section** (AGENTSPLACE1h; the section's body on the place page, SETUPUX1h): its route and chart, Gates,
+ * the line's landing rows from the one molecule Setup draws them with, and Change… and Edit steps…. A molecule: the setup and the workflow
+ * arrive as props, and every press goes out.
+ */
+export function PlaceWorkflowBodyView({ setup, workflow = null }: { setup: RepositorySetupProps | null; workflow?: PlaceWorkflowProps | null }) {
+  if (!setup || !workflow) return null;
   return (
-    <section aria-labelledby={id} className="mt-5 grid gap-3">
-      <h2 id={id} className="m-0 text-body font-medium text-ink">{title}</h2>
-      {children}
-    </section>
+    <PlaceWorkflowView
+      {...workflow}
+      onAcceptIntegration={setup.landed?.onAcceptIntegration}
+      landing={(asked) => (setup.work ? <RepositorySetup {...setup} only={['work']} gatesApart open={asked ?? setup.open} /> : null)}
+    />
   );
 }
 
 /**
- * **A repository place's Driving, Workflow and Sessions** (AGENTSPLACE1f, 1h), drawn from the one molecule the Repositories page's Setup tab
- * drew, so each row, its *Set for this repository* and *Clear*, and its terminal twin are today's. A molecule: the setup and the workflow
- * arrive as props, and every press goes out.
- *
- * @remarks
- * - **Sessions** holds the access, the heavy gates and checks, the language, helpers, hand-over and standing answer, and the reach and rules.
- * - **Driving** (drive, hold, a tree per session, the supervisor's door) is drawn here too, since the tab it was on goes with this row (design
- *   §6); it is the page head's, and moves there when the head is built.
- * - **Workflow** (AGENTSPLACE1h) is `PlaceWorkflowView`: its route and chart, Gates, the line's landing rows from the same molecule, and
- *   Change… and Edit steps…. A workspace's page has none yet; its Workflow tab stays.
+ * **A repository place's Sessions section**: the access, the heavy gates and checks, the language, helpers, hand-over and standing answer,
+ * and the reach and rules, today's rows moved whole from Repositories' Setup tab, each with *Set for this repository* or *Clear*.
  */
-export function PlaceRepositorySetupView({ setup, workflow = null }: { setup: RepositorySetupProps | null; workflow?: PlaceWorkflowProps | null }) {
-  const { t } = useTranslation();
+export function PlaceSessionsBodyView({ setup }: { setup: RepositorySetupProps | null }) {
   if (!setup) return null;
-  return (
-    <>
-      <RepositorySetup {...setup} only={['driving']} />
-      {workflow && (
-        <PlaceWorkflowView
-          {...workflow}
-          onAcceptIntegration={setup.landed?.onAcceptIntegration}
-          landing={(asked) => (setup.work ? <RepositorySetup {...setup} only={['work']} gatesApart open={asked ?? setup.open} /> : null)}
-        />
-      )}
-      <PageSection id="place-sessions" title={t('agents.setup.sessions.title')}>
-        <RepositorySetup {...setup} only={SESSIONS_SECTIONS} />
-      </PageSection>
-    </>
-  );
+  return <RepositorySetup {...setup} only={SESSIONS_SECTIONS} />;
 }
 
-/** A repository place's Setup, from the registry's row and the driver's answers: the organism for the view above. */
-function PlaceRepositorySetup({ place, notify, onOpenPlugin, onOpenAppointed }: {
+/** A repository place's setup, from the registry's row and the driver's answers; read only while the section that draws it is open. */
+function useRepositoryPlace({ place, notify, onOpenPlugin, onOpenAppointed }: {
   place: PlaceRow;
   notify: Notify;
   onOpenPlugin?: (plugin: string) => void;
@@ -62,31 +44,65 @@ function PlaceRepositorySetup({ place, notify, onOpenPlugin, onOpenAppointed }: 
   const registry = useRegistry('machine');
   const registration = (registry.data ?? []).find((row) => row.repository === place.repository && workspaceOf(row) === workspaceOf(place));
   const setup = useRepositorySetup({ registration, enabled: true, notify, onOpenPlugin, onOpenAppointed });
+  return { registration, setup };
+}
+
+type PlaceOf = { kind: 'workspace'; row: PlaceRow } | { kind: 'repository'; row: PlaceRow };
+
+/**
+ * **A place's Workflow section**: a repository's, from its Workflow answer; a workspace's is the Repositories page's tab until the
+ * workspace's own section is built, so it says so and holds a door there.
+ */
+export function PlaceWorkflow({ place, notify, onOpenPlugin, onOpenWorkspaceFlow }: {
+  place: PlaceOf;
+  notify: Notify;
+  onOpenPlugin?: (plugin: string) => void;
+  onOpenWorkspaceFlow?: (workspace: string) => void;
+}) {
+  const { t } = useTranslation();
+  if (place.kind === 'workspace') {
+    return (
+      <div className="flex flex-wrap items-center gap-2 py-1 text-small text-ink-soft">
+        <span>{t('agents.setup.page.workspaceFlow')}</span>
+        {onOpenWorkspaceFlow && (
+          <Button variant="ghost" onClick={() => onOpenWorkspaceFlow(place.row.workspace ?? '')}>{t('agents.setup.page.workspaceFlowOpen')}</Button>
+        )}
+      </div>
+    );
+  }
+  return <RepositoryWorkflow place={place.row} notify={notify} onOpenPlugin={onOpenPlugin} />;
+}
+
+function RepositoryWorkflow({ place, notify, onOpenPlugin }: { place: PlaceRow; notify: Notify; onOpenPlugin?: (plugin: string) => void }) {
+  const { registration, setup } = useRepositoryPlace({ place, notify, onOpenPlugin });
   const workflowOf = useWorkflowTab({ repository: registration?.repository ?? null, enabled: setup !== null, ready: setup !== null, notify });
   const workflow = registration ? workflowOf(registration) : null;
-  return <PlaceRepositorySetupView setup={setup} workflow={workflow && { ...workflow, name: registration!.repository }} />;
+  return <PlaceWorkflowBodyView setup={setup} workflow={workflow && { ...workflow, name: registration!.repository }} />;
 }
 
 /**
- * **A place's Sessions** (AGENTSPLACE1f, the Agents-place design §3): how its sessions run, today's rows moved whole from Repositories'
- * Setup tab and a workspace's Setup, each with *Set for this repository* or *Clear*. A repository's page also holds its Driving and Line and
- * landing until their own rows build them; *This machine* and a repository not driven hold none.
+ * **A place's Sessions section** (AGENTSPLACE1f): how its sessions run. *This machine* holds none.
  *
- * An organism: it holds the bridge's hooks, so the molecules below hold none.
+ * An organism: it holds the bridge's hooks, so the molecules above hold none. It mounts only while its section is open.
  */
 export function PlaceSessions({ place, notify, onOpenPlugin, onOpenAppointed }: {
-  place: { kind: 'workspace'; row: PlaceRow } | { kind: 'repository'; row: PlaceRow };
+  place: PlaceOf;
   notify: Notify;
   onOpenPlugin?: (plugin: string) => void;
   onOpenAppointed?: () => void;
 }) {
-  const { t } = useTranslation();
   if (place.kind === 'repository') {
-    return <PlaceRepositorySetup place={place.row} notify={notify} onOpenPlugin={onOpenPlugin} onOpenAppointed={onOpenAppointed} />;
+    return <RepositorySessions place={place.row} notify={notify} onOpenPlugin={onOpenPlugin} onOpenAppointed={onOpenAppointed} />;
   }
-  return (
-    <PageSection id="place-sessions" title={t('agents.setup.sessions.title')}>
-      <WorkspaceSetupPart workspace={place.row.workspace ?? ''} notify={notify} rows="sessions" onOpenPlugin={onOpenPlugin} onOpenAppointed={onOpenAppointed} />
-    </PageSection>
-  );
+  return <WorkspaceSetupPart workspace={place.row.workspace ?? ''} notify={notify} rows="sessions" onOpenPlugin={onOpenPlugin} onOpenAppointed={onOpenAppointed} />;
+}
+
+function RepositorySessions({ place, notify, onOpenPlugin, onOpenAppointed }: {
+  place: PlaceRow;
+  notify: Notify;
+  onOpenPlugin?: (plugin: string) => void;
+  onOpenAppointed?: () => void;
+}) {
+  const { setup } = useRepositoryPlace({ place, notify, onOpenPlugin, onOpenAppointed });
+  return <PlaceSessionsBodyView setup={setup} />;
 }

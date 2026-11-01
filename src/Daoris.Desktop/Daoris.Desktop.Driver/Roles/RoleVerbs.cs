@@ -14,7 +14,7 @@ public sealed class RoleVerb : ChoiceVerb
     public override string Word => "role";
 
     private const string Grammar =
-        "`driver role set <id> [--name \"…\"] [--zh \"…\"] [--takes <work,…>] [--scope machine|workspace:<id>|repository:<id>] "
+        "`driver role set <id> [--name \"…\"] [--name-in <tag>=\"…\"]… [--takes <work,…>] [--scope machine|workspace:<id>|repository:<id>] "
         + "[\"<agent> [<model>|-] [<effort>|-]\" …]`, `driver role remove <id>`, `driver role default <id>` or `driver role default --all`";
 
     /// <summary><c>role suggested [--use]</c> (MODELROLE1g): the choices Daoris suggests for the seeded roles, said, or with <c>--use</c> set through the role door; null for the rest.</summary>
@@ -91,7 +91,7 @@ public sealed class RoleVerb : ChoiceVerb
         {
             payload["role"] = new JsonObject
             {
-                ["name"] = new JsonObject { ["en"] = role.NameEn, ["zh"] = role.NameZh },
+                ["name"] = JsonNode.Parse(role.Name.Json()),
                 ["takes"] = new JsonArray([.. role.Takes.Select(work => (JsonNode)JsonValue.Create(work))]),
                 ["scope"] = new JsonObject { ["kind"] = role.Scope.Kind, ["id"] = role.Scope.Id },
             };
@@ -138,7 +138,7 @@ public sealed class RoleVerb : ChoiceVerb
             {
                 "removed" => "removed",
                 "unreadable" => $"unreadable: {row.Error}",
-                _ => $"{row.NameEn} · {Shape(row.Takes, row.ScopeKind, row.ScopeId)}"
+                _ => $"{row.Name?.In("en")} · {Shape(row.Takes, row.ScopeKind, row.ScopeId)}"
                     + (row.Choices is { } staffed ? $" · {(staffed.Count == 0 ? "off" : Choices(staffed))}" : row.Seeded ? " · its actor's order" : "")
                     + (row.State == "seed" ? " (the seed)" : $" (revision {row.Revision})"),
             };
@@ -158,7 +158,7 @@ public sealed class RoleVerb : ChoiceVerb
     private static (RoleChange, IReadOnlyList<ActorChoice>?) Set(string id, IReadOnlyList<string> rest, RoleCatalog catalogue)
     {
         var current = catalogue.Slots.FirstOrDefault(slot => slot.Id == id)?.Role;
-        string? en = current?.NameEn, zh = current?.NameZh;
+        var name = current?.Name;
         var takes = current?.Takes ?? [];
         var scope = current?.Scope ?? RoleScope.Everywhere;
         var entries = new List<ActorChoice>();
@@ -167,8 +167,9 @@ public sealed class RoleVerb : ChoiceVerb
             string Value() => at + 1 < rest.Count ? rest[++at] : throw new ChoiceWords($"`{rest[at]}` needs its value: {Grammar}.");
             switch (rest[at])
             {
-                case "--name": en = Value(); break;
-                case "--zh": zh = Value(); break;
+                case "--name": name = Renamed(name, Value()); break;
+                case "--name-in": name = NameIn(name, Value()); break;
+                case "--zh": name = NameIn(name, $"zh={Value()}"); break;
                 case "--takes": takes = [.. Value().Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)]; break;
                 case "--scope": scope = Scope(Value()); break;
                 case var flag when flag.StartsWith("--", StringComparison.Ordinal): throw new ChoiceWords($"`{flag}` is not a flag of `driver role set`: {Grammar}.");
@@ -177,8 +178,27 @@ public sealed class RoleVerb : ChoiceVerb
         }
 
         if (takes.Count == 0) throw new ChoiceWords($"a new role names the work it takes (`--takes`): {Grammar}.");
-        if (en is null) throw new ChoiceWords($"a new role names itself (`--name`): {Grammar}.");
-        return (RoleChange.Set(new RoleRecord(id, en, zh ?? en, RoleRecord.Always, takes, scope)), entries.Count > 0 ? entries : null);
+        if (name is null) throw new ChoiceWords($"a new role names itself (`--name`): {Grammar}.");
+        return (RoleChange.Set(new RoleRecord(id, name, RoleRecord.Always, takes, scope)), entries.Count > 0 ? entries : null);
+    }
+
+    /// <summary><c>--name</c>: the one text as written, which replaces a map's <c>en</c> (its first entry where it has none) and keeps its other languages.</summary>
+    private static AuthoredText Renamed(AuthoredText? current, string text)
+    {
+        if (current is null || current.Tags.Count == 0) return AuthoredText.Of(text);
+        var at = current.Tags.FirstOrDefault(tag => tag.Equals("en", StringComparison.OrdinalIgnoreCase)) ?? current.Tags[0];
+        return current.With(at, text) ?? AuthoredText.Of(text);
+    }
+
+    /// <summary><c>--name-in &lt;tag&gt;="…"</c>: the name in one language, added to the others; a name given as one text so far is kept as <c>en</c>.</summary>
+    private static AuthoredText NameIn(AuthoredText? current, string given)
+    {
+        var split = given.IndexOf('=');
+        if (split < 1 || split == given.Length - 1) throw new ChoiceWords($"`--name-in` takes a language tag and its text, `<tag>=\"…\"`: {Grammar}.");
+        var tag = given[..split];
+        var text = given[(split + 1)..];
+        return (current is null ? AuthoredText.FromTags([new(tag, text)]) : current.With(tag, text))
+            ?? throw new ChoiceWords($"`{tag}` is not a language tag, or its name is blank: {Grammar}.");
     }
 
     private static RoleScope Scope(string word)
@@ -198,7 +218,7 @@ public sealed class RoleVerb : ChoiceVerb
         return new ActorChoice(words[0], Value(1), Value(2));
     }
 
-    private static string Shape(RoleRecord role) => $"{role.NameEn} · {Shape(role.Takes, role.Scope.Kind, role.Scope.Id)}";
+    private static string Shape(RoleRecord role) => $"{role.Name.In("en")} ·{Shape(role.Takes, role.Scope.Kind, role.Scope.Id)}";
 
     private static string Shape(IReadOnlyList<string> takes, string? kind, string? scope) =>
         $"takes {string.Join(", ", takes)} " + (kind is null or RoleScope.Machine ? "on the machine" : $"in {kind} `{scope}`");

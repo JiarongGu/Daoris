@@ -4,9 +4,10 @@ import { refusedNoRoute } from '../../bridge/shell';
 import { useRoleStructureChain } from '../../bridge/driver';
 import type { RoleStructure, StructurePlaceAsk, StructureWork } from '../../data/wiring';
 import { Button, type Notify, SettingList, SettingRow } from '../../design/ui';
+import type { Authored } from '../../locales/authored';
 import { InlineConfirm } from '../../work/InlineConfirm';
 import { AppointedRoles } from '../roles/AppointedRoles';
-import { type Editing, editingOfLine, entryText, type Line, mayEditLine, newRoleEditing, placeText, roleName, RolesCard } from '../roles/Roles';
+import { type Editing, editingOfLine, entryText, type Line, mayEditLine, nameFields, newRoleEditing, placeText, roleName, RolesCard } from '../roles/Roles';
 import { useRoleEditing } from '../roles/RolesView';
 import { stateText } from '../roles/StructureSections';
 
@@ -45,19 +46,24 @@ function ChoiceLine({ work }: { work: StructureWork }) {
  *   (`RolesCard`'s editor) and `SET_ROLE`: the place is filled and fixed, the id is made, the page judges nothing.
  * - **It reads the last readings alone** (D150 point 5): the chain's read probes no account.
  */
-export function PlaceRoles({ place, notify }: { place: StructurePlaceAsk; notify: Notify }) {
+export function PlaceRoles({ place, notify, onSource }: { place: StructurePlaceAsk; notify: Notify; onSource?: SourceDoor }) {
   const editor = useRoleEditing(notify);
   const chain = useRoleStructureChain(place);
   const read = chain.data ? 'ok' : chain.isError ? (refusedNoRoute(chain.error) ? 'notOffered' : 'failed') : 'loading';
-  return <PlaceRolesView place={place} read={read} answer={chain.data ?? null} editor={editor} appointed={<AppointedRoles place={place} />} />;
+  return <PlaceRolesView place={place} read={read} answer={chain.data ?? null} editor={editor} appointed={<AppointedRoles place={place} />} onSource={onSource} />;
 }
+
+/** The door from a role's source mark to the place that sets it, at the same work (SETUPUX1h): its workspace's page, or this machine's. */
+export type SourceDoor = (scope: { kind: 'workspace' | 'machine'; id?: string }, work: string) => void;
 
 /** What the section needs of the role editor's hook: the molecule reads no bridge. */
 export type PlaceRoleEditor = Pick<ReturnType<typeof useRoleEditing>, 'agents' | 'offers' | 'staffing' | 'catalogue' | 'read' | 'busy' | 'onSet' | 'onSetActor'>;
 
 /** The section drawn from its reads, and every press out (`SET_ROLE`, `SET_ACTOR`): a molecule, so a story reaches every state by props. */
-export function PlaceRolesView({ place, read, answer, editor, appointed }: {
+export function PlaceRolesView({ place, read, answer, editor, appointed, onSource }: {
   place: StructurePlaceAsk;
+  /** Told where a role placed above the place is pressed: its source mark is a door to the place that sets it. */
+  onSource?: SourceDoor;
   /** The chain's read: its rows, not read yet, not offered by this shell, or failed. */
   read: 'ok' | 'loading' | 'notOffered' | 'failed';
   answer: RoleStructure | null;
@@ -80,7 +86,7 @@ export function PlaceRolesView({ place, read, answer, editor, appointed }: {
   const kept = catalogue?.kept === true;
   const mine = answer?.places[0];
   const parent = kind === 'machine' ? undefined : answer?.places[1];
-  const name = (role: { id: string; nameEn?: string | null; nameZh?: string | null }) => roleName(t, i18n.language, { ...role, seeded: false });
+  const name = (role: { id: string; name?: Authored | null }) => roleName(t, i18n.language, { ...role, seeded: false });
   const workName = (work: string) => t(`settings.ai.roles.work.${work}`, { defaultValue: work });
   const lineOf = (id: string): Line => ({
     id, row: catalogue?.roles.find((each) => each.id === id) ?? null, actor: staffing.find((each) => each.id === id) ?? null,
@@ -88,12 +94,14 @@ export function PlaceRolesView({ place, read, answer, editor, appointed }: {
 
   const give = (work: StructureWork) => {
     const base = newRoleEditing(catalogue?.works ?? [], editor.agents, kind === 'machine' ? null : { kind, id: here }, nextKey());
-    const named = work.role ? { en: work.role.nameEn, zh: work.role.nameZh } : { en: work.work, zh: workName(work.work) };
+    const beside = (text: string) => (text ? `${text} · ${placeName}` : '');
+    const named = work.role ? nameFields(work.role.name, '') : { name: workName(work.work), nameIn: [] };
     const choices = work.choices.filter((choice) => /^[1-4]$/.test(choice.from));
     setOpen({
       work: work.work,
       editing: {
-        ...base, work: work.work, takes: [work.work], nameEn: `${named.en} · ${placeName}`, nameZh: `${named.zh} · ${placeName}`,
+        ...base, work: work.work, takes: [work.work], name: beside(named.name) || (named.nameIn.length > 0 ? '' : beside(workName(work.work))),
+        nameIn: named.nameIn.map(([tag, text]): [string, string] => [tag, beside(text)]),
         drafts: choices.length > 0
           ? choices.map((choice) => ({ key: nextKey(), agent: choice.agent, model: choice.model ?? '', effort: choice.effort ?? '' }))
           : base.drafts,
@@ -119,11 +127,21 @@ export function PlaceRolesView({ place, read, answer, editor, appointed }: {
     return (
       <SettingRow
         key={work.work}
-        label={label}
+        label={<span data-place-row={work.work} tabIndex={-1} className="outline-none focus-visible:outline-2 focus-visible:outline-accent">{label}</span>}
         control={!asking && !(open?.work === work.work) && (
           <>
             <span className="text-body text-ink wrap-anywhere">
-              {role ? `${name(role)} · ${placeText(t, role.scope.kind, role.scope.id)}` : t('agents.setup.roles.noRole')}
+              {role ? `${name(role)} · ` : t('agents.setup.roles.noRole')}
+              {role && (onSource && !mineHere && (role.scope.kind === 'workspace' || role.scope.kind === 'machine')
+                ? (
+                  <Button
+                    variant="ghost" className="px-0 py-0 align-baseline text-body"
+                    onClick={() => onSource({ kind: role.scope.kind as 'workspace' | 'machine', id: role.scope.id }, work.work)}
+                  >
+                    {placeText(t, role.scope.kind, role.scope.id)}
+                  </Button>
+                )
+                : placeText(t, role.scope.kind, role.scope.id))}
             </span>
             {role && mineHere && line && mayEditLine(line, kept) && (
               <Button variant="ghost" disabled={busy || open !== null} aria-label={t('agents.setup.roles.editOf', { work: label })} onClick={() => edit(work.work, role.id)}>
@@ -177,8 +195,7 @@ export function PlaceRolesView({ place, read, answer, editor, appointed }: {
   };
 
   return (
-    <section aria-labelledby="place-roles" className="mt-5 grid gap-3">
-      <h2 id="place-roles" className="m-0 text-body font-medium text-ink">{t('agents.setup.roles.title')}</h2>
+    <div className="grid gap-3">
       {read === 'loading' && <p className="m-0 text-small text-ink-soft">{t('agents.roles.reading')}</p>}
       {read === 'notOffered' && <p className="m-0 text-small text-ink-soft">{t('agents.roles.notOffered')}</p>}
       {read === 'failed' && <p role="alert" className="m-0 text-small text-ink-soft">{t('agents.roles.readFailed')}</p>}
@@ -189,6 +206,6 @@ export function PlaceRolesView({ place, read, answer, editor, appointed }: {
         <h3 className="m-0 text-small font-medium text-ink-soft">{t('agents.setup.roles.appointed')}</h3>
         {appointed}
       </div>
-    </section>
+    </div>
   );
 }

@@ -10,6 +10,7 @@
  * with the id its row has (`place:`, `role:`, `agent:`), so the two views are one selection.
  */
 import type { RoleStructure, StructureChoice, StructureWork } from '../../data/wiring';
+import { type Authored, authoredTexts } from '../../locales/authored';
 import type { AccountsAnswer } from '../../settings/accounts/accounts';
 import type { RepositoryLine } from '../../settings/repository/Lines';
 import type { RepositoryLanding } from '../../settings/repository/Landings';
@@ -55,7 +56,7 @@ export const CANNOT_RUN: ReadonlySet<string> = new Set(['unavailable', 'not-offe
 export type Reason =
   | 'catalogue' | 'held' | 'no-role' | 'policy-failed' | 'choices-failed' | 'cannot-run' | 'not-installed' | 'not-known' | 'integration' | 'not-driven-held';
 
-export type RoleRef = { id: string; nameEn: string; nameZh: string; scope: { kind: string; id?: string }; revision: number };
+export type RoleRef = { id: string; name: Authored; scope: { kind: string; id?: string }; revision: number };
 
 /** A work's rule, as the driver resolved it for the place with where it was set. */
 export type RuleRead =
@@ -409,11 +410,11 @@ export function buildStructure(input: StructureInput): Structure {
       const tool = toolOf(input.tools, agent);
       return [agent, ...(tool ? [tool.name] : [])];
     }))
-    && (needle === '' || [row.work, row.role?.id, row.role?.nameEn, row.role?.nameZh, ...row.choices.map((choice) => choice.agent)].some((text) => lower(text).includes(needle)))
+    && (needle === '' || [row.work, row.role?.id, ...authoredTexts(row.role?.name), ...row.choices.map((choice) => choice.agent)].some((text) => lower(text).includes(needle)))
     && (!filters.needsLook || row.reasons.length > 0));
   const accountsShown = accounts.filter((row) => hasAgent(agentNames(row))
     && (filters.work === null || row.usedBy.some((used) => used.works.includes(filters.work!)))
-    && (needle === '' || [row.agent, row.product, ...row.usedBy.flatMap((used) => [used.role.id, used.role.nameEn, used.role.nameZh])].some((text) => lower(text).includes(needle)))
+    && (needle === '' || [row.agent, row.product, ...row.usedBy.flatMap((used) => [used.role.id, ...authoredTexts(used.role.name)])].some((text) => lower(text).includes(needle)))
     && (!filters.needsLook || row.reasons.length > 0))
     .map((row) => (filters.work === null ? row : { ...row, usedBy: row.usedBy.filter((used) => used.works.includes(filters.work!)) }));
   const groups = repositories
@@ -422,7 +423,7 @@ export function buildStructure(input: StructureInput): Structure {
       ...group,
       repositories: group.repositories.filter((row) => (filters.work === null || row.works.some((each) => each.work === filters.work))
         && hasAgent(row.works.flatMap((each) => (each.first ? [each.first.agent, toolOf(input.tools, each.first.agent)?.name ?? ''] : [])))
-        && (needle === '' || [row.repository, group.workspace, ...row.works.flatMap((each) => [each.role?.nameEn, each.role?.nameZh, each.work])].some((text) => lower(text).includes(needle)))
+        && (needle === '' || [row.repository, group.workspace, ...row.works.flatMap((each) => [...authoredTexts(each.role?.name), each.work])].some((text) => lower(text).includes(needle)))
         && (!filters.needsLook || row.reasons.length > 0)),
     }))
     .filter((group) => group.repositories.length > 0 || (!filters.needsLook && needle === '' && filters.work === null && filters.agent === null));
@@ -456,7 +457,7 @@ function diagramOf(input: StructureInput, accounts: readonly AccountRow[], needl
     if (row.state === 'removed') continue;
     roles.set(row.id, {
       ref: {
-        id: row.id, nameEn: row.nameEn ?? '', nameZh: row.nameZh ?? '', revision: row.revision,
+        id: row.id, name: row.name ?? '', revision: row.revision,
         scope: { kind: row.scopeKind ?? 'machine', ...(row.scopeId ? { id: row.scopeId } : {}) },
       },
       takes: row.takes,
@@ -596,7 +597,7 @@ function diagramOf(input: StructureInput, accounts: readonly AccountRow[], needl
     return (from === undefined || inScope(from))
       && (byWork === null || byWork.has(node.id))
       && (filters.agent === null || agents.some((agent) => agent.agent === filters.agent))
-      && (needle === '' || [node.role.id, node.role.nameEn, node.role.nameZh, ...(from ? [titleOf(from)] : []), ...agents.flatMap((agent) => [agent.agent, agent.product])]
+      && (needle === '' || [node.role.id, ...authoredTexts(node.role.name), ...(from ? [titleOf(from)] : []), ...agents.flatMap((agent) => [agent.agent, agent.product])]
         .some((text) => lower(text).includes(needle)))
       && (!filters.needsLook || node.reasons.length > 0);
   }).map((node) => node.id));

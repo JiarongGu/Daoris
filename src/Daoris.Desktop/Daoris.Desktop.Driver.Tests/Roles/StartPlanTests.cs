@@ -408,7 +408,7 @@ public sealed class StartPlanTests : IDisposable
     [Fact]
     public async Task A_named_role_s_order_is_walked_its_revision_kept_and_Seeded_stays_the_work_s()
     {
-        var catalogue = RoleCatalog.Of([RoleCatalogTests.Stored(RoleCatalogTests.Working("checker", ParticipantWork.Review, new RoleScope(RoleScope.Workspace, "w1")) with { NameEn = "Checker" }, 5)]);
+        var catalogue = RoleCatalog.Of([RoleCatalogTests.Stored(RoleCatalogTests.Working("checker", ParticipantWork.Review, new RoleScope(RoleScope.Workspace, "w1")) with { Name = AuthoredText.Of("Checker") }, 5)]);
         var config = DriverConfig.Empty with
         {
             Adapter = "cool",

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// The en/zh parity gate — the bilingual sibling's proven check, adopted here (D42). The build fails
-// when the catalogs' key sets diverge, because a missing translation otherwise "works" in English and
-// is discovered by the first reader it fails — silently, in the other language.
+// The parity gate — the bilingual sibling's proven check, adopted here (D42). The build fails when the catalogs' key sets diverge,
+// because a missing translation otherwise "works" in English and is discovered by the first reader it fails — silently, in the other
+// language.
 //
 // And since REV3, when their PLACEHOLDERS diverge: a placeholder is part of the contract
 // (`translation-parity`), and a key present in both with `{{nmae}}` in one, or with the `{{name}}`
@@ -9,78 +9,43 @@
 //
 // And since MOD2, per AREA: each language is `src/locales/<language>/<area>.json`, merged at load
 // (`src/locales/index.ts`). A key lives in the file named by its longest dotted prefix that has a
-// file, so a new key has one home, found by its prefix. The gate holds that both languages have the
-// same areas, that each area's two files hold the same keys (both directions), that no key is in two
+// file, so a new key has one home, found by its prefix. The gate holds that every language has the
+// same areas, that each area's files hold the same keys (both directions), that no key is in two
 // files — the merge would keep only the last — and that every key is in its home.
+//
+// And since I18NOPEN1 (D222), across EVERY catalogue present: a language is a folder under `src/locales`, `en` the source the rest
+// are held to, so adding a language is adding a catalogue and the gate holds it the moment it exists.
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isMain } from '../../../tools/fsx.mjs';
 
-const locales = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'locales');
-const LANGUAGES = ['en', 'zh'];
+const LOCALES = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'locales');
+const SOURCE = 'en';
+
+/** The languages present under `root`: a folder each, English first, then the rest in order. */
+export function languagesIn(root = LOCALES) {
+  const found = readdirSync(root, { withFileTypes: true }).filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
+  return [...found.filter((name) => name === SOURCE), ...found.filter((name) => name !== SOURCE)];
+}
 
 /** A language's areas, by name, each as its file holds it. */
-const areasOf = (language) => Object.fromEntries(
-  readdirSync(join(locales, language))
+const areasOf = (root, language, problems) => Object.fromEntries(
+  readdirSync(join(root, language))
     .filter((file) => file.endsWith('.json'))
     .sort()
     .map((file) => {
-      const path = join(locales, language, file);
       try {
-        return [file.slice(0, -'.json'.length), JSON.parse(readFileSync(path, 'utf8'))];
+        return [file.slice(0, -'.json'.length), JSON.parse(readFileSync(join(root, language, file), 'utf8'))];
       } catch (error) {
-        console.error(`i18n: ${language}/${file} does not parse: ${error.message}`);
-        process.exit(1);
+        problems.push(`${language}/${file} does not parse: ${error.message}`);
+        return [file.slice(0, -'.json'.length), {}];
       }
     }));
 
 /** The area a key belongs in: the longest area name that is the key or a dotted prefix of it. */
 const homeOf = (key, names) =>
   names.filter((name) => key === name || key.startsWith(`${name}.`)).sort((a, b) => b.length - a.length)[0] ?? null;
-
-const areas = Object.fromEntries(LANGUAGES.map((language) => [language, areasOf(language)]));
-const problems = [];
-
-// The same areas in both languages, both directions.
-const enAreas = Object.keys(areas.en);
-const zhAreas = Object.keys(areas.zh);
-for (const area of enAreas) if (!(area in areas.zh)) problems.push(`zh has no ${area}.json (en has)`);
-for (const area of zhAreas) if (!(area in areas.en)) problems.push(`en has no ${area}.json (zh has)`);
-
-for (const language of LANGUAGES) {
-  const names = Object.keys(areas[language]);
-  const seen = new Map();
-  for (const [area, catalogue] of Object.entries(areas[language])) {
-    for (const key of Object.keys(catalogue)) {
-      // In two files: the merge keeps the last one read and the other says nothing.
-      if (seen.has(key)) problems.push(`${language}: ${key} is in both ${seen.get(key)}.json and ${area}.json`);
-      seen.set(key, area);
-      const home = homeOf(key, names);
-      if (home === null) problems.push(`${language}: ${key} has no area — add ${key.split('.')[0]}.json`);
-      else if (home !== area) problems.push(`${language}: ${key} is in ${area}.json, and belongs in ${home}.json`);
-    }
-  }
-}
-
-// Each area's two files hold the same keys, both directions.
-for (const area of enAreas.filter((name) => name in areas.zh)) {
-  const en = new Set(Object.keys(areas.en[area]));
-  const zh = new Set(Object.keys(areas.zh[area]));
-  const missing = [...en].filter((key) => !zh.has(key));
-  const stale = [...zh].filter((key) => !en.has(key));
-  if (missing.length) problems.push(`missing in zh/${area}.json:\n    ${missing.join('\n    ')}`);
-  if (stale.length) problems.push(`in zh/${area}.json but not en (stale):\n    ${stale.join('\n    ')}`);
-}
-
-if (problems.length) {
-  console.error(`i18n: the catalogues disagree:\n  ${problems.join('\n  ')}`);
-  process.exit(1);
-}
-
-const merged = (language) => Object.assign({}, ...Object.values(areas[language]));
-const enCatalog = merged('en');
-const zhCatalog = merged('zh');
-const en = new Set(Object.keys(enCatalog));
 
 /** The placeholders a sentence interpolates — `{{name}}`, `{{ name, format }}` — by name. */
 const placeholders = (text) =>
@@ -116,25 +81,83 @@ const PASSED_FACTS = [
   },
 ];
 
-const mismatched = [];
-for (const key of en) {
-  const inEnglish = family(enCatalog, key);
-  const inChinese = family(zhCatalog, key);
-  const facts = new Set(PASSED_FACTS.filter(({ pattern }) => pattern.test(key)).flatMap(({ names }) => names));
-  const invented = [...placeholders(zhCatalog[key])].filter((name) => !inEnglish.has(name) && !facts.has(name));
-  const dropped = PASSED_THROUGH.some((pattern) => pattern.test(key))
-    ? []
-    : [...placeholders(enCatalog[key])].filter((name) => !inChinese.has(name));
-  if (invented.length) mismatched.push(`${key}: zh interpolates {{${invented.join('}}, {{')}}}, which en never passes`);
-  if (dropped.length) mismatched.push(`${key}: zh drops {{${dropped.join('}}, {{')}}}`);
+/** Every disagreement between the catalogues under `root`, `en` the source, and the line a clean run says. */
+export function checkLocales(root = LOCALES) {
+  const problems = [];
+  const languages = languagesIn(root);
+  if (!languages.includes(SOURCE)) return { problems: [`there is no ${SOURCE} catalogue: the source the others are held to`], summary: '' };
+  const others = languages.filter((language) => language !== SOURCE);
+  const areas = Object.fromEntries(languages.map((language) => [language, areasOf(root, language, problems)]));
+  const sourceAreas = Object.keys(areas[SOURCE]);
+
+  // The same areas in every language, both directions.
+  for (const language of others) {
+    for (const area of sourceAreas) if (!(area in areas[language])) problems.push(`${language} has no ${area}.json (${SOURCE} has)`);
+    for (const area of Object.keys(areas[language])) if (!(area in areas[SOURCE])) problems.push(`${SOURCE} has no ${area}.json (${language} has)`);
+  }
+
+  for (const language of languages) {
+    const names = Object.keys(areas[language]);
+    const seen = new Map();
+    for (const [area, catalogue] of Object.entries(areas[language])) {
+      for (const key of Object.keys(catalogue)) {
+        // In two files: the merge keeps the last one read and the other says nothing.
+        if (seen.has(key)) problems.push(`${language}: ${key} is in both ${seen.get(key)}.json and ${area}.json`);
+        seen.set(key, area);
+        const home = homeOf(key, names);
+        if (home === null) problems.push(`${language}: ${key} has no area — add ${key.split('.')[0]}.json`);
+        else if (home !== area) problems.push(`${language}: ${key} is in ${area}.json, and belongs in ${home}.json`);
+      }
+    }
+  }
+
+  // Each area's files hold the same keys as English's, both directions.
+  for (const language of others) {
+    for (const area of sourceAreas.filter((name) => name in areas[language])) {
+      const source = new Set(Object.keys(areas[SOURCE][area]));
+      const held = new Set(Object.keys(areas[language][area]));
+      const missing = [...source].filter((key) => !held.has(key));
+      const stale = [...held].filter((key) => !source.has(key));
+      if (missing.length) problems.push(`missing in ${language}/${area}.json:\n    ${missing.join('\n    ')}`);
+      if (stale.length) problems.push(`in ${language}/${area}.json but not ${SOURCE} (stale):\n    ${stale.join('\n    ')}`);
+    }
+  }
+
+  if (problems.length) return { problems, summary: '' };
+
+  // And the placeholders, which are part of each sentence's contract.
+  const merged = (language) => Object.assign({}, ...Object.values(areas[language]));
+  const catalogues = Object.fromEntries(languages.map((language) => [language, merged(language)]));
+  const mismatched = [];
+  for (const key of Object.keys(catalogues[SOURCE])) {
+    const inSource = family(catalogues[SOURCE], key);
+    const facts = new Set(PASSED_FACTS.filter(({ pattern }) => pattern.test(key)).flatMap(({ names }) => names));
+    for (const language of others) {
+      const inLanguage = family(catalogues[language], key);
+      const invented = [...placeholders(catalogues[language][key])].filter((name) => !inSource.has(name) && !facts.has(name));
+      const dropped = PASSED_THROUGH.some((pattern) => pattern.test(key))
+        ? []
+        : [...placeholders(catalogues[SOURCE][key])].filter((name) => !inLanguage.has(name));
+      if (invented.length) mismatched.push(`${key}: ${language} interpolates {{${invented.join('}}, {{')}}}, which ${SOURCE} never passes`);
+      if (dropped.length) mismatched.push(`${key}: ${language} drops {{${dropped.join('}}, {{')}}}`);
+    }
+  }
+
+  if (mismatched.length) return { problems: mismatched, summary: '', placeholders: true };
+
+  const largest = sourceAreas.reduce((top, area) =>
+    (Object.keys(areas[SOURCE][area]).length > Object.keys(areas[SOURCE][top]).length ? area : top), sourceAreas[0]);
+  const count = Object.keys(catalogues[SOURCE]).length;
+  const summary = `i18n: ${languages.join(', ')} agree on ${count} keys in ${sourceAreas.length} areas and their placeholders `
+    + `(largest: ${largest}, ${Object.keys(areas[SOURCE][largest]).length})`;
+  return { problems: [], summary };
 }
 
-if (mismatched.length) {
-  console.error(`i18n: placeholders disagree:\n  ${mismatched.join('\n  ')}`);
-  process.exit(1);
+if (isMain(import.meta.url)) {
+  const { problems, summary, placeholders: onPlaceholders } = checkLocales();
+  if (problems.length) {
+    console.error(`i18n: the ${onPlaceholders ? 'placeholders' : 'catalogues'} disagree:\n  ${problems.join('\n  ')}`);
+    process.exit(1);
+  }
+  console.log(summary);
 }
-
-const largest = enAreas.reduce((top, area) =>
-  (Object.keys(areas.en[area]).length > Object.keys(areas.en[top]).length ? area : top), enAreas[0]);
-console.log(`i18n: en and zh agree on ${en.size} keys in ${enAreas.length} areas and their placeholders `
-  + `(largest: ${largest}, ${Object.keys(areas.en[largest]).length})`);

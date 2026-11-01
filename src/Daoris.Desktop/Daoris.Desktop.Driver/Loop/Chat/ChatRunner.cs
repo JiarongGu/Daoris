@@ -615,7 +615,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             if (order is not null && pending is null && roleTaken != "chat" && order is not [{ From: "pick" }])
             {
                 order = roles.Order(ParticipantWork.Chat, place, config);
-                if (order.Count == 0) return new(null, $"{role.NameEn} is off on this machine, so it starts no conversation until it is given a choice.");
+                if (order.Count == 0) return new(null, $"{role.Name.In("en")} is off on this machine, so it starts no conversation until it is given a choice.");
                 chosen = order is [var sole] ? sole : null;
                 if (chosen is not null) adapter = chosen.Agent;
                 walking = order.Count > 1;

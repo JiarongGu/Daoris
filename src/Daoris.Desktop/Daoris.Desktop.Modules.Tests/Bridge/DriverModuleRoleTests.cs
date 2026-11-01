@@ -37,8 +37,24 @@ public sealed class DriverModuleRoleTests : DriverModuleBridge
             Assert.Empty(answer.GetProperty("suggested").EnumerateArray());
             Assert.Contains("design", answer.GetProperty("works").EnumerateArray().Select(work => work.GetString()));
             var designer = answer.GetProperty("roles").EnumerateArray().Single(row => row.GetProperty("id").GetString() == "designer");
-            Assert.Equal(("set", "设计师", 1L), (designer.GetProperty("state").GetString(), designer.GetProperty("nameZh").GetString(), designer.GetProperty("revision").GetInt64()));
+            Assert.Equal(("set", "设计师", 1L), (designer.GetProperty("state").GetString(), designer.GetProperty("name").GetProperty("zh").GetString(), designer.GetProperty("revision").GetInt64()));
             Assert.Equal("opus", designer.GetProperty("choices")[0].GetProperty("model").GetString());
+
+            // I18NOPEN1: a role named by one text, or in a third language alone, is saved and answered as written.
+            await AnswerAsync(module, "SET_ROLE", new
+            {
+                change = "set", id = "reader", role = new { name = "Reader", takes = new[] { "design" }, scope = new { kind = "workspace", id = "w1" } },
+                choices = new object[] { new { agent = "claude-code", model = "opus", effort = "high" } },
+            });
+            await AnswerAsync(module, "SET_ROLE", new
+            {
+                change = "set", id = "lecteur", role = new { name = new { fr = "Lecteur" }, takes = new[] { "design" }, scope = new { kind = "workspace", id = "w2" } },
+                choices = new object[] { new { agent = "claude-code", model = "opus", effort = "high" } },
+            });
+            var named = (await AnswerAsync(module, "ROLES")).GetProperty("roles").EnumerateArray().ToDictionary(row => row.GetProperty("id").GetString()!);
+            Assert.Equal(("Reader", JsonValueKind.Object, "Lecteur"), (named["reader"].GetProperty("name").GetString(), named["lecteur"].GetProperty("name").ValueKind, named["lecteur"].GetProperty("name").GetProperty("fr").GetString()));
+            await AnswerAsync(module, "SET_ROLE", new { change = "remove", id = "reader", revision = 1 });
+            await AnswerAsync(module, "SET_ROLE", new { change = "remove", id = "lecteur", revision = 1 });
 
             Assert.Contains(
                 RoleCatalog.Of([]).Judge(RoleChange.Remove("build"))!.Said,

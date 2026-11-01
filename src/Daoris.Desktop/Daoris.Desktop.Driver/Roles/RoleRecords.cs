@@ -60,7 +60,7 @@ public readonly record struct RolePlace(string? Workspace = null, string? Reposi
 /// <c>Authority</c> is a mixed shape, which no door writes and no read accepts.
 /// </summary>
 public sealed record RoleRecord(
-    string Id, string NameEn, string NameZh, string Filled, IReadOnlyList<string> Takes, RoleScope Scope, IReadOnlyList<string>? Authority = null)
+    string Id, AuthoredText Name, string Filled, IReadOnlyList<string> Takes, RoleScope Scope, IReadOnlyList<string>? Authority = null)
 {
     public const string Always = "always";
     public const string Appointed = "appointed";
@@ -75,10 +75,8 @@ public sealed record RoleRecord(
         {
             writer.WriteStartObject();
             writer.WriteString("id", Id);
-            writer.WriteStartObject("name");
-            writer.WriteString("en", NameEn);
-            writer.WriteString("zh", NameZh);
-            writer.WriteEndObject();
+            writer.WritePropertyName("name");
+            Name.Write(writer);
             writer.WriteString("filled", Filled);
             if (Takes.Count > 0)
             {
@@ -116,11 +114,7 @@ public sealed record RoleRecord(
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object) return (null, "is not a role record");
             if (Text(root, "id") != id) return (null, "names another id than its row");
-            if (!root.TryGetProperty("name", out var name) || name.ValueKind != JsonValueKind.Object
-                || Text(name, "en") is not { } en || Text(name, "zh") is not { } zh)
-            {
-                return (null, "has no name in English and in Chinese");
-            }
+            if (!root.TryGetProperty("name", out var named) || AuthoredText.Read(named) is not { } name) return (null, "has no name");
 
             var filled = Text(root, "filled");
             if (filled is not (Always or Appointed)) return (null, "has no `filled` of `always` or `appointed`");
@@ -142,7 +136,7 @@ public sealed record RoleRecord(
             }
 
             if (ReadScope(root) is not { } scope) return (null, "has no scope of `machine`, a `workspace` or a `repository` with its id");
-            return (new RoleRecord(id, en, zh, filled, takes, scope), null);
+            return (new RoleRecord(id, name, filled, takes, scope), null);
         }
         catch (JsonException error)
         {

@@ -19,8 +19,9 @@ public sealed class HelpRoleTool(IntakeScope? intake = null, HelpProposalBox? he
         [Description("`set`, `remove`, `default` or `default-all`.")] string change,
         [Description("The role's id: lowercase letters, digits and hyphens, as the catalogue names it (`build`, `designer`); `*` for `default-all`, which names no one role.")] string id,
         [Description("Why: what the person asked. The person decides on this.")] string why,
-        [Description("A set's name in English; left out keeps the role's own.")] string? name_en = null,
-        [Description("A set's name in Chinese; left out keeps the role's own.")] string? name_zh = null,
+        [Description("A set's name as the person wrote it, in whatever language; no language is required. Left out keeps the role's own names.")] string? name = null,
+        [Description("A set's name in other languages, by language tag (`{ \"fr\": \"Relecteur\", \"zh\": \"审阅\" }`); with `name` that text is kept as `en`. Optional.")]
+        Dictionary<string, string>? name_in = null,
         [Description("A set's work, one or more of the codes above; left out keeps the role's own.")] string[]? takes = null,
         [Description("A set's scope: `machine`, `workspace:<id>` or `repository:<id>`; left out keeps the role's own.")] string? scope = null,
         [Description("A set's choices in order, each one quoted `agent [model|-] [effort|-]`, at most four; left out keeps the role's own.")]
@@ -28,6 +29,6 @@ public sealed class HelpRoleTool(IntakeScope? intake = null, HelpProposalBox? he
         [Description("The revision of the role you read, so a change made since is refused rather than overwritten.")] long? revision = null)
     {
         var box = help ?? HelpProposalBox.FromEnvironment();
-        return box.ProposeRole(change, id, name_en, name_zh, takes, scope, choices, revision, why, intake?.Session, DateTimeOffset.UtcNow).Message;
+        return box.ProposeRole(change, id, name, name_in, takes, scope, choices, revision, why, intake?.Session, DateTimeOffset.UtcNow).Message;
     }
 }

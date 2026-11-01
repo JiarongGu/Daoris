@@ -854,7 +854,7 @@ public sealed class Driver(
         try
         {
             return Found(RoleCatalog.ReadHome(home), ParticipantWork.Design, start, named).Role is { } role
-                ? ActorChoices.Ids.Contains(role.Id, StringComparer.Ordinal) ? ActorWords.Name(role.Id) : role.NameEn
+                ? ActorChoices.Ids.Contains(role.Id, StringComparer.Ordinal) ? ActorWords.Name(role.Id) : role.Name.In("en")
                 : null;
         }
         catch (DriverException)

@@ -272,10 +272,19 @@ describe('a door into a repository\'s Setup tab or Workflow tab, once the Setup 
 
   // AGENTSPLACE1h: What needs you's, the Roles sections' and a workflow step's doors to a repository's workflow all name the tab.
   it("opens the repository's place, whose Workflow section holds it, for a door naming the Workflow tab", () => {
-    const place = { view: 'agents', agentsMode: 'setup', place: 'repo:studio/engine' };
+    const place = { view: 'agents', agentsMode: 'setup', place: 'repo:studio/engine', placeAt: { section: 'workflow' } };
     expect(placeOpening(opening('projects', 'engine', { tab: 'workflow' }), true, where)).toEqual(place);
     expect(placeOpening(doorOpening({ view: 'projects', item: 'engine', tab: 'workflow' }), true, where)).toEqual(place);
     expect(placeOpening(doorOpening({ view: 'projects', tab: 'workflow' }), true, where)).toEqual({ view: 'agents', agentsMode: 'setup' });
+  });
+
+  // SETUPUX1h: a door names the section of the place's page and the row of it, and the page opens there.
+  it('carries the section and row a door names to the place\'s page', () => {
+    const door = opening('projects', 'engine', { tab: 'setup', placeSection: 'roles', placeRow: 'review' });
+    expect(placeOpening(door, true, where)).toEqual({
+      view: 'agents', agentsMode: 'setup', place: 'repo:studio/engine', placeAt: { section: 'roles', row: 'review' },
+    });
+    expect(placeOpening(door, false, where)).toEqual(door);
   });
 
   // AGENTSPLACE1k: Ask Daoris's place card opens a repository's Details (a workspace's page for several) with the ask; lit, the place's page.

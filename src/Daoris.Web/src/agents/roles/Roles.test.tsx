@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ActorRow, RoleCatalogue, RoleRow, StaffingFound } from '../../data/wiring';
 import i18n from '../../locales/i18n';
-import { RolesCard, roleIdFor } from './Roles';
+import { RolesCard, roleIdFor, roleName } from './Roles';
 
 // FOUNDATION1y-i (the foundation design §2.7), COMPANYVIEW1a (the company-view design §3.1): the roles on AI features, one row each. The
 // person adds, changes and removes a working role (its names, work, place and choices), turns it off, puts its order back to as before,
@@ -11,7 +11,7 @@ import { RolesCard, roleIdFor } from './Roles';
 // Clear order over `SET_ACTOR` only; the page judges nothing, and a refusal is the driver's sentence under its press.
 
 const seed = (id: string, en: string, zh: string, work: string): RoleRow => ({
-  id, state: 'seed', seeded: true, nameEn: en, nameZh: zh, takes: [work], scopeKind: 'machine', revision: 0,
+  id, state: 'seed', seeded: true, name: { en, zh }, takes: [work], scopeKind: 'machine', revision: 0,
 });
 
 const CATALOGUE: RoleCatalogue = {
@@ -20,13 +20,13 @@ const CATALOGUE: RoleCatalogue = {
     seed('intake', 'Intake', '受理', 'intake'),
     { id: 'chat', state: 'removed', seeded: true, takes: [], revision: 2 },
     {
-      id: 'night', state: 'set', seeded: false, nameEn: 'Night shift', nameZh: '夜班', takes: ['build'], scopeKind: 'workspace', scopeId: 'studio',
+      id: 'night', state: 'set', seeded: false, name: { en: 'Night shift', zh: '夜班' }, takes: ['build'], scopeKind: 'workspace', scopeId: 'studio',
       revision: 3, choices: [{ agent: 'codex-acp', model: 'gpt-5', effort: 'high' }],
     },
   ],
   works: ['build', 'design', 'chat', 'ask-daoris', 'intake', 'help', 'partner', 'review', 'brainstorm'],
   kept: true,
-  suggested: [{ id: 'designer', nameEn: 'Designer', nameZh: '设计师', takes: ['design'], scopeKind: 'machine', choices: [{ agent: 'claude-code', model: 'opus', effort: 'high' }] }],
+  suggested: [{ id: 'designer', name: { en: 'Designer', zh: '设计师' }, takes: ['design'], scopeKind: 'machine', choices: [{ agent: 'claude-code', model: 'opus', effort: 'high' }] }],
 };
 
 const actor = (id: string, state: ActorRow['state'], ...agents: string[]): ActorRow => ({
@@ -82,8 +82,10 @@ describe('The roles', () => {
 
     expect(form.queryByLabelText('Id')).toBeNull();
     expect(form.queryByLabelText('Where')).toBeNull();
-    fireEvent.change(form.getByLabelText('Name in English'), { target: { value: 'Night review' } });
-    fireEvent.change(form.getByLabelText('Name in Chinese'), { target: { value: '夜审' } });
+    fireEvent.change(form.getByLabelText('Name'), { target: { value: 'Night review' } });
+    fireEvent.click(form.getByRole('button', { name: 'Add a language' }));
+    fireEvent.change(form.getByLabelText('Language tag'), { target: { value: 'zh' } });
+    fireEvent.change(form.getByLabelText('Name in that language'), { target: { value: '夜审' } });
     fireEvent.change(form.getByLabelText("choice 1's model"), { target: { value: 'opus' } });
     fireEvent.click(form.getByRole('button', { name: 'Save' }));
 
@@ -92,6 +94,35 @@ describe('The roles', () => {
       role: { name: { en: 'Night review', zh: '夜审' }, takes: ['build'], scope: { kind: 'machine', id: null } },
       choices: [{ agent: 'claude-code', model: 'opus', effort: null }],
     }, expect.anything());
+  });
+
+  it('names a role in one language alone as a plain string (D222)', () => {
+    const { onSet } = card();
+    fireEvent.click(screen.getByRole('button', { name: 'Add a role' }));
+    const form = within(screen.getByRole('form', { name: 'A new role' }));
+    fireEvent.change(form.getByLabelText('Name'), { target: { value: 'Lecteur' } });
+    fireEvent.click(form.getByRole('button', { name: 'Save' }));
+    expect(onSet).toHaveBeenLastCalledWith(expect.objectContaining({ role: expect.objectContaining({ name: 'Lecteur' }) }), expect.anything());
+  });
+
+  it('names a role in a third language by its tag, the text beside it optional (D222)', () => {
+    const { onSet } = card();
+    fireEvent.click(screen.getByRole('button', { name: 'Add a role' }));
+    const form = within(screen.getByRole('form', { name: 'A new role' }));
+    fireEvent.click(form.getByRole('button', { name: 'Add a language' }));
+    fireEvent.change(form.getByLabelText('Language tag'), { target: { value: 'fr' } });
+    fireEvent.change(form.getByLabelText('Name in that language'), { target: { value: 'Relecteur' } });
+    fireEvent.click(form.getByRole('button', { name: 'Save' }));
+    expect(onSet).toHaveBeenLastCalledWith(expect.objectContaining({ role: expect.objectContaining({ name: { fr: 'Relecteur' } }) }), expect.anything());
+  });
+
+  it('shows a role in the viewer\'s language, else its base language, else as written', () => {
+    const t = ((key: string) => key) as never;
+    const row = (name: RoleRow['name']) => ({ id: 'night', seeded: false, name });
+    expect(roleName(t, 'zh-TW', row({ en: 'Night', zh: '夜班' }))).toBe('夜班');
+    expect(roleName(t, 'fr', row({ fr: 'Nuit', en: 'Night' }))).toBe('Nuit');
+    expect(roleName(t, 'de', row({ fr: 'Nuit', en: 'Night' }))).toBe('Nuit');
+    expect(roleName(t, 'en', row('Night'))).toBe('Night');
   });
 
   it('restores every role default in one press, offered while a seeded role differs', () => {
@@ -103,7 +134,7 @@ describe('The roles', () => {
   });
 
   it('removes an added role after naming the role it falls back to, gives a seeded one back its seed, and takes the suggested Designer, each by the revision it read', () => {
-    const { onSet } = card({ catalogue: { ...CATALOGUE, roles: [...CATALOGUE.roles, { ...CATALOGUE.roles[3]!, id: 'night-2', nameEn: 'Night two', scopeKind: 'machine', scopeId: undefined, revision: 5 }] } });
+    const { onSet } = card({ catalogue: { ...CATALOGUE, roles: [...CATALOGUE.roles, { ...CATALOGUE.roles[3]!, id: 'night-2', name: 'Night two', scopeKind: 'machine', scopeId: undefined, revision: 5 }] } });
 
     fireEvent.click(screen.getByRole('button', { name: 'Remove Night two' }));
     expect(onSet).not.toHaveBeenCalled();
@@ -180,7 +211,7 @@ describe('The roles', () => {
       await choose("choice 1's model", 'sonnet');
       await choose("choice 1's effort", 'other…');
       fireEvent.change(form.getByLabelText("choice 1's effort name"), { target: { value: 'ultra' } });
-      fireEvent.change(form.getByLabelText('Name in English'), { target: { value: 'Quick' } });
+      fireEvent.change(form.getByLabelText('Name'), { target: { value: 'Quick' } });
       fireEvent.click(form.getByRole('button', { name: 'Save' }));
 
       expect(onSet).toHaveBeenCalledWith(expect.objectContaining({
@@ -233,7 +264,7 @@ describe('The roles', () => {
         only: 'desk',
         catalogue: {
           ...CATALOGUE,
-          roles: [{ id: 'desk', state: 'set', seeded: false, nameEn: 'Desk', nameZh: '前台', takes: ['intake'], scopeKind: 'workspace', scopeId: 'studio', revision: 4, choices: [{ agent: 'claude-code' }] }],
+          roles: [{ id: 'desk', state: 'set', seeded: false, name: { en: 'Desk', zh: '前台' }, takes: ['intake'], scopeKind: 'workspace', scopeId: 'studio', revision: 4, choices: [{ agent: 'claude-code' }] }],
         },
       });
       fireEvent.click(screen.getByRole('button', { name: 'Edit Desk' }));
@@ -288,7 +319,7 @@ describe('The roles', () => {
 
       fireEvent.click(screen.getByRole('button', { name: 'Edit Build' }));
       const form = within(screen.getByRole('form', { name: 'Build: your order' }));
-      expect(form.queryByLabelText('Name in English')).toBeNull();
+      expect(form.queryByLabelText('Name')).toBeNull();
       expect(form.queryByLabelText('Where')).toBeNull();
       fireEvent.click(form.getByRole('button', { name: 'Save' }));
 

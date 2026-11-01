@@ -58,7 +58,7 @@ public sealed class RoleCatalog
             ?? throw new InvalidOperationException("the roles this build ships are not carried in it (Defaults/roles.json).");
         using var document = JsonDocument.Parse(stream);
         return [.. document.RootElement.GetProperty("roles").EnumerateArray().Select(each => new RoleRecord(
-            each.GetProperty("id").GetString()!, each.GetProperty("name").GetProperty("en").GetString()!, each.GetProperty("name").GetProperty("zh").GetString()!,
+            each.GetProperty("id").GetString()!, AuthoredText.Read(each.GetProperty("name")) ?? throw new InvalidOperationException("a shipped role has no name."),
             each.GetProperty("filled").GetString()!, [each.GetProperty("work").GetString()!],
             new RoleScope(each.GetProperty("place").GetString()!)))];
     }
@@ -283,7 +283,7 @@ public sealed class RoleCatalog
             if (role.Filled != RoleRecord.Always) return Refused("bad-record", $"`{role.Id}` is not `always` or `appointed`.");
             if (Reserved.Contains(role.Id, StringComparer.Ordinal)) return Refused("reserved-id", $"`{role.Id}` is the shell's: the supervisor and the steward are not configured here.");
             if (!IdShape.IsMatch(role.Id)) return Refused("bad-record", $"`{role.Id}` is not an id: lowercase letters, digits and hyphens, from a letter, at most 40.");
-            if (string.IsNullOrWhiteSpace(role.NameEn) || string.IsNullOrWhiteSpace(role.NameZh)) return Refused("bad-record", $"`{role.Id}` needs a name in English and in Chinese.");
+            if (string.IsNullOrWhiteSpace(role.Name.AsWritten)) return Refused("bad-record", $"`{role.Id}` needs a name.");
             if (!RoleScope.Kinds.Contains(role.Scope.Kind, StringComparer.Ordinal) || (role.Scope.Kind == RoleScope.Machine) != string.IsNullOrWhiteSpace(role.Scope.Id))
             {
                 return Refused("bad-record", $"`{role.Id}`'s scope is the machine alone, or a workspace or a repository with its id.");
