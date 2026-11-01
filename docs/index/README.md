@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (373)
+## Files over 40 KB (375)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -82,6 +82,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/rail/SessionRail.test.tsx` | 56 | 1103 |
 | `src/Daoris.Web/src/work/rail/SessionRow.test.tsx` | 47 | 859 |
 | `src/Daoris.Web/src/workflow/WorkflowRunView.test.tsx` | 62 | 1008 |
+| `src/Daoris.Web/src/workflow/edit/graphDraft.ts` | 43 | 773 |
 
 ### Web settings (`web-settings`)
 
@@ -436,6 +437,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-11-02-flowchart-proposal-codex.md` | 46 | 443 |
 | `docs/2026-11-02-flowchart-proposal-opus.md` | 80 | 736 |
 | `docs/2026-11-02-staff-policy-proposal-codex.md` | 44 | 469 |
+| `docs/2026-11-02-staff-policy-proposal-opus.md` | 47 | 542 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `docs/backlog-parked.md` | 176 | 934 |
 | `docs/development.md` | 55 | 605 |
