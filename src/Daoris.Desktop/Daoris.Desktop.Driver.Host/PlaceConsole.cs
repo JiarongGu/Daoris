@@ -1,8 +1,8 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// A place's quick set-up planned from a terminal (AGENTSPLACE1a2): <c>daoris-driver place &lt;repository&gt;… --preset &lt;id&gt; … --plan</c>,
-/// <c>PLACE_PLAN</c>'s twin. The words are the library's (<see cref="PlaceCommand"/>); this wires the real world: the service, the home's
+/// A place's quick set-up planned or applied from a terminal (AGENTSPLACE1a2, AGENTSPLACE1b3): <c>daoris-driver place &lt;repository&gt;… --preset &lt;id&gt; …
+/// (--plan | --apply)</c>, <c>PLACE_PLAN</c>'s and <c>PLACE_APPLY</c>'s twin. The words are the library's (<see cref="PlaceCommand"/>); this wires the real world: the service, the home's
 /// choices and plugins, and each repository's line.
 /// </summary>
 internal static class PlaceConsole
@@ -21,8 +21,13 @@ internal static class PlaceConsole
         var config = DriverConfig.Load(configPath);
         var home = DriverConfig.HomeOf(configPath);
         using var service = ServiceClient.FromEnvironment();
+        var plugins = PluginCatalog.Load(home, AdapterSet.Built().Names);
+        var door = SetupWorld.DoorOf(config, home);
+        // An apply alone edits the driver's file as the window's press does: read, edited and written under its own lock.
+        var apply = new PlaceApplyDoors(
+            new PlaceWorld(service), new SetupWorld(service, home), home, plugins, door, () => DriverConfig.Load(configPath),
+            change => change(DriverConfig.Load(configPath)).Save(configPath), DateOnly.FromDateTime(DateTime.Now));
         return await PlaceCommand.RunAsync(
-            args, Console.Out, new PlaceWorld(service), config, home, PluginCatalog.Load(home, AdapterSet.Built().Names), SetupWorld.DoorOf(config, home),
-            InstanceHost.World(home, "place")).ConfigureAwait(false);
+            args, Console.Out, new PlaceWorld(service), config, home, plugins, door, InstanceHost.World(home, "place"), apply).ConfigureAwait(false);
     }
 }

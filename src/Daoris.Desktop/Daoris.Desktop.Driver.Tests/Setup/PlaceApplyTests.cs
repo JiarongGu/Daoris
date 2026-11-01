@@ -253,6 +253,115 @@ public sealed class PlaceApplyTests : IDisposable
         Assert.Equal(Blob, new PlaceReceipts(_home).Read(digest)!.Accepted.Single().Blob);
     }
 
+    /// <summary>
+    /// AGENTSPLACE1b3: the two acceptances are two choices (the design §3 Gates). Naming the landed verification's where the plan offers none is
+    /// refused and writes nothing; naming the integration's records only it, its blob, and leaves the landed route's gates unset.
+    /// </summary>
+    [Fact]
+    public async Task The_two_acceptances_stay_distinct_naming_one_never_makes_the_other()
+    {
+        var stand = Make();
+        var ask = new PlaceAsk(["engine"], SetupPresets.Integrated);
+        var digest = await DigestOf(stand, ask);
+
+        var landed = await Apply(stand, ask, digest, new PlaceAccept("engine", PlacePlans.Landed));
+        Assert.Equal(PlaceApplyRefusals.NotOffered, landed.Refused);
+        Assert.Equal(0, stand.Changes);
+        Assert.Null(new PlaceReceipts(_home).Read(digest));
+
+        var integration = await Apply(stand, ask, digest, new PlaceAccept("engine", PlacePlans.Integration));
+
+        Assert.True(integration.Done);
+        Assert.Equal(Blob, IntegrationAcceptance.Of(stand.Config, "engine"));
+        Assert.Null(WorkflowSelection.ResolveLanded(stand.Config, "engine", "aurora").Gates);
+        Assert.Equal([PlacePlans.Integration], new PlaceReceipts(_home).Read(digest)!.Accepted.Select(each => each.Purpose));
+    }
+
+    /// <summary>
+    /// AGENTSPLACE1b3: <c>place … --apply</c> alone prints the plan it applies, applies it with the acceptances the words named, and says the
+    /// outcome; the same words the running Daoris's route says for a terminal (<c>said</c>).
+    /// </summary>
+    [Fact]
+    public async Task The_verb_applies_alone_printing_the_plan_then_the_outcome_with_only_the_acceptances_it_names()
+    {
+        var stand = Make();
+        var output = new StringWriter();
+
+        var code = await PlaceCommand.RunAsync(
+            ["engine", "--preset", SetupPresets.Integrated, "--apply", "--accept", "engine:integration"], output, stand.Place, stand.Config, _home, Plugins,
+            SessionWire.Acp, instance: null, apply: stand.Doors());
+
+        var lines = output.ToString().ReplaceLineEndings("\n").TrimEnd('\n').Split('\n');
+        Assert.Equal(0, code);
+        Assert.StartsWith("place: `engine` — ", lines[0], StringComparison.Ordinal);
+        Assert.DoesNotContain(lines, line => line.StartsWith("--plan:", StringComparison.Ordinal));
+        Assert.Equal("place: configuration applied.", lines[^1]);
+        Assert.Equal(Blob, IntegrationAcceptance.Of(stand.Config, "engine"));
+        Assert.Equal(1, stand.Changes);
+
+        var none = Make();
+        var bare = new StringWriter();
+        Assert.Equal(0, await PlaceCommand.RunAsync(
+            ["engine", "--preset", SetupPresets.Integrated, "--apply"], bare, none.Place, none.Config, _home, Plugins, SessionWire.Acp, instance: null, apply: none.Doors()));
+        Assert.Null(IntegrationAcceptance.Of(none.Config, "engine"));
+    }
+
+    [Fact]
+    public async Task The_verb_applying_a_refused_plan_says_why_exits_1_and_writes_nothing()
+    {
+        var stand = Make();
+        var output = new StringWriter();
+
+        var code = await PlaceCommand.RunAsync(
+            ["docs", "--preset", SetupPresets.PullRequest, "--apply"], output, stand.Place, stand.Config, _home, Plugins, SessionWire.Acp, instance: null, apply: stand.Doors());
+
+        Assert.Equal(1, code);
+        Assert.Contains("refused:", output.ToString(), StringComparison.Ordinal);
+        Assert.Contains("the plan refuses, so nothing was written", output.ToString(), StringComparison.Ordinal);
+        Assert.Equal(0, stand.Changes);
+    }
+
+    /// <summary>Words that are the usage: both of `--plan` and `--apply`, neither, an acceptance without an apply and a purpose that is none.</summary>
+    [Theory]
+    [InlineData("engine --preset merge-after-accept --plan --apply")]
+    [InlineData("engine --preset merge-after-accept")]
+    [InlineData("engine --preset merge-after-accept --plan --accept engine:integration")]
+    [InlineData("engine --preset merge-after-accept --apply --accept engine:both")]
+    [InlineData("engine --preset merge-after-accept --apply --accept engine")]
+    [InlineData("engine --preset merge-after-accept --apply --accept")]
+    public async Task Words_the_verb_does_not_take_are_its_usage_exit_2_before_anything_is_planned(string words)
+    {
+        var stand = Make();
+        var output = new StringWriter();
+
+        var code = await PlaceCommand.RunAsync(words.Split(' '), output, stand.Place, stand.Config, _home, Plugins, SessionWire.Acp, instance: null, apply: stand.Doors());
+
+        Assert.Equal(2, code);
+        Assert.Contains(PlaceCommand.Usage, output.ToString(), StringComparison.Ordinal);
+        Assert.Equal(0, stand.Changes);
+    }
+
+    [Fact]
+    public void An_apply_names_each_acceptance_on_its_own_and_hands_the_same_words_back_to_the_verb()
+    {
+        var (words, problem) = PlaceCommand.Parse(["a", "b", "--preset", SetupPresets.Integrated, "--apply", "--accept", "a:landed,a:integration", "--accept", "b:integration"]);
+
+        Assert.Null(problem);
+        Assert.True(words!.Apply);
+        Assert.Equal(
+            [("a", PlacePlans.Landed), ("a", PlacePlans.Integration), ("b", PlacePlans.Integration)], words.Accept.Select(each => (each.Repository, each.Purpose)));
+        Assert.Equal(words, PlaceCommand.Parse(PlaceCommand.ApplyArgsOf(words.Ask, words.Accept)).Words, new WordsComparer());
+    }
+
+    private sealed class WordsComparer : IEqualityComparer<PlaceWords?>
+    {
+        public bool Equals(PlaceWords? x, PlaceWords? y) =>
+            x is not null && y is not null && x.Apply == y.Apply && x.Ask.Preset == y.Ask.Preset && x.Ask.Repositories.SequenceEqual(y.Ask.Repositories)
+            && x.Accept.Select(each => (each.Repository, each.Purpose)).SequenceEqual(y.Accept.Select(each => (each.Repository, each.Purpose)));
+
+        public int GetHashCode(PlaceWords? words) => 0;
+    }
+
     [Fact]
     public async Task An_acceptance_the_plan_does_not_offer_a_refused_plan_and_a_word_that_is_no_digest_are_refused_with_nothing_written()
     {

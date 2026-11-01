@@ -272,6 +272,50 @@ public sealed class PipeConfirmTests : Bridge
         Assert.Empty(pipe.Confirmations.Now().Waiting);
     }
 
+    /// <summary>
+    /// AGENTSPLACE1b3 (the Agents-place design §7 row 8): a terminal's apply of a place's plan is one card, confirmed once. It runs once on the
+    /// Confirm and is never asked or run again by its id; and a plan that moved between the ask and the Confirm, read by <c>PLACE_PLAN</c>'s
+    /// digest, is refused <c>changed</c> with nothing run.
+    /// </summary>
+    [Fact]
+    public async Task A_place_apply_is_one_card_confirmed_once_and_a_plan_that_moved_while_it_waited_is_refused()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var digest = new string('a', 64);
+        var grounds = new StubGrounds();
+        grounds.Reads["PLACE_PLAN"] = _ => new { digest };
+        var (pipe, client, driver, services, log) = await ServeAsync(grounds);
+        using var _ = services;
+        using var __ = log;
+        using var ___ = pipe;
+        await using var ____ = client;
+        var apply = new { repositories = new[] { "engine" }, preset = SetupPresets.Merge, said = true };
+
+        var id = await client.SendAsync(DriverModule.Name, "PLACE_APPLY", apply);
+        await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
+        var shown = Assert.Single(pipe.Confirmations.Now().Waiting);
+        Assert.Equal("PLACE_APPLY", shown.Route);
+        Assert.Equal(0, driver.Ran);
+        Assert.Equal(PipeAnswered.Answered, (await pipe.Confirmations.AnswerAsync(shown.Id, confirm: true)).Outcome);
+        Assert.True((await client.AnswerAsync(id)).GetProperty("success").GetBoolean());
+        Assert.Equal(1, driver.Ran);
+        await client.SendAsync(DriverModule.Name, "PLACE_APPLY", apply, id: id);
+        Assert.True((await client.AnswerAsync(id)).GetProperty("success").GetBoolean());
+        Assert.Equal(1, driver.Ran);
+        Assert.Empty(pipe.Confirmations.Now().Waiting);
+
+        var later = await client.SendAsync(DriverModule.Name, "PLACE_APPLY", new { repositories = new[] { "engine" }, preset = SetupPresets.Integrated, said = true });
+        await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
+        digest = new string('b', 64);
+
+        var moved = await pipe.Confirmations.AnswerAsync(pipe.Confirmations.Now().Waiting[0].Id, confirm: true);
+
+        Assert.Equal(PipeAnswered.Changed, moved.Outcome);
+        Assert.Equal("plan", moved.Change!.Reason);
+        Assert.Equal(InstancePipe.Changed, Code(await client.AnswerAsync(later)));
+        Assert.Equal(1, driver.Ran);
+    }
+
     [Fact]
     public async Task A_change_made_before_the_ask_is_no_change()
     {
