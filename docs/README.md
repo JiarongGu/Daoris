@@ -215,6 +215,7 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-11-02-flowchart-proposal-opus.md` | Proposal: FLOWCHART2, Opus, sealed
 | `2026-11-02-flowchart-proposal-codex.md` | Proposal: FLOWCHART2, Codex, sealed
 | `2026-11-02-flowchart-design.md` | Design: FLOWCHART2, one component set on Flow's layout, editing on the chart, Ask Daoris's draft door; accepted 2026-11-02 (D223)
+| `2026-11-02-flowchart-reads.md` | Reads: FLOWCHART2, Codex's read, settled in the design's §8
 
 ## UI, browser, tools and plugin contracts
 
