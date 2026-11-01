@@ -58,6 +58,30 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
         Assert.DoesNotContain("quest.close", kinds);
         Assert.Equal(variant.Contains("opinion"), kinds.Contains("opinion"));
         Assert.Equal(variant.Contains("look"), kinds.Contains("look"));
+        // LANDNODE1h: the preset holds a `land`, and the tail its method brings.
+        var land = Assert.Single(version.Graph.Nodes, node => node.Kind == NodeKinds.Land);
+        Assert.DoesNotContain(NodeKinds.Handed, kinds);
+        Assert.Equal(preset == "pull-request" ? "\"pull-request\"" : "\"integrate\"", land.Options["method"]);
+        Assert.Equal(preset == "pull-request", kinds.Contains(NodeKinds.PullRequest) && kinds.Contains(NodeKinds.Pushed));
+        Assert.Equal(preset != "pull-request", kinds.Contains(NodeKinds.Integrate));
+    }
+
+    /// <summary>LANDNODE1h: <c>new --from current:&lt;repository&gt;</c> writes Current's landing out as a <c>land</c> node and its tail.</summary>
+    [Fact]
+    public async Task Current_is_written_out_as_a_land_node_with_its_tail()
+    {
+        File.WriteAllText(Config, """{"landings":{"web-app":{"form":"branch","pattern":"w/{quest}","plugin":"acme.pr","autoAccept":true}}}""");
+
+        var exit = await Run("workflow new made --from current:web-app", ("web-app", "work", null));
+
+        Assert.Equal((0, ""), (exit, _error.ToString()));
+        var graph = Saved("made").Graph!;
+        var land = Assert.Single(graph.Nodes, node => node.Kind == NodeKinds.Land);
+        Assert.Equal(
+            ["\"pull-request\"", "\"automatic\"", "\"w/{quest}\"", "\"acme.pr\""],
+            [land.Options["method"], land.Options["accept"], land.Options["pattern"], land.Options["plugin"]]);
+        Assert.Equal(["claimed", "work.requests", "land", "pushed", "pull-request"], graph.Nodes.Select(node => node.Kind));
+        Assert.Equal("pull-request", graph.End);
     }
 
     [Fact]

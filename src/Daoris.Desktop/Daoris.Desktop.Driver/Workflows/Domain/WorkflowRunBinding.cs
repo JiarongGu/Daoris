@@ -39,6 +39,13 @@ public sealed record WorkflowRunBinding(string Run, string Repository, string Wo
     public IReadOnlyList<string> CurrentSteps { get; init; } = [];
 
     /// <summary>
+    /// The open options of the version's <c>land</c> node (<c>pattern</c>, <c>plugin</c> and the ticket <c>key</c>) as the repository's rule
+    /// resolved them at the bind (LANDNODE1h; the land node design §4), kept so no later rule edit reaches the run. Empty for a version with
+    /// no <c>land</c> or none left open, and for every binding from before.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> Land { get; init; } = LandNodes.NoResolved;
+
+    /// <summary>
     /// The person's <i>Keep</i> (WORKFLOW1f, design §4.4): they kept the kind's workflow for this work though it changed paths outside
     /// the kind's, with when, their words and the door. Null where none was given, which every binding from before reads as.
     /// </summary>

@@ -61,7 +61,7 @@ public static class WorkflowPresets
         new("pull-request", "A pull request",
             $$$"""
             {"schemaVersion":2,"entries":["work"],"end":"pull-request","nodes":[{{{Claimed}}},{{{Requests}}},
-              {"id":"landing","kind":"handed","version":1,"reach":"observed","options":{"form":"branch","accept":"you"}},
+              {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"pull-request","accept":"you"}},
               {"id":"pushed","kind":"pushed","version":1,"reach":"observed"},
               {"id":"pull-request","kind":"pull-request","version":1,"reach":"observed"}],
              "wires":[{{{Wires}}},{"id":"c","kind":"after","from":"landing","to":"pushed"},{"id":"d","kind":"after","from":"pushed","to":"pull-request"}]}
@@ -71,7 +71,7 @@ public static class WorkflowPresets
     private static string Integrated(string accept, string request) =>
         $$$"""
         {"schemaVersion":2,"entries":["work"],"end":"line","nodes":[{{{Claimed}}},{{{Requests}}},
-          {"id":"landing","kind":"handed","version":1,"reach":"observed","options":{"form":"branch","accept":"{{{accept}}}"}},
+          {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"integrate","accept":"{{{accept}}}"}},
           {"id":"integrate","kind":"integrate","version":1,"reach":"waited","options":{"request":"{{{request}}}","conflicts":"session"}},
           {"id":"line","kind":"line","version":1,"reach":"observed"}],
          "wires":[{{{Wires}}},{"id":"c","kind":"after","from":"landing","to":"integrate"},{"id":"d","kind":"after","from":"integrate","to":"line"}]}
@@ -90,7 +90,7 @@ public static class WorkflowPresets
         var nodes = next["nodes"]!.AsArray();
         var wires = next["wires"]!.AsArray();
         bool Has(string kind) => nodes.Any(node => (string?)node!["kind"] == kind);
-        var landing = (string)nodes.First(node => (string?)node!["kind"] == WorkflowKinds.Landing || (string?)node!["kind"] == "handed")!["id"]!;
+        var landing = (string)nodes.First(node => (string?)node!["kind"] == WorkflowKinds.Landing || NodeKinds.IsLanding((string)node!["kind"]!))!["id"]!;
         var lead = wires.First(wire => (string?)wire!["to"] == landing)!;
         var from = (string)lead["from"]!;
         wires.Remove(lead);
@@ -117,7 +117,7 @@ public static class WorkflowPresets
         var said = new List<string>();
         if (Of(WorkflowKinds.Opinion) is not null) said.Add("Another agent reads the work first.");
         if (Of(WorkflowKinds.Look) is not null) said.Add("You look at it running before it lands.");
-        var you = Option(Of("handed"), "accept") == "you";
+        var you = Option(Of(NodeKinds.Land) ?? Of(NodeKinds.Handed), "accept") == "you";
         if (Of("pull-request") is not null)
         {
             said.Add(you ? "You accept; the plugin pushes and opens a pull request; you merge it."

@@ -356,8 +356,9 @@ public static class WorkflowOperations
             var repository = from["current:".Length..];
             if (repository.Length == 0) throw new ChoiceWords($"`current:` names a repository, such as `current:web-app` — {DriverWorkflowsCommand.Usage}");
             var drawn = (await CurrentOfAsync(choices, home, registry, repository, ct).ConfigureAwait(false));
+            // LANDNODE1h: Current's landing is written out as a `land` node, so what is saved is a graph.
             return new($"`{repository}`'s Current (version {drawn.Version})", $"{repository}'s Current",
-                WorkflowPresets.WithGates(WorkflowWords.StepsOfCurrent(drawn), opinion, look), null, null, drawn);
+                null, WorkflowWords.GraphOfCurrent(drawn, opinion, look), null, drawn);
         }
 
         if (!from.Contains('@', StringComparison.Ordinal) && WorkflowPresets.GraphOf(from) is { } graphPreset)

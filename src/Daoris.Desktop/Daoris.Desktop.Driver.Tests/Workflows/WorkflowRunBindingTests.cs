@@ -437,4 +437,65 @@ public sealed class WorkflowRunBindingTests : IDisposable
         Assert.Equal(22, versions[^1]);
         Assert.Equal([1], WorkflowRunBindings.KeptVersions(_home, "docs-to-pr"));
     }
+
+    /// <summary>
+    /// LANDNODE1h (the land node design §4): a <c>land</c> the version leaves open is resolved over the repository's rule at the bind, kept in
+    /// the run's file, and read from there: a rule edited after the bind reaches new runs, never the bound one.
+    /// </summary>
+    [Fact]
+    public void A_land_left_open_is_resolved_at_the_bind_and_a_later_rule_edit_does_not_reach_the_bound_run()
+    {
+        WorkflowStore.Add(_home, new WorkflowVersionAdded("open-land", "An open land", "terminal", "2026-11-01T09:00:00Z", null, JsonNode.Parse(
+            """
+            {"schemaVersion":2,"entries":["work"],"end":"pull-request","nodes":[{"id":"work","kind":"claimed","version":1,"reach":"observed"},
+              {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"pull-request","accept":"you"}},
+              {"id":"pushed","kind":"pushed","version":1,"reach":"observed"},{"id":"pull-request","kind":"pull-request","version":1,"reach":"observed"}],
+             "wires":[{"id":"a","kind":"after","from":"work","to":"landing"},{"id":"b","kind":"after","from":"landing","to":"pushed"},
+                      {"id":"c","kind":"after","from":"pushed","to":"pull-request"}]}
+            """)), kept: []);
+        var before = Config("""
+            {"workflows":{"web-app":{"default":"open-land"}},
+             "landings":{"web-app":{"form":"branch","pattern":"a/{ticket}-{quest}","plugin":"acme.pr","key":"AAA-\\d+"}}}
+            """);
+
+        var planned = WorkflowRunBindings.Plan(before, _home, "a1b2c3", "web-app", null, null, null, [], At);
+        Assert.True(WorkflowRunBindings.Bind(_home, planned));
+        var bound = WorkflowRunBindings.Read(_home, "a1b2c3")!;
+
+        Assert.Null(bound.Problem);
+        Assert.Equal(
+            new Dictionary<string, string> { ["pattern"] = "a/{ticket}-{quest}", ["plugin"] = "acme.pr", ["key"] = "AAA-\\d+" }.OrderBy(each => each.Key),
+            bound.Land.OrderBy(each => each.Key));
+
+        var after = Config("""
+            {"workflows":{"web-app":{"default":"open-land"}},
+             "landings":{"web-app":{"form":"branch","pattern":"b/{quest}","plugin":"other.pr"}}}
+            """);
+        var version = WorkflowStore.Load(_home, "open-land")!.Read.Versions[^1];
+        var (steps, problem) = WorkflowNamed.GateSteps(version.Graph!, 1, LandingRules.Effective(after, "web-app", null).Rule, bound.Land);
+        var process = WorkflowProcess.Of(after, "web-app", null, bound, steps!);
+
+        Assert.Null(problem);
+        Assert.Equal(("a/{ticket}-{quest}", "acme.pr", "AAA-\\d+"), (process.Landing.Rule.Pattern, process.Landing.Rule.Plugin, process.Landing.Rule.Key));
+        var fresh = WorkflowRunBindings.Plan(after, _home, "d4e5f6", "web-app", null, null, null, [], At);
+        Assert.Equal("b/{quest}", fresh.Land["pattern"]);
+    }
+
+    /// <summary>A pull request whose plugin neither the version nor the rule names is held at the bind with why.</summary>
+    [Fact]
+    public void A_pull_request_land_with_no_plugin_anywhere_is_held_at_the_bind()
+    {
+        WorkflowStore.Add(_home, new WorkflowVersionAdded("no-plugin", "No plugin", "terminal", "2026-11-01T09:00:00Z", null, JsonNode.Parse(
+            """
+            {"schemaVersion":2,"entries":["work"],"end":"pull-request","nodes":[{"id":"work","kind":"claimed","version":1,"reach":"observed"},
+              {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"pull-request"}},
+              {"id":"pushed","kind":"pushed","version":1,"reach":"observed"},{"id":"pull-request","kind":"pull-request","version":1,"reach":"observed"}],
+             "wires":[{"id":"a","kind":"after","from":"work","to":"landing"},{"id":"b","kind":"after","from":"landing","to":"pushed"},
+                      {"id":"c","kind":"after","from":"pushed","to":"pull-request"}]}
+            """)), kept: []);
+
+        var planned = WorkflowRunBindings.Plan(Config("""{"workflows":{"web-app":{"default":"no-plugin"}}}"""), _home, "a1b2c3", "web-app", null, null, null, [], At);
+
+        Assert.Contains("names one", planned.Problem);
+    }
 }

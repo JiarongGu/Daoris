@@ -11,6 +11,12 @@ public sealed record TreeDelivery(DeliveryStore Store, DeliveryClaim Claim)
 {
     /// <summary>The test seam: run with a phase's name after its effect and before its outcome is written. Null in production.</summary>
     internal Func<string, Task>? Seam { get; init; }
+
+    /// <summary>
+    /// Whether the standing automatic authority still stands (LANDNODE1h; the land node design §3), asked of an automatic delivery just before
+    /// its first effect: a refusal in words, or null where it stands. Null judges nothing, and an automatic delivery with none lands nothing.
+    /// </summary>
+    public Func<DeliveryRecord, string?>? Standing { get; init; }
 }
 
 /// <summary>
@@ -45,6 +51,15 @@ internal sealed class TreeDelivering
 
     /// <summary>Who accepted it, as the landing record keeps it: the standing automatic authority, or the person.</summary>
     public string Accepted => Record.Authorization.Authority == DeliveryAuthorities.Automatic ? AcceptedBy.Auto : AcceptedBy.Person;
+
+    /// <summary>
+    /// Why the delivery's authority no longer holds, or null: the person's Accept stands as recorded; the standing automatic authority is
+    /// judged again, here, before anything is written ahead.
+    /// </summary>
+    public string? Unauthorized() =>
+        Record.Authorization.Authority != DeliveryAuthorities.Automatic ? null
+        : _delivery.Standing is null ? "nothing judges whether its automatic authority still stands"
+        : _delivery.Standing(Record);
 
     /// <summary>The preparation's intended effect, as its entry says it.</summary>
     public string Preparing => Intent.Method == DeliveryMethods.Merge

@@ -157,7 +157,9 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
             }
 
             // The rule's ticket key rides with it where the pattern, the step's or the rule's, says `{ticket}` (PROCESS1b-i).
-            var key = branch && pattern?.Contains("{ticket}", StringComparison.Ordinal) == true ? rule.Key : null;
+            // A land version's key was resolved at the bind, and no later rule edit reaches it (LANDNODE1h).
+            var key = binding.Land.TryGetValue(LandNodes.KeyOption, out var bound) ? bound
+                : branch && pattern?.Contains("{ticket}", StringComparison.Ordinal) == true ? rule.Key : null;
             // The rule's squash rides with it too (PROCESS1b-ii): it is how the repository wants its pull request's branch made.
             landing = new LandingRule(LandingForm.Branch, pattern, rule.Tidy, plugin, (string?)land.Field("accept") == "automatic", key,
                 branch && rule.Squash);
@@ -387,7 +389,7 @@ public static class Involvement
                 NodeKinds.Claimed => WorkflowKinds.Work,
                 NodeKinds.Opinion => WorkflowKinds.Opinion,
                 NodeKinds.Look => WorkflowKinds.Look,
-                NodeKinds.Handed => WorkflowKinds.Landing,
+                NodeKinds.Handed or NodeKinds.Land => WorkflowKinds.Landing,
                 NodeKinds.PullRequest => WorkflowKinds.PullRequest,
                 NodeKinds.GoAhead => WorkflowKinds.GoAhead,
                 // INTEGRATE1n: a graph-only kind, kept by its own kind and its node's id for the comparison's graph part (<see cref="Lowers"/>).
