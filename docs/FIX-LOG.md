@@ -12,6 +12,13 @@ repository.
 - **Fix:** `BrainstormTurnRun.Why` carries the sentence; `PassAsync` keeps it on the pass record (`why`, written only when there is one, so a record without it reads as before), writes `brainstorm.pass` to the machine log once as the pass ends, and `brainstorm show` and the document's pass list print it. The name is still not guessed: the sentence names the adapters this machine has.
 - **Verify:** `BrainstormStartTests` (2) written first and failing to compile against the old code (no `Why`), green after: the install's request, the record's reason, `show`, and an older record reading as before. The brainstorm classes, `MeetingTests` and the four census classes green. Not run: the installed window.
 
+## 2026-11-01 - A request read from the store carried no epoch (LANDNODE1g follow-up)
+
+- **Symptom:** `IntegrationRequestsTests.A_recorded_landing_is_requested_bound_to_its_record_and_its_gate_proof_read_as_recorded` failed: the request the door stamped with an epoch differed from the one `Open()` read back.
+- **Root cause:** the epoch lives in `integration_epochs`, not in `integration_requests`, and `MapRequest` read only the request's own columns, so every store read answered `Epoch = null`; only `RequestEpoch(id)` read it. A request compared by record equality therefore never equalled its read-back.
+- **Fix:** the store's request reads select the epoch as a subquery column beside `RequestColumns` (`Read(version, table)`), only where the store's version is at least step 14, so an older store (no table) reads none and is not queried for it; `MapRequest` takes it when the column is present. `RequestColumns` stays the insert's list. A request written with no epoch reads back as its policy's alone, as `Add` stored it.
+- **Verify:** `IntegrationStoreTests` (a new read-back of every read incl. the queue's alias, and a store dropped to step 13 reading with no epoch), `IntegrationRequestsTests`, `DesktopStoreTests`, `DesktopStoreReaderTests`, `StructureTests`, `SettledReadersCensusTests` and the `Integration*GitTests` green.
+
 ## 2026-11-01 - One request's policy governed members queued under another (LANDNODE1g)
 
 - **Symptom:** after a change of the line's rule, requests admitted under different `integrate` keys formed one candidate, and the first request's batch and gates governed all of them.

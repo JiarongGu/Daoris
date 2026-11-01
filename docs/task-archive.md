@@ -36,6 +36,8 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 > **LANDNODE1g — the line's epoch** (driver; a fix waiting on nothing, `docs/2026-11-01-land-node-design.md` §5 and §8 row 2). A candidate took its batching from its first request's policy alone, and promotion took its acceptance from the current configuration. The epoch (the resolved shared policy plus the accepted declaration's blob) kept on requests and candidates, formation enforcing equality, gates run from the frozen declaration; one policy per target.
 
+*Amended 2026-11-01:* the store's request reads carry the epoch too (`IntegrationRequest.Epoch`; null from a store before step 14); `RequestEpoch(id)` is the same read by id.
+
 **Outcome** 2026-11-01: `IntegrationEpoch` kept in `integration_epochs` (store step 14); formation takes one epoch in the replay and in `Form`'s transaction; the verdict runs the candidate's frozen blob; an older record reads as its own epoch. The cause and proof are in `docs/FIX-LOG.md`, the rule in D215's note of 2026-11-01.
 
 ---

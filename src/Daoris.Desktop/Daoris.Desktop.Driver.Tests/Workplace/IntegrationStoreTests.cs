@@ -78,6 +78,7 @@ public sealed class IntegrationStoreTests : IDisposable
             new LandingIntegrate(Request: LandingIntegrate.Steward, Gates: LandingIntegrate.Declared, Line: "main").Resolved(), At)
         {
             Unit = "unit-a", Session = "s1", Quest = "q1", LandedAt = At.AddHours(-1), RuleSource = LandingSource.Repository,
+            Epoch = IntegrationEpoch.Of(new LandingIntegrate(Request: LandingIntegrate.Steward, Gates: LandingIntegrate.Declared, Line: "main").Resolved(), null),
             Proof = new IntegrationProof(AcceptedBy.Person)
             {
                 Review = new LandingReview(ReviewVerdicts.Reviewed, "staging", "q1") { Commit = Tip, At = At.AddMinutes(-30), Words = "it reads well" },
@@ -101,7 +102,8 @@ public sealed class IntegrationStoreTests : IDisposable
         // A records branch's request carries no unit, session, quest or proof, and the card names no act: each reads back as none.
         var records = Request("request-2", "notes/records") with { Route = IntegrationRoutes.Records, RuleSource = LandingSource.Repository };
         Assert.Null(store.Add(records));
-        Assert.Equal(records, store.Request("request-2"));
+        // One written with no epoch is kept under its policy's alone, and reads back as that.
+        Assert.Equal(records with { Epoch = IntegrationEpoch.Of(records.Policy, null) }, store.Request("request-2"));
     }
 
     /// <summary>
@@ -114,7 +116,7 @@ public sealed class IntegrationStoreTests : IDisposable
         var store = Store("run-a");
         Assert.Null(store.FindByKey("unit-a", Tip));
 
-        var first = Request("r1", "feature/q1-fix") with { Unit = "unit-a" };
+        var first = Request("r1", "feature/q1-fix") with { Unit = "unit-a", Epoch = IntegrationEpoch.Of(new LandingIntegrate().Resolved(), null) };
         Assert.Null(store.Add(first));
         Assert.Equal(first, store.FindByKey("unit-a", Tip));
         Assert.Equal(first, store.FindByKey("unit-a", Tip.ToUpperInvariant()));
@@ -172,6 +174,11 @@ public sealed class IntegrationStoreTests : IDisposable
         Assert.Null(store.Add(Request("r2", "feature/b") with { Epoch = Epoch("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb") }));
         Assert.Null(store.Add(Request("r3", "feature/c") with { Epoch = Epoch("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa") }));
         Assert.Equal(Epoch("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), store.RequestEpoch("r1"));
+        // Every read of a request carries its epoch (the queue's join alias included).
+        var wanted = new[] { "r1", "r2", "r3" }.ToDictionary(id => id, id => store.RequestEpoch(id));
+        Assert.Equal(wanted, store.Open().ToDictionary(request => request.Id, request => request.Epoch));
+        Assert.Equal(wanted, store.Queued("engine", "main").ToDictionary(request => request.Id, request => request.Epoch));
+        Assert.Equal(Epoch("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"), store.Request("r2")!.Epoch);
         var revision = Revision();
 
         Assert.Throws<IntegrationRefusedException>(() => store.Form(Forming("r1", "r2")));
@@ -184,10 +191,33 @@ public sealed class IntegrationStoreTests : IDisposable
         }
 
         Assert.Null(store.RequestEpoch("r1"));
+        Assert.Null(store.Request("r1")!.Epoch);
         Assert.Throws<IntegrationRefusedException>(() => store.Form(Forming("r1", "r3")));
         Assert.Throws<IntegrationRefusedException>(() => store.Form(Forming("r3", "r1")));
         var alone = store.Form(Forming("r1"));
         Assert.Null(store.CandidateEpoch(alone.Candidate.Id));
+    }
+
+    /// <summary>A store from before the epochs' step has no table to join: every read of a request answers, none carrying an epoch.</summary>
+    [Fact]
+    public void A_store_from_before_the_epochs_table_reads_its_requests_with_no_epoch()
+    {
+        var store = Store("run-a");
+        Assert.Null(store.Add(Request("r1")));
+        using (var raw = DesktopStore.Open(Db, new DesktopStoreOptions { Settled = () => StoreSettled.Yes }))
+        {
+            raw.Write("probe", write =>
+            {
+                write.Execute("DROP TABLE integration_epochs");
+                write.Execute("UPDATE store_version SET version = 13 WHERE one = 1");
+            });
+        }
+
+        Assert.Null(store.Request("r1")!.Epoch);
+        Assert.Null(Assert.Single(store.Open()).Epoch);
+        Assert.Single(store.Queued("engine", "main"));
+        Assert.Null(store.OpenFor("engine", "feature/q1-fix")!.Epoch);
+        Assert.Null(store.RequestEpoch("r1"));
     }
 
     [Fact]
