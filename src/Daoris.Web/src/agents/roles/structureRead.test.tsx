@@ -8,12 +8,14 @@ const { whole, chain, driver } = vi.hoisted(() => ({
   whole: vi.fn(), chain: vi.fn(), driver: vi.fn(),
 }));
 
-vi.mock('../../bridge/driver', () => ({
+vi.mock('../../bridge/driver', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../bridge/driver')>()),
   useDriver: () => driver(),
   useRoleStructure: (...args: unknown[]) => whole(...args),
   useRoleStructureChain: (...args: unknown[]) => chain(...args),
 }));
-vi.mock('../../data/queries', () => ({
+vi.mock('../../data/queries', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../data/queries')>()),
   useRegistry: () => ({ data: [{ repository: 'engine', workspace: 'aurora' }, { repository: 'old-import', workspace: 'aurora' }, { repository: 'site', workspace: 'borealis' }] }),
 }));
 
