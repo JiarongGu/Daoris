@@ -162,6 +162,18 @@ public sealed partial record WorkflowDraftTold(string Fingerprint, string Place,
     public string Words => $"{Lead}\n{Json}";
 
     /// <summary>
+    /// The note the record keeps of it as told: its lead by code, then what the agent was handed as the program's words, the draft's JSON
+    /// last and whole, which <see cref="Told"/> reads back.
+    /// </summary>
+    public SessionEvent ToldNote()
+    {
+        var told = Noted.Of(NoteCodes.ChatToldDraft, "told the agent the open workflow draft:")
+            .Then(" ", Noted.Said(Lead, NoteBy.Program))
+            .Then("\n", Noted.Said(Json, NoteBy.Program));
+        return new SessionEvent { Kind = SessionEventKind.Note, Text = told.Note, Parts = told.Parts };
+    }
+
+    /// <summary>
     /// The drafts a conversation's record says it was told, each by its fingerprint, the newest kept where one was told twice: what the
     /// draft door judges a proposal against. A note that does not read is no draft told.
     /// </summary>

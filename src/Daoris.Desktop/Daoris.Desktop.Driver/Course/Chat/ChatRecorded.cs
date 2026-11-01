@@ -116,14 +116,7 @@ internal static class ChatRecorded
     /// code, then what the agent was handed as the program's words, the draft's JSON last and whole, so the draft door finds it by its
     /// fingerprint (<see cref="WorkflowDraftTold.Told"/>).
     /// </summary>
-    internal static SessionEvent? ToldDraft(ChatMessage message)
-    {
-        if (message.Draft is not { } draft) return null;
-        var told = Noted.Of(NoteCodes.ChatToldDraft, "told the agent the open workflow draft:")
-            .Then(" ", Noted.Said(draft.Lead, NoteBy.Program))
-            .Then("\n", Noted.Said(draft.Json, NoteBy.Program));
-        return new SessionEvent { Kind = SessionEventKind.Note, Text = told.Note, Parts = told.Parts };
-    }
+    internal static SessionEvent? ToldDraft(ChatMessage message) => message.Draft?.ToldNote();
 
     /// <summary>
     /// The browser the agent was handed and told of beside the person's first words (BRWHINT1a), as the record keeps it: a note of

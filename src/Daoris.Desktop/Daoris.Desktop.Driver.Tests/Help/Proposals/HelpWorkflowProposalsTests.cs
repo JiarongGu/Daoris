@@ -30,7 +30,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
     /// <summary>The proposal's file as the service's box writes it (WORKFLOW1h-a), read back as the driver reads it.</summary>
     private HelpProposal Propose(
         string? steps, int? @base = null, bool choose = false, string scope = "engine", string? name = null,
-        string? graph = null, string? route = null, string workflow = Id)
+        string? graph = null, string? route = null, string workflow = Id, string? draft = null)
     {
         var node = new JsonObject
         {
@@ -44,8 +44,145 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
         if (graph is not null) node["graph"] = JsonNode.Parse(graph);
         if (route is not null) node["route"] = route;
         if (name is not null) node["name"] = name;
+        if (draft is not null) node["draft"] = draft;
         System.IO.File.WriteAllText(Path.Combine(HelpProposals.FolderOf(_home), "p6.json"), node.ToJsonString());
         return HelpProposals.Find(_home, "p6")!;
+    }
+
+    private const string Fingerprint = "g1-0123456789abcdef";
+
+    private static string Preset(string id) => WorkflowDefaults.Of(id)!.GraphJson;
+
+    /// <summary>The draft this conversation was told (FLOWCHART2d): the Merge workflow's graph, open for `engine`, as its record keeps it.</summary>
+    private HelpMachineFacts Told(string? workflow = null, int? @base = null, string graph = "", HelpMachineFacts? from = null)
+    {
+        var draft = new JsonObject { ["fingerprint"] = Fingerprint, ["place"] = "engine", ["graph"] = JsonNode.Parse(graph.Length > 0 ? graph : Preset("merge-after-accept")) };
+        if (workflow is not null) draft["workflow"] = workflow;
+        if (@base is not null) draft["base"] = @base;
+        using var document = System.Text.Json.JsonDocument.Parse(draft.ToJsonString());
+        var told = WorkflowDraftTold.Read(document.RootElement);
+        return Here(from) with { Home = _home, Drafts = WorkflowDraftTold.Told([told.ToldNote()]) };
+    }
+
+    /// <summary>Every byte under the home's workflows: what a draft's Apply must leave as it was.</summary>
+    private Dictionary<string, string> WorkflowFiles()
+    {
+        var folder = DaorisHome.Entry(_home, HomeEntry.Workflows);
+        return Directory.Exists(folder)
+            ? Directory.EnumerateFiles(folder, "*", SearchOption.AllDirectories).ToDictionary(path => path, path => Convert.ToBase64String(System.IO.File.ReadAllBytes(path)))
+            : [];
+    }
+
+    /// <summary>
+    /// FLOWCHART2e (the flowchart design §4, §8.4): a whole graph proposed against the draft this conversation was told, judged as a save
+    /// is, its card said as the draft's changes, with the candidate kept apart from what a save would take, so it saves nothing.
+    /// </summary>
+    [Fact]
+    public void A_change_to_the_open_draft_is_judged_against_the_draft_this_conversation_was_told()
+    {
+        var proposal = Propose(null, graph: Preset("release"), workflow: "", draft: Fingerprint);
+        Assert.Equal(("draft", Fingerprint), (proposal.Door, proposal.Draft));
+
+        var plan = HelpProposals.Plan(proposal, DriverConfig.Empty, Told());
+        var card = Card(plan);
+
+        Assert.Equal(Fingerprint, card.Draft);
+        Assert.False(card.Saves);
+        Assert.Null(card.Graph);
+        Assert.Null(card.Steps);
+        Assert.Null(card.Use);
+        Assert.NotNull(card.Proposed);
+        Assert.Contains("step:+find", card.Changes.Select(change => change.Id));
+        Assert.Equal(["step:+release"], card.Changes.Single(change => change.Id == "way:+k").Needs.Take(1));
+        Assert.Contains("Nothing is saved or chosen", plan.Describe);
+        Assert.Equal(("projects", (string?)null), (plan.Go!.View, plan.Go.Part));
+    }
+
+    /// <summary>What a save would refuse is the card's to put right, never a refusal of the proposal: the person may take it and fix it.</summary>
+    [Fact]
+    public void What_a_save_would_refuse_is_on_the_card_to_put_right()
+    {
+        var graph = JsonNode.Parse(Preset("merge-after-accept"))!;
+        graph["nodes"]!.AsArray().Add(new JsonObject { ["id"] = "stray", ["kind"] = "check", ["version"] = 1, ["reach"] = "performed" });
+        var unreached = graph.ToJsonString();
+
+        var card = Card(HelpProposals.Plan(Propose(null, graph: unreached, workflow: "", draft: Fingerprint), DriverConfig.Empty, Told()));
+
+        Assert.Contains(card.Problems, problem => problem.Code == GraphRefusal.Unreachable && problem.Node == "stray");
+        Assert.Equal(["step:+stray"], card.Changes.Select(change => change.Id));
+    }
+
+    [Fact]
+    public void A_fingerprint_this_conversation_was_never_told_is_refused()
+    {
+        var plan = HelpProposals.Plan(Propose(null, graph: Preset("release"), workflow: "", draft: "g1-ffffffffffffffff"), DriverConfig.Empty, Told());
+
+        Assert.Equal("the draft `g1-ffffffffffffffff` was never shown to this conversation: ask again from the editor, whose draft goes beside your words.", plan.Refusal);
+    }
+
+    /// <summary>§8.4: a draft mixed with what saves or chooses is refused before anything else is judged.</summary>
+    [Theory]
+    [InlineData(1, false, null, null)]
+    [InlineData(null, true, null, null)]
+    [InlineData(null, false, "default", null)]
+    [InlineData(null, false, null, "Release")]
+    public void A_draft_mixed_with_a_base_a_choice_a_route_or_a_name_is_refused(int? @base, bool choose, string? route, string? name)
+    {
+        var plan = HelpProposals.Plan(Propose(null, @base, choose, graph: Preset("release"), route: route, name: name, workflow: "", draft: Fingerprint), DriverConfig.Empty, Told());
+
+        Assert.StartsWith("a change to the open draft ", plan.Refusal, StringComparison.Ordinal);
+    }
+
+    /// <summary>A development pipeline's graph is still refused by the `edit` door, and taken by the `draft` door, which saves nothing.</summary>
+    [Fact]
+    public void A_development_graph_is_refused_by_edit_and_taken_by_draft()
+    {
+        WorkflowStore.Add(_home, new WorkflowVersionAdded(Id, "Merge it", "terminal", "2026-10-30T09:00:00Z", null, JsonNode.Parse(Preset("merge-after-accept"))), kept: []);
+
+        var edit = HelpProposals.Plan(Propose(null, 1, graph: Preset("release")), DriverConfig.Empty, Here());
+        Assert.StartsWith($"`{Id}` is a development pipeline, and Ask Daoris proposes a graph only for a verification pipeline", edit.Refusal, StringComparison.Ordinal);
+
+        var draft = Card(HelpProposals.Plan(Propose(null, graph: Preset("release"), draft: Fingerprint), DriverConfig.Empty, Told(Id, 1)));
+        Assert.Equal((Id, (int?)1, false), (draft.Id, draft.Base, draft.Saves));
+    }
+
+    /// <summary>
+    /// Its Apply writes no workflow and no choice: pressed from the card it opens the place's Workflow and stands; pressed with every change
+    /// taken or left it settles, recording which, and the workflow store and the configuration are as they were, byte for byte.
+    /// </summary>
+    [Fact]
+    public async Task Apply_leaves_the_workflow_store_and_the_configuration_as_they_were()
+    {
+        WorkflowStore.Add(_home, new WorkflowVersionAdded(Id, "Merge it", "terminal", "2026-10-30T09:00:00Z", null, JsonNode.Parse(Preset("merge-after-accept"))), kept: []);
+        var files = WorkflowFiles();
+        var facts = Told(Id, 1);
+        var proposal = Propose(null, graph: Preset("release"), draft: Fingerprint);
+        var plan = HelpProposals.Plan(proposal, Chosen, facts);
+        var card = Card(plan);
+        var doors = new HelpStandInDoors();
+
+        var opened = await HelpProposals.ApplyAsync(_home, proposal, plan, doors, _ => { }, CancellationToken.None);
+        Assert.True(opened.Stands);
+        Assert.Equal("projects", opened.Go!.View);
+        Assert.Equal("proposed", HelpProposals.Find(_home, "p6")!.State);
+
+        var ids = card.Changes.Select(change => change.Id).ToList();
+        var some = proposal with { Taken = ids[..2] };
+        var short1 = await HelpProposals.ApplyAsync(_home, some, plan, doors, _ => { }, CancellationToken.None);
+        Assert.False(short1.Applied);
+        Assert.Equal("proposed", HelpProposals.Find(_home, "p6")!.State);
+
+        var settled = await HelpProposals.ApplyAsync(_home, proposal with { Taken = ids[..2], Left = ids[2..] }, plan, doors, _ => { }, CancellationToken.None);
+        Assert.True(settled.Applied);
+        Assert.False(settled.Stands);
+        var file = JsonNode.Parse(System.IO.File.ReadAllText(Path.Combine(HelpProposals.FolderOf(_home), "p6.json")))!;
+        Assert.Equal("applied", file["state"]!.GetValue<string>());
+        Assert.Equal(ids[..2], file["taken"]!.AsArray().Select(each => each!.GetValue<string>()));
+        Assert.Equal(ids[2..], file["left"]!.AsArray().Select(each => each!.GetValue<string>()));
+
+        Assert.Empty(doors.Calls);
+        Assert.Same(DriverConfig.Empty, doors.Config);
+        Assert.Equal(files, WorkflowFiles());
     }
 
     private void Saved(string steps, string name = "Documentation to a pull request") =>
@@ -307,10 +444,11 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
         Assert.Equal(["it verifies the work that lands with fewer of its gates: `e2e`"], Card(narrower).Lowers);
     }
 
+    /// <summary>FLOWCHART2e: `draft` beside the three, which are unchanged.</summary>
     [Fact]
-    public void Its_doors_are_new_edit_and_use()
+    public void Its_doors_are_new_edit_use_and_draft()
     {
-        Assert.Equal(["new", "edit", "use"], HelpProposalKinds.Find("workflow")!.Doors);
+        Assert.Equal(["new", "edit", "use", "draft"], HelpProposalKinds.Find("workflow")!.Doors);
     }
 
     [Fact]

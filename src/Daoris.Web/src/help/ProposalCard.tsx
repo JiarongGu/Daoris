@@ -124,6 +124,37 @@ export type HelpWorkflowShown = {
    * an older driver, which said it in the plan's text alone. What a repository cannot carry stays in `needs`, as the driver sent it.
    */
   noGates?: string[];
+  /**
+   * FLOWCHART2e: on a change to the draft open in the editor (the `draft` door), the fingerprint of the draft it is against; null on every
+   * other card, which saves or chooses, and absent from an older driver. A draft card saves nothing: its `version` is 0.
+   */
+  draft?: string | null;
+  /** FLOWCHART2e: a draft card's changes against its draft, in the driver's order, each with the changes it needs taken with it. */
+  changes?: WorkflowGraphChange[];
+  /** FLOWCHART2e: what a save of a draft card's graph would refuse, each at its step or way, for the person to put right. */
+  problems?: { code: string; node?: string | null; wire?: string | null; words: string }[];
+  /** FLOWCHART2e: a draft card's candidate graph, whole, which the editor takes changes from and nothing saves. */
+  proposed?: Record<string, unknown> | null;
+};
+
+/**
+ * One change a draft card makes to its draft (FLOWCHART2e, the driver's `WorkflowGraphDiff`): a step, a way or a field of the graph, added,
+ * removed or changed. `id` is `step:`, `way:` or `graph:`, then `+`, `-` or `~`, then the step's or way's id or the field; `said` is the
+ * driver's English.
+ */
+export type WorkflowGraphChange = {
+  id: string;
+  what: 'step' | 'way' | 'graph';
+  change: 'added' | 'removed' | 'changed';
+  step?: string | null;
+  /** The way's id: the proposal's, or the draft's for a way removed. */
+  way?: string | null;
+  /** A changed way's id in the draft, where the proposal moved it. */
+  was?: string | null;
+  kind?: string | null;
+  fields: string[];
+  needs: string[];
+  said: string;
 };
 
 /**

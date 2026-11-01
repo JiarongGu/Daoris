@@ -152,6 +152,12 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  their words as Daoris told it: its fingerprint, its place, where it came from and what it would save to, its route\n");
         text.Append("  and pipeline, the step selected, the problems open and the whole graph, with what a step graph may hold here the\n");
         text.Append("  first time and again when that changes. It is told again only once the draft has changed.\n");
+        // FLOWCHART2e (D223, the flowchart design §4, §8.4): the draft door, which saves and chooses nothing.
+        text.Append("  To change that draft, send `draft` its fingerprint and `graph` the whole changed draft, of either pipeline, with\n");
+        text.Append("  the draft's place as `scope`: nothing is saved or chosen, so no `steps`, `base`, `choose`, `route` or `name` goes\n");
+        text.Append("  with it. Its card says each change to a step or a way and what each needs taken with it, and what a save would\n");
+        text.Append("  refuse, for the person to put right; they take the changes into the draft and save it themselves. A fingerprint\n");
+        text.Append("  this conversation was not told is refused: ask the person to ask again from the editor.\n");
         // LAYOUT8 (D170 point 1): the set-up press as a card, where the owner's helper could only name the terminal command. The
         // room has no shell, by design (D89): the door is the press, judged by `--plan`'s refusals.
         text.Append("- `setup_propose`: set a repository registered here up for every agent, as `daoris-driver setup <repository>`\n");
