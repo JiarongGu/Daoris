@@ -576,7 +576,7 @@ test('the protocol stub both rehearsals run holds a conversation open until its 
   writeFileSync(agent, ACP_STUB_AGENT);
   // A conversation serves no quest; the stub's chat branch is the one without one, and without a brainstorm's turn.
   const env = unroled();
-  const child = spawn(process.execPath, [agent], { cwd: fx.root, env, stdio: ['pipe', 'pipe', 'pipe'] });
+  const child = spawn(process.execPath, [agent], { cwd: fx.root, env, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
   const exited = new Promise<number | null>((resolve) => child.on('exit', (code) => resolve(code)));
 
   const answers = new Map<number, { result?: { stopReason?: string; sessionId?: string } }>();
@@ -619,7 +619,7 @@ test('the protocol stub says the command of each server it was offered, which is
   const agent = join(fx.root, 'acp-agent.mjs');
   writeFileSync(agent, ACP_STUB_AGENT);
   const env = unroled();
-  const child = spawn(process.execPath, [agent], { cwd: fx.root, env, stdio: ['pipe', 'pipe', 'pipe'] });
+  const child = spawn(process.execPath, [agent], { cwd: fx.root, env, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
   let said = '';
   child.stderr.on('data', (chunk) => { said += chunk; });
   const exited = new Promise<number | null>((resolve) => child.on('exit', (code) => resolve(code)));

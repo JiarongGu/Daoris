@@ -1275,7 +1275,7 @@ const QUEUE_GATE = [
 
 /** Git in `cwd` with the case's environment `env`, which must succeed; its output trimmed. */
 function sh(env: Record<string, string>, cwd: string, ...args: string[]): string {
-  const result = spawnSync('git', args, { cwd, encoding: 'utf8', env });
+  const result = spawnSync('git', args, { cwd, encoding: 'utf8', env, windowsHide: true });
   assert.equal(result.status, 0, `git ${args.join(' ')}: ${result.stderr}`);
   return result.stdout.trim();
 }
@@ -1354,7 +1354,7 @@ function queueScratch(name: string) {
   let probes = 0;
   /** A node process of the case, bounded by `ms` (TOOLTESTHANG1), ended with its tree at the bound; `extra` over the case's environment. */
   const node = (args: string[], extra: Record<string, string>, ms: number, cwd: string): Promise<{ status: number | null; out: string }> => {
-    const child = spawn(process.execPath, args, { cwd, env: withEnv(env, extra) });
+    const child = spawn(process.execPath, args, { cwd, env: withEnv(env, extra), windowsHide: true });
     started.add(child);
     let out = '';
     child.stdout.on('data', (chunk) => { out += String(chunk); });
@@ -1463,8 +1463,8 @@ function treeGate(dir: string, holdWhen: string, record = ''): string {
     `const holding = role === 'child' || role === 'grandchild' || (role === 'check' && dir && (${holdWhen}));`,
     'if (holding) {',
     "  writeFileSync(`${dir}/${role}.pid`, String(process.pid));",
-    "  if (role === 'check') spawn(process.execPath, [process.argv[1], 'child'], { stdio: 'ignore' });",
-    "  if (role === 'child') spawn(process.execPath, [process.argv[1], 'grandchild'], { stdio: 'ignore' });",
+    "  if (role === 'check') spawn(process.execPath, [process.argv[1], 'child'], { stdio: 'ignore', windowsHide: true });",
+    "  if (role === 'child') spawn(process.execPath, [process.argv[1], 'grandchild'], { stdio: 'ignore', windowsHide: true });",
     '  await wait();',
     '}',
     'console.log(`${role} ran`);',
@@ -1572,7 +1572,7 @@ describe('QUEUETESTLEAK1: a case reaches only its own scratch repository and que
     const outer = join(decoy.root, 'repo');
     mkdirSync(join(outer, 'local'), { recursive: true });
     const env = caseEnvironment(decoy.root);
-    const outerGit = (...args: string[]) => spawnSync('git', args, { cwd: outer, encoding: 'utf8', env });
+    const outerGit = (...args: string[]) => spawnSync('git', args, { cwd: outer, encoding: 'utf8', env, windowsHide: true });
     outerGit('init', '--quiet', '--template=', '-b', 'main');
     writeFileSync(join(outer, '.gitignore'), 'local/\n');
     outerGit('add', '-A');
@@ -2024,7 +2024,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
       assert.equal(enqueue.length, 1);
       // The lock the sighting met, held by another writer: the test's own git write is refused, as it was.
       writeFileSync(join(repo.root, '.git', 'index.lock'), '');
-      const refused = spawnSync('git', ['checkout', '--quiet', '--', 'qgate.mjs'], { cwd: repo.root, encoding: 'utf8', env: repo.env });
+      const refused = spawnSync('git', ['checkout', '--quiet', '--', 'qgate.mjs'], { cwd: repo.root, encoding: 'utf8', env: repo.env, windowsHide: true });
       assert.notEqual(refused.status, 0);
       assert.match(refused.stderr, /index\.lock/);
       // Ending the test here, as a failed assertion does, must leave neither child holding the run.
@@ -2552,7 +2552,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
       const kept = JSON.parse(readFileSync(gate!.composition.settings, 'utf8')) as Answered;
       assert.deepEqual(kept.settings.runsettings, { path: 'fixture.runsettings', text: settings }, 'the run settings as the commit holds them');
       // Alone, the failing test passes: it fails only after the test before it in its class.
-      const alone = spawnSync(process.execPath, [join(shims, 'dotnet.mjs'), 'test', 'Fixture.csproj', '--filter', 'FullyQualifiedName~Fixture.PollutedTests.B_Reads'], { encoding: 'utf8' });
+      const alone = spawnSync(process.execPath, [join(shims, 'dotnet.mjs'), 'test', 'Fixture.csproj', '--filter', 'FullyQualifiedName~Fixture.PollutedTests.B_Reads'], { encoding: 'utf8', windowsHide: true });
       assert.equal(alone.status, 0, alone.stdout);
       // The probe runs its class as the gate composed it, and it fails again with its signature.
       const failure = join(repo.root, 'local', 'verify', 'failure.json');
@@ -2672,7 +2672,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
     const repo = queueScratch('drain-gate');
     const dir = join(repo.root, 'local', 'drain');
     mkdirSync(dir, { recursive: true });
-    const bystander = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { stdio: 'ignore' });
+    const bystander = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { stdio: 'ignore', windowsHide: true });
     try {
       repo.branch('b1', { 'hold-check': 'x\n', 'qgate.mjs': treeGate(dir, "existsSync('hold-check')") });
       repo.branch('b2', { 'b.txt': 'b\n' });
@@ -3057,13 +3057,13 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
 // PROCLEAK1 (2026-10-30): the machine was found slowed by what the merge tool and its tests had left running: waiters whose requests
 // were gone, runners no record named, a stand-in polling for a file its killed test never wrote.
 /** A process of the test's own that does nothing, ended by `kill`: a live pid a record can name, and an owner that can end. */
-const idle = () => spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { stdio: 'ignore' });
+const idle = () => spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { stdio: 'ignore', windowsHide: true });
 
 /** A process whose parent is gone and whose command line names `marker`: started by a node that ended at once. Answers its pid. */
 function orphanNaming(marker: string): number {
   const maker = spawnSync(process.execPath, ['-e',
-    `const c = require('node:child_process').spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)', ${JSON.stringify(marker)}], { detached: true, stdio: 'ignore' }); console.log(c.pid); c.unref();`],
-  { encoding: 'utf8' });
+    `const c = require('node:child_process').spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)', ${JSON.stringify(marker)}], { detached: true, stdio: 'ignore', windowsHide: true }); console.log(c.pid); c.unref();`],
+  { encoding: 'utf8', windowsHide: true });
   return Number(maker.stdout.trim());
 }
 
@@ -3420,7 +3420,7 @@ const STRAY = [
   "import { fileURLToPath } from 'node:url';",
   'const [role, dir] = process.argv.slice(2);',
   'writeFileSync(`${dir}/${role}.pid`, String(process.pid));',
-  "if (role === 'two') spawn(process.execPath, [fileURLToPath(import.meta.url), 'three', dir], { detached: true, stdio: 'ignore' }).unref();",
+  "if (role === 'two') spawn(process.execPath, [fileURLToPath(import.meta.url), 'three', dir], { detached: true, stdio: 'ignore', windowsHide: true }).unref();",
   'const bound = Date.now() + 120000;',
   'while (Date.now() < bound && !existsSync(`${dir}/release`)) await new Promise((done) => setTimeout(done, 100));',
   '',
@@ -3431,8 +3431,8 @@ const MAKE_STRAYS = [
   "import { spawn } from 'node:child_process';",
   "import { resolve } from 'node:path';",
   'const dir = process.argv[2];',
-  "spawn(process.execPath, [resolve('_fixtures/stray.mjs'), 'one', dir], { detached: true, stdio: 'ignore' }).unref();",
-  "spawn(process.execPath, ['_fixtures/stray.mjs', 'two', dir], { detached: true, stdio: 'ignore' }).unref();",
+  "spawn(process.execPath, [resolve('_fixtures/stray.mjs'), 'one', dir], { detached: true, stdio: 'ignore', windowsHide: true }).unref();",
+  "spawn(process.execPath, ['_fixtures/stray.mjs', 'two', dir], { detached: true, stdio: 'ignore', windowsHide: true }).unref();",
   '',
 ].join('\n');
 
@@ -3449,7 +3449,7 @@ function strayGate(dir: string): string {
     "  mkdirSync('_fixtures', { recursive: true });",
     `  writeFileSync('_fixtures/stray.mjs', ${JSON.stringify(STRAY)});`,
     `  writeFileSync('_fixtures/make.mjs', ${JSON.stringify(MAKE_STRAYS)});`,
-    "  spawnSync(process.execPath, ['_fixtures/make.mjs', dir], { stdio: 'ignore' });",
+    "  spawnSync(process.execPath, ['_fixtures/make.mjs', dir], { stdio: 'ignore', windowsHide: true });",
     '  while (!existsSync(`${dir}/release`)) await new Promise((done) => setTimeout(done, 25));',
     '}',
     "console.log(`${process.argv[2]} ran`);",

@@ -115,7 +115,7 @@ public sealed class GitDoorsProcessTests : IDisposable
 
     private static string Backend()
     {
-        var (exit, output, _) = RunAsync(new ProcessStartInfo("git", "--exec-path") { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false })
+        var (exit, output, _) = RunAsync(new ProcessStartInfo("git", "--exec-path") { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false, CreateNoWindow = true })
             .GetAwaiter().GetResult();
         Assert.Equal(0, exit);
         return Path.Combine(output.Trim(), "git-http-backend.exe");
@@ -375,7 +375,7 @@ public sealed class GitDoorsProcessTests : IDisposable
         var tip = await CommitAsync("the person's own");
 
         // The terminal's block: the tools' variables alone, over the person's own environment.
-        var info = new ProcessStartInfo("git") { WorkingDirectory = Work, UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true };
+        var info = new ProcessStartInfo("git") { WorkingDirectory = Work, UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true };
         foreach (var word in new[] { "push", "origin", "main" }) info.ArgumentList.Add(word);
         foreach (var (name, value) in Tools.ChildEnvironment(Tools.Read(Home), Home, Environment.GetEnvironmentVariable("PATH"))) info.Environment[name] = value;
         info.Environment["GIT_CONFIG_NOSYSTEM"] = "1";

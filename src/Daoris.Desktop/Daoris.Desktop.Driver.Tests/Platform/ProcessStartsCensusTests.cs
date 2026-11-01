@@ -303,6 +303,40 @@ public sealed class ProcessStartsCensusTests
         Assert.True(bare.Count == 0, "the file manager opened on the caller's thread:\n" + string.Join('\n', bare));
     }
 
+    /// <summary>
+    /// Every console program the driver, its tests, the devkit and the service start hides its window (CONSOLEWINDOWS1): a parent with
+    /// no console of its own (the merge queue's detached runner) gives each one a visible window on the owner's screen otherwise.
+    /// </summary>
+    [Fact]
+    public void Every_console_start_hides_its_window_but_the_ones_named_with_their_reason()
+    {
+        var sources = NoConsoleStarts.Read(NoConsoleStarts.Src(), "Daoris.Desktop/Daoris.Desktop.Driver", "Daoris.Desktop/Daoris.Desktop.Driver.Host",
+            "Daoris.Desktop/Daoris.Desktop.Driver.Tests", "Daoris.Devkit", "Daoris.Service").ToList();
+        var (problems, starts) = NoConsoleStarts.Scan(sources);
+
+        Assert.True(starts >= 20, $"expected to find the projects' starts, found {starts}");
+        Assert.True(problems.Count == 0, string.Join('\n', problems));
+        Assert.Empty(NoConsoleStarts.Stale(sources));
+    }
+
+    /// <summary>A start with no window hidden fails; each way of hiding it, and each named exemption, passes.</summary>
+    [Fact]
+    public void A_console_start_without_CreateNoWindow_fails_the_census()
+    {
+        var start = "var i = new ProcessStartInfo(\"git\") { UseShellExecute = false";
+        Assert.Single(NoConsoleStarts.Scan([("Daoris.Desktop/X.cs", start + " };")]).Problems);
+        Assert.Empty(NoConsoleStarts.Scan([("Daoris.Desktop/X.cs", start + ", CreateNoWindow = true };")]).Problems);
+        Assert.Empty(NoConsoleStarts.Scan([("Daoris.Desktop/X.cs", start + " };\ni.CreateNoWindow = true;")]).Problems);
+        Assert.Empty(NoConsoleStarts.Scan([("Daoris.Desktop/X.cs", start + " }; TestGit.Past(i);")]).Problems);
+        Assert.Empty(NoConsoleStarts.Scan([("Daoris.Desktop/X.cs", "var i = new ProcessStartInfo(\"x\");")]).Problems);
+        Assert.Single(NoConsoleStarts.Scan([("Daoris.Desktop/X.cs", "var i = new ProcessStartInfo(\"x\") { UseShellExecute = true };")]).Problems);
+        Assert.Empty(NoConsoleStarts.Scan([(NoConsoleStarts.Shell.Keys.First(), "var i = new ProcessStartInfo(\"x\") { UseShellExecute = true };")]).Problems);
+        var kept = NoConsoleStarts.Windows.Keys.First();
+        var marked = "// console-window: why\n" + start + ", CreateNoWindow = false };";
+        Assert.Empty(NoConsoleStarts.Scan([(kept, marked)]).Problems);
+        Assert.Single(NoConsoleStarts.Scan([("Daoris.Desktop/X.cs", marked)]).Problems);
+    }
+
     /// <summary>Every production source of the desktop's projects, by its path under the desktop folder, comments read out.</summary>
     private static IEnumerable<(string File, string Source)> Sources()
     {

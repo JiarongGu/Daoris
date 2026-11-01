@@ -471,7 +471,7 @@ test('a project created mid-run joins, and the platform shows it (D44)', async (
   const cli = join(repoRoot, 'src', 'Daoris.Cli', 'bin', 'daoris.mjs');
   mkdirSync(newcomer, { recursive: true });
   writeFileSync(join(newcomer, 'README.md'), '# newcomer\n\nBorn during the test run.\n');
-  execSync(`node "${cli}" init`, { cwd: newcomer });
+  execSync(`node "${cli}" init`, { cwd: newcomer, windowsHide: true });
   const manifestPath = join(newcomer, 'daoris.json');
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as { domain: unknown };
   manifest.domain = {
@@ -480,10 +480,11 @@ test('a project created mid-run joins, and the platform shows it (D44)', async (
     accepts: ['a first quest'],
   };
   writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
-  execSync(`node "${cli}" sync`, { cwd: newcomer });
-  execSync(`node "${cli}" check`, { cwd: newcomer });
+  execSync(`node "${cli}" sync`, { cwd: newcomer, windowsHide: true });
+  execSync(`node "${cli}" check`, { cwd: newcomer, windowsHide: true });
   execSync(`node "${cli}" connect`, {
     cwd: newcomer,
+    windowsHide: true,
     env: { ...process.env, DAORIS_SERVICE_URL: 'http://localhost:5196' },
   });
 

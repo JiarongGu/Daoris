@@ -181,7 +181,7 @@ test('the asks of the knowledge server are counted, before the first edit and in
 test('it runs on transcript files, says which it could not read, and prints JSON when asked', () => {
   const fx = makeFixture('orient-report-run');
   const file = fx.write('a1b2c3.output', SESSION);
-  const run = (...args: string[]) => spawnSync(process.execPath, [toolPath, ...args], { encoding: 'utf8' });
+  const run = (...args: string[]) => spawnSync(process.execPath, [toolPath, ...args], { encoding: 'utf8', windowsHide: true });
 
   const text = run(file);
   assert.equal(text.status, 0, text.stderr);
@@ -467,7 +467,7 @@ test('the home\'s report says what it read, each session in characters, then eac
 
 test('it runs on a home, narrowed by repository and date, prints JSON when asked, and refuses what it cannot read', () => {
   const fx = home();
-  const run = (...args: string[]) => spawnSync(process.execPath, [toolPath, ...args], { encoding: 'utf8' });
+  const run = (...args: string[]) => spawnSync(process.execPath, [toolPath, ...args], { encoding: 'utf8', windowsHide: true });
 
   const text = run('--home', fx.root);
   assert.equal(text.status, 0, text.stderr);

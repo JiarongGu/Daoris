@@ -23,8 +23,8 @@ test('a tool reached through a junction still knows it is the one being run', ()
   const linked = join(fx.root, 'linked');
   symlinkSync(real, linked, 'junction');
 
-  const direct = spawnSync(process.execPath, [join(real, 'probe.mjs')], { encoding: 'utf8' });
-  const through = spawnSync(process.execPath, [join(linked, 'probe.mjs')], { encoding: 'utf8' });
+  const direct = spawnSync(process.execPath, [join(real, 'probe.mjs')], { encoding: 'utf8', windowsHide: true });
+  const through = spawnSync(process.execPath, [join(linked, 'probe.mjs')], { encoding: 'utf8', windowsHide: true });
 
   assert.equal(direct.stdout.trim(), 'ran', direct.stderr);
   assert.equal(through.stdout.trim(), 'ran', through.stderr);

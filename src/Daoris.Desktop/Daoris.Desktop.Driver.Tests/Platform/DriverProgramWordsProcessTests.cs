@@ -78,7 +78,7 @@ public sealed class DriverProgramWordsProcessTests(DriverProgramWordsProcessTest
 
     private static (int Code, string Out, string Error) Run(string file, IEnumerable<string> words, IDictionary<string, string?>? environment)
     {
-        var info = new ProcessStartInfo(file) { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false };
+        var info = new ProcessStartInfo(file) { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false, CreateNoWindow = true };
         foreach (var word in words) info.ArgumentList.Add(word);
         if (environment is not null)
         {

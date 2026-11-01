@@ -40,7 +40,7 @@ public sealed class SessionProcessesProcessTests : IDisposable
 
     private Process Holding()
     {
-        var process = Process.Start(new ProcessStartInfo("node", ["-e", "setTimeout(() => {}, 60000)"]) { UseShellExecute = false })!;
+        var process = Process.Start(new ProcessStartInfo("node", ["-e", "setTimeout(() => {}, 60000)"]) { UseShellExecute = false, CreateNoWindow = true })!;
         _spawned.Add(process);
         return process;
     }

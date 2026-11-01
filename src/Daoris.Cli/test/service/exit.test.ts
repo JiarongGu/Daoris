@@ -22,7 +22,7 @@ const entry = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'bin', '
 /** Runs the real entry point in a child process and returns its exit code and what it wrote. */
 function runEntry(args: string[], env: Record<string, string>): Promise<{ code: number | null; out: string; err: string }> {
   return new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, [entry, ...args], { env: { ...process.env, ...env }, stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = spawn(process.execPath, [entry, ...args], { env: { ...process.env, ...env }, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
     let out = '';
     let err = '';
     child.stdout.on('data', (chunk) => { out += chunk; });

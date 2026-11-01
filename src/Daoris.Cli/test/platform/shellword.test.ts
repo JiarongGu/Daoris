@@ -59,15 +59,15 @@ function install(root: string): NodeJS.ProcessEnv {
 function shells(line: string, cwd: string, env: NodeJS.ProcessEnv): { shell: string; out: string; code: number | null }[] {
   const ran = (shell: string, result: ReturnType<typeof spawnSync>) =>
     ({ shell, out: `${result.stdout ?? ''}${result.stderr ?? ''}${result.error?.message ?? ''}`, code: result.status });
-  if (process.platform !== 'win32') return [ran('sh', spawnSync('sh', ['-c', line], { cwd, env, encoding: 'utf8' }))];
+  if (process.platform !== 'win32') return [ran('sh', spawnSync('sh', ['-c', line], { cwd, env, encoding: 'utf8', windowsHide: true }))];
   return [
     // Command Prompt finds `daoris.cmd` by PATHEXT; PowerShell 5.1 finds it too, and hands it its arguments itself.
     ran('cmd', spawnSync(env.ComSpec ?? 'cmd.exe', [`/d /s /c "${line}"`], {
-      cwd, env, encoding: 'utf8', windowsVerbatimArguments: true,
+      cwd, env, encoding: 'utf8', windowsVerbatimArguments: true, windowsHide: true,
     })),
     ran('powershell', spawnSync('powershell.exe', [
       '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', Buffer.from(line, 'utf16le').toString('base64'),
-    ], { cwd, env, encoding: 'utf8' })),
+    ], { cwd, env, encoding: 'utf8', windowsHide: true })),
   ];
 }
 

@@ -15,6 +15,7 @@ const folder = dirname(fileURLToPath(import.meta.url));
 function start(t, data, home) {
   const child = spawn('node', [join(folder, 'plugin.mjs')], {
     cwd: folder,
+    windowsHide: true,
     env: { ...process.env, DAORIS_PLUGIN_WORLD: '', DAORIS_PLUGIN_ID: 'local-preview', DAORIS_PLUGIN_FOLDER: folder, DAORIS_PLUGIN_DATA: data, DAORIS_HOME: home },
   });
   const gone = new Promise((resolveGone) => child.on('close', resolveGone));

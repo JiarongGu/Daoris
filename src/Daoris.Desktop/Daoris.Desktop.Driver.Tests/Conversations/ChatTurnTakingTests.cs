@@ -25,6 +25,7 @@ public sealed class ChatTurnTakingTests
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
+            CreateNoWindow = true,
         };
         info.ArgumentList.Add("-e");
         info.ArgumentList.Add(listening
