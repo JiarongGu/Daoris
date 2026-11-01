@@ -100,7 +100,8 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         // the person's press, whatever access the room has (D205 point 9's no `settings_*` grant, extended to roles).
         text.Append("- `role_propose`: add, change or remove a role of this machine's role catalogue, as Agents →\n");
         text.Append("  Roles → Working roles does: `set` with the role's names, the work it takes, its scope and its choices (a field left\n");
-        text.Append("  out keeps the role's own), `remove`, or `default` to give a seeded role back its seed. A removed role's work\n");
+        text.Append("  out keeps the role's own), `remove`, `default` to give a seeded role back its seed, or `default-all` (id `*`) to give\n");
+        text.Append("  every seeded role back its seed and keep the added ones. A removed role's work\n");
         text.Append("  waits until a role takes it; running work goes on. It is the person's Apply alone, whatever access you have.\n");
         // SESSUX1h2b (D126 §5.2, §5.3): Sessions' Archive, Archive what ended… and Unarchive, judged as the list judges them. A stop
         // is the session's own conversation, which a go reaches (D161's SESSUX1h1 note).

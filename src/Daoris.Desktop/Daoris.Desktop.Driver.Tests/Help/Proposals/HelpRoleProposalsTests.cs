@@ -72,6 +72,22 @@ public sealed class HelpRoleProposalsTests : HelpProposalsFixture, IDisposable
         Assert.Equal([new ActorChoice("claude-code", "sonnet", "high")], plan.Role.Choices);
     }
 
+    /// <summary>DEFAULTCONFIG1b's <i>Restore all role defaults</i>: <c>default-all</c> names no role, so the target and a revision read are not its.</summary>
+    [Fact]
+    public void Every_seeded_role_given_back_its_seed_names_no_role_and_its_card_says_the_terminal_twin()
+    {
+        RoleDoor.Apply(Staffing, RoleChange.Remove("intake"));
+
+        var plan = HelpProposals.Plan(Role("default-all", "*", """{ "revision": 0 }"""), DriverConfig.Empty, Machine);
+
+        Assert.Null(plan.Refusal);
+        Assert.IsType<RoleChange.DefaultAllRoles>(plan.Role!.Change);
+        Assert.Null(plan.Role.Read);
+        Assert.Equal("daoris driver role default --all", plan.Terminal);
+        Assert.Contains("Give every seeded role back its seed", plan.Describe);
+        Assert.Contains("added roles are kept", plan.Describe);
+    }
+
     [Fact]
     public void A_change_made_since_the_revision_read_is_refused()
     {

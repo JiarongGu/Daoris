@@ -13,11 +13,11 @@ public sealed class HelpRoleTool(IntakeScope? intake = null, HelpProposalBox? he
         + "Working roles, or `daoris driver role`. A role takes one kind of work (build, design, chat, ask-daoris, intake, help, "
         + "partner, review, brainstorm) on this machine, in a workspace or in a repository, and runs on its ordered choices of agent, "
         + "model and effort. `set` adds a role or changes one (a field left out keeps the role's own), `remove` takes one out (its "
-        + "work then waits until a role takes it; running work goes on), `default` gives a seeded role back its seed. Nothing changes "
+        + "work then waits until a role takes it; running work goes on), `default` gives a seeded role back its seed, and `default-all` every seeded role at once (its id is `*`; added roles are kept). Nothing changes "
         + "until the person presses Apply, whatever access you have: no setting you are granted reaches a role.")]
     public string ProposeRole(
-        [Description("`set`, `remove` or `default`.")] string change,
-        [Description("The role's id: lowercase letters, digits and hyphens, as the catalogue names it (`build`, `designer`).")] string id,
+        [Description("`set`, `remove`, `default` or `default-all`.")] string change,
+        [Description("The role's id: lowercase letters, digits and hyphens, as the catalogue names it (`build`, `designer`); `*` for `default-all`, which names no one role.")] string id,
         [Description("Why: what the person asked. The person decides on this.")] string why,
         [Description("A set's name in English; left out keeps the role's own.")] string? name_en = null,
         [Description("A set's name in Chinese; left out keeps the role's own.")] string? name_zh = null,

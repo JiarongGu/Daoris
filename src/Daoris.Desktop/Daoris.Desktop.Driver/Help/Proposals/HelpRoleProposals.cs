@@ -4,7 +4,8 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// Ask Daoris's <c>role</c> proposal (FOUNDATION1y-i, the foundation design §2.7; O2-11): a working role of the role catalogue added or
-/// changed (<c>set</c>), removed (<c>remove</c>) or given back its seed (<c>default</c>), by the role's id, its file's own <c>press</c>
+/// changed (<c>set</c>), removed (<c>remove</c>) or given back its seed (<c>default</c>), or every seeded role at once (<c>default-all</c>,
+/// DEFAULTCONFIG1b's <i>Restore all role defaults</i>, naming no one role), by the role's id, its file's own <c>press</c>
 /// carrying the record's fields, the choices and the revision Ask Daoris read. It is judged by the role door's judge, the one
 /// <c>SET_ROLE</c> and <c>daoris driver role</c> answer, and applied only by the person's press, through that door, in both modes: no
 /// <c>settings_*</c> grant reaches a role (D205 point 9). It extends what MODELROLE1h's <c>actor_propose</c> would be: a <c>set</c> of a
@@ -17,7 +18,7 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
 
     public string Tool => "role_propose";
 
-    public IReadOnlyList<string> Doors { get; } = ["set", "remove", "default"];
+    public IReadOnlyList<string> Doors { get; } = ["set", "remove", "default", "default-all"];
 
     public HelpProposal Read(HelpProposal proposal, JsonElement file) =>
         proposal with { RolePress = file.TryGetProperty("press", out var press) && press.ValueKind == JsonValueKind.Object ? press.Clone() : null };
@@ -34,8 +35,9 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
     {
         static HelpPlan Refused(string why) => new(why, "", "", null);
-        if (!Doors.Contains(proposal.Door, StringComparer.Ordinal)) return Refused($"`{proposal.Door}` is not a role's change — `set`, `remove` or `default`.");
-        if (proposal.Target?.Trim() is not { Length: > 0 } id) return Refused("a role's change names the role, as the role catalogue lists it.");
+        if (!Doors.Contains(proposal.Door, StringComparer.Ordinal)) return Refused($"`{proposal.Door}` is not a role's change — `set`, `remove`, `default` or `default-all`.");
+        var all = proposal.Door == "default-all";
+        if ((all ? RoleChange.DefaultAll().Id : proposal.Target?.Trim()) is not { Length: > 0 } id) return Refused("a role's change names the role, as the role catalogue lists it.");
         if (facts.Home is not { } home) return Refused("this machine's role catalogue was not read, so nothing is proposed.");
 
         RoleCatalog catalogue;
@@ -49,7 +51,7 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
         }
 
         var press = proposal.RolePress;
-        long? read = press is { } given && given.TryGetProperty("revision", out var revision) && revision.TryGetInt64(out var number) ? number : null;
+        long? read = !all && press is { } given && given.TryGetProperty("revision", out var revision) && revision.TryGetInt64(out var number) ? number : null;
         if (read is { } seen && catalogue.RevisionOf(id) != seen)
         {
             return Refused($"the role `{id}` changed since it was read (revision {seen}, now {catalogue.RevisionOf(id)}); read the catalogue again.");
@@ -62,6 +64,7 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
         {
             case "remove": change = RoleChange.Remove(id); break;
             case "default": change = RoleChange.Default(id); break;
+            case "default-all": change = RoleChange.DefaultAll(); break;
             default:
                 var name = press is { } named && named.TryGetProperty("name", out var names) && names.ValueKind == JsonValueKind.Object ? names : default;
                 var takes = press is { } work && work.TryGetProperty("takes", out var works) && works.ValueKind == JsonValueKind.Array
@@ -105,6 +108,7 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
             + (choices is null ? ", its choices kept." : choices.Count == 0 ? ", off." : $", on {Choices(choices)}.")
             + " Running work goes on; new work takes it.",
         RoleChange.RemoveRole => $"Remove the role `{change.Id}`: a work no role then takes waits until one is given it; running work goes on.",
+        RoleChange.DefaultAllRoles => "Give every seeded role back its seed: the roles as Daoris first had them, their choices kept; added roles are kept.",
         _ => $"Give `{change.Id}` back its seed: the role as Daoris first had it, its choices kept.",
     };
 
@@ -115,6 +119,7 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
             + $"--scope {(role.Scope.Kind == RoleScope.Machine ? RoleScope.Machine : $"{role.Scope.Kind}:{role.Scope.Id}")}"
             + string.Concat((choices ?? []).Select(choice => $" \"{choice.Agent} {choice.Model ?? "-"} {choice.Effort ?? "-"}\"")),
         RoleChange.RemoveRole => $"daoris driver role remove {change.Id}",
+        RoleChange.DefaultAllRoles => "daoris driver role default --all",
         _ => $"daoris driver role default {change.Id}",
     };
 
