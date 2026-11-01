@@ -1,21 +1,30 @@
-import type { TFunction, i18n as I18n } from 'i18next';
-import { type ReactNode, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { type KeyboardEvent, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Flow } from '../../design/Flow';
-import { Button, CheckField, Inline, Pill, Prose, SelectField, SkeletonRows } from '../../design/ui';
+import { Button, Drawer, Inline, Prose, SkeletonRows } from '../../design/ui';
+import { useWidth } from '../../design/useWidth';
+import { isComposing } from '../../lib/composing';
 import { useDebounced } from '../../lib/useDebounced';
+import { registerOpenDraft } from '../../help/openDraft';
 import { sentence } from '../../locales/format';
-import { type DrawnNode, type DrawnWire, type DrawOptions, graphFlow, type GraphFlow, isHoldKind, kindTitle } from '../graphFlow';
-import { presetName } from './presetWords';
+import { EDIT_EVENT } from '../../menus/editing';
+import { isTextField } from '../../menus/press';
+import type { ChartEdit } from '../chart/FlowChart';
+import { isHoldKind } from '../graphFlow';
 import type {
-  EditorRole, GraphProblem, WorkflowListAnswer, WorkflowPaletteAnswer, WorkflowSaveAnswer, WorkflowSaveAsk, WorkflowScopeRow, WorkflowShownAnswer,
+  EditorRole, GraphProblem, WorkflowListAnswer, WorkflowPaletteAnswer, WorkflowSaveAnswer, WorkflowSaveAsk, WorkflowShownAnswer,
   WorkflowUseAnswer, WorkflowUseAsk,
 } from './answers';
+import { type Begin, draftFlow, EditCanvas } from './EditCanvas';
+import { refusalSaid, rowSaid, stepTitle } from './editWords';
 import {
-  addStep, addWire, choiceOf, type DraftNode, type DraftWire, draftOf, emptyDraft, entriesOf, type GraphDraft, graphOf, inputsOf, leavesOf, onChoices,
-  outcomesOf, outputsOf, removeStep, removeWire, setEnd, setOption, stepChoices, type WireAsk,
+  canInsertOn, type Clip, commit, connect, copySteps, draftOf, duplicateStep, emptyDraft, entriesOf, type GraphDraft, graphOf, historyOf,
+  type InsertAt, insertStep, joinOf, moveInChain, movePlan, pasteSteps, redo, removeStep, removeWire, retarget, type StepChoice, targetsOf,
+  undo, type WayRowKey, workflowIdFor,
 } from './graphDraft';
-import { StepOptions } from './StepOptions';
+import { type Confirming, Inspector, type InspectorActs } from './Inspector';
+import { presetName } from './presetWords';
+import { type SaveTarget, SaveReview } from './SaveReview';
+import { StepPicker } from './StepPicker';
 
 /** What the step editor's bridge hands it (`bridge/repositories/workflowEdit.ts`): the reads, the roles, the judge, the save and the choice. */
 export type WorkflowEditorBridge = {
@@ -47,152 +56,423 @@ export type WorkflowEditorProps = WorkflowEditorBridge & {
   place: { repository: string } | { workspace: string };
   /** The steps it opens on, a graph as a version holds it, and the saved workflow and version they are, where they are one. */
   startFrom?: { graph: unknown; id?: string; name?: string; base?: number | null };
+  /** The route and the pipeline the place opened it for, where the caller knows them: Ask Daoris is told them with the draft. */
+  route?: string | null;
+  pipeline?: 'development' | 'verification' | null;
   onClose?: () => void;
 };
 
 /** How long a change holds still before it is judged: each judge is a planned save, and typing a name is many changes. */
 const JUDGE_MS = 250;
 
-/** The id a draft is judged under before the person names one: a plan writes nothing, so it only has to be an id. */
+/** The id a draft is judged under before it has one: a plan writes nothing, so it only has to be an id. */
 const DRAFT_ID = 'draft';
 
-const EMPTY = ':empty';
-const DEFAULT = 'default:';
-const SAVED = 'saved:';
+/** The editor's region holds the chart and the inspector side by side from 64rem (the flowchart design §2, §8.8); else a drawer. */
+const BESIDE = 64 * 16;
 
-const plain = (text: string) => text.replace(/`/g, '');
+/** The id the drawing gives the folded holds, by their first step (`graphFlow`). */
+const HOLDS = 'holds:';
 
-/** A refusal in the reader's words, or the driver's where this page has none for its code (a rule newer than the page). */
-const refusalSaid = (t: TFunction, i18n: I18n, problem: GraphProblem) =>
-  i18n.exists(`workflow.edit.refusal.${problem.code}`) ? t(`workflow.edit.refusal.${problem.code}`) : problem.words;
+/** The focus asked for the first step that can take the way being chosen. */
+const PICKABLE = ':pickable';
 
-/** How a wire goes on, said without its target: the drawing's edge cause and the *How it goes on* choice. */
-function howSaid(t: TFunction, wire: Pick<DraftWire, 'kind' | 'outcome' | 'on'>): string {
-  switch (wire.kind) {
-    case 'when': return t('workflow.edit.on.outcome', { outcome: wire.outcome ?? '' });
-    case 'back': return wire.on === 'rejected' ? t('workflow.edit.on.rejected') : wire.on === 'failed' ? t('workflow.edit.on.failed')
-      : t('workflow.edit.on.outcome', { outcome: wire.on ?? '' });
-    case 'after': case 'trigger': case 'data': case 'failed': case 'rejected': return t(`workflow.edit.how.${wire.kind}`);
-    default: return t('workflow.edit.how.recorded', { kind: wire.kind });
-  }
-}
+/** The focus asked back for the control the picker was opened from. */
+const RETURN = ':return';
 
-/** A way on, said with its target: *The landing, once it is reached*; *Back to The work, when you ask for changes*. */
-function waySaid(t: TFunction, wire: DraftWire, to: string): string {
-  switch (wire.kind) {
-    case 'after': case 'trigger': case 'failed': case 'rejected': return t(`workflow.edit.way.${wire.kind}`, { to });
-    case 'when': return t('workflow.edit.way.when', { to, outcome: wire.outcome ?? '' });
-    case 'data': return t('workflow.edit.way.data', { to, from: wire.fromPort ?? '', input: wire.toPort ?? '' });
-    case 'back': return wire.on === 'rejected' || wire.on === 'failed'
-      ? t(`workflow.edit.way.back.${wire.on}`, { to }) : t('workflow.edit.way.back.outcome', { to, outcome: wire.on ?? '' });
-    default: return t('workflow.edit.way.recorded', { to, kind: wire.kind });
-  }
-}
+/** One step of the editor's history: the draft, and the words of the change that made it. */
+type Snapshot = { draft: GraphDraft; said: string };
 
-/** The draft drawn through the one drawing (`graphFlow`): each step a node, each way on between two of them an edge, in the editor's words. */
-function draftFlow(t: TFunction, i18n: I18n, draft: GraphDraft, holds: DrawOptions['holds']): GraphFlow {
-  const nodes = draft.nodes.map((node): DrawnNode => ({
-    id: node.id, kind: node.kind, title: plain(kindTitle(t, i18n, node.kind)), outcomes: outcomesOf(node),
-  }));
-  const wires = draft.wires.filter((wire) => wire.from !== null).map((wire): DrawnWire => ({
-    id: wire.id, kind: wire.kind, from: wire.from!, to: wire.to, outcome: wire.outcome, on: wire.on, says: plain(howSaid(t, wire)),
-  }));
-  return graphFlow(t, { nodes, wires, entries: entriesOf(draft), end: draft.end }, { label: t('workflow.edit.drawing'), holds });
-}
+/** A way being chosen on the chart: the step and the row it leaves by. */
+type Choosing = { from: string; row: WayRowKey };
 
-/** What the person is saving to: a new workflow's id and name, or a saved one's id and the version the change is made against. */
-type Target = { id: string; name: string; base: number | null };
+type Said = { saved: WorkflowSaveAnswer | null; used: WorkflowUseAnswer | null; failed: string | null };
+const QUIET: Said = { saved: null, used: null, failed: null };
 
-const NEW: Target = { id: '', name: '', base: null };
+/** What the save is aimed at, and the id a new one was copied from (a preset's, or a saved workflow's). */
+type Target = SaveTarget & { from: string | null };
 
 /**
- * **The step editor** (WORKFLOWEDIT1b; D173's notes of 2026-11-01): a workflow composed as its steps, from one of Daoris's defaults, a
- * version saved here or nothing. Each step comes from the palette, so a kind added to the driver is offered with no change here; each
- * says where it goes on, by a kind of way the palette lets leave it, its options and the role that takes it. The draft is drawn on the
- * flow canvas and judged as it changes, by a planned save, each refusal said at the step or the way on it names. Saved, a new workflow
- * or a version appended against the one read with the places it reaches authorized, it is chosen here by *Use here*.
+ * **The workflow editor** (WORKFLOWEDIT1b; FLOWCHART2b, D223 §3): a workflow composed on its chart. A step is added by a way's ＋, a ◎'s,
+ * its + key or the picker; a way's target is chosen in the selected step's *What happens next*, by a drag from a port or by picking on the
+ * chart, and its kind is what the row and the target give, never named. A step moves within its chain, is duplicated, copied and pasted,
+ * and removed alone or joined; every change is one step of history, undone and redone by the Edit menu and its keys, and said aloud.
+ * Each change is judged by a planned save, each refusal said with a door to its step. The inspector stands beside the chart where the
+ * editor's region holds both, and in a drawer where it does not.
  *
- * A molecule: the answers arrive as props, the draft is page state, and every press goes out.
+ * A molecule: the answers arrive as props, the draft and its history are page state, and every press goes out.
  */
-export function WorkflowEditor({
-  list, palette, error, roles, shown, onShow, judged, judging, onJudge, saving, onSave, using, onUse, place, startFrom, onClose,
-}: WorkflowEditorProps) {
+export function WorkflowEditor(props: WorkflowEditorProps) {
+  const { t } = useTranslation();
+  const region = useRef<HTMLDivElement>(null);
+  const width = useWidth(region);
+  const { list, palette, error } = props;
+  return (
+    <div ref={region} data-editor-region="" className="min-w-0">
+      {palette && list
+        ? <Composing {...props} list={list} palette={palette} wide={width !== undefined && width >= BESIDE} />
+        : (
+          <div aria-busy={!error || undefined} className="grid gap-2">
+            <Prose className="text-small">{error ? t('workflow.edit.unread', { why: sentence(error) }) : t('workflow.edit.reading')}</Prose>
+            {!error && <SkeletonRows rows={3} />}
+          </div>
+        )}
+    </div>
+  );
+}
+
+/** The editor once its reads are answered, told whether its region holds the inspector beside the chart. */
+function Composing({
+  list, palette, roles, shown, onShow, judged, judging, onJudge, saving, onSave, using, onUse, place, startFrom, route = null, pipeline = null,
+  onClose, wide,
+}: WorkflowEditorProps & { list: WorkflowListAnswer; palette: WorkflowPaletteAnswer; wide: boolean }) {
   const { t, i18n } = useTranslation();
   const headId = useId();
-  const [source, setSource] = useState(startFrom?.id ? `${SAVED}${startFrom.id}` : EMPTY);
+  const inspectorId = useId();
+  const region = useRef<HTMLElement>(null);
+  // Where the focus goes back to when the picker is given up: a dialog with no trigger of its own gives back none.
+  const returnTo = useRef<HTMLElement | null>(null);
+
+  const [history, setHistory] = useState(() => historyOf<Snapshot>({ draft: startFrom ? draftOf(startFrom.graph) : emptyDraft(), said: '' }));
+  const draft = history.present.draft;
+  const [chosen, setChosen] = useState<string | null>(null);
+  const [drawer, setDrawer] = useState(false);
+  const [picker, setPicker] = useState<InsertAt | null>(null);
+  const [choosing, setChoosing] = useState<Choosing | null>(null);
+  const [confirming, setConfirming] = useState<Confirming>(null);
+  const [clip, setClip] = useState<Clip | null>(null);
+  const [heard, setHeard] = useState('');
   const [waiting, setWaiting] = useState<string | null>(null);
-  const [draft, setDraft] = useState<GraphDraft>(() => (startFrom ? draftOf(startFrom.graph) : emptyDraft()));
-  const [target, setTarget] = useState<Target>(() =>
-    (startFrom ? { id: startFrom.id ?? '', name: startFrom.name ?? '', base: startFrom.base ?? null } : NEW));
+  const [target, setTarget] = useState<Target>(() => ({
+    id: startFrom?.id ?? '', name: startFrom?.name ?? '', base: startFrom ? startFrom.base ?? null : null, from: startFrom?.id ?? null,
+  }));
   const [authorized, setAuthorized] = useState(false);
   const [holdsOpen, setHoldsOpen] = useState(false);
-  const [said, setSaid] = useState<{ saved: WorkflowSaveAnswer | null; used: WorkflowUseAnswer | null; failed: string | null }>(
-    { saved: null, used: null, failed: null });
+  const [said, setSaid] = useState<Said>(QUIET);
+  const [focusing, setFocusing] = useState<{ at: string; n: number } | null>(null);
 
-  // A saved version, once its answer lands; a version of steps (schema 1) is no graph to compose, and leaves the draft as it was.
+  const selected = chosen !== null && draft.nodes.some((node) => node.id === chosen) ? chosen : null;
+
+  // A saved version to begin from, once its answer lands; a version of steps (schema 1) is no graph to compose, and leaves the draft as it was.
   useEffect(() => {
     if (waiting === null || shown?.id !== waiting) return;
     setWaiting(null);
-    if (shown.schema === 2) {
-      setDraft(draftOf(shown.body));
-      setTarget({ id: shown.id, name: shown.name, base: shown.version });
-    }
-  }, [waiting, shown]);
+    if (shown.schema !== 2) return;
+    const words = t('workflow.edit.said.began', { name: shown.name });
+    setHistory((was) => commit(was, { draft: draftOf(shown.body), said: words }));
+    setHeard(words);
+    setTarget({ id: shown.id, name: shown.name, base: shown.version, from: shown.id });
+  }, [waiting, shown, t]);
 
-  // Each change judged once it holds still, as the driver would save it.
+  // The focus a change asks for, given once the dialogs it closed have let theirs go: a step by its id, the first that can take the way
+  // being chosen, or the control the picker was opened from.
+  useEffect(() => {
+    if (!focusing) return undefined;
+    const timer = window.setTimeout(() => {
+      if (focusing.at === RETURN) {
+        if (returnTo.current?.isConnected) returnTo.current.focus();
+        return;
+      }
+      const nodes = [...(region.current?.querySelectorAll<HTMLElement>('[data-flow-node]') ?? [])];
+      const found = focusing.at === PICKABLE ? nodes.find((node) => node.dataset.picking === 'true') : nodes.find((node) => node.dataset.flowNode === focusing.at);
+      found?.focus();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [focusing]);
+  const focusOn = (at: string) => setFocusing((was) => ({ at, n: (was?.n ?? 0) + 1 }));
+
+  // Each change judged once it holds still, as the driver would save it, under the id it would be saved as.
   const graph = useMemo(() => graphOf(draft), [draft]);
+  const newId = workflowIdFor(target.name, target.from, list?.workflows.map((each) => each.id) ?? []);
+  const saveId = target.base === null ? newId : target.id;
   const ask = useMemo((): WorkflowSaveAsk => ({
-    id: target.id.trim() || DRAFT_ID, graph, ...(target.base === null ? {} : { base: target.base }),
-  }), [graph, target.id, target.base]);
+    id: saveId || DRAFT_ID, graph, ...(target.base === null ? {} : { base: target.base }),
+  }), [graph, saveId, target.base]);
   const settled = useDebounced(ask, JUDGE_MS);
   const judge = useRef(onJudge);
   judge.current = onJudge;
   useEffect(() => { if ((settled.graph as { nodes: unknown[] }).nodes.length > 0) judge.current(settled); }, [settled]);
 
-  if (!palette || !list) {
-    return (
-      <div aria-busy={!error || undefined} className="grid gap-2">
-        <Prose className="text-small">{error ? t('workflow.edit.unread', { why: sentence(error) }) : t('workflow.edit.reading')}</Prose>
-        {!error && <SkeletonRows rows={3} />}
-      </div>
-    );
-  }
+  // Edit's undo, redo, copy and paste, heard as the event the menu sends a region with a history of its own.
+  const menu = useRef<Partial<Record<string, () => void>>>({});
+  useEffect(() => {
+    const element = region.current;
+    if (!element) return undefined;
+    const hear = (event: Event) => {
+      const run = menu.current[(event as CustomEvent<{ act?: string }>).detail?.act ?? ''];
+      if (!run) return;
+      event.preventDefault();
+      run();
+    };
+    element.addEventListener(EDIT_EVENT, hear);
+    return () => element.removeEventListener(EDIT_EVENT, hear);
+  }, []);
 
-  const choices = stepChoices(palette);
-  const titleOf = (node: DraftNode) => kindTitle(t, i18n, node.kind);
-  const nodeNamed = (id: string) => draft.nodes.find((node) => node.id === id);
-  const titleById = (id: string) => (nodeNamed(id) ? plain(titleOf(nodeNamed(id)!)) : id);
-  const change = (next: GraphDraft) => { setDraft(next); setSaid({ saved: null, used: null, failed: null }); };
+  const nodeOf = (id: string) => draft.nodes.find((node) => node.id === id);
+  const titleOf = (id: string) => {
+    const node = nodeOf(id);
+    return node ? stepTitle(t, i18n, palette, node) : id;
+  };
+  const wireOf = (id: string) => draft.wires.find((wire) => wire.id === id);
 
-  const problems = draft.nodes.length > 0 && judged ? judged.problems ?? [] : [];
-  const nodeIds = new Set(draft.nodes.map((node) => node.id));
-  const wireIds = new Set(draft.wires.map((wire) => wire.id));
-  const atNode = (id: string) => problems.filter((problem) => problem.node === id && !(problem.wire && wireIds.has(problem.wire)));
-  const atWire = (id: string) => problems.filter((problem) => problem.wire === id);
-  const general = problems.filter((problem) => !(problem.wire && wireIds.has(problem.wire)) && !(problem.node && nodeIds.has(problem.node)));
-
-  const chooseSource = (value: string) => {
-    setSource(value);
-    setAuthorized(false);
-    setSaid({ saved: null, used: null, failed: null });
-    if (value.startsWith(SAVED)) {
-      const id = value.slice(SAVED.length);
-      setWaiting(id);
-      onShow(id);
-      return;
-    }
-    onShow(null);
-    setWaiting(null);
-    const preset = value.startsWith(DEFAULT) ? list.presets.find((each) => each.id === value.slice(DEFAULT.length)) : undefined;
-    setDraft(preset ? draftOf(preset.body) : emptyDraft());
-    setTarget({ ...NEW, name: preset ? presetName(t, i18n, preset) : '' });
+  /** One change: a step of history, said aloud, and what it made stale let go. */
+  const change = (next: GraphDraft, words: string) => {
+    setHistory((was) => commit(was, { draft: next, said: words }));
+    setHeard(words);
+    setSaid(QUIET);
+    setConfirming(null);
+  };
+  const undoChange = () => {
+    if (history.past.length === 0) return;
+    setHeard(t('workflow.edit.said.undone', { what: history.present.said }));
+    setHistory(undo);
+    setChoosing(null);
+    setConfirming(null);
+    setSaid(QUIET);
+  };
+  const redoChange = () => {
+    const next = history.future[0];
+    if (!next) return;
+    setHeard(t('workflow.edit.said.redone', { what: next.said }));
+    setHistory(redo);
+    setChoosing(null);
+    setConfirming(null);
+    setSaid(QUIET);
   };
 
-  const scopes: WorkflowScopeRow[] = target.base !== null && judged?.appended ? judged.scopes : [];
+  // The drawing's nodes as the draft's steps: a step is itself, the folded holds their run of steps from the first, a ◎ none.
+  const holdsRun = (id: string): string[] => {
+    const first = id.slice(HOLDS.length);
+    const count = flow?.nodes.find((node) => node.id === id)?.step?.group?.count ?? 1;
+    const run = [first];
+    while (run.length < count) {
+      const on = draft.wires.find((wire) => wire.from === run[run.length - 1] && wire.kind === 'after');
+      if (!on) break;
+      run.push(on.to);
+    }
+    return run;
+  };
+  const stepsAt = (id: string): string[] => (nodeOf(id) ? [id] : id.startsWith(HOLDS) ? holdsRun(id) : []);
+
+  const words = (from: string, row: WayRowKey, to: string) => t('workflow.edit.said.way', { row: rowSaid(t, row), from: titleOf(from), to: titleOf(to) });
+  const select = (id: string) => {
+    setChosen(id);
+    setConfirming(null);
+    if (!wide) setDrawer(true);
+  };
+  const openPicker = (at: InsertAt) => {
+    returnTo.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setChoosing(null);
+    setPicker(at);
+  };
+  const closePicker = () => {
+    setPicker(null);
+    focusOn(RETURN);
+  };
+  const closeDrawer = () => {
+    setDrawer(false);
+    if (selected) focusOn(selected);
+  };
+  const pickedStep = (choice: StepChoice) => {
+    const at = picker;
+    setPicker(null);
+    if (!at) return;
+    const made = insertStep(palette, draft, choice, at);
+    if (made.draft === draft) return;
+    change(made.draft, t('workflow.edit.said.added', { step: stepTitle(t, i18n, palette, choice) }));
+    setDrawer(false);
+    setChosen(made.id);
+    focusOn(made.id);
+  };
+  const afterOf = (id: string): InsertAt => {
+    if (id.startsWith(HOLDS)) return { after: holdsRun(id).at(-1)! };
+    const none = /^(.+):none:(.+)$/.exec(id);
+    return none ? { from: none[1]!, row: `outcome:${none[2]!}` } : { after: id };
+  };
+
+  // Choosing a way's target on the chart: only the steps that can take it are offered, and the focus goes to the first.
+  const choose = (from: string, row: WayRowKey) => {
+    const offered = targetsOf(palette, draft, from, row);
+    const named = { row: rowSaid(t, row), step: titleOf(from) };
+    if (offered.length === 0) { setHeard(t('workflow.edit.pick.none', named)); return; }
+    setDrawer(false);
+    setConfirming(null);
+    if (choosing?.from === from && choosing.row === row) return;
+    setChoosing({ from, row });
+    setHeard(t('workflow.edit.pick.started', { ...named, count: offered.length }));
+    focusOn(PICKABLE);
+  };
+  const takers = new Set(choosing ? targetsOf(palette, draft, choosing.from, choosing.row).map((each) => each.id) : []);
+  // The folded holds take a way by their first step, the one a way into the group reaches.
+  const takerAt = (id: string) => {
+    const first = stepsAt(id)[0];
+    return first !== undefined && takers.has(first) ? first : null;
+  };
+  const take = (id: string) => {
+    if (!choosing) return;
+    const to = takerAt(id);
+    const made = to === null ? null : connect(palette, draft, choosing.from, choosing.row, to);
+    if (!made || to === null) return;
+    change(made.draft, words(choosing.from, choosing.row, to));
+    setChoosing(null);
+  };
+  const giveUp = () => {
+    if (!choosing) return;
+    const from = choosing.from;
+    setChoosing(null);
+    setHeard(t('workflow.edit.pick.cancelled'));
+    focusOn(from);
+  };
+
+  const remove = (id: string, options: { join: boolean; end?: string }) => {
+    const join = options.join ? joinOf(draft, id) : null;
+    const before = draft.wires.find((wire) => wire.to === id && wire.from !== null && wire.kind !== 'back')?.from ?? null;
+    change(removeStep(draft, id, options), join
+      ? t('workflow.edit.said.joined', { step: titleOf(id), from: titleOf(join.from), to: titleOf(join.to) })
+      : t('workflow.edit.said.removed', { step: titleOf(id) }));
+    setChosen(null);
+    setDrawer(false);
+    const next = join?.from ?? before ?? draft.nodes.find((node) => node.id !== id)?.id;
+    if (next) focusOn(next);
+  };
+  const duplicate = (id: string) => {
+    const made = duplicateStep(draft, id);
+    change(made.draft, t('workflow.edit.said.duplicated', { step: titleOf(id) }));
+    setChosen(made.id);
+    setDrawer(false);
+    focusOn(made.id);
+  };
+  const copy = (id: string | null) => {
+    if (id === null) return;
+    setClip(copySteps(draft, stepsAt(id)));
+    setHeard(t('workflow.edit.said.copied', { step: titleOf(id) }));
+  };
+  const paste = () => {
+    if (!clip || clip.nodes.length === 0) { setHeard(t('workflow.edit.said.nothingCopied')); return; }
+    const made = pasteSteps(draft, clip);
+    const steps = clip.nodes.map((node) => stepTitle(t, i18n, palette, node)).join(t('workflow.listJoin'));
+    change(made.draft, t('workflow.edit.said.pasted', { steps, dropped: made.dropped }));
+    setChosen(made.ids[0] ?? null);
+    focusOn(made.ids[0] ?? '');
+  };
+  const askMove = (id: string, dir: 'earlier' | 'later') => {
+    if (!movePlan(draft, id, dir)) { setHeard(t('workflow.edit.move.cannot')); return; }
+    setChosen(id);
+    setConfirming(dir);
+    if (!wide) setDrawer(true);
+  };
+  const askRemove = (id: string) => {
+    setChosen(id);
+    setConfirming('remove');
+    if (!wide) setDrawer(true);
+  };
+  menu.current = { undo: undoChange, redo: redoChange, copy: () => copy(selected), paste };
+
+  // The keys (D223 §3): undo and redo outside a field; on a step, + or Insert to add a step after it, / for the picker, Delete to remove,
+  // Alt+↑ and Alt+↓ to move within its chain, Ctrl+C and Ctrl+V to copy and paste. A key aimed at a field is the field's own.
+  const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (isComposing(event) || event.defaultPrevented) return;
+    const aimed = event.target as HTMLElement;
+    if (isTextField(aimed) || aimed.closest('[role="listbox"], [role="option"]')) return;
+    const ctrl = event.ctrlKey || event.metaKey;
+    const key = event.key.toLowerCase();
+    const run = (act: () => void) => { event.preventDefault(); act(); };
+    if (ctrl && key === 'z') { run(event.shiftKey ? redoChange : undoChange); return; }
+    if (ctrl && key === 'y') { run(redoChange); return; }
+    if (ctrl && key === 'v') { run(paste); return; }
+    const at = aimed.closest<HTMLElement>('[data-flow-node]')?.dataset.flowNode;
+    if (event.key === '/' && !ctrl) { run(() => openPicker(selected ? { after: selected } : { free: true })); return; }
+    if (!at || choosing) return;
+    const own = stepsAt(at);
+    if (ctrl && key === 'c') run(() => copy(at));
+    else if ((event.key === '+' || event.key === 'Insert') && !ctrl) run(() => openPicker(afterOf(at)));
+    else if (event.key === 'Delete' && own.length === 1) run(() => askRemove(own[0]!));
+    else if (event.altKey && (event.key === 'ArrowUp' || event.key === 'ArrowDown') && own.length === 1) {
+      run(() => askMove(own[0]!, event.key === 'ArrowUp' ? 'earlier' : 'later'));
+    }
+  };
+
+  // The judgement: each refusal at the step or the way it names, and a door from the head to that step.
+  const problems = draft.nodes.length > 0 && judged && !judged.done ? judged.problems ?? [] : [];
+  const stepOf = (problem: GraphProblem): string | null => {
+    const wire = problem.wire ? wireOf(problem.wire) : undefined;
+    if (wire?.from && nodeOf(wire.from)) return wire.from;
+    return problem.node && nodeOf(problem.node) ? problem.node : null;
+  };
+  // Ask Daoris is told the draft open here (FLOWCHART2d; D223 §8.3), registered while the editor is mounted and let go when it closes.
+  const placeName = 'repository' in place ? place.repository : place.workspace;
+  const source = target.base !== null ? `${target.id}@v${target.base}` : target.from ? `preset:${target.from}` : 'new';
+  const problemsKey = JSON.stringify(problems);
+  useEffect(() => registerOpenDraft({
+    place: placeName, graph, workflow: saveId || null, base: target.base, source, route, pipeline, selected,
+    problems: JSON.parse(problemsKey) as GraphProblem[],
+  }), [placeName, graph, saveId, target.base, source, route, pipeline, selected, problemsKey]);
+
+  const atStep = (id: string) => problems.filter((problem) => problem.node === id && !(problem.wire && wireOf(problem.wire)));
+  const atWire = (id: string) => problems.filter((problem) => problem.wire === id);
+  const holdRefused = draft.nodes.some((node) => isHoldKind(node.kind) && problems.some((problem) => stepOf(problem) === node.id));
+
+  const flow = draft.nodes.length > 0
+    ? draftFlow(t, i18n, palette, draft, { open: holdsOpen || holdRefused, toggle: () => setHoldsOpen((was) => !was) }, select)
+    : null;
+
+  const edit: ChartEdit = {
+    selected,
+    onSelect: (id) => (choosing ? take(id) : select(id)),
+    insertOn: (edge) => {
+      const wire = wireOf(edge.id);
+      if (!wire || wire.from === null || !canInsertOn(draft, wire.id)) return null;
+      return { label: t('workflow.edit.insert.between', { from: titleOf(wire.from), to: titleOf(wire.to) }), onPress: () => openPicker({ on: wire.id }) };
+    },
+    insertAt: (node) => {
+      const none = /^(.+):none:(.+)$/.exec(node.id);
+      if (!none) return null;
+      return {
+        label: t('workflow.edit.insert.at', { from: titleOf(none[1]!), outcome: none[2]! }),
+        onPress: () => openPicker({ from: none[1]!, row: `outcome:${none[2]!}` }),
+      };
+    },
+    onPort: (from, outcome) => choose(from, `outcome:${outcome}`),
+    onGround: () => { if (choosing) openPicker({ from: choosing.from, row: choosing.row }); },
+    pick: choosing ? { key: `${choosing.from}\n${choosing.row}`, can: (id) => takerAt(id) !== null, onPick: take, onCancel: giveUp } : null,
+  };
+
+  const placeSaid = (at: InsertAt): string => {
+    const between = (id: string) => {
+      const wire = wireOf(id)!;
+      return t('workflow.edit.picker.between', { from: titleOf(wire.from!), to: titleOf(wire.to) });
+    };
+    if ('on' in at) return between(at.on);
+    if ('after' in at) {
+      const on = draft.wires.filter((wire) => wire.from === at.after && wire.kind === 'after');
+      return on.length === 1 && canInsertOn(draft, on[0]!.id) ? between(on[0]!.id) : t('workflow.edit.picker.after', { from: titleOf(at.after) });
+    }
+    if ('from' in at) {
+      const row = at.row.startsWith('outcome:') ? 'outcome' : at.row;
+      return t(`workflow.edit.picker.at.${row}`, { from: titleOf(at.from), outcome: at.row.slice('outcome:'.length) });
+    }
+    return t('workflow.edit.picker.free');
+  };
+
+  const begin = (from: Begin) => {
+    if ('saved' in from) {
+      setWaiting(from.saved.id);
+      onShow(from.saved.id);
+      return;
+    }
+    const name = presetName(t, i18n, from.preset);
+    const next = draftOf(from.preset.body);
+    change(next, t('workflow.edit.said.began', { name }));
+    setTarget({ id: '', name: '', base: null, from: from.preset.id });
+    const first = entriesOf(next)[0] ?? next.nodes[0]?.id;
+    if (first) focusOn(first);
+  };
+
+  const scopes = target.base !== null && judged?.appended ? judged.scopes : [];
   const save = async () => {
     try {
       const answer = await onSave({
-        id: target.id.trim(), graph,
+        id: saveId, graph,
         ...(target.base === null ? (target.name.trim() ? { name: target.name.trim() } : {}) : { base: target.base }),
         ...(authorized && scopes.length > 0 ? { authorize: scopes.map((scope) => scope.key) } : {}),
       });
@@ -215,75 +495,52 @@ export function WorkflowEditor({
     }
   };
 
-  // A refusal at one of the declared holds opens their group, so its step is in view.
-  const holdRefused = draft.nodes.some((node) => isHoldKind(node.kind) && atNode(node.id).length > 0);
-  const flow = draft.nodes.length > 0
-    ? draftFlow(t, i18n, draft, { open: holdsOpen || holdRefused, toggle: () => setHoldsOpen((was) => !was) })
-    : null;
+  const node = selected ? nodeOf(selected) ?? null : null;
+  const acts = (id: string): InspectorActs => ({
+    onChange: change,
+    onTarget: (row, wire, to) => {
+      if (to === null) {
+        change(removeWire(draft, wire.id), t('workflow.edit.said.wayRemoved', { row: rowSaid(t, row), from: titleOf(id), to: titleOf(wire.to) }));
+        return;
+      }
+      const next = retarget(palette, draft, wire.id, to);
+      if (next) change(next, words(id, row, to));
+    },
+    onAdd: (row, to) => {
+      const made = connect(palette, draft, id, row, to);
+      if (made) change(made.draft, words(id, row, to));
+    },
+    onPick: (row) => choose(id, row),
+    onNew: (row) => openPicker({ from: id, row }),
+    onInsert: (wire) => openPicker({ on: wire.id }),
+    onAfter: () => openPicker({ after: id }),
+    onMove: (dir) => {
+      const next = moveInChain(draft, id, dir);
+      if (next) change(next, t('workflow.edit.said.moved', { step: titleOf(id) }));
+    },
+    onDuplicate: () => duplicate(id),
+    onCopy: () => copy(id),
+    onRemove: (options) => remove(id, options),
+  });
+  const inspector = node && (
+    <Inspector palette={palette} draft={draft} roles={roles} node={node} titleOf={titleOf}
+      problems={{ atStep: atStep(node.id), atWire }} confirming={confirming} onConfirm={setConfirming} acts={acts(node.id)} />
+  );
 
   return (
-    <section aria-labelledby={headId} className="grid min-w-0 gap-4">
+    <section ref={region} data-edit-history="" aria-labelledby={headId} onKeyDown={onKeyDown} className="grid min-w-0 gap-4">
       <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <h3 id={headId} className="m-0 text-title font-semibold text-ink">{t('workflow.edit.title')}</h3>
-        {onClose && <Button variant="ghost" onClick={onClose}>{t('common.cancel')}</Button>}
+        <div className="flex flex-wrap gap-1.5">
+          <Button variant="ghost" className="border border-line" onClick={() => openPicker(selected ? { after: selected } : { free: true })}>
+            {t('workflow.edit.add.open')}
+          </Button>
+          <Button variant="ghost" className="border border-line" disabled={history.past.length === 0} onClick={undoChange}>{t('workflow.edit.undo')}</Button>
+          <Button variant="ghost" className="border border-line" disabled={history.future.length === 0} onClick={redoChange}>{t('workflow.edit.redo')}</Button>
+          {onClose && <Button variant="ghost" onClick={onClose}>{t('common.cancel')}</Button>}
+        </div>
       </div>
       <Prose className="text-small">{t('workflow.edit.body')}</Prose>
-
-      <div className="grid min-w-0 gap-1">
-        <span className="text-meta text-ink-soft">{t('workflow.edit.source.label')}</span>
-        <SelectField
-          ariaLabel={t('workflow.edit.source.label')}
-          value={source}
-          onChange={chooseSource}
-          options={[
-            { value: EMPTY, label: t('workflow.edit.source.empty') },
-            ...list.presets.filter((preset) => preset.graph && preset.body).map((preset) => ({
-              value: `${DEFAULT}${preset.id}`, label: presetName(t, i18n, preset), group: t('workflow.edit.source.defaults'),
-            })),
-            ...list.workflows.filter((saved) => saved.schema === 2 && !saved.problem).map((saved) => ({
-              value: `${SAVED}${saved.id}`, group: t('workflow.edit.source.saved'),
-              label: t('workflow.edit.source.savedVersion', { name: saved.name ?? saved.id, version: saved.versions.at(-1) ?? 1 }),
-            })),
-          ]}
-        />
-        {waiting && <p className="m-0 text-meta text-ink-faint">{t('workflow.edit.source.loading', { id: waiting })}</p>}
-      </div>
-
-      {flow && <Flow label={flow.label} nodes={flow.nodes} edges={flow.edges} entries={flow.entries} sections={flow.sections} track={flow.track} />}
-
-      {draft.nodes.length === 0 && <Prose className="text-small">{t('workflow.edit.none')}</Prose>}
-      <ol aria-label={t('workflow.edit.steps')} className="m-0 grid list-none gap-3 p-0">
-        {draft.nodes.map((node) => (
-          <Step
-            key={node.id}
-            node={node}
-            draft={draft}
-            palette={palette}
-            roles={roles}
-            title={titleOf(node)}
-            titleById={titleById}
-            problems={atNode(node.id)}
-            wireProblems={atWire}
-            onChange={change}
-          />
-        ))}
-      </ol>
-
-      <div className="grid min-w-0 gap-1">
-        <span className="text-meta text-ink-soft">{t('workflow.edit.add.label')}</span>
-        {/* Drawn again with each step added, so the choice reads as a press and the same kind can be added twice. */}
-        <SelectField
-          key={draft.nodes.length}
-          ariaLabel={t('workflow.edit.add.label')}
-          value=""
-          placeholder={t('workflow.edit.add.label')}
-          onChange={(kind) => { const choice = choices.find((each) => each.kind === kind); if (choice) change(addStep(draft, choice).draft); }}
-          options={choices.map((choice) => ({
-            value: choice.kind, label: plain(kindTitle(t, i18n, choice.kind)),
-            group: choice.plugin ? t('workflow.edit.add.plugin', { plugin: choice.plugin }) : t('workflow.edit.add.daoris'),
-          }))}
-        />
-      </div>
 
       {draft.nodes.length > 0 && (
         <div aria-live="polite" className="grid min-w-0 gap-1">
@@ -291,246 +548,62 @@ export function WorkflowEditor({
             : judged?.done ? <p className="m-0 text-small text-ink">{t('workflow.edit.judge.holds')}</p>
               : judged ? (
                 <>
-                  <p className="m-0 text-small text-ink">{t('workflow.edit.judge.refused')}</p>
-                  {general.length > 0
-                    ? <ul className="m-0 grid list-disc gap-1 pl-5">{general.map((problem, at) => <Refusal key={at} problem={problem} />)}</ul>
-                    : judged.message && <Prose className="text-small"><Inline text={judged.message} /></Prose>}
+                  <p className="m-0 text-small text-ink">{t('workflow.edit.problems.count', { count: problems.length })}</p>
+                  {problems.length > 0 ? (
+                    <ul className="m-0 grid list-none gap-0.5 p-0">
+                      {problems.map((problem, at) => {
+                        const step = stepOf(problem);
+                        const refused = refusalSaid(t, i18n, problem);
+                        return (
+                          <li key={at} className="min-w-0 text-small">
+                            {step
+                              ? (
+                                <button type="button" onClick={() => { select(step); focusOn(step); }}
+                                  className="cursor-pointer border-0 bg-transparent p-0 text-left text-ink-danger underline-offset-2 hover:underline">
+                                  {t('workflow.edit.problems.at', { step: titleOf(step), words: refused })}
+                                </button>
+                              )
+                              : <span className="text-ink-danger"><Inline text={refused} /></span>}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  ) : judged.message && <Prose className="text-small"><Inline text={judged.message} /></Prose>}
                 </>
               ) : null}
         </div>
       )}
 
-      <div className="grid min-w-0 gap-2 border-t border-line pt-3">
-        <h4 className="m-0 text-small font-semibold text-ink">{t('workflow.edit.save.title')}</h4>
-        {target.base === null ? (
-          <div className="flex min-w-0 flex-wrap gap-3">
-            <TextField label={t('workflow.edit.save.id')} hint={t('workflow.edit.save.idHint')} value={target.id}
-              onChange={(id) => setTarget((was) => ({ ...was, id }))} />
-            <TextField label={t('workflow.edit.save.name')} value={target.name} onChange={(name) => setTarget((was) => ({ ...was, name }))} />
-          </div>
-        ) : (
-          <Prose className="text-small">{t('workflow.edit.save.appendSays', { version: target.base + 1, id: target.id })}</Prose>
-        )}
-        {scopes.length > 0 && (
-          <div className="grid min-w-0 gap-1">
-            <p className="m-0 text-small text-ink">{t('workflow.edit.save.reach')}</p>
-            <ul className="m-0 grid list-disc gap-0.5 pl-5 text-small text-ink-soft">
-              {scopes.map((scope) => <li key={scope.key}>{scopeSaid(t, scope)}</li>)}
-            </ul>
-            <CheckField checked={authorized} onChange={setAuthorized} label={t('workflow.edit.save.authorize')} />
-          </div>
-        )}
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <Button disabled={saving || draft.nodes.length === 0 || !target.id.trim()} onClick={() => void save()}>
-            {saving ? t('workflow.edit.save.saving')
-              : target.base === null ? t('workflow.edit.save.new') : t('workflow.edit.save.append', { version: target.base + 1 })}
-          </Button>
-          {target.base !== null && (
-            <Button variant="ghost" className="border border-line" disabled={using} onClick={() => void use()}>
-              {using ? t('workflow.edit.using') : t('workflow.edit.use')}
-            </Button>
-          )}
-        </div>
-        {said.saved?.message && <Prose className="text-small"><Inline text={said.saved.message} /></Prose>}
-        {said.used?.message && <Prose className="text-small"><Inline text={said.used.message} /></Prose>}
-        {said.failed && <Prose className="text-small"><Inline text={said.failed} /></Prose>}
+      <div className={wide ? 'grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(18rem,26rem)] items-start gap-6' : 'grid min-w-0 gap-4'}>
+        <EditCanvas flow={flow} selected={selected} edit={edit} list={list} waiting={waiting} onBegin={begin} />
+        {wide && (node
+          ? (
+            <section aria-labelledby={inspectorId} className="grid min-w-0 gap-3 rounded-card border border-line bg-raised p-3">
+              <h4 id={inspectorId} className="m-0 text-body font-semibold text-ink">{titleOf(node.id)}</h4>
+              {inspector}
+            </section>
+          )
+          : <p className="m-0 text-small text-ink-soft">{t('workflow.edit.inspector.none')}</p>)}
       </div>
-    </section>
-  );
-}
 
-/** A place an append reaches, in words. */
-function scopeSaid(t: TFunction, scope: WorkflowScopeRow): string {
-  const place = t(`workflow.edit.save.place.${scope.level}`, { name: scope.name });
-  return scope.kind ? t('workflow.edit.save.place.kind', { place, kind: scope.kind }) : place;
-}
-
-/** A refusal in the reader's words, the driver's beneath where its code is one this page words. */
-function Refusal({ problem }: { problem: GraphProblem }) {
-  const { t, i18n } = useTranslation();
-  const worded = i18n.exists(`workflow.edit.refusal.${problem.code}`);
-  return (
-    <li className="text-small text-ink">
-      {worded ? refusalSaid(t, i18n, problem) : <Inline text={problem.words} />}
-      {worded && <p className="m-0 text-meta text-ink-faint"><Inline text={t('workflow.edit.judge.driver', { words: problem.words })} /></p>}
-    </li>
-  );
-}
-
-function TextField({ label, hint, value, onChange }: { label: string; hint?: string; value: string; onChange: (value: string) => void }) {
-  const id = useId();
-  return (
-    <div className="grid min-w-0 gap-1">
-      <label htmlFor={id} className="text-meta text-ink-soft">{label}</label>
-      <input
-        id={id}
-        className="min-h-[1.9rem] min-w-0 rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
-        value={value}
-        aria-describedby={hint ? `${id}-hint` : undefined}
-        onChange={(event) => onChange(event.target.value)}
+      <SaveReview
+        target={target}
+        id={newId}
+        onName={(name) => setTarget((was) => ({ ...was, name }))}
+        scopes={scopes}
+        authorized={authorized}
+        onAuthorize={setAuthorized}
+        empty={draft.nodes.length === 0}
+        saving={saving}
+        using={using}
+        said={said}
+        onSave={() => void save()}
+        onUse={() => void use()}
       />
-      {hint && <span id={`${id}-hint`} className="text-meta text-ink-faint"><Inline text={hint} /></span>}
-    </div>
-  );
-}
 
-/**
- * One step of the draft: its title and id, where the work ends, its refusals, its options, the ways it goes on with theirs, and the
- * form that adds a way on, offering only what the palette lets leave it.
- */
-function Step({ node, draft, palette, roles, title, titleById, problems, wireProblems, onChange }: {
-  node: DraftNode;
-  draft: GraphDraft;
-  palette: WorkflowPaletteAnswer;
-  roles: EditorRole[];
-  title: string;
-  titleById: (id: string) => string;
-  problems: GraphProblem[];
-  wireProblems: (wire: string) => GraphProblem[];
-  onChange: (draft: GraphDraft) => void;
-}) {
-  const { t } = useTranslation();
-  const headId = useId();
-  const choice = choiceOf(palette, node.kind);
-  const ways = draft.wires.filter((wire) => wire.from === node.id);
-  const name = plain(title);
-
-  return (
-    <li aria-labelledby={headId} data-step={node.id} className="grid min-w-0 gap-2 rounded-card border border-line bg-raised p-3">
-      <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <div className="flex min-w-0 flex-wrap items-baseline gap-2">
-          <h4 id={headId} className="m-0 text-body font-semibold text-ink"><Inline text={title} /></h4>
-          <code className="text-meta text-ink-faint">{node.id}</code>
-          {draft.end === node.id && <Pill tone="neutral">{t('workflow.edit.step.ends')}</Pill>}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {draft.end !== node.id && (
-            <Button variant="ghost" className="border border-line" aria-label={t('workflow.edit.step.endHereNamed', { step: name })}
-              onClick={() => onChange(setEnd(draft, node.id))}>
-              {t('workflow.edit.step.endHere')}
-            </Button>
-          )}
-          <Button variant="ghost" className="border border-line" aria-label={t('workflow.edit.step.removeNamed', { step: name })}
-            onClick={() => onChange(removeStep(draft, node.id))}>
-            {t('workflow.edit.step.remove')}
-          </Button>
-        </div>
-      </div>
-      {problems.length > 0 && <ul className="m-0 grid list-disc gap-1 pl-5">{problems.map((problem, at) => <Refusal key={at} problem={problem} />)}</ul>}
-
-      {choice && (
-        <StepOptions node={node} fields={choice.options} roleTakes={choice.roleTakes} roles={roles}
-          onSet={(option, value) => onChange(setOption(draft, node.id, option, value))} />
-      )}
-
-      <div className="grid min-w-0 gap-1">
-        <span className="text-meta text-ink-soft">{t('workflow.edit.step.goesOn')}</span>
-        {ways.length === 0 ? <p className="m-0 text-small text-ink-faint">{t('workflow.edit.step.nowhere')}</p> : (
-          <ul aria-label={t('workflow.edit.step.goesOn')} className="m-0 grid list-none gap-1 p-0">
-            {ways.map((wire) => (
-              <li key={wire.id} className="grid min-w-0 gap-0.5">
-                <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
-                  <span className="text-small text-ink"><Inline text={waySaid(t, wire, titleById(wire.to))} /></span>
-                  <Button variant="ghost" className="border border-line"
-                    aria-label={t('workflow.edit.way.removeNamed', { from: name, way: plain(waySaid(t, wire, titleById(wire.to))) })}
-                    onClick={() => onChange(removeWire(draft, wire.id))}>
-                    {t('workflow.edit.way.remove')}
-                  </Button>
-                </div>
-                {wireProblems(wire.id).length > 0 && (
-                  <ul className="m-0 grid list-disc gap-1 pl-5">{wireProblems(wire.id).map((problem, at) => <Refusal key={at} problem={problem} />)}</ul>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      {/* Drawn again whenever the ways change, so a way added leaves the form as it first was. */}
-      <WayForm key={draft.wires.length} node={node} draft={draft} palette={palette} name={name} titleById={titleById}
-        onAdd={(ask) => onChange(addWire(draft, ask))} />
-    </li>
-  );
-}
-
-/** The form that adds a way on from a step: how, to which step, and a decision's outcome, a way back's `on` or a data wire's ports. */
-function WayForm({ node, draft, palette, name, titleById, onAdd }: {
-  node: DraftNode;
-  draft: GraphDraft;
-  palette: WorkflowPaletteAnswer;
-  name: string;
-  titleById: (id: string) => string;
-  onAdd: (ask: WireAsk) => void;
-}) {
-  const { t } = useTranslation();
-  const leaves = leavesOf(palette, node);
-  const [kind, setKind] = useState(leaves[0] ?? 'after');
-  const [to, setTo] = useState('');
-  const [extra, setExtra] = useState<{ outcome?: string; on?: string; fromPort?: string; toPort?: string }>({});
-  if (leaves.length === 0) return null;
-
-  const target = draft.nodes.find((each) => each.id === to);
-  const ons = onChoices(palette, node);
-  const ready = to !== '' && (kind !== 'when' || Boolean(extra.outcome)) && (kind !== 'back' || Boolean(extra.on))
-    && (kind !== 'data' || (Boolean(extra.fromPort) && Boolean(extra.toPort)));
-  const onSaid = (on: string) => (on === 'rejected' ? t('workflow.edit.on.rejected') : on === 'failed' ? t('workflow.edit.on.failed')
-    : plain(t('workflow.edit.on.outcome', { outcome: on })));
-
-  return (
-    <div className="flex min-w-0 flex-wrap items-end gap-2">
-      <Labelled label={t('workflow.edit.how.label')}>
-        <SelectField ariaLabel={t('workflow.edit.how.label')} value={kind} onChange={(chosen) => { setKind(chosen); setExtra({}); }}
-          options={leaves.map((leaf) => ({ value: leaf, label: plain(t(`workflow.edit.how.${leaf}`, { kind: leaf, defaultValue: t('workflow.edit.how.recorded', { kind: leaf }) })) }))} />
-      </Labelled>
-      <Labelled label={t('workflow.edit.to.label')}>
-        <SelectField ariaLabel={t('workflow.edit.to.label')} value={to} placeholder={t('workflow.edit.to.label')} onChange={(chosen) => { setTo(chosen); setExtra((was) => ({ ...was, toPort: undefined })); }}
-          options={draft.nodes.filter((each) => each.id !== node.id).map((each) => ({
-            value: each.id, label: t('workflow.edit.step.named', { title: titleById(each.id), id: each.id }),
-          }))} />
-      </Labelled>
-      {kind === 'when' && (
-        <Labelled label={t('workflow.edit.outcome.label')}>
-          <SelectField ariaLabel={t('workflow.edit.outcome.label')} value={extra.outcome ?? ''} placeholder={t('workflow.edit.outcome.label')}
-            onChange={(outcome) => setExtra({ outcome })} options={outcomesOf(node).map((outcome) => ({ value: outcome, label: outcome }))} />
-        </Labelled>
-      )}
-      {kind === 'back' && (
-        <Labelled label={t('workflow.edit.on.label')}>
-          <SelectField ariaLabel={t('workflow.edit.on.label')} value={extra.on ?? ''} placeholder={t('workflow.edit.on.label')}
-            onChange={(on) => setExtra({ on })} options={ons.map((on) => ({ value: on, label: onSaid(on) }))} />
-        </Labelled>
-      )}
-      {kind === 'data' && (
-        <>
-          <Labelled label={t('workflow.edit.port.from')}>
-            <SelectField ariaLabel={t('workflow.edit.port.from')} value={extra.fromPort ?? ''} placeholder={t('workflow.edit.port.from')}
-              onChange={(fromPort) => setExtra((was) => ({ ...was, fromPort }))} options={outputsOf(node).map((port) => ({ value: port, label: port }))} />
-          </Labelled>
-          <Labelled label={t('workflow.edit.port.to')}>
-            <SelectField ariaLabel={t('workflow.edit.port.to')} value={extra.toPort ?? ''} placeholder={t('workflow.edit.port.to')}
-              onChange={(toPort) => setExtra((was) => ({ ...was, toPort }))}
-              options={(target ? inputsOf(target) : []).map((port) => ({ value: port, label: port }))} />
-          </Labelled>
-        </>
-      )}
-      <Button
-        variant="ghost"
-        className="border border-line"
-        disabled={!ready}
-        aria-label={t('workflow.edit.way.addNamed', { step: name })}
-        onClick={() => { onAdd({ kind, from: node.id, to, ...extra }); setTo(''); setExtra({}); }}
-      >
-        {t('workflow.edit.way.add')}
-      </Button>
-    </div>
-  );
-}
-
-function Labelled({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="grid min-w-0 gap-1">
-      <span aria-hidden className="text-meta text-ink-soft">{label}</span>
-      {children}
-    </div>
+      <p role="status" aria-live="polite" className="sr-only">{heard}</p>
+      <StepPicker open={picker !== null} palette={palette} place={picker ? placeSaid(picker) : ''} onPick={pickedStep} onClose={closePicker} />
+      {!wide && drawer && node && <Drawer title={titleOf(node.id)} onClose={closeDrawer}>{inspector}</Drawer>}
+    </section>
   );
 }

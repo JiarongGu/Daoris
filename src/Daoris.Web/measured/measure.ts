@@ -26,6 +26,10 @@ export type FlowMeasure = {
   portMisses: string[];
   /** How many times the flow drew its edges (trap 14). */
   drawn: number;
+  /** An editor's ＋ on a way shown (FLOWCHART2b), counted. */
+  inserts: number;
+  /** A ＋ shown over a node, a shown label or another ＋ shown (FLOWCHART2b). */
+  insertOverlaps: string[];
 };
 
 export function measureFlows(): FlowMeasure[] {
@@ -104,6 +108,16 @@ export function measureFlows(): FlowMeasure[] {
       for (const other of labels.slice(index + 1)) if (overlap(label.box, other.box)) overlaps.push(`the labels of ${label.id} and ${other.id} overlap`);
     });
 
+    // An editor's ＋ on a way stands clear of every node, every label shown and every other ＋ shown; one in the rail stands in its row.
+    const inserts = placement === 'rail' ? []
+      : [...pane.querySelectorAll<HTMLElement>('[data-flow-insert][data-shown]')].map((element) => ({ id: element.dataset.flowInsert!, box: boxOf(element) }));
+    const insertOverlaps: string[] = [];
+    inserts.forEach((insert, index) => {
+      for (const node of nodes) if (overlap(insert.box, node.box)) insertOverlaps.push(`the ＋ on ${insert.id} lies over the node ${node.id}`);
+      for (const label of labels) if (overlap(insert.box, label.box)) insertOverlaps.push(`the ＋ on ${insert.id} lies over the label of ${label.id}`);
+      for (const other of inserts.slice(index + 1)) if (overlap(insert.box, other.box)) insertOverlaps.push(`the ＋s on ${insert.id} and ${other.id} overlap`);
+    });
+
     // Crossings, by chunks of each path's samples whose boxes meet first, so a dense graph is counted in time.
     const chunks = paths.map((path) => {
       const out: { from: number; to: number; box: Box }[] = [];
@@ -139,6 +153,7 @@ export function measureFlows(): FlowMeasure[] {
     results.push({
       frame, placement, nodes: nodes.length, paths: paths.length, labels: labels.length, collisions, overlaps, crossings, ported, portMisses,
       drawn: Number(pane.querySelector('[data-drawn]')?.getAttribute('data-drawn') ?? 0),
+      inserts: inserts.length, insertOverlaps,
     });
   }
   return results;

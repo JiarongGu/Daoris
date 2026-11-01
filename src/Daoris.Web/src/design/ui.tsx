@@ -944,6 +944,8 @@ const countDrawer = (by: 1 | -1) => {
 /**
  * The single detail-and-form surface (D41), on Radix Dialog: focus is trapped, ESC and the scrim
  * dismiss, and the list behind it survives. Every pixel is ours; the behaviour is not hand-rolled.
+ * Radix gives the focus back on close only to a `Dialog.Trigger`, which this has none of: a caller
+ * that opens it by state gives the focus back itself, a beat after the close (FLOWCHART2b).
  */
 export function Drawer({ title, meta, onClose, footer, children }: {
   title: string; meta?: ReactNode; onClose: () => void; footer?: ReactNode;

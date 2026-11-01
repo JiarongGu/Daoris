@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type Box, routeInk } from './flowInk';
+import { type Box, type InkLabel, type InkPath, placeInserts, routeInk } from './flowInk';
 import { type FlowShape, layoutFlow } from './flowLayout';
 
 // FLOWCHART2a (D223): a decision's `when` path leaves its own port's box, not a spot spread along the node's edge; a data wire is
@@ -66,5 +66,35 @@ describe('data wires', () => {
     expect(routeInk(layout, 'down', boxes()).some((path) => path.style === 'data')).toBe(false);
     const backwards = routeInk(layout, 'down', boxes(), { data: [{ id: 'd', from: 'end', to: 'find' }] });
     expect(backwards.some((path) => path.id === 'd')).toBe(false);
+  });
+});
+
+// FLOWCHART2b (D223 §6): an editor's ＋ on a way, placed from its path's middle outward where it clears every node, every label shown and
+// every ＋ placed before it, and not shown where it clears none.
+describe('an editor’s ＋ on a way', () => {
+  const ABOVE: Box = { x: 0, y: 0, w: 200, h: 40 };
+  const BELOW: Box = { x: 0, y: 80, w: 200, h: 40 };
+  /** A straight link from one node's foot to the next one's head, 40 px long, sampled each pixel. */
+  const link = (id: string, x = 100): InkPath => ({
+    id, from: 'a', to: 'b', style: 'next', back: false, port: null, d: '', mid: { x, y: 60 },
+    points: Array.from({ length: 41 }, (_, at) => ({ x, y: 40 + at })),
+  });
+  const size = (ids: string[]) => new Map(ids.map((id) => [id, { w: 20, h: 20 }]));
+
+  it('stands at its path\'s middle where that clears the nodes, and moves along it past a label there', () => {
+    expect(placeInserts([link('p')], size(['p']), [ABOVE, BELOW], [])).toEqual([{ id: 'p', x: 100, y: 60, w: 20, h: 20, shown: true }]);
+    const chip: InkLabel = { id: 'p', x: 100, y: 52, w: 30, h: 8, shown: true };
+    const moved = placeInserts([link('p')], size(['p']), [ABOVE, BELOW], [chip])[0]!;
+    expect(moved.shown).toBe(true);
+    expect(moved.y - 10).toBeGreaterThanOrEqual(chip.y + chip.h / 2 + 2);
+  });
+
+  it('takes an empty label as no room, and is not shown where it clears nothing, nor over a ＋ placed before it', () => {
+    const empty: InkLabel = { id: 'p', x: 100, y: 60, w: 8, h: 0, shown: true };
+    expect(placeInserts([link('p')], size(['p']), [ABOVE, BELOW], [empty])[0]!.shown).toBe(true);
+    const tight: Box = { x: 0, y: 46, w: 200, h: 28 };
+    expect(placeInserts([link('p')], size(['p']), [tight], [])[0]!.shown).toBe(false);
+    const [first, second] = placeInserts([link('p'), link('q', 105)], size(['p', 'q']), [ABOVE, BELOW], []);
+    expect([first!.shown, second!.shown]).toEqual([true, false]);
   });
 });
