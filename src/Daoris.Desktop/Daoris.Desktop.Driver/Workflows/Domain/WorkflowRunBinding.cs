@@ -51,6 +51,15 @@ public sealed record WorkflowRunBinding(string Run, string Repository, string Wo
     /// </summary>
     public WorkflowKept? Kept { get; init; }
 
+    /// <summary>
+    /// The role each agent step of the version names (ROLESTEP1b), in the graph's order, as the catalogue read it at the bind. Empty under
+    /// Current, for a version whose steps name none, and for every binding from before, whose steps take their work's own role.
+    /// </summary>
+    public IReadOnlyList<WorkflowStepRole> Roles { get; init; } = [];
+
+    /// <summary>The role the version's first step of <paramref name="kind"/> names; null where it names none.</summary>
+    public WorkflowStepRole? RoleOf(string kind) => Roles.FirstOrDefault(each => each.Kind == kind);
+
     /// <summary>Whether the run follows Current, which every gate reads live, as today (design §2.6).</summary>
     public bool IsCurrent => Workflow == WorkflowSelection.Current;
 
@@ -72,6 +81,12 @@ public sealed record WorkflowRunBinding(string Run, string Repository, string Wo
         };
     }
 }
+
+/// <summary>
+/// The role an agent step names, kept on its run's binding (ROLESTEP1b): the step's node and kind (<c>claimed</c> or <c>opinion</c>), the
+/// role's id as the version names it, and the revision of its record the catalogue held at the bind.
+/// </summary>
+public sealed record WorkflowStepRole(string Step, string Kind, string Role, long Revision);
 
 /// <summary>The person's say-so that a run keeps its workflow (WORKFLOW1f, design §4.4): when, at which door, and their words.</summary>
 /// <param name="Door"><c>terminal</c> or <c>screen</c> (<see cref="ReviewDoors"/>).</param>

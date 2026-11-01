@@ -87,13 +87,14 @@ public static class WorkflowRunStart
         IReadOnlyList<WorkflowStarted> opened, IWorkflowStartWorld world, string home, DriverConfig config,
         IReadOnlyList<WorkflowPlugin> plugins, Func<DateTimeOffset> now, List<string> events, CancellationToken ct, LookSaid? said = null,
         IReadOnlyList<WorkflowBind>? made = null) =>
-        BindAsync(opened, world, WorkflowPorts.Store(home), WorkflowPorts.Runs(home), config, plugins, now, events, ct, said, made);
+        BindAsync(opened, world, WorkflowPorts.Store(home), WorkflowPorts.Runs(home), config, plugins, now, events, ct, said, made, () => RoleCatalog.ReadHome(home));
 
     /// <summary>The look's bind through the ports: what the starts bound, said; then each run that opened in this look and is bound nowhere, bound.</summary>
+    /// <param name="roles">The role catalogue a step's role is judged by (ROLESTEP1b); null judges by the seed's.</param>
     public static async Task BindAsync(
         IReadOnlyList<WorkflowStarted> opened, IWorkflowStartWorld world, IWorkflowStore store, IWorkflowRunStore runs, DriverConfig config,
         IReadOnlyList<WorkflowPlugin> plugins, Func<DateTimeOffset> now, List<string> events, CancellationToken ct, LookSaid? said = null,
-        IReadOnlyList<WorkflowBind>? made = null)
+        IReadOnlyList<WorkflowBind>? made = null, Func<RoleCatalog>? roles = null)
     {
         said ??= LookSaid.None;
         foreach (var bound in made ?? [])
@@ -108,7 +109,7 @@ public static class WorkflowRunStart
         foreach (var start in opened)
         {
             var quest = start.Quest;
-            var bound = await BindOneAsync(start, world, store, runs, config, plugins, now, every, readKept: false, ct).ConfigureAwait(false);
+            var bound = await BindOneAsync(start, world, store, runs, config, plugins, now, every, readKept: false, roles, ct).ConfigureAwait(false);
             if (bound is { Came: WorkflowBindCame.Bound, Binding: { } binding } && Says(binding))
             {
                 events.Add(said.Progress("workflow", WorkflowRunBindings.Said(binding, quest.Id)));
@@ -129,13 +130,37 @@ public static class WorkflowRunStart
     public static Task<WorkflowBind> AtStartAsync(
         WorkflowStarted start, IWorkflowStartWorld world, string home, DriverConfig config, IReadOnlyList<WorkflowPlugin> plugins,
         Func<DateTimeOffset> now, CancellationToken ct) =>
-        AtStartAsync(start, world, WorkflowPorts.Store(home), WorkflowPorts.Runs(home), config, plugins, now, ct);
+        AtStartAsync(start, world, WorkflowPorts.Store(home), WorkflowPorts.Runs(home), config, plugins, now, ct, () => RoleCatalog.ReadHome(home));
 
     /// <summary>The start's bind through the ports.</summary>
+    /// <param name="roles">The role catalogue a step's role is judged by (ROLESTEP1b); null judges by the seed's.</param>
     public static Task<WorkflowBind> AtStartAsync(
         WorkflowStarted start, IWorkflowStartWorld world, IWorkflowStore store, IWorkflowRunStore runs, DriverConfig config,
-        IReadOnlyList<WorkflowPlugin> plugins, Func<DateTimeOffset> now, CancellationToken ct) =>
-        BindOneAsync(start, world, store, runs, config, plugins, now, new Every(), readKept: true, ct);
+        IReadOnlyList<WorkflowPlugin> plugins, Func<DateTimeOffset> now, CancellationToken ct, Func<RoleCatalog>? roles = null) =>
+        BindOneAsync(start, world, store, runs, config, plugins, now, new Every(), readKept: true, roles, ct);
+
+    /// <summary>
+    /// The binding a start's bind would come to now, written nowhere (ROLESTEP1b): its run's kept binding, or the one its first start would
+    /// make, which the start's walk reads its work step's role from before its bind. Null where its work names no run, or the binding cannot
+    /// be read or planned; the bind then says why and holds the start.
+    /// </summary>
+    public static async Task<WorkflowRunBinding?> PlannedAsync(
+        WorkflowStarted start, IWorkflowStartWorld world, string home, DriverConfig config, IReadOnlyList<WorkflowPlugin> plugins,
+        Func<DateTimeOffset> now, CancellationToken ct)
+    {
+        var (store, runs, every) = (WorkflowPorts.Store(home), WorkflowPorts.Runs(home), new Every());
+        try
+        {
+            var run = await RunOfAsync(start.Quest, world, every, ct).ConfigureAwait(false);
+            if (!WorkflowRunBindings.IsRunId(run)) return null;
+            if (runs.Bound(run)) return runs.Read(run);
+            return await PlanAsync(start, run, world, store, config, plugins, now, every, () => RoleCatalog.ReadHome(home), ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (Unbound(error, ct))
+        {
+            return null;
+        }
+    }
 
     /// <summary>What the start's hold says of a bind that was not made.</summary>
     private const string NotBound = "its run was not bound to a workflow, and its quest is taken only once it is";
@@ -146,28 +171,18 @@ public static class WorkflowRunStart
     /// </summary>
     private static async Task<WorkflowBind> BindOneAsync(
         WorkflowStarted start, IWorkflowStartWorld world, IWorkflowStore store, IWorkflowRunStore runs, DriverConfig config,
-        IReadOnlyList<WorkflowPlugin> plugins, Func<DateTimeOffset> now, Every every, bool readKept, CancellationToken ct)
+        IReadOnlyList<WorkflowPlugin> plugins, Func<DateTimeOffset> now, Every every, bool readKept, Func<RoleCatalog>? roles, CancellationToken ct)
     {
         var quest = start.Quest;
         string? run = null;
         try
         {
-            // A chain's first quest has no parent, and names its run without the chain being read.
             run = quest.Id;
-            if (quest.Parent is { Length: > 0 })
-            {
-                every.Quests ??= await world.EveryQuestAsync(ct).ConfigureAwait(false);
-                run = WorkflowRunBindings.RunOf(ReviewGate.ChainOf(every.Quests, quest.Id), quest.To) ?? quest.Id;
-            }
-
+            run = await RunOfAsync(quest, world, every, ct).ConfigureAwait(false);
             if (!WorkflowRunBindings.IsRunId(run)) return new(quest, WorkflowBindCame.None, null, null, null);
             if (runs.Bound(run)) return readKept ? Kept(quest, runs, run) : new(quest, WorkflowBindCame.Already, run, null, null);
 
-            var askId = AskWords.AskOf(quest.From);
-            var ask = askId is null ? null : await world.FindAskAsync(askId, ct).ConfigureAwait(false);
-            // A quest no ask published carries its own choice, made on its page before it started (WORKFLOW1e2).
-            var task = askId is null ? WorkflowRunBindings.TaskOf(quest, every.Quests) : WorkflowRunBindings.TaskOf(ask);
-            var binding = WorkflowRunBindings.Plan(config, store, run, quest.To, start.Workspace, askId, task, plugins, now());
+            var binding = await PlanAsync(start, run, world, store, config, plugins, now, every, roles, ct).ConfigureAwait(false);
             if (!runs.Bind(binding))
             {
                 // Another start of the run bound it first, between the look above and this write (design §8, one first binding): its
@@ -179,11 +194,36 @@ public static class WorkflowRunStart
             world.Chosen(WorkflowLines.Chosen(binding));
             return new(quest, WorkflowBindCame.Bound, run, binding, null);
         }
-        catch (Exception error) when (error is HttpRequestException or System.Text.Json.JsonException or DriverException or IOException
-                                          or UnauthorizedAccessException || (error is OperationCanceledException && !ct.IsCancellationRequested))
+        catch (Exception error) when (Unbound(error, ct))
         {
             return new(quest, WorkflowBindCame.Failed, run, null, readKept ? $"{NotBound}: {error.Message}" : error.Message);
         }
+    }
+
+    /// <summary>The failures a bind is not made on, said and tried again at the next look.</summary>
+    private static bool Unbound(Exception error, CancellationToken ct) =>
+        error is HttpRequestException or System.Text.Json.JsonException or DriverException or IOException or UnauthorizedAccessException
+        || (error is OperationCanceledException && !ct.IsCancellationRequested);
+
+    /// <summary>The run a quest's work is: a chain's first quest has no parent, and names its run without the chain being read.</summary>
+    private static async Task<string> RunOfAsync(QuestView quest, IWorkflowStartWorld world, Every every, CancellationToken ct)
+    {
+        if (quest.Parent is not { Length: > 0 }) return quest.Id;
+        every.Quests ??= await world.EveryQuestAsync(ct).ConfigureAwait(false);
+        return WorkflowRunBindings.RunOf(ReviewGate.ChainOf(every.Quests, quest.Id), quest.To) ?? quest.Id;
+    }
+
+    /// <summary>The binding the run's first start makes now, its task's choice read from its ask, or for a quest no ask published, its own.</summary>
+    private static async Task<WorkflowRunBinding> PlanAsync(
+        WorkflowStarted start, string run, IWorkflowStartWorld world, IWorkflowStore store, DriverConfig config, IReadOnlyList<WorkflowPlugin> plugins,
+        Func<DateTimeOffset> now, Every every, Func<RoleCatalog>? roles, CancellationToken ct)
+    {
+        var quest = start.Quest;
+        var askId = AskWords.AskOf(quest.From);
+        var ask = askId is null ? null : await world.FindAskAsync(askId, ct).ConfigureAwait(false);
+        // A quest no ask published carries its own choice, made on its page before it started (WORKFLOW1e2).
+        var task = askId is null ? WorkflowRunBindings.TaskOf(quest, every.Quests) : WorkflowRunBindings.TaskOf(ask);
+        return WorkflowRunBindings.Plan(config, store, run, quest.To, start.Workspace, askId, task, plugins, now(), roles);
     }
 
     /// <summary>The binding kept for <paramref name="run"/>, read; one that does not read holds the start, since what its take names is not known.</summary>

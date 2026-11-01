@@ -568,6 +568,41 @@ public sealed class ReviewerChoiceTests : IDisposable
         Assert.All(none.Tried, each => Assert.Equal("codex-acp", each.Reviewer));
     }
 
+    /// <summary>
+    /// ROLESTEP1b: the role a workflow's opinion step names gives the rule's reviewers their entries in place of the opinion role's, judged
+    /// where the run's bind judged it, the repository included; one that takes no review holds the choice by its own sentence.
+    /// </summary>
+    [Fact]
+    public async Task The_opinion_step_s_role_chooses_the_reviewer_s_entries_and_one_that_takes_no_review_holds_it()
+    {
+        var config = Config with
+        {
+            Actors = new Dictionary<string, IReadOnlyList<ActorChoice>>
+            {
+                ["opinion"] = [new ActorChoice("codex-acp", "gpt-5")],
+                ["security"] = [new ActorChoice("codex-acp", "o3", "high")],
+                ["builder"] = [new ActorChoice("codex-acp")],
+            },
+        };
+        var catalogue = RoleCatalog.Of(
+        [
+            RoleCatalogTests.Stored(RoleCatalogTests.Working("security", "review", new RoleScope(RoleScope.Repository, "engine")), 2),
+            RoleCatalogTests.Stored(RoleCatalogTests.Working("builder", "build")),
+        ]);
+        var roster = Roster();
+        Task<ReviewerChoice> Choose(string? role) =>
+            ReviewerChoice.ChooseAsync(roster, Rule("codex-acp"), ["claude-code"], config, "work", catalogue: () => catalogue, role: role, repository: "engine");
+
+        Assert.Equal(new ActorEffective("codex-acp", "gpt-5", null, "1"), (await Choose(null)).Effective);
+        Assert.Equal(new ActorEffective("codex-acp", "o3", "high", "1"), (await Choose("security")).Effective);
+
+        var held = await Choose("builder");
+        Assert.False(held.Chosen);
+        Assert.Equal(
+            (Refused, "No second opinion: The role `builder` does not take `review`, so the starts naming it hold until it does: Agents → Roles, or `daoris driver role`."),
+            (held.Code, held.Sentence));
+    }
+
     /// <summary>A cool-off is the account's, so an agent that is cooling holds each of its entries alike and is asked once.</summary>
     [Fact]
     public async Task A_cooling_agent_holds_each_of_its_entries_alike_and_is_asked_once()

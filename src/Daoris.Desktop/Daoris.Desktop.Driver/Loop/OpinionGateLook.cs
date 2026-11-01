@@ -423,9 +423,11 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         var wrote = OpinionWriters.Agents(records, due.Session, part.Select(quest => quest.Id));
         var reviewers = Reviewers(request, record, rule, Config);
         // D205 §4.4 and §3.5(f): the rule decides who, the opinion actor each agent's model; a refusal at the open is asked again here.
+        // ROLESTEP1b: the role the run's opinion step names, kept at its bind, gives the models in place of the opinion actor's.
+        var stepRole = process.Binding?.RoleOf(NodeKinds.Opinion)?.Role;
         Task<ReviewerChoice> Walk(IReadOnlyList<ReviewerPassed>? passed) =>
             ReviewerChoice.ChooseAsync(_context.Harnesses, rule with { Reviewers = reviewers }, wrote, Config, due.Workspace, ct, passed: passed,
-                catalogue: () => RoleCatalog.ReadHome(_context.Harnesses.Home));
+                catalogue: () => RoleCatalog.ReadHome(_context.Harnesses.Home), role: stepRole, repository: due.Repository);
         var choice = await Walk(null).ConfigureAwait(false);
         var reading = choice;
 

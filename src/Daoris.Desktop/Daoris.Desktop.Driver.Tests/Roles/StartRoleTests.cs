@@ -1,4 +1,7 @@
+using System.Diagnostics;
+using System.Text.Json.Nodes;
 using Daoris.Driver;
+using Microsoft.Data.Sqlite;
 
 namespace Daoris.Desktop.Driver.Tests;
 
@@ -6,9 +9,18 @@ namespace Daoris.Desktop.Driver.Tests;
 /// FOUNDATION1x step 1 (the foundation design §2.4, §2.7): the start plan finds a start's role by its work and place from the role
 /// catalogue, keeps the seeded role for <c>actor</c>, and a continuation of a record an added role started runs as that seeded work.
 /// </summary>
-public sealed class StartRoleTests
+public sealed class StartRoleTests : IDisposable
 {
     private static readonly RolePlace Machine = new();
+
+    private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "rolestep1b-start-" + Guid.NewGuid().ToString("N")[..8]);
+
+    public void Dispose()
+    {
+        if (!Directory.Exists(_home)) return;
+        SqliteConnection.ClearAllPools();
+        GitSeed.Discard(_home);
+    }
 
     private static readonly DriverConfig Config = DriverConfig.Empty with
     {
@@ -145,5 +157,93 @@ public sealed class StartRoleTests
         // The newer build reads the binding's role first, and where the role is since removed, the role that takes the work now.
         Assert.Equal("codex", StartPlan.ContinuedOn(record, Config, "design", bound: "designer", catalogue: WithDesigner(), place: Machine));
         Assert.Equal("claude", StartPlan.ContinuedOn(record, Config, "design", bound: "designer", catalogue: RoleCatalog.Of([]), place: Machine));
+    }
+
+    private sealed class Present(string name, HarnessToolchain toolchain) : ISessionAdapter
+    {
+        public string Name => name;
+
+        public HarnessToolchain? Toolchain => toolchain;
+
+        public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => throw new InvalidOperationException("nothing spawns here");
+    }
+
+    /// <summary>
+    /// A home whose catalogue holds the repository's own Build role and a role the workflow's work step names, each staffed by its own
+    /// agent, and the driver over it; nothing spawns, and each agent is present by a file look.
+    /// </summary>
+    private Daoris.Driver.Driver StaffedDriver(string named)
+    {
+        Directory.CreateDirectory(_home);
+        var command = Path.Combine(_home, "agent-here");
+        File.WriteAllText(command, "");
+        var settings = new HarnessSettings();
+        var present = new HarnessToolchain(Binary: [command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
+        var adapters = new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase);
+        foreach (var agent in new[] { "own", "staffed" })
+        {
+            Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, agent, "account-1"));
+            settings = settings.WithDefault(agent, "account-1");
+            adapters[agent] = new Present(agent, present);
+        }
+
+        settings.Save(DaorisHome.Entry(_home, HomeEntry.Harnesses));
+        var set = new AdapterSet(adapters);
+        var store = DesktopStore.LocationIn(_home);
+        RoleCatalog.Write(store, RoleChange.Set(RoleCatalogTests.Working("engine-build", "build", new RoleScope(RoleScope.Repository, "engine"))), () => StoreSettled.Yes);
+        RoleCatalog.Write(store, RoleChange.Set(RoleCatalogTests.Working("frontend", "build", new RoleScope(RoleScope.Workspace, "default"))), () => StoreSettled.Yes);
+        WorkflowStore.Add(_home, new WorkflowVersionAdded("staffed", "Staffed work", "terminal", "2026-11-01T09:00:00Z", null, JsonNode.Parse(
+            $$$"""
+            {"schemaVersion":2,"entries":["work"],"end":"pull-request","nodes":[{"id":"work","kind":"claimed","version":1,"reach":"observed","options":{"role":"{{{named}}}"}},
+              {"id":"review","kind":"review","version":1,"reach":"pressed"},
+              {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"pull-request"}},
+              {"id":"pushed","kind":"pushed","version":1,"reach":"observed"},{"id":"pull-request","kind":"pull-request","version":1,"reach":"observed"}],
+             "wires":[{"id":"a","kind":"after","from":"work","to":"review"},{"id":"r","kind":"after","from":"review","to":"landing"},
+                      {"id":"b","kind":"after","from":"landing","to":"pushed"},{"id":"c","kind":"after","from":"pushed","to":"pull-request"}]}
+            """)), kept: []);
+        var config = DriverConfig.Parse("""
+            {"workflows":{"engine":{"default":"staffed"}},"landings":{"engine":{"form":"branch","pattern":"a/{quest}","plugin":"acme.pr"}}}
+            """) with
+        {
+            Adapter = "own",
+            Drivable = ["engine"],
+            Actors = new Dictionary<string, IReadOnlyList<ActorChoice>>
+            {
+                ["build"] = [new ActorChoice("own")],
+                ["engine-build"] = [new ActorChoice("own", "sonnet")],
+                ["frontend"] = [new ActorChoice("staffed", "opus", "high")],
+            },
+        };
+        var roster = new HarnessRoster(set, DaorisHome.Entry(_home, HomeEntry.Harnesses));
+        return new Daoris.Driver.Driver(new ServiceClient("http://127.0.0.1:9", null), config, set, _home, harnesses: roster);
+    }
+
+    private static Consideration Engine => new(new QuestView("q1", "platform", "engine", "Split the loader", "Two jobs.", "Open"), StartVerdict.Start, "", Workspace: "default");
+
+    /// <summary>
+    /// ROLESTEP1b: a quest whose run's work step names an added role starts on that role's order, not the role its place gives the work,
+    /// and its start keeps the role and its record's revision for the session's binding; a role that cannot take it holds the start, said.
+    /// </summary>
+    [Fact]
+    public async Task A_run_whose_work_step_names_an_added_role_starts_on_that_role_s_order_and_records_it()
+    {
+        var driver = StaffedDriver("frontend");
+        RepoView[] registry = [new("engine", true, null)];
+
+        var named = await driver.StepRoleAsync(Engine.Quest, Engine.Workspace, CancellationToken.None);
+        Assert.Equal("frontend", named);
+
+        var own = await driver.WalkBuildPassesAsync(Engine, registry, CancellationToken.None, counts: false);
+        Assert.Equal(("engine-build", "own"), (own.Role, own.Chosen!.Agent));
+
+        var walked = await driver.WalkBuildPassesAsync(Engine, registry, CancellationToken.None, counts: false, role: named);
+        Assert.True(walked.Selection.Allowed, walked.Selection.Refusal);
+        Assert.Equal(("frontend", 1L), (walked.Role, walked.Revision));
+        Assert.Equal(new ActorEffective("staffed", "opus", "high", "1"), walked.Chosen);
+        Assert.Equal(("frontend", 1L), driver.RoleTaken(Engine, named));
+        Assert.Equal(("engine-build", 1L), driver.RoleTaken(Engine, null));
+
+        var error = await Assert.ThrowsAsync<DriverException>(() => driver.WalkBuildPassesAsync(Engine, registry, CancellationToken.None, counts: false, role: "gone"));
+        Assert.StartsWith("No role `gone` is in the catalogue, so the starts naming it hold until it is added", error.Message);
     }
 }

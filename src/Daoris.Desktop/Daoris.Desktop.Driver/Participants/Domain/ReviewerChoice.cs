@@ -250,11 +250,16 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
     /// The role catalogue (FOUNDATION1x), read when the choice is made: a store that will not read refuses the choice, as a role that does not
     /// read does. Null reads the seeded role of the work.
     /// </param>
+    /// <param name="role">
+    /// The role a workflow's opinion step names (ROLESTEP1b), whose entries give each reviewer its model in place of the work's role; it holds
+    /// the choice by its own sentence where it cannot take the work, and no other role is read. Null reads the work's role.
+    /// </param>
+    /// <param name="repository">The repository the work is in, where a named role is judged as the run's bind judged it.</param>
     /// <returns>The choice; an actor whose stored entry does not read (§6.4) chooses nothing, saying so, and is read again at the next ask.</returns>
     public static async Task<ReviewerChoice> ChooseAsync(
         HarnessRoster roster, OpinionRule rule, IReadOnlyCollection<string> working, DriverConfig config, string? workspace,
         CancellationToken ct = default, string actor = "opinion", IReadOnlyList<ReviewerPassed>? passed = null,
-        IReadOnlyList<ActorEffective>? order = null, Func<RoleCatalog>? catalogue = null)
+        IReadOnlyList<ActorEffective>? order = null, Func<RoleCatalog>? catalogue = null, string? role = null, string? repository = null)
     {
         StartPlan plan;
         try
@@ -262,9 +267,11 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
             // FOUNDATION1j part ii (the foundation design §2.4): the start plan of the actor's work, its order the rule's reviewers each
             // expanded into the actor's entries for it, or the entries the caller holds; its account walk the plan's, for the workspace.
             // FOUNDATION1x: the role is the catalogue's for the work at the workspace; the seeded catalogue answers the seeded role.
+            // ROLESTEP1b: a named role is judged at the repository too, where its bind judged it; the work's role stays the workspace's.
             plan = new StartPlan(
                 WorkOf(actor), config, roster, roster.Adapters, new PassMemory(), fence: rule.Reviewers.Count == 0 ? null : rule.Reviewers,
-                order: order ?? (rule.Reviewers.Count == 0 ? Array.Empty<ActorEffective>() : null), catalogue: catalogue?.Invoke(), place: new RolePlace(workspace))
+                order: order ?? (rule.Reviewers.Count == 0 ? Array.Empty<ActorEffective>() : null), catalogue: catalogue?.Invoke(),
+                place: new RolePlace(workspace, role is { Length: > 0 } ? repository : null), role: role)
             {
                 Workspace = workspace, Subject = actor,
             };

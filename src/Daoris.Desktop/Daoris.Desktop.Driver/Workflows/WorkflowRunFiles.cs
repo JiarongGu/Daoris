@@ -124,6 +124,9 @@ public sealed class WorkflowRunFiles(string home) : IWorkflowRunStore
                 return null;
             }
 
+            // ROLESTEP1b: a step's role that does not read leaves the binding unread, so no start takes another role in its place.
+            if (RolesOf(root) is not { } roles) return null;
+
             return new WorkflowRunBinding(run, repository, workspace, workflow, level, at)
             {
                 Ask = Text(root, "ask"),
@@ -148,12 +151,34 @@ public sealed class WorkflowRunFiles(string home) : IWorkflowRunStore
                        && Moments.Read(Text(kept, "at")) is { } keptAt
                     ? new WorkflowKept(keptAt, door) { Words = Text(kept, "words") }
                     : null,
+                Roles = roles,
             };
         }
         catch (JsonException)
         {
             return null;
         }
+    }
+
+    /// <summary>A binding's steps' roles as its file holds them: none where it names none, null where one does not read.</summary>
+    private static IReadOnlyList<WorkflowStepRole>? RolesOf(JsonElement root)
+    {
+        if (!root.TryGetProperty("roles", out var roles)) return [];
+        if (roles.ValueKind != JsonValueKind.Array) return null;
+        var read = new List<WorkflowStepRole>();
+        foreach (var each in roles.EnumerateArray())
+        {
+            if (each.ValueKind != JsonValueKind.Object || Text(each, "step") is not { } step || Text(each, "kind") is not { } kind
+                || Text(each, "role") is not { } role || !each.TryGetProperty("revision", out var revision)
+                || revision.ValueKind != JsonValueKind.Number || !revision.TryGetInt64(out var number))
+            {
+                return null;
+            }
+
+            read.Add(new WorkflowStepRole(step, kind, role, number));
+        }
+
+        return read;
     }
 
     /// <summary>A binding as its file holds it: what every binding says first, then what this one has, LF, with a last newline.</summary>
@@ -192,6 +217,22 @@ public sealed class WorkflowRunFiles(string home) : IWorkflowRunStore
             writer.WriteStartObject("land");
             foreach (var (name, value) in binding.Land.OrderBy(each => each.Key, StringComparer.Ordinal)) writer.WriteString(name, value);
             writer.WriteEndObject();
+        }
+
+        if (binding.Roles.Count > 0)
+        {
+            writer.WriteStartArray("roles");
+            foreach (var each in binding.Roles)
+            {
+                writer.WriteStartObject();
+                writer.WriteString("step", each.Step);
+                writer.WriteString("kind", each.Kind);
+                writer.WriteString("role", each.Role);
+                writer.WriteNumber("revision", each.Revision);
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
         }
 
         if (binding.Kept is { } kept)

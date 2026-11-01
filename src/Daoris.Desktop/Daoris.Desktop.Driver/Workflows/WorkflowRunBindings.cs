@@ -88,15 +88,17 @@ public static class WorkflowRunBindings
     /// </summary>
     /// <param name="workspace">The repository's workspace, or null for none.</param>
     /// <param name="plugins">The plugins switched on and sound, as Current reads them (<see cref="WorkflowCurrent.PluginsOf"/>).</param>
+    /// <exception cref="DriverException">A step names a role and the home's role catalogue cannot be read: nothing is bound, and the start holds.</exception>
     public static WorkflowRunBinding Plan(
         DriverConfig config, string home, string run, string repository, string? workspace, string? ask, WorkflowTaskChoice? task,
         IReadOnlyList<WorkflowPlugin> plugins, DateTimeOffset at) =>
-        Plan(config, WorkflowPorts.Store(home), run, repository, workspace, ask, task, plugins, at);
+        Plan(config, WorkflowPorts.Store(home), run, repository, workspace, ask, task, plugins, at, () => RoleCatalog.ReadHome(home));
 
     /// <summary>The binding a run's first start makes, its named workflow read from <paramref name="store"/>.</summary>
+    /// <param name="roles">The role catalogue the steps' roles are judged by, read only where a step names one; null judges by the seed's.</param>
     public static WorkflowRunBinding Plan(
         DriverConfig config, IWorkflowStore store, string run, string repository, string? workspace, string? ask, WorkflowTaskChoice? task,
-        IReadOnlyList<WorkflowPlugin> plugins, DateTimeOffset at)
+        IReadOnlyList<WorkflowPlugin> plugins, DateTimeOffset at, Func<RoleCatalog>? roles = null)
     {
         var selected = WorkflowSelection.Resolve(config, repository, workspace, task);
         var binding = new WorkflowRunBinding(
@@ -136,11 +138,45 @@ public static class WorkflowRunBindings
             : LandNodes.NoResolved;
         var unplugged = newest.Graph?.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land) is { } open && !open.Options.ContainsKey("plugin")
             && NodeOptions.Text(open, "method") is LandNodes.Push or LandNodes.PullRequest && !resolved.ContainsKey("plugin");
+        var (named, unstaffed) = newest.Graph is { } graph
+            ? StepRoles(graph, $"`{selected.Workflow}` v{newest.Version}", roles, new RolePlace(workspace, repository))
+            : ([], null);
         return binding with
         {
-            Version = newest.Version, Digest = newest.Digest, Land = resolved,
-            Problem = unplugged ? $"`{selected.Workflow}` v{newest.Version} lands by a plugin, and neither it nor `{repository}`'s landing rule names one." : null,
+            Version = newest.Version, Digest = newest.Digest, Land = resolved, Roles = named,
+            Problem = unplugged ? $"`{selected.Workflow}` v{newest.Version} lands by a plugin, and neither it nor `{repository}`'s landing rule names one." : unstaffed,
         };
+    }
+
+    /// <summary>
+    /// The role each agent step of <paramref name="graph"/> names (ROLESTEP1b), judged by the catalogue where the run's starts are: the work
+    /// step as build or design work, the opinion as a review. Each is kept as named, with its record's revision, so a start reads that role
+    /// and holds on it, never on another; the first that cannot take its step is the binding's problem, said with why.
+    /// </summary>
+    private static (IReadOnlyList<WorkflowStepRole> Roles, string? Problem) StepRoles(NodeGraph graph, string version, Func<RoleCatalog>? roles, RolePlace place)
+    {
+        var named = new List<WorkflowStepRole>();
+        string? problem = null;
+        RoleCatalog? catalogue = null;
+        foreach (var node in graph.Nodes.Where(node => node.Kind is NodeKinds.Claimed or NodeKinds.Opinion))
+        {
+            // Absent, null and empty name no role: the step takes its work's own.
+            if (!node.Options.TryGetValue(NodeOptionFields.Role, out var written) || NodeOptions.Value(written) is null or "") continue;
+            var where = $"{version}'s step `{node.Id}`";
+            if (NodeOptions.Value(written) is not string role)
+            {
+                named.Add(new WorkflowStepRole(node.Id, node.Kind, written, 0));
+                problem ??= $"{where} names its role by something other than a role's id.";
+                continue;
+            }
+
+            catalogue ??= roles?.Invoke() ?? RoleCatalog.Of([]);
+            named.Add(new WorkflowStepRole(node.Id, node.Kind, role, catalogue.RevisionOf(role)));
+            var found = catalogue.Named(role, node.Kind == NodeKinds.Opinion ? RoleWork.Review : RoleWork.Design, place);
+            if (found.Held is { } held) problem ??= $"{where} names the role `{role}`, which cannot take it: {held}";
+        }
+
+        return (named, problem);
     }
 
     /// <summary>

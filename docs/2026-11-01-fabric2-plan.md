@@ -62,7 +62,7 @@
 
 **Files.** `src/Daoris.Desktop/Daoris.Desktop.Driver/Plugins/Domain/PluginSteps.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver/Plugins/Domain/WorkWire.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Nodes/WorkBelief.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Nodes/WorkPerformer.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver/Plugins/plugin-kit/plugin.mjs.template`, `src/Daoris.Desktop/Daoris.Desktop.Driver/Plugins/plugin-kit/README.md.template`, `src/Daoris.Desktop/Daoris.Desktop.Driver/Plugins/plugin-kit/plugin.test.mjs.template`, `src/Daoris.Desktop/Daoris.Desktop.Driver/Plugins/plugin-kit/plugin.contract.test.mjs.template`, `src/Daoris.Desktop/Daoris.Desktop.Driver/Plugins/PluginKit.cs`, `examples/plugins/local-release/plugin.json`, `examples/plugins/local-release/plugin.mjs`, `examples/plugins/local-release/work.mjs`, `examples/plugins/local-release/release.test.mjs`, `examples/plugins/local-preview/work.mjs`, `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Plugins/PluginStepsTests.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Plugins/WorkWireTests.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workflows/WorkBeliefTests.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workflows/WorkPerformerTests.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Plugins/PluginKitTests.cs`
 
-## ROLESTEP1b — A step names the role that takes it, and the start plan takes that role
+## ROLESTEP1b — A step names the role that takes it, and the start plan takes that role (built 2026-11-01)
 
 **Wave** 2; after ROLESTEP1a, WORKFLOWEDIT1a, LANDNODE1c2; opus.
 
