@@ -26,6 +26,9 @@ their later amendments.
 | 9. Departments set up dependably | Doctrine and set-up | Existing knowledge is kept, checks stay green, and each repository has a generated orientation index | D117, D122, D124, D128; TASKS: Development and agent layout |
 | 10. Equipment and capacity from real use | Tools, plugins and finance | Plugin distribution and managed-tool boundaries; a session never idle for want of the machine; the capacity estimate once history allows | D120, D121, D148, D179; TASKS: Plugin distribution, Declarations and managed tools, PLUGINEVAL1, USAGECAP1b |
 | 11. Management the company runs itself | The steward | The parent's planning, dispatch, merging and verification move into Daoris's own roles | D160, D187, D191; TASKS: Development and agent layout |
+| 12. Offices that run fast | Optimization, after the foundation, the structure and the agents | Measured first, then cut: git's process starts per view, landing and test class, with a held reader per repository; one management of the processes and executables Daoris starts (git, agents, plugins, the browser, the managed tools); the window's, the service's and the driver's start-up time; and the test halves' and CI's wall time, their git fixtures seeded rather than built command by command | D147 §4.3 (the git binary stays), D202, D121; TASKS: OPTIMIZE1 |
+
+**The order now:** the foundation (D212, FOUNDATION1), the structure (FABRIC2's dynamic workflows, LANDNODE1, AGENTSPLACE1's places and roles) and the agents' work (Sessions, Communication, Ask Daoris) are finished before priority 12 starts. A defect found on the way is still fixed when found; only optimization waits.
 
 **Alongside every priority:** the owner's install builds this repository's rows (DOGFOOD1), so each part is tried on the company's own work as it is built, and what blocks that work is filed as it is found.
 
