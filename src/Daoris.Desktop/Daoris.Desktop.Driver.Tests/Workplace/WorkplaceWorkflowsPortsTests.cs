@@ -151,6 +151,11 @@ public sealed class WorkplaceWorkflowsPortsTests : IDisposable
         var (line, live) = operations.ChatPressOf("s9", "[]");
         Assert.Equal(["s9"], line);
         Assert.True(live);
+
+        // LANDNODE1c3: Current's `land` for a rule, the method it names and the graph's digest, as the delivery's intent reads them.
+        var rule = new LandingRule(LandingForm.Branch, "feature/{quest}") { Integrate = new LandingIntegrate() };
+        Assert.Equal((LandNodes.Integrate, NodeGraphs.Digest(NodeGraphHomes.Landing(rule))), operations.CurrentLand(rule));
+        Assert.Equal(LandNodes.Merge, operations.CurrentLand(LandingRule.Merge).Method);
     }
 
     [Fact]
@@ -387,6 +392,12 @@ public sealed class WorkplaceWorkflowsPortsTests : IDisposable
         {
             Calls.Add($"press:{session}");
             return ([session], true);
+        }
+
+        public (string Method, string Graph) CurrentLand(LandingRule rule)
+        {
+            Calls.Add($"land:{rule.Form}");
+            return (rule.Form, "gph-0");
         }
     }
 }

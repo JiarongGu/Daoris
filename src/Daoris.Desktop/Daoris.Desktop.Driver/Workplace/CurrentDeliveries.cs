@@ -29,8 +29,7 @@ internal static class CurrentDeliveries
         string line, string tree, string? branch, string acceptedBy, bool waited, Func<string?> standing, CancellationToken ct)
     {
         var rule = landing.Rule;
-        var graph = NodeGraphHomes.Landing(rule);
-        var method = Method(graph);
+        var (method, graph) = WorkplaceWorkflows.Current.CurrentLand(rule);
         // A name git would not take is the landing's to refuse in its own words, before anything is written.
         if (method != DeliveryMethods.Merge && !(branch is { } named && BranchName.IsValid(named))) return (null, null);
         var squash = rule.Squash && method is DeliveryMethods.Branch or DeliveryMethods.PullRequest;
@@ -40,8 +39,8 @@ internal static class CurrentDeliveries
             method == DeliveryMethods.PullRequest ? rule.Plugin : null, IntegrationEpoch.Of((rule.Integrate ?? new LandingIntegrate()).Resolved(), null));
         var options = JsonSerializer.Serialize(new Dictionary<string, object> { ["method"] = method, ["squash"] = squash });
         var authorization = acceptedBy == AcceptedBy.Auto
-            ? DeliveryAuthorization.Automatic($"{landing.Source}:{repository}", tip, NodeGraphs.Digest(graph), options, "[]")
-            : DeliveryAuthorization.Person($"{AcceptedBy.Person}:{subject.Session}", tip, NodeGraphs.Digest(graph), options, "[]");
+            ? DeliveryAuthorization.Automatic($"{landing.Source}:{repository}", tip, graph, options, "[]")
+            : DeliveryAuthorization.Person($"{AcceptedBy.Person}:{subject.Session}", tip, graph, options, "[]");
 
         var store = new DeliveryStore(home);
         var reconciler = DeliveryReconciler.Of(store, home, wire, record =>
@@ -100,9 +99,4 @@ internal static class CurrentDeliveries
             return (null, Refused($"its delivery could not be written ({error.Message.Trim()}), and no landing is made with none; accept again"));
         }
     }
-
-    /// <summary>The method Current's <c>land</c> names in <paramref name="graph"/>.</summary>
-    private static string Method(NodeGraph graph) =>
-        graph.Nodes.First(node => node.Kind == NodeKinds.Land).Options.TryGetValue("method", out var written)
-        && JsonSerializer.Deserialize<string>(written) is { } method ? method : DeliveryMethods.Merge;
 }
