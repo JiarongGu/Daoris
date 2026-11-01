@@ -22602,3 +22602,9 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 ## WORKFLOWEDIT1d — the palette and the draft carry outputsOn, the press census lists workflow changes, and Ask Daoris proposes default-all (2026-11-01, FABRIC2)
 
 **Outcome** 2026-11-01: `PaletteStep.OutputsOn` and the draft's `StepChoice.outputsOn` copy a plugin step's `outputsOn` into the node `addStep` writes, so a release workflow composed in the window keeps `release` on `release` only; `PersonPresses.Presses` lists `workflow changes` over `WORKFLOW_NODE`; the `role` kind has a `default-all` door (id `*`, no revision) in the driver's judge, the service's writer and `role_propose`, with the room's text and goldens. Tests `WorkflowPaletteTests`, `graphDraft.test.ts`, `WorkflowNodeThroughInstanceTests`, `HelpRoleProposalsTests`, `HelpRoleProposalTests`.
+
+## SERVICEPROBE1 — the terminal waits for a slow service whose process runs, rather than refusing (2026-11-01)
+
+> On a machine at full CPU (the merge queue's rehearsals and builders), the install's service answered in 1.3 to 5 s and `/api/sessions` in more than 15, and `daoris-driver trees land` refused with "nothing answered as its service … within 2 seconds, asked twice" though Daoris's pid was alive. Contract: where the home's lease names a live process, the probe waits longer, bounded, and says it is waiting; a dead or absent one still refuses at once. Proof: a unit test with a stand-in that answers after 4 s and one whose pid is gone.
+
+**Outcome** 2026-11-01: `RunningService.Find` asks once within 2 s, then, where the lease's process lives, says one line on stderr (`ServiceHttp.FromEnvironment()`) and asks again each second with a 10 s bound up to 30 s in all (`WaitFor`, `LongWithin`; `Status` takes the bound), refusing with the real bound and ask count; a gone lease refuses at once. Tests `RunningServiceTests`.

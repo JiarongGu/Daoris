@@ -141,7 +141,7 @@ public sealed class RunningServiceTests : IDisposable
     {
         using var running = Running(Data);
 
-        var error = Assert.Throws<DriverException>(() => ServiceHttp.FromEnvironment(Env(), App, Answering((ServiceStatus?)null), TimeSpan.Zero));
+        var error = Assert.Throws<DriverException>(() => ServiceHttp.FromEnvironment(Env(), App, Answering((ServiceStatus?)null), TimeSpan.Zero, total: TimeSpan.Zero));
 
         Assert.Contains($"Daoris is running on {Data} (pid {Environment.ProcessId})", error.Message);
         Assert.Contains("nothing answered as its service at http://localhost:5181", error.Message);
@@ -163,7 +163,7 @@ public sealed class RunningServiceTests : IDisposable
         {
             _asked.Add(url);
             return ++tries == 1 ? null : new ServiceStatus("lexical only", id);
-        }, TimeSpan.Zero);
+        }, TimeSpan.Zero, total: TimeSpan.FromSeconds(5));
 
         Assert.Equal("http://localhost:5181", service.BaseUrl);
         Assert.Equal(2, tries);
@@ -173,13 +173,51 @@ public sealed class RunningServiceTests : IDisposable
     public void A_status_door_that_never_answers_is_said_as_unanswered_not_as_a_missing_variable()
     {
         using var running = Running(Data);
+        var waited = new List<string>();
 
-        var error = Assert.Throws<DriverException>(() => ServiceHttp.FromEnvironment(Env(), App, Answering((ServiceStatus?)null), TimeSpan.Zero));
+        var error = Assert.Throws<DriverException>(() => ServiceHttp.FromEnvironment(
+            Env(), App, Answering((ServiceStatus?)null), TimeSpan.FromMilliseconds(100), waited.Add, TimeSpan.FromMilliseconds(350)));
 
-        Assert.StartsWith($"Daoris is running on {Data} (pid {Environment.ProcessId}), and nothing answered as its service at http://localhost:5181 within 2 seconds, asked twice, 0 seconds apart.", error.Message);
+        Assert.StartsWith($"Daoris is running on {Data} (pid {Environment.ProcessId}), and nothing answered as its service at http://localhost:5181 within 0.35 seconds, asked {_asked.Count} times.", error.Message);
         Assert.Contains($"{ServiceClient.UrlVariable} is not the cause: the service may be busy", error.Message);
         Assert.DoesNotContain("no DAORIS_SERVICE_URL", error.Message);
-        Assert.Equal(["http://localhost:5181", "http://localhost:5181"], _asked);
+        Assert.True(_asked.Count >= 2);
+        Assert.Single(waited);
+    }
+
+    /// <summary>SERVICEPROBE1: a service whose process runs but answers only after seconds is waited for, one line said, and found.</summary>
+    [Fact]
+    public void A_slow_service_whose_process_runs_is_waited_for_and_found()
+    {
+        using var running = Running(Data);
+        var id = HomeIdentity.Ensure(Data);
+        var clock = Stopwatch.StartNew();
+        var waited = new List<string>();
+
+        using var service = ServiceHttp.FromEnvironment(Env(), App, url =>
+        {
+            _asked.Add(url);
+            return clock.ElapsedMilliseconds < 400 ? null : new ServiceStatus("lexical only", id);
+        }, TimeSpan.FromMilliseconds(100), waited.Add, TimeSpan.FromSeconds(10));
+
+        Assert.Equal("http://localhost:5181", service.BaseUrl);
+        Assert.True(_asked.Count > 2);
+        Assert.Single(waited);
+    }
+
+    /// <summary>SERVICEPROBE1: a lease whose process is gone still refuses at once, the service never asked and no waiting said.</summary>
+    [Fact]
+    public void A_gone_process_refuses_at_once_without_waiting()
+    {
+        Leave(Data, "http://localhost:5181", started: 1L);
+        var waited = new List<string>();
+        var clock = Stopwatch.StartNew();
+
+        Assert.Throws<DriverException>(() => ServiceHttp.FromEnvironment(Env(), App, Answering(Data), waiting: waited.Add));
+
+        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(2));
+        Assert.Empty(_asked);
+        Assert.Empty(waited);
     }
 
     /// <summary>
