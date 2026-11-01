@@ -38,7 +38,7 @@ public sealed partial class RoleCatalogCensusTests : IDisposable
         ("role_propose", ["Daoris.Desktop.Driver/Help/Proposals/HelpRoleProposals.cs"]),
     ];
 
-    [GeneratedRegex(@"ActorChoices\.(Judge|Judged|With)\(|RoleStaffing\.SetAt\(|\.WithIntake\(|\.WithHelper\(|RoleCatalog\.Write\(|RoleDoor\.Apply\(|public static DriverConfig With(Intake|Helper)\(")]
+    [GeneratedRegex(@"ActorChoices\.(Judge|Judged|With)\(|RoleStaffing\.SetAt\(|\.WithIntake\(|\.WithHelper\(|RoleCatalog\.Write(In)?\(|RoleDoor\.Apply\(|public static DriverConfig With(Intake|Helper)\(")]
     private static partial Regex Reaches();
 
     private static IEnumerable<string> Reaching()

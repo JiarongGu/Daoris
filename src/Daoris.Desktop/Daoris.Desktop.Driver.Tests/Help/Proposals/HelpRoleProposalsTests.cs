@@ -80,6 +80,31 @@ public sealed class HelpRoleProposalsTests : HelpProposalsFixture, IDisposable
         Assert.Contains("already takes", HelpProposals.Plan(Role("set", "chatty", """{ "name": { "en": "C", "zh": "C" }, "takes": ["chat"], "choices": [{ "agent": "claude-code" }] }"""), DriverConfig.Empty, Machine).Refusal);
     }
 
+    /// <summary>STAFFPOLICY1b: a policy rides a set as a preset or a record, is judged by the policy's judge, and is applied by the person's press with the revision read.</summary>
+    [Fact]
+    public void A_policy_proposed_with_a_set_is_judged_described_and_applied_by_the_press_alone()
+    {
+        Staffing.Set("build", [new ActorChoice("claude-code", "sonnet", "high"), new ActorChoice("claude-code", "opus", "high")]);
+        var config = StaffingProjection.Config(Staffing.Read()!);
+
+        var preset = HelpProposals.Plan(Role("set", "build", """{ "policy": "even", "policyRevision": 0 }"""), config, Machine);
+
+        Assert.Null(preset.Refusal);
+        Assert.Contains("Its policy: spread by weight 1:1.", preset.Describe);
+        Assert.Contains("This can spend differently.", preset.Describe);
+        Assert.Contains("&& daoris driver role policy build --preset first --rule weight", preset.Terminal);
+        Assert.Equal(StaffPolicy.Code, Assert.Throws<RoleRefusedException>(() => RoleDoor.Apply(Staffing, RoleChange.Set(RoleCatalog.Seed[0]), null, null, new RolePolicyPress(Preset: "cheapest"))).Code);
+
+        Assert.Null(Staffing.Policy("build").Policy);
+        RoleDoor.Apply(Staffing, preset.Role!.Change, preset.Role.Choices, preset.Role.Read, preset.Role.Policy);
+        Assert.Equal((StaffPolicyRead.Set, 1L), (Staffing.Policy("build").State, Staffing.Policy("build").Revision));
+
+        var stale = HelpProposals.Plan(Role("set", "build", """{ "policy": "first", "policyRevision": 0 }"""), config, Machine);
+        Assert.Contains("changed since you read it", stale.Refusal);
+        var unenforced = HelpProposals.Plan(Role("set", "build", """{ "policy": { "rule": "order", "choices": [], "most": 3 }, "policyRevision": 1 }"""), config, Machine);
+        Assert.Contains("does not enforce yet", unenforced.Refusal);
+    }
+
     [Fact]
     public void A_set_of_a_seeded_role_naming_its_choices_alone_keeps_its_record_and_sets_its_order()
     {

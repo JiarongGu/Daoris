@@ -94,6 +94,25 @@ public static class StaffPolicies
         return true;
     }
 
+    /// <summary>Whether the store this write is in has the policy's tables: a store held before <see cref="Step"/>, by a start not yet settled, has none.</summary>
+    public static bool Has(DesktopWrite write) =>
+        write.Scalar<long>("SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'role_policy'") > 0;
+
+    /// <summary>
+    /// Bind <paramref name="policy"/> to <paramref name="choices"/>, the staffing a write of Daoris's own just made (§2.1): the digest set and the
+    /// record re-keyed in the revision it has, which is rewritten to say the same. Nothing where the digest is already the choices'.
+    /// </summary>
+    public static void Rekey(DesktopWrite write, string role, StaffPolicy policy, IReadOnlyList<ActorChoice> choices)
+    {
+        var digest = StaffPolicy.Digest(choices);
+        if (write.Scalar<string>("SELECT staffing FROM role_policy WHERE role = $role", ("$role", role)) == digest) return;
+        var text = policy.Rekeyed(choices).Write();
+        write.Execute("UPDATE role_policy SET policy = $policy, staffing = $staffing WHERE role = $role", ("$role", role), ("$policy", text), ("$staffing", digest));
+        write.Execute(
+            "UPDATE role_policy_revisions SET policy = $policy, staffing = $staffing WHERE role = $role AND revision = (SELECT revision FROM role_policy WHERE role = $role)",
+            ("$role", role), ("$policy", text), ("$staffing", digest));
+    }
+
     private sealed record Stored(string? Policy, string? Staffing, long? Revision, string? Since, string? State, string? Choices, long? Last);
 
     private static Stored Raw(SqliteDataReader row) => new(
@@ -165,6 +184,9 @@ public sealed class StaffLedger(string home, Func<StoreSettled>? settled = null,
 
     /// <summary>How long an agent marked not answering stays marked, unless a prompt on it answers sooner (§4.2).</summary>
     public static readonly TimeSpan Mark = TimeSpan.FromMinutes(15);
+
+    /// <summary>How many of the latest starts since a policy's <c>since</c> the balances are replayed from; held within −W and 2W they forget the rest.</summary>
+    private const int Sequence = 1000;
 
     private readonly Lock _gate = new();
 
@@ -280,7 +302,7 @@ public sealed class StaffLedger(string home, Func<StoreSettled>? settled = null,
             {
                 window = [.. store.Query(
                         "SELECT choice FROM role_starts WHERE role = $role AND at >= $since ORDER BY at DESC, rowid DESC LIMIT $most",
-                        row => StaffKey.Read(row.GetString(0)), ("$role", role), ("$since", policy.Since), ("$most", StaffJudge.Window))
+                        row => StaffKey.Read(row.GetString(0)), ("$role", role), ("$since", policy.Since), ("$most", Sequence))
                     .OfType<StaffKey>().Reverse()];
                 foreach (var (key, count) in store.Query(
                              "SELECT choice, COUNT(*) FROM role_starts WHERE role = $role AND at >= $day GROUP BY choice",

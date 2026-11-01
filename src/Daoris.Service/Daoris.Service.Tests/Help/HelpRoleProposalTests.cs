@@ -65,6 +65,36 @@ public sealed class HelpRoleProposalTests : HelpProposalBoxFixture
         Assert.Contains($"Proposed `#{id}`", message);
     }
 
+    /// <summary>STAFFPOLICY1b: a set carries a policy as a preset's name, the record as JSON, or `none`, with the policy revision read.</summary>
+    [Fact]
+    public void A_policy_is_written_as_a_preset_a_record_or_a_clear_with_the_revision_read()
+    {
+        var (preset, _) = Box().ProposeRole("set", "build", null, null, null, null, null, null, "spread it", "h1", Now, "even", 2);
+        var press = Written(preset!).GetProperty("press");
+        Assert.Equal(("even", 2L), (press.GetProperty("policy").GetString(), press.GetProperty("policyRevision").GetInt64()));
+
+        var (record, _) = Box().ProposeRole(
+            "set", "build", null, null, null, null, null, null, "spread it", "h1", Now,
+            """{ "rule": "weight", "choices": [{ "agent": "claude-code", "weight": 3 }] }""");
+        Assert.Equal(3, Written(record!).GetProperty("press").GetProperty("policy").GetProperty("choices")[0].GetProperty("weight").GetInt32());
+
+        var (none, _) = Box().ProposeRole("set", "build", null, null, null, null, null, null, "back to the order", "h1", Now, "none");
+        Assert.Equal(JsonValueKind.Null, Written(none!).GetProperty("press").GetProperty("policy").ValueKind);
+    }
+
+    [Theory]
+    [InlineData("set", "cheapest", null, "is not a policy")]
+    [InlineData("set", "{ not json", null, "not JSON")]
+    [InlineData("remove", "even", null, "names the role alone")]
+    [InlineData("set", null, 3L, "name the policy")]
+    public void A_policy_of_the_wrong_shape_is_refused_and_nothing_proposed(string change, string? policy, long? revision, string said)
+    {
+        var (id, message) = Box().ProposeRole(change, "build", null, null, null, null, null, null, "why", "h1", Now, policy, revision);
+
+        Assert.Null(id);
+        Assert.Contains(said, message, StringComparison.OrdinalIgnoreCase);
+    }
+
     [Theory]
     [InlineData("rename", "night", null, null, "a role's change is `set`, `remove`, `default` or `default-all`.")]
     [InlineData("default-all", "night", null, null, "is the id of `default-all` alone")]
