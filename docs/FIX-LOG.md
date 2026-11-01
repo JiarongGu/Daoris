@@ -12822,3 +12822,13 @@ mis-rooted instance.
 **Fix.** `runCheck` ends a timed-out check at its bound: the pipes are let go and the record is finished at once, while `taskkill` runs beside the bench, unwaited (`tools/question-bench.mjs`, `stopTree`).
 
 **Verified.** `node --test tools/question-bench.test.mjs tools/console-windows.test.mjs`, 26 of 26; `node tools/console-windows.mjs` clean. The loaded machine's failure was not reproduced on demand; the next CI run on main is its proof.
+
+## 2026-11-01 — a repository's Changes tab could keep *Refresh* disabled after a fresh read
+
+**Symptom.** `ProjectsView.git.test.tsx`'s Changes tab case failed in CI on main and then once in three runs alone: *Refresh* stayed disabled past the five-second wait.
+
+**Root cause.** `ChangesRead` called the tab *reading again* while the shown read's `readAt` was older than `askedAt`, and stamped `askedAt` in an effect after the render that began the fetch. A read answered before that effect ran (a fast answer, or the stub's synchronous one) was older than the ask that fetched it, so the tab said *reading again* until some later ask, with *Refresh* disabled.
+
+**Fix.** `useGitChanges` stamps `askedAt` in its query function, as each ask goes out and before its answer can be read, and returns it; `ChangesRead` reads it (`src/Daoris.Web/src/bridge/repositories/git.ts`, `src/projects/git/RepositoryGitView.tsx`).
+
+**Verified.** The Changes tab cases six times alone, 15 of 15 each; `ProjectsView.git`, `RepositoryGit`, `ChangesActs`, `bridge` and `presentational`, 130 of 130; `tsc --noEmit` clean.

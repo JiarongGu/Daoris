@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   type GitActAnswer, type GitAnswer, type GitBranch, type GitGraphPage, type GitLogCommit, type GitRepositoryBranches, gitRefusal, useGitActs,
   useGitBranches, useGitChanges, useGitCommitAct, useGitCommitPlan, useGitConflict, useGitGraphPages, useGitHistoryEdits, useGitHunks, useGitRefActs,
@@ -92,12 +92,8 @@ export function RepositoryChanges({ repository, workspace, here }: { repository:
 }
 
 function ChangesRead({ repository, workspace }: { repository: string; workspace: string }) {
-  const { query } = useGitChanges(repository, workspace);
-  // When this window last asked: a read made before it is the shell's held one, shown until the fresh read comes.
-  const [askedAt, setAskedAt] = useState(() => Date.now());
-  useEffect(() => {
-    if (query.isFetching) setAskedAt(Date.now());
-  }, [query.isFetching]);
+  // `askedAt`, when this window last asked: a read made before it is the shell's held one, shown until the fresh read comes.
+  const { query, askedAt } = useGitChanges(repository, workspace);
 
   const answer = query.data;
   const refusal = gitRefusal(answer);
