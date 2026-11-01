@@ -309,7 +309,8 @@ public sealed class RoleStaffingTests : IDisposable
     [Fact]
     public void The_staffing_family_is_named_by_its_own_files_the_roots_that_wire_it_the_loops_check_and_its_writers_doors_alone()
     {
-        var own = new[] { "RoleStaffing.cs", "StaffingFile.cs", "StaffingProjection.cs", "RoleStaffingPort.cs", "DriverConfig.cs" };
+        // A role's staffing policy (STAFFPOLICY1a) is the family's own too: its digest and its state read the choices as the staffing writes them.
+        var own = new[] { "RoleStaffing.cs", "StaffingFile.cs", "StaffingProjection.cs", "RoleStaffingPort.cs", "DriverConfig.cs", "StaffPolicy.cs", "StaffLedger.cs" };
         var naming = Production()
             .Where(path => !own.Contains(Path.GetFileName(path)))
             .Where(path => File.ReadAllText(path).Contains("RoleStaffing", StringComparison.Ordinal))

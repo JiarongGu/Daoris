@@ -1,12 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { keys } from '../../data/queries';
 import { fingerprintOf } from '../../workflow/draftFingerprint';
 import type {
   EditorRole, WorkflowListAnswer, WorkflowPaletteAnswer, WorkflowSaveAnswer, WorkflowSaveAsk, WorkflowShownAnswer, WorkflowUseAsk,
 } from '../../workflow/edit/answers';
+import type { ProposalShown } from '../../workflow/edit/proposalTake';
 import type { WorkflowEditorBridge } from '../../workflow/edit/WorkflowEditor';
+import { useDraftProposals, useSettleHelp } from '../help';
 import type { WorkflowPlanBridge } from '../../workflow/place/ChangeWorkflow';
 import { useRoleStructureChain } from '../driver';
 import { askHeld, isPending } from '../state/held';
@@ -99,6 +101,19 @@ export const useWorkflowEditor = (place: EditorPlace, { enabled = true }: { enab
   const roles: EditorRole[] = (structure.data?.roles ?? [])
     .filter((role) => role.state !== 'removed' && role.state !== 'unreadable')
     .map((role) => ({ id: role.id, name: role.name ?? null, takes: role.takes }));
+  // FLOWCHART2f: Ask Daoris's newest proposal against a draft of this place, and the presses that settle it, Ask Daoris's own.
+  const drafts = useDraftProposals('repository' in place ? place.repository : place.workspace, live);
+  const settle = useSettleHelp();
+  const newest = drafts.at(-1);
+  const card = newest?.proposal ?? null;
+  const base = newest?.base ?? null;
+  const made = newest?.maker ? JSON.stringify(newest.maker) : null;
+  // One proposal object while its card, its base and its maker hold: the editor reckons its changes' closures from it.
+  const proposal = useMemo((): ProposalShown | null => (card?.workflow ? {
+    id: card.id, base, proposed: card.workflow.proposed ?? {}, changes: card.workflow.changes ?? [], why: card.why,
+    problems: card.workflow.problems?.length ?? 0,
+    maker: made === null ? null : JSON.parse(made) as ProposalShown['maker'],
+  } : null), [card, base, made]);
 
   return {
     list: list.data ?? null,
@@ -128,5 +143,8 @@ export const useWorkflowEditor = (place: EditorPlace, { enabled = true }: { enab
     // A plan writes nothing, so it asks no read again.
     onPlan: (ask) => askWorkflowUse({ ...ask, plan: true }),
     onOpen: setOpen,
+    proposal,
+    onSettleProposal: (id, taken, left) => settle.mutateAsync({ id, apply: true, taken, left }),
+    onDismissProposal: (id) => settle.mutateAsync({ id, apply: false }),
   };
 };

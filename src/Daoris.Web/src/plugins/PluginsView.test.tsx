@@ -361,6 +361,79 @@ describe('the Plugins view', () => {
     expect(await within(main()).findByText('It answered allow in 41 ms.')).toBeInTheDocument();
   });
 
+  // ADOSIGNIN1: the page draws a plugin's declared tools and asks nothing; Check reads them, a press opens the person's console
+  // for the one check, and the tool is read again from the answer.
+  describe("a plugin's tools", () => {
+    const AZ_CHECKS = [
+      { says: 'Its devops extension is added', fix: 'az extension add --name azure-devops', signIn: false, press: true },
+      { says: 'Signed in', fix: 'az login', signIn: true, press: true },
+    ];
+    const DECLARED_AZ = { id: 'az', name: 'Azure CLI', for: 'Opens the pull request.', versions: '>=2.0.79', install: 'winget install -e --id Microsoft.AzureCLI', checks: AZ_CHECKS };
+    const standing = (signedIn: boolean) => ({
+      ...DECLARED_AZ, found: true, ok: true, version: '2.70.0', sentence: 'Azure CLI 2.70.0, the system\'s.',
+      checks: [
+        { ...AZ_CHECKS[0], ready: true, sentence: 'ready: Its devops extension is added.' },
+        { ...AZ_CHECKS[1], ready: signedIn, sentence: signedIn ? 'ready: Signed in.' : 'not ready: Signed in.' },
+      ],
+    });
+
+    // The main area is a new element once the page replaces its skeleton, so it is found after the heading is.
+    const toolsRegion = async () => {
+      await page('Acme gate');
+      return within(main()).findByRole('region', { name: 'Tools it needs' });
+    };
+
+    beforeEach(() => {
+      answer([{ ...GATE, tools: [DECLARED_AZ] }, FUTURE]);
+      window.localStorage.setItem('daoris.list.plugins.chosen', 'acme.gate');
+    });
+
+    it('draws the declared tools, asks nothing at a look, and reads them on Check', async () => {
+      routes.PLUGIN_TOOLS = ({ id }) => ({ id, tools: [standing(false)] });
+      show();
+
+      const tools = await toolsRegion();
+      expect(within(tools).getByText('Azure CLI')).toBeInTheDocument();
+      expect(within(tools).queryByRole('button', { name: /^Sign in/ })).toBeNull();
+      expect(calls('PLUGIN_TOOLS')).toEqual([]);
+
+      await userEvent.click(within(tools).getByRole('button', { name: 'Check acme.gate’s tools' }));
+
+      expect(await within(tools).findByRole('button', { name: 'Sign in: Signed in' })).toBeInTheDocument();
+      expect(calls('PLUGIN_TOOLS')).toEqual([{ id: 'acme.gate' }]);
+      expect(calls('PLUGIN_TOOL_FIX')).toEqual([]);
+    });
+
+    it('presses a check\'s fix on the person\'s press and shows the tool read again when the console closes', async () => {
+      routes.PLUGIN_TOOLS = ({ id }) => ({ id, tools: [standing(false)] });
+      routes.PLUGIN_TOOL_FIX = ({ id, tool, check }) => ({ id, tool, check, ran: true, message: 'ready: Signed in.', exitCode: 0, standing: standing(true) });
+      show();
+      const tools = await toolsRegion();
+      await userEvent.click(within(tools).getByRole('button', { name: 'Check acme.gate’s tools' }));
+
+      await userEvent.click(await within(tools).findByRole('button', { name: 'Sign in: Signed in' }));
+
+      await waitFor(() => expect(calls('PLUGIN_TOOL_FIX')).toEqual([{ id: 'acme.gate', tool: 'az', check: 2 }]));
+      await waitFor(() => expect(within(tools).queryByRole('button', { name: 'Sign in: Signed in' })).toBeNull());
+      expect(within(tools).getAllByText('ready')).toHaveLength(2);
+    });
+
+    it('says a press the driver turned down beside its check, and keeps the tool as it stood', async () => {
+      routes.PLUGIN_TOOLS = ({ id }) => ({ id, tools: [standing(false)] });
+      routes.PLUGIN_TOOL_FIX = ({ id, tool, check }) => ({
+        id, tool, check, ran: false, why: 'not_found', message: '`az` is not on this machine\'s PATH.', install: 'winget install -e --id Microsoft.AzureCLI',
+      });
+      show();
+      const tools = await toolsRegion();
+      await userEvent.click(within(tools).getByRole('button', { name: 'Check acme.gate’s tools' }));
+
+      await userEvent.click(await within(tools).findByRole('button', { name: 'Sign in: Signed in' }));
+
+      expect(await within(tools).findByText(/Install it first/)).toBeInTheDocument();
+      expect(within(tools).getByRole('button', { name: 'Sign in: Signed in' })).toBeInTheDocument();
+    });
+  });
+
   it('opens the kit in a drawer from the ＋, and at its trial from the ⋯', async () => {
     show({ onAsk: vi.fn() });
     await within(list()).findByText('Installed (2)');

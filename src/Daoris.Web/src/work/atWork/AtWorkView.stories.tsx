@@ -3,9 +3,9 @@ import { atWidths, inDark, inLight } from '../../design/flowFrames';
 import { chinese } from '../../design/storyLanguage';
 import { AtWorkView } from './AtWorkView';
 import {
-  BOUND, CHAT_TOOK_A_QUEST, CODEX, CODEX_NONE, CONTINUED, ELSEWHERE, EMPTY, FAILED, HISTORY, IDS_ONLY, JOINED_EACH_WAY, LEAD_WAITING_ON_HELPER,
-  LEAD_WAITING_ON_LANE, LOST, NO_PARENT, NOW, OVERFLOW_AND_EARLIER, PARTS, PUBLISHED_AND_WAITS_ON_NONE, READING, RESUMED_AND_EARLIER, STALE,
-  THREE, TURN_WAITS, UNCERTAIN, UNREADABLE,
+  ASKED_BY, BOUND, CHAIN_AND_QUESTION, CHAT_TOOK_A_QUEST, CODEX, CODEX_NONE, CONSIDERED, CONTINUED, ELSEWHERE, EMPTY, FAILED, HISTORY, IDS_ONLY,
+  JOINED_EACH_WAY, LANES_ALONGSIDE_AND_UNTAKEN, LEAD_WAITING_ON_HELPER, LEAD_WAITING_ON_LANE, LOST, NO_PARENT, NOW, OVERFLOW_AND_EARLIER, PARTS,
+  PUBLISHED_AND_WAITS_ON_NONE, QUESTS_EACH_TAKER, READING, RESUMED_AND_EARLIER, STALE, THREE, TURN_WAITS, UNCERTAIN, UNREADABLE,
 } from './atWork.fixtures';
 
 // Who is at work (COWORKVIEW1a, the cowork view design §5.3): each state the view draws, at the side bar's floor (300 px), a roomier
@@ -121,6 +121,30 @@ export const JoinedEachWayChinese: Story = { args: { held: JOINED_EACH_WAY }, de
 /** The limit's overflow counted apart from the fold: *2 earlier parts* and *10 more parts*. */
 export const OverflowBesideTheFold: Story = { args: { held: OVERFLOW_AND_EARLIER }, decorators: routingLight };
 export const OverflowBesideTheFoldChinese: Story = { args: { held: OVERFLOW_AND_EARLIER }, decorators: routingZh };
+
+// COWORKVIEW1b-ii: the quests a part asked and what asked it, at the same widths (80, 39 and 25rem and the side bar's 300 px floor), in
+// English in light and in 中文 in dark. The tick's reasons are the page's `considered`.
+
+/** Two lane parts alongside the chat that published them, and a third lane quest untaken with the tick's reason beside it. */
+export const TwoLanePartsAndOneUntaken: Story = { args: { held: LANES_ALONGSIDE_AND_UNTAKEN, considered: CONSIDERED }, decorators: routingLight };
+export const TwoLanePartsAndOneUntakenChinese: Story = { args: { held: LANES_ALONGSIDE_AND_UNTAKEN, considered: CONSIDERED }, decorators: routingZh };
+
+/** The same untaken quest before the driver's first look: *not taken yet*, no reason. */
+export const UntakenBeforeTheFirstLook: Story = { args: { held: LANES_ALONGSIDE_AND_UNTAKEN, considered: [] }, decorators: routingLight };
+
+/** Each taker: a session here, a chat through its connector, another machine, no session recorded here, nobody yet, and a quest declined. */
+export const EachTaker: Story = { args: { held: QUESTS_EACH_TAKER, considered: CONSIDERED }, decorators: routingLight };
+export const EachTakerChinese: Story = { args: { held: QUESTS_EACH_TAKER, considered: CONSIDERED }, decorators: routingZh };
+
+/** A quest to another repository whose taker waits on a question, under the step it follows. */
+export const QuestWaitingOnAQuestion: Story = { args: { held: CHAIN_AND_QUESTION }, decorators: routingLight };
+export const QuestWaitingOnAQuestionChinese: Story = { args: { held: CHAIN_AND_QUESTION }, decorators: routingZh };
+
+/** What asked the attended part's quest: a session of the entry, and the person. */
+export const AskedBySession: Story = { args: { held: ASKED_BY({ session: 's1' }) }, decorators: routingLight };
+export const AskedBySessionChinese: Story = { args: { held: ASKED_BY({ session: 's1' }) }, decorators: routingZh };
+export const AskedByYou: Story = { args: { held: ASKED_BY({ person: true }) }, decorators: routingLight };
+export const AskedByYouChinese: Story = { args: { held: ASKED_BY({ person: true }) }, decorators: routingZh };
 
 /** An ended first process's child *ended with its agent* beside its continuation's child working. */
 export const EndedBesideItsContinuation: Story = { args: { held: CONTINUED }, decorators: light };

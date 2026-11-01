@@ -253,6 +253,10 @@
       "reads": "other",
       "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"
     },
+    "WorkOrders/AtWorkVerb.cs": {
+      "reads": "other",
+      "note": "a part's join ask number, read to word how the part joined; no record's mark tells a work"
+    },
     "WorkOrders/AskWorkflowCommand.cs": {
       "reads": "other",
       "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"

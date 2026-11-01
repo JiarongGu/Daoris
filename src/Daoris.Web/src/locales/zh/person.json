@@ -191,6 +191,8 @@
   "person.route.PLUGIN_ADD": "从一个文件夹添加插件",
   "person.route.PLUGIN_INSTALL": "安装一个插件",
   "person.route.PLUGIN_NEW": "创建一个新插件的文件夹",
+  "person.route.PLUGIN_TOOLS": "检查插件所需的工具",
+  "person.route.PLUGIN_TOOL_FIX": "设置或登录插件所需的工具",
   "person.route.PLUGIN_TRY": "试用一个插件",
   "person.route.PLUGIN_UPDATE": "更新一个插件",
   "person.route.TOOLS_DELETE": "删除一个工具的某个版本",

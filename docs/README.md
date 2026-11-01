@@ -221,8 +221,12 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-11-02-canvas-proposal-opus.md` | Proposal: CANVAS1, Opus, sealed
 | `2026-11-02-canvas-proposal-codex.md` | Proposal: CANVAS1, Codex, sealed
 | `2026-11-02-canvas-design.md` | Design: CANVAS1, one canvas platform, placed and positioned worlds, the engine chosen by measurement; accepted 2026-11-02 (D224)
+| `2026-11-02-canvas-reads.md` | Reads: CANVAS1, Codex's read, settled in the design's §11
 | `2026-11-02-staff-policy-proposal-opus.md` | Proposal: STAFFPOLICY1, Opus, sealed
 | `2026-11-02-staff-policy-proposal-codex.md` | Proposal: STAFFPOLICY1, Codex, sealed
+| `2026-11-02-staff-policy-design.md` | Design: STAFFPOLICY1, a policy beside a role's choices, order or weight, conditions that move a line; accepted 2026-11-02 (D226)
+| `2026-11-02-staff-policy-reads.md` | Reads: STAFFPOLICY1, Codex's read, settled in the design's §11
+| `2026-11-02-comms-brief.md` | Brief: COMMS1, one model for how sessions, agents and the person talk and hand work to each other
 
 ## UI, browser, tools and plugin contracts
 

@@ -183,4 +183,74 @@ public sealed class AtWorkReadTests
         Assert.Equal(1, entry.Published);
         Assert.True(lane.Alongside);
     }
+
+    [Fact]
+    public async Task The_quests_a_part_asked_are_read_by_the_quest_units_over_the_two_slices_with_each_taker()
+    {
+        _records = new JsonObject
+        {
+            ["lead"] = Record("lead", "completed", kind: "chat"),
+            ["other"] = Record("other", "working", kind: "chat"),
+            ["serving"] = Record("serving", "working", "claude-code"),
+            ["lane"] = Record("lane", "working"),
+        };
+        _records["other"]!["tookQuest"] = "q2";
+        _records["serving"]!["quest"] = "q3";
+        _records["serving"]!["created"] = "2026-11-01T08:00:00Z";
+        _records["lane"]!["quest"] = "q6";
+        _entries = new JsonObject
+        {
+            ["e"] = new JsonObject
+            {
+                ["parts"] = new JsonArray(
+                    new JsonObject { ["session"] = "lead", ["shown"] = "completed", ["began"] = "opened" },
+                    new JsonObject { ["session"] = "lane", ["quest"] = "q6", ["shown"] = "working", ["began"] = "opened", ["after"] = "lead" }),
+            },
+        };
+        JsonObject Quest(string id, string status, string by = "lead", string to = "core") =>
+            new() { ["id"] = id, ["status"] = status, ["to"] = to, ["title"] = $"Title {id}", ["publishedBy"] = by };
+        _questsHeld = new JsonObject
+        {
+            ["q1"] = Quest("q1", "Open"),
+            ["q2"] = Quest("q2", "Taken"),
+            ["q3"] = Quest("q3", "Taken", to: "docs"),
+            ["q4"] = Quest("q4", "Taken"),
+            ["q5"] = new JsonObject { ["id"] = "q5", ["status"] = "Open", ["parent"] = "q3", ["to"] = "docs", ["title"] = "Step" },
+            ["q6"] = Quest("q6", "Taken"),
+            ["q7"] = Quest("q7", "Open", by: "stranger"),
+        };
+        _questsHeld["q4"]!["holder"] = "laptop";
+        _questsHeld["q4"]!["here"] = "desk";
+        _questsHeld["q1"]!["short"] = "The short";
+        var (groups, sessions, quests) = await JudgedAsync();
+
+        var answer = Read("lead", groups, sessions, quests).Answer!;
+
+        Assert.Equal(["q1", "q2", "q3", "q4", "q5"], answer.Quests!.Select(quest => quest.Id).Order());
+        AtWorkAskedQuest Row(string id) => answer.Quests!.Single(quest => quest.Id == id);
+        Assert.Equal(("The short", true), (Row("q1").Title, Row("q1").Taker!.Untaken == true));
+        Assert.Equal("other", Row("q2").Taker!.Conversation);
+        Assert.Equal(("serving", "working", "claude-code"), (Row("q3").Taker!.Session, Row("q3").Taker!.State, Row("q3").Taker!.Agent));
+        Assert.Equal(("docs", true), (Row("q3").Of, Row("q4").Taker!.Elsewhere == true));
+        Assert.Equal("q3", Row("q5").Step);
+        // q6 opened the entry's lane part, so it is that part's, and never a row too.
+        Assert.DoesNotContain(answer.Quests!, quest => quest.Id is "q6" or "q7");
+        Assert.Equal("q6", answer.Parts.Single(part => part.Key == "lane").Joined!.Quest);
+    }
+
+    [Fact]
+    public async Task The_asker_of_the_attended_part_s_quest_is_read_from_the_quest_it_serves_or_took()
+    {
+        _records = new JsonObject { ["chat"] = Record("chat", "completed", kind: "chat") };
+        _records["chat"]!["tookQuest"] = "t1";
+        _questsHeld = new JsonObject
+        {
+            ["t1"] = new JsonObject { ["id"] = "t1", ["status"] = "Taken", ["from"] = "ask #a7", ["title"] = "T" },
+        };
+        var (groups, sessions, quests) = await JudgedAsync();
+
+        var asker = Read("chat", groups, sessions, quests).Answer!.AskedBy!;
+
+        Assert.Equal(("t1", "a7"), (asker.Quest, asker.By.Ask));
+    }
 }

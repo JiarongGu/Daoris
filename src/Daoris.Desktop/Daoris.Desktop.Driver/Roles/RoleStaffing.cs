@@ -719,8 +719,8 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
         return Encoding.UTF8.GetString(stream.GetBuffer(), 0, (int)stream.Length);
     }
 
-    /// <summary>The choices a stored list holds, or null where the text is not one the store wrote.</summary>
-    private static IReadOnlyList<ActorChoice>? Choices(string? text)
+    /// <summary>The choices a stored list holds, or null where the text is not one the store wrote; a policy's digest reads them too.</summary>
+    internal static IReadOnlyList<ActorChoice>? Choices(string? text)
     {
         if (text is null) return null;
         try

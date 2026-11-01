@@ -547,6 +547,8 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     // HELPMODE1c3: and the driver's, whose helpGrants draws the browser's grant from the plugin's approval.
     [InlineData("PLUGIN_ACTION", "driver,plugins,harnesses", null)]
     [InlineData("PLUGIN_UPDATE", "driver,plugins,harnesses", null)]
+    [InlineData("PLUGIN_TOOLS", "plugins", null)]
+    [InlineData("PLUGIN_TOOL_FIX", "plugins", null)]
     [InlineData("PLUGIN_INSTALL", "driver,plugins,harnesses", null)]
     [InlineData("PLUGIN_ADD", "driver,plugins,harnesses", null)]
     [InlineData("PLUGINS", "", null)]

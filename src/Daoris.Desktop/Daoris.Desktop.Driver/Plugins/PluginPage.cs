@@ -84,6 +84,9 @@ public static class PluginPage
             // FABRIC-UNIT1e (§D9): its steps and what they create, as written.
             Steps = manifest.Steps,
             Resources = manifest.Resources,
+            // ADOSIGNIN1: its tools as written; nothing is found or run by this read.
+            Tools = [.. manifest.Tools.Select(tool => ToolStanding.Declared(tool, manifest.Tools))],
+            ToolsProblem = manifest.ToolsProblem,
         };
     }
 

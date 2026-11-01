@@ -400,6 +400,8 @@ public sealed class PipeCensus
             "RULE_ACTION", "RULE_PROPOSAL", "ACCOUNT_USE", "HARNESS_ACTION",
             // Code that runs in the driver, and the programs it runs with.
             "PLUGIN_ACTION", "PLUGIN_ADD", "PLUGIN_INSTALL", "PLUGIN_NEW", "PLUGIN_TRY",
+            // ADOSIGNIN1: a plugin's tools checked, and a tool's set-up or sign-in in a console the person sees: the person's alone.
+            "PLUGIN_TOOLS", "PLUGIN_TOOL_FIX",
             "TOOLS_DELETE", "TOOLS_DOWNLOAD", "TOOLS_LOCATION", "TOOLS_STOP", "TOOLS_USE",
             // Made by the driver, and still the person's (a second agent's review): bringing Daoris's branches up to date
             // fast-forwards the lines and replays and deletes branches, every repository's at once; a second opinion starts a
@@ -493,7 +495,7 @@ public sealed class PipeCensus
             "PLACE_APPLY", "WORKFLOW_LANDED", "WORKFLOW_SAVE", "WORKFLOW_USE", "WORKFLOW_KIND", "WORKFLOW_VERIFY", "SET_KEEP", "TRUST_FOLDER", "PLUGIN_ACTION", "PLUGIN_ADD", "PLUGIN_INSTALL", "PLUGIN_UPDATE",
             // A process of its own that runs on past its answer, which the drain counts not and the close would cut: a plugin's try, a
             // harness's installer, updater or sign-in, and a tool's download (a managed use downloads first).
-            "PLUGIN_TRY", "HARNESS_ACTION", "TOOLS_DOWNLOAD", "TOOLS_USE",
+            "PLUGIN_TRY", "PLUGIN_TOOLS", "PLUGIN_TOOL_FIX", "HARNESS_ACTION", "TOOLS_DOWNLOAD", "TOOLS_USE",
             // A repository changed through git: a landing, a hand-off, a discard, a drop of recovery refs, a sweep, a sync, an abandon
             // and a delete, each of which removes a tree or a branch, and Free up space's run, which takes finished trees too.
             "LAND_SESSION_TREE", "LAND_WITHOUT_LOOK", "LAND_ENTRY", "LAND_ASK", "HANDOFF", "DISCARD_SESSION_TREE", "DISCARD_SESSION_BRANCH",

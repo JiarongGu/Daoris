@@ -1,0 +1,313 @@
+using Microsoft.Data.Sqlite;
+
+namespace Daoris.Driver;
+
+/// <summary>
+/// A role's policy as the store holds it (the staff policy design §2.1): its state, <see cref="Default"/> with no row, <see cref="Set"/>
+/// while its digest is the role's choices', <see cref="Stale"/> once they changed or it does not read; the record, kept for the editor
+/// even when stale; its revision, the deletion's where there is no row; and the moment its window starts from.
+/// </summary>
+public sealed record StaffPolicyRead(string State, StaffPolicy? Policy, long Revision, string? Since, string? Why = null)
+{
+    public const string Default = "default";
+    public const string Set = "set";
+    public const string Stale = "stale";
+
+    /// <summary>The policy a start applies: a set one; with none or a stale one the role runs in order, every move as today.</summary>
+    public StaffPolicy? Applied => State == Set ? Policy : null;
+}
+
+/// <summary>
+/// The store's half of a role's policy (STAFFPOLICY1a, D226; the staff policy design §2.1): <c>role_policy</c> and its revisions, read and
+/// written inside a caller's transaction, so the choices' writer can save or re-key the policy in its own (row b).
+/// </summary>
+/// <remarks>Its callers write a store at <see cref="Step"/> or later; a store held before it, by a start not yet settled, has no table.</remarks>
+public static class StaffPolicies
+{
+    /// <summary>The family a policy's write moves.</summary>
+    public const string Family = "role_policy";
+
+    /// <summary>The store's version the policy's tables arrive at.</summary>
+    public const int Step = 16;
+
+    private const string Row =
+        """
+        SELECT p.policy, p.staffing, p.revision, p.since, s.state, s.choices,
+               (SELECT MAX(r.revision) FROM role_policy_revisions r WHERE r.role = $role)
+        FROM (SELECT $role AS role) k
+        LEFT JOIN role_policy p ON p.role = k.role
+        LEFT JOIN role_staffing s ON s.role = k.role
+        """;
+
+    /// <summary><paramref name="role"/>'s policy as a read-only store holds it; default before the policy's step.</summary>
+    public static StaffPolicyRead Read(DesktopStoreReader store, string role) =>
+        store.Version < Step ? new StaffPolicyRead(StaffPolicyRead.Default, null, 0, null) : Judged(store.Query(Row, Raw, ("$role", role))[0]);
+
+    /// <summary><paramref name="role"/>'s policy as the write's transaction sees it.</summary>
+    public static StaffPolicyRead Read(DesktopWrite write, string role) => Judged(write.Query(Row, Raw, ("$role", role))[0]);
+
+    /// <summary>
+    /// Save <paramref name="policy"/> as <paramref name="role"/>'s, set for <paramref name="choices"/>, where the revision the person read is
+    /// still the store's, and keep the revision; the window starts afresh where the rule or a choice's weight changed (§3.2). The caller
+    /// judged it (<see cref="StaffPolicy.Judge"/>). The new revision.
+    /// </summary>
+    /// <exception cref="RoleRefusedException">The policy changed since <paramref name="read"/>: nothing is written, and the draft is the caller's to keep.</exception>
+    public static long Save(DesktopWrite write, string role, StaffPolicy policy, IReadOnlyList<ActorChoice> choices, long read, string at)
+    {
+        var now = Read(write, role);
+        if (read != now.Revision)
+        {
+            throw new RoleRefusedException(new RoleRefusal(StaffPolicy.Code,
+                $"`{role}`'s policy changed since you read it (revision {read}, now {now.Revision}), so nothing was saved: read it again and save your draft over it."));
+        }
+
+        var kept = now.State != StaffPolicyRead.Default && now.Policy is { } old && old.Rule == policy.Rule
+            && choices.All(choice => (old.Of(StaffKey.Of(choice))?.Weight ?? 1) == (policy.Of(StaffKey.Of(choice))?.Weight ?? 1));
+        var revision = now.Revision + 1;
+        var text = policy.Write();
+        var digest = StaffPolicy.Digest(choices);
+        write.Execute(
+            """
+            INSERT INTO role_policy (role, policy, staffing, revision, since, at) VALUES ($role, $policy, $staffing, $revision, $since, $at)
+            ON CONFLICT (role) DO UPDATE SET policy = excluded.policy, staffing = excluded.staffing, revision = excluded.revision,
+              since = excluded.since, at = excluded.at
+            """,
+            ("$role", role), ("$policy", text), ("$staffing", digest), ("$revision", revision), ("$since", kept ? now.Since : at), ("$at", at));
+        write.Execute(
+            "INSERT INTO role_policy_revisions (role, revision, policy, staffing, at) VALUES ($role, $revision, $policy, $staffing, $at)",
+            ("$role", role), ("$revision", revision), ("$policy", text), ("$staffing", digest), ("$at", at));
+        return revision;
+    }
+
+    /// <summary>
+    /// Delete <paramref name="role"/>'s policy, as <i>Restore role defaults</i>, <i>Clear staffing</i> and a removal do (§2.4): its revisions
+    /// kept, a revision with no policy marking the deletion. Whether there was one.
+    /// </summary>
+    public static bool Delete(DesktopWrite write, string role, string at)
+    {
+        var now = Read(write, role);
+        if (now.State == StaffPolicyRead.Default) return false;
+        write.Execute("DELETE FROM role_policy WHERE role = $role", ("$role", role));
+        write.Execute(
+            "INSERT INTO role_policy_revisions (role, revision, policy, staffing, at) VALUES ($role, $revision, NULL, NULL, $at)",
+            ("$role", role), ("$revision", now.Revision + 1), ("$at", at));
+        return true;
+    }
+
+    private sealed record Stored(string? Policy, string? Staffing, long? Revision, string? Since, string? State, string? Choices, long? Last);
+
+    private static Stored Raw(SqliteDataReader row) => new(
+        Text(row, 0), Text(row, 1), row.IsDBNull(2) ? null : row.GetInt64(2), Text(row, 3), Text(row, 4), Text(row, 5), row.IsDBNull(6) ? null : row.GetInt64(6));
+
+    private static string? Text(SqliteDataReader row, int column) => row.IsDBNull(column) ? null : row.GetString(column);
+
+    /// <summary>The state of a stored row: set while its digest is the role's choices' as they stand.</summary>
+    private static StaffPolicyRead Judged(Stored stored)
+    {
+        if (stored.Policy is null) return new StaffPolicyRead(StaffPolicyRead.Default, null, stored.Last ?? 0, null);
+        var revision = stored.Revision ?? 0;
+        var (policy, refused) = StaffPolicy.Parse(stored.Policy);
+        if (policy is null) return new StaffPolicyRead(StaffPolicyRead.Stale, null, revision, stored.Since, $"its policy does not read ({refused!.Said.TrimEnd('.')}), so it runs in order");
+        if (stored.State != "set" || RoleStaffing.Choices(stored.Choices) is not { Count: > 0 } choices)
+        {
+            return new StaffPolicyRead(StaffPolicyRead.Stale, policy, revision, stored.Since, "its role has no choices of its own now, so it keeps its policy unapplied");
+        }
+
+        return StaffPolicy.Digest(choices) == stored.Staffing
+            ? new StaffPolicyRead(StaffPolicyRead.Set, policy, revision, stored.Since)
+            : new StaffPolicyRead(StaffPolicyRead.Stale, policy, revision, stored.Since, "its policy was set for other choices; it runs them in order until it is saved again");
+    }
+}
+
+/// <summary>A start's hold on a choice in this process (§3.2): the role and the choice it counts on until the start opens or is refused.</summary>
+public sealed class StaffReservation
+{
+    internal StaffReservation(string role, StaffKey choice)
+    {
+        Role = role;
+        Choice = choice;
+    }
+
+    public string Role { get; }
+
+    /// <summary>The choice it counts on: the arrangement's top pick, then the entry the settled selection took.</summary>
+    public StaffKey Choice { get; internal set; }
+}
+
+/// <summary>
+/// A look at a role's staffing (§3.1): the policy as read, the facts it was arranged by, the arrangement, and the reservation of its top pick
+/// where the look takes one (<see cref="StaffLedger.Take"/>); a preview takes none.
+/// </summary>
+public sealed record StaffTake(StaffPolicyRead Policy, StaffFacts Facts, StaffArrangement Arrangement, StaffReservation? Reservation);
+
+/// <summary>A new start's row of <c>role_starts</c> (§3.2): its session, role, choice, why it was chosen, and the condition where it moved.</summary>
+public sealed record StaffStart(string Session, string Role, StaffKey Choice, string By, string? Condition = null);
+
+/// <summary>
+/// The ledger of a home's role starts (STAFFPOLICY1a, D226; the staff policy design §3.2, §4.2): <c>role_starts</c>, a row per new start at
+/// its open; the reservations of this process's looks under one lock; the day's counts; and the health mark. It coordinates a look's
+/// snapshot, its arrangement by <see cref="StaffJudge.Arrange"/> and its reservation under its lock, so two starts in one look count each
+/// other. Nothing reads it at a start yet (row c).
+/// </summary>
+/// <remarks>
+/// <para><b>In memory, this process's:</b> the reservations and the marks. A restart drops them and keeps <c>role_starts</c>.</para>
+/// <para><b>The day</b> is the machine's local day, in its zone as D125 reads a reset; an edit of the policy never refills it.</para>
+/// <para>The store is opened for one use and closed, a read never creating or writing it.</para>
+/// </remarks>
+/// <param name="home">The home whose store this is.</param>
+/// <param name="settled">The reading of the start's confirmation a write opens the store under; null reads this install's swap journal.</param>
+/// <param name="clock">The clock of every moment read and written.</param>
+/// <param name="zone">The zone the day is read in; null for the machine's.</param>
+public sealed class StaffLedger(string home, Func<StoreSettled>? settled = null, TimeProvider? clock = null, TimeZoneInfo? zone = null)
+{
+    /// <summary>The family a start's write moves.</summary>
+    public const string Family = "role_starts";
+
+    /// <summary>How long an agent marked not answering stays marked, unless a prompt on it answers sooner (§4.2).</summary>
+    public static readonly TimeSpan Mark = TimeSpan.FromMinutes(15);
+
+    private readonly Lock _gate = new();
+
+    private readonly List<StaffReservation> _reserved = [];
+
+    private readonly Dictionary<string, DateTimeOffset> _marks = new(StringComparer.OrdinalIgnoreCase);
+
+    private TimeProvider Clock => clock ?? TimeProvider.System;
+
+    /// <summary>The store's file in this home.</summary>
+    public string Location => DesktopStore.LocationIn(home);
+
+    /// <summary><paramref name="role"/>'s policy as the store holds it; default where there is no store or it is before the policy's step.</summary>
+    public StaffPolicyRead Policy(string role)
+    {
+        using var store = DesktopStoreReader.Open(Location);
+        return store is null ? new StaffPolicyRead(StaffPolicyRead.Default, null, 0, null) : StaffPolicies.Read(store, role);
+    }
+
+    /// <summary>
+    /// A look that reserves its top pick: under the ledger's lock, the policy and the facts read once, <paramref name="line"/>'s tokens and
+    /// moves off kept beside them, the walk arranged and, where a set policy arranged one, its top entry reserved. A refusal gives it back
+    /// (<see cref="Release"/>), the settled selection moves it (<see cref="Settle"/>) and the open records it (<see cref="Record"/>).
+    /// </summary>
+    public StaffTake Take(string role, string work, IReadOnlyList<ActorEffective> order, StaffFacts? line = null) => Look(role, work, order, line, reserve: true);
+
+    /// <summary>The same look reserving nothing and asking no account: <c>ROLES</c>' next start.</summary>
+    public StaffTake Preview(string role, string work, IReadOnlyList<ActorEffective> order, StaffFacts? line = null) => Look(role, work, order, line, reserve: false);
+
+    private StaffTake Look(string role, string work, IReadOnlyList<ActorEffective> order, StaffFacts? line, bool reserve)
+    {
+        lock (_gate)
+        {
+            var policy = Policy(role);
+            var facts = Facts(role, policy, line ?? new StaffFacts());
+            var arranged = StaffJudge.Arrange(policy.Applied, work, order, facts);
+            StaffReservation? reservation = null;
+            if (reserve && policy.Applied is not null && arranged.Walk.Count > 0)
+            {
+                reservation = new StaffReservation(role, StaffKey.Of(arranged.Walk[0].Entry));
+                _reserved.Add(reservation);
+            }
+
+            return new StaffTake(policy, facts, arranged, reservation);
+        }
+    }
+
+    /// <summary>Move <paramref name="reservation"/> to the entry the settled selection took.</summary>
+    public void Settle(StaffReservation reservation, ActorEffective taken)
+    {
+        lock (_gate) reservation.Choice = StaffKey.Of(taken);
+    }
+
+    /// <summary>Give <paramref name="reservation"/> back, once: the start was refused before it opened.</summary>
+    public void Release(StaffReservation reservation)
+    {
+        lock (_gate) _reserved.Remove(reservation);
+    }
+
+    /// <summary>
+    /// Write <paramref name="start"/>'s row at its open, once for its session, and drop <paramref name="reservation"/>, which the row now counts.
+    /// False, nothing written, where the store is before the policy's step; the reservation is dropped either way.
+    /// </summary>
+    public bool Record(StaffStart start, StaffReservation? reservation = null)
+    {
+        lock (_gate)
+        {
+            try
+            {
+                using var store = DesktopStore.Open(Location, StoreProcess.Options(settled ?? StartConfirmation.Read));
+                if (store.Stamp.Version < StaffPolicies.Step) return false;
+                store.Write(Family, write => write.Execute(
+                    """
+                    INSERT INTO role_starts (session, role, choice, by, condition, at) VALUES ($session, $role, $choice, $by, $condition, $at)
+                    ON CONFLICT (session) DO NOTHING
+                    """,
+                    ("$session", start.Session), ("$role", start.Role), ("$choice", start.Choice.Text), ("$by", start.By), ("$condition", start.Condition),
+                    ("$at", StaffJson.Moment(Clock.GetUtcNow()))));
+                return true;
+            }
+            finally
+            {
+                if (reservation is not null) _reserved.Remove(reservation);
+            }
+        }
+    }
+
+    /// <summary>Mark <paramref name="agent"/> not answering for <see cref="Mark"/>: a transient episode past its bound, or a driven line's <c>after</c>.</summary>
+    public void MarkNotAnswering(string agent)
+    {
+        lock (_gate) _marks[agent] = Clock.GetUtcNow() + Mark;
+    }
+
+    /// <summary>A prompt on <paramref name="agent"/> answered: its mark ends.</summary>
+    public void Answered(string agent)
+    {
+        lock (_gate) _marks.Remove(agent);
+    }
+
+    /// <summary>
+    /// The facts of a look, under the lock: <paramref name="line"/>'s tokens and moves off, the window since the policy's <c>since</c> and
+    /// today's starts where a set policy reads them, this process's reservations and marks, and now.
+    /// </summary>
+    private StaffFacts Facts(string role, StaffPolicyRead policy, StaffFacts line)
+    {
+        var now = Clock.GetUtcNow();
+        IReadOnlyList<StaffKey> window = [];
+        var today = new Dictionary<StaffKey, int>();
+        if (policy.Applied is not null)
+        {
+            using var store = DesktopStoreReader.Open(Location);
+            if (store is not null && store.Version >= StaffPolicies.Step)
+            {
+                window = [.. store.Query(
+                        "SELECT choice FROM role_starts WHERE role = $role AND at >= $since ORDER BY at DESC, rowid DESC LIMIT $most",
+                        row => StaffKey.Read(row.GetString(0)), ("$role", role), ("$since", policy.Since), ("$most", StaffJudge.Window))
+                    .OfType<StaffKey>().Reverse()];
+                foreach (var (key, count) in store.Query(
+                             "SELECT choice, COUNT(*) FROM role_starts WHERE role = $role AND at >= $day GROUP BY choice",
+                             row => (StaffKey.Read(row.GetString(0)), row.GetInt32(1)), ("$role", role), ("$day", StaffJson.Moment(DayStart(now)))))
+                {
+                    if (key is { } choice) today[choice] = today.GetValueOrDefault(choice) + count;
+                }
+            }
+        }
+
+        var reserved = new Dictionary<StaffKey, int>();
+        foreach (var each in _reserved.Where(each => each.Role == role)) reserved[each.Choice] = reserved.GetValueOrDefault(each.Choice) + 1;
+        return line with
+        {
+            Now = now,
+            Window = window,
+            Reserved = reserved,
+            Today = today,
+            NotAnswering = new Dictionary<string, DateTimeOffset>(_marks.Where(mark => mark.Value > now), StringComparer.OrdinalIgnoreCase),
+        };
+    }
+
+    /// <summary>The start of <paramref name="now"/>'s local day in the ledger's zone.</summary>
+    private DateTimeOffset DayStart(DateTimeOffset now)
+    {
+        var where = zone ?? TimeZoneInfo.Local;
+        var local = TimeZoneInfo.ConvertTime(now, where);
+        return new DateTimeOffset(local.Date, where.GetUtcOffset(local.Date));
+    }
+}
