@@ -924,13 +924,15 @@ internal sealed class ChatLedger : HttpMessageHandler
         return this;
     }
 
-    public ChatLedger Register(string repository, string root)
+    /// <param name="lanes">The ids of the lanes the repository declares (COWORKVIEW1e-i), as the registry answers them.</param>
+    public ChatLedger Register(string repository, string root, params string[] lanes)
     {
         lock (_gate)
         {
             _registry.Add(new JsonObject
             {
                 ["repository"] = repository, ["adopted"] = true, ["registered"] = true, ["root"] = root, ["workspace"] = "default",
+                ["lanes"] = new JsonArray([.. lanes.Select(lane => (JsonNode)new JsonObject { ["id"] = lane, ["title"] = lane })]),
             });
         }
 

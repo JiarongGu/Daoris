@@ -132,6 +132,22 @@ public sealed class RepositorySignatureTests
         Assert.NotEqual(Repositories.Signature(before), Repositories.Signature([new RepoView("engine", true, "/work/engine", "aurora")]));
         Assert.Equal(string.Empty, Repositories.Signature([]));
     }
+
+    /// <summary>COWORKVIEW1e-i (the cowork view design §R11.2 point 2): the lanes a repository declares are heard, whatever their order.</summary>
+    [Fact]
+    public void A_repository_s_lanes_alone_move_the_signature_and_their_order_does_not()
+    {
+        var none = new RepoView("engine", true, "/work/engine", "aurora");
+        var core = none with { Lanes = ["core"] };
+
+        Assert.NotEqual(Repositories.Signature([none]), Repositories.Signature([core]));
+        Assert.NotEqual(Repositories.Signature([core]), Repositories.Signature([none with { Lanes = ["core", "web"] }]));
+        Assert.NotEqual(Repositories.Signature([core]), Repositories.Signature([none with { Lanes = ["web"] }]));
+        Assert.Equal(
+            Repositories.Signature([none with { Lanes = ["core", "web"] }]), Repositories.Signature([none with { Lanes = ["web", "core"] }]));
+        // A host from before lanes answers none, which signs as an empty list does.
+        Assert.Equal(Repositories.Signature([none]), Repositories.Signature([none with { Lanes = [] }]));
+    }
 }
 
 public sealed class PlannerTests

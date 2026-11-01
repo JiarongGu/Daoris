@@ -339,6 +339,13 @@ public sealed record SessionTarget(
     public string? Browser { get; init; }
 
     /// <summary>
+    /// The routing standing of this session's repository on this machine (COWORKVIEW1e-i; the judge's words), a block
+    /// of the instruction beside the browser's, set where the driver starts a quest's session. Null says nothing, and the instruction
+    /// reads as it did; a helper's, a partner's, a reviewer's and an intake's instruction never carry it.
+    /// </summary>
+    public string? Routing { get; init; }
+
+    /// <summary>
     /// The target a quest's session is handed: the quest as the service answered it, run in
     /// <paramref name="workTree"/> — the repository's own tree where it opted in (D51), its root
     /// otherwise — naming the code map that tree keeps.
@@ -515,6 +522,8 @@ public static class TargetPrompt
         new(HandedSections.Landing, Landing(target)),
         // The browser handed, a block of its own (BRWHINT1b); the driver's own words, so counted with the close.
         new(HandedSections.Close, target.Browser is { } browser ? $"\n{browser}\n" : ""),
+        // Its repository's routing standing (COWORKVIEW1e-i), the driver's own words beside the browser's, counted with the close.
+        new(HandedSections.Close, target.Routing is { Length: > 0 } routing ? $"\n{routing}\n" : ""),
         new(HandedSections.Reading, Reading(target)),
         .. AskingPieces(target, lead: "\n"),
         new(HandedSections.Proposing, "\n\n" + Proposing),

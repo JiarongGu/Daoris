@@ -17,9 +17,9 @@ import type {
   WorkflowUseAnswer, WorkflowUseAsk,
 } from './answers';
 import { type Begin, draftFlow, EditCanvas } from './EditCanvas';
-import { plain, rowSaid, stepTitle } from './editWords';
+import { carriedSaid, plain, rowSaid, stepTitle } from './editWords';
 import {
-  canInsertOn, type Clip, commit, connect, copySteps, draftOf, duplicateStep, emptyDraft, entriesOf, type GraphDraft, graphOf, historyOf,
+  canInsertOn, type Carried, type Clip, commit, connect, copySteps, draftOf, duplicateStep, emptyDraft, entriesOf, type GraphDraft, graphOf, historyOf,
   type InsertAt, insertStep, joinOf, moveInChain, movePlan, pasteSteps, redo, removeStep, removeWire, retarget, type StepChoice, targetsOf,
   undo, type WayRowKey, workflowIdFor,
 } from './graphDraft';
@@ -78,6 +78,8 @@ export type WorkflowEditorProps = WorkflowEditorBridge & {
   /** The route and the pipeline the place opened it for, where the caller knows them: Ask Daoris is told them with the draft. */
   route?: string | null;
   pipeline?: 'development' | 'verification' | null;
+  /** The lines the place declares, which a landing's target is chosen from; none, and the target is typed. */
+  lines?: string[];
   onClose?: () => void;
 };
 
@@ -149,7 +151,7 @@ export function WorkflowEditor(props: WorkflowEditorProps) {
 /** The editor once its reads are answered, told whether its region holds the inspector beside the chart. */
 function Composing({
   list, palette, roles, shown, onShow, judged, judgedOf = null, judgeFailed = null, judging, onJudge, saving, onSave, using, onUse, place, startFrom,
-  route = null, pipeline = null, onClose, wide, proposal: offered = null, onSettleProposal, onDismissProposal,
+  route = null, pipeline = null, lines, onClose, wide, proposal: offered = null, onSettleProposal, onDismissProposal,
 }: WorkflowEditorProps & { list: WorkflowListAnswer; palette: WorkflowPaletteAnswer; wide: boolean }) {
   const { t, i18n } = useTranslation();
   const headId = useId();
@@ -282,6 +284,9 @@ function Composing({
   const stepsAt = (id: string): string[] => (nodeOf(id) ? [id] : id.startsWith(HOLDS) ? holdsRun(id) : []);
 
   const words = (from: string, row: WayRowKey, to: string) => t('workflow.edit.said.way', { row: rowSaid(t, row), from: titleOf(from), to: titleOf(to) });
+  /** A change's words, with the inputs it proposed and the ones it leaves to ask about (SETUPUX1r). */
+  const carried = (said: string, next: GraphDraft, proposed: Carried[], steps: string[]) =>
+    [said, carriedSaid(t, i18n, palette, next, proposed, steps)].filter(Boolean).join(' ');
   const select = (id: string) => {
     setChosen(id);
     setConfirming(null);
@@ -306,7 +311,7 @@ function Composing({
     if (!at) return;
     const made = insertStep(palette, draft, choice, at);
     if (made.draft === draft) return;
-    change(made.draft, t('workflow.edit.said.added', { step: stepTitle(t, i18n, palette, choice) }));
+    change(made.draft, carried(t('workflow.edit.said.added', { step: stepTitle(t, i18n, palette, choice) }), made.draft, made.carried, [made.id]));
     setDrawer(false);
     setChosen(made.id);
     focusOn(made.id);
@@ -340,7 +345,7 @@ function Composing({
     const to = takerAt(id);
     const made = to === null ? null : connect(palette, draft, choosing.from, choosing.row, to);
     if (!made || to === null) return;
-    change(made.draft, words(choosing.from, choosing.row, to));
+    change(made.draft, carried(words(choosing.from, choosing.row, to), made.draft, made.carried, [to]));
     setChoosing(null);
   };
   const giveUp = () => {
@@ -644,11 +649,11 @@ function Composing({
         return;
       }
       const next = retarget(palette, draft, wire.id, to);
-      if (next) change(next, words(id, row, to));
+      if (next) change(next, carried(words(id, row, to), next, [], [to]));
     },
     onAdd: (row, to) => {
       const made = connect(palette, draft, id, row, to);
-      if (made) change(made.draft, words(id, row, to));
+      if (made) change(made.draft, carried(words(id, row, to), made.draft, made.carried, [to]));
     },
     onPick: (row) => choose(id, row),
     onNew: (row) => openPicker({ from: id, row }),
@@ -663,7 +668,7 @@ function Composing({
     onRemove: (options) => remove(id, options),
   });
   const inspector = node && (
-    <Inspector palette={palette} draft={draft} roles={roles} node={node} titleOf={titleOf}
+    <Inspector palette={palette} draft={draft} roles={roles} lines={lines} node={node} titleOf={titleOf}
       problems={{ atStep: atStep(node.id), atWire }} confirming={confirming} onConfirm={setConfirming} acts={acts(node.id)} />
   );
 

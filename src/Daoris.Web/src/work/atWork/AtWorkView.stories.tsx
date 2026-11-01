@@ -3,8 +3,9 @@ import { atWidths, inDark, inLight } from '../../design/flowFrames';
 import { chinese } from '../../design/storyLanguage';
 import { AtWorkView } from './AtWorkView';
 import {
-  BOUND, CODEX, CODEX_NONE, CONTINUED, ELSEWHERE, EMPTY, FAILED, HISTORY, IDS_ONLY, LOST, NO_PARENT, NOW, PARTS, READING, STALE, THREE,
-  TURN_WAITS, UNCERTAIN, UNREADABLE,
+  BOUND, CHAT_TOOK_A_QUEST, CODEX, CODEX_NONE, CONTINUED, ELSEWHERE, EMPTY, FAILED, HISTORY, IDS_ONLY, JOINED_EACH_WAY, LEAD_WAITING_ON_HELPER,
+  LEAD_WAITING_ON_LANE, LOST, NO_PARENT, NOW, OVERFLOW_AND_EARLIER, PARTS, PUBLISHED_AND_WAITS_ON_NONE, READING, RESUMED_AND_EARLIER, STALE,
+  THREE, TURN_WAITS, UNCERTAIN, UNREADABLE,
 } from './atWork.fixtures';
 
 // Who is at work (COWORKVIEW1a, the cowork view design §5.3): each state the view draws, at the side bar's floor (300 px), a roomier
@@ -86,6 +87,40 @@ export const DrivenHistoryChinese: Story = { args: { held: HISTORY }, decorators
 /** An attended teammate's part: its subagents not visible on this machine. */
 export const Elsewhere: Story = { args: { held: ELSEWHERE }, decorators: light };
 export const ElsewhereChinese: Story = { args: { held: ELSEWHERE }, decorators: zhDark };
+
+// COWORKVIEW1b-i: the routing half's stories at the main area's three widths (80, 39 and 25rem: `storyWidths.tsx`) and the side bar's
+// 300 px floor, each in English in light and in 中文 in dark.
+const ROUTING_WIDTHS = [300, 400, 624, 1280] as const;
+const routingLight = [atWidths(ROUTING_WIDTHS), inLight];
+const routingZh = [chinese, atWidths(ROUTING_WIDTHS), inDark];
+
+/** A lead waiting on its own lane part: the *Waiting on* line first, the lane part alongside below it, never folded. */
+export const LeadWaitingOnLanePart: Story = { args: { held: LEAD_WAITING_ON_LANE }, decorators: routingLight };
+export const LeadWaitingOnLanePartChinese: Story = { args: { held: LEAD_WAITING_ON_LANE }, decorators: routingZh };
+
+/** A lead waiting on its helper, which the strip words *awaiting helper*. */
+export const LeadWaitingOnHelper: Story = { args: { held: LEAD_WAITING_ON_HELPER }, decorators: routingLight };
+export const LeadWaitingOnHelperChinese: Story = { args: { held: LEAD_WAITING_ON_HELPER }, decorators: routingZh };
+
+/** A chat that took a quest, waiting on the question the quest asked. */
+export const ChatTookAQuest: Story = { args: { held: CHAT_TOOK_A_QUEST }, decorators: routingLight };
+export const ChatTookAQuestChinese: Story = { args: { held: CHAT_TOOK_A_QUEST }, decorators: routingZh };
+
+/** A session with two lane parts alongside, having published three quests and waiting on none. */
+export const PublishedAndWaitsOnNone: Story = { args: { held: PUBLISHED_AND_WAITS_ON_NONE }, decorators: routingLight };
+export const PublishedAndWaitsOnNoneChinese: Story = { args: { held: PUBLISHED_AND_WAITS_ON_NONE }, decorators: routingZh };
+
+/** The resumed record first, the one that waited among four earlier parts. */
+export const ResumedBesideItsEarlierParts: Story = { args: { held: RESUMED_AND_EARLIER }, decorators: routingLight };
+export const ResumedBesideItsEarlierPartsChinese: Story = { args: { held: RESUMED_AND_EARLIER }, decorators: routingZh };
+
+/** Each door a part joined by, in the design's words. */
+export const JoinedEachWay: Story = { args: { held: JOINED_EACH_WAY }, decorators: routingLight };
+export const JoinedEachWayChinese: Story = { args: { held: JOINED_EACH_WAY }, decorators: routingZh };
+
+/** The limit's overflow counted apart from the fold: *2 earlier parts* and *10 more parts*. */
+export const OverflowBesideTheFold: Story = { args: { held: OVERFLOW_AND_EARLIER }, decorators: routingLight };
+export const OverflowBesideTheFoldChinese: Story = { args: { held: OVERFLOW_AND_EARLIER }, decorators: routingZh };
 
 /** An ended first process's child *ended with its agent* beside its continuation's child working. */
 export const EndedBesideItsContinuation: Story = { args: { held: CONTINUED }, decorators: light };

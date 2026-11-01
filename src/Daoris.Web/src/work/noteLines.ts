@@ -320,6 +320,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // The repository's process a chat in a tree of its own was told (PROCESS1d-ii): its commit rule's mode and where it was set,
   // the words following as a program's.
   'chat.told-process': { values: ['mode', 'source'] },
+  // The routing standing a chat's agent was told at a start (COWORKVIEW1e-i): the standing, the words following as a program's.
+  'chat.told-routing': { values: ['standing'] },
   // The workflow draft open in the editor a chat's agent was told (FLOWCHART2d): what it was handed follows as a program's words.
   'chat.told-draft': { values: [] },
   // A conversation handed to another agent (MIXAGENT1a-i): where the old one went, and where the new one came from and why.
@@ -673,9 +675,11 @@ export const NOTE_VALUES: Readonly<
   Record<
     string,
     | 'id' | 'ids' | 'names' | 'moment' | 'number' | 'count' | 'percent' | 'text' | 'why' | 'cooling' | 'window' | 'account' | 'accounts'
-    | 'bgstate' | 'setAt' | 'accessAt' | 'actor' | 'authors'
+    | 'bgstate' | 'setAt' | 'accessAt' | 'actor' | 'authors' | 'routing'
   >
 > = {
+  // The routing standing a chat was told (COWORKVIEW1e-i), each of the judge's four worded by `work.note.routing.*`.
+  standing: 'routing',
   // SUPERVISOR1a-i: who a word is by, each a code worded by `work.note.author.*` and joined the reader's way.
   authors: 'authors',
   // A commit rule's mode, its own word set as code by the sentence, and where it was set (PROCESS1d-ii).
@@ -754,6 +758,9 @@ export const ACCESS_AT: Readonly<Record<string, string>> = {
   workspace: 'settings.access.setupOf.workspace',
   machine: 'settings.access.setupOf.machine',
 };
+
+/** The routing standings the driver's judge answers (COWORKVIEW1e-i, in §6.4's order); one this page does not know shows the line as recorded. */
+const ROUTING_STANDINGS = new Set(['not-driven', 'no-lanes', 'one-at-a-time', 'open']);
 
 /** The actors' ids (D205 §2.2), each worded by its `work.actor.name.*` entry, as *Details* says it. */
 const ACTOR_IDS = new Set(['build', 'intake', 'opinion', 'helper', 'partner', 'brainstorm', 'ask-daoris', 'chat']);
@@ -838,6 +845,10 @@ function said(
     case 'accessAt': {
       const level = text(value);
       return level && Object.hasOwn(ACCESS_AT, level) ? t(ACCESS_AT[level]) : null;
+    }
+    case 'routing': {
+      const standing = text(value);
+      return standing && ROUTING_STANDINGS.has(standing) ? t(`work.note.routing.${standing}`) : null;
     }
     case 'actor': {
       // An actor by its id, said by the name the screen gives it (D205 §2.2); one this page does not know as written.

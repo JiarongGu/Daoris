@@ -4,9 +4,9 @@ import { describe, expect, it } from 'vitest';
 import type { WorkflowPaletteAnswer } from '../../bridge/repositories/workflowEdit';
 import { PALETTE } from './editFixtures';
 import {
-  addStep, addWire, carryOf, choiceOf, commit, connect, copySteps, type DraftWire, draftOf, duplicateStep, earlierThan, emptyDraft, entriesOf,
+  addStep, addWire, askedInputs, carryOf, choiceOf, commit, connect, copySteps, type DraftWire, draftOf, duplicateStep, earlierThan, emptyDraft, entriesOf,
   type GraphDraft, type GraphJson, graphOf, historyOf, insertStep, joinModeOf, joinOf, leavesOf, moveInChain, movePlan, moreWaysOf, pasteSteps,
-  redo, removeStep, removeWire, retarget, rowsOf, setCarry, setEnd, setJoinMode, setOption, sourcesOf, stepChoices, targetsOf, triggerTargetsOf,
+  optionOf, redo, removeStep, removeWire, retarget, rowsOf, setCarry, setEnd, setJoinMode, setLandMethod, setOption, sourcesOf, stepChoices, targetsOf, triggerTargetsOf,
   undo, type WayRowKey, wayTo, workflowIdFor,
 } from './graphDraft';
 
@@ -302,7 +302,8 @@ describe('the editing operations', () => {
   it("adds a step at a row's end, after a step in its chain, or unconnected, the new step a way the row's own kind", () => {
     const release = shipped('release');
     const atNone = insertStep(PALETTE, release, choice('local-release/release'), { from: 'find', row: 'outcome:none' });
-    expect(said(atNone.draft.wires.at(-1)!)).toBe(`when:find>${atNone.id}?none`);
+    // Its input is proposed beside the way, from the step the way leaves.
+    expect(atNone.draft.wires.slice(release.wires.length).map(said)).toEqual([`when:find>${atNone.id}?none`, `data:find>${atNone.id}`]);
     // After a step whose one way on is plain, it goes between; after one with no way on, it follows.
     const between = insertStep(PALETTE, release, choice('line'), { after: 'landing' });
     expect(said(wire(between.draft, 'e'))).toBe('after:landing>line-2');
@@ -458,4 +459,168 @@ it('offers a step of a kind the palette does not hold only once done', () => {
   const strange = { ...draft, nodes: [{ id: 'a', kind: 'gone', node: { id: 'a', kind: 'gone' } }] };
   expect(choiceOf(PALETTE, 'gone')).toBeNull();
   expect(rowsOf(PALETTE, strange, 'a').map((row) => row.key)).toEqual(['done']);
+});
+
+// SETUPUX1r (D221 §2.3, D223 §3): a landing method brings its tail in one change, and an input is proposed from the step it is routed from.
+
+/** The refusals of `NodeGraphs`' `land-tail` rule, mirrored: the method's tail and no other, each step of it reached from the landing. */
+function tailProblems(graph: GraphJson): string[] {
+  const land = graph.nodes.find((node) => node.kind === 'land');
+  const method = (land?.options as { method?: string } | undefined)?.method;
+  if (!land || !method) return [];
+  const reach = (from: string[]): Set<string> => {
+    const found = new Set<string>();
+    const queue = [...from];
+    while (queue.length > 0) {
+      const at = queue.shift();
+      for (const each of graph.wires) {
+        if (each.kind !== 'data' && each.kind !== 'back' && each.from === at && !found.has(each.to as string)) { found.add(each.to as string); queue.push(each.to as string); }
+      }
+    }
+    return found;
+  };
+  const after = reach([land.id as string]);
+  const problems: string[] = [];
+  const check = (kind: string, brought: boolean) => {
+    const held = graph.nodes.filter((node) => node.kind === kind).map((node) => node.id as string);
+    if (!brought) problems.push(...held.map((id) => `${id}: brings no ${kind}`));
+    else if (held.length === 0) problems.push(`${kind}: none held`);
+    else problems.push(...held.filter((id) => !after.has(id)).map((id) => `${id}: not after the landing`));
+  };
+  check('pushed', method === 'push' || method === 'pull-request');
+  check('pull-request', method === 'pull-request');
+  check('integrate', method === 'integrate');
+  const pushes = graph.nodes.filter((node) => node.kind === 'pushed').map((node) => node.id as string);
+  if (method === 'pull-request' && pushes.length > 0) {
+    const afterPush = reach(pushes);
+    problems.push(...graph.nodes.filter((node) => node.kind === 'pull-request' && !afterPush.has(node.id as string)).map((node) => `${String(node.id)}: before the push`));
+  }
+  return problems;
+}
+
+describe('a landing method brings its tail, in one change (SETUPUX1r)', () => {
+  const METHODS = ['merge', 'branch', 'push', 'pull-request', 'integrate'];
+
+  it('adds the pushed and the pull request after the landing for a pull request, between the landing and what followed it', () => {
+    const merge = shipped('merge-after-accept');
+    const made = setLandMethod(PALETTE, merge, 'landing', 'pull-request');
+    expect(made.added).toEqual(['pushed', 'pull-request']);
+    expect(made.removed).toEqual([]);
+    expect(optionOf(made.draft.nodes.find((node) => node.id === 'landing')!, 'method')).toBe('pull-request');
+    expect(made.draft.wires.filter((each) => each.kind === 'after' && ['landing', 'pushed', 'pull-request'].includes(each.from!)).map(said))
+      .toEqual(['after:landing>pushed', 'after:pushed>pull-request', 'after:pull-request>line']);
+    expect(made.draft.end).toBe('line');
+    expect(tailProblems(graphOf(made.draft))).toEqual([]);
+  });
+
+  it('takes the tail back out on the way to another method, joining what it stood between, so merge comes back to the graph it was', () => {
+    const merge = shipped('merge-after-accept');
+    const there = setLandMethod(PALETTE, merge, 'landing', 'pull-request').draft;
+    const back = setLandMethod(PALETTE, there, 'landing', 'merge');
+    expect([...back.removed].sort()).toEqual(['pull-request', 'pushed']);
+    expect(graphOf(back.draft)).toEqual(graphOf(merge));
+    // A push keeps its pushed and drops the request.
+    const pushOnly = setLandMethod(PALETTE, there, 'landing', 'push');
+    expect(pushOnly.removed).toEqual(['pull-request']);
+    expect(pushOnly.added).toEqual([]);
+    expect(pushOnly.draft.nodes.map((node) => node.kind).filter((kind) => ['pushed', 'pull-request'].includes(kind))).toEqual(['pushed']);
+  });
+
+  it('moves the end to the last of the tail where the landing was the end, and back to the landing when the end was a tail step', () => {
+    const branch = shipped('branch-to-push');
+    expect(branch.end).toBe('landing');
+    const request = setLandMethod(PALETTE, branch, 'landing', 'pull-request');
+    expect(request.draft.end).toBe('pull-request');
+    expect(tailProblems(graphOf(request.draft))).toEqual([]);
+    const push = setLandMethod(PALETTE, request.draft, 'landing', 'push');
+    expect(push.draft.end).toBe('pushed');
+    expect(setLandMethod(PALETTE, push.draft, 'landing', 'branch').draft.end).toBe('landing');
+  });
+
+  it('adds an integrate between the landing and the line, and drops the options its method refuses', () => {
+    const merge = shipped('merge-after-accept');
+    const withOptions = setOption(setOption(setOption(merge, 'landing', 'squash', true), 'landing', 'plugin', 'host'), 'landing', 'pattern', 'x/{quest}');
+    const integrate = setLandMethod(PALETTE, withOptions, 'landing', 'integrate');
+    expect(integrate.added).toEqual(['integrate']);
+    expect(integrate.draft.wires.filter((each) => each.from === 'landing' || each.from === 'integrate').map(said)).toEqual(['after:landing>integrate', 'after:integrate>line']);
+    const land = integrate.draft.nodes.find((node) => node.id === 'landing')!;
+    expect(optionOf(land, 'plugin')).toBeUndefined();
+    expect(optionOf(land, 'squash')).toBeUndefined();
+    expect(optionOf(land, 'pattern')).toBe('x/{quest}');
+    const onMerge = setLandMethod(PALETTE, withOptions, 'landing', 'merge').draft.nodes.find((node) => node.id === 'landing')!;
+    expect([optionOf(onMerge, 'pattern'), optionOf(onMerge, 'plugin'), optionOf(onMerge, 'squash')]).toEqual([undefined, undefined, true]);
+  });
+
+  it.each(SHIPPED.filter((each) => each.graph.nodes.some((node) => node.kind === 'land')).map((each) => [each.id] as const))(
+    '%s: every method leaves a tail the driver\'s land-tail rule accepts, from every other',
+    (id) => {
+      const land = shipped(id).nodes.find((node) => node.kind === 'land')!.id;
+      for (const from of METHODS) {
+        for (const to of METHODS) {
+          const made = setLandMethod(PALETTE, setLandMethod(PALETTE, shipped(id), land, from).draft, land, to).draft;
+          expect(tailProblems(graphOf(made)), `${id}: ${from} to ${to}`).toEqual([]);
+        }
+      }
+    });
+
+  it('keeps every field of the graph it does not draw, through a method', () => {
+    const graph = {
+      schemaVersion: 2, entries: ['work'], end: 'landing', cleanup: { keep: true }, note: 'kept',
+      nodes: [
+        { id: 'work', kind: 'claimed', version: 1, reach: 'observed', retry: { times: 2 } },
+        { id: 'landing', kind: 'land', version: 1, reach: 'performed', options: { method: 'branch', future: 'x', plugin: 'none' }, extra: [1] },
+      ],
+      wires: [{ id: 'a', kind: 'after', from: 'work', to: 'landing', delay: 5 }],
+    };
+    const written = graphOf(setLandMethod(PALETTE, draftOf(graph), 'landing', 'branch').draft);
+    expect(written).toEqual({ ...graph, nodes: [graph.nodes[0], { ...graph.nodes[1] }] });
+    const request = graphOf(setLandMethod(PALETTE, draftOf(graph), 'landing', 'pull-request').draft);
+    expect(request).toMatchObject({ cleanup: { keep: true }, note: 'kept', entries: ['work'] });
+    expect(request.nodes[0]).toEqual(graph.nodes[0]);
+    // A pull request is a plugin's to push, so the `none` a branch left is the one option it refuses.
+    expect(request.nodes[1]).toEqual({ ...graph.nodes[1], options: { method: 'pull-request', future: 'x' } });
+    expect(request.wires.find((each) => each.id === 'a')).toEqual(graph.wires[0]);
+  });
+});
+
+describe('an input is proposed from the step it is routed from, and asked where two fit (SETUPUX1r)', () => {
+  const merge = shipped('merge-after-accept');
+
+  it('proposes both data wires of the release workflow as its steps are put in', () => {
+    const find = insertStep(PALETTE, merge, choice('local-release/find'), { after: 'line' });
+    expect(find.carried).toEqual([]);
+    const release = insertStep(PALETTE, find.draft, choice('local-release/release'), { from: find.id, row: 'outcome:release' });
+    expect(release.carried).toEqual([{ step: release.id, input: 'release', from: find.id, port: 'release' }]);
+    const publish = insertStep(PALETTE, release.draft, choice('local-release/publish'), { after: release.id });
+    expect(publish.carried).toEqual([{ step: publish.id, input: 'release', from: release.id, port: 'release' }]);
+    expect(publish.draft.wires.filter((each) => each.kind === 'data').map(said)).toEqual(['data:find>release', 'data:release>publish']);
+    expect(askedInputs(publish.draft, publish.id)).toEqual([]);
+  });
+
+  it("prefers the routed step's own output, and proposes the one other that fits where it has none", () => {
+    const loose = removeWire(removeWire(shipped('release'), 'k'), 'i');
+    // Routing a way into publish from release proposes release's output, though find's fits as well.
+    const viaRelease = connect(PALETTE, removeWire(loose, 'j'), 'release', 'done', 'publish')!;
+    expect(viaRelease.carried).toEqual([{ step: 'publish', input: 'release', from: 'release', port: 'release' }]);
+    // Where only one other step makes it, it is taken though the routed step makes none.
+    const alone = removeStep(loose, 'release');
+    const fromLine = connect(PALETTE, alone, 'line', 'done', 'publish')!;
+    expect(fromLine.carried).toEqual([{ step: 'publish', input: 'release', from: 'find', port: 'release' }]);
+  });
+
+  it('asks where two others fit and the routed step has none, proposing neither', () => {
+    const loose = removeWire(removeWire(shipped('release'), 'k'), 'j');
+    const routed = connect(PALETTE, loose, 'line', 'done', 'publish')!;
+    expect(routed.carried).toEqual([]);
+    expect(carryOf(routed.draft, 'publish', 'release')).toBeNull();
+    expect(askedInputs(routed.draft, 'publish')).toEqual([{ input: 'release', sources: [{ from: 'find', port: 'release' }, { from: 'release', port: 'release' }] }]);
+    // Chosen, it no longer asks.
+    expect(askedInputs(setCarry(routed.draft, 'publish', 'release', { from: 'find', port: 'release' }), 'publish')).toEqual([]);
+  });
+
+  it('proposes nothing for an input already fed', () => {
+    const made = connect(PALETTE, removeWire(shipped('release'), 'j'), 'find', 'done', 'publish')!;
+    expect(made.carried).toEqual([]);
+    expect(carryOf(made.draft, 'publish', 'release')!.from).toBe('release');
+  });
 });

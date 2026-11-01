@@ -18,6 +18,12 @@ internal sealed record ChatPlace(
     string Name, string Tree, Func<PermissionFile, string, RuleLists> Rules, bool Plugins, bool ConnectorOnPipe,
     string? Posture, bool ToolsUpFront)
 {
+    /// <summary>
+    /// The routing standing of its repository as this start found it (COWORKVIEW1e-i), told to its agent: with a new conversation's first
+    /// message and at each go-on. Null for Ask Daoris's, which publishes to no lane.
+    /// </summary>
+    public RoutingStanding? Routing { get; init; }
+
     /// <summary>The checkouts it may also write into (D107), which its tree guard lets a write reach.</summary>
     public IReadOnlyList<string> Also { get; init; } = [];
 
