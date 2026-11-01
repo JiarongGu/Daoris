@@ -18,6 +18,9 @@ public abstract record RoleChange
     /// <summary><i>Back to the default</i>: <paramref name="id"/>'s record deleted, a seeded id the seed's again.</summary>
     public static RoleChange Default(string id) => new DefaultRole(id);
 
+    /// <summary><i>Back to the default</i> for the whole structure: every seeded role the seed's again; added roles are kept.</summary>
+    public static RoleChange DefaultAll() => new DefaultAllRoles();
+
     /// <summary>The id the change is of.</summary>
     public abstract string Id { get; }
 
@@ -34,5 +37,11 @@ public abstract record RoleChange
     public sealed record DefaultRole(string RoleId) : RoleChange
     {
         public override string Id => RoleId;
+    }
+
+    /// <summary>Every seeded role at once; it names no one id.</summary>
+    public sealed record DefaultAllRoles : RoleChange
+    {
+        public override string Id => "*";
     }
 }

@@ -15,7 +15,7 @@ public sealed class RoleVerb : ChoiceVerb
 
     private const string Grammar =
         "`driver role set <id> [--name \"…\"] [--zh \"…\"] [--takes <work,…>] [--scope machine|workspace:<id>|repository:<id>] "
-        + "[\"<agent> [<model>|-] [<effort>|-]\" …]`, `driver role remove <id>` or `driver role default <id>`";
+        + "[\"<agent> [<model>|-] [<effort>|-]\" …]`, `driver role remove <id>`, `driver role default <id>` or `driver role default --all`";
 
     /// <summary><c>role suggested [--use]</c> (MODELROLE1g): the choices Daoris suggests for the seeded roles, said, or with <c>--use</c> set through the role door; null for the rest.</summary>
     public override Task<int>? RunAsync(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world, CancellationToken ct) =>
@@ -74,17 +74,19 @@ public sealed class RoleVerb : ChoiceVerb
         if (args.Count < 3 || args[1] is not ("set" or "remove" or "default")) throw new ChoiceWords($"{Grammar}.");
         var staffing = RoleStaffing.Of(world.ConfigPath) ?? throw new ChoiceWords(Unkept(world));
         var catalogue = RoleCatalog.Read(staffing.Location);
-        var id = args[2];
+        var all = args is [_, "default", "--all"];
+        var id = all ? RoleChange.DefaultAll().Id : args[2];
         var (change, choices) = args[1] switch
         {
             "remove" => (RoleChange.Remove(id), (IReadOnlyList<ActorChoice>?)null),
+            "default" when all => (RoleChange.DefaultAll(), null),
             "default" => (RoleChange.Default(id), null),
             _ => Set(id, [.. args.Skip(3)], catalogue),
         };
         if (args[1] != "set" && args.Count > 3) throw new ChoiceWords($"`driver role {args[1]}` takes the role's id alone.");
         if (RoleDoor.Judge(catalogue, change, choices) is { } refused) throw new ChoiceWords($"`driver role`: {refused.Said}");
 
-        var payload = new JsonObject { ["change"] = args[1], ["id"] = id };
+        var payload = all ? new JsonObject { ["change"] = "default-all" } : new JsonObject { ["change"] = args[1], ["id"] = id };
         if (change is RoleChange.SetRole { Role: var role })
         {
             payload["role"] = new JsonObject
@@ -111,6 +113,7 @@ public sealed class RoleVerb : ChoiceVerb
                 RoleChange.SetRole { Role: var set } => $"daoris: role `{set.Id}` set: {Shape(set)}"
                     + (choices is null ? "." : $"; {(choices.Count == 0 ? "off" : Choices(choices))}."),
                 RoleChange.RemoveRole => $"daoris: role `{id}` removed; a work no role takes holds its starts until it is given one. A running session goes on.",
+                RoleChange.DefaultAllRoles => "daoris: every seeded role is the seed's again; added roles are kept.",
                 _ => $"daoris: role `{id}` is the seed's again.",
             });
             said.WriteLine("  The driver reads the catalogue at each start, so nothing restarts.");

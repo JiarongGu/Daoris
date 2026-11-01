@@ -161,5 +161,7 @@
   "settings.ai.roles.savedAll": "Saved together: {{roles}}; new work takes them.",
   "settings.ai.roles.removedSaved": "{{role}} is removed; its work waits until a role takes it.",
   "settings.ai.roles.defaulted": "{{role}} is the default again.",
+  "settings.ai.roles.defaultAll": "Restore all role defaults",
+  "settings.ai.roles.defaultedAll": "Every seeded role is the default again; the roles you added are kept.",
   "settings.ai.roles.footnote": "Also `daoris driver role`. An older Daoris runs the default roles and none you add."
 }

@@ -52,6 +52,36 @@ public sealed class RoleCatalogTests : IDisposable
     }
 
     [Fact]
+    public void The_seed_is_the_shipped_data_and_its_ids_are_the_actors()
+    {
+        Assert.Equal(ActorChoices.Ids, RoleCatalog.Seed.Select(role => role.Id));
+        Assert.Equal(
+            [("build", "Build", "开发"), ("intake", "Intake", "受理"), ("opinion", "Second opinion", "第二意见"), ("helper", "Helper", "助手"),
+                ("partner", "Partner", "搭档"), ("brainstorm", "Brainstorm", "头脑风暴"), ("ask-daoris", "Ask Daoris", "问道衍"), ("chat", "Chat", "聊天")],
+            RoleCatalog.Seed.Select(role => (role.Id, role.NameEn, role.NameZh)));
+        Assert.All(RoleCatalog.Seed, role => Assert.Equal(ActorWords.Name(role.Id), role.NameEn));
+    }
+
+    [Fact]
+    public void Restoring_every_default_returns_the_seeded_roles_and_keeps_the_added_ones()
+    {
+        var db = DesktopStore.LocationIn(_home);
+        var added = Working("designer", ParticipantWork.Design);
+        var changed = RoleCatalog.Seed[0] with { NameEn = "Maker" };
+        RoleCatalog.WriteAll(db, [RoleChange.Set(added), RoleChange.Set(changed), RoleChange.Remove("intake")], () => StoreSettled.Yes);
+        var before = RoleCatalog.Read(db);
+        Assert.Equal([RoleState.Set, RoleState.Removed], before.Slots.Where(slot => slot.Id is "build" or "intake").Select(slot => slot.State));
+
+        RoleCatalog.Write(db, RoleChange.DefaultAll(), () => StoreSettled.Yes);
+
+        var after = RoleCatalog.Read(db);
+        Assert.Equal(ActorChoices.Ids.Append("designer"), after.Slots.Select(slot => slot.Id));
+        Assert.All(after.Slots.Where(slot => slot.Id != "designer"), slot => Assert.Equal(RoleState.Seed, slot.State));
+        Assert.Equal((RoleState.Set, added.Json()), (after.Slots[^1].State, after.Slots[^1].Role!.Json()));
+        Assert.Null(after.Judge(RoleChange.DefaultAll()));
+    }
+
+    [Fact]
     public void The_seed_reproduces_today_s_every_start_case()
     {
         var catalog = RoleCatalog.Of([]);

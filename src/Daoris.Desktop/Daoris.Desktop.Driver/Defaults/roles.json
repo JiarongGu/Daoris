@@ -1,0 +1,12 @@
+{
+  "roles": [
+    { "id": "build", "name": { "en": "Build", "zh": "开发" }, "work": "build", "place": "machine", "filled": "always" },
+    { "id": "intake", "name": { "en": "Intake", "zh": "受理" }, "work": "intake", "place": "machine", "filled": "always" },
+    { "id": "opinion", "name": { "en": "Second opinion", "zh": "第二意见" }, "work": "review", "place": "machine", "filled": "always" },
+    { "id": "helper", "name": { "en": "Helper", "zh": "助手" }, "work": "help", "place": "machine", "filled": "always" },
+    { "id": "partner", "name": { "en": "Partner", "zh": "搭档" }, "work": "partner", "place": "machine", "filled": "always" },
+    { "id": "brainstorm", "name": { "en": "Brainstorm", "zh": "头脑风暴" }, "work": "brainstorm", "place": "machine", "filled": "always" },
+    { "id": "ask-daoris", "name": { "en": "Ask Daoris", "zh": "问道衍" }, "work": "ask-daoris", "place": "machine", "filled": "always" },
+    { "id": "chat", "name": { "en": "Chat", "zh": "聊天" }, "work": "chat", "place": "machine", "filled": "always" }
+  ]
+}
