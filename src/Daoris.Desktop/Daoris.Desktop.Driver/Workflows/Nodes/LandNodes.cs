@@ -4,10 +4,12 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A <c>land</c> node's options (LANDNODE1a; the land node design §2): <c>method</c>, <c>accept</c>, <c>target</c>, <c>pattern</c>,
-/// <c>plugin</c>, <c>squash</c> and <c>message</c>. Each is optional here, since a version leaves some open and the bind resolves them; a
-/// written one is held to its choices, and the method's own refusals (a pattern on a merge, a plugin beside an integrate, a squash of an
-/// integrate) are the declaration's. Where the graph's other nodes must stand is <see cref="NodeGraphs.Problems"/>'s.
+/// A <c>land</c> node's options (LANDNODE1a; the land node design §2): <c>method</c>, <c>target</c>, <c>pattern</c>, <c>plugin</c>,
+/// <c>squash</c> and <c>message</c>. Each is optional here, since a version leaves some open and the bind resolves them; a written one is held
+/// to its choices, and the method's own refusals (a pattern on a merge, a plugin beside an integrate, a squash of an integrate) are the
+/// declaration's. Where the graph's other nodes must stand is <see cref="NodeGraphs.Problems"/>'s. The person's Accept is a
+/// <see cref="NodeKinds.Review"/> before it (LANDNODE1c2), so an <c>accept</c> option is refused: a version 1a to 1h saved with one is held,
+/// never landed without the press it named.
 /// </summary>
 public static class LandNodes
 {
@@ -16,14 +18,14 @@ public static class LandNodes
     public const string Push = "push";
     public const string PullRequest = "pull-request";
     public const string Integrate = "integrate";
-    public const string You = "you";
-    public const string Automatic = "automatic";
+
+    /// <summary>The option LANDNODE1a gave the Accept, refused by name since LANDNODE1c2.</summary>
+    public const string AcceptOption = "accept";
 
     /// <summary>The word a <c>plugin</c> option takes for no plugin.</summary>
     public const string NoPlugin = "none";
 
     public static readonly IReadOnlyList<string> Methods = [Merge, Branch, Push, PullRequest, Integrate];
-    public static readonly IReadOnlyList<string> Accepts = [You, Automatic];
 
     /// <summary>What a commit message template may say: the landing's own names, frozen before the landing.</summary>
     public static readonly IReadOnlyList<string> MessagePlaceholders = ["title", "quest", "ticket", "session"];
@@ -55,13 +57,14 @@ public static class LandNodes
 
     /// <summary>
     /// A <c>land</c> node's options as the landing step they stand for reads them (<c>form</c>, <c>accept</c>, <c>pattern</c>, <c>plugin</c>), the
-    /// open ones taken from <paramref name="resolved"/>; an option left out stays left out. JSON texts, as a node's options are.
+    /// open ones taken from <paramref name="resolved"/>; an option left out stays left out. JSON texts, as a node's options are. Its
+    /// <c>accept</c> is the graph's: <c>you</c> where a <see cref="NodeKinds.Review"/> comes before it (<paramref name="reviewed"/>).
     /// </summary>
-    public static IReadOnlyDictionary<string, string> AsLanding(NodeDeclaration land, IReadOnlyDictionary<string, string>? resolved)
+    public static IReadOnlyDictionary<string, string> AsLanding(NodeDeclaration land, IReadOnlyDictionary<string, string>? resolved, bool reviewed)
     {
         var options = new Dictionary<string, string>(StringComparer.Ordinal);
         if (Written(land, "method") is { } method) options["form"] = JsonSerializer.Serialize(method == Merge ? LandingForm.Merge : LandingForm.Branch);
-        if (land.Options.TryGetValue("accept", out var accept)) options["accept"] = accept;
+        options[AcceptOption] = JsonSerializer.Serialize(reviewed ? "you" : "automatic");
         foreach (var name in new[] { "pattern", "plugin" })
         {
             if (land.Options.TryGetValue(name, out var written)) options[name] = written;
@@ -71,12 +74,15 @@ public static class LandNodes
         return options;
     }
 
+    /// <summary>Whether the person's Accept comes before the graph's landing: a <see cref="NodeKinds.Review"/>, which the graph rules hold before every landing.</summary>
+    public static bool Reviewed(NodeGraph? graph) => graph?.Nodes.Any(node => node.Kind == NodeKinds.Review) == true;
+
     /// <summary>The first option that does not hold, by its name, or null.</summary>
     public static string? Problem(NodeDeclaration node)
     {
         var method = Written(node, "method");
         if (node.Options.ContainsKey("method") && (method is null || !Methods.Contains(method, StringComparer.Ordinal))) return "method";
-        if (node.Options.ContainsKey("accept") && !(Written(node, "accept") is { } accept && Accepts.Contains(accept, StringComparer.Ordinal))) return "accept";
+        if (node.Options.ContainsKey(AcceptOption)) return AcceptOption;
         if (node.Options.ContainsKey("target") && !(Written(node, "target") is { } target && BranchName.IsValid(target))) return "target";
 
         if (node.Options.ContainsKey("pattern"))

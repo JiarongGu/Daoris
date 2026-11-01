@@ -171,7 +171,7 @@ public static class WorkflowNamed
 
     /// <summary>The kinds a verification pipeline's graph never holds: each observes a chain's work, or lands it (the pipeline design §2.1).</summary>
     private static readonly string[] NotVerified =
-        [NodeKinds.Claimed, NodeKinds.Opinion, NodeKinds.Look, NodeKinds.GoAhead, NodeKinds.Handed, NodeKinds.Land, NodeKinds.Integrate, NodeKinds.WorkRequests, NodeKinds.QuestClose];
+        [NodeKinds.Claimed, NodeKinds.Opinion, NodeKinds.Look, NodeKinds.GoAhead, NodeKinds.Handed, NodeKinds.Land, NodeKinds.Review, NodeKinds.Integrate, NodeKinds.WorkRequests, NodeKinds.QuestClose];
 
     /// <summary>A workflow's or a step's id: lower-case letters, digits and dashes, at most 40.</summary>
     public static bool IsId(string? value) => value is { Length: > 0 and <= 40 } && SafeNames.IsKebabId(value);
@@ -495,7 +495,7 @@ public static class WorkflowNamed
 
             var p = $"v{number}, node `{node.Id}`: ";
             var fields = new List<WorkflowSetting>();
-            var options = node.Kind == NodeKinds.Land ? LandNodes.AsLanding(node, bound) : node.Options;
+            var options = node.Kind == NodeKinds.Land ? LandNodes.AsLanding(node, bound, LandNodes.Reviewed(graph)) : node.Options;
             foreach (var field in WorkflowKindTable.Of(kind)!.Fields)
             {
                 var text = options.TryGetValue(field.Name, out var written) ? written

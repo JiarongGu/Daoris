@@ -251,7 +251,7 @@ public static class RunSubjects
         // INTEGRATE1p (§17.5): a `request` binds the run, as `wait.unit` does; the quest it published is named by its attempt's key.
         NodeKinds.GoAhead or NodeKinds.Human or NodeKinds.WaitUnit or NodeKinds.Stop or NodeKinds.All or NodeKinds.WorkRequests
             or NodeKinds.Request => RunSubject.Run,
-        NodeKinds.Opinion or NodeKinds.Look or NodeKinds.Handed or NodeKinds.Land => RunSubject.Branch,
+        NodeKinds.Opinion or NodeKinds.Look or NodeKinds.Review or NodeKinds.Handed or NodeKinds.Land => RunSubject.Branch,
         // INTEGRATE1n (§17.4): the landed branch at the tip `handed` recorded, wherever the graph wires it.
         NodeKinds.Pushed or NodeKinds.PullRequest or NodeKinds.Line or NodeKinds.Integrate => RunSubject.Landing,
         _ => afterHanded.Contains(node.Id) ? RunSubject.Landing : RunSubject.Branch,

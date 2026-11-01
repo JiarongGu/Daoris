@@ -2,9 +2,14 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A place's delivery as `land` options (the land node design §2 and §7): the method, who accepts, the plugin a pull request is opened by
-/// (<c>none</c> for a branch left to push) and an integration's request.
+/// (<c>none</c> for a branch left to push) and an integration's request. <see cref="Accept"/> is <c>you</c> where a <c>review</c> comes before
+/// the <c>land</c> (LANDNODE1c2) and <c>automatic</c> where none does.
 /// </summary>
-public sealed record SetupLand(string Method, string Accept, string? Plugin = null, string? Request = null);
+public sealed record SetupLand(string Method, string Accept, string? Plugin = null, string? Request = null)
+{
+    public const string You = "you";
+    public const string Automatic = "automatic";
+}
 
 /// <summary>One delivery preset: its id, the name the page shows, and its land; <i>Not driven</i> has none.</summary>
 public sealed record SetupPreset(string Id, string Name, SetupLand? Land);
@@ -36,10 +41,10 @@ public static class SetupPresets
     public static IReadOnlyList<SetupPreset> Table { get; } =
     [
         new(NotDriven, "Not driven", null),
-        new(Merge, "Merge after you accept", new(LandNodes.Merge, LandNodes.You)),
-        new(Branch, "A branch to push", new(LandNodes.Branch, LandNodes.You, LandNodes.NoPlugin)),
-        new(PullRequest, "A pull request", new(LandNodes.PullRequest, LandNodes.You)),
-        new(Integrated, "Integrated into the line", new(LandNodes.Integrate, LandNodes.You, LandNodes.NoPlugin, LandingIntegrate.Owner)),
+        new(Merge, "Merge after you accept", new(LandNodes.Merge, SetupLand.You)),
+        new(Branch, "A branch to push", new(LandNodes.Branch, SetupLand.You, LandNodes.NoPlugin)),
+        new(PullRequest, "A pull request", new(LandNodes.PullRequest, SetupLand.You)),
+        new(Integrated, "Integrated into the line", new(LandNodes.Integrate, SetupLand.You, LandNodes.NoPlugin, LandingIntegrate.Owner)),
     ];
 
     /// <summary>A preset by its id, or null.</summary>
@@ -52,7 +57,7 @@ public static class SetupPresets
     public static SetupLand LandOf(IReadOnlyList<NamedStep> steps)
     {
         var landing = steps.FirstOrDefault(step => step.Kind == WorkflowKinds.Landing);
-        var accept = landing?.Field("accept") as string == LandNodes.Automatic ? LandNodes.Automatic : LandNodes.You;
+        var accept = landing?.Field("accept") as string == SetupLand.Automatic ? SetupLand.Automatic : SetupLand.You;
         var plugin = landing?.Field("plugin") as string;
         if (steps.FirstOrDefault(step => step.Kind == NodeKinds.Integrate) is { } integrate)
         {
@@ -91,7 +96,7 @@ public static class SetupPresets
     /// </summary>
     public static LandingRule RuleOf(SetupLand land, LandingRule standing, LandingIntegrate? policy)
     {
-        var automatic = land.Accept == LandNodes.Automatic;
+        var automatic = land.Accept == SetupLand.Automatic;
         if (land.Method == LandNodes.Merge) return LandingRule.Merge with { Tidy = standing.Tidy, Cycle = standing.Cycle };
 
         var branch = standing.Form == LandingForm.Branch ? standing : new LandingRule(LandingForm.Branch, Pattern, standing.Tidy) { Cycle = standing.Cycle };

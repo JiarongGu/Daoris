@@ -27,6 +27,26 @@ public static class DeliveryStandings
     public const string Unknown = "unknown";
 }
 
+/// <summary>A unit's newest delivery as the landing's plan shows it (LANDNODE1c2): the record, and the phase an unresolved one last wrote ahead.</summary>
+public sealed record LandingDelivery(DeliveryRecord Record, string? Phase)
+{
+    /// <summary>The newest delivery of <paramref name="unit"/> in <paramref name="home"/>'s store, or null where it holds none or does not read.</summary>
+    public static LandingDelivery? Newest(string home, string unit)
+    {
+        try
+        {
+            var store = new DeliveryStore(home);
+            return store.OfUnit(unit).FirstOrDefault() is { } newest
+                ? new LandingDelivery(newest, newest.Unresolved ? store.Phases(newest.Key).LastOrDefault()?.Phase : null)
+                : null;
+        }
+        catch (Exception error) when (error is SqliteException or DesktopStoreException or IOException)
+        {
+            return null;
+        }
+    }
+}
+
 /// <summary>One delivery's settlement by phase: its key, what it came to, and its words.</summary>
 public sealed record DeliveryReconciled(string Key, string Standing, string Said)
 {

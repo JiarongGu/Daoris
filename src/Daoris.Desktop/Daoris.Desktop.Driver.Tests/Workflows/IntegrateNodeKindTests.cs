@@ -25,7 +25,7 @@ public sealed class IntegrateNodeKindTests
         var current = NodeGraphHomes.Landing(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}") { Integrate = new LandingIntegrate() });
         var after = RunSubjects.AfterHanded(current);
         Assert.Equal(["integrate", "line"], after.Order(StringComparer.Ordinal));
-        Assert.All(current.Nodes.Where(node => node.Kind != NodeKinds.Land), node => Assert.Equal(RunSubject.Landing, RunSubjects.Of(node, after)));
+        Assert.All(current.Nodes.Where(node => node.Kind is not (NodeKinds.Land or NodeKinds.Review)), node => Assert.Equal(RunSubject.Landing, RunSubjects.Of(node, after)));
         Assert.Equal(RunSubject.Branch, RunSubjects.Of(current.Nodes.Single(node => node.Kind == NodeKinds.Land), after));
     }
 
