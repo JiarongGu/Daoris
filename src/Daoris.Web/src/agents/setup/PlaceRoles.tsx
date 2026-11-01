@@ -240,7 +240,12 @@ export function PlaceRolesView({ place, read, answer, editor, appointed, onSourc
         </>
       )}
       <div className="grid gap-2">
-        <h3 className="m-0 text-small font-medium text-ink-soft">{t('agents.setup.roles.appointed')}</h3>
+        <h3
+          data-place-row="appointed" tabIndex={-1}
+          className="m-0 text-small font-medium text-ink-soft outline-none focus-visible:outline-2 focus-visible:outline-accent"
+        >
+          {t('agents.setup.roles.appointed')}
+        </h3>
         {appointed}
       </div>
     </div>

@@ -194,7 +194,7 @@ function RunLimit({ limit }: { limit: { text: string; recorded: boolean } | null
  * What a step is set to, where that was set with its door, how much of it this build runs, its limit, and on the rail its edge
  * and its failure path: the flowchart's node says those in its foot, as its edges.
  */
-function StepSettings({ step, page, workspace, limit, doors, edge }: {
+export function StepSettings({ step, page, workspace, limit, doors, edge }: {
   step: WorkflowStep;
   page: 'repository' | 'workspace';
   workspace: string;
@@ -242,7 +242,7 @@ function StepSettings({ step, page, workspace, limit, doors, edge }: {
 }
 
 /** Who acts in a step's node (FLOWCHART1d): the person's part by its shape and its word, and the executor, names as code. */
-function Who({ step }: { step: WorkflowStep }) {
+export function Who({ step }: { step: WorkflowStep }) {
   const { t } = useTranslation();
   return (
     <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">

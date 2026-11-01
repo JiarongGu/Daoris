@@ -30,6 +30,13 @@ function answered(row: RoleRow, staffing: readonly ActorRow[]): boolean {
   return actor ? actor.state !== 'before' : row.choices != null;
 }
 
+/** The roles the suggested-choices card would offer to change now: none where it is not kept, was declined or the roles are answered already. */
+export function suggestedRoles(catalogue: RoleCatalogue, staffing: readonly ActorRow[], agents: readonly string[]): number {
+  if (!catalogue.kept || stored(DECLINED_KEY) === (catalogue.suggestedChoicesDated ?? '')) return 0;
+  const { changes } = wouldChange(catalogue, agents);
+  return changes.length > 0 && changes.every(({ row }) => !answered(row, staffing)) ? changes.length : 0;
+}
+
 /**
  * **Daoris suggests a role's choices** (MODELROLE1g, D205 point 7, the actors design §6.2): the head of Working roles at first run, while
  * none of the roles it would change holds an order of the person's own. One press sets every role's suggested choices as one change through
