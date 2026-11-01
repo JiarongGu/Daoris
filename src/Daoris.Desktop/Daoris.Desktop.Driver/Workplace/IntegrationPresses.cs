@@ -34,6 +34,8 @@ internal static class IntegrationPresses
                 },
                 new IntegrationPromoteAsk(repository, request.Workspace, root, line, config, home) { Beside = beside });
             var run = await new IntegrationLines(store, DaorisHome.Entry(home, HomeEntry.Trees)).RunAsync(asks, ct).ConfigureAwait(false);
+            // LANDNODE1l: the run may take an earlier press's waiting request with this one's, and records its merge.
+            if (run.Closed) await DeliveryReconciler.TakenAsync(home, root, repository, line, ct).ConfigureAwait(false);
             return store.Request(request.Id) switch
             {
                 { ClosedWhy: IntegrationRequestCloses.Settled } => (true, null),

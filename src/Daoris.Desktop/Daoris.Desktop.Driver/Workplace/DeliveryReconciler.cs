@@ -108,6 +108,32 @@ public sealed class DeliveryReconciler(DeliveryStore store, string home, Func<De
         return settled;
     }
 
+    /// <summary>
+    /// After a line's run closed a request (LANDNODE1l): each merge into <paramref name="line"/> whose press left its request waiting settled by
+    /// phase now, so the one the line took is recorded reached as it is taken rather than at the next start. One still waiting, or a live run's,
+    /// stands as it was.
+    /// </summary>
+    public static async Task TakenAsync(string home, string root, string repository, string line, CancellationToken ct)
+    {
+        try
+        {
+            var store = new DeliveryStore(home);
+            var reconciler = new DeliveryReconciler(store, home, _ => root);
+            foreach (var delivery in store.Unresolved().Where(each => each.Intent.Method == DeliveryMethods.Merge && each.Intent.Line == line
+                && string.Equals(each.Intent.Repository, repository, StringComparison.OrdinalIgnoreCase)))
+            {
+                if (store.Phases(delivery.Key).LastOrDefault() is { Phase: DeliveryPhases.RefWritten, Outcome: DeliveryOutcomes.Withdrawn })
+                {
+                    await reconciler.OneAsync(delivery, ct).ConfigureAwait(false);
+                }
+            }
+        }
+        catch (Exception error) when (error is SqliteException or DesktopStoreException or IOException)
+        {
+            // A store that cannot be read now leaves them to the next start's settlement, as before.
+        }
+    }
+
     /// <summary>Before a new start of <paramref name="unit"/>: its unresolved delivery settled by phase; null where it has none.</summary>
     public async Task<DeliveryReconciled?> BeforeStartAsync(string unit, CancellationToken ct) =>
         store.UnresolvedFor(unit) is { } open ? await OneAsync(open, ct).ConfigureAwait(false) : null;
@@ -239,8 +265,9 @@ public sealed class DeliveryReconciler(DeliveryStore store, string home, Func<De
 
     /// <summary>
     /// Rule 2, the open entry of <paramref name="phase"/> read: a preparation cut before any ref was written ahead is withdrawn, since nothing of
-    /// it stands; a ref done where it stands at the intended tip, withdrawn where it is absent or stands where its record had it, else unknown; a
-    /// record done where it holds the branch at the tip its ref was written at, else withdrawn, to be written again. Null where git cannot say.
+    /// it stands; a ref done where it stands at the intended tip, withdrawn where it is absent or stands where its record had it or at the tip
+    /// judged, else unknown; a record done where it holds the branch at the tip its ref was written at, else withdrawn, to be written again. Null
+    /// where git cannot say.
     /// </summary>
     private async Task<(string Outcome, string? Evidence, string Said)?> ReadAsync(
         DeliveryRecord delivery, IReadOnlyList<DeliveryPhase> phases, string phase, string root, CancellationToken ct)
@@ -283,10 +310,14 @@ public sealed class DeliveryReconciler(DeliveryStore store, string home, Func<De
             return (DeliveryOutcomes.Done, stands, $"`{reference}` stands at {commit}, read after a stop");
         }
 
-        if (stands is null || string.Equals(stands, recorded, StringComparison.OrdinalIgnoreCase))
+        // A tree's own branch replayed in place is moved from the tip judged (LANDNODE1l), as an advance is from where its record had it.
+        var stood = stands is null ? "absent"
+            : string.Equals(stands, recorded, StringComparison.OrdinalIgnoreCase) ? $"at {stands}, where its landing record had it"
+            : string.Equals(stands, intent.Tip, StringComparison.OrdinalIgnoreCase) ? $"at {stands}, the tip its landing was judged at"
+            : null;
+        if (stood is not null)
         {
-            return (DeliveryOutcomes.Withdrawn, stands ?? "absent",
-                $"`{reference}` stands {(stands is null ? "absent" : $"at {stands}, where its landing record had it")}, read after a stop: nothing of its write stands");
+            return (DeliveryOutcomes.Withdrawn, stands ?? "absent", $"`{reference}` stands {stood}, read after a stop: nothing of its write stands");
         }
 
         return (DeliveryOutcomes.Unknown, stands,

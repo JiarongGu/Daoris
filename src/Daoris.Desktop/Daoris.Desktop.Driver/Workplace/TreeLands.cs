@@ -746,11 +746,10 @@ internal sealed class TreeLands(
             // A squash reads the work's subject whatever the pattern reads (ACCEPTFOOT2b): its commit is named by it too.
             var worked = await ForWorkAsync(full, workspace, repository, landing.Rule, subject, ct, always: landing.Rule.Squash).ConfigureAwait(false);
             var name = delivering?.Intent.Branch ?? BranchNamed(worked, landing.Rule, repository);
-            // TREEFOLLOW1: a tree on a branch of its own lands as that branch, which its delivery names; replayed in place it moves outside a
-            // delivery's ref transaction, so it lands as before.
+            // TREEFOLLOW1: a tree on a branch of its own lands as that branch, which its delivery names, replayed in place or as it stands.
             var own = here?.Branch.Trim() is { } onBranch && onBranch is not ("" or "HEAD") && !onBranch.StartsWith(TreeFollows.SessionPrefix, StringComparison.Ordinal)
                 ? onBranch : null;
-            if ((own is null || replaying is null) && await DeliverAsync(own ?? name).ConfigureAwait(false) is { } undelivered) return Fetched(undelivered, notFetched);
+            if (await DeliverAsync(own ?? name).ConfigureAwait(false) is { } undelivered) return Fetched(undelivered, notFetched);
             var branched = await BranchAsync(full, workspace, repository,
                 delivering?.Intent.Branch ?? name,
                 handedOn: plugin is not null, ct,
@@ -1059,7 +1058,8 @@ internal sealed class TreeLands(
     /// <param name="here">The tree's repository and branch as its landing read them a moment ago (LANDGIT1b); null reads them here.</param>
     /// <param name="delivering">
     /// The delivery it performs (LANDNODE1b2): <paramref name="name"/> is its intent's, and the branch's ref is written by its one transaction under
-    /// the checkout's lock, each in its phase, the tree's own branch verified standing at the tip. Null writes the ref as before.
+    /// the checkout's lock, each in its phase, the tree's own branch verified standing at the tip or, replayed in place, moved from it while its
+    /// tree is detached. Null writes the ref as before.
     /// </param>
     private async Task<Branched> BranchAsync(
         string full, string workspace, string repository, string name, bool handedOn, CancellationToken ct, bool entered = false,
@@ -1145,17 +1145,10 @@ internal sealed class TreeLands(
             if (sync is not null && !(pushed && sync.Held.HoldsNone))
             {
                 if (pushed) return TreeLandSyncs.OwnOnRemote(sync);
-                // LANDNODE1b2: replayed in place, the branch its tree has out would move outside the delivery's ref transaction.
-                if (delivering is not null)
-                {
-                    return new TreeLanding(false, $"Nothing was landed: `{branch}`, the session's own branch, would be replayed in place onto "
-                        + $"`{sync.OntoName}`, which a delivery does not do yet. The tree and its branch are as they were.")
-                    { Refusal = AutoLandingCode.Refused, LeftOut = sync.Held.LeftOut };
-                }
-
                 var (made, refused) = await syncs.ReplayAsync(sync, repository, workspace, sync.Onto, sync.Held.Kept, ct).ConfigureAwait(false);
                 if (refused is not null) return refused;
-                if (await syncs.MoveTreeAsync(full, sync, made!.Now, repository, workspace, inUse: null, ct).ConfigureAwait(false) is { } stays)
+                // LANDNODE1l: a delivery's ref is the branch its tree has out, moved from the tip judged by its one transaction.
+                if (await syncs.MoveTreeAsync(full, sync, made!.Now, repository, workspace, inUse: null, ct, delivering).ConfigureAwait(false) is { } stays)
                 {
                     return new TreeLanding(false, $"Nothing was landed: `{branch}`, the session's own branch, could not be replayed in place ({stays}). "
                         + "The tree and its branch are as they were.") { Refusal = AutoLandingCode.Refused, LeftOut = sync.Held.LeftOut };
@@ -1188,12 +1181,7 @@ internal sealed class TreeLands(
                 root, line, commits, follows.BranchOfTree(full)?.Branch);
         }
 
-        if (!BranchName.IsValid(name))
-        {
-            return new TreeLanding(false, entered ? EnteredInvalid(name)
-                : $"the landing rule names `{name}` for this session, which is not a branch name git "
-                + "would take. Change the pattern with `daoris driver landing`.");
-        }
+        if (!BranchName.IsValid(name)) return new TreeLanding(false, Untaken(name, entered));
 
         // PROCESS1b-ii (point 1): the squash is a commit Daoris makes, so git's own identity here makes it, asked before anything is.
         if (squash is not null && await TreeSquashes.IdentityProblemAsync(root, repository, ct).ConfigureAwait(false) is { } nobody)
@@ -1445,6 +1433,10 @@ internal sealed class TreeLands(
     /// <summary>What a pattern is expanded from: the quest, or the session where there is none; the quest's name's words (LANDNAME1).</summary>
     private static string EnteredInvalid(string name) =>
         $"the branch name you entered, `{name}`, is not a branch name git would take. Enter another, or leave it blank for the rule's.";
+
+    /// <summary>What a branch name git would not take is refused with: the name the person entered, or the one the rule makes.</summary>
+    internal static string Untaken(string name, bool entered) => entered ? EnteredInvalid(name)
+        : $"the landing rule names `{name}` for this session, which is not a branch name git would take. Change the pattern with `daoris driver landing`.";
 
     /// <summary>An entered name that is already a branch Daoris did not make (LANDNAME1a): the press's refusal, which the plan says first.</summary>
     private static string EnteredStands(string name, string repository) =>

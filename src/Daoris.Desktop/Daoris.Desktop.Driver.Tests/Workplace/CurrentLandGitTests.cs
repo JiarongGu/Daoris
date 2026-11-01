@@ -184,6 +184,85 @@ public sealed class CurrentLandGitTests : IDisposable
         Assert.NotEqual(tip, second.Intent.Tip);
     }
 
+    /// <summary>
+    /// A name git would not take is refused at its delivery's start, nothing written: a delivery's key holds no name, so one written for it would
+    /// stand in the way of the name that takes, which then lands through its own.
+    /// </summary>
+    [Fact]
+    public async Task A_branch_name_git_would_not_take_is_refused_at_its_delivery_s_start_and_the_one_that_takes_lands_through_its_own()
+    {
+        var root = await GitSeed.PlainAsync(Path.Combine(_scratch, "engine"), "engine");
+        Save(DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}")));
+        var (trees, tree, _) = await TreeAsync(root);
+
+        var refused = await trees.LandAsync(tree, Subject with { Entered = "two..dots" }, inUse: NoneRunning);
+
+        Assert.False(refused.Landed, refused.Message);
+        Assert.Equal(AutoLandingCode.Refused, refused.Refusal);
+        Assert.Contains("`two..dots`, is not a branch name git would take", refused.Message);
+        Assert.Empty(Store().OfUnit("s1"));
+
+        var landed = await trees.LandAsync(tree, Subject with { Entered = "feature/taken" }, inUse: NoneRunning);
+
+        Assert.True(landed.Landed, landed.Message);
+        var delivery = Assert.Single(Store().OfUnit("s1"));
+        Assert.Equal(("feature/taken", DeliverySettlements.Delivered), (delivery.Intent.Branch, delivery.Settled));
+    }
+
+    /// <summary>
+    /// A press whose request waits in its line's queue, a session in the checkout holding the promotion: its delivery stays unresolved, and is
+    /// recorded reached when the line's run at a look takes the request, with no start between.
+    /// </summary>
+    [Fact]
+    public async Task A_merge_whose_request_waits_in_its_line_s_queue_is_recorded_when_its_line_takes_it()
+    {
+        var root = await GitSeed.PlainAsync(Path.Combine(_scratch, "engine"), "engine");
+        Save(DriverConfig.Empty.WithLanding("engine", LandingRule.Merge));
+        var (trees, tree, _) = await TreeAsync(root);
+
+        var waits = await trees.LandAsync(tree, Subject, inUse: NoneRunning,
+            beside: _ => Task.FromResult<IReadOnlyList<TreeHolder>>([new TreeHolder(root, "s9")]));
+
+        Assert.False(waits.Landed, waits.Message);
+        Assert.Contains("waits to be merged into `main`", waits.Message);
+        Assert.True(Assert.Single(Store().OfUnit("s1")).Unresolved);
+
+        await using var transport = new IntegrationTransport(_home, new IntegrationTransportWorld { Config = Config, Root = (_, _, _) => Task.FromResult<string?>(root) });
+        await transport.RunAsync(new IntegrationLineSend("engine", "aurora", "main"), CancellationToken.None);
+
+        Assert.Contains("the work", await GitFixture.GitAsync(root, "log", "main", "--oneline"));
+        Assert.Equal(DeliverySettlements.Delivered, Assert.Single(Store().OfUnit("s1")).Settled);
+    }
+
+    /// <summary>
+    /// A tree on a branch of its own whose line moved: replayed in place through its delivery, the branch moved from the tip judged by the
+    /// delivery's one ref transaction, recorded, delivered, and the tree on it.
+    /// </summary>
+    [Fact]
+    public async Task A_tree_s_own_branch_replayed_in_place_lands_through_its_delivery()
+    {
+        var root = await GitSeed.PlainAsync(Path.Combine(_scratch, "engine"), "engine");
+        Save(DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}")));
+        var trees = new SessionTrees(_home);
+        var tree = (await trees.OpenAsync(root, "engine", "aurora")).Path;
+        await GitFixture.GitAsync(tree, "checkout", "--quiet", "-b", "feature/own");
+        await CommitAsync(tree, "work.txt", "the session's work", "the work");
+        var judged = (await GitFixture.GitAsync(tree, "rev-parse", "HEAD")).Trim();
+        await CommitAsync(root, "later.txt", "the line moves on", "the line moves on");
+
+        var landed = await trees.LandAsync(tree, Subject, inUse: NoneRunning);
+
+        Assert.True(landed.Landed, landed.Message);
+        var delivery = Assert.Single(Store().OfUnit("s1"));
+        Assert.Equal((DeliveryMethods.Branch, "feature/own", judged, DeliverySettlements.Delivered),
+            (delivery.Intent.Method, delivery.Intent.Branch, delivery.Intent.Tip, delivery.Settled));
+        var moved = (await GitFixture.GitAsync(root, "rev-parse", "refs/heads/feature/own")).Trim();
+        Assert.Equal(moved, Store().Phases(delivery.Key).Single(each => each.Phase == DeliveryPhases.RefWritten).Evidence);
+        Assert.Equal(moved, trees.Recorded.Of("engine", "feature/own")?.Tip);
+        Assert.Equal((moved, "feature/own"), ((await GitFixture.GitAsync(tree, "rev-parse", "HEAD")).Trim(),
+            (await GitFixture.GitAsync(tree, "rev-parse", "--abbrev-ref", "HEAD")).Trim()));
+    }
+
     // ——— The fixture.
 
     private static readonly LandingSubject Subject = new("s1", "0fda18", "Tidy the readme");

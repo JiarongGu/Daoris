@@ -43,7 +43,7 @@ public sealed partial class CheckoutWritersCensusTests
         // Refs no checkout has out, each from the tip judged or refused by git itself, and git's record of the trees.
         ["BranchReplays.cs"] = (Refs, "a branch replayed in its own tree or one made for it (D109 §2), moved from the tip judged while no checkout has it out", ["add@tree", "checkout@tree", "rebase@tree", "rm@tree", "switch@tree", "update-ref@root", "worktree@root"]),
         ["TreeUpdates.cs"] = (Refs, "a session's branch brought up to date in its own tree, moved from the tip judged while that tree is detached", ["rebase@tree", "switch@full", "switch@tree", "update-ref@root"]),
-        ["TreeLandSyncs.cs"] = (Refs, "a session's branch following what landed, moved from the tip judged while its own tree is detached", ["switch@full", "update-ref@sync.Root"]),
+        ["TreeLandSyncs.cs"] = (Refs, "a session's branch following what landed, moved from the tip judged while its own tree is detached; a delivery's is TreeDeliveries' transaction instead", ["switch@full", "update-ref@sync.Root"]),
         ["TreeLands.cs"] = (Refs, "a landing's new branch, and its advance from the recorded tip of a branch checked out in no tree; a delivery's are TreeDeliveries' transaction instead; its merge rule writes the checkout only through IntegrationPromotes' effect and holds nothing itself", ["branch@root", "update-ref@root"]),
         ["TreeSquashes.cs"] = (Refs, "a squash's advance, from the recorded tip of a branch checked out in no tree; a delivery's is TreeDeliveries' transaction instead", ["update-ref@root"]),
         ["ContentHolds.cs"] = (Refs, "Daoris's holds on content under its own refs, and a branch deleted verified at the tip judged", ["update-ref@root"]),
@@ -81,7 +81,7 @@ public sealed partial class CheckoutWritersCensusTests
     /// </summary>
     private static readonly Dictionary<string, string> RefsHeldAlone = new(StringComparer.Ordinal)
     {
-        ["TreeDeliveries.cs"] = "a delivery's landing (LANDNODE1b2): its branch made, moved on from the tip judged, or its tree's own verified at the tip, one transaction in its phase",
+        ["TreeDeliveries.cs"] = "a delivery's landing (LANDNODE1b2): its branch made, moved on from the tip judged, or its tree's own verified at the tip or replayed in place while that tree is detached, one transaction in its phase",
     };
 
     /// <summary>Writers of a checkout that start no git of Daoris's and so take no lock: how each is fenced instead.</summary>
