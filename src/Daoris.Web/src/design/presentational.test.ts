@@ -96,6 +96,8 @@ const ORGANISMS = new Set<string>([
   './agents/setup/PlaceRoles.tsx',
   // A place's Sessions (AGENTSPLACE1f): the registry's row and the one reading of a repository's setup behind it, so the molecules below hold none.
   './agents/setup/PlaceSessions.tsx',
+  // A place's Set up… (AGENTSPLACE1j): the plan's read and the person's Apply, so the page below it holds neither.
+  './agents/setup/PlaceSetUpPanel.tsx',
   './projects/setup/useRepositorySetup.ts',
   // A repository's Workflow as its molecules take it (AGENTSPLACE1h): its Current, the acceptance and the step editor's bridge, held by the
   // Repositories view and a place's Sessions, so the Workflow tab and the place's Workflow below hold none.

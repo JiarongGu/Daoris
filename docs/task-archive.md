@@ -22603,6 +22603,11 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 
 **Outcome** 2026-11-01: `PaletteStep.OutputsOn` and the draft's `StepChoice.outputsOn` copy a plugin step's `outputsOn` into the node `addStep` writes, so a release workflow composed in the window keeps `release` on `release` only; `PersonPresses.Presses` lists `workflow changes` over `WORKFLOW_NODE`; the `role` kind has a `default-all` door (id `*`, no revision) in the driver's judge, the service's writer and `role_propose`, with the room's text and goldens. Tests `WorkflowPaletteTests`, `graphDraft.test.ts`, `WorkflowNodeThroughInstanceTests`, `HelpRoleProposalsTests`, `HelpRoleProposalTests`.
 
+## AGENTSPLACE1j — *Set up…* (2026-11-01, D191)
+
+> **AGENTSPLACE1j** (web; row 14 of AGENTSPLACE1). *Set up…* in the head of a repository's and a workspace's place page: delivery, adoption with *What it builds*, general driving, the plan, the acceptances and Apply; one plan over several repositories; refusals in place.
+
+**Outcome** 2026-11-01: lit by `daoris.agents.setup`, *Set up…* opens in the place's main area (`PlaceSetUp`, `PlaceSetUpPanel`, its draft held by `useSetUpPage`): the suggested delivery preselected from `PLACE_PLAN`, every refusal said in place, the acceptances unchosen until ticked, and `PLACE_APPLY` pressed with the plan's digest (a `moved` refusal said and the plan read again); a workspace ticks its repositories into one plan. Tests `PlaceSetUp.test.tsx`, `PlaceSetUpPanel.test.tsx`, `setup.test.tsx`; stories `PlaceSetUp`.
 ## SERVICEPROBE1 — the terminal waits for a slow service whose process runs, rather than refusing (2026-11-01)
 
 > On a machine at full CPU (the merge queue's rehearsals and builders), the install's service answered in 1.3 to 5 s and `/api/sessions` in more than 15, and `daoris-driver trees land` refused with "nothing answered as its service … within 2 seconds, asked twice" though Daoris's pid was alive. Contract: where the home's lease names a live process, the probe waits longer, bounded, and says it is waiting; a dead or absent one still refuses at once. Proof: a unit test with a stand-in that answers after 4 s and one whose pid is gone.

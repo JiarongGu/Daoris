@@ -23,7 +23,8 @@ import { type AgentPart, accountLabel, agentRows } from './agents';
 import { AgentsModes, AgentsStrip, RoleSectionStrip } from './AgentsModes';
 import { type AgentsMode, isRoleSection, readAgentsMode, type RoleSection, setupLit, storeAgentsMode } from './modes';
 import { PlaceRoles } from './setup/PlaceRoles';
-import { findPlace, placeAsk, SetupList, SetupMain, useSetupPlaces } from './setup/SetupPlaces';
+import { type SetUpPage, type SetUpPlace, useSetUpPage } from './setup/placePlan';
+import { findPlace, placeAsk, SetupList, SetupMain, setUpPlaceOf, useSetupPlaces } from './setup/SetupPlaces';
 import { RoleSectionList } from './roles/RoleSections';
 import { type RoleOpeners, RolesMode, useRolesPage } from './roles/RolesView';
 import { usedByAgent } from './roles/roleStructure';
@@ -78,7 +79,12 @@ export function useAgentsMode(lists: ListPanes) {
  *
  * **Every act has its terminal twin** (D50): `daoris agent …`, named at the page's foot.
  */
-export function useAgentsView({ active, chosen, onChoose, notify, part = null, onAnchored, onOpenPlugin, say, modes, roleDoors, sessions }: {
+export function useAgentsView({ active, chosen, onChoose, notify, part = null, onAnchored, onOpenPlugin, say, modes, roleDoors, sessions, setUp }: {
+  /**
+   * A place's *Set up…* (AGENTSPLACE1j), opened in its main area and handed in by the application for the same reason: it reads the plan and
+   * presses Apply, the person's own act. The set-up's draft per place is held here, so a door out of it and back finds it as left.
+   */
+  setUp?: (place: SetUpPlace, page: SetUpPage) => ReactNode;
   /**
    * A place's Sessions (AGENTSPLACE1f), drawn under its Roles and handed in by the application, which holds the presses the rows make: this
    * place imports none of them, so Ask Daoris's census of what the place presses does not take them for its own.
@@ -122,6 +128,7 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
   const places = useSetupPlaces(active && inSetup && lit);
   // The Roles page's state lives here, so a door out of it and the way back find the selection and the scope as left.
   const rolesPage = useRolesPage();
+  const setUpPage = useSetUpPage();
   const accounts = useAccounts();
   useErrorNotify(active ? roster.error : null, notify);
 
@@ -156,6 +163,7 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
   const loading = active && roster.data === undefined && roster.isPending;
   if (modes && inSetup && lit) {
     const placed = findPlace(places.read, modes.place);
+    const setUpPlace = setUp ? setUpPlaceOf(placed, modes.place, places.read) : null;
     return {
       list: {
         view: 'agents',
@@ -173,6 +181,13 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
           state={places.status}
           roles={placed && placed.kind !== 'imported' ? <PlaceRoles place={placeAsk(placed)} notify={notify} /> : null}
           after={placed && (placed.kind === 'workspace' || placed.kind === 'repository') ? sessions?.(placed) : null}
+          setUp={setUp && setUpPlace
+            ? {
+              open: setUpPage.draftOf(setUpPlace.id) !== null,
+              onOpen: () => setUpPage.open(setUpPlace.id, setUpPlace.kind === 'workspace' ? setUpPlace.driven : [setUpPlace.name]),
+              panel: setUp(setUpPlace, setUpPage),
+            }
+            : undefined}
         />
       ),
     };

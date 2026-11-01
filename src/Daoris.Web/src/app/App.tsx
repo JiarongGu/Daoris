@@ -38,6 +38,7 @@ import {
 } from './opener';
 import { setupLit } from '../agents/modes';
 import { PlaceSessions } from '../agents/setup/PlaceSessions';
+import { PlaceSetUpPanel } from '../agents/setup/PlaceSetUpPanel';
 import { DEFAULT_WORKSPACE, workspaceOf } from '../data/workspaces';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import { Drawer, failure, Prose, Toasts, useToasts } from '../design/ui';
@@ -433,6 +434,8 @@ export function App() {
     onOpenPlugin: (plugin) => open('plugins', plugin),
     // A place's Sessions (AGENTSPLACE1f): its rows press the driver's hooks, which the application hands in so the place imports none.
     sessions: (place) => <PlaceSessions place={place} notify={notify} onOpenPlugin={(plugin) => open('plugins', plugin)} />,
+    // A place's *Set up…* (AGENTSPLACE1j): it reads the plan and presses Apply, which the application hands in for the same reason.
+    setUp: (place, page) => <PlaceSetUpPanel place={place} page={page} notify={notify} />,
     // The Roles mode's doors (COMPANYVIEW1d): each thing's home, the Agents mode at an agent's accounts among them.
     roleDoors: {
       agent: (agent) => open('agents', agent, { agentPart: 'accounts', agentsMode: 'agents' }),
