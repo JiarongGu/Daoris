@@ -220,5 +220,11 @@ public sealed class NodeAcceptancesTests
         Assert.False(approved.SameResult(binding with { Outcome = "changes-asked" }));
         Assert.False(approved.SameResult(binding));
         Assert.Equal(NodeRefusal.OtherResult, NodeAcceptances.Keep([approved], binding with { Outcome = "changes-asked" }).Refused);
+
+        // A route rests on its decision's outcome receipt, so the decision's invalidation carries to it.
+        var route = new NodeAcceptance("unit-a", "tip-1", "graph-1", "land", 1, 1) { PrerequisiteReceipts = [WireEvaluation.OutcomeReceipt(approved.Id, "approved")] };
+        Assert.Equal(
+            [new NodeInvalidation(approved.Id, NodeLapse.Revision, null), new NodeInvalidation(route.Id, NodeLapse.Upstream, approved.Id)],
+            NodeAcceptances.Invalidate([approved, route], acceptance => acceptance.Node == "review" ? NodeLapse.Revision : null));
     }
 }

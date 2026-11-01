@@ -193,9 +193,12 @@ public static class NodeAcceptances
         for (var next = 0; next < found.Count; next++)
         {
             var upstream = found[next].Acceptance;
+            // DECIDE1a: a route rests on its decision's outcome receipt, never on the acceptance's id alone.
+            var routes = acceptances.Where(each => each.Id == upstream && each.Outcome is not null)
+                .Select(each => WireEvaluation.OutcomeReceipt(upstream, each.Outcome!)).ToHashSet(StringComparer.Ordinal);
             foreach (var acceptance in acceptances)
             {
-                if (named.Contains(acceptance.Id) || !RestsOn(acceptance, upstream)) continue;
+                if (named.Contains(acceptance.Id) || !RestsOn(acceptance, upstream, routes)) continue;
                 named.Add(acceptance.Id);
                 found.Add(new NodeInvalidation(acceptance.Id, NodeLapse.Upstream, upstream));
             }
@@ -217,7 +220,7 @@ public static class NodeAcceptances
             : new(kept, NodeRefusal.OtherResult);
     }
 
-    private static bool RestsOn(NodeAcceptance acceptance, string upstream) =>
-        acceptance.PrerequisiteReceipts.Contains(upstream, StringComparer.Ordinal)
+    private static bool RestsOn(NodeAcceptance acceptance, string upstream, HashSet<string> routes) =>
+        acceptance.PrerequisiteReceipts.Any(receipt => string.Equals(receipt, upstream, StringComparison.Ordinal) || routes.Contains(receipt))
         || acceptance.Inputs.Values.Any(port => string.Equals(port.Acceptance, upstream, StringComparison.Ordinal));
 }
