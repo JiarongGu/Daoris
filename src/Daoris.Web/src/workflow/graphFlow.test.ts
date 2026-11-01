@@ -127,6 +127,33 @@ describe('the shipped workflows, read from the driver\'s own data', () => {
     }
   });
 
+  // SETUPUX1u: a run passes the outcome a decision returned, and the drawing says which route that was.
+  it('draws a run\'s decision: the route its outcome took reached, the others not taken, and Finished after the one taken', () => {
+    const decided = (outcome: 'release' | 'none') => {
+      const graph = drawnFromJson(t, i18n, shipped('release').graph);
+      const taken = outcome === 'release' ? ['publish', 'release'] : [];
+      const nodes = graph.nodes.map((node) => ({
+        ...node,
+        reached: !['release', 'publish'].includes(node.id) || taken.includes(node.id),
+        ...(node.id === 'find' ? { outcome } : {}),
+      }));
+      return graphFlow(t, { ...graph, nodes }, { label: 'How work moves', finished: { word: 'done', tone: 'done' } });
+    };
+
+    // `none` is routed to nothing: its ◎ is reached, and the run finished there, not after the steps it never took.
+    const none = decided('none');
+    const nowhere = none.nodes.find((node) => node.title === 'No further step')!;
+    expect(nowhere.reached).toBe(true);
+    expect(none.edges.filter((edge) => edge.to === FINISHED).map((edge) => edge.from)).toEqual([nowhere.id]);
+
+    // `release` is routed: the run finished after the last step it took, and the unrouted outcome is a ◎ not taken.
+    const release = decided('release');
+    const left = release.nodes.find((node) => node.title === 'No further step')!;
+    expect(left.reached).toBe(false);
+    expect(left.state).toMatchObject({ word: 'route not taken' });
+    expect(release.edges.filter((edge) => edge.to === FINISHED).map((edge) => edge.from)).toEqual(['publish']);
+  });
+
   it('folds the declared requests and holds into one group, counted, and opens it on request', () => {
     const release = draw(shipped('release').graph);
     expect(release.nodes.map((node) => node.id)).not.toEqual(expect.arrayContaining(['requests', 'holds', 'content']));

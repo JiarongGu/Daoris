@@ -81,7 +81,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/noteLines.ts` | 58 | 984 |
 | `src/Daoris.Web/src/work/rail/SessionRail.test.tsx` | 56 | 1103 |
 | `src/Daoris.Web/src/work/rail/SessionRow.test.tsx` | 47 | 859 |
-| `src/Daoris.Web/src/workflow/WorkflowRunView.test.tsx` | 53 | 847 |
+| `src/Daoris.Web/src/workflow/WorkflowRunView.test.tsx` | 62 | 1008 |
 
 ### Web settings (`web-settings`)
 

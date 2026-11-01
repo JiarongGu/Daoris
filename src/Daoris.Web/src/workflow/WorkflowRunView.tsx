@@ -1,13 +1,17 @@
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ago } from '../locales/format';
 import { ExternalLink } from '../design/links';
 import { Button, Icon, Inline, Pill, Prose, SkeletonRows } from '../design/ui';
 import type { CurrentWorkflow } from './current';
 import { NodeWord } from './NodeWord';
-import { type CheckHeldAnswer, type CheckHeldAsk, type NodeWordAnswer, type NodeWordAsk, type RunRequest, type RunStep, runTone, type WorkflowRun, type WorkflowRunAnswer } from './run';
+import {
+  type CheckHeldAnswer, type CheckHeldAsk, finishedBy, notTakenBy, type NodeWordAnswer, type NodeWordAsk, openedBy, type RunRequest, type RunStep, runTone,
+  type WorkflowRun, type WorkflowRunAnswer,
+} from './run';
 import { whySaid } from './routeSaid';
-import { addedSaid, chatChecksSaid, graphSaid, noRunSaid, requestSaid, runSaid, runShort, stateSaid, stepWord } from './runSaid';
+import { addedSaid, chatChecksSaid, graphSaid, noRunSaid, placeSaid, requestSaid, runSaid, stateSaid, stepWord } from './runSaid';
+import { stepTitle } from './said';
 import { CheckHeld } from './CheckHeld';
 import { type RunMarks, WorkflowChart } from './WorkflowChart';
 import { WorkflowHold } from './WorkflowHold';
@@ -36,8 +40,113 @@ export const runWorkflow = (run: WorkflowRun): CurrentWorkflow => ({
   limits: run.workflow.limits,
 });
 
-/** Whether the outcomes a graph run reached leave no route to this step (DECIDE1c, the driver's `notTaken`). */
-const notTakenIn = (run: WorkflowRun, step: RunStep): boolean => run.graph?.notTaken?.includes(step.step.id) ?? false;
+const notTakenIn = notTakenBy;
+
+/** A step's title as a name for a reader to hear: its code marks dropped. */
+const plain = (text: string) => text.replace(/`/g, '');
+
+/** One route a decision leads along (SETUPUX1u): its outcome, where it goes on in words, and whether the outcome it returned ruled it out. */
+type Route = { outcome: string; to: string; notTaken: boolean };
+
+/**
+ * A decision's routes, in the graph's order: each `when` wire by its outcome, to the steps that follow it in a chain; and, where it returned
+ * an outcome nothing follows, that outcome going to *No further step*. A step that decides nothing has none.
+ */
+function routesOf(t: ReturnType<typeof useTranslation>['t'], run: WorkflowRun, step: RunStep): Route[] {
+  const graph = run.graph;
+  const wires = graph?.wires.filter((wire) => wire.kind === 'when' && wire.from === step.step.id) ?? [];
+  if (!graph || wires.length === 0) return [];
+  const byId = new Map(run.steps.map((each) => [each.step.id, each]));
+  const returned = graph.outcomes?.[step.step.id] ?? null;
+  const follow = (start: string): string[] => {
+    const titles: string[] = [];
+    for (let id: string | undefined = start; id && !titles.includes(id);) {
+      const next = byId.get(id);
+      if (!next) break;
+      titles.push(id);
+      const after = graph.wires.filter((wire) => wire.from === id);
+      id = after.length === 1 && after[0]!.kind === 'after' ? after[0]!.to : undefined;
+    }
+    return titles.map((id) => plain(stepTitle(t, byId.get(id)!.step)));
+  };
+  const routes = wires.map((wire): Route => ({
+    outcome: wire.outcome ?? '', to: follow(wire.to).join(t('workflow.listJoin')), notTaken: returned !== null && returned !== wire.outcome,
+  }));
+  if (returned !== null && !wires.some((wire) => wire.outcome === returned)) {
+    routes.push({ outcome: returned, to: t('workflow.graph.noFurther'), notTaken: false });
+  }
+  return routes;
+}
+
+/** A decision's routes as the rail reads them: each outcome and where it goes, the ones its outcome ruled out said to be not taken. */
+function Routes({ routes }: { routes: Route[] }) {
+  const { t } = useTranslation();
+  if (routes.length === 0) return null;
+  return (
+    <ul aria-label={t('workflow.run.routes')} className="m-0 grid list-none gap-0.5 p-0 text-meta text-ink-soft">
+      {routes.map((route, index) => (
+        <li key={route.outcome} className="m-0 grid min-w-0 grid-cols-[1.25ch_minmax(0,1fr)] gap-x-1.5">
+          <span aria-hidden className="font-mono text-ink-faint">{index === routes.length - 1 ? '└' : '├'}</span>
+          <span className="min-w-0">
+            <Inline text={t('workflow.run.routeTo', { outcome: route.outcome, to: route.to })} />
+            {route.notTaken && <span className="ml-1.5 text-ink-faint">{t('workflow.run.notTaken.state')}</span>}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/**
+ * A step's state line: its pill (drawn by the node itself on the flowchart), *this session* where the attended session is its own, and when it
+ * came to stand there.
+ */
+function StateLine({ run, step, here, pill, children }: { run: WorkflowRun; step: RunStep; here: boolean; pill: boolean; children?: ReactNode }) {
+  const { t } = useTranslation();
+  const notTaken = notTakenIn(run, step);
+  const when = step.at && step.state !== 'not-reached' ? ago(step.at) : null;
+  if (!pill && !here && !when && !children) return null;
+  return (
+    <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+      {pill && <Pill tone={notTaken ? 'neutral' : runTone(step.state)}>{notTaken ? t('workflow.run.notTaken.state') : stepWord(t, step)}</Pill>}
+      {here && (
+        <span className="rounded-full border border-line-strong px-2 py-px text-meta text-ink-soft">{t('workflow.run.thisSession')}</span>
+      )}
+      {when && <span className="font-mono text-meta text-ink-faint">{when}</span>}
+      {children}
+    </p>
+  );
+}
+
+/**
+ * **A step the person has not opened** (SETUPUX1u): its state, the outcome a decision came to and the routes it led along, and the press that
+ * opens its record. Its record and its owner's control wait for that press.
+ */
+function StepBrief({ run, step, here, pill, onPick }: { run: WorkflowRun; step: RunStep; here: boolean; pill: boolean; onPick: () => void }) {
+  const { t } = useTranslation();
+  const outcome = run.graph?.outcomes?.[step.step.id] ?? null;
+  const routes = pill ? routesOf(t, run, step) : [];
+  return (
+    <div className="mt-1 grid min-w-0 gap-1">
+      <StateLine run={run} step={step} here={here} pill={pill}>
+        {/* A step the work has not come to keeps no record to open. */}
+        {step.state !== 'not-reached' && (
+          <Button
+            variant="ghost"
+            aria-expanded={false}
+            aria-label={t('workflow.run.detailsOf', { step: plain(stepTitle(t, step.step)) })}
+            className="min-h-0 px-1.5 py-0.5 text-small"
+            onClick={onPick}
+          >
+            {t('workflow.run.details')}
+          </Button>
+        )}
+      </StateLine>
+      {outcome && <p className="m-0 text-small text-ink-soft"><Inline text={t('workflow.run.outcome', { outcome })} /></p>}
+      <Routes routes={routes} />
+    </div>
+  );
+}
 
 /** The person's words a step keeps, shown as written: a skip's and a *not yet*'s (D154). */
 const QUOTES: ReadonlySet<string> = new Set(['look.skip', 'look.not-yet']);
@@ -48,8 +157,9 @@ const NODE_QUOTES: ReadonlySet<string> = new Set(['skipped', 'rejected', 'stoppe
 /**
  * One step's place in its run (design §5.2, §7): its state on its pill, *this session* where the attended session is its own,
  * when it came to stand there, what that state says, the person's words where it keeps them, why a step Current does not draw is
- * here, the owner's control where it waits, and the door to where its record is. On the flowchart (FLOWCHART1d) the node wears
- * the state's pill itself, so its mark is drawn without it.
+ * here, the owner's control where it waits, and the door to where its record is. The step the person has opened (SETUPUX1u): the others
+ * are `StepBrief`s. On the flowchart (FLOWCHART1d) the node wears the state's pill itself, so its mark is drawn without it, and without
+ * the routes, which its edges draw.
  */
 function StepMark({ run, step, here, doors, control, pill = true, onNodeWord, onHeld }: {
   run: WorkflowRun;
@@ -77,21 +187,13 @@ function StepMark({ run, step, here, doors, control, pill = true, onNodeWord, on
   const twin = !control && kind === 'opinion' && step.state === 'waiting-on-you' && step.session
     ? t('workflow.run.opinionTwin', { session: step.session })
     : null;
-  const when = step.at && step.state !== 'not-reached' ? ago(step.at) : null;
 
   return (
     <div className="mt-1 grid min-w-0 gap-1">
-      {(pill || here || when) && (
-        <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-          {pill && <Pill tone={notTaken ? 'neutral' : runTone(step.state)}>{notTaken ? t('workflow.run.notTaken.state') : stepWord(t, step)}</Pill>}
-          {here && (
-            <span className="rounded-full border border-line-strong px-2 py-px text-meta text-ink-soft">{t('workflow.run.thisSession')}</span>
-          )}
-          {when && <span className="font-mono text-meta text-ink-faint">{when}</span>}
-        </p>
-      )}
+      <StateLine run={run} step={step} here={here} pill={pill} />
       {said && <p className="m-0 text-small text-ink-soft"><Inline text={said} /></p>}
       {outcome && <p className="m-0 text-small text-ink-soft"><Inline text={t('workflow.run.outcome', { outcome })} /></p>}
+      {pill && <Routes routes={routesOf(t, run, step)} />}
       {/* INTEGRATE1o part o2: the requests the work's sessions made, inside the work: each quest they published and each helper they asked. */}
       {step.requests && step.requests.length > 0 && (
         <ul aria-label={t('workflow.run.requests.title')} className="m-0 grid list-none gap-1 p-0">
@@ -224,58 +326,64 @@ function Run({ run, here, doors, controls, named, onNodeWord, onHeld }: {
   onNodeWord?: (ask: NodeWordAsk) => Promise<NodeWordAnswer>;
   onHeld?: (ask: CheckHeldAsk) => Promise<CheckHeldAnswer>;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const at = run.at ?? null;
+  // The step whose record and owner's control are drawn: the person's choice, else where the run stands (SETUPUX1u).
+  const [picked, setPicked] = useState<string | null>(null);
+  const opened = picked !== null && run.steps.some((step) => step.step.id === picked) ? picked : openedBy(run);
+  const finished = finishedBy(run);
   const reached = new Set(run.steps.filter((step) => step.state !== 'not-reached').map((step) => step.step.id));
   const marks: RunMarks = Object.fromEntries(run.steps.map((step) => {
-    const mark = (pill: boolean) => (
-      <StepMark
-        run={run}
-        step={step}
-        here={here === step.step.id}
-        doors={doors}
-        control={step.step.id === at ? controls?.[step.step.id] : undefined}
-        pill={pill}
-        onNodeWord={onNodeWord}
-        onHeld={onHeld}
-      />
-    );
-    const door = doorFor(t, run, step, doors);
-    return [step.step.id, {
-      reached: reached.has(step.step.id),
-      at: step.step.id === at,
+    const id = step.step.id;
+    const pick = () => setPicked(id);
+    const mark = (pill: boolean) => id === opened
+      ? (
+        <StepMark
+          run={run}
+          step={step}
+          here={here === id}
+          doors={doors}
+          control={id === at ? controls?.[id] : undefined}
+          pill={pill}
+          onNodeWord={onNodeWord}
+          onHeld={onHeld}
+        />
+      )
+      : <StepBrief run={run} step={step} here={here === id} pill={pill} onPick={pick} />;
+    return [id, {
+      reached: reached.has(id),
+      at: id === at,
       mark: mark(true),
       // Its node on the flowchart (FLOWCHART1d): its state's word in `runTone`'s tone, done only where it is (a skip stays in view
-      // when a long run folds), its lines without the pill the node draws, and its door for Enter. DECIDE1c: a route not taken says so.
+      // when a long run folds), its lines without the pill the node draws, and Enter opens its record. DECIDE1c: a route not taken says so.
       state: notTakenIn(run, step)
         ? { word: t('workflow.run.notTaken.state'), tone: 'neutral' as const }
         : { word: stepWord(t, step), tone: runTone(step.state) },
       settled: step.state === 'done',
       node: mark(false),
-      ...(door && 'open' in door ? { open: door.open } : {}),
+      ...(step.state === 'not-reached' ? {} : { open: pick }),
     }];
   }));
-  const says = runShort(t, run);
   const checks = chatChecksSaid(t, run);
+  // One line of the head: the saved workflow by its name and version, or Current by its version; and what chose it, as its binding keeps it.
+  const source = run.workflow.route
+    ? whySaid(t, run.workflow.route.level, { repository: run.repository, workspace: run.workspace }, run.workflow.route.label ?? run.workflow.route.kind ?? null)
+    : null;
+  const bound = run.workflow.id && run.workflow.boundVersion != null
+    ? t('workflow.run.headBound', {
+      workflow: i18n.exists(`workflow.shipped.${run.workflow.id}.name`) ? t(`workflow.shipped.${run.workflow.id}.name`) : run.workflow.id,
+      version: run.workflow.boundVersion,
+    })
+    : null;
+  const head = bound ?? (run.problem ? t('workflow.run.unreadHead', { repository: run.repository })
+    : t('workflow.run.head', { repository: run.repository, version: run.workflow.version }));
 
   return (
     // The chart names itself by the repository (`workflow.chart`), so the run's own box needs no second name.
     <div className="grid min-w-0 gap-3">
       <div className="grid min-w-0 gap-0.5">
-        <Prose className="text-ink">
-          <Inline text={named ? t('workflow.run.lineIn', { repository: run.repository, says }) : t('workflow.run.line', { says })} />
-        </Prose>
-        <p className="m-0 text-meta text-ink-faint">{run.workflow.id && run.workflow.boundVersion != null
-          ? t('workflow.run.namedHead', { repository: run.repository, workflow: run.workflow.id, version: run.workflow.boundVersion })
-          : run.problem ? t('workflow.run.unreadHead', { repository: run.repository })
-            : t('workflow.run.head', { repository: run.repository, version: run.workflow.version })}</p>
-        {/* FABRIC-PIPELINE1a: the route that chose its workflow, as its binding keeps it; a driver before it keeps none. */}
-        {run.workflow.route && (
-          <p className="m-0 text-meta text-ink-faint">{t('workflow.run.route', {
-            why: whySaid(t, run.workflow.route.level, { repository: run.repository, workspace: run.workspace },
-              run.workflow.route.label ?? run.workflow.route.kind ?? null),
-          })}</p>
-        )}
+        <Prose className="text-ink"><Inline text={placeSaid(t, run, named)} /></Prose>
+        <p className="m-0 text-meta text-ink-faint">{source && !run.problem ? t('workflow.run.headSource', { head, source }) : head}</p>
       </div>
       {/* FABRIC-CUTOVER1e: a graph run says what its record says, what its graph observes, that its branches are its graph's and that
           every landing door still holds it, before its nodes. */}
@@ -294,8 +402,8 @@ function Run({ run, here, doors, controls, named, onNodeWord, onHeld }: {
         page="repository"
         name={run.repository}
         run={marks}
-        end={at === null ? <Pill tone="done">{stateSaid(t, 'done')}</Pill> : undefined}
-        finished={at === null}
+        end={finished ? <Pill tone="done">{stateSaid(t, 'done')}</Pill> : undefined}
+        finished={finished}
         graph={run.graph ?? null}
       />}
     </div>
