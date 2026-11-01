@@ -599,7 +599,8 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
             // Accept refuses until the tree's uncommitted paths are committed (D164 point 4): the page says so before the press.
             var uncommitted = UncommittedCount(await trees.UncommittedAsync(tree, cancellationToken));
             // ACCEPTALL1c (D167's amendment point 3): only a part of an entry with others can have been left out.
-            return Planned(id, plan, uncommitted, gate, lead is null ? null : LeftOutOfEntry(id), new CarriedAccepts(_loop.Home).Of(id));
+            return Planned(id, plan, uncommitted, gate, lead is null ? null : LeftOutOfEntry(id), new CarriedAccepts(_loop.Home).Of(id),
+                LandingDelivery.Newest(_loop.Home, id));
         }
 
         // The press answers what it showed beside Accept (the second-agent design §8.2–§8.3): a dispute or commits nobody read,
@@ -766,8 +767,14 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// Discard; null where none did.
     /// </param>
     public static object Planned(
-        string session, LandingPlan plan, int uncommitted, LandingGate gate, string? leftOutOf, CarriedAccept? carried = null) => new
+        string session, LandingPlan plan, int uncommitted, LandingGate gate, string? leftOutOf, CarriedAccept? carried = null,
+        LandingDelivery? delivery = null) => new
     {
+        // LANDNODE1c2 (the land node design §7): the session's newest delivery, where one was written: who authorized it and when, the phase
+        // an unresolved one stands at, and when it was delivered; each null where there is none.
+        Authorized = delivery is null ? null : new { delivery.Record.Authorization.Authority, delivery.Record.At },
+        Running = delivery is { Record.Unresolved: true } ? new { delivery.Record.Intent.Method, delivery.Phase } : null,
+        Completed = delivery?.Record is { Settled: DeliverySettlements.Delivered, SettledAt: { } delivered } ? delivered : (DateTimeOffset?)null,
         // Own (TREEFOLLOW1): the target is the branch the session's agent made, which lands as it stands. Stands (ACCEPTALL1g): the
         // target already stands, an entry's or a chain's branch, so the press moves it on rather than making it.
         Session = session, plan.Form, plan.Target, plan.Source, plan.Plugin, plan.Problem, plan.Own, plan.Stands, Uncommitted = uncommitted,
