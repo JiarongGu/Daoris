@@ -22701,3 +22701,9 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 > **NOTEBREAK1 — a decision's note never lands glued** (tools). A union merge of `docs/decisions/*.md` coalesced the blank line two branches each added before their `**Note, ` line, and `doc-duplicates` failed the next CI. Proof: `tools/index-hook.test.mjs`.
 
 **Outcome** 2026-11-02: `tools/index-hook.mjs` separates a glued note in every staged decision file before it regenerates the index (pre-commit, which a conflicted merge finishes through), and a `notes` merge driver (`--merge-notes`, set by `--install`, named for `docs/decisions/*.md` in `.gitattributes`) does union and the separation inside the merge itself, since a clean merge runs no pre-commit and git ignores what a `pre-merge-commit` hook stages; no commit is remade. Detail: the FIX-LOG entry of 2026-11-02.
+
+## SETUPUX1o — the Workflow section (2026-11-02, D221)
+
+> **SETUPUX1o — the Workflow section** (web; row o of the set-up design). Route rows as a selection; the chart in its own column and one press away; label and cells; the folds with their owners; the Gates and Landing need-openings; a workspace's own section. Proof: a saved default route draws its own graph and says so; landed Current reads *No verification here*; *Verify…* waits on an accepted landed pipeline; choosing writes nothing; the head and the three section lines within the first screen; stories at 80, 39 and 25rem, en and zh, both themes, keyboard.
+
+**Outcome** 2026-11-02: a place's Workflow draws the chosen route's effective graph through `graphFlow` in the page's own column from 64rem and one press away below it, with its folds as one row (Gates, Landing, Second opinion, Your look, Landed route, The line, More; the heavy gates now in More). Detail: D221's SETUPUX1o note; `PlaceWorkflowView.test.tsx`, `RepositorySetup.folds.test.tsx`, the measured `place/*` and `placeWorkflow/*` stories.
