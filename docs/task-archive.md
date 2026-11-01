@@ -22602,3 +22602,9 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 ## WORKFLOWEDIT1d — the palette and the draft carry outputsOn, the press census lists workflow changes, and Ask Daoris proposes default-all (2026-11-01, FABRIC2)
 
 **Outcome** 2026-11-01: `PaletteStep.OutputsOn` and the draft's `StepChoice.outputsOn` copy a plugin step's `outputsOn` into the node `addStep` writes, so a release workflow composed in the window keeps `release` on `release` only; `PersonPresses.Presses` lists `workflow changes` over `WORKFLOW_NODE`; the `role` kind has a `default-all` door (id `*`, no revision) in the driver's judge, the service's writer and `role_propose`, with the room's text and goldens. Tests `WorkflowPaletteTests`, `graphDraft.test.ts`, `WorkflowNodeThroughInstanceTests`, `HelpRoleProposalsTests`, `HelpRoleProposalTests`.
+
+## LANDNODE1l — Current's deliveries' last gaps (2026-11-01)
+
+> **LANDNODE1l — Current's deliveries' last gaps** (driver; carried from LANDNODE1c3 through LANDNODE1k, archived 2026-11-01). A tree's own branch replayed in place still lands with no delivery, a branch name git would not take is refused with none written (`CurrentDeliveries.StartAsync`), and a merge whose request waits in its line's queue is recorded only at the next start. Contract: each lands through, or settles, its delivery. Proof: a `CurrentLandGitTests` row for each.
+
+**Outcome** 2026-11-01: a tree's own branch replayed in place lands through its delivery, the branch moved from the tip judged by its one ref transaction while the tree is detached, and a restart reads it found there as withdrawn; a name git would not take is refused at the delivery's start with nothing written, since a delivery's key holds no name; a merge whose request waited is recorded reached by the line's run that takes it (`DeliveryReconciler.TakenAsync`). Detail: the commits; three rows in `CurrentLandGitTests`.
