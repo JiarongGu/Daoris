@@ -35,7 +35,7 @@ public static class WireKinds
 
     /// <summary>
     /// A way back to a node its source comes after (DECIDE1b), taken <see cref="Wire.On"/> the source's rejection, its spent failure or one of
-    /// its outcomes. It makes no node eligible and closes no cycle; the run takes it from DECIDE1c.
+    /// its outcomes. It makes no node eligible and closes no cycle.
     /// </summary>
     public const string Back = "back";
 
