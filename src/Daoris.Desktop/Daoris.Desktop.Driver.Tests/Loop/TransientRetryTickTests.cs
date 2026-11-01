@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text.Json.Nodes;
 using Daoris.Driver;
 using static Daoris.Desktop.Driver.Tests.SessionMessagesTickTests;
@@ -17,31 +16,24 @@ namespace Daoris.Desktop.Driver.Tests;
 /// source-derived (§3.3). The service is MSG1b's stand-in, <see cref="SaidStandIn"/>.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
-public sealed class TransientRetryTickTests : IDisposable
+public sealed class TransientRetryTickTests : IAsyncLifetime
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-transient-tick-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "transient-tick", Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _repository;
 
-    public TransientRetryTickTests()
-    {
-        Directory.CreateDirectory(_home);
-        _repository = Path.Combine(_home, "engine");
-        Directory.CreateDirectory(_repository);
-        Git("init", "-q", "-b", "main");
-        Git("config", "user.email", "transient@example.com");
-        Git("config", "user.name", "AGENTERRORS1a");
-        File.WriteAllText(Path.Combine(_repository, "README.md"), "# engine\n");
-        Git("add", "-A");
-        Git("commit", "-qm", "the starting point");
-    }
+    public TransientRetryTickTests() => _repository = Path.Combine(_home, "engine");
 
-    public void Dispose()
+    /// <summary>The repository <c>engine</c>, a copy of the run's plain seed (<see cref="GitSeed.PlainAsync"/>): no case reads its first commit.</summary>
+    public Task InitializeAsync() => GitSeed.PlainAsync(_repository, "engine");
+
+    public Task DisposeAsync()
     {
         // The stand-in's own failures are no case's subject: one it logged fails the case it happened under, whatever it asserted.
         var failed = File.Exists(Log) ? Heard().Where(line => line["method"]!.GetValue<string>() == "stand-in-failed").Select(line => line.ToJsonString()).ToList() : [];
-        try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        GitSeed.Discard(_home);
         Assert.True(failed.Count == 0, $"the stand-in agent failed on its own: {string.Join(" | ", failed)}");
+        return Task.CompletedTask;
     }
 
     private static string Faults(SaidStandIn service)
@@ -651,14 +643,5 @@ public sealed class TransientRetryTickTests : IDisposable
             lines.on('close', () => { process.exitCode = 0; process.stdin.destroy(); });
             """);
         return script;
-    }
-
-    private void Git(params string[] arguments)
-    {
-        var info = new ProcessStartInfo("git") { WorkingDirectory = _repository, UseShellExecute = false, RedirectStandardOutput = true };
-        foreach (var argument in arguments) info.ArgumentList.Add(argument);
-        using var process = Process.Start(TestGit.Past(info))!;
-        process.StandardOutput.ReadToEnd();
-        process.WaitForExit();
     }
 }
