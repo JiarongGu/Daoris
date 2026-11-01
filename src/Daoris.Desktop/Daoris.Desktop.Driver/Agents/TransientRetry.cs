@@ -27,6 +27,16 @@ public sealed class TransientRetry
     /// <summary>The bound: how many tries an episode makes before the run ends past it.</summary>
     public static int Bound => Delays.Count;
 
+    /// <summary>
+    /// The tries this run's episode makes before it ends past the bound (STAFFPOLICY1e): <see cref="Bound"/>, or a driven line's policy's
+    /// <c>after</c> where its role moves on <c>transient</c>, 1 to <see cref="Bound"/>. The waits are the schedule's first ones either way.
+    /// </summary>
+    public int Limit
+    {
+        get;
+        init => field = Math.Clamp(value, 1, Bound);
+    } = Bound;
+
     /// <summary>The one reader (<see cref="AgentErrors.Read"/>), closed over the adapter set and the adapter: a prompt's refusal as its kind.</summary>
     public required Func<AcpRefusal, AgentError> Read { get; init; }
 

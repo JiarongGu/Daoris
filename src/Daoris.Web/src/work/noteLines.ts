@@ -531,6 +531,11 @@ export const HANDED_REASONS: Readonly<Record<string, { key: string; values: read
   retry: { key: 'note.handed.why.retry', values: [] },
   // MODELROLE1d2 (D205 §3.5(b)): the replacement of a record its agent refused at the open, before any prompt.
   'not-offered': { key: 'note.handed.why.not-offered', values: [] },
+  // STAFFPOLICY1e: a role's policy moved the line to another choice.
+  transient: { key: 'note.handed.why.transient', values: [] },
+  failed: { key: 'note.handed.why.failed', values: [] },
+  quiet: { key: 'note.handed.why.quiet', values: [] },
+  budget: { key: 'note.handed.why.budget', values: [] },
 };
 
 /**

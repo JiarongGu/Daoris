@@ -912,7 +912,7 @@ public static class SessionGroups
             // SESSUX1b (D126 §2.2): its line says the stop holds its quest, in whichever group it rests; and PAUSE1b (D132
             // §6.1), that a pause does, since a pause is the reason before a stop.
             // AGENTERRORS1a2 (D210 §5.1, §8): so does its end past its transient bound, which *Try again* releases for that end alone.
-            row = row with { HoldsQuest = verdict?.Verdict is StartVerdict.Stopped or StartVerdict.TransientHeld, PausedBy = verdict?.PausedBy };
+            row = row with { HoldsQuest = verdict?.Verdict is StartVerdict.Stopped or StartVerdict.TransientHeld or StartVerdict.PolicyHeld, PausedBy = verdict?.PausedBy };
 
             // MSG1f2 (D137 §3.2): the person's words wait on it, so it goes on with them, working, where the planner starts
             // it; else it resumes later, its line naming what holds them, the planner's own verdict. Before parked and to

@@ -151,7 +151,8 @@ public static class StaffJudge
         }
 
         var remaining = served.Where(each => passed.All(pass => pass.Entry != each)).ToList();
-        if (policy.Moves.TryGetValue(StaffConditions.Transient, out var transient) && StaffActions.Moves(transient.Do))
+        // An ask is a move the person's yes releases, so the choice it leaves is passed on that walk as a move's is.
+        if (policy.Moves.TryGetValue(StaffConditions.Transient, out var transient) && (StaffActions.Moves(transient.Do) || transient.Do == StaffActions.Ask))
         {
             foreach (var each in remaining.ToList())
             {
