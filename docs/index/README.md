@@ -300,7 +300,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Tests/Sessions/SaidSettledTests.cs` | 61 | 1142 |
 | `src/Daoris.Service/Daoris.Service.Tests/Sessions/SessionLedgerTests.cs` | 120 | 2282 |
 | `src/Daoris.Service/Daoris.Service.Tests/Sessions/SessionStoreTests.cs` | 47 | 922 |
-| `src/Daoris.Service/README.md` | 135 | 953 |
+| `src/Daoris.Service/README.md` | 136 | 953 |
 
 ### CLI (`cli`)
 

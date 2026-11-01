@@ -5,13 +5,6 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
-## 2026-11-02 - ChatPendingProcessTests read the routing line as part of the words (COWORKVIEW1e-i, found by STAFFPOLICY1c)
-
-- **Symptom:** four of the class's twelve cases failed on main with the process settings: the first prompt read `Routing standing here: not driven. …` where `Make the port configurable.` was expected.
-- **Root cause:** COWORKVIEW1e-i tells a chat its repository's routing standing with its first message (the cowork view design §R11.2 point 4), composed ahead of the words in the same prompt (`ChatMessage.Text`'s join). The class's `Prompts` helper, written before it, compared the whole prompt with the person's words. The product was right; the test's expectation was stale.
-- **Fix:** `Prompts` leaves the leading routing sentence out, since these cases are about the words that reached the replacement.
-- **Verify:** the class's twelve cases pass with `process.runsettings`; `ChatRoutingProcessTests` still holds the routing line's place and its once-only telling.
-
 ## 2026-11-02 - A flowchart placed by 16 px a rem under the window's zoom (CANVAS1a, trap 12)
 
 - **Symptom:** at the window's 200% a flowchart could choose top to bottom, or a track, its pane could not hold, and at 50% turn to the rail where its drawing fitted: its placement and its node track did not follow the zoom the page was drawn at.
