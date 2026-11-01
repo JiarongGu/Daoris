@@ -363,12 +363,13 @@ export function triggerTargetsOf(draft: GraphDraft, from: string): string[] {
     .filter((id) => id !== from && !waits.has(id) && !draft.wires.some((wire) => wire.kind === 'trigger' && wire.from === from && wire.to === id));
 }
 
-/** A row's way to `to`, by the kind the row and the target give, and its wire's id; null where no way can go there. */
-export function connect(palette: WorkflowPaletteAnswer, draft: GraphDraft, from: string, row: WayRowKey, to: string): { draft: GraphDraft; wire: string } | null {
+/** A row's way to `to`, by the kind the row and the target give, and its wire's id; null where no way can go there. A forward way proposes `to`'s inputs. */
+export function connect(palette: WorkflowPaletteAnswer, draft: GraphDraft, from: string, row: WayRowKey, to: string): { draft: GraphDraft; wire: string; carried: Carried[] } | null {
   const ask = wayTo(palette, draft, from, row, to);
   if (!ask) return null;
   const made = withWire(draft, ask);
-  return { draft: made.draft, wire: made.id };
+  const proposed = ask.kind === BACK ? { draft: made.draft, carried: [] } : proposeInputs(made.draft, to, from);
+  return { draft: proposed.draft, wire: made.id, carried: proposed.carried };
 }
 
 /**
@@ -382,12 +383,13 @@ export function retarget(palette: WorkflowPaletteAnswer, draft: GraphDraft, id: 
   const ask = row === null ? null : wayTo(palette, draft, was.from!, row, to, id);
   if (!ask) return null;
   const { group: _group, ...fields } = was.wire;
-  return {
+  const moved: GraphDraft = {
     ...draft,
     wires: draft.wires.map((wire) => (wire.id === id
       ? { ...wire, kind: ask.kind, to, toPort: null, outcome: ask.outcome ?? null, on: ask.on ?? null, wire: to === was.to ? was.wire : fields }
       : wire)),
   };
+  return ask.kind === BACK || to === was.to ? moved : proposeInputs(moved, to, was.from!).draft;
 }
 
 /* ---------------------------------------------------------------- inserting, duplicating, moving, removing */
@@ -432,9 +434,16 @@ function placeAt(draft: GraphDraft, step: DraftNode, at: InsertAt, mayEnd: boole
  * new step, which goes on to B once done; at a row's end, by the row's own kind; after a step, between it and its one plain way on where
  * it has one, else following it; or unconnected, a new start. Nothing else is rewired.
  */
-export function insertStep(_palette: WorkflowPaletteAnswer, draft: GraphDraft, choice: StepChoice, at: InsertAt): { draft: GraphDraft; id: string } {
+export function insertStep(_palette: WorkflowPaletteAnswer, draft: GraphDraft, choice: StepChoice, at: InsertAt): { draft: GraphDraft; id: string; carried: Carried[] } {
   const id = idFor(choice.kind, taken(draft));
-  return placeAt(draft, { id, kind: choice.kind, node: nodeOf(choice, id) }, at, choice.mayEnd);
+  const made = placeAt(draft, { id, kind: choice.kind, node: nodeOf(choice, id) }, at, choice.mayEnd);
+  if (made.draft === draft) return { ...made, carried: [] };
+  // The new step's inputs are proposed from the step it follows, and the step it now precedes is offered the new step's outputs.
+  const way = 'on' in at ? draft.wires.find((each) => each.id === at.on) : undefined;
+  const before = way ? way.from : 'after' in at ? at.after : 'from' in at ? at.from : null;
+  const fed = before === null ? { draft: made.draft, carried: [] } : proposeInputs(made.draft, id, before);
+  const onward = way ? proposeInputs(fed.draft, way.to, id) : { draft: fed.draft, carried: [] };
+  return { draft: onward.draft, id, carried: [...fed.carried, ...onward.carried] };
 }
 
 /** A copy of a step, its options and declaration whole under a new id, put after it in its chain. */
@@ -571,6 +580,95 @@ export function setCarry(draft: GraphDraft, to: string, input: string, source: C
     ...draft,
     wires: draft.wires.filter((wire) => !rest.includes(wire)).map((wire) => (wire === kept ? { ...wire, from: source.from, fromPort: source.port } : wire)),
   };
+}
+
+/** An input given an output when a way was made into its step: the step, its input and the output of the step it comes from. */
+export type Carried = { step: string; input: string; from: string; port: string };
+
+/**
+ * The inputs of `to` left unfed, fed from an output of the step its way comes from (SETUPUX1r; D221 §2.3): that step's own output of the
+ * input's schema where it makes one, else the one other step that makes it. Where two fit, none is chosen and the step's *Carries* asks.
+ */
+function proposeInputs(draft: GraphDraft, to: string, from: string): { draft: GraphDraft; carried: Carried[] } {
+  const node = nodeById(draft, to);
+  if (!node) return { draft, carried: [] };
+  let next = draft;
+  const carried: Carried[] = [];
+  for (const input of inputsOf(node)) {
+    if (carryOf(next, to, input)) continue;
+    const sources = sourcesOf(next, to, input);
+    const own = sources.filter((source) => source.from === from);
+    const pick = own.length === 1 ? own[0]! : own.length === 0 && sources.length === 1 ? sources[0]! : null;
+    if (!pick) continue;
+    next = setCarry(next, to, input, pick);
+    carried.push({ step: to, input, from: pick.from, port: pick.port });
+  }
+  return { draft: next, carried };
+}
+
+/** The inputs of a step that nothing feeds and more than one output fits: what its *Carries* asks the person to choose. */
+export function askedInputs(draft: GraphDraft, id: string): { input: string; sources: CarrySource[] }[] {
+  const node = nodeById(draft, id);
+  if (!node) return [];
+  return inputsOf(node).filter((input) => carryOf(draft, id, input) === null)
+    .map((input) => ({ input, sources: sourcesOf(draft, id, input) })).filter((each) => each.sources.length > 1);
+}
+
+/* ---------------------------------------------------------------- a landing's method, and the tail it brings */
+
+/** The five ways a `land` lands (`LandNodes.Methods`). */
+export const LAND_METHODS = ['merge', 'branch', 'push', 'pull-request', 'integrate'] as const;
+
+/** The steps a method brings after the landing, in order (`NodeGraphs`' `land-tail`): a pull request is pushed, then completed on the host. */
+const TAILS: Readonly<Record<string, readonly string[]>> = { push: ['pushed'], 'pull-request': ['pushed', 'pull-request'], integrate: ['integrate'] };
+
+export const tailOf = (method: string | null): readonly string[] => (method === null ? [] : TAILS[method] ?? []);
+
+const TAIL_KINDS: readonly string[] = ['pushed', 'pull-request', 'integrate'];
+
+/** The options a method refuses (`LandNodes.Problem`): a merge makes no branch to name nor plugin to push it, an integrate neither a plugin nor a squash. */
+const REFUSED: Readonly<Record<string, readonly string[]>> = { merge: ['pattern', 'plugin'], integrate: ['plugin', 'squash'] };
+
+/** Whether a land option means something under the method it is held beside; `method` unset leaves each to the repository's rule. */
+export function landOptionApplies(method: string | null, name: string): boolean {
+  return method === null || !(REFUSED[method] ?? []).includes(name);
+}
+
+/**
+ * A landing's method set and its tail brought in one change (SETUPUX1r; the land node design §2): the steps the new method brings are put
+ * after the landing (a pull request's pushed, then its request; a push's pushed; an integrate), between it and what followed it; the tail
+ * steps the method does not bring go, each joined over; the options it refuses are cleared; and the end follows the tail where the landing
+ * or a removed tail step was the end. Everything else the graph holds is kept as written.
+ */
+export function setLandMethod(palette: WorkflowPaletteAnswer, draft: GraphDraft, id: string, method: string): { draft: GraphDraft; added: string[]; removed: string[] } {
+  if (!nodeById(draft, id)) return { draft, added: [], removed: [] };
+  let next = setOption(draft, id, 'method', method);
+  for (const name of REFUSED[method] ?? []) next = setOption(next, id, name, undefined);
+  if (method === 'push' || method === 'pull-request') {
+    if (optionOf(nodeById(next, id)!, 'plugin') === 'none') next = setOption(next, id, 'plugin', undefined);
+  }
+  const brought = tailOf(method);
+  const removed: string[] = [];
+  const gone = new Set<string>();
+  for (const node of next.nodes.filter((each) => TAIL_KINDS.includes(each.kind) && !brought.includes(each.kind))) {
+    next = removeStep(next, node.id, { join: true, end: id });
+    removed.push(node.kind);
+    gone.add(node.id);
+  }
+  const added: string[] = [];
+  let last = id;
+  for (const kind of brought) {
+    const held = next.nodes.find((each) => each.kind === kind);
+    if (held) { last = held.id; continue; }
+    const choice = choiceOf(palette, kind);
+    if (!choice) continue;
+    const made = insertStep(palette, next, choice, { after: last });
+    next = made.draft;
+    last = made.id;
+    added.push(kind);
+  }
+  if (gone.has(draft.end) || (draft.end === id && added.length > 0)) next = { ...next, end: last };
+  return { draft: next, added, removed };
 }
 
 /** The kinds that make a step eligible, which a group gathers (`WireKinds.Eligibility`). */

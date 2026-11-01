@@ -10,8 +10,9 @@ import type { PlaceView } from '../../agents/setup/placeShell';
 import type { CurrentWorkflow, WorkflowEffective } from '../current';
 import { LIST, PALETTE } from '../edit/editFixtures';
 import {
-  cellOf, EFFECTIVE_CURRENT, EFFECTIVE_DOCS, EFFECTIVE_LANDED_NONE, EFFECTIVE_LANDED_VERIFIES, EFFECTIVE_RELEASE,
+  cellOf, EFFECTIVE_CURRENT, EFFECTIVE_DOCS, EFFECTIVE_LANDED_NONE, EFFECTIVE_LANDED_VERIFIES, EFFECTIVE_RELEASE, EFFECTIVE_UNREAD,
 } from './effectiveFixtures';
+import { openDraftNow } from '../../help/openDraft';
 import { FULL, GATES_CHANGED, INTEGRATION_CHANGED, NO_VERIFICATION, START, WORKSPACE } from '../fixtures';
 import { type LandingHand, PlaceWorkflowView, type PlaceWorkflowProps } from './PlaceWorkflowView';
 
@@ -301,6 +302,36 @@ describe('Change… and Edit steps…', () => {
     expect(screen.getByRole('heading', { name: 'Compose a workflow' })).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Never mind' }));
     expect(onOpen).toHaveBeenLastCalledWith(false);
+  });
+
+  // SETUPUX1r: Edit steps… opens on the graph the selected route follows, and tells the editor the route and pipeline it was opened for.
+  it("open the selected route's effective graph, a saved workflow's newest version as the version to append to, and tell the editor the route", async () => {
+    draw({ editor: editor(), current: withRoute(EFFECTIVE_RELEASE, SAVED_DEFAULT) });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Edit steps…' }));
+    const steps = await screen.findByRole('list', { name: 'How the steps go on' });
+    expect(within(steps).getByRole('listitem', { name: 'find by local-release' })).toBeInTheDocument();
+    expect(screen.getByText(/^Saving adds v3 to release;/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save v3' })).toBeInTheDocument();
+    expect(openDraftNow()).toMatchObject({ place: 'engine', route: 'default', pipeline: 'development', workflow: 'release', base: 2 });
+  });
+
+  it("open Current's steps as a new workflow, and a kind's route as the route the editor was opened for", async () => {
+    draw({ editor: editor(), current: withRoute(EFFECTIVE_DOCS, SAVED_DEFAULT), first: { route: 'kind:docs' } });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Edit steps…' }));
+    await screen.findByRole('list', { name: 'How the steps go on' });
+    expect(openDraftNow()).toMatchObject({ route: 'kind:docs', pipeline: 'development', source: 'docs-to-pr@v1' });
+    expect(openDraftNow()!.graph.nodes).toHaveLength(7);
+  });
+
+  it('open an empty draft where the route draws no graph, as it always did', async () => {
+    draw({ editor: editor(), current: withRoute(EFFECTIVE_UNREAD, SAVED_DEFAULT) });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Edit steps…' }));
+    await screen.findByRole('heading', { name: 'Compose a workflow' });
+    expect(screen.queryByRole('list', { name: 'How the steps go on' })).toBeNull();
+    expect(openDraftNow()!.graph.nodes).toHaveLength(0);
   });
 
   it("chooses a saved version for this repository through Change…, the editor's own press", async () => {
