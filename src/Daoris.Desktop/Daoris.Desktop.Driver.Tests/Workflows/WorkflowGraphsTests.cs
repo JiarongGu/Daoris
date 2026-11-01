@@ -310,10 +310,13 @@ public sealed class WorkflowGraphsTests : IDisposable
             // FABRICRUN1: the runtime asks which version a quest's run is bound to (`NodeRuntime.BoundIn`), only to leave that unit
             // ungoverned by Current's graph; it evaluates nothing on the version and stores no digest of it, so that one read stays.
             // FABRIC-GRAPH1j: `workflow apply --as-graph` writes a decoded graph as a new version, which binds its own digest, never a decoded one.
+            // SETUPUX1b: the effective graph draws a version of steps as the graph it decodes to, for the page to read; it binds nothing.
             .Where(file => (Path.GetFileName(file) switch
                 {
                     "NodeRuntime.cs" => File.ReadAllText(file).Replace("WorkflowRunNodes.VersionOf", "", StringComparison.Ordinal),
                     "DriverWorkflowsCommand.cs" => File.ReadAllText(file).Replace("WorkflowGraphs.Saved", "", StringComparison.Ordinal),
+                    "WorkflowEffectives.cs" => File.ReadAllText(file)
+                        .Replace("WorkflowGraphs.Saved", "", StringComparison.Ordinal).Replace("WorkflowGraphs.Graph", "", StringComparison.Ordinal),
                     _ => File.ReadAllText(file),
                 }) is var text
                 && (text.Contains("WorkflowGraphs.", StringComparison.Ordinal) || text.Contains("WorkflowRunNodes.", StringComparison.Ordinal)))

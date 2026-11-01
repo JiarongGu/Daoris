@@ -38,7 +38,7 @@ describe('Change…', () => {
 
     expect(screen.getByText(/Live and derived from the rules as they stand/)).toBeInTheDocument();
     expect(screen.getByText('v4740fb017006')).toBeInTheDocument();
-    expect(screen.getByText('Documents')).toBeInTheDocument();
+    expect(screen.getByText('Documents workflow')).toBeInTheDocument();
     expect(screen.getByText('The work merges into the line.')).toBeInTheDocument();
     expect(screen.getByText('Docs release')).toBeInTheDocument();
     expect(screen.getByText('v2')).toBeInTheDocument();
@@ -78,8 +78,8 @@ describe('Change…', () => {
   it("starts the editor from a preset's steps, and not from one that has none", async () => {
     const { onStartFrom } = draw();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Edit steps from Documents' }));
-    expect(onStartFrom).toHaveBeenCalledWith({ graph: expect.objectContaining({ nodes: expect.any(Array) }), name: 'Documents' });
+    await userEvent.click(screen.getByRole('button', { name: 'Edit steps from Documents workflow' }));
+    expect(onStartFrom).toHaveBeenCalledWith({ graph: expect.objectContaining({ nodes: expect.any(Array) }), name: 'Documents workflow' });
     expect(screen.queryByRole('button', { name: 'Edit steps from A pull request with no press' })).toBeNull();
   });
 
@@ -99,6 +99,6 @@ describe('Change…', () => {
 
     await act(async () => { await i18n.changeLanguage('zh'); });
     expect(within(screen.getByRole('region', { name: '更改它的工作所遵循的工作流' })).getByText('预设')).toBeInTheDocument();
-    expect(screen.getByText('文档')).toBeInTheDocument();
+    expect(screen.getByText('文档工作流')).toBeInTheDocument();
   });
 });

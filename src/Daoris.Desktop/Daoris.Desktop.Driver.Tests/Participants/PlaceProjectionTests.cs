@@ -71,7 +71,7 @@ public sealed class PlaceProjectionTests
             foreach (var (id, opinion) in new[] { ("same", false), ("opinion", true) })
             {
                 var graph = WorkflowPresets.WithGraphGates(shipped.Graph(), opinion, look: false);
-                var planned = WorkflowOperations.PlanGraph(home, null, id, null, shipped.Names.En, "terminal", "2026-11-01T09:00:00Z", graph,
+                var planned = WorkflowOperations.PlanGraph(home, null, id, null, shipped.Name, "terminal", "2026-11-01T09:00:00Z", graph,
                     new WorkflowFrom(shipped.Id, shipped.Digest));
                 store.Write(id, planned.Plan.Result!);
             }
@@ -118,7 +118,7 @@ public sealed class PlaceProjectionTests
             foreach (var each in shipped)
             {
                 var id = $"copy-{each.Id}";
-                var planned = WorkflowOperations.PlanGraph(home, null, id, null, each.Names.En, "terminal", "2026-11-01T09:00:00Z",
+                var planned = WorkflowOperations.PlanGraph(home, null, id, null, each.Name, "terminal", "2026-11-01T09:00:00Z",
                     WorkflowPresets.WithGraphGates(each.Graph(), opinion: false, look: false), new WorkflowFrom(each.Id, each.Digest));
                 store.Write(id, planned.Plan.Result!);
 

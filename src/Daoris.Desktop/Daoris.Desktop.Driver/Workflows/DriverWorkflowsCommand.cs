@@ -184,7 +184,7 @@ public static class DriverWorkflowsCommand
             if (named is null)
             {
                 Say("daoris: the defaults Daoris ships, each a graph `daoris driver workflow new <id> --from <default>` copies (`--with-opinion`, `--with-look`):");
-                foreach (var each in WorkflowDefaults.All) Say($"  `{each.Id}` — {each.Names.En}. {each.For.En}");
+                foreach (var each in WorkflowDefaults.All) Say($"  `{each.Id}` — {each.Name}. {each.For}");
                 Say("  `daoris driver workflow defaults <default>` says one whole, and `--to <file>` writes its graph to a file.");
                 return 0;
             }
@@ -202,9 +202,9 @@ public static class DriverWorkflowsCommand
 
             var graph = NodeGraphs.Read(shipped.GraphJson).Graph!;
             var delivery = shipped.Delivery;
-            Say($"daoris: `{shipped.Id}` — {shipped.Names.En} ({shipped.Names.Zh}), a default Daoris ships: {WorkflowWords.GraphSaid(new NamedVersion(1, null, null, null, null, shipped.Digest, graph))}");
+            Say($"daoris: `{shipped.Id}` — {shipped.Name}, a default Daoris ships: {WorkflowWords.GraphSaid(new NamedVersion(1, null, null, null, null, shipped.Digest, graph))}");
             if (shipped.Aliases.Count > 0) Say($"  Also named {string.Join(", ", shipped.Aliases.Select(alias => $"`{alias}`"))}.");
-            Say($"  {shipped.For.En}");
+            Say($"  {shipped.For}");
             Say($"  {WorkflowPresets.GraphLine(shipped.Graph())}");
             Say($"  Its delivery: method `{delivery.Method}`, accept `{delivery.Accept}`{(delivery.Plugin is { } plugin ? $", plugin `{plugin}`" : "")}"
                 + $"{(delivery.Request is { } request ? $", request `{request}`" : "")}{(shipped.SetUp ? "; a place's quick set-up offers it" : "")}.");

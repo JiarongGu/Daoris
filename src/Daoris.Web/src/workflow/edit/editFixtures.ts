@@ -89,9 +89,10 @@ export const LIST: WorkflowListAnswer = {
   workflows: [{ id: 'docs-release', name: 'Docs release', problem: null, versions: [1, 2], schema: 2, digest: 'ab', line: 'x', pipeline: null,
     chosen: [{ level: 'repository', name: 'engine', role: 'default', kind: null }] }],
   presets: [
-    { id: 'documents', name: 'Documents', graph: true, line: 'The work merges into the line.', preset: true, body: DOCUMENTS_GRAPH,
-      names: { en: 'Documents', zh: '文档' } },
-    { id: 'pull-request-no-press', name: 'A pull request with no press', graph: false, line: 'y', preset: true, body: null, names: null },
+    { id: 'documents', name: 'Documents workflow', graph: true, line: 'The work merges into the line.', preset: true, body: DOCUMENTS_GRAPH,
+      for: 'For a kind of task whose paths are documents: the work merges into the line once it is done, with no review.', order: 3, setUp: false,
+      delivery: { id: 'merge-automatic', method: 'merge', accept: 'automatic', name: 'Merge with no review', for: 'For a development repository.' } },
+    { id: 'pull-request-no-press', name: 'A pull request with no press', graph: false, line: 'y', preset: true, body: null },
   ],
 };
 
