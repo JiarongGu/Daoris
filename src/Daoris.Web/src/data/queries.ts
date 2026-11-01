@@ -81,9 +81,11 @@ export const keys = {
   calls: ['driver', 'calls'] as const,
   /**
    * A repository's or a workspace's Current workflow (WORKFLOW1b) — shell-only, like the lines, and under their key, since
-   * Current is drawn from the rules they resolve: every change that asks the lines again asks it again.
+   * Current is drawn from the rules they resolve: every change that asks the lines again asks it again. A route asked for is a read
+   * of its own (SETUPUX1o), under the same prefix.
    */
-  workflow: (scope: 'repository' | 'workspace', name: string) => ['driver', 'lines', 'workflow', scope, name] as const,
+  workflow: (scope: 'repository' | 'workspace', name: string, route?: string | null) =>
+    (route ? ['driver', 'lines', 'workflow', scope, name, route] : ['driver', 'lines', 'workflow', scope, name]) as readonly string[],
   /**
    * The process a session's own tree runs under (PROCESS1e) — shell-only, and under the lines' key, since it is the rules they
    * resolve: every change that asks the lines again asks it again.

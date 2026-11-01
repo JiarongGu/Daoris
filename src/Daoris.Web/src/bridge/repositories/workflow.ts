@@ -15,17 +15,25 @@ import { call } from '../call';
  * (design §2.4), so a browser asks nothing and its page has no Workflow tab. `enabled: false` asks nothing, so a page asks
  * only while its Workflow tab shows; and it is asked again each time the tab is shown, since a rule changed on Setup, a
  * plugin switched on or a repository moved to another workspace each changes what it draws.
+ *
+ * Given a `route` (`default`, `kind:<name>` or `landed`), the answer also carries `effective`, the graph that route follows (SETUPUX1b); the
+ * read writes nothing, and the answer of the route before it stays in place while the next is read.
  */
-export const useWorkflowCurrent = (scope: WorkflowScope | null, { enabled = true }: { enabled?: boolean } = {}) => {
+export const useWorkflowCurrent = (scope: WorkflowScope | null, { enabled = true, route }: { enabled?: boolean; route?: string | null } = {}) => {
   const { isAvailable } = useShenora();
   const [kind, name] = scope === null ? ['repository' as const, ''] : 'repository' in scope
     ? ['repository' as const, scope.repository]
     : ['workspace' as const, scope.workspace];
   return useQuery({
-    queryKey: keys.workflow(kind, name),
-    queryFn: () => call<CurrentWorkflow>('WORKFLOW_CURRENT', kind === 'repository' ? { repository: name } : { workspace: name }),
+    queryKey: keys.workflow(kind, name, route),
+    queryFn: () => call<CurrentWorkflow>('WORKFLOW_CURRENT', {
+      ...(kind === 'repository' ? { repository: name } : { workspace: name }),
+      ...(route ? { route } : {}),
+    }),
     enabled: isAvailable && enabled && scope !== null,
     staleTime: 0,
+    // A route chosen over another keeps the page drawn until its own answer lands; the holder checks the answer is its place's.
+    placeholderData: route ? (previous) => previous : undefined,
   });
 };
 
