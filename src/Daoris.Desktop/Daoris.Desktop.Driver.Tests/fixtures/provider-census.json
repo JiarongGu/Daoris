@@ -19,6 +19,7 @@
     ["Daoris.Desktop.Modules/Bridge/Routes/WorkflowRoutes.cs", ".Wire", "a refused save's problem's workflow wire id, no door"]
   ],
   "exceptions": [
+    ["Daoris.Desktop.Driver.Host/AskAtWorkConsole.cs", "Wire(", "g", "behaviour", "a helper that only hides the door read"],
     ["Daoris.Desktop.Driver.Host/DriverChoicesConsole.cs", ".Wire", "g", "behaviour", "the console asks its configured adapter's door"],
     ["Daoris.Desktop.Driver.Host/DriverChoicesConsole.cs", "SessionWire", "g", "behaviour", "the door held in a local"],
     ["Daoris.Desktop.Driver.Host/DriverChoicesConsole.cs", "SessionWire.Pipe", "g", "behaviour", "an unknown adapter is still the pipe"],
