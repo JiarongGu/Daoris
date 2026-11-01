@@ -27,7 +27,7 @@ const worksAt = (workspace?: string, repository?: string): PlaceWork[] =>
     held: each.held ?? null,
     consent: each.policy?.consent ?? null,
     source: (each.policy?.source ?? 'default') as PlaceWork['source'],
-    roleNames: each.role ? { en: each.role.nameEn, zh: each.role.nameZh } : null,
+    roleName: each.role ? each.role.name : null,
     roleScope: each.role ? { kind: each.role.scope.kind as 'machine' | 'workspace' | 'repository', id: each.role.scope.id } : null,
   }));
 

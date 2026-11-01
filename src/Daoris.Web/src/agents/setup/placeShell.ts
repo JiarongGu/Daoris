@@ -1,6 +1,7 @@
 import type { TFunction } from 'i18next';
 import { useCallback, useMemo, useState } from 'react';
 import type { PlaceRow, PlaceWork } from '../../data/wiring';
+import { type Authored, authoredText } from '../../locales/authored';
 
 // A place page's shell (SETUPUX1h, the setup-UX design §2.1): its three sections, the one that opens on arrival and the one a need opens, the
 // one-line summary each folds to, and the state the application holds above the page so a door out and back finds it as left.
@@ -20,10 +21,9 @@ export const sectionsOf = (kind: PlaceKind): readonly PlaceSection[] => (kind ==
 /** The section that opens on arrival: Workflow on a repository and a workspace, Roles on this machine. */
 export const firstSection = (kind: PlaceKind): PlaceSection => sectionsOf(kind)[0]!;
 
-/** A role's name as one text: the viewer's language, else the other; none where the driver named none. */
-export function roleNameOf(names: { en: string; zh: string } | null | undefined, language: string): string {
-  if (!names) return '';
-  return (language.startsWith('zh') ? names.zh || names.en : names.en || names.zh) || '';
+/** A role's name as one text, as authored words are shown (D222); none where the driver named none. */
+export function roleNameOf(name: Authored | null | undefined, language: string): string {
+  return authoredText(name, language);
 }
 
 /** Where a section opens itself for something that needs the person, and at which row: a held start opens Roles at that work. */
@@ -121,7 +121,7 @@ function rolesLine(row: PlaceRow, kind: PlaceKind, t: TFunction, language: strin
       : null;
   return say([
     held ? t('agents.setup.fold.held', { work: label(held.work) }) : null,
-    ...shown.map((each) => t('agents.setup.fold.role', { work: label(each.work), role: roleNameOf(each.roleNames, language) || each.role })),
+    ...shown.map((each) => t('agents.setup.fold.role', { work: label(each.work), role: roleNameOf(each.roleName, language) || each.role })),
     rest,
   ]);
 }

@@ -9,7 +9,7 @@ import { firstSection, foldedLines, headOf, needOpening, roleNameOf, sectionsOf 
 const value = (text: string, source: 'here' | 'workspace' | 'machine' | 'default') => ({ value: text, source });
 
 const work = (name: string, patch: Partial<PlaceWork> = {}): PlaceWork => ({
-  work: name, role: `r-${name}`, source: 'default', roleNames: { en: `${name} role`, zh: `${name}角色` }, roleScope: { kind: 'machine' }, ...patch,
+  work: name, role: `r-${name}`, source: 'default', roleName: { en: `${name} role`, zh: `${name}角色` }, roleScope: { kind: 'machine' }, ...patch,
 });
 
 const VALUES = (patch: Partial<NonNullable<PlaceRow['values']>> = {}): NonNullable<PlaceRow['values']> => ({
@@ -77,7 +77,7 @@ describe('a folded value names its source, from PLACES alone', () => {
   it('says a start held first, and reads nothing it was not given', () => {
     const held: PlaceRow = {
       ...ENGINE,
-      works: [work('review', { held: 'no role', role: null, roleNames: null, roleScope: null }), ...ENGINE.works.filter((each) => each.work !== 'review')],
+      works: [work('review', { held: 'no role', role: null, roleName: null, roleScope: null }), ...ENGINE.works.filter((each) => each.work !== 'review')],
     };
     expect(foldedLines(held, 'repository', t, 'en').roles).toMatch(/^Second opinions: start held · /);
     const bare: PlaceRow = { driven: false, held: false, trees: false, checkout: true, adopted: false, works: [], needs: [], workspace: 'aurora', repository: 'archive-1' };
@@ -136,7 +136,8 @@ describe('a role name', () => {
   it('reads in the viewer\'s language, then the other, then nothing', () => {
     expect(roleNameOf({ en: 'Reader', zh: '阅读者' }, 'en')).toBe('Reader');
     expect(roleNameOf({ en: 'Reader', zh: '阅读者' }, 'zh')).toBe('阅读者');
-    expect(roleNameOf({ en: '', zh: '阅读者' }, 'en')).toBe('阅读者');
+    expect(roleNameOf({ zh: '阅读者' }, 'en')).toBe('阅读者');
+    expect(roleNameOf('Lecteur', 'zh')).toBe('Lecteur');
     expect(roleNameOf(null, 'en')).toBe('');
   });
 });
