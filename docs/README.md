@@ -206,6 +206,7 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-11-01-land-node-design.md` | Design: LANDNODE1, a performed `land` node, the rule as Current's options, the line's epoch; accepted 2026-11-01
 | `2026-11-01-land-node-reads.md` | Reads: LANDNODE1, both makers' reads and the steward's settlement
 | `2026-11-01-fabric2-plan.md` | Plan: FABRIC2, dynamic workflows, fifteen slices in five waves with their contracts
+| `2026-11-01-setup-ux-brief.md` | Brief: SETUPUX1, one design for setting work up, composing its workflow and staffing it
 
 ## UI, browser, tools and plugin contracts
 
