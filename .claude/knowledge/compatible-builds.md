@@ -48,6 +48,11 @@ A take-bind's contract was fixed twice before it held against the builds already
   and refuses a take's bind, saying it was written by a newer Daoris. So a later change to the take-bind
   contract can bump the stamp instead of hiding its rows. Builds from before the stamp still read none of
   it, and against them only a shape they cannot see works.
+- **A raise of the desktop store's stamp refuses an older build's every write, to every table** (first
+  taken by the delivery record, LANDNODE1b, D212's note). Each migration step names the stamp it leaves,
+  `DesktopStore.FirstWriter` for every step before that raise, never `WriterStamp`, which moves with the
+  build and would turn every earlier step into a raise. A test that fakes a newer build stamps it
+  `WriterStamp + 1`; a fake at a fixed number becomes this build once the stamp reaches it.
 - **Say what is left.** An older build still acts on its own rows as it always did: CLOSE1w's note keeps
   that its take of a quest this build named takes it unbound and closes by its done. Write the remainder
   into the decision's note, so nobody reads the boundary as wider than it is.

@@ -38,8 +38,8 @@ public sealed record DesktopStoreOptions
 
 /// <summary>
 /// The desktop's store (FOUNDATION1 z-i, D212; the design §13.2 to §13.4): <c>data/desktop.db</c>, one SQLite file the driver library alone
-/// opens, machine-local and never synced, holding what Daoris owns and more than one reader or writer sets. In this row it holds its own
-/// tables and no family: <c>store_version</c>, <c>store_revisions</c>, <c>store_runs</c> and <c>imports</c>, and nothing reads it.
+/// opens, machine-local and never synced, holding what Daoris owns and more than one reader or writer sets: its own tables
+/// (<c>store_version</c>, <c>store_revisions</c>, <c>store_runs</c> and <c>imports</c>) and each family's, one numbered step each.
 /// </summary>
 /// <remarks>
 /// <para><b>One connection per process</b> behind a lock, as the service's <c>ConnectionGate</c> keeps its own (SQLITETX1): write-ahead
@@ -58,8 +58,14 @@ public sealed record DesktopStoreOptions
 /// </remarks>
 public sealed class DesktopStore : IDisposable
 {
-    /// <summary>The writer stamp this build writes with: 1, the first build that knows the store.</summary>
-    public const int WriterStamp = 1;
+    /// <summary>
+    /// The writer stamp this build writes with: 2 since the delivery record (LANDNODE1b), whose step raised it, so a build before it reads the
+    /// store and writes nothing there.
+    /// </summary>
+    public const int WriterStamp = 2;
+
+    /// <summary>The stamp of the first build that knows the store, which every step before the delivery record's leaves the store at.</summary>
+    public const int FirstWriter = 1;
 
     /// <summary>How long a write waits on the file's lock before it is refused, in seconds (§13.4).</summary>
     private const int BusySeconds = 5;
@@ -70,7 +76,7 @@ public sealed class DesktopStore : IDisposable
     /// <summary>The build's own migrations: version 1 makes the store's four tables.</summary>
     public static IReadOnlyList<StoreMigration> Steps { get; } =
     [
-        new(1, WriterStamp, write => write.Execute(
+        new(1, FirstWriter, write => write.Execute(
             """
             CREATE TABLE store_version (
               one     INTEGER PRIMARY KEY CHECK (one = 1),
@@ -106,7 +112,7 @@ public sealed class DesktopStore : IDisposable
 
         // Row z-iii: the participants' bindings. A new table, every column required, which a build of z-i never opens, so the stamp stays
         // where it is and the step runs at the first start (§13.3); later rows add their own columns nullable, each writer naming its own.
-        new(2, WriterStamp, write => write.Execute(
+        new(2, FirstWriter, write => write.Execute(
             """
             CREATE TABLE bindings (
               session      TEXT PRIMARY KEY,
@@ -119,7 +125,7 @@ public sealed class DesktopStore : IDisposable
         // Row a-ii: whether the person picked a session's account, kept with its binding (§13.3). A new table, every column required, so
         // a build of z-iii, which reads `bindings` as a conversation to resume, never meets a row with no conversation in it, and the
         // stamp stays where it is (`compatible-builds.md`): the pick is known when a start opens, the conversation's id only when the wire names it.
-        new(3, WriterStamp, write => write.Execute(
+        new(3, FirstWriter, write => write.Execute(
             """
             CREATE TABLE binding_picks (
               session TEXT PRIMARY KEY,
@@ -133,7 +139,7 @@ public sealed class DesktopStore : IDisposable
         // line moving again once its move has ended and the ended row kept as evidence; the claim names the run that holds it, a row of
         // `store_runs`, and its generation. A column every decision writes is required; each later phase's moment and what it carries, the
         // effect mark, the selection and the recipe are nullable. No phase or reason is held by a CHECK, so a newer build's word is kept as written.
-        new(4, WriterStamp, write => write.Execute(
+        new(4, FirstWriter, write => write.Execute(
             $"""
             CREATE TABLE moves (
               id               INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -188,7 +194,7 @@ public sealed class DesktopStore : IDisposable
         // §19.1). Each nullable, added to the table a step-4 build already writes, which names its own columns and leaves these empty, so the
         // stamp stays where it is and the step runs at the first start: the agent a hand-over opens its new part on, a limit's refused
         // turns' bound, and the phase moment a quiet move was last said quiet for, so two processes looking say it once between them.
-        new(5, WriterStamp, write => write.Execute(
+        new(5, FirstWriter, write => write.Execute(
             """
             ALTER TABLE moves ADD COLUMN agent TEXT;
             ALTER TABLE moves ADD COLUMN refused_bound INTEGER;
@@ -201,7 +207,7 @@ public sealed class DesktopStore : IDisposable
         // by a partial unique index the write meets; one job per candidate by its own. A column every row of its table carries is
         // required; a route's own (a records branch has no unit, session, quest or proof), a requester's (only the steward's act names an
         // act) and a later step's (the candidate's tip, a step's end) are nullable. No CHECK holds a word, so a newer build's word is kept.
-        new(6, WriterStamp, write => write.Execute(
+        new(6, FirstWriter, write => write.Execute(
             """
             CREATE TABLE integration_requests (
               id               TEXT NOT NULL PRIMARY KEY,
@@ -290,7 +296,7 @@ public sealed class DesktopStore : IDisposable
         // of a request, written in the settle step's own end, so the member settling and its work being kept in view are one write; it stays
         // pending (no `answered_at`) until the session, the steward or the owner answers it. `reference` is the recovery ref under
         // `refs/daoris/discarded/` the member's branch work is kept on, `by_commit` the line's commit that superseded it.
-        new(7, WriterStamp, write => write.Execute(
+        new(7, FirstWriter, write => write.Execute(
             """
             CREATE TABLE integration_dispositions (
               request     TEXT NOT NULL REFERENCES integration_requests (id),
@@ -314,7 +320,7 @@ public sealed class DesktopStore : IDisposable
         // read). `first_agent` is the store's own key, `adapter` for Build, `intakeAdapter` for Intake and `helperAdapter` for Ask Daoris,
         // null where the file shows none. The projection's one row, `written`, and each found row hold `driver.json`'s four staffing paths
         // as that file's own JSON text, compact, a null being a path the file does not hold.
-        new(8, WriterStamp, write => write.Execute(
+        new(8, FirstWriter, write => write.Execute(
             """
             CREATE TABLE role_staffing (
               role        TEXT NOT NULL PRIMARY KEY,
@@ -353,7 +359,7 @@ public sealed class DesktopStore : IDisposable
         // is and the step runs at the first start. `notices` holds `data/notices.json`'s notices by id, one column for each field the page
         // reads; `news_said` the occurrences already told, apart from the notices so a prune or a dismissal never forgets one; and
         // `journal_cursors` one journal position for each teller, with the store identity it was read against.
-        new(9, WriterStamp, write => write.Execute(
+        new(9, FirstWriter, write => write.Execute(
             """
             CREATE TABLE notices (
               id         TEXT NOT NULL PRIMARY KEY,
@@ -387,7 +393,7 @@ public sealed class DesktopStore : IDisposable
         // it is. `roles` holds one row for each role id the person changed: `state` is `set` (`record` the role's JSON, as written) or
         // `removed` (a seeded role taken out); an id with no row is the seed's. `role_revisions` keeps every revision of every id, never
         // rewritten and never reset by a removal; its `state` adds `default` (a seeded id's record deleted) and `deleted` (an added one's).
-        new(10, WriterStamp, write => write.Execute(
+        new(10, FirstWriter, write => write.Execute(
             """
             CREATE TABLE roles (
               id       TEXT NOT NULL PRIMARY KEY,
@@ -409,7 +415,7 @@ public sealed class DesktopStore : IDisposable
         // FOUNDATION1x: the role a start took and its revision, kept with its binding (§2.7, §13.3's Bindings family). A new table, as
         // `binding_picks` was, so the role is known when a start opens while the conversation's id comes only when the wire names it, a
         // build that knows no role never opens it, and each writer of a binding names its own columns (O3-16). The stamp stays.
-        new(11, WriterStamp, write => write.Execute(
+        new(11, FirstWriter, write => write.Execute(
             """
             CREATE TABLE binding_roles (
               session  TEXT PRIMARY KEY,
@@ -422,7 +428,7 @@ public sealed class DesktopStore : IDisposable
         // INTEGRATE1h: the owner's decide on a candidate held for one, a queued request's place, and a disposition's answer (the integration
         // design §5.7, §5.8, §8), Workplace's. A new table and two nullable columns an older build names none of, so the stamp stays where it
         // is: an older build orders its queue by arrival and answers a disposition with its moment alone. One decide for each candidate.
-        new(12, WriterStamp, write => write.Execute(
+        new(12, FirstWriter, write => write.Execute(
             """
             CREATE TABLE integration_decides (
               candidate TEXT NOT NULL PRIMARY KEY REFERENCES integration_candidates (id),
@@ -437,7 +443,7 @@ public sealed class DesktopStore : IDisposable
         // GITAPP2a: the act journal (the git-writes design §5, D204), Workplace's. New tables an older build never opens, so the stamp stays
         // where it is; a record carries its own `format`, and one past a build's is held by it, never reconciled. One open act per checkout
         // (`common_dir`, the checkout lock's key), one job per act; each step's start is written before its effect and its end after.
-        new(13, WriterStamp, write => write.Execute(
+        new(13, FirstWriter, write => write.Execute(
             """
             CREATE TABLE git_acts (
               id               TEXT NOT NULL PRIMARY KEY,
@@ -488,7 +494,7 @@ public sealed class DesktopStore : IDisposable
         // LANDNODE1g: the line's epoch (the land node design §5), Workplace's. A new table an older build never opens, so the stamp stays where
         // it is; a request or candidate with no row reads as its own epoch. An older build still forms candidates by its first request's
         // policy alone, which this build cannot stop: the remainder D215's note keeps.
-        new(14, WriterStamp, write => write.Execute(
+        new(14, FirstWriter, write => write.Execute(
             """
             CREATE TABLE integration_epochs (
               subject TEXT NOT NULL,
@@ -496,6 +502,57 @@ public sealed class DesktopStore : IDisposable
               epoch   TEXT NOT NULL,
               PRIMARY KEY (subject, id)
             );
+            """)),
+
+        // LANDNODE1b: the delivery record (the land node design §3, §4), Workplace's, and the first step that raises the writer stamp. From 2
+        // an older build reads the store and its every write is refused inside its transaction, so none writes beside a delivery's phases; the
+        // step waits for the start's confirmation as every raise does (§13.3, §13.5). One unresolved delivery per unit by the partial unique
+        // index, its key the digest of the unit, the bound tip, the method and the target; one phase entry without its outcome per delivery by
+        // its own. What a later phase or a settlement sets is nullable, and no CHECK holds a word, so a newer build's is kept as written.
+        new(15, WriterStamp, write => write.Execute(
+            """
+            CREATE TABLE deliveries (
+              key              TEXT NOT NULL PRIMARY KEY,
+              format           INTEGER NOT NULL,
+              unit             TEXT NOT NULL,
+              repository       TEXT NOT NULL,
+              tip              TEXT NOT NULL,
+              method           TEXT NOT NULL,
+              target           TEXT NOT NULL,
+              line             TEXT NOT NULL,
+              branch           TEXT,
+              ticket           TEXT,
+              message          TEXT NOT NULL,
+              plugin           TEXT,
+              epoch            TEXT NOT NULL,
+              authority        TEXT NOT NULL,
+              accept           TEXT,
+              scope            TEXT,
+              revision         TEXT NOT NULL,
+              graph            TEXT NOT NULL,
+              options          TEXT NOT NULL,
+              receipts         TEXT NOT NULL,
+              claim_run        TEXT NOT NULL REFERENCES store_runs (run),
+              claim_generation INTEGER NOT NULL,
+              at               TEXT NOT NULL,
+              settled          TEXT,
+              settled_at       TEXT,
+              said             TEXT
+            );
+            CREATE UNIQUE INDEX deliveries_unresolved ON deliveries (unit) WHERE settled_at IS NULL;
+            CREATE TABLE delivery_phases (
+              delivery TEXT NOT NULL REFERENCES deliveries (key),
+              ordinal  INTEGER NOT NULL,
+              phase    TEXT NOT NULL,
+              intended TEXT,
+              began_at TEXT NOT NULL,
+              ended_at TEXT,
+              outcome  TEXT,
+              evidence TEXT,
+              said     TEXT,
+              PRIMARY KEY (delivery, ordinal)
+            );
+            CREATE UNIQUE INDEX delivery_phases_open ON delivery_phases (delivery) WHERE ended_at IS NULL;
             """)),
     ];
 
