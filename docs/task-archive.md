@@ -44,6 +44,14 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## AGENTSPLACE1a — the effective projection (2026-11-01)
+
+> **AGENTSPLACE1a — the effective projection** (driver, modules, web; row 4 of AGENTSPLACE1, `docs/2026-11-01-agents-place-design.md` §2, §3 and §7, the reads in `…-reads.md`). `PLACES` (Open, by event, paged): this machine, each workspace and every driven repository, each with its driving, its works' roles and rules, the values of its head's line with where each was set, and its *Needs a look* reasons judged from the configuration; the not-driven repositories only as a count per workspace and a page of them when the fold opens. `ROLE_STRUCTURE` asked for the chosen place's chain alone; the eager consumer (`structureRead.ts`) replaced. Proof: every value and its source equal to its execution reader's, opening probes nothing, a home with many undriven repositories answers counts, and the Roles mode's tests pass on the scoped read.
+
+**Outcome** 2026-11-01: `PlaceProjection` (`Workflows/PlaceProjection.cs`) reads each value through the reader a start uses (`RoleFor`, `CanonicalLine.Choose`, `LandingRules.Choose`, `WorkflowSelection.Resolve` and `ResolveLanded`, `WorkPolicies.Of`, `CommitRules`, `AccessRules`) and says its source as `here`, `workspace`, `machine` or `default` (`PlaceSource.At`); it takes only the configuration, the role store and the service's registry. *Needs a look* names `no-checkout`, `not-adopted`, `landing-unread`, `work-held`, `policy-failed` and, on this machine, `catalogue-unread`. `ROLE_STRUCTURE` takes `chain: {workspace, repository}`; `useStructureRead(enabled, chosen?)` asks that chain, and without a chosen place this machine, the workspaces and the *driven* repositories, never an imported one. Hooks `usePlaces` and `useRoleStructureChain`. Proof: `DriverModulePlacesTests` (a fixture home with two workspaces, an override at each level, 41 undriven in a fold, the registry the only door asked), `PlaceProjectionTests`, `driver.test.tsx`, `structureRead.test.tsx`, `roleStructure.test.ts`. Left for 1e: the page on the read, and the machine's *Needs a look* for undriven repositories (they are not judged: not driven is not a fault). No decision note.
+
+---
+
 ## CLEANUPADVICE1 — a blocked clean-up row names the press that takes it (2026-11-01)
 
 > **CLEANUPADVICE1 — a blocked clean-up row names the press that takes it** (driver, modules, web; OVERVIEWNOISE1b, TIDYOUTPUT1). The install's row for a finished tree its session recorded (code `unfollowed`) told the owner the workspace's clean-up removes it, and that press keeps it: the tree holds ignored files only it has (a gate's log, a `local/` folder). Contract: where the clean-up would keep the tree, the row says what keeps it (`TreeHolds.OwnSaid`) and the remove that takes it, never a press that refuses. Proof: a unit test of the row's words over a kept tree; the install's row read again.

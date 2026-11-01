@@ -1,21 +1,27 @@
 import { useMemo } from 'react';
 import { refusedNoRoute } from '../../bridge/shell';
-import { type RoleStructure, useRoleStructure } from '../../bridge/driver';
+import { type RoleStructure, useDriver, useRoleStructure, useRoleStructureChain } from '../../bridge/driver';
+import type { StructurePlaceAsk } from '../../data/wiring';
 import { useRegistry } from '../../data/queries';
 import { heldMarks, placesToAsk } from './roleStructure';
 import type { StructureRead } from './StructureSections';
 
 /**
- * **The one read behind Work, Accounts, By repository and an agent's *Used by*** (COMPANYVIEW1d, the company-view design §4): this
- * machine, each workspace and each repository, every work, asked once whatever the filters say, so a filter changes no read. The driver
- * composes it from the last readings alone, so asking probes nothing (D150 point 5). `loading` is the first reading not landed,
- * `notOffered` a shell older than the route, and `failed` any other refusal: none of them an empty list.
+ * **The read behind Work, Accounts, By repository and an agent's *Used by*** (COMPANYVIEW1d, the company-view design §4), scoped
+ * (AGENTSPLACE1a): with a `chosen` place, that place and its parents alone; without one, this machine, each workspace and each *driven*
+ * repository, never an imported one that is not driven, whatever the filters say, so a filter changes no read. The driver composes it
+ * from the last readings alone, so asking probes nothing (D150 point 5). `loading` is the first reading not landed, `notOffered` a
+ * shell older than the route, and `failed` any other refusal: none of them an empty list.
  */
-export function useStructureRead(enabled: boolean): { answer: RoleStructure | null; read: StructureRead } {
+export function useStructureRead(enabled: boolean, chosen?: StructurePlaceAsk | null): { answer: RoleStructure | null; read: StructureRead } {
   const registry = useRegistry('machine');
+  const driver = useDriver();
   const rows = registry.data;
-  const places = useMemo(() => placesToAsk(rows ?? []), [rows]);
-  const structure = useRoleStructure(places, undefined, { enabled });
+  const drivable = driver.data?.drivable;
+  const places = useMemo(() => placesToAsk(rows ?? [], drivable ?? []), [rows, drivable]);
+  const whole = useRoleStructure(places, undefined, { enabled: enabled && !chosen && drivable !== undefined });
+  const chain = useRoleStructureChain(chosen ?? {}, undefined, { enabled: enabled && Boolean(chosen) });
+  const structure = chosen ? chain : whole;
   const read: StructureRead = structure.data
     ? 'ok'
     : structure.isError ? (refusedNoRoute(structure.error) ? 'notOffered' : 'failed') : 'loading';
