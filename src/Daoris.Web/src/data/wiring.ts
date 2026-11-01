@@ -326,6 +326,43 @@ export type StructureWork = {
   policyFailed?: string;
 };
 
+/** Where a place's effective value was set (AGENTSPLACE1a): *set here*, *from the workspace*, *from this machine* or *default*. */
+export type PlaceSourceCode = 'here' | 'workspace' | 'machine' | 'default';
+
+export type PlaceValue = { value?: string | null; source: PlaceSourceCode };
+
+/** Why a place needs a look, judged in the driver from the configuration alone. */
+export type PlaceNeed = { code: string; detail?: string | null };
+
+export type PlaceWork = { work: string; role?: string | null; held?: string | null; consent?: string | null; source: PlaceSourceCode; policyFailed?: string | null };
+
+/** A place as `PLACES` answers it: this machine (no workspace), a workspace (no repository) or a driven repository. */
+export type PlaceRow = {
+  workspace?: string | null;
+  repository?: string | null;
+  driven: boolean;
+  held: boolean;
+  trees: boolean;
+  checkout: boolean;
+  adopted: boolean;
+  /** The head's line; none for this machine. */
+  values?: Record<'line' | 'landing' | 'workflow' | 'landed' | 'commits' | 'opinion' | 'handOver' | 'language' | 'access', PlaceValue> | null;
+  works: PlaceWork[];
+  needs: PlaceNeed[];
+};
+
+export type PlacesAsk = { limit?: number; after?: string; search?: string; needsLook?: boolean; fold?: string; foldAfter?: string; foldSearch?: string };
+
+/** The places (AGENTSPLACE1a, the Agents-place design §3): driven ones a page at a time, the others as counts and a page of one fold. */
+export type PlacesRead = {
+  machine: PlaceRow;
+  workspaces: { place: PlaceRow; driven: number; notDriven: number }[];
+  repositories: PlaceRow[];
+  next?: string | null;
+  matching: number;
+  undriven?: { workspace: string; rows: { workspace: string; repository: string; checkout: boolean }[]; next?: string | null; total: number } | null;
+};
+
 /** The roles' structure as `ROLE_STRUCTURE` answers it (COMPANYVIEW1c, the company-view design §4). */
 export type RoleStructure = {
   works: string[];

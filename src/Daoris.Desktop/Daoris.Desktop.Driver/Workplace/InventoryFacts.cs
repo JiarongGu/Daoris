@@ -65,4 +65,21 @@ public sealed record InventoryFacts(
     /// landing the line has not held for a day whose quest is here is named to the person. None given, none is closed, as before.
     /// </summary>
     public IReadOnlySet<string> ClosedQuests { get; init; } = new HashSet<string>();
+
+    /// <summary>
+    /// What the clean-up would keep each unfollowed tree for (CLEANUPADVICE1), by the tree's full path, read by <see cref="WorkInventories"/>
+    /// with the judgement the press makes. A tree not here is one the clean-up would take, or one nothing was asked of.
+    /// </summary>
+    public IReadOnlyDictionary<string, TreeKeep> TreeKeeps { get; init; } = new Dictionary<string, TreeKeep>();
+}
+
+/// <summary>Why the clean-up keeps a tree (CLEANUPADVICE1): what its folder holds that no commit does, or that git could not say.</summary>
+/// <param name="Said">The holds in a clause (<see cref="ContentHolds.TreeHolds.KeepSaid"/>); null where git could not say.</param>
+/// <param name="Uncommitted">How many uncommitted paths keep it.</param>
+/// <param name="Own">How many paths only the tree has keep it (ignored, written after it opened, or in a folder too large to look through).</param>
+/// <param name="Paths">The first of those, as written, comma-separated.</param>
+public sealed record TreeKeep(string? Said, int Uncommitted = 0, int Own = 0, string Paths = "")
+{
+    /// <summary>Whether git could not say what the tree holds, so no remove is advised.</summary>
+    public bool Unread => Said is null;
 }

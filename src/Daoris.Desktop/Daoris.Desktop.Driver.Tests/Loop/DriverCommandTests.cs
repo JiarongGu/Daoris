@@ -360,8 +360,8 @@ public sealed class DriverCommandTests
     [Fact]
     public void The_usage_names_the_set_up_press_and_the_host_routes_it_to_the_librarys_words()
     {
-        Assert.Contains("\n  setup <repository> [--plan]\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
-        Assert.Equal("usage: daoris-driver setup <repository> [--plan]", SetupCommand.Usage);
+        Assert.Contains("\n  setup <repository> [--plan] [--what-it-builds <kind>]\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
+        Assert.Equal("usage: daoris-driver setup <repository> [--plan] [--what-it-builds <kind>]", SetupCommand.Usage);
 
         var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
         Assert.Contains("if (args is [\"setup\", .. var setupArgs])", program);

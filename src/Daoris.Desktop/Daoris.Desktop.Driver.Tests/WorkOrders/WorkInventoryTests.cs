@@ -294,6 +294,16 @@ public sealed class WorkInventoryTests
         Assert.Same(entry, Assert.Single(unit.Cleanup.Waits));
     }
 
+    /// <summary>INTEGRATETREE1: a line's integration tree, detached as its run keeps it, is Daoris's own: no unit, so no clean-up waits on the person.</summary>
+    [Fact]
+    public void A_lines_integration_tree_is_no_unit_and_one_on_a_branch_is_still_unknown()
+    {
+        Assert.Empty(WorkInventory.Derive(Facts(trees: [Tree("i-main-0d6e4079", "HEAD")])));
+
+        // Only the run's shape is its own: an i- folder with a branch checked out is no integration tree.
+        Assert.Equal("unknown", One(Facts(trees: [Tree("i-main-0d6e4079", "daoris/other")])).End.State);
+    }
+
     [Theory]
     [InlineData("(not a tree)", "no repository is linked")]
     [InlineData("(unreadable)", "could not read which branch")]
@@ -412,6 +422,38 @@ public sealed class WorkInventoryTests
         var running = WorkInventory.Derive(Facts(branches: [trace], trees: [tree], inUse: [tree.Path], recorded: recorded))
             .Single(unit => unit.Session == "c0ffee01");
         Assert.Equal(InventoryDisposition.Pending, Assert.Single(running.Cleanup.Waits).Disposition);
+    }
+
+    /// <summary>
+    /// CLEANUPADVICE1: where the clean-up would keep an unfollowed tree, its row says what keeps it and the remove that takes it; where the
+    /// clean-up would take it, the row says what it said before; where git could not say, it names no remove.
+    /// </summary>
+    [Fact]
+    public void An_unfollowed_tree_the_clean_up_would_keep_names_what_keeps_it_and_the_remove_that_takes_it()
+    {
+        var tree = Tree("s-e0a8e0fd", "daoris/s-e0a8e0fd");
+        var trace = Grown("daoris/s-e0a8e0fd", held: Held(), gone: Then.AddHours(1));
+        RecordedTree[] recorded = [new("c0ffee01", tree.Path)];
+        InventoryEntry Wait(Dictionary<string, TreeKeep>? keeps) =>
+            Assert.Single(WorkInventory.Derive(Facts(branches: [trace], trees: [tree], recorded: recorded) with { TreeKeeps = keeps ?? [] })
+                .Single(unit => unit.Session == "c0ffee01").Cleanup.Waits);
+
+        var kept = Wait(new() { [Path.GetFullPath(tree.Path)] = new TreeKeep("1 ignored path(s) your checkout does not have: local/notes.md", 0, 1, "local/notes.md") });
+        Assert.Equal(InventoryCode.Unfollowed, kept.Code);
+        Assert.Equal(("0", "1", "local/notes.md"), (kept.Facts!["uncommitted"], kept.Facts["own"], kept.Facts["paths"]));
+        Assert.Equal("1 ignored path(s) your checkout does not have: local/notes.md", kept.Facts!["keeps"]);
+        Assert.Equal(tree.Path, kept.Facts["tree"]);
+        Assert.Contains("keeps it too, since its tree holds 1 ignored path(s) your checkout does not have: local/notes.md", kept.Detail);
+        Assert.Contains($"daoris-driver trees remove {tree.Path} --force", kept.Detail);
+        Assert.DoesNotContain("removes it once you press it", kept.Detail);
+
+        var taken = Wait(null);
+        Assert.Equal(["branch"], taken.Facts!.Keys);
+        Assert.EndsWith("the clean-up on its workspace's page removes it once you press it", taken.Detail);
+
+        var unread = Wait(new() { [Path.GetFullPath(tree.Path)] = new TreeKeep(null) });
+        Assert.Equal("true", unread.Facts!["unread"]);
+        Assert.DoesNotContain("trees remove", unread.Detail);
     }
 
     /// <summary>A tree its branch's record names is named by the session that recorded it, so its milestone says whose work it is.</summary>

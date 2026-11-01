@@ -431,6 +431,52 @@
           { "id": "c", "kind": "after", "from": "again", "to": "line" }
         ] },
       "problems": [{ "code": "integrate-twice", "wire": null, "node": "again", "words": "node `again`: `integrate` and `again` are both an `integrate`, and the graph's landing is integrated once." }] },
+    { "name": "two lands (LANDNODE1a)",
+      "graph": { "entries": ["land"], "end": "line",
+        "nodes": [
+          { "id": "land", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "merge" } },
+          { "id": "again", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "merge" } },
+          { "id": "line", "kind": "line", "version": 1, "reach": "observed" }
+        ],
+        "wires": [{ "id": "a", "kind": "after", "from": "land", "to": "again" }, { "id": "b", "kind": "after", "from": "again", "to": "line" }] },
+      "problems": [{ "code": "land-once", "wire": null, "node": "again", "words": "node `again`: `land` and `again` are both a landing, and a graph holds one, a `land` or a `handed`." }] },
+    { "name": "a merge land with a pushed after it (LANDNODE1a)",
+      "graph": { "entries": ["land"], "end": "line",
+        "nodes": [
+          { "id": "land", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "merge" } },
+          { "id": "push", "kind": "pushed", "version": 1, "reach": "observed" },
+          { "id": "line", "kind": "line", "version": 1, "reach": "observed" }
+        ],
+        "wires": [{ "id": "a", "kind": "after", "from": "land", "to": "push" }, { "id": "b", "kind": "after", "from": "push", "to": "line" }] },
+      "problems": [{ "code": "land-tail", "wire": null, "node": "push", "words": "node `push`: a `merge` land brings no `pushed`, and `land` is the graph's landing." }] },
+    { "name": "a pull-request land with no pushed or pull-request (LANDNODE1a)",
+      "graph": { "entries": ["land"], "end": "line",
+        "nodes": [
+          { "id": "land", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "pull-request", "plugin": "acme.pr" } },
+          { "id": "line", "kind": "line", "version": 1, "reach": "observed" }
+        ],
+        "wires": [{ "id": "a", "kind": "after", "from": "land", "to": "line" }] },
+      "problems": [
+        { "code": "land-tail", "wire": null, "node": "land", "words": "node `land`: a `pull-request` land brings a `pushed` after it, and the graph holds none." },
+        { "code": "land-tail", "wire": null, "node": "land", "words": "node `land`: a `pull-request` land brings a `pull-request` after it, and the graph holds none." }
+      ] },
+    { "name": "a merge land accepting automatically (LANDNODE1a)",
+      "graph": { "entries": ["land"], "end": "line",
+        "nodes": [
+          { "id": "land", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "merge", "accept": "automatic" } },
+          { "id": "line", "kind": "line", "version": 1, "reach": "observed" }
+        ],
+        "wires": [{ "id": "a", "kind": "after", "from": "land", "to": "line" }] },
+      "problems": [{ "code": "land-automatic", "wire": null, "node": "land", "words": "node `land`: a merge writes into your checkout, and with no press nothing would stand between the work and the line (D145)." }] },
+    { "name": "an integrate land accepting automatically without request done (LANDNODE1a)",
+      "graph": { "entries": ["land"], "end": "line",
+        "nodes": [
+          { "id": "land", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "integrate", "accept": "automatic" } },
+          { "id": "integrate", "kind": "integrate", "version": 1, "reach": "waited" },
+          { "id": "line", "kind": "line", "version": 1, "reach": "observed" }
+        ],
+        "wires": [{ "id": "a", "kind": "after", "from": "land", "to": "integrate" }, { "id": "b", "kind": "after", "from": "integrate", "to": "line" }] },
+      "problems": [{ "code": "land-automatic", "wire": null, "node": "land", "words": "node `land`: an integrate is accepted automatically only under `request: done`, with the line's gates declared and accepted." }] },
     { "name": "an integrate with no landing before it (INTEGRATE1n)",
       "graph": { "entries": ["integrate"], "end": "integrate", "nodes": [{ "id": "integrate", "kind": "integrate", "version": 1, "reach": "waited" }] },
       "problems": [{ "code": "integrate-unlanded", "wire": null, "node": "integrate", "words": "node `integrate`: an `integrate` integrates the landing a `handed` makes, and the graph holds no `handed`." }] },
@@ -574,7 +620,13 @@
       "problems": [{ "code": "end", "wire": null, "node": "pull-request", "words": "the end `pull-request` names no node of this graph." }] },
     { "name": "a landing's kind declared again", "rule": { "form": "merge" },
       "cycle": { "nodes": [{ "id": "proof", "kind": "line", "version": 1, "reach": "observed" }], "wires": [{ "id": "a", "kind": "after", "from": "line", "to": "proof" }] },
-      "problems": [{ "code": "landing-kind", "wire": null, "node": "proof", "words": "node `proof` is a `line`, a landing's node, which the landing rule holds already: wire from it." }] },
+      "problems": [{ "code": "landing-kind", "wire": null, "node": "proof", "words": "node `proof` is a `line`, a landing's node: the graph holds one landing, and under Current the rule's `land` is it. Wire from it." }] },
+    { "name": "a land declared in a cycle (LANDNODE1a)", "rule": { "form": "merge" },
+      "cycle": { "nodes": [{ "id": "again", "kind": "land", "version": 1, "reach": "performed" }], "wires": [{ "id": "a", "kind": "after", "from": "handed", "to": "again" }] },
+      "problems": [
+        { "code": "landing-kind", "wire": null, "node": "again", "words": "node `again` is a `land`, a landing's node: the graph holds one landing, and under Current the rule's `land` is it. Wire from it." },
+        { "code": "land-once", "wire": null, "node": "again", "words": "node `again`: `handed` and `again` are both a landing, and a graph holds one, a `land` or a `handed`." }
+      ] },
     { "name": "a wire into the landing", "rule": { "form": "merge" },
       "cycle": { "nodes": [{ "id": "qa", "kind": "human", "version": 1, "reach": "pressed" }], "wires": [{ "id": "a", "kind": "after", "from": "qa", "to": "handed" }], "entries": ["qa"], "end": "line" },
       "problems": [{ "code": "into-landing", "wire": "a", "node": "handed", "words": "wire `a`: the cycle comes after the landing, and `handed` is the landing's; what comes before it is the rules' gates." }] },
@@ -583,11 +635,11 @@
       "problems": [] },
     { "name": "a cycle declaring an integrate where its rule has none (INTEGRATE1n)", "rule": { "form": "branch", "pattern": "feature/{quest}-{slug}" },
       "cycle": { "nodes": [{ "id": "merge", "kind": "integrate", "version": 1, "reach": "waited" }], "wires": [{ "id": "a", "kind": "after", "from": "handed", "to": "merge" }] },
-      "problems": [{ "code": "landing-kind", "wire": null, "node": "merge", "words": "node `merge` is a `integrate`, a landing's node, which the landing rule holds already: wire from it." }] },
+      "problems": [{ "code": "landing-kind", "wire": null, "node": "merge", "words": "node `merge` is a `integrate`, a landing's node: the graph holds one landing, and under Current the rule's `land` is it. Wire from it." }] },
     { "name": "a cycle declaring an integrate where its rule carries one (INTEGRATE1n)", "rule": { "form": "branch", "pattern": "feature/{quest}-{slug}", "integrate": {} },
       "cycle": { "nodes": [{ "id": "merge", "kind": "integrate", "version": 1, "reach": "waited" }], "wires": [{ "id": "a", "kind": "after", "from": "integrate", "to": "merge" }] },
       "problems": [
-        { "code": "landing-kind", "wire": null, "node": "merge", "words": "node `merge` is a `integrate`, a landing's node, which the landing rule holds already: wire from it." },
+        { "code": "landing-kind", "wire": null, "node": "merge", "words": "node `merge` is a `integrate`, a landing's node: the graph holds one landing, and under Current the rule's `land` is it. Wire from it." },
         { "code": "integrate-twice", "wire": null, "node": "merge", "words": "node `merge`: `integrate` and `merge` are both an `integrate`, and the graph's landing is integrated once." }
       ] },
     { "name": "a wire into the integrate (INTEGRATE1n)", "rule": { "form": "branch", "pattern": "feature/{quest}-{slug}", "integrate": {} },

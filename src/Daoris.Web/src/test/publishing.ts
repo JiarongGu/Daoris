@@ -31,6 +31,10 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   WORK_HELD: { scopes: ['sessions'] },
   // FABRIC-CUTOVER1f: the person's skip or stop of a run's node; the run's view, read under the driver's key, asks again.
   WORKFLOW_NODE: { scopes: ['driver'] },
+  // AGENTSPLACE1c: a workflow saved, a place's choice and a workspace's kinds; the workflow page's reads, under the driver's key, ask again.
+  WORKFLOW_SAVE: { scopes: ['driver'] },
+  WORKFLOW_USE: { scopes: ['driver'] },
+  WORKFLOW_KIND: { scopes: ['driver'] },
   // FABRIC-PIPELINE1d: a person's verification bound for the running driver; the run's and the tab's reads, under the driver's key, ask again.
   WORKFLOW_VERIFY: { scopes: ['driver'] },
   // INTEGRATE1d: the person's acceptance of a repository's integration declaration; the start node, read under the driver's key, asks again.
@@ -91,6 +95,27 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   SET_HOLD: { scopes: ['driver'] },
   SET_TREES: { scopes: ['driver'] },
   SET_CHECKOUT_WRITES: { scopes: ['driver'] },
+  // GITAPP2h: the Changes tab's acts on the checkout's index.
+  GIT_STAGE: { scopes: ['checkouts'] },
+  GIT_UNSTAGE: { scopes: ['checkouts'] },
+  GIT_UNDO: { scopes: ['checkouts'] },
+  // GITAPP2j: a conflict resolved, and the file marked resolved.
+  GIT_RESOLVE: { scopes: ['checkouts'] },
+  GIT_MARK_RESOLVED: { scopes: ['checkouts'] },
+  // GITAPP2i: a commit moves the checkout's index and the branch it has out.
+  GIT_MAKE_COMMIT: { scopes: ['driver', 'checkouts'] },
+  GIT_AMEND: { scopes: ['driver', 'checkouts'] },
+  // GITAPP2k: a switch moves HEAD and the checkout's files; a stash Save moves the shared stash and the tracked files.
+  GIT_SWITCH: { scopes: ['driver', 'checkouts'] },
+  GIT_STASH: { scopes: ['driver', 'checkouts'] },
+  GIT_STASH_APPLY: { scopes: ['driver', 'checkouts'] },
+  GIT_REF_CREATE: { scopes: ['driver'] },
+  GIT_REF_UNDO: { scopes: ['driver'] },
+  GIT_REF_DELETE: { scopes: ['driver'] },
+  GIT_REF_RENAME: { scopes: ['driver'] },
+  GIT_REF_FINISH: { scopes: ['driver'] },
+  GIT_FETCH: { scopes: ['driver'] },
+  GIT_HISTORY_EDIT: { scopes: ['driver'] },
   SET_STANDING: { scopes: ['driver'] },
   SET_HEAVY_GATES: { scopes: ['driver'] },
   SET_SESSION_CHECKS: { scopes: ['driver'] },

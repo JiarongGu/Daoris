@@ -46,10 +46,14 @@ public sealed class IntegrationPromoteGitTests : LandedFixture
         return tip;
     }
 
-    private static void Queue(IntegrationStore store, string id, string branch, string tip, int order, LandingIntegrate integrate, string? session = null) =>
+    private static void Queue(IntegrationStore store, string id, string branch, string tip, int order, LandingIntegrate integrate, string? session = null, string? frozen = null) =>
         Assert.Null(store.Add(new IntegrationRequest(
             id, "engine", "aurora", branch, tip, IntegrationRoutes.Recorded, "main", IntegrationRequester.Card, integrate.Resolved(),
-            new DateTimeOffset(2026, 10, 30, 9, 0, order, TimeSpan.Zero)) { Session = session }));
+            new DateTimeOffset(2026, 10, 30, 9, 0, order, TimeSpan.Zero))
+        {
+            Session = session,
+            Epoch = frozen is null ? null : IntegrationEpoch.Of(integrate.Resolved(), frozen),
+        }));
 
     /// <summary>What a candidate formed and replayed on the line stands on: the requests are ra, rb, rc... in the order given.</summary>
     private sealed record Candidate(
@@ -69,7 +73,7 @@ public sealed class IntegrationPromoteGitTests : LandedFixture
     /// </summary>
     private async Task<Candidate> FormedAsync(
         (string Branch, (string File, string Content)[] Commits)[] members, string? declaration = Gates, LandingIntegrate? integrate = null,
-        bool detached = true, bool accepted = true, Func<string, Task>? beforeFormed = null)
+        bool detached = true, bool accepted = true, Func<string, Task>? beforeFormed = null, bool frozen = false)
     {
         var root = await RepositoryAsync("engine");
         var blob = "";
@@ -86,7 +90,7 @@ public sealed class IntegrationPromoteGitTests : LandedFixture
         for (var at = 0; at < members.Length; at++)
         {
             var tip = await BranchAsync(root, members[at].Branch, members[at].Commits);
-            Queue(store, $"r{(char)('a' + at)}", members[at].Branch, tip, at + 1, policy);
+            Queue(store, $"r{(char)('a' + at)}", members[at].Branch, tip, at + 1, policy, frozen: frozen && declaration is not null ? blob : null);
         }
 
         var config = declaration is not null && accepted ? DriverConfig.Empty.WithIntegrationGates("engine", blob) : DriverConfig.Empty;
@@ -128,6 +132,38 @@ public sealed class IntegrationPromoteGitTests : LandedFixture
         [.. candidate.Store.Steps(candidate.Claim.Candidate).Select(each => (each.Step, each.Outcome))];
 
     private static IntegrationStep Last(Candidate candidate, string step) => candidate.Store.Steps(candidate.Claim.Candidate).Last(each => each.Step == step);
+
+    /// <summary>
+    /// 🔴 LANDNODE1g: the gates run from the declaration the candidate's epoch froze. The owner accepted another declaration after the requests
+    /// were admitted, yet the verdict is asked for the declaration they were admitted under, and the candidate promotes. A candidate with no
+    /// epoch, or one that froze none, runs under the acceptance as it stands, so the same change leaves it waiting.
+    /// </summary>
+    [Fact]
+    public async Task The_gates_run_from_the_declaration_the_epoch_froze_after_the_acceptance_changed()
+    {
+        var candidate = await FormedAsync([Member("feature/a", ("a.txt", "a\n"))], frozen: true);
+        var verdict = Green();
+        var later = candidate.Ask with { Config = DriverConfig.Empty.WithIntegrationGates("engine", "dddddddddddddddddddddddddddddddddddddddd") };
+
+        var run = await Promotes(candidate).RunAsync(candidate.Claim, later);
+
+        Assert.Equal(IntegrationPromoteRuns.Settled, run.Kind);
+        var asked = Assert.Single(verdict.Asks);
+        Assert.Equal((candidate.Blob, Gates), (asked.DeclarationId, asked.Declaration));
+    }
+
+    [Fact]
+    public async Task A_candidate_whose_epoch_froze_no_declaration_runs_its_gates_under_the_acceptance_as_it_stands()
+    {
+        var older = await FormedAsync([Member("feature/a", ("a.txt", "a\n"))]);
+        var verdict = Green();
+        var later = older.Ask with { Config = DriverConfig.Empty.WithIntegrationGates("engine", "dddddddddddddddddddddddddddddddddddddddd") };
+
+        var waited = await Promotes(older).RunAsync(older.Claim, later);
+
+        Assert.Equal(IntegrationPromoteRuns.Waiting, waited.Kind);
+        Assert.Empty(verdict.Asks);
+    }
 
     /// <summary>
     /// 🔴 A green verdict promotes the candidate to its line by one <c>update-ref</c> where no working tree has the line out: the line stands at

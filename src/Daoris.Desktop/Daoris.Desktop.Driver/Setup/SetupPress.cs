@@ -7,7 +7,8 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para><b>Never Daoris writing into the repository</b> (D32): a set-up is the repository's own session's work, on its
-/// branch, landed by the workspace's rule. The press only asks, and adds a rule in Daoris's own file.</para>
+/// branch, landed by the workspace's rule. The press only asks, and adds a rule, and where the repository is not driven its quest's
+/// admission (AGENTSPLACE1b), in Daoris's own files.</para>
 ///
 /// <para><b>The rule is exact verbs</b> (D124 §2.4), never a runner, since a session on the protocol door cannot ask for
 /// another (D52): no <c>upstream</c>, which writes into the canon inside the install, and no management verb, since a
@@ -26,68 +27,32 @@ public static class SetupPress
 {
     /// <summary>What a press on <paramref name="repository"/> would do today. Reads, and writes nothing.</summary>
     /// <param name="door">The door this machine's driven sessions ride: the configured agent's wire.</param>
+    public static Task<SetupPlan> PlanAsync(
+        ISetupWorld world, DriverConfig config, SessionWire door, string repository, DateOnly day, CancellationToken ct = default) =>
+        PlanAsync(world, config, door, repository, day, builds: null, ct);
+
+    /// <summary>
+    /// What a press would do today, its quest's safe work shaped by what the repository builds (AGENTSPLACE1a2, <see cref="SetupBuilds"/>),
+    /// one of the four or null for none said. Reads, and writes nothing.
+    /// </summary>
     public static async Task<SetupPlan> PlanAsync(
-        ISetupWorld world, DriverConfig config, SessionWire door, string repository, DateOnly day, CancellationToken ct = default)
+        ISetupWorld world, DriverConfig config, SessionWire door, string repository, DateOnly day, string? builds, CancellationToken ct = default)
     {
         var name = repository.Trim();
         var registry = await world.RegistryAsync(ct).ConfigureAwait(false);
         var row = registry.FirstOrDefault(repo => string.Equals(repo.Repository, name, StringComparison.OrdinalIgnoreCase));
-        if (row is null)
-        {
-            return new SetupPlan(name)
-            {
-                Refusals =
-                [
-                    new(SetupRefusals.NotOnRegistry,
-                        $"`{name}` is not on this machine's registry. Add it on Repositories → *Add a repository*, or with "
-                        + "`daoris import <folder> --workspace <name>`, then press again."),
-                ],
-            };
-        }
+        if (row is null) return new SetupPlan(name) { Refusals = [NotOnRegistry(name)] };
 
         var plan = new SetupPlan(row.Repository)
         {
             Workspace = row.Workspace,
             Landing = LandingRules.Choose(config, row.Repository, row.Workspace),
             Adapter = config.Adapter,
+            Builds = builds,
+            Alone = !config.Drivable.Contains(row.Repository, StringComparer.OrdinalIgnoreCase),
         };
-        if (row.Root is null)
-        {
-            return plan with
-            {
-                Refusals =
-                [
-                    new(SetupRefusals.NoCheckout,
-                        $"`{row.Repository}` has no checkout here: its row is a teammate's registration, and its own "
-                        + "machine's driver can be asked to set it up."),
-                ],
-            };
-        }
-
-        var refusals = new List<SetupRefusal>();
-        // HELPSETUP1: driving and a tree per session are the repository's own, on its Setup → Driving since UX6f (D150 §4.2).
-        if (!config.Drivable.Contains(row.Repository, StringComparer.OrdinalIgnoreCase))
-        {
-            refusals.Add(new(SetupRefusals.NotDriven,
-                $"`{row.Repository}` is not driven here: it is not opted into driving on this machine, and only a driven "
-                + "session carries a set-up. Drive it under Repositories → the repository's page → Setup → Driving, or with "
-                + $"`daoris driver drive {row.Repository}`."));
-        }
-        else if (!row.Adopted && door != SessionWire.Acp)
-        {
-            refusals.Add(new(SetupRefusals.NotDriven,
-                $"`{row.Repository}` is not driven here: it has not adopted, so only a session on the protocol door is "
-                + $"handed the connector it takes the quest with, and this machine's sessions start on `{config.Adapter}`, "
-                + "which rides the pipe. Choose an ACP agent with `daoris driver adapter <agent>`, in Settings → Driver."));
-        }
-
-        if (!config.OpensOwnTree(row.Repository))
-        {
-            refusals.Add(new(SetupRefusals.NoOwnTree,
-                $"`{row.Repository}`'s sessions run in its checkout, not a tree of their own, and a set-up rewrites what "
-                + "every later session there reads, so it lands on a branch of its own. Give it trees under Repositories → "
-                + $"the repository's page → Setup → Driving, or with `daoris driver trees {row.Repository} on`."));
-        }
+        var refusals = ConfigurationRefusals(config, door, row).ToList();
+        if (row.Root is null) return plan with { Refusals = refusals };
 
         var line = await world.ReadLineAsync(row, config, ct).ConfigureAwait(false);
         if (line.Facts is null)
@@ -125,15 +90,7 @@ public static class SetupPress
             }
         }
 
-        var open = (await world.QuestsAsync(ct).ConfigureAwait(false)).FirstOrDefault(quest =>
-            string.Equals(quest.To, row.Repository, StringComparison.OrdinalIgnoreCase)
-            && quest.Status is "Open" or "Taken"
-            && SetupQuests.IsSetup(quest.Title));
-        if (open is not null)
-        {
-            refusals.Add(new(SetupRefusals.Open,
-                $"a set-up is already {open.Status.ToLowerInvariant()} for `{row.Repository}`: `#{open.Id}`, {open.Title}."));
-        }
+        if (OpenRefusal(await world.QuestsAsync(ct).ConfigureAwait(false), row.Repository) is { } open) refusals.Add(open);
 
         plan = plan with { Facts = facts, Tools = tools, Case = kind, Index = form, Refusals = refusals };
         if (facts is null || kind is null or SetupCase.Done || (kind == SetupCase.Index && form is null)) return plan;
@@ -145,13 +102,67 @@ public static class SetupPress
             .ToList();
         var (title, body) = SetupBrief.Compose(new SetupBriefInput(
             kind.Value, day, row.Repository, facts, tools.DaorisVersion is { Length: > 0 } version ? version : "(no version was found)",
-            description, await world.EntriesAsync(row.Repository, ct).ConfigureAwait(false), neighbours, form));
+            description, await world.EntriesAsync(row.Repository, ct).ConfigureAwait(false), neighbours, form, builds));
         return plan with { Title = title, Body = body };
     }
 
+    /// <summary>The refusal of a repository this machine's registry does not hold.</summary>
+    public static SetupRefusal NotOnRegistry(string repository) =>
+        new(SetupRefusals.NotOnRegistry,
+            $"`{repository}` is not on this machine's registry. Add it on Repositories → *Add a repository*, or with "
+            + "`daoris import <folder> --workspace <name>`, then press again.");
+
     /// <summary>
-    /// Press: the rule into the repository's scope, then one ask to it. A refusal from the service takes back the rules
-    /// this press added, and keeps any the person already had. A plan that is not pressable is never applied.
+    /// The refusals the configuration and the registry's row alone say, in the press's order (D124 §2.1): no checkout here, no door that
+    /// hands an unadopted repository's session its connector, and its sessions not in trees of their own. Driving is not one: a set-up
+    /// where the repository is not driven is admitted alone (AGENTSPLACE1b, <see cref="SetupPlan.Alone"/>). Read by the press and by a
+    /// place's plan (AGENTSPLACE1a2) over the configuration it would leave, so the two refuse alike.
+    /// </summary>
+    public static IReadOnlyList<SetupRefusal> ConfigurationRefusals(DriverConfig config, SessionWire door, RepoView row)
+    {
+        if (row.Root is null)
+        {
+            return
+            [
+                new(SetupRefusals.NoCheckout,
+                    $"`{row.Repository}` has no checkout here: its row is a teammate's registration, and its own "
+                    + "machine's driver can be asked to set it up."),
+            ];
+        }
+
+        var refusals = new List<SetupRefusal>();
+        // Its code stays `not-driven`, a stored shape the machine log's `setup.skipped` keeps.
+        if (!row.Adopted && door != SessionWire.Acp)
+        {
+            refusals.Add(new(SetupRefusals.NotDriven,
+                $"`{row.Repository}` is not driven here: it has not adopted, so only a session on the protocol door is "
+                + $"handed the connector it takes the quest with, and this machine's sessions start on `{config.Adapter}`, "
+                + "which rides the pipe. Choose an ACP agent with `daoris driver adapter <agent>`, in Settings → Driver."));
+        }
+
+        // HELPSETUP1: a tree per session is the repository's own, on its Setup → Driving since UX6f (D150 §4.2).
+        if (!config.OpensOwnTree(row.Repository))
+        {
+            refusals.Add(new(SetupRefusals.NoOwnTree,
+                $"`{row.Repository}`'s sessions run in its checkout, not a tree of their own, and a set-up rewrites what "
+                + "every later session there reads, so it lands on a branch of its own. Give it trees under Repositories → "
+                + $"the repository's page → Setup → Driving, or with `daoris driver trees {row.Repository} on`."));
+        }
+
+        return refusals;
+    }
+
+    /// <summary>A set-up already open or taken for <paramref name="repository"/>, refused as the press refuses it; null where none is.</summary>
+    public static SetupRefusal? OpenRefusal(IEnumerable<QuestView> quests, string repository) =>
+        quests.FirstOrDefault(quest => string.Equals(quest.To, repository, StringComparison.OrdinalIgnoreCase)
+                && quest.Status is "Open" or "Taken" && SetupQuests.IsSetup(quest.Title)) is { } open
+            ? new(SetupRefusals.Open, $"a set-up is already {open.Status.ToLowerInvariant()} for `{repository}`: `#{open.Id}`, {open.Title}.")
+            : null;
+
+    /// <summary>
+    /// Press: the rule into the repository's scope, then one ask to it, its quest admitted alone where the repository is not driven
+    /// (<see cref="PublishAsync"/>). A refusal from the service takes back the rules this press added, and keeps any the person already
+    /// had. A plan that is not pressable is never applied.
     /// </summary>
     /// <exception cref="DriverException">Daoris's rules file could not be read, so no rule is written over it.</exception>
     public static async Task<SetupOutcome> ApplyAsync(SetupPlan plan, ISetupWorld world, string home, CancellationToken ct = default)
@@ -170,7 +181,7 @@ public static class SetupPress
         var added = SetupPressRules.RulesOf(plan).Where(rule => !held.Contains(rule)).ToList();
         PermissionRules.Save(home, added.Aggregate(file, (rules, rule) => PermissionRules.Add(rules, RuleScope.Repository, plan.Repository, RuleList.Allow, rule)));
 
-        var asked = await PublishAsync(plan, world, ct).ConfigureAwait(false);
+        var asked = await PublishAsync(plan, world, home, ct).ConfigureAwait(false);
         if (asked.Published) return asked with { Added = added };
 
         var after = PermissionRules.Load(home);
@@ -180,9 +191,11 @@ public static class SetupPress
 
     /// <summary>
     /// The ask alone, as a workspace plan's tick publishes it (WSSETUP6): its rule is the workspace's, added once by the plan's
-    /// press (D124 §4.3), so nothing is added here. A plan that is not pressable is never asked.
+    /// press (D124 §4.3), so nothing is added here. Where the repository is not driven, the quest it published is admitted alone in
+    /// <paramref name="home"/>'s <c>driver.json</c> (AGENTSPLACE1b), after the publication that names it. A plan that is not pressable is
+    /// never asked.
     /// </summary>
-    public static async Task<SetupOutcome> PublishAsync(SetupPlan plan, ISetupWorld world, CancellationToken ct = default)
+    public static async Task<SetupOutcome> PublishAsync(SetupPlan plan, ISetupWorld world, string home, CancellationToken ct = default)
     {
         if (!plan.Pressable || plan.Workspace is null)
         {
@@ -190,6 +203,29 @@ public static class SetupPress
         }
 
         var answer = await world.PublishAsync(plan.Workspace, plan.Sentence!, plan.Repository, ct).ConfigureAwait(false);
-        return new(answer.Ok, answer.Message, answer.AskId, answer.Ok ? answer.QuestId : null, []);
+        var quest = answer.Ok ? answer.QuestId : null;
+        var message = answer.Ok && plan.Alone && Admit(home, plan.Repository, quest) is { } unadmitted ? $"{answer.Message} {unadmitted}" : answer.Message;
+        return new(answer.Ok, message, answer.AskId, quest, []);
+    }
+
+    /// <summary>
+    /// The quest admitted alone in the driver's file, or why it is not: then it waits, as the rest of its repository's work does, and the
+    /// sentence says so.
+    /// </summary>
+    private static string? Admit(string home, string repository, string? quest)
+    {
+        var waits = $"waits as the rest of `{repository}`'s work does until it is driven here.";
+        if (quest is not { Length: > 0 }) return $"The service named no quest for it, so none is admitted alone: it {waits}";
+
+        try
+        {
+            var path = DriverConfig.ResolvePath(home);
+            DriverConfig.Load(path).WithAdmitted(quest, repository).Save(path);
+            return null;
+        }
+        catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
+        {
+            return $"Its admission could not be written ({error.Message.TrimEnd('.', ' ')}), so `#{quest}` {waits}";
+        }
     }
 }

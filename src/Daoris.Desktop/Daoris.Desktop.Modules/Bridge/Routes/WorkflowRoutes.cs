@@ -12,8 +12,9 @@ namespace Daoris.Desktop;
 /// its plugins and its registry exactly as `daoris driver workflow show` reads them; and where a piece of work stands in it
 /// (WORKFLOW1c), the runs <see cref="WorkflowRunReader"/> reads. Read-only but three: <c>WORKFLOW_LANDED</c>, the person's press that sets
 /// the landed route and accepts the gates it runs unasked (FABRIC-PIPELINE1a); <c>INTEGRATION_GATES</c>, their acceptance of a
-/// repository's integration declaration by its blob (INTEGRATE1d); and <c>WORKFLOW_NODE</c>, their skip or stop of a graph run's
-/// node (FABRIC-CUTOVER1f).
+/// repository's integration declaration by its blob (INTEGRATE1d); <c>WORKFLOW_NODE</c>, their skip or stop of a graph run's
+/// node (FABRIC-CUTOVER1f); and <c>WORKFLOW_SAVE</c>, <c>WORKFLOW_USE</c> and <c>WORKFLOW_KIND</c>, their saving, choosing and kind-setting of
+/// workflows (AGENTSPLACE1c).
 /// </summary>
 public sealed class WorkflowRoutes(DriverContext context)
 {
@@ -191,7 +192,9 @@ public sealed class WorkflowRoutes(DriverContext context)
     /// line's tip and accepts it by its blob, as <c>daoris driver workflow use … --landed</c> does; where the tip cannot be read it keeps
     /// what was accepted for the same pipeline. Judged by the twins' edit first (<see cref="WorkflowSelection.Apply"/>), so a development
     /// pipeline is refused in its words before anything is written. Answers the start node as it now stands, and what the change lowers
-    /// (<see cref="InvolvementRoutes.LowersRoute"/>), said: the person's press applies it (D157 point 10).
+    /// (<see cref="InvolvementRoutes.LowersRoute"/>), said: the person's press applies it (D157 point 10). An optional <c>gates</c> names the
+    /// blob the person read: one that is no longer the tip's is refused <c>moved</c>, and a tip that cannot be read <c>unread</c>, each as the
+    /// driver's sentence with nothing written, as <c>INTEGRATION_GATES</c> does; a caller naming none accepts the tip as it stands.
     /// </summary>
     [DriverRoute("WORKFLOW_LANDED")]
     private async Task<object?> WorkflowLandedAsync(IpcRequest request, CancellationToken cancellationToken)
@@ -204,6 +207,8 @@ public sealed class WorkflowRoutes(DriverContext context)
         }
 
         var workflow = Optional(request, "workflow");
+        var expected = Optional(request, "gates");
+        if (expected is not null && !IntegrationGatesKey.IsAcceptance(expected)) throw new DriverException(IntegrationGatesKey.Problem);
         var config = DriverConfig.Load(_loop.ConfigPath);
         var inWorkspace = workspace;
         if (repository is not null)
@@ -220,7 +225,17 @@ public sealed class WorkflowRoutes(DriverContext context)
         string? gates = null;
         if (repository is not null && found?.Read.Verifies == true)
         {
-            var (_, tip, _) = await TipAsync(config, repository, inWorkspace, cancellationToken).ConfigureAwait(false);
+            var (_, tip, problem) = await TipAsync(config, repository, inWorkspace, cancellationToken).ConfigureAwait(false);
+            if (expected is not null)
+            {
+                if (tip is null) throw new DriverException($"{problem ?? $"`{repository}`'s line could not be read here."} Nothing was accepted (unread).");
+                if (expected != tip.Gates)
+                {
+                    throw new DriverException($"moved: `{repository}`'s line holds another declaration than the one you read, so nothing was accepted: "
+                        + "read it again, then accept it.");
+                }
+            }
+
             var own = config.Workflows.TryGetValue(repository.Trim(), out var held) ? held.Landed : null;
             gates = tip?.Gates ?? (own?.Workflow == named ? own.Gates : null);
         }
@@ -308,6 +323,155 @@ public sealed class WorkflowRoutes(DriverContext context)
             Done = refused is null,
             Refused = refused,
             Message = message,
+        };
+    }
+
+    // AGENTSPLACE1c (D194 point 4): the terminal's `workflow new|edit|use|kind` as routes, the person's alone. Each runs the typed operation the
+    // verb runs (`WorkflowOperations`) and says its result as data; a refusal is an answer `{ done: false, refused, message }` with nothing written.
+    // Every answer says the integration design's §17.7 reach: per repository, the graph a combination of choices and landing rule would run,
+    // `cannots` where that combination cannot start and `noGates` where its line integrates with none.
+
+    private WorkflowOperations.RegistryRead Registry => async ct =>
+    {
+        if (_loop.Service is not { } service) return new ChoicesRegistry(null, "the driver is still coming up");
+        var rows = await service.RegistryAsync(ct).ConfigureAwait(false);
+        return new ChoicesRegistry([.. rows.Select(row => (row.Repository, (string?)row.Workspace, (string?)row.Root))], null);
+    };
+
+    private static object[] ReachRows(IReadOnlyList<WorkflowReach> reach) =>
+        [.. reach.Select(each => new { each.Repository, each.Workflow, each.Cannots, each.NoGates, each.Said })];
+
+    private static object Refused(string code, string message, IReadOnlyList<WorkflowReach>? reach = null) =>
+        new { Done = false, Refused = code, Message = message, Changed = false, Reach = ReachRows(reach ?? []), Start = (object?)null };
+
+    private static JsonNode? NodeOf(IpcRequest request, string name) =>
+        request.Payload is { } payload && payload.TryGetProperty(name, out var value) && value.ValueKind is JsonValueKind.Array or JsonValueKind.Object
+            ? JsonNode.Parse(value.GetRawText())
+            : null;
+
+    /// <summary>
+    /// A version saved (AGENTSPLACE1c; <c>daoris-driver workflow new|edit|apply</c>'s twin): <c>{id}</c> and one of <c>from</c> (a preset, a saved
+    /// workflow or <c>current:&lt;repository&gt;</c>, for an id not held, with <c>withOpinion</c>, <c>withLook</c> and <c>name</c>), <c>steps</c> or
+    /// <c>graph</c>. Under a fresh id it makes v1. Onto a saved one it appends, against <c>base</c>, the version the caller read: a newer one is
+    /// refused <c>stale</c>; and since a new start binds the newest version, it first answers every place that chooses the workflow, and writes
+    /// only when <c>authorize</c> lists exactly those places' keys (refused <c>reach</c> otherwise, also where the graph's reach cannot start).
+    /// <c>plan: true</c> says all of it and writes nothing. Answers <c>{ id, done, refused, message, version, written, appended, scopes, reach }</c>.
+    /// </summary>
+    [DriverRoute("WORKFLOW_SAVE")]
+    [Publishes("WORKFLOW_SAVE", StateScopes.Driver)]
+    private async Task<object?> WorkflowSaveAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var id = Optional(request, "id")?.Trim();
+        if (string.IsNullOrEmpty(id)) throw new DriverException("a workflow is saved under an `id` — name it.");
+        var authorize = request.Payload is { } payload && payload.TryGetProperty("authorize", out var listed) && listed.ValueKind == JsonValueKind.Array
+            ? listed.EnumerateArray().Where(each => each.ValueKind == JsonValueKind.String).Select(each => each.GetString()!).ToList()
+            : null;
+        var saved = await WorkflowOperations.SaveAsync(
+            DriverConfig.Load(_loop.ConfigPath), _loop.Home, Registry, id, Optional(request, "from"), NodeOf(request, "steps"), NodeOf(request, "graph"),
+            Flag(request, "withOpinion"), Flag(request, "withLook"), Optional(request, "name"),
+            Number(request, "base") is { } baseVersion ? baseVersion.ToString(System.Globalization.CultureInfo.InvariantCulture) : null,
+            authorize, Flag(request, "plan"), DateTimeOffset.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", System.Globalization.CultureInfo.InvariantCulture),
+            cancellationToken).ConfigureAwait(false);
+        return new
+        {
+            saved.Id,
+            saved.Done,
+            saved.Refused,
+            saved.Message,
+            saved.Version,
+            saved.Written,
+            saved.Appended,
+            Scopes = saved.Scopes.Select(each => new { each.Level, each.Name, each.Role, each.Kind, each.Key }).ToArray(),
+            Reach = ReachRows(saved.Reach),
+        };
+    }
+
+    /// <summary>
+    /// The person's choice of a workflow for a place (AGENTSPLACE1c; <c>daoris-driver workflow use</c>'s twin, the landed route apart, which is
+    /// <c>WORKFLOW_LANDED</c>): <c>{repository}</c> or <c>{workspace}</c>, <c>workflow</c> (a saved id, <c>current</c>, or absent to clear), and
+    /// <c>kind</c> for a kind of task instead of the default; <c>version</c>, the newest the caller read, is refused <c>stale</c> when it moved.
+    /// One change, judged first as the terminal judges it: a graph whose reach cannot start somewhere is refused <c>reach</c>, nothing written.
+    /// Answers <c>{ done, refused, message, changed, reach, start }</c>, the start node as it now stands.
+    /// </summary>
+    [DriverRoute("WORKFLOW_USE")]
+    [Publishes("WORKFLOW_USE", StateScopes.Driver)]
+    private async Task<object?> WorkflowUseAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var repository = Optional(request, "repository");
+        var workspace = Optional(request, "workspace");
+        if ((repository is null) == (workspace is null))
+        {
+            throw new DriverException("a workflow is chosen for a `repository` or a `workspace` — name one of them.");
+        }
+
+        var workflow = Optional(request, "workflow");
+        var kind = Optional(request, "kind");
+        var config = DriverConfig.Load(_loop.ConfigPath);
+        WorkflowUsed used;
+        try
+        {
+            if (workflow is { } named && named != WorkflowSelection.Current && Number(request, "version") is { } read
+                && WorkflowOperations.NewestOf(_loop.Home, named) is { } newest && newest != read)
+            {
+                return Refused("stale", $"`{named}` is at v{newest} now, not v{read}: read it again and choose that. Nothing was written.");
+            }
+
+            used = await WorkflowOperations.UseAsync(config, _loop.Home, Registry, workflow, repository, workspace, kind, cancellationToken).ConfigureAwait(false);
+        }
+        catch (ChoiceWords refused)
+        {
+            return Refused("refused", refused.Message);
+        }
+
+        if (used.Refusal is not null) return Refused(used.Reach.Any(each => each.Cannots.Count > 0) ? "reach" : "refused", used.Refusal, used.Reach);
+        if (used.Changed) _context.Change(each => WorkflowSelection.Apply(each, used.Edit!));
+        var inWorkspace = workspace ?? (await Registry(cancellationToken).ConfigureAwait(false)).Checkouts
+            ?.FirstOrDefault(each => WorkflowOperations.InScope(each.Repository, repository!)).Workspace;
+        return new
+        {
+            Done = true,
+            Refused = (string?)null,
+            Message = string.Join('\n', used.Lines),
+            used.Changed,
+            Reach = ReachRows(used.Reach),
+            Start = await StartAsync(DriverConfig.Load(_loop.ConfigPath), repository, inWorkspace, cancellationToken).ConfigureAwait(false),
+        };
+    }
+
+    /// <summary>
+    /// The person's declaration of a kind of task for a workspace (AGENTSPLACE1c; <c>daoris-driver workflow kind</c>'s twin): <c>{workspace, kind,
+    /// label, paths}</c>, or <c>drop: true</c> with no label. Declared again, the label and the paths are replaced; the workflow a kind maps to is
+    /// <c>WORKFLOW_USE</c>'s. Answers <c>{ done, refused, message, changed, reach, start }</c>, the reach being what the workspace's repositories
+    /// now run (§17.7).
+    /// </summary>
+    [DriverRoute("WORKFLOW_KIND")]
+    [Publishes("WORKFLOW_KIND", StateScopes.Driver)]
+    private async Task<object?> WorkflowKindAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var workspace = Optional(request, "workspace");
+        var kind = Optional(request, "kind");
+        if (workspace is null || kind is null) throw new DriverException("a kind is declared for a `workspace` and a `kind` — name both.");
+        var label = Optional(request, "label");
+        var drop = Flag(request, "drop");
+        if (drop == (label is not null)) throw new DriverException("a kind is declared with a `label`, or dropped with `drop: true` — one of them.");
+        var paths = request.Payload is { } payload && payload.TryGetProperty("paths", out var listed) && listed.ValueKind == JsonValueKind.Array
+            ? listed.EnumerateArray().Where(each => each.ValueKind == JsonValueKind.String).Select(each => each.GetString()!.Trim()).Where(each => each.Length > 0).ToList()
+            : [];
+        if (drop && paths.Count > 0) throw new DriverException("a dropped kind takes no `paths`.");
+
+        var config = DriverConfig.Load(_loop.ConfigPath);
+        var set = WorkflowOperations.KindSet(config, workspace, kind, label, paths, drop);
+        if (set.Refusal is not null) return Refused("refused", set.Refusal);
+        _context.Change(each => WorkflowSelection.Apply(each, set.Edit!));
+        var after = DriverConfig.Load(_loop.ConfigPath);
+        return new
+        {
+            Done = true,
+            Refused = (string?)null,
+            Message = string.Join('\n', set.Lines),
+            Changed = true,
+            Reach = ReachRows(await WorkflowOperations.PlaceReachAsync(after, _loop.Home, Registry, null, workspace, cancellationToken).ConfigureAwait(false)),
+            Start = await StartAsync(after, null, workspace, cancellationToken).ConfigureAwait(false),
         };
     }
 

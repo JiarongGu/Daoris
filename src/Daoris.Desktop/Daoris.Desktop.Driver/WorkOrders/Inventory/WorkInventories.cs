@@ -99,13 +99,49 @@ public static class WorkInventories
             standing.AddRange(branchesHere);
         }
 
-        return new InventoryFacts(
+        var gathered = new InventoryFacts(
             branches, landings, trees, Ours(new AutoLandings(home).All(), entry => entry.Repository), refs, inUse,
             session => Directory.Exists(DaorisHome.Entry(home, HomeEntry.Sessions, session)), at)
         {
             Standing = standing, Recorded = recorded ?? [], SetAsideFor = days, Owed = WorkObligations.Read(home, at),
             ClosedQuests = closedQuests ?? new HashSet<string>(),
         };
+        return gathered with { TreeKeeps = await KeepsAsync(home, gathered, roots, ct).ConfigureAwait(false) };
+    }
+
+    /// <summary>
+    /// What the clean-up would keep each unfollowed tree for (CLEANUPADVICE1): asked of git for those trees alone, by the judgement the press
+    /// makes (<see cref="ContentHolds.HoldsAsync"/> under the repository's declared output). A tree it would take is not here.
+    /// </summary>
+    private static async Task<IReadOnlyDictionary<string, TreeKeep>> KeepsAsync(
+        string home, InventoryFacts facts, IReadOnlyDictionary<string, string> roots, CancellationToken ct)
+    {
+        var keeps = new Dictionary<string, TreeKeep>(StringComparer.OrdinalIgnoreCase);
+        var unfollowed = WorkInventory.Units(facts).SelectMany(unit => unit.Entries)
+            .Where(entry => entry.Kind == InventoryKind.Tree && entry.Code == InventoryCode.Unfollowed).Select(entry => entry.Resource).ToList();
+        if (unfollowed.Count == 0) return keeps;
+        foreach (var path in unfollowed)
+        {
+            var tree = facts.Trees.FirstOrDefault(each => string.Equals(Path.TrimEndingDirectorySeparator(Path.GetFullPath(each.Path)), Path.TrimEndingDirectorySeparator(Path.GetFullPath(path)), StringComparison.OrdinalIgnoreCase));
+            if (tree is null || !Directory.Exists(tree.Path)) continue;
+            var full = Path.TrimEndingDirectorySeparator(Path.GetFullPath(tree.Path));
+            if (!roots.TryGetValue(tree.Repository, out var root) || string.IsNullOrWhiteSpace(root) || !Directory.Exists(root))
+            {
+                keeps[full] = new TreeKeep(null);
+                continue;
+            }
+
+            var declared = await TreeContext.ScratchOfHomeAsync(home, root, tree.Repository, tree.Workspace, ct).ConfigureAwait(false);
+            var holds = await ContentHolds.HoldsAsync(tree.Path, root, declared, ct).ConfigureAwait(false);
+            if (holds is null) keeps[full] = new TreeKeep(null);
+            else if (holds.KeepSaid is { } said)
+            {
+                List<string> own = [.. holds.Ignored, .. holds.Written, .. holds.TooLarge];
+                keeps[full] = new TreeKeep(said, holds.Uncommitted.Count, own.Count, string.Join(", ", own.Take(3)));
+            }
+        }
+
+        return keeps;
     }
 
     /// <summary>The milestone of every unit this home names, and Daoris's own recoveries no unit names (CLEANUP1), from one read.</summary>

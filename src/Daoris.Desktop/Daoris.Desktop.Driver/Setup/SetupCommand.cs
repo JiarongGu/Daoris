@@ -14,7 +14,10 @@ namespace Daoris.Driver;
 /// </remarks>
 public static class SetupCommand
 {
-    public const string Usage = "usage: daoris-driver setup <repository> [--plan]";
+    public const string Usage = "usage: daoris-driver setup <repository> [--plan] [--what-it-builds <kind>]";
+
+    /// <summary>The flag naming what the repository builds (<see cref="SetupBuilds"/>), which shapes the quest's safe work.</summary>
+    public const string BuildsFlag = "--what-it-builds";
 
     public static Task<int> RunAsync(
         IReadOnlyList<string> args, TextWriter output, ISetupWorld world, DriverConfig config, SessionWire door, string home,
@@ -37,11 +40,24 @@ public static class SetupCommand
             return 2;
         }
 
+        var (repository, builds) = Named(args);
         var route = args.Contains("--plan") ? OpenRoutes.SetupPlan : PersonPresses.SetupPress;
         return await InstanceDoor.ThroughAsync(
-                instance, route, InstanceDoor.Said(("repository", args.Single(arg => arg != "--plan"))),
+                instance, route, InstanceDoor.Said(("repository", repository), ("builds", builds)),
                 () => AloneAsync(args, output, world, config, door, home, day, ct), output, ct)
             .ConfigureAwait(false);
+    }
+
+    /// <summary>The words a route answering a terminal hands back to this verb: the repository, what it builds, and <c>--plan</c>.</summary>
+    public static IReadOnlyList<string> ArgsOf(string repository, string? builds, bool plan) =>
+        [repository, .. builds is null ? Array.Empty<string>() : [BuildsFlag, builds], .. plan ? ["--plan"] : Array.Empty<string>()];
+
+    /// <summary>The repository the words name and what it builds, once <see cref="Problem"/> holds nothing against them.</summary>
+    private static (string Repository, string? Builds) Named(IReadOnlyList<string> args)
+    {
+        var at = args.ToList().IndexOf(BuildsFlag);
+        var builds = at >= 0 ? args[at + 1] : null;
+        return (args.Where((arg, index) => arg != "--plan" && (at < 0 || (index != at && index != at + 1))).Single(), builds);
     }
 
     private static async Task<int> AloneAsync(
@@ -49,7 +65,8 @@ public static class SetupCommand
         DateOnly day, CancellationToken ct)
     {
         var plan = args.Contains("--plan");
-        var setup = await SetupPress.PlanAsync(world, config, door, args.Single(arg => arg != "--plan"), day, ct).ConfigureAwait(false);
+        var (repository, builds) = Named(args);
+        var setup = await SetupPress.PlanAsync(world, config, door, repository, day, builds, ct).ConfigureAwait(false);
         Describe(setup, output);
 
         if (!setup.Pressable)
@@ -93,10 +110,18 @@ public static class SetupCommand
         return 0;
     }
 
-    /// <summary>What is wrong with the words, or null for one repository and, perhaps, <c>--plan</c>.</summary>
+    /// <summary>What is wrong with the words, or null for one repository and, perhaps, <c>--plan</c> and what it builds.</summary>
     public static string? Problem(IReadOnlyList<string> args)
     {
-        var named = args.Where(arg => arg != "--plan").ToList();
+        var at = args.ToList().IndexOf(BuildsFlag);
+        if (at >= 0)
+        {
+            if (at + 1 >= args.Count || args[at + 1].StartsWith('-')) return $"`{BuildsFlag}` names what the repository builds: {string.Join(", ", SetupBuilds.All.Select(each => $"`{each}`"))}.";
+            if (!SetupBuilds.Is(args[at + 1])) return SetupBuilds.Problem(args[at + 1]);
+            if (args.ToList().LastIndexOf(BuildsFlag) != at) return $"`{BuildsFlag}` is said once.";
+        }
+
+        var named = args.Where((arg, index) => arg != "--plan" && (at < 0 || (index != at && index != at + 1))).ToList();
         if (named.Count > 1) return "one repository at a time: each one's session, branch and review is its own.";
         if (named.Count == 0) return "name the repository to set up.";
         return named[0].StartsWith('-') ? $"`{named[0]}` is not a word setup takes." : null;
@@ -117,6 +142,12 @@ public static class SetupCommand
             ? " (whether its sandbox runs a program outside the workspace is not measured)"
             : ""));
         if (setup.Landing is { } landing) output.WriteLine($"  lands    {SetupPressRules.LandsAs(landing)}");
+        if (setup.Builds is { } builds) output.WriteLine($"  builds   {SetupBuilds.Named(builds)}, which shapes the checks its safe work declares");
+        if (setup is { Alone: true, Pressable: true })
+        {
+            output.WriteLine($"  starts   its quest alone: `{setup.Repository}` is not driven here, so nothing else of it starts");
+        }
+
         if (setup.Tools is { } tools)
         {
             output.WriteLine($"  tools    node {tools.NodeVersion?.Trim() ?? "not found"} · daoris {(SetupPressRules.IsVersion(tools.DaorisVersion) ? tools.DaorisVersion!.Trim() : "not found")}");

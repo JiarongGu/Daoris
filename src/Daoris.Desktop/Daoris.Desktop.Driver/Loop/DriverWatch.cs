@@ -75,6 +75,27 @@ public sealed class DriverWatch(
     /// <summary>The landed branches whose integration waits for the owner's card (INTEGRATE1h), as the evaluation runtime last judged them; none before a pass.</summary>
     public IReadOnlyList<IntegrationCardWait> CardWaits => _nodes?.CardWaits() ?? [];
 
+    private readonly IntegrationOwed _owed = new();
+
+    /// <summary>The repositories whose integration declaration waits for the owner's acceptance (INTEGRATE1h, §5.8), as the last look read them; none before a look.</summary>
+    public IReadOnlyList<DeclarationOwed> DeclarationsOwed => _owed.Owed;
+
+    /// <summary>
+    /// The look's read of the declarations owed acceptance (<see cref="IntegrationOwed"/>): git only where a line's tip moved. A read that
+    /// fails keeps what the last one found and is said, never a reason to fail the look.
+    /// </summary>
+    private async Task OwedLookAsync(DriverConfig config, CancellationToken ct)
+    {
+        try
+        {
+            await _owed.LookAsync(config, await service.RegistryAsync(ct).ConfigureAwait(false), DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or IOException or UnauthorizedAccessException)
+        {
+            Log?.Failed("the read of the declarations owed acceptance", error);
+        }
+    }
+
     /// <summary>The loop's evaluation runtime once it runs, or null: a test holds its pass with one of its own (PARALLEL1h).</summary>
     internal NodeRuntime? Nodes => _nodes;
 
@@ -907,6 +928,9 @@ public sealed class DriverWatch(
 
                     if (limiting is { IsCompleted: true }) limiting = null;
                     if (limiting is null && Limits is { } limits && !DrainsNow()) limiting = LimitsAsync(limits, config, ct);
+
+                    // INTEGRATE1h (§5.8): the declarations owed acceptance, read before the report so the wake it brings judges them.
+                    await OwedLookAsync(config, ct).ConfigureAwait(false);
 
                     Looked(by, woke, part, nudges, began, failed: false);
                     await onReport(report, config).ConfigureAwait(false);

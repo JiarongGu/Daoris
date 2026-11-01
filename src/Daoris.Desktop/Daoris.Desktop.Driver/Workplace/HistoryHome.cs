@@ -296,7 +296,7 @@ internal static class HistoryHome
     }
 
     /// <summary>
-    /// <c>driver.json</c>'s entries for each cleared quest (its restart mark, its release, its own pause) and each cleared ask
+    /// <c>driver.json</c>'s entries for each cleared quest (its restart mark, its release, its admission, its own pause) and each cleared ask
     /// (its pause), as abandon's step 7 tidies a closed quest's (§4); a failed-sessions clear keeps its quest, so its entries
     /// stay. A workspace's clear also drops the entries for quests and asks no store holds, as a hand purge left them.
     /// </summary>
@@ -311,7 +311,8 @@ internal static class HistoryHome
         {
             var held = after.Quests.Select(quest => quest.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
             quests.AddRange(handed.Readable().Where(quest => !held.Contains(quest)));
-            quests.AddRange(config.Forgiven.Keys.Concat(config.Released.Keys).Concat(config.PausedQuests.Keys).Where(quest => !held.Contains(quest)));
+            quests.AddRange(config.Forgiven.Keys.Concat(config.Released.Keys).Concat(config.PausedQuests.Keys).Concat(config.Admitted.Keys)
+                .Where(quest => !held.Contains(quest)));
             var standing = after.Asks.Select(ask => ask.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
             asks.AddRange(config.PausedAsks.Keys.Where(ask => !standing.Contains(ask)));
         }

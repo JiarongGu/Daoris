@@ -208,6 +208,27 @@ export const SETUP_PROCESS_OWN: RepositorySetupProps = {
   },
 };
 
+/** The engine's branch rule integrating into its line (AGENTSPLACE1d): batch 4, oldest first, gates declared. */
+export const SETUP_INTEGRATING: RepositorySetupProps = {
+  ...SETUP_PROCESS,
+  work: {
+    ...SETUP_PROCESS.work,
+    landing: {
+      repository: 'engine', workspace: 'default', form: 'branch', pattern: 'work/{quest}', source: 'repository',
+      integrate: { batch: 4, order: 'arrival', gates: 'declared' },
+    },
+  },
+};
+
+/** The same rule after a save the driver refused, its sentence under *Save*. */
+export const SETUP_INTEGRATING_REFUSED: RepositorySetupProps = {
+  ...SETUP_INTEGRATING,
+  work: {
+    ...SETUP_INTEGRATING.work,
+    landingRefusal: '`request: steward` needs `gates: declared` — a role\'s act never lands ungated work on the line.',
+  },
+};
+
 /** A whole commit id from a short one, as git answers them: forty hex digits. */
 const id = (short: string) => short.padEnd(40, '0');
 const hoursAgo = (hours: number) => new Date(Date.now() - hours * 3_600_000).toISOString();
@@ -340,6 +361,104 @@ export const GIT_CHANGES_ENGINE = {
     { path: 'src/cache.cs', code: 'UU', modes: ['100644', '100644', '100644'], blobs: [blob('1a2b3c'), blob('4d5e6f'), blob('7a8b9c')] },
   ],
   readAt: hoursAgo(0.05),
+};
+
+/**
+ * `src/budget.cs`'s hunks on the index → worktree side, as `GIT_HUNKS` answers them (GITAPP2h): one hunk of a changed line and an
+ * added one, with the ids a press sends back (`index` is the entry the list shows for it).
+ */
+export const GIT_HUNKS_BUDGET = {
+  path: 'src/budget.cs',
+  side: 'unstaged' as 'unstaged' | 'staged',
+  head: id('c4f1a2') as string | null,
+  index: `100644 ${blob('9c41e7')}`,
+  source: blob('d70a41'),
+  binary: false,
+  hunks: [
+    {
+      id: 'a1b2c3d4e5f6',
+      header: '@@ -10,4 +10,5 @@ class Budget',
+      lines: [
+        { kind: ' ', text: '    var total = 0;' },
+        { kind: '-', text: '    total += cost;' },
+        { kind: '+', text: '    total += cost * rate;' },
+        { kind: '+', text: '    total = Math.Round(total);' },
+        { kind: ' ', text: '    return total;' },
+      ],
+    },
+  ],
+};
+
+/**
+ * `src/cache.cs`'s conflicts, as `GIT_CONFLICT` answers them (GITAPP2j): two, the first with a line each side changed and the second where
+ * ours holds a line theirs removed, with the stages and the worktree id a press sends back.
+ */
+export const GIT_CONFLICT_CACHE = {
+  path: 'src/cache.cs',
+  head: id('c4f1a2') as string | null,
+  base: `100644 ${blob('1a2b3c')}`,
+  ours: `100644 ${blob('4d5e6f')}`,
+  theirs: `100644 ${blob('7a8b9c')}`,
+  worktree: blob('e2d4a8'),
+  why: null as string | null,
+  hunks: [
+    {
+      id: '3f9a1c7b2d40',
+      before: ['class Cache', '{'],
+      ours: ['    private const int Size = 64;'],
+      theirs: ['    private const int Size = 128;'],
+      after: ['    private readonly Dictionary<string, Entry> _items = new();'],
+    },
+    {
+      id: '8c2e5d9a4b17',
+      before: ['    public void Clear()'],
+      ours: ['    {', '        _items.Clear();', '        Hits = 0;'],
+      theirs: [],
+      after: ['    }'],
+    },
+  ],
+};
+
+/**
+ * What a commit of the engine's staged changes rests on, as `GIT_COMMIT_PLAN` answers it (GITAPP2i): the tip and the index as a tree,
+ * HEAD's message for an amend, the hooks its git runs and who commits.
+ */
+export const GIT_COMMIT_PLAN_ENGINE = {
+  head: id('c4f1a2') as string | null,
+  branch: 'refs/heads/main' as string | null,
+  tree: id('7e3b90') as string | null,
+  why: null as string | null,
+  empty: false,
+  message: 'Round the budget total\n' as string | null,
+  hooks: ['pre-commit', 'commit-msg'],
+  identity: 'Aurora Dev <aurora@example.com>' as string | null,
+};
+
+/** `GIT_SWITCH_PLAN` for the engine's `release` branch from `main`: nothing changed, a post-checkout hook (GITAPP2k). */
+export const GIT_SWITCH_PLAN_ENGINE = {
+  from: 'main' as string | null,
+  head: id('c4f1a2') as string | null,
+  to: 'release',
+  dirty: false,
+  elsewhere: null as string | null,
+  why: null as string | null,
+  hooks: ['post-checkout'],
+};
+
+/** `GIT_STASH_PLAN` for the engine: two tracked files changed, one untracked, one session tree sharing the stash (GITAPP2k). */
+export const GIT_STASH_PLAN_ENGINE = {
+  head: id('c4f1a2') as string | null,
+  stash: null as string | null,
+  tracked: 2,
+  untracked: 1,
+  sharedWith: 1,
+  why: null as string | null,
+  hooks: [] as string[],
+  entries: [
+    { id: '3fa91c0e2b7d4a18c6e5d0b9a7f1e2c3d4b5a697', message: 'On release: before the switch', untracked: true, collides: 0 },
+    { id: '9bd20e51a7c3f4086d1e2b3c4a5f6978e0d1c2b3', message: '', untracked: false, collides: 2 },
+  ] as { id: string; message: string; untracked: boolean; collides: number }[],
+  applyWhy: null as string | null,
 };
 
 /**

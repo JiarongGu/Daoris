@@ -5,7 +5,9 @@ namespace Daoris.Driver;
 
 /// <summary>A brainstorm's request as its verb wrote it (BRAINSTORM1a, D176 point 1): written once, never changed.</summary>
 /// <param name="Agents">The adapters the request names, in order; empty for the machine's own agent.</param>
-public sealed record BrainstormRequest(string Id, string Question, string? Repository, IReadOnlyList<string> Agents, DateTimeOffset At);
+/// <param name="Sources">The repository-relative paths the asker named with <c>--source</c>; null where none (and for a request written before the option).</param>
+public sealed record BrainstormRequest(
+    string Id, string Question, string? Repository, IReadOnlyList<string> Agents, DateTimeOffset At, IReadOnlyList<string>? Sources = null);
 
 /// <summary>Where a brainstorm stands, as the driver alone writes it (the helper's file shape, D163).</summary>
 /// <param name="Packet">The digest of the packet frozen for it; null before the look froze one.</param>
@@ -69,7 +71,8 @@ public sealed class BrainstormFiles(string home)
     /// The request a person's terminal writes, atomically: its id, which names the brainstorm everywhere. An id the caller names
     /// (BRAINSTORM1b, D176 point 6) makes the request idempotent: one already on file under it is kept as it is, never written again.
     /// </summary>
-    public string WriteRequest(string question, string? repository, IReadOnlyList<string> agents, DateTimeOffset at, string? named = null)
+    public string WriteRequest(
+        string question, string? repository, IReadOnlyList<string> agents, DateTimeOffset at, string? named = null, IReadOnlyList<string>? sources = null)
     {
         var id = named ?? Guid.NewGuid().ToString("N")[..8];
         if (named is not null && File.Exists(PathOf(id, "request.json"))) return id;
@@ -85,6 +88,13 @@ public sealed class BrainstormFiles(string home)
             foreach (var agent in agents) writer.WriteStringValue(agent);
             writer.WriteEndArray();
             writer.WriteString("at", Moments.Write(at));
+            if (sources is { Count: > 0 })
+            {
+                writer.WriteStartArray("sources");
+                foreach (var source in sources) writer.WriteStringValue(source);
+                writer.WriteEndArray();
+            }
+
             writer.WriteEndObject();
         });
         return id;
@@ -110,7 +120,11 @@ public sealed class BrainstormFiles(string home)
             var agents = element.TryGetProperty("agents", out var named) && named.ValueKind == JsonValueKind.Array
                 ? named.EnumerateArray().Where(agent => agent.ValueKind == JsonValueKind.String).Select(agent => agent.GetString()!).ToList()
                 : [];
-            return new BrainstormRequest(id, question, Text(element, "repository"), agents, Moments.Read(element, "at") ?? DateTimeOffset.UnixEpoch);
+            IReadOnlyList<string> sources = element.TryGetProperty("sources", out var paths) && paths.ValueKind == JsonValueKind.Array
+                ? [.. paths.EnumerateArray().Where(path => path.ValueKind == JsonValueKind.String).Select(path => path.GetString()!)]
+                : [];
+            return new BrainstormRequest(
+                id, question, Text(element, "repository"), agents, Moments.Read(element, "at") ?? DateTimeOffset.UnixEpoch, sources);
         }
     }
 
@@ -197,7 +211,7 @@ public sealed class BrainstormFiles(string home)
                 {
                     Actor = Text(element, "actor"), Choice = Text(element, "choice"),
                     Asked = ServiceClient.ActorRead<ActorAsked>(element, "asked"),
-                    Ran = ServiceClient.ActorRead<ActorRan>(element, "ran"),
+                    Ran = ServiceClient.ActorRead<ActorRan>(element, "ran"), Why = Text(element, "why"),
                 });
             }
         }
@@ -226,6 +240,7 @@ public sealed class BrainstormFiles(string home)
             writer.WriteStartArray("codes");
             foreach (var code in pass.Codes) writer.WriteStringValue(code);
             writer.WriteEndArray();
+            if (pass.Why is not null) writer.WriteString("why", pass.Why);
             writer.WriteEndObject();
         });
 

@@ -11,8 +11,10 @@ namespace Daoris.Driver;
 /// <param name="Tier">The tier that found it: <c>meaning</c>, <c>words</c> or <c>files</c>.</param>
 /// <param name="Kept">The characters kept.</param>
 /// <param name="Of">The characters it had.</param>
+/// <param name="Reason">Why it is in the packet, in a sentence; null in a packet frozen before reasons were kept.</param>
 public sealed record BrainstormSource(
-    string Id, string Kind, string Path, int? First, int? Last, string? Revision, string Words, string Tier, string Text, int Kept, int Of);
+    string Id, string Kind, string Path, int? First, int? Last, string? Revision, string Words, string Tier, string Text, int Kept, int Of,
+    string? Reason = null);
 
 /// <summary>A source found and left out of the packet, with why: <c>bound</c>, <c>machine-path</c> or <c>removed</c>.</summary>
 public sealed record BrainstormLeftOut(string Path, string Why);
@@ -47,6 +49,9 @@ public static class BrainstormPackets
     public const string Words = BrainstormTier.Words;
     public const string Files = "files";
 
+    /// <summary>The tier of a source the asker named with <c>--source</c>: no search found it.</summary>
+    public const string NamedTier = "named";
+
     public const string LeftForBound = "bound";
     public const string LeftForMachinePath = "machine-path";
 
@@ -80,8 +85,8 @@ public static class BrainstormPackets
             var kept = Math.Min(Math.Min(each.Text.Length, bounds.Each), room);
             room -= kept;
             sources.Add(new BrainstormSource(
-                $"S{sources.Count + 1}", each.Kind, each.Path.Replace('\\', '/'), each.First, each.Last, revision, each.Words, tier ?? Files,
-                each.Text[..kept], kept, each.Text.Length));
+                $"S{sources.Count + 1}", each.Kind, each.Path.Replace('\\', '/'), each.First, each.Last, revision, each.Words, each.Tier ?? tier ?? Files,
+                each.Text[..kept], kept, each.Text.Length, each.Reason));
         }
 
         return new BrainstormPacket(question, repository, repository is null ? null : tier, sources, left);
@@ -134,7 +139,7 @@ public static class BrainstormPackets
                 lines.ValueKind == JsonValueKind.Array ? lines[0].GetInt32() : null,
                 lines.ValueKind == JsonValueKind.Array ? lines[1].GetInt32() : null,
                 Json.Text(source, "revision"), Json.Text(why, "words") ?? "", Json.Text(why, "tier") ?? "",
-                Json.Text(source, "text") ?? "", source.GetProperty("kept").GetInt32(), source.GetProperty("of").GetInt32()));
+                Json.Text(source, "text") ?? "", source.GetProperty("kept").GetInt32(), source.GetProperty("of").GetInt32(), Json.Text(why, "reason")));
         }
 
         var left = Items(root, "leftOut").Select(item => new BrainstormLeftOut(Json.Text(item, "path") ?? "", Json.Text(item, "why") ?? "")).ToList();
@@ -147,8 +152,39 @@ public static class BrainstormPackets
     private static string Named(BrainstormFound found) =>
         found.First is { } first ? $"{found.Path.Replace('\\', '/')}:{first}-{found.Last ?? first}" : found.Path.Replace('\\', '/');
 
+    /// <summary>
+    /// What a search found, in the order a packet wants it: designs, decisions and the code index first, other records next, session
+    /// records last, the search's own order kept within each; each given the reason it is in.
+    /// </summary>
+    public static IReadOnlyList<BrainstormFound> Prefer(IEnumerable<BrainstormFound> found) =>
+        [.. found.Select(each => (Found: each, Class: Preference(each)))
+            .OrderBy(each => each.Class)
+            .Select(each => each.Found with { Reason = each.Found.Reason ?? ReasonOf(each.Found, each.Class) })];
+
+    private static int Preference(BrainstormFound found)
+    {
+        var path = found.Path.Replace('\\', '/');
+        if (string.Equals(found.Kind, "record", StringComparison.OrdinalIgnoreCase) || path.Contains("/sessions/", StringComparison.OrdinalIgnoreCase)
+            || path.StartsWith("sessions/", StringComparison.OrdinalIgnoreCase))
+        {
+            return 2;
+        }
+
+        return found.Kind is "decision" or "index" || path.Contains("design", StringComparison.OrdinalIgnoreCase) ? 0 : 1;
+    }
+
+    private static string ReasonOf(BrainstormFound found, int preference) =>
+        preference switch
+        {
+            2 => "a session record, kept below designs and decisions",
+            0 when found.Kind == "decision" => "a decision that matched the question's terms",
+            0 when found.Kind == "index" => "the code index, where the question's terms matched",
+            0 => "a design that matched the question's terms",
+            _ => $"a {found.Kind} record that matched the question's terms",
+        };
+
     /// <summary>A path from a repository's root: never rooted, never a drive, never climbing out.</summary>
-    private static bool Relative(string path) =>
+    internal static bool Relative(string path) =>
         path.Length > 0 && !Path.IsPathRooted(path) && !path.Contains(':') && !path.StartsWith('/') && !path.StartsWith('\\')
         && !path.Replace('\\', '/').Split('/').Contains("..");
 
@@ -211,6 +247,7 @@ public static class BrainstormPackets
             writer.WriteStartObject("why");
             writer.WriteString("words", source.Words);
             writer.WriteString("tier", source.Tier);
+            if (source.Reason is { } reason) writer.WriteString("reason", reason);
             writer.WriteEndObject();
             writer.WriteNumber("kept", source.Kept);
             writer.WriteNumber("of", source.Of);
@@ -238,7 +275,11 @@ public static class BrainstormPackets
     }
 }
 
-/// <summary>The wordings a packet's search is asked in (D129 §2): the question as written, then its longer words alone.</summary>
+/// <summary>
+/// The wordings a packet's search is asked in (D129 §2; BRAINSTORMPACKET1): the question's longer terms, never the question as one
+/// phrase, so a long question matches by its terms; with many terms, each half alone too, so the search's limit does not fill
+/// with one half's hits. A question with no long term is asked as written.
+/// </summary>
 public static class BrainstormWordings
 {
     public static IReadOnlyList<string> Of(string question)
@@ -248,11 +289,11 @@ public static class BrainstormWordings
             .Where(word => word.Length >= 5)
             .Select(word => word.ToLowerInvariant())
             .Distinct(StringComparer.Ordinal)
-            .Take(8)
+            .Take(12)
             .ToList();
-        var second = string.Join(' ', words);
-        return second.Length > 0 && !string.Equals(second, question.Trim(), StringComparison.OrdinalIgnoreCase)
-            ? [question.Trim(), second]
-            : [question.Trim()];
+        if (words.Count == 0) return [question.Trim()];
+        if (words.Count < 4) return [string.Join(' ', words)];
+        var half = words.Count / 2;
+        return [string.Join(' ', words), string.Join(' ', words.Take(half)), string.Join(' ', words.Skip(half))];
     }
 }

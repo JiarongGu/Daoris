@@ -6,5 +6,11 @@
   "work.related.declares_other": "{{count}} sessions declare",
   "work.related.notRead": "not read here",
   "work.related.notReadSince": "not read here (last read {{at}})",
+  "work.related.notReadMany": "{{count}} session not read here",
+  "work.related.notReadMany_other": "{{count}} sessions not read here",
+  "work.related.notReadManySince": "{{count}} session not read here (last read {{at}})",
+  "work.related.notReadManySince_other": "{{count}} sessions not read here (last read {{at}})",
+  "work.related.ownNotRead": "its own tree was not read here",
+  "work.related.ownNotReadSince": "its own tree was not read here (last read {{at}})",
   "work.related.door": "Open session {{id}}"
 }

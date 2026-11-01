@@ -35,6 +35,8 @@ export type WorkspaceDefaults = {
     set?: LandingRule; landers: string[]; onSet: (rule: LandingRule | undefined) => void;
     /** A rule `driver.json` keeps for it that reads as no rule (FABRIC-GRAPH1d); absent where none. */
     unread?: UnreadLanding;
+    /** The driver's sentence for the rule it last refused, shown under *Save* (AGENTSPLACE1d). */
+    refusal?: string | null;
   } | null;
   /** The language its sessions write in (LANG1c), by the driver's table: `daoris driver language --workspace`. */
   language?: { set?: string; table: LanguageOption[]; onSet: (code: string | undefined) => void } | null;
@@ -456,6 +458,7 @@ function LandingDefault({ workspace, landing, busy, onOpenPlugin }: {
           clearable={false}
           onSave={(rule) => landing.onSet(rule)}
           onAccepting={setAccepting}
+          refusal={landing.refusal}
         />
       )}
     >

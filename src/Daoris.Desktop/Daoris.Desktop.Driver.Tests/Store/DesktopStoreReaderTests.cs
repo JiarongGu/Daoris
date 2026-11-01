@@ -74,7 +74,7 @@ public sealed class DesktopStoreReaderTests : IDisposable
 
         var reader = Reader();
 
-        Assert.Equal((DesktopStore.Steps.Count, 1), (reader.Version, reader.Writer));
+        Assert.Equal((DesktopStore.Steps.Count, DesktopStore.WriterStamp), (reader.Version, reader.Writer));
         Assert.Equal(new Dictionary<string, long> { ["settings"] = 2 }, reader.Revisions());
         Assert.Equal(["settings"], reader.Query("SELECT family FROM imports", row => row.GetString(0)));
     }
@@ -91,7 +91,7 @@ public sealed class DesktopStoreReaderTests : IDisposable
         Assert.Throws<SqliteException>(() => reader.Query("UPDATE store_version SET writer = 99", row => 0));
 
         Assert.Equal(before, Revisions(reader));
-        Assert.Equal(1, reader.Writer);
+        Assert.Equal(DesktopStore.WriterStamp, reader.Writer);
     }
 
     [Fact]
@@ -116,8 +116,8 @@ public sealed class DesktopStoreReaderTests : IDisposable
     {
         using (var newer = DesktopStore.Open(Db, new DesktopStoreOptions
         {
-            Writer = 2,
-            Steps = [.. DesktopStore.Steps, new StoreMigration(DesktopStore.Steps.Count + 1, 2, write => write.Execute("CREATE TABLE raised (x TEXT)"))],
+            Writer = DesktopStore.WriterStamp + 1,
+            Steps = [.. DesktopStore.Steps, new StoreMigration(DesktopStore.Steps.Count + 1, DesktopStore.WriterStamp + 1, write => write.Execute("CREATE TABLE raised (x TEXT)"))],
             Settled = () => StoreSettled.Yes,
         }))
         {
@@ -126,7 +126,7 @@ public sealed class DesktopStoreReaderTests : IDisposable
 
         var reader = Reader();
 
-        Assert.Equal((DesktopStore.Steps.Count + 1, 2), (reader.Version, reader.Writer));
+        Assert.Equal((DesktopStore.Steps.Count + 1, DesktopStore.WriterStamp + 1), (reader.Version, reader.Writer));
         Assert.Equal(1, reader.Revisions()["settings"]);
     }
 

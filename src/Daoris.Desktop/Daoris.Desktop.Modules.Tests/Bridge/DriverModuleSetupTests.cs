@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Modules.Tests;
@@ -67,11 +68,38 @@ public sealed class DriverModuleSetupTests : DriverModuleBridge
         Assert.False(File.Exists(DaorisHome.Entry(Home, HomeEntry.Permissions)));
     }
 
-    /// <summary>Every refusal that applies, at once, each with its code and the sentence naming the door that answers it.</summary>
+    /// <summary>
+    /// AGENTSPLACE1a2: what the repository builds shapes the quest's safe work, in the plan and in the press's ask alike, and a word that is
+    /// none of the four is the driver's sentence with nothing published.
+    /// </summary>
+    [Fact]
+    public async Task What_it_builds_shapes_the_plans_body_and_the_press_s_ask_and_an_unknown_one_is_refused()
+    {
+        Driven();
+        var module = await UpAsync();
+
+        var plan = await AnswerAsync(module, "SETUP_PLAN", new { repository = "atlas", builds = SetupBuilds.Desktop });
+        var plain = await AnswerAsync(module, "SETUP_PLAN", new { repository = "atlas" });
+        var refusal = await RefusalAsync(module, "SETUP_PLAN", new { repository = "atlas", builds = "game" });
+        var pressed = await AnswerAsync(module, "SETUP_PRESS", new { repository = "atlas", builds = SetupBuilds.Desktop });
+
+        Assert.Equal(SetupBuilds.Desktop, plan.GetProperty("builds").GetString());
+        Assert.Contains(SetupBuilds.Checks(SetupBuilds.Desktop), plan.GetProperty("body").GetString());
+        Assert.Equal(JsonValueKind.Null, plain.GetProperty("builds").ValueKind);
+        Assert.DoesNotContain("This repository builds", plain.GetProperty("body").GetString());
+        Assert.Contains(SetupBuilds.Problem("game"), refusal);
+        Assert.True(pressed.GetProperty("published").GetBoolean());
+        Assert.Contains(SetupBuilds.Checks(SetupBuilds.Desktop), Assert.Single(_world.Published).Sentence);
+    }
+
+    /// <summary>
+    /// Every refusal that applies, at once, each with its code and the sentence naming the door that answers it: here, an unadopted
+    /// repository on the pipe door and no tree of its own. Not being driven is none (AGENTSPLACE1b).
+    /// </summary>
     [Fact]
     public async Task A_plan_the_press_refuses_answers_every_refusal_with_its_code()
     {
-        (DriverConfig.Empty with { Adapter = "claude-code-acp" }).Save(DriverConfigPath);
+        DriverConfig.Empty.Save(DriverConfigPath);
         var module = await UpAsync();
 
         var plan = await AnswerAsync(module, "SETUP_PLAN", new { repository = "atlas" });
@@ -81,7 +109,9 @@ public sealed class DriverModuleSetupTests : DriverModuleBridge
             .Select(refusal => (refusal.GetProperty("code").GetString(), refusal.GetProperty("sentence").GetString()!))
             .ToList();
         Assert.Equal([SetupRefusals.NotDriven, SetupRefusals.NoOwnTree], refusals.Select(refusal => refusal.Item1));
-        Assert.Contains("`daoris driver drive atlas`", refusals[0].Item2);
+        Assert.Contains("protocol door", refusals[0].Item2);
+        Assert.Contains("`daoris driver trees atlas on`", refusals[1].Item2);
+        Assert.DoesNotContain("`daoris driver drive atlas`", refusals[0].Item2);
     }
 
     [Fact]
@@ -113,10 +143,28 @@ public sealed class DriverModuleSetupTests : DriverModuleBridge
         var pressed = await AnswerAsync(module, "SETUP_PRESS", new { repository = "atlas" });
 
         Assert.False(pressed.GetProperty("published").GetBoolean());
-        Assert.Contains("is not driven here", pressed.GetProperty("message").GetString());
+        Assert.Contains("not a tree of their own", pressed.GetProperty("message").GetString());
         Assert.False(pressed.GetProperty("plan").GetProperty("pressable").GetBoolean());
         Assert.Empty(_world.Published);
         Assert.False(File.Exists(DaorisHome.Entry(Home, HomeEntry.Permissions)));
+    }
+
+    /// <summary>
+    /// AGENTSPLACE1b: a press where the repository is not driven publishes all the same, and admits its quest alone in the file the loop
+    /// reads, leaving its driving as it was.
+    /// </summary>
+    [Fact]
+    public async Task A_press_where_it_is_not_driven_admits_its_quest_alone_in_the_loops_file()
+    {
+        (DriverConfig.Empty with { Adapter = "claude-code-acp" }).WithTrees("atlas", true).Save(DriverConfigPath);
+        var module = await UpAsync();
+
+        var pressed = await AnswerAsync(module, "SETUP_PRESS", new { repository = "atlas" });
+
+        Assert.True(pressed.GetProperty("published").GetBoolean());
+        var after = DriverConfig.Load(DriverConfigPath);
+        Assert.Equal(new Dictionary<string, string> { ["q1a2b3c4"] = "atlas" }, after.Admitted);
+        Assert.Empty(after.Drivable);
     }
 
     /// <summary>The lines and the exit code a route answered as <c>said</c> (RPC1e), which the terminal prints, joined.</summary>

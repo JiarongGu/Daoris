@@ -36,6 +36,7 @@ public sealed class OwnerSetCensusTests
         ["PLUGIN_UPDATE"] = OwnerNone.MachineSetting, // a plugin replaced, by its id
         ["PLUGIN_NEW"] = OwnerNone.MachineSetting, // a plugin made in a folder, by its id
         ["PLUGIN_TRY"] = OwnerNone.MachineSetting, // a plugin tried from a folder, by its id
+        ["WORKFLOW_SAVE"] = OwnerNone.MachineSetting, // a version of one of the machine's saved workflows, by its id
         ["ACCOUNT_USE"] = OwnerNone.MachineSetting, // an agent's account's use, by the account's ids and the workspaces it serves
         ["START_CHAT"] = OwnerNone.OwnConversation, // a conversation begun in a repository: no quest, and its record is a new conversation's
         ["START_HELP"] = OwnerNone.OwnConversation, // Ask Daoris begun in a workspace: no quest

@@ -175,8 +175,18 @@ public static class PipeWording
         Row("RECOVERY_DROP", W("repository", PipeRole.Repository));
         Row("WITHDRAW_LANDING_BRANCH", W("repository", PipeRole.Repository), W("why", PipeRole.Words));
         Row("TREES_SYNC", W("repository", PipeRole.Repository));
+        Row("GIT_REF_CREATE", W("repository", PipeRole.Repository), W("name", PipeRole.Words));
+        Row("GIT_REF_UNDO", W("repository", PipeRole.Repository));
+        Row("GIT_REF_DELETE", W("repository", PipeRole.Repository), W("name", PipeRole.Words));
+        Row("GIT_REF_RENAME", W("repository", PipeRole.Repository), W("name", PipeRole.Words), W("to", PipeRole.Words));
+        Row("GIT_REF_FINISH", W("repository", PipeRole.Repository));
+        Row("GIT_FETCH", W("repository", PipeRole.Repository));
+        Row("GIT_HISTORY_EDIT", W("repository", PipeRole.Repository), W("branch", PipeRole.Words));
         Row("SETUP_PRESS", W("repository", PipeRole.Repository));
         Row("WORKFLOW_LANDED", W("repository", PipeRole.Repository));
+        Row("WORKFLOW_USE", W("repository", PipeRole.Repository), W("workflow", PipeRole.Form), W("kind", PipeRole.Form));
+        Row("WORKFLOW_KIND", W("kind", PipeRole.Form), W("label", PipeRole.Words));
+        Row("WORKFLOW_SAVE", W("id", PipeRole.Form), W("from", PipeRole.Form), W("name", PipeRole.Words));
         Row("INTEGRATION_GATES", W("repository", PipeRole.Repository));
         Row("WORKFLOW_VERIFY", W("repository", PipeRole.Repository));
         Row("SET_DRIVABLE", W("repository", PipeRole.Repository));

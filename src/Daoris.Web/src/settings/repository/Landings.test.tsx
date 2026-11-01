@@ -3,7 +3,8 @@ import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { describe, expect, it, vi } from 'vitest';
 import { useState } from 'react';
-import { AcceptingNote, type Accepting, LandingField, type LandingRule } from './Landings';
+import i18n from '../../locales/i18n';
+import { AcceptingNote, type Accepting, LandingField, landingIntegrateSays, type LandingRule } from './Landings';
 
 // WSR1 (D87): how work lands, set as `daoris driver landing` sets it from a terminal (D50). Daoris never pushes. The
 // rule's control is one, on a workspace's Setup and a repository's (UX6f, UX6g; D150 §4.2, §4.3), so its behaviour is
@@ -241,5 +242,83 @@ describe("the landing rule's ticket key and squash", () => {
     expect(screen.queryByRole('checkbox', { name: 'Squash into one commit' })).toBeNull();
     await user.click(screen.getByRole('button', { name: 'Save' }));
     expect(onSet).toHaveBeenLastCalledWith({ workspace: 'aurora', form: 'merge' });
+  });
+});
+
+/**
+ * AGENTSPLACE1d: a branch rule's `integrate` has its form here: ticked, it offers each choice `LandingKey` judges and sends them as an
+ * object; unticked where it stood, it sends null; and the driver's refusal stands under *Save* in its own sentence, the page judging nothing.
+ */
+describe("the landing rule's integrate form", () => {
+  const drawIntegrating = (set: LandingRule | undefined, onSet = vi.fn(), refusal: string | null = null) => {
+    render(
+      <Tooltip.Provider>
+        <section aria-label="forge">
+          <LandingField name="forge" set={set} inherited={MERGE} landers={[]} refusal={refusal} onSave={(rule) => onSet({ workspace: 'forge', ...rule })} onAccepting={() => {}} />
+        </section>
+      </Tooltip.Provider>,
+    );
+    return onSet;
+  };
+
+  const says = { form: 'branch', integrate: { batch: 4, order: 'arrival', gates: 'declared' } };
+
+  it('is offered on a branch only, and sends the choices made as the file writes them', async () => {
+    const onSet = drawIntegrating(undefined);
+    const user = userEvent.setup();
+    const forge = screen.getByRole('region', { name: 'forge' });
+
+    expect(within(forge).queryByRole('checkbox', { name: 'Integrate into the line' })).toBeNull();
+    await user.click(within(forgeForm()).getByRole('radio', { name: 'Branch' }));
+    await user.click(within(forge).getByRole('checkbox', { name: 'Integrate into the line' }));
+    await user.type(within(forge).getByRole('textbox', { name: 'Members per candidate in forge' }), '4');
+    await choose("The order forge's work is integrated in", 'Oldest first');
+    await choose('The gates a candidate of forge runs', 'Gates declared');
+    await user.click(forgeSave());
+
+    expect(onSet).toHaveBeenLastCalledWith({
+      workspace: 'forge', form: 'branch', pattern: 'feature/{quest}-{slug}', squash: false,
+      integrate: { batch: 4, order: 'arrival', gates: 'declared' },
+    });
+  });
+
+  it('starts from the rule it stands on, withdraws it with null when unticked, and sends nothing for what stands', async () => {
+    const onSet = drawIntegrating({ form: 'branch', pattern: 'work/{quest}', integrate: { batch: 4, order: 'arrival', gates: 'declared' } });
+    const user = userEvent.setup();
+    const forge = screen.getByRole('region', { name: 'forge' });
+
+    expect(within(forge).getByRole('checkbox', { name: 'Integrate into the line' })).toBeChecked();
+    expect(within(forge).getByRole('textbox', { name: 'Members per candidate in forge' })).toHaveValue('4');
+    expect(forgeSave()).toBeDisabled();
+    await user.click(within(forge).getByRole('checkbox', { name: 'Integrate into the line' }));
+    await user.click(forgeSave());
+
+    expect(onSet).toHaveBeenLastCalledWith({ workspace: 'forge', form: 'branch', pattern: 'work/{quest}', squash: false, integrate: null });
+  });
+
+  it("shows the driver's refusal under Save as it came, and a batch the page does not judge goes to the driver", async () => {
+    const said = '`integrate.batch` is how many members a candidate holds, 1 to 8.';
+    const onSet = drawIntegrating({ form: 'branch', pattern: 'work/{quest}', integrate: {} }, vi.fn(), said);
+    const user = userEvent.setup();
+    const forge = screen.getByRole('region', { name: 'forge' });
+
+    expect(within(forge).getByRole('alert')).toHaveTextContent('integrate.batch is how many members a candidate holds, 1 to 8.');
+    await user.type(within(forge).getByRole('textbox', { name: 'Members per candidate in forge' }), '9');
+    await user.click(forgeSave());
+    expect(onSet).toHaveBeenLastCalledWith(expect.objectContaining({ integrate: { batch: 9 } }));
+  });
+
+  it('is worded in 中文 as in English, and its row says the batch, order and gates', async () => {
+    expect(landingIntegrateSays(i18n.t.bind(i18n), says)).toEqual(['Integrated into the line: batch 4, oldest first, gates declared.']);
+    expect(landingIntegrateSays(i18n.t.bind(i18n), { form: 'merge' })).toEqual([]);
+    await i18n.changeLanguage('zh');
+    try {
+      drawIntegrating({ form: 'branch', pattern: 'work/{quest}', integrate: {} });
+      expect(screen.getByRole('checkbox', { name: '集成到主线' })).toBeChecked();
+      expect(screen.getByRole('group', { name: '工作如何集成到 forge 的主线' })).toBeInTheDocument();
+      expect(landingIntegrateSays(i18n.t.bind(i18n), says)).toEqual(['集成到主线：每个候选 4 个成员，先到先集成，按声明运行关卡。']);
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 });

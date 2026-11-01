@@ -100,9 +100,10 @@ internal sealed class TreeSquashes(TreeContext context)
     /// <param name="head">The session's tip, judged to grow from <paramref name="grewFrom"/> with something new.</param>
     /// <param name="grewFrom">The session tip the record says was squashed last, or the branch's own tip where it says none.</param>
     /// <param name="against">The line's form, from which a plugin is told every commit the branch holds now (D100).</param>
+    /// <param name="delivering">The delivery it performs (LANDNODE1b2), whose transaction moves the branch in its phase; null moves it as before.</param>
     internal static async Task<Branched> AdvanceSquashedAsync(
         string root, string name, string standsAt, string branch, string? line, string head, string grewFrom, bool handedOn,
-        string? against, LandingSubject squash, CancellationToken ct)
+        string? against, LandingSubject squash, CancellationToken ct, TreeDelivering? delivering = null)
     {
         var (logCode, added, logErr) = await WorkingTree.GitAsync(
             root, ["log", "--reverse", "--format=%H%x09%s", $"{grewFrom}..{head}"], ct).ConfigureAwait(false);
@@ -117,8 +118,10 @@ internal sealed class TreeSquashes(TreeContext context)
         if (made is null) return new TreeLanding(false, $"git would not make the squashed commit for `{name}`: {why} Nothing was changed.");
 
         // Compare-and-swap from the tip judged: git refuses where the branch moved since, and nothing is forced.
-        var (moved, _, moveErr) = await WorkingTree.GitAsync(
-            root, ["update-ref", "-m", $"daoris: {branch} squashed onto {name}", $"refs/heads/{name}", made, standsAt], ct).ConfigureAwait(false);
+        var (moved, _, moveErr) = delivering is null
+            ? await WorkingTree.GitAsync(
+                root, ["update-ref", "-m", $"daoris: {branch} squashed onto {name}", $"refs/heads/{name}", made, standsAt], ct).ConfigureAwait(false)
+            : await delivering.WriteAsync(root, $"refs/heads/{name}", standsAt, made, ct).ConfigureAwait(false);
         if (moved != 0)
         {
             return new TreeLanding(false, $"git would not move `{name}` on from {TextBounds.ShortCommit(standsAt, 8)}: "

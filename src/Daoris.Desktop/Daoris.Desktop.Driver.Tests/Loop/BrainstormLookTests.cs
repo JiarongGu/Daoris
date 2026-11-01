@@ -414,7 +414,8 @@ public sealed class BrainstormLookTests : IDisposable
 
         await LookAsync(looked);
 
-        Assert.Equal(2, asked.Count);
+        Assert.Single(asked);
+        Assert.Equal("daily report", asked[0].Words);
         Assert.All(asked, each => Assert.Equal("reports", each.Repository));
         var packet = BrainstormPackets.Read(Files.PacketBytes(id)!)!;
         Assert.Equal(("reports", "words"), (packet.Repository, packet.Tier));

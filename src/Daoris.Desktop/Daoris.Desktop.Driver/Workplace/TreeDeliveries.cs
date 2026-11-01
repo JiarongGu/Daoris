@@ -1,0 +1,242 @@
+using System.Text.Json;
+using System.Text.RegularExpressions;
+
+namespace Daoris.Driver;
+
+/// <summary>
+/// The delivery a landing performs (LANDNODE1b2; the land node design §3 step 4): the store and the claim its phases are written under. The
+/// landing reads its intent from the store, and the intent chooses the method, the branch, the line and the pinned tip; no live rule does.
+/// </summary>
+public sealed record TreeDelivery(DeliveryStore Store, DeliveryClaim Claim)
+{
+    /// <summary>The test seam: run with a phase's name after its effect and before its outcome is written. Null in production.</summary>
+    internal Func<string, Task>? Seam { get; init; }
+}
+
+/// <summary>
+/// A landing performing its delivery (LANDNODE1b2): the intent read once, and each git effect's entry written ahead of it and its outcome
+/// after, read back and never assumed: <i>prepared</i> from the start of the landing's judgement to the commit its ref is written at,
+/// <i>ref written</i>, <i>recorded</i>. The branch's ref goes through one <see cref="RefTransaction"/> under the checkout's lock held alone
+/// (GITLOCK1), inside the tree's landing hold (LANDRACE1) the landing took first; a merge's line is moved by the promotion's effect, which
+/// takes that lock itself. The landing's ownership is its landing record: no act-journal mark is made.
+/// </summary>
+internal sealed class TreeDelivering
+{
+    private static readonly Regex FullId = new("^(?:[0-9a-f]{40}|[0-9a-f]{64})$", RegexOptions.CultureInvariant);
+
+    private readonly TreeDelivery _delivery;
+    private readonly string _home;
+    private readonly string _repository;
+    private readonly HashSet<string> _done = new(StringComparer.Ordinal);
+    private string? _open;
+
+    private TreeDelivering(TreeDelivery delivery, DeliveryRecord record, string home, string repository, bool squash)
+    {
+        (_delivery, Record, _home, _repository, Squash) = (delivery, record, home, repository, squash);
+    }
+
+    /// <summary>The delivery as the store held it when the landing began.</summary>
+    public DeliveryRecord Record { get; }
+
+    public DeliveryIntent Intent => Record.Intent;
+
+    /// <summary>Whether its resolved options squash the work into one commit.</summary>
+    public bool Squash { get; }
+
+    /// <summary>Who accepted it, as the landing record keeps it: the standing automatic authority, or the person.</summary>
+    public string Accepted => Record.Authorization.Authority == DeliveryAuthorities.Automatic ? AcceptedBy.Auto : AcceptedBy.Person;
+
+    /// <summary>The preparation's intended effect, as its entry says it.</summary>
+    public string Preparing => Intent.Method == DeliveryMethods.Merge
+        ? $"merge {Intent.Tip} into `{Intent.Line}`"
+        : $"{Intent.Method}: `{Intent.Branch}` at {Intent.Tip}" + (Squash ? ", squashed" : "");
+
+    /// <summary>
+    /// The delivery <paramref name="delivery"/>'s claim names, read for a landing of <paramref name="repository"/>'s tree; or why it does not
+    /// land: none, held, settled or claimed by another run, of another repository, or an intent or option this build does not land.
+    /// </summary>
+    public static (TreeDelivering? Delivering, string? Refused) Read(TreeDelivery delivery, string home, string repository)
+    {
+        var record = delivery.Store.Delivery(delivery.Claim.Key);
+        var intent = record?.Intent;
+        var why = record switch
+        {
+            null => "the store holds no such delivery",
+            { Held: true } => "it was written by a newer Daoris, which this build reads and never lands",
+            { Unresolved: false } => $"it is settled ({record.Settled})",
+            _ when record.ClaimRun != delivery.Claim.Run || record.ClaimGeneration != delivery.Claim.Generation =>
+                $"run {record.ClaimRun} holds it at generation {record.ClaimGeneration}",
+            _ when !string.Equals(intent!.Repository, repository, StringComparison.OrdinalIgnoreCase) => $"it lands `{intent.Repository}`, not `{repository}`",
+            _ when !DeliveryMethods.All.Contains(intent.Method, StringComparer.Ordinal) => $"`{intent.Method}` is no method this build lands",
+            _ when !FullId.IsMatch(intent.Tip) => $"its tip `{intent.Tip}` is no full commit id",
+            _ when intent.Method != DeliveryMethods.Merge && !(intent.Branch is { } named && BranchName.IsValid(named)) =>
+                $"its branch `{intent.Branch}` is no branch name git would take",
+            _ => null,
+        };
+
+        var squash = record is null ? false : SquashOf(record.Authorization.Options);
+        why ??= squash switch
+        {
+            null => "its resolved options do not read as options, so whether it squashes is unknown",
+            true when intent!.Method == DeliveryMethods.Integrate => "an integrate is never squashed, since its history is the line's",
+            true when intent!.Method == DeliveryMethods.Merge => "a squashed merge is not made by this build, and a merge commit nobody chose would be",
+            _ => null,
+        };
+
+        return why is null
+            ? (new TreeDelivering(delivery, record!, home, repository, squash!.Value), null)
+            : (null, $"delivery {delivery.Claim.Key[..12]}: {why}");
+    }
+
+    /// <summary>
+    /// The landing as its delivery lands it: the method's form and squash the intent's; of the rule only what setup keeps (its tidy), no plugin
+    /// (none is told here, row 1e), no switch and no integrate, since the delivery's authorization and the next node hold those.
+    /// </summary>
+    public Landing Over(Landing live) =>
+        new(live.Rule with
+        {
+            Form = Intent.Method == DeliveryMethods.Merge ? LandingForm.Merge : LandingForm.Branch,
+            Pattern = null, Plugin = null, AutoAccept = false, Squash = Squash, Integrate = null,
+        }, live.Source);
+
+    /// <summary>Write the phase's entry ahead of its effect; the store's refusal in its words where it may not be.</summary>
+    public string? Begin(string phase, string intended)
+    {
+        try
+        {
+            _delivery.Store.Begin(_delivery.Claim, phase, intended);
+        }
+        catch (DeliveryRefusedException refused)
+        {
+            return $"delivery {refused.Key[..12]}: {refused.Why}";
+        }
+
+        _open = phase;
+        return null;
+    }
+
+    /// <summary>
+    /// The landing's branch ref written from its preparation, answered in the shape of git's so the caller's words stay: the checkout held alone,
+    /// the preparation done at <paramref name="value"/>, the ref's entry written ahead, one ref transaction, the ref read back and its outcome
+    /// written. Where another holds the checkout nothing is written, and the preparation stands for the landing's refusal to withdraw.
+    /// </summary>
+    /// <param name="old">The tip judged, which the ref moves from; null makes it where it is absent; equal to <paramref name="value"/>, it is verified there.</param>
+    public async Task<(int Code, string Stdout, string Stderr)> WriteAsync(string root, string reference, string? old, string value, CancellationToken ct)
+    {
+        using var held = TreeLock.TryWriting(_home, root, _repository, TreeLock.Landing);
+        if (held is null) return (1, "", $"{TreeLock.Held(_repository, TreeLock.HolderOf(_home, root))}, so the branch was not written; accept again once it is done");
+
+        var (transaction, intended) = old is null ? (new RefTransaction().Create(reference, value), $"`{reference}` made at {value}")
+            : old == value ? (new RefTransaction().Verify(reference, value), $"`{reference}` standing at {value}")
+            : (new RefTransaction().Update(reference, old, value), $"`{reference}` moved from {old} to {value}");
+        End(DeliveryPhases.Prepared, DeliveryOutcomes.Done, value, $"the commit `{reference}` is written at is {value}");
+        if (Begin(DeliveryPhases.RefWritten, intended) is { } refused) return (1, "", refused);
+
+        var run = await transaction.RunAsync(root, ct).ConfigureAwait(false);
+        await SeamAsync(DeliveryPhases.RefWritten).ConfigureAwait(false);
+        var (read, stands) = await StandsAsync(root, reference, ct).ConfigureAwait(false);
+        // Git's refusal moved nothing; no answer is told by the ref itself.
+        var outcome = run.Done || (run.Unanswered && read && stands == value) ? DeliveryOutcomes.Done
+            : !run.Unanswered || (read && stands == old) ? DeliveryOutcomes.Withdrawn
+            : DeliveryOutcomes.Unknown;
+        End(DeliveryPhases.RefWritten, outcome, read ? stands ?? "absent" : null, outcome == DeliveryOutcomes.Done ? intended : run.Said);
+        return outcome == DeliveryOutcomes.Done ? (0, "", "") : (1, "", run.Said);
+    }
+
+    /// <summary>A merge's press about to move the line: the preparation done at the commit merged, the line's entry written ahead.</summary>
+    public string? BeginMerge(string line, string commit)
+    {
+        End(DeliveryPhases.Prepared, DeliveryOutcomes.Done, commit, $"the commit merged into `{line}` is {commit}");
+        return Begin(DeliveryPhases.RefWritten, $"`refs/heads/{line}` to hold {commit}");
+    }
+
+    /// <summary>
+    /// What the merge's press came to, read from the line: done where it holds the commit, withdrawn where the press refused and it does not,
+    /// unknown where git cannot say or it merged and the line does not hold it. A merge keeps no landing record of its own: the line holding
+    /// the commit, through the integration's request the press settled, is its record, and that is what its <i>recorded</i> reads.
+    /// </summary>
+    public async Task MergedAsync(string root, string line, string commit, string? refused, CancellationToken ct)
+    {
+        await SeamAsync(DeliveryPhases.RefWritten).ConfigureAwait(false);
+        var (_, tip) = await StandsAsync(root, $"refs/heads/{line}", ct).ConfigureAwait(false);
+        var (code, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", commit, $"refs/heads/{line}"], ct).ConfigureAwait(false);
+        var outcome = code == 0 ? DeliveryOutcomes.Done : code == 1 && refused is not null ? DeliveryOutcomes.Withdrawn : DeliveryOutcomes.Unknown;
+        End(DeliveryPhases.RefWritten, outcome, tip, outcome == DeliveryOutcomes.Done ? $"`{line}` holds {commit}" : refused ?? $"`{line}` does not hold {commit}");
+        if (outcome != DeliveryOutcomes.Done || Begin(DeliveryPhases.Recorded, $"`{line}` recorded holding {commit}") is not null) return;
+        await SeamAsync(DeliveryPhases.Recorded).ConfigureAwait(false);
+        End(DeliveryPhases.Recorded, DeliveryOutcomes.Done, tip, $"the integration's request is settled and `{line}` holds the commit at {tip}");
+    }
+
+    /// <summary>
+    /// The landing record written by <paramref name="write"/> (the landing's own write and words), its entry ahead and its outcome read back by
+    /// <paramref name="read"/>: done where the record holds <paramref name="branch"/> at <paramref name="tip"/>, else withdrawn. Refused ahead,
+    /// nothing is recorded, and the landing says so.
+    /// </summary>
+    public async Task<TreeLanding> RecordAsync(TreeLanding landed, string branch, string tip, Func<TreeLanding> write, Func<LandedBranch?> read)
+    {
+        if (Begin(DeliveryPhases.Recorded, $"`{branch}` recorded at {tip}") is { } refused)
+        {
+            return landed with { Message = landed.Message + $" Its delivery did not record it, so its clean-up will not judge it: {refused}." };
+        }
+
+        var written = write();
+        await SeamAsync(DeliveryPhases.Recorded).ConfigureAwait(false);
+        var holds = read() is { } entry && string.Equals(entry.Tip, tip, StringComparison.OrdinalIgnoreCase);
+        End(DeliveryPhases.Recorded, holds ? DeliveryOutcomes.Done : DeliveryOutcomes.Withdrawn, holds ? $"{LandedBranches.FileName}: `{branch}` at {tip}" : null,
+            holds ? $"the landing record holds `{branch}` at {tip}" : $"the landing record does not hold `{branch}` at {tip}");
+        return written;
+    }
+
+    /// <summary>
+    /// The landing ended as <paramref name="landed"/> says: a preparation still standing is withdrawn with the landing's words, a refusal having
+    /// made nothing, and the delivery stays unresolved, to be tried again or stopped; it is settled delivered once its method's reaching phase
+    /// is done, so a push and a pull request stay open for their plugin's phases.
+    /// </summary>
+    public TreeLanding Close(TreeLanding landed)
+    {
+        if (_open == DeliveryPhases.Prepared)
+        {
+            // Landed with its preparation standing is a landing that wrote its ref by no phase: read as neither.
+            End(DeliveryPhases.Prepared, landed.Landed ? DeliveryOutcomes.Unknown : DeliveryOutcomes.Withdrawn, null, landed.Message);
+        }
+
+        if (_done.Contains(DeliveryPhases.ReachOf(Intent.Method)))
+        {
+            _delivery.Store.Settle(_delivery.Claim, DeliverySettlements.Delivered, $"{Intent.Method} of {Intent.Tip} delivered");
+        }
+
+        return landed;
+    }
+
+    private void End(string phase, string outcome, string? evidence, string said)
+    {
+        _delivery.Store.End(_delivery.Claim, phase, outcome, evidence, said);
+        _open = null;
+        if (outcome == DeliveryOutcomes.Done) _done.Add(phase);
+    }
+
+    private Task SeamAsync(string phase) => _delivery.Seam?.Invoke(phase) ?? Task.CompletedTask;
+
+    /// <summary>Where <paramref name="reference"/> stands: read and absent (null), read at a commit, or not read.</summary>
+    private static async Task<(bool Read, string? At)> StandsAsync(string root, string reference, CancellationToken ct)
+    {
+        var (code, at, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", reference], ct).ConfigureAwait(false);
+        return code switch { 0 => (true, at.Trim()), 1 => (true, null), _ => (false, null) };
+    }
+
+    /// <summary>The <c>squash</c> of the resolved options: false where they name none, null where they are not an object or it is no boolean.</summary>
+    private static bool? SquashOf(string options)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(options);
+            if (document.RootElement.ValueKind != JsonValueKind.Object) return null;
+            if (!document.RootElement.TryGetProperty("squash", out var squash)) return false;
+            return squash.ValueKind switch { JsonValueKind.True => true, JsonValueKind.False => false, _ => null };
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+}

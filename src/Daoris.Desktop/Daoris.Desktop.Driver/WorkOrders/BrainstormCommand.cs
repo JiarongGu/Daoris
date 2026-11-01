@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 public static partial class BrainstormCommand
 {
     public const string Usage =
-        "usage: daoris-driver brainstorm \"<question>\" [--repository <name>] [--agents <a,b>] [--id <id>]\n"
+        "usage: daoris-driver brainstorm \"<question>\" [--repository <name>] [--agents <a,b>] [--source <path>]... [--id <id>]\n"
         + "       daoris-driver brainstorm show|send|stop|clear <id>\n"
         + "       daoris-driver brainstorm list";
 
@@ -48,6 +48,7 @@ public static partial class BrainstormCommand
         string? repository = null;
         string? named = null;
         IReadOnlyList<string> agents = [];
+        var sources = new List<string>();
         for (var at = 0; at < rest.Count; at += 2)
         {
             if (at + 1 >= rest.Count || rest[at + 1].StartsWith("--", StringComparison.Ordinal))
@@ -63,6 +64,15 @@ public static partial class BrainstormCommand
                     break;
                 case "--agents":
                     agents = [.. rest[at + 1].Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
+                    break;
+                case "--source":
+                    if (!BrainstormPackets.Relative(rest[at + 1].Trim()))
+                    {
+                        output.WriteLine($"daoris-driver: `--source {rest[at + 1]}` is not a path from the repository's root; name a document or a code file by its repository-relative path.");
+                        return 1;
+                    }
+
+                    if (!sources.Contains(rest[at + 1].Trim().Replace('\\', '/'), StringComparer.Ordinal)) sources.Add(rest[at + 1].Trim().Replace('\\', '/'));
                     break;
                 // The caller's own id (BRAINSTORM1b, D176 point 6): asked again under it, it is the same brainstorm, never a second spend.
                 case "--id" when IdShape().IsMatch(rest[at + 1]) && !BrainstormFiles.Reserved(rest[at + 1]):
@@ -88,9 +98,22 @@ public static partial class BrainstormCommand
         }
 
         repository = repository is { Length: > 0 } ? repository : null;
+        if (sources.Count > 0 && repository is null)
+        {
+            output.WriteLine("daoris-driver: `--source` names a path of a repository; name it with `--repository`.");
+            return 1;
+        }
+
+        if (sources.Count > DriverBrainstormLimits.MostSources)
+        {
+            output.WriteLine($"daoris-driver: a brainstorm takes at most {DriverBrainstormLimits.MostSources} named sources; {sources.Count} were named.");
+            return 1;
+        }
+
         if (named is not null && files.Request(named) is { } asked)
         {
-            if (asked.Question != question || !string.Equals(asked.Repository, repository, StringComparison.Ordinal) || !asked.Agents.SequenceEqual(agents, StringComparer.Ordinal))
+            if (asked.Question != question || !string.Equals(asked.Repository, repository, StringComparison.Ordinal) || !asked.Agents.SequenceEqual(agents, StringComparer.Ordinal)
+                || !(asked.Sources ?? []).SequenceEqual(sources, StringComparer.Ordinal))
             {
                 output.WriteLine($"daoris-driver: brainstorm `{named}` was asked with other words; an id names one brainstorm.");
                 return 1;
@@ -100,7 +123,7 @@ public static partial class BrainstormCommand
             return 0;
         }
 
-        var id = files.WriteRequest(question, repository, agents, now, named);
+        var id = files.WriteRequest(question, repository, agents, now, named, sources);
         output.WriteLine($"Brainstorm `{id}` asked. Daoris freezes its packet at its next look, from "
             + (repository is { Length: > 0 } ? $"its knowledge of `{repository}`" : "the question alone")
             + $"; with no Daoris running, it waits. Read it with `daoris-driver brainstorm show {id}` before you send it.");
@@ -136,6 +159,16 @@ public static partial class BrainstormCommand
             BrainstormStates.Running => "Sent, and running.",
             _ => $"Ended ({state.Code ?? "no document"}): {(state.Code == BrainstormStates.NoAgent ? "no agent could answer, and the packet is kept" : "no document was kept")}.",
         });
+        // Where no document was kept, the passes are what there is to read: each with its state, its codes and the walk's sentence.
+        if (state.State == BrainstormStates.Ended)
+        {
+            foreach (var pass in files.ReadPasses(id))
+            {
+                output.WriteLine($"  {pass.By.Pass} on `{pass.By.Adapter}` (maker {pass.By.Maker}): {pass.State}"
+                    + (pass.Codes.Count > 0 ? $" ({string.Join(", ", pass.Codes)})" : "") + (pass.Why is { } why ? $": {why}" : ""));
+            }
+        }
+
         _ = request;
         return 0;
     }
@@ -166,7 +199,8 @@ public static partial class BrainstormCommand
             text.Append("\n").Append(source.Id).Append("  ").Append(source.Kind).Append("  ").Append(source.Path)
                 .Append(source.First is { } first ? $":{first}-{source.Last ?? first}" : "")
                 .Append(source.Revision is { } revision ? $" at {revision[..Math.Min(12, revision.Length)]}" : " at a revision not read")
-                .Append($"  ({source.Kept} of {source.Of} characters; found by \"{source.Words}\", {source.Tier})\n");
+                .Append($"  ({source.Kept} of {source.Of} characters; found by \"{source.Words}\", {source.Tier}")
+                .Append(source.Reason is { } reason ? $"; in as {reason})\n" : ")\n");
             foreach (var line in source.Text.Split('\n')) text.Append("    ").Append(line.TrimEnd('\r')).Append('\n');
         }
 
@@ -268,4 +302,7 @@ public static class DriverBrainstormLimits
 {
     /// <summary>At most four makers: the policy's own bound (<see cref="BrainstormRules.MostAgents"/>).</summary>
     public const int MostAgents = BrainstormRules.MostAgents;
+
+    /// <summary>At most twelve named sources: half the packet's sources, so the search keeps room beside them.</summary>
+    public const int MostSources = 12;
 }

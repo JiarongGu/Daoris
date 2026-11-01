@@ -328,6 +328,16 @@ public sealed class PipeCensusTests
     // The person's alone: a yes, a delete, a clear, their words, a standing choice.
     [InlineData("DAORIS.DRIVER", "LAND_SESSION_TREE", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "DISCARD_SESSION_TREE", PipeClass.Person)]
+    // GITAPP2c: a ref made in a repository and its undo write the person's repository through git.
+    [InlineData("DAORIS.DRIVER", "GIT_REF_CREATE", PipeClass.Person)]
+    [InlineData("DAORIS.DRIVER", "GIT_REF_UNDO", PipeClass.Person)]
+    [InlineData("DAORIS.DRIVER", "GIT_REF_DELETE", PipeClass.Person)]
+    [InlineData("DAORIS.DRIVER", "GIT_REF_RENAME", PipeClass.Person)]
+    [InlineData("DAORIS.DRIVER", "GIT_REF_FINISH", PipeClass.Person)]
+    [InlineData("DAORIS.DRIVER", "GIT_FETCH", PipeClass.Person)]
+    [InlineData("DAORIS.DRIVER", "GIT_FETCH_PLAN", PipeClass.Open)]
+    // GITAPP2m: a branch's history edited moves the person's branch; its plan form is open (a rule on `plan`).
+    [InlineData("DAORIS.DRIVER", "GIT_HISTORY_EDIT", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "SWEEP", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "RECOVERY_DROP", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "WORK_HELD", PipeClass.Person)]
@@ -390,6 +400,10 @@ public sealed class PipeCensusTests
     [InlineData("SYSTEM_SPACE_FREE", """{"plan":false,"units":[]}""", PipeClass.Person)]
     [InlineData("SYSTEM_SPACE_FREE", """{"units":[{"kind":"logs","id":"2026-09-01.driver.jsonl"}]}""", PipeClass.Person)]
     [InlineData("SYSTEM_SPACE_FREE", """{"plan":true,"Plan":"yes"}""", PipeClass.Person)]
+    // GITAPP2m: a history edit's plan is a look; its press, pinned or not, moves the branch.
+    [InlineData("GIT_HISTORY_EDIT", """{"repository":"engine","edit":"rebase","branch":"topic","target":"main","plan":true}""", PipeClass.Open)]
+    [InlineData("GIT_HISTORY_EDIT", """{"repository":"engine","edit":"rebase","branch":"topic","target":"main"}""", PipeClass.Person)]
+    [InlineData("GIT_HISTORY_EDIT", """{"edit":"pick","plan":false,"said":true}""", PipeClass.Person)]
     public void A_route_that_is_a_look_and_a_press_is_classed_by_its_payload(string route, string payload, PipeClass expected)
     {
         using var document = JsonDocument.Parse(payload);
@@ -498,6 +512,13 @@ public sealed class PipeCensusTests
     [InlineData("LAND_ASK", PipeDrain.Waits)]
     [InlineData("DISCARD_SESSION_TREE", PipeDrain.Waits)]
     [InlineData("SYSTEM_SPACE_FREE", PipeDrain.Waits)]
+    [InlineData("GIT_REF_CREATE", PipeDrain.Waits)]
+    [InlineData("GIT_REF_UNDO", PipeDrain.Waits)]
+    [InlineData("GIT_REF_DELETE", PipeDrain.Waits)]
+    [InlineData("GIT_REF_RENAME", PipeDrain.Waits)]
+    [InlineData("GIT_REF_FINISH", PipeDrain.Waits)]
+    [InlineData("GIT_FETCH", PipeDrain.Waits)]
+    [InlineData("GIT_HISTORY_EDIT", PipeDrain.Waits)]
     [InlineData("ROLE_ACT", PipeDrain.Waits)]
     public void A_drain_holds_what_starts_work_or_changes_a_repository_and_lets_the_rest_through(string route, PipeDrain expected)
     {
@@ -522,7 +543,7 @@ public sealed class PipeCensusTests
         [
             "SET_HELPERS", "SET_CAP", "SET_ACTOR", "SET_ROLE", "SET_COOLOFF", "ACCOUNT_USE", "HARNESSES_REFRESH", "SET_HAND_OVER", "SET_OPINION",
             "SET_LANDING", "SET_REVIEW", "SET_LINE", "OPINION_ANYWAY", "OPINION_MYSELF", "WORK_HELD", "WORKFLOW_NODE", "WORK_RESUME",
-            "WORKFLOW_LANDED", "WORKFLOW_VERIFY", "SET_KEEP", "TRUST_FOLDER", "PLUGIN_ACTION", "PLUGIN_ADD", "PLUGIN_INSTALL", "PLUGIN_UPDATE",
+            "WORKFLOW_LANDED", "WORKFLOW_SAVE", "WORKFLOW_USE", "WORKFLOW_KIND", "WORKFLOW_VERIFY", "SET_KEEP", "TRUST_FOLDER", "PLUGIN_ACTION", "PLUGIN_ADD", "PLUGIN_INSTALL", "PLUGIN_UPDATE",
         ];
         string[] inert =
         [

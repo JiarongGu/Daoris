@@ -297,8 +297,8 @@ public sealed class BindingsTests : IDisposable
         // A newer Daoris migrated the store and stamped it past this build's: this build reads what it knows and writes nothing.
         using (DesktopStore.Open(Db, new DesktopStoreOptions
         {
-            Writer = 2,
-            Steps = [.. DesktopStore.Steps, new StoreMigration(DesktopStore.Steps.Count + 1, 2, write => write.Execute("CREATE TABLE raised (x TEXT)"))],
+            Writer = DesktopStore.WriterStamp + 1,
+            Steps = [.. DesktopStore.Steps, new StoreMigration(DesktopStore.Steps.Count + 1, DesktopStore.WriterStamp + 1, write => write.Execute("CREATE TABLE raised (x TEXT)"))],
             Settled = () => StoreSettled.Yes,
         }))
         {
@@ -366,8 +366,8 @@ public sealed class BindingsTests : IDisposable
         OlderKeep("s1", "claude-code-acp", "c-1-older");
         using (DesktopStore.Open(Db, new DesktopStoreOptions
         {
-            Writer = 2,
-            Steps = [.. DesktopStore.Steps, new StoreMigration(DesktopStore.Steps.Count + 1, 2, write => write.Execute("CREATE TABLE raised (x TEXT)"))],
+            Writer = DesktopStore.WriterStamp + 1,
+            Steps = [.. DesktopStore.Steps, new StoreMigration(DesktopStore.Steps.Count + 1, DesktopStore.WriterStamp + 1, write => write.Execute("CREATE TABLE raised (x TEXT)"))],
             Settled = () => StoreSettled.Yes,
         }))
         {
@@ -439,7 +439,7 @@ public sealed class BindingsTests : IDisposable
         Assert.Equal(1, conversations.ImportFiles().Imported);
 
         using var store = DesktopStore.Open(Db, new DesktopStoreOptions { Settled = () => StoreSettled.Yes });
-        Assert.Equal((DesktopStore.Steps.Count, 1), store.Stamp);
+        Assert.Equal((DesktopStore.Steps.Count, DesktopStore.WriterStamp), store.Stamp);
         var columns = store.Query("SELECT name, \"notnull\" FROM pragma_table_info('bindings')", row => (row.GetString(0), row.GetInt32(1)));
         Assert.Equal([("session", 0), ("adapter", 1), ("conversation", 1), ("kept", 1)], columns);
 

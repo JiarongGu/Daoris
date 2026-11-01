@@ -44,6 +44,13 @@ internal static class ActSteps
         return new ActStepPlan(ActStepKinds.Config, said, said, undo);
     }
 
+    /// <summary>A configuration step that puts <paramref name="text"/> back as the section <paramref name="section"/>, only where none stands (a deleted branch's, returned).</summary>
+    public static ActStepPlan Restore(string file, string scope, string section, string text)
+    {
+        var said = new JsonObject { ["file"] = file, ["scope"] = scope, ["section"] = section, ["to"] = null, ["text"] = text, ["restore"] = true }.ToJsonString();
+        return new ActStepPlan(ActStepKinds.Config, said, said);
+    }
+
     /// <summary>An index step in the tree whose git directory is <paramref name="gitDir"/>: the entries as read, and what replaces them (an entry absent there is removed).</summary>
     public static ActStepPlan Index(string gitDir, IReadOnlyList<ActEntry> before, IReadOnlyList<ActEntry> after)
     {
@@ -53,7 +60,17 @@ internal static class ActSteps
     }
 
     /// <summary>The bound a step of <paramref name="kind"/> runs under, by the git it is or starts (<see cref="GitBounds"/>).</summary>
-    public static TimeSpan BoundOf(string kind) => GitBounds.Of([kind == ActStepKinds.Index ? "update-index" : "update-ref"]);
+    public static TimeSpan BoundOf(string kind) =>
+        kind == ActStepKinds.Bytes ? GitBounds.Question
+        : GitBounds.Of([kind switch { ActStepKinds.Index => "update-index", ActStepKinds.Commit => "commit", ActStepKinds.Switch => "switch", ActStepKinds.Stash => "stash", ActStepKinds.Fetch => "fetch", _ => "update-ref" }]);
+
+    /// <summary>A file step: <paramref name="path"/>'s bytes (digest <paramref name="before"/>) replaced by <paramref name="written"/>'s (digest <paramref name="after"/>), <paramref name="replaced"/> holding the old ones.</summary>
+    public static ActStepPlan Bytes(string path, string relative, string before, string after, string replaced, string written)
+    {
+        var said = new JsonObject { ["path"] = path, ["relative"] = relative, ["before"] = before, ["after"] = after, ["replaced"] = replaced, ["written"] = written }.ToJsonString();
+        var undo = new JsonObject { ["path"] = path, ["relative"] = relative, ["before"] = after, ["after"] = before, ["replaced"] = written, ["written"] = replaced }.ToJsonString();
+        return new ActStepPlan(ActStepKinds.Bytes, said, said, undo);
+    }
 
     // ——— The effects, under the checkout's hold.
 
@@ -62,6 +79,11 @@ internal static class ActSteps
     {
         ActStepKinds.Ref => RefAsync(held, launch, step),
         ActStepKinds.Config => ConfigAsync(held, launch, step),
+        ActStepKinds.Commit => ActCommits.EffectAsync(held, launch, step),
+        ActStepKinds.Bytes => ActFiles.EffectAsync(step),
+        ActStepKinds.Switch => ActWorkSteps.SwitchAsync(held, launch, step),
+        ActStepKinds.Stash => ActWorkSteps.StashAsync(held, launch, step),
+        ActStepKinds.Fetch => ActFetchSteps.EffectAsync(held, launch, step),
         _ => IndexAsync(held, launch, step),
     };
 
@@ -69,7 +91,12 @@ internal static class ActSteps
     {
         _ = held;
         var input = Read(step.Arguments)["input"]!.GetValue<string>();
-        var run = await launch.HeldGitAsync(launch.Root, step.Ordinal, ["update-ref", "--stdin"], input, null).ConfigureAwait(false);
+        // A recovery ref is dated by its reflog's first entry (RECOVERYDATE1), which git writes outside refs/heads/ only when asked
+        // (`--create-reflog` has no place in the census's literal command, so the setting is passed for this one git).
+        var reflog = input.Contains(ContentHolds.DiscardedPrefix, StringComparison.Ordinal)
+            ? new Dictionary<string, string>(StringComparer.Ordinal) { ["GIT_CONFIG_COUNT"] = "1", ["GIT_CONFIG_KEY_0"] = "core.logAllRefUpdates", ["GIT_CONFIG_VALUE_0"] = "always" }
+            : null;
+        var run = await launch.HeldGitAsync(launch.Root, step.Ordinal, ["update-ref", "--stdin"], input, reflog).ConfigureAwait(false);
         return run.End(run.Exit == 0 ? "git made the transaction" : $"git refused the transaction ({ContentHolds.Said(run.Stderr)})");
     }
 
@@ -78,7 +105,8 @@ internal static class ActSteps
         _ = held;
         var plan = Read(step.Arguments);
         var (file, scope, section, to, text) = (Text(plan, "file")!, Text(plan, "scope")!, Text(plan, "section")!, Text(plan, "to"), Text(plan, "text")!);
-        if (await ElsewhereAsync(launch.Root, section, scope).ConfigureAwait(false) is { } elsewhere) return Refused(elsewhere);
+        var restore = plan["restore"] is JsonValue flag && flag.TryGetValue<bool>(out var on) && on;
+        if (!restore && await ElsewhereAsync(launch.Root, section, scope).ConfigureAwait(false) is { } elsewhere) return Refused(elsewhere);
 
         var lockPath = file + ".lock";
         if (Exclusive(lockPath) is not { } exclusive) return Refused(ActLocks.Stale(lockPath, launch.Repository));
@@ -86,19 +114,29 @@ internal static class ActSteps
         {
             var now = ActConfig.Decode(await File.ReadAllBytesAsync(file).ConfigureAwait(false));
             if (now is null) return Mine(lockPath, exclusive, $"`{file}` does not read as UTF-8, so the `{section}` section was not moved");
-            if (ActConfig.Find(now, section) is not { } found || found.Text != text)
+            string replaced;
+            if (restore)
             {
-                return Mine(lockPath, exclusive, $"the `{section}` section changed since it was read, so nothing was moved; the recovery is kept");
+                if (ActConfig.Find(now, section) is not null) return Mine(lockPath, exclusive, $"a `{section}` section stands, so it was not restored");
+                replaced = (now.Length == 0 || now.EndsWith('\n') ? now : now + "\n") + (text.EndsWith('\n') ? text : text + "\n");
+            }
+            else
+            {
+                if (ActConfig.Find(now, section) is not { } found || found.Text != text)
+                {
+                    return Mine(lockPath, exclusive, $"the `{section}` section changed since it was read, so nothing was moved; the recovery is kept");
+                }
+
+                if (to is not null && ActConfig.Find(now, to) is not null) return Mine(lockPath, exclusive, $"a `{to}` section stands, so `{section}` was not moved onto it");
+                replaced = now[..found.Start] + (to is null ? "" : ActConfig.Renamed(text, to)) + now[(found.Start + found.Text.Length)..];
             }
 
-            if (to is not null && ActConfig.Find(now, to) is not null) return Mine(lockPath, exclusive, $"a `{to}` section stands, so `{section}` was not moved onto it");
-            var replaced = now[..found.Start] + (to is null ? "" : ActConfig.Renamed(text, to)) + now[(found.Start + found.Text.Length)..];
             var bytes = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false).GetBytes(replaced);
             await exclusive.WriteAsync(bytes).ConfigureAwait(false);
             exclusive.Flush(flushToDisk: true);
             exclusive.Dispose();
             File.Move(lockPath, file, overwrite: true);
-            return new ActStepEnd(0, false, to is null ? $"the `{section}` section was removed" : $"the `{section}` section was moved to `{to}`", false);
+            return new ActStepEnd(0, false, restore ? $"the `{section}` section was restored" : to is null ? $"the `{section}` section was removed" : $"the `{section}` section was moved to `{to}`", false);
         }
         catch
         {
@@ -126,11 +164,13 @@ internal static class ActSteps
 
             File.Copy(index, copy, overwrite: true);
             var input = new StringBuilder();
-            foreach (var entry in after) input.Append($"{entry.Mode} {entry.Id} {entry.Stage}\t{entry.Path}\n");
-            foreach (var gone in before.Where(entry => !after.Any(each => each.Path == entry.Path && each.Stage == entry.Stage)))
+            // A removal takes every stage of its path, so removals come first and the entries after them are added.
+            foreach (var gone in before.Where(entry => !after.Any(each => each.Path == entry.Path && each.Stage == entry.Stage)).DistinctBy(entry => entry.Path))
             {
                 input.Append($"0 {new string('0', gone.Id.Length)} {gone.Stage}\t{gone.Path}\n");
             }
+
+            foreach (var entry in after) input.Append($"{entry.Mode} {entry.Id} {entry.Stage}\t{entry.Path}\n");
 
             var environment = new Dictionary<string, string>(StringComparer.Ordinal) { ["GIT_INDEX_FILE"] = copy };
             var run = await launch.HeldGitAsync(launch.Root, step.Ordinal, ["update-index", "--index-info"], input.ToString(), environment).ConfigureAwait(false);
@@ -255,9 +295,31 @@ internal static class ActSteps
 
                 if (now is null) return null;
                 var (source, target) = (ActConfig.Find(now, section), to is null ? null : ActConfig.Find(now, to));
+                if (plan["restore"] is JsonValue flag && flag.TryGetValue<bool>(out var on) && on)
+                {
+                    return source is null ? ActOutcomes.NotDone : source.Text.TrimEnd() == text.TrimEnd() ? ActOutcomes.Done : ActOutcomes.Unknown;
+                }
+
                 if (source is null && (to is null || target?.Text == ActConfig.Renamed(text, to))) return ActOutcomes.Done;
+                // A removal asked and the section stands, whatever it now says: it was not removed.
+                if (to is null && source is not null) return ActOutcomes.NotDone;
                 return source?.Text == text && target is null ? ActOutcomes.NotDone : ActOutcomes.Unknown;
             }
+
+            case ActStepKinds.Commit:
+                return await ActCommits.ReadAsync(root, plan, ct).ConfigureAwait(false);
+
+            case ActStepKinds.Bytes:
+                return await ActFiles.ReadAsync(plan, ct).ConfigureAwait(false);
+
+            case ActStepKinds.Switch:
+                return await ActWorkSteps.ReadSwitchAsync(root, plan, ct).ConfigureAwait(false);
+
+            case ActStepKinds.Stash:
+                return await ActWorkSteps.ReadStashAsync(root, plan, ct).ConfigureAwait(false);
+
+            case ActStepKinds.Fetch:
+                return await ActFetchSteps.ReadAsync(root, step, plan, ct).ConfigureAwait(false);
 
             default:
             {
@@ -286,7 +348,7 @@ internal static class ActSteps
     private static JsonArray Entries(IEnumerable<ActEntry> entries) =>
         new([.. entries.Select(entry => (JsonNode)new JsonObject { ["mode"] = entry.Mode, ["id"] = entry.Id, ["stage"] = entry.Stage, ["path"] = entry.Path })]);
 
-    private static IReadOnlyList<ActEntry> EntriesOf(JsonNode? node) =>
+    internal static IReadOnlyList<ActEntry> EntriesOf(JsonNode? node) =>
         node is JsonArray array
             ? [.. array.Select(each => new ActEntry(Text(each!, "mode")!, Text(each!, "id")!, each!["stage"]!.GetValue<int>(), Text(each!, "path")!))]
             : [];
@@ -298,6 +360,9 @@ internal sealed class ActLaunch(ActJournal journal, ActClaim claim, ProcessJob j
     public string Root => root;
 
     public string Repository => repository;
+
+    /// <summary>The Daoris home the act's journal lives in.</summary>
+    public string Home => journal.Home;
 
     /// <summary>What one held git did: its exit, its words, and whether it outlived its bound or its end.</summary>
     internal sealed record Ran(int? Exit, string Stdout, string Stderr, bool Unended, string Said)

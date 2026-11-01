@@ -27,6 +27,17 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+export const UnreadFolded: Story = {
+  args: {
+    related: [
+      row({ id: 'a1b2c3d4', changedOverlap: ['TASKS.md'] }),
+      row({ id: '0a1b2c3d', read: 'not-read', readAt: '2026-10-31T10:00:00Z' }),
+      row({ id: '1b2c3d4e', read: 'not-read', readAt: '2026-10-31T09:24:00Z' }),
+      row({ id: '2c3d4e5f', read: 'not-read', readAt: '2026-10-31T09:24:00Z' }),
+    ],
+  },
+};
+export const OwnNotRead: Story = { args: { related: [], own: { readAt: '2026-10-31T09:24:00Z' } } };
 export const Wide: Story = { decorators: [storyWidths.wide] };
 export const Narrow: Story = { decorators: [storyWidths.narrow] };
 export const NarrowChinese: Story = { decorators: [chinese, storyWidths.narrow] };

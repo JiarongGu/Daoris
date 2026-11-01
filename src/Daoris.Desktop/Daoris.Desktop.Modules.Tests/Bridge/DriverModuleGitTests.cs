@@ -118,6 +118,110 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
         Assert.DoesNotContain("checkouts", answer.GetRawText());
     }
 
+    /// <summary>GITAPP2h: a file's hunks come with the ids a press sends back, and a stage with the switch off is refused as data, with no path.</summary>
+    [Fact]
+    [Trait(Category.Name, Category.Process)]
+    public async Task The_hunks_read_names_the_ids_and_a_stage_with_the_switch_off_is_refused_in_words()
+    {
+        var root = await InitAsync();
+        await File.WriteAllTextAsync(Path.Combine(root, "README.md"), "changed\n");
+        var module = await UpAsync(root);
+
+        var hunks = await AnswerAsync(module, "GIT_HUNKS", new { repository = "engine", workspace = "aurora", path = "README.md", side = "unstaged" });
+        var value = hunks.GetProperty("value");
+        var press = new { repository = "engine", workspace = "aurora", path = "README.md", head = value.GetProperty("head").GetString(), index = value.GetProperty("index").GetString(), source = value.GetProperty("source").GetString() };
+        var refused = await AnswerAsync(module, "GIT_STAGE", press);
+        var undo = await AnswerAsync(module, "GIT_UNDO", new { repository = "engine", workspace = "aurora", act = "none" });
+
+        Assert.Equal(1, value.GetProperty("hunks").GetArrayLength());
+        Assert.Matches("^[0-9a-f]{12}$", value.GetProperty("hunks")[0].GetProperty("id").GetString());
+        Assert.False(refused.GetProperty("done").GetBoolean());
+        Assert.True(refused.GetProperty("refused").GetBoolean());
+        Assert.Contains("may not change", refused.GetProperty("said").GetString());
+        Assert.DoesNotContain(root, refused.GetRawText().Replace("\\\\", "\\"));
+        Assert.True(undo.GetProperty("refused").GetBoolean());
+        Assert.Equal("changed\n", await File.ReadAllTextAsync(Path.Combine(root, "README.md")));
+    }
+
+    /// <summary>GITAPP2i: the commit's plan names the tip, the tree and who commits; a commit with the switch off is refused as data, with no path, and HEAD stays.</summary>
+    [Fact]
+    [Trait(Category.Name, Category.Process)]
+    public async Task The_commit_plan_names_the_tree_and_a_commit_with_the_switch_off_is_refused_in_words()
+    {
+        var root = await InitAsync();
+        await File.WriteAllTextAsync(Path.Combine(root, "README.md"), "changed\n");
+        await GitAsync(root, "add", "README.md");
+        var before = (await GitAsync(root, "rev-parse", "HEAD")).Trim();
+        var module = await UpAsync(root);
+
+        var plan = (await AnswerAsync(module, "GIT_COMMIT_PLAN", new { repository = "engine", workspace = "aurora", verb = "commit" })).GetProperty("value");
+        var press = new { repository = "engine", workspace = "aurora", message = "changed", head = plan.GetProperty("head").GetString(), tree = plan.GetProperty("tree").GetString() };
+        var refused = await AnswerAsync(module, "GIT_MAKE_COMMIT", press);
+        var amend = await AnswerAsync(module, "GIT_AMEND", press);
+
+        Assert.Equal(before, plan.GetProperty("head").GetString());
+        Assert.Matches("^[0-9a-f]{40,64}$", plan.GetProperty("tree").GetString());
+        Assert.False(plan.GetProperty("empty").GetBoolean());
+        Assert.True(refused.GetProperty("refused").GetBoolean());
+        Assert.Contains("may not change", refused.GetProperty("said").GetString());
+        Assert.DoesNotContain(root, refused.GetRawText().Replace("\\\\", "\\"));
+        Assert.True(amend.GetProperty("refused").GetBoolean());
+        Assert.Equal(before, (await GitAsync(root, "rev-parse", "HEAD")).Trim());
+    }
+
+    /// <summary>GITAPP2j: a file not in conflict is read with its reason, and a resolve and a mark with the switch off are refused as data, with no path.</summary>
+    [Fact]
+    [Trait(Category.Name, Category.Process)]
+    public async Task The_conflict_read_says_why_a_file_has_none_and_a_resolve_with_the_switch_off_is_refused_in_words()
+    {
+        var root = await InitAsync();
+        var module = await UpAsync(root);
+
+        var read = (await AnswerAsync(module, "GIT_CONFLICT", new { repository = "engine", workspace = "aurora", path = "README.md" })).GetProperty("value");
+        var press = new { repository = "engine", workspace = "aurora", path = "README.md", head = read.GetProperty("head").GetString(), picks = Array.Empty<object>() };
+        var resolve = await AnswerAsync(module, "GIT_RESOLVE", press);
+        var mark = await AnswerAsync(module, "GIT_MARK_RESOLVED", press);
+
+        Assert.Contains("not in conflict", read.GetProperty("why").GetString());
+        Assert.Equal(0, read.GetProperty("hunks").GetArrayLength());
+        Assert.True(resolve.GetProperty("refused").GetBoolean());
+        Assert.Contains("may not change", resolve.GetProperty("said").GetString());
+        Assert.True(mark.GetProperty("refused").GetBoolean());
+        Assert.DoesNotContain(root, resolve.GetRawText().Replace("\\\\", "\\"));
+    }
+
+    /// <summary>GITAPP2k: the switch's and the stash's plans read, and with the switch off each press is refused as data, with no path, and nothing moves.</summary>
+    [Fact]
+    [Trait(Category.Name, Category.Process)]
+    public async Task The_switch_and_stash_plans_read_and_a_press_with_the_switch_off_is_refused_in_words()
+    {
+        var root = await InitAsync();
+        await GitAsync(root, "branch", "other");
+        await File.WriteAllTextAsync(Path.Combine(root, "README.md"), "changed\n");
+        var before = (await GitAsync(root, "rev-parse", "HEAD")).Trim();
+        var module = await UpAsync(root);
+
+        var switchPlan = (await AnswerAsync(module, "GIT_SWITCH_PLAN", new { repository = "engine", workspace = "aurora", branch = "other" })).GetProperty("value");
+        var stashPlan = (await AnswerAsync(module, "GIT_STASH_PLAN", new { repository = "engine", workspace = "aurora" })).GetProperty("value");
+        var switched = await AnswerAsync(module, "GIT_SWITCH", new { repository = "engine", workspace = "aurora", branch = "other", from = "main", head = before });
+        var stashed = await AnswerAsync(module, "GIT_STASH", new { repository = "engine", workspace = "aurora", head = before, untracked = true });
+        var applied = await AnswerAsync(module, "GIT_STASH_APPLY", new { repository = "engine", workspace = "aurora", head = before, id = before });
+
+        Assert.Equal("other", switchPlan.GetProperty("to").GetString());
+        Assert.True(switchPlan.GetProperty("dirty").GetBoolean());
+        Assert.Equal(1, stashPlan.GetProperty("tracked").GetInt32());
+        Assert.Equal(0, stashPlan.GetProperty("entries").GetArrayLength());
+        foreach (var refused in new[] { switched, stashed, applied })
+        {
+            Assert.True(refused.GetProperty("refused").GetBoolean());
+            Assert.Contains("may not change", refused.GetProperty("said").GetString());
+            Assert.DoesNotContain(root, refused.GetRawText().Replace("\\\\", "\\"));
+        }
+
+        Assert.Equal(before, (await GitAsync(root, "rev-parse", "HEAD")).Trim());
+        Assert.Empty((await GitAsync(root, "stash", "list")).Trim());
+    }
+
     [Fact]
     public async Task The_changes_read_of_a_repository_with_no_checkout_is_answered_with_its_code()
     {
@@ -203,6 +307,260 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
         Assert.True(second.GetProperty("remembered").GetBoolean());
         Assert.Equal("base", second.GetProperty("value").GetProperty("subject").GetString());
         Assert.NotEmpty(second.GetProperty("commands").EnumerateArray());
+    }
+
+    /// <summary>GITAPP2c: before the driver is up, and for a repository with no checkout here, each ref act is the cold start or a coded answer.</summary>
+    [Theory]
+    [InlineData("GIT_REF_CREATE")]
+    [InlineData("GIT_REF_UNDO")]
+    [InlineData("GIT_REF_DELETE")]
+    [InlineData("GIT_REF_RENAME")]
+    [InlineData("GIT_REF_FINISH")]
+    [InlineData("GIT_FETCH")]
+    [InlineData("GIT_FETCH_PLAN")]
+    public async Task A_ref_act_before_the_driver_is_up_is_the_cold_start_sentence(string route) =>
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), route, new { repository = "engine", kind = "branch", name = "x", to = "y", act = "a" }));
+
+    [Fact]
+    public async Task A_ref_act_of_a_repository_with_no_checkout_is_refused_as_data_with_its_code()
+    {
+        var module = await UpAsync(null);
+
+        var answer = await AnswerAsync(module, "GIT_REF_CREATE", new { repository = "engine", kind = "branch", name = "topic" });
+
+        Assert.True(answer.GetProperty("refused").GetBoolean());
+        Assert.Equal(Refusals.GitNoCheckout, answer.GetProperty("code").GetString());
+    }
+
+    [Fact]
+    public async Task A_create_names_its_kind_and_its_name()
+    {
+        var module = await UpAsync(Checkout("engine", git: true));
+
+        Assert.Contains(Refusals.DriverRefused, await RefusalAsync(module, "GIT_REF_CREATE", new { repository = "engine", name = "topic" }));
+        Assert.Contains(Refusals.DriverRefused, await RefusalAsync(module, "GIT_REF_CREATE", new { repository = "engine", kind = "branch" }));
+    }
+
+    /// <summary>
+    /// The page's create runs the act in the journal and answers it: done, its act, no machine path; a name that stands is refused as data and
+    /// nothing is written; the undo deletes at the id the act made.
+    /// </summary>
+    [Fact]
+    [Trait(Category.Name, Category.Process)]
+    public async Task A_create_is_journaled_and_answered_and_its_undo_deletes_at_the_id_it_made()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var root = await InitAsync();
+        var module = await UpAsync(root);
+
+        var made = await AnswerAsync(module, "GIT_REF_CREATE", new { repository = "engine", kind = "branch", name = "topic" });
+        var again = await AnswerAsync(module, "GIT_REF_CREATE", new { repository = "engine", kind = "branch", name = "topic" });
+
+        Assert.Equal("done", made.GetProperty("outcome").GetString());
+        Assert.False(made.GetProperty("refused").GetBoolean());
+        Assert.Equal((await GitAsync(root, "rev-parse", "HEAD")).Trim(), (await GitAsync(root, "rev-parse", "refs/heads/topic")).Trim());
+        Assert.DoesNotContain("checkouts", made.GetRawText());
+        Assert.True(again.GetProperty("refused").GetBoolean());
+        Assert.Contains("already", again.GetProperty("said").GetString());
+
+        var undone = await AnswerAsync(module, "GIT_REF_UNDO", new { repository = "engine", act = made.GetProperty("act").GetString() });
+
+        Assert.Equal("done", undone.GetProperty("outcome").GetString());
+        Assert.Equal("", (await GitAsync(root, "branch", "--list", "topic")).Trim());
+    }
+
+    /// <summary>
+    /// GITAPP2d: the page's delete runs the act in the journal and answers it, the line it reads refusing the line itself and a commit that is
+    /// not the one shown; the undo makes the branch again.
+    /// </summary>
+    [Fact]
+    [Trait(Category.Name, Category.Process)]
+    public async Task A_delete_is_journaled_and_answered_and_its_undo_makes_the_branch_again()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var root = await InitAsync();
+        await GitAsync(root, "branch", "topic");
+        var tip = (await GitAsync(root, "rev-parse", "topic")).Trim();
+        var module = await UpAsync(root);
+
+        var stale = await AnswerAsync(module, "GIT_REF_DELETE", new { repository = "engine", kind = "branch", name = "topic", at = new string('0', 40) });
+        var line = await AnswerAsync(module, "GIT_REF_DELETE", new { repository = "engine", kind = "branch", name = "main", at = tip });
+        var deleted = await AnswerAsync(module, "GIT_REF_DELETE", new { repository = "engine", kind = "branch", name = "topic", at = tip });
+
+        Assert.True(stale.GetProperty("refused").GetBoolean());
+        Assert.True(line.GetProperty("refused").GetBoolean());
+        Assert.Equal("done", deleted.GetProperty("outcome").GetString());
+        Assert.DoesNotContain("checkouts", deleted.GetRawText());
+        Assert.Equal("", (await GitAsync(root, "branch", "--list", "topic")).Trim());
+        Assert.Equal(tip, (await GitAsync(root, "rev-parse", "refs/daoris/discarded/topic")).Trim());
+
+        var undone = await AnswerAsync(module, "GIT_REF_UNDO", new { repository = "engine", act = deleted.GetProperty("act").GetString() });
+
+        Assert.Equal("done", undone.GetProperty("outcome").GetString());
+        Assert.Equal(tip, (await GitAsync(root, "rev-parse", "refs/heads/topic")).Trim());
+    }
+
+    /// <summary>
+    /// GITAPP2e: the page's rename runs the act in the journal and answers it, refusing the line and a taken name as data; the undo moves the branch
+    /// back, and Finish is refused for an act that did not stop partway.
+    /// </summary>
+    [Fact]
+    [Trait(Category.Name, Category.Process)]
+    public async Task A_rename_is_journaled_and_answered_and_its_undo_moves_the_branch_back()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var root = await InitAsync();
+        await GitAsync(root, "branch", "topic");
+        await GitAsync(root, "branch", "taken");
+        var tip = (await GitAsync(root, "rev-parse", "topic")).Trim();
+        var module = await UpAsync(root);
+
+        var line = await AnswerAsync(module, "GIT_REF_RENAME", new { repository = "engine", kind = "branch", name = "main", to = "trunk", at = tip });
+        var taken = await AnswerAsync(module, "GIT_REF_RENAME", new { repository = "engine", kind = "branch", name = "topic", to = "taken", at = tip });
+        var renamed = await AnswerAsync(module, "GIT_REF_RENAME", new { repository = "engine", kind = "branch", name = "topic", to = "work", at = tip });
+
+        Assert.True(line.GetProperty("refused").GetBoolean());
+        Assert.True(taken.GetProperty("refused").GetBoolean());
+        Assert.Equal("done", renamed.GetProperty("outcome").GetString());
+        Assert.Equal(tip, (await GitAsync(root, "rev-parse", "refs/heads/work")).Trim());
+        Assert.Equal("", (await GitAsync(root, "branch", "--list", "topic")).Trim());
+
+        var finish = await AnswerAsync(module, "GIT_REF_FINISH", new { repository = "engine", act = renamed.GetProperty("act").GetString() });
+        var undone = await AnswerAsync(module, "GIT_REF_UNDO", new { repository = "engine", act = renamed.GetProperty("act").GetString() });
+
+        Assert.True(finish.GetProperty("refused").GetBoolean());
+        Assert.Equal("done", undone.GetProperty("outcome").GetString());
+        Assert.Equal(tip, (await GitAsync(root, "rev-parse", "refs/heads/topic")).Trim());
+        Assert.Equal("", (await GitAsync(root, "branch", "--list", "work")).Trim());
+    }
+
+    /// <summary>GITAPP2f: where Daoris's git doors are not installed the fetch is not offered, its plan says so in a word, and its press is refused as data, no act made.</summary>
+    [Fact]
+    [Trait(Category.Name, Category.Process)]
+    public async Task A_fetch_is_not_offered_without_the_git_doors_and_its_press_is_refused_as_data()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var root = await InitAsync();
+        var module = await UpAsync(root);
+
+        var plan = await AnswerAsync(module, "GIT_FETCH_PLAN", new { repository = "engine" });
+        var press = await AnswerAsync(module, "GIT_FETCH", new { repository = "engine" });
+
+        Assert.False(plan.GetProperty("value").GetProperty("offered").GetBoolean());
+        Assert.Equal("doors", plan.GetProperty("value").GetProperty("reason").GetString());
+        Assert.True(press.GetProperty("refused").GetBoolean());
+        Assert.Contains("doors", press.GetProperty("said").GetString());
+        Assert.Equal(JsonValueKind.Null, press.GetProperty("act").ValueKind);
+    }
+
+    /// <summary>A terminal's press, asked for its words (<c>said</c>), is the verb's own lines and exit code, the act run as the terminal's.</summary>
+    [Fact]
+    [Trait(Category.Name, Category.Process)]
+    public async Task A_terminals_create_answers_the_verbs_lines_and_exit_code()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var root = await InitAsync();
+        var module = await UpAsync(root);
+
+        var made = await AnswerAsync(module, "GIT_REF_CREATE", new { repository = "engine", kind = "tag", name = "v1", said = true });
+        var refused = await AnswerAsync(module, "GIT_REF_CREATE", new { repository = "engine", kind = "tag", name = "v1", said = true });
+
+        Assert.Equal(0, made.GetProperty("said").GetProperty("code").GetInt32());
+        Assert.Contains("created the tag `v1`", made.GetProperty("said").GetProperty("out")[0].GetString());
+        Assert.Equal(1, refused.GetProperty("said").GetProperty("code").GetInt32());
+    }
+
+    /// <summary>GITAPP2m: before the driver is up a history edit is the cold start; with no checkout here it is refused as data with its code.</summary>
+    [Fact]
+    public async Task A_history_edit_before_the_driver_is_up_or_with_no_checkout_is_the_cold_start_or_a_coded_answer()
+    {
+        var edit = new { repository = "engine", edit = "rebase", branch = "topic", target = "main" };
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "GIT_HISTORY_EDIT", edit));
+
+        var answer = await AnswerAsync(await UpAsync(null), "GIT_HISTORY_EDIT", edit);
+
+        Assert.True(answer.GetProperty("refused").GetBoolean());
+        Assert.Equal(Refusals.GitNoCheckout, answer.GetProperty("code").GetString());
+    }
+
+    [Fact]
+    public async Task A_history_edit_names_its_edit_its_branch_and_its_target()
+    {
+        var module = await UpAsync(Checkout("engine", git: true));
+
+        Assert.Contains(Refusals.DriverRefused, await RefusalAsync(module, "GIT_HISTORY_EDIT", new { repository = "engine", edit = "squash", branch = "topic", target = "main" }));
+        Assert.Contains(Refusals.DriverRefused, await RefusalAsync(module, "GIT_HISTORY_EDIT", new { repository = "engine", edit = "rebase", target = "main" }));
+        Assert.Contains(Refusals.DriverRefused, await RefusalAsync(module, "GIT_HISTORY_EDIT", new { repository = "engine", edit = "pick", branch = "topic" }));
+    }
+
+    /// <summary>
+    /// GITAPP2m: the plan form answers what the edit would take and writes nothing; the press with the plan's ids runs the act and answers it
+    /// done, the branch's new tip and its old one's recovery ref, no machine path; the line is refused as data.
+    /// </summary>
+    [Fact]
+    [Trait(Category.Name, Category.Process)]
+    public async Task A_history_edits_plan_is_answered_and_its_press_with_the_plans_ids_moves_the_branch()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var root = await InitAsync();
+        await GitAsync(root, "branch", "topic", "main");
+        var topic = await CommitOnBranchAsync(root, "topic", "t.txt", "topic one");
+        await CommitOnBranchAsync(root, "main", "m.txt", "main one");
+        var module = await UpAsync(root);
+
+        var plan = await AnswerAsync(module, "GIT_HISTORY_EDIT", new { repository = "engine", edit = "rebase", branch = "topic", target = "main", plan = true });
+        var shown = plan.GetProperty("plan");
+
+        Assert.False(plan.GetProperty("refused").GetBoolean());
+        Assert.Equal(topic, shown.GetProperty("tip").GetString());
+        Assert.Equal("topic one", shown.GetProperty("commits")[0].GetProperty("subject").GetString());
+        Assert.Equal(topic, (await GitAsync(root, "rev-parse", "topic")).Trim());
+
+        var pins = new { tip = shown.GetProperty("tip").GetString(), onto = shown.GetProperty("onto").GetString(), commits = new[] { shown.GetProperty("commits")[0].GetProperty("id").GetString() } };
+        var made = await AnswerAsync(module, "GIT_HISTORY_EDIT", new { repository = "engine", edit = "rebase", branch = "topic", target = "main", pins });
+
+        Assert.Equal("done", made.GetProperty("outcome").GetString());
+        Assert.Equal((await GitAsync(root, "rev-parse", "topic")).Trim(), made.GetProperty("tip").GetString());
+        Assert.Equal((await GitAsync(root, "rev-parse", "main")).Trim(), (await GitAsync(root, "rev-parse", "topic^")).Trim());
+        Assert.Equal("refs/daoris/discarded/topic", made.GetProperty("kept").GetString());
+        Assert.DoesNotContain("checkouts", made.GetRawText());
+
+        var line = await AnswerAsync(module, "GIT_HISTORY_EDIT", new { repository = "engine", edit = "rebase", branch = "main", target = "topic", plan = true });
+        Assert.True(line.GetProperty("refused").GetBoolean());
+        Assert.Contains("line", line.GetProperty("said").GetString());
+    }
+
+    /// <summary>A terminal's press, asked for its words (<c>said</c>), is the verb's own lines and exit code, the act run as the terminal's.</summary>
+    [Fact]
+    [Trait(Category.Name, Category.Process)]
+    public async Task A_terminals_history_edit_answers_the_verbs_lines_and_exit_code()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var root = await InitAsync();
+        await GitAsync(root, "branch", "topic", "main");
+        await CommitOnBranchAsync(root, "main", "m.txt", "main one");
+        var picked = (await GitAsync(root, "rev-parse", "main")).Trim();
+        var module = await UpAsync(root);
+
+        var made = await AnswerAsync(module, "GIT_HISTORY_EDIT", new { repository = "engine", edit = "pick", branch = "topic", target = picked, said = true });
+        var refused = await AnswerAsync(module, "GIT_HISTORY_EDIT", new { repository = "engine", edit = "pick", branch = "topic", target = picked, said = true });
+
+        Assert.Equal(0, made.GetProperty("said").GetProperty("code").GetInt32());
+        Assert.Contains("picked onto `topic`", string.Join("\n", made.GetProperty("said").GetProperty("out").EnumerateArray().Select(each => each.GetString())));
+        Assert.Equal(1, refused.GetProperty("said").GetProperty("code").GetInt32());
+    }
+
+    /// <summary>A commit on <paramref name="branch"/>, the checkout back on main after it, so no tree has the branch out; the checkout names its committer.</summary>
+    private static async Task<string> CommitOnBranchAsync(string root, string branch, string file, string subject)
+    {
+        await GitAsync(root, "config", "user.name", "Fixture");
+        await GitAsync(root, "config", "user.email", "fixture@example.test");
+        await GitAsync(root, "switch", "--quiet", branch);
+        await File.WriteAllTextAsync(Path.Combine(root, file), subject + "\n");
+        await GitAsync(root, "add", file);
+        await GitAsync(root, "-c", "user.name=Fixture", "-c", "user.email=fixture@example.test", "commit", "--quiet", "-m", subject);
+        await GitAsync(root, "switch", "--quiet", "main");
+        return (await GitAsync(root, "rev-parse", branch)).Trim();
     }
 
     private async Task<string> InitAsync()

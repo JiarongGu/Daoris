@@ -39,4 +39,28 @@ internal static class CheckoutBeside
               + "and goes on at the next look once it ends"
             : null;
     }
+
+    /// <summary>
+    /// The same read for a press: why <paramref name="what"/> is refused now, or null where no session holds the checkout. A ledger not given or not
+    /// readable refuses, since the person's press is not retried at a look.
+    /// </summary>
+    internal static async Task<string?> RefusesAsync(
+        Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside, string checkout, string repository, string what, string then, CancellationToken ct)
+    {
+        if (beside is null) return $"the ledger of sessions was not read, so whether a session works in `{repository}`'s checkout is not known and {what} is refused";
+        IReadOnlyList<TreeHolder> holders;
+        try
+        {
+            holders = await beside(ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or JsonException or IOException
+                                          || (error is OperationCanceledException && !ct.IsCancellationRequested))
+        {
+            return $"the ledger could not be read ({error.Message}), so whether a session works in `{repository}`'s checkout is not known and {what} is refused";
+        }
+
+        return holders.FirstOrDefault(each => SamePath(each.Tree, checkout)) is { } holder
+            ? $"session `{holder.Session}` works in `{repository}`'s checkout (Repositories → the repository's page), so {what} {then}"
+            : null;
+    }
 }

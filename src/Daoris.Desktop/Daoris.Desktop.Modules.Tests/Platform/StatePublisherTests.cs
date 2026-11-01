@@ -524,6 +524,26 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("GIT_BLAME", "", null)]
     [InlineData("GIT_COMPARE", "", null)]
     [InlineData("GIT_CHANGES", "", null)]
+    [InlineData("GIT_HUNKS", "", null)]
+    // GITAPP2h: a person's stage, unstage and Undo move the checkout's index, which the Changes tab reads.
+    [InlineData("GIT_STAGE", "checkouts", null)]
+    [InlineData("GIT_UNSTAGE", "checkouts", null)]
+    [InlineData("GIT_UNDO", "checkouts", null)]
+    // GITAPP2j: a conflict is read, and a resolve and a mark move the file and the index the tab reads.
+    [InlineData("GIT_CONFLICT", "", null)]
+    [InlineData("GIT_RESOLVE", "checkouts", null)]
+    [InlineData("GIT_MARK_RESOLVED", "checkouts", null)]
+    [InlineData("GIT_COMMIT_PLAN", "", null)]
+    // GITAPP2i: a commit moves the checkout's index and the branch it has out, which the Changes tab and the branch list read.
+    [InlineData("GIT_MAKE_COMMIT", "driver,checkouts", null)]
+    [InlineData("GIT_AMEND", "driver,checkouts", null)]
+    [InlineData("GIT_SWITCH_PLAN", "", null)]
+    [InlineData("GIT_STASH_PLAN", "", null)]
+    [InlineData("GIT_FETCH_PLAN", "", null)]
+    // GITAPP2k: a switch moves HEAD and the checkout's files, a Save the shared stash and the tracked files; the branch list and the Changes tab read both.
+    [InlineData("GIT_SWITCH", "driver,checkouts", null)]
+    [InlineData("GIT_STASH", "driver,checkouts", null)]
+    [InlineData("GIT_STASH_APPLY", "driver,checkouts", null)]
     // HELPMODE1c3: and the driver's, whose helpGrants draws the browser's grant from the plugin's approval.
     [InlineData("PLUGIN_ACTION", "driver,plugins,harnesses", null)]
     [InlineData("PLUGIN_UPDATE", "driver,plugins,harnesses", null)]
@@ -558,6 +578,13 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("SET_STANDING_CONFIRMATION", "driver", null)]
     [InlineData("SET_TREES", "driver", null)]
     [InlineData("SET_CHECKOUT_WRITES", "driver", null)]
+    [InlineData("GIT_REF_CREATE", "driver", null)]
+    [InlineData("GIT_REF_UNDO", "driver", null)]
+    [InlineData("GIT_REF_DELETE", "driver", null)]
+    [InlineData("GIT_REF_RENAME", "driver", null)]
+    [InlineData("GIT_REF_FINISH", "driver", null)]
+    [InlineData("GIT_FETCH", "driver", null)]
+    [InlineData("GIT_HISTORY_EDIT", "driver", null)]
     [InlineData("SET_STANDING", "driver", null)]
     [InlineData("SET_HEAVY_GATES", "driver", null)]
     [InlineData("SET_KEEP", "driver,wiring", null)]
@@ -571,6 +598,8 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("SET_ACTOR", "driver,harnesses", null)]
     [InlineData("SET_ROLE", "driver,harnesses", null)]
     [InlineData("ROLE_STRUCTURE", "", null)]
+    [InlineData("PLACES", "", null)]
+    [InlineData("PLACE_PLAN", "", null)]
     [InlineData("SET_HELP_MODE", "driver", null)]
     [InlineData("SET_HELP_GRANT", "driver", null)]
     [InlineData("TRUST_FOLDER", "driver", null)]
@@ -638,6 +667,10 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("INTEGRATION_GATES", "driver", null)]
     // FABRIC-CUTOVER1f: the person's skip or stop of a run's node, kept on its record, which the run's view reads again under the driver's key.
     [InlineData("WORKFLOW_NODE", "driver", null)]
+    // AGENTSPLACE1c: a workflow saved, a place's choice and a workspace's kinds, which the workflow page's reads ask again under the driver's key.
+    [InlineData("WORKFLOW_SAVE", "driver", null)]
+    [InlineData("WORKFLOW_USE", "driver", null)]
+    [InlineData("WORKFLOW_KIND", "driver", null)]
     // FABRIC-PIPELINE1d: a verification bound for the running driver, which the Workflow tab's and the run's reads ask again under the driver's key.
     [InlineData("WORKFLOW_VERIFY", "driver", null)]
     [InlineData("START_HELP", "sessions", null)]
@@ -690,7 +723,7 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     public void Every_scope_has_its_word_on_the_wire_in_its_declared_order() =>
         Assert.Equal(
             "sessions,landing,diff,handOff,sweep,treesSync,lines,quests,asks,driver,rules,history,sync,registry,plugins,harnesses,"
-            + "tools,help,browser,wiring,notices,repositories,integration,atWork",
+            + "tools,help,browser,wiring,notices,repositories,integration,atWork,checkouts",
             string.Join(",", StatePublisher.Names((StateScopes)~0)));
 
     /// <summary>

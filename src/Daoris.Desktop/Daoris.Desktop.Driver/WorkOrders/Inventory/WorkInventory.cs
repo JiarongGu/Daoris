@@ -196,6 +196,9 @@ public static partial class WorkInventory
         treeOf = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var tree in facts.Trees)
         {
+            // INTEGRATETREE1: a line's integration tree is Daoris's own, kept warm and detached between candidates by the line's run
+            // (IntegrationReplays), which owns it: no unit's, and nothing of it waits on the person.
+            if (IntegrationTree(tree)) continue;
             var aside = tree.Branch == SessionTree.SetAside;
             var name = aside ? AsideName(tree.Path) : Name(tree.Path);
             var found = drafts.Values.FirstOrDefault(draft => draft.Branch is { } branch && SameRepository(branch.Repository, tree.Repository)
@@ -240,6 +243,10 @@ public static partial class WorkInventory
 
         return attached;
     }
+
+    /// <summary>A line's integration tree: its folder named as the line's run names it, and detached, as that run keeps it.</summary>
+    private static bool IntegrationTree(SessionTree tree) =>
+        tree.Branch == "HEAD" && Path.GetFileName(Full(tree.Path)).StartsWith(IntegrationReplays.Prefix, StringComparison.Ordinal);
 
     /// <summary>The sessions whose records name <paramref name="tree"/>, in the order the records list them (OVERVIEWNOISE1b).</summary>
     private static IEnumerable<string> RecordedBy(InventoryFacts facts, SessionTree tree)
@@ -489,9 +496,22 @@ public static partial class WorkInventory
         {
             // OVERVIEWNOISE1b: the look's tidy takes recorded branches alone, so a tree no branch record follows waits on the clean-up's
             // press; no retry is promised that will not come.
+            var said = $"its session recorded it, but no branch record follows `{tree.Branch}`, so the look's tidy never takes it";
+            // CLEANUPADVICE1: where the press would keep it, the row says what keeps it and the remove that takes it, never a press that refuses.
+            if (facts.TreeKeeps.TryGetValue(Full(tree.Path), out var keep))
+            {
+                return keep.Said is not { } holds
+                    ? Coded(draft.Id, InventoryKind.Tree, tree.Path, InventoryCode.Unfollowed, [("branch", tree.Branch), ("tree", tree.Path), ("unread", "true")],
+                        $"{said}, and Daoris could not tell what its tree holds, so the clean-up on its workspace's page may keep it")
+                    : Coded(draft.Id, InventoryKind.Tree, tree.Path, InventoryCode.Unfollowed, [("branch", tree.Branch), ("tree", tree.Path), ("keeps", holds),
+                            ("uncommitted", keep.Uncommitted.ToString(System.Globalization.CultureInfo.InvariantCulture)),
+                            ("own", keep.Own.ToString(System.Globalization.CultureInfo.InvariantCulture)), ("paths", keep.Paths)],
+                        $"{said}, and the clean-up on its workspace's page keeps it too, since its tree holds {holds}; "
+                        + $"`daoris-driver trees remove {tree.Path} --force` removes it, and what it holds with it");
+            }
+
             return Coded(draft.Id, InventoryKind.Tree, tree.Path, InventoryCode.Unfollowed, [("branch", tree.Branch)],
-                $"its session recorded it, but no branch record follows `{tree.Branch}`, so the look's tidy never takes it: the clean-up on "
-                + "its workspace's page removes it once you press it");
+                $"{said}: the clean-up on its workspace's page removes it once you press it");
         }
 
         return new InventoryEntry(draft.Id, InventoryKind.Tree, tree.Path, InventoryRole.Temporary, InventoryDisposition.Pending,

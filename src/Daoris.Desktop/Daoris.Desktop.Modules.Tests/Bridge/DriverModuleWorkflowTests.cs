@@ -197,6 +197,35 @@ public sealed class DriverModuleWorkflowTests : DriverModuleBridge
         Assert.Contains("a landed route is set for a `repository` or a `workspace`", await RefusalAsync(module, "WORKFLOW_LANDED", new { workflow = "web-verify" }));
     }
 
+    /// <summary>
+    /// AGENTSPLACE1a0: the landed route's press may name the blob the person read, as <c>INTEGRATION_GATES</c> does. A blob that is no longer
+    /// the tip's is refused <c>moved</c> with nothing written, one that is accepts it, and a press naming none (an older caller) accepts the
+    /// tip as it stands.
+    /// </summary>
+    [Fact]
+    [Trait(Category.Name, Category.Process)]
+    public async Task The_landed_route_refuses_a_blob_the_tip_no_longer_holds_and_an_older_caller_naming_none_is_unchanged()
+    {
+        Verification();
+        var root = await CheckoutAsync();
+        var (module, _) = await UpAsync(root);
+        var blob = (await GitAsync(root, "rev-parse", "main:daoris.gates.json")).Trim();
+
+        var accepted = await AnswerAsync(module, "WORKFLOW_LANDED", new { repository = "engine", workflow = "web-verify", gates = blob });
+        Assert.Equal(blob, DriverConfig.Load(DriverConfigPath).Workflows["engine"].Landed!.Gates);
+        Assert.Equal("web-verify", accepted.GetProperty("start").GetProperty("landed").GetProperty("workflow").GetString());
+
+        await CommitAsync(root, """{ "integration": { "scratch": ["out/**", "logs/**"] } }""");
+        var moved = await RefusalAsync(module, "WORKFLOW_LANDED", new { repository = "engine", workflow = "web-verify", gates = blob });
+        Assert.Contains("moved", moved);
+        Assert.Contains("read it again", moved);
+        Assert.Equal(blob, DriverConfig.Load(DriverConfigPath).Workflows["engine"].Landed!.Gates);
+
+        var newer = (await GitAsync(root, "rev-parse", "main:daoris.gates.json")).Trim();
+        await AnswerAsync(module, "WORKFLOW_LANDED", new { repository = "engine", workflow = "web-verify" });
+        Assert.Equal(newer, DriverConfig.Load(DriverConfigPath).Workflows["engine"].Landed!.Gates);
+    }
+
     [Fact]
     public async Task A_refusal_names_what_to_name_and_a_repository_waits_for_the_driver()
     {

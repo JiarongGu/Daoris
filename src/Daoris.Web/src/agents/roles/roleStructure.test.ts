@@ -17,11 +17,12 @@ const build = (filters: Partial<StructureFilters> = {}, workflows = WORKFLOWS) =
 describe('buildStructure', () => {
   beforeEach(() => i18n.changeLanguage('en'));
 
-  it('asks this machine, each workspace and each repository once', () => {
-    expect(placesToAsk(REGISTRY)).toEqual([
+  it('asks this machine, each workspace and each driven repository once, and no imported one that is not driven', () => {
+    expect(placesToAsk(REGISTRY, DRIVER.drivable)).toEqual([
       {}, { workspace: 'aurora' }, { workspace: 'default' },
-      { workspace: 'aurora', repository: 'engine' }, { workspace: 'aurora', repository: 'site' }, { workspace: 'default', repository: 'tools' },
+      { workspace: 'aurora', repository: 'engine' }, { workspace: 'aurora', repository: 'site' },
     ]);
+    expect(placesToAsk(REGISTRY, [])).toEqual([{}, { workspace: 'aurora' }, { workspace: 'default' }]);
   });
 
   describe('Work', () => {

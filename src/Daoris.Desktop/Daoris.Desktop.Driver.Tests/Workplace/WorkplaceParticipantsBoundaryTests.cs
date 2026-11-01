@@ -113,8 +113,8 @@ public sealed class WorkplaceParticipantsBoundaryTests : IDisposable
         // A newer Daoris migrated the store and stamped it past this build's: this build reads what it knows and writes nothing.
         using (DesktopStore.Open(Db, new DesktopStoreOptions
         {
-            Writer = 2,
-            Steps = [.. DesktopStore.Steps, new StoreMigration(DesktopStore.Steps.Count + 1, 2, write => write.Execute("CREATE TABLE raised (x TEXT)"))],
+            Writer = DesktopStore.WriterStamp + 1,
+            Steps = [.. DesktopStore.Steps, new StoreMigration(DesktopStore.Steps.Count + 1, DesktopStore.WriterStamp + 1, write => write.Execute("CREATE TABLE raised (x TEXT)"))],
             Settled = () => StoreSettled.Yes,
         }))
         {

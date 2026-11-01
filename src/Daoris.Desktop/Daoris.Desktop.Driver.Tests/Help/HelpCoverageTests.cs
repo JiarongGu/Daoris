@@ -361,6 +361,14 @@ public sealed partial class HelpCoverageTests
     /// TRACE1's <c>daoris-driver trace</c> (D143), a verb of the headless host: exempt, since it reads the records back to an ask
     /// and changes nothing, as <c>driver list</c> is (D110 §4). A screen's door to the same read is a row of its own.
     /// </summary>
+    /// <summary>
+    /// AGENTSPLACE1a2's <c>daoris-driver place … --plan</c>, a verb of the headless host: exempt while it only plans, since a plan changes
+    /// nothing; Ask Daoris's <c>setup</c> kind gains its <c>place</c> door with AGENTSPLACE1k, after the apply exists.
+    /// </summary>
+    private static readonly Exempt PlaceDoor = new(
+        "it plans a place's quick set-up, reads the configuration before and after and changes nothing, so there is nothing to propose; "
+        + "the `setup` kind's `place` door, proposing the plan as a card, waits on its apply (AGENTSPLACE1k).");
+
     private static readonly Exempt TraceDoor = new(
         "it reads from a commit, a session or a quest back to its ask and changes nothing, so there is nothing to propose, as "
         + "`driver list` is exempt (D110 §4); a screen's door to the same read is a row of its own (D143).");
@@ -992,6 +1000,39 @@ public sealed partial class HelpCoverageTests
             "it is the person's own consent to Daoris changing the files of their checkout, and writes nothing to the repository itself; "
             + "an agent that could propose it would be one card from the consent every later git act rests on (D204 point 3), so a go "
             + "reaches Setup → Reach and the person presses it there.")),
+        // GITAPP2h (D204, the git-writes design §8): stage, unstage and Undo in the Changes tab, hunk by hunk and line by line.
+        ("projects", "useGitActs", null, new Exempt(
+            "it changes the files of the person's own checkout, hunk by hunk and line by line, from hunks the person is looking at, each "
+            + "press judged against the bytes and the index entry the page read (D204 point 3); a go could not name a hunk the person has not "
+            + "seen, so Ask Daoris proposes none and the person presses it in the Changes tab.")),
+        // GITAPP2c (D204, the git-writes design §9): New branch and New tag on a repository's Branches, and the undo of the ref one made.
+        ("projects", "useGitRefActs", null, new Exempt(
+            "it is the person's own act on their repository, named and confirmed on the page before it is pressed and run as an act of the "
+            + "journal; Ask Daoris's git kind proposes cards for git acts, never applies them (design §9), and no card kind carries a ref "
+            + "act yet, so a go reaches the repository's Branches and the person makes the ref there.")),
+        // GITAPP2m (D204, the git-writes design §7, §9): Edit history on a branch's page, its plan asked and shown before its Confirm.
+        ("projects", "useGitHistoryEdits", null, new Exempt(
+            "it is the person's own act on their branch, its plan read from the driver and shown with every commit it takes before the edit "
+            + "is pressed and run as an act of the journal; Ask Daoris's git kind proposes cards for git acts, never applies them (design §9), "
+            + "and no card kind carries a history edit yet, so a go reaches the branch's page and the person edits it there.")),
+        // GITAPP2i (D204, the git-writes design §8): commit and amend in the Changes tab.
+        ("projects", "useGitCommitAct", null, new Exempt(
+            "it writes a commit into the person's own checkout, with the message the person typed and the hooks the repository runs, each press "
+            + "judged against the HEAD and the index the page read (D204 point 3); a go could not stand for a message the person has not written, "
+            + "so Ask Daoris proposes none and the person presses it in the Changes tab.")),
+        // GITAPP2k (D204, the git-writes design §8): switch and stash Save in the Changes tab.
+        ("projects", "useGitSwitchAct", null, new Exempt(
+            "it moves the person's own checkout to another branch and runs the repository's post-checkout hook, each press judged against the HEAD "
+            + "the page read and refused where tracked files are changed; Ask Daoris's git kind proposes cards for git acts, never applies them, so "
+            + "the person presses it in the Changes tab.")),
+        ("projects", "useGitStashAct", null, new Exempt(
+            "it saves the person's changed files into the stash every linked tree shares, judged against the HEAD and the stash tip the page read; "
+            + "a go could not stand for the files it would take away from the working tree, so the person presses it in the Changes tab.")),
+        // GITAPP2l: stash Apply, by the stash commit's id.
+        ("projects", "useGitStashApplyAct", null, new Exempt(
+            "it puts a saved stash back onto the person's clean checkout by the stash commit's id, judged against the HEAD the page read, and may leave "
+            + "files in conflict for the person to resolve; Ask Daoris's git kind proposes cards for git acts, never applies them, so the person "
+            + "presses it in the Changes tab.")),
         ("projects", "useSetLine", null, new Door("setting", "line")),
         ("projects", "useSetLanding", null, new Door("setting", "landing")),
         ("projects", "useSetLanguage", null, new Door("setting", "language")),
@@ -1279,6 +1320,7 @@ public sealed partial class HelpCoverageTests
             .Append(HelperAskDoor)
             .Append(PartnerAskDoor)
             .Append(TraceDoor)
+            .Append(PlaceDoor)
             .Append(WorkflowRunDoor)
             .Append(WiringDoor)
             .Append(SpaceDoor)
@@ -1676,6 +1718,19 @@ public sealed partial class HelpCoverageTests
         Assert.Null(HelpProposalKinds.Find("trace"));
         Assert.Contains("changes nothing", TraceDoor.Reason);
         Assert.Contains("D143", TraceDoor.Reason);
+    }
+
+    /// <summary>
+    /// AGENTSPLACE1a2: the headless host's <c>place … --plan</c> is exempt from Ask Daoris while its usage spells it and it only plans: a read
+    /// that changes nothing, which the <c>setup</c> kind takes no door for until its apply (AGENTSPLACE1k).
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_place_plan_is_exempt_since_it_changes_nothing()
+    {
+        Assert.Contains("place <repository>… --preset <id> [--with opinion,look,adoption] [--what-it-builds <kind>] [--drive] --plan", DriverCommand.Usage);
+        Assert.DoesNotContain("place", HelpProposalKinds.Find("setup")!.Doors);
+        Assert.Contains("changes nothing", PlaceDoor.Reason);
+        Assert.Contains("AGENTSPLACE1k", PlaceDoor.Reason);
     }
 
     /// <summary>
