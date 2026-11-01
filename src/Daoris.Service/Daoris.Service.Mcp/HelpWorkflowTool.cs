@@ -18,11 +18,13 @@ public sealed class HelpWorkflowTool(IntakeScope? intake = null, HelpProposalBox
         + "steps, never a change to them. A verification pipeline, which verifies the work that lands, takes its whole graph "
         + "instead of steps. A route with no steps and no graph chooses a workflow saved here for that route, saving nothing. "
         + "A new workflow is named by the person's words in `name`, at most 60 characters; left out, its id names it. An edit "
-        + "keeps its name, so send none with a base.")]
+        + "keeps its name, so send none with a base. Where the message says a workflow draft is open in the person's editor, "
+        + "propose changes to that draft with `draft` and the whole changed `graph` instead.")]
     public string ProposeWorkflow(
         [Description("The repository or workspace the workflow applies to, one word.")]
         string scope,
-        [Description("The workflow's id: lower-case letters, digits and dashes, at most 40. A new id proposes a new workflow.")]
+        [Description("The workflow's id: lower-case letters, digits and dashes, at most 40. A new id proposes a new workflow. "
+            + "With `draft`, the draft's workflow as the message names it, or empty for a new one.")]
         string workflow,
         [Description("Why: what the person asked. The person decides on this.")]
         string why,
@@ -45,9 +47,13 @@ public sealed class HelpWorkflowTool(IntakeScope? intake = null, HelpProposalBox
         string? graph = null,
         [Description("The route the scope chooses this workflow for: `default`, `landed` (the work that lands, a verification pipeline only), "
             + "or `kind:<id>` for one of its kinds. With no steps and no graph, it chooses a workflow saved here and saves nothing.")]
-        string? route = null)
+        string? route = null,
+        [Description("The fingerprint of the workflow draft open in the person's editor, as the message told it. With it, `graph` is the "
+            + "whole changed draft, of either pipeline, and nothing is saved or chosen: the person takes the changes into the draft and saves "
+            + "it themselves, so no steps, base, choose, route or name goes with it. Leave out for a saved workflow.")]
+        string? draft = null)
     {
         var box = help ?? HelpProposalBox.FromEnvironment();
-        return box.ProposeWorkflow(scope, workflow, @base, steps, choose, changes, kind, import, why, intake?.Session, DateTimeOffset.UtcNow, name, graph, route).Message;
+        return box.ProposeWorkflow(scope, workflow, @base, steps, choose, changes, kind, import, why, intake?.Session, DateTimeOffset.UtcNow, name, graph, route, draft).Message;
     }
 }
