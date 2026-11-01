@@ -22,6 +22,7 @@ const NODE_TITLES: Record<string, string> = {
   'go-ahead': 'workflow.step.goAhead',
   human: 'workflow.step.task',
   pushed: 'workflow.step.pushed',
+  handed: 'workflow.step.handed',
   line: 'workflow.step.line',
   'quest.close': 'workflow.step.questClose',
   all: 'workflow.step.join',
