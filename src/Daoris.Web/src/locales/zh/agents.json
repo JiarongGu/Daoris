@@ -481,5 +481,19 @@
   "agents.setup.page.confirm.drive": "驱动",
   "agents.setup.page.back": "← 返回 {{place}} · {{section}}",
   "agents.setup.page.workspaceFlow": "工作区的工作流暂时在它的仓库页上设置。",
-  "agents.setup.page.workspaceFlowOpen": "到那里打开"
+  "agents.setup.page.workspaceFlowOpen": "到那里打开",
+  "agents.setup.allRoles.title": "全部角色",
+  "agents.setup.allRoles.fold": "每个角色一次，按所在位置 · 列表或角色图",
+  "agents.setup.allRoles.view": "角色的显示方式",
+  "agents.setup.allRoles.list": "列表",
+  "agents.setup.allRoles.diagram": "角色图",
+  "agents.setup.allRoles.search": "搜索角色",
+  "agents.setup.allRoles.nothing": "没有匹配的角色。",
+  "agents.setup.allRoles.notes": "需要留意的人选",
+  "agents.setup.allRoles.suggested": "Daoris 为 {{count}} 个角色建议了选择",
+  "agents.setup.allRoles.suggested_other": "Daoris 为 {{count}} 个角色建议了选择",
+  "agents.setup.allRoles.found": "在 Daoris 之外发现 {{count}} 项更改",
+  "agents.setup.allRoles.found_other": "在 Daoris 之外发现 {{count}} 项更改",
+  "agents.setup.allRoles.show": "显示",
+  "agents.setup.allRoles.showOf": "显示：{{what}}"
 }

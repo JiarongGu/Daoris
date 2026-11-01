@@ -22717,3 +22717,9 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 > **SETUPUX1l — Roles on a place, one role editor** (web; row l of the set-up design). Only the works that differ from the parent as rows, the rest folded; one `RoleEditor` for the place's Roles and All roles (a step's later), keeping the role's scope, revision and typed alternatives; *Back to …* naming the fallback; the two-roles-one-work refusal said in the editor; a shared role edited once with its works named. Proof: the folds, *Back to*, the refusal, a shared role, a typed model saved (`PlaceRoles.test.tsx`, `RoleEditor.test.tsx`); stories at 80, 39 and 25rem, en and zh, both themes.
 
 **Outcome** 2026-11-02: `agents/roles/RoleEditor.tsx` holds the editor (prose behind one ⓘ, a sentence of consequence before *Save*) and `setup/PlaceRoles.tsx` folds the unchanged works. Detail: D221's SETUPUX1l note; `PlaceRoles.stories.tsx`.
+
+## SETUPUX1m — This machine's page (2026-11-02, D221)
+
+> **SETUPUX1m — This machine's page** (web; row m of the set-up design). *All roles*, the diagram, the *Suggested* line and the found staffing changes, all reachable with the Setup mode lit, so lighting the flag loses none of what the dark Roles mode shows. Proof: a door census and `HelpCoverageTests` re-point every dark Roles door; *All roles* lists every role once with scope filters and search, opens a role placed elsewhere at its place, and edits a machine role in place; stories at 80, 39 and 25rem, en and zh, both themes, keyboard.
+
+**Outcome** 2026-11-02: `agents/roles/AllRoles.tsx` is This machine's *All roles* section over the Roles mode's card and diagram, `setup/MachineNotes.tsx` the two lines above the sections, and `placeOpening` sends the Roles mode's doors to the page. Detail: D221's SETUPUX1m note; `MachineRoles.test.tsx`, `MachineRoles.stories.tsx`.

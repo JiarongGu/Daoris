@@ -301,6 +301,30 @@ describe('a door into a repository\'s Setup tab or Workflow tab, once the Setup 
     expect(placeOpening(workspace, false, where)).toEqual(workspace);
   });
 
+  // SETUPUX1m: the Roles mode's doors, which named the mode or one of its sections, name This machine's page once the Setup mode is lit.
+  it("opens This machine's page for each door that opened the Roles mode, at the part of it the door named", () => {
+    const machine = { view: 'agents', agentsMode: 'setup', place: 'machine' };
+    // The Appointed roles section is the Roles section's *Appointed* row (Settings' and the supervisor's doors say it).
+    expect(placeOpening(opening('agents', null, { roleSection: 'appointed' }), true, where))
+      .toEqual({ ...machine, placeAt: { section: 'roles', row: 'appointed' } });
+    // Working roles, Work, Accounts and By repository were All roles' lists: one section now.
+    for (const roleSection of ['working', 'work', 'accounts', 'repository'] as const) {
+      expect(placeOpening(opening('agents', null, { roleSection }), true, where)).toEqual({ ...machine, placeAt: { section: 'allRoles' } });
+    }
+    // Settings' *Roles* button, the help room's Roles step and Get started's name the mode alone.
+    expect(placeOpening(doorOpening({ view: 'agents', agentsMode: 'setup' }), true, where)).toEqual({ ...machine, placeAt: { section: 'roles' } });
+    expect(placeOpening(opening('agents', null, { agentsMode: 'setup' }), true, where)).toEqual({ ...machine, placeAt: { section: 'roles' } });
+  });
+
+  it('leaves the Roles mode\'s doors as they are while dark, and an agent\'s own door in either state', () => {
+    const appointed = opening('agents', null, { roleSection: 'appointed' });
+    expect(placeOpening(appointed, false, where)).toEqual(appointed);
+    const agent = opening('agents', 'claude-code', { agentPart: 'accounts', agentsMode: 'agents' });
+    expect(placeOpening(agent, true, where)).toEqual(agent);
+    const place = { view: 'agents', agentsMode: 'setup', place: 'repo:studio/engine' } as const;
+    expect(placeOpening(place, true, where)).toEqual(place);
+  });
+
   it('changes nothing while the mode is dark, nor for a door that is not one of those tabs', () => {
     const tab = opening('projects', 'engine', { tab: 'setup' });
     expect(placeOpening(tab, false, where)).toEqual(tab);
