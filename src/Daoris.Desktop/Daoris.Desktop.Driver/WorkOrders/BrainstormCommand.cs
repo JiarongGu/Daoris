@@ -16,7 +16,7 @@ public static partial class BrainstormCommand
         + "       daoris-driver brainstorm list";
 
     /// <summary>Exit codes as every verb's: 0 done, 1 refused, 2 a line this verb does not read.</summary>
-    public static int Run(string[] args, string home, TextWriter output, DateTimeOffset now)
+    public static int Run(string[] args, string home, TextWriter output, DateTimeOffset now, Func<string, AdapterSet>? adapters = null)
     {
         var files = new BrainstormFiles(home);
         switch (args)
@@ -36,14 +36,14 @@ public static partial class BrainstormCommand
             case ["clear", var id]:
                 return Clear(files, id, output);
             case [var question, .. var rest] when !question.StartsWith("--", StringComparison.Ordinal) && question is not ("show" or "send" or "stop" or "clear" or "list"):
-                return Ask(files, question, rest, output, now);
+                return Ask(files, question, rest, output, now, (adapters ?? AskedAgents.Current)(home));
             default:
                 output.WriteLine(Usage);
                 return 2;
         }
     }
 
-    private static int Ask(BrainstormFiles files, string question, IReadOnlyList<string> rest, TextWriter output, DateTimeOffset now)
+    private static int Ask(BrainstormFiles files, string question, IReadOnlyList<string> rest, TextWriter output, DateTimeOffset now, AdapterSet adapters)
     {
         string? repository = null;
         string? named = null;
@@ -94,6 +94,12 @@ public static partial class BrainstormCommand
         if (agents.Count > DriverBrainstormLimits.MostAgents)
         {
             output.WriteLine($"daoris-driver: a brainstorm runs at most {DriverBrainstormLimits.MostAgents} agents; {agents.Count} were named.");
+            return 1;
+        }
+
+        if (AskedAgents.Refusal(adapters, agents) is { } unknown)
+        {
+            output.WriteLine(unknown);
             return 1;
         }
 

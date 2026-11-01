@@ -70,15 +70,26 @@ public sealed class MeetingCommandTests : IDisposable
     [Fact]
     public void Ask_writes_a_request_naming_its_agents_in_order_under_the_brainstorms_entry_and_says_the_next_look_freezes_it()
     {
-        var (code, said) = Run("ask", Question, "--agents", "claude,codex", "--repository", "reports");
+        var (code, said) = Run("ask", Question, "--agents", "stub,acp-stub", "--repository", "reports");
 
         Assert.Equal(0, code);
         var request = Assert.Single(Files.Requests());
         Assert.Equal((Question, "reports"), (request.Question, request.Repository));
-        Assert.Equal(["claude", "codex"], request.Agents);
+        Assert.Equal(["stub", "acp-stub"], request.Agents);
         Assert.Contains(request.Id, said, StringComparison.Ordinal);
         Assert.Contains("next look", said, StringComparison.Ordinal);
         Assert.Equal(Path.Combine(DaorisHome.Entry(_home, HomeEntry.Brainstorms), "meetings", request.Id), Files.Folder(request.Id));
+    }
+
+    [Fact]
+    public void Ask_refuses_an_agent_no_adapter_names_with_the_names_there_are_and_writes_nothing()
+    {
+        var (code, said) = Run("ask", Question, "--agents", "claude,codex");
+
+        Assert.Equal(1, code);
+        Assert.Contains("claude-code-acp", said, StringComparison.Ordinal);
+        Assert.Contains("codex-acp", said, StringComparison.Ordinal);
+        Assert.Empty(Files.Requests());
     }
 
     [Theory]
@@ -119,21 +130,21 @@ public sealed class MeetingCommandTests : IDisposable
     [Fact]
     public void An_ask_is_idempotent_by_its_id()
     {
-        Assert.Equal(0, Run("ask", Question, "--agents", "claude,codex", "--id", "daily-report").Code);
-        var (code, said) = Run("ask", Question, "--agents", "claude,codex", "--id", "daily-report");
+        Assert.Equal(0, Run("ask", Question, "--agents", "stub,acp-stub", "--id", "daily-report").Code);
+        var (code, said) = Run("ask", Question, "--agents", "stub,acp-stub", "--id", "daily-report");
 
         Assert.Equal(0, code);
         Assert.Contains("the same meeting, never a second", said, StringComparison.Ordinal);
         Assert.Equal("daily-report", Asked());
-        Assert.Equal(1, Run("ask", "Why is the report slow?", "--agents", "claude,codex", "--id", "daily-report").Code);
-        Assert.Equal(1, Run("ask", Question, "--agents", "codex,claude", "--id", "daily-report").Code);
+        Assert.Equal(1, Run("ask", "Why is the report slow?", "--agents", "stub,acp-stub", "--id", "daily-report").Code);
+        Assert.Equal(1, Run("ask", Question, "--agents", "acp-stub,stub", "--id", "daily-report").Code);
         Assert.Single(Files.Requests());
     }
 
     [Fact]
     public void Show_before_the_look_says_it_waits_and_after_the_freeze_prints_the_packet_whole_with_its_participants()
     {
-        Run("ask", Question, "--agents", "claude,codex", "--repository", "reports");
+        Run("ask", Question, "--agents", "stub,acp-stub", "--repository", "reports");
         var id = Asked();
         Assert.Contains("waits for Daoris's next look", Run("show", id).Out, StringComparison.Ordinal);
 
@@ -153,7 +164,7 @@ public sealed class MeetingCommandTests : IDisposable
     [Fact]
     public void Send_sends_the_first_round_s_packet_once_and_a_later_round_only_when_the_person_names_it()
     {
-        Run("ask", Question, "--agents", "claude,codex");
+        Run("ask", Question, "--agents", "stub,acp-stub");
         var id = Asked();
         Assert.Equal(1, Run("send", id).Code);
         var first = Freeze(id);
@@ -176,7 +187,7 @@ public sealed class MeetingCommandTests : IDisposable
     [Fact]
     public void A_later_round_is_refused_while_a_round_runs_and_any_round_after_a_stop()
     {
-        Run("ask", Question, "--agents", "claude,codex");
+        Run("ask", Question, "--agents", "stub,acp-stub");
         var id = Asked();
         var first = Freeze(id);
         Files.WriteSent(id, 1, first.Digest, At);
@@ -199,7 +210,7 @@ public sealed class MeetingCommandTests : IDisposable
     [Fact]
     public void Show_of_a_refreshed_packet_says_what_it_adds_beyond_the_round_the_person_sent_and_the_transcript_with_its_authors()
     {
-        Run("ask", Question, "--agents", "claude,codex");
+        Run("ask", Question, "--agents", "stub,acp-stub");
         var id = Asked();
         var first = Freeze(id);
         var second = SecondRound(id, first);
@@ -218,7 +229,7 @@ public sealed class MeetingCommandTests : IDisposable
     public void List_names_each_meeting_stop_asks_it_to_end_and_clear_takes_its_records_never_while_it_runs()
     {
         Assert.Contains("No meeting on this machine.", Run("list").Out, StringComparison.Ordinal);
-        Run("ask", Question, "--agents", "claude,codex");
+        Run("ask", Question, "--agents", "stub,acp-stub");
         var id = Asked();
         Assert.Contains($"{id}  asked  {Question}", Run("list").Out, StringComparison.Ordinal);
         var first = Freeze(id);
@@ -243,7 +254,7 @@ public sealed class MeetingCommandTests : IDisposable
     [Fact]
     public void The_brainstorm_verb_never_takes_a_meeting_or_the_folder_that_holds_them()
     {
-        Run("ask", Question, "--agents", "claude,codex");
+        Run("ask", Question, "--agents", "stub,acp-stub");
         var id = Asked();
         Freeze(id);
         var brainstorm = (string[] args) =>
