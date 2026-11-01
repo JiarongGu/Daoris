@@ -123,6 +123,9 @@ export const offered = (plan: PlacePlanned | null): PlaceAccept[] =>
 export const isChosen = (accept: readonly PlaceAccept[], one: PlaceAccept) =>
   accept.some((each) => each.repository === one.repository && each.purpose === one.purpose);
 
+/** The place a set-up is for, as its page names it: the id the list chose, and for a workspace the repositories it drives now. */
+export type SetUpPlace = { id: string; kind: 'repository' | 'workspace'; name: string; workspace: string; driven: string[] };
+
 /** What the application holds for the places whose set-up is open (the Roles page's way, `useRolesPage`): a draft by place id. */
 export type SetUpPage = {
   /** The draft of an open place; none where its set-up is closed. */
