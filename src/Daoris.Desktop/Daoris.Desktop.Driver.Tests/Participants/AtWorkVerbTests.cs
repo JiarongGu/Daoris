@@ -172,6 +172,55 @@ public sealed class AtWorkVerbTests : IDisposable
         Assert.Contains("published 1, waits on none", text.ToString(), StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task With_no_window_the_quests_a_chat_published_say_who_took_each_in_text_and_json_alike()
+    {
+        _ledger.Publish("q3", "core");
+        _ledger.PublishedBy("q3", "c1");
+        _ledger.Publish("q4", "engine", title: "The second");
+        _ledger.PublishedBy("q4", "c1");
+        _ledger.Publish("q5", "engine", parent: "q4");
+        _ledger.Working("c1", "engine", Path.Combine(_home, "engine"));
+        _ledger.Working("c2", "engine", Path.Combine(_home, "engine"));
+        _ledger.Took("c2", "q4");
+        var text = new StringWriter();
+        var json = new StringWriter();
+
+        Assert.Equal(0, await SessionsCommand.RunAsync(Read("at-work", "c1"), World(), text));
+        Assert.Equal(0, await SessionsCommand.RunAsync(Read("at-work", "c1", "--json"), World(), json));
+
+        var lines = text.ToString();
+        Assert.Contains("#q3 · The work of #q3 · of core · not taken yet", lines, StringComparison.Ordinal);
+        Assert.Contains("#q4 · The second · taken by conversation c2", lines, StringComparison.Ordinal);
+        Assert.Contains("#q5 · The work of #q5 · the next step of #q4 · not taken yet", lines, StringComparison.Ordinal);
+        var quests = JsonDocument.Parse(json.ToString()).RootElement.GetProperty("answer").GetProperty("quests");
+        Assert.Equal(["q3", "q4", "q5"], quests.EnumerateArray().Select(quest => quest.GetProperty("id").GetString()).Order().ToArray());
+        var taken = quests.EnumerateArray().Single(quest => quest.GetProperty("id").GetString() == "q4");
+        Assert.Equal("c2", taken.GetProperty("taker").GetProperty("conversation").GetString());
+        var step = quests.EnumerateArray().Single(quest => quest.GetProperty("id").GetString() == "q5");
+        Assert.Equal("q4", step.GetProperty("step").GetString());
+        Assert.True(step.GetProperty("taker").GetProperty("untaken").GetBoolean());
+    }
+
+    [Fact]
+    public async Task With_no_window_the_quest_a_session_serves_says_what_asked_it()
+    {
+        var tree = DaorisHome.Entry(_home, HomeEntry.Trees, "s-1");
+        Directory.CreateDirectory(tree);
+        _ledger.PublishedBy("q1", "other");
+        _ledger.Driven("s1", "q1", tree);
+        _ledger.InEntry("s1", "quest:q1/engine");
+        var text = new StringWriter();
+        var json = new StringWriter();
+
+        Assert.Equal(0, await SessionsCommand.RunAsync(Read("at-work", "s1"), World(), text));
+        Assert.Equal(0, await SessionsCommand.RunAsync(Read("at-work", "s1", "--json"), World(), json));
+
+        Assert.Contains("asked by: #q1 · published by other", text.ToString(), StringComparison.Ordinal);
+        var asker = JsonDocument.Parse(json.ToString()).RootElement.GetProperty("answer").GetProperty("askedBy");
+        Assert.Equal(("q1", "other"), (asker.GetProperty("quest").GetString(), asker.GetProperty("by").GetProperty("session").GetString()));
+    }
+
     private static int Asked(InstanceStandIn standIn) =>
         standIn.Presses.Count(press => press.GetProperty("type").GetString() == "SESSION_AT_WORK");
 

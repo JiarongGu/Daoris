@@ -65,7 +65,10 @@ public static class AtWorkVerb
         var published = look.Quests.Where(quest => quest.PublishedBy is { Length: > 0 }).GroupBy(quest => quest.PublishedBy!, StringComparer.Ordinal)
             .ToDictionary(group => group.Key, group => group.Count(), StringComparer.Ordinal);
         var routing = new AtWorkRouting(
-            parts ?? [], id => rows.GetValueOrDefault(id), id => quests.GetValueOrDefault(id), id => published.GetValueOrDefault(id), new SliceHealth(true));
+            parts ?? [], id => rows.GetValueOrDefault(id), id => quests.GetValueOrDefault(id), id => published.GetValueOrDefault(id), new SliceHealth(true))
+        {
+            Asking = new AtWorkAsking(look.Quests, look.Records, id => rows.GetValueOrDefault(id)),
+        };
         return AtWork.Compose(
             session, parts?.Select(part => part.Session).ToList(),
             id => records.GetValueOrDefault(id) is { } record
@@ -135,6 +138,15 @@ public static class AtWorkVerb
 
         if (answer.Earlier is > 0 and var earlier) lines.Add($"{earlier} earlier parts");
         if (answer.Published is > 0 and var published && answer.Parts.All(part => part.Waits is null)) lines.Add($"published {published}, waits on none");
+        if (answer.Quests is { Count: > 0 } quests)
+        {
+            lines.Add("asked through quests:");
+            lines.AddRange(quests.Select(quest => $"  {Quest(quest)}"));
+            if (answer.MoreQuests is > 0 and var more) lines.Add($"  {more} more quests");
+            if (quests.Any(quest => quest.Taker?.Untaken == true)) lines.Add("  why a quest is not taken yet is the driver's last look's, which the window says");
+        }
+
+        if (answer.AskedBy is { } asker) lines.Add($"asked by: #{asker.Quest} · {Asker(asker.By)}");
         lines.Add($"subagents: {answer.Subagents.Working} working");
         foreach (var child in answer.Subagents.Children)
         {
@@ -144,6 +156,34 @@ public static class AtWorkVerb
 
         return lines;
     }
+
+    /// <summary>One quest a part asked: its name, where it went and by which lanes, the step it follows, who took it and what it waits on.</summary>
+    private static string Quest(AtWorkAskedQuest quest)
+    {
+        List<string> words = [$"#{quest.Id}", quest.Title];
+        if (quest.Of is { } of) words.Add($"of {of}");
+        if (quest.Lanes is { Count: > 0 } lanes) words.Add($"{string.Join(", ", lanes)} lane");
+        if (quest.Step is { } step) words.Add($"the next step of #{step}");
+        words.Add(quest.Taker switch
+        {
+            { Untaken: true } => "not taken yet",
+            { Session: { } session } taker => $"taken by {session} ({taker.Agent ?? "agent"}, {taker.State ?? "state not read"})",
+            { Conversation: { } conversation } => $"taken by conversation {conversation}",
+            { Elsewhere: true } => "taken on another machine",
+            { Unrecorded: true } => "taken, by no session recorded here",
+            _ => quest.Status.ToLowerInvariant(),
+        });
+        if (quest.Waits is { } wait) words.Add(Wait(wait));
+        return string.Join(" · ", words);
+    }
+
+    private static string Asker(AtWorkBy by) => by switch
+    {
+        { Session: { } session } => $"published by {session}",
+        { Step: { } step } => $"the next step of #{step}",
+        { Ask: { } ask } => $"ask #{ask}",
+        _ => "you",
+    };
 
     /// <summary>What a part waits on, in the rail's words: <i>waits on #q, asked of core</i>, or <i>awaiting helper</i>.</summary>
     private static string Wait(AtWorkWait wait)
