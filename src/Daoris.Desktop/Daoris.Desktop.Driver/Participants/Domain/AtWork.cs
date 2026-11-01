@@ -32,6 +32,14 @@ public sealed record AtWorkRecord(string Id, string? State)
 
     /// <summary>The record's kind, <see cref="ChildBindings.Chat"/> or driven, which the fold reads its history by.</summary>
     public string? Kind { get; init; }
+
+    /// <summary>The quest a chat took through its own connector, its <c>quest</c> staying null (COWORKVIEW1b-i).</summary>
+    public string? TookQuest { get; init; }
+
+    public string? Repository { get; init; }
+
+    /// <summary>The tree it works in: only whether another part works in it is answered, never the path.</summary>
+    public string? Tree { get; init; }
 }
 
 /// <summary>An input slice's health, taken with its snapshot: whether it has judged, and its failure's words while it fails.</summary>
@@ -73,6 +81,14 @@ public sealed record AtWorkAnswer(AtWorkOf Of, string Attended, IReadOnlyList<At
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyDictionary<string, int>? MoreParts { get; init; }
 
+    /// <summary>Ended parts that wait on nothing, past the newest three, which the list leaves out (COWORKVIEW1b-i).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? Earlier { get; init; }
+
+    /// <summary>How many quests the entry's parts published; null where none, and where the routing half is not read.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? Published { get; init; }
+
     /// <summary>When this process began: the window's memory of what it heard starts here (rule 18).</summary>
     public DateTimeOffset WindowOpened { get; init; } = Opened;
 
@@ -87,6 +103,21 @@ public sealed record AtWorkPart(string Key, AtWorkCounts Children)
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? State { get; init; }
+
+    /// <summary>Its place in the strip, from one; the number the words <i>part 2</i> and <i>retried after part 1</i> say.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? Number { get; init; }
+
+    /// <summary>What it waits on, as the strip places it (COWORKVIEW1b-i); null where it waits on nothing.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public AtWorkWait? Waits { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public AtWorkJoined? Joined { get; init; }
+
+    /// <summary>It runs in a tree no earlier part of the entry worked in.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Alongside { get; init; }
 }
 
 /// <summary>A part's subagents counted, or for a teammate's part <see cref="Elsewhere"/> and no count.</summary>
@@ -197,11 +228,13 @@ public static class AtWork
     /// <param name="entry">Its entry's parts in the strip's order; null where it is in no entry, an ended intake's among them.</param>
     /// <param name="record">A record's read fields as the sessions slice holds them; null where it holds none.</param>
     /// <param name="lineage">A part's lineage reading; never asked for a teammate's part.</param>
+    /// <param name="routing">The routing half's inputs (COWORKVIEW1b-i); null reads none of it, and no part is folded.</param>
     public static AtWorkHeld Compose(
         string session, IReadOnlyList<string>? entry, Func<string, AtWorkRecord?> record, Func<AtWorkRecord, LineageReading> lineage,
-        SliceHealth groups, SliceHealth sessions)
+        SliceHealth groups, SliceHealth sessions, AtWorkRouting? routing = null)
     {
-        foreach (var health in new[] { groups, sessions })
+        SliceHealth[] inputs = routing is null ? [groups, sessions] : [groups, sessions, routing.Quests];
+        foreach (var health in inputs)
         {
             if (health.Judged) continue;
             return health.Failing is { } why ? new AtWorkHeld { Failed = new AtWorkWhy(why) } : new AtWorkHeld { Pending = true, Waits = WaitsSlices };
@@ -209,13 +242,18 @@ public static class AtWork
 
         if (record(session) is not { } attended) return new AtWorkHeld { Pending = true, Waits = WaitsRecord };
 
-        List<string> ids = [session, .. (entry ?? []).Where(id => id != session).Distinct(StringComparer.Ordinal)];
+        List<string> order = [.. (entry ?? []).Distinct(StringComparer.Ordinal)];
+        List<string> ids = [session, .. order.Where(id => id != session)];
+        AtWorkRecord? Held(string id) => id == session ? attended : record(id);
+        var routed = routing is null ? null : new Routed(routing, order, ids, Held, session);
+
         var parts = new List<AtWorkPart>();
         var moreParts = new Dictionary<string, int>(StringComparer.Ordinal);
         LineageReading? attendedReading = null;
         foreach (var id in ids)
         {
-            var held = id == session ? attended : record(id);
+            if (routed?.Folded.Contains(id) == true) continue;
+            var held = Held(id);
             if (parts.Count >= Bound)
             {
                 var state = held?.State ?? "unknown";
@@ -225,24 +263,76 @@ public static class AtWork
 
             if (Teammate(id))
             {
-                parts.Add(new AtWorkPart(id, new AtWorkCounts { Elsewhere = true }) { Agent = held?.Adapter, State = held?.State });
+                var away = new AtWorkPart(id, new AtWorkCounts { Elsewhere = true }) { Agent = held?.Adapter, State = held?.State };
+                parts.Add(routed is null ? away : routed.Place(away, held));
                 continue;
             }
 
             var reading = held is null ? LineageReading.None : lineage(held);
             if (id == session) attendedReading = reading;
-            parts.Add(new AtWorkPart(id, Counts(reading)) { Agent = held?.Adapter, State = held?.State });
+            var here = new AtWorkPart(id, Counts(reading)) { Agent = held?.Adapter, State = held?.State };
+            parts.Add(routed is null ? here : routed.Place(here, held));
         }
 
-        var stale = groups.Failing ?? sessions.Failing;
+        var stale = groups.Failing ?? sessions.Failing ?? routing?.Quests.Failing;
         return new AtWorkHeld
         {
             Answer = new AtWorkAnswer(new AtWorkOf(session), session, parts, Subagents(attended, Teammate(session) ? null : attendedReading))
             {
                 MoreParts = moreParts.Count > 0 ? moreParts : null,
+                Earlier = routed?.Folded.Count is > 0 and var earlier ? earlier : null,
+                Published = routed?.Published is > 0 and var published ? published : null,
             },
             Stale = stale is null ? null : new AtWorkWhy(stale),
         };
+    }
+
+    /// <summary>
+    /// The routing half over one composition (COWORKVIEW1b-i): the waits the strip places, which ended parts fold, and what each part
+    /// gains. The parts are numbered and judged in the strip's order, whichever the answer lists first.
+    /// </summary>
+    private sealed class Routed
+    {
+        private readonly AtWorkRouting _routing;
+        private readonly Dictionary<string, int> _numbers;
+        private readonly Dictionary<string, AtWorkEntryPart> _entry;
+        private readonly Dictionary<string, AtWorkWait?> _waits = new(StringComparer.Ordinal);
+        private readonly Dictionary<string, bool> _alongside = new(StringComparer.Ordinal);
+
+        public Routed(AtWorkRouting routing, List<string> order, List<string> ids, Func<string, AtWorkRecord?> held, string session)
+        {
+            _routing = routing;
+            _numbers = order.Select((id, index) => (id, number: index + 1)).ToDictionary(each => each.id, each => each.number, StringComparer.Ordinal);
+            _entry = routing.Parts.GroupBy(part => part.Session, StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
+            foreach (var id in ids) _waits[id] = AtWorkParts.Wait(routing, id, _entry.GetValueOrDefault(id), held(id));
+            for (var at = 0; at < order.Count; at++)
+            {
+                if (Teammate(order[at])) continue;
+                var self = held(order[at]);
+                _alongside[order[at]] = AtWorkParts.Alongside(self, _waits[order[at]] is not null, order.Take(at).Select(held));
+            }
+
+            // Ended parts that wait on nothing, oldest first, but the newest three; the attended part is the page's own and never folds.
+            var ended = order.Where(id => id != session && AtWorkParts.Ended(held(id)) && _waits[id] is null).ToList();
+            Folded = [.. ended.Take(Math.Max(0, ended.Count - NewestEnded))];
+            Published = ids.Sum(routing.Published);
+        }
+
+        public HashSet<string> Folded { get; }
+
+        public int Published { get; }
+
+        public AtWorkPart Place(AtWorkPart part, AtWorkRecord? held)
+        {
+            var entry = _entry.GetValueOrDefault(part.Key);
+            return part with
+            {
+                Number = _numbers.TryGetValue(part.Key, out var number) ? number : null,
+                Waits = _waits.GetValueOrDefault(part.Key),
+                Joined = AtWorkParts.Joined(_routing, entry, held, id => id is not null && _numbers.TryGetValue(id, out var each) ? each : null),
+                Alongside = _alongside.GetValueOrDefault(part.Key) ? true : null,
+            };
+        }
     }
 
     /// <summary>A teammate's record, named <c>origin/id</c>: its lineage is on another machine.</summary>
