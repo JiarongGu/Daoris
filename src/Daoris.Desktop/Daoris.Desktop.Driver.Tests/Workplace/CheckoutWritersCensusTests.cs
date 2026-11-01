@@ -44,8 +44,8 @@ public sealed partial class CheckoutWritersCensusTests
         ["BranchReplays.cs"] = (Refs, "a branch replayed in its own tree or one made for it (D109 §2), moved from the tip judged while no checkout has it out", ["add@tree", "checkout@tree", "rebase@tree", "rm@tree", "switch@tree", "update-ref@root", "worktree@root"]),
         ["TreeUpdates.cs"] = (Refs, "a session's branch brought up to date in its own tree, moved from the tip judged while that tree is detached", ["rebase@tree", "switch@full", "switch@tree", "update-ref@root"]),
         ["TreeLandSyncs.cs"] = (Refs, "a session's branch following what landed, moved from the tip judged while its own tree is detached", ["switch@full", "update-ref@sync.Root"]),
-        ["TreeLands.cs"] = (Refs, "a landing's new branch, and its advance from the recorded tip of a branch checked out in no tree; its merge rule writes the checkout only through IntegrationPromotes' effect and holds nothing itself", ["branch@root", "update-ref@root"]),
-        ["TreeSquashes.cs"] = (Refs, "a squash's advance, from the recorded tip of a branch checked out in no tree", ["update-ref@root"]),
+        ["TreeLands.cs"] = (Refs, "a landing's new branch, and its advance from the recorded tip of a branch checked out in no tree; a delivery's are TreeDeliveries' transaction instead; its merge rule writes the checkout only through IntegrationPromotes' effect and holds nothing itself", ["branch@root", "update-ref@root"]),
+        ["TreeSquashes.cs"] = (Refs, "a squash's advance, from the recorded tip of a branch checked out in no tree; a delivery's is TreeDeliveries' transaction instead", ["update-ref@root"]),
         ["ContentHolds.cs"] = (Refs, "Daoris's holds on content under its own refs, and a branch deleted verified at the tip judged", ["update-ref@root"]),
         ["RecoveryDropping.cs"] = (Refs, "a recovery ref dropped verified at its commit", ["update-ref@root"]),
         ["RefTransaction.cs"] = (Refs, "one typed transaction per ref act (GITTXN1, GITTXN2), each ref's expectation inside it, for refs no checkout has out: the content holds' deletes, drops and put-backs", ["update-ref@?", "update-ref@root"]),
@@ -73,6 +73,15 @@ public sealed partial class CheckoutWritersCensusTests
         ["ActSteps.cs"] = "ActRuns.cs",
         ["ActCommits.cs"] = "ActRuns.cs",
         ["ActWorkSteps.cs"] = "ActRuns.cs",
+    };
+
+    /// <summary>
+    /// Files that hold a checkout alone around a write of refs no checkout has out, through <c>RefTransaction</c>, so no act of the person's on
+    /// the same refs runs beside it: what each writes.
+    /// </summary>
+    private static readonly Dictionary<string, string> RefsHeldAlone = new(StringComparer.Ordinal)
+    {
+        ["TreeDeliveries.cs"] = "a delivery's landing (LANDNODE1b2): its branch made, moved on from the tip judged, or its tree's own verified at the tip, one transaction in its phase",
     };
 
     /// <summary>Writers of a checkout that start no git of Daoris's and so take no lock: how each is fenced instead.</summary>
@@ -198,7 +207,13 @@ public sealed partial class CheckoutWritersCensusTests
         }
 
         var taking = sources.Where(each => each.Value.Contains("TreeLock.TryWriting(", StringComparison.Ordinal)).Select(each => each.Key);
-        Assert.Equal(HeldIn.Values.Distinct().Order(StringComparer.Ordinal), taking.Order(StringComparer.Ordinal));
+        Assert.Equal(HeldIn.Values.Concat(RefsHeldAlone.Keys).Distinct().Order(StringComparer.Ordinal), taking.Order(StringComparer.Ordinal));
+        foreach (var (holder, what) in RefsHeldAlone)
+        {
+            Assert.False(string.IsNullOrWhiteSpace(what), holder);
+            Assert.Contains("new RefTransaction()", sources[holder], StringComparison.Ordinal);
+            Assert.DoesNotContain(holder, Census.Keys);
+        }
 
         foreach (var (start, how) in Fenced)
         {

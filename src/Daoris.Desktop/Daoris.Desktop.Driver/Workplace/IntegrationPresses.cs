@@ -13,14 +13,15 @@ internal static class IntegrationPresses
     /// Merge <paramref name="tip"/> of <paramref name="branch"/> into <paramref name="line"/> as the press's: true where the line now holds it,
     /// else the sentence the press is refused with (the conflict or the hook in today's words, or what holds it).
     /// </summary>
+    /// <param name="delivered">A delivery's merge (LANDNODE1b2), admitted by its intent's method rather than the rule's.</param>
     public static async Task<(bool Merged, string? Refused)> MergeAsync(
         string home, DriverConfig config, string root, string repository, string? workspace, string line, string branch, string tip, CancellationToken ct,
-        Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null)
+        Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null, bool delivered = false)
     {
         try
         {
             var store = new IntegrationStore(home);
-            var admitted = new IntegrationRequests(new HomeIntegrationRecords(home), store, () => config).Press(repository, workspace, branch, tip, line);
+            var admitted = new IntegrationRequests(new HomeIntegrationRecords(home), store, () => config).Press(repository, workspace, branch, tip, line, delivered);
             if (admitted is not { Admitted: true, Request: { } request }) return (false, $"Nothing was merged: {admitted.Message}");
 
             var asks = new IntegrationSweepAsks(

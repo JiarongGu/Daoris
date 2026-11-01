@@ -27,7 +27,8 @@ namespace Daoris.Driver;
 /// registered twice, under two names or in two workspaces, is one lock, and a session tree names its checkout's.</para>
 ///
 /// <para><b>Every writer of the checkout holds it alone</b> (GITLOCK1, D51's note): a line's pull and a promotion's move, each
-/// from its fresh judgement through its write and its read after it (<see cref="TryWriting"/>), and every start holds it shared,
+/// from its fresh judgement through its write and its read after it (<see cref="TryWriting"/>), a delivery's landing around its branch's
+/// ref transaction (LANDNODE1b2), and every start holds it shared,
 /// in its own tree or the checkout. <c>CheckoutWritersCensusTests</c> names every git write and where it writes. A holder alone
 /// says what it is beside the lock (<see cref="HolderOf"/>), so a start or a writer it refuses names it.</para>
 ///
@@ -54,6 +55,9 @@ public sealed class TreeLock : IDisposable
 
     /// <inheritdoc cref="HeldBy.Acting"/>
     public const string Acting = HeldBy.Acting;
+
+    /// <inheritdoc cref="HeldBy.Landing"/>
+    public const string Landing = HeldBy.Landing;
 
     private readonly FileStream _file;
     private readonly string? _by;
@@ -190,6 +194,7 @@ public sealed class TreeLock : IDisposable
         Tidying => $"`{repository}`'s session trees were being cleaned up",
         Promoting => $"`{repository}`'s line was being moved to what its integration promoted",
         Acting => $"a git act was changing `{repository}`'s checkout, or its record being reconciled (see the repository's page)",
+        Landing => $"a landing was writing one of `{repository}`'s branches",
         _ => $"a session was starting in `{repository}`, or another of Daoris's writes held it",
     };
 
