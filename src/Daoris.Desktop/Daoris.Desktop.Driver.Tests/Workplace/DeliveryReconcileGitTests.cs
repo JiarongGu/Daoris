@@ -61,9 +61,225 @@ public sealed class DeliveryReconcileGitTests : IDisposable
         Assert.Equal(DeliverySettlements.Delivered, Store("run-a").Delivery(claim.Key)?.Settled);
     }
 
+    /// <summary>
+    /// A stop after each git effect and before its outcome, then a restart: the dead run's delivery taken up by the next and settled by phase.
+    /// Cut while prepared, nothing stands and the preparation is withdrawn; cut after its ref, the ref read at the intended tip is done and the
+    /// landing goes on to its record; cut after its record, the record read is done and the delivery delivered. One branch at the tip, written once.
+    /// </summary>
+    [Theory]
+    [InlineData(DeliveryPhases.Prepared, DeliveryPhases.Prepared)]
+    [InlineData(DeliveryPhases.RefWritten, DeliveryPhases.Recorded)]
+    [InlineData(DeliveryPhases.Recorded, null)]
+    public async Task A_stop_at_each_git_boundary_and_a_restart_end_in_one_branch(string cut, string? next)
+    {
+        var (root, trees, tree, tip) = await TreeAsync();
+        var (store, claim) = Start(tip, DeliveryMethods.Branch);
+        await Assert.ThrowsAsync<Crash>(() => trees.LandAsync(tree.Path, Subject, inUse: NoneRunning, delivery: Stopping(store, claim, cut)));
+
+        var reconciled = Assert.Single(await Reconciler("run-b", root, DeadAre("run-a")).StartAsync(CancellationToken.None));
+
+        Assert.Equal(next is null ? DeliveryStandings.Delivered : DeliveryStandings.GoesOn, reconciled.Standing);
+        Assert.Equal(next, reconciled.Next);
+        Assert.Equal(("run-b", 2L), (reconciled.Claim?.Run, reconciled.Claim?.Generation));
+        if (next is not null)
+        {
+            var landed = await new SessionTrees(_home).LandAsync(tree.Path, Subject, inUse: NoneRunning, delivery: new TreeDelivery(Store("run-b"), reconciled.Claim!));
+            Assert.True(landed.Landed, landed.Message);
+            Assert.Equal(Named, landed.Branch);
+        }
+
+        Assert.Equal([Named], await BranchesAsync(root));
+        Assert.Equal(tip, await RevAsync(root, $"refs/heads/{Named}"));
+        Assert.Equal(tip, new SessionTrees(_home).Recorded.Of("engine", Named)?.Tip);
+        var phases = Store("run-b").Phases(claim.Key);
+        Assert.All(phases, each => Assert.False(each.Open));
+        Assert.Single(phases, each => each.Phase == DeliveryPhases.RefWritten);
+        Assert.Equal(DeliveryOutcomes.Done, phases[^1].Outcome);
+        Assert.Equal(cut == DeliveryPhases.Prepared ? DeliveryOutcomes.Withdrawn : DeliveryOutcomes.Done, phases[0].Outcome);
+        Assert.Equal(DeliverySettlements.Delivered, Store("run-b").Delivery(claim.Key)?.Settled);
+        Assert.Empty(await Reconciler("run-b", root).StartAsync(CancellationToken.None));
+    }
+
+    /// <summary>
+    /// A later delivery stopped after its advance's ref: the restart reads the branch at the new tip, done, and its landing goes on to record it
+    /// as an advance from the tip the first recorded, never as a branch made anew, and the branch is not moved twice.
+    /// </summary>
+    [Fact]
+    public async Task An_advance_stopped_after_its_ref_is_recorded_as_an_advance_from_the_recorded_tip_after_a_restart()
+    {
+        var (root, trees, tree, first) = await TreeAsync();
+        var (store, claim) = Start(first, DeliveryMethods.Branch);
+        Assert.True((await trees.LandAsync(tree.Path, Subject, inUse: NoneRunning, delivery: new TreeDelivery(store, claim))).Landed);
+        await CommitAsync(tree.Path, "more.txt", "more work", "more work");
+        var second = (await RevAsync(tree.Path, "HEAD"))!;
+        var (_, later) = Start(second, DeliveryMethods.Branch);
+        await Assert.ThrowsAsync<Crash>(() => trees.LandAsync(tree.Path, Subject, inUse: NoneRunning, delivery: Stopping(store, later, DeliveryPhases.RefWritten)));
+
+        var reconciled = await Reconciler("run-b", root, DeadAre("run-a")).BeforeStartAsync("unit-1", CancellationToken.None);
+        var landed = await new SessionTrees(_home).LandAsync(tree.Path, Subject, inUse: NoneRunning, delivery: new TreeDelivery(Store("run-b"), reconciled!.Claim!));
+
+        Assert.True(landed.Landed, landed.Message);
+        Assert.Equal(first, landed.AdvancedFrom);
+        Assert.Equal(second, await RevAsync(root, $"refs/heads/{Named}"));
+        Assert.Equal(second, new SessionTrees(_home).Recorded.Of("engine", Named)?.Tip);
+        Assert.Equal([Named], await BranchesAsync(root));
+        Assert.Single(Store("run-b").Phases(later.Key), each => each.Phase == DeliveryPhases.RefWritten);
+        Assert.Equal(DeliverySettlements.Delivered, Store("run-b").Delivery(later.Key)?.Settled);
+    }
+
+    /// <summary>A merge stopped after the promotion moved its line, before its outcome: the restart reads the line holding it, records it and delivers it, merged once.</summary>
+    [Fact]
+    public async Task A_merge_stopped_after_its_line_moved_is_reached_by_the_restart_and_merged_once()
+    {
+        var (root, trees, tree, tip) = await TreeAsync();
+        var (store, claim) = Start(tip, DeliveryMethods.Merge);
+        await Assert.ThrowsAsync<Crash>(() =>
+            trees.LandAsync(tree.Path, Subject, inUse: NoneRunning, delivery: Stopping(store, claim, DeliveryPhases.RefWritten), beside: NoSessions));
+
+        var reconciled = Assert.Single(await Reconciler("run-b", root, DeadAre("run-a")).StartAsync(CancellationToken.None));
+
+        Assert.Equal(DeliveryStandings.Delivered, reconciled.Standing);
+        Assert.Equal(0, (await GitFixture.RunAsync(root, "merge-base", "--is-ancestor", tip, "refs/heads/main")).ExitCode);
+        Assert.Equal("1", (await GitFixture.GitAsync(root, "rev-list", "--merges", "--count", "main")).Trim());
+        Assert.Empty(await BranchesAsync(root));
+        var phases = Store("run-b").Phases(claim.Key);
+        Assert.Equal([DeliveryPhases.Prepared, DeliveryPhases.RefWritten, DeliveryPhases.Recorded], phases.Select(each => each.Phase));
+        Assert.All(phases, each => Assert.Equal(DeliveryOutcomes.Done, each.Outcome));
+        Assert.Equal(await RevAsync(root, "refs/heads/main"), phases[1].Evidence);
+        Assert.Equal(DeliverySettlements.Delivered, Store("run-b").Delivery(claim.Key)?.Settled);
+    }
+
+    /// <summary>
+    /// A merge press whose request was left waiting, its line's entry withdrawn as 1b2 writes it: while the request waits, nothing is pressed again;
+    /// once the line takes it, the restart's settlement reads the line holding the commit and settles it reached.
+    /// </summary>
+    [Fact]
+    public async Task A_merge_whose_request_waits_is_held_for_its_line_and_reached_once_the_line_holds_its_tip()
+    {
+        var (root, _, tree, tip) = await TreeAsync();
+        var (store, claim) = Start(tip, DeliveryMethods.Merge);
+        store.Begin(claim, DeliveryPhases.Prepared, $"merge {tip} into `main`");
+        store.End(claim, DeliveryPhases.Prepared, DeliveryOutcomes.Done, tip, $"the commit merged into `main` is {tip}");
+        store.Begin(claim, DeliveryPhases.RefWritten, $"`refs/heads/main` to hold {tip}");
+        store.End(claim, DeliveryPhases.RefWritten, DeliveryOutcomes.Withdrawn, null, $"`{tree.Branch}` waits to be merged into `main`, and is tried again at each look");
+        var admitted = new IntegrationRequests(new HomeIntegrationRecords(_home), new IntegrationStore(_home), () => DriverConfig.Empty)
+            .Press("engine", "aurora", tree.Branch, tip, "main", delivered: true);
+        Assert.True(admitted.Admitted, admitted.Message);
+
+        var waits = Assert.Single(await Reconciler("run-a", root).StartAsync(CancellationToken.None));
+
+        Assert.Equal(DeliveryStandings.Waits, waits.Standing);
+        Assert.Contains("waits", waits.Said);
+        Assert.Equal(2, Store("run-a").Phases(claim.Key).Count);
+
+        await GitFixture.GitAsync(root, "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture", "merge", "--no-ff", "-m", "the line takes it", tip);
+        var reached = Assert.Single(await Reconciler("run-a", root).StartAsync(CancellationToken.None));
+
+        Assert.Equal(DeliveryStandings.Delivered, reached.Standing);
+        var phases = Store("run-a").Phases(claim.Key);
+        Assert.Equal([DeliveryPhases.Prepared, DeliveryPhases.RefWritten, DeliveryPhases.RefWritten, DeliveryPhases.Recorded], phases.Select(each => each.Phase));
+        Assert.Equal([DeliveryOutcomes.Done, DeliveryOutcomes.Withdrawn, DeliveryOutcomes.Done, DeliveryOutcomes.Done], phases.Select(each => each.Outcome));
+        Assert.Equal(DeliverySettlements.Delivered, Store("run-a").Delivery(claim.Key)?.Settled);
+    }
+
+    /// <summary>
+    /// The branch found at another commit after a stop, neither where its delivery wrote it ahead nor where it stood: unknown, held for the person,
+    /// and neither a restart again nor a landing again writes anything more.
+    /// </summary>
+    [Fact]
+    public async Task A_ref_found_elsewhere_after_a_stop_is_unknown_and_nothing_repeats_its_effect()
+    {
+        var (root, trees, tree, tip) = await TreeAsync();
+        var (store, claim) = Start(tip, DeliveryMethods.Branch);
+        var main = (await RevAsync(root, "refs/heads/main"))!;
+        var moving = new TreeDelivery(store, claim)
+        {
+            Seam = async phase =>
+            {
+                if (phase != DeliveryPhases.RefWritten) return;
+                await GitFixture.GitAsync(root, "update-ref", $"refs/heads/{Named}", main);
+                throw new Crash();
+            },
+        };
+        await Assert.ThrowsAsync<Crash>(() => trees.LandAsync(tree.Path, Subject, inUse: NoneRunning, delivery: moving));
+
+        var reconciled = Assert.Single(await Reconciler("run-b", root, DeadAre("run-a")).StartAsync(CancellationToken.None));
+
+        Assert.Equal(DeliveryStandings.Unknown, reconciled.Standing);
+        Assert.Contains(Named, reconciled.Said);
+        var written = Store("run-b").Phases(claim.Key);
+        Assert.Equal((DeliveryPhases.RefWritten, DeliveryOutcomes.Unknown, main), (written[^1].Phase, written[^1].Outcome, written[^1].Evidence));
+
+        Assert.Equal(DeliveryStandings.Unknown, Assert.Single(await Reconciler("run-b", root).StartAsync(CancellationToken.None)).Standing);
+        var again = await new SessionTrees(_home).LandAsync(tree.Path, Subject, inUse: NoneRunning, delivery: new TreeDelivery(Store("run-b"), reconciled.Claim!));
+        Assert.False(again.Landed, again.Message);
+        Assert.Contains("unknown", again.Message);
+        Assert.Equal(main, await RevAsync(root, $"refs/heads/{Named}"));
+        Assert.Equal(written.Count, Store("run-b").Phases(claim.Key).Count);
+        Assert.True(Store("run-b").Delivery(claim.Key)!.Unresolved);
+    }
+
+    /// <summary>A delivery whose run still lives is that run's to land: held, its claim not taken, nothing written.</summary>
+    [Fact]
+    public async Task A_delivery_whose_run_still_lives_is_held_and_nothing_is_written()
+    {
+        var (root, _, _, tip) = await TreeAsync();
+        var (store, claim) = Start(tip, DeliveryMethods.Branch);
+        store.Begin(claim, DeliveryPhases.Prepared, $"branch: `{Named}` at {tip}");
+
+        var held = Assert.Single(await Reconciler("run-b", root).StartAsync(CancellationToken.None));
+
+        Assert.Equal(DeliveryStandings.Held, held.Standing);
+        Assert.Contains("still runs", held.Said);
+        Assert.Null(held.Claim);
+        Assert.True(Assert.Single(Store("run-b").Phases(claim.Key)).Open);
+        Assert.Equal(("run-a", 1L), (Store("run-b").Delivery(claim.Key)!.ClaimRun, Store("run-b").Delivery(claim.Key)!.ClaimGeneration));
+    }
+
+    /// <summary>A push stopped after its record: the git phases are done, and what follows is its plugin's (row 1e), left as it stands.</summary>
+    [Fact]
+    public async Task A_push_stopped_after_its_record_leaves_its_plugin_s_phases_to_the_plugin_frame()
+    {
+        var (root, trees, tree, tip) = await TreeAsync();
+        var (store, claim) = Start(tip, DeliveryMethods.Push);
+        await Assert.ThrowsAsync<Crash>(() => trees.LandAsync(tree.Path, Subject, inUse: NoneRunning, delivery: Stopping(store, claim, DeliveryPhases.Recorded)));
+
+        var reconciled = Assert.Single(await Reconciler("run-b", root, DeadAre("run-a")).StartAsync(CancellationToken.None));
+
+        Assert.Equal(DeliveryStandings.Plugin, reconciled.Standing);
+        Assert.Equal([Named], await BranchesAsync(root));
+        Assert.All(Store("run-b").Phases(claim.Key), each => Assert.Equal(DeliveryOutcomes.Done, each.Outcome));
+        Assert.True(Store("run-b").Delivery(claim.Key)!.Unresolved);
+    }
+
+    /// <summary>A stop that leaves its unit's delivery unresolved blocks a new tip's start until its settlement before the start delivers it.</summary>
+    [Fact]
+    public async Task A_stopped_delivery_is_settled_before_its_unit_s_next_start()
+    {
+        var (root, trees, tree, tip) = await TreeAsync();
+        var (store, claim) = Start(tip, DeliveryMethods.Branch);
+        await Assert.ThrowsAsync<Crash>(() => trees.LandAsync(tree.Path, Subject, inUse: NoneRunning, delivery: Stopping(store, claim, DeliveryPhases.Recorded)));
+        await CommitAsync(tree.Path, "more.txt", "more work", "more work");
+        var next = Intent((await RevAsync(tree.Path, "HEAD"))!, DeliveryMethods.Branch);
+        Assert.NotNull(Store("run-b").Start(next, Accepted()).Refused);
+
+        var before = await Reconciler("run-b", root, DeadAre("run-a")).BeforeStartAsync("unit-1", CancellationToken.None);
+
+        Assert.Equal((claim.Key, DeliveryStandings.Delivered), (before?.Key, before?.Standing));
+        Assert.True(Store("run-b").Start(next, Accepted()).Started);
+        Assert.Null(await Reconciler("run-b", root).BeforeStartAsync("unit-2", CancellationToken.None));
+    }
+
     // ——— The fixture.
 
     private static readonly LandingSubject Subject = new("s1", "0fda18", "Tidy the readme");
+
+    private static readonly Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>> NoSessions = _ => Task.FromResult<IReadOnlyList<TreeHolder>>([]);
+
+    private static TreeDelivery Stopping(DeliveryStore store, DeliveryClaim claim, string cut) =>
+        new(store, claim) { Seam = phase => phase == cut ? Task.FromException(new Crash()) : Task.CompletedTask };
+
+    private DeliveryReconciler Reconciler(string run, string root, Func<StoreRun, bool>? alive = null) => new(Store(run, alive), _home, _ => root);
 
     private sealed class Crash : Exception;
 
