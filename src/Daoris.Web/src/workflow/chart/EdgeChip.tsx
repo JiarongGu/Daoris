@@ -11,7 +11,7 @@ export function EdgeChip({ style, text, problem }: { style: EdgeStyle; text: str
   return (
     <>
       {said}
-      {problem && <span className="text-ink-danger">{said === null ? '' : ' '}⚠ {problem}</span>}
+      {problem && <span data-flow-refusal-chip="" className="text-ink-danger">{said === null ? '' : ' '}⚠ {problem}</span>}
     </>
   );
 }
