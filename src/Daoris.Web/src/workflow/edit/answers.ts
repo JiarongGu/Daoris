@@ -48,11 +48,14 @@ export type PaletteWire = { kind: string; eligibility: boolean; from: string[] |
 /**
  * A plugin's step as its manifest declares it, which a graph's node copies, with the wire kinds that may leave it. `outputsOn` (DECIDE1d)
  * names, for an output carried on some outcomes alone, those outcomes; an output it leaves out is carried on every reach, and it is absent
- * from a driver before it.
+ * from a driver before it. `title` and `about` (SETUPUX1f) are the manifest's words in en and zh, null or absent where it declares none.
  */
+export type StepWords = { en: string; zh: string };
+
 export type PaletteStep = {
   kind: string; version: number; reach: string; rejectable: boolean; skippable: boolean; inputs: Record<string, string>;
   outputs: Record<string, string>; evidence: string | null; outcomes: string[]; outputsOn?: Record<string, string[]>; leaves: string[];
+  title?: StepWords | null; about?: StepWords | null;
 };
 
 export type PalettePlugin = { plugin: string; steps: PaletteStep[] };

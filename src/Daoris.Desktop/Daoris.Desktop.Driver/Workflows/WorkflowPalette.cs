@@ -15,10 +15,12 @@ public sealed record PaletteWire(string Kind, bool Eligibility, IReadOnlyList<st
 
 /// <summary>One step a plugin declares, as its manifest holds it, with the wire kinds that may leave it.</summary>
 /// <param name="OutputsOn">DECIDE1d: each output a step carries on some of its outcomes alone, with the outcomes that carry it; an output left out is carried on every reach.</param>
+/// <param name="Title">SETUPUX1f: the step's name in en and zh as its manifest wrote it, or null where it declares none.</param>
+/// <param name="About">SETUPUX1f: a sentence of what the step does, in en and zh, or null.</param>
 public sealed record PaletteStep(
     string Kind, int Version, string Reach, bool Rejectable, bool Skippable, IReadOnlyDictionary<string, string> Inputs,
     IReadOnlyDictionary<string, string> Outputs, string? Evidence, IReadOnlyList<string> Outcomes,
-    IReadOnlyDictionary<string, IReadOnlyList<string>> OutputsOn, IReadOnlyList<string> Leaves);
+    IReadOnlyDictionary<string, IReadOnlyList<string>> OutputsOn, IReadOnlyList<string> Leaves, StepWords? Title = null, StepWords? About = null);
 
 /// <summary>An installed plugin and the steps it declares.</summary>
 public sealed record PalettePlugin(string Plugin, IReadOnlyList<PaletteStep> Steps);
@@ -64,7 +66,8 @@ public sealed record WorkflowPalette(IReadOnlyList<PaletteKind> Kinds, IReadOnly
             kind == WireKinds.Wait ? NodeKinds.WaitUnit : null)).ToArray();
         var declared = plugins.Select(each => new PalettePlugin(each.Plugin,
             [.. each.Steps.Select(step => new PaletteStep(step.Kind, step.Version, step.Reach, step.Rejectable, step.Skippable, step.Inputs, step.Outputs,
-                step.Evidence, step.Outcomes, step.OutputsOn, NodeAuthorities.Of(step) is { } authority ? Leaving(authority, step.Outcomes.Count > 0) : []))])).ToArray();
+                step.Evidence, step.Outcomes, step.OutputsOn, NodeAuthorities.Of(step) is { } authority ? Leaving(authority, step.Outcomes.Count > 0) : [],
+                step.Title, step.About))])).ToArray();
         return new WorkflowPalette(kinds, wires, declared);
     }
 

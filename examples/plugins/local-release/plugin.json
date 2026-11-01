@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "name": "Local release",
   "version": "0.1.0",
-  "description": "An example of publish and release as a plugin's performed steps: it finds a pending release for the attempt's revision, records the release, and copies the built package into a registry folder, all inside its own data folder. It never pushes.",
+  "description": "An example of recording and copying a release as a plugin's performed steps: it finds a pending release for the attempt's revision, records the release, and copies the built package into a registry folder, all inside its own data folder. It never pushes.",
   "hooks": {
     "command": ["node", "${plugin}/plugin.mjs"],
     "points": ["work/watch", "work/step", "work/perform"]
@@ -11,6 +11,8 @@
   "steps": [
     {
       "id": "find",
+      "title": { "en": "Find a pending release", "zh": "查找待发版本" },
+      "about": { "en": "Looks for a release waiting at this attempt's revision, and records that it was found.", "zh": "查找此次尝试的修订上是否有待发的版本，并记下已找到。" },
       "reach": "performed",
       "outcomes": ["release", "none"],
       "outputs": { "release": "local-release/release@1" },
@@ -22,6 +24,8 @@
     },
     {
       "id": "release",
+      "title": { "en": "Record the release", "zh": "记录发版" },
+      "about": { "en": "Records the release's version, tag name and notes in this plugin's own data folder.", "zh": "把版本号、标签名和说明记录在此插件自己的数据文件夹里。" },
       "reach": "performed",
       "inputs": { "release": "local-release/release@1" },
       "outputs": { "release": "local-release/release@1" },
@@ -32,6 +36,8 @@
     },
     {
       "id": "publish",
+      "title": { "en": "Copy to its registry", "zh": "复制到它的登记目录" },
+      "about": { "en": "Copies the built package, whole or not at all, into a registry folder inside this plugin's own data folder. It sends nothing anywhere else.", "zh": "把已构建的安装包整个复制到此插件自己数据文件夹里的登记目录，要么全部复制，要么不复制。不会发往任何别处。" },
       "reach": "performed",
       "inputs": { "release": "local-release/release@1" },
       "evidence": { "schema": "local-release/receipt@1" },

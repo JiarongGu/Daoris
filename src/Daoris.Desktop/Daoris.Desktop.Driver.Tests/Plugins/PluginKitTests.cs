@@ -1161,6 +1161,19 @@ public sealed class PluginKitTests : IDisposable
         Assert.Equal("local-release/release@1", manifest.Steps[1].Inputs["release"]);
         Assert.Equal("local-release/release@1", manifest.Steps[2].Inputs["release"]);
 
+        // SETUPUX1f: each step says what it does in both languages, and none says it publishes anywhere: it copies into its own registry folder.
+        Assert.All(manifest.Steps, step =>
+        {
+            Assert.NotNull(step.Title);
+            Assert.NotNull(step.About);
+            foreach (var words in new[] { step.Title!.En, step.Title.Zh, step.About!.En, step.About.Zh })
+            {
+                Assert.DoesNotContain("publish", words, StringComparison.OrdinalIgnoreCase);
+                Assert.DoesNotContain("发布", words, StringComparison.Ordinal);
+            }
+        });
+        Assert.Contains("registry", manifest.Steps[2].About!.En, StringComparison.OrdinalIgnoreCase);
+
         var fixture = PluginCycles.Read(Path.Combine(example, PluginKit.CycleFixture));
         Assert.Equal("publish", fixture.Step);
 
