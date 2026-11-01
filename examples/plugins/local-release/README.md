@@ -6,7 +6,7 @@ plugin kit (`daoris-driver plugins new local-release --points work/perform`); wh
 `plugin.mjs` does. Its wire, the rules a plugin is held to, the tools it runs and the stand-in world are
 those of [local-preview](../local-preview/README.md), which this folder is built the same way as.
 
-> An example of publish and release as a plugin's performed steps: it finds a pending release for the
+> An example of recording and copying a release as a plugin's performed steps: it finds a pending release for the
 > attempt's revision, records the release, and copies the built package into a registry folder, all inside
 > its own data folder. It never pushes.
 
@@ -27,6 +27,11 @@ Each step is `performed`, `idempotent` and reconciled (`work/reconcile`), with t
 | `find` | nothing | reads `pending/<revision>.json` (`{ "version", "notes" }`) for the attempt's revision and records it as found | `release: local-release/release@1:<version>` on `release`; none on `none` |
 | `release` | `release` | records the release, its tag name `v<version>` and its notes, in `releases/<version>.json` | the same `release` reference |
 | `publish` | `release` | copies the built package `incoming/<version>/` into `registry/<version>/`, whole or not at all | none |
+
+Each step declares a `title` and an `about`, each `{ "en", "zh" }`, which the step editor shows where it
+lists the plugin's steps: *Find a pending release*, *Record the release* and *Copy to its registry*. Their
+words say what the step does here, a copy into the plugin's own registry folder, and never that it sends a
+release to an outside registry. The step id `publish` is a name in the manifest, not a promise.
 
 `find` is a decision (`outcomes`: `release` | `none`): it reaches with `release` and the output where a
 release is pending, and with `none` and no output where not. Its `outputsOn` (`{ "release": ["release"] }`)

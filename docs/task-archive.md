@@ -22643,6 +22643,16 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 > **LANDNODE1m — a saved workflow's `land` lands its work, and its run says so** (driver; found on the install, 2026-11-01). With Daoris and Lyntai choosing `dev-line` (a saved copy of `merge-automatic`), two sessions' work merged into the line with no press, yet no delivery was written for either unit, and the run afterwards reads *What the line holds* working and *The landing* not reached (`daoris-driver workflow run --quest e97919f37db9`): the work was merged outside the graph's own `land`, which then finds the line holding it. Contract: a run bound to a saved version lands through its `land` node and its delivery, as Current's does (LANDNODE1c3), and nothing else lands a unit whose graph holds a `land`; the run reads the landing done and the line's step passed. Proof: a `CurrentLandGitTests`-style row over a saved version with `accept: automatic`, and the run's reading after it.
 
 **Outcome** 2026-11-02: every door writes a bound version's `land` delivery as Current's (`IWorkplaceProcess.Land`), its merge admitted by its method, not the live rule; a run's hold reads its merge at the bound commit, and a lapsed `land` attempt is settled by its deliveries (`LandAttempts`), so a replayed merge reads landed. Detail: D215's LANDNODE1m note, the FIX-LOG entry of 2026-11-02; `GraphRunLandingTests`.
+## SETUPUX1f — step titles (2026-11-02, D221)
+
+> **SETUPUX1f — step titles** (plugin contract, driver). A manifest step may declare `title` and `about` (en, zh); the palette carries them; the example's words say it records a release and copies the package into its own registry folder. Proof: schema tests; an old manifest keeps its kind; no *publish* in the example.
+
+**Outcome** 2026-11-02: `PluginSteps.Read` reads `title` and `about` into `NodeDeclaration.Title` and `About` (`StepWords`, outside equality and the digest), refused by the field's own code; `PaletteStep` carries them; the `local-release` example names its three steps and says its copy stays in its own registry folder. Detail: D221's note; `PluginStepsTests`, `WorkflowPaletteTests`, `PluginKitTests`.
+## SETUPUX1g — the glossary rows (2026-11-02, D221)
+
+> **SETUPUX1g — the glossary rows** (web, glossary). §2.5's new and amended rows, before any visible row's words. Proof: `names:check --strict` knows each row, and fails on a name containing another kind's.
+
+**Outcome** 2026-11-02: `glossary.json` holds the twenty new terms and the twelve amended ones; its `distinct` lists carry the workflow, delivery and step names, and `names-check.mjs` gains the `distinct` rule (strict) and the `reword` rule (reported: a term's `avoid.later` words existing strings still say, for row w). Detail: D221's note; `names.test.ts`.
 
 ## SETUPUX1b — the effective graph (2026-11-02, D221)
 
