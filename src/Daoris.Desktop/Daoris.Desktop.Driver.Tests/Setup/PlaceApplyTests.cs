@@ -124,6 +124,47 @@ public sealed class PlaceApplyTests : IDisposable
     }
 
     [Fact]
+    public async Task Keep_how_it_lands_applies_driving_and_adoption_and_leaves_a_saved_workflow_and_its_landing_as_chosen()
+    {
+        PlacePlanTests.SaveWorkflow(_home, "kept");
+        var stand = Make(each => each.Config = WorkflowSelection.Apply(each.Config, new WorkflowUse("kept", "atlas", null, null)));
+        var landing = LandingRules.Choose(stand.Config, "atlas", "aurora").Rule;
+        var ask = new PlaceAsk(["atlas"], SetupPresets.Keep) { Drive = true, Adoption = true, Builds = SetupBuilds.Library };
+        var digest = await DigestOf(stand, ask);
+
+        var result = await Apply(stand, ask, digest);
+
+        Assert.True(result.Done);
+        Assert.True(stand.Config.Drivable.Contains("atlas"));
+        Assert.True(stand.Config.OpensOwnTree("atlas"));
+        Assert.Equal("kept", WorkflowSelection.Resolve(stand.Config, "atlas", "aurora", task: null).Workflow);
+        Assert.Equal(landing, LandingRules.Choose(stand.Config, "atlas", "aurora").Rule);
+        Assert.Single(stand.Setup.Published);
+    }
+
+    [Fact]
+    public async Task A_restart_settles_a_kept_plans_configuration_by_its_values_as_it_does_any_plans()
+    {
+        PlacePlanTests.SaveWorkflow(_home, "kept");
+        var stand = Make(each =>
+        {
+            each.Config = WorkflowSelection.Apply(each.Config, new WorkflowUse("kept", "atlas", null, null));
+            each.LandThenFail = true;
+        });
+        var ask = new PlaceAsk(["atlas"], SetupPresets.Keep) { Drive = true, Adoption = true, Builds = SetupBuilds.Library };
+        var digest = await DigestOf(stand, ask);
+
+        await Apply(stand, ask, digest);
+        var settled = Assert.Single(await PlaceApplies.SettleAllAsync(stand.Doors()));
+
+        Assert.Equal(PlaceOutcomes.Done, settled.Of(PlaceOperations.Configuration)!.Outcome);
+        Assert.Equal(PlaceOutcomes.Pending, settled.Of(PlaceOperations.AdoptionOf("atlas"))!.Outcome);
+        Assert.Empty(stand.Setup.Published);
+        Assert.True((await Apply(stand, ask, digest)).Done);
+        Assert.Equal(1, stand.Changes);
+    }
+
+    [Fact]
     public async Task A_stop_at_the_publication_leaves_it_uncertain_and_a_retry_that_finds_the_quest_asks_no_second()
     {
         var stand = Make(each => each.Setup.PublishThenLose = true);

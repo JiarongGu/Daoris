@@ -11,6 +11,9 @@ export const BUILDS = ['library', 'service', 'desktop', 'tooling'] as const;
 
 export const NOT_DRIVEN = 'not-driven';
 
+/** The ask that is no delivery (`SetupPresets.Keep`): it writes no landing and no workflow choice, and allows driving, the ticks and adoption. */
+export const KEEP = 'keep';
+
 export type PlaceAsk = {
   repositories: string[];
   preset: string;
