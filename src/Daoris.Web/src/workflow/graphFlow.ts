@@ -24,7 +24,12 @@ export const isHoldKind = (kind: string) => HOLD_KINDS.includes(kind);
 const LANDING_KINDS: readonly string[] = ['land', 'landing'];
 
 /** A step to draw: `Flow`'s node, worded by the caller, and the kind and declared outcomes the drawing reads. */
-export type DrawnNode = FlowNode & { kind: string; outcomes?: readonly string[] };
+export type DrawnNode = FlowNode & {
+  kind: string;
+  outcomes?: readonly string[];
+  /** The outcome a run's decision returned: its route is reached, and an outcome it did not return is not taken. */
+  outcome?: string | null;
+};
 
 /** A way on to draw: a graph's wire, by its kind, with the words of its cause where the caller has its own. */
 export type DrawnWire = {
@@ -171,7 +176,7 @@ function groupLit(members: DrawnNode[]): Pick<FlowNode, 'state' | 'reached' | 'c
   };
 }
 
-const without = ({ kind: _kind, outcomes: _outcomes, ...node }: DrawnNode): FlowNode => node;
+const without = ({ kind: _kind, outcomes: _outcomes, outcome: _outcome, ...node }: DrawnNode): FlowNode => node;
 
 /**
  * **A workflow graph as a flowchart**: its steps and ways on, the declared holds folded to one group (or opened), the configured end
@@ -235,7 +240,11 @@ export function graphFlow(t: TFunction, graph: DrawnGraph, options: DrawOptions)
     for (const outcome of node.outcomes ?? []) {
       if (wires.some((wire) => wire.kind === 'when' && wire.from === node.id && wire.outcome === outcome)) continue;
       const id = `${node.id}:none:${outcome}`;
-      nowhere.push({ id, title: t('workflow.graph.noFurther'), glyph: 'stepNoFurther', faint: true });
+      // A run that knows which outcome came: that route is reached, any other is not taken (never *not reached*).
+      const lit: Partial<FlowNode> = node.outcome == null ? {}
+        : node.outcome === outcome ? { reached: true }
+          : { reached: false, state: { word: t('workflow.run.notTaken.state'), tone: 'neutral' } };
+      nowhere.push({ id, title: t('workflow.graph.noFurther'), glyph: 'stepNoFurther', faint: true, ...lit });
       edges.push({
         id: `${node.id}>${id}`, from: rep(node.id), to: id, style: 'conditional', label: outcome, says: t('workflow.graph.noFurtherSays', { outcome }),
       });
@@ -245,7 +254,7 @@ export function graphFlow(t: TFunction, graph: DrawnGraph, options: DrawOptions)
   // Finished is the record's: drawn after the steps nothing follows, those the run reached where it says which.
   const finished: FlowNode[] = [];
   if (options.finished) {
-    const sinks = marked.filter((node) => !edges.some((edge) => edge.from === node.id && edge.style !== 'back'));
+    const sinks = [...marked, ...nowhere].filter((node) => !edges.some((edge) => edge.from === node.id && edge.style !== 'back'));
     const reached = sinks.filter((node) => node.reached !== false);
     for (const node of reached.length > 0 ? reached : sinks) {
       edges.push({ id: `${node.id}>${FINISHED}`, from: node.id, to: FINISHED, says: t('workflow.flow.move.automatic') });

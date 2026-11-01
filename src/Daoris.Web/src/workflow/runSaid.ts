@@ -1,5 +1,6 @@
 import type { TFunction } from 'i18next';
 import { type GraphRun, knownState, type RunRequest, type RunStep, standsAt, type WorkflowRun, type WorkflowRunAnswer } from './run';
+import { stepTitle } from './said';
 
 // What a run says in the reader's language (WORKFLOW1c, the workflow design §5.2's *Said*, §7): each step's state and the row
 // of its table, composed from the step's typed fields, so it cannot drift from what the driver read. A name from a record (an
@@ -311,6 +312,22 @@ export function runShort(t: TFunction, run: WorkflowRun): string {
   const key = `workflow.run.short.${kind}.${at.state}`;
   const known = SHORT[kind]?.includes(at.state) ?? false;
   return known ? t(key) : stateSaid(t, at.state);
+}
+
+/**
+ * **Where the work stands, in one sentence** (SETUPUX1u; the Setup design's §2.3): the step the run stands at and its state, as the driver's
+ * record has them; a run with no step to stand at, or one unread or held, says it in `runShort`'s words. Named by its repository where
+ * several runs are drawn.
+ */
+export function placeSaid(t: TFunction, run: WorkflowRun, named: boolean): string {
+  const at = standsAt(run);
+  const says = at && !run.problem && !run.workflowGate?.holds
+    ? t('workflow.run.placeAt', { step: stepTitle(t, at.step).replace(/`/g, ''), state: stepWord(t, at) })
+    : null;
+  if (says) return named ? t('workflow.run.lineIn', { repository: run.repository, says }) : says;
+  return named
+    ? t('workflow.run.lineIn', { repository: run.repository, says: runShort(t, run) })
+    : t('workflow.run.line', { says: runShort(t, run) });
 }
 
 /** The short phrases each kind words, by state; any other is the state's word. */

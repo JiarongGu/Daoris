@@ -80,7 +80,7 @@ describe("the session's Workflow view", () => {
     await userEvent.click(within(side).getByRole('tab', { name: 'Workflow' }));
 
     await waitFor(() => expect(asked()[0]?.[2]).toEqual(expect.objectContaining({ payload: { session: 's1' } })));
-    expect(await within(side).findByText('Workflow: the agent is working')).toBeInTheDocument();
+    expect(await within(side).findByText('At The work · working')).toBeInTheDocument();
     const work = within(side).getAllByRole('listitem').find((item) => item.getAttribute('data-step') === 'work')!;
     expect(work).toHaveTextContent('this session');
     expect(work).toHaveTextContent('Being worked on by claude-code.');
@@ -103,7 +103,7 @@ describe("the session's Workflow view", () => {
     </Tooltip.Provider></QueryClientProvider>);
     const side = await screen.findByRole('complementary', { name: 'right side bar' });
     await userEvent.click(within(side).getByRole('tab', { name: 'Workflow' }));
-    await within(side).findByText('engine · release workflow, version 1');
+    await within(side).findByText('Release workflow v1');
     const rows = within(side).getAllByRole('listitem');
     expect(rows.find((row) => row.getAttribute('data-step') === 'write')).toHaveTextContent('this session');
     const inspect = rows.find((row) => row.getAttribute('data-step') === 'inspect')!;
@@ -132,7 +132,8 @@ describe("the session's Workflow view", () => {
     act(() => ask('workflow'));
 
     await waitFor(() => expect(within(side).getByRole('tab', { name: 'Workflow' })).toHaveAttribute('aria-selected', 'true'));
-    expect(await within(side).findByText('Workflow: waits for your look')).toBeInTheDocument();
+    expect(await within(side).findByText((_, element) => element?.matches('p') === true
+      && element.textContent === 'At Your look in dev · waiting on you')).toBeInTheDocument();
     const look = within(side).getAllByRole('listitem').find((item) => item.getAttribute('data-step') === 'look')!;
     expect(look).toHaveAttribute('aria-current', 'step');
   });

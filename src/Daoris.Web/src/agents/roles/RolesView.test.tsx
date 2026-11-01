@@ -181,7 +181,7 @@ describe('The Agents place, Roles mode', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Edit Build' }));
     const editor = screen.getByRole('form', { name: 'Build: your order' });
-    expect(within(editor).getByText('Running work never moves to another choice.')).toBeTruthy();
+    expect(within(editor).getByRole('note', { name: /Running work never moves to another choice\./ })).toBeTruthy();
     await user.type(within(editor).getByRole('textbox', { name: "choice 1's model" }), 'opus');
     await user.click(within(editor).getByRole('button', { name: 'Save' }));
 
@@ -237,7 +237,7 @@ describe('The Agents place, Roles mode', () => {
       const editor = screen.getByRole('form', {
         name: i18n.t('settings.ai.actors.editorTitle', { actor: i18n.t(`settings.ai.actors.name.${id}`) }),
       });
-      expect(within(editor).getByText(i18n.t(`settings.ai.actors.${words}`))).toBeTruthy();
+      expect(within(editor).getByRole('note', { name: new RegExp(i18n.t(`settings.ai.actors.${words}`).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')) })).toBeTruthy();
       await user.click(within(editor).getByRole('button', { name: i18n.t('common.cancel') }));
     }
     await i18n.changeLanguage('en');
@@ -414,7 +414,7 @@ describe('Intake in the Roles mode', () => {
 
     await user.click(within(await rowOf('Intake')).getByRole('button', { name: 'Edit Intake' }));
     const editor = screen.getByRole('form', { name: 'Intake: your order' });
-    expect(within(editor).getByText('Running work never moves to another choice.')).toBeTruthy();
+    expect(within(editor).getByRole('note', { name: /Running work never moves to another choice\./ })).toBeTruthy();
     await user.click(within(editor).getByRole('button', { name: 'Save' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_ACTOR', {
