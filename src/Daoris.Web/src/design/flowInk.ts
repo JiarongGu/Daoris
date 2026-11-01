@@ -32,6 +32,8 @@ export type InkPath = {
   to: string;
   style: EdgeStyle;
   back: boolean;
+  /** The outcome's port it leaves (FLOWCHART2a). */
+  port: string | null;
   d: string;
   points: Point[];
   mid: Point | null;
@@ -219,7 +221,7 @@ function finish(path: FlowLayout['paths'][number], start: Point, segments: Segme
     for (let step = 1; step <= steps; step += 1) points.push(sample(here, segment, step / steps));
     here = segment.to;
   }
-  return { id: path.id, from: path.from, to: path.to, style: path.style, back: path.back, d, points, mid };
+  return { id: path.id, from: path.from, to: path.to, style: path.style, back: path.back, port: path.port, d, points, mid };
 }
 
 function sample(from: Point, segment: Segment, t: number): Point {

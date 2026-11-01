@@ -586,6 +586,7 @@ export function FlowCanvas({
                       data-flow-edge={path.id}
                       data-from={path.from}
                       data-to={path.to}
+                      data-port={path.port !== null && !path.back ? path.port : undefined}
                       data-taken={taken.has(path.id) ? '' : undefined}
                       d={path.d}
                       fill="none"

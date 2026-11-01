@@ -49,6 +49,14 @@ const TABLE: Record<string, Record<number, number>> = {
   'graph/ReleaseHoldsOpen': { 1280: 0, 624: 0 },
   'graph/Merge': { 1280: 0, 624: 0, 400: 0 },
   'graph/MergeChinese': { 1280: 0, 624: 0, 400: 0 },
+  // Two outcomes that reach one step (FLOWCHART2a), each from its own port, the third going nowhere; and the data wires drawn dotted at the
+  // right while a step is selected (they cross the ways on in the gaps they pass), with the lanes kept free when none is.
+  'graph/TwoOutcomes': { 1280: 0, 624: 0 },
+  'graph/TwoOutcomesDark': { 1280: 0, 624: 0 },
+  'graph/TwoOutcomesChinese': { 1280: 0, 624: 0 },
+  'graph/ReleaseData': { 1280: 1, 624: 1 },
+  'graph/ReleaseDataChinese': { 1280: 1, 624: 1 },
+  'graph/ReleaseDataUnselected': { 1280: 0, 624: 0 },
   // A run's view (SETUPUX1u): a run draws the route its decision took, so the release outcome is one chain that draws from the side bar's
   // floor, like a review's; the none outcome keeps the route not taken beside *No further step*, a two-way branch that needs 31rem, so the
   // 300 px and 25rem frames are the rail and 45% of the window (696 px) draws it. A selected step's record makes its node taller, never wider.
@@ -111,6 +119,17 @@ const TABLE: Record<string, Record<number, number>> = {
   'landing/MergedIntoTheLine': { 300: 0, 400: 0, 544: 0, 1200: 0 },
 };
 
+/**
+ * The paths that leave a decision's port in each drawn frame of these stories (FLOWCHART2a): the release workflow's two outcomes, and the
+ * three of the decision whose two outcomes reach one step. Each leaves its own port's box, and a story that drew none fails.
+ */
+const PORTED: Record<string, number> = {
+  'graph/Release': 2, 'graph/ReleaseDark': 2, 'graph/ReleaseChinese': 2, 'graph/ReleaseChineseDark': 2, 'graph/ReleaseHoldsOpen': 2,
+  'graph/TwoOutcomes': 3, 'graph/TwoOutcomesDark': 3, 'graph/TwoOutcomesChinese': 3,
+  'graph/ReleaseData': 2, 'graph/ReleaseDataChinese': 2, 'graph/ReleaseDataUnselected': 2,
+  'runview/ReleaseRun': 1, 'runview/NoneRun': 1,
+};
+
 /** Every drawn flow's edges drawn and holding still. */
 async function drawn(page: Page) {
   await page.waitForFunction(() => [...document.querySelectorAll<HTMLElement>('[data-flow-pane]')]
@@ -150,6 +169,8 @@ for (const [story, ceilings] of Object.entries(TABLE)) {
       expect(flow.paths, at).toBeGreaterThan(0);
       expect(flow.collisions, at).toEqual([]);
       expect(flow.overlaps, at).toEqual([]);
+      expect(flow.portMisses, at).toEqual([]);
+      if (PORTED[story] !== undefined) expect(flow.ported, `${at}: the paths that leave a port`).toBe(PORTED[story]);
       expect(flow.crossings, at).toBeLessThanOrEqual(ceilings[flow.frame]!);
     }
     // Drawn, the edges hold still: nothing measured loops back into what is measured.
@@ -158,6 +179,24 @@ for (const [story, ceilings] of Object.entries(TABLE)) {
     expect(await drawnCounts(page)).toEqual(counts);
   });
 }
+
+test('a data wire drawn on selection moves no node, and is drawn for each wire the selected step is an end of (FLOWCHART2a)', async ({ page }) => {
+  const read = async (story: string) => {
+    await open(page, story);
+    const frame = page.locator('[data-frame="1280"]');
+    return {
+      boxes: await frame.locator('[data-flow-node]').evaluateAll((nodes) => nodes.map((node) => {
+        const rect = node.getBoundingClientRect();
+        return [node.getAttribute('data-flow-node'), rect.left, rect.top, rect.width, rect.height];
+      })),
+      paths: await frame.locator('path[data-flow-edge]').count(),
+    };
+  };
+  const selected = await read('graph/ReleaseData');
+  const unselected = await read('graph/ReleaseDataUnselected');
+  expect(selected.boxes).toEqual(unselected.boxes);
+  expect(selected.paths).toBe(unselected.paths + 2);
+});
 
 test('drawing the edges takes no room, so it moves no node, and a resize draws them once (trap 14)', async ({ page }) => {
   await open(page, 'flow/SeveralCurrent');
