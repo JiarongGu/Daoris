@@ -199,9 +199,17 @@ export type RepositorySetupProps = {
   busy?: boolean;
   /** A section a door asked to see open, beside those that open on their own. */
   open?: SetupSectionId;
+  /**
+   * The sections drawn, in the page's order; absent, all of them. The place's page draws its Driving in its head, its Line and landing
+   * under Workflow and the rest under Sessions (AGENTSPLACE1f), each from the one molecule.
+   */
+  only?: readonly SetupSectionId[];
   /** Open a plugin's page: the landing rule's plugin is a door (PLUGUI1c2c); absent, its name stays words. */
   onOpenPlugin?: (plugin: string) => void;
 };
+
+/** The sections the place's page draws under its Sessions (AGENTSPLACE1f): the access, the heavy gates and checks, the sessions' own rows and the reach. */
+export const SESSIONS_SECTIONS: readonly SetupSectionId[] = ['access', 'heavy', 'sessions', 'reach'];
 
 const JOIN = ' · ';
 
@@ -228,7 +236,7 @@ const JOIN = ' · ';
  *
  * A molecule: every state is reached by its props, and every press goes out.
  */
-export function RepositorySetup({ repository, driving, work, access, heavy, landed, sessions, reach, busy = false, open, onOpenPlugin }: RepositorySetupProps) {
+export function RepositorySetup({ repository, driving, work, access, heavy, landed, sessions, reach, busy = false, open, only, onOpenPlugin }: RepositorySetupProps) {
   const { t, i18n } = useTranslation();
   const marked = (value: string, source: 'repository' | 'workspace' | 'daoris') =>
     source === 'repository' ? value : t(`projects.setup.marked.${source}`, { value });
@@ -691,7 +699,7 @@ export function RepositorySetup({ repository, driving, work, access, heavy, land
 
   return (
     <div className="grid">
-      {sections.map((section) => (
+      {sections.filter((section) => !only || only.includes(section.id)).map((section) => (
         <SetupSection
           // Keyed by the repository, so another repository's page opens its own sections afresh.
           key={`${repository}:${section.id}`}

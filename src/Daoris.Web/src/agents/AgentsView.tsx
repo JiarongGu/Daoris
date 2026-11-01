@@ -22,6 +22,7 @@ import { type AgentPart, accountLabel, agentRows } from './agents';
 import { AgentsModes, AgentsStrip, RoleSectionStrip } from './AgentsModes';
 import { type AgentsMode, isRoleSection, readAgentsMode, type RoleSection, setupLit, storeAgentsMode } from './modes';
 import { PlaceRoles } from './setup/PlaceRoles';
+import { PlaceSessions } from './setup/PlaceSessions';
 import { findPlace, placeAsk, SetupList, SetupMain, useSetupPlaces } from './setup/SetupPlaces';
 import { RoleSectionList } from './roles/RoleSections';
 import { type RoleOpeners, RolesMode, useRolesPage } from './roles/RolesView';
@@ -161,7 +162,16 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
         chosen: modes.place,
         body: <SetupList state={places} chosen={modes.place} onChoose={modes.onPlace} />,
       },
-      main: <SetupMain found={placed} state={places.status} roles={placed && placed.kind !== 'imported' ? <PlaceRoles place={placeAsk(placed)} notify={notify} /> : null} />,
+      main: (
+        <SetupMain
+          found={placed}
+          state={places.status}
+          roles={placed && placed.kind !== 'imported' ? <PlaceRoles place={placeAsk(placed)} notify={notify} /> : null}
+          after={placed && (placed.kind === 'workspace' || placed.kind === 'repository')
+            ? <PlaceSessions place={placed} notify={notify} onOpenPlugin={onOpenPlugin} />
+            : null}
+        />
+      ),
     };
   }
   if (modes && inSetup) {

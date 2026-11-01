@@ -52,6 +52,20 @@ describe("a workspace's Setup", () => {
     expect(section('Remote and reach')).toHaveAccessibleDescription('local only · no rules of its own');
   });
 
+  // AGENTSPLACE1f: the workspace place's Sessions hold its session rows; the tab keeps the rest, so no row is on both and none is lost.
+  it("splits its rows between the place's Sessions and the tab that keeps the rest", () => {
+    const { acts } = at({ rows: 'sessions' });
+    expect(section('Defaults')).toHaveAccessibleDescription("no session language (Daoris's default) · read by agents outside it (Daoris's default)");
+    expect(screen.queryByRole('button', { name: 'Remote and reach' })).toBeNull();
+    expect(acts.line).not.toHaveBeenCalled();
+  });
+
+  it('keeps the line, the landing, the remote and the rules where the session rows have gone', () => {
+    at({ rows: 'rest' });
+    expect(section('Defaults')).toHaveAccessibleDescription("each checkout's own line (Daoris's default) · lands into its line (Daoris's default)");
+    expect(section('Remote and reach')).toHaveAccessibleDescription('local only · no rules of its own');
+  });
+
   // SUPERVISOR1e (D208 §5, §6.3): the workspace's supervisor, its own section, folded while none is appointed, open once one is.
   // COMPANYVIEW1e: the supervisor's section keeps one line and a door to Agents → Roles → Appointed roles, where it is appointed.
   it("keeps the workspace's supervisor to one line and a door to Appointed roles, never an Appoint", async () => {
