@@ -102,7 +102,7 @@
 
 **Files.** `src/Daoris.Desktop/Daoris.Desktop.Driver/Defaults/roles.json`, `src/Daoris.Desktop/Daoris.Desktop.Driver/Roles/RoleCatalog.cs`, `src/Daoris.Desktop/Daoris.Desktop.Driver/Roles/RoleChange.cs`, `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs`, `src/Daoris.Web/src/agents/roles/Roles.tsx`, `src/Daoris.Web/src/agents/roles/Roles.test.tsx`, `src/Daoris.Web/src/agents/roles/Roles.stories.tsx`, `src/Daoris.Web/src/locales/en/settings.ai.json`, `src/Daoris.Web/src/locales/zh/settings.ai.json`, `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Roles/RoleCatalogTests.cs`, `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleRoleTests.cs`
 
-## DEFAULTCONFIG1c — The release workflow, shipped as a default
+## DEFAULTCONFIG1c — The release workflow, shipped as a default (built 2026-11-01)
 
 **Wave** 3; after DEFAULTCONFIG1a, DECIDE1b, PLUGINSTEP1b; sonnet.
 
