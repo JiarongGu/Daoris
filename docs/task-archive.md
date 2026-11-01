@@ -22565,3 +22565,7 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 ## ROLESTEP1b — a step names the role that takes it, and the start plan takes that role (2026-11-01, FABRIC2)
 
 **Outcome** 2026-11-01: `claimed` and `opinion` take an option `role`; the bind judges it by `RoleCatalog.Named`, keeps it with its revision (`WorkflowRunBinding.Roles`, `roles` in the run's file) or makes it the binding's problem; the quest's start walks the work step's role and the second opinion's reviewer the opinion step's. An older build runs such a version on each work's own role (D173's note). Tests `WorkflowRunBindingTests`, `StartRoleTests`, `ReviewerChoiceTests`.
+
+## DEFAULTCONFIG1d — a place's page says which default it follows and what differs (2026-11-01, FABRIC2)
+
+**Outcome** 2026-11-01: a place's page names the shipped default its workflow follows (en and zh word per default id in `agents.json`) and the options it differs in, read from `PlaceValues.Follows` through `PlaceRow.values.follows`. Test `SetupPlaces.test.tsx`; stories show it through the fixtures.

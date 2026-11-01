@@ -336,6 +336,9 @@ export type PlaceNeed = { code: string; detail?: string | null };
 
 export type PlaceWork = { work: string; role?: string | null; held?: string | null; consent?: string | null; source: PlaceSourceCode; policyFailed?: string | null };
 
+/** The shipped default a place's workflow follows, by its id, and each option the place says otherwise (DEFAULTCONFIG1d). */
+export type PlaceDefault = { default?: string | null; differs: string[] };
+
 /** A place as `PLACES` answers it: this machine (no workspace), a workspace (no repository) or a driven repository. */
 export type PlaceRow = {
   workspace?: string | null;
@@ -346,7 +349,7 @@ export type PlaceRow = {
   checkout: boolean;
   adopted: boolean;
   /** The head's line; none for this machine. */
-  values?: Record<'line' | 'landing' | 'workflow' | 'landed' | 'commits' | 'opinion' | 'handOver' | 'language' | 'access', PlaceValue> | null;
+  values?: (Record<'line' | 'landing' | 'workflow' | 'landed' | 'commits' | 'opinion' | 'handOver' | 'language' | 'access', PlaceValue> & { follows?: PlaceDefault | null }) | null;
   works: PlaceWork[];
   needs: PlaceNeed[];
 };

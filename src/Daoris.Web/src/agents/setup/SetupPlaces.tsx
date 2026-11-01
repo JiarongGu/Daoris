@@ -220,7 +220,10 @@ export function findPlace(read: PlacesRead | null, id: string | null): Found | n
 }
 
 /** How many of a place's values were set at the place itself. */
-const ownChanges = (row: PlaceRow) => Object.values(row.values ?? {}).filter((value) => value.source === 'here').length;
+const ownChanges = (row: PlaceRow) => {
+  const { follows: _follows, ...values } = row.values ?? {};
+  return Object.values(values).filter((value) => value.source === 'here').length;
+};
 
 function Fact({ name, children }: { name: string; children: ReactNode }) {
   return (
@@ -257,6 +260,7 @@ export function SetupMain({ found, state, roles, after }: {
   const where = found.kind === 'repository' ? found.row.workspace : found.kind === 'imported' ? found.workspace : undefined;
   const needs = found.kind === 'imported' ? [] : found.row.needs;
   const changes = found.kind === 'imported' || found.kind === 'machine' ? null : ownChanges(found.row);
+  const follows = found.kind === 'repository' || found.kind === 'workspace' ? found.row.values?.follows : null;
   return (
     <ViewMain header={<PageHead title={name} line={where ?? undefined} />}>
       <dl className="m-0 grid">
@@ -282,6 +286,13 @@ export function SetupMain({ found, state, roles, after }: {
         {found.kind === 'machine' && <Fact name={t('agents.setup.works')}>{t('agents.setup.worksCount', { count: found.row.works.length })}</Fact>}
         {changes !== null && (
           <Fact name={t('agents.setup.changes')}>{changes === 0 ? t('agents.setup.followsDefaults') : t('agents.setup.changesOwn', { count: changes })}</Fact>
+        )}
+        {follows?.default && (
+          <Fact name={t('agents.setup.followsDefault')}>
+            {t(`agents.setup.defaultName.${follows.default}`, { defaultValue: follows.default })}
+            {' '}
+            {follows.differs.length === 0 ? t('agents.setup.differsNone') : t('agents.setup.differsIn', { options: follows.differs.join(', ') })}
+          </Fact>
         )}
         {needs.length > 0 && (
           <Fact name={t('agents.setup.needsLook')}>
