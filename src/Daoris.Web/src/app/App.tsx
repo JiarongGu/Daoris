@@ -440,6 +440,7 @@ export function App() {
       workflow: (
         <PlaceWorkflow
           place={place}
+          landingAsked={place.asked === 'landing'}
           notify={notify}
           onOpenPlugin={(plugin) => open('plugins', plugin)}
           onOpenWorkspaceFlow={(workspace) => open('projects', workspaceItem(workspace), { workspaceTab: 'workflow' })}
@@ -466,7 +467,7 @@ export function App() {
       </PlaceDrivingScope>
     ),
     // A place's *Set up…* (AGENTSPLACE1j): it reads the plan and presses Apply, which the application hands in for the same reason.
-    setUp: (place, page) => <PlaceSetUpPanel place={place} page={page} notify={notify} />,
+    setUp: (place, page, doorFor) => <PlaceSetUpPanel place={place} page={page} notify={notify} doorFor={doorFor} />,
     // The Roles mode's doors (COMPANYVIEW1d): each thing's home, the Agents mode at an agent's accounts among them.
     roleDoors: {
       agent: (agent) => open('agents', agent, { agentPart: 'accounts', agentsMode: 'agents' }),

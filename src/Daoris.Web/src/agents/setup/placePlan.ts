@@ -231,11 +231,20 @@ export const isChosen = (accept: readonly PlaceAccept[], one: PlaceAccept) =>
 export type SetUpPlace = { id: string; kind: 'repository' | 'workspace'; name: string; workspace: string; driven: string[] };
 
 /** What the application holds for the places whose set-up is open (the Roles page's way, `useRolesPage`): a draft by place id. */
+/** A refusal's door, built by the page the set-up is in: where its cause is put right, which returns to the set-up; none where it has no door. */
+export type SetUpDoor = (refusal: PlaceRefusal) => (() => void) | null;
+
 export type SetUpPage = {
   /** The draft of an open place; none where its set-up is closed. */
   draftOf: (place: string) => SetUpDraft | null;
+  /** Whether the set-up is in front: a draft left through a door is kept but not shown (SETUPUX1j). */
+  shown: (place: string) => boolean;
   /** Opens a place's set-up; a seed (an ask Ask Daoris proposed) replaces the draft the place held, since the person came for it. */
   open: (place: string, repositories: string[], seed?: Partial<SetUpDraft>) => void;
+  /** Leaves the set-up through a door, the draft kept as it is. */
+  leave: (place: string) => void;
+  /** Returns to a set-up left through a door. */
+  resume: (place: string) => void;
   close: (place: string) => void;
   /** A change to the draft; any change but the result's own drops the last result, since the plan it came of is gone. */
   change: (place: string, patch: Partial<SetUpDraft>) => void;
@@ -243,11 +252,20 @@ export type SetUpPage = {
 
 export function useSetUpPage(): SetUpPage {
   const [drafts, setDrafts] = useState<Record<string, SetUpDraft>>({});
+  const [away, setAway] = useState<ReadonlySet<string>>(new Set());
   const draftOf = useCallback((place: string) => drafts[place] ?? null, [drafts]);
-  const open = useCallback((place: string, repositories: string[], seed?: Partial<SetUpDraft>) =>
-    setDrafts((was) => (was[place] && !seed ? was : { ...was, [place]: { ...freshDraft(repositories), ...seed } })), []);
-  const close = useCallback((place: string) => setDrafts(({ [place]: _closed, ...rest }) => rest), []);
+  const shown = useCallback((place: string) => drafts[place] !== undefined && !away.has(place), [drafts, away]);
+  const back = useCallback((place: string) => setAway((was) => (was.has(place) ? new Set([...was].filter((each) => each !== place)) : was)), []);
+  const open = useCallback((place: string, repositories: string[], seed?: Partial<SetUpDraft>) => {
+    back(place);
+    setDrafts((was) => (was[place] && !seed ? was : { ...was, [place]: { ...freshDraft(repositories), ...seed } }));
+  }, [back]);
+  const leave = useCallback((place: string) => setAway((was) => new Set([...was, place])), []);
+  const close = useCallback((place: string) => {
+    back(place);
+    setDrafts(({ [place]: _closed, ...rest }) => rest);
+  }, [back]);
   const change = useCallback((place: string, patch: Partial<SetUpDraft>) =>
     setDrafts((was) => (was[place] ? { ...was, [place]: { ...was[place], ...('result' in patch ? {} : { result: null }), ...patch } } : was)), []);
-  return { draftOf, open, close, change };
+  return { draftOf, shown, open, leave, resume: back, close, change };
 }

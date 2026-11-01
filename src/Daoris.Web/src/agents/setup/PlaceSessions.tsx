@@ -14,13 +14,24 @@ import type { PlaceRow } from '../../data/wiring';
  * the line's landing rows from the one molecule Setup draws them with, and Change… and Edit steps…. A molecule: the setup and the workflow
  * arrive as props, and every press goes out.
  */
-export function PlaceWorkflowBodyView({ setup, workflow = null }: { setup: RepositorySetupProps | null; workflow?: PlaceWorkflowProps | null }) {
+export function PlaceWorkflowBodyView({ setup, workflow = null, landingAsked = false }: {
+  setup: RepositorySetupProps | null;
+  workflow?: PlaceWorkflowProps | null;
+  /** A door asked for the landing rows (a refusal of *Set up…* whose cause is put right there): they open, and take the focus. */
+  landingAsked?: boolean;
+}) {
   if (!setup || !workflow) return null;
   return (
     <PlaceWorkflowView
       {...workflow}
       onAcceptIntegration={setup.landed?.onAcceptIntegration}
-      landing={(asked) => (setup.work ? <RepositorySetup {...setup} only={['work']} gatesApart open={asked ?? setup.open} /> : null)}
+      landing={(asked) => (setup.work
+        ? (
+          <div data-place-row="landing" tabIndex={-1} className="outline-none focus-visible:outline-2 focus-visible:outline-accent">
+            <RepositorySetup {...setup} only={['work']} gatesApart open={asked ?? (landingAsked ? 'work' : setup.open)} />
+          </div>
+        )
+        : null)}
     />
   );
 }
@@ -53,9 +64,10 @@ type PlaceOf = { kind: 'workspace'; row: PlaceRow } | { kind: 'repository'; row:
  * **A place's Workflow section**: a repository's, from its Workflow answer; a workspace's is the Repositories page's tab until the
  * workspace's own section is built, so it says so and holds a door there.
  */
-export function PlaceWorkflow({ place, notify, onOpenPlugin, onOpenWorkspaceFlow }: {
+export function PlaceWorkflow({ place, notify, onOpenPlugin, onOpenWorkspaceFlow, landingAsked = false }: {
   place: PlaceOf;
   notify: Notify;
+  landingAsked?: boolean;
   onOpenPlugin?: (plugin: string) => void;
   onOpenWorkspaceFlow?: (workspace: string) => void;
 }) {
@@ -70,14 +82,14 @@ export function PlaceWorkflow({ place, notify, onOpenPlugin, onOpenWorkspaceFlow
       </div>
     );
   }
-  return <RepositoryWorkflow place={place.row} notify={notify} onOpenPlugin={onOpenPlugin} />;
+  return <RepositoryWorkflow place={place.row} notify={notify} onOpenPlugin={onOpenPlugin} landingAsked={landingAsked} />;
 }
 
-function RepositoryWorkflow({ place, notify, onOpenPlugin }: { place: PlaceRow; notify: Notify; onOpenPlugin?: (plugin: string) => void }) {
+function RepositoryWorkflow({ place, notify, onOpenPlugin, landingAsked }: { place: PlaceRow; notify: Notify; onOpenPlugin?: (plugin: string) => void; landingAsked: boolean }) {
   const { registration, setup } = useRepositoryPlace({ place, notify, onOpenPlugin });
   const workflowOf = useWorkflowTab({ repository: registration?.repository ?? null, enabled: setup !== null, ready: setup !== null, notify });
   const workflow = registration ? workflowOf(registration) : null;
-  return <PlaceWorkflowBodyView setup={setup} workflow={workflow && { ...workflow, name: registration!.repository }} />;
+  return <PlaceWorkflowBodyView setup={setup} workflow={workflow && { ...workflow, name: registration!.repository }} landingAsked={landingAsked} />;
 }
 
 /**
