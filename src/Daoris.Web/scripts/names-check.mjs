@@ -11,8 +11,8 @@
 // - door: a door says its destination's name;
 // - distinct: no workflow, delivery or step name holds another kind's whole name, in either language
 //   (SETUPUX1g; the glossary's `distinct` lists, D221 §2.5);
-// - reword: a word a term lists under `avoid.later` is one the Setup design's rewording row (SETUPUX1w) will
-//   forbid. Strings that still say it are reported, so that row has its list; nothing fails on it yet.
+// - reword: a word a term lists under `avoid.later` is one a later rewording will forbid. Strings that still say it are
+//   reported; nothing fails on it. The glossary lists none now (SETUPUX1w moved them to `avoid`).
 //
 // Alone it REPORTS and exits 0. It exits 2 when the glossary itself is malformed, since a glossary that
 // cannot be read has stopped checking anything. `--strict` exits 1 on a glossary, form or door finding
@@ -239,7 +239,7 @@ export function check(glossary, en, zh, { all = false, others = {} } = {}) {
         .sort((a, b) => b.length - a.length);
       const rest = names.reduce((text, name) => text.split(name).join('¤'), chinese);
       for (const word of term.avoid.zh) if (rest.includes(word)) note(key, kind, 'glossary', 'zh', `says ${word} for ${term.term}, which is ${term.zh}`);
-      // A word the rewording row will forbid (SETUPUX1w): reported with its keys, so that row has its list, and it fails nothing yet.
+      // A word a later rewording will forbid: reported with its keys, and it fails nothing yet.
       for (const word of term.avoid.later?.zh ?? []) {
         if (rest.includes(word)) note(key, kind, 'reword', 'zh', `says ${word} for ${term.term}, which is ${term.zh}`);
       }
@@ -363,7 +363,7 @@ export function report(findings, { labels, accepted } = {}) {
     `names-check: ${labels ?? '?'} label keys; ${findings.length} findings — `
       + ['glossary', 'budget', 'form', 'door', 'distinct', 'reword'].map((rule) => `${rule} ${count(rule)} (en ${count(rule, 'en')}, zh ${count(rule, 'zh')})`).join(', ')
       + (accepted === undefined ? '' : `; ${accepted} budget judgements accepted in the glossary`),
-    'Under --strict (the build runs it) a glossary, form, door or distinct finding fails; the budgets are a report and never fail (D54), and neither does a reword, a word the rewording row (SETUPUX1w) will forbid.',
+    'Under --strict (the build runs it) a glossary, form, door or distinct finding fails; the budgets are a report and never fail (D54), and neither does a reword, a word a later rewording will forbid.',
   ];
   const order = (finding) => `${KINDS.indexOf(finding.kind).toString().padStart(2, '0')}|${finding.key}|${finding.rule}|${finding.language}`;
   for (const finding of [...findings].sort((a, b) => order(a).localeCompare(order(b)))) {

@@ -191,7 +191,7 @@ describe('The Agents place, Setup mode', () => {
     await screen.findByRole('list', { name: 'Places' });
     await userEvent.type(screen.getByRole('searchbox', { name: 'Search places' }), 'sit');
     await waitFor(() => expect(asked().at(-1)).toMatchObject({ search: 'sit', foldSearch: 'sit' }));
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Needs a look' }));
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Needs attention' }));
     await waitFor(() => expect(asked().at(-1)).toMatchObject({ search: 'sit', needsLook: true }));
     await waitFor(() => expect(screen.queryByRole('button', { name: /engine/ })).toBeNull());
     expect(screen.getByRole('button', { name: /site/ })).toBeTruthy();

@@ -345,10 +345,10 @@ describe('the kinds that reach every door', () => {
 
       await i18n.changeLanguage('zh');
       render(<ul><ProposalCard proposal={{ ...WORKFLOW, workflow: chosen }} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
-      expect(headings()).toEqual(['你的部分', '步骤', '不再每次询问你', '集成不跑关卡', '适用于']);
-      const said = screen.getAllByRole('listitem').map((each) => each.textContent).filter((text) => /^\w+ 集成时不跑关卡/.test(text ?? ''));
+      expect(headings()).toEqual(['你的部分', '步骤', '不再每次询问你', '集成不跑检查项', '适用于']);
+      const said = screen.getAllByRole('listitem').map((each) => each.textContent).filter((text) => /^\w+ 集成时不跑检查项/.test(text ?? ''));
       expect(said).toHaveLength(2);
-      expect(said[0]).toMatch(/^engine 集成时不跑关卡：/);
+      expect(said[0]).toMatch(/^engine 集成时不跑检查项：/);
     } finally {
       cleanup();
       await i18n.changeLanguage('en');

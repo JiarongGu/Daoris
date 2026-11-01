@@ -153,7 +153,7 @@ describe("the Workflow tab's flowchart", () => {
     expect(screen.getByRole('heading', { name: '落地之前' })).toBeInTheDocument();
     const list = chart('engine 中的工作如何推进');
     expect(feet(node('工作本身', list))).toEqual(['第二意见，自动继续']);
-    expect(node('你在 dev 中审阅', list)).toHaveTextContent('智能体与你');
+    expect(node('你的查看（dev）', list)).toHaveTextContent('智能体与你');
   });
 });
 

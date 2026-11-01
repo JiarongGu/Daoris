@@ -193,7 +193,7 @@ describe('The Roles mode, the diagram', () => {
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: new RegExp(`^${i18n.t('nav.roles.work')}$`) }));
     await user.click(await screen.findByRole('button', { name: '以角色图显示' }));
-    expect(await screen.findByRole('list', { name: '角色图：范围、角色与智能体' })).toBeTruthy();
+    expect(await screen.findByRole('list', { name: '角色图：位置、角色与智能体' })).toBeTruthy();
     expect(screen.getByRole('button', { name: '以列表显示' })).toBeTruthy();
   });
 });

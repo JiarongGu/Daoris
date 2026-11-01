@@ -150,7 +150,7 @@ describe("a repository's Workflow tab", () => {
     await i18n.changeLanguage('zh');
     expect(screen.getByRole('list', { name: '落地之后' }).textContent).toContain('集成请求');
     expect(steps()[2]).toHaveTextContent('尚未集成');
-    expect(steps()[2]).toHaveTextContent('把已落地的分支集成进它的主线，由你发起，不跑关卡；冲突退回它的会话。');
+    expect(steps()[2]).toHaveTextContent('把已落地的分支集成进它的主线，由你发起，不跑检查项；冲突退回它的会话。');
   });
 
   it('says a limit whole on every step that has one, never folded away', () => {

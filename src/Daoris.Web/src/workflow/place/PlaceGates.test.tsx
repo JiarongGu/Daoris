@@ -154,7 +154,7 @@ describe("a place's Gates", () => {
     await act(async () => { await i18n.changeLanguage('zh'); });
     draw();
 
-    expect(screen.getByRole('heading', { name: '检查' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '检查项' })).toBeInTheDocument();
     expect(within(row('landed')).getByText('采纳，用于落地验证')).toBeInTheDocument();
     expect(within(row('integration')).getByText('采纳，用于集成')).toBeInTheDocument();
   });

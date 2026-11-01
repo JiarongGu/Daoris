@@ -1193,8 +1193,8 @@ describe('noteLines', () => {
     );
     expect(failed.text).toBe('`local/big.bin` was not copied from your checkout, since the copy failed:');
     const [copiedZh, missingZh, refusedZh, failedZh] = noteLines(zh, { parts }, 'zh');
-    expect(copiedZh.text).toMatch(/^仓库的检查读取的本机文件已从你的检出以只读方式复制进来：`local\/sensitive-patterns\.txt`.+`local\/hosts\.txt`。$/);
-    expect(missingZh.text).toBe('`local/allowed.txt` 没有复制：仓库的检查会读取它，而你的检出里没有它。');
+    expect(copiedZh.text).toMatch(/^仓库的检查项读取的本机文件已从你的检出以只读方式复制进来：`local\/sensitive-patterns\.txt`.+`local\/hosts\.txt`。$/);
+    expect(missingZh.text).toBe('`local/allowed.txt` 没有复制：仓库的检查项会读取它，而你的检出里没有它。');
     expect(refusedZh.text).toBe('`secrets/token.txt` 没有复制：Daoris 只把 `local/` 下、git 在工作树中忽略的文件复制进工作树，而它不是这样的文件。');
     expect(failedZh.text).toBe('`local/big.bin` 没有从你的检出复制，因为复制失败了：');
     for (const line of [copied, missing, refused, failed, copiedZh, missingZh, refusedZh, failedZh]) expect(line.kind).toBe('said');
