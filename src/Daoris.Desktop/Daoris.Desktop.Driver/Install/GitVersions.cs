@@ -23,15 +23,34 @@ public static class GitVersions
     private static readonly ConcurrentDictionary<string, (DateTime Written, long Length, Version Version)> s_asked =
         new(StringComparer.OrdinalIgnoreCase);
 
+    private static readonly AsyncLocal<Version?> s_pretended = new();
+
+    /// <summary>
+    /// Answer <paramref name="version"/> for every git this flow asks of, until disposed, starting none: a test's older git, which this
+    /// machine does not have. Flow-scoped, so classes running beside it never see it.
+    /// </summary>
+    internal static IDisposable Pretending(Version version)
+    {
+        var before = s_pretended.Value;
+        s_pretended.Value = version;
+        return new Restore(() => s_pretended.Value = before);
+    }
+
+    private sealed class Restore(Action restore) : IDisposable
+    {
+        public void Dispose() => restore();
+    }
+
     /// <summary>The version git said, as its first dotted number (<c>git version 2.53.0.windows.1</c> is 2.53.0); null where it said none.</summary>
     public static Version? Parse(string? said) =>
         said is not null && ToolQuestions.VersionIn(said) is { } dotted && Version.TryParse(dotted, out var version) ? version : null;
 
     /// <summary>The version kept for <paramref name="file"/> as it stands now; null where it was never asked, or has changed since.</summary>
     public static Version? Known(string? file) =>
-        file is not null && Stamp(file) is { } now && s_asked.TryGetValue(Key(file), out var kept) && (kept.Written, kept.Length) == now
+        s_pretended.Value
+        ?? (file is not null && Stamp(file) is { } now && s_asked.TryGetValue(Key(file), out var kept) && (kept.Written, kept.Length) == now
             ? kept.Version
-            : null;
+            : null);
 
     /// <summary>
     /// <paramref name="file"/>'s version: the one kept for it as it stands, else asked by <paramref name="ask"/> and kept. An answer with
@@ -39,6 +58,7 @@ public static class GitVersions
     /// </summary>
     public static async Task<Version?> OfAsync(string? file, Func<string, CancellationToken, Task<string?>> ask, CancellationToken ct)
     {
+        if (s_pretended.Value is { } pretended) return pretended;
         if (file is null || Stamp(file) is not { } stamp) return null;
         if (Known(file) is { } known) return known;
         var version = Parse(await ask(file, ct).ConfigureAwait(false));
@@ -57,8 +77,8 @@ public static class GitVersions
     /// <summary>Why Daoris's own remote acts refuse on this git (§4.1), or null where it is new enough or not known.</summary>
     public static string? DoorsRefusal(Version? version) =>
         version is not null && version < Doors
-            ? $"the git Daoris runs is {version}, older than the {Doors} Daoris's git doors need, so Daoris does not reach a remote with "
-              + "it: Settings → Tools sets a newer git, or `daoris tool use git managed` downloads one"
+            ? $"the git Daoris runs is {version}, older than the {Doors} Daoris's git doors need, so Daoris reaches no remote with it "
+              + "(Settings → Tools sets a newer git, or `daoris tool use git managed` downloads one)"
             : null;
 
     /// <summary>Why a git setting refuses on this git (D121 §2.5), or null where it is new enough or not known.</summary>
