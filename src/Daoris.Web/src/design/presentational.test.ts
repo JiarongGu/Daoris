@@ -97,6 +97,9 @@ const ORGANISMS = new Set<string>([
   // A place's Sessions (AGENTSPLACE1f): the registry's row and the one reading of a repository's setup behind it, so the molecules below hold none.
   './agents/setup/PlaceSessions.tsx',
   './projects/setup/useRepositorySetup.ts',
+  // A repository's Workflow as its molecules take it (AGENTSPLACE1h): its Current, the acceptance and the step editor's bridge, held by the
+  // Repositories view and a place's Sessions, so the Workflow tab and the place's Workflow below hold none.
+  './projects/useWorkflowTab.ts',
   // A workspace's page's organism (UX6g, D150 §4.3): it holds the driver's answers and every act on a workspace, so the
   // page, its Details and its Setup below it hold none.
   './projects/workspace/WorkspaceView.tsx',

@@ -16,7 +16,7 @@ import { useDoor } from './door';
 
 export function ProjectsView({
   notify, onOpenCode, onOpenAgent, onSyncNow, addRequested, onAddOpened, importRequested, onImportOpened, drawerWorkspace, door,
-  section = null, onOpenQuest, onOpenAsk, onAttend, branchAsked = null, onBranchOpened,
+  section = null, onOpenQuest, onOpenAsk, onAttend, branchAsked = null, onBranchOpened, onOpenSetup,
 }: {
   notify: Notify;
   onOpenCode?: (repository: string) => void;
@@ -38,6 +38,8 @@ export function ProjectsView({
   /** A door into how a landed branch landed (FLOWCHART1c): its opening chose the repository (`door`) and Branches, as `App`'s does. */
   branchAsked?: { repository: string; branch: string } | null;
   onBranchOpened?: () => void;
+  /** A door into a repository's place in the Agents place, once its Setup mode is lit (AGENTSPLACE1f, 1h). */
+  onOpenSetup?: (repository: string) => void;
 }) {
   const lists = useListPanes();
   const [over, setOver] = useState(false);
@@ -55,7 +57,7 @@ export function ProjectsView({
     onWorkspaceTab: (next) => { setWorkspaceTab(next); storeWorkspaceTab(next); },
     workspaceSection: section,
     notify, onOpenCode, onOpenAgent, onSyncNow, addRequested, onAddOpened, importRequested, onImportOpened, drawerWorkspace,
-    onOpenQuest, onOpenAsk, onAttend, branchAsked, onBranchOpened,
+    onOpenQuest, onOpenAsk, onAttend, branchAsked, onBranchOpened, onOpenSetup,
   });
   return <ViewFrame layout={layout} lists={lists} over={over} onOver={setOver} />;
 }

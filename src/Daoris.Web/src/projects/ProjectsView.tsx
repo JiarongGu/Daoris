@@ -5,20 +5,19 @@ import { sentence } from '../locales/format';
 import { setupLit } from '../agents/modes';
 import { AddProjectDrawer, ImportFolderDrawer, ManageProjectDrawer } from './ProjectManage';
 import { projectsItem, workspaceItem } from '../app/opener';
-import type { WorkflowTabProps } from '../workflow/WorkflowTab';
 import { ProjectList, type RepositoryRowFacts, type WorkspaceGroup } from './ProjectList';
 import { ProjectPage, ProjectsMainNotice } from './ProjectPage';
 import { RepositoryBranch, RepositoryBranches, RepositoryChanges, RepositoryHistory } from './git/RepositoryGitView';
 import { RepositoryIntegration } from './integration/RepositoryIntegration';
 import { useRepositorySetup } from './setup/useRepositorySetup';
+import { useWorkflowTab } from './useWorkflowTab';
 import type { ProjectTab, WorkspaceSection, WorkspaceTab } from './tabs';
 import { WorkspaceView } from './workspace/WorkspaceView';
 import { useQuests, useRegistry, useRepositories, useSessions } from '../data/queries';
 import { sessionTitle } from '../work/identity';
 import { useScope } from '../data/scope';
 import {
-  useDriver, useLines, useHeavySlot, useSetupPlan, useSetupPress, useSweepPlan, useWorkflowCurrent, useSetLanded, acceptGatesPress, useVerify,
-  useWorkflowEditor,
+  useDriver, useLines, useHeavySlot, useSetupPlan, useSetupPress, useSweepPlan,
 } from '../bridge/shell';
 import type { SetUpForAgentsProps } from './setup/SetUpForAgents';
 import { type Notify, useErrorNotify } from '../design/ui';
@@ -153,12 +152,9 @@ export function useProjectsView({
     return session ? sessionTitle(session, session.quest ? (heavyQuests.data ?? []).find((row) => row.id === session.quest) : null) : id;
   };
   // How its work moves (WORKFLOW1b): its Current, asked only while its Workflow tab shows.
-  const workflowShown = active && driver.data !== undefined && tab === 'workflow' && chosenRepository !== null;
-  const current = useWorkflowCurrent(chosenRepository === null ? null : { repository: chosenRepository }, { enabled: workflowShown });
-  // Its step editor (WORKFLOWEDIT1b), asked only once the tab opens it.
-  const editor = useWorkflowEditor({ repository: chosenRepository ?? '', workspace: current.data?.workspace ?? null }, { enabled: workflowShown });
-  const setLanded = useSetLanded();
-  const verify = useVerify();
+  // Once the Setup mode is lit its Workflow is the Agents place's page (AGENTSPLACE1h), and the tab goes with it.
+  const workflowShown = active && driver.data !== undefined && tab === 'workflow' && chosenRepository !== null && setupLives;
+  const workflowOf = useWorkflowTab({ repository: chosenRepository, enabled: workflowShown, ready: driver.data !== undefined, notify });
   // Session branches holding work no branch of the person's holds (WSR3, D88) — named on the repository,
   // so work is not lost in a pile nobody reads. A workspace's Branches lists them one by one (UX6g).
   const sweep = useSweepPlan();
@@ -268,48 +264,6 @@ export function useProjectsView({
     };
   };
 
-  /**
-   * **Its Workflow** (WORKFLOW1b, the workflow design §6.1): its Current as the driver answers it, read only while the tab
-   * shows, and a refusal said in its place. A step its workspace set opens the workspace's Setup, whose defaults open by
-   * themselves wherever a rule is set there.
-   */
-  const workflowOf = (registration: Registration): WorkflowTabProps | null => {
-    if (!driver.data) return null;
-    const workspace = current.data?.workspace ?? workspaceOf(registration);
-    const landed = current.data?.start?.landed;
-    return {
-      current: current.data,
-      reading: current.isPending,
-      refusal: current.error ? sentence(current.error) : null,
-      doors: {
-        workspaceSetup: () => {
-          onChoose(workspaceItem(workspace));
-          onWorkspaceTab?.('setup');
-        },
-      },
-      // FABRIC-PIPELINE1a: the person's *Accept the gates*, the route's own pipeline again, which accepts the tip's declaration by its blob.
-      onAcceptGates: landed && landed.workflow !== 'current' ? (answered) => setLanded.mutate(acceptGatesPress(registration.repository, landed), {
-        onSuccess: () => {
-          notify(t('projects.landed.accepted', { repository: registration.repository }));
-          answered.done();
-        },
-        onError: (error) => answered.refused(sentence(error)),
-      }) : undefined,
-      accepting: setLanded.isPending,
-      // FABRIC-PIPELINE1d: *Verify…* of a branch or a commit under the accepted gates, `daoris-driver verify`'s twin; a refusal is an answer.
-      onVerify: (ask, answered) => verify.mutate({ repository: registration.repository, ...ask }, {
-        onSuccess: (answer) => {
-          if (answer.done) {
-            notify(t('projects.verify.started', { repository: registration.repository }));
-            answered.done();
-          } else answered.refused(answer.message);
-        },
-        onError: (error) => answered.refused(sentence(error)),
-      }),
-      editor,
-    };
-  };
-
   const shown = chosenRepository ? rows.find((row) => row.repository === chosenRepository) : undefined;
   const workspaceHeld = chosenWorkspace !== null && groups.some((group) => group.workspace === chosenWorkspace);
   const branchShown = attached && shown && tab === 'branches' && branchOpen?.repository === shown.repository ? branchOpen.branch : null;
@@ -331,7 +285,8 @@ export function useProjectsView({
           notify={notify}
           onOpenRepository={onChoose}
           // A repository that sets rules of its own opens at its own workflow (WORKFLOW1b).
-          onOpenRepositoryWorkflow={(repository) => { onChoose(repository); onTab?.('workflow'); }}
+          // Once the Setup mode is lit that is the repository's place (AGENTSPLACE1h): the application opens it, as it does for a Setup door.
+          onOpenRepositoryWorkflow={(repository) => { if (setupLives) { onChoose(repository); onTab?.('workflow'); } else onOpenSetup?.(repository); }}
           // A branch in its Branches opens on its repository's page, so its way back is that repository's Branches (UX6h3b).
           onOpenBranch={(repository, branch) => { setBranchOpen({ repository, branch }); onChoose(repository); onTab?.('branches'); }}
           onOpenRepositoryHistory={(repository) => { onChoose(repository); onTab?.('history'); }}
@@ -386,7 +341,10 @@ export function useProjectsView({
           setup={setupLives ? setupProps : null}
           onOpenSetup={!setupLives && onOpenSetup ? () => onOpenSetup(shown.repository) : undefined}
           setUp={setUpOf(shown)}
-          workflow={workflowOf(shown)}
+          // A step its workspace set opens the workspace's Setup, whose defaults open by themselves wherever a rule is set there.
+          workflow={setupLives
+            ? workflowOf(shown, (workspace) => ({ workspaceSetup: () => { onChoose(workspaceItem(workspace)); onWorkspaceTab?.('setup'); } }))
+            : null}
           // Its branches and its line's history (UX6h1): a shell's, each read only while its tab shows (D147 §6).
           branches={attached
             ? (

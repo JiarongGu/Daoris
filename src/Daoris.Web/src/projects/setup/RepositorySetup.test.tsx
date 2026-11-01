@@ -820,6 +820,15 @@ describe("a repository's landed route", () => {
     expect(head('Line and landing')).toHaveAttribute('aria-expanded', 'false');
   });
 
+  // AGENTSPLACE1h: the place's Gates draws the declaration and its acceptance once, so Line and landing draws neither and opens for neither.
+  it('draws no integration declaration and does not open for one where the page draws its Gates apart', () => {
+    const none = { ...NO_VERIFICATION, integration: INTEGRATION_UNACCEPTED };
+    draw({ ...SETUP_DEFAULTS, gatesApart: true, landed: { start: none, workspace: 'aurora', onChoose: vi.fn(), onAcceptIntegration: vi.fn() } });
+
+    expect(head('Line and landing')).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByText('Integration declaration')).not.toBeInTheDocument();
+  });
+
   it("folds to its workspace's route, marked as such, and stays folded", () => {
     draw({ ...SETUP_DEFAULTS, landed: { start: { ...START, landed: { ...START.landed, level: 'workspace-landed' } }, workspace: 'aurora', onChoose: vi.fn() } });
 

@@ -5,6 +5,8 @@ import { workspaceOf } from '../../data/workspaces';
 import type { Notify } from '../../design/ui';
 import { RepositorySetup, type RepositorySetupProps, SESSIONS_SECTIONS } from '../../projects/setup/RepositorySetup';
 import { useRepositorySetup } from '../../projects/setup/useRepositorySetup';
+import { useWorkflowTab } from '../../projects/useWorkflowTab';
+import { type PlaceWorkflowProps, PlaceWorkflowView } from '../../workflow/place/PlaceWorkflowView';
 import { WorkspaceSetupPart } from '../../projects/workspace/WorkspaceView';
 import type { PlaceRow } from '../../data/wiring';
 
@@ -19,26 +21,29 @@ function PageSection({ id, title, children }: { id: string; title: string; child
 }
 
 /**
- * **A repository place's Driving, Line and landing, and Sessions** (AGENTSPLACE1f), drawn from the one molecule the Repositories page's
- * Setup tab drew, so each row, its *Set for this repository* and *Clear*, and its terminal twin are today's. A molecule: the setup arrives
- * as props, and every press goes out.
+ * **A repository place's Driving, Workflow and Sessions** (AGENTSPLACE1f, 1h), drawn from the one molecule the Repositories page's Setup tab
+ * drew, so each row, its *Set for this repository* and *Clear*, and its terminal twin are today's. A molecule: the setup and the workflow
+ * arrive as props, and every press goes out.
  *
  * @remarks
  * - **Sessions** holds the access, the heavy gates and checks, the language, helpers, hand-over and standing answer, and the reach and rules.
- * - **Driving** (drive, hold, a tree per session, the supervisor's door) and **Line and landing** (its line, landing, commits, review, opinion,
- *   the landed route and the integration declaration) are drawn here too, since the tab they were on goes with this row (design §6). They are
- *   the page head's and Workflow's (AGENTSPLACE1h), and move there when that row builds them.
+ * - **Driving** (drive, hold, a tree per session, the supervisor's door) is drawn here too, since the tab it was on goes with this row (design
+ *   §6); it is the page head's, and moves there when the head is built.
+ * - **Workflow** (AGENTSPLACE1h) is `PlaceWorkflowView`: its route and chart, Gates, the line's landing rows from the same molecule, and
+ *   Change… and Edit steps…. A workspace's page has none yet; its Workflow tab stays.
  */
-export function PlaceRepositorySetupView({ setup }: { setup: RepositorySetupProps | null }) {
+export function PlaceRepositorySetupView({ setup, workflow = null }: { setup: RepositorySetupProps | null; workflow?: PlaceWorkflowProps | null }) {
   const { t } = useTranslation();
   if (!setup) return null;
   return (
     <>
       <RepositorySetup {...setup} only={['driving']} />
-      {setup.work && (
-        <PageSection id="place-workflow" title={t('agents.setup.workflow.title')}>
-          <RepositorySetup {...setup} only={['work']} />
-        </PageSection>
+      {workflow && (
+        <PlaceWorkflowView
+          {...workflow}
+          onAcceptIntegration={setup.landed?.onAcceptIntegration}
+          landing={(asked) => (setup.work ? <RepositorySetup {...setup} only={['work']} gatesApart open={asked ?? setup.open} /> : null)}
+        />
       )}
       <PageSection id="place-sessions" title={t('agents.setup.sessions.title')}>
         <RepositorySetup {...setup} only={SESSIONS_SECTIONS} />
@@ -57,7 +62,9 @@ function PlaceRepositorySetup({ place, notify, onOpenPlugin, onOpenAppointed }: 
   const registry = useRegistry('machine');
   const registration = (registry.data ?? []).find((row) => row.repository === place.repository && workspaceOf(row) === workspaceOf(place));
   const setup = useRepositorySetup({ registration, enabled: true, notify, onOpenPlugin, onOpenAppointed });
-  return <PlaceRepositorySetupView setup={setup} />;
+  const workflowOf = useWorkflowTab({ repository: registration?.repository ?? null, enabled: setup !== null, ready: setup !== null, notify });
+  const workflow = registration ? workflowOf(registration) : null;
+  return <PlaceRepositorySetupView setup={setup} workflow={workflow && { ...workflow, name: registration!.repository }} />;
 }
 
 /**

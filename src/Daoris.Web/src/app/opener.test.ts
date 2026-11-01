@@ -247,8 +247,8 @@ describe("a press's plan door", () => {
   });
 });
 
-/** AGENTSPLACE1f: every door into a repository's Setup tab ends in `apply`, so one redirect there is the door census. */
-describe('a door into a repository\'s Setup tab, once the Setup mode is lit', () => {
+/** AGENTSPLACE1f and 1h: every door into a repository's Setup tab or Workflow tab ends in `apply`, so one redirect there is the door census. */
+describe('a door into a repository\'s Setup tab or Workflow tab, once the Setup mode is lit', () => {
   const where = () => 'studio';
 
   it("opens the repository's place in the Setup mode, whichever door named the tab", () => {
@@ -270,11 +270,24 @@ describe('a door into a repository\'s Setup tab, once the Setup mode is lit', ()
     expect(placeOpening(remote, true, where)).toEqual(remote);
   });
 
-  it('changes nothing while the mode is dark, nor for a door that is not the Setup tab', () => {
+  // AGENTSPLACE1h: What needs you's, the Roles sections' and a workflow step's doors to a repository's workflow all name the tab.
+  it("opens the repository's place, whose Workflow section holds it, for a door naming the Workflow tab", () => {
+    const place = { view: 'agents', agentsMode: 'setup', place: 'repo:studio/engine' };
+    expect(placeOpening(opening('projects', 'engine', { tab: 'workflow' }), true, where)).toEqual(place);
+    expect(placeOpening(doorOpening({ view: 'projects', item: 'engine', tab: 'workflow' }), true, where)).toEqual(place);
+    expect(placeOpening(doorOpening({ view: 'projects', tab: 'workflow' }), true, where)).toEqual({ view: 'agents', agentsMode: 'setup' });
+  });
+
+  it('changes nothing while the mode is dark, nor for a door that is not one of those tabs', () => {
     const tab = opening('projects', 'engine', { tab: 'setup' });
     expect(placeOpening(tab, false, where)).toEqual(tab);
     const workflow = opening('projects', 'engine', { tab: 'workflow' });
-    expect(placeOpening(workflow, true, where)).toEqual(workflow);
+    expect(placeOpening(workflow, false, where)).toEqual(workflow);
+    const branches = opening('projects', 'engine', { tab: 'branches' });
+    expect(placeOpening(branches, true, where)).toEqual(branches);
+    // A workspace's own Workflow tab stays where it is until its place is built.
+    const workspace = opening('projects', workspaceItem('studio'), { workspaceTab: 'workflow' });
+    expect(placeOpening(workspace, true, where)).toEqual(workspace);
     const agents = opening('agents', 'claude-code');
     expect(placeOpening(agents, true, where)).toEqual(agents);
   });

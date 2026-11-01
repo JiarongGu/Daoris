@@ -34,6 +34,41 @@ export type WorkflowTabProps = {
 };
 
 /**
+ * **A Workflow's head** (WORKFLOW1b): what it shows and why, *Current workflow*, its version, whose rules it reads, the person's part
+ * composed from the steps, and its terminal twin (D50). The Workflow tab draws it first, and so does the Agents place's Workflow
+ * section (AGENTSPLACE1h).
+ */
+export function WorkflowHead({ page, name, current }: { page: 'repository' | 'workspace'; name: string; current: CurrentWorkflow }) {
+  const { t } = useTranslation();
+  const headId = useId();
+  const read = page === 'repository'
+    ? [
+        t('workflow.head.repository', { repository: name }),
+        ...(current.registered === false ? [t('workflow.head.unregistered', { workspace: current.workspace })] : []),
+      ].join(t('workflow.set.join'))
+    : t('workflow.head.workspace', { workspace: name });
+
+  return (
+    <section aria-labelledby={headId} className="grid min-w-0 gap-1.5">
+      <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <h2 id={headId} className="m-0 text-title font-semibold text-ink">{t('workflow.head.title')}</h2>
+        <Tip content={t('workflow.versionTip')}>
+          <span className="font-mono text-meta text-ink-faint">{t('workflow.version', { version: current.version })}</span>
+        </Tip>
+      </div>
+      <Prose className="text-small"><Inline text={read} /></Prose>
+      <Prose className="text-ink"><Inline text={partSaid(t, current)} /></Prose>
+      <p className="m-0 text-meta text-ink-faint">
+        <Inline text={page === 'repository'
+          ? t('workflow.twin.repository', { repository: name })
+          : t('workflow.twin.workspace', { workspace: name })}
+        />
+      </p>
+    </section>
+  );
+}
+
+/**
  * **A Workflow tab** (WORKFLOW1b; D157 point 12, the workflow design §6.1, §6.2): on a repository's page and a workspace's,
  * how work there moves, drawn read-only from the rules as they stand (Current, design §2.7). It heads with what it shows
  * and why: *Current workflow*, its version, whose rules it reads, the person's part composed from the steps, and its
@@ -56,7 +91,6 @@ export function WorkflowTab({
   name: string;
 }) {
   const { t } = useTranslation();
-  const headId = useId();
 
   if (!current) {
     return (
@@ -67,31 +101,9 @@ export function WorkflowTab({
     );
   }
 
-  const read = page === 'repository'
-    ? [
-        t('workflow.head.repository', { repository: name }),
-        ...(current.registered === false ? [t('workflow.head.unregistered', { workspace: current.workspace })] : []),
-      ].join(t('workflow.set.join'))
-    : t('workflow.head.workspace', { workspace: name });
-
   return (
     <div className="grid min-w-0 gap-5">
-      <section aria-labelledby={headId} className="grid min-w-0 gap-1.5">
-        <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-          <h2 id={headId} className="m-0 text-title font-semibold text-ink">{t('workflow.head.title')}</h2>
-          <Tip content={t('workflow.versionTip')}>
-            <span className="font-mono text-meta text-ink-faint">{t('workflow.version', { version: current.version })}</span>
-          </Tip>
-        </div>
-        <Prose className="text-small"><Inline text={read} /></Prose>
-        <Prose className="text-ink"><Inline text={partSaid(t, current)} /></Prose>
-        <p className="m-0 text-meta text-ink-faint">
-          <Inline text={page === 'repository'
-            ? t('workflow.twin.repository', { repository: name })
-            : t('workflow.twin.workspace', { workspace: name })}
-          />
-        </p>
-      </section>
+      <WorkflowHead page={page} name={name} current={current} />
 
       {/* FABRIC-PIPELINE1a: the start node first, the routes into the workflows; a driver before it answers none. */}
       {current.start && (
