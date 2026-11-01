@@ -58,10 +58,17 @@ public sealed record NodeAcceptance(string Unit, string? SubjectRevision, string
     public IReadOnlyDictionary<string, NodePort> Outputs { get => outputs; init => outputs = Frozen(value); }
 
     /// <summary>
-    /// Whether <paramref name="other"/> is the same result: the same binding, and the same evidence and outputs, which the id leaves out.
+    /// The outcome a decision was reached with (DECIDE1a), one of its node's <see cref="NodeDeclaration.Outcomes"/>; null on any other reach.
+    /// Not part of the binding, as the evidence is not: a start's binding is the one its reach names whichever outcome it chose.
+    /// </summary>
+    public string? Outcome { get; init; }
+
+    /// <summary>
+    /// Whether <paramref name="other"/> is the same result: the same binding, and the same evidence, outputs and outcome, which the id leaves out.
     /// </summary>
     public bool SameResult(NodeAcceptance other) =>
-        Id == other.Id && Equals(Evidence, other.Evidence) && Outputs.Count == other.Outputs.Count
+        Id == other.Id && Equals(Evidence, other.Evidence) && string.Equals(Outcome, other.Outcome, StringComparison.Ordinal)
+        && Outputs.Count == other.Outputs.Count
         && Outputs.All(output => other.Outputs.TryGetValue(output.Key, out var port) && Equals(port, output.Value));
 
     private static IReadOnlyDictionary<string, NodePort> Frozen(IReadOnlyDictionary<string, NodePort> ports) =>
@@ -127,6 +134,12 @@ public static class NodeLapse
 
     /// <summary>An acceptance it rests on, by a prerequisite or an input, was invalidated.</summary>
     public const string Upstream = "upstream";
+
+    /// <summary>
+    /// A reached decision's outcome no longer reads as one of its node's (DECIDE1a): an older writer rewrote the record without it, so the
+    /// decision is judged again rather than routed on a guess.
+    /// </summary>
+    public const string Outcome = "outcome";
 }
 
 /// <summary>One acceptance invalidated: why, and, where it was carried from upstream, the acceptance it rested on.</summary>
@@ -180,9 +193,12 @@ public static class NodeAcceptances
         for (var next = 0; next < found.Count; next++)
         {
             var upstream = found[next].Acceptance;
+            // DECIDE1a: a route rests on its decision's outcome receipt, never on the acceptance's id alone.
+            var routes = acceptances.Where(each => each.Id == upstream && each.Outcome is not null)
+                .Select(each => WireEvaluation.OutcomeReceipt(upstream, each.Outcome!)).ToHashSet(StringComparer.Ordinal);
             foreach (var acceptance in acceptances)
             {
-                if (named.Contains(acceptance.Id) || !RestsOn(acceptance, upstream)) continue;
+                if (named.Contains(acceptance.Id) || !RestsOn(acceptance, upstream, routes)) continue;
                 named.Add(acceptance.Id);
                 found.Add(new NodeInvalidation(acceptance.Id, NodeLapse.Upstream, upstream));
             }
@@ -204,7 +220,7 @@ public static class NodeAcceptances
             : new(kept, NodeRefusal.OtherResult);
     }
 
-    private static bool RestsOn(NodeAcceptance acceptance, string upstream) =>
-        acceptance.PrerequisiteReceipts.Contains(upstream, StringComparer.Ordinal)
+    private static bool RestsOn(NodeAcceptance acceptance, string upstream, HashSet<string> routes) =>
+        acceptance.PrerequisiteReceipts.Any(receipt => string.Equals(receipt, upstream, StringComparison.Ordinal) || routes.Contains(receipt))
         || acceptance.Inputs.Values.Any(port => string.Equals(port.Acceptance, upstream, StringComparison.Ordinal));
 }

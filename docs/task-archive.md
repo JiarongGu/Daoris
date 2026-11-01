@@ -22514,3 +22514,7 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 > **1f, the message** (driver; `docs/2026-11-01-land-node-design.md` §2 and §8 row 7): a `land` node's `message` template over `{title}`, `{quest}`, `{ticket}`, `{session}`, rendered once into the delivery's intent before the landing and used on the commits the landing makes (the merge commit, a squash commit), the maker's own line kept; a template naming another placeholder is refused where the node is judged. Proof: message tests.
 
 **Outcome** 2026-11-01: `LandNodes.RenderMessage` renders the template in one pass (null for one the node refuses, which `LandNodes.Problem` already did); a delivery's merge says its intent's message with the maker's line (`IntegrationPresses` hands it to the press's own request only), and a squash opens with it above the commits' list and the session line. The intent's producer, which calls `RenderMessage`, is row 1c2's. Tests `LandMessageTests`, `LandDeliveryGitTests`.
+
+## DECIDE1a — decision steps, the model: a reach's named outcome and the `when` wire that follows it (2026-11-01, D173)
+
+**Outcome** 2026-11-01: a step declares `Outcomes` and its reach names one, outside the acceptance's id (D173's note); a `when` wire follows it on an `out-` receipt, so another outcome lapses the route, and `WireEvaluated.NotTaken` names what no route starts, settled in an `all` join. Inert in files and outside `NodeGraphs`' digest until DECIDE1b. Detail: the commits.

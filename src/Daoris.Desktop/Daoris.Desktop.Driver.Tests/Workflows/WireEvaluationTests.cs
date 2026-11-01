@@ -32,6 +32,11 @@ public sealed class WireEvaluationTests
 
     internal static Wire Data(string id, string from, string output, string to, string input) => new(id, WireKinds.Data, new(from, output), new(to, input));
 
+    private static Wire When(string id, string from, string outcome, string to, WireGroup? group = null) =>
+        new(id, WireKinds.When, new(from), new(to)) { Outcome = outcome, Group = group };
+
+    private static readonly string[] Routes = ["approved", "changes-asked"];
+
     /// <summary>
     /// A graph's nodes on one record's unit (<see cref="Unit"/> unless named: FABRIC-CUTOVER1a's <c>run:r</c>), with their statuses as a record
     /// writer would keep them between evaluations.
@@ -72,7 +77,7 @@ public sealed class WireEvaluationTests
             Statuses[id] = moved.Status;
         }
 
-        public void Reach(string id, Dictionary<string, NodePort>? outputs = null)
+        public void Reach(string id, Dictionary<string, NodePort>? outputs = null, string? outcome = null)
         {
             var node = Declared(id);
             var status = Statuses[id];
@@ -85,6 +90,7 @@ public sealed class WireEvaluationTests
                 {
                     Evidence = authority.Evidenced ? new NodePort("acme/receipt@1", $"{id}#{status.Attempt}", status.Binding.SubjectRevision, null) : null,
                     Outputs = outputs ?? NodeAcceptance.NoPorts,
+                    Outcome = outcome,
                 },
             });
         }
@@ -352,6 +358,129 @@ public sealed class WireEvaluationTests
         failing.Evaluate();
         Assert.Equal((NodeStates.Failed, WireEvaluation.MemberFailed, NodeSource.Members), (failing.State("j"), failing.Statuses["j"].Code, failing.Statuses["j"].By));
         Assert.Equal((NodeStates.Blocked, NodeStates.Ready), (failing.State("n"), failing.State("sink")));
+    }
+
+    /// <summary>
+    /// DECIDE1a: a decision reached with one outcome starts that route alone, on a receipt of its acceptance and that outcome; the other
+    /// route, and what only it leads to, is not taken. An <c>after</c> from the decision passes on any outcome.
+    /// </summary>
+    [Fact]
+    public void A_decision_starts_only_its_chosen_route_and_the_other_is_not_taken()
+    {
+        NodeDeclaration[] nodes = [Node("review") with { Outcomes = Routes }, Node("land"), Node("rework"), Node("again"), Node("note")];
+        Wire[] wires = [When("w1", "review", "approved", "land"), When("w2", "review", "changes-asked", "rework"), After("w3", "rework", "again"), After("w4", "review", "note")];
+        var g = new Graph(nodes, wires);
+        var first = g.Evaluate();
+        Assert.Empty(first.NotTaken);
+        Assert.Equal(["w1"], first.Of("land")!.Waiting);
+
+        g.Start(first, "review");
+        g.Reach("review", outcome: "approved");
+        var decided = g.Evaluate();
+        var accepted = g.Statuses["review"].Current!;
+        Assert.Equal((NodeStates.Ready, NodeStates.Blocked, NodeStates.Blocked, NodeStates.Ready), (g.State("land"), g.State("rework"), g.State("again"), g.State("note")));
+        Assert.Equal([WireEvaluation.OutcomeReceipt(accepted.Id, "approved")], decided.Of("land")!.Receipts);
+        Assert.Equal([accepted.Id], decided.Of("note")!.Receipts);
+        Assert.Equal(["again", "rework"], decided.NotTaken);
+        Assert.Equal(["land", "note"], decided.Starts.Select(start => start.Node));
+    }
+
+    /// <summary>
+    /// DECIDE1a: a route rests on its decision's outcome, so a new attempt choosing another lapses it and starts the other; the same
+    /// acceptance read with another outcome lapses it too, and one whose outcome no longer reads is judged again, never routed.
+    /// </summary>
+    [Fact]
+    public void Another_outcome_lapses_the_route_the_first_one_took()
+    {
+        NodeDeclaration[] nodes = [Node("review") with { Outcomes = Routes }, Node("land"), Node("rework")];
+        Wire[] wires = [When("w1", "review", "approved", "land"), When("w2", "review", "changes-asked", "rework")];
+        var g = new Graph(nodes, wires);
+        g.Start(g.Evaluate(), "review");
+        g.Reach("review", outcome: "approved");
+        g.Start(g.Evaluate(), "land");
+        g.Reach("land");
+        var first = g.Statuses["review"].Current!.Id;
+
+        g.Move("review", new NodeMove(NodeStates.Invalidated, NodeCause.Daoris));
+        var lapsed = g.Evaluate();
+        var land = lapsed.Moves.Single(move => move.Node == "land");
+        Assert.Equal((NodeStates.Invalidated, WireWhy.Upstream, WireEvaluation.OutcomeReceipt(first, "approved")), (g.State("land"), land.Why, land.Detail));
+
+        g.Start(lapsed, "review");
+        g.Reach("review", outcome: "changes-asked");
+        var other = g.Evaluate();
+        Assert.Equal((NodeStates.Blocked, NodeStates.Ready), (g.State("land"), g.State("rework")));
+        Assert.Equal(["land"], other.NotTaken);
+
+        g.Start(other, "rework");
+        var second = g.Statuses["review"].Current!;
+        g.Statuses["review"] = g.Statuses["review"] with { Acceptance = second with { Outcome = "approved" } };
+        var rewritten = g.Evaluate();
+        var rework = rewritten.Moves.Single(move => move.Node == "rework");
+        Assert.Equal((WireWhy.Upstream, WireEvaluation.OutcomeReceipt(second.Id, "changes-asked")), (rework.Why, rework.Detail));
+        Assert.Equal((NodeStates.Invalidated, NodeStates.Ready, second.Id), (g.State("rework"), g.State("land"), g.Statuses["review"].Current!.Id));
+
+        g.Start(rewritten, "land");
+        g.Statuses["review"] = g.Statuses["review"] with { Acceptance = second with { Outcome = null } };
+        var unread = g.Evaluate();
+        var review = unread.Moves.Single(move => move.Node == "review");
+        Assert.Equal((WireWhy.Lapsed, NodeLapse.Outcome), (review.Why, review.Detail));
+        Assert.Equal((NodeStates.Invalidated, NodeStates.Invalidated), (g.State("review"), g.State("land")));
+        Assert.Empty(unread.NotTaken);
+    }
+
+    /// <summary>DECIDE1a: an <c>anyOf</c> merging a decision's two routes starts on whichever was taken.</summary>
+    [Fact]
+    public void An_anyOf_merging_two_routes_starts_on_either()
+    {
+        var merge = new WireGroup("merge", WireGroupModes.AnyOf);
+        NodeDeclaration[] nodes = [Node("review") with { Outcomes = Routes }, Node("land"), Node("rework"), Node("tell")];
+        Wire[] wires =
+        [
+            When("w1", "review", "approved", "land"), When("w2", "review", "changes-asked", "rework"),
+            After("w3", "land", "tell", merge), After("w4", "rework", "tell", merge),
+        ];
+        foreach (var (outcome, route, witness, other) in new[] { ("approved", "land", "w3", "rework"), ("changes-asked", "rework", "w4", "land") })
+        {
+            var g = new Graph(nodes, wires);
+            g.Start(g.Evaluate(), "review");
+            g.Reach("review", outcome: outcome);
+            g.Start(g.Evaluate(), route);
+            g.Reach(route);
+
+            var merged = g.Evaluate();
+            Assert.Equal((NodeStates.Ready, witness), (g.State("tell"), merged.Of("tell")!.Witnesses["merge"]));
+            Assert.Equal([other], merged.NotTaken);
+        }
+    }
+
+    /// <summary>DECIDE1a: an <c>all</c> join counts a member no route takes as settled, as a skip, on the outcome that closed it.</summary>
+    [Fact]
+    public void An_all_join_over_a_route_not_taken_settles()
+    {
+        NodeDeclaration[] nodes = [Node("review") with { Outcomes = Routes }, Node("land"), Node("rework"), Node("j", NodeKinds.All), Node("done")];
+        Wire[] wires =
+        [
+            When("w1", "review", "approved", "land"), When("w2", "review", "changes-asked", "rework"),
+            After("w3", "land", "j"), After("w4", "rework", "j"), After("w5", "j", "done"),
+        ];
+        var g = new Graph(nodes, wires);
+        g.Start(g.Evaluate(), "review");
+        g.Reach("review", outcome: "approved");
+        var decided = g.Evaluate();
+        Assert.Equal(["rework"], decided.NotTaken);
+        Assert.Equal(["w3"], decided.Of("j")!.Waiting);
+
+        g.Start(decided, "land");
+        g.Reach("land");
+        var joined = g.Evaluate();
+        var approved = WireEvaluation.OutcomeReceipt(g.Statuses["review"].Current!.Id, "approved");
+        Assert.Equal(NodeStates.Ready, g.State("j"));
+        Assert.Equal(new[] { g.Statuses["land"].Current!.Id, approved }.Order(StringComparer.Ordinal), joined.Of("j")!.Receipts);
+
+        g.Start(joined, "j");
+        g.Evaluate();
+        Assert.Equal((NodeStates.Reached, NodeStates.Ready), (g.State("j"), g.State("done")));
     }
 
     /// <summary>§E2: a changed dependency invalidates every acceptance downstream, transitively, and a waiting eligibility lapses with it.</summary>
