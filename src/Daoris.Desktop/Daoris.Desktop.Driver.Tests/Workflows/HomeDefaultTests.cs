@@ -18,7 +18,7 @@ public sealed class HomeDefaultTests : IDisposable
     [Fact]
     public void A_fresh_home_is_seeded_once_with_the_merge_copy_and_a_home_that_has_a_file_never()
     {
-        var path = Path.Combine(_home, "driver.json");
+        var path = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
 
         Assert.True(HomeSeed.Once(path, _home));
 
@@ -37,8 +37,8 @@ public sealed class HomeDefaultTests : IDisposable
     [Fact]
     public void A_home_that_already_has_a_file_is_not_seeded()
     {
-        var path = Path.Combine(_home, "driver.json");
-        Directory.CreateDirectory(_home);
+        var path = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         File.WriteAllText(path, "{}\n");
 
         Assert.False(HomeSeed.Once(path, _home));
@@ -49,8 +49,8 @@ public sealed class HomeDefaultTests : IDisposable
     [Fact]
     public void The_new_keys_are_kept_by_a_save_that_changes_something_else()
     {
-        var path = Path.Combine(_home, "driver.json");
-        Directory.CreateDirectory(_home);
+        var path = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         File.WriteAllText(path, """{"defaultWorkflow":"merge-after-accept","linePolicies":{"engine":{"batch":4,"gates":"declared"}},"futureKey":{"a":1}}""");
 
         DriverConfig.Load(path).WithCap(3).Save(path);
