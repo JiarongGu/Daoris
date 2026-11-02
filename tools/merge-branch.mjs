@@ -134,7 +134,8 @@
  *   lists there is the half-removed rule's (CLEANUP2).
  * - **Under load.** A full set beside merges shares the machine with their gates (GATEORDER1's lesson: a Process half's
  *   timing tests failed beside heavy gates). Nothing of FLAKE1's changes: a Process half's failures are re-run alone once
- *   its lane is quiet, and a pass alone reads FLAKE. The run says so before its gates start.
+ *   its lane is quiet, and a pass alone reads FLAKE. The run says so before its gates start. A clock gate's timed Playwright
+ *   specs that failed are run again alone once both lanes have ended (MEASUREDALONE1).
  * - **A guest (CIPRIO1).** After the lock is taken and before anything is built, the run lowers its own process to below
  *   normal (`startBesideRun`), so every gate's descendants start there. Its gates get build servers of their own
  *   (`BESIDE_ENVIRONMENT`), and it never shuts the owner's down. A run of main's tip, not one given a commit, asks
@@ -256,6 +257,10 @@
  * built, and passed alone. If the second run passes, the gate reads FLAKE. A rehearsal that reported a
  * failed check has failed whatever its exit, and so has one that said why it stopped; neither is run again.
  *
+ * A clock gate that runs Playwright (`web-measured`) and failed only in specs whose title path carries `timed`, every
+ * failure named, runs those specs again once, alone, by `file:line`, after every gate has ended (MEASUREDALONE1): a pass
+ * reads FLAKE. Any other failure of it keeps its FAIL, with a note saying why it was not run again.
+ *
  * ## A heavy gate waits for memory (MEMGATE1)
  *
  * On 2026-10-22 a full set beside the install's driven sessions and two builders ran a 64 GB machine out of commit: the
@@ -276,6 +281,7 @@
  * change's, never for FLAKE1; a second death of memory fails, still named as memory; another failure fails plainly. A Process
  * half whose dead tests are named runs them alone as FLAKE1's are, once its memory is free. A run a failure stopped runs none
  * again, saying so. The gate's own pass and fail are unchanged, and so is `--one-at-a-time`, whose memory re-runs come last.
+ * A clock gate's timed specs run again alone (MEASUREDALONE1) take the same turn, and are run again in the same way.
  *
  * ## Two lanes (GATELANES1)
  *
@@ -2459,6 +2465,32 @@ export function flakeDecision(output, isProcess = () => true) {
 
 export const rerunCommand = (run, test) => `${run.trim()} --no-build --filter "FullyQualifiedName=${test}"`;
 
+/**
+ * MEASUREDALONE1: whether a Playwright run's failures are re-run alone: all of them in timed specs (a title path through
+ * `timed`), all named. Read from the summary the run ends with (`N failed`, then one spec per line), which the list and dot
+ * reporters both print, so a retry's lines above it and the `[project] ›` prefix do not matter. `playwright` is false for a
+ * log with no such summary; `rerun` is then each failed spec's `file:line`, once.
+ */
+export function timedDecision(output) {
+  const own = ownOutput(output);
+  const at = own.findLastIndex((line) => /^\s*\d+ failed\s*$/.test(line));
+  if (at < 0) return { playwright: false, rerun: [], reason: 'it printed no Playwright summary of failed specs' };
+  const count = Number(/\d+/.exec(own[at])[0]);
+  const specs = [];
+  for (const line of own.slice(at + 1)) {
+    const spec = /^\s+(?:\[[^\]]+\]\s+›\s+)?(\S+?):(\d+):\d+\s+›\s+(.*?)\s*$/.exec(line);
+    if (!spec) break;
+    specs.push({ location: `${spec[1].replaceAll('\\', '/')}:${spec[2]}`, timed: line.includes(' › timed › ') });
+  }
+  if (specs.length !== count) return { playwright: true, rerun: [], reason: `${count} failed but ${specs.length} are named` };
+  const others = specs.filter((spec) => !spec.timed);
+  if (others.length) return { playwright: true, rerun: [], reason: `not a timed spec: ${[...new Set(others.map((spec) => spec.location.replace(/^.*\//, '')))].join(', ')}` };
+  return { playwright: true, rerun: [...new Set(specs.map((spec) => spec.location))] };
+}
+
+/** The gate's command run for the specs named, alone: `npm run` forwards what follows its second `--` to Playwright. */
+export const timedRerunCommand = (run, specs) => `${run.trim()} -- -- ${specs.join(' ')}`;
+
 // ---------------------------------------------------------------------------------------------------
 // PROC1: where a Process half's time goes
 
@@ -3950,7 +3982,7 @@ function endedResult(result, started, trees, before = '') {
  * once `memory` (the run's wait) has its memory free.
  */
 export async function runGate(root, gate, dir, { step = runStep, settled = null, noBuild = false, built = null, trees = null, again = null, memory = null } = {}) {
-  if (again) return runAgain(root, gate, dir, again, guarded(step, trees), trees);
+  if (again) return (again.timed ? runTimedAgain : runAgain)(root, gate, dir, again, guarded(step, trees), trees);
   const log = join(dir, `${gate.name}.log`);
   const started = Date.now();
   const go = guarded(step, trees);
@@ -3965,12 +3997,20 @@ export async function runGate(root, gate, dir, { step = runStep, settled = null,
   if (trx && existsSync(trx)) Object.assign(result, { trx, slowest: slowestClasses(readFileSync(trx, 'utf8')) });
   const died = code !== 0 ? memoryDeath(readFileSync(log, 'utf8'), code) : null;
   const testsAlone = died !== null && isProcessGate(gate) && /^dotnet test\b/.test(gate.run) && flakeDecision(readFileSync(log, 'utf8')).rerun.length > 0;
+  const timed = code !== 0 && gate.clock && !died && !/^npm run rehearse/.test(gate.run.trim()) ? timedDecision(readFileSync(log, 'utf8')) : null;
   if (died && !testsAlone) {
     // MEMGATE1: before a rehearsal's report and LEFT1's re-run in place, beside the gates still running.
     Object.assign(result, {
       cause: 'memory', again: true, died,
       note: `exit ${code}; died of memory (${died.said}): run again alone once every other gate has ended, after waiting for memory`,
     });
+  } else if (timed?.playwright) {
+    // MEASUREDALONE1: a clock gate is a light-lane gate, so its timed specs run again after every gate has ended (`runTimedAgain`).
+    if (timed.rerun.length) {
+      Object.assign(result, { again: true, timed: timed.rerun, note: `exit ${code}; ${count(timed.rerun.length, 'timed spec')} failed beside other gates: run alone once every other gate has ended` });
+    } else {
+      result.note = `exit ${code}; ${timed.reason}; not re-run`;
+    }
   } else if (code !== 0 && gateKind(gate.run) === 'rehearsal') {
     // A rehearsal that died is run again once, whole, into a log of its own beside the first (LEFT1).
     const decision = rehearsalDecision(readFileSync(log, 'utf8'), code, gate.run);
@@ -4048,6 +4088,27 @@ async function runAgain(root, gate, dir, first, go, trees) {
       ? `exit ${code}; died of memory twice (${before}; then ${died.said}), not of a check: run it again when the machine has memory to spare; ${shown(root, log)}`
       : `exit ${code}; died of memory (${before}), then failed run again alone, not of memory; ${shown(root, log)}`;
     if (died) Object.assign(result, { cause: 'memory', died });
+  }
+  result.ms = (first.ms ?? 0) + Date.now() - started;
+  return result;
+}
+
+/**
+ * MEASUREDALONE1: a clock gate whose timed specs failed beside other gates (`first`, its result), run again once for those specs
+ * alone, into a log of its own beside the first: a pass is a FLAKE, a second failure a FAIL naming them.
+ */
+async function runTimedAgain(root, gate, dir, first, go, trees) {
+  const started = Date.now();
+  const log = join(dir, `${gate.name}.rerun.log`);
+  const code = await runSteps(root, gate, log, go, timedRerunCommand(gate.run, first.timed), trees);
+  const result = { gate, code, log: first.log, verdict: 'FAIL', note: '' };
+  const specs = first.timed.join(', ');
+  if (code === STEP_ENDED) return endedResult(result, started, trees, `${first.note}; run alone, ${shown(root, log)}`);
+  const text = readFileSync(log, 'utf8');
+  if (code === 0 && ownOutput(text).some((line) => /^\s*\d+ passed\b/.test(line))) {
+    Object.assign(result, { verdict: 'FLAKE', flakes: first.timed, note: `${count(first.timed.length, 'timed spec')} failed beside other gates and passed alone: ${specs}; ${shown(root, log)}` });
+  } else {
+    result.note = `exit ${code}; ${count(first.timed.length, 'timed spec')} failed beside other gates and failed again alone: ${specs}; ${shown(root, log)}`;
   }
   result.ms = (first.ms ?? 0) + Date.now() - started;
   return result;
@@ -4177,6 +4238,7 @@ export const endsStageRun = stops;
 const withWait = (beside, wait) => (wait ? { ...beside, memory: wait } : beside);
 
 /**
+ * MEASUREDALONE1: a clock gate whose timed specs failed is run again by the same path, for those specs.
  * MEMGATE1: each gate of this run that died of memory, run again once, alone: once every other gate has ended, one at a time in
  * the plan's order, each once its memory is free (`wait`). A run that stopped (`halted`: a failure, or a run beside ended) runs
  * none again: each keeps its first verdict, a failure named as memory, its note saying why it was not run again.
@@ -4186,7 +4248,8 @@ async function againOfMemory(root, gates, dir, results, { run, print, wait, hear
   if (!died.length) return;
   const failure = gates.map((gate) => results.get(gate.name)).find((result) => result && stops(result));
   const why = () => (failure ? `${failure.gate.name} failed, and the run stopped there` : 'the run was stopped');
-  if (!halted()) print(`  run again alone, every other gate having ended: ${died.map((gate) => gate.name).join(', ')}, which died of memory`);
+  const what = (gate) => (results.get(gate.name).timed ? 'whose timed specs failed' : 'which died of memory');
+  if (!halted()) print(`  run again alone, every other gate having ended: ${died.map((gate) => `${gate.name}, ${what(gate)}`).join('; ')}`);
   for (const gate of died) {
     const first = results.get(gate.name);
     first.again = false;
@@ -4198,7 +4261,7 @@ async function againOfMemory(root, gates, dir, results, { run, print, wait, hear
     });
     if (!result) {
       first.note = `${first.note}; not run again: ${why()}`;
-      print(`  not run again: ${gate.name}, which died of memory, since ${why()}`);
+      print(`  not run again: ${gate.name}, ${what(gate)}, since ${why()}`);
       continue;
     }
     results.set(gate.name, result);
@@ -4287,6 +4350,9 @@ async function runInTurn(root, gates, dir, { keepGoing, run, print, beside = () 
  * memory before it starts, holding its place in its lane, and is handed the wait, for its tests run alone. A gate that died
  * of memory stops nothing: once both lanes have ended it runs again alone (`againOfMemory`), before the summary. With no
  * `memory` nothing is read and nothing waits, and a gate that died of memory still runs again.
+ *
+ * MEASUREDALONE1: a clock gate whose failed Playwright specs are all timed stops nothing either, and runs those specs again
+ * through the same step (`againOfMemory`), in turn or after both lanes, waiting for admission and memory as a memory re-run does.
  *
  * CI1: `byMemory` is a CI run's schedule (`laneSchedule`): a Process half waits only for what builds its component, and
  * the heavy light gates beside it each wait for their memory as it did.
