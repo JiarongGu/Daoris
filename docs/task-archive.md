@@ -22945,6 +22945,12 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 
 **Outcome** 2026-11-02: built. `PLACE_APPLY`'s adoption part, over `SetupPress`, is the one door that adopts a repository: `SETUP_PLAN` and `SETUP_PRESS`, `daoris-driver setup`, the repository page's *Set up for agents* with its routes and strings, the shell's set-up plan door, and Ask Daoris's `setup` door are gone; `daoris-driver place <repo> --preset keep --adoption [--what-it-builds …]` is the terminal's, and `setup_propose` is a place's. An adoption covering more of a workspace's repositories than `--at-once` (the plan's default, one) is paced: the apply writes the workspace plan (rule added once) and the tick publishes it, an existing plan file unchanged; `place --workspace <ws> --adoption --at-once <n> --pilot <n>` and `--pause`/`--resume`/`--stop` steer it. Detail: D227's 1f note and D221's; `PlaceApplyTests`, `WorkspaceSetupLoopTests`, `WorkspaceSetupCommandTests`, `HelpSetupProposalsTests`, `HelpSetupDoorTests`.
 
+## WORKFLOWCLEAN1c — the runtime performs `land` (2026-11-02, D227)
+
+> **1c** the runtime performs `land` (driver, modules; after a). Contract and proof: the cleanup design's §2.1–§2.6, §4.7, §9 row 1c and §13 point 3.
+
+**Outcome** 2026-11-02: built. The pass starts a run's `land` once, on `ILandingDoor`, and `LandingDoor` lands it off the pass from the node's bound intent, authorized by the review's Accept or the standing authority; a press and a pass land one delivery. The run's process carries the bound `land` (`LandNodes.RuleOf`) in place of the live rule; the look chooses nothing for it, closes the entries written before the update with their kept Accepts adopted as the review's word and repair (`NodeRecord.Repairs`), and the conversion writes no due entry. `LAND_SESSION_TREE` keeps the word and waits for the landing; an entry's Accept keeps each such part's word; `SET_ACCESS` refuses `landing`. Left: `GraphGates.Of`, `TOGETHER_PRESS` and a combined head's delivery, the terminal alone keeping the word, and `full` still reaching the landing pause. Detail: D227's 1c note, D215's, D145's, D190's and D184's; `GraphRunLandingTests`.
+
 ## The parked backlog triaged against D228: dropped rows (2026-11-02)
 
 > **Triage of 2026-11-02** (`docs/2026-11-02-parked-triage.md`; D228 and its note): 55 rows of `docs/backlog-parked.md` and 26 of its pointer lines, each superseded by work the owner's direction of that day put in a chunk or a decision. The rows' whole text is in git at `cb884a6b6:docs/backlog-parked.md`.

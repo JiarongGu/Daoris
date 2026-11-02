@@ -232,6 +232,29 @@ public sealed class NodeRuntime(
     /// </summary>
     public ICheckPort? Checks { get => _performer.Checks; set => _performer.Checks = value; }
 
+    /// <summary>
+    /// The door a run's <c>land</c> is performed through (WORKFLOWCLEAN1 1c; the land node design §3): none by default, so a runtime nobody wired
+    /// lands nothing and its node waits active. The watch sets it, so the landing goes on off the pass.
+    /// </summary>
+    public ILandingDoor? Landing { get; set; }
+
+    /// <summary>
+    /// A run's <c>land</c>, active at the tip this pass read, started once on the door: a node reaches active only once its wires hold, its
+    /// subject is due and the gate holds nothing, and what authorizes it is the run's review word, or the standing authority judged again
+    /// before the first effect. The door is idempotent by node and tip; its delivery key fences a press and a pass at once.
+    /// </summary>
+    private void StartLandings(GovernedUnit governed, RunScope scope)
+    {
+        if (Landing is not { } door || !_holdsLease() || scope.Branch is not { } branch || records.Read(governed.Unit.Id) is not { } record) return;
+        foreach (var node in governed.Declared.Values.Where(each => each.Kind == NodeKinds.Land))
+        {
+            var status = WorkPerformer.StatusOf(record, node.Id);
+            if (status.State != NodeStates.Active || status.Binding is not { SubjectRevision: { } tip } binding) continue;
+            door.Start(new LandStart(governed.Unit.Id, governed.Run, node.Id, branch.Id, branch.Executors, governed.Watched.Repository,
+                governed.Watched.Workspace, tip, binding.GraphDigest, governed.Graph.Nodes.FirstOrDefault(each => each.Kind == NodeKinds.Review)?.Id));
+        }
+    }
+
     /// <summary>The door over this home's records and integration store, built from the home the node records live in.</summary>
     public static IIntegrationDoor HomeDoor(string home) => new HomeIntegrationDoor(home);
 
@@ -1032,7 +1055,31 @@ public sealed class NodeRuntime(
             if (evaluated.Settled && !started) break;
         }
 
-        if (governed.Scope is { } run) End(governed, run, said);
+        if (governed.Scope is { } run)
+        {
+            await AcceptRepairsAsync(governed, run, ct).ConfigureAwait(false);
+            StartLandings(governed, run);
+            End(governed, run, said);
+        }
+    }
+
+    /// <summary>
+    /// A review whose Accept waits on a carried-on session (<see cref="RunRepairs"/>), begun again at a tip that only continues the one the person
+    /// accepted: the Accept is kept on it once more, for the next pass to apply, and the repair is spent.
+    /// </summary>
+    private async Task AcceptRepairsAsync(GovernedUnit governed, RunScope scope, CancellationToken ct)
+    {
+        if (!_holdsLease() || records.Read(governed.Unit.Id) is not { Repairs.Count: > 0 } record) return;
+        foreach (var repair in record.Repairs)
+        {
+            var status = WorkPerformer.StatusOf(record, repair.Node);
+            if (status.State != NodeStates.Active || status.Binding is not { SubjectRevision: { } tip }) continue;
+            if (!await RunRepairs.ContinuesAsync(scope.Root, repair, tip, ct).ConfigureAwait(false)) continue;
+            if (RunNodeWords.Word(records, governed.Run, repair.Node, NodeWordActs.Accept, null, clock).Done)
+            {
+                RunRepairs.Take(records, governed.Unit.Id, repair.Node);
+            }
+        }
     }
 
     /// <summary>

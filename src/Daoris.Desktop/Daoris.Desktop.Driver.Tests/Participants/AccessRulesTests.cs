@@ -139,13 +139,13 @@ public sealed class AccessRulesTests
         var config = DriverConfig.Empty
             .WithAccess(new AccessEdit { Repository = "engine", Set = [new("goAheads", "never"), new("permissions", "Asking")] })
             .WithAccess(new AccessEdit { Workspace = "shop", Full = true })
-            .WithAccess(new AccessEdit { Machine = true, Set = [new("landing", "rule")] });
+            .WithAccess(new AccessEdit { Machine = true, Set = [new("routing", "intake")] });
 
         var written = JsonNode.Parse(config.ToJson())!.AsObject();
 
         Assert.Equal("""{"engine":{"permissions":"asking","goAheads":"never"}}""", written["access"]!.ToJsonString());
         Assert.Equal("""{"shop":"full"}""", written["workspaceAccess"]!.ToJsonString());
-        Assert.Equal("""{"landing":"rule"}""", written["machineAccess"]!.ToJsonString());
+        Assert.Equal("""{"routing":"intake"}""", written["machineAccess"]!.ToJsonString());
     }
 
     /// <summary>One change at a time, at exactly one level, every pause and value known: anything else is refused, nothing changed.</summary>
@@ -155,7 +155,9 @@ public sealed class AccessRulesTests
         { "two levels named", """{"repository":"engine","machine":true,"access":"full"}""", "an access setup is set for a repository, a workspace or this machine — name exactly one." },
         { "a pause the setup does not have", """{"repository":"engine","access":{"plan":"always"}}""", "`plan` is not a pause a session stops for — one of `permissions`, `routing`, `landing`, `goAheads` or `questions`." },
         { "a value its pause does not have", """{"repository":"engine","access":{"permissions":"sometimes"}}""", "`permissions` is `asking`, `auto` or `unrestricted`, not `sometimes`." },
-        { "a value that is no word", """{"workspace":"shop","access":{"landing":true}}""", "`landing` is `person` or `rule`, not `true`." },
+        { "a value that is no word", """{"workspace":"shop","access":{"permissions":true}}""", "`permissions` is `asking`, `auto` or `unrestricted`, not `true`." },
+        // WORKFLOWCLEAN1 1c (D228): how work lands is its workflow's, so no access setup sets it any more.
+        { "the landing pause, retired", """{"machine":true,"access":{"landing":"rule"}}""", AccessRules.LandingRetired },
         { "a word that is not full", """{"machine":true,"access":"everything"}""", "an access setup is `full`, or the pauses it names, each with its value — or none, to clear it." },
         { "an empty list of pauses", """{"repository":"engine","access":{}}""", "one change at a time: full access, the pauses it names with their values, or clear." },
     };
@@ -192,7 +194,7 @@ public sealed class AccessRulesTests
         Assert.Equal(Today, Spelled(AccessRules.Resolve(cleared, "engine", null)));
 
         // The last pause taken away clears the level: a setting naming none is never kept.
-        var last = DriverConfig.Empty.WithAccess(Edit("""{"machine":true,"access":{"landing":"rule"}}""")).WithAccess(Edit("""{"machine":true,"access":{"landing":null}}"""));
+        var last = DriverConfig.Empty.WithAccess(Edit("""{"machine":true,"access":{"routing":"intake"}}""")).WithAccess(Edit("""{"machine":true,"access":{"routing":null}}"""));
         Assert.Null(last.MachineAccess);
     }
 

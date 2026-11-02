@@ -76,8 +76,21 @@ public sealed class EntryAccepts(
             pressed.Add(part with { Gate = await presses.PressedAsync(part.Session, (LandingGate)part.Gate!, null, part.Tree, quest, cancellationToken).ConfigureAwait(false) });
         }
 
+        // WORKFLOWCLEAN1 1c (the cleanup design §2.2, §13 point 3): a part whose run's `land` the runtime performs is accepted by its review's
+        // word and landed by that node at its pass; only the others land in place here, as the transitional path (§4.7).
+        var accepted = new List<EntryPartLanding>();
+        foreach (var part in pressed.Where(each => each.Gate?.Process is { LandsByRuntime: true }).ToList())
+        {
+            pressed.Remove(part);
+            var word = WorkplaceWorkflows.Current.KeepReviewWord(home, null, part.Gate!.Process!, DateTimeOffset.UtcNow);
+            accepted.Add(new EntryPartLanding(part.Session, EntryPartOutcome.Accepted,
+                new TreeLanding(false, word.Said ?? "Accepted; Daoris lands it at its next pass.")));
+        }
+
+        if (pressed.Count == 0) return new EntryLanding(false, "Accepted; Daoris lands each part at its next pass.", null, accepted);
         var together = await TogetherAsync(pressed, presses, cancellationToken).ConfigureAwait(false);
         var landed = await trees.LandEntryAsync(pressed, subject, leaveOut, cancellationToken, inUse, together, beside).ConfigureAwait(false);
+        if (accepted.Count > 0) landed = landed with { Parts = [.. landed.Parts, .. accepted] };
         // ACCEPTALL1c (D167's amendment point 3): a part the person left out is recorded with the landing, on its conversation, so its
         // review says so and leads with Discard; only where the entry's work landed somewhere.
         var landedAny = landed.Parts.Any(part => part.Outcome == EntryPartOutcome.Landed);
@@ -97,7 +110,7 @@ public sealed class EntryAccepts(
 
         foreach (var part in landed.Parts)
         {
-            if (part.Landing is not { } its) continue;
+            if (part.Landing is not { } its || part.Outcome == EntryPartOutcome.Accepted) continue;
             if (its.Landed) events.Keep(part.Session, LandingRules.Note(its), line => say(part.Session, line));
             var gate = pressed.First(each => each.Session == part.Session);
             if (log is not null && gate.Gate!.Held(part.Session, trees.Owner(gate.Tree), its, door) is { } held)

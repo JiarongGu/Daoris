@@ -33,7 +33,30 @@ internal interface IWorkplaceWorkflows
 
     /// <summary>Current's landing graph for <paramref name="rule"/>: the method its <c>land</c> names, and the graph's digest (see <c>NodeGraphHomes.Landing</c>).</summary>
     (string Method, string Graph) CurrentLand(LandingRule rule);
+
+    /// <summary>
+    /// The person's Accept kept as the review's word of <paramref name="process"/>'s run (WORKFLOWCLEAN1 1c), where its graph holds a review
+    /// (see <c>RunNodeWords.Word</c>); a process whose graph holds none, or that is no run's, answers <see cref="ReviewWord.HasReview"/> false.
+    /// </summary>
+    ReviewWord KeepReviewWord(string home, Func<bool>? holdsLease, IWorkplaceProcess process, DateTimeOffset now);
+
+    /// <summary>Keeps the repair a carried review Accept waits on, on the run's record (see <c>RunRepairs.Keep</c>).</summary>
+    void KeepRepair(string home, Func<bool>? holdsLease, string unit, string review, string tip, string turn, int carries, DateTimeOffset at);
+
+    /// <summary>Takes the review's repair back (see <c>RunRepairs.Take</c>).</summary>
+    void TakeRepair(string home, Func<bool>? holdsLease, string unit, string review);
+
+    /// <summary>How many times the session was carried on for the review's Accept; 0 where no repair is kept (see <c>RunRepairs.Of</c>).</summary>
+    int RepairCarries(string home, Func<bool>? holdsLease, string unit, string review);
 }
+
+/// <summary>What keeping the person's Accept as a run's review word came to (WORKFLOWCLEAN1 1c).</summary>
+/// <param name="HasReview">Whether the run's graph holds a review, so a word was to be kept; false lands by itself.</param>
+/// <param name="Kept">Whether the word is on the run's record: kept now, or kept already and not applied yet.</param>
+/// <param name="Unit">The run's own unit, whose record holds the review.</param>
+/// <param name="Review">The review node's id.</param>
+/// <param name="Said">Why the word was refused, as a sentence; null where it was kept, or where the review does not wait for it yet.</param>
+public sealed record ReviewWord(bool HasReview, bool Kept, string? Unit, string? Review, string? Said);
 
 internal static class WorkplaceWorkflows
 {

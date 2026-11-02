@@ -192,6 +192,10 @@ public static class TreesWords
     public static TreesSaid NoTreeToLand(string session) =>
         new([], [$"trees: session `{session}` names no working tree on this machine, so there is nothing here to land."], 1);
 
+    /// <summary>A press on a run whose <c>land</c> the runtime performs, before Daoris judged the commit it would land (WORKFLOWCLEAN1 1c).</summary>
+    public static TreesSaid NotJudged(string session) =>
+        new([], [$"trees: Daoris has not judged session `{session}`'s work at its commit yet, so nothing was landed; its next pass does, and this asks for it."], 1);
+
     /// <summary>
     /// The review's reading of a session's earlier landing, for the press that would land it again: null where this machine kept no
     /// landing of it. The verb and the route ask it alike, so the two refuse alike (RPC1b4).

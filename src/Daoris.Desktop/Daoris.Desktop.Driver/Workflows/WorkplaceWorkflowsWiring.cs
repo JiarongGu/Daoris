@@ -27,6 +27,29 @@ internal sealed class WorkplaceWorkflowsOperations : IWorkplaceWorkflows, IWorkp
 
     public (IReadOnlyList<string> Line, bool Live) ChatPressOf(string session, string recordsJson) => ChatRuns.PressOf(session, recordsJson);
 
+    public ReviewWord KeepReviewWord(string home, Func<bool>? holdsLease, IWorkplaceProcess process, DateTimeOffset now)
+    {
+        if (process is not WorkflowProcess { BoundRun: { } run, Graph: { } graph } || graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Review) is not { } review)
+        {
+            return new ReviewWord(false, false, null, null, null);
+        }
+
+        var word = RunNodeWords.Word(new NodeRecordFiles(home, holdsLease), run, review.Id, NodeWordActs.Accept, null, () => now);
+        var kept = word.Done || word.Refused == RunNodeWords.Worded;
+        // A review that does not wait for the word yet (not active) is no refusal: the word is given again when it does.
+        var said = kept || word.Refused == NodeRefusal.NotInTable ? null : RunNodeWords.Said(word);
+        return new ReviewWord(true, kept, RunUnits.IdOf(run), review.Id, said);
+    }
+
+    public void KeepRepair(string home, Func<bool>? holdsLease, string unit, string review, string tip, string turn, int carries, DateTimeOffset at) =>
+        RunRepairs.Keep(new NodeRecordFiles(home, holdsLease), unit, new NodeRepair(review, tip, turn, carries, at));
+
+    public void TakeRepair(string home, Func<bool>? holdsLease, string unit, string review) =>
+        RunRepairs.Take(new NodeRecordFiles(home, holdsLease), unit, review);
+
+    public int RepairCarries(string home, Func<bool>? holdsLease, string unit, string review) =>
+        RunRepairs.Of(new NodeRecordFiles(home, holdsLease), unit, review)?.Carries ?? 0;
+
     public (string Method, string Graph) CurrentLand(LandingRule rule)
     {
         var graph = NodeGraphHomes.Landing(rule);

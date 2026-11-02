@@ -517,14 +517,15 @@ public static class WorkflowNamed
                 NodeKinds.Claimed => WorkflowKinds.Work,
                 NodeKinds.Opinion => WorkflowKinds.Opinion,
                 NodeKinds.Look => WorkflowKinds.Look,
-                NodeKinds.Handed or NodeKinds.Land => WorkflowKinds.Landing,
+                // WORKFLOWCLEAN1 1c: a `land` is no step here; the process carries its bound intent (LandNodes.RuleOf), not a rule read back.
+                NodeKinds.Handed => WorkflowKinds.Landing,
                 _ => null,
             };
             if (kind is null) continue;
 
             var p = $"v{number}, node `{node.Id}`: ";
             var fields = new List<WorkflowSetting>();
-            var options = node.Kind == NodeKinds.Land ? LandNodes.AsLanding(node, bound, LandNodes.Reviewed(graph)) : node.Options;
+            var options = node.Options;
             foreach (var field in WorkflowKindTable.Of(kind)!.Fields)
             {
                 var text = options.TryGetValue(field.Name, out var written) ? written
