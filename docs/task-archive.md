@@ -22933,6 +22933,13 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 > **1a** a place follows a saved graph (driver, modules). Contract and proof: the cleanup design's §1, §4.7's Current rows, §9 row 1a and §12.
 
 **Outcome** 2026-11-02: built. A home names its default workflow (`defaultWorkflow`, seeded `merge-after-accept` on a fresh home); a place follows it with nothing written, and *Set up…* saves and chooses the shipped copy through `PLACE_APPLY`'s new `WORKFLOW_SAVE` operation instead of writing a landing rule. The shipped `delivery` is derived from each graph; `land` has the option `key`; an open option resolves from derived defaults where the place has no rule; the line's policy is `linePolicies`, edited by `SET_LINE`. `SET_LANDING`, `daoris driver landing` and Ask Daoris's `landing` card refuse for a place that follows a saved workflow (row 1y retires them whole), and `new --from current:` is retired. Left to 1b to 1f: the transitional paths named in D227's 1a note. Detail: D227's 1a note; `HomeDefaultTests`, `PlacePlanTests`, `PlaceApplyTests`, `WorkflowRunBindingTests`, `SetupPresetsTests`.
+
+## WORKFLOWCLEAN1f — one adoption door (2026-11-02, D227)
+
+> **1f** one adoption door (driver, modules, web-shell, service; after a). Contract and proof: the cleanup design's §5 *One adoption door*, §9 row 1f, and the one-way census's A1 and A2.
+
+**Outcome** 2026-11-02: built. `PLACE_APPLY`'s adoption part, over `SetupPress`, is the one door that adopts a repository: `SETUP_PLAN` and `SETUP_PRESS`, `daoris-driver setup`, the repository page's *Set up for agents* with its routes and strings, the shell's set-up plan door, and Ask Daoris's `setup` door are gone; `daoris-driver place <repo> --preset keep --adoption [--what-it-builds …]` is the terminal's, and `setup_propose` is a place's. An adoption covering more of a workspace's repositories than `--at-once` (the plan's default, one) is paced: the apply writes the workspace plan (rule added once) and the tick publishes it, an existing plan file unchanged; `place --workspace <ws> --adoption --at-once <n> --pilot <n>` and `--pause`/`--resume`/`--stop` steer it. Detail: D227's 1f note and D221's; `PlaceApplyTests`, `WorkspaceSetupLoopTests`, `WorkspaceSetupCommandTests`, `HelpSetupProposalsTests`, `HelpSetupDoorTests`.
+
 ## The parked backlog triaged against D228: dropped rows (2026-11-02)
 
 > **Triage of 2026-11-02** (`docs/2026-11-02-parked-triage.md`; D228 and its note): 55 rows of `docs/backlog-parked.md` and 26 of its pointer lines, each superseded by work the owner's direction of that day put in a chunk or a decision. The rows' whole text is in git at `cb884a6b6:docs/backlog-parked.md`.
