@@ -94,7 +94,7 @@ public sealed record KeptTurn(
     /// <summary>The brainstorm a pass's turn was spent for (BRAINSTORM1c, D176 point 7); null for every other session.</summary>
     public string? Brainstorm { get; init; }
 
-    /// <summary>The role's choice the turn was spent on, as <see cref="StaffKey.Text"/> keys it (STAFFPOLICY1e2); null where its start chose none.</summary>
+    /// <summary>The role's choice the turn was spent on, as its policy keys it, the tuple's JSON (STAFFPOLICY1e2); null where its start chose none.</summary>
     public string? Choice { get; init; }
 }
 

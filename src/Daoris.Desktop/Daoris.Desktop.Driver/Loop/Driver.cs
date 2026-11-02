@@ -3037,11 +3037,7 @@ public sealed class Driver(
         var movedRole = stepRole ?? RoleWork.Build;
         if (movedOffModel is { } countedModel)
         {
-            CountMove(
-                quest.Id, movedRole, StaffConditions.ModelRefused,
-                ActorChoices.Effective(movedRole, config).FirstOrDefault(each => string.Equals(each.Agent, countedModel.Agent, StringComparison.OrdinalIgnoreCase) && each.Model == countedModel.Model)
-                ?? new ActorEffective(countedModel.Agent, countedModel.Model, null, ""),
-                chosen?.From);
+            CountMove(quest.Id, movedRole, StaffConditions.ModelRefused, new ActorEffective(countedModel.Agent, countedModel.Model, null, ""), chosen?.From);
         }
         else if (movedOff is not null && movedFrom is { } wasAgent && !string.Equals(wasAgent, agent, StringComparison.OrdinalIgnoreCase))
         {
@@ -4390,7 +4386,7 @@ public sealed class Driver(
         if (target.Brainstorm is null)
             await service.TryKeepActorAsync(sessionId, Log, choice, asked, ct: ct).ConfigureAwait(false);
         UsageTurns.ActorBound(home, Context.Events, sessionId, actor);
-        if (choice != "before" && target.Brainstorm is null) UsageTurns.ChoiceBound(home, Context.Events, sessionId, new StaffKey(asked.Agent, asked.NamedModel, asked.Effort.Value));
+        if (choice != "before" && target.Brainstorm is null) UsageTurns.ChoiceBound(home, Context.Events, sessionId, new StaffKey(asked.Agent, asked.NamedModel, asked.Effort.Value).Text);
         // BRAINSTORM1c: a pass's turns are the brainstorm's usage, kept naming it beside the account its walk chose.
         if (target.Brainstorm is { } brainstorm) UsageTurns.BrainstormBound(home, Context.Events, sessionId, brainstorm);
         await using var actorRun = new ActorRun(Context.Events, sessionId, actor, prior?.Ran,
@@ -4509,11 +4505,11 @@ public sealed class Driver(
                 ActorMoves.Write(Log, actor, sessionId, refusedEntry.From, later.Choice, "model-refused");
                 if (target.QuestId is { } movedLine)
                 {
-                    CountMove(movedLine, actor, StaffConditions.ModelRefused, ActorChoices.Effective(actor, config).FirstOrDefault(each => each.From == choice) ?? refusedEntry, later.Choice);
+                    CountMove(movedLine, actor, StaffConditions.ModelRefused, new ActorEffective(adapter.Name, refusal.Value, asked.Effort.Value, choice), later.Choice);
                 }
 
                 choice = later.Choice;
-                UsageTurns.ChoiceBound(home, Context.Events, sessionId, new StaffKey(adapter.Name, later.Asked.NamedModel, later.Asked.Effort.Value));
+                UsageTurns.ChoiceBound(home, Context.Events, sessionId, new StaffKey(adapter.Name, later.Asked.NamedModel, later.Asked.Effort.Value).Text);
                 await service.TryKeepActorAsync(
                         sessionId, Log, choice, later.Asked, ct: CancellationToken.None,
                         chosen: new ActorChosen(prior?.Chosen?.Rule ?? StaffRules.Order, StaffBy.Moved, "model-refused", refusedEntry.From))

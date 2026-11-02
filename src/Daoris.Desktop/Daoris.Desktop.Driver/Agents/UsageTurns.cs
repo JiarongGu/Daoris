@@ -20,7 +20,7 @@ public sealed record TurnBinding(string? Agent, string? Account, string Door, st
 {
     public string? Actor { get; init; }
 
-    /// <summary>The role's choice this part's start asked, as its policy keys it (<see cref="StaffKey.Text"/>); null where the start chose none.</summary>
+    /// <summary>The role's choice this part's start asked, as its policy keys it (the tuple's JSON); null where the start chose none.</summary>
     public string? Choice { get; init; }
 
     /// <summary>The brainstorm a pass's turns are spent for (BRAINSTORM1c, D176 point 7); null for every other session.</summary>
@@ -113,11 +113,11 @@ public static class UsageTurns
 
     /// <summary>
     /// The choice a session's start asked (STAFFPOLICY1e2): its turns are kept naming it, so a role's daily budget of tokens is weighed against the
-    /// tuple its policy keys, whatever slot it stands in now. Rebound where a start moves to another choice inside the same session.
+    /// tuple its policy keys (<paramref name="choice"/>, its JSON), whatever slot it stands in now. Rebound where a start moves to another choice inside the same session.
     /// </summary>
-    public static void ChoiceBound(string home, ISessionEvents events, string session, StaffKey choice)
+    public static void ChoiceBound(string home, ISessionEvents events, string session, string choice)
     {
-        if (BindingOf(home, session) is { } binding) Bound(home, events, session, binding with { Choice = choice.Text });
+        if (BindingOf(home, session) is { } binding) Bound(home, events, session, binding with { Choice = choice });
     }
 
     /// <summary>A brainstorm pass's session is its brainstorm's (BRAINSTORM1c): its turns are kept naming it, beside the account its start chose.</summary>
