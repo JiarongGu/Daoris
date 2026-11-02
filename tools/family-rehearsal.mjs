@@ -4627,7 +4627,8 @@ const acpChat = run(
 check(
   'a conversation runs over the ACP door from a terminal, each message a turn on ONE session',
   acpChat.code === 0
-    && /acp heard: first over the protocol \(in acp-session-1\)/.test(acpChat.out)
+    // The first message carries the routing standing after the person's words (COWORKVIEW1e-i).
+    && /acp heard: first over the protocol[\s\S]*\(in acp-session-1\)/.test(acpChat.out)
     && /acp heard: second over the protocol \(in acp-session-1\)/.test(acpChat.out),
   acpChat.out,
 );
@@ -5202,7 +5203,8 @@ check(
   SETUP_RULES.every((rule) => atlasAllows().includes(rule)),
   `${pressed.out}\n${JSON.stringify(atlasAllows())}`,
 );
-const again = onSetupMachine(`${PLACE_ATLAS} --apply`);
+// The same ask again goes on from its receipt (a press of one plan is one act); an ask of another shape is a plan of its own, and is refused.
+const again = onSetupMachine(`${PLACE_ATLAS} --what-it-builds library --apply`);
 check(
   'a second press while the set-up is open is refused, naming it, and asks nothing',
   again.code === 1 && readPlace(again.out).refusals.some((said) => said.startsWith(`a set-up is already open for \`atlas\`: \`#${setupQuest?.id}\``))

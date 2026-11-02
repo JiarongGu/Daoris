@@ -880,7 +880,8 @@ const handle = async (line) => {
         }
         // A turn that runs until it is stopped (CONV4a): answered only by session/cancel, the way a
         // real agent answers a cancelled prompt — with its own stop reason.
-        if (said === 'hold this turn') { holding = frame.id; break; }
+        // The first message of a chat carries the routing standing after the person's words (COWORKVIEW1e-i), so the words start the prompt.
+        if (said.startsWith('hold this turn')) { holding = frame.id; break; }
         send({ jsonrpc: '2.0', id: frame.id, result: { stopReason: 'end_turn' } });
         break;
       }
