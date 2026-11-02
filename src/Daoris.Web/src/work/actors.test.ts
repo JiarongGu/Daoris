@@ -35,6 +35,46 @@ describe('D205 actor provenance', () => {
     expect(choiceChip(i18n.t, { choice: '3' })).toBe('选择 3');
     expect(choiceChip(i18n.t, { choice: 'pick' })).toBe('你指定的');
   });
+  it('says why the choice ran after the number, by its code or its condition (STAFFPOLICY1f)', async () => {
+    const chip = (chosen: Session['chosen'], choice = '2') => choiceChip(i18n.t, { choice, chosen });
+    expect(chip({ rule: 'weight', by: 'weight' })).toBe('choice 2 · by weight');
+    expect(chip({ rule: 'weight', by: 'share' })).toBe('choice 2 · over its share');
+    expect(chip({ rule: 'weight', by: 'budget' })).toBe('choice 2 · over its budget');
+    expect(chip({ rule: 'weight', by: 'work' })).toBe('choice 2 · only fit');
+    expect(chip({ rule: 'order', by: 'first' })).toBe('choice 2');
+    expect(chip({ rule: 'order', by: 'moved', condition: 'limit', from: '1' })).toBe('choice 2 · after a limit');
+    expect(chip({ rule: 'order', by: 'moved', condition: 'transient', from: '1' })).toBe('choice 2 · no answer');
+    expect(chip({ rule: 'order', by: 'moved', condition: 'model-refused', from: '1' })).toBe('choice 2 · model refused');
+    expect(chip({ rule: 'order', by: 'moved' })).toBe('choice 2 · moved');
+    expect(chip({ rule: 'order', by: 'later-code', condition: 'later-condition' })).toBe('choice 2 · by policy');
+    expect(chip({ rule: 'order', by: 'moved', condition: 'later-condition' })).toBe('choice 2 · moved');
+    expect(chip({ rule: 'weight', by: 'weight' }, 'pick')).toBe('your pick');
+    expect(chip({ rule: 'weight', by: 'weight' }, '1')).toBeNull();
+    await i18n.changeLanguage('zh');
+    expect(chip({ rule: 'weight', by: 'weight' })).toBe('选择 2 · 按权重');
+    expect(chip({ rule: 'order', by: 'moved', condition: 'limit', from: '1' })).toBe('选择 2 · 达上限后');
+    expect(chip({ rule: 'order', by: 'later-code' })).toBe('选择 2 · 按策略');
+  });
+  it('keeps every reason within the status budget (16 letters, 5 characters)', async () => {
+    const codes = ['weight', 'share', 'budget', 'work', 'limit', 'signed-out', 'model-refused', 'transient', 'failed', 'quiet', 'moved', 'other'];
+    for (const [language, max] of [['en', 16], ['zh', 5]] as const) {
+      await i18n.changeLanguage(language);
+      for (const code of codes) expect([...i18n.t(`work.actor.chip.reason.${code}`)].length, `${language} ${code}`).toBeLessThanOrEqual(max);
+    }
+  });
+  it('says the Chosen row in a sentence, or that the policy was not recorded', async () => {
+    const row = (chosen?: Session['chosen']) => actorRows(i18n.t, { ...record, chosen }).find((each) => each.label === 'Chosen')?.value;
+    expect(row()).toBe('the selection policy was not recorded');
+    expect(row({ rule: 'weight', by: 'weight' })).toBe('Chosen by the weights of the role’s choices.');
+    expect(row({ rule: 'order', by: 'first' })).toBe('Chosen as the first that could run, in the role’s order.');
+    expect(row({ rule: 'order', by: 'moved', condition: 'limit', from: '1' })).toBe('Moved here from choice 1: every account of that choice reached its limit.');
+    expect(row({ rule: 'order', by: 'moved', condition: 'later-condition', from: '1' })).toBe('Moved here from choice 1.');
+    expect(row({ rule: 'order', by: 'later-code' })).toBe('Chosen by the role’s policy.');
+    await i18n.changeLanguage('zh');
+    expect(actorRows(i18n.t, { ...record, chosen: undefined }).find((each) => each.label === '选择依据')?.value).toBe('未记录选择策略');
+    expect(actorRows(i18n.t, { ...record, chosen: { rule: 'order', by: 'moved', condition: 'limit', from: '1' } }).find((each) => each.label === '选择依据')?.value)
+      .toBe('从选择 1 改用其他选择：该选择的所有账户都已用尽额度。');
+  });
   it('translates the chrome while preserving the agent names', async () => {
     await i18n.changeLanguage('zh');
     expect(actorRows(i18n.t, record)[0]?.value).toBe('开发');
