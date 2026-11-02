@@ -286,7 +286,10 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
             return new ReviewerChoice(null, null, ReviewerUnavailable.Refused, $"No second opinion: {error.Message}");
         }
 
-        return await WalkAsync(roster.Adapters, plan.Order, working, entry => TryAsync(plan, entry, passed, ct), plan.Role).ConfigureAwait(false);
+        // STAFFPOLICY1d: the walk's agents are the rule's (another maker first, the asker's list, the named partner); the role's policy arranges
+        // only each agent's own alternatives.
+        var arranged = RoleOrders.WithinAgents(plan.Order, RoleOrders.Arranged(roster.StaffFor(roster.Home), plan.Role, plan.Work, plan.Order));
+        return await WalkAsync(roster.Adapters, arranged, working, entry => TryAsync(plan, entry, passed, ct), plan.Role).ConfigureAwait(false);
     }
 
     /// <summary>The participant's work an actor's reviewer starts for: a helper's, a partner's, else a second opinion's.</summary>

@@ -115,7 +115,7 @@ public static partial class GitIdentityActs
             var described = GitKeys.Describe(publicLine) ?? throw new DriverException("git: the public key does not read (keygen-failed)");
             GitSshFiles.Ensure(home);
             var identity = new GitIdentity(id, label, canonical, GitIdentity.Ssh, null, commitsName, commitsEmail, described.Type,
-                described.Fingerprint, ReadOnly: false, Test: null, Default: !identities.Any(each => each.Host == canonical && each.Default));
+                described.Fingerprint, ReadOnly: false, Test: null, Default: !identities.Any(each => each.Host == canonical && each.Way == GitIdentity.Ssh && each.Default));
             GitIdentities.Change(home, all => [.. all, identity]);
             return identity;
         }
@@ -135,14 +135,14 @@ public static partial class GitIdentityActs
         return canonical;
     }
 
-    private static string LabelOf(string label)
+    internal static string LabelOf(string label)
     {
         var trimmed = label.Trim();
         if (trimmed.Length is 0 or > 80 || trimmed.Any(char.IsControl)) throw new DriverException("git: a label is one line of up to 80 characters (label)");
         return trimmed;
     }
 
-    private static (string? Name, string? Email) CommitsOf(string? name, string? email)
+    internal static (string? Name, string? Email) CommitsOf(string? name, string? email)
     {
         if (name is null && email is null) return (null, null);
         if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(email) || !email.Contains('@') || (name + email).Any(char.IsControl))
@@ -225,7 +225,7 @@ public static partial class GitIdentityActs
     [GeneratedRegex(@"(?:Hi (?<user>[A-Za-z0-9_.\-/]+)! You've successfully authenticated|Welcome to GitLab, @(?<user>[A-Za-z0-9_.\-]+)!)", RegexOptions.CultureInvariant)]
     private static partial Regex Named();
 
-    private static GitTestAnswer Record(string home, GitIdentity identity, GitTestAnswer answer)
+    internal static GitTestAnswer Record(string home, GitIdentity identity, GitTestAnswer answer)
     {
         GitIdentities.Change(home, all => [.. all.Select(each => each.Id != identity.Id ? each : each with
         {
@@ -340,7 +340,9 @@ public static partial class GitIdentityActs
         var identity = name is null ? null : Find(home, name);
         if (identity is not null && identity.Host != canonical)
             throw new DriverException($"git: {identity.Label} is for {identity.Host}, not {canonical} (host-mismatch)");
-        GitIdentities.Change(home, all => [.. all.Select(each => each.Host != canonical ? each : each with { Default = each.Id == identity?.Id })]);
+        // A host's default is per way: an SSH identity and an HTTPS one each serve their own addresses (§3.2 step 3).
+        GitIdentities.Change(home, all => [.. all.Select(each => each.Host != canonical || (identity is not null && each.Way != identity.Way)
+            ? each : each with { Default = each.Id == identity?.Id })]);
         return identity;
     }
 
@@ -383,7 +385,7 @@ public static partial class GitIdentityActs
 
     /// <summary>The canonical host of an address, or null for one with none (a local path).</summary>
     public static string? GitAddressHost(string address) =>
-        GitAddressKeys.Of(address) is { } key ? GitHosts.Canonical(key[..key.IndexOf('/')]) : null;
+        GitHttps.HostOf(address) ?? (GitAddressKeys.Of(address) is { } key ? GitHosts.Canonical(key[..key.IndexOf('/')]) : null);
 
     private static string? PointerOf(string home, string? value, string? host)
     {
@@ -409,10 +411,15 @@ public static partial class GitIdentityActs
     /// <summary>Change <c>driver.json</c> in place, keeping every key it has no part in, under the home's lease.</summary>
     private static void ChangeDriverConfig(string home, Action<JsonObject> change) => DriverConfigFile.Change(home, change);
 
-    private static string? LastLine(string? words) =>
+    internal static string? LastLine(string? words) =>
         words?.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).LastOrDefault();
 
-    private static async Task<GitToolRun> RunAsync(string file, IReadOnlyList<string> arguments, string folder)
+    private static Task<GitToolRun> RunAsync(string file, IReadOnlyList<string> arguments, string folder) =>
+        RunWithAsync(file, arguments, folder, null, drain: false, _ => { });
+
+    /// <summary>The one start of these acts' programs: handed the tools' environment (<paramref name="home"/>, else the process's), then adjusted.</summary>
+    internal static async Task<GitToolRun> RunWithAsync(
+        string file, IReadOnlyList<string> arguments, string folder, string? input, bool drain, Action<ProcessStartInfo> adjust, string? home = null)
     {
         var info = new ProcessStartInfo(file)
         {
@@ -427,13 +434,28 @@ public static partial class GitIdentityActs
             StandardInputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
         };
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
-        Tools.Hand(info);
+        if (home is null) Tools.Hand(info);
+        else Tools.Hand(info, home);
+        adjust(info);
         using var process = await ProcessStarts.Shared.StartAsync(info, StartClass.Person, CancellationToken.None).ConfigureAwait(false)
             ?? throw new DriverException($"git: {Path.GetFileName(file)} did not start (no-ssh)");
+        // A secret goes in on the standard input and nowhere else; a program's answer that may carry one is drained unread.
+        if (input is not null) await process.StandardInput.WriteAsync(input).ConfigureAwait(false);
         process.StandardInput.Close();
-        var output = process.StandardOutput.ReadToEndAsync();
+        var output = drain ? DrainAsync(process.StandardOutput) : process.StandardOutput.ReadToEndAsync();
         var error = process.StandardError.ReadToEndAsync();
         await process.WaitForExitAsync().ConfigureAwait(false);
         return new GitToolRun(process.ExitCode, await output.ConfigureAwait(false), await error.ConfigureAwait(false));
+    }
+
+    /// <summary>Read a stream to its end and keep none of it.</summary>
+    private static async Task<string> DrainAsync(StreamReader reader)
+    {
+        var buffer = new char[4096];
+        while (await reader.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false) > 0)
+        {
+        }
+
+        return "";
     }
 }

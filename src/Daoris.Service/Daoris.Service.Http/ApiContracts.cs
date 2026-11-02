@@ -482,6 +482,8 @@ public sealed record SessionResponse(
     string? TookQuest = null,
     // D205: this machine's actor provenance. Never on the feed or answered off loopback.
     string? Actor = null, string? Choice = null, JsonElement? Asked = null, JsonElement? Override = null, JsonElement? Ran = null,
+    // STAFFPOLICY1c2: why the role's policy chose this start's choice; this machine's own, answered to it only, absent under no policy.
+    JsonElement? Chosen = null,
     // FOUNDATION1c (D212; the foundation design §2.2): the work the record was opened for, read from its marks and never stored
     // (`ParticipantWork.Of`): `build`, `chat`, `ask-daoris`, `intake`, `help`, `partner` or `review`. This machine's own, like the opinion:
     // answered to it only, absent for a mirror, which is another machine's, and never on the sync wire.
@@ -682,7 +684,7 @@ public sealed record OpenIntakeRequest(
 public sealed record OpenHelpRequest(
     string? Adapter, string? Room, string? HarnessVersion = null, string? Profile = null, string? Workspace = null,
     string? Mode = null, string? Actor = null);
-public sealed record ActorKeepRequest(string? Choice = null, JsonElement? Asked = null, JsonElement? Override = null, JsonElement? Ran = null);
+public sealed record ActorKeepRequest(string? Choice = null, JsonElement? Asked = null, JsonElement? Override = null, JsonElement? Ran = null, JsonElement? Chosen = null);
 // HELPMODE1a2 (D183 point 3): the access mode an Ask Daoris conversation going on runs under, as its driver resolved it.
 public sealed record HelpModeRequest(string? Mode);
 // AUTONOMY1b2 (D184 point 1): the access setup a resumed driven session now runs under, each pause with its value, as its driver resolved it.

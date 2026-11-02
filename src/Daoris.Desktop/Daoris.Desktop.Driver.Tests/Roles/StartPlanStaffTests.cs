@@ -43,6 +43,8 @@ public sealed class StartPlanStaffTests : IDisposable
         {
             ["cool"] = new Adapter("cool", present),
             ["fine"] = new Adapter("fine", present),
+            // Runs in the person's own tool home: no Daoris account, so the roster counts nothing for its starts (Number 0).
+            ["bare"] = new Adapter("bare", present with { ProfileVariable = null }),
         });
         _roster = Roster();
 
@@ -235,6 +237,57 @@ public sealed class StartPlanStaffTests : IDisposable
 
         // The line gains its rule and its why only under a set policy; with none it is the line it always was.
         Assert.Equal(["", "order|first", "order|first", "order|first"], ChoseLines());
+    }
+
+    /// <summary>STAFFPOLICY1c2: an agent with no account count (Number 0) still writes its start's row, so its starts move the balance.</summary>
+    [Fact]
+    public async Task An_agent_with_no_account_count_writes_its_start_and_its_starts_move_the_weighted_balance()
+    {
+        ActorChoice bare = new("bare", "mb", null);
+        var policy = StaffPolicy.Parse($$"""{"rule":"weight","choices":[{{Entry(bare, ",\"weight\":1")}},{{Entry(Two, ",\"weight\":1")}}]}""").Policy!;
+        _staffing.Set("build", [bare, Two]);
+        RoleDoor.Apply(_staffing, RoleChange.Set(RoleCatalog.Seed[0]), null, null, new RolePolicyPress(policy));
+
+        var taken = new List<(string Choice, long Number)>();
+        for (var i = 0; i < 4; i++)
+        {
+            var settled = await Plan("build", bare, Two).ResolveAsync(CancellationToken.None);
+            taken.Add((settled.Chosen!.From, settled.Selection.Number));
+            Assert.NotNull(Ledger.Opened(settled.Selection, $"b{i}"));
+        }
+
+        Assert.Equal(0, taken[0].Number);
+        Assert.Equal(["1", "2", "1", "2"], taken.Select(each => each.Choice));
+        Assert.Equal(["mb", "m2", "mb", "m2"], Rows());
+    }
+
+    private sealed class Capturing(List<string> bodies) : HttpMessageHandler
+    {
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            bodies.Add(request.Content is null ? "" : await request.Content.ReadAsStringAsync(ct));
+            return new HttpResponseMessage(System.Net.HttpStatusCode.OK) { Content = new StringContent("{\"session\":{},\"message\":\"kept\"}") };
+        }
+    }
+
+    /// <summary>STAFFPOLICY1c2: the open keeps the rule and the why on the record; a role on first-that-can-run keeps none.</summary>
+    [Fact]
+    public async Task A_policy_start_keeps_its_rule_and_why_on_the_record_and_a_first_start_keeps_none()
+    {
+        var bodies = new List<string>();
+        using var http = new HttpClient(new Capturing(bodies));
+        using var service = new ServiceClient("http://stand-in", key: null, http);
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
+
+        Policy("weight", ",\"weight\":3", ",\"weight\":1");
+        var weighted = await Plan().ResolveAsync(CancellationToken.None);
+        await RotatedOpening.SayStaffAsync(events, Ledger, service, null, "s1", weighted.Selection, "build");
+        Assert.Equal("""{"chosen":{"rule":"weight","by":"weight","condition":null,"from":null}}""", Assert.Single(bodies));
+
+        Policy("order");
+        var first = await Plan().ResolveAsync(CancellationToken.None);
+        await RotatedOpening.SayStaffAsync(events, Ledger, service, null, "s2", first.Selection, "build");
+        Assert.Single(bodies);
     }
 
     private List<string> ChoseLines()

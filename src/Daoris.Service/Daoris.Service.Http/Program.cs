@@ -1428,7 +1428,7 @@ if (mode == ServiceMode.Local)
         if (!MachineLocal(http)) return Results.NotFound();
         try
         {
-            var kept = await s.Ledger.KeepActorAsync(id, body.Choice, body.Asked, body.Override, body.Ran, ct);
+            var kept = await s.Ledger.KeepActorAsync(id, body.Choice, body.Asked, body.Override, body.Ran, body.Chosen, ct);
             return kept is null ? Results.NotFound(new ErrorResponse("no session of this machine's"))
                 : Results.Ok(new SessionActionResponse(await ToSessionAsync(s, kept, true), "Actor provenance kept."));
         }
@@ -3084,7 +3084,7 @@ static SessionResponse ToSession(Session s, bool loopback) => new(
     // The quest a chat took (CHATTAKE1), which its line's run reads (CHATFLOW1a): this machine's, like the opinion, so answered to it only.
     TookQuest: loopback ? s.TookQuest : null,
     Actor: loopback ? s.Actor : null, Choice: loopback ? s.Choice : null,
-    Asked: loopback ? s.Asked : null, Override: loopback ? s.Override : null, Ran: loopback ? s.Ran : null,
+    Asked: loopback ? s.Asked : null, Override: loopback ? s.Override : null, Ran: loopback ? s.Ran : null, Chosen: loopback ? s.Chosen : null,
     // The work its marks read as (FOUNDATION1c): this machine's, like the opinion, so answered to it only; a mirror reads none.
     Work: loopback ? ParticipantWork.Of(s) : null);
 

@@ -68,6 +68,9 @@ public static class StaffBy
     /// <summary>It is the only one of the role's choices taking the start's work.</summary>
     public const string Work = "work";
 
+    /// <summary>A part that followed another choice on a condition (a record's <c>chosen</c>; never an arrangement's answer).</summary>
+    public const string Moved = "moved";
+
     public static IReadOnlyList<string> Codes { get; } = [First, Weight, Share, Budget, Work];
 }
 
@@ -151,7 +154,8 @@ public static class StaffJudge
         }
 
         var remaining = served.Where(each => passed.All(pass => pass.Entry != each)).ToList();
-        if (policy.Moves.TryGetValue(StaffConditions.Transient, out var transient) && StaffActions.Moves(transient.Do))
+        // An ask is a move the person's yes releases, so the choice it leaves is passed on that walk as a move's is.
+        if (policy.Moves.TryGetValue(StaffConditions.Transient, out var transient) && (StaffActions.Moves(transient.Do) || transient.Do == StaffActions.Ask))
         {
             foreach (var each in remaining.ToList())
             {

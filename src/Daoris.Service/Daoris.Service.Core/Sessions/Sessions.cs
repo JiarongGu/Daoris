@@ -202,6 +202,8 @@ public sealed record Session(
     public JsonElement? Override { get; init; }
     /// <summary>D205: reported model names and dated acknowledgements, machine-local.</summary>
     public JsonElement? Ran { get; init; }
+    /// <summary>STAFFPOLICY1c2: why the role's policy chose this start's choice (<c>rule</c>, <c>by</c>, and <c>condition</c> and <c>from</c> for a move), machine-local; absent under no policy.</summary>
+    public JsonElement? Chosen { get; init; }
 
     /// <summary>
     /// The access setup a driven session started under (AUTONOMY1a, D184 point 1): each pause with its value, as the driver resolved it
@@ -633,7 +635,7 @@ public sealed class SessionStore
         // is: no wire carries it, and a record from before says none, which keeps the downloads' start-time rule.
         await SchemaColumns.EnsureAsync(_db, "sessions", "resolved", "resolved TEXT NULL", ct).ConfigureAwait(false);
         // An existing record says none, preserving its reading. Mirrors never name these columns.
-        foreach (var column in new[] { "actor", "choice", "asked", "actor_override", "ran" })
+        foreach (var column in new[] { "actor", "choice", "asked", "actor_override", "ran", "chosen" })
             await SchemaColumns.EnsureAsync(_db, "sessions", column, $"{column} TEXT NULL", ct).ConfigureAwait(false);
 
         await using (var cursor = _db.Command())
@@ -1478,6 +1480,7 @@ public sealed class SessionStore
         Asked = ActorElement(reader, "asked"),
         Override = ActorElement(reader, "actor_override"),
         Ran = ActorElement(reader, "ran"),
+        Chosen = ActorElement(reader, "chosen"),
     };
 
     /// <summary>A record's handed versions as kept (KEEP1b): the list, in order; null for none, or for a column that does not read as one.</summary>
@@ -1486,12 +1489,12 @@ public sealed class SessionStore
 
     /// <summary>D205's later door: this machine's record only, without a sync revision. Omitted members keep their value.</summary>
     public Task<bool> KeepActorAsync(string id, string? choice, JsonElement? asked, JsonElement? changed, JsonElement? ran,
-        CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
+        JsonElement? chosen = null, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
     {
         await using var command = _db.Command();
         command.CommandText = """
             UPDATE sessions SET choice = COALESCE($choice, choice), asked = COALESCE($asked, asked),
-              actor_override = COALESCE($override, actor_override), ran = COALESCE($ran, ran)
+              actor_override = COALESCE($override, actor_override), ran = COALESCE($ran, ran), chosen = COALESCE($chosen, chosen)
             WHERE id = $id AND origin IS NULL
             """;
         command.Parameters.AddWithValue("$id", id);
@@ -1499,6 +1502,7 @@ public sealed class SessionStore
         command.Parameters.AddWithValue("$asked", (object?)asked?.GetRawText() ?? DBNull.Value);
         command.Parameters.AddWithValue("$override", (object?)changed?.GetRawText() ?? DBNull.Value);
         command.Parameters.AddWithValue("$ran", (object?)ran?.GetRawText() ?? DBNull.Value);
+        command.Parameters.AddWithValue("$chosen", (object?)chosen?.GetRawText() ?? DBNull.Value);
         return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
     }, ct);
 

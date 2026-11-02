@@ -361,17 +361,21 @@ internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMove
         var quest = IsQuest(record);
         // D205 §3.5(e) (MODELROLE1e): every path takes the actor's effective order, a driven line's Build's and a conversation's Chat's:
         // the next entry on another agent. The roster's order serves only where the actor is as before.
-        return HandOverOrder.Steps(record.Adapter, doors, OrderOf(quest ? "build" : "chat"))
+        return HandOverOrder.Steps(record.Adapter, doors, OrderOf(quest ? "build" : "chat", record))
             .Select(step => step.Harness)
             .FirstOrDefault(agent => quest ? Drives(agent) is not null : AccountsOf(agent) is not null);
     }
 
-    /// <summary>The actor's effective order as it stands now; none where its stored entry does not read, and then the roster's order stands.</summary>
-    private IReadOnlyList<ActorEffective> OrderOf(string actor)
+    /// <summary>
+    /// The order of the role <paramref name="record"/>'s start was bound to (the work's role while it names none), as a start would arrange it now
+    /// (STAFFPOLICY1d); none where its stored entry does not read, and then the roster's order stands.
+    /// </summary>
+    private IReadOnlyList<ActorEffective> OrderOf(string work, PriorSession record)
     {
         try
         {
-            return ActorChoices.Effective(actor, _context.Config);
+            var role = RoleOrders.Bound(_context.Conversations.RoleOf(record.Session)?.Role, work, RoleCatalog.ReadHome(_context.Home), new RolePlace(record.Workspace));
+            return RoleOrders.Arranged(_context.Harnesses.StaffFor(_context.Home), role, work, _context.Config);
         }
         catch (ActorUnreadableException)
         {

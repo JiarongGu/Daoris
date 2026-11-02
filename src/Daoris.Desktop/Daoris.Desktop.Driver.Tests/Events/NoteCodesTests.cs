@@ -426,7 +426,7 @@ public sealed class WordsNotesTests
             .Select(field => (string)field.GetRawConstantValue()!)
             .Order(StringComparer.Ordinal)
             .ToList();
-        Assert.Equal(["agent", "carry-on", "curve", "limit", "near", "not-offered", "press", "resume", "retry"], reasons);
+        Assert.Equal(["agent", "budget", "carry-on", "curve", "failed", "limit", "near", "not-offered", "press", "quiet", "resume", "retry", "transient"], reasons);
         Assert.Equal(reasons, NoteCodes.Handed.All.Select(reason => reason.Code).Order(StringComparer.Ordinal));
         Assert.Equal(["agent", "curve", "limit", "near", "press"], reasons.Where(HandOverWhy.Known));
         Assert.All(reasons, why => Assert.True(HandOverWhy.Continues(why), $"`{why}` is no reason a record continues another by"));

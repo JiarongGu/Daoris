@@ -21,9 +21,12 @@ public static class ActorOpenings
         /// where the role's policy chose it by anything but the order, the opening note says why, in the local record only. Nothing is said for a
         /// role on <i>First that can run</i>, which says what it said before.
         /// </summary>
-        internal static void SayStaff(ISessionEvents events, StaffLedger? ledger, string sessionId, long number, string actor)
+        internal static async Task SayStaffAsync(
+            ISessionEvents events, StaffLedger? ledger, ServiceClient service, MachineLog? log, string sessionId, HarnessSelection selection, string actor)
         {
-            if (ledger?.Opened(number, sessionId) is not { Reservation: not null } bound || (bound.Rule == StaffRules.Order && bound.By == StaffBy.First)) return;
+            if (ledger?.Opened(selection, sessionId) is not { Reservation: not null } bound || (bound.Rule == StaffRules.Order && bound.By == StaffBy.First)) return;
+            // The record's own why (STAFFPOLICY1c2), through the actor door, as reporting alone: a service that does not answer costs the record this, never the run.
+            await service.TryKeepActorAsync(sessionId, log, chosen: new ActorChosen(bound.Rule, bound.By)).ConfigureAwait(false);
             var line = Noted.Of(NoteCodes.OpeningChosen, $"{ActorWords.Name(actor)}'s policy chose this: {bound.Said}.", ("actor", ActorWords.Name(actor)), ("said", bound.Said));
             events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts }, say: null);
         }

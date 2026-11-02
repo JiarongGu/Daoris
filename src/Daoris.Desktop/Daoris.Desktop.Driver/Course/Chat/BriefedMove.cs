@@ -266,6 +266,9 @@ internal sealed class BriefedMove(ChatContext context, IChatRunning runner, Chat
 
         IReadOnlyList<ActorEffective> order;
         string? pinned = null;
+        // The role its start was bound to (STAFFPOLICY1d), else the role that takes the work now; its order as a start would arrange it.
+        var staff = context.Harnesses.StaffFor(context.Home);
+        var role = RoleOrders.Bound(context.Conversations.RoleOf(sessionId)?.Role, actor, RoleCatalog.ReadHome(context.Home), new RolePlace());
         try
         {
             if (record.Choice == "pick" && record.Adapter is { Length: > 0 } picked)
@@ -273,12 +276,12 @@ internal sealed class BriefedMove(ChatContext context, IChatRunning runner, Chat
                 // Only an account the person picked is held to its account (FOUNDATION1a-iii, §7 row 2): an agent pick walks its agent's
                 // accounts, the refused one passed by the reading kept.
                 order = ChatPending.Recovering(
-                    actor, [new ActorEffective(picked, record.Asked?.NamedModel, record.Asked?.Effort.Value, "pick")], config);
+                    actor, [new ActorEffective(picked, record.Asked?.NamedModel, record.Asked?.Effort.Value, "pick")], config, staff, role);
                 pinned = context.Conversations.PickedOn(sessionId, record.Profile) ? record.Profile : null;
             }
             else
             {
-                order = ActorChoices.Effective(actor, config);
+                order = RoleOrders.Arranged(staff, role, actor, config);
             }
         }
         catch (ActorUnreadableException unread)

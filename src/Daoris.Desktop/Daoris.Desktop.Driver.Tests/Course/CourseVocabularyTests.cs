@@ -45,16 +45,18 @@ public sealed class CourseVocabularyTests
         Assert.Equal(["Brief", "Carry"], Enum.GetNames<CourseHow>());
         Assert.Equal(["Own", "Named", "Settled", "Pick"], Enum.GetNames<CourseAccountSource>());
         Assert.Equal(["None", "LimitReset", "TransientRetry", "Restart"], Enum.GetNames<CourseDaorisWord>());
-        Assert.Equal(["AccountCooling", "LimitReset", "TransientRetry"], Enum.GetNames<CourseWaitWhy>());
+        // STAFFPOLICY1e widened three of them for a role policy's wait, ask and bound, and the door that answers the ask.
+        Assert.Equal(["AccountCooling", "LimitReset", "TransientRetry", "PolicyWait"], Enum.GetNames<CourseWaitWhy>());
         Assert.Equal(
-            ["AnswersAlone", "Account", "TransientBound", "CannotGoOn", "ConsentRefused", "SwitchOff", "MoveHeld", "Stays", "Refused"],
+            ["AnswersAlone", "Account", "TransientBound", "CannotGoOn", "ConsentRefused", "SwitchOff", "MoveHeld", "Stays", "Refused", "PolicyAsk", "MovesBound"],
             Enum.GetNames<CourseHoldWhy>());
         Assert.Equal(
-            ["GoOnNew", "StartFrom", "TryAgain", "Say", "LetAnswerGoOn", "NotNow", "GoOnBrief", "HandOver", "LetAskGo"],
+            ["GoOnNew", "StartFrom", "TryAgain", "Say", "LetAnswerGoOn", "NotNow", "GoOnBrief", "HandOver", "LetAskGo", "GoOnNow"],
             Enum.GetNames<CourseDoor>());
         Assert.Equal(["Teammate", "Intake", "StoodDown", "Superseded", "StandingMove"], Enum.GetNames<CourseNeverWhy>());
         Assert.Equal(
-            ["Press", "Near", "Limit", "Agent", "Curve", "Resume", "CarryOn", "Retry", "NotOffered"], Enum.GetNames<CourseFromWhy>());
+            ["Press", "Near", "Limit", "Agent", "Curve", "Resume", "CarryOn", "Retry", "NotOffered", "Transient", "Failed", "Quiet", "Budget"],
+            Enum.GetNames<CourseFromWhy>());
         Assert.Equal(["Person", "Daoris", "Agent"], Enum.GetNames<CourseFromBy>());
     }
 
@@ -92,7 +94,7 @@ public sealed class CourseVocabularyTests
     public void The_from_enum_is_todays_reasons_and_authors_one_to_one()
     {
         var reasons = Constants(typeof(HandOverWhy));
-        Assert.Equal(9, reasons.Count);
+        Assert.Equal(13, reasons.Count);
         Assert.Equal(reasons.Count, Enum.GetValues<CourseFromWhy>().Length);
         foreach (var code in reasons)
         {
@@ -173,6 +175,7 @@ public sealed class CourseVocabularyTests
         ["Course/Chat/ChatHelperWords.cs"] = "FOUNDATION1h branch 7: the helper's go-on",
         ["Course/Chat/ChatRunner.StartFrom.cs"] = "FOUNDATION1h branch 8: start-from",
         ["Course/Chat/StartWith.cs"] = "FOUNDATION1h branch 8: start-with",
+        ["Loop/StaffCourse.cs"] = "STAFFPOLICY1e: a role policy's met condition read into the course's facts at the look",
     };
 
     /// <summary>

@@ -137,6 +137,24 @@ public static class GitDoors
         return GitIdentityUse.Resolve(identities, pointers, repository, workspace, remotes, host, GitIdentity.Ssh);
     }
 
+    /// <summary>
+    /// What serves an HTTP or HTTPS act (§3.2, §4.3 step 1): as <see cref="Serving"/>, by the act's address, its host with a port where
+    /// not the scheme's default. From the files alone, taking no lease.
+    /// </summary>
+    public static GitServes ServingHttps(string home, string folder, string address, Func<string, string?> variable)
+    {
+        var identities = GitIdentities.Read(home);
+        var pointers = GitIdentityUse.Read(home);
+        if (identities.Count == 0 && pointers.Count == 0) return GitServes.Nothing([]);
+        if (GitHttps.HostOf(address) is not { } host) return GitServes.Nothing([]);
+
+        var (repository, workspace) = GitFolders.RepositoryOf(home, folder);
+        IReadOnlyList<string> remotes = repository is not null && pointers.Repository.ContainsKey(repository)
+            ? RemotesAt(folder, GitAddressKeys.Of(address), variable)
+            : [];
+        return GitIdentityUse.Resolve(identities, pointers, repository, workspace, remotes, host, GitIdentity.Https);
+    }
+
     /// <summary>The port git handed the door by <c>-p</c>, or null for the default.</summary>
     internal static string? PortOf(IReadOnlyList<string> options)
     {
@@ -360,7 +378,7 @@ public static class GitDoors
     /// </summary>
     public static int Helper(
         IReadOnlyList<string> arguments, Func<string, string?> variable, Stream input, Stream output, TextWriter error,
-        Func<IDictionary<string, string?>, IDictionary<string, string?>>? environment = null)
+        Func<IDictionary<string, string?>, IDictionary<string, string?>>? environment = null, string? folder = null)
     {
         if (arguments.Count != 2) return Refuse(error, "git-remote-daoris: takes a remote and an address, as git passes them.");
         var address = arguments[1];
@@ -378,6 +396,11 @@ public static class GitDoors
             return Refuse(error, $"git-remote-daoris: finds no {transport} on git's PATH.");
         }
 
+        var serves = ServingHttps(home, folder ?? Environment.CurrentDirectory, address, variable);
+        var identity = serves.Kind == GitServeKind.Identity ? serves.Identity : null;
+        if (identity is not null && GitHttps.HasPassword(address))
+            return Refuse(error, "git-remote-daoris: refuses an address carrying a password: a git identity's sign-in is stored through Git Credential Manager, not written into an address.");
+
         // Not the tools' environment (TOOLS5): git's own transport, with git's environment less Daoris's routing (§4.3).
         // The relay reads and writes the streams' bytes (BaseStream); the encodings are named for the census, and change no byte.
         var info = new ProcessStartInfo(file)
@@ -390,8 +413,15 @@ public static class GitDoors
             StandardOutputEncoding = Encoding.UTF8,
         };
         info.ArgumentList.Add(arguments[0]);
-        info.ArgumentList.Add(address);
+        // Under an identity the transport is given no user-info; GCM's choice of account is the identity's user (§4.3 step 3).
+        info.ArgumentList.Add(identity is null ? address : GitHttps.Bare(address));
         GitRouting.Unroute(info.Environment);
+        if (identity is not null)
+        {
+            GitHttps.Apply(info.Environment, home, identity.User ?? GitHttps.UserOf(address), GitHttps.Manager(variable));
+            GitSshFiles.Used(home, identity.Id);
+        }
+
         environment?.Invoke(info.Environment);
 
         var key = GitAddressKeys.Of(address);

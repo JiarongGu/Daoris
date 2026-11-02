@@ -30,6 +30,7 @@ public sealed partial class SessionsStateSliceTests : DriverModuleBridge
         ["helpMode"] = null, ["access"] = new JsonObject { ["permissions"] = "ask" }, ["piece"] = null,
         ["actor"] = "build", ["choice"] = "before", ["asked"] = new JsonObject { ["agent"] = "claude-code" },
         ["override"] = null, ["ran"] = new JsonObject { ["models"] = new JsonArray("reported-model"), ["more"] = 0, ["entries"] = new JsonArray(), ["entriesMore"] = 0 },
+        ["chosen"] = new JsonObject { ["rule"] = "weight", ["by"] = "weight" },
         // FOUNDATION1c: the work its marks read as, beside the kind, which stays driven or chat.
         ["work"] = "build",
         // COWORKVIEW1b-i: the quest a chat took, pushed for the at-work view.
@@ -53,6 +54,7 @@ public sealed partial class SessionsStateSliceTests : DriverModuleBridge
         var pushed = Written(slice.Snapshot().Partitions.Single().Data)["s1"]!;
         Assert.Equal("working", pushed["state"]!.GetValue<string>());
         Assert.Equal("next-reported-model", pushed["ran"]!["models"]![0]!.GetValue<string>());
+        Assert.Equal("weight", pushed["chosen"]!["by"]!.GetValue<string>());
     }
 
     /// <summary>A loop come up over the stand-in service, and its sessions' slice.</summary>

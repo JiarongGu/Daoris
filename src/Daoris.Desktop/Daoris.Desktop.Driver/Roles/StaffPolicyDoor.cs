@@ -9,15 +9,35 @@ namespace Daoris.Driver;
 /// </summary>
 public static class StaffCapabilities
 {
-    /// <summary>The fields the start's walk enforces: the rule, a choice's weight, share, daily budget of starts and works.</summary>
-    public static IReadOnlyList<string> Fields { get; } = ["rule", "weight", "share", "budget.starts", "takes"];
+    /// <summary>
+    /// The fields the start's walk and the course enforce: the rule, a choice's weight, share, daily budget of starts and works; the
+    /// moves of a limit and of a service that does not answer (STAFFPOLICY1e), with the tries before it; and the bound of moves.
+    /// </summary>
+    public static IReadOnlyList<string> Fields { get; } =
+        ["rule", "weight", "share", "budget.starts", "takes", "moves.limit", "moves.transient", "most"];
+
+    /// <summary>
+    /// The actions each condition's move may name: a limit's and a service's are the course's; a refused sign-in's, a refused model's and a
+    /// budget's are the walk's, which already arranges by the role's rule, and a fatal error's and a quiet stop's are today's (retry), so
+    /// none of those five is a field of its own until a row moves the line by it.
+    /// </summary>
+    private static readonly IReadOnlyDictionary<string, string[]> Enforced = new Dictionary<string, string[]>(StringComparer.Ordinal)
+    {
+        [StaffConditions.Limit] = [StaffActions.Next, StaffActions.Weighted, StaffActions.Wait, StaffActions.Ask],
+        [StaffConditions.Transient] = [StaffActions.Next, StaffActions.Weighted, StaffActions.Ask, StaffActions.Hold],
+        [StaffConditions.SignedOut] = [StaffActions.Next, StaffActions.Weighted],
+        [StaffConditions.ModelRefused] = [StaffActions.Next, StaffActions.Weighted],
+        [StaffConditions.Budget] = [StaffActions.Next, StaffActions.Weighted],
+        [StaffConditions.Failed] = [StaffActions.Retry],
+        [StaffConditions.Quiet] = [StaffActions.Retry],
+    };
 
     /// <summary>The first field of <paramref name="policy"/> this build does not enforce yet, refused with the fields it does; null where it sets none.</summary>
     public static RoleRefusal? Unenforced(string role, StaffPolicy policy)
     {
         var field = policy.Choices.Any(choice => choice.Budget?.Tokens is not null) ? "budget.tokens"
-            : policy.Moves.Count > 0 ? "moves"
-            : policy.Most is not null ? "most"
+            : policy.Moves.FirstOrDefault(move => !Enforced.TryGetValue(move.Key, out var actions) || !actions.Contains(move.Value.Do, StringComparer.Ordinal)) is { Key: { } key } unenforced
+                ? $"moves.{key}` as `{unenforced.Value.Do}"
             : null;
         return field is null
             ? null
@@ -25,12 +45,8 @@ public static class StaffCapabilities
                 $"`{role}`'s policy sets `{field}`, which this build does not enforce yet, so nothing was saved: it enforces {string.Join(", ", Fields.Select(each => $"`{each}`"))}.");
     }
 
-    /// <summary><see cref="StaffPolicy.Preset"/> as the doors apply it: the preset's moves and bound are left out while no build enforces them.</summary>
-    public static StaffPolicy Preset(string preset, IReadOnlyList<ActorChoice> choices, StaffPolicy? draft)
-    {
-        var filled = StaffPolicy.Preset(preset, choices, draft);
-        return filled with { Moves = new Dictionary<string, StaffMove>(), Most = null };
-    }
+    /// <summary><see cref="StaffPolicy.Preset"/> as the doors apply it: a preset's moves and bound are enforced, so it reaches a door whole.</summary>
+    public static StaffPolicy Preset(string preset, IReadOnlyList<ActorChoice> choices, StaffPolicy? draft) => StaffPolicy.Preset(preset, choices, draft);
 }
 
 /// <summary>

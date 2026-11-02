@@ -412,8 +412,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
     /// <param name="onEnded">Told when the new conversation ends, as a start's is.</param>
     public Task<HandedOver> HandOverAsync(
         string sessionId, string agent, string? account, string why, string askedBy, DriverConfig config,
-        Func<string, string, Task>? onEnded = null, CancellationToken ct = default) =>
-        _handOver.HandOverAsync(sessionId, agent, account, why, askedBy, config, onEnded, ct);
+        Func<string, string, Task>? onEnded = null, CancellationToken ct = default, string? model = null, string? effort = null) =>
+        _handOver.HandOverAsync(sessionId, agent, account, why, askedBy, config, onEnded, ct, model, effort);
 
     /// <summary>
     /// Judge a conversation by its account's usage curve and, where the decision says so, move it (SWITCH1c-ii,
@@ -616,7 +616,10 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             if (found.Held is { } held) return new(null, held);
             if (found.Role is not { } role) return new(null, "No role takes chat on this machine, so it starts no conversation until one does.");
             (roleTaken, roleRevision) = (role.Id, roles.RevisionOf(role.Id));
-            if (order is not null && pending is null && roleTaken != "chat" && order is not [{ From: "pick" }])
+            // Only the seeded Chat order a caller holds is replaced: an order read from the role the line is bound to (a limit's other choices,
+            // a refused open's) is that role's already, and is walked as given (STAFFPOLICY1d).
+            if (order is not null && pending is null && roleTaken != "chat" && order is not [{ From: "pick" }]
+                && order.SequenceEqual(ActorChoices.Effective("chat", config)))
             {
                 order = roles.Order(ParticipantWork.Chat, place, config);
                 if (order.Count == 0) return new(null, $"{role.Name.In("en")} is off on this machine, so it starts no conversation until it is given a choice.");
@@ -747,7 +750,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             _service, _events, sessionId, resolved.Name, selection, from is { Why: HandOverWhy.Limit } ? LimitCarried(from.Session) : null);
         // Where a later choice of Chat's order ran, its actor line says which and why (D205 §4.6), in the local conversation only.
         if (chosen is not null) RotatedOpening.SayActor(_events, sessionId, "chat", chosen, passes);
-        RotatedOpening.SayStaff(_events, _harnesses.Staff(), sessionId, selection.Number, "chat");
+        await RotatedOpening.SayStaffAsync(_events, _harnesses.Staff(), _service, null, sessionId, selection, "chat").ConfigureAwait(false);
 
         // MODELROLE1d2 (D205 §3.5(b)): a new conversation that asks its actor's entry on the protocol door owns its attempt from here until it
         // is dispatched or exhausted; a replacement goes on under the pending start it opens for, its issued id the press's.
@@ -762,7 +765,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             // moving words the refused record keeps, which it names and read, and any of the person's kept there since, in its own step.
             var ranIn = tree ?? opened?.Path;
             _context.Pending.Add(new ChatPending(
-                sessionId, "chat", ChatPending.Recovering("chat", order!, config), chosen, profile, known.Workspace,
+                sessionId, "chat", ChatPending.Recovering("chat", order!, config, _harnesses.StaffFor(_home), roleTaken), chosen, profile, known.Workspace,
                 (owner, token) => StartAsync(
                     repository, adapter, config, onEnded, owner.Pinned, ownTree: ranIn is null ? false : null, token, ranIn,
                     new ContinuedFrom(owner.Current, HandOverWhy.NotOffered, HandOverBy.Daoris), order: null, leftBy, owner,
@@ -982,7 +985,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         RotatedOpening.Say(_service, _events, sessionId, resolved.Name, selection, LimitCarried(carries));
         // Where a later choice of Ask Daoris's order ran, its actor line says which and why (D205 §4.6).
         if (chosen is not null) RotatedOpening.SayActor(_events, sessionId, "ask-daoris", chosen, passes);
-        RotatedOpening.SayStaff(_events, _harnesses.Staff(), sessionId, selection.Number, "ask-daoris");
+        await RotatedOpening.SayStaffAsync(_events, _harnesses.Staff(), _service, null, sessionId, selection, "ask-daoris").ConfigureAwait(false);
 
         // MODELROLE1d2 (D205 §3.5(b)): owned from its placement until dispatched or exhausted; its run says how a replacement runs.
         if (pending is not null)

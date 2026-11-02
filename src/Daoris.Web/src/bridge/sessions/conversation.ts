@@ -667,9 +667,12 @@ const handedOf = (answer: unknown): HandedOver => {
 export const useHandOver = () => useMutation({
   mutationFn: async (over: {
     session: string; agent: string; account?: string | null; why?: 'near' | 'limit';
+    /** The model and effort of the choice the offer named (STAFFPOLICY1d): started as approved, never picked again. */
+    model?: string | null; effort?: string | null;
   }): Promise<HandedOver> =>
     handedOf(await call<unknown>('SESSION_HAND_OVER', {
       id: over.session, agent: over.agent, ...(over.account ? { account: over.account } : {}),
+      ...(over.model ? { model: over.model } : {}), ...(over.effort ? { effort: over.effort } : {}),
       ...(over.why ? { why: over.why, askedBy: 'daoris' } : { why: 'press' }),
     })),
 });
