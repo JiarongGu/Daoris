@@ -22916,3 +22916,9 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 > **c** the structure as bands (web; b). Contract and proof: the canvas design's §9 row c, §3.2 and §11 (the appointment model): `structureBands.ts`, `StructureCanvas`, `StructureNode`; only staffed edges drawn; lit as today; workspace folds past 24; the label above the roles below 40rem; the list below the floor; `RoleDiagram` replaced in COMPANYVIEW1 and AGENTSPLACE1.
 
 **Outcome** 2026-11-02: built. The roles' structure is bands by place in the canvas from 36rem, its list below; a role is one identity drawn in each band it is placed in; `RoleDiagram` and `diagram.ts` are gone. `routeInk` held on bands in every story (no collision, six crossings in the fixture's ten choices, none in the hundred-node one). Detail: D224's CANVAS1c note; `structureBands.test.ts`, `StructureCanvas.test.tsx`, `RolesDiagram.test.tsx`, `measured/roles.spec.ts`.
+
+## CANVAS1d — large graphs (2026-11-02, D224)
+
+> **d** large graphs (web; c). Contract and proof: the canvas design's §9 row d, §4, §4.1 and §11: positioned worlds, the spatial grid, culling past 400, the tiers, the budget, the worker layout with revisions, find, the minimap's rule, the view by feature key and graph identity, `aria-setsize` and `aria-posinset`, `CanvasList` grouped.
+
+**Outcome** 2026-11-02: built. `PositionedCanvas` draws a scene of nodes, groups and edges in the canvas: laid out inline or in a worker under a revision, culled past 400, drawn by tier, a grouped world past 1,000 an overview opened one group at a time, with find, the minimap, the viewer's kept place and the grouped list. No feature draws on it yet (rows e and f). Detail: D224's CANVAS1d note, with the measured figures; `largeGraph.test.ts`, `PositionedCanvas.test.tsx`, `Canvas.test.tsx`, `measured/large.spec.ts`.
