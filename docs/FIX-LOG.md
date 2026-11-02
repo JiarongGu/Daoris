@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-02 - A `land` node's target was accepted for every method and landed nowhere (REVIEW2, LANDNODE1)
+
+- **Symptom:** `land {method: merge, target: "release"}` merged into the tree's line while the delivery's record said `release`.
+- **Root cause:** `LandNodes.Problem` checked only that `target` was a valid branch name, and the value went only into the delivery's key and `Intent.Target`; the landing used `Intent.Line`. The design allows another line for an integrate alone, and only one the repository declares.
+- **Fix:** `Problem` holds a target beside an explicit method other than `integrate`; `CurrentDeliveries.StartAsync` refuses a bound `land` whose target is not the tree's line before any delivery is written, so a saved version that carries one never lands. Noted on D145.
+- **Verify:** `LandTargetTests` and `LandNodeKindTests`' new rows, red first.
+
 ## 2026-11-02 - Thirty-seven chat Process tests red after the routing standing was told (COWORKVIEW1e-i)
 
 - **Symptom:** the driver's Process gate failed 37 tests across nine chat classes (`ChatGoesOnProcessTests`, `ChatPendingProcessTests`, `ProtocolChatTests`, `TurnStopTests`, `HandOverProcessTests` and four more): prompts read `Routing standing here: ...` where the person's words were expected, and stand-ins keyed on a prompt's text (`hold`, `refuse`, a reply's length as context) no longer matched.
