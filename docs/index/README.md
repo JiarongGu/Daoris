@@ -132,7 +132,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/ChatTransientProcessTests.cs` | 48 | 803 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/ChatTurnsTests.cs` | 78 | 1588 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/DriverCommandTests.cs` | 49 | 773 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/HelperLookTests.cs` | 79 | 1638 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/HelperLookTests.cs` | 80 | 1659 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/SessionMessagesTickTests.cs` | 107 | 1796 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/SessionsOutliveTheirLookTests.cs` | 43 | 957 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Participants/ChildBindingsTests.cs` | 42 | 781 |

@@ -29,8 +29,9 @@ public sealed class GoAheadsGoOnTests : IDisposable
     {
         Directory.CreateDirectory(_home);
         _ledger.Register("engine", Path.Combine(_home, "engine"));
-        _ledger.Publish("q1", "engine", from: "ask #a1");
-        _ledger.Park("s1", "q1", DaorisHome.Entry(_home, HomeEntry.Trees,"s-1"));
+        // A quest a sibling of the ask published (its sender is a repository), on the ask by its session's entry (COMMS1c).
+        _ledger.Publish("q1", "engine", from: "dashboards");
+        _ledger.Park("s1", "q1", DaorisHome.Entry(_home, HomeEntry.Trees,"s-1"), entry: "ask:a1/engine");
         _ledger.GoAheadAsked("a1", "s1", "write", "production", "dashboard configuration");
         _ledger.GoAheadAsked("a1", "s1", "release", "production", "comparison report");
     }
@@ -162,7 +163,7 @@ public sealed class GoAheadsGoOnTests : IDisposable
 
             var resume = new ResumeAsk(
                 "conversation-1", record.Waiting, "It goes on.",
-                await DriverContinuations.ResumedAfterAsync(service, quest, record.Session, language: null, ct));
+                await DriverContinuations.ResumedAfterAsync(service, record.Session, language: null, ct));
             lock (_turns) _turns.Add(resume.Blocks);
 
             await _ending.Task.WaitAsync(ct);

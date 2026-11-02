@@ -9,9 +9,9 @@ internal sealed class RolesWorkOrdersOperations : IRolesWorkOrders
 
     public ParkQuestion? QuestionOf(string home, string session) => new QuestionFiles(home).Read(session);
 
-    public async Task<SupervisorAskWords> AskWordsAsync(ServiceClient service, string? from, string questId, CancellationToken ct)
+    public async Task<SupervisorAskWords> AskWordsAsync(ServiceClient service, string session, string questId, CancellationToken ct)
     {
-        var words = await AskWords.ReadAsync(service, from, ct).ConfigureAwait(false);
+        var words = await AskWords.ReadOfSessionAsync(service, session, ct).ConfigureAwait(false);
         var goAheads = words?.GoAheads is { } held
             ? string.Join("\n", held.Select(each => $"#{each.Number} {each.Kind} on {each.On}: {each.Act} — "
                 + (each.Answer is null ? "open" : each.Answer.Approved ? "approved" : "refused")))

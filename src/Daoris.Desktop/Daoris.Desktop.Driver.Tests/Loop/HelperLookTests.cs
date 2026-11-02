@@ -106,6 +106,8 @@ public sealed class HelperLookTests : IDisposable
         var host = new OpinionStandIn().Session("s1", state, tree: "trees/default/reports/s-1", kind: kind)
             .Session(Helper, "completed", adapter: "codex-acp", kind: "chat");
         host.Set(Helper, "serves", "s1");
+        // The ask a session's line is on is its entry's origin (COMMS1c), whoever asked its quest.
+        host.Set("s1", "entry", "ask:a1/reports");
         return host;
     }
 
@@ -1169,6 +1171,25 @@ public sealed class HelperLookTests : IDisposable
 
         host.AskFailure = failure;
         Assert.False(await driver.WaitsOnOwnHelperAsync("s1", quest, At, CancellationToken.None));
+    }
+
+    /// <summary>
+    /// COMMS1c: the ask is read from the session's entry, not its quest's sender. A line on no ask holds no go-ahead to read, so the ask's
+    /// failing read is never reached and the turn waits on its helper; a quest a sibling published, its line on the ask, reads it.
+    /// </summary>
+    [Fact]
+    public async Task The_go_ahead_is_read_on_the_ask_the_sessions_entry_names_not_the_quests_sender()
+    {
+        var host = Host(state: "working").Quest("q1", "Taken");
+        var driver = Driver(host, pass: null);
+        Ask("a4");
+        host.AskFailure = "refused";
+
+        host.Set("s1", "entry", "session:s1/reports");
+        Assert.True(await driver.WaitsOnOwnHelperAsync("s1", new QuestView("q1", "ask #a1", "reports", "The work", "", "Taken"), At, CancellationToken.None));
+
+        host.Set("s1", "entry", "ask:a1/reports");
+        Assert.False(await driver.WaitsOnOwnHelperAsync("s1", new QuestView("q1", "reports", "reports", "The work", "", "Taken"), At, CancellationToken.None));
     }
 
     /// <summary>
