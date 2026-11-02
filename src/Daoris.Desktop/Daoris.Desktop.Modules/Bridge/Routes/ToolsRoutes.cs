@@ -349,8 +349,8 @@ public sealed class ToolsRoutes(DriverContext context)
 
             case "repository":
             {
-                repository ??= throw new DriverException("`repository` is needed.");
-                service ??= throw new DriverException("Daoris is not ready to read its repositories yet.");
+                if (repository is null) throw new DriverException("`repository` is needed.");
+                if (service is null) throw new DriverException("Daoris is not ready to read its repositories yet.");
                 var registry = await service.RegistryAsync(cancellationToken).ConfigureAwait(false);
                 var rows = LinesRoutes.Checkouts(registry, repository, workspace);
                 var root = rows.Select(row => row.Root).FirstOrDefault(each => !string.IsNullOrEmpty(each) && Directory.Exists(each))

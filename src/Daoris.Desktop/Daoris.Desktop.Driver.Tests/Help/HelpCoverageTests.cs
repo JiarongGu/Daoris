@@ -1005,9 +1005,6 @@ public sealed partial class HelpCoverageTests
         ("git", "useSetGitAccess", null, new Exempt(
             "git access decides what a session's git may do on a remote and whether it asks, so loosening it is the person's own press, confirmed "
             + "in place; no proposal names it, as none names full access (D198, the design §9).")),
-        ("projects", "useSetGitAccess", null, new Exempt(
-            "a repository's or a workspace's git access, as Settings → Git's: the person's own press, confirmed in place when it loosens; "
-            + "no proposal names it (D198, the design §9).")),
         ("agents", "useHarnessInput", null, new Exempt("it types into a running sign-in, the person's own words to it; " + SignIn)),
         ("agents", "useHarnessCancel", null, new Exempt("it stops a sign-in the person started, theirs to stop; " + SignIn)),
         // UX6e (D150 §3.1): what the agent may do moved to its page, the rules for every session and the proposals with it.

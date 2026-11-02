@@ -595,7 +595,7 @@ public sealed class PipeCensusTests
     [Fact]
     public void The_keyed_routes_are_the_remotes_set_alone_and_each_is_the_person_s()
     {
-        Assert.Equal(["DAORIS.REMOTES.SET", $"{DriverModule.Name.ToUpperInvariant()}.GIT_IDENTITY"], PipeCensus.KeyedRoutes.Order(StringComparer.Ordinal));
+        Assert.Equal(new[] { "DAORIS.REMOTES.SET", $"{DriverModule.Name.ToUpperInvariant()}.GIT_IDENTITY" }.Order(StringComparer.Ordinal), PipeCensus.KeyedRoutes.Order(StringComparer.Ordinal));
         Assert.True(PipeCensus.Keyed(DriverModule.Name, "GIT_IDENTITY"));
         Assert.Equal(Daoris.Driver.HomeCategory.Profiles, Daoris.Driver.HomeEntry.Remotes.Category);
         Assert.True(PipeCensus.Keyed("daoris.remotes", "SET"));
