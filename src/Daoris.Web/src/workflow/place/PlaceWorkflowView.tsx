@@ -9,6 +9,10 @@ import { cn } from '../../lib/cn';
 import { Button, Inline, Prose, SkeletonRows } from '../../design/ui';
 import { useWidth } from '../../design/useWidth';
 import { FoldRow, type FoldSpec } from '../../projects/setup/FoldRow';
+import type { LandsHere } from '../../projects/setup/RepositorySetup';
+import { choiceLabel } from '../edit/editWords';
+import { draftOf, optionOf } from '../edit/graphDraft';
+import { LandOptions } from './LandOptions';
 import type { IntegrationRequest } from '../../settings/repository/IntegrationDeclaration';
 import { type Answered, InlineConfirm } from '../../work/InlineConfirm';
 import type { WorkflowEffective, WorkflowStart } from '../current';
@@ -29,7 +33,36 @@ export type LandingHand = {
   again: number;
   /** Gates, which the page owns, to stand before the folds of the line and its landing. */
   lead: readonly FoldSpec[];
+  /** How the chosen route lands: the followed version's land options, or Current's door to the conversion; none while the route is read. */
+  lands: LandsHere | null;
 };
+
+/** The land options of the followed version, which read the palette only while they show. */
+function LandEditor({ editor, graph, workflow, lines, onReads }: {
+  editor: NonNullable<PlaceWorkflowProps['editor']>;
+  graph: unknown;
+  workflow: { id: string; version: number };
+  lines?: string[];
+  onReads: (on: boolean) => void;
+}) {
+  const { t } = useTranslation();
+  useEffect(() => { onReads(true); return () => onReads(false); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!editor.palette) return <p className="m-0 text-small text-ink-soft">{t('workflow.reading')}</p>;
+  return (
+    <LandOptions
+      palette={editor.palette}
+      roles={editor.roles}
+      graph={graph}
+      workflow={workflow}
+      lines={lines}
+      judged={editor.judged}
+      judgedOf={editor.judgedOf ?? null}
+      onJudge={editor.onJudge}
+      saving={editor.saving}
+      onSave={editor.onSave}
+    />
+  );
+}
 
 /** What the section draws under the routes: the line's landing rows, handed in by the page that holds the settings. */
 export type PlaceWorkflowProps = WorkflowTabProps & {
@@ -157,13 +190,17 @@ export function PlaceWorkflowView({
   // panel, lets the draft go.
   const reported = useRef<EditorHold | null>(held?.editor ?? null);
   const [discarding, setDiscarding] = useState(false);
+  // The editor's reads are asked while a panel shows or the Landing row's options do.
+  const reads = useRef({ panel: false, land: false });
+  const tell = () => editor?.onOpen?.(reads.current.panel || reads.current.land);
   const show = (next: Panel) => {
     setPanel(next);
-    editor?.onOpen?.(next !== null);
+    reads.current.panel = next !== null;
+    tell();
     if (next?.is !== 'edit') { reported.current = null; onHold?.(null); } else if (panel?.is !== 'edit') { reported.current = null; onHold?.({ route: next.route, ...(next.from ? { from: next.from } : {}), editor: null }); }
   };
   // The page may have unmounted this section with the editor open (a fold, *Set up…*, a change of layout): the editor is told it is shown.
-  useEffect(() => { if (panel) editor?.onOpen?.(true); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (panel) { reads.current.panel = true; tell(); } }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (asked.section) document.querySelector('[data-place-row="landing"]')?.scrollIntoView?.({ block: 'nearest' });
@@ -227,6 +264,31 @@ export function PlaceWorkflowView({
       else doors?.setup?.(section);
     },
   };
+
+  // How the route lands (WORKFLOWCLEAN1h-b): under a saved version it is the version's `land` options; under Current, only the conversion.
+  const land = answered === null || !answered.graph || page !== 'repository' || landed ? undefined : draftOf(answered.graph).nodes.find((node) => node.kind === 'land');
+  const lands: LandsHere | null = answered === null || page !== 'repository' || landed ? null
+    : answered.workflow === 'current' ? { is: 'current', onConvert }
+      : editor && land && answered.schema === 2 && answered.version !== null
+        ? {
+          is: 'version',
+          summary: t('projects.setup.summary.landsVersion', {
+            method: choiceLabel(t, 'land', 'method', (optionOf(land, 'method') as string | undefined) ?? 'merge'),
+            workflow: answered.name ?? answered.workflow,
+            version: answered.version,
+          }),
+          editor: (
+            <LandEditor
+              key={`${answered.workflow}@${answered.version}`}
+              editor={editor}
+              graph={answered.graph}
+              workflow={{ id: answered.workflow, version: answered.version }}
+              lines={start?.landed.tip?.line ? [start.landed.tip.line] : undefined}
+              onReads={(on) => { reads.current.land = on; tell(); }}
+            />
+          ),
+        }
+        : null;
 
   const gates: FoldSpec[] = page === 'repository' && start
     ? [{
@@ -395,7 +457,7 @@ export function PlaceWorkflowView({
         )}
         {!editor && <p className="m-0 text-meta text-ink-faint"><Inline text={t('workflow.compose.twin')} /></p>}
         {!wide && (open || chartShown) && chart}
-        {landing ? landing({ asked: asked.section, again: asked.n, lead: gates }) : gates.length + repositories.length > 0 && <FoldRow folds={[...gates, ...repositories]} />}
+        {landing ? landing({ asked: asked.section, again: asked.n, lead: gates, lands }) : gates.length + repositories.length > 0 && <FoldRow folds={[...gates, ...repositories]} />}
       </div>
       {wide && (aside ? createPortal(<div className="min-w-0">{chart}</div>, aside) : <div className="min-w-0">{chart}</div>)}
     </div>

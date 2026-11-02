@@ -283,6 +283,17 @@ describe("a place's Workflow, its folds and Gates", () => {
     expect(onAcceptIntegration).toHaveBeenCalledWith({ gates: '0e5751c026e543b2e8ab2eb06099daa1d1e5df47' }, expect.anything());
   });
 
+  it('hands the Landing row how the route lands: the conversion under Current, the version\'s own options under a saved workflow', () => {
+    const landing = vi.fn((hand: LandingHand) => <div data-testid="landing">{hand.lands?.is ?? 'none'}{hand.lands?.is === 'version' && hand.lands.editor}</div>);
+    const current = draw({ landing, onConvert: vi.fn() });
+    expect(screen.getByTestId('landing')).toHaveTextContent('current');
+    current.unmount();
+
+    draw({ landing, editor: editor(), current: withRoute(EFFECTIVE_RELEASE, SAVED_DEFAULT) });
+    expect(screen.getByTestId('landing')).toHaveTextContent('version');
+    expect(screen.getByTestId('landing')).toHaveTextContent('How it lands');
+  });
+
   it('hands the line and landing folds Gates to stand before them, and draws what they draw', () => {
     const landing = vi.fn((hand: LandingHand) => <p data-testid="landing">{hand.lead.map((fold) => fold.title).join()}</p>);
     draw({ landing });

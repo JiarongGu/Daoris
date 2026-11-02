@@ -54,9 +54,9 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/locales/names.test.ts` | 41 | 721 |
 | `src/Daoris.Web/src/menus/commands.ts` | 43 | 831 |
 | `src/Daoris.Web/src/projects/ProjectsView.git.test.tsx` | 82 | 1345 |
-| `src/Daoris.Web/src/projects/ProjectsView.test.tsx` | 107 | 1875 |
-| `src/Daoris.Web/src/projects/setup/RepositorySetup.test.tsx` | 52 | 906 |
-| `src/Daoris.Web/src/projects/setup/RepositorySetup.tsx` | 44 | 910 |
+| `src/Daoris.Web/src/projects/ProjectsView.test.tsx` | 106 | 1863 |
+| `src/Daoris.Web/src/projects/setup/RepositorySetup.test.tsx` | 52 | 910 |
+| `src/Daoris.Web/src/projects/setup/RepositorySetup.tsx` | 45 | 905 |
 | `src/Daoris.Web/src/quests/QuestPage.tsx` | 59 | 1073 |
 | `src/Daoris.Web/src/quests/QuestsView.test.tsx` | 75 | 1464 |
 | `src/Daoris.Web/src/work/WorkFrame.conversation.test.tsx` | 61 | 1192 |
