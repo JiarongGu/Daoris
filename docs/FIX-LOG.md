@@ -5,6 +5,27 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-02 - The room said an off or unreadable role runs the machine's defaults (REVIEW2 S4)
+
+- **Symptom:** a role whose stored choices are empty (off) or whose `actors` entry does not read was said to have "no choices of its own, so this machine's defaults run".
+- **Root cause:** `HelpRole` carried the choices only; the empty list was read as unset.
+- **Fix:** `HelpRole.ChoiceState` carries `ActorView.Of(id, config).State`, and the line says off (it starts nothing) or does not read.
+- **Verify:** `HelpRoomRolesScopeTests`, `HelpRoomRolesTests` and the room's goldens.
+
+## 2026-11-02 - The room's week was the machine's, said as the workspace's (REVIEW2 S5)
+
+- **Symptom:** a workspace's room presented the machine-wide starts and moves of the last 7 days under an intro saying each count is the workspace's.
+- **Root cause:** `role_starts` and `role_moves` hold no workspace, and the room's only record of sessions by workspace is counts and a short list, not every session id, so a per-workspace count is not at hand.
+- **Fix:** the second way: the Roles section of a workspace's room says the last 7 days are the whole machine's, and the intro lists them among what is the machine's.
+- **Verify:** `HelpRoomRolesScopeTests.A_workspaces_room_says_the_last_seven_days_are_the_whole_machines`, the scoped golden.
+
+## 2026-11-02 - A workspace's conversation could change another workspace's role, and its room listed other repositories' roles (REVIEW2 S3)
+
+- **Symptom:** `remove`, `default`, a policy-only `set` and `default-all` named no scope and passed the scope fence (ASKSCOPE1c); `default-all` reaches every workspace yet was not `Every`; the Roles section listed other workspaces' repository-scoped roles.
+- **Root cause:** `HelpRoleProposals.Named` read only the press's own `scope`; the section kept every repository-scoped role.
+- **Fix:** `Named` also names the target role's current catalogue scope, and `default-all` is `Every`; the section keeps a repository's role only where the repository is one of `machine.Repositories`.
+- **Verify:** `HelpRoleProposalsTests.A_scoped_conversation_refuses_a_change_to_a_role_scoped_elsewhere_and_a_default_of_every_role`, `HelpRoomRolesScopeTests`.
+
 ## 2026-11-02 - A draft told to an earlier part of a conversation was not found after a limit move (REVIEW2 S7)
 
 - **Symptom (to test, held):** `workflow_propose` against a draft told before a limit opened a new part was judged as if no draft had been told.

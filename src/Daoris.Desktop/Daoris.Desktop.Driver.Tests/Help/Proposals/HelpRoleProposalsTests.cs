@@ -147,6 +147,22 @@ public sealed class HelpRoleProposalsTests : HelpProposalsFixture, IDisposable
         Assert.Contains("Policy, Build: Spread by weight (1:1); on a limit: next by weight; at most 3 moves a day →", rekeyed.Describe);
     }
 
+    /// <summary>REVIEW2 S3: in a workspace's conversation a change is judged by the role's own scope, and the whole-seed door reaches every workspace.</summary>
+    [Fact]
+    public void A_scoped_conversation_refuses_a_change_to_a_role_scoped_elsewhere_and_a_default_of_every_role()
+    {
+        RoleDoor.Apply(Staffing, RoleChange.Set(new RoleRecord("night", AuthoredText.Of("Night"), RoleRecord.Always, ["build"], new RoleScope(RoleScope.Workspace, "other"))),
+            [new ActorChoice("claude-code", "sonnet", "high")]);
+        var mine = Machine with { Circle = "mine" };
+
+        Assert.Contains("workspace `other`", HelpProposals.Plan(Role("remove", "night"), DriverConfig.Empty, mine).Refusal);
+        Assert.Contains("workspace `other`", HelpProposals.Plan(Role("default", "night"), DriverConfig.Empty, mine).Refusal);
+        Assert.Contains("workspace `other`", HelpProposals.Plan(Role("set", "night", """{ "choices": [{ "agent": "claude-code" }] }"""), DriverConfig.Empty, mine).Refusal);
+        Assert.Contains("every workspace at once", HelpProposals.Plan(Role("default-all", "*"), DriverConfig.Empty, mine).Refusal);
+        Assert.Null(HelpProposals.Plan(Role("default-all", "*"), DriverConfig.Empty, Machine).Refusal);
+        Assert.Null(HelpProposals.Plan(Role("default", "intake"), DriverConfig.Empty, mine).Refusal);
+    }
+
     [Fact]
     public void A_set_of_a_seeded_role_naming_its_choices_alone_keeps_its_record_and_sets_its_order()
     {

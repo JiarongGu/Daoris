@@ -24,13 +24,34 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
     public HelpProposal Read(HelpProposal proposal, JsonElement file) =>
         proposal with { RolePress = file.TryGetProperty("press", out var press) && press.ValueKind == JsonValueKind.Object ? press.Clone() : null };
 
-    /// <summary>ASKSCOPE1c: a role scoped to a workspace or a repository names it.</summary>
+    /// <summary>
+    /// ASKSCOPE1c: a role scoped to a workspace or a repository names it, the scope the press gives and the one the role stands in now
+    /// (REVIEW2 S3); <c>default-all</c> reaches every workspace.
+    /// </summary>
     public HelpNames Named(HelpProposal proposal, HelpMachineFacts facts)
     {
-        var (kind, id) = proposal.RolePress is { } press && press.TryGetProperty("scope", out var scope) && scope.ValueKind == JsonValueKind.Object
-            ? (Text(scope, "kind"), Text(scope, "id"))
-            : (null, null);
-        return new(kind == RoleScope.Workspace ? [id] : [null], kind == RoleScope.Repository ? [id] : [null]);
+        if (proposal.Door == "default-all") return new([null], [null]) { Every = true };
+        var scopes = new List<(string? Kind, string? Id)>();
+        if (proposal.RolePress is { } press && press.TryGetProperty("scope", out var scope) && scope.ValueKind == JsonValueKind.Object)
+        {
+            scopes.Add((Text(scope, "kind"), Text(scope, "id")));
+        }
+
+        if (facts.Home is { } home && proposal.Target?.Trim() is { Length: > 0 } target)
+        {
+            try
+            {
+                if (RoleCatalog.ReadHome(home).Slots.FirstOrDefault(slot => slot.Id == target)?.Role?.Scope is { } now) scopes.Add((now.Kind, now.Id));
+            }
+            catch (DriverException)
+            {
+                // Plan refuses a catalogue that does not read.
+            }
+        }
+
+        return new(
+            [.. scopes.Select(each => each.Kind == RoleScope.Workspace ? each.Id : null)],
+            [.. scopes.Select(each => each.Kind == RoleScope.Repository ? each.Id : null)]);
     }
 
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
