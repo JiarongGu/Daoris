@@ -49,7 +49,9 @@ export function syntheticScene(count: number, { groups = 1, edgesPerNode = 1.5 }
     const from = made % count;
     const reach = next(7);
     const home = Math.floor(from / size) * size;
-    let to = reach === 0 && grouped ? next(count) : reach === 1 ? Math.max(home, from - 1 - next(4)) : Math.min(home + size - 1, count - 1, from + 1 + next(8));
+    // Across groups mostly to a near neighbour, as modules lean on the ones beside them: a few hundred lines, not every pair.
+    const near = Math.min(count - 1, Math.max(0, from + (next(7) - 3) * size + next(size)));
+    let to = reach === 0 && grouped ? near : reach === 1 ? Math.max(home, from - 1 - next(4)) : Math.min(home + size - 1, count - 1, from + 1 + next(8));
     if (to === from) to = (from + 1) % count;
     edges.push({ id: `e${made}`, from: `n${from}`, to: `n${to}`, kind: made % 3 === 0 ? 'asks' : 'then' });
   }

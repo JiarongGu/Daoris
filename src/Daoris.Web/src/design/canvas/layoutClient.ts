@@ -12,7 +12,7 @@ export type WorkerLike = {
 };
 
 /** Nodes plus edges from which a layout is sent to a worker: measured, the layered layout passes 50 ms near here. */
-export const WORKER_FROM = 4000;
+export const WORKER_FROM = 8000;
 
 export const weight = (scene: Scene): number => scene.nodes.length + scene.edges.length;
 
@@ -48,7 +48,7 @@ export function createLayoutClient(spawn: (() => WorkerLike) | null, workerFrom 
   return {
     revision: () => latest,
     cancel,
-    dispose: () => { cancel(); },
+    dispose: () => { cancel(); stop(); },
     run: (scene) => {
       latest += 1;
       const revision = latest;

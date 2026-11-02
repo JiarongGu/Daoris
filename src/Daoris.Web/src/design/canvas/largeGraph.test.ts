@@ -3,7 +3,7 @@ import { syntheticScene } from './canvasFixtures';
 import { findMatches, stepMatch } from './findNodes';
 import { createLayoutClient, type WorkerLike } from './layoutClient';
 import { layoutScene, NODE_H, NODE_W } from './layoutScene';
-import { minimapGeometry, viewAtMinimap, wantsMinimap } from './minimap';
+import { minimapGeometry, viewAtMinimap, wantsMinimap } from './minimapRule';
 import { buildGrid, nearestWay, queryGrid } from './spatialGrid';
 import { budgeted, CULL_PAST, mountedIds, tierAt, viewRect } from './tiers';
 import { anchorOf, graphIdentity, keepView, memoryKey, recallView, restoreView } from './viewMemory';
