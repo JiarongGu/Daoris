@@ -459,6 +459,43 @@ the read's findings are settled here before wave 1 merges. Settled now:
 
 1. **WORKSETUP1 applies on wave 2.** The work workspace's set-up over its 29 repositories waits for waves 1 and 2 and applies on
    the new *Set up…*, so it is written once in the new shape and never converted.
-2. **Waves 1 and 2 are the next update the owner's install takes** after REVIEW2's page and checks fixes; DOGFOOD1's rows go
-   through that install.
+2. **The install's order** (§13 point 6): the next update carries REVIEW2's fixes, the sitting follows on it, and waves 1 and 2 ship
+   with 1y in the update after; DOGFOOD1's rows go through the install from the next update.
 3. **Row j** is taken only if the census on the owner's home finds a work cycle; the measurement in §11 decides it before wave 1 ends.
+
+## 13. Settled after Opus's read
+
+Opus's read (`docs/2026-11-02-workflow-cleanup-reads.md`) is taken whole; these amend §1 to §9, and each row carries its part.
+
+1. **Row 1a** (B1, B2, B11, B12's admission half): Current is reached only by a home with no default — a kind with no default falls
+   to the home default (`WorkflowSelection.cs:224`; D157 point 10 noted) and `current` as a development route's choice is refused at
+   every door (the landed route's `current` stays); the bind keeps resolving a version's open options over the place's rule where one
+   exists until the conversion writes them into the version (derived defaults only where no rule exists); the reach consent names
+   every place following the home default; admission reads the rule's `integrate` where `linePolicies` holds none, until the
+   conversion moves it. `SET_LANDING` is refused only where the place follows a saved workflow; the dark window keeps writing rules
+   until the lit wave (point 6).
+2. **Row 1b** (B3): a `land` with no `method` is refused at the save; `handed-refused` is gated like F47 (`saved && onSave`), so a
+   stored version's `workflow show` and the decoder are not refused.
+3. **Row 1c** (B4, B7, B8): a `land` run's process carries the bound `land` in place of the live rule, and each reader the read lists
+   (`TreeLands`, `CurrentDeliveries`, `Land()`, `AutoLander`, `EntryLands`, `OpinionGateLook`, `IntegrateChoice`, the run graphs, the
+   proposals, `LANDING`'s preview) moves to the intent; §2.2's word-and-wait is for `land` runs, with Current, steps and `handed` units
+   landing at their doors as the transitional path, and `LAND_ASK`, `ASK_LANDING` and `trees land --entry|--ask` added; each open
+   `CarriedAccepts` entry of a `land` run is adopted as its word's `repair` and each open due entry closed, proved across the update.
+   A press on a `land` run with no review and LANDBACK1's carrier when the performer is refused for uncommitted work are named.
+4. **Row 1e** (B5, B6, B9, B10, B12's race half): a place on Current with no rule follows the home default with nothing written, and
+   a Current graph matches a shipped copy by normalised shape, not by digest; the `handed` lift reproduces `GateSteps`' reading over
+   `LandingRules.Effective` exactly; the census and translator read the raw keys through their own `Workflows/Legacy/` readers, so row
+   z deleting Current's derivation leaves the conversion working; `sessionChecks` converts to `claimed.checks` and is removed at the
+   apply, its writes refused for a place on a saved workflow; the open Current units are judged again inside the apply's edit under
+   the start lock; census item 7 gives each open old run a door to end it.
+5. **Row z** (B9, B10): an update to z or later is refused while the home's census counts an open old-engine run; if row j is not
+   taken, z deletes `workCycles` and its doors.
+6. **The lit wave** (B13; D227 point 4's order kept): the sitting comes first. After the next update (REVIEW2's fixes), SETUPUX1x is
+   sat on the owner's install with the place page turned on for the sitting, and what it finds is fixed; waves 1 and 2 then ship with
+   1y in the same update, so the window that update ships is the lit one and no retired write is left to a hidden page.
+7. **The rest** (non-blocking): the chat-flow design's §4.5 and CHATFLOW1f are amended for word-and-wait, and the chat press becomes
+   it (row 1d); `LAND_WITHOUT_LOOK`'s skip reaches a Current-bound chat's look until z; *Undo* removes the `defaultWorkflow` and
+   `linePolicies` it wrote; `SET_OPINION none` and `SET_REVIEW required` are refused for a place on a saved graph; the access refusal
+   sits in the shared edit; `GraphOfCurrent` leaves the opinion's reviewers open; line-policy inheritance per level is said in the
+   plan; the clean-up keeps the end judgement the door's tidy wrote; ONEWAY1 names D190 point 7; `LAND_ENTRY` on a mixed entry and
+   `workflow convert --apply` with no Daoris running are said.
