@@ -1686,7 +1686,7 @@ test("a merge that changes the web's sources blocks on its typecheck, and one th
   // A merge that changes nothing it reads skips it, even a path the lane table places nowhere.
   for (const paths of [service, ['src/Daoris.Web/e2e/rail.spec.ts'], ['src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs'], ['TASKS.md']]) {
     // The desktop's sources reach the censuses' path check (REVIEW2 T6), and nothing else here.
-    assert.deepEqual(mergeRuns(paths), paths[0].startsWith('src/Daoris.Desktop/') ? [...BLOCKING, 'censuses'] : BLOCKING, paths[0]);
+    assert.deepEqual(mergeRuns(paths), paths[0]!.startsWith('src/Daoris.Desktop/') ?[...BLOCKING, 'censuses'] : BLOCKING, paths[0]);
     assert.equal(runs(paths).includes('web-types'), false, `--gated: ${paths[0]}`);
     assert.equal(stalens(paths).includes('web-types'), false, `its verdict stands: ${paths[0]}`);
   }
@@ -1720,7 +1720,7 @@ test("a merge that changes the web's sources blocks on its design and structure 
   // A merge that changes nothing it reads skips it, even a path the lane table places nowhere.
   for (const paths of [service, ['src/Daoris.Web/e2e/rail.spec.ts'], ['src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs'], ['TASKS.md']]) {
     // The desktop's sources reach the censuses' path check (REVIEW2 T6), and nothing else here.
-    assert.deepEqual(mergeRuns(paths), paths[0].startsWith('src/Daoris.Desktop/') ? [...BLOCKING, 'censuses'] : BLOCKING, paths[0]);
+    assert.deepEqual(mergeRuns(paths), paths[0]!.startsWith('src/Daoris.Desktop/') ?[...BLOCKING, 'censuses'] : BLOCKING, paths[0]);
     assert.equal(runs(paths).includes('web-rules'), false, `--gated: ${paths[0]}`);
     assert.equal(stalens(paths).includes('web-rules'), false, `its verdict stands: ${paths[0]}`);
   }
