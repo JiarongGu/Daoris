@@ -7,6 +7,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// folder; a bridge domain's handler class is a <c>*Routes.cs</c> in <c>Bridge/Routes/</c> and the only file that marks a
 /// route. The rules are held on sources made in memory, one case each, and then run over the library's own tree.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed class StructureTests
 {
     private static readonly StructureMap Map = new(

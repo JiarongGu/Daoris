@@ -23009,3 +23009,9 @@ The row is quoted by its head; its whole text and proof are the foundation desig
   - **HELPBROWSERBEFORE1** — what browser Ask Daoris reached before 2026-10-16. Dropped: a duplicate of work already built or kept elsewhere (the triage).
 
 The 26 pointer lines of the parked file's head (the owner's reports and features whose rows are built, archived, moved into `TASKS.md` or triaged above) are removed with them.
+
+## REVIEW2 — a full code review of the session's changes (2026-11-02)
+
+- [x] **REVIEW2 — a full code review of the session's changes** (reviewers by area, read-only; after the current waves merge). FABRIC2, LANDNODE1, AGENTSPLACE1, SETUPUX1, FLOWCHART2, I18NOPEN1 and their fixes changed the driver, the modules, the service and the page in a short time; reviewers by area (the driver's landing and workflows, the routes and authority, the service and Ask Daoris, the page's flows, tests and checks) find what the merges missed, each finding verified against the code. Proof: the findings, each fixed on main or filed as a row.
+
+  **Done 2026-11-02.** Five areas read over `f0674b65a..` main: 47 findings, 18 blocking, each fixed on main by a fixer that verified it first (the FIX-LOG's entries of 2026-11-02), the record `docs/2026-11-02-review2-findings.md`. What the fixes left is REVIEW2-LEFT1. The review also changed how merges are checked: merges go through `tools/merge-branch.mjs`, a `censuses` gate runs every census, and the post-merge CI keeps going past a red.

@@ -612,6 +612,25 @@ function trxClasses(trx) {
   return classes;
 }
 
+/**
+ * REVIEW2 T1: a trx's classes with a test that did not execute (a skip), by full name. A proof that needs a machine's own tool
+ * (an sshd) skips where the machine lacks it and reports green; the check names each such class so the skip is seen.
+ */
+export function trxSkipped(trx) {
+  const classOf = new Map();
+  for (const [, id, body] of trx.matchAll(/<UnitTest\b[^>]*\bid="([^"]+)"[^>]*>([\s\S]*?)<\/UnitTest>/g)) {
+    const name = /<TestMethod\b[^>]*\bclassName="([^"]+)"/.exec(body)?.[1];
+    if (name) classOf.set(id, name.replace(/&amp;/g, '&'));
+  }
+  const skipped = new Set();
+  for (const [tag] of trx.matchAll(/<UnitTestResult\b[^>]*>/g)) {
+    if (!/\boutcome="NotExecuted"/.test(tag)) continue;
+    const id = /\btestId="([^"]+)"/.exec(tag)?.[1];
+    if (id && classOf.has(id)) skipped.add(classOf.get(id));
+  }
+  return [...skipped].sort();
+}
+
 async function main(argv) {
   const [verb, ...rest] = argv;
   const root = process.cwd();
@@ -670,7 +689,10 @@ async function main(argv) {
         // A half run by reach kept classes out by its own run settings (PROCREACH1's `reachSettings`): those did not run, by design.
         const settings = join(dir, `${gate}.process.runsettings`);
         const kept = new Set(existsSync(settings) ? [...readFileSync(settings, 'utf8').matchAll(/FullyQualifiedName!~([^&<)]+?)\\?\.(?=&|<|\))/g)].map((match) => match[1].replace(/\\(.)/g, '$1')) : []);
-        reports[gate] = { ran: trxClasses(readFileSync(join(dir, file), 'utf8')), kept };
+        const trx = readFileSync(join(dir, file), 'utf8');
+        reports[gate] = { ran: trxClasses(trx), kept };
+        const skipped = trxSkipped(trx);
+        if (skipped.length) console.log(`test-map: ${gate} skipped on this machine, so these proofs did not run: ${skipped.join(', ')}`);
       }
     }
     const failures = checks(files, read, map, {

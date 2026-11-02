@@ -21,7 +21,7 @@ public sealed class GitHttpsProcessTests : IDisposable
     private const string User = "fixture-user";
     private const string Token = "fixture-token-not-a-secret";
 
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-git-https-process-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _root = Path.Combine(GitSeed.RepoRoot(), "_fixtures", "git-https-process", Guid.NewGuid().ToString("N")[..8]);
     private readonly List<(string Host, string User)> _stored = [];
 
     private string Home => Path.Combine(_root, "data");
@@ -50,7 +50,7 @@ public sealed class GitHttpsProcessTests : IDisposable
             try { GitIdentityHttps.EraseAsync(Home, "http", host, user, CancellationToken.None).GetAwaiter().GetResult(); } catch (DriverException) { }
         }
 
-        try { Directory.Delete(_root, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        GitSeed.Discard(_root);
     }
 
     private void LayDoors()
@@ -123,6 +123,16 @@ public sealed class GitHttpsProcessTests : IDisposable
     {
         _stored.Add((host, User));
         return await GitIdentityHttps.AddHttpsAsync(Home, host, "Fixture host", User, null, null, Token, "http", CancellationToken.None);
+    }
+
+    /// <summary>A machine with no manager skips the others and says why; the skip is the manager's absence and nothing else.</summary>
+    [Fact]
+    public void A_machine_without_a_manager_skips_the_signed_in_facts_and_says_why()
+    {
+        var skip = new GcmFactAttribute().Skip;
+
+        Assert.Equal(!OperatingSystem.IsWindows() || GitHttps.Manager(Environment.GetEnvironmentVariable) is null, skip is not null);
+        Assert.True(skip is null || skip.Contains("Git Credential Manager", StringComparison.Ordinal));
     }
 
     [GcmFact]

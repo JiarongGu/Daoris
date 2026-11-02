@@ -10,6 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// below with what it is that is not a wait on a signal (a bound that states the claim, a window in which nothing should happen,
 /// a staging delay, or an input the product itself honours), and a new one, or one gone, fails until the list says so.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed class ShortWaitsCensusTests
 {
     private const string Units = "Milliseconds|Seconds|Minutes|Hours";

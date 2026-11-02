@@ -7,6 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// The one reader of a remote's address (GITAUTH1b; the git-auth design §4.4): it takes Daoris's own prefix off, once, and no other
 /// code of the desktop's reads <c>remote get-url</c> or <c>remote -v</c>, so no address Daoris keeps, says or judges carries the prefix.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed class GitRemotesTests
 {
     private static readonly string[] Projects = ["Daoris.Desktop.Driver", "Daoris.Desktop.Driver.Host", "Daoris.Desktop.Modules", "Daoris.Desktop.App"];

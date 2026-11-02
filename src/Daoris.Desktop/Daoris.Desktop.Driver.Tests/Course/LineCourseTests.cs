@@ -17,6 +17,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <para>Where two paths answer the same facts two ways, the table holds both rows and the decision tells them apart by the trigger or a
 /// fact: the differences, each a decision for the row that adopts it (h for conversations, i for driven lines), in D212's note.</para>
 /// </remarks>
+[Trait(Category.Name, Category.Census)]
 public sealed class LineCourseTests
 {
     private static readonly DateTimeOffset Seen = new(2026, 10, 3, 15, 0, 0, TimeSpan.Zero);
@@ -249,6 +250,8 @@ public sealed class LineCourseTests
         ["D-06"] = new(T.LimitEnd, Later(Live(Chat(P()) with { Limited = true, Choice = "pick" }, WaitsWalk()), "other", "2")),
         ["D-07"] = new(T.LimitEnd, Live(Chat(P()) with { Limited = true }, WaitsWalk())),
         ["D-08"] = new(T.LimitEnd, Earliest(Live(Chat(P()) with { Limited = true }, Goes(Own)), Cools(Own, 2))),
+        // STAFFPOLICY1d: the role that took the conversation's work is the added one, whose next choice the walk reads.
+        ["D-09"] = new(T.LimitEnd, Later(Live(Chat(P()) with { Limited = true, Role = "night" }, WaitsWalk()), "other", "2")),
 
         // ——— A: the driven go-on.
         ["A-01"] = new(T.WordsKept, Ended(Driven("Taken", P()), Resumes)),
@@ -455,6 +458,9 @@ public sealed class LineCourseTests
 
     // ——— The table.
 
+    /// <summary>The facts the course reads, by the name of each of <see cref="CourseFacts"/>'s members.</summary>
+    private static readonly string[] CourseFactNames = [.. typeof(CourseFacts).GetConstructors()[0].GetParameters().Select(parameter => parameter.Name!)];
+
     private sealed record Row(string Id, string Group, string Source, string Outcome);
 
     private sealed record Difference(string Name, IReadOnlyList<string> Rows, IReadOnlyList<string> Adopts, string Title);
@@ -498,7 +504,13 @@ public sealed class LineCourseTests
                 case "Left":
                 {
                     var parts = line.Split(' ');
-                    Assert.True(parts is ["out", _, _], $"a left-out line reads `out Suite.Method why`: {line}");
+                    // REVIEW2 T8: a case left out as a reading (R) names the fact it reads, one of the course's own, so the letter alone is no excuse.
+                    Assert.True(parts is ["out", _, not "R"] or ["out", _, "R", _], $"a left-out line reads `out Suite.Method why`, and `out Suite.Method R <fact>` for a reading: {line}");
+                    if (parts is [_, _, "R", var fact])
+                    {
+                        Assert.True(CourseFactNames.Contains(fact), $"{parts[1]}: reads {fact}, which is no fact of the course ({string.Join(", ", CourseFactNames)})");
+                    }
+
                     Assert.True(leftOut.TryAdd(parts[1], parts[2]), $"left out twice: {parts[1]}");
                     break;
                 }

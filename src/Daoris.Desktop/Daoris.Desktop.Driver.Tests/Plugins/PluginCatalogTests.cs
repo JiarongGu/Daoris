@@ -9,6 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the host that drives whatever is there and names no plugin. Every rule here had a twin in the CLI's `plugins.ts`, until it left
 /// with `daoris plugin`'s TypeScript (PUSH1f2f): these rows are the rules' one home.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed class PluginCatalogTests : IDisposable
 {
     private readonly string _home = Path.Combine(

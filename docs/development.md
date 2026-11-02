@@ -200,8 +200,10 @@ below). `<branch>` alone is still the merge in place, which follows. It runs the
 index check and the census of test units' check (`test-map`, below), and the web's typecheck (`web-types`, `npm run typecheck:web`, about a minute) when its paths reach the
 page's sources or its compiler's configuration: two sides that each typecheck may not together (MERGETSC1); and, where
 its paths reach the page's sources or its test configuration, the web's design and structure checks (`web-rules`, `npm
-run check:web-rules`: `design/tokens.test.ts` and `test/structure.test.ts` alone, a minute or two), which a story or a
-module broke twice before the CI beside's `web-unit` reached it (MERGEWEBRULES1). Every other
+run check:web-rules`: the design, structure, provider-census, presentational and page-measure tests alone, a minute or two), which a story or a
+module broke twice before the CI beside's `web-unit` reached it (MERGEWEBRULES1); and, where its paths reach the desktop's sources, the
+desktop's censuses (`censuses`: every test class that reads the sources by text carries `[Trait("Category","Census")]`, and the gate runs
+`dotnet test <project> --filter Category=Census` for the driver's tests and the modules', REVIEW2 T6). Every other
 gate its paths reach is listed and skipped, "in the CI beside": the CI (`--ci`, below) gates main's
 tip after a merge or batch; fix what it reports. `--gated` runs what the paths reach, for a risky merge; the full set
 is still required before any stage (GATESLIM1, D115).

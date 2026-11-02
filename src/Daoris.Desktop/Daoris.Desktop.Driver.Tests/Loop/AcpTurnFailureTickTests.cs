@@ -32,7 +32,7 @@ public sealed class AcpTurnFailureTickTests : IDisposable
 
     public void Dispose()
     {
-        try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        GitSeed.Discard(_home);
     }
 
     [Fact]

@@ -8,6 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// unit's id and a landing's <c>Units</c>, the traces kept on the forget path with an open unit never pruned, the cross-process lock
 /// on the two files, and the one writer (canary 9). Files only; the judgement over real git is <see cref="HeldFactsGitTests"/>'.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed partial class HeldFactsTests : IDisposable
 {
     private static readonly DateTimeOffset Then = new(2026, 10, 17, 9, 0, 0, TimeSpan.Zero);

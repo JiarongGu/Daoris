@@ -8,6 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// work, by the revision of that role the start kept on its binding; a role taking <c>design</c> is admitted on a record whose marks read
 /// <c>build</c>. Where the marks and the role would differ the marks decide the work.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed class RoleCensusTests : IDisposable
 {
     private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "role-census", Guid.NewGuid().ToString("N")[..8]);

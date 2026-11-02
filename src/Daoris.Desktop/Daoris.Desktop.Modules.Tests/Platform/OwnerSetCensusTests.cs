@@ -13,6 +13,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// that only names one is <c>none</c> only from the reviewed exemptions below, and a mutating route declaring <c>none</c>, or listing
 /// itself an exemption, fails.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed class OwnerSetCensusTests
 {
     /// <summary>

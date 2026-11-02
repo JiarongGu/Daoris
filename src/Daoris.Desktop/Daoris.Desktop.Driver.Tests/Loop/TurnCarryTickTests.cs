@@ -34,7 +34,7 @@ public sealed class TurnCarryTickTests : IDisposable
 
     public void Dispose()
     {
-        try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        GitSeed.Discard(_home);
     }
 
     /// <summary>TURNWAIT1's case, whole: the check runs on, the quest is done, the fix is uncommitted; the commit comes on the carry-on.</summary>

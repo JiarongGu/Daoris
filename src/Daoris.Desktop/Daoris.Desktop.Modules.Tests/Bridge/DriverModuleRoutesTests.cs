@@ -17,6 +17,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// bridge's one call onto this module; the argument of a helper that forwards its own to <c>call</c>
 /// (<see cref="Forwarders"/>); or the route after <c>'DAORIS.DRIVER'</c> in a direct <c>invoke</c>.</para>
 /// </remarks>
+[Trait(Category.Name, Category.Census)]
 public sealed partial class DriverModuleRoutesTests
 {
     /// <summary>The bridge's helpers that send their route argument on to <c>call</c>, besides <c>call</c> itself.</summary>

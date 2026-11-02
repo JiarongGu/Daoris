@@ -47,4 +47,11 @@ internal static class Category
 
     /// <summary>Starts git and nothing a neighbour's load could fail: runs four at once with the others so marked.</summary>
     public const string Git = "Git";
+
+    /// <summary>
+    /// A class that reads the project's sources by text (<c>SourceFiles.All</c> and the like): the censuses. The <c>censuses</c> gate runs
+    /// <c>--filter Category=Census</c>, a minute at most, so a change that adds a source the census would refuse is seen in a minute
+    /// (REVIEW2 T6). <c>CensusTraitTests</c> holds that every such class carries it.
+    /// </summary>
+    public const string Census = "Census";
 }

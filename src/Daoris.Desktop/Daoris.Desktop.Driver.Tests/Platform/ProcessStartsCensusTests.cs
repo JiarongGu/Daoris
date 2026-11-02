@@ -19,6 +19,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <see cref="AgentStarts"/>, which makes its start the launcher's and passes the gate; every other start through the gate is named as
 /// Daoris's own, with its reason, so an agent's start written outside the route is named here.</para>
 /// </remarks>
+[Trait(Category.Name, Category.Census)]
 public sealed class ProcessStartsCensusTests
 {
     private static readonly string[] Projects =

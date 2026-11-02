@@ -15,6 +15,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// dispatchers' own keeps are named too (<see cref="Dispatchers"/>): a fresh dispatcher answered <c>continued</c> must hold, queue, steer, attempt and
 /// write nothing on its old door, never fall back to holding the word in this process as it does for a refusal from a host before COWORK1c.
 /// </remarks>
+[Trait(Category.Name, Category.Census)]
 public sealed partial class ContinuedReadersCensusTests
 {
     private enum How

@@ -8,6 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// listens on every interface, as `IPAddress.Any` and `IPAddress.IPv6Any` do; the suites' own servers listen on
 /// `IPAddress.Loopback` or `127.0.0.1`. The rule is held on sources made in memory, then over every test project here.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed class LoopbackListensTests
 {
     [Fact]

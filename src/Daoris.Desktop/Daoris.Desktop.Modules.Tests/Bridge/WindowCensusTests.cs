@@ -14,6 +14,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// Moving an owed read is its <c>[ByEvent]</c> mark, its page hook through <c>askHeld</c>, its row in
 /// <c>DriverModuleHeldTests.Payloads</c>, and its name taken out of <see cref="Owed"/>.
 /// </remarks>
+[Trait(Category.Name, Category.Census)]
 public sealed class WindowCensusTests
 {
     /// <summary>The reads that answer only from memory, each with what it reads.</summary>

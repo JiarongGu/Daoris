@@ -18,4 +18,7 @@ internal static class Category
     public const string Name = "Category";
 
     public const string Process = "Process";
+
+    /// <summary>A class that reads the project's sources by text: the censuses, run alone by the <c>censuses</c> gate (REVIEW2 T6).</summary>
+    public const string Census = "Census";
 }

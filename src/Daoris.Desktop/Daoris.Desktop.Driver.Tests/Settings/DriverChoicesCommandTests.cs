@@ -135,6 +135,48 @@ public sealed class DriverChoicesCommandTests : IDisposable
         Assert.False(File.Exists(Config));
     }
 
+    private IReadOnlyList<string> Approvals(string quest)
+    {
+        using var reader = DesktopStoreReader.Open(DesktopStore.LocationIn(_home));
+        return reader is null ? [] : reader.Query("SELECT role FROM role_moves WHERE line = $line AND kind = 'approved' ORDER BY id", row => row.GetString(0), ("$line", quest));
+    }
+
+    private DriverChoicesWorld Judging(Consideration verdict)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(Config)!);
+        File.WriteAllText(Config, """{ "adapter": "acp-stub", "actors": { "build": [ { "agent": "acp-stub", "model": "sonnet", "effort": "low" } ] } }""");
+        Assert.True(new RoleStaffing(_home, () => StoreSettled.Yes).ImportFile().How is StaffingImported.Done or StaffingImported.Already);
+        return World() with { Verbs = DriverChoiceVerbs.With((_, _) => Task.FromResult<IReadOnlyList<Consideration>>([verdict])) };
+    }
+
+    /// <summary>REVIEW2 T2: `driver retry` alone writes the yes to a role policy's ask as one approval for the quest and the role that took it.</summary>
+    [Fact]
+    public async Task A_retry_alone_of_a_quest_a_policy_holds_keeps_one_approval_for_its_role()
+    {
+        var quest = new QuestView("q7", "game", "engine", "A title", "A body.", "Taken");
+        var held = new PriorSession("s1", "trees/s1", "failed") { Actor = "build" };
+        var world = Judging(new Consideration(quest, StartVerdict.PolicyHeld, "the role's policy asks") { HeldBy = held });
+
+        var exit = await DriverChoicesCommand.RunAsync(["retry", "q7"], world, CancellationToken.None);
+
+        Assert.Equal(0, exit);
+        Assert.Equal(["build"], Approvals("q7"));
+        Assert.Contains("your yes to quest `#q7` is kept", _out.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task An_ordinary_parked_retry_alone_writes_no_approval()
+    {
+        var quest = new QuestView("q7", "game", "engine", "A title", "A body.", "Taken");
+        var world = Judging(new Consideration(quest, StartVerdict.Exhausted, "parked") { Failures = 3 });
+
+        var exit = await DriverChoicesCommand.RunAsync(["retry", "q7"], world, CancellationToken.None);
+
+        Assert.Equal(0, exit);
+        Assert.Empty(Approvals("q7"));
+        Assert.False(new StaffMoves(_home).Of("q7").Approved);
+    }
+
     [Theory]
     [InlineData("frobnicate")]
     [InlineData("workflows list")]
@@ -409,6 +451,7 @@ public sealed class DriverChoicesCommandTests : IDisposable
 
     public void Dispose()
     {
+        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
         GitSeed.Discard(_home);
     }
 }

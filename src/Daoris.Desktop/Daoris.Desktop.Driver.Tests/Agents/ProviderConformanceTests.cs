@@ -16,6 +16,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// environment are <see cref="ProviderConformanceEnvironmentTests"/>' (run alone), and the stand-ins' live cases
 /// <see cref="ProviderConformanceProcessTests"/>' (the Process half).
 /// </remarks>
+[Trait(Category.Name, Category.Census)]
 public sealed class ProviderConformanceTests(ITestOutputHelper output) : IDisposable
 {
     private readonly string _scratch = ConformanceScratch.New("in-process");
