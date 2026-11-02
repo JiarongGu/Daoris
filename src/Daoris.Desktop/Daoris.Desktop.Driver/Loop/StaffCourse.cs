@@ -62,7 +62,7 @@ internal static class StaffCourse
     /// moves on <c>transient</c>, the course decides, once. A move is counted and written; an ask or the bound's hold is the quest's typed hold.
     /// </summary>
     internal static (IReadOnlyDictionary<string, StaffMoving> Moving, IReadOnlyDictionary<string, string> Holds) Look(
-        StaffLedger? staff, Snapshot snapshot, DriverConfig config, DateTimeOffset now)
+        StaffLedger? staff, Snapshot snapshot, DriverConfig config, DateTimeOffset now, bool write = true)
     {
         var moving = new Dictionary<string, StaffMoving>(StringComparer.OrdinalIgnoreCase);
         var holds = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -99,6 +99,9 @@ internal static class StaffCourse
                 : DrivenCourse.PolicyEnd(last, quest.Status, fact);
             switch (course)
             {
+                // A read of the holds alone (a plan nobody looked for) decides nothing and writes no move.
+                case LineCourse.Move when !write:
+                    break;
                 case LineCourse.Move:
                     var from = ChoiceOf(last, policy)?.Text;
                     if (staff.Moves.Decided(
@@ -122,6 +125,21 @@ internal static class StaffCourse
         }
 
         return (moving, holds);
+    }
+
+    /// <summary>
+    /// <paramref name="snapshot"/> with the typed holds a role's policy leaves (<c>policy-ask</c>, <c>moves-bound</c>), read without deciding or
+    /// writing anything: what a plan nobody looked for (a terminal's, the retry door's, a window with no loop) answers, so it says the same hold
+    /// the loop's look does and <i>Try again</i> approves it as one move.
+    /// </summary>
+    internal static Snapshot Held(StaffLedger? staff, Snapshot snapshot, DriverConfig config, DateTimeOffset now)
+    {
+        if (staff is null) return snapshot;
+        var (_, holds) = Look(staff, snapshot, config, now, write: false);
+        var limit = LimitHolds(staff, snapshot);
+        return holds.Count == 0 && limit.Count == 0
+            ? snapshot
+            : snapshot with { PolicyHolds = holds.Concat(limit).ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase) };
     }
 
     /// <summary>

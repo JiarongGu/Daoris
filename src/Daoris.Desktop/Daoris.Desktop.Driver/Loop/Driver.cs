@@ -1171,7 +1171,7 @@ public sealed class Driver(
         snapshot = await Stages.TimeAsync("handovers", () => HandOversAsync(read, events, ct)).ConfigureAwait(false);
         // STAFFPOLICY1e: a quest whose last session ended past its transient bound under a role that moves on it: the course decides once, and
         // the move is written down before the planner reads it, so a restart or a second look reads the one decision.
-        var (policyMoving, policyHolds) = StaffCourse.Look(Context.Harnesses.StaffFor(home), snapshot, config, DateTimeOffset.UtcNow);
+        var (policyMoving, policyHolds) = StaffCourse.Look(Context.Harnesses.StaffFor(home), snapshot, config, Context.Harnesses.Clock());
         var limitHolds = StaffCourse.LimitHolds(Context.Harnesses.StaffFor(home), snapshot);
         snapshot = snapshot with { PolicyMoving = policyMoving, PolicyHolds = limitHolds.Count == 0 ? policyHolds : policyHolds.Concat(limitHolds).ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase) };
         // RETRYWORK1: the commits a failed session left beyond its start, for each open quest it failed before taking, so the planner
@@ -2349,7 +2349,7 @@ public sealed class Driver(
                     // STAFFPOLICY1e: a role that waits on a limit keeps the choice and waits for its accounts' reset (D197's walk of its
                     // accounts stays inside the choice), until its `upTo` has passed.
                     if (limitWalks && policyMove is null && cut.Limit
-                        && StaffCourse.LimitWait(Context.Harnesses.StaffFor(home), stepRole ?? RoleWork.Build, cut, DateTimeOffset.UtcNow) is LineCourse.Wait)
+                        && StaffCourse.LimitWait(Context.Harnesses.StaffFor(home), stepRole ?? RoleWork.Build, cut, Context.Harnesses.Clock()) is LineCourse.Wait)
                     {
                         limitWalks = false;
                     }

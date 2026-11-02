@@ -19,6 +19,8 @@ public sealed class StaffPolicyTransientTickTests : IAsyncLifetime
 
     private readonly string _repository;
 
+    private DriverConfig? _config;
+
     private static readonly ActorChoice First = new("acp-stub", "sonnet", "low");
 
     private static readonly ActorChoice Second = new("acp-other", "codex-mini", "high");
@@ -82,6 +84,7 @@ public sealed class StaffPolicyTransientTickTests : IAsyncLifetime
             },
             "build", [First, Second]);
 
+        _config = config;
         // The staffing in the home's store, with the policy the case sets through the role door, as the person's press would.
         var file = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         Directory.CreateDirectory(Path.GetDirectoryName(file)!);
@@ -235,6 +238,9 @@ public sealed class StaffPolicyTransientTickTests : IAsyncLifetime
         var verdict = Assert.Single(verdicts, each => each.Quest.Id == "q1");
         Assert.Equal(StartVerdict.PolicyHeld, verdict.Verdict);
         Assert.Equal(SittingFact.PolicyAsk, verdict.Said!.Code);
+        // A plan nobody looked for (the retry door with no loop's look, a terminal) says the same typed hold and approves the same way.
+        var fresh = await SessionGroups.VerdictsAsync(new ServiceClient(service.Url, null), _config!, SessionWire.Acp, lastLook: null, home: _home);
+        Assert.Equal(StartVerdict.PolicyHeld, Assert.Single(fresh, each => each.Quest.Id == "q1").Verdict);
         var decision = QuestRetry.Decide("q1", verdicts);
         Assert.Equal((RetryDecision.Approved, "build"), (decision.Did, decision.Approve));
         Assert.Empty(Moves());

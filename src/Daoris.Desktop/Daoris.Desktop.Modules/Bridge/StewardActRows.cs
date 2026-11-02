@@ -104,7 +104,7 @@ public sealed class DriverStewardWorld(DriverContext context) : IStewardWorld
     {
         var config = Config();
         return Loop.Look.Latest
-               ?? await SessionGroups.VerdictsAsync(Service, config, context.Door(config), lastLook: null, ct).ConfigureAwait(false);
+               ?? await SessionGroups.VerdictsAsync(Service, config, context.Door(config), lastLook: null, ct, Loop.Home).ConfigureAwait(false);
     }
 }
 
