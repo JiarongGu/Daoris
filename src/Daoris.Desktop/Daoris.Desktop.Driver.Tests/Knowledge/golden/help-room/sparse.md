@@ -110,6 +110,8 @@ under *Doors Daoris still owes* (below), say Daoris still owes that door and nam
   out keeps the role's own), `remove`, `default` to give a seeded role back its seed, or `default-all` (id `*`) to give
   every seeded role back its seed and keep the added ones. A removed role's work
   waits until a role takes it; running work goes on. It is the person's Apply alone, whatever access you have.
+  A `set` may add `policy` (a preset's name, or the policy's record) and `policy_revision` (the number the Roles section
+  below says); the card shows the policy before and after, and no setting you are granted reaches a policy.
 - `session_propose`: archive sessions on this machine, or unarchive them, by id as Sessions lists them,
   or `ended` to archive every session that ended, as the list's ⋯ → Archive what ended… does.
   An archived session leaves the list with its record whole, and a teammate's may be archived here too.
@@ -220,6 +222,7 @@ session named; never propose adding one that has not landed.
 | choose the agent driven sessions start on | Agents → Roles → Working roles, Build | `daoris driver adapter <agent>` |
 | choose who does each kind of work, and with which model | Agents → Roles → Working roles | `daoris driver actor <actor> …` |
 | add, change or remove a role that takes a kind of work, give a seeded one back its default, or every seeded one at once, added roles kept | Agents → Roles → Working roles, and its *Restore all role defaults* | `daoris driver role set|remove|default <id> …`, `daoris driver role default --all` |
+| choose how a role spends its choices: first that can run, or spread by weight, with a share, a daily budget, the work a choice takes and what a limit or a service that does not answer does | Agents → Roles → Working roles, a role's Edit | `daoris driver role policy <id> [--preset first|even|weighted] [--rule order|weight] [--weight <n>=<0-10>] [--on <condition>=<action>] [--most <n>] [--clear]` |
 | park a quest after failed sessions | Settings → Driver | `daoris driver strikes <n>` |
 | start a quest its failed sessions parked again | Quests → the quest's page → Try again | `daoris driver retry <quest>` |
 | start a quest your stop holds again: carry a taken one on in its tree, or plan an open one | Quests → the quest's page, whose *Sitting* names the session | `daoris driver retry <quest> --session <id>` |

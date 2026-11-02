@@ -511,6 +511,20 @@ public sealed partial class McpToolDescriptionTests
             && (name.Contains("log") || name.Contains("diff") || name.Contains("show") || name.Contains("write")));
     }
 
+    /// <summary>STAFFPOLICY1g: the role tool says a policy is a change of spending, shown before and after on the card, and names the moves it enforces.</summary>
+    [Fact]
+    public void The_role_tool_says_its_policy_is_shown_before_and_after_and_names_the_revision_it_reads()
+    {
+        var text = string.Join(" ", Descriptions().Where(d => d.Tool == "role_propose").Select(d => d.Text));
+
+        Assert.Contains("before and after", text);
+        Assert.Contains("a change of spending", text);
+        Assert.Contains("The policy revision you read", text);
+        Assert.Contains("\"moves\"", text);
+        Assert.Contains("\"most\"", text);
+        Assert.DoesNotContain("not enforce yet is refused. A change", text);
+    }
+
     // Not after `#`: an entry id's example (`…/DECISIONS.md#D12`) is an anchor in the reader's own
     // repository, not a citation of this one's.
     [GeneratedRegex(@"(?<![#\w])D\d{1,3}\b")]

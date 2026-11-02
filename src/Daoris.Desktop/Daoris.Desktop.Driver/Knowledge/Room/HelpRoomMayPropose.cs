@@ -103,6 +103,9 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  out keeps the role's own), `remove`, `default` to give a seeded role back its seed, or `default-all` (id `*`) to give\n");
         text.Append("  every seeded role back its seed and keep the added ones. A removed role's work\n");
         text.Append("  waits until a role takes it; running work goes on. It is the person's Apply alone, whatever access you have.\n");
+        // STAFFPOLICY1g (D226): a `set` may carry the role's policy, judged by the policy's judge and said on the card as before and after.
+        text.Append("  A `set` may add `policy` (a preset's name, or the policy's record) and `policy_revision` (the number the Roles section\n");
+        text.Append("  below says); the card shows the policy before and after, and no setting you are granted reaches a policy.\n");
         // SESSUX1h2b (D126 §5.2, §5.3): Sessions' Archive, Archive what ended… and Unarchive, judged as the list judges them. A stop
         // is the session's own conversation, which a go reaches (D161's SESSUX1h1 note).
         text.Append("- `session_propose`: archive sessions on this machine, or unarchive them, by id as Sessions lists them,\n");

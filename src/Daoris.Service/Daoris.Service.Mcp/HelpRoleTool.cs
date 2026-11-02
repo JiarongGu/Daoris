@@ -31,8 +31,11 @@ public sealed class HelpRoleTool(IntakeScope? intake = null, HelpProposalBox? he
             "A set's staffing policy, for a role with choices of its own: how its choices share new starts. A preset's name — `first` (the choices "
             + "in order, as before), `even` or `weighted` — or the record as JSON "
             + "(`{ \"rule\": \"weight\", \"choices\": [{ \"agent\": \"claude-code\", \"model\": \"sonnet\", \"effort\": \"high\", \"weight\": 3, \"share\": 60, "
-            + "\"budget\": { \"starts\": 6 }, \"takes\": [\"design\"] }] }`), or `none` to go back to no policy. This build enforces the rule, weights, "
-            + "shares, daily budgets of starts and works; a field it does not enforce yet is refused. A change of spending: say so. Left out keeps the role's own.")]
+            + "\"budget\": { \"starts\": 6 }, \"takes\": [\"design\"] }], \"moves\": { \"limit\": \"weighted\", \"transient\": { \"do\": \"next\", \"after\": 2 } }, "
+            + "\"most\": 3 }`), or `none` to go back to no policy. This build enforces the rule, weights, shares, daily budgets of starts, works, "
+            + "the moves on a limit and on a service that does not answer, and `most`; a field it does not enforce yet is refused. The person's card "
+            + "shows the policy before and after, in the words the room's Roles section says it in: a change of spending, so say so. Left out keeps "
+            + "the role's own.")]
         string? policy = null,
         [Description("The policy revision you read (`ROLES`' `policies`), so a policy changed since is refused rather than overwritten.")] long? policy_revision = null)
     {

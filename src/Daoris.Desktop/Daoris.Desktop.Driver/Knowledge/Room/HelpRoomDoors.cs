@@ -170,6 +170,11 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         ("add, change or remove a role that takes a kind of work, give a seeded one back its default, or every seeded one at once, "
             + "added roles kept", "Agents → Roles → Working roles, and its *Restore all role defaults*",
             "`daoris driver role set|remove|default <id> …`, `daoris driver role default --all`"),
+        // STAFFPOLICY1g (D226): how a role spends its choices, a policy proposed with `role_propose`'s `policy`; the terminal's twin names a choice by its number.
+        ("choose how a role spends its choices: first that can run, or spread by weight, with a share, a daily budget, the work a choice takes "
+            + "and what a limit or a service that does not answer does", "Agents → Roles → Working roles, a role's Edit",
+            "`daoris driver role policy <id> [--preset first|even|weighted] [--rule order|weight] [--weight <n>=<0-10>] [--on <condition>=<action>] "
+            + "[--most <n>] [--clear]`"),
         ("park a quest after failed sessions", "Settings → Driver", "`daoris driver strikes <n>`"),
         // SESSUX1b: FRAME1d made the quest's drawer a page. A stop's release names its session, since the terminal cannot
         // see which hold a quest is under (D50); the page's Try again on a stopped quest is the web shell's to add.

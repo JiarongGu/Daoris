@@ -1873,6 +1873,19 @@ public sealed partial class HelpCoverageTests
     }
 
     /// <summary>
+    /// STAFFPOLICY1g: <c>driver role policy</c>, a form of the <c>role</c> verb (the <c>role</c> kind's door), is named by the room with its
+    /// grammar and the screen that sets it, and its tool carries the policy and the revision it reads.
+    /// </summary>
+    [Fact]
+    public void The_role_verbs_policy_is_named_by_the_room_and_proposed_by_the_role_kind()
+    {
+        Assert.Contains(Verbs, row => row.Verb == "role" && row.Answer is Door { Kind: "role", Name: "set" });
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris driver role policy <id>", StringComparison.Ordinal)
+            && door.Screen.Contains("Working roles", StringComparison.Ordinal));
+        Assert.Contains("A `set` may add `policy`", HelpRoom.Render(new HelpMachine()));
+    }
+
+    /// <summary>
     /// GIT1c: the headless host's <c>git branches</c> is exempt from Ask Daoris (D147 §3.3, D110 §4) while its usage spells it:
     /// a read that changes nothing. The <c>git</c> kind GIT1k builds takes the acts, and never the read.
     /// </summary>
