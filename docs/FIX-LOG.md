@@ -12886,3 +12886,13 @@ mis-rooted instance.
 **Fix.** A name matching only ignoring case, or a field said twice, takes the strict class of the rule's two (`PipeRule.For`); `GIT_HISTORY_EDIT`'s rule names `said` as `Unless`, and its handler refuses `plan` beside `said`. The other rules (`TOOLS_GIT`, `PLUGIN_UPDATE`) read their field exact-case and first, and take the same casing rule.
 
 **Verified.** Red first: the new `PipeCensusTests` payloads and `A_history_edit_asking_for_its_plan_and_its_words_at_once_is_refused` failed (7); all pipe classes green after.
+
+## 2026-11-02 — `daoris-driver driver workflow` wrote alone beside a running Daoris, with no card
+
+**Symptom.** `workflow new|edit|apply|import|use|kind` saved a workflow or changed a place's choice from the terminal while the window ran, the only guard `DAORIS_SESSION_ID` (REVIEW2 finding 3).
+
+**Root cause.** `WorkflowVerb` ran before any `PressAsync` (`DriverChoicesCommand` runs a registered verb first), on the comment that no route takes a workflow write; `WORKFLOW_SAVE`, `WORKFLOW_USE`, `WORKFLOW_KIND` and `WORKFLOW_LANDED` have been Person routes since AGENTSPLACE1c.
+
+**Fix.** `DriverWorkflowsCommand` plans and says as before, then defers the write: `InstanceDoor.PressAsync` on the matching route (a file imported goes a version at a time; a verification-marked one, which the save cannot carry, is refused while Daoris runs), and the write is done here only where no instance answers or a named file is used; the session-terminal refusal now guards that alone path alone (output held until then), so the window's Confirm is the guard beside a running Daoris, as for every other press. The four routes join `ChoiceRoutes`.
+
+**Verified.** `Beside_the_running_Daoris_a_workflows_write_is_its_route_and_this_process_writes_nothing` (kind, use, new): the old code wrote the file here and sent nothing; the driver's workflow, verb-lease, choice and help-coverage classes green (633).
