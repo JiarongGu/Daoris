@@ -87,6 +87,11 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("cap", null, null, "3")]
     [InlineData("adapter", null, null, "claude-code-acp")]
     [InlineData("cooloff", null, null, "90")]
+    // GITAUTH1e: a repository's remote or a workspace's host pointed at an identity, or taken back.
+    [InlineData("git-use", "engine", null, "Work")]
+    [InlineData("git-use", "engine", null, "--remote upstream Work")]
+    [InlineData("git-use", "engine", null, "--clear")]
+    [InlineData("git-use", null, "work", "--host github.com Work")]
     // KEEP1d: each kind's keep rule, a kind and its rule, for this machine.
     [InlineData("keep", null, null, "set-aside 30")]
     [InlineData("keep", null, null, "set-aside whole")]
@@ -369,6 +374,10 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("cap", null, null, "0", "a whole number, 1 or more")]
     [InlineData("cooloff", null, null, "0", "a whole number of minutes, 1 or more")]
     [InlineData("cooloff", null, null, "soon", "a whole number of minutes, 1 or more")]
+    [InlineData("git-use", null, null, "Work", "name exactly one")]
+    [InlineData("git-use", "engine", "work", "Work", "name exactly one")]
+    [InlineData("git-use", "engine", null, "", "`git-use` is an identity's label or `--clear`")]
+    [InlineData("git-use", "engine", null, "--machine Work", "`git-use` is an identity's label or `--clear`")]
     [InlineData("keep", null, null, "trees 30", "`keep` names a kind and its rule")]
     [InlineData("keep", null, null, "set-aside", "`keep` names a kind and its rule")]
     [InlineData("keep", "engine", null, "set-aside 30", "for this machine")]

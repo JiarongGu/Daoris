@@ -996,15 +996,15 @@ public sealed partial class HelpCoverageTests
         ("git", "useGitIdentity", null, new Exempt(
             "an identity holds a key or a stored sign-in, so setting one up, importing a key file, testing it, trusting a host's key and removing "
             + "it are the person's own presses; Ask Daoris never creates, imports, tests, renames or removes one (D198, the design §9).")),
-        // The `git-use` door (a remote's or a workspace's host pointed at an existing identity, never `own`) goes into the service's list
-        // and writer with the driver's, which `HelpProposalKindsTests` holds equal: GITAUTH1e leaves it, saying so in D198's note.
-        ("git", "useSetGitUse", null, new Exempt(
-            "it points a scope at an identity, or at the person's own sign-ins, which is a widening only the person confirms; the `git-use` "
-            + "door for an existing identity (never `own`) is owed with the service's list (D198's GITAUTH1e note).")),
+        // The `git-use` door (a remote's or a workspace's host pointed at an existing identity, never `own`): the person applies it; choosing
+        // the person's own sign-ins stays their press in the page's own confirmation.
+        ("git", "useSetGitUse", null, new Door("setting", "git-use")),
         ("git", "useToolPick", null, new Exempt("it is the system's file picker, for the key file the person imports.")),
-        ("projects", "useSetGitUse", null, new Exempt(
-            "a remote's or a workspace's choice of identity, as Settings → Git's: the `git-use` door for an existing identity is owed with the "
-            + "service's list (D198's GITAUTH1e note), and choosing the person's own sign-ins stays their press.")),
+        ("projects", "useSetGitUse", null, new Door("setting", "git-use")),
+        // GITAUTH1f (D198, the git-auth design §9): git access is the person's own, as `SET_ACCESS` is, so no proposal sets it.
+        ("git", "useSetGitAccess", null, new Exempt(
+            "git access decides what a session's git may do on a remote and whether it asks, so loosening it is the person's own press, confirmed "
+            + "in place; no proposal names it, as none names full access (D198, the design §9).")),
         ("agents", "useHarnessInput", null, new Exempt("it types into a running sign-in, the person's own words to it; " + SignIn)),
         ("agents", "useHarnessCancel", null, new Exempt("it stops a sign-in the person started, theirs to stop; " + SignIn)),
         // UX6e (D150 §3.1): what the agent may do moved to its page, the rules for every session and the proposals with it.

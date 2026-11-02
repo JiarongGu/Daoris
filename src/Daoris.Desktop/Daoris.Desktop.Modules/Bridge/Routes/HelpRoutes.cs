@@ -647,6 +647,10 @@ public sealed class HelpRoutes(DriverContext context)
         // SET_ACTOR's own write: the staffing's (FOUNDATION1w-s).
         public void SetActor(string actor, IReadOnlyList<ActorChoice>? choices) => context.SetActor(actor, choices);
 
+        // GIT_USE's own write (GITAUTH1e): the pointer in the identities' file, and the holds it lifts.
+        public Task UseGitAsync(HelpGitUse use, CancellationToken ct) =>
+            ToolsRoutes.UseGitAsync(_loop.Home, _loop.Service, use.Scope, use.Repository, use.Workspace, use.Remote, use.Host, use.Identity, ct);
+
         // The ask composer's door, the local host's `POST /api/asks`, with its review choice and words (ENTRY1c). A named
         // environment the workspace does not declare is refused before anything is sent, as `daoris-driver ask --review` refuses
         // it: the service holds no rule, and the proposal's plan holds no repositories per workspace.
@@ -1040,6 +1044,8 @@ public sealed class HelpRoutes(DriverContext context)
             Circle = HelpCircle.OfRecord(_loop.Home, records?.FirstOrDefault(record => string.Equals(record.Id, conversation, StringComparison.OrdinalIgnoreCase))),
             // A landing rule naming a plugin is judged by the catalogue the landing route reads (HELP8, D100).
             Plugins = PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names),
+            // The identities a `git-use` proposal may point at: labels and hosts, never a key or a token (GITAUTH1e).
+            GitIdentities = [.. GitIdentities.Read(_loop.Home).Select(each => new HelpGitIdentity(each.Id, each.Label, each.Host, each.Way))],
             // A plugin is added from a registered checkout, never from the home, and may not shadow a
             // harness this build carries (PLUG9) — what `daoris plugin add` refuses.
             Home = _loop.Home,

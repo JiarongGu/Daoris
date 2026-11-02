@@ -589,10 +589,23 @@ public sealed class PipeCensusTests
     /// <c>profiles/</c> alone are keyed, kept in no record across a restart: today <c>DAORIS.REMOTES</c> <c>SET</c> alone, whose
     /// <c>key</c> is the workspace's deployment key (<c>remotes</c>, a <c>profiles</c> entry); each keyed route is a person's.
     /// </summary>
+    /// <summary>REVIEW2: a pasted token over the pipe would be kept in the waiting record and shown on the card, so the route refuses it.</summary>
+    [Fact]
+    public void A_git_identity_press_carrying_a_token_is_refused_whole()
+    {
+        var with = System.Text.Json.JsonDocument.Parse("""{"action":"add-https","host":"github.com","token":"x"}""").RootElement;
+        var without = System.Text.Json.JsonDocument.Parse("""{"action":"add-https","host":"github.com"}""").RootElement;
+
+        Assert.Contains("never sent over the pipe", PipeCensus.SecretRefusal("GIT_IDENTITY", with));
+        Assert.Null(PipeCensus.SecretRefusal("GIT_IDENTITY", without));
+        Assert.Null(PipeCensus.SecretRefusal("GIT_USE", with));
+    }
+
     [Fact]
     public void The_keyed_routes_are_the_remotes_set_alone_and_each_is_the_person_s()
     {
-        Assert.Equal(["DAORIS.REMOTES.SET"], PipeCensus.KeyedRoutes.Order(StringComparer.Ordinal));
+        Assert.Equal(new[] { "DAORIS.REMOTES.SET", $"{DriverModule.Name.ToUpperInvariant()}.GIT_IDENTITY" }.Order(StringComparer.Ordinal), PipeCensus.KeyedRoutes.Order(StringComparer.Ordinal));
+        Assert.True(PipeCensus.Keyed(DriverModule.Name, "GIT_IDENTITY"));
         Assert.Equal(Daoris.Driver.HomeCategory.Profiles, Daoris.Driver.HomeEntry.Remotes.Category);
         Assert.True(PipeCensus.Keyed("daoris.remotes", "SET"));
         Assert.False(PipeCensus.Keyed("DAORIS.REMOTES", "REMOVE"));

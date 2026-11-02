@@ -227,6 +227,7 @@ session named; never propose adding one that has not landed.
 | start a quest its failed sessions parked again | Quests → the quest's page → Try again | `daoris driver retry <quest>` |
 | start a quest your stop holds again: carry a taken one on in its tree, or plan an open one | Quests → the quest's page, whose *Sitting* names the session | `daoris driver retry <quest> --session <id>` |
 | set how long an account cools when its agent hits a limit and names no time | Settings → Driver → Cool-off when no time is named | `daoris driver cooloff <minutes>` |
+| point a repository's remote, or a workspace's host, at a git identity already set up (Ask Daoris proposes it; it never sets one up or chooses your own sign-ins) | Repository → Setup → Git remote → Change…, and Workspace → Setup → Git | `daoris-driver git use <repository> [--remote <name>] <identity>|--clear`, `daoris-driver git use --workspace <workspace> --host <host> <identity>|--clear` |
 | set how long Daoris keeps set-aside trees, unused downloads, the machine log or finished work's records | Settings → This Daoris → Disk space → Change… | `daoris driver keep <kind> <rule>` |
 | bound how many sessions run at once | Settings → Driver → Sessions at once on this machine | `daoris driver cap <n>` |
 | say so when a session parks | Settings → Driver | `daoris driver notify on|off` |

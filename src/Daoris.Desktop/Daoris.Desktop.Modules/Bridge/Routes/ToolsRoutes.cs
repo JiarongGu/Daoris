@@ -322,30 +322,43 @@ public sealed class ToolsRoutes(DriverContext context)
     [Publishes("GIT_USE", StateScopes.Tools | StateScopes.Driver)]
     private async Task<object?> GitUseAsync(IpcRequest request, CancellationToken cancellationToken)
     {
-        var home = _loop.Home;
         var scope = PayloadHelper.GetRequiredValue<string>(request.Payload, "scope");
-        var value = Optional(request, "value");
+        await UseGitAsync(_loop.Home, _loop.Service, scope, Optional(request, "repository"), Optional(request, "workspace"), Optional(request, "remote"),
+            Optional(request, "host"), Optional(request, "value"), cancellationToken).ConfigureAwait(false);
+        return new { Scope = scope };
+    }
+
+    /// <summary>
+    /// The choice <c>GIT_USE</c> makes, shared with Ask Daoris's <c>git-use</c> door (GITAUTH1e): a repository's remote, a workspace's
+    /// host or this machine's host pointed at an identity, at the person's own sign-ins or cleared.
+    /// </summary>
+    internal static async Task UseGitAsync(
+        string home, ServiceClient? service, string scope, string? repository, string? workspace, string? remote, string? host, string? value,
+        CancellationToken cancellationToken)
+    {
         switch (scope)
         {
             case "machine":
                 if (value is not (null or GitIdentityUse.Own)) throw new DriverException("this machine chooses the person's own sign-ins or nothing for a host; a host's identity is its default.");
-                GitIdentityActs.UseMachine(home, Needed(request, "host"), value is not null);
+                GitIdentityActs.UseMachine(home, host ?? throw new DriverException("`host` is needed."), value is not null);
                 break;
 
             case "workspace":
-                GitIdentityActs.UseWorkspace(home, Needed(request, "workspace"), Needed(request, "host"), value);
+                GitIdentityActs.UseWorkspace(home, workspace ?? throw new DriverException("`workspace` is needed."), host ?? throw new DriverException("`host` is needed."), value);
                 break;
 
             case "repository":
             {
-                var repository = Needed(request, "repository");
-                var service = _loop.Service ?? throw new DriverException("Daoris is not ready to read its repositories yet.");
-                var rows = LinesRoutes.Checkouts(await service.RegistryAsync(cancellationToken).ConfigureAwait(false), repository, Optional(request, "workspace"));
+                if (repository is null) throw new DriverException("`repository` is needed.");
+                if (service is null) throw new DriverException("Daoris is not ready to read its repositories yet.");
+                var registry = await service.RegistryAsync(cancellationToken).ConfigureAwait(false);
+                var rows = LinesRoutes.Checkouts(registry, repository, workspace);
                 var root = rows.Select(row => row.Root).FirstOrDefault(each => !string.IsNullOrEmpty(each) && Directory.Exists(each))
                     ?? throw new DriverException($"{repository} has no checkout here.");
                 var addresses = await GitRemoteRows.AddressesAsync(root, cancellationToken).ConfigureAwait(false);
-                GitFolders.Remember(home, rows.Where(row => !string.IsNullOrEmpty(row.Root)).Select(row => (row.Root!, row.Repository, row.Workspace)));
-                GitIdentityActs.UseRepository(home, repository, Optional(request, "remote") ?? "origin", value, addresses);
+                // Every checkout, as the verb remembers them: the file is written whole, so a lone repository's would drop the rest.
+                GitFolders.Remember(home, LinesRoutes.Checkouts(registry, null, null).Select(row => (row.Root!, row.Repository, row.Workspace ?? "")));
+                GitIdentityActs.UseRepository(home, repository, remote ?? "origin", value, addresses);
                 break;
             }
 
@@ -354,7 +367,6 @@ public sealed class ToolsRoutes(DriverContext context)
         }
 
         GitHolds.LiftAll(home, "pointer");
-        return new { Scope = scope };
     }
 
     private static string Needed(IpcRequest request, string name) =>
