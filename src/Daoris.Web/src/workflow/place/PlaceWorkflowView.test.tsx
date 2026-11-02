@@ -308,6 +308,23 @@ describe('Change… and Edit steps…', () => {
     expect(onOpen).toHaveBeenLastCalledWith(false);
   });
 
+  // REVIEW2 P1: Landed work is chosen only by its own press, so no panel opened on another route may reach a choice while it is the route shown.
+  it('stay out of the way on the landed route: Use here is not offered there, and the panel is for the route it opened on', async () => {
+    const using = editor();
+    draw({ editor: { ...using, onShow: vi.fn() }, current: withRoute(EFFECTIVE_CURRENT) });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Change…' }));
+    await userEvent.click(routeRow(/^Landed work:/));
+    expect(screen.queryByRole('region', { name: 'Change what its work follows' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Use / })).toBeNull();
+
+    await userEvent.click(routeRow(/^Default work:/));
+    await userEvent.click(screen.getByRole('button', { name: 'Edit steps…' }));
+    await userEvent.click(routeRow(/^Landed work:/));
+    expect(screen.queryByRole('heading', { name: 'Compose a workflow' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Use here' })).toBeNull();
+  });
+
   // SETUPUX1r: Edit steps… opens on the graph the selected route follows, and tells the editor the route and pipeline it was opened for.
   it("open the selected route's effective graph, a saved workflow's newest version as the version to append to, and tell the editor the route", async () => {
     draw({ editor: editor(), current: withRoute(EFFECTIVE_RELEASE, SAVED_DEFAULT) });

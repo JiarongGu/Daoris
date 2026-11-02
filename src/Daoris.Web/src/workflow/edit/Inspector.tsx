@@ -24,7 +24,7 @@ export type Confirming = 'remove' | 'earlier' | 'later' | null;
 export type InspectorActs = WaysActs & {
   onChange: (draft: GraphDraft, said: string) => void;
   /** A step's option set on the newest draft, not the one this render held: a role saved after a press lands on what the draft is by then. */
-  onOption: (option: string, value: unknown, said: string) => void;
+  onOption: (option: string, value: string | boolean | string[] | undefined, said: string) => void;
   onAfter: () => void;
   onMove: (dir: 'earlier' | 'later') => void;
   onDuplicate: () => void;

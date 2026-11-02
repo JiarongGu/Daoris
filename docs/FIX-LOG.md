@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-02 - On Landed work, Use here wrote the default route's choice (REVIEW2 P1)
+
+- **Symptom:** an open *Change…* or editor panel stayed open when *Landed work* was picked; its *Use here* reached `WORKFLOW_USE` with no kind, which the driver reads as the default route.
+- **Root cause:** the panel took the route from the page's current selection at every render, and only the two opening buttons were hidden on the landed route.
+- **Fix:** the panel records the route it opened on and keys *Change…* and the editor by it, writing for that route alone; on the landed route no panel is drawn (it is kept, and shows again on a route it can write for).
+- **Verify:** `PlaceWorkflowView.test.tsx` (REVIEW2 P1, red first).
+
 ## 2026-11-02 - A draft card's Open in the editor took the told draft for the saved version (REVIEW2 P4)
 
 - **Symptom:** *Use here* on an editor opened from a draft card chose a saved version without the draft's changes, and the save review compared the draft with itself.

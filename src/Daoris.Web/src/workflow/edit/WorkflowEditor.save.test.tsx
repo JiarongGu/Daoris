@@ -242,8 +242,7 @@ describe('Use here', () => {
   });
 
   it('does not take a told draft for the saved version: the baseline is that version read, and Use here waits for it (REVIEW2 P4)', async () => {
-    const user = userEvent.setup();
-    const told = { ...MERGE_GRAPH, nodes: [...MERGE_GRAPH.nodes, { id: 'extra', kind: 'line', version: 1, reach: 'observed' }] };
+    const told ={ ...MERGE_GRAPH, nodes: [...MERGE_GRAPH.nodes, { id: 'extra', kind: 'line', version: 1, reach: 'observed' }] };
     let answer = () => {};
     driver.show = (payload) => new Promise((resolve) => {
       answer = () => resolve({ ...SHOWN, version: payload.version, body: MERGE_GRAPH });
@@ -260,8 +259,7 @@ describe('Use here', () => {
     expect(screen.queryByRole('button', { name: 'Use here' })).toBeNull();
   });
 
-  it('offers Use here on a told draft once the version read is the draft itself (REVIEW2 P4)', async () => {
-    driver.show = (payload) => ({ ...SHOWN, version: payload.version, body: MERGE_GRAPH });
+  it('offers Use here on a told draft once the version read is the draft itself (REVIEW2 P4)', async () => {    driver.show = (payload) => ({ ...SHOWN, version: payload.version, body: MERGE_GRAPH });
     render(wrap(<Editor startFrom={{ graph: MERGE_GRAPH, id: 'docs-release', name: 'Docs release', base: 2, told: true }} />));
     expect(await screen.findByRole('button', { name: 'Use here' })).toBeInTheDocument();
   });

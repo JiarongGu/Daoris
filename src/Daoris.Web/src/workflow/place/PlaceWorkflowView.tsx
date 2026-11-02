@@ -61,7 +61,8 @@ export type PlaceWorkflowProps = WorkflowTabProps & {
 
 type EditStart = NonNullable<WorkflowEditorProps['startFrom']>;
 
-type Panel = { is: 'change' } | { is: 'edit'; from?: EditStart } | null;
+/** The panel open in place of the chart, and the route it opened on: what it writes is for that route, whichever route is shown after. */
+type Panel = { is: 'change'; route: string } | { is: 'edit'; route: string; from?: EditStart } | null;
 
 /**
  * What *Edit steps…* opens the editor on (SETUPUX1r): the graph the selected route follows. A saved workflow's newest version is the version
@@ -163,6 +164,7 @@ export function PlaceWorkflowView({
     const told = opens.draft ? toldGraph(opens.draft) : null;
     show({
       is: 'edit',
+      route: shown.route,
       ...(told ? { from: { graph: told, ...(opens.base != null && opens.workflow ? { id: opens.workflow, base: opens.base, told: true } : {}), ...(opens.name ? { name: opens.name } : {}) } } : {}),
     });
     onOpened?.();
@@ -192,8 +194,10 @@ export function PlaceWorkflowView({
   const answered = effective !== null && effective.route === routeKey ? effective : null;
   const steps = answered?.cells.map((cell) => cell.step) ?? current.steps;
   // The repository's own choice for the route, which *Use the workspace's* clears; a workspace's has none above it.
-  const ownChoice = page === 'repository'
-    && (start?.routes.find((each) => (each.kind === null ? 'default' : `kind:${each.kind}`) === routeKey)?.level ?? '').startsWith('repository');
+  const ownChoiceOf = (key: string) => page === 'repository'
+    && (start?.routes.find((each) => (each.kind === null ? 'default' : `kind:${each.kind}`) === key)?.level ?? '').startsWith('repository');
+  // Landed work is chosen by its own press, never by a panel: one opened on another route is kept but not shown there.
+  const open = panel && editor && !landed ? panel : null;
 
   const openSessions = () => {
     if (onOpenSection) onOpenSection('sessions');
@@ -228,14 +232,15 @@ export function PlaceWorkflowView({
     }]
     : [];
 
-  const chart = panel && editor
-    ? panel.is === 'edit'
+  const chart = open && editor
+    ? open.is === 'edit'
       ? (
         <WorkflowEditor
+          key={open.route}
           {...editor}
           place={place}
-          startFrom={panel.from ?? editStart(answered)}
-          route={routeKey}
+          startFrom={open.from ?? editStart(answered?.route === open.route ? answered : null)}
+          route={open.route}
           pipeline="development"
           lines={page === 'repository' && start?.landed.tip?.line ? [start.landed.tip.line] : undefined}
           onClose={() => show(null)}
@@ -243,12 +248,18 @@ export function PlaceWorkflowView({
       )
       : (
         <ChangeWorkflow
+          key={open.route}
           list={editor.list}
           error={editor.error}
           current={current}
           place={place}
-          route={{ key: routeKey, kind: routeKey.startsWith('kind:') ? routeKey.slice('kind:'.length) : null, label: kind, own: ownChoice }}
-          effective={answered}
+          route={{
+            key: open.route,
+            kind: open.route.startsWith('kind:') ? open.route.slice('kind:'.length) : null,
+            label: open.route.startsWith('kind:') ? rows.find((row) => row.key === open.route)?.label ?? null : null,
+            own: ownChoiceOf(open.route),
+          }}
+          effective={answered?.route === open.route ? answered : null}
           shown={editor.shown}
           onShow={editor.onShow}
           using={editor.using}
@@ -256,7 +267,7 @@ export function PlaceWorkflowView({
           onUse={editor.onUse}
           onPlan={editor.onPlan}
           onSave={editor.onSave}
-          onStartFrom={(from) => show({ is: 'edit', from })}
+          onStartFrom={(from) => show({ is: 'edit', route: open.route, from })}
           onClose={() => show(null)}
         />
       )
@@ -298,12 +309,13 @@ export function PlaceWorkflowView({
   const canChange = editor !== undefined && !landed;
   // *Ask Daoris* opens the editor on the chart's graph, so the conversation is told that draft with the person's next words (FLOWCHART2d),
   // and puts the start of a request in its box. The editor, once open, is not opened again.
+  const openEdit = () => show({ is: 'edit', route: routeKey, from: editStart(answered) });
   const askDaoris = () => {
-    if (panel?.is !== 'edit') show({ is: 'edit' });
+    if (open?.is !== 'edit') openEdit();
     fillAskDaoris(t('workflow.place.ask.fill', { place: name }));
   };
   const buttons = 'min-h-0 border border-line py-0.5 text-small';
-  const chartPress = !wide && !panel;
+  const chartPress = !wide && !open;
   const hasActs = chartPress || canChange;
 
   return (
@@ -324,8 +336,8 @@ export function PlaceWorkflowView({
             )}
             {canChange && (
               <>
-                <Button variant="ghost" className={buttons} onClick={() => show({ is: 'change' })}>{t('workflow.place.change.open')}</Button>
-                <Button variant="ghost" className={buttons} onClick={() => show({ is: 'edit' })}>{t('workflow.place.steps.open')}</Button>
+                <Button variant="ghost" className={buttons} onClick={() => show({ is: 'change', route: routeKey })}>{t('workflow.place.change.open')}</Button>
+                <Button variant="ghost" className={buttons} onClick={openEdit}>{t('workflow.place.steps.open')}</Button>
                 {canAsk && <Button variant="ghost" className={buttons} onClick={askDaoris}>{t('workflow.place.ask.open')}</Button>}
               </>
             )}
@@ -335,7 +347,7 @@ export function PlaceWorkflowView({
           <LandedLines landed={start.landed} page={page} repository={page === 'repository' ? name : null} onVerify={onVerify} apart />
         )}
         {!editor && <p className="m-0 text-meta text-ink-faint"><Inline text={t('workflow.compose.twin')} /></p>}
-        {!wide && (panel || chartShown) && chart}
+        {!wide && (open || chartShown) && chart}
         {landing ? landing({ asked: asked.section, again: asked.n, lead: gates }) : gates.length + repositories.length > 0 && <FoldRow folds={[...gates, ...repositories]} />}
       </div>
       {wide && (aside ? createPortal(<div className="min-w-0">{chart}</div>, aside) : <div className="min-w-0">{chart}</div>)}
