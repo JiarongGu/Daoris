@@ -25,7 +25,7 @@ public sealed class GitOwnInputScopedGitTests : IDisposable
     {
         var root = await RepositoryAsync(["http.https://host.example/org/.extraHeader", "Authorization: Bearer test-value"]);
 
-        Assert.Equal("http.extraHeader", await GitOwnInput.ScopedInputAsync(root, "https://host.example/org/repo.git", default));
+        Assert.Equal("http.https://host.example/org/.extraHeader", await GitOwnInput.ScopedInputAsync(root, "https://host.example/org/repo.git", default));
         Assert.Null(await GitOwnInput.ScopedInputAsync(root, "https://host.example/other/repo.git", default));
         Assert.Null(await GitOwnInput.ScopedInputAsync(root, "https://elsewhere.example/org/repo.git", default));
         Assert.Null(await GitOwnInput.ScopedInputAsync(root, "ssh://host.example/org/repo.git", default));
@@ -38,8 +38,8 @@ public sealed class GitOwnInputScopedGitTests : IDisposable
             ["http.https://host.example.cookieFile", "cookies.txt"],
             ["http.https://host.example/org/.sslCert", "client.pem"]);
 
-        Assert.Equal("http.cookieFile", await GitOwnInput.ScopedInputAsync(root, "https://host.example/x/y", default));
-        Assert.Equal("http.sslCert", await GitOwnInput.CertificateAsync(root, "https://host.example/org/y", default));
+        Assert.Equal("http.https://host.example.cookieFile", await GitOwnInput.ScopedInputAsync(root, "https://host.example/x/y", default));
+        Assert.Equal("http.https://host.example/org/.sslCert", await GitOwnInput.CertificateAsync(root, "https://host.example/org/y", default));
         Assert.Null(await GitOwnInput.CertificateAsync(root, "https://host.example/other/y", default));
     }
 

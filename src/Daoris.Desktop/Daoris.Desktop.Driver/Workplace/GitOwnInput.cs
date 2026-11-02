@@ -42,10 +42,29 @@ public static class GitOwnInput
         // git's own urlmatch decides which scoped setting wins for this address (a longer path, a user), not a prefix guess.
         foreach (var name in new[] { "sslCert", "sslKey" })
         {
-            if (await UrlMatchedAsync(root, $"http.{name}", address, ct).ConfigureAwait(false)) return $"http.{name}";
+            if (await UrlMatchedAsync(root, $"http.{name}", address, ct).ConfigureAwait(false))
+                return await NamedAsync(root, name, address, ct).ConfigureAwait(false);
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// The key the person set for <paramref name="name"/>, once urlmatch has found one applies: the scoped key whose address this one
+    /// starts with, the longest, else the unscoped one. git answers names lowercased, so the variable is spelled as git documents it.
+    /// </summary>
+    private static async Task<string> NamedAsync(string root, string name, string address, CancellationToken ct)
+    {
+        var (code, said, _) = await WorkingTree.GitAsync(
+            root, ["config", "--name-only", "--get-regexp", $@"^http\..*{name.ToLowerInvariant()}$"], ct).ConfigureAwait(false);
+        var bare = GitHttps.Bare(address);
+        var scopes = code != 0 ? [] : said.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(key => key.Length > $"http..{name}".Length)
+            .Select(key => key["http.".Length..^(name.Length + 1)])
+            .Where(scope => bare.StartsWith(scope, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(scope => scope.Length)
+            .ToList();
+        return scopes.Count > 0 ? $"http.{scopes[0]}.{name}" : $"http.{name}";
     }
 
     /// <summary>
@@ -57,7 +76,8 @@ public static class GitOwnInput
         if (TreeRefs.ReachOf(address) is not ("https" or "http")) return null;
         foreach (var name in new[] { "extraHeader", "cookieFile" })
         {
-            if (await UrlMatchedAsync(root, $"http.{name}", address, ct).ConfigureAwait(false)) return $"http.{name}";
+            if (await UrlMatchedAsync(root, $"http.{name}", address, ct).ConfigureAwait(false))
+                return await NamedAsync(root, name, address, ct).ConfigureAwait(false);
         }
 
         return null;
