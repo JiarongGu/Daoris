@@ -70,7 +70,9 @@ public sealed class AutoLander(
     /// <summary>Whether this process holds the home's lease, as the node records ask it; null asks the lease itself. A test's stand-in sets it.</summary>
     public Func<bool>? HoldsLease { get; init; }
 
-    private NodeRecordFiles Files => new(home, HoldsLease);
+    private IWorkplaceWorkflows Flows => WorkplaceWorkflows.Current;
+
+    private void TakeRepair(LandStart run) { if (run.Review is { } review) Flows.TakeRepair(home, HoldsLease, run.Unit, review); }
 
     // The performer's last try of each session, what a due entry's tries are to the look: a refusal is tried again only once the tree moves.
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, AutoTry> Performed = new(StringComparer.OrdinalIgnoreCase);
@@ -107,10 +109,7 @@ public sealed class AutoLander(
         if (choice is null) return said;
         var landed = await LandOneAsync(choice, fresh, ct).ConfigureAwait(false);
         // A repair outlives nothing that ended the landing: a landing or a refusal spends it.
-        if (start.Review is { } review && Performed_(record.Id) is { Code: var code } && AutoLandingCode.Closes(code) && code != AutoLandingCode.CarryBound)
-        {
-            RunRepairs.Take(Files, start.Unit, review);
-        }
+        if (Performed_(record.Id) is { Code: var code } && AutoLandingCode.Closes(code) && code != AutoLandingCode.CarryBound) TakeRepair(start);
 
         return landed;
     }
@@ -232,7 +231,7 @@ public sealed class AutoLander(
         if (carried is not null && LandCarry.Skips(newest))
         {
             if (run is null) accepts.Take(entry.Session);
-            else RunRepairs.Take(Files, run.Unit, run.Review!);
+            else TakeRepair(run);
             carried = null;
             if (offRule) return (Closed(entry, AutoLandingCode.Off), null);
         }
@@ -449,10 +448,10 @@ public sealed class AutoLander(
         // Counted and waiting before the words go: a session that goes on at once may end its turn before this look is done.
         // WORKFLOWCLEAN1 1c: a run's is the repair kept beside its review's word, which the pass spends where the tip only continues.
         if (run is null) new CarriedAccepts(home).CarriedOn(entry.Session);
-        else if (tip is not null) RunRepairs.Keep(Files, run.Unit, new NodeRepair(run.Review!, tip, key, carried.Carries + 1, Now()));
+        else if (tip is not null) Flows.KeepRepair(home, HoldsLease, run.Unit, run.Review!, tip, key, carried.Carries + 1, Now());
         if (await LandCarry.TellAsync(world.SayAsync, entry.Session, words, key, ct).ConfigureAwait(false) is not { Kept: true })
         {
-            if (run is not null) RunRepairs.Take(Files, run.Unit, run.Review!);
+            if (run is not null) TakeRepair(run);
             // Untold, nobody can clear it: the refusal is kept as it always was, the yes is taken back, and the person's review has the words.
             return why == LandCarry.Conflicted
                 ? Tried(entry, AutoLandingCode.Refused, tip, status, landed)
@@ -807,7 +806,7 @@ public sealed class AutoLander(
     /// </summary>
     private CarriedAccept? CarriedOf(AutoLanding entry, LandStart run) => run.Review is null
         ? null
-        : new CarriedAccept(entry.Session, entry.Tree, Now(), RunRepairs.Of(Files, run.Unit, run.Review)?.Carries ?? 0, Awaiting: false);
+        : new CarriedAccept(entry.Session, entry.Tree, Now(), Flows.RepairCarries(home, HoldsLease, run.Unit, run.Review), Awaiting: false);
 
     /// <summary>
     /// A due entry of a run whose <c>land</c> the runtime performs (WORKFLOWCLEAN1 1c), closed: its kept Accept (<see cref="CarriedAccepts"/>) is
@@ -816,17 +815,15 @@ public sealed class AutoLander(
     /// </summary>
     private async Task<string?> AdoptAsync(AutoLanding entry, CarriedAccept? carried, IWorkplaceProcess process, CancellationToken ct)
     {
-        if (carried is not null && process is WorkflowProcess { Graph: { } graph, BoundRun: { } run })
+        if (carried is not null)
         {
-            if (graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Review) is { } review)
+            var word = Flows.KeepReviewWord(home, HoldsLease, process, Now());
+            if (word.HasReview)
             {
-                var files = Files;
-                var worded = RunNodeWords.Word(files, run, review.Id, NodeWordActs.Accept, null, Now);
-                if (!worded.Done && worded.Refused != RunNodeWords.Worded) return null;
-                var unit = RunUnits.IdOf(run);
+                if (!word.Kept) return null;
                 if (carried.Carries > 0 && (await ReadTreeAsync(entry.Tree, ct).ConfigureAwait(false)).Tip is { } tip)
                 {
-                    RunRepairs.Keep(files, unit, new NodeRepair(review.Id, tip, CarryKeys.Of(entry.Session, tip, carried.Carries), carried.Carries, Now()));
+                    Flows.KeepRepair(home, HoldsLease, word.Unit!, word.Review!, tip, CarryKeys.Of(entry.Session, tip, carried.Carries), carried.Carries, Now());
                 }
             }
 

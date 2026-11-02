@@ -226,7 +226,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Nodes/WireEvaluation.cs` | 59 | 932 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Nodes/WorkPerformer.cs` | 70 | 1129 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/WorkflowOperations.cs` | 53 | 876 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/AutoLander.cs` | 66 | 949 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/AutoLander.cs` | 65 | 946 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/BranchTidying.cs` | 61 | 1086 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/ContentHolds.cs` | 42 | 648 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/IntegrationPromotes.cs` | 52 | 796 |

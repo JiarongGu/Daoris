@@ -399,5 +399,17 @@ public sealed class WorkplaceWorkflowsPortsTests : IDisposable
             Calls.Add($"land:{rule.Form}");
             return (rule.Form, "gph-0");
         }
+
+        public ReviewWord KeepReviewWord(string home, Func<bool>? holdsLease, IWorkplaceProcess process, DateTimeOffset now) => new(false, false, null, null, null);
+
+        public void KeepRepair(string home, Func<bool>? holdsLease, string unit, string review, string tip, string turn, int carries, DateTimeOffset at)
+        {
+        }
+
+        public void TakeRepair(string home, Func<bool>? holdsLease, string unit, string review)
+        {
+        }
+
+        public int RepairCarries(string home, Func<bool>? holdsLease, string unit, string review) => 0;
     }
 }

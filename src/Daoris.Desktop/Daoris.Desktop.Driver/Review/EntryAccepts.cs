@@ -79,11 +79,12 @@ public sealed class EntryAccepts(
         // WORKFLOWCLEAN1 1c (the cleanup design §2.2, §13 point 3): a part whose run's `land` the runtime performs is accepted by its review's
         // word and landed by that node at its pass; only the others land in place here, as the transitional path (§4.7).
         var accepted = new List<EntryPartLanding>();
-        foreach (var part in pressed.Where(each => each.Gate?.Process is WorkflowProcess { LandsByRuntime: true }).ToList())
+        foreach (var part in pressed.Where(each => each.Gate?.Process is { LandsByRuntime: true }).ToList())
         {
             pressed.Remove(part);
+            var word = WorkplaceWorkflows.Current.KeepReviewWord(home, null, part.Gate!.Process!, DateTimeOffset.UtcNow);
             accepted.Add(new EntryPartLanding(part.Session, EntryPartOutcome.Accepted,
-                new TreeLanding(false, AcceptWord((WorkflowProcess)part.Gate!.Process!) ?? "Accepted; Daoris lands it at its next pass.")));
+                new TreeLanding(false, word.Said ?? "Accepted; Daoris lands it at its next pass.")));
         }
 
         if (pressed.Count == 0) return new EntryLanding(false, "Accepted; Daoris lands each part at its next pass.", null, accepted);
@@ -109,7 +110,7 @@ public sealed class EntryAccepts(
 
         foreach (var part in landed.Parts)
         {
-            if (part.Landing is not { } its) continue;
+            if (part.Landing is not { } its || part.Outcome == EntryPartOutcome.Accepted) continue;
             if (its.Landed) events.Keep(part.Session, LandingRules.Note(its), line => say(part.Session, line));
             var gate = pressed.First(each => each.Session == part.Session);
             if (log is not null && gate.Gate!.Held(part.Session, trees.Owner(gate.Tree), its, door) is { } held)
@@ -119,17 +120,6 @@ public sealed class EntryAccepts(
         }
 
         return landed;
-    }
-
-    /// <summary>
-    /// The person's Accept kept as the run's review word (WORKFLOWCLEAN1 1c), where its review waits; a run whose graph holds none lands by
-    /// itself and needs no word. Null where the word was kept or none was needed.
-    /// </summary>
-    private string? AcceptWord(WorkflowProcess process)
-    {
-        if (process.Graph?.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Review) is not { } review || process.BoundRun is not { } run) return null;
-        var word = RunNodeWords.Word(new NodeRecordFiles(home), run, review.Id, NodeWordActs.Accept, null);
-        return word.Done || word.Refused is RunNodeWords.Worded or NodeRefusal.NotInTable ? null : RunNodeWords.Said(word);
     }
 
     /// <summary>
