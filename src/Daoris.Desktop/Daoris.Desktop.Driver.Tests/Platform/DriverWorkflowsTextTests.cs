@@ -12,6 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// own, the terminal in it: the same lines on each stream, the same exit, <c>driver.json</c> after it the same choices, and every other
 /// file it wrote the same. A row the port changes on purpose says why under <c>changed</c>.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed partial class DriverWorkflowsTextTests
 {
     private static readonly DateTimeOffset Now = DateTimeOffset.Parse("2026-10-09T09:12:34.567Z", System.Globalization.CultureInfo.InvariantCulture);

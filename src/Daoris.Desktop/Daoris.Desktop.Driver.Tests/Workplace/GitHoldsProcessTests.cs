@@ -51,7 +51,7 @@ public sealed class GitHoldsProcessTests : IDisposable
     public void Dispose()
     {
         foreach (var (name, value) in _was) Environment.SetEnvironmentVariable(name, value);
-        try { Directory.Delete(_root, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        GitSeed.Discard(_root);
     }
 
     private async Task Git(params string[] arguments)

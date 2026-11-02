@@ -13,6 +13,7 @@ namespace Daoris.Driver.Tests;
 /// What the room is and what it allows. Each section's own sentences are held beside it under
 /// <c>Knowledge/Room/</c>, and the room whole by <see cref="HelpRoomGoldenTests"/> (MOD6).
 /// </remarks>
+[Trait(Category.Name, Category.Census)]
 public sealed class HelpRoomTests : IDisposable
 {
     private readonly string _home = Path.Combine(

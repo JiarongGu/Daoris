@@ -14,6 +14,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// Every case has its own scratch home under <c>_fixtures/</c> and sets no variable of the process's environment. The start's confirmation
 /// is a reading each case holds in its hand; a kill before the commit is the import's own seam, which throws inside its transaction.
 /// </remarks>
+[Trait(Category.Name, Category.Census)]
 public sealed class RoleStaffingTests : IDisposable
 {
     private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "role-staffing", Guid.NewGuid().ToString("N")[..8]);

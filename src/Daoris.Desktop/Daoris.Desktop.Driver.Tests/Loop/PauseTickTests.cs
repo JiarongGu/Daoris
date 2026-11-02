@@ -42,7 +42,7 @@ public sealed class PauseTickTests : IDisposable
 
     public void Dispose()
     {
-        try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        GitSeed.Discard(_home);
     }
 
     private string ConfigPath => DaorisHome.Entry(_home, HomeEntry.DriverConfig);

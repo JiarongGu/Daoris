@@ -6,6 +6,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// <summary>
 /// Each repository's line, its landing rule and the clean-up over the bridge (`LinesRoutes.cs`, MOD5).
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed class DriverModuleLinesTests : DriverModuleBridge
 {
     /// <summary>

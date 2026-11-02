@@ -12,6 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the same world, and the commands the chain's but for the graph's wasted speculative starts and the shared <c>--show-toplevel</c>.
 /// The untracked window's held cases are held at w = 1 and w = 4.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed class ReviewGraphCensusTests : IDisposable
 {
     private const string Session = "aurora";

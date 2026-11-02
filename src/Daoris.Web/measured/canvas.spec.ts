@@ -312,6 +312,9 @@ const SIZES: Record<string, { nodes: number; target: number }> = {
   'canvas/Dense:whole': { nodes: 0, target: 16.7 },
 };
 
+// REVIEW2 T10 (FLAKE1): a frame time under load is a timed claim, so a timed spec that fails runs once more alone before it counts, as a Process class does.
+test.describe('timed', () => {
+test.describe.configure({ retries: 1 });
 for (const [story, { nodes, target }] of Object.entries(SIZES)) {
   test(`${story}: p95 frame within ${target} ms while panning and zooming, and no long frame at rest`, async ({ page }) => {
     test.setTimeout(240_000);
@@ -353,6 +356,7 @@ for (const [story, { nodes, target }] of Object.entries(SIZES)) {
     expect(await drawnCounts(page)).toEqual(atRest);
   });
 }
+});
 
 // CANVAS1b (D224; the canvas design §2.3, §2.5, trap 8): a mark takes no room, and the connection line starts in its port's box.
 

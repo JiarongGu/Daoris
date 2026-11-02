@@ -44,7 +44,7 @@ public static class ActorOpenings
         }
 
         /// <summary>The words for the role a start took: the seeded roles' own names, an added role's as written in the catalogue.</summary>
-        private static string NameOf(string home, string role, string actor)
+        internal static string NameOf(string home, string role, string actor)
         {
             if (string.Equals(role, actor, StringComparison.Ordinal) || ActorChoices.Ids.Contains(role, StringComparer.Ordinal)) return ActorWords.Name(role);
             try

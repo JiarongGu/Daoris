@@ -51,7 +51,7 @@ public sealed class SignInRefusalTickTests : IDisposable
 
     public void Dispose()
     {
-        try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        GitSeed.Discard(_home);
     }
 
     private string Log => Path.Combine(_home, "agent.log");
@@ -166,7 +166,7 @@ public sealed class SignInRefusalTickTests : IDisposable
     [Fact]
     public async Task A_start_refused_for_its_sign_in_with_no_other_account_free_ends_failed_and_waits()
     {
-        Directory.Delete(HarnessSettings.ProfileHome(_home, "stub", "account-2"), recursive: true);
+        GitSeed.Remove(HarnessSettings.ProfileHome(_home, "stub", "account-2"));
         new HarnessSettings().WithDefault("stub", "account-1").WithRotation("stub", ["account-1"])
             .Save(DaorisHome.Entry(_home, HomeEntry.Harnesses));
         await using var service = AskAndWaitTickTests.StandIn.Start(_repository);

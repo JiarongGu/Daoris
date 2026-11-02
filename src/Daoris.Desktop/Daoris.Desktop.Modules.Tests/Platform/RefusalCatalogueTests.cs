@@ -15,6 +15,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// <para>Checked from this side because this is the side that decides what codes exist. The web's own
 /// i18n gate asserts `en` and `zh` carry the same keys; this asserts they carry the right ones.</para>
 /// </remarks>
+[Trait(Category.Name, Category.Census)]
 public sealed class RefusalCatalogueTests
 {
     /// <summary>Walk up to the workspace root — the tests run from `bin/Debug/net10.0`.</summary>

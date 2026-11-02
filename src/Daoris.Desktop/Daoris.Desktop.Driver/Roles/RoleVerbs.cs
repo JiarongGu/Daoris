@@ -13,6 +13,9 @@ public sealed class RoleVerb : ChoiceVerb
 {
     public override string Word => "role";
 
+    /// <summary>The words that follow <c>role</c> to change the catalogue; the CLI's usage names them (held by <c>RoleVerbUsageTests</c>).</summary>
+    internal static readonly string[] Changes = ["set", "remove", "default", "policy"];
+
     private const string Grammar =
         "`driver role set <id> [--name \"…\"] [--name-in <tag>=\"…\"]… [--takes <work,…>] [--scope machine|workspace:<id>|repository:<id>] "
         + "[\"<agent> [<model>|-] [<effort>|-]\" …]`, `driver role remove <id>`, `driver role default <id>` or `driver role default --all`";
@@ -123,7 +126,7 @@ public sealed class RoleVerb : ChoiceVerb
     public override ChoicePress Plan(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world)
     {
         if (args.Count > 1 && args[1] == "policy") return PolicyPlan(args, before, world);
-        if (args.Count < 3 || args[1] is not ("set" or "remove" or "default")) throw new ChoiceWords($"{Grammar}.");
+        if (args.Count < 3 || !Changes.Contains(args[1]) || args[1] == "policy") throw new ChoiceWords($"{Grammar}.");
         var staffing = RoleStaffing.Of(world.ConfigPath) ?? throw new ChoiceWords(Unkept(world));
         var catalogue = RoleCatalog.Read(staffing.Location);
         var all = args is [_, "default", "--all"];

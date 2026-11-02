@@ -10,6 +10,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// <c>ParticipantWorkReadersTests</c> and the service's read over their own sources. A new line, or a new file, fails until it is listed.
 /// A copy of the driver tests' scan: the test projects share no code.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed class ParticipantWorkReadersTests
 {
     private static readonly Regex[] Reads =
