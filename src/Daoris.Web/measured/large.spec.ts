@@ -66,9 +66,8 @@ const SIZES: Record<string, { nodes: number; target: number }> = {
   Ten: { nodes: 10_000, target: 33.3 },
 };
 
-// REVIEW2 T10 (FLAKE1): a frame time under load is a timed claim, so a timed spec that fails runs once more alone before it counts, as a Process class does.
+// MEASUREDALONE1: a claim bound to the wall clock is a timed spec; the merge tool re-runs a timed spec that failed, alone, as a Process class is.
 test.describe('timed', () => {
-test.describe.configure({ retries: 1 });
 for (const [story, { nodes, target }] of Object.entries(SIZES)) {
   test(`large/${story}: ${nodes} nodes, p95 frame within ${target} ms while panning and zooming, the DOM bounded`, async ({ page }) => {
     test.setTimeout(240_000);

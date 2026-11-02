@@ -2993,6 +2993,44 @@ test('a solution prints one summary per project, and the counts are summed', () 
   assert.match(tool.flakeDecision(service, () => false).reason!, /not a real-process test: HostTests\.A_route/);
 });
 
+// The tail of a real measured run (the list reporter, a retry beside it): the summary names each failed spec.
+const TIMED_SPEC = String.raw`[chromium] › measured\large.spec.ts:73:3 › timed › large/Hundred: 100 nodes, p95 frame within 16.7 ms while panning and zooming, the DOM bounded`;
+const PLAIN_SPEC = String.raw`[chromium] › measured\canvas.spec.ts:108:3 › canvas/Lifecycle: the ink, every box and every ＋ in world units`;
+const measuredLog = (specs: string[], count = specs.length, { retry = true } = {}) => [
+  '$ npm run test:web:measured',
+  '> daoris-web@0.0.1 e2e:measured',
+  `  ✘    3 ${TIMED_SPEC} (14.7s)`,
+  ...(retry ? [`  ✘  141 ${TIMED_SPEC} (retry #1) (6.2s)`] : []),
+  '  ✓  157 [chromium] › measured\\large.spec.ts:73:3 › timed › large/Thousand: 1000 nodes (5.9s)',
+  '',
+  `  ${count} failed`,
+  ...specs.map((spec) => `    ${spec} `),
+  '  287 passed (9.1m)',
+  '',
+  '(exited 1)',
+].join('\n');
+
+test('MEASUREDALONE1: only failures all in timed specs, all named, are re-run, by their file and line', () => {
+  const timed = tool.timedDecision(measuredLog([TIMED_SPEC]));
+  assert.deepEqual(timed.rerun, ['measured/large.spec.ts:73']);
+  assert.equal(timed.playwright, true);
+  assert.equal(tool.timedDecision(measuredLog([TIMED_SPEC.replace('[chromium] › ', '')])).rerun.length, 1, 'no project prefix');
+  // Four sizes defined on one line are one location.
+  assert.deepEqual(tool.timedDecision(measuredLog([TIMED_SPEC, TIMED_SPEC.replace('Hundred', 'Ten')])).rerun, ['measured/large.spec.ts:73']);
+
+  const mixed = tool.timedDecision(measuredLog([TIMED_SPEC, PLAIN_SPEC]));
+  assert.deepEqual(mixed.rerun, []);
+  assert.match(mixed.reason!, /not a timed spec: canvas\.spec\.ts:108/);
+  const counted = tool.timedDecision(measuredLog([TIMED_SPEC], 2));
+  assert.deepEqual(counted.rerun, []);
+  assert.match(counted.reason!, /2 failed but 1 are named/);
+
+  assert.equal(tool.timedDecision('$ npm run test:web:unit\n Tests  1 failed | 5 passed\n').playwright, false, 'a vitest summary is no Playwright result');
+  assert.equal(tool.timedDecision('(exited 1)\n').playwright, false);
+  assert.equal(tool.timedRerunCommand('npm run test:web:measured', ['measured/large.spec.ts:73', 'measured/canvas.spec.ts:210']),
+    'npm run test:web:measured -- -- measured/large.spec.ts:73 measured/canvas.spec.ts:210');
+});
+
 test('a re-run runs that one test with no build, and passes only on a test that ran and passed', () => {
   assert.equal(tool.rerunCommand('dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests', 'N.ProcessJobTests.A'),
     'dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --no-build --filter "FullyQualifiedName=N.ProcessJobTests.A"');
@@ -4321,6 +4359,98 @@ test('MEMGATE1: a second death of memory is a failure still named as memory; a s
   assert.equal(tool.memoryLine([as('cli', 'FAIL')]), null);
   assert.equal(tool.memoryLine([as('cli', 'FAIL'), as('web-rules', 'FAIL', 'memory')]),
     '  Of memory, not of a check: web-rules died of memory; run it again when the machine has memory to spare.');
+  fx.cleanup();
+});
+
+/** A clock gate and a light gate that ends only once the clock gate's first line is printed, run as `runGates` runs them. */
+async function measuredRun(name: string, firstLog: string, second: { out: string; code: number }, { clock = true, run = 'npm run test:web:measured', hold = true } = {}) {
+  const fx = makeFixture(name);
+  const measured = { ...planned('web-measured', run), ...(clock ? { clock: true } : {}) } as Gate;
+  const beside = planned('u', 'node u.mjs');
+  const firstLine = signal();
+  const asked: string[] = [];
+  const printed: string[] = [];
+  let runs = 0;
+  const step: Step = async (command, _cwd, fd) => {
+    asked.push(command);
+    if (command === beside.run) {
+      if (hold) await within(firstLine.promise, "the measured gate's first line");
+      asked.push('u ended');
+    }
+    const first = command === measured.run && ++runs === 1;
+    const answer = command === beside.run ? { out: 'ok\n', code: 0 } : first ? { out: firstLog, code: 1 } : second;
+    writeSync(fd, `$ ${command}\n${answer.out}`);
+    return answer.code;
+  };
+  const results = await tool.runGates(fx.root, [measured, beside], fx.root, {
+    run: (root, gate, dir, given) => tool.runGate(root, gate, dir, { ...given, step }),
+    print: (line) => {
+      printed.push(line);
+      if (/^\s+(FAIL|FLAKE|PASS)\s+web-measured/.test(line)) firstLine.resolve();
+    },
+  });
+  firstLine.resolve();
+  fx.cleanup();
+  return { results, asked, printed, measured };
+}
+
+test('MEASUREDALONE1: a timed spec that failed beside other gates runs again alone, once the others have ended: a pass is a FLAKE', async () => {
+  const passed = { out: '  1 passed (7.0s)\n', code: 0 };
+  const { results, asked, printed, measured } = await measuredRun('merge-branch-measured-flake', measuredLog([TIMED_SPEC]), passed);
+  assert.deepEqual(asked, [measured.run, 'node u.mjs', 'u ended', `${measured.run} -- -- measured/large.spec.ts:73`], 'asked once, after the other light gate ended');
+  const [result] = results;
+  assert.equal(result!.verdict, 'FLAKE');
+  assert.deepEqual(result!.flakes, ['measured/large.spec.ts:73']);
+  assert.match(result!.note, /timed spec.*failed beside other gates and passed alone: measured\/large\.spec\.ts:73; web-measured\.rerun\.log/);
+  assert.deepEqual(summary(printed), ['FLAKE web-measured', 'PASS u']);
+  assert.match(printed.join('\n'), /run again alone, every other gate having ended: web-measured/);
+  assert.equal(tool.endsStageRun(result!), false);
+});
+
+test('MEASUREDALONE1: a timed spec that fails again alone is a FAIL naming it', async () => {
+  const { results, asked, measured } = await measuredRun('merge-branch-measured-twice', measuredLog([TIMED_SPEC]), { out: `  1 failed\n    ${TIMED_SPEC} \n`, code: 1 });
+  assert.equal(asked.filter((command) => command.startsWith(measured.run)).length, 2, 're-run once, not until it passes');
+  const [result] = results;
+  assert.equal(result!.verdict, 'FAIL');
+  assert.equal(result!.flakes, undefined);
+  assert.match(result!.note, /failed again alone: measured\/large\.spec\.ts:73; web-measured\.rerun\.log/);
+});
+
+test('MEASUREDALONE1: a mixed failure, or a count that does not match the names, is a FAIL and never re-run, and says why', async () => {
+  for (const [log, why] of [
+    [measuredLog([TIMED_SPEC, PLAIN_SPEC]), /not a timed spec: canvas\.spec\.ts:108/],
+    [measuredLog([TIMED_SPEC], 2), /2 failed but 1 are named/],
+  ] as const) {
+    const { results, asked, measured } = await measuredRun('merge-branch-measured-mixed', log, { out: '  1 passed\n', code: 0 });
+    assert.equal(asked.filter((command) => command.startsWith(measured.run)).length, 1);
+    assert.equal(results[0]!.verdict, 'FAIL');
+    assert.match(results[0]!.note, why);
+    assert.match(results[0]!.note, /not re-run/);
+  }
+});
+
+test('MEASUREDALONE1: a Playwright gate that is not a clock gate, and a rehearsal, keep their old failure', async () => {
+  const log = measuredLog([TIMED_SPEC]);
+  let run = await measuredRun('merge-branch-measured-noclock', log, { out: '  1 passed\n', code: 0 }, { clock: false });
+  assert.equal(run.asked.filter((command) => command.startsWith('npm run test:web:measured')).length, 1);
+  assert.equal(run.results[0]!.verdict, 'FAIL');
+  assert.match(run.results[0]!.note, /reported failed checks, so it is never run again/);
+  run = await measuredRun('merge-branch-measured-rehearse', log, { out: '  1 passed\n', code: 0 }, { run: 'npm run rehearse:family', hold: false });
+  assert.equal(run.asked.filter((command) => command.startsWith('npm run rehearse:family')).length, 1);
+  assert.equal(run.results[0]!.verdict, 'FAIL');
+});
+
+test('MEASUREDALONE1: one gate in turn runs the timed spec alone after the last gate', async () => {
+  const fx = makeFixture('merge-branch-measured-turn');
+  const measured = { ...planned('web-measured', 'npm run test:web:measured'), clock: true } as Gate;
+  const after = planned('u', 'node u.mjs');
+  let runs = 0;
+  const fake = fakeStep((command) => (command === measured.run && ++runs === 1 ? { out: measuredLog([TIMED_SPEC]), code: 1 } : { out: '  1 passed\n', code: 0 }));
+  const results = await tool.runGates(fx.root, [measured, after], fx.root, {
+    oneAtATime: true, run: (root, gate, dir, given) => tool.runGate(root, gate, dir, { ...given, step: fake.step }), print: () => {},
+  });
+  assert.deepEqual(fake.asked, [measured.run, after.run, `${measured.run} -- -- measured/large.spec.ts:73`]);
+  assert.deepEqual(results.map((each) => each.verdict), ['FLAKE', 'PASS']);
   fx.cleanup();
 });
 
