@@ -49,7 +49,7 @@ public sealed class ChatRoutingProcessTests : IDisposable
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 
-    /// <summary>The first message tells a driven repository's chat its standing before the person's words, once, and the record keeps the note.</summary>
+    /// <summary>The first message tells a driven repository's chat its standing after the person's words, once, and the record keeps the note.</summary>
     [Fact]
     public async Task A_new_chats_first_message_is_told_its_standing_once_and_the_record_keeps_a_note_of_it()
     {
@@ -69,7 +69,7 @@ public sealed class ChatRoutingProcessTests : IDisposable
         var told = "Routing standing here: one at a time.";
         Assert.Contains(told, heard);
         Assert.Contains("`engine:core`, `engine:web`", heard);
-        Assert.True(heard.IndexOf(told, StringComparison.Ordinal) < heard.IndexOf("open the board", StringComparison.Ordinal));
+        Assert.True(heard.IndexOf(told, StringComparison.Ordinal) > heard.IndexOf("open the board", StringComparison.Ordinal));
         Assert.Equal(heard.IndexOf(told, StringComparison.Ordinal), heard.LastIndexOf(told, StringComparison.Ordinal));
 
         var note = Assert.Single(Told(events, id));

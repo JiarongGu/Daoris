@@ -522,7 +522,10 @@ public sealed class ChatPendingProcessTests : IDisposable
                   send({ jsonrpc: '2.0', id: frame.id, result: { configOptions: options() } });
                 }
               } else if (frame.method === 'session/prompt') {
-                const text = frame.params.prompt.filter((block) => block.type === 'text').map((block) => block.text).join(' | ');
+                const raw = frame.params.prompt.filter((block) => block.type === 'text').map((block) => block.text).join(' | ');
+                // The routing standing line Daoris appends after the words is kept apart (StubFile.WithoutRouting, StubFile.Routings).
+                const text = raw.replace(/(\n\n| \| )?Routing standing here: [\s\S]*$/, '');
+                if (text !== raw) appendFileSync(heard + '.routing', /Routing standing here: ([^.]*)\./.exec(raw)[1] + '\n');
                 // On one line, so a brief's lines and the words after it read as the one prompt they are.
                 note('prompt: ' + text.replace(/\s*\n\s*/g, ' '));
                 await new Promise((resolve) => setTimeout(resolve, 50));
