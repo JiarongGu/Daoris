@@ -1,7 +1,9 @@
 # CONTEXTDRIVE1: the design. A line's behaviors counted in its own context, and a supervisor, an appointed agent or the person's rules, acting on them
 
 Status: proposed 2026-11-03 (D229 reserved for it), for its reads under D191; revised the same day after its Opus read, whose findings
-§12 settles, with the owner's two answers in §10. It answers `2026-11-03-context-counters-brief.md`, whose §2 binds every section:
+§12 settles, with the owner's two answers in §10. **Accepted 2026-11-03** by the steward after the Opus reader's second read, whose
+two new findings (a preset's moves on a reached home, §6.4; the next start's walk as an executor, §4.5) and per-role inheritance (§4.4)
+are written in and row e proves them; the other maker's read is owed under its spend cap and is folded in if it finds anything. It answers `2026-11-03-context-counters-brief.md`, whose §2 binds every section:
 each piece joins a structure that exists, and none runs beside one. Each claim about the code was read at `6bcd5cce9`. Driver paths
 start at `src/Daoris.Desktop/Daoris.Desktop.Driver/`, the modules' at `src/Daoris.Desktop/Daoris.Desktop.Modules/` (written `Mod/`),
 the web's at `src/Daoris.Web/src/`, the service's at `src/Daoris.Service/Daoris.Service.Core/`.
@@ -267,9 +269,11 @@ leaves it to.
   a sync wire (D208 point 1).
 - **Set** through `SET_ROLE { id: "supervisor", place, rules, rulesRevision }` and `SET_ROLES`, judged by `SupervisorRules.Judge`
   before anything is written, in one transaction; by `daoris role rules …` (§7.6); proposed by `role_propose`'s `rules`.
-- **Inherited by place** as D205's scopes are, with no layering, as D226 refused it: for each count, a line's rules come from the
-  most specific place holding any rule on it (the line, its repository, its workspace, the machine), and that place's rules on it
-  replace every less specific place's. Within one place, rules naming the line's role replace those naming none. `off` ends the
+- **Inherited by place** as D205's scopes are, with no layering, as D226 refused it: for each count **and each role**, a line's
+  rules come from the most specific place holding a rule on that count that applies to the line's role (one naming it, or naming
+  none), and that place's rules replace every less specific place's. A repository holding only a Build rule on a count therefore
+  leaves a Chat line there under the workspace's or the machine's rule, never under none. Within one place, rules naming the line's
+  role replace those naming none. `off` ends the
   inheritance for that count. Several rules on one count at one place make a ladder (*at 2, ask; at 4, hold*); the highest `at`
   reached acts.
 - A line's own rules (`line:<key>`) are removed with the line's records by the retention pass (D195).
@@ -303,6 +307,7 @@ after the transient-bound hold (`:117`, `:123-128`).
 | — past the episode | the planner's `TransientHolding` (`Planner.cs:878-887`) into `CourseDecision.PastBound` (`LineCourse.Decide.cs:452-458`), and a go-on's check (`:123-126`); a move through `StaffCourse.Look` (`WorkOrders/StaffCourse.cs:89-156`) into `Policied` | `hold`, `ask` or a move | `TransientBound`, its row as today |
 | `failures-on-choice`, `quiet`, `limits` | `StaffCourse.Look` (`:89-156`), `LimitWait`, `LimitHolds` and `LimitMoved` (`:178-220`), into `Policied` (`LineCourse.Decide.cs:52-79`) | the `StaffAction` read from the effective rule where `StaffJudge.OnCondition` (`Roles/StaffJudge.cs:228-242`) reads the role policy's move today | `policy-ask`, `moves-bound` |
 | `moves` | `StaffMoves.Decided`'s check (`StaffCourse.cs:133-135`) and `OnCondition`'s `MovesBound` (`StaffJudge.cs:239-241`) | `most` | `moves-bound` |
+| — the next start's walk | `StaffJudge.Arrange` (`Roles/StaffJudge.cs:163-170`), which skips an agent marked not answering, and a choice moved off within thirty minutes, where a move on `transient`, `failed` or `quiet` stands: on a reached home it reads that from the line's effective `tries`, `failures-on-choice` and `quiet` rules whose `do` is a move, as it reads the policy's moves on a home not reached | whether those skips apply | none: a start's order, said by `chosen` |
 
 A conversation's line reads `answers-alone` from row e and its other ruled counts from CONTEXTDRIVE1n, which moves its episode's limit
 and its limit's `wait` and `ask` onto the rules (STAFFPOLICY1e3's conversation half; §9). *Not now* stays the person's mark
@@ -432,6 +437,10 @@ it changes), ending when the `rules` part's census reads `Ended`, deleted by `CO
   (`Roles/StaffPolicyDoor.cs:18`) through `SET_ROLE`, `role policy --on` and `--most` (`Roles/StaffPolicyFlags.cs`) and
   `role_propose`'s policy moves, each refused naming `role rules`. No press is then written that no reader honours. On a home not
   reached they write as today, and their readers decide there.
+- **A preset on a reached home.** *Spread evenly* and *Spread by weight* carry a limit move and a bound (`Roles/StaffPolicy.cs:195-211`).
+  On a reached home a preset is neither refused nor stripped: the one `SET_ROLES` press writes its choices and rule into the policy
+  and its limit move and bound as rules naming the role, at the place the press names, in the same transaction. The role editor,
+  `role policy --preset` and `role_propose` take the same path.
 - **The rules wave reaches main whole** (§9): d's door, e's deciding and refusals, f's part, g's editors, h's holds and k's words land
   in one merge, so the window's *When a choice cannot go on* fold (`MovesFold`, `agents/roles/RolePolicy.tsx:158`) writes rules on a
   reached home in the same merge that refuses its moves there (D228: a retirement and its surface in one chunk).
@@ -582,7 +591,7 @@ D229 states each; no older decision's text is edited.
 | **CONTEXTDRIVE1i** the agent supervisor's reading, dark (driver, modules; a, c, COMMS1's wave 1) | §5 but `course` | the print's golden with its fenced part; a `count:` source handed and one not, refused at the keeping (`Mod/Bridge/SupervisorDoor.cs`); the decision's counts snapshot | after COMMS1's wave 1 reaches main |
 | **The rules wave**, `wave/contextdrive1`, reaching main whole | | | ONEWAY1's wave 2: after `wave/workflowclean1` reaches main, ONEWAY1ae and ONEWAY1a |
 | **CONTEXTDRIVE1d** the door (driver, modules, service; c, ONEWAY1a) | §4.3, §4.4, §7.6 | `SupervisorRuleDoorTests` (a moved revision, `convert-first`, `appointed-not-configurable` for any other field); `RoleVerbTests`; `HelpRoleProposalsTests` and the service's `HelpRoleProposalTests`; `McpToolDescriptionTests`; full access's terminal refusal | the rules wave, first |
-| **CONTEXTDRIVE1e** the rules decide (driver, modules; d) | §4.5-§4.7, §6.1's seed, §6.3's entries, §6.4's refusals | `LineCourseTests`' pinned table unchanged, each seeded rule answering as today's reader did; `SupervisorRuleTickTests` on stand-ins: answers alone held at 2 then one *Go on with this answer*, two answers queued together one held, *Not now* kept; failures held at 3 and *Try again*; tries at 2 weighted, at 5 held, and *Try again*; moves at 3 asked and one yes; a quiet end moved once and the next part's end not; an unknown count never acting; `rule-holds` at the keeping and the release; the rule's decision file unread by the sweep; the note; a fresh home seeded at its first start; each old door refused on a reached home naming `role rules` and writing on one not reached; the save writing no `strikes` the file did not hold; the transitional gate green with the four entries; a real quiet tick (STAFFPOLICY1e3's) | the rules wave, after d |
+| **CONTEXTDRIVE1e** the rules decide (driver, modules; d) | §4.5-§4.7, §6.1's seed, §6.3's entries, §6.4's refusals | `LineCourseTests`' pinned table unchanged, each seeded rule answering as today's reader did; `SupervisorRuleTickTests` on stand-ins: answers alone held at 2 then one *Go on with this answer*, two answers queued together one held, *Not now* kept; failures held at 3 and *Try again*; tries at 2 weighted, at 5 held, and *Try again*; moves at 3 asked and one yes; a quiet end moved once and the next part's end not; an unknown count never acting; `rule-holds` at the keeping and the release; the rule's decision file unread by the sweep; the note; a fresh home seeded at its first start; each old door refused on a reached home naming `role rules` and writing on one not reached; a preset on a reached home writing its limit move and bound as rules in the same press; after conversion, a `tries at 2: weighted` rule keeping the next start off the choice it left (`StaffJudge.Arrange` reading the rules); a Chat line under the machine's rule where its repository holds only a Build rule; the save writing no `strikes` the file did not hold; the transitional gate green with the four entries; a real quiet tick (STAFFPOLICY1e3's) | the rules wave, after d |
 | **CONTEXTDRIVE1f** the `rules` part (driver, modules; e, ONEWAY1ae) | §6.2 | a fixture home with `strikes` 5, Build's applied policy `transient after 2: weighted`, `most` 2, and a stale policy with a `failed` move: plan, Apply, a start answering as before, the stale moves removed with no rule, Undo, Undo refused after a rule is edited; `strikes` 0 writing no failures rule; the census `Ended` after Apply | the rules wave, after e |
 | **CONTEXTDRIVE1g** the editors (web, modules; d, f) | §7.1-§7.3 | page tests en and zh; stories at 80, 39 and 25 rem, both themes; keyboard order; `RolePolicy.test.tsx` on rules, reached and not; each rule's *replaces* line; `HelpCoverageTests`' rows for each new hook | the rules wave |
 | **CONTEXTDRIVE1h** the head, *Details* and *What needs you* (web, modules, driver; e) | §7.4, §7.5 | page tests en and zh; stories at 80, 39 and 25 rem, both themes; `AttentionStateSliceTests`, `attention.test.ts`; each hold with its own door; one hold counted once on the head, the foot and *What needs you*; the rehearsals' whole-answer comparisons checked for `counts` | the rules wave |
