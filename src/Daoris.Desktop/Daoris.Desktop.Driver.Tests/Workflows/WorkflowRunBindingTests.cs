@@ -125,11 +125,11 @@ public sealed class WorkflowRunBindingTests : IDisposable
     }
 
     /// <summary>
-    /// CHATFLOW1c (§4.3, §4.5): a choice that is a graph version binds nothing before CHATFLOW1f, and says which; a named workflow that cannot
+    /// CHATFLOW1c (§4.3, §4.5): a choice that is a graph version binds as any other does (CHATFLOW1f); a named workflow that cannot
     /// be read is bound with its problem, which holds the press by it; a home that cannot keep the binding fails the bind, saying why.
     /// </summary>
     [Fact]
-    public void A_chat_run_binds_no_graph_version_keeps_an_unreadable_workflow_s_problem_and_fails_only_on_a_home_it_cannot_write()
+    public void A_chat_run_binds_a_graph_version_keeps_an_unreadable_workflow_s_problem_and_fails_only_on_a_home_it_cannot_write()
     {
         // A graph with a `handed`, as an older build stored it: no door saves one now, and a stored one still binds.
         StoredSteps.AddGraph(WorkflowPorts.Store(_home), "web-graph", "A graph", "2026-10-21T09:00:00Z", JsonNode.Parse(
@@ -138,11 +138,11 @@ public sealed class WorkflowRunBindingTests : IDisposable
         var graph = Config("""{"workflows":{"web-app":{"default":"web-graph"}}}""");
 
         var graphed = ChatRuns.Bind(graph, _home, "chat-c1a2b3c4", "web-app", null, [], At);
-        Assert.Equal(((WorkflowRunBinding?)null, "web-graph", (string?)null), (graphed.Binding, graphed.Graph, graphed.Failed));
-        Assert.Equal("web-graph", ChatRuns.GraphChosen(graph, _home, "web-app", null));
-        Assert.False(WorkflowRunBindings.Bound(_home, "chat-c1a2b3c4"));
+        Assert.Null(graphed.Failed);
+        Assert.True(GraphRun.Names(graphed.Binding!));
+        Assert.True(WorkflowRunBindings.Bound(_home, "chat-c1a2b3c4"));
 
-        var unread = ChatRuns.Bind(Config("""{"workflows":{"web-app":{"default":"release-train"}}}"""), _home, "chat-c1a2b3c4", "web-app", null, [], At);
+        var unread = ChatRuns.Bind(Config("""{"workflows":{"web-app":{"default":"release-train"}}}"""), _home, "chat-e1a2b3c4", "web-app", null, [], At);
         Assert.True(unread.Wrote);
         Assert.Equal("no workflow `release-train` is saved here.", unread.Binding!.Problem);
         Assert.Equal(NoteCodes.ChatWorkflowUnread.Code, ChatRuns.Line(unread.Binding)!.Parts.Single().Code);
