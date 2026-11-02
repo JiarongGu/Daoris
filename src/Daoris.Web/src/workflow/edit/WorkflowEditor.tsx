@@ -19,7 +19,7 @@ import type {
 import { type Begin, draftFlow, EditCanvas } from './EditCanvas';
 import { carriedSaid, plain, rowSaid, stepTitle } from './editWords';
 import {
-  canInsertOn, type Carried, type Clip, commit, connect, copySteps, draftOf, duplicateStep, emptyDraft, entriesOf, type GraphDraft, graphOf, historyOf,
+  canInsertOn, type Carried, type Clip, commit, connect, copySteps, draftOf, duplicateStep, emptyDraft, entriesOf, type GraphDraft, graphOf, type History, historyOf,
   type InsertAt, insertStep, joinOf, moveInChain, movePlan, pasteSteps, redo, removeStep, removeWire, retarget, setOption, type StepChoice, targetsOf,
   undo, type WayRowKey, workflowIdFor,
 } from './graphDraft';
@@ -88,6 +88,9 @@ export type WorkflowEditorProps = WorkflowEditorBridge & {
   pipeline?: 'development' | 'verification' | null;
   /** The lines the place declares, which a landing's target is chosen from; none, and the target is typed. */
   lines?: string[];
+  /** The draft the page held for this place when the editor was last unmounted, which it begins from; and where it reports each change. */
+  held?: EditorHold | null;
+  onHold?: (hold: EditorHold) => void;
   onClose?: () => void;
 };
 
@@ -114,7 +117,7 @@ const RETURN = ':return';
  * One step of the editor's history: the draft, the words of the change that made it, and what of each of Ask Daoris's proposals was taken
  * and left by then, so one undo takes back a take and its record together (D223 §8.6).
  */
-type Snapshot = { draft: GraphDraft; said: string; decided?: Readonly<Record<string, Decided>> };
+export type Snapshot = { draft: GraphDraft; said: string; decided?: Readonly<Record<string, Decided>> };
 
 /** The settling press of a proposal: on its way, answered, or refused in the driver's words. */
 type Settling = { state: 'pending' | 'told' } | { state: 'failed'; why: string };
@@ -126,7 +129,19 @@ type Said = { saved: WorkflowSaveAnswer | null; used: WorkflowUseAnswer | null; 
 const QUIET: Said = { saved: null, used: null, failed: null };
 
 /** What the save is aimed at, and the id a new one was copied from (a preset's, or a saved workflow's). */
-type Target = SaveTarget & { from: string | null };
+export type Target = SaveTarget & { from: string | null };
+
+/**
+ * What the editor keeps outside itself, so the draft outlives the editor's mount: its history, the target and baseline a save is
+ * reviewed against, the consent given, and the version still being read as the baseline.
+ */
+export type EditorHold = {
+  history: History<Snapshot>;
+  target: Target;
+  baseline: unknown;
+  consented: string | null;
+  reading: { id: string; version: number } | null;
+};
 
 /**
  * **The workflow editor** (WORKFLOWEDIT1b; FLOWCHART2b, D223 §3): a workflow composed on its chart. A step is added by a way's ＋, a ◎'s,
@@ -161,7 +176,7 @@ export function WorkflowEditor(props: WorkflowEditorProps) {
 /** The editor once its reads are answered, told whether its region holds the inspector beside the chart. */
 function Composing({
   list, palette, roles, staffing, shown, onShow, judged, judgedOf = null, judgeFailed = null, judging, onJudge, saving, onSave, using, onUse, onPlan, place, startFrom,
-  route = null, pipeline = null, lines, onClose, wide, proposal: offered = null, onSettleProposal, onDismissProposal,
+  route = null, pipeline = null, lines, held = null, onHold, onClose, wide, proposal: offered = null, onSettleProposal, onDismissProposal,
 }: WorkflowEditorProps & { list: WorkflowListAnswer; palette: WorkflowPaletteAnswer; wide: boolean }) {
   const { t, i18n } = useTranslation();
   const headId = useId();
@@ -171,7 +186,7 @@ function Composing({
   // Where the focus goes back to when the picker is given up: a dialog with no trigger of its own gives back none.
   const returnTo = useRef<HTMLElement | null>(null);
 
-  const [history, setHistory] = useState(() => historyOf<Snapshot>({ draft: startFrom ? draftOf(startFrom.graph) : emptyDraft(), said: '' }));
+  const [history, setHistory] = useState(() => held?.history ?? historyOf<Snapshot>({ draft: startFrom ? draftOf(startFrom.graph) : emptyDraft(), said: '' }));
   const draft = history.present.draft;
   // The draft as the newest render holds it, for a press whose answer comes after the draft has moved on.
   const latest = useRef(draft);
@@ -187,17 +202,17 @@ function Composing({
   const [clip, setClip] = useState<Clip | null>(null);
   const [heard, setHeard] = useState('');
   const [waiting, setWaiting] = useState<string | null>(null);
-  const [target, setTarget] = useState<Target>(() => ({
+  const [target, setTarget] = useState<Target>(() => held?.target ?? ({
     id: startFrom?.id ?? '', name: startFrom?.name ?? '', base: startFrom ? startFrom.base ?? null : null, from: startFrom?.id ?? null,
   }));
   // The places an append reaches that the person let follow it, as one key (`consentKey`): consent holds for exactly that set.
-  const [consented, setConsented] = useState<string | null>(null);
+  const [consented, setConsented] = useState<string | null>(held?.consented ?? null);
   // The steps the draft began from, which a save is reviewed against and *Use here* needs the draft to still be.
   // A draft the conversation was told is not the version it came from: that version is read, and until it is the baseline is unknown.
   const [readingBase, setReadingBase] = useState<{ id: string; version: number } | null>(
-    () => (startFrom?.told && startFrom.id && startFrom.base != null ? { id: startFrom.id, version: startFrom.base } : null),
+    () => (held ? held.reading : startFrom?.told && startFrom.id && startFrom.base != null ? { id: startFrom.id, version: startFrom.base } : null),
   );
-  const [baseline, setBaseline] = useState<unknown>(readingBase ? null : startFrom?.graph ?? null);
+  const [baseline, setBaseline] = useState<unknown>(() => (held ? held.baseline : readingBase ? null : startFrom?.graph ?? null));
   const askedBase = useRef(false);
   useEffect(() => {
     if (!readingBase || askedBase.current) return;
@@ -209,6 +224,10 @@ function Composing({
     setReadingBase(null);
     if (shown.schema === 2) setBaseline(shown.body);
   }, [readingBase, shown]);
+  // The page keeps the draft past this mount; the sender is read through a ref, since the page hands a new one each render.
+  const report = useRef(onHold);
+  report.current = onHold;
+  useEffect(() => { report.current?.({ history, target, baseline, consented, reading: readingBase }); }, [history, target, baseline, consented, readingBase]);
   const [reviewing, setReviewing] = useState<string | null>(null);
   const [planning, setPlanning] = useState(false);
   const [rebasing, setRebasing] = useState(false);

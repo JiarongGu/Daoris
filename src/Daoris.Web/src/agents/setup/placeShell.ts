@@ -2,6 +2,7 @@ import type { TFunction } from 'i18next';
 import { useCallback, useMemo, useState } from 'react';
 import type { PlaceRow, PlaceWork } from '../../data/wiring';
 import { type Authored, authoredText } from '../../locales/authored';
+import type { EditorHold } from '../../workflow/edit/WorkflowEditor';
 
 // A place page's shell (SETUPUX1h, the setup-UX design §2.1): its three sections, the one that opens on arrival and the one a need opens, the
 // one-line summary each folds to, and the state the application holds above the page so a door out and back finds it as left.
@@ -190,6 +191,12 @@ export type PlaceEdit = { draft: string | null; workflow?: string; name?: string
 /** The page a door came from, to return to: its place and section, or the place's *Set up…* (SETUPUX1j), which keeps its draft. */
 export type PlaceBack = { place: string; name: string; section: PlaceSection | null; setUp?: boolean };
 
+/**
+ * The step editor open on a place's Workflow, kept above the mounts so a fold, *Set up…* or a change of layout that unmounts the section
+ * leaves the draft as it was: the route it opened on, the steps it began from and the editor's own history and target.
+ */
+export type PlaceFlowHold = { route: string; from?: { graph: unknown; id?: string; name?: string; base?: number | null; told?: boolean }; editor: EditorHold | null };
+
 type Folds = Partial<Record<PlaceSection, boolean>>;
 
 /** What a place's Workflow draws: the route whose chart it is (`default`, `kind:<name>` or `landed`), and the step whose cell shows. */
@@ -215,6 +222,9 @@ export type PlaceShell = {
   /** The draft a door asked the place's Workflow editor to open on, until the editor has opened (FLOWCHART2g). */
   editOf: (place: string) => PlaceEdit | null;
   editOpened: (place: string) => void;
+  /** The step editor's draft at the place, kept while the section is unmounted; null once the editor is closed (REVIEW2 P5). */
+  holdOf: (place: string) => PlaceFlowHold | null;
+  hold: (place: string, held: PlaceFlowHold | null) => void;
   /** A door to a place: its section opens, its row is asked for, and the way back is kept once. */
   arrive: (place: string, at: PlaceAt) => void;
   /** The way back, where the chosen place was reached from another. */
@@ -230,6 +240,7 @@ export function usePlaceShell(): PlaceShell {
   const [views, setViews] = useState<Record<string, PlaceView>>({});
   const [rows, setRows] = useState<Record<string, string>>({});
   const [edits, setEdits] = useState<Record<string, PlaceEdit>>({});
+  const [holds, setHolds] = useState<Record<string, PlaceFlowHold>>({});
   const [back, setBack] = useState<{ place: string; back: PlaceBack } | null>(null);
   const [focusAsked, setFocusAsked] = useState(0);
 
@@ -254,12 +265,15 @@ export function usePlaceShell(): PlaceShell {
   }, []);
   const editOf = useCallback((place: string) => edits[place] ?? null, [edits]);
   const editOpened = useCallback((place: string) => setEdits(({ [place]: _opened, ...rest }) => rest), []);
+  const holdOf = useCallback((place: string) => holds[place] ?? null, [holds]);
+  const hold = useCallback((place: string, held: PlaceFlowHold | null) =>
+    setHolds(({ [place]: _was, ...rest }) => (held === null ? rest : { ...rest, [place]: held })), []);
   const backTo = useCallback((place: string) => (back?.place === place ? back.back : null), [back]);
   const clearBack = useCallback(() => setBack(null), []);
   const askFocus = useCallback(() => setFocusAsked((was) => was + 1), []);
 
   return useMemo(
-    () => ({ isOpen, setOpen, viewOf, choose, rowOf, rowBrought, editOf, editOpened, arrive, backTo, clearBack, focusAsked, askFocus }),
-    [isOpen, setOpen, viewOf, choose, rowOf, rowBrought, editOf, editOpened, arrive, backTo, clearBack, focusAsked, askFocus],
+    () => ({ isOpen, setOpen, viewOf, choose, rowOf, rowBrought, editOf, editOpened, holdOf, hold, arrive, backTo, clearBack, focusAsked, askFocus }),
+    [isOpen, setOpen, viewOf, choose, rowOf, rowBrought, editOf, editOpened, holdOf, hold, arrive, backTo, clearBack, focusAsked, askFocus],
   );
 }

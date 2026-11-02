@@ -2,7 +2,7 @@ import { type ReactNode, useContext, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { PlaceAside } from '../../agents/setup/placeAside';
-import type { PlaceEdit, PlaceView } from '../../agents/setup/placeShell';
+import type { PlaceEdit, PlaceFlowHold, PlaceView } from '../../agents/setup/placeShell';
 import { fillAskDaoris, useCanFillAsk } from '../../help/askFill';
 import { toldGraph } from '../../help/openDraft';
 import { cn } from '../../lib/cn';
@@ -10,10 +10,10 @@ import { Button, Inline, Prose, SkeletonRows } from '../../design/ui';
 import { useWidth } from '../../design/useWidth';
 import { FoldRow, type FoldSpec } from '../../projects/setup/FoldRow';
 import type { IntegrationRequest } from '../../settings/repository/IntegrationDeclaration';
-import type { Answered } from '../../work/InlineConfirm';
+import { type Answered, InlineConfirm } from '../../work/InlineConfirm';
 import type { WorkflowEffective, WorkflowStart } from '../current';
 import { EffectiveChart } from './EffectiveChart';
-import { WorkflowEditor, type WorkflowEditorProps } from '../edit/WorkflowEditor';
+import { type EditorHold, WorkflowEditor, type WorkflowEditorProps } from '../edit/WorkflowEditor';
 import { type RouteRow, routeRows } from './effective';
 import { partSaid } from '../said';
 import { type WorkflowTabProps } from '../WorkflowTab';
@@ -57,6 +57,9 @@ export type PlaceWorkflowProps = WorkflowTabProps & {
    */
   opens?: PlaceEdit | null;
   onOpened?: () => void;
+  /** The editor's draft the page kept when this section was last unmounted, and where it keeps the draft as the editor reports it (REVIEW2 P5). */
+  held?: PlaceFlowHold | null;
+  onHold?: (held: PlaceFlowHold | null) => void;
 };
 
 type EditStart = NonNullable<WorkflowEditorProps['startFrom']>;
@@ -131,7 +134,7 @@ function Routes({ rows, chosen, onChoose }: { rows: readonly RouteRow[]; chosen:
  */
 export function PlaceWorkflowView({
   name, page = 'repository', current, reading = false, refusal = null, doors, onAcceptGates, accepting = false, onVerify, editor,
-  view, onView, onAcceptIntegration, landing, onOpenSection, opens = null, onOpened,
+  view, onView, onAcceptIntegration, landing, onOpenSection, opens = null, onOpened, held = null, onHold,
 }: PlaceWorkflowProps) {
   const { t } = useTranslation();
   const canAsk = useCanFillAsk();
@@ -139,7 +142,7 @@ export function PlaceWorkflowView({
   const width = useWidth(pane);
   const aside = useContext(PlaceAside);
   const [local, setLocal] = useState<PlaceView>(DEFAULT_VIEW);
-  const [panel, setPanel] = useState<Panel>(null);
+  const [panel, setPanel] = useState<Panel>(() => (held ? { is: 'edit', route: held.route, ...(held.from ? { from: held.from } : {}) } : null));
   const [chartShown, setChartShown] = useState(false);
   const [asked, setAsked] = useState<{ section: 'landing' | null; n: number }>({ section: null, n: 0 });
   const place = page === 'workspace' ? { workspace: name } : { repository: name };
@@ -148,7 +151,17 @@ export function PlaceWorkflowView({
     if (onView) onView(choice);
     else setLocal((was) => ({ route: choice.route ?? was.route, step: choice.route && choice.route !== was.route ? choice.step ?? null : choice.step === undefined ? was.step : choice.step }));
   };
-  const show = (next: Panel) => { setPanel(next); editor?.onOpen?.(next !== null); };
+  // The editor's draft as it last reported, which the page keeps past this mount (`held`); closing the editor, or replacing it by another
+  // panel, lets the draft go.
+  const reported = useRef<EditorHold | null>(held?.editor ?? null);
+  const [discarding, setDiscarding] = useState(false);
+  const show = (next: Panel) => {
+    setPanel(next);
+    editor?.onOpen?.(next !== null);
+    if (next?.is !== 'edit') { reported.current = null; onHold?.(null); } else if (panel?.is !== 'edit') { reported.current = null; onHold?.({ route: next.route, ...(next.from ? { from: next.from } : {}), editor: null }); }
+  };
+  // The page may have unmounted this section with the editor open (a fold, *Set up…*, a change of layout): the editor is told it is shown.
+  useEffect(() => { if (panel) editor?.onOpen?.(true); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (asked.section) document.querySelector('[data-place-row="landing"]')?.scrollIntoView?.({ block: 'nearest' });
@@ -241,6 +254,11 @@ export function PlaceWorkflowView({
           place={place}
           startFrom={open.from ?? editStart(answered?.route === open.route ? answered : null)}
           route={open.route}
+          held={held && held.route === open.route ? held.editor : null}
+          onHold={(kept) => {
+            reported.current = kept;
+            onHold?.({ route: open.route, ...(open.from ? { from: open.from } : {}), editor: kept });
+          }}
           pipeline="development"
           lines={page === 'repository' && start?.landed.tip?.line ? [start.landed.tip.line] : undefined}
           onClose={() => show(null)}
@@ -309,7 +327,12 @@ export function PlaceWorkflowView({
   const canChange = editor !== undefined && !landed;
   // *Ask Daoris* opens the editor on the chart's graph, so the conversation is told that draft with the person's next words (FLOWCHART2d),
   // and puts the start of a request in its box. The editor, once open, is not opened again.
-  const openEdit = () => show({ is: 'edit', route: routeKey, from: editStart(answered) });
+  const openEdit = () => { if (open?.is !== 'edit') show({ is: 'edit', route: routeKey, from: editStart(answered) }); };
+  // Change… replaces the editor, so a draft with changes in it is asked about first.
+  const openChange = () => {
+    if (open?.is === 'edit' && (reported.current?.history.past.length ?? 0) > 0) setDiscarding(true);
+    else show({ is: 'change', route: routeKey });
+  };
   const askDaoris = () => {
     if (open?.is !== 'edit') openEdit();
     fillAskDaoris(t('workflow.place.ask.fill', { place: name }));
@@ -336,12 +359,22 @@ export function PlaceWorkflowView({
             )}
             {canChange && (
               <>
-                <Button variant="ghost" className={buttons} onClick={() => show({ is: 'change', route: routeKey })}>{t('workflow.place.change.open')}</Button>
+                <Button variant="ghost" className={buttons} onClick={openChange}>{t('workflow.place.change.open')}</Button>
                 <Button variant="ghost" className={buttons} onClick={openEdit}>{t('workflow.place.steps.open')}</Button>
                 {canAsk && <Button variant="ghost" className={buttons} onClick={askDaoris}>{t('workflow.place.ask.open')}</Button>}
               </>
             )}
           </div>
+        )}
+        {discarding && (
+          <InlineConfirm
+            tone="warn"
+            label={t('workflow.place.discard.label')}
+            says={t('workflow.place.discard.says')}
+            meanIt={t('workflow.place.discard.meanIt')}
+            onConfirm={(answered) => { setDiscarding(false); show({ is: 'change', route: routeKey }); answered.done(); }}
+            onClose={() => setDiscarding(false)}
+          />
         )}
         {landed && start && (
           <LandedLines landed={start.landed} page={page} repository={page === 'repository' ? name : null} onVerify={onVerify} apart />

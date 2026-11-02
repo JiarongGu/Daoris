@@ -104,6 +104,8 @@ function RepositoryWorkflow({ place, notify, onOpenPlugin, landingAsked }: {
         onOpenSection: place.onOpenSection,
         opens: place.edit,
         onOpened: place.onEdited,
+        held: place.held,
+        onHold: place.onHold,
       }}
       landingAsked={landingAsked}
     />
@@ -134,6 +136,8 @@ function WorkspaceWorkflow({ place, notify, onOpenPlugin }: { place: PlaceHold; 
         onView={place.onView}
         opens={place.edit}
         onOpened={place.onEdited}
+        held={place.held}
+        onHold={place.onHold}
       />
       <div className="mt-3">
         <WorkspaceSetupPart

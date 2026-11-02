@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-02 - The editor's draft was lost whenever the editor unmounted (REVIEW2 P5)
+
+- **Symptom:** a fold, *Set up…*, *Change…* or a change of layout that unmounted the place's Workflow section threw away the step editor's draft and its undo history.
+- **Root cause:** the history, target, baseline and consent lived only in `WorkflowEditor`'s state, and the place page mounts the chart at different tree positions by layout and replaces it by other panels.
+- **Fix:** the editor reports `EditorHold` and begins from one; `usePlaceShell` holds it per place (`holdOf`, `hold`) with the route and start the editor opened on, and the section restores the panel from it. *Change…* asks before it replaces an editor that holds changes; closing the editor lets the draft go. The chart is still drawn at two tree positions by layout, which a restored draft makes harmless; the selection and the open drawer are not held.
+- **Verify:** `PlaceWorkflowView.test.tsx` (keep the draft, ask before Change…; red first) and `placeShell.test.ts`.
+
 ## 2026-11-02 - The page's set-up card did not draw that the repository is admitted alone (REVIEW2 S6, page half)
 
 - **Symptom:** `SETUP_PLAN` now carries `alone` and the Ask Daoris card says it, but the set-up card on the page drew nothing of it.
