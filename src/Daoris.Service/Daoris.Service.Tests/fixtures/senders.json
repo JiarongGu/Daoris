@@ -1,0 +1,116 @@
+{
+  "_why": "COMMS1a (the comms design §3.3, §13 point 11): who said a word, read once, one table all three twins are held to, row for row. The service's Senders.Of reads a kept word's marks (`word`: from, by, helper, key, channel), the driver's twin and the page's sender.ts read an event's (`event`: origin, from, opinion, helper, helperWork, channel), since an event carries no key and tells a partner from a helper by the work of the record its `helper` names (`helperWork`, null where the twin cannot read that record: a helper). A row with no `word` is a shape only an event has; a row with no `event` only a kept word. `sender` is the one rule's answer, the first that holds: from supervisor is the supervisor, from daoris is Daoris (on the person's own origin it reads as theirs), from agent is a channel post, any other from is unattributed; an opinion; a helper that is a partner by its key or its record's work, else a helper; a channel message on a target origin is a channel post; any other target is the composed prompt (`composed`, an event's only); no mark is the person. `today` is what the readers answered before the row: `persons` is the service's and the driver's Persons, `drawn` is what the page drew. Where a reader's old answer differs from the rule's, the row names it in `disagrees` with the decision that says why; a difference not named fails every suite.",
+
+  "senders": ["person", "daoris", "supervisor", "channel", "helper", "partner", "opinion", "unattributed", "composed"],
+
+  "decisions": {
+    "helper-drawn": "A helper's or a partner's answer is drawn under its sender, in a string of its own, where the page drew it as the target Daoris composed because the event carried no field to tell it by. Only the drawing changes; Persons answered false for both already."
+  },
+
+  "rows": [
+    {
+      "name": "the person's own words",
+      "word": {},
+      "event": { "origin": "person" },
+      "sender": "person",
+      "today": { "persons": true, "drawn": "person" },
+      "disagrees": {}
+    },
+    {
+      "name": "the person's own message on the ask's channel",
+      "word": { "channel": "c1" },
+      "event": { "origin": "person", "channel": "c1" },
+      "sender": "person",
+      "today": { "persons": true, "drawn": "person" },
+      "disagrees": {}
+    },
+    {
+      "name": "Daoris's own words",
+      "word": { "from": "daoris" },
+      "event": { "origin": "target", "from": "daoris" },
+      "sender": "daoris",
+      "today": { "persons": false, "drawn": "daoris" },
+      "disagrees": {}
+    },
+    {
+      "name": "Daoris's mark outranks a helper's",
+      "word": { "from": "daoris", "helper": "h1" },
+      "event": { "origin": "target", "from": "daoris", "helper": "h1", "helperWork": "help" },
+      "sender": "daoris",
+      "today": { "persons": false, "drawn": "daoris" },
+      "disagrees": {}
+    },
+    {
+      "name": "a Daoris mark on the person's own origin",
+      "word": null,
+      "event": { "origin": "person", "from": "daoris" },
+      "sender": "person",
+      "today": { "persons": null, "drawn": "person" },
+      "disagrees": {}
+    },
+    {
+      "name": "the supervisor's decision",
+      "word": { "from": "supervisor" },
+      "event": { "origin": "target", "from": "supervisor" },
+      "sender": "supervisor",
+      "today": { "persons": false, "drawn": "supervisor" },
+      "disagrees": {}
+    },
+    {
+      "name": "an author this build does not know",
+      "word": { "from": "robot" },
+      "event": { "origin": "target", "from": "robot" },
+      "sender": "unattributed",
+      "today": { "persons": false, "drawn": "unattributed" },
+      "disagrees": {}
+    },
+    {
+      "name": "another session's claim the person passed on",
+      "word": { "from": "agent", "channel": "c1" },
+      "event": { "origin": "target", "channel": "c1" },
+      "sender": "channel",
+      "today": { "persons": false, "drawn": "channel" },
+      "disagrees": {}
+    },
+    {
+      "name": "a second opinion's findings",
+      "word": { "by": "op1" },
+      "event": { "origin": "target", "opinion": "op1" },
+      "sender": "opinion",
+      "today": { "persons": false, "drawn": "opinion" },
+      "disagrees": {}
+    },
+    {
+      "name": "a helper's answer",
+      "word": { "helper": "h1", "key": "helper:h1" },
+      "event": { "origin": "target", "helper": "h1", "helperWork": "help" },
+      "sender": "helper",
+      "today": { "persons": false, "drawn": "composed" },
+      "disagrees": { "drawn": "helper-drawn" }
+    },
+    {
+      "name": "a helper whose record the twin cannot read",
+      "word": null,
+      "event": { "origin": "target", "helper": "h1", "helperWork": null },
+      "sender": "helper",
+      "today": { "persons": null, "drawn": "composed" },
+      "disagrees": { "drawn": "helper-drawn" }
+    },
+    {
+      "name": "a partner's answer",
+      "word": { "helper": "p1", "key": "partner:piece-1" },
+      "event": { "origin": "target", "helper": "p1", "helperWork": "partner" },
+      "sender": "partner",
+      "today": { "persons": false, "drawn": "composed" },
+      "disagrees": { "drawn": "helper-drawn" }
+    },
+    {
+      "name": "the target Daoris composed",
+      "word": null,
+      "event": { "origin": "target" },
+      "sender": "composed",
+      "today": { "persons": null, "drawn": "composed" },
+      "disagrees": {}
+    }
+  ]
+}
