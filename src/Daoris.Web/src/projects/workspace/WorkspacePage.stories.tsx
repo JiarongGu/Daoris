@@ -79,7 +79,6 @@ const DEFAULTS_DAORIS: WorkspaceSetupProps = {
   workspace: 'work',
   defaults: {
     line: { onSet: nothing },
-    landing: { landers: ['azure-devops-pull-request'], onSet: nothing },
     language: { table: LANGUAGES, onSet: nothing },
     read: { onSet: nothing },
   },
@@ -103,11 +102,6 @@ const DEFAULTS_PROCESS_OWN: WorkspaceSetupProps = {
   ...DEFAULTS_DAORIS,
   defaults: {
     ...DEFAULTS_DAORIS.defaults,
-    landing: {
-      set: { form: 'branch', pattern: 'feature/{ticket}-{slug}', key: 'TK-\\d+', squash: true, plugin: 'azure-devops-pull-request' },
-      landers: ['azure-devops-pull-request'],
-      onSet: nothing,
-    },
     commits: { set: { mode: 'at-end', convention: 'One commit per ticket: its key, then an imperative summary.' }, onChange: nothing },
     helpers: { set: { mode: 'on', agents: ['codex-acp', 'dsh'] }, onChange: nothing },
   },
@@ -117,11 +111,6 @@ const DEFAULTS_OWN: WorkspaceSetupProps = {
   ...DEFAULTS_DAORIS,
   defaults: {
     line: { set: 'develop', onSet: nothing },
-    landing: {
-      set: { form: 'branch', pattern: 'feature/{slug}-{quest}', plugin: 'azure-devops-pull-request', tidy: true, autoAccept: true },
-      landers: ['azure-devops-pull-request'],
-      onSet: nothing,
-    },
     language: { set: 'zh', table: LANGUAGES, onSet: nothing },
     read: { set: false, onSet: nothing },
   },
@@ -348,10 +337,10 @@ export const SetupFolded: Story = { args: { tab: 'setup', wired: false } };
 // values beside their words at the half width and under them at the floor. `measured/settings.spec.ts` reads them.
 
 /** Setup with its own values, at the half width. */
-export const SetupOwnHalf: Story = { args: { tab: 'setup', setup: { ...DEFAULTS_OWN, onOpenPlugin: nothing } }, decorators: [storyWidths.half] };
+export const SetupOwnHalf: Story = { args: { tab: 'setup', setup: DEFAULTS_OWN }, decorators: [storyWidths.half] };
 
 /** Setup with its own values, at the 400 px floor. */
-export const SetupOwnNarrow: Story = { args: { tab: 'setup', setup: { ...DEFAULTS_OWN, onOpenPlugin: nothing } }, decorators: [storyWidths.narrow] };
+export const SetupOwnNarrow: Story = { args: { tab: 'setup', setup: DEFAULTS_OWN }, decorators: [storyWidths.narrow] };
 
 /** The process defaults open, in 中文, at the half width. */
 export const SetupProcessChineseHalf: Story = { args: { tab: 'setup', wired: false, setup: DEFAULTS_PROCESS_OWN }, decorators: [storyWidths.half, chinese] };
@@ -366,7 +355,7 @@ export const SetupProcessOwn: Story = { args: { tab: 'setup', wired: false, setu
 export const SetupProcessChinese: Story = { args: { tab: 'setup', wired: false, setup: DEFAULTS_PROCESS_OWN }, decorators: [chinese] };
 
 /** Setup with the workspace's own values: a line, a branch rule a plugin pushes and accepts, 中文 sessions, no reading, a remote and two rules. */
-export const SetupOwn: Story = { args: { tab: 'setup', setup: { ...DEFAULTS_OWN, onOpenPlugin: nothing } } };
+export const SetupOwn: Story = { args: { tab: 'setup', setup: DEFAULTS_OWN } };
 
 /** The header's *Wire to a remote…*: Setup at its remote, the form open. */
 export const Wiring: Story = { args: { tab: 'setup', wired: false, setup: { ...DEFAULTS_DAORIS, wiring: true } } };

@@ -17,13 +17,12 @@ const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Toolt
 /** Everything at Daoris's default: no line, merged into its line, no language, read; local only, no rules of its own. */
 const at = (over: Partial<WorkspaceSetupProps> = {}) => {
   const acts = {
-    line: vi.fn(), landing: vi.fn(), language: vi.fn(), read: vi.fn(), wire: vi.fn(), unwire: vi.fn(), add: vi.fn(), remove: vi.fn(),
+    line: vi.fn(), language: vi.fn(), read: vi.fn(), wire: vi.fn(), unwire: vi.fn(), add: vi.fn(), remove: vi.fn(),
   };
   const props: WorkspaceSetupProps = {
     workspace: 'aurora',
     defaults: {
       line: { onSet: acts.line },
-      landing: { landers: ['github-pull-request'], onSet: acts.landing },
       language: { table: LANGUAGES, onSet: acts.language },
       read: { onSet: acts.read },
     },
@@ -46,7 +45,7 @@ describe("a workspace's Setup", () => {
 
     expect(section('Defaults')).toHaveAttribute('aria-expanded', 'false');
     expect(section('Defaults')).toHaveAccessibleDescription(
-      "each checkout's own line (Daoris's default) · lands into its line (Daoris's default) · no session language (Daoris's default) · "
+      "each checkout's own line (Daoris's default) · no session language (Daoris's default) · "
       + "read by agents outside it (Daoris's default)");
     expect(section('Remote and reach')).toHaveAttribute('aria-expanded', 'false');
     expect(section('Remote and reach')).toHaveAccessibleDescription('local only · no rules of its own');
@@ -60,9 +59,9 @@ describe("a workspace's Setup", () => {
     expect(acts.line).not.toHaveBeenCalled();
   });
 
-  it('keeps the line, the landing, the remote and the rules where the session rows have gone', () => {
+  it('keeps the line, the remote and the rules where the session rows have gone', () => {
     at({ rows: 'rest' });
-    expect(section('Defaults')).toHaveAccessibleDescription("each checkout's own line (Daoris's default) · lands into its line (Daoris's default)");
+    expect(section('Defaults')).toHaveAccessibleDescription("each checkout's own line (Daoris's default)");
     expect(section('Remote and reach')).toHaveAccessibleDescription('local only · no rules of its own');
   });
 
@@ -70,7 +69,7 @@ describe("a workspace's Setup", () => {
   // so each row has one home among them and the tab's, and a section a door names is found by its row.
   it("draws the line's defaults alone for the place's Workflow", () => {
     const { acts } = at({ rows: 'defaults' });
-    expect(section('Defaults')).toHaveAccessibleDescription("each checkout's own line (Daoris's default) · lands into its line (Daoris's default)");
+    expect(section('Defaults')).toHaveAccessibleDescription("each checkout's own line (Daoris's default)");
     expect(screen.queryByRole('button', { name: 'Reach' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Remote and reach' })).toBeNull();
     expect(screen.queryByText('Session language')).toBeNull();
@@ -162,7 +161,6 @@ describe("a workspace's Setup", () => {
     const { acts } = at({
       defaults: {
         line: { set: 'develop', onSet: vi.fn() },
-        landing: { set: { form: 'branch', pattern: 'feature/{quest}-{slug}', plugin: 'github-pull-request' }, landers: [], onSet: vi.fn() },
         language: { set: 'zh', table: LANGUAGES, onSet: vi.fn() },
         read: { set: false, onSet: (read) => acts.read(read) },
       },
@@ -173,42 +171,9 @@ describe("a workspace's Setup", () => {
     expect(screen.getByText('Simplified Chinese (简体中文), set for this workspace.')).toBeInTheDocument();
     expect(screen.getByText(/Read by no agent outside it/)).toBeInTheDocument();
     // Each value the workspace sets carries its Clear, which hands it back to Daoris's.
-    expect(screen.getAllByRole('button', { name: 'Clear' })).toHaveLength(4);
-    await userEvent.click(screen.getAllByRole('button', { name: 'Clear' })[3]!);
+    expect(screen.getAllByRole('button', { name: 'Clear' })).toHaveLength(3);
+    await userEvent.click(screen.getAllByRole('button', { name: 'Clear' })[2]!);
     expect(acts.read).toHaveBeenLastCalledWith(undefined);
-  });
-
-  /** FABRIC-GRAPH1d: a rule the file keeps for it that reads as no rule is said under the row, and opens Defaults. */
-  it('names a landing rule that does not read under its row, opening Defaults', () => {
-    at({
-      defaults: {
-        line: { onSet: vi.fn() },
-        landing: { landers: [], onSet: vi.fn(), unread: { why: 'object', said: "it holds no rule's object." } },
-        language: { table: LANGUAGES, onSet: vi.fn() },
-        read: { onSet: vi.fn() },
-      },
-    });
-
-    expect(section('Defaults')).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByText(/keeps a landing rule for/).closest('[role="note"]')).toHaveTextContent(
-      'driver.json keeps a landing rule for aurora that is not a rule, so nothing reads it: work lands as though it set none.');
-  });
-
-  /** PLUGUI1c2c: the landing plugin is a door to that plugin's page. */
-  it("opens the plugin's page from its name in the landing sentence", async () => {
-    const onOpenPlugin = vi.fn();
-    at({
-      onOpenPlugin,
-      defaults: {
-        line: { onSet: vi.fn() },
-        landing: { set: { form: 'branch', pattern: 'feature/{quest}-{slug}', plugin: 'github-pull-request' }, landers: [], onSet: vi.fn() },
-        language: { table: LANGUAGES, onSet: vi.fn() },
-        read: { onSet: vi.fn() },
-      },
-    });
-
-    await userEvent.click(screen.getByRole('button', { name: 'github-pull-request' }));
-    expect(onOpenPlugin).toHaveBeenCalledWith('github-pull-request');
   });
 
   /** Each row's hint is its terminal twin (D41 §4, D50): `daoris driver <verb> --workspace <name>`. */
@@ -217,7 +182,6 @@ describe("a workspace's Setup", () => {
     await userEvent.click(section('Defaults'));
 
     expect(screen.getByText(code('daoris driver line --workspace aurora <branch>|--clear'))).toBeInTheDocument();
-    expect(screen.getByText(code('daoris driver landing --workspace aurora merge|branch <pattern>|--clear'))).toBeInTheDocument();
     expect(screen.getByText(code('daoris driver language --workspace aurora en|zh|--clear'))).toBeInTheDocument();
     expect(screen.getByText(code('daoris driver across --workspace aurora read on|off|--clear'))).toBeInTheDocument();
   });
@@ -241,22 +205,16 @@ describe("a workspace's Setup", () => {
     expect(screen.getByText(code('daoris driver line --workspace <workspace> <branch>|--clear'))).toBeInTheDocument();
   });
 
-  it('sets a default where none is: its line, how its work lands, its language and its reading', async () => {
+  it('sets a default where none is: its line, its language and its reading', async () => {
     const { acts } = at();
     const user = userEvent.setup();
     await user.click(section('Defaults'));
 
     const sets = () => screen.getAllByRole('button', { name: 'Set for this workspace' });
-    expect(sets()).toHaveLength(4);
+    expect(sets()).toHaveLength(3);
     await user.click(sets()[0]!);
     await user.type(screen.getByRole('textbox', { name: 'The line for aurora' }), 'develop{Enter}');
     expect(acts.line).toHaveBeenLastCalledWith('develop');
-
-    await user.click(sets()[0]!);
-    const rule = screen.getByRole('radiogroup', { name: 'How work in aurora lands' });
-    await user.click(within(rule).getByRole('radio', { name: 'Branch' }));
-    await user.click(within(rule.closest('form')!).getByRole('button', { name: 'Save' }));
-    expect(acts.landing).toHaveBeenLastCalledWith({ form: 'branch', pattern: 'feature/{quest}-{slug}', squash: false });
   });
 
   it('switches its reading off, as the terminal does', async () => {
@@ -264,13 +222,13 @@ describe("a workspace's Setup", () => {
     const user = userEvent.setup();
     await user.click(section('Defaults'));
 
-    await user.click(screen.getAllByRole('button', { name: 'Set for this workspace' })[3]!);
+    await user.click(screen.getAllByRole('button', { name: 'Set for this workspace' })[2]!);
     await user.click(within(screen.getByRole('radiogroup', { name: 'Reading across in aurora' })).getByRole('radio', { name: 'Off' }));
     expect(acts.read).toHaveBeenLastCalledWith(false);
   });
 
   it('leaves out a default the driver did not answer, rather than offer a save it would refuse', () => {
-    at({ defaults: { line: { onSet: vi.fn() }, landing: null, language: null, read: null } });
+    at({ defaults: { line: { onSet: vi.fn() }, language: null, read: null } });
 
     expect(section('Defaults')).toHaveAccessibleDescription("each checkout's own line (Daoris's default)");
   });

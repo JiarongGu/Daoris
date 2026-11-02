@@ -516,6 +516,20 @@ describe("a workspace's own Workflow", () => {
     expect(screen.queryByRole('button', { name: 'Gates' })).toBeNull();
   });
 
+  it('hands the Landing row how the route lands, as a repository\'s is handed: no line from the repository\'s tip', () => {
+    const landing = vi.fn((hand: LandingHand) => <div data-testid="landing">{hand.lands?.is ?? 'none'}{hand.lands?.is === 'version' && hand.lands.editor}</div>);
+    const current = draw({ page: 'workspace', name: 'aurora', current: workspace(), landing, onConvert: vi.fn() });
+    expect(screen.getByTestId('landing')).toHaveTextContent('current');
+    current.unmount();
+
+    draw({
+      page: 'workspace', name: 'aurora', landing, editor: editor(),
+      current: { ...WORKSPACE, start: { ...SAVED_DEFAULT, integration: null }, effective: EFFECTIVE_RELEASE },
+    });
+    expect(screen.getByTestId('landing')).toHaveTextContent('version');
+    expect(screen.getByTestId('landing')).toHaveTextContent('How it lands');
+  });
+
   it('lists its repositories, each following it or setting its own, with a door to the one that sets its own', async () => {
     const repository = vi.fn();
     draw({ page: 'workspace', name: 'aurora', current: workspace(), doors: { repository } });
