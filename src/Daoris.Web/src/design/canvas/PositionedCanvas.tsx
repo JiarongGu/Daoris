@@ -6,7 +6,8 @@ import { Canvas, CANVAS_FLOOR, type CanvasHandle, type CanvasOptions } from './C
 import { CanvasFind } from './CanvasFind';
 import { CanvasList, type ListGroup } from './CanvasList';
 import { DotLayer } from './DotLayer';
-import { FIND_FROM, findMatches, stepMatch } from './findNodes';
+import { FIND_FROM } from './findNodes';
+import { useCanvasFind } from './useCanvasFind';
 import { createLayoutClient, spawnLayoutWorker } from './layoutClient';
 import type { Layout, Scene } from './layoutScene';
 import { aggregateLine, type DrawnAggregate, type DrawnNode, type DrawnPath, edgePath, PositionedWorld } from './PositionedWorld';
@@ -99,17 +100,6 @@ export function PositionedCanvas({ scene, label, feature, storeKey, version = ''
   const [focusTick, setFocusTick] = useState(0);
 
   // Find: every node, shown or not; stepping opens the group, selects, and shows the node at a readable scale, the focus kept in the field.
-  const [query, setQuery] = useState('');
-  const [at, setAt] = useState(-1);
-  const started = useRef<View | null>(null);
-  const matches = useMemo(() => {
-    const found = findMatches(shape.nodes, query);
-    const titles = new Map(shape.nodes.map((node) => [node.id, node.title]));
-    return found.map((id) => ({ id, title: titles.get(id)! }));
-  }, [shape, query]);
-  const matching = useMemo(() => (query.trim() === '' ? null : new Set(matches.map((match) => match.id))), [matches, query]);
-  const shown = at >= 0 ? matches[at]?.id ?? null : null;
-
   const reveal = (id: string) => {
     if (!model) return;
     const group = model.groupOf.get(id);
@@ -119,18 +109,7 @@ export function PositionedCanvas({ scene, label, feature, storeKey, version = ''
     const box = model.nodeBoxes.get(id);
     if (box) handle.current?.showBox(box);
   };
-  const step = (back: boolean) => {
-    started.current ??= handle.current?.view() ?? null;
-    const next = stepMatch(at, matches.length, back);
-    setAt(next);
-    if (next >= 0) reveal(matches[next]!.id);
-  };
-  const clear = () => {
-    setQuery('');
-    setAt(-1);
-    if (started.current) handle.current?.setView(started.current);
-    started.current = null;
-  };
+  const { query, at, matches, matching, shown, onQuery, step, clear, pick } = useCanvasFind({ nodes: shape.nodes, handle, reveal });
   const focusNode = (id: string) => { focusing.current = id; setFocusTick((tick) => tick + 1); setActive(id); };
 
   const onView = useCallback((view: View, viewport: Size) => {
@@ -201,8 +180,7 @@ export function PositionedCanvas({ scene, label, feature, storeKey, version = ''
       {finding && (
         <CanvasFind
           label={findLabel ?? t('canvas.find')} query={query} matches={matches} at={at}
-          onQuery={(next) => { setQuery(next); setAt(-1); }}
-          onStep={step} onClear={clear} onPick={(id) => { setAt(matches.findIndex((match) => match.id === id)); reveal(id); }}
+          onQuery={onQuery} onStep={step} onClear={clear} onPick={pick}
           onDown={() => { if (shown) focusNode(shown); }}
         />
       )}
