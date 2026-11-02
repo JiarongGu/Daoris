@@ -572,7 +572,7 @@ public sealed record OpinionAnswerResponse(int Finding, string Said, string? Com
 // A door's answer: the opinion as it now stands, the desk's sentence, and the reviewer's record a pass opened or the working
 // session the findings went to, with the word they wait in.
 public sealed record OpinionActionResponse(
-    OpinionResponse Opinion, string Message, SessionResponse? Session = null, SaidWordResponse? Said = null);
+    OpinionResponse Opinion, string Message, SessionResponse? Session = null, SaidWordResponse? Said = null, string? Settled = null, bool? Waiting = null);
 // MIXAGENT2a-ii (D163 point 2): the driver's helper session opens its record, and hands the helper's answer to the asker. Every
 // part nullable so one left out is refused by the desk naming which. `text` is Daoris's words around the helper's claim.
 public sealed record HelperOpenRequest(string? Asker, string? Adapter, string? Tree, string? Account = null, string? HarnessVersion = null, string? BaseCommit = null);
@@ -585,9 +585,12 @@ public sealed record PartnerOpenRequest(
 public sealed record HelperHandRequest(string? Text, bool? Running = null, string? Level = null, bool? Settled = null);
 // CHATFLOW1e (the chat-flow design §6.1 (a), (e)): a first pass's findings handed to a chat run's record the driver names, the line's newest
 // in its tree, live between turns or ended; none for the working session itself, as before.
-public sealed record OpinionHandRequest(string? To = null);
-// A helper door's answer: the desk's sentence, the helper's record a pass opened or the asker the answer went to, and the word.
-public sealed record HelperActionResponse(string Message, SessionResponse? Session = null, SaidWordResponse? Said = null, string? Settled = null);
+// COMMS1b: `settled` true asks to be told a key the line settled, as a say or a helper's hand does.
+public sealed record OpinionHandRequest(string? To = null, bool? Settled = null);
+// A helper door's answer: the desk's sentence, the helper's record a pass opened or the asker the answer went to, and the word. `waiting`
+// (COMMS1b): the answer was waiting already, `session` holds it and `said` is it, and nothing was kept now.
+public sealed record HelperActionResponse(
+    string Message, SessionResponse? Session = null, SaidWordResponse? Said = null, string? Settled = null, bool? Waiting = null);
 // BRAINSTORM1a3 (D176 points 1, 2 and 8): a person's question for a brainstorm, every part nullable so one left out is refused by
 // the desk naming which. `Repository` is the one whose knowledge the packet is frozen from, none for the question alone.
 // ONEWAY1t: `Kind` is `brainstorm` (none) or `meeting`; `Id` the caller's own, which makes the ask idempotent; `Sources` the repository's

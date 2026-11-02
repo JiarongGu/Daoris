@@ -389,8 +389,12 @@ public sealed record SessionDeleteOutcome(SessionDeleteRefusal Refusal, string M
 /// This machine's home, where a park's question is filed (<see cref="QuestionBox"/>), or null on a host with none: a supervisor's word is
 /// then refused <see cref="SessionSayRefusal.NoHome"/>, since its question cannot be checked (SUPERVISOR1a-i).
 /// </param>
+/// <param name="opinions">
+/// The second opinions, where findings an open moved to a new part are followed (COMMS1b): the part that holds them answers them.
+/// </param>
 public sealed class SessionLedger(
-    QuestStore quests, SessionStore sessions, KnowledgeService? registry = null, AskStore? asks = null, string? home = null)
+    QuestStore quests, SessionStore sessions, KnowledgeService? registry = null, AskStore? asks = null, string? home = null,
+    OpinionStore? opinions = null)
 {
     /// <summary>The go-ahead family over the ledger's stores (PART6).</summary>
     private readonly SessionGoAheads goAheads = new(quests, sessions, asks);
@@ -836,6 +840,15 @@ public sealed class SessionLedger(
                 var moved = await sessions.MoveSaidAsync(before.Id, opened.Id,
                     word => named.Contains(word.Id) || (word.Persons && word.Attempt is null && !read.Contains(word.Id)), inside).ConfigureAwait(false);
                 transfer = [.. moved.Select((word, order) => new OpenTransfer(word.Id, word.Key, $"{key}/{word.Id}", order, word.Id))];
+                // The part that now holds a waiting findings word answers its opinion (COMMS1b, an authority change): handed_to follows the word.
+                if (opinions is not null)
+                {
+                    foreach (var word in moved.Where(each => each.By is not null))
+                    {
+                        await opinions.KeepFollowedAsync(word.By!, word.Id, before.Id, opened.Id, inside).ConfigureAwait(false);
+                    }
+                }
+
                 if (moved.Count > 0) opened = await sessions.FindAsync(opened.Id, inside).ConfigureAwait(false) ?? opened;
                 message += moved.Count switch
                 {

@@ -104,7 +104,7 @@ public sealed class OpinionHostTests(LocalHost host) : IClassFixture<LocalHost>
     /// <summary>
     /// 🔴 The hand door keeps the findings on the working session's record as another agent's words (design §6.3): `said`
     /// names the opinion as `by`, `answer` holds none of them, and when the session takes them they are never kept on the
-    /// ask, where they would read as the person's. A second hand is 409. The say door refuses words to the reviewer's record
+    /// ask, where they would read as the person's. A second hand while they wait is answered `waiting` with the word. The say door refuses words to the reviewer's record
     /// by its word, `opinion`.
     /// </summary>
     [Fact]
@@ -137,7 +137,10 @@ public sealed class OpinionHostTests(LocalHost host) : IClassFixture<LocalHost>
         var listed = (await ListedSessionAsync(working))!.Value;
         Assert.Equal(id, Assert.Single(listed.GetProperty("said").EnumerateArray().ToList()).GetProperty("by").GetString());
         Assert.False(listed.TryGetProperty("answer", out _));
-        Assert.Equal(409, (await host.PostAsync($"/api/opinions/{id}/hand", new { })).Status);
+        var again = await host.PostAsync($"/api/opinions/{id}/hand", new { });
+        Assert.Equal(200, again.Status);
+        Assert.True(again.Json.GetProperty("waiting").GetBoolean());
+        Assert.Equal(wordId, again.Json.GetProperty("said").GetProperty("id").GetString());
 
         Assert.Equal(200, (await host.PostAsync($"/api/sessions/{working}/state", new { state = "working" })).Status);
         Assert.Equal(200, (await host.PostAsync($"/api/sessions/{working}/taken", new { said = new[] { wordId } })).Status);

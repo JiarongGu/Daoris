@@ -100,10 +100,10 @@ public sealed class HandOverAskBox(string? home)
     /// conversation never goes on with another agent. The sentence says which, or null when it may.
     /// </summary>
     private static string? Unfit(Session asker) =>
-        asker.Serves is { } serves
-            ? $"Session `{asker.Id}` is a helper for session `{serves}`, and a helper cannot hand over: it answers one question."
-        : asker.Opinion is { } opinion
+        asker.Opinion is { } opinion
             ? $"Session `{asker.Id}` reads another session's work for second opinion `{opinion}`, and a reviewer cannot hand over."
+        : asker.Serves is { } serves
+            ? $"Session `{asker.Id}` is a helper for session `{serves}`, and a helper cannot hand over: it answers one question."
         : asker.Ask is { } ask
             ? $"Session `{asker.Id}` is the intake for ask `#{ask}`, which does no work in a repository, and an intake cannot hand over."
         : asker.HelpMode is not null || string.Equals(asker.Repository, SessionLedger.HelpRepository, StringComparison.Ordinal)
