@@ -146,6 +146,24 @@ public sealed class ReviewRulesTests : IDisposable
     }
 
     /// <summary>
+    /// A place on a saved workflow has its look decided by that workflow's <c>look</c> node (WORKFLOWCLEAN1 1h): `required` is refused in the
+    /// shared edit, coded, naming the node; an environment put without it, or a place on Current, is unchanged.
+    /// </summary>
+    [Fact]
+    public void Required_is_refused_for_a_place_on_a_saved_workflow_naming_its_look_node()
+    {
+        var saved = DriverConfig.Parse("""{"workflows":{"storefront":{"default":"merge-after-accept"}}}""");
+        var put = new ReviewSpelled("dev", "deployed", "README.md");
+
+        var refused = Assert.Throws<ChoiceRefusal>(() => ReviewRules.Apply(saved, new ReviewEdit { Repository = "storefront", Put = put, Required = true }));
+        Assert.Equal(ChoiceRefusal.GraphDecides, refused.Check);
+        Assert.Contains("`look` node", refused.Message);
+
+        Assert.False(ReviewRules.Apply(saved, new ReviewEdit { Repository = "storefront", Put = put }).Reviews["storefront"].Required);
+        Assert.True(ReviewRules.Apply(DriverConfig.Empty, new ReviewEdit { Repository = "storefront", Put = put, Required = true }).Reviews["storefront"].Required);
+    }
+
+    /// <summary>
     /// The room's cell (design §1.7–§1.8): what the intake's and Ask Daoris's room shows of the rule standing for a repository,
     /// and <c>no review environment</c> where nothing is set.
     /// </summary>

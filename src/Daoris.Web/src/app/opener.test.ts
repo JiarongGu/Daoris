@@ -52,8 +52,8 @@ describe('the opener', () => {
     expect(opening('settings', 'driver')).toEqual({
       view: 'settings', chosen: { view: 'settings', item: 'driver' }, anchor: null,
     });
-    expect(opening('settings', 'start', { anchor: 'step-landing' })).toEqual({
-      view: 'settings', chosen: { view: 'settings', item: 'start' }, anchor: 'step-landing',
+    expect(opening('settings', 'start', { anchor: 'step-setUp' })).toEqual({
+      view: 'settings', chosen: { view: 'settings', item: 'start' }, anchor: 'step-setUp',
     });
     // The gear names no domain: Settings opens on the one it had, at its top as it was.
     expect(opening('settings')).toEqual({ view: 'settings' });

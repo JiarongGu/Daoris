@@ -391,20 +391,19 @@ describe('Set up…, on a place\'s page', () => {
     expect(await screen.findByRole('radio', { name: /A branch to push/ })).toBeChecked();
   });
 
-  it('preselects Keep how it lands where the landing was chosen, and offers and sends a keep plan with driving and a tick', async () => {
+  it('preselects Keep how it lands where the landing was chosen, and offers and sends a keep plan with adoption', async () => {
     mix = { engine: KEPT_ROW };
     show(<Place />);
     await open(/^engine/);
     const keep = await screen.findByRole('radio', { name: 'Keep how it lands' });
     await waitFor(() => expect(keep).toBeChecked());
     await waitFor(() => expect(sent('PLACE_PLAN').at(-1)).toEqual({ repositories: ['engine'], preset: 'keep', opinion: false, look: false, adoption: false, drive: false }));
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Your look before it lands' }));
     await userEvent.click(screen.getByRole('checkbox', { name: 'Ask its session to adopt Daoris' }));
-    await waitFor(() => expect(sent('PLACE_PLAN').at(-1)).toMatchObject({ preset: 'keep', look: true, adoption: true }));
+    await waitFor(() => expect(sent('PLACE_PLAN').at(-1)).toMatchObject({ preset: 'keep', look: false, adoption: true }));
     await review();
     await waitFor(() => expect(applyButton()).toBeEnabled());
     await userEvent.click(applyButton());
-    const ask: PlaceAsk = { repositories: ['engine'], preset: 'keep', opinion: false, look: true, adoption: true, drive: false };
+    const ask: PlaceAsk = { repositories: ['engine'], preset: 'keep', opinion: false, look: false, adoption: true, drive: false };
     await waitFor(() => expect(sent('PLACE_APPLY')).toEqual([{ ...ask, digest: planOf(ask, mix).digest, accept: [] }]));
   });
 

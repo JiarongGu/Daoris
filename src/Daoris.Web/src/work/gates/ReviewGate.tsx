@@ -28,10 +28,7 @@ export type ReviewGateActs = {
   showAgain?: () => void;
   /** The set-up step's own page, where the gate is not drawn on it. */
   open?: () => void;
-  /**
-   * *Accept without the look…* (CHATFLOW1d2, the chat-flow design §5.3): a chat run's work landed past a look no set-up step can show,
-   * with the person's words, at the commit the press captures. Offered only where the frame lands a conversation's work.
-   */
+  /** *Accept without the look…*: a chat run's look node skipped with the person's words, then the work accepted. Offered where the run names that node. */
   withoutLook?: (words: string | null, answered: Answered) => void;
 };
 
@@ -166,7 +163,7 @@ export function ReviewGate({
       </div>
 
       {sentence && <p className="m-0 text-small text-ink-soft"><Inline text={sentence} /></p>}
-      {/* A look that cannot start says the driver's words beneath: a chat run's name the terminal's door, `trees land --without-look` (D50). */}
+      {/* A look that cannot start says the driver's words beneath: a chat run's name the terminal's door, `workflow skip` (D50). */}
       {said && (state === 'unread' || state === 'cannot-start') && (
         <p className="m-0 text-meta text-ink-faint [overflow-wrap:anywhere]"><Inline text={t('review.driverSaid', { said })} /></p>
       )}
@@ -231,14 +228,14 @@ export function ReviewGate({
         </InlineConfirm>
       )}
       {asking === 'withoutLook' && (
-        /* The person's own way past a look no conversation can have (design §5.3): it asks once, with their words, which the landing
-           record keeps beside the commit it lands. */
+        /* The person's skip of the look node a conversation's work waits on, then the one Accept: it asks once, and needs their words. */
         <InlineConfirm
           tone="primary"
           label={t('review.ask.withoutLookTitle')}
           says={t('review.ask.withoutLook')}
           meanIt={t('review.ask.withoutLookMeanIt')}
           busy={busy}
+          ready={words.trim().length > 0}
           onConfirm={(answered) => acts.withoutLook?.(words.trim() || null, answered)}
           onClose={() => { setAsking(null); setWords(''); }}
         >

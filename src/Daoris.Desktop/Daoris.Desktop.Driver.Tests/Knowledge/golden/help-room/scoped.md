@@ -215,7 +215,7 @@ session named; never propose adding one that has not landed.
 
 | To | On the screen | At a terminal |
 |---|---|---|
-| walk through setting this machine up: an agent, Ask Daoris's agent, a workspace and its repositories, what is driven, how work lands, what agents may do | Settings → Get started (Help → *Get started*) | (each step shows its own command there) |
+| walk through setting this machine up: an agent, Ask Daoris's agent, a workspace and its repositories, setting a place up, what agents may do | Settings → Get started (Help → *Get started*) | (each step shows its own command there) |
 | drive a repository, or stop | Repositories → the repository's page → Setup → Driving | `daoris driver drive|undrive <repository>` |
 | hold one, so nothing new starts there, or resume it | Repositories → the repository's page → Setup → Driving | `daoris driver hold|resume <repository>` |
 | give its sessions their own tree | Repositories → the repository's page → Setup → Driving | `daoris driver trees <repository> on|off` |
@@ -331,7 +331,7 @@ view, for Settings its domain, and a part where the place has one.
 - Parts of `quests`: `asks` (Asks), `held` (Waiting on you).
 - Parts of `projects`: `add` (Add repository), `import` (Import a folder), `setup` (a repository's Setup), `branches` (a repository's Branches), `history` (a repository's History), `workspace-details` (a workspace's Details), `workspace-branches` (a workspace's Branches), `workspace-workflow` (a workspace's Workflow), `workspace-setup` (a workspace's Setup), `workspace-defaults` (a workspace's Defaults), `workspace-remote` (a workspace's Remote and reach).
 - Parts of `knowledge`: `search` (Search), `convergence` (Convergence).
-- Parts of `start`, the setup guide's steps: `agent` (step 1, an agent), `helper` (step 2, Ask Daoris's agent), `repositories` (step 3, a workspace and its repositories), `driven` (step 4, what is driven), `landing` (step 5, how work lands), `rules` (step 6, what agents may do).
+- Parts of `start`, the setup guide's steps: `agent` (step 1, an agent), `helper` (step 2, Ask Daoris's agent), `repositories` (step 3, a workspace and its repositories), `setUp` (step 4, setting a place up), `rules` (step 5, what agents may do).
 - Parts of `agents`: `accounts` (Accounts), `rules` (What it may do), `usage` (Usage), `roles` (Roles).
 
 A go names no repository or agent: `setup` opens the Setup of the repository Repositories has chosen,

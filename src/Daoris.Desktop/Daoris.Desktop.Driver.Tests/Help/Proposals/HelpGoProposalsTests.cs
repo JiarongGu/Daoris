@@ -439,7 +439,7 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
                 "projects/workspace-details", "projects/workspace-branches", "projects/workspace-workflow",
                 "projects/workspace-setup", "projects/workspace-defaults", "projects/workspace-remote",
                 "knowledge/search", "knowledge/convergence",
-                "start/agent", "start/helper", "start/repositories", "start/driven", "start/landing", "start/rules",
+                "start/agent", "start/helper", "start/repositories", "start/setUp", "start/rules",
                 "agents/accounts", "agents/rules", "agents/usage", "agents/roles",
             ],
             HelpPlaces.Parts.Select(part => $"{part.Within}/{part.Id}"));

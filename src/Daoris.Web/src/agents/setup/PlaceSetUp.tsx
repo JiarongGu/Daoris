@@ -212,8 +212,8 @@ function PlaceChoices({
             </ChoiceRow>
           ))}
         </div>
-        <CheckField checked={delivers && draft.opinion} onChange={(on) => onChange({ opinion: on })} label={t('agents.setup.set.opinion')} disabled={!delivers} className="whitespace-normal text-ink" />
-        <CheckField checked={delivers && draft.look} onChange={(on) => onChange({ look: on })} label={t('agents.setup.set.look')} disabled={!delivers} className="whitespace-normal text-ink" />
+        <CheckField checked={delivers && draft.preset !== KEEP && draft.opinion} onChange={(on) => onChange({ opinion: on })} label={t('agents.setup.set.opinion')} disabled={!delivers || draft.preset === KEEP} className="whitespace-normal text-ink" />
+        <CheckField checked={delivers && draft.preset !== KEEP && draft.look} onChange={(on) => onChange({ look: on })} label={t('agents.setup.set.look')} disabled={!delivers || draft.preset === KEEP} className="whitespace-normal text-ink" />
         <PartRefusals refusals={refusedIn('delivery')} doorFor={doorFor} />
       </Part>
 

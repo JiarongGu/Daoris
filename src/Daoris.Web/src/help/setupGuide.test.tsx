@@ -94,8 +94,8 @@ describe('Get started, on the desktop', () => {
     const onGo = show();
 
     const steps = await screen.findByRole('list', { name: 'setup steps' });
-    expect(within(steps).getAllByRole('listitem')).toHaveLength(6);
-    expect(screen.getByText('0 of 5 required steps done')).toBeInTheDocument();
+    expect(within(steps).getAllByRole('listitem')).toHaveLength(5);
+    expect(screen.getByText('0 of 4 required steps done')).toBeInTheDocument();
     const agent = within(steps).getByRole('listitem', { name: '1. An agent' });
     expect(within(agent).getByText('to do')).toBeInTheDocument();
 
@@ -112,7 +112,7 @@ describe('Get started, on the desktop', () => {
     show();
 
     const steps = await screen.findByRole('list', { name: 'setup steps' });
-    expect(await screen.findByText('2 of 5 required steps done')).toBeInTheDocument();
+    expect(await screen.findByText('2 of 4 required steps done')).toBeInTheDocument();
     expect(within(within(steps).getByRole('listitem', { name: '1. An agent' })).getByText('done')).toBeInTheDocument();
     expect(within(within(steps).getByRole('listitem', { name: '3. A workspace and its repositories' })).getByText('done'))
       .toBeInTheDocument();

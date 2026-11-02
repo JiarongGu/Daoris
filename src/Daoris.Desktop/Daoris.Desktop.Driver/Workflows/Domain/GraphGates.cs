@@ -30,7 +30,7 @@ public static class GraphGates
         {
             var read = Read(lookNode, WorkflowKinds.Look)!;
             if (read.Problem is not null) return new(none, null, null, claims, read.Problem);
-            look = WorkflowProcess.ReadLook(declared, declared.Repository, lookNode.Id, (string?)read.Values["environment"]);
+            look = WorkflowProcess.ReadLook(declared, declared.Repository, lookNode.Id, (string?)read.Values["environment"]) with { Node = lookNode.Id };
         }
 
         ResolvedOpinion? opinion = null;
