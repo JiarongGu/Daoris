@@ -5,5 +5,19 @@
   "canvas.zoomIn": "Zoom in",
   "canvas.zoomOut": "Zoom out",
   "canvas.actual": "Actual size",
-  "canvas.toSelection": "Zoom to the selection"
+  "canvas.toSelection": "Zoom to the selection",
+  "canvas.minimap": "Minimap",
+  "canvas.fit": "Show the whole graph",
+  "canvas.moves": "a graph: drag to move",
+  "canvas.laying": "Laying out the graph…",
+  "canvas.find": "Find in the graph",
+  "canvas.findAt": "{{at}} of {{count}}",
+  "canvas.findNone": "No match",
+  "canvas.findResults": "Matches",
+  "canvas.asList": "Show as list",
+  "canvas.asGraph": "Show as graph",
+  "canvas.items": "{{count}} items",
+  "canvas.groupCard": "{{title}}, {{count}} items. Press to open",
+  "canvas.foldAgain": "Fold again",
+  "canvas.selectionGone": "The item you had selected is no longer in the graph."
 }

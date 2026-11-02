@@ -26,6 +26,7 @@ import * as editor from '../src/workflow/edit/WorkflowEditor.stories';
 import * as proposal from '../src/workflow/edit/WorkflowEditor.proposal.stories';
 import * as judgement from '../src/workflow/edit/WorkflowEditor.judgement.stories';
 import * as canvas from '../src/design/canvas/Canvas.stories';
+import * as large from '../src/design/canvas/LargeGraph.stories';
 import { applyZoom } from '../src/design/zoom';
 
 // The measured-box checks' page (FLOWCHART1a1; the flowchart design §7, trap 3; UIFIT1, the UI/UX design §5's first trap):
@@ -79,6 +80,8 @@ const books: Record<string, Record<string, ComponentType>> = {
   judgement: composeStories(judgement) as unknown as Record<string, ComponentType>,
   // The canvas (CANVAS1a): a flow in the viewport at the three widths, the dense graph whole, and the synthetic worlds measured for frames.
   canvas: composeStories(canvas) as unknown as Record<string, ComponentType>,
+  // The large positioned worlds (CANVAS1d): 100, 1,000, 5,000 and 10,000 nodes in the viewport, tiers, culling, the minimap, find.
+  large: composeStories(large) as unknown as Record<string, ComponentType>,
 };
 
 const query = new URLSearchParams(window.location.search);
@@ -90,8 +93,14 @@ const Story = books[book]?.[name];
 const root = document.getElementById('root')!;
 // The moment the story's props are handed to React, from which a drawing's first usable frame is timed (the canvas design §4.1).
 performance.mark('story-render');
-if (Story) createRoot(root).render(<Story />);
-else root.textContent = `No story ${book}/${name}. Stories: ${Object.entries(books).flatMap(([at, stories]) => Object.keys(stories).map((each) => `${at}/${each}`)).join(', ')}`;
+const mounted = Story ? createRoot(root) : null;
+if (Story) mounted?.render(<Story />);
+// The page can open and close its story again, for the checks that nothing is retained across opens (CANVAS1d, trap 22).
+(window as unknown as { setOpen: (open: boolean) => void }).setOpen = (open) => {
+  if (!Story) return;
+  if (open) { performance.mark('story-render'); mounted?.render(<Story />); } else mounted?.render(null);
+};
+if (!Story) root.textContent = `No story ${book}/${name}. Stories: ${Object.entries(books).flatMap(([at, stories]) => Object.keys(stories).map((each) => `${at}/${each}`)).join(', ')}`;
 
 // Ready once the faces have loaded and two frames have passed, so every flow has measured its pane and drawn its edges,
 // and every track has sized to its labels in the loaded face.

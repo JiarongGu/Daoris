@@ -7,7 +7,10 @@ import { isComposing } from '../../lib/composing';
 import { useTall } from '../useWidth';
 import { CanvasToolbar, type SizingActs } from './CanvasToolbar';
 import { boxSelect, worldRect } from './gesture';
+import { Minimap } from './Minimap';
+import { minimapWanted, rememberMinimap, wantsMinimap } from './minimapRule';
 import { type Connect, useConnection } from './useConnection';
+import { anchorOf, keepView, memoryKey, recallView, restoreView } from './viewMemory';
 import {
   type Box, clampScale, clampView, fitView, keepAnchor, panBy, type Point, reveal, type Size, translation, type View, wheelPan, wheelTravel,
   zoomAbout, zoomByWheel, type ZoomBounds,
@@ -37,8 +40,30 @@ export type CanvasSelection = {
   onBox: (ids: string[]) => void;
 };
 
-/** What the drawing tells the canvas each time it measured its world. */
-export type CanvasHandle = { measured: (read: WorldRead) => void };
+/** What the drawing tells the canvas each time it measured its world (a positioned world adds its groups' boxes), and what it can ask. */
+export type CanvasHandle = {
+  measured: (read: WorldRead, groups?: ReadonlyMap<string, Box>) => void;
+  /** Brings a box to the middle at a readable scale: at least 100% where the bounds allow, never smaller than the view is. */
+  showBox: (box: Box) => void;
+  view: () => View;
+  setView: (view: View) => void;
+};
+
+/**
+ * What the viewer keeps (CANVAS1d; the canvas design §4, trap 18): the view, by feature and key, restored if the graph's identity is
+ * the same, else by the surviving anchor. `onGone` says the selection kept is no longer in the graph.
+ */
+export type CanvasMemory = {
+  feature: string;
+  key: string;
+  identity: string;
+  selected?: string | null;
+  groupOf?: (id: string) => string | null;
+  onGone?: () => void;
+};
+
+/** A large world's minimap: the boxes it draws, offered by `minimap.ts`'s rule. */
+export type CanvasMinimap = { boxes: readonly Box[] };
 
 /** The region's inner width from which a feature's drawing stands in the viewport, in rem: the 39rem story's 576 px. */
 export const CANVAS_FLOOR = 36;
@@ -89,7 +114,8 @@ function scrollsItself(target: Element | null, stop: Element, dx: number, dy: nu
  * offered (below the 36rem floor, the list chosen, nothing measured) it is the pane as it always was. A molecule: the view is its own.
  */
 export function Canvas({
-  ref, active, options, label, width, rem, pane, paneProps, tools, showTools, entry, selected = null, selection = null, connect = null, children,
+  ref, active, options, label, width, rem, pane, paneProps, tools, showTools, entry, selected = null, selection = null, connect = null,
+  remember = null, minimap = null, overlay, onView, children,
 }: {
   ref?: Ref<CanvasHandle>;
   /** Whether the viewport is offered: from the floor, the drawing chosen and measured. */
@@ -111,6 +137,12 @@ export function Canvas({
   selection?: CanvasSelection | null;
   /** The connection line, where the feature's ports are dragged from; it works with or without the viewport. */
   connect?: Connect | null;
+  remember?: CanvasMemory | null;
+  minimap?: CanvasMinimap | null;
+  /** A layer in the viewport's own pixels, over the world and under the controls (the dots); given the view and the viewport. */
+  overlay?: (view: View, viewport: Size) => ReactNode;
+  /** Told when the view or the viewport changed, for what the drawing culls by. */
+  onView?: (view: View, viewport: Size) => void;
   children: ReactNode;
 }) {
   const on = active && options !== null && width !== undefined;
@@ -171,14 +203,27 @@ export function Canvas({
   };
 
   useImperativeHandle(ref, () => ({
-    measured: (read) => {
+    showBox: (box) => {
+      const k = Math.max(viewRef.current.k, clampScale(1, bounds));
+      const size = viewport(k);
+      commit({ x: box.x + box.w / 2 - size.w / (2 * k), y: box.y + box.h / 2 - size.h / (2 * k), k });
+    },
+    view: () => viewRef.current,
+    setView: (next) => commit(next),
+    measured: (read, groups) => {
       const size = { w: read.width, h: read.height };
       if (!worldRef.current || worldRef.current.w !== size.w || worldRef.current.h !== size.h) {
         worldRef.current = size;
         setWorld(size);
       }
       let next = viewRef.current;
-      if (!moved.current) next = opening(read.nodes);
+      const kept = remember && boxes.current.size === 0 ? recallView(memoryKey(remember.feature, remember.key)) : null;
+      const restored = kept && remember ? restoreView(kept, remember.identity, read.nodes, groups ?? new Map()) : null;
+      if (restored && remember) {
+        next = restored.view;
+        moved.current = true;
+        if (restored.selectionGone) remember.onGone?.();
+      } else if (!moved.current) next = opening(read.nodes);
       else {
         const id = anchor(read.nodes);
         if (id !== null) next = keepAnchor(next, boxes.current.get(id)!, read.nodes.get(id)!);
@@ -195,6 +240,23 @@ export function Canvas({
     if (!lasting) settle.current = window.setTimeout(() => setMoving(false), SETTLE_MS);
   };
   useEffect(() => () => window.clearTimeout(settle.current), []);
+
+  // The drawing is told where the view stands (what it culls by); the viewer's place is kept once the view has held still.
+  const viewport0 = viewport(view.k);
+  useEffect(() => {
+    if (on) onView?.(view, viewport0);
+  }, [on, view.x, view.y, view.k, viewport0.w, viewport0.h]);
+  useEffect(() => {
+    if (!on || !remember || !moved.current || boxes.current.size === 0) return undefined;
+    const timer = window.setTimeout(() => {
+      keepView({
+        identity: remember.identity, view: viewRef.current, selected: remember.selected ?? null,
+        anchor: anchorOf(viewRef.current, viewport(viewRef.current.k), boxes.current, remember.groupOf ?? (() => null)),
+      }, memoryKey(remember.feature, remember.key));
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [on, view.x, view.y, view.k, remember?.identity, remember?.selected]);
+  const [mapOn, setMapOn] = useState(minimapWanted);
 
   // The wheel, heard before the window's zoom: a listener of its own, since a passive React one cannot keep the page from scrolling.
   useEffect(() => {
@@ -329,6 +391,7 @@ export function Canvas({
     if (id === null) return;
     commit(fitView(boxes.current.get(id)!, viewport(1), { min: bounds.min, max: Math.min(1, bounds.max) }, 2 * rem));
   };
+  const offered = minimap !== null && world !== null && wantsMinimap(world, { w: width ?? 0, h: cap });
   const middle = (): Point => ({ x: (width ?? 0) / 2, y: heightAt(viewRef.current.k) / 2 });
   const acts: SizingActs = {
     zoomIn: () => commit(zoomAbout(viewRef.current, viewRef.current.k * 1.25, middle(), bounds)),
@@ -337,6 +400,7 @@ export function Canvas({
     toSelection: target() === null ? null : toTarget,
     actual: () => commit(zoomAbout(viewRef.current, 1, middle(), bounds)),
     zoomTo: (k) => commit(zoomAbout(viewRef.current, k, middle(), bounds)),
+    minimap: offered ? { on: mapOn, toggle: () => { setMapOn(!mapOn); rememberMinimap(!mapOn); } } : null,
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -435,6 +499,10 @@ export function Canvas({
         <div ref={element} {...{ [WORLD]: '', [SCALE]: String(view.k) }} className="absolute left-0 top-0 w-max" style={worldStyle}>
           {children}
         </div>
+        {overlay?.(view, viewport(view.k))}
+        {offered && mapOn && minimap && world && (
+          <Minimap world={world} view={view} viewport={viewport(view.k)} boxes={minimap.boxes} onGo={(next) => commit(next)} />
+        )}
         {lasso && (
           <div aria-hidden="true" data-canvas-box="" className="pointer-events-none absolute border border-dashed border-accent" style={{ left: lasso.x, top: lasso.y, width: lasso.w, height: lasso.h }} />
         )}
