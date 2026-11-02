@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-02 - A `merge --auto-accept` landing card never said the merge needs no press (REVIEW2 S1)
+
+- **Symptom:** the card for `landing … merge --auto-accept` read `Land X's accepted work merged into its line.`, and its Apply wrote `AutoAccept = true`, so every done quest merged into the line with no press, unsaid; the room said the switch was never proposed on a merge.
+- **Root cause:** LANDNODE1c3 made the merge plan acceptable, but the accepting sentence (D145 point 5) was appended to the branch form's sentence only.
+- **Fix:** `LandingRules.AutoAcceptSays` has a merge variant that the card, `daoris driver landing` and the Landing section of the room use, the room and the service tool's description stop saying "never on a merge"; a note on D145.
+- **Verify:** `HelpSettingProposalsTests` asserts the merge card's `Describe`; `HelpSettingProposalTests` (service) asserts the tool's words.
+
 ## 2026-11-02 - Thirty-seven chat Process tests red after the routing standing was told (COWORKVIEW1e-i)
 
 - **Symptom:** the driver's Process gate failed 37 tests across nine chat classes (`ChatGoesOnProcessTests`, `ChatPendingProcessTests`, `ProtocolChatTests`, `TurnStopTests`, `HandOverProcessTests` and four more): prompts read `Routing standing here: ...` where the person's words were expected, and stand-ins keyed on a prompt's text (`hold`, `refuse`, a reply's length as context) no longer matched.

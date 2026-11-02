@@ -638,7 +638,9 @@ public static class LandingRules
     /// person's standing say-so for a push with no press, so it is said where it is given. With no plugin, the warning
     /// that nothing leaves the machine. <c>daoris-driver driver landing</c> says these words; the page says them in its own catalogue.
     /// </summary>
-    public static string AutoAcceptSays(string? plugin) => plugin is { } named
+    public static string AutoAcceptSays(string? plugin, bool merge = false) => merge
+        ? "when a quest here is done, its work is merged into its line with no press. Switch it off to accept each one yourself."
+        : plugin is { } named
         ? $"when a quest here is done, its work is put on its branch, and `{named}` pushes it and opens a pull request without "
           + "asking you each time. The pull request is where it is judged. Switch it off to accept each one yourself."
         : "when a quest here is done, its work is put on its branch, and nothing leaves this machine: no plugin opens a pull "

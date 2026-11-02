@@ -711,6 +711,9 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
         var merge = HelpProposals.Plan(Setting("landing", "engine", null, "merge --auto-accept"), DriverConfig.Empty, Facts);
         Assert.Null(merge.Refusal);
         Assert.True(merge.Apply!(DriverConfig.Empty).Landings["engine"].AutoAccept);
+        // REVIEW2 S1: the standing say-so is said on the card applied (D145 point 5), merge or branch.
+        Assert.Contains("accepted automatically", merge.Describe);
+        Assert.Contains("merged into its line with no press", merge.Describe);
         Assert.Contains("`--auto-accept` or `--no-auto-accept`",
             HelpProposals.Plan(Setting("landing", "engine", null, "branch feature/{quest} --auto-accept --no-auto-accept"), DriverConfig.Empty, Facts).Refusal);
     }
