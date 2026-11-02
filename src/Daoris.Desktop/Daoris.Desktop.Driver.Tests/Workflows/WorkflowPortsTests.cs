@@ -105,7 +105,8 @@ public sealed class WorkflowPortsTests
 
         var named = WorkflowProcesses.Read(store, runs, Declared, "web-app", "work", "q1");
         Assert.True(named.Named);
-        Assert.Equal((1, (string?)null, true, true), (named.Binding!.Version, named.Landing.Rule.Pattern, named.Landing.Rule.AutoAccept, named.Landing.Rule.Tidy));
+        // The door's tidy is retired (WORKFLOWCLEAN1 1c): a run bound to a `land` carries the intent it bound, whose rule tidies nothing.
+        Assert.Equal((1, (string?)null, true, false), (named.Binding!.Version, named.Landing.Rule.Pattern, named.Landing.Rule.AutoAccept, named.Landing.Rule.Tidy));
 
         runs.Damage("q2");
         var damaged = WorkflowProcesses.Read(store, runs, Declared, "web-app", "work", "q2");

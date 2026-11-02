@@ -215,7 +215,15 @@ public sealed class StartRoleTests : IDisposable
             },
         };
         var roster = new HarnessRoster(set, DaorisHome.Entry(_home, HomeEntry.Harnesses));
-        return new Daoris.Driver.Driver(new ServiceClient("http://127.0.0.1:9", null), config, set, _home, harnesses: roster);
+        // A saved workflow's bind reads the registry for the remote's platform (WORKFLOWCLEAN1 1a), so the service answers an empty one.
+        var service = new ServiceClient("http://127.0.0.1:9", null, new HttpClient(new Registry()));
+        return new Daoris.Driver.Driver(service, config, set, _home, harnesses: roster);
+    }
+
+    private sealed class Registry : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct) =>
+            Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK) { Content = new StringContent("[]") });
     }
 
     private static Consideration Engine => new(new QuestView("q1", "platform", "engine", "Split the loader", "Two jobs.", "Open"), StartVerdict.Start, "", Workspace: "default");

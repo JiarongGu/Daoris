@@ -289,6 +289,9 @@ jobs:
       - name: Desktop modules gate
         run: dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests --filter Category!=Process --nologo
 
+      - name: Censuses gate
+        run: dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter Category=Census && dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests --filter Category=Census
+
       - name: Driver process gate
         run: dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/process.runsettings --nologo
 

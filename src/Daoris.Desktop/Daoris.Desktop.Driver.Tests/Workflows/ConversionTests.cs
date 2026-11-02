@@ -21,7 +21,7 @@ public sealed class ConversionTests : IDisposable
         new("plain", true, "/f/plain", "default"),
     ];
 
-    private string ConfigPath => Path.Combine(_home, "driver.json");
+    private string ConfigPath => DaorisHome.Entry(_home, HomeEntry.DriverConfig);
 
     public void Dispose()
     {

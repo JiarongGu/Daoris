@@ -45,6 +45,14 @@ public sealed class ConversionCensusTests : Bridge
         }
 
         var running = census.RefreshAsync(Read, default);
+        // A reading yields before it begins, and a call made before then shares it: the burst comes once the first has begun.
+        var until = DateTime.UtcNow + Poll.Patience;
+        while (Volatile.Read(ref readings) < 1)
+        {
+            Assert.True(DateTime.UtcNow < until, "the first reading never began");
+            await Task.Delay(5);
+        }
+
         var asked = Enumerable.Range(0, 5).Select(_ => census.RefreshAsync(Read, default)).ToList();
         Assert.All(asked, each => Assert.False(each.IsCompleted));
 
