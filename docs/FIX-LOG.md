@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-02 - A role card said "choices kept" while its Apply deleted or re-keyed the policy (REVIEW2 S2)
+
+- **Symptom:** a `default`, `default-all` or `remove` card for a role with a standing staffing policy said nothing of it, and a `set` of new choices with no `policy` re-keyed it unsaid; a policy set after the card was drawn was deleted too, because the card's revision is built from `Describe`/`Terminal`, which never read the policy.
+- **Root cause:** `HelpRoleProposals.Plan` described the policy only for a `set` that carried one, while `RoleDoor.Apply` clears the policies of defaulted and removed roles and `RoleStaffing.Rekeyed` re-keys a set's.
+- **Fix:** `Plan` reads each affected role's policy and appends the before and after in the fold's words (`PolicyDescribe`) to `Describe`; a note on D226.
+- **Verify:** `HelpRoleProposalsTests.A_change_that_clears_or_rekeys_a_standing_policy_says_so_on_the_card`.
+
 ## 2026-11-02 - A `merge --auto-accept` landing card never said the merge needs no press (REVIEW2 S1)
 
 - **Symptom:** the card for `landing … merge --auto-accept` read `Land X's accepted work merged into its line.`, and its Apply wrote `AutoAccept = true`, so every done quest merged into the line with no press, unsaid; the room said the switch was never proposed on a merge.
