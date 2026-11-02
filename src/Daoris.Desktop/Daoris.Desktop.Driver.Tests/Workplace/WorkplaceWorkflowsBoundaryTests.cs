@@ -85,7 +85,8 @@ public sealed class WorkplaceWorkflowsBoundaryTests : IDisposable
         Assert.Equal(DaorisHome.Entry(_home, HomeEntry.OpinionGates), ChatRuns.GatesFolder(_home));
         Assert.Equal(Path.Combine(DaorisHome.Entry(_home, HomeEntry.Workflows), "looks"), ChatRuns.LooksFolder(_home));
         Assert.Equal(
-            [WorkflowRunBindings.PathOf(_home, "chat-s1"), Path.Combine(ChatRuns.GatesFolder(_home), "chat-s1.json"), Path.Combine(ChatRuns.LooksFolder(_home), "chat-s1.json")],
+            [WorkflowRunBindings.PathOf(_home, "chat-s1"), Path.Combine(ChatRuns.GatesFolder(_home), "chat-s1.json"), Path.Combine(ChatRuns.LooksFolder(_home), "chat-s1.json"),
+                ChatCandidates.PathOf(_home, "chat-s1")],
             ChatRuns.Files(_home, "chat-s1"));
         Assert.Empty(ChatRuns.Files(_home, "q1"));
         Assert.Empty(ChatRuns.Files(_home, "chat-a/b"));
@@ -106,13 +107,14 @@ public sealed class WorkplaceWorkflowsBoundaryTests : IDisposable
         File.WriteAllText(WorkflowRunBindings.PathOf(_home, "chat-s2"), "{}");
 
         var files = new SessionHomeFiles(_home);
-        Assert.Equal(12L, files.Size("s1").Total);
+        // Four files of four bytes, the candidate file (WORKFLOWCLEAN1 1d) the fourth.
+        Assert.Equal(16L, files.Size("s1").Total);
         Assert.Equal(2L, files.Size("s2").Total);
 
         var removed = files.Remove(["s1"], null);
 
         Assert.Contains("run", removed.Went["s1"]);
-        Assert.Equal(12L, removed.Bytes["s1"].Total);
+        Assert.Equal(16L, removed.Bytes["s1"].Total);
         Assert.Empty(removed.Failed);
         Assert.All(ChatRuns.Files(_home, "chat-s1"), path => Assert.False(File.Exists(path), path));
         Assert.True(File.Exists(WorkflowRunBindings.PathOf(_home, "q1")));
