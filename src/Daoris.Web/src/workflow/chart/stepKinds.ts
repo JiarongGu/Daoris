@@ -49,7 +49,7 @@ export type ChartStep = {
   terminal?: 'none' | 'finished';
   /** The declared holds, folded to one node or opened (the first member carrying the press that folds them again). */
   group?: { count: number; open: boolean; members: string[] };
-  /** What the driver's judgement refused at this step, in the reader's words (FLOWCHART2c): drawn as words, never a border alone. */
+  /** What the driver's judgement refused at this step, in the reader's words (FLOWCHART2c): an outline on the step, its chip the canvas's, and the words in its description. */
   refused?: string[];
 };
 

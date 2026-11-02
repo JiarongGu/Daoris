@@ -65,9 +65,13 @@ internal sealed class ChatHandOver(ChatContext context, IChatRunning runner)
     /// <param name="why">One of <see cref="HandOverWhy"/>.</param>
     /// <param name="askedBy">One of <see cref="HandOverBy"/>.</param>
     /// <param name="onEnded">Told when the new conversation ends, as a start's is.</param>
+    /// <param name="model">
+    /// The model and effort of the choice the offer named (STAFFPOLICY1d): the new conversation starts that choice as approved, revalidated
+    /// against the role's choices when it starts and never picked again; null takes the agent's own entry as before.
+    /// </param>
     public async Task<HandedOver> HandOverAsync(
         string sessionId, string agent, string? account, string why, string askedBy, DriverConfig config,
-        Func<string, string, Task>? onEnded, CancellationToken ct)
+        Func<string, string, Task>? onEnded, CancellationToken ct, string? model = null, string? effort = null)
     {
         if (_context.Closing) return new HandedOver(null, false, null, "the application is closing, so no conversation is handed over now.");
 
@@ -85,7 +89,7 @@ internal sealed class ChatHandOver(ChatContext context, IChatRunning runner)
                         HandOver.Running,
                         $"{sessionId} is {prior.State}, running in another Daoris process on this machine: hand it over there, or stop it first.")
                     : null,
-                course => Decided?.Invoke(sessionId, course))
+                course => Decided?.Invoke(sessionId, course), model, effort)
             .ConfigureAwait(false);
         if (asked is not { Move: { } move, Request: { } request }) return new HandedOver(null, false, asked.Answer.Why, asked.Answer.Message);
 
@@ -245,9 +249,13 @@ internal sealed class ChatHandOver(ChatContext context, IChatRunning runner)
                 {
                     if (unasked is not null) return new ChatStart(null, unasked);
 
+                    // STAFFPOLICY1d: the choice approved is the one started, held to the role's choices as they stand now and never picked again.
+                    var approved = HandedChoice(sessionId, prior, request, config, out var gone);
+                    if (gone is not null) return new ChatStart(null, gone);
+
                     var started = await _runner.StartAsync(
                             prior.Repository!, request.Agent, config, onEnded, request.Account, ct: token, tree: prior.Tree, from: from,
-                            picked: keeps && request.AskedBy == HandOverBy.Person && !string.IsNullOrWhiteSpace(request.Account), moves: keyed)
+                            order: approved, picked: keeps && request.AskedBy == HandOverBy.Person && !string.IsNullOrWhiteSpace(request.Account), moves: keyed)
                         .ConfigureAwait(false);
                     if (started.SessionId is not { } to) return started;
 
@@ -344,6 +352,30 @@ internal sealed class ChatHandOver(ChatContext context, IChatRunning runner)
         {
             return null;
         }
+    }
+
+    /// <summary>
+    /// The choice a hand-over was approved on (STAFFPOLICY1d, the staff policy design §11 point 4): its agent, model and effort as one entry
+    /// the start takes as handed, after holding that the role the conversation is bound to still lists it. Null where the ask named no model or
+    /// effort (the agent's own entry, as before); <paramref name="gone"/> says it where the choice is no longer the role's, and the start waits
+    /// for the person rather than start another.
+    /// </summary>
+    private IReadOnlyList<ActorEffective>? HandedChoice(string sessionId, PriorSession prior, HandOverRequest request, DriverConfig config, out string? gone)
+    {
+        gone = null;
+        if (request.Model is null && request.Effort is null) return null;
+        try
+        {
+            var role = RoleOrders.Bound(_context.Conversations.RoleOf(sessionId)?.Role, "chat", RoleCatalog.ReadHome(_context.Home), new RolePlace(prior.Workspace));
+            if (RoleOrders.Holds(role, config, request.Agent, request.Model, request.Effort)) return [new ActorEffective(request.Agent, request.Model, request.Effort, "handed")];
+            gone = $"the choice it was offered, {request.Agent}{(request.Model is null ? "" : $" · {request.Model}")}, is no longer one of {ActorWords.Name(role)}'s choices, so nothing started: offer it again.";
+        }
+        catch (ActorUnreadableException unread)
+        {
+            gone = unread.Message;
+        }
+
+        return null;
     }
 
     /// <summary>

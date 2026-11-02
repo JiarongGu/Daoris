@@ -18,12 +18,13 @@ import * as graph from '../src/workflow/GraphFlow.stories';
 import * as runView from '../src/workflow/WorkflowRunFlow.stories';
 import * as zoom from '../src/work/frame/ZoomReadout.stories';
 import * as waitPanel from '../src/work/waits/WaitPanel.stories';
-import * as roles from '../src/agents/roles/RoleDiagram.stories';
+import * as roles from '../src/agents/roles/StructureCanvas.stories';
 import * as place from '../src/agents/setup/PlacePage.stories';
 import * as setUpReview from '../src/agents/setup/PlaceReview.stories';
 import * as placeWorkflow from '../src/workflow/place/PlaceWorkflowView.stories';
 import * as editor from '../src/workflow/edit/WorkflowEditor.stories';
 import * as proposal from '../src/workflow/edit/WorkflowEditor.proposal.stories';
+import * as judgement from '../src/workflow/edit/WorkflowEditor.judgement.stories';
 import * as canvas from '../src/design/canvas/Canvas.stories';
 import { applyZoom } from '../src/design/zoom';
 
@@ -74,6 +75,8 @@ const books: Record<string, Record<string, ComponentType>> = {
   editor: composeStories(editor) as unknown as Record<string, ComponentType>,
   // Ask Daoris's proposal on the editor's chart (FLOWCHART2f): the union drawn and marked at 80 and 39rem, the rail at 25rem.
   proposal: composeStories(proposal) as unknown as Record<string, ComponentType>,
+  // The driver's refusals on the editor's chart (FLOWCHART2c, CANVAS1b): an outline and a chip, no box moved.
+  judgement: composeStories(judgement) as unknown as Record<string, ComponentType>,
   // The canvas (CANVAS1a): a flow in the viewport at the three widths, the dense graph whole, and the synthetic worlds measured for frames.
   canvas: composeStories(canvas) as unknown as Record<string, ComponentType>,
 };

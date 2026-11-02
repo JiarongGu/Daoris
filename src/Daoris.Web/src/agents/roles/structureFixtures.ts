@@ -111,10 +111,13 @@ export const DRIVER = { drivable: ['engine', 'site'], holds: [] as string[] };
 
 /**
  * A structure past 24 nodes (COMPANYVIEW1f): aurora's eight repositories and borealis's six each with a building role of its own, two
- * more of aurora's taking this machine's, so each workspace folds to one node.
+ * more of aurora's taking this machine's, so each workspace folds to one node. `sizes` is how many repositories each of the two has of its own
+ * (CANVAS1c's hundred-node fixture is thirty each).
  */
-export function largeStructure(): { structure: RoleStructure; registry: { repository: string; workspace?: string }[] } {
-  const own = [...Array.from({ length: 8 }, (_, n) => ['aurora', `aurora-${n + 1}`]), ...Array.from({ length: 6 }, (_, n) => ['borealis', `borealis-${n + 1}`])];
+export function largeStructure(sizes: readonly [number, number] = [8, 6]): { structure: RoleStructure; registry: { repository: string; workspace?: string }[] } {
+  const own = [
+    ...Array.from({ length: sizes[0] }, (_, n) => ['aurora', `aurora-${n + 1}`]), ...Array.from({ length: sizes[1] }, (_, n) => ['borealis', `borealis-${n + 1}`]),
+  ];
   const taking = [['aurora', 'aurora-docs'], ['aurora', 'aurora-site']];
   const roleFor = (repository: string) => roleOf(`${repository}-build`, `${repository} build`, `${repository} 开发`, { kind: 'repository', id: repository }, 1);
   const buildAt = (role: ReturnType<typeof roleOf>) => [work('build', role, [choice('claude-code', 'ready', { model: 'sonnet' })])];

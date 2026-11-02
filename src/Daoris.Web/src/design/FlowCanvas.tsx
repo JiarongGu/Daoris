@@ -2,5 +2,5 @@
 // 36rem floor (`viewport`), and as it always was where it does not.
 export { RankedFlow as FlowCanvas } from './RankedFlow';
 export type {
-  FlowCanvasProps, FlowEdge, FlowNode, FlowPick, FlowProps, FlowSection, LabelContext, NodeContext, NodeFoot, PillTone,
+  FlowCanvasProps, FlowEdge, FlowMark, FlowNode, FlowPick, FlowProps, FlowSection, LabelContext, NodeContext, NodeFoot, PillTone,
 } from './RankedFlow';

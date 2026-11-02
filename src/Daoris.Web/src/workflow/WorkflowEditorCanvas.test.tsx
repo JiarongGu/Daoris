@@ -235,3 +235,78 @@ describe('the editor\'s chart in the viewport', () => {
     expect(JSON.stringify(openDraftNow()!.graph)).not.toMatch(/"(x|y|k|zoom|view)":/);
   });
 });
+
+// CANVAS1b (D224; the canvas design §2.4, §3.1): many steps are chosen for Copy alone, and the inspector stands beside the chart where the
+// editor's region holds both, read in the root's rem.
+describe('choosing more than one step', () => {
+  it('outlines each step chosen with Ctrl or Shift, copies them all and pastes them all, while every other act takes the first', async () => {
+    render(wrap(<Editor />));
+    await user.click(await screen.findByRole('button', { name: 'Begin from Merge workflow' }));
+    await waitFor(() => expect(focused()).toBe(step('The work')));
+    await user.click(step('The work'));
+    await user.click(await screen.findByRole('button', { name: 'Close' }));
+    await user.keyboard('{Control>}');
+    await user.click(step('Your review'));
+    await user.keyboard('{/Control}');
+    expect(step('Your review')).toHaveAttribute('data-selected', 'true');
+    expect(step('The work')).toHaveAttribute('data-selected', 'true');
+    // The inspector is the primary's alone, and chose no drawer.
+    expect(screen.queryByRole('button', { name: 'Close' })).toBeNull();
+
+    await user.keyboard('{Control>}c{/Control}');
+    expect(screen.getByRole('status')).toHaveTextContent('Copied Your review, The work.');
+    await user.keyboard('{Control>}v{/Control}');
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent(/Pasted The work, Your review/));
+    expect(screen.getAllByRole('listitem', { name: 'Your review' })).toHaveLength(2);
+    expect(screen.getAllByRole('listitem', { name: 'The work' })).toHaveLength(2);
+  });
+
+  it('chooses one again by a plain press, and none by toggling the only one out', async () => {
+    render(wrap(<Editor />));
+    await user.click(await screen.findByRole('button', { name: 'Begin from Merge workflow' }));
+    await waitFor(() => expect(focused()).toBe(step('The work')));
+    await user.click(step('The work'));
+    await user.click(await screen.findByRole('button', { name: 'Close' }));
+    await user.keyboard('{Shift>}');
+    await user.click(step('Your review'));
+    await user.keyboard('{/Shift}');
+    expect(document.querySelectorAll('[data-selected="true"]')).toHaveLength(2);
+    await user.click(step('The work'));
+    await user.click(await screen.findByRole('button', { name: 'Close' }));
+    expect([...document.querySelectorAll('[data-selected="true"]')].map((each) => each.getAttribute('data-flow-node'))).toHaveLength(1);
+    await user.keyboard('{Control>}');
+    await user.click(step('The work'));
+    await user.keyboard('{/Control}');
+    expect(document.querySelectorAll('[data-selected="true"]')).toHaveLength(0);
+  });
+});
+
+describe('the inspector beside the chart', () => {
+  const wideRegion = () => vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+    const width = this.hasAttribute('data-flow-pane') ? 900 : this.hasAttribute('data-editor-region') ? 1100 : 0;
+    return { width, height: 0, top: 0, left: 0, right: width, bottom: 0, x: 0, y: 0, toJSON: () => ({}) } as DOMRect;
+  });
+
+  it('stands beside the chart where the region holds 64rem, and in a drawer where the window\'s zoom leaves the chart less (a rem is the root\'s)', async () => {
+    wideRegion();
+    const { unmount } = render(wrap(<Editor />));
+    await user.click(await screen.findByRole('button', { name: 'Begin from Merge workflow' }));
+    await user.click(await screen.findByRole('listitem', { name: 'The work' }));
+    // 1100 px is 68.75rem at 16 px: the inspector stands beside the chart, and no drawer opens.
+    expect(await screen.findByRole('heading', { name: 'The work', level: 4 })).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    unmount();
+
+    // At the window's 200% a rem is 32 px, the same 1100 px is 34rem, and the chart keeps the room as a drawer holds the inspector.
+    document.documentElement.style.fontSize = '32px';
+    try {
+      render(wrap(<Editor />));
+      await user.click(await screen.findByRole('button', { name: 'Begin from Merge workflow' }));
+      await user.click(await screen.findByRole('listitem', { name: 'The work' }));
+      expect(await screen.findByRole('button', { name: 'Close' })).toBeInTheDocument();
+      expect(screen.queryByRole('heading', { name: 'The work', level: 4 })).toBeNull();
+    } finally {
+      document.documentElement.style.removeProperty('font-size');
+    }
+  });
+});

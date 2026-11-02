@@ -18,6 +18,7 @@ public sealed record SessionRecord(string Id, string Repository, string State)
     public ActorAsked? Asked { get; init; }
     public JsonElement? Override { get; init; }
     public ActorRan? Ran { get; init; }
+    public ActorChosen? Chosen { get; init; }
     /// <summary>The quest it serves, or null for a conversation's or an intake's.</summary>
     public string? Quest { get; init; }
 

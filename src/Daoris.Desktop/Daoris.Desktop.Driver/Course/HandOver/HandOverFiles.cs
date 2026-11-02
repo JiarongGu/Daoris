@@ -29,6 +29,9 @@ internal static class HandOverFiles
             writer.WriteString("why", request.Why);
             writer.WriteString("askedBy", request.AskedBy);
             writer.WriteString("at", Moments.Write(request.At));
+            // STAFFPOLICY1d: only where the choice approved names them, so every box from before keeps its shape.
+            if (request.Model is { } model) writer.WriteString("model", model);
+            if (request.Effort is { } effort) writer.WriteString("effort", effort);
             writer.WriteEndObject();
         });
     }
@@ -65,7 +68,9 @@ internal static class HandOverFiles
                 return null;
             }
 
-            return new HandOverRequest(agent, Text(root, "account") is { Length: > 0 } account ? account : null, why, by, at);
+            return new HandOverRequest(
+                agent, Text(root, "account") is { Length: > 0 } account ? account : null, why, by, at,
+                Text(root, "model") is { Length: > 0 } model ? model : null, Text(root, "effort") is { Length: > 0 } effort ? effort : null);
         }
         catch (JsonException)
         {

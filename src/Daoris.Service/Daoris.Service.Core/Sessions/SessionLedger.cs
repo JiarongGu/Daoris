@@ -570,11 +570,11 @@ public sealed class SessionLedger(
     /// An unknown choice, a non-object value or provenance beyond its bounds.
     /// </exception>
     public async Task<Session?> KeepActorAsync(string id, string? choice, JsonElement? asked, JsonElement? changed, JsonElement? ran,
-        CancellationToken ct = default)
+        JsonElement? chosen = null, CancellationToken ct = default)
     {
         if (choice is not null && choice is not ("1" or "2" or "3" or "4" or "before" or "rule-default" or "pick" or "handed"))
             throw new ArgumentException("unknown actor choice");
-        foreach (var value in new[] { asked, changed, ran })
+        foreach (var value in new[] { asked, changed, ran, chosen })
             if (value is { } element && (element.ValueKind != JsonValueKind.Object || element.GetRawText().Length > 16384))
                 throw new ArgumentException("actor provenance must be a bounded object");
         if (ran is { } reported)
@@ -586,7 +586,7 @@ public sealed class SessionLedger(
                 if (reported.TryGetProperty(name, out var count) && (count.ValueKind != JsonValueKind.Number || !count.TryGetInt32(out var n) || n < 0))
                     throw new ArgumentException($"ran.{name} must be a nonnegative count");
         }
-        return await sessions.KeepActorAsync(id, choice, asked, changed, ran, ct).ConfigureAwait(false)
+        return await sessions.KeepActorAsync(id, choice, asked, changed, ran, chosen, ct).ConfigureAwait(false)
             ? await sessions.FindAsync(id, ct).ConfigureAwait(false) : null;
     }
 

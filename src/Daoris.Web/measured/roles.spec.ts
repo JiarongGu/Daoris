@@ -24,16 +24,27 @@ const TABLE: Record<string, 'across' | 'rail'> = {
   'roles/OneAgent': 'across',
   'roles/TooLarge': 'across',
   'roles/TooLargeChinese': 'across',
-  'roles/Half': 'rail',
+  // At 39rem the region holds the canvas's 36rem floor, the label above the roles (CANVAS1c); at 25rem, the list.
+  'roles/Half': 'across',
   'roles/Narrow': 'rail',
-  'roles/ChineseHalf': 'rail',
+  'roles/ChineseHalf': 'across',
   'roles/ChineseNarrow': 'rail',
-  'roles/DarkHalf': 'rail',
+  'roles/DarkHalf': 'across',
   'roles/DarkNarrow': 'rail',
-  'roles/PlaceChosenHalf': 'rail',
+  'roles/PlaceChosenHalf': 'across',
   'roles/AgentChosenNarrowChinese': 'rail',
   'roles/TooLargeNarrow': 'rail',
+  'roles/TooLargeHalf': 'across',
 };
+
+/**
+ * The crossings each story's staffed edges make, the table of what the bands may cross; none above it (CANVAS1c). The fixture's ten
+ * choices cross six times as its agents are ordered by the bands their roles stand in; a fixture with one agent or folded bands crosses none.
+ */
+const CROSSINGS: Record<string, number> = {
+  'roles/OneAgent': 0, 'roles/TooLarge': 0, 'roles/TooLargeChinese': 0, 'roles/TooLargeHalf': 0,
+};
+const FIXTURE_CROSSINGS = 6;
 
 /** The story drawn, its faces loaded, and a drawn diagram's edges drawn and holding still. */
 async function open(page: Page, story: string) {
@@ -68,14 +79,34 @@ for (const [story, placement] of Object.entries(TABLE)) {
       expect(diagram!.collisions, story).toEqual([]);
       expect(diagram!.overlaps, story).toEqual([]);
       expect(at.narrow, story).toBe(false);
-      // The detail stands beside the diagram.
-      expect(at.detail!.left, story).toBeGreaterThanOrEqual(at.pane!.right);
+      // The detail stands beside the structure at 80rem, and below it where the main area holds one column.
+      if (/Half$/.test(story)) expect(at.detail!.top, story).toBeGreaterThanOrEqual(at.pane!.bottom);
+      else expect(at.detail!.left, story).toBeGreaterThanOrEqual(at.pane!.right);
+      console.log(`roles: ${story} ${diagram!.nodes} nodes, ${diagram!.paths} paths, ${diagram!.crossings} crossings`);
+      expect(diagram!.crossings, story).toBeLessThanOrEqual(CROSSINGS[story] ?? FIXTURE_CROSSINGS);
     } else {
       expect(diagram!.paths, story).toBe(0);
       expect(at.narrow, story).toBe(true);
       // The detail stands below the list.
       expect(at.detail!.top, story).toBeGreaterThanOrEqual(at.pane!.bottom);
     }
+  });
+}
+
+for (const story of ['roles/Hundred', 'roles/HundredHalf']) {
+  test(`${story}: a hundred places and roles drawn whole, every staffed edge clear of every node, within the crossings of its fixture`, async ({ page }) => {
+    test.setTimeout(120_000);
+    await open(page, story);
+    await page.getByRole('button', { name: 'Show whole' }).click();
+    await expect(page.locator('[data-flow-node][data-kind="fold"]')).toHaveCount(0);
+    await page.waitForFunction(() => Number(document.querySelector('[data-drawn]')?.getAttribute('data-drawn') ?? 0) > 0);
+    await page.waitForTimeout(600);
+    const [diagram] = await page.evaluate(measureFlows);
+    console.log(`roles: ${story} whole: ${diagram!.nodes} nodes, ${diagram!.paths} paths, ${diagram!.crossings} crossings, ${diagram!.collisions.length} collisions`);
+    expect(diagram!.placement).toBe('across');
+    expect(diagram!.nodes).toBeGreaterThan(100);
+    expect(diagram!.collisions).toEqual([]);
+    expect(diagram!.overlaps).toEqual([]);
   });
 }
 
