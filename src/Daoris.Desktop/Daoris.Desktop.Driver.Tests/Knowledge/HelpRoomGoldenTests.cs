@@ -97,6 +97,29 @@ public sealed class HelpRoomGoldenTests
             new("codex") { Present = false },
             new("dsh") { Present = true, Accounts = [new("home", "in")] },
         ],
+        // STAFFPOLICY1g: a role under a set policy with its week, one whose policy went stale, one with none, and one scoped to a workspace.
+        Roles =
+        [
+            new HelpRole("build", "Build", ["build", "design"], HelpRole.MachineScope, null, 7)
+            {
+                Choices = ["claude-code sonnet high", "claude-code opus high"],
+                PolicyState = HelpRole.Set, PolicyRevision = 3,
+                Policy = "Spread by weight (3:1); on a limit: next by weight; at most 3 moves a day",
+                Next = "choice 1 (claude-code sonnet high), by weight, 3 of the last 4 were choice 2",
+                Week = "last 7 days: 14 starts (claude-code sonnet high ×10, claude-code opus high ×4), moved: limit ×1, transient ×1",
+            },
+            new HelpRole("intake", "Intake", ["intake"], HelpRole.MachineScope, null, 0)
+            {
+                Choices = ["codex-acp"], PolicyState = HelpRole.Stale, PolicyRevision = 2,
+                Why = "its choices changed since it was set",
+            },
+            new HelpRole("helper", "Helper", ["help"], HelpRole.MachineScope, null, 0),
+            new HelpRole("designer", "Designer", ["design"], HelpRole.WorkspaceScope, "work", 2)
+            {
+                Choices = ["claude-code opus high"],
+                Week = "last 7 days: 1 start (claude-code opus high ×1)",
+            },
+        ],
         OpenAsks =
         [
             new HelpAsk("a1b2c3d4", "fix the chunk streamer's stall", "work", "Published", ["q1a2b3c4", "q5e6f7a8"]),

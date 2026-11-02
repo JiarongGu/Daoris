@@ -90,7 +90,7 @@ public sealed class HelpRoleProposalsTests : HelpProposalsFixture, IDisposable
         var preset = HelpProposals.Plan(Role("set", "build", """{ "policy": "even", "policyRevision": 0 }"""), config, Machine);
 
         Assert.Null(preset.Refusal);
-        Assert.Contains("Its policy: spread by weight 1:1.", preset.Describe);
+        Assert.Contains("Policy, Build: First that can run → Spread by weight (1:1); on a limit: next by weight; at most 3 moves a day.", preset.Describe);
         Assert.Contains("This can spend differently.", preset.Describe);
         Assert.Contains("&& daoris driver role policy build --preset first --rule weight", preset.Terminal);
         Assert.Equal(StaffPolicy.Code, Assert.Throws<RoleRefusedException>(() => RoleDoor.Apply(Staffing, RoleChange.Set(RoleCatalog.Seed[0]), null, null, new RolePolicyPress(Preset: "cheapest"))).Code);
@@ -101,8 +101,32 @@ public sealed class HelpRoleProposalsTests : HelpProposalsFixture, IDisposable
 
         var stale = HelpProposals.Plan(Role("set", "build", """{ "policy": "first", "policyRevision": 0 }"""), config, Machine);
         Assert.Contains("changed since you read it", stale.Refusal);
-        var unenforced = HelpProposals.Plan(Role("set", "build", """{ "policy": { "rule": "order", "choices": [], "most": 3 }, "policyRevision": 1 }"""), config, Machine);
+        var unenforced = HelpProposals.Plan(Role("set", "build", """{ "policy": { "rule": "order", "choices": [], "moves": { "failed": "next" } }, "policyRevision": 1 }"""), config, Machine);
         Assert.Contains("does not enforce yet", unenforced.Refusal);
+    }
+
+    /// <summary>STAFFPOLICY1g: the card says the policy before and after, a stale one as having run in order, and a revision moved since is refused at Apply.</summary>
+    [Fact]
+    public void The_card_says_the_policy_before_and_after_and_a_revision_moved_since_is_refused_at_apply()
+    {
+        Staffing.Set("build", [new ActorChoice("claude-code", "sonnet", "high"), new ActorChoice("claude-code", "opus", "high")]);
+        var config = StaffingProjection.Config(Staffing.Read()!);
+        var first = HelpProposals.Plan(Role("set", "build", """{ "policy": "even", "policyRevision": 0 }"""), config, Machine);
+        Assert.Contains("Policy, Build: First that can run → Spread by weight (1:1); on a limit: next by weight; at most 3 moves a day.", first.Describe);
+        var duplicate = HelpProposals.Plan(Role("set", "build", """{ "policy": "weighted", "policyRevision": 0 }"""), config, Machine);
+        RoleDoor.Apply(Staffing, first.Role!.Change, first.Role.Choices, first.Role.Read, first.Role.Policy);
+
+        var weighted = HelpProposals.Plan(Role("set", "build", """{ "policy": "weighted", "policyRevision": 1 }"""), config, Machine);
+        Assert.Contains("Policy, Build: Spread by weight (1:1); on a limit: next by weight; at most 3 moves a day → Spread by weight (1:1); on a limit: next by weight; at most 3 moves a day. This can spend differently.", weighted.Describe);
+
+        // The card of the same read, pressed after the policy moved, is refused whole and the stored policy stays as it was.
+        var refused = Assert.Throws<RoleRefusedException>(() => RoleDoor.Apply(Staffing, duplicate.Role!.Change, duplicate.Role.Choices, duplicate.Role.Read, duplicate.Role.Policy));
+        Assert.Equal(StaffPolicy.Code, refused.Code);
+        Assert.Equal(1L, Staffing.Policy("build").Revision);
+        Assert.Equal(StaffRules.Weight, Staffing.Policy("build").Policy!.Rule);
+
+        var cleared = HelpProposals.Plan(Role("set", "build", """{ "policy": null, "policyRevision": 1 }"""), config, Machine);
+        Assert.Contains("→ First that can run (its policy is cleared).", cleared.Describe);
     }
 
     [Fact]

@@ -42,6 +42,8 @@ internal static class HelpRoomSections
         new HelpRoomWork(),
         new HelpRoomWorkspaces(),
         new HelpRoomAgents(),
+        // STAFFPOLICY1g (D226): each role's policy and its last 7 days, beside the agents they spend.
+        new HelpRoomRoles(),
         new HelpRoomAsks(),
     ];
 }

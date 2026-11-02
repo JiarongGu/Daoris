@@ -61,6 +61,14 @@ public sealed record HelpMachine
 
     public IReadOnlyList<HelpAgent> Agents { get; init; } = [];
 
+    // The roles section's (STAFFPOLICY1g).
+
+    /// <summary>
+    /// The working roles with their choices, policy and last seven days, read from the home as the room is written
+    /// (<see cref="HelpRoom.Prepare"/>); none for a machine described by hand.
+    /// </summary>
+    public IReadOnlyList<HelpRole> Roles { get; init; } = [];
+
     // The asks section's.
 
     /// <summary>The asks not closed, newest first (HELP6).</summary>
