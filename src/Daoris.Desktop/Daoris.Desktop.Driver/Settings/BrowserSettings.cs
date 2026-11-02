@@ -1,9 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using static Daoris.Driver.Json;
-using Daoris.Driver;
 
-namespace Daoris.Desktop;
+namespace Daoris.Driver;
 
 /// <summary>
 /// What Daoris's browser does with extensions other software registered for Chrome on this machine
@@ -45,9 +44,8 @@ public sealed record BrowserSettingsRead(string Extensions, string Browser, stri
 /// click (BRW7), so that one holds at once.
 /// </summary>
 /// <remarks>
-/// <para>🔴 <b>A twin file</b>, as the favorites are. The CLI's <c>browser.ts</c> reads and edits it
-/// with its own code, for <c>daoris browser extensions</c>, and each side carries the same test table.
-/// A rule changed here is changed there, in the same commit.</para>
+/// <para>The one writer of the file (ONEWAY1u): the window's Browser screen, Ask Daoris and the terminal call
+/// <see cref="SetExtensions"/>, <see cref="SetBrowser"/> and <see cref="SetLinks"/>.</para>
 ///
 /// <para><b>An editor never writes over what it could not read</b>, and keeps what it has no field
 /// for. A value it does not know is the default, never a guess at a neighbouring one.</para>
@@ -69,36 +67,39 @@ public static class BrowserSettings
     }
 
     /// <summary>Set the extensions setting for the browser's next start.</summary>
-    /// <exception cref="InvalidOperationException">A value that is neither, or a file this could not read.</exception>
+    /// <exception cref="HomeFileRefusal">A value that is neither, or a file this could not read; nothing was written.</exception>
     public static void SetExtensions(string home, string extensions)
     {
         if (extensions is not (ExtensionsSetting.Offer or ExtensionsSetting.Refuse))
         {
-            throw new InvalidOperationException($"The extensions setting is `offer` or `refuse`, not `{extensions}`.");
+            throw new HomeFileRefusal(
+                HomeFileRefusal.ExtensionsUnknown, $"The extensions setting is `offer` or `refuse`, not `{extensions}`.", ("value", extensions));
         }
 
         Set(home, "extensions", extensions);
     }
 
     /// <summary>Choose the browser for the next time one is opened.</summary>
-    /// <exception cref="InvalidOperationException">A value that is neither, or a file this could not read.</exception>
+    /// <exception cref="HomeFileRefusal">A value that is neither, or a file this could not read; nothing was written.</exception>
     public static void SetBrowser(string home, string browser)
     {
         if (browser is not (BrowserChoice.Daoris or BrowserChoice.Edge))
         {
-            throw new InvalidOperationException($"The browser is `daoris` or `edge`, not `{browser}`.");
+            throw new HomeFileRefusal(
+                HomeFileRefusal.BrowserUnknown, $"The browser is `daoris` or `edge`, not `{browser}`.", ("value", browser));
         }
 
         Set(home, "browser", browser);
     }
 
     /// <summary>Choose where the page's links open (BRW7).</summary>
-    /// <exception cref="InvalidOperationException">A value that is neither, or a file this could not read.</exception>
+    /// <exception cref="HomeFileRefusal">A value that is neither, or a file this could not read; nothing was written.</exception>
     public static void SetLinks(string home, string links)
     {
         if (links is not (LinksSetting.System or LinksSetting.Daoris))
         {
-            throw new InvalidOperationException($"Links open in `system` or `daoris`, not `{links}`.");
+            throw new HomeFileRefusal(
+                HomeFileRefusal.LinksUnknown, $"Links open in `system` or `daoris`, not `{links}`.", ("value", links));
         }
 
         Set(home, "links", links);
@@ -109,8 +110,10 @@ public static class BrowserSettings
         var (file, problem) = Load(home);
         if (problem is not null)
         {
-            throw new InvalidOperationException(
-                $"{problem}. Fix it, or delete it to start from the defaults: the browser's settings will not write over a file they could not read.");
+            throw new HomeFileRefusal(
+                HomeFileRefusal.Unreadable,
+                $"{problem}. Fix it, or delete it to start from nothing: Daoris will not write over a file it could not read.",
+                ("file", FilePath(home)), ("problem", problem));
         }
 
         // The edit made onto the file as it stands (KEEPALL1c, `JsonKeeping.Save`): its line ends kept, a key written twice
@@ -130,7 +133,7 @@ public static class BrowserSettings
         try
         {
             // A key written twice reads as the CLI's `JSON.parse` reads it, where a node threw at the first look (KEEPALL1c).
-            file = JsonNode.Parse(JsonKeeping.Once(File.ReadAllText(path)));
+            file = JsonNode.Parse(JsonKeeping.Once(AtomicFile.ReadText(path)));
         }
         catch (JsonException error)
         {

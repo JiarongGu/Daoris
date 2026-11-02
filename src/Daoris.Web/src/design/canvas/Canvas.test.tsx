@@ -619,3 +619,74 @@ describe('the viewer\'s place', () => {
     }
   });
 });
+
+// CANVAS1e (the canvas design §3.3): a world drawn fitted with zoom off (the ring), one opened fitted and never below a floor (the layered
+// map), and a region that is a Tab stop where the bare keys act as the map's always did.
+describe('a world fitted, with zoom off', () => {
+  it('is drawn at the scale that fits its width, offers no sizing, and ignores Ctrl+wheel', () => {
+    const handle = createRef<CanvasHandle>();
+    render(<Drawn handle={handle} options={{ ...OPTIONS, fixed: true }} />);
+    act(() => handle.current!.measured(WORLD));
+    expect(scale()).toBeCloseTo(0.4, 6);
+    expect(screen.queryByRole('button', { name: /^Sizing/ })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Show as list' })).toBeInTheDocument();
+    wheel({ ctrlKey: true, deltaY: -300 });
+    expect(scale()).toBeCloseTo(0.4, 6);
+  });
+
+  it('keeps its scale at 100% when the world measured is a smaller one: never above', () => {
+    const handle = createRef<CanvasHandle>();
+    render(<Drawn handle={handle} options={{ ...OPTIONS, fixed: true }} />);
+    act(() => handle.current!.measured({ ...WORLD, width: 500, height: 300 }));
+    expect(scale()).toBe(1);
+  });
+});
+
+describe('a world opened fitted', () => {
+  const OPENING = { ...OPTIONS, zoom: { min: 0.25, max: 2.5 }, opening: { least: 0.8 } };
+
+  it('opens as large as fits, never below the floor, and from the top left where it does not fit', () => {
+    const handle = createRef<CanvasHandle>();
+    render(<Drawn handle={handle} options={OPENING} />);
+    act(() => handle.current!.measured(WORLD));
+    expect(view().k).toBe(0.8);
+    expect(view().x).toBe(0);
+  });
+
+  it('centres a world that fits, at 100% at most', () => {
+    const handle = createRef<CanvasHandle>();
+    render(<Drawn handle={handle} options={OPENING} />);
+    act(() => handle.current!.measured({ ...WORLD, width: 300, height: 200 }));
+    expect(view().k).toBe(1);
+    expect(view().x).toBe(-250);
+  });
+});
+
+describe('the region as a stop', () => {
+  const STOP = { ...OPTIONS, zoom: { min: 0.25, max: 2.5 }, stop: true };
+
+  it('is reached by Tab, and + - 0 and the arrows act on it, and on nothing a node holds', async () => {
+    const handle = createRef<CanvasHandle>();
+    render(<Drawn handle={handle} options={STOP} />);
+    act(() => handle.current!.measured(WORLD));
+    expect(region()).toHaveAttribute('tabindex', '0');
+    region().focus();
+    await user.keyboard('+');
+    expect(scale()).toBeCloseTo(1.25, 6);
+    await user.keyboard('--');
+    expect(scale()).toBeLessThan(1);
+    const before = view().x;
+    await user.keyboard('{ArrowRight}');
+    expect(view().x).toBeGreaterThan(before);
+    await user.keyboard('0');
+    // Fit shows it all, height included, so it is below the width's fit.
+    expect(scale()).toBeLessThan(0.4);
+    expect(scale()).toBeGreaterThanOrEqual(0.25);
+    // A key aimed at a node is the node's.
+    const node = document.querySelector<HTMLElement>('[data-flow-node="a"]')!;
+    const was = scale();
+    node.focus();
+    await user.keyboard('+');
+    expect(scale()).toBe(was);
+  });
+});

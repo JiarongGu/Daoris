@@ -549,8 +549,12 @@ lines assert its absence and stay. The census read main before WORKFLOWCLEAN1 1h
   the modules' routes kept for an older page. `ONEWAY1ab-ii` takes those in `Web/bridge/repositories/lines.ts`,
   `Web/bridge/sessions/trees.ts` and `Web/bridge/shell.ts`, which the wave changes. The named files are examples: P3 covers every
   older-shell branch in the page (about three hundred sites in ninety files, `bridge/driver.ts` the largest) and every pull kept beside
-  a slice, `USAGE` and `ACCOUNTS_READ` among them where no terminal or Ask Daoris reads them. `ONEWAY1ab-i` takes those in files the
-  wave left alone, in two parts that each typecheck: the pulls and the named files, then the rest of the fields.
+  a slice, `USAGE` among them where no terminal or Ask Daoris reads it. `ONEWAY1ab-i` took the sign-in's older-host steps (2026-11-03);
+  the rest moves to `ONEWAY1ab-ii`, after the wave, for three reasons its build found. The pulls cannot go until a shared test shell
+  answers `STATE_SLICE` snapshots from the same fixtures: retiring them sent 62 window-level tests red over a mocked shell that answers
+  none, two of them in files the wave holds. Most fields marked *absent on an older shell* are absent because the bridge omits nulls, so
+  they stay optional and their comments are corrected, not made required. `ACCOUNTS_READ` is the live *Read now* press, not an older
+  page's pull, and stays.
 - *Kept:* a fallback for a record that travels between machines, such as a quest or a channel message, which another machine's build
   writes (D178). A fallback for the local service host, which a second install may run, is under the floor.
 

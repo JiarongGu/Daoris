@@ -84,6 +84,17 @@ public sealed class RemotesModuleTests : Bridge
         Assert.False(File.Exists(RemotesPath), "a refused wiring still wrote the file");
     }
 
+    /// <summary>ONEWAY1u: an address with no http or https scheme is refused where it is typed, in the sentence <c>daoris remote add</c> gives.</summary>
+    [Fact]
+    public async Task An_address_with_no_scheme_is_refused_rather_than_written()
+    {
+        var refusal = await RefusalAsync(Module(), "SET", Wiring("team", "team.example.com:5177", Key));
+
+        Assert.Contains("is not an address a deployment answers at", refusal);
+        Assert.Contains("http:// or https://", refusal);
+        Assert.False(File.Exists(RemotesPath), "a refused wiring still wrote the file");
+    }
+
     [Fact]
     public async Task Unwiring_something_that_was_never_wired_is_an_answer_not_a_failure()
     {

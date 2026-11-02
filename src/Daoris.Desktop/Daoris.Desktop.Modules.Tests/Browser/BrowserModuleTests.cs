@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Daoris.Driver;
 
 namespace Daoris.Desktop.Modules.Tests;
 

@@ -35,20 +35,22 @@ export type SizingActs = {
  *
  * A molecule: every press goes out.
  */
-export function CanvasToolbar({ tools, k, bounds, fit, acts }: {
+export function CanvasToolbar({ tools, k, bounds, fit, acts, sizing = true }: {
   tools: ReactNode;
   k: number;
   bounds: ZoomBounds;
   /** The feature's words for showing the whole. */
   fit: string;
   acts: SizingActs;
+  /** Whether the size and its menu are offered: not on a world fitted with zoom off. */
+  sizing?: boolean;
 }) {
   const { t } = useTranslation();
   const percent = Math.round(k * 100);
   return (
     <div className="mb-2 flex flex-wrap items-center justify-end gap-x-1 gap-y-1">
       {tools}
-      <Menu.Root>
+      {sizing && <Menu.Root>
         <Tip content={t('canvas.sizing')}>
           <Menu.Trigger asChild>
             <button
@@ -87,7 +89,7 @@ export function CanvasToolbar({ tools, k, bounds, fit, acts }: {
             </>
           )}
         </Menu.Content>
-      </Menu.Root>
+      </Menu.Root>}
     </div>
   );
 }

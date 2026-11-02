@@ -1,14 +1,14 @@
 using System.Text.Json.Nodes;
+using Daoris.Driver;
 
-namespace Daoris.Desktop.Modules.Tests;
+namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// BRW5: the in-app browser's favorites, kept in <c>&lt;home&gt;/browser/favorites.json</c>, the
-/// person's and never a session's. 🔴 A TWIN file: the CLI's <c>browser.ts</c> reads and edits it too,
-/// and its <c>browser.test.ts</c> carries the same tables. A case changed here is changed there, in the
-/// same commit (the in-app browser design, §3a).
+/// person's and never a session's, and the one address rule (ONEWAY1u). 🔴 A TWIN file while the CLI's <c>browser.ts</c> lasts: it reads
+/// and edits it too, and its <c>browser.test.ts</c> carries the same tables. A case changed here is changed there, in the same commit.
 /// </summary>
-public sealed class BrowserFavoritesTests : Bridge
+public sealed class BrowserFavoritesTests : TestHome
 {
     private string File => BrowserFavorites.FilePath(Home);
 
@@ -35,9 +35,13 @@ public sealed class BrowserFavoritesTests : Bridge
     [InlineData("https://user:pw@site.example/", null)]
     [InlineData("a b", null)]
     [InlineData("", null)]
+    [InlineData("   ", null)]
+    [InlineData("data:text/html,<script>1</script>", null)]
+    [InlineData("tickets.example/browse/T-1", "https://tickets.example/browse/T-1")]
+    [InlineData("127.0.0.1:5177/api/status", "http://127.0.0.1:5177/api/status")]
     public void An_address_is_kept_in_the_bars_form_or_not_at_all(string typed, string? kept)
     {
-        Assert.Equal(kept, BrowserFavorites.Address(typed));
+        Assert.Equal(kept, BrowserAddress.Page(typed));
     }
 
     [Fact]
@@ -88,8 +92,8 @@ public sealed class BrowserFavoritesTests : Bridge
         var read = BrowserFavorites.Read(Home);
         Assert.Empty(read.Favorites);
         Assert.NotNull(read.Problem);
-        Assert.Throws<InvalidOperationException>(() => BrowserFavorites.Add(Home, "site.example", null));
-        Assert.Throws<InvalidOperationException>(() => BrowserFavorites.Remove(Home, "site.example"));
+        Assert.Equal(HomeFileCodes.BrowserFileUnreadable, HomeFileCodes.Of(Assert.Throws<HomeFileRefusal>(() => BrowserFavorites.Add(Home, "site.example", null))));
+        Assert.Equal(HomeFileCodes.BrowserFileUnreadable, HomeFileCodes.Of(Assert.Throws<HomeFileRefusal>(() => BrowserFavorites.Remove(Home, "site.example"))));
         Assert.Equal(content, System.IO.File.ReadAllText(File));
     }
 
@@ -111,9 +115,11 @@ public sealed class BrowserFavoritesTests : Bridge
     [Fact]
     public void An_address_that_is_not_a_page_is_refused()
     {
-        var refused = Assert.Throws<InvalidOperationException>(() => BrowserFavorites.Add(Home, "javascript:alert(1)", null));
+        var refused = Assert.Throws<HomeFileRefusal>(() => BrowserFavorites.Add(Home, "javascript:alert(1)", null));
 
         Assert.Contains("not a web page", refused.Message);
+        Assert.Equal(HomeFileCodes.BrowserNotAPage, HomeFileCodes.Of(refused));
+        Assert.Equal([("address", "javascript:alert(1)")], refused.Facts);
         Assert.False(System.IO.File.Exists(File));
     }
 

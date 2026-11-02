@@ -1,0 +1,1375 @@
+{
+  "note": "ONEWAY1u (D194 point 6): what `daoris remote` and `daoris browser` said for each case of their tests, run once through the CLI's TypeScript verbs before they retire, on a home of their own (`<home>`; the map at `<home>/remotes.json`, the browser's files where the home puts them). Each row: the words, the operation the command makes of them (`op` and `args`; a row of the `command` door is the verb's own grammar, held for the command tree's table), the files before (`remotes`, `favorites`, `settings`; null: none), the environment, the exit, the lines on each stream and the files after. A file that does not parse says the parser's own words, `<parse error>`. `DriverFilesTextTests` reads it row for row; a sentence the port changes on purpose says why under `changed`.",
+  "rows": [
+    {
+      "name": "remote list, a machine with no remote",
+      "door": "operation",
+      "argv": [
+        "remote",
+        "list"
+      ],
+      "op": "remote-list",
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: no remote on this machine — every workspace stays local, which is the default (D21).",
+        "  `daoris remote add <workspace> --url https://… --key dk_…` wires one (<home>/remotes.json)."
+      ],
+      "err": [],
+      "after": {}
+    },
+    {
+      "name": "remote list, no Daoris home",
+      "door": "operation",
+      "argv": [
+        "remote",
+        "list"
+      ],
+      "op": "remote-list",
+      "noHome": true,
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: no remote on this machine — every workspace stays local, which is the default (D21).",
+        "  `daoris remote add <workspace> --url https://… --key dk_…` wires one (the home's remotes.json, once DAORIS_HOME names one)."
+      ],
+      "err": [],
+      "after": {}
+    },
+    {
+      "name": "remote, the bare verb lists",
+      "door": "operation",
+      "argv": [
+        "remote"
+      ],
+      "op": "remote-list",
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: no remote on this machine — every workspace stays local, which is the default (D21).",
+        "  `daoris remote add <workspace> --url https://… --key dk_…` wires one (<home>/remotes.json)."
+      ],
+      "err": [],
+      "after": {}
+    },
+    {
+      "name": "remote add, one workspace, the key echoed redacted",
+      "door": "operation",
+      "argv": [
+        "remote",
+        "add",
+        "aurora",
+        "--url",
+        "https://aurora.example.com/",
+        "--key",
+        "dk_abcd1234wxyzsecret"
+      ],
+      "op": "remote-add",
+      "args": {
+        "workspace": "aurora",
+        "url": "https://aurora.example.com/",
+        "key": "dk_abcd1234wxyzsecret",
+        "keyFrom": "flag"
+      },
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: wiring `aurora` on this machine",
+        "  aurora  https://aurora.example.com  dk_abcd1234…",
+        "  written to <home>/remotes.json — machine-local, tracked by nothing (D47 §7).",
+        "  Repositories feed it where their own manifest says they may; the map only says where."
+      ],
+      "err": [],
+      "after": {
+        "remotes": "{\n  \"aurora\": {\n    \"url\": \"https://aurora.example.com\",\n    \"key\": \"dk_abcd1234wxyzsecret\"\n  }\n}\n"
+      }
+    },
+    {
+      "name": "remote add, a second workspace joins the map",
+      "door": "operation",
+      "argv": [
+        "remote",
+        "add",
+        "tools",
+        "--url",
+        "https://tools.example.com",
+        "--key",
+        "dk_toolskey0000"
+      ],
+      "op": "remote-add",
+      "args": {
+        "workspace": "tools",
+        "url": "https://tools.example.com",
+        "key": "dk_toolskey0000",
+        "keyFrom": "flag"
+      },
+      "before": {
+        "remotes": "{\n  \"aurora\": {\n    \"url\": \"https://aurora.example.com\",\n    \"key\": \"dk_abcd1234wxyzsecret\"\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: wiring `tools` on this machine",
+        "  tools  https://tools.example.com  dk_toolskey…",
+        "  written to <home>/remotes.json — machine-local, tracked by nothing (D47 §7).",
+        "  Repositories feed it where their own manifest says they may; the map only says where."
+      ],
+      "err": [],
+      "after": {
+        "remotes": "{\n  \"aurora\": {\n    \"url\": \"https://aurora.example.com\",\n    \"key\": \"dk_abcd1234wxyzsecret\"\n  },\n  \"tools\": {\n    \"url\": \"https://tools.example.com\",\n    \"key\": \"dk_toolskey0000\"\n  }\n}\n"
+      }
+    },
+    {
+      "name": "remote add, the key from the environment",
+      "door": "operation",
+      "argv": [
+        "remote",
+        "add",
+        "aurora",
+        "--url",
+        "https://aurora.example.com"
+      ],
+      "op": "remote-add",
+      "args": {
+        "workspace": "aurora",
+        "url": "https://aurora.example.com",
+        "key": "dk_abcd1234wxyzsecret",
+        "keyFrom": "environment"
+      },
+      "env": {
+        "DAORIS_REMOTE_KEY": "dk_abcd1234wxyzsecret"
+      },
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: wiring `aurora` on this machine",
+        "  key from DAORIS_REMOTE_KEY",
+        "  aurora  https://aurora.example.com  dk_abcd1234…",
+        "  written to <home>/remotes.json — machine-local, tracked by nothing (D47 §7).",
+        "  Repositories feed it where their own manifest says they may; the map only says where."
+      ],
+      "err": [],
+      "after": {
+        "remotes": "{\n  \"aurora\": {\n    \"url\": \"https://aurora.example.com\",\n    \"key\": \"dk_abcd1234wxyzsecret\"\n  }\n}\n"
+      }
+    },
+    {
+      "name": "remote add, a case-different name replaces and says what it replaced",
+      "door": "operation",
+      "argv": [
+        "remote",
+        "add",
+        "aurora",
+        "--url",
+        "https://new.example.com",
+        "--key",
+        "dk_abcd1234wxyzsecret"
+      ],
+      "op": "remote-add",
+      "args": {
+        "workspace": "aurora",
+        "url": "https://new.example.com",
+        "key": "dk_abcd1234wxyzsecret",
+        "keyFrom": "flag"
+      },
+      "before": {
+        "remotes": "{\n  \"Aurora\": {\n    \"url\": \"https://aurora.example.com\",\n    \"key\": \"dk_abcd1234wxyzsecret\"\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: wiring `aurora` on this machine",
+        "  aurora  https://new.example.com  dk_abcd1234…",
+        "  (replacing https://aurora.example.com — the previous key is untouched at its deployment)",
+        "  written to <home>/remotes.json — machine-local, tracked by nothing (D47 §7).",
+        "  Repositories feed it where their own manifest says they may; the map only says where."
+      ],
+      "err": [],
+      "after": {
+        "remotes": "{\n  \"Aurora\": {\n    \"url\": \"https://new.example.com\",\n    \"key\": \"dk_abcd1234wxyzsecret\"\n  }\n}\n"
+      }
+    },
+    {
+      "name": "remote add, a name other letters only widen to is another workspace",
+      "door": "operation",
+      "argv": [
+        "remote",
+        "add",
+        "i̇zmir",
+        "--url",
+        "https://other.example.com",
+        "--key",
+        "dk_abcd1234wxyzsecret"
+      ],
+      "op": "remote-add",
+      "args": {
+        "workspace": "i̇zmir",
+        "url": "https://other.example.com",
+        "key": "dk_abcd1234wxyzsecret",
+        "keyFrom": "flag"
+      },
+      "before": {
+        "remotes": "{\n  \"İzmir\": {\n    \"url\": \"https://izmir.example.com\",\n    \"key\": \"dk_abcd1234wxyzsecret\"\n  },\n  \"straße\": {\n    \"url\": \"https://strasse.example.com\",\n    \"key\": \"dk_abcd1234wxyzsecret\"\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: wiring `i̇zmir` on this machine",
+        "  i̇zmir  https://other.example.com  dk_abcd1234…",
+        "  written to <home>/remotes.json — machine-local, tracked by nothing (D47 §7).",
+        "  Repositories feed it where their own manifest says they may; the map only says where."
+      ],
+      "err": [],
+      "after": {
+        "remotes": "{\n  \"İzmir\": {\n    \"url\": \"https://izmir.example.com\",\n    \"key\": \"dk_abcd1234wxyzsecret\"\n  },\n  \"straße\": {\n    \"url\": \"https://strasse.example.com\",\n    \"key\": \"dk_abcd1234wxyzsecret\"\n  },\n  \"i̇zmir\": {\n    \"url\": \"https://other.example.com\",\n    \"key\": \"dk_abcd1234wxyzsecret\"\n  }\n}\n"
+      }
+    },
+    {
+      "name": "remote add, what the verb does not own stays",
+      "door": "operation",
+      "argv": [
+        "remote",
+        "add",
+        "aurora",
+        "--url",
+        "https://aurora.example.com",
+        "--key",
+        "dk_abcd1234wxyzsecret"
+      ],
+      "op": "remote-add",
+      "args": {
+        "workspace": "aurora",
+        "url": "https://aurora.example.com",
+        "key": "dk_abcd1234wxyzsecret",
+        "keyFrom": "flag"
+      },
+      "before": {
+        "remotes": "{\n  \"version\": 3,\n  \"broken\": { \"url\": \"https://tools.example.com\" },\n  \"aurora\": { \"url\": \"https://old.example.com\", \"key\": \"dk_oldkey000000\", \"note\": \"mine\" }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: wiring `aurora` on this machine",
+        "  aurora  https://aurora.example.com  dk_abcd1234…",
+        "  (replacing https://old.example.com — the previous key is untouched at its deployment)",
+        "  written to <home>/remotes.json — machine-local, tracked by nothing (D47 §7).",
+        "  Repositories feed it where their own manifest says they may; the map only says where."
+      ],
+      "err": [],
+      "after": {
+        "remotes": "{\n  \"version\": 3,\n  \"broken\": {\n    \"url\": \"https://tools.example.com\"\n  },\n  \"aurora\": {\n    \"url\": \"https://aurora.example.com\",\n    \"key\": \"dk_abcd1234wxyzsecret\",\n    \"note\": \"mine\"\n  }\n}\n"
+      }
+    },
+    {
+      "name": "remote add, an address with no scheme is refused before it is wired",
+      "door": "operation",
+      "argv": [
+        "remote",
+        "add",
+        "team",
+        "--url",
+        "team.example.com:5177",
+        "--key",
+        "dk_abcd1234wxyzsecret"
+      ],
+      "op": "remote-add",
+      "args": {
+        "workspace": "team",
+        "url": "team.example.com:5177",
+        "key": "dk_abcd1234wxyzsecret",
+        "keyFrom": "flag"
+      },
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `team.example.com:5177` is not an address a deployment answers at — one starts http:// or https://, e.g. `--url https://team.example.com`."
+      ],
+      "after": {}
+    },
+    {
+      "name": "remote add, without a url",
+      "door": "command",
+      "argv": [
+        "remote",
+        "add",
+        "aurora",
+        "--key",
+        "dk_abcd1234wxyzsecret"
+      ],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `remote add aurora` needs the deployment's address — `--url https://…`. The workspace name keys the map; the url and the key are what speak to its server."
+      ],
+      "after": {}
+    },
+    {
+      "name": "remote add, without a workspace name",
+      "door": "command",
+      "argv": [
+        "remote",
+        "add",
+        "--url",
+        "https://aurora.example.com",
+        "--key",
+        "dk_abcd1234wxyzsecret"
+      ],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `remote add` needs a workspace name — e.g. `daoris remote add aurora`. The name is the workspace, and it is what a shared deployment declares itself to be."
+      ],
+      "after": {}
+    },
+    {
+      "name": "remote add, no Daoris home to write into",
+      "door": "command",
+      "argv": [
+        "remote",
+        "add",
+        "aurora",
+        "--url",
+        "https://aurora.example.com",
+        "--key",
+        "dk_abcd1234wxyzsecret"
+      ],
+      "noHome": true,
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: no Daoris home: set DAORIS_HOME to the application's data folder (the `data` directory beside Daoris.exe), or name the file's own variable. Daoris keeps nothing under the user profile. (wanted: profiles/remotes.json)"
+      ],
+      "after": {}
+    },
+    {
+      "name": "remote, an unknown verb",
+      "door": "command",
+      "argv": [
+        "remote",
+        "frobnicate"
+      ],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: unknown remote verb 'frobnicate' — one of: list, add, remove"
+      ],
+      "after": {}
+    },
+    {
+      "name": "remote list, the wired workspaces by name, a half pair left out",
+      "door": "operation",
+      "argv": [
+        "remote",
+        "list"
+      ],
+      "op": "remote-list",
+      "before": {
+        "remotes": "{\n  \"tools\": {\n    \"url\": \"https://tools.example.com/\",\n    \"key\": \"dk_toolskey0000\"\n  },\n  \"aurora\": {\n    \"url\": \"https://aurora.example.com\",\n    \"key\": \"dk_abcd1234wxyzsecret\"\n  },\n  \"broken\": {\n    \"url\": \"https://x.example.com\"\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: <home>/remotes.json",
+        "  aurora           https://aurora.example.com  dk_abcd1234…",
+        "  tools            https://tools.example.com  dk_toolskey…"
+      ],
+      "err": [],
+      "after": {
+        "remotes": "{\n  \"tools\": {\n    \"url\": \"https://tools.example.com/\",\n    \"key\": \"dk_toolskey0000\"\n  },\n  \"aurora\": {\n    \"url\": \"https://aurora.example.com\",\n    \"key\": \"dk_abcd1234wxyzsecret\"\n  },\n  \"broken\": {\n    \"url\": \"https://x.example.com\"\n  }\n}\n"
+      }
+    },
+    {
+      "name": "remote list, the environment is the answer when it names one",
+      "door": "operation",
+      "argv": [
+        "remote",
+        "list"
+      ],
+      "op": "remote-list",
+      "env": {
+        "DAORIS_REMOTE_URL": "https://env.example.com",
+        "DAORIS_REMOTE_KEY": "dk_envkey000000",
+        "DAORIS_REMOTE_WORKSPACE": "tools"
+      },
+      "before": {
+        "remotes": "{\n  \"aurora\": {\n    \"url\": \"https://aurora.example.com\",\n    \"key\": \"dk_abcd1234wxyzsecret\"\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: the environment names this machine's remote, whole — <home>/remotes.json is not read.",
+        "  (DAORIS_REMOTE_URL / DAORIS_REMOTE_KEY, for the workspace DAORIS_REMOTE_WORKSPACE names.)",
+        "  tools            https://env.example.com  dk_envkey00…"
+      ],
+      "err": [],
+      "after": {
+        "remotes": "{\n  \"aurora\": {\n    \"url\": \"https://aurora.example.com\",\n    \"key\": \"dk_abcd1234wxyzsecret\"\n  }\n}\n"
+      }
+    },
+    {
+      "name": "remote list, half an environment pair is no remote",
+      "door": "operation",
+      "argv": [
+        "remote",
+        "list"
+      ],
+      "op": "remote-list",
+      "env": {
+        "DAORIS_REMOTE_URL": "https://env.example.com"
+      },
+      "before": {
+        "remotes": "{\n  \"aurora\": {\n    \"url\": \"https://aurora.example.com\",\n    \"key\": \"dk_abcd1234wxyzsecret\"\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: the environment names this machine's remote, whole — <home>/remotes.json is not read.",
+        "  (DAORIS_REMOTE_URL / DAORIS_REMOTE_KEY, for the workspace DAORIS_REMOTE_WORKSPACE names.)",
+        "daoris: no remote on this machine — every workspace stays local, which is the default (D21).",
+        "  `daoris remote add <workspace> --url https://… --key dk_…` wires one (<home>/remotes.json)."
+      ],
+      "err": [],
+      "after": {
+        "remotes": "{\n  \"aurora\": {\n    \"url\": \"https://aurora.example.com\",\n    \"key\": \"dk_abcd1234wxyzsecret\"\n  }\n}\n"
+      }
+    },
+    {
+      "name": "remote remove, the workspace off the map",
+      "door": "operation",
+      "argv": [
+        "remote",
+        "remove",
+        "aurora"
+      ],
+      "op": "remote-remove",
+      "args": {
+        "workspace": "aurora"
+      },
+      "before": {
+        "remotes": "{\n  \"aurora\": {\n    \"url\": \"https://aurora.example.com\",\n    \"key\": \"dk_abcd1234wxyzsecret\"\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: `aurora` is no longer wired on this machine.",
+        "  Nothing at the deployment changed: the key stays valid there until an operator revokes",
+        "  it, and what that workspace already fed stays where it is. This workspace now syncs",
+        "  nowhere from here, silently — which is what having no remote has always meant."
+      ],
+      "err": [],
+      "after": {
+        "remotes": "{}\n"
+      }
+    },
+    {
+      "name": "remote remove, found in any case",
+      "door": "operation",
+      "argv": [
+        "remote",
+        "remove",
+        "AURORA"
+      ],
+      "op": "remote-remove",
+      "args": {
+        "workspace": "AURORA"
+      },
+      "before": {
+        "remotes": "{\n  \"Aurora\": {\n    \"url\": \"https://aurora.example.com\",\n    \"key\": \"dk_abcd1234wxyzsecret\"\n  }\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: `AURORA` is no longer wired on this machine.",
+        "  Nothing at the deployment changed: the key stays valid there until an operator revokes",
+        "  it, and what that workspace already fed stays where it is. This workspace now syncs",
+        "  nowhere from here, silently — which is what having no remote has always meant."
+      ],
+      "err": [],
+      "after": {
+        "remotes": "{}\n"
+      }
+    },
+    {
+      "name": "remote remove, what was never wired is an answer",
+      "door": "operation",
+      "argv": [
+        "remote",
+        "remove",
+        "nobody"
+      ],
+      "op": "remote-remove",
+      "args": {
+        "workspace": "nobody"
+      },
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: `nobody` is not wired on this machine — nothing to remove."
+      ],
+      "err": [],
+      "after": {}
+    },
+    {
+      "name": "favorite list, none yet",
+      "door": "operation",
+      "argv": [
+        "browser",
+        "favorite",
+        "list"
+      ],
+      "op": "favorite-list",
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: no favorites yet — `daoris browser favorite add <address>` keeps a page, and",
+        "  Daoris's browser shows them in a Daoris folder on its bookmarks bar."
+      ],
+      "err": [],
+      "after": {}
+    },
+    {
+      "name": "favorite, the bare verb lists",
+      "door": "operation",
+      "argv": [
+        "browser",
+        "favorite"
+      ],
+      "op": "favorite-list",
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: no favorites yet — `daoris browser favorite add <address>` keeps a page, and",
+        "  Daoris's browser shows them in a Daoris folder on its bookmarks bar."
+      ],
+      "err": [],
+      "after": {}
+    },
+    {
+      "name": "favorite list, in order with a title or the host",
+      "door": "operation",
+      "argv": [
+        "browser",
+        "favorite",
+        "list"
+      ],
+      "op": "favorite-list",
+      "before": {
+        "favorites": "{\n  \"favorites\": [\n    { \"url\": \"https://site.example/board\", \"title\": \"Board\" },\n    { \"url\": \"http://localhost:4200/\" },\n    { \"url\": \"javascript:alert(1)\" }\n  ]\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: <home>/data/browser/favorites.json",
+        "  Board      https://site.example/board",
+        "  localhost  http://localhost:4200/"
+      ],
+      "err": [],
+      "after": {
+        "favorites": "{\n  \"favorites\": [\n    { \"url\": \"https://site.example/board\", \"title\": \"Board\" },\n    { \"url\": \"http://localhost:4200/\" },\n    { \"url\": \"javascript:alert(1)\" }\n  ]\n}\n"
+      }
+    },
+    {
+      "name": "favorite list, a file that cannot be read",
+      "door": "operation",
+      "argv": [
+        "browser",
+        "favorite",
+        "list"
+      ],
+      "op": "favorite-list",
+      "before": {
+        "favorites": "not json"
+      },
+      "exit": 1,
+      "out": [
+        "daoris: ⚠ <home>/data/browser/favorites.json is not readable JSON (<parse error>)"
+      ],
+      "err": [],
+      "after": {
+        "favorites": "not json"
+      }
+    },
+    {
+      "name": "favorite list, favorites that is not a list",
+      "door": "operation",
+      "argv": [
+        "browser",
+        "favorite",
+        "list"
+      ],
+      "op": "favorite-list",
+      "before": {
+        "favorites": "{ \"favorites\": \"nope\" }"
+      },
+      "exit": 1,
+      "out": [
+        "daoris: ⚠ <home>/data/browser/favorites.json's favorites is not a list"
+      ],
+      "err": [],
+      "after": {
+        "favorites": "{ \"favorites\": \"nope\" }"
+      }
+    },
+    {
+      "name": "favorite add, a page with a title",
+      "door": "operation",
+      "argv": [
+        "browser",
+        "favorite",
+        "add",
+        "site.example/board",
+        "--title",
+        "Board"
+      ],
+      "op": "favorite-add",
+      "args": {
+        "address": "site.example/board",
+        "title": "Board"
+      },
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: Board (https://site.example/board) is a favorite."
+      ],
+      "err": [],
+      "after": {
+        "favorites": "{\n  \"favorites\": [\n    {\n      \"url\": \"https://site.example/board\",\n      \"title\": \"Board\"\n    }\n  ]\n}\n"
+      }
+    },
+    {
+      "name": "favorite add, one kept already keeps its place and takes the new title",
+      "door": "operation",
+      "argv": [
+        "browser",
+        "favorite",
+        "add",
+        "site.example/board",
+        "--title",
+        "The board"
+      ],
+      "op": "favorite-add",
+      "args": {
+        "address": "site.example/board",
+        "title": "The board"
+      },
+      "before": {
+        "favorites": "{\n  \"favorites\": [\n    { \"url\": \"https://site.example/board\", \"title\": \"Board\" },\n    { \"url\": \"http://localhost:4200/\" },\n    { \"url\": \"javascript:alert(1)\" }\n  ]\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: The board (https://site.example/board) is a favorite."
+      ],
+      "err": [],
+      "after": {
+        "favorites": "{\n  \"favorites\": [\n    {\n      \"url\": \"https://site.example/board\",\n      \"title\": \"The board\"\n    },\n    {\n      \"url\": \"http://localhost:4200/\"\n    },\n    {\n      \"url\": \"javascript:alert(1)\"\n    }\n  ]\n}\n"
+      }
+    },
+    {
+      "name": "favorite add, a local page with no title",
+      "door": "operation",
+      "argv": [
+        "browser",
+        "favorite",
+        "add",
+        "localhost:4200"
+      ],
+      "op": "favorite-add",
+      "args": {
+        "address": "localhost:4200"
+      },
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: localhost (http://localhost:4200/) is a favorite."
+      ],
+      "err": [],
+      "after": {
+        "favorites": "{\n  \"favorites\": [\n    {\n      \"url\": \"http://localhost:4200/\"\n    }\n  ]\n}\n"
+      }
+    },
+    {
+      "name": "favorite add, what it has no field for stays",
+      "door": "operation",
+      "argv": [
+        "browser",
+        "favorite",
+        "add",
+        "localhost:4200"
+      ],
+      "op": "favorite-add",
+      "args": {
+        "address": "localhost:4200"
+      },
+      "before": {
+        "favorites": "{ \"version\": 7, \"favorites\": [ { \"url\": \"https://site.example/\", \"title\": \"Site\", \"icon\": \"star.png\" }, { \"url\": \"javascript:alert(1)\", \"note\": \"kept\" } ] }"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: localhost (http://localhost:4200/) is a favorite."
+      ],
+      "err": [],
+      "after": {
+        "favorites": "{\n  \"version\": 7,\n  \"favorites\": [\n    {\n      \"url\": \"https://site.example/\",\n      \"title\": \"Site\",\n      \"icon\": \"star.png\"\n    },\n    {\n      \"url\": \"javascript:alert(1)\",\n      \"note\": \"kept\"\n    },\n    {\n      \"url\": \"http://localhost:4200/\"\n    }\n  ]\n}\n"
+      }
+    },
+    {
+      "name": "favorite add, no web page",
+      "door": "operation",
+      "argv": [
+        "browser",
+        "favorite",
+        "add",
+        "javascript:alert(1)"
+      ],
+      "op": "favorite-add",
+      "args": {
+        "address": "javascript:alert(1)"
+      },
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `javascript:alert(1)` is not a web page, so it cannot be a favorite."
+      ],
+      "after": {}
+    },
+    {
+      "name": "favorite add, over a file that cannot be read",
+      "door": "operation",
+      "argv": [
+        "browser",
+        "favorite",
+        "add",
+        "site.example"
+      ],
+      "op": "favorite-add",
+      "args": {
+        "address": "site.example"
+      },
+      "before": {
+        "favorites": "not json"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: <home>/data/browser/favorites.json is not readable JSON (<parse error>). Fix it, or delete it to start from nothing: Daoris will not write over a file it could not read."
+      ],
+      "after": {
+        "favorites": "not json"
+      },
+      "changed": "The operation says its refusal in the window's sentence (the file it could not read, the values it takes), the one both doors share; the verb says it as `daoris: ` and the sentence."
+    },
+    {
+      "name": "favorite add, without an address",
+      "door": "command",
+      "argv": [
+        "browser",
+        "favorite",
+        "add"
+      ],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `browser favorite add` needs an address — `daoris browser favorite list`, `daoris browser favorite add <address> [--title T]`, `daoris browser favorite remove <address>`, `daoris browser extensions [offer|refuse]`, `daoris browser use [daoris|edge]`, or `daoris browser links [system|daoris]`."
+      ],
+      "after": {}
+    },
+    {
+      "name": "favorite remove, by address under the same rule",
+      "door": "operation",
+      "argv": [
+        "browser",
+        "favorite",
+        "remove",
+        "HTTPS://SITE.EXAMPLE/board"
+      ],
+      "op": "favorite-remove",
+      "args": {
+        "address": "HTTPS://SITE.EXAMPLE/board"
+      },
+      "before": {
+        "favorites": "{\n  \"favorites\": [\n    { \"url\": \"https://site.example/board\", \"title\": \"Board\" },\n    { \"url\": \"http://localhost:4200/\" },\n    { \"url\": \"javascript:alert(1)\" }\n  ]\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: https://site.example/board is no longer a favorite."
+      ],
+      "err": [],
+      "after": {
+        "favorites": "{\n  \"favorites\": [\n    {\n      \"url\": \"http://localhost:4200/\"\n    },\n    {\n      \"url\": \"javascript:alert(1)\"\n    }\n  ]\n}\n"
+      }
+    },
+    {
+      "name": "favorite remove, one not kept",
+      "door": "operation",
+      "argv": [
+        "browser",
+        "favorite",
+        "remove",
+        "never.example"
+      ],
+      "op": "favorite-remove",
+      "args": {
+        "address": "never.example"
+      },
+      "before": {
+        "favorites": "{\n  \"favorites\": [\n    { \"url\": \"https://site.example/board\", \"title\": \"Board\" },\n    { \"url\": \"http://localhost:4200/\" },\n    { \"url\": \"javascript:alert(1)\" }\n  ]\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: https://never.example/ was not a favorite; nothing changed."
+      ],
+      "err": [],
+      "after": {
+        "favorites": "{\n  \"favorites\": [\n    { \"url\": \"https://site.example/board\", \"title\": \"Board\" },\n    { \"url\": \"http://localhost:4200/\" },\n    { \"url\": \"javascript:alert(1)\" }\n  ]\n}\n"
+      }
+    },
+    {
+      "name": "favorite remove, no web page",
+      "door": "operation",
+      "argv": [
+        "browser",
+        "favorite",
+        "remove",
+        "javascript:alert(1)"
+      ],
+      "op": "favorite-remove",
+      "args": {
+        "address": "javascript:alert(1)"
+      },
+      "before": {
+        "favorites": "{\n  \"favorites\": [\n    { \"url\": \"https://site.example/board\", \"title\": \"Board\" },\n    { \"url\": \"http://localhost:4200/\" },\n    { \"url\": \"javascript:alert(1)\" }\n  ]\n}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: javascript:alert(1) was not a favorite; nothing changed."
+      ],
+      "err": [],
+      "after": {
+        "favorites": "{\n  \"favorites\": [\n    { \"url\": \"https://site.example/board\", \"title\": \"Board\" },\n    { \"url\": \"http://localhost:4200/\" },\n    { \"url\": \"javascript:alert(1)\" }\n  ]\n}\n"
+      }
+    },
+    {
+      "name": "favorite, an unknown verb",
+      "door": "command",
+      "argv": [
+        "browser",
+        "favorite",
+        "frobnicate"
+      ],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `browser favorite` does not know `frobnicate` — it takes `daoris browser favorite list`, `daoris browser favorite add <address> [--title T]`, `daoris browser favorite remove <address>`, `daoris browser extensions [offer|refuse]`, `daoris browser use [daoris|edge]`, or `daoris browser links [system|daoris]`."
+      ],
+      "after": {}
+    },
+    {
+      "name": "favorite list, no Daoris home",
+      "door": "command",
+      "argv": [
+        "browser",
+        "favorite",
+        "list"
+      ],
+      "noHome": true,
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: no Daoris home: set DAORIS_HOME to the application's data folder (the `data` directory beside Daoris.exe), or name the file's own variable. Daoris keeps nothing under the user profile. (wanted: browser/favorites.json)"
+      ],
+      "after": {}
+    },
+    {
+      "name": "extensions, the default with no file",
+      "door": "operation",
+      "argv": [
+        "browser",
+        "extensions"
+      ],
+      "op": "browser-extensions",
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: extensions other software registered for Chrome are offered by Daoris's browser, each for your approval."
+      ],
+      "err": [],
+      "after": {}
+    },
+    {
+      "name": "extensions, as the file chose",
+      "door": "operation",
+      "argv": [
+        "browser",
+        "extensions"
+      ],
+      "op": "browser-extensions",
+      "before": {
+        "settings": "{ \"extensions\": \"refuse\" }"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: extensions other software registered for Chrome are refused by Daoris's browser."
+      ],
+      "err": [],
+      "after": {
+        "settings": "{ \"extensions\": \"refuse\" }"
+      }
+    },
+    {
+      "name": "extensions, a file that cannot be read says the default holds",
+      "door": "operation",
+      "argv": [
+        "browser",
+        "extensions"
+      ],
+      "op": "browser-extensions",
+      "before": {
+        "settings": "not json"
+      },
+      "exit": 1,
+      "out": [
+        "daoris: ⚠ <home>/data/browser/settings.json is not readable JSON (<parse error>); the default holds.",
+        "daoris: extensions other software registered for Chrome are offered by Daoris's browser, each for your approval."
+      ],
+      "err": [],
+      "after": {
+        "settings": "not json"
+      }
+    },
+    {
+      "name": "extensions refuse, set keeping the rest",
+      "door": "operation",
+      "argv": [
+        "browser",
+        "extensions",
+        "refuse"
+      ],
+      "op": "browser-extensions",
+      "args": {
+        "value": "refuse"
+      },
+      "before": {
+        "settings": "{ \"theirs\": { \"kept\": true } }"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: extensions other software registered for Chrome will be refused the next time Daoris's browser starts."
+      ],
+      "err": [],
+      "after": {
+        "settings": "{\n  \"theirs\": {\n    \"kept\": true\n  },\n  \"extensions\": \"refuse\"\n}\n"
+      }
+    },
+    {
+      "name": "extensions offer, set with no file",
+      "door": "operation",
+      "argv": [
+        "browser",
+        "extensions",
+        "offer"
+      ],
+      "op": "browser-extensions",
+      "args": {
+        "value": "offer"
+      },
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: extensions other software registered for Chrome will be offered the next time Daoris's browser starts."
+      ],
+      "err": [],
+      "after": {
+        "settings": "{\n  \"extensions\": \"offer\"\n}\n"
+      }
+    },
+    {
+      "name": "extensions maybe, a value that is neither",
+      "door": "operation",
+      "argv": [
+        "browser",
+        "extensions",
+        "maybe"
+      ],
+      "op": "browser-extensions",
+      "args": {
+        "value": "maybe"
+      },
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: The extensions setting is `offer` or `refuse`, not `maybe`."
+      ],
+      "after": {},
+      "changed": "The operation says its refusal in the window's sentence (the file it could not read, the values it takes), the one both doors share; the verb says it as `daoris: ` and the sentence."
+    },
+    {
+      "name": "extensions refuse, over a file that cannot be read",
+      "door": "operation",
+      "argv": [
+        "browser",
+        "extensions",
+        "refuse"
+      ],
+      "op": "browser-extensions",
+      "args": {
+        "value": "refuse"
+      },
+      "before": {
+        "settings": "not json"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: <home>/data/browser/settings.json is not readable JSON (<parse error>). Fix it, or delete it to start from nothing: Daoris will not write over a file it could not read."
+      ],
+      "after": {
+        "settings": "not json"
+      },
+      "changed": "The operation says its refusal in the window's sentence (the file it could not read, the values it takes), the one both doors share; the verb says it as `daoris: ` and the sentence."
+    },
+    {
+      "name": "use, the default with no file",
+      "door": "operation",
+      "argv": [
+        "browser",
+        "use"
+      ],
+      "op": "browser-use",
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: sessions and you use Daoris's own browser, the engine it ships."
+      ],
+      "err": [],
+      "after": {}
+    },
+    {
+      "name": "use, as the file chose",
+      "door": "operation",
+      "argv": [
+        "browser",
+        "use"
+      ],
+      "op": "browser-use",
+      "before": {
+        "settings": "{ \"browser\": \"edge\" }"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: sessions and you use your Edge, on a profile of Daoris's under the home."
+      ],
+      "err": [],
+      "after": {
+        "settings": "{ \"browser\": \"edge\" }"
+      }
+    },
+    {
+      "name": "use, a file that cannot be read says the default holds",
+      "door": "operation",
+      "argv": [
+        "browser",
+        "use"
+      ],
+      "op": "browser-use",
+      "before": {
+        "settings": "not json"
+      },
+      "exit": 1,
+      "out": [
+        "daoris: ⚠ <home>/data/browser/settings.json is not readable JSON (<parse error>); the default holds.",
+        "daoris: sessions and you use Daoris's own browser, the engine it ships."
+      ],
+      "err": [],
+      "after": {
+        "settings": "not json"
+      }
+    },
+    {
+      "name": "use edge, set keeping the rest",
+      "door": "operation",
+      "argv": [
+        "browser",
+        "use",
+        "edge"
+      ],
+      "op": "browser-use",
+      "args": {
+        "value": "edge"
+      },
+      "before": {
+        "settings": "{ \"theirs\": { \"kept\": true } }"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: Edge, from the next time the browser is opened. Edge signs its profile in to your Microsoft account on its own, and its sync and extensions are yours to turn on. Your default Edge profile cannot be driven: Chromium refuses a debug port there, so Daoris gives Edge a profile of its own."
+      ],
+      "err": [],
+      "after": {
+        "settings": "{\n  \"theirs\": {\n    \"kept\": true\n  },\n  \"browser\": \"edge\"\n}\n"
+      }
+    },
+    {
+      "name": "use daoris, set with no file",
+      "door": "operation",
+      "argv": [
+        "browser",
+        "use",
+        "daoris"
+      ],
+      "op": "browser-use",
+      "args": {
+        "value": "daoris"
+      },
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: Daoris's own browser, from the next time the browser is opened."
+      ],
+      "err": [],
+      "after": {
+        "settings": "{\n  \"browser\": \"daoris\"\n}\n"
+      }
+    },
+    {
+      "name": "use firefox, a value that is neither",
+      "door": "operation",
+      "argv": [
+        "browser",
+        "use",
+        "firefox"
+      ],
+      "op": "browser-use",
+      "args": {
+        "value": "firefox"
+      },
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: The browser is `daoris` or `edge`, not `firefox`."
+      ],
+      "after": {},
+      "changed": "The operation says its refusal in the window's sentence (the file it could not read, the values it takes), the one both doors share; the verb says it as `daoris: ` and the sentence."
+    },
+    {
+      "name": "use edge, over a file that cannot be read",
+      "door": "operation",
+      "argv": [
+        "browser",
+        "use",
+        "edge"
+      ],
+      "op": "browser-use",
+      "args": {
+        "value": "edge"
+      },
+      "before": {
+        "settings": "not json"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: <home>/data/browser/settings.json is not readable JSON (<parse error>). Fix it, or delete it to start from nothing: Daoris will not write over a file it could not read."
+      ],
+      "after": {
+        "settings": "not json"
+      },
+      "changed": "The operation says its refusal in the window's sentence (the file it could not read, the values it takes), the one both doors share; the verb says it as `daoris: ` and the sentence."
+    },
+    {
+      "name": "links, the default with no file",
+      "door": "operation",
+      "argv": [
+        "browser",
+        "links"
+      ],
+      "op": "browser-links",
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: links on Daoris's page open in the system's browser."
+      ],
+      "err": [],
+      "after": {}
+    },
+    {
+      "name": "links, as the file chose",
+      "door": "operation",
+      "argv": [
+        "browser",
+        "links"
+      ],
+      "op": "browser-links",
+      "before": {
+        "settings": "{ \"links\": \"daoris\" }"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: links on Daoris's page open in Daoris's browser — its own, or your Edge where `browser use edge` chose it."
+      ],
+      "err": [],
+      "after": {
+        "settings": "{ \"links\": \"daoris\" }"
+      }
+    },
+    {
+      "name": "links, a file that cannot be read says the default holds",
+      "door": "operation",
+      "argv": [
+        "browser",
+        "links"
+      ],
+      "op": "browser-links",
+      "before": {
+        "settings": "not json"
+      },
+      "exit": 1,
+      "out": [
+        "daoris: ⚠ <home>/data/browser/settings.json is not readable JSON (<parse error>); the default holds.",
+        "daoris: links on Daoris's page open in the system's browser."
+      ],
+      "err": [],
+      "after": {
+        "settings": "not json"
+      }
+    },
+    {
+      "name": "links daoris, set keeping the rest",
+      "door": "operation",
+      "argv": [
+        "browser",
+        "links",
+        "daoris"
+      ],
+      "op": "browser-links",
+      "args": {
+        "value": "daoris"
+      },
+      "before": {
+        "settings": "{ \"theirs\": { \"kept\": true } }"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: links on Daoris's page open in Daoris's browser. No restart: an open window takes it up when it is next brought to the front. A sign-in link still opens in the system's browser, where your own sign-ins are."
+      ],
+      "err": [],
+      "after": {
+        "settings": "{\n  \"theirs\": {\n    \"kept\": true\n  },\n  \"links\": \"daoris\"\n}\n"
+      }
+    },
+    {
+      "name": "links system, set with no file",
+      "door": "operation",
+      "argv": [
+        "browser",
+        "links",
+        "system"
+      ],
+      "op": "browser-links",
+      "args": {
+        "value": "system"
+      },
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: links on Daoris's page open in the system's browser. No restart: an open window takes it up when it is next brought to the front."
+      ],
+      "err": [],
+      "after": {
+        "settings": "{\n  \"links\": \"system\"\n}\n"
+      }
+    },
+    {
+      "name": "links chrome, a value that is neither",
+      "door": "operation",
+      "argv": [
+        "browser",
+        "links",
+        "chrome"
+      ],
+      "op": "browser-links",
+      "args": {
+        "value": "chrome"
+      },
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: Links open in `system` or `daoris`, not `chrome`."
+      ],
+      "after": {},
+      "changed": "The operation says its refusal in the window's sentence (the file it could not read, the values it takes), the one both doors share; the verb says it as `daoris: ` and the sentence."
+    },
+    {
+      "name": "links daoris, over a file that cannot be read",
+      "door": "operation",
+      "argv": [
+        "browser",
+        "links",
+        "daoris"
+      ],
+      "op": "browser-links",
+      "args": {
+        "value": "daoris"
+      },
+      "before": {
+        "settings": "not json"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: <home>/data/browser/settings.json is not readable JSON (<parse error>). Fix it, or delete it to start from nothing: Daoris will not write over a file it could not read."
+      ],
+      "after": {
+        "settings": "not json"
+      },
+      "changed": "The operation says its refusal in the window's sentence (the file it could not read, the values it takes), the one both doors share; the verb says it as `daoris: ` and the sentence."
+    },
+    {
+      "name": "browser history is retired",
+      "door": "command",
+      "argv": [
+        "browser",
+        "history"
+      ],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `browser history` is retired: Daoris's browser keeps the browser's own history now, on its History page, where it is cleared as well."
+      ],
+      "after": {}
+    },
+    {
+      "name": "browser, an unknown area",
+      "door": "command",
+      "argv": [
+        "browser",
+        "frobnicate"
+      ],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `browser` takes `daoris browser favorite list`, `daoris browser favorite add <address> [--title T]`, `daoris browser favorite remove <address>`, `daoris browser extensions [offer|refuse]`, `daoris browser use [daoris|edge]`, or `daoris browser links [system|daoris]`."
+      ],
+      "after": {}
+    },
+    {
+      "name": "browser extensions, no Daoris home",
+      "door": "command",
+      "argv": [
+        "browser",
+        "extensions"
+      ],
+      "noHome": true,
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: no Daoris home: set DAORIS_HOME to the application's data folder (the `data` directory beside Daoris.exe), or name the file's own variable. Daoris keeps nothing under the user profile. (wanted: browser/favorites.json)"
+      ],
+      "after": {}
+    }
+  ]
+}

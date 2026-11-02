@@ -26,7 +26,16 @@ export type CanvasOptions = {
   fit: string;
   /** How to move it, said as the region's role. */
   moves: string;
+  /** Zoom off: the world is drawn at the scale that fits its width, never above 100%, with no sizing offered (the ring). */
+  fixed?: boolean;
+  /** Opens fitted rather than at 100%: as large as fits, never below `least`, and follows the drawing until the person moves it. */
+  opening?: { least: number };
+  /** The region is a Tab stop, where bare + - 0 and the arrows act (the map's keys). */
+  stop?: boolean;
 };
+
+/** How far an arrow pans the view from the region, in screen pixels. */
+const ARROW = 60;
 
 /**
  * What a feature does with a selection beyond a press on a node (CANVAS1b; the canvas design §2.4): a press on the ground (which
@@ -146,16 +155,23 @@ export function Canvas({
   children: ReactNode;
 }) {
   const on = active && options !== null && width !== undefined;
-  const bounds: ZoomBounds = options
-    ? { min: options.mode === 'edit' ? Math.max(options.zoom.min, coarse() ? 1 : EDIT_FLOOR) : options.zoom.min, max: options.zoom.max }
-    : { min: 1, max: 1 };
+  const [world, setWorld] = useState<Size | null>(null);
+  // The bounds follow the world measured: a fixed one is the scale that fits its width, so a handle call holds the newest world's own.
+  const boundsFor = (size: Size | null): ZoomBounds => {
+    if (!options) return { min: 1, max: 1 };
+    if (options.fixed) {
+      const fixed = Math.min(1, size && width ? width / Math.max(1, size.w) : 1);
+      return { min: fixed, max: fixed };
+    }
+    return { min: options.mode === 'edit' ? Math.max(options.zoom.min, coarse() ? 1 : EDIT_FLOOR) : options.zoom.min, max: options.zoom.max };
+  };
+  const bounds = boundsFor(world);
   const tall = useTall(pane, BELOW);
   const pad = rem;
   const least = LEAST * rem;
   const cap = Math.max(least, tall ?? (typeof window === 'undefined' ? least : window.innerHeight - BELOW));
 
   const [view, setView] = useState<View>({ x: 0, y: 0, k: clampScale(1, bounds) });
-  const [world, setWorld] = useState<Size | null>(null);
   const [moving, setMoving] = useState(false);
   const viewRef = useRef(view);
   const worldRef = useRef(world);
@@ -170,7 +186,10 @@ export function Canvas({
 
   const heightAt = (k: number, size: Size | null = worldRef.current) => Math.min(cap, Math.max(least, size === null ? least : size.h * k + 2 * pad));
   const viewport = (k: number): Size => ({ w: width ?? 0, h: heightAt(k) });
-  const held = (next: View): View => (worldRef.current ? clampView(next, worldRef.current, viewport(next.k), pad) : next);
+  const held = (asked: View): View => {
+    const next = options?.fixed ? { ...asked, k: boundsFor(worldRef.current).min } : asked;
+    return worldRef.current ? clampView(next, worldRef.current, viewport(next.k), pad) : next;
+  };
   const commit = (next: View, byPerson = true) => {
     const kept = held(next);
     if (byPerson && !same(kept, viewRef.current)) moved.current = true;
@@ -181,7 +200,15 @@ export function Canvas({
 
   /** The view the canvas opens at: 100% within the bounds, the entry's middle at the viewport's, the world's top at the top. */
   const opening = (nodes: ReadonlyMap<string, Box>): View => {
-    const k = clampScale(1, bounds);
+    const size = worldRef.current;
+    const own = boundsFor(size);
+    if (options?.opening && size && width) {
+      // As large as fits (never above 100%, never below the floor); `held` centres what fits and keeps the top left of what does not.
+      const fit = Math.min(width / Math.max(1, size.w), cap / Math.max(1, size.h));
+      const k = clampScale(Math.min(1, Math.max(options.opening.least, fit)), own);
+      return { x: 0, y: 0 - pad / k, k };
+    }
+    const k = clampScale(1, own);
     const at = entry === null ? undefined : nodes.get(entry);
     const middle = at ? at.x + at.w / 2 : (worldRef.current?.w ?? 0) / 2;
     return { x: middle - (width ?? 0) / (2 * k), y: 0 - pad / k, k };
@@ -232,6 +259,11 @@ export function Canvas({
       commit(next, false);
     },
   }));
+
+  // A fixed world follows its width: a narrower region fits it again.
+  useEffect(() => {
+    if (options?.fixed && on && Math.abs(viewRef.current.k - bounds.min) > EPSILON) commit({ ...viewRef.current, k: bounds.min }, false);
+  }, [options?.fixed, on, bounds.min]);
 
   // A gesture holds `will-change` only while it lasts: kept on, a zoomed text stays blurred at its old raster (trap 9).
   const gesture = (lasting: boolean) => {
@@ -405,10 +437,30 @@ export function Canvas({
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (!on || isComposing(event)) return;
+    // The region itself, where it is a stop: the bare keys of the map, which a node or a field keeps for itself.
+    if (options.stop && event.target === pane.current && !event.altKey && !event.ctrlKey && !event.metaKey) {
+      const moves: Record<string, (() => void) | undefined> = {
+        '+': acts.zoomIn, '=': acts.zoomIn, '-': acts.zoomOut, '0': event.shiftKey ? undefined : fitAll,
+        ArrowLeft: () => commit(panBy(viewRef.current, -ARROW, 0)), ArrowRight: () => commit(panBy(viewRef.current, ARROW, 0)),
+        ArrowUp: () => commit(panBy(viewRef.current, 0, -ARROW)), ArrowDown: () => commit(panBy(viewRef.current, 0, ARROW)),
+      };
+      const run = moves[event.key];
+      if (run) {
+        event.preventDefault();
+        run();
+        return;
+      }
+    }
     if (event.key === 'Escape' && drag.current?.going) {
       event.preventDefault();
       event.stopPropagation();
       end(true);
+      return;
+    }
+    // Escape on the region itself releases the choice, as a press on the ground does.
+    if (event.key === 'Escape' && options.stop && event.target === pane.current && selection) {
+      event.preventDefault();
+      selection.onGround();
       return;
     }
     if (!event.shiftKey || event.ctrlKey || event.altKey || event.metaKey) return;
@@ -478,10 +530,11 @@ export function Canvas({
   } as CSSProperties;
   return (
     <div className="min-w-0" onKeyDown={onKeyDown}>
-      {showTools || on ? <CanvasToolbar tools={tools} k={view.k} bounds={bounds} fit={options.fit} acts={acts} /> : null}
+      {showTools || on ? <CanvasToolbar tools={tools} k={view.k} bounds={bounds} fit={options.fit} acts={acts} sizing={!options.fixed} /> : null}
       <div
         ref={pane}
         {...paneProps}
+        tabIndex={options.stop ? 0 : undefined}
         role="region"
         aria-label={label}
         aria-roledescription={options.moves}

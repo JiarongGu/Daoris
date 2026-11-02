@@ -9,13 +9,8 @@ namespace Daoris.Driver.Tests;
 /// </summary>
 public sealed class HelpBrowserProposalsTests : HelpProposalsFixture
 {
-    /// <summary>The two files as the Browser screen reads them; an address is a page where it starts `https://`, as a stand-in for the route's reader.</summary>
-    private static readonly HelpBrowserFacts Files = new("daoris", "system", "offer", ["https://site.example/board"])
-    {
-        EdgeFound = true,
-        Page = typed => typed.StartsWith("https://", StringComparison.Ordinal) ? typed
-            : typed.Contains('.', StringComparison.Ordinal) && !typed.Contains(':', StringComparison.Ordinal) ? $"https://{typed}" : null,
-    };
+    /// <summary>The two files as the Browser screen reads them; an address is read by the one rule (<see cref="BrowserAddress"/>).</summary>
+    private static readonly HelpBrowserFacts Files = new("daoris", "system", "offer", ["https://site.example/board"]) { EdgeFound = true };
 
     private static readonly HelpMachineFacts WithFiles = Facts with { Browser = Files };
 
