@@ -1908,14 +1908,25 @@ if (mode == ServiceMode.Local)
 if (mode == ServiceMode.Local)
 {
     var brainstorms = BrainstormDesk.FromEnvironment();
+    var meetings = MeetingDesk.FromEnvironment();
 
     app.MapGet("/api/brainstorms", (HttpContext http) =>
         MachineLocal(http) ? Results.Ok(brainstorms.List().Select(ToBrainstorm)) : OffMachineBrainstorm());
 
+    // ONEWAY1t: the one writer of a brainstorm's request, a meeting's included (`kind`); the caller's own `id` makes an ask idempotent.
     app.MapPost("/api/brainstorms", (HttpContext http, BrainstormAskRequest body) =>
-        MachineLocal(http)
-            ? BrainstormReply(brainstorms.Ask(body.Question, body.Repository, body.Agents, DateTimeOffset.UtcNow))
-            : OffMachineBrainstorm());
+    {
+        if (!MachineLocal(http)) return OffMachineBrainstorm();
+        return BrainstormKindOf(body.Kind) switch
+        {
+            BrainstormDesk.MeetingKind when body.Sources is { Count: > 0 } =>
+                BrainstormReply(new(BrainstormRefusal.BadShape, "A meeting takes no named sources. Nothing was asked.")),
+            BrainstormDesk.MeetingKind => BrainstormReply(meetings.Ask(body.Question, body.Repository, body.Agents, DateTimeOffset.UtcNow, body.Id)),
+            BrainstormDesk.BrainstormKind => BrainstormReply(
+                brainstorms.Ask(body.Question, body.Repository, body.Agents, DateTimeOffset.UtcNow, body.Id, body.Sources)),
+            _ => BrainstormReply(BadBrainstormKind(body.Kind)),
+        };
+    });
 
     app.MapGet("/api/brainstorms/{id}", (HttpContext http, string id) =>
     {
@@ -1925,12 +1936,50 @@ if (mode == ServiceMode.Local)
             : Results.NotFound(new ErrorResponse(BrainstormDesk.NotFoundSentence(id)));
     });
 
-    app.MapPost("/api/brainstorms/{id}/send", (HttpContext http, string id) =>
-        MachineLocal(http) ? BrainstormReply(brainstorms.Send(id, DateTimeOffset.UtcNow)) : OffMachineBrainstorm());
+    // `?kind=meeting` addresses a meeting; `?round=<n>` names the round a meeting's send is for.
+    app.MapPost("/api/brainstorms/{id}/send", (HttpContext http, string id, string? kind, int? round) =>
+    {
+        if (!MachineLocal(http)) return OffMachineBrainstorm();
+        return BrainstormKindOf(kind) switch
+        {
+            BrainstormDesk.MeetingKind => BrainstormReply(meetings.Send(id, round, DateTimeOffset.UtcNow)),
+            BrainstormDesk.BrainstormKind when round is not null => BrainstormReply(
+                new(BrainstormRefusal.BadShape, "A brainstorm has one packet to send, no rounds; a round is a meeting's.")),
+            BrainstormDesk.BrainstormKind => BrainstormReply(brainstorms.Send(id, DateTimeOffset.UtcNow)),
+            _ => BrainstormReply(BadBrainstormKind(kind)),
+        };
+    });
 
-    app.MapDelete("/api/brainstorms/{id}", (HttpContext http, string id) =>
-        MachineLocal(http) ? BrainstormReply(brainstorms.Clear(id)) : OffMachineBrainstorm());
+    app.MapPost("/api/brainstorms/{id}/stop", (HttpContext http, string id, string? kind) =>
+    {
+        if (!MachineLocal(http)) return OffMachineBrainstorm();
+        return BrainstormKindOf(kind) switch
+        {
+            BrainstormDesk.MeetingKind => BrainstormReply(meetings.Stop(id, DateTimeOffset.UtcNow)),
+            BrainstormDesk.BrainstormKind => BrainstormReply(brainstorms.Stop(id, DateTimeOffset.UtcNow)),
+            _ => BrainstormReply(BadBrainstormKind(kind)),
+        };
+    });
+
+    app.MapDelete("/api/brainstorms/{id}", (HttpContext http, string id, string? kind) =>
+    {
+        if (!MachineLocal(http)) return OffMachineBrainstorm();
+        return BrainstormKindOf(kind) switch
+        {
+            BrainstormDesk.MeetingKind => BrainstormReply(meetings.Clear(id)),
+            BrainstormDesk.BrainstormKind => BrainstormReply(brainstorms.Clear(id)),
+            _ => BrainstormReply(BadBrainstormKind(kind)),
+        };
+    });
 }
+
+// The kind a brainstorm door is asked of: none is a brainstorm; anything but the two is no kind.
+static string? BrainstormKindOf(string? kind) => string.IsNullOrWhiteSpace(kind)
+    ? BrainstormDesk.BrainstormKind
+    : kind.Trim().ToLowerInvariant() is var word and (BrainstormDesk.BrainstormKind or BrainstormDesk.MeetingKind) ? word : null;
+
+static BrainstormOutcome BadBrainstormKind(string? kind) =>
+    new(BrainstormRefusal.BadShape, $"A brainstorm's kind is `brainstorm` or `meeting`; `{kind}` is neither. Nothing was done.");
 
 // A door to a brainstorm answers as a second opinion's does: a shape is a bad request, nothing by that name is not found, and a state
 // it is in, a clear the disk would not finish or no home is the lock's own shape, 409.
@@ -1943,7 +1992,8 @@ static IResult BrainstormReply(BrainstormOutcome outcome) => outcome.Refusal swi
 };
 
 static BrainstormResponse ToBrainstorm(BrainstormStanding b) =>
-    new(b.Id, b.Question, b.Repository, b.Agents, b.At, b.State, b.Code, b.Packet, b.Sent);
+    new(b.Id, b.Question, b.Repository, b.Agents, b.At, b.State, b.Code, b.Packet, b.Sent,
+        b.Kind == BrainstormDesk.MeetingKind ? b.Kind : null, b.Kind == BrainstormDesk.MeetingKind ? b.Round : null);
 
 // A door to a helper answers as a second opinion's does: a shape is a bad request, nothing by that name is not found, and a
 // state it is in is the lock's own shape, 409.

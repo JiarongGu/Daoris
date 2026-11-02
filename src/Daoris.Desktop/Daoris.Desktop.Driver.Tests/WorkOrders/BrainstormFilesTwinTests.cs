@@ -5,9 +5,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// BRAINSTORM1a3 (D176 points 1 and 8): a brainstorm's records are written by two doors, this verb and the local host's brainstorm
-/// door that <c>daoris brainstorm</c> reaches, and read by both. They share no code, so the files are the contract: this reader and
-/// the service's <c>BrainstormDesk</c> are held, row for row, to one table, <c>fixtures/brainstorm-files.json</c>.
+/// BRAINSTORM1a3 (D176 points 1 and 8), ONEWAY1t: a brainstorm's request, send and stop are written by the service's desk alone, and
+/// read by it and by the driver's look. They share no code, so the files are the contract: this reader and the service's
+/// <c>BrainstormDesk</c> are held, row for row, to one table, <c>fixtures/brainstorm-files.json</c>.
 /// </summary>
 public sealed class BrainstormFilesTwinTests : IDisposable
 {
@@ -77,6 +77,7 @@ public sealed class BrainstormFilesTwinTests : IDisposable
             Assert.Equal(reads["repository"]?.GetValue<string>(), read.Repository);
             Assert.Equal(reads["agents"]!.AsArray().Select(agent => agent!.GetValue<string>()), read.Agents);
             Assert.Equal(DateTimeOffset.Parse(reads["at"]!.GetValue<string>(), CultureInfo.InvariantCulture), read.At);
+            Assert.Equal(reads["sources"]?.AsArray().Select(source => source!.GetValue<string>()) ?? [], read.Sources ?? []);
         }
 
         foreach (var row in table["states"]!.AsArray())
@@ -103,15 +104,40 @@ public sealed class BrainstormFilesTwinTests : IDisposable
         }
     }
 
-    /// <summary>The request this verb writes is the table's first row's shape, key for key in its order, as the service's door writes it.</summary>
+    /// <summary>🔴 The stop and a meeting's request, state and per-round send rows read here as the service's desk reads them (ONEWAY1t).</summary>
     [Fact]
-    public void The_verbs_request_is_written_in_the_tables_shape()
+    public void The_stop_and_the_meeting_rows_of_the_files_table_read_as_the_service_reads_them()
     {
-        var id = Files.WriteRequest("Why?", "reports", ["stub"], DateTimeOffset.Parse("2026-10-19T10:00:00Z", CultureInfo.InvariantCulture));
+        var table = Table();
+        var meetings = new MeetingFiles(_home);
 
-        var written = JsonNode.Parse(File.ReadAllText(Files.PathOf(id, "request.json")))!.AsObject();
-        var shape = JsonNode.Parse(Table()["requests"]![0]!["file"]!.GetValue<string>())!.AsObject();
-        Assert.Equal(shape.Select(pair => pair.Key), written.Select(pair => pair.Key));
-        Assert.Equal(id, written["id"]!.GetValue<string>());
+        foreach (var row in table["stops"]!.AsArray())
+        {
+            var id = $"sp{row["name"]!.GetValue<string>().Length:D3}";
+            if (row["file"] is { } file) Put(id, "stop.json", file.GetValue<string>());
+            else Directory.CreateDirectory(Files.Folder(id));
+            Assert.Equal(row["reads"]!.GetValue<bool>(), Files.Stopped(id));
+        }
+
+        var rows = table["meetings"]!.AsArray();
+        Directory.CreateDirectory(meetings.Folder("mt000001"));
+        File.WriteAllText(meetings.PathOf("mt000001", "request.json"), rows[0]!["file"]!.GetValue<string>());
+        var request = meetings.Request("mt000001")!;
+        Assert.Equal((rows[0]!["reads"]!["question"]!.GetValue<string>(), rows[0]!["reads"]!["repository"]!.GetValue<string>()), (request.Question, request.Repository));
+        Assert.Equal(rows[0]!["reads"]!["agents"]!.AsArray().Select(agent => agent!.GetValue<string>()), request.Agents);
+
+        foreach (var row in new[] { rows[1], rows[2] })
+        {
+            File.WriteAllText(meetings.PathOf("mt000001", "state.json"), row!["state"]!.GetValue<string>());
+            var state = meetings.ReadState("mt000001")!;
+            Assert.Equal(
+                (row["reads"]!["state"]!.GetValue<string>(), row["reads"]!["round"]!.GetValue<int>(), row["reads"]!["packet"]!.GetValue<string>()),
+                (state.State, state.Round, state.Packet));
+        }
+
+        var send = rows[3]!;
+        Directory.CreateDirectory(Path.Combine(meetings.Folder("mt000001"), "sent"));
+        File.WriteAllText(meetings.PathOf("mt000001", "sent", $"{send["round"]!.GetValue<int>()}.json"), send["sent"]!.GetValue<string>());
+        Assert.Equal(send["reads"]!["sent"]!.GetValue<string>(), meetings.Sent("mt000001", send["round"]!.GetValue<int>()));
     }
 }

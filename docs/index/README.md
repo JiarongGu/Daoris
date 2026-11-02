@@ -285,9 +285,9 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/Sessions/WorkRecords.cs` | 44 | 812 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs` | 57 | 1016 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 170 | 2786 |
-| `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 88 | 1019 |
-| `src/Daoris.Service/Daoris.Service.Http/PersonDoors.cs` | 43 | 660 |
-| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 193 | 3220 |
+| `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 89 | 1024 |
+| `src/Daoris.Service/Daoris.Service.Http/PersonDoors.cs` | 43 | 661 |
+| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 196 | 3270 |
 | `src/Daoris.Service/Daoris.Service.Tests/Asks/HistoryDeskTests.cs` | 46 | 864 |
 | `src/Daoris.Service/Daoris.Service.Tests/Knowledge/IndexEntriesTests.cs` | 50 | 983 |
 | `src/Daoris.Service/Daoris.Service.Tests/Mcp/McpToolsTests.cs` | 53 | 915 |

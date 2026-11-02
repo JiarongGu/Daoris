@@ -590,12 +590,17 @@ public sealed record OpinionHandRequest(string? To = null);
 public sealed record HelperActionResponse(string Message, SessionResponse? Session = null, SaidWordResponse? Said = null, string? Settled = null);
 // BRAINSTORM1a3 (D176 points 1, 2 and 8): a person's question for a brainstorm, every part nullable so one left out is refused by
 // the desk naming which. `Repository` is the one whose knowledge the packet is frozen from, none for the question alone.
-public sealed record BrainstormAskRequest(string? Question, string? Repository = null, IReadOnlyList<string?>? Agents = null);
+// ONEWAY1t: `Kind` is `brainstorm` (none) or `meeting`; `Id` the caller's own, which makes the ask idempotent; `Sources` the repository's
+// paths the packet takes in.
+public sealed record BrainstormAskRequest(
+    string? Question, string? Repository = null, IReadOnlyList<string?>? Agents = null, string? Kind = null, string? Id = null,
+    IReadOnlyList<string?>? Sources = null);
 // One brainstorm as its records stand: `State` is `asked` before the driver's look froze its packet, then the driver's own
 // (`frozen`, `running`, `ended`); `Packet` the frozen packet's digest, `Sent` the digest the person sent, each null for none.
+// A meeting's carries its `Kind` and the `Round` its state is of; a brainstorm's leaves both out.
 public sealed record BrainstormResponse(
     string Id, string Question, string? Repository, IReadOnlyList<string> Agents, DateTimeOffset At, string State, string? Code,
-    string? Packet, string? Sent);
+    string? Packet, string? Sent, string? Kind = null, int? Round = null);
 // One brainstorm shown: the packet as frozen, whole and as written (null before the look froze one), and the document's Markdown.
 public sealed record BrainstormShownResponse(BrainstormResponse Brainstorm, JsonElement? Frozen, string? Document);
 // A press's answer: the brainstorm as it now stands, and the desk's sentence.

@@ -3,47 +3,89 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The brainstorm at the terminal (BRAINSTORM1a, D176 points 1, 2 and 8): <c>daoris-driver brainstorm "&lt;question&gt;"</c> writes a
-/// request the driver's look takes, as a helper's ask does, so every pass runs in whichever process holds the loop; <c>show</c>
-/// prints the packet whole, then the document; <c>send</c> is the person's press that lets the packet they saw go; <c>clear</c>
-/// removes the records and the packet; <c>list</c> names each. Files only: the verb spawns nothing and asks no service.
+/// The brainstorm at the terminal (BRAINSTORM1a, D176 points 1, 2 and 8; ONEWAY1t): <c>daoris-driver brainstorm "&lt;question&gt;"</c>
+/// asks the running service's desk, the one writer of a request, which the driver's look takes, so every pass runs in whichever
+/// process holds the loop. <c>send</c>, <c>stop</c> and <c>clear</c> are the desk's presses; <c>show</c> and <c>list</c> read the
+/// records here, which the look and the desk share. <c>--kind meeting</c> asks a meeting of the same desk (D177). With no service
+/// running the verb says so and writes nothing.
 /// </summary>
-public static partial class BrainstormCommand
+public static class BrainstormCommand
 {
     public const string Usage =
         "usage: daoris-driver brainstorm \"<question>\" [--repository <name>] [--agents <a,b>] [--source <path>]... [--id <id>]\n"
         + "       daoris-driver brainstorm show|send|stop|clear <id>\n"
-        + "       daoris-driver brainstorm list";
+        + "       daoris-driver brainstorm list\n"
+        + "       daoris-driver brainstorm \"<question>\" --kind meeting --agents <a,b> [--repository <name>] [--id <id>]\n"
+        + "       daoris-driver brainstorm send <id> --kind meeting [--round <n>]";
 
-    /// <summary>Exit codes as every verb's: 0 done, 1 refused, 2 a line this verb does not read.</summary>
-    public static int Run(string[] args, string home, TextWriter output, DateTimeOffset now, Func<string, AdapterSet>? adapters = null)
+    /// <summary>
+    /// Exit codes as every verb's: 0 done, 1 refused or no service, 2 a line this verb does not read. <paramref name="doors"/> null
+    /// finds the service as a terminal does; <paramref name="now"/> is unused, since the desk stamps what it writes.
+    /// </summary>
+    public static int Run(string[] args, string home, TextWriter output, DateTimeOffset now, IServiceDoors? doors = null)
     {
+        _ = now;
+        if (Kind(args) is not { } kinded)
+        {
+            output.WriteLine(Usage);
+            return 2;
+        }
+
+        if (kinded.Meeting) return MeetingCommand.Run(kinded.Args, home, output, now, doors);
+        args = kinded.Args;
         var files = new BrainstormFiles(home);
         switch (args)
         {
             case ["list"]:
                 return List(files, output);
-            // The folder that holds every meeting is no brainstorm (AGENTROOM1a): cleared as one, it would take them all.
-            case ["show" or "send" or "stop" or "clear", var id] when BrainstormFiles.Reserved(id):
+            // The folder that holds every meeting is no brainstorm (AGENTROOM1a): the desk refuses it a press, and a read says so.
+            case ["show", var id] when BrainstormFiles.Reserved(id):
                 output.WriteLine($"daoris-driver: there is no brainstorm `{id}` on this machine.");
                 return 1;
             case ["show", var id]:
                 return Show(files, id, output);
             case ["send", var id]:
-                return Send(files, id, output, now);
+                return BrainstormDoor.Press(doors, ServiceVerb.Post, BrainstormDoor.PathOf(id, "send", meeting: false), "{}", output);
             case ["stop", var id]:
-                return Stop(files, id, output, now);
+                return BrainstormDoor.Press(doors, ServiceVerb.Post, BrainstormDoor.PathOf(id, "stop", meeting: false), "{}", output);
             case ["clear", var id]:
-                return Clear(files, id, output);
+                return BrainstormDoor.Press(doors, ServiceVerb.Delete, BrainstormDoor.PathOf(id, null, meeting: false), null, output);
             case [var question, .. var rest] when !question.StartsWith("--", StringComparison.Ordinal) && question is not ("show" or "send" or "stop" or "clear" or "list"):
-                return Ask(files, question, rest, output, now, (adapters ?? AskedAgents.Current)(home));
+                return Ask(question, rest, output, doors);
             default:
                 output.WriteLine(Usage);
                 return 2;
         }
     }
 
-    private static int Ask(BrainstormFiles files, string question, IReadOnlyList<string> rest, TextWriter output, DateTimeOffset now, AdapterSet adapters)
+    /// <summary>
+    /// The line without its <c>--kind</c> pair, and whether it names a meeting; null where the kind is none of the two or is named
+    /// twice. A meeting's line is a brainstorm's with the kind named, which the meeting verb reads as it always has.
+    /// </summary>
+    private static (string[] Args, bool Meeting)? Kind(string[] args)
+    {
+        var at = Array.IndexOf(args, "--kind");
+        if (at < 0) return (args, false);
+        if (at + 1 >= args.Length || args.Count(word => word == "--kind") > 1) return null;
+        var rest = args.Where((_, index) => index != at && index != at + 1).ToArray();
+        switch (args[at + 1])
+        {
+            case "brainstorm":
+                return (rest, false);
+            case "meeting":
+                return rest switch
+                {
+                    [] => (rest, true),
+                    ["list" or "show" or "send" or "stop" or "clear", ..] => (rest, true),
+                    [var question, .. var more] when !question.StartsWith("--", StringComparison.Ordinal) => (["ask", question, .. more], true),
+                    _ => (rest, true),
+                };
+            default:
+                return null;
+        }
+    }
+
+    private static int Ask(string question, IReadOnlyList<string> rest, TextWriter output, IServiceDoors? doors)
     {
         string? repository = null;
         string? named = null;
@@ -66,16 +108,10 @@ public static partial class BrainstormCommand
                     agents = [.. rest[at + 1].Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
                     break;
                 case "--source":
-                    if (!BrainstormPackets.Relative(rest[at + 1].Trim()))
-                    {
-                        output.WriteLine($"daoris-driver: `--source {rest[at + 1]}` is not a path from the repository's root; name a document or a code file by its repository-relative path.");
-                        return 1;
-                    }
-
-                    if (!sources.Contains(rest[at + 1].Trim().Replace('\\', '/'), StringComparer.Ordinal)) sources.Add(rest[at + 1].Trim().Replace('\\', '/'));
+                    sources.Add(rest[at + 1]);
                     break;
-                // The caller's own id (BRAINSTORM1b, D176 point 6): asked again under it, it is the same brainstorm, never a second spend.
-                case "--id" when IdShape().IsMatch(rest[at + 1]) && !BrainstormFiles.Reserved(rest[at + 1]):
+                // The caller's own id (BRAINSTORM1b, D176 point 6), which the desk judges: asked again under it, the same brainstorm.
+                case "--id":
                     named = rest[at + 1];
                     break;
                 default:
@@ -84,56 +120,9 @@ public static partial class BrainstormCommand
             }
         }
 
-        question = question.Trim();
-        if (question.Length == 0 || question.Length > BrainstormBounds.First.Question)
-        {
-            output.WriteLine($"daoris-driver: a brainstorm's question is 1 to {BrainstormBounds.First.Question} characters; this one is {question.Length}.");
-            return 1;
-        }
-
-        if (agents.Count > DriverBrainstormLimits.MostAgents)
-        {
-            output.WriteLine($"daoris-driver: a brainstorm runs at most {DriverBrainstormLimits.MostAgents} agents; {agents.Count} were named.");
-            return 1;
-        }
-
-        if (AskedAgents.Refusal(adapters, agents) is { } unknown)
-        {
-            output.WriteLine(unknown);
-            return 1;
-        }
-
-        repository = repository is { Length: > 0 } ? repository : null;
-        if (sources.Count > 0 && repository is null)
-        {
-            output.WriteLine("daoris-driver: `--source` names a path of a repository; name it with `--repository`.");
-            return 1;
-        }
-
-        if (sources.Count > DriverBrainstormLimits.MostSources)
-        {
-            output.WriteLine($"daoris-driver: a brainstorm takes at most {DriverBrainstormLimits.MostSources} named sources; {sources.Count} were named.");
-            return 1;
-        }
-
-        if (named is not null && files.Request(named) is { } asked)
-        {
-            if (asked.Question != question || !string.Equals(asked.Repository, repository, StringComparison.Ordinal) || !asked.Agents.SequenceEqual(agents, StringComparer.Ordinal)
-                || !(asked.Sources ?? []).SequenceEqual(sources, StringComparer.Ordinal))
-            {
-                output.WriteLine($"daoris-driver: brainstorm `{named}` was asked with other words; an id names one brainstorm.");
-                return 1;
-            }
-
-            output.WriteLine($"Brainstorm `{named}` is already asked: the same brainstorm, never a second spend. Read it with `daoris-driver brainstorm show {named}`.");
-            return 0;
-        }
-
-        var id = files.WriteRequest(question, repository, agents, now, named, sources);
-        output.WriteLine($"Brainstorm `{id}` asked. Daoris freezes its packet at its next look, from "
-            + (repository is { Length: > 0 } ? $"its knowledge of `{repository}`" : "the question alone")
-            + $"; with no Daoris running, it waits. Read it with `daoris-driver brainstorm show {id}` before you send it.");
-        return 0;
+        return BrainstormDoor.Press(
+            doors, ServiceVerb.Post, "/api/brainstorms",
+            BrainstormDoor.AskBody(question, repository is { Length: > 0 } ? repository : null, agents, sources, named, meeting: false), output);
     }
 
     private static int Show(BrainstormFiles files, string id, TextWriter output)
@@ -211,81 +200,6 @@ public static partial class BrainstormCommand
         }
 
         foreach (var left in leftOut) text.Append("\nLeft out: ").Append(left.Path).Append(" (").Append(left.Why).Append(")\n");
-    }
-
-    /// <summary>A caller's own id: a plain name of letters, digits and dashes, at most 32, so it is a folder's name and nothing more.</summary>
-    [System.Text.RegularExpressions.GeneratedRegex("^[A-Za-z0-9][A-Za-z0-9-]{0,31}$")]
-    internal static partial System.Text.RegularExpressions.Regex IdShape();
-
-    /// <summary>
-    /// The person's stop (BRAINSTORM1b, D176 point 6): a file the driver looks for while the brainstorm runs, and at its next look
-    /// before it does; every pass ends, what answered is kept, and nothing runs again by itself.
-    /// </summary>
-    private static int Stop(BrainstormFiles files, string id, TextWriter output, DateTimeOffset now)
-    {
-        if (files.Request(id) is null)
-        {
-            output.WriteLine($"daoris-driver: there is no brainstorm `{id}` on this machine.");
-            return 1;
-        }
-
-        if (files.ReadState(id) is { State: BrainstormStates.Ended } ended)
-        {
-            output.WriteLine($"Brainstorm `{id}` already ended ({ended.Code ?? "with its document"}).");
-            return 0;
-        }
-
-        files.WriteStop(id, now);
-        output.WriteLine($"Brainstorm `{id}`: stop asked. Every pass ends where Daoris runs it, what answered is kept, and nothing runs again by itself.");
-        return 0;
-    }
-
-    private static int Send(BrainstormFiles files, string id, TextWriter output, DateTimeOffset now)
-    {
-        var state = files.ReadState(id);
-        if (state is not { State: BrainstormStates.Frozen, Packet: { } digest })
-        {
-            output.WriteLine(files.Request(id) is null
-                ? $"daoris-driver: there is no brainstorm `{id}` on this machine."
-                : state is null
-                    ? $"daoris-driver: brainstorm `{id}` has no packet yet: Daoris freezes it at its next look, and you read it before it goes."
-                    : $"Brainstorm `{id}` was already sent ({state.State}).");
-            return state is null || files.Request(id) is null ? 1 : 0;
-        }
-
-        if (files.Sent(id) == digest)
-        {
-            output.WriteLine($"Brainstorm `{id}` is already sent: the same brainstorm, never a second spend.");
-            return 0;
-        }
-
-        files.WriteSent(id, digest, now);
-        output.WriteLine($"Brainstorm `{id}` sent, packet `{digest}`: its passes start at Daoris's next look. Read the document with `daoris-driver brainstorm show {id}`.");
-        return 0;
-    }
-
-    private static int Clear(BrainstormFiles files, string id, TextWriter output)
-    {
-        if (files.Request(id) is null && !Directory.Exists(files.Folder(id)))
-        {
-            output.WriteLine($"daoris-driver: there is no brainstorm `{id}` on this machine.");
-            return 1;
-        }
-
-        if (files.ReadState(id) is { State: BrainstormStates.Running })
-        {
-            output.WriteLine($"daoris-driver: brainstorm `{id}` is running; it is cleared once it ends.");
-            return 1;
-        }
-
-        if (files.Clear(id) is { } left)
-        {
-            output.WriteLine($"daoris-driver: brainstorm `{id}` could not be cleared whole: {left}");
-            return 1;
-        }
-
-        output.WriteLine($"Brainstorm `{id}` cleared: its records and its packet are gone from this machine.");
-        return 0;
     }
 
     private static int List(BrainstormFiles files, TextWriter output)

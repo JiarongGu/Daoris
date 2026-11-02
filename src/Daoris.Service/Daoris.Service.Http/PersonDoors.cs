@@ -330,6 +330,7 @@ public static class PersonDoors
         // for their yes, which a terminal's confirmation in the window is.
         new("POST", "/api/brainstorms", DoorClass.Person, "a brainstorm's question") { Marks = OwnerMark.None("a brainstorm, no quest") },
         new("POST", "/api/brainstorms/{id}/send", DoorClass.Person, "a brainstorm's send") { Marks = OwnerMark.None("a brainstorm, no quest") },
+        new("POST", "/api/brainstorms/{id}/stop", DoorClass.Person, "a brainstorm's stop") { Marks = OwnerMark.None("a brainstorm, no quest") },
         new("DELETE", "/api/brainstorms/{id}", DoorClass.Person, "a brainstorm's clear") { Marks = OwnerMark.None("a brainstorm, no quest") },
         new("POST", "/api/quests/{id}/conflicts/dismiss", DoorClass.Person, "a conflict's dismissal") { Marks = OwnerMark.None("a lost move dismissed; its status does not move") },
         // SYNCMERGE1a (D178 point 3): only the person, on the machine whose take lost, brings it forward; a local host's alone.
