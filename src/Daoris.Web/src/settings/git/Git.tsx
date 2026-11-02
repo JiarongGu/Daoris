@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { sentence, ago } from '../locales/format';
-import { ExternalLink } from '../design/links';
-import { type Answered, InlineConfirm, Refused } from '../work/InlineConfirm';
+import { sentence, ago } from '../../locales/format';
+import { ExternalLink } from '../../design/links';
+import { type Answered, InlineConfirm, Refused } from '../../work/InlineConfirm';
 import {
   Button, Card, CardHeader, Dot, EmptyState, Inline, MonoWell, Pill, Prose, SelectField, SettingList, SettingRow,
-} from '../design/ui';
+} from '../../design/ui';
 
 /** The way an identity signs in: an SSH key of Daoris's own, or an HTTPS sign-in kept by Git Credential Manager (D198). */
 export type GitWay = 'ssh' | 'https';

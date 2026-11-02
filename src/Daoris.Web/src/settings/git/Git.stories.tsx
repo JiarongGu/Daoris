@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { CardStack } from '../design/ui';
-import { chinese } from '../design/storyLanguage';
-import { storyWidths } from '../design/storyWidths';
+import { CardStack } from '../../design/ui';
+import { chinese } from '../../design/storyLanguage';
+import { storyWidths } from '../../design/storyWidths';
 import { GitDefaults, GitIdentities, GitIdentityRow, GitOwn } from './Git';
 import { GitAdd } from './GitAdd';
 import { ACTS, DEPLOY, EMPTY_PAGE, PAGE, PERSONAL, UNKNOWN_HOST, WORK } from './gitFixtures';

@@ -22,7 +22,7 @@ import {
   useSweep, useSweepLook, useSweepPlan, useTreesSync, useTreesSyncPlan, useTreesSyncScope, useUnwireRemote, useWireRemote, useWorkflowCurrent,
   useWithdrawLandingBranch, useWorkState, useWorkflowEditor, useGitRemotes, useSetGitUse, useTools,
 } from '../../bridge/shell';
-import type { GitHostShown } from '../../settings/GitRemotes';
+import type { GitHostShown } from '../../settings/git/GitRemotes';
 import { supervisorOf } from '../../agents/setup/PlaceSupervisor';
 import { byTool } from '../../agents/tools';
 import { failure, type Notify, useErrorNotify } from '../../design/ui';

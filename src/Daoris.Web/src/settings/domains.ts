@@ -7,7 +7,7 @@ import { AiDomain } from './AiDomain';
 import { AppearanceDomain } from './AppearanceDomain';
 import { BrowserDomain } from './BrowserDomain';
 import { DriverDomain } from './DriverDomain';
-import { GitDomain } from './GitDomain';
+import { GitDomain } from './git/GitDomain';
 import { LogsDomain } from './LogsDomain';
 import { ToolsDomain } from './ToolsDomain';
 import { WiringDomain } from './WiringDomain';

@@ -28,8 +28,8 @@ import { RepositoryRules, type RuleLists } from './RepositoryRules';
 import { type FoldSpec, FoldRow } from './FoldRow';
 import { Inheritable, landingRowSays, landingSays, SetupSection, type UnreadLanding, UnreadLandingNote } from './SetupParts';
 import { StandingAnswer } from './StandingAnswer';
-import type { GitIdentityShown } from '../../settings/Git';
-import { GitRemotes, type GitRemoteActs, type GitRemoteShown } from '../../settings/GitRemotes';
+import type { GitIdentityShown } from '../../settings/git/Git';
+import { GitRemotes, type GitRemoteActs, type GitRemoteShown } from '../../settings/git/GitRemotes';
 
 /**
  * The sections of a repository's Setup (UX6f, D150 §4.2; *Sessions' access* since AUTONOMY1d, *Heavy gates* since HEAVYRUN1b2b), in

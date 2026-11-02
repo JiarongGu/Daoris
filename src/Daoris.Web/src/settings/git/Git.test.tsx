@@ -2,7 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { describe, expect, it, vi } from 'vitest';
-import '../locales/i18n';
+import '../../locales/i18n';
 import { GitDefaults, GitIdentities, GitIdentityRow, GitOwn, type GitActs } from './Git';
 import { GitAdd } from './GitAdd';
 import { ACTS, DEPLOY, EMPTY_PAGE, PAGE, PERSONAL, UNKNOWN_HOST, WORK } from './gitFixtures';

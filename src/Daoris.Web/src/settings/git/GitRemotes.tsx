@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { sentence } from '../locales/format';
-import { InlineConfirm, Refused } from '../work/InlineConfirm';
-import { Button, Inline, Pill, SelectField } from '../design/ui';
+import { sentence } from '../../locales/format';
+import { InlineConfirm, Refused } from '../../work/InlineConfirm';
+import { Button, Inline, Pill, SelectField } from '../../design/ui';
 import type { GitIdentityShown } from './Git';
 
 /** One git remote of a repository, with what serves it (GITAUTH1e, the git-auth design §7.3), as `GIT_BRANCHES`' `remotes` answers it. */

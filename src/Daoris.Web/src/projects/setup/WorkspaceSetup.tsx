@@ -21,8 +21,8 @@ import type { SupervisorLine } from './SupervisorRow';
 import { SupervisorDoor } from './SupervisorDoor';
 import type { WorkspaceSection } from '../tabs';
 import { hostOf } from '../workspace/workspace';
-import type { GitIdentityShown } from '../../settings/Git';
-import { GitHosts, type GitHostActs, type GitHostShown } from '../../settings/GitRemotes';
+import type { GitIdentityShown } from '../../settings/git/Git';
+import { GitHosts, type GitHostActs, type GitHostShown } from '../../settings/git/GitRemotes';
 
 /**
  * A workspace's defaults on this machine (§4.3), each what the workspace sets, absent where it sets none, and the press

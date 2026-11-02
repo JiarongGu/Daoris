@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ago, size } from '../locales/format';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
-import type { GitPageShown } from './Git';
+import type { GitPageShown } from './git/Git';
 import {
   Button, Card, CardHeader, Inline, PathText, Pill, Prose, Segmented, SelectField, SettingList, SettingRow,
 } from '../design/ui';

@@ -216,7 +216,7 @@ export const useGitRemotes = ({ repository, workspace, enabled = true }: { repos
 };
 
 /** A remote's row as `GIT_BRANCHES` answers it with `remotes`: the settings page's `GitRemoteShown`. */
-export type GitRemoteRow = import('../../settings/GitRemotes').GitRemoteShown;
+export type GitRemoteRow = import('../../settings/git/GitRemotes').GitRemoteShown;
 
 /** What `CHECKOUT_BRANCH` answers: the checkout's branch by its short name, or null where HEAD is detached. */
 export type CheckoutBranch = { branch: string | null };

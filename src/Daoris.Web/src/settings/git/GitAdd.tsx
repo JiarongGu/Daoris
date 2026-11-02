@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { sentence } from '../locales/format';
-import { ExternalLink } from '../design/links';
-import { InlineConfirm, Refused } from '../work/InlineConfirm';
-import { Button, Card, CardHeader, Inline, Prose, Segmented, SettingList, SettingRow } from '../design/ui';
+import { sentence } from '../../locales/format';
+import { ExternalLink } from '../../design/links';
+import { InlineConfirm, Refused } from '../../work/InlineConfirm';
+import { Button, Card, CardHeader, Inline, Prose, Segmented, SettingList, SettingRow } from '../../design/ui';
 import {
   CommitsFields, type GitActs, type GitAdded, type GitAddInput, type GitWay, PublicKey, SelectOrType,
 } from './Git';

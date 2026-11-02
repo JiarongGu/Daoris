@@ -17,9 +17,9 @@ vi.mock('@shenora/react', () => ({
   useShenoraEvent: () => {},
 }));
 
-import { SettingsView } from './SettingsView';
-import { DRIVER_STATE, respond, serviceCalls, show } from '../test/shellHarness';
-import { TOOLS } from './toolsFixtures';
+import { SettingsView } from '../SettingsView';
+import { DRIVER_STATE, respond, serviceCalls, show } from '../../test/shellHarness';
+import { TOOLS } from '../toolsFixtures';
 import { PAGE } from './gitFixtures';
 
 type Payload = Record<string, unknown> | undefined;

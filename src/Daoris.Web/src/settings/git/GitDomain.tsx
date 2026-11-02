@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { sentence } from '../locales/format';
-import { useGitIdentity, useSetGitUse, useToolPick, useTools } from '../bridge/shell';
-import { failure, Inline, type Notify, Prose, useErrorNotify } from '../design/ui';
-import { DomainLoading } from './DomainLoading';
+import { sentence } from '../../locales/format';
+import { useGitIdentity, useSetGitUse, useToolPick, useTools } from '../../bridge/shell';
+import { failure, Inline, type Notify, Prose, useErrorNotify } from '../../design/ui';
+import { DomainLoading } from '../DomainLoading';
 import {
   type GitActs, GitDefaults, GitIdentities, GitOwn, type GitTestAnswer,
 } from './Git';
