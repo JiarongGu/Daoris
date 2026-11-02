@@ -5,6 +5,27 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-02 - A `land` node's target was accepted for every method and landed nowhere (REVIEW2, LANDNODE1)
+
+- **Symptom:** `land {method: merge, target: "release"}` merged into the tree's line while the delivery's record said `release`.
+- **Root cause:** `LandNodes.Problem` checked only that `target` was a valid branch name, and the value went only into the delivery's key and `Intent.Target`; the landing used `Intent.Line`. The design allows another line for an integrate alone, and only one the repository declares.
+- **Fix:** `Problem` holds a target beside an explicit method other than `integrate`; `CurrentDeliveries.StartAsync` refuses a bound `land` whose target is not the tree's line before any delivery is written, so a saved version that carries one never lands. Noted on D145.
+- **Verify:** `LandTargetTests` and `LandNodeKindTests`' new rows, red first.
+
+## 2026-11-02 - A store held below step 18 threw "no such column: model" on every move (REVIEW2, STAFFPOLICY1d)
+
+- **Symptom:** while the start's confirmation of the step-16 stamp raise is awaited, steps 17 and 18 wait with it, and every move `Decide` or phase `Step` threw.
+- **Root cause:** `MoveStore` named `model` and `effort` in its insert and in `ReadIn`/`StandingIn` whatever the store's version; only its reads had `ColumnsAt`.
+- **Fix:** a write transaction knows the store's version (`DesktopWrite.Version`), and the insert and the in-write reads name the columns only from step 18.
+- **Verify:** `MoveStoreHeldStepTests` on a store held at step 15, red first.
+
+## 2026-11-02 - The place's chart drew an older version than every run would bind (REVIEW2)
+
+- **Symptom:** a workflow whose newest version did not read was drawn as its older readable version, while every run bound to it held on the newest's problem.
+- **Root cause:** `WorkflowEffectives.OfSaved` took the newest version that reads; `WorkflowRunBindings` takes `Versions[^1]`.
+- **Fix:** the chart draws the newest version and, where it does not read, its problem in the bind's words.
+- **Verify:** `WorkflowEffectiveTests`' newest-does-not-read case, red first.
+
 ## 2026-11-02 - The staffing policy's course read seeded Build's policy, and six more (STAFFPOLICY1e2, REVIEW2)
 
 - **Symptom:** a scoped added role with `moves.limit: ask` was walked with no hold; the 30-minute pass never passed anything; a refused single-choice start kept its reservation; `driver retry` alone said it marked a quest and wrote no approval on a policy hold; `next` and `weighted` walked the same; a yes could release a later move; a refused store write read as the bound of moves; the opening note said "Build's policy chose this" for an added role's start; a conversation's role was offered a limit `ask`, `wait` and a bound nothing read.

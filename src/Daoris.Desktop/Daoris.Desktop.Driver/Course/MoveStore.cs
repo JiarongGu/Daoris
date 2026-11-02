@@ -634,11 +634,11 @@ public sealed class MoveStore(
     /// <summary>A move's one row, claimed by this store's run at generation 1, at <paramref name="phase"/> with the moments it has reached.</summary>
     private void Insert(DesktopWrite write, MoveDecision decision, MoveRecordPhase phase, string decidedAt, string at, string? destination) =>
         write.Execute(
-            """
+            $"""
             INSERT INTO moves (record_left, executor, how, from_why, from_by, phase, claim_run, claim_generation, account, recipe_why, recipe_bound, agent,
-                               refused_bound, destination, decided_at, old_ended_at, opened_at, model, effort)
+                               refused_bound, destination, decided_at, old_ended_at, opened_at{(write.Version >= EntryColumnsSince ? ", model, effort" : "")})
             VALUES ($left, $executor, $how, $why, $by, $phase, $run, 1, $account, $recipeWhy, $recipeBound, $agent, $refusedBound, $destination, $decided,
-                    $oldEnded, $opened, $model, $effort)
+                    $oldEnded, $opened{(write.Version >= EntryColumnsSince ? ", $model, $effort" : "")})
             """,
             ("$model", decision.Model), ("$effort", decision.Effort),
             ("$left", decision.Left), ("$executor", decision.Executor), ("$how", decision.How), ("$why", decision.Why), ("$by", decision.By),
@@ -696,13 +696,13 @@ public sealed class MoveStore(
     }
 
     private static MoveRecord? ReadIn(DesktopWrite write, long id) =>
-        write.Query($"SELECT {Columns} FROM moves WHERE id = $id", Map, ("$id", id)).FirstOrDefault();
+        write.Query($"SELECT {ColumnsAt(write.Version)} FROM moves WHERE id = $id", Map, ("$id", id)).FirstOrDefault();
 
     private static MoveRecord? StandingIn(DesktopWrite write, string left) =>
-        write.Query($"SELECT {Columns} FROM moves WHERE record_left = $left AND {DesktopStore.StandingMoves}", Map, ("$left", left)).FirstOrDefault();
+        write.Query($"SELECT {ColumnsAt(write.Version)} FROM moves WHERE record_left = $left AND {DesktopStore.StandingMoves}", Map, ("$left", left)).FirstOrDefault();
 
     private static MoveRecord? StandingToIn(DesktopWrite write, string destination) =>
-        write.Query($"SELECT {Columns} FROM moves WHERE destination = $destination AND {DesktopStore.StandingMoves} ORDER BY id", Map, ("$destination", destination))
+        write.Query($"SELECT {ColumnsAt(write.Version)} FROM moves WHERE destination = $destination AND {DesktopStore.StandingMoves} ORDER BY id", Map, ("$destination", destination))
             .FirstOrDefault();
 
     private static StoreRun? RunIn(DesktopWrite write, string run) =>

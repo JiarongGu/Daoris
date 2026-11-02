@@ -16,7 +16,7 @@ public sealed record EffectiveCell(string Node, WorkflowStep Step);
 /// <param name="Route"><c>default</c>, <c>kind:&lt;name&gt;</c> or <c>landed</c>.</param>
 /// <param name="Workflow">A saved workflow's id, or <c>current</c>.</param>
 /// <param name="Name">The saved workflow's name; null under Current.</param>
-/// <param name="Version">The saved version followed (the newest that reads); null under Current.</param>
+/// <param name="Version">The saved version followed (the newest, which a run binds); null under Current.</param>
 /// <param name="Digest">The version's digest, or under Current the digest of what it draws.</param>
 /// <param name="Schema">1 for a version of steps, drawn as the graph it decodes to; 2 for a graph; null under Current and where nothing is drawn.</param>
 /// <param name="Verifies">The landed route follows a verification pipeline; false under Current, which is no verification.</param>
@@ -99,8 +99,10 @@ public static class WorkflowEffectives
         var found = WorkflowNamed.IsId(id) ? store.Load(id) : null;
         if (found is null) return Unread($"no workflow `{id}` is saved here any more.");
         if (found.Read.Problem is { } unread) return Unread($"`{id}` cannot be read: {unread}");
-        var newest = found.Read.Versions.LastOrDefault(each => each.Steps is not null || each.Graph is not null);
+        // The newest version, as a run's bind takes it: one that does not read is the problem every run will hold on, not a reason to draw an older.
+        var newest = found.Read.Versions.LastOrDefault();
         if (newest is null) return Unread($"`{id}` keeps no version that reads here.");
+        if (newest.Steps is null && newest.Graph is null) return Unread($"`{id}` v{newest.Version} cannot be read here: {newest.Problem}");
 
         // A graph version is drawn as the file holds it; a version of steps as the graph it decodes to (no run binds that, D190 point 1).
         var (graph, nodes) = newest.Graph is { } held

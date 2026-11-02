@@ -194,6 +194,24 @@ public sealed class WorkflowEffectiveTests : IDisposable
     }
 
     /// <summary>The read writes nothing: the driver's file and the workflows under the home are byte for byte as they were.</summary>
+    /// <summary>REVIEW2: the chart follows the newest version as the run's bind does; a newest that does not read is drawn as its problem, not as an older one.</summary>
+    [Fact]
+    public void A_newest_version_that_does_not_read_is_the_problem_drawn_and_no_older_version_is()
+    {
+        Save("release", "Release", null, Release());
+        var path = Path.Combine(WorkflowStore.FolderOf(_home), "release.json");
+        var file = JsonNode.Parse(File.ReadAllText(path))!;
+        file["versions"]!.AsArray().Add(new JsonObject { ["version"] = 2, ["schema"] = 7 });
+        File.WriteAllText(path, file.ToJsonString());
+        var config = DriverConfig.Load(WriteConfig("""{"workflows":{"engine":{"default":"release"}}}"""));
+
+        var effective = Read(config, "default");
+
+        Assert.Null(effective.Graph);
+        Assert.Null(effective.Version);
+        Assert.Contains("v2 cannot be read here", effective.Problem);
+    }
+
     [Fact]
     public void Reading_writes_nothing()
     {

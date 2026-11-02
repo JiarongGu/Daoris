@@ -71,6 +71,9 @@ public sealed class LandNodeKindTests
     [InlineData("""{"method":"merge","accept":"you"}""", "accept")]
     [InlineData("""{"method":"pull-request","plugin":"acme.pr","accept":"automatic"}""", "accept")]
     [InlineData("""{"accept":null}""", "accept")]
+    // REVIEW2: only an integrate may name a line other than the tree's; the others land on the tree's line, which a target would only misname.
+    [InlineData("""{"method":"merge","target":"release"}""", "target")]
+    [InlineData("""{"method":"branch","target":"release","pattern":"x/{quest}"}""", "target")]
     [InlineData("""{"target":"has space"}""", "target")]
     [InlineData("""{"target":""}""", "target")]
     [InlineData("""{"method":"branch","pattern":"feature/{nothing}"}""", "pattern")]

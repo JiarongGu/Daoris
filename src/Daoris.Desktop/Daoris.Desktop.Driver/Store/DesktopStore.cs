@@ -790,7 +790,7 @@ public sealed class DesktopStore : IDisposable
                 var stamp = ReadStamp(transaction);
                 if (stamp.Writer > Own) throw new DesktopStoreNewerException(stamp.Writer, Own);
                 if (stamp.Version == 0) throw new DesktopStoreException($"the desktop's store has no schema yet: {Held ?? "its first migration did not run"}.");
-                var write = new DesktopWrite(_connection, transaction);
+                var write = new DesktopWrite(_connection, transaction, stamp.Version);
                 var registering = !_registered;
                 if (registering) Register(write);
                 result = work(write);
