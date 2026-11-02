@@ -148,7 +148,7 @@ public sealed class ConversationRoutes(DriverContext context)
         // COWORK1c: `key`, the press's own where the page names one, so a press that arrives twice keeps one word; the shell gives each
         // press one otherwise.
         var said = await _loop.Words
-            .SayAsync(id, text, files, Optional(request, "preface"), door: "screen", cancellationToken, level, Optional(request, "key"), choice)
+            .SayAsync(id, text, files, Optional(request, "preface"), door: "screen", cancellationToken, level, Optional(request, "key"), choice, asking)
             .ConfigureAwait(false) ?? throw NotReady();
         // Words a running session took are kept on its ask now (DRIFT1a2); words kept on a record are kept there once a
         // session takes them (MSG1a's taken door), so they are never posted twice.
