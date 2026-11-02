@@ -125,6 +125,16 @@ public sealed class GitHttpsProcessTests : IDisposable
         return await GitIdentityHttps.AddHttpsAsync(Home, host, "Fixture host", User, null, null, Token, "http", CancellationToken.None);
     }
 
+    /// <summary>A machine with no manager skips the others and says why; the skip is the manager's absence and nothing else.</summary>
+    [Fact]
+    public void A_machine_without_a_manager_skips_the_signed_in_facts_and_says_why()
+    {
+        var skip = new GcmFactAttribute().Skip;
+
+        Assert.Equal(!OperatingSystem.IsWindows() || GitHttps.Manager(Environment.GetEnvironmentVariable) is null, skip is not null);
+        Assert.True(skip is null || skip.Contains("Git Credential Manager", StringComparison.Ordinal));
+    }
+
     [GcmFact]
     public async Task An_identitys_stored_token_is_handed_to_git_by_GCM_and_the_host_sees_the_user_and_no_other()
     {

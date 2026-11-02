@@ -215,6 +215,16 @@ public sealed class GitSshdProcessTests : IDisposable
 
     // ── The cases ──────────────────────────────────────────────────────────────────────────────────
 
+    /// <summary>A machine with no sshd named skips the server cases and says why; the skip is the missing sshd and nothing else.</summary>
+    [Fact]
+    public void A_machine_with_no_sshd_skips_the_server_cases_and_says_why()
+    {
+        var skip = new SshdFactAttribute().Skip;
+
+        Assert.Equal(SshdFactAttribute.Named() is null, skip is not null);
+        Assert.True(skip is null || skip.Contains("DAORIS_TEST_SSHD", StringComparison.Ordinal));
+    }
+
     [SshdFact]
     public async Task An_identity_fetches_and_pushes_through_the_door_and_fetches_in_another_repository_by_git_C()
     {
