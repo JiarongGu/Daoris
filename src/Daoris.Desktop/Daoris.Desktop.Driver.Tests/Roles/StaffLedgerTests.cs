@@ -366,4 +366,57 @@ public sealed class StaffLedgerTests : IDisposable
         Assert.Equal([("1", StaffPasses.MovedOff)], take.Arrangement.Passed.Select(each => (each.Entry.From, each.Code)));
         Assert.Equal(StaffKey.Of(Opus), take.Reservation!.Choice);
     }
+
+    // ——— STAFFPOLICY1e2: a daily budget of reported tokens, weighed against the turn line's choice.
+
+    private void Turn(long seq, TurnTokens? tokens, ActorChoice? choice, string actor = "build", string session = "s1") =>
+        UsageHistory.Turned(
+            _home, new TurnBinding("claude", "acct", "claude-code", UsageHistory.PerTurn) { Actor = actor, Choice = choice is null ? null : StaffKey.Of(choice).Text },
+            new TurnSeen(session, seq, null, _clock.GetUtcNow(), tokens, null, false), _clock.GetUtcNow());
+
+    private static StaffPolicy Budgeted() => new(
+        StaffRules.Order, [new StaffChoice(StaffKey.Of(Sonnet), Budget: new StaffBudget(Tokens: 1000)), new StaffChoice(StaffKey.Of(Opus))], new Dictionary<string, StaffMove>());
+
+    [Fact]
+    public void A_days_reported_tokens_past_a_choice_s_budget_pass_it_and_the_next_day_frees_it()
+    {
+        Save(Budgeted(), read: 0);
+        Turn(1, new TurnTokens(600, 200, 90000, 0), Sonnet);
+        Assert.Empty(Ledger().Preview("build", RoleWork.Build, Order).Arrangement.Passed);
+
+        Turn(2, new TurnTokens(100, 200, null, null), Sonnet);
+        var take = Ledger().Preview("build", RoleWork.Build, Order);
+        Assert.Equal([("1", StaffPasses.OverBudget)], take.Arrangement.Passed.Select(each => (each.Entry.From, each.Code)));
+        Assert.Equal(1100, take.Facts.Tokens[StaffKey.Of(Sonnet)].Reported);
+        Assert.Equal(["2"], take.Arrangement.Walk.Select(each => each.Entry.From));
+
+        _clock.Advance(TimeSpan.FromDays(1));
+        Assert.Empty(Ledger().Preview("build", RoleWork.Build, Order).Arrangement.Passed);
+    }
+
+    [Fact]
+    public void An_unreported_turn_holds_its_choice_and_another_role_s_turns_or_a_turn_naming_no_choice_count_for_nothing()
+    {
+        Save(Budgeted(), read: 0);
+        Turn(1, new TurnTokens(1, 1, null, null), Opus, actor: "design");
+        Turn(2, new TurnTokens(5000, 5000, null, null), null);
+        Assert.Empty(Ledger().Preview("build", RoleWork.Build, Order).Arrangement.Passed);
+
+        Turn(3, new TurnTokens(null, null, null, null), Sonnet);
+        var take = Ledger().Preview("build", RoleWork.Build, Order);
+        Assert.Equal([("1", StaffPasses.OverBudget)], take.Arrangement.Passed.Select(each => (each.Entry.From, each.Code)));
+        Assert.True(take.Facts.Tokens[StaffKey.Of(Sonnet)].Unreported);
+    }
+
+    [Fact]
+    public void A_choice_is_the_tuple_a_turn_names_whatever_slot_it_stands_in_after_a_reorder()
+    {
+        Save(Budgeted(), read: 0);
+        Turn(1, new TurnTokens(900, 900, null, null), Sonnet);
+
+        IReadOnlyList<ActorEffective> reordered = [new(Opus.Agent, Opus.Model, Opus.Effort, "1"), new(Sonnet.Agent, Sonnet.Model, Sonnet.Effort, "2")];
+        var take = Ledger().Preview("build", RoleWork.Build, reordered);
+
+        Assert.Equal([("2", StaffPasses.OverBudget)], take.Arrangement.Passed.Select(each => (each.Entry.From, each.Code)));
+    }
 }

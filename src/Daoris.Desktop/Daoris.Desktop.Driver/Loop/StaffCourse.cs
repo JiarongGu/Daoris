@@ -48,6 +48,12 @@ internal static class StaffCourse
     }
 
     /// <summary>The choice a record ran, as the policy keys it.</summary>
+    internal static StaffKey? ChoiceOf(PriorSession record, StaffPolicy? policy) =>
+        record.Asked is null && policy?.Choices.FirstOrDefault(each => string.Equals(each.Key.Agent, record.Adapter, StringComparison.OrdinalIgnoreCase)) is { } listed
+            ? listed.Key
+            : ChoiceOf(record);
+
+    /// <summary>The choice a record ran, as the policy keys it.</summary>
     internal static StaffKey? ChoiceOf(PriorSession record) =>
         record.Adapter is { Length: > 0 } agent ? new StaffKey(agent, record.Asked?.NamedModel, record.Asked?.Effort.Value) : null;
 
@@ -87,14 +93,14 @@ internal static class StaffCourse
             var action = StaffJudge.OnCondition(policy, condition, new StaffLine(true, moved.Moves));
             // A fatal error moves a line after its `after` failures on the one choice; before them it is today's retry.
             if (condition == StaffConditions.Failed && (action.Do == StaffActions.Retry || snapshot.FailedRuns.GetValueOrDefault(quest.Id) < (action.After ?? 1))) continue;
-            var fact = new CoursePolicy(action, now, Met: ChoiceOf(last)?.Said, Approved: moved.Approved, Moves: moved.Moves);
+            var fact = new CoursePolicy(action, now, Met: ChoiceOf(last, policy)?.Said, Approved: moved.Approved, Moves: moved.Moves);
             var course = condition == StaffConditions.Transient
                 ? DrivenCourse.PastBound(last, quest.Status, released: false, fact)
                 : DrivenCourse.PolicyEnd(last, quest.Status, fact);
             switch (course)
             {
                 case LineCourse.Move:
-                    var from = ChoiceOf(last)?.Text;
+                    var from = ChoiceOf(last, policy)?.Text;
                     if (staff.Moves.Decided(
                             quest.Id, role, last.Session, condition, action.Do, from,
                             read => !StaffJudge.OnCondition(policy, condition, new StaffLine(true, read.Moves)).MovesBound))

@@ -58,7 +58,7 @@ public sealed class StaffPolicyTransientTickTests : IAsyncLifetime
         [.. new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After(session, 0).Events
             .Where(e => e.Kind == SessionEventKind.Transient && e.Next is not null).Select(e => e.Next!.Value)];
 
-    private Daoris.Driver.Driver Protocol(SaidStandIn service, MovedClock clock, string? policy)
+    private Daoris.Driver.Driver Protocol(SaidStandIn service, MovedClock clock, string? policy, string firstMode = "overloaded", string secondMode = "serves")
     {
         var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
@@ -76,8 +76,8 @@ public sealed class StaffPolicyTransientTickTests : IAsyncLifetime
                 PollSeconds = 1,
                 Commands = new Dictionary<string, IReadOnlyList<string>>
                 {
-                    ["acp-stub"] = ["node", Agent(), Log, "overloaded"],
-                    ["acp-other"] = ["node", Agent(), Log, "serves"],
+                    ["acp-stub"] = ["node", Agent(), Log, firstMode],
+                    ["acp-other"] = ["node", Agent(), Log, secondMode],
                 },
             },
             "build", [First, Second]);
@@ -169,6 +169,47 @@ public sealed class StaffPolicyTransientTickTests : IAsyncLifetime
         Assert.True(
             prompts[^1]["blocks"]!.ToJsonString().Contains("the service it ran on did not answer", StringComparison.Ordinal),
             prompts[^1]["blocks"]!.ToJsonString()[..Math.Min(1500, prompts[^1]["blocks"]!.ToJsonString().Length)]);
+    }
+
+    private const string FailedMoving =
+        """
+        {"rule":"order","choices":[{"agent":"acp-stub","model":"sonnet","effort":"low"},{"agent":"acp-other","model":"codex-mini","effort":"high"}],
+         "moves":{"failed":{"do":"next","after":2}},"most":3}
+        """;
+
+    [Fact]
+    public async Task Two_fatal_ends_on_one_choice_move_the_quest_to_the_second_choice_and_the_first_is_passed()
+    {
+        await using var service = SaidStandIn.Start(_repository);
+        var driver = Protocol(service, new MovedClock(), FailedMoving, firstMode: "fails");
+
+        // Failure one: today's carry-on, on the same choice (the policy moves after two).
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        Assert.True(service.State("s1") == "failed", Seen(service));
+        Assert.Empty(Moves());
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        Assert.True(service.SessionCount == 2 && service.State("s2") == "failed", Seen(service));
+        Assert.Contains("\"adapter\":\"acp-stub\"", service.Record("s2"), StringComparison.Ordinal);
+        Assert.Empty(Moves());
+
+        // Failure two on the one choice: the look's course moves the line, once, to choice 2.
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        Assert.True(service.SessionCount == 3, Seen(service));
+        Assert.Equal(["q1:moved:s2:failed"], Moves());
+        Assert.True(service.Record("s3").Contains("\"adapter\":\"acp-other\"", StringComparison.Ordinal), Seen(service) + "\ns3: " + service.Record("s3"));
+        Assert.Equal("Done", service.Status("q1"));
+    }
+
+    [Fact]
+    public async Task Fatal_ends_with_no_failed_move_are_carried_on_by_the_strikes_alone_and_park_at_three()
+    {
+        await using var service = SaidStandIn.Start(_repository);
+        var driver = Protocol(service, new MovedClock(), Moving, firstMode: "fails");
+
+        for (var look = 0; look < 4; look++) await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+
+        Assert.True(service.SessionCount == 3, Seen(service));
+        Assert.Empty(Moves());
     }
 
     [Fact]
@@ -267,6 +308,12 @@ public sealed class StaffPolicyTransientTickTests : IAsyncLifetime
                 const blocks = (frame.params?.prompt ?? []).filter((block) => block.type === 'text').map((block) => block.text);
                 heard({ method: 'session/prompt', conversation: frame.params?.sessionId, blocks });
                 if (prompts === 1) await respond({ action: 'take' });
+                if (mode === 'fails') {
+                  // A fatal end that is no outage: the agent's own error, which the strikes count.
+                  say('boom');
+                  send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: 'Internal error: boom' } });
+                  return;
+                }
                 if (mode === 'overloaded') {
                   say(overloaded);
                   send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: 'Internal error: ' + overloaded, data: { errorKind: 'overloaded' } } });

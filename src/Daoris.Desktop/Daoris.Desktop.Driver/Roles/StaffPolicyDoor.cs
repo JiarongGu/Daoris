@@ -10,16 +10,17 @@ namespace Daoris.Driver;
 public static class StaffCapabilities
 {
     /// <summary>
-    /// The fields the start's walk and the course enforce: the rule, a choice's weight, share, daily budget of starts and works; the
-    /// moves of a limit and of a service that does not answer (STAFFPOLICY1e), with the tries before it; and the bound of moves.
+    /// The fields the start's walk and the course enforce: the rule, a choice's weight, share, daily budgets of starts and of reported tokens,
+    /// and works; the moves of a limit, of a service that does not answer, of a fatal error and of a quiet stop (STAFFPOLICY1e, e2), with
+    /// the tries or failures before it; and the bound of moves.
     /// </summary>
     public static IReadOnlyList<string> Fields { get; } =
-        ["rule", "weight", "share", "budget.starts", "takes", "moves.limit", "moves.transient", "most"];
+        ["rule", "weight", "share", "budget.starts", "budget.tokens", "takes", "moves.limit", "moves.transient", "moves.failed", "moves.quiet", "most"];
 
     /// <summary>
-    /// The actions each condition's move may name: a limit's and a service's are the course's; a refused sign-in's, a refused model's and a
-    /// budget's are the walk's, which already arranges by the role's rule, and a fatal error's and a quiet stop's are today's (retry), so
-    /// none of those five is a field of its own until a row moves the line by it.
+    /// The actions each condition's move may name: a limit's, a service's, a fatal error's and a quiet stop's are the course's; a refused
+    /// sign-in's, a refused model's and a budget's are the walk's, which already arranges by the role's rule, so none of those three is a
+    /// field of its own until a row moves the line by it.
     /// </summary>
     private static readonly IReadOnlyDictionary<string, string[]> Enforced = new Dictionary<string, string[]>(StringComparer.Ordinal)
     {
@@ -28,15 +29,14 @@ public static class StaffCapabilities
         [StaffConditions.SignedOut] = [StaffActions.Next, StaffActions.Weighted],
         [StaffConditions.ModelRefused] = [StaffActions.Next, StaffActions.Weighted],
         [StaffConditions.Budget] = [StaffActions.Next, StaffActions.Weighted],
-        [StaffConditions.Failed] = [StaffActions.Retry],
-        [StaffConditions.Quiet] = [StaffActions.Retry],
+        [StaffConditions.Failed] = [StaffActions.Next, StaffActions.Weighted, StaffActions.Ask, StaffActions.Retry],
+        [StaffConditions.Quiet] = [StaffActions.Next, StaffActions.Weighted, StaffActions.Retry],
     };
 
     /// <summary>The first field of <paramref name="policy"/> this build does not enforce yet, refused with the fields it does; null where it sets none.</summary>
     public static RoleRefusal? Unenforced(string role, StaffPolicy policy)
     {
-        var field = policy.Choices.Any(choice => choice.Budget?.Tokens is not null) ? "budget.tokens"
-            : policy.Moves.FirstOrDefault(move => !Enforced.TryGetValue(move.Key, out var actions) || !actions.Contains(move.Value.Do, StringComparer.Ordinal)) is { Key: { } key } unenforced
+        var field = policy.Moves.FirstOrDefault(move => !Enforced.TryGetValue(move.Key, out var actions) || !actions.Contains(move.Value.Do, StringComparer.Ordinal)) is { Key: { } key } unenforced
                 ? $"moves.{key}` as `{unenforced.Value.Do}"
             : null;
         return field is null

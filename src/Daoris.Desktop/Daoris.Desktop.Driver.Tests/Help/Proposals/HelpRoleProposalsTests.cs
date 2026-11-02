@@ -90,7 +90,7 @@ public sealed class HelpRoleProposalsTests : HelpProposalsFixture, IDisposable
         var preset = HelpProposals.Plan(Role("set", "build", """{ "policy": "even", "policyRevision": 0 }"""), config, Machine);
 
         Assert.Null(preset.Refusal);
-        Assert.Contains("Its policy: spread by weight 1:1.", preset.Describe);
+        Assert.Contains("Its policy: spread by weight 1:1;", preset.Describe);
         Assert.Contains("This can spend differently.", preset.Describe);
         Assert.Contains("&& daoris driver role policy build --preset first --rule weight", preset.Terminal);
         Assert.Equal(StaffPolicy.Code, Assert.Throws<RoleRefusedException>(() => RoleDoor.Apply(Staffing, RoleChange.Set(RoleCatalog.Seed[0]), null, null, new RolePolicyPress(Preset: "cheapest"))).Code);
@@ -101,7 +101,7 @@ public sealed class HelpRoleProposalsTests : HelpProposalsFixture, IDisposable
 
         var stale = HelpProposals.Plan(Role("set", "build", """{ "policy": "first", "policyRevision": 0 }"""), config, Machine);
         Assert.Contains("changed since you read it", stale.Refusal);
-        var unenforced = HelpProposals.Plan(Role("set", "build", """{ "policy": { "rule": "order", "choices": [], "most": 3 }, "policyRevision": 1 }"""), config, Machine);
+        var unenforced = HelpProposals.Plan(Role("set", "build", """{ "policy": { "rule": "order", "choices": [], "moves": { "model-refused": "hold" } }, "policyRevision": 1 }"""), config, Machine);
         Assert.Contains("does not enforce yet", unenforced.Refusal);
     }
 

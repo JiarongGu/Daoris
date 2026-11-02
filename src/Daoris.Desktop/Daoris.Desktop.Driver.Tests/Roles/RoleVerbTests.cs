@@ -119,8 +119,8 @@ public sealed class RoleVerbTests : IDisposable
     {
         Assert.Equal(0, await Run("set", "designer", "--name", "Designer", "--takes", "design", "claude-code-acp opus high", "claude-code-acp sonnet high"));
 
-        Assert.Equal(2, await Run("policy", "designer", "--on", "failed=next"));
-        Assert.Contains("`moves.failed` as `next`, which this build does not enforce yet", _error.ToString());
+        Assert.Equal(2, await Run("policy", "designer", "--on", "signed-out=hold"));
+        Assert.Contains("`moves.signed-out` as `hold`, which this build does not enforce yet", _error.ToString());
         Assert.Equal(2, await Run("policy", "designer", "--rule", "weight", "--weight", "1=11"));
         Assert.Contains("a weight is from 0 to 10", _error.ToString());
         Assert.Equal(2, await Run("policy", "designer", "--weight", "3=1"));
