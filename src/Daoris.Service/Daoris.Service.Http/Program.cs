@@ -228,6 +228,17 @@ if (origins.Count > 0)
 }
 
 var app = builder.Build();
+
+// ONEWAY1n-i (D156's note): the host's whole pipeline, routing included, held so a request the person confirms is made through it
+// as asked, every gate and handler its own. Routing is placed first, where the host placed it by itself before.
+RequestDelegate? pipeline = null;
+app.Use(next =>
+{
+    pipeline = next;
+    return next;
+});
+app.UseRouting();
+
 var hostRun = Guid.NewGuid().ToString("N");
 app.Use(async (context, next) =>
 {
@@ -245,13 +256,15 @@ var changes = mode == ServiceMode.Local
 // The change stream's observer closes with the host, once the stop has answered every wait it held (FABRIC-EVENT3b).
 if (changes is not null) app.Lifetime.ApplicationStopped.Register(() => changes.DisposeAsync().AsTask().GetAwaiter().GetResult());
 
-// PERSONDOOR1b (D156 point 4): what a terminal asks the person to confirm, held in this start's memory only and judged by
-// the clock the services hold (the system's, unless a test moves one), and the gate that takes a confirmed grant once.
-// What each door binds is read from its own endpoint when a confirmation is asked, so a card shows only what binds.
+// PERSONDOOR1b (D156 point 4; ONEWAY1n-i): what an asker asks the person to confirm, held in this start's memory only, on the
+// clock the services hold (the system's, unless a test moves one), and made at the Confirm through the pipeline held above with
+// this start's key, ended with the host's stop. What each door binds is read from its own endpoint when a confirmation is asked,
+// so a card shows only what binds.
 var doorContracts = new DoorContracts(app.Services);
 var confirmations = new PersonConfirmations(
-    app.Services.GetService<TimeProvider>() ?? TimeProvider.System, log, holds: personKey is not null, doorContracts.For);
-var personGate = new PersonGate(personKey, log, confirmations);
+    app.Services.GetService<TimeProvider>() ?? TimeProvider.System, log, holds: personKey is not null, doorContracts.For,
+    asked => PersonConfirmations.MakeAsync(pipeline!, app.Services, personKey!, asked, app.Lifetime.ApplicationStopping));
+var personGate = new PersonGate(personKey, log);
 
 // A request that failed or took over two seconds, into the log (LOG1a). By its route's pattern, so an
 // id in the path and a search in the query never reach the file. Outermost, so a throw from anything
@@ -387,10 +400,9 @@ if (mode == ServiceMode.Local)
 // runs: a read answers anyone; an agent's door answers a keyless call, judged as an agent's; the driver's own and the
 // person's alone want the key; a key from another start is refused at every door but a read. Every refusal is 403 with a
 // sentence and a code, and one `person.refused` line. The forms a body makes (respond's `whileOpen`, a set-up naming a
-// session or none) are judged by their routes, and a publish reads who called. A keyless call presenting a grant the person
-// confirmed in the window is theirs for that one request, and a grant that covers nothing is refused `grant` (PERSONDOOR1b,
-// the confirmations below). A host handed no key has no gate here, and trusts the loopback as before. PersonDoors holds
-// the table and why each door is whose.
+// session or none) are judged by their routes, and a publish reads who called. A request the person confirmed in the window is
+// made by the host with this key (ONEWAY1n-i, the confirmations below), so it is judged here like any other. A host handed no
+// key has no gate here, and trusts the loopback as before. PersonDoors holds the table and why each door is whose.
 if (personGate.Holds)
 {
     app.Use(async (context, next) => await personGate.InvokeAsync(context, next));
@@ -941,11 +953,11 @@ async Task<IResult> ReviewAnswer(QuestRespondOutcome outcome, ComposedService s,
         _ => Results.Conflict(new ErrorResponse(outcome.Message)),
     };
 
-// The window's confirmation of what a terminal asked (PERSONDOOR1b, D156 point 4; the person-door design §4.2). A terminal
-// cannot be told from a session, so a keyless call to the person's or the driver's door is refused, and its client asks
-// here with the exact request and its secret's SHA-256. The window lists what waits and the person answers with the key;
-// the terminal polls its one, and sends the same request again with its secret, which the gate takes once. LOCAL mode
-// only: a shared host has no door that is the person's alone (§6). PersonConfirmations holds the rules and the reasons.
+// The window's confirmation of what an asker asked (PERSONDOOR1b, D156 point 4; ONEWAY1n-i, the oneway design §4 M4). A terminal
+// cannot be told from a session, so a keyless call to the person's or the driver's door is refused, and its asker asks here with
+// the exact request. It waits with no clock; the window lists it and the person answers with the key, and at the Confirm the host
+// makes the request as asked. The asker polls its one, and withdraws it with the token its ask was answered with. LOCAL mode only:
+// a shared host has no door that is the person's alone (§6). PersonConfirmations holds the rules and the reasons.
 if (mode == ServiceMode.Local)
 {
     app.MapGet("/api/confirmations", () => confirmations.Waiting().Select(PersonConfirmations.Wire));
@@ -960,10 +972,11 @@ if (mode == ServiceMode.Local)
         return new ConfirmationsWaitingResponse(next, [.. waiting.Select(PersonConfirmations.Wire)]);
     });
 
+    // An id an earlier start held reads `restarted`: what waited ended with that start (§4 M4).
     app.MapGet("/api/confirmations/{id}", (string id) =>
         confirmations.Find(id) is { } found
             ? Results.Ok(PersonConfirmations.Wire(found))
-            : Results.NotFound(new ErrorResponse(PersonConfirmations.NotFoundSentence(id))));
+            : ConfirmationAnswer(confirmations.Missing(id)));
 
     // The ask is read here rather than bound, so it is read no further than its limit: a JSON body, which a page on
     // another origin sends only with CORS's leave (design §4.2), parsed by the host's own options.
@@ -972,22 +985,25 @@ if (mode == ServiceMode.Local)
         var (body, unread) = await PersonConfirmations.ReadAskAsync(http, ct);
         if (unread is not null) return unread;
 
-        var (asked, refusal, message) = confirmations.Ask(body!.Method, body.Path, body.Body, body.SecretSha256);
+        var (asked, token, refusal, message) = confirmations.Ask(body!.Method, body.Path, body.Body, body.Session);
         return refusal switch
         {
-            ConfirmationAskRefusal.None => Results.Ok(new ConfirmationActionResponse(PersonConfirmations.Wire(asked!), message)),
+            ConfirmationAskRefusal.None => Results.Ok(new ConfirmationAskedResponse(PersonConfirmations.Wire(asked!), message, token!)),
             // A host handed no key refused nothing, so there is nothing to confirm: a state, the lock's own shape.
             ConfirmationAskRefusal.NoKey => Results.Conflict(new ErrorResponse(message)),
-            // The sixth (design §4.2): the gate's refusal, in its shape and with its log line, asking nothing.
-            ConfirmationAskRefusal.Full => personGate.Refusal(http, PersonDoors.ConfirmationsFull),
+            // Its asker's places taken (PERSONDOOR1j): the gate's refusal, in its shape and with its log line, asking nothing.
+            ConfirmationAskRefusal.Full => personGate.Refusal(http, PersonDoors.ConfirmationsFull, message),
+            ConfirmationAskRefusal.Bound => personGate.Refusal(http, PersonDoors.AskerFull, message),
             _ => Results.BadRequest(new ErrorResponse(message)),
         };
     });
 
-    // The person's answers, each behind the key (the gate's Person class): confirmed or refused while it waits, and a
-    // state that refuses it is the lock's own shape.
-    app.MapPost("/api/confirmations/{id}/confirm", (string id) => ConfirmationAnswer(confirmations.Answer(id, confirm: true)));
-    app.MapPost("/api/confirmations/{id}/refuse", (string id) => ConfirmationAnswer(confirmations.Answer(id, confirm: false)));
+    // The person's answers, each behind the key (the gate's Person class), and its asker's withdrawal by its token, each while it
+    // waits; a state that refuses it is the lock's own shape. The Confirm makes the request, and is answered how its door took it.
+    app.MapPost("/api/confirmations/{id}/confirm", async (string id) => ConfirmationAnswer(await confirmations.ConfirmAsync(id)));
+    app.MapPost("/api/confirmations/{id}/refuse", (string id) => ConfirmationAnswer(confirmations.Refuse(id)));
+    app.MapPost("/api/confirmations/{id}/withdraw", (string id, ConfirmationWithdrawRequest? body) =>
+        ConfirmationAnswer(confirmations.Withdraw(id, body?.Token)));
 }
 
 static IResult ConfirmationAnswer((Confirmation? Confirmation, ConfirmationAnswerRefusal Refusal, string Message) outcome) =>
@@ -995,6 +1011,11 @@ static IResult ConfirmationAnswer((Confirmation? Confirmation, ConfirmationAnswe
     {
         ConfirmationAnswerRefusal.None => Results.Ok(new ConfirmationActionResponse(PersonConfirmations.Wire(outcome.Confirmation!), outcome.Message)),
         ConfirmationAnswerRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
+        ConfirmationAnswerRefusal.Restarted => Results.NotFound(new ErrorResponse(outcome.Message, PersonConfirmations.Restarted)),
+        // Made, and its door refused or failed it: what moved is its door's own sentence.
+        ConfirmationAnswerRefusal.NotMade => Results.Conflict(new ErrorResponse(outcome.Message, PersonConfirmations.NotMade)),
+        ConfirmationAnswerRefusal.NotAsker => Results.Json(
+            new ErrorResponse(outcome.Message, PersonConfirmations.NotAsker), statusCode: StatusCodes.Status403Forbidden),
         _ => Results.Conflict(new ErrorResponse(outcome.Message)),
     };
 

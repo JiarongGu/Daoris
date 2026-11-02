@@ -1,42 +1,61 @@
+using System.Buffers.Text;
+using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using Daoris.Knowledge;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Options;
 
 namespace Daoris.Knowledge.Http;
 
-/// <summary>Where a confirmation stands (PERSONDOOR1b), as its poll answers it.</summary>
+/// <summary>Where a confirmation stands (PERSONDOOR1b; ONEWAY1n-i), as its poll answers it.</summary>
 public enum ConfirmationState
 {
-    /// <summary>Asked, and waiting for the person in the window.</summary>
+    /// <summary>Asked, and waiting for the person in the window, however long they take.</summary>
     Waiting,
 
-    /// <summary>The person confirmed it: its grant may be used once, within its two minutes.</summary>
-    Confirmed,
+    /// <summary>The person confirmed it, and the host is making the request now.</summary>
+    Making,
 
-    /// <summary>The person refused it: it grants nothing.</summary>
+    /// <summary>Made at the Confirm, and its door took it.</summary>
+    Made,
+
+    /// <summary>The person refused it: nothing was made.</summary>
     Refused,
 
-    /// <summary>Its two minutes passed before it was answered, or before its grant was used: it grants nothing.</summary>
-    Expired,
+    /// <summary>Its asker withdrew it: nothing was made.</summary>
+    Withdrawn,
 
-    /// <summary>Its grant was used, once.</summary>
-    Used,
+    /// <summary>Made at the Confirm, and its door refused it: what it rested on moved while it waited.</summary>
+    Stale,
+
+    /// <summary>Made at the Confirm, and its door failed.</summary>
+    Failed,
 }
 
 /// <summary>
-/// One request a terminal asked the person to confirm (PERSONDOOR1b): what it is shown by, and what its grant is held to.
-/// <see cref="Path"/> is the path and query exactly as asked; the grant is held to the unescaped path, the query as sent,
-/// the pattern of the door that answers it, and the body to the byte. The secret's hash is held and never answered.
+/// One request an asker asked the person to confirm (PERSONDOOR1b; ONEWAY1n-i): what it is shown by, and the request as asked, which
+/// the host makes at the Confirm. <see cref="Path"/> is the path and query exactly as asked, made with the path unescaped as its door
+/// was found, the query as sent and the body to the byte. <see cref="Session"/> is the session the ask named, or null for a terminal's.
+/// Once it ends, <see cref="Ended"/>, and for one made, the door's <see cref="Status"/>, its <see cref="Answer"/> and, where it refused,
+/// its <see cref="Reason"/>. The asker's token is held by its hash and never answered.
 /// </summary>
 public sealed record Confirmation(
     string Id, string Method, string Path, string Pattern, string Act,
     IReadOnlyList<ConfirmationValue> Values, IReadOnlyList<ConfirmationValue> Fields, string? Body,
-    DateTimeOffset Asked, DateTimeOffset Expires, ConfirmationState State)
+    DateTimeOffset Asked, string? Session, ConfirmationState State)
 {
-    internal byte[] Hash { get; init; } = [];
+    public DateTimeOffset? Ended { get; init; }
+
+    public int? Status { get; init; }
+
+    public string? Answer { get; init; }
+
+    public string? Reason { get; init; }
+
+    internal byte[] Token { get; init; } = [];
 
     internal string Unescaped { get; init; } = "";
 
@@ -45,91 +64,95 @@ public sealed record Confirmation(
     internal byte[] Bytes { get; init; } = [];
 }
 
-/// <summary>Why an ask was not taken: none, a host holding no key, a request out of shape, or five already waiting.</summary>
+/// <summary>What a request made at the Confirm was answered: its status and its body, as its door wrote them.</summary>
+public sealed record MadeRequest(int Status, byte[] Body);
+
+/// <summary>Why an ask was not taken: none, a host holding no key, a request out of shape, every place taken, or its asker's bound.</summary>
 public enum ConfirmationAskRefusal
 {
     None,
     NoKey,
     Shape,
     Full,
+    Bound,
 }
 
 /// <summary>
-/// A grant whose secret and address hold (PERSONDOOR1b, after its review): what the gate reads of the call's body before
-/// it is taken, and no more than <see cref="Length"/> bytes and one.
+/// Why an answer was not taken, or how a Confirm's request went: none, no such confirmation, one of an earlier start, one no longer
+/// waiting, a request its door did not take, or a withdrawal without its asker's token.
 /// </summary>
-public sealed record Grantable(string Id, byte[] Hash, int Length);
-
-/// <summary>Why an answer was not taken: none, no such confirmation, or one no longer waiting.</summary>
 public enum ConfirmationAnswerRefusal
 {
     None,
     NotFound,
+    Restarted,
     NotWaiting,
+    NotMade,
+    NotAsker,
 }
 
 /// <summary>
-/// The window's confirmation of what a terminal asked (PERSONDOOR1b, D156 point 4; the person-door design §4.2). A
-/// terminal's keyless call to a person's or the driver's door is refused; its client asks here with the exact request
-/// (method, path and body) and its own secret's SHA-256; the window lists what waits by the door's name and the request's
-/// own fields; the person confirms or refuses with the key; and the client sends the same request again with the secret
-/// in <see cref="GrantHeader"/>, which <see cref="PersonGate"/> takes once, for that request alone, within the two
-/// minutes of its ask.
+/// The service's confirmation queue (PERSONDOOR1b, D156 point 4; ONEWAY1n-i, the oneway design §4 M4; the person-door design §4.2). A
+/// keyless call to a person's or the driver's door is refused; its asker asks here with the exact request (method, path and body); the
+/// window lists what waits by the door's name and the request's own fields; and the person confirms or refuses it with the key. It waits
+/// with no clock until then, or until its asker withdraws it. At the Confirm the host makes the request itself, as asked, through its own
+/// pipeline with its own key (<see cref="MakeAsync"/>), so every gate and handler judges it as it judges any call: a refusal it meets
+/// there is its reason, read back to the asker, which polls its id.
 /// </summary>
 /// <remarks>
-/// <para><b>In memory only.</b> Nothing here reaches the store, a file or an answer but what the window shows: a
-/// confirmation lives with this start of the host, and none outlives it. A confirmation is forgotten two minutes after its
-/// own two minutes end, so the terminal that asked can still read how it ended.</para>
+/// <para><b>In memory only.</b> Nothing here reaches the store, a file or an answer but what the window shows and the asker polls: a
+/// restart ends what waits, and an asker polling an id of an earlier start reads <see cref="RestartedSentence"/>. One that ended is
+/// forgotten <see cref="Kept"/> after its end, the oldest first past <see cref="MostEnded"/>.</para>
 ///
-/// <para><b>Bounded</b> (§4.2): at most <see cref="Most"/> wait for the person at once; a sixth is refused
-/// <c>confirmations-full</c> and asks nothing. One the person answered waits no more, and frees its place.</para>
+/// <para><b>Bounded</b> (PERSONDOOR1j): the host cannot tell the person's terminal from a session (the person-door design §4.1), so
+/// an ask is placed by what it says of itself, as a body may narrow who acted and never widen it (§3.1). Asks naming a session fill at
+/// most <see cref="Most"/> places; an ask naming none, the terminal's, may take one more, so sessions' asks never fill the last. Each
+/// asker, a session or the terminal, holds at most <see cref="PerAsker"/> at once. Past either, the ask is refused, naming the asker's own
+/// requests waiting, so it can withdraw one; one answered or withdrawn frees its place.</para>
 ///
-/// <para><b>A session can ask, and cannot answer.</b> The ask is any caller's, as a terminal cannot be told from a
-/// session (§4.1); the answers are the key's. What a session asks is a card the person refuses or lets expire. Only a door
-/// that wants the key can be asked for, in the very form that wants it, and never the confirmations' own doors.</para>
+/// <para><b>A session can ask, and cannot answer.</b> The ask is any caller's; the answers are the key's, and a withdrawal its
+/// asker's alone, by the token its ask was answered with. Only a door that wants the key can be asked for, in the very form that wants
+/// it, and never the confirmations' own doors.</para>
 ///
-/// <para><b>The card shows only what binds</b> (after the review of PERSONDOOR1b). A body is asked for only with names its
-/// door binds, each once, and a query only with names its handler reads (<see cref="DoorContract"/>): a name the binder
-/// ignores would be shown and never kept, and could leave the door's own value unbound, so a card would show one act
-/// while its grant did another. Each value is named by its JSON pointer and keeps its JSON type.</para>
+/// <para><b>The card shows only what binds</b> (after the review of PERSONDOOR1b). A body is asked for only with names its door binds,
+/// each once, and a query only with names its handler reads (<see cref="DoorContract"/>): a name the binder ignores would be shown and
+/// never kept, so a card would show one act while the request made did another. Each value is named by its JSON pointer and keeps its
+/// JSON type.</para>
 ///
-/// <para><b>Bounded before it is read</b>: an ask is read to <see cref="AskLimit"/> bytes, its body to
-/// <see cref="BodyLimit"/> and <see cref="FieldLimit"/> values, and while five wait a sixth is refused before its body is
-/// parsed. A grant's secret and address are checked before a byte of its call's body is read, and the body is read no
-/// further than the confirmed one and a byte.</para>
+/// <para><b>Bounded before it is read</b>: an ask is read to <see cref="AskLimit"/> bytes, its body to <see cref="BodyLimit"/> and
+/// <see cref="FieldLimit"/> values, and with its asker's places taken it is refused before its body is parsed.</para>
 ///
-/// <para><b>The secret</b> is made by the client like a key: 32 random bytes in base64url without padding. The host holds
-/// only its SHA-256 (lowercase hex as asked), never answers that, and never logs either: a grant whose secret is not in
-/// that form grants nothing.</para>
+/// <para><b>The log</b> (the person-door design §5.1): one <see cref="Event"/> line as each is asked, made, found stale or failed,
+/// refused or withdrawn, by the door's method and pattern. Never the id, the token, the path's values or the body. A refused ask is the
+/// gate's <c>person.refused</c> line.</para>
 ///
-/// <para><b>The log</b> (§5.1): one <see cref="Event"/> line as each is asked, confirmed, refused or expires, by the door's
-/// method and pattern. Never the id, the secret, its hash, the path's values or the body. A grant used writes nothing; a
-/// grant refused, and a sixth ask, are the gate's <c>person.refused</c> lines.</para>
-///
-/// <para><b>What waits says its change</b> (NOTIFY2j, D196 point 4, the notification design §2.5): a wait on
-/// <see cref="WaitAsync"/> is answered as soon as what waits moves (one asked, answered, or past its two minutes, at its
-/// time), or at its bound with what waits as it is, so the desktop's host holds one wait and tells every window, and no
-/// window polls. The cursor is <c>&lt;epoch&gt;.&lt;n&gt;</c>, the epoch new at each start of the host; any other cursor
-/// is answered at once.</para>
+/// <para><b>What waits says its change</b> (NOTIFY2j, D196 point 4, the notification design §2.5): a wait on <see cref="WaitAsync"/>
+/// is answered as soon as what waits moves, or at its bound with what waits as it is, so the desktop's host holds one wait and tells
+/// every window, and no window polls. The cursor is <c>&lt;epoch&gt;.&lt;n&gt;</c>, the epoch new at each start of the host; any other
+/// cursor is answered at once.</para>
 /// </remarks>
-public sealed class PersonConfirmations(TimeProvider clock, MachineLog log, bool holds, Func<string, string, DoorContract?> contracts)
+public sealed class PersonConfirmations(
+    TimeProvider clock, MachineLog log, bool holds, Func<string, string, DoorContract?> contracts, Func<Confirmation, Task<MadeRequest>> make)
 {
-    /// <summary>The header a client presents its secret in, with the request the person confirmed.</summary>
-    public const string GrantHeader = "Daoris-Person-Grant";
-
-    /// <summary>The machine log's event for a confirmation asked, confirmed, refused or expired.</summary>
+    /// <summary>The machine log's event for a confirmation asked or ended.</summary>
     public const string Event = "person.confirmation";
 
-    /// <summary>How many may wait for the person at once.</summary>
+    /// <summary>How many asks naming a session may wait for the person at once.</summary>
     public const int Most = 5;
 
-    /// <summary>How long a confirmation lasts from its ask: the wait for the person, and its grant's use, both within it.</summary>
-    public static readonly TimeSpan Lasts = TimeSpan.FromMinutes(2);
+    /// <summary>How many more an ask naming no session, the terminal's, may take beyond <see cref="Most"/>.</summary>
+    public const int Reserved = 1;
 
-    /// <summary>How long one that ended is still answered to the terminal that polls it.</summary>
-    public static readonly TimeSpan Kept = TimeSpan.FromMinutes(2);
+    /// <summary>How many one asker, a session or the terminal, may hold waiting at once.</summary>
+    public const int PerAsker = 2;
 
-    /// <summary>The most bytes an asked request's body may be, in UTF-8.</summary>
+    /// <summary>How long one that ended is still answered to the asker that polls it.</summary>
+    public static readonly TimeSpan Kept = TimeSpan.FromMinutes(10);
+
+    /// <summary>The most ended confirmations kept at once, the oldest forgotten first.</summary>
+    public const int MostEnded = 64;
+
+    /// <summary>The most bytes an asked request's body may be, in UTF-8; a made request's answer longer than it is kept unread.</summary>
     public const int BodyLimit = 64 * 1024;
 
     /// <summary>The most values a card may show: an asked body carrying more is refused before it is shown.</summary>
@@ -138,31 +161,55 @@ public sealed class PersonConfirmations(TimeProvider clock, MachineLog log, bool
     /// <summary>The most bytes an ask itself is read to, its asked body escaped inside it.</summary>
     public const int AskLimit = 512 * 1024;
 
-    /// <summary>What a client says while it waits (design §4.2 step 3), answered with an ask so both clients say it alike.</summary>
+    /// <summary>The most characters a session's name may be.</summary>
+    public const int SessionLimit = 128;
+
+    /// <summary>The error code of a request its door did not take at the Confirm.</summary>
+    public const string NotMade = "not-made";
+
+    /// <summary>The error code of a confirmation an earlier start of this host held.</summary>
+    public const string Restarted = "restarted";
+
+    /// <summary>The error code of a withdrawal without its asker's token.</summary>
+    public const string NotAsker = "not-asker";
+
+    /// <summary>What an asker says while it waits (design §4.2 step 3), answered with an ask so every client says it alike.</summary>
     public const string WaitingSentence = "Waiting for you to confirm this in Daoris's window…";
 
-    /// <summary>The answer to the person's confirmation.</summary>
-    public const string ConfirmedSentence =
-        "Confirmed. The terminal that asked may send this once, as it was asked, within its two minutes; nothing else is granted.";
+    /// <summary>The answer to the person's Confirm of a request its door took.</summary>
+    public const string MadeAnswer = "Confirmed and done, as it was asked; its asker reads how it went.";
 
     /// <summary>The answer to the person's refusal.</summary>
-    public const string RefusedAnswer = "Refused. Nothing was kept, and the terminal that asked is told so.";
+    public const string RefusedAnswer = "Refused. Nothing was done, and its asker reads that you refused it.";
+
+    /// <summary>The answer to an asker's withdrawal.</summary>
+    public const string WithdrawnAnswer = "Withdrawn. Nothing was done, and it no longer waits for the person.";
 
     /// <summary>An ask on a host handed no key, whose doors want none (design §2.1).</summary>
     public const string NoKeySentence =
         "This service was started without a person key, so none of its doors waits for a confirmation: send the request "
         + "again as it was. Nothing was asked.";
 
-    /// <summary>An answer to a confirmation that was confirmed already.</summary>
-    public const string ConfirmedAlreadySentence = "This act was confirmed already.";
+    /// <summary>An answer to a confirmation the person confirmed already.</summary>
+    public const string ConfirmedAlreadySentence = "This act was confirmed already; its asker reads how it went.";
+
+    /// <summary>An answer to a confirmation being made now.</summary>
+    public const string MakingSentence = "This act was confirmed already, and is being done now.";
 
     /// <summary>An answer to a confirmation the person refused.</summary>
-    public const string RefusedSentence = "This act was refused already, and grants nothing.";
+    public const string RefusedSentence = "This act was refused already, and nothing was done.";
 
-    /// <summary>An answer to a confirmation past its two minutes.</summary>
-    public const string ExpiredSentence =
-        "This act's two minutes passed before it was answered, so it grants nothing. The terminal asks again if it still "
-        + "means it.";
+    /// <summary>An answer to a confirmation its asker withdrew.</summary>
+    public const string WithdrawnSentence = "Its asker withdrew this act, and nothing was done.";
+
+    /// <summary>A withdrawal without the token the ask was answered with.</summary>
+    public const string NotAskerSentence =
+        "Only the asker withdraws its ask, with the token its ask was answered with, and this call carried none of it. "
+        + "Nothing was withdrawn.";
+
+    /// <summary>What an asker polling an earlier start's confirmation reads (§4 M4).</summary>
+    public const string RestartedSentence =
+        "Not confirmed: Daoris restarted, and what waited for the person's confirmation ended with it. Ask again if it is still meant.";
 
     /// <summary>The most waits on what waits held at once; a ninth is answered at once.</summary>
     public const int MostWaits = 8;
@@ -185,8 +232,28 @@ public sealed class PersonConfirmations(TimeProvider clock, MachineLog log, bool
 
     /// <summary>The sentence for a confirmation this host holds no more, or never held.</summary>
     public static string NotFoundSentence(string id) =>
-        $"No confirmation `{id}` is held here: one is forgotten two minutes after its own two minutes end, and none outlives "
-        + "a start of this service.";
+        $"No confirmation `{id}` is held here: one is forgotten ten minutes after it ends, and none outlives a start of this service.";
+
+    /// <summary>The sentence the Confirm of a request its door did not take is answered with: the door's own words.</summary>
+    public static string NotDoneSentence(string reason) => $"Not done: {reason}";
+
+    /// <summary>
+    /// The refusal of an ask while <paramref name="waiting"/> wait, as many as its asker may fill (<see cref="Most"/> for a session's,
+    /// one more for the terminal's), naming the asker's own requests waiting.
+    /// </summary>
+    public static string FullSentence(int waiting, bool session, IReadOnlyList<Confirmation> yours) =>
+        $"{waiting} acts already wait for the person's confirmation, as many as {(session ? "sessions' asks may fill" : "may")}, so "
+        + "this one was not asked." + Yours(yours) + " Nothing was kept.";
+
+    /// <summary>The refusal of an ask from an asker holding <see cref="PerAsker"/>, each of them named.</summary>
+    public static string BoundSentence(IReadOnlyList<Confirmation> yours) =>
+        $"This asker already has {yours.Count} acts waiting for the person's confirmation, as many as one asker may: {Named(yours)}. "
+        + "Withdraw one, or wait for the person's answer, then ask again. Nothing was asked.";
+
+    private static string Yours(IReadOnlyList<Confirmation> yours) =>
+        yours.Count == 0 ? "" : $" This asker's own waiting: {Named(yours)}.";
+
+    private static string Named(IReadOnlyList<Confirmation> each) => string.Join(", ", each.Select(c => $"`{c.Id}` ({c.Act})"));
 
     /// <summary>What waits for the person, oldest first.</summary>
     public IReadOnlyList<Confirmation> Waiting()
@@ -200,9 +267,9 @@ public sealed class PersonConfirmations(TimeProvider clock, MachineLog log, bool
 
     /// <summary>
     /// What waits after <paramref name="since"/>, answered with the cursor to ask from next: at once where the cursor is not the
-    /// current one (none, malformed, another start's, or behind), else as soon as what waits moves, one past its two minutes at its
-    /// time, or at <paramref name="wait"/> (at most <see cref="LongestWait"/>) as it is. A cancelled wait answers what waits then;
-    /// a wait past <see cref="MostWaits"/> is answered at once.
+    /// current one (none, malformed, another start's, or behind), else as soon as what waits moves, or at <paramref name="wait"/> (at
+    /// most <see cref="LongestWait"/>) as it is. A cancelled wait answers what waits then; a wait past <see cref="MostWaits"/> is
+    /// answered at once.
     /// </summary>
     public async Task<(string Since, IReadOnlyList<Confirmation> Waiting)> WaitAsync(string? since, TimeSpan wait, CancellationToken ct = default)
     {
@@ -211,7 +278,7 @@ public sealed class PersonConfirmations(TimeProvider clock, MachineLog log, bool
         var arrived = clock.GetTimestamp();
         lock (_gate)
         {
-            if (_waits >= MostWaits) return Told(clock.GetUtcNow(), out _, out _);
+            if (_waits >= MostWaits) return Told(out _);
             _waits++;
         }
 
@@ -220,18 +287,16 @@ public sealed class PersonConfirmations(TimeProvider clock, MachineLog log, bool
             while (true)
             {
                 var read = clock.GetUtcNow();
-                var told = Told(read, out var moved, out var ends);
+                var told = Told(out var moved);
                 var left = wait - clock.GetElapsedTime(arrived);
                 if (told.Since != since || left <= TimeSpan.Zero || ct.IsCancellationRequested) return told;
 
-                // Held to the first of a move, the bound and the first of what waits reaching its time, which the sweep then ends.
-                var hold = ends is { } end && end < left ? end : left;
                 // Its own timer, stopped before the answer: a wait answered holds nothing on the clock.
                 var woken = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-                using var timer = clock.CreateTimer(_ => woken.TrySetResult(), null, hold, Timeout.InfiniteTimeSpan);
+                using var timer = clock.CreateTimer(_ => woken.TrySetResult(), null, left, Timeout.InfiniteTimeSpan);
                 using var cancelled = ct.Register(() => woken.TrySetResult());
-                // The clock may have passed the hold between its read and the timer's making, which then counts from later.
-                if (clock.GetUtcNow() >= read + hold) continue;
+                // The clock may have passed the bound between its read and the timer's making, which then counts from later.
+                if (clock.GetUtcNow() >= read + left) continue;
                 await Task.WhenAny(moved, woken.Task).ConfigureAwait(false);
             }
         }
@@ -241,16 +306,15 @@ public sealed class PersonConfirmations(TimeProvider clock, MachineLog log, bool
         }
     }
 
-    // What waits at `now` and its cursor, swept first; what the next move completes; and how long until the first of it ends.
-    private (string Since, IReadOnlyList<Confirmation> Waiting) Told(DateTimeOffset now, out Task moved, out TimeSpan? ends)
+    // What waits now and its cursor, swept first; and what the next move completes.
+    private (string Since, IReadOnlyList<Confirmation> Waiting) Told(out Task moved)
     {
         lock (_gate)
         {
-            Sweep(now);
-            List<Confirmation> waiting = [.. _kept.Where(c => c.State == ConfirmationState.Waiting)];
+            Sweep(clock.GetUtcNow());
             moved = _moved.Task;
-            ends = waiting.Count == 0 ? null : waiting.Min(c => c.Expires) - now;
-            return (_epoch + "." + _moves.ToString(System.Globalization.CultureInfo.InvariantCulture), waiting);
+            return (_epoch + "." + _moves.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                [.. _kept.Where(c => c.State == ConfirmationState.Waiting)]);
         }
     }
 
@@ -272,13 +336,23 @@ public sealed class PersonConfirmations(TimeProvider clock, MachineLog log, bool
     }
 
     /// <summary>
-    /// A terminal's ask: the request it was refused, exactly, and its secret's SHA-256. Taken only on a host that holds a
-    /// key, for a door that wants it in the form the body makes, and while fewer than <see cref="Most"/> wait.
+    /// Why <paramref name="id"/> is not held: an id of an earlier start's form, which a restart ended (§4 M4), or one this host never
+    /// held or forgot.
     /// </summary>
-    public (Confirmation? Confirmation, ConfirmationAskRefusal Refusal, string Message) Ask(
-        string? method, string? path, string? body, string? secretSha256)
+    public (Confirmation? Confirmation, ConfirmationAnswerRefusal Refusal, string Message) Missing(string id) =>
+        id.Length == _epoch.Length + 16 && id.All(Uri.IsHexDigit) && !id.StartsWith(_epoch, StringComparison.OrdinalIgnoreCase)
+            ? (null, ConfirmationAnswerRefusal.Restarted, RestartedSentence)
+            : (null, ConfirmationAnswerRefusal.NotFound, NotFoundSentence(id));
+
+    /// <summary>
+    /// An ask: the request it was refused, exactly, and the session asking, if a session asks. Taken only on a host that holds a key,
+    /// for a door that wants it in the form the body makes, and within the asker's places. Answered with the token that withdraws it,
+    /// the only time it is answered.
+    /// </summary>
+    public (Confirmation? Confirmation, string? Token, ConfirmationAskRefusal Refusal, string Message) Ask(
+        string? method, string? path, string? body, string? session)
     {
-        if (!holds) return (null, ConfirmationAskRefusal.NoKey, NoKeySentence);
+        if (!holds) return (null, null, ConfirmationAskRefusal.NoKey, NoKeySentence);
 
         var verb = (method ?? "").Trim().ToUpperInvariant();
         if (verb.Length == 0 || !BrowserOrigins.IsWrite(verb))
@@ -303,7 +377,7 @@ public sealed class PersonConfirmations(TimeProvider clock, MachineLog log, bool
 
         var (door, route) = resolved;
         if (ReferenceEquals(door, PersonDoors.AskConfirmation) || ReferenceEquals(door, PersonDoors.Confirm)
-            || ReferenceEquals(door, PersonDoors.Refuse))
+            || ReferenceEquals(door, PersonDoors.Refuse) || ReferenceEquals(door, PersonDoors.Withdraw))
         {
             return Shape("A confirmation is answered in Daoris's window, with the person's key; it is never itself confirmed.");
         }
@@ -314,15 +388,14 @@ public sealed class PersonConfirmations(TimeProvider clock, MachineLog log, bool
             return Shape($"`body` is over {BodyLimit / 1024} KB, more than a confirmation holds.");
         }
 
-        var hash = (secretSha256 ?? "").Trim().ToLowerInvariant();
-        if (hash.Length != 64 || !hash.All(Uri.IsHexDigit))
+        var asker = string.IsNullOrWhiteSpace(session) ? null : session.Trim();
+        if (asker is not null && (asker.Length > SessionLimit || asker.Any(char.IsControl)))
         {
-            return Shape("`secretSha256` is the SHA-256 of a secret the client made, 64 hexadecimal characters; the secret itself is never sent until it is used.");
+            return Shape($"`session` names the session asking, as its record names it, at most {SessionLimit} characters; a terminal names none.");
         }
 
-        // The places first, before anything is parsed: while five wait, a sixth costs nothing to refuse.
-        var hashBytes = Encoding.ASCII.GetBytes(hash);
-        if (Admits(hashBytes) is { } closed) return closed;
+        // The places first, before anything is parsed: with its asker's places taken, an ask costs nothing to refuse.
+        if (Admits(asker) is { } closed) return closed;
 
         JsonElement? parsed = null;
         if (text is not null)
@@ -351,16 +424,16 @@ public sealed class PersonConfirmations(TimeProvider clock, MachineLog log, bool
         var (values, fields, refusal) = contract.Read(route, query, parsed, FieldLimit);
         if (refusal is not null) return Shape(refusal);
 
-        var now = clock.GetUtcNow();
+        var token = Base64Url.EncodeToString(RandomNumberGenerator.GetBytes(32));
         lock (_gate)
         {
-            if (Admits(hashBytes) is { } taken) return taken;
+            if (Admits(asker) is { } taken) return taken;
 
             var confirmation = new Confirmation(
-                Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(8)), verb, path, door.Pattern, act, values, fields, text,
-                now, now + Lasts, ConfirmationState.Waiting)
+                _epoch + Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(8)), verb, path, door.Pattern, act, values, fields, text,
+                clock.GetUtcNow(), asker, ConfirmationState.Waiting)
             {
-                Hash = hashBytes,
+                Token = SHA256.HashData(Encoding.ASCII.GetBytes(token)),
                 Unescaped = unescaped,
                 Query = query,
                 Bytes = text is null ? [] : Encoding.UTF8.GetBytes(text),
@@ -368,110 +441,194 @@ public sealed class PersonConfirmations(TimeProvider clock, MachineLog log, bool
             _kept.Add(confirmation);
             Moved();
             Write("asked", confirmation);
-            return (confirmation, ConfirmationAskRefusal.None, WaitingSentence);
+            return (confirmation, token, ConfirmationAskRefusal.None, WaitingSentence);
         }
     }
 
-    // Whether an ask with this hash may wait now: a hash asked already, or five waiting, refuse it. Judged once before the
-    // body is parsed and again as it is kept, since another ask may have taken the place between.
-    private (Confirmation?, ConfirmationAskRefusal, string)? Admits(byte[] hash)
+    // Whether an ask from this asker may wait now: past its own bound, or with every place it may fill taken, it is refused, naming
+    // its own requests waiting. Judged once before the body is parsed and again as it is kept, since another ask may have come between.
+    private (Confirmation?, string?, ConfirmationAskRefusal, string)? Admits(string? asker)
     {
         lock (_gate)
         {
             Sweep(clock.GetUtcNow());
-            if (_kept.Any(c => CryptographicOperations.FixedTimeEquals(c.Hash, hash)))
-            {
-                return Shape("This secret's hash was asked already: a client makes a new secret for each ask.");
-            }
-
-            return _kept.Count(c => c.State == ConfirmationState.Waiting) >= Most
-                ? (null, ConfirmationAskRefusal.Full, PersonDoors.FullSentence)
+            List<Confirmation> waiting = [.. _kept.Where(c => c.State == ConfirmationState.Waiting)];
+            List<Confirmation> yours = [.. waiting.Where(c => string.Equals(c.Session, asker, StringComparison.Ordinal))];
+            if (yours.Count >= PerAsker) return (null, null, ConfirmationAskRefusal.Bound, BoundSentence(yours));
+            return waiting.Count >= (asker is null ? Most + Reserved : Most)
+                ? (null, null, ConfirmationAskRefusal.Full, FullSentence(waiting.Count, asker is not null, yours))
                 : null;
         }
     }
 
-    /// <summary>The person's answer, with the key: confirmed or refused, only while it waits.</summary>
-    public (Confirmation? Confirmation, ConfirmationAnswerRefusal Refusal, string Message) Answer(string id, bool confirm)
+    /// <summary>
+    /// The person's Confirm, with the key, only while it waits: the request is made as it was asked (<see cref="MakeAsync"/>), and it
+    /// ends made where its door took it, or stale or failed with its door's own reason, which the Confirm is answered with as
+    /// <see cref="ConfirmationAnswerRefusal.NotMade"/>.
+    /// </summary>
+    public async Task<(Confirmation? Confirmation, ConfirmationAnswerRefusal Refusal, string Message)> ConfirmAsync(string id)
+    {
+        Confirmation taken;
+        lock (_gate)
+        {
+            Sweep(clock.GetUtcNow());
+            var index = _kept.FindIndex(c => c.Id == id);
+            if (index < 0) return Missing(id);
+            if (_kept[index] is not { State: ConfirmationState.Waiting } found) return NotWaiting(_kept[index]);
+
+            taken = _kept[index] = found with { State = ConfirmationState.Making };
+            Moved();
+        }
+
+        MadeRequest made;
+        try
+        {
+            made = await make(taken).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is not OutOfMemoryException)
+        {
+            made = new MadeRequest(StatusCodes.Status500InternalServerError, []);
+        }
+
+        var state = made.Status switch
+        {
+            < 400 => ConfirmationState.Made,
+            < 500 => ConfirmationState.Stale,
+            _ => ConfirmationState.Failed,
+        };
+        Confirmation ended;
+        lock (_gate)
+        {
+            ended = taken with
+            {
+                State = state,
+                Ended = clock.GetUtcNow(),
+                Status = made.Status,
+                Answer = made.Body.Length <= BodyLimit ? Encoding.UTF8.GetString(made.Body) : null,
+                Reason = state == ConfirmationState.Made ? null : ReasonOf(made),
+            };
+            var index = _kept.FindIndex(c => c.Id == id);
+            if (index >= 0) _kept[index] = ended;
+            Write(state.ToString().ToLowerInvariant(), ended);
+        }
+
+        return state == ConfirmationState.Made
+            ? (ended, ConfirmationAnswerRefusal.None, MadeAnswer)
+            : (ended, ConfirmationAnswerRefusal.NotMade, NotDoneSentence(ended.Reason!));
+    }
+
+    /// <summary>The person's refusal, with the key, only while it waits: nothing is made.</summary>
+    public (Confirmation? Confirmation, ConfirmationAnswerRefusal Refusal, string Message) Refuse(string id) =>
+        End(id, token: null, ConfirmationState.Refused, RefusedAnswer);
+
+    /// <summary>Its asker's withdrawal, with the token its ask was answered with, only while it waits: nothing is made.</summary>
+    public (Confirmation? Confirmation, ConfirmationAnswerRefusal Refusal, string Message) Withdraw(string id, string? token) =>
+        End(id, token ?? "", ConfirmationState.Withdrawn, WithdrawnAnswer);
+
+    // Ends one still waiting as `state`, with nothing made; a withdrawal's token must be its asker's, judged before its state.
+    private (Confirmation?, ConfirmationAnswerRefusal, string) End(string id, string? token, ConfirmationState state, string answer)
     {
         lock (_gate)
         {
             Sweep(clock.GetUtcNow());
             var index = _kept.FindIndex(c => c.Id == id);
-            if (index < 0) return (null, ConfirmationAnswerRefusal.NotFound, NotFoundSentence(id));
+            if (index < 0) return Missing(id);
 
             var found = _kept[index];
-            if (found.State != ConfirmationState.Waiting)
+            if (token is not null
+                && !CryptographicOperations.FixedTimeEquals(found.Token, SHA256.HashData(Encoding.UTF8.GetBytes(token))))
             {
-                return (found, ConfirmationAnswerRefusal.NotWaiting, found.State switch
-                {
-                    ConfirmationState.Refused => RefusedSentence,
-                    ConfirmationState.Expired => ExpiredSentence,
-                    _ => ConfirmedAlreadySentence,
-                });
+                return (null, ConfirmationAnswerRefusal.NotAsker, NotAskerSentence);
             }
 
-            var answered = found with { State = confirm ? ConfirmationState.Confirmed : ConfirmationState.Refused };
-            _kept[index] = answered;
+            if (found.State != ConfirmationState.Waiting) return NotWaiting(found);
+
+            var ended = _kept[index] = found with { State = state, Ended = clock.GetUtcNow() };
             Moved();
-            Write(confirm ? "confirmed" : "refused", answered);
-            return (answered, ConfirmationAnswerRefusal.None, confirm ? ConfirmedSentence : RefusedAnswer);
+            Write(state.ToString().ToLowerInvariant(), ended);
+            return (ended, ConfirmationAnswerRefusal.None, answer);
         }
     }
 
-    /// <summary>
-    /// The grant <paramref name="secret"/> holds for this call's address, before anything of its body is read: one the
-    /// person confirmed, within its two minutes, never used, for this method, this door, this unescaped path and this
-    /// query; null for none, so the gate refuses the call unread. Uses nothing up.
-    /// </summary>
-    public Grantable? Expecting(string secret, string method, string pattern, string unescaped, string query)
-    {
-        // A secret is made as a key is; one in any other form was never a client's, and grants nothing.
-        if (secret.Length != 43 || PersonKey.Parse(secret) is null) return null;
-        var hash = Encoding.ASCII.GetBytes(Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(secret))));
-
-        lock (_gate)
+    private static (Confirmation?, ConfirmationAnswerRefusal, string) NotWaiting(Confirmation found) =>
+        (found, ConfirmationAnswerRefusal.NotWaiting, found.State switch
         {
-            Sweep(clock.GetUtcNow());
-            var found = _kept.Find(c => c.State == ConfirmationState.Confirmed && CryptographicOperations.FixedTimeEquals(c.Hash, hash));
-            return found is not null
-                && string.Equals(found.Method, method, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(found.Pattern, pattern, StringComparison.Ordinal)
-                && string.Equals(found.Unescaped, unescaped, StringComparison.Ordinal)
-                && string.Equals(found.Query, query, StringComparison.Ordinal)
-                    ? new Grantable(found.Id, hash, found.Bytes.Length)
-                    : null;
-        }
-    }
+            ConfirmationState.Refused => RefusedSentence,
+            ConfirmationState.Withdrawn => WithdrawnSentence,
+            ConfirmationState.Making => MakingSentence,
+            _ => ConfirmedAlreadySentence,
+        });
 
-    /// <summary>
-    /// Whether <paramref name="grant"/> covers a call whose body is <paramref name="body"/>, which uses it if it does: still
-    /// confirmed, in time and unused as it is taken, and its bytes the confirmed body's to the byte. A call that differs uses
-    /// nothing up, so the exact request still may.
-    /// </summary>
-    public bool Take(Grantable grant, ReadOnlySpan<byte> body)
+    // The door's own sentence, as every refusal of this host carries one; else its words, short; else its status alone.
+    private static string ReasonOf(MadeRequest made)
     {
-        lock (_gate)
+        try
         {
-            Sweep(clock.GetUtcNow());
-            var index = _kept.FindIndex(c => c.Id == grant.Id);
-            if (index < 0) return false;
-
-            var found = _kept[index];
-            if (found.State != ConfirmationState.Confirmed || !CryptographicOperations.FixedTimeEquals(found.Hash, grant.Hash)
-                || !found.Bytes.AsSpan().SequenceEqual(body))
+            using var answer = JsonDocument.Parse(made.Body);
+            if (answer.RootElement is { ValueKind: JsonValueKind.Object } root
+                && root.TryGetProperty("error", out var error) && error.ValueKind == JsonValueKind.String
+                && error.GetString() is { Length: > 0 } sentence)
             {
-                return false;
+                return sentence;
             }
-
-            _kept[index] = found with { State = ConfirmationState.Used };
-            return true;
         }
+        catch (JsonException)
+        {
+        }
+
+        var text = made.Body.Length <= 512 ? Encoding.UTF8.GetString(made.Body).Trim() : "";
+        return text.Length > 0 ? text : $"its door answered {made.Status}, with no sentence.";
     }
 
     /// <summary>
-    /// An ask, read here rather than bound so it is read no further than <see cref="AskLimit"/> and a byte: a JSON body,
-    /// which a page on another origin sends only with CORS's leave (design §4.2), parsed by the host's own options. The ask,
-    /// or the refusal to answer instead.
+    /// The request <paramref name="asked"/>, made through the host's whole pipeline (<paramref name="pipeline"/>, routing included) in
+    /// this process, as it was asked: its method, its path unescaped as its door was found and as sent, its query as sent, and its body
+    /// to the byte, labelled UTF-8 JSON. It carries the host's own key, which never leaves the process, so the gate judges it as it
+    /// judges the person's window; it comes from no address, as the in-process server's calls do. Its answer is read whole.
+    /// </summary>
+    public static async Task<MadeRequest> MakeAsync(
+        RequestDelegate pipeline, IServiceProvider services, PersonKey key, Confirmation asked, CancellationToken ct)
+    {
+        IHeaderDictionary headers = new HeaderDictionary();
+        key.PresentOn(headers);
+        if (asked.Bytes.Length > 0) headers.ContentType = "application/json";
+        headers.ContentLength = asked.Bytes.Length;
+
+        var features = new FeatureCollection();
+        features.Set<IHttpRequestFeature>(new HttpRequestFeature
+        {
+            Protocol = "HTTP/1.1",
+            Scheme = "http",
+            Method = asked.Method,
+            PathBase = "",
+            Path = asked.Unescaped,
+            QueryString = asked.Query,
+            RawTarget = asked.Path,
+            Headers = headers,
+            Body = new MemoryStream(asked.Bytes, writable: false),
+        });
+        var answer = new MemoryStream();
+        features.Set<IHttpResponseFeature>(new HttpResponseFeature());
+        features.Set<IHttpResponseBodyFeature>(new StreamResponseBodyFeature(answer));
+        features.Set<IHttpConnectionFeature>(new HttpConnectionFeature { LocalIpAddress = IPAddress.Loopback });
+        features.Set<IHttpRequestBodyDetectionFeature>(new BodyDetection(asked.Bytes.Length > 0));
+        features.Set<IHttpRequestLifetimeFeature>(new HttpRequestLifetimeFeature { RequestAborted = ct });
+
+        await using var scope = services.CreateAsyncScope();
+        var context = new DefaultHttpContext(features) { RequestServices = scope.ServiceProvider };
+        await pipeline(context).ConfigureAwait(false);
+        return new MadeRequest(context.Response.StatusCode, answer.ToArray());
+    }
+
+    private sealed class BodyDetection(bool body) : IHttpRequestBodyDetectionFeature
+    {
+        public bool CanHaveBody => body;
+    }
+
+    /// <summary>
+    /// An ask, read here rather than bound so it is read no further than <see cref="AskLimit"/> and a byte: a JSON body, which a page
+    /// on another origin sends only with CORS's leave (design §4.2), parsed by the host's own options. The ask, or the refusal to
+    /// answer instead.
     /// </summary>
     public static async Task<(ConfirmationAskRequest? Ask, IResult? Refusal)> ReadAskAsync(HttpContext http, CancellationToken ct)
     {
@@ -479,7 +636,7 @@ public sealed class PersonConfirmations(TimeProvider clock, MachineLog log, bool
             || !type.MediaType.Equals("application/json", StringComparison.OrdinalIgnoreCase))
         {
             return (null, Results.Json(
-                new ErrorResponse("An ask for a confirmation is a JSON body: `method`, `path`, `body` and `secretSha256`. Nothing was asked."),
+                new ErrorResponse("An ask for a confirmation is a JSON body: `method`, `path`, `body` and `session`. Nothing was asked."),
                 statusCode: StatusCodes.Status415UnsupportedMediaType));
         }
 
@@ -502,7 +659,7 @@ public sealed class PersonConfirmations(TimeProvider clock, MachineLog log, bool
 
         return ask is null
             ? (null, Results.BadRequest(new ErrorResponse(
-                "An ask for a confirmation is a JSON object: `method`, `path`, `body` and `secretSha256`. Nothing was asked.")))
+                "An ask for a confirmation is a JSON object: `method`, `path`, `body` and `session`. Nothing was asked.")))
             : (ask, null);
     }
 
@@ -525,21 +682,16 @@ public sealed class PersonConfirmations(TimeProvider clock, MachineLog log, bool
         return filled > most || (declared is { } length && filled != length) ? null : buffer[..filled];
     }
 
-    // Expires what its two minutes ended for, once, saying so; forgets what ended two minutes before. Under the lock.
+    // Forgets what ended `Kept` before, and past `MostEnded` the oldest ended first. What waits moves no clock. Under the lock.
     private void Sweep(DateTimeOffset now)
     {
-        for (var i = 0; i < _kept.Count; i++)
+        _kept.RemoveAll(c => c.Ended is { } ended && now >= ended + Kept);
+        var over = _kept.Count(c => c.Ended is not null) - MostEnded;
+        if (over > 0)
         {
-            if (_kept[i] is { State: ConfirmationState.Waiting or ConfirmationState.Confirmed } open && now >= open.Expires)
-            {
-                _kept[i] = open with { State = ConfirmationState.Expired };
-                // One no longer waiting moves what waits; a grant unused past its time moves nothing a window lists.
-                if (open.State == ConfirmationState.Waiting) Moved();
-                Write("expired", _kept[i]);
-            }
+            var oldest = _kept.Where(c => c.Ended is not null).OrderBy(c => c.Ended).Take(over).ToHashSet();
+            _kept.RemoveAll(oldest.Contains);
         }
-
-        _kept.RemoveAll(c => now >= c.Expires + Kept);
     }
 
     // Codes only (design §5.1): what happened, and the door's method and pattern.
@@ -548,13 +700,13 @@ public sealed class PersonConfirmations(TimeProvider clock, MachineLog log, bool
 
     private static string Capitalized(string text) => text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text[1..];
 
-    private static (Confirmation?, ConfirmationAskRefusal, string) Shape(string sentence) =>
-        (null, ConfirmationAskRefusal.Shape, sentence + " Nothing was asked.");
+    private static (Confirmation?, string?, ConfirmationAskRefusal, string) Shape(string sentence) =>
+        (null, null, ConfirmationAskRefusal.Shape, sentence + " Nothing was asked.");
 
-    /// <summary>The wire a confirmation is answered in: never its secret's hash.</summary>
+    /// <summary>The wire a confirmation is answered in: never its asker's token.</summary>
     public static ConfirmationResponse Wire(Confirmation c) => new(
         c.Id, c.State.ToString().ToLowerInvariant(), c.Method, c.Path, c.Pattern, c.Act,
         [.. c.Values.Select(v => new ConfirmationFieldResponse(v.Name, v.Type, v.Value))],
         [.. c.Fields.Select(f => new ConfirmationFieldResponse(f.Name, f.Type, f.Value))],
-        c.Body, c.Asked, c.Expires);
+        c.Body, c.Asked, c.Session, c.Ended, c.Status, c.Answer, c.Reason);
 }

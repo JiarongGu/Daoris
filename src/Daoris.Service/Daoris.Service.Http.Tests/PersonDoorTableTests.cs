@@ -70,6 +70,8 @@ public sealed class PersonDoorTableTests
         ("POST", "/api/quests", Agent),
         ("POST", "/api/asks/{id}/publish", Agent),
         ("POST", "/api/confirmations", Agent),
+        // ONEWAY1n-i: an asker's withdrawal of its own ask, by the token its ask was answered with.
+        ("POST", "/api/confirmations/{id}/withdraw", Agent),
 
         ("POST", "/api/quests/{id}/evidence", Driver),
         ("POST", "/api/quests/{id}/set-up", Driver),
@@ -196,9 +198,10 @@ public sealed class PersonDoorTableTests
         // not hand put back, the driver's (SUPERVISOR1a-i), and a finished tree's record and its age, the driver's (KEEPSIZE1b), and the host's protocol, a read (FOUNDATION1 row p),
         // and one quest's handback, a read (HANDBACK1), and the event journal's rows after a position, a read (FOUNDATION1 l-i), and a session's finished tree's record, a read (KEEPSIZE1),
         // and the person's move of a held word to the head (LINESTOGETHER1b), and a session's memory changes, a read, and the person's
-        // decision of a memory end and Keep or Drop of an ended session's staged changes (KNOWCENTRAL2d).
+        // decision of a memory end and Keep or Drop of an ended session's staged changes (KNOWCENTRAL2d), and an asker's withdrawal of
+        // its own confirmation (ONEWAY1n-i).
         Assert.Equal(35, Routes.Count(route => route.Class == Open));
-        Assert.Equal(4, Routes.Count(route => route.Class == Agent));
+        Assert.Equal(5, Routes.Count(route => route.Class == Agent));
         Assert.Equal(31, Routes.Count(route => route.Class == Driver));
         Assert.Equal(36, Routes.Count(route => route.Class == Person));
         // And a shared host's two channel doors, a feed and a page (SESSONE2d), and its retirement of a machine (FABRIC-CLOSE1i2).
