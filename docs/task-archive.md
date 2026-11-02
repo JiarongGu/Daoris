@@ -22957,6 +22957,12 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 
 **Outcome** 2026-11-02: built. **CHATFLOW1f:** a conversation in a tree of its own binds a graph version; its candidate, submitted at the person's press, is the subject its `claimed` observes, its `land` is the runtime's and its press is word-and-wait; `chat-graph-later` is gone, and a graph holding a `quest.close` is bound with that as its problem. **CHATFLOW1h:** each execution of such a conversation locks its tree in its id, keeps its run's checks for it, denies a light chat's heavy gates in its spawn and tells it the checks, and the view no longer says they are not enforced. **CHATFLOW1i:** a chat that took a quest, a worker gone on as a conversation and a line whose origin is a quest's are gated by that quest's chain at the window's press, the terminal's land and the opinion's door. Left: the terminal alone still lands a graph-bound chat's work in place; no chat-specific proof of a failed check's single send-back. Detail: D227's 1d note and the chat-flow design's §4.5; `ChatGraphRunTests`, `WorkflowRunBindingTests`, `WorkflowRunChatTests`.
 
+## WORKFLOWCLEAN1e — the conversion (2026-11-02, D227)
+
+> **1e** the conversion (driver, modules; after a, b, c). Contract and proof: the cleanup design's §4, §9 row 1e and §13 point 4.
+
+**Outcome** 2026-11-02: built. `WorkflowLegacy.Census` finds every old shape the home holds, and one plan, `CONVERT_PLAN`, saves each steps, `handed` and `land`+`accept` newest as the next version of its id, gives each place that follows Current a saved workflow (the home default where it has no rule, a shipped copy by shape, else its own), moves `integrate` to the line's policy and removes the converted rules; `CONVERT_APPLY` is the person's press (receipt first, `moved` where the plan changed, judged again inside the one edit, a place with a Current unit open keeping its rules), `CONVERT_UNDO` takes it back, and `workflow convert --plan|--apply|--undo` is the terminal's through the running Daoris. Left to 1g: the page. Detail: D227's 1e note; `ConversionTests`, `DriverModuleConvertTests`.
+
 ## The parked backlog triaged against D228: dropped rows (2026-11-02)
 
 > **Triage of 2026-11-02** (`docs/2026-11-02-parked-triage.md`; D228 and its note): 55 rows of `docs/backlog-parked.md` and 26 of its pointer lines, each superseded by work the owner's direction of that day put in a chunk or a decision. The rows' whole text is in git at `cb884a6b6:docs/backlog-parked.md`.

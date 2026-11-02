@@ -1371,6 +1371,10 @@ public sealed class DriverLoop(
                 new PlaceWorld(service), new SetupWorld(service, Home), Home, PluginCatalog.Load(Home, AdapterSet.Built().Names), DriverContext.DoorOf(this, config),
                 () => DriverConfig.Load(ConfigPath), _ => throw new InvalidOperationException("settling writes no configuration"), DateOnly.FromDateTime(DateTime.Now));
             await PlaceApplies.SettleAllAsync(doors, ct).ConfigureAwait(false);
+            // WORKFLOWCLEAN1 1e: a conversion's receipt a stop left uncertain is read the same way, and a press of its plan goes on from it.
+            ConversionApplies.SettleAll(new ConvertDoors(
+                Home, _ => throw new InvalidOperationException("settling reads no world"), _ => throw new InvalidOperationException("settling writes no configuration"),
+                () => DriverConfig.Load(ConfigPath), () => new HashSet<string>()));
         }
         catch (Exception error) when (error is not OperationCanceledException)
         {

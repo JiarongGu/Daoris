@@ -327,7 +327,8 @@ public sealed class WorkflowGraphsTests : IDisposable
     private static readonly Dictionary<string, string> PinnedReads = new(StringComparer.Ordinal)
     {
         ["NodeRuntime.cs"] = ": WorkflowRunNodes.VersionOf(store, runs, WorkflowRunBindings.RunOf(ReviewGate.ChainOf([.. quests], quest.Id), unit.Owner.Repository ?? \"\") ?? quest.Id);",
-        ["DriverWorkflowsCommand.cs"] = "return ChangeGraph(found, @base, WorkflowGraphs.Saved(steps), $\"v{@base.Version}'s steps as a graph\", held);",
+        // WORKFLOWCLEAN1 1e: the conversion draws a version of steps as the graph it saves, once.
+        ["WorkflowLegacy.cs"] = "if (version.Steps is { } steps) return WorkflowGraphs.Saved(steps);",
         ["WorkflowEffectives.cs"] = ": ((JsonNode)WorkflowGraphs.Saved(newest.Steps!), WorkflowGraphs.Graph(newest.Steps!).Nodes);",
     };
 

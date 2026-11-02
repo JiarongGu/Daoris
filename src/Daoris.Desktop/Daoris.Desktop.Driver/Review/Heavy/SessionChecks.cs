@@ -90,6 +90,14 @@ public static class SessionChecks
     public static DriverConfig Apply(DriverConfig config, string? repository, string? checks)
     {
         var named = repository?.Trim() is { Length: > 0 } r ? r : throw new DriverException(Scope);
+        // WORKFLOWCLEAN1 1e: the checks of a place on a saved workflow are the workflow's `claimed.checks`; the conversion moved the rule there.
+        // The place's workspace is not known here, so a workspace's own choice is not weighed: its own choice, else the home's default.
+        var chosen = config.Workflows.TryGetValue(named, out var own) ? own.Default : null;
+        if (checks is not null && (chosen ?? config.DefaultWorkflow) is { } followed && followed != WorkflowKey.Current)
+        {
+            throw new DriverException(OnGraph(named));
+        }
+
         var key = config.SessionChecks.Keys.FirstOrDefault(k => string.Equals(k, named, StringComparison.OrdinalIgnoreCase)) ?? named;
         var changed = new Dictionary<string, string>(config.SessionChecks, StringComparer.OrdinalIgnoreCase);
         if (checks is null)
@@ -105,6 +113,11 @@ public static class SessionChecks
 
         return config with { SessionChecks = changed };
     }
+
+    /// <summary>The refusal for a place on a saved workflow: its checks are its workflow's work step's, edited there.</summary>
+    public static string OnGraph(string repository) =>
+        $"`{repository}` follows a saved workflow, whose work step carries its sessions' checks (`checks` on `claimed`): edit the workflow in the workflow editor. "
+        + "The rule is Current's, and a conversion moves it there (`daoris-driver workflow convert --plan`).";
 
     /// <summary>What a session's kept checks are named by under the home's <c>spawn/</c>, after its id.</summary>
     public const string Suffix = SessionHomeFiles.ChecksSuffix;
