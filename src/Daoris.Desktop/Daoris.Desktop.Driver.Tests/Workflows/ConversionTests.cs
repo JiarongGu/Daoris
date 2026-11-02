@@ -389,6 +389,19 @@ public sealed class ConversionTests : IDisposable
     }
 
     [Fact]
+    public void Session_checks_are_refused_for_a_place_on_a_saved_workflow_and_still_set_on_current()
+    {
+        var onGraph = DriverConfig.Empty.WithDefaultWorkflow("merge-after-accept");
+
+        var refused = Assert.Throws<DriverException>(() => SessionChecks.Apply(onGraph, "engine", SessionChecks.Light));
+
+        Assert.Contains("claimed", refused.Message);
+        // Taking the rule away is never refused, and a place on Current sets it as it did.
+        Assert.Empty(SessionChecks.Apply(onGraph, "engine", null).SessionChecks);
+        Assert.Equal(SessionChecks.Light, SessionChecks.Apply(DriverConfig.Empty, "engine", SessionChecks.Light).SessionChecks["engine"]);
+    }
+
+    [Fact]
     public void A_handed_lift_reproduces_the_old_reading_over_the_rule()
     {
         // A merge-form `handed` under a `merge --auto-accept` rule: GateSteps read the press as `you` (a merge is always pressed).

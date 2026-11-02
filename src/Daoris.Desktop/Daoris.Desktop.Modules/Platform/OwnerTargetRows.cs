@@ -140,6 +140,8 @@ internal static class OwnerTargetRows
             "TRUST_FOLDER", "ACCOUNT_USE", "HARNESS_ACTION", "HARNESSES_REFRESH", "TOOLS_DELETE", "TOOLS_DOWNLOAD", "TOOLS_LOCATION", "TOOLS_STOP",
             "TOOLS_USE", "TOOLS_GIT", "TOOLS_GIT_SET", "GIT_IDENTITY", "SYSTEM_DOWNLOADS_CLEAR", "SYSTEM_SPACE_FREE", "SET_STANDING_CONFIRMATION", "PLUGIN_ACTION", "PLUGIN_UPDATE",
             "PLUGIN_NEW", "PLUGIN_TRY", "PLUGIN_TOOLS", "PLUGIN_TOOL_FIX", "PLUGIN_ADD", "PLUGIN_INSTALL", "WORKFLOW_SAVE",
+            // WORKFLOWCLEAN1 1e: the conversion of the old records reaches every place and the home's workflows, a machine setting the owner presses.
+            "CONVERT_APPLY", "CONVERT_UNDO",
             PipeTargets.Key("DAORIS.REMOTES", "SET"), PipeTargets.Key("DAORIS.REMOTES", "REMOVE"));
 
         // A window's own, naming nothing a role acts on.

@@ -262,12 +262,12 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/SessionsRoutes.cs` | 78 | 1222 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/TreesRoutes.cs` | 75 | 1228 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/WorkflowRoutes.cs` | 46 | 748 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/DriverLoop.cs` | 98 | 1672 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/DriverLoop.cs` | 98 | 1676 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/NeedsAPerson.cs` | 57 | 931 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/SessionWords.cs` | 70 | 1336 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/InstancePipe.cs` | 101 | 1995 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/PipeCensus.cs` | 43 | 575 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/PipeTargetRows.cs` | 41 | 530 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/PipeCensus.cs` | 43 | 579 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/PipeTargetRows.cs` | 42 | 537 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/StandingConfirmation.cs` | 93 | 1710 |
 
 ### Service (`service`)
@@ -450,4 +450,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `docs/backlog-parked.md` | 91 | 556 |
 | `docs/development.md` | 56 | 607 |
-| `src/Daoris.Desktop/README.md` | 283 | 1290 |
+| `src/Daoris.Desktop/README.md` | 284 | 1291 |

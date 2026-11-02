@@ -127,6 +127,13 @@ public static class ConversionApplies
         return receipt;
     }
 
+    /// <summary>A restart's read of every conversion receipt: each uncertain operation settled by its postcondition, nothing written but the receipt.</summary>
+    public static IReadOnlyList<ConversionReceipt> SettleAll(ConvertDoors doors)
+    {
+        var receipts = new ConversionReceipts(doors.Home);
+        return [.. receipts.All().Select(each => each.Undone || each.Operations.All(op => op.Outcome != PlaceOutcomes.Uncertain) ? each : Settle(doors, receipts, each))];
+    }
+
     private static bool SaveHeld(string home, ConvertSave save) =>
         WorkflowPorts.Store(home).Load(save.Id) is { Read: { Problem: null, Versions: [.., { Digest: { } digest }] } } && digest == save.Digest;
 
