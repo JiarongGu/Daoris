@@ -92,53 +92,6 @@ public sealed record PlaceApplied(DriverConfig After, IReadOnlyList<PlaceChange>
 public sealed record PlaceSave(string Id, string Default, bool Opinion, bool Look);
 
 /// <summary>
-/// The home's workflows as a plan reads them, with the copies a set-up would save added in memory (WORKFLOWCLEAN1 1a): nothing is written, so
-/// the plan's after reads the version it would choose.
-/// </summary>
-internal sealed class PlannedWorkflows : IWorkflowStore
-{
-    private readonly IWorkflowStore _inner;
-    private readonly Dictionary<string, System.Text.Json.Nodes.JsonNode> _files = new(StringComparer.Ordinal);
-
-    public PlannedWorkflows(IWorkflowStore inner, string home)
-    {
-        _inner = inner;
-        Home = home;
-    }
-
-    public PlannedWorkflows(string home) : this(WorkflowPorts.Store(home), home)
-    {
-    }
-
-    public string Home { get; }
-
-    /// <summary>The moment a planned copy is stamped with: the plan's own, and not a part of its digest.</summary>
-    public static string At => DateTimeOffset.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", System.Globalization.CultureInfo.InvariantCulture);
-
-    public WorkflowFileFound? Load(string id) => _files.TryGetValue(id, out var file) ? Found(id, file) : _inner.Load(id);
-
-    public IReadOnlyList<WorkflowFileFound> List() =>
-        [.. _inner.List().Where(each => !_files.ContainsKey(each.Id)).Concat(_files.Select(pair => Found(pair.Key, pair.Value))).OrderBy(each => each.Id, StringComparer.Ordinal)];
-
-    public void Write(string id, System.Text.Json.Nodes.JsonNode file) => _files[id] = file;
-
-    private static WorkflowFileFound Found(string id, System.Text.Json.Nodes.JsonNode file) =>
-        new(id, file, WorkflowNamed.Read(WorkflowNamed.ElementOf(file)));
-
-    /// <summary>
-    /// The id of a saved workflow whose newest version is a copy of <paramref name="shipped"/> with the gates a variant asks for, the home's
-    /// first by id; null where there is none.
-    /// </summary>
-    public string? CopyOf(WorkflowDefault shipped, bool opinion, bool look)
-    {
-        // The newest version's digest is the variant's own: a copy the person edited is no copy of it.
-        var wanted = NodeGraphs.Digest(NodeGraphs.Read(WorkflowPresets.WithGraphGates(shipped.Graph(), opinion, look).ToJsonString()).Graph!);
-        return List().FirstOrDefault(each => each.Read is { Problem: null, Versions: [.., { From: { } from, Digest: { } digest }] }
-            && from.Default == shipped.Id && digest == wanted)?.Id;
-    }
-}
-
-/// <summary>
 /// A place's plan (AGENTSPLACE1a2, <c>PLACE_PLAN</c> and <c>daoris-driver place … --plan</c>; the Agents-place design §4): the parts applied to a
 /// copy of the configuration through today's doors' own edits (driving, trees, the workflow choice, the landing rule by
 /// <see cref="LandingRules.Put"/>, the second opinion and the review rule), read before and after through the resolvers a start uses
@@ -305,7 +258,8 @@ public static class PlacePlans
         }
 
         // The ticks choose among what is declared, never beyond it (D23): the agents that read and the environment a look runs in.
-        if (ask.Opinion && OpinionRules.Resolve(config, name, workspace) is not { Rule.IsNone: false })
+        var reviewersNamed = OpinionRules.Resolve(config, name, workspace) is { Rule.IsNone: false };
+        if (ask.Opinion && !reviewersNamed)
         {
             refuse(Delivery, "no-reviewers",
                 $"a second opinion names the agents that read `{name}`'s work, and none is set for it: they are yours to name, never guessed. "
@@ -328,7 +282,8 @@ public static class PlacePlans
         var copy = planned.CopyOf(shipped, ask.Opinion, ask.Look);
         if (copy is null)
         {
-            var made = WorkflowDefaults.Copy(shipped, ask.Opinion, ask.Look, id => planned.Load(id) is not null);
+            bool Taken(string id) => planned.Load(id) is not null;
+            var made = WorkflowDefaults.Copy(shipped, ask.Opinion, ask.Look, Taken);
             planned.Write(made.Id, WorkflowOperations.PlanGraph(planned.Home, null, made.Id, null, made.Name, "screen", PlannedWorkflows.At, made.Graph, made.From).Plan.Result!);
             var save = new PlaceSave(made.Id, shipped.Id, ask.Opinion, ask.Look);
             if (!saves.Contains(save)) saves.Add(save);

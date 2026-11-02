@@ -135,8 +135,12 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
                 break;
             }
             case "landing":
-                // WORKFLOWCLEAN1 1a: a landing rule is no longer written, by any door.
-                return Refused(LandingVerb.Retired, "", "");
+            {
+                var (refused, landing) = Landing(target, workspace, value, config, facts, whose, scope);
+                if (refused is not null) return Refused(refused, "", "");
+                planned = landing;
+                break;
+            }
             case "across":
             {
                 var (refused, across) = Across(target, workspace, value, facts);
@@ -374,6 +378,101 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
             terminal,
             // Marked where it stands rather than erased, so the records still read true.
             c => c.WithForgiven(quest, Mark(c)));
+    }
+
+    /// <summary>
+    /// <c>landing</c>, as <c>daoris driver landing</c> reads its words (HELP8): the form, a branch's pattern, and <c>--tidy</c>,
+    /// <c>--plugin &lt;id&gt;</c>, <c>--auto-accept</c> or <c>--no-auto-accept</c> (LAND2a), <c>--key &lt;shape&gt;</c> or
+    /// <c>--no-key</c> (PROCESS1b-i) and <c>--squash</c> or <c>--no-squash</c> (PROCESS1b-ii) in any order, a quoted word kept
+    /// whole; each refused as the terminal refuses it, and the rule's shape by its edit, in <see cref="LandingRules.Problem(LandingRule)"/>'s words.
+    /// </summary>
+    /// <remarks>
+    /// DOORS1a (D164's amendment point 2): the rule replaces the one set there whole, as the terminal's does, but for its key and
+    /// its squash, which a card naming neither keeps where the new rule can hold them (a branch, and a key only for a pattern
+    /// saying <c>{ticket}</c>): a card rebuilding the rule without them dropped what the terminal set. They are kept from what
+    /// stands when the person applies, as every rule's edit reads it then, and the card says the rule it leaves.
+    /// </remarks>
+    private static (string? Refusal, (string Describe, string Terminal, Func<DriverConfig, DriverConfig> Edit) Planned) Landing(
+        string? target, string? workspace, string value, DriverConfig config, HelpMachineFacts facts, string whose, string scope)
+    {
+        // WORKFLOWCLEAN1 1a: a place that follows a saved workflow lands as that workflow says; no rule is proposed for it (row 1y retires the card whole).
+        if ((workspace is { Length: > 0 } || target is { Length: > 0 })
+            && WorkflowSelection.Resolve(config, workspace is { Length: > 0 } ? null : target, workspace is { Length: > 0 } ? workspace : null, null).Workflow
+                != WorkflowSelection.Current)
+        {
+            return (LandingVerb.Retired, default);
+        }
+
+        if (Words(value) is not { } words) return ("`landing`'s words close every quote they open.", default);
+        var tidy = words.Remove("--tidy");
+        var auto = words.Remove("--auto-accept");
+        var byHand = words.Remove("--no-auto-accept");
+        var squash = words.Remove("--squash");
+        var unsquashed = words.Remove("--no-squash");
+        var keyless = words.Remove("--no-key");
+
+        // Refused in the order `daoris driver landing` refuses them.
+        var (key, keyMissing) = Valued(words, "--key");
+        if (keyMissing) return ($"`--key` needs the shape of a ticket's key — `--key <shape>`, e.g. `--key \"{LandingRules.DefaultKey}\"`.", default);
+        if (key is not null && keyless) return ("a rule names its ticket's key or reads the default — say `--key <shape>` or `--no-key`, not both.", default);
+        var (plugin, pluginMissing) = Valued(words, "--plugin");
+        if (pluginMissing) return ("`--plugin` needs the id of an installed plugin — `--plugin <id>`; `daoris plugin list` shows what there is.", default);
+        if (auto && byHand) return ("a rule accepts automatically or waits for your Accept — say `--auto-accept` or `--no-auto-accept`, not both.", default);
+        if (squash && unsquashed)
+        {
+            return ("a rule squashes the work to one commit or keeps the session's commits — say `--squash` or `--no-squash`, not both.", default);
+        }
+
+        var bare = string.Join(' ', words);
+        LandingRule? rule = bare switch
+        {
+            "--clear" => null,
+            LandingForm.Merge => new LandingRule(LandingForm.Merge, null, tidy, plugin, auto, key, squash),
+            _ when bare.StartsWith("branch ", StringComparison.Ordinal) =>
+                new LandingRule(LandingForm.Branch, bare["branch ".Length..].Trim(), tidy, plugin, auto, key, squash),
+            _ => new LandingRule(bare, null, tidy, plugin, auto, key, squash),
+        };
+
+        var circle = workspace is { Length: > 0 };
+        LandingRule? Kept(DriverConfig at)
+        {
+            if (rule is not { Form: LandingForm.Branch }
+                || !(circle ? at.WorkspaceLandings : at.Landings).TryGetValue((circle ? workspace : target)!, out var standing))
+            {
+                return rule;
+            }
+
+            var ticketed = (rule.Pattern ?? "").Contains("{ticket}", StringComparison.Ordinal);
+            return rule with { Key = key ?? (keyless || !ticketed ? null : standing.Key), Squash = squash || (!unsquashed && standing.Squash) };
+        }
+
+        var leaves = Kept(config);
+        // The plugin must land work on THIS machine, asked as the screen's route asks it (D100),
+        // once the rule's own shape is sound, so a merge naming one is told why in that shape's words.
+        if (leaves is { Plugin: { } named } && LandingRules.Problem(leaves) is null
+            && LandingRules.PluginProblem(named, facts.Plugins) is { } unready)
+        {
+            return (unready, default);
+        }
+
+        var after = (plugin is null ? "" : $", plugin `{plugin}` pushes it and opens the pull request")
+            + (tidy ? ", its tree removed once landed" : "");
+        // The person's standing say-so for a push with no press is said on the card they apply (D145 point 5).
+        var accepting = auto ? $" It is accepted automatically: {LandingRules.AutoAcceptSays(plugin, leaves?.Form == LandingForm.Merge)}"
+            : byHand && leaves?.Form == LandingForm.Branch ? " Done work there waits for your Accept." : "";
+        var lands = leaves is null ? $"Clear {whose}'s landing rule."
+            : leaves.Form == LandingForm.Branch ? $"Land {whose}'s accepted work on a branch `{leaves.Pattern}`{after}.{accepting}"
+            : $"Land {whose}'s accepted work merged into its line{after}.{accepting}";
+        // What finds the branch's ticket and what Accept makes, said of the rule it leaves, as the terminal says them.
+        if (leaves is { Form: LandingForm.Branch, Pattern: { } pattern } && pattern.Contains("{ticket}", StringComparison.Ordinal))
+        {
+            lands += " " + LandingRules.TicketSays(leaves.Key);
+        }
+
+        if (leaves is { Squash: true }) lands += " " + LandingRules.Squashed;
+        else if (leaves is { Form: LandingForm.Branch } && unsquashed) lands += " The branch holds the session's own commits.";
+        return (null, (lands, $"daoris driver landing {scope} {value}",
+            c => circle ? c.WithWorkspaceLanding(workspace!, Kept(c)) : c.WithLanding(target!, Kept(c))));
     }
 
     /// <summary>A flag's value taken out of the words, as the terminal reads it: none where the flag is absent, missing where no value follows it.</summary>

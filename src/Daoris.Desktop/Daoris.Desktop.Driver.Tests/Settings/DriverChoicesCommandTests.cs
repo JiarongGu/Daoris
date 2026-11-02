@@ -253,7 +253,6 @@ public sealed class DriverChoicesCommandTests : IDisposable
     /// </summary>
     [Theory]
     [InlineData("workflow kind work docs --label Documentation", "WORKFLOW_KIND")]
-    [InlineData("workflow use current --workspace work", "WORKFLOW_USE")]
     [InlineData("workflow new docs --from merge-after-accept", "WORKFLOW_SAVE")]
     public async Task Beside_the_running_Daoris_a_workflows_write_is_its_route_and_this_process_writes_nothing(string words, string route)
     {

@@ -184,7 +184,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Course/DrivenInbox.cs` | 55 | 1237 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Course/MoveStore.cs` | 46 | 781 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Events/NoteCodes.cs` | 97 | 1359 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpSettingProposals.cs` | 56 | 979 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpSettingProposals.cs` | 63 | 1078 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpWorkflowProposals.cs` | 49 | 838 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Install/Tools.cs` | 40 | 778 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Instance/InstanceDoor.cs` | 44 | 780 |
@@ -207,7 +207,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Roles/QuestionSupervisorDecisions.cs` | 48 | 861 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Roles/RoleStaffing.cs` | 44 | 837 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs` | 194 | 3376 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Settings/DriverChoicesCommand.cs` | 50 | 856 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Settings/DriverChoicesCommand.cs` | 50 | 860 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Settings/DriverConfig.cs` | 112 | 1857 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Settings/LandingKey.cs` | 42 | 725 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Store/DesktopStore.cs` | 50 | 1026 |

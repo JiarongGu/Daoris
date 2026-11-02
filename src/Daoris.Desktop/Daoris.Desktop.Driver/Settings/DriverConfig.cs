@@ -485,8 +485,8 @@ public sealed record DriverConfig(
     /// <summary>Set the home's default workflow, or clear it with null.</summary>
     /// <exception cref="DriverException">An id no saved workflow may take.</exception>
     public DriverConfig WithDefaultWorkflow(string? workflow) =>
-        workflow is not null && (!WorkflowSelection.IsWorkflow(workflow) || workflow == WorkflowSelection.Current)
-            ? throw new DriverException(WorkflowSelection.WorkflowProblem(workflow))
+        workflow is not null && (!WorkflowKey.IsId(workflow) || workflow == WorkflowKey.Current)
+            ? throw new DriverException(WorkflowKey.WorkflowProblem(workflow))
             : this with { DefaultWorkflow = workflow };
 
     /// <summary>
@@ -526,7 +526,7 @@ public sealed record DriverConfig(
     /// <summary>The line policy that reaches <paramref name="repository"/>: its own, else its workspace's, else null.</summary>
     public LandingIntegrate? LinePolicyOf(string repository, string? workspace) =>
         LinePolicies.TryGetValue(repository.Trim(), out var own) ? own
-        : WorkspaceLinePolicies.TryGetValue(RemoteTarget.Workspace(workspace), out var shared) ? shared : null;
+        : WorkspaceLinePolicies.TryGetValue(WorkspaceNames.Of(workspace), out var shared) ? shared : null;
 
     /// <summary>
     /// The integration declaration each repository's owner accepted on this machine (INTEGRATE1d; D215 point 2, the integration design
@@ -1689,7 +1689,7 @@ public sealed record DriverConfig(
             WorkspaceWorkflows = WorkflowKey.Map(root, "workspaceWorkflows", workspace: true),
             // A default that is no workflow's id is not read (WORKFLOWCLEAN1 1a).
             DefaultWorkflow = root.TryGetProperty("defaultWorkflow", out var homeDefault) && homeDefault.ValueKind == JsonValueKind.String
-                && homeDefault.GetString() is { } homeId && homeId != WorkflowSelection.Current && WorkflowSelection.IsWorkflow(homeId) ? homeId : null,
+                && homeDefault.GetString() is { } homeId && homeId != WorkflowKey.Current && WorkflowKey.IsId(homeId) ? homeId : null,
             LinePolicies = LandingKey.PolicyMap(root, "linePolicies"),
             WorkspaceLinePolicies = LandingKey.PolicyMap(root, "workspaceLinePolicies"),
             // Read as a stored shape (INTEGRATE1d): a value that is no blob id and not `none` is not read, and shadows none.
