@@ -100,6 +100,9 @@ const ORGANISMS = new Set<string>([
   './agents/setup/PlaceSessions.tsx',
   // A place's Set up… (AGENTSPLACE1j): the plan's read and the person's Apply, so the page below it holds neither.
   './agents/setup/PlaceSetUpPanel.tsx',
+  // A home's Convert… (WORKFLOWCLEAN1g-i): the conversion's plan, apply and undo, and the census the place heads read, so the review below holds none.
+  './agents/setup/ConvertPanel.tsx',
+  './agents/setup/useConversion.ts',
   // A repository's driving for its page head (SETUPUX1h): the hold and the ⋯'s drive and trees, so the page's molecule holds none.
   './agents/setup/PlaceDriving.tsx',
   // This machine's All roles and its notes (SETUPUX1m): the Roles mode's read and the found changes' answer, so the cards below hold none.

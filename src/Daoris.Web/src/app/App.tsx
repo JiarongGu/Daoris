@@ -41,6 +41,8 @@ import { setupLit } from '../agents/modes';
 import { PlaceDrivingScope } from '../agents/setup/PlaceDriving';
 import { PlaceSessions, PlaceWorkflow } from '../agents/setup/PlaceSessions';
 import { PlaceSetUpPanel } from '../agents/setup/PlaceSetUpPanel';
+import { ConvertPanel } from '../agents/setup/ConvertPanel';
+import { useConversion } from '../agents/setup/useConversion';
 import { placeIdOf } from '../agents/setup/SetupPlaces';
 import { DEFAULT_WORKSPACE, workspaceOf } from '../data/workspaces';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
@@ -425,6 +427,12 @@ export function App() {
   // The words to the session that proposed a rule an *Accept* on the page kept (PROPOSEHERE1c): the Agents place is handed the
   // door, its own view pressing no say hook (the driver's `HelpCoverageTests` follows what a place's view imports).
   const sayToSession = useSay();
+  // The home's Convert… (WORKFLOWCLEAN1g-i): its review opens in the Agents place's Setup main area, from any place's head or any other door.
+  const conversion = useConversion({ active: attached && view === 'agents' });
+  const openConversion = () => {
+    conversion.show();
+    if (view !== 'agents' || agentsModes.mode !== 'setup') open('agents', null, { agentsMode: 'setup' });
+  };
   const agents = useAgentsView({
     say: (session, text) => sayToSession.mutateAsync({ id: session, text }),
     active: view === 'agents',
@@ -445,6 +453,7 @@ export function App() {
           landingAsked={place.asked === 'landing'}
           notify={notify}
           onOpenPlugin={(plugin) => open('plugins', plugin)}
+          onConvert={openConversion}
         />
       ),
       sessions: (
@@ -470,6 +479,8 @@ export function App() {
     ),
     // A place's *Set up…* (AGENTSPLACE1j): it reads the plan and presses Apply, which the application hands in for the same reason.
     setUp: (place, page, doorFor) => <PlaceSetUpPanel place={place} page={page} notify={notify} doorFor={doorFor} onOpenQuest={(quest) => open('quests', quest)} />,
+    // The home's Convert… (WORKFLOWCLEAN1g-i): it reads the conversion's plan and presses Apply and Undo, handed in for the same reason.
+    convert: { shown: conversion.shown, onOpen: openConversion, follows: conversion.follows, panel: <ConvertPanel onClose={conversion.close} /> },
     // The Roles mode's doors (COMPANYVIEW1d): each thing's home, the Agents mode at an agent's accounts among them.
     roleDoors: {
       agent: (agent) => open('agents', agent, { agentPart: 'accounts', agentsMode: 'agents' }),

@@ -31,6 +31,7 @@ export * from './agents/rules';
 export * from './sessions/sessions';
 export * from './sessions/together';
 export * from './repositories/setup';
+export * from './repositories/convert';
 export * from './state/held';
 export * from './state/published';
 export * from './state/slices';

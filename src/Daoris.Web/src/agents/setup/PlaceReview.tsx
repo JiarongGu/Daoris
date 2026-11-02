@@ -37,7 +37,7 @@ export type PlaceReviewProps = {
 };
 
 /** A section of the review, its heading naming it. */
-function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
+export function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
   return (
     <section aria-labelledby={id} className="grid min-w-0 content-start gap-1.5">
       <h3 id={id} className="m-0 text-body font-semibold text-ink">{title}</h3>
