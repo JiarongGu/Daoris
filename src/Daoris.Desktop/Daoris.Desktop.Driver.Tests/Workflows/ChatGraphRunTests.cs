@@ -188,5 +188,17 @@ public sealed class ChatGraphRunTests : AutoLandingFixture
         Assert.Equal(("q4", "q4", (string?)null), (ChatRuns.TakenOf("c1", Records), ChatRuns.TakenOf("c2", Records), ChatRuns.TakenOf("c3", Records)));
     }
 
+    /// <summary>CHATFLOW1h: the checks a conversation is held to are those its run's process hands, so a light chat is held to light and one that sets none to nothing.</summary>
+    [Fact]
+    public void A_chat_run_s_checks_are_those_its_process_hands_and_none_where_it_sets_none()
+    {
+        var light = DriverConfig.Parse("""{"sessionChecks":{"engine":"light"}}""");
+        var held = ParticipantsWorkflows.Current.ChecksOf(light, "engine", ParticipantsWorkflows.Current.ReadProcess(_home, light, "engine", null, Run));
+        Assert.Equal("light", held!.Value.Checks);
+
+        var none = DriverConfig.Parse("{}");
+        Assert.Null(ParticipantsWorkflows.Current.ChecksOf(none, "engine", ParticipantsWorkflows.Current.ReadProcess(_home, none, "engine", null, Run)));
+    }
+
     private DriverConfig Config(string json) => DriverConfig.Parse(json);
 }

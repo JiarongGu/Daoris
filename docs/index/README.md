@@ -393,7 +393,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-23-terminal-trust-design.md` | 66 | 603 |
 | `docs/2026-10-24-agent-errors-design.md` | 161 | 1143 |
 | `docs/2026-10-24-agent-errors-reads.md` | 125 | 1263 |
-| `docs/2026-10-24-chat-flow-design.md` | 143 | 1183 |
+| `docs/2026-10-24-chat-flow-design.md` | 143 | 1189 |
 | `docs/2026-10-24-chat-flow-reads.md` | 87 | 668 |
 | `docs/2026-10-24-ci-scope-design.md` | 196 | 1796 |
 | `docs/2026-10-24-ci-scope-reads.md` | 195 | 1757 |
