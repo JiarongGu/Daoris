@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-02 - A git hold named `http.sslCert` for a certificate scoped to an address, and the proof of the fixtures' git broke the tests beside it
+
+- **Symptom:** CI on main: `GitCertificateHoldTests` expected the hold to name `http.https://github.com/.sslCert` and it named `http.sslCert`; two end-to-end merge-branch tests found no merge in progress in their fixture; the fixture-variables test found the real repository's worktree list changed.
+- **Root cause:** REVIEW2 moved the certificate and scoped-header readers to git's urlmatch, which answers a value and never the key that holds it, so both returned the unscoped name, and a test written beside it pinned that. The fixture-variables test set `GIT_DIR` on the test process inside the concurrent suite, so the tests running beside it read the real repository, and it compared whole worktree records, whose HEADs move as other sessions commit.
+- **Fix:** once urlmatch finds one applies, `GitOwnInput.NamedAsync` names the key the person set: the longest scoped key whose address the remote's starts with, else the unscoped one. The fixture-variables test runs alone outside the concurrent suite and looks only for a worktree of the fixture's in the real list.
+- **Verify:** the driver's git hold, own-input and move tests (38); that merge-branch test alone; `npm run typecheck -w daoris`.
+
 ## 2026-11-02 - The limit stubs refused the first exchange when a start told the agent its routing standing
 
 - **Symptom:** `LimitGoesElsewhereProcessTests` (the added-role case alone in CI, the seeded Chat case in a serial class run) timed out waiting for the held words on the new part; the new part's record held the first exchange's words and not the refused turn's.

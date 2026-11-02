@@ -1686,7 +1686,7 @@ test("a merge that changes the web's sources blocks on its typecheck, and one th
   // A merge that changes nothing it reads skips it, even a path the lane table places nowhere.
   for (const paths of [service, ['src/Daoris.Web/e2e/rail.spec.ts'], ['src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs'], ['TASKS.md']]) {
     // The desktop's sources reach the censuses' path check (REVIEW2 T6), and nothing else here.
-    assert.deepEqual(mergeRuns(paths), paths[0].startsWith('src/Daoris.Desktop/') ? [...BLOCKING, 'censuses'] : BLOCKING, paths[0]);
+    assert.deepEqual(mergeRuns(paths), paths[0]!.startsWith('src/Daoris.Desktop/') ? [...BLOCKING, 'censuses'] : BLOCKING, paths[0]);
     assert.equal(runs(paths).includes('web-types'), false, `--gated: ${paths[0]}`);
     assert.equal(stalens(paths).includes('web-types'), false, `its verdict stands: ${paths[0]}`);
   }
@@ -1720,7 +1720,7 @@ test("a merge that changes the web's sources blocks on its design and structure 
   // A merge that changes nothing it reads skips it, even a path the lane table places nowhere.
   for (const paths of [service, ['src/Daoris.Web/e2e/rail.spec.ts'], ['src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs'], ['TASKS.md']]) {
     // The desktop's sources reach the censuses' path check (REVIEW2 T6), and nothing else here.
-    assert.deepEqual(mergeRuns(paths), paths[0].startsWith('src/Daoris.Desktop/') ? [...BLOCKING, 'censuses'] : BLOCKING, paths[0]);
+    assert.deepEqual(mergeRuns(paths), paths[0]!.startsWith('src/Daoris.Desktop/') ? [...BLOCKING, 'censuses'] : BLOCKING, paths[0]);
     assert.equal(runs(paths).includes('web-rules'), false, `--gated: ${paths[0]}`);
     assert.equal(stalens(paths).includes('web-rules'), false, `its verdict stands: ${paths[0]}`);
   }
@@ -7290,27 +7290,6 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     repo.cleanup();
   });
 
-  // REVIEW2: a builder's worktree sets GIT_DIR; the fixtures' git must still be the fixture's own, and the real repository's worktrees unchanged.
-  test('a fixture repository ignores the variables that locate the real one: its git and the tool it runs change its worktrees alone', async () => {
-    const realDir = git(process.cwd(), 'rev-parse', '--git-dir');
-    const listed = (cwd: string) => spawnSync('git', ['worktree', 'list', '--porcelain'], { cwd, encoding: 'utf8', windowsHide: true }).stdout;
-    const before = listed(process.cwd());
-    const repo = scratch('ci-env', [{ name: 'universal', run: 'node ci-gate.mjs universal' }], { 'ci-gate.mjs': CI_GATE, 'docs/a.md': 'a\n' });
-    const saved = { dir: process.env['GIT_DIR'], tree: process.env['GIT_WORK_TREE'] };
-    process.env['GIT_DIR'] = resolve(realDir);
-    process.env['GIT_WORK_TREE'] = process.cwd();
-    try {
-      assert.equal(realpathSync(git(repo.root, 'rev-parse', '--show-toplevel')).toLowerCase(), realpathSync(repo.root).toLowerCase());
-      await repo.run(['--ci']);
-      assert.equal(listed(process.cwd()), before, 'the real repository registered no worktree');
-      assert.match(listed(repo.root), /gate-tree|worktree /);
-    } finally {
-      if (saved.dir === undefined) delete process.env['GIT_DIR']; else process.env['GIT_DIR'] = saved.dir;
-      if (saved.tree === undefined) delete process.env['GIT_WORK_TREE']; else process.env['GIT_WORK_TREE'] = saved.tree;
-      repo.cleanup();
-    }
-  });
-
   // CIFINDINGSKEEP1's proof: a stage CI kept scoped passes of two gates and left their older findings open.
   test('--ci clears a gate\'s older finding from the pass it kept on this tree, with the kept verdict\'s provenance; a pass that does not stand on this tree clears nothing', async () => {
     const repo = scratch('ci-keep', [
@@ -7768,4 +7747,29 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.deepEqual([...contradictions], [], 'a green status was read while the run still held the gate tree');
     repo.cleanup();
   });
+});
+
+// REVIEW2: a builder's worktree sets GIT_DIR; the fixtures' git must still be the fixture's own, and the real repository registers
+// no worktree of the fixture's. Outside the concurrent suite: the variables are the process's, and every test beside would read them.
+// The real repository's own worktrees move while this runs (other sessions commit and add theirs), so only the fixture's are looked for.
+test('a fixture repository ignores the variables that locate the real one: its git and the tool it runs change its worktrees alone', async () => {
+  const realDir = git(process.cwd(), 'rev-parse', '--git-dir');
+  const listed = (cwd: string) => spawnSync('git', ['worktree', 'list', '--porcelain'], { cwd, encoding: 'utf8', windowsHide: true }).stdout;
+  const repo = scratch('ci-env', [{ name: 'universal', run: 'node ci-gate.mjs universal' }], { 'ci-gate.mjs': CI_GATE, 'docs/a.md': 'a\n' });
+  const fixture = realpathSync(repo.root).replaceAll('\\', '/').toLowerCase();
+  const saved = { dir: process.env['GIT_DIR'], tree: process.env['GIT_WORK_TREE'] };
+  process.env['GIT_DIR'] = resolve(realDir);
+  process.env['GIT_WORK_TREE'] = process.cwd();
+  try {
+    assert.equal(realpathSync(git(repo.root, 'rev-parse', '--show-toplevel')).toLowerCase(), realpathSync(repo.root).toLowerCase());
+    await repo.run(['--ci']);
+    const leaked = listed(process.cwd()).split('\n')
+      .filter((line) => line.startsWith('worktree ') && line.slice('worktree '.length).replaceAll('\\', '/').toLowerCase().startsWith(fixture));
+    assert.deepEqual(leaked, [], 'the real repository registered no worktree of the fixture\'s');
+    assert.match(listed(repo.root), /gate-tree|worktree /);
+  } finally {
+    if (saved.dir === undefined) delete process.env['GIT_DIR']; else process.env['GIT_DIR'] = saved.dir;
+    if (saved.tree === undefined) delete process.env['GIT_WORK_TREE']; else process.env['GIT_WORK_TREE'] = saved.tree;
+    repo.cleanup();
+  }
 });
