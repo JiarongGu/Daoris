@@ -237,7 +237,7 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-11-02-oneway-census.md` | Census: ONEWAY1, every job that still has two ways, beside the workflows (D228)
 | `2026-11-02-workflow-cleanup-design.md` | Design: WORKFLOWCLEAN1, a place follows a saved graph, the runtime lands it, the old shapes convert on the person's press; accepted 2026-11-02 (D227)
 | `2026-11-02-workflow-cleanup-reads.md` | Reads: WORKFLOWCLEAN1, Opus's read, settled in the design's §13; Codex's owed
-| `2026-11-02-oneway-design.md` | Design: ONEWAY1, each job done one way: one conversion door in parts, a register of kept reads with their ends, the waves; proposed for both makers' reads (D228)
+| `2026-11-02-oneway-design.md` | Design: ONEWAY1, each job done one way: one conversion door in parts, a register of kept reads with their ends, one name (`daoris`) with one command tree, the waves; revised after the Opus read, proposed for both makers' reads (D228)
 
 ## UI, browser, tools and plugin contracts
 

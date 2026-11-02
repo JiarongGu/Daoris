@@ -12,9 +12,9 @@ Owner direction, 2026-11-01: the foundation, the structure (FABRIC2, LANDNODE1, 
 
 Owner direction, 2026-11-02: large changes go as big chunks, each designed whole and then built as one wave, so a change to the logic's foundation reaches its dependents once rather than through many small rows. The chunks, in order: **CANVAS1**, **WORKSETUP1**, **REVIEW2**, **WORKFLOWCLEAN1**, **ONEWAY1**, **COMMS1** (below).
 
-- [ ] **ONEWAY1 — one way to do each thing, across every area** (D228; after WORKFLOWCLEAN1, its first area). Census `docs/2026-11-02-oneway-census.md` (37 jobs); design `docs/2026-11-02-oneway-design.md`, proposed for both makers' reads, its *now* rows starting beside them. Rows, each row's contract and proof in the design's §10.2: **now, on main** — ad-i, n, t, u, aa, ab, j, h-i to h-iii (m-i parts 2–4); **wave 1**, once `wave/workflowclean1` reaches main — ae (one conversion door), ad-ii; **wave 2** — a, b, c, d, s, q, p, v, r, WIRING1d; **wave 3**, inside COMMS1's wave 1 — k, l, m, o; **wave 4**, measured on the install first — POOL1d, HOMELAYOUT5, w, x, ac, y (the owner's sitting), z; **sessions track** — h's host rows, g, i, t-i; **wave 5** — af, FOUNDATION1 row v, ag. The owner's question: the design's §11.
+- [ ] **ONEWAY1 — one way to do each thing, across every area** (D228; after WORKFLOWCLEAN1, its first area). Census `docs/2026-11-02-oneway-census.md` (37 jobs); design `docs/2026-11-02-oneway-design.md`, revised 2026-11-03 (its §14 settles the Opus read; its §11 is the owner's choice: one name, `daoris`, one command tree); proposed for both makers' reads, its *now* rows starting beside them within the files its §10.1 names. Rows, each `ONEWAY1`-prefixed (contract and proof in §10.2): **now, on main** — ad-i, n-i, t, u, ab-i, h-i, h-ii; **wave 1**, once `wave/workflowclean1` reaches main — ae, ad-ii; **wave 2** — c-i then a, b, c-ii, d, s, q, p, v, r, j, h-iii, n-ii, ab-ii, WIRING1d, and aa after CANVAS1e/f and SETUPUX1y; **wave 3**, the command tree on its own wave branch — ai-i to ai-iv; **wave 4**, inside COMMS1's wave 1 — k, l, m, o; **wave 5**, measured on the install first — POOL1d, HOMELAYOUT5, w, x, ac, y; **sessions track** — h, g, i, ah; **wave 6** — af, FOUNDATION1 row v, ag.
   - *Moved back from the parked list, 2026-11-02 (`docs/2026-11-02-parked-triage.md`; each row's whole text is in git at `cb884a6b6:docs/backlog-parked.md`), in this order:*
-    - **Row g** — an agent's doors as providers of one contract:
+    - **ONEWAY1g** — an agent's doors as providers of one contract:
       - **STEER3** — measure other steering.
       - **MSG1h** — Codex next-step words.
       - **MSG1i** — native next-step words.
@@ -25,34 +25,34 @@ Owner direction, 2026-11-02: large changes go as big chunks, each designed whole
       - **AGENTERRORS1** — one error policy for every agent, designed into the agent interface (rows 1c and 1e here; row 1d under h, after AGENTPROVIDER1m-i).
       - **LIMITRESUME1** — work cut off by a limit resumes by itself (row f).
       - **FABRIC-C2b** — the two-harness canary on the install's doors.
-    - **Row h** — one executor, the adapter classes end:
-      - [ ] **AGENTPROVIDER1m-i — every executor holds `AgentRun` over today's transports, and nothing changes** (driver; **buildable now**, no release; first, before 1b-i and every move). `TransportRun` and its five members, the restart among them, behind the driven start, the continuations, the conversation's runner and the helpers', intakes', opinions', partners' and brainstorms' starts; no words' operation before m-ii. The design's §9.2 m-i; proof its §12 line, the installed proof the owner's yes (§11 item 3). *Back from the parked list, 2026-11-02 (triage): ONEWAY1 row h, its first row: every executor holds `AgentRun`; part 1 of 4 is built, and a half-moved seam is itself a second way.*
+    - **ONEWAY1h** — one executor, the adapter classes end:
+      - [ ] **AGENTPROVIDER1m-i — every executor holds `AgentRun` over today's transports, and nothing changes** (driver; **buildable now**, no release; first, before 1b-i and every move). `TransportRun` and its five members, the restart among them, behind the driven start, the continuations, the conversation's runner and the helpers', intakes', opinions', partners' and brainstorms' starts; no words' operation before m-ii. The design's §9.2 m-i; proof its §12 line, the installed proof the owner's yes (§11 item 3). *Back from the parked list, 2026-11-02 (triage): ONEWAY1h, its first row: every executor holds `AgentRun`; part 1 of 4 is built, and a half-moved seam is itself a second way. Parts 2–3 are ONEWAY1h-i and h-ii, on main now; part 4, the conversation's runner, is ONEWAY1h-iii, after `wave/workflowclean1`, which changes `ChatRunner.cs`.*
       - **AGENTPROVIDER1** — one provider contract every agent implements (the host rows: d, e's host half, f, g, h, l's sink, m-ii, n, o, p, q, r, s, u, after m-i).
       - **AGENTLYNTAI1** — Daoris's providers on Lyntai's agent-provider layer (its non-release rows).
-      - **AGENTPROVIDER1t** — the old seam ends and every record still reads (last; ONEWAY1 row t-i ends the adapter classes on Daoris's own transports, the design's §3).
+      - **AGENTPROVIDER1t** — the old seam ends and every record still reads (last; ONEWAY1ah ends the adapter classes on Daoris's own transports, the parity oracle's old path on `TransportRun`: the design's §3, D213's note of 2026-11-03).
       - **CONNECTORS1** — the connectors a session's agent gets, seen and managed (row p, designed under D191, one plan per workspace).
       - **HELPWIRED1b** — what the door says it loaded, beside what was handed.
       - **COAGENT1e** — the provider sheet, and a maker that joins by declaration (row r).
-    - **Row j** — one press per go-on case:
-      - [ ] **SESSCTX1e — *Go on fresh*** (driver, modules, web-shell; after 1a and 1c; D189 point 7). The person's press and `daoris-driver sessions fresh <id>` move a conversation to a new part on the same agent and account, handed the brief: Daoris's compaction, chosen by the person, built once SESSCTX1a shows what it saves. Contract: the design §6. Proof: chat tests, a `HelpCoverageTests` row (exempt, the person's), stories, the window. *Re-cut: row j's Go on fresh, a hand-over to the same agent and account through `SESSION_HAND_OVER` (ONEWAY1's design §3 C5).*
-    - **Row n** — one confirmation queue:
+    - **ONEWAY1j** — one press per go-on case:
+      - [ ] **SESSCTX1e — *Go on fresh*** (driver, modules, web-shell; after 1a and 1c; D189 point 7). The person's press and `daoris-driver sessions fresh <id>` move a conversation to a new part on the same agent and account, handed the brief: Daoris's compaction, chosen by the person, built once SESSCTX1a shows what it saves. Contract: the design §6. Proof: chat tests, a `HelpCoverageTests` row (exempt, the person's), stories, the window. *Re-cut: ONEWAY1j's Go on fresh, a hand-over to the same agent and account through `SESSION_HAND_OVER` (ONEWAY1's design §3 C5); its verb is `daoris session hand-over`, the tree's (§11).*
+    - **ONEWAY1n** — one confirmation queue:
       - **PERSONDOOR1j** — protect confirmation slots.
-    - **Row s** — the retired timeout doors:
-      - [ ] **SESSWATCH1c — the quiet setting** (driver, service, web-settings; after 1a, beside 1b; design §9 row 3). `quietMinutes` in every door. Proof: the setting-doors checks and case 15. *Re-cut: `quietMinutes` is the one door for the quiet setting; row s removes the timeout doors, which name nothing (ONEWAY1's design §6 X1).*
-    - **Row t** — one brainstorm verb:
+    - **ONEWAY1s** — the retired timeout doors:
+      - [ ] **SESSWATCH1c — the quiet setting** (driver, service, web-settings; after 1a, beside 1b; design §9 row 3). `quietMinutes` in every door. Proof: the setting-doors checks and case 15. *Re-cut: `quietMinutes` is the one door for the quiet setting; ONEWAY1s removes the timeout doors, which name nothing (ONEWAY1's design §6 X1).*
+    - **ONEWAY1t** — one brainstorm writer (the verb is `daoris brainstorm`, the driver's, the design's §11):
       - [ ] **BRAINSTORM1b2 — the stop and the id through the CLI's door** (service, cli; after BRAINSTORM1b; D176 point 6). `daoris brainstorm stop <id>` and `--id` reach the driver's `stop.json` and its idempotent request through `BrainstormDesk`, twinned on `fixtures/brainstorm-files.json`. Proof: `BrainstormDeskTests` and `brainstorm.test.ts` stop a running brainstorm and ask one twice under an id. *Re-cut: its stop and id go through the one brainstorm verb.*
       - [ ] **AGENTROOM1c — the CLI twin `daoris meeting`** (service, cli; D177 point 7). A machine-only door `/api/meetings` and the CLI verb, as BRAINSTORM1a3 made for the brainstorm. Proof: a desk test, a twin fixture for `brainstorms/meetings/<id>/`, and a family-rehearsal phase. *Re-cut: a meeting is a kind of the one brainstorm verb through `BrainstormDesk`, no `daoris meeting` (ONEWAY1's design §6 X2).*
-    - **Row v** — one word per flag and verb:
+    - **ONEWAY1v** — the accounts part (one name per flag and verb is the command tree, ONEWAY1ai):
       - **POOL1d** — the install's fold read rule by rule (the fold's dry run, applied on the person's press).
-    - **Row w** — an end for D172's old home places:
+    - **ONEWAY1w** — an end for D172's old home places:
       - **HOMELAYOUT5** — moving what D172 never moves, measured first.
-    - **Row y** — INTEGRATE1 row k widened:
+    - **ONEWAY1y** — INTEGRATE1 row k widened:
       - **FABRIC-PIPELINE1e** — landed work verified by itself: a run per batch and its base in a folder of its own, each run to its verdict, an unknown held for the person, the line read from its runs, the history clear, the failure on *What needs you.
       - **FABRIC-PIPELINE1f** — a failure becomes work: *Ask for a fix…*, `failed: ask` as the person's say-so, one ask per gate found by a look first, the log attached, the kind routed.
       - **FABRIC-PIPELINE1g** — this repository on the install: the rehearsals declared and the suites marked, the merge tool as the declared runner, the stage holding the gate tree's lock, the guide's words, the install's two pipelines set by the owner's press.
       - **FABRIC-PIPELINE1h** — a stage after the check, its dispatch reading the exact commit's verdict, and the verdict reader any publisher asks.
       - **FABRIC-PIPELINE1j** — the gates a batch reaches by its paths, every owed gate with them, the whole set before a stage (CI1's reach for any repository).
-    - **Row ad** — across:
+    - **ONEWAY1ad** — across:
       - **WIRING1d** — every setting in one list (one key per setting).
     - **Row new areas** — second ways the census filed as new areas:
       - **DOCSHOME1** — managed documents and skills have two portable homes (documents with more than one source).
