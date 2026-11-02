@@ -1,3 +1,4 @@
+import { stored, store } from '../../lib/stored';
 import type { Box, Size, View } from './viewMath';
 
 // The minimap's rule and its geometry (CANVAS1d; the canvas design §4): offered where the world is past twice the viewport either way,
@@ -34,9 +35,9 @@ export function viewAtMinimap(at: { x: number; y: number }, geometry: MinimapGeo
 }
 
 export function minimapWanted(): boolean {
-  try { return typeof window === 'undefined' || window.localStorage.getItem(MINIMAP_KEY) !== '0'; } catch { return true; }
+  return typeof window === 'undefined' || stored(MINIMAP_KEY) !== '0';
 }
 
 export function rememberMinimap(on: boolean): void {
-  try { window.localStorage.setItem(MINIMAP_KEY, on ? '1' : '0'); } catch { /* a convenience */ }
+  store(MINIMAP_KEY, on ? '1' : '0');
 }
