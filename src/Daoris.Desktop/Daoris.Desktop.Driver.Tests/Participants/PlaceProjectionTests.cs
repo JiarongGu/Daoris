@@ -122,15 +122,11 @@ public sealed class PlaceProjectionTests
                     WorkflowPresets.WithGraphGates(each.Graph(), opinion: false, look: false), new WorkflowFrom(each.Id, each.Digest));
                 store.Write(id, planned.Plan.Result!);
 
-                var current = DriverConfig.Empty with { Drivable = ["engine"] };
-                // A pull request is Current's only where a plugin opens it; the match reads the method, not the plugin.
-                var land = each.Delivery!.Method == LandNodes.PullRequest ? each.Delivery with { Plugin = "owner.github" } : each.Delivery;
-                current = current.WithLanding("engine", SetupPresets.RuleOf(land, LandingRule.Merge, null));
                 var saved = WorkflowSelection.Apply(DriverConfig.Empty with { Drivable = ["engine"] }, new WorkflowUse(id, "engine", null, null));
 
-                var expected = PlaceProjection.ValuesAt(current, "engine", "aurora", PlaceSource.RepositoryLevel).Lands;
-                Assert.Equal(each.Id, expected?.Preset);
-                Assert.Equal(expected, PlaceProjection.ValuesAt(saved, "engine", "aurora", PlaceSource.RepositoryLevel, store).Lands);
+                // WORKFLOWCLEAN1 1a: a saved workflow's delivery is the default it was copied from, with nothing the copy changed.
+                var lands = PlaceProjection.ValuesAt(saved, "engine", "aurora", PlaceSource.RepositoryLevel, store).Lands;
+                Assert.Equal(new SetupMatch(each.Id, []), lands);
             }
 
             // With no store to read the version from, it lands as nothing known.

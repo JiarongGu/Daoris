@@ -14,6 +14,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// Moving an owed read is its <c>[ByEvent]</c> mark, its page hook through <c>askHeld</c>, its row in
 /// <c>DriverModuleHeldTests.Payloads</c>, and its name taken out of <see cref="Owed"/>.
 /// </remarks>
+[Trait(Category.Name, Category.Census)]
 public sealed class WindowCensusTests
 {
     /// <summary>The reads that answer only from memory, each with what it reads.</summary>
@@ -40,7 +41,7 @@ public sealed class WindowCensusTests
         "PLUGIN_NEW", "PLUGIN_OPEN_FOLDER", "PLUGIN_READ", "PLUGIN_TRY", "READ_LEAVE", "RULES", "SERVICE_CONFIRMATIONS", "SESSION_DIFF",
         "SESSION_FILE", "SESSION_FILES", "SESSION_GROUPS", "SESSION_HAND_OVER_ASK", "SESSION_HELPERS", "SESSION_HISTORY", "SESSION_OPEN_FOLDER", "SESSION_OPTIONS",
         "SESSION_PARTNERS", "SESSION_PERMISSION_ANSWER", "SESSION_PROCESS", "SESSION_QUESTION", "SESSION_QUEUE", "SESSION_SEARCH", "SESSION_SPENT", "SESSION_STREAMS",
-        "SESSION_SUPERVISOR", "SETUP_PLAN", "SET_SESSION_OPTION", "STARTS", "STATE", "STOP_TASK", "SWEEP_PLAN", "SYSTEM_DOWNLOADS",
+        "SESSION_SUPERVISOR", "SET_SESSION_OPTION", "STARTS", "STATE", "STOP_TASK", "SWEEP_PLAN", "SYSTEM_DOWNLOADS",
         "SYSTEM_SPACE", "SYSTEM_WIRING", "TAIL_SESSION", "TOOLS_GIT", "TOOLS_PICK", "TOOLS_STOP", "TRACE", "TREES_SYNC_PLAN",
         "TREES_SYNC_SCOPE", "USAGE", "WORKFLOW_CURRENT", "WORKFLOW_LANDED", "WORKFLOW_RUN", "WORK_PLAN", "WORK_RECORDS_FOLDER", "WORK_STATE",
     };

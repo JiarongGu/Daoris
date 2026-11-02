@@ -124,7 +124,9 @@ public static class WorkflowProcesses
         held = held with { Claimed = claimed, Graph = graph };
         var (steps, problem) = WorkflowNamed.GateSteps(graph, number, held.Landing.Rule, binding.Land);
         if (steps is null) return held with { Problem = $"`{binding.Workflow}` v{number} cannot be read here: {problem}" };
-        if (!steps.Any(step => step.Kind == WorkflowKinds.Landing))
+        // WORKFLOWCLEAN1 1c: a `land` is carried as the intent it binds (LandNodes.RuleOf), never read back from the live rule as a step.
+        var landNode = graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land);
+        if (landNode is null && !steps.Any(step => step.Kind == WorkflowKinds.Landing))
         {
             // A verification pipeline's graph lands nothing (FABRIC-PIPELINE1a), so no chain's work follows it.
             return held with { Problem = $"`{binding.Workflow}` v{number}'s graph holds no landing (`{NodeKinds.Handed}`), so no chain's work lands by it." };
@@ -139,7 +141,8 @@ public static class WorkflowProcesses
             };
         }
 
-        var process = WorkflowProcess.Of(config, repository, workspace, binding, steps) with
+        var bound = landNode is null ? null : LandNodes.RuleOf(landNode, LandNodes.Reviewed(graph), binding.Land, held.Landing.Rule);
+        var process = WorkflowProcess.Of(config, repository, workspace, binding, steps, bound) with
         {
             Run = run, Steps = Involvement.StepsOf(graph), Claimed = claimed, Graph = graph,
         };

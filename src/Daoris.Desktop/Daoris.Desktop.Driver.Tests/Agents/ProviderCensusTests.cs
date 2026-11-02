@@ -25,6 +25,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// a provider's folder names another provider's type, variable or wire key only where the fixture declares that reference;
 /// <c>Agents/Registry/Providers.cs</c>, the one registration list, names registrations and nothing else.</para>
 /// </remarks>
+[Trait(Category.Name, Category.Census)]
 public sealed class ProviderCensusTests
 {
     private static readonly string[] Projects = ["Daoris.Desktop.Driver", "Daoris.Desktop.Driver.Host", "Daoris.Desktop.Modules"];

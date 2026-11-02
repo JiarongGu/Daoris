@@ -11,6 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// adoption, and moves this check.
 /// </summary>
 /// <remarks>Not a twin of <see cref="CourseVocabularyTests"/>' check of the course's vocabulary (<c>twins.md</c>): it shares that check's shape and reads other files.</remarks>
+[Trait(Category.Name, Category.Census)]
 public sealed class MoveStoreCensusTests
 {
     private static string Driver => Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver");

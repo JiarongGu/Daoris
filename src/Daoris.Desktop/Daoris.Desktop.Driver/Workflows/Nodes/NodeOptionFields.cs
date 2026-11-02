@@ -38,6 +38,7 @@ public static class NodeOptionFields
             Text("target"),
             Text("pattern"),
             Text("plugin"),
+            Text(LandNodes.KeyOption),
             new("squash", NodeOptionTypes.Switch, [], false),
             Text("message"),
         ],

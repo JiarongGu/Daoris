@@ -1281,7 +1281,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
               } else if (frame.method === 'session/prompt') {
                 const text = frame.params.prompt.filter((block) => block.type === 'text').map((block) => block.text).join(' | ');
                 note(`prompt[${account}][${process.pid}]: ` + text.replace(/\r?\n/g, ' '));
-                if (existsSync(join(gate, 'limited-' + account)) && text !== 'Earlier answered exchange.') {
+                if (existsSync(join(gate, 'limited-' + account)) && !text.startsWith('Earlier answered exchange.')) {
                   send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: "Internal error: You've hit your weekly limit" } });
                   return;
                 }

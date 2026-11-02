@@ -9,6 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// waits on is the one D147 rejected for a fetch, and TOOL6g found the same shape costing an account. A source scan rather than
 /// a unit test, because the property is one every new caller must keep and the next one written will not know to.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed class PullRequestOccasionTests
 {
     private static readonly string[] Projects =

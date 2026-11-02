@@ -58,9 +58,6 @@ public static class OpenRoutes
     /// <summary><c>opinion show &lt;session|opinion&gt;</c> (RPC1e): where a work's second opinion stands, its findings and their answers.</summary>
     public static InstanceRoute OpinionGate { get; } = Open("OPINION_GATE");
 
-    /// <summary><c>setup &lt;repository&gt; --plan</c> (RPC1e): what a set-up's press would do today, read and never written.</summary>
-    public static InstanceRoute SetupPlan { get; } = Open("SETUP_PLAN");
-
     /// <summary><c>place &lt;repository&gt;… --plan</c> (AGENTSPLACE1a2): a quick set-up's plan, read and never written.</summary>
     public static InstanceRoute PlacePlan { get; } = Open("PLACE_PLAN");
 
@@ -94,8 +91,7 @@ public static class OpenRoutes
         ("help delete <id>", null, "alone: the first ask reads the conversation's name here, which no route answers; with `--yes` the person's press (SESSION_DELETE)"),
         ("help resume <id>", null, "alone: the conversation goes on in this terminal's own process until RPC1g"),
         ("opinion show <session|opinion>", OpinionGate, "the gate's reading"),
-        ("setup <repository> --plan", SetupPlan, "the plan; without `--plan` the person's press (SETUP_PRESS)"),
-        ("setup --workspace <name>", null, "alone: no route sets a workspace up; each repository's press is SETUP_PRESS's"),
+        ("place --workspace <name> --adoption", null, "alone: no route writes a workspace's paced plan; PLACE_APPLY writes one when an adoption covers more repositories than it asks at once"),
         ("place <repository>… --plan", PlacePlan, "the plan; with `--apply` the person's press (PLACE_APPLY)"),
         ("ask channel <id>", null,
             "alone: the read moves the person's own mark (CHANNEL_MARK, the person's), a door of the service, which writes it once whoever "
@@ -249,9 +245,6 @@ public static class PersonPresses
     /// <summary><c>ask channel &lt;id&gt; "…"</c> (RPC1e): the person's words on an ask's channel, which every session on the ask reads.</summary>
     public static InstanceRoute ChannelPost { get; } = Person("CHANNEL_POST");
 
-    /// <summary><c>setup &lt;repository&gt;</c> (RPC1e): the rule its session needs added, and one ask published to it as the person's.</summary>
-    public static InstanceRoute SetupPress { get; } = Person("SETUP_PRESS");
-
     /// <summary>
     /// <c>place &lt;repository&gt;… --preset &lt;id&gt; … --apply [--accept …]</c> (AGENTSPLACE1b3): a place's plan applied, the configuration's changes and the
     /// acceptances chosen, and each adoption quest. The plan is the same ask's <c>PLACE_PLAN</c>, open, which the verb reads alone.
@@ -302,7 +295,6 @@ public static class PersonPresses
         ("opinion anyway <session>", OpinionAnyway),
         ("opinion myself <session>", OpinionMyself),
         ("ask channel <id> \"…\"", ChannelPost),
-        ("setup <repository>", SetupPress),
         ("place <repository>… --preset <id> … --apply [--accept <repository>:<purpose>,…]", PlaceApply),
         ("plugins approve <id> <server>", PluginAction),
         ("plugins withdraw <id> <server>", PluginAction),

@@ -102,6 +102,12 @@ public static class AutoLandingCode
     /// </summary>
     public const string CarryBound = "carry-bound";
 
+    /// <summary>
+    /// The entry's run is bound to a version whose <c>land</c> the runtime performs (WORKFLOWCLEAN1 1c): the look chooses nothing for it, and
+    /// an entry written before the update is closed with this code, its work landed by the run's own <c>land</c>.
+    /// </summary>
+    public const string Performed = "performed";
+
     /// <summary>Whether a try with this code closes its entry; the rest wait for a change, a release or the person's press.</summary>
     public static bool Closes(string code) =>
         code is not (Held or Uncommitted or Exists or Completed or Refused or Unreviewed or Opinion or PushHeld or CarriedOn);

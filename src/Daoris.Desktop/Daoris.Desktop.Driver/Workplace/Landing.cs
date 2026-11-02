@@ -886,6 +886,15 @@ public static class LandingRules
     /// <summary>The repository's rule, else its workspace's (a repository in no workspace is in `default`'s), else merge.</summary>
     public static Landing Choose(DriverConfig config, string repository, string? workspace)
     {
+        var chosen = Unpolicied(config, repository, workspace);
+        // WORKFLOWCLEAN1 1a: the line's policy, where one is set, is what integration reads; a rule's own `integrate` is the transitional one.
+        return config.LinePolicyOf(repository, workspace) is { } policy
+            ? chosen with { Rule = chosen.Rule with { Integrate = policy } }
+            : chosen;
+    }
+
+    private static Landing Unpolicied(DriverConfig config, string repository, string? workspace)
+    {
         if (config.Landings.TryGetValue(repository, out var own)) return new(own, LandingSource.Repository);
         if (config.WorkspaceLandings.TryGetValue(RemoteTarget.Workspace(workspace), out var shared)) return new(shared, LandingSource.Workspace);
         return new(LandingRule.Merge, LandingSource.Default);

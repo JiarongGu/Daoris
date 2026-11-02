@@ -48,7 +48,7 @@ public sealed class ToolsChildProcessTests : IDisposable
 
     public void Dispose()
     {
-        try { Directory.Delete(_root, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        GitSeed.Discard(_root);
     }
 
     /// <summary>A node script that asks its own shell for <c>&lt;program&gt; --version</c> and writes the answer to the file it is given.</summary>

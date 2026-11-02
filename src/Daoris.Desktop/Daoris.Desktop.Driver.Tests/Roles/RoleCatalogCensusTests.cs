@@ -9,6 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// file that reaches the judge or the staffing's one write, so a writer added later without joining the census fails here; and the eight
 /// always-on ids are one list.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed partial class RoleCatalogCensusTests : IDisposable
 {
     private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "role-catalog-census", Guid.NewGuid().ToString("N")[..8]);

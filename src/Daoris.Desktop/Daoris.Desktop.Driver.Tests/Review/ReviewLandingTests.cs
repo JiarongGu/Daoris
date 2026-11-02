@@ -345,9 +345,9 @@ public sealed class ReviewLandingTests : IDisposable
     public async Task A_chat_s_press_under_a_graph_choice_lands_as_before_and_is_never_refused_bind_failed()
     {
         var root = await RepositoryAsync("web-app");
-        WorkflowStore.Add(_home, new WorkflowVersionAdded("web-graph", "A graph", "terminal", "2026-10-21T09:00:00Z", null, System.Text.Json.Nodes.JsonNode.Parse(
+        StoredSteps.AddGraph(WorkflowPorts.Store(_home), "web-graph", "A graph", "2026-10-21T09:00:00Z", System.Text.Json.Nodes.JsonNode.Parse(
             """{"schemaVersion":2,"entries":["claimed"],"end":"handed","nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},"""
-            + """{"id":"handed","kind":"handed","version":1,"reach":"observed"}],"wires":[{"id":"c>h","kind":"after","from":"claimed","to":"handed"}]}""")), kept: []);
+            + """{"id":"handed","kind":"handed","version":1,"reach":"observed"}],"wires":[{"id":"c>h","kind":"after","from":"claimed","to":"handed"}]}""")!);
         DriverConfig.Parse("""{"workflows":{"web-app":{"default":"web-graph"}}}""").Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
         var tree = await ChatAsync(root);
         var line = await HeadAsync(root);
@@ -592,7 +592,7 @@ public sealed class ReviewLandingTests : IDisposable
     /// </summary>
     private void Follow(string steps)
     {
-        WorkflowStore.Add(_home, new WorkflowVersionAdded(
+        StoredSteps.Add(_home, new WorkflowVersionAdded(
             "docs-to-pr", "Documentation to a pull request", "terminal", "2026-10-09T09:00:00Z", System.Text.Json.Nodes.JsonNode.Parse(steps)), kept: []);
         WorkflowSelection.Apply(Config(), new WorkflowUse("docs-to-pr", "web-app", null, null)).Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
         Assert.True(WorkflowRunBindings.Bind(_home, WorkflowRunBindings.Plan(Config(), _home, "q1", "web-app", "aurora", null, null, [], DateTimeOffset.UtcNow)));

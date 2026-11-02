@@ -94,7 +94,6 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
             WorkflowDefaults.All.Select(each => each.Id));
         Assert.Equal(WorkflowDefaults.All.Select(each => (each.Id, each.Name)), WorkflowPresets.GraphTable.Select(preset => (preset.Id, preset.Name)));
         Assert.Equal("merge-automatic", WorkflowPresets.GraphOf("merge-no-press")?.Id);
-        Assert.DoesNotContain(WorkflowPresets.Table, preset => WorkflowDefaults.Of(preset.Id) is not null);
     }
 
     /// <summary>DEFAULTCONFIG1a: each default is judged by the graph rules, its delivery is what its graph says, and its line is composed from it.</summary>
@@ -261,37 +260,18 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
         Assert.Contains("`nothing` is no default Daoris ships", _error.ToString());
     }
 
-    /// <summary>LANDNODE1h: <c>new --from current:&lt;repository&gt;</c> writes Current's landing out as a <c>land</c> node and its tail.</summary>
+    /// <summary>WORKFLOWCLEAN1 1a: a copy of a repository's Current is no longer made by hand; the refusal names <c>workflow convert</c>, the one door.</summary>
     [Fact]
-    public async Task Current_is_written_out_as_a_land_node_with_its_tail()
+    public async Task New_from_a_repository_s_Current_is_retired_and_names_the_conversion()
     {
         File.WriteAllText(Config, """{"landings":{"web-app":{"form":"branch","pattern":"w/{quest}","plugin":"acme.pr","autoAccept":true}}}""");
 
         var exit = await Run("workflow new made --from current:web-app", ("web-app", "work", null));
 
-        Assert.Equal((0, ""), (exit, _error.ToString()));
-        var graph = Saved("made").Graph!;
-        var land = Assert.Single(graph.Nodes, node => node.Kind == NodeKinds.Land);
-        Assert.Equal(
-            ["\"pull-request\"", "\"w/{quest}\"", "\"acme.pr\""],
-            [land.Options["method"], land.Options["pattern"], land.Options["plugin"]]);
-        Assert.DoesNotContain(LandNodes.AcceptOption, land.Options.Keys);
-        Assert.Equal(["claimed", "work.requests", "quest.holds", "content.holds", "land", "pushed", "pull-request"], graph.Nodes.Select(node => node.Kind));
-        Assert.Equal("pull-request", graph.End);
-    }
-
-    /// <summary>LANDNODE1c2: a rule that waits for the person's Accept is written out with a <c>review</c> before the <c>land</c>.</summary>
-    [Fact]
-    public async Task Current_waiting_for_your_accept_is_written_out_with_a_review_before_the_land()
-    {
-        File.WriteAllText(Config, """{"landings":{"web-app":{"form":"branch","pattern":"w/{quest}","plugin":"acme.pr"}}}""");
-
-        var exit = await Run("workflow new made --from current:web-app", ("web-app", "work", null));
-
-        Assert.Equal((0, ""), (exit, _error.ToString()));
-        var graph = Saved("made").Graph!;
-        Assert.Equal(["claimed", "work.requests", "quest.holds", "content.holds", "review", "land", "pushed", "pull-request"], graph.Nodes.Select(node => node.Kind));
-        Assert.Contains(graph.Wires, wire => wire.From?.Node == "review" && wire.To.Node == "landing");
+        Assert.Equal(2, exit);
+        Assert.Contains("retired", _error.ToString());
+        Assert.Contains("workflow convert", _error.ToString());
+        Assert.Null(WorkflowStore.Load(_home, "made"));
     }
 
     [Fact]

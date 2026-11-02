@@ -10,6 +10,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// person's authority. An unclassed press is the person's and an unclassed module is refused, and the census fails on a route
 /// it does not class, so a route added later is classed in the change that adds it (`bridge-presses.md`).
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed class PipeCensusTests
 {
     [Fact]
@@ -265,7 +266,7 @@ public sealed class PipeCensusTests
             // GITAPP1a-i: the bench's verb times the git its own process starts.
             "git review <session>",
             "plugins show <id>", "plugins activity <id>", "plugins try <folder|id>", "plugins install <file>", "plugins new <id>",
-            "help delete <id>", "setup --workspace <name>",
+            "help delete <id>", "place --workspace <name> --adoption",
             // COAGENT1b: a session's pieces, read off the box under the home, which says the same with or without the instance.
             "sessions partner <id> --list",
         ];
@@ -278,7 +279,7 @@ public sealed class PipeCensusTests
         // and the channel.
         var sent = Daoris.Driver.OpenRoutes.Verbs.Where(each => each.Route is not null).Select(each => each.Verb)
             .Concat(Daoris.Driver.PersonPresses.Presses.Select(each => each.Verb)).ToList();
-        foreach (var family in new[] { "quest pause", "history", "help", "opinion", "setup", "register", "sync", "plugins", "ask channel" })
+        foreach (var family in new[] { "quest pause", "history", "help", "opinion", "place", "register", "sync", "plugins", "ask channel" })
         {
             Assert.Contains(sent, verb => verb.StartsWith(family, StringComparison.Ordinal));
         }

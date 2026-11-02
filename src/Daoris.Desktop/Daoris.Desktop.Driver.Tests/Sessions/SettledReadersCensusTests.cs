@@ -14,6 +14,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// Read from the sources of the driver, its host and the modules, by name wherever they lie (STRUCT5a), as <see cref="SayKeysCensusTests"/> is.
 /// The supervisor's release says with <c>supervised</c> and no settled request: its door stays today's (O7-F12), which the client's tests hold.
 /// </remarks>
+[Trait(Category.Name, Category.Census)]
 public sealed partial class SettledReadersCensusTests
 {
     /// <summary>Readers that handle a settled answer in their own code, before any word: what they do with it.</summary>

@@ -22,6 +22,7 @@ namespace Daoris.Driver.Tests;
 /// (HELPOWED1, D170 point 2). A quest's or a session's own act is its own conversation, which Ask Daoris reaches by a go to the
 /// view it names (D161's ENTRY1 note).</para>
 /// </remarks>
+[Trait(Desktop.Driver.Tests.Category.Name, Desktop.Driver.Tests.Category.Census)]
 public sealed partial class HelpCoverageTests
 {
     private abstract record Answer;
@@ -144,13 +145,6 @@ public sealed partial class HelpCoverageTests
         "`daoris-driver drive --share` starts a headless loop beside a live one; it is a process a person runs at a "
         + "terminal, not a setting: nothing is stored to apply, Ask Daoris starts no loop, and the desktop's own loop "
         + "waits on the lock instead (D104).");
-
-    /// <summary>
-    /// LAYOUT7's <c>daoris-driver setup</c> (D117 §6.1), a verb of the headless host rather than the CLI's table, and the
-    /// repository page's *Set up for agents* (<c>useSetupPress</c>), its twin: the <c>setup</c> kind's <c>setup</c> door since
-    /// LAYOUT8 (D170 point 1), judged by the press's own plan and applied as the press.
-    /// </summary>
-    private static readonly Door SetupDoor = new("setup", "setup");
 
     /// <summary>
     /// WSSETUP5's <c>daoris-driver register</c> (D124 §3.1), a verb of the headless host: a door Ask Daoris owes, until WSSETUP7
@@ -873,7 +867,6 @@ public sealed partial class HelpCoverageTests
         // version, new or an edit on the newest; a version from a file and an import are owed to WORKFLOW1h2.
         ("workflow list", new Exempt("it reads the home's workflows and the presets built in, and changes nothing.")),
         ("workflow new", new Door("workflow", "new")),
-        ("workflow edit", new Door("workflow", "edit")),
         ("workflow apply", WorkflowOwed),
         ("workflow export", new Exempt(
             "it copies a workflow's file out, whole, to a new file or the terminal, for the person to carry, and changes nothing here.")),
@@ -1132,8 +1125,6 @@ public sealed partial class HelpCoverageTests
         ("projects", "useImportFolder", null, RepositoryAddGo),
         // ENTRY1d1 (D161's ENTRY1d note): a move needs no path, so the `repository` kind proposes it by name.
         ("projects", "useWireRepository", null, new Door("repository", "wire")),
-        // LAYOUT8 (D170 point 1): a not adopted repository's *Set up for agents*, the `setup` kind's door, as its terminal is.
-        ("projects", "useSetupPress", null, SetupDoor),
         ("projects", "useRetireRepository", null, new Exempt(
             "retiring takes a repository off this machine's registry and its entries out of the index, a removal, which stays "
             + "the person's own press (D89), as a plugin's removal does; registering it again is the person's Add repository, "
@@ -1383,16 +1374,16 @@ public sealed partial class HelpCoverageTests
     }
 
     /// <summary>
-    /// LAYOUT8 (D170 point 1): the headless host's <c>setup</c>, owed since LAYOUT7, is the <c>setup</c> kind's door while the
-    /// host's usage spells it, and the room names its screen, the repository page's *Set up for agents*, beside its command.
+    /// WORKFLOWCLEAN1 1f: the headless host's <c>setup</c> verb is gone and the <c>setup</c> kind has the <c>place</c> door alone, which the room
+    /// names beside the page's *Set up…* and the verb's adoption.
     /// </summary>
     [Fact]
-    public void The_headless_hosts_setup_is_the_setup_kinds_door()
+    public void The_setup_verb_and_door_are_gone_and_the_room_names_the_places_adoption()
     {
-        Assert.Contains("setup <repository> [--plan]", DriverCommand.Usage);
-        Assert.Contains(SetupDoor.Name, HelpProposalKinds.Find(SetupDoor.Kind)!.Doors);
-        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver setup <repository> [--plan]`", StringComparison.Ordinal)
-            && door.Screen.Contains("Set up for agents", StringComparison.Ordinal));
+        Assert.DoesNotContain("\n  setup ", DriverCommand.Usage);
+        Assert.Equal(["place"], HelpProposalKinds.Find("setup")!.Doors);
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver place <repository>… --preset keep --adoption", StringComparison.Ordinal)
+            && door.Screen.Contains("Set up…", StringComparison.Ordinal));
     }
 
     /// <summary>
@@ -1416,10 +1407,10 @@ public sealed partial class HelpCoverageTests
     [Fact]
     public void The_headless_hosts_workspace_plan_is_a_door_owed_to_the_setup_kind()
     {
-        Assert.Contains("setup --workspace <name> [--plan]", DriverCommand.Usage);
-        Assert.Contains("setup --workspace <name> --pause | --resume | --stop", DriverCommand.Usage);
+        Assert.Contains("place --workspace <name> --adoption [--plan]", DriverCommand.Usage);
+        Assert.Contains("place --workspace <name> --pause | --resume | --stop", DriverCommand.Usage);
         Assert.Empty(HelpProposalKinds.Find("setup")!.Doors.Intersect(["workspace", "pause", "resume", "stop"]));
-        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver setup --workspace <name> [--plan]", StringComparison.Ordinal)
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver place --workspace <name> --adoption [--plan]", StringComparison.Ordinal)
             && door.Terminal.Contains("--pause|--resume|--stop", StringComparison.Ordinal));
         Assert.Contains("WSSETUP7", WorkspaceDoor.Reason);
     }
@@ -1763,9 +1754,9 @@ public sealed partial class HelpCoverageTests
     [Fact]
     public void The_headless_hosts_place_plan_is_the_setup_kinds_place_door()
     {
-        Assert.Contains("place <repository>… --preset <id> [--with opinion,look,adoption] [--what-it-builds <kind>] [--drive] --plan", DriverCommand.Usage);
+        Assert.Contains("place <repository>… --preset <id> [--with opinion,look] [--adoption [--what-it-builds <kind>] [--at-once <n>] [--pilot <n>]] [--drive] (--plan | --apply)", DriverCommand.Usage);
         Assert.Contains(PlaceDoor.Name, HelpProposalKinds.Find(PlaceDoor.Kind)!.Doors);
-        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver place <repository>… --preset <id>", StringComparison.Ordinal));
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver place <repository>… --preset keep --adoption", StringComparison.Ordinal));
     }
 
     /// <summary>

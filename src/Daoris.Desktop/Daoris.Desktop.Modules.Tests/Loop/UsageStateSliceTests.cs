@@ -12,6 +12,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// account, written by <c>USAGE</c>'s own builders, so neither a focus nor a mount reads <c>USAGE</c> again in a window that holds it.
 /// </summary>
 /// <remarks>Every reading is the test's own entry in its home's usage file; no service runs and no process starts.</remarks>
+[Trait(Category.Name, Category.Census)]
 public sealed partial class UsageStateSliceTests : DriverModuleBridge
 {
     private static readonly DateTimeOffset T0 = new(2026, 10, 20, 9, 0, 0, TimeSpan.Zero);

@@ -77,6 +77,7 @@ public sealed record WorkflowRunBinding(string Run, string Repository, string Wo
             WorkflowLevels.Repository => $"`{binding.Repository}`'s default",
             WorkflowLevels.WorkspaceKind => $"chosen by the workspace `{binding.Workspace}` for {kind}",
             WorkflowLevels.Workspace => $"the workspace `{binding.Workspace}`'s default",
+            WorkflowLevels.Home => "this machine's default",
             _ => "since nothing names a workflow",
         };
     }

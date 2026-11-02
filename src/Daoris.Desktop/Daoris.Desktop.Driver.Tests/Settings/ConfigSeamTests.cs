@@ -10,6 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// a review step that the landing never asked for, and the work merged into the line. A door that holds its home reads the
 /// override where it is a file in that home, since every home is the folder its config sits in, and never another home's file.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed partial class ConfigSeamTests
 {
     private static Func<string, string?> Env(params (string Name, string? Value)[] pairs) =>

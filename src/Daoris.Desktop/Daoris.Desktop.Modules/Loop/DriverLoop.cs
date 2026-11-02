@@ -982,6 +982,8 @@ public sealed class DriverLoop(
         // the shell's one periodic place for its conversations: a dead shell's move is taken up, a live one quiet ten minutes said once.
         var moves = new ConversationMoves(homeDirectory, service, Events, Output);
 
+        // WORKFLOWCLEAN1 1a: a fresh home is seeded once with the copy of the merge workflow, which a place then follows.
+        HomeSeed.Once(ConfigPath, homeDirectory);
         _watch = new DriverWatch(service, ConfigPath, homeDirectory, Processes, sync, Output, Harnesses, Usage, _hooks, Events, browser)
         {
             // Asked at every look, so an update staged or put off between looks holds or frees the next one (UPDATE1).

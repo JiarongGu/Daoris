@@ -12,6 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// receiver is a service client by the name the code gives it; one reached under another name is not seen, which the floor on the
 /// calls seen holds against a scan that stopped reading.
 /// </remarks>
+[Trait(Category.Name, Category.Census)]
 public sealed partial class SayKeysCensusTests
 {
     /// <summary>The names the code gives a service client the say door is called on.</summary>

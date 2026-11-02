@@ -26,7 +26,7 @@ public sealed class WorkplaceWorkflowsPortsTests : IDisposable
 
     private void Choose()
     {
-        WorkflowStore.Add(_home, new WorkflowVersionAdded(
+        StoredSteps.Add(_home, new WorkflowVersionAdded(
             "docs-to-pr", "Documentation to a pull request", "terminal", "2026-10-09T09:00:00Z", JsonNode.Parse(Steps)), kept: []);
         WorkflowSelection.Apply(Config(), new WorkflowUse("docs-to-pr", "engine", null, null)).Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
     }
@@ -399,5 +399,17 @@ public sealed class WorkplaceWorkflowsPortsTests : IDisposable
             Calls.Add($"land:{rule.Form}");
             return (rule.Form, "gph-0");
         }
+
+        public ReviewWord KeepReviewWord(string home, Func<bool>? holdsLease, IWorkplaceProcess process, DateTimeOffset now) => new(false, false, null, null, null);
+
+        public void KeepRepair(string home, Func<bool>? holdsLease, string unit, string review, string tip, string turn, int carries, DateTimeOffset at)
+        {
+        }
+
+        public void TakeRepair(string home, Func<bool>? holdsLease, string unit, string review)
+        {
+        }
+
+        public int RepairCarries(string home, Func<bool>? holdsLease, string unit, string review) => 0;
     }
 }

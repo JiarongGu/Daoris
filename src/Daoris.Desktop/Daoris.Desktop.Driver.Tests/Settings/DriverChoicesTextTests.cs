@@ -11,6 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <see cref="DriverChoicesCommand"/> acting alone on a home of its own: the same lines on each stream, the same exit, and
 /// <c>driver.json</c> after it the same choices. A row the port changes on purpose says why under <c>changed</c>.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed partial class DriverChoicesTextTests
 {
     private static readonly Lazy<JsonElement> Read = new(() => JsonDocument.Parse(File.ReadAllText(Path.Combine(

@@ -23,6 +23,7 @@ const tool = await import(
   tsSubject: (file: string) => string;
   dotnetSubject: (project: string, file: string, text?: string) => { subject: string; atRoot: boolean; declared: string | null };
   checks: (files: string[], read: (file: string) => string, map: Map, options: Record<string, unknown>) => string[];
+  trxSkipped: (trx: string) => string[];
 };
 
 const TREE: Record<string, string> = {
@@ -116,4 +117,16 @@ test('the checks: a hand row held to its readers, a whole-suite file listed, a s
     baseline: ['cli'], tasks: '- [ ] **CLOSED1** — open again.\n- [ ] **OPEN1** — open.', listed: { 'src/Daoris.Web/vite.config.ts': 'the config' },
   });
   assert.deepEqual(held, []);
+});
+
+test('a report names each class with a test that did not execute (REVIEW2 T1)', () => {
+  const trx = [
+    '<TestRun><TestDefinitions>',
+    '<UnitTest name="A" id="1"><Execution id="e"/><TestMethod codeBase="x" className="Ns.SshProofs" name="A"/></UnitTest>',
+    '<UnitTest name="B" id="2"><TestMethod codeBase="x" className="Ns.Plain" name="B"/></UnitTest>',
+    '</TestDefinitions><Results>',
+    '<UnitTestResult testId="1" outcome="NotExecuted"/><UnitTestResult testId="2" outcome="Passed"/>',
+    '</Results></TestRun>',
+  ].join('\n');
+  assert.deepEqual(tool.trxSkipped(trx), ['Ns.SshProofs']);
 });

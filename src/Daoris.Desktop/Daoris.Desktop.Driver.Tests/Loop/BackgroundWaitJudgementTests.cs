@@ -24,7 +24,7 @@ public sealed class BackgroundWaitJudgementTests : IDisposable
         _ledger.Dispose();
         if (_tree is not null)
         {
-            try { Directory.Delete(_tree, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+            GitSeed.Discard(_tree);
         }
     }
 
@@ -270,7 +270,7 @@ public sealed class BackgroundWaitJudgementTests : IDisposable
         }
         finally
         {
-            Directory.Delete(folder, recursive: true);
+            GitSeed.Remove(folder);
         }
     }
 }

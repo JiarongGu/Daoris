@@ -27,7 +27,7 @@ public sealed class LandNodeKindTests
         nodes, [.. nodes.Skip(1).Select((node, at) => new Wire($"{nodes[at].Id}>{node.Id}", WireKinds.After, new(nodes[at].Id), new(node.Id)))],
         [nodes[0].Id], nodes[^1].Id);
 
-    private static string[] Codes(NodeGraph graph) => [.. NodeGraphs.Problems(graph).Select(problem => problem.Code)];
+    private static string[] Codes(NodeGraph graph) => [.. NodeGraphs.Problems(graph).Where(GraphProblemsTable.IsRule).Select(problem => problem.Code)];
 
     [Fact]
     public void Land_is_performed_by_daoris_reached_and_failed_by_the_landing_record_and_never_skipped()
@@ -118,7 +118,7 @@ public sealed class LandNodeKindTests
         var beside = Chain(Claimed(), Land(), Node("old", NodeKinds.Handed), Line());
 
         Assert.Equal([GraphRefusal.LandOnce], Codes(two));
-        Assert.Equal("again", NodeGraphs.Problems(two).Single().Node);
+        Assert.Equal("again", NodeGraphs.Problems(two).Where(GraphProblemsTable.IsRule).Single().Node);
         Assert.Equal([GraphRefusal.LandOnce], Codes(beside));
         // A stored graph of two handed is as it was: the rule is the new kind's.
         Assert.Empty(Codes(Chain(Claimed(), Node("a", NodeKinds.Handed), Node("b", NodeKinds.Handed), Line())));

@@ -38,7 +38,7 @@ function Shown({ draft, step, lines }: { draft: GraphDraft; step: string; lines?
       <Inspector
         palette={PALETTE} draft={draft} roles={ROLES} lines={lines} node={node} titleOf={titleOf} problems={{ atStep: [], atWire: () => [] }}
         confirming={null} onConfirm={nothing}
-        acts={{ onChange: nothing, onAfter: nothing, onMove: nothing, onDuplicate: nothing, onCopy: nothing, onRemove: nothing,
+        acts={{ onChange: nothing, onOption: nothing, onAfter: nothing, onMove: nothing, onDuplicate: nothing, onCopy: nothing, onRemove: nothing,
           onTarget: nothing, onAdd: nothing, onPick: nothing, onNew: nothing, onInsert: nothing }}
       />
     </div>

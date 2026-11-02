@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -43,12 +43,14 @@ const ROSTER = {
 
 let roles: Row[] = [];
 let refuse: string | false = false;
+let gate: Promise<void> | null = null;
 
 const setRoles = () => invoke.mock.calls.filter((call) => call[1] === 'SET_ROLE').map((call) => (call[2] as { payload: Record<string, unknown> }).payload);
 const asked = (type: string) => invoke.mock.calls.filter((call) => call[1] === type).map((call) => (call[2] as { payload: Record<string, unknown> }).payload);
 
 beforeEach(() => {
   refuse = false;
+  gate = null;
   roles = [
     role('build', 'Builder', ['build'], 'machine', null, true),
     role('aurora-build', 'Aurora builder', ['build'], 'workspace', 'aurora'),
@@ -65,6 +67,7 @@ beforeEach(() => {
       case 'HARNESSES': return ROSTER;
       case 'ACTORS': return { actors: [] };
       case 'SET_ROLE': {
+        if (gate) await gate;
         if (refuse) throw new Error(refuse);
         const press = payload as { id: string; role: { name: Record<string, string>; takes: string[]; scope: { kind: string; id: string | null } } };
         roles = [...roles.filter((each) => each.id !== press.id), {
@@ -190,6 +193,50 @@ describe('a step\'s Taken by', () => {
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(setRoles()).toHaveLength(1));
     expect(setRoles()[0]).toMatchObject({ change: 'set', id: 'designer-engine', revision: 0 });
+  });
+
+  it('applies a saved role to the draft as it is when the save answers, not as it was at the press (REVIEW2 P7)', async () => {
+    const user = userEvent.setup();
+    let release = () => {};
+    gate = new Promise<void>((resolve) => { release = resolve; });
+    render(wrap(<Editor startFrom={{ graph: MERGE_GRAPH, name: 'Merge workflow' }} />));
+    await selectWork(user);
+    await user.click(await screen.findByRole('button', { name: 'Give engine its own role for design and decisions…' }));
+    const form = await screen.findByRole('form', { name: 'A new role' });
+    await user.click(within(form).getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(setRoles()).toHaveLength(1));
+
+    // While the save is on its way the draft changes: the step is duplicated.
+    await user.click(screen.getByRole('button', { name: 'Duplicate' }));
+    const steps = () => document.querySelectorAll('[data-flow-node]').length;
+    const before = steps();
+    release();
+    await waitFor(() => expect(roles.some((each) => each.id === 'designer-2')).toBe(true));
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 50)); });
+
+    // The duplicate is still in the draft: the role went onto the newest draft, not the one at the press.
+    expect(steps()).toBe(before);
+  });
+
+  it('does not carry an open role editor to the next step chosen (REVIEW2 P6)', async () => {
+    const user = userEvent.setup();
+    const two = {
+      ...MERGE_GRAPH,
+      nodes: [
+        { id: 'work', kind: 'claimed', version: 1, reach: 'observed' },
+        { id: 'second', kind: 'claimed', version: 1, reach: 'observed' },
+      ],
+      wires: [{ id: 'a', kind: 'after', from: 'work', to: 'second' }],
+    };
+    render(wrap(<Editor startFrom={{ graph: two, name: 'Two' }} />));
+    const chart = await screen.findByRole('list', { name: 'How the steps go on' });
+    await user.click(within(chart).getAllByRole('listitem', { name: 'The work' })[0]!);
+    await user.click(await screen.findByRole('button', { name: 'Give engine its own role for design and decisions…' }));
+    expect(await screen.findByRole('form', { name: 'A new role' })).toBeInTheDocument();
+
+    const second = chart.querySelector<HTMLElement>('[data-flow-node="second"]')!;
+    await fireEvent.click(second.closest<HTMLElement>('[role="listitem"]') ?? second);
+    expect(screen.queryByRole('form', { name: 'A new role' })).toBeNull();
   });
 
   it('says it in Chinese', async () => {

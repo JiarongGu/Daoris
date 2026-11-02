@@ -22927,3 +22927,102 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 > **d** large graphs (web; c). Contract and proof: the canvas design's §9 row d, §4, §4.1 and §11: positioned worlds, the spatial grid, culling past 400, the tiers, the budget, the worker layout with revisions, find, the minimap's rule, the view by feature key and graph identity, `aria-setsize` and `aria-posinset`, `CanvasList` grouped.
 
 **Outcome** 2026-11-02: built. `PositionedCanvas` draws a scene of nodes, groups and edges in the canvas: laid out inline or in a worker under a revision, culled past 400, drawn by tier, a grouped world past 1,000 an overview opened one group at a time, with find, the minimap, the viewer's kept place and the grouped list. No feature draws on it yet (rows e and f). Detail: D224's CANVAS1d note, with the measured figures; `largeGraph.test.ts`, `PositionedCanvas.test.tsx`, `Canvas.test.tsx`, `measured/large.spec.ts`.
+
+## WORKFLOWCLEAN1a — a place follows a saved graph (2026-11-02, D227)
+
+> **1a** a place follows a saved graph (driver, modules). Contract and proof: the cleanup design's §1, §4.7's Current rows, §9 row 1a and §12.
+
+**Outcome** 2026-11-02: built. A home names its default workflow (`defaultWorkflow`, seeded `merge-after-accept` on a fresh home); a place follows it with nothing written, and *Set up…* saves and chooses the shipped copy through `PLACE_APPLY`'s new `WORKFLOW_SAVE` operation instead of writing a landing rule. The shipped `delivery` is derived from each graph; `land` has the option `key`; an open option resolves from derived defaults where the place has no rule; the line's policy is `linePolicies`, edited by `SET_LINE`. `SET_LANDING`, `daoris driver landing` and Ask Daoris's `landing` card refuse for a place that follows a saved workflow (row 1y retires them whole), and `new --from current:` is retired. Left to 1b to 1f: the transitional paths named in D227's 1a note. Detail: D227's 1a note; `HomeDefaultTests`, `PlacePlanTests`, `PlaceApplyTests`, `WorkflowRunBindingTests`, `SetupPresetsTests`.
+## WORKFLOWCLEAN1b — old saves refused (2026-11-02, D227)
+
+> **1b** saves refused (driver, modules; after a). Contract and proof: the cleanup design's §3, §9 row 1b and §13 point 2.
+
+**Outcome** 2026-11-02: built. A list of steps, a `handed` and a `land` with no method are refused at the one save point, in the same words at every door (the step presets deleted, `workflow new --from` steps, `edit`, `apply` of steps, `apply --as-graph` folded into `convert`, `import`, `WORKFLOW_SAVE` with `steps`, Ask Daoris's steps door); a stored version of each still reads, shows and binds. The palette's `offered` hides `handed` and a landing's tail from the picker. Detail: D227's 1b note; `SavesRefusedTests`, `WorkflowAsGraphCommandTests`, `HelpWorkflowProposalsTests`, `DriverModuleWorkflowWritesTests`.
+
+## WORKFLOWCLEAN1f — one adoption door (2026-11-02, D227)
+
+> **1f** one adoption door (driver, modules, web-shell, service; after a). Contract and proof: the cleanup design's §5 *One adoption door*, §9 row 1f, and the one-way census's A1 and A2.
+
+**Outcome** 2026-11-02: built. `PLACE_APPLY`'s adoption part, over `SetupPress`, is the one door that adopts a repository: `SETUP_PLAN` and `SETUP_PRESS`, `daoris-driver setup`, the repository page's *Set up for agents* with its routes and strings, the shell's set-up plan door, and Ask Daoris's `setup` door are gone; `daoris-driver place <repo> --preset keep --adoption [--what-it-builds …]` is the terminal's, and `setup_propose` is a place's. An adoption covering more of a workspace's repositories than `--at-once` (the plan's default, one) is paced: the apply writes the workspace plan (rule added once) and the tick publishes it, an existing plan file unchanged; `place --workspace <ws> --adoption --at-once <n> --pilot <n>` and `--pause`/`--resume`/`--stop` steer it. Detail: D227's 1f note and D221's; `PlaceApplyTests`, `WorkspaceSetupLoopTests`, `WorkspaceSetupCommandTests`, `HelpSetupProposalsTests`, `HelpSetupDoorTests`.
+
+## WORKFLOWCLEAN1c — the runtime performs `land` (2026-11-02, D227)
+
+> **1c** the runtime performs `land` (driver, modules; after a). Contract and proof: the cleanup design's §2.1–§2.6, §4.7, §9 row 1c and §13 point 3.
+
+**Outcome** 2026-11-02: built. The pass starts a run's `land` once, on `ILandingDoor`, and `LandingDoor` lands it off the pass from the node's bound intent, authorized by the review's Accept or the standing authority; a press and a pass land one delivery. The run's process carries the bound `land` (`LandNodes.RuleOf`) in place of the live rule; the look chooses nothing for it, closes the entries written before the update with their kept Accepts adopted as the review's word and repair (`NodeRecord.Repairs`), and the conversion writes no due entry. `LAND_SESSION_TREE` keeps the word and waits for the landing; an entry's Accept keeps each such part's word; `SET_ACCESS` refuses `landing`. Left: `GraphGates.Of`, `TOGETHER_PRESS` and a combined head's delivery, the terminal alone keeping the word, and `full` still reaching the landing pause. Detail: D227's 1c note, D215's, D145's, D190's and D184's; `GraphRunLandingTests`.
+
+## The parked backlog triaged against D228: dropped rows (2026-11-02)
+
+> **Triage of 2026-11-02** (`docs/2026-11-02-parked-triage.md`; D228 and its note): 55 rows of `docs/backlog-parked.md` and 26 of its pointer lines, each superseded by work the owner's direction of that day put in a chunk or a decision. The rows' whole text is in git at `cb884a6b6:docs/backlog-parked.md`.
+
+**Outcome** 2026-11-02: dropped, each superseded by what is named.
+
+- **By WORKFLOWCLEAN1 and D227:**
+  - **LAYOUT8c** — the setup door on the install, in both languages. Dropped: superseded by WORKFLOWCLEAN1.
+  - **LAYOUT8b** — the rest of §6.5 on the screen. Dropped: superseded by WORKFLOWCLEAN1.
+  - **WSSETUP7** — workspace setup UI/proposal. Dropped: superseded by WORKFLOWCLEAN1.
+  - **RPC1b6** — a real landing through the land presses with the registry followed. Dropped: superseded by WORKFLOWCLEAN1.
+  - **FABRIC-END4c** — the configured cleanup. Dropped: superseded by WORKFLOWCLEAN1.
+  - **FABRIC-END5** — the CLI, a quest's page and Ask Daoris read the cycle. Dropped: superseded by WORKFLOWCLEAN1.
+  - **PRESSSTEP2** — a landing says merging, replaying or handing off. Dropped: superseded by WORKFLOWCLEAN1.
+  - **LAND2e** — post-landing advances. Dropped: superseded by WORKFLOWCLEAN1.
+  - **LAND2d** — automatic acceptance UI/rehearsal. Dropped: superseded by WORKFLOWCLEAN1.
+  - **LAND4b** — failed automatic landing. Dropped: superseded by WORKFLOWCLEAN1.
+  - **WORKFLOW1j** — wait on pull request. Dropped: superseded by WORKFLOWCLEAN1, into FABRIC-PERFORM1l.
+  - **WORKFLOW1k** — outside checks. Dropped: superseded by WORKFLOWCLEAN1, into FABRIC-PERFORM1l.
+  - **WORKFLOW1l** — stages and go-aheads. Dropped: superseded by WORKFLOWCLEAN1, into FABRIC-PIPELINE1h.
+  - **WORKFLOW1m** — workflow rehearsal. Dropped: superseded by WORKFLOWCLEAN1, steps retire.
+  - **WORKFLOW1n** — installed workflows. Dropped: superseded by WORKFLOWCLEAN1, into SETUPUX1x.
+  - **XAGENT1f5** — answers under steps rules. Dropped: superseded by WORKFLOWCLEAN1.
+  - **XAGENT1f3** — omitted gate behavior. Dropped: superseded by WORKFLOWCLEAN1.
+  - **XAGENT1g2** — quest/ask/struck doors. Dropped: superseded by WORKFLOWCLEAN1.
+  - **REVIEWENV1f** — intake review choice. Dropped: superseded by WORKFLOWCLEAN1.
+- **By FLOWCHART2 and CANVAS1:**
+  - **WORKFLOW1g** — workflow editor. Dropped: superseded by FLOWCHART2 and CANVAS1.
+  - **WORKFLOW1h2** — workflow proposal, changes and kinds. Dropped: superseded by FLOWCHART2 and CANVAS1.
+  - **FABRIC-GRAPHEDIT1** — one graph editor. Dropped: superseded by FLOWCHART2 and CANVAS1.
+  - **FABRIC-GRAPHVIEW1** — the running view. Dropped: superseded by FLOWCHART2 and CANVAS1.
+- **By D225, COWORKVIEW1 and ONEWAY1:**
+  - **PARTNERLINE1** — a piece's hand past sixteen links reaches a part its lead's line has left. Dropped: superseded by D225 (COMMS1 row b retires the 16-link limit).
+  - **ANSWER1d** — installed same-record resume. Dropped: superseded by ONEWAY1 row k.
+  - **FABRIC-C1b** — a part's native children on its record. Dropped: superseded by COWORKVIEW1 and ONEWAY1.
+- **By D226:**
+  - **SESSUX1k** — limit-ended list state. Dropped: superseded by D226.
+  - **TOOL4i** — installed rotation. Dropped: superseded by D226.
+  - **MODELROLE1** — Daoris's own sessions spend as this development learned to: actors, each a range of agents and models. Dropped: superseded by D226 (the parent row; its parts live on).
+  - **SUBLOAD1c** — the model trial. Dropped: superseded by D226.
+  - **XAGENT1h** — intake reviewer choice. Dropped: superseded by D226.
+- **By D215 and INTEGRATE1:**
+  - **DEV5** — landing queue. Dropped: superseded by D215 and INTEGRATE1.
+  - **DEV6** — concurrent lanes. Dropped: superseded by D215 and INTEGRATE1.
+  - **DEV7** — ready/verdict. Dropped: superseded by D215 and INTEGRATE1.
+  - **DEV8** — queue UI/proposal. Dropped: superseded by D215 and INTEGRATE1.
+  - **DEV9** — steward. Dropped: superseded by STEWARDROLE1.
+  - **DEV10** — first real user. Dropped: superseded by INTEGRATE1 row k's sitting.
+  - **DEV11** — second user/retirement. Dropped: superseded by ONEWAY1 row y.
+  - **LAYOUT9** — lane rooms. Dropped: superseded by D215 and INTEGRATE1.
+  - **EVID1d** — queue proof. Dropped: superseded by D215 and INTEGRATE1.
+  - **CISCOPE1** — a scoped CI: a merge runs what it reaches, the full set in the background. Dropped: superseded by FABRIC-PIPELINE1j and OPTIMIZE1 part d.
+  - **CISCOPE1c2** — recall's historical runs. Dropped: superseded by D215 and INTEGRATE1.
+  - **CISCOPE1d2** — the stage built from the gate tree alone, and the attempt-level records. Dropped: superseded by D215 and INTEGRATE1.
+  - **CISCOPE1e2** — the admission's job objects and background side, and the queue's timed proof. Dropped: superseded by D215 and INTEGRATE1.
+  - **REHPAIR1** — the family and deployment rehearsals side by side on the stage's path. Dropped: superseded by D215 and INTEGRATE1.
+  - **GATEWT1b** — the first full set beside a merge, measured. Dropped: superseded by D215 and INTEGRATE1.
+- **By GITAPP and GITAUTH, and duplicates:**
+  - **GIT1f** — commit/history/blame/compare tabs. Dropped: superseded by GITAPP and GITAUTH.
+  - **GIT1g** — fetch/create/delete. Dropped: superseded by GITAPP and GITAUTH.
+  - **GIT1h** — explicit push/PR. Dropped: superseded by GITAPP and GITAUTH.
+  - **GIT1i** — session Git doors. Dropped: superseded by GITAPP and GITAUTH.
+  - **GITAPP2** — the person's git acts and writes. Dropped: superseded by the GITAPP2 row in TASKS.md (this was its parked copy).
+  - **UNBLOCK4c** — push canary. Dropped: superseded by GITAPP and GITAUTH.
+  - **TERMTRUST1** — the person may trust this machine's terminal for management presses, once, in the window. Dropped: superseded by TERMTRUST1a in TASKS.md (this was the parent's parked copy).
+  - **ACCEPTALL1w** — one Accept for an entry and an ask, on the window. Dropped: a duplicate of work already built or kept elsewhere (the triage).
+  - **HELPBROWSERBEFORE1** — what browser Ask Daoris reached before 2026-10-16. Dropped: a duplicate of work already built or kept elsewhere (the triage).
+
+The 26 pointer lines of the parked file's head (the owner's reports and features whose rows are built, archived, moved into `TASKS.md` or triaged above) are removed with them.
+
+## REVIEW2 — a full code review of the session's changes (2026-11-02)
+
+- [x] **REVIEW2 — a full code review of the session's changes** (reviewers by area, read-only; after the current waves merge). FABRIC2, LANDNODE1, AGENTSPLACE1, SETUPUX1, FLOWCHART2, I18NOPEN1 and their fixes changed the driver, the modules, the service and the page in a short time; reviewers by area (the driver's landing and workflows, the routes and authority, the service and Ask Daoris, the page's flows, tests and checks) find what the merges missed, each finding verified against the code. Proof: the findings, each fixed on main or filed as a row.
+
+  **Done 2026-11-02.** Five areas read over `f0674b65a..` main: 47 findings, 18 blocking, each fixed on main by a fixer that verified it first (the FIX-LOG's entries of 2026-11-02), the record `docs/2026-11-02-review2-findings.md`. What the fixes left is REVIEW2-LEFT1. The review also changed how merges are checked: merges go through `tools/merge-branch.mjs`, a `censuses` gate runs every census, and the post-merge CI keeps going past a red.

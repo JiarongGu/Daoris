@@ -7,6 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// and how often is held without a process: one <c>for-each-ref</c>, a call more only where a landed branch is exceptional,
 /// and each fallback for a git without an atom. <c>GitBranchesTests</c> reads the same list from real repositories.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed class GitBranchesReadTests
 {
     private const string Main = "1111111111111111111111111111111111111111";

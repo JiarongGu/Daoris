@@ -182,7 +182,6 @@ public static class PipeWording
         Row("GIT_REF_FINISH", W("repository", PipeRole.Repository));
         Row("GIT_FETCH", W("repository", PipeRole.Repository));
         Row("GIT_HISTORY_EDIT", W("repository", PipeRole.Repository), W("branch", PipeRole.Words));
-        Row("SETUP_PRESS", W("repository", PipeRole.Repository));
         // AGENTSPLACE1b2: a place's apply names the repositories, the delivery and what it builds; the digest and the chosen acceptances are listed under it.
         Row("PLACE_APPLY", W("repositories", PipeRole.Repository), W("preset", PipeRole.Form), W("builds", PipeRole.Form));
         Row("WORKFLOW_LANDED", W("repository", PipeRole.Repository));

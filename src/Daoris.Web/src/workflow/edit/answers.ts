@@ -55,6 +55,8 @@ export type OptionField = { name: string; type: 'choice' | 'text' | 'switch' | '
 export type PaletteKind = {
   kind: string; reach: string; reachBy: string; failureBy: string | null; personJudges: boolean; personSkips: boolean; mayEnd: boolean;
   evidenced: boolean; skipBy: string | null; options: OptionField[]; leaves: string[]; roleTakes: string[];
+  /** How the editor offers the kind (WORKFLOWCLEAN1 1b): `alone`, `tail:<method>` for a step a landing's method brings, or `retired`. Absent: `alone`. */
+  offered?: string;
 };
 
 /** A wire kind: whether it makes its target eligible, and the kinds that may leave it (null: any node). */

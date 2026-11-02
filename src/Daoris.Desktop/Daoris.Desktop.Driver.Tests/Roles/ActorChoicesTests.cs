@@ -7,6 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <c>Effective</c>'s for every actor, the reading from today's keys, the write through them, Chat and Brainstorm made explicit on every
 /// change of <c>adapter</c>, an older build's projection, an entry that does not read, and the drain's Intake off.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed class ActorChoicesTests
 {
     private static readonly ActorChoice Opus = new("claude-code", "opus", "high");

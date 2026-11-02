@@ -9,6 +9,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// none of the words, times and versions beside them, so two reads of an unchanged world across a moved clock and a new day give one
 /// fingerprint and one moved item gives another.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed class PipeGroundsCensusTests
 {
     private static readonly string[] Timeless = ["CHANNEL_MARK", "NOTICES_READ", "HELP_RENAME", "HELP_PIN"];
@@ -198,12 +199,6 @@ public sealed class PipeGroundsCensusTests
 
     public static TheoryData<string, string, string, string, string> Plans() => new()
     {
-        {
-            "SETUP_PRESS", "SETUP_PLAN",
-            """{"repository":"Lyntai","workspace":"games","line":"main","commit":"0a1b2c3d4e5f","rules":["one","two"],"title":"Set up Lyntai @@DAY@@","body":"Daoris @@VERSION@@ on @@DAY@@","daoris":"@@VERSION@@","node":"24","refusals":[{"code":"no-checkout","sentence":"@@WORDS@@"}],"pressable":true}""",
-            """{"repository":"Lyntai","workspace":"games","line":"main","commit":"0a1b2c3d4e5f","rules":["one","three"],"title":"t","body":"b","refusals":[{"code":"no-checkout","sentence":"s"}],"pressable":true}""",
-            """{"repository":"Lyntai"}"""
-        },
         {
             "LAND_SESSION_TREE", "LANDING",
             """{"session":"s1","form":"merge","target":"main","source":"quest/x","own":true,"stands":true,"uncommitted":0,"lands":[{"commit":"0a1b2c3d","subject":"@@WORDS@@"}],"opinion":{"state":"settled","until":"@@DAY@@","says":"@@WORDS@@"}}""",

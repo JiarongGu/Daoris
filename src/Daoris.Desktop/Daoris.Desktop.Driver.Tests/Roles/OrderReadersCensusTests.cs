@@ -8,6 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// (<c>ActorChoices.Effective</c>) is named with why it may read the order as stored, so a reader added later that should read the arranged
 /// one (<see cref="RoleOrders"/>, or the start plan) fails here until it joins, with its reason.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed partial class OrderReadersCensusTests
 {
     private static readonly (string File, string Why)[] Census =

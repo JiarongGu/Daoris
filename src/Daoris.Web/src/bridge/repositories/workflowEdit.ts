@@ -88,10 +88,10 @@ export const useWorkflowEditor = (place: EditorPlace, { enabled = true }: { enab
   const client = useQueryClient();
   const [open, setOpen] = useState(false);
   const live = enabled && open;
-  const [shownId, setShownId] = useState<string | null>(null);
+  const [shownAsk, setShownAsk] = useState<{ id: string | null; version?: number }>({ id: null });
   const list = useWorkflowList({ enabled: live });
   const palette = useWorkflowPalette({ enabled: live });
-  const shown = useWorkflowShown(shownId, undefined, { enabled: live });
+  const shown = useWorkflowShown(shownAsk.id, shownAsk.version, { enabled: live });
   const chain = 'repository' in place ? { repository: place.repository, ...(place.workspace ? { workspace: place.workspace } : {}) } : { workspace: place.workspace };
   const structure = useRoleStructureChain(chain, undefined, { enabled: live });
   // The newest judgement is of one draft, by its fingerprint (FLOWCHART2c): the editor reads it only while the draft it holds is that one.
@@ -164,7 +164,7 @@ export const useWorkflowEditor = (place: EditorPlace, { enabled = true }: { enab
     roles,
     staffing,
     shown: shown.data ?? null,
-    onShow: setShownId,
+    onShow: (id, version) => setShownAsk(version === undefined ? { id } : { id, version }),
     judged: judge.answer,
     judgedOf: judge.of,
     judgeFailed: judge.failed,

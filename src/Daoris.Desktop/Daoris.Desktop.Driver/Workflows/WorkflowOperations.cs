@@ -450,6 +450,11 @@ public static class WorkflowOperations
         return rows;
     }
 
+    /// <summary>The scope of the home's default: every repository that follows it with nothing written.</summary>
+    public const string HomeLevel = "home";
+
+    public const string HomeName = "this machine";
+
     /// <summary>The places a saved workflow is chosen for, in the order the file keeps them: what appending a version to it reaches.</summary>
     public static IReadOnlyList<WorkflowScope> ScopesOf(DriverConfig choices, string id)
     {
@@ -466,6 +471,8 @@ public static class WorkflowOperations
 
         Level("repository", choices.Workflows);
         Level("workspace", choices.WorkspaceWorkflows);
+        // The home's default reaches every place that names nothing of its own (WORKFLOWCLEAN1 1a), so editing its copy asks consent for them all.
+        if (choices.DefaultWorkflow == id) scopes.Add(new WorkflowScope(HomeLevel, HomeName, "default", null));
         return scopes;
     }
 
@@ -475,14 +482,12 @@ public static class WorkflowOperations
     /// </summary>
     /// <exception cref="ChoiceWords">Naming why the source cannot be used.</exception>
     public static async Task<WorkflowVersionSource> SourceAsync(
-        DriverConfig choices, string home, RegistryRead registry, string from, bool opinion, bool look, CancellationToken ct)
+        DriverConfig choices, string home, RegistryRead registry, string from, bool opinion, bool look, CancellationToken ct, string? asId = null)
     {
+        // WORKFLOWCLEAN1 1a: converting Current has one door, and it is not a copy made by hand.
         if (from.StartsWith("current:", StringComparison.Ordinal))
         {
-            var repository = from["current:".Length..];
-            if (repository.Length == 0) throw new ChoiceWords($"`current:` names a repository, such as `current:web-app` — {DriverWorkflowsCommand.Usage}");
-            var drawn = (await CurrentOfAsync(choices, home, registry, repository, ct).ConfigureAwait(false));
-            return CurrentSource(drawn, repository, opinion, look);
+            throw new ChoiceWords(CurrentRetired);
         }
 
         if (!from.Contains('@', StringComparison.Ordinal) && WorkflowDefaults.Of(from) is { } shipped && WorkflowPresets.GraphOf(shipped.Id) is { } graphPreset)
@@ -494,24 +499,23 @@ public static class WorkflowOperations
             };
         }
 
-        if (!from.Contains('@', StringComparison.Ordinal) && WorkflowPresets.Of(from) is { } preset)
-        {
-            // Short enough that every preset's name with both stays within a name's 60 characters.
-            var name = $"{preset.Name}{(opinion ? " + second opinion" : "")}{(look ? " + your look" : "")}";
-            return new($"the preset `{preset.Id}`", name, WorkflowPresets.WithGates(preset.Steps(), opinion, look), null, null, null);
-        }
-
         var (sourceId, wanted) = Named(from);
         var found = WorkflowNamed.IsId(sourceId) ? WorkflowPorts.Store(home).Load(sourceId) : throw new ChoiceWords(WorkflowNamed.IdProblem(sourceId)!, 1);
         if (found is null)
         {
             throw new ChoiceWords($"`{from}` is no preset, no saved workflow and no `current:<repository>` — the presets are "
-                + $"{string.Join(", ", WorkflowPresets.Table.Select(each => $"`{each.Id}`").Concat(WorkflowPresets.GraphTable.Select(each => $"`{each.Id}`")))}.");
+                + $"{string.Join(", ", WorkflowPresets.GraphTable.Select(each => $"`{each.Id}`"))}.");
         }
 
-        var (shown, raw) = VersionOf(found, wanted);
-        return new($"`{sourceId}` v{shown.Version}", found.Read.Name!, WorkflowPresets.WithGates(raw, opinion, look), null, null, null);
+        // WORKFLOWCLEAN1 1b: a copy of a list of steps would save one, and a list of steps is no longer saved.
+        _ = VersionOf(found, wanted);
+        throw new ChoiceWords(WorkflowNamed.StepsRefused(asId), 1);
     }
+
+    /// <summary>What <c>new --from current:&lt;repository&gt;</c> is told: the conversion is the one door for what a place follows under Current.</summary>
+    public const string CurrentRetired =
+        "retired: a workflow is no longer copied from a repository's Current by hand. `daoris driver workflow convert` converts what a place follows "
+        + "under Current into a saved workflow, as you press it. Nothing was written.";
 
     /// <summary>
     /// Current as a workflow's source, the one handler behind <c>new --from current:&lt;repository&gt;</c> and the effective graph a place's chart
@@ -586,20 +590,6 @@ public static class WorkflowOperations
         }
 
         return (newest, newest.Steps is null ? null : VersionOf(found, newest.Version).Raw);
-    }
-
-    /// <summary>A new version of steps, judged against the base: planned, read back and compared; nothing is written.</summary>
-    /// <exception cref="ChoiceWords">Where the plan refuses.</exception>
-    public static WorkflowPlanned PlanSteps(string home, WorkflowFileFound? found, string id, NamedVersion? @base, string? name, string door, string at, JsonNode? steps)
-    {
-        var plan = WorkflowNamed.PlanAdd(found?.File, new WorkflowVersionAdded(id, name, door, at, steps),
-            found is null ? [] : WorkflowRunBindings.KeptVersions(home, id).ToList());
-        if (plan.Problem is not null) throw new ChoiceWords(plan.Problem, 1);
-        // A new workflow's steps are read as the plan saved them; a version added to one, as given, after the versions that read.
-        var read = found is null ? plan.Result!["versions"]![0]!["steps"] : steps;
-        var next = WorkflowNamed.ReadSteps(read is null ? null : WorkflowNamed.ElementOf(read), plan.Version!.Value,
-            found is null ? null : [.. found.Read.Versions.Where(each => each.Steps is not null)]).Steps;
-        return new(plan, null, next, @base?.Steps is not null && next is not null && @base.Digest == WorkflowNamed.Digest(next));
     }
 
     /// <summary>A new graph version, judged whole as the driver judges it, against the base: planned, read back and compared; nothing is written.</summary>
@@ -690,6 +680,7 @@ public static class WorkflowOperations
             new(id, false, code, message, null, false, appended, scopes ?? [], reach ?? []);
 
         if (WorkflowNamed.IdProblem(id) is { } idProblem) return Refuse("refused", idProblem);
+        if (steps is not null) return Refuse(WorkflowNamed.StepsRefusedCode, WorkflowNamed.StepsRefused(id));
         var given = (from is null ? 0 : 1) + (steps is null ? 0 : 1) + (graph is null ? 0 : 1);
         if (given != 1) return Refuse("refused", "a save names where the version comes from — one of `from`, `steps` or `graph`.");
         try
@@ -703,18 +694,13 @@ public static class WorkflowOperations
                 string made;
                 if (from is not null)
                 {
-                    var source = await SourceAsync(choices, home, registry, from, opinion, look, ct).ConfigureAwait(false);
-                    planned = source.Graph is not null
-                        ? PlanGraph(home, null, id, null, name ?? source.Name, "screen", at, source.Graph, source.From)
-                        : PlanSteps(home, null, id, null, name ?? source.Name, "screen", at, source.Steps);
+                    var source = await SourceAsync(choices, home, registry, from, opinion, look, ct, id).ConfigureAwait(false);
+                    planned = PlanGraph(home, null, id, null, name ?? source.Name, "screen", at, source.Graph, source.From);
                     made = source.Description;
                 }
                 else
                 {
-                    var nameless = name ?? id;
-                    planned = graph is not null
-                        ? PlanGraph(home, null, id, null, nameless, "screen", at, graph)
-                        : PlanSteps(home, null, id, null, nameless, "screen", at, steps);
+                    planned = PlanGraph(home, null, id, null, name ?? id, "screen", at, graph);
                     made = "the page";
                 }
 
@@ -732,9 +718,7 @@ public static class WorkflowOperations
             }
 
             var version = newest;
-            var planAgainst = graph is not null
-                ? PlanGraph(home, found, id, version, null, "screen", at, graph)
-                : PlanSteps(home, found, id, version, null, "screen", at, steps);
+            var planAgainst = PlanGraph(home, found, id, version, null, "screen", at, graph);
             if (planAgainst.Same) return new(id, true, null, $"`{id}` v{version.Version} already says this: nothing was written.", version.Version, false, true, [], []);
 
             var scopes = ScopesOf(choices, id);
@@ -773,6 +757,12 @@ public static class WorkflowOperations
                 var own = read.Checkouts?.FirstOrDefault(each => InScope(each.Repository, scope.Name)) ?? default;
                 reached.Add(own.Repository is null ? (scope.Name, null, null) : own);
             }
+            else if (scope.Level == HomeLevel)
+            {
+                // Every place that follows the home's default with nothing written.
+                reached.AddRange((read.Checkouts ?? []).Where(each =>
+                    WorkflowSelection.Resolve(choices, each.Repository, each.Workspace, null).Level == WorkflowLevels.Home));
+            }
             else if (read.Checkouts is { } checkouts)
             {
                 reached.AddRange(InWorkspace(choices, checkouts, scope.Name, except: null));
@@ -806,13 +796,10 @@ public static class WorkflowOperations
                 ScopesOf(choices, found.Id)));
         }
 
-        var presets = WorkflowPresets.Table
-            .Select(preset => new WorkflowPresetListed(preset.Id, preset.Name, false, WorkflowPresets.Line(WorkflowNamed.ReadSteps(
-                WorkflowNamed.ElementOf(preset.Steps()), 1, null).Steps!)))
-            .Concat(WorkflowPresets.GraphTable.Select(preset => new WorkflowPresetListed(preset.Id, preset.Name, true, WorkflowPresets.GraphLine(preset.Graph()))
+        var presets = WorkflowPresets.GraphTable.Select(preset => new WorkflowPresetListed(preset.Id, preset.Name, true, WorkflowPresets.GraphLine(preset.Graph()))
             {
                 Body = preset.Graph(), Default = WorkflowDefaults.Of(preset.Id),
-            }))
+            })
             .ToArray();
         return (saved, presets);
     }
@@ -839,7 +826,7 @@ public static class WorkflowOperations
         var line = shown.Steps is not null ? WorkflowPresets.Line(shown.Steps) : WorkflowPresets.GraphLine(body.AsObject());
         return new(id, found.Read.Name!, shown.Version, index == versions.Count - 1, [.. versions.Select(each => each.Version)], shown.At, shown.Door,
             shown.Digest, shown.Steps is not null ? 1 : WorkflowNamed.GraphSchema, line, body,
-            shown.Graph is null ? [] : NodeGraphs.Problems(shown.Graph));
+            shown.Graph is null ? [] : NodeGraphs.Problems(shown.Graph, onSave: false));
     }
 
     /// <summary>Whether a checkout is the repository named, in any case.</summary>

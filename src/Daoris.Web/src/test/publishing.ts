@@ -176,9 +176,8 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   // COWORK1d: the person's *Send to its session*, whose receipts the ask's channel shows.
   CHANNEL_FORWARD: { scopes: ['asks'] },
   REGISTRY_REFRESH: { scopes: ['registry'] },
-  // A set-up's press (LAYOUT8): one ask and its quest, and the repository's rule.
+  // A place's apply: the configuration, an adoption's asks and quests, and the rules.
   PLACE_APPLY: { scopes: ['quests', 'asks', 'driver', 'rules'] },
-  SETUP_PRESS: { scopes: ['quests', 'asks', 'rules'] },
   TOOLS_USE: { scopes: ['tools'] },
   TOOLS_DOWNLOAD: { scopes: ['tools'] },
   TOOLS_DELETE: { scopes: ['tools'] },

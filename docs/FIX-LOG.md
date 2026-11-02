@@ -5,6 +5,140 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-02 - The limit stubs refused the first exchange when a start told the agent its routing standing
+
+- **Symptom:** `LimitGoesElsewhereProcessTests` (the added-role case alone in CI, the seeded Chat case in a serial class run) timed out waiting for the held words on the new part; the new part's record held the first exchange's words and not the refused turn's.
+- **Root cause:** the stand-in agent let only the prompt exactly equal to `Earlier answered exchange.` through on `account-1`. A start may append the repository's routing standing sentence to the first prompt's words, depending on when the registry was read, and then the first exchange was itself refused by the limit: the held words were the first turn's, and the stub refused the move's delivery again. A test fault, not the limit walk's.
+- **Fix:** the stubs of the four limit classes let through a prompt that starts with the first exchange's words.
+- **Verify:** `LimitGoesElsewhereProcessTests` and `LimitGoesOnProcessTests` serially under `process.runsettings` (the class run that failed passes); the failure could not be forced, so it is a timing-dependent reading of the cause.
+
+## 2026-11-02 - A merge-branch test run from a builder's worktree registered a worktree of the real repository (REVIEW2)
+
+- **Symptom:** the `ci-keep` fixture's `--ci` run added `local/gate-tree` to the real repository's `git worktree list` and the run then stalled.
+- **Root cause:** the test helpers inherited `GIT_DIR`/`GIT_WORK_TREE` and the like, which a builder's worktree sets, so the fixture's git, and the tool it ran, reached the real `.git`.
+- **Fix:** the fixture's `git` helper and the tool's spawn drop the repository-locating `GIT_*` variables; a test sets `GIT_DIR` to the real repository and shows the fixture's git is its own and the real worktree list is unchanged after a `--ci` run.
+- **Verify:** `merge-branch.test.ts`, the end-to-end umbrella test (2 passes).
+
+## 2026-11-02 - Censuses were found hours after a merge, by name in a skill's list (REVIEW2 T6)
+
+- **Symptom:** the censuses (every test class that reads the sources by text) were named by hand in the dispatch skill, so a builder ran the ones it remembered and the CI beside found the rest; the page's provider census, presentational and page-measure tests were not in `check:web-rules`.
+- **Root cause:** no trait, no gate, and no check that a new census class joined any list.
+- **Fix:** `[Trait("Category","Census")]` on every such class (`CensusTraitTests` holds that each carries it), the `censuses` gate (`dotnet test <project> --filter Category=Census` for the driver's tests and the modules'; a path check on the desktop's sources), the three page tests in `check:web-rules`, and the skill names the one command. `LineAccountTests`' one census fact moved to its own class so the gate does not run its 350 s of cases. The first run of the modules' census found `Loop/AtWorkRead.cs` unlisted in `participant-work-readers.json` since COWORKVIEW1d; listed as `other`.
+- **Verify:** `CensusTraitTests`; both projects' `Category=Census` runs (driver about two minutes here, modules 23 s); `npm run check:web-rules`.
+
+## 2026-11-02 - `--keep-going` beside `--ci` was taken and read nowhere (REVIEW2 T5)
+
+- **Symptom:** `merge-branch --ci --keep-going` was accepted; the CI run hard-codes `keepGoing: true` and a stage's cut ignores it.
+- **Fix:** refused beside `--ci` with a sentence saying why.
+- **Verify:** `merge-branch.test.ts` (the flag's refusal and the `--ci` usage sentence).
+
+## 2026-11-02 - The course table's readings named a letter, and the added role's limit case was a reading (REVIEW2 T8)
+
+- **Symptom:** `out <case> R` said a case was "a reading the executor hands the course as a fact" without saying which fact; the added role's limit case (`LimitGoesElsewhereProcessTests.A_conversation_of_an_added_role…`) was left out as such though the course decides it by the role.
+- **Fix:** a reading names a `CourseFacts` member (`out <case> R <fact>`, checked against the record's own members); the added role's case is row D-09, whose `where=` names the role. `participant-work-readers.json`'s `reads` value (`tells` or `other`) is a judgement of what a line means (a workflow step's opinion, an ask's own field); no text separates the two, so it is not machine-checked.
+- **Verify:** `LineCourseTests`.
+
+## 2026-11-02 - The scratch census read only sources that name `_fixtures` and one spelling of a recursive delete (REVIEW2 T9)
+
+- **Symptom:** `Directory.Delete(x, true)` and every test rooted under the OS temp passed `GitSeedTests`' census; fifty test classes that start git deleted their scratch by hand, quietly leaving what git's read-only objects held.
+- **Fix:** the census reads every driver test source that starts git or roots under `_fixtures`, matches both spellings, and the fifty classes (and `QuestCloseTests`) now remove through `GitSeed.Discard` or `GitSeed.Remove`. The HTTPS and SSH classes' roots moved from the OS temp to `_fixtures`. The modules' tests link `TestGit` but have no `GitSeed`; their four such deletes are left.
+- **Verify:** `GitSeedTests`, then the classes changed.
+
+## 2026-11-02 - The measured specs' frame times failed once under load without a second look (REVIEW2 T10)
+
+- **Symptom:** `web-measured`'s timed specs (`measured/canvas.spec.ts`, `measured/large.spec.ts`) counted a frame time taken while the machine was loaded.
+- **Fix:** both timed loops run in a `describe` configured for one retry, FLAKE1's rerun once more alone as the Process halves have.
+- **Verify:** read; the measured run is the CI's.
+
+## 2026-11-02 - A decoder census exemption covered a whole file; two console checks accepted a wrong flag (REVIEW2 T11, T7, T12)
+
+- **Symptom:** `WorkflowGraphsTests` exempted every `WorkflowGraphs.Saved` in three files, so a second call passed; `NoConsoleWindowTests` read `CreateNoWindow` in the initializer only, and `console-windows.mjs` took `windowsHide: false` as hidden; the CLI usage's `role` words were compared to nothing.
+- **Fix:** each exemption is one code line pinned by its text; a later `CreateNoWindow = false` fails; only `windowsHide: true` hides; `RoleVerb.Changes` is the words the usage line names, held by `RoleVerbUsageTests`. T12's first part (the help room's *never* and *only when* sentences built from the doors' constants) is left: it reaches every row of the door table.
+- **Verify:** `WorkflowGraphsTests`, `NoConsoleWindowTests`, `console-windows.test.mjs`, `RoleVerbUsageTests`.
+
+## 2026-11-02 - The yes to a policy hold was written by two doors and tested by neither (REVIEW2 T2)
+
+- **Symptom:** `RETRY_QUEST` and `driver retry` alone each write the approval a role policy's ask waits for; the one flow test approved through `StaffMoves.Approve` directly, so neither door's write, nor its absence on an ordinary retry, was held. The opening note's role name (`NameOf`) was tested nowhere.
+- **Root cause:** the doors' code was reviewed but the tests drove past it. The finding held: no test named either door.
+- **Fix:** `DriverModuleRetryTests` (the route writes exactly one approval for the quest and role; a parked retry and a released stop write none), `DriverChoicesCommandTests` (the same alone), `StaffPolicyLimitTickTests` now gives its yes through `driver retry` and the next look moves once, `OpeningRoleNameTests` for `NameOf`.
+- **Verify:** those classes.
+
+## 2026-11-02 - A pasted git token's refusal was held only at the census, not over the pipe (REVIEW2 T3)
+
+- **Symptom:** only `PipeCensus.SecretRefusal` was tested; nothing sent `GIT_IDENTITY` with a token through the served pipe.
+- **Root cause:** the call site (`InstancePipe`, the person's class branch) had no test.
+- **Fix:** `PipeConfirmTests.A_git_identity_press_carrying_a_token_is_refused_asking_nothing_and_the_token_is_kept_nowhere`: refused as a shape, no card, no waiting record, and the token is in no file of the home.
+- **Verify:** that test.
+
+## 2026-11-02 - The SSH security proofs never ran under a gate (REVIEW2 T1)
+
+- **Symptom:** `GitSshdProcessTests` and `GitSshHoldsProcessTests` read `DAORIS_TEST_SSHD`, which the merge tool strips from every gate's environment, so both were skipped (or, for the holds, returned early and reported green) in every gate.
+- **Root cause:** the variable carried the `DAORIS_` prefix `GATE_REMOVED` takes out, and the holds class returned early instead of skipping.
+- **Fix:** the variable is `TEST_SSHD` (the old name still read for a person's run); the holds class uses `SshdFact`; `test-map --check --reports` names every class whose tests did not execute, so a skipped proof is seen. The two classes' roots moved from the OS temp to `_fixtures` (T9).
+- **Verify:** `test-map.test.ts` (`trxSkipped`); the holds class shows as skipped without the variable.
+## 2026-11-02 - The editor's draft was lost whenever the editor unmounted (REVIEW2 P5)
+
+- **Symptom:** a fold, *Set up…*, *Change…* or a change of layout that unmounted the place's Workflow section threw away the step editor's draft and its undo history.
+- **Root cause:** the history, target, baseline and consent lived only in `WorkflowEditor`'s state, and the place page mounts the chart at different tree positions by layout and replaces it by other panels.
+- **Fix:** the editor reports `EditorHold` and begins from one; `usePlaceShell` holds it per place (`holdOf`, `hold`) with the route and start the editor opened on, and the section restores the panel from it. *Change…* asks before it replaces an editor that holds changes; closing the editor lets the draft go. The chart is still drawn at two tree positions by layout, which a restored draft makes harmless; the selection and the open drawer are not held.
+- **Verify:** `PlaceWorkflowView.test.tsx` (keep the draft, ask before Change…; red first) and `placeShell.test.ts`.
+
+## 2026-11-02 - The page's set-up card did not draw that the repository is admitted alone (REVIEW2 S6, page half)
+
+- **Symptom:** `SETUP_PLAN` now carries `alone` and the Ask Daoris card says it, but the set-up card on the page drew nothing of it.
+- **Root cause:** `SetupShown` had no `alone`, and `SetupPlanFacts` drew no row for it.
+- **Fix:** `SetupShown.alone`, and an *Admission* fact in `SetupPlanFacts` (both catalogues) when it is true.
+- **Verify:** `SetUpForAgents.test.tsx` (red first).
+
+## 2026-11-02 - Clear on a git access class loosened it without asking (REVIEW2 P3)
+
+- **Symptom:** *Clear* on a class set at this level sent `{access: {class: null}}` at once, though the level above could be looser (the design's §8 lists that as a widening to confirm).
+- **Root cause:** `onClear` called `send` directly; only a chosen value went through the widening check.
+- **Fix:** `GitAccessRows` takes the level above's resolution (`above`; this machine's is Daoris's defaults) and sends a clear through `choose(…)`, so a looser parent opens the `InlineConfirm`.
+- **Verify:** `GitAccess.test.tsx` (REVIEW2 P3, red first); the file's older Write sentence updated to the git-remote words.
+
+## 2026-11-02 - The confirmation for a remote's own sign-ins could be skipped (REVIEW2 P2)
+
+- **Symptom:** choosing *Own sign-ins* on a git remote opened the confirmation; *Never mind* or Escape closed it and left Save enabled with the choice still `own`, which sent `GIT_USE {value: 'own'}` unconfirmed.
+- **Root cause:** closing the confirmation cleared `asking` only, so the widening choice stayed while Save was enabled by the difference from what stands.
+- **Fix:** closing puts the choice back to what stands, and Save opens the confirmation whenever the choice is `own`.
+- **Verify:** `GitRemotes.test.tsx` (REVIEW2 P2, red first).
+
+## 2026-11-02 - On Landed work, Use here wrote the default route's choice (REVIEW2 P1)
+
+- **Symptom:** an open *Change…* or editor panel stayed open when *Landed work* was picked; its *Use here* reached `WORKFLOW_USE` with no kind, which the driver reads as the default route.
+- **Root cause:** the panel took the route from the page's current selection at every render, and only the two opening buttons were hidden on the landed route.
+- **Fix:** the panel records the route it opened on and keys *Change…* and the editor by it, writing for that route alone; on the landed route no panel is drawn (it is kept, and shows again on a route it can write for).
+- **Verify:** `PlaceWorkflowView.test.tsx` (REVIEW2 P1, red first).
+
+## 2026-11-02 - A draft card's Open in the editor took the told draft for the saved version (REVIEW2 P4)
+
+- **Symptom:** *Use here* on an editor opened from a draft card chose a saved version without the draft's changes, and the save review compared the draft with itself.
+- **Root cause:** the editor set its baseline to `startFrom.graph`, which for a card is the draft the conversation was told, not version `base`.
+- **Fix:** a start marked `told` leaves the baseline unknown, reads `WORKFLOW_SHOW {id, version: base}` (`onShow` takes an optional version) and sets the baseline to that body; until then *Use here* is unsaved.
+- **Verify:** `WorkflowEditor.save.test.tsx` (two REVIEW2 P4 cases; the first red first).
+
+## 2026-11-02 - A role saved from Taken by was applied to the draft as it was at the press (REVIEW2 P7)
+
+- **Symptom:** a change made to the draft while a role's save was on its way was lost when the save answered; the step named the role on the old draft.
+- **Root cause:** the inspector's option setter closed over the render's draft, and the role editor called it after `SET_ROLE` answered.
+- **Fix:** `InspectorActs.onOption` sets the option on the editor's newest draft (a ref set each render), so an answer lands on what the draft is by then.
+- **Verify:** `WorkflowEditor.staffing.test.tsx` (REVIEW2 P7, red first).
+
+## 2026-11-02 - The inspector carried an open role editor and typed fields to the next step (REVIEW2 P6)
+
+- **Symptom:** a role editor opened on one step stayed open on the next step chosen, and its save put that role on the other step; the gates field kept its typed text.
+- **Root cause:** `<Inspector>` was not keyed by step, so the role editor's state and the uncontrolled gates field survived a change of node.
+- **Fix:** `<Inspector key={node.id}>`: a step's inspector begins fresh.
+- **Verify:** `WorkflowEditor.staffing.test.tsx` (REVIEW2 P6, red first).
+
+## 2026-11-02 - Change… previewed one version and Use here chose another (REVIEW2 P8)
+
+- **Symptom:** the preview drew the version `WORKFLOW_SHOW` answered; *Use here* sent the newest version `WORKFLOW_LIST` named, which could be another.
+- **Root cause:** `ChangeWorkflow` took `versions.at(-1)` for the ask, independent of `shown`.
+- **Fix:** the ask carries `shown.version` of the selected workflow; until that preview is read, *Use here* is disabled.
+- **Verify:** `ChangeWorkflow.test.tsx` (two REVIEW2 P8 cases, red first).
+
 ## 2026-11-02 - The room said an off or unreadable role runs the machine's defaults (REVIEW2 S4)
 
 - **Symptom:** a role whose stored choices are empty (off) or whose `actors` entry does not read was said to have "no choices of its own, so this machine's defaults run".

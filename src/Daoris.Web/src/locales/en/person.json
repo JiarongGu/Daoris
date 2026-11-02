@@ -136,7 +136,6 @@
   "person.route.HELP_RENAME": "rename a conversation with Ask Daoris",
   "person.route.HELP_PIN": "pin a conversation with Ask Daoris, or unpin it",
   "person.route.PLACE_APPLY": "apply a place's set-up",
-  "person.route.SETUP_PRESS": "set a repository up for agents",
   "person.route.SET_ACCESS": "change what agents may reach",
   "person.route.SET_GIT_ACCESS": "change what git may do on a git remote",
   "person.route.SET_ACTOR": "change the agents and models an actor runs on",

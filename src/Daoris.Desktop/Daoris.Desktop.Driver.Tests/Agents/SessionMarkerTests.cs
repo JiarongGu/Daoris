@@ -8,6 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <c>DAORIS_SESSION_ID</c>, by which <c>daoris-driver driver</c> refuses a person's press acting in its own process. Every start that
 /// hands it is listed here, so a new one is seen; the window's terminal panel removes it from the shells it starts, which are the person's.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed partial class SessionMarkerTests
 {
     /// <summary>Each source that hands a started process the marker, and how many times: the sessions and their connectors alone.</summary>

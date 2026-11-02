@@ -14,6 +14,11 @@ public sealed class LandingVerb : ChoiceVerb
 {
     public override string Word => "landing";
 
+    /// <summary>What the verb tells whoever presses it for a place that follows a saved workflow.</summary>
+    public const string Retired =
+        "retired here: a place that follows a saved workflow lands as that workflow says, and `driver landing` no longer writes a rule for it. "
+        + "`daoris driver workflow use <id>` chooses a workflow, and the line's policy is set on the place's page (Line). Nothing was written.";
+
     /// <summary>
     /// <c>landing</c> (WSR1, D87, D100, LAND2a, PROCESS1b): a rule replaced whole, or cleared; its plugin asked by the operation
     /// (<see cref="LandingRules.Put"/>). A cycle the rule holds is kept and said, judged under the rule as it now stands;
@@ -32,6 +37,14 @@ public sealed class LandingVerb : ChoiceVerb
         {
             name = words[0];
             words.RemoveAt(0);
+        }
+
+        // WORKFLOWCLEAN1 1a: where the place follows a saved workflow, how work lands is that workflow's and no rule is written. It stays
+        // working for a place on Current until the lit wave (row 1y) retires the verb whole.
+        if (!string.IsNullOrEmpty(name)
+            && WorkflowSelection.Resolve(before, workspace is null ? name : null, workspace, null).Workflow != WorkflowSelection.Current)
+        {
+            throw new ChoiceWords(Retired);
         }
 
         var form = words.ElementAtOrDefault(0);

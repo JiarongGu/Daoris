@@ -392,13 +392,29 @@
       "selection": { "workflow": "feature-review", "level": "repository", "kind": "feature", "label": "Feature", "paths": [], "undeclared": null }
     },
     {
-      "name": "a repository that names any workflow replaces its workspace's whole: Current where it names none",
+      "name": "a repository that names any workflow replaces its workspace's whole: the home's default where it names none, Current where the home names none",
       "file": {
         "workflows": { "web-app": { "kinds": { "docs": "docs-to-pr" } } },
         "workspaceWorkflows": { "work": { "default": "feature-local-review", "kinds": { "docs": { "label": "Documentation" }, "feature": { "label": "Feature", "workflow": "feature-review" } } } }
       },
       "repository": "web-app", "workspace": "work", "task": { "kind": "feature", "workflow": null },
-      "selection": { "workflow": "current", "level": "repository", "kind": "feature", "label": "Feature", "paths": [], "undeclared": null }
+      "selection": { "workflow": "current", "level": "current", "kind": "feature", "label": "Feature", "paths": [], "undeclared": null }
+    },
+    {
+      "name": "a repository naming kinds but no default follows the home's default, and so does a fresh place",
+      "file": {
+        "defaultWorkflow": "merge-after-accept",
+        "workflows": { "web-app": { "kinds": { "docs": "docs-to-pr" } } },
+        "workspaceWorkflows": { "work": { "kinds": { "docs": { "label": "Documentation" } } } }
+      },
+      "repository": "web-app", "workspace": "work", "task": null,
+      "selection": { "workflow": "merge-after-accept", "level": "home", "kind": null, "label": null, "paths": [], "undeclared": null }
+    },
+    {
+      "name": "nothing names a workflow and the home names a default",
+      "file": { "defaultWorkflow": "merge-after-accept" },
+      "repository": "engine", "workspace": null, "task": null,
+      "selection": { "workflow": "merge-after-accept", "level": "home", "kind": null, "label": null, "paths": [], "undeclared": null }
     },
     {
       "name": "the workspace's choice for the kind",
@@ -613,7 +629,7 @@
     {
       "name": "current",
       "file": {}, "edit": { "use": "current", "repository": "notes-site" },
-      "read": { "workflows": { "notes-site": { "default": "current" } }, "workspaceWorkflows": {} }, "refusal": null
+      "read": null, "refusal": "`current` is no longer chosen for a place's work: a place follows a saved workflow. Choose one, or clear the choice to follow this machine's default."
     },
     {
       "name": "an id that is no id",

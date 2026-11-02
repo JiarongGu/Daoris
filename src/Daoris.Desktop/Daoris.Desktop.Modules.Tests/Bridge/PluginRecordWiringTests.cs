@@ -12,6 +12,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// Read from the modules' sources, as a reviewer would: the hook set is built only once the loop's host is up, and a
 /// landing needs a service, git and a plugin's process, none of which this half of the suite starts.
 /// </remarks>
+[Trait(Category.Name, Category.Census)]
 public sealed class PluginRecordWiringTests : DriverModuleBridge
 {
     [Fact]

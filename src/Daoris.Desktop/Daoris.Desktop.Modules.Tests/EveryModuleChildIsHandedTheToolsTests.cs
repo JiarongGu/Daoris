@@ -16,6 +16,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// <para>A source scan, as <c>NoConsoleWindowTests</c> holds <c>CreateNoWindow</c>: the next start written will not
 /// know to.</para>
 /// </remarks>
+[Trait(Category.Name, Category.Census)]
 public sealed class EveryModuleChildIsHandedTheToolsTests
 {
     private static readonly string[] Projects = ["Daoris.Desktop.Modules", "Daoris.Desktop.App", "Daoris.Desktop.Launcher"];

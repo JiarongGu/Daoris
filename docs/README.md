@@ -232,6 +232,11 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-11-02-comms-design.md` | Design: COMMS1, communication as a read over its records, one door for answers to the line's head, parts that address each other; accepted 2026-11-02 (D225)
 | `2026-11-02-comms-reads.md` | Reads: COMMS1, Opus's read, settled in the design's §13; Codex's owed
 | `2026-11-02-review2-findings.md` | Record: REVIEW2, the full review's findings by area and where each went; open
+| `2026-11-02-workflow-cleanup-inventory.md` | Inventory: WORKFLOWCLEAN1, the old workflow logic still live beside the new, and the default setup
+| `2026-11-02-parked-triage.md` | Triage: the parked backlog against D228, each row back, into a chunk, parked with its condition, or dropped
+| `2026-11-02-oneway-census.md` | Census: ONEWAY1, every job that still has two ways, beside the workflows (D228)
+| `2026-11-02-workflow-cleanup-design.md` | Design: WORKFLOWCLEAN1, a place follows a saved graph, the runtime lands it, the old shapes convert on the person's press; accepted 2026-11-02 (D227)
+| `2026-11-02-workflow-cleanup-reads.md` | Reads: WORKFLOWCLEAN1, Opus's read, settled in the design's §13; Codex's owed
 
 ## UI, browser, tools and plugin contracts
 

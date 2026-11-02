@@ -598,6 +598,7 @@ internal static class TraceWords
             WorkflowLevels.Repository => "its repository's default",
             WorkflowLevels.WorkspaceKind => $"chosen by its workspace for kind `{workflow.Kind}`",
             WorkflowLevels.Workspace => "its workspace's default",
+            WorkflowLevels.Home => "this machine's default",
             var level => $"chosen at `{level}`",
         });
 

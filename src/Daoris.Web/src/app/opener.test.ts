@@ -218,11 +218,6 @@ describe("a press's plan door", () => {
       .toEqual({ opening: opening('sessions', '3f2a91c4'), review: true });
   });
 
-  it("opens a set-up's repository at its Details, where its Set up is drawn", () => {
-    expect(planOpening({ plan: 'setup', repository: 'game' }, 'forge', holding))
-      .toEqual({ opening: opening('projects', 'game', { tab: 'details' }) });
-  });
-
   it("opens a sweep's workspace at its Branches, or the one in view where it names none", () => {
     expect(planOpening({ plan: 'sweep', workspace: 'studio' }, 'forge', holding))
       .toEqual({ opening: opening('projects', workspaceItem('studio'), { workspaceTab: 'branches' }) });

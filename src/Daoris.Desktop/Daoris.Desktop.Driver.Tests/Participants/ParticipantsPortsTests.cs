@@ -72,7 +72,7 @@ public sealed class ParticipantsPortsTests : IDisposable
     [Fact]
     public void A_chat_run_bind_says_its_workflow_through_the_supplied_events_and_reads_the_catalogue_the_plugins_install()
     {
-        WorkflowStore.Add(_home, new WorkflowVersionAdded("chat-steps", "A conversation's steps", "terminal", "2026-10-09T09:00:00Z",
+        StoredSteps.Add(_home, new WorkflowVersionAdded("chat-steps", "A conversation's steps", "terminal", "2026-10-09T09:00:00Z",
             System.Text.Json.Nodes.JsonNode.Parse("""
                 [{"id":"work","kind":"work","checks":"light"},
                  {"id":"landing","kind":"landing","form":"branch","accept":"you","pattern":"chat/{session}-{slug}","plugin":"none"}]

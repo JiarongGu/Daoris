@@ -86,7 +86,6 @@ internal static class OwnerTargetRows
         Row("GIT_FETCH", Repository(), Workspace());
         // GITAPP2m: a branch's history edited in one repository's checkout.
         Row("GIT_HISTORY_EDIT", Repository(), Workspace());
-        Row("SETUP_PRESS", Repository());
         // AGENTSPLACE1b2: a place's apply acts on every repository its plan names.
         rows.Add("PLACE_APPLY", OwnerTarget.Of(new OwnerField("repositories", OwnerKinds.Repository, Many: true)));
         // GITAPP2h, GITAPP2i, GITAPP2j, GITAPP2k, GITAPP2l: the Changes tab's acts on one repository's checkout.
