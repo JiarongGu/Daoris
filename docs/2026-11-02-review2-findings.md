@@ -31,6 +31,19 @@ Three areas are read and every finding in them is fixed on main, each fixer conf
 - `DrivenMoveDowngradeProcessTests` (cut `sent`, word false) failed once under load and was not seen passing alone: rerun on a quiet
   machine.
 
+## The page's flows
+
+| # | Finding | Severity | Where | Taken by |
+|---|---|---|---|---|
+| P1 | On the *Landed work* route, *Use here* writes the default route's choice | blocking | `workflow/place/PlaceWorkflowView.tsx:231-262`, `:298`; `workflow/place/ChangeWorkflow.tsx:175` | the page fixer |
+| P2 | The confirmation for *Your own git sign-ins* on a remote can be skipped | blocking | `settings/git/GitRemotes.tsx:129`, `:131`, `:145` | the page fixer |
+| P3 | *Clear* on a git access class loosens it without asking | blocking | `settings/repository/GitAccess.tsx:148` | the page fixer |
+| P4 | A draft card's *Open in the editor* treats the told draft as the saved version | blocking | `PlaceWorkflowView.tsx:163-167`; `workflow/edit/WorkflowEditor.tsx:192` | the page fixer |
+| P5 | The editor's draft is lost whenever the editor unmounts (layout, *Change…*, a fold, *Set up…*) | blocking | `WorkflowEditor.tsx:173`; `PlaceWorkflowView.tsx:327`, `:338-341` | the page fixer |
+| P6 | The inspector is not keyed by step, so an open role editor and typed fields carry to the next step | blocking | `WorkflowEditor.tsx:789-791`; `workflow/edit/StepOptions.tsx:62-63`, `:122-126` | the page fixer |
+| P7 | A role saved from *Taken by* is applied to the draft as it was at the press | non-blocking | `workflow/edit/StepRole.tsx:73-83` | the page fixer |
+| P8 | *Change…* previews one version and *Use here* chooses another | non-blocking | `ChangeWorkflow.tsx:193-197`, `:290-295` | the page fixer |
+
 ## Still to read
 
-The page's flows; the tests and checks.
+The tests and checks.
