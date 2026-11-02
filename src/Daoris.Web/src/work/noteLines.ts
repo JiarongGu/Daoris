@@ -266,6 +266,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'opening.actor': { values: ['actor', 'n', 'entry', 'passed'] },
   // STAFFPOLICY1c: the role's policy chose the choice that ran; the sentence is the judge's, in English, as `passed` is the walk's.
   'opening.chosen': { values: ['actor', 'said'] },
+  // STAFFPOLICY1e2: the part moved here from another choice of the role; the choice it left is said as a choice, the why is the judge's, in English.
+  'opening.moved-choice': { values: ['from', 'said'] },
   // FOUNDATION1x: a quest marked design ran on the order of the role taking design, Build's while none does; the role's name as written.
   'opening.design': { values: ['role'] },
   // LIMITPICK2: the account a start was refused for its sign-in and moved off, as named.

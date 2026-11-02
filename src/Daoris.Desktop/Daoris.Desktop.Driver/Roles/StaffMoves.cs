@@ -37,6 +37,9 @@ public sealed class StaffMoves(string home, Func<StoreSettled>? settled = null, 
     /// <summary>The person's yes to a policy's ask: one move released.</summary>
     public const string Approval = "approved";
 
+    /// <summary>A yes closed at the start it released, which moved nothing.</summary>
+    public const string Spent = "spent";
+
     /// <summary>How long a move counts against the bound.</summary>
     public static readonly TimeSpan Window = TimeSpan.FromHours(24);
 
@@ -57,16 +60,23 @@ public sealed class StaffMoves(string home, Func<StoreSettled>? settled = null, 
             "SELECT id, kind FROM role_moves WHERE line = $line AND at >= $since ORDER BY id",
             row => (Id: row.GetInt64(0), Kind: row.GetString(1)), ("$line", line), ("$since", since));
         var moves = rows.Count(row => row.Kind == Moved);
-        var approvals = rows.Count(row => row.Kind == Approval);
-        var lastMove = rows.Where(row => row.Kind == Moved).Select(row => row.Id).DefaultIfEmpty(0).Max();
-        return new StaffMoved(Math.Max(0, moves - approvals), rows.Any(row => row.Kind == Approval && row.Id > lastMove));
+        // A yes closed at the start it released (Spent) was never used for a move: it cancels itself and loosens nothing.
+        var approvals = Math.Max(0, rows.Count(row => row.Kind == Approval) - rows.Count(row => row.Kind == Spent));
+        var lastClosed = rows.Where(row => row.Kind is Moved or Spent).Select(row => row.Id).DefaultIfEmpty(0).Max();
+        return new StaffMoved(Math.Max(0, moves - approvals), rows.Any(row => row.Kind == Approval && row.Id > lastClosed));
     }
 
     /// <summary>
-    /// Count a move off <paramref name="from"/> on <paramref name="condition"/> by <paramref name="action"/>, made in <paramref name="session"/>
-    /// (the part it leaves, or the start it was made inside). False where the store would not take it.
+    /// Close the person's standing yes for <paramref name="line"/> at the start it released, when that start moved nothing: an approval releases
+    /// one move at the start that follows it and is not kept for a later one. False where none stood or the store would not take it.
     /// </summary>
-    public bool Record(string line, string role, string session, string condition, string action, string? from, string? to = null) =>
+    public bool SpendApproval(string line, string role) => Of(line).Approved && Write(line, role, Spent, null, null, null, null, null);
+
+    /// <summary>
+    /// Count a move off <paramref name="from"/> on <paramref name="condition"/> by <paramref name="action"/>, made in <paramref name="session"/>
+    /// (the part it leaves; none for a move made inside one start, which no later part is carried on by). False where the store would not take it.
+    /// </summary>
+    public bool Record(string line, string role, string? session, string condition, string action, string? from, string? to = null) =>
         Write(line, role, Moved, session, from, to, condition, action);
 
     /// <summary>
@@ -79,6 +89,30 @@ public sealed class StaffMoves(string home, Func<StoreSettled>? settled = null, 
         {
             return decide(Of(line)) && Record(line, role, session, condition, action, from);
         }
+    }
+
+    /// <summary>
+    /// The choices <paramref name="line"/> moved off within <see cref="StaffJudge.Hold"/>, each with when it was left (the judge's
+    /// <c>moved-off</c> pass keeps the line from walking back onto one): the line's facts a start arranges by.
+    /// </summary>
+    public StaffFacts LineFacts(string line)
+    {
+        using var store = DesktopStoreReader.Open(Location);
+        if (store is null || store.Version < Step) return new StaffFacts();
+        var now = Clock.GetUtcNow();
+        var since = StaffJson.Moment(now - StaffJudge.Hold);
+        var off = new Dictionary<StaffKey, DateTimeOffset>();
+        string? rule = null;
+        foreach (var (from, at, action) in store.Query(
+                     "SELECT from_choice, at, action FROM role_moves WHERE line = $line AND kind = $kind AND from_choice IS NOT NULL AND at >= $since ORDER BY id",
+                     row => (row.GetString(0), row.GetString(1), row.IsDBNull(2) ? null : row.GetString(2)), ("$line", line), ("$kind", Moved), ("$since", since)))
+        {
+            if (StaffKey.Read(from) is { } key && DateTimeOffset.TryParse(at, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var when)) off[key] = when;
+            // The latest move's action names the rule of the walk it moves.
+            rule = action == StaffActions.Weighted ? StaffRules.Weight : action == StaffActions.Next ? StaffRules.Order : rule;
+        }
+
+        return new StaffFacts { MovedOff = off, Rule = rule };
     }
 
     /// <summary>The person's yes to <paramref name="line"/>'s policy ask or bound: one move released. False where the store would not take it.</summary>

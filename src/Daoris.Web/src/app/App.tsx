@@ -1090,6 +1090,8 @@ export function App() {
     'parked-quest': (item) => openQuest(item.id),
     // The steward's stop (STEWARDROLE1b) opens its quest's page, as a parked quest does.
     'steward-stopped': (item) => openQuest(item.id),
+    // A quest its role's policy holds (STAFFPOLICY1e2) opens its page, as a parked quest does.
+    'policy-hold': (item) => openQuest(item.id),
     // A run held at a declined request (INTEGRATE1o part o3) opens its work quest's page, where the run and the request are read.
     'request-declined': (item) => { if (item.declined?.work) openQuest(item.declined.work); },
     // A held git remote nothing serves leads to Settings → Git, where its identity is set up (GITAUTH1e); a browser has no such page.

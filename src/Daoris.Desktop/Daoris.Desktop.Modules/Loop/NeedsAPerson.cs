@@ -302,6 +302,17 @@ public static class NeedsAPerson
             rows.Add(row);
         }
 
+        // STAFFPOLICY1e2 (D226, design §11 point 7): a quest its role's policy holds, for an ask or for the bound of moves, waits on the person's
+        // yes (Try again, one move). The planner's typed verdict, so a plan with no look says it as the look does.
+        foreach (var consideration in facts.Considered.Where(consideration => Text(consideration, "verdict") == "PolicyHeld"))
+        {
+            var held = quests.GetValueOrDefault(Text(consideration, "quest") ?? "");
+            var row = Row("policy-hold", Text(consideration, "quest"), Text(consideration, "since") ?? Text(held, "updated"), held is null ? null : Scope(held));
+            row["where"] = Text(consideration, "repository");
+            row["sitting"] = consideration.DeepClone();
+            rows.Add(row);
+        }
+
         // STEWARDROLE1b (D209 §5.3): a quest the steward's stop holds waits on a Try again, the steward's or the owner's: *Stopped by the
         // steward*, the one act of the steward's that can leave something waiting on the owner. Read from the planner's verdict by its code.
         foreach (var consideration in facts.Considered.Where(consideration => Text(consideration, "verdict") == "Stopped"
@@ -635,6 +646,14 @@ public static class NeedsAPerson
             var parked = new JsonObject { ["kind"] = "parked-quest" };
             if (quests.GetValueOrDefault(quest ?? "") is { } record) parked["workspace"] = Scope(record);
             counted.Add(($"quest:{quest}", parked));
+        }
+
+        // STAFFPOLICY1e2: and a quest its role's policy holds for the person's yes, by its own key beside the parked quests'.
+        foreach (var quest in facts.Considered.Where(consideration => Text(consideration, "verdict") == "PolicyHeld").Select(each => Text(each, "quest")).Distinct())
+        {
+            var held = new JsonObject { ["kind"] = "policy-hold" };
+            if (quests.GetValueOrDefault(quest ?? "") is { } record) held["workspace"] = Scope(record);
+            counted.Add(($"policy:{quest}", held));
         }
 
         return counted;

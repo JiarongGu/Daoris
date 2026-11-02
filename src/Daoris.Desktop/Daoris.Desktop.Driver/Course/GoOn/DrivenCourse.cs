@@ -129,6 +129,13 @@ internal static class DrivenCourse
             CourseTrigger.TransientPastBound);
 
     /// <summary>
+    /// What follows a record that ended failed or quiet, once a role's policy has met the condition (STAFFPOLICY1e2): the carry-on's decision with
+    /// the policy's fact. Today's answer (a plain carry-on) comes back as anything but a move or a policy hold, and the caller leaves it to the planner.
+    /// </summary>
+    internal static LineCourse PolicyEnd(PriorSession record, string questStatus, CoursePolicy policy) =>
+        CourseDecision.Decide(new CourseFacts(HeadOf(record, questStatus), CourseBoundary.ProcessExited, Policy: policy), CourseTrigger.CarryOn);
+
+    /// <summary>
     /// The limit resume's step 1 (path F, LIMITRESUME1b): a record an account's limit, an update or a released transient end cut off, on a
     /// door known to fail closed and a judge that passed. Its own account ready is the resume; another the move to it, held while a move
     /// still stands to this record as its destination.

@@ -23,7 +23,7 @@ import { TrustAsk } from '../waits/TrustAsk';
 
 /** The kinds of thing *What needs you* lists (design §6.2), each in one of its three groups (`ATTENTION_GROUP`). */
 export type AttentionKind =
-  | 'parked' | 'parked-quest' | 'steward-stopped' | 'go-ahead' | 'trust' | 'account-wait' | 'signed-out'
+  | 'parked' | 'parked-quest' | 'steward-stopped' | 'policy-hold' | 'go-ahead' | 'trust' | 'account-wait' | 'signed-out'
   | 'proposal' | 'intake' | 'departure' | 'set-up' | 'rule' | 'unanswerable'
   | 'review' | 'opinion' | 'helper' | 'hand-over' | 'work' | 'permission' | 'answer' | 'confirmation' | 'space' | 'git-held'
   | 'quiet' | 'helper-ended' | 'request-declined' | 'memory' | 'integration';

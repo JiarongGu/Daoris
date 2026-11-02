@@ -49,5 +49,9 @@ is the row's, not its kind's: `attentionGroup` reads it, and the band, its order
 - **Several waits of one record can be one kind.** INTEGRATE1h's `integration` row names its wait in a field (`decide`, `superseded`,
   `card`, `declaration`): its label is picked by that field in `AttentionRow`, its words in `attentionWorded`, and its group by the row's `stands`, which
   `attentionGroup` and its twin `NoticesRead.Group` both read, so every place but the label and the words stays the kind's one entry.
+- **A quest-level hold is a row of the band alone.** `steward-stopped` and STAFFPOLICY1e2's `policy-hold` (a role's policy asking before a
+  move, or at its bound of moves) are read from the planner's typed verdict by its code, answered by *Try again* (the retry door approves
+  one move), and have no session wait in `waits.ts` yet; a plan with no look (the retry door, a terminal) must read the same hold
+  (`SessionGroups.VerdictsAsync` takes the home).
 - **"waiting on you" is taken.** `work.head.waiting` and `sessionState.awaiting-person` say it of a parked session, and the
   page's end-to-end spec reads the phrase in an intake's region (`e2e/platform.spec.ts`): word a new wait differently.
