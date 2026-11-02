@@ -51,6 +51,7 @@ public static class ChatLandCommand
         var presses = new OpinionPresses(world.Home, service);
         var quests = new PressQuests(service.FindQuestAsync);
         var records = SessionRecords.Parse(recordsJson);
+        TreesSaid? kept = null;
         var pressed = await ChatPresses.PressAsync(
             world.Home, new ChatPressAsk(session, tree, chatRun, repository, workspace, Live: false) { WithoutLook = withoutLook }, holder: null,
             async (tip, token) => await presses.PressedAsync(
@@ -58,6 +59,13 @@ public static class ChatLandCommand
                 token, chatRun, ReviewDoors.Terminal).ConfigureAwait(false),
             async (gate, token) =>
             {
+                // WORKFLOWCLEAN1 1d: a graph-bound chat's `land` is the runtime's, so a terminal with no loop keeps the word and performs nothing.
+                if (TreesWords.AcceptedForPass(world.Home, gate) is { } accepted)
+                {
+                    kept = accepted;
+                    return new TreeLanding(false, "accepted; Daoris lands it at its next pass.");
+                }
+
                 var subject = await landing.OwnSubjectAsync(
                     tree, session, null, records, quest => quests.FindAsync(quest, token), named => events.Openings([named]).GetValueOrDefault(named),
                     gate.Process, token).ConfigureAwait(false) with { Entered = entered };
@@ -67,6 +75,8 @@ public static class ChatLandCommand
                     beside: held => BranchTidying.BesideAsync(service, held)).ConfigureAwait(false);
             },
             () => ChatPresses.TurnsOf(events, line), ct).ConfigureAwait(false);
+
+        if (kept is not null) return Print(world, kept);
 
         WorkplacePressTelling.Current.Tell(world.Home, withoutLook is null ? TreesMarks.Land : TreesMarks.LandWithoutLook, session, DateTimeOffset.UtcNow);
         var said = TreesWords.Land(pressed.Landed, []);
