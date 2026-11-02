@@ -33,7 +33,7 @@ public sealed class GitGlobalFileTests : IDisposable
 
     public void Dispose()
     {
-        try { Directory.Delete(_root, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        GitSeed.Discard(_root);
     }
 
     private void ToolsFile(string json) => File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Tools), json);
