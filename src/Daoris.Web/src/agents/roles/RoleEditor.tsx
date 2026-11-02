@@ -1,20 +1,27 @@
 import { useTranslation } from 'react-i18next';
 import { Button, FormField, FormGrid, FormRow, Icon, SelectField, WhyGlyph } from '../../design/ui';
 import { Refused } from '../../work/InlineConfirm';
+import type { RoleNext, StaffCondition } from '../../data/wiring';
 import type { SettingsChoices } from '../tools';
 import { OfferedField } from './OfferedField';
+import { HowItChooses, LimitsFold, MovesFold, WeightField } from './RolePolicy';
+import { aimOf, conversational, type PolicyDraft, type PolicyFields, type PolicyMove, type Preset, withPreset } from './staffPolicyDraft';
 
 /** The most choices a role holds (D205 §3.1, `ActorChoices.Most`). */
 const MOST = 4;
 
 const FIELD = 'w-full min-w-0 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink placeholder:italic placeholder:text-ink-faint';
 
-export type Draft = { key: number; agent: string; model: string; effort: string };
+/** A choice as drafted: its tuple, and the policy fields typed beside it (weight, share, budget, works). */
+export type Draft = { key: number; agent: string; model: string; effort: string } & PolicyFields;
 
-/** `role` is the catalogue's editor over `SET_ROLE`; `staffing` holds a role's order alone, over `SET_ACTOR`. */
+/**
+ * `role` is the catalogue's editor over `SET_ROLE`; `staffing` holds a role's order alone, over `SET_ACTOR`. `policy` is the role's staffing
+ * policy (STAFFPOLICY1f), absent where the role keeps none: a new role, a brainstorm, a `staffing` editor or a driver before policies.
+ */
 export type Editing = {
   id: string; mode: 'role' | 'staffing'; isNew: boolean; revision: number | null; name: string; nameIn: [string, string][]; takes: string[]; work: string;
-  place: string; placeId: string; drafts: Draft[];
+  place: string; placeId: string; drafts: Draft[]; policy?: PolicyDraft | null;
 };
 
 export type RoleEditorProps = {
@@ -42,10 +49,18 @@ export type RoleEditorProps = {
   mayClear: boolean;
   /** The driver's sentence for a refused press. */
   refused: string | null;
+  /** The role's next new start as its saved policy would take it (a probe); null or absent, none is said. */
+  next?: RoleNext | null;
+  /** This home keeps no policies in the store yet: the editor says so and offers none. */
+  noStore?: boolean;
+  /** The policy fields this build enforces (`ROLES`' `policyFields`); absent, every move the editor knows. */
+  fields?: readonly string[];
   onSave: (off: boolean) => void;
   onClear: () => void;
   onCancel: () => void;
 };
+
+const MOVE_FIELDS = ['moves.limit', 'moves.transient', 'moves.failed', 'moves.quiet'];
 
 /**
  * **The role editor** (SETUPUX1l, the Setup design §2.4): a role's choices of agent, model and effort first, each model and effort from what
@@ -55,12 +70,31 @@ export type RoleEditorProps = {
  * A molecule shared by All roles, a place's Roles and, later, a step's: it reads no bridge, and every press goes out.
  */
 export function RoleEditor({
-  editing: now, onEditing, title, agents, offers, works, busy, held, placed, consequence, conversing, mayOff, isOff, mayClear, refused, onSave, onClear, onCancel,
+  editing: now, onEditing, title, agents, offers, works, busy, held, placed, consequence, conversing, mayOff, isOff, mayClear, refused, next, noStore, fields = MOVE_FIELDS,
+  onSave, onClear, onCancel,
 }: RoleEditorProps) {
   const { t } = useTranslation();
   const set = (patch: Partial<Editing>) => onEditing((was) => ({ ...was, ...patch }));
   const change = (key: number, field: 'agent' | 'model' | 'effort', value: string) =>
     onEditing((was) => ({ ...was, drafts: was.drafts.map((draft) => (draft.key === key ? { ...draft, [field]: value } : draft)) }));
+  const policy = now.policy ?? null;
+  const rule = policy && policy.preset !== 'first' ? 'weight' : 'order';
+  const roleWorks = now.takes.length > 0 ? now.takes : [now.work];
+  const conversation = conversational(roleWorks);
+  const policyLocked = busy || (now.mode === 'role' && held);
+  const patchDraft = (key: number, patch: Partial<PolicyFields>) =>
+    onEditing((was) => ({ ...was, drafts: was.drafts.map((draft) => (draft.key === key ? { ...draft, ...patch } : draft)) }));
+  const patchPolicy = (patch: (was: PolicyDraft) => Partial<PolicyDraft>) => onEditing((was) => (was.policy ? { ...was, policy: { ...was.policy, ...patch(was.policy) } } : was));
+  const weigh = (key: number, weight: string) => onEditing((was) => ({
+    ...was, drafts: was.drafts.map((draft) => (draft.key === key ? { ...draft, weight } : draft)),
+    policy: was.policy && was.policy.preset === 'even' ? { ...was.policy, preset: 'weighted' } : was.policy,
+  }));
+  const setMove = (condition: StaffCondition, move: PolicyMove | null) => patchPolicy((was) => {
+    const moves = { ...was.moves };
+    if (move) moves[condition] = move;
+    else delete moves[condition];
+    return { moves };
+  });
   const move = (from: number, to: number) => onEditing((was) => {
     if (to < 0 || to >= was.drafts.length) return was;
     const moved = [...was.drafts];
@@ -68,16 +102,21 @@ export function RoleEditor({
     return { ...was, drafts: moved };
   });
   const add = () => onEditing((was) => ({
-    ...was, drafts: [...was.drafts, { key: Math.max(0, ...was.drafts.map((draft) => draft.key)) + 1, agent: agents[0]?.value ?? '', model: '', effort: '' }],
+    ...was, drafts: [...was.drafts, { key: Math.max(0, ...was.drafts.map((draft) => draft.key)) + 1, agent: agents[0]?.value ?? '', model: '', effort: '', weight: '1' }],
   }));
   const locked = busy || (now.mode === 'role' && held);
   const shared = now.takes.length > 1;
   const labelOf = (work: string) => works.find((each) => each.value === work)?.label ?? work;
+  const moving = policy !== null && Object.keys({ ...policy.moves, ...policy.carried }).length > 0;
   const how = [
-    t('settings.ai.actors.later'), t('settings.ai.actors.outranks'),
-    t(conversing ? 'settings.ai.actors.goesOn' : 'settings.ai.actors.neverMoves'),
-    t('settings.ai.roles.choicesNote'), t('settings.ai.actors.most', { count: MOST }),
+    t(rule === 'weight' ? 'settings.ai.policy.later' : 'settings.ai.actors.later'), t('settings.ai.actors.outranks'),
+    t(moving ? 'settings.ai.policy.movesNote' : conversing ? 'settings.ai.actors.goesOn' : 'settings.ai.actors.neverMoves'),
+    t(rule === 'weight' ? 'settings.ai.policy.choicesNote' : 'settings.ai.roles.choicesNote'), t('settings.ai.actors.most', { count: MOST }),
+    ...(policy && rule === 'order' ? [t('settings.ai.policy.lighter')] : []),
   ].join(' ');
+  const columns: readonly ('name' | 'short' | 'number' | 'long' | 'acts')[] = policy
+    ? rule === 'weight' ? ['name', 'name', 'short', 'number', 'short', 'long', 'acts'] : ['name', 'name', 'short', 'long', 'acts']
+    : ['name', 'name', 'short', 'acts'];
 
   return (
     <form
@@ -89,15 +128,27 @@ export function RoleEditor({
       }}
     >
       <p className="m-0 text-small font-medium text-ink">{title}</p>
-      <FormGrid columns={['name', 'name', 'short', 'acts']} floor="40rem">
+      {noStore && <p className="m-0 text-small text-ink-soft">{t('settings.ai.policy.noStore')}</p>}
+      {policy?.state === 'stale' && <p role="status" className="m-0 text-small text-ink-soft">{t('settings.ai.policy.stale')}</p>}
+      {policy && (
+        <HowItChooses
+          preset={policy.preset} disabled={policyLocked}
+          onPreset={(preset: Preset) => onEditing((was) => withPreset(was, preset, conversation))}
+        />
+      )}
+      <FormGrid columns={columns} floor="40rem">
         <FormRow head>
           <span className="text-meta text-ink-faint">{t('settings.ai.actors.field.agent')}</span>
           <span className="text-meta text-ink-faint">{t('settings.ai.actors.field.model')}</span>
           <span className="text-meta text-ink-faint">{t('settings.ai.actors.field.effort')}</span>
+          {policy && rule === 'weight' && <span className="text-meta text-ink-faint">{t('settings.ai.policy.field.weight')}</span>}
+          {policy && rule === 'weight' && <span className="text-meta text-ink-faint">{t('settings.ai.policy.field.aim')}</span>}
+          {policy && <span className="text-meta text-ink-faint">{t('settings.ai.policy.field.limits')}</span>}
           <span />
         </FormRow>
         {now.drafts.map((draft, index) => {
           const n = index + 1;
+          const aim = aimOf(now.drafts.map((each) => each.weight), index);
           // What is in effect is shown as itself: a name typed at a terminal stays named.
           const options = draft.agent && !agents.some((agent) => agent.value === draft.agent) ? [...agents, { value: draft.agent, label: draft.agent }] : agents;
           return (
@@ -125,6 +176,22 @@ export function RoleEditor({
                   onChange={(value) => change(draft.key, 'effort', value)}
                 />
               </FormField>
+              {policy && rule === 'weight' && (
+                <FormField label={t('settings.ai.policy.field.weight')} when="stacked">
+                  <WeightField n={n} value={draft.weight ?? '1'} onChange={(weight) => weigh(draft.key, weight)} />
+                </FormField>
+              )}
+              {policy && rule === 'weight' && (
+                <FormField label={t('settings.ai.policy.field.aim')} when="stacked">
+                  <span className="text-small text-ink-soft">{aim ? t('settings.ai.policy.aim', { w: aim[0], of: aim[1] }) : t('settings.ai.policy.aimNone')}</span>
+                </FormField>
+              )}
+              {policy && (
+                <div className="grid min-w-0 gap-1">
+                  <span className="hidden text-small text-ink-faint @max-[40rem]:block">{t('settings.ai.policy.field.limits')}</span>
+                  <LimitsFold n={n} fields={draft} takes={roleWorks} labelOf={labelOf} disabled={policyLocked} onChange={(patch) => patchDraft(draft.key, patch)} />
+                </div>
+              )}
               <span className="flex items-center">
                 <Button variant="ghost" disabled={busy || index === 0} aria-label={t('settings.ai.actors.up', { n })} onClick={() => move(index, index - 1)}>
                   <Icon name="chevronUp" size={12} />
@@ -160,6 +227,18 @@ export function RoleEditor({
           {t('settings.ai.roles.editor.how')}
         </span>
       </div>
+      {policy && (
+        <MovesFold
+          policy={policy} rule={rule} fields={fields} conversation={conversation} disabled={policyLocked}
+          onMove={setMove} onMost={(most) => patchPolicy(() => ({ most }))}
+        />
+      )}
+      {policy && next && (
+        <p className="m-0 text-small text-ink-soft">
+          {next.by === 'first' ? t('settings.ai.policy.nextPlain', { choice: next.choice }) : t('settings.ai.policy.next', { choice: next.choice, said: next.said })}
+        </p>
+      )}
+      {policy && <p className="m-0 text-meta text-ink-faint">{t('settings.ai.policy.older')}</p>}
       {now.mode === 'role' && (
         <details open={now.isNew} className="grid gap-2">
           <summary className="cursor-pointer text-small font-medium text-ink-soft">{t('settings.ai.roles.editRole')}</summary>
