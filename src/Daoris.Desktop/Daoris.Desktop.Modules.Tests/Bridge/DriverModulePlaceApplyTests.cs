@@ -74,6 +74,19 @@ public sealed class DriverModulePlaceApplyTests : DriverModuleBridge
         return [.. said.GetProperty("out").EnumerateArray().Select(line => line.GetString()).SkipLast(1)];
     }
 
+    /// <summary>REVIEW2 5: the apply names its repositories as `repositories`; a single `repository`, which its owner row and grounds do not read, is refused.</summary>
+    [Fact]
+    public async Task An_apply_naming_a_single_repository_is_refused_and_nothing_is_written()
+    {
+        var module = await ModuleAsync();
+        var written = File.ReadAllBytes(DriverConfigPath);
+
+        var refusal = await RefusalAsync(module, "PLACE_APPLY", new { repository = "atlas", preset = SetupPresets.Merge, digest = new string('0', 64) });
+
+        Assert.Contains(Refusals.DriverRefused, refusal);
+        Assert.Equal(written, File.ReadAllBytes(DriverConfigPath));
+    }
+
     [Fact]
     public async Task A_digest_the_plan_no_longer_has_is_refused_moved_and_nothing_is_written()
     {

@@ -362,6 +362,27 @@ public sealed class PlaceApplyTests : IDisposable
         Assert.Equal(0, stand.Changes);
     }
 
+    /// <summary>REVIEW2 4: from a session's terminal the apply, acting alone, is refused and writes nothing, as every other person's press is.</summary>
+    [Fact]
+    public async Task The_verb_applying_alone_from_a_sessions_terminal_is_refused_and_writes_nothing()
+    {
+        var stand = Make();
+        var output = new StringWriter();
+        var terminal = new InstanceWorld
+        {
+            Home = _home, Environment = name => name == "DAORIS_SESSION_ID" ? "s1a2b3c4" : null, Out = output, Error = output, Verb = "place",
+        };
+
+        var code = await PlaceCommand.RunAsync(
+            ["engine", "--preset", SetupPresets.Integrated, "--apply", "--accept", "engine:integration"], output, stand.Place, stand.Config, _home, Plugins,
+            SessionWire.Acp, terminal, apply: stand.Doors());
+
+        Assert.Equal(1, code);
+        Assert.Contains("`DAORIS_SESSION_ID`", output.ToString(), StringComparison.Ordinal);
+        Assert.Null(IntegrationAcceptance.Of(stand.Config, "engine"));
+        Assert.Equal(0, stand.Changes);
+    }
+
     /// <summary>Words that are the usage: both of `--plan` and `--apply`, neither, an acceptance without an apply and a purpose that is none.</summary>
     [Theory]
     [InlineData("engine --preset merge-after-accept --plan --apply")]

@@ -96,6 +96,10 @@ public static class ChoiceRoutes
     public static InstanceRoute Keep { get; } = Person("SET_KEEP");
     public static InstanceRoute Actor { get; } = Person("SET_ACTOR");
     public static InstanceRoute Role { get; } = Person("SET_ROLE");
+    public static InstanceRoute WorkflowSave { get; } = Person("WORKFLOW_SAVE");
+    public static InstanceRoute WorkflowUse { get; } = Person("WORKFLOW_USE");
+    public static InstanceRoute WorkflowKind { get; } = Person("WORKFLOW_KIND");
+    public static InstanceRoute WorkflowLanded { get; } = Person("WORKFLOW_LANDED");
 
     /// <summary>Each verb that changes the home, in the verb's words: the route it sends while Daoris runs, or null with why it acts alone.</summary>
     public static IReadOnlyList<(string Verb, InstanceRoute? Route, string Reason)> Verbs { get; } =
@@ -133,9 +137,10 @@ public static class ChoiceRoutes
         ("driver landing … --cycle <file>|--no-cycle", null, "alone: SET_LANDING has no field for the cycle, and keeps the one the rule holds"),
         ("driver work-cycle", null, "alone: no route sets a quest's or an ask's cycle of work"),
         ("driver brainstorms", null, "alone: no route sets the brainstorm policy"),
-        ("driver workflow new|edit|apply|import|use|kind", null,
-            "alone: it runs the typed operations the window's WORKFLOW_SAVE, WORKFLOW_USE and WORKFLOW_KIND run, holding the home's lease; "
-            + "the window's WORKFLOW_LANDED reads the tip from its own registry"),
+        ("driver workflow new|edit|apply|import", ChoiceRoutes.WorkflowSave, "the window's workflow save, a version at a time"),
+        ("driver workflow use", ChoiceRoutes.WorkflowUse, "the window's choice of a workflow for a place"),
+        ("driver workflow kind", ChoiceRoutes.WorkflowKind, "the window's declaration of a kind of task"),
+        ("driver workflow use … --landed", ChoiceRoutes.WorkflowLanded, "the window's landed route, whose gates the instance reads at the line's tip"),
     ];
 }
 
@@ -145,7 +150,7 @@ public static class ChoiceRoutes
 /// <see cref="IChoiceTerminal.PressAsync"/> where the running Daoris answers, confirmed in its window; else the choice's own operation, on
 /// the terminal's word (D50), refused from a session's terminal (D194 point 5); and alone, holding nothing and sending nothing, on a
 /// file <c>DAORIS_DRIVER_CONFIG</c> names. A change no route takes acts alone even beside a running Daoris (<see cref="ChoiceRoutes"/>):
-/// a landing's cycle, <c>work-cycle</c>, <c>brainstorms</c> and the workflows' writes (<see cref="DriverWorkflowsCommand"/>). Its words
+/// a landing's cycle, <c>work-cycle</c> and <c>brainstorms</c>; the workflows' writes are routes (<see cref="DriverWorkflowsCommand"/>). Its words
 /// are one function per verb on both paths, today's text kept (<c>fixtures/driver-choices-text.json</c>,
 /// <c>fixtures/driver-workflows-text.json</c>). The settings' own keys' verbs are here; a rule a subdomain above owns has its verb
 /// beside the rule (<see cref="ChoiceVerb"/>, FOUNDATION1 mod-iii), which Loop wires into the world (<see cref="DriverChoiceVerbs"/>)

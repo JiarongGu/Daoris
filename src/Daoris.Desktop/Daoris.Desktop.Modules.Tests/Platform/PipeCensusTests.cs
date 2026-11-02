@@ -404,6 +404,15 @@ public sealed class PipeCensusTests
     [InlineData("GIT_HISTORY_EDIT", """{"repository":"engine","edit":"rebase","branch":"topic","target":"main","plan":true}""", PipeClass.Open)]
     [InlineData("GIT_HISTORY_EDIT", """{"repository":"engine","edit":"rebase","branch":"topic","target":"main"}""", PipeClass.Person)]
     [InlineData("GIT_HISTORY_EDIT", """{"edit":"pick","plan":false,"said":true}""", PipeClass.Person)]
+    // REVIEW2 1-2: another casing, a name said twice, or `said` beside `plan` opens nothing the handler would read as the press.
+    [InlineData("GIT_HISTORY_EDIT", """{"repository":"engine","edit":"rebase","branch":"topic","target":"main","Plan":true}""", PipeClass.Person)]
+    [InlineData("GIT_HISTORY_EDIT", """{"repository":"engine","edit":"rebase","branch":"topic","target":"main","plan":true,"said":true}""", PipeClass.Person)]
+    [InlineData("GIT_HISTORY_EDIT", """{"edit":"pick","plan":true,"plan":true}""", PipeClass.Person)]
+    [InlineData("SYSTEM_SPACE_FREE", """{"Plan":true,"units":[{"kind":"logs","id":"a"}]}""", PipeClass.Person)]
+    [InlineData("SYSTEM_SPACE_FREE", """{"plan":true,"plan":true}""", PipeClass.Person)]
+    [InlineData("TOOLS_GIT", """{"Way":"system"}""", PipeClass.Person)]
+    [InlineData("PLUGIN_UPDATE", """{"id":"acme.watch","Apply":true}""", PipeClass.Person)]
+    [InlineData("PLUGIN_UPDATE", """{"id":"acme.watch","apply":true,"apply":false}""", PipeClass.Person)]
     public void A_route_that_is_a_look_and_a_press_is_classed_by_its_payload(string route, string payload, PipeClass expected)
     {
         using var document = JsonDocument.Parse(payload);

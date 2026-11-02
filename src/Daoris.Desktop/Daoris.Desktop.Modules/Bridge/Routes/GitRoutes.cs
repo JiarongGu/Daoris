@@ -541,6 +541,8 @@ public sealed class GitRoutes(DriverLoop loop)
             throw new DriverException("a history edit names its edit (`pick`, `revert` or `rebase`), its branch and its target.");
         }
 
+        // The pipe opens `plan: true` as a look; a payload saying `said` beside it would run as the press, so it is refused.
+        if (Flag(request, "plan") && Flag(request, "said")) throw new DriverException("a history edit's plan and its words are asked apart.");
         _ = _loop.Service ?? throw NotReady();
         var workspace = Optional(request, "workspace");
         var world = new GitHistoryWorld(

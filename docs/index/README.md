@@ -207,7 +207,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Roles/QuestionSupervisorDecisions.cs` | 48 | 861 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Roles/RoleStaffing.cs` | 44 | 837 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs` | 194 | 3376 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Settings/DriverChoicesCommand.cs` | 50 | 855 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Settings/DriverChoicesCommand.cs` | 50 | 860 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Settings/DriverConfig.cs` | 107 | 1792 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Store/DesktopStore.cs` | 50 | 1026 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/WorkOrders/Domain/Planner.cs` | 105 | 1652 |
@@ -217,7 +217,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/WorkOrders/Work/WorkAbandoning.cs` | 43 | 765 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Domain/WorkflowNamed.cs` | 49 | 863 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Domain/WorkflowRun.cs` | 64 | 1108 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/DriverWorkflowsCommand.cs` | 56 | 979 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/DriverWorkflowsCommand.cs` | 63 | 1102 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Nodes/NodeGraphs.cs` | 76 | 1253 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Nodes/NodeRuntime.cs` | 146 | 2201 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Nodes/QuestCloser.cs` | 61 | 955 |
@@ -255,7 +255,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/StatePublisherTests.cs` | 47 | 888 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/ConversationRoutes.cs` | 42 | 640 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs` | 60 | 945 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/GitRoutes.cs` | 46 | 695 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/GitRoutes.cs` | 46 | 697 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/HelpRoutes.cs` | 88 | 1465 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/LinesRoutes.cs` | 68 | 1094 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/SessionsRoutes.cs` | 78 | 1222 |
@@ -265,7 +265,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/NeedsAPerson.cs` | 57 | 931 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/SessionWords.cs` | 70 | 1336 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/InstancePipe.cs` | 101 | 1994 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/PipeCensus.cs` | 41 | 551 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/PipeCensus.cs` | 42 | 561 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/PipeTargetRows.cs` | 41 | 535 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/StandingConfirmation.cs` | 93 | 1710 |
 
