@@ -1,41 +1,31 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { CodeDependency, CodeModule, Provenance } from '../data/api';
-import { CodeMapCanvas, CodeMapDetail } from './CodeMap';
+import type { Provenance } from '../data/api';
+import { inDark } from '../design/flowFrames';
+import { chinese } from '../design/storyLanguage';
+import { storyWidths } from '../design/storyWidths';
+import { type CodeFixture, LONG_IDS, REPOSITORY, syntheticMap, WITH_A_CYCLE } from './codeFixtures';
+import { CodeMapDetail, CodeMapWorld } from './CodeMap';
 
-// A repository's own code map (MAP3a), in the shapes a producer writes: a small layered service, a
-// map with a recorded cycle, and ids too long for their boxes.
+// A repository's own code map on the canvas (MAP3a; CANVAS1f; D224, the canvas design §3.4), in the shapes a producer writes: this
+// repository's twenty modules, a map with a cycle, ids too long for their cards, a teammate's, and synthetic ones of 500 and 5,000
+// that open on their closed folders. At the main area's 80, 39 and 25rem (below the 36rem floor the world is drawn where it fits and
+// pans in its pane), in English and 中文, light and dark. Frames and cards are measured on these (`measured/code.spec.ts`).
 
-const MODULES: CodeModule[] = [
-  { id: 'cli', path: 'src/Cli', summary: 'the npm package: commands and the canon' },
-  { id: 'web', path: 'src/Web', summary: 'the platform, the only UI' },
-  { id: 'desktop', path: 'src/Desktop', summary: 'the local driver and its window' },
-  { id: 'service', path: 'src/Service', summary: 'indexes the family, reachable over MCP' },
-  { id: 'devkit', path: 'src/Devkit', summary: 'five universal gates' },
-];
+const FED: Provenance = {
+  commit: 'c0ffee1234567890', shortCommit: 'c0ffee12', committedAt: '2026-09-24T08:00:00Z', branch: 'main', origin: 'person@machine-b',
+};
 
-const DEPENDENCIES: CodeDependency[] = [
-  { from: 'desktop', to: 'web', kind: 'hosts' },
-  { from: 'desktop', to: 'service', kind: 'http' },
-  { from: 'web', to: 'service', kind: 'http' },
-  { from: 'cli', to: 'service', kind: 'http' },
-];
-
-function Both({ modules, dependencies, fed, initial = 'service' }: {
-  modules: CodeModule[]; dependencies: CodeDependency[]; fed?: Provenance; initial?: string | null;
-}) {
+function Both({ map, fed, initial = null }: { map: CodeFixture; fed?: Provenance; initial?: string | null }) {
   const [selected, setSelected] = useState<string | null>(initial);
   return (
     // As MapView lays them out: beside each other by the main area's own width (D118 §3b), so the story
     // stands in for the main area as their container.
     <div className="@container/main">
-    <div className="grid items-start gap-4 @4xl/main:grid-cols-[minmax(0,1fr)_20rem]">
-      <CodeMapCanvas repository="daoris" modules={modules} dependencies={dependencies} selected={selected} onSelect={setSelected} />
-      <CodeMapDetail
-        modules={modules} dependencies={dependencies} selected={selected} file="docs/code-map.json" fed={fed}
-        onSelect={setSelected}
-      />
-    </div>
+      <div className="grid items-start gap-4 @4xl/main:grid-cols-[minmax(0,1fr)_20rem]">
+        <CodeMapWorld repository="daoris" modules={map.modules} dependencies={map.dependencies} selected={selected} onSelect={setSelected} version={fed?.commit} />
+        <CodeMapDetail modules={map.modules} dependencies={map.dependencies} selected={selected} file="docs/code-map.json" fed={fed} onSelect={setSelected} />
+      </div>
     </div>
   );
 }
@@ -43,41 +33,38 @@ function Both({ modules, dependencies, fed, initial = 'service' }: {
 const meta: Meta<typeof Both> = {
   title: 'Map/CodeMap',
   component: Both,
-  args: { modules: MODULES, dependencies: DEPENDENCIES },
+  args: { map: REPOSITORY },
+  decorators: [storyWidths.wide],
 };
 export default meta;
 
 type Story = StoryObj<typeof Both>;
 
-/** Five artefacts and what reaches what. */
-export const Layered: Story = {};
+/** This repository's twenty modules, in their folders, opened whole, a module chosen and its neighbourhood forward. */
+export const Layered: Story = { args: { initial: 'Daoris.Desktop.Driver' } };
+export const LayeredHalf: Story = { ...Layered, decorators: [storyWidths.half] };
+export const LayeredNarrow: Story = { ...Layered, decorators: [storyWidths.narrow] };
+export const LayeredChinese: Story = { ...Layered, decorators: [storyWidths.wide, chinese] };
+export const LayeredDark: Story = { ...Layered, decorators: [storyWidths.wide, inDark] };
 
-/** A producer recorded a cycle: every module is still drawn once, and one arrow points up. */
-export const WithACycle: Story = {
-  args: { dependencies: [...DEPENDENCIES, { from: 'service', to: 'desktop', kind: 'callback' }] },
-};
+/** A producer recorded a cycle: its modules are one labelled unit in the layers, whole in a frame of their own. */
+export const WithACycle: Story = { args: { map: WITH_A_CYCLE } };
+export const WithACycleChinese: Story = { ...WithACycle, decorators: [storyWidths.wide, chinese] };
 
 /**
  * A teammate's map (MAP3e): no checkout here, so it came down with the sync, and the detail says
  * from which commit and whose key — before a module is chosen, where the file line sits.
  */
-export const FromATeammate: Story = {
-  args: {
-    initial: null,
-    fed: {
-      commit: 'c0ffee1234567890', shortCommit: 'c0ffee12', committedAt: '2026-09-24T08:00:00Z',
-      branch: 'main', origin: 'person@machine-b',
-    },
-  },
-};
+export const FromATeammate: Story = { args: { fed: FED } };
+export const FromATeammateNarrow: Story = { ...FromATeammate, decorators: [storyWidths.narrow] };
 
-/** Ids longer than a box, cut on the drawing and whole in the detail. */
-export const LongIds: Story = {
-  args: {
-    modules: [
-      { id: 'Daoris.Desktop.Driver.Host', path: 'src/Desktop/Host', summary: 'the headless driver' },
-      { id: 'Daoris.Desktop.Modules', path: 'src/Desktop/Modules', summary: 'the IPC surfaces' },
-    ],
-    dependencies: [{ from: 'Daoris.Desktop.Driver.Host', to: 'Daoris.Desktop.Modules', kind: 'project' }],
-  },
-};
+/** Ids longer than a card, cut on it and whole in the detail. */
+export const LongIds: Story = { args: { map: LONG_IDS, initial: 'Daoris.Desktop.Driver.Host.Integration' } };
+
+/** Five hundred modules: folders closed, the lines between them counted, find reaching every module. */
+export const Hundreds: Story = { args: { map: syntheticMap(500) } };
+export const HundredsHalf: Story = { ...Hundreds, decorators: [storyWidths.half] };
+export const HundredsDark: Story = { ...Hundreds, decorators: [storyWidths.wide, inDark] };
+
+/** Five thousand synthetic modules: the overview of closed folders the world opens on. */
+export const Thousands: Story = { args: { map: syntheticMap(5000) } };

@@ -272,7 +272,7 @@ export function layoutCode(tree: CodeTree, open: ReadonlySet<string>, words: { c
       }
     }
 
-    const cell = (id: string, child: CodeGroup | undefined): { w: number; h: number; inner?: Laid } => {
+    const cell = (child: CodeGroup | undefined): { w: number; h: number; inner?: Laid } => {
       if (child && open.has(child.id)) { const inner = laidGroup(child, false); return { w: inner.w, h: inner.h, inner }; }
       return { w: CARD_W, h: CARD_H };
     };
@@ -280,13 +280,13 @@ export function layoutCode(tree: CodeTree, open: ReadonlySet<string>, words: { c
     const lines: { id: string; w: number; h: number; inner?: Laid }[][] = [];
     for (const row of units.length > 0 ? layerModules(units, edges) : []) {
       for (let at = 0; at < row.length; at += perLine) {
-        lines.push(row.slice(at, at + perLine).map((id) => ({ id, ...cell(id, tree.groups.get(id)) })));
+        lines.push(row.slice(at, at + perLine).map((id) => ({ id, ...cell(tree.groups.get(id)) })));
       }
     }
     const lineWidth = (cells: readonly { w: number }[]) => cells.reduce((sum, each) => sum + each.w, 0) + GAP_X * (cells.length - 1);
     const layersW = Math.max(0, ...lines.map(lineWidth));
     const folders = group.groups.map((id) => tree.groups.get(id)!).filter((child) => child.kind === 'folder')
-      .map((child) => ({ id: child.id, ...cell(child.id, child) }));
+      .map((child) => ({ id: child.id, ...cell(child) }));
     const area = folders.reduce((sum, each) => sum + (each.w + GAP_X) * (each.h + GAP_Y), 0);
     const target = Math.max(layersW, CARD_W, ...folders.map((each) => each.w), Math.ceil(Math.sqrt(area * 1.6)));
 
