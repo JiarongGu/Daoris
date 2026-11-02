@@ -44,6 +44,21 @@ Three areas are read and every finding in them is fixed on main, each fixer conf
 | P7 | A role saved from *Taken by* is applied to the draft as it was at the press | non-blocking | `workflow/edit/StepRole.tsx:73-83` | the page fixer |
 | P8 | *Change…* previews one version and *Use here* chooses another | non-blocking | `ChangeWorkflow.tsx:193-197`, `:290-295` | the page fixer |
 
-## Still to read
+## The tests and checks
 
-The tests and checks.
+| # | Finding | Severity | Where | Taken by |
+|---|---|---|---|---|
+| T1 | The SSH security proofs never run under a gate: every gate strips `DAORIS_*` (so `DAORIS_TEST_SSHD`), and `GitSshHoldsProcessTests` returns green having asserted nothing | blocking | `tools/merge-branch.mjs:7194-7199`; `Workplace/GitSshdProcessTests.cs:275-286`; `GitSshHoldsProcessTests.cs:40-41` | the checks fixer |
+| T2 | The person's yes to a policy hold is written by two doors and neither is tested | blocking | `WorkOrders/RetryVerb.cs:110-116`; `Modules/Bridge/Routes/DriverRoutes.cs:694-702` | the checks fixer |
+| T3 | The pipe's token refusal is tested as a function, never through the pipe | non-blocking | `PipeCensusTests.cs:594-602`; `InstancePipe.cs:1026` | the checks fixer |
+| T4 | Merging with plain git skips every check merge-branch blocks on | non-blocking | the dispatch skill | the steward: merges go through the tool (skill amended) |
+| T5 | The post-merge CI ends at its first red, so each red costs a cycle; `--keep-going` beside `--ci` is never read | non-blocking | `tools/merge-branch.mjs:838`, `:6859`, `:6870-6874` | the steward (plain `--ci` after a merge, skill amended); the flag to the checks fixer |
+| T6 | The censuses have no gate of their own, and the post-merge list is hand-written prose | non-blocking | the censuses; the dispatch skill | the checks fixer |
+| T7 | The help room's goldens pinned false statements about authority as text | non-blocking | `HelpRoomGoldenTests.cs:222-236` | the checks fixer |
+| T8 | The course table can be satisfied by a *left out* row, and the readers fixture's `reads` is never checked | non-blocking | `LineCourseTests.cs:653`; `participant-work-readers.json` | the checks fixer |
+| T9 | The scratch census reads only one shape of delete and only `_fixtures` roots | non-blocking | `GitSeedTests.cs:151-160`; `GitHttpsProcessTests.cs:24`, `:53` | the checks fixer |
+| T10 | The new frame-time budgets are load-timed with no rerun | non-blocking | `measured/canvas.spec.ts:349`; `measured/large.spec.ts:84` | the checks fixer |
+| T11 | Several text censuses read only one spelling of what they guard | non-blocking | `WorkflowGraphsTests.cs:314-322`; `NoConsoleWindowTests.cs:81`; `tools/console-windows.mjs:69` | the checks fixer |
+| T12 | Goldens pin incidental text, or one fact twice | non-blocking | `cli-usage/help.txt` with `driver-choices-text.json`; `deployment-rehearsal.test.ts:158-160` | the checks fixer |
+
+All five areas are read.
