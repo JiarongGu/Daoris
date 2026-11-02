@@ -55,7 +55,7 @@ public sealed class GitSshHoldsProcessTests : IDisposable
         try { _server?.Kill(entireProcessTree: true); } catch (InvalidOperationException) { }
         _server?.Dispose();
         foreach (var (name, value) in _was) Environment.SetEnvironmentVariable(name, value);
-        try { Directory.Delete(_root, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        GitSeed.Discard(_root);
     }
 
     private static string Slashed(string path) => path.Replace('\\', '/');

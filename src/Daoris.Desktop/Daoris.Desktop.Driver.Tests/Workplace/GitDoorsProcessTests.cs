@@ -39,7 +39,7 @@ public sealed class GitDoorsProcessTests : IDisposable
 
     public void Dispose()
     {
-        try { Directory.Delete(_root, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        GitSeed.Discard(_root);
     }
 
     /// <summary>The doors' build beside this test's own, laid out as the install's <c>app/bin/</c>: one program, two names.</summary>

@@ -34,7 +34,7 @@ public sealed class PluginKitTests : IDisposable
         {
             try
             {
-                Directory.Delete(_scratch, recursive: true);
+                GitSeed.Remove(_scratch);
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
             {

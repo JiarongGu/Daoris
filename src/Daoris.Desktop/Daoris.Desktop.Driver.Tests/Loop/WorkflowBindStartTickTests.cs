@@ -44,7 +44,7 @@ public sealed class WorkflowBindStartTickTests : IDisposable
 
     public void Dispose()
     {
-        try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        GitSeed.Discard(_home);
     }
 
     private static JsonNode Steps() => JsonNode.Parse("""[{"id":"work","kind":"work"},{"id":"landing","kind":"landing","form":"merge","accept":"you"}]""")!;

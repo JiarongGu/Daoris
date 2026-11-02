@@ -50,7 +50,7 @@ public sealed class GitHttpsProcessTests : IDisposable
             try { GitIdentityHttps.EraseAsync(Home, "http", host, user, CancellationToken.None).GetAwaiter().GetResult(); } catch (DriverException) { }
         }
 
-        try { Directory.Delete(_root, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        GitSeed.Discard(_root);
     }
 
     private void LayDoors()

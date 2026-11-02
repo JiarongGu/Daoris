@@ -25,7 +25,7 @@ public sealed class GitPromptsProcessTests : IDisposable
 
     public void Dispose()
     {
-        try { Directory.Delete(_root, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        GitSeed.Discard(_root);
     }
 
     private string Marker => Path.Combine(_root, "asked");

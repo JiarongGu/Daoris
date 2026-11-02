@@ -35,7 +35,7 @@ public sealed class AccessSwapTickTests : IDisposable
 
     public void Dispose()
     {
-        try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        GitSeed.Discard(_home);
     }
 
     private string Log => Path.Combine(_home, "agent.log");

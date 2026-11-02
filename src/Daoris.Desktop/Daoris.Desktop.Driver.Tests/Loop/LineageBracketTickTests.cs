@@ -28,7 +28,7 @@ public sealed class LineageBracketTickTests : IDisposable
 
     public void Dispose()
     {
-        try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        GitSeed.Discard(_home);
     }
 
     private void Git(params string[] arguments)
