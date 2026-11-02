@@ -26,6 +26,7 @@ public static class AccountSet
     /// start, a look or a door reads one scope, the machine's, whatever the raw file still holds.
     /// </summary>
     /// <param name="accounts">Each agent's accounts on this machine, sorted (<see cref="HarnessSettings.Profiles"/>).</param>
+    // transitional: account-pool-fold
     public static HarnessSettings Of(HarnessSettings settings, IReadOnlyDictionary<string, IReadOnlyList<string>> accounts) =>
         Fold(settings, accounts, DateTimeOffset.UnixEpoch, () => "", receipts: false).Settings;
 
