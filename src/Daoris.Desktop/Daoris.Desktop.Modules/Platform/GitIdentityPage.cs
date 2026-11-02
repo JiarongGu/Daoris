@@ -34,6 +34,9 @@ internal static class GitIdentityPage
                 };
             }).ToArray(),
             Own = pointers.Machine.Keys.Order(StringComparer.Ordinal).ToArray(),
+            // Each workspace's choice for a host (§3.2 step 2): an identity's id or `own`, as an array so no name is a key.
+            Choices = pointers.Workspace.SelectMany(workspace => workspace.Value.Select(host => new { Workspace = workspace.Key, Host = host.Key, Value = host.Value }))
+                .OrderBy(each => each.Workspace, StringComparer.Ordinal).ThenBy(each => each.Host, StringComparer.Ordinal).ToArray(),
             Hosts = identities.Select(each => each.Host).Concat(pointers.Machine.Keys).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray(),
         };
     }

@@ -28,6 +28,8 @@ import { RepositoryRules, type RuleLists } from './RepositoryRules';
 import { type FoldSpec, FoldRow } from './FoldRow';
 import { Inheritable, landingRowSays, landingSays, SetupSection, type UnreadLanding, UnreadLandingNote } from './SetupParts';
 import { StandingAnswer } from './StandingAnswer';
+import type { GitIdentityShown } from '../../settings/Git';
+import { GitRemotes, type GitRemoteActs, type GitRemoteShown } from '../../settings/GitRemotes';
 
 /**
  * The sections of a repository's Setup (UX6f, D150 §4.2; *Sessions' access* since AUTONOMY1d, *Heavy gates* since HEAVYRUN1b2b), in
@@ -35,8 +37,19 @@ import { StandingAnswer } from './StandingAnswer';
  * `only` names them.
  */
 export type SetupSectionId =
-  | 'driving' | 'work' | 'access' | 'heavy' | 'sessions' | 'reach'
+  | 'driving' | 'work' | 'git' | 'access' | 'heavy' | 'sessions' | 'reach'
   | 'landing' | 'opinion' | 'look' | 'landedRoute' | 'line' | 'more';
+
+/**
+ * A repository's git remotes with the identity each resolves to (GITAUTH1e, the git-auth design §7.3), and the presses that choose one
+ * for a remote; absent on a shell older than it or where the remotes are not read, and the section is not drawn.
+ */
+export type GitSetup = {
+  remotes: GitRemoteShown[];
+  /** The machine's identities, from which a remote's choice is offered. */
+  identities: GitIdentityShown[];
+  acts: GitRemoteActs;
+};
 
 /**
  * This machine's heavy gates for it (HEAVYRUN1b2b, D180's HEAVYRUN1b2a note), used where its own `daoris.gates.json` marks none, and
@@ -199,6 +212,7 @@ export type RepositorySetupProps = {
   /** Its sessions' language and standing answer, where it can be driven. */
   sessions?: SessionsSetup | null;
   reach?: ReachSetup | null;
+  git?: GitSetup | null;
   /** A change on its way: every control waits for it. */
   busy?: boolean;
   /** A section a door asked to see open, beside those that open on their own. */
@@ -219,7 +233,7 @@ export type RepositorySetupProps = {
 };
 
 /** The sections the place's page draws under its Sessions (AGENTSPLACE1f): the access, the sessions' own rows and the reach; the heavy gates went to *More* (SETUPUX1o). */
-export const SESSIONS_SECTIONS: readonly SetupSectionId[] = ['access', 'sessions', 'reach'];
+export const SESSIONS_SECTIONS: readonly SetupSectionId[] = ['git', 'access', 'sessions', 'reach'];
 
 /**
  * The folds the place's page draws under its Workflow beside Gates (SETUPUX1o, the Setup design's §2.3), each with its owner: *Landing*
@@ -252,7 +266,7 @@ const JOIN = ' · ';
  *
  * A molecule: every state is reached by its props, and every press goes out.
  */
-export function RepositorySetup({ repository, driving, work, access, heavy, landed, sessions, reach, busy = false, open, openAgain, only, lead = [], gatesApart = false, onOpenPlugin }: RepositorySetupProps) {
+export function RepositorySetup({ repository, driving, work, access, heavy, landed, sessions, reach, git, busy = false, open, openAgain, only, lead = [], gatesApart = false, onOpenPlugin }: RepositorySetupProps) {
   const { t, i18n } = useTranslation();
   const marked = (value: string, source: 'repository' | 'workspace' | 'daoris') =>
     source === 'repository' ? value : t(`projects.setup.marked.${source}`, { value });
@@ -354,6 +368,8 @@ export function RepositorySetup({ repository, driving, work, access, heavy, land
     // An unread landing rule opens it too (FABRIC-GRAPH1d): the person wrote something nothing reads.
     // A declaration owed acceptance opens it too (INTEGRATE1h): *What needs you*'s door brings the person here to read it and accept.
     work: lineOwn || landingOwn || Boolean(work?.landingUnread) || commitsOwn || reviewOwn || opinionOwn || landedOwn || integrationOwed,
+    // A remote nothing serves opens it: the person has something to do there (GITAUTH1e).
+    git: Boolean(git?.remotes.some((remote) => remote.serves === 'none')),
     access: accessOwn,
     // This machine's heavy gates are set for this repository alone, so a list set is its own; and so are its sessions' checks.
     heavy: (heavy?.gates.length ?? 0) > 0 || Boolean(heavy?.checks?.set),
@@ -564,6 +580,14 @@ export function RepositorySetup({ repository, driving, work, access, heavy, land
       id: 'work',
       summary: workParts.join(JOIN),
       body: <>{lineRow}{landingRow}{commitsRow}{reviewRow}{opinionRow}{landedRow}{integrationRow}</>,
+    });
+  }
+  if (git && git.remotes.length > 0) {
+    sections.push({
+      id: 'git',
+      summary: git.remotes.map((remote) => `${remote.name}: ${remote.serves === 'identity' ? remote.label : remote.serves === 'own'
+        ? t('settings.git.own') : remote.serves === 'none' ? t('settings.git.none') : t('settings.git.remotes.local')}`).join(JOIN),
+      body: <GitRemotes remotes={git.remotes} identities={git.identities} acts={git.acts} />,
     });
   }
   if (accessShown) {

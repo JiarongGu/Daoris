@@ -250,6 +250,11 @@ describe('what needs a person, worded', () => {
     const own = words(row('git-held', 'own', null, { git: { ...git, class: 'own-input', words: '' } }));
     expect(own.title).toBe("github.com is reached by the repository's own ssh command, past Daoris's door");
     expect(own.detail).toMatch(/^engine, game: the repository names its own ssh command \(core\.sshCommand\).*until that setting is removed from the repository\.$/);
+    // GITAUTH1e (§6.8): a remote nothing serves once the home has moved offers the two ways out, both in Settings → Git, and no Try again.
+    const nothing = words(row('git-held', 'none', null, { git: { ...git, class: 'no-identity', words: '' } }));
+    expect(nothing.title).toBe('github.com has no git identity yet');
+    expect(nothing.detail).toMatch(/^engine, game: Daoris's git no longer uses your own git sign-ins.*Settings → Git\.$/);
+    expect(attentionActs(nothing)).toEqual(['git-set-up', 'git-keep-own']);
     // A row from a shell that sent no group offers nothing to lift.
     expect(attentionActs(words(row('git-held', 'bare', null)))).toEqual([]);
     // After a volume below its floor, before a quest nobody can take, where they waited as long.
@@ -1124,7 +1129,7 @@ describe('the place each wait is counted at', () => {
       rule: 'agents', 'account-wait': 'agents', 'signed-out': 'agents',
       space: 'settings',
       confirmation: null,
-      'git-held': null,
+      'git-held': 'settings',
     });
   });
 

@@ -52,7 +52,7 @@ public sealed class GitRoutes(DriverLoop loop)
             .Select(row => row.Root)];
         // GITAUTH1e: a repository's Setup asks for its remotes with what serves each (the git-auth design §7.3), beside the list.
         var remotes = new Dictionary<(string, string), IReadOnlyList<GitRemoteRow>>();
-        if (Flag(request, "remotes") && named is not null)
+        if (Flag(request, "remotes") && (named is not null || Optional(request, "workspace") is not null))
         {
             foreach (var each in list.Repositories)
             {

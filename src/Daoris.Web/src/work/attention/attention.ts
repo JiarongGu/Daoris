@@ -173,9 +173,9 @@ export const ATTENTION_PLACE: Readonly<Record<AttentionKind, AttentionPlace | nu
   // This Daoris's *Disk space* card.
   space: 'settings',
   confirmation: null,
-  // A held git remote (GITAUTH1a): its one act, *Try again*, is on the row itself, so no place counts it until Settings → Git holds its
-  // setting (GITAUTH1e); the bell does.
-  'git-held': null,
+  // A held git remote (GITAUTH1a): *Try again* is on the row itself; the identity it waits for is set in Settings → Git (GITAUTH1e), so the
+  // place counts it there, as it counts Disk space.
+  'git-held': 'settings',
 };
 
 /** The sessions a place is judged with: those the page holds, for the branch a unit of work was cut for (`workCutFor`). */
@@ -287,6 +287,8 @@ export type AttentionActId =
   | 'stop-partial'
   // GITAUTH1a: a git remote held because it could not authenticate, tried again on the person's press.
   | 'git-try-again'
+  // GITAUTH1e: a remote nothing serves, led to Settings → Git to set an identity up or to keep the person's own sign-ins.
+  | 'git-set-up' | 'git-keep-own'
   // SESSWATCH1a: a quiet session's presses: *End and carry on*, *Hand over…*, *Stop…*, *Leave it running*.
   | 'quiet-carry-on' | 'quiet-hand-over' | 'quiet-stop' | 'quiet-leave'
   // INTEGRATE1o part o3: the run's own skip of its `work.requests` node, with the person's words.
@@ -429,7 +431,9 @@ export function attentionOffers(item: Attention): AttentionOffer[] {
     case 'account-wait':
     case 'signed-out': return accountOffers(item);
     // A held git remote (GITAUTH1a, the git auth design §5.2): *Try again*, one press, which lifts its holds and connects nothing itself.
-    case 'git-held': return item.git ? plain('git-try-again') : [];
+    // GITAUTH1e (§6.8): a remote nothing serves once the home has moved is set up in Settings → Git, or kept on the person's own sign-ins
+    // there, confirmed in place; *Try again* would change nothing until one of them is done.
+    case 'git-held': return !item.git ? [] : item.git.class === 'no-identity' ? plain('git-set-up', 'git-keep-own') : plain('git-try-again');
     // SESSWATCH1a (the session-watch design §2.3, §5.2): *End and carry on* for a quiet quest session alone, never a busy one; *Hand
     // over…* for a quest session; *Stop…* and *Leave it running* for every one, an intake's among them.
     case 'quiet': return item.quiet ? quietOffers(item.quiet) : [];
@@ -616,14 +620,15 @@ export type PushedConfirmation = {
   shownAt?: string | null;
 };
 
-export type GitHeldClass = 'refused' | 'write-refused' | 'host-unknown' | 'host-changed' | 'own-input';
+export type GitHeldClass = 'refused' | 'write-refused' | 'host-unknown' | 'host-changed' | 'own-input' | 'no-identity';
 
 /**
  * The detail's key for a held group: an `own-input` hold is lifted by removing the repository's setting, not by a retry, and git said
  * nothing, since nothing failed (GITAUTH1b).
  */
 export function gitHeldDetailKey(held: Pick<GitHeld, 'class'>): string {
-  return held.class === 'own-input' ? 'work.attention.gitHeld.detailOwnInput' : 'work.attention.gitHeld.detail';
+  return held.class === 'own-input' ? 'work.attention.gitHeld.detailOwnInput'
+    : held.class === 'no-identity' ? 'work.attention.gitHeld.detailNoIdentity' : 'work.attention.gitHeld.detail';
 }
 
 /**

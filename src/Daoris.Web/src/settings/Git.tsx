@@ -44,6 +44,8 @@ export type GitPageShown = {
   identities: GitIdentityShown[];
   own: string[];
   hosts: string[];
+  /** Each workspace's choice for a host: an identity's id, or `own`. */
+  choices?: { workspace: string; host: string; value: string }[];
 };
 
 /** A test's answer (§7.2 step 6): the host's keys are listed where it is not yet trusted, each against the host's published one. */

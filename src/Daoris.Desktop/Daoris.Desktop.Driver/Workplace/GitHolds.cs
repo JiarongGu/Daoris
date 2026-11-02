@@ -223,11 +223,16 @@ public static class GitHolds
             : hold.Class == "own-input"
             ? $"`{hold.Remote}` ({hold.Host ?? hold.Address}) is held: {OwnInputWhyOf(hold)}. Do not fetch, pull or push it, and do not change "
               + $"that setting: work from the line as this checkout has it, and say in your closing note that `{hold.Remote}` was not fetched."
+            : hold.Class == "no-identity"
+            ? $"`{hold.Remote}` ({hold.Host ?? hold.Address}) has no git identity on this machine, so neither you nor Daoris can reach it now. "
+              + $"Do not fetch, pull or push it: work from the line as this checkout has it, and say in your closing note that `{hold.Remote}` was not fetched."
             : $"`{hold.Remote}` ({hold.Host ?? hold.Address}) cannot be reached with the sign-in git has on this machine "
               + $"({Why(hold)}), so neither you nor Daoris can reach it now. Do not fetch, pull or push it: work from the line as this "
               + $"checkout has it, and say in your closing note that `{hold.Remote}` was not fetched.");
         return "**Git.** " + (rewrite is null ? "" : rewrite + " ") + string.Join(" ", lines)
-            + " The person sees it in What needs you, where Try again lifts it.";
+            + (holds.All(hold => hold.Class == "no-identity")
+                ? " The person sees it in What needs you, where they set up a git identity for it."
+                : " The person sees it in What needs you, where Try again lifts it.");
     }
 
     /// <summary>Why a repository is held as <c>own-input</c> (<see cref="GitOwnInput"/>), naming the setting and never its value.</summary>

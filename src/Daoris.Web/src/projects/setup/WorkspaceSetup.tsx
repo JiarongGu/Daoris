@@ -21,6 +21,8 @@ import type { SupervisorLine } from './SupervisorRow';
 import { SupervisorDoor } from './SupervisorDoor';
 import type { WorkspaceSection } from '../tabs';
 import { hostOf } from '../workspace/workspace';
+import type { GitIdentityShown } from '../../settings/Git';
+import { GitHosts, type GitHostActs, type GitHostShown } from '../../settings/GitRemotes';
 
 /**
  * A workspace's defaults on this machine (§4.3), each what the workspace sets, absent where it sets none, and the press
@@ -91,6 +93,11 @@ export type WorkspaceSetupProps = {
    */
   access?: Omit<AccessSetup, 'workspace'> | null;
   /**
+   * The hosts its repositories' git remotes reach and the identity this workspace chooses for each (GITAUTH1e, the git-auth design §7.3);
+   * absent on a shell older than it, and the section is not drawn.
+   */
+  git?: { hosts: GitHostShown[]; identities: GitIdentityShown[]; acts: GitHostActs } | null;
+  /**
    * The supervisor's appointment for every repository of the workspace (SUPERVISOR1e, D208 §5), a repository's own winning over it;
    * absent where the shell says no standing confirmation.
    */
@@ -136,7 +143,7 @@ const plain = (text: string) => text.replace(/`/g, '');
  * A molecule: every state is reached by its props, and every press goes out.
  */
 export function WorkspaceSetup({
-  workspace, defaults, access: accessAnswered, supervisor: supervisorLine, onOpenAppointed, remote, busy = false, open, wiring: startWiring = false,
+  workspace, defaults, access: accessAnswered, git, supervisor: supervisorLine, onOpenAppointed, remote, busy = false, open, wiring: startWiring = false,
   rows = 'all', onOpenPlugin,
 }: WorkspaceSetupProps) {
   const { t } = useTranslation();
@@ -148,6 +155,7 @@ export function WorkspaceSetup({
   const { language, read, helpers, handOver } = mine ? defaults : ({} as WorkspaceDefaults);
   const access = mine ? accessAnswered : null;
   const supervisor = rest ? supervisorLine : null;
+  const gitShown = mine ? git : null;
 
   const defaultsParts = [
     ...(line ? [line.set ? t('projects.setup.summary.line', { branch: line.set }) : daoris(t('projects.workspace.summary.noLine'))] : []),
@@ -208,6 +216,8 @@ export function WorkspaceSetup({
       || commits?.set || helpers?.set || handOver?.set),
     access: Boolean(accessShown?.pauses.some((each) => each.source === 'workspace')),
     reach: ruleCount > 0 || undeclared > 0,
+    // A host its repositories reach and no identity serves opens it (GITAUTH1e).
+    git: Boolean(gitShown?.hosts.some((each) => !each.chosen && !gitShown.identities.some((identity) => identity.host === each.host && identity.way === each.way))),
     // An appointment the person made opens it, as a value they set does.
     supervisor: Boolean(supervisor?.appointment),
     remote: Boolean(wired) || ruleCount > 0 || startWiring,
@@ -395,6 +405,14 @@ export function WorkspaceSetup({
       ),
     });
   }
+  if (gitShown && gitShown.hosts.length > 0) {
+    sections.push({
+      id: 'git',
+      summary: gitShown.hosts.map((each) => `${each.host}: ${each.chosen === 'own' ? t('settings.git.own')
+        : gitShown.identities.find((identity) => identity.id === each.chosen)?.label ?? t('settings.git.workspace.default')}`).join(JOIN),
+      body: <GitHosts hosts={gitShown.hosts} identities={gitShown.identities} acts={gitShown.acts} />,
+    });
+  }
   if (reachParts.length > 0) {
     sections.push({
       id: 'reach',
@@ -441,7 +459,7 @@ export function WorkspaceSetup({
         <SetupSection
           // Keyed by the workspace, so another workspace's page opens its own sections afresh.
           key={`${workspace}:${section.id}`}
-          title={t(`projects.setup.section.${section.id}`)}
+          title={section.id === 'git' ? t('settings.git.workspace.title') : t(`projects.setup.section.${section.id}`)}
           summary={section.summary}
           startsOpen={opensItself[section.id] || open === section.id}
           // A place's page finds the row a door named by this (SETUPUX1v); Sessions' own Defaults is not Workflow's.

@@ -228,6 +228,8 @@ export type AttentionActs = {
   answerAlone?: (item: Attention, goOn: boolean) => void;
   /** A held git remote's *Try again* (GITAUTH1a): its repositories' holds lifted, so the next act connects once. */
   gitTryAgain?: (item: Attention) => void;
+  /** A remote nothing serves (GITAUTH1e): the door to Settings → Git, where an identity is set up or the person's own sign-ins are kept. */
+  gitSetUp?: (item: Attention) => void;
   /**
    * A quiet session's presses (SESSWATCH1a): *End and carry on*, *Hand over…* (its page's hand-over asked), *Stop…* and *Leave it
    * running*, each told how it ended where it asked once.
@@ -275,6 +277,8 @@ const HANDLER: Record<AttentionActId, keyof AttentionActs> = {
   'again-step': 'held',
   'stop-partial': 'held',
   'git-try-again': 'gitTryAgain',
+  'git-set-up': 'gitSetUp',
+  'git-keep-own': 'gitSetUp',
   'quiet-carry-on': 'quiet',
   'quiet-hand-over': 'quiet',
   'quiet-stop': 'quiet',
@@ -401,6 +405,7 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
     else if (act === 'open-records') acts.openRecords?.(item);
     else if (act === 'again-step') acts.held?.(item, 'again');
     else if (act === 'git-try-again') acts.gitTryAgain?.(item);
+    else if (act === 'git-set-up' || act === 'git-keep-own') acts.gitSetUp?.(item);
     else if (act === 'quiet-hand-over') acts.quiet?.(item, 'hand-over');
     else if (act === 'quiet-leave') acts.quiet?.(item, 'leave');
   };
@@ -457,6 +462,9 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
       case 'stop-partial': return t('work.milestone.closed.act.stop');
       // GITAUTH1a: a held git remote's one act, *Try again*, the word a quest's retry is.
       case 'git-try-again': return t('work.attention.act.retry');
+      // GITAUTH1e: the two presses of a remote nothing serves, the words of Settings → Git's own.
+      case 'git-set-up': return t('settings.git.moved.setUp');
+      case 'git-keep-own': return t('settings.git.moved.keep');
       // SESSWATCH1a: the quiet row's own presses, and the session page's own *Hand over…* and *Stop…*.
       case 'quiet-carry-on': return t('work.attention.act.carryOn');
       case 'quiet-hand-over': return t('work.attention.act.handOver');

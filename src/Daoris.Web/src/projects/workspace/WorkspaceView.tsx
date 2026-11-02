@@ -20,8 +20,9 @@ import {
   useSetReadAcross,
   useSetReview, useStarts, useSyncNow,
   useSweep, useSweepLook, useSweepPlan, useTreesSync, useTreesSyncPlan, useTreesSyncScope, useUnwireRemote, useWireRemote, useWorkflowCurrent,
-  useWithdrawLandingBranch, useWorkState, useWorkflowEditor,
+  useWithdrawLandingBranch, useWorkState, useWorkflowEditor, useGitRemotes, useSetGitUse, useTools,
 } from '../../bridge/shell';
+import type { GitHostShown } from '../../settings/GitRemotes';
 import { supervisorOf } from '../../agents/setup/PlaceSupervisor';
 import { byTool } from '../../agents/tools';
 import { failure, type Notify, useErrorNotify } from '../../design/ui';
@@ -452,10 +453,12 @@ function useWorkspaceWiring(workspace: string, notify: Notify) {
  * machines its remote counts undeclared, SETUPUX1v) and `rows="defaults"` under its Workflow; this tab, once the Setup mode is lit, keeps the
  * rest until row y takes it away.
  */
-export function WorkspaceSetupPart({ workspace, notify, open, wiring = false, rows, onOpenPlugin, onOpenAppointed }: {
+export function WorkspaceSetupPart({ workspace, notify, open, wiring = false, rows, onOpenPlugin, onOpenAppointed, onOpenGit }: {
   workspace: string;
   onOpenPlugin?: (plugin: string) => void;
   onOpenAppointed?: () => void;
+  /** Open Settings → Git, where a host nothing serves is given an identity (GITAUTH1e). */
+  onOpenGit?: (host: string) => void;
   notify: Notify;
   open?: WorkspaceSection;
   wiring?: boolean;
@@ -483,8 +486,28 @@ export function WorkspaceSetupPart({ workspace, notify, open, wiring = false, ro
   const setAccess = useSetAccess();
   const setRead = useSetReadAcross();
   const act = useRuleAction();
+  // GITAUTH1e: the hosts its repositories' git remotes reach and the identity this workspace chooses for each.
+  const gitIdentities = useTools().data?.identities;
+  const gitRemotes = useGitRemotes({ workspace });
+  const setGitUse = useSetGitUse();
   useErrorNotify(wiringError ?? across.error ?? rules.error, notify);
   const onError = failure(notify);
+
+  const gitHosts: GitHostShown[] = [];
+  for (const entry of gitRemotes.data ?? []) {
+    for (const remote of entry.remotes) {
+      if (!remote.host || !remote.way) continue;
+      const found = gitHosts.find((each) => each.host === remote.host && each.way === remote.way);
+      const label = `${entry.repository}: ${remote.name}`;
+      if (found) found.remotes.push(label);
+      else {
+        gitHosts.push({
+          host: remote.host, way: remote.way, remotes: [label],
+          chosen: gitIdentities?.choices?.find((each) => each.workspace === workspace && each.host === remote.host)?.value ?? null,
+        });
+      }
+    }
+  }
 
   const state = driver.data;
   const ofWorkspace = <R extends { workspace: string }>(rows: R[] | undefined) => (rows ?? []).find((row) => same(row.workspace, workspace));
@@ -504,6 +527,16 @@ export function WorkspaceSetupPart({ workspace, notify, open, wiring = false, ro
     open,
     wiring,
     onOpenAppointed,
+    git: gitIdentities && gitRemotes.data
+      ? {
+          hosts: gitHosts,
+          identities: gitIdentities.identities,
+          acts: {
+            use: (host, value) => setGitUse.mutateAsync({ scope: 'workspace', workspace, host, ...(value ? { value } : {}) }),
+            ...(onOpenGit ? { onSetUp: onOpenGit } : {}),
+          },
+        }
+      : null,
     busy: setLine.isPending || setLanding.isPending || setLanguage.isPending || setReview.isPending || setOpinion.isPending
       || setCommits.isPending || setHelpers.isPending || setHandOver.isPending || setAccess.isPending || setRead.isPending || act.isPending || wiringBusy
       || retire.isPending,

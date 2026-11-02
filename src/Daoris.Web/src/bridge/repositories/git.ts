@@ -198,6 +198,26 @@ export const useGitBranches = (scope: GitBranchScope = {}) => {
   return { available: isAvailable, query };
 };
 
+/**
+ * A repository's git remotes with what serves each (GITAUTH1e, the git-auth design §7.3), or every repository of a workspace: the list's
+ * `remotes` beside its branches. Keyed under the tools' root, so a change of identity or choice (`GIT_IDENTITY`, `GIT_USE`) asks again.
+ */
+export const useGitRemotes = ({ repository, workspace, enabled = true }: { repository?: string; workspace?: string; enabled?: boolean }) => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: ['tools', 'git-remotes', repository ?? '', workspace ?? ''] as const,
+    queryFn: async () => {
+      const list = await call<{ repositories: { repository: string; workspace: string; remotes?: GitRemoteRow[] | null }[] }>(
+        'GIT_BRANCHES', { remotes: true, ...(repository ? { repository } : {}), ...(workspace ? { workspace } : {}) });
+      return list.repositories.map((each) => ({ repository: each.repository, workspace: each.workspace, remotes: each.remotes ?? [] }));
+    },
+    enabled: isAvailable && enabled && Boolean(repository || workspace),
+  });
+};
+
+/** A remote's row as `GIT_BRANCHES` answers it with `remotes`: the settings page's `GitRemoteShown`. */
+export type GitRemoteRow = import('../../settings/GitRemotes').GitRemoteShown;
+
 /** What `CHECKOUT_BRANCH` answers: the checkout's branch by its short name, or null where HEAD is detached. */
 export type CheckoutBranch = { branch: string | null };
 

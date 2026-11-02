@@ -143,6 +143,7 @@
   "settings.git.workspace.title": "Git",
   "settings.git.workspace.why": "The git identity each host its repositories reach uses, unless a repository's git remote says otherwise.",
   "settings.git.workspace.none": "No repository of this workspace has a git remote on a host.",
+  "settings.git.workspace.default": "As the host's default",
   "settings.git.workspace.choose": "The identity for {{host}}",
   "settings.git.workspace.ownSays": "This lets Daoris's git use your own SSH keys, git configuration and stored sign-ins for {{host}} in this workspace, and a session's git reaches it as you.",
   "settings.git.moved.title": "Daoris's git no longer uses your own git sign-ins",

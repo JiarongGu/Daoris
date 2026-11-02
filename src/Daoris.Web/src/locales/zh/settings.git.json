@@ -143,6 +143,7 @@
   "settings.git.workspace.title": "Git",
   "settings.git.workspace.why": "这个工作区的仓库所访问的每个主机使用的 Git 身份；仓库的远程仓库另有选择时以它为准。",
   "settings.git.workspace.none": "这个工作区的仓库都没有指向主机的远程仓库。",
+  "settings.git.workspace.default": "按主机的默认身份",
   "settings.git.workspace.choose": "{{host}} 所用的身份",
   "settings.git.workspace.ownSays": "这会让 Daoris 的 git 在这个工作区为 {{host}} 使用你自己的 SSH 密钥、git 配置和已保存的登录，会话的 git 也将以你的身份访问它。",
   "settings.git.moved.title": "Daoris 的 git 不再使用你自己的 Git 登录",
