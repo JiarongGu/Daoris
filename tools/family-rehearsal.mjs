@@ -5464,10 +5464,10 @@ const plannedRows = async () => ((await api('GET', '/api/registry')).json ?? [])
 const planLog = (event) => readEvents(onPlanMachine(`logs --event ${event} --json`).out, event);
 
 // The list, and nothing written: both rows to go and refused nothing, the pacing at the cap, and the rule a press adds.
-const previewed = onPlanMachine(`setup --workspace ${PLAN_WORKSPACE} --plan`);
+const previewed = onPlanMachine(`place --workspace ${PLAN_WORKSPACE} --adoption --plan`);
 const preview = readWorkspaceSetup(previewed.out);
 check(
-  '`setup --workspace --plan` lists both repositories, each to go and refused nothing, one at a time at a cap of two, with the rule a press adds — and writes, publishes and adds nothing',
+  '`place --workspace --adoption --plan` lists both repositories, each to go and refused nothing, one at a time at a cap of two, with the rule a press adds — and writes, publishes and adds nothing',
   plannedAdded.every((added) => added.status === 200) && previewed.code === 0 && preview.workspace === PLAN_WORKSPACE
     && JSON.stringify(preview.rows.map((row) => row.repository).sort()) === JSON.stringify(PLANNED)
     && preview.rows.every((row) => row.now === 'to go' && row.refusals.length === 0)
@@ -5479,7 +5479,7 @@ check(
 );
 
 // The press, with a pilot of one: the plan written, and the nine verbs added once at the workspace's scope.
-const pressedPlan = onPlanMachine(`setup --workspace ${PLAN_WORKSPACE} --pilot 1`);
+const pressedPlan = onPlanMachine(`place --workspace ${PLAN_WORKSPACE} --adoption --pilot 1`);
 const planPressed = readWorkspaceSetup(pressedPlan.out);
 const writtenPlan = readPlan();
 check(
@@ -5527,7 +5527,7 @@ check(
 );
 
 // The person resumes it, and the loop asks the second.
-const resumedPlan = onPlanMachine(`setup --workspace ${PLAN_WORKSPACE} --resume`);
+const resumedPlan = onPlanMachine(`place --workspace ${PLAN_WORKSPACE} --resume`);
 const resumedRead = readWorkspaceSetup(resumedPlan.out);
 const planResumed = readPlan();
 const restRun = onPlanMachine('drive --until-idle');
@@ -5561,7 +5561,7 @@ const plannedLandings = [firstRecord, secondRecord].map((record) => onPlanMachin
 const rowsAfterLanding = await plannedRows();
 // Set up, each is to go again in the plan, for its index of where things are (ORIENT2c, D151's note: the plan asks a set-up
 // repository its index in its turn, and it is set up once that closes done). Read from its line, each asks only that.
-const standingAfter = readWorkspaceSetup(onPlanMachine(`setup --workspace ${PLAN_WORKSPACE} --plan`).out);
+const standingAfter = readWorkspaceSetup(onPlanMachine(`place --workspace ${PLAN_WORKSPACE} --adoption --plan`).out);
 const planAfterLanding = readPlan();
 const linesAfterLanding = PLANNED.map((name) => readSetup(onPlanMachine(`setup ${name} --plan`).out));
 check(
@@ -5587,7 +5587,7 @@ check(
 );
 
 // Leave nothing for a later phase to meet: the plan stopped, so no later look works it, both trees gone, both retired.
-const stoppedPlan = onPlanMachine(`setup --workspace ${PLAN_WORKSPACE} --stop`);
+const stoppedPlan = onPlanMachine(`place --workspace ${PLAN_WORKSPACE} --stop`);
 const plannedTrees = [firstRecord?.tree ?? '', secondRecord?.tree ?? ''];
 const plannedTreesRemoved = plannedTrees.filter(Boolean).map((tree) => onPlanMachine(`trees remove "${tree}" --force`));
 const plannedRetired = [];

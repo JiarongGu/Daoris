@@ -34,7 +34,7 @@ internal static class OwnerTargetRows
                      "STOP_SESSION", "CANCEL_TURN", "END_CHAT", "RESOLVE_SESSION", "SESSION_QUIET_CARRY_ON", "SESSION_QUIET_LEAVE", "SESSION_GO_ON_NEW",
                      "SESSION_START_FROM", "SESSION_GO_ON_BRIEF", "SESSION_HAND_OVER", "SESSION_STOP_WAITING", "SESSION_HELPER_ASK", "SESSION_PARTNER_ASK",
                      "SESSION_INPUT", "SESSION_DELETE", "SESSION_GO_AHEAD", "SET_SESSION_OPTION", "STOP_TASK", "SUPERVISOR_OVERRULE", "HELP_START_FROM",
-                     "HELP_RENAME", "HELP_PIN", "LAND_SESSION_TREE", "LAND_WITHOUT_LOOK", "HANDOFF", "OPINION_ANYWAY", "OPINION_MYSELF", "ASK_OPINION", "STOP_OPINION",
+                     "HELP_RENAME", "HELP_PIN", "LAND_SESSION_TREE", "HANDOFF", "OPINION_ANYWAY", "OPINION_MYSELF", "ASK_OPINION", "STOP_OPINION",
                      "DISCARD_SESSION_TREE",
                  })
         {
@@ -86,7 +86,6 @@ internal static class OwnerTargetRows
         Row("GIT_FETCH", Repository(), Workspace());
         // GITAPP2m: a branch's history edited in one repository's checkout.
         Row("GIT_HISTORY_EDIT", Repository(), Workspace());
-        Row("SETUP_PRESS", Repository());
         // AGENTSPLACE1b2: a place's apply acts on every repository its plan names.
         rows.Add("PLACE_APPLY", OwnerTarget.Of(new OwnerField("repositories", OwnerKinds.Repository, Many: true)));
         // GITAPP2h, GITAPP2i, GITAPP2j, GITAPP2k, GITAPP2l: the Changes tab's acts on one repository's checkout.
@@ -141,6 +140,8 @@ internal static class OwnerTargetRows
             "TRUST_FOLDER", "ACCOUNT_USE", "HARNESS_ACTION", "HARNESSES_REFRESH", "TOOLS_DELETE", "TOOLS_DOWNLOAD", "TOOLS_LOCATION", "TOOLS_STOP",
             "TOOLS_USE", "TOOLS_GIT", "TOOLS_GIT_SET", "GIT_IDENTITY", "SYSTEM_DOWNLOADS_CLEAR", "SYSTEM_SPACE_FREE", "SET_STANDING_CONFIRMATION", "PLUGIN_ACTION", "PLUGIN_UPDATE",
             "PLUGIN_NEW", "PLUGIN_TRY", "PLUGIN_TOOLS", "PLUGIN_TOOL_FIX", "PLUGIN_ADD", "PLUGIN_INSTALL", "WORKFLOW_SAVE",
+            // WORKFLOWCLEAN1 1e: the conversion of the old records reaches every place and the home's workflows, a machine setting the owner presses.
+            "CONVERT_APPLY", "CONVERT_UNDO",
             PipeTargets.Key("DAORIS.REMOTES", "SET"), PipeTargets.Key("DAORIS.REMOTES", "REMOVE"));
 
         // A window's own, naming nothing a role acts on.

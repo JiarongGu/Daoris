@@ -254,8 +254,8 @@ public sealed class DriverModuleWorkflowTests : DriverModuleBridge
     public async Task The_landed_route_is_set_by_the_persons_press_and_a_development_pipeline_is_refused()
     {
         Verification();
-        WorkflowStore.Add(Home, new WorkflowVersionAdded("docs-to-pr", "Docs", "terminal", "2026-10-21T09:00:00Z", System.Text.Json.Nodes.JsonNode.Parse(
-            """[{"id":"work","kind":"work"},{"id":"land","kind":"landing","form":"merge","accept":"you"}]""")), kept: []);
+        WorkflowStore.Add(Home, new WorkflowVersionAdded("docs-to-pr", "Docs", "terminal", "2026-10-21T09:00:00Z", null,
+            System.Text.Json.Nodes.JsonNode.Parse(WorkflowDefaults.Of("merge-after-accept")!.GraphJson)), kept: []);
         var (module, _) = await UpAsync();
 
         var set = await AnswerAsync(module, "WORKFLOW_LANDED", new { repository = "engine", workflow = "web-verify" });
@@ -361,7 +361,7 @@ public sealed class DriverModuleWorkflowTests : DriverModuleBridge
         var chosen = Assert.Single(saved.GetProperty("chosen").EnumerateArray());
         Assert.Equal(("repository", "engine", "default"), (chosen.GetProperty("level").GetString(), chosen.GetProperty("name").GetString(), chosen.GetProperty("role").GetString()));
         var presets = list.GetProperty("presets").EnumerateArray().ToList();
-        Assert.Equal(WorkflowPresets.Table.Count + WorkflowPresets.GraphTable.Count, presets.Count);
+        Assert.Equal(WorkflowPresets.GraphTable.Count, presets.Count);
         Assert.All(presets, each => Assert.True(each.GetProperty("preset").GetBoolean()));
 
         var shown = await AnswerAsync(module, "WORKFLOW_SHOW", new { id = "web-verify" });

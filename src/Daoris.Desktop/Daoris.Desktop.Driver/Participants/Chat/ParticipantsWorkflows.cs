@@ -20,6 +20,9 @@ internal interface IParticipantsWorkflows
 
     /// <summary>The process of a run, its binding read (see <c>WorkflowProcesses.Read</c>).</summary>
     IWorkplaceProcess ReadProcess(string home, DriverConfig config, string repository, string? workspace, string? run);
+
+    /// <summary>The checks a run's process hands its work and its long-call minutes (see <c>SessionChecks.Of</c>); null where it sets none.</summary>
+    (string Checks, int? Minutes)? ChecksOf(DriverConfig config, string repository, IWorkplaceProcess process);
 }
 
 /// <summary>What a chat run's bind came to, and what the conversation is told of it.</summary>

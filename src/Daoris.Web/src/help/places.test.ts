@@ -47,7 +47,7 @@ describe('the places a go may name', () => {
       'projects/workspace-details', 'projects/workspace-branches', 'projects/workspace-workflow',
       'projects/workspace-setup', 'projects/workspace-defaults', 'projects/workspace-remote',
       'knowledge/search', 'knowledge/convergence',
-      'start/agent', 'start/helper', 'start/repositories', 'start/driven', 'start/landing', 'start/rules',
+      'start/agent', 'start/helper', 'start/repositories', 'start/setUp', 'start/rules',
       'agents/accounts', 'agents/rules', 'agents/usage', 'agents/roles',
     ]);
     expect(PLACE_KEPT.map(({ was, now }) => `${spelled(was)} → ${spelled(now)}`)).toEqual([

@@ -3,11 +3,6 @@
   "order": 8,
   "name": "Release workflow",
   "for": "For a repository that releases: the work is checked, you review it, it merges into the line, and the Local release plugin finds a pending release, records it and copies the built package into its own registry folder; with none pending the run ends at the line.",
-  "delivery": {
-    "id": "merge-after-accept", "method": "merge", "accept": "you",
-    "name": "Merge after you accept",
-    "for": "For a repository whose work you accept: once the work's requests are answered you review it, and it merges into the line."
-  },
   "setUp": false,
   "graph": {
     "schemaVersion": 2,

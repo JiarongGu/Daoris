@@ -402,7 +402,7 @@ public sealed class InstallUpdater(
             // Checked by the application before it closes for it (D139 §4); the launcher checks again before it moves a file.
             if (StagedBuild.Check(install!) is { } problem) refused = new UpdateProblem(problem.Code, problem.Sentence);
             // LANDNODE1c2: going back to an older build waits until no delivery is unresolved.
-            else if (InstallRollback.Refusal(home, staged?.Version, Running) is { } back) refused = new UpdateProblem(Deliveries, back);
+            else if (InstallRollback.Refused(home, staged?.Version, Running, ConversionReceipts.Stands) is var (backCode, back)) refused = new UpdateProblem(backCode, back);
             // DRAINHOLD1, a review's finding: what began after the look read no work (a turn a press let through opened, a helper the look
             // started, a conversation the window began) is read again now that no press passes, and the drain goes on for it. *Update now*
             // closes whatever runs, so it reads nothing.

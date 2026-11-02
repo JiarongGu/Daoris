@@ -232,6 +232,29 @@ public sealed class NodeRuntime(
     /// </summary>
     public ICheckPort? Checks { get => _performer.Checks; set => _performer.Checks = value; }
 
+    /// <summary>
+    /// The door a run's <c>land</c> is performed through (WORKFLOWCLEAN1 1c; the land node design §3): none by default, so a runtime nobody wired
+    /// lands nothing and its node waits active. The watch sets it, so the landing goes on off the pass.
+    /// </summary>
+    public ILandingDoor? Landing { get; set; }
+
+    /// <summary>
+    /// A run's <c>land</c>, active at the tip this pass read, started once on the door: a node reaches active only once its wires hold, its
+    /// subject is due and the gate holds nothing, and what authorizes it is the run's review word, or the standing authority judged again
+    /// before the first effect. The door is idempotent by node and tip; its delivery key fences a press and a pass at once.
+    /// </summary>
+    private void StartLandings(GovernedUnit governed, RunScope scope)
+    {
+        if (Landing is not { } door || !_holdsLease() || scope.Branch is not { } branch || records.Read(governed.Unit.Id) is not { } record) return;
+        foreach (var node in governed.Declared.Values.Where(each => each.Kind == NodeKinds.Land))
+        {
+            var status = WorkPerformer.StatusOf(record, node.Id);
+            if (status.State != NodeStates.Active || status.Binding is not { SubjectRevision: { } tip } binding) continue;
+            door.Start(new LandStart(governed.Unit.Id, governed.Run, node.Id, branch.Id, branch.Executors, governed.Watched.Repository,
+                governed.Watched.Workspace, tip, binding.GraphDigest, governed.Graph.Nodes.FirstOrDefault(each => each.Kind == NodeKinds.Review)?.Id));
+        }
+    }
+
     /// <summary>The door over this home's records and integration store, built from the home the node records live in.</summary>
     public static IIntegrationDoor HomeDoor(string home) => new HomeIntegrationDoor(home);
 
@@ -328,7 +351,11 @@ public sealed class NodeRuntime(
     /// A run whose version no longer reads arms nothing: it is held whole, and said whenever a pass reads the units.
     /// </summary>
     private bool ArmsRuns =>
-        _graphRuns.Read().Any(run => run.Version.Readable && (run.Ended is null || _restarted || _returned.ContainsKey(run.Run)));
+        _graphRuns.Read().Any(run => run.Version.Readable && (run.Ended is null || _restarted || _returned.ContainsKey(run.Run))
+            // CHATFLOW1f: a conversation's run is owed a pass only once a press submitted a candidate, and again at the next one.
+            && (!ChatRuns.IsChatRun(run.Run) || (run.Candidate?.Newest is { } candidate
+                && !string.Equals(candidate.IdIn(run.Run), run.Ended?.Quest, StringComparison.Ordinal)))
+            || run.Version.Readable && run.Candidate?.Newest is { } next && !string.Equals(next.IdIn(run.Run), run.Ended?.Quest, StringComparison.Ordinal));
 
     /// <summary>The governed units the last look read, by id: what a wake judges with.</summary>
     private Dictionary<string, GovernedUnit>? _governed;
@@ -599,18 +626,28 @@ public sealed class NodeRuntime(
         var quests = read.Units.Select(unit => unit.Records.Quest).OfType<QuestView>().ToList();
 
         // §2.2: its work here is its chain's quests in its repository, never a look's set-up step, which a run's work leaves out.
-        var work = ReviewGate.ChainOf(quests, binding.Run)
+        // CHATFLOW1f (the chat-flow design §4.5): a conversation's run has no quest; its newest candidate, submitted at the person's press, stands
+        // in the quest's place, and a run with none yet judges nothing.
+        var chat = run.Candidate?.Newest;
+        if (ChatRuns.IsChatRun(binding.Run) && chat is null) return null;
+        List<QuestView> work = chat is not null ? [] : ReviewGate.ChainOf(quests, binding.Run)
             .Where(quest => string.Equals(quest.To, repository, StringComparison.OrdinalIgnoreCase) && quest.SetUpIn is null).ToList();
         var newest = work.LastOrDefault();
 
-        // §3: an ended run is judged again only once its chain has come back here, at a start's ask or this process's first look.
-        if (run.Ended is { } ended && !(run.Asked && newest is not null && !string.Equals(newest.Id, ended.Quest, StringComparison.Ordinal))) return null;
+        // §3: an ended run is judged again only once its chain has come back here, at a start's ask or this process's first look. A conversation's
+        // comes back at its next candidate, which a press submits (§4.5), never at a turn's end.
+        if (run.Ended is { } ended
+            && !(chat is not null ? !string.Equals(chat.IdIn(binding.Run), ended.Quest, StringComparison.Ordinal)
+                : run.Asked && newest is not null && !string.Equals(newest.Id, ended.Quest, StringComparison.Ordinal)))
+        {
+            return null;
+        }
 
         // The branch its newest session worked, the newest opened of those the newest quest produced, whether its tree stands or not; one held
         // between two runs is no subject. Every branch of its quests, its former subjects included, is what an answer maps back by.
         var branches = read.Units.Where(unit => unit.Kind == WorkUnitKind.Branch && owners.Owns(unit)?.Run == binding.Run).ToList();
         var produced = newest is null ? null : new WorkLink(WorkRelation.ProducedBy, QuestUnits.IdOf(newest.Id));
-        var newestBranch = produced is null ? null
+        var newestBranch = chat is not null ? branches.FirstOrDefault() : produced is null ? null
             : read.Units.Where(unit => unit.Kind == WorkUnitKind.Branch && unit.Links.Contains(produced)).MaxBy(Opened);
         var branch = newestBranch is not null && owners.Keeps(newestBranch) == RunOwners.Run ? newestBranch : null;
 
@@ -630,7 +667,7 @@ public sealed class NodeRuntime(
             new WorkSubject(binding.Run, null), new MilestoneEnd(WorkEndState.NotEnded, null, null, null, null, "its graph runs"), []);
         var scope = new RunScope(run, self)
         {
-            Quest = newest is null ? null : units.GetValueOrDefault(QuestUnits.IdOf(newest.Id)),
+            Quest = chat is not null ? CandidateUnit(binding, chat, branch) : newest is null ? null : units.GetValueOrDefault(QuestUnits.IdOf(newest.Id)),
             Quests = work,
             Branch = branch,
             Branches = branches,
@@ -652,6 +689,20 @@ public sealed class NodeRuntime(
 
         // A named version is never edited (D157 point 6), so its run takes no places: its nodes are scoped and bound by the version's digest.
         return new GovernedUnit(self, graph, digest, binding.Run, declared, dispatchable, watched) { Observable = observable, Scope = scope };
+
+        // A conversation's candidate as the quest `claimed` observes (§4.5): done at the tip the press submitted, one per candidate of the run.
+        static WorkUnit CandidateUnit(WorkflowRunBinding binding, ChatCandidate candidate, WorkUnit? branch)
+        {
+            var id = candidate.IdIn(binding.Run);
+            var stood = new QuestView(id, "", binding.Repository, "A conversation's candidate", "", "Done");
+            return new WorkUnit(
+                QuestUnits.IdOf(id), WorkUnitKind.Quest, new WorkOwner(binding.Repository, binding.Workspace, "chat candidates", WorkRecord.DriverWriter),
+                new WorkSubject("#" + id, candidate.Tip),
+                new MilestoneEnd(WorkEndState.Ended, "submitted", null, null, candidate.At, "the person's press submitted it"), [])
+            {
+                Executors = branch?.Executors ?? [], Records = new WorkUnitRecords(null, [], stood),
+            };
+        }
 
         // When a branch unit's work was opened: its session branch's opening, else its newest landing.
         static DateTimeOffset Opened(WorkUnit unit) =>
@@ -1032,7 +1083,31 @@ public sealed class NodeRuntime(
             if (evaluated.Settled && !started) break;
         }
 
-        if (governed.Scope is { } run) End(governed, run, said);
+        if (governed.Scope is { } run)
+        {
+            await AcceptRepairsAsync(governed, run, ct).ConfigureAwait(false);
+            StartLandings(governed, run);
+            End(governed, run, said);
+        }
+    }
+
+    /// <summary>
+    /// A review whose Accept waits on a carried-on session (<see cref="RunRepairs"/>), begun again at a tip that only continues the one the person
+    /// accepted: the Accept is kept on it once more, for the next pass to apply, and the repair is spent.
+    /// </summary>
+    private async Task AcceptRepairsAsync(GovernedUnit governed, RunScope scope, CancellationToken ct)
+    {
+        if (!_holdsLease() || records.Read(governed.Unit.Id) is not { Repairs.Count: > 0 } record) return;
+        foreach (var repair in record.Repairs)
+        {
+            var status = WorkPerformer.StatusOf(record, repair.Node);
+            if (status.State != NodeStates.Active || status.Binding is not { SubjectRevision: { } tip }) continue;
+            if (!await RunRepairs.ContinuesAsync(scope.Root, repair, tip, ct).ConfigureAwait(false)) continue;
+            if (RunNodeWords.Word(records, governed.Run, repair.Node, NodeWordActs.Accept, null, clock).Done)
+            {
+                RunRepairs.Take(records, governed.Unit.Id, repair.Node);
+            }
+        }
     }
 
     /// <summary>

@@ -98,7 +98,7 @@ public static class WorkflowRunBindings
     /// <param name="roles">The role catalogue the steps' roles are judged by, read only where a step names one; null judges by the seed's.</param>
     public static WorkflowRunBinding Plan(
         DriverConfig config, IWorkflowStore store, string run, string repository, string? workspace, string? ask, WorkflowTaskChoice? task,
-        IReadOnlyList<WorkflowPlugin> plugins, DateTimeOffset at, Func<RoleCatalog>? roles = null)
+        IReadOnlyList<WorkflowPlugin> plugins, DateTimeOffset at, Func<RoleCatalog>? roles = null, string? remoteHost = null)
     {
         var selected = WorkflowSelection.Resolve(config, repository, workspace, task);
         var binding = new WorkflowRunBinding(
@@ -132,9 +132,14 @@ public static class WorkflowRunBindings
             return binding with { Version = newest.Version, Problem = $"`{selected.Workflow}` v{newest.Version} cannot be read here: {newest.Problem}" };
         }
 
-        // LANDNODE1h (the land node design §4): a `land` the version leaves open is resolved over the repository's rule now, once, and kept.
+        // LANDNODE1h (the land node design §4), amended by WORKFLOWCLEAN1 1a: a `land` the version leaves open is resolved now, once, and kept,
+        // from derived defaults (the default pattern, the remote platform's plugin, the default key) and never from a landing rule.
+        // Transitional (design §4.7): a place that still has a landing rule resolves over it, as before, until the conversion writes those options
+        // into the version and removes the rule; with none, the derived defaults resolve them.
+        var platform = remoteHost is null ? null : SetupPresets.PlatformPlugin(remoteHost, plugins);
+        var standing = LandingRules.Effective(config, repository, workspace);
         var resolved = newest.Graph?.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land) is { } land
-            ? LandNodes.Resolve(land, LandingRules.Effective(config, repository, workspace).Rule)
+            ? LandNodes.Resolve(land, standing.Source == LandingSource.Default ? null : standing.Rule, platform)
             : LandNodes.NoResolved;
         var unplugged = newest.Graph?.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land) is { } open && !open.Options.ContainsKey("plugin")
             && NodeOptions.Text(open, "method") is LandNodes.Push or LandNodes.PullRequest && !resolved.ContainsKey("plugin");
@@ -144,7 +149,9 @@ public static class WorkflowRunBindings
         return binding with
         {
             Version = newest.Version, Digest = newest.Digest, Land = resolved, Roles = named,
-            Problem = unplugged ? $"`{selected.Workflow}` v{newest.Version} lands by a plugin, and neither it nor `{repository}`'s landing rule names one." : unstaffed,
+            Problem = unplugged
+                ? $"`{selected.Workflow}` v{newest.Version} lands by a plugin, and no plugin serves `{repository}`'s remote: add one on Plugins, or name one in the workflow's `land` step."
+                : unstaffed,
         };
     }
 

@@ -1,7 +1,8 @@
+import type { i18n, TFunction } from 'i18next';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Prose, SelectField } from '../../design/ui';
-import type { EditorRole, GraphProblem, StepStaffing, WorkflowPaletteAnswer } from './answers';
+import type { EditorRole, GraphProblem, OptionField, StepStaffing, WorkflowPaletteAnswer } from './answers';
 import { choiceLabel, optionLabel, plain, previewPattern, stepAbout, stepTitle, waySaid } from './editWords';
 import {
   addWire, askedInputs, carryOf, choiceOf, type DraftNode, type GraphDraft, givesOf, inputsOf, joinModeOf, joinOf, landOptionApplies, moreWaysOf, movePlan,
@@ -38,6 +39,45 @@ const LAND = 'land';
 const METHOD = 'method';
 const text = (value: unknown): string | null => (typeof value === 'string' && value !== '' ? value : null);
 
+/**
+ * The options a step shows and the words under them. A landing shows the options its method means (one it holds is shown wherever it is,
+ * for the judge to say why), and says under its method the tail that method brings and under its pattern the branch it names.
+ */
+export function optionsShown(t: TFunction, i18n: i18n, palette: WorkflowPaletteAnswer, node: DraftNode): { options: OptionField[]; notes: Record<string, string> } {
+  const method = node.kind === LAND ? text(optionOf(node, METHOD)) : null;
+  const options = (choiceOf(palette, node.kind)?.options ?? []).filter((field) => node.kind !== LAND || landOptionApplies(method, field.name) || optionOf(node, field.name) !== undefined);
+  const notes: Record<string, string> = {};
+  if (node.kind === LAND && method !== null) {
+    const tail = tailOf(method).map((kind) => stepTitle(t, i18n, palette, { kind }));
+    notes[METHOD] = tail.length > 0 ? t('workflow.edit.option.land.method.tail', { steps: tail.join(t('workflow.listJoin')) }) : t('workflow.edit.option.land.method.noTail');
+  }
+  const pattern = text(optionOf(node, 'pattern'));
+  if (node.kind === LAND && pattern) {
+    const shown = previewPattern(pattern);
+    notes.pattern = shown.unknown.length > 0
+      ? t('workflow.edit.option.land.pattern.unknown', { names: shown.unknown.join(t('workflow.listJoin')) })
+      : t('workflow.edit.option.land.pattern.preview', { name: shown.name });
+  }
+  return { options, notes };
+}
+
+/** A step's option set through the draft's acts; a landing's method also brings or takes out the tail it means (SETUPUX1r). */
+export function setNodeOption(
+  t: TFunction, i18n: i18n, palette: WorkflowPaletteAnswer, draft: GraphDraft, node: DraftNode, title: string,
+  acts: Pick<InspectorActs, 'onChange' | 'onOption'>, option: string, value: string | boolean | string[] | undefined,
+): void {
+  if (node.kind === LAND && option === METHOD && typeof value === 'string') {
+    const made = setLandMethod(palette, draft, node.id, value);
+    const steps = (kinds: string[]) => kinds.map((kind) => stepTitle(t, i18n, palette, { kind })).join(t('workflow.listJoin'));
+    const said = made.added.length > 0 && made.removed.length > 0 ? 'methodBoth' : made.added.length > 0 ? 'methodAdded' : made.removed.length > 0 ? 'methodRemoved' : 'method';
+    acts.onChange(made.draft, t(`workflow.edit.said.${said}`, {
+      step: title, method: choiceLabel(t, LAND, METHOD, value), added: steps(made.added), removed: steps(made.removed),
+    }));
+    return;
+  }
+  acts.onOption(option, value, t('workflow.edit.said.option', { step: title, option: optionLabel(t, node.kind, option) }));
+}
+
 export function Inspector({ palette, draft, roles, place, staffing, lines, node, titleOf, problems, confirming, onConfirm, acts }: {
   palette: WorkflowPaletteAnswer;
   draft: GraphDraft;
@@ -62,22 +102,7 @@ export function Inspector({ palette, draft, roles, place, staffing, lines, node,
   const earlier = movePlan(draft, id, 'earlier');
   const later = movePlan(draft, id, 'later');
 
-  // A landing shows the options its method means (one it holds is shown wherever it is, for the judge to say why), and says under its
-  // method the tail that method brings and under its pattern the branch it names.
-  const method = node.kind === LAND ? text(optionOf(node, METHOD)) : null;
-  const options = (choice?.options ?? []).filter((field) => node.kind !== LAND || landOptionApplies(method, field.name) || optionOf(node, field.name) !== undefined);
-  const notes: Record<string, string> = {};
-  if (node.kind === LAND && method !== null) {
-    const tail = tailOf(method).map((kind) => stepTitle(t, i18n, palette, { kind }));
-    notes[METHOD] = tail.length > 0 ? t('workflow.edit.option.land.method.tail', { steps: tail.join(t('workflow.listJoin')) }) : t('workflow.edit.option.land.method.noTail');
-  }
-  const pattern = text(optionOf(node, 'pattern'));
-  if (node.kind === LAND && pattern) {
-    const shown = previewPattern(pattern);
-    notes.pattern = shown.unknown.length > 0
-      ? t('workflow.edit.option.land.pattern.unknown', { names: shown.unknown.join(t('workflow.listJoin')) })
-      : t('workflow.edit.option.land.pattern.preview', { name: shown.name });
-  }
+  const { options, notes } = optionsShown(t, i18n, palette, node);
 
   return (
     <div className="grid min-w-0 gap-4">
@@ -94,18 +119,7 @@ export function Inspector({ palette, draft, roles, place, staffing, lines, node,
 
       {options.length > 0 && choice && (
         <StepOptions node={node} fields={options} roleTakes={choice.roleTakes} roles={roles} place={place} staffing={staffing} lines={lines} notes={notes}
-          onSet={(option, value) => {
-            if (node.kind === LAND && option === METHOD && typeof value === 'string') {
-              const made = setLandMethod(palette, draft, id, value);
-              const steps = (kinds: string[]) => kinds.map((kind) => stepTitle(t, i18n, palette, { kind })).join(t('workflow.listJoin'));
-              const said = made.added.length > 0 && made.removed.length > 0 ? 'methodBoth' : made.added.length > 0 ? 'methodAdded' : made.removed.length > 0 ? 'methodRemoved' : 'method';
-              acts.onChange(made.draft, t(`workflow.edit.said.${said}`, {
-                step: title, method: choiceLabel(t, LAND, METHOD, value), added: steps(made.added), removed: steps(made.removed),
-              }));
-              return;
-            }
-            acts.onOption(option, value, t('workflow.edit.said.option', { step: title, option: optionLabel(t, node.kind, option) }));
-          }} />
+          onSet={(option, value) => setNodeOption(t, i18n, palette, draft, node, title, acts, option, value)} />
       )}
 
       <MoreWays palette={palette} draft={draft} node={node} titleOf={titleOf} onChange={acts.onChange} />

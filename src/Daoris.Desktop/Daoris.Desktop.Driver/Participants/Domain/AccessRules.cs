@@ -115,6 +115,10 @@ public static class AccessRules
     /// <summary>The value of <paramref name="pause"/> a spelling names, trimmed and in any case, or null for none.</summary>
     public static string? ValueNamed(AccessPause pause, string? spelled) => AccessKey.ValueNamed(pause, spelled);
 
+    /// <summary>The refusal for setting the landing pause (WORKFLOWCLEAN1 1c): how work lands is its workflow's now.</summary>
+    public const string LandingRetired =
+        "how work lands is its workflow's now: a workflow with no review lands with no press. Choose one on its Workflow.";
+
     /// <summary>The refusal for a pause the setup does not have.</summary>
     public static string UnknownPause(string spelled) =>
         $"`{spelled.Trim()}` is not a pause a session stops for — one of {Listed(Pauses.Select(pause => pause.Name).ToList(), "or")}.";
@@ -216,6 +220,8 @@ public static class AccessRules
             foreach (var (spelled, value) in set)
             {
                 var pause = PauseNamed(spelled) ?? throw new DriverException(UnknownPause(spelled));
+                // WORKFLOWCLEAN1 1c (D228): whether work lands with no press is its workflow's, so no access setup sets it any more.
+                if (pause.Name == Landing && !string.IsNullOrWhiteSpace(value)) throw new DriverException(LandingRetired);
                 if (string.IsNullOrWhiteSpace(value))
                 {
                     pauses.Remove(pause.Name);

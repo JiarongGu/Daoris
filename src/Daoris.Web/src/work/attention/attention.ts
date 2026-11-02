@@ -102,6 +102,8 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
   // An integration's wait on the owner (INTEGRATE1h): a superseded commit's answer holds nothing running; a candidate held for their decide
   // holds its line's next, and a landing waiting for their card its unit's flow, which hold work (`attentionGroup`).
   integration: 'word',
+  // Places still on old workflow shapes (WORKFLOWCLEAN1g-ii, the cleanup design §4.3): nothing running is held; the review converts them.
+  'workflow-convert': 'word',
   unanswerable: 'word',
   review: 'ready',
 };
@@ -173,6 +175,8 @@ export const ATTENTION_PLACE: Readonly<Record<AttentionKind, AttentionPlace | nu
   rule: 'agents',
   'account-wait': 'agents',
   'signed-out': 'agents',
+  // WORKFLOWCLEAN1g-ii: the conversion's review opens in the Agents place's Setup.
+  'workflow-convert': 'agents',
   // This Daoris's *Disk space* card.
   space: 'settings',
   confirmation: null,
@@ -565,6 +569,8 @@ export type PushedAttention = {
    * bytes as read when it was said, what the floor freed in this stretch, and what *Free up space…* could free (null where none was read).
    */
   space?: { root: string | null; free: number; total: number; floor: number | null; freed: number; could?: number | null };
+  /** The places the home's census lists while it has not ended (WORKFLOWCLEAN1g-ii). */
+  convert?: { places: number };
   /** A git remote held because it could not authenticate (GITAUTH1a): one row per held group, as .NET groups them. */
   git?: GitHeld;
   /** A session the watcher brings to the person (SESSWATCH1a): its watch, which its words and its presses read. */
@@ -671,7 +677,7 @@ export type AttentionPushed = {
  */
 const KIND_ORDER: readonly AttentionKind[] = [
   'account-wait', 'signed-out', 'parked', 'helper-ended', 'parked-quest', 'steward-stopped', 'policy-hold', 'request-declined', 'go-ahead', 'permission', 'answer', 'confirmation', 'trust',
-  'quiet', 'proposal', 'departure', 'set-up', 'opinion', 'rule', 'helper', 'hand-over', 'memory', 'integration', 'work', 'space', 'git-held', 'unanswerable',
+  'quiet', 'proposal', 'departure', 'set-up', 'opinion', 'rule', 'helper', 'hand-over', 'memory', 'integration', 'work', 'space', 'git-held', 'workflow-convert', 'unanswerable',
   'review',
 ];
 
@@ -1034,6 +1040,9 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
         ...(row.git ? { git: row.git } : {}),
         ...(row.workspace ? { workspace: row.workspace } : {}),
       };
+    // WORKFLOWCLEAN1g-ii: the places the census lists, said as a count.
+    case 'workflow-convert':
+      return { ...base, title: i18n.t('work.attention.convertTitle', { count: row.convert?.places ?? 0 }) };
     default:
       return { ...base, title: row.title ?? row.id };
   }

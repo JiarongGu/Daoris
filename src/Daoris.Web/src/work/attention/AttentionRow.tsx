@@ -26,7 +26,7 @@ export type AttentionKind =
   | 'parked' | 'parked-quest' | 'steward-stopped' | 'policy-hold' | 'go-ahead' | 'trust' | 'account-wait' | 'signed-out'
   | 'proposal' | 'intake' | 'departure' | 'set-up' | 'rule' | 'unanswerable'
   | 'review' | 'opinion' | 'helper' | 'hand-over' | 'work' | 'permission' | 'answer' | 'confirmation' | 'space' | 'git-held'
-  | 'quiet' | 'helper-ended' | 'request-declined' | 'memory' | 'integration';
+  | 'quiet' | 'helper-ended' | 'request-declined' | 'memory' | 'integration' | 'workflow-convert';
 
 /**
  * One thing that is waiting on a person, as Overview's band shows it.
@@ -169,6 +169,8 @@ export type Attention = {
   integration?: IntegrationWait;
   /** A `git-held` row's held group (GITAUTH1a): the repositories its *Try again* lifts, and why, which its mark's ink says. */
   git?: GitHeld;
+  /** A `workflow-convert` row's count (WORKFLOWCLEAN1g-ii): the places the home's census lists, which its title says. */
+  convert?: { places: number };
   /** The workspace a `git-held` row was judged in, which its *Try again* names; absent where .NET scoped it to none. */
   workspace?: string;
   /**
@@ -321,6 +323,8 @@ const DOOR_ONLY: Partial<Record<Attention['kind'], (item: Attention) => [string,
   confirmation: () => ['work.attention.door.confirmation'],
   // KEEP1f: what else goes below the floor is chosen on the *Disk space* card's press, where every unit is listed first.
   space: () => ['work.attention.door.space'],
+  // WORKFLOWCLEAN1g-ii: the home-wide review, the same one the place head's Convert… opens.
+  'workflow-convert': () => ['work.attention.door.convert'],
 };
 
 /**

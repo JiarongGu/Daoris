@@ -604,6 +604,17 @@ public sealed class DriverWatch(
                 (await WordsHead.FollowAsync(session, at => service.SayAsync(at, text, null, ct, from: DaorisWords.From, key: key)).ConfigureAwait(false)).Said;
         }
 
+        // WORKFLOWCLEAN1 1c (the cleanup design §2.1): the door a run's `land` is performed through, landing as the review's Accept lands it, run
+        // off the pass; only where this loop holds the home's lease, and never while an update drains (DRAINHOLD1).
+        if (nodes is not null)
+        {
+            var landingPlugins = new LandingPlugins(home, say: (plugin, line) => output?.Append($"plugin:{plugin}", line), pluginLog: hooks?.Log);
+            nodes.Landing = new LandingDoor(
+                () => new AutoLander(home, new ServiceAutoLandingWorld(service), new SessionTrees(home, landingPlugins),
+                    events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)), service.LandingSaid) { Performs = true },
+                said => Log?.Info("landing.run", ("said", said)), () => HomeLease.HeldHere(home) && !DrainsNow());
+        }
+
         // FABRIC-PIPELINE1d (the pipeline design §4.2): the heavy executor a check is handed to; its answer asks a pass, which reconciles it.
         HeavyExecutor? executor = null;
         if (nodes is not null)

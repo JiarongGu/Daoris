@@ -89,7 +89,10 @@ export function planOf(ask: PlaceAsk, mix: Record<string, Partial<PlaceRepositor
       ...(delivers && ask.drive && !known.before.driven ? [{ key: 'SET_DRIVABLE', part: 'driving', said: 'general driving', before: 'off', after: 'on' }] : []),
       ...(!delivers && known.before.driven ? [{ key: 'SET_DRIVABLE', part: 'delivery', said: 'driven here', before: 'on', after: 'off' }] : []),
       ...(delivers && ask.preset !== 'keep' && known.before.match.preset !== ask.preset
-        ? [{ key: 'SET_LANDING', part: 'delivery', said: 'how its work lands', before: '`merge`', after: `\`${ask.preset}\`` }]
+        ? [
+          { key: 'WORKFLOW_SAVE', part: 'delivery', said: 'a saved copy of the workflow Daoris ships', before: 'none', after: `\`${ask.preset}\`` },
+          { key: 'WORKFLOW_USE', part: 'delivery', said: 'the workflow its work follows', before: 'Current', after: `\`${ask.preset}\`` },
+        ]
         : []),
       ...(ask.adoption ? [{ key: 'SETUP_PRESS', part: 'adoption', said: 'a set-up asked of its own session', before: 'not asked', after: ask.builds ? `asked, for ${ask.builds}` : 'asked' }] : []),
     ];

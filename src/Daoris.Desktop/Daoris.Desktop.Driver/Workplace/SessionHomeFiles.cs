@@ -91,6 +91,9 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
 
         /// <summary><c>workflows/looks/</c>, a chat run's look, named the same.</summary>
         Looks,
+
+        /// <summary><c>workflows/candidates/</c>, a graph-bound chat run's candidates, named the same.</summary>
+        Candidates,
     }
 
     /// <summary>
@@ -174,6 +177,8 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         new(Run, Place.Runs, ".json", false, Beside),
         new(Run, Place.Gates, ".json", false, Beside),
         new(Run, Place.Looks, ".json", false, Beside),
+        // CHATFLOW1f: the candidates a graph-bound chat run's presses submitted.
+        new(Run, Place.Candidates, ".json", false, Beside),
     ];
 
     /// <summary>
@@ -215,6 +220,7 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         Place.Runs => [Path.Combine(WorkplaceRunFiles.RunsFolder(home), WorkplaceRunFiles.ChatPrefix + id + file.Suffix)],
         Place.Gates => [Path.Combine(WorkplaceRunFiles.GatesFolder(home), WorkplaceRunFiles.ChatPrefix + id + file.Suffix)],
         Place.Looks => [Path.Combine(WorkplaceRunFiles.LooksFolder(home), WorkplaceRunFiles.ChatPrefix + id + file.Suffix)],
+        Place.Candidates => [Path.Combine(WorkplaceRunFiles.CandidatesFolder(home), WorkplaceRunFiles.ChatPrefix + id + file.Suffix)],
         Place.Files => [.. new[] { DaorisHome.Places(home, HomeEntry.SessionFiles, id)[0], Path.Combine(Sessions, id) }
             .DistinctBy(path => Path.GetFullPath(path), StringComparer.OrdinalIgnoreCase)],
         // And beside its records, where a tracker handed the sessions' folder for its markers kept it.

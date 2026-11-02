@@ -245,7 +245,7 @@ public sealed class ReadShareTreeTests : IDisposable
         if (!OperatingSystem.IsWindows()) return;
         var steps = JsonNode.Parse(
             """[{"id":"work","kind":"work"},{"id":"landing","kind":"landing","form":"branch","accept":"you","pattern":"docs/{quest}","plugin":"none"}]""")!;
-        WorkflowStore.Add(_home, new WorkflowVersionAdded("docs-to-pr", "Documentation to a pull request", "terminal", "2026-10-09T09:00:00Z", steps), kept: []);
+        StoredSteps.Add(_home, new WorkflowVersionAdded("docs-to-pr", "Documentation to a pull request", "terminal", "2026-10-09T09:00:00Z", steps), kept: []);
         var path = WorkflowStore.PathOf(_home, "docs-to-pr");
 
         using (MoveHold.Take(path))

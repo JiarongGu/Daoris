@@ -130,19 +130,6 @@ public sealed class TreesWordsTests : IAsyncLifetime
         await AssertSameAsync(said);
     }
 
-    /// <summary>
-    /// CHATFLOW1d2 (§5.3): <c>trees land &lt;id&gt; --without-look</c> on work that is no conversation's has no look to accept it without:
-    /// its sentence and exit 1, nothing landed, on both doors.
-    /// </summary>
-    [Fact]
-    public async Task Without_the_look_on_work_that_is_no_conversations_is_refused_exit_1()
-    {
-        var said = TreesWords.NoChatLook("s1a2b3c4");
-        Assert.Equal(1, said.Code);
-        Assert.Equal(["trees: session `s1a2b3c4`'s work is no conversation's, so there is no look to accept it without; nothing was landed."], said.Error);
-        await AssertSameAsync(said);
-    }
-
     // trees clean --yes: SWEEP.
     private static SweepResult Swept(string kind, bool removed, string message, int commits = 0, string? where = "main") =>
         new(new SweepItem("engine", "aurora", "daoris/s-x", "tree", kind, commits, where, "detail"), removed, message);

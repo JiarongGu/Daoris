@@ -157,13 +157,13 @@ public sealed class WorkplacePluginsPortsTests : IDisposable
             var wire = Assert.Throws<InvalidOperationException>(() => new SessionTrees(_home));
             Assert.Contains("Plugins installs them", wire.Message);
             var load = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                ChatLandCommand.RunAsync(World(client, handed), "s1", ChatTree, "chat-s1", Ended("s1"), null, null));
+                ChatLandCommand.RunAsync(World(client, handed), "s1", ChatTree, "chat-s1", Ended("s1"), null));
             Assert.Contains("Plugins installs them", load.Message);
 
             var refused = new IOException("refused");
             WorkplacePlugins.Current = new Operations(handed) { LoadFails = refused };
             Assert.Same(refused, await Assert.ThrowsAsync<IOException>(() =>
-                ChatLandCommand.RunAsync(World(client, handed), "s1", ChatTree, "chat-s1", Ended("s1"), null, null)));
+                ChatLandCommand.RunAsync(World(client, handed), "s1", ChatTree, "chat-s1", Ended("s1"), null)));
         }
         finally { WorkplacePlugins.Current = actual; }
     }
@@ -177,7 +177,7 @@ public sealed class WorkplacePluginsPortsTests : IDisposable
         try
         {
             WorkplacePlugins.Current = operations;
-            Assert.Equal(1, await ChatLandCommand.RunAsync(World(client, new Wire()), "s1", ChatTree, "chat-s1", Ended("s1"), null, null));
+            Assert.Equal(1, await ChatLandCommand.RunAsync(World(client, new Wire()), "s1", ChatTree, "chat-s1", Ended("s1"), null));
         }
         finally { WorkplacePlugins.Current = actual; }
 

@@ -137,7 +137,7 @@ public sealed class DriverWorkflowsLandedProcessTests : IDisposable
     {
         var root = await RepositoryAsync(Declared);
         await VerificationAsync(root);
-        await RunAsync(root, "new", "docs-to-pr", "--from", "pull-request-no-press", "--name", "Documentation to a pull request");
+        await RunAsync(root, "new", "docs-to-pr", "--from", "merge-after-accept", "--name", "Documentation to a pull request");
         await RunAsync(root, "kind", "work", "docs", "--label", "Documentation", "--paths", "docs/**");
         await RunAsync(root, "kind", "work", "feature", "--label", "Feature");
         await RunAsync(root, "use", "docs-to-pr", "--workspace", "work", "--kind", "docs");
