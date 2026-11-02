@@ -196,6 +196,22 @@ export const AnotherAgentsFindings: Story = {
     ]).turns,
   },
 };
+/** COMMS1a: a helper's answer and a partner's, each drawn under its sender and open, never as the target Daoris composed. */
+const HELPED: SessionEvent[] = [
+  ev({ kind: 'user', origin: 'person', text: 'Check how the page cap is read.' }),
+  ev({ kind: 'user', origin: 'target', helper: 'h1', id: 'w1', text: 'The helper answers your question: the cap is read from the streamer, and the page reads it once at the start.' }),
+  ev({ kind: 'message', text: 'Noted: the cap is read once at the start.' }),
+  ev({ kind: 'turn', stopReason: 'end_turn' }),
+  ev({ kind: 'user', origin: 'target', helper: 'p1', id: 'w2', text: 'Your partner answers your question: piece two reads the same cap, so no change is needed there.' }),
+];
+const helped = { args: { turns: toTurns(HELPED, { workOf: (id) => (id === 'p1' ? 'partner' : 'help') }).turns } };
+export const HelperAndPartnerWords: Story = helped;
+export const HelperAndPartnerWordsHalf: Story = { ...helped, decorators: [sessionWidths.half] };
+export const HelperAndPartnerWordsNarrow: Story = { ...helped, decorators: [sessionWidths.narrow] };
+export const HelperAndPartnerWordsChinese: Story = { ...helped, decorators: [chinese] };
+export const HelperAndPartnerWordsChineseHalf: Story = { ...helped, decorators: [sessionWidths.half, chinese] };
+export const HelperAndPartnerWordsChineseNarrow: Story = { ...helped, decorators: [sessionWidths.narrow, chinese] };
+
 export const Running: Story = { args: { turns: toTurns(RUNNING).turns, live: true } };
 /** WAITSHOWN1: a resumed conversation asked seven minutes ago, its agent still waiting on the model: *working…* and the wait, ticking. */
 const WAITING: SessionEvent[] = [

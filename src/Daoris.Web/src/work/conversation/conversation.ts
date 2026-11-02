@@ -12,6 +12,7 @@
  */
 
 import type { NotePart } from '../../data/api';
+import { type Author, authorOf } from './sender';
 
 /**
  * The codes a driver's note in a conversation carries, each the key the page words it by (MSG1c3, D142 point 1): the
@@ -57,6 +58,12 @@ export type SessionEvent = {
    * `target`, so a page that does not read this shows them as what Daoris handed, never as the person's. Absent on every other.
    */
   from?: string | null;
+  /**
+   * For `user`: the helper or partner session whose answer these words are (COWORK1e, D188 point 4; COMMS1a). Its origin is `target`,
+   * so a page that does not read this shows them as the target Daoris composed. Which of the two it is, is the work of the record it
+   * names (`sender.ts`). Absent on every other.
+   */
+  helper?: string | null;
   /**
    * For the turn Daoris handed a session with another agent's findings (XAGENT1e, D155 point 7): the second opinion they are
    * from. Its origin is `target`, so a page that does not read this shows them as what Daoris handed, never as the person's.
@@ -312,8 +319,9 @@ export type Ask = {
   /** Another agent's findings, handed as the session's next turn (XAGENT1e): the second opinion they are from. */
   opinion?: string;
   /**
-   * Whose words where not the person's, by their mark (COWORK1b; SUPERVISOR1a-i, {@link Author}): Daoris's own, the supervisor's on
-   * the owner's behalf, or an author the page does not know; never the person's, and no target Daoris composed.
+   * Whose words where not the person's, by their mark (COWORK1b; SUPERVISOR1a-i; COMMS1a, {@link Author}): Daoris's own, the
+   * supervisor's on the owner's behalf, a helper's or a partner's answer, or an author the page does not know; never the person's,
+   * and no target Daoris composed.
    */
   from?: Author;
   /** The ask's channel message these words carry, by its id (SESSCTX1b): another session's claim where the origin is `target`. */
@@ -352,22 +360,6 @@ export type ChatMessage = {
  * cutting its step where its agent steers. A request: the door gives what it can and says so, and no level stops a turn.
  */
 export type Level = 'ordinary' | 'urgent' | 'now';
-
-/**
- * Whose words a word is where they are not the person's, read from its event's `from` mark, never its sentence: Daoris's own words
- * (COWORK1b), handed as a target; the supervisor's, on the owner's behalf (SUPERVISOR1a-i, D208); or `unattributed`, an author this
- * page does not know, drawn as *Not attributed* and never as *You* (the supervisor design §6.1).
- */
-export type Author = 'daoris' | 'supervisor' | 'unattributed';
-
-/** The {@link Author} of a word event, or undefined for the person's (no `from`). */
-export function authorOf(event: Pick<SessionEvent, 'from' | 'origin'>): Author | undefined {
-  if (!event.from) return undefined;
-  if (event.from === 'supervisor') return 'supervisor';
-  // Daoris's words are a target it handed; a `daoris` mark on the person's own origin reads as theirs, as it always did.
-  if (event.from === 'daoris') return event.origin === 'target' ? 'daoris' : undefined;
-  return 'unattributed';
-}
 
 /** A level from the driver's word, read defensively: any other is none. */
 export const levelOf = (word: unknown): Level | undefined =>
@@ -478,8 +470,11 @@ export type Usage = { used: number; size: number; most: number };
  *   they went to another session takes them back from the note that carried them (MSG1f2).
  */
 export function toTurns(
-  events: readonly SessionEvent[], { opening }: { opening?: SessionEvent | null } = {},
+  events: readonly SessionEvent[],
+  { opening, workOf }: { opening?: SessionEvent | null; workOf?: (session: string) => string | null | undefined } = {},
 ): { turns: Turn[]; usage?: Usage; where: Record<number, string> } {
+  // The work of the record a helper's word names (COMMS1a): what tells a partner's answer from a helper's.
+  const helperWork = (event: SessionEvent) => (event.helper && workOf ? workOf(event.helper) : null);
   const turns: Turn[] = [];
   let usage: Usage | undefined;
   let current: Turn | null = null;
@@ -508,7 +503,7 @@ export function toTurns(
     // What a target was composed of (CONTEXT1), or null where its record keeps none: said missing, never left out. Another
     // agent's findings are no composed target (XAGENT1g): they name the opinion they are from instead. Nor are Daoris's own words
     // (COWORK1b), named by their mark, never their sentence.
-    ...(authorOf(event) ? { from: authorOf(event) }
+    ...(authorOf(event, helperWork(event)) ? { from: authorOf(event, helperWork(event)) }
       : event.origin === 'target' && event.opinion ? { opinion: event.opinion }
         : event.origin === 'target' ? { account: event.account ?? null } : {}),
   });
@@ -562,7 +557,7 @@ export function toTurns(
           const block: Block = {
             key, kind: 'held', at: event.at, text: event.text ?? '', id: event.id, reaches: event.reaches,
             ...(level ? { level } : {}),
-            ...(authorOf(event) ? { from: authorOf(event) } : {}),
+            ...(authorOf(event, helperWork(event)) ? { from: authorOf(event, helperWork(event)) } : {}),
             ...(event.choice && (event.origin ?? 'person') === 'person' ? { choice: event.choice } : {}),
             ...(event.files?.length ? { files: event.files } : {}),
           };

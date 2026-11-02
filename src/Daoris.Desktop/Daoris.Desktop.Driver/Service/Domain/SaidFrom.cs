@@ -12,4 +12,7 @@ public static class SaidFrom
 
     /// <summary>A supervisor's word, a claim on the record and never an authority.</summary>
     public const string Supervisor = "supervisor";
+
+    /// <summary>Another agent's claim on an ask's channel that the person passed on (COWORK1d): never the person's.</summary>
+    public const string Agent = "agent";
 }

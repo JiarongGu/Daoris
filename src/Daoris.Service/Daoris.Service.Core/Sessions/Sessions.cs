@@ -396,8 +396,8 @@ public sealed record SaidWord(
     string? Channel = null, string? From = null, string? Key = null, string? Level = null, DateTimeOffset? Attempt = null,
     string? Decision = null, string? Question = null, string? Choice = null)
 {
-    /// <summary>Whether the person said it: every word but another agent's, a reviewer's, a helper's, Daoris's or the supervisor's.</summary>
-    public bool Persons => By is null && Helper is null && From is null;
+    /// <summary>Whether the person said it: every word but another agent's, a reviewer's, a helper's, a partner's, Daoris's or the supervisor's.</summary>
+    public bool Persons => Senders.Of(this) == Senders.Person;
 
     /// <summary>Whether it claims the supervisor (SUPERVISOR1a-i): a claim only, which the driver attributes or quarantines.</summary>
     public bool Supervisors => From == SaidFrom.Supervisor;
