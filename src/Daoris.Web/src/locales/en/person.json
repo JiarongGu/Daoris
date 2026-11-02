@@ -138,7 +138,7 @@
   "person.route.PLACE_APPLY": "apply a place's set-up",
   "person.route.SETUP_PRESS": "set a repository up for agents",
   "person.route.SET_ACCESS": "change what agents may reach",
-  "person.route.SET_GIT_ACCESS": "change what git may do on a remote",
+  "person.route.SET_GIT_ACCESS": "change what git may do on a git remote",
   "person.route.SET_ACTOR": "change the agents and models an actor runs on",
   "person.route.STAFFING_FOUND_ANSWER": "take or dismiss a change of the actors another program made",
   "person.route.SET_ROLE": "add, change or remove a role that takes Daoris's work",
