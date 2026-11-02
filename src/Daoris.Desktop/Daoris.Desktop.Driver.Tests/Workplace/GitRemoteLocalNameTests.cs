@@ -6,8 +6,8 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class GitRemoteLocalNameTests
 {
     [Theory]
-    [InlineData("C:\\Users\\someone\\code\\engine.git", "engine")]
-    [InlineData("/home/someone/code/engine/", "engine")]
+    [InlineData("D:\\code\\remotes\\engine.git", "engine")]
+    [InlineData("/srv/code/engine/", "engine")]
     [InlineData("file:///srv/git/engine.git", "engine")]
     [InlineData("../sibling", "sibling")]
     public void A_local_remote_is_its_folders_name(string address, string name)
@@ -15,7 +15,7 @@ public sealed class GitRemoteLocalNameTests
         var said = GitRemoteRows.LocalName(address);
 
         Assert.Equal(name, said);
-        Assert.DoesNotContain("someone", said);
+        Assert.DoesNotContain("code", said);
         Assert.DoesNotContain("/", said);
     }
 }
