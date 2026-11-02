@@ -18,7 +18,7 @@ import * as graph from '../src/workflow/GraphFlow.stories';
 import * as runView from '../src/workflow/WorkflowRunFlow.stories';
 import * as zoom from '../src/work/frame/ZoomReadout.stories';
 import * as waitPanel from '../src/work/waits/WaitPanel.stories';
-import * as roles from '../src/agents/roles/RoleDiagram.stories';
+import * as roles from '../src/agents/roles/StructureCanvas.stories';
 import * as place from '../src/agents/setup/PlacePage.stories';
 import * as setUpReview from '../src/agents/setup/PlaceReview.stories';
 import * as placeWorkflow from '../src/workflow/place/PlaceWorkflowView.stories';

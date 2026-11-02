@@ -1,11 +1,11 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import type { RoleCatalogue } from '../../data/wiring';
 import { chinese } from '../../design/storyLanguage';
 import { storyWidths } from '../../design/storyWidths';
 import { InTheme } from '../../plugins/storyIcons';
 import { CLAUDE_USE, CODEX_USE } from '../agentsFixtures';
-import { DiagramSection } from './RoleDiagram';
+import { DiagramSection } from './StructureCanvas';
 import { RolesCard } from './Roles';
 import { type AppointedRead, buildStructure, NO_FILTERS, type StructureFilters } from './roleStructure';
 import { DiagramDetail, type RoleDoors } from './StructureSections';
@@ -29,12 +29,12 @@ const APPOINTED: AppointedRead = {
 };
 
 function Page({ chosen = null, large = false, appointed = null, filters = NO_FILTERS }: {
-  chosen?: string | null; large?: boolean; appointed?: AppointedRead | null; filters?: StructureFilters;
+  chosen?: string | null; large?: boolean | 'hundred'; appointed?: AppointedRead | null; filters?: StructureFilters;
 }) {
   const [selected, setSelected] = useState(chosen);
   const [now, setNow] = useState(filters);
   const [open, setOpen] = useState<ReadonlySet<string>>(new Set(chosen ? [chosen] : []));
-  const from = large ? largeStructure() : { structure: STRUCTURE, registry: REGISTRY };
+  const from = large ? largeStructure(large === 'hundred' ? [30, 30] : undefined) : { structure: STRUCTURE, registry: REGISTRY };
   const structure = buildStructure({
     ...from, tools: TOOLS, accounts: { agents: [CLAUDE_USE, CODEX_USE] }, plugins: PLUGINS, lines: large ? null : LINES,
     driver: large ? null : DRIVER, workflows: large ? {} : WORKFLOWS, filters: now, appointed,
@@ -59,7 +59,7 @@ function Page({ chosen = null, large = false, appointed = null, filters = NO_FIL
 }
 
 const meta: Meta<typeof Page> = {
-  title: 'Agents/RoleDiagram',
+  title: 'Agents/StructureCanvas',
   component: Page,
   decorators: [storyWidths.wide],
 };
@@ -81,8 +81,10 @@ export const ChineseHalf: Story = { decorators: [storyWidths.half, chinese] };
 export const ChineseNarrow: Story = { decorators: [storyWidths.narrow, chinese] };
 
 export const Dark: Story = { render: dark };
-export const DarkHalf: Story = { render: dark, decorators: [storyWidths.half] };
-export const DarkNarrow: Story = { render: dark, decorators: [storyWidths.narrow] };
+// The theme wraps the width's frame and adds no padding of its own, so the dark story holds the region's 36rem at 39rem as the light one does.
+const darkFrame: Decorator = (Story) => <InTheme theme="dark" className="p-0"><Story /></InTheme>;
+export const DarkHalf: Story = { decorators: [storyWidths.half, darkFrame] };
+export const DarkNarrow: Story = { decorators: [storyWidths.narrow, darkFrame] };
 
 /** A repository chosen: per work the role the driver answered there lit, inherited where it takes this machine's, its row beside. */
 export const PlaceChosen: Story = { args: { chosen: 'place:aurora/engine' } };
@@ -108,3 +110,7 @@ export const OneAgent: Story = { args: { filters: { ...NO_FILTERS, agent: 'codex
 export const TooLarge: Story = { args: { large: true } };
 export const TooLargeChinese: Story = { args: { large: true }, decorators: [chinese] };
 export const TooLargeNarrow: Story = { args: { large: true }, decorators: [storyWidths.narrow] };
+/** A hundred places and roles and more, folded to a band for each workspace, and drawn whole once *Show whole* is pressed. */
+export const Hundred: Story = { args: { large: 'hundred' } };
+export const HundredHalf: Story = { args: { large: 'hundred' }, decorators: [storyWidths.half] };
+export const TooLargeHalf: Story = { args: { large: true }, decorators: [storyWidths.half] };

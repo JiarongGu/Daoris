@@ -271,6 +271,8 @@
   "agents.roles.diagram.label": "The diagram: places, roles and agents",
   "agents.roles.diagram.keys": "Arrow keys move between places, roles and agents, Enter chooses one, Tab reaches its controls.",
   "agents.roles.diagram.narrow": "Too narrow to draw the diagram here, so it is shown as a list, its links said in words.",
+  "agents.roles.diagram.fit": "Show the whole structure",
+  "agents.roles.diagram.moves": "the structure by place: drag or the wheel to move, Ctrl+wheel to zoom",
   "agents.roles.diagram.column.place": "Places",
   "agents.roles.diagram.column.role": "Roles",
   "agents.roles.diagram.column.agent": "Agents",
