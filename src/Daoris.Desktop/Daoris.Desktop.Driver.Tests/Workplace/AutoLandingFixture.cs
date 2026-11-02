@@ -41,8 +41,8 @@ public abstract class AutoLandingFixture : IDisposable
     /// </summary>
     protected void Follow(string steps, string? kind = null)
     {
-        WorkflowStore.Add(_home, new WorkflowVersionAdded(
-            "docs-to-pr", "Documentation to a pull request", "terminal", "2026-10-09T09:00:00Z", System.Text.Json.Nodes.JsonNode.Parse(steps)), kept: []);
+        StoredSteps.Add(_home, new WorkflowVersionAdded(
+            "docs-to-pr", "Documentation to a pull request", "terminal", "2026-10-09T09:00:00Z", System.Text.Json.Nodes.JsonNode.Parse(steps)));
         var use = kind is null
             ? new WorkflowUse("docs-to-pr", "engine", null, null)
             : new WorkflowUse("docs-to-pr", null, "aurora", kind);

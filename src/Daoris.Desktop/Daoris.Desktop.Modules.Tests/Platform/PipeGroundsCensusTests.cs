@@ -9,6 +9,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// none of the words, times and versions beside them, so two reads of an unchanged world across a moved clock and a new day give one
 /// fingerprint and one moved item gives another.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed class PipeGroundsCensusTests
 {
     private static readonly string[] Timeless = ["CHANNEL_MARK", "NOTICES_READ", "HELP_RENAME", "HELP_PIN"];

@@ -26,7 +26,7 @@ public sealed class WorkplaceWorkflowsPortsTests : IDisposable
 
     private void Choose()
     {
-        WorkflowStore.Add(_home, new WorkflowVersionAdded(
+        StoredSteps.Add(_home, new WorkflowVersionAdded(
             "docs-to-pr", "Documentation to a pull request", "terminal", "2026-10-09T09:00:00Z", JsonNode.Parse(Steps)), kept: []);
         WorkflowSelection.Apply(Config(), new WorkflowUse("docs-to-pr", "engine", null, null)).Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
     }

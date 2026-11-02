@@ -10,6 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// contract, never rewritten; a version that does not decode read as unreadable with its reason, never in part; a bound run's identity
 /// unchanged; read from one table, <c>fixtures/workflow-graphs.json</c>, row for row (the CLI's twin left in PUSH1f2b).
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed class WorkflowGraphsTests : IDisposable
 {
     private static readonly DateTimeOffset At = new(2026, 10, 17, 9, 0, 0, TimeSpan.Zero);
@@ -311,18 +312,31 @@ public sealed class WorkflowGraphsTests : IDisposable
             // ungoverned by Current's graph; it evaluates nothing on the version and stores no digest of it, so that one read stays.
             // FABRIC-GRAPH1j: `workflow apply --as-graph` writes a decoded graph as a new version, which binds its own digest, never a decoded one.
             // SETUPUX1b: the effective graph draws a version of steps as the graph it decodes to, for the page to read; it binds nothing.
-            .Where(file => (Path.GetFileName(file) switch
-                {
-                    "NodeRuntime.cs" => File.ReadAllText(file).Replace("WorkflowRunNodes.VersionOf", "", StringComparison.Ordinal),
-                    "DriverWorkflowsCommand.cs" => File.ReadAllText(file).Replace("WorkflowGraphs.Saved", "", StringComparison.Ordinal),
-                    "WorkflowEffectives.cs" => File.ReadAllText(file)
-                        .Replace("WorkflowGraphs.Saved", "", StringComparison.Ordinal).Replace("WorkflowGraphs.Graph", "", StringComparison.Ordinal),
-                    _ => File.ReadAllText(file),
-                }) is var text
+            // REVIEW2 T11: each exemption is one code line, pinned by its text; a second call in the file, or this one changed, fails here, and
+            // a comment's mention is no read.
+            .Where(file => (Path.GetFileName(file) is var name && PinnedReads.TryGetValue(name, out var pinned)
+                    ? PinnedText(file, pinned)
+                    : File.ReadAllText(file)) is var text
                 && (text.Contains("WorkflowGraphs.", StringComparison.Ordinal) || text.Contains("WorkflowRunNodes.", StringComparison.Ordinal)))
             .Select(file => Path.GetRelativePath(driver, file))
             .ToList();
         Assert.Empty(readers);
+    }
+
+    /// <summary>The one code line of each file that may call the decoder or its projection, by the line's trimmed text.</summary>
+    private static readonly Dictionary<string, string> PinnedReads = new(StringComparer.Ordinal)
+    {
+        ["NodeRuntime.cs"] = ": WorkflowRunNodes.VersionOf(store, runs, WorkflowRunBindings.RunOf(ReviewGate.ChainOf([.. quests], quest.Id), unit.Owner.Repository ?? \"\") ?? quest.Id);",
+        ["DriverWorkflowsCommand.cs"] = "return ChangeGraph(found, @base, WorkflowGraphs.Saved(steps), $\"v{@base.Version}'s steps as a graph\", held);",
+        ["WorkflowEffectives.cs"] = ": ((JsonNode)WorkflowGraphs.Saved(newest.Steps!), WorkflowGraphs.Graph(newest.Steps!).Nodes);",
+    };
+
+    /// <summary>A file's text without its comment lines and its pinned line, which must be there exactly once.</summary>
+    private static string PinnedText(string file, string pinned)
+    {
+        var lines = File.ReadAllLines(file).Select(line => line.Trim()).ToList();
+        Assert.True(lines.Count(line => line == pinned) == 1, $"{Path.GetFileName(file)}: the pinned read `{pinned}` is not there exactly once");
+        return string.Join('\n', lines.Where(line => line != pinned && !line.StartsWith("//", StringComparison.Ordinal)));
     }
 
     private const string WorkflowFile = """

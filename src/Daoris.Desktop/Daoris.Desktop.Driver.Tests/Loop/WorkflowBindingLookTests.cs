@@ -36,7 +36,7 @@ public sealed class WorkflowBindingLookTests : IDisposable
     [Fact]
     public async Task A_run_is_bound_at_its_first_start_to_the_repository_s_choice_and_the_look_says_so()
     {
-        WorkflowStore.Add(_home, new WorkflowVersionAdded("merge-after", "Merge after you accept", "terminal", "2026-10-09T09:00:00Z", Steps()), kept: []);
+        StoredSteps.Add(_home, new WorkflowVersionAdded("merge-after", "Merge after you accept", "terminal", "2026-10-09T09:00:00Z", Steps()), kept: []);
         _ledger.Publish("q1", "engine");
         var (watch, runs) = Watch(""" "workflows": { "engine": { "default": "merge-after" } }, """);
         var reports = new List<TickReport>();

@@ -22933,6 +22933,12 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 > **1a** a place follows a saved graph (driver, modules). Contract and proof: the cleanup design's §1, §4.7's Current rows, §9 row 1a and §12.
 
 **Outcome** 2026-11-02: built. A home names its default workflow (`defaultWorkflow`, seeded `merge-after-accept` on a fresh home); a place follows it with nothing written, and *Set up…* saves and chooses the shipped copy through `PLACE_APPLY`'s new `WORKFLOW_SAVE` operation instead of writing a landing rule. The shipped `delivery` is derived from each graph; `land` has the option `key`; an open option resolves from derived defaults where the place has no rule; the line's policy is `linePolicies`, edited by `SET_LINE`. `SET_LANDING`, `daoris driver landing` and Ask Daoris's `landing` card refuse for a place that follows a saved workflow (row 1y retires them whole), and `new --from current:` is retired. Left to 1b to 1f: the transitional paths named in D227's 1a note. Detail: D227's 1a note; `HomeDefaultTests`, `PlacePlanTests`, `PlaceApplyTests`, `WorkflowRunBindingTests`, `SetupPresetsTests`.
+## WORKFLOWCLEAN1b — old saves refused (2026-11-02, D227)
+
+> **1b** saves refused (driver, modules; after a). Contract and proof: the cleanup design's §3, §9 row 1b and §13 point 2.
+
+**Outcome** 2026-11-02: built. A list of steps, a `handed` and a `land` with no method are refused at the one save point, in the same words at every door (the step presets deleted, `workflow new --from` steps, `edit`, `apply` of steps, `apply --as-graph` folded into `convert`, `import`, `WORKFLOW_SAVE` with `steps`, Ask Daoris's steps door); a stored version of each still reads, shows and binds. The palette's `offered` hides `handed` and a landing's tail from the picker. Detail: D227's 1b note; `SavesRefusedTests`, `WorkflowAsGraphCommandTests`, `HelpWorkflowProposalsTests`, `DriverModuleWorkflowWritesTests`.
+
 ## The parked backlog triaged against D228: dropped rows (2026-11-02)
 
 > **Triage of 2026-11-02** (`docs/2026-11-02-parked-triage.md`; D228 and its note): 55 rows of `docs/backlog-parked.md` and 26 of its pointer lines, each superseded by work the owner's direction of that day put in a chunk or a decision. The rows' whole text is in git at `cb884a6b6:docs/backlog-parked.md`.
@@ -23002,3 +23008,9 @@ The row is quoted by its head; its whole text and proof are the foundation desig
   - **HELPBROWSERBEFORE1** — what browser Ask Daoris reached before 2026-10-16. Dropped: a duplicate of work already built or kept elsewhere (the triage).
 
 The 26 pointer lines of the parked file's head (the owner's reports and features whose rows are built, archived, moved into `TASKS.md` or triaged above) are removed with them.
+
+## REVIEW2 — a full code review of the session's changes (2026-11-02)
+
+- [x] **REVIEW2 — a full code review of the session's changes** (reviewers by area, read-only; after the current waves merge). FABRIC2, LANDNODE1, AGENTSPLACE1, SETUPUX1, FLOWCHART2, I18NOPEN1 and their fixes changed the driver, the modules, the service and the page in a short time; reviewers by area (the driver's landing and workflows, the routes and authority, the service and Ask Daoris, the page's flows, tests and checks) find what the merges missed, each finding verified against the code. Proof: the findings, each fixed on main or filed as a row.
+
+  **Done 2026-11-02.** Five areas read over `f0674b65a..` main: 47 findings, 18 blocking, each fixed on main by a fixer that verified it first (the FIX-LOG's entries of 2026-11-02), the record `docs/2026-11-02-review2-findings.md`. What the fixes left is REVIEW2-LEFT1. The review also changed how merges are checked: merges go through `tools/merge-branch.mjs`, a `censuses` gate runs every census, and the post-merge CI keeps going past a red.

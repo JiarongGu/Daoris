@@ -371,6 +371,10 @@
   "workflow.edit.refusal.work-requests-unclaimed": "工作的请求要在工作之后。",
   "workflow.edit.refusal.work-requests-late": "落地可能在工作的请求得到回复之前开始。",
   "workflow.edit.refusal.land-once": "只能有一个落地步骤。",
-  "workflow.edit.refusal.land-tail": "落地之后的步骤与它的方式不符。",
+  "workflow.edit.refusal.land-tail": "这一步随落地方式而来：在落地步骤上选择该方式，它就会带上这一步。",
+  "workflow.edit.refusal.accept": "落地步骤自己不带接受：要由你接受的工作，请把“你的审阅”放在它之前。",
+  "workflow.edit.refusal.land-method": "落地步骤保存时要选定它的方式：合并、分支、推送、拉取请求或并入主线。",
+  "workflow.edit.refusal.handed-refused": "“已交出”步骤不再保存：由落地步骤来执行落地。请选择它的方式，其后的步骤会随之而来。",
+  "workflow.edit.refusal.steps-refused": "步骤列表不再保存：工作流以步骤图保存。请在工作流编辑器中编排。",
   "workflow.edit.refusal.role": "它的角色不做这个步骤的工作。"
 }

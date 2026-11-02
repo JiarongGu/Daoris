@@ -22,6 +22,7 @@ namespace Daoris.Driver.Tests;
 /// (HELPOWED1, D170 point 2). A quest's or a session's own act is its own conversation, which Ask Daoris reaches by a go to the
 /// view it names (D161's ENTRY1 note).</para>
 /// </remarks>
+[Trait(Desktop.Driver.Tests.Category.Name, Desktop.Driver.Tests.Category.Census)]
 public sealed partial class HelpCoverageTests
 {
     private abstract record Answer;
@@ -873,7 +874,6 @@ public sealed partial class HelpCoverageTests
         // version, new or an edit on the newest; a version from a file and an import are owed to WORKFLOW1h2.
         ("workflow list", new Exempt("it reads the home's workflows and the presets built in, and changes nothing.")),
         ("workflow new", new Door("workflow", "new")),
-        ("workflow edit", new Door("workflow", "edit")),
         ("workflow apply", WorkflowOwed),
         ("workflow export", new Exempt(
             "it copies a workflow's file out, whole, to a new file or the terminal, for the person to carry, and changes nothing here.")),

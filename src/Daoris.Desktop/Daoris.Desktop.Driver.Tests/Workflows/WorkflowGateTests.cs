@@ -628,7 +628,7 @@ public sealed class WorkflowGateTests : IDisposable
     {
         foreach (var accept in accepts)
         {
-            WorkflowStore.Add(_home, new WorkflowVersionAdded("docs-to-pr", "Documentation to a pull request", "terminal", "2026-10-09T09:00:00Z", Saved(accept)), kept: []);
+            StoredSteps.Add(_home, new WorkflowVersionAdded("docs-to-pr", "Documentation to a pull request", "terminal", "2026-10-09T09:00:00Z", Saved(accept)), kept: []);
         }
     }
 

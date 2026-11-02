@@ -60,7 +60,7 @@ public sealed class QuestCloseTests : IDisposable
 
     public void Dispose()
     {
-        if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
+        GitSeed.Discard(_home);
     }
 
     /// <summary>The close door as the closer calls it: each close kept, each answer the test's (a throw is a close unanswered).</summary>
@@ -1391,7 +1391,7 @@ public sealed class QuestCloseTests : IDisposable
         Assert.Contains("record|resend|stop", string.Join('\n', WorkHeld().Lines), StringComparison.Ordinal);
 
         // Disarmed (no governing graph and no closure graph kept): deleted.
-        if (Directory.Exists(ClosureGraphs.FolderOf(_home))) Directory.Delete(ClosureGraphs.FolderOf(_home), true);
+        GitSeed.Remove(ClosureGraphs.FolderOf(_home));
         await runtime.PassAsync(Look("{}"), CancellationToken.None);
         Assert.False(File.Exists(QuestsFile));
         Assert.Contains("record|resend|stop", string.Join('\n', WorkHeld().Lines), StringComparison.Ordinal);

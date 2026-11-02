@@ -25,10 +25,10 @@ public sealed class IntakeKindTests : IDisposable
 
     private DriverConfig Config()
     {
-        WorkflowStore.Add(_home, new WorkflowVersionAdded("docs-fast", "Documentation, fast", "terminal", "2026-10-09T09:00:00Z",
-            JsonNode.Parse("""[{"id":"work","kind":"work"},{"id":"land","kind":"landing","form":"branch","accept":"automatic","pattern":"docs/{quest}"}]""")), kept: []);
-        WorkflowStore.Add(_home, new WorkflowVersionAdded("careful", "Careful", "terminal", "2026-10-09T09:00:00Z",
-            JsonNode.Parse("""[{"id":"work","kind":"work"},{"id":"look","kind":"look"},{"id":"land","kind":"landing","form":"merge","accept":"you"}]""")), kept: []);
+        StoredSteps.Add(_home, new WorkflowVersionAdded("docs-fast", "Documentation, fast", "terminal", "2026-10-09T09:00:00Z",
+            JsonNode.Parse("""[{"id":"work","kind":"work"},{"id":"land","kind":"landing","form":"branch","accept":"automatic","pattern":"docs/{quest}"}]""")));
+        StoredSteps.Add(_home, new WorkflowVersionAdded("careful", "Careful", "terminal", "2026-10-09T09:00:00Z",
+            JsonNode.Parse("""[{"id":"work","kind":"work"},{"id":"look","kind":"look"},{"id":"land","kind":"landing","form":"merge","accept":"you"}]""")));
         var config = WorkflowSelection.Apply(DriverConfig.Empty, new WorkflowDeclare("docs", "work", "Documentation", ["docs/**"]));
         config = WorkflowSelection.Apply(config, new WorkflowDeclare("feature", "work", "Feature", []));
         config = WorkflowSelection.Apply(config, new WorkflowUse("docs-fast", null, "work", "docs"));

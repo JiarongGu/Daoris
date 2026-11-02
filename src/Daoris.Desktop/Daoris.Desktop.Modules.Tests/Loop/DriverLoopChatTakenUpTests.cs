@@ -14,6 +14,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// runner's adapter here spawns nothing, so a chat that goes on ends <c>failed</c> at its spawn, which is an end all the
 /// same; the runs that resume a conversation are the driver's <c>ChatGoesOnProcessTests</c>'.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed class DriverLoopChatTakenUpTests : DriverModuleBridge
 {
     [Fact]

@@ -39,9 +39,10 @@ export const PALETTE: WorkflowPaletteAnswer = {
         { name: 'plugin', type: 'text', choices: [], required: false }, { name: 'squash', type: 'switch', choices: [], required: false },
         { name: 'message', type: 'text', choices: [], required: false }] }),
     kind('line', 'observed', { evidenced: true }),
-    kind('pushed', 'observed', { failureBy: 'plugin', personSkips: true, evidenced: true }),
-    kind('pull-request', 'observed', { failureBy: 'plugin', personSkips: true, evidenced: true, skipBy: 'landing' }),
-    kind('integrate', 'waited', { failureBy: 'integration', evidenced: true,
+    kind('handed', 'observed', { evidenced: true, offered: 'retired' }),
+    kind('pushed', 'observed', { failureBy: 'plugin', personSkips: true, evidenced: true, offered: 'tail:push' }),
+    kind('pull-request', 'observed', { failureBy: 'plugin', personSkips: true, evidenced: true, skipBy: 'landing', offered: 'tail:pull-request' }),
+    kind('integrate', 'waited', { failureBy: 'integration', evidenced: true, offered: 'tail:integrate',
       options: [{ name: 'request', type: 'choice', choices: ['owner', 'done', 'steward'], required: false },
         { name: 'conflicts', type: 'choice', choices: ['session', 'hold'], required: false }] }),
   ],
@@ -116,9 +117,7 @@ export const LIST: WorkflowListAnswer = {
       delivery: { id: 'merge-after-accept', method: 'merge', accept: 'you', name: 'Merge after you accept', for: 'For a repository whose work you accept.' } },
     { id: 'documents', name: 'Documents workflow', graph: true, line: 'The work merges into the line.', preset: true, body: DOCUMENTS_GRAPH,
       for: 'For a kind of task whose paths are documents: the work merges into the line once it is done, with no review.', order: 3, setUp: false,
-      delivery: { id: 'merge-automatic', method: 'merge', accept: 'automatic', name: 'Merge with no review', for: 'For a development repository.' } },
-    { id: 'pull-request-no-press', name: 'A pull request with no press', graph: false, line: 'y', preset: true, body: null },
-  ],
+      delivery: { id: 'merge-automatic', method: 'merge', accept: 'automatic', name: 'Merge with no review', for: 'For a development repository.' } },  ],
 };
 
 export const ROLES: EditorRole[] = [

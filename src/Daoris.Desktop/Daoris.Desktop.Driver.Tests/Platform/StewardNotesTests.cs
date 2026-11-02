@@ -9,6 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// planner reason a steward's act writes is its own code, a behavioural sibling of the person's, and none of them, stored English or
 /// worded en and zh, reads <i>person</i> or <i>you</i>; and every reader of the person's codes, found by search, reads the steward's too.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed class StewardNotesTests
 {
     /// <summary>Each person's code beside its steward's sibling.</summary>

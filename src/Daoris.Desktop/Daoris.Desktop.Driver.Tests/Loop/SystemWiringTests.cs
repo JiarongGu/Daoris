@@ -10,6 +10,7 @@ namespace Daoris.Driver.Tests.Platform;
 /// <c>null</c> with its <c>…Why</c>, and no secret anywhere in the answer. Every world here is handed in: no test reads this
 /// machine's environment, its account's or its home.
 /// </summary>
+[Trait(Desktop.Driver.Tests.Category.Name, Desktop.Driver.Tests.Category.Census)]
 public sealed class SystemWiringTests : IDisposable
 {
     private readonly List<string> _made = [];

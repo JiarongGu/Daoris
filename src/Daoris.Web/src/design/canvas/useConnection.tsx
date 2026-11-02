@@ -1,4 +1,5 @@
 import { type PointerEvent, type ReactNode, type RefObject, useEffect, useRef, useState } from 'react';
+import { isComposing } from '../../lib/composing';
 import { edgeDrift } from './gesture';
 import type { Point } from './viewMath';
 
@@ -132,6 +133,7 @@ export function useConnection(
   useEffect(() => {
     if (!drawing) return undefined;
     const onKey = (event: KeyboardEvent) => {
+      if (isComposing(event)) return;
       if (event.key !== 'Escape') return;
       event.preventDefault();
       event.stopPropagation();

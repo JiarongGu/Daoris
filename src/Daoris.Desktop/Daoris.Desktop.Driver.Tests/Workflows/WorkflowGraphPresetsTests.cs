@@ -94,7 +94,6 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
             WorkflowDefaults.All.Select(each => each.Id));
         Assert.Equal(WorkflowDefaults.All.Select(each => (each.Id, each.Name)), WorkflowPresets.GraphTable.Select(preset => (preset.Id, preset.Name)));
         Assert.Equal("merge-automatic", WorkflowPresets.GraphOf("merge-no-press")?.Id);
-        Assert.DoesNotContain(WorkflowPresets.Table, preset => WorkflowDefaults.Of(preset.Id) is not null);
     }
 
     /// <summary>DEFAULTCONFIG1a: each default is judged by the graph rules, its delivery is what its graph says, and its line is composed from it.</summary>

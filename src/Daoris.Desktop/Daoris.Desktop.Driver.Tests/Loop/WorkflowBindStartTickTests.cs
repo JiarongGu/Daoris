@@ -44,13 +44,13 @@ public sealed class WorkflowBindStartTickTests : IDisposable
 
     public void Dispose()
     {
-        try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        GitSeed.Discard(_home);
     }
 
     private static JsonNode Steps() => JsonNode.Parse("""[{"id":"work","kind":"work"},{"id":"landing","kind":"landing","form":"merge","accept":"you"}]""")!;
 
     private void Save() =>
-        WorkflowStore.Add(_home, new WorkflowVersionAdded("merge-after", "Merge after you accept", "terminal", "2026-10-09T09:00:00Z", Steps()), kept: []);
+        StoredSteps.Add(_home, new WorkflowVersionAdded("merge-after", "Merge after you accept", "terminal", "2026-10-09T09:00:00Z", Steps()), kept: []);
 
     /// <summary>
     /// The start binds its run before its open, so the ledger's refusal leaves the run bound, said once in the look; a version saved

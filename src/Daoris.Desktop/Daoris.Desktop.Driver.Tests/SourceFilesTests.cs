@@ -5,6 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// §6): the driver's files move into module folders one module per branch, and a reader that named a folder would break
 /// at each move. A name is one file, or the read is refused, since a name found twice says neither.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed class SourceFilesTests
 {
     [Fact]

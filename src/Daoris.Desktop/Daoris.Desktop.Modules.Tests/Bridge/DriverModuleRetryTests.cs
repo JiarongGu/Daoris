@@ -141,6 +141,48 @@ public sealed class DriverModuleRetryTests : DriverModuleBridge
         Assert.Contains("id=q9", refusal);
     }
 
+    /// <summary>A home whose store holds the role-move table (the staffing imported), so an approval can be written and read back.</summary>
+    private void Staffed()
+    {
+        File.WriteAllText(DriverConfigPath, """{ "adapter": "acp-stub", "actors": { "build": [ { "agent": "acp-stub", "model": "sonnet", "effort": "low" } ] } }""");
+        Assert.True(new RoleStaffing(Home, () => StoreSettled.Yes).ImportFile().How is StaffingImported.Done or StaffingImported.Already);
+    }
+
+    private IReadOnlyList<string> Approvals(string quest)
+    {
+        using var reader = DesktopStoreReader.Open(DesktopStore.LocationIn(Home));
+        return reader is null ? [] : reader.Query("SELECT role FROM role_moves WHERE line = $line AND kind = 'approved' ORDER BY id", row => row.GetString(0), ("$line", quest));
+    }
+
+    /// <summary>REVIEW2 T2: the yes to a role policy's ask is written by this route, one approval for the quest and the role that took it.</summary>
+    [Fact]
+    public async Task A_quest_a_policy_holds_is_approved_once_for_its_role_and_the_next_look_may_move_it_once()
+    {
+        Staffed();
+        var held = Stop with { Actor = "build", State = "failed" };
+        var module = Looked(new Consideration(Taken, StartVerdict.PolicyHeld, "the role's policy asks") { HeldBy = held });
+
+        var answer = await AnswerAsync(module, "RETRY_QUEST", new { quest = "q1" });
+
+        Assert.Equal("approved", answer.GetProperty("retried").GetProperty("did").GetString());
+        Assert.Equal(["build"], Approvals("q1"));
+        var moved = new StaffMoves(Home).Of("q1");
+        Assert.True(moved.Approved);
+        Assert.Equal(0, moved.Moves);
+    }
+
+    [Fact]
+    public async Task An_ordinary_parked_retry_and_a_released_stop_write_no_approval()
+    {
+        Staffed();
+
+        await AnswerAsync(Looked(new Consideration(Taken, StartVerdict.Exhausted, "parked") { Failures = 3 }), "RETRY_QUEST", new { quest = "q1" });
+        await AnswerAsync(Looked(new Consideration(Taken, StartVerdict.Stopped, "you stopped it") { HeldBy = Stop }), "RETRY_QUEST", new { quest = "q1" });
+
+        Assert.Empty(Approvals("q1"));
+        Assert.False(new StaffMoves(Home).Of("q1").Approved);
+    }
+
     /// <summary>Before any look, and with no service to plan from, the driver is still coming up, as every route that reads it says.</summary>
     [Fact]
     public async Task Before_any_look_with_no_service_it_is_still_coming_up()

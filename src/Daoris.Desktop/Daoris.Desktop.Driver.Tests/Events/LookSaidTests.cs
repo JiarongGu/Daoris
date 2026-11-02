@@ -10,6 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <i>Done and failed</i>, whatever the notify switch says; and the census: every line a producer of the look adds goes through
 /// <see cref="LookSaid"/>, so a line with no class fails here. Files only, in a home under <c>_fixtures/</c>.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed class LookSaidTests : IDisposable
 {
     private static readonly DateTimeOffset Now = new(2026, 10, 22, 9, 0, 0, TimeSpan.Zero);

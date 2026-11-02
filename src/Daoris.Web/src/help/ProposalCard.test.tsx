@@ -349,7 +349,7 @@ describe('the kinds that reach every door', () => {
     expect(screen.getByText('For the workflow draft open for engine')).toBeInTheDocument();
     expect(headings()).toEqual(['Its changes', 'To put right before it saves']);
     expect(within(screen.getByRole('region', { name: 'Its changes' })).getAllByRole('listitem')).toHaveLength(16);
-    expect(screen.getByText('The steps after the landing are not what its method brings.')).toBeInTheDocument();
+    expect(screen.getByText('This step comes with a landing method: choose that method on the landing and it brings the step.')).toBeInTheDocument();
     expect(screen.getByText(/a rule this page has no words for refuses/)).toBeInTheDocument();
     expect(screen.getByText(/^Nothing is saved or chosen: you take its changes into the draft in its editor/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Apply' })).not.toBeInTheDocument();

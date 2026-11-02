@@ -72,7 +72,7 @@ public sealed class IntegrationPresetsGitTests : LandedFixture, IAsyncLifetime
             "\"kind\":\"land\",\"version\":1,\"reach\":\"performed\",\"options\":{\"method\":\"integrate\"",
             "\"kind\":\"handed\",\"version\":1,\"reach\":\"observed\",\"options\":{\"form\":\"branch\"", StringComparison.Ordinal);
         Assert.DoesNotContain("\"land\"", graph);
-        WorkflowStore.Add(Home, new WorkflowVersionAdded("made", "Integrated", "terminal", "2026-10-31T09:00:00Z", null, System.Text.Json.Nodes.JsonNode.Parse(graph)), kept: []);
+        StoredSteps.AddGraph(WorkflowPorts.Store(Home), "made", "Integrated", "2026-10-31T09:00:00Z", System.Text.Json.Nodes.JsonNode.Parse(graph)!);
         var version = Assert.Single(new WorkflowFiles(Home).Load("made")!.Read.Versions);
         Assert.True(version.Problem is null, version.Problem);
         Assert.True(WorkflowRunBindings.Bind(Home,

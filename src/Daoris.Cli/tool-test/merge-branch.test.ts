@@ -4,7 +4,7 @@ import { type ChildProcess, spawn, spawnSync } from 'node:child_process';
 import { EventEmitter } from 'node:events';
 import os from 'node:os';
 import { chmodSync, closeSync, existsSync, lstatSync, mkdirSync, openSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, utimesSync, writeFileSync, writeSync } from 'node:fs';
-import { delimiter, dirname, join, posix } from 'node:path';
+import { delimiter, dirname, join, posix, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { makeFixture, PATIENCE } from '../test/_fixture.ts';
 
@@ -558,7 +558,7 @@ test("--ci gates a commit in the gate tree, main's tip unless named; --watch fol
   assert.deepEqual([plain.ci, plain.ciCommit, plain.watch, plain.stop, plain.branches, plain.full], [true, null, false, false, [], false]);
   const named = tool.parseArgs(['--ci', 'abc1234', '--one-at-a-time']);
   assert.deepEqual([named.ci, named.ciCommit, named.oneAtATime], [true, 'abc1234', true]);
-  assert.equal(tool.parseArgs(['--ci', '--keep-going']).ci, true, 'a CI run keeps going anyway: the flag is taken and changes nothing');
+  assert.throws(() => tool.parseArgs(['--ci', '--keep-going']), /--keep-going is not taken beside --ci/, 'a CI run keeps going anyway: the flag would change nothing, so it is refused');
   const watch = tool.parseArgs(['--ci', '--watch']);
   assert.deepEqual([watch.ci, watch.watch, watch.ciCommit], [true, true, null]);
   assert.equal(tool.parseArgs(['--watch', '--ci']).watch, true);
@@ -586,7 +586,7 @@ test("--ci gates a commit in the gate tree, main's tip unless named; --watch fol
     [['--ci', '--watch', 'abc1234'], /--ci --watch gates main's tip as it moves: it takes no commit/],
     [['--ci', '--stop', 'abc1234'], /--ci --stop takes nothing else/],
     [['--ci', '--stop', '--watch'], /--ci --stop takes nothing else/],
-    [['--ci', '--full'], /--ci takes only a commit, --stage, --night, --watch, --stop, --keep-going and --one-at-a-time/],
+    [['--ci', '--full'], /--ci takes only a commit, --stage, --night, --watch, --stop and --one-at-a-time/],
     [['--stage'], /--stage is the CI's: --ci --stage \[<commit>\]/],
     [['--ci', '--watch', '--stage'], /--ci --watch owes the stage's rehearsals/],
     [['--ci', '--stop', '--stage'], /--ci --stop takes nothing else/],
@@ -1476,15 +1476,15 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ['the web shell', ['src/Daoris.Web/src/App.tsx'], [...BASE, 'web-types', 'web-rules', 'service', 'driver', 'modules', 'web', 'web-unit']],
     ["the web's settings", ['src/Daoris.Web/src/settings/DriverDomain.tsx'], [...BASE, 'web-types', 'web-rules', 'service', 'driver', 'modules', 'web', 'web-unit']],
     ['the driver', ['src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs'],
-      [...BASE, 'driver', 'modules', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'deployment']],
+      [...BASE, 'driver', 'modules', 'censuses', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'deployment']],
     ['ServiceHostLocator', ['src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceHostLocator.cs'],
-      [...BASE, 'driver', 'modules', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'deployment']],
+      [...BASE, 'driver', 'modules', 'censuses', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'deployment']],
     // MOD9e: the page's twin vitests parse these driver sources' declarations, so a change to one runs the web gate's unit
     // run as well (WEBSPLIT1), and not its build.
     ...PAGE_PARSED.map((path): [string, string[], string[]] => [`${path.split('/').at(-1)}, which a page twin parses`, [path],
-      [...BASE, 'driver', 'modules', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'web-unit', 'deployment']]),
+      [...BASE, 'driver', 'modules', 'censuses', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'web-unit', 'deployment']]),
     // PROC1b: the driver's Process classes run in two halves, the git-only ones four at once and the rest eight at once (PROCPAR1).
-    ["the driver's tests", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/LandingTests.cs'], [...BASE, 'driver', 'driver-process', 'driver-process-git']],
+    ["the driver's tests", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/LandingTests.cs'], [...BASE, 'driver', 'censuses', 'driver-process', 'driver-process-git']],
     // GATE6: a browser test is the web gate's alone; no .NET suite reads it (the test below holds that).
     ['a browser test', ['src/Daoris.Web/e2e/platform.spec.ts'], [...BASE, 'web']],
     // FLOWCHART1e: what the measured-box check draws reaches its gate beside the web shell's; its own specs and config reach it alone.
@@ -1494,14 +1494,14 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ["the measured-box check's config", ['src/Daoris.Web/playwright.measured.config.ts'], [...BASE, 'web-measured']],
     ['a design file it does not draw', ['src/Daoris.Web/src/design/theme.ts'], [...BASE, 'web-types', 'web-rules', 'service', 'driver', 'modules', 'web', 'web-unit']],
     // MOD9c: the driver's console and occasion scans read every C# source of the modules and the app, from its source root.
-    ['the modules', ['src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/DriverModule.cs'], [...BASE, 'driver', 'modules', 'modules-process', 'deployment']],
-    ["the modules' loop", ['src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/DriverLoop.cs'], [...BASE, 'driver', 'modules', 'modules-process', 'deployment']],
-    ['the desktop app', ['src/Daoris.Desktop/Daoris.Desktop.App/Program.cs'], [...BASE, 'driver', 'modules', 'modules-process', 'deployment']],
+    ['the modules', ['src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/DriverModule.cs'], [...BASE, 'driver', 'modules', 'censuses', 'modules-process', 'deployment']],
+    ["the modules' loop", ['src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/DriverLoop.cs'], [...BASE, 'driver', 'modules', 'censuses', 'modules-process', 'deployment']],
+    ['the desktop app', ['src/Daoris.Desktop/Daoris.Desktop.App/Program.cs'], [...BASE, 'driver', 'modules', 'censuses', 'modules-process', 'deployment']],
     // What those scans do not read stays the modules lane's alone: a project file, the icon, the modules' tests (the launcher is built by the driver gate, LAUNCHGATE1).
     ["the modules' project", ['src/Daoris.Desktop/Daoris.Desktop.Modules/Daoris.Desktop.Modules.csproj'], [...BASE, 'modules', 'modules-process', 'deployment']],
     ["the app's icon", ['src/Daoris.Desktop/Daoris.Desktop.App/daoris.ico'], [...BASE, 'modules', 'modules-process', 'deployment']],
     ['the launcher', ['src/Daoris.Desktop/Daoris.Desktop.Launcher/Program.cs'], [...BASE, 'driver', 'modules', 'modules-process', 'deployment']],
-    ["the modules' tests", ['src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/DriverModuleRoutesTests.cs'], [...BASE, 'modules', 'modules-process']],
+    ["the modules' tests", ['src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/DriverModuleRoutesTests.cs'], [...BASE, 'modules', 'censuses', 'modules-process']],
     // GATESLIM1: the tests of the tools only the parent runs are the tool-tests gate, reached by those tools and their folder.
     ['the publish script', ['tools/desktop-publish.mjs'], [...BASE, 'tool-tests', 'rehearse-family', 'deployment']],
     // FAMILYFAIL1: the rehearsals' kit imports it too, to end what a timed-out command left running.
@@ -1525,7 +1525,7 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ["the history words' table", ['src/Daoris.Service/Daoris.Service.Tests/fixtures/history-words.json'], [...BASE, 'service', 'driver']],
     // FOUNDATION1c: the participant's work table sits among the service's tests, and the driver's twin and the page's identity read it too.
     ["the participant's work table", ['src/Daoris.Service/Daoris.Service.Tests/fixtures/participant-work.json'], [...BASE, 'service', 'driver', 'web-unit']],
-    ["the participant's work readers' table", ['src/Daoris.Service/Daoris.Service.Tests/fixtures/participant-work-readers.json'], [...BASE, 'service', 'driver', 'modules']],
+    ["the participant's work readers' table", ['src/Daoris.Service/Daoris.Service.Tests/fixtures/participant-work-readers.json'], [...BASE, 'service', 'driver', 'modules', 'censuses']],
     // SESSDEL1c: the kept names' table sits among the driver's tests, and the page's twin reads it too.
     ["the kept names' table", [KEPT_NAMES], [...BASE, 'driver', 'web-unit']],
     // LANDBACKLOG1: the backlog merges' table sits among the driver's tests, and the merge tool's twin reads it too.
@@ -1544,7 +1544,7 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     // BRAINSTORM1a3: the brainstorm files' table, which the service's brainstorm desk reads too.
     ["the brainstorm files' table", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/brainstorm-files.json'], [...BASE, 'service', 'driver']],
     ["the brainstorm posture", ['src/Daoris.Desktop/Daoris.Desktop.Driver/WorkOrders/Domain/BrainstormPermissions.cs'],
-      [...BASE, 'service', 'driver', 'modules', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'deployment']],
+      [...BASE, 'service', 'driver', 'modules', 'censuses', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'deployment']],
     ["the service's tests", ['src/Daoris.Service/Daoris.Service.Tests/HistoryDeskTests.cs'], [...BASE, 'service']],
     // ORIENT2h6: the fence table sits among the CLI's fixtures, and the driver's SelfDescription twin reads it too, and
     // since ORIENT2h6b the service's MarkdownFence twin.
@@ -1615,7 +1615,7 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
   }
   // Lanes add up: a branch crossing two runs what either reaches.
   assert.deepEqual(runs(['docs/x.md', 'tools/release-rehearsal.mjs', 'src/Daoris.Desktop/Daoris.Desktop.App/Program.cs']),
-    [...BASE, 'service', 'driver', 'modules', 'rehearse']);
+    [...BASE, 'service', 'driver', 'modules', 'censuses', 'rehearse']);
 
   // FLOWCHART1e's proof: a merge touching the flowchart's layout lists the measured-box check, saying what reached it, and
   // --gated runs it.
@@ -1635,10 +1635,10 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
   assert.equal(slim.kind, 'suite');
   assert.equal(tool.isHeavyGate(slim), false);
 
-  // GATE5's proof: a driver change runs seven gates, and says the long four are in the full set before staging.
+  // GATE5's proof: a driver change runs eight gates (the censuses among them, REVIEW2 T6), and says the long four are in the full set before staging.
   const driver = selected(['src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs']);
   assert.deepEqual(driver.filter((entry) => entry.run).map((entry) => entry.gate.name),
-    ['universal', 'code-map', 'orient-index', 'test-map', 'cli', 'driver', 'modules', 'rehearse-family']);
+    ['universal', 'code-map', 'orient-index', 'test-map', 'cli', 'driver', 'modules', 'censuses', 'rehearse-family']);
   for (const name of LONG) {
     const entry = driver.find((candidate) => candidate.gate.name === name)!;
     assert.equal(entry.run, false, name);
@@ -1685,7 +1685,8 @@ test("a merge that changes the web's sources blocks on its typecheck, and one th
 
   // A merge that changes nothing it reads skips it, even a path the lane table places nowhere.
   for (const paths of [service, ['src/Daoris.Web/e2e/rail.spec.ts'], ['src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs'], ['TASKS.md']]) {
-    assert.deepEqual(mergeRuns(paths), BLOCKING, paths[0]);
+    // The desktop's sources reach the censuses' path check (REVIEW2 T6), and nothing else here.
+    assert.deepEqual(mergeRuns(paths), paths[0].startsWith('src/Daoris.Desktop/') ? [...BLOCKING, 'censuses'] : BLOCKING, paths[0]);
     assert.equal(runs(paths).includes('web-types'), false, `--gated: ${paths[0]}`);
     assert.equal(stalens(paths).includes('web-types'), false, `its verdict stands: ${paths[0]}`);
   }
@@ -1700,8 +1701,9 @@ test("a merge that changes the web's sources blocks on its design and structure 
   const service = ['src/Daoris.Service/Daoris.Service.Core/Asks.cs'];
   const check = repoPlan.find((gate) => gate.name === 'web-rules')!;
   assert.equal(check.run, 'npm run check:web-rules');
-  assert.equal(rootScripts()['check:web-rules'], 'npm --prefix src/Daoris.Web run test -- src/design/tokens.test.ts src/test/structure.test.ts',
-    'the two files, not the whole unit run');
+  assert.equal(rootScripts()['check:web-rules'],
+    'npm --prefix src/Daoris.Web run test -- src/design/tokens.test.ts src/test/structure.test.ts src/test/providerCensus.test.ts src/design/presentational.test.ts src/design/pageMeasure.test.tsx',
+    'the five files, not the whole unit run');
   assert.equal(check.kind, 'check', 'among the checks, fast first');
   assert.equal(tool.isHeavyGate(check), false);
   assert.equal(tool.isProcessLane(check), false);
@@ -1717,7 +1719,8 @@ test("a merge that changes the web's sources blocks on its design and structure 
 
   // A merge that changes nothing it reads skips it, even a path the lane table places nowhere.
   for (const paths of [service, ['src/Daoris.Web/e2e/rail.spec.ts'], ['src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs'], ['TASKS.md']]) {
-    assert.deepEqual(mergeRuns(paths), BLOCKING, paths[0]);
+    // The desktop's sources reach the censuses' path check (REVIEW2 T6), and nothing else here.
+    assert.deepEqual(mergeRuns(paths), paths[0].startsWith('src/Daoris.Desktop/') ? [...BLOCKING, 'censuses'] : BLOCKING, paths[0]);
     assert.equal(runs(paths).includes('web-rules'), false, `--gated: ${paths[0]}`);
     assert.equal(stalens(paths).includes('web-rules'), false, `its verdict stands: ${paths[0]}`);
   }
@@ -2818,8 +2821,8 @@ test("every file outside the page a page's vitest reads is one whose change reac
   assert.equal(without.length, tool.REACH.length - 1, "MOD9e's rule names each source by its name under the driver's folder");
   for (const path of PAGE_PARSED) {
     const reached = (reach: readonly Rule[]) => tool.selectGates(repoPlan, [path], { lanes: repoLanes, reach, gated: true }).gates.filter((entry) => entry.run).map((entry) => entry.gate.name);
-    assert.deepEqual(reached(without), ['universal', 'code-map', 'orient-index', 'test-map', 'cli', 'driver', 'modules', 'rehearse-family'], path);
-    assert.deepEqual(reached(tool.REACH), ['universal', 'code-map', 'orient-index', 'test-map', 'cli', 'driver', 'modules', 'rehearse-family', 'web-unit'], path);
+    assert.deepEqual(reached(without), ['universal', 'code-map', 'orient-index', 'test-map', 'cli', 'driver', 'modules', 'censuses', 'rehearse-family'], path);
+    assert.deepEqual(reached(tool.REACH), ['universal', 'code-map', 'orient-index', 'test-map', 'cli', 'driver', 'modules', 'censuses', 'rehearse-family', 'web-unit'], path);
   }
 });
 
@@ -3241,7 +3244,7 @@ test("this repository's Process lane is the real-process halves and the rehearsa
   assert.deepEqual(repoPlan.filter((gate) => tool.isProcessLane(gate)).map((gate) => gate.name),
     ['driver-process', 'driver-process-git', 'modules-process', 'rehearse', 'rehearse-family', 'deployment']);
   assert.deepEqual(repoPlan.filter((gate) => !tool.isProcessLane(gate)).map((gate) => gate.name),
-    ['universal', 'code-map', 'orient-index', 'test-map', 'web-types', 'web-rules', 'cli', 'tool-tests', 'service', 'devkit', 'driver', 'modules', 'web', 'web-unit', 'web-measured']);
+    ['universal', 'code-map', 'orient-index', 'test-map', 'web-types', 'web-rules', 'cli', 'tool-tests', 'service', 'devkit', 'driver', 'modules', 'censuses', 'web', 'web-unit', 'web-measured']);
   // By what each runs, as the long gates are: a renamed gate, a new Process half or a new rehearsal is still one.
   assert.equal(tool.isProcessLane({ name: 'renamed', run: 'dotnet test x --settings src/Daoris.Desktop/git.process.runsettings' }), true);
   assert.equal(tool.isProcessLane({ name: 'renamed', run: 'npm run rehearse:anything' }), true);
@@ -3292,16 +3295,16 @@ test("what a light gate's script builds behind its name is never a component the
 test("this repository's light lane runs the desktop suites' fast halves first, and the Process lane waits for what it shares", () => {
   const schedule = tool.laneSchedule(repoPlan);
   assert.deepEqual(schedule.light.map((gate) => gate.name),
-    ['driver', 'modules', 'universal', 'code-map', 'orient-index', 'test-map', 'web-types', 'web-rules', 'cli', 'tool-tests', 'service', 'devkit', 'web', 'web-unit', 'web-measured']);
+    ['driver', 'modules', 'censuses', 'universal', 'code-map', 'orient-index', 'test-map', 'web-types', 'web-rules', 'cli', 'tool-tests', 'service', 'devkit', 'web', 'web-unit', 'web-measured']);
   // REHLANE1, REHLANE2, REHLANE2b: the release, family and deployment rehearsals right after the git half, which they run
   // beside, one after the other.
   assert.deepEqual(schedule.process.map((gate) => gate.name),
     ['driver-process', 'driver-process-git', 'rehearse', 'rehearse-family', 'deployment', 'modules-process']);
   for (const name of ['driver-process', 'driver-process-git', 'modules-process']) {
     // GATEORDER1: and for the heavy light gates (the CLI, service, devkit and web suites), so no Process half runs under their load.
-    assert.deepEqual(schedule.waits[name], { after: ['driver', 'modules', 'cli', 'service', 'devkit', 'web', 'web-unit', 'web-measured'], component: 'src/Daoris.Desktop' }, name);
+    assert.deepEqual(schedule.waits[name], { after: ['driver', 'modules', 'censuses', 'cli', 'service', 'devkit', 'web', 'web-unit', 'web-measured'], component: 'src/Daoris.Desktop' }, name);
   }
-  assert.deepEqual(repoPlan.filter((gate) => tool.isHeavyGate(gate)).map((gate) => gate.name), ['cli', 'service', 'devkit', 'driver', 'modules', 'web', 'web-unit', 'web-measured']);
+  assert.deepEqual(repoPlan.filter((gate) => tool.isHeavyGate(gate)).map((gate) => gate.name), ['cli', 'service', 'devkit', 'driver', 'modules', 'censuses', 'web', 'web-unit', 'web-measured']);
   assert.equal(tool.isHeavyGate({ name: 'x', run: 'node tools/orient-index.mjs --check' }), false);
   // A rehearsal builds what its command does not name. REHLANE2: and the release and deployment rehearsals' packs stage the
   // CLI's dist/, which the bin the cli gate's `daoris check` runs prefers.
@@ -3313,7 +3316,7 @@ test("this repository's light lane runs the desktop suites' fast halves first, a
 test('a CI run schedules by memory: a Process half waits only for the gates that build its component, and the heavy light gates run beside it (CI1)', () => {
   const schedule = tool.laneSchedule(repoPlan, { byMemory: true });
   for (const name of ['driver-process', 'driver-process-git', 'modules-process']) {
-    assert.deepEqual(schedule.waits[name], { after: ['driver', 'modules'], component: 'src/Daoris.Desktop' }, name);
+    assert.deepEqual(schedule.waits[name], { after: ['driver', 'modules', 'censuses'], component: 'src/Daoris.Desktop' }, name);
   }
   // The rehearsals still wait for the whole light lane: what they build and stage is state, not load.
   for (const name of ['rehearse', 'rehearse-family', 'deployment']) {
@@ -3517,7 +3520,7 @@ test("this repository's light gates run three at once, never two that build one 
   assert.equal(tool.LIGHT_WIDTH, 3);
   assert.equal(schedule.width, tool.LIGHT_WIDTH);
   const building = (component: string) => schedule.light.filter((gate) => schedule.components[gate.name]!.includes(component)).map((gate) => gate.name);
-  assert.deepEqual(building('src/Daoris.Desktop'), ['driver', 'modules']);
+  assert.deepEqual(building('src/Daoris.Desktop'), ['driver', 'modules', 'censuses']);
   // The CLI's verify ends in the devkit's universal gates, and the web gate builds the HTTP host its own build writes into.
   assert.deepEqual(building('src/Daoris.Devkit'), ['universal', 'code-map', 'cli', 'devkit']);
   assert.deepEqual(building('src/Daoris.Service'), ['service', 'web']);
@@ -3528,8 +3531,8 @@ test("this repository's light gates run three at once, never two that build one 
   assert.deepEqual(schedule.components['web-measured'], []);
   // GATELANES1's light order and GATEORDER1's waits hold.
   assert.deepEqual(schedule.light.map((gate) => gate.name),
-    ['driver', 'modules', 'universal', 'code-map', 'orient-index', 'test-map', 'web-types', 'web-rules', 'cli', 'tool-tests', 'service', 'devkit', 'web', 'web-unit', 'web-measured']);
-  assert.deepEqual(schedule.waits['driver-process']!.after, ['driver', 'modules', 'cli', 'service', 'devkit', 'web', 'web-unit', 'web-measured']);
+    ['driver', 'modules', 'censuses', 'universal', 'code-map', 'orient-index', 'test-map', 'web-types', 'web-rules', 'cli', 'tool-tests', 'service', 'devkit', 'web', 'web-unit', 'web-measured']);
+  assert.deepEqual(schedule.waits['driver-process']!.after, ['driver', 'modules', 'censuses', 'cli', 'service', 'devkit', 'web', 'web-unit', 'web-measured']);
   // GATEBUILD1: each Process half reuses the build of its own test project's fast half.
   assert.deepEqual(schedule.reuses, { 'driver-process': 'driver', 'driver-process-git': 'driver', 'modules-process': 'modules' });
 });
@@ -4105,7 +4108,7 @@ test('MEMGATE1: the memory a gate needs is its class\'s, or what daoris.gates.js
   const { suite, process: half, rehearsal } = tool.MEMORY_NEEDS;
   assert.deepEqual(needs, {
     universal: 0, 'code-map': 0, 'orient-index': 0, 'test-map': 0, 'web-types': 0, 'web-rules': 0, 'tool-tests': 0,
-    cli: suite, service: suite, devkit: suite, driver: suite, modules: suite, web: suite, 'web-unit': suite, 'web-measured': suite,
+    cli: suite, service: suite, devkit: suite, driver: suite, modules: suite, censuses: suite, web: suite, 'web-unit': suite, 'web-measured': suite,
     'driver-process': half, 'driver-process-git': half, 'modules-process': half,
     rehearse: rehearsal, 'rehearse-family': rehearsal, deployment: rehearsal,
   });
@@ -4610,7 +4613,7 @@ test("a verdict stands until a path that reaches its gate changes: a browser tes
 
   // A driver change voids the driver's verdicts, and every gate it reaches; the page's and the service's stand.
   const driver = tool.stageJudgement({ ...judging('D'), plan: ALL, verdicts: full });
-  assert.deepEqual(driver.missing, inPlan([...BASE, 'driver', 'modules', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'deployment']));
+  assert.deepEqual(driver.missing, inPlan([...BASE, 'driver', 'modules', 'censuses', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'deployment']));
   const d = Object.fromEntries(driver.gates.map((gate) => [gate.name, gate]));
   assert.deepEqual(d['driver-process']!.stale!.paths, [driverCs]);
   for (const gate of ['service', 'devkit', 'rehearse', 'web']) assert.equal(d[gate]!.standing!.standing, 'unreached', gate);
@@ -5650,8 +5653,13 @@ const GIT_ENV = {
   GIT_CONFIG_COUNT: '1', GIT_CONFIG_KEY_0: 'core.autocrlf', GIT_CONFIG_VALUE_0: 'false',
 };
 
+// A builder's worktree sets the variables that locate a repository; inherited, they send a fixture's git to the real one's .git
+// (REVIEW2: a run registered a worktree of the real repository under a fixture).
+const LOCATING = /^GIT_(DIR|WORK_TREE|INDEX_FILE|OBJECT_DIRECTORY|ALTERNATE_OBJECT_DIRECTORIES|COMMON_DIR|NAMESPACE|CEILING_DIRECTORIES)$/i;
+const fixtureEnv = () => Object.fromEntries(Object.entries(process.env).filter(([key]) => !LOCATING.test(key)));
+
 function git(cwd: string, ...args: string[]): string {
-  const result = spawnSync('git', args, { cwd, encoding: 'utf8', env: { ...process.env, ...GIT_ENV }, windowsHide: true });
+  const result = spawnSync('git', args, { cwd, encoding: 'utf8', env: { ...fixtureEnv(), ...GIT_ENV }, windowsHide: true });
   assert.equal(result.status, 0, `git ${args.join(' ')}: ${result.stderr}`);
   return result.stdout.trim();
 }
@@ -5843,7 +5851,7 @@ function scratch(name: string, gates: { name: string; run: string }[], files: Re
     run(args, extra = {}, cwd = root) {
       const env: Record<string, string | undefined> = {};
       for (const [key, value] of Object.entries(process.env)) {
-        if (key.toUpperCase() !== 'PATH' && key !== 'NODE_TEST_CONTEXT') env[key] = value;
+        if (key.toUpperCase() !== 'PATH' && key !== 'NODE_TEST_CONTEXT' && !LOCATING.test(key)) env[key] = value;
       }
       env['PATH'] = `${bin}${delimiter}${process.env['PATH'] ?? process.env['Path'] ?? ''}`;
       // GATESLIM1: a merge blocks on the checks alone by default, so the tests that watch gates run read the merge with --gated;
@@ -7280,6 +7288,27 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.deepEqual(record().runs.map((run) => `${run.commit.slice(0, 7)} ${run.state}`),
       [first, second, second, third, fourth, third].map((sha, i) => `${sha.slice(0, 7)} ${i === 3 || i === 5 ? 'failed' : 'green'}`));
     repo.cleanup();
+  });
+
+  // REVIEW2: a builder's worktree sets GIT_DIR; the fixtures' git must still be the fixture's own, and the real repository's worktrees unchanged.
+  test('a fixture repository ignores the variables that locate the real one: its git and the tool it runs change its worktrees alone', async () => {
+    const realDir = git(process.cwd(), 'rev-parse', '--git-dir');
+    const listed = (cwd: string) => spawnSync('git', ['worktree', 'list', '--porcelain'], { cwd, encoding: 'utf8', windowsHide: true }).stdout;
+    const before = listed(process.cwd());
+    const repo = scratch('ci-env', [{ name: 'universal', run: 'node ci-gate.mjs universal' }], { 'ci-gate.mjs': CI_GATE, 'docs/a.md': 'a\n' });
+    const saved = { dir: process.env['GIT_DIR'], tree: process.env['GIT_WORK_TREE'] };
+    process.env['GIT_DIR'] = resolve(realDir);
+    process.env['GIT_WORK_TREE'] = process.cwd();
+    try {
+      assert.equal(realpathSync(git(repo.root, 'rev-parse', '--show-toplevel')).toLowerCase(), realpathSync(repo.root).toLowerCase());
+      await repo.run(['--ci']);
+      assert.equal(listed(process.cwd()), before, 'the real repository registered no worktree');
+      assert.match(listed(repo.root), /gate-tree|worktree /);
+    } finally {
+      if (saved.dir === undefined) delete process.env['GIT_DIR']; else process.env['GIT_DIR'] = saved.dir;
+      if (saved.tree === undefined) delete process.env['GIT_WORK_TREE']; else process.env['GIT_WORK_TREE'] = saved.tree;
+      repo.cleanup();
+    }
   });
 
   // CIFINDINGSKEEP1's proof: a stage CI kept scoped passes of two gates and left their older findings open.

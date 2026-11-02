@@ -14,6 +14,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// in <see cref="Fenced"/> with how it is fenced instead. Read from the sources by name wherever they lie (STRUCT5a), as
 /// <see cref="SettledReadersCensusTests"/> is.
 /// </remarks>
+[Trait(Category.Name, Category.Census)]
 public sealed partial class CheckoutWritersCensusTests
 {
     private const string Checkout = "checkout";
