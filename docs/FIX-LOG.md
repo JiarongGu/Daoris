@@ -5,6 +5,20 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-02 - The yes to a policy hold was written by two doors and tested by neither (REVIEW2 T2)
+
+- **Symptom:** `RETRY_QUEST` and `driver retry` alone each write the approval a role policy's ask waits for; the one flow test approved through `StaffMoves.Approve` directly, so neither door's write, nor its absence on an ordinary retry, was held. The opening note's role name (`NameOf`) was tested nowhere.
+- **Root cause:** the doors' code was reviewed but the tests drove past it. The finding held: no test named either door.
+- **Fix:** `DriverModuleRetryTests` (the route writes exactly one approval for the quest and role; a parked retry and a released stop write none), `DriverChoicesCommandTests` (the same alone), `StaffPolicyLimitTickTests` now gives its yes through `driver retry` and the next look moves once, `OpeningRoleNameTests` for `NameOf`.
+- **Verify:** those classes.
+
+## 2026-11-02 - A pasted git token's refusal was held only at the census, not over the pipe (REVIEW2 T3)
+
+- **Symptom:** only `PipeCensus.SecretRefusal` was tested; nothing sent `GIT_IDENTITY` with a token through the served pipe.
+- **Root cause:** the call site (`InstancePipe`, the person's class branch) had no test.
+- **Fix:** `PipeConfirmTests.A_git_identity_press_carrying_a_token_is_refused_asking_nothing_and_the_token_is_kept_nowhere`: refused as a shape, no card, no waiting record, and the token is in no file of the home.
+- **Verify:** that test.
+
 ## 2026-11-02 - The SSH security proofs never ran under a gate (REVIEW2 T1)
 
 - **Symptom:** `GitSshdProcessTests` and `GitSshHoldsProcessTests` read `DAORIS_TEST_SSHD`, which the merge tool strips from every gate's environment, so both were skipped (or, for the holds, returned early and reported green) in every gate.

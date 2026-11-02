@@ -191,7 +191,15 @@ public sealed class StaffPolicyLimitTickTests : IDisposable
         Assert.Equal((RetryDecision.Approved, "build"), (QuestRetry.Decide("q1", verdicts).Did, QuestRetry.Decide("q1", verdicts).Approve));
         Assert.Empty(Moves());
 
-        Assert.True(new StaffMoves(_home).Approve("q1", "build"));
+        // The yes through the terminal's door (REVIEW2 T2), which writes the one approval; the window's route is held by DriverModuleRetryTests.
+        var said = new StringWriter();
+        var world = new DriverChoicesWorld
+        {
+            Verbs = DriverChoiceVerbs.With((_, _) => Task.FromResult(verdicts)),
+            Instance = new InstanceWorld { Home = _home, Environment = _ => null, Out = said, Error = said, Verb = "daoris" },
+            ConfigPath = DaorisHome.Entry(_home, HomeEntry.DriverConfig),
+        };
+        Assert.Equal(0, await DriverChoicesCommand.RunAsync(["retry", "q1"], world, CancellationToken.None));
         var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         var seen = Seeing(service, look);
         Assert.True(service.SessionCount == 2, seen);
