@@ -40,6 +40,8 @@ public static class DriverStateSlice
             "sessionChecks", "unreadLandings", "workspaceUnreadLandings",
             // TERMTRUST1a (D201): the standing confirmation, as This Daoris's row, Notifications' line and the hold's mark read it.
             "standingConfirmation",
+            // GITAUTH1f (D198): git access at each level, as Settings → Git and the remote rows read it.
+            "gitAccess", "workspaceGitAccess", "machineGitAccess",
         ],
         ["running"] = ["running", "drivingBrowser", "inReview", "helpSwapping"],
     };
