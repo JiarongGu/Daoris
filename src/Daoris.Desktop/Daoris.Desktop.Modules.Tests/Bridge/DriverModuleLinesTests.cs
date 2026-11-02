@@ -302,6 +302,24 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
         Assert.False(game.TryGetProperty("key", out var none) && none.ValueKind != JsonValueKind.Null);
     }
 
+    /// <summary>WORKFLOWCLEAN1h: each line row carries the policy that reaches it, its own else its workspace's, and nothing where none is set.</summary>
+    [Fact]
+    public async Task The_lines_answer_each_lines_policy()
+    {
+        DriverConfig.Empty
+            .WithWorkspaceLinePolicy("aurora", new LandingIntegrate(Order: LandingIntegrate.Arrival))
+            .WithLinePolicy("game", new LandingIntegrate(Batch: 4))
+            .Save(DriverConfigPath);
+        var loop = Loop();
+        var module = new DriverModule(Bus, loop);
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new StandInService())));
+
+        var lines = (await AnswerAsync(module, "LINES")).GetProperty("lines").EnumerateArray().ToList();
+
+        Assert.Equal(4, lines.Single(row => row.GetProperty("repository").GetString() == "game").GetProperty("policy").GetProperty("batch").GetInt32());
+        Assert.Equal("arrival", lines.Single(row => row.GetProperty("repository").GetString() == "engine").GetProperty("policy").GetProperty("order").GetString());
+    }
+
     /// <summary>The clean-up reads the registry's checkouts and the sessions in use, so before the driver is up it is the cold-start sentence.</summary>
     [Fact]
     public async Task The_clean_up_before_the_driver_is_up_is_a_sentence()
