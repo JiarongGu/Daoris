@@ -62,7 +62,7 @@ const hoverOf = (target: EventTarget): string | null => {
 
 export function SuppliedCanvas({
   world, label, moves, fit, feature, storeKey, selected, onSelect, zoom, opening, nodeLabel, titleOf, frameClass, renderNode, renderEdges,
-  tools, findLabel, findFrom = FIND_FROM,
+  tools, findLabel, findFrom = FIND_FROM, findItems,
 }: {
   world: SuppliedWorld;
   /** Names the region and the world for a reader. */
@@ -91,6 +91,11 @@ export function SuppliedCanvas({
   tools?: ReactNode;
   findLabel: string;
   findFrom?: number;
+  /**
+   * What find searches where the world folds items away: each with the card that stands for it now. A match without a card is revealed
+   * once the feature, answering `onSelect`, has drawn one.
+   */
+  findItems?: readonly { id: string; title: string; stands?: string }[];
 }) {
   const frameRef = useRef<HTMLDivElement>(null);
   const pane = useRef<HTMLDivElement>(null);
@@ -122,13 +127,18 @@ export function SuppliedCanvas({
     element?.focus({ preventScroll: true });
   };
 
+  // A match the world does not draw yet: shown when the feature's answer to its selection has put a card there.
+  const awaited = useRef<string | null>(null);
   const reveal = (id: string) => {
     const box = world.boxes.get(id);
     onSelect(id);
     setActive({ line: false, id });
-    if (box) handle.current?.showBox(placed(box));
+    if (box) handle.current?.showBox(placed(box)); else awaited.current = id;
   };
-  const finding = useMemo(() => stops.map((id) => ({ id, title: titleOf(id) })), [stops, titleOf]);
+  const finding = useMemo(
+    () => findItems ?? stops.map((id) => ({ id, title: titleOf(id) })),
+    [findItems, stops, titleOf],
+  );
   const find = useCanvasFind({ nodes: finding, handle, reveal });
   const identity = useMemo(() => graphIdentity([...world.order, ...world.lines.map((line) => line.id)]), [world]);
 
@@ -140,6 +150,18 @@ export function SuppliedCanvas({
     const read: WorldRead = { k: 1, width: frame.w, height: frame.h, nodes: shifted, ways: new Map(), ports: new Map(), sections: [] };
     handle.current?.measured(read, groupBoxes);
   }, [wide, width, shifted, groupBoxes, frame.w, frame.h]);
+  useEffect(() => {
+    const box = awaited.current === null ? undefined : shifted.get(awaited.current);
+    if (!box) return;
+    awaited.current = null;
+    handle.current?.showBox(box);
+  }, [shifted]);
+  // Find dims what does not match; a card standing for matches is not dimmed.
+  const standing = useMemo(() => {
+    if (find.matching === null) return null;
+    const stands = new Map((findItems ?? []).map((item) => [item.id, item.stands ?? item.id]));
+    return new Set([...find.matching].map((id) => stands.get(id) ?? id));
+  }, [find.matching, findItems]);
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (isComposing(event)) return;
@@ -178,11 +200,11 @@ export function SuppliedCanvas({
   };
   const toolbar = (
     <>
-      {stops.length >= findFrom && (
+      {(findItems?.length ?? stops.length) >= findFrom && (
         <CanvasFind
           label={findLabel} query={find.query} matches={find.matches} at={find.at}
           onQuery={find.onQuery} onStep={find.step} onClear={find.clear} onPick={find.pick}
-          onDown={() => { if (find.shown) focusStop({ line: false, id: find.shown }); }}
+          onDown={() => { if (find.shown && stops.includes(find.shown)) focusStop({ line: false, id: find.shown }); }}
         />
       )}
       {tools}
@@ -233,7 +255,7 @@ export function SuppliedCanvas({
             if (!raw) return null;
             const box = placed(raw);
             const place = { left: box.x, top: box.y, width: box.w, height: box.h };
-            const dim = find.matching !== null && !statics.has(id) && !find.matching.has(id);
+            const dim = standing !== null && !statics.has(id) && !standing.has(id);
             const state: NodeState = { tier, selected: selected === id, dim };
             if (statics.has(id)) {
               return <div key={id} role="img" aria-label={nodeLabel(id)} data-flow-static={id} className={cn('absolute', frameClass?.(id))} style={place}>{renderNode(id, state)}</div>;

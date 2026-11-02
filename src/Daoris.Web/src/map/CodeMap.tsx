@@ -1,194 +1,264 @@
-import { type KeyboardEvent, useRef, useState } from 'react';
+import { type ReactElement, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { CodeDependency, CodeModule, Provenance } from '../data/api';
 import { ago } from '../locales/format';
 import { cn } from '../lib/cn';
-import { isComposing } from '../lib/composing';
-import { PathText } from '../design/ui';
-import { layerModules } from './codeLayout';
-import { useWidth } from '../design/useWidth';
+import { CanvasList } from '../design/canvas/CanvasList';
+import { type EdgeContext, type NodeState, SuppliedCanvas } from '../design/canvas/SuppliedCanvas';
+import { Button, PathText } from '../design/ui';
+import { buildTree, type CodeLine, defaultOpen, layoutCode, listByFolder, openingPath } from './codeClusters';
 
-const BOX_W = 136;
-const BOX_H = 36;
-const GAP = 20;
-const ROW = 92;
-const MARGIN = 24;
-/** Characters of an id a box can hold at the meta size before it would run past its edge. */
-const FITS = 17;
+/** Characters of an id a card can hold at the meta size before it would run past its edge. */
+export const FITS = 17;
+/** Zoom 10–250%: a repository of thousands is read from far, and a name is the type scale's at 100%. */
+const ZOOM = { min: 0.1, max: 2.5 } as const;
+/** The code map opens fitted on its closed folders, never below this. */
+const OPENING = 0.8;
 
-/** Where a box sits: its centre across, its top edge down. */
-type Place = { x: number; y: number };
+/** An id cut to what a card holds, with an ellipsis; whole in the detail and in the name a reader hears. */
+export const cutId = (id: string) => (id.length > FITS ? `${id.slice(0, FITS - 1)}…` : id);
 
-/** The width the drawing is laid out at where nothing measures its card. */
-const UNMEASURED = 640;
+const isLine = (lines: readonly CodeLine[], id: string) => lines.some((line) => line.id === id);
 
-/**
- * How wide the drawing is, in units that are pixels: its card's width, narrow or wide, so the
- * columns spread with the window (UX5 U59, the owner) and a name stays the type scale's (U44). Never
- * narrower than its widest row of boxes needs; past that, the drawing shrinks as the last resort.
- */
-export function codeWidth(widest: number, room: number | undefined): number {
-  return Math.max(widest * (BOX_W + GAP) + MARGIN * 2, room ?? UNMEASURED);
+/** The dependencies the scene draws, each a stop the canvas walks; the chosen module's stand forward and the rest step back. */
+function CodeEdges({ lines, context, focus, name }: { lines: readonly CodeLine[]; context: EdgeContext; focus: string | null; name: (id: string) => string }) {
+  const { t } = useTranslation();
+  const chosenLine = context.selected !== null && isLine(lines, context.selected);
+  const forward = (line: CodeLine) => (chosenLine && context.hovered === null
+    ? context.selected === line.id
+    : focus === null || line.from === focus || line.to === focus);
+  const dotted = context.tier === 'dot';
+  // What a line says it is, for a reader: a dependency by its kind as written, or the count between two groups.
+  const lineName = (line: CodeLine) => {
+    const [from, to] = [name(line.from), name(line.to)];
+    if (line.aggregated) return t('code.aggregateLabel', { from, to, count: line.count });
+    return line.kinds[0] ? t('code.dependsLabel', { from, to, kind: line.kinds[0] }) : t('code.dependsLabelPlain', { from, to });
+  };
+  return (
+    <>
+      <defs>
+        {/* In the drawing's own units, so a head is the size of every other whatever the zoom. */}
+        <marker id="code-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto">
+          <path d="M 0 0 L 10 5 L 0 10 z" className="fill-ink-faint" />
+        </marker>
+        <marker id="code-arrow-lit" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto">
+          <path d="M 0 0 L 10 5 L 0 10 z" className="fill-accent" />
+        </marker>
+      </defs>
+      {lines.map((line) => {
+        const chosen = context.selected === line.id;
+        const lit = (focus !== null && forward(line)) || chosen;
+        const back = !forward(line);
+        return (
+          <g
+            key={line.id}
+            {...context.line(line.id)}
+            aria-label={lineName(line)}
+            className={cn('cursor-pointer outline-none transition-opacity duration-(--speed) [&:focus-visible>path.shown]:stroke-ink', back && 'opacity-20')}
+            style={{ pointerEvents: 'auto' }}
+          >
+            <path d={line.d} fill="none" stroke="transparent" strokeWidth={18} pointerEvents="stroke" />
+            <path
+              d={line.d} fill="none" markerEnd={lit ? 'url(#code-arrow-lit)' : 'url(#code-arrow)'}
+              strokeDasharray={line.aggregated ? '6 3' : undefined}
+              style={{ strokeWidth: (chosen ? 2 : 0) + 1.5 + (line.aggregated ? Math.min(Math.log2(line.count), 4) : 0) }}
+              className={cn('shown', lit ? 'stroke-accent' : 'stroke-ink-faint')}
+            />
+            {line.aggregated && !dotted && (
+              <>
+                <circle cx={line.mid.x} cy={line.mid.y} r={13} className={cn('fill-page stroke-[1.5]', lit ? 'stroke-accent' : 'stroke-line-strong')} />
+                <text x={line.mid.x} y={line.mid.y} textAnchor="middle" dominantBaseline="central" className="fill-ink font-mono text-meta tabular-nums">
+                  {t('code.times', { count: line.count })}
+                </text>
+              </>
+            )}
+            {/* A kind is written on the line only where the eye is: the chosen module's, or the chosen line. */}
+            {!line.aggregated && !dotted && lit && line.kinds[0] && (
+              <text
+                x={line.mid.x + 6} y={line.mid.y} dominantBaseline="central"
+                className="fill-ink-soft text-meta" style={{ paintOrder: 'stroke', stroke: 'var(--color-page)', strokeWidth: 3 }}
+              >
+                {line.kinds[0]}
+              </text>
+            )}
+          </g>
+        );
+      })}
+    </>
+  );
 }
 
 /**
- * The path of one dependency arrow, from the module that depends to the module it depends on.
+ * A repository's code, drawn (MAP3a; CANVAS1f; D224): folders as nested boxes, the modules in a folder in layers by dependency, each
+ * arrow pointing from a module to what it depends on. Display only: a press chooses a module or a line, a press on a closed folder
+ * opens it, a second press, Escape or the ground releases. Presentational: everything arrives as props.
  *
  * @remarks
- * 🔴 An arrow that SKIPS a layer leaves by the source's side and bows out past the column, entering
- * its target from the side. Drawn straight down, `runtime → chunks` ran behind `renderer`, which
- * sat between them in the same column, and the dependency vanished from the picture (seen on the
- * window). An arrow to the next layer down stays a short curve from bottom to top. An arrow up is a
- * recorded cycle and goes from top to bottom.
+ * Past 60 modules the folders open closed, and what is between two closed groups is one line counted (×n). Choosing a module,
+ * from the drawing, find, the list or the detail, opens the path to it and stands its neighbourhood forward. An id too long for its
+ * card is cut with an ellipsis and whole in the detail and in the name a reader hears. A view kept under another commit restores no
+ * coordinates.
  */
-export function codeEdge(a: Place, b: Place): string {
-  const layers = Math.round((b.y - a.y) / ROW);
-  if (layers > 1) {
-    const side = BOX_W / 2;
-    const bow = side + 40;
-    const start = { x: a.x + side, y: a.y + BOX_H / 2 };
-    const end = { x: b.x + side + 2, y: b.y + BOX_H / 2 };
-    return `M ${start.x} ${start.y} C ${a.x + bow} ${start.y} ${b.x + bow} ${end.y} ${end.x} ${end.y}`;
-  }
-
-  const down = b.y > a.y;
-  const start = { x: a.x, y: down ? a.y + BOX_H : a.y };
-  const end = { x: b.x, y: down ? b.y - 2 : b.y + BOX_H + 2 };
-  const bend = (end.y - start.y) / 2;
-  return `M ${start.x} ${start.y} C ${start.x} ${start.y + bend} ${end.x} ${end.y - bend} ${end.x} ${end.y}`;
-}
-
-/**
- * A repository's code, drawn (MAP3a): its modules in layers by dependency, each arrow pointing from a
- * module to what it depends on. Presentational, like the workspace map: everything arrives as props.
- *
- * @remarks
- * Every module is a button a keyboard can reach, and its name says how many things it depends on.
- * Choosing or hovering one lights its arrows and steps the rest back. An id too long for its box is
- * cut with an ellipsis on the drawing, and whole in the detail and in the name a reader hears.
- */
-export function CodeMapCanvas({ repository, modules, dependencies, selected, onSelect }: {
+export function CodeMapWorld({ repository, modules, dependencies, selected, onSelect, version }: {
   repository: string;
   modules: CodeModule[];
   dependencies: CodeDependency[];
   selected: string | null;
   /** A module chosen, or `null` when the choice is released (a second press, or Escape: UX5 U47). */
   onSelect: (id: string | null) => void;
+  /** What the map was read at: the commit it was fed, else any. The viewer's place is kept per version. */
+  version?: string;
 }) {
   const { t } = useTranslation();
-  // The module the pointer or the keyboard is on.
-  const [hovered, setHovered] = useState<string | null>(null);
-  // Drawn one unit a pixel, so a module's name is the type scale's (UX5 U44): it was stretched to its
-  // card, 640 units drawn 775px wide at 1400.
-  const box = useRef<HTMLDivElement>(null);
-  const room = useWidth(box);
-  const layers = layerModules(modules.map((m) => m.id), dependencies);
-  const widest = Math.max(1, ...layers.map((row) => row.length));
-  const width = codeWidth(widest, room);
-  const height = layers.length * ROW - (ROW - BOX_H) + MARGIN * 2;
+  const tree = useMemo(() => buildTree(modules, dependencies), [modules, dependencies]);
+  // Which groups the person opened, for the tree they were opened on; a changed map starts from its own default.
+  const [held, setHeld] = useState<{ tree: typeof tree; open: ReadonlySet<string> } | null>(null);
+  const [listed, setListed] = useState(false);
+  const [line, setLine] = useState<string | null>(null);
+  const base = held?.tree === tree ? held.open : defaultOpen(tree);
+  // The chosen module stays drawn: its path is open for as long as it is chosen.
+  const open = useMemo(() => (selected !== null && tree.modules.has(selected) ? openingPath(tree, base, selected) : base), [tree, base, selected]);
+  const scene = useMemo(
+    () => layoutCode(tree, open, { cycle: (count) => t('code.cycleTitle', { count }) }),
+    [tree, open, t],
+  );
+  const setOpen = (next: ReadonlySet<string>) => setHeld({ tree, open: next });
 
-  const at = new Map<string, { x: number; y: number }>();
-  layers.forEach((row, depth) => {
-    const step = (width - MARGIN * 2) / row.length;
-    row.forEach((id, index) => at.set(id, { x: MARGIN + step * (index + 0.5), y: MARGIN + depth * ROW }));
-  });
+  const chosenCard = selected !== null && scene.world.boxes.has(selected) ? selected : null;
+  const chosen = line !== null && isLine(scene.lines, line) ? line : chosenCard;
+  const neighbours = useMemo(() => {
+    if (chosenCard === null) return null;
+    const near = new Set([chosenCard]);
+    for (const each of scene.lines) {
+      if (each.from === chosenCard) near.add(each.to);
+      if (each.to === chosenCard) near.add(each.from);
+    }
+    return near;
+  }, [chosenCard, scene]);
 
-  const focus = hovered ?? selected;
-  const lit = (from: string, to: string) => focus === null || focus === from || focus === to;
-  const choose = (id: string) => onSelect(id === selected ? null : id);
-  // Every handler that reads Enter or Escape asks first, so none acts on an input method's press (IME1).
-  const press = (id: string) => (event: KeyboardEvent) => {
-    if (isComposing(event)) return;
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      choose(id);
+  // A folder opened by a press hands the focus to its first card, since the card that was pressed is now a frame.
+  const wrapper = useRef<HTMLDivElement>(null);
+  const focusing = useRef<string | null>(null);
+  useEffect(() => {
+    const id = focusing.current;
+    if (id === null) return;
+    const card = scene.standsFor.get(id);
+    if (!card) return;
+    focusing.current = null;
+    [...(wrapper.current?.querySelectorAll<HTMLElement>('[data-flow-node]') ?? [])]
+      .find((each) => each.getAttribute('data-flow-node') === card)?.focus({ preventScroll: true });
+  }, [scene]);
+
+  const choose = (id: string | null) => {
+    if (id === null) { setLine(null); onSelect(null); return; }
+    const group = tree.groups.get(id);
+    if (group) {
+      setOpen(openingPath(tree, base, id));
+      focusing.current = group.members[0] ?? null;
+      return;
     }
+    if (isLine(scene.lines, id)) { setLine(id === line ? null : id); onSelect(null); return; }
+    setLine(null);
+    setOpen(openingPath(tree, base, id));
+    onSelect(id);
   };
-  const release = (event: KeyboardEvent) => {
-    if (!isComposing(event) && event.key === 'Escape' && selected !== null) {
-      event.preventDefault();
-      onSelect(null);
+
+  const outgoing = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const each of tree.dependencies) counts.set(each.from, (counts.get(each.from) ?? 0) + 1);
+    return counts;
+  }, [tree]);
+  const nameOf = (id: string) => {
+    const group = tree.groups.get(id);
+    return group ? (group.kind === 'cycle' ? t('code.cycleTitle', { count: group.modules.length }) : group.dir || group.name || repository) : id;
+  };
+  const nodeLabel = (id: string) => {
+    const group = tree.groups.get(id);
+    if (!group) return t('code.moduleLabel', { id, count: outgoing.get(id) ?? 0 });
+    return group.kind === 'cycle'
+      ? t('code.cycleLabel', { count: group.modules.length })
+      : t('code.folderLabel', { name: nameOf(id), count: group.members.length });
+  };
+  const titleOf = (id: string) => nameOf(id);
+  const findItems = useMemo(
+    () => [...tree.modules.keys()].map((id) => ({ id, title: id, stands: scene.standsFor.get(id) ?? id })),
+    [tree, scene],
+  );
+  const lists = useMemo(() => listByFolder(tree), [tree]);
+
+  const renderNode = (id: string, state: NodeState): ReactElement => {
+    const group = tree.groups.get(id);
+    const back = neighbours !== null && !neighbours.has(id);
+    const dot = state.tier === 'dot';
+    if (group) {
+      return (
+        <span
+          className={cn(
+            'flex h-full w-full items-center justify-between gap-2 rounded-card border-[1.5px] border-dashed bg-raised px-2.5',
+            state.selected ? 'border-accent' : 'border-line-strong', back && 'opacity-40',
+          )}
+        >
+          {!dot && (
+            <>
+              <span className="min-w-0 truncate text-small font-semibold text-ink">{group.kind === 'cycle' ? t('code.cycleCard') : group.name || repository}</span>
+              <span className="shrink-0 font-mono text-meta tabular-nums text-ink-soft">{t('code.times', { count: group.members.length })}</span>
+            </>
+          )}
+        </span>
+      );
     }
+    return (
+      <span
+        className={cn(
+          'flex h-full w-full items-center justify-center rounded-card border bg-raised px-2',
+          state.selected ? 'border-[3px] border-accent' : 'border-[1.5px] border-line-strong', back && 'opacity-40',
+        )}
+      >
+        {!dot && <span className="truncate font-mono text-meta text-ink">{cutId(id)}</span>}
+      </span>
+    );
   };
+
+  const tools = (
+    <>
+      <Button variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => { setLine(null); setOpen(new Set(tree.groups.keys())); }}>
+        {t('code.showWhole')}
+      </Button>
+      <Button variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => { setLine(null); setHeld(null); }}>
+        {t('code.foldAgain')}
+      </Button>
+      <Button variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => setListed(!listed)}>
+        {t(listed ? 'canvas.asGraph' : 'canvas.asList')}
+      </Button>
+    </>
+  );
+
+  if (listed) {
+    return (
+      <div className="grid gap-2">
+        <div className="flex flex-wrap items-center gap-1">{tools}</div>
+        <CanvasList
+          label={t('code.canvas', { repository })} groups={lists} selected={selected}
+          onPick={(id) => { setOpen(openingPath(tree, base, id)); onSelect(id === selected ? null : id); }}
+        />
+      </div>
+    );
+  }
 
   return (
-    <div ref={box}>
-      <svg
-        viewBox={`0 0 ${width} ${height}`}
-        width={width}
-        role="group"
-        aria-label={t('code.canvas', { repository })}
-        onKeyDown={release}
-        className="mx-auto block h-auto max-w-full"
-      >
-        <defs>
-          {/* In the drawing's own units, so a chosen arrow's head is the size of every other (MAP2) —
-              and one per hue, so a lit arrow does not end in a grey head (seen on the window). The
-              arrows are this drawing's content, so they wear an ink, never a container's line: that
-              was 1.6:1 on the card, and stepped back, gone in dark (UX5 U48). */}
-          <marker id="code-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto">
-            <path d="M 0 0 L 10 5 L 0 10 z" className="fill-ink-faint" />
-          </marker>
-          <marker id="code-arrow-lit" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto">
-            <path d="M 0 0 L 10 5 L 0 10 z" className="fill-accent" />
-          </marker>
-        </defs>
-
-        {dependencies.map((edge) => {
-          const a = at.get(edge.from);
-          const b = at.get(edge.to);
-          if (!a || !b) return null;
-          const accent = focus !== null && lit(edge.from, edge.to);
-          return (
-            <path
-              key={`${edge.from}-${edge.to}`}
-              d={codeEdge(a, b)}
-              fill="none"
-              markerEnd={accent ? 'url(#code-arrow-lit)' : 'url(#code-arrow)'}
-              className={cn(
-                'stroke-ink-faint transition-opacity duration-(--speed)',
-                lit(edge.from, edge.to) ? 'stroke-[1.5]' : 'opacity-20',
-                accent && 'stroke-accent stroke-2',
-              )}
-            />
-          );
-        })}
-
-        {modules.map((module) => {
-          const place = at.get(module.id);
-          if (!place) return null;
-          const chosen = selected === module.id;
-          const count = dependencies.filter((d) => d.from === module.id).length;
-          const shown = module.id.length > FITS ? `${module.id.slice(0, FITS - 1)}…` : module.id;
-          return (
-            <g
-              key={module.id}
-              role="button"
-              tabIndex={0}
-              aria-label={t('code.moduleLabel', { id: module.id, count })}
-              aria-pressed={chosen}
-              onClick={() => choose(module.id)}
-              onKeyDown={press(module.id)}
-              onPointerEnter={() => setHovered(module.id)}
-              onPointerLeave={() => setHovered(null)}
-              onFocus={() => setHovered(module.id)}
-              onBlur={() => setHovered(null)}
-              className="cursor-pointer outline-none [&:focus-visible>rect]:stroke-ink"
-            >
-              <rect
-                x={place.x - BOX_W / 2} y={place.y} width={BOX_W} height={BOX_H} rx={6}
-                className={cn('fill-raised', chosen ? 'stroke-accent stroke-[2.5]' : 'stroke-line-strong stroke-[1.5]')}
-              />
-              <text
-                x={place.x} y={place.y + BOX_H / 2} textAnchor="middle" dominantBaseline="central"
-                className="fill-ink font-mono text-meta"
-              >
-                {shown}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
+    <div ref={wrapper}>
+      <SuppliedCanvas
+        world={scene.world}
+        label={t('code.canvas', { repository })} moves={t('code.moves')} fit={t('code.fit')} findLabel={t('code.find')}
+        feature="code" storeKey={`${repository}@${version ?? 'local'}`}
+        selected={chosen} onSelect={choose}
+        zoom={ZOOM} opening={OPENING}
+        nodeLabel={nodeLabel} titleOf={titleOf} findItems={findItems}
+        frameClass={() => 'rounded-card'}
+        renderNode={renderNode}
+        renderEdges={(context) => <CodeEdges lines={scene.lines} context={context} focus={context.hovered ?? chosenCard} name={nameOf} />}
+        tools={tools}
+      />
     </div>
   );
 }
