@@ -5,6 +5,20 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-02 - A role saved from Taken by was applied to the draft as it was at the press (REVIEW2 P7)
+
+- **Symptom:** a change made to the draft while a role's save was on its way was lost when the save answered; the step named the role on the old draft.
+- **Root cause:** the inspector's option setter closed over the render's draft, and the role editor called it after `SET_ROLE` answered.
+- **Fix:** `InspectorActs.onOption` sets the option on the editor's newest draft (a ref set each render), so an answer lands on what the draft is by then.
+- **Verify:** `WorkflowEditor.staffing.test.tsx` (REVIEW2 P7, red first).
+
+## 2026-11-02 - The inspector carried an open role editor and typed fields to the next step (REVIEW2 P6)
+
+- **Symptom:** a role editor opened on one step stayed open on the next step chosen, and its save put that role on the other step; the gates field kept its typed text.
+- **Root cause:** `<Inspector>` was not keyed by step, so the role editor's state and the uncontrolled gates field survived a change of node.
+- **Fix:** `<Inspector key={node.id}>`: a step's inspector begins fresh.
+- **Verify:** `WorkflowEditor.staffing.test.tsx` (REVIEW2 P6, red first).
+
 ## 2026-11-02 - Change… previewed one version and Use here chose another (REVIEW2 P8)
 
 - **Symptom:** the preview drew the version `WORKFLOW_SHOW` answered; *Use here* sent the newest version `WORKFLOW_LIST` named, which could be another.

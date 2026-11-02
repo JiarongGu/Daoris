@@ -20,7 +20,7 @@ import { type Begin, draftFlow, EditCanvas } from './EditCanvas';
 import { carriedSaid, plain, rowSaid, stepTitle } from './editWords';
 import {
   canInsertOn, type Carried, type Clip, commit, connect, copySteps, draftOf, duplicateStep, emptyDraft, entriesOf, type GraphDraft, graphOf, historyOf,
-  type InsertAt, insertStep, joinOf, moveInChain, movePlan, pasteSteps, redo, removeStep, removeWire, retarget, type StepChoice, targetsOf,
+  type InsertAt, insertStep, joinOf, moveInChain, movePlan, pasteSteps, redo, removeStep, removeWire, retarget, setOption, type StepChoice, targetsOf,
   undo, type WayRowKey, workflowIdFor,
 } from './graphDraft';
 import { type Confirming, Inspector, type InspectorActs } from './Inspector';
@@ -172,6 +172,9 @@ function Composing({
 
   const [history, setHistory] = useState(() => historyOf<Snapshot>({ draft: startFrom ? draftOf(startFrom.graph) : emptyDraft(), said: '' }));
   const draft = history.present.draft;
+  // The draft as the newest render holds it, for a press whose answer comes after the draft has moved on.
+  const latest = useRef(draft);
+  latest.current = draft;
   const [chosen, setChosen] = useState<string | null>(null);
   // The steps chosen with it by Ctrl- or Shift-press or a box: for Copy alone; every other act takes the primary (CANVAS1b).
   // Kept with the primary it was chosen beside, so any act that moves the primary leaves it behind.
@@ -762,6 +765,7 @@ function Composing({
   const node = selected ? nodeOf(selected) ?? null : null;
   const acts = (id: string): InspectorActs => ({
     onChange: change,
+    onOption: (option, value, said) => change(setOption(latest.current, id, option, value), said),
     onTarget: (row, wire, to) => {
       if (to === null) {
         change(removeWire(draft, wire.id), t('workflow.edit.said.wayRemoved', { row: rowSaid(t, row), from: titleOf(id), to: titleOf(wire.to) }));
