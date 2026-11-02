@@ -36,12 +36,7 @@ public sealed class SendersTests
     {
         var row = Table.Read().Rows.Single(each => each.Name == name);
         var marks = row.Event!;
-        var sent = new SessionEvent
-        {
-            Kind = SessionEventKind.User, Origin = marks.Origin, From = marks.From, Opinion = marks.Opinion, Helper = marks.Helper, Channel = marks.Channel,
-        };
-
-        Assert.Equal(row.Sender, Senders.Of(sent, marks.HelperWork));
+        Assert.Equal(row.Sender, Senders.Of(marks.Origin, marks.From, marks.Opinion, marks.Helper, marks.HelperWork, marks.Channel));
     }
 
     /// <summary>The message a conversation says is read as the event it is recorded as: the same sender, and <c>Persons</c> its person being it.</summary>
@@ -52,11 +47,11 @@ public sealed class SendersTests
         var supervised = new ChatMessage("Yes.", []) { Supervised = "d1" };
         var person = new ChatMessage("Hello.", []);
 
-        Assert.Equal(Senders.Daoris, Senders.Of(daoris));
-        Assert.Equal(Senders.Supervisor, Senders.Of(supervised));
+        Assert.Equal(Senders.Daoris, daoris.Sender);
+        Assert.Equal(Senders.Supervisor, supervised.Sender);
         Assert.False(supervised.Persons);
         Assert.True(person.Persons);
-        Assert.Equal(Senders.Person, Senders.Of(person));
+        Assert.Equal(Senders.Person, person.Sender);
         Assert.Equal("target", ChatMessage.Words(daoris).Origin);
         Assert.Equal("person", ChatMessage.Words(person).Origin);
     }

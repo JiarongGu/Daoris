@@ -7,9 +7,10 @@ import type { NotePart } from '../../data/api';
 import { turnEnd } from '../waits/anchors';
 import { CHANNEL_CLAIM_OPENING } from '../channel';
 import {
-  type Ask, type Author, type Block, CONVERSATION_CODES, type Level, type PlanEntry, type Receipts, runCount, type RunningCall, runningCall, segments,
+  type Ask, type Block, CONVERSATION_CODES, type Level, type PlanEntry, type Receipts, runCount, type RunningCall, runningCall, segments,
   type Turn,
 } from './conversation';
+import type { Author } from './sender';
 import { useNow } from '../useNow';
 import type { AccountNames } from '../accountNames';
 import { HandedAccount } from './HandedAccount';
@@ -399,6 +400,8 @@ const AUTHOR_KEYS = {
   daoris: 'work.conversation.daoris',
   supervisor: 'work.conversation.supervisor',
   unattributed: 'work.conversation.unattributed',
+  helper: 'work.conversation.helper',
+  partner: 'work.conversation.partner',
 } as const satisfies Record<Author, string>;
 
 function AskView({ ask }: { ask: Ask }) {

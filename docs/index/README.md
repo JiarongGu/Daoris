@@ -70,10 +70,10 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/attention/attention.stories.tsx` | 44 | 982 |
 | `src/Daoris.Web/src/work/attention/attention.test.ts` | 83 | 1365 |
 | `src/Daoris.Web/src/work/attention/attention.ts` | 63 | 1153 |
-| `src/Daoris.Web/src/work/conversation/ConversationView.test.tsx` | 74 | 1388 |
-| `src/Daoris.Web/src/work/conversation/ConversationView.tsx` | 45 | 912 |
-| `src/Daoris.Web/src/work/conversation/conversation.test.ts` | 74 | 1375 |
-| `src/Daoris.Web/src/work/conversation/conversation.ts` | 52 | 1021 |
+| `src/Daoris.Web/src/work/conversation/ConversationView.test.tsx` | 75 | 1412 |
+| `src/Daoris.Web/src/work/conversation/ConversationView.tsx` | 45 | 915 |
+| `src/Daoris.Web/src/work/conversation/conversation.test.ts` | 75 | 1391 |
+| `src/Daoris.Web/src/work/conversation/conversation.ts` | 52 | 1016 |
 | `src/Daoris.Web/src/work/frame/frame.tsx` | 44 | 932 |
 | `src/Daoris.Web/src/work/head/SessionHead.test.tsx` | 72 | 1365 |
 | `src/Daoris.Web/src/work/head/SessionHead.tsx` | 41 | 716 |

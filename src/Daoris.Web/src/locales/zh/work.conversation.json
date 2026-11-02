@@ -11,6 +11,8 @@
   "work.conversation.daoris": "Daoris 的话",
   "work.conversation.supervisor": "主管代你答复",
   "work.conversation.unattributed": "来源不明",
+  "work.conversation.helper": "助手的回答，附 Daoris 的说明",
+  "work.conversation.partner": "搭档的回答，附 Daoris 的说明",
   "work.conversation.show": "展开",
   "work.conversation.hide": "收起",
   "work.conversation.thought": "思考",

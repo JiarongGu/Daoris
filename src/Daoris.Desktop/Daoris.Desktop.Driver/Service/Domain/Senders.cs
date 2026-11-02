@@ -6,8 +6,8 @@ namespace Daoris.Driver;
 /// with the page's <c>sender.ts</c> to <c>fixtures/senders.json</c> among the service's tests, row for row.
 /// </summary>
 /// <remarks>
-/// An event carries no key (<see cref="SessionEvent"/>), so a partner is told from a helper by the work of the record its
-/// <see cref="SessionEvent.Helper"/> names (B11), which the caller reads and hands in; a kept word tells it by its key.
+/// An event carries no key, so a partner is told from a helper by the work of the record the event's <c>Helper</c> names (B11), which
+/// the caller reads and hands in; a kept word tells it by its key. A reader of an event or a message hands in the marks it carries.
 /// </remarks>
 public static class Senders
 {
@@ -23,27 +23,23 @@ public static class Senders
     /// <summary>An event's sender where only the composed prompt carries no mark of one: the target Daoris composed.</summary>
     public const string Composed = "composed";
 
-    private const string Target = "target";
+    /// <summary>The origin a <c>user</c> event names for every word that is not the person's.</summary>
+    public const string Target = "target";
 
-    // The partner's work, spelled as ParticipantWork.Partner, which this lower subdomain may not name.
-    private const string PartnerWork = "partner";
+    /// <summary>The partner's work, spelled as <c>ParticipantWork.Partner</c>, which this lower subdomain may not name.</summary>
+    public const string PartnerWork = "partner";
 
     /// <summary>The sender of a word as the service keeps it.</summary>
-    public static string Of(SaidWordView word) => Read(
+    public static string Of(SaidWordView word) => Of(
         word.From is null && word.By is null && word.Helper is null ? null : Target, word.From, word.By, word.Helper,
         word.Key?.StartsWith("partner:", StringComparison.Ordinal) == true ? PartnerWork : null, null);
 
-    /// <summary>The sender of a <c>user</c> event; <paramref name="helperWork"/> is the work of the record <see cref="SessionEvent.Helper"/> names, or null where it is not read.</summary>
-    public static string Of(SessionEvent sent, string? helperWork) =>
-        Read(sent.Origin, sent.From, sent.Opinion, sent.Helper, helperWork, sent.Channel);
-
-    /// <summary>The sender of a message, as <see cref="ChatMessage.Words"/> records it.</summary>
-    internal static string Of(ChatMessage message) => Read(
-        message.Daoris is not null || message.Supervised is not null || message.Helped is not null || message.Channel is { Person: false } ? Target : null,
-        message.Daoris is not null ? DaorisWords.From : message.Supervised is not null ? SupervisorHanded.From : null,
-        null, message.Helped?.Helper, null, message.Channel is { Person: false } ? "channel" : null);
-
-    private static string Read(string? origin, string? from, string? opinion, string? helper, string? helperWork, string? channel)
+    /// <summary>
+    /// The sender of a <c>user</c> event or a message from its marks: its <paramref name="origin"/>, <paramref name="from"/>, the
+    /// second <paramref name="opinion"/> it carries, the session <paramref name="helper"/> whose answer it is with that record's
+    /// <paramref name="helperWork"/> (null where it is not read), and its <paramref name="channel"/> message.
+    /// </summary>
+    public static string Of(string? origin, string? from, string? opinion, string? helper, string? helperWork, string? channel)
     {
         var target = origin == Target;
         if (from is not null)
@@ -52,7 +48,7 @@ public static class Senders
             {
                 SaidFrom.Supervisor => Supervisor,
                 SaidFrom.Daoris => target ? Daoris : Person,
-                ChannelFrom.Agent => Channel,
+                SaidFrom.Agent => Channel,
                 _ => Unattributed,
             };
         }

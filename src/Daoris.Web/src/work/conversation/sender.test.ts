@@ -25,7 +25,7 @@ describe('who said a word (COMMS1a)', () => {
 
   it.each(EVENT_ROWS.map((row) => [row.name, row] as const))('reads %s as the table says', (_name, row) => {
     const { helperWork, ...marks } = row.event;
-    expect(senderOf({ ...marks, seq: 1, at: '', kind: 'user' }, helperWork)).toBe(row.sender);
+    expect(senderOf(marks, helperWork)).toBe(row.sender);
   });
 
   it('lists every difference from what the page drew before, each with its decision', () => {

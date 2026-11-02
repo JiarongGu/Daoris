@@ -9,6 +9,8 @@ import { accountNames } from '../accountNames';
 import { type AnchorAsks, type Anchors, anchorsOf, type AnchorWait, marksOf } from '../waits/anchors';
 import { beginsByMove, firstAnswerWait, lastWords, retryingAt, type RunningCall, runningCall, settle, toTurns, type Usage } from './conversation';
 import { ConversationFind } from './ConversationFind';
+import { useEverySession } from '../../data/queries';
+import { isPartnerRecord } from './sender';
 import { type CallMark, type Cooling, ConversationView } from './ConversationView';
 import type { ReasonValues } from '../say';
 import { useFollowTail } from './followTail';
@@ -165,10 +167,16 @@ export function SessionConversation({
   const names = useMemo(() => accountNames(Array.isArray(roster) ? roster : []), [roster]);
   // Read from what was asked (SESS1 S1), and as an ended session leaves it: a turn it ended inside says
   // so, and its open calls read stopped rather than running for good (S4).
+  // A helper's word is a partner's by the work of the record it names (COMMS1a): an event carries no key to tell them by.
+  const everySession = useEverySession(true).data;
   const { turns, usage, where } = useMemo(() => {
-    const read = toTurns(events, { opening });
+    const workOf = (id: string) => {
+      const record = everySession?.find((each) => each.id === id);
+      return record && isPartnerRecord(record) ? 'partner' : null;
+    };
+    const read = toTurns(events, { opening, workOf });
     return { turns: settle(read.turns, live), usage: read.usage, where: read.where };
-  }, [events, opening, live]);
+  }, [events, opening, live, everySession]);
 
   // Told on a change of reading only: a callback that changed on every render would otherwise tell the
   // frame, which re-renders, which hands a new callback, round and round.
