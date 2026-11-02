@@ -155,7 +155,9 @@ test('the doctrine tool check names what an install lacks, and passes on a sound
  */
 test('the publish lays the git doors out under the names GitWiring hands, and the gate names what is missing', () => {
   const wiring = readText(driverFile('GitWiring.cs'));
-  assert.ok(wiring.includes(`SshDoor = "${GIT_DOORS[0]}"`), `GitWiring.SshDoor is not ${GIT_DOORS[0]}`);
+  // GITAUTH1c: the ssh door's name lives with Daoris's git file, which an Install file holds and the wiring names (TOOLS6).
+  const sshDoor = wiring.includes('SshDoor = GitGlobalFile.SshDoor') ? readText(driverFile('GitGlobalFile.cs')) : wiring;
+  assert.ok(sshDoor.includes(`SshDoor = "${GIT_DOORS[0]}"`), `GitWiring.SshDoor is not ${GIT_DOORS[0]}`);
   assert.ok(wiring.includes(`RemoteHelper = "${GIT_DOORS[1]}"`), `GitWiring.RemoteHelper is not ${GIT_DOORS[1]}`);
 
   const fx = makeFixture('deploy-doors');
