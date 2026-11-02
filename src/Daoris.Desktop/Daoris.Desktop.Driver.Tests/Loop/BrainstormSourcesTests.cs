@@ -100,19 +100,12 @@ public sealed class BrainstormSourcesTests : IDisposable
         Assert.Contains("in as a source the asker named", BrainstormCommand.Packet("x", packet), StringComparison.Ordinal);
     }
 
+    /// <summary>The request the desk writes with its sources is read back as they were named, in order (the desk's own rules are the service suite's).</summary>
     [Fact]
-    public void The_verb_keeps_each_named_source_and_refuses_a_path_outside_the_repository()
+    public void A_request_with_named_sources_reads_back_each_in_order()
     {
-        var output = new StringWriter();
-        Assert.Equal(0, BrainstormCommand.Run(["Why?", "--repository", "daoris", "--source", "docs/a.md", "--source", "src/B.cs"], _home, output, At));
+        Files.WriteRequest("Why?", "daoris", [], At, null, ["docs/a.md", "src/B.cs"]);
+
         Assert.Equal(["docs/a.md", "src/B.cs"], Files.Requests().Single().Sources);
-
-        foreach (var wrong in new[] { "../secret.md", "/etc/passwd", "C:/x.md" })
-        {
-            Assert.Equal(1, BrainstormCommand.Run(["Why?", "--repository", "daoris", "--source", wrong], _home, output, At));
-        }
-
-        Assert.Equal(1, BrainstormCommand.Run(["Why?", "--source", "docs/a.md"], _home, output, At));
-        Assert.Single(Files.Requests());
     }
 }

@@ -4,11 +4,11 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A meeting at the terminal (AGENTROOM1a, D177 points 1, 2, 4 and 7): <c>daoris-driver meeting ask "&lt;question&gt;" --agents a,b</c>
-/// writes a request the driver's look takes, as the brainstorm's verb does, so every turn runs in whichever process holds the loop;
-/// <c>show</c> prints the round's packet whole, what a refreshed packet adds beyond the one the person sent, and the transcript;
-/// <c>send</c> is the person's press for a round, the first by itself and a later one only named; <c>stop</c> ends the meeting at
-/// once; <c>clear</c> removes it; <c>list</c> names each. Files only: the verb spawns nothing and asks no service.
+/// A meeting at the terminal (AGENTROOM1a, D177 points 1, 2, 4 and 7; ONEWAY1t): <c>daoris-driver meeting ask "&lt;question&gt;" --agents a,b</c>
+/// asks the running service's brainstorm desk for a meeting, which writes the request the driver's look takes, so every turn runs in
+/// whichever process holds the loop; <c>send</c> is the person's press for a round, the first by itself and a later one only named;
+/// <c>stop</c> ends the meeting at once; <c>clear</c> removes it, each the desk's. <c>show</c> prints the round's packet whole, what a
+/// refreshed packet adds beyond the one the person sent, and the transcript; <c>list</c> names each, read here.
 /// </summary>
 public static class MeetingCommand
 {
@@ -21,9 +21,14 @@ public static class MeetingCommand
     /// <summary>The fewest agents a meeting names: one agent alone is no meeting.</summary>
     public const int FewestAgents = 2;
 
-    /// <summary>Exit codes as every verb's: 0 done, 1 refused, 2 a line this verb does not read.</summary>
-    public static int Run(string[] args, string home, TextWriter output, DateTimeOffset now, Func<string, AdapterSet>? adapters = null)
+    /// <summary>
+    /// Exit codes as every verb's: 0 done, 1 refused or no service, 2 a line this verb does not read. The asks and presses go to the
+    /// brainstorm desk's meeting kind (<see cref="BrainstormCommand"/>, <c>--kind meeting</c>), the one writer; <c>show</c> and
+    /// <c>list</c> read the records here.
+    /// </summary>
+    public static int Run(string[] args, string home, TextWriter output, DateTimeOffset now, IServiceDoors? doors = null)
     {
+        _ = now;
         var files = new MeetingFiles(home);
         switch (args)
         {
@@ -32,22 +37,22 @@ public static class MeetingCommand
             case ["show", var id]:
                 return Show(files, id, output);
             case ["send", var id]:
-                return Send(files, id, null, output, now);
+                return BrainstormDoor.Press(doors, ServiceVerb.Post, BrainstormDoor.PathOf(id, "send", meeting: true), "{}", output);
             case ["send", var id, "--round", var round] when int.TryParse(round, NumberStyles.None, CultureInfo.InvariantCulture, out var number) && number >= 1:
-                return Send(files, id, number, output, now);
+                return BrainstormDoor.Press(doors, ServiceVerb.Post, BrainstormDoor.PathOf(id, "send", meeting: true, number), "{}", output);
             case ["stop", var id]:
-                return Stop(files, id, output, now);
+                return BrainstormDoor.Press(doors, ServiceVerb.Post, BrainstormDoor.PathOf(id, "stop", meeting: true), "{}", output);
             case ["clear", var id]:
-                return Clear(files, id, output);
+                return BrainstormDoor.Press(doors, ServiceVerb.Delete, BrainstormDoor.PathOf(id, null, meeting: true), null, output);
             case ["ask", var question, .. var rest] when !question.StartsWith("--", StringComparison.Ordinal):
-                return Ask(files, question, rest, output, now, (adapters ?? AskedAgents.Current)(home));
+                return Ask(question, rest, output, doors);
             default:
                 output.WriteLine(Usage);
                 return 2;
         }
     }
 
-    private static int Ask(MeetingFiles files, string question, IReadOnlyList<string> rest, TextWriter output, DateTimeOffset now, AdapterSet adapters)
+    private static int Ask(string question, IReadOnlyList<string> rest, TextWriter output, IServiceDoors? doors)
     {
         string? repository = null;
         string? named = null;
@@ -68,8 +73,8 @@ public static class MeetingCommand
                 case "--agents":
                     agents = [.. rest[at + 1].Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
                     break;
-                // The caller's own id, as the brainstorm's (D176 point 6): asked again under it, it is the same meeting, never a second.
-                case "--id" when BrainstormCommand.IdShape().IsMatch(rest[at + 1]):
+                // The caller's own id, as the brainstorm's (D176 point 6), which the desk judges.
+                case "--id":
                     named = rest[at + 1];
                     break;
                 default:
@@ -84,45 +89,9 @@ public static class MeetingCommand
             return 2;
         }
 
-        question = question.Trim();
-        if (question.Length == 0 || question.Length > BrainstormBounds.First.Question)
-        {
-            output.WriteLine($"daoris-driver: a meeting's question is 1 to {BrainstormBounds.First.Question} characters; this one is {question.Length}.");
-            return 1;
-        }
-
-        var different = agents.Distinct(StringComparer.OrdinalIgnoreCase).Count();
-        if (different != agents.Count || different < FewestAgents || different > DriverBrainstormLimits.MostAgents)
-        {
-            output.WriteLine($"daoris-driver: a meeting names {FewestAgents} to {DriverBrainstormLimits.MostAgents} different agents, each once; "
-                + $"{agents.Count} were named.");
-            return 1;
-        }
-
-        if (AskedAgents.Refusal(adapters, agents) is { } unknown)
-        {
-            output.WriteLine(unknown);
-            return 1;
-        }
-
-        repository = repository is { Length: > 0 } ? repository : null;
-        if (named is not null && files.Request(named) is { } asked)
-        {
-            if (asked.Question != question || !string.Equals(asked.Repository, repository, StringComparison.Ordinal) || !asked.Agents.SequenceEqual(agents, StringComparer.Ordinal))
-            {
-                output.WriteLine($"daoris-driver: meeting `{named}` was asked with other words; an id names one meeting.");
-                return 1;
-            }
-
-            output.WriteLine($"Meeting `{named}` is already asked: the same meeting, never a second spend. Read it with `daoris-driver meeting show {named}`.");
-            return 0;
-        }
-
-        var id = files.WriteRequest(question, repository, agents, now, named);
-        output.WriteLine($"Meeting `{id}` asked of {string.Join(", ", agents.Select(agent => $"`{agent}`"))}, in that order. Daoris freezes its first "
-            + "round's packet at its next look, from " + (repository is null ? "the question alone" : $"its knowledge of `{repository}`")
-            + $"; with no Daoris running, it waits. Read it with `daoris-driver meeting show {id}` before you send it.");
-        return 0;
+        return BrainstormDoor.Press(
+            doors, ServiceVerb.Post, "/api/brainstorms",
+            BrainstormDoor.AskBody(question, repository is { Length: > 0 } ? repository : null, agents, [], named, meeting: true), output);
     }
 
     private static int Show(MeetingFiles files, string id, TextWriter output)
@@ -234,117 +203,6 @@ public static class MeetingCommand
                                    + $"or stop the meeting with `daoris-driver meeting stop {id}`.",
         _ => $"{state.State}.",
     };
-
-    /// <summary>
-    /// The person's press for one round (D177 point 4): the first round's by itself; a later round's only named, so a send repeated
-    /// from a terminal's history never spends another round; refused while a round runs, and after a stop.
-    /// </summary>
-    private static int Send(MeetingFiles files, string id, int? round, TextWriter output, DateTimeOffset now)
-    {
-        if (files.Request(id) is null)
-        {
-            output.WriteLine($"daoris-driver: there is no meeting `{id}` on this machine.");
-            return 1;
-        }
-
-        var state = files.ReadState(id);
-        if (state is null)
-        {
-            output.WriteLine($"daoris-driver: meeting `{id}` has no packet yet: Daoris freezes its first round's at its next look, and you read it before it goes.");
-            return 1;
-        }
-
-        if (files.Stopped(id) || state.State == BrainstormStates.Ended)
-        {
-            output.WriteLine(files.Stopped(id) || state.Code == BrainstormStates.Stopped
-                ? $"daoris-driver: meeting `{id}` was stopped: nothing more goes to any agent."
-                : $"daoris-driver: meeting `{id}` ended ({state.Code ?? "after its last round"}): nothing more goes to any agent.");
-            return 1;
-        }
-
-        var wanted = round ?? 1;
-        if (state.State == BrainstormStates.Running)
-        {
-            if (wanted == state.Round)
-            {
-                output.WriteLine($"Meeting `{id}`'s round {wanted} is already sent, and running.");
-                return 0;
-            }
-
-            output.WriteLine($"daoris-driver: meeting `{id}`'s round {state.Round} is running; round {wanted} can be sent once it ends and you read its packet.");
-            return 1;
-        }
-
-        if (state is not { State: BrainstormStates.Frozen, Packet: { } digest })
-        {
-            output.WriteLine($"daoris-driver: meeting `{id}` has no round to send ({state.State}).");
-            return 1;
-        }
-
-        if (wanted != state.Round)
-        {
-            output.WriteLine(round is null
-                ? $"daoris-driver: meeting `{id}` waits for round {state.Round}: read its packet with `daoris-driver meeting show {id}`, then send it with "
-                  + $"`daoris-driver meeting send {id} --round {state.Round}`."
-                : $"daoris-driver: meeting `{id}` waits for round {state.Round}, not round {wanted}.");
-            return 1;
-        }
-
-        if (files.Sent(id, state.Round) == digest)
-        {
-            output.WriteLine($"Meeting `{id}`'s round {state.Round} is already sent: the same round, never a second spend.");
-            return 0;
-        }
-
-        files.WriteSent(id, state.Round, digest, now);
-        output.WriteLine($"Meeting `{id}`'s round {state.Round} sent, packet `{digest}`: its turns start at Daoris's next look, one participant at a time. "
-            + $"Read the transcript with `daoris-driver meeting show {id}`.");
-        return 0;
-    }
-
-    /// <summary>The person's stop (D177's trap, the person leaving): the turn that runs ends, what was said is kept, and nothing more goes.</summary>
-    private static int Stop(MeetingFiles files, string id, TextWriter output, DateTimeOffset now)
-    {
-        if (files.Request(id) is null)
-        {
-            output.WriteLine($"daoris-driver: there is no meeting `{id}` on this machine.");
-            return 1;
-        }
-
-        if (files.ReadState(id) is { State: BrainstormStates.Ended } ended)
-        {
-            output.WriteLine($"Meeting `{id}` already ended ({ended.Code ?? "after its last round"}).");
-            return 0;
-        }
-
-        files.WriteStop(id, now);
-        output.WriteLine($"Meeting `{id}`: stop asked. The turn that runs ends where Daoris runs it, what was said is kept, and nothing more goes to any agent.");
-        return 0;
-    }
-
-    private static int Clear(MeetingFiles files, string id, TextWriter output)
-    {
-        if (files.Request(id) is null && !Directory.Exists(files.Folder(id)))
-        {
-            output.WriteLine($"daoris-driver: there is no meeting `{id}` on this machine.");
-            return 1;
-        }
-
-        if (files.ReadState(id) is { State: BrainstormStates.Running })
-        {
-            output.WriteLine($"daoris-driver: meeting `{id}` is running; it is cleared once its round ends.");
-            return 1;
-        }
-
-        if (files.Clear(id) is { } left)
-        {
-            output.WriteLine($"daoris-driver: meeting `{id}` could not be cleared whole: {left}");
-            return 1;
-        }
-
-        output.WriteLine($"Meeting `{id}` cleared: its records, its packets and its transcript are gone from this machine.");
-        return 0;
-    }
 
     private static int List(MeetingFiles files, TextWriter output)
     {
