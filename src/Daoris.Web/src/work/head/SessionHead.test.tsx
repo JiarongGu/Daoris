@@ -75,6 +75,13 @@ describe('the attended session\'s head', () => {
     expect(screen.getByText('as before')).toBeInTheDocument();
     expect(screen.getByText('reported-model')).toBeInTheDocument();
     expect(screen.getAllByText('not reported')).toHaveLength(2);
+    expect(screen.getByText('the selection policy was not recorded')).toBeInTheDocument();
+  });
+  it('says in Details how the choice was reached, beside the chip’s reason', () => {
+    render(<SessionHead session={session({ actor: 'build', choice: '2', chosen: { rule: 'order', by: 'moved', condition: 'limit', from: '1' } })} />);
+    expect(screen.getByText('choice 2 · after a limit')).toBeInTheDocument();
+    details();
+    expect(screen.getByText('Moved here from choice 1: every account of that choice reached its limit.')).toBeInTheDocument();
   });
   beforeEach(() => {
     vi.useFakeTimers();
