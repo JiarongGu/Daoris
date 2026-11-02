@@ -295,7 +295,7 @@ public static class WorkflowNamed
         }
 
         // WORKFLOWCLEAN1 1b: a list of steps is no longer saved; a stored one reads as before.
-        if (onSave) return Unread(StepsRefused(id));
+        if (onSave && hasSteps) return Unread(StepsRefused(id));
 
         var (steps, problem) = ReadSteps(hasSteps ? raw : null, number, prior);
         return steps is null ? Unread(problem!) : new NamedVersion(number, at, door, steps, null, Digest(steps)) { From = FromOf(version) };

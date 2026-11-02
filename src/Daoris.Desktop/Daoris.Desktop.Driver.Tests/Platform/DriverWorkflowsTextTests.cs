@@ -19,10 +19,25 @@ public sealed partial class DriverWorkflowsTextTests
     private static readonly Lazy<JsonElement> Read = new(() => JsonDocument.Parse(File.ReadAllText(Path.Combine(
         WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "driver-workflows-text.json"))).RootElement.Clone());
 
+    /// <summary>
+    /// The rows of the verbs that saved a list of steps, kept in the table as the record of what they said and no longer run (WORKFLOWCLEAN1 1b):
+    /// <c>edit</c>, and <c>new</c>, <c>apply</c> and <c>import</c> of steps are refused now, by the one judge's words, which the command tests prove.
+    /// </summary>
+    private static readonly string[] RetiredPrefixes =
+    [
+        "workflow edit,", "workflow new, a preset", "workflow new, the longest preset", "workflow new, from a saved", "workflow apply, a list of steps",
+        "workflow apply, a file's steps", "workflow apply, the same steps", "workflow apply, steps after a graph", "workflow apply, a file of no steps",
+    ];
+
     public static TheoryData<string> Names()
     {
         var names = new TheoryData<string>();
-        foreach (var row in Read.Value.GetProperty("rows").EnumerateArray()) names.Add(row.GetProperty("name").GetString()!);
+        foreach (var row in Read.Value.GetProperty("rows").EnumerateArray())
+        {
+            var name = row.GetProperty("name").GetString()!;
+            if (!RetiredPrefixes.Any(prefix => name.StartsWith(prefix, StringComparison.Ordinal))) names.Add(name);
+        }
+
         return names;
     }
 

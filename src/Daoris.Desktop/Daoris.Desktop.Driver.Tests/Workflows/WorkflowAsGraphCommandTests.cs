@@ -4,10 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-GRAPH1j (D190 point 8, the cutover design §7.2): <c>daoris driver workflow apply &lt;id&gt; --as-graph</c> on shape-level input.
-/// The newest version, of steps, is read by its shape, since one holding a kind schema 1 does not run reads as no steps; decoded, its
-/// synthetic nodes authored, judged as a saved graph is and saved as the next version, the steps version kept as it was. Two observed
-/// nodes of one plugin step are refused naming both, and nothing is written.
+/// WORKFLOWCLEAN1 1b (the workflow clean-up design §3): the terminal's doors that saved a list of steps refuse alike, in the one judge's words,
+/// and write nothing: <c>apply</c> holding steps, <c>apply --as-graph</c> (folded into <c>workflow convert</c>), <c>edit</c>, <c>new --from</c> a
+/// version of steps or a step preset, and <c>import</c> of a file holding steps or a <c>handed</c>. A workflow saved as steps before is still read.
 /// </summary>
 public sealed class WorkflowAsGraphCommandTests : IDisposable
 {
@@ -34,7 +33,9 @@ public sealed class WorkflowAsGraphCommandTests : IDisposable
 
     private Task<int> Run(string words) => DriverChoicesCommand.RunAsync(words.Split(' '), World(), CancellationToken.None);
 
-    /// <summary>A workflow whose one version is the steps given, as a file holds it.</summary>
+    private const string Steps = """[ { "id": "work", "kind": "work" }, { "id": "land", "kind": "landing", "form": "merge", "accept": "you" } ]""";
+
+    /// <summary>A workflow whose one version is the steps given, as an older build's file holds it.</summary>
     private void Stored(string steps)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(FileOf("careful"))!);
@@ -50,87 +51,107 @@ public sealed class WorkflowAsGraphCommandTests : IDisposable
             """.Replace("\r\n", "\n"));
     }
 
-    /// <summary>A go-ahead, a branch landing and a group of a check and a stage: a kind schema 1 does not run, so v1 reads as no steps.</summary>
-    private const string Grouped = """
-        [ { "id": "work", "kind": "work" }, { "id": "ask", "kind": "go-ahead", "act": "Ship", "on": "the line" },
-          { "id": "land", "kind": "landing", "form": "branch", "accept": "you", "plugin": "acme.ci" },
-          { "id": "both", "kind": "all", "steps": [ { "id": "unit", "kind": "check", "plugin": "acme.ci" },
-            { "id": "smoke", "kind": "stage", "plugin": "acme.deploy", "stage": "smoke", "start": "automatic" } ] } ]
-        """;
+    private string Written(string name, string text)
+    {
+        var path = Path.Combine(_home, name);
+        File.WriteAllText(path, text);
+        return name;
+    }
 
-    private static IReadOnlyList<string> Lines(StringWriter writer) => writer.ToString().Replace("\r\n", "\n").TrimEnd('\n').Split('\n');
+    private string Said => _error.ToString().Replace("\r\n", "\n").TrimEnd();
 
     [Fact]
-    public async Task A_steps_version_with_a_group_is_saved_as_the_next_version_its_join_authored_and_the_steps_kept()
+    public async Task A_stored_steps_file_still_reads_and_shows_as_it_did()
     {
-        Stored(Grouped);
-        var before = JsonNode.Parse(File.ReadAllText(FileOf("careful")))!;
-        Assert.NotNull(new WorkflowFiles(_home).Load("careful")!.Read.Versions[0].Problem);
+        Stored(Steps);
 
-        var exit = await Run("workflow apply careful --as-graph");
+        Assert.Equal(0, await Run("workflow show careful"));
 
-        Assert.Equal((0, ""), (exit, _error.ToString()));
-        var lines = Lines(_out);
-        Assert.Equal("daoris: `careful` v1 → v2 — Careful, v1's steps as a graph: a graph (schema 2) of 8 nodes and 9 wires, ending at `both`, "
-            + "digest gph-e336ed86bc06526dccbcc95a8da3add3.", lines[0]);
-        Assert.Equal("  The go-ahead `ask` now holds what follows it until your yes, or your skip with your words: the steps went on past one that "
-            + "could not start.", lines[1]);
-        Assert.StartsWith("  Written to ", lines[2], StringComparison.Ordinal);
-
-        var after = JsonNode.Parse(File.ReadAllText(FileOf("careful")))!;
-        Assert.True(JsonNode.DeepEquals(before["versions"]![0], after["versions"]![0]), "the steps version is kept as it was");
-        var saved = after["versions"]![1]!;
-        Assert.Equal((2, 2), (saved["version"]!.GetValue<int>(), saved["schema"]!.GetValue<int>()));
-        Assert.DoesNotContain("synthetic", saved.ToJsonString(), StringComparison.Ordinal);
-        var read = new WorkflowFiles(_home).Load("careful")!.Read.Versions[1];
-        Assert.Equal((null, "gph-e336ed86bc06526dccbcc95a8da3add3"), (read.Problem, read.Digest));
-        Assert.Equal(["work", "ask", "ask:rejected", "land", "unit", "smoke", "both", "both:failed"], read.Graph!.Nodes.Select(node => node.Id));
-        Assert.Equal((NodeKinds.All, false), read.Graph.Nodes.Single(node => node.Id == "both") is var join ? (join.Kind, join.Synthetic) : default);
+        Assert.Null(new WorkflowFiles(_home).Load("careful")!.Read.Versions[0].Problem);
+        Assert.NotNull(new WorkflowFiles(_home).Load("careful")!.Read.Versions[0].Steps);
+        Assert.Equal("", _error.ToString());
     }
 
     [Fact]
-    public async Task Two_checks_of_one_plugin_are_refused_naming_both_and_nothing_is_written()
+    public async Task Apply_as_graph_is_folded_into_convert_and_refused_naming_it()
     {
-        Stored("""
-            [ { "id": "work", "kind": "work" }, { "id": "land", "kind": "landing", "form": "branch", "accept": "you", "plugin": "acme.ci" },
-              { "id": "lint", "kind": "check", "plugin": "acme.ci" }, { "id": "unit", "kind": "check", "plugin": "acme.ci" } ]
-            """);
+        Stored(Steps);
         var before = File.ReadAllBytes(FileOf("careful"));
 
-        var exit = await Run("workflow apply careful --as-graph");
+        Assert.Equal(1, await Run("workflow apply careful --as-graph"));
 
-        Assert.Equal((1, ""), (exit, _out.ToString()));
-        Assert.Equal("daoris: v2: its graph does not hold: node `unit` and `lint` are both observed nodes of `acme.ci/work.checks`: an event of that "
-            + "step names one node, so neither would be reached.", _error.ToString().TrimEnd());
+        Assert.Contains("`daoris driver workflow convert`", Said);
         Assert.Equal(before, File.ReadAllBytes(FileOf("careful")));
     }
 
     [Fact]
-    public async Task With_plan_it_is_said_and_nothing_is_written()
+    public async Task Apply_of_a_file_holding_steps_is_refused_with_the_steps_words()
     {
-        Stored(Grouped);
+        Stored(Steps);
         var before = File.ReadAllBytes(FileOf("careful"));
+        var file = Written("steps.json", Steps);
 
-        Assert.Equal(0, await Run("workflow apply careful --as-graph --plan"));
+        Assert.Equal(1, await Run($"workflow apply careful {file}"));
 
-        Assert.Contains("  --plan: nothing was written.", Lines(_out));
+        Assert.Equal($"daoris: {WorkflowNamed.StepsRefused("careful")}", Said);
         Assert.Equal(before, File.ReadAllBytes(FileOf("careful")));
     }
 
     [Fact]
-    public async Task A_graph_version_is_a_graph_already_and_a_file_beside_the_switch_is_the_usage()
+    public async Task Edit_is_refused_with_the_steps_words_and_writes_nothing()
     {
-        Stored(Grouped);
-        Assert.Equal(0, await Run("workflow apply careful --as-graph"));
+        Stored(Steps);
         var before = File.ReadAllBytes(FileOf("careful"));
+
+        Assert.Equal(1, await Run("workflow edit careful add look --after work"));
+
+        Assert.Equal($"daoris: {WorkflowNamed.StepsRefused("careful")}", Said);
+        Assert.Equal(before, File.ReadAllBytes(FileOf("careful")));
+    }
+
+    [Fact]
+    public async Task New_from_a_version_of_steps_is_refused_and_the_step_presets_are_gone()
+    {
+        Stored(Steps);
+
+        Assert.Equal(1, await Run("workflow new copy --from careful@1"));
+        Assert.Equal($"daoris: {WorkflowNamed.StepsRefused("copy")}", Said);
+        Assert.False(File.Exists(FileOf("copy")));
         _error.GetStringBuilder().Clear();
 
-        Assert.Equal(1, await Run("workflow apply careful --as-graph --base 2"));
-        Assert.Equal("daoris: `careful` v2 is a graph already: --as-graph saves a version of steps as one.", _error.ToString().TrimEnd());
-        _error.GetStringBuilder().Clear();
+        Assert.Equal(1, await Run("workflow new docs --from pull-request-no-press"));
+        Assert.StartsWith("daoris: `pull-request-no-press` is no preset, no saved workflow and no `current:<repository>`", Said, StringComparison.Ordinal);
+        Assert.DoesNotContain("pull-request-after-accept", Said, StringComparison.Ordinal);
+        Assert.False(File.Exists(FileOf("docs")));
+    }
 
-        Assert.Equal(2, await Run("workflow apply careful steps.json --as-graph"));
-        Assert.Equal($"daoris: {DriverWorkflowsCommand.Usage}", _error.ToString().TrimEnd());
-        Assert.Equal(before, File.ReadAllBytes(FileOf("careful")));
+    [Fact]
+    public async Task Import_of_a_file_holding_steps_is_refused_with_the_steps_words()
+    {
+        Stored(Steps);
+        var text = File.ReadAllText(FileOf("careful"));
+        File.Delete(FileOf("careful"));
+        var file = Written("careful.json", text);
+
+        Assert.Equal(1, await Run($"workflow import {file}"));
+
+        Assert.Equal($"daoris: {WorkflowNamed.StepsRefused("careful")}", Said);
+        Assert.False(File.Exists(FileOf("careful")));
+    }
+
+    [Fact]
+    public async Task Import_of_a_file_holding_a_handed_is_refused_at_that_node()
+    {
+        var graph = JsonNode.Parse("""{"schemaVersion":2,"entries":["claim"],"end":"land","nodes":[{"id":"claim","kind":"claimed","version":1,"reach":"observed"},{"id":"land","kind":"handed","version":1,"reach":"observed"}],"wires":[{"id":"a","kind":"after","from":"claim","to":"land"}]}""")!;
+        var file = Written("careful.json", new JsonObject
+        {
+            ["id"] = "careful", ["name"] = "Careful",
+            ["versions"] = new JsonArray(new JsonObject { ["version"] = 1, ["at"] = "2026-10-09T09:12:00Z", ["door"] = "screen", ["schema"] = 2, ["graph"] = graph }),
+        }.ToJsonString());
+
+        Assert.Equal(1, await Run($"workflow import {file}"));
+
+        Assert.Contains("node `land` is a `handed`", Said);
+        Assert.False(File.Exists(FileOf("careful")));
     }
 }

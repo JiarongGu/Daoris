@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Driver.Tests;
@@ -133,14 +134,14 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
         Assert.StartsWith("a change to the open draft ", plan.Refusal, StringComparison.Ordinal);
     }
 
-    /// <summary>A development pipeline's graph is still refused by the `edit` door, and taken by the `draft` door, which saves nothing.</summary>
+    /// <summary>WORKFLOWCLEAN1 1b: a development pipeline's graph is proposed by the `edit` door, and taken by the `draft` door, which saves nothing.</summary>
     [Fact]
-    public void A_development_graph_is_refused_by_edit_and_taken_by_draft()
+    public void A_development_graph_is_proposed_by_edit_and_taken_by_draft()
     {
         WorkflowStore.Add(_home, new WorkflowVersionAdded(Id, "Merge it", "terminal", "2026-10-30T09:00:00Z", null, JsonNode.Parse(Preset("merge-after-accept"))), kept: []);
 
-        var edit = HelpProposals.Plan(Propose(null, 1, graph: Preset("release")), DriverConfig.Empty, Here());
-        Assert.StartsWith($"`{Id}` is a development pipeline, and Ask Daoris proposes a graph only for a verification pipeline", edit.Refusal, StringComparison.Ordinal);
+        var edit = Card(HelpProposals.Plan(Propose(null, 1, graph: Preset("release")), DriverConfig.Empty, Here()));
+        Assert.Equal((true, false, 2), (edit.Saves, edit.Verifies, edit.Version));
 
         var draft = Card(HelpProposals.Plan(Propose(null, graph: Preset("release"), draft: Fingerprint), DriverConfig.Empty, Told(Id, 1)));
         Assert.Equal((Id, (int?)1, false), (draft.Id, draft.Base, draft.Saves));
@@ -185,8 +186,12 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
         Assert.Equal(files, WorkflowFiles());
     }
 
+    private void SavedGraph(string name = "Documentation to a pull request") =>
+        WorkflowStore.Add(_home, new WorkflowVersionAdded(Id, name, "terminal", "2026-10-09T09:00:00Z", null, JsonNode.Parse(Preset("merge-after-accept"))), kept: []);
+
+    /// <summary>A version of steps as an older build saved it: no door saves one now, and a stored one still reads.</summary>
     private void Saved(string steps, string name = "Documentation to a pull request") =>
-        WorkflowStore.Add(_home, new WorkflowVersionAdded(Id, name, "terminal", "2026-10-09T09:00:00Z", JsonNode.Parse(steps)), kept: []);
+        StoredSteps.Add(Daoris.Driver.WorkflowPorts.Store(_home), Id, name, "2026-10-09T09:00:00Z", JsonNode.Parse(steps)!);
 
     /// <summary>The machine with this home's workflows, each repository in the workspace `work`.</summary>
     private HelpMachineFacts Here(HelpMachineFacts? from = null) => (from ?? Machine) with
@@ -242,14 +247,14 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
 
     /// <summary>A development graph that integrates its landing, asking as <paramref name="request"/>, saved as the workflow `integrated`.</summary>
     private void SavedIntegrating(string request = "owner", string landing = "{}") =>
-        WorkflowStore.Add(_home, new WorkflowVersionAdded("integrated", "Integrated into the line", "terminal", "2026-10-30T09:00:00Z", null, JsonNode.Parse(
+        StoredSteps.AddGraph(Daoris.Driver.WorkflowPorts.Store(_home), "integrated", "Integrated into the line", "2026-10-30T09:00:00Z", JsonNode.Parse(
             $$$"""
             {"schemaVersion":2,"entries":["claim"],"end":"merge-in",
              "nodes":[{"id":"claim","kind":"claimed","version":1,"reach":"observed"},
                       {"id":"land","kind":"handed","version":1,"reach":"observed","options":{{{landing}}}},
                       {"id":"merge-in","kind":"integrate","version":1,"reach":"waited","options":{"request":"{{{request}}}"}}],
              "wires":[{"id":"a","kind":"after","from":"claim","to":"land"},{"id":"b","kind":"after","from":"land","to":"merge-in"}]}
-            """)), kept: []);
+            """)!);
 
     private static DriverConfig Landings(string engine, string game) =>
         DriverConfig.Parse("{\"landings\":{\"engine\":" + engine + ",\"game\":" + game + "}}");
@@ -345,7 +350,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
     [Theory]
     [InlineData(null, "kind:Docs", "`kind:Docs` is not a route: `default`, `landed` for the work that lands, or `kind:<id>` for one of the scope's kinds, such as `kind:docs`.")]
     [InlineData(null, "default", "there is no workflow `docs-to-pr` on this machine: a `route` with no version chooses a workflow saved here.")]
-    [InlineData(null, null, "a workflow proposal carries its whole `steps`, a JSON list of step objects, or a verification pipeline's `graph`; or, with neither, the `route` it chooses a saved workflow for.")]
+    [InlineData(null, null, "a workflow proposal carries its whole `graph`; or, with none, the `route` it chooses a saved workflow for.")]
     [InlineData(1, "default", "a `route` with no version saves nothing, so it names no `base` and no `name`.")]
     public void A_route_with_no_version_is_refused_where_it_cannot_choose(int? @base, string? route, string refusal)
     {
@@ -359,10 +364,11 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
     [Fact]
     public async Task A_verification_graph_proposed_is_judged_by_the_mark_and_saved_as_one()
     {
-        var landing = """{"schemaVersion":2,"entries":["gates"],"end":"land","nodes":[{"id":"gates","kind":"check","version":1,"reach":"performed"},{"id":"land","kind":"handed","version":1,"reach":"observed"}],"wires":[{"id":"w1","kind":"after","from":"gates","to":"land"}]}""";
+        var landing = """{"schemaVersion":2,"entries":["gates"],"end":"land","nodes":[{"id":"gates","kind":"check","version":1,"reach":"performed"},{"id":"land","kind":"land","version":1,"reach":"performed","options":{"method":"merge"}}],"wires":[{"id":"w1","kind":"after","from":"gates","to":"land"}]}""";
+        SavedVerification(Verify(), "line-verify");
         Assert.StartsWith(
-            "v1: its graph holds `land`, a `handed`, and a verification pipeline's graph lands nothing",
-            HelpProposals.Plan(Propose(null, graph: landing), DriverConfig.Empty, Here()).Refusal, StringComparison.Ordinal);
+            "v2: its graph holds `land`, a `land`, and a verification pipeline's graph lands nothing",
+            HelpProposals.Plan(Propose(null, graph: landing, @base: 1, workflow: "line-verify"), DriverConfig.Empty, Here()).Refusal, StringComparison.Ordinal);
 
         var proposal = Propose(null, graph: Verify(), route: "landed");
         var plan = HelpProposals.Plan(proposal, DriverConfig.Empty, Here());
@@ -396,14 +402,14 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
     {
         Saved(Merge);
         Assert.StartsWith(
-            "`docs-to-pr` is a development pipeline, and Ask Daoris proposes a graph only for a verification pipeline",
+            "v2: its graph holds no landing",
             HelpProposals.Plan(Propose(null, graph: Verify(), @base: 1), DriverConfig.Empty, Here()).Refusal, StringComparison.Ordinal);
         Assert.Equal(WorkflowSelection.NotVerification(Id), HelpProposals.Plan(Propose(null, route: "landed"), DriverConfig.Empty, Here()).Refusal);
 
         SavedVerification(Verify(), "line-verify");
-        Assert.Equal(
-            "`line-verify` is a verification pipeline, whose versions are graphs holding its checks: a proposal changes it with its `graph`, never `steps`.",
-            HelpProposals.Plan(Propose(Merge, @base: 1, workflow: "line-verify"), DriverConfig.Empty, Here()).Refusal);
+        Assert.StartsWith(
+            "v2: its graph holds",
+            HelpProposals.Plan(Propose(null, graph: Preset("release"), @base: 1, workflow: "line-verify"), DriverConfig.Empty, Here()).Refusal, StringComparison.Ordinal);
         Assert.Equal(
             WorkflowSelection.VerificationElsewhere("line-verify"),
             HelpProposals.Plan(Propose(null, route: "default", workflow: "line-verify"), DriverConfig.Empty, Here()).Refusal);
@@ -461,28 +467,34 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
         Assert.Equal(("edit", (int?)3), (Propose(Merge, @base: 3).Door, Propose(Merge, @base: 3).Base));
     }
 
-    /// <summary>§8.2: a new workflow's card is its first version, every step added, and what applies it.</summary>
+    /// <summary>§8.2: a new workflow's card is its first version, every step added, and what applies it; a graph that lands is a development pipeline.</summary>
     [Fact]
     public void A_new_workflow_s_card_is_its_first_version()
     {
-        var plan = HelpProposals.Plan(Propose(Merge), DriverConfig.Empty, Here());
+        var plan = HelpProposals.Plan(Propose(null, graph: Preset("merge-after-accept")), DriverConfig.Empty, Here());
         var card = Card(plan);
 
-        Assert.Equal((Id, Id, (int?)null, 1, "engine", false), (card.Id, card.Name, card.Base, card.Version, card.Scope, card.Choose));
-        Assert.Equal(["+ work · work", "+ land · landing: form `merge`; accept `you`"], card.Diff);
-        Assert.Equal(["+ land: you accept each piece of work before it lands."], card.YourPart);
-        Assert.Empty(card.Outward);
+        Assert.Equal((Id, Id, (int?)null, 1, "engine", false, false), (card.Id, card.Name, card.Base, card.Version, card.Scope, card.Choose, card.Verifies));
+        Assert.True(card.Saves);
+        Assert.NotEmpty(card.Diff);
         Assert.Empty(card.Needs);
         Assert.Equal("New work only, once a repository or a workspace chooses `docs-to-pr`: nothing does now.", card.AppliesTo);
         Assert.Equal("daoris driver workflow import <file>", plan.Terminal);
-        Assert.StartsWith("Save a new workflow `docs-to-pr` as v1.\nYour part:\n", plan.Describe, StringComparison.Ordinal);
+        Assert.StartsWith("Save a new workflow `docs-to-pr` as v1.", plan.Describe, StringComparison.Ordinal);
+    }
+
+    /// <summary>WORKFLOWCLEAN1 1b: a list of steps is refused by this door as by every other, naming the editor and the graph file.</summary>
+    [Fact]
+    public void A_list_of_steps_is_refused_naming_the_editor_and_the_graph_file()
+    {
+        Assert.Equal(WorkflowNamed.StepsRefused(Id), HelpProposals.Plan(Propose(Merge), DriverConfig.Empty, Here()).Refusal);
     }
 
     /// <summary>WORKFLOW1h-name: a new workflow is named by the person's words, on the card and in the saved version; absent, by its id.</summary>
     [Fact]
     public async Task A_new_workflow_is_saved_under_the_name_given_else_its_id()
     {
-        var named = Propose(Merge, name: "Docs to a pull request");
+        var named = Propose(null, graph: Preset("merge-after-accept"), name: "Docs to a pull request");
         Assert.Equal("Docs to a pull request", named.Name);
         var plan = HelpProposals.Plan(named, DriverConfig.Empty, Here());
         Assert.Equal("Docs to a pull request", Card(plan).Name);
@@ -492,39 +504,25 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
         Assert.Equal("Docs to a pull request", WorkflowStore.Load(_home, Id)!.Read.Name);
 
         System.IO.File.Delete(WorkflowStore.PathOf(_home, Id));
-        Assert.Equal(Id, Card(HelpProposals.Plan(Propose(Merge), DriverConfig.Empty, Here())).Name);
+        Assert.Equal(Id, Card(HelpProposals.Plan(Propose(null, graph: Preset("merge-after-accept")), DriverConfig.Empty, Here())).Name);
     }
 
     /// <summary>§8.2: an edit's diff by step id, the person's part first, then the steps, then what leaves with no press.</summary>
     [Fact]
-    public void An_edit_s_card_says_your_part_first_then_the_steps_and_the_outward_acts()
+    public void An_edit_s_card_names_its_base_the_version_it_makes_and_the_runs_that_keep_theirs()
     {
-        Saved(LookThenBranch);
-        var facts = Here(WithPlugin("pr-plugin")) with
+        WorkflowStore.Add(_home, new WorkflowVersionAdded(Id, "Documentation to a pull request", "terminal", "2026-10-30T09:00:00Z", null, JsonNode.Parse(Preset("merge-after-accept"))), kept: []);
+        var facts = Here() with
         {
             WorkflowRuns = [new WorkflowRunBinding("q1", "engine", "work", Id, WorkflowLevels.Repository, DateTimeOffset.UnixEpoch) { Version = 1 }],
         };
 
-        var plan = HelpProposals.Plan(Propose(Automatic, @base: 1), Chosen, facts);
+        var plan = HelpProposals.Plan(Propose(null, graph: Preset("release"), @base: 1), Chosen, facts);
         var card = Card(plan);
 
         Assert.Equal(("Documentation to a pull request", (int?)1, 2), (card.Name, card.Base, card.Version));
-        Assert.Equal(
-            ["− look: you no longer look at it running before it lands.", "− land: you no longer accept each piece of work before it lands.",
-             "+ pr: you merge its pull request on the platform."],
-            card.YourPart);
-        Assert.Equal(
-            ["  work · work", "− look · look", "~ land · landing: accept `you` → `automatic`; plugin as declared → `pr-plugin`", "+ pr · pull-request"],
-            card.Diff);
-        Assert.Equal(["`pr-plugin` pushes each branch with no press of yours."], card.Outward);
-        Assert.Empty(card.Needs);
         Assert.Equal("New work only, in `engine`; 1 run keeps the version it started on.", card.AppliesTo);
         Assert.Equal("daoris driver workflow apply docs-to-pr <file> --base 1", plan.Terminal);
-
-        var part = plan.Describe.IndexOf("Your part:", StringComparison.Ordinal);
-        var steps = plan.Describe.IndexOf("Steps, by id:", StringComparison.Ordinal);
-        var outward = plan.Describe.IndexOf("Without asking you each time:", StringComparison.Ordinal);
-        Assert.True(part > 0 && part < steps && steps < outward, plan.Describe);
         Assert.StartsWith("Save `docs-to-pr` v1 → v2 (Documentation to a pull request).", plan.Describe, StringComparison.Ordinal);
     }
 
@@ -558,15 +556,14 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
             HelpProposals.Plan(Propose(Merge, @base: 1), DriverConfig.Empty, Here()).Refusal);
     }
 
-    /// <summary>§2.5, §3.9: steps the editor would not save are refused in its words, naming the step.</summary>
+    /// <summary>WORKFLOWCLEAN1 1b: a graph the editor would not save is refused in its words, naming the node (a `handed` is no longer saved).</summary>
     [Fact]
-    public void Steps_the_editor_would_not_save_are_refused_in_its_words()
+    public void A_graph_the_editor_would_not_save_is_refused_in_its_words()
     {
-        var plan = HelpProposals.Plan(
-            Propose("""[{"id":"work","kind":"work"},{"id":"land","kind":"landing","form":"merge","accept":"automatic"}]"""),
-            DriverConfig.Empty, Here());
+        var handed = """{"schemaVersion":2,"entries":["claim"],"end":"land","nodes":[{"id":"claim","kind":"claimed","version":1,"reach":"observed"},{"id":"land","kind":"handed","version":1,"reach":"observed"}],"wires":[{"id":"a","kind":"after","from":"claim","to":"land"}]}""";
+        var plan = HelpProposals.Plan(Propose(null, graph: handed), DriverConfig.Empty, Here());
 
-        Assert.StartsWith("v1, step `land`: only a branch lands with no press", plan.Refusal, StringComparison.Ordinal);
+        Assert.StartsWith("v1: its graph does not hold: node `land` is a `handed`, which only watches a landing some door made", plan.Refusal, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -583,29 +580,14 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
     /// the card is a draft, and its Apply is refused before anything is saved, the card left standing.
     /// </summary>
     [Fact]
-    public async Task What_a_step_needs_first_makes_a_draft_with_no_apply()
+    public async Task A_card_that_needs_something_first_is_a_draft_with_no_apply()
     {
-        var steps = """
-            [{"id":"work","kind":"work"},{"id":"look","kind":"look"},{"id":"land","kind":"landing","form":"branch","accept":"you"},
-             {"id":"deploy","kind":"stage","plugin":"pr-plugin","stage":"staging"}]
-            """;
-        var proposal = Propose(steps, choose: true);
+        var proposal = Propose(null, graph: Preset("merge-after-accept"), choose: true);
         var plan = HelpProposals.Plan(proposal, DriverConfig.Empty, Here());
-        var card = Card(plan);
-
-        Assert.Equal(
-            [
-                "its look `look` reads the work in an environment, and `engine` declares no review environment: `daoris driver review engine "
-                + "<environment> --kind local|deployed --procedure <path>` declares one.",
-                "its landing `land` puts the work on a branch, and neither the step nor `engine`'s landing rule names a pattern for it: "
-                + "`daoris driver landing engine branch <pattern>` declares one.",
-                "its step `deploy` is a `stage`, which this build does not run yet.",
-            ],
-            card.Needs);
-        Assert.Contains("\nNeeds first:\n", plan.Describe, StringComparison.Ordinal);
+        var card = Card(plan) with { Needs = ["its step needs something declared first."] };
 
         var doors = new HelpStandInDoors();
-        await Assert.ThrowsAsync<DriverException>(() => HelpProposals.ApplyAsync(_home, proposal, plan, doors, _ => { }, CancellationToken.None));
+        await Assert.ThrowsAsync<DriverException>(() => HelpProposals.ApplyAsync(_home, proposal, plan with { Workflow = card }, doors, _ => { }, CancellationToken.None));
         Assert.Empty(doors.Calls);
         Assert.Null(WorkflowStore.Load(_home, Id));
         Assert.Equal("proposed", HelpProposals.Find(_home, "p6")!.State);
@@ -615,7 +597,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
     [Fact]
     public async Task Apply_saves_the_version_through_ask_daoris_and_makes_the_choice()
     {
-        var proposal = Propose(Merge, choose: true);
+        var proposal = Propose(null, graph: Preset("merge-after-accept"), choose: true);
         var plan = HelpProposals.Plan(proposal, DriverConfig.Empty, Here());
         Assert.Equal("daoris driver workflow import <file> && daoris driver workflow use docs-to-pr --repository engine", plan.Terminal);
         Assert.Equal("New work only, in `engine`.", Card(plan).AppliesTo);
@@ -636,11 +618,11 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
     [Fact]
     public async Task The_press_judges_again_and_a_version_saved_since_makes_it_stale()
     {
-        Saved(Merge);
-        var proposal = Propose("""[{"id":"work","kind":"work"},{"id":"land","kind":"landing","form":"branch","accept":"you"}]""", @base: 1);
+        SavedGraph();
+        var proposal = Propose(null, graph: Preset("release"), @base: 1);
         var plan = HelpProposals.Plan(proposal, Chosen, Here());
         Assert.Empty(Card(plan).Needs);
-        Saved(Merge);
+        SavedGraph();
 
         var doors = new HelpStandInDoors();
         var applied = await HelpProposals.ApplyAsync(_home, proposal, plan, doors, _ => { }, CancellationToken.None);
@@ -659,8 +641,8 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
     [Fact]
     public async Task An_edit_that_changes_nothing_is_said_and_saves_nothing()
     {
-        Saved(Merge);
-        var proposal = Propose(Merge, @base: 1);
+        SavedGraph();
+        var proposal = Propose(null, graph: Preset("merge-after-accept"), @base: 1);
         var plan = HelpProposals.Plan(proposal, Chosen, Here());
 
         Assert.Null(plan.Refusal);

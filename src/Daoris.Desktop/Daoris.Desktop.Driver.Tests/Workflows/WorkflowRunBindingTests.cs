@@ -24,7 +24,7 @@ public sealed class WorkflowRunBindingTests : IDisposable
     {
         foreach (var each in steps)
         {
-            WorkflowStore.Add(_home, new WorkflowVersionAdded(id, "Documentation to a pull request", "terminal", "2026-10-09T09:00:00Z", each), kept: []);
+            StoredSteps.Add(_home, new WorkflowVersionAdded(id, "Documentation to a pull request", "terminal", "2026-10-09T09:00:00Z", each), kept: []);
         }
     }
 
@@ -131,9 +131,10 @@ public sealed class WorkflowRunBindingTests : IDisposable
     [Fact]
     public void A_chat_run_binds_no_graph_version_keeps_an_unreadable_workflow_s_problem_and_fails_only_on_a_home_it_cannot_write()
     {
-        WorkflowStore.Add(_home, new WorkflowVersionAdded("web-graph", "A graph", "terminal", "2026-10-21T09:00:00Z", null, JsonNode.Parse(
+        // A graph with a `handed`, as an older build stored it: no door saves one now, and a stored one still binds.
+        StoredSteps.AddGraph(WorkflowPorts.Store(_home), "web-graph", "A graph", "2026-10-21T09:00:00Z", JsonNode.Parse(
             """{"schemaVersion":2,"entries":["claimed"],"end":"handed","nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},"""
-            + """{"id":"handed","kind":"handed","version":1,"reach":"observed"}],"wires":[{"id":"c>h","kind":"after","from":"claimed","to":"handed"}]}""")), kept: []);
+            + """{"id":"handed","kind":"handed","version":1,"reach":"observed"}],"wires":[{"id":"c>h","kind":"after","from":"claimed","to":"handed"}]}""")!);
         var graph = Config("""{"workflows":{"web-app":{"default":"web-graph"}}}""");
 
         var graphed = ChatRuns.Bind(graph, _home, "chat-c1a2b3c4", "web-app", null, [], At);
@@ -427,7 +428,8 @@ public sealed class WorkflowRunBindingTests : IDisposable
 
         for (var n = 0; n < 21; n++)
         {
-            WorkflowStore.Add(_home, new WorkflowVersionAdded("docs-to-pr", null, "terminal", "2026-10-09T09:00:00Z", Steps(n % 2 == 0 ? "automatic" : "you")));
+            WorkflowStore.Add(_home, new WorkflowVersionAdded("docs-to-pr", null, "terminal", "2026-10-09T09:00:00Z", null,
+                JsonNode.Parse(WorkflowDefaults.Of(n % 2 == 0 ? "merge-automatic" : "merge-after-accept")!.GraphJson)));
         }
 
         var versions = WorkflowStore.Load(_home, "docs-to-pr")!.Read.Versions.Select(each => each.Version).ToList();

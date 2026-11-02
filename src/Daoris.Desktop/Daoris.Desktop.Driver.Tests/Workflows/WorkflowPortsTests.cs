@@ -17,11 +17,12 @@ public sealed class WorkflowPortsTests
 
     private static readonly DriverConfig Choice = DriverConfig.Parse("""{"workflows":{"web-app":{"default":"docs-to-pr"}}}""");
 
-    private static JsonNode Steps(string accept) => JsonNode.Parse(
-        $$"""[{"id":"work","kind":"work"},{"id":"land","kind":"landing","form":"branch","accept":"{{accept}}","pattern":"docs/{quest}","plugin":"none"}]""")!;
+    /// <summary>A graph version (WORKFLOWCLEAN1 1b: a list of steps is no longer saved): the merge with no review for <c>automatic</c>, else after you accept.</summary>
+    private static JsonNode Graph(string accept) =>
+        JsonNode.Parse(WorkflowDefaults.Of(accept == "automatic" ? "merge-automatic" : "merge-after-accept")!.GraphJson)!;
 
     private static WorkflowVersionAdded Added(string accept) =>
-        new("docs-to-pr", "Documentation to a pull request", "terminal", "2026-10-09T09:00:00Z", Steps(accept));
+        new("docs-to-pr", "Documentation to a pull request", "terminal", "2026-10-09T09:00:00Z", null, Graph(accept));
 
     [Fact]
     public void A_version_is_added_through_the_store_and_the_newest_twenty_kept_with_every_version_a_run_names()
@@ -124,13 +125,14 @@ public sealed class WorkflowPortsTests
         var store = new MemoryStore();
         var runs = new MemoryRuns();
         WorkflowStore.Add(store, runs, Added("you"));
-        WorkflowStore.Add(store, runs, new WorkflowVersionAdded("docs-to-pr", null, "terminal", "2026-10-10T09:00:00Z", null, JsonNode.Parse("""
+        // A `handed` graph as an older build stored it: no door saves one now, and a stored one still reads.
+        StoredSteps.AddGraph(store, "docs-to-pr", null, "2026-10-10T09:00:00Z", JsonNode.Parse("""
             {"schemaVersion":2,"entries":["claimed"],"end":"handed",
              "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
                       {"id":"ok","kind":"go-ahead","version":1,"reach":"pressed","options":{"act":"publish the docs","on":"dev"}},
                       {"id":"handed","kind":"handed","version":1,"reach":"observed","options":{"form":"branch","accept":"automatic"}}],
              "wires":[{"id":"c>o","kind":"after","from":"claimed","to":"ok"},{"id":"o>h","kind":"after","from":"ok","to":"handed"}]}
-            """)));
+            """)!);
 
         var (name, steps) = WorkflowProcesses.Otherwise(store, Declared, "web-app", "work");
 

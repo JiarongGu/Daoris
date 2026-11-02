@@ -85,11 +85,10 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         if (proposal.Door == Drafts) return PlanDraft(proposal, facts);
         var id = proposal.Workflow?.Trim() ?? "";
         if (WorkflowNamed.IdProblem(id) is { } idProblem) return Refused(idProblem);
-        // WORKFLOWCLEAN1 1b: a list of steps is no longer saved, by this door as by every other.
-        if (proposal.Steps is not null) return Refused(WorkflowNamed.StepsRefused(id));
+        if (proposal.Steps is not null && proposal.Graph is not null) return Refused("a workflow proposal carries its `steps` or its `graph`, never both.");
         var route = string.IsNullOrWhiteSpace(proposal.Route) ? null : proposal.Route.Trim();
         if (route is not null && RouteProblem(route) is { } routeProblem) return Refused(routeProblem);
-        if (proposal.Graph is null && route is null)
+        if (proposal.Steps is null && proposal.Graph is null && route is null)
         {
             return Refused("a workflow proposal carries its whole `graph`; or, with none, the `route` it chooses a saved workflow for.");
         }
@@ -110,7 +109,7 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         }
 
         var found = facts.Workflows.FirstOrDefault(each => each.Id == id);
-        var saves = proposal.Graph is not null;
+        var saves = proposal.Steps is not null || proposal.Graph is not null;
         if (!saves && UseProblem(id, proposal, found) is { } unsaved) return Refused(unsaved);
 
         // FABRIC-PIPELINE1i (the pipeline design §2.1): the workflow's mark says which version it takes. A new workflow proposed as a graph
@@ -119,6 +118,9 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         var verifies = found?.Read.Verifies ?? (proposal.Graph is { } proposed && !HoldsLanding(proposed));
 
         if (saves && BaseProblem(id, proposal.Base, found) is { } stale) return Refused(stale);
+
+        // WORKFLOWCLEAN1 1b: a list of steps is no longer saved, by this door as by every other.
+        if (proposal.Steps is not null) return Refused(WorkflowNamed.StepsRefused(id));
 
         var newest = found?.Read.Versions is [.., var last] ? last : null;
         var before = !saves || proposal.Base is null ? null : newest;

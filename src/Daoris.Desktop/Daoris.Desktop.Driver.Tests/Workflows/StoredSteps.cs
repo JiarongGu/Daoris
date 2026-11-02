@@ -21,8 +21,21 @@ internal static class StoredSteps
         return number;
     }
 
+    /// <summary>A graph version stored as an older build kept it, a <c>handed</c> landing included, which no door of this build saves.</summary>
+    public static int AddGraph(IWorkflowStore store, string id, string? name, string at, JsonNode graph, string door = "terminal")
+    {
+        var found = store.Load(id);
+        var file = found?.File?.DeepClone().AsObject() ?? new JsonObject { ["id"] = id, ["name"] = name ?? id, ["versions"] = new JsonArray() };
+        var versions = file["versions"]!.AsArray();
+        var number = versions.Count == 0 ? 1 : (int)versions[^1]!["version"]! + 1;
+        versions.Add(new JsonObject { ["version"] = number, ["at"] = at, ["door"] = door, ["schema"] = WorkflowNamed.GraphSchema, ["graph"] = graph.DeepClone() });
+        store.Write(id, file);
+        return number;
+    }
+
     /// <summary>The same through the home, as <see cref="WorkflowStore.Add(string, WorkflowVersionAdded, IReadOnlyCollection{int}?)"/> takes a version.</summary>
-    public static int Add(string home, WorkflowVersionAdded add) => Add(WorkflowPorts.Store(home), add.Id, add.Name, add.At, add.Steps!, add.Door);
+    public static int Add(string home, WorkflowVersionAdded add, IReadOnlyCollection<int>? kept = null) =>
+        Add(WorkflowPorts.Store(home), add.Id, add.Name, add.At, add.Steps!, add.Door);
 
     /// <summary>Whether <paramref name="add"/> is a version of steps, which only this seam writes.</summary>
     public static bool Holds(WorkflowVersionAdded add) => add.Steps is not null && add.Graph is null;

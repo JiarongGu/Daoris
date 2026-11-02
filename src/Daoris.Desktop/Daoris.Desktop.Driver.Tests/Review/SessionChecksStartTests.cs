@@ -52,7 +52,7 @@ public sealed class SessionChecksStartTests : IDisposable
     [Fact]
     public async Task A_run_bound_to_a_light_named_workflow_starts_its_first_session_light_where_its_repository_sets_none()
     {
-        WorkflowStore.Add(Home, new WorkflowVersionAdded(
+        StoredSteps.Add(Home, new WorkflowVersionAdded(
             "light-work", "Light work", "terminal", "2026-10-22T09:00:00Z",
             JsonNode.Parse("""[{"id":"work","kind":"work","checks":"light"},{"id":"landing","kind":"landing","form":"merge","accept":"you"}]""")), kept: []);
 

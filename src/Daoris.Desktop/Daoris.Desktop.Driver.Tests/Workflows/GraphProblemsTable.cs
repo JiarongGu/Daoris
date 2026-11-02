@@ -32,6 +32,13 @@ internal static class GraphProblemsTable
     public static IReadOnlyList<(string Code, string? Wire, string? Node, string Words)> Expected(JsonObject row) =>
         [.. row["problems"]!.AsArray().Select(problem => ((string)problem!["code"]!, (string?)problem["wire"], (string?)problem["node"], (string)problem["words"]!))];
 
+    /// <summary>
+    /// Whether a problem is a graph rule's, which the table holds, and not the save's own: a <c>handed</c> is no longer saved and a <c>land</c> is
+    /// saved with its method chosen (WORKFLOWCLEAN1 1b), each proved by <c>SavesRefusedTests</c> apart from the rows.
+    /// </summary>
+    public static bool IsRule(WireProblem problem) =>
+        problem.Code != GraphRefusal.HandedRefused && !problem.Words.Contains("is saved with its method chosen", StringComparison.Ordinal);
+
     /// <summary>What a save named, as a row holds it.</summary>
     public static IReadOnlyList<(string Code, string? Wire, string? Node, string Words)> Said(IEnumerable<WireProblem> problems) =>
         [.. problems.Select(problem => (problem.Code, problem.Wire, problem.Node, problem.Words))];

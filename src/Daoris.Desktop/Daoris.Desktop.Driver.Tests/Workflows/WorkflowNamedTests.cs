@@ -132,9 +132,13 @@ public sealed class WorkflowNamedTests
         Assert.True(row.GetProperty("line").GetString() == WorkflowPresets.Line(Read(row.GetProperty("steps").GetRawText())), name);
     }
 
+    /// <summary>
+    /// WORKFLOWCLEAN1 1b: each row of the old store table adds a version of steps, which no door saves now. A row that planned refuses
+    /// with the steps words, and a row that already refused for its file or its id says that as before.
+    /// </summary>
     [Theory]
     [MemberData(nameof(Rows), "store")]
-    public void A_version_added_is_planned_as_the_cli_plans_it(string name, int index)
+    public void A_version_of_steps_added_is_refused_whatever_the_file_says(string name, int index)
     {
         var row = Table("store")[index];
         var add = row.GetProperty("add");
@@ -145,9 +149,9 @@ public sealed class WorkflowNamedTests
                 add.GetProperty("at").GetString()!, Node(add.GetProperty("steps"))),
             [.. row.GetProperty("kept").EnumerateArray().Select(each => each.GetInt32())]);
 
-        Assert.True(Text(row, "problem") == plan.Problem, $"{name}: the problem is {plan.Problem}");
-        Assert.Equal(row.GetProperty("version").ValueKind == JsonValueKind.Null ? null : row.GetProperty("version").GetInt32(), plan.Version);
-        Assert.True(JsonNode.DeepEquals(Node(row.GetProperty("result")), plan.Result), $"{name}: the file after is {plan.Result?.ToJsonString()}");
+        Assert.Null(plan.Result);
+        Assert.NotNull(plan.Problem);
+        if (Text(row, "problem") is null) Assert.Equal(WorkflowNamed.StepsRefused(add.GetProperty("id").GetString()), plan.Problem);
     }
 
     /// <summary>The store on disk: a new workflow's file written whole, LF and no BOM, a version added to it, and both read back.</summary>
@@ -160,9 +164,10 @@ public sealed class WorkflowNamedTests
             var steps = JsonNode.Parse("""[{"id":"work","kind":"work"},{"id":"landing","kind":"landing","form":"merge","accept":"you"}]""");
             Assert.Empty(WorkflowStore.List(home));
 
-            Assert.Equal(1, WorkflowStore.Add(home, new WorkflowVersionAdded("docs-to-pr", "文档直接开拉取请求", "screen", "2026-10-09T09:12:00Z", steps)));
-            Assert.Equal(2, WorkflowStore.Add(home, new WorkflowVersionAdded("docs-to-pr", null, "terminal", "2026-10-09T09:20:00Z",
-                JsonNode.Parse("""[{"id":"work","kind":"work"},{"id":"landing","kind":"landing","form":"branch","accept":"you","plugin":"none"}]"""))));
+            Assert.Equal(1, WorkflowStore.Add(home, new WorkflowVersionAdded("docs-to-pr", "文档直接开拉取请求", "screen", "2026-10-09T09:12:00Z", null,
+                JsonNode.Parse(WorkflowDefaults.Of("merge-after-accept")!.GraphJson))));
+            Assert.Equal(2, WorkflowStore.Add(home, new WorkflowVersionAdded("docs-to-pr", null, "terminal", "2026-10-09T09:20:00Z", null,
+                JsonNode.Parse(WorkflowDefaults.Of("release")!.GraphJson))));
 
             var path = DaorisHome.Entry(home, HomeEntry.Workflows,"docs-to-pr.json");
             var bytes = File.ReadAllBytes(path);
@@ -179,12 +184,13 @@ public sealed class WorkflowNamedTests
 
             // A refusal writes nothing, and says why.
             var refused = Assert.Throws<DriverException>(() => WorkflowStore.Add(home, new WorkflowVersionAdded("docs-to-pr", null, "terminal",
-                "2026-10-09T09:30:00Z", JsonNode.Parse("""[{"id":"work","kind":"work"},{"id":"landing","kind":"landing","form":"merge","accept":"automatic"}]"""))));
-            Assert.StartsWith("v3, step `landing`: only a branch lands with no press", refused.Message, StringComparison.Ordinal);
+                "2026-10-09T09:30:00Z", steps)));
+            Assert.Equal(WorkflowNamed.StepsRefused("docs-to-pr"), refused.Message);
             Assert.Equal(text, File.ReadAllText(path));
 
             // An id that is no id names no path.
-            Assert.Throws<DriverException>(() => WorkflowStore.Add(home, new WorkflowVersionAdded("../escape", "Docs", "terminal", "2026-10-09T09:30:00Z", steps)));
+            Assert.Throws<DriverException>(() => WorkflowStore.Add(home, new WorkflowVersionAdded("../escape", "Docs", "terminal", "2026-10-09T09:30:00Z", null,
+                JsonNode.Parse(WorkflowDefaults.Of("release")!.GraphJson))));
             Assert.False(File.Exists(Path.Combine(home, "escape.json")));
         }
         finally
