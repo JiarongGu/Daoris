@@ -128,7 +128,11 @@ export function GitRemotes({ remotes, identities, acts }: { remotes: GitRemoteSh
                     options={options}
                     onChange={(next) => { setChoice(next); setAsking(next === OWN); }}
                   />
-                  <Button variant="primary" disabled={busy || asking || choice === (remote.chosen ?? AS_ABOVE)} onClick={() => { void save(remote); }}>
+                  <Button
+                    variant="primary"
+                    disabled={busy || asking || choice === (remote.chosen ?? AS_ABOVE)}
+                    onClick={() => { if (choice === OWN) setAsking(true); else void save(remote); }}
+                  >
                     {t('settings.git.remotes.save')}
                   </Button>
                   <Button variant="ghost" onClick={close}>{t('settings.git.close')}</Button>
@@ -142,7 +146,7 @@ export function GitRemotes({ remotes, identities, acts }: { remotes: GitRemoteSh
                     meanIt={t('settings.git.remotes.ownConfirm')}
                     busy={busy}
                     onConfirm={(answered) => { void save(remote, answered); }}
-                    onClose={() => setAsking(false)}
+                    onClose={() => { setAsking(false); setChoice(remote.chosen ?? AS_ABOVE); }}
                   />
                 )}
               </div>

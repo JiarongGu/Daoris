@@ -27,7 +27,7 @@ import { MachineNotes } from './setup/MachineNotes';
 import { PlaceRoles } from './setup/PlaceRoles';
 import type { PlaceDriving } from './setup/PlacePage';
 import { doorOf, draftOfAsk, type PlaceAsk, type SetUpDoor, type SetUpPage, type SetUpPlace, useSetUpPage } from './setup/placePlan';
-import { type PlaceAt, type PlaceEdit, type PlaceSection, type PlaceView, usePlaceShell } from './setup/placeShell';
+import { type PlaceAt, type PlaceEdit, type PlaceFlowHold, type PlaceSection, type PlaceView, usePlaceShell } from './setup/placeShell';
 import { findPlace, placeAsk, rowOfFound, SetupList, SetupMain, setUpPlaceOf, sourceDoor, useSetupPlaces } from './setup/SetupPlaces';
 import { RoleSectionList } from './roles/RoleSections';
 import { type RoleOpeners, RolesMode, useRolesPage } from './roles/RolesView';
@@ -91,6 +91,9 @@ export type PlaceHold = {
   /** The draft a door asked the Workflow's editor to open on (FLOWCHART2g), and the word that it has. */
   edit?: PlaceEdit | null;
   onEdited?: () => void;
+  /** The step editor's draft, kept above the mounts so it outlives the section (REVIEW2 P5). */
+  held?: PlaceFlowHold | null;
+  onHold?: (held: PlaceFlowHold | null) => void;
   view: PlaceView;
   onView: (choice: Partial<PlaceView>) => void;
   onOpenSection: (section: PlaceSection) => void;
@@ -247,6 +250,8 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
         asked: shell.rowOf(modes.place),
         edit: shell.editOf(modes.place),
         onEdited: () => shell.editOpened(modes.place!),
+        held: shell.holdOf(modes.place),
+        onHold: (held) => shell.hold(modes.place!, held),
         view: shell.viewOf(modes.place),
         onView: (choice) => shell.choose(modes.place!, choice),
         onOpenSection: (section) => shell.setOpen(modes.place!, section, true),

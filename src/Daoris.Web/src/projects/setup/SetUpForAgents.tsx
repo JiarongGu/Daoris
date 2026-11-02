@@ -32,6 +32,8 @@ export type SetupShown = {
   /** Every refusal that applies, at once: a code a screen keys on and the driver's sentence naming the door that answers it. */
   refusals: { code: string; sentence: string }[];
   pressable: boolean;
+  /** The repository is not driven here: the press admits its set-up quest alone, and it starts by itself while the repository's other work stays held. */
+  alone?: boolean | null;
 };
 
 /** What the press came to (`SETUP_PRESS`): the service's sentence, the ask and quest it made, the rules it added, and its plan. */
@@ -91,6 +93,7 @@ export function SetupPlanFacts({ plan }: { plan: SetupShown }) {
             />
           </Fact>
         )}
+        {plan.alone && <Fact label={t('projects.setUp.admission')}>{t('projects.setUp.alone')}</Fact>}
         <Fact label={t('projects.setUp.tools')}>
           <Inline text={t('projects.setUp.versions', { node: found(plan.node), daoris: found(plan.daoris) })} />
         </Fact>

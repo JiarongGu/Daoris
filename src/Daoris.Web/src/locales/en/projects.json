@@ -69,6 +69,8 @@
   "projects.setUp.landsMerge": "merged into its line, where the landed history is the review",
   "projects.setUp.landsBranch": "as a branch, for your review",
   "projects.setUp.landsBranchWith": "as a branch, for your review, which `{{plugin}}` pushes and opens the pull request for",
+  "projects.setUp.admission": "Admission",
+  "projects.setUp.alone": "not driven here, so its set-up quest is admitted alone and starts by itself, while its other work stays held",
   "projects.setUp.tools": "Tools",
   "projects.setUp.versions": "node {{node}} · daoris {{daoris}}",
   "projects.setUp.notFound": "not found",

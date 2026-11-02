@@ -26,6 +26,9 @@ without a service. Model-dependent capabilities state the tier that actually ran
 - UI chrome translates through a catalogue per shipped language (today English and Chinese); authored content,
   configuration included, stays as written and asks for no language (D222). Read the translation and UI contracts
   before changing visible text or screens.
+- Do each thing one way (D228). A change that supersedes an older way removes it — code, doors, words and
+  defaults — in the same chunk; an older record still read keeps its path only with the condition that ends it
+  and the row that deletes it. A second way to do one job is a defect.
 - Keep project facts in versioned records. Rewrite a present fact where it lives (D220); append
   amendments to decisions as history, and move completed tasks from the backlog to the archive.
 - Do not hand-edit versions or release headings. The release workflow owns their stamping.
