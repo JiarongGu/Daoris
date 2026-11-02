@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-02 - A draft told to an earlier part of a conversation was not found after a limit move (REVIEW2 S7)
+
+- **Symptom (to test, held):** `workflow_propose` against a draft told before a limit opened a new part was judged as if no draft had been told.
+- **Root cause:** `HelpFactsAsync` read `WorkflowDraftTold.Told` from the proposing part's events only, and a new part's record holds the first brief (`Continues` the part before), not the earlier notes.
+- **Fix:** `WorkflowDraftTold.ToldAcross` walks the parts back by the first brief's `Continues` (bounded, loops end it), the oldest first so a later telling wins; `HelpRoutes` uses it.
+- **Verify:** `WorkflowDraftToldTests.A_draft_told_to_an_earlier_part_is_found_from_the_part_that_goes_on_from_it`.
+
 ## 2026-11-02 - A set-up card for an undriven repository hid its alone admission (REVIEW2 S6)
 
 - **Symptom:** the card for a set-up of a repository not driven here said nothing of the admission its press writes and the start it makes; the repository's other work stays held.

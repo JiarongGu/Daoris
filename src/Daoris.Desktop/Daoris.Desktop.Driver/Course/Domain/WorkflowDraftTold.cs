@@ -177,7 +177,37 @@ public sealed partial record WorkflowDraftTold(string Fingerprint, string Place,
     /// The drafts a conversation's record says it was told, each by its fingerprint, the newest kept where one was told twice: what the
     /// draft door judges a proposal against. A note that does not read is no draft told.
     /// </summary>
-    public static IReadOnlyDictionary<string, WorkflowDraftTold> Told(IEnumerable<SessionEvent> events)
+    public static IReadOnlyDictionary<string, WorkflowDraftTold> Told(IEnumerable<SessionEvent> events) => ToldIn(events);
+
+    /// <summary>
+    /// <see cref="Told"/> across the parts of a conversation (REVIEW2 S7): <paramref name="session"/>'s record, then the one its first brief continues, and so
+    /// on back, the oldest read first so a draft told again later wins. A part named twice or past <see cref="MostParts"/> ends the walk.
+    /// </summary>
+    public static IReadOnlyDictionary<string, WorkflowDraftTold> ToldAcross(string session, Func<string, IEnumerable<SessionEvent>> eventsOf)
+    {
+        var chain = new List<IReadOnlyList<SessionEvent>>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        for (string? at = session; at is { Length: > 0 } && chain.Count < MostParts && seen.Add(at);)
+        {
+            var events = eventsOf(at).ToList();
+            chain.Add(events);
+            at = events.FirstOrDefault(each => each is { Kind: SessionEventKind.User, Continues: not null })?.Continues;
+        }
+
+        chain.Reverse();
+        var told = new Dictionary<string, WorkflowDraftTold>(StringComparer.Ordinal);
+        foreach (var events in chain)
+        {
+            foreach (var (fingerprint, draft) in ToldIn(events)) told[fingerprint] = draft;
+        }
+
+        return told;
+    }
+
+    /// <summary>The most parts a conversation's draft walk reads back.</summary>
+    public const int MostParts = 32;
+
+    private static Dictionary<string, WorkflowDraftTold> ToldIn(IEnumerable<SessionEvent> events)
     {
         var told = new Dictionary<string, WorkflowDraftTold>(StringComparer.Ordinal);
         foreach (var each in events)
