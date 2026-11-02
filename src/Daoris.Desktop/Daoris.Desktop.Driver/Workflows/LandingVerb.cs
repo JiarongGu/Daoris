@@ -168,7 +168,7 @@ public sealed class LandingVerb : ChoiceVerb
             }
 
             // The person's standing say-so for a push with no press, said as it is given (D145 point 5, design §6).
-            if (rule is { AutoAccept: true }) Say($"  Accept automatically: {LandingRules.AutoAcceptSays(rule.Plugin)}");
+            if (rule is { AutoAccept: true }) Say($"  Accept automatically: {LandingRules.AutoAcceptSays(rule.Plugin, rule.Form == LandingForm.Merge)}");
             else if (rule is { Form: LandingForm.Branch } && args.Contains("--no-auto-accept"))
             {
                 Say("  Done work there waits for your Accept — a repository's own rule replaces its workspace's whole, the switch with it.");

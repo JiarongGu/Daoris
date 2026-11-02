@@ -13,12 +13,17 @@ internal sealed class HelpRoomRoles : IHelpRoomSection
     public string Render(HelpMachine machine)
     {
         // A workspace's room leaves out the roles scoped to another workspace; the whole machine's room (no workspace) says them all.
-        var roles = machine.Roles.Where(role =>
-            machine.Workspace is null || role.ScopeKind != HelpRole.WorkspaceScope || string.Equals(role.ScopeId, machine.Workspace, StringComparison.OrdinalIgnoreCase)).ToList();
+        // A repository's role stays only where that repository is the workspace's.
+        var roles = machine.Roles.Where(role => machine.Workspace is null
+            || role.ScopeKind == HelpRole.WorkspaceScope && string.Equals(role.ScopeId, machine.Workspace, StringComparison.OrdinalIgnoreCase)
+            || role.ScopeKind == HelpRole.RepositoryScope && machine.Repositories.Any(repository => string.Equals(repository.Name, role.ScopeId, StringComparison.OrdinalIgnoreCase))
+            || role.ScopeKind is not (HelpRole.WorkspaceScope or HelpRole.RepositoryScope)).ToList();
         if (roles.Count == 0) return "";
 
         var text = new StringBuilder();
         text.Append("### Roles and their policies\n\n");
+        // The starts and moves are the machine's records, not split by workspace, so a workspace's room says whose they are.
+        if (machine.Workspace is not null) text.Append("The last 7 days' starts and moves below are the whole machine's, every workspace's, not this workspace's alone.\n\n");
         text.Append("Each working role with its choices (numbered as its policy numbers them), its policy in the words a card says it in, the next new\n");
         text.Append("start the policy would take and what the last 7 days did: answer *why did this run on that agent?* from these lines. A policy\n");
         text.Append("only orders the choices a role already lists; it is proposed with `role_propose`'s `policy` (a preset's name, `first`, `even` or\n");
@@ -33,7 +38,9 @@ internal sealed class HelpRoomRoles : IHelpRoomSection
         var parts = new List<string>
         {
             $"`{role.Id}` ({role.Name}) takes {string.Join(", ", role.Takes)}{(role.ScopeKind == HelpRole.MachineScope ? "" : $", {role.ScopeKind} {role.ScopeId}")}; revision {role.Revision}",
-            role.Choices.Count == 0
+            role.ChoiceState == "off" ? "off: it starts nothing"
+            : role.ChoiceState == "unreadable" ? "its entry in `driver.json` does not read, so it starts nothing until it is set again"
+            : role.Choices.Count == 0
                 ? "no choices of its own, so this machine's defaults run"
                 : "choices " + string.Join(", ", role.Choices.Select((choice, at) => $"{at + 1} {choice}")),
             role.PolicyState switch
@@ -58,11 +65,19 @@ public sealed record HelpRole(string Id, string Name, IReadOnlyList<string> Take
 
     public const string WorkspaceScope = "workspace";
 
+    public const string RepositoryScope = "repository";
+
     /// <summary>The policy is set and in use.</summary>
     public const string Set = "set";
 
     /// <summary>The policy was set for other choices than the role has now, so the role runs in order.</summary>
     public const string Stale = "stale";
+
+    /// <summary>The choices have not been set, so this machine's defaults run.</summary>
+    public const string Before = "before";
+
+    /// <summary>The role's choices as the driver's file holds them: <see cref="Before"/>, <c>set</c>, <c>off</c> or <c>unreadable</c> (<c>ActorView.State</c>).</summary>
+    public string ChoiceState { get; init; } = Before;
 
     /// <summary>The role's own choices, each as its agent, model and effort; none where it has none of its own.</summary>
     public IReadOnlyList<string> Choices { get; init; } = [];

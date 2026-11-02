@@ -72,8 +72,8 @@ internal sealed class HelpRoomIntro : IHelpRoomSection
         text.Append("The repositories and their lines, the sessions, quests and asks, the finished work and where work has\n");
         text.Append($"got to that this room lists are `{workspace}`'s alone, and each count here counts `{workspace}`'s; another\n");
         text.Append("workspace's are not listed. The agents and their accounts, sign-in and usage, the plugins and what the\n");
-        text.Append("person approved of them, Daoris's browser, the driver and its cap on sessions at once are this\n");
-        text.Append("machine's, shared by every workspace. Asked about another workspace, say this conversation is\n");
+        text.Append("person approved of them, Daoris's browser, the driver and its cap on sessions at once, and the roles'\n");
+        text.Append("starts and moves of the last 7 days, are this machine's, shared by every workspace. Asked about another workspace, say this conversation is\n");
         text.Append($"`{workspace}`'s, and that a conversation started from a window on that workspace reads it.\n\n");
         return text.ToString();
     }

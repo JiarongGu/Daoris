@@ -5,6 +5,54 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-02 - The room said an off or unreadable role runs the machine's defaults (REVIEW2 S4)
+
+- **Symptom:** a role whose stored choices are empty (off) or whose `actors` entry does not read was said to have "no choices of its own, so this machine's defaults run".
+- **Root cause:** `HelpRole` carried the choices only; the empty list was read as unset.
+- **Fix:** `HelpRole.ChoiceState` carries `ActorView.Of(id, config).State`, and the line says off (it starts nothing) or does not read.
+- **Verify:** `HelpRoomRolesScopeTests`, `HelpRoomRolesTests` and the room's goldens.
+
+## 2026-11-02 - The room's week was the machine's, said as the workspace's (REVIEW2 S5)
+
+- **Symptom:** a workspace's room presented the machine-wide starts and moves of the last 7 days under an intro saying each count is the workspace's.
+- **Root cause:** `role_starts` and `role_moves` hold no workspace, and the room's only record of sessions by workspace is counts and a short list, not every session id, so a per-workspace count is not at hand.
+- **Fix:** the second way: the Roles section of a workspace's room says the last 7 days are the whole machine's, and the intro lists them among what is the machine's.
+- **Verify:** `HelpRoomRolesScopeTests.A_workspaces_room_says_the_last_seven_days_are_the_whole_machines`, the scoped golden.
+
+## 2026-11-02 - A workspace's conversation could change another workspace's role, and its room listed other repositories' roles (REVIEW2 S3)
+
+- **Symptom:** `remove`, `default`, a policy-only `set` and `default-all` named no scope and passed the scope fence (ASKSCOPE1c); `default-all` reaches every workspace yet was not `Every`; the Roles section listed other workspaces' repository-scoped roles.
+- **Root cause:** `HelpRoleProposals.Named` read only the press's own `scope`; the section kept every repository-scoped role.
+- **Fix:** `Named` also names the target role's current catalogue scope, and `default-all` is `Every`; the section keeps a repository's role only where the repository is one of `machine.Repositories`.
+- **Verify:** `HelpRoleProposalsTests.A_scoped_conversation_refuses_a_change_to_a_role_scoped_elsewhere_and_a_default_of_every_role`, `HelpRoomRolesScopeTests`.
+
+## 2026-11-02 - A draft told to an earlier part of a conversation was not found after a limit move (REVIEW2 S7)
+
+- **Symptom (to test, held):** `workflow_propose` against a draft told before a limit opened a new part was judged as if no draft had been told.
+- **Root cause:** `HelpFactsAsync` read `WorkflowDraftTold.Told` from the proposing part's events only, and a new part's record holds the first brief (`Continues` the part before), not the earlier notes.
+- **Fix:** `WorkflowDraftTold.ToldAcross` walks the parts back by the first brief's `Continues` (bounded, loops end it), the oldest first so a later telling wins; `HelpRoutes` uses it.
+- **Verify:** `WorkflowDraftToldTests.A_draft_told_to_an_earlier_part_is_found_from_the_part_that_goes_on_from_it`.
+
+## 2026-11-02 - A set-up card for an undriven repository hid its alone admission (REVIEW2 S6)
+
+- **Symptom:** the card for a set-up of a repository not driven here said nothing of the admission its press writes and the start it makes; the repository's other work stays held.
+- **Root cause:** `SetupPress` admits the set-up quest alone (`SetupPlan.Alone`) and the terminal says so, but neither the card nor `SetupRoutes.Shown` carried `Alone`.
+- **Fix:** the card says the repository is not driven here, so its set-up quest is admitted alone and starts by itself while its other work stays held; `Shown` carries `Alone`.
+- **Verify:** `HelpSetupProposalsTests.A_set_up_of_a_repository_not_driven_here_says_it_is_admitted_and_started_alone`.
+
+## 2026-11-02 - A role card said "choices kept" while its Apply deleted or re-keyed the policy (REVIEW2 S2)
+
+- **Symptom:** a `default`, `default-all` or `remove` card for a role with a standing staffing policy said nothing of it, and a `set` of new choices with no `policy` re-keyed it unsaid; a policy set after the card was drawn was deleted too, because the card's revision is built from `Describe`/`Terminal`, which never read the policy.
+- **Root cause:** `HelpRoleProposals.Plan` described the policy only for a `set` that carried one, while `RoleDoor.Apply` clears the policies of defaulted and removed roles and `RoleStaffing.Rekeyed` re-keys a set's.
+- **Fix:** `Plan` reads each affected role's policy and appends the before and after in the fold's words (`PolicyDescribe`) to `Describe`; a note on D226.
+- **Verify:** `HelpRoleProposalsTests.A_change_that_clears_or_rekeys_a_standing_policy_says_so_on_the_card`.
+
+## 2026-11-02 - A `merge --auto-accept` landing card never said the merge needs no press (REVIEW2 S1)
+
+- **Symptom:** the card for `landing … merge --auto-accept` read `Land X's accepted work merged into its line.`, and its Apply wrote `AutoAccept = true`, so every done quest merged into the line with no press, unsaid; the room said the switch was never proposed on a merge.
+- **Root cause:** LANDNODE1c3 made the merge plan acceptable, but the accepting sentence (D145 point 5) was appended to the branch form's sentence only.
+- **Fix:** `LandingRules.AutoAcceptSays` has a merge variant that the card, `daoris driver landing` and the Landing section of the room use, the room and the service tool's description stop saying "never on a merge"; a note on D145.
+- **Verify:** `HelpSettingProposalsTests` asserts the merge card's `Describe`; `HelpSettingProposalTests` (service) asserts the tool's words.
 ## 2026-11-02 - A `land` node's target was accepted for every method and landed nowhere (REVIEW2, LANDNODE1)
 
 - **Symptom:** `land {method: merge, target: "release"}` merged into the tree's line while the delivery's record said `release`.

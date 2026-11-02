@@ -32,6 +32,7 @@ internal static class HelpRoleFacts
                     return new HelpRole(role.Id, role.Name.Texts.FirstOrDefault() ?? role.Id, role.Takes, role.Scope.Kind, role.Scope.Id, slot.Revision)
                     {
                         Choices = [.. own.Select(choice => StaffWeekRole.Named(StaffKey.Of(choice)))],
+                        ChoiceState = ActorChoices.Ids.Contains(role.Id, StringComparer.Ordinal) ? ActorView.Of(role.Id, config).State : HelpRole.Before,
                         PolicyState = read.State,
                         PolicyRevision = read.Revision,
                         Policy = StaffPolicyFlags.Fold(read.Applied, own),

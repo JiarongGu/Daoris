@@ -450,11 +450,11 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
         var after = (plugin is null ? "" : $", plugin `{plugin}` pushes it and opens the pull request")
             + (tidy ? ", its tree removed once landed" : "");
         // The person's standing say-so for a push with no press is said on the card they apply (D145 point 5).
-        var accepting = auto ? $" It is accepted automatically: {LandingRules.AutoAcceptSays(plugin)}"
+        var accepting = auto ? $" It is accepted automatically: {LandingRules.AutoAcceptSays(plugin, leaves?.Form == LandingForm.Merge)}"
             : byHand && leaves?.Form == LandingForm.Branch ? " Done work there waits for your Accept." : "";
         var lands = leaves is null ? $"Clear {whose}'s landing rule."
             : leaves.Form == LandingForm.Branch ? $"Land {whose}'s accepted work on a branch `{leaves.Pattern}`{after}.{accepting}"
-            : $"Land {whose}'s accepted work merged into its line{after}.";
+            : $"Land {whose}'s accepted work merged into its line{after}.{accepting}";
         // What finds the branch's ticket and what Accept makes, said of the rule it leaves, as the terminal says them.
         if (leaves is { Form: LandingForm.Branch, Pattern: { } pattern } && pattern.Contains("{ticket}", StringComparison.Ordinal))
         {

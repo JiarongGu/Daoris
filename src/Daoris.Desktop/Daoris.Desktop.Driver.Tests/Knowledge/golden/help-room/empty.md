@@ -295,8 +295,9 @@ and git must take what it comes out as: `feature/{quest}-{slug}` is a pattern th
 A branch rule may add `--plugin <id>`: once Daoris has made the branch, that plugin pushes it and
 opens the pull request, as the person's own platform tools are signed in.
 A branch rule may also add `--auto-accept`: a quest's done then lands its work with no press, and the
-rule's plugin pushes it and opens a pull request without asking each time. It is the person's standing
-say-so for that push, so propose it only when they ask for it, and never on a merge.
+rule's plugin pushes it and opens a pull request without asking each time. A merge rule may add it too: a
+done quest's work is then merged into its line with no press. It is the person's standing
+say-so, so propose it only when they ask for it.
 No plugin that lands work is installed here: the person installs one (`daoris plugin add <folder>`,
 or the Plugins place), so never propose a rule naming one.
 

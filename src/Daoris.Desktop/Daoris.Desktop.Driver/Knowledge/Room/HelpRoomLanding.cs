@@ -30,8 +30,9 @@ internal sealed class HelpRoomLanding : IHelpRoomSection
         // LAND2a (D145 point 5): the switch is the person's standing say-so for a push with no press, so the helper
         // proposes it only when they ask for it.
         text.Append("A branch rule may also add `--auto-accept`: a quest's done then lands its work with no press, and the\n");
-        text.Append("rule's plugin pushes it and opens a pull request without asking each time. It is the person's standing\n");
-        text.Append("say-so for that push, so propose it only when they ask for it, and never on a merge.\n");
+        text.Append("rule's plugin pushes it and opens a pull request without asking each time. A merge rule may add it too: a\n");
+        text.Append("done quest's work is then merged into its line with no press. It is the person's standing\n");
+        text.Append("say-so, so propose it only when they ask for it.\n");
         var offeredLanders = machine.Offers.Where(offer => offer.Points.Contains(HookPoints.Land, StringComparer.Ordinal)).Select(offer => $"`{offer.Id}`").ToList();
         text.Append(machine.LandingPlugins.Count > 0
             ? $"Plugins that can land work here: {string.Join(", ", machine.LandingPlugins.Select(id => $"`{id}`"))}.\n\n"

@@ -59,7 +59,7 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
 
     /// <summary>
     /// LANDSVC1 (D145 points 1 and 5): the tool tells the helper a branch rule may accept automatically, what that does, and
-    /// that it is the person's standing say-so for a push, proposed only when they ask and never on a merge, as the room
+    /// that it is the person's standing say-so for a push, proposed only when they ask, a merge's too (REVIEW2 S1), as the room
     /// says it, so an agent finding what it may propose learns the switch from the tool and not from the room alone.
     /// </summary>
     [Fact]
@@ -75,7 +75,8 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
         Assert.Contains("`--tidy`, `--plugin <id>` and `--auto-accept` if wanted", value);
         Assert.Contains("a `landing` on a branch may add `--auto-accept`: a quest's done then lands its work with no press", tool);
         Assert.Contains("the rule's plugin pushes it and opens a pull request without asking each time", tool);
-        Assert.Contains("the person's standing say-so for that push, so propose it only when they ask for it, and never on a merge", tool);
+        Assert.Contains("the person's standing say-so for that push, so propose it only when they ask for it; a merge rule may add it too", tool);
+        Assert.DoesNotContain("never on a merge", tool);
     }
 
     /// <summary>HELP9: reading and writing across (D107), a cap and an adapter pass the shape as the terminal spells them.</summary>

@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 
 namespace Daoris.Driver;
@@ -23,13 +24,34 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
     public HelpProposal Read(HelpProposal proposal, JsonElement file) =>
         proposal with { RolePress = file.TryGetProperty("press", out var press) && press.ValueKind == JsonValueKind.Object ? press.Clone() : null };
 
-    /// <summary>ASKSCOPE1c: a role scoped to a workspace or a repository names it.</summary>
+    /// <summary>
+    /// ASKSCOPE1c: a role scoped to a workspace or a repository names it, the scope the press gives and the one the role stands in now
+    /// (REVIEW2 S3); <c>default-all</c> reaches every workspace.
+    /// </summary>
     public HelpNames Named(HelpProposal proposal, HelpMachineFacts facts)
     {
-        var (kind, id) = proposal.RolePress is { } press && press.TryGetProperty("scope", out var scope) && scope.ValueKind == JsonValueKind.Object
-            ? (Text(scope, "kind"), Text(scope, "id"))
-            : (null, null);
-        return new(kind == RoleScope.Workspace ? [id] : [null], kind == RoleScope.Repository ? [id] : [null]);
+        if (proposal.Door == "default-all") return new([null], [null]) { Every = true };
+        var scopes = new List<(string? Kind, string? Id)>();
+        if (proposal.RolePress is { } press && press.TryGetProperty("scope", out var scope) && scope.ValueKind == JsonValueKind.Object)
+        {
+            scopes.Add((Text(scope, "kind"), Text(scope, "id")));
+        }
+
+        if (facts.Home is { } home && proposal.Target?.Trim() is { Length: > 0 } target)
+        {
+            try
+            {
+                if (RoleCatalog.ReadHome(home).Slots.FirstOrDefault(slot => slot.Id == target)?.Role?.Scope is { } now) scopes.Add((now.Kind, now.Id));
+            }
+            catch (DriverException)
+            {
+                // Plan refuses a catalogue that does not read.
+            }
+        }
+
+        return new(
+            [.. scopes.Select(each => each.Kind == RoleScope.Workspace ? each.Id : null)],
+            [.. scopes.Select(each => each.Kind == RoleScope.Repository ? each.Id : null)]);
     }
 
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
@@ -98,13 +120,43 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
             if (notTaken is not null) return Refused(notTaken.Said);
             policy = policy with { Policy = resolved, Preset = null, Clear = resolved is null };
             var before = (existing.Applied, config.Actors.TryGetValue(id, out var held) ? held : []);
-            return new HelpPlan(null, Describe(change, choices) + PolicyDescribe(set, before, existing, resolved, effective), Terminal(change, choices) + PolicyTerminal(id, resolved, effective), null)
+            return new HelpPlan(null, Describe(change, choices) + PolicyDescribe(set.Name.Texts.FirstOrDefault() ?? set.Id, before, existing, resolved, effective), Terminal(change, choices) + PolicyTerminal(id, resolved, effective), null)
             {
                 Role = new HelpRoleChange(change, choices, read, policy),
             };
         }
 
-        return new HelpPlan(null, Describe(change, choices), Terminal(change, choices), null) { Role = new HelpRoleChange(change, choices, read) };
+        return new HelpPlan(null, Describe(change, choices) + Unsaid(change, choices, catalogue, new RoleStaffing(home), config), Terminal(change, choices), null)
+        {
+            Role = new HelpRoleChange(change, choices, read),
+        };
+    }
+
+    /// <summary>
+    /// What a change does to a standing policy it does not name (REVIEW2 S2): a default, a remove or a set emptying the choices deletes it, and a
+    /// set naming other choices re-keys it. Said on the card, so the revision the person presses holds it.
+    /// </summary>
+    private static string Unsaid(RoleChange change, IReadOnlyList<ActorChoice>? choices, RoleCatalog catalogue, RoleStaffing staffing, DriverConfig config)
+    {
+        IEnumerable<string> roles = change switch
+        {
+            RoleChange.DefaultAllRoles => ActorChoices.Ids,
+            RoleChange.SetRole => choices is null ? [] : [change.Id],
+            _ => [change.Id],
+        };
+        var said = new StringBuilder();
+        foreach (var role in roles)
+        {
+            var existing = staffing.Policy(role);
+            if (existing.State == StaffPolicyRead.Default) continue;
+            var held = config.Actors.TryGetValue(role, out var own) ? own : [];
+            var name = catalogue.Slots.FirstOrDefault(slot => slot.Id == role)?.Role?.Name.Texts.FirstOrDefault() ?? role;
+            var rekeyed = change is RoleChange.SetRole && choices is { Count: > 0 } && existing is { State: StaffPolicyRead.Set, Policy: not null } ? existing.Policy.Rekeyed(choices) : null;
+            if (change is RoleChange.SetRole && rekeyed is null && choices is { Count: > 0 }) continue;
+            said.Append(PolicyDescribe(name, (existing.Applied, held), existing, rekeyed, choices));
+        }
+
+        return said.ToString();
     }
 
     /// <summary>
@@ -112,12 +164,11 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
     /// by weight. This can spend differently.</i> A policy set for other choices ran in order, and the card says so.
     /// </summary>
     private static string PolicyDescribe(
-        RoleRecord role, (StaffPolicy? Policy, IReadOnlyList<ActorChoice> Choices) before, StaffPolicyRead existing, StaffPolicy? policy, IReadOnlyList<ActorChoice>? choices)
+        string name, (StaffPolicy? Policy, IReadOnlyList<ActorChoice> Choices) before, StaffPolicyRead existing, StaffPolicy? policy, IReadOnlyList<ActorChoice>? choices)
     {
         var was = existing.State == StaffPolicyRead.Stale
             ? "First that can run (its policy was set for other choices, so it ran in order)"
             : StaffPolicyFlags.Fold(before.Policy, before.Choices);
-        var name = role.Name.Texts.FirstOrDefault() ?? role.Id;
         return policy is null
             ? $" Policy, {name}: {was} → First that can run (its policy is cleared)."
             : $" Policy, {name}: {was} → {StaffPolicyFlags.Fold(policy, choices ?? [])}. This can spend differently.";

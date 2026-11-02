@@ -110,4 +110,21 @@ public sealed class WorkflowDraftToldTests
         Assert.Equal(Graph, found["g1-0123456789abcdef"].Graph.GetRawText());
         Assert.Null(ChatRecorded.ToldDraft(new ChatMessage("hello", [])));
     }
+
+    /// <summary>REVIEW2 S7: a limit move opens a new part, and a draft told to an earlier part is still the conversation's.</summary>
+    [Fact]
+    public void A_draft_told_to_an_earlier_part_is_found_from_the_part_that_goes_on_from_it()
+    {
+        var first = ChatRunner.Recorded(new ChatMessage("hello", []) { Draft = WorkflowDraftTold.Read(Payload()) }).ToList();
+        var second = new[] { new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = "brief", Continues = "part-1" } };
+        var parts = new Dictionary<string, IReadOnlyList<SessionEvent>> { ["part-1"] = first, ["part-2"] = second };
+
+        Assert.Empty(WorkflowDraftTold.Told(second));
+        var found = WorkflowDraftTold.ToldAcross("part-2", id => parts.GetValueOrDefault(id) ?? []);
+
+        Assert.Equal(["g1-0123456789abcdef"], found.Keys);
+        // A part that names itself or loops back ends the walk.
+        parts["part-1"] = [.. first, new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = "b", Continues = "part-2" }];
+        Assert.Single(WorkflowDraftTold.ToldAcross("part-2", id => parts.GetValueOrDefault(id) ?? []));
+    }
 }

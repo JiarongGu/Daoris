@@ -211,5 +211,6 @@ public sealed class SetupRoutes(DriverContext context)
         Refusals = plan.Refusals.Select(refusal => new { refusal.Code, refusal.Sentence }).ToArray(),
         plan.Pressable,
         plan.Builds,
+        plan.Alone,
     };
 }

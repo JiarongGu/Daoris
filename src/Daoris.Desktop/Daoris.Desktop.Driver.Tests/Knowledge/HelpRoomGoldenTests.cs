@@ -113,7 +113,10 @@ public sealed class HelpRoomGoldenTests
                 Choices = ["codex-acp"], PolicyState = HelpRole.Stale, PolicyRevision = 2,
                 Why = "its choices changed since it was set",
             },
-            new HelpRole("helper", "Helper", ["help"], HelpRole.MachineScope, null, 0),
+            new HelpRole("helper", "Helper", ["help"], HelpRole.MachineScope, null, 0) { ChoiceState = "off" },
+            new HelpRole("steward", "Steward", ["steward"], HelpRole.MachineScope, null, 0) { ChoiceState = "unreadable" },
+            // REVIEW2 S3: a repository's role stays in a workspace's room only where the repository is one of its own.
+            new HelpRole("auditor", "Auditor", ["review"], HelpRole.RepositoryScope, "no-such-repository", 1) { Choices = ["claude-code opus high"] },
             new HelpRole("designer", "Designer", ["design"], HelpRole.WorkspaceScope, "work", 2)
             {
                 Choices = ["claude-code opus high"],

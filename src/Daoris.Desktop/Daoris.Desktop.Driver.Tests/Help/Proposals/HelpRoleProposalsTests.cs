@@ -129,6 +129,40 @@ public sealed class HelpRoleProposalsTests : HelpProposalsFixture, IDisposable
         Assert.Contains("→ First that can run (its policy is cleared).", cleared.Describe);
     }
 
+    /// <summary>REVIEW2 S2: a default or a set of new choices clears or re-keys a policy it does not name, and the card says so (D226).</summary>
+    [Fact]
+    public void A_change_that_clears_or_rekeys_a_standing_policy_says_so_on_the_card()
+    {
+        Staffing.Set("build", [new ActorChoice("claude-code", "sonnet", "high"), new ActorChoice("claude-code", "opus", "high")]);
+        var config = StaffingProjection.Config(Staffing.Read()!);
+        var even = HelpProposals.Plan(Role("set", "build", """{ "policy": "even", "policyRevision": 0 }"""), config, Machine);
+        RoleDoor.Apply(Staffing, even.Role!.Change, even.Role.Choices, even.Role.Read, even.Role.Policy);
+
+        var quiet = HelpProposals.Plan(Role("default", "intake"), config, Machine);
+        Assert.DoesNotContain("Policy,", quiet.Describe);
+        var given = HelpProposals.Plan(Role("default", "build"), config, Machine);
+        Assert.Contains("Policy, Build: Spread by weight (1:1); on a limit: next by weight; at most 3 moves a day → First that can run (its policy is cleared).", given.Describe);
+        Assert.Contains("Policy, Build:", HelpProposals.Plan(Role("default-all", "*"), config, Machine).Describe);
+        var rekeyed = HelpProposals.Plan(Role("set", "build", """{ "choices": [{ "agent": "claude-code", "model": "opus", "effort": "high" }] }"""), config, Machine);
+        Assert.Contains("Policy, Build: Spread by weight (1:1); on a limit: next by weight; at most 3 moves a day →", rekeyed.Describe);
+    }
+
+    /// <summary>REVIEW2 S3: in a workspace's conversation a change is judged by the role's own scope, and the whole-seed door reaches every workspace.</summary>
+    [Fact]
+    public void A_scoped_conversation_refuses_a_change_to_a_role_scoped_elsewhere_and_a_default_of_every_role()
+    {
+        RoleDoor.Apply(Staffing, RoleChange.Set(new RoleRecord("night", AuthoredText.Of("Night"), RoleRecord.Always, ["build"], new RoleScope(RoleScope.Workspace, "other"))),
+            [new ActorChoice("claude-code", "sonnet", "high")]);
+        var mine = Machine with { Circle = "mine" };
+
+        Assert.Contains("workspace `other`", HelpProposals.Plan(Role("remove", "night"), DriverConfig.Empty, mine).Refusal);
+        Assert.Contains("workspace `other`", HelpProposals.Plan(Role("default", "night"), DriverConfig.Empty, mine).Refusal);
+        Assert.Contains("workspace `other`", HelpProposals.Plan(Role("set", "night", """{ "choices": [{ "agent": "claude-code" }] }"""), DriverConfig.Empty, mine).Refusal);
+        Assert.Contains("every workspace at once", HelpProposals.Plan(Role("default-all", "*"), DriverConfig.Empty, mine).Refusal);
+        Assert.Null(HelpProposals.Plan(Role("default-all", "*"), DriverConfig.Empty, Machine).Refusal);
+        Assert.Null(HelpProposals.Plan(Role("default", "intake"), DriverConfig.Empty, mine).Refusal);
+    }
+
     [Fact]
     public void A_set_of_a_seeded_role_naming_its_choices_alone_keeps_its_record_and_sets_its_order()
     {

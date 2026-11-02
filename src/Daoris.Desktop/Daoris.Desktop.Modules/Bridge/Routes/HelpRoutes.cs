@@ -1206,7 +1206,7 @@ public sealed class HelpRoutes(DriverContext context)
         // read from this machine's record only for one.
         if (JudgedAgainstDrafts(proposals) && conversation is not null && SessionEventText.IsLocalId(conversation))
         {
-            facts = facts with { Drafts = WorkflowDraftTold.Told(_loop.Events.After(conversation, 0).Events) };
+            facts = facts with { Drafts = WorkflowDraftTold.ToldAcross(conversation, id => _loop.Events.After(id, 0).Events) };
         }
 
         // A set-up proposal is judged by the press's plan for the repository it names, as `daoris-driver setup <repository> --plan`
