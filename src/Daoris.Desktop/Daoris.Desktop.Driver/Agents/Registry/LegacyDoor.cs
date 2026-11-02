@@ -66,8 +66,8 @@ internal sealed class LegacyDoor : ISessionAdapter
                 $"the `{Name}` adapter cannot hold a conversation — it spawns an agent that takes its "
                 + "target once and runs to completion. Chat with an adapter that declares `interactive`.");
 
-    public ProcessStartInfo? PrepareResume(SessionTarget target, IReadOnlyList<string>? command, string conversation, string prompt) =>
-        Spawn().Resume(target, command, conversation, prompt);
+    public ProcessStartInfo? PrepareResume(SessionTarget target, IReadOnlyList<string>? command, string conversation) =>
+        Spawn().Resume(target, command, conversation);
 
     public IReadOnlyDictionary<string, string> ToolsUpFront => Spawn().ToolsUpFront;
 

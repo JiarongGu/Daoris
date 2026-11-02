@@ -52,7 +52,7 @@ public sealed class ActorRunTests : IDisposable
         var adapter = new ClaudeCodeAdapter();
         var target = new SessionTarget("q", "title", "body", "asker", "Owner", _home, "http://stand-in") { Asked = roundtrip };
         var chat = new ChatTarget("Owner", _home, "http://stand-in") { Asked = roundtrip, Resume = "conv-1" };
-        foreach (var info in new[] { adapter.Prepare(target, null), adapter.PrepareResume(target, null, "conv-1", "go on"), adapter.PrepareChat(chat, null) })
+        foreach (var info in new[] { adapter.Prepare(target, null), adapter.PrepareResume(target, null, "conv-1"), adapter.PrepareChat(chat, null) })
         {
             var arguments = info.ArgumentList.ToList();
             Assert.Equal("default", arguments[arguments.IndexOf("--model") + 1]);

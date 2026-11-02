@@ -147,7 +147,7 @@ public sealed class StandInShimProcessTests : IDisposable
         var count = Path.Combine(_home, "ran.txt");
         var script = Script("fail.mjs", $"import {{ appendFileSync }} from 'node:fs'; appendFileSync({System.Text.Json.JsonSerializer.Serialize(count)}, 'ran\\n'); process.exit(3);");
         var door = new LegacyDoor(Provider(), ResumingDoor());
-        var info = door.PrepareResume(Target(), Command(script), "c-1", "go on")!;
+        var info = door.PrepareResume(Target(), Command(script), "c-1")!;
 
         Assert.True(door.Resumes);
         Assert.Null(door.StructuredOutput());
@@ -175,7 +175,7 @@ public sealed class StandInShimProcessTests : IDisposable
 
         public ProcessStartInfo Chat(ChatTarget target, IReadOnlyList<string>? command) => Spawning.ChatInRoot(target, command![0], command.Skip(1));
 
-        public ProcessStartInfo? Resume(SessionTarget target, IReadOnlyList<string>? command, string conversation, string prompt) =>
-            Spawning.InRoot(target, command![0], command.Skip(1).Append(conversation).Append(prompt));
+        public ProcessStartInfo? Resume(SessionTarget target, IReadOnlyList<string>? command, string conversation) =>
+            Spawning.InRoot(target, command![0], command.Skip(1).Append(conversation));
     }
 }

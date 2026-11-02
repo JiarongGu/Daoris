@@ -15,10 +15,13 @@ namespace Daoris.Driver;
 /// </param>
 internal sealed record TransportStart(ProcessStartInfo Info, StartClass Whose)
 {
-    /// <summary>The target the spawn was prepared for, which a go-on prepares its resume from; null where the run goes on in nothing.</summary>
+    /// <summary>The target the spawn was prepared for, which a go-on prepares its resume from.</summary>
     public SessionTarget? Target { get; init; }
 
-    /// <summary>What the harness is selected as (its account's home, its binary), which a go-on is handed as the first run was; null with no target.</summary>
+    /// <summary>
+    /// What the harness is selected as (its account's home, its binary), which a go-on is handed as the first run was; null where the run goes
+    /// on in nothing, so its executor holds no words for it (<see cref="TransportRun.GoesOn"/>).
+    /// </summary>
     public HarnessSelection? Selection { get; init; }
 
     /// <summary>Why this session takes no person's line, in the driver's words; null for a conversation, the one kind that takes turns (SessionProcesses.Track).</summary>
