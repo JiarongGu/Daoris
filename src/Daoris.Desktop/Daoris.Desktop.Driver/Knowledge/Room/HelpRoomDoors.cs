@@ -185,6 +185,11 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         // Ask Daoris's `setting` kind's `cooloff` (HelpCoverageTests).
         ("set how long an account cools when its agent hits a limit and names no time", "Settings → Driver → Cool-off when no time is named",
             "`daoris driver cooloff <minutes>`"),
+        // GITAUTH1e (D198, the git-auth design §9): a repository's remote or a workspace's host pointed at a git identity that exists, Ask
+        // Daoris's `setting` kind's `git-use` (HelpCoverageTests); never the person's own sign-ins, never an identity set up, tested or removed.
+        ("point a repository's remote, or a workspace's host, at a git identity already set up (Ask Daoris proposes it; it never sets one up or chooses your own sign-ins)",
+            "Repository → Setup → Git remote → Change…, and Workspace → Setup → Git",
+            "`daoris-driver git use <repository> [--remote <name>] <identity>|--clear`, `daoris-driver git use --workspace <workspace> --host <host> <identity>|--clear`"),
         // KEEP1d (D195 point 2): how long each kind Daoris keeps is kept, Ask Daoris's `setting` kind's `keep` (HelpCoverageTests).
         ("set how long Daoris keeps set-aside trees, unused downloads, the machine log or finished work's records", "Settings → This Daoris → Disk space → Change…",
             "`daoris driver keep <kind> <rule>`"),

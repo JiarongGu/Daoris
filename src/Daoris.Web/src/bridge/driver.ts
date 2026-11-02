@@ -208,6 +208,13 @@ export type DriverState = {
   /** And this machine's, for each pause neither a repository nor its workspace names: no pause and not full where none is set. */
   machineAccess?: AccessLevel;
   /**
+   * Git access as set (GITAUTH1f, the git-auth design §6.4): the classes each repository, workspace and this machine sets, none
+   * being Daoris's default — absent on a shell older than it. What each repository resolves to is `LINES`' `gitAccess`.
+   */
+  gitAccess?: { repository: string; classes: GitAccessLevel }[];
+  workspaceGitAccess?: { workspace: string; classes: GitAccessLevel }[];
+  machineGitAccess?: GitAccessLevel;
+  /**
    * This machine's heavy gates (HEAVYRUN1b2b, D180's HEAVYRUN1b2a note): for each repository whose own `daoris.gates.json` marks no
    * heavy gate, the list `run-heavy` runs for it in its order — absent on a shell older than it, which offers no heavy gates section.
    */
