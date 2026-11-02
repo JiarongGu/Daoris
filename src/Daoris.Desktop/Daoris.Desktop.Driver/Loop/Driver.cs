@@ -911,7 +911,55 @@ public sealed class Driver(
             Log = Log,
             Gate = Gate,
             Staff = Context.Harnesses.StaffFor(home),
+            // The choices this quest's line moved off in the last 30 minutes are passed (STAFFPOLICY1e2).
+            LineFacts = LineMovedOff(quest.Id),
         };
+    }
+
+    /// <summary>
+    /// A part the role's policy moved to another choice (STAFFPOLICY1e2): the record keeps its <c>chosen</c> (moved, with the condition and the
+    /// choice left), the machine log writes <c>actor.moved</c>, and the opening note says it. A service that will not answer costs the record this, never the run.
+    /// </summary>
+    private async Task SayPolicyMoveAsync(
+        ServiceClient service, string sessionId, string role, string line, StaffMoving moving, PriorSession left, string? to)
+    {
+        var staff = Context.Harnesses.StaffFor(home);
+        var policy = staff.Policy(role);
+        var read = staff.Moves.Of(line);
+        var said = StaffCourse.MovedSaid(moving.Condition, policy.Applied, read.Moves, ActorWords.Name(role));
+        ActorMoves.Write(Log, role, line, left.Choice, to, moving.Condition, StaffCourse.ActionOf(policy.Applied, moving.Condition), read.Moves);
+        await service.TryKeepActorAsync(
+                sessionId, Log, chosen: new ActorChosen(policy.Applied?.Rule ?? StaffRules.Order, StaffBy.Moved, moving.Condition, left.Choice))
+            .ConfigureAwait(false);
+        RotatedOpening.SayMovedChoice(Context.Events, sessionId, StaffCourse.ChoiceOf(left)?.Said ?? left.Adapter ?? "", said);
+    }
+
+    /// <summary>
+    /// A move to another choice made inside one start (a model its agent refused, a sign-in that walked to another agent), counted against the
+    /// line's bound of moves in 24 hours (STAFFPOLICY1e2, design §11 point 5). It names no part, so no later carry-on is taken for a move's own.
+    /// </summary>
+    private void CountMove(string line, string role, string condition, ActorEffective from, string? to)
+    {
+        try
+        {
+            Context.Harnesses.StaffFor(home).Moves.Record(line, role, null, condition, StaffActions.Next, StaffKey.Of(from).Text, to);
+        }
+        catch (Exception error) when (error is DesktopStoreException or Microsoft.Data.Sqlite.SqliteException or IOException or UnauthorizedAccessException)
+        {
+            Log?.Write("warn", "actor.moves-unkept", [("line", line), ("why", error.Message)]);
+        }
+    }
+
+    private StaffFacts? LineMovedOff(string line)
+    {
+        try
+        {
+            return Context.Harnesses.StaffFor(home).Moves.LineFacts(line);
+        }
+        catch (Exception error) when (error is DesktopStoreException or Microsoft.Data.Sqlite.SqliteException or IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
     }
 
     /// <summary>
@@ -1489,7 +1537,7 @@ public sealed class Driver(
                     {
                         var again = new FreshTree(path => Context.Trees.RemoveAsync(path));
                         var moved = await again.UntilOpenAsync(
-                                () => RunAsync(start, snapshot.Repositories, own, () => Context.Runs.Release(holding), again, ct, movedOff: signedOut), ct)
+                                () => RunAsync(start, snapshot.Repositories, own, () => Context.Runs.Release(holding), again, ct, movedOff: signedOut, movedFrom: run.Ended?.Adapter), ct)
                             .ConfigureAwait(false);
                         if (moved.Opened) return moved;
                     }
@@ -2188,7 +2236,7 @@ public sealed class Driver(
     /// <param name="movedOff">The account the first run of this start was refused for its sign-in (LIMITPICK2); a walk that gives it again holds.</param>
     private async Task<StartRun> RunAsync(
         Consideration start, IReadOnlyList<RepoView> registry, List<TrustHold> untrusted, Action onOpened, FreshTree fresh, CancellationToken ct,
-        string? movedOff = null, (string Agent, string Model)? movedOffModel = null)
+        string? movedOff = null, (string Agent, string Model)? movedOffModel = null, string? movedFrom = null)
     {
         var quest = start.Quest;
         var root = start.Root!;
@@ -2985,8 +3033,27 @@ public sealed class Driver(
         // Where a later choice of Build's ran, its actor line beside it, naming each choice passed (D205 §4.6 item 1, MODELROLE1c2).
         if (movedOff is not null) RotatedOpening.SayMovedOff(Context.Events, sessionId, AccountNames.Said(AccountNames.Of(home, agent), movedOff));
         if (movedOffModel is { } refusedModel) RotatedOpening.SayMovedOffModel(Context.Events, sessionId, refusedModel.Agent, refusedModel.Model);
+        // STAFFPOLICY1e2: a model its agent refused, or a sign-in that walked to another agent, is a move to another choice, counted against `most`.
+        var movedRole = stepRole ?? RoleWork.Build;
+        if (movedOffModel is { } countedModel)
+        {
+            CountMove(
+                quest.Id, movedRole, StaffConditions.ModelRefused,
+                ActorChoices.Effective(movedRole, config).FirstOrDefault(each => string.Equals(each.Agent, countedModel.Agent, StringComparison.OrdinalIgnoreCase) && each.Model == countedModel.Model)
+                ?? new ActorEffective(countedModel.Agent, countedModel.Model, null, ""),
+                chosen?.From);
+        }
+        else if (movedOff is not null && movedFrom is { } wasAgent && !string.Equals(wasAgent, agent, StringComparison.OrdinalIgnoreCase))
+        {
+            CountMove(quest.Id, movedRole, StaffConditions.SignedOut, new ActorEffective(wasAgent, null, null, ""), chosen?.From);
+        }
         if (chosen is not null) RotatedOpening.SayActor(Context.Events, sessionId, "build", chosen, buildPasses);
         await RotatedOpening.SayStaffAsync(Context.Events, Context.Harnesses.Staff(), service, Log, sessionId, selection, "build").ConfigureAwait(false);
+        // STAFFPOLICY1e2: a part the role's policy moved here says so, on the record and the opening note, after the start's own why.
+        if (policyMove is { } movedByPolicy && start.Resumes is { } leftPart)
+        {
+            await SayPolicyMoveAsync(service, sessionId, stepRole ?? RoleWork.Build, quest.Id, movedByPolicy, leftPart, chosen?.From).ConfigureAwait(false);
+        }
         // A quest marked design says whose order it ran on: the role taking design, Build's while none does (FOUNDATION1x, MODELROLE1l).
         if (start.Resumes is null && StartWork(quest) == ParticipantWork.Design && DesignRoleName(start, stepRole) is { } designer)
         {
@@ -4439,6 +4506,11 @@ public sealed class Driver(
                 var why = $"`{offers.Account ?? "its own sign-in"}` did not offer `{refusal.Value}`";
                 RotatedOpening.SayActor(Context.Events, sessionId, actor, ranEntry, [new BuildPass(refusedEntry, refusal.Code, why)]);
                 ActorMoves.Write(Log, actor, sessionId, refusedEntry.From, later.Choice, "model-refused");
+                if (target.QuestId is { } movedLine)
+                {
+                    CountMove(movedLine, actor, StaffConditions.ModelRefused, ActorChoices.Effective(actor, config).FirstOrDefault(each => each.From == choice) ?? refusedEntry, later.Choice);
+                }
+
                 choice = later.Choice;
                 await service.TryKeepActorAsync(
                         sessionId, Log, choice, later.Asked, ct: CancellationToken.None,

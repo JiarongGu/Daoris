@@ -155,11 +155,14 @@ public static class StaffJudge
 
         var remaining = served.Where(each => passed.All(pass => pass.Entry != each)).ToList();
         // An ask is a move the person's yes releases, so the choice it leaves is passed on that walk as a move's is.
-        if (policy.Moves.TryGetValue(StaffConditions.Transient, out var transient) && (StaffActions.Moves(transient.Do) || transient.Do == StaffActions.Ask))
+        static bool MovesOn(StaffPolicy policy, string condition) =>
+            policy.Moves.TryGetValue(condition, out var move) && (StaffActions.Moves(move.Do) || move.Do == StaffActions.Ask);
+        var movesOnTransient = MovesOn(policy, StaffConditions.Transient);
+        if (movesOnTransient || MovesOn(policy, StaffConditions.Failed) || MovesOn(policy, StaffConditions.Quiet))
         {
             foreach (var each in remaining.ToList())
             {
-                if (remaining.Count > 1 && facts.NotAnswering.Any(mark => string.Equals(mark.Key, each.Effective.Agent, StringComparison.OrdinalIgnoreCase) && mark.Value > facts.Now))
+                if (movesOnTransient && remaining.Count > 1 && facts.NotAnswering.Any(mark => string.Equals(mark.Key, each.Effective.Agent, StringComparison.OrdinalIgnoreCase) && mark.Value > facts.Now))
                 {
                     remaining.Remove(each);
                     passed.Add((each, StaffPasses.NotAnswering, "its agent's service did not answer: it is passed until its mark ends or a prompt on it answers"));

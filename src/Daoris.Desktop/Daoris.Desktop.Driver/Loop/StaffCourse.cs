@@ -16,6 +16,37 @@ internal static class StaffCourse
             : TransientRetry.Bound;
     }
 
+    /// <summary>Whether a record ended on the watcher's quiet end (<see cref="NoteCodes.EndedQuiet"/>), by its code: failed, and the quiet policy's, never the failed one's.</summary>
+    internal static bool EndedQuiet(PriorSession record) =>
+        string.Equals(record.State, "failed", StringComparison.OrdinalIgnoreCase) && record.NoteParts?.Any(part => part.Code == RecordNotes.EndedQuiet) == true;
+
+    /// <summary>Whether a record is a failure that counts a strike and is no other condition's: not a limit, a refused account, a choice not offered, a service that did not answer or a quiet end.</summary>
+    internal static bool FailedStrike(PriorSession record) =>
+        string.Equals(record.State, "failed", StringComparison.OrdinalIgnoreCase)
+        && !record.Limit && !record.NotOffered && !Planner.EndedTransient(record) && !EndedQuiet(record)
+        && record.NoteParts?.Any(part => part.Code is { } code && (code == RecordNotes.UpdateClosed || RecordNotes.AccountsOwn.Contains(code))) != true;
+
+    /// <summary>The action the policy names for <paramref name="condition"/>, else the walk's own <c>next</c>.</summary>
+    internal static string ActionOf(StaffPolicy? policy, string condition) =>
+        policy is not null && policy.Moves.TryGetValue(condition, out var move) ? move.Do : ActorMoves.Next;
+
+    /// <summary>
+    /// Why a part moved, as the opening note says it (design §5): the condition, and the role's moves in 24 hours against its bound.
+    /// </summary>
+    internal static string MovedSaid(string condition, StaffPolicy? policy, int moves, string roleName)
+    {
+        var why = condition switch
+        {
+            StaffConditions.Transient => "its service did not answer",
+            StaffConditions.Failed => "it failed again",
+            StaffConditions.Quiet => "it stopped after a quiet spell",
+            StaffConditions.Budget => "it was over its budget",
+            _ => $"the {condition} condition was met",
+        };
+        var count = policy?.Bound is { } most ? $"{moves} of {most} moves today" : $"{moves} move{(moves == 1 ? "" : "s")} today";
+        return $"{why}. {roleName}'s policy moves on that; {count}";
+    }
+
     /// <summary>The choice a record ran, as the policy keys it.</summary>
     internal static StaffKey? ChoiceOf(PriorSession record) =>
         record.Adapter is { Length: > 0 } agent ? new StaffKey(agent, record.Asked?.NamedModel, record.Asked?.Effort.Value) : null;
@@ -34,11 +65,16 @@ internal static class StaffCourse
         foreach (var quest in snapshot.Quests)
         {
             if (quest.Status is not ("Open" or "Taken") || !snapshot.LastRun.TryGetValue(quest.Id, out var last)) continue;
-            if (!Planner.EndedTransient(last) || config.ReleasesTransient(quest.Id, last.Session, last.Updated)) continue;
+            var condition = Planner.EndedTransient(last) ? StaffConditions.Transient : EndedQuiet(last) ? StaffConditions.Quiet : FailedStrike(last) ? StaffConditions.Failed : null;
+            if (condition is null || (condition == StaffConditions.Transient && config.ReleasesTransient(quest.Id, last.Session, last.Updated))) continue;
             // A record the service kept no role for was started by Build's walk, as a quest's session is.
             var role = last.Actor is { Length: > 0 } kept ? kept : RoleWork.Build;
             if (snapshot.Handed.TryGetValue(quest.Id, out var handed) && string.Equals(handed.From, last.Session, StringComparison.Ordinal)) continue;
-            if (staff.Policy(role).Applied is not { } policy || !policy.Moves.TryGetValue(StaffConditions.Transient, out _)) continue;
+            if (staff.Policy(role).Applied is not { } policy || !policy.Moves.TryGetValue(condition, out _)) continue;
+
+            // The strikes park a quest as they always did: a parked line is the person's, and a move would only be counted against it.
+            var strikes = snapshot.Strikes.GetValueOrDefault(quest.Id) - config.ForgivenAt(quest.Id);
+            if (condition != StaffConditions.Transient && config.Strikes > 0 && strikes >= config.Strikes) continue;
 
             written ??= staff.Moves.Moving();
             if (written.TryGetValue(quest.Id, out var done) && done.Session == last.Session)
@@ -48,18 +84,24 @@ internal static class StaffCourse
             }
 
             var moved = staff.Moves.Of(quest.Id);
-            var action = StaffJudge.OnCondition(policy, StaffConditions.Transient, new StaffLine(true, moved.Moves));
+            var action = StaffJudge.OnCondition(policy, condition, new StaffLine(true, moved.Moves));
+            // A fatal error moves a line after its `after` failures on the one choice; before them it is today's retry.
+            if (condition == StaffConditions.Failed && (action.Do == StaffActions.Retry || snapshot.FailedRuns.GetValueOrDefault(quest.Id) < (action.After ?? 1))) continue;
             var fact = new CoursePolicy(action, now, Met: ChoiceOf(last)?.Said, Approved: moved.Approved, Moves: moved.Moves);
-            switch (DrivenCourse.PastBound(last, quest.Status, released: false, fact))
+            var course = condition == StaffConditions.Transient
+                ? DrivenCourse.PastBound(last, quest.Status, released: false, fact)
+                : DrivenCourse.PolicyEnd(last, quest.Status, fact);
+            switch (course)
             {
                 case LineCourse.Move:
                     var from = ChoiceOf(last)?.Text;
                     if (staff.Moves.Decided(
-                            quest.Id, role, last.Session, StaffConditions.Transient, action.Do, from,
-                            read => !StaffJudge.OnCondition(policy, StaffConditions.Transient, new StaffLine(true, read.Moves)).MovesBound))
+                            quest.Id, role, last.Session, condition, action.Do, from,
+                            read => !StaffJudge.OnCondition(policy, condition, new StaffLine(true, read.Moves)).MovesBound))
                     {
-                        if (last.Adapter is { } agent) staff.MarkNotAnswering(agent);
-                        moving[quest.Id] = new StaffMoving(last.Session, StaffConditions.Transient, from);
+                        // A service that did not answer marks its agent; a fatal error or a quiet stop is the choice's alone, held off by the 30 minutes.
+                        if (condition == StaffConditions.Transient && last.Adapter is { } agent) staff.MarkNotAnswering(agent);
+                        moving[quest.Id] = new StaffMoving(last.Session, condition, from);
                     }
                     else
                     {

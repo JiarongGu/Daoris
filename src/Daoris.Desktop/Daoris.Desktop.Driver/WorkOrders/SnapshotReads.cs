@@ -40,6 +40,7 @@ public static class SnapshotReads
             return new Snapshot(quests, repositories, active, ServiceClient.ReadStrikes(records))
             {
                 LastRun = lastRun,
+                FailedRuns = ServiceClient.ReadFailedRuns(records),
                 StoodDown = stoodDown,
                 // The session a taken quest's reopen names, where a later one is its last here (FABRIC-CLOSE1c9): its words go on in it.
                 NamedByReopen = ServiceClient.ReadNamedByReopen(records, quests, lastRun),

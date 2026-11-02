@@ -32,6 +32,16 @@ public static class ActorOpenings
         }
 
         /// <summary>
+        /// A part the role's policy moved here from another choice (STAFFPOLICY1e2): the choice it left and why, in the local record only, with the
+        /// agent and model but no account, as <see cref="SayMovedOffModel"/> says it.
+        /// </summary>
+        internal static void SayMovedChoice(ISessionEvents events, string sessionId, string from, string said)
+        {
+            var line = Noted.Of(NoteCodes.OpeningMovedChoice, $"Moved here from {from}: {said}.", ("from", from), ("said", said));
+            events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts }, say: null);
+        }
+
+        /// <summary>
         /// Where a quest marked design started (FOUNDATION1x, MODELROLE1l), whose order it ran on: the role taking <c>design</c> by its name,
         /// or Build while none does; kept in the local conversation's record beside the opening, like the actor line.
         /// </summary>

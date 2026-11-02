@@ -64,9 +64,9 @@ public sealed class StaffMoves(string home, Func<StoreSettled>? settled = null, 
 
     /// <summary>
     /// Count a move off <paramref name="from"/> on <paramref name="condition"/> by <paramref name="action"/>, made in <paramref name="session"/>
-    /// (the part it leaves, or the start it was made inside). False where the store would not take it.
+    /// (the part it leaves; none for a move made inside one start, which no later part is carried on by). False where the store would not take it.
     /// </summary>
-    public bool Record(string line, string role, string session, string condition, string action, string? from, string? to = null) =>
+    public bool Record(string line, string role, string? session, string condition, string action, string? from, string? to = null) =>
         Write(line, role, Moved, session, from, to, condition, action);
 
     /// <summary>
@@ -79,6 +79,27 @@ public sealed class StaffMoves(string home, Func<StoreSettled>? settled = null, 
         {
             return decide(Of(line)) && Record(line, role, session, condition, action, from);
         }
+    }
+
+    /// <summary>
+    /// The choices <paramref name="line"/> moved off within <see cref="StaffJudge.Hold"/>, each with when it was left (the judge's
+    /// <c>moved-off</c> pass keeps the line from walking back onto one): the line's facts a start arranges by.
+    /// </summary>
+    public StaffFacts LineFacts(string line)
+    {
+        using var store = DesktopStoreReader.Open(Location);
+        if (store is null || store.Version < Step) return new StaffFacts();
+        var now = Clock.GetUtcNow();
+        var since = StaffJson.Moment(now - StaffJudge.Hold);
+        var off = new Dictionary<StaffKey, DateTimeOffset>();
+        foreach (var (from, at) in store.Query(
+                     "SELECT from_choice, at FROM role_moves WHERE line = $line AND kind = $kind AND from_choice IS NOT NULL AND at >= $since ORDER BY id",
+                     row => (row.GetString(0), row.GetString(1)), ("$line", line), ("$kind", Moved), ("$since", since)))
+        {
+            if (StaffKey.Read(from) is { } key && DateTimeOffset.TryParse(at, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var when)) off[key] = when;
+        }
+
+        return new StaffFacts { MovedOff = off };
     }
 
     /// <summary>The person's yes to <paramref name="line"/>'s policy ask or bound: one move released. False where the store would not take it.</summary>
