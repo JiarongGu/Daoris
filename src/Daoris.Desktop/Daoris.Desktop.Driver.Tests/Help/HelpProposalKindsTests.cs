@@ -13,6 +13,7 @@ namespace Daoris.Driver.Tests;
 /// The three share no code (<c>.claude/knowledge/twins.md</c>): this reads the service's and the page's source
 /// as text, the way a reviewer would, and the service's own test holds the same table.
 /// </remarks>
+[Trait(Category.Name, Category.Census)]
 public sealed partial class HelpProposalKindsTests
 {
     /// <summary>

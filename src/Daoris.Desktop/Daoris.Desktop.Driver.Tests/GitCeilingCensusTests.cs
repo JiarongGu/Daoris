@@ -9,6 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// (<c>new ProcessStartInfo("git")</c>, <c>FileName = "git"</c>, <c>WorkingTree.GitStart</c>) and names none of <c>TestGit.Past</c>,
 /// <c>TestGit.Ceiling</c>, <c>GIT_CEILING_DIRECTORIES</c> or <c>--git-dir</c>. A start that reaches no repository says so below.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed class GitCeilingCensusTests
 {
     private static readonly string[] Projects = [SourceFiles.DriverTestsProject, "Daoris.Desktop.Modules.Tests"];

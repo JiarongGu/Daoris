@@ -10,6 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// reaches git with the arguments its call site passed, nothing added (Codex R3-9). No git runs here: the gate's stand-in sees each
 /// start's <see cref="ProcessStartInfo"/> and answers it with none.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed class GitLaunchTests
 {
     /// <summary>

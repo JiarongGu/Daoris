@@ -96,7 +96,7 @@ public sealed partial class HolderKeyStripTests
         }
         finally
         {
-            if (Directory.Exists(home)) Directory.Delete(home, recursive: true);
+            GitSeed.Discard(home);
         }
 
         // A key of its own proves nothing against the appointment's hash.

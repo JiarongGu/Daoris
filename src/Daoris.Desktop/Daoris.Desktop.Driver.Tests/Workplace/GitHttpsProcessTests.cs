@@ -21,7 +21,7 @@ public sealed class GitHttpsProcessTests : IDisposable
     private const string User = "fixture-user";
     private const string Token = "fixture-token-not-a-secret";
 
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-git-https-process-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _root = Path.Combine(GitSeed.RepoRoot(), "_fixtures", "git-https-process", Guid.NewGuid().ToString("N")[..8]);
     private readonly List<(string Host, string User)> _stored = [];
 
     private string Home => Path.Combine(_root, "data");
@@ -50,7 +50,7 @@ public sealed class GitHttpsProcessTests : IDisposable
             try { GitIdentityHttps.EraseAsync(Home, "http", host, user, CancellationToken.None).GetAwaiter().GetResult(); } catch (DriverException) { }
         }
 
-        try { Directory.Delete(_root, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        GitSeed.Discard(_root);
     }
 
     private void LayDoors()

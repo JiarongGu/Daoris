@@ -9,6 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// 2026-09-23). A source scan rather than a unit test, because the property is one every spawn site
 /// must carry and the next one written will not know to.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed class NoConsoleWindowTests
 {
     private static readonly string[] Projects =
@@ -81,6 +82,14 @@ public sealed class NoConsoleWindowTests
                     if (!initializer.Contains("CreateNoWindow = true", StringComparison.Ordinal))
                     {
                         missing.Add($"{Path.GetRelativePath(root, file)} at offset {spawn.Index}");
+                    }
+
+                    // REVIEW2 T7: the flag set after the initializer (to the next spawn) counts too; a start that says true and then false opens the console.
+                    var rest = source[(spawn.Index + initializer.Length)..];
+                    var next = rest.IndexOf("new ProcessStartInfo", 1, StringComparison.Ordinal);
+                    if (Regex.IsMatch(next < 0 ? rest : rest[..next], @"\bCreateNoWindow\s*=\s*false\b"))
+                    {
+                        missing.Add($"{Path.GetRelativePath(root, file)} at offset {spawn.Index}: sets CreateNoWindow = false after its initializer");
                     }
                 }
             }

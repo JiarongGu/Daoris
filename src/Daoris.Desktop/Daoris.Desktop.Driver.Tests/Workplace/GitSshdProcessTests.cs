@@ -281,16 +281,22 @@ public sealed class GitSshdProcessTests : IDisposable
     }
 }
 
-/// <summary>A fact that runs where <c>DAORIS_TEST_SSHD</c> names an OpenSSH <c>sshd.exe</c> on Windows, and is skipped saying so elsewhere.</summary>
+/// <summary>
+/// A fact that runs where <c>TEST_SSHD</c> (or <c>DAORIS_TEST_SSHD</c>, a person's own run) names an OpenSSH <c>sshd.exe</c> on
+/// Windows, and is skipped saying so elsewhere. The merge tool strips every <c>DAORIS_</c> variable from a gate, so the gate's name
+/// is <c>TEST_SSHD</c>.
+/// </summary>
 public sealed class SshdFactAttribute : FactAttribute
 {
     public SshdFactAttribute()
     {
         if (Named() is null)
-            Skip = "DAORIS_TEST_SSHD names no sshd.exe here (Win32-OpenSSH's portable build on Windows serves these), so no server runs";
+            Skip = "TEST_SSHD names no sshd.exe here (Win32-OpenSSH's portable build on Windows serves these), so no server runs";
     }
 
     /// <summary>The sshd the variable names, where it is a file on Windows; else null.</summary>
     public static string? Named() =>
-        Environment.GetEnvironmentVariable("DAORIS_TEST_SSHD") is { Length: > 0 } named && File.Exists(named) && OperatingSystem.IsWindows() ? named : null;
+        (Read("TEST_SSHD") ?? Read("DAORIS_TEST_SSHD")) is { } named && File.Exists(named) && OperatingSystem.IsWindows() ? named : null;
+
+    private static string? Read(string name) => Environment.GetEnvironmentVariable(name) is { Length: > 0 } value ? value : null;
 }

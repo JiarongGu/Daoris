@@ -22,6 +22,7 @@ namespace Daoris.Driver.Tests;
 /// (HELPOWED1, D170 point 2). A quest's or a session's own act is its own conversation, which Ask Daoris reaches by a go to the
 /// view it names (D161's ENTRY1 note).</para>
 /// </remarks>
+[Trait(Desktop.Driver.Tests.Category.Name, Desktop.Driver.Tests.Category.Census)]
 public sealed partial class HelpCoverageTests
 {
     private abstract record Answer;

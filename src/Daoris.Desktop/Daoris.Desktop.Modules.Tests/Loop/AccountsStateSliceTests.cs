@@ -12,6 +12,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// focus read <c>ACCOUNTS</c> again in no window, and a probe's result moves every window by one push.
 /// </summary>
 /// <remarks>Every account, reading and list is the test's own file under its home; no service runs, no agent is asked and no process starts.</remarks>
+[Trait(Category.Name, Category.Census)]
 public sealed partial class AccountsStateSliceTests : DriverModuleBridge
 {
     private static readonly DateTimeOffset Now = DateTimeOffset.UtcNow;

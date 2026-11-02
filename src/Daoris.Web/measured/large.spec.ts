@@ -66,6 +66,9 @@ const SIZES: Record<string, { nodes: number; target: number }> = {
   Ten: { nodes: 10_000, target: 33.3 },
 };
 
+// REVIEW2 T10 (FLAKE1): a frame time under load is a timed claim, so a timed spec that fails runs once more alone before it counts, as a Process class does.
+test.describe('timed', () => {
+test.describe.configure({ retries: 1 });
 for (const [story, { nodes, target }] of Object.entries(SIZES)) {
   test(`large/${story}: ${nodes} nodes, p95 frame within ${target} ms while panning and zooming, the DOM bounded`, async ({ page }) => {
     test.setTimeout(240_000);
@@ -84,6 +87,7 @@ for (const [story, { nodes, target }] of Object.entries(SIZES)) {
     expect(frames.p95).toBeLessThan(target * 1.5);
   });
 }
+});
 
 // The tier follows 11 px × the window's zoom × k (trap 12 beside it): 9 px full, 4 px a chip, below it a dot.
 const expectedTier = (k: number, rem: number) => { const size = 11 * (rem / 16) * k; return size >= 9 ? 'full' : size >= 4 ? 'chip' : 'dot'; };

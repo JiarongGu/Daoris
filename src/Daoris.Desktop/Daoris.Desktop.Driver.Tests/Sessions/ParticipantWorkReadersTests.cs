@@ -11,6 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// catch), and so does a listed file that reads none now; how many lines a listed file reads is not pinned (CENSUSRULES1). The shell's
 /// modules' census and the service's read the same table over their own sources.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed class ParticipantWorkReadersTests
 {
     /// <summary>The shapes a line takes that tests a mark's presence or the Ask Daoris repository's identity.</summary>

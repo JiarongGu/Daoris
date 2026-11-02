@@ -10,6 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// row after which it is cut; a <c>Domain</c> file does no I/O; and nothing outside Loop's folder names a type declared in it. The rules are
 /// held here on sources made in memory, one case each, and then run over the driver's own tree.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
 {
     private static readonly StructureMap Map = new(

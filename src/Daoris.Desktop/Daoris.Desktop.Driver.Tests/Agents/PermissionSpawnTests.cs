@@ -33,7 +33,7 @@ public sealed class PermissionSpawnTests : IDisposable
 
     public void Dispose()
     {
-        try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        GitSeed.Discard(_home);
     }
 
     /// <summary>The machine's rules as a person set them: one for the session's circle, one for its repository.</summary>

@@ -8,6 +8,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// otherwise. The scan and its named exemptions are the driver tests' <c>NoConsoleStarts</c>, compiled in as a link; the launcher and the
 /// update launcher open a window on purpose and are named there with their reasons.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed class ProcessStartsCensusTests
 {
     [Fact]

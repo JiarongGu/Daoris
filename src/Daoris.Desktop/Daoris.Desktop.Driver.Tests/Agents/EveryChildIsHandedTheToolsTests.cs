@@ -17,6 +17,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// block is built through <c>Tools.ChildEnvironment(</c>. The modules hold their own starts in
 /// <c>EveryModuleChildIsHandedTheToolsTests</c>.</para>
 /// </remarks>
+[Trait(Category.Name, Category.Census)]
 public sealed class EveryChildIsHandedTheToolsTests
 {
     private static readonly string[] Projects = ["Daoris.Desktop.Driver", "Daoris.Desktop.Driver.Host"];

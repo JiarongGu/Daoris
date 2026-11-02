@@ -415,7 +415,7 @@
     },
     "Loop/AtWorkRead.cs": {
       "reads": "other",
-      "note": "a work read's own ask id (whose read it is), not a record's mark"
+      "note": "an at-work read's own `Ask` field (the ask it was taken for), tested for presence; no session's kind is told by it"
     },
     "Loop/NeedsAPerson.cs": {
       "reads": "tells",

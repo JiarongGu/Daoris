@@ -7,6 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// repositories they belong to, the lease and the checkout the door asks before the act, the words both doors say, and the verb's usage.
 /// The act over real git is <see cref="LandedWithdrawTests"/>.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed class LandedBranchWithdrawalTests : IDisposable
 {
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-withdrawal-" + Guid.NewGuid().ToString("N")[..8]);

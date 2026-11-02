@@ -16,6 +16,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <c>ProviderCensusTests</c> the sites that name a provider; this one lists where a path decides how a line goes on, and each names
 /// other files for other reasons. It shares their shape alone.
 /// </remarks>
+[Trait(Category.Name, Category.Census)]
 public sealed class CourseCensusTests
 {
     /// <summary>The projects a site can be written in: the driver, its host, the modules and the app.</summary>
