@@ -687,7 +687,7 @@ public sealed class DriverRoutes(DriverContext context)
         var quest = PayloadHelper.GetRequiredValue<string>(request.Payload, "quest").Trim().TrimStart('#');
         var config = DriverConfig.Load(_loop.ConfigPath);
         var considered = _loop.Look.Latest
-            ?? await SessionGroups.VerdictsAsync(_loop.Service ?? throw NotReady(), config, _context.Door(config), lastLook: null, cancellationToken)
+            ?? await SessionGroups.VerdictsAsync(_loop.Service ?? throw NotReady(), config, _context.Door(config), lastLook: null, cancellationToken, _loop.Home)
                 .ConfigureAwait(false);
         // PUSH1f2a: the verdict's switch is the library's operation, which `daoris-driver driver retry` acting alone calls too; a
         // pause or a quest neither parked nor held is its coded refusal (ChoiceCodes), raised here by the module's one mapping.

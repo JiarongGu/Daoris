@@ -209,6 +209,9 @@ public sealed class StaffLedger(string home, Func<StoreSettled>? settled = null,
     /// <summary>The store's file in this home.</summary>
     public string Location => DesktopStore.LocationIn(home);
 
+    /// <summary>The home this ledger keeps its tables in.</summary>
+    public string Home => home;
+
     /// <summary>The lines' moves to another choice, kept beside the starts (STAFFPOLICY1e).</summary>
     public StaffMoves Moves => new(home, settled, clock);
 
@@ -394,6 +397,7 @@ public sealed class StaffLedger(string home, Func<StoreSettled>? settled = null,
             }
         }
 
+        var tokens = policy.Applied is { } applied ? TokensToday(role, applied, now) : new Dictionary<StaffKey, StaffTokens>();
         var reserved = new Dictionary<StaffKey, int>();
         _reserved.RemoveAll(each => now - each.At >= ReservationLife);
         foreach (var each in _reserved.Where(each => each.Role == role)) reserved[each.Choice] = reserved.GetValueOrDefault(each.Choice) + 1;
@@ -403,8 +407,33 @@ public sealed class StaffLedger(string home, Func<StoreSettled>? settled = null,
             Window = window,
             Reserved = reserved,
             Today = today,
+            Tokens = tokens,
             NotAnswering = new Dictionary<string, DateTimeOffset>(_marks.Where(mark => mark.Value > now), StringComparer.OrdinalIgnoreCase),
         };
+    }
+
+    /// <summary>
+    /// The tokens <paramref name="role"/>'s turns reported today, by the choice each turn's line names (STAFFPOLICY1e2): input plus output of every
+    /// turn of the local day, read only where a choice of the policy has a daily budget of tokens. A turn whose door reported no count leaves its
+    /// choice <see cref="StaffTokens.Unreported"/>, which holds the choice, never zero. A turn that names no choice is nobody's budget.
+    /// </summary>
+    private Dictionary<StaffKey, StaffTokens> TokensToday(string role, StaffPolicy policy, DateTimeOffset now)
+    {
+        var counted = new Dictionary<StaffKey, StaffTokens>();
+        if (policy.Choices.All(choice => choice.Budget?.Tokens is null)) return counted;
+        var day = DayStart(now);
+        var turns = new List<KeptTurn>();
+        foreach (var month in UsageHistory.TurnMonths(home).Where(each => each.Month.AddMonths(1) > day)) UsageHistory.TurnsOn(home, month, 0, turns);
+        foreach (var turn in turns.Where(each => each.Actor == role && each.Ended >= day && each.Choice is not null))
+        {
+            if (StaffKey.Read(turn.Choice!) is not { } key) continue;
+            var seen = counted.GetValueOrDefault(key, new StaffTokens(0, false));
+            counted[key] = turn.Tokens.Input is null && turn.Tokens.Output is null
+                ? seen with { Unreported = true }
+                : seen with { Reported = seen.Reported + (turn.Tokens.Input ?? 0) + (turn.Tokens.Output ?? 0) };
+        }
+
+        return counted;
     }
 
     /// <summary>The start of <paramref name="now"/>'s local day in the ledger's zone.</summary>

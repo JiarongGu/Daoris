@@ -27,8 +27,34 @@ public static class ActorOpenings
             if (ledger?.Opened(selection, sessionId) is not { Reservation: not null } bound || (bound.Rule == StaffRules.Order && bound.By == StaffBy.First)) return;
             // The record's own why (STAFFPOLICY1c2), through the actor door, as reporting alone: a service that does not answer costs the record this, never the run.
             await service.TryKeepActorAsync(sessionId, log, chosen: new ActorChosen(bound.Rule, bound.By)).ConfigureAwait(false);
-            var line = Noted.Of(NoteCodes.OpeningChosen, $"{ActorWords.Name(actor)}'s policy chose this: {bound.Said}.", ("actor", ActorWords.Name(actor)), ("said", bound.Said));
+            // The role that took the work, by its name as written: an added designer's policy chose this, never Build's (STAFFPOLICY1e2).
+            var name = NameOf(ledger.Home, bound.Role, actor);
+            var line = Noted.Of(NoteCodes.OpeningChosen, $"{name}'s policy chose this: {bound.Said}.", ("actor", name), ("said", bound.Said));
             events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts }, say: null);
+        }
+
+        /// <summary>
+        /// A part the role's policy moved here from another choice (STAFFPOLICY1e2): the choice it left and why, in the local record only, with the
+        /// agent and model but no account, as <see cref="SayMovedOffModel"/> says it.
+        /// </summary>
+        internal static void SayMovedChoice(ISessionEvents events, string sessionId, string from, string said)
+        {
+            var line = Noted.Of(NoteCodes.OpeningMovedChoice, $"Moved here from {from}: {said}.", ("from", from), ("said", said));
+            events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts }, say: null);
+        }
+
+        /// <summary>The words for the role a start took: the seeded roles' own names, an added role's as written in the catalogue.</summary>
+        private static string NameOf(string home, string role, string actor)
+        {
+            if (string.Equals(role, actor, StringComparison.Ordinal) || ActorChoices.Ids.Contains(role, StringComparer.Ordinal)) return ActorWords.Name(role);
+            try
+            {
+                return RoleCatalog.ReadHome(home).Slots.FirstOrDefault(slot => slot.Id == role)?.Role?.Name.AsWritten ?? ActorWords.Name(role);
+            }
+            catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
+            {
+                return ActorWords.Name(role);
+            }
         }
 
         /// <summary>

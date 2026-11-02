@@ -2383,6 +2383,44 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     }
 
     /// <summary>
+    /// How many strikes in a row each quest's last choice has made (STAFFPOLICY1e2): the trailing failed records on the same agent and asked
+    /// model, in the order they were made. A limit, a refused account, a transient end and a choice not offered are no strike and break
+    /// nothing; any other end that is not a failure, or a failure on another choice, starts the count again. The policy's <c>failed</c>
+    /// move with <c>after</c> weighs its tries against this.
+    /// </summary>
+    internal static IReadOnlyDictionary<string, int> ReadFailedRuns(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        var runs = new List<(string Quest, DateTimeOffset At, string State, string Choice)>();
+        foreach (var session in document.RootElement.EnumerateArray())
+        {
+            if (IsTeams(session) || Text(session, "quest") is not { Length: > 0 } quest) continue;
+            var state = Text(session, "state") ?? "";
+            if (state is "stood-down" or "") continue;
+            var parts = NotePart.Read(session);
+            if (Limit(session) || AccountRefused(session) || NotOffered(session) || parts?.Any(part => part.Code is RecordNotes.EndedTransient or RecordNotes.UpdateClosed) == true) continue;
+            var asked = ActorRead<ActorAsked>(session, "asked");
+            runs.Add((quest, Moments.Read(Text(session, "created")) ?? DateTimeOffset.MinValue, state, $"{Text(session, "adapter")}|{asked?.NamedModel}|{asked?.Effort.Value}"));
+        }
+
+        var counts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        var choices = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var run in runs.OrderBy(each => each.At))
+        {
+            if (!string.Equals(run.State, "failed", StringComparison.OrdinalIgnoreCase))
+            {
+                counts[run.Quest] = 0;
+                continue;
+            }
+
+            counts[run.Quest] = choices.TryGetValue(run.Quest, out var was) && was == run.Choice && counts.GetValueOrDefault(run.Quest) > 0 ? counts[run.Quest] + 1 : 1;
+            choices[run.Quest] = run.Choice;
+        }
+
+        return counts.Where(pair => pair.Value > 0).ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
     /// The session this machine last ran on each quest, and where (D79) — from the records, as the
     /// strikes are.
     /// </summary>

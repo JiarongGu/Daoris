@@ -686,6 +686,9 @@ public static class NoteCodes
     /// <summary>STAFFPOLICY1c: a role's policy chose the choice that ran, by weight, share, budget or work; the sentence is the judge's, in English.</summary>
     public static readonly NoteCode OpeningChosen = new("opening.chosen", ["actor", "said"]);
 
+    /// <summary>STAFFPOLICY1e2: a part that began on another choice of its role than the one before, moved by the role's policy; <c>from</c> says the choice it left, <c>said</c> the condition and the count, in English.</summary>
+    public static readonly NoteCode OpeningMovedChoice = new("opening.moved-choice", ["from", "said"]);
+
     // FOUNDATION1x (MODELROLE1l): a quest marked design ran on the order of the role taking `design`, Build's while none does; the role by
     // its name as written, since an added role has no id the page knows.
     public static readonly NoteCode OpeningDesign = new("opening.design", ["role"]);
