@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/cn';
 import { Button } from '../../design/ui';
+import type { LandingIntegrate } from './IntegratePolicy';
 
 /** Where a repository's line came from (WSR2): set for it, set for its workspace, the checkout's guess, or nothing. */
 export type LineSource = 'repository' | 'workspace' | 'checkout' | 'none';
@@ -11,10 +12,15 @@ export type RepositoryLine = {
   repository: string; workspace: string; branch?: string; source: LineSource;
   /** The pushed lines only (PUSH1b2): the checkout's guess is not judged yet, so `none` is not an answer. Read before `source`. */
   notReadYet?: boolean;
+  /** How work is integrated into the line, the policy that reaches it (own, else its workspace's); absent where none is set. */
+  policy?: LandingIntegrate | null;
 };
 
-/** A change to a line: a repository's or a workspace's, cleared when it names no branch. */
-export type LineChange = { repository?: string; workspace?: string; branch?: string };
+/**
+ * A change to a line: a repository's or a workspace's, cleared when it names no branch. `policy` alone leaves the line as it is: an object
+ * sets the policy, `null` withdraws it.
+ */
+export type LineChange = { repository?: string; workspace?: string; branch?: string; policy?: LandingIntegrate | null };
 
 /**
  * One line's field: what is set, with what would stand without it as the placeholder, and a clear

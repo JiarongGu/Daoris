@@ -543,19 +543,6 @@ export const useLandSessionTree = () =>
   });
 
 /**
- * *Accept without the look…* on a chat run's work (CHATFLOW1d2, the chat-flow design §5.3): the person's way past a look no set-up step
- * can show, with their words, kept at the commit the press captures and landed there by the same press as *Accept…*. Keyed by its own
- * route, and read under way as a landing.
- */
-export const useLandWithoutLook = () =>
-  useMutation({
-    mutationKey: ['LAND_WITHOUT_LOOK'],
-    mutationFn: ({ id, words }: { id: string; words?: string | null }) =>
-      call<TreeAct & { branch?: string; plugin?: PluginLanding; withheld?: string | null; press?: string | null }>(
-        'LAND_WITHOUT_LOOK', { id, ...(words?.trim() ? { words: words.trim() } : {}) }, { timeoutMs: pluginBound }),
-  });
-
-/**
  * Whether the branch this session's landing made can be handed to a landing plugin now (WSR5b): the
  * branch, the plugin it would go to (the rule's), and the sentence a press would be refused with. A
  * session whose landing made no branch answers none. Shell-only: it reads this machine's record and checkout.

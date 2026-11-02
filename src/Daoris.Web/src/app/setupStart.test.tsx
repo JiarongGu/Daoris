@@ -141,7 +141,7 @@ describe('the setup guide, at start', () => {
     expect(within(await domains()).getByRole('button', { name: 'Get started' })).toHaveAttribute('aria-current', 'page');
     expect(await screen.findByRole('list', { name: 'setup steps' })).toBeInTheDocument();
     const bar = screen.getByRole('contentinfo', { name: 'state of this machine' });
-    expect(await within(bar).findByText('start: 0 of 5')).toBeInTheDocument();
+    expect(await within(bar).findByText('start: 0 of 4')).toBeInTheDocument();
 
     // The count leads back to it from wherever the person went.
     await userEvent.click(screen.getByRole('button', { name: 'Repositories' }));
@@ -155,7 +155,7 @@ describe('the setup guide, at start', () => {
     start();
 
     const bar = screen.getByRole('contentinfo', { name: 'state of this machine' });
-    expect(await within(bar).findByText('start: 0 of 5')).toBeInTheDocument();
+    expect(await within(bar).findByText('start: 0 of 4')).toBeInTheDocument();
     expect(screen.queryByRole('navigation', { name: 'Settings domains' })).toBeNull();
   });
 
@@ -176,7 +176,7 @@ describe('the setup guide, at start', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Set up with Ask Daoris' }));
     await waitFor(() => expect(sent()).toEqual([
       'Walk me through setting up Daoris on this machine, one step at a time. Not done yet: '
-      + '1. An agent; 3. A workspace and its repositories; 4. What is driven; 5. How work lands; 6. What agents may do (optional).',
+      + '1. An agent; 3. A workspace and its repositories; 4. Set a place up; 5. What agents may do (optional).',
     ]));
   });
 

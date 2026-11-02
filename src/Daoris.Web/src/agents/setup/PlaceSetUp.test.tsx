@@ -94,13 +94,11 @@ describe('Set up…, a place\'s quick set-up', () => {
     expect(screen.getByRole('checkbox', { name: '驱动它的全部工作' })).toBeTruthy();
   });
 
-  it('offers Keep how it lands as a choice that sends no delivery, and leaves the ticks and driving open under it', async () => {
+  it('offers Keep how it lands as a choice that sends no delivery, and leaves driving open under it', async () => {
     const on = show({ draft: draftOf({ preset: 'keep' }) });
     const keep = screen.getByRole('radio', { name: 'Keep how it lands' });
     expect(keep).toBeChecked();
-    for (const name of ['A second opinion before it lands', 'Your look before it lands', 'Drive all its work']) {
-      expect(screen.getByRole('checkbox', { name })).toBeEnabled();
-    }
+    expect(screen.getByRole('checkbox', { name: 'Drive all its work' })).toBeEnabled();
     await userEvent.click(screen.getByRole('radio', { name: /A branch to push/ }));
     expect(on.onChange).toHaveBeenLastCalledWith({ preset: 'branch-to-push' });
     cleanup();
@@ -163,6 +161,15 @@ describe('Set up…, a place\'s quick set-up', () => {
     for (const name of ['A second opinion before it lands', 'Your look before it lands', 'Drive all its work']) {
       expect(screen.getByRole('checkbox', { name })).toBeDisabled();
     }
+  });
+
+  it('leaves the ticks off under Keep how it lands, and driving open', () => {
+    show({ draft: draftOf({ preset: 'keep', opinion: true, look: true }) });
+    for (const name of ['A second opinion before it lands', 'Your look before it lands']) {
+      expect(screen.getByRole('checkbox', { name })).toBeDisabled();
+      expect(screen.getByRole('checkbox', { name })).not.toBeChecked();
+    }
+    expect(screen.getByRole('checkbox', { name: 'Drive all its work' })).toBeEnabled();
   });
 
   it('captions driving from the plan\'s own before and after, repository by repository', () => {
@@ -242,7 +249,7 @@ describe('Set up…, a place\'s quick set-up', () => {
     const draft = draftOf({ repositories: ['site'], preset: 'pull-request', adoption: true });
     show({ draft, plan: planOf(askOf(draft)) });
     const plan = screen.getByRole('region', { name: 'The plan' });
-    expect(within(plan).getByText('2 changes · 2 stop it')).toBeTruthy();
+    expect(within(plan).getByText('3 changes · 2 stop it')).toBeTruthy();
     await userEvent.click(within(plan).getByRole('button', { name: '↑ Adoption' }));
     expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Adoption' }));
     await userEvent.click(within(plan).getByRole('button', { name: '↑ How it lands' }));

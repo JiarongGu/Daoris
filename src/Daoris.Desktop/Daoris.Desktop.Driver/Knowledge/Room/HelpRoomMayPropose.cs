@@ -161,23 +161,19 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  with it. Its card says each change to a step or a way and what each needs taken with it, and what a save would\n");
         text.Append("  refuse, for the person to put right; they take the changes into the draft and save it themselves. A fingerprint\n");
         text.Append("  this conversation was not told is refused: ask the person to ask again from the editor.\n");
-        // LAYOUT8 (D170 point 1): the set-up press as a card, where the owner's helper could only name the terminal command. The
-        // room has no shell, by design (D89): the door is the press, judged by `--plan`'s refusals.
-        text.Append("- `setup_propose`: set a repository registered here up for every agent, as `daoris-driver setup <repository>`\n");
-        text.Append("  and its page's Set up for agents do: one quest to that repository's own session, which takes up the shared\n");
-        text.Append("  doctrine and writes down what the repository owns and its instructions on a branch of its own, landed by its\n");
-        text.Append("  workspace's rule, and a rule letting its sessions run the doctrine tool. Name it as `registry` lists it.\n");
-        // AGENTSPLACE1b: driving is no refusal; a set-up where the repository is not driven starts alone.
-        text.Append("  Its card shows what was read on its line and the quest's whole text; what the press refuses (no tree of its\n");
-        text.Append("  own, no doctrine tool, already set up, a set-up already open) comes back to you in its words, each with the\n");
-        text.Append("  door that answers it. Where the repository is not driven here, its quest starts alone and nothing else of it\n");
-        text.Append("  does. Daoris never writes into the repository, and you never run it yourself: the person's Apply is the press.\n");
-        // AGENTSPLACE1k: the place door proposes a quick set-up of a workspace's repositories; its Apply opens the page, never presses.
-        text.Append("  Asked to set one or several repositories up (their delivery, a second opinion and the person's look, the adoption\n");
-        text.Append("  quest and what it builds, general driving), give the preset and the repositories to `setup_propose`'s place ask. The\n");
-        text.Append("  card shows the plan `daoris-driver place <repository>… --preset <id> --plan` prints, every refusal in its words; its\n");
-        text.Append("  Apply opens the Agents place's Setup with *Set up…* open on your ask, where the person reads the plan and presses\n");
-        text.Append("  Apply themselves. Nothing is written by your card; the repositories must be in one workspace.\n\n");
+        // WORKFLOWCLEAN1 1f: one door adopts a repository, a place's adoption. The room has no shell, by design (D89): the door is a
+        // card whose Apply opens the page, judged by the plan's refusals.
+        text.Append("- `setup_propose`: set one or several repositories registered here up (their delivery, a second opinion and the\n");
+        text.Append("  person's look, the adoption quest and what it builds, general driving), as `daoris-driver place <repository>…\n");
+        text.Append("  --preset keep --adoption` does and its page's *Set up…* does. Adoption asks each repository's own session for one\n");
+        text.Append("  quest, which takes up the shared doctrine and writes down what the repository owns and its instructions on a\n");
+        text.Append("  branch of its own, landed by its workspace's rule, with a rule letting its sessions run the doctrine tool. Give\n");
+        text.Append("  the preset and the repositories, named as `registry` lists them, to `setup_propose`'s place ask; the only door is\n");
+        text.Append("  `place`. The card shows the plan `daoris-driver place <repository>… --preset <id> --plan` prints, every refusal in\n");
+        text.Append("  its words (no tree of its own, no doctrine tool, a set-up already open); where a repository is not driven here, its\n");
+        text.Append("  quest starts alone and nothing else of it does. Its Apply opens the Agents place's Setup with *Set up…* open on\n");
+        text.Append("  your ask, where the person reads the plan and presses Apply themselves. Nothing is written by your card; the\n");
+        text.Append("  repositories must be in one workspace. Daoris never writes into a repository, and you never run it yourself.\n\n");
         // HELP7: the real helper said *press Apply* of a card whose button reads *go there*. HELP10: a delete's
         // press was *delete* all along, and a bring-up-to-date card's first is the look. ASKDISMISS1: a go card's second
         // press only takes it away, and is told to nobody, so the helper never waits on it or reads anything into it.

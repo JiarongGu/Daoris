@@ -43,6 +43,21 @@ public static class TreesWords
             landed.Landed && landed.Withheld is null && landed.Plugin is not { Failed: true } and not { Pushed: false } ? 0 : 1);
 
     /// <summary>
+    /// <c>trees land &lt;session&gt;</c> with no running Daoris, for a run whose <c>land</c> the runtime performs (WORKFLOWCLEAN1 1c; the cleanup
+    /// design §2.1): the review's word is kept under the verb's lease (<see cref="VerbLeases"/>) and the verb never performs. Null where the
+    /// gate's run is not performed; what holds the work, said as a press says it, where the gate holds it; exit 0 once the word is kept.
+    /// </summary>
+    public static TreesSaid? AcceptedForPass(string home, IWorkplaceGate gate)
+    {
+        if (gate.Process is not { LandsByRuntime: true } process) return null;
+        if (gate.Refusal is { } held) return Land(held, []);
+        var word = WorkplaceWorkflows.Current.KeepReviewWord(home, null, process, DateTimeOffset.UtcNow);
+        return word.HasReview && !word.Kept && word.Said is { } refused
+            ? new([$"trees: {refused}"], [], 1)
+            : new(["trees: accepted; Daoris lands it at its next pass."], [], 0);
+    }
+
+    /// <summary>
     /// <c>trees land</c> on a session its Accept carried on (LANDBACK1 part 1): the plugin's lines, then the sentence that says it was carried
     /// on and lands when its tree is clean, exit 0, since the person's act took effect. Where the door kept nothing the refusal stands, with
     /// the carry-on's sentence beneath it (why, and the words to say), exit 1.
@@ -182,15 +197,12 @@ public static class TreesWords
     public static TreesSaid BindFailed(string session, string why) =>
         new([], [$"trees: session `{session}`'s repository's workflow could not be bound, so its work cannot be landed yet: {why}."], 1);
 
-    /// <summary>
-    /// <i>Accept without the look…</i> on work that is no chat run's (CHATFLOW1d2, the chat-flow design §5.3): a quest's look is set up by its
-    /// set-up step, so this press lands nothing.
-    /// </summary>
-    public static TreesSaid NoChatLook(string session) =>
-        new([], [$"trees: session `{session}`'s work is no conversation's, so there is no look to accept it without; nothing was landed."], 1);
-
     public static TreesSaid NoTreeToLand(string session) =>
         new([], [$"trees: session `{session}` names no working tree on this machine, so there is nothing here to land."], 1);
+
+    /// <summary>A press on a run whose <c>land</c> the runtime performs, before Daoris judged the commit it would land (WORKFLOWCLEAN1 1c).</summary>
+    public static TreesSaid NotJudged(string session) =>
+        new([], [$"trees: Daoris has not judged session `{session}`'s work at its commit yet, so nothing was landed; its next pass does, and this asks for it."], 1);
 
     /// <summary>
     /// The review's reading of a session's earlier landing, for the press that would land it again: null where this machine kept no

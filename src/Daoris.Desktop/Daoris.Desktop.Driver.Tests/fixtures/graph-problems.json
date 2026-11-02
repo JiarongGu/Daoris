@@ -519,7 +519,7 @@
           { "id": "line", "kind": "line", "version": 1, "reach": "observed" }
         ],
         "wires": [{ "id": "a", "kind": "after", "from": "land", "to": "push" }, { "id": "b", "kind": "after", "from": "push", "to": "line" }] },
-      "problems": [{ "code": "land-tail", "wire": null, "node": "push", "words": "node `push`: a `merge` land brings no `pushed`, and `land` is the graph's landing." }] },
+      "problems": [{ "code": "land-tail", "wire": null, "node": "push", "words": "node `push` is a `pushed`, which comes with a `land` whose method is `push`: choose that method on the landing and it brings this step." }] },
     { "name": "a pull-request land with no pushed or pull-request (LANDNODE1a)",
       "graph": { "entries": ["land"], "end": "line",
         "nodes": [
@@ -547,7 +547,7 @@
           { "id": "line", "kind": "line", "version": 1, "reach": "observed" }
         ],
         "wires": [{ "id": "a", "kind": "after", "from": "land", "to": "integrate" }, { "id": "b", "kind": "after", "from": "integrate", "to": "line" }] },
-      "problems": [{ "code": "declaration", "wire": null, "node": "land", "words": "node `land`: its `accept` does not hold for a `land`." }] },
+      "problems": [{ "code": "accept", "wire": null, "node": "land", "words": "node `land`: a `land` takes no `accept`. Where you accept the work, put *Your review* before it; with no review it lands once the steps before it are done." }] },
     { "name": "an integrate with no landing before it (INTEGRATE1n)",
       "graph": { "entries": ["integrate"], "end": "integrate", "nodes": [{ "id": "integrate", "kind": "integrate", "version": 1, "reach": "waited" }] },
       "problems": [{ "code": "integrate-unlanded", "wire": null, "node": "integrate", "words": "node `integrate`: an `integrate` integrates the landing a `handed` makes, and the graph holds no `handed`." }] },

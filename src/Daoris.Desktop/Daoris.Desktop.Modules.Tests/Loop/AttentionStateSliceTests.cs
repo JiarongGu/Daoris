@@ -1425,6 +1425,23 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.True(woken >= 2);
     }
 
+    /// <summary>WORKFLOWCLEAN1g-ii: while the kept census holds places, one row for the home says how many, and it is pushed.</summary>
+    [Fact]
+    [Trait("Category", "Census")]
+    public void A_census_that_holds_places_is_one_row_for_the_home()
+    {
+        var conversion = new ConversionCensus(null);
+        conversion.Tell(new([], [new("aurora", false, "default", ["steps"], false, false)], [], []));
+        var row = Assert.Single(Rows(new() { Conversion = conversion.Wait() }));
+        Assert.Equal("workflow-convert:home", $"{row["kind"]}:{row["id"]}");
+        Assert.Equal(1, row["convert"]!["places"]!.GetValue<int>());
+        var pushed = AttentionStateSlice.Judge(new() { Conversion = conversion.Wait() })!.Single(each => each.Partition == AttentionStateSlice.Rows);
+        Assert.Contains("\"places\"", JsonSerializer.Serialize(pushed.Data, IpcJson.Options));
+
+        conversion.Tell(new([], [], [], []));
+        Assert.Empty(Rows(new() { Conversion = conversion.Wait() }));
+    }
+
     /// <summary>AUTONOMY1b3c (D184 point 3): a tool call a session holds for the person holds work: its wait whole, the session that holds it.</summary>
     [Fact]
     public void A_tool_call_a_session_holds_for_the_person_is_a_row_with_the_wait_whole()

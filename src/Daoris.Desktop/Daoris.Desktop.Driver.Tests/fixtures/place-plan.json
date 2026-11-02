@@ -10,6 +10,8 @@
         "  `solo`: now Not driven · after Merge after you accept · suggested Merge after you accept",
         "changes, each said once:",
         "  `solo`: a tree per session, off → on",
+        "  `solo`: a saved copy of the workflow Daoris ships, none → `merge-after-accept`",
+        "  `solo`: the workflow its work follows, Current → `merge-after-accept`",
         "  `solo`: general driving, off → on",
         "--plan: nothing was written, and nothing was asked."
       ]
@@ -23,7 +25,8 @@
         "  `web`: now Merge after you accept · after A pull request · suggested A pull request",
         "  `docs`: now Merge after you accept · after Merge after you accept · suggested Merge after you accept",
         "changes, each said once:",
-        "  `web`: how its work lands, merged after you accept → on `feature/{quest}-{slug}`, a pull request by `example.github-pull-request`",
+        "  `web`: a saved copy of the workflow Daoris ships, none → `pull-request`",
+        "  `web`: the workflow its work follows, Current → `pull-request`",
         "refused:",
         "  - `docs`'s remote is on `gitlab.com`, and no landing plugin here opens a pull request there: a pull request is its platform's plugin's to open. Add one on Plugins, or choose *A branch to push*.",
         "--plan: nothing was written, and nothing was asked."
@@ -31,13 +34,15 @@
     },
     {
       "name": "a repository declaring integration, integrated, with its set-up asked for a library",
-      "args": ["engine", "--preset", "integrated", "--with", "adoption", "--what-it-builds", "library", "--plan"],
+      "args": ["engine", "--preset", "integrated", "--adoption", "--what-it-builds", "library", "--plan"],
       "exit": 0,
       "lines": [
         "place: `engine` — Integrated into the line; adoption, for a library or package",
         "  `engine`: now Merge after you accept · after Integrated into the line · suggested Integrated into the line",
         "changes, each said once:",
-        "  `engine`: how its work lands, merged after you accept → on `feature/{quest}-{slug}`, integrated into the line, requested by you",
+        "  `engine`: a saved copy of the workflow Daoris ships, none → `integrated`",
+        "  `engine`: the workflow its work follows, Current → `integrated`",
+        "  `engine`: how its line integrates, no policy → the default policy",
         "  `engine`: a set-up asked of its own session, not asked → asked, for a library or package",
         "declarations:",
         "  `engine`: `daoris.gates.json` at `main` `0123456789ab`, blob `fedcba987654`",
@@ -48,13 +53,15 @@
     },
     {
       "name": "adoption without driving, its set-up quest started alone (AGENTSPLACE1b)",
-      "args": ["atlas", "--preset", "merge-after-accept", "--with", "adoption", "--plan"],
+      "args": ["atlas", "--preset", "merge-after-accept", "--adoption", "--plan"],
       "exit": 0,
       "lines": [
         "place: `atlas` — Merge after you accept; adoption",
         "  `atlas`: now Not driven · after Not driven · suggested Merge after you accept, with adoption",
         "changes, each said once:",
         "  `atlas`: a tree per session, off → on",
+        "  `atlas`: a saved copy of the workflow Daoris ships, none → `merge-after-accept`",
+        "  `atlas`: the workflow its work follows, Current → `merge-after-accept`",
         "  `atlas`: a set-up asked of its own session, not asked → asked",
         "  `atlas`: what starts here while general driving stays off, nothing → its set-up quest alone",
         "--plan: nothing was written, and nothing was asked."
@@ -69,6 +76,8 @@
         "  `atlas`: now Not driven · after Merge after you accept · suggested Merge after you accept, with adoption",
         "changes, each said once:",
         "  `atlas`: a tree per session, off → on",
+        "  `atlas`: a saved copy of the workflow Daoris ships, none → `merge-after-accept`",
+        "  `atlas`: the workflow its work follows, Current → `merge-after-accept`",
         "  `atlas`: general driving, off → on",
         "  `atlas`: a set-up asked of its own session, not asked → asked",
         "released when driving starts:",
@@ -82,7 +91,9 @@
       "exit": 2,
       "lines": [
         "place: name `--plan` to read the plan, or `--apply` to apply it.",
-        "usage: daoris-driver place <repository>… --preset <id> [--with opinion,look,adoption] [--what-it-builds <kind>] [--drive] (--plan | --apply [--accept <repository>:landed|integration,…])"
+        "usage: daoris-driver place <repository>… --preset <id> [--with opinion,look] [--adoption [--what-it-builds <kind>] [--at-once <n>] [--pilot <n>]] [--drive] (--plan | --apply [--accept <repository>:landed|integration,…])",
+        "       daoris-driver place --workspace <name> --adoption [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]",
+        "       daoris-driver place --workspace <name> --pause | --resume | --stop"
       ]
     },
     {
@@ -103,8 +114,10 @@
       "args": ["engine", "--preset", "merge-after-accept", "--with", "opinions", "--plan"],
       "exit": 2,
       "lines": [
-        "place: `opinions` is not something `--with` takes — `opinion`, `look` or `adoption`.",
-        "usage: daoris-driver place <repository>… --preset <id> [--with opinion,look,adoption] [--what-it-builds <kind>] [--drive] (--plan | --apply [--accept <repository>:landed|integration,…])"
+        "place: `opinions` is not something `--with` takes — `opinion` or `look`; adoption is `--adoption`.",
+        "usage: daoris-driver place <repository>… --preset <id> [--with opinion,look] [--adoption [--what-it-builds <kind>] [--at-once <n>] [--pilot <n>]] [--drive] (--plan | --apply [--accept <repository>:landed|integration,…])",
+        "       daoris-driver place --workspace <name> --adoption [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]",
+        "       daoris-driver place --workspace <name> --pause | --resume | --stop"
       ]
     }
   ]

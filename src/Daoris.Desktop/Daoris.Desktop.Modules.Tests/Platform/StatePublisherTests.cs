@@ -652,9 +652,6 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("CHANNEL_READ", "", null)]
     [InlineData("ASKS_ELSEWHERE", "", null)]
     [InlineData("REGISTRY_REFRESH", "registry", null)]
-    // LAYOUT8: a set-up's press publishes one ask, whose quest it becomes, and adds the repository's rule; its plan reads.
-    [InlineData("SETUP_PRESS", "quests,asks,rules", null)]
-    [InlineData("SETUP_PLAN", "", null)]
     [InlineData("TOOLS_USE", "tools", null)]
     [InlineData("TOOLS_DOWNLOAD", "tools", null)]
     [InlineData("TOOLS_DELETE", "tools", null)]

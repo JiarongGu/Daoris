@@ -75,6 +75,7 @@ public static class AttentionStateSlice
             "departed", "setUp", "local", "environment", "shows", "opinion", "placed", "sitting", "trust", "quest", "proposal", "title",
             "permission", "blocked", "held", "unreadable", "wholeWorkspace", "holding", "read", "account", "answer", "ended",
             "confirmation", "agent", "stands", "stale", "space", "git", "quiet", "declined", "memory", "integration",
+            "convert",
         ],
         ["waiting"] = ["kind", "workspace"],
         ["working"] = ["workspace"],
@@ -117,6 +118,8 @@ public static class AttentionStateSlice
         ["asker"] = ["process", "pid"],
         // KEEP1f: a volume still below its free-space floor once the floor's acts ran.
         ["space"] = ["root", "free", "total", "floor", "freed", "could"],
+        // WORKFLOWCLEAN1g-ii: the places the kept census lists.
+        ["convert"] = ["places"],
         // GITAUTH1a: a held group of git remotes that cannot authenticate.
         ["git"] = ["host", "class", "holds", "remote", "repositories", "words"],
         // SESSWATCH1a: a quiet session brought to the person, or a busy one nothing is heard from.
@@ -163,6 +166,7 @@ public static class AttentionStateSlice
         ["confirmation.asker"] = "asker",
         ["row.space"] = "space",
         ["row.git"] = "git",
+        ["row.convert"] = "convert",
         ["row.declined"] = "declined",
         ["row.memory"] = "memory",
         ["row.integration"] = "integration",
@@ -183,6 +187,8 @@ public static class AttentionStateSlice
         new(PipeConfirmations.Event),
         // KNOWCENTRAL2e: what memory waits on the person, as the service was last read.
         new(MemoryWaits.Event),
+        // WORKFLOWCLEAN1g-ii: the conversion's census, as the loop last read it.
+        new(ConversionCensus.Event),
     ];
 
     /// <summary>
@@ -305,6 +311,8 @@ public static class AttentionStateSlice
             Space = Written(SpaceWaits(SpaceFloors.Shared, loop.Home)),
             // GITAUTH1a: each remote held since it could not authenticate, from the home's run/git/held.json.
             Git = Written(GitWaits(loop.Home)),
+            // WORKFLOWCLEAN1g-ii: the places still on old workflow shapes, from the census the loop keeps.
+            Conversion = loop.Conversion.Wait(),
             // INTEGRATE1o part o3: each run held at a declined request, from the node runtime's last look and its node records.
             Requests = Written(loop.RequestHolds.Select(hold => new
             {

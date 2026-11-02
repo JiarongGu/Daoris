@@ -20,10 +20,31 @@ public sealed partial class DriverWorkflowsTextTests
     private static readonly Lazy<JsonElement> Read = new(() => JsonDocument.Parse(File.ReadAllText(Path.Combine(
         WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "driver-workflows-text.json"))).RootElement.Clone());
 
+    /// <summary>
+    /// The rows of the verbs that saved a list of steps, kept in the table as the record of what they said and no longer run (WORKFLOWCLEAN1 1b):
+    /// <c>edit</c>, and <c>new</c>, <c>apply</c> and <c>import</c> of steps are refused now, by the one judge's words, which the command tests prove.
+    /// </summary>
+    private static readonly string[] RetiredPrefixes =
+    [
+        "workflow edit,", "workflow new, a preset", "workflow new, the longest preset", "workflow new, from a saved", "workflow apply, a list of steps",
+        "workflow apply, a file's steps", "workflow apply, the same steps", "workflow apply, steps after a graph", "workflow apply, a file of no steps",
+        // These rows save a graph that lands by a `handed` (refused at the save now) or a file of steps.
+        "workflow apply, a graph", "workflow apply, the same graph again", "workflow apply, a version holding a graph", "workflow import, a file",
+        "workflow import, the same file again", "workflow import, --plan", "workflow import, another's versions", "workflow import, versions that are graphs",
+        // WORKFLOWCLEAN1 1a: Current is no longer copied by hand nor chosen as a development route's workflow.
+        "workflow new, from Current", "workflow new, from a repository's Current", "workflow new, from a light Current", "workflow new, from a Current",
+        "workflow new, current:", "workflow use, Current",
+    ];
+
     public static TheoryData<string> Names()
     {
         var names = new TheoryData<string>();
-        foreach (var row in Read.Value.GetProperty("rows").EnumerateArray()) names.Add(row.GetProperty("name").GetString()!);
+        foreach (var row in Read.Value.GetProperty("rows").EnumerateArray())
+        {
+            var name = row.GetProperty("name").GetString()!;
+            if (!RetiredPrefixes.Any(prefix => name.StartsWith(prefix, StringComparison.Ordinal))) names.Add(name);
+        }
+
         return names;
     }
 

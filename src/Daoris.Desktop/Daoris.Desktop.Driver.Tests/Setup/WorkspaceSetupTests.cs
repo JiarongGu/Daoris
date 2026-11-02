@@ -343,7 +343,7 @@ public sealed class WorkspaceSetupTests : IDisposable
         var said = (await TickAsync(world, config)).Concat(await TickAsync(world, config)).ToList();
 
         Assert.Contains(said, line => line.StartsWith("setup  my team: paused after the pilot", StringComparison.Ordinal)
-            && line.EndsWith("then `daoris-driver setup --workspace \"my team\" --resume` carries on.", StringComparison.Ordinal));
+            && line.EndsWith("then `daoris-driver place --workspace \"my team\" --resume` carries on.", StringComparison.Ordinal));
     }
 
     [Fact]

@@ -42,9 +42,10 @@ public sealed record SetupMatch(string? Preset, IReadOnlyList<string> Own)
 
 /// <summary>
 /// The delivery presets of a place's quick set-up (AGENTSPLACE1a2; the Agents-place design §2 point 3 and §4, the land node design §7), beside
-/// the workflows' presets: each is a set of `land` options applied to Current through the landing rule, never stored. A place's preset is
-/// derived from what its work follows (<see cref="LandOf"/>, <see cref="Match"/>), or said as the options of its own. After <i>Not driven</i>,
-/// each is a default Daoris ships that the data offers a set-up (<see cref="WorkflowDefaults"/>), with its name and delivery.
+/// the workflows' presets: each is a default Daoris ships, whose saved copy a set-up has the place follow (WORKFLOWCLEAN1 1a; the cleanup design
+/// §1.2), never a rule written beside it. A place's preset is derived from what its work follows (<see cref="LandOf"/>, <see cref="Match"/>),
+/// or said as the options of its own. After <i>Not driven</i>, each is a default the data offers a set-up (<see cref="WorkflowDefaults"/>),
+/// with its name and the delivery its graph derives.
 /// </summary>
 public static class SetupPresets
 {
@@ -55,9 +56,6 @@ public static class SetupPresets
     public const string Branch = "branch-to-push";
     public const string PullRequest = "pull-request";
     public const string Integrated = "integrated";
-
-    /// <summary>The pattern a branch preset gives a rule that names none.</summary>
-    public const string Pattern = "feature/{quest}-{slug}";
 
     public static IReadOnlyList<SetupPreset> Table { get; } =
     [
@@ -119,28 +117,6 @@ public static class SetupPresets
     }
 
     /// <summary>
-    /// The landing rule a preset's land writes over the rule standing (Current's `land` options, the land node design §4): a branch keeps the
-    /// standing branch's pattern, tidy, key, squash and cycle, or takes <see cref="Pattern"/>; a merge keeps its tidy and cycle. An
-    /// integration keeps the line's policy, <paramref name="policy"/>, and asks with the land's request only where it reads as another.
-    /// </summary>
-    public static LandingRule RuleOf(SetupLand land, LandingRule standing, LandingIntegrate? policy)
-    {
-        var automatic = land.Accept == SetupLand.Automatic;
-        if (land.Method == LandNodes.Merge) return LandingRule.Merge with { Tidy = standing.Tidy, Cycle = standing.Cycle };
-
-        var branch = standing.Form == LandingForm.Branch ? standing : new LandingRule(LandingForm.Branch, Pattern, standing.Tidy) { Cycle = standing.Cycle };
-        if (land.Method == LandNodes.Integrate)
-        {
-            var kept = policy ?? new LandingIntegrate();
-            var request = kept.Resolved().Request == land.Request ? kept.Request : land.Request;
-            return branch with { Plugin = null, Squash = false, AutoAccept = automatic, Integrate = kept with { Request = request } };
-        }
-
-        var plugin = land.Method == LandNodes.PullRequest ? land.Plugin : null;
-        return branch with { Plugin = plugin, AutoAccept = automatic, Integrate = null };
-    }
-
-    /// <summary>
     /// The landing plugin a pull request is opened by for a remote on <paramref name="host"/>: the rule's own, <paramref name="named"/>, where
     /// it can land work here; else the first contributing plugin speaking on <see cref="HookPoints.Land"/> whose name, after its publisher,
     /// names the host's platform; null where none does.
@@ -152,6 +128,16 @@ public static class SetupPresets
         return catalog.Contributing.FirstOrDefault(entry => entry.Points.Contains(HookPoints.Land, StringComparer.Ordinal)
             && entry.Id[(entry.Id.IndexOf('.') + 1)..].Contains(platform, StringComparison.OrdinalIgnoreCase))?.Id;
     }
+
+    /// <summary>
+    /// The plugin that serves a remote on <paramref name="host"/> at a bind (WORKFLOWCLEAN1 1a): the first plugin speaking on
+    /// <see cref="HookPoints.Land"/> whose name, after its publisher, names the host's platform; null where none does.
+    /// </summary>
+    public static string? PlatformPlugin(string? host, IReadOnlyList<WorkflowPlugin> plugins) =>
+        PlatformOf(host) is { } platform
+            ? plugins.FirstOrDefault(entry => entry.Points.Contains(HookPoints.Land, StringComparer.Ordinal)
+                && entry.Id[(entry.Id.IndexOf('.') + 1)..].Contains(platform, StringComparison.OrdinalIgnoreCase))?.Id
+            : null;
 
     /// <summary>The platform a remote's host is: <c>github</c>, <c>gitlab</c>, <c>azure</c> or <c>bitbucket</c>; null for one none is known for.</summary>
     public static string? PlatformOf(string? host)
@@ -178,20 +164,4 @@ public static class SetupPresets
         : declaresIntegration ? (Integrated, SuggestionWhy.Of(SuggestionWhy.Integration))
         : plugin is not null ? (PullRequest, SuggestionWhy.Of(SuggestionWhy.Plugin))
         : (Merge, SuggestionWhy.Of(SuggestionWhy.Default));
-
-    /// <summary>How a rule lands its work, in a few words: the plan's before and after of the landing.</summary>
-    public static string Said(LandingRule rule)
-    {
-        if (rule.Form == LandingForm.Merge) return "merged after you accept";
-        var press = rule.AutoAccept ? " with no press" : "";
-        var asks = rule.Integrate?.Resolved().Request switch
-        {
-            LandingIntegrate.Done => "requested once its agent is done",
-            LandingIntegrate.Steward => "requested by the steward",
-            _ => "requested by you",
-        };
-        return rule.Integrate is not null ? $"on `{rule.Pattern}`{press}, integrated into the line, {asks}"
-            : rule.Plugin is { } plugin ? $"on `{rule.Pattern}`{press}, a pull request by `{plugin}`"
-            : $"on `{rule.Pattern}`{press}, a branch for you to push";
-    }
 }

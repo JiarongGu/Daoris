@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// WSSETUP6 (D124 §4.5): the terminal's door to a workspace plan, <c>daoris-driver setup --workspace &lt;name&gt;</c>.
+/// WSSETUP6 (D124 §4.5): the terminal's door to a workspace plan, <c>daoris-driver place --workspace &lt;name&gt; --adoption</c>.
 /// <c>--plan</c> prints the list with what touched each and every refusal, and writes nothing; a press writes the plan and
 /// says the rule it added; <c>--pause</c>, <c>--resume</c> and <c>--stop</c> steer a plan already made, and print where it
 /// stands. Fast: the world is a stand-in.
@@ -48,6 +48,8 @@ public sealed class WorkspaceSetupCommandTests : IDisposable
     [InlineData("--workspace work --first")]
     [InlineData("--workspace work --frobnicate")]
     [InlineData("--workspace work --workspace home")]
+    [InlineData("--workspace work")]
+    [InlineData("--workspace work --pause --adoption")]
     public async Task Words_it_does_not_take_are_the_usage(string words)
     {
         var output = new StringWriter();
@@ -55,7 +57,7 @@ public sealed class WorkspaceSetupCommandTests : IDisposable
         var code = await RunAsync(words.Split(' '), output);
 
         Assert.Equal(2, code);
-        Assert.Contains("daoris-driver setup --workspace <name> [--plan]", output.ToString(), StringComparison.Ordinal);
+        Assert.Contains("daoris-driver place --workspace <name> --adoption [--plan]", output.ToString(), StringComparison.Ordinal);
         Assert.False(File.Exists(WorkspaceSetupFile.PathOf(_home, "work")));
     }
 
@@ -67,11 +69,11 @@ public sealed class WorkspaceSetupCommandTests : IDisposable
         world.Quest("q1", "cargo", "Say what the tariff is", "Done", from: "billing");
         var output = new StringWriter();
 
-        var code = await RunAsync(["--workspace", "work", "--plan"], output, world, Config.WithTrees("billing", false));
+        var code = await RunAsync(["--workspace", "work", "--adoption", "--plan"], output, world, Config.WithTrees("billing", false));
 
         var said = output.ToString().ReplaceLineEndings("\n");
         Assert.Equal(0, code);
-        Assert.Contains("setup: workspace `work`, 3 repositories with a checkout here, the ones other work touches first", said, StringComparison.Ordinal);
+        Assert.Contains("place: workspace `work`, 3 repositories with a checkout here, the ones other work touches first", said, StringComparison.Ordinal);
         Assert.Contains("\n  1  cargo          1     0         0  to go\n", said, StringComparison.Ordinal);
         Assert.Contains("\n  2  atlas          0     0         0  to go\n", said, StringComparison.Ordinal);
         Assert.Contains("\n  3  billing        0     0         0  to go\n       refused: `billing`'s sessions run in its checkout, not a tree of their own", said, StringComparison.Ordinal);
@@ -91,8 +93,8 @@ public sealed class WorkspaceSetupCommandTests : IDisposable
         var output = new StringWriter();
         var again = new StringWriter();
 
-        var code = await RunAsync(["--workspace", "work", "--pilot", "1", "--first", "cargo", "--skip", "billing"], output, world);
-        var second = await RunAsync(["--workspace", "work"], again, world);
+        var code = await RunAsync(["--workspace", "work", "--adoption", "--pilot", "1", "--first", "cargo", "--skip", "billing"], output, world);
+        var second = await RunAsync(["--workspace", "work", "--adoption"], again, world);
 
         var said = output.ToString().ReplaceLineEndings("\n");
         Assert.Equal(0, code);
@@ -113,7 +115,7 @@ public sealed class WorkspaceSetupCommandTests : IDisposable
         world.Tools = new("node", "v22.11.0", null, null, null, null);
         var output = new StringWriter();
 
-        var code = await RunAsync(["--workspace", "work"], output, world);
+        var code = await RunAsync(["--workspace", "work", "--adoption"], output, world);
 
         Assert.Equal(1, code);
         Assert.Contains("the doctrine tool cannot run here", output.ToString(), StringComparison.Ordinal);
@@ -126,16 +128,16 @@ public sealed class WorkspaceSetupCommandTests : IDisposable
     public async Task The_plan_of_a_workspace_with_a_plan_working_prints_where_it_stands()
     {
         var world = World();
-        await RunAsync(["--workspace", "work", "--pilot", "0"], new StringWriter(), world);
+        await RunAsync(["--workspace", "work", "--adoption", "--pilot", "0"], new StringWriter(), world);
         await WorkspaceSetup.TickAsync(world, Config, SessionWire.Acp, _home, Day, Now);
         world.Close(world.SetupOf("atlas").Id, "Done");
         var output = new StringWriter();
 
-        var code = await RunAsync(["--workspace", "work", "--plan"], output, world);
+        var code = await RunAsync(["--workspace", "work", "--adoption", "--plan"], output, world);
 
         var said = output.ToString().ReplaceLineEndings("\n");
         Assert.Equal(0, code);
-        Assert.Contains("setup: workspace `work`, a plan made 2026-10-02: one at a time, with no pilot", said, StringComparison.Ordinal);
+        Assert.Contains("place: workspace `work`, a plan made 2026-10-02: one at a time, with no pilot", said, StringComparison.Ordinal);
         Assert.Contains("  1  atlas    waiting for your review — its set-up #q1 is done and waits for your review", said, StringComparison.Ordinal);
         Assert.Contains("  2  billing  to go", said, StringComparison.Ordinal);
         Assert.Contains("Setting up — 1 waiting for your review · 2 to go", said, StringComparison.Ordinal);
@@ -146,7 +148,7 @@ public sealed class WorkspaceSetupCommandTests : IDisposable
     public async Task Pause_resume_and_stop_steer_the_plan_and_say_where_it_stands()
     {
         var world = World();
-        await RunAsync(["--workspace", "work"], new StringWriter(), world);
+        await RunAsync(["--workspace", "work", "--adoption"], new StringWriter(), world);
         await WorkspaceSetup.TickAsync(world, Config, SessionWire.Acp, _home, Day, Now);
         var paused = new StringWriter();
         var resumed = new StringWriter();
@@ -187,15 +189,15 @@ public sealed class WorkspaceSetupCommandTests : IDisposable
         var again = new StringWriter();
         var paused = new StringWriter();
 
-        Assert.Equal(0, await RunAsync(["--workspace", "my team"], pressed, world));
-        Assert.Equal(1, await RunAsync(["--workspace", "my team"], again, world));
+        Assert.Equal(0, await RunAsync(["--workspace", "my team", "--adoption"], pressed, world));
+        Assert.Equal(1, await RunAsync(["--workspace", "my team", "--adoption"], again, world));
         Assert.Equal(0, await RunAsync(["--workspace", "my team", "--pause"], paused, world));
 
         Assert.Contains("taken back in Repositories → the workspace's page → Setup → Remote and reach, or `daoris agent rules remove <rule> --workspace \"my team\"`.",
             pressed.ToString(), StringComparison.Ordinal);
-        Assert.Contains("a plan for workspace `my team` is already working, made 2026-10-02. `daoris-driver setup --workspace \"my team\" "
+        Assert.Contains("a plan for workspace `my team` is already working, made 2026-10-02. `daoris-driver place --workspace \"my team\" "
             + "--pause`, `--resume` or `--stop` steers it", again.ToString(), StringComparison.Ordinal);
-        Assert.Contains("the plan for workspace `my team` is paused: nothing more is asked until `daoris-driver setup --workspace "
+        Assert.Contains("the plan for workspace `my team` is paused: nothing more is asked until `daoris-driver place --workspace "
             + "\"my team\" --resume`", paused.ToString(), StringComparison.Ordinal);
     }
 
@@ -206,9 +208,9 @@ public sealed class WorkspaceSetupCommandTests : IDisposable
         var pressed = new StringWriter();
 
         Assert.Equal(1, await RunAsync(["--workspace", "R&D", "--pause"], steered));
-        Assert.Equal(1, await RunAsync(["--workspace", "R&D"], pressed));
+        Assert.Equal(1, await RunAsync(["--workspace", "R&D", "--adoption"], pressed));
 
-        Assert.Contains("there is no plan for workspace `R&D`: `daoris-driver setup --workspace <workspace>` makes one.",
+        Assert.Contains("there is no plan for workspace `R&D`: `daoris-driver place --workspace <workspace> --adoption` makes one.",
             steered.ToString(), StringComparison.Ordinal);
         Assert.Contains("no repository on this machine's registry is in workspace `R&D`. Add them on Repositories, or with "
             + "`daoris import <folder> --workspace <workspace>`, then press again.", pressed.ToString(), StringComparison.Ordinal);

@@ -29,7 +29,7 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         // steps by these titles, so it is told the guide exists and what each step is done on. UX6i2a: named Get started
         // since UX6j (D150 §2), in Settings and on Help's row.
         ("walk through setting this machine up: an agent, Ask Daoris's agent, a workspace and its repositories, "
-            + "what is driven, how work lands, what agents may do", "Settings → Get started (Help → *Get started*)",
+            + "setting a place up, what agents may do", "Settings → Get started (Help → *Get started*)",
             "(each step shows its own command there)"),
         // HELPSETUP1: a repository's own values are on its Setup since UX6f (D150 §4.2); a workspace's are on its page
         // since UX6g (D150 §3.1).
@@ -37,20 +37,20 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         // PAUSE1b (D132 §13): a repository's hold, never a pause; a pause is an ask's or a quest's, and stops what runs.
         ("hold one, so nothing new starts there, or resume it", Setup + "Driving", "`daoris driver hold|resume <repository>`"),
         ("give its sessions their own tree", Setup + "Driving", "`daoris driver trees <repository> on|off`"),
-        // LAYOUT7: the set-up press's terminal door; LAYOUT8 (D170 point 1): its screen, the page's press with its plan first,
-        // and Ask Daoris's `setup` kind, which proposes it.
+        // WORKFLOWCLEAN1 1f: one door adopts a repository, a place's adoption: one quest to its own session, which takes up the
+        // doctrine, writes down what the repository owns and its brief on its own branch. Ask Daoris's `setup` kind proposes it
+        // through its `place` door, and the page's *Set up…* applies it.
         ("set a repository up for every agent: one quest to its own session, which takes up the doctrine, writes down what "
             + "the repository owns and its brief on its own branch (`--plan` shows what was read and the quest, and asks nothing; "
             + "Ask Daoris proposes it)",
-            "Repositories → the repository's page → Details → Set up for agents (one not adopted, with a checkout here)",
-            "`daoris-driver setup <repository> [--plan]`; several at once, with their delivery: "
-                + "`daoris-driver place <repository>… --preset <id> [--with opinion,look,adoption] [--what-it-builds <kind>] [--drive] --plan`"),
+            "Agents → Setup → *Set up…* (adoption ticked)",
+            "`daoris-driver place <repository>… --preset keep --adoption [--what-it-builds <kind>] --plan`, then `--apply`"),
         // WSSETUP6: the workspace plan's terminal door; its screen and Ask Daoris's doors are WSSETUP7's, owed meanwhile.
         ("set every repository of a workspace up, one at a time, the ones other work touches first: a plan the loop works, "
             + "pausing after a pilot of two (`--plan` shows the list and each refusal, and writes nothing); pause, resume or stop it",
             "(no screen yet)",
-            "`daoris-driver setup --workspace <name> [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]`, "
-            + "`daoris-driver setup --workspace <name> --pause|--resume|--stop`"),
+            "`daoris-driver place --workspace <name> --adoption [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]`, "
+            + "`daoris-driver place --workspace <name> --pause|--resume|--stop`"),
         // WSSETUP5: registration follows the line on its own (a start, a line Daoris moves); this is the person's ask. The
         // row's *Refresh* and Ask Daoris's `register` door are WSSETUP7's, owed meanwhile.
         ("register a repository from what its line declares, as `connect` would, without running it: after a set-up's "

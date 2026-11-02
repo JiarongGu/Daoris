@@ -87,8 +87,8 @@ public sealed class AccessCommandTests : IDisposable
         const string NextTurn = "a driven session running now under other permission prompts takes these at its next turn";
         Assert.Equal(0, Run("engine permissions=asking", out var asking));
         Assert.Contains(NextTurn, asking);
-        Assert.Equal(0, Run("engine landing=rule", out var landing));
-        Assert.DoesNotContain(NextTurn, landing);
+        Assert.Equal(0, Run("engine routing=intake", out var routing));
+        Assert.DoesNotContain(NextTurn, routing);
         Assert.Equal(0, Run("--workspace shop full", out var full));
         Assert.Contains(NextTurn, full);
         Assert.Equal(0, Run("engine permissions=asking", out var same));
@@ -116,12 +116,25 @@ public sealed class AccessCommandTests : IDisposable
     [InlineData("--workspace shop permissions=sometimes", "`permissions` is `asking`, `auto` or `unrestricted`, not `sometimes`.")]
     public void A_pause_or_value_it_does_not_have_is_refused_in_the_route_s_words_and_nothing_is_written(string words, string refusal)
     {
-        Assert.Equal(0, Run("engine landing=rule", out _));
+        Assert.Equal(0, Run("engine routing=intake", out _));
         var before = File.ReadAllText(ConfigPath);
 
         Assert.Equal(1, Run(words, out var said));
 
         Assert.Equal($"access: {refusal}", said.Trim());
+        Assert.Equal(before, File.ReadAllText(ConfigPath));
+    }
+
+    /// <summary>WORKFLOWCLEAN1 1c (D228): how work lands is its workflow's, so the terminal refuses the landing pause and writes nothing.</summary>
+    [Fact]
+    public void The_landing_pause_is_refused_in_the_workflow_s_words_and_nothing_is_written()
+    {
+        Assert.Equal(0, Run("engine routing=intake", out _));
+        var before = File.ReadAllText(ConfigPath);
+
+        Assert.Equal(1, Run("engine landing=rule", out var said));
+
+        Assert.Equal($"access: {AccessRules.LandingRetired}", said.Trim());
         Assert.Equal(before, File.ReadAllText(ConfigPath));
     }
 

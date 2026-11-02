@@ -35,7 +35,6 @@ export const Halfway: Story = {
       driver: { drivable: ['engine'], helperAdapter: 'claude-code-acp' },
       harnesses: [IN],
       lines: [{ repository: 'engine', workspace: 'aurora', source: 'none' }],
-      landings: [{ repository: 'engine', workspace: 'aurora', source: 'default', form: 'merge' }],
     })),
   },
 };
@@ -50,7 +49,6 @@ export const Done: Story = {
       driver: { drivable: ['engine'], helperAdapter: 'claude-code-acp' },
       harnesses: [IN],
       lines: [{ repository: 'engine', workspace: 'aurora', branch: 'develop', source: 'workspace' }],
-      landings: [{ repository: 'engine', workspace: 'aurora', source: 'workspace', form: 'branch', pattern: 'feature/{quest}-{slug}' }],
     })),
   },
 };

@@ -227,6 +227,19 @@ public static class NodeWordActs
 public sealed record NodeWord(string Node, string Act, string? Words, DateTimeOffset At);
 
 /// <summary>
+/// The repair a review's Accept carries (WORKFLOWCLEAN1 1c; LANDBACK1): the work could not land at the tip the person accepted (its tree held
+/// uncommitted work, or its replay conflicted), so Daoris carried the session on to clear it and the Accept waits. Where the tip then moved
+/// only by the session's own commits, the next pass accepts the review again at the new tip, once; a stop, a decline or the carry-on's bound
+/// takes it back.
+/// </summary>
+/// <param name="Node">The <c>review</c> node whose Accept it is.</param>
+/// <param name="Tip">The tip the Accept was given at, which the new tip must descend from.</param>
+/// <param name="Turn">The carry-on's turn key, as the say door kept it (<see cref="CarryKeys"/>).</param>
+/// <param name="Carries">How many times the session was carried on for this Accept.</param>
+/// <param name="At">When it was kept.</param>
+public sealed record NodeRepair(string Node, string Tip, string Turn, int Carries, DateTimeOffset At);
+
+/// <summary>
 /// A unit's node record (FABRIC-PERFORM1b; §E7, <i>unit records keep §D6's attempts</i>): every node's status on the unit, the attempts
 /// dispatched for them, the trigger firings their starts consumed, and the history their moves cleared. One writer, the driver in the
 /// loop that holds the home's lease (<see cref="NodeRecordFiles"/>).
@@ -265,6 +278,13 @@ public sealed record NodeRecord(string Unit)
     /// next pass applies them and takes them off. Empty on every unit's record, and on a record written before the field.
     /// </summary>
     public IReadOnlyList<NodeWord> Pending { get; init; } = [];
+
+    /// <summary>
+    /// The review Accepts waiting on a carried-on session to clear its tree (WORKFLOWCLEAN1 1c), at most one a node. Empty on every unit's record,
+    /// and on a record written before the field; an older build reads past it and writes the record without it, which loses the repair and
+    /// leaves the person's Accept to be given again, never misapplied.
+    /// </summary>
+    public IReadOnlyList<NodeRepair> Repairs { get; init; } = [];
 
     /// <summary>The attempt an invocation names, or null.</summary>
     public NodeAttempt? Invoked(string invocation) =>

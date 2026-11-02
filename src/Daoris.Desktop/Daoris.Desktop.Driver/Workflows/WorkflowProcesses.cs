@@ -122,12 +122,27 @@ public static class WorkflowProcesses
     {
         var claimed = graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Claimed)?.Options ?? new Dictionary<string, string>();
         held = held with { Claimed = claimed, Graph = graph };
-        var (steps, problem) = WorkflowNamed.GateSteps(graph, number, held.Landing.Rule, binding.Land);
-        if (steps is null) return held with { Problem = $"`{binding.Workflow}` v{number} cannot be read here: {problem}" };
-        if (!steps.Any(step => step.Kind == WorkflowKinds.Landing))
+        // WORKFLOWCLEAN1 1c: a `land` is carried as the intent it binds (LandNodes.RuleOf) and its gates read from the node options
+        // (GraphGates); only a `handed` graph is still read back as steps (the transitional path of the design's §4.7).
+        var landNode = graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land);
+        IReadOnlyList<NamedStep>? steps = null;
+        GraphGateReading? gates = null;
+        if (landNode is null)
         {
-            // A verification pipeline's graph lands nothing (FABRIC-PIPELINE1a), so no chain's work follows it.
-            return held with { Problem = $"`{binding.Workflow}` v{number}'s graph holds no landing (`{NodeKinds.Handed}`), so no chain's work lands by it." };
+            var (read, problem) = WorkflowNamed.GateSteps(graph, number, held.Landing.Rule, binding.Land);
+            if (read is null) return held with { Problem = $"`{binding.Workflow}` v{number} cannot be read here: {problem}" };
+            if (!read.Any(step => step.Kind == WorkflowKinds.Landing))
+            {
+                // A verification pipeline's graph lands nothing (FABRIC-PIPELINE1a), so no chain's work follows it.
+                return held with { Problem = $"`{binding.Workflow}` v{number}'s graph holds no landing (`{NodeKinds.Handed}`), so no chain's work lands by it." };
+            }
+
+            steps = read;
+        }
+        else
+        {
+            gates = GraphGates.Of(graph, held);
+            if (gates.Problem is { } unread) return held with { Problem = $"`{binding.Workflow}` v{number} cannot be read here: v{number}, {unread}" };
         }
 
         if (graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.QuestClose) is { } close)
@@ -139,7 +154,10 @@ public static class WorkflowProcesses
             };
         }
 
-        var process = WorkflowProcess.Of(config, repository, workspace, binding, steps) with
+        var bound = landNode is null ? null : LandNodes.RuleOf(landNode, LandNodes.Reviewed(graph), binding.Land, held.Landing.Rule);
+        var process = (gates is null
+            ? WorkflowProcess.Of(config, repository, workspace, binding, steps!, bound)
+            : WorkflowProcess.Of(config, repository, workspace, binding, gates, bound!)) with
         {
             Run = run, Steps = Involvement.StepsOf(graph), Claimed = claimed, Graph = graph,
         };

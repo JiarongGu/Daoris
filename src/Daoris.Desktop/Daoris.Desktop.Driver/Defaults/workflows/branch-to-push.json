@@ -4,7 +4,6 @@
   "name": "Branch workflow",
   "for": "For a repository you push yourself: you review the work, and it lands on a branch of its own for you to push.",
   "delivery": {
-    "id": "branch-to-push", "method": "branch", "accept": "you", "plugin": "none",
     "name": "A branch to push",
     "for": "For a repository you push yourself: you review the work, and it lands on a branch of its own for you to push."
   },

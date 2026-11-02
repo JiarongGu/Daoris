@@ -19,12 +19,16 @@ public static class ChoiceCodes
     /// <summary>The shell's <c>DRIVER_REFUSED</c>: any other refusal, said in its own sentence.</summary>
     public const string Refused = "DRIVER_REFUSED";
 
+    /// <summary>A second opinion switched off, or a look required, for a place whose saved workflow's node decides it (WORKFLOWCLEAN1 1h).</summary>
+    public const string GraphDecides = "GRAPH_DECIDES";
+
     /// <summary>Each check an operation refuses by, and the code it is said in.</summary>
     public static IReadOnlyDictionary<string, string> Table { get; } = new Dictionary<string, string>(StringComparer.Ordinal)
     {
         [ChoiceRefusal.NotHeld] = QuestNotHeld,
         [ChoiceRefusal.Paused] = QuestPaused,
         [ChoiceRefusal.KeepOutOfRange] = KeepOutOfRange,
+        [ChoiceRefusal.GraphDecides] = GraphDecides,
     };
 
     /// <summary>The code a refusal is said in: its check's, else the verbatim refusal.</summary>
@@ -46,6 +50,9 @@ public sealed class ChoiceRefusal(string check, string message, params (string K
 
     /// <summary>A keep rule out of its kind's bounds (KEEP1d): its <c>kind</c>, <c>min</c> and <c>max</c> said with it.</summary>
     public const string KeepOutOfRange = "keep-out-of-range";
+
+    /// <summary>The place follows a saved workflow, whose <c>opinion</c> or <c>look</c> node decides what the edit would set.</summary>
+    public const string GraphDecides = "graph-decides";
 
     public string Check { get; } = check;
 

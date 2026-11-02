@@ -224,7 +224,8 @@ public sealed class WorkflowRunChatTests
             var said = WorkflowRunWords.Say(read.Runs, asked);
             Assert.Contains("engine · Current workflow", said);
             Assert.Contains("chat run chat-c1", said);
-            Assert.Contains(WorkflowRunWords.ChatChecks("light"), said);
+            // CHATFLOW1h: the checks are enforced on its tree, so the terminal no longer marks them as not.
+            Assert.DoesNotContain("not yet enforced", said);
         }
 
         Assert.False(Directory.Exists(sources.Home));
@@ -248,7 +249,7 @@ public sealed class WorkflowRunChatTests
         var home = Path.Combine(GitSeed.RepoRoot(), "_fixtures", "workflow-run-chat", Guid.NewGuid().ToString("N")[..8]);
         try
         {
-            WorkflowStore.Add(home, new WorkflowVersionAdded("chat-steps", "A conversation's steps", "terminal", "2026-10-09T09:00:00Z", JsonNode.Parse(
+            StoredSteps.Add(home, new WorkflowVersionAdded("chat-steps", "A conversation's steps", "terminal", "2026-10-09T09:00:00Z", JsonNode.Parse(
                 """[{"id":"work","kind":"work","checks":"heavy-at-end"},{"id":"landing","kind":"landing","form":"merge","accept":"you"}]""")), kept: []);
             var config = DriverConfig.Parse("""{"workflows":{"engine":{"default":"chat-steps"}},"sessionChecks":{"engine":"light"}}""");
             Assert.True(ChatRuns.Bind(config, home, "chat-c1", "engine", "aurora", [], T).Wrote);

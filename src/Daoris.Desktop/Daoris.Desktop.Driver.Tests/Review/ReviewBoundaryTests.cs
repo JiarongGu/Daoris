@@ -22,15 +22,6 @@ public sealed class ReviewBoundaryTests
         Assert.True(new OpinionDue("s1", "q1", "web-app", "work", "/tree", OpinionRules.Landing, DateTimeOffset.UnixEpoch) { Run = "chat-s1" }.OnRun);
         Assert.False(new OpinionDue("s1", "q1", "web-app", "work", "/tree", OpinionRules.Landing, DateTimeOffset.UnixEpoch) { Run = "q1" }.OnRun);
         Assert.False(new OpinionDue("s1", "q1", "web-app", "work", "/tree", OpinionRules.Landing, DateTimeOffset.UnixEpoch).OnRun);
-
-        var home = Path.Combine(GitSeed.RepoRoot(), "_fixtures", "review-boundary", Guid.NewGuid().ToString("N")[..8]);
-        try
-        {
-            var looks = new ChatLooks(home);
-            Assert.Equal(Path.Combine(DaorisHome.Entry(home, HomeEntry.Workflows), "looks", "chat-s1.json"), looks.PathOf("chat-s1"));
-            Assert.Null(looks.PathOf("q1"));
-        }
-        finally { GitSeed.Remove(home); }
     }
 
     [Fact]

@@ -1,7 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { ago } from '../locales/format';
 import type { PlaceAsk } from '../agents/setup/placePlan';
-import { SetupPlanFacts, type SetupShown } from '../projects/setup/SetUpForAgents';
 import { RequirementItem } from '../quests/Requirements';
 import { Button, Inline } from '../design/ui';
 
@@ -57,8 +56,6 @@ export type HelpProposal = {
   accept?: HelpAcceptShown | null;
   /** A workflow version (`workflow`, WORKFLOW1h-a): drawn as the design's card (WORKFLOW1h-d). */
   workflow?: HelpWorkflowShown | null;
-  /** A repository set up for every agent (`setup`, LAYOUT8): the press's plan, as the repository's page shows it. */
-  setup?: SetupShown | null;
   /** A place's quick set-up (`setup`'s `place` door, AGENTSPLACE1k): the ask and the plan's changes; Apply opens *Set up…* on the ask. */
   place?: HelpPlaceShown | null;
 };
@@ -418,8 +415,7 @@ function SyncApart({ apart }: { apart: string[] }) {
  * become standing, what is needed first and who it applies to. A draft (needs present) offers only *Not now*. A change to the draft open in
  * the editor (FLOWCHART2f) lists its changes and what to put right, and its press, *Open in the editor*, saves and settles nothing.
  *
- * **A set-up shows its plan first** (LAYOUT8, D170 point 1): what was read on the repository's line, the rule its press adds
- * and the quest's whole text, drawn as the repository's page draws them before its own press (`SetupPlanFacts`).
+ * **A set-up is a place's** (WORKFLOWCLEAN1 1f): its card lists the plan's changes and Apply opens the page's *Set up…* on the ask.
  */
 export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: {
   proposal: HelpProposal;
@@ -438,7 +434,6 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
   const accepting = proposal.kind === 'accept';
   const departures = accepting ? proposal.accept?.departures ?? [] : [];
   const workflow = proposal.kind === 'workflow' ? proposal.workflow ?? null : null;
-  const setup = proposal.kind === 'setup' ? proposal.setup ?? null : null;
   const place = proposal.kind === 'setup' ? proposal.place ?? null : null;
   // A draft (WORKFLOW1h-b): what is still needed leaves no Apply, only Not now.
   const draft = workflow !== null && workflow.needs.length > 0;
@@ -465,7 +460,6 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
         : <p className="m-0 mt-1 text-small text-ink"><Inline text={proposal.describe} /></p>}
       {plugin && <PluginRuns plugin={plugin} />}
       {grant && <GrantTools grant={grant} />}
-      {setup && <SetupPlanFacts plan={setup} />}
       {place && <PlaceChanges place={place} />}
       {departures.length > 0 && (
         <ol aria-label={t('help.proposal.departures')} className="m-0 mt-2 grid list-none gap-2.5 p-0">

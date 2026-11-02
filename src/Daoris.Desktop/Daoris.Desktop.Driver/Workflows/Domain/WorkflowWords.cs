@@ -190,6 +190,7 @@ public static class WorkflowWords
             WorkflowLevels.Repository => $"`{repository}`'s default",
             WorkflowLevels.WorkspaceKind => $"chosen by the workspace `{workspace}` for {kind}",
             WorkflowLevels.Workspace => $"the workspace `{workspace}`'s default",
+            WorkflowLevels.Home => "this machine's default",
             _ => "since nothing names a workflow",
         };
     }

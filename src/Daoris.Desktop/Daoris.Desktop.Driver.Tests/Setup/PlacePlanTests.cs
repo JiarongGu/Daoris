@@ -40,8 +40,9 @@ public sealed class PlacePlanTests
         Assert.False(string.IsNullOrWhiteSpace(solo.Suggested.Why.Said));
         Assert.Equal(new SetupMatch(SetupPresets.NotDriven, []), solo.Before.Match);
         Assert.Equal(new SetupMatch(SetupPresets.Merge, []), solo.After.Match);
-        // The default rule already merges after the person's Accept, so no landing rule is written.
-        Assert.Equal(["SET_TREES", "SET_DRIVABLE"], solo.Changes.Select(change => change.Key));
+        // WORKFLOWCLEAN1 1a: the delivery is a saved copy of the shipped workflow, saved and chosen; no landing rule is written.
+        Assert.Equal(["SET_TREES", "WORKFLOW_SAVE", "WORKFLOW_USE", "SET_DRIVABLE"], solo.Changes.Select(change => change.Key));
+        Assert.Equal([new PlaceSave("merge-after-accept", "merge-after-accept", false, false)], plan.Saves);
         Assert.True(plan.Applies);
         Assert.Empty(solo.Lowers);
         Assert.Equal("daoris-driver place solo --preset merge-after-accept --drive --plan", plan.Terminal);
@@ -54,9 +55,9 @@ public sealed class PlacePlanTests
 
         var engine = Assert.Single(plan.Repositories);
         Assert.Equal((SetupPresets.Integrated, SuggestionWhy.Integration), (engine.Suggested.Preset, engine.Suggested.Why.Code));
-        var landing = Assert.Single(engine.Changes);
-        Assert.Equal(new PlaceChange("SET_LANDING", PlacePlans.Delivery, "how its work lands", "merged after you accept",
-            "on `feature/{quest}-{slug}`, integrated into the line, requested by you"), landing);
+        Assert.Equal(["WORKFLOW_SAVE", "WORKFLOW_USE", "SET_LINE"], engine.Changes.Select(change => change.Key));
+        Assert.DoesNotContain(engine.Changes, change => change.Key == "SET_LANDING");
+        Assert.Equal("`integrated`", engine.Changes.Single(change => change.Key == "WORKFLOW_USE").After);
         Assert.Equal(new SetupLand("integrate", "you", "none", "owner"), engine.After.Land);
         var declaration = engine.Declaration!;
         Assert.Equal(("main", Commit, Blob, Declaring), (declaration.Line, declaration.Commit, declaration.Blob, declaration.Text));
@@ -73,8 +74,9 @@ public sealed class PlacePlanTests
 
         var web = Assert.Single(plan.Repositories);
         Assert.Equal((SetupPresets.PullRequest, SuggestionWhy.Plugin), (web.Suggested.Preset, web.Suggested.Why.Code));
-        Assert.Equal("on `feature/{quest}-{slug}`, a pull request by `example.github-pull-request`", Assert.Single(web.Changes).After);
-        Assert.Equal(new SetupLand("pull-request", "you", Plugin), web.After.Land);
+        // The plugin is left open in the copy and resolved at the bind from the remote's platform (design §1.1).
+        Assert.Equal("`pull-request`", web.Changes.Single(change => change.Key == "WORKFLOW_USE").After);
+        Assert.Equal("pull-request", web.After.Land!.Method);
         Assert.True(plan.Applies);
     }
 
@@ -101,11 +103,12 @@ public sealed class PlacePlanTests
         var row = world.Registry.Single(each => each.Repository == "engine");
 
         var plan = await PlanAsync(world, ask);
-        var after = PlacePlans.Apply(Config, row, ask, world.Tips["engine"], Plugins, SessionWire.Acp, []).After;
+        var applied = PlacePlans.Apply(Config, row, ask, world.Tips["engine"], Plugins, SessionWire.Acp, [], _home);
+        var after = applied.After;
 
         var engine = Assert.Single(plan.Repositories);
-        var store = WorkflowPorts.Store(_home);
-        foreach (var (side, config) in new[] { (engine.Before, Config), (engine.After, after) })
+        var plain = WorkflowPorts.Store(_home);
+        foreach (var (side, config, store) in new[] { (engine.Before, Config, plain), (engine.After, after, applied.Store!) })
         {
             Assert.Equal(PlaceProjection.ValuesAt(config, "engine", "aurora", PlaceSource.RepositoryLevel), side.Values);
             Assert.Equal(SetupPresets.LandOf(WorkflowProcesses.Otherwise(store, config, "engine", "aurora").Steps!), side.Land);
@@ -113,10 +116,10 @@ public sealed class PlacePlanTests
             Assert.Equal(LandingRules.Choose(config, "engine", "aurora").Rule.Form, side.Values.Landing.Value);
         }
 
-        var rule = LandingRules.Choose(after, "engine", "aurora");
-        Assert.Equal(("repository", LandingForm.Branch, (string?)null), (rule.Source, rule.Rule.Form, rule.Rule.Integrate!.Request));
-        Assert.Null(LandingKey.Problem(rule.Rule));
-        Assert.Equal(WorkflowSelection.Current, WorkflowSelection.Resolve(after, "engine", "aurora", task: null).Workflow);
+        // No landing rule is written (design §1.2): the place follows the copy, and the line gets its policy.
+        Assert.Empty(after.Landings);
+        Assert.Equal("integrated", WorkflowSelection.Resolve(after, "engine", "aurora", task: null).Workflow);
+        Assert.NotNull(after.LinePolicyOf("engine", "aurora"));
     }
 
     [Fact]
@@ -139,7 +142,7 @@ public sealed class PlacePlanTests
 
         Assert.Equal(["solo", "atlas"], plan.Repositories.Select(row => row.Repository));
         Assert.Equal(
-            [("SET_TREES", "solo,atlas"), ("SET_DRIVABLE", "solo,atlas")],
+            [("SET_TREES", "solo,atlas"), ("WORKFLOW_SAVE", "solo,atlas"), ("WORKFLOW_USE", "solo,atlas"), ("SET_DRIVABLE", "solo,atlas")],
             plan.Changes.Select(each => (each.Change.Key, string.Join(",", each.Repositories))));
     }
 
@@ -197,10 +200,12 @@ public sealed class PlacePlanTests
         var kept = await PlanAsync(new World(), Ask(SetupPresets.Merge, "engine") with { Opinion = true }, reviewed);
 
         Assert.Equal(["no-reviewers"], guessed.Refusals.Select(refusal => refusal.Code));
+        // The ticks choose the copy's variant (design §1.2): no rule is written to take the opinion off, and one ticked is a copy that has it.
         var engine = Assert.Single(dropped.Repositories);
-        Assert.Equal(new PlaceChange("SET_OPINION", PlacePlans.Delivery, "a second opinion", "`codex-acp`", "none"), Assert.Single(engine.Changes));
-        Assert.Equal(["it drops the second opinion"], engine.Lowers);
-        Assert.Empty(Assert.Single(kept.Repositories).Changes);
+        Assert.Equal(["WORKFLOW_SAVE", "WORKFLOW_USE"], engine.Changes.Select(change => change.Key));
+        Assert.Equal("`merge-after-accept`", engine.Changes[1].After);
+        Assert.Equal("`merge-after-accept-opinion`", Assert.Single(kept.Repositories).Changes[1].After);
+        Assert.Equal([new PlaceSave("merge-after-accept-opinion", "merge-after-accept", true, false)], kept.Saves);
     }
 
     [Theory]
@@ -245,23 +250,25 @@ public sealed class PlacePlanTests
         var chosen = WorkflowSelection.Apply(reviewed.WithDrivable("atlas", false), new WorkflowUse("kept", "atlas", null, null));
         try
         {
-            var kept = await PlanAsync(new World(), Ask(SetupPresets.Keep, "atlas") with { Drive = true, Adoption = true, Opinion = true }, chosen);
-            var replaced = await PlanAsync(new World(), Ask(SetupPresets.Merge, "atlas") with { Drive = true }, chosen);
+            var kept = await PlanAsync(new World(), Ask(SetupPresets.Keep, "atlas") with { Drive = true, Adoption = true }, chosen);
+            var replaced = await PlanAsync(new World(), Ask(SetupPresets.Integrated, "atlas") with { Drive = true }, chosen);
 
             Assert.Contains("WORKFLOW_USE", replaced.Changes.Select(each => each.Change.Key));
+            // The merge copy the home already has (by its newest version's digest) is the one chosen: nothing is saved or changed.
+            var same = await PlanAsync(new World(), Ask(SetupPresets.Merge, "atlas"), chosen);
+            Assert.DoesNotContain("WORKFLOW_SAVE", Assert.Single(same.Repositories).Changes.Select(change => change.Key));
             Assert.True(kept.Applies, string.Join(" | ", kept.Refusals.Select(each => each.Code + ": " + each.Sentence)));
             var atlas = Assert.Single(kept.Repositories);
             Assert.Equal(["SET_TREES", "SET_DRIVABLE", "SETUP_PRESS"], atlas.Changes.Select(change => change.Key));
             Assert.Equal(atlas.Before.Values.Landing, atlas.After.Values.Landing);
             Assert.Equal(atlas.Before.Values.Workflow, atlas.After.Values.Workflow);
             Assert.Equal("kept", WorkflowSelection.Resolve(chosen, "atlas", "aurora", task: null).Workflow);
-            Assert.Equal("daoris-driver place atlas --preset keep --with opinion,adoption --drive --plan", kept.Terminal);
+            Assert.Equal("daoris-driver place atlas --preset keep --adoption --drive --plan", kept.Terminal);
 
-            // The ticks ride the kept workflow: a second opinion unticked is written none, a ticked one stands.
-            var ticks = await PlanAsync(new World(), Ask(SetupPresets.Keep, "engine") with { Opinion = false }, chosen);
-            var standing = await PlanAsync(new World(), Ask(SetupPresets.Keep, "engine") with { Opinion = true }, chosen);
-            Assert.Equal(["SET_OPINION"], Assert.Single(ticks.Repositories).Changes.Select(change => change.Key));
-            Assert.Empty(Assert.Single(standing.Repositories).Changes);
+            // A tick under Keep is refused: a step is added at the workflow's own door.
+            var ticked = await PlanAsync(new World(), Ask(SetupPresets.Keep, "engine") with { Opinion = true }, chosen);
+            var refusal = Assert.Single(ticked.Refusals);
+            Assert.Equal(("keeps-workflow", PlacePlans.KeepsSteps), (refusal.Code, refusal.Sentence));
         }
         finally
         {

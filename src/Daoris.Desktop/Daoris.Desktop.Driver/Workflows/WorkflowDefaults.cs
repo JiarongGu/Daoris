@@ -72,6 +72,18 @@ public static class WorkflowDefaults
     }
 
     /// <summary>
+    /// The shipped default a copy is behind (WORKFLOWCLEAN1h; the cleanup design §1.1): the one its newest version's <c>from</c> names, where this build
+    /// ships a digest other than the one stamped, with the graph the copy's next version would be, which keeps the gates the copy has. Null for a
+    /// copy that is up to date, one stamped by none, or one copied from a default this build no longer ships.
+    /// </summary>
+    public static ShippedNewer? NewerThan(WorkflowFrom? from, NodeGraph? copy)
+    {
+        if (from is null || copy is null || Of(from.Default) is not { } shipped || shipped.Digest == from.Digest) return null;
+        var made = Copy(shipped, copy.Nodes.Any(node => node.Kind == NodeKinds.Opinion), copy.Nodes.Any(node => node.Kind == NodeKinds.Look));
+        return new ShippedNewer(shipped.Id, shipped.Name, made.Graph);
+    }
+
+    /// <summary>
     /// Whether every path a kind of task keeps to is a document's (the <c>documents</c> default is for such a kind): a text file by its extension,
     /// or anything under a <c>docs</c> or <c>doc</c> folder at the top. No paths is no such kind.
     /// </summary>
@@ -97,7 +109,57 @@ public static class WorkflowDefaults
             read.Add(Read(name[Folder.Length..^".json".Length], document.RootElement));
         }
 
-        return [.. read.OrderBy(each => each.Order)];
+        // A delivery's words are its owner's: the first default by order whose graph derives that shape (WORKFLOWCLEAN1 1a, the cleanup design §1.3).
+        var ordered = read.OrderBy(each => each.Order).ToList();
+        var owners = ordered.Where(each => each.DeliveryWords.Id.Length > 0).ToList();
+        if (owners.GroupBy(each => each.Delivery).FirstOrDefault(group => group.Count() > 1) is { } twice)
+        {
+            throw new InvalidOperationException($"two defaults this build ships word the delivery `{twice.Key.Method}` after `{twice.Key.Accept}`: only its first carries its words.");
+        }
+
+        for (var at = 0; at < ordered.Count; at++)
+        {
+            if (ordered[at].DeliveryWords.Id.Length > 0) continue;
+            var owner = owners.FirstOrDefault(each => each.Delivery == ordered[at].Delivery)
+                ?? throw new InvalidOperationException($"the default workflow `{ordered[at].Id}` this build ships derives a delivery that no default words.");
+            ordered[at] = ordered[at] with { DeliveryWords = owner.DeliveryWords };
+        }
+
+        return ordered;
+    }
+
+    /// <summary>What a saved copy of a default is made of (<see cref="Copy"/>): its id, name, graph and where it came from.</summary>
+    public sealed record WorkflowCopy(string Id, string Name, JsonObject Graph, WorkflowFrom From);
+
+    /// <summary>
+    /// A copy of <paramref name="shipped"/> for a home to save (WORKFLOWCLEAN1 1a; the cleanup design §1.1): the id <c>merge-after-accept</c>, with
+    /// <c>-opinion</c>, <c>-look</c> or <c>-opinion-look</c> after it for the variant the ticks choose, numbered <c>-2</c>, <c>-3</c> from
+    /// <paramref name="taken"/> where a person's own workflow holds it; the graph with the gates the ticks add; <c>from</c> stamped.
+    /// </summary>
+    /// <param name="taken">Whether an id is held by a workflow that is not a copy of this variant (a person's own).</param>
+    public static WorkflowCopy Copy(WorkflowDefault shipped, bool opinion, bool look, Func<string, bool>? taken = null)
+    {
+        var id = shipped.Id + (opinion ? "-opinion" : "") + (look ? "-look" : "");
+        var free = id;
+        for (var number = 2; taken?.Invoke(free) == true; number++) free = $"{id}-{number}";
+        var name = shipped.Name + (opinion ? " + second opinion" : "") + (look ? " + your look" : "");
+        return new WorkflowCopy(free, name, WorkflowPresets.WithGraphGates(shipped.Graph(), opinion, look), shipped.From);
+    }
+
+    /// <summary>
+    /// The land a graph says (the cleanup design §1.3): the method from its <c>land</c>, <c>you</c> where a <c>review</c> comes before it,
+    /// the plugin it names (an integration or a branch left to push is <c>none</c>), and an integration's request.
+    /// </summary>
+    public static SetupLand DerivedLand(NodeGraph graph)
+    {
+        var land = graph.Nodes.First(node => node.Kind == NodeKinds.Land);
+        var method = NodeOptions.Text(land, "method") ?? LandNodes.Merge;
+        var accept = LandNodes.Reviewed(graph) ? SetupLand.You : SetupLand.Automatic;
+        var plugin = method == LandNodes.Integrate ? LandNodes.NoPlugin : NodeOptions.Text(land, "plugin");
+        var request = method == LandNodes.Integrate
+            ? graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Integrate) is { } integrate ? NodeOptions.Text(integrate, "request") ?? LandingIntegrate.Owner : LandingIntegrate.Owner
+            : null;
+        return new SetupLand(method, accept, plugin, request);
     }
 
     /// <summary>One shipped file read whole.</summary>
@@ -115,13 +177,15 @@ public static class WorkflowDefaults
         var id = Text(root, "id");
         if (id != file) throw Broken("its `id` is its file's name.");
         if (!(root.TryGetProperty("order", out var order) && order.TryGetInt32(out var place))) throw Broken("its `order` is a whole number.");
-        var delivery = Object("delivery");
-        var land = new SetupLand(Text(delivery, "method"), Text(delivery, "accept"), Optional(delivery, "plugin"), Optional(delivery, "request"));
-        var deliveryWords = new ShippedDelivery(Text(delivery, "id"), Text(delivery, "name"), Text(delivery, "for"));
         var graph = JsonNode.Parse(Object("graph").GetRawText())!.ToJsonString();
         var (read, problems) = NodeGraphs.Read(graph, onSave: true);
         if (read is null) throw Broken(problems[0].Words);
         if (NodeGraphs.Problems(read) is [var first, ..]) throw Broken(first.Words);
+        // The delivery is derived from the graph; a file keeps only the words of the delivery it owns (WORKFLOWCLEAN1 1a, design §1.3).
+        var land = DerivedLand(read);
+        var deliveryWords = root.TryGetProperty("delivery", out var delivery) && delivery.ValueKind == JsonValueKind.Object
+            ? new ShippedDelivery(id, Text(delivery, "name"), Text(delivery, "for"))
+            : new ShippedDelivery("", "", "");
         IReadOnlyList<string> aliases = root.TryGetProperty("aliases", out var listed) && listed.ValueKind == JsonValueKind.Array
             ? [.. listed.EnumerateArray().Select(each => each.GetString() ?? throw Broken("each of its `aliases` is an id."))]
             : [];

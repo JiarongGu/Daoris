@@ -182,6 +182,12 @@ public static class ReviewRules
         }
 
         if (edit.None && workspace is not null) throw new DriverException(NoneWorkspace);
+        if (edit.Required == true && repository is not null && WorkplaceWorkflows.Current.FollowsSaved(config, repository, null))
+        {
+            throw new ChoiceRefusal(ChoiceRefusal.GraphDecides,
+                $"`{repository}` follows a saved workflow, and its `look` node decides whether your look is required before its work lands: change "
+                + "that node with *Edit steps…*, or choose another workflow for it.", ("repository", repository), ("node", "look"));
+        }
 
         var map = repository is not null ? config.Reviews : config.WorkspaceReviews;
         var named = (repository ?? workspace)!;

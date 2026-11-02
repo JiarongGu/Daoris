@@ -35,6 +35,8 @@ export type ReviewWaits = {
   says?: string | null;
   /** The chat run whose look this is (CHATFLOW1d2), which no set-up step can show; absent for a quest's work. */
   chatRun?: string | null;
+  /** The look node of the graph that run is bound to, which the person's skip names; absent for a run bound to no graph. */
+  lookNode?: string | null;
 };
 
 /**
@@ -116,7 +118,7 @@ export function reviewPresses(state: ReviewState, { local = false }: { local?: b
     case 'being-set-up':
     case 'not-yet':
     case 'not-held': return ['skip'];
-    // CHATFLOW1d2 (the chat-flow design §5.3): no look can be set up for a conversation's work, so its way past is the person's own.
+    // No look can be set up for a conversation's work, so its way past is the person's skip of the look node, where the run has one.
     case 'cannot-start': return ['withoutLook'];
     default: return [];
   }

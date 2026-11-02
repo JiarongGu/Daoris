@@ -3,7 +3,6 @@ import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../locales/i18n';
 import { code } from '../test/code';
-import { NEWBIE_SETUP } from '../projects/fixtures';
 import { RELEASE_CARD } from '../workflow/edit/proposalFixtures';
 import { type HelpProposal, ProposalCard } from './ProposalCard';
 
@@ -349,7 +348,7 @@ describe('the kinds that reach every door', () => {
     expect(screen.getByText('For the workflow draft open for engine')).toBeInTheDocument();
     expect(headings()).toEqual(['Its changes', 'To put right before it saves']);
     expect(within(screen.getByRole('region', { name: 'Its changes' })).getAllByRole('listitem')).toHaveLength(16);
-    expect(screen.getByText('The steps after the landing are not what its method brings.')).toBeInTheDocument();
+    expect(screen.getByText('This step comes with a landing method: choose that method on the landing and it brings the step.')).toBeInTheDocument();
     expect(screen.getByText(/a rule this page has no words for refuses/)).toBeInTheDocument();
     expect(screen.getByText(/^Nothing is saved or chosen: you take its changes into the draft in its editor/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Apply' })).not.toBeInTheDocument();
@@ -796,50 +795,6 @@ describe('a place\'s set-up card', () => {
       expect(screen.getByText('问道衍提议配置')).toBeInTheDocument();
       expect(within(screen.getByRole('list', { name: '计划会改动什么' })).getAllByRole('listitem')[0]).toHaveTextContent('its own tree');
       expect(screen.getByRole('button', { name: '审阅计划' })).toBeInTheDocument();
-    } finally {
-      cleanup();
-      await i18n.changeLanguage('en');
-    }
-  });
-});
-
-/**
- * LAYOUT8 (D170 point 1): a set-up card shows what the repository page shows before its press, `--plan`'s twin: what was read
- * on the line, the rule the press adds and the quest's whole text. Apply is the press.
- */
-describe('a set-up card', () => {
-  const SETUP: HelpProposal = {
-    id: 's1e2t3u4', kind: 'setup',
-    describe: 'Set `newbie` up for every agent: publish one quest to it in workspace `default`, as your ask.',
-    terminal: 'daoris-driver setup newbie',
-    why: 'the person asked to include it in Daoris',
-    setup: NEWBIE_SETUP,
-  };
-
-  it('shows the plan, the rule and the quest before Apply, and Apply is the press', async () => {
-    const onApply = vi.fn();
-    render(<ul><ProposalCard proposal={SETUP} onApply={onApply} onDismiss={vi.fn()} /></ul>);
-
-    expect(screen.getByText('Ask Daoris proposes a setup')).toBeInTheDocument();
-    const facts = screen.getByLabelText('What a setup of newbie would ask');
-    expect(within(facts).getByText(code('main'))).toBeInTheDocument();
-    expect(within(screen.getByRole('list', { name: 'The rule it adds' })).getAllByRole('listitem')).toHaveLength(NEWBIE_SETUP.rules.length);
-    expect(screen.getByText(NEWBIE_SETUP.title!)).toBeInTheDocument();
-    expect(screen.getByText(code(SETUP.terminal))).toBeInTheDocument();
-
-    await userEvent.click(screen.getByRole('button', { name: 'Apply' }));
-    expect(onApply).toHaveBeenCalledWith('s1e2t3u4');
-  });
-
-  it('speaks 中文 in its chrome and leaves the quest as written', async () => {
-    const { default: i18n } = await import('../locales/i18n');
-    await i18n.changeLanguage('zh');
-    try {
-      render(<ul><ProposalCard proposal={SETUP} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
-      expect(screen.getByText('问道衍提议配置')).toBeInTheDocument();
-      expect(screen.getByLabelText('newbie 的配置计划')).toBeInTheDocument();
-      expect(screen.getByText(NEWBIE_SETUP.title!)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: '应用' })).toBeInTheDocument();
     } finally {
       cleanup();
       await i18n.changeLanguage('en');

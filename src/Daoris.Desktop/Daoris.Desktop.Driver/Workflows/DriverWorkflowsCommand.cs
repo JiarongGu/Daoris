@@ -28,16 +28,16 @@ public static class DriverWorkflowsCommand
     /// <summary>The sub-verbs that write a workflow or the choice; with <c>--plan</c> each only says what it would write.</summary>
     public static IReadOnlySet<string> Writes { get; } = ChoiceGrammar.WorkflowWrites;
 
-    /// <summary>The sub-verbs, each the CLI's.</summary>
-    public static IReadOnlyList<string> Verbs { get; } = ["list", "defaults", "show", "use", "kind", "new", "edit", "apply", "export", "import"];
+    /// <summary>The sub-verbs the usage names; <c>edit</c> is still answered, with the refusal that names the editor and <c>apply</c> (WORKFLOWCLEAN1 1b).</summary>
+    public static IReadOnlyList<string> Verbs { get; } = ["list", "defaults", "show", "use", "kind", "new", "apply", "export", "import"];
 
     public const string Usage = "`driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; "
-        + "new <id> --from <preset>|current:<repository>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; "
-        + "edit <id> [--base <version>] <change>…; apply <id> <file>|--as-graph [--base <version>]; export <id> [--to <file>]; import <file>; "
+        + "new <id> --from <default>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; "
+        + "apply <id> <file> [--base <version>]; export <id> [--to <file>]; import <file>; "
         + "use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]; "
         + "kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. "
-        + "new, edit, apply, import, use and kind print their change, and with --plan save nothing — e.g. "
-        + "`daoris driver workflow new docs --from pull-request-no-press --plan`.";
+        + "new, apply, import, use and kind print their change, and with --plan save nothing — e.g. "
+        + "`daoris driver workflow new docs --from merge-after-accept --plan`.";
 
     /// <summary>Whether the words (after <c>workflow</c>) write: a writing sub-verb with no <c>--plan</c>.</summary>
     public static bool Changes(IReadOnlyList<string> args) => ChoiceGrammar.WorkflowChanges(args);
@@ -245,11 +245,6 @@ public static class DriverWorkflowsCommand
             }
 
             Say("Presets built in, for `daoris driver workflow new <id> --from <preset>` (`--with-opinion`, `--with-look`):");
-            foreach (var preset in WorkflowPresets.Table)
-            {
-                Say($"  `{preset.Id}` — {preset.Name}. {WorkflowPresets.Line(StepsOf(preset.Steps(), 1)!)}");
-            }
-
             foreach (var preset in WorkflowPresets.GraphTable)
             {
                 Say($"  `{preset.Id}` — {preset.Name}, a graph. {WorkflowPresets.GraphLine(preset.Graph())}");
@@ -754,11 +749,11 @@ public static class DriverWorkflowsCommand
             var id = argv[2];
             if (WorkflowNamed.IdProblem(id) is { } idProblem) throw new ChoiceWords(idProblem, 1);
             var from = FlagValue("--from")
-                ?? throw new ChoiceWords($"`driver workflow new` needs --from: a preset, `current:<repository>` or a saved workflow — {Usage}");
+                ?? throw new ChoiceWords($"`driver workflow new` needs --from: a default or a saved workflow — {Usage}");
             if (Load(id) is { } existing)
             {
                 var at = existing.Read.Versions.Count > 0 ? $", at v{existing.Read.Versions[^1].Version}" : "";
-                throw new ChoiceWords($"`{id}` is a workflow here already{at}: `daoris driver workflow edit {id} …` adds a version to it.", 1);
+                throw new ChoiceWords($"`{id}` is a workflow here already{at}: `daoris driver workflow apply {id} <file>` adds a version to it.", 1);
             }
 
             var opinion = argv.Contains("--with-opinion");
@@ -769,25 +764,16 @@ public static class DriverWorkflowsCommand
             if (FlagValue("--name") is { } given) asked["name"] = given;
             var gated = string.Join(" and ", new[] { opinion ? "with a second opinion" : null, look ? "with your look first" : null }.OfType<string>());
 
-            var source = await WorkflowOperations.SourceAsync(choices, _home, Registry, from, opinion, look, ct).ConfigureAwait(false);
+            var source = await WorkflowOperations.SourceAsync(choices, _home, Registry, from, opinion, look, ct, id).ConfigureAwait(false);
             var name = FlagValue("--name") ?? source.Name;
             var also = gated.Length > 0 ? $", {gated}" : "";
-            if (source.Graph is { } graph)
-            {
-                var planned = WorkflowOperations.PlanGraph(_home, null, id, null, name, "terminal", Moment(), graph, source.From);
-                Say($"daoris: `{id}` v1, a new workflow — {(string?)planned.Plan.Result!["name"]}, from {source.Description}{also}, a graph:");
-                Say($"  {WorkflowPresets.GraphLine(graph)}");
-                if (source.GraphPreset?.NoPress == true) Say("  With no press: choosing it is refused for a repository whose line does not declare its gates and have them accepted.");
-                if (source.From is { } copied) Say($"  A copy of the default `{copied.Default}` (digest {copied.Digest}): the version keeps where it came from.");
-                return Saved(id, planned.Plan.Result, [asked]);
-            }
-
-            var made = WorkflowOperations.PlanSteps(_home, null, id, null, name, "terminal", Moment(), source.Steps);
-            Say($"daoris: `{id}` v1, a new workflow — {(string?)made.Plan.Result!["name"]}, from {source.Description}{also}:");
-            Said(made.NextSteps!, WorkflowDiff.Of(null, made.NextSteps!).Said);
-            var saved = Saved(id, made.Plan.Result, [asked]);
-            if (source.Drawn is { } drawn && drawn.Steps.Any(step => step.Kind == NodeKinds.Integrate)) Say(WorkflowWords.IntegrateLeftOut);
-            return saved;
+            var graph = source.Graph!;
+            var planned = WorkflowOperations.PlanGraph(_home, null, id, null, name, "terminal", Moment(), graph, source.From);
+            Say($"daoris: `{id}` v1, a new workflow — {(string?)planned.Plan.Result!["name"]}, from {source.Description}{also}, a graph:");
+            Say($"  {WorkflowPresets.GraphLine(graph)}");
+            if (source.GraphPreset?.NoPress == true) Say("  With no press: choosing it is refused for a repository whose line does not declare its gates and have them accepted.");
+            if (source.From is { } copied) Say($"  A copy of the default `{copied.Default}` (digest {copied.Digest}): the version keeps where it came from.");
+            return Saved(id, planned.Plan.Result, [asked]);
         }
 
         /// <summary>The base a change is made against: the newest version, which <c>--base</c> must name where it is given (design §8.1).</summary>
@@ -795,26 +781,9 @@ public static class DriverWorkflowsCommand
 
         private int Edit()
         {
-            var id = Named(argv.ElementAtOrDefault(2)).Id;
-            var found = Required(id);
-            var (version, raw) = BaseOf(found);
-            if (raw is null && version.Graph is not null) throw new ChoiceWords(WorkflowWords.NoSteps(id, version), 1);
-            if (raw is null)
-            {
-                throw new ChoiceWords($"`{id}` v{version.Version} cannot be read here: {version.Unrun} `daoris driver workflow apply "
-                    + $"{id} <file>` saves a whole version after it.", 1);
-            }
-
-            var tokens = new List<string>();
-            for (var at = 3; at < argv.Count; at++)
-            {
-                var token = argv[at];
-                if (token == "--base") at++;
-                else if (token != "--plan") tokens.Add(token);
-            }
-
-            if (tokens.Count == 0) throw new ChoiceWords($"`driver workflow edit` needs a change: {WorkflowChanges.Said}");
-            return Change(found, version, WorkflowChanges.Apply(raw, tokens, version.Version, found.Read));
+            // WORKFLOWCLEAN1 1b: `edit` composed a list of steps, which is no longer saved; the editor and `apply <id> <graph-file>` save a graph.
+            var id = argv.ElementAtOrDefault(2) is { } token && !token.StartsWith("--", StringComparison.Ordinal) ? Named(token).Id : null;
+            throw new ChoiceWords(WorkflowNamed.StepsRefused(id), 1);
         }
 
         private int Apply()
@@ -822,69 +791,26 @@ public static class DriverWorkflowsCommand
             var asGraph = argv.Contains("--as-graph");
             Flags("apply", asGraph ? 3 : 4, ["--base"], ["--plan", "--as-graph"]);
             var id = Named(argv[2]).Id;
+            if (asGraph)
+            {
+                throw new ChoiceWords($"`apply {id} --as-graph` is folded into `daoris driver workflow convert`, which converts what was saved as steps as you press it: "
+                    + "`daoris driver workflow convert --plan`. Nothing was written.", 1);
+            }
+
             var found = Required(id);
             var (version, _) = BaseOf(found);
-            if (asGraph) return AsGraph(found, version);
             var held = Parsed(FileOperand(argv[3]));
             // A graph (FABRIC-GRAPH1f): the file's own, a version's of schema 2, or a workflow's newest version's.
             var versions = held is JsonObject record && record["versions"] is JsonArray listed ? listed : null;
             if (GraphIn(versions is null ? held : versions.Count > 0 ? versions[^1] : null, out var graph)) return ChangeGraph(found, version, graph);
-            JsonNode? steps = null;
-            var has = true;
-            if (held is JsonArray list) steps = list;
-            else if (held is JsonObject holder && holder["steps"] is JsonArray own) steps = own;
-            else if (versions is { Count: > 0 } && versions[^1] is JsonObject last && last.TryGetPropertyValue("steps", out var newest)) steps = newest;
-            else has = false;
-            if (!has)
+            // A list of steps, however the file holds it, is no longer saved (WORKFLOWCLEAN1 1b).
+            if (held is JsonArray || (held is JsonObject holder && holder["steps"] is JsonArray)
+                || (versions is { Count: > 0 } && versions[^1] is JsonObject last && last.ContainsKey("steps")))
             {
-                throw new ChoiceWords($"`{argv[3]}` holds no steps and no graph: a list of steps, a version's `steps` or its `graph` (schema 2), a graph "
-                    + "itself, or a workflow's `versions`, its newest taken.", 1);
+                throw new ChoiceWords(WorkflowNamed.StepsRefused(id), 1);
             }
 
-            return Change(found, version, steps?.DeepClone());
-        }
-
-        /// <summary>A new version made from steps, against the base: judged, compared, said, and saved unless <c>--plan</c>.</summary>
-        private int Change(Found found, NamedVersion @base, JsonNode? steps)
-        {
-            // Every version a bound run names is kept beyond the newest (design §2.6): the driver binds them (WORKFLOW1e).
-            var planned = WorkflowOperations.PlanSteps(_home, found.Of, found.Id, @base, null, "terminal", Moment(), steps);
-            var (plan, next) = (planned.Plan, planned.NextSteps!);
-            if (planned.Same)
-            {
-                Say($"daoris: `{found.Id}` v{@base.Version} already says this: nothing was written.");
-                return 0;
-            }
-
-            Say($"daoris: `{found.Id}` v{@base.Version} → v{plan.Version} — {found.Read.Name}{(@base.Steps is not null ? ""
-                : @base.Graph is not null ? $" (v{@base.Version} is a graph, so the change is drawn from nothing)"
-                : $" (v{@base.Version} cannot be read here, so the change is drawn from nothing)")}:");
-            Said(next, WorkflowDiff.Of(@base.Steps, next).Said);
-            return Saved(found.Id, plan.Result!, [new JsonObject
-            {
-                ["id"] = found.Id, ["steps"] = steps?.DeepClone(), ["base"] = @base.Version, ["authorize"] = Authorize(found.Id),
-            }]);
-        }
-
-        /// <summary>
-        /// <c>apply &lt;id&gt; --as-graph</c> (FABRIC-GRAPH1j; D190 point 8, the cutover design §7.2): the base, a steps version, read by its
-        /// shape, since one holding a kind schema 1 does not run reads as no steps; decoded and saved as the next version, its synthetic nodes
-        /// authored (<see cref="WorkflowGraphs.Saved"/>) and judged as a saved graph is, so two observed nodes of one plugin step are refused
-        /// naming both. The steps version stays as it was read. A go-ahead is said, since the graph holds what follows it where the steps went on.
-        /// </summary>
-        private int AsGraph(Found found, NamedVersion @base)
-        {
-            if (@base.Graph is not null) throw new ChoiceWords($"`{found.Id}` v{@base.Version} is a graph already: --as-graph saves a version of steps as one.", 1);
-            var index = found.Read.Versions.ToList().IndexOf(@base);
-            var raw = found.File!["versions"]![index]!["steps"];
-            var prior = found.Read.Versions.Take(index).Where(each => each.Steps is not null).ToList();
-            var (steps, problem) = WorkflowNamed.ReadShape(raw is null ? null : WorkflowNamed.ElementOf(raw), @base.Version, prior);
-            if (steps is null) throw new ChoiceWords($"`{found.Id}` v{@base.Version} cannot be saved as a graph: {problem}", 1);
-            var held = steps.Where(step => step.Kind == WorkflowKinds.GoAhead)
-                .Select(step => $"  The go-ahead `{step.Id}` now holds what follows it until your yes, or your skip with your words: the steps went on past "
-                    + "one that could not start.")
-                .ToList();
-            return ChangeGraph(found, @base, WorkflowGraphs.Saved(steps), $"v{@base.Version}'s steps as a graph", held);
+            throw new ChoiceWords($"`{argv[3]}` holds no graph: a version's `graph` (schema 2), a graph itself, or a workflow's `versions`, its newest taken.", 1);
         }
 
         /// <summary>
@@ -947,6 +873,7 @@ public static class DriverWorkflowsCommand
             }
 
             var id = read.Id!;
+            if (read.Versions.Any(each => each.Steps is not null)) throw new ChoiceWords(WorkflowNamed.StepsRefused(id), 1);
             var newest = read.Versions[^1];
             if (Load(id) is { } here)
             {
@@ -967,15 +894,7 @@ public static class DriverWorkflowsCommand
             var marked = read.Pipeline == WorkflowPipelines.Verification ? ", a verification pipeline" : "";
             var header = $"daoris: `{id}` — {read.Name}{marked}, from {from}: {(read.Versions.Count == 1 ? "one version" : $"{read.Versions.Count} versions")}, "
                 + $"its newest v{newest.Version}:";
-            if (newest.Steps is null)
-            {
-                Say($"{header} {WorkflowWords.GraphSaid(newest)}");
-            }
-            else
-            {
-                Say(header);
-                Said(newest.Steps, WorkflowDiff.Of(null, newest.Steps).Said);
-            }
+            Say($"{header} {WorkflowWords.GraphSaid(newest)}");
 
             // Through the window's save a file goes a version at a time, each confirmed there.
             var versions = file!["versions"]?.AsArray();
@@ -986,8 +905,12 @@ public static class DriverWorkflowsCommand
                 if (at == 0) asked["name"] = read.Name;
                 else asked["base"] = at;
                 var version = versions[at]!.AsObject();
-                if (version["graph"] is { } graph) asked["graph"] = graph.DeepClone();
-                else asked["steps"] = version["steps"]?.DeepClone();
+                if (version["graph"] is { } graph)
+                {
+                    // The one judge at the save point: a file written straight to the home is judged as the window's save is.
+                    if (WorkflowOperations.GraphProblems(_home, graph) is [var refused, ..]) throw new ChoiceWords($"`{from}` cannot be imported: v{at + 1}: {refused.Words}", 1);
+                    asked["graph"] = graph.DeepClone();
+                }
                 payloads.Add(asked);
             }
 

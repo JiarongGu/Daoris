@@ -34,7 +34,12 @@ public static class PlaceOperations
 
     public const string Adoption = "adoption";
 
+    /// <summary>A copy of a shipped default saved in the home (<c>WORKFLOW_SAVE</c>), before the configuration that chooses it.</summary>
+    public const string WorkflowSave = "workflow-save";
+
     public static string AdoptionOf(string repository) => $"{Adoption}:{repository}";
+
+    public static string WorkflowSaveOf(string workflow) => $"{WorkflowSave}:{workflow}";
 }
 
 /// <summary>One operation an apply authorizes and what came of it; <see cref="Quest"/> is the adoption quest once it is known.</summary>
@@ -43,6 +48,15 @@ public sealed record PlaceOperation(string Id, string Kind, string? Repository, 
     public string? Note { get; init; }
 
     public string? Quest { get; init; }
+
+    /// <summary>For a <see cref="PlaceOperations.WorkflowSave"/>: the id the copy is saved under, the default it copies and the gates it adds.</summary>
+    public string? Workflow { get; init; }
+
+    public string? Default { get; init; }
+
+    public bool Opinion { get; init; }
+
+    public bool Look { get; init; }
 }
 
 /// <summary>
@@ -70,10 +84,15 @@ public static class PlaceDigests
         var ask = plan.Asked;
         var parts = new List<string[]>();
         parts.Add(["ask", ask.Preset, Flag(ask.Opinion), Flag(ask.Look), Flag(ask.Adoption), ask.Builds ?? "", Flag(ask.Drive), .. ask.Repositories]);
+        // Pacing joins the digest only where it is said, so a plan read without it keeps the digest it had.
+        if (ask.AtOnce is not null || ask.Pilot is not null) parts.Add(["pacing", ask.AtOnce?.ToString() ?? "", ask.Pilot?.ToString() ?? ""]);
         foreach (var row in plan.Repositories)
         {
             parts.Add(["repository", row.Repository, row.Workspace]);
-            parts.AddRange(row.Changes.Select(change => (string[])["change", change.Key, change.Part, change.Said, change.Before, change.After]));
+            // The copy's saving is its own operation, done once; the choice that names it is in the digest, so a plan read again after the
+            // copy is saved is the plan that was read.
+            parts.AddRange(row.Changes.Where(change => change.Key != PlacePlans.WorkflowSaveKey)
+                .Select(change => (string[])["change", change.Key, change.Part, change.Said, change.Before, change.After]));
             if (row.Declaration is { } declaration)
             {
                 parts.Add(["declaration", declaration.Line, declaration.Blob, .. declaration.Acceptances.Select(each => $"{each.Purpose}={each.Standing}")]);

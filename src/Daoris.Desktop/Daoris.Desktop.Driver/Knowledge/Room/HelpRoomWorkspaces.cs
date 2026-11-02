@@ -83,6 +83,7 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
         {
             WorkflowLevels.Repository => "set for it",
             WorkflowLevels.Workspace => "its workspace's",
+            WorkflowLevels.Home => "this machine's default",
             _ => "the default",
         };
         var what = followed.Workflow == WorkflowLevels.Current ? "Current"

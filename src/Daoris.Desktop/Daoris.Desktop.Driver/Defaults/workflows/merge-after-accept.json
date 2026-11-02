@@ -4,7 +4,6 @@
   "name": "Merge workflow",
   "for": "For a repository whose work you accept: once the work's requests are answered you review it, and it merges into the line.",
   "delivery": {
-    "id": "merge-after-accept", "method": "merge", "accept": "you",
     "name": "Merge after you accept",
     "for": "For a repository whose work you accept: once the work's requests are answered you review it, and it merges into the line."
   },

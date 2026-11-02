@@ -35,7 +35,6 @@ import { sweepSlice } from '../bridge/repositories/lines';
 import { useStateSlices } from '../bridge/state/slices';
 import { useStateHub } from '../bridge/state/stateHub';
 import { code } from '../test/code';
-import { NEWBIE_SETUP } from './fixtures';
 import { DRIVER_STATE, REGISTRY, REPOSITORIES, respond, serviceCalls, show, WIRING } from '../test/shellHarness';
 import {
   chooseRepository, chooseWorkspace, openSetup, ProjectsView, repositoryList, repositoryMain, repositoryRow,
@@ -384,29 +383,17 @@ describe("a repository's Setup on its page (UX6f)", () => {
     expect(within(repositoryMain()).getByRole('button', { name: 'Line and landing' })).toHaveAttribute('aria-expanded', 'true');
   });
 
-  it('sets its line and how its work lands, each on DAORIS.DRIVER, and says what changed', async () => {
+  it('sets its line on DAORIS.DRIVER, and says what changed', async () => {
     const notify = vi.fn();
     show(<ProjectsView notify={notify} />);
     await chooseRepository('engine');
     await openSetup('Line and landing');
     const work = within(repositoryMain()).getByRole('region', { name: 'Line and landing' });
 
-    const [line, landing] = within(work).getAllByRole('button', { name: 'Set for this repository' });
-    await userEvent.click(line!);
+    await userEvent.click(within(work).getByRole('button', { name: 'Set for this repository' }));
     await userEvent.type(within(work).getByRole('textbox', { name: 'The line for engine' }), 'develop{Enter}');
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_LINE', { payload: { repository: 'engine', branch: 'develop' } });
     await vi.waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringContaining('In engine, work grows from `develop`')));
-
-    // Every control waits while a change is on its way.
-    await vi.waitFor(() => expect(landing).toBeEnabled());
-    await userEvent.click(landing!);
-    await userEvent.click(within(work).getByRole('radio', { name: 'Branch' }));
-    // The line's field is still open beside it, since this bridge answers the line as its workspace's still.
-    await userEvent.click(within(work).getAllByRole('button', { name: 'Save' }).at(-1)!);
-    // A branch says its squash whole (DOORS1b), so a press never leaves one standing that the field shows off.
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_LANDING', {
-      payload: { repository: 'engine', form: 'branch', pattern: 'feature/{quest}-{slug}', squash: false },
-    });
   });
 
   /**
@@ -1788,35 +1775,21 @@ describe('an unadopted repository on this machine (INT3c)', () => {
   });
 
   /**
-   * LAYOUT8 (D117 §6.1, §6.5; D170 point 1): the press `daoris-driver setup <repository>` is, on the page, its plan first:
-   * nothing is read until the person asks, the plan is `--plan`'s twin, and the press asks the repository's own session.
+   * WORKFLOWCLEAN1 1f: one door adopts a repository, the Agents place's *Set up…*; the repository's page keeps no card of its own that
+   * asks its session, and calls neither route that card used.
    */
-  it('sets one with a root here up for agents: its plan first, then the press, each on DAORIS.DRIVER', async () => {
+  it('keeps no Set up for agents card: the place adopts', async () => {
     invoke.mockImplementation(async (module: string, type: string) => {
       if (module !== 'DAORIS.DRIVER') return undefined;
       if (type === 'HARNESSES') return roster('claude-code-acp');
-      if (type === 'SETUP_PLAN') return NEWBIE_SETUP;
-      if (type === 'SETUP_PRESS') {
-        return {
-          published: true, message: 'Asked as `#a1b2c3d4` in `default`.', askId: 'a1b2c3d4', questId: 'q1a2b3c4',
-          added: NEWBIE_SETUP.rules, plan: NEWBIE_SETUP,
-        };
-      }
       return { ...DRIVER_STATE, adapter: 'claude-code-acp' };
     });
     show(<ProjectsView notify={() => {}} />);
     const page = await chooseRepository('newbie');
 
-    const setUp = within(page).getByRole('heading', { name: 'Set up for agents' }).closest('section')!;
+    expect(within(page).queryByRole('heading', { name: 'Set up for agents' })).toBeNull();
+    expect(within(page).queryByRole('button', { name: 'Show the plan' })).toBeNull();
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SETUP_PLAN', expect.anything());
-    await userEvent.click(within(setUp).getByRole('button', { name: 'Show the plan' }));
-
-    expect(await within(setUp).findByText(NEWBIE_SETUP.title!)).toBeInTheDocument();
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SETUP_PLAN', { payload: { repository: 'newbie' }, timeoutMs: 120_000 });
-    await userEvent.click(within(setUp).getByRole('button', { name: 'Set it up' }));
-
-    expect(await within(setUp).findByText(/its own session takes it at the next look/)).toBeInTheDocument();
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SETUP_PRESS', { payload: { repository: 'newbie' }, timeoutMs: 120_000 });
   });
 
   /**
@@ -1824,7 +1797,7 @@ describe('an unadopted repository on this machine (INT3c)', () => {
    * repository from it, adopted, but the page still read it not adopted until a reload: nothing told the window the registry moved.
    * The shell tells `registry` once a follow sends a registration (`DriverLoop`'s `RegistryFollowed`), and the page reads it again.
    */
-  it('reads a repository set up from its page as adopted once its line is registered, with no reload (SETUPSTATE1)', async () => {
+  it('reads a repository whose set-up landed as adopted once its line is registered, with no reload (SETUPSTATE1)', async () => {
     let adopted = false;
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
@@ -1836,21 +1809,10 @@ describe('an unadopted repository on this machine (INT3c)', () => {
     invoke.mockImplementation(async (module: string, type: string) => {
       if (module !== 'DAORIS.DRIVER') return undefined;
       if (type === 'HARNESSES') return roster('claude-code-acp');
-      if (type === 'SETUP_PLAN') return NEWBIE_SETUP;
-      if (type === 'SETUP_PRESS') {
-        return {
-          published: true, message: 'Asked as `#a1b2c3d4` in `default`.', askId: 'a1b2c3d4', questId: 'q1a2b3c4',
-          added: NEWBIE_SETUP.rules, plan: NEWBIE_SETUP,
-        };
-      }
       return { ...DRIVER_STATE, adapter: 'claude-code-acp' };
     });
     show(<><Hub /><ProjectsView notify={() => {}} /></>);
-    const page = await chooseRepository('newbie');
-    const setUp = within(page).getByRole('heading', { name: 'Set up for agents' }).closest('section')!;
-    await userEvent.click(within(setUp).getByRole('button', { name: 'Show the plan' }));
-    await userEvent.click(await within(setUp).findByRole('button', { name: 'Set it up' }));
-    expect(await within(setUp).findByText(/its own session takes it at the next look/)).toBeInTheDocument();
+    await chooseRepository('newbie');
     expect(within(repositoryMain()).getByText('Adoption steps')).toBeInTheDocument();
 
     // Its session's work lands and the look's follow registers it from the line. Untold, the window keeps what it read.

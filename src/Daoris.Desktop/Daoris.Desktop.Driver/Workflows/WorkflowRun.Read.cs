@@ -36,7 +36,7 @@ public sealed record WorkflowRunRead(IReadOnlyList<WorkflowRun> Runs, string? Pr
     /// <summary>The record's id or the workflow's id the code's words name, beside <see cref="Code"/>; null where they name none.</summary>
     public string? Id { get; init; }
 
-    /// <summary>The workflow's id <see cref="WorkflowNoRun.ChatGraphLater"/>'s words name; null otherwise.</summary>
+    /// <summary>The workflow's id a no-run code's words name (none does since CHATFLOW1f); null otherwise.</summary>
     public string? Workflow { get; init; }
 
     /// <summary>What the service's failure said, beside <see cref="WorkflowNoRun.Unanswered"/>'s sentence, for the terminal.</summary>
@@ -80,19 +80,11 @@ public static class WorkflowRunReader
         if (problem is not null) return new WorkflowRunRead([], problem) { Code = code, Id = id };
 
         var reads = new Reads(sources, quests, records, ct);
-        // CHATFLOW1c: a chat in a tree of its own runs its repository's workflow, keyed by its line; a choice that is a graph version, not
-        // bound yet, runs none before CHATFLOW1f, and says so (the chat-flow design §4.3).
+        // CHATFLOW1c: a chat in a tree of its own runs its repository's workflow, keyed by its line; a graph version binds as a steps one does
+        // (CHATFLOW1f, the chat-flow design §4.3).
         if (chat is { } session)
         {
             var run = ChatRuns.KeyOf(session, sessions)!;
-            if (!records.Bound(run) && ChatRuns.GraphChosen(sources.Config, sources.Home, session.Repository, sources.WorkspaceOf(session.Repository)) is { } graph)
-            {
-                return new WorkflowRunRead([], WorkflowNoRun.Said(WorkflowNoRun.ChatGraphLater, workflow: graph))
-                {
-                    Code = WorkflowNoRun.ChatGraphLater, Workflow = graph,
-                };
-            }
-
             return new WorkflowRunRead([await ChatRunAsync(session, run, sessions, reads).ConfigureAwait(false)]);
         }
         var runs = new List<WorkflowRun>();
@@ -373,6 +365,18 @@ public static class WorkflowRunReader
             Accepted = reads.Records.Acceptances(line),
             Chat = new ChatRunFacts(run) { Tip = tip?.Head, Beyond = tip?.Beyond, Between = reads.Records.Between(newest.Id) },
         };
+        // CHATFLOW1f: a run bound to a graph version is drawn from its record, as a quest's is, its subject the candidate a press submitted.
+        if (process is { Graph: { } graph, BoundRun: { } bound })
+        {
+            var record = reads.Records.Record(RunUnits.IdOf(bound));
+            return WorkflowGraphRuns.Derive(
+                new WorkflowGraphRunFacts(facts, bound, graph, record)
+                {
+                    Branches = reads.Branches, Failures = FailedGates(sources.Home, bound, graph, record), Integration = IntegrationOf(sources.Home, graph, record),
+                },
+                workspace) with { Session = newest.Id, ChatRun = run };
+        }
+
         return WorkflowRuns.Derive(facts, workspace);
     }
 

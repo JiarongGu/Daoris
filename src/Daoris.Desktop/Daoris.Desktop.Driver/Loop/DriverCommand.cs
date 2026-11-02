@@ -66,19 +66,19 @@ public static class DriverCommand
           ask --abandon <id> [--reason "…" --yes]  ·  quest abandon <id> [--reason "…" --yes]
               list what abandoning it would decline, discard and archive, and what it keeps and why; with
               --reason and --yes, give up what the list holds, each quest declined with your reason.
-          setup <repository> [--plan] [--what-it-builds <kind>]
-              ask a repository's own session to set it up for every agent: the doctrine, its knowledge, its
-              brief, on its own branch. The press adds the doctrine tool's exact verbs to its rules; --plan
-              prints what was read, the rule and the quest, and publishes nothing. --what-it-builds library,
-              service, desktop or tooling names the checks its session is asked to declare.
-          place <repository>… --preset <id> [--with opinion,look,adoption] [--what-it-builds <kind>] [--drive] --plan
-              a quick set-up's plan: a delivery preset (not-driven, merge-after-accept, branch-to-push,
-              pull-request, integrated), its second opinion and your look, a set-up quest and general
-              driving, read before and after through the driver's own readers, every refusal at once, what
-              lowers your part, the work driving releases and each declaration to accept. Writes nothing.
-          setup --workspace <name> [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]
-          setup --workspace <name> --pause | --resume | --stop
-              set a workspace up one repository at a time, the ones other work touches first: a press
+          place <repository>… --preset <id> [--with opinion,look] [--adoption [--what-it-builds <kind>] [--at-once <n>] [--pilot <n>]] [--drive] (--plan | --apply)
+              a quick set-up: a delivery preset (not-driven, merge-after-accept, branch-to-push,
+              pull-request, integrated; keep leaves how it lands), its second opinion and your look,
+              adoption (a repository's own session asked to set it up for every agent, on its own branch,
+              the doctrine tool's exact verbs added to its rules; --what-it-builds library, service,
+              desktop or tooling names the checks it is asked to declare) and general driving, read
+              before and after through the driver's own readers, every refusal at once, what lowers your
+              part, the work driving releases and each declaration to accept. --plan writes nothing;
+              --apply is your press, and an adoption of more repositories than --at-once asks is paced
+              by a workspace plan the loop works.
+          place --workspace <name> --adoption [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]
+          place --workspace <name> --pause | --resume | --stop
+              adopt a workspace one repository at a time, the ones other work touches first: a press
               writes a plan the loop works, adding the doctrine tool's verbs to the workspace's rules
               once, and pausing after a pilot of two. --plan prints the list and each refusal; --pause,
               --resume (which judges the skipped again) and --stop steer a plan already made.
@@ -327,6 +327,10 @@ public static class DriverCommand
           workflow stop <run> <node> ["…"]
               pass a node of a run bound to a graph version over, with your words, or stop it: kept on the run's record,
               and Daoris's next look applies it. `workflow run` names the run and its nodes. Daoris's window confirms it.
+          workflow convert --plan | --apply <digest> | --undo [<digest>]
+              convert the old workflow records (steps, `handed`, a `land` with `accept`, and the places that follow Current
+              from the rules) to saved graph workflows: the plan reads and writes nothing, `--apply` is your press, confirmed
+              in Daoris's window, and `--undo` puts the removed rules back. Needs the running Daoris.
           workflow changes <run> <node> "…"
               ask for changes on a run's review in place of its Accept, with your words: the work's session is told
               them as its next turn, and what it commits is reviewed again. Daoris's window confirms it.

@@ -61,24 +61,19 @@ using Daoris.Driver;
 //                 commit of it is on any ref but this machine's local daoris/* branches, the sessions archived, and
 //                 <home>/abandoned.json written with each discarded branch's tip. A step that fails leaves it paused.
 //
-//   setup <repository> [--plan] [--what-it-builds <kind>]
-//                 ask a repository's own session to set it up for every agent (LAYOUT7; D117 §6, D124 §2): take up
-//                 the doctrine on the agents layout, initialise its knowledge, write its brief and declare its
-//                 documents and safe work, on its own branch. Read from its LINE as git objects, every refusal said
-//                 with its door. A press publishes one ask to it, as yours, and adds to its rules the doctrine tool's
-//                 exact verbs; --plan prints what was read, the rule, the landing, the agent and the quest's text,
-//                 and publishes nothing. --what-it-builds names the checks its safe work declares (D124's 1a2 note).
-//
-//   place <repository>… --preset <id> [--with opinion,look,adoption] [--what-it-builds <kind>] [--drive]
-//                 (--plan | --apply [--accept <repository>:landed|integration,…])
-//                 a quick set-up's plan (AGENTSPLACE1a2), PLACE_PLAN's twin: a delivery preset, its riders, a set-up quest
-//                 and general driving, read before and after, every refusal at once. --plan writes nothing. --apply
+//   place <repository>… --preset <id> [--with opinion,look] [--adoption [--what-it-builds <kind>] [--at-once <n>] [--pilot <n>]]
+//                 [--drive] (--plan | --apply [--accept <repository>:landed|integration,…])
+//                 a quick set-up's plan (AGENTSPLACE1a2), PLACE_PLAN's twin: a delivery preset, its riders, adoption and
+//                 general driving, read before and after, every refusal at once. --plan writes nothing. --apply
 //                 (AGENTSPLACE1b3) is the person's press, PLACE_APPLY's twin: the running Daoris asks for the Confirm on its
-//                 card; each acceptance is named on its own, and none is made unless named.
+//                 card; each acceptance is named on its own, and none is made unless named. --adoption (the one door that
+//                 adopts a repository, WORKFLOWCLEAN1 1f; D117 §6, D124 §2) asks a repository's own session to set it up for
+//                 every agent on its own branch, and adds to its rules the doctrine tool's exact verbs; more repositories
+//                 than --at-once are paced by the workspace plan below.
 //
-//   setup --workspace <name> [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]
-//   setup --workspace <name> --pause | --resume | --stop
-//                 set a whole workspace up (WSSETUP6, D124 §4): a press writes <home>/setup/<workspace>.json, a plan of
+//   place --workspace <name> --adoption [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]
+//   place --workspace <name> --pause | --resume | --stop
+//                 adopt a whole workspace (WSSETUP6, D124 §4): a press writes <home>/setup/<workspace>.json, a plan of
 //                 single set-ups in the order other work touches them, and adds the doctrine tool's verbs to the
 //                 workspace's rules once; the loop then publishes each in turn, one at a time by default and never
 //                 the cap's last slot, skipping a repository the press refuses and saying why, and pausing once a
@@ -314,6 +309,11 @@ using Daoris.Driver;
 //                 the person's Keep (WORKFLOW1f, design §4.4): where a kind's paths hold a session's work, keep the workflow
 //                 the kind chose for it, with their words, on its run, and print what the landing gate says after.
 //
+//   workflow convert --plan | --apply <digest> | --undo [<digest>]
+//                 the old workflow records converted to saved graph workflows (WORKFLOWCLEAN1 1e, D227): the plan reads and
+//                 writes nothing, --apply and --undo are the person's presses, confirmed in the running Daoris's window; with
+//                 none running it says so.
+//
 //   workflow skip <run> <node> "…"  ·  workflow stop <run> <node> ["…"]
 //                 the person's skip or stop of a node of a run bound to a graph version (FABRIC-CUTOVER1f, D190, design §5.2):
 //                 kept on the run's record, and the next look applies it; the running Daoris's window confirms it.
@@ -537,19 +537,11 @@ try
         return await Daoris.Driver.Host.AskConsole.RunAsync(askArgs);
     }
 
-    // A set-up asked of a repository from a terminal (LAYOUT7, D117 §6.1, D50): one ask to one repository, as the
-    // person's, with the rule its session needs. Repositories' *Set up for agents* and Ask Daoris's `setup` kind are
-    // LAYOUT8's doors to the same press. With `--workspace`, a whole workspace's plan (WSSETUP6, D124 §4.5), whose lines
-    // go to this host's log; its screen and its Ask Daoris doors are WSSETUP7's.
-    if (args is ["setup", .. var setupArgs])
-    {
-        return await Daoris.Driver.Host.SetupConsole.RunAsync(setupArgs, log);
-    }
-
-    // A place's quick set-up planned from a terminal (AGENTSPLACE1a2): PLACE_PLAN's twin, the same plan in English, writing nothing.
+    // A place's quick set-up from a terminal (AGENTSPLACE1a2): PLACE_PLAN's and PLACE_APPLY's twin, and the one door that adopts a repository
+    // (WORKFLOWCLEAN1 1f). With `--workspace`, a whole workspace's paced adoption (WSSETUP6, D124 §4.5), whose lines go to this host's log.
     if (args is ["place", .. var placeArgs])
     {
-        return await Daoris.Driver.Host.PlaceConsole.RunAsync(placeArgs);
+        return await Daoris.Driver.Host.PlaceConsole.RunAsync(placeArgs, log);
     }
 
     // Registration followed from each line when the person asks (WSSETUP5, D124 §3.1, D50): the repository row's
@@ -1071,6 +1063,7 @@ try
         // below, which is this door's exit-2 contract; what that look had said before it failed, a
         // stop among it, is printed first (DEV3c).
         // The machine log rides each look, where a run's failure nothing else awaits is written with its place (ANSWER2).
+        HomeSeed.Once(configPath, home);
         watching = new DriverWatch(service, configPath, home, processes, sync, hooks: hooks, events: events) { Log = log, Share = held.Beside is not null };
         await watching.RunAsync(
             async (report, ticked) =>

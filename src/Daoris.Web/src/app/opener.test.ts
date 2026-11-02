@@ -52,8 +52,8 @@ describe('the opener', () => {
     expect(opening('settings', 'driver')).toEqual({
       view: 'settings', chosen: { view: 'settings', item: 'driver' }, anchor: null,
     });
-    expect(opening('settings', 'start', { anchor: 'step-landing' })).toEqual({
-      view: 'settings', chosen: { view: 'settings', item: 'start' }, anchor: 'step-landing',
+    expect(opening('settings', 'start', { anchor: 'step-setUp' })).toEqual({
+      view: 'settings', chosen: { view: 'settings', item: 'start' }, anchor: 'step-setUp',
     });
     // The gear names no domain: Settings opens on the one it had, at its top as it was.
     expect(opening('settings')).toEqual({ view: 'settings' });
@@ -216,11 +216,6 @@ describe("a press's plan door", () => {
   it("opens a land's session at its review", () => {
     expect(planOpening({ plan: 'land', session: '3f2a91c4' }, 'forge', holding))
       .toEqual({ opening: opening('sessions', '3f2a91c4'), review: true });
-  });
-
-  it("opens a set-up's repository at its Details, where its Set up is drawn", () => {
-    expect(planOpening({ plan: 'setup', repository: 'game' }, 'forge', holding))
-      .toEqual({ opening: opening('projects', 'game', { tab: 'details' }) });
   });
 
   it("opens a sweep's workspace at its Branches, or the one in view where it names none", () => {

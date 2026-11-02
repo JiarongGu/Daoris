@@ -34,6 +34,7 @@ export function PlaceWorkflowBodyView({ setup, workflow = null, landingAsked = f
             {...setup}
             only={FOLD_SECTIONS}
             lead={hand.lead}
+            lands={hand.lands}
             gatesApart
             open={hand.asked ?? (landingAsked ? 'landing' : undefined)}
             openAgain={hand.again}
@@ -71,19 +72,21 @@ function useRepositoryPlace({ place, notify, onOpenPlugin, onOpenAppointed, onOp
  * **A place's Workflow section**: a repository's or a workspace's, from its Workflow answer for the route the person chose, read only
  * while the section is open. The route and the step are the shell's, held above the mounts.
  */
-export function PlaceWorkflow({ place, notify, onOpenPlugin, landingAsked = false }: {
+export function PlaceWorkflow({ place, notify, onOpenPlugin, onConvert, landingAsked = false }: {
   place: PlaceHold;
   notify: Notify;
   /** A door asked for the landing rows (a refusal of *Set up…* whose cause is put right there): the Landing fold opens and takes the focus. */
   landingAsked?: boolean;
   onOpenPlugin?: (plugin: string) => void;
+  /** Opens the home's conversion review. */
+  onConvert?: () => void;
 }) {
-  if (place.kind === 'workspace') return <WorkspaceWorkflow place={place} notify={notify} onOpenPlugin={onOpenPlugin} />;
-  return <RepositoryWorkflow place={place} notify={notify} onOpenPlugin={onOpenPlugin} landingAsked={landingAsked} />;
+  if (place.kind === 'workspace') return <WorkspaceWorkflow place={place} notify={notify} onOpenPlugin={onOpenPlugin} onConvert={onConvert} />;
+  return <RepositoryWorkflow place={place} notify={notify} onOpenPlugin={onOpenPlugin} onConvert={onConvert} landingAsked={landingAsked} />;
 }
 
-function RepositoryWorkflow({ place, notify, onOpenPlugin, landingAsked }: {
-  place: PlaceHold; notify: Notify; onOpenPlugin?: (plugin: string) => void; landingAsked: boolean;
+function RepositoryWorkflow({ place, notify, onOpenPlugin, onConvert, landingAsked }: {
+  place: PlaceHold; notify: Notify; onOpenPlugin?: (plugin: string) => void; onConvert?: () => void; landingAsked: boolean;
 }) {
   const { registration, setup } = useRepositoryPlace({ place: place.row, notify, onOpenPlugin });
   const workflowOf = useWorkflowTab({
@@ -106,6 +109,7 @@ function RepositoryWorkflow({ place, notify, onOpenPlugin, landingAsked }: {
         onOpened: place.onEdited,
         held: place.held,
         onHold: place.onHold,
+        onConvert,
       }}
       landingAsked={landingAsked}
     />
@@ -116,7 +120,7 @@ function RepositoryWorkflow({ place, notify, onOpenPlugin, landingAsked }: {
  * A workspace's own Workflow: its routes and chart, and the repositories that follow it or set their own, then the line's defaults it
  * gives each repository that sets none (SETUPUX1v, moved from the Setup tab): its line, landing, commits, review and second opinion.
  */
-function WorkspaceWorkflow({ place, notify, onOpenPlugin }: { place: PlaceHold; notify: Notify; onOpenPlugin?: (plugin: string) => void }) {
+function WorkspaceWorkflow({ place, notify, onOpenPlugin, onConvert }: { place: PlaceHold; notify: Notify; onOpenPlugin?: (plugin: string) => void; onConvert?: () => void }) {
   const workspace = place.row.workspace ?? '';
   const answer = useWorkflowCurrent({ workspace }, { route: place.view.route });
   const editor = useWorkflowEditor({ workspace });
@@ -138,6 +142,7 @@ function WorkspaceWorkflow({ place, notify, onOpenPlugin }: { place: PlaceHold; 
         onOpened={place.onEdited}
         held={place.held}
         onHold={place.onHold}
+        onConvert={onConvert}
       />
       <div className="mt-3">
         <WorkspaceSetupPart

@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from 'react';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type AccessEdit, AccessRows, accessSummary, type ResolvedPause } from '../../settings/repository/Access';
 import type { RepositoryAcross } from '../../settings/repository/Across';
@@ -12,14 +12,13 @@ import { HELPER_DEFAULT, type HelperEdit, HelperField, helperRowSays, helperSumm
 import {
   HAND_OVER_DEFAULT, type HandOverEdit, HandOverField, handOverRowSays, handOverSummary, type RepositoryHandOver,
 } from '../../settings/repository/HandOver';
-import {
-  type Accepting, AcceptingNote, LandingField, landingFrom, landingProcessSays, type LandingRule, type RepositoryLanding,
-} from '../../settings/repository/Landings';
+import { type LandingIntegrate, LinePolicyField, policySays } from '../../settings/repository/IntegratePolicy';
+import { landingFrom, landingProcessSays, type RepositoryLanding } from '../../settings/repository/Landings';
 import { LanguageChoice, type LanguageOption, type RepositoryLanguage } from '../../settings/repository/Languages';
 import { LineField, type RepositoryLine } from '../../settings/repository/Lines';
 import { type OpinionEdit, OpinionField, opinionRowSays, opinionSummary, type RepositoryOpinion } from '../../settings/repository/Opinions';
 import { type RepositoryReview, type ReviewEdit, ReviewField, reviewRowSays, reviewSummary } from '../../settings/repository/Reviews';
-import { Button, CheckField, Chip, Icon, Segmented, SelectField, SettingRow } from '../../design/ui';
+import { Button, CheckField, Chip, Icon, Inline, Segmented, SelectField, SettingRow } from '../../design/ui';
 import { clockOf } from '../../locales/format';
 import type { SupervisorLine } from './SupervisorRow';
 import { SupervisorDoor } from './SupervisorDoor';
@@ -117,15 +116,10 @@ export type WorkSetup = {
   /** Its line as the driver resolved it, and what said so; absent where the driver has not answered. */
   line?: RepositoryLine | null;
   onLine?: (branch: string | undefined) => void;
+  /** Sets the line's policy, or with null withdraws it (`SET_LINE`'s `policy`); absent on a shell older than it, and no policy is offered. */
+  onLinePolicy?: (policy: LandingIntegrate | null) => void;
   /** How its work lands as the driver chose it; absent on a shell older than it. */
   landing?: RepositoryLanding | null;
-  /** What stands under a rule of its own: its workspace's rule, else Daoris's merge. */
-  landingAbove?: LandingRule;
-  /** The plugins here that land work, which a branch rule may hand its branch to (D100). */
-  landers?: string[];
-  onLanding?: (rule: LandingRule | undefined) => void;
-  /** The driver's sentence for the landing rule it last refused, shown under *Save* (AGENTSPLACE1d). */
-  landingRefusal?: string | null;
   /**
    * A landing rule `driver.json` keeps that reads as no rule (FABRIC-GRAPH1d): its own, or its workspace's where it lands by
    * Daoris's merge, with the name it is written under; absent where none, and on a shell older than it.
@@ -195,8 +189,18 @@ export type ReachSetup = {
   checkout?: { on: boolean; running?: number | null; onChange: (on: boolean) => void };
 };
 
+/**
+ * How the route the place page shows lands (WORKFLOWCLEAN1h-b, D228): under a saved version, the summary the fold folds to and the editor of the
+ * version's own `land` options; under Current, the conversion's door, since the old rule has no editor any more.
+ */
+export type LandsHere =
+  | { is: 'version'; summary: string; editor: ReactNode }
+  | { is: 'current'; onConvert?: () => void };
+
 export type RepositorySetupProps = {
   repository: string;
+  /** How the chosen route lands, handed in by the place's Workflow section; absent, the row reads the rule as it stands. */
+  lands?: LandsHere | null;
   /** Driving, where it has somewhere to start (INT3c): absent for one with no root here. */
   driving?: Driving | null;
   work?: WorkSetup | null;
@@ -266,7 +270,7 @@ const JOIN = ' · ';
  *
  * A molecule: every state is reached by its props, and every press goes out.
  */
-export function RepositorySetup({ repository, driving, work, access, heavy, landed, sessions, reach, git, busy = false, open, openAgain, only, lead = [], gatesApart = false, onOpenPlugin }: RepositorySetupProps) {
+export function RepositorySetup({ repository, lands = null, driving, work, access, heavy, landed, sessions, reach, git, busy = false, open, openAgain, only, lead = [], gatesApart = false, onOpenPlugin }: RepositorySetupProps) {
   const { t, i18n } = useTranslation();
   const marked = (value: string, source: 'repository' | 'workspace' | 'daoris') =>
     source === 'repository' ? value : t(`projects.setup.marked.${source}`, { value });
@@ -303,7 +307,8 @@ export function RepositorySetup({ repository, driving, work, access, heavy, land
           : line.branch ? t('projects.setup.summary.line', { branch: line.branch }) : t('projects.setup.summary.noLine'),
         line.source === 'repository' ? 'repository' : line.source === 'workspace' ? 'workspace' : 'daoris')
     : null;
-  const landingSaid = landing ? marked(landingSays(t, landing), landing.source === 'default' ? 'daoris' : landing.source) : null;
+  const landingSaid = lands?.is === 'version' ? lands.summary
+    : landing ? marked(landingSays(t, landing), landing.source === 'default' ? 'daoris' : landing.source) : null;
   const commitsSaid = commits ? marked(commitSummary(t, commitRule), commits.source === 'repository' || commits.source === 'workspace' ? commits.source : 'daoris') : null;
   const reviewSaid = review ? marked(reviewSummary(t, review.rule), review.rule && review.source ? review.source : 'daoris') : null;
   const opinionSaid = opinion ? marked(opinionSummary(t, opinion.rule), opinion.rule && opinion.source ? opinion.source : 'daoris') : null;
@@ -433,6 +438,7 @@ export function RepositorySetup({ repository, driving, work, access, heavy, land
   // The rows of the line and landing, each one `work` holds and the place's folds hold apart (SETUPUX1o).
   const lineRow = line && work?.onLine
     ? (
+      <>
             <Inheritable
               setHere={t('projects.setup.setHere')}
               label={t('projects.setup.line')}
@@ -456,22 +462,21 @@ export function RepositorySetup({ repository, driving, work, access, heavy, land
                 />
               )}
             />
+            {work.onLinePolicy && (
+              <SettingRow label={t('projects.setup.linePolicy')}>
+                <p className="m-0 text-small text-ink-soft">
+                  <Inline text={line.policy ? policySays(t, line.policy) : t('projects.setup.linePolicyNone')} />
+                </p>
+                <div className="mt-2">
+                  <LinePolicyField name={repository} set={line.policy} busy={busy} onSave={work.onLinePolicy} />
+                </div>
+              </SettingRow>
+            )}
+      </>
       )
     : null;
-  const landingRow = landing && work?.onLanding
-    ? (
-            <LandingSetting
-              repository={repository}
-              landing={landing}
-              above={work.landingAbove ?? { form: 'merge' }}
-              landers={work.landers ?? []}
-              unread={work.landingUnread ?? null}
-              busy={busy}
-              onLanding={work.onLanding}
-              refusal={work.landingRefusal ?? null}
-              onOpenPlugin={onOpenPlugin}
-            />
-      )
+  const landingRow = work && (landing || lands?.is === 'version')
+    ? <LandingSetting repository={repository} landing={landing ?? null} lands={lands} unread={work.landingUnread ?? null} onOpenPlugin={onOpenPlugin} />
     : null;
   const commitsRow = commits && work?.onCommits
     ? (
@@ -810,52 +815,42 @@ function CheckoutSwitch({ checkout, busy }: { checkout: NonNullable<ReachSetup['
   );
 }
 
-/** How its work lands: an `Inheritable` whose control is the rule's own, and what accepting automatically gives. */
-function LandingSetting({ repository, landing, above, landers, unread, busy, onLanding, onOpenPlugin, refusal }: {
+/**
+ * How its work lands (WORKFLOWCLEAN1h-b, D228): under a saved version, the version's own `land` options; under Current, the old rule as it
+ * stands, read and never edited, with the conversion's door.
+ */
+function LandingSetting({ repository, landing, lands, unread, onOpenPlugin }: {
   repository: string;
-  refusal: string | null;
+  landing: RepositoryLanding | null;
+  lands: LandsHere | null;
   unread: (UnreadLanding & { name: string }) | null;
   onOpenPlugin?: (plugin: string) => void;
-  landing: RepositoryLanding;
-  above: LandingRule;
-  landers: string[];
-  busy: boolean;
-  onLanding: (rule: LandingRule | undefined) => void;
 }) {
   const { t } = useTranslation();
-  const [accepting, setAccepting] = useState<Accepting>(null);
-  const own = landing.source === 'repository';
-  const said = landingFrom(t, landing);
-  const branch = landing.form === 'branch';
-  const says = landingRowSays(
-    t, said, branch ? landing.plugin : undefined, branch && !!landing.autoAccept, onOpenPlugin, landingProcessSays(t, landing));
+  const label = t('projects.setup.landing');
+  const twin = t('projects.setup.twin.landing', { repository });
+  if (lands?.is === 'version') {
+    return (
+      <SettingRow label={label} hint={twin}>
+        <p className="m-0 text-small text-ink-soft"><Inline text={lands.summary} /></p>
+        <div className="mt-2">{lands.editor}</div>
+      </SettingRow>
+    );
+  }
+  const branch = landing?.form === 'branch';
+  const says = landing
+    ? landingRowSays(t, landingFrom(t, landing), branch ? landing.plugin : undefined, branch && !!landing.autoAccept, onOpenPlugin, landingProcessSays(t, landing))
+    : '';
   return (
-    <Inheritable
-      setHere={t('projects.setup.setHere')}
-      label={t('projects.setup.landing')}
-      twin={t('projects.setup.twin.landing', { repository })}
-      says={says}
-      own={own}
-      busy={busy}
-      wide
-      onClear={() => onLanding(undefined)}
-      editor={() => (
-        <LandingField
-          name={repository}
-          set={own ? landing : undefined}
-          inherited={own ? above : landing}
-          landers={landers}
-          busy={busy}
-          clearable={false}
-          onSave={(rule) => onLanding(rule)}
-          onAccepting={setAccepting}
-          refusal={refusal}
-        />
-      )}
+    <SettingRow
+      label={label}
+      hint={twin}
+      control={lands?.onConvert ? <Button variant="ghost" onClick={lands.onConvert}>{t('agents.convert.open')}</Button> : undefined}
     >
-      <AcceptingNote accepting={accepting} />
+      <p className="m-0 text-small text-ink-soft">{typeof says === 'string' ? <Inline text={says} /> : says}</p>
+      {lands && <p className="m-0 mt-1 text-small text-ink-soft">{t('agents.convert.follows')}</p>}
       {unread && <UnreadLandingNote name={unread.name} unread={unread} />}
-    </Inheritable>
+    </SettingRow>
   );
 }
 

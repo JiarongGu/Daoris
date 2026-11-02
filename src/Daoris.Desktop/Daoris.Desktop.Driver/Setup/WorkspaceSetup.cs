@@ -61,7 +61,7 @@ public static class WorkspaceSetup
         {
             refusals.Add(new(WorkspaceSetupRefusals.PlanWorking,
                 $"a plan for workspace `{spelled}` is already working, made {Day(working.Created)}. "
-                + $"`daoris-driver setup --workspace {Spelled(spelled)} --pause`, `--resume` or `--stop` steers it, and a stopped plan "
+                + $"`daoris-driver place --workspace {Spelled(spelled)} --pause`, `--resume` or `--stop` steers it, and a stopped plan "
                 + "may be replaced by a new press."));
         }
 
@@ -141,18 +141,28 @@ public static class WorkspaceSetup
                 false, preview.Refusals.FirstOrDefault()?.Sentence ?? "there is no repository to set up.", null, []));
         }
 
+        var outcome = Write(home, preview.Workspace, [.. preview.Rows.Select(row => row.Repository)], preview.AtOnce, preview.Pilot, now);
+        if (outcome.Plan is { } written) world.Said(SetupLine.Planned(written.Workspace, written.Order.Count, written.AtOnce, written.Pilot));
+        return Task.FromResult(outcome);
+    }
+
+    /// <summary>
+    /// The plan written for <paramref name="order"/>, after the doctrine tool's verbs are added to the workspace's rules once: what a press
+    /// does, and what an apply of an adoption covering more repositories than it asks at once does (WORKFLOWCLEAN1 1f). A plan that could not
+    /// be written takes back the rules it added, and keeps any the person had.
+    /// </summary>
+    public static WorkspaceSetupOutcome Write(
+        string home, string workspace, IReadOnlyList<string> order, int atOnce, int pilot, DateTimeOffset now)
+    {
         var file = PermissionRules.Load(home);
         var held = file.Workspaces
-            .Where(pair => Same(pair.Key, preview.Workspace))
+            .Where(pair => Same(pair.Key, workspace))
             .SelectMany(pair => pair.Value.Allow)
             .ToHashSet(StringComparer.Ordinal);
         var added = SetupPressRules.Rules.Where(rule => !held.Contains(rule)).ToList();
-        PermissionRules.Save(home, added.Aggregate(file, (rules, rule) => PermissionRules.Add(rules, RuleScope.Workspace, preview.Workspace, RuleList.Allow, rule)));
+        PermissionRules.Save(home, added.Aggregate(file, (rules, rule) => PermissionRules.Add(rules, RuleScope.Workspace, workspace, RuleList.Allow, rule)));
 
-        var plan = new WorkspaceSetupPlan(preview.Workspace, [.. preview.Rows.Select(row => row.Repository)], preview.AtOnce, preview.Pilot)
-        {
-            Created = now,
-        };
+        var plan = new WorkspaceSetupPlan(workspace, order, atOnce, pilot) { Created = now };
         try
         {
             WorkspaceSetupFile.Save(home, plan);
@@ -160,18 +170,17 @@ public static class WorkspaceSetup
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
             var after = PermissionRules.Load(home);
-            PermissionRules.Save(home, added.Aggregate(after, (rules, rule) => PermissionRules.Remove(rules, RuleScope.Workspace, preview.Workspace, rule)));
-            return Task.FromResult(new WorkspaceSetupOutcome(false, $"the plan could not be written under the home: {error.Message}", null, []));
+            PermissionRules.Save(home, added.Aggregate(after, (rules, rule) => PermissionRules.Remove(rules, RuleScope.Workspace, workspace, rule)));
+            return new WorkspaceSetupOutcome(false, $"the plan could not be written under the home: {error.Message}", null, []);
         }
 
-        world.Said(SetupLine.Planned(plan.Workspace, plan.Order.Count, plan.AtOnce, plan.Pilot));
-        return Task.FromResult(new WorkspaceSetupOutcome(
+        return new WorkspaceSetupOutcome(
             true,
             $"the plan for workspace `{plan.Workspace}` is written: {plan.Order.Count} repositories, {AtOnceWords(plan.AtOnce)}"
             + (plan.Pilot > 0 ? $", pausing once the first {plan.Pilot} have closed." : ", with no pilot.")
             + " The driver's loop asks the next at each look while fewer are open; with no loop running, nothing is asked until one runs.",
             plan,
-            added));
+            added);
     }
 
     /// <summary>
@@ -212,7 +221,7 @@ public static class WorkspaceSetup
                 if (flown.All(standing => standing.State is not (SetupState.Open or SetupState.Parked)))
                 {
                     var sentence = $"paused after the pilot: {string.Join(", ", flown.Select(standing => $"`{standing.Repository}` {WorkspaceSetupRules.Word(standing.State)}"))}. "
-                        + $"Look at what each wrote and what it cost, then `daoris-driver setup --workspace {Spelled(workspace)} --resume` carries on.";
+                        + $"Look at what each wrote and what it cost, then `daoris-driver place --workspace {Spelled(workspace)} --resume` carries on.";
                     if (PauseItself(home, workspace, new SetupPause(SetupPausedBy.Pilot, sentence, now), current => !current.PilotResumed))
                     {
                         world.Said(SetupLine.Paused(workspace, SetupPausedBy.Pilot));
@@ -270,7 +279,7 @@ public static class WorkspaceSetup
                     if (PauseItself(home, workspace, new SetupPause(SetupPausedBy.Tool, tool.Sentence, now), _ => true))
                     {
                         world.Said(SetupLine.Paused(workspace, SetupPausedBy.Tool));
-                        said.Progress($"setup  {workspace}: paused: {tool.Sentence} `daoris-driver setup --workspace {Spelled(workspace)} --resume` carries on once it is.");
+                        said.Progress($"setup  {workspace}: paused: {tool.Sentence} `daoris-driver place --workspace {Spelled(workspace)} --resume` carries on once it is.");
                     }
 
                     return;
@@ -325,7 +334,7 @@ public static class WorkspaceSetup
         world.Said(SetupLine.Paused(plan.Workspace, SetupPausedBy.Person));
         return new(true,
             $"the plan for workspace `{plan.Workspace}` is paused: nothing more is asked until "
-            + $"`daoris-driver setup --workspace {Spelled(plan.Workspace)} --resume`, and what it already asked carries on.",
+            + $"`daoris-driver place --workspace {Spelled(plan.Workspace)} --resume`, and what it already asked carries on.",
             next);
     }
 
@@ -393,7 +402,7 @@ public static class WorkspaceSetup
     }
 
     private static string NoPlan(string workspace) =>
-        $"there is no plan for workspace `{RemoteTarget.Workspace(workspace)}`: `daoris-driver setup --workspace {Spelled(RemoteTarget.Workspace(workspace))}` makes one.";
+        $"there is no plan for workspace `{RemoteTarget.Workspace(workspace)}`: `daoris-driver place --workspace {Spelled(RemoteTarget.Workspace(workspace))} --adoption` makes one.";
 
     /// <summary>A workspace in a command a person pastes, spelled for any shell (ACCTQUOTE1b); the words around it name it as it is.</summary>
     internal static string Spelled(string workspace) => ShellWord.Of(workspace, ShellWord.Workspace);

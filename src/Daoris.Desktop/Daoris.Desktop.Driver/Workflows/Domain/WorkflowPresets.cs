@@ -2,13 +2,6 @@ using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
 
-/// <summary>One preset built in (the workflow design §2.7): its id, its name, and its steps as a version saves them, as JSON.</summary>
-public sealed record WorkflowPreset(string Id, string Name, string StepsJson)
-{
-    /// <summary>The steps as saved, fresh each time, for a version to take.</summary>
-    public JsonArray Steps() => JsonNode.Parse(StepsJson)!.AsArray();
-}
-
 /// <summary>One preset built in that is a graph (the integration design §17.7): its id, its name and its graph as a version saves it, as JSON.</summary>
 /// <param name="NoPress">It integrates with no press: the repository must declare its gates and have them accepted (§4.1).</param>
 public sealed record WorkflowGraphPreset(string Id, string Name, string GraphJson, bool NoPress = false)
@@ -25,39 +18,10 @@ public sealed record WorkflowGraphPreset(string Id, string Name, string GraphJso
 /// <remarks>
 /// Held to this suite's tests' <c>fixtures/workflow-named.json</c> <c>presets</c>, <c>variants</c> and <c>lines</c>, cell for cell
 /// (the CLI's twin, <c>namedworkflows.ts</c>, left in PUSH1f2b). The graphs are the defaults Daoris ships
-/// (<see cref="WorkflowDefaults"/>); the presets of steps left are a pull request's, said from the <c>pull-request</c> default's delivery.
+/// (<see cref="WorkflowDefaults"/>); the presets of steps are deleted (WORKFLOWCLEAN1 1b).
 /// </remarks>
 public static class WorkflowPresets
 {
-    /// <summary>
-    /// The presets that are steps (schema 1): a pull request after you accept, and with no press. None is a merge's or a branch's, since a
-    /// default of that id is a graph, which <c>new --from</c> copies.
-    /// </summary>
-    public static IReadOnlyList<WorkflowPreset> Table { get; } =
-    [
-        new("pull-request-after-accept", "A pull request after you accept", StepsOf(PullRequestLand)),
-        new("pull-request-no-press", "A pull request with no press", StepsOf(PullRequestLand with { Accept = SetupLand.Automatic })),
-    ];
-
-    /// <summary>A preset by its id, or null.</summary>
-    public static WorkflowPreset? Of(string id) => Table.FirstOrDefault(preset => preset.Id == id);
-
-    private static SetupLand PullRequestLand => WorkflowDefaults.Of(SetupPresets.PullRequest)!.Delivery;
-
-    /// <summary>A delivery said as steps: the work, then its landing, then the pull request it opens.</summary>
-    private static string StepsOf(SetupLand land)
-    {
-        var landing = new JsonObject
-        {
-            ["id"] = "landing", ["kind"] = WorkflowKinds.Landing, ["form"] = land.Method == LandNodes.Merge ? LandingForm.Merge : LandingForm.Branch,
-            ["accept"] = land.Accept,
-        };
-        if (land.Plugin is { } plugin) landing["plugin"] = plugin;
-        var steps = new JsonArray(new JsonObject { ["id"] = "work", ["kind"] = WorkflowKinds.Work }, landing);
-        if (land.Method == LandNodes.PullRequest) steps.Add(new JsonObject { ["id"] = "pull-request", ["kind"] = WorkflowKinds.PullRequest });
-        return steps.ToJsonString();
-    }
-
     /// <summary>
     /// The presets that are graphs: the defaults Daoris ships, each by its id and English name. Each holds no
     /// <c>quest.close</c>, so the quest is closed by its agent's done and the flow's end is the work's. <see cref="WorkflowGraphPreset.NoPress"/>

@@ -46,9 +46,27 @@ public sealed class LinesRoutes(DriverContext context)
             throw new DriverException("a line is set for a `repository` or a `workspace` — name one of them.");
         }
 
-        _context.Change(config => workspace is not null
-            ? config.WithWorkspaceLine(workspace, branch)
-            : config.WithLine(repository!, branch));
+        // WORKFLOWCLEAN1 1a: the line's policy (how it is integrated) is edited here beside its branch, set where the press names an object,
+        // withdrawn on null; a press that names only a policy leaves the line as it is. Its values are LandingKey's to judge.
+        var named = request.Payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty("policy", out _);
+        LandingIntegrate? policy = null;
+        if (named)
+        {
+            var wire = request.Payload!.Value.GetProperty("policy");
+            if (wire.ValueKind != JsonValueKind.Null) policy = LandingKey.IntegrateOf(wire, out var shape) ?? throw new DriverException(shape!);
+        }
+
+        var keepsLine = named && !(request.Payload!.Value.TryGetProperty("branch", out _));
+        _context.Change(config =>
+        {
+            if (!keepsLine)
+            {
+                config = workspace is not null ? config.WithWorkspaceLine(workspace, branch) : config.WithLine(repository!, branch);
+            }
+
+            if (!named) return config;
+            return workspace is not null ? config.WithWorkspaceLinePolicy(workspace, policy) : config.WithLinePolicy(repository!, policy);
+        });
         return DriverRoutes.State(_loop);
     }
 
@@ -105,7 +123,8 @@ public sealed class LinesRoutes(DriverContext context)
         var gitLevels = GitLevelsOf(config);
         return new
         {
-            Lines = lines.ToArray(),
+            // The policy that reaches each line (the Line row, WORKFLOWCLEAN1h): its own, else its workspace's; left out where none is set.
+            Lines = lines.Select(line => line with { Policy = IntegrateWire(config.LinePolicyOf(line.Repository, line.Workspace)) }).ToArray(),
             // How each one's work lands (WSR1), from the same file and the same circles.
             Landings = lines.Select(line => (line, landing: LandingRules.Choose(config, line.Repository, line.Workspace)))
                 .Select(pair => new
@@ -209,13 +228,19 @@ public sealed class LinesRoutes(DriverContext context)
             throw new DriverException("a landing rule is set for a `repository` or a `workspace` — name one of them.");
         }
 
+        // WORKFLOWCLEAN1 1a: where the place follows a saved workflow, how work lands is that workflow's and the line's policy is the line's, so no
+        // rule is written. It stays working for an unconverted place on Current until the lit wave (row 1y) retires it whole.
+        if (WorkflowSelection.Resolve(DriverConfig.Load(_loop.ConfigPath), repository, workspace, null).Workflow != WorkflowSelection.Current)
+        {
+            throw new DriverException(RetiredLanding);
+        }
+
         // *Accept automatically* rides the rule (LAND2a, D145): a save that dropped it would switch it off unasked.
         var rule = Optional(request, "form") is { } form
             ? new LandingRule(form, Optional(request, "pattern"), Flag(request, "tidy"), Optional(request, "plugin"), Flag(request, "autoAccept"))
             : null;
         // The ticket's key and the squash (DOORS1b, D164's DOORS1a note) are set where the press names them, an empty key taking
-        // it away; a press naming neither keeps the ones the rule set here holds, where the new rule can hold them, as Ask
-        // Daoris's card keeps them. A save that rebuilt the rule without them dropped what the terminal set.
+        // it away; a press naming neither keeps the ones the rule set here holds, where the new rule can hold them.
         if (rule is not null)
         {
             var config = DriverConfig.Load(_loop.ConfigPath);
@@ -224,8 +249,7 @@ public sealed class LinesRoutes(DriverContext context)
             rule = LandingKept(rule, standing, request.Payload);
         }
 
-        // AGENTSPLACE1d: `integrate` is set where the press names an object, withdrawn on null, and kept when it is not named; its
-        // shape and its values are LandingKey's to judge, never the route's.
+        // AGENTSPLACE1d: `integrate` is set where the press names an object, withdrawn on null, and kept when it is not named.
         var withdraw = false;
         if (rule is not null && request.Payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty("integrate", out var asked))
         {
@@ -233,12 +257,9 @@ public sealed class LinesRoutes(DriverContext context)
             else rule = rule with { Integrate = LandingKey.IntegrateOf(asked, out var shape) ?? throw new DriverException(shape!) };
         }
 
-        // The rule's plugin must be able to land work here, said as `daoris driver landing` says it (D100): the library's operation
-        // asks it before anything is written, as the terminal's command acting alone asks it (PUSH1f2a).
         var catalog = PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names);
         _context.Change(config =>
         {
-            // Withdrawn first, so a rule whose new form cannot carry it is not refused for the integrate it drops.
             if (withdraw && (workspace is not null ? config.WorkspaceLandings : config.Landings).TryGetValue((workspace ?? repository)!, out var held)
                 && held.Integrate is not null)
             {
@@ -249,6 +270,11 @@ public sealed class LinesRoutes(DriverContext context)
         });
         return DriverRoutes.State(_loop);
     }
+
+    /// <summary>What a press of <c>SET_LANDING</c> is told where the place follows a saved workflow (the cleanup design §1.4): where its two halves went.</summary>
+    internal const string RetiredLanding =
+        "retired: a landing rule is no longer written. How work lands is the workflow a place follows (Workflow › Landing, or Set up…), "
+        + "and how the line integrates is its policy (Line).";
 
     /// <summary>A rule's <c>integrate</c> as the file writes it (and a press may send it), each key null where absent; null where the rule has none.</summary>
     internal static object? IntegrateWire(LandingIntegrate? integrate) => integrate is null ? null : new
@@ -1138,4 +1164,8 @@ internal sealed record LineRow(string Repository, string Workspace, string? Bran
     /// <summary>The checkout's guess not judged yet: left out where false, so the pull's rows are as they always were.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public bool NotReadYet { get; init; }
+
+    /// <summary>The line's integration policy as <see cref="LinesRoutes.IntegrateWire"/> carries it; left out where none is set.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public object? Policy { get; init; }
 }

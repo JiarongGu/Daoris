@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, render as rtlRender, screen, within } from '@testing-library/react';
+import { act, render as rtlRender, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { type ReactElement, useState } from 'react';
@@ -8,7 +8,8 @@ import { code } from '../../test/code';
 import { PlaceAside } from '../../agents/setup/placeAside';
 import type { PlaceFlowHold, PlaceView } from '../../agents/setup/placeShell';
 import type { CurrentWorkflow, WorkflowEffective } from '../current';
-import { LIST, PALETTE } from '../edit/editFixtures';
+import { APPEND, judgedFor, LIST, PALETTE } from '../edit/editFixtures';
+import { draftOf, graphOf } from '../edit/graphDraft';
 import {
   cellOf, EFFECTIVE_CURRENT, EFFECTIVE_DOCS, EFFECTIVE_LANDED_NONE, EFFECTIVE_LANDED_VERIFIES, EFFECTIVE_RELEASE, EFFECTIVE_UNREAD,
 } from './effectiveFixtures';
@@ -283,6 +284,17 @@ describe("a place's Workflow, its folds and Gates", () => {
     expect(onAcceptIntegration).toHaveBeenCalledWith({ gates: '0e5751c026e543b2e8ab2eb06099daa1d1e5df47' }, expect.anything());
   });
 
+  it('hands the Landing row how the route lands: the conversion under Current, the version\'s own options under a saved workflow', () => {
+    const landing = vi.fn((hand: LandingHand) => <div data-testid="landing">{hand.lands?.is ?? 'none'}{hand.lands?.is === 'version' && hand.lands.editor}</div>);
+    const current = draw({ landing, onConvert: vi.fn() });
+    expect(screen.getByTestId('landing')).toHaveTextContent('current');
+    current.unmount();
+
+    draw({ landing, editor: editor(), current: withRoute(EFFECTIVE_RELEASE, SAVED_DEFAULT) });
+    expect(screen.getByTestId('landing')).toHaveTextContent('version');
+    expect(screen.getByTestId('landing')).toHaveTextContent('How it lands');
+  });
+
   it('hands the line and landing folds Gates to stand before them, and draws what they draw', () => {
     const landing = vi.fn((hand: LandingHand) => <p data-testid="landing">{hand.lead.map((fold) => fold.title).join()}</p>);
     draw({ landing });
@@ -293,7 +305,7 @@ describe("a place's Workflow, its folds and Gates", () => {
 describe('Change… and Edit steps…', () => {
   it('open in place of the chart, each told so the editor reads wait for them', async () => {
     const onOpen = vi.fn();
-    draw({ editor: editor(onOpen) });
+    draw({ editor: editor(onOpen), current: withRoute(EFFECTIVE_RELEASE, SAVED_DEFAULT) });
 
     await userEvent.click(screen.getByRole('button', { name: 'Change…' }));
     expect(onOpen).toHaveBeenLastCalledWith(true);
@@ -311,7 +323,7 @@ describe('Change… and Edit steps…', () => {
   // REVIEW2 P1: Landed work is chosen only by its own press, so no panel opened on another route may reach a choice while it is the route shown.
   it('stay out of the way on the landed route: Use here is not offered there, and the panel is for the route it opened on', async () => {
     const using = editor();
-    draw({ editor: { ...using, onShow: vi.fn() }, current: withRoute(EFFECTIVE_CURRENT) });
+    draw({ editor: { ...using, onShow: vi.fn() }, current: withRoute(EFFECTIVE_RELEASE, SAVED_DEFAULT) });
 
     await userEvent.click(screen.getByRole('button', { name: 'Change…' }));
     await userEvent.click(routeRow(/^Landed work:/));
@@ -390,7 +402,7 @@ describe('Change… and Edit steps…', () => {
     expect(openDraftNow()).toMatchObject({ place: 'engine', route: 'default', pipeline: 'development', workflow: 'release', base: 2 });
   });
 
-  it("open Current's steps as a new workflow, and a kind's route as the route the editor was opened for", async () => {
+  it("open a kind's route as the route the editor was opened for", async () => {
     draw({ editor: editor(), current: withRoute(EFFECTIVE_DOCS, SAVED_DEFAULT), first: { route: 'kind:docs' } });
 
     await userEvent.click(screen.getByRole('button', { name: 'Edit steps…' }));
@@ -408,15 +420,52 @@ describe('Change… and Edit steps…', () => {
     expect(openDraftNow()!.graph.nodes).toHaveLength(0);
   });
 
-  it("chooses a saved version for this repository through Change…, the editor's own press", async () => {
+  // WORKFLOWCLEAN1h-b: Current goes only to the conversion, from Edit steps… and from Change…'s Current tab.
+  it('send a place that follows Current to the conversion, from Edit steps… and from the Current tab, and open no editor', async () => {
+    const onConvert = vi.fn();
     const bridge = editor();
-    draw({ editor: bridge });
+    draw({ editor: bridge, onConvert });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Edit steps…' }));
+    expect(onConvert).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('heading', { name: 'Compose a workflow' })).toBeNull();
 
     await userEvent.click(screen.getByRole('button', { name: 'Change…' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Current' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Use Current here' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Convert…' }));
+    expect(onConvert).toHaveBeenCalledTimes(2);
+    expect(screen.queryByRole('button', { name: 'Use Current here' })).toBeNull();
+  });
 
-    expect(bridge.onUse).toHaveBeenCalledWith({ repository: 'engine', workflow: 'current' });
+  // WORKFLOWCLEAN1h-b: a copy behind the default this build ships is offered the update, a plan of one that appends the shipped graph.
+  it("say Daoris ships a newer workflow, and plan the update as the copy's next version, with the shipped default it came from", async () => {
+    const onJudge = vi.fn();
+    const onSave = vi.fn(async (_ask: unknown) => ({ ...APPEND, written: true, version: 3 }));
+    const newer = { default: 'merge-after-accept', name: 'Merge after you accept', graph: MERGE_GRAPH };
+    const effective = { ...EFFECTIVE_RELEASE, newer };
+    const bridge = { ...editor(), onJudge, onSave, judged: APPEND, judgedOf: judgedFor(MERGE_GRAPH) };
+    draw({ editor: bridge, current: withRoute(effective, SAVED_DEFAULT) });
+
+    expect(screen.getByText('Daoris ships a newer Merge workflow.')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Update…' }));
+    await waitFor(() => expect(onJudge).toHaveBeenCalledWith({ id: 'release', graph: graphOf(draftOf(MERGE_GRAPH)), base: 2 }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Review and save' }));
+    await userEvent.click(screen.getByRole('checkbox', { name: /follow it/i }));
+    await userEvent.click(screen.getByRole('button', { name: 'Save v3' }));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ id: 'release', base: 2, updates: 'merge-after-accept' }));
+  });
+
+  it('offer no update where the copy is up to date', () => {
+    draw({ editor: editor(), current: withRoute(EFFECTIVE_RELEASE, SAVED_DEFAULT) });
+    expect(screen.queryByRole('button', { name: 'Update…' })).toBeNull();
+  });
+
+  it('say Current follows its old landing rule, with the conversion beside it', async () => {
+    const onConvert = vi.fn();
+    draw({ editor: editor(), onConvert });
+
+    expect(screen.getByText('Follows its old landing rule')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Convert…' }));
+    expect(onConvert).toHaveBeenCalledTimes(1);
   });
 
   it("starts the step editor from a preset's steps, from Change…", async () => {
@@ -429,23 +478,6 @@ describe('Change… and Edit steps…', () => {
 
     expect(screen.getByRole('heading', { name: 'Compose a workflow' })).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Change what its work follows' })).toBeNull();
-  });
-
-  it("choose per route: the selected route's kind goes out with the plan and the press, and the place's own choice is the one it can clear", async () => {
-    const onPlan = vi.fn(async () => ({
-      done: false, plan: true, refused: null, message: null, changed: true, reach: [], lowers: [], places: [], keeps: null, expected: 'use-docs',
-    }));
-    const bridge = { ...editor(), list: { ...LIST, use: ['plan'] }, onPlan };
-    draw({ editor: bridge, current: withRoute(EFFECTIVE_DOCS, SAVED_DEFAULT), first: { route: 'kind:docs' } });
-
-    await userEvent.click(screen.getByRole('button', { name: 'Change…' }));
-    // Documentation follows what the workspace maps, so there is no choice of the repository's own to clear.
-    expect(screen.queryByRole('button', { name: "Use the workspace's" })).toBeNull();
-    await userEvent.click(screen.getByRole('button', { name: 'Current' }));
-    await userEvent.click(await screen.findByRole('button', { name: 'Use Current here' }));
-
-    expect(onPlan).toHaveBeenCalledWith({ repository: 'engine', kind: 'docs', workflow: 'current', plan: true });
-    expect(bridge.onUse).toHaveBeenCalledWith({ repository: 'engine', kind: 'docs', workflow: 'current', expected: 'use-docs' });
   });
 
   it("clears the repository's own default through Use the workspace's, asking nothing of the plan where the driver announces none", async () => {
