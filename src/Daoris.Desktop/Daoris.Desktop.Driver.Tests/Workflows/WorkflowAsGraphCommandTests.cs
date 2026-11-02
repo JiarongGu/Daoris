@@ -119,7 +119,7 @@ public sealed class WorkflowAsGraphCommandTests : IDisposable
         Assert.False(File.Exists(FileOf("copy")));
         _error.GetStringBuilder().Clear();
 
-        Assert.Equal(1, await Run("workflow new docs --from pull-request-no-press"));
+        Assert.Equal(2, await Run("workflow new docs --from pull-request-no-press"));
         Assert.StartsWith("daoris: `pull-request-no-press` is no preset, no saved workflow and no `current:<repository>`", Said, StringComparison.Ordinal);
         Assert.DoesNotContain("pull-request-after-accept", Said, StringComparison.Ordinal);
         Assert.False(File.Exists(FileOf("docs")));

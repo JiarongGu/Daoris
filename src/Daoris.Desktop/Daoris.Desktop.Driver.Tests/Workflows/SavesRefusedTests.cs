@@ -55,7 +55,7 @@ public sealed class SavesRefusedTests : IDisposable
     {
         var said = Assert.Single(Saved(NoMethod));
 
-        Assert.Equal((GraphRefusal.Declaration, "land"), (said.Code, said.Node));
+        Assert.Equal((GraphRefusal.LandMethod, "land"), (said.Code, said.Node));
         Assert.Equal("node `land`: a `land` is saved with its method chosen: merge, branch, push, pull-request or integrate.", said.Words);
         Assert.Empty(NodeGraphs.Read(NoMethod).Problems);
     }

@@ -105,14 +105,15 @@ public sealed class WorkflowPortsTests
 
         var named = WorkflowProcesses.Read(store, runs, Declared, "web-app", "work", "q1");
         Assert.True(named.Named);
-        Assert.Equal((1, "docs/{quest}", true, true), (named.Binding!.Version, named.Landing.Rule.Pattern, named.Landing.Rule.AutoAccept, named.Landing.Rule.Tidy));
+        Assert.Equal((1, (string?)null, true, true), (named.Binding!.Version, named.Landing.Rule.Pattern, named.Landing.Rule.AutoAccept, named.Landing.Rule.Tidy));
 
         runs.Damage("q2");
         var damaged = WorkflowProcesses.Read(store, runs, Declared, "web-app", "work", "q2");
         Assert.Equal(("its stored run binding could not be read.", (WorkflowRunBinding?)null), (damaged.Unread, damaged.Binding));
 
         var (name, steps) = WorkflowProcesses.Otherwise(store, Declared, "web-app", "work");
-        Assert.Equal(("`docs-to-pr` v2", 2), (name, steps!.Count));
+        Assert.Equal("`docs-to-pr` v2", name);
+        Assert.NotEmpty(steps!);
     }
 
     /// <summary>

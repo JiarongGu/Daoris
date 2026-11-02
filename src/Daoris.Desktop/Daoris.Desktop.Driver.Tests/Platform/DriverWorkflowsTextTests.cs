@@ -27,6 +27,12 @@ public sealed partial class DriverWorkflowsTextTests
     [
         "workflow edit,", "workflow new, a preset", "workflow new, the longest preset", "workflow new, from a saved", "workflow apply, a list of steps",
         "workflow apply, a file's steps", "workflow apply, the same steps", "workflow apply, steps after a graph", "workflow apply, a file of no steps",
+        // These rows save a graph that lands by a `handed` (refused at the save now) or a file of steps.
+        "workflow apply, a graph", "workflow apply, the same graph again", "workflow apply, a version holding a graph", "workflow import, a file",
+        "workflow import, the same file again", "workflow import, --plan", "workflow import, another's versions", "workflow import, versions that are graphs",
+        // WORKFLOWCLEAN1 1a: Current is no longer copied by hand nor chosen as a development route's workflow.
+        "workflow new, from Current", "workflow new, from a repository's Current", "workflow new, from a light Current", "workflow new, from a Current",
+        "workflow new, current:", "workflow use, Current",
     ];
 
     public static TheoryData<string> Names()

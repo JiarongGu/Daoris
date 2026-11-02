@@ -161,6 +161,9 @@ public static class GraphRefusal
     /// <summary>A <c>land</c> written with an <c>accept</c> (WORKFLOWCLEAN1 1b): the press is the graph's <c>review</c> before it.</summary>
     public const string Accept = "accept";
 
+    /// <summary>A <c>land</c> saved with no <c>method</c> (WORKFLOWCLEAN1 1b; design §13 point 2): a stored one still reads, and a run resolves it as before.</summary>
+    public const string LandMethod = "land-method";
+
     /// <summary>A <c>handed</c> in a graph being saved (WORKFLOWCLEAN1 1b): the <c>land</c> performs a landing, and a stored version holding one still reads.</summary>
     public const string HandedRefused = "handed-refused";
 
@@ -552,7 +555,7 @@ public static class NodeGraphs
 
             foreach (var chosen in lands.Where(land => !land.Options.ContainsKey("method")))
             {
-                Say(GraphRefusal.Declaration, null, chosen.Id, $"node `{chosen.Id}`: a `land` is saved with its method chosen: merge, branch, push, pull-request or integrate.");
+                Say(GraphRefusal.LandMethod, null, chosen.Id, $"node `{chosen.Id}`: a `land` is saved with its method chosen: merge, branch, push, pull-request or integrate.");
             }
         }
 
@@ -1177,7 +1180,7 @@ public static class NodeGraphHomes
         // One fault is one refusal: a cycle's node already refused as a landing's kind is not refused again by the landing's own rules.
         var refused = problems.Where(problem => problem.Code == GraphRefusal.LandingKind && problem.Node is not null).Select(problem => problem.Node!).ToHashSet(StringComparer.Ordinal);
         problems.AddRange(NodeGraphs.Problems(graph).Where(problem =>
-            !(problem.Code == GraphRefusal.LandTail && problem.Node is not null && refused.Contains(problem.Node))));
+            !(problem.Code is GraphRefusal.LandTail or GraphRefusal.LandMethod && problem.Node is not null && refused.Contains(problem.Node))));
         return new(WorkUnitKind.Branch, source, rule.Cycle, problems.Count == 0 ? graph : null, problems);
     }
 

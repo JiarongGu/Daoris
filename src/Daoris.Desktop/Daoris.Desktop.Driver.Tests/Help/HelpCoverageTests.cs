@@ -873,7 +873,6 @@ public sealed partial class HelpCoverageTests
         // version, new or an edit on the newest; a version from a file and an import are owed to WORKFLOW1h2.
         ("workflow list", new Exempt("it reads the home's workflows and the presets built in, and changes nothing.")),
         ("workflow new", new Door("workflow", "new")),
-        ("workflow edit", new Door("workflow", "edit")),
         ("workflow apply", WorkflowOwed),
         ("workflow export", new Exempt(
             "it copies a workflow's file out, whole, to a new file or the terminal, for the person to carry, and changes nothing here.")),

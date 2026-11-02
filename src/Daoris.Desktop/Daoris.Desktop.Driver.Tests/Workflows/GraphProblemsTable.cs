@@ -37,7 +37,7 @@ internal static class GraphProblemsTable
     /// saved with its method chosen (WORKFLOWCLEAN1 1b), each proved by <c>SavesRefusedTests</c> apart from the rows.
     /// </summary>
     public static bool IsRule(WireProblem problem) =>
-        problem.Code != GraphRefusal.HandedRefused && !problem.Words.Contains("is saved with its method chosen", StringComparison.Ordinal);
+        problem.Code != GraphRefusal.HandedRefused && problem.Code != GraphRefusal.LandMethod;
 
     /// <summary>What a save named, as a row holds it.</summary>
     public static IReadOnlyList<(string Code, string? Wire, string? Node, string Words)> Said(IEnumerable<WireProblem> problems) =>

@@ -81,7 +81,7 @@
       "exit": 1,
       "out": [],
       "err": [
-        "daoris: `docs-to-pr` is a workflow here already, at v1: `daoris driver workflow edit docs-to-pr …` adds a version to it."
+        "daoris: `docs-to-pr` is a workflow here already, at v1: `daoris driver workflow apply docs-to-pr <file>` adds a version to it."
       ],
       "after": null
     },
@@ -292,7 +292,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver workflow new` needs --from: a preset, `current:<repository>` or a saved workflow — `driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; new <id> --from <default>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; apply <id> <file> [--base <version>]; export <id> [--to <file>]; import <file>; use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]; kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. new, apply, import, use and kind print their change, and with --plan save nothing — e.g. `daoris driver workflow new docs --from merge-after-accept --plan`."
+        "daoris: `driver workflow new` needs --from: a default or a saved workflow — `driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; new <id> --from <default>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; apply <id> <file> [--base <version>]; export <id> [--to <file>]; import <file>; use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]; kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. new, apply, import, use and kind print their change, and with --plan save nothing — e.g. `daoris driver workflow new docs --from merge-after-accept --plan`."
       ],
       "after": null
     },

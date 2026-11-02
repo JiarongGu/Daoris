@@ -52,6 +52,24 @@ public sealed class DriverModuleWorkflowWritesTests : DriverModuleBridge
         Assert.Equal(1, NewestOnDisk("docs"));
     }
 
+    /// <summary>WORKFLOWCLEAN1 1b: the window's save refuses a list of steps, and a copy of a step preset, with the one judge's words and writes nothing.</summary>
+    [Fact]
+    public async Task A_save_of_steps_is_refused_with_the_steps_code_and_writes_nothing()
+    {
+        var (module, _) = await UpAsync();
+
+        var refused = await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", steps = Parse("""[{"id":"work","kind":"work"}]""") });
+
+        Assert.Equal((false, "steps-refused"), (refused.GetProperty("done").GetBoolean(), refused.GetProperty("refused").GetString()));
+        Assert.Equal(WorkflowNamed.StepsRefused("docs"), refused.GetProperty("message").GetString());
+        Assert.Null(WorkflowStore.Load(Home, "docs"));
+
+        var preset = await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "docs", from = "pull-request-no-press" });
+        Assert.Equal((false, "refused"), (preset.GetProperty("done").GetBoolean(), preset.GetProperty("refused").GetString()));
+        Assert.Contains("is no preset", preset.GetProperty("message").GetString());
+        Assert.Null(WorkflowStore.Load(Home, "docs"));
+    }
+
     [Fact]
     public async Task A_save_onto_a_saved_id_names_the_version_it_was_made_against_and_a_stale_one_is_refused()
     {
