@@ -1477,7 +1477,7 @@ public static class SessionsCommand
         Consideration? verdict;
         try
         {
-            verdict = (await SessionGroups.VerdictsAsync(world.Service, world.Config, world.Door, lastLook: null, ct).ConfigureAwait(false))
+            verdict = (await SessionGroups.VerdictsAsync(world.Service, world.Config, world.Door, lastLook: null, ct, world.Home).ConfigureAwait(false))
                 .FirstOrDefault(each => string.Equals(each.Quest.Id, quest, StringComparison.OrdinalIgnoreCase));
         }
         catch (Exception error) when (error is HttpRequestException or DriverException or JsonException)

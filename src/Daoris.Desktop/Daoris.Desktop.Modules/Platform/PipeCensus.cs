@@ -43,8 +43,8 @@ public enum PipeDrain
 /// field holds one of <see cref="Values"/>, <see cref="Otherwise"/> where it holds another or is absent.
 /// </summary>
 /// <remarks>
-/// Every property whose name is <see cref="Field"/> ignoring case is read, and the strictest class any of them gives is the
-/// route's, so neither another casing nor a name said twice opens what the handler would read as the press. A value is compared
+/// The handlers read the field exact-case and once, so a name that matches <see cref="Field"/> only ignoring case, a name said twice,
+/// or one of <see cref="Unless"/> beside it is no form the rule names: it takes the strict class of the two (never Open). A value is compared
 /// as the handler reads it: a string by its text, whatever its escapes; <c>true</c>, <c>false</c> and <c>null</c> by kind.
 /// </remarks>
 /// <param name="Field">The payload's field.</param>
@@ -61,13 +61,23 @@ public sealed record PipeRule(string Field, IReadOnlyList<JsonElement> Values, P
     public PipeClass For(JsonElement? payload)
     {
         if (payload is not { ValueKind: JsonValueKind.Object } named) return Otherwise;
-        var classes = named.EnumerateObject()
-            .Where(property => string.Equals(property.Name, Field, StringComparison.OrdinalIgnoreCase))
-            .Select(property => Values.Any(value => Same(value, property.Value)) ? Class : Otherwise)
-            .ToList();
-        if (classes.Count == 0) return Otherwise;
-        return classes.FirstOrDefault(each => each != PipeClass.Open, PipeClass.Open);
+        var properties = named.EnumerateObject().ToList();
+        var fields = properties.Where(property => string.Equals(property.Name, Field, StringComparison.OrdinalIgnoreCase)).ToList();
+        if (fields.Count == 0) return Otherwise;
+        // The handler reads the field exact-case and once: another casing or a second say is no form it would read as named.
+        if (fields.Count > 1 || fields[0].Name != Field || properties.Any(property => Unless.Contains(property.Name, StringComparer.OrdinalIgnoreCase)))
+        {
+            return Class != PipeClass.Open ? Class : Otherwise;
+        }
+
+        return Values.Any(value => Same(value, fields[0].Value)) ? Class : Otherwise;
     }
+
+    /// <summary>
+    /// Fields that, said beside <see cref="Field"/>, make the payload no form <see cref="Field"/> names: the handler reads one of
+    /// these first (a history edit's <c>said</c>, run as the press whatever <c>plan</c> says).
+    /// </summary>
+    public IReadOnlyList<string> Unless { get; init; } = [];
 
     private static bool Same(JsonElement expected, JsonElement actual) =>
         expected.ValueKind == actual.ValueKind
@@ -183,7 +193,21 @@ public sealed class PipeCensus
     /// confirm-wait design §7.1): <c>DAORIS.REMOTES</c> <c>SET</c>, its <c>key</c> the workspace's deployment key. A press of one keeps no
     /// payload in its record and does not wait across a restart.
     /// </summary>
-    public static IReadOnlySet<string> KeyedRoutes { get; } = new HashSet<string>(StringComparer.Ordinal) { "DAORIS.REMOTES.SET" };
+    public static IReadOnlySet<string> KeyedRoutes { get; } = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "DAORIS.REMOTES.SET",
+        // A git identity's press: a token never arrives over the pipe (SecretRefusal), and an imported key file's path is kept out of the record too.
+        $"{DriverModule.Name.ToUpperInvariant()}.GIT_IDENTITY",
+    };
+
+    /// <summary>
+    /// The refusal for a field a route's payload must never carry over the pipe: a git identity's pasted token (the terminal reads one
+    /// from standard input, <c>--token-stdin</c>), which a record of the press and its card would otherwise keep and show. Null where none.
+    /// </summary>
+    public static string? SecretRefusal(string route, System.Text.Json.JsonElement? payload) =>
+        route == "GIT_IDENTITY" && payload is { ValueKind: System.Text.Json.JsonValueKind.Object } sent && sent.TryGetProperty("token", out _)
+            ? "a token is never sent over the pipe, where it would be kept and shown; pipe it to `daoris-driver git identity add-https --token-stdin` at the terminal."
+            : null;
 
     /// <summary>Whether <paramref name="module"/>'s <paramref name="route"/> is one of <see cref="KeyedRoutes"/>, its module matched ignoring case.</summary>
     public static bool Keyed(string module, string route) => KeyedRoutes.Contains($"{module.ToUpperInvariant()}.{route}");
@@ -377,7 +401,7 @@ public sealed class PipeCensus
             "SET_ROLE",
             // AGENTSPLACE1g2: several roles' changes made as one, the Roles mode's suggested choices.
             "SET_ROLES",
-            "SETUP_PRESS", "SET_ACCESS", "SET_ACTOR", "SET_AGENT_SETTINGS", "SET_CAP", "SET_COMMITS", "SET_COOLOFF", "SET_DRIVABLE", "SET_HAND_OVER", "SET_HELPERS", "SET_HELP_MODE",
+            "SETUP_PRESS", "SET_ACCESS", "SET_GIT_ACCESS", "SET_ACTOR", "SET_AGENT_SETTINGS", "SET_CAP", "SET_COMMITS", "SET_COOLOFF", "SET_DRIVABLE", "SET_HAND_OVER", "SET_HELPERS", "SET_HELP_MODE",
             // HELPMODE1c2b: what Ask Daoris's housekeeping may do, the person's grant alone.
             "SET_HELP_GRANT",
             // FABRIC-PIPELINE1a: the landed route and the gates it runs unasked, accepted by their blob (D156).
@@ -452,7 +476,7 @@ public sealed class PipeCensus
         // KEEP1e: Free up space's list (`plan: true`) changes nothing; every other form starts a run removing what it names, their delete.
         table.Add("SYSTEM_SPACE_FREE", PipeRule.Of("plan", PipeClass.Open, PipeClass.Person, "true"));
         // GITAPP2m: a history edit's plan (`plan: true`) changes nothing; every other form moves the person's branch, pinned to what it showed.
-        table.Add("GIT_HISTORY_EDIT", PipeRule.Of("plan", PipeClass.Open, PipeClass.Person, "true"));
+        table.Add("GIT_HISTORY_EDIT", PipeRule.Of("plan", PipeClass.Open, PipeClass.Person, "true") with { Unless = ["said"] });
         return table;
 
         void Add(PipeClass @class, params string[] routes)
@@ -527,7 +551,7 @@ public sealed class PipeCensus
             // A standing choice that changes only how later sessions run, what they reach or say, or what the person is told; a hold or a
             // drivable repository the drain's look holds whatever it says; a session's own option; Ask Daoris's access, which ends its
             // conversation at its turn's end and starts none.
-            "SET_ACCESS", "SET_AGENT_SETTINGS", "SET_CHECKOUT_WRITES", "SET_COMMITS", "SET_DRIVABLE", "SET_HELP_MODE", "SET_HELP_GRANT", "SET_HEAVY_GATES", "SET_HOLD",
+            "SET_ACCESS", "SET_GIT_ACCESS", "SET_AGENT_SETTINGS", "SET_CHECKOUT_WRITES", "SET_COMMITS", "SET_DRIVABLE", "SET_HELP_MODE", "SET_HELP_GRANT", "SET_HEAVY_GATES", "SET_HOLD",
             "SET_LANGUAGE", "SET_NOTIFY", "SET_READ_ACROSS", "SET_SESSION_OPTION", "SET_SESSION_CHECKS", "SET_STANDING", "SET_STRIKES", "SET_TREES",
             "SET_WRITE_ACROSS", "RULE_ACTION", "RULE_PROPOSAL",
             // INTEGRATE1d: an integration declaration's acceptance, which starts nothing: what it accepts runs only in a landing or a tidy,

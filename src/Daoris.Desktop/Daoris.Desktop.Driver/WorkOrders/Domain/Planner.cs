@@ -210,6 +210,9 @@ public sealed record Snapshot(
     /// </summary>
     public IReadOnlyDictionary<string, StaffMoving> PolicyMoving { get; init; } = new Dictionary<string, StaffMoving>(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>The failures in a row each quest's last choice made (STAFFPOLICY1e2, <see cref="ServiceClient.ReadFailedRuns"/>): what a <c>failed</c> move's <c>after</c> is weighed against.</summary>
+    public IReadOnlyDictionary<string, int> FailedRuns { get; init; } = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>The quests a role's policy holds for the person's yes (STAFFPOLICY1e), by quest: <c>policy-ask</c> or <c>moves-bound</c>.</summary>
     public IReadOnlyDictionary<string, string> PolicyHolds { get; init; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
@@ -736,7 +739,8 @@ public static class Planner
 
             // STAFFPOLICY1e: a line an account's limit cut off whose role's policy asks, or whose bound of moves is reached, waits for the person's yes.
             if (snapshot.PolicyHolds.TryGetValue(quest.Id, out var limitHold) && quest.Status is "Open" or "Taken"
-                && snapshot.LastRun.TryGetValue(quest.Id, out var limitedHeld) && limitedHeld.Limit)
+                && snapshot.LastRun.TryGetValue(quest.Id, out var limitedHeld)
+                && (limitedHeld.Limit || StaffCourse.EndedQuiet(limitedHeld) || StaffCourse.FailedStrike(limitedHeld)))
             {
                 considerations.Add(PolicyHeld(quest, limitedHeld, limitHold));
                 continue;

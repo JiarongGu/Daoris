@@ -8,6 +8,9 @@ namespace Daoris.Driver;
 /// </summary>
 public static class RecordNotes
 {
+    /// <summary>A run the watcher ended after its quiet window (<see cref="NoteCodes.EndedQuiet"/>).</summary>
+    public const string EndedQuiet = "ended.quiet";
+
     /// <summary>An update closed the session (<see cref="NoteCodes.UpdateClosed"/>).</summary>
     public const string UpdateClosed = "update.closed";
 

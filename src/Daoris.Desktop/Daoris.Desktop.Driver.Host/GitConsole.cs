@@ -11,6 +11,33 @@ internal static class GitConsole
 {
     public static async Task<int> RunAsync(string[] args)
     {
+        // Git access and the git go-aheads (GITAUTH1f): the library's words, with the home and the window looked for before a widening or an answer.
+        if (GitAccessCommand.Answers(args))
+        {
+            try
+            {
+                var configPath = DriverConfig.ResolvePath();
+                var home = DriverConfig.HomeOf(configPath);
+                var world = new GitAccessWorld(
+                    home,
+                    async () => (await InstanceDoor.PeekAsync(new InstanceWorld { Home = home, Verb = "git" }).ConfigureAwait(false)).Found
+                        is not (InstanceFound.None or InstanceFound.Headless),
+                    Environment.GetEnvironmentVariable,
+                    async repository =>
+                    {
+                        using var service = ServiceClient.FromEnvironment();
+                        var registry = await service.RegistryAsync().ConfigureAwait(false);
+                        return registry.FirstOrDefault(row => string.Equals(row.Repository, repository, StringComparison.OrdinalIgnoreCase))?.Workspace;
+                    });
+                return await GitAccessCommand.RunAsync(args, world, Console.Out, Console.Error).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException)
+            {
+                Console.Error.WriteLine($"git: {error.Message}");
+                return 2;
+            }
+        }
+
         // The identities, the defaults and the pointers (GITAUTH1c): the library's words, with the home, the registry asked only by
         // `git use` of a repository, and the window looked for only before a widening.
         if (GitIdentityCommand.Answers(args))

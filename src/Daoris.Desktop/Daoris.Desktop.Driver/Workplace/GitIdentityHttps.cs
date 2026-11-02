@@ -82,7 +82,7 @@ public static class GitIdentityHttps
         }
         catch (DriverException)
         {
-            return;
+            throw new DriverException("git: Git Credential Manager was not found, so this sign-in's stored entry could not be erased and the identity was kept (no-gcm)");
         }
 
         var fields = $"protocol={protocol}\nhost={host}\n" + (user is null ? "" : $"username={user}\n") + "\n";
@@ -166,15 +166,15 @@ public static class GitIdentityHttps
     public static async Task<IReadOnlyList<string>> RemoveAsync(string home, string name, CancellationToken ct)
     {
         var identity = Find(home, name);
-        var pointing = Remove(home, name);
         if (identity.Way == GitIdentity.Https)
         {
+            // Erased first: an identity removed before its stored sign-in is erased leaves the secret with nothing that names it.
             // An address of the host reached over http is keyed by its scheme: both entries of Daoris's namespace go.
             await EraseAsync(home, "https", identity.Host, identity.User, ct).ConfigureAwait(false);
             await EraseAsync(home, "http", identity.Host, identity.User, ct).ConfigureAwait(false);
         }
 
-        return pointing;
+        return Remove(home, name);
     }
 
 }

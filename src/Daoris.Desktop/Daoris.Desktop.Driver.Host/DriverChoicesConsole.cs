@@ -67,6 +67,6 @@ internal static class DriverChoicesConsole
             wire = SessionWire.Pipe;
         }
 
-        return await SessionGroups.VerdictsAsync(service, config, wire, lastLook: null, ct).ConfigureAwait(false);
+        return await SessionGroups.VerdictsAsync(service, config, wire, lastLook: null, ct, home).ConfigureAwait(false);
     }
 }

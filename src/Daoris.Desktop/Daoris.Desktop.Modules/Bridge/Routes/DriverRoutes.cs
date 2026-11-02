@@ -687,7 +687,7 @@ public sealed class DriverRoutes(DriverContext context)
         var quest = PayloadHelper.GetRequiredValue<string>(request.Payload, "quest").Trim().TrimStart('#');
         var config = DriverConfig.Load(_loop.ConfigPath);
         var considered = _loop.Look.Latest
-            ?? await SessionGroups.VerdictsAsync(_loop.Service ?? throw NotReady(), config, _context.Door(config), lastLook: null, cancellationToken)
+            ?? await SessionGroups.VerdictsAsync(_loop.Service ?? throw NotReady(), config, _context.Door(config), lastLook: null, cancellationToken, _loop.Home)
                 .ConfigureAwait(false);
         // PUSH1f2a: the verdict's switch is the library's operation, which `daoris-driver driver retry` acting alone calls too; a
         // pause or a quest neither parked nor held is its coded refusal (ChoiceCodes), raised here by the module's one mapping.
@@ -918,6 +918,12 @@ public sealed class DriverRoutes(DriverContext context)
             WorkspaceAccess = config.WorkspaceAccess.OrderBy(p => p.Key, StringComparer.Ordinal)
                 .Select(p => new { Workspace = p.Key, Setting = LinesRoutes.AccessWire(p.Value) }).ToArray(),
             MachineAccess = LinesRoutes.AccessWire(config.MachineAccess),
+            // Git access as set (GITAUTH1f), level by level: a workspace's Defaults and Settings read their own here.
+            GitAccess = LinesRoutes.GitLevelsOf(config).Repository.OrderBy(p => p.Key, StringComparer.Ordinal)
+                .Select(p => new { Repository = p.Key, Classes = LinesRoutes.GitClassesWire(p.Value) }).ToArray(),
+            WorkspaceGitAccess = LinesRoutes.GitLevelsOf(config).Workspace.OrderBy(p => p.Key, StringComparer.Ordinal)
+                .Select(p => new { Workspace = p.Key, Classes = LinesRoutes.GitClassesWire(p.Value) }).ToArray(),
+            MachineGitAccess = LinesRoutes.GitClassesWire(LinesRoutes.GitLevelsOf(config).Machine),
             Running = loop.Processes.Running,
             // Who is driving Daoris's browser (BRW8): the running sessions handed a server that drives it.
             DrivingBrowser = loop.Processes.DrivingBrowser,

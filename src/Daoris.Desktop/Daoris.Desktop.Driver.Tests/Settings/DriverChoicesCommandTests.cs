@@ -214,7 +214,6 @@ public sealed class DriverChoicesCommandTests : IDisposable
     [Theory]
     [InlineData("landing engine merge --no-cycle")]
     [InlineData("brainstorms --mode off")]
-    [InlineData("workflow kind work docs --label Documentation")]
     public async Task Beside_the_running_Daoris_a_change_no_route_takes_is_written_here_and_nothing_is_sent(string words)
     {
         if (!OperatingSystem.IsWindows()) return;
@@ -246,6 +245,50 @@ public sealed class DriverChoicesCommandTests : IDisposable
         Assert.True(File.Exists(config), running.Error.ToString());
         Assert.Empty(standIn.Presses);
         Assert.Equal(0, standIn.Connections);
+    }
+
+    /// <summary>
+    /// REVIEW2 3: beside the running Daoris a workflow's write is the window's route, confirmed there whatever the terminal's environment
+    /// says, and this process writes nothing (the guard is the window's Confirm, as every other person's press).
+    /// </summary>
+    [Theory]
+    [InlineData("workflow kind work docs --label Documentation", "WORKFLOW_KIND")]
+    [InlineData("workflow use current --workspace work", "WORKFLOW_USE")]
+    [InlineData("workflow new docs --from merge-after-accept", "WORKFLOW_SAVE")]
+    public async Task Beside_the_running_Daoris_a_workflows_write_is_its_route_and_this_process_writes_nothing(string words, string route)
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        await using var running = new InstanceTestHome();
+        var standIn = running.Serve();
+        standIn.Confirming = true;
+        standIn.Data = new { done = true };
+        var instance = running.World("daoris");
+        var config = DaorisHome.Entry(running.Home, HomeEntry.DriverConfig);
+        var world = new DriverChoicesWorld
+        {
+            Verbs = DriverChoiceVerbs.All,
+            Instance = new InstanceWorld
+            {
+                Home = running.Home,
+                Environment = name => name == "DAORIS_SESSION_ID" ? "s1a2b3c4" : null,
+                BaseDirectory = instance.BaseDirectory,
+                Status = instance.Status,
+                Out = running.Out,
+                Error = running.Error,
+                Verb = "daoris",
+                Answer = instance.Answer,
+                Wait = instance.Wait,
+            },
+            ConfigPath = config,
+        };
+
+        var exit = await DriverChoicesCommand.RunAsync(words.Split(' '), world, CancellationToken.None);
+
+        Assert.Equal(0, exit);
+        var press = Assert.Single(standIn.Presses);
+        Assert.Equal(route, press.GetProperty("type").GetString());
+        Assert.False(File.Exists(config));
+        Assert.False(Directory.Exists(WorkflowStore.FolderOf(running.Home)));
     }
 
     [Fact]

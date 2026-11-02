@@ -34,7 +34,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
     public IReadOnlyList<string> Doors { get; } =
     [
         "drive", "undrive", "hold", "resume", "trees", "line", "landing", "across", "standing", "language", "review", "opinion",
-        "helpers", "commits", "intake", "helper", "strikes", "retry", "timeout", "notify", "cap", "adapter", "cooloff", "keep",
+        "helpers", "commits", "intake", "helper", "strikes", "retry", "timeout", "notify", "cap", "adapter", "cooloff", "keep", "git-use",
     ];
 
     /// <summary>
@@ -79,6 +79,16 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
 
         // HELP10: a retry's target is a quest, not a repository, so it is judged before the registry is asked.
         if (proposal.Door == "retry") return Retry(target, config, facts);
+
+        // GITAUTH1e: a git identity chosen for a remote or a host is the identities file's own write, not an edit of the driver's file.
+        if (proposal.Door == "git-use")
+        {
+            if (target is { Length: > 0 } && !facts.Repositories.Contains(target, StringComparer.OrdinalIgnoreCase))
+                return Refused($"`{target}` is not registered on this machine — use a repository's name as Repositories lists it.", "", "");
+            if (workspace is { Length: > 0 } && !facts.Workspaces.Contains(workspace, StringComparer.OrdinalIgnoreCase))
+                return Refused($"there is no workspace `{workspace}` on this machine — one of {Names(facts.Workspaces)}.", "", "");
+            return GitUse(target, workspace, value, facts);
+        }
 
         // The names the route itself does not check, and a helper can invent: a repository, a circle, an agent.
         if (target is { Length: > 0 } && !facts.Repositories.Contains(target, StringComparer.OrdinalIgnoreCase))
@@ -960,19 +970,97 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
         return words;
     }
 
-    public Task<HelpApplied> ApplyAsync(HelpApplying applying, CancellationToken ct)
+    public async Task<HelpApplied> ApplyAsync(HelpApplying applying, CancellationToken ct)
     {
         if (applying.Plan.Staffing is { } staffing) applying.Doors.SetActor(staffing.Actor, staffing.Choices);
+        else if (applying.Plan.GitUse is { } use)
+        {
+            try
+            {
+                await applying.Doors.UseGitAsync(use, ct).ConfigureAwait(false);
+            }
+            catch (DriverException refused)
+            {
+                return applying.Settled(false, $"Not applied: {refused.Message}", null);
+            }
+        }
         else applying.Doors.Change(applying.Plan.Apply!);
-        return Task.FromResult(applying.Settled(true, $"Applied: `#{applying.Id}` — {applying.Plan.Describe} (`{applying.Plan.Terminal}`)", null));
+        return applying.Settled(true, $"Applied: `#{applying.Id}` — {applying.Plan.Describe} (`{applying.Plan.Terminal}`)", null);
     }
+
+    /// <summary>
+    /// <c>git-use</c> (GITAUTH1e, D198 point 15; the git-auth design §9), as <c>daoris-driver git use</c> reads it: a repository's remote
+    /// (<c>origin</c> unless <c>--remote</c> names one) or, with <c>--host</c> and the target a workspace, a workspace's host pointed at an
+    /// identity that exists on this machine, or cleared with <c>--clear</c>. Never <c>own</c>: the person's own sign-ins are a widening
+    /// only the person's press makes; never an identity created, tested or removed.
+    /// </summary>
+    private static HelpPlan GitUse(string? target, string? workspace, string value, HelpMachineFacts facts)
+    {
+        HelpPlan Refused(string why) => new(why, "", "", null);
+        var words = Words(value);
+        string? remote = null, host = null, chosen = null;
+        var clear = false;
+        for (var at = 0; words is not null && at < words.Count; at++)
+        {
+            if (words[at] == "--remote" && at + 1 < words.Count) remote = words[++at];
+            else if (words[at] == "--host" && at + 1 < words.Count) host = words[++at];
+            else if (words[at] == "--clear") clear = true;
+            else if (chosen is null && !words[at].StartsWith("--", StringComparison.Ordinal)) chosen = words[at];
+            else return Refused(GitUseUsage);
+        }
+
+        if (words is null || clear == (chosen is not null)) return Refused(GitUseUsage);
+        if (chosen is not null && string.Equals(chosen, GitIdentityUse.Own, StringComparison.OrdinalIgnoreCase))
+            return Refused("a proposal never chooses the person's own git sign-ins: that widens what Daoris's git may use, and is the person's press in Settings → Git.");
+
+        HelpGitIdentity? identity = null;
+        if (chosen is not null)
+        {
+            identity = facts.GitIdentities.FirstOrDefault(each => string.Equals(each.Label, chosen, StringComparison.OrdinalIgnoreCase) || each.Id == chosen);
+            if (identity is null) return Refused($"there is no git identity `{chosen}` on this machine — one of {Names(facts.GitIdentities.Select(each => each.Label).ToList())}.");
+        }
+
+        var named = identity is null ? "" : $" {ShellWord.Of(identity.Label, ShellWord.Workspace)}";
+        var point = identity is null ? "Take back" : $"Point";
+        if (workspace is { Length: > 0 })
+        {
+            if (target is { Length: > 0 }) return Refused("a git identity is chosen for a repository's remote or a workspace's host — name exactly one.");
+            if (host is not { Length: > 0 }) return Refused("a workspace chooses a git identity for a host: add `--host <host>`.");
+            if (identity is not null && !string.Equals(identity.Host, GitIdentityActs.HostOf(host), StringComparison.OrdinalIgnoreCase))
+                return Refused($"git identity `{identity.Label}` is for {identity.Host}, not {GitIdentityActs.HostOf(host)}.");
+            return new HelpPlan(null,
+                identity is null ? $"Take back workspace `{workspace}`'s choice of git identity for {host}." : $"Use git identity `{identity.Label}` for {host} in workspace `{workspace}`.",
+                $"daoris-driver git use --workspace {ShellWord.Of(workspace, ShellWord.Workspace)} --host {host}{(identity is null ? " --clear" : named)}", c => c)
+            { GitUse = new HelpGitUse("workspace", null, workspace, remote, host, identity?.Id) };
+        }
+
+        if (target is not { Length: > 0 }) return Refused("a git identity is chosen for a repository's remote or a workspace's host — name exactly one.");
+        remote ??= "origin";
+        return new HelpPlan(null,
+            identity is null ? $"Take back the git identity chosen for {remote} of `{target}`." : $"Use git identity `{identity.Label}` for {remote} of `{target}`.",
+            $"daoris-driver git use {target}{(remote == "origin" ? "" : $" --remote {remote}")}{(identity is null ? " --clear" : named)}", c => c)
+        { GitUse = new HelpGitUse("repository", target, null, remote, null, identity?.Id) };
+    }
+
+    private const string GitUseUsage =
+        "`git-use` takes an identity's label, or `--clear`: for a repository `[--remote <name>] <identity>|--clear`, and for a workspace `--host <host> <identity>|--clear`.";
 }
 
 /// <summary>An actor's order a setting proposal sets (FOUNDATION1w-s): applied as <c>SET_ACTOR</c> applies it, through the staffing's one write.</summary>
 public sealed record HelpStaffing(string Actor, IReadOnlyList<ActorChoice>? Choices);
 
+/// <summary>A git identity a <c>git-use</c> proposal chooses (GITAUTH1e): applied as <c>GIT_USE</c> applies it. A null <c>Identity</c> takes the choice back.</summary>
+public sealed record HelpGitUse(string Scope, string? Repository, string? Workspace, string? Remote, string? Host, string? Identity);
+
+/// <summary>A git identity as a proposal's judge knows it: its id, label, host and way. Never a key, a token or a user name.</summary>
+public sealed record HelpGitIdentity(string Id, string Label, string Host, string Way);
+
 public interface IHelpSettingDoors
 {
+    /// <summary>A repository's remote or a workspace's host pointed at an identity, or cleared, as <c>GIT_USE</c> does it (GITAUTH1e).</summary>
+    /// <exception cref="DriverException">The pointer's own refusal.</exception>
+    Task UseGitAsync(HelpGitUse use, CancellationToken ct);
+
     /// <summary>An edit to the driver's file, as the `SET_*` routes and `RETRY_QUEST` make it.</summary>
     void Change(Func<DriverConfig, DriverConfig> edit);
 

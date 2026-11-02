@@ -121,6 +121,12 @@ public sealed class SetupRoutes(DriverContext context)
     [Publishes("PLACE_APPLY", StateScopes.Driver | StateScopes.Quests | StateScopes.Asks | StateScopes.Rules)]
     private async Task<object?> PlaceApplyAsync(IpcRequest request, CancellationToken cancellationToken)
     {
+        // The owner row and the grounds read `repositories` alone: a `repository` would name a place they never judged.
+        if (request.Payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty("repository", out _))
+        {
+            throw new DriverException("a place's apply names its repositories as `repositories`, never a single `repository`.");
+        }
+
         var service = _loop.Service ?? throw NotReady();
         var digest = Optional(request, "digest") ?? "";
         var config = DriverConfig.Load(_loop.ConfigPath);

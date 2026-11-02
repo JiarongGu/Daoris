@@ -35,6 +35,13 @@ public sealed class RetryVerb(Func<DriverConfig, CancellationToken, Task<IReadOn
             return 0;
         }
 
+        int Approved()
+        {
+            Say($"daoris: your yes to quest `#{quest}` is kept: its role's policy may move it to another choice once.");
+            Say("  The driver reads it at its next look; a later hold asks again.");
+            return 0;
+        }
+
         int Marked(int mark, bool counted, int strikes)
         {
             Say($"daoris: quest `#{quest}` may be started again.");
@@ -102,6 +109,12 @@ public sealed class RetryVerb(Func<DriverConfig, CancellationToken, Task<IReadOn
 
             var decision = QuestRetry.Decide(quest, verdicts);
             var now = StandingChoices.Write(path, decision.Change);
+            // STAFFPOLICY1e: the yes to a role policy's ask or bound is one approval beside the line's moves (as RETRY_QUEST writes it).
+            if (decision.Approve is { } role && !new StaffMoves(DriverConfig.HomeOf(path)).Approve(quest, role))
+            {
+                throw new ChoiceWords("this machine's store would not take your yes, so nothing was approved; try again.");
+            }
+
             return new Retried(decision.Did, decision.Session, now.ForgivenAt(quest), now.Strikes);
         }, answer =>
         {
@@ -126,6 +139,7 @@ public sealed class RetryVerb(Func<DriverConfig, CancellationToken, Task<IReadOn
             var strikes = answer.ValueKind == JsonValueKind.Object && Json.Number(answer, "strikes") is { } counted ? (int)counted : before.Strikes;
             return new Retried(did ?? RetryDecision.Marked, session, mark, strikes);
         }, fields => fields is Retried { Did: RetryDecision.Released, Session: { } session } ? Released(session)
+            : fields is Retried { Did: RetryDecision.Approved } ? Approved()
             : fields is Retried marked ? Marked(marked.Mark, true, marked.Strikes) : Marked(0, true, before.Strikes));
     }
 

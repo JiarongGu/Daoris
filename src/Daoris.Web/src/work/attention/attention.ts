@@ -46,6 +46,8 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
   'parked-quest': 'holding',
   // STEWARDROLE1b (D209 §5.3): a quest the steward's stop holds for a Try again, the steward's or the person's.
   'steward-stopped': 'holding',
+  // STAFFPOLICY1e2 (D226, design §11 point 7): a quest its role's policy holds for the person's yes to one move to another choice.
+  'policy-hold': 'holding',
   // INTEGRATE1o part o3 (§17.3): a run held at a request the receiver declined stands still until the person passes it over.
   'request-declined': 'holding',
   // A stale one holds nothing and waits for the person's word instead (GOAHEADSTALE1, `attentionGroup`).
@@ -155,6 +157,7 @@ export const ATTENTION_PLACE: Readonly<Record<AttentionKind, AttentionPlace | nu
   unanswerable: 'quests',
   'parked-quest': 'quests',
   'steward-stopped': 'quests',
+  'policy-hold': 'quests',
   // INTEGRATE1o part o3: the run's door opens its quest, where the work and its declined request are read.
   'request-declined': 'quests',
   'go-ahead': 'quests',
@@ -258,6 +261,8 @@ export function rowRun(item: Attention): { session?: string | null; quest?: stri
     case 'parked-quest': return { quest: item.id };
     // The steward's stop (STEWARDROLE1b): its quest, and the session it stopped.
     case 'steward-stopped': return { session: item.session ?? null, quest: item.id };
+    // A policy's hold (STAFFPOLICY1e2): its quest, as a parked quest's.
+    case 'policy-hold': return { quest: item.id };
     // INTEGRATE1o part o3: the run's newest work quest here, whose run the step waits in.
     case 'request-declined': return item.declined?.work ? { quest: item.declined.work } : null;
     default: return null;
@@ -396,6 +401,8 @@ export function attentionOffers(item: Attention): AttentionOffer[] {
     case 'parked-quest': return plain('retry');
     // STEWARDROLE1b (D209 §5.3, §5.4): the person's own *Try again*, the parked quest's press.
     case 'steward-stopped': return plain('retry');
+    // STAFFPOLICY1e2: *Try again* is the person's yes to one move (the retry door approves it, once).
+    case 'policy-hold': return plain('retry');
     // INTEGRATE1o part o3: the run's existing *Pass over…* (§17.3), offered where the node it is said on is named.
     case 'request-declined': return !item.declined ? [] : item.declined.request ? plain('ask-again', 'go-on') : plain('pass-over');
     // GOAHEADSTALE1: nothing on a stale one's ask could use a yes but whatever starts there next, which no session asked it for, so
@@ -663,7 +670,7 @@ export type AttentionPushed = {
  * floor, a held git remote (GITAUTH1a) and quests nobody can take; then review.
  */
 const KIND_ORDER: readonly AttentionKind[] = [
-  'account-wait', 'signed-out', 'parked', 'helper-ended', 'parked-quest', 'steward-stopped', 'request-declined', 'go-ahead', 'permission', 'answer', 'confirmation', 'trust',
+  'account-wait', 'signed-out', 'parked', 'helper-ended', 'parked-quest', 'steward-stopped', 'policy-hold', 'request-declined', 'go-ahead', 'permission', 'answer', 'confirmation', 'trust',
   'quiet', 'proposal', 'departure', 'set-up', 'opinion', 'rule', 'helper', 'hand-over', 'memory', 'integration', 'work', 'space', 'git-held', 'unanswerable',
   'review',
 ];
@@ -832,6 +839,13 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
         session: row.session ?? null,
         detail: row.sitting ? sittingSentence(row.sitting)
           : row.session ? i18n.t('work.attention.stewardStoppedSession', { session: row.session }) : null,
+      };
+    // STAFFPOLICY1e2: the policy's hold, said by the planner's typed sentence (`policy-ask`, `moves-bound`).
+    case 'policy-hold':
+      return {
+        ...base,
+        title: questOf(row.id)?.title ?? `#${row.id}`,
+        detail: row.sitting ? sittingSentence(row.sitting) : null,
       };
     // INTEGRATE1o part o3 (§17.3): the run's work as its quest names it, and the quest declined, to where it went, held until passed over.
     case 'request-declined': {

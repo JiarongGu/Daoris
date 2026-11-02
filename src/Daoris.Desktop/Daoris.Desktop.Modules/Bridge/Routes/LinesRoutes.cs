@@ -102,6 +102,7 @@ public sealed class LinesRoutes(DriverContext context)
     /// <param name="adapters">The loop's agents, the machine's plugins among them, which an opinion's <c>sameAgent</c> is judged by.</param>
     internal static object Answer(IReadOnlyList<LineRow> lines, DriverConfig config, AdapterSet adapters)
     {
+        var gitLevels = GitLevelsOf(config);
         return new
         {
             Lines = lines.ToArray(),
@@ -180,6 +181,16 @@ public sealed class LinesRoutes(DriverContext context)
                     pair.line.Workspace,
                     pair.access.Full,
                     Pauses = pair.access.Pauses.Select(pause => new { pause.Pause, pause.Value, pause.Source }).ToArray(),
+                })
+                .ToArray(),
+            // What a session's git may do on a remote, each class with its value and where it was set (GITAUTH1f, §6.4); the driver's
+            // resolution, `default` where nothing is set (Write then `as-today`).
+            GitAccess = lines.Select(line => (line, access: GitAccessKeys.Resolve(gitLevels, line.Repository, line.Workspace)))
+                .Select(pair => new
+                {
+                    pair.line.Repository,
+                    pair.line.Workspace,
+                    Classes = pair.access.Classes.Select(each => new { each.Class, each.Value, each.Source }).ToArray(),
                 })
                 .ToArray(),
         };
@@ -1060,6 +1071,42 @@ public sealed class LinesRoutes(DriverContext context)
         DrivenAccess.TellRunning(_loop.Processes, before, DriverConfig.Load(_loop.ConfigPath), _loop.Output.Append);
         return DriverRoutes.State(_loop);
     }
+
+    /// <summary>
+    /// One change to git access (GITAUTH1f, D198 points 8, 10 and 12; the git-auth design §6.4), the page's half of
+    /// <c>daoris-driver git access</c>: <c>repository</c>, <c>workspace</c> or <c>machine: true</c>, and <c>access</c> (the classes it
+    /// sets, a null value taking one back to the level above), <c>oneValue</c> (Read and Write together), or neither to clear. A
+    /// separate route from <c>SET_ACCESS</c>: a payload with no <c>access</c> clears the access setup on a host that does not know the
+    /// field. Judged by <see cref="GitAccessActs.Changes"/> before anything is written; the window confirms a widening in its own
+    /// <c>InlineConfirm</c>, and the route carries no flag for it.
+    /// </summary>
+    [DriverRoute("SET_GIT_ACCESS")]
+    [Publishes("SET_GIT_ACCESS", Chosen)]
+    private object? SetGitAccess(IpcRequest request)
+    {
+        var edit = GitAccessActs.EditOf(request.Payload ?? default);
+        GitAccessActs.Apply(_loop.Home, edit);
+        return DriverRoutes.State(_loop);
+    }
+
+    /// <summary>The git access levels in the file <paramref name="config"/> was read from; none where it holds none.</summary>
+    internal static GitAccessLevels GitLevelsOf(DriverConfig config)
+    {
+        try
+        {
+            return config.Source is { Length: > 0 } text && System.Text.Json.Nodes.JsonNode.Parse(text) is System.Text.Json.Nodes.JsonObject root
+                ? GitAccessKeys.Of(root)
+                : GitAccessLevels.None;
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return GitAccessLevels.None;
+        }
+    }
+
+    /// <summary>A level's git access as set, its classes in order, so the page says where a value came from.</summary>
+    internal static object[] GitClassesWire(IReadOnlyDictionary<string, string> level) =>
+        [.. GitAccessKeys.Classes.Where(level.ContainsKey).Select(name => new { Class = name, Value = level[name] })];
 
     /// <summary>
     /// A level's access setup as the bridge carries it (AUTONOMY1a): whether it is full access, and the pauses it names in their order,

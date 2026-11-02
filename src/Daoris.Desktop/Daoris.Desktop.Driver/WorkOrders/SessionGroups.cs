@@ -500,11 +500,16 @@ public static class SessionGroups
     /// </summary>
     /// <param name="door">The configured adapter's wire, which decides whether a repository that never adopted can be driven (D70).</param>
     public static async Task<IReadOnlyList<Consideration>> VerdictsAsync(
-        ServiceClient service, DriverConfig config, SessionWire door, IReadOnlyList<Consideration>? lastLook, CancellationToken ct = default) =>
+        ServiceClient service, DriverConfig config, SessionWire door, IReadOnlyList<Consideration>? lastLook, CancellationToken ct = default,
+        string? home = null)
+    {
+        if (lastLook is not null) return lastLook;
         // A fresh plan reads the pauses as the loop's look does (PAUSE1b), so the list and a tick say one verdict.
-        lastLook ?? Planner.Plan(
-            await PausedWork.LookAsync(service, config, await service.SnapshotAsync(ct).ConfigureAwait(false), ct).ConfigureAwait(false),
-            config, door);
+        var snapshot = await PausedWork.LookAsync(service, config, await service.SnapshotAsync(ct).ConfigureAwait(false), ct).ConfigureAwait(false);
+        // And the typed holds a role's policy leaves (STAFFPOLICY1e2), read from the home's store, so a plan with no look says the hold the look says.
+        if (home is not null) snapshot = StaffCourse.Held(new StaffLedger(home), snapshot, config, DateTimeOffset.UtcNow);
+        return Planner.Plan(snapshot, config, door);
+    }
 
     /// <summary>
     /// One look at the sessions, gathered for the reader (D126 §2.4): the records, every quest, the planner's verdicts, the
@@ -530,7 +535,7 @@ public static class SessionGroups
         times ??= new LookTimes();
         var records = await times.TimeAsync("records", () => service.SessionRecordsJsonAsync(ct)).ConfigureAwait(false);
         var quests = await times.TimeAsync("quests", () => service.EveryQuestAsync(ct)).ConfigureAwait(false);
-        var considered = await times.TimeAsync("verdicts", () => VerdictsAsync(service, config, door, lastLook, ct)).ConfigureAwait(false);
+        var considered = await times.TimeAsync("verdicts", () => VerdictsAsync(service, config, door, lastLook, ct, home)).ConfigureAwait(false);
         var trees = new SessionTrees(home);
         var look = times.Time("marks", () =>
         {

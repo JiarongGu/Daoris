@@ -108,7 +108,7 @@ internal static class OwnerTargetRows
 
         foreach (var route in new[]
                  {
-                     "SET_LINE", "SET_LANGUAGE", "SET_LANDING", "SET_REVIEW", "SET_OPINION", "SET_HELPERS", "SET_HAND_OVER", "SET_COMMITS", "SET_ACCESS",
+                     "SET_LINE", "SET_LANGUAGE", "SET_LANDING", "SET_REVIEW", "SET_OPINION", "SET_HELPERS", "SET_HAND_OVER", "SET_COMMITS", "SET_ACCESS", "SET_GIT_ACCESS",
                      "SET_READ_ACROSS", "WORKFLOW_LANDED", "WORKFLOW_USE",
                  })
         {

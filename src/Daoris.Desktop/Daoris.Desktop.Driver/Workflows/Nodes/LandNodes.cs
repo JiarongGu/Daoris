@@ -84,6 +84,9 @@ public static class LandNodes
         if (node.Options.ContainsKey("method") && (method is null || !Methods.Contains(method, StringComparer.Ordinal))) return "method";
         if (node.Options.ContainsKey(AcceptOption)) return AcceptOption;
         if (node.Options.ContainsKey("target") && !(Written(node, "target") is { } target && BranchName.IsValid(target))) return "target";
+        // Every method but an integrate lands on the tree's line, so a target there would only misname it; an integrate's must also be the
+        // line the repository declares, which the landing's door judges (CurrentDeliveries.StartAsync).
+        if (node.Options.ContainsKey("target") && method is not null && method != Integrate) return "target";
 
         if (node.Options.ContainsKey("pattern"))
         {

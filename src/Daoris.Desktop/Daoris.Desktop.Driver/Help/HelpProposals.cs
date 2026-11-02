@@ -194,6 +194,9 @@ public sealed record HelpMachineFacts(
     /// <summary>Each door as the Agents screen's roster reads it (HELP6), for an agent's update or pin and an account's settings.</summary>
     public IReadOnlyList<HelpDoorFacts> Doors { get; init; } = [];
 
+    /// <summary>The git identities on this machine (labels and hosts, never a key or a token), for a <c>git-use</c> door's judge (GITAUTH1e).</summary>
+    public IReadOnlyList<HelpGitIdentity> GitIdentities { get; init; } = [];
+
     /// <summary>This machine's plugins, for a landing rule that names one (HELP8, D100), a plugin proposal (PLUG9) and a hand-off (WSR5b).</summary>
     public PluginCatalog Plugins { get; init; } = PluginCatalog.None;
 
@@ -414,6 +417,9 @@ public sealed record HelpPlan(string? Refusal, string Describe, string Terminal,
 
     /// <summary>An actor's order a setting proposal sets (FOUNDATION1w-s), applied through the staffing's one write; null for every other plan.</summary>
     public HelpStaffing? Staffing { get; init; }
+
+    /// <summary>A git identity a setting proposal points a repository's remote or a workspace's host at (GITAUTH1e), applied through the pointer's own write; null for every other plan.</summary>
+    public HelpGitUse? GitUse { get; init; }
 
     // The clear kind's.
 

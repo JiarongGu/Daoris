@@ -31,6 +31,14 @@ public static class GitRemoteRows
         return addresses;
     }
 
+    /// <summary>The last folder of a local remote's path or <c>file://</c> address, with no parent, drive or user-info.</summary>
+    internal static string LocalName(string address)
+    {
+        var path = address.StartsWith("file://", StringComparison.OrdinalIgnoreCase) ? address[7..] : address;
+        var name = path.TrimEnd('/', '\\').Split('/', '\\').LastOrDefault() ?? "";
+        return name.EndsWith(".git", StringComparison.OrdinalIgnoreCase) && name.Length > 4 ? name[..^4] : name;
+    }
+
     /// <summary>The rows of the checkout at <paramref name="root"/>, in the order git lists the remotes.</summary>
     public static async Task<IReadOnlyList<GitRemoteRow>> ReadAsync(string home, string root, string repository, string? workspace, CancellationToken ct)
     {
@@ -45,7 +53,8 @@ public static class GitRemoteRows
             var host = address is null ? null : GitIdentityActs.GitAddressHost(address);
             if (address is null || host is null)
             {
-                rows.Add(new GitRemoteRow(name, GitWords.Redact(address) ?? "", null, null, "local", null, null, null, [], own));
+                // A local remote is its folder's name: the route answers no machine path.
+                rows.Add(new GitRemoteRow(name, address is null ? "" : LocalName(address), null, null, "local", null, null, null, [], own));
                 continue;
             }
 

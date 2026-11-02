@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sentence } from '../../locales/format';
-import { useGitIdentity, useSetGitUse, useToolPick, useTools } from '../../bridge/shell';
-import { failure, Inline, type Notify, Prose, useErrorNotify } from '../../design/ui';
+import { useDriver, useGitIdentity, useSetGitAccess, useSetGitUse, useToolPick, useTools } from '../../bridge/shell';
+import { Card, CardHeader, failure, Inline, type Notify, Prose, SettingList, useErrorNotify } from '../../design/ui';
+import { GitAccessRows, resolveGitAccess } from '../repository/GitAccess';
 import { DomainLoading } from '../DomainLoading';
 import {
   type GitActs, GitDefaults, GitIdentities, GitOwn, type GitTestAnswer,
@@ -24,6 +25,9 @@ export function GitDomain({ notify, host: openHost, onClosed }: { notify: Notify
   const identity = useGitIdentity();
   const use = useSetGitUse();
   const pick = useToolPick();
+  const driver = useDriver();
+  const setAccess = useSetGitAccess();
+  const machineAccess = driver.data?.machineGitAccess;
   const [adding, setAdding] = useState(openHost !== undefined);
   useErrorNotify(list.error, notify);
   const failed = failure(notify);
@@ -97,6 +101,22 @@ export function GitDomain({ notify, host: openHost, onClosed }: { notify: Notify
       <GitIdentities identities={page.identities} acts={acts} adding={adding} onAdd={() => setAdding(true)} />
       <GitDefaults identities={page.identities} acts={acts} onError={(said) => notify(said, 'error')} />
       <GitOwn hosts={page.own} acts={acts} knownHosts={page.hosts} />
+      {machineAccess && (
+        <Card id="settings-git-access" className="scroll-mt-3">
+          <CardHeader title={t('settings.git.access.machine')} />
+          <SettingList>
+            <GitAccessRows
+              owner="machine"
+              classes={resolveGitAccess([{ classes: machineAccess, source: 'machine' }])}
+              busy={setAccess.isPending}
+              onChange={(edit, answered) => setAccess.mutate({ machine: true, ...edit }, {
+                onSuccess: () => answered?.done(),
+                onError: (error) => (answered ? answered.refused(sentence(error)) : failed(error)),
+              })}
+            />
+          </SettingList>
+        </Card>
+      )}
     </>
   );
 }

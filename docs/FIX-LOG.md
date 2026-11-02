@@ -53,6 +53,39 @@ repository.
 - **Root cause:** LANDNODE1c3 made the merge plan acceptable, but the accepting sentence (D145 point 5) was appended to the branch form's sentence only.
 - **Fix:** `LandingRules.AutoAcceptSays` has a merge variant that the card, `daoris driver landing` and the Landing section of the room use, the room and the service tool's description stop saying "never on a merge"; a note on D145.
 - **Verify:** `HelpSettingProposalsTests` asserts the merge card's `Describe`; `HelpSettingProposalTests` (service) asserts the tool's words.
+## 2026-11-02 - A `land` node's target was accepted for every method and landed nowhere (REVIEW2, LANDNODE1)
+
+- **Symptom:** `land {method: merge, target: "release"}` merged into the tree's line while the delivery's record said `release`.
+- **Root cause:** `LandNodes.Problem` checked only that `target` was a valid branch name, and the value went only into the delivery's key and `Intent.Target`; the landing used `Intent.Line`. The design allows another line for an integrate alone, and only one the repository declares.
+- **Fix:** `Problem` holds a target beside an explicit method other than `integrate`; `CurrentDeliveries.StartAsync` refuses a bound `land` whose target is not the tree's line before any delivery is written, so a saved version that carries one never lands. Noted on D145.
+- **Verify:** `LandTargetTests` and `LandNodeKindTests`' new rows, red first.
+
+## 2026-11-02 - A store held below step 18 threw "no such column: model" on every move (REVIEW2, STAFFPOLICY1d)
+
+- **Symptom:** while the start's confirmation of the step-16 stamp raise is awaited, steps 17 and 18 wait with it, and every move `Decide` or phase `Step` threw.
+- **Root cause:** `MoveStore` named `model` and `effort` in its insert and in `ReadIn`/`StandingIn` whatever the store's version; only its reads had `ColumnsAt`.
+- **Fix:** a write transaction knows the store's version (`DesktopWrite.Version`), and the insert and the in-write reads name the columns only from step 18.
+- **Verify:** `MoveStoreHeldStepTests` on a store held at step 15, red first.
+
+## 2026-11-02 - The place's chart drew an older version than every run would bind (REVIEW2)
+
+- **Symptom:** a workflow whose newest version did not read was drawn as its older readable version, while every run bound to it held on the newest's problem.
+- **Root cause:** `WorkflowEffectives.OfSaved` took the newest version that reads; `WorkflowRunBindings` takes `Versions[^1]`.
+- **Fix:** the chart draws the newest version and, where it does not read, its problem in the bind's words.
+- **Verify:** `WorkflowEffectiveTests`' newest-does-not-read case, red first.
+
+## 2026-11-02 - The staffing policy's course read seeded Build's policy, and six more (STAFFPOLICY1e2, REVIEW2)
+
+- **Symptom:** a scoped added role with `moves.limit: ask` was walked with no hold; the 30-minute pass never passed anything; a refused single-choice start kept its reservation; `driver retry` alone said it marked a quest and wrote no approval on a policy hold; `next` and `weighted` walked the same; a yes could release a later move; a refused store write read as the bound of moves; the opening note said "Build's policy chose this" for an added role's start; a conversation's role was offered a limit `ask`, `wait` and a bound nothing read.
+- **Root cause:** the course took the role from the record's `actor`, which is the seeded id on every driven record (the taken role is `binding_roles`); `StaffFacts.MovedOff` had no producer; the one-entry fast path settled before checking `Allowed`; the alone retry path judged and never wrote what `RETRY_QUEST` writes; the met action never reached `Arrange`; an approval stayed standing until a move; `Decided` answered false for a refused write and for the bound alike; the doors' enforced list ignored the role's works.
+- **Fix:** `StaffCourse.RoleOf` (the bound role, else the work's at its place) for `Look`, `LimitHolds`, the limit sites and the transient tries; `StaffMoves.LineFacts` feeds the pass and the rule of the last move (`StaffFacts.Rule`) from `BuildPlan`; `GiveBack` on a refused fast path; `RetryVerb` writes the approval and words it; `SpendApproval` closes a yes at the start that moved nothing; a refused write decides nothing instead of holding; `StaffCapabilities.Unenforced` refuses `ask`, `wait` and `most` for a role taking `chat` or `ask-daoris`; the opening note names the binding's role by its catalogue name (`ActorOpenings.NameOf`, no test of its own).
+- **Verify:** `StaffCourseLookTests` (a scoped role, the pass, the rule, the closed yes), `StartPlanStaffTests`, `StaffPolicyDoorTests`' conversation case. Not each seen red first: the role, the rule and the door cases were reasoned against the old code, and the retry verb has no test of its own.
+## 2026-11-02 - A pasted token kept on disk, a lone checkout remembered, scoped headers and a erase-after-remove (REVIEW2, GITAUTH1e)
+
+- **Symptom:** (3) an HTTPS token sent over the pipe was written to `data/pipe-waiting/` and shown on the card; (4) pointing one repository's remote from the window dropped every other checkout from `run/git/checkouts.json`, so their pointers read as none in the doors and the author; (5) a repository's URL-scoped `http.<url>.extraHeader` or `cookieFile` still reached an identity's act, and a scoped certificate was matched by prefix; (6) removing an HTTPS identity dropped it before GCM's erase, and with no GCM said nothing; (10) a local remote's machine path was answered by `GIT_BRANCHES`.
+- **Root cause:** (3) `GIT_IDENTITY` was not a keyed route and read `token` from any payload; (4) `GIT_USE` remembered `Checkouts(registry, repository, …)` into a file written whole; (5) Daoris's reset covers only the unscoped keys, and git's urlmatch lets a scoped one win; (6) `RemoveAsync` removed first and `EraseAsync` returned when no GCM was found; (10) the row kept the address when it named no host.
+- **Fix:** (3) `PipeCensus.SecretRefusal` refuses a `token` on the pipe before anything is recorded, and the route is keyed; (4) `ToolsRoutes.UseGitAsync` remembers every checkout; (5) `GitOwnInput.ScopedInputAsync` and `CertificateAsync` ask `git config --get-urlmatch` and hold the remote as own-input; (6) erase first, remove on success, `no-gcm` refused with the identity kept; (10) a local remote is its folder's name (`GitRemoteRows.LocalName`).
+- **Verify:** `PipeCensusTests`, `GitOwnInputScopedGitTests` (a real git and repository-local scoped settings), `GitHttpsTests`, `GitRemoteRowsTests`. Written beside the fixes, not before them: the reds were not seen.
 
 ## 2026-11-02 - Thirty-seven chat Process tests red after the routing standing was told (COWORKVIEW1e-i)
 
@@ -12925,3 +12958,43 @@ mis-rooted instance.
 **Fix.** `tools/index-hook.mjs` puts a blank line before each glued `**Note, ` line in every staged decision file and re-stages it, before the index is regenerated (pre-commit, which also finishes a conflicted merge); a file staged in part is left with a note. A clean merge commits without pre-commit, and git ignores what a `pre-merge-commit` hook stages (the tree is fixed before it runs), so `--install` also sets a `notes` merge driver (`merge.notes.*`, `tools/index-hook.mjs --merge-notes`) that `.gitattributes` names for `docs/decisions/*.md`: git's union merge, then the separation, inside the merge itself. No commit is remade, so the ids that delivery and landing records hold stay right. A clone without the driver merges those files as plain text, which fails the merge rather than gluing.
 
 **Verified.** Red first: the new `index-hook.test.mjs` cases (clean union merge, conflicted merge finished by `git commit`, glued note separated and a clean file untouched, a partly staged decision) failed; all pass after, with the driver configured by install, the merge commit as git made it, and the driver-absent fallback.
+
+## 2026-11-02 — a person-only git act and Free up space's delete ran as an open read through a payload's casing or a second flag
+
+**Symptom.** `{…, "Plan": true}` to `GIT_HISTORY_EDIT` or `SYSTEM_SPACE_FREE`, and `{…, "plan": true, "said": true}` to `GIT_HISTORY_EDIT`, were classed Open by the pipe's census and ran the press (a branch edit, a delete) with no card and no standing judgement (REVIEW2 findings 1 and 2).
+
+**Root cause.** `PipeRule.For` matched the field ignoring case and let an Open value decide, while the handlers read `plan` exact-case (`Flag`); and the history edit's handler read `said` before `plan`, which the census could not see.
+
+**Fix.** A name matching only ignoring case, or a field said twice, takes the strict class of the rule's two (`PipeRule.For`); `GIT_HISTORY_EDIT`'s rule names `said` as `Unless`, and its handler refuses `plan` beside `said`. The other rules (`TOOLS_GIT`, `PLUGIN_UPDATE`) read their field exact-case and first, and take the same casing rule.
+
+**Verified.** Red first: the new `PipeCensusTests` payloads and `A_history_edit_asking_for_its_plan_and_its_words_at_once_is_refused` failed (7); all pipe classes green after.
+
+## 2026-11-02 — `daoris-driver driver workflow` wrote alone beside a running Daoris, with no card
+
+**Symptom.** `workflow new|edit|apply|import|use|kind` saved a workflow or changed a place's choice from the terminal while the window ran, the only guard `DAORIS_SESSION_ID` (REVIEW2 finding 3).
+
+**Root cause.** `WorkflowVerb` ran before any `PressAsync` (`DriverChoicesCommand` runs a registered verb first), on the comment that no route takes a workflow write; `WORKFLOW_SAVE`, `WORKFLOW_USE`, `WORKFLOW_KIND` and `WORKFLOW_LANDED` have been Person routes since AGENTSPLACE1c.
+
+**Fix.** `DriverWorkflowsCommand` plans and says as before, then defers the write: `InstanceDoor.PressAsync` on the matching route (a file imported goes a version at a time; a verification-marked one, which the save cannot carry, is refused while Daoris runs), and the write is done here only where no instance answers or a named file is used; the session-terminal refusal now guards that alone path alone (output held until then), so the window's Confirm is the guard beside a running Daoris, as for every other press. The four routes join `ChoiceRoutes`.
+
+**Verified.** `Beside_the_running_Daoris_a_workflows_write_is_its_route_and_this_process_writes_nothing` (kind, use, new): the old code wrote the file here and sent nothing; the driver's workflow, verb-lease, choice and help-coverage classes green (633).
+
+## 2026-11-02 — `daoris-driver place … --apply` acting alone did not refuse a session's terminal
+
+**Symptom.** From a session's terminal with no Daoris running, `place <repository> --preset … --apply` planned, wrote the configuration and asked the adoption quest, though every other person's press acting alone refuses `DAORIS_SESSION_ID` (REVIEW2 finding 4).
+
+**Root cause.** `PlaceCommand.ApplyAloneAsync` was written without the check `GitHistoryCommand`, `GitRefCommand` and `GitFetchCommand` carry in their alone callbacks.
+
+**Fix.** `ApplyAloneAsync` takes the terminal and says `DriverChoicesCommand.SessionsTerminal`, exit 1, before the plan is read; the route's own `said` run (no terminal) is unaffected.
+
+**Verified.** Red first: `The_verb_applying_alone_from_a_sessions_terminal_is_refused_and_writes_nothing` (applied, exit 0).
+
+## 2026-11-02 — `PLACE_APPLY` accepted a single `repository` its owner row and grounds never read
+
+**Symptom.** `{"repository":"x", "preset":…}` to `PLACE_APPLY` planned and applied for `x` while the card's owner target and grounds judged `repositories`, which was absent (REVIEW2 finding 5).
+
+**Root cause.** The handler shared `Names` with `PLACE_PLAN`, whose single-`repository` fallback is harmless for a read, but the press must be judged on the places it acts on.
+
+**Fix.** `PlaceApplyAsync` refuses a payload carrying `repository`; `repositories` is the apply's one way (the verb and the page send it).
+
+**Verified.** Red first: `An_apply_naming_a_single_repository_is_refused_and_nothing_is_written` (the apply ran).

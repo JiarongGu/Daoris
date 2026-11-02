@@ -193,6 +193,7 @@ export const HOME_ENTRIES = [
   row('git-held', 'run', 'run/git/held.json', 'run/git/held.json'),
   row('git-grants', 'run', 'run/git/grants', 'run/git/grants'),
   row('git-used', 'run', 'run/git/used', 'run/git/used'),
+  row('git-asks', 'run', 'run/git/asks', 'run/git/asks'),
   row('git-checkouts', 'run', 'run/git/checkouts.json', 'run/git/checkouts.json'),
   row('git-home', 'run', 'run/git/home', 'run/git/home'),
   row('logs', 'logs', 'logs', 'logs'),

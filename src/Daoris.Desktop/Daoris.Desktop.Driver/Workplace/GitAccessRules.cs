@@ -8,7 +8,8 @@ namespace Daoris.Driver;
 /// <param name="Allowed">Whether the act may pass.</param>
 /// <param name="Code">Why: <c>read</c>, <c>granted</c>, <c>no-push-off</c>, or <c>denied</c>.</param>
 /// <param name="Line">The one line a refusal writes where git prints it; null where the act passes.</param>
-public sealed record GitVerdict(bool Allowed, string Code, string? Line);
+/// <param name="Ask">Whether the act must be asked of the person at the door (GITAUTH1f, §6.6): not allowed yet, and not refused.</param>
+public sealed record GitVerdict(bool Allowed, string Code, string? Line, bool Ask = false);
 
 /// <summary>
 /// The one judge of git access (GITAUTH1b, D198 points 8, 11 and 13; the git-auth design §6.1, §6.2, §6.5 and §6.7), asked by both
@@ -44,6 +45,32 @@ public static class GitAccessRules
         _ when pushesHere => new(true, "no-push-off", null),
         _ => new(false, "denied", DeniedLine),
     };
+
+    /// <summary>The line a refusal says where the person's git access denies the act.</summary>
+    public static string AccessDeniedLine(GitAct act) =>
+        $"daoris: this repository's git access denies {(act == GitAct.Read ? "reading from" : "writing to")} a remote: change it in Daoris's settings.";
+
+    /// <summary>The line a refusal says where the person refused the act's go-ahead.</summary>
+    public const string RefusedLine = "daoris: the git go-ahead for this act was refused, or was not answered in time.";
+
+    /// <summary>
+    /// The answer for an act under the value its class resolved to (GITAUTH1f, §6.2, §6.5): <c>allow</c> passes, <c>deny</c> refuses,
+    /// <c>ask</c> is asked at the door, and <see cref="GitAccessKeys.AsToday"/> (Write, set by none) is <see cref="Judge(GitAct, bool, bool)"/>.
+    /// A grant (the landing's, or a late answer's) passes a Write whatever the value but <c>deny</c>. A <c>readOnly</c> identity makes
+    /// Write deny whatever the access.
+    /// </summary>
+    public static GitVerdict Judge(GitAct act, string value, bool pushesHere, bool granted, bool readOnlyIdentity = false)
+    {
+        if (act == GitAct.Write && readOnlyIdentity) return new(false, "read-only", AccessDeniedLine(act));
+        return value switch
+        {
+            GitAccessKeys.Deny => new(false, "access-denied", AccessDeniedLine(act)),
+            GitAccessKeys.Allow => new(true, "access", null),
+            GitAccessKeys.Ask when granted => new(true, "granted", null),
+            GitAccessKeys.Ask => new(false, "ask", null, Ask: true),
+            _ => Judge(act, pushesHere, granted),
+        };
+    }
 
     /// <summary>
     /// Whether the person switched <c>no-push</c> off in the home's <c>permissions.json</c> (<c>defaultsOff</c>). A file that is absent or

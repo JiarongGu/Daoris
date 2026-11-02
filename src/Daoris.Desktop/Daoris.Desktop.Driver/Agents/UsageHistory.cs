@@ -93,6 +93,9 @@ public sealed record KeptTurn(
 
     /// <summary>The brainstorm a pass's turn was spent for (BRAINSTORM1c, D176 point 7); null for every other session.</summary>
     public string? Brainstorm { get; init; }
+
+    /// <summary>The role's choice the turn was spent on, as its policy keys it, the tuple's JSON (STAFFPOLICY1e2); null where its start chose none.</summary>
+    public string? Choice { get; init; }
 }
 
 /// <summary>What the turns' log holds, in the order it was written: its turns, its gaps, and the lines that did not read.</summary>
@@ -636,6 +639,9 @@ public static class UsageHistory
         Text(json, "door", Word(binding?.Door));
         Text(json, "actor", Word(binding?.Actor));
         if (Word(binding?.Brainstorm) is { } brainstorm) json.WriteString("brainstorm", brainstorm);
+        // STAFFPOLICY1e2: the role's choice the turn was spent on, as its policy keys it (agent, model, effort), where its start chose one: what a
+        // daily budget of tokens is weighed against. Written only then, so a line from before reads as it did.
+        if (binding?.Choice is { Length: > 0 and <= 400 } choice) json.WriteString("choice", choice);
         json.WriteString("session", turn.Session);
         json.WriteNumber("seq", turn.Seq);
         Text(json, "started", turn.Started is { } started ? Stamp(started) : null);
@@ -905,7 +911,7 @@ public static class UsageHistory
         return new KeptTurn(
             agent, agent is null ? null : Json.Text(record, "account"), Whole(record, "epoch"), Json.NonEmpty(record, "door"), session, seq,
             Moments.ReadStrict(Json.Text(record, "started")), ended, TokensOf(record), model, split, Json.NonEmpty(record, "attribution"),
-            Flag(record, "whole"), cancelled, meaning, reader) { Actor = Json.NonEmpty(record, "actor"), Brainstorm = Json.NonEmpty(record, "brainstorm") };
+            Flag(record, "whole"), cancelled, meaning, reader) { Actor = Json.NonEmpty(record, "actor"), Brainstorm = Json.NonEmpty(record, "brainstorm"), Choice = Json.NonEmpty(record, "choice") };
     }
 
     private static TurnTokens TokensOf(JsonObject record) =>

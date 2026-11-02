@@ -33,6 +33,13 @@ internal static class CurrentDeliveries
         var rule = landing.Rule;
         var (method, graph) = bound is null ? WorkplaceWorkflows.Current.CurrentLand(rule) : (bound.Method, bound.Graph);
         TreeLanding Refused(string why) => new(false, $"Nothing was landed: {why}.") { Refusal = AutoLandingCode.Refused };
+        // The landing goes into the tree's line whatever the record would say, and the repository declares one line: a target is that line or
+        // nothing lands (REVIEW2), so a saved version that names another is refused here and never lands.
+        if (bound?.Target is { } target && !string.Equals(target, line, StringComparison.Ordinal))
+        {
+            return (null, Refused($"its `land` names the target `{target}`, and only the repository's line `{line}` is one it declares"));
+        }
+
         // A name git would not take is refused before anything is written: a delivery's key holds no name, so one written for it would stand in
         // the way of the name that takes, whose landing would read the key settled and land with no delivery.
         if (method != DeliveryMethods.Merge && !(branch is { } named && BranchName.IsValid(named)))

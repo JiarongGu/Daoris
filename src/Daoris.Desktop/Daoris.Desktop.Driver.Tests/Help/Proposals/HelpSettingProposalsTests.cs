@@ -606,7 +606,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
             ("helpers", "engine", null, "--mode on"), ("commits", null, "work", "--mode ask"), ("intake", null, null, "off"),
             ("helper", null, null, "claude-code"), ("strikes", null, null, "0"), ("retry", "q1a2b3c4", null, null),
             ("timeout", null, null, "30"), ("notify", null, null, "on"), ("cap", null, null, "1"), ("adapter", null, null, "claude-code"),
-            ("cooloff", null, null, "90"), ("keep", null, null, "logs 14"),
+            ("cooloff", null, null, "90"), ("keep", null, null, "logs 14"), ("git-use", "engine", null, "--clear"),
         ];
 
         Assert.Equal(new HelpSettingProposals().Doors, samples.Select(sample => sample.Door));

@@ -153,7 +153,7 @@ public static class PlaceCommand
                         ("repositories", ask.Repositories), ("preset", ask.Preset), ("opinion", ask.Opinion), ("look", ask.Look), ("adoption", ask.Adoption),
                         ("builds", ask.Builds), ("drive", ask.Drive),
                         ("accept", words.Accept.Select(each => new { repository = each.Repository, purpose = each.Purpose }).ToArray())),
-                    () => ApplyAloneAsync(words, output, apply, ct), output, ct)
+                    () => ApplyAloneAsync(words, output, apply, instance, ct), output, ct)
                 .ConfigureAwait(false);
         }
 
@@ -170,8 +170,15 @@ public static class PlaceCommand
     /// The apply, alone (or as the running Daoris runs it for a terminal): the plan printed as <c>--plan</c> prints it, then the apply of that plan
     /// by its digest with the acceptances the words chose, then the outcome in a sentence. Exit 0 where every operation is done.
     /// </summary>
-    private static async Task<int> ApplyAloneAsync(PlaceWords words, TextWriter output, PlaceApplyDoors? doors, CancellationToken ct)
+    private static async Task<int> ApplyAloneAsync(PlaceWords words, TextWriter output, PlaceApplyDoors? doors, InstanceWorld? instance, CancellationToken ct)
     {
+        // A session's terminal never applies alone (D194 point 5); the running Daoris's window confirms the same press.
+        if (instance?.Environment(DriverChoicesCommand.SessionVariable) is { Length: > 0 })
+        {
+            output.WriteLine($"place: {DriverChoicesCommand.SessionsTerminal}");
+            return 1;
+        }
+
         if (doors is null)
         {
             output.WriteLine("place: applying needs the driver's home and its service, which this run was not given.");

@@ -101,7 +101,7 @@ public sealed class HelpRoleProposalsTests : HelpProposalsFixture, IDisposable
 
         var stale = HelpProposals.Plan(Role("set", "build", """{ "policy": "first", "policyRevision": 0 }"""), config, Machine);
         Assert.Contains("changed since you read it", stale.Refusal);
-        var unenforced = HelpProposals.Plan(Role("set", "build", """{ "policy": { "rule": "order", "choices": [], "moves": { "failed": "next" } }, "policyRevision": 1 }"""), config, Machine);
+        var unenforced = HelpProposals.Plan(Role("set", "build", """{ "policy": { "rule": "order", "choices": [], "moves": { "model-refused": "hold" } }, "policyRevision": 1 }"""), config, Machine);
         Assert.Contains("does not enforce yet", unenforced.Refusal);
     }
 

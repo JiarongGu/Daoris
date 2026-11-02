@@ -175,7 +175,7 @@ public sealed class CourseVocabularyTests
         ["Course/Chat/ChatHelperWords.cs"] = "FOUNDATION1h branch 7: the helper's go-on",
         ["Course/Chat/ChatRunner.StartFrom.cs"] = "FOUNDATION1h branch 8: start-from",
         ["Course/Chat/StartWith.cs"] = "FOUNDATION1h branch 8: start-with",
-        ["Loop/StaffCourse.cs"] = "STAFFPOLICY1e: a role policy's met condition read into the course's facts at the look",
+        ["WorkOrders/StaffCourse.cs"] = "STAFFPOLICY1e: a role policy's met condition read into the course's facts at the look",
     };
 
     /// <summary>

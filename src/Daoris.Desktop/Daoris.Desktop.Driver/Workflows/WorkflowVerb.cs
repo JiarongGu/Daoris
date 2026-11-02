@@ -16,17 +16,13 @@ public sealed class WorkflowVerb : ChoiceVerb
         Run(args, before, world, ct);
 
     /// <summary>
-    /// <c>workflow …</c> (PUSH1f2b): a read said, and a write acted on the terminal's word, since no route takes one (D171's PUSH1f note),
-    /// refused from a session's terminal before anything is read (D194 point 5). <see cref="DriverWorkflowsCommand"/> is the verb.
+    /// <c>workflow …</c> (PUSH1f2b): a read said, and a write the person's press (REVIEW2 3): its route, confirmed in the running Daoris's
+    /// window, else done here on the terminal's word and refused from a session's terminal (D194 point 5). <see cref="DriverWorkflowsCommand"/>
+    /// is the verb.
     /// </summary>
     private static async Task<int> Run(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world, CancellationToken ct)
     {
         var error = world.Instance.Error;
-        if (DriverWorkflowsCommand.Changes([.. args.Skip(1)]) && world.Instance.Environment(DriverChoicesCommand.SessionVariable) is { Length: > 0 })
-        {
-            await error.WriteLineAsync($"{DriverChoicesCommand.Prefix}: {DriverChoicesCommand.SessionsTerminal}").ConfigureAwait(false);
-            return 1;
-        }
 
         try
         {

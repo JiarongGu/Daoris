@@ -14,11 +14,12 @@ namespace Daoris.Driver;
 /// change as Ask Daoris's card draws it and saves a new version, never editing one; <c>--plan</c> says it and saves nothing.
 /// </summary>
 /// <remarks>
-/// <para>A write acts on the terminal's word, refused from a session's terminal, and holds the home's lease from the top
-/// (<see cref="VerbLeases"/>); a read holds nothing. <c>new</c>, <c>use</c> and <c>kind</c> run the typed operations
+/// <para>A write is the person's press: sent to the running Daoris's route (<c>WORKFLOW_SAVE</c>, <c>WORKFLOW_USE</c>, <c>WORKFLOW_KIND</c>,
+/// <c>WORKFLOW_LANDED</c>) and confirmed in its window, else done on the terminal's word, refused from a session's terminal, and
+/// holding the home's lease (<see cref="VerbLeases"/>); a read holds nothing. <c>new</c>, <c>use</c> and <c>kind</c> run the typed operations
 /// (<see cref="WorkflowOperations"/>) the window's <c>WORKFLOW_SAVE</c>, <c>WORKFLOW_USE</c> and <c>WORKFLOW_KIND</c> run (AGENTSPLACE1c),
 /// and say their result. The landed route, <c>use … --landed</c>, accepts the gates at the line's tip as the window's
-/// <c>WORKFLOW_LANDED</c> does, and stays the terminal's own act, as it was.</para>
+/// <c>WORKFLOW_LANDED</c> does, and is that route while Daoris runs. A file imported goes a version at a time, each confirmed.</para>
 /// <para>Today's text is kept (<c>fixtures/driver-workflows-text.json</c>). Exit codes are the CLI's: 1 where a version would not read
 /// or a choice is refused, 2 where the words cannot be done.</para>
 /// </remarks>
@@ -61,9 +62,95 @@ public static class DriverWorkflowsCommand
         private string Folder => WorkflowStore.FolderOf(_home);
         private bool Plan => argv.Contains("--plan");
 
-        private void Say(string line) => world.Instance.Out.WriteLine(line);
+        private readonly List<string> _held = [];
+        private bool _hold;
+        private Deferred? _write;
 
-        public Task<int> Go()
+        /// <summary>A session's terminal that writes says nothing until its write is known to be refused or sent (REVIEW2 3).</summary>
+        private bool Session() => world.Instance.Environment(DriverChoicesCommand.SessionVariable) is { Length: > 0 };
+
+        private void Say(string line)
+        {
+            if (_hold) _held.Add(line);
+            else world.Instance.Out.WriteLine(line);
+        }
+
+        /// <summary>
+        /// The write, the person's: sent to the running Daoris's route, confirmed in its window, whatever the terminal's environment says;
+        /// done here only where none runs, refused from a session's terminal (D194 point 5), and on a named file, which no instance reads.
+        /// </summary>
+        private sealed record Deferred(InstanceRoute Route, IReadOnlyList<JsonObject> Payloads, Action Write, IReadOnlyList<string> Lines)
+        {
+            /// <summary>Why the route cannot carry the write whole, or null; said and nothing done where an instance answers.</summary>
+            public string? Cannot { get; init; }
+        }
+
+        public async Task<int> Go()
+        {
+            _hold = Changes([.. argv.Skip(1)]) && Session();
+            try
+            {
+                var exit = await Dispatch().ConfigureAwait(false);
+                return _write is { } write && exit == 0 ? await PressAsync(write).ConfigureAwait(false) : exit;
+            }
+            finally
+            {
+                foreach (var line in _held) world.Instance.Out.WriteLine(line);
+            }
+        }
+
+        private async Task<int> PressAsync(Deferred write)
+        {
+            var written = false;
+            async Task<int> Alone()
+            {
+                if (written) return 0;
+                if (Session())
+                {
+                    _held.Clear();
+                    await world.Instance.Error.WriteLineAsync($"{DriverChoicesCommand.Prefix}: {DriverChoicesCommand.SessionsTerminal}").ConfigureAwait(false);
+                    return 1;
+                }
+
+                write.Write();
+                written = true;
+                foreach (var line in write.Lines) Say(line);
+                return 0;
+            }
+
+            if (DriverConfig.Overridden(world.Instance.Environment)) return await Alone().ConfigureAwait(false);
+            if (write.Cannot is { } cannot && world.Instance is InstanceWorld door
+                && (await InstanceDoor.FindAsync(door, ct).ConfigureAwait(false)).Found == InstanceFound.Answers)
+            {
+                await world.Instance.Error.WriteLineAsync($"{DriverChoicesCommand.Prefix}: {cannot} Nothing was written.").ConfigureAwait(false);
+                return 1;
+            }
+
+            for (var at = 0; at < write.Payloads.Count; at++)
+            {
+                var lines = at == write.Payloads.Count - 1 ? write.Lines : [];
+                var exit = await world.Instance.PressAsync(write.Route, write.Payloads[at], Alone, answer => Answered(answer, lines), ct).ConfigureAwait(false);
+                if (exit != 0 || written) return exit;
+            }
+
+            return 0;
+        }
+
+        /// <summary>The route's answer in the verb's words: a refusal it gives as data is said and exit 1, else the lines the write would say.</summary>
+        private int Answered(JsonElement data, IReadOnlyList<string> lines)
+        {
+            if (data.ValueKind == JsonValueKind.Object && data.TryGetProperty("refused", out var refused) && refused.ValueKind == JsonValueKind.String)
+            {
+                var said = data.TryGetProperty("message", out var message) && message.ValueKind == JsonValueKind.String ? message.GetString() : refused.GetString();
+                world.Instance.Error.WriteLine($"{DriverChoicesCommand.Prefix}: {said}");
+                return 1;
+            }
+
+            foreach (var line in lines) Say(line);
+            return 0;
+        }
+
+        private Task<int> Dispatch()
         {
             var verb = argv.ElementAtOrDefault(1);
             switch (verb)
@@ -414,7 +501,11 @@ public static class DriverWorkflowsCommand
             var used = await WorkflowOperations.UseAsync(choices, _home, Registry, chosen, repository, workspace, kind, ct).ConfigureAwait(false);
             if (used.Refusal is not null) throw new ChoiceWords(used.Refusal, 1);
             foreach (var line in used.Lines) Say(line);
-            return used.Changed ? SavedChoice(used.Edit!) : 0;
+            if (!used.Changed) return 0;
+            var asked = new JsonObject { [repository is not null ? "repository" : "workspace"] = repository ?? workspace };
+            if (chosen is not null) asked["workflow"] = chosen;
+            if (kind is not null) asked["kind"] = kind;
+            return SavedChoice(used.Edit!, ChoiceRoutes.WorkflowUse, asked);
         }
 
         private Task<ChoicesRegistry> Registry(CancellationToken token) => world.Registry(token);
@@ -540,14 +631,15 @@ public static class DriverWorkflowsCommand
             if (Plan)
             {
                 Say("  --plan: nothing was written.");
-            }
-            else
-            {
-                StandingChoices.Write(world.ConfigPath, config => WorkflowSelection.Apply(config, edit));
-                Say($"  Written to {world.ConfigPath}.");
+                Say(WorkflowWords.LandedReads);
+                return 0;
             }
 
-            Say(WorkflowWords.LandedReads);
+            var payload = new JsonObject { [repository is not null ? "repository" : "workspace"] = repository ?? workspace };
+            if (chosen is not null) payload["workflow"] = chosen;
+            if (edit.Gates is { } blob && IntegrationGatesKey.IsAcceptance(blob)) payload["gates"] = blob;
+            _write = new Deferred(ChoiceRoutes.WorkflowLanded, [payload], () => StandingChoices.Write(world.ConfigPath, config => WorkflowSelection.Apply(config, edit)),
+                [$"  Written to {world.ConfigPath}.", WorkflowWords.LandedReads]);
             return 0;
         }
 
@@ -593,23 +685,25 @@ public static class DriverWorkflowsCommand
             var set = WorkflowOperations.KindSet(choices, workspace, id, label, paths, drop);
             if (set.Refusal is not null) throw new ChoiceWords(set.Refusal, 1);
             foreach (var line in set.Lines) Say(line);
-            return SavedChoice(set.Edit!);
+            var declared = new JsonObject { ["workspace"] = workspace, ["kind"] = id };
+            if (drop) declared["drop"] = true;
+            else declared["label"] = label;
+            declared["paths"] = new JsonArray(paths.Select(each => (JsonNode)JsonValue.Create(each)!).ToArray());
+            return SavedChoice(set.Edit!, ChoiceRoutes.WorkflowKind, declared);
         }
 
         /// <summary>The choice written, or not with <c>--plan</c>, and said either way, with what reads it: every gate, from a run's first start.</summary>
-        private int SavedChoice(WorkflowChoiceEdit edit)
+        private int SavedChoice(WorkflowChoiceEdit edit, InstanceRoute route, JsonObject payload)
         {
             if (Plan)
             {
                 Say("  --plan: nothing was written.");
-            }
-            else
-            {
-                StandingChoices.Write(world.ConfigPath, config => WorkflowSelection.Apply(config, edit));
-                Say($"  Written to {world.ConfigPath}.");
+                Say(WorkflowWords.GateReads);
+                return 0;
             }
 
-            Say(WorkflowWords.GateReads);
+            _write = new Deferred(route, [payload], () => StandingChoices.Write(world.ConfigPath, config => WorkflowSelection.Apply(config, edit)),
+                [$"  Written to {world.ConfigPath}.", WorkflowWords.GateReads]);
             return 0;
         }
 
@@ -669,6 +763,10 @@ public static class DriverWorkflowsCommand
 
             var opinion = argv.Contains("--with-opinion");
             var look = argv.Contains("--with-look");
+            var asked = new JsonObject { ["id"] = id, ["from"] = from };
+            if (opinion) asked["withOpinion"] = true;
+            if (look) asked["withLook"] = true;
+            if (FlagValue("--name") is { } given) asked["name"] = given;
             var gated = string.Join(" and ", new[] { opinion ? "with a second opinion" : null, look ? "with your look first" : null }.OfType<string>());
 
             var source = await WorkflowOperations.SourceAsync(choices, _home, Registry, from, opinion, look, ct).ConfigureAwait(false);
@@ -681,13 +779,13 @@ public static class DriverWorkflowsCommand
                 Say($"  {WorkflowPresets.GraphLine(graph)}");
                 if (source.GraphPreset?.NoPress == true) Say("  With no press: choosing it is refused for a repository whose line does not declare its gates and have them accepted.");
                 if (source.From is { } copied) Say($"  A copy of the default `{copied.Default}` (digest {copied.Digest}): the version keeps where it came from.");
-                return Saved(id, planned.Plan.Result);
+                return Saved(id, planned.Plan.Result, [asked]);
             }
 
             var made = WorkflowOperations.PlanSteps(_home, null, id, null, name, "terminal", Moment(), source.Steps);
             Say($"daoris: `{id}` v1, a new workflow — {(string?)made.Plan.Result!["name"]}, from {source.Description}{also}:");
             Said(made.NextSteps!, WorkflowDiff.Of(null, made.NextSteps!).Said);
-            var saved = Saved(id, made.Plan.Result);
+            var saved = Saved(id, made.Plan.Result, [asked]);
             if (source.Drawn is { } drawn && drawn.Steps.Any(step => step.Kind == NodeKinds.Integrate)) Say(WorkflowWords.IntegrateLeftOut);
             return saved;
         }
@@ -762,7 +860,10 @@ public static class DriverWorkflowsCommand
                 : @base.Graph is not null ? $" (v{@base.Version} is a graph, so the change is drawn from nothing)"
                 : $" (v{@base.Version} cannot be read here, so the change is drawn from nothing)")}:");
             Said(next, WorkflowDiff.Of(@base.Steps, next).Said);
-            return Saved(found.Id, plan.Result!);
+            return Saved(found.Id, plan.Result!, [new JsonObject
+            {
+                ["id"] = found.Id, ["steps"] = steps?.DeepClone(), ["base"] = @base.Version, ["authorize"] = Authorize(found.Id),
+            }]);
         }
 
         /// <summary>
@@ -804,7 +905,10 @@ public static class DriverWorkflowsCommand
 
             Say($"daoris: `{found.Id}` v{@base.Version} → v{plan.Version} — {found.Read.Name}{(what is null ? "" : $", {what}")}: {WorkflowWords.GraphSaid(next)}");
             foreach (var line in lines ?? []) Say(line);
-            return Saved(found.Id, plan.Result!);
+            return Saved(found.Id, plan.Result!, [new JsonObject
+            {
+                ["id"] = found.Id, ["graph"] = graph?.DeepClone(), ["base"] = @base.Version, ["authorize"] = Authorize(found.Id),
+            }]);
         }
 
         private int Export()
@@ -873,7 +977,25 @@ public static class DriverWorkflowsCommand
                 Said(newest.Steps, WorkflowDiff.Of(null, newest.Steps).Said);
             }
 
-            return Saved(id, file!);
+            // Through the window's save a file goes a version at a time, each confirmed there.
+            var versions = file!["versions"]?.AsArray();
+            var payloads = new List<JsonObject>();
+            for (var at = 0; at < read.Versions.Count && versions is not null; at++)
+            {
+                var asked = new JsonObject { ["id"] = id };
+                if (at == 0) asked["name"] = read.Name;
+                else asked["base"] = at;
+                var version = versions[at]!.AsObject();
+                if (version["graph"] is { } graph) asked["graph"] = graph.DeepClone();
+                else asked["steps"] = version["steps"]?.DeepClone();
+                payloads.Add(asked);
+            }
+
+            if (payloads.Count == 0) payloads.Add(new JsonObject { ["id"] = id });
+            var cannot = read.Pipeline == WorkflowPipelines.Verification
+                ? "The window's save cannot carry a verification pipeline's mark, so this file is not imported while Daoris runs: stop it first, or save its graph from the window."
+                : null;
+            return Saved(id, file!, payloads, cannot);
         }
 
         /// <summary>The new version's line, then its change as the card draws it, under the header.</summary>
@@ -884,22 +1006,23 @@ public static class DriverWorkflowsCommand
         }
 
         /// <summary>Written, or not with <c>--plan</c>, and said either way, with what reads it: the version a run binds.</summary>
-        private int Saved(string id, JsonNode file)
+        private int Saved(string id, JsonNode file, IReadOnlyList<JsonObject> payloads, string? cannot = null)
         {
             if (Plan)
             {
                 Say("  --plan: nothing was written.");
-            }
-            else
-            {
-                // Every value as read (FABRIC-GRAPH1f): a graph version's numbers by their own text and its keys in their order.
-                WorkflowPorts.Store(_home).Write(id, file);
-                Say($"  Written to {WorkflowStore.PathOf(_home, id)}.");
+                Say(WorkflowWords.WhatChooses);
+                return 0;
             }
 
-            Say(WorkflowWords.WhatChooses);
+            // Every value as read (FABRIC-GRAPH1f): a graph version's numbers by their own text and its keys in their order.
+            _write = new Deferred(ChoiceRoutes.WorkflowSave, payloads, () => WorkflowPorts.Store(_home).Write(id, file),
+                [$"  Written to {WorkflowStore.PathOf(_home, id)}.", WorkflowWords.WhatChooses]) { Cannot = cannot };
             return 0;
         }
+
+        /// <summary>The places that choose a workflow, as <c>WORKFLOW_SAVE</c> asks them authorized to append a version to it.</summary>
+        private JsonArray Authorize(string id) => new(WorkflowOperations.ScopesOf(choices, id).Select(each => (JsonNode)JsonValue.Create(each.Key)!).ToArray());
 
         /// <summary>A file the terminal names: absolute as given, else from the folder it was run in.</summary>
         private string FileOperand(string? token)

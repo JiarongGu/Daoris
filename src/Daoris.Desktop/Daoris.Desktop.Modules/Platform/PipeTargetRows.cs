@@ -32,6 +32,7 @@ internal static class PipeTargetRows
         ["SET_HAND_OVER"] = "merges into the repository's hand-over rule",
         ["SET_COMMITS"] = "merges into the repository's commits rule",
         ["SET_ACCESS"] = "merges into the repository's access rule",
+        ["SET_GIT_ACCESS"] = "merges into the repository's git access",
         ["SET_READ_ACROSS"] = "merges into the repository's reading across",
         ["SET_WRITE_ACROSS"] = "adds or removes one repository of the list it writes to",
         ["RULE_ACTION"] = "edits a rule list in place",
@@ -270,6 +271,7 @@ internal static class PipeTargetRows
         Scoped(rows, "SET_HAND_OVER", "handOver", "workspaceHandOver");
         Scoped(rows, "SET_COMMITS", "commits", "workspaceCommits");
         Scoped(rows, "SET_ACCESS", "access", "workspaceAccess");
+        Scoped(rows, "SET_GIT_ACCESS", "gitAccess", "workspaceGitAccess");
         Scoped(rows, "SET_READ_ACROSS", "readAcross", "workspaceReadAcross");
         Row("SET_WRITE_ACROSS", new RepositoryGround("repository"), State(["repository", "to", "allow"],
             (a, p) => Each(At(Named(At(a, "writeAcross"), "repository", Text(p, "repository")), "to")).Any(each => Same(Text(each), Text(p, "to")))
