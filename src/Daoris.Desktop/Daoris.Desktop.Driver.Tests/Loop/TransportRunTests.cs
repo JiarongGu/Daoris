@@ -4,10 +4,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1m-i part 1: <see cref="TransportRun"/>, Daoris's <see cref="AgentRun"/> over today's two transports, admits an operation by
-/// the run's own evidence (its door's wire and its resume) and refuses one it does not, before anything is written (design §2.4, §4.1). No
-/// process: every refusal here comes before a start, so the run holds nothing. The unit of a start itself, over both doors, is
-/// <see cref="TransportRunProcessTests"/>'s.
+/// AGENTPROVIDER1m-i: <see cref="TransportRun"/>, Daoris's <see cref="AgentRun"/> over today's two transports, admits an operation by the
+/// run's own evidence (its door's wire and its resume) and refuses one it does not, before anything is written (design §2.4, §4.1); its
+/// spawn asks its host in order. No process: every refusal here comes before a start, so the run holds nothing. The unit of a start itself,
+/// over both doors, is <see cref="TransportRunProcessTests"/>'s.
 /// </summary>
 public sealed class TransportRunTests : IDisposable
 {
