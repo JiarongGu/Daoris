@@ -796,8 +796,9 @@ describe("a workspace's page (UX6g)", () => {
     // The bridge answers no line set, so the field stays open; *Never mind* closes it, and the rows keep their order.
     await userEvent.click(within(defaults).getByRole('button', { name: 'Never mind' }));
     const user = userEvent.setup();
-    await vi.waitFor(() => expect(within(defaults).getAllByRole('button', { name: 'Set for this workspace' })[2]).toBeEnabled());
-    await user.click(within(defaults).getAllByRole('button', { name: 'Set for this workspace' })[2]!);
+    // The Landing row is the workflow's now (WORKFLOWCLEAN1 1h-c), so the language is the second row after the line.
+    await vi.waitFor(() => expect(within(defaults).getAllByRole('button', { name: 'Set for this workspace' })[1]).toBeEnabled());
+    await user.click(within(defaults).getAllByRole('button', { name: 'Set for this workspace' })[1]!);
     within(defaults).getByRole('combobox', { name: 'The session language for aurora' }).focus();
     await user.keyboard('{Enter}');
     await user.click(await screen.findByRole('option', { name: 'Simplified Chinese (简体中文)' }));

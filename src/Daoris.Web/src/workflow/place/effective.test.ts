@@ -51,7 +51,7 @@ describe('the chart label', () => {
 
   it('says it in Chinese', async () => {
     await i18n.changeLanguage('zh');
-    expect(effectiveLabel(i18n.t.bind(i18n), EFFECTIVE_CURRENT, '默认工作')).toContain('旧的合并规则');
+    expect(effectiveLabel(i18n.t.bind(i18n), EFFECTIVE_CURRENT, '默认工作')).toContain('旧的落地规则');
   });
 });
 
