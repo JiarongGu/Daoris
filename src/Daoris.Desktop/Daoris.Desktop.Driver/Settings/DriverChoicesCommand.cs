@@ -180,7 +180,7 @@ public static class DriverChoicesCommand
                daoris-driver driver retry <quest> [--at <n> | --session <id>]
                daoris-driver driver line <repository>|--workspace <name> <branch>|--clear
                daoris-driver driver landing <repository>|--workspace <name> merge|branch <pattern>|--clear
-                      (serves only a place still on Current; converting retires the old landing rule)
+                      (serves only a place that follows Current; converting retires the old landing rule)
                       [--tidy] [--plugin <id>] [--auto-accept|--no-auto-accept] [--key <shape>|--no-key] [--squash|--no-squash]
                       [--cycle <file>|--no-cycle]
                daoris-driver driver work-cycle <repository>|--workspace <name> quest|ask <file>|--clear
