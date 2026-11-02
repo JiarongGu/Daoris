@@ -134,7 +134,8 @@
  *   lists there is the half-removed rule's (CLEANUP2).
  * - **Under load.** A full set beside merges shares the machine with their gates (GATEORDER1's lesson: a Process half's
  *   timing tests failed beside heavy gates). Nothing of FLAKE1's changes: a Process half's failures are re-run alone once
- *   its lane is quiet, and a pass alone reads FLAKE. The run says so before its gates start.
+ *   its lane is quiet, and a pass alone reads FLAKE. The run says so before its gates start. A clock gate's timed Playwright
+ *   specs that failed are run again alone once both lanes have ended (MEASUREDALONE1).
  * - **A guest (CIPRIO1).** After the lock is taken and before anything is built, the run lowers its own process to below
  *   normal (`startBesideRun`), so every gate's descendants start there. Its gates get build servers of their own
  *   (`BESIDE_ENVIRONMENT`), and it never shuts the owner's down. A run of main's tip, not one given a commit, asks
@@ -256,6 +257,10 @@
  * built, and passed alone. If the second run passes, the gate reads FLAKE. A rehearsal that reported a
  * failed check has failed whatever its exit, and so has one that said why it stopped; neither is run again.
  *
+ * A clock gate that runs Playwright (`web-measured`) and failed only in specs whose title path carries `timed`, every
+ * failure named, runs those specs again once, alone, by `file:line`, after every gate has ended (MEASUREDALONE1): a pass
+ * reads FLAKE. Any other failure of it keeps its FAIL, with a note saying why it was not run again.
+ *
  * ## A heavy gate waits for memory (MEMGATE1)
  *
  * On 2026-10-22 a full set beside the install's driven sessions and two builders ran a 64 GB machine out of commit: the
@@ -276,6 +281,7 @@
  * change's, never for FLAKE1; a second death of memory fails, still named as memory; another failure fails plainly. A Process
  * half whose dead tests are named runs them alone as FLAKE1's are, once its memory is free. A run a failure stopped runs none
  * again, saying so. The gate's own pass and fail are unchanged, and so is `--one-at-a-time`, whose memory re-runs come last.
+ * A clock gate's timed specs run again alone (MEASUREDALONE1) take the same turn, and are run again in the same way.
  *
  * ## Two lanes (GATELANES1)
  *
@@ -4344,6 +4350,9 @@ async function runInTurn(root, gates, dir, { keepGoing, run, print, beside = () 
  * memory before it starts, holding its place in its lane, and is handed the wait, for its tests run alone. A gate that died
  * of memory stops nothing: once both lanes have ended it runs again alone (`againOfMemory`), before the summary. With no
  * `memory` nothing is read and nothing waits, and a gate that died of memory still runs again.
+ *
+ * MEASUREDALONE1: a clock gate whose failed Playwright specs are all timed stops nothing either, and runs those specs again
+ * through the same step (`againOfMemory`), in turn or after both lanes, waiting for admission and memory as a memory re-run does.
  *
  * CI1: `byMemory` is a CI run's schedule (`laneSchedule`): a Process half waits only for what builds its component, and
  * the heavy light gates beside it each wait for their memory as it did.

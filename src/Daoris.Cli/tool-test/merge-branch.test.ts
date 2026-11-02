@@ -189,6 +189,8 @@ const tool = await import(
   gatePlan: (declared: { name: string; run: string }[], workflow?: string) => Gate[];
   readPlan: (root: string) => Gate[];
   flakeDecision: (output: string, isProcess?: (test: string) => boolean) => { rerun: string[]; reason?: string };
+  timedDecision: (output: string) => { playwright: boolean; rerun: string[]; reason?: string };
+  timedRerunCommand: (run: string, specs: string[]) => string;
   rerunCommand: (run: string, test: string) => string;
   prefixCommand: (gate: { run: string }, failure: { names: string; unit?: string; test?: string }) => string;
   rerunPassed: (output: string) => boolean;
