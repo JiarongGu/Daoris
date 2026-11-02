@@ -476,7 +476,7 @@ export function RepositorySetup({ repository, lands = null, driving, work, acces
       )
     : null;
   const landingRow = work && (landing || lands?.is === 'version')
-    ? <LandingSetting repository={repository} landing={landing ?? null} lands={lands} unread={work.landingUnread ?? null} onOpenPlugin={onOpenPlugin} />
+    ? <LandingSetting twin={t('projects.setup.twin.landing', { repository })} landing={landing ?? null} lands={lands} unread={work.landingUnread ?? null} onOpenPlugin={onOpenPlugin} />
     : null;
   const commitsRow = commits && work?.onCommits
     ? (
@@ -819,8 +819,9 @@ function CheckoutSwitch({ checkout, busy }: { checkout: NonNullable<ReachSetup['
  * How its work lands (WORKFLOWCLEAN1h-b, D228): under a saved version, the version's own `land` options; under Current, the old rule as it
  * stands, read and never edited, with the conversion's door.
  */
-function LandingSetting({ repository, landing, lands, unread, onOpenPlugin }: {
-  repository: string;
+export function LandingSetting({ twin, landing, lands, unread, onOpenPlugin }: {
+  /** The terminal twin of the row: a repository's, or a workspace's. */
+  twin: string;
   landing: RepositoryLanding | null;
   lands: LandsHere | null;
   unread: (UnreadLanding & { name: string }) | null;
@@ -828,7 +829,6 @@ function LandingSetting({ repository, landing, lands, unread, onOpenPlugin }: {
 }) {
   const { t } = useTranslation();
   const label = t('projects.setup.landing');
-  const twin = t('projects.setup.twin.landing', { repository });
   if (lands?.is === 'version') {
     return (
       <SettingRow label={label} hint={twin}>

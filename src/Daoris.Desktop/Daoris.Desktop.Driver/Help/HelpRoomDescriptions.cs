@@ -272,7 +272,7 @@ internal static class HelpRoomDescriptions
             {
                 null => followed with { Problem = "not saved here" },
                 { Problem: not null } => followed with { Problem = "which cannot be read here" },
-                _ => followed with { Name = found.Name, Version = found.NewestVersion },
+                _ => followed with { Name = found.Name, Version = found.NewestVersion, LandMethod = found.LandMethod, LandPattern = found.LandPattern },
             };
         }
     }

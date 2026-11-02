@@ -60,7 +60,10 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "`daoris driver line <repository> <branch>|--clear` (`--workspace <name>` for a whole workspace)"),
         // DOORS1a (D164's amendment point 2): the ticket's key and the squash (PROCESS1b-i, -ii), which Ask Daoris's `landing`
         // door takes too, keeping the ones set there that a card does not name.
-        ("set how accepted work lands", Setup + "Line and landing; a workspace's, " + Ws + "Setup → Defaults → How work lands",
+        // WORKFLOWCLEAN1 1i: the old landing rule serves only a place still on Current; converting retires it (D227).
+        ("set how accepted work lands: this serves only a place still on Current, which follows its old landing rule (a place that "
+            + "follows a saved workflow lands as that workflow's `land` step says), and converting retires the rule",
+            Setup + "Line and landing; a workspace's, " + Ws + "Setup → Defaults → How work lands",
             "`daoris driver landing <repository> merge|branch <pattern>|--clear` (`--workspace <name>`, `--tidy`, "
             + "and on a branch `--plugin <id>`: an installed plugin that pushes it and opens the pull request, "
             + "`--auto-accept`: a quest's done lands it with no press, `--key <shape>|--no-key`: the shape a `{ticket}` in the "
@@ -107,35 +110,47 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "`daoris driver opinion <repository> --reviewers <adapter,adapter> [--on landing,steps] [--required|--not-required] "
             + "[--verify|--no-verify] [--minutes <n>] [--recheck|--no-recheck]` (`--workspace <name>` for a whole workspace), "
             + "`daoris driver opinion <repository> none|--clear`"),
-        // WORKFLOW1c4: Current drawn from the rules above (WORKFLOW1a's verb, WORKFLOW1b's tab, D157 point 7). Exempt from Ask
-        // Daoris, since it reads (HelpCoverageTests' `workflow show`); a change is a rule's, on the Setup row a step opens.
-        ("see how a repository's work moves, or a workspace's, read from its rules as they stand at each gate: each step they "
-            + "make (the work, a second opinion, your look, the landing, a pull request a plugin opens after it) and the plugins "
-            + "that may hold a start, who takes part (agent alone, agent + you, you, automatic) and who acts, where each was set, "
-            + "and what Daoris cannot do of it yet; a step opens the Setup row that sets it, where a change is made (Ask Daoris "
-            + "never proposes it: it reads and changes nothing)",
+        // WORKFLOW1c4: the workflow a place follows drawn as it stands (WORKFLOW1a's verb, WORKFLOW1b's tab, D157 point 7); a place
+        // still on Current is drawn from its old landing rule (D227). Exempt from Ask Daoris, since it reads (HelpCoverageTests'
+        // `workflow show`); a change is the workflow's, in the editor, or the Setup row a step opens for Current.
+        ("see how a repository's work moves, or a workspace's, at each gate: the workflow it follows, or for a place still on "
+            + "Current its old landing rule's, as they stand; each step (the work, a second opinion, your look, the landing, a pull "
+            + "request a plugin opens after it) and the plugins that may hold a start, who takes part (agent alone, agent + you, "
+            + "you, automatic) and who acts, where each was set, and what Daoris cannot do of it yet; a step opens the workflow "
+            + "editor, or for Current the Setup row that sets it, where a change is made (Ask Daoris never proposes it: it reads "
+            + "and changes nothing)",
             "Repositories → the repository's page → Workflow; a workspace's, Repositories → the workspace's page → Workflow",
             "`daoris driver workflow show --repository <name>|--workspace <name>`"),
         // WORKFLOW1d (D157 points 5 and 6): a named workflow, its versions never edited; its screen is WORKFLOW1g's. Ask Daoris's
         // `workflow` kind takes `new` and `edit` since WORKFLOW1h-b, a whole version; `apply` and `import` are WORKFLOW1h2's
         // (HelpCoverageTests). WORKFLOW1e chooses one, and every gate reads the version a run bound (WORKFLOW1f).
-        ("name a workflow: its steps from a preset, a repository's Current or another workflow, each change saved as its next "
-            + "version, never edited, said step by step with your part first (Ask Daoris proposes a whole version, new or after "
-            + "the newest, which you apply; not an import yet)",
+        ("name a workflow: a graph of steps from a default Daoris ships or another saved workflow, each change saved as its next "
+            + "version, never edited, said step by step with your part first (Ask Daoris "
+            + "proposes a whole version, new or after the newest, which you apply; not an import yet); a list of steps is no longer saved",
             "(no screen yet)",
-            "`daoris driver workflow new <id> --from <preset>|current:<repository>|<id>[@<version>]`, `daoris driver workflow "
-            + "edit|apply|export|import …`, `daoris driver workflow list`, `daoris driver workflow show <id>[@<version>]`"),
+            "`daoris driver workflow new <id> --from <default>|<id>[@<version>]`, `daoris driver workflow "
+            + "apply|export|import …`, `daoris driver workflow list`, `daoris driver workflow show <id>[@<version>]`"),
         // WORKFLOW1e (D157 point 10): which workflow work follows, by repository, workspace and kind of task, the first level
         // that names one deciding; a run binds it at its first start, and every gate reads that version (WORKFLOW1f). Ask Daoris's
         // `workflow` kind takes `use` since WORKFLOW1h-b, with the version it proposes; `kind` is WORKFLOW1h2's.
         ("choose which workflow a repository's or a workspace's work follows, or a kind of task's, and declare a workspace's kinds "
             + "with the paths their work keeps to (a repository's choice replaces its workspace's whole; each run binds the "
-            + "newest version at its first start, and how it lands, your look and its second opinion follow that version) "
-            + "(Ask Daoris proposes the choice with a version it proposes, as a repository's or a workspace's default; not a kind yet)",
+            + "newest version at its first start, and how it lands, your look and its second opinion follow that version; "
+            + "`--clear` follows this machine's default workflow) "
+            + "(Ask Daoris proposes the choice with a version it proposes, as a repository's or a workspace's default; not a kind yet). "
+            + "`current` is no development route's choice any more, and is refused there; only the landed route takes it, for no verification",
             "(no screen yet)",
-            "`daoris driver workflow use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>]`, "
+            "`daoris driver workflow use <id>|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]`, "
             + "`daoris driver workflow kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop`, "
             + "`daoris driver workflow show --repository <name>|--workspace <name> [--kind <kind>]`"),
+        // WORKFLOWCLEAN1 1i (the cleanup design §4.3): the conversion of the old workflow records, which is the person's press over
+        // the plan they read. Ask Daoris opens the page and names the plan, and never proposes the apply (HelpCoverageTests).
+        ("convert the old workflow records: a workflow saved as steps or holding a `handed` step, and a place still on Current, which "
+            + "follows its old landing rule, become saved graphs that each place follows, with a home default workflow for a place that "
+            + "chooses none (`--plan` shows every operation and writes nothing; the apply is your press over the plan you read, by its "
+            + "digest, and is undone; Ask Daoris opens the page and never proposes the apply)",
+            "Agents → Setup → the place's head *Convert…*, or *What needs you* → *Review conversion…*",
+            "`daoris-driver workflow convert --plan`, then `--apply <digest>` or `--undo`, through the running Daoris"),
         // WSR6: after a pull request merges — the line pulled, what merged deleted, what still works replayed onto it. It
         // takes the repositories holding Daoris's branches, and the others where included (WSR7, D112); one workspace's
         // alone with `--workspace`, as its Branches tab does (BRSCOPE1a).

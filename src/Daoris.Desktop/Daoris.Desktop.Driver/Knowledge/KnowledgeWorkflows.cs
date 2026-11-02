@@ -7,6 +7,10 @@ internal interface IKnowledgeWorkflowFile
     string? Problem { get; }
     string? Name { get; }
     int NewestVersion { get; }
+
+    /// <summary>The newest version's <c>land</c> method and pattern as it writes them; null where it writes none.</summary>
+    string? LandMethod { get; }
+    string? LandPattern { get; }
 }
 
 internal interface IKnowledgeWorkflows

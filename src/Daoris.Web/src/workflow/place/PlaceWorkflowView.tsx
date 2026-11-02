@@ -33,7 +33,7 @@ import { PlaceRepositories, repositoriesSummary } from './PlaceRepositories';
 export type LandingHand = {
   asked: 'landing' | null;
   again: number;
-  /** Gates, which the page owns, to stand before the folds of the line and its landing. */
+  /** Gates (and a workspace's repositories), which the page owns, to stand before the folds of the line and its landing. */
   lead: readonly FoldSpec[];
   /** How the chosen route lands: the followed version's land options, or Current's door to the conversion; none while the route is read. */
   lands: LandsHere | null;
@@ -312,8 +312,8 @@ export function PlaceWorkflowView({
   };
 
   // How the route lands (WORKFLOWCLEAN1h-b): under a saved version it is the version's `land` options; under Current, only the conversion.
-  const land = answered === null || !answered.graph || page !== 'repository' || landed ? undefined : draftOf(answered.graph).nodes.find((node) => node.kind === 'land');
-  const lands: LandsHere | null = answered === null || page !== 'repository' || landed ? null
+  const land = answered === null || !answered.graph || landed ? undefined : draftOf(answered.graph).nodes.find((node) => node.kind === 'land');
+  const lands: LandsHere | null = answered === null || landed ? null
     : answered.workflow === 'current' ? { is: 'current', onConvert }
       : editor && land && answered.schema === 2 && answered.version !== null
         ? {
@@ -329,7 +329,7 @@ export function PlaceWorkflowView({
               editor={editor}
               graph={answered.graph}
               workflow={{ id: answered.workflow, version: answered.version }}
-              lines={start?.landed.tip?.line ? [start.landed.tip.line] : undefined}
+              lines={page === 'repository' && start?.landed.tip?.line ? [start.landed.tip.line] : undefined}
               onReads={(on) => { reads.current.land = on; tell(); }}
             />
           ),
@@ -506,7 +506,7 @@ export function PlaceWorkflowView({
         )}
         {!editor && <p className="m-0 text-meta text-ink-faint"><Inline text={t('workflow.compose.twin')} /></p>}
         {!wide && (open || chartShown) && chart}
-        {landing ? landing({ asked: asked.section, again: asked.n, lead: gates, lands }) : gates.length + repositories.length > 0 && <FoldRow folds={[...gates, ...repositories]} />}
+        {landing ? landing({ asked: asked.section, again: asked.n, lead: [...gates, ...repositories], lands }) : gates.length + repositories.length > 0 && <FoldRow folds={[...gates, ...repositories]} />}
       </div>
       {wide && (aside ? createPortal(<div className="min-w-0">{chart}</div>, aside) : <div className="min-w-0">{chart}</div>)}
     </div>

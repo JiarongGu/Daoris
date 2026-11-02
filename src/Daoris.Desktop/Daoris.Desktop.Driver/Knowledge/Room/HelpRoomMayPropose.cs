@@ -70,7 +70,8 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         // WSR5b: the review's own hand-off, for a ticket landed before its workspace named a plugin, or whose plugin failed.
         text.Append("- `hand_propose`: hand a branch a landing made (from the list below) to a landing plugin, which pushes it\n");
         text.Append("  and opens the pull request, signed in as the person. Name the session that landed it or the branch, and\n");
-        text.Append("  a plugin only where the repository's landing rule names none. Only a branch a landing made and recorded\n");
+        text.Append("  a plugin only where the workflow it followed (or, for a place still on Current, its old landing rule) names none.\n");
+        text.Append("  Only a branch a landing made and recorded\n");
         text.Append("  here can be handed on; the person's own branches are theirs to push.\n");
         // HELP10: the browser's settings, which HELP9 left owed, each as `daoris browser` spells it.
         text.Append("- `browser_propose`: Daoris's browser's settings, as Settings → Browser sets them: `use` `daoris` or `edge`,\n");
@@ -136,8 +137,9 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         // WORKFLOW1h2's, and a merge with nobody is a decision of its own (§8.3, §12.1).
         text.Append("- `workflow_propose`: a named workflow's whole version for a repository or a workspace (`scope`): a new\n");
         text.Append("  workflow (an id no workflow here has, and no `base`) or an edit of one (`base` its newest version, as\n");
-        text.Append("  `daoris driver workflow show <id>` says it), every step in `steps` as the workflow's own list, and\n");
-        text.Append("  `choose` to make it the scope's workflow too. Its card says the person's part first, then each step by id,\n");
+        text.Append("  `daoris driver workflow show <id>` says it), the whole graph in `graph` (a development workflow's too, its `land`\n");
+        text.Append("  step landing the work by its method), and `choose` to make it the scope's workflow too. A list of `steps` is\n");
+        text.Append("  refused: it is no longer saved, and one saved before is the conversion's. Its card says the person's part first, then each step by id,\n");
         text.Append("  what leaves this machine with no press of theirs, what is needed first, and that it applies to new work only.\n");
         text.Append("  A base that is not the newest is refused as stale. A declaration a step needs that is missing where it\n");
         text.Append("  applies, a landing plugin that cannot land here, or a kind this build does not run\n");
@@ -146,7 +148,7 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         // FABRIC-PIPELINE1i (D192 point 2, the pipeline design §1.3): a route with no version, and a verification pipeline's graph.
         text.Append("  `route` chooses it for `default`, `landed` (the work that lands) or `kind:<id>`; with no `steps` and no\n");
         text.Append("  `graph`, it chooses a workflow saved here and saves nothing. A verification pipeline, which only `landed`\n");
-        text.Append("  names, takes its whole `graph` in place of `steps`: at least one `check`, and nothing that lands. Its gates\n");
+        text.Append("  names, takes a whole `graph` of its own: at least one `check`, and nothing that lands. Its gates\n");
         text.Append("  are the person's to accept on the Workflow tab, and what a change asks less of them is said on its card.\n");
         text.Append("  Merging with nobody is never proposed: *land without my review* is a pull request opened with no press, which\n");
         text.Append("  the person still merges, and a merge at done is a decision of its own, which you say rather than propose.\n");

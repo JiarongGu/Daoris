@@ -8,7 +8,8 @@ import { InTheme } from '../../plugins/storyIcons';
 import { FoldRow } from '../../projects/setup/FoldRow';
 import { RepositorySetup, FOLD_SECTIONS } from '../../projects/setup/RepositorySetup';
 import { LIST, PALETTE } from '../edit/editFixtures';
-import { EFFECTIVE_CURRENT, EFFECTIVE_LANDED_VERIFIES } from './effectiveFixtures';
+import { WorkspaceLandingFolds } from '../../agents/setup/PlaceSessions';
+import { EFFECTIVE_CURRENT, EFFECTIVE_LANDED_VERIFIES, EFFECTIVE_RELEASE } from './effectiveFixtures';
 import { FULL, GATES_CHANGED, INTEGRATION_CHANGED, START, WORKSPACE } from '../fixtures';
 import { answerFor, CURRENT_ANSWER, PLACE_SETUP, SAVED_ROUTES } from './placeWorkflowFixtures';
 import { PlaceWorkflowView, type PlaceWorkflowProps } from './PlaceWorkflowView';
@@ -161,6 +162,41 @@ export const WorkspaceWorkflow: Story = {
   },
 };
 export const WorkspaceWorkflowHalf: Story = { ...WorkspaceWorkflow, decorators: [storyWidths.half] };
+
+/**
+ * **A workspace's Landing row** (WORKFLOWCLEAN1h-c): the same row a repository has, open here. Under a saved version, the version's `land` options;
+ * under Current, the old rule as it stands, with the conversion and no editor.
+ */
+const workspaceLanding: Pick<PlaceWorkflowProps, 'name' | 'page' | 'doors' | 'landing' | 'onConvert'> = {
+  name: 'aurora',
+  page: 'workspace',
+  doors: { repository: nothing },
+  onConvert: nothing,
+  landing: (hand) => (
+    <WorkspaceLandingFolds
+      workspace="aurora"
+      hand={{ ...hand, asked: 'landing' }}
+      landing={{ repository: '', workspace: 'aurora', source: 'workspace', form: 'branch', pattern: 'feature/{quest}-{slug}' }}
+      unread={null}
+    />
+  ),
+};
+export const WorkspaceLandingByVersion: Story = {
+  args: { ...workspaceLanding, route: () => ({ ...WORKSPACE, start: { ...SAVED_ROUTES, integration: null }, effective: EFFECTIVE_RELEASE }) },
+};
+export const WorkspaceLandingByVersionHalf: Story = { ...WorkspaceLandingByVersion, decorators: [storyWidths.half] };
+export const WorkspaceLandingByVersionNarrow: Story = { ...WorkspaceLandingByVersion, decorators: [storyWidths.narrow] };
+export const WorkspaceLandingByVersionChinese: Story = { ...WorkspaceLandingByVersion, decorators: [chinese] };
+export const WorkspaceLandingByVersionChineseNarrow: Story = { ...WorkspaceLandingByVersion, decorators: [storyWidths.narrow, chinese] };
+export const WorkspaceLandingByVersionDark: Story = { ...WorkspaceLandingByVersion, decorators: [dark] };
+export const WorkspaceLandingUnderCurrent: Story = {
+  args: { ...workspaceLanding, route: () => ({ ...WORKSPACE, start: { ...SAVED_ROUTES, integration: null }, effective: { ...EFFECTIVE_CURRENT } }) },
+};
+export const WorkspaceLandingUnderCurrentHalf: Story = { ...WorkspaceLandingUnderCurrent, decorators: [storyWidths.half] };
+export const WorkspaceLandingUnderCurrentNarrow: Story = { ...WorkspaceLandingUnderCurrent, decorators: [storyWidths.narrow] };
+export const WorkspaceLandingUnderCurrentChinese: Story = { ...WorkspaceLandingUnderCurrent, decorators: [chinese] };
+export const WorkspaceLandingUnderCurrentChineseNarrow: Story = { ...WorkspaceLandingUnderCurrent, decorators: [storyWidths.narrow, chinese] };
+export const WorkspaceLandingUnderCurrentDark: Story = { ...WorkspaceLandingUnderCurrent, decorators: [dark] };
 
 /** The answer on its way, and refused in the driver's sentence. */
 export const Reading: Story = { args: { route: undefined, current: null, reading: true } };

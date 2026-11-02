@@ -292,7 +292,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver workflow new` needs --from: a default or a saved workflow — `driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; new <id> --from <default>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; apply <id> <file> [--base <version>]; export <id> [--to <file>]; import <file>; use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]; kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. new, apply, import, use and kind print their change, and with --plan save nothing — e.g. `daoris driver workflow new docs --from merge-after-accept --plan`."
+        "daoris: `driver workflow new` needs --from: a default or a saved workflow — `driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; new <id> --from <default>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; apply <id> <file> [--base <version>]; export <id> [--to <file>]; import <file>; use <id>|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed] (current only with --landed: no verification); kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. new, apply, import, use and kind print their change, and with --plan save nothing — e.g. `daoris driver workflow new docs --from merge-after-accept --plan`."
       ],
       "after": null
     },
@@ -341,7 +341,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `--kind` is not a flag `driver workflow new` takes — `driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; new <id> --from <default>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; apply <id> <file> [--base <version>]; export <id> [--to <file>]; import <file>; use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]; kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. new, apply, import, use and kind print their change, and with --plan save nothing — e.g. `daoris driver workflow new docs --from merge-after-accept --plan`."
+        "daoris: `--kind` is not a flag `driver workflow new` takes — `driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; new <id> --from <default>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; apply <id> <file> [--base <version>]; export <id> [--to <file>]; import <file>; use <id>|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed] (current only with --landed: no verification); kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. new, apply, import, use and kind print their change, and with --plan save nothing — e.g. `daoris driver workflow new docs --from merge-after-accept --plan`."
       ],
       "after": null
     },
@@ -1325,7 +1325,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; new <id> --from <default>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; apply <id> <file> [--base <version>]; export <id> [--to <file>]; import <file>; use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]; kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. new, apply, import, use and kind print their change, and with --plan save nothing — e.g. `daoris driver workflow new docs --from merge-after-accept --plan`."
+        "daoris: `driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; new <id> --from <default>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; apply <id> <file> [--base <version>]; export <id> [--to <file>]; import <file>; use <id>|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed] (current only with --landed: no verification); kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. new, apply, import, use and kind print their change, and with --plan save nothing — e.g. `daoris driver workflow new docs --from merge-after-accept --plan`."
       ],
       "after": null
     },
@@ -1495,7 +1495,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; new <id> --from <default>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; apply <id> <file> [--base <version>]; export <id> [--to <file>]; import <file>; use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]; kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. new, apply, import, use and kind print their change, and with --plan save nothing — e.g. `daoris driver workflow new docs --from merge-after-accept --plan`."
+        "daoris: `driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; new <id> --from <default>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; apply <id> <file> [--base <version>]; export <id> [--to <file>]; import <file>; use <id>|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed] (current only with --landed: no verification); kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. new, apply, import, use and kind print their change, and with --plan save nothing — e.g. `daoris driver workflow new docs --from merge-after-accept --plan`."
       ],
       "after": null
     },
@@ -1939,7 +1939,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; new <id> --from <default>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; apply <id> <file> [--base <version>]; export <id> [--to <file>]; import <file>; use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]; kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. new, apply, import, use and kind print their change, and with --plan save nothing — e.g. `daoris driver workflow new docs --from merge-after-accept --plan`."
+        "daoris: `driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; new <id> --from <default>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; apply <id> <file> [--base <version>]; export <id> [--to <file>]; import <file>; use <id>|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed] (current only with --landed: no verification); kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. new, apply, import, use and kind print their change, and with --plan save nothing — e.g. `daoris driver workflow new docs --from merge-after-accept --plan`."
       ],
       "after": null
     },
@@ -2174,7 +2174,7 @@
       "exit": 0,
       "out": [
         "daoris: no workflow is named in <home>/data/workflows yet.",
-        "Presets built in, for `daoris driver workflow new <id> --from <preset>` (`--with-opinion`, `--with-look`):",
+        "Defaults built in, for `daoris driver workflow new <id> --from <default>` (`--with-opinion`, `--with-look`):",
         "  `merge-after-accept` — Merge workflow, a graph. You accept each piece of work, and it merges into the line. Its agent's done closes the quest; the flow's end is the work's.",
         "  `merge-automatic` — Automatic merge workflow, a graph. Each piece of work merges into the line once its agent is done. Its agent's done closes the quest; the flow's end is the work's.",
         "  `documents` — Documents workflow, a graph. Each piece of work merges into the line once its agent is done. Its agent's done closes the quest; the flow's end is the work's.",
@@ -2316,7 +2316,7 @@
         "  `broken` — cannot be read: `broken.json` is not readable JSON.",
         "  `docs` — Docs: v1, 2 steps. You accept each piece of work, and it merges into the line.",
         "  `release` — Release: v2 cannot be read here (v2, step `checks`: this build does not run a step of kind `check` yet.); v1 is the newest that reads.",
-        "Presets built in, for `daoris driver workflow new <id> --from <preset>` (`--with-opinion`, `--with-look`):",
+        "Defaults built in, for `daoris driver workflow new <id> --from <default>` (`--with-opinion`, `--with-look`):",
         "  `merge-after-accept` — Merge workflow, a graph. You accept each piece of work, and it merges into the line. Its agent's done closes the quest; the flow's end is the work's.",
         "  `merge-automatic` — Automatic merge workflow, a graph. Each piece of work merges into the line once its agent is done. Its agent's done closes the quest; the flow's end is the work's.",
         "  `documents` — Documents workflow, a graph. Each piece of work merges into the line once its agent is done. Its agent's done closes the quest; the flow's end is the work's.",
@@ -2515,7 +2515,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; new <id> --from <default>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; apply <id> <file> [--base <version>]; export <id> [--to <file>]; import <file>; use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]; kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. new, apply, import, use and kind print their change, and with --plan save nothing — e.g. `daoris driver workflow new docs --from merge-after-accept --plan`."
+        "daoris: `driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; new <id> --from <default>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; apply <id> <file> [--base <version>]; export <id> [--to <file>]; import <file>; use <id>|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed] (current only with --landed: no verification); kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. new, apply, import, use and kind print their change, and with --plan save nothing — e.g. `daoris driver workflow new docs --from merge-after-accept --plan`."
       ],
       "after": null
     },
@@ -2535,7 +2535,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; new <id> --from <default>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; apply <id> <file> [--base <version>]; export <id> [--to <file>]; import <file>; use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]; kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. new, apply, import, use and kind print their change, and with --plan save nothing — e.g. `daoris driver workflow new docs --from merge-after-accept --plan`."
+        "daoris: `driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; new <id> --from <default>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; apply <id> <file> [--base <version>]; export <id> [--to <file>]; import <file>; use <id>|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed] (current only with --landed: no verification); kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. new, apply, import, use and kind print their change, and with --plan save nothing — e.g. `daoris driver workflow new docs --from merge-after-accept --plan`."
       ],
       "after": null
     },
@@ -2556,7 +2556,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; new <id> --from <default>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; apply <id> <file> [--base <version>]; export <id> [--to <file>]; import <file>; use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]; kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. new, apply, import, use and kind print their change, and with --plan save nothing — e.g. `daoris driver workflow new docs --from merge-after-accept --plan`."
+        "daoris: `driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; new <id> --from <default>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; apply <id> <file> [--base <version>]; export <id> [--to <file>]; import <file>; use <id>|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed] (current only with --landed: no verification); kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. new, apply, import, use and kind print their change, and with --plan save nothing — e.g. `daoris driver workflow new docs --from merge-after-accept --plan`."
       ],
       "after": null
     },
@@ -2958,7 +2958,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver workflow use` takes <id>|current|--clear, then --repository <name>|--workspace <name>, and --kind <kind> for a kind of task or --landed for the work that lands — e.g. `daoris driver workflow use docs-to-pr --workspace work --kind docs`."
+        "daoris: `driver workflow use` takes <id>|--clear (`current` only with --landed), then --repository <name>|--workspace <name>, and --kind <kind> for a kind of task or --landed for the work that lands — e.g. `daoris driver workflow use docs-to-pr --workspace work --kind docs`."
       ],
       "after": null
     },
@@ -2979,7 +2979,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver workflow use` takes <id>|current|--clear, then --repository <name>|--workspace <name>, and --kind <kind> for a kind of task or --landed for the work that lands — e.g. `daoris driver workflow use docs-to-pr --workspace work --kind docs`."
+        "daoris: `driver workflow use` takes <id>|--clear (`current` only with --landed), then --repository <name>|--workspace <name>, and --kind <kind> for a kind of task or --landed for the work that lands — e.g. `daoris driver workflow use docs-to-pr --workspace work --kind docs`."
       ],
       "after": null
     },
@@ -3001,7 +3001,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver workflow use` takes <id>|current|--clear, then --repository <name>|--workspace <name>, and --kind <kind> for a kind of task or --landed for the work that lands — e.g. `daoris driver workflow use docs-to-pr --workspace work --kind docs`."
+        "daoris: `driver workflow use` takes <id>|--clear (`current` only with --landed), then --repository <name>|--workspace <name>, and --kind <kind> for a kind of task or --landed for the work that lands — e.g. `daoris driver workflow use docs-to-pr --workspace work --kind docs`."
       ],
       "after": null
     },
@@ -3023,7 +3023,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `--label` is not a flag `driver workflow use` takes — `driver workflow use` takes <id>|current|--clear, then --repository <name>|--workspace <name>, and --kind <kind> for a kind of task or --landed for the work that lands — e.g. `daoris driver workflow use docs-to-pr --workspace work --kind docs`."
+        "daoris: `--label` is not a flag `driver workflow use` takes — `driver workflow use` takes <id>|--clear (`current` only with --landed), then --repository <name>|--workspace <name>, and --kind <kind> for a kind of task or --landed for the work that lands — e.g. `daoris driver workflow use docs-to-pr --workspace work --kind docs`."
       ],
       "after": null
     },
@@ -4191,7 +4191,7 @@
         "daoris: 2 workflows named in <home>/data/workflows:",
         "  `docs-to-pr` — A pull request with no press: v1, 3 steps. A pull request opens once its quest is done; you merge it.",
         "  `web-verify` — Verify the line: v1, a graph (schema 2) of 1 node and 0 wires, ending at `gates`, digest gph-33adad6e2b31c4063bc79327db9f9639.",
-        "Presets built in, for `daoris driver workflow new <id> --from <preset>` (`--with-opinion`, `--with-look`):",
+        "Defaults built in, for `daoris driver workflow new <id> --from <default>` (`--with-opinion`, `--with-look`):",
         "  `merge-after-accept` — Merge workflow, a graph. You accept each piece of work, and it merges into the line. Its agent's done closes the quest; the flow's end is the work's.",
         "  `merge-automatic` — Automatic merge workflow, a graph. Each piece of work merges into the line once its agent is done. Its agent's done closes the quest; the flow's end is the work's.",
         "  `documents` — Documents workflow, a graph. Each piece of work merges into the line once its agent is done. Its agent's done closes the quest; the flow's end is the work's.",
@@ -4867,6 +4867,7 @@
         "       daoris-driver driver retry <quest> [--at <n> | --session <id>]",
         "       daoris-driver driver line <repository>|--workspace <name> <branch>|--clear",
         "       daoris-driver driver landing <repository>|--workspace <name> merge|branch <pattern>|--clear",
+        "              (serves only a place still on Current; converting retires the old landing rule)",
         "              [--tidy] [--plugin <id>] [--auto-accept|--no-auto-accept] [--key <shape>|--no-key] [--squash|--no-squash]",
         "              [--cycle <file>|--no-cycle]",
         "       daoris-driver driver work-cycle <repository>|--workspace <name> quest|ask <file>|--clear",
@@ -4890,7 +4891,8 @@
         "              [--with-opinion] [--with-look] [--name \"…\"]",
         "       daoris-driver driver workflow apply <id> <file> [--base <version>]",
         "       daoris-driver driver workflow export <id> [--to <file>] · import <file>",
-        "       daoris-driver driver workflow use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]",
+        "       daoris-driver driver workflow use <id>|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]",
+        "              (current only with --landed: no verification)",
         "       daoris-driver driver workflow kind <workspace> <kind> --label \"…\" [--paths <path,…>] | --drop",
         "              (a workflow's writes say their change, and with --plan save nothing)",
         "       daoris-driver driver keep [set-aside <days>|whole|slim|default · downloads <days>|never|default · logs <days>|default",

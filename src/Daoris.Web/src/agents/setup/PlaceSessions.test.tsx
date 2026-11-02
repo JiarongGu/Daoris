@@ -1,13 +1,16 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../../locales/i18n';
 import { SETUP_DEFAULTS, SETUP_OWN } from '../../projects/fixtures';
 import type { RepositorySetupProps } from '../../projects/setup/RepositorySetup';
-import { FULL, GATES_CHANGED, INTEGRATION_CHANGED } from '../../workflow/fixtures';
-import type { PlaceWorkflowProps } from '../../workflow/place/PlaceWorkflowView';
-import { PlaceSessionsBodyView, PlaceWorkflowBodyView } from './PlaceSessions';
+import type { RepositoryLanding } from '../../settings/repository/Landings';
+import { LIST, PALETTE } from '../../workflow/edit/editFixtures';
+import { FULL, GATES_CHANGED, INTEGRATION_CHANGED, START, WORKSPACE } from '../../workflow/fixtures';
+import { EFFECTIVE_CURRENT, EFFECTIVE_RELEASE } from '../../workflow/place/effectiveFixtures';
+import { PlaceWorkflowView, type PlaceWorkflowProps } from '../../workflow/place/PlaceWorkflowView';
+import { PlaceSessionsBodyView, PlaceWorkflowBodyView, WorkspaceLandingFolds } from './PlaceSessions';
 
 // AGENTSPLACE1f (the Agents-place design §3): a repository place's Sessions hold today's rows moved whole from Repositories' Setup tab, each
 // with *Set for this repository* or *Clear*, drawn from the one molecule. SETUPUX1h: its Driving is the page head's, and each section's body
@@ -96,5 +99,50 @@ describe("a repository place's Workflow", () => {
     drawWorkflow(SETUP_DEFAULTS);
     expect(screen.getByRole('list', { name: '工作在这里如何分流' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '落地' })).toBeInTheDocument();
+  });
+});
+
+// WORKFLOWCLEAN1h-c (D228): a workspace's Landing row is a repository's row: the followed version's land options, or the rule read under Current.
+describe("a workspace place's Landing row", () => {
+  const editor = {
+    list: LIST, palette: PALETTE, error: null, roles: [], shown: null, onShow: vi.fn(), judged: null, judging: false, onJudge: vi.fn(),
+    saving: false, onSave: vi.fn(), using: false, onUse: vi.fn(), onOpen: vi.fn(),
+  };
+  const drawWorkspace = (props: Partial<PlaceWorkflowProps>, landing: RepositoryLanding | null = null) =>
+    render(
+      <Tooltip.Provider>
+        <PlaceWorkflowView
+          page="workspace"
+          name="aurora"
+          current={{ ...WORKSPACE, start: { ...START, integration: null }, effective: EFFECTIVE_CURRENT }}
+          landing={(hand) => <WorkspaceLandingFolds workspace="aurora" hand={hand} landing={landing} unread={null} />}
+          {...props}
+        />
+      </Tooltip.Provider>,
+    );
+
+  it('reads the rule under Current and offers the conversion, with no field to edit it', async () => {
+    const onConvert = vi.fn();
+    const rule: RepositoryLanding = { repository: '', workspace: 'aurora', source: 'workspace', form: 'branch', pattern: 'work/{quest}' };
+    drawWorkspace({ onConvert }, rule);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Landing' }));
+    expect(screen.getAllByText(/work\/\{quest\}/).length).toBeGreaterThan(0);
+    expect(screen.queryByRole('button', { name: 'Set' })).toBeNull();
+    // The row's door is the second beside the routes' own, and both open the one conversion.
+    await userEvent.click(screen.getAllByRole('button', { name: 'Convert…' }).at(-1)!);
+    expect(onConvert).toHaveBeenCalledOnce();
+  });
+
+  it("offers the followed version's land options, judged as its next version", async () => {
+    const onJudge = vi.fn();
+    drawWorkspace({
+      editor: { ...editor, onJudge },
+      current: { ...WORKSPACE, start: { ...START, integration: null }, effective: EFFECTIVE_RELEASE },
+    });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Landing' }));
+    await userEvent.click(screen.getByRole('checkbox', { name: /one commit/ }));
+    await waitFor(() => expect(onJudge).toHaveBeenCalledWith(expect.objectContaining({ id: 'release', base: 2 })));
   });
 });

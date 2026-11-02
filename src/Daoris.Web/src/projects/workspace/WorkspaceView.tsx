@@ -8,15 +8,14 @@ import { accessToast, isFull, resolveAccess } from '../../settings/repository/Ac
 import { commitToast } from '../../settings/repository/Commits';
 import { helperToast } from '../../settings/repository/Helpers';
 import { handOverToast } from '../../settings/repository/HandOver';
-import type { LandingRule } from '../../settings/repository/Landings';
 import { opinionToast } from '../../settings/repository/Opinions';
 import { reviewToast } from '../../settings/repository/Reviews';
 import { namer } from '../../settings/accounts/namer';
 import { sayDiscard, sayWithdraw, sweepKey, SweepList } from '../../settings/Sweep';
 import { SyncSection } from '../../settings/Sync';
 import {
-  stoppedWaiting, useAccounts, useAcross, useDriver, useHarnesses, useHistoryPlan, usePlugins, useRemotes, useRuleAction, useRules,
-  useDiscardSessionBranch, useDropRecoveries, useSetAccess, useSetCommits, useSetHandOver, useSetHelpers, useSetLanding, useSetLanguage, useSetLine, useSetOpinion,
+  stoppedWaiting, useAccounts, useAcross, useDriver, useHarnesses, useHistoryPlan, useRemotes, useRuleAction, useRules,
+  useDiscardSessionBranch, useDropRecoveries, useSetAccess, useSetCommits, useSetHandOver, useSetHelpers, useSetLanguage, useSetLine, useSetOpinion,
   useSetReadAcross,
   useSetReview, useStarts, useSyncNow,
   useSweep, useSweepLook, useSweepPlan, useTreesSync, useTreesSyncPlan, useTreesSyncScope, useUnwireRemote, useWireRemote, useWorkflowCurrent,
@@ -46,12 +45,6 @@ const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
 /** The rows of a driver answer that are this workspace's. */
 const mine = <R extends { workspace: string }>(rows: readonly R[], workspace: string) => rows.filter((row) => same(row.workspace, workspace));
 
-/** A workspace's landing rule as the driver answers it, without the name it is answered under, its key and squash kept (DOORS1b). */
-const ruleOf = ({ form, pattern, tidy, plugin, autoAccept, key, squash, integrate }: LandingRule): LandingRule => ({
-  form, ...(pattern ? { pattern } : {}), ...(tidy ? { tidy } : {}), ...(plugin ? { plugin } : {}), ...(autoAccept ? { autoAccept } : {}),
-  ...(key ? { key } : {}), ...(squash ? { squash } : {}), ...(integrate ? { integrate } : {}),
-});
-
 /**
  * **A workspace's page, with its data** (UX6g, D150 §4.3): the organism that holds what the page reads and every press it
  * makes, so the page, its Details and its Setup below it hold none (components §2). Each tab is a part of its own, drawn
@@ -74,7 +67,7 @@ const ruleOf = ({ form, pattern, tidy, plugin, autoAccept, key, squash, integrat
  */
 export function WorkspaceView({
   workspace, repositories, attached, tab, onTab, asked = null, notify, onOpenRepository, onOpenRepositoryWorkflow, onOpenBranch,
-  onOpenRepositoryHistory, onOpenAgent, onOpenAppointed, onOpenPlugin, onSyncNow, syncing = false, onOpenQuest, onOpenAsk, onAttend,
+  onOpenRepositoryHistory, onOpenAgent, onOpenAppointed, onSyncNow, syncing = false, onOpenQuest, onOpenAsk, onAttend,
   onOpenSetupSection,
 }: {
   workspace: string;
@@ -98,8 +91,6 @@ export function WorkspaceView({
   onOpenAgent?: (agent: string) => void;
   /** Open Agents → Roles → Appointed roles, where the workspace's supervisor is appointed (COMPANYVIEW1e). */
   onOpenAppointed?: () => void;
-  /** Open a plugin's page, from the plugin a landing rule names (PLUGUI1c2c). */
-  onOpenPlugin?: (plugin: string) => void;
   /** The status bar's *Sync now* (SYNC6b), the application's, which says the pass's own words. */
   onSyncNow?: (workspace: string) => void;
   syncing?: boolean;
@@ -168,7 +159,6 @@ export function WorkspaceView({
             wiring={wiring}
             // Lit, the session rows are the workspace place's (AGENTSPLACE1f); this tab keeps the rest.
             rows={setupLit() ? 'rest' : 'all'}
-            onOpenPlugin={onOpenPlugin}
             onOpenAppointed={onOpenAppointed}
           />
         )
@@ -453,9 +443,8 @@ function useWorkspaceWiring(workspace: string, notify: Notify) {
  * machines its remote counts undeclared, SETUPUX1v) and `rows="defaults"` under its Workflow; this tab, once the Setup mode is lit, keeps the
  * rest until row y takes it away.
  */
-export function WorkspaceSetupPart({ workspace, notify, open, wiring = false, rows, onOpenPlugin, onOpenAppointed, onOpenGit }: {
+export function WorkspaceSetupPart({ workspace, notify, open, wiring = false, rows, onOpenAppointed, onOpenGit }: {
   workspace: string;
-  onOpenPlugin?: (plugin: string) => void;
   onOpenAppointed?: () => void;
   /** Open Settings → Git, where a host nothing serves is given an identity (GITAUTH1e). */
   onOpenGit?: (host: string) => void;
@@ -468,7 +457,6 @@ export function WorkspaceSetupPart({ workspace, notify, open, wiring = false, ro
   const driver = useDriver();
   const across = useAcross();
   const rules = useRules();
-  const catalog = usePlugins();
   const { wiring: wiringRow, busy: wiringBusy, error: wiringError } = useWorkspaceWiring(workspace, notify);
   // FABRIC-CLOSE1i2: the machines its remote counts undeclared, as the last pass heard them, and the person's retirement of one. The pass
   // after it hears the remote for itself, and its end pushes where the circle stands to every window.
@@ -476,7 +464,6 @@ export function WorkspaceSetupPart({ workspace, notify, open, wiring = false, ro
   const retire = useRetireMachine();
   const syncNow = useSyncNow();
   const setLine = useSetLine();
-  const setLanding = useSetLanding();
   const setLanguage = useSetLanguage();
   const setReview = useSetReview();
   const setOpinion = useSetOpinion();
@@ -511,11 +498,6 @@ export function WorkspaceSetupPart({ workspace, notify, open, wiring = false, ro
 
   const state = driver.data;
   const ofWorkspace = <R extends { workspace: string }>(rows: R[] | undefined) => (rows ?? []).find((row) => same(row.workspace, workspace));
-  // The plugins a branch rule may hand its branch to (D100): on, sound, and speaking on `work/land`.
-  const landers = (catalog.data?.plugins ?? [])
-    .filter((plugin) => plugin.enabled && !plugin.problem && plugin.points.includes('work/land'))
-    .map((plugin) => plugin.id);
-  const landingSet = ofWorkspace(state?.workspaceLandings);
   const table = state?.languageTable;
   const answered = rules.data && Array.isArray(rules.data.defaults) && Array.isArray(rules.data.scopes) ? rules.data : null;
   const scope = answered?.scopes.find((row) => row.scope === 'workspace' && row.name !== undefined && same(row.name, workspace));
@@ -537,7 +519,7 @@ export function WorkspaceSetupPart({ workspace, notify, open, wiring = false, ro
           },
         }
       : null,
-    busy: setLine.isPending || setLanding.isPending || setLanguage.isPending || setReview.isPending || setOpinion.isPending
+    busy: setLine.isPending || setLanguage.isPending || setReview.isPending || setOpinion.isPending
       || setCommits.isPending || setHelpers.isPending || setHandOver.isPending || setAccess.isPending || setRead.isPending || act.isPending || wiringBusy
       || retire.isPending,
     supervisor,
@@ -568,24 +550,6 @@ export function WorkspaceSetupPart({ workspace, notify, open, wiring = false, ro
             : t('settings.lines.cleared', { name: workspace })),
           onError,
         }),
-      },
-      landing: state && {
-        set: landingSet && ruleOf(landingSet),
-        landers,
-        // FABRIC-GRAPH1d: a rule the file keeps for it that reads as no rule, said under the row.
-        unread: ofWorkspace(state.workspaceUnreadLandings),
-        onSet: (rule) => setLanding.mutate(rule ? { workspace, ...rule } : { workspace }, {
-          onSuccess: () => notify(!rule
-            ? t('settings.landing.cleared', { name: workspace })
-            : rule.form === 'branch'
-              ? rule.plugin
-                ? t('settings.landing.savedBranchPlugin', { name: workspace, pattern: rule.pattern, plugin: rule.plugin })
-                : t('settings.landing.savedBranch', { name: workspace, pattern: rule.pattern })
-              : t('settings.landing.savedMerge', { name: workspace })),
-          // A rule the driver refuses is said under *Save*, in LandingKey's sentence (AGENTSPLACE1d); a clear has no such place.
-          onError: rule ? undefined : onError,
-        }),
-        refusal: setLanding.error ? sentence(setLanding.error) : null,
       },
       // A shell older than LANG1c answers no table, and nothing is offered rather than a field whose save is refused.
       language: state && Array.isArray(table)
@@ -698,5 +662,5 @@ export function WorkspaceSetupPart({ workspace, notify, open, wiring = false, ro
     },
   };
 
-  return <WorkspaceSetup {...setup} rows={rows} onOpenPlugin={onOpenPlugin} />;
+  return <WorkspaceSetup {...setup} rows={rows} />;
 }

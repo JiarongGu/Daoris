@@ -264,7 +264,6 @@ export function useProjectsView({
           onOpenRepositoryHistory={(repository) => { onChoose(repository); onTab?.('history'); }}
           onOpenAgent={onOpenAgent}
           onOpenAppointed={onOpenAppointed}
-          onOpenPlugin={onOpenPlugin}
           onOpenSetupSection={onOpenWorkspaceSetup}
           onSyncNow={onSyncNow}
           syncing={syncing}

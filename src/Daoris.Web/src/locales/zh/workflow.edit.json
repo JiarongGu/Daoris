@@ -375,6 +375,6 @@
   "workflow.edit.refusal.accept": "落地步骤自己不带采纳：要由你采纳的工作，请把“你的审阅”放在它之前。",
   "workflow.edit.refusal.land-method": "落地步骤保存时要选定它的方式：合并、分支、推送、拉取请求或并入主线。",
   "workflow.edit.refusal.handed-refused": "“已交出”步骤不再保存：由落地步骤来执行落地。请选择它的方式，其后的步骤会随之而来。",
-  "workflow.edit.refusal.steps-refused": "步骤列表不再保存：工作流以步骤图保存。请在工作流编辑器中编排。",
+  "workflow.edit.refusal.steps-refused": "工作流现在以步骤图保存，不再保存步骤列表（架构 1）。请在工作流编辑器中编排，或用 `daoris driver workflow apply <id> <file>` 保存一张图；以前以步骤保存的工作流由转换计划转换：`daoris driver workflow convert --plan`。",
   "workflow.edit.refusal.role": "它的角色不做这个步骤的工作。"
 }
