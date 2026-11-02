@@ -19,6 +19,13 @@ repository.
 - **Fix:** a write transaction knows the store's version (`DesktopWrite.Version`), and the insert and the in-write reads name the columns only from step 18.
 - **Verify:** `MoveStoreHeldStepTests` on a store held at step 15, red first.
 
+## 2026-11-02 - The place's chart drew an older version than every run would bind (REVIEW2)
+
+- **Symptom:** a workflow whose newest version did not read was drawn as its older readable version, while every run bound to it held on the newest's problem.
+- **Root cause:** `WorkflowEffectives.OfSaved` took the newest version that reads; `WorkflowRunBindings` takes `Versions[^1]`.
+- **Fix:** the chart draws the newest version and, where it does not read, its problem in the bind's words.
+- **Verify:** `WorkflowEffectiveTests`' newest-does-not-read case, red first.
+
 ## 2026-11-02 - Thirty-seven chat Process tests red after the routing standing was told (COWORKVIEW1e-i)
 
 - **Symptom:** the driver's Process gate failed 37 tests across nine chat classes (`ChatGoesOnProcessTests`, `ChatPendingProcessTests`, `ProtocolChatTests`, `TurnStopTests`, `HandOverProcessTests` and four more): prompts read `Routing standing here: ...` where the person's words were expected, and stand-ins keyed on a prompt's text (`hold`, `refuse`, a reply's length as context) no longer matched.
