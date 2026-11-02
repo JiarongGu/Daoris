@@ -49,6 +49,9 @@ async function said(...texts: string[]) {
   });
 }
 
+/** The driver's phase line (SIGNIN1): the relay's record separator, then the phase and its start. */
+const phaseLine = (name: string) => `\u001e${JSON.stringify({ phase: name, at: new Date('2026-10-20T09:00:00.000Z').toISOString() })}`;
+
 describe('signing in on the row', () => {
   beforeEach(() => {
     // The action has no backlog (nothing buffers a harness action): the tail is the command line
@@ -68,6 +71,7 @@ describe('signing in on the row', () => {
    */
   it('offers the link when it appears, the code box when asked, and sends what is pasted', async () => {
     show();
+    await said(phaseLine('start'), phaseLine('browser'));
     expect(await screen.findByText(/Waiting for the tool/)).toBeTruthy();
     // The tail is in before the tool speaks, so what it says joins one stream.
     await userEvent.click(screen.getByText('The tool\'s own output'));
@@ -108,7 +112,7 @@ describe('signing in on the row', () => {
   });
 
   /**
-   * Signing in to ANOTHER account (D66 §3): the same three steps, with no account to name yet — and
+   * Signing in to ANOTHER account (D66 §3): the same phases, with no account to name yet — and
    * the stop reaches the sign-in that is actually running, under its own action.
    */
   it('signs in to another account under its own action, naming the tool rather than an account', async () => {
@@ -122,7 +126,6 @@ describe('signing in on the row', () => {
     );
 
     expect(await screen.findByText('Signing in to another claude-code account')).toBeTruthy();
-    expect(screen.getByText(/under who signed in/)).toBeTruthy();
     await userEvent.click(screen.getByRole('button', { name: /Cancel/ }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_CANCEL', {
       payload: { harness: 'claude-code', action: 'login-new' },
@@ -157,7 +160,7 @@ describe('signing in on the row', () => {
       eventHandlers.get('DAORIS.SESSION_OUTPUT')!({
         session: id,
         lines: [
-          '', 'Welcome to Codex [v0.160.0]', "OpenAI's command-line coding agent", '',
+          phaseLine('start'), phaseLine('browser'), '', 'Welcome to Codex [v0.160.0]', "OpenAI's command-line coding agent", '',
           'Follow these steps to sign in with ChatGPT using device code authorization:', '',
           '1. Open this link in your browser and sign in to your account', '   https://auth.openai.com/codex/device', '',
           '2. Enter this one-time code (expires in 15 minutes)', '   ABCD-12345', '',
@@ -168,12 +171,10 @@ describe('signing in on the row', () => {
 
     const link = await screen.findByRole('link', { name: /auth\.openai\.com/ });
     expect(link.getAttribute('href')).toBe('https://auth.openai.com/codex/device');
-    // Nothing opened by itself: the step says to open the link, not that a page opened.
-    expect(screen.getByText('Open the link and sign in.')).toBeTruthy();
-    expect(screen.getByText('Enter this code on that page.')).toBeTruthy();
+    // Nothing opened by itself: the phase says to enter the code, not that a page opened.
+    expect(screen.getByText('Open the page and enter this code:')).toBeTruthy();
     expect(screen.getByText('ABCD-12345')).toBeTruthy();
     expect(screen.queryByLabelText('sign-in code')).toBeNull();
-    expect(screen.queryByText(/The box appears when the tool asks/)).toBeNull();
 
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
     await userEvent.click(screen.getByRole('button', { name: 'Copy code' }));
@@ -187,9 +188,9 @@ describe('signing in on the row', () => {
   /**
    * CODEXSIGNIN3: the code is read by its shape, not by one version's words — a link to the device page, then a code of letters
    * and digits in groups joined by a hyphen — so a newer pin that rewords the sentence asking for it still shows it, and until
-   * a code is printed the step says it comes later.
+   * a code is printed the phase offers the link alone.
    */
-  it('reads the device code by its shape from a reworded output, and says code later until one is printed', async () => {
+  it('reads the device code by its shape from a reworded output, and offers the link alone until one is printed', async () => {
     const id = 'codex-acp:login-new';
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'TAIL_SESSION'
       ? { session: id, lines: [{ sequence: 1, text: '$ codex login --device-auth' }], sequence: 1, live: true, dropped: 0 }
@@ -207,14 +208,13 @@ describe('signing in on the row', () => {
       eventHandlers.get('DAORIS.SESSION_OUTPUT')!({ session: id, lines: texts.map((text) => ({ sequence: ++sequence, text })) });
     });
 
-    await send('Welcome to Codex [v0.200.0]', 'Open this page and sign in:', '   https://auth.openai.com/codex/device', '');
+    await send(phaseLine('start'), phaseLine('browser'), 'Welcome to Codex [v0.200.0]', 'Open this page and sign in:', '   https://auth.openai.com/codex/device', '');
     await screen.findByRole('link', { name: /auth\.openai\.com/ });
-    expect(screen.getByText(/The box appears when the tool asks/)).toBeTruthy();
+    expect(screen.queryByText('Open the page and enter this code:')).toBeNull();
 
     await send('Then type the code below (valid for 15 minutes):', '   WXYZ-98765', 'Never share this code. A one-time-use token.');
     expect(await screen.findByText('WXYZ-98765')).toBeTruthy();
-    expect(screen.getByText('Enter this code on that page.')).toBeTruthy();
-    expect(screen.queryByText(/The box appears when the tool asks/)).toBeNull();
+    expect(screen.getByText('Open the page and enter this code:')).toBeTruthy();
   });
 
   /**
@@ -271,8 +271,7 @@ describe('signing in on the row', () => {
 /**
  * SIGNIN1 (the UI/UX design §3.2, R2): the sign-in says its phase and how long. The phases are the driver's, each a line of
  * its relay that begins with the record separator and names the phase and its start; the link, the code and the ask stay
- * read from the tool's lines by their shape. An older host writes no phases, and the panel draws as before with the time
- * since the press.
+ * read from the tool's lines by their shape.
  */
 describe('signing in, phase by phase', () => {
   const START = Date.parse('2026-10-20T09:00:00.000Z');
@@ -374,13 +373,12 @@ describe('signing in, phase by phase', () => {
     expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
   });
 
-  it('from an older host that writes no phases, draws its steps as before with the time since the press', async () => {
-    codex({ pressedAt: START + 30_000 });
+  it('says the first phase is under way before the driver has written any, with no time yet', async () => {
+    codex({});
     await push(CODEX, '$ codex login --device-auth');
 
-    expect(await screen.findByText('Waiting for the tool to open the page…')).toBeTruthy();
-    expect(screen.getByText('18s so far')).toBeTruthy();
-    expect(screen.queryByText('Starting Codex')).toBeNull();
+    expect(await screen.findByText('Starting Codex')).toBeTruthy();
+    expect(screen.queryByText(/so far/)).toBeNull();
   });
 
   /**

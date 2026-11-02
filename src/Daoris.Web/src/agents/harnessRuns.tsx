@@ -57,11 +57,6 @@ export type HarnessRun = {
   retry: () => void;
   dismiss: () => void;
   /**
-   * When the running action was pressed (SIGNIN1), so a sign-in's panel says how long it has run where its host writes no
-   * phases of its own; null with nothing pressed.
-   */
-  pressedAt: number | null;
-  /**
    * A sign-in that ended without signing in (SIGNIN1, the UI/UX design §3.2's *Failed at a phase*): its sentence and when it
    * ended. Its panel stays up and says it, with *Try again* and *Close*, as a refused start's does; null otherwise.
    */
@@ -98,7 +93,6 @@ function useRunState(notify: Notify): HarnessRun {
   const runningRef = useRef<string | null>(null);
   const [refusal, setRefusal] = useState<string | null>(null);
   const [failure, setFailure] = useState<{ sentence: string; at: number } | null>(null);
-  const [pressedAt, setPressedAt] = useState<number | null>(null);
   const lastSignIn = useRef<{ harness: string; action: HarnessRunAction; profile?: string; way: SignInWay } | null>(null);
   // The last sign-in's way and whether its agent has the other (CODEXLOGIN1), as state, so its panel draws the switch; and
   // whether the one a switch replaces was heard stopped.
@@ -201,7 +195,6 @@ function useRunState(notify: Notify): HarnessRun {
     stopped.current = false;
     setRefusal(null);
     setFailure(null);
-    setPressedAt(Date.now());
     const signIn = action === 'login' || action === 'login-new';
     if (signIn) {
       lastSignIn.current = { harness, action, profile, way };
@@ -284,7 +277,6 @@ function useRunState(notify: Notify): HarnessRun {
   // Already started, so nothing is sent: only the end is waited for, as a process started here waits.
   const follow: HarnessRun['follow'] = (harness, action) => {
     if (inFlight !== null) return;
-    setPressedAt(Date.now());
     setRunning(`${harness}:${action}`);
     runningRef.current = `${harness}:${action}`;
     setInFlight(`${harness}:${action}`);
@@ -292,7 +284,7 @@ function useRunState(notify: Notify): HarnessRun {
 
   return {
     running, inFlight, runningProfile, signingInNew, busy: act.isPending || inFlight !== null, run, follow,
-    refusal, retry, dismiss, pressedAt, failure, otherWay, switchWay,
+    refusal, retry, dismiss, failure, otherWay, switchWay,
     added, settleAdded: () => setAdded(null),
   };
 }

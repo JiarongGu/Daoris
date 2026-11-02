@@ -19,8 +19,7 @@ import { type SignInPhase, SignInSteps, type SignInWay } from './SignInSteps';
  *
  * The steps are `SignInSteps`' (SIGNIN1, the UI/UX design §3.2): the driver's phases, each written with its start into the
  * relay the tool's output takes, drawn as a list standing open, or as the line alone under a row of *What needs you*; the
- * link, the code and the ask are read from the tool's lines by their shape, and an older host that writes no phases draws
- * the steps as before, with the time since the press. The tool's own output is one disclosure away and never the surface,
+ * link, the code and the ask are read from the tool's lines by their shape. The tool's own output is one disclosure away and never the surface,
  * the same rule the setting rows follow for their why; a phase line is the driver's and never shown there.
  *
  * An organism: it holds the console hook ONCE — the steps read the stream and the disclosure shows
@@ -32,7 +31,7 @@ import { type SignInPhase, SignInSteps, type SignInWay } from './SignInSteps';
  * link and a one-time code the person enters on that page, with the code's own bound.
  */
 export function SignIn({
-  id, harness, profile, action = 'login', tool, refused, failed, failedAt, pressedAt, shown = 'list', onRetry, onClose,
+  id, harness, profile, action = 'login', tool, refused, failed, failedAt, shown = 'list', onRetry, onClose,
   other, onSwitch,
 }: {
   id: string;
@@ -49,8 +48,6 @@ export function SignIn({
   /** The sentence of a sign-in that ended without signing in, and when (SIGNIN1): the phase it was in failed. */
   failed?: string | null;
   failedAt?: number | null;
-  /** When the sign-in was pressed: the time an older host's panel says, since it writes no phases. */
-  pressedAt?: number | null;
   /** The list standing open, its own surface; or the line alone, under a row of *What needs you* (§3.2). */
   shown?: 'list' | 'line';
   onRetry?: () => void;
@@ -87,7 +84,7 @@ export function SignIn({
   }
   const ended = Boolean(refused || failed);
   const starts = phases.filter((each) => each.phase === 'start');
-  const since = starts[starts.length - 1]?.at ?? pressedAt ?? null;
+  const since = starts[starts.length - 1]?.at ?? null;
 
   const copy = async (what: 'link' | 'code', text: string) => {
     try {
@@ -131,7 +128,6 @@ export function SignIn({
       <SignInSteps
         title={title}
         tool={tool ?? harness}
-        action={action}
         phases={phases}
         texts={latest}
         refused={refused}

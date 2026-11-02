@@ -37,20 +37,19 @@ export type SignInActs = {
 
 /**
  * A sign-in's steps (SIGNIN1, the UI/UX design §3.2): from the driver's phases, `PhaseList` standing open, or as the line
- * alone under a row of *What needs you*; from an older host that writes none, the steps as they were. The link, the code
- * and the ask are read from the tool's lines by their shape, the fallback R2 keeps, and never make a phase.
+ * alone under a row of *What needs you*. The link, the code and the ask are read from the tool's lines by their shape and
+ * never make a phase.
  *
  * @remarks
  * A molecule: every state is its props, so each has a story (`SignInSteps.stories.tsx`).
  */
 export function SignInSteps({
-  title, tool, action, phases, texts, refused = null, failed = null, failedAt = null, shown = 'list', acts,
+  title, tool, phases, texts, refused = null, failed = null, failedAt = null, shown = 'list', acts,
 }: {
   /** The panel's title, which names its list of phases. */
   title: string;
   /** What a person calls the tool. */
   tool: string;
-  action: 'login' | 'login-new';
   /** The phases the driver wrote, oldest first: the latest run's are read, after its own start. */
   phases: SignInPhase[];
   /** The tool's own lines, the phases left out. */
@@ -93,12 +92,6 @@ export function SignInSteps({
     </div>
   ) : null;
 
-  if (run.length === 0 && !refused) {
-    return failed
-      ? <><p role="alert" className="m-0 mt-2 text-small text-ink-danger">{failed}</p>{ways}</>
-      : <><Steps action={action} read={read} acts={acts} />{ways}</>;
-  }
-
   const labels: Record<(typeof ORDER)[number], string> = {
     start: t('signin.phase.start', { tool }),
     browser: t('signin.phase.browser'),
@@ -106,7 +99,8 @@ export function SignInSteps({
     lists: t('signin.phase.lists'),
   };
   const at = (name: string) => run.find((each) => each.phase === name)?.at ?? null;
-  const current = refused ? 0 : Math.max(0, ORDER.indexOf(run[run.length - 1]!.phase as (typeof ORDER)[number]));
+  // Before the driver's first phase lands the first one is under way.
+  const current = refused ? 0 : Math.max(0, ORDER.indexOf((run[run.length - 1]?.phase ?? 'start') as (typeof ORDER)[number]));
   const rows: PhaseRow[] = ORDER.map((name, index) => {
     const from = at(name);
     if (index < current) return { key: name, label: labels[name], state: 'done', from, to: at(ORDER[index + 1]!) };
@@ -248,53 +242,6 @@ function Browser({ read, since, acts }: { read: ToolRead; since: number | null; 
   let shown: ReactNode = <p className="m-0 text-small text-ink-faint">{t(read.opened ? 'signin.opened' : 'signin.waiting')}</p>;
   if (read.url) shown = <>{read.opened && <p className="m-0 text-small text-ink-soft">{t('signin.opened')}</p>}<Link url={read.url} acts={acts} /></>;
   return <div className="min-w-0">{shown}{read.asked && <CodeBox acts={acts} />}</div>;
-}
-
-/**
- * The steps as they were, for an older host that writes no phases (R2: it draws as today): open the page, the code the page
- * shows or the device code to enter, and how it ends.
- */
-function Steps({ action, read, acts }: { action: 'login' | 'login-new'; read: ToolRead; acts: SignInActs }) {
-  const { t } = useTranslation();
-  const { url, opened, asked, device } = read;
-  return (
-    <ol className="m-0 mt-2 grid list-none gap-2.5 p-0">
-      <li className="grid grid-cols-[1.25rem_1fr] gap-x-2">
-        <span className="text-small font-semibold text-ink-faint">1</span>
-        <div className="min-w-0">
-          <p className="m-0 text-body text-ink">{t(device ? 'signin.step.openLink' : 'signin.step.open')}</p>
-          {url ? <Link url={url} acts={acts} /> : (
-            <p className="m-0 mt-0.5 text-small text-ink-faint">{t(opened ? 'signin.opened' : 'signin.waiting')}</p>
-          )}
-        </div>
-      </li>
-
-      <li className="grid grid-cols-[1.25rem_1fr] gap-x-2">
-        <span className="text-small font-semibold text-ink-faint">2</span>
-        <div className="min-w-0">
-          <p className="m-0 text-body text-ink">{t(device && !asked ? 'signin.step.enter' : 'signin.step.code')}</p>
-          {asked ? <CodeBox acts={acts} /> : device ? (
-            <div className="mt-1 flex flex-wrap items-center gap-2">
-              <span className="select-all font-mono text-body font-semibold text-ink">{device}</span>
-              <Button variant="ghost" onClick={() => acts.onCopy('code', device)}>
-                <Icon name="copy" size={12} />
-                {acts.copied === 'code' ? t('signin.copied') : t('signin.copyCode')}
-              </Button>
-            </div>
-          ) : (
-            <p className="m-0 mt-0.5 text-small text-ink-faint">{t('signin.codeLater')}</p>
-          )}
-        </div>
-      </li>
-
-      <li className="grid grid-cols-[1.25rem_1fr] gap-x-2">
-        <span className="text-small font-semibold text-ink-faint">3</span>
-        <p className="m-0 text-small text-ink-soft">
-          {t(action === 'login-new' ? 'signin.readyNew' : 'signin.ready')}
-        </p>
-      </li>
-    </ol>
-  );
 }
 
 /**
