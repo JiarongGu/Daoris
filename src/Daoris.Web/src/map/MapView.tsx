@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CodeMapCanvas, CodeMapDetail } from './CodeMap';
+import { CodeMapDetail, CodeMapWorld } from './CodeMap';
 import type { MapSelection } from './MapLines';
 import { MapWorld } from './MapWorld';
 import { LinesMenu, lineCounts, useMapWhen, useShownLines } from './LinesMenu';
@@ -98,12 +98,13 @@ export function MapView({ notify, code: opening = null, onOpenConvergence, onOpe
           // Beside the code map by the main area's own width, as the workspace map's detail is (D118 §3b).
           <div className="grid items-start gap-4 @4xl/main:grid-cols-[minmax(0,1fr)_20rem]">
             <Card>
-              <CodeMapCanvas
+              <CodeMapWorld
                 repository={code}
                 modules={answer.modules}
                 dependencies={answer.dependencies}
                 selected={module}
                 onSelect={setModule}
+                version={answer.fed?.commit}
               />
               <p className="m-0 mt-2 text-meta text-ink-faint">{t('code.legend')}</p>
             </Card>

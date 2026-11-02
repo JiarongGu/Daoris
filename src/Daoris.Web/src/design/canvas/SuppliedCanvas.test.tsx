@@ -21,8 +21,9 @@ const WORLD: SuppliedWorld = {
   lines: [{ id: 'a>b', from: 'a', to: 'b' }, { id: 'a>c', from: 'a', to: 'c' }, { id: '$>a', from: '$', to: 'a' }],
 };
 
-function Host({ selected: first = null, onChange = () => undefined, zoom = { min: 0.25, max: 2.5 }, findFrom = 40 }: {
+function Host({ selected: first = null, onChange = () => undefined, zoom = { min: 0.25, max: 2.5 }, findFrom = 40, findItems }: {
   selected?: string | null; onChange?: (id: string | null) => void; zoom?: { min: number; max: number } | 'off'; findFrom?: number;
+  findItems?: { id: string; title: string; stands?: string }[];
 }) {
   const [selected, setSelected] = useState<string | null>(first);
   return (
@@ -30,7 +31,7 @@ function Host({ selected: first = null, onChange = () => undefined, zoom = { min
       <SuppliedCanvas
         world={WORLD} label="a world" moves="a world: drag to move" fit="Show the whole world" feature="test" storeKey="world"
         selected={selected} onSelect={(id) => { setSelected(id); onChange(id); }} zoom={zoom} opening={0.8}
-        nodeLabel={(id) => (id === '$' ? 'the source' : `card ${id}`)} titleOf={(id) => `card ${id}`} findLabel="find a card" findFrom={findFrom}
+        nodeLabel={(id) => (id === '$' ? 'the source' : `card ${id}`)} titleOf={(id) => `card ${id}`} findLabel="find a card" findFrom={findFrom} findItems={findItems}
         renderNode={(id, state) => <span data-tier={state.tier}>{id}</span>}
         renderEdges={(context) => WORLD.lines.map((line) => (
           <g key={line.id} {...context.line(line.id)} aria-label={`line ${line.id}`}>
@@ -119,6 +120,18 @@ describe('find in a supplied world', () => {
     await user.keyboard('{Enter}');
     expect(chosen).toHaveBeenLastCalledWith('b');
     expect(field).toHaveFocus();
+  });
+
+  it('searches the items the feature folds away, selects a match with no card, and keeps the card that holds it undimmed', async () => {
+    const chosen = vi.fn();
+    const items = [{ id: 'a', title: 'card a' }, { id: 'b', title: 'card b' }, { id: 'c', title: 'card c' }, { id: 'deep', title: 'deep inside', stands: 'c' }];
+    render(<Host findFrom={4} onChange={chosen} findItems={items} />);
+    await user.type(screen.getByRole('searchbox', { name: 'find a card' }), 'deep');
+    const drawn = (id: string) => document.querySelector<HTMLElement>(`[data-flow-node="${id}"]`)!;
+    expect(drawn('c').className).not.toContain('opacity-25');
+    expect(drawn('a').className).toContain('opacity-25');
+    await user.keyboard('{Enter}');
+    expect(chosen).toHaveBeenLastCalledWith('deep');
   });
 
   it('is not offered to a world with fewer cards', () => {
