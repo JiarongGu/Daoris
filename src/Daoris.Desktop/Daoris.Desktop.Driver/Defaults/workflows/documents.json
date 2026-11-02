@@ -3,11 +3,6 @@
   "order": 3,
   "name": "Documents workflow",
   "for": "For a kind of task whose paths are documents: the work merges into the line once it is done, with no review.",
-  "delivery": {
-    "id": "merge-automatic", "method": "merge", "accept": "automatic",
-    "name": "Merge with no review",
-    "for": "For a development repository whose main branch is its line: the work merges into the line once its requests are answered, with no review."
-  },
   "setUp": false,
   "graph": {
     "schemaVersion": 2,

@@ -18,6 +18,12 @@ public interface IWorkflowStartWorld
 
     /// <summary>The machine log's line for a run bound (<see cref="WorkflowLines.Chosen"/>).</summary>
     void Chosen(LandingLine line);
+
+    /// <summary>
+    /// The host of the repository's <c>origin</c> here, which names the platform whose plugin a <c>land</c> left open resolves to at the bind
+    /// (WORKFLOWCLEAN1 1a); null where it has none or this world reads none.
+    /// </summary>
+    Task<string?> RemoteHostAsync(string repository, CancellationToken ct) => Task.FromResult<string?>(null);
 }
 
 /// <summary>What a run's bind at a start came to (FABRIC-CUTOVER1g, D190's binding moment; the cutover design §8).</summary>
@@ -223,7 +229,11 @@ public static class WorkflowRunStart
         var ask = askId is null ? null : await world.FindAskAsync(askId, ct).ConfigureAwait(false);
         // A quest no ask published carries its own choice, made on its page before it started (WORKFLOW1e2).
         var task = askId is null ? WorkflowRunBindings.TaskOf(quest, every.Quests) : WorkflowRunBindings.TaskOf(ask);
-        return WorkflowRunBindings.Plan(config, store, run, quest.To, start.Workspace, askId, task, plugins, now(), roles);
+        // The remote's platform names the plugin a pull request left open is opened by (WORKFLOWCLEAN1 1a); read only for a saved workflow.
+        var host = WorkflowSelection.Resolve(config, quest.To, start.Workspace, task).Workflow == WorkflowSelection.Current
+            ? null
+            : await world.RemoteHostAsync(quest.To, ct).ConfigureAwait(false);
+        return WorkflowRunBindings.Plan(config, store, run, quest.To, start.Workspace, askId, task, plugins, now(), roles, host);
     }
 
     /// <summary>The binding kept for <paramref name="run"/>, read; one that does not read holds the start, since what its take names is not known.</summary>

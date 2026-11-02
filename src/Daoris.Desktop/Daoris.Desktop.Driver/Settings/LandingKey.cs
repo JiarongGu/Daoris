@@ -498,7 +498,13 @@ public static class LandingKey
 
     private static void WriteIntegrate(Utf8JsonWriter writer, LandingIntegrate integrate)
     {
-        writer.WriteStartObject("integrate");
+        writer.WritePropertyName("integrate");
+        WriteIntegrateValue(writer, integrate);
+    }
+
+    private static void WriteIntegrateValue(Utf8JsonWriter writer, LandingIntegrate integrate)
+    {
+        writer.WriteStartObject();
         // Each written only when set, in the design's order: absent reads the Absent column (LandingIntegrate.Resolved).
         if (integrate.Request is not null) writer.WriteString("request", integrate.Request);
         if (integrate.Commit is not null) writer.WriteString("commit", integrate.Commit);
@@ -516,6 +522,52 @@ public static class LandingKey
         if (integrate.Conflicts is not null) writer.WriteString("conflicts", integrate.Conflicts);
         if (integrate.Overlap is not null) writer.WriteString("overlap", integrate.Overlap);
         if (integrate.Line is not null) writer.WriteString("line", integrate.Line);
+        writer.WriteEndObject();
+    }
+
+    /// <summary>
+    /// What is wrong with a line's policy (WORKFLOWCLEAN1 1a; the cleanup design §1.4), or null: each key one of its values, and <c>land</c>
+    /// for an unconfirmed failure only where a whole-set verification runs on the line. The unit's own process, <c>request</c> and
+    /// <c>conflicts</c>, is the <c>integrate</c> node's, so a policy holds neither.
+    /// </summary>
+    public static string? PolicyProblem(LandingIntegrate policy, bool wholeSet)
+    {
+        if (policy.Request is not null || policy.Conflicts is not null) return PolicyHoldsProcess;
+        var rule = new LandingRule(LandingForm.Branch) { Integrate = policy };
+        // The rule's own switches are not a policy's: judge the keys that are, by the rule judge with request and conflicts left absent.
+        return IntegrateProblem(rule, wholeSet);
+    }
+
+    internal const string PolicyHoldsProcess =
+        "a line's policy says how the line is integrated; who requests and where a conflict goes are the workflow's `integrate` step's.";
+
+    /// <summary>A map of names to line policies; one that does not read, or that <see cref="PolicyProblem"/> refuses, is not read.</summary>
+    internal static IReadOnlyDictionary<string, LandingIntegrate> PolicyMap(JsonElement root, string name)
+    {
+        var map = new Dictionary<string, LandingIntegrate>(StringComparer.OrdinalIgnoreCase);
+        if (root.TryGetProperty(name, out var element) && element.ValueKind == JsonValueKind.Object)
+        {
+            foreach (var property in element.EnumerateObject())
+            {
+                if (map.ContainsKey(property.Name) || IntegrateOf(property.Value, out _) is not { } read) continue;
+                var policy = read with { Request = null, Conflicts = null };
+                if (PolicyProblem(policy, wholeSet: true) is null) map[property.Name] = policy;
+            }
+        }
+
+        return map;
+    }
+
+    internal static void WritePolicies(Utf8JsonWriter writer, string name, IReadOnlyDictionary<string, LandingIntegrate> map)
+    {
+        if (map.Count == 0) return;
+        writer.WriteStartObject(name);
+        foreach (var (key, policy) in map.OrderBy(pair => pair.Key, StringComparer.Ordinal))
+        {
+            writer.WritePropertyName(key);
+            WriteIntegrateValue(writer, policy);
+        }
+
         writer.WriteEndObject();
     }
 

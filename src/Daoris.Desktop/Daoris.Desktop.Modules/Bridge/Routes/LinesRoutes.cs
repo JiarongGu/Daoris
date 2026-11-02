@@ -46,9 +46,27 @@ public sealed class LinesRoutes(DriverContext context)
             throw new DriverException("a line is set for a `repository` or a `workspace` — name one of them.");
         }
 
-        _context.Change(config => workspace is not null
-            ? config.WithWorkspaceLine(workspace, branch)
-            : config.WithLine(repository!, branch));
+        // WORKFLOWCLEAN1 1a: the line's policy (how it is integrated) is edited here beside its branch, set where the press names an object,
+        // withdrawn on null; a press that names only a policy leaves the line as it is. Its values are LandingKey's to judge.
+        var named = request.Payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty("policy", out _);
+        LandingIntegrate? policy = null;
+        if (named)
+        {
+            var wire = request.Payload!.Value.GetProperty("policy");
+            if (wire.ValueKind != JsonValueKind.Null) policy = LandingKey.IntegrateOf(wire, out var shape) ?? throw new DriverException(shape!);
+        }
+
+        var keepsLine = named && !(request.Payload!.Value.TryGetProperty("branch", out _));
+        _context.Change(config =>
+        {
+            if (!keepsLine)
+            {
+                config = workspace is not null ? config.WithWorkspaceLine(workspace, branch) : config.WithLine(repository!, branch);
+            }
+
+            if (!named) return config;
+            return workspace is not null ? config.WithWorkspaceLinePolicy(workspace, policy) : config.WithLinePolicy(repository!, policy);
+        });
         return DriverRoutes.State(_loop);
     }
 
@@ -202,53 +220,15 @@ public sealed class LinesRoutes(DriverContext context)
     [Publishes("SET_LANDING", StateScopes.Landing | StateScopes.Lines)]
     private object? SetLanding(IpcRequest request)
     {
-        var repository = Optional(request, "repository");
-        var workspace = Optional(request, "workspace");
-        if ((repository is null) == (workspace is null))
-        {
-            throw new DriverException("a landing rule is set for a `repository` or a `workspace` — name one of them.");
-        }
-
-        // *Accept automatically* rides the rule (LAND2a, D145): a save that dropped it would switch it off unasked.
-        var rule = Optional(request, "form") is { } form
-            ? new LandingRule(form, Optional(request, "pattern"), Flag(request, "tidy"), Optional(request, "plugin"), Flag(request, "autoAccept"))
-            : null;
-        // The ticket's key and the squash (DOORS1b, D164's DOORS1a note) are set where the press names them, an empty key taking
-        // it away; a press naming neither keeps the ones the rule set here holds, where the new rule can hold them, as Ask
-        // Daoris's card keeps them. A save that rebuilt the rule without them dropped what the terminal set.
-        if (rule is not null)
-        {
-            var config = DriverConfig.Load(_loop.ConfigPath);
-            var standing = (workspace is not null ? config.WorkspaceLandings : config.Landings)
-                .TryGetValue((workspace ?? repository)!, out var own) ? own : null;
-            rule = LandingKept(rule, standing, request.Payload);
-        }
-
-        // AGENTSPLACE1d: `integrate` is set where the press names an object, withdrawn on null, and kept when it is not named; its
-        // shape and its values are LandingKey's to judge, never the route's.
-        var withdraw = false;
-        if (rule is not null && request.Payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty("integrate", out var asked))
-        {
-            if (asked.ValueKind == JsonValueKind.Null) withdraw = true;
-            else rule = rule with { Integrate = LandingKey.IntegrateOf(asked, out var shape) ?? throw new DriverException(shape!) };
-        }
-
-        // The rule's plugin must be able to land work here, said as `daoris driver landing` says it (D100): the library's operation
-        // asks it before anything is written, as the terminal's command acting alone asks it (PUSH1f2a).
-        var catalog = PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names);
-        _context.Change(config =>
-        {
-            // Withdrawn first, so a rule whose new form cannot carry it is not refused for the integrate it drops.
-            if (withdraw && (workspace is not null ? config.WorkspaceLandings : config.Landings).TryGetValue((workspace ?? repository)!, out var held)
-                && held.Integrate is not null)
-            {
-                config = workspace is not null ? config.WithWorkspaceLandingIntegrate(workspace, null) : config.WithLandingIntegrate(repository!, null);
-            }
-
-            return LandingRules.Put(config, repository, workspace, rule, catalog);
-        });
-        return DriverRoutes.State(_loop);
+        // WORKFLOWCLEAN1 1a: how work lands is the workflow's now, and the line's policy is the line's; nothing writes a rule any more.
+        _ = request;
+        throw new DriverException(RetiredLanding);
     }
+
+    /// <summary>What a press of the retired <c>SET_LANDING</c> is told (the cleanup design §1.4): where its two halves went.</summary>
+    internal const string RetiredLanding =
+        "retired: a landing rule is no longer written. How work lands is the workflow a place follows (Workflow › Landing, or Set up…), "
+        + "and how the line integrates is its policy (Line).";
 
     /// <summary>A rule's <c>integrate</c> as the file writes it (and a press may send it), each key null where absent; null where the rule has none.</summary>
     internal static object? IntegrateWire(LandingIntegrate? integrate) => integrate is null ? null : new

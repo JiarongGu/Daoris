@@ -288,6 +288,13 @@ public static class PlaceProjection
         var scope = level == PlaceSource.RepositoryLevel ? repository : "";
         var steps = StepsFollowed(config, scope, workspace, flow.Workflow, workflows);
         var lands = steps is null ? null : SetupPresets.Match(driven: true, SetupPresets.LandOf(steps));
+        // WORKFLOWCLEAN1 1a: a saved workflow's delivery is the default its version was copied from, and what the copy changed.
+        if (flow.Workflow != WorkflowSelection.Current && FollowsOf(flow.Workflow, null, workflows) is { Default: { } copied } held
+            && SetupPresets.Of(copied) is not null)
+        {
+            lands = new SetupMatch(copied, held.Differs);
+        }
+
         return new PlaceValues(
             new(line.Branch, PlaceSource.At(line.Source, level)),
             new(landing.Rule.Form, PlaceSource.At(landing.Source, level)),

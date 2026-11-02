@@ -219,13 +219,16 @@ public static class WorkflowSelection
         // A repository naming only its landed route names no development route, so its workspace's reach it (FABRIC-PIPELINE1a).
         if (repository is not null && config.Workflows.TryGetValue(repository.Trim(), out var own) && own.NamesDevelopment)
         {
-            return kind is not null && own.KindOf(kind)?.Workflow is { } mapped
-                ? Pick(mapped, WorkflowLevels.RepositoryKind)
-                : Pick(own.Default ?? Current, WorkflowLevels.Repository);
+            if (kind is not null && own.KindOf(kind)?.Workflow is { } mapped) return Pick(mapped, WorkflowLevels.RepositoryKind);
+            return own.Default is { } chosen2 ? Pick(chosen2, WorkflowLevels.Repository) : Home(Pick);
         }
 
         if (declared?.Workflow is { } sharedKind) return Pick(sharedKind, WorkflowLevels.WorkspaceKind);
-        return shared?.Default is { } fallback ? Pick(fallback, WorkflowLevels.Workspace) : Pick(Current, WorkflowLevels.Current);
+        return shared?.Default is { } fallback ? Pick(fallback, WorkflowLevels.Workspace) : Home(Pick);
+
+        // Row 6 (WORKFLOWCLEAN1 1a): the home's default; Current only where the home names none (the transitional path, design §4.7).
+        WorkflowSelected Home(Func<string, string, WorkflowSelected> pick) =>
+            config.DefaultWorkflow is { } home ? pick(home, WorkflowLevels.Home) : pick(Current, WorkflowLevels.Current);
     }
 
     /// <summary>

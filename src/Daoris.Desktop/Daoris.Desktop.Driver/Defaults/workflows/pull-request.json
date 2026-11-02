@@ -4,7 +4,6 @@
   "name": "Hosted merge workflow",
   "for": "For a repository on a code host: you review the work, and a plugin pushes its branch and opens a pull request for you to merge.",
   "delivery": {
-    "id": "pull-request", "method": "pull-request", "accept": "you",
     "name": "A pull request",
     "for": "For a repository on a code host: you review the work, and a plugin pushes its branch and opens a pull request for you to merge."
   },

@@ -32,26 +32,35 @@ public static class LandNodes
 
     private static readonly Regex Placeholder = new(@"\{([^{}]*)\}", RegexOptions.CultureInvariant);
 
-    /// <summary>The name a ticket key takes among a run's resolved options: no node option, since the rule's is all there is of it.</summary>
+    /// <summary>The <c>land</c> option that is a ticket's key, and the name it takes among a run's resolved options.</summary>
     public const string KeyOption = "key";
+
+    /// <summary>The branch a landing names where its <c>pattern</c> is left open (the cleanup design §1.4): not a rule's, the default.</summary>
+    public const string DefaultPattern = "feature/{quest}-{slug}";
 
     /// <summary>No option resolved: one instance, so a binding with none reads equal to one that never had any.</summary>
     public static readonly IReadOnlyDictionary<string, string> NoResolved = new Dictionary<string, string>();
 
     /// <summary>
-    /// The options a version's <paramref name="land"/> leaves open, resolved over the repository's <paramref name="rule"/> (LANDNODE1h; the land
-    /// node design §4): the <c>pattern</c> and the <c>plugin</c> a branch rule names, and the rule's ticket key where the pattern says
-    /// <c>{ticket}</c>. A merge has none to resolve, and an integrate no plugin. Called once, at the run's bind, and kept; a written option stands.
+    /// The options a version's <paramref name="land"/> leaves open, resolved from derived defaults and never from a rule (WORKFLOWCLEAN1 1a; the
+    /// cleanup design §1.4): the <see cref="DefaultPattern"/>, the plugin that serves the remote's platform (<paramref name="platformPlugin"/>,
+    /// null where none does), and the default key where the pattern says <c>{ticket}</c>. A merge has none to resolve, and an integrate no
+    /// plugin. Called once, at the run's bind, and kept; a written option stands.
     /// </summary>
-    public static IReadOnlyDictionary<string, string> Resolve(NodeDeclaration land, LandingRule rule)
+    public static IReadOnlyDictionary<string, string> Resolve(NodeDeclaration land, string? platformPlugin)
     {
         var method = Written(land, "method");
-        if (method == Merge || rule.Form != LandingForm.Branch) return NoResolved;
+        if (method is null or Merge) return NoResolved;
         var resolved = new Dictionary<string, string>(StringComparer.Ordinal);
         var pattern = Written(land, "pattern");
-        if (pattern is null && rule.Pattern is { } fromRule) resolved["pattern"] = pattern = fromRule;
-        if (method != Integrate && Written(land, "plugin") is null && rule.Plugin is { } plugin) resolved["plugin"] = plugin;
-        if (pattern?.Contains("{ticket}", StringComparison.Ordinal) == true && rule.Key is { } key) resolved[KeyOption] = key;
+        if (pattern is null) resolved["pattern"] = pattern = DefaultPattern;
+        if (method != Integrate && Written(land, "plugin") is null && platformPlugin is not null && method is PullRequest or Push)
+        {
+            resolved["plugin"] = platformPlugin;
+        }
+
+        // The key rides with the binding whether written or defaulted, since the landing reads it from there.
+        if (pattern.Contains("{ticket}", StringComparison.Ordinal)) resolved[KeyOption] = Written(land, KeyOption) ?? LandingKey.DefaultKey;
         return resolved.Count == 0 ? NoResolved : resolved;
     }
 
@@ -101,6 +110,14 @@ public static class LandNodes
         // A plugin left open is the repository's, resolved at the bind (LANDNODE1h), which refuses a run whose rule names none; `none` is refused here.
         if (method is Push or PullRequest && plugin == NoPlugin) return "plugin";
         if (method is Merge or Integrate && named) return "plugin";
+
+        // The ticket's key (WORKFLOWCLEAN1 1a): read only for a pattern that says {ticket}, so a merge, a pattern without it and an
+        // integrate (which names no branch by a pattern) refuse one; its shape is the landing key's to judge.
+        if (node.Options.ContainsKey(KeyOption))
+        {
+            if (Written(node, KeyOption) is not { } key || LandingKey.KeyProblem(key) is not null) return KeyOption;
+            if (method == Merge || (Written(node, "pattern") is { } written && !written.Contains("{ticket}", StringComparison.Ordinal))) return KeyOption;
+        }
 
         if (node.Options.TryGetValue("squash", out var squash))
         {

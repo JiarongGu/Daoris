@@ -34,7 +34,12 @@ public static class PlaceOperations
 
     public const string Adoption = "adoption";
 
+    /// <summary>A copy of a shipped default saved in the home (<c>WORKFLOW_SAVE</c>), before the configuration that chooses it.</summary>
+    public const string WorkflowSave = "workflow-save";
+
     public static string AdoptionOf(string repository) => $"{Adoption}:{repository}";
+
+    public static string WorkflowSaveOf(string workflow) => $"{WorkflowSave}:{workflow}";
 }
 
 /// <summary>One operation an apply authorizes and what came of it; <see cref="Quest"/> is the adoption quest once it is known.</summary>
@@ -43,6 +48,15 @@ public sealed record PlaceOperation(string Id, string Kind, string? Repository, 
     public string? Note { get; init; }
 
     public string? Quest { get; init; }
+
+    /// <summary>For a <see cref="PlaceOperations.WorkflowSave"/>: the id the copy is saved under, the default it copies and the gates it adds.</summary>
+    public string? Workflow { get; init; }
+
+    public string? Default { get; init; }
+
+    public bool Opinion { get; init; }
+
+    public bool Look { get; init; }
 }
 
 /// <summary>

@@ -473,6 +473,60 @@ public sealed record DriverConfig(
         new Dictionary<string, WorkflowChoice>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
+    /// The saved workflow a place follows where nothing above it names one (WORKFLOWCLEAN1 1a; the cleanup design §1.1): the home's default,
+    /// row 6 of the choosing order at level <see cref="WorkflowLevels.Home"/>. A fresh home is seeded once with the copy of
+    /// <c>merge-after-accept</c>. Null names none, and a place then follows Current (the transitional path, design §4.7). Older builds keep
+    /// the key and read none of it.
+    /// </summary>
+    public string? DefaultWorkflow { get; init; }
+
+    /// <summary>Set the home's default workflow, or clear it with null.</summary>
+    /// <exception cref="DriverException">An id no saved workflow may take.</exception>
+    public DriverConfig WithDefaultWorkflow(string? workflow) =>
+        workflow is not null && (!WorkflowSelection.IsWorkflow(workflow) || workflow == WorkflowSelection.Current)
+            ? throw new DriverException(WorkflowSelection.WorkflowProblem(workflow))
+            : this with { DefaultWorkflow = workflow };
+
+    /// <summary>
+    /// How each repository's line is integrated (WORKFLOWCLEAN1 1a; the cleanup design §1.4), by repository: the line's policy that was a
+    /// landing rule's <c>integrate</c>, beside the unit's process, which is the workflow's. A repository's policy replaces its workspace's whole.
+    /// Edited by <c>SET_LINE</c> alone.
+    /// </summary>
+    public IReadOnlyDictionary<string, LandingIntegrate> LinePolicies { get; init; } =
+        new Dictionary<string, LandingIntegrate>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>A workspace's line policy, for every repository in it that sets none of its own.</summary>
+    public IReadOnlyDictionary<string, LandingIntegrate> WorkspaceLinePolicies { get; init; } =
+        new Dictionary<string, LandingIntegrate>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Set a repository's line policy, or clear it with null.</summary>
+    /// <exception cref="DriverException">A policy that holds a value it does not take.</exception>
+    public DriverConfig WithLinePolicy(string repository, LandingIntegrate? policy) =>
+        this with { LinePolicies = Policy(LinePolicies, repository, policy) };
+
+    /// <summary>Set a workspace's line policy, or clear it with null.</summary>
+    public DriverConfig WithWorkspaceLinePolicy(string workspace, LandingIntegrate? policy) =>
+        this with { WorkspaceLinePolicies = Policy(WorkspaceLinePolicies, workspace, policy) };
+
+    private static IReadOnlyDictionary<string, LandingIntegrate> Policy(IReadOnlyDictionary<string, LandingIntegrate> map, string key, LandingIntegrate? policy)
+    {
+        var next = new Dictionary<string, LandingIntegrate>(map, StringComparer.OrdinalIgnoreCase);
+        if (policy is null) next.Remove(key.Trim());
+        else
+        {
+            if (LandingKey.PolicyProblem(policy, wholeSet: true) is { } problem) throw new DriverException(problem);
+            next[key.Trim()] = policy;
+        }
+
+        return next;
+    }
+
+    /// <summary>The line policy that reaches <paramref name="repository"/>: its own, else its workspace's, else null.</summary>
+    public LandingIntegrate? LinePolicyOf(string repository, string? workspace) =>
+        LinePolicies.TryGetValue(repository.Trim(), out var own) ? own
+        : WorkspaceLinePolicies.TryGetValue(RemoteTarget.Workspace(workspace), out var shared) ? shared : null;
+
+    /// <summary>
     /// The integration declaration each repository's owner accepted on this machine (INTEGRATE1d; D215 point 2, the integration design
     /// §4.1), by repository: git's blob id of the <c>daoris.gates.json</c> accepted, or <c>none</c> where the line held none. Its own
     /// acceptance beside the landed route's, never bound to a chosen workflow, so a repository needs no verification pipeline to
@@ -1168,6 +1222,10 @@ public sealed record DriverConfig(
             // Written only when set (WORKFLOW1e), as the CLI writes them: absent is Current, today's behaviour.
             WorkflowKey.WriteMap(writer, "workflows", Workflows, workspace: false);
             WorkflowKey.WriteMap(writer, "workspaceWorkflows", WorkspaceWorkflows, workspace: true);
+            // Written only when set (WORKFLOWCLEAN1 1a): absent is no home default (a place follows Current) and no line policy.
+            if (DefaultWorkflow is { } homeDefault) writer.WriteString("defaultWorkflow", homeDefault);
+            LandingKey.WritePolicies(writer, "linePolicies", LinePolicies);
+            LandingKey.WritePolicies(writer, "workspaceLinePolicies", WorkspaceLinePolicies);
             // Written only when set (INTEGRATE1d), beside the landed route's acceptance: absent is nothing accepted for integration.
             IntegrationGatesKey.WriteMap(writer, IntegrationGates);
             // Written only when set (AUTONOMY1a), as the CLI writes them: absent is today's behaviour, and nothing loosens by itself.
@@ -1627,6 +1685,11 @@ public sealed record DriverConfig(
             // An entry with a problem, or naming nothing, is not read (WORKFLOW1e).
             Workflows = WorkflowKey.Map(root, "workflows", workspace: false),
             WorkspaceWorkflows = WorkflowKey.Map(root, "workspaceWorkflows", workspace: true),
+            // A default that is no workflow's id is not read (WORKFLOWCLEAN1 1a).
+            DefaultWorkflow = root.TryGetProperty("defaultWorkflow", out var homeDefault) && homeDefault.ValueKind == JsonValueKind.String
+                && homeDefault.GetString() is { } homeId && homeId != WorkflowSelection.Current && WorkflowSelection.IsWorkflow(homeId) ? homeId : null,
+            LinePolicies = LandingKey.PolicyMap(root, "linePolicies"),
+            WorkspaceLinePolicies = LandingKey.PolicyMap(root, "workspaceLinePolicies"),
             // Read as a stored shape (INTEGRATE1d): a value that is no blob id and not `none` is not read, and shadows none.
             IntegrationGates = IntegrationGatesKey.Map(root),
             // Read as a stored shape (AUTONOMY1a): a pause this build does not know passed over, a value it does not know read as today's.
