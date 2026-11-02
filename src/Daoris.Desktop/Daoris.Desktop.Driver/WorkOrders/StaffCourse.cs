@@ -138,10 +138,12 @@ internal static class StaffCourse
                         if (condition == StaffConditions.Transient && last.Adapter is { } agent) staff.MarkNotAnswering(agent);
                         moving[quest.Id] = new StaffMoving(last.Session, condition, from);
                     }
-                    else
+                    else if (StaffJudge.OnCondition(policy, condition, new StaffLine(true, staff.Moves.Of(quest.Id).Moves)).MovesBound)
                     {
                         holds[quest.Id] = HoldMovesBound;
                     }
+
+                    // Otherwise the store would not take the move: nothing is decided, and the next look asks again. It is no bound reached.
 
                     break;
                 case LineCourse.Hold { Why: CourseHoldWhy.PolicyAsk or CourseHoldWhy.MovesBound } hold:

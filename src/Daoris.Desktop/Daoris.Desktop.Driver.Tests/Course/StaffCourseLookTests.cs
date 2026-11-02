@@ -170,6 +170,20 @@ public sealed class StaffCourseLookTests : IDisposable
     }
 
     [Fact]
+    public void A_yes_is_closed_at_the_start_it_released_and_releases_no_later_move_and_loosens_no_bound()
+    {
+        var moves = Staffed(Policy("""{"failed":{"do":"ask","after":1}}""")).Moves;
+        Assert.True(moves.Record("q1", "build", "s1", StaffConditions.Failed, StaffActions.Next, null));
+        Assert.True(moves.Approve("q1", "build"));
+        Assert.True(moves.Of("q1").Approved);
+
+        Assert.True(moves.SpendApproval("q1", "build"));
+
+        Assert.Equal(new StaffMoved(1, false), moves.Of("q1"));
+        Assert.False(moves.SpendApproval("q1", "build"));
+    }
+
+    [Fact]
     public void A_moved_off_choice_is_passed_for_thirty_minutes_and_then_not()
     {
         var staff = Staffed(Policy("""{"failed":{"do":"next","after":1}}"""));

@@ -3052,6 +3052,11 @@ public sealed class Driver(
         {
             await SayPolicyMoveAsync(service, sessionId, policyRole, quest.Id, movedByPolicy, leftPart, chosen?.From).ConfigureAwait(false);
         }
+        else
+        {
+            // A yes releases one move at the start that follows it: a start that moved nothing closes it, so it releases no later one.
+            Context.Harnesses.StaffFor(home).Moves.SpendApproval(quest.Id, policyRole);
+        }
         // A quest marked design says whose order it ran on: the role taking design, Build's while none does (FOUNDATION1x, MODELROLE1l).
         if (start.Resumes is null && StartWork(quest) == ParticipantWork.Design && DesignRoleName(start, stepRole) is { } designer)
         {

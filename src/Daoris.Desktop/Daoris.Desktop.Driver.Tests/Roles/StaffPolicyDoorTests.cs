@@ -221,6 +221,21 @@ public sealed class StaffPolicyDoorTests : IDisposable
         Assert.DoesNotContain(Catalogue().Slots, slot => slot.Id == "night");
     }
 
+    [Theory]
+    [InlineData("""{"limit":"ask"}""", "")]
+    [InlineData("""{"limit":{"do":"wait"}}""", "")]
+    [InlineData("""{"limit":"next"}""", ",\"most\":2")]
+    public void A_role_taking_a_conversations_work_is_refused_the_limit_waits_asks_and_bound_its_conversation_does_not_read(string moves, string rest)
+    {
+        var night = Role("build") with { Id = "night", Takes = [RoleWork.Chat], Scope = new RoleScope(RoleScope.Workspace, "w2") };
+        var policy = Policy("order", [(Sonnet, ""), (Opus, "")], $",\"moves\":{moves}{rest}");
+
+        var refused = Assert.Throws<RoleRefusedException>(() => RoleDoor.Apply(Staffing, RoleChange.Set(night), [Sonnet, Opus], null, new RolePolicyPress(policy)));
+
+        Assert.Contains("takes a conversation's work", refused.Message);
+        Assert.DoesNotContain(Catalogue().Slots, slot => slot.Id == "night");
+    }
+
     [Fact]
     public void A_role_the_catalogue_refuses_writes_neither_its_staffing_nor_its_policy()
     {

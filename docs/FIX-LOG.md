@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-02 - The staffing policy's course read seeded Build's policy, and six more (STAFFPOLICY1e2, REVIEW2)
+
+- **Symptom:** a scoped added role with `moves.limit: ask` was walked with no hold; the 30-minute pass never passed anything; a refused single-choice start kept its reservation; `driver retry` alone said it marked a quest and wrote no approval on a policy hold; `next` and `weighted` walked the same; a yes could release a later move; a refused store write read as the bound of moves; a conversation's role was offered a limit `ask`, `wait` and a bound nothing read.
+- **Root cause:** the course took the role from the record's `actor`, which is the seeded id on every driven record (the taken role is `binding_roles`); `StaffFacts.MovedOff` had no producer; the one-entry fast path settled before checking `Allowed`; the alone retry path judged and never wrote what `RETRY_QUEST` writes; the met action never reached `Arrange`; an approval stayed standing until a move; `Decided` answered false for a refused write and for the bound alike; the doors' enforced list ignored the role's works.
+- **Fix:** `StaffCourse.RoleOf` (the bound role, else the work's at its place) for `Look`, `LimitHolds`, the limit sites and the transient tries; `StaffMoves.LineFacts` feeds the pass and the rule of the last move (`StaffFacts.Rule`) from `BuildPlan`; `GiveBack` on a refused fast path; `RetryVerb` writes the approval and words it; `SpendApproval` closes a yes at the start that moved nothing; a refused write decides nothing instead of holding; `StaffCapabilities.Unenforced` refuses `ask`, `wait` and `most` for a role taking `chat` or `ask-daoris`.
+- **Verify:** `StaffCourseLookTests` (a scoped role, the pass, the rule, the closed yes), `StartPlanStaffTests`, `StaffPolicyDoorTests`' conversation case. Not each seen red first: the role, the rule and the door cases were reasoned against the old code, and the retry verb has no test of its own.
+
 ## 2026-11-02 - A flowchart placed by 16 px a rem under the window's zoom (CANVAS1a, trap 12)
 
 - **Symptom:** at the window's 200% a flowchart could choose top to bottom, or a track, its pane could not hold, and at 50% turn to the rail where its drawing fitted: its placement and its node track did not follow the zoom the page was drawn at.

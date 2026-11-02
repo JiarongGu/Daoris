@@ -37,6 +37,9 @@ public sealed class StaffMoves(string home, Func<StoreSettled>? settled = null, 
     /// <summary>The person's yes to a policy's ask: one move released.</summary>
     public const string Approval = "approved";
 
+    /// <summary>A yes closed at the start it released, which moved nothing.</summary>
+    public const string Spent = "spent";
+
     /// <summary>How long a move counts against the bound.</summary>
     public static readonly TimeSpan Window = TimeSpan.FromHours(24);
 
@@ -57,10 +60,17 @@ public sealed class StaffMoves(string home, Func<StoreSettled>? settled = null, 
             "SELECT id, kind FROM role_moves WHERE line = $line AND at >= $since ORDER BY id",
             row => (Id: row.GetInt64(0), Kind: row.GetString(1)), ("$line", line), ("$since", since));
         var moves = rows.Count(row => row.Kind == Moved);
-        var approvals = rows.Count(row => row.Kind == Approval);
-        var lastMove = rows.Where(row => row.Kind == Moved).Select(row => row.Id).DefaultIfEmpty(0).Max();
-        return new StaffMoved(Math.Max(0, moves - approvals), rows.Any(row => row.Kind == Approval && row.Id > lastMove));
+        // A yes closed at the start it released (Spent) was never used for a move: it cancels itself and loosens nothing.
+        var approvals = Math.Max(0, rows.Count(row => row.Kind == Approval) - rows.Count(row => row.Kind == Spent));
+        var lastClosed = rows.Where(row => row.Kind is Moved or Spent).Select(row => row.Id).DefaultIfEmpty(0).Max();
+        return new StaffMoved(Math.Max(0, moves - approvals), rows.Any(row => row.Kind == Approval && row.Id > lastClosed));
     }
+
+    /// <summary>
+    /// Close the person's standing yes for <paramref name="line"/> at the start it released, when that start moved nothing: an approval releases
+    /// one move at the start that follows it and is not kept for a later one. False where none stood or the store would not take it.
+    /// </summary>
+    public bool SpendApproval(string line, string role) => Of(line).Approved && Write(line, role, Spent, null, null, null, null, null);
 
     /// <summary>
     /// Count a move off <paramref name="from"/> on <paramref name="condition"/> by <paramref name="action"/>, made in <paramref name="session"/>
