@@ -92,14 +92,17 @@ public sealed class StaffMoves(string home, Func<StoreSettled>? settled = null, 
         var now = Clock.GetUtcNow();
         var since = StaffJson.Moment(now - StaffJudge.Hold);
         var off = new Dictionary<StaffKey, DateTimeOffset>();
-        foreach (var (from, at) in store.Query(
-                     "SELECT from_choice, at FROM role_moves WHERE line = $line AND kind = $kind AND from_choice IS NOT NULL AND at >= $since ORDER BY id",
-                     row => (row.GetString(0), row.GetString(1)), ("$line", line), ("$kind", Moved), ("$since", since)))
+        string? rule = null;
+        foreach (var (from, at, action) in store.Query(
+                     "SELECT from_choice, at, action FROM role_moves WHERE line = $line AND kind = $kind AND from_choice IS NOT NULL AND at >= $since ORDER BY id",
+                     row => (row.GetString(0), row.GetString(1), row.IsDBNull(2) ? null : row.GetString(2)), ("$line", line), ("$kind", Moved), ("$since", since)))
         {
             if (StaffKey.Read(from) is { } key && DateTimeOffset.TryParse(at, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var when)) off[key] = when;
+            // The latest move's action names the rule of the walk it moves.
+            rule = action == StaffActions.Weighted ? StaffRules.Weight : action == StaffActions.Next ? StaffRules.Order : rule;
         }
 
-        return new StaffFacts { MovedOff = off };
+        return new StaffFacts { MovedOff = off, Rule = rule };
     }
 
     /// <summary>The person's yes to <paramref name="line"/>'s policy ask or bound: one move released. False where the store would not take it.</summary>

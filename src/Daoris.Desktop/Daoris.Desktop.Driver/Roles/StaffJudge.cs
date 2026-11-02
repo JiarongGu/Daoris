@@ -28,6 +28,12 @@ public sealed record StaffFacts
     /// <summary>Each choice this line moved off, when.</summary>
     public IReadOnlyDictionary<StaffKey, DateTimeOffset> MovedOff { get; init; } = new Dictionary<StaffKey, DateTimeOffset>();
 
+    /// <summary>
+    /// The rule this walk arranges by where the line's move named one (<c>weighted</c> by weight, <c>next</c> by the stored order), else null for
+    /// the role's own (STAFFPOLICY1e2): the met action overrides the arrangement's rule for the walk it moves.
+    /// </summary>
+    public string? Rule { get; init; }
+
     /// <summary>The moment the marks and the hold are read at.</summary>
     public DateTimeOffset Now { get; init; }
 }
@@ -124,6 +130,7 @@ public static class StaffJudge
     /// <param name="facts">The window, the reservations, today's counts, the marks and the line's moves off.</param>
     public static StaffArrangement Arrange(StaffPolicy? policy, string work, IReadOnlyList<ActorEffective> order, StaffFacts facts)
     {
+        if (policy is not null && facts.Rule is { } overriding && overriding != policy.Rule) policy = policy with { Rule = overriding };
         if (policy is null || order.Count == 0 || !order.All(entry => Own(entry.From)))
         {
             return new StaffArrangement(

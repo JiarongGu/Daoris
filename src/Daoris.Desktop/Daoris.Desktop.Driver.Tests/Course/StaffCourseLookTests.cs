@@ -155,6 +155,20 @@ public sealed class StaffCourseLookTests : IDisposable
         Assert.Equal(5, TransientRetry.Bound);
     }
 
+    [Theory]
+    [InlineData(StaffActions.Weighted, StaffRules.Weight)]
+    [InlineData(StaffActions.Next, StaffRules.Order)]
+    public void The_met_action_names_the_rule_of_the_walk_it_moves_whatever_the_roles_own_rule_is(string action, string rule)
+    {
+        var staff = Staffed(Policy("""{"failed":{"do":"next","after":1}}""").Replace("\"rule\":\"order\"", rule == StaffRules.Order ? "\"rule\":\"weight\"" : "\"rule\":\"order\""));
+        Assert.True(staff.Moves.Record("q1", "build", "s1", StaffConditions.Failed, action, new StaffKey("acp-stub", "sonnet", "low").Text));
+
+        Assert.Equal(rule, staff.Moves.LineFacts("q1").Rule);
+        Assert.Null(staff.Moves.LineFacts("another").Rule);
+        IReadOnlyList<ActorEffective> order = [new("acp-stub", "sonnet", "low", "1"), new("acp-other", "codex-mini", "high", "2")];
+        Assert.Equal(rule, staff.Preview("build", RoleWork.Build, order, staff.Moves.LineFacts("q1")).Arrangement.Rule);
+    }
+
     [Fact]
     public void A_moved_off_choice_is_passed_for_thirty_minutes_and_then_not()
     {
