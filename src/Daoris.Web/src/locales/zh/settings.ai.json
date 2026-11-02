@@ -197,7 +197,7 @@
   "settings.ai.policy.limits.tokens": "每天 {{count}} 个已报告的令牌",
   "settings.ai.policy.limits.tokens_other": "每天 {{count}} 个已报告的令牌",
   "settings.ai.policy.limits.share": "最多占新启动的 {{count}}%",
-  "settings.ai.policy.limits.shareLabel": "最多占新启动的比例（%）",
+  "settings.ai.policy.limits.shareLabel": "新启动的占比上限（%）",
   "settings.ai.policy.limits.shareOf": "第 {{n}} 个选择的占比（百分比）",
   "settings.ai.policy.limits.budgetLabel": "每日预算",
   "settings.ai.policy.limits.budgetOf": "第 {{n}} 个选择的每日预算",
