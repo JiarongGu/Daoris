@@ -170,6 +170,23 @@ describe('the editor a door asked a place to open', () => {
   });
 });
 
+// REVIEW2 P5: the step editor's draft outlives the section that drew it, for its place alone, until the editor is closed.
+describe('the draft the step editor keeps above the mount', () => {
+  const kept = { route: 'default', editor: null };
+
+  it('is held for a place, and let go when the editor closes', () => {
+    const { result } = renderHook(() => usePlaceShell());
+    expect(result.current.holdOf('p1')).toBeNull();
+
+    act(() => result.current.hold('p1', kept));
+    expect(result.current.holdOf('p1')).toEqual(kept);
+    expect(result.current.holdOf('p2')).toBeNull();
+
+    act(() => result.current.hold('p1', null));
+    expect(result.current.holdOf('p1')).toBeNull();
+  });
+});
+
 describe('the head: its pill and the facts under the title', () => {
   const NOT_DRIVEN: PlaceRow = { ...ENGINE, repository: 'site', driven: false, trees: false, adopted: false, adoption: 'none', works: [] };
 

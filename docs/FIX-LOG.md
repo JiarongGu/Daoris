@@ -5,6 +5,69 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-02 - The editor's draft was lost whenever the editor unmounted (REVIEW2 P5)
+
+- **Symptom:** a fold, *Set up…*, *Change…* or a change of layout that unmounted the place's Workflow section threw away the step editor's draft and its undo history.
+- **Root cause:** the history, target, baseline and consent lived only in `WorkflowEditor`'s state, and the place page mounts the chart at different tree positions by layout and replaces it by other panels.
+- **Fix:** the editor reports `EditorHold` and begins from one; `usePlaceShell` holds it per place (`holdOf`, `hold`) with the route and start the editor opened on, and the section restores the panel from it. *Change…* asks before it replaces an editor that holds changes; closing the editor lets the draft go. The chart is still drawn at two tree positions by layout, which a restored draft makes harmless; the selection and the open drawer are not held.
+- **Verify:** `PlaceWorkflowView.test.tsx` (keep the draft, ask before Change…; red first) and `placeShell.test.ts`.
+
+## 2026-11-02 - The page's set-up card did not draw that the repository is admitted alone (REVIEW2 S6, page half)
+
+- **Symptom:** `SETUP_PLAN` now carries `alone` and the Ask Daoris card says it, but the set-up card on the page drew nothing of it.
+- **Root cause:** `SetupShown` had no `alone`, and `SetupPlanFacts` drew no row for it.
+- **Fix:** `SetupShown.alone`, and an *Admission* fact in `SetupPlanFacts` (both catalogues) when it is true.
+- **Verify:** `SetUpForAgents.test.tsx` (red first).
+
+## 2026-11-02 - Clear on a git access class loosened it without asking (REVIEW2 P3)
+
+- **Symptom:** *Clear* on a class set at this level sent `{access: {class: null}}` at once, though the level above could be looser (the design's §8 lists that as a widening to confirm).
+- **Root cause:** `onClear` called `send` directly; only a chosen value went through the widening check.
+- **Fix:** `GitAccessRows` takes the level above's resolution (`above`; this machine's is Daoris's defaults) and sends a clear through `choose(…)`, so a looser parent opens the `InlineConfirm`.
+- **Verify:** `GitAccess.test.tsx` (REVIEW2 P3, red first); the file's older Write sentence updated to the git-remote words.
+
+## 2026-11-02 - The confirmation for a remote's own sign-ins could be skipped (REVIEW2 P2)
+
+- **Symptom:** choosing *Own sign-ins* on a git remote opened the confirmation; *Never mind* or Escape closed it and left Save enabled with the choice still `own`, which sent `GIT_USE {value: 'own'}` unconfirmed.
+- **Root cause:** closing the confirmation cleared `asking` only, so the widening choice stayed while Save was enabled by the difference from what stands.
+- **Fix:** closing puts the choice back to what stands, and Save opens the confirmation whenever the choice is `own`.
+- **Verify:** `GitRemotes.test.tsx` (REVIEW2 P2, red first).
+
+## 2026-11-02 - On Landed work, Use here wrote the default route's choice (REVIEW2 P1)
+
+- **Symptom:** an open *Change…* or editor panel stayed open when *Landed work* was picked; its *Use here* reached `WORKFLOW_USE` with no kind, which the driver reads as the default route.
+- **Root cause:** the panel took the route from the page's current selection at every render, and only the two opening buttons were hidden on the landed route.
+- **Fix:** the panel records the route it opened on and keys *Change…* and the editor by it, writing for that route alone; on the landed route no panel is drawn (it is kept, and shows again on a route it can write for).
+- **Verify:** `PlaceWorkflowView.test.tsx` (REVIEW2 P1, red first).
+
+## 2026-11-02 - A draft card's Open in the editor took the told draft for the saved version (REVIEW2 P4)
+
+- **Symptom:** *Use here* on an editor opened from a draft card chose a saved version without the draft's changes, and the save review compared the draft with itself.
+- **Root cause:** the editor set its baseline to `startFrom.graph`, which for a card is the draft the conversation was told, not version `base`.
+- **Fix:** a start marked `told` leaves the baseline unknown, reads `WORKFLOW_SHOW {id, version: base}` (`onShow` takes an optional version) and sets the baseline to that body; until then *Use here* is unsaved.
+- **Verify:** `WorkflowEditor.save.test.tsx` (two REVIEW2 P4 cases; the first red first).
+
+## 2026-11-02 - A role saved from Taken by was applied to the draft as it was at the press (REVIEW2 P7)
+
+- **Symptom:** a change made to the draft while a role's save was on its way was lost when the save answered; the step named the role on the old draft.
+- **Root cause:** the inspector's option setter closed over the render's draft, and the role editor called it after `SET_ROLE` answered.
+- **Fix:** `InspectorActs.onOption` sets the option on the editor's newest draft (a ref set each render), so an answer lands on what the draft is by then.
+- **Verify:** `WorkflowEditor.staffing.test.tsx` (REVIEW2 P7, red first).
+
+## 2026-11-02 - The inspector carried an open role editor and typed fields to the next step (REVIEW2 P6)
+
+- **Symptom:** a role editor opened on one step stayed open on the next step chosen, and its save put that role on the other step; the gates field kept its typed text.
+- **Root cause:** `<Inspector>` was not keyed by step, so the role editor's state and the uncontrolled gates field survived a change of node.
+- **Fix:** `<Inspector key={node.id}>`: a step's inspector begins fresh.
+- **Verify:** `WorkflowEditor.staffing.test.tsx` (REVIEW2 P6, red first).
+
+## 2026-11-02 - Change… previewed one version and Use here chose another (REVIEW2 P8)
+
+- **Symptom:** the preview drew the version `WORKFLOW_SHOW` answered; *Use here* sent the newest version `WORKFLOW_LIST` named, which could be another.
+- **Root cause:** `ChangeWorkflow` took `versions.at(-1)` for the ask, independent of `shown`.
+- **Fix:** the ask carries `shown.version` of the selected workflow; until that preview is read, *Use here* is disabled.
+- **Verify:** `ChangeWorkflow.test.tsx` (two REVIEW2 P8 cases, red first).
+
 ## 2026-11-02 - The room said an off or unreadable role runs the machine's defaults (REVIEW2 S4)
 
 - **Symptom:** a role whose stored choices are empty (off) or whose `actors` entry does not read was said to have "no choices of its own, so this machine's defaults run".

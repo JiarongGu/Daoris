@@ -64,7 +64,7 @@ const valueName = (t: TFunction, value: string) => (value === 'as-today' ? t('se
  * lets happen, and only its press sends it; a tightening and a clear send at once. The route carries no flag for it. A refusal is
  * said under the row that was pressed, in the driver's sentence. A molecule: every state is reached by its props.
  */
-export function GitAccessRows({ owner, name, workspace, classes, busy = false, onChange }: {
+export function GitAccessRows({ owner, name, workspace, classes, above, busy = false, onChange }: {
   owner: GitAccessOwner;
   /** The repository's or the workspace's name; this machine has none. */
   name?: string;
@@ -72,6 +72,8 @@ export function GitAccessRows({ owner, name, workspace, classes, busy = false, o
   workspace?: string;
   /** Each class as it resolves at this level, with where it was set. */
   classes: readonly ResolvedGitClass[];
+  /** Each class as the level above resolves it (this machine's: Daoris's defaults), which a *Clear* gives the class back to. */
+  above: readonly ResolvedGitClass[];
   busy?: boolean;
   /** A change at this level, and how to answer the row it was pressed in. */
   onChange: (edit: GitAccessEdit, answered?: Answered) => void;
@@ -145,7 +147,7 @@ export function GitAccessRows({ owner, name, workspace, classes, busy = false, o
             own={each.source === owner}
             busy={busy}
             refusal={refusals[cls] ?? null}
-            onClear={() => send(cls, { access: { [cls]: null } })}
+            onClear={() => choose(cls, cls, each.value, above.find((one) => one.class === cls)?.value ?? each.value, { access: { [cls]: null } })}
             editor={() => (
               <>
                 <Segmented

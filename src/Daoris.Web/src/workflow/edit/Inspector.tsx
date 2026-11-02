@@ -5,7 +5,7 @@ import type { EditorRole, GraphProblem, StepStaffing, WorkflowPaletteAnswer } fr
 import { choiceLabel, optionLabel, plain, previewPattern, stepAbout, stepTitle, waySaid } from './editWords';
 import {
   addWire, askedInputs, carryOf, choiceOf, type DraftNode, type GraphDraft, givesOf, inputsOf, joinModeOf, joinOf, landOptionApplies, moreWaysOf, movePlan,
-  optionOf, removeWire, setCarry, setEnd, setJoinMode, setLandMethod, setOption, sourcesOf, tailOf, triggerTargetsOf,
+  optionOf, removeWire, setCarry, setEnd, setJoinMode, setLandMethod, sourcesOf, tailOf, triggerTargetsOf,
 } from './graphDraft';
 import { Refusals } from './Refusals';
 import { StepOptions } from './StepOptions';
@@ -23,6 +23,8 @@ export type Confirming = 'remove' | 'earlier' | 'later' | null;
 /** What the inspector asks of the page beyond a row's ways: a change made, a step after, a move, a copy, a duplicate, a removal. */
 export type InspectorActs = WaysActs & {
   onChange: (draft: GraphDraft, said: string) => void;
+  /** A step's option set on the newest draft, not the one this render held: a role saved after a press lands on what the draft is by then. */
+  onOption: (option: string, value: string | boolean | string[] | undefined, said: string) => void;
   onAfter: () => void;
   onMove: (dir: 'earlier' | 'later') => void;
   onDuplicate: () => void;
@@ -102,7 +104,7 @@ export function Inspector({ palette, draft, roles, place, staffing, lines, node,
               }));
               return;
             }
-            acts.onChange(setOption(draft, id, option, value), t('workflow.edit.said.option', { step: title, option: optionLabel(t, node.kind, option) }));
+            acts.onOption(option, value, t('workflow.edit.said.option', { step: title, option: optionLabel(t, node.kind, option) }));
           }} />
       )}
 

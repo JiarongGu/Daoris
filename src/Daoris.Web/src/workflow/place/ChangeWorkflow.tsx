@@ -190,11 +190,12 @@ export function ChangeWorkflow({
 
   // What selecting asks of the driver: the choice as it would be pressed, or none for a preset, which is stored by a copy.
   const selectedSaved = selected?.startsWith('saved:') ? saved.find((each) => keyOf.saved(each.id) === selected) : undefined;
-  const newest = selectedSaved?.versions.at(-1);
+  // The version chosen is the one the preview draws, so the press cannot choose another than the person read.
+  const previewed = selectedSaved && shown?.id === selectedSaved.id ? shown.version : undefined;
   const ask: WorkflowUseAsk | null =
     selected === keyOf.current ? { ...at, workflow: CURRENT }
       : selected === keyOf.clear ? at
-        : selectedSaved && newest !== undefined && selectedSaved.problem === null ? { ...at, workflow: selectedSaved.id, version: newest }
+        : selectedSaved && previewed !== undefined && selectedSaved.problem === null ? { ...at, workflow: selectedSaved.id, version: previewed }
           : null;
   const askKey = ask === null ? '' : JSON.stringify(ask);
   const announced = list?.use?.includes('plan') === true && onPlan !== undefined;
@@ -303,13 +304,13 @@ export function ChangeWorkflow({
     return null;
   };
 
-  const useHere = (name: string, what: WorkflowUseAsk) => (
+  const useHere = (name: string, what: WorkflowUseAsk | null) => (
     <Button
       variant="ghost"
       className={small}
-      disabled={using || saving || (planned && token === null)}
+      disabled={what === null || using || saving || (planned && token === null)}
       aria-label={t('workflow.place.change.use', { name })}
-      onClick={() => press(what)}
+      onClick={() => { if (what) void press(what); }}
     >
       {t('workflow.edit.use')}
     </Button>
@@ -446,7 +447,7 @@ export function ChangeWorkflow({
               </Button>
             </>
           )}
-          {selectedSaved && ask && !chosenOnRoute(selectedSaved) && useHere(name, ask)}
+          {selectedSaved && selectedSaved.problem === null && !chosenOnRoute(selectedSaved) && useHere(name, ask)}
           {selected === keyOf.current && ask && useHere(name, ask)}
         </div>
         {selectedPreset && copying && (

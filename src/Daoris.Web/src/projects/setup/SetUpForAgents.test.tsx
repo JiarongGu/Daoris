@@ -47,6 +47,20 @@ describe('setting a repository up for agents', () => {
     expect(doors.onPress).toHaveBeenCalledOnce();
   });
 
+  it('says an undriven repository\'s set-up quest is admitted and started alone, and says nothing of it otherwise', async () => {
+    const { unmount } = render(
+      <SetUpForAgents repository="newbie" plan={{ ...NEWBIE_SETUP, alone: true }} reading={false} pressing={false} pressed={null} problem={null}
+        onLook={vi.fn()} onPress={vi.fn()} onClose={vi.fn()} />,
+    );
+    const facts = screen.getByLabelText('What a setup of newbie would ask');
+    expect(within(facts).getByText('Admission')).toBeInTheDocument();
+    expect(within(facts).getByText(/not driven here.*admitted alone.*its other work stays held/)).toBeInTheDocument();
+    unmount();
+
+    show({ plan: NEWBIE_SETUP });
+    expect(screen.queryByText('Admission')).toBeNull();
+  });
+
   // ORIENT2c: a repository set up and naming no index is asked its index, and the rule is the generator's own commands.
   it('names the index quest a set-up repository is asked, and the generator commands its rule adds', () => {
     const rules = ['Bash(daoris --version)', 'Bash(node tools/index.mjs)', 'Bash(node tools/index.mjs --check)'];

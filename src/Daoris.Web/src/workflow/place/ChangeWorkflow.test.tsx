@@ -157,6 +157,25 @@ describe('Change…: selecting a candidate against a driver that announces no pl
     expect(onPlan).not.toHaveBeenCalled();
   });
 
+  it('chooses the version the preview draws, not the newest the list holds (REVIEW2 P8)', async () => {
+    const { onUse } = draw({ shown: { ...SHOWN, version: 1, newest: false } });
+
+    await userEvent.click(tab('Saved here'));
+    await pick('Verify the docs first');
+    await userEvent.click(screen.getByRole('button', { name: 'Use Verify the docs first here' }));
+
+    expect(onUse).toHaveBeenCalledWith({ repository: 'engine', workflow: 'verify-docs', version: 1 });
+  });
+
+  it('offers no *Use here* on a saved workflow until its preview is read (REVIEW2 P8)', async () => {
+    draw({ shown: null });
+
+    await userEvent.click(tab('Saved here'));
+    await pick('Verify the docs first');
+
+    expect(screen.queryByRole('button', { name: 'Use Verify the docs first here' })).toBeDisabled();
+  });
+
   it('chooses Current by name', async () => {
     const { onUse } = draw();
 
@@ -314,6 +333,7 @@ describe('Change…: the plan of one, where the driver announces it', () => {
       onPlan,
       route: { key: 'kind:docs', kind: 'docs', label: 'Documentation', own: false },
       effective: EFFECTIVE_DOCS,
+      shown: { ...SHOWN, id: 'docs-release', name: 'Docs release' },
     });
 
     await userEvent.click(tab('Saved here'));

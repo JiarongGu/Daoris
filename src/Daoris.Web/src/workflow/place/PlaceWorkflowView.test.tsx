@@ -6,7 +6,7 @@ import { type ReactElement, useState } from 'react';
 import i18n from '../../locales/i18n';
 import { code } from '../../test/code';
 import { PlaceAside } from '../../agents/setup/placeAside';
-import type { PlaceView } from '../../agents/setup/placeShell';
+import type { PlaceFlowHold, PlaceView } from '../../agents/setup/placeShell';
 import type { CurrentWorkflow, WorkflowEffective } from '../current';
 import { LIST, PALETTE } from '../edit/editFixtures';
 import {
@@ -306,6 +306,76 @@ describe('Change… and Edit steps…', () => {
     expect(screen.getByRole('heading', { name: 'Compose a workflow' })).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Never mind' }));
     expect(onOpen).toHaveBeenLastCalledWith(false);
+  });
+
+  // REVIEW2 P1: Landed work is chosen only by its own press, so no panel opened on another route may reach a choice while it is the route shown.
+  it('stay out of the way on the landed route: Use here is not offered there, and the panel is for the route it opened on', async () => {
+    const using = editor();
+    draw({ editor: { ...using, onShow: vi.fn() }, current: withRoute(EFFECTIVE_CURRENT) });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Change…' }));
+    await userEvent.click(routeRow(/^Landed work:/));
+    expect(screen.queryByRole('region', { name: 'Change what its work follows' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Use / })).toBeNull();
+
+    await userEvent.click(routeRow(/^Default work:/));
+    await userEvent.click(screen.getByRole('button', { name: 'Edit steps…' }));
+    await userEvent.click(routeRow(/^Landed work:/));
+    expect(screen.queryByRole('heading', { name: 'Compose a workflow' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Use here' })).toBeNull();
+  });
+
+  // REVIEW2 P5: the editor's draft is kept above the mount, so a fold, *Set up…* or a layout change that unmounts the section leaves it as it was.
+  function Kept(props: Partial<Parameters<typeof Held>[0]>) {
+    const [held, setHeld] = useState<PlaceFlowHold | null>(null);
+    const [mounted, setMounted] = useState(true);
+    return (
+      <>
+        <button type="button" onClick={() => setMounted((was) => !was)}>toggle section</button>
+        {mounted && <Held {...props} held={held} onHold={setHeld} />}
+      </>
+    );
+  }
+  const duplicated = async () => {
+    await userEvent.click(await screen.findByRole('listitem', { name: 'find by local-release' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Duplicate' }));
+  };
+
+  it('keep the draft when the section unmounts and mounts again, and ask before Change… replaces a draft with changes in it', async () => {
+    render(<Kept editor={editor()} current={withRoute(EFFECTIVE_RELEASE, SAVED_DEFAULT)} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Edit steps…' }));
+    await duplicated();
+    expect(screen.getByRole('button', { name: 'Undo' })).toBeEnabled();
+
+    await userEvent.click(screen.getByRole('button', { name: 'toggle section' }));
+    expect(screen.queryByRole('heading', { name: 'Compose a workflow' })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'toggle section' }));
+    // The editor is back on the draft, history and all.
+    expect(await screen.findByRole('heading', { name: 'Compose a workflow' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Undo' })).toBeEnabled();
+
+    // Change… asks first; giving up keeps the editor, going on replaces it and lets the draft go.
+    await userEvent.click(screen.getByRole('button', { name: 'Change…' }));
+    expect(screen.getByText(/not saved and cannot be got back/)).toBeInTheDocument();
+    // The editor's own Cancel is also *Never mind*; the confirmation stands before it.
+    await userEvent.click(screen.getAllByRole('button', { name: 'Never mind' })[0]!);
+    expect(screen.queryByText(/not saved and cannot be got back/)).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Compose a workflow' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Change…' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Discard the changes' }));
+    expect(await screen.findByRole('region', { name: 'Change what its work follows' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'toggle section' }));
+    await userEvent.click(screen.getByRole('button', { name: 'toggle section' }));
+    expect(screen.queryByRole('heading', { name: 'Compose a workflow' })).toBeNull();
+  });
+
+  it('do not ask before Change… where the editor holds no changes', async () => {
+    render(<Kept editor={editor()} current={withRoute(EFFECTIVE_RELEASE, SAVED_DEFAULT)} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Edit steps…' }));
+    await screen.findByRole('heading', { name: 'Compose a workflow' });
+    await userEvent.click(screen.getByRole('button', { name: 'Change…' }));
+    expect(screen.queryByText(/not saved and cannot be got back/)).toBeNull();
+    expect(await screen.findByRole('region', { name: 'Change what its work follows' })).toBeInTheDocument();
   });
 
   // SETUPUX1r: Edit steps… opens on the graph the selected route follows, and tells the editor the route and pipeline it was opened for.
