@@ -1406,6 +1406,38 @@ public sealed class PipeConfirmTests : Bridge
         Assert.Equal(0, driver.Ran);
     }
 
+    /// <summary>
+    /// REVIEW2 T3: a token pasted into a git identity's press is refused whole over the real pipe: no card is raised, nothing is kept in
+    /// the waiting records and the secret is in no file of the home, the machine log included.
+    /// </summary>
+    [Fact]
+    public async Task A_git_identity_press_carrying_a_token_is_refused_asking_nothing_and_the_token_is_kept_nowhere()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        const string Secret = "tok-review2-not-a-secret-9f3c";
+        var (pipe, client, driver, services, log) = await ServeAsync();
+        using var _ = services;
+        using var __ = log;
+        using var ___ = pipe;
+        await using var ____ = client;
+
+        var id = await client.SendAsync(DriverModule.Name, "GIT_IDENTITY", new { action = "add-https", host = "github.com", token = Secret });
+        var answer = await client.AnswerAsync(id);
+
+        Assert.Equal(InstancePipe.Shape, Code(answer));
+        Assert.Contains("never sent over the pipe", answer.GetRawText(), StringComparison.Ordinal);
+        Assert.Empty(pipe.Confirmations.Now().Waiting);
+        Assert.Empty(Records());
+        Assert.Equal(0, driver.Ran);
+        Assert.Empty(Confirmations());
+        foreach (var path in Directory.GetFiles(Home, "*", SearchOption.AllDirectories))
+        {
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+            using var reader = new StreamReader(stream);
+            Assert.DoesNotContain(Secret, reader.ReadToEnd(), StringComparison.Ordinal);
+        }
+    }
+
     private static async Task<JsonElement> Withdraw(PipeClient client, string id)
     {
         var answer = await client.AnswerAsync(await client.SendAsync(InstancePipe.Module, "WITHDRAW", new { id, key = client.KeyOf(id) }));
