@@ -207,24 +207,6 @@ test('a focus walked off screen scrolls nothing and is revealed, and Tab reaches
   expect(stops).toBe(1);
 });
 
-test('a resize draws the edges once in the viewport (trap 14), and a gesture holds will-change only while it lasts (trap 9)', async ({ page }) => {
-  await open(page, 'editor/Release');
-  const pane = page.locator('[data-canvas-world] [data-drawn]').first();
-  const was = Number(await pane.getAttribute('data-drawn'));
-  await page.evaluate(() => { document.querySelector<HTMLElement>('[data-main-width]')!.style.width = '76rem'; });
-  await expect.poll(async () => Number(await pane.getAttribute('data-drawn'))).toBe(was + 1);
-  await page.waitForTimeout(400);
-  expect(Number(await pane.getAttribute('data-drawn'))).toBe(was + 1);
-
-  const world = page.locator('[data-canvas-world]').first();
-  const box = (await region(page).boundingBox())!;
-  await page.mouse.move(box.x + box.width / 2, box.y + 60);
-  await page.mouse.wheel(0, 120);
-  expect(await world.evaluate((element) => (element as HTMLElement).style.willChange)).toBe('transform');
-  await page.waitForTimeout(400);
-  expect(await world.evaluate((element) => (element as HTMLElement).style.willChange)).toBe('');
-});
-
 for (const level of [50, 100, 200]) {
   test(`at the window's ${level}%, a rem is the root's and the track and placement are what the layout needs (trap 12)`, async ({ page }) => {
     // The canvas's own story at 39rem: the editor beside its inspector sizes its columns by its own measure.
@@ -312,9 +294,25 @@ const SIZES: Record<string, { nodes: number; target: number }> = {
   'canvas/Dense:whole': { nodes: 0, target: 16.7 },
 };
 
-// REVIEW2 T10 (FLAKE1): a frame time under load is a timed claim, so a timed spec that fails runs once more alone before it counts, as a Process class does.
+// MEASUREDALONE1: a claim bound to the wall clock is a timed spec; the merge tool re-runs a timed spec that failed, alone, as a Process class is.
 test.describe('timed', () => {
-test.describe.configure({ retries: 1 });
+test('a resize draws the edges once in the viewport (trap 14), and a gesture holds will-change only while it lasts (trap 9)', async ({ page }) => {
+  await open(page, 'editor/Release');
+  const pane = page.locator('[data-canvas-world] [data-drawn]').first();
+  const was = Number(await pane.getAttribute('data-drawn'));
+  await page.evaluate(() => { document.querySelector<HTMLElement>('[data-main-width]')!.style.width = '76rem'; });
+  await expect.poll(async () => Number(await pane.getAttribute('data-drawn'))).toBe(was + 1);
+  await page.waitForTimeout(400);
+  expect(Number(await pane.getAttribute('data-drawn'))).toBe(was + 1);
+
+  const world = page.locator('[data-canvas-world]').first();
+  const box = (await region(page).boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + 60);
+  await page.mouse.wheel(0, 120);
+  expect(await world.evaluate((element) => (element as HTMLElement).style.willChange)).toBe('transform');
+  await page.waitForTimeout(400);
+  expect(await world.evaluate((element) => (element as HTMLElement).style.willChange)).toBe('');
+});
 for (const [story, { nodes, target }] of Object.entries(SIZES)) {
   test(`${story}: p95 frame within ${target} ms while panning and zooming, and no long frame at rest`, async ({ page }) => {
     test.setTimeout(240_000);
