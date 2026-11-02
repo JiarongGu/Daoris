@@ -72,6 +72,18 @@ public static class WorkflowDefaults
     }
 
     /// <summary>
+    /// The shipped default a copy is behind (WORKFLOWCLEAN1h; the cleanup design §1.1): the one its newest version's <c>from</c> names, where this build
+    /// ships a digest other than the one stamped, with the graph the copy's next version would be, which keeps the gates the copy has. Null for a
+    /// copy that is up to date, one stamped by none, or one copied from a default this build no longer ships.
+    /// </summary>
+    public static ShippedNewer? NewerThan(WorkflowFrom? from, NodeGraph? copy)
+    {
+        if (from is null || copy is null || Of(from.Default) is not { } shipped || shipped.Digest == from.Digest) return null;
+        var made = Copy(shipped, copy.Nodes.Any(node => node.Kind == NodeKinds.Opinion), copy.Nodes.Any(node => node.Kind == NodeKinds.Look));
+        return new ShippedNewer(shipped.Id, shipped.Name, made.Graph);
+    }
+
+    /// <summary>
     /// Whether every path a kind of task keeps to is a document's (the <c>documents</c> default is for such a kind): a text file by its extension,
     /// or anything under a <c>docs</c> or <c>doc</c> folder at the top. No paths is no such kind.
     /// </summary>

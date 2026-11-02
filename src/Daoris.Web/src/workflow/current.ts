@@ -152,6 +152,11 @@ export interface WorkflowEffective {
   /** Each limit a cell carries, by its code, in the driver's own words. */
   limits: Record<string, string>;
   problem: string | null;
+  /**
+   * A copy of a shipped default that this build ships changed since (WORKFLOWCLEAN1h-b): the default's id and English name, and the graph the
+   * copy's next version would be, with the gates the copy has. Absent or null where the copy is up to date.
+   */
+  newer?: { default: string; name: string; graph: unknown } | null;
 }
 
 /** What `WORKFLOW_CURRENT` answers. */

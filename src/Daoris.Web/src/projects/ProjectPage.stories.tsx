@@ -7,7 +7,7 @@ import { storyWidths } from '../design/storyWidths';
 import { FULL, NOTHING_SET, PLUGIN_UNREADY } from '../workflow/fixtures';
 import {
   CJK, COUNTS, ELSEWHERE, ENGINE, GAME, GIT_BRANCHES_ENGINE, GIT_HISTORY_ENGINE, GIT_HISTORY_PAGES, LINE, MIRRORED, NEWBIE,
-  SETUP_DEFAULTS, SETUP_INTEGRATING, SETUP_INTEGRATING_REFUSED, SETUP_OWN, SETUP_PROCESS, SETUP_PROCESS_OWN, UNDECLARED,
+  SETUP_DEFAULTS, SETUP_INTEGRATING, SETUP_OWN, SETUP_PROCESS, SETUP_PROCESS_OWN, UNDECLARED,
 } from './fixtures';
 import { ProjectPage, ProjectsMainNotice } from './ProjectPage';
 import { BranchesTab, type GitRead, HistoryTab, type HistoryRead } from './git/RepositoryGit';
@@ -599,9 +599,6 @@ export const SetupIntegratingNarrow: Story = { ...SetupNarrow, args: { start: 's
 
 /** The integrate form in 中文. */
 export const SetupIntegratingChinese: Story = { args: { start: 'setup', setup: opened('work', SETUP_INTEGRATING) }, decorators: [chinese] };
-
-/** The driver refused the save: LandingKey's sentence stands under *Save*, the page having judged nothing. */
-export const SetupIntegratingRefused: Story = { args: { start: 'setup', setup: opened('work', SETUP_INTEGRATING_REFUSED) } };
 
 /** Nothing chosen: how to choose, and the list's ＋ on a shell. */
 export const NothingChosen: Story = {

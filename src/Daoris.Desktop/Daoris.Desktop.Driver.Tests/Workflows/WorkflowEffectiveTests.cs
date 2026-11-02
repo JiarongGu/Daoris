@@ -219,6 +219,46 @@ public sealed class WorkflowEffectiveTests : IDisposable
         Assert.Contains("v2 cannot be read here", effective.Problem);
     }
 
+    private void SaveCopy(string id, string digest, bool opinion = false)
+    {
+        var shipped = WorkflowDefaults.Of("integrated")!;
+        var planned = WorkflowOperations.PlanGraph(_home, null, id, null, shipped.Name, "terminal", "2026-11-01T09:00:00Z",
+            WorkflowPresets.WithGraphGates(shipped.Graph(), opinion, look: false), new WorkflowFrom(shipped.Id, digest));
+        Store.Write(id, planned.Plan.Result!);
+    }
+
+    /// <summary>WORKFLOWCLEAN1h: a copy stamped with an older shipped digest is offered the shipped graph, with the gates the copy has.</summary>
+    [Fact]
+    public void A_copy_of_a_default_Daoris_ships_changed_since_offers_the_shipped_graph_with_its_gates()
+    {
+        var shipped = WorkflowDefaults.Of("integrated")!;
+        SaveCopy("old", "0000", opinion: true);
+        SaveCopy("uptodate", shipped.Digest);
+        DriverConfig Choosing(string id) => Edit(DriverConfig.Empty, new WorkflowUse(id, Repo, null, null));
+
+        var newer = Read(Choosing("old"), "default").Newer;
+
+        Assert.Equal("integrated", newer?.Default);
+        Assert.Equal(NodeGraphs.Digest(NodeGraphs.Read(WorkflowPresets.WithGraphGates(shipped.Graph(), opinion: true, look: false).ToJsonString()).Graph!),
+            NodeGraphs.Digest(NodeGraphs.Read(newer!.Graph.ToJsonString()).Graph!));
+        Assert.Null(Read(Choosing("uptodate"), "default").Newer);
+    }
+
+    /// <summary>WORKFLOWCLEAN1h: the update is saved as the copy's next version and keeps where it came from, so it is the shipped digest the copy follows after.</summary>
+    [Fact]
+    public async Task Saving_the_update_stamps_the_next_version_with_the_shipped_digest()
+    {
+        var shipped = WorkflowDefaults.Of("integrated")!;
+        SaveCopy("old", "0000", opinion: true);
+
+        var saved = await WorkflowOperations.SaveAsync(DriverConfig.Empty, _home, _ => Task.FromResult(new ChoicesRegistry(null, "unread")), "old", null, null,
+            shipped.Graph(), false, false, null, "1", null, false, "2026-11-02T09:00:00Z", CancellationToken.None, updates: "integrated");
+
+        Assert.True(saved.Done, saved.Message);
+        Assert.Equal(new WorkflowFrom(shipped.Id, shipped.Digest), Store.Load("old")!.Read.Versions[^1].From);
+        Assert.Null(Read(Edit(DriverConfig.Empty, new WorkflowUse("old", Repo, null, null)), "default").Newer);
+    }
+
     [Fact]
     public void Reading_writes_nothing()
     {

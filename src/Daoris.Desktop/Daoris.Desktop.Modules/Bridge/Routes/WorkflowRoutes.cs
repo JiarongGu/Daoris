@@ -376,7 +376,7 @@ public sealed class WorkflowRoutes(DriverContext context)
             Flag(request, "withOpinion"), Flag(request, "withLook"), Optional(request, "name"),
             Number(request, "base") is { } baseVersion ? baseVersion.ToString(System.Globalization.CultureInfo.InvariantCulture) : null,
             authorize, Flag(request, "plan"), DateTimeOffset.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", System.Globalization.CultureInfo.InvariantCulture),
-            cancellationToken).ConfigureAwait(false);
+            cancellationToken, Optional(request, "updates")).ConfigureAwait(false);
         return new
         {
             saved.Id,
@@ -584,6 +584,8 @@ public sealed class WorkflowRoutes(DriverContext context)
             Cells = effective.Cells.Select(cell => new { cell.Node, Step = JsonDocument.Parse(WorkflowCurrent.ToJson(cell.Step)).RootElement.Clone() }).ToArray(),
             Limits = limits,
             effective.Problem,
+            // A copy of a shipped default this build ships changed since: left out, as null, where it is up to date (WORKFLOWCLEAN1h).
+            Newer = effective.Newer is null ? null : new { effective.Newer.Default, effective.Newer.Name, effective.Newer.Graph },
         };
     }
 

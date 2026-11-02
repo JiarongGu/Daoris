@@ -90,7 +90,11 @@ export type WorkflowScopeRow = WorkflowChosen & { key: string };
  * A version saved, or planned (`plan: true` writes nothing): under a fresh `id`, or appended to a saved one against `base`, the version the
  * person read, with `authorize` naming every place that chooses it.
  */
-export type WorkflowSaveAsk = { id: string; graph: unknown; base?: number; name?: string; authorize?: string[]; plan?: boolean };
+export type WorkflowSaveAsk = {
+  id: string; graph: unknown; base?: number; name?: string; authorize?: string[]; plan?: boolean;
+  /** The shipped default an appended version updates its copy to (WORKFLOWCLEAN1h-b): the version keeps it as where it came from. */
+  updates?: string;
+};
 
 /**
  * What `WORKFLOW_SAVE` answers: whether it was (or would be) written, the version, the places an append reaches, and a refused graph's

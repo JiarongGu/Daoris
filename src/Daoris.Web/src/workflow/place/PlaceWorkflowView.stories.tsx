@@ -28,7 +28,9 @@ const editor = {
 };
 
 /** The section as the application holds it: the route and the step are the shell's, here a story's own. */
-function Place({ first, route, ...props }: Partial<PlaceWorkflowProps> & { first?: Partial<PlaceView>; route?: (route: string) => PlaceWorkflowProps['current'] }) {
+function Place({ first, route, landingOpen, ...props }: Partial<PlaceWorkflowProps> & {
+  first?: Partial<PlaceView>; route?: (route: string) => PlaceWorkflowProps['current']; landingOpen?: boolean;
+}) {
   const [view, setView] = useState<PlaceView>({ route: 'default', step: null, ...first });
   return (
     <PlaceWorkflowView
@@ -44,7 +46,15 @@ function Place({ first, route, ...props }: Partial<PlaceWorkflowProps> & { first
       onVerify={(_ask, answered) => answered.done()}
       editor={editor}
       landing={(hand) => (
-        <RepositorySetup {...PLACE_SETUP} only={FOLD_SECTIONS} lead={hand.lead} gatesApart open={hand.asked ?? undefined} openAgain={hand.again} />
+        <RepositorySetup
+          {...PLACE_SETUP}
+          only={FOLD_SECTIONS}
+          lead={hand.lead}
+          lands={hand.lands}
+          gatesApart
+          open={hand.asked ?? (landingOpen ? 'landing' : undefined)}
+          openAgain={hand.again}
+        />
       )}
       {...props}
     />
@@ -80,9 +90,37 @@ export const SavedDefaultDark: Story = { decorators: [dark] };
 export const SavedDefaultDarkHalf: Story = { decorators: [storyWidths.half, dark] };
 export const SavedDefaultDarkNarrow: Story = { decorators: [storyWidths.narrow, dark] };
 
-/** **Current**: nothing names a workflow for default work, so its graph is Current's, read from the rules as they stand. */
-export const CurrentDefault: Story = { args: { route: undefined, current: CURRENT_ANSWER } };
+/** **Current**: nothing names a workflow for default work, so it follows its old landing rule, with the conversion's door beside the routes. */
+export const CurrentDefault: Story = { args: { route: undefined, current: CURRENT_ANSWER, onConvert: nothing } };
 export const CurrentDefaultHalf: Story = { ...CurrentDefault, decorators: [storyWidths.half] };
+export const CurrentDefaultNarrowChinese: Story = { ...CurrentDefault, decorators: [storyWidths.narrow, chinese] };
+export const CurrentDefaultDark: Story = { ...CurrentDefault, decorators: [dark] };
+
+/**
+ * **The Landing row under a saved version** (WORKFLOWCLEAN1h-b): the version's own `land` options, saved as its next version once the places it
+ * reaches are let follow it. And **under Current**: the rule as it stands, with the conversion and no editor.
+ */
+export const LandingByVersion: Story = { args: { landingOpen: true } };
+export const LandingByVersionHalf: Story = { ...LandingByVersion, decorators: [storyWidths.half] };
+export const LandingByVersionNarrow: Story = { ...LandingByVersion, decorators: [storyWidths.narrow] };
+export const LandingByVersionChinese: Story = { ...LandingByVersion, decorators: [chinese] };
+export const LandingByVersionChineseNarrow: Story = { ...LandingByVersion, decorators: [storyWidths.narrow, chinese] };
+export const LandingByVersionDark: Story = { ...LandingByVersion, decorators: [dark] };
+export const LandingUnderCurrent: Story = { args: { route: undefined, current: CURRENT_ANSWER, onConvert: nothing, landingOpen: true } };
+export const LandingUnderCurrentHalf: Story = { ...LandingUnderCurrent, decorators: [storyWidths.half] };
+export const LandingUnderCurrentNarrow: Story = { ...LandingUnderCurrent, decorators: [storyWidths.narrow] };
+export const LandingUnderCurrentChinese: Story = { ...LandingUnderCurrent, decorators: [chinese] };
+export const LandingUnderCurrentDark: Story = { ...LandingUnderCurrent, decorators: [dark] };
+
+/** **A copy behind the default this build ships**: *Daoris ships a newer … · Update…*, a plan of one that appends the shipped graph. */
+const behind = (route: string): PlaceWorkflowProps['current'] => {
+  const answer = answerFor(route);
+  return answer && answer.effective ? { ...answer, effective: { ...answer.effective, newer: { default: 'merge-after-accept', name: 'Merge workflow', graph: answer.effective.graph } } } : answer;
+};
+export const ShippedUpdate: Story = { args: { route: behind } };
+export const ShippedUpdateHalf: Story = { ...ShippedUpdate, decorators: [storyWidths.half] };
+export const ShippedUpdateNarrowChinese: Story = { ...ShippedUpdate, decorators: [storyWidths.narrow, chinese] };
+export const ShippedUpdateDark: Story = { ...ShippedUpdate, decorators: [dark] };
 
 /** **A kind**: Documentation work follows its own saved workflow, chosen by the workspace. */
 export const DocumentsRoute: Story = { args: { first: { route: 'kind:docs' } } };

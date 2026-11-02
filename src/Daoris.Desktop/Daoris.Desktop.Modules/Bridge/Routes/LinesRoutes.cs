@@ -123,7 +123,8 @@ public sealed class LinesRoutes(DriverContext context)
         var gitLevels = GitLevelsOf(config);
         return new
         {
-            Lines = lines.ToArray(),
+            // The policy that reaches each line (the Line row, WORKFLOWCLEAN1h): its own, else its workspace's; left out where none is set.
+            Lines = lines.Select(line => line with { Policy = IntegrateWire(config.LinePolicyOf(line.Repository, line.Workspace)) }).ToArray(),
             // How each one's work lands (WSR1), from the same file and the same circles.
             Landings = lines.Select(line => (line, landing: LandingRules.Choose(config, line.Repository, line.Workspace)))
                 .Select(pair => new
@@ -1163,4 +1164,8 @@ internal sealed record LineRow(string Repository, string Workspace, string? Bran
     /// <summary>The checkout's guess not judged yet: left out where false, so the pull's rows are as they always were.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public bool NotReadYet { get; init; }
+
+    /// <summary>The line's integration policy as <see cref="LinesRoutes.IntegrateWire"/> carries it; left out where none is set.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public object? Policy { get; init; }
 }
