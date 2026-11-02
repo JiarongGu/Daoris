@@ -25,7 +25,7 @@ public sealed class WorkflowEffectiveTests : IDisposable
     private IWorkflowStore Store => WorkflowPorts.Store(_home);
 
     private int Save(string id, string name, JsonNode? steps, JsonNode? graph, string? pipeline = null) =>
-        WorkflowStore.Add(_home, new WorkflowVersionAdded(id, name, "terminal", "2026-11-01T09:00:00Z", steps, graph) { Pipeline = pipeline }, kept: []);
+        steps is not null ? StoredSteps.Add(Store, id, name, "2026-11-01T09:00:00Z", steps) : WorkflowStore.Add(_home, new WorkflowVersionAdded(id, name, "terminal", "2026-11-01T09:00:00Z", steps, graph) { Pipeline = pipeline }, kept: []);
 
     private static JsonObject Release() => WorkflowPresets.GraphTable.First(preset => preset.Id == SetupPresets.Merge).Graph();
 
@@ -150,7 +150,7 @@ public sealed class WorkflowEffectiveTests : IDisposable
     {
         Save("release", "Release", null, Release());
         Save("release", "Release", null, Release());
-        Save("legacy", "Legacy", WorkflowPresets.Table[0].Steps(), null);
+        Save("legacy", "Legacy", JsonNode.Parse("""[{"id":"work","kind":"work"},{"id":"landing","kind":"landing","form":"merge","accept":"you"}]"""), null);
         var config = Edit(DriverConfig.Empty, new WorkflowUse("release", Repo, null, null));
 
         var graph = Read(config, "default");

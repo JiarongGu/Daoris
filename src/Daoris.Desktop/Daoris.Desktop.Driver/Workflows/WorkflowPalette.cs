@@ -3,9 +3,27 @@ namespace Daoris.Driver;
 /// <summary>A built-in kind a step graph may hold: who reaches and fails it, what the person may do to it, and its options.</summary>
 /// <param name="Leaves">The wire kinds that may leave a node of this kind (WORKFLOWEDIT1b), which the step editor offers from it.</param>
 /// <param name="RoleTakes">The works a role takes a node of this kind by, the step's own first; none where no agent session takes it.</param>
+/// <param name="Offered">
+/// How the editor offers the kind (WORKFLOWCLEAN1 1b): <c>alone</c>, a step to add; <c>tail:&lt;method&gt;</c>, a step a <c>land</c> of that method brings
+/// with it; <c>retired</c>, a step no longer saved. The page reads it and keeps no list of its own.
+/// </param>
 public sealed record PaletteKind(
     string Kind, string Reach, string ReachBy, string? FailureBy, bool PersonJudges, bool PersonSkips, bool MayEnd, bool Evidenced,
-    string? SkipBy, IReadOnlyList<NodeOptionField> Options, IReadOnlyList<string> Leaves, IReadOnlyList<string> RoleTakes);
+    string? SkipBy, IReadOnlyList<NodeOptionField> Options, IReadOnlyList<string> Leaves, IReadOnlyList<string> RoleTakes, string Offered = PaletteKind.Alone)
+{
+    public const string Alone = "alone";
+    public const string Retired = "retired";
+
+    /// <summary>How the editor offers <paramref name="kind"/>: a <c>handed</c> is retired, and the steps a landing's method brings are its tail.</summary>
+    public static string OfferedOf(string kind) => kind switch
+    {
+        NodeKinds.Handed => Retired,
+        NodeKinds.Pushed => $"tail:{LandNodes.Push}",
+        NodeKinds.PullRequest => $"tail:{LandNodes.PullRequest}",
+        NodeKinds.Integrate => $"tail:{LandNodes.Integrate}",
+        _ => Alone,
+    };
+}
 
 /// <summary>
 /// A wire kind: whether it makes its target eligible (and so may be grouped), and the kinds it may leave. <see cref="From"/> is null where any
@@ -49,7 +67,7 @@ public sealed record WorkflowPalette(IReadOnlyList<PaletteKind> Kinds, IReadOnly
         var kinds = NodeKinds.BuiltIn
             .Select(kind => NodeAuthorities.BuiltIn[kind])
             .Select(each => new PaletteKind(each.Kind, each.Reach, each.ReachBy, each.FailureBy, each.PersonJudges, each.PersonSkips, each.MayEnd,
-                each.Evidenced, each.SkipBy, NodeOptionFields.Of(each.Kind), Leaving(each, decision: false), RoleTakesOf(each.Kind)))
+                each.Evidenced, each.SkipBy, NodeOptionFields.Of(each.Kind), Leaving(each, decision: false), RoleTakesOf(each.Kind), PaletteKind.OfferedOf(each.Kind)))
             .ToArray();
         IReadOnlyList<string> Leaves(Func<NodeAuthority, bool> may) =>
             [.. NodeKinds.BuiltIn.Where(kind => may(NodeAuthorities.BuiltIn[kind]))];

@@ -124,32 +124,6 @@ public sealed class WorkflowNamedTests
     }
 
     [Theory]
-    [MemberData(nameof(Rows), "presets")]
-    public void The_presets_are_the_table_s_in_order_each_line_composed_from_its_steps(string id, int index)
-    {
-        var row = Table("presets")[index];
-        var preset = WorkflowPresets.Table[index];
-
-        Assert.Equal(id, preset.Id);
-        Assert.Equal(row.GetProperty("name").GetString(), preset.Name);
-        Assert.True(JsonNode.DeepEquals(JsonNode.Parse(row.GetProperty("steps").GetRawText()), preset.Steps()), $"{id}: its steps");
-        Assert.Equal(row.GetProperty("line").GetString(), WorkflowPresets.Line(Read(preset.StepsJson)));
-        Assert.Equal(Table("presets").Count, WorkflowPresets.Table.Count);
-    }
-
-    [Theory]
-    [MemberData(nameof(Rows), "variants")]
-    public void A_preset_with_a_second_opinion_your_look_first_or_both(string preset, int index)
-    {
-        var row = Table("variants")[index];
-
-        var steps = WorkflowPresets.WithGates(WorkflowPresets.Of(preset)!.Steps(), row.GetProperty("opinion").GetBoolean(), row.GetProperty("look").GetBoolean());
-
-        Assert.True(JsonNode.DeepEquals(JsonNode.Parse(row.GetProperty("steps").GetRawText()), steps), $"{preset}: its steps are {steps.ToJsonString()}");
-        Assert.Equal(row.GetProperty("line").GetString(), WorkflowPresets.Line(Read(steps.ToJsonString())));
-    }
-
-    [Theory]
     [MemberData(nameof(Rows), "lines")]
     public void The_line_other_steps_compose(string name, int index)
     {

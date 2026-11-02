@@ -85,13 +85,13 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         if (proposal.Door == Drafts) return PlanDraft(proposal, facts);
         var id = proposal.Workflow?.Trim() ?? "";
         if (WorkflowNamed.IdProblem(id) is { } idProblem) return Refused(idProblem);
-        if (proposal.Steps is not null && proposal.Graph is not null) return Refused("a workflow proposal carries its `steps` or its `graph`, never both.");
+        // WORKFLOWCLEAN1 1b: a list of steps is no longer saved, by this door as by every other.
+        if (proposal.Steps is not null) return Refused(WorkflowNamed.StepsRefused(id));
         var route = string.IsNullOrWhiteSpace(proposal.Route) ? null : proposal.Route.Trim();
         if (route is not null && RouteProblem(route) is { } routeProblem) return Refused(routeProblem);
-        if (proposal.Steps is null && proposal.Graph is null && route is null)
+        if (proposal.Graph is null && route is null)
         {
-            return Refused("a workflow proposal carries its whole `steps`, a JSON list of step objects, or a verification pipeline's `graph`; "
-                + "or, with neither, the `route` it chooses a saved workflow for.");
+            return Refused("a workflow proposal carries its whole `graph`; or, with none, the `route` it chooses a saved workflow for.");
         }
 
         var scope = proposal.Scope?.Trim() ?? "";
@@ -110,24 +110,13 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         }
 
         var found = facts.Workflows.FirstOrDefault(each => each.Id == id);
-        var saves = proposal.Steps is not null || proposal.Graph is not null;
+        var saves = proposal.Graph is not null;
         if (!saves && UseProblem(id, proposal, found) is { } unsaved) return Refused(unsaved);
 
         // FABRIC-PIPELINE1i (the pipeline design §2.1): the workflow's mark says which version it takes. A new workflow proposed as a graph
-        // is made a verification pipeline, since the person's part in a development pipeline's graph is read nowhere yet, so only a
-        // verification pipeline's graph is proposed; its steps, a development pipeline's.
-        var verifies = found?.Read.Verifies ?? proposal.Graph is not null;
-        if (proposal.Steps is not null && verifies)
-        {
-            return Refused($"`{id}` is a verification pipeline, whose versions are graphs holding its checks: a proposal changes it with its "
-                + "`graph`, never `steps`.");
-        }
-
-        if (proposal.Graph is not null && !verifies)
-        {
-            return Refused($"`{id}` is a development pipeline, and Ask Daoris proposes a graph only for a verification pipeline, since the "
-                + $"person's part in a development pipeline's graph is not read yet: `daoris driver workflow apply {id} <file>` saves one.");
-        }
+        // that lands its work (a `land` or a `handed`) is a development pipeline, as the person's part in its graph is read since CUTOVER1e;
+        // one that lands nothing is a verification pipeline.
+        var verifies = found?.Read.Verifies ?? (proposal.Graph is { } proposed && !HoldsLanding(proposed));
 
         if (saves && BaseProblem(id, proposal.Base, found) is { } stale) return Refused(stale);
 
@@ -136,16 +125,10 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         var version = !saves ? newest!.Version : before is null ? 1 : before.Version + 1;
         IReadOnlyList<NamedStep>? steps = null;
         NodeGraph? graph = null;
-        if (proposal.Steps is { } raw)
+        if (proposal.Graph is { } drawn)
         {
-            var prior = found?.Read.Versions.Where(each => each.Steps is not null).ToList() ?? [];
-            (steps, var shape) = WorkflowNamed.ReadShape(raw, version, prior);
-            if (steps is null) return Refused(shape!);
-        }
-        else if (proposal.Graph is { } drawn)
-        {
-            // Judged as the store judges a save under the mark (§2.1): the graph reader, then the verification rule.
-            var read = WorkflowNamed.ReadVersion(GraphVersion(drawn, version), version, [], WorkflowPipelines.Verification);
+            // Judged as the store judges a save under the mark (§2.1): the graph reader, then the pipeline's own rule.
+            var read = WorkflowNamed.ReadVersion(GraphVersion(drawn, version), version, [], verifies ? WorkflowPipelines.Verification : WorkflowPipelines.Development, onSave: true, id: id);
             if (read.Graph is null) return Refused(read.Problem!);
             graph = read.Graph;
         }
@@ -600,6 +583,12 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
     }
 
     /// <summary>A graph proposed, as the version a save would write around it (schema 2), for the store's own reader to judge.</summary>
+    /// <summary>Whether a proposed graph holds a landing node, which makes a new workflow a development pipeline.</summary>
+    private static bool HoldsLanding(JsonElement graph) =>
+        graph.TryGetProperty("nodes", out var nodes) && nodes.ValueKind == JsonValueKind.Array
+        && nodes.EnumerateArray().Any(node => node.ValueKind == JsonValueKind.Object && node.TryGetProperty("kind", out var kind)
+            && kind.ValueKind == JsonValueKind.String && kind.GetString() is NodeKinds.Land or NodeKinds.Handed);
+
     private static JsonElement GraphVersion(JsonElement graph, int version)
     {
         var node = new JsonObject

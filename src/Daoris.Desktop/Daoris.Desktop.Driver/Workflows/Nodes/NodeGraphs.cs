@@ -158,6 +158,12 @@ public static class GraphRefusal
     /// </summary>
     public const string LandTail = "land-tail";
 
+    /// <summary>A <c>land</c> written with an <c>accept</c> (WORKFLOWCLEAN1 1b): the press is the graph's <c>review</c> before it.</summary>
+    public const string Accept = "accept";
+
+    /// <summary>A <c>handed</c> in a graph being saved (WORKFLOWCLEAN1 1b): the <c>land</c> performs a landing, and a stored version holding one still reads.</summary>
+    public const string HandedRefused = "handed-refused";
+
     /// <summary>A second hold of one kind (LANDNODE1k): the graph judges each hold once.</summary>
     public const string HoldTwice = "hold-twice";
 
@@ -248,7 +254,17 @@ public static class NodeGraphs
 
         foreach (var node in graph.Nodes)
         {
-            if (NodeDeclarations.Problem(node) is { } field) Say(GraphRefusal.Declaration, null, node.Id, $"node `{node.Id}`: its `{field}` does not hold for a `{node.Kind}`.");
+            if (NodeDeclarations.Problem(node) is { } field)
+            {
+                if (node.Kind == NodeKinds.Land && field == LandNodes.AcceptOption)
+                {
+                    Say(GraphRefusal.Accept, null, node.Id, $"node `{node.Id}`: a `land` takes no `accept`. Where you accept the work, put *Your review* before it; with no review it lands once the steps before it are done.");
+                }
+                else
+                {
+                    Say(GraphRefusal.Declaration, null, node.Id, $"node `{node.Id}`: its `{field}` does not hold for a `{node.Kind}`.");
+                }
+            }
             // DECIDE1d: judged with the graph, so the declarations' own checks are left as they were.
             else if (NodeOutcomes.OutputsOnProblem(node) is not null) Say(GraphRefusal.Declaration, null, node.Id, $"node `{node.Id}`: its `outputsOn` does not hold for a `{node.Kind}`.");
         }
@@ -432,7 +448,9 @@ public static class NodeGraphs
                     {
                         foreach (var extra in held)
                         {
-                            Say(GraphRefusal.LandTail, null, extra.Id, $"node `{extra.Id}`: a `{method}` land brings no `{kind}`, and `{land.Id}` is the graph's landing.");
+                            var brings = kind == NodeKinds.Integrate ? LandNodes.Integrate : kind == NodeKinds.Pushed ? LandNodes.Push : LandNodes.PullRequest;
+                            Say(GraphRefusal.LandTail, null, extra.Id, $"node `{extra.Id}` is a `{kind}`, which comes with a `land` whose method is `{brings}`: "
+                                + "choose that method on the landing and it brings this step.");
                         }
                     }
                     else if (held.Count == 0)
@@ -522,6 +540,22 @@ public static class NodeGraphs
         // INTEGRATE1n, F47 (§17.4): every kind that observes the landing record is refused when saved where some way to it passes no `handed`,
         // since it would wait for ever before a landing. A way is any wire from an entry, a failure's included, and a `handed` is passed
         // through whole: its own wires are not followed. Said only of a graph that holds a landing, so one without (a quest's cycle) is as it was.
+        // WORKFLOWCLEAN1 1b: the one judge at the one save point. A `handed` only watches a landing some door made, and a `land` with no method
+        // chooses none; a stored version of either still reads (the same gate as F47), so a graph kept before is never made unreadable.
+        if (saved && onSave)
+        {
+            foreach (var handed in landings.Where(landing => landing.Kind == NodeKinds.Handed))
+            {
+                Say(GraphRefusal.HandedRefused, null, handed.Id, $"node `{handed.Id}` is a `handed`, which only watches a landing some door made, and is no longer saved: a `land` step performs the landing. "
+                    + "Choose its method (merge, a branch, a push, a pull request, or integrated into the line) and the steps after it come with it.");
+            }
+
+            foreach (var chosen in lands.Where(land => !land.Options.ContainsKey("method")))
+            {
+                Say(GraphRefusal.Declaration, null, chosen.Id, $"node `{chosen.Id}`: a `land` is saved with its method chosen: merge, branch, push, pull-request or integrate.");
+            }
+        }
+
         if (saved && onSave && landings.Count > 0)
         {
             var landed = landings.Select(landing => landing.Id).ToHashSet(StringComparer.Ordinal);

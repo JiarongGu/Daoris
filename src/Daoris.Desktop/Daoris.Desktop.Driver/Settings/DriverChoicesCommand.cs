@@ -199,9 +199,9 @@ public static class DriverChoicesCommand
                       [--synthesis-minutes <n>] [--challenge-minutes <n>] [--request-minutes <n>] | --clear
                daoris-driver driver workflow list · show <id>[@<version>] · show --repository <name>|--workspace <name> [--kind <kind>]
                daoris-driver driver workflow defaults [<default> [--to <file>]]
-               daoris-driver driver workflow new <id> --from <preset>|current:<repository>|<id>[@<version>]
+               daoris-driver driver workflow new <id> --from <default>|<id>[@<version>]
                       [--with-opinion] [--with-look] [--name "…"]
-               daoris-driver driver workflow edit <id> [--base <version>] <change>… · apply <id> <file>|--as-graph [--base <version>]
+               daoris-driver driver workflow apply <id> <file> [--base <version>]
                daoris-driver driver workflow export <id> [--to <file>] · import <file>
                daoris-driver driver workflow use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]
                daoris-driver driver workflow kind <workspace> <kind> --label "…" [--paths <path,…>] | --drop

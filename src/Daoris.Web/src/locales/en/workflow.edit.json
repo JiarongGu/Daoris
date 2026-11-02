@@ -371,6 +371,9 @@
   "workflow.edit.refusal.work-requests-unclaimed": "The work's requests come after the work.",
   "workflow.edit.refusal.work-requests-late": "The landing can start before the work's requests are answered.",
   "workflow.edit.refusal.land-once": "One landing step, never two.",
-  "workflow.edit.refusal.land-tail": "The steps after the landing are not what its method brings.",
+  "workflow.edit.refusal.land-tail": "This step comes with a landing method: choose that method on the landing and it brings the step.",
+  "workflow.edit.refusal.accept": "A landing takes no accept of its own: put Your review before it where you accept the work.",
+  "workflow.edit.refusal.handed-refused": "A handed step is no longer saved: a landing step performs the landing. Choose its method and the steps after it come with it.",
+  "workflow.edit.refusal.steps-refused": "A list of steps is no longer saved: a workflow is saved as a graph of steps. Compose it in the editor.",
   "workflow.edit.refusal.role": "Its role does not do this step's work."
 }
