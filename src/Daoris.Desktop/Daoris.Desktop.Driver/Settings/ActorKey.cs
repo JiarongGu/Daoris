@@ -29,6 +29,7 @@ public static class ActorKey
     /// The agent an <i>as before</i> order of <paramref name="actor"/> starts as (§4.0): today's keys at account default, <c>adapter</c> for
     /// Build, Chat and Brainstorm, <c>intakeAdapter</c> for Intake and <c>helperAdapter</c> for Ask Daoris; null for any other actor.
     /// </summary>
+    // transitional: actor-key-before
     public static string? Before(string actor, DriverConfig config) => actor switch
     {
         "build" or "chat" or "brainstorm" => config.Adapter,

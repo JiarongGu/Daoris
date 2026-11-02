@@ -90,6 +90,12 @@ public sealed class PersonKey
         presented is not null && CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(presented), _text);
 
     /// <summary>
+    /// Presents this key on a request the host makes of itself, in its own process (ONEWAY1n-i: a request the person confirmed), so its
+    /// gate judges it as it judges the window's. It never leaves the process.
+    /// </summary>
+    internal void PresentOn(IHeaderDictionary headers) => headers[Header] = Encoding.ASCII.GetString(_text);
+
+    /// <summary>
     /// The proof of possession for <paramref name="nonce"/> (design §2.3): HMAC-SHA-256 under the key's 32 bytes, of the
     /// nonce's UTF-8 bytes, in base64url without padding. Whoever holds the key can check it; nobody else can make it.
     /// </summary>

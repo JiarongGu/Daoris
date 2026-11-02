@@ -84,8 +84,7 @@ public class DaorisHost : IDisposable
     /// to read its key there (<see cref="Daoris.Knowledge.Http.PersonKey.InputVariable"/>), as the shell will ask it.
     /// </param>
     /// <param name="clock">
-    /// The time the host's confirmations are judged by (PERSONDOOR1b), for a test that moves it instead of waiting two
-    /// minutes; the system's when none is given.
+    /// The time the host's services read (PERSONDOOR1b), for a test that moves it instead of waiting; the system's when none is given.
     /// </param>
     public DaorisHost(
         ServiceMode mode, IReadOnlyDictionary<string, string?>? settings = null, Action<string>? seed = null,
@@ -182,13 +181,9 @@ public class DaorisHost : IDisposable
             .ThenBy(route => route.method, StringComparer.Ordinal)
             .ToList();
 
-    /// <summary>
-    /// One request, from <paramref name="from"/>, with a bearer key, the person key (PERSONDOOR1a), a confirmation's grant
-    /// (PERSONDOOR1b) and a JSON body when given.
-    /// </summary>
+    /// <summary>One request, from <paramref name="from"/>, with a bearer key, the person key (PERSONDOOR1a) and a JSON body when given.</summary>
     public async Task<Answer> SendAsync(
-        string method, string pathAndQuery, IPAddress from, string? key = null, string? json = null, string? person = null,
-        string? grant = null)
+        string method, string pathAndQuery, IPAddress from, string? key = null, string? json = null, string? person = null)
     {
         var query = pathAndQuery.IndexOf('?');
         var context = await Server.SendAsync(http =>
@@ -199,7 +194,6 @@ public class DaorisHost : IDisposable
             http.Connection.RemoteIpAddress = from;
             if (key is not null) http.Request.Headers.Authorization = "Bearer " + key;
             if (person is not null) http.Request.Headers[Daoris.Knowledge.Http.PersonKey.Header] = person;
-            if (grant is not null) http.Request.Headers[Daoris.Knowledge.Http.PersonConfirmations.GrantHeader] = grant;
             if (json is not null)
             {
                 var bytes = Encoding.UTF8.GetBytes(json);

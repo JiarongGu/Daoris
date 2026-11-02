@@ -15,6 +15,7 @@ public static class GitMove
     /// <summary>Mark the home as moved if it is not; true when this call marked it. A file that does not read is left as it is.</summary>
     public static bool Ensure(string home, DateTimeOffset now)
     {
+        // transitional: git-moved-key
         try
         {
             if (Moved(home)) return false;

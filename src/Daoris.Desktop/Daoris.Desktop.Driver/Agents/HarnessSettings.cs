@@ -238,6 +238,7 @@ public sealed record HarnessSettings(
         var dropped = AccountSet.Strays(settings, known);
         foreach (var stray in dropped) settings = settings.WithoutStray(stray.Agent);
         var accounts = AccountsOf(home, settings, known);
+        // transitional: account-pool-fold
         var (folded, counts) = AccountSet.Fold(settings, Hinted(settings, accounts, account), DateTimeOffset.UtcNow, PoolReceipts.NewId);
         var changed = AccountSet.Whole(folded, edit(folded), AccountsOf(home, folded, known)).WithSaidKept();
         changed.SaveHolding(path);
@@ -1147,6 +1148,7 @@ public sealed record HarnessSettings(
     //    nothing, and go at the next write (KEEPALL1b: held as read, so the save's edit takes them out). Each other field is a value this build knows, or one it does not, which reads as today's default and is said
     //    (RotationScope.Unknown); a field this build has no name for is kept and said too, so a newer build's setting outlives
     //    this one's save.
+    //  transitional: harness-old-names
     //  - The old names read on (D165 §6): `early` and `near`, which only an older build writes, are taken out and applied as a
     //    change applies them (UseChange), over the entry's own switch and curve; a value of theirs that does not read is said, and goes.
     //  - Resolved as one scope (§2 rule 1): the workspace's, when it names a default or a list of its own for the agent, else the

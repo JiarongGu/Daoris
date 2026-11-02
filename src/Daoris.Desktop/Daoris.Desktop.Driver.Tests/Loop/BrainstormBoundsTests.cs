@@ -406,7 +406,7 @@ public sealed class BrainstormBoundsTests : IDisposable
         script.Behaviours["g2"] = async (turn, ct) =>
         {
             await Task.Delay(TimeSpan.FromMilliseconds(100), ct);
-            Assert.Equal(0, BrainstormCommand.Run(["stop", id], _home, TextWriter.Null, At));
+            Files.WriteStop(id, At);
             return await Hang(turn, ct);
         };
 
@@ -426,7 +426,7 @@ public sealed class BrainstormBoundsTests : IDisposable
     {
         var (driver, script) = Start();
         var id = await SentAsync(driver, "stub");
-        Assert.Equal(0, BrainstormCommand.Run(["stop", id], _home, TextWriter.Null, At));
+        Files.WriteStop(id, At);
 
         await LookAsync(driver);
 
@@ -487,23 +487,5 @@ public sealed class BrainstormBoundsTests : IDisposable
         await LookAsync(driver);
 
         Assert.Equal(["acp-stub", "stub"], script.Started.Where(turn => turn.StartsWith('g')).Order().Select(turn => script.Seen[turn].Agent));
-    }
-
-    /// <summary>
-    /// 🔴 A request is idempotent by its id: asked again with the same words it is the same brainstorm, never a second; asked with
-    /// other words under that id it is refused; and an id that is no plain name is a line the verb does not read.
-    /// </summary>
-    [Fact]
-    public void A_request_is_idempotent_by_its_id()
-    {
-        var said = new StringWriter();
-        Assert.Equal(0, BrainstormCommand.Run(["Why does the report drop its last day?", "--id", "daily-report"], _home, said, At));
-        Assert.Equal(0, BrainstormCommand.Run(["Why does the report drop its last day?", "--id", "daily-report"], _home, said, At));
-
-        Assert.Equal("daily-report", Assert.Single(Files.Requests()).Id);
-        Assert.Contains("the same brainstorm, never a second", said.ToString(), StringComparison.Ordinal);
-        Assert.Equal(1, BrainstormCommand.Run(["Why is the report slow?", "--id", "daily-report"], _home, TextWriter.Null, At));
-        Assert.Equal(2, BrainstormCommand.Run(["Why is the report slow?", "--id", "../other"], _home, TextWriter.Null, At));
-        Assert.Single(Files.Requests());
     }
 }

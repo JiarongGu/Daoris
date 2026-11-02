@@ -566,4 +566,16 @@ export const ActorReportedNarrow: Story = { ...ActorReported, decorators: [sessi
 export const ActorReportedChinese: Story = { ...ActorReported, decorators: [chinese, sessionWidths.wide] };
 export const ActorReportedChineseHalf: Story = { ...ActorReported, decorators: [chinese, sessionWidths.half] };
 export const ActorReportedChineseNarrow: Story = { ...ActorReported, decorators: [chinese, sessionWidths.narrow] };
+/** STAFFPOLICY1f: *Details* says how the choice was reached; a record with no `chosen` says the policy was not recorded. */
+export const ActorChosenAfterALimit: Story = {
+  args: { session: { ...SESSION, choice: '2', chosen: { rule: 'order', by: 'moved', condition: 'limit', from: '1' } } },
+  play: openDetails,
+};
+export const ActorChosenByWeightNarrow: Story = {
+  args: { session: { ...SESSION, choice: '2', chosen: { rule: 'weight', by: 'weight' } } },
+  decorators: [sessionWidths.narrow],
+  play: openDetails,
+};
+export const ActorChosenChineseDark: Story = { ...ActorChosenAfterALimit, decorators: [chinese, dark] };
+export const ActorChosenNotRecorded: Story = { args: { session: { ...SESSION, choice: '2' } }, play: openDetails };
 export const ActorNotReported: Story = { args: { session: { ...SESSION, ran: null } }, play: openDetails };

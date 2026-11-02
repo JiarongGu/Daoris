@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next';
-import type { ActorValue, Session } from '../data/api';
+import type { ActorChosen, ActorValue, Session } from '../data/api';
 import type { DetailRow } from './head/DetailsFold';
 import { stamp } from '../locales/format';
 import { CHOICE_NOT_OFFERED } from '../design/ui';
@@ -24,10 +24,40 @@ function askedValue(t: TFunction, value?: ActorValue | null): string {
  * The head's chip for the choice its actor ran (D205 §4.6 item 2, §7.1; MODELROLE1c2): *choice n* only where a later choice than the
  * first ran, *your pick* where the person picked the agent; none for choice 1, *as before*, a rule's agent or a handed quest.
  */
-export function choiceChip(t: TFunction, session: Pick<Session, 'choice'>): string | null {
+export function choiceChip(t: TFunction, session: Pick<Session, 'choice' | 'chosen'>): string | null {
   const choice = session.choice;
   if (choice === 'pick') return t('work.actor.chip.pick');
-  return choice && /^[2-4]$/.test(choice) ? t('work.actor.chip.choice', { n: Number(choice) }) : null;
+  if (!choice || !/^[2-4]$/.test(choice)) return null;
+  const number = t('work.actor.chip.choice', { n: Number(choice) });
+  const reason = chipReason(t, session.chosen);
+  return reason === null ? number : `${number} · ${reason}`;
+}
+
+const BY_CODES = ['weight', 'share', 'budget', 'work'];
+const CONDITION_CODES = ['limit', 'signed-out', 'model-refused', 'transient', 'failed', 'quiet', 'budget'];
+
+/** The reason's code: a moved part by its condition, any other by its `by`; none for the stored order, a code the page does not know is *other*. */
+function reasonCode(chosen: ActorChosen): string | null {
+  if (chosen.by === 'first') return null;
+  if (chosen.by === 'moved') return chosen.condition && CONDITION_CODES.includes(chosen.condition) ? chosen.condition : 'moved';
+  return BY_CODES.includes(chosen.by) ? chosen.by : 'other';
+}
+
+function chipReason(t: TFunction, chosen?: ActorChosen | null): string | null {
+  const code = chosen ? reasonCode(chosen) : null;
+  return code === null ? null : t(`work.actor.chip.reason.${code}`);
+}
+
+/** *Details*' sentence for how the choice was reached; the policy's absence on the record is said, not left blank. */
+export function chosenLine(t: TFunction, chosen?: ActorChosen | null): string {
+  if (!chosen) return t('work.actor.chosen.none');
+  if (chosen.by === 'moved') {
+    const from = chosen.from ? t('work.actor.chosen.movedFrom', { from: chosen.from }) : t('work.actor.chosen.movedAway');
+    return chosen.condition && CONDITION_CODES.includes(chosen.condition)
+      ? t('work.actor.chosen.movedOn', { from, why: t(`work.actor.chosen.on.${chosen.condition}`) })
+      : t('work.actor.chosen.movedBare', { from });
+  }
+  return t(`work.actor.chosen.by.${chosen.by === 'first' || BY_CODES.includes(chosen.by) ? chosen.by : 'other'}`);
 }
 
 /**
@@ -53,6 +83,7 @@ export function actorRows(t: TFunction, session: Session): DetailRow[] {
   return [
     { label: t('work.actor.title'), value: session.actor ? t(`work.actor.name.${session.actor}`, { defaultValue: session.actor }) : t('work.actor.notRecorded') },
     { label: t('work.actor.choice'), value: session.choice === 'before' ? t('work.actor.before') : session.choice ?? t('work.actor.notRecorded') },
+    { label: t('work.actor.chosen.label'), value: chosenLine(t, session.chosen) },
     { label: t('work.actor.asked'), value: `${askedValue(t, session.asked?.model)} · ${askedValue(t, session.asked?.effort)}` },
     { label: t('work.actor.acknowledged'), value: last?.acknowledged ?? t('work.actor.notReported') },
     { label: t('work.actor.ran'), value: ranLine(t, session) },

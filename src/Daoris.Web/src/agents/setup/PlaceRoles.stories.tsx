@@ -1,7 +1,7 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { chinese } from '../../design/storyLanguage';
 import { storyWidths } from '../../design/storyWidths';
-import type { RoleCatalogue, RoleStructure } from '../../data/wiring';
+import type { RoleCatalogue, RolePolicyRow, RoleStructure } from '../../data/wiring';
 import { SettingList } from '../../design/ui';
 import type { AppointmentNow } from '../../person/standing';
 import { InTheme } from '../../plugins/storyIcons';
@@ -39,7 +39,13 @@ const OWN: RoleCatalogue = {
   ...CATALOGUE, roles: CATALOGUE.roles.map((each) => (each.id === 'engine-build' ? { ...each, choices: [{ agent: 'claude-code', model: 'sonnet', effort: 'high' }] } : each)),
 };
 
-type Args = { shared?: boolean; refuse?: string; supervisor?: 'off' | 'appointed' };
+type Args = { shared?: boolean; refuse?: string; supervisor?: 'off' | 'appointed'; policy?: 'set' | 'stale' };
+
+/** STAFFPOLICY1f: each role's policy as `ROLES` answers it, a weight rule with a limit move, or one set for other choices. */
+const policies = (state: 'set' | 'stale'): RolePolicyRow[] => ['engine-build', 'build'].map((role) => ({
+  role, policyState: state, revision: 2, next: null,
+  staffPolicy: { rule: 'weight', choices: [{ agent: 'claude-code', model: 'opus', effort: 'high', weight: 3 }, { agent: 'claude-code', model: 'sonnet', effort: 'high', weight: 1 }], moves: { limit: 'weighted' }, most: 3 },
+}));
 
 const AURORA = { workspace: 'aurora' };
 const APPOINTMENT: AppointmentNow = {
@@ -47,8 +53,9 @@ const APPOINTMENT: AppointmentNow = {
   scope: 'workspace:aurora', holderId: 'h1', acts: [], setup: false, workspace: 'aurora', window: 15,
 };
 
-function Roles({ shared = false, refuse, supervisor }: Args) {
-  const catalogue = shared ? SHARED : OWN;
+function Roles({ shared = false, refuse, supervisor, policy }: Args) {
+  const base = shared ? SHARED : OWN;
+  const catalogue = policy ? { ...base, policies: policies(policy) } : base;
   if (supervisor) {
     // A workspace's Roles hold its supervisor's line between the works and the appointed roles (SETUPUX1v).
     const editor = { agents: AGENTS, offers: {}, staffing: [], catalogue, read: 'ok' as const, busy: false, onSet: nothing, onSetActor: nothing };
@@ -159,6 +166,23 @@ const REFUSAL = '`engine-review` already takes `review` in that scope: at most o
 /** The driver's two-roles-one-work refusal, said under the editor, which stays open. */
 export const TwoRolesOneWork: Story = { args: { refuse: REFUSAL }, play: refused };
 export const TwoRolesOneWorkNarrowDark: Story = { args: { refuse: REFUSAL }, play: refused, decorators: [storyWidths.narrow, dark] };
+
+/** STAFFPOLICY1f: the role set here says its rule, moves and bound on its line. */
+export const WithPolicy: Story = { args: { policy: 'set' } };
+export const WithPolicyHalf: Story = { args: { policy: 'set' }, decorators: [storyWidths.half] };
+export const WithPolicyNarrow: Story = { args: { policy: 'set' }, decorators: [storyWidths.narrow] };
+export const WithPolicyChinese: Story = { args: { policy: 'set' }, decorators: [chinese] };
+export const WithPolicyDark: Story = { args: { policy: 'set' }, decorators: [dark] };
+
+/** A policy set for other choices: the role runs in order until saved again, and its line says so. */
+export const StalePolicy: Story = { args: { policy: 'stale' } };
+export const StalePolicyNarrow: Story = { args: { policy: 'stale' }, decorators: [storyWidths.narrow] };
+export const StalePolicyChinese: Story = { args: { policy: 'stale' }, decorators: [chinese] };
+export const StalePolicyDark: Story = { args: { policy: 'stale' }, decorators: [dark] };
+
+/** *Give engine its own…* copies the parent's policy with its choices into the editor. */
+export const GivingItsOwnWithPolicy: Story = { args: { policy: 'set' }, play: give };
+export const GivingItsOwnWithPolicyNarrowChinese: Story = { args: { policy: 'set' }, play: give, decorators: [storyWidths.narrow, chinese] };
 
 /** A workspace's Roles hold its supervisor's line (SETUPUX1v): not appointed, with the door to the Appointed row beneath it. */
 export const WorkspaceSupervisor: Story = { args: { supervisor: 'off' } };
