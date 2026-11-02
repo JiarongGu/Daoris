@@ -29,8 +29,7 @@ public sealed class LandingDoor(Func<AutoLander> lander, Action<string>? log = n
             {
                 try
                 {
-                    var said = await lander().PerformAsync(start).ConfigureAwait(false);
-                    if (said is not null) LandOutcomes.Kept(start.Unit, start.Tip, said);
+                    await lander().PerformAsync(start).ConfigureAwait(false);
                 }
                 catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException
                                                   or UnauthorizedAccessException)
@@ -53,16 +52,19 @@ public sealed class LandingDoor(Func<AutoLander> lander, Action<string>? log = n
 }
 
 /// <summary>
-/// What the performer's landings came to, in memory (WORKFLOWCLEAN1 1c): the sentence of each run's newest, by unit and tip, which the press that
+/// What the performer's landings came to, in memory (WORKFLOWCLEAN1 1c): the landing of each run's newest, by unit and tip, which the press that
 /// asked for the pass reads to answer. The delivery and the landing record are the durable facts; this is only their words for a press that
 /// waited, so a restart loses it and the press then answers from them.
 /// </summary>
 public static class LandOutcomes
 {
-    private static readonly ConcurrentDictionary<string, string> Said = new(StringComparer.Ordinal);
+    private static readonly ConcurrentDictionary<string, TreeLanding> Landed = new(StringComparer.Ordinal);
 
-    internal static void Kept(string unit, string tip, string said) => Said[$"{unit}\n{tip}"] = said;
+    internal static void Kept(string unit, string tip, TreeLanding landed) => Landed[$"{unit}\n{tip}"] = landed;
 
-    /// <summary>The sentence the performer's landing of <paramref name="unit"/> at <paramref name="tip"/> ended with; null where none was kept.</summary>
-    public static string? Of(string unit, string tip) => Said.GetValueOrDefault($"{unit}\n{tip}");
+    /// <summary>The landing the performer made of <paramref name="unit"/> at <paramref name="tip"/>, or was refused; null where none was kept.</summary>
+    public static TreeLanding? Of(string unit, string tip) => Landed.GetValueOrDefault($"{unit}\n{tip}");
+
+    /// <summary>Forgets a tip's outcome, so a press that asks to try again reads the next one and not the last.</summary>
+    public static void Forget(string unit, string tip) => Landed.TryRemove($"{unit}\n{tip}", out _);
 }

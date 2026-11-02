@@ -613,6 +613,13 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
             token => new OpinionPresses(_loop.Home, service).PressedAsync(id, shown, Optional(request, "answers"), tree, questId, token),
             token => trees.GateAsync(tree, questId, new ServiceReviewWorld(service), id, token, run: chatRun), _loop.PassWholeAsync, cancellationToken,
             (review, _) => Task.FromResult(RunNodeWords.Word(new NodeRecordFiles(_loop.Home), review.Run, review.Node!, NodeWordActs.Accept, null).Done));
+        // WORKFLOWCLEAN1 1c (the cleanup design §2.2): a run whose `land` the runtime performs is landed by that node, never by this press: the
+        // press was the Accept (the review's word, above), and it waits within the bound for the landing the pass starts.
+        if (gate.Process is WorkflowProcess { LandsByRuntime: true } performed)
+        {
+            return await PerformedPressAsync(request, id, gate, performed, cancellationToken);
+        }
+
         // FABRIC-CLOSE1h3 (D173's note): the result the press is made on, its quest as read for its name, judged again under the tree's
         // hold and before the push, so a press that waited behind another landing makes nothing where that result moved meanwhile.
         var pressed = await quests.PressedAsync(id, questId, ct: cancellationToken);
@@ -649,6 +656,41 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
             ? Pressed(id, landed, gate, TreesWords.Land(landed, pluginLines).Followed(followed), followed?.Out ?? [])
             : Pressed(id, carry.Told ? landed with { Message = carry.Sentence } : landed, gate,
                 TreesWords.Carried(landed, carry, pluginLines).Followed(followed), followed?.Out ?? [], carried: carry);
+    }
+
+    /// <summary>
+    /// The press on a run whose <c>land</c> the runtime performs (WORKFLOWCLEAN1 1c; the cleanup design §2.2): its Accept is the review's word,
+    /// kept above, and it lands nothing and builds no plugin wire. It forgets a refusal nothing changed since (the press is the person's try
+    /// again), asks a whole pass, and waits within <see cref="GraphPasses.Bound"/> for the landing that pass starts; it answers what the landing
+    /// came to, or <i>accepted; landing</i> past the bound. A workflow with no review needs no Accept, and this press is only that try.
+    /// </summary>
+    private async Task<object?> PerformedPressAsync(IpcRequest request, string id, LandingGate gate, WorkflowProcess process, CancellationToken ct)
+    {
+        PressSteps.Reach(PressSteps.Landing);
+        var unit = RunUnits.IdOf(process.BoundRun!);
+        // What holds it, said as every press says it: the graph's part, the opinion, the look.
+        if (gate.Refusal is { } held) return Pressed(id, held, gate, TreesWords.Land(held, []), []);
+        if ((gate.Tip ?? gate.GraphPart()?.Commit) is not { } tip) return Refused(id, TreesWords.NotJudged(id));
+
+        AutoLander.Retry(_loop.Home, id, unit, tip);
+        await _loop.PassWholeAsync(GraphPasses.Bound, ct);
+        var deadline = DateTimeOffset.UtcNow + GraphPasses.Bound;
+        TreeLanding? outcome;
+        while ((outcome = LandOutcomes.Of(unit, tip)) is null && DateTimeOffset.UtcNow < deadline && !ct.IsCancellationRequested)
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(200), ct);
+        }
+
+        var carried = outcome is { Landed: false } && process.Graph?.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Review) is { } review
+                      && RunRepairs.Of(new NodeRecordFiles(_loop.Home), unit, review.Id) is not null;
+        var landed = outcome is null ? new TreeLanding(false, "Accepted; landing. Daoris lands it at its pass, and this window shows it when it has.")
+            : carried ? outcome with { Message = "Accepted; its session was carried on to clear its tree, and it lands when the tree is clean." }
+            : outcome;
+        _loop.Nudge();
+        var followed = Flag(request, "follow") && landed.Landed
+            ? await TreesWords.FollowMovedAsync(_loop.Service ?? throw NotReady(), _loop.Home, () => DriverConfig.Load(_loop.ConfigPath), _loop.Log, ct)
+            : null;
+        return Pressed(id, landed, gate, TreesWords.Land(landed, []).Followed(followed), followed?.Out ?? []);
     }
 
     /// <summary>

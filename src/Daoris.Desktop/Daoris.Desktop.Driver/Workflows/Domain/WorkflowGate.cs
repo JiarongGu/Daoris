@@ -163,16 +163,29 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
     /// the rule's otherwise, with the rule's <c>tidy</c>. A step that needs what is not declared cannot start, and sits saying so
     /// (§3.7).</para>
     /// </remarks>
-    public static WorkflowProcess Of(DriverConfig config, string repository, string? workspace, WorkflowRunBinding binding, IReadOnlyList<NamedStep> steps)
+    /// <param name="bound">
+    /// The landing rule a graph version holding a <c>land</c> carries (<see cref="LandNodes.RuleOf"/>; WORKFLOWCLEAN1 1c), in place of one read from a
+    /// landing step and the live rule. Null reads the landing step as before: a steps version and a <c>handed</c> graph.
+    /// </param>
+    public static WorkflowProcess Of(
+        DriverConfig config, string repository, string? workspace, WorkflowRunBinding binding, IReadOnlyList<NamedStep> steps, LandingRule? bound = null)
     {
         var declared = Current(config, repository, workspace);
 
         // The landing: its form and its press the step's; a pattern and a plugin its own where it names them, the rule's otherwise.
-        var land = steps.First(step => step.Kind == WorkflowKinds.Landing);
+        var land = bound is null ? steps.First(step => step.Kind == WorkflowKinds.Landing) : null!;
         var rule = declared.Landing.Rule;
         string? landingCannot = null;
         LandingRule landing;
-        if ((string?)land.Field("form") == LandingForm.Merge)
+        if (bound is not null)
+        {
+            landing = bound;
+            if (bound.Form == LandingForm.Branch && bound.Pattern is null)
+            {
+                landingCannot = "its `land` puts the work on a branch, and neither the node nor the bind names a pattern for it.";
+            }
+        }
+        else if ((string?)land.Field("form") == LandingForm.Merge)
         {
             // LANDNODE1k: a graph's merge with no review before its `land` lands with no press (D145's note of 2026-11-01), so the look lands it as
             // the graph says; a steps version's merge is refused `automatic` where its steps are read, and never reaches here with it.
@@ -196,7 +209,7 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
 
             // The rule's ticket key rides with it where the pattern, the step's or the rule's, says `{ticket}` (PROCESS1b-i).
             // A land version's key was resolved at the bind, and no later rule edit reaches it (LANDNODE1h).
-            var key = binding.Land.TryGetValue(LandNodes.KeyOption, out var bound) ? bound
+            var key = binding.Land.TryGetValue(LandNodes.KeyOption, out var resolvedKey) ? resolvedKey
                 : branch && pattern?.Contains("{ticket}", StringComparison.Ordinal) == true ? rule.Key : null;
             // The rule's squash rides with it too (PROCESS1b-ii): it is how the repository wants its pull request's branch made.
             landing = new LandingRule(LandingForm.Branch, pattern, rule.Tidy, plugin, (string?)land.Field("accept") == "automatic", key,

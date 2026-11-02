@@ -67,10 +67,25 @@ public sealed class AutoLander(
     /// </summary>
     public bool Performs { get; init; }
 
+    /// <summary>Whether this process holds the home's lease, as the node records ask it; null asks the lease itself. A test's stand-in sets it.</summary>
+    public Func<bool>? HoldsLease { get; init; }
+
+    private NodeRecordFiles Files => new(home, HoldsLease);
+
     // The performer's last try of each session, what a due entry's tries are to the look: a refusal is tried again only once the tree moves.
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, AutoTry> Performed = new(StringComparer.OrdinalIgnoreCase);
 
     private AutoTry? Performed_(string session) => Performed.GetValueOrDefault($"{home}\n{session}");
+
+    /// <summary>
+    /// The person's press on a run whose <c>land</c> was refused (WORKFLOWCLEAN1 1c): the refusal is forgotten, so the next pass tries the landing
+    /// again though neither its tip nor its tree's status moved. Nothing else repeats a refusal that nothing changed.
+    /// </summary>
+    public static void Retry(string home, string session, string? unit = null, string? tip = null)
+    {
+        Performed.TryRemove($"{home}\n{session}", out _);
+        if (unit is not null && tip is not null) LandOutcomes.Forget(unit, tip);
+    }
 
     /// <summary>
     /// Lands the work of a run whose <c>land</c> the runtime started (WORKFLOWCLEAN1 1c): judged as the look judges a due entry, now, then landed
@@ -80,7 +95,10 @@ public sealed class AutoLander(
     {
         var fresh = world.Again();
         var records = await fresh.RecordsAsync(ct).ConfigureAwait(false);
-        var record = start.Executors.Reverse().Select(id => RecordOf(records, id)).FirstOrDefault(each => each is { Tree.Length: > 0, Quest.Length: > 0 });
+        // The branch unit's newest executor with a tree; else the newest session on the run's own quest (a unit read with no executors named).
+        var record = start.Executors.Reverse().Select(id => RecordOf(records, id)).FirstOrDefault(each => each is { Tree.Length: > 0, Quest.Length: > 0 })
+            ?? records.Where(each => !each.Teammate && each is { Tree.Length: > 0 } && string.Equals(each.Quest, start.Run, StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(each => each.Created).FirstOrDefault();
         if (record is null) return null;
         var tried = Performed_(record.Id);
         var entry = new AutoLanding(record.Id, record.Quest!, start.Repository, start.Workspace, record.Tree!, Now()) { Tries = tried is null ? [] : [tried] };
@@ -91,7 +109,7 @@ public sealed class AutoLander(
         // A repair outlives nothing that ended the landing: a landing or a refusal spends it.
         if (start.Review is { } review && Performed_(record.Id) is { Code: var code } && AutoLandingCode.Closes(code) && code != AutoLandingCode.CarryBound)
         {
-            RunRepairs.Take(new NodeRecordFiles(home), start.Unit, review);
+            RunRepairs.Take(Files, start.Unit, review);
         }
 
         return landed;
@@ -214,7 +232,7 @@ public sealed class AutoLander(
         if (carried is not null && LandCarry.Skips(newest))
         {
             if (run is null) accepts.Take(entry.Session);
-            else RunRepairs.Take(new NodeRecordFiles(home), run.Unit, run.Review!);
+            else RunRepairs.Take(Files, run.Unit, run.Review!);
             carried = null;
             if (offRule) return (Closed(entry, AutoLandingCode.Off), null);
         }
@@ -393,6 +411,8 @@ public sealed class AutoLander(
             },
             beforePush: (record, waited, token) => BeforePushAsync(choice, record, waited, token), uncommitted: choice.Uncommitted,
             beside: fresh.BesideAsync).ConfigureAwait(false);
+        // WORKFLOWCLEAN1 1c: what the performer's landing came to, for the press that waits on it to answer from.
+        if (choice.Run is { } performed) LandOutcomes.Kept(performed.Unit, performed.Tip, landed);
         // Judged again under the tree's hold and refused there: what that judgement kept is the try, so nothing more is kept for it.
         if (judgedAgain is not null) return judgedAgain;
         // A landing the session can clear (a conflict, work left uncommitted since the look) carries it on again under the kept yes,
@@ -429,10 +449,10 @@ public sealed class AutoLander(
         // Counted and waiting before the words go: a session that goes on at once may end its turn before this look is done.
         // WORKFLOWCLEAN1 1c: a run's is the repair kept beside its review's word, which the pass spends where the tip only continues.
         if (run is null) new CarriedAccepts(home).CarriedOn(entry.Session);
-        else if (tip is not null) RunRepairs.Keep(new NodeRecordFiles(home), run.Unit, new NodeRepair(run.Review!, tip, key, carried.Carries + 1, Now()));
+        else if (tip is not null) RunRepairs.Keep(Files, run.Unit, new NodeRepair(run.Review!, tip, key, carried.Carries + 1, Now()));
         if (await LandCarry.TellAsync(world.SayAsync, entry.Session, words, key, ct).ConfigureAwait(false) is not { Kept: true })
         {
-            if (run is not null) RunRepairs.Take(new NodeRecordFiles(home), run.Unit, run.Review!);
+            if (run is not null) RunRepairs.Take(Files, run.Unit, run.Review!);
             // Untold, nobody can clear it: the refusal is kept as it always was, the yes is taken back, and the person's review has the words.
             return why == LandCarry.Conflicted
                 ? Tried(entry, AutoLandingCode.Refused, tip, status, landed)
@@ -787,7 +807,7 @@ public sealed class AutoLander(
     /// </summary>
     private CarriedAccept? CarriedOf(AutoLanding entry, LandStart run) => run.Review is null
         ? null
-        : new CarriedAccept(entry.Session, entry.Tree, Now(), RunRepairs.Of(new NodeRecordFiles(home), run.Unit, run.Review)?.Carries ?? 0, Awaiting: false);
+        : new CarriedAccept(entry.Session, entry.Tree, Now(), RunRepairs.Of(Files, run.Unit, run.Review)?.Carries ?? 0, Awaiting: false);
 
     /// <summary>
     /// A due entry of a run whose <c>land</c> the runtime performs (WORKFLOWCLEAN1 1c), closed: its kept Accept (<see cref="CarriedAccepts"/>) is
@@ -800,7 +820,7 @@ public sealed class AutoLander(
         {
             if (graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Review) is { } review)
             {
-                var files = new NodeRecordFiles(home);
+                var files = Files;
                 var worded = RunNodeWords.Word(files, run, review.Id, NodeWordActs.Accept, null, Now);
                 if (!worded.Done && worded.Refused != RunNodeWords.Worded) return null;
                 var unit = RunUnits.IdOf(run);
