@@ -538,8 +538,9 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
                 ("session", id));
         }
 
-        var questId = await service.SessionQuestAsync(id, cancellationToken);
         var recordsJson = await service.SessionRecordsJsonAsync(cancellationToken);
+        // CHATFLOW1i (the chat-flow design §4.1): a chat that took a quest is gated by that quest's chain, read as the view reads it.
+        var questId = await service.SessionQuestAsync(id, cancellationToken) ?? ChatRuns.TakenOf(id, recordsJson);
         var records = SessionRecords.Parse(recordsJson);
         // COAGENT1b (D199 point 3): a partner's record lands nothing, at the press, the plan and the verb alike.
         if (TreesWords.PartnerLands(records, id) is { } partner)

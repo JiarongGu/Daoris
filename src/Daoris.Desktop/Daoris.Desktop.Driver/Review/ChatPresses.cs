@@ -162,10 +162,9 @@ public static class ChatPresses
     {
         try
         {
-            if (WorkflowRunBindings.Read(home, ask.Run) is not { Problem: null } binding || !GraphRun.Names(binding)) return;
             if (new SessionTrees(home).BranchOfTree(ask.Tree) is not { } of) return;
             var landings = new LandedBranches(home).All();
-            ChatCandidates.Submit(home, ask.Run, ask.Repository, ask.Workspace, of.Branch, tip, DateTimeOffset.UtcNow,
+            WorkplaceWorkflows.Current.SubmitChatCandidate(home, ask.Run, ask.Repository, ask.Workspace, of.Branch, tip, DateTimeOffset.UtcNow,
                 landed => landings.Any(each => string.Equals(each.Branch, of.Branch, StringComparison.Ordinal)
                     && (string.Equals(each.Tip, landed, StringComparison.OrdinalIgnoreCase) || string.Equals(each.Squashed, landed, StringComparison.OrdinalIgnoreCase))));
         }

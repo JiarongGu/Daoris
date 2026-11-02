@@ -95,7 +95,7 @@ public sealed class AutoLander(
     /// </summary>
     public async Task<string?> PerformAsync(LandStart start, CancellationToken ct = default)
     {
-        if (ChatRuns.IsChatRun(start.Run)) return await PerformChatAsync(start, ct).ConfigureAwait(false);
+        if (WorkplaceRunFiles.IsChatRun(start.Run)) return await PerformChatAsync(start, ct).ConfigureAwait(false);
         var fresh = world.Again();
         var records = await fresh.RecordsAsync(ct).ConfigureAwait(false);
         // The branch unit's newest executor with a tree; else the newest session on the run's own quest (a unit read with no executors named).
@@ -126,7 +126,7 @@ public sealed class AutoLander(
         var fresh = world.Again();
         var records = await fresh.RecordsAsync(ct).ConfigureAwait(false);
         var record = start.Executors.Reverse().Select(id => RecordOf(records, id)).FirstOrDefault(each => each is { Tree.Length: > 0 })
-            ?? (ChatRuns.RecordOf(start.Run) is { } first ? RecordOf(records, first) : null);
+            ?? (WorkplaceRunFiles.RecordOf(start.Run) is { } first ? RecordOf(records, first) : null);
         if (record is not { Tree: { Length: > 0 } tree }) return null;
         var tried = Performed_(record.Id);
         var entry = new AutoLanding(record.Id, "", start.Repository, start.Workspace, tree, Now()) { Tries = tried is null ? [] : [tried] };

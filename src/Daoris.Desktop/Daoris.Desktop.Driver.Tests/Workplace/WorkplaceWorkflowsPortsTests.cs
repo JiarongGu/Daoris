@@ -381,6 +381,12 @@ public sealed class WorkplaceWorkflowsPortsTests : IDisposable
             string? workspace, CancellationToken ct) =>
             throw new NotSupportedException();
 
+        public string? TakenOf(string session, string recordsJson) => null;
+
+        public void SubmitChatCandidate(string home, string run, string repository, string? workspace, string branch, string tip, DateTimeOffset at, Func<string, bool> landed)
+        {
+        }
+
         public string? BindChatFirst(DriverConfig config, string home, string run, string tree, IWorkplacePluginCatalog plugins, DateTimeOffset at)
         {
             Calls.Add($"bind:{run}:{tree}");

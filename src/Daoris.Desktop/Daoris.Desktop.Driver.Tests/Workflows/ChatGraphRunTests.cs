@@ -173,5 +173,20 @@ public sealed class ChatGraphRunTests : AutoLandingFixture
         Assert.Contains("quest.close", refused.Binding.Problem);
     }
 
+    /// <summary>CHATFLOW1i: a chat that took a quest, and the next record of its line, are that quest's work; a chat that took none is not.</summary>
+    [Fact]
+    public void A_chat_that_took_a_quest_is_that_quests_work_at_every_door_and_one_that_took_none_is_not()
+    {
+        const string Records = """
+            [
+              {"id":"c1","repository":"engine","state":"completed","kind":"chat","tookQuest":"q4"},
+              {"id":"c2","repository":"engine","state":"working","kind":"chat","from":"c1"},
+              {"id":"c3","repository":"engine","state":"working","kind":"chat"}
+            ]
+            """;
+
+        Assert.Equal(("q4", "q4", (string?)null), (ChatRuns.TakenOf("c1", Records), ChatRuns.TakenOf("c2", Records), ChatRuns.TakenOf("c3", Records)));
+    }
+
     private DriverConfig Config(string json) => DriverConfig.Parse(json);
 }

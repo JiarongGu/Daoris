@@ -55,6 +55,16 @@ public static class ChatRuns
         return KeyOf(session, sessions);
     }
 
+    /// <summary>
+    /// The quest whose work a record continues though its own <c>quest</c> is none (CHATFLOW1i, the chat-flow design §4.1): a chat that took one,
+    /// a quest's worker gone on as a conversation, a line whose stored origin is a quest's; null for any other, and for a record not read.
+    /// </summary>
+    public static string? TakenOf(string session, string recordsJson)
+    {
+        var sessions = Trace.ParseSessions(recordsJson);
+        return sessions.FirstOrDefault(each => Same(each.Id, session)) is { Quest: null } record ? WorkflowRunReader.WorkOf(record, sessions) : null;
+    }
+
     /// <summary>The chat run of the record <paramref name="session"/> names, read from the service's records as they were answered.</summary>
     public static string? ChatOf(string session, string recordsJson, Func<string, bool> holds)
     {
