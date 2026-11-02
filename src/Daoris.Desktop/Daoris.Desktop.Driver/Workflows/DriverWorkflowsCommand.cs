@@ -28,8 +28,8 @@ public static class DriverWorkflowsCommand
     /// <summary>The sub-verbs that write a workflow or the choice; with <c>--plan</c> each only says what it would write.</summary>
     public static IReadOnlySet<string> Writes { get; } = ChoiceGrammar.WorkflowWrites;
 
-    /// <summary>The sub-verbs, each the CLI's.</summary>
-    public static IReadOnlyList<string> Verbs { get; } = ["list", "defaults", "show", "use", "kind", "new", "edit", "apply", "export", "import"];
+    /// <summary>The sub-verbs the usage names; <c>edit</c> is still answered, with the refusal that names the editor and <c>apply</c> (WORKFLOWCLEAN1 1b).</summary>
+    public static IReadOnlyList<string> Verbs { get; } = ["list", "defaults", "show", "use", "kind", "new", "apply", "export", "import"];
 
     public const string Usage = "`driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; "
         + "new <id> --from <default>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; "
