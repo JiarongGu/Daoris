@@ -28,7 +28,7 @@ import {
   rehearsalRun, restartBetweenRequests, takePorts, waitFor,
 } from './rehearsal-kit.mjs';
 import {
-  SETUP_RULES, SETUP_TITLE, readEvents, readFollowed, readRegister, readSetup, readWorkspaceSetup, withFirstOnPath,
+  SETUP_RULES, SETUP_TITLE, readEvents, readFollowed, readPlace, readRegister, readWorkspaceSetup, withFirstOnPath,
   writeDoctrineLauncher,
 } from './setup-kit.mjs';
 import { doorCommand, programOf, providersFolder, readStandIns, scenarioPlan } from './stand-ins.mjs';
@@ -5094,9 +5094,10 @@ check('it is retired again, so no later phase meets it', unadoptedRetired.status
 
 section('17c. A repository nobody adopted is set up by its own session, and registered from its line (LAYOUT7, D117 §6, D124 §2–§3)');
 
-// The set-up press (LAYOUT7): `daoris-driver setup <repository>` reads the repository's LINE as git objects, says
-// every refusal with its door, and publishes one ask to it as the person's, adding the doctrine tool's exact verbs to
-// its rules. Its own session then takes up the doctrine with the tool found by its bare name, in a tree of its own,
+// The one adoption door (LAYOUT7, WORKFLOWCLEAN1 1f): `daoris-driver place <repository> --preset keep --adoption` plans, then
+// applies, the set-up press: it reads the repository's LINE as git objects, says every refusal with its door, and publishes one ask to
+// it as the person's, adding the doctrine tool's exact verbs to its rules. Its own session then takes up the doctrine with the tool
+// found by its bare name, in a tree of its own,
 // and the person lands the work. The ACP stub above is that session: a set-up's title takes its set-up branch. The
 // landing moves the line, and the driver registers what the line now declares, with no `connect` (WSSETUP5).
 //
@@ -5149,64 +5150,62 @@ const unreadyConfig = join(scratch, 'driver-setup-unready.json');
 writeFileSync(unreadyConfig, `${JSON.stringify({
   drivable: [], adapter: 'acp-stub', cap: 1, timeoutMinutes: 2, commands: { 'acp-stub': ['node', acpAgent] },
 }, null, 2)}\n`);
-const unready = onSetupMachine('setup atlas --plan', { config: unreadyConfig });
-const unreadyRead = readSetup(unready.out);
+const PLACE_ATLAS = 'place atlas --preset keep --adoption';
+const unready = onSetupMachine(`${PLACE_ATLAS} --plan`, { config: unreadyConfig });
+const unreadyRead = readPlace(unready.out);
 check(
-  '`daoris-driver setup --plan` refuses a repository with no tree of its own, saying its door, and not for being undriven',
+  '`daoris-driver place --adoption --plan` refuses a repository with no tree of its own, saying its door, and not for being undriven',
   atlasAdded.status === 200 && unready.code === 1 && unreadyRead.refusals.length === 1
     && /`daoris driver trees atlas on`/.test(unreadyRead.refusals[0]) && !/is not driven here/.test(unready.out)
-    && unreadyRead.nothingPublished && unreadyRead.title === null,
+    && unreadyRead.nothingWritten && unreadyRead.quests.length === 0,
   `${atlasAdded.text}\n${unready.out}`,
 );
 
-// The plan: what was read, the quest's whole text and the rule, and nothing published or added.
+// The plan: the repository, its delivery kept, the one change an adoption makes, and nothing written, asked or added.
 const asksBeforePlan = await askCount();
-const planned = onSetupMachine('setup atlas --plan');
-const plan = readSetup(planned.out);
+const planned = onSetupMachine(`${PLACE_ATLAS} --plan`);
+const plan = readPlace(planned.out);
 check(
-  '`setup --plan` prints what it read from the line: the commit, nothing for agents yet, the agent, the landing, and the tool a child finds',
-  planned.code === 0 && plan.repository === 'atlas' && plan.workspace === 'default'
-    && plan.line === 'main' && plan.commit === atlasBorn.slice(0, 12)
-    && plan.layout === 'none · adopted no · declares no · the whole set-up'
-    && plan.agent === 'acp-stub' && /^merged into its line/.test(plan.lands ?? '')
-    && /^v\d+\./.test(plan.node ?? '') && plan.daoris === cliVersion,
-  planned.out,
-);
-const neighbours = (plan.body ?? '').split('\n').find((line) => line.includes('by the names it knows them by')) ?? '';
-check(
-  '…and the quest it would publish: the set-up\'s title, the version the tool answered, the neighbours by name, the knowledge step, and `daoris`, never `npx`',
-  SETUP_TITLE.test(plan.title ?? '')
-    && (plan.body ?? '').includes(`Run \`daoris --version\`. It prints \`${cliVersion}\`.`)
-    && neighbours.includes('`game`') && !neighbours.includes('`atlas`')
-    && (plan.body ?? '').includes('**Initialise the knowledge.**') && !/\bnpx\b/.test(plan.body ?? ''),
+  '`place --adoption --plan` says the repository, its delivery kept, and the one change: a set-up asked of its own session',
+  planned.code === 0 && JSON.stringify(plan.repositories) === '["atlas"]' && plan.adoption
+    && plan.rows.length === 1 && plan.rows[0].repository === 'atlas' && plan.refusals.length === 0
+    && plan.changes.length === 1 && /a set-up asked of its own session, not asked → asked$/.test(plan.changes[0]),
   planned.out,
 );
 check(
-  '…and the rule it would add, the doctrine tool\'s nine exact verbs — while a plan publishes nothing and adds no rule',
-  JSON.stringify(plan.rules) === JSON.stringify(SETUP_RULES) && plan.nothingPublished
-    && (await atlasQuests()).length === 0 && (await askCount()) === asksBeforePlan && atlasAllows().length === 0,
+  '…while a plan writes nothing: no quest, no ask, and no rule added',
+  plan.nothingWritten && (await atlasQuests()).length === 0 && (await askCount()) === asksBeforePlan && atlasAllows().length === 0,
   planned.out,
 );
 
 // The press: one ask, as the person's, which the service publishes at once as one quest.
-const pressed = onSetupMachine('setup atlas');
-const press = readSetup(pressed.out);
+const pressed = onSetupMachine(`${PLACE_ATLAS} --apply`);
+const press = readPlace(pressed.out);
 const [setupQuest, ...moreQuests] = await atlasQuests();
 check(
-  'a press publishes ONE quest to atlas, titled as a set-up and asked by the ask it made as the person\'s',
-  pressed.code === 0 && moreQuests.length === 0 && Boolean(press.quest) && setupQuest?.id === press.quest
-    && SETUP_TITLE.test(setupQuest.title ?? '') && setupQuest.status === 'Open' && setupQuest.from === `ask #${press.ask}`,
+  'a press asks ONE quest of atlas, titled as a set-up and asked by an ask made as the person\'s',
+  pressed.code === 0 && moreQuests.length === 0 && press.quests.length === 1 && press.quests[0].repository === 'atlas'
+    && setupQuest?.id === press.quests[0].quest && SETUP_TITLE.test(setupQuest.title ?? '') && setupQuest.status === 'Open'
+    && /^ask #[0-9a-f]+$/.test(setupQuest.from ?? ''),
   `${pressed.out}\n${JSON.stringify(setupQuest ?? null)}`,
 );
+const neighbours = (setupQuest?.body ?? '').split('\n').find((line) => line.includes('by the names it knows them by')) ?? '';
 check(
-  '…and adds the doctrine tool\'s verbs to atlas\'s rules, as it says it did, before its session starts',
-  JSON.stringify(press.rules) === JSON.stringify(SETUP_RULES) && SETUP_RULES.every((rule) => atlasAllows().includes(rule)),
+  '…its words: the version the tool answered, the neighbours by name, the knowledge step, and `daoris`, never `npx`',
+  (setupQuest?.body ?? '').includes(`Run \`daoris --version\`. It prints \`${cliVersion}\`.`)
+    && neighbours.includes('`game`') && !neighbours.includes('`atlas`')
+    && (setupQuest?.body ?? '').includes('**Initialise the knowledge.**') && !/\bnpx\b/.test(setupQuest?.body ?? ''),
+  JSON.stringify(setupQuest ?? null),
+);
+check(
+  '…and adds the doctrine tool\'s nine exact verbs to atlas\'s rules before its session starts',
+  SETUP_RULES.every((rule) => atlasAllows().includes(rule)),
   `${pressed.out}\n${JSON.stringify(atlasAllows())}`,
 );
-const again = onSetupMachine('setup atlas');
+const again = onSetupMachine(`${PLACE_ATLAS} --apply`);
 check(
-  'a second press while the set-up is open is refused, naming it, and publishes nothing',
-  again.code === 1 && readSetup(again.out).refusals.some((said) => said.startsWith(`a set-up is already open for \`atlas\`: \`#${setupQuest?.id}\``))
+  'a second press while the set-up is open is refused, naming it, and asks nothing',
+  again.code === 1 && readPlace(again.out).refusals.some((said) => said.startsWith(`a set-up is already open for \`atlas\`: \`#${setupQuest?.id}\``))
     && (await atlasQuests()).length === 1,
   again.out,
 );
@@ -5342,15 +5341,16 @@ check(
 // are (ORIENT2c, D151's note: `Done` means set up and naming an index). Atlas is a README and what its set-up wrote, so
 // the press cannot read what it is built with and cannot name the generator: it refuses (`no-index-form`), naming the
 // ask to make by hand, and asks nothing.
-const afterLanding = onSetupMachine('setup atlas --plan');
-const afterRead = readSetup(afterLanding.out);
+// An ask of another shape (what it builds) is a plan of its own, so it is applied afresh rather than finding the first press's receipt.
+const questsBeforeIndex = (await atlasQuests()).length;
+const afterLanding = onSetupMachine(`${PLACE_ATLAS} --what-it-builds library --apply`);
+const afterRead = readPlace(afterLanding.out);
 check(
-  'read from the line again, atlas is set up — adopted on the agents layout and declaring — and only its index is left to ask, which the press cannot frame for a repository whose stack it cannot read, so nothing is asked',
-  afterLanding.code === 1 && afterRead.commit === atlasLine.slice(0, 12)
-    && afterRead.layout === 'agents · adopted yes · declares yes · its index of where things are'
-    && afterRead.refusals.length === 1
-    && /^`atlas` is set up and names no index of where things are, and the press cannot name its generator: /.test(afterRead.refusals[0])
-    && afterRead.refusals[0].includes('*Give this repository an index of where things are*') && afterRead.nothingPublished,
+  'read from the line again, atlas is set up — and only its index is left to ask, which the press cannot frame for a repository whose stack it cannot read, so the adoption is refused and nothing is asked',
+  afterLanding.code === 1 && afterRead.quests.length === 0
+    && /^adoption refused — `atlas` is set up and names no index of where things are, and the press cannot name its generator: /.test(afterRead.message ?? '')
+    && (afterRead.message ?? '').includes('*Give this repository an index of where things are*')
+    && (await atlasQuests()).length === questsBeforeIndex,
   afterLanding.out,
 );
 
@@ -5407,7 +5407,7 @@ check(
 
 section('17d. A workspace is set up one repository at a time, pausing after its pilot (WSSETUP6, D124 §4)');
 
-// The workspace plan (WSSETUP6): `daoris-driver setup --workspace <name>` writes a plan of single set-ups and adds the
+// The workspace plan (WSSETUP6): `daoris-driver place --workspace <name> --adoption` writes a plan of single set-ups and adds the
 // doctrine tool's verbs once, at the workspace's scope; each look of the loop publishes the next to go while fewer than its
 // `atOnce` are open (never the last slot: `cap − 1`), and once its pilot has closed the plan pauses itself until the person
 // resumes it. Nothing in the plan is a count: each state is read from the registry and the quests.
@@ -5563,7 +5563,10 @@ const rowsAfterLanding = await plannedRows();
 // repository its index in its turn, and it is set up once that closes done). Read from its line, each asks only that.
 const standingAfter = readWorkspaceSetup(onPlanMachine(`place --workspace ${PLAN_WORKSPACE} --adoption --plan`).out);
 const planAfterLanding = readPlan();
-const linesAfterLanding = PLANNED.map((name) => readSetup(onPlanMachine(`setup ${name} --plan`).out));
+// A single adoption of each, as the one door asks it: refused for the index it cannot frame, nothing asked.
+const linesAfterLanding = PLANNED.map((name) => ({
+  name, read: readPlace(onPlanMachine(`place ${name} --preset keep --adoption --what-it-builds library --apply`).out),
+}));
 check(
   'both land and are registered from their lines, adopted and declared in their workspace, with no `connect` run, and the plan reads both to go again for their index of where things are, asking neither a set-up twice',
   rowsBeforeLanding.length === 2 && rowsBeforeLanding.every((row) => row.adopted === false && row.registered === false)
@@ -5581,9 +5584,10 @@ check(
     && Object.keys(planAfterLanding?.published ?? {}).length === 2
     && planAfterLanding.published[firstPlanned] === firstSetup?.id && planAfterLanding.published[secondPlanned] === secondSetup?.id
     && Object.keys(planAfterLanding?.indexed ?? {}).length === 0
-    && linesAfterLanding.every((read) => read.layout === 'agents · adopted yes · declares yes · its index of where things are'),
+    && linesAfterLanding.every(({ name, read }) => read.quests.length === 0
+      && (read.message ?? '').startsWith(`adoption refused — \`${name}\` is set up and names no index of where things are`)),
   `${plannedLandings.map((landed) => landed.out).join('\n')}\n${JSON.stringify(rowsAfterLanding)}\n${standingAfter.summary}\n`
-    + `${JSON.stringify(standingAfter.standing)}\n${JSON.stringify(planAfterLanding)}\n${linesAfterLanding.map((read) => read.layout).join('\n')}`,
+    + `${JSON.stringify(standingAfter.standing)}\n${JSON.stringify(planAfterLanding)}\n${linesAfterLanding.map(({ read }) => read.message).join('\n')}`,
 );
 
 // Leave nothing for a later phase to meet: the plan stopped, so no later look works it, both trees gone, both retired.

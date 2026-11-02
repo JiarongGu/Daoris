@@ -1,9 +1,10 @@
 /**
  * The family rehearsal's set-up phase, in the parts a test can hold without a host or a driver (LAYOUT7a):
  * the doctrine tool's launcher a child of Daoris finds by its bare name, the PATH that puts it first, and a
- * reading of what `daoris-driver setup` prints; for the registration that follows the landing (WSSETUP5a), a
- * reading of what `daoris-driver register` prints and of the machine log's lines; and, for a workspace set up one
- * repository at a time (WSSETUP6a), a reading of what `daoris-driver place --workspace` prints.
+ * reading of what `daoris-driver place <repository> --preset keep --adoption` prints (the one adoption door, WORKFLOWCLEAN1
+ * 1f); for the registration that follows the landing (WSSETUP5a), a reading of what `daoris-driver register` prints and of
+ * the machine log's lines; and, for a workspace set up one repository at a time (WSSETUP6a), a reading of what
+ * `daoris-driver place --workspace` prints.
  *
  * ## Why the workspace's CLI, and a launcher of the rehearsal's own
  *
@@ -14,11 +15,10 @@
  *
  * ## A reading of another program's words
  *
- * `readSetup` reads `SetupCommand`'s output by its shape: the head, the rows of what was read, the quest's
- * words, the rules, the refusals, what a press published. It shares no code with it. The CLI's
- * `test/setup-kit.test.ts`, which `npm run verify` runs (TEST3), holds the reading against output spelled as
- * `SetupCommand` writes it, so a change to those words is a
- * change to that test's fixtures too, and the family rehearsal is what runs the two against each other.
+ * `readPlace` reads `PlaceCommand`'s output by its shape: the head, each repository's row, the changes, the refusals,
+ * the apply's sentence and the quests it asked. It shares no code with it. The CLI's `tool-test/setup-kit.test.ts`
+ * holds the reading against output spelled as `PlaceCommand` writes it, so a change to those words is a change to
+ * that test's fixtures too, and the family rehearsal is what runs the two against each other.
  * `readRegister`, `readFollowed`, `readEvents` and `readWorkspaceSetup` read `RegisterCommand`, `MachineLog` and
  * `WorkspaceSetupCommand` the same way.
  */
@@ -72,7 +72,7 @@ export function withFirstOnPath(folder, env = process.env) {
   return { [key]: env[key] ? `${folder}${delimiter}${env[key]}` : folder };
 }
 
-/** A row of what was read (`  line     …`): its label padded to nine, after two spaces; a plan's pacing pads to ten. */
+/** A row of what was read (`  at once  …`): its label padded to `width` after two spaces. */
 const row = (lines, label, width = 9) => {
   const lead = `  ${label.padEnd(width)}`;
   const found = lines.find((line) => line.startsWith(lead));
@@ -87,43 +87,29 @@ const following = (lines, from, lead) => {
 };
 
 /**
- * What `daoris-driver setup <repository> [--plan]` printed (`SetupCommand`), read back: null for a field it did
- * not print. `title` and `body` are the ask's words a plan shows; `rules` are the ones it would add or added;
- * `refusals` each sentence after `refused:`; `ask` and `quest` the ids a press published; `nothingPublished`
- * whether it said a plan published nothing and added no rule.
+ * What `daoris-driver place <repository> --preset keep --adoption [--plan]` printed (`PlaceCommand`, the one adoption door), read
+ * back: null for a field it did not print. `repositories` and `adoption` are the head's; `rows` each repository's line (now,
+ * after, suggested); `changes` the sentences under `changes, each said once:`; `refusals` each sentence after `refused:`;
+ * `nothingWritten` whether it said a plan wrote and asked nothing; `message` the apply's outcome sentence; `quests` each
+ * adoption quest an apply asked, by repository.
  */
-export function readSetup(out) {
+export function readPlace(out) {
   const lines = out.split(/\r?\n/);
-  const head = /^setup: `([^`]+)`(?:, in workspace `([^`]+)`)?$/.exec(lines.find((line) => line.startsWith('setup: `')) ?? '');
-  const line = /^`([^`]+)` at `([0-9a-f]+)`$/.exec(row(lines, 'line') ?? '');
-  const tools = /^node (.+) · daoris (.+)$/.exec(row(lines, 'tools') ?? '');
-
-  // The words: a blank line after the heading that names where they go, then the title, a blank line and the
-  // body, and a blank line before the rules.
-  const opens = lines.findIndex((each) => /^a press publishes this to `[^`]+`, as your ask, in `[^`]+`:$/.test(each));
-  const closes = lines.findIndex((each, at) => at > opens && /^and adds to `[^`]+`'s rules/.test(each));
-  const words = opens >= 0 && closes > opens ? lines.slice(opens + 2, closes) : null;
-
-  const rulesAt = lines.findIndex((each) => /^(and adds|added) to `[^`]+`'s rules, so its session may run the doctrine tool:$/.test(each));
+  const headAt = lines.findIndex((line) => /^place: `[^`]+`(?:, `[^`]+`)* — /.test(line));
+  const head = headAt < 0 ? null : lines[headAt];
+  const changesAt = lines.indexOf('changes, each said once:');
   const refusedAt = lines.indexOf('refused:');
-  const id = (label) => lines.map((each) => new RegExp(`^  ${label} +#([0-9a-f]+)$`).exec(each)).find(Boolean)?.[1] ?? null;
   return {
-    repository: head?.[1] ?? null,
-    workspace: head?.[2] ?? null,
-    line: line?.[1] ?? null,
-    commit: line?.[2] ?? null,
-    layout: row(lines, 'layout'),
-    agent: row(lines, 'agent'),
-    lands: row(lines, 'lands'),
-    node: tools?.[1] ?? null,
-    daoris: tools?.[2] ?? null,
-    title: words?.[0] ?? null,
-    body: words ? words.slice(2).join('\n').trim() : null,
-    rules: rulesAt < 0 ? [] : following(lines, rulesAt, '  ').filter((each) => /^Bash\(.+\)$/.test(each)),
+    repositories: head === null ? [] : [...head.slice(0, head.indexOf(' — ')).matchAll(/`([^`]+)`/g)].map((match) => match[1]),
+    adoption: head !== null && /; adoption\b/.test(head),
+    rows: lines.map((line) => /^ {2}`([^`]+)`: now (.*) · after (.*) · suggested (.*)$/.exec(line)).filter(Boolean)
+      .map(([, repository, now, after, suggested]) => ({ repository, now, after, suggested })),
+    changes: changesAt < 0 ? [] : following(lines, changesAt, '  '),
     refusals: refusedAt < 0 ? [] : following(lines, refusedAt, '  - '),
-    ask: id('ask'),
-    quest: id('quest'),
-    nothingPublished: lines.includes('--plan: nothing was published, and no rule was added.'),
+    nothingWritten: lines.includes('--plan: nothing was written, and nothing was asked.'),
+    message: lines.find((line, at) => at !== headAt && line.startsWith('place: '))?.slice(7) ?? null,
+    quests: lines.map((line) => /^ {2}quest {2}#([0-9a-f]+) for `([^`]+)`$/.exec(line)).filter(Boolean)
+      .map(([, quest, repository]) => ({ quest, repository })),
   };
 }
 

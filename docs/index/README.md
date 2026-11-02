@@ -314,7 +314,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/tool-test/desktop-publish.test.ts` | 82 | 1391 |
 | `src/Daoris.Cli/tool-test/merge-branch.test.ts` | 531 | 7771 |
 | `src/Daoris.Cli/tool-test/merge-queue.test.ts` | 235 | 3458 |
-| `src/Daoris.Cli/tool-test/setup-kit.test.ts` | 56 | 1039 |
+| `src/Daoris.Cli/tool-test/setup-kit.test.ts` | 55 | 1019 |
 
 ### Tools (`tools`)
 
@@ -323,7 +323,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/deployment-rehearsal.mjs` | 108 | 1846 |
 | `tools/desktop-publish.mjs` | 86 | 1493 |
 | `tools/desktop.mjs` | 54 | 1098 |
-| `tools/family-rehearsal.mjs` | 371 | 6430 |
+| `tools/family-rehearsal.mjs` | 372 | 6434 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
 | `tools/merge-branch.mjs` | 500 | 8418 |
 | `tools/merge-queue.mjs` | 66 | 1039 |
