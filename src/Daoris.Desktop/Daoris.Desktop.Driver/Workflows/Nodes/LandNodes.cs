@@ -172,6 +172,10 @@ public static class LandNodes
         return null;
     }
 
+    /// <summary>The <c>method</c> and <c>pattern</c> a graph's <c>land</c> node writes, null for one it leaves open or a graph with none.</summary>
+    public static (string? Method, string? Pattern) WrittenLanding(NodeGraph? graph) =>
+        graph?.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land) is { } land ? (Written(land, "method"), Written(land, "pattern")) : (null, null);
+
     /// <summary>An option written as a JSON string, or null: <see cref="NodeOptions.Text"/> reads a number by its text, which no option here takes.</summary>
     private static string? Written(NodeDeclaration node, string name) =>
         node.Options.TryGetValue(name, out var raw) && raw.TrimStart().StartsWith('"') ? NodeOptions.Value(raw) as string : null;
