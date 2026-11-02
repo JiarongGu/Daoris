@@ -167,7 +167,6 @@
     { "code": "ask-no-quest", "id": "a1", "said": "Nothing runs here yet: ask `#a1` has published no quest." },
     { "code": "chat-checkout", "said": "This chat works in your checkout, not in a tree of its own, so its work runs no workflow: what it changes is yours to commit. To give work a workflow, start a conversation with a tree of its own." },
     { "code": "chat-own-tree", "said": "This chat works in a tree of its own, but this build reads no workflow for a conversation's work yet." },
-    { "code": "chat-graph-later", "workflow": "reviewed", "said": "This chat's repository follows the workflow `reviewed`, which this build does not run for a conversation's work yet, so its work is landed as before." },
     { "code": "chat-tree-gone", "said": "This chat's tree is gone, and its work was never bound to a workflow, so there is no run to show." },
     { "code": "ask-daoris", "said": "Ask Daoris works in its workspace's room, not in a repository's tree, and a repository's work is asked for through a quest, so no workflow runs for its conversations." },
     { "code": "reviewer", "said": "This session reads another's work for a second opinion and changes nothing of its own, so no workflow runs for it." },

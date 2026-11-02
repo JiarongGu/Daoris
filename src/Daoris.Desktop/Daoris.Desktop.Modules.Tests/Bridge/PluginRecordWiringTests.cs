@@ -49,6 +49,33 @@ public sealed class PluginRecordWiringTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// WORKFLOWCLEAN1 1c (the cleanup design §2.2): the press on a run whose <c>land</c> Daoris performs is the review's word and a wait, so it
+    /// builds no plugin wire and calls no landing; the route builds its wire only where it lands in place (a chat run's press, the transitional
+    /// path). Read from the source, as a reviewer would, since a landing needs git and a plugin's process.
+    /// </summary>
+    [Fact]
+    public void The_press_on_a_run_whose_land_is_performed_builds_no_plugin_wire_and_calls_no_landing()
+    {
+        var source = File.ReadAllText(SourceFiles.Module("TreesRoutes.cs"));
+        var from = source.IndexOf("private async Task<object?> PerformedPressAsync(", StringComparison.Ordinal);
+        Assert.True(from > 0);
+        var body = source[from..source.IndexOf("private async Task<object?> ChatPressAsync(", from, StringComparison.Ordinal)];
+        Assert.DoesNotContain("LandingPlugins", body);
+        Assert.DoesNotContain("LandAsync", body);
+        Assert.DoesNotContain("TreeLands", body);
+
+        var waits = File.ReadAllText(SourceFiles.Module("PerformedWaits.cs"));
+        Assert.DoesNotContain("LandingPlugins", waits);
+        Assert.DoesNotContain("LandAsync", waits);
+
+        // The gate, the plan and the Accept read through trees with no wire; the wire is built after the performed branch is left.
+        var landing = source.IndexOf("SessionTrees Landing() => new(", StringComparison.Ordinal);
+        var performed = source.IndexOf("return await PerformedPressAsync(", StringComparison.Ordinal);
+        var inPlace = source.IndexOf("await Landing().LandAsync(", StringComparison.Ordinal);
+        Assert.True(landing > 0 && performed > landing && inPlace > performed);
+    }
+
+    /// <summary>
     /// PLUGUI1e: the loop's conversations write <c>plugin.served</c> to the shell's log for each plugin server they are
     /// handed or withheld, as its driven sessions do through the hook set. A conversation needs a service, git and a
     /// harness, so this half reads the construction; the driver's tests hold what the runner writes.

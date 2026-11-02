@@ -31,6 +31,15 @@ internal interface IWorkplaceWorkflows
     /// <summary>The press's view of a chat run's record: its line's ids, oldest first, and whether it is live (see <c>ChatRuns.PressOf</c>).</summary>
     (IReadOnlyList<string> Line, bool Live) ChatPressOf(string session, string recordsJson);
 
+    /// <summary>The quest whose work a record continues though its own is none (CHATFLOW1i; see <c>ChatRuns.TakenOf</c>).</summary>
+    string? TakenOf(string session, string recordsJson);
+
+    /// <summary>
+    /// A press's candidate on a graph-bound chat run (CHATFLOW1f; see <c>ChatCandidates.Submit</c>): submitted at <paramref name="tip"/>, the run's
+    /// binding read first, and none for a run bound to anything else or held by a problem.
+    /// </summary>
+    void SubmitChatCandidate(string home, string run, string repository, string? workspace, string branch, string tip, DateTimeOffset at, Func<string, bool> landed);
+
     /// <summary>Current's landing graph for <paramref name="rule"/>: the method its <c>land</c> names, and the graph's digest (see <c>NodeGraphHomes.Landing</c>).</summary>
     (string Method, string Graph) CurrentLand(LandingRule rule);
 
@@ -38,7 +47,8 @@ internal interface IWorkplaceWorkflows
     /// The person's Accept kept as the review's word of <paramref name="process"/>'s run (WORKFLOWCLEAN1 1c), where its graph holds a review
     /// (see <c>RunNodeWords.Word</c>); a process whose graph holds none, or that is no run's, answers <see cref="ReviewWord.HasReview"/> false.
     /// </summary>
-    ReviewWord KeepReviewWord(string home, Func<bool>? holdsLease, IWorkplaceProcess process, DateTimeOffset now);
+    /// <param name="words">What the word carries: for a head's combined Accept, the operation bringing sessions together it delivers.</param>
+    ReviewWord KeepReviewWord(string home, Func<bool>? holdsLease, IWorkplaceProcess process, DateTimeOffset now, string? words = null);
 
     /// <summary>Keeps the repair a carried review Accept waits on, on the run's record (see <c>RunRepairs.Keep</c>).</summary>
     void KeepRepair(string home, Func<bool>? holdsLease, string unit, string review, string tip, string turn, int carries, DateTimeOffset at);
@@ -48,6 +58,12 @@ internal interface IWorkplaceWorkflows
 
     /// <summary>How many times the session was carried on for the review's Accept; 0 where no repair is kept (see <c>RunRepairs.Of</c>).</summary>
     int RepairCarries(string home, Func<bool>? holdsLease, string unit, string review);
+
+    /// <summary>
+    /// Whether work in <paramref name="repository"/> follows a saved workflow (a version of the person's own or the home's default), not
+    /// Current (WORKFLOWCLEAN1 1c, the cleanup design §2.4): its landing is that workflow's, which the access setup's pauses do not compose into.
+    /// </summary>
+    bool FollowsSaved(DriverConfig config, string repository, string? workspace);
 }
 
 /// <summary>What keeping the person's Accept as a run's review word came to (WORKFLOWCLEAN1 1c).</summary>

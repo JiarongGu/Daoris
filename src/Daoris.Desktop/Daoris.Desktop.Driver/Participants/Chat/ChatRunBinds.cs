@@ -14,6 +14,9 @@ namespace Daoris.Driver;
 ///
 /// <para><b>Nothing of its checks</b> is told here: they are not enforced on its tree before CHATFLOW1h (§4.4).</para>
 /// </remarks>
+/// <summary>The checks a conversation's run holds it to at an execution: the choice, its long-call minutes, and the repository they are keyed by.</summary>
+internal sealed record ChatChecked(string Checks, int? Minutes, string Repository);
+
 internal sealed class ChatRunBinds(string home, ServiceClient service, ISessionEvents events)
 {
     // Each conversation's run once its key was read, and each run whose failed bind was said, so a turn's end asks the service once.
@@ -96,6 +99,37 @@ internal sealed class ChatRunBinds(string home, ServiceClient service, ISessionE
                                           or UnauthorizedAccessException or OperationCanceledException or InvalidOperationException)
         {
             return false;
+        }
+    }
+
+    /// <summary>
+    /// The checks a chat run's conversation is held to at an execution (CHATFLOW1h, the chat-flow design §4.4): its run's, read from the service's
+    /// records as a turn's end reads them, as the checks the process hands (<see cref="SessionChecks.Of"/>); null where it is no chat run's, its
+    /// run sets none, or nothing could be read.
+    /// </summary>
+    public async Task<ChatChecked?> ChecksAsync(string session, string tree, DriverConfig config)
+    {
+        try
+        {
+            var trees = new SessionTrees(home);
+            if (!trees.Holds(tree)) return null;
+            var sessions = Trace.ParseSessions(await service.SessionRecordsJsonAsync(CancellationToken.None).ConfigureAwait(false));
+            if (sessions.FirstOrDefault(each => string.Equals(each.Id, session, StringComparison.OrdinalIgnoreCase)) is not { } record
+                || ParticipantsWorkflows.Current.ChatOf(record, sessions, trees.Holds) is not { } run)
+            {
+                return null;
+            }
+
+            var registry = await service.RegistryAsync(CancellationToken.None).ConfigureAwait(false);
+            var workspace = registry.FirstOrDefault(each => string.Equals(each.Repository, record.Repository, StringComparison.OrdinalIgnoreCase))?.Workspace;
+            var process = ParticipantsWorkflows.Current.ReadProcess(home, config, record.Repository, workspace, run);
+            return ParticipantsWorkflows.Current.ChecksOf(config, record.Repository, process) is { } checks
+                ? new ChatChecked(checks.Checks, checks.Minutes, record.Repository) : null;
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException
+                                          or UnauthorizedAccessException or OperationCanceledException or InvalidOperationException)
+        {
+            return null;
         }
     }
 

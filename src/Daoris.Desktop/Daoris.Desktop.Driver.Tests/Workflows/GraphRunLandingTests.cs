@@ -326,6 +326,38 @@ public sealed class GraphRunLandingTests : AutoLandingFixture
         Assert.Single(new DeliveryStore(_home).OfUnit("s1"));
     }
 
+    /// <summary>
+    /// A restart at each phase of the performer: the Accept kept and applied but the process gone before the node started (a fresh door starts it
+    /// once); the landing made and the process gone before the pass reached the node (a fresh door finds the delivery and lands nothing again).
+    /// </summary>
+    [Fact]
+    public async Task A_restart_before_the_start_and_after_the_landing_lands_once()
+    {
+        var (root, tree, branch, _) = await ReviewedRunAsync(ReviewedLand("""{"method":"merge"}"""));
+        var commit = await HeadAsync(tree);
+        Assert.True(RunNodeWords.Word(new NodeRecordFiles(_home, () => true), "q1", "review", NodeWordActs.Accept, null).Done);
+
+        // The pass that applies the word readies the `land`, and the process ends before any door starts it.
+        await PassAsync(root, branch, tree, door: null);
+        Assert.Equal(NodeStates.Active, Status("landing").State);
+        Assert.Empty(new DeliveryStore(_home).OfUnit("s1"));
+
+        // A fresh process at its next pass starts it, once.
+        var restarted = Door();
+        await PassAsync(root, branch, tree, door: restarted);
+        await restarted.IdleAsync();
+        Assert.Single(new DeliveryStore(_home).OfUnit("s1"));
+        Assert.Equal(commit, (await GitAsync(root, "merge-base", "main", commit)).Trim());
+
+        // And again after the landing, whatever the node's status says: no second delivery, no second landing.
+        var after = Door();
+        await PassAsync(root, branch, tree, door: after);
+        await PassAsync(root, branch, tree, door: after);
+        await after.IdleAsync();
+        var delivery = Assert.Single(new DeliveryStore(_home).OfUnit("s1"));
+        Assert.Equal(DeliverySettlements.Delivered, delivery.Settled);
+    }
+
     /// <summary>A branch method makes its branch from the intent alone, with no plugin asked, and the landing record names it.</summary>
     [Fact]
     public async Task A_branch_land_makes_its_branch_through_the_performer()

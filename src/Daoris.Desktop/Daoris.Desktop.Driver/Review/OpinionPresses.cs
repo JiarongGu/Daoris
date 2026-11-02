@@ -222,10 +222,14 @@ public sealed class OpinionPresses(string home, ServiceClient service)
             return (null, $"session `{session}` names no working tree of its own on this machine, so no second opinion is asked of its work here.");
         }
 
-        if (await service.SessionQuestAsync(session, ct).ConfigureAwait(false) is not { } quest)
+        // CHATFLOW1i (the chat-flow design §4.1): a chat that took a quest, a worker gone on as a conversation and a line whose origin is a quest's
+        // are that quest's work, read by the resolver the view reads (WorkflowRunReader.WorkOf), so every door decides by one answer.
+        var recordsJson = await service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
+        var taken = await service.SessionQuestAsync(session, ct).ConfigureAwait(false) ?? WorkplaceWorkflows.Current.TakenOf(session, recordsJson);
+        if (taken is not { } quest)
         {
             // CHATFLOW1d (the chat-flow design §7): a chat in a tree of its own is its chat run's work, its gate keyed by the run.
-            if (ChatRunOf(session, await service.SessionRecordsJsonAsync(ct).ConfigureAwait(false)) is { } chatRun)
+            if (ChatRunOf(session, recordsJson) is { } chatRun)
             {
                 var (chatWorkspace, chatRepository) = _trees.Owner(tree);
                 return (new Work(session, tree, null, chatRun, chatRepository, chatWorkspace, new ServiceReviewWorld(service))
