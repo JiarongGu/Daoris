@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-02 - Clear on a git access class loosened it without asking (REVIEW2 P3)
+
+- **Symptom:** *Clear* on a class set at this level sent `{access: {class: null}}` at once, though the level above could be looser (the design's §8 lists that as a widening to confirm).
+- **Root cause:** `onClear` called `send` directly; only a chosen value went through the widening check.
+- **Fix:** `GitAccessRows` takes the level above's resolution (`above`; this machine's is Daoris's defaults) and sends a clear through `choose(…)`, so a looser parent opens the `InlineConfirm`.
+- **Verify:** `GitAccess.test.tsx` (REVIEW2 P3, red first); the file's older Write sentence updated to the git-remote words.
+
 ## 2026-11-02 - The confirmation for a remote's own sign-ins could be skipped (REVIEW2 P2)
 
 - **Symptom:** choosing *Own sign-ins* on a git remote opened the confirmation; *Never mind* or Escape closed it and left Save enabled with the choice still `own`, which sent `GIT_USE {value: 'own'}` unconfirmed.

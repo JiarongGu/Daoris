@@ -108,6 +108,7 @@ export function GitDomain({ notify, host: openHost, onClosed }: { notify: Notify
             <GitAccessRows
               owner="machine"
               classes={resolveGitAccess([{ classes: machineAccess, source: 'machine' }])}
+              above={resolveGitAccess([])}
               busy={setAccess.isPending}
               onChange={(edit, answered) => setAccess.mutate({ machine: true, ...edit }, {
                 onSuccess: () => answered?.done(),
