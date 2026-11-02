@@ -281,7 +281,7 @@ built and merged as one wave, after REVIEW2 by the chunks' order. Each row write
 | **COMMS1d** the exchanges, read (driver, modules; 1) | §3.4, delivery and outcome apart, `available` and `source`; `HelperWaits`, `Observation`'s input and `SessionGroups` read it with no behaviour change | `ExchangesTests` per case, delivery and outcome; `ObservationTests`, `HelperWaitsTests`, `SessionGroupsTests` unchanged; the read equal across a restart; after a hand-over the head's read holds its predecessor's open exchanges; an unread source said, never empty |
 | **COMMS1e** a question's answer names the question (service, driver, web; 1) | §5.2 | a question replaced while the person answers: the older press refused beside its control, the newer one shown; a double press taken once; free words never read as a choice |
 | **COMMS1f** the brief says what the line waits on (driver; 1) | §5.4's piece, bounded, Daoris's words | `ContextBriefTests` golden; a hand-over while a helper reads tells the new part |
-| **COMMS1g** the answers-alone count, kept (driver; 1) | §5.3; a store step and its writer stamp; the legacy reader kept | a mixed helper, opinion and supervisor sequence; two answers queued together; a hand-over and a restart keep the count; missing history reads as *unknown*; no reset by a wrapper; the chat's no-wake rule unchanged; a waited quest's result counts; no number is fixed in the product: an appointed supervisor agent, or a person's hard-limit rule read with no model, decides and says so on the line; with neither, the line goes on with its count shown |
+| **COMMS1g** the answers-alone count, kept (driver; 1) | §5.3; a store step and its writer stamp; the legacy reader kept | a mixed helper, opinion and supervisor sequence; two answers queued together; a hand-over and a restart keep the count; missing history reads as *unknown*; no reset by a wrapper; the chat's no-wake rule unchanged; a waited quest's result counts; the admission judges the `at` it is handed, holding no number of its own (CONTEXTDRIVE1e's rules hand it; D229) |
 | **COMMS1h** the conversation draws each message once (web, modules; 2) | §7: the exchange card, the sender chips, the reference line, the receipts' words | page tests in en and zh; stories at 80, 39 and 25rem and the 300 px dock, both themes; keyboard order |
 | **COMMS1i** *Waiting on* and *Co-workers* (web, modules, driver; 2) | §7; *At work*'s co-workers; `sessions at-work`; Ask Daoris's room reads the exchanges | `AtWorkView` and `stripVersusView` tests; the verb's text and JSON; a story per member state; `HelpCoverageTests`' row |
 | **COMMS1j** *What needs you* by obligation (modules, web; 2) | §4.1 clause 3; one key per obligation | the same wait on the head, the foot and *Notifications* counted once; an unread message makes no count; a supervisor's held decision is no wait, its deferral is |
@@ -293,8 +293,8 @@ built and merged as one wave, after REVIEW2 by the chunks' order. Each row write
 ## 11. Open
 
 - **Settled 2026-11-03 (the owner's):** a quest's result that a line waited on (D79's resume) counts, and the count is no hard
-  limit fixed in the product: the line's supervisor, an agent or a rule the person sets, judges from it (§5.3). Row g builds the count with the waited quest's result as a cause, the rule supervisor, and the
-  supervisor's reading of it, and no fixed hold.
+  limit fixed in the product: the line's supervisor, an agent or a rule the person sets, judges from it (§5.3). Row g builds the count with the waited quest's result as a cause, and no fixed hold; the rule
+  supervisor and the supervisor's reading of the count are CONTEXTDRIVE1's rows (D229).
 - **Unmeasured:** a real agent's helper answer across a hand-over; two alongside parts posting to each other; zh at 300 px in the
   dock; whether agents use sibling posts as the doctrine says.
 - **Model tiers:** every judgement here is the no-model tier, .NET and TypeScript over records. The model-dependent acts are an
@@ -345,8 +345,9 @@ and is settled here when it lands. These amend §3 to §10, and each row carries
    (`SessionLedger.cs:1060-1066`), checks the press inside the step against the head's question as `SupervisedParkAsync` does
    (`:1362`), carries the question id on a held word and its file (`Mod/Loop/SessionWords.cs:194-196`), and sends it under a host
    mark; against an older host the modules' check stands alone. Proof: a press held across a hand-over refused when forwarded.
-8. **Row g, the count's key, reset and seed** (B8): the admission is keyed by the line's first record as the door's walk reaches it
-   (`Lines.WalkAsync`, the quest hop included). **D188's reset stands**: the person's words and Daoris's own fact words
+8. **Row g, the count's key, reset and seed** (B8): the admission is keyed by the line's one key, `LineKeys.Of` (CONTEXTDRIVE1's
+   design §2.3, D229: the quest's id where a part is a driven run of a quest, else the line's first record), the same line the
+   door's walk reaches (`Lines.WalkAsync`, the quest hop included). **D188's reset stands**: the person's words and Daoris's own fact words
    (`from: daoris`) reset the count; an answer carried in any wrapper, a brief, a retry or a hand-over never does. A line with no
    admission is seeded from the legacy count on first read, where no events count zero (D188's steward choice 2), so §5.3's
    *unknown* is withdrawn. `supervisor-bound` reads the same count. The step adds a table that no older build reads and leaves the
