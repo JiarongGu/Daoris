@@ -188,29 +188,51 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
     {
         var files = new HelperFiles(_context.Home);
         if (HelperWaits.Open(session, files.Asks(), files.ReadState).Count == 0) return false;
-        // A question on file that does not read is no proof that none was asked (Codex's round-2 #3): it parks, as one asked does.
-        if (new QuestionFiles(_context.Home).AskedSince(session, since) != false) return false;
-        return await AskedGoAheadAsync(session, ct).ConfigureAwait(false) == false;
+        var exchanges = Exchanges.Of(await OwnLookAsync(session, since, ct).ConfigureAwait(false), session);
+        return Exchanges.HoldsOnOwnHelper(exchanges, session);
     }
 
     /// <summary>
-    /// Whether <paramref name="session"/> asked a go-ahead on its work's ask that still waits on the person (HELPERWAIT1): an ask
-    /// the service does not hold, or a line on no ask (its entry's origin, COMMS1c), has none; one the service did not answer is unread,
-    /// null, and its caller parks as before rather than read a question as absent.
+    /// The look of <paramref name="session"/>'s own exchanges as the loop composes it (COMMS1d): the helper files, its question since
+    /// <paramref name="since"/> and the go-aheads on the ask its line is on, its entry's origin (COMMS1c). A source it cannot read is left
+    /// null, which the read says as unread; the sources a park does not wait on here are not read.
     /// </summary>
-    private async Task<bool?> AskedGoAheadAsync(string session, CancellationToken ct)
+    internal async Task<ExchangeLook> OwnLookAsync(string session, DateTimeOffset since, CancellationToken ct)
+    {
+        var files = new HelperFiles(_context.Home);
+        var questions = new QuestionFiles(_context.Home);
+        var asked = questions.AskedSince(session, since);
+        var (ask, goAheads) = await GoAheadsAsync(session, ct).ConfigureAwait(false);
+        return new ExchangeLook
+        {
+            Helpers = files.Asks(),
+            HelperState = files.ReadState,
+            Questions = asked is null ? null : questions.Read(session) is { } question ? [question] : [],
+            QuestionsSince = since,
+            Ask = ask,
+            GoAheads = goAheads,
+        };
+    }
+
+    /// <summary>
+    /// The ask <paramref name="session"/>'s line is on, its entry's origin (COMMS1c), and the go-aheads on it (HELPERWAIT1): none for a
+    /// line on no ask or an ask the service does not hold; null go-aheads where the service did not answer, unread, so its caller parks
+    /// as before rather than read a question as absent.
+    /// </summary>
+    private async Task<(string? Ask, IReadOnlyList<GoAheadView>? GoAheads)> GoAheadsAsync(string session, CancellationToken ct)
     {
         try
         {
             var record = await _context.Service.RecordAsync(session, ct).ConfigureAwait(false);
-            if (AskWords.AskOfEntry(record?.Entry) is not { } id) return false;
-            return await _context.Service.FindAskAsync(id, ct).ConfigureAwait(false) is { } ask
-                   && HelperWaits.AskedGoAhead(session, AskWords.Of(ask));
+            if (AskWords.AskOfEntry(record?.Entry) is not { } id) return (null, []);
+            return (id, await _context.Service.FindAskAsync(id, ct).ConfigureAwait(false) is { } ask
+                ? AskWords.Of(ask).GoAheads ?? []
+                : []);
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or JsonException or InvalidOperationException
                                           || (error is OperationCanceledException && !ct.IsCancellationRequested))
         {
-            return null;
+            return (null, null);
         }
     }
 
