@@ -15,6 +15,19 @@ public sealed record LegacyFacts(
     /// <summary>Whether the place follows Current, drawn from the old keys.</summary>
     public bool OnCurrent => Follows == WorkflowSelection.Current;
 
+    /// <summary>The keys of <c>driver.json</c> the conversion removes at this place: its own rule, its access setup's <c>landing</c>, its session checks.</summary>
+    public IReadOnlyList<string> RemovableKeys
+    {
+        get
+        {
+            var keys = new List<string>();
+            if (Own && Rule is not null) keys.Add(IsWorkspace ? "workspaceLandings" : "landings");
+            if (AccessLanding) keys.Add(IsWorkspace ? "workspaceAccess.landing" : "access.landing");
+            if (OwnChecks) keys.Add("sessionChecks");
+            return keys;
+        }
+    }
+
     /// <summary>The keys of the old shapes this place holds of its own, in the census's words.</summary>
     public IReadOnlyList<string> Shapes
     {

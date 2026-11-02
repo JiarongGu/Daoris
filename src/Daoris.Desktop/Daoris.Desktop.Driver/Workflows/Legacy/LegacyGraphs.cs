@@ -80,6 +80,13 @@ public static class LegacyGraphs
                 break;
         }
 
+        // A cycle's wires leave the landing or `line`, which every rule's graph drew; a branch or a pull request ends where the shipped ones do otherwise.
+        if (rule?.Cycle is not null && end != "line")
+        {
+            nodes.Add(Node("line", NodeKinds.Line, "observed"));
+            chain.Add(end = "line");
+        }
+
         var wires = new JsonArray();
         for (var at = 1; at < chain.Count; at++) wires.Add(new JsonObject { ["id"] = $"w{at}", ["kind"] = "after", ["from"] = chain[at - 1], ["to"] = chain[at] });
         var graph = new JsonObject { ["schemaVersion"] = 2, ["entries"] = new JsonArray("work"), ["end"] = end, ["nodes"] = nodes, ["wires"] = wires };

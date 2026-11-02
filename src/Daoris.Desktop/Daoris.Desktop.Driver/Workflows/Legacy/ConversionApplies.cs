@@ -268,7 +268,9 @@ public static class ConversionApplies
         if (receipt.DefaultWorkflow is { } wrote && next.DefaultWorkflow is null) next = next.WithDefaultWorkflow(wrote);
         foreach (var use in receipt.Uses)
         {
-            next = WorkflowSelection.Apply(next, new WorkflowUse(use.Workflow, use.IsWorkspace ? null : use.Place, use.IsWorkspace ? use.Place : null, use.Kind));
+            next = use.Workflow == WorkflowSelection.Current
+                ? PinnedToCurrent(next, use.Place, use.IsWorkspace)
+                : WorkflowSelection.Apply(next, new WorkflowUse(use.Workflow, use.IsWorkspace ? null : use.Place, use.IsWorkspace ? use.Place : null, use.Kind));
         }
 
         foreach (var removal in receipt.Removals)
@@ -291,6 +293,18 @@ public static class ConversionApplies
         }
 
         return (next, held);
+    }
+
+    /// <summary>
+    /// A place's default choice written as <c>current</c>, which no door writes any more for a development route: the conversion keeps a place with a
+    /// work cycle on Current this way once the home default would take it, its kinds and landed route as they were.
+    /// </summary>
+    public static DriverConfig PinnedToCurrent(DriverConfig config, string place, bool workspace)
+    {
+        var map = workspace ? config.WorkspaceWorkflows : config.Workflows;
+        var held = map.GetValueOrDefault(place);
+        var pinned = With(map, place, new WorkflowChoice(WorkflowSelection.Current, held?.Kinds ?? []) { Landed = held?.Landed });
+        return workspace ? config with { WorkspaceWorkflows = pinned } : config with { Workflows = pinned };
     }
 
     private static bool Reads(DriverConfig config, ConvertRemoval removal, ConversionBefore before, string key)

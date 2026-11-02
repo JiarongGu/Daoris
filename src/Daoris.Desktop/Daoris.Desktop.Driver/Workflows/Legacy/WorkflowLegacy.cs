@@ -46,14 +46,20 @@ public static class WorkflowLegacy
     /// <summary>The terminal word that ends an open unit, which a run's row carries as its door.</summary>
     public static string DoorOf(string? quest) => quest is null ? "daoris-driver quest abandon <quest>" : $"daoris-driver quest abandon {quest}";
 
-    /// <summary>The shape of a version if it is an old one, else null.</summary>
-    public static string? ShapeOf(NamedVersion version)
+    /// <summary>
+    /// The shape of a version if it is an old one, else null. A <c>land</c> saved with an <c>accept</c> does not read as a graph (it is held, never
+    /// landing), so it is found in the file's own text.
+    /// </summary>
+    public static string? ShapeOf(WorkflowFileFound found, NamedVersion version)
     {
         if (version.Steps is not null) return "steps";
-        if (version.Graph is not { } graph) return null;
-        if (graph.Nodes.Any(node => node.Kind == NodeKinds.Handed)) return "handed";
-        return graph.Nodes.Any(node => node.Kind == NodeKinds.Land && node.Options.ContainsKey(LandNodes.AcceptOption)) ? "land-accept" : null;
+        if (version.Graph is { } graph) return graph.Nodes.Any(node => node.Kind == NodeKinds.Handed) ? "handed" : null;
+        return RawGraph(found, version)?["nodes"] is JsonArray nodes
+            && nodes.Any(node => (string?)node?["kind"] == NodeKinds.Land && node?["options"]?[LandNodes.AcceptOption] is not null) ? "land-accept" : null;
     }
+
+    private static JsonObject? RawGraph(WorkflowFileFound found, NamedVersion version) =>
+        found.File?["versions"]?.AsArray().FirstOrDefault(each => (int?)each?["version"] == version.Version)?["graph"] as JsonObject;
 
     /// <summary>The places this home has: its registry's repositories and the workspaces they and the file name, each once.</summary>
     public static (IReadOnlyList<(string Repository, string Workspace)> Repositories, IReadOnlyList<string> Workspaces) PlacesOf(DriverConfig config, IReadOnlyList<RepoView> registry)
@@ -74,8 +80,8 @@ public static class WorkflowLegacy
     public static string? EngineOf(IWorkflowStore store, WorkflowRunBinding binding)
     {
         if (binding.IsCurrent) return WorkflowSelection.Current;
-        if (store.Load(binding.Workflow)?.Read.Versions.FirstOrDefault(each => each.Version == binding.Version) is not { } version) return null;
-        return ShapeOf(version) is { } shape && shape is "steps" or "handed" ? shape : null;
+        if (store.Load(binding.Workflow) is not { } found || found.Read.Versions.FirstOrDefault(each => each.Version == binding.Version) is not { } version) return null;
+        return ShapeOf(found, version) is { } shape && shape is "steps" or "handed" ? shape : null;
     }
 
     /// <summary>
@@ -90,7 +96,7 @@ public static class WorkflowLegacy
         {
             if (found.Read is not { Problem: null, Verifies: false } read || read.Versions.Count == 0) continue;
             var newest = read.Versions[^1];
-            if (ShapeOf(newest) is { } shape) versions.Add(new(found.Id, newest.Version, shape));
+            if (ShapeOf(found, newest) is { } shape) versions.Add(new(found.Id, newest.Version, shape));
         }
 
         var runs = new List<LegacyRunRow>();
@@ -114,7 +120,7 @@ public static class WorkflowLegacy
                 continue;
             }
 
-            var keys = each.Shapes.Where(shape => shape is not ("opinion" or "review")).ToList();
+            var keys = each.RemovableKeys;
             if (keys.Count == 0) continue;
             if (open) leftovers.Add(new(each.Place, each.IsWorkspace, keys, "a Current unit is open here and reads these rules until it ends."));
             else if (held?.Contains(Held(each)) == true) leftovers.Add(new(each.Place, each.IsWorkspace, keys, "kept for a unit that has ended; the plan offers to remove them."));
@@ -131,6 +137,6 @@ public static class WorkflowLegacy
     public static JsonObject? GraphOf(WorkflowFileFound found, NamedVersion version)
     {
         if (version.Steps is { } steps) return WorkflowGraphs.Saved(steps);
-        return found.File?["versions"]?.AsArray().FirstOrDefault(each => (int?)each?["version"] == version.Version)?["graph"]?.DeepClone() as JsonObject;
+        return RawGraph(found, version)?.DeepClone() as JsonObject;
     }
 }

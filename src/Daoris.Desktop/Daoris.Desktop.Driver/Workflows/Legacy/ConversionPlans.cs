@@ -208,6 +208,14 @@ public static class ConversionPlans
             if (place.WorkCycle)
             {
                 kept.Add(new("work-cycle", place.Place, $"`{place.Place}` stays on Current: its quests close by its work cycle, which a saved workflow does not run yet (FABRIC-CUTOVER1h)."));
+                // The home default would take it from Current, so the place is pinned there by an explicit choice, as the landed route's `current` is.
+                var cycled = place.IsWorkspace ? config.WorkspaceWorkCycles.ContainsKey(place.Place) : config.WorkCycles.ContainsKey(place.Place);
+                if (defaultWrite is not null && cycled)
+                {
+                    working = ConversionApplies.PinnedToCurrent(working, place.Place, place.IsWorkspace);
+                    uses.Add(new(place.Place, place.IsWorkspace, WorkflowSelection.Current, null, $"`{place.Place}` stays on Current, as its work cycle needs"));
+                }
+
                 continue;
             }
 
@@ -234,10 +242,7 @@ public static class ConversionPlans
                 }
             }
 
-            var keys = new List<string>();
-            if (place.Own && place.Rule is not null) keys.Add(place.IsWorkspace ? "workspaceLandings" : "landings");
-            if (place.AccessLanding) keys.Add(place.IsWorkspace ? "workspaceAccess.landing" : "access.landing");
-            if (place.OwnChecks) keys.Add("sessionChecks");
+            var keys = place.RemovableKeys;
             if (keys.Count == 0) continue;
             if (census.Places.Any(each => each.Place == place.Place && each.IsWorkspace == place.IsWorkspace && each.OpenUnits))
             {
@@ -254,9 +259,14 @@ public static class ConversionPlans
         }
 
         // 3. Rules an earlier conversion left for an open unit, once it has ended.
-        foreach (var leftover in census.Leftovers.Where(each => held?.Contains((each.IsWorkspace ? "workspace:" : "repository:") + each.Place.ToLowerInvariant()) == true && each.Why.StartsWith("kept", StringComparison.Ordinal)))
+        foreach (var place in facts.Where(each => !each.OnCurrent && each.RemovableKeys.Count > 0 && held?.Contains(WorkflowLegacy.Held(each)) == true))
         {
-            removals.Add(new(leftover.Place, leftover.IsWorkspace, leftover.Keys));
+            if (census.Leftovers.Any(each => each.Place == place.Place && each.IsWorkspace == place.IsWorkspace && each.Why.StartsWith("a Current unit", StringComparison.Ordinal))) continue;
+            removals.Add(new(place.Place, place.IsWorkspace, place.RemovableKeys));
+            if (place.Own && place.Rule?.Integrate is { } integrate && !(place.IsWorkspace ? config.WorkspaceLinePolicies : config.LinePolicies).ContainsKey(place.Place))
+            {
+                policies.Add(new(place.Place, place.IsWorkspace, integrate with { Request = null, Conflicts = null }));
+            }
         }
 
         foreach (var run in census.Runs)
