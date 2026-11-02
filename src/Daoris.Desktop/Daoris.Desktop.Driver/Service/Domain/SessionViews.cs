@@ -276,8 +276,8 @@ public sealed record SaidWordView(string? Id, string Text, DateTimeOffset At, IR
     /// <summary>Whether these words claim the supervisor (SUPERVISOR1a-i): a claim only, which the look attributes or quarantines.</summary>
     public bool Supervisors => From == SaidFrom.Supervisor;
 
-    /// <summary>Whether these are the person's words: no second opinion's, no helper's and not Daoris's.</summary>
-    public bool Persons => By is null && Helper is null && From is null;
+    /// <summary>Whether these are the person's words: no second opinion's, no helper's or partner's, and not Daoris's or the supervisor's.</summary>
+    public bool Persons => Senders.Of(this) == Senders.Person;
 }
 
 /// <summary>An ACTIVE session as the service answered it — closed ones never reach the planner.</summary>

@@ -263,7 +263,7 @@ internal static class ContextBriefs
             return
             [
                 .. helpers.Asks()
-                    .Where(ask => on.Contains(ask.Asker) && helpers.ReadState(ask.Id)?.State is not (HelperStates.Answered or HelperStates.Refused))
+                    .Where(ask => on.Contains(ask.Asker) && !HelperWaits.Settled(helpers.ReadState(ask.Id)))
                     .Select(ask => $"a helper's answer to session `{ask.Asker}`'s question: {TextBounds.Clip(TextBounds.OneLine(ask.Question), ContextBrief.StepLimit)}"),
             ];
         }

@@ -1375,8 +1375,7 @@ public sealed class SessionLedger(
             return Refused(SessionSayRefusal.NotOfferedChoice, $"\"{choice}\" is not one of the answers session `{id}` offered, exactly.");
         }
 
-        var quest = await quests.FindAsync(session.Quest, inside).ConfigureAwait(false);
-        if (AskDesk.AskOf(quest?.From) is not { } askId)
+        if (await AskOfLineAsync(session, inside).ConfigureAwait(false) is not { } askId)
         {
             return Refused(SessionSayRefusal.NoQuest, $"Session `{id}`'s quest is on no ask, so no go-aheads the supervisor could leave to the owner.");
         }
@@ -1389,6 +1388,13 @@ public sealed class SessionLedger(
         return ask.GoAheads.Any(held => held.Answer is null)
             ? Refused(SessionSayRefusal.GoAheadOpen, $"A go-ahead on ask `#{askId}` is open: go-aheads are the owner's alone, so nothing was kept.")
             : null;
+    }
+
+    /// <summary>The ask a session's line is on: its entry's origin where that is <c>ask:&lt;id&gt;</c>, else none (COMMS1c).</summary>
+    private async Task<string?> AskOfLineAsync(Session session, CancellationToken ct)
+    {
+        var origin = await SessionEntries.OriginOfAsync(session, new StoreEntryFacts(quests, sessions), ct).ConfigureAwait(false);
+        return origin.StartsWith("ask:", StringComparison.Ordinal) ? origin["ask:".Length..] : null;
     }
 
     /// <summary>
@@ -1852,14 +1858,14 @@ public sealed class SessionLedger(
 
         const string Own = "so nothing was kept on one; its own record holds what was said.";
         var quest = session.Quest is { } questId ? await quests.FindAsync(questId, ct).ConfigureAwait(false) : null;
-        var askId = session.Ask ?? AskDesk.AskOf(quest?.From);
+        var askId = await AskOfLineAsync(session, ct).ConfigureAwait(false);
         if (askId is null)
         {
             return new(AskWordRefusal.NoAsk, (session.Quest, quest) switch
             {
                 (null, _) => $"Session `{session.Id}` is a conversation on no ask, {Own}",
                 (_, null) => $"Session `{session.Id}` works quest `#{session.Quest}`, which is not held here, {Own}",
-                _ => $"Session `{session.Id}` works quest `#{quest.Id}`, which `{quest.From}` asked rather than an ask, {Own}",
+                _ => $"Session `{session.Id}` works quest `#{quest.Id}`, which `{quest.From}` asked and whose line is on no ask, {Own}",
             });
         }
 

@@ -436,7 +436,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         {
             Workspace = due.Workspace,
             Quests = part,
-            Words = due.OnRun ? null : await AskWords.ReadAsync(Service, chain.FirstOrDefault()?.From, ct).ConfigureAwait(false),
+            Words = due.OnRun ? null : await AskWords.ReadOfSessionAsync(Service, due.Session, ct).ConfigureAwait(false),
             Opening = due.OnRun ? ChatRuns.OpeningOf(_context.Events, due.Run!) : null,
             Reask = Walk,
             Replaced = next => reading = next,
@@ -483,7 +483,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         {
             Workspace = due.Workspace,
             Quests = [.. chain.Where(quest => Same(quest.To, due.Repository))],
-            Words = due.OnRun ? null : await AskWords.ReadAsync(Service, chain.FirstOrDefault()?.From, ct).ConfigureAwait(false),
+            Words = due.OnRun ? null : await AskWords.ReadOfSessionAsync(Service, due.Session, ct).ConfigureAwait(false),
             // CHATFLOW1e (the chat-flow design §6): a chat run's findings go back into its conversation, compared with the press's turn count.
             Opening = due.OnRun ? ChatRuns.OpeningOf(_context.Events, due.Run!) : null,
             Run = due.OnRun ? due.Run : null,

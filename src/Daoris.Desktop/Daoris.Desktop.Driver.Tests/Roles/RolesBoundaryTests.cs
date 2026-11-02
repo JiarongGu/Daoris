@@ -110,9 +110,9 @@ public sealed class RolesBoundaryTests
     {
         Assert.IsType<RolesWorkOrdersOperations>(RolesWorkOrders.Current);
 
-        // An ask no sender names reads as unread, and its words beneath the quest are the pure rule's.
+        // A session whose record the service does not answer is on no ask the print can name: unread, and its words beneath the quest are the pure rule's.
         using var service = new ServiceClient("http://stand-in", null, new HttpClient());
-        var words = await RolesWorkOrders.Current.AskWordsAsync(service, null, "q1", CancellationToken.None);
+        var words = await RolesWorkOrders.Current.AskWordsAsync(service, "s1", "q1", CancellationToken.None);
         Assert.Equal("unread", words.GoAheads);
         Assert.Equal(AskWordsText.Beneath(null, "q1"), words.Beneath);
         Assert.Null(RolesWorkOrders.Current.QuestionOf(Path.Combine(GitSeed.RepoRoot(), "_fixtures", "roles-no-home"), "not an id"));
