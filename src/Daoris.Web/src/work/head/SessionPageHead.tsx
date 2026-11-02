@@ -119,7 +119,7 @@ export function SessionPageHead({ session, title, shown, facts = [], factsTip, a
                   </button>
                 </Tip>
               )}
-              <ChoiceChip session={session} />
+              <ChoiceChip session={session} narrow={narrow} />
               {startedFull(session) && <AccessChip />}
             </span>
           )

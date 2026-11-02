@@ -273,9 +273,36 @@ export type RoleUse = {
 /** The use over `days` of the machine log (at most seven; none with no log); a driver before it leaves the field out. */
 export type RoleUseRead = { days: number; roles: RoleUse[] };
 
+/** A condition a choice cannot go on under (STAFFPOLICY1, the staff policy design §4); an absent one is *as today*. */
+export type StaffCondition = 'limit' | 'signed-out' | 'model-refused' | 'transient' | 'failed' | 'quiet' | 'budget';
+
+/** What a condition does: a code, the tries or failures before it, and how long a wait holds in minutes. */
+export type StaffMove = { do: string; after?: number; upTo?: number };
+
+/** A choice's entry in a role's policy: keyed by its tuple, with its weight, share, daily budget (starts or reported tokens) and works. */
+export type StaffPolicyChoice = {
+  agent: string; model?: string | null; effort?: string | null; weight?: number; share?: number | null;
+  budget?: { starts?: number; tokens?: number } | null; takes?: string[] | null;
+};
+
+/** A role's policy record as `ROLES` answers and `SET_ROLE` takes it (`policy`). The moves are a code or `{ do, after?, upTo? }`. */
+export type StaffPolicy = {
+  rule: 'order' | 'weight'; choices: StaffPolicyChoice[]; moves?: Partial<Record<StaffCondition, string | StaffMove>>; most?: number | null;
+};
+
+/** A role's next new start as its policy would take it: a probe that reserves nothing; null for a brainstorm. */
+export type RoleNext = { choice: string; by: string; said: string; agent: string; model?: string | null; effort?: string | null };
+
+/** One role's policy as `ROLES` answers it: `default` (no row), `set`, or `stale` (set for other choices; the role runs in order). */
+export type RolePolicyRow = {
+  role: string; policyState: 'default' | 'set' | 'stale'; revision: number; why?: string | null; staffPolicy?: StaffPolicy | null; next?: RoleNext | null;
+};
+
 /** The catalogue as `ROLES` answers it: its roles, the work a role may take, whether this home keeps it, and what is suggested. */
 export type RoleCatalogue = {
   roles: RoleRow[]; works: string[]; kept: boolean; suggested: SuggestedRole[]; use?: RoleUseRead;
+  /** Each role's policy, the fields this build enforces and the presets the doors take (STAFFPOLICY1b); absent from a driver before them. */
+  policies?: RolePolicyRow[]; policyFields?: string[]; policyPresets?: string[];
   /** The choices Daoris suggests for the seeded roles (MODELROLE1g) and the day of the reference they were read from; absent from a driver before them. */
   suggestedChoices?: { role: string; choices: RoleChoice[] }[]; suggestedChoicesDated?: string;
 };
@@ -285,6 +312,10 @@ export type RoleChangePress = {
   change: 'set' | 'remove' | 'default' | 'default-all'; id: string; revision?: number | null;
   role?: { name: Authored; takes: string[]; scope: { kind: string; id?: string | null } };
   choices?: RoleChoice[] | null;
+  /** A preset's name, a record, or null to clear (STAFFPOLICY1b); absent leaves the policy as it is. Only `SET_ROLE`/`SET_ROLES` write it. */
+  policy?: string | StaffPolicy | null;
+  /** The policy revision the person read: a save against a moved one is refused, nothing written. */
+  policyRevision?: number | null;
 };
 
 /**

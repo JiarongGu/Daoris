@@ -1,13 +1,14 @@
 import type { TFunction } from 'i18next';
 import { type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ActorRow, RoleCatalogue, RoleChangePress, RoleChoice, RoleRow, RoleUse, StaffingFound, SuggestedRole } from '../../data/wiring';
+import type { ActorRow, RoleCatalogue, RoleChangePress, RoleChoice, RolePolicyRow, RoleRow, RoleUse, StaffingFound, SuggestedRole } from '../../data/wiring';
 import { Button, Card, CardHeader, Icon, Inline, Prose, SelectField, SettingList, SettingRow } from '../../design/ui';
 import { authoredEntries, authoredText, composeAuthored } from '../../locales/authored';
 import { type Answered, InlineConfirm, Refused } from '../../work/InlineConfirm';
 import type { SettingsChoices } from '../tools';
 import { type Draft, type Editing, RoleEditor } from './RoleEditor';
 import { RowMore } from './RowMore';
+import { conversational, fieldsOf, OFFERED_MOVES, policyDraftOf, policyIsDefault, recordOf } from './staffPolicyDraft';
 import { SuggestedChoicesCard } from './SuggestedChoicesCard';
 
 /** An entry as `SET_ACTOR` takes it: an agent, and its model and effort in the tool's own words, absent for account default. */
@@ -61,9 +62,17 @@ export const mayEditLine = (line: Line, kept: boolean): boolean => (line.row
   ? (line.row.state === 'seed' || line.row.state === 'set') && (staffingOnlyLine(line, kept) ? !!line.actor && EDITABLE.has(line.id) : kept)
   : !!line.actor && EDITABLE.has(line.id));
 
-/** A role's order as drafts: the staffing's where it has one, else the record's, else one empty choice on the first agent. */
-function draftsOf(line: Line, agents: readonly { value: string }[], key: () => number): Draft[] {
-  const draft = (entry?: RoleChoice): Draft => ({ key: key(), agent: entry?.agent ?? agents[0]?.value ?? '', model: entry?.model ?? '', effort: entry?.effort ?? '' });
+/**
+ * A role's order as drafts: the staffing's where it has one, else the record's, else one empty choice on the first agent; each carries the
+ * policy's fields for its tuple where the role keeps a policy.
+ */
+function draftsOf(line: Line, agents: readonly { value: string }[], key: () => number, policy?: RolePolicyRow | null): Draft[] {
+  const draft = (entry?: RoleChoice): Draft => {
+    const agent = entry?.agent ?? agents[0]?.value ?? '';
+    const model = entry?.model ?? '';
+    const effort = entry?.effort ?? '';
+    return { key: key(), agent, model, effort, ...(policy ? fieldsOf(policy.staffPolicy, agent, model, effort) : {}) };
+  };
   const own = line.actor && line.actor.choices.length > 0 ? line.actor.choices : line.row?.choices ?? [];
   return own.length > 0 ? own.map(draft) : [draft()];
 }
@@ -78,13 +87,22 @@ export function nameFields(authored: RoleRow['name'], shown: string): Pick<Editi
 
 /** The editor an existing role opens with: its record and its order, in the catalogue's mode or the order editor's alone. */
 export function editingOfLine(
-  line: Line, { kept, works, agents, name, key }: { kept: boolean; works: readonly string[]; agents: readonly { value: string }[]; name: string; key: () => number },
+  line: Line,
+  { kept, works, agents, name, key, policy }: {
+    kept: boolean; works: readonly string[]; agents: readonly { value: string }[]; name: string; key: () => number;
+    /** The role's row in `ROLES`' policies: its policy opens with the editor where the catalogue's record is this home's and the role keeps one. */
+    policy?: RolePolicyRow | null;
+  },
 ): Editing {
   const row = line.row;
+  const mode = staffingOnlyLine(line, kept) ? 'staffing' : 'role';
+  const keeps = mode === 'role' && kept && !!policy && !!row && row.state !== 'removed' && !row.takes.includes('brainstorm')
+    && ((line.actor?.choices.length ?? 0) > 0 || (row.choices?.length ?? 0) > 0);
   return {
-    id: line.id, mode: staffingOnlyLine(line, kept) ? 'staffing' : 'role', isNew: false, revision: row?.revision ?? null,
+    id: line.id, mode, isNew: false, revision: row?.revision ?? null,
     ...nameFields(row?.name, name), takes: row?.takes ?? [],
-    work: row?.takes[0] ?? works[0] ?? 'build', place: row?.scopeKind ?? 'machine', placeId: row?.scopeId ?? '', drafts: draftsOf(line, agents, key),
+    work: row?.takes[0] ?? works[0] ?? 'build', place: row?.scopeKind ?? 'machine', placeId: row?.scopeId ?? '',
+    drafts: draftsOf(line, agents, key, keeps ? policy : null), ...(keeps && policy ? { policy: policyDraftOf(policy) } : {}),
   };
 }
 
@@ -125,8 +143,27 @@ export function placeText(t: TFunction, kind?: string | null, id?: string | null
   return kind === 'workspace' || kind === 'repository' ? t(`settings.ai.roles.place.${kind}`, { id: id ?? '' }) : t('settings.ai.roles.place.machine');
 }
 
+/**
+ * A role's policy in its folded words (STAFFPOLICY1f, §6.2): the rule with its proportions, a move other than *as today* and the bound of
+ * moves. Nothing for a role with no policy or a stale one, which runs in order as today and says so where it is edited.
+ */
+export function policyLine(t: TFunction, read: RolePolicyRow | null | undefined): string {
+  const policy = read?.policyState === 'set' ? read.staffPolicy : null;
+  if (!policy) return '';
+  const weights = policy.choices.map((choice) => choice.weight ?? 1);
+  const rule = policy.rule !== 'weight' ? t('settings.ai.policy.summary.first')
+    : weights.every((each) => each === 1) ? t('settings.ai.policy.summary.even') : t('settings.ai.policy.summary.weighted', { weights: weights.join(':') });
+  const moved = Object.keys(policy.moves ?? {});
+  const conditions = [...OFFERED_MOVES.map((each) => each.condition as string), 'signed-out', 'model-refused', 'budget'].filter((each) => moved.includes(each));
+  return [
+    rule,
+    conditions.length > 0 ? t('settings.ai.policy.summary.moves', { conditions: conditions.map((each) => t(`settings.ai.policy.cond.${each}`)).join(t('settings.ai.actors.and')) }) : '',
+    policy.most ? t('settings.ai.policy.summary.most', { count: policy.most }) : '',
+  ].filter((part) => part !== '').join(' · ');
+}
+
 /** A role's folded line: the work it takes, where, and its first choice and how many more (the staffing's, where it is read). */
-export function roleSummary(t: TFunction, row: RoleRow, actor?: ActorRow | null): string {
+export function roleSummary(t: TFunction, row: RoleRow, actor?: ActorRow | null, policy?: RolePolicyRow | null): string {
   if (row.state === 'removed') return t('settings.ai.roles.removed');
   if (row.state === 'unreadable') return t('settings.ai.roles.unreadable', { error: row.error ?? '' });
   const works = row.takes.map((work) => t(`settings.ai.roles.work.${work}`)).join(t('settings.ai.actors.and'));
@@ -136,7 +173,8 @@ export function roleSummary(t: TFunction, row: RoleRow, actor?: ActorRow | null)
     : choices.length === 0
       ? row.choices ? ` · ${t('settings.ai.actors.off')}` : ''
       : ` · ${entryText(t, choices[0]!)}${choices.length > 1 ? ` ${t('settings.ai.actors.more', { count: choices.length - 1 })}` : ''}`;
-  return `${works} · ${placeText(t, row.scopeKind, row.scopeId)}${order}`;
+  const how = policyLine(t, policy);
+  return `${works} · ${placeText(t, row.scopeKind, row.scopeId)}${order}${how ? ` · ${how}` : ''}`;
 }
 
 /**
@@ -263,6 +301,7 @@ export function RolesCard({
   const lines = only === undefined ? all : all.filter((line) => line.id === only);
   const lineOf = (id: string) => all.find((line) => line.id === id);
   const nameOfLine = (line: Line) => name(line.row ?? { id: line.id, seeded: true });
+  const policyOf = (id: string) => catalogue?.policies?.find((each) => each.role === id) ?? null;
   const press = (at: string, change: RoleChangePress, done?: () => void) => {
     setRefused(null);
     onSet(change, { done: () => done?.(), refused: (sentence) => setRefused({ at, sentence }) });
@@ -277,10 +316,21 @@ export function RolesCard({
       setEditing(newRoleEditing(catalogue?.works ?? [], agents, null, next.current++));
       return;
     }
-    setEditing(editingOfLine(line, { kept, works: catalogue?.works ?? [], agents, name: nameOfLine(line), key: () => next.current++ }));
+    setEditing(editingOfLine(line, {
+      kept, works: catalogue?.works ?? [], agents, name: nameOfLine(line), key: () => next.current++, policy: policyOf(line.id),
+    }));
   };
   const entries = (now: Editing): ActorChoice[] =>
     now.drafts.map((draft) => ({ agent: draft.agent.trim(), model: draft.model.trim() || null, effort: draft.effort.trim() || null }));
+  /** The policy a save carries, with the revision read: its record, or null to clear it; nothing where the role has none and the draft says none. */
+  const policyPress = (now: Editing): Pick<RoleChangePress, 'policy' | 'policyRevision'> => {
+    const policy = now.policy;
+    if (!policy) return {};
+    const empty = policyIsDefault(now.drafts, policy);
+    if (empty && policy.state === 'default') return {};
+    const works = now.takes.length > 0 ? now.takes : [now.work];
+    return { policy: empty ? null : recordOf(now.drafts, policy, conversational(works)), policyRevision: policy.revision };
+  };
   /** *Save* (the editor's choices) or *Off* (`[]`): over `SET_ROLE` from the catalogue's editor, over `SET_ACTOR` from the order editor. */
   const save = (now: Editing, off = false) => {
     if (now.mode === 'staffing') {
@@ -296,6 +346,7 @@ export function RolesCard({
         scope: { kind: now.place, id: now.place === 'machine' ? null : now.placeId.trim() || null },
       },
       choices: off ? [] : now.drafts.length > 0 ? entries(now) : now.isNew ? [] : null,
+      ...(off ? {} : policyPress(now)),
     }, () => setEditing(null));
   };
   const answer = (id: number, said: 'take' | 'dismiss') => {
@@ -331,6 +382,8 @@ export function RolesCard({
         placed={t('settings.ai.roles.fixedPlace', { place: placeText(t, now.place, now.placeId) })}
         consequence={consequence ?? t('settings.ai.roles.editor.then')} conversing={CONVERSING.has(now.id)}
         mayOff={mayOff} isOff={!!isOff} mayClear={mayClear} refused={refused && refused.at === at ? refused.sentence : null}
+        next={policyOf(now.id)?.next ?? null} fields={catalogue?.policyFields}
+        noStore={!!catalogue?.policies && !kept && !now.isNew && !now.takes.includes('brainstorm')}
         onSave={(off) => save(now, off)} onClear={() => pressActor(at, now.id, null)} onCancel={() => { setRefused(null); setEditing(null); }}
       />
     );
@@ -366,7 +419,7 @@ export function RolesCard({
               why={about[line.id]?.why}
               control={!open_ && !asking && (
                 <>
-                  <span className="text-body text-ink wrap-anywhere">{row ? roleSummary(t, row, actor) : actorSummary(t, actor!)}</span>
+                  <span className="text-body text-ink wrap-anywhere">{row ? roleSummary(t, row, actor, policyOf(line.id)) : actorSummary(t, actor!)}</span>
                   {mayEdit && (
                     <Button variant="ghost" disabled={busy || editing !== null} aria-label={t('settings.ai.roles.editOf', { role: named })} onClick={() => open(line)}>
                       {t('settings.ai.actors.edit')}

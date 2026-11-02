@@ -593,6 +593,33 @@ export const YourPickChineseNarrow: Story = {
   decorators: [sessionWidths.narrow, chinese],
 };
 
+// STAFFPOLICY1f: the chip says why its choice ran, after a limit and by weight, at the three widths in English, 中文 and dark; at 680 px
+// and below the sentence is in the chip's ⓘ.
+const inDark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
+const AFTER_A_LIMIT: Session = { ...LATER, chosen: { rule: 'order', by: 'moved', condition: 'limit', from: '1' } };
+const BY_WEIGHT: Session = { ...LATER, chosen: { rule: 'weight', by: 'weight' } };
+const WHY = (session: Session) => ({ session, title: LONG_REQUEST, facts: CHOICE_FACTS });
+const WHY_ZH = (session: Session) => ({ session, title: '修复同步外观中的流式水合预算', facts: CHOICE_FACTS_ZH });
+
+export const AfterALimitWide: Story = { args: WHY(AFTER_A_LIMIT), decorators: [sessionWidths.wide] };
+export const AfterALimitHalf: Story = { args: WHY(AFTER_A_LIMIT), decorators: [sessionWidths.half] };
+export const AfterALimitNarrow: Story = { args: WHY(AFTER_A_LIMIT), decorators: [sessionWidths.narrow] };
+export const AfterALimitChineseWide: Story = { args: WHY_ZH(AFTER_A_LIMIT), decorators: [sessionWidths.wide, chinese] };
+export const AfterALimitChineseHalf: Story = { args: WHY_ZH(AFTER_A_LIMIT), decorators: [sessionWidths.half, chinese] };
+export const AfterALimitChineseNarrow: Story = { args: WHY_ZH(AFTER_A_LIMIT), decorators: [sessionWidths.narrow, chinese] };
+export const AfterALimitDarkWide: Story = { args: WHY(AFTER_A_LIMIT), decorators: [sessionWidths.wide, inDark] };
+export const AfterALimitDarkHalf: Story = { args: WHY(AFTER_A_LIMIT), decorators: [sessionWidths.half, inDark] };
+export const AfterALimitDarkNarrow: Story = { args: WHY(AFTER_A_LIMIT), decorators: [sessionWidths.narrow, inDark] };
+export const ByWeightWide: Story = { args: WHY(BY_WEIGHT), decorators: [sessionWidths.wide] };
+export const ByWeightHalf: Story = { args: WHY(BY_WEIGHT), decorators: [sessionWidths.half] };
+export const ByWeightNarrow: Story = { args: WHY(BY_WEIGHT), decorators: [sessionWidths.narrow] };
+export const ByWeightChineseWide: Story = { args: WHY_ZH(BY_WEIGHT), decorators: [sessionWidths.wide, chinese] };
+export const ByWeightChineseHalf: Story = { args: WHY_ZH(BY_WEIGHT), decorators: [sessionWidths.half, chinese] };
+export const ByWeightChineseNarrow: Story = { args: WHY_ZH(BY_WEIGHT), decorators: [sessionWidths.narrow, chinese] };
+export const ByWeightDarkWide: Story = { args: WHY(BY_WEIGHT), decorators: [sessionWidths.wide, inDark] };
+export const ByWeightDarkHalf: Story = { args: WHY(BY_WEIGHT), decorators: [sessionWidths.half, inDark] };
+export const ByWeightDarkNarrow: Story = { args: WHY(BY_WEIGHT), decorators: [sessionWidths.narrow, inDark] };
+
 // REVIEWFLOW1b: the facts led by *now · next*, a story per phase, each wide, narrow in 中文, and wide in the dark theme.
 type Phase = {
   session: Partial<Session>; shown: ComponentProps<typeof SessionPageHead>['shown']; flow: { parts: number; landing: boolean };
