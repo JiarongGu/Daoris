@@ -92,7 +92,9 @@ internal static class StaffCourse
             var moved = staff.Moves.Of(quest.Id);
             var action = StaffJudge.OnCondition(policy, condition, new StaffLine(true, moved.Moves));
             // A fatal error moves a line after its `after` failures on the one choice; before them it is today's retry.
-            if (condition == StaffConditions.Failed && (action.Do == StaffActions.Retry || snapshot.FailedRuns.GetValueOrDefault(quest.Id) < (action.After ?? 1))) continue;
+            // A retry is today's carry-on, which the planner makes without the course.
+            if (condition != StaffConditions.Transient && !StaffActions.Moves(action.Do) && action.Do != StaffActions.Ask) continue;
+            if (condition == StaffConditions.Failed && snapshot.FailedRuns.GetValueOrDefault(quest.Id) < (action.After ?? 1)) continue;
             var fact = new CoursePolicy(action, now, Met: ChoiceOf(last, policy)?.Said, Approved: moved.Approved, Moves: moved.Moves);
             var course = condition == StaffConditions.Transient
                 ? DrivenCourse.PastBound(last, quest.Status, released: false, fact)
