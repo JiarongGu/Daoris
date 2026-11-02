@@ -304,7 +304,6 @@
       ["src/Daoris.Web/src/map/StartWiring.stories.tsx", "\"claude-code\"", "-", "measurement", "a story's sample data names the agents it shows"],
       ["src/Daoris.Web/src/map/StartWiring.stories.tsx", "\"claude-code-acp\"", "-", "measurement", "a story's sample data names the doors it shows"],
       ["src/Daoris.Web/src/map/StartWiring.stories.tsx", "id in a sentence", "-", "measurement", "a story's sample text names the agents it shows"],
-      ["src/Daoris.Web/src/projects/fixtures.ts", "\"claude-code-acp\"", "-", "measurement", "fixture data for the stories names the doors it stands for"],
       ["src/Daoris.Web/src/projects/fixtures.ts", "\"codex-acp\"", "-", "measurement", "fixture data for the stories names the doors it stands for"],
       ["src/Daoris.Web/src/projects/fixtures.ts", "\"dsh\"", "-", "measurement", "fixture data for the stories names the agents it stands for"],
       ["src/Daoris.Web/src/projects/git/landingFixtures.ts", "\"claude-code\"", "-", "measurement", "fixture data for the stories names the agents it stands for"],
