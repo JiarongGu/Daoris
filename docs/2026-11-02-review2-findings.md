@@ -35,6 +35,24 @@ a backlog row. Until the routes' blocking findings are fixed, the install is not
 | R9 | `PLACE_APPLY` accepts a single `repository` its owner row and grounds never read | non-blocking | `Bridge/Routes/SetupRoutes.cs:174-177` | the pipe fixer |
 | R10 | `GIT_BRANCHES {remotes}` answers a local remote's machine path | non-blocking | `Workplace/GitRemoteRows.cs:48` | GITAUTH1e/f |
 
+## The service and Ask Daoris
+
+The service's own side held (`chosen` loopback-only and off the sync feed; the call table and role filter unchanged); the
+defects are Ask Daoris's cards and room on the driver's side.
+
+| # | Finding | Severity | Where | Taken by |
+|---|---|---|---|---|
+| S1 | A landing card for `merge --auto-accept` never says the merge needs no press, though Apply writes it | blocking | `Help/Proposals/HelpSettingProposals.cs:443-447`; `Workplace/Landing.cs:641`; `Knowledge/Room/HelpRoomLanding.cs:32-34` | the Ask Daoris fixer |
+| S2 | A `default` or `default-all` card says the choices are kept, while Apply deletes the roles' policies; a `set` naming new choices re-keys a policy unsaid | blocking | `Help/Proposals/HelpRoleProposals.cs:145-146`; `Roles/RoleDoor.cs:117-120`, `:138` | the Ask Daoris fixer |
+| S3 | A workspace's conversation can propose changes to another workspace's roles, and its room lists other workspaces' repository-scoped roles | non-blocking | `Help/Proposals/HelpRoleProposals.cs:27-33`; `Knowledge/Room/HelpRoomRoles.cs:16-17` | the Ask Daoris fixer |
+| S4 | The room says an off or unreadable role runs the machine's defaults | non-blocking | `Help/HelpRoleFacts.cs:31`; `Knowledge/Room/HelpRoomRoles.cs:36-38` | the Ask Daoris fixer |
+| S5 | A workspace's room presents the machine's start counts as the workspace's | non-blocking | `Roles/StaffWeek.cs:50-57`; `Knowledge/Room/HelpRoomIntro.cs:73` | the Ask Daoris fixer |
+| S6 | A set-up card for an undriven repository hides the admission it writes and the start it makes | non-blocking | `Help/Proposals/HelpSetupProposals.cs:85-94`; `Setup/SetupPress.cs:52`, `:206` | the Ask Daoris fixer |
+| S7 | The opening note names Build, Chat or Ask Daoris instead of the role whose policy chose | non-blocking | `Roles/ActorOpenings.cs:30`; `Loop/Driver.cs:2989` | STAFFPOLICY1e2 |
+
+To test, not confirmed: drafts told to an earlier part of an Ask Daoris conversation may not be read once a limit move opens a new
+part (`WorkflowDraftTold.Told` reads only the proposing part's events, `HelpRoutes.cs:1201-1203`); the Ask Daoris fixer writes the test.
+
 ## Still to read
 
-The service and Ask Daoris; the page's flows; the tests and checks.
+The page's flows; the tests and checks.
