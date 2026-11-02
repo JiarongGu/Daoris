@@ -235,6 +235,7 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-11-02-workflow-cleanup-inventory.md` | Inventory: WORKFLOWCLEAN1, the old workflow logic still live beside the new, and the default setup
 | `2026-11-02-oneway-census.md` | Census: ONEWAY1, every job that still has two ways, beside the workflows (D228)
 | `2026-11-02-workflow-cleanup-design.md` | Design: WORKFLOWCLEAN1, a place follows a saved graph, the runtime lands it, the old shapes convert on the person's press; accepted 2026-11-02 (D227)
+| `2026-11-02-workflow-cleanup-reads.md` | Reads: WORKFLOWCLEAN1, Opus's read, settled in the design's §13; Codex's owed
 
 ## UI, browser, tools and plugin contracts
 
