@@ -3,7 +3,7 @@ import type { Quest } from '../data/api';
 import { Button, Chip, Pill } from '../design/ui';
 import { QuestStatus } from '../quests/QuestStatus';
 import { questName } from '../work/identity';
-import type { MapSelection } from './MapCanvas';
+import type { MapSelection } from './MapLines';
 import type { Topology } from './topology';
 
 /**

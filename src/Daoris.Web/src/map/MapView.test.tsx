@@ -88,9 +88,8 @@ describe('the workspace map', () => {
       expect(screen.queryByText('working')).toBeNull();
       // UX5 U1: the hue the rail's dot and the band's card give the same fact, not the notice tone; the word in that
       // hue's ink and the ring in the hue itself (UXFIX5c).
-      expect(word.getAttribute('class')).toContain('fill-ink-open');
-      expect(word.closest('g')!.querySelector('circle[stroke-dasharray]')!.getAttribute('class'))
-        .toContain('stroke-st-open');
+      expect(word.getAttribute('class')).toContain('text-ink-open');
+      expect(word.closest('button')!.querySelector('[data-session]')!.getAttribute('class')).toContain('border-st-open');
     } finally {
       SESSIONS[0] = { ...SESSIONS[0]!, state: 'working' };
     }
@@ -347,11 +346,11 @@ describe('the workspace map', () => {
   it('is drawn at its own size, framed on what it draws', async () => {
     show();
     const map = await screen.findByRole('group', { name: 'the workspace map' });
-    const [, , width, height] = map.getAttribute('viewBox')!.split(' ').map(Number);
+    const [, , width, height] = map.querySelector('svg')!.getAttribute('viewBox')!.split(' ').map(Number);
 
-    expect(map.getAttribute('width')).toBe(String(width));
+    // The world is the frame, one unit a pixel, and fitted to the region's width with zoom off.
+    expect(map.style.width).toBe(`${width}px`);
     expect(height).toBeLessThan(600);
-    expect(map.getAttribute('class')).toContain('mx-auto');
   });
 
   /**

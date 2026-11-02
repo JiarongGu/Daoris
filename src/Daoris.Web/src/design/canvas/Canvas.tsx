@@ -457,6 +457,12 @@ export function Canvas({
       end(true);
       return;
     }
+    // Escape on the region itself releases the choice, as a press on the ground does.
+    if (event.key === 'Escape' && options.stop && event.target === pane.current && selection) {
+      event.preventDefault();
+      selection.onGround();
+      return;
+    }
     if (!event.shiftKey || event.ctrlKey || event.altKey || event.metaKey) return;
     if (isField(event.target as Element)) return;
     const run = { Digit1: fitAll, Digit2: toTarget, Digit0: acts.actual }[event.code];
