@@ -327,7 +327,8 @@ public sealed class LimitGoesElsewhereProcessTests : IDisposable
               } else if (frame.method === 'session/prompt') {
                 const text = frame.params.prompt.filter((block) => block.type === 'text').map((block) => block.text).join(' | ');
                 note(`prompt[${account}]: ` + text.replace(/\r?\n/g, ' '));
-                if (account === 'account-1' && text !== 'Earlier answered exchange.') {
+                // A start may tell the agent its repository's routing standing after the words, so the first exchange is told by its start.
+                if (account === 'account-1' && !text.startsWith('Earlier answered exchange.')) {
                   send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: "Internal error: You've hit your weekly limit" } });
                   return;
                 }

@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-02 - The limit stubs refused the first exchange when a start told the agent its routing standing
+
+- **Symptom:** `LimitGoesElsewhereProcessTests` (the added-role case alone in CI, the seeded Chat case in a serial class run) timed out waiting for the held words on the new part; the new part's record held the first exchange's words and not the refused turn's.
+- **Root cause:** the stand-in agent let only the prompt exactly equal to `Earlier answered exchange.` through on `account-1`. A start may append the repository's routing standing sentence to the first prompt's words, depending on when the registry was read, and then the first exchange was itself refused by the limit: the held words were the first turn's, and the stub refused the move's delivery again. A test fault, not the limit walk's.
+- **Fix:** the stubs of the four limit classes let through a prompt that starts with the first exchange's words.
+- **Verify:** `LimitGoesElsewhereProcessTests` and `LimitGoesOnProcessTests` serially under `process.runsettings` (the class run that failed passes); the failure could not be forced, so it is a timing-dependent reading of the cause.
+
 ## 2026-11-02 - The editor's draft was lost whenever the editor unmounted (REVIEW2 P5)
 
 - **Symptom:** a fold, *Set up…*, *Change…* or a change of layout that unmounted the place's Workflow section threw away the step editor's draft and its undo history.
