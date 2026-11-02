@@ -58,7 +58,7 @@ import { buttonNamed, returnFocus } from '../lib/returnFocus';
  */
 export function useProjectsView({
   active, chosen, onChoose, tab = 'details', onTab, workspaceTab = 'details', onWorkspaceTab, workspaceSection = null, notify,
-  onOpenCode, onOpenAgent, onOpenAppointed, onOpenPlugin, onOpenSetup, onOpenWorkspaceSetup, onSyncNow, syncing = false, addRequested = false, onAddOpened, importRequested = false, onImportOpened,
+  onOpenCode, onOpenAgent, onOpenAppointed, onOpenPlugin, onOpenGit, onOpenSetup, onOpenWorkspaceSetup, onSyncNow, syncing = false, addRequested = false, onAddOpened, importRequested = false, onImportOpened,
   drawerWorkspace = null, onOpenQuest, onOpenAsk, onAttend, branchAsked = null, onBranchOpened,
 }: {
   /** The view is in front: only then are its errors said. */
@@ -85,6 +85,8 @@ export function useProjectsView({
   onOpenAppointed?: () => void;
   /** Open a plugin's page, from the plugin a landing rule names in a Setup (PLUGUI1c2c). */
   onOpenPlugin?: (plugin: string) => void;
+  /** Open Settings → Git, where a remote nothing serves is given an identity (GITAUTH1e). */
+  onOpenGit?: (host: string) => void;
   /** Open a repository's Setup, which is the Agents place's page once its Setup mode is lit (AGENTSPLACE1f): the door its page offers in place of the tab. */
   onOpenSetup?: (repository: string) => void;
   /** Open a section of a workspace's Setup, which is the workspace place's once the Setup mode is lit (SETUPUX1v): the door its Workflow tab's steps offer. */
@@ -218,6 +220,7 @@ export function useProjectsView({
     notify,
     onOpenPlugin,
     onOpenAppointed,
+    onOpenGit,
   });
 
   /** Its standing on this machine: the driver's choices and whether a checkout is here, where a shell answers. */

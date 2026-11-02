@@ -3,6 +3,7 @@ import {
   useAcceptIntegration, useAcross, useDriver, useHarnesses, useHeavyMarks, useLines, usePlugins, useRuleAction, useRules, useSetAccess, useSetCheckoutWrites,
   useSetCommits, useSetDrivable, useSetHandOver, useSetHeavyGates, useSetHelpers, useSetHold, useSetLanded, useSetLanding, useSetLanguage, useSetLine,
   useSetOpinion, useSetReadAcross, useSetReview, useSetSessionChecks, useSetStanding, useSetTrees, useSetWriteAcross, useWorkflowCurrent, standingOf,
+  useGitRemotes, useSetGitUse, useTools,
 } from '../../bridge/shell';
 import { canBeAsked, type Registration, SESSION_ACTIVE } from '../../data/api';
 import { useSessions } from '../../data/queries';
@@ -39,11 +40,13 @@ type Row<K extends keyof LinesAnswer> = NonNullable<LinesAnswer[K]>[number];
  * the plugins that land work and its Workflow answer's start node. Null for a repository the driver does not know, or while it has not
  * answered. A hook, so a view that shows setup holds it and the molecule stays props.
  */
-export function useRepositorySetup({ registration, enabled, notify, onOpenPlugin, onOpenAppointed }: {
+export function useRepositorySetup({ registration, enabled, notify, onOpenPlugin, onOpenAppointed, onOpenGit }: {
   registration: Registration | undefined;
   enabled: boolean;
   notify: Notify;
   onOpenPlugin?: (plugin: string) => void;
+  /** Open Settings → Git, where a remote nothing serves is given an identity (GITAUTH1e); absent, the press is not drawn. */
+  onOpenGit?: (host: string) => void;
   /** Open Agents → Setup → Roles → Appointed roles, where the supervisor is appointed (COMPANYVIEW1e). */
   onOpenAppointed?: () => void;
 }): RepositorySetupProps | null {
@@ -73,9 +76,13 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenPlugin
   const acceptIntegration = useAcceptIntegration();
   const lines = useLines();
   const rules = useRules();
+  const setGitUse = useSetGitUse();
 
   const target = registration?.repository ?? null;
   const shown = enabled && driver.data !== undefined && target !== null;
+  // GITAUTH1e: its git remotes, with what serves each, and the machine's identities to choose from; shell-only, as the identities are.
+  const identities = useTools().data?.identities?.identities;
+  const remotes = useGitRemotes({ repository: target ?? undefined, enabled: shown });
   const across = useAcross({ enabled: shown });
   // GITAPP2b: the sessions the service lists, asked only while its switch is on, to say which already run in its checkout (a session with
   // no tree of its own runs in the registered root).
@@ -397,6 +404,18 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenPlugin
     }),
   } : null;
 
+  const gitRows = remotes.data?.find((each) => each.repository === registration.repository)?.remotes;
+  const git: RepositorySetupProps['git'] = identities && gitRows ? {
+    remotes: gitRows,
+    identities,
+    acts: {
+      use: (remote, value) => setGitUse.mutateAsync({
+        scope: 'repository', repository, remote: remote.name, ...(value ? { value } : {}),
+      }),
+      ...(onOpenGit ? { onSetUp: onOpenGit } : {}),
+    },
+  } : null;
+
   return {
     repository: registration.repository,
     driving,
@@ -406,6 +425,7 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenPlugin
     landed,
     sessions,
     reach,
+    git,
     onOpenPlugin,
     busy: setLine.isPending || setLanding.isPending || setReview.isPending || setOpinion.isPending || setLanguage.isPending
       || setCommits.isPending || setHelpers.isPending || setHandOver.isPending || setAccess.isPending || setHeavy.isPending || setStanding.isPending

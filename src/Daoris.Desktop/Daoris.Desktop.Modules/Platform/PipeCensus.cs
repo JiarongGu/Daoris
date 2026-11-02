@@ -403,6 +403,8 @@ public sealed class PipeCensus
             // ADOSIGNIN1: a plugin's tools checked, and a tool's set-up or sign-in in a console the person sees: the person's alone.
             "PLUGIN_TOOLS", "PLUGIN_TOOL_FIX",
             "TOOLS_DELETE", "TOOLS_DOWNLOAD", "TOOLS_GIT_SET", "TOOLS_LOCATION", "TOOLS_STOP", "TOOLS_USE",
+            // GITAUTH1e: a git identity added, tested, changed or removed, and a remote, workspace or host pointed at one: Settings → Git.
+            "GIT_IDENTITY", "GIT_USE",
             // Made by the driver, and still the person's (a second agent's review): bringing Daoris's branches up to date
             // fast-forwards the lines and replays and deletes branches, every repository's at once; a second opinion starts a
             // review on one of their accounts; Read again lets a refused account through and ends the tool's own cool-off.
@@ -535,7 +537,9 @@ public sealed class PipeCensus
             // runs the line, which the drain holds.
             "INTEGRATE",
             // A plugin made in a folder, which installs nothing, and a tool's files and location.
-            "PLUGIN_NEW", "TOOLS_DELETE", "TOOLS_LOCATION", "TOOLS_GIT", "TOOLS_GIT_SET");
+            "PLUGIN_NEW", "TOOLS_DELETE", "TOOLS_LOCATION", "TOOLS_GIT", "TOOLS_GIT_SET",
+            // GITAUTH1e: a git identity's files and pointers; nothing a session runs reads them before its next act, which judges anew.
+            "GIT_IDENTITY", "GIT_USE");
         return table;
 
         void Add(PipeDrain drain, params string[] routes)

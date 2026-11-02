@@ -387,6 +387,7 @@
   "projects.lineDoor": "Change in Setup",
   "projects.setup.section.driving": "Driving",
   "projects.setup.section.work": "Line and landing",
+  "projects.setup.section.git": "Git remote",
   "projects.setup.section.access": "Sessions' access",
   "projects.setup.section.heavy": "Heavy gates",
   "projects.setup.section.sessions": "Sessions",

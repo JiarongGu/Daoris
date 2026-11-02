@@ -248,7 +248,10 @@ public sealed class LimitGoesOnProcessTests : IDisposable
                 conversation = 'conv-' + account;
                 send({ jsonrpc: '2.0', id: frame.id, result: { sessionId: conversation } });
               } else if (frame.method === 'session/prompt') {
-                const text = frame.params.prompt.filter((block) => block.type === 'text').map((block) => block.text).join(' | ');
+                const raw = frame.params.prompt.filter((block) => block.type === 'text').map((block) => block.text).join(' | ');
+                // The routing standing line Daoris appends after the words is kept apart (StubFile.WithoutRouting, StubFile.Routings).
+                const text = raw.replace(/(\n\n| \| )?Routing standing here: [\s\S]*$/, '');
+                if (text !== raw) appendFileSync(heard + '.routing', `[${account}] ` + /Routing standing here: ([^.]*)\./.exec(raw)[1] + '\n');
                 note(`prompt[${account}]: ` + text.replace(/\r?\n/g, ' '));
                 if (account === 'account-1' && text !== 'Earlier answered exchange.') {
                   send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: "Internal error: You've hit your weekly limit" } });

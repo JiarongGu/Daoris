@@ -4,6 +4,7 @@
   "settings.domain.wiring": "This Daoris",
   "settings.domain.driver": "Driver",
   "settings.domain.tools": "Tools",
+  "settings.domain.git": "Git",
   "settings.domain.browser": "Browser",
   "settings.domain.start": "Get started",
   "settings.domain.logs": "Machine log"

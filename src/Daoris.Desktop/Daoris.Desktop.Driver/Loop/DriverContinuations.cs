@@ -1600,7 +1600,7 @@ internal static class NativeWords
     /// conversation's message names them on the native door.
     /// </summary>
     public static string Prompt(IReadOnlyList<ChatMessage> words) =>
-        string.Join("\n\n", words.Select(word => word.Prompt + ChatFiles.PathLines(word.Files)));
+        string.Join("\n\n", words.Select(word => word.PromptWithFiles));
 
     /// <summary>
     /// The words a native run leaves waiting when its turn failed (TURNFAIL2): what the harness said failed, its <c>result</c>'s

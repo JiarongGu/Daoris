@@ -320,6 +320,9 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
         else notify(permissionSaid(t, answer.why, answer.message), 'error');
       });
     },
+    // A remote nothing serves (GITAUTH1e, §6.8): both presses lead to Settings → Git, where the identity is set up and the person's own
+    // sign-ins are kept after the confirmation that names what they let Daoris's git use; a browser has no such door.
+    gitSetUp: (item) => doors['git-held']?.(item),
     // A quiet session's presses (SESSWATCH1a, the session-watch design §2.3): *End and carry on* and *Stop…* asked once under the row,
     // *Leave it running* one press, *Hand over…* its session's page, whose head asks it; a refusal said in its words.
     quiet: (item, act, answered) => {

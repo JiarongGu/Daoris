@@ -163,6 +163,13 @@ public static class GitHolds
     }
 
     /// <summary>
+    /// A change to an identity, a pointer or a host's default (§5.2): every hold on the home lifted, so each remote is tried once at its
+    /// next act with what now serves it. How many were.
+    /// </summary>
+    public static int LiftAll(string home, string why = "identity") =>
+        Read(home).Select(each => each.Root).Distinct(StringComparer.OrdinalIgnoreCase).ToList().Sum(root => Lift(home, root, null, why));
+
+    /// <summary>
     /// A held remote in the words an act says in place of trying (the design §5.2): what the transport said, and what lifts it, naming
     /// the row in <i>What needs you</i> rather than repeating it. English, as the terminal's and the instruction's words are; the
     /// screen's row has its own catalogue.
@@ -176,6 +183,7 @@ public static class GitHolds
             "host-unknown" => $"ssh does not know {host}'s key",
             "host-changed" => $"{host}'s key is not the one ssh knows for it",
             "own-input" => OwnInputWhyOf(hold),
+            "no-identity" => $"{host} has no git identity on this machine, and Daoris's git no longer uses your own sign-ins unless you choose them",
             _ => $"{host} refused the sign-in git has here",
         };
         var said = hold.Words.Length == 0 ? "" : $" ({hold.Words})";
@@ -215,11 +223,16 @@ public static class GitHolds
             : hold.Class == "own-input"
             ? $"`{hold.Remote}` ({hold.Host ?? hold.Address}) is held: {OwnInputWhyOf(hold)}. Do not fetch, pull or push it, and do not change "
               + $"that setting: work from the line as this checkout has it, and say in your closing note that `{hold.Remote}` was not fetched."
+            : hold.Class == "no-identity"
+            ? $"`{hold.Remote}` ({hold.Host ?? hold.Address}) has no git identity on this machine, so neither you nor Daoris can reach it now. "
+              + $"Do not fetch, pull or push it: work from the line as this checkout has it, and say in your closing note that `{hold.Remote}` was not fetched."
             : $"`{hold.Remote}` ({hold.Host ?? hold.Address}) cannot be reached with the sign-in git has on this machine "
               + $"({Why(hold)}), so neither you nor Daoris can reach it now. Do not fetch, pull or push it: work from the line as this "
               + $"checkout has it, and say in your closing note that `{hold.Remote}` was not fetched.");
         return "**Git.** " + (rewrite is null ? "" : rewrite + " ") + string.Join(" ", lines)
-            + " The person sees it in What needs you, where Try again lifts it.";
+            + (holds.All(hold => hold.Class == "no-identity")
+                ? " The person sees it in What needs you, where they set up a git identity for it."
+                : " The person sees it in What needs you, where Try again lifts it.");
     }
 
     /// <summary>Why a repository is held as <c>own-input</c> (<see cref="GitOwnInput"/>), naming the setting and never its value.</summary>

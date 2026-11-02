@@ -116,6 +116,41 @@ export const useToolGitSet = () =>
       call<{ key: string; value: string | null; version: string | null }>('TOOLS_GIT_SET', change),
   });
 
+/** One act on a git identity (GITAUTH1e, the git-auth design §7.1-§7.2), in the words `daoris-driver git identity` uses. */
+export type GitIdentityChange =
+  | { action: 'add-ssh'; host: string; label: string; name?: string; email?: string; import?: string; rsa?: boolean }
+  | { action: 'add-https'; host: string; label: string; user?: string; token?: string; name?: string; email?: string }
+  | { action: 'test'; identity: string; trust?: string; repository?: string }
+  | { action: 'rename'; identity: string; label: string }
+  | { action: 'commits-as'; identity: string; name?: string; email?: string; clear?: boolean }
+  | { action: 'read-only'; identity: string; on: boolean }
+  | { action: 'remove'; identity: string }
+  | { action: 'default'; host: string; identity?: string };
+
+/** The longest a browser sign-in is waited on (§7.2 step 4): the person's own pace, the bridge's thirty seconds being too short. */
+const SIGN_IN_BOUND_MS = 10 * 60_000;
+
+/**
+ * A git identity added, tested, changed or removed (GITAUTH1e): the screen's half of `daoris-driver git identity` and
+ * `git default`. A refusal is the operation's own sentence. A browser sign-in (`add-https` with no token) waits as long as the
+ * person takes; the press that loosens what Daoris's git may use is confirmed in the page first.
+ */
+export const useGitIdentity = () =>
+  useMutation({
+    mutationFn: (change: GitIdentityChange) =>
+      call<Record<string, unknown>>('GIT_IDENTITY', change, change.action === 'add-https' && !change.token ? { timeoutMs: SIGN_IN_BOUND_MS } : undefined),
+  });
+
+/** A choice of identity for a scope (§3.2): a repository's remote, a workspace's host or this machine's host; `own` or an id, or none clears it. */
+export type GitUseChange =
+  | { scope: 'repository'; repository: string; remote?: string; workspace?: string; value?: string }
+  | { scope: 'workspace'; workspace: string; host: string; value?: string }
+  | { scope: 'machine'; host: string; value?: 'own' };
+
+/** The screen's half of `daoris-driver git use` (GITAUTH1e). Choosing `own` is a widening, confirmed in the page before it is sent. */
+export const useSetGitUse = () =>
+  useMutation({ mutationFn: (change: GitUseChange) => call<{ scope: string }>('GIT_USE', change) });
+
 /**
  * What a switch of git to `target` changes (§4.1), asked of both gits before the switch applies; null asks nothing.
  * Not retried: a refusal (a version not downloaded, a file not there) is the answer.
