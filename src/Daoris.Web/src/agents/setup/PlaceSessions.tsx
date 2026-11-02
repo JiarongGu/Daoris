@@ -201,7 +201,6 @@ function WorkspaceWorkflow({ place, notify, onOpenPlugin, onConvert }: { place: 
           notify={notify}
           rows="defaults"
           open={place.asked === 'defaults' ? 'defaults' : undefined}
-          onOpenPlugin={onOpenPlugin}
         />
       </div>
     </>
@@ -231,7 +230,6 @@ export function PlaceSessions({ place, notify, onOpenPlugin, onOpenAppointed, on
       notify={notify}
       rows="sessions"
       open={place.asked === 'access' || place.asked === 'reach' ? place.asked : undefined}
-      onOpenPlugin={onOpenPlugin}
       onOpenAppointed={onOpenAppointed}
       onOpenGit={onOpenGit}
     />
