@@ -350,11 +350,18 @@ test('every declared gate is actually run by the release workflow', () => {
     scripts: { verify: string };
   }).scripts.verify;
   const runsVerify = /run:\s*npm run verify\s*$/m.test(workflow);
+  // A gate of one category (the censuses) is run where the workflow runs its project's whole fast half: every category but
+  // Process. Each of its commands is judged so, never the gate's text as a whole.
+  const runs = (command: string) => {
+    const category = /^dotnet test (\S+) --filter Category=(\w+)$/.exec(command);
+    return workflow.includes(command) || (runsVerify && verify.includes(command))
+      || (category !== null && category[2] !== 'Process' && workflow.includes(`dotnet test ${category[1]} --filter Category!=Process`));
+  };
 
   assert.ok(gates.gates.length >= 4, 'the gate list emptied — that is not a pass');
   for (const gate of gates.gates) {
     assert.ok(
-      workflow.includes(gate.run) || (runsVerify && verify.includes(gate.run)),
+      workflow.includes(gate.run) || (runsVerify && verify.includes(gate.run)) || gate.run.split(' && ').every(runs),
       `the '${gate.name}' gate is declared in daoris.gates.json but the release workflow never runs `
       + `it: ${gate.run}`);
   }
