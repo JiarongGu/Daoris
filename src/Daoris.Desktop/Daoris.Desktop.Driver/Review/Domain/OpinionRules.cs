@@ -243,6 +243,12 @@ public static class OpinionRules
         var set = edit.Set is { Names: true } named ? named : null;
         if (new[] { set is not null, edit.None, edit.Clear }.Count(change => change) != 1) throw new DriverException(OneAtATime);
         if (edit.None && workspace is not null) throw new DriverException(NoneWorkspace);
+        if (edit.None && repository is not null && WorkplaceWorkflows.Current.FollowsSaved(config, repository, null))
+        {
+            throw new ChoiceRefusal(ChoiceRefusal.GraphDecides,
+                $"`{repository}` follows a saved workflow, and its `opinion` node decides whether a second opinion reads its work: change that node "
+                + "with *Edit steps…*, or choose another workflow for it.", ("repository", repository), ("node", "opinion"));
+        }
 
         var map = repository is not null ? config.Opinions : config.WorkspaceOpinions;
         var scope = (repository ?? workspace)!;

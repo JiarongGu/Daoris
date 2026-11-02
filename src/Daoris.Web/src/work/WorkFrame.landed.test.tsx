@@ -1628,22 +1628,23 @@ describe('acting on what a session landed', () => {
     });
 
     /**
-     * CHATFLOW1d2 (the chat-flow design §5.3): a chat run whose rule asks a look reads it as one that cannot start, and offers the person's
-     * own way past it, *Accept without the look…*, with their words, through its own press; in the reader's language.
+     * A chat run whose graph asks a look reads it as one that cannot start, and offers *Accept without the look…*: the person's words skip
+     * the run's look node, then the one Accept lands it; in the reader's language.
      */
     it.each([
-      ['en', 'Accept without the look…', 'Accept without the look', 'why, if you want to say'],
-      ['zh', '不经审阅采纳…', '不经审阅采纳', '原因，如果你想说'],
-    ])('offers Accept without the look… on a chat run’s look that cannot start, in %s', async (language, open, press, field) => {
+      ['en', 'Accept without the look…', 'Accept without the look', 'why you pass over the look'],
+      ['zh', '不经审阅采纳…', '不经审阅采纳', '跳过审阅的原因'],
+    ])('skips a chat run’s look node and then accepts, in %s', async (language, open, press, field) => {
       SESSIONS = [TALK];
       const base = answering(BEYOND);
       invoke.mockImplementation(async (module: string, type: string, ...rest: unknown[]) => {
         if (type === 'LANDING') {
           return { session: 'c0ffee11', form: 'branch', target: 'feature/delta', source: 'workspace',
-            review: { state: 'cannot-start', environment: null, level: 'repository', quest: null, chatRun: 'chat-c0ffee11',
+            review: { state: 'cannot-start', environment: null, level: 'repository', quest: null, chatRun: 'chat-c0ffee11', lookNode: 'look',
               says: 'Waits for your look, and it cannot start.' } };
         }
-        if (type === 'LAND_WITHOUT_LOOK') return { session: 'c0ffee11', done: true, message: 'put its work on `feature/delta` — 1 commit(s).' };
+        if (type === 'WORKFLOW_NODE') return { run: 'chat-c0ffee11', node: 'look', act: 'skip', done: true };
+        if (type === 'LAND_SESSION_TREE') return { session: 'c0ffee11', done: true, message: 'put its work on `feature/delta` — 1 commit(s).' };
         return base(module, type, ...(rest as []));
       });
       await i18n.changeLanguage(language);
@@ -1652,13 +1653,30 @@ describe('acting on what a session landed', () => {
         const strip = await screen.findByRole('region', { name: language === 'en' ? 'Waiting on you' : '等你处理' });
         await userEvent.click(await within(strip).findByRole('button', { name: open }));
         const ask = within(strip).getByRole('group', { name: press });
+        expect(within(ask).getByRole('button', { name: press })).toBeDisabled();
         await userEvent.type(within(ask).getByRole('textbox', { name: field }), 'no environment for this');
         await userEvent.click(within(ask).getByRole('button', { name: press }));
         await vi.waitFor(() => expect(invoke).toHaveBeenCalledWith(
-          'DAORIS.DRIVER', 'LAND_WITHOUT_LOOK', { payload: { id: 'c0ffee11', words: 'no environment for this' }, timeoutMs: 6 * 60_000 }));
+          'DAORIS.DRIVER', 'LAND_SESSION_TREE', expect.objectContaining({ payload: { id: 'c0ffee11' } })));
+        expect(invoke).toHaveBeenCalledWith(
+          'DAORIS.DRIVER', 'WORKFLOW_NODE', expect.objectContaining({ payload: { run: 'chat-c0ffee11', node: 'look', act: 'skip', words: 'no environment for this' } }));
+        expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_WITHOUT_LOOK', expect.anything());
       } finally {
         await i18n.changeLanguage('en');
       }
+    });
+
+    it('offers no way past a chat run’s look that names no look node', async () => {
+      SESSIONS = [TALK];
+      const base = answering(BEYOND);
+      invoke.mockImplementation(async (module: string, type: string, ...rest: unknown[]) => type === 'LANDING'
+        ? { session: 'c0ffee11', form: 'branch', target: 'feature/delta', source: 'workspace',
+          review: { state: 'cannot-start', environment: null, level: 'repository', quest: null, chatRun: 'chat-c0ffee11', says: 'Waits for your look, and it cannot start.' } }
+        : base(module, type, ...(rest as [])));
+      show('c0ffee11');
+      const strip = await screen.findByRole('region', { name: 'Waiting on you' });
+      await within(strip).findByText(/publishes no set-up step/);
+      expect(within(strip).queryByRole('button', { name: 'Accept without the look…' })).not.toBeInTheDocument();
     });
 
     it('offers none while a turn runs, and offers it the moment the turn ends', async () => {

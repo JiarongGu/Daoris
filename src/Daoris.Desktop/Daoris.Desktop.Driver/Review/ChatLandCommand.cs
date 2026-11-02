@@ -9,8 +9,8 @@ public sealed record ChatLandWorld(ServiceClient Service, string Home, SessionTr
 }
 
 /// <summary>
-/// <c>daoris-driver trees land &lt;session&gt; [--without-look "…"]</c> on a chat run's work (CHATFLOW1d, CHATFLOW1d2; the chat-flow design §5.2
-/// point 1, §5.3, Codex's finding 11): bound first, as the window's press binds it, then the driver's one press operation
+/// <c>daoris-driver trees land &lt;session&gt;</c> on a chat run's work (CHATFLOW1d; the chat-flow design §5.2
+/// point 1, Codex's finding 11): bound first, as the window's press binds it, then the driver's one press operation
 /// (<see cref="ChatPresses.PressAsync"/>). A live conversation is held by the running Daoris's runner, so the press is sent there (the connected
 /// terminal), confirmed in its window and reserved there; with none to reach, it is refused, never landed beside a turn this terminal cannot
 /// see. An ended one no runner holds, and this terminal is its door (the standalone terminal). Its words are the press's, exit 1 where refused.
@@ -19,10 +19,8 @@ public static class ChatLandCommand
 {
     /// <summary>The press, by the session's record as the service answered it and its chat run.</summary>
     /// <param name="entered">The branch name the person entered, which lands as entered.</param>
-    /// <param name="withoutLook">The person's way past the look and their words (CHATFLOW1d2); null for a plain Accept.</param>
     public static async Task<int> RunAsync(
-        ChatLandWorld world, string session, string tree, string chatRun, string recordsJson, string? entered, ChatLookPress? withoutLook,
-        CancellationToken ct = default)
+        ChatLandWorld world, string session, string tree, string chatRun, string recordsJson, string? entered, CancellationToken ct = default)
     {
         var bound = WorkplaceWorkflows.Current.BindChatFirst(DriverConfig.Load(DriverConfig.ResolvePath(world.Home)), world.Home, chatRun, tree,
             WorkplacePlugins.Current.Load(world.Home), DateTimeOffset.UtcNow);
@@ -31,15 +29,12 @@ public static class ChatLandCommand
         var (line, live) = WorkplaceWorkflows.Current.ChatPressOf(session, recordsJson);
         if (live)
         {
-            var route = withoutLook is null ? TreesRoutes.Land : TreesRoutes.LandWithoutLook;
-            object payload = withoutLook is null
-                ? new { id = session, branch = entered, said = true, follow = true }
-                : new { id = session, words = withoutLook.Words, said = true, follow = true };
+            var payload = new { id = session, branch = entered, said = true, follow = true };
             Task<int> Elsewhere() =>
                 Task.FromResult(Print(world, TreesWords.Land(new TreeLanding(false, ChatPresses.Elsewhere) { Refusal = AutoLandingCode.Refused }, [])));
             return world.Instance is null
                 ? await Elsewhere().ConfigureAwait(false)
-                : await InstanceDoor.PressAsync(route, payload, Elsewhere, answer => TreesSaid.ReadWords(world.Output, world.Error)(answer) ?? 2,
+                : await InstanceDoor.PressAsync(TreesRoutes.Land, payload, Elsewhere, answer => TreesSaid.ReadWords(world.Output, world.Error)(answer) ?? 2,
                     world.Instance, ct).ConfigureAwait(false);
         }
 
@@ -52,7 +47,7 @@ public static class ChatLandCommand
         var quests = new PressQuests(service.FindQuestAsync);
         var records = SessionRecords.Parse(recordsJson);
         var pressed = await ChatPresses.PressAsync(
-            world.Home, new ChatPressAsk(session, tree, chatRun, repository, workspace, Live: false) { WithoutLook = withoutLook }, holder: null,
+            world.Home, new ChatPressAsk(session, tree, chatRun, repository, workspace, Live: false), holder: null,
             async (tip, token) => await presses.PressedAsync(
                 session, await landing.GateAsync(tree, null, reviewWorld, session, token, tip: tip, run: chatRun).ConfigureAwait(false), null, tree, null,
                 token, chatRun, ReviewDoors.Terminal).ConfigureAwait(false),
@@ -68,7 +63,7 @@ public static class ChatLandCommand
             },
             () => ChatPresses.TurnsOf(events, line), ct).ConfigureAwait(false);
 
-        WorkplacePressTelling.Current.Tell(world.Home, withoutLook is null ? TreesMarks.Land : TreesMarks.LandWithoutLook, session, DateTimeOffset.UtcNow);
+        WorkplacePressTelling.Current.Tell(world.Home, TreesMarks.Land, session, DateTimeOffset.UtcNow);
         var said = TreesWords.Land(pressed.Landed, []);
         said.Print(world.Output, world.Error);
         if (world.Log is { } log && pressed.Gate is { } judged

@@ -6,13 +6,13 @@ namespace Daoris.Desktop.Modules.Tests;
 /// WORKFLOWCLEAN1g-ii: the census the loop keeps. The row's wait is the places it lists while it has not ended, told when that changes;
 /// none before the first reading, and none once it has ended.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed class ConversionCensusTests : Bridge
 {
     private static LegacyCensus Holding(params string[] places) =>
         new([], [.. places.Select(each => new LegacyPlaceRow(each, false, "default", ["steps"], false, false))], [], []);
 
     [Fact]
-    [Trait("Category", "Census")]
     public void A_census_that_holds_places_is_a_wait_with_their_count_until_it_ends()
     {
         var census = new ConversionCensus(Bus);

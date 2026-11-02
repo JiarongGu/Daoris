@@ -495,17 +495,13 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     [DriverRoute("LANDING")]
     [DriverRoute("LAND_SESSION_TREE")]
     [Publishes("LAND_SESSION_TREE", Lands, Session = "id")]
-    [DriverRoute("LAND_WITHOUT_LOOK")]
-    [Publishes("LAND_WITHOUT_LOOK", Lands, Session = "id")]
     private async Task<object?> LandAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
         var service = _loop.Service ?? throw NotReady();
 
         var (tree, _) = await service.SessionGroundAsync(id, cancellationToken);
-        // CHATFLOW1d2 (the chat-flow design §5.3): Accept without the look… is the same press on a chat run's work, past its look.
-        var withoutLook = request.Type == "LAND_WITHOUT_LOOK";
-        var press = request.Type == "LAND_SESSION_TREE" || withoutLook;
+        var press = request.Type == "LAND_SESSION_TREE";
         // RPCOPEN1: `trees land --plan` asks for the verb's words (`said`) in place of the page's fields, and gets them for the two
         // cases the verb answers before it plans, as its alone path does: a landing its review reads as landed, and no tree to land.
         var terminal = !press && Flag(request, "said");
@@ -566,11 +562,8 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         // every part at one captured tip, asks the opinion where it is not asked, and lands that tip pinned.
         if (press && chatRun is not null)
         {
-            return await ChatPressAsync(request, service, id, tree, chatRun, records, recordsJson, Landing(), pluginLines, cancellationToken,
-                withoutLook ? new ChatLookPress(Optional(request, "words"), ReviewDoors.Screen) : null);
+            return await ChatPressAsync(request, service, id, tree, chatRun, records, recordsJson, Landing(), pluginLines, cancellationToken);
         }
-
-        if (withoutLook) return Refused(id, TreesWords.NoChatLook(id));
 
         // The landing gate (XAGENT1f, REVIEWENV1c): the second opinion, then the review. What holds the press says so before it,
         // and the press refuses it.
@@ -722,7 +715,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// </summary>
     private async Task<object?> ChatPressAsync(
         IpcRequest request, ServiceClient service, string id, string tree, string chatRun, IReadOnlyList<SessionRecord> records, string recordsJson,
-        SessionTrees trees, List<string> pluginLines, CancellationToken cancellationToken, ChatLookPress? withoutLook = null)
+        SessionTrees trees, List<string> pluginLines, CancellationToken cancellationToken)
     {
         var (workspace, repository) = trees.Owner(tree);
         var (line, live) = ChatRuns.PressOf(id, recordsJson);
@@ -731,7 +724,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         var quests = new PressQuests(service.FindQuestAsync);
         PressSteps.Reach(PressSteps.Gate);
         var pressed = await ChatPresses.PressAsync(
-            _loop.Home, new ChatPressAsk(id, tree, chatRun, repository, workspace, live) { WithoutLook = withoutLook }, _loop.Chat,
+            _loop.Home, new ChatPressAsk(id, tree, chatRun, repository, workspace, live), _loop.Chat,
             // CHATFLOW1f (the chat-flow design §4.5): a graph-bound run's gate is the quest's, its graph part judged by the pass this press asks
             // after the candidate it submitted, and the press's Accept the review's word.
             async (tip, token) => await GraphPasses.PressAsync(
@@ -1125,7 +1118,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// </summary>
     public static object? Waits(ReviewGateState review) => review.LetsGo
         ? null
-        : new { review.State, review.Decision.Environment, review.Decision.Level, Quest = review.Decision.SetUpStep?.Id, Says = review.Says, review.Decision.ChatRun };
+        : new { review.State, review.Decision.Environment, review.Decision.Level, Quest = review.Decision.SetUpStep?.Id, Says = review.Says, review.Decision.ChatRun, review.Decision.LookNode };
 
     // A branch a landing made, handed to a landing plugin afterwards (WSR5b): what a press would do,
     // said before it, and the press — `daoris-driver trees hand` is the terminal's door (D50).

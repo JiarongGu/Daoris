@@ -125,14 +125,17 @@ public sealed record ReviewDecision(string Level, string? Environment)
 
     /// <summary>
     /// The chat run whose work this is (CHATFLOW1d2, the chat-flow design §5.3), where no quest is: no look can be set up for it, and the
-    /// person's way past it is <i>Accept without the look…</i>, kept on the run's look file at a tip. Null for a quest's work.
+    /// person's way past it is a skip of the look node of the graph it is bound to. Null for a quest's work.
     /// </summary>
     public string? ChatRun { get; init; }
 
-    /// <summary>The working session the door lands, which a chat run's words name for the terminal's door (CHATFLOW1d2).</summary>
+    /// <summary>The look node of a chat run's graph, which the person's skip names; null where the run is bound to no graph.</summary>
+    public string? LookNode { get; init; }
+
+    /// <summary>The working session the door lands.</summary>
     public string? Session { get; init; }
 
-    /// <summary>The tip a chat run's way past the look was kept at (CHATFLOW1d2), where it is the skip that lets the work go.</summary>
+    /// <summary>The tip a chat run's skip of its look let go: the commit the landing record names.</summary>
     public string? SkippedAt { get; init; }
 }
 
@@ -173,7 +176,7 @@ public sealed record ReviewGateState(string State, ReviewDecision Decision)
         },
         ReviewStates.Skipped => new LandingReview(ReviewVerdicts.Skipped, null, Decision.SkippedOn)
         {
-            // CHATFLOW1d2: a chat run's way past the look keeps the tip it was pressed at, which the landing record says.
+            // A chat run's skip of its look keeps the tip it let go, which the landing record says.
             Commit = Decision.SkippedAt,
             At = Decision.Skip?.At,
             Words = Decision.Skip?.Words,
@@ -369,8 +372,10 @@ public static class ReviewGate
         {
             // CHATFLOW1d2 (the chat-flow design §5.3): a chat run's look, which no set-up step can show, and the person's way past it.
             ReviewStates.CannotStart when decision.ChatRun is not null =>
-                $"Waits for your look, and it cannot start: {ChatLooks.Limit} Accept without the look… lands it at this tip with your words, or "
-                + $"`daoris-driver trees land {decision.Session ?? "<session>"} --without-look \"…\"`.",
+                $"Waits for your look, and it cannot start: {ChatLookLimit}"
+                + (decision.LookNode is null
+                    ? " Convert its workflow to a saved one, and its look becomes a step you can skip."
+                    : $" `daoris-driver workflow skip {decision.ChatRun} {decision.LookNode} \"…\"` passes it over with your words."),
             ReviewStates.Skipped when decision.ChatRun is not null =>
                 $"You accepted this conversation's work without the look at `{Short(decision.SkippedAt ?? "")}`: it lands without one.",
             ReviewStates.None => decision.Level == ReviewLevels.Nothing
@@ -457,7 +462,7 @@ public static class ReviewGate
         if (quest is null)
         {
             return WorkplaceRunFiles.IsChatRun(run) && home is not null
-                ? await ChatAsync(new ChatLooks(home), run!, session, tree, repository, rule, look, process?.Name, at, ct).ConfigureAwait(false)
+                ? await ChatAsync(home, run!, session, tree, repository, rule, look, process?.Name, at, ct).ConfigureAwait(false)
                 : new(ReviewStates.None, new ReviewDecision(ReviewLevels.Nothing, null) { Repository = repository });
         }
 
@@ -484,28 +489,31 @@ public static class ReviewGate
         return await JudgeAsync(decision, tip, commit => ReviewGit.HoldsAsync(tree, tip!, commit, ct)).ConfigureAwait(false);
     }
 
+    /// <summary>What the look part says of a chat run's look that cannot start, as its limit.</summary>
+    public const string ChatLookLimit = "a conversation publishes no set-up step, so no look can be set up for its work.";
+
     /// <summary>
     /// A chat run's look (CHATFLOW1d2, the chat-flow design §5.3): rows 5 and 6 decide, a chat having no chain and no ask. Where they ask a look,
-    /// none can be set up for a conversation's work, so it reads <c>cannot-start</c> with <see cref="ChatLooks.Limit"/>; the person's way past it
-    /// kept at the tip that would land, or at a later commit that holds it, lets it go as a skip does, its words on the landing record.
+    /// none can be set up for a conversation's work, so it reads <c>cannot-start</c> with <see cref="ChatLookLimit"/>; the person's skip of the
+    /// look node of the graph the run is bound to, kept on its record, lets it go as a skip does, its words on the landing record.
     /// </summary>
     private static async Task<ReviewGateState> ChatAsync(
-        ChatLooks looks, string run, string? session, string tree, string repository, ResolvedReview? rule, WorkflowLook? look, string? workflow,
+        string home, string run, string? session, string tree, string repository, ResolvedReview? rule, WorkflowLook? look, string? workflow,
         string? at, CancellationToken ct)
     {
-        var decision = Decide([], repository, null, rule, look, workflow) with { ChatRun = run, Session = session };
+        var decision = Decide([], repository, null, rule, look, workflow) with { ChatRun = run, Session = session, LookNode = look?.Node };
         if (!decision.Reviews) return new(ReviewStates.None, decision);
 
         var tip = at ?? await ReviewGit.HeadAsync(tree, ct).ConfigureAwait(false);
-        if (await looks.CoveringAsync(run, tip, commit => ReviewGit.HoldsAsync(tree, tip!, commit, ct)).ConfigureAwait(false) is { } skip)
+        if (WorkplaceWorkflows.Current.SkippedLook(home, run, look?.Node) is { } words)
         {
-            var verdict = new QuestReviewVerdictView(ReviewVerdicts.Skipped) { Commit = skip.Tip, Words = skip.Words, At = skip.At };
-            return new(ReviewStates.Skipped, decision with { Level = ReviewLevels.Skip, Skip = verdict, Words = skip.Words, SkippedAt = skip.Tip })
+            var verdict = new QuestReviewVerdictView(ReviewVerdicts.Skipped) { Commit = tip, Words = words };
+            return new(ReviewStates.Skipped, decision with { Level = ReviewLevels.Skip, Skip = verdict, Words = words, SkippedAt = tip })
             {
                 Tip = tip, Verdict = verdict,
             };
         }
 
-        return new(ReviewStates.CannotStart, decision with { Cannot = ChatLooks.Limit }) { Tip = tip };
+        return new(ReviewStates.CannotStart, decision with { Cannot = ChatLookLimit }) { Tip = tip };
     }
 }
