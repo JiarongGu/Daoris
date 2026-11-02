@@ -149,6 +149,21 @@ public sealed class ChannelTests : IAsyncLifetime
         Assert.Equal(ChannelRefusal.None, (await _channel.PostAsPersonAsync(ask.Id, "for all", "everyone", null, Now.AddMinutes(2))).Refusal);
     }
 
+    /// <summary>The channel and the go-ahead agree on which ask a session is on (COMMS1c): a sibling-published quest's session posts and asks on the same one.</summary>
+    [Fact]
+    public async Task The_channel_and_the_go_ahead_name_the_same_ask_for_a_sibling_published_session()
+    {
+        var (ask, _, session) = await AskedAsync();
+        var sibling = (await _exchange.PublishAsync(new QuestAsk("reports", "checker", "Check the bridge", "Please.") { PublishedBy = session.Id }, Now)).Quest!;
+        var checker = (await _ledger.OpenAsync(sibling.Id, "stub", Now, tree: Path.Combine(_root, "trees", "sibling"))).Session!;
+
+        var posted = await _channel.PostAsSessionAsync(checker.Id, "looking", null, null, false, Now.AddMinutes(1));
+        var asked = await _ledger.AskGoAheadAsync(checker.Id, "write", "production", "the report", "It needs it.", Now.AddMinutes(2));
+
+        Assert.Equal(ChannelRefusal.None, posted.Refusal);
+        Assert.Equal(ask.Id, asked.Ask);
+    }
+
     /// <summary>A question is open until a message answers it by <c>re</c>.</summary>
     [Fact]
     public async Task A_question_is_open_until_a_message_answers_it()

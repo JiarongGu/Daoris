@@ -150,6 +150,22 @@ public sealed class SupervisorWordTests : GoAheadFixture
         foreach (var id in new[] { asking.Id, working.Id, onNoAsk.Id, third.Id }) Assert.Empty((await Record(id)).Said);
     }
 
+    /// <summary>An open go-ahead on the ask holds the release for a session on a quest a sibling of the ask published (COMMS1c).</summary>
+    [Fact]
+    public async Task The_release_is_refused_for_a_sibling_published_quest_where_the_asks_go_ahead_is_open()
+    {
+        var (_, quest) = await Asked($"{Sentence} for the sibling report");
+        var build = await Working(quest, "build");
+        Assert.Equal(GoAheadRefusal.None, (await _ledger.AskGoAheadAsync(build.Id, "write", "production", "the report", "It needs it.", Now)).Refusal);
+        var sibling = (await _exchange.PublishAsync(
+            new QuestAsk("checker", "dashboards", "Verify it", "Look.") { PublishedBy = build.Id }, Now)).Quest!;
+        var verify = await Working(sibling, "verify");
+        await _ledger.AdvanceAsync(verify.Id, "awaiting-person", "Which report?", null, null, Now);
+        File(verify.Id, Question);
+
+        Assert.Equal(SessionSayRefusal.GoAheadOpen, (await Release(verify.Id)).Refusal);
+    }
+
     /// <summary>
     /// SUPERVISOR1b (D208; the supervisor design §3.1, §4.1): the question's <c>owner</c> mark is checked again at the release, from the
     /// file the service reads inside the say's step, so a question marked the owner's after a decision was admitted is never answered

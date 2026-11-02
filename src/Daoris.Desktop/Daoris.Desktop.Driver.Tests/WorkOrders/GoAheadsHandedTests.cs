@@ -37,6 +37,8 @@ public sealed class GoAheadsHandedTests
     private static QuestView Quest(string from = "ask #a1") =>
         new("q2", from, "dashboards", "Verify the figure", "Look at the tile in production.", "Taken") { Parent = "q1" };
 
+    private const string SessionsOnTheAsk = """[{"id":"s1","state":"working","entry":"ask:a1/dashboards"}]""";
+
     private static GoAheadView Held(int number, string kind, string act, bool? approved, string? words = null, int minute = 0, string session = "s1") =>
         new(number, kind, "production", act,
             [new GoAheadRequestView(session, "q2", new DateTimeOffset(2026, 10, 3, 9, minute, 0, TimeSpan.Zero), "why")])
@@ -58,7 +60,12 @@ public sealed class GoAheadsHandedTests
     [Fact]
     public async Task A_carry_on_is_handed_what_was_approved_refused_and_still_waits()
     {
-        var standIn = new StandIn(request => request.RequestUri!.AbsolutePath == "/api/asks/a1" ? (HttpStatusCode.OK, AskJson()) : null);
+        var standIn = new StandIn(request => request.RequestUri!.AbsolutePath switch
+        {
+            "/api/asks/a1" => (HttpStatusCode.OK, AskJson()),
+            "/api/sessions" => (HttpStatusCode.OK, SessionsOnTheAsk),
+            _ => null,
+        });
         using var service = new ServiceClient("http://stand-in", null, new HttpClient(standIn));
         var carryOn = SessionTarget.ForQuest(Quest(), "C:/somewhere/dashboards", service.BaseUrl) with
         {
@@ -66,14 +73,14 @@ public sealed class GoAheadsHandedTests
             AccountChanged = true,
         };
 
-        var handed = TargetPrompt.Compose(await Daoris.Driver.Driver.WithAskWordsAsync(carryOn, service, CancellationToken.None));
+        var handed = TargetPrompt.Compose(await Daoris.Driver.Driver.WithAskWordsAsync(carryOn, "s1", service, CancellationToken.None));
 
         Assert.DoesNotContain("Go-ahead 1", TargetPrompt.Compose(carryOn));
         Assert.Contains("- Go-ahead 1, write on production: \"dashboard configuration\" — approved 2026-10-03 09:06 UTC, saying:\n\n  > run the put", handed);
         Assert.Contains("- Go-ahead 2, release on production: \"comparison report\" — refused 2026-10-03 09:07 UTC, saying:\n\n  > test it on dev first", handed);
         Assert.Contains("- Go-ahead 3, write on production: \"menu entries\" — still waiting on the person, first asked 2026-10-03 09:08 UTC.", handed);
         Assert.Contains("do not ask for one of these again", handed);
-        Assert.Equal(["/api/asks/a1"], standIn.Paths);
+        Assert.Equal(["/api/sessions", "/api/asks/a1"], standIn.Paths);
     }
 
     /// <summary>A first start, a resume and a carry-on each carry them beneath the quest and the person's words, before the look.</summary>
@@ -105,12 +112,12 @@ public sealed class GoAheadsHandedTests
     [Fact]
     public async Task A_follow_up_steps_session_is_handed_the_go_aheads_its_parents_sessions_asked()
     {
-        var standIn = new StandIn(_ => (HttpStatusCode.OK, AskJson()));
+        var standIn = new StandIn(request => (HttpStatusCode.OK, request.RequestUri!.AbsolutePath == "/api/sessions" ? SessionsOnTheAsk : AskJson()));
         using var service = new ServiceClient("http://stand-in", null, new HttpClient(standIn));
         var step = new QuestView("q3", "ask #a1", "checker", "Check the figure", "Open it.", "Open") { Parent = "q2" };
 
         var handed = TargetPrompt.Compose(await Daoris.Driver.Driver.WithAskWordsAsync(
-            SessionTarget.ForQuest(step, "C:/somewhere/checker", service.BaseUrl), service, CancellationToken.None));
+            SessionTarget.ForQuest(step, "C:/somewhere/checker", service.BaseUrl), "s1", service, CancellationToken.None));
 
         Assert.Contains("- Go-ahead 1, write on production", handed);
     }

@@ -190,19 +190,20 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         if (HelperWaits.Open(session, files.Asks(), files.ReadState).Count == 0) return false;
         // A question on file that does not read is no proof that none was asked (Codex's round-2 #3): it parks, as one asked does.
         if (new QuestionFiles(_context.Home).AskedSince(session, since) != false) return false;
-        return await AskedGoAheadAsync(session, quest.From, ct).ConfigureAwait(false) == false;
+        return await AskedGoAheadAsync(session, ct).ConfigureAwait(false) == false;
     }
 
     /// <summary>
     /// Whether <paramref name="session"/> asked a go-ahead on its work's ask that still waits on the person (HELPERWAIT1): an ask
-    /// the service does not hold, or a quest on no ask, has none; one the service did not answer is unread, null, and its caller parks as
-    /// before rather than read a question as absent.
+    /// the service does not hold, or a line on no ask (its entry's origin, COMMS1c), has none; one the service did not answer is unread,
+    /// null, and its caller parks as before rather than read a question as absent.
     /// </summary>
-    private async Task<bool?> AskedGoAheadAsync(string session, string? from, CancellationToken ct)
+    private async Task<bool?> AskedGoAheadAsync(string session, CancellationToken ct)
     {
-        if (AskWords.AskOf(from) is not { } id) return false;
         try
         {
+            var record = await _context.Service.RecordAsync(session, ct).ConfigureAwait(false);
+            if (AskWords.AskOfEntry(record?.Entry) is not { } id) return false;
             return await _context.Service.FindAskAsync(id, ct).ConfigureAwait(false) is { } ask
                    && HelperWaits.AskedGoAhead(session, AskWords.Of(ask));
         }

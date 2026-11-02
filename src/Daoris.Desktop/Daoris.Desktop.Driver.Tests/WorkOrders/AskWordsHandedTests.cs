@@ -72,7 +72,12 @@ public sealed class AskWordsHandedTests
         var prior = runs["q2"];
         Assert.Equal(("s5", (string?)null), (prior.Session, prior.Answer));
 
-        var standIn = new StandIn(request => request.RequestUri!.AbsolutePath == "/api/asks/a1" ? (HttpStatusCode.OK, AskJson(Words)) : null);
+        var standIn = new StandIn(request => request.RequestUri!.AbsolutePath switch
+        {
+            "/api/asks/a1" => (HttpStatusCode.OK, AskJson(Words)),
+            "/api/sessions" => (HttpStatusCode.OK, """[{"id":"s6","state":"working","entry":"ask:a1/report"}]"""),
+            _ => null,
+        });
         using var service = new ServiceClient("http://stand-in", null, new HttpClient(standIn));
         // The carry-on as the driver composes it (Driver.RunAsync): the cut-off's note, the last record's answer (none), the account
         // changed, and the ask's words read for the start; its brief (SESSCTX1b) is the record's, not the ask's.
@@ -83,14 +88,14 @@ public sealed class AskWordsHandedTests
             AccountChanged = prior.Limit && AccountIdentity.OnAnotherAccount(prior, "account-2"),
         };
 
-        var handed = TargetPrompt.Compose(await Daoris.Driver.Driver.WithAskWordsAsync(carryOn, service, CancellationToken.None));
+        var handed = TargetPrompt.Compose(await Daoris.Driver.Driver.WithAskWordsAsync(carryOn, "s6", service, CancellationToken.None));
 
         // One hop, as it was: the answer is nowhere in what the carry-on was handed.
         Assert.DoesNotContain(Answer, TargetPrompt.Compose(carryOn));
         Assert.Contains("  > " + Answer, handed);
         Assert.Contains("  > " + Added, handed);
         Assert.Contains("It ran on another account", handed);
-        Assert.Equal(["/api/asks/a1"], standIn.Paths);
+        Assert.Equal(["/api/sessions", "/api/asks/a1"], standIn.Paths);
     }
 
     // ——— Every start on the ask, beneath its quest, newest last.
@@ -279,12 +284,12 @@ public sealed class AskWordsHandedTests
     // ——— Read from the ask, at the start.
 
     [Fact]
-    public async Task The_words_are_read_from_the_ask_the_quest_was_asked_by()
+    public async Task The_words_are_read_from_the_ask_the_sessions_line_is_on()
     {
         var standIn = new StandIn(request => request.RequestUri!.AbsolutePath == "/api/asks/a1" ? (HttpStatusCode.OK, AskJson(Words)) : null);
         using var service = new ServiceClient("http://stand-in", null, new HttpClient(standIn));
 
-        var words = await AskWords.ReadAsync(service, "ask #a1", CancellationToken.None);
+        var words = await AskWords.ReadAsync(service, "ask:a1/report", CancellationToken.None);
 
         Assert.Equal("a1", words!.Ask);
         Assert.Equal(["asked", "added", "answered"], words.Said!.Select(word => word.Kind));
@@ -295,17 +300,38 @@ public sealed class AskWordsHandedTests
     }
 
     [Theory]
-    [InlineData("report")]
-    [InlineData("ask #")]
-    [InlineData("ask a1")]
+    [InlineData("quest:q1/report")]
+    [InlineData("session:s1/report")]
+    [InlineData("ask:/report")]
+    [InlineData("ask:a1")]
     [InlineData("")]
-    public async Task A_quest_a_repository_asked_reads_nothing_and_is_on_no_ask(string from)
+    [InlineData(null)]
+    public async Task A_line_on_no_ask_reads_nothing(string? entry)
     {
         var standIn = new StandIn(_ => (HttpStatusCode.OK, AskJson(Words)));
         using var service = new ServiceClient("http://stand-in", null, new HttpClient(standIn));
 
-        Assert.Null(await AskWords.ReadAsync(service, from, CancellationToken.None));
+        Assert.Null(await AskWords.ReadAsync(service, entry, CancellationToken.None));
         Assert.Empty(standIn.Paths);
+    }
+
+    /// <summary>COMMS1c: the ask is the session's entry origin, so a session on a quest a sibling published reads the ask's words.</summary>
+    [Fact]
+    public async Task A_session_is_on_the_ask_its_records_entry_names_whoever_asked_its_quest()
+    {
+        var standIn = new StandIn(request => request.RequestUri!.AbsolutePath switch
+        {
+            "/api/asks/a1" => (HttpStatusCode.OK, AskJson(Words)),
+            "/api/sessions" => (HttpStatusCode.OK, """[{"id":"s7","quest":"q3","state":"working","entry":"ask:a1/checker"},{"id":"s8","state":"working","entry":"session:s8/checker"}]"""),
+            _ => null,
+        });
+        using var service = new ServiceClient("http://stand-in", null, new HttpClient(standIn));
+
+        var onAsk = await AskWords.ReadOfSessionAsync(service, "s7", CancellationToken.None);
+        var onNone = await AskWords.ReadOfSessionAsync(service, "s8", CancellationToken.None);
+
+        Assert.Equal("a1", onAsk!.Ask);
+        Assert.Null(onNone);
     }
 
     [Theory]
@@ -318,7 +344,7 @@ public sealed class AskWordsHandedTests
     {
         using var service = new ServiceClient("http://stand-in", null, new HttpClient(new StandIn(_ => (status, body))));
 
-        var words = await AskWords.ReadAsync(service, "ask #a1", CancellationToken.None);
+        var words = await AskWords.ReadAsync(service, "ask:a1/report", CancellationToken.None);
 
         Assert.Equal(AskWords.Unread("a1"), words);
     }
@@ -328,7 +354,7 @@ public sealed class AskWordsHandedTests
     {
         using var service = new ServiceClient("http://stand-in", null, new HttpClient(new StandIn(_ => throw new HttpRequestException("refused"))));
 
-        Assert.Equal(AskWords.Unread("a1"), await AskWords.ReadAsync(service, "ask #a1", CancellationToken.None));
+        Assert.Equal(AskWords.Unread("a1"), await AskWords.ReadAsync(service, "ask:a1/report", CancellationToken.None));
     }
 
     [Fact]
@@ -338,7 +364,7 @@ public sealed class AskWordsHandedTests
         await cancelled.CancelAsync();
         using var service = new ServiceClient("http://stand-in", null, new HttpClient(new StandIn(_ => (HttpStatusCode.OK, AskJson(Words)))));
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => AskWords.ReadAsync(service, "ask #a1", cancelled.Token));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => AskWords.ReadAsync(service, "ask:a1/report", cancelled.Token));
     }
 
     [Fact]

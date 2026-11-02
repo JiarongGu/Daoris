@@ -3166,7 +3166,7 @@ public sealed class Driver(
             var heavy = HeavyTold.Hand(workTree, home, quest.To, checks, adapter.TakesSettings);
             var checksKept = SessionChecks.Hold(home, sessionId, checks, LongCalls.MinutesOf(process));
             using var checksHeld = new Disposer(() => SessionChecks.LetGo(checksKept));
-            var asking = await WithAskWordsAsync(SessionTarget.ForQuest(quest, workTree, service.BaseUrl), service, ct).ConfigureAwait(false);
+            var asking = await WithAskWordsAsync(SessionTarget.ForQuest(quest, workTree, service.BaseUrl), sessionId, service, ct).ConfigureAwait(false);
             // FOUNDATION1f-iv part b: a carry-on's moved words are taken once its first prompt is written, and the take is what keeps the
             // person's among them on the ask this instruction reads, so the instruction is handed them here, as the take will have kept them.
             if (delivering is not null && movedBy is not null && movedOn is { Count: > 0 } && asking.Words is AskWords askRead)
@@ -5283,13 +5283,13 @@ public sealed class Driver(
     }
 
     /// <summary>
-    /// A quest's target with the person's words on the ask it was asked by (DRIFT1b, D133 §2), read from the ask for this
-    /// start: every start on the ask is handed them, a first start, a resume and a carry-on on any account alike, since a
-    /// carry-on's own record holds only the session before it. A quest no ask asked is handed none, and words the service
+    /// A quest's target with the person's words on the ask its session's line is on (DRIFT1b, D133 §2; COMMS1c), read from the
+    /// ask for this start: every start on the ask is handed them, a first start, a resume and a carry-on on any account alike,
+    /// since a carry-on's own record holds only the session before it. A line on no ask is handed none, and words the service
     /// did not answer leave today's instruction, saying so (<see cref="AskWords.ReadAsync"/>).
     /// </summary>
-    internal static async Task<SessionTarget> WithAskWordsAsync(SessionTarget target, ServiceClient service, CancellationToken ct) =>
-        target with { Words = await AskWords.ReadAsync(service, target.Asker, ct).ConfigureAwait(false) };
+    internal static async Task<SessionTarget> WithAskWordsAsync(SessionTarget target, string session, ServiceClient service, CancellationToken ct) =>
+        target with { Words = await AskWords.ReadOfSessionAsync(service, session, ct).ConfigureAwait(false) };
 
     /// <summary>
     /// The person's standing answer for the quest's repository on this machine (KNOWUSE1b, D135 §3), read from the config this
