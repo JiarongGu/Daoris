@@ -1070,11 +1070,21 @@ public sealed class SessionLedger(
             return await SuperviseAsync(id, text, files, now, channel, key, level, decision, question, choice, ct).ConfigureAwait(false);
         }
 
-        if (decision is not null || question is not null || choice is not null)
+        // COMMS1e: the person's press names its question alone; a decision and a choice stay the supervisor's, and no other author presses.
+        if (decision is not null || choice is not null || (question is not null && from is not null))
         {
             return new(
                 SessionSayRefusal.From,
-                "A decision, a question and a choice are the supervisor's alone: words from any other author name none, so nothing was kept.",
+                "A decision and a choice are the supervisor's alone, and a question is named by the person's press alone: "
+                + "words from any other author name none, so nothing was kept.",
+                Session: null);
+        }
+
+        if (question is not null && home is null)
+        {
+            return new(
+                SessionSayRefusal.NoHome,
+                "This host keeps no home, so no park's question to check a press against: nothing was kept.",
                 Session: null);
         }
 
@@ -1161,9 +1171,21 @@ public sealed class SessionLedger(
                     session, waiting) { Again = true };
             }
 
+            // COMMS1e: after the retry, so a double press is answered with its word whatever the question did since; before the keep, in this step.
+            if (question is not null && QuestionBox.Read(home!, id) is var onFile
+                && (onFile is null || !string.Equals(onFile.Id, question, StringComparison.Ordinal)))
+            {
+                var current = onFile is null ? "No question is on file now" : $"The question now on file is `{onFile.Id}`: \"{onFile.Question}\"";
+                return new SessionSayOutcome(
+                    SessionSayRefusal.QuestionChanged,
+                    $"The question on file for session `{id}` is not `{question}`: nothing was kept. {current}.",
+                    Session: null);
+            }
+
             // A word for a running record's run reopens nothing and answers no park, so no note is written and nothing travels.
             var word = new SaidWord(
-                NewWordId(), words, now, Names(files), Reopens: !parked && !forRun, Channel: channel, From: from, Key: key, Level: level);
+                NewWordId(), words, now, Names(files), Reopens: !parked && !forRun, Channel: channel, From: from, Key: key, Level: level,
+                Question: question);
             var (note, parts) = parked ? AnsweredNote(session, words, from) : (null, null);
             var kept = await KeepOwnersWordAsync(session, word, note, parts, inside).ConfigureAwait(false);
             var message = forRun ? ForRunMessage(id, from) : forNext ? ForNextMessage(id, from) : KeptMessage(session, from);

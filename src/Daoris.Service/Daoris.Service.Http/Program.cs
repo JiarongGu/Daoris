@@ -491,7 +491,9 @@ app.MapGet("/api/status", (ComposedService s, string? prove) => new StatusRespon
 // answers to a reader that asks with `journal=1` (a reader that does not is answered as before), and `answers` 1 COMMS1b's one door for solicited
 // answers: the head walk to the store's bound, answered parks, *already waiting* (`waiting` with its holder and word), the opinion key and
 // `serves`; a driver that sees it hands a solicited answer through the door alone. A host before this answers none, and a client keeps no mark for it.
-app.MapGet("/api/protocol", () => new ProtocolResponse(hostRun, new Dictionary<string, int> { ["settled"] = 1, ["opens"] = 2, ["head"] = 1, ["journal"] = 1, ["answers"] = 1 }));
+// `presses` 1 is COMMS1e: a say naming `question` is a person's press, checked inside the door's step against the question on file (`question-changed`);
+// a host before it refuses a person's say that names one, so a client sends it only to a host with the mark.
+app.MapGet("/api/protocol", () => new ProtocolResponse(hostRun, new Dictionary<string, int> { ["settled"] = 1, ["opens"] = 2, ["head"] = 1, ["journal"] = 1, ["answers"] = 1, ["presses"] = 1 }));
 
 // Every cross-repository answer below takes `workspace` — the unit of sharing (D48 §4). Absent spans
 // every circle this deployment holds, which for a shared host is one by construction and for a local
