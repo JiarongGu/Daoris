@@ -394,7 +394,8 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
         var run = Assert.Single(chat.GetProperty("runs").EnumerateArray());
         Assert.Equal(("c2", 0), (run.GetProperty("session").GetString(), run.GetProperty("quests").GetArrayLength()));
         var mark = run.GetProperty("chat");
-        Assert.Equal(("chat-c2", "light", false),
+        // A chat's run binds its graph now (WORKFLOWCLEAN1 1d), so its checks are the graph's and enforced.
+        Assert.Equal(("chat-c2", "light", true),
             (mark.GetProperty("run").GetString(), mark.GetProperty("checks").GetString(), mark.GetProperty("enforced").GetBoolean()));
         var work = run.GetProperty("steps").EnumerateArray().Single(step => step.GetProperty("step").GetProperty("kind").GetString() == "work");
         Assert.Equal(("working", "agent"), (work.GetProperty("state").GetString(), work.GetProperty("detail").GetString()));
