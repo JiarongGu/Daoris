@@ -31,6 +31,9 @@ public static class Refusals
     /// <summary>A remote with an address but no key, or the reverse — no remote in any loader.</summary>
     public const string RemoteHalfDeclared = Daoris.Driver.HomeFileCodes.RemoteHalfDeclared;
 
+    /// <summary>A remote's address with no `http://` or `https://`, which every sync would fail at the service's door (REV3).</summary>
+    public const string RemoteNotAnAddress = Daoris.Driver.HomeFileCodes.RemoteNotAnAddress;
+
     /// <summary>A declaration form pointed at a folder that has not adopted Daoris.</summary>
     public const string RepositoryNotAdopted = "REPOSITORY_NOT_ADOPTED";
 
