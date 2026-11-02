@@ -428,22 +428,23 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
     }
 
     [Fact]
-    public void The_map_names_the_design_s_twenty_one_subdomains_in_their_order_and_each_one_s_folder_and_Domain()
+    public void The_map_names_the_design_s_subdomains_in_their_order_and_each_one_s_folder_and_Domain()
     {
         var map = StructureMap.Read(File.ReadAllText(MapFile()));
 
-        // §14.2: bottom to top, so a subdomain names only its own types and those listed before it.
+        // §14.2: bottom to top, so a subdomain names only its own types and those listed before it. Transitional (ONEWAY1ad-i) holds
+        // the register of kept reads, which names the others' types and no one names it.
         Assert.Equal(
             [
                 "Platform", "Store", "Settings", "Service", "Install", "Instance", "Events", "Knowledge", "Agents", "Workplace", "Roles",
-                "Participants", "Context", "Course", "Work orders", "Review", "Plugins", "Workflows", "Setup", "Help", "Loop",
+                "Participants", "Context", "Course", "Work orders", "Review", "Plugins", "Workflows", "Setup", "Transitional", "Help", "Loop",
             ],
             map.Subdomains.Select(subdomain => subdomain.Name));
-        Assert.Equal(21, map.Subdomains.Select(subdomain => subdomain.Folder).Distinct().Count());
+        Assert.Equal(22, map.Subdomains.Select(subdomain => subdomain.Folder).Distinct().Count());
         Assert.Equal("WorkOrders", map.Subdomains.Single(subdomain => subdomain.Name == "Work orders").Folder);
         // The ownership moves, bottom up (FOUNDATION1 mod-i through mod-xxi: Platform through Work orders, then Review, Plugins, Workflows, Setup, Help and Loop); no namespace
         // row: every namespace stays Daoris.Driver (D166 point 4).
-        Assert.Equal(["Platform", "Store", "Settings", "Service", "Install", "Instance", "Events", "Knowledge", "Agents", "Workplace", "Roles", "Participants", "Context", "Course", "Work orders", "Review", "Plugins", "Workflows", "Setup", "Help", "Loop"], map.Subdomains.Where(subdomain => subdomain.Moved).Select(subdomain => subdomain.Name));
+        Assert.Equal(["Platform", "Store", "Settings", "Service", "Install", "Instance", "Events", "Knowledge", "Agents", "Workplace", "Roles", "Participants", "Context", "Course", "Work orders", "Review", "Plugins", "Workflows", "Setup", "Transitional", "Help", "Loop"], map.Subdomains.Where(subdomain => subdomain.Moved).Select(subdomain => subdomain.Name));
         Assert.All(map.Subdomains, subdomain => Assert.Null(subdomain.Namespace));
         // Loop's folder is the composition root's, and holds no Domain.
         Assert.False(map.Subdomains[^1].Domain);
