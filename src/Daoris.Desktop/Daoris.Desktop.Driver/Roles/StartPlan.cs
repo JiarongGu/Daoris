@@ -296,6 +296,14 @@ internal sealed class StartPlan
         if (order.Count == 1 && !WalksOne && staffed.Count == 0)
         {
             var only = await AccountsAsync(order[0].Agent, order[0].Model, PassedFor(order[0]), ct, counts, except).ConfigureAwait(false);
+            // A refused start gives its reservation back, and settles nothing (STAFFPOLICY1e2): only a start that can run is taken. Its own
+            // hold or refusal is today's answer, unchanged.
+            if (!only.Allowed)
+            {
+                GiveBack();
+                return new SettledSelection(Role, only, order[0], []) { Revision = Revision };
+            }
+
             return Taken(new SettledSelection(Role, only, order[0], []) { Revision = Revision }, order[0]);
         }
 
