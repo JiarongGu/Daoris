@@ -147,10 +147,10 @@ public sealed class ExchangesTests
         var question = new ParkQuestion("q1", "s1", "Which?", [], null, null, At);
         var helper = Look([Ask("a1")]);
 
-        Assert.True(DriverHelpers.OwnHelperHolds(Exchanges.Of(helper, "s1"), "s1"));
-        Assert.False(DriverHelpers.OwnHelperHolds(Exchanges.Of(helper with { Questions = [question] }, "s1"), "s1"));
-        Assert.False(DriverHelpers.OwnHelperHolds(Exchanges.Of(helper with { Questions = null }, "s1"), "s1"));
-        Assert.False(DriverHelpers.OwnHelperHolds(Exchanges.Of(helper with { GoAheads = null }, "s1"), "s1"));
-        Assert.False(DriverHelpers.OwnHelperHolds(Exchanges.Of(Look([Ask("a1", asker: "s2")]), "s1"), "s1"));
+        Assert.True(Exchanges.HoldsOnOwnHelper(Exchanges.Of(helper, "s1"), "s1"));
+        Assert.False(Exchanges.HoldsOnOwnHelper(Exchanges.Of(helper with { Questions = [question] }, "s1"), "s1"));
+        Assert.False(Exchanges.HoldsOnOwnHelper(Exchanges.Of(helper with { Questions = null }, "s1"), "s1"));
+        Assert.False(Exchanges.HoldsOnOwnHelper(Exchanges.Of(helper with { GoAheads = null }, "s1"), "s1"));
+        Assert.False(Exchanges.HoldsOnOwnHelper(Exchanges.Of(Look([Ask("a1", asker: "s2")]), "s1"), "s1"));
     }
 }

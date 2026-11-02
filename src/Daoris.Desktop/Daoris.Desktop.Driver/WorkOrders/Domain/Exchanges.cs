@@ -39,6 +39,12 @@ public sealed record ExchangeAnswer(DateTimeOffset At, string? Word = null, stri
 public sealed record ExchangeSaid(string Session, string Question, DateTimeOffset At, string? Word = null);
 
 /// <summary>
+/// An opinion asked on a working line, as plain values (Review is above this subdomain, so Loop maps its view): <c>reading</c>, <c>given</c>
+/// or <c>failed</c>, and the session its findings were handed to.
+/// </summary>
+public sealed record ExchangeOpinion(string Id, string Working, string Session, string Label, string? Adapter, string State, string? HandedTo);
+
+/// <summary>
 /// The snapshot <see cref="Exchanges.Of"/> reads: each source as the look holds it, a source it could not read left null. Plain values,
 /// so the structure's lower readers can be handed what they need without naming the read (design §13 point 9).
 /// </summary>
@@ -66,7 +72,7 @@ public sealed record ExchangeLook
 
     public IReadOnlyList<QuestView>? Quests { get; init; }
 
-    public IReadOnlyList<OpinionView>? Opinions { get; init; }
+    public IReadOnlyList<ExchangeOpinion>? Opinions { get; init; }
 
     /// <summary>The ask the line's quest came from, and the go-aheads it holds.</summary>
     public string? Ask { get; init; }
@@ -125,6 +131,20 @@ public static class Exchanges
                     : exchange)
                 .OrderBy(exchange => exchange.At).ThenBy(exchange => exchange.Id, StringComparer.Ordinal),
         ];
+    }
+
+    /// <summary>
+    /// Whether <paramref name="session"/>'s turn ends on its own helper alone (HELPERWAIT1): an ask of its agent's held, and no question or
+    /// go-ahead held on the person, nor one unread. A question on file that does not read is no proof that none was asked (Codex's round-2
+    /// #3), and a go-ahead the service did not answer is the same: it parks, as one asked does.
+    /// </summary>
+    public static bool HoldsOnOwnHelper(IReadOnlyList<Exchange> exchanges, string session)
+    {
+        var own = exchanges.Where(exchange => string.Equals(exchange.Part, session, StringComparison.Ordinal)).ToList();
+        if (!own.Any(exchange => exchange.Holds && exchange.Id.StartsWith("helper:", StringComparison.Ordinal))) return false;
+        return !own.Any(exchange => exchange.Source == Unread
+                                    ? exchange.Id is "question:unread" or "go-ahead:unread"
+                                    : exchange.Holds && exchange.To == Person);
     }
 
     /// <summary>Whether any source was not read: a caller deciding that nothing waits must not read these as none.</summary>
@@ -285,8 +305,8 @@ public static class Exchanges
             {
                 var (delivery, outcome) = opinion.State switch
                 {
-                    OpinionViews.GivenState when opinion.HandedTo is not null => (Taken, "taken-in"),
-                    OpinionViews.GivenState => (Kept, "produced"),
+                    "given" when opinion.HandedTo is not null => (Taken, "taken-in"),
+                    "given" => (Kept, "produced"),
                     "failed" => (NotReached, "declined"),
                     _ => (Kept, "asked"),
                 };

@@ -189,22 +189,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         var files = new HelperFiles(_context.Home);
         if (HelperWaits.Open(session, files.Asks(), files.ReadState).Count == 0) return false;
         var exchanges = Exchanges.Of(await OwnLookAsync(session, quest.From, since, ct).ConfigureAwait(false), session);
-        return OwnHelperHolds(exchanges, session);
-    }
-
-    /// <summary>
-    /// Whether the exchanges of <paramref name="session"/> end its turn on its own helper alone: an ask of its agent's still held, and no
-    /// question or go-ahead held on the person, nor one unread. A question on file that does not read is no proof that none was asked
-    /// (Codex's round-2 #3), and a go-ahead the service did not answer is the same: it parks, as one asked does.
-    /// </summary>
-    internal static bool OwnHelperHolds(IReadOnlyList<Exchange> exchanges, string session)
-    {
-        var own = exchanges.Where(exchange => string.Equals(exchange.Part, session, StringComparison.Ordinal)).ToList();
-        if (!own.Any(exchange => exchange.Holds && exchange.Id.StartsWith("helper:", StringComparison.Ordinal))) return false;
-        return !own.Any(exchange => exchange.Source == Exchanges.Unread
-                                    ? exchange.Id is "question:unread" or "go-ahead:unread"
-                                    : exchange.Holds && exchange.Expects is Exchanges.Answer or Exchanges.Decision
-                                      && exchange.To == Exchanges.Person);
+        return Exchanges.HoldsOnOwnHelper(exchanges, session);
     }
 
     /// <summary>
