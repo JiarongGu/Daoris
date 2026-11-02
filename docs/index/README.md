@@ -82,7 +82,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/rail/SessionRail.test.tsx` | 56 | 1103 |
 | `src/Daoris.Web/src/work/rail/SessionRow.test.tsx` | 47 | 859 |
 | `src/Daoris.Web/src/workflow/WorkflowRunView.test.tsx` | 62 | 1008 |
-| `src/Daoris.Web/src/workflow/edit/WorkflowEditor.tsx` | 46 | 896 |
+| `src/Daoris.Web/src/workflow/edit/WorkflowEditor.tsx` | 48 | 935 |
 | `src/Daoris.Web/src/workflow/edit/graphDraft.ts` | 43 | 773 |
 
 ### Web settings (`web-settings`)
@@ -446,8 +446,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-11-02-staff-policy-design.md` | 46 | 447 |
 | `docs/2026-11-02-staff-policy-proposal-codex.md` | 44 | 469 |
 | `docs/2026-11-02-staff-policy-proposal-opus.md` | 47 | 542 |
-| `docs/2026-11-02-workflow-cleanup-design.md` | 50 | 464 |
+| `docs/2026-11-02-workflow-cleanup-design.md` | 54 | 501 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
-| `docs/backlog-parked.md` | 176 | 934 |
+| `docs/backlog-parked.md` | 91 | 556 |
 | `docs/development.md` | 55 | 605 |
 | `src/Daoris.Desktop/README.md` | 283 | 1290 |

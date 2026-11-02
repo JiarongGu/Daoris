@@ -74,6 +74,21 @@ describe('a repository\'s git remotes', () => {
     expect(use).toHaveBeenCalledWith(expect.objectContaining({ name: 'origin' }), 'own');
   });
 
+  it('puts the choice back when the confirmation is given up, so Use this cannot send own sign-ins unconfirmed (REVIEW2 P2)', async () => {
+    const use = vi.fn(async () => ({}));
+    draw(<GitRemotes remotes={[ORIGIN]} identities={[WORK]} acts={{ use }} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Change…' }));
+    screen.getByRole('combobox', { name: 'Choose for origin' }).focus();
+    await userEvent.keyboard('{Enter}');
+    await userEvent.click(await screen.findByRole('option', { name: 'Own sign-ins' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Never mind' }));
+
+    // The choice is as it was, so there is nothing to send.
+    expect(screen.getByRole('button', { name: 'Use this' })).toBeDisabled();
+    expect(use).not.toHaveBeenCalled();
+  });
+
   it('says a refusal under the press, keeping the choice', async () => {
     const use = vi.fn().mockRejectedValue(new Error('upstream is at the same address and points elsewhere'));
     draw(<GitRemotes remotes={[ORIGIN]} identities={[WORK, { ...WORK, id: 'gi-00000000000f', label: 'Side', default: false }]} acts={{ use }} />);

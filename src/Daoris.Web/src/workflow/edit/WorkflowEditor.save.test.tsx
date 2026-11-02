@@ -33,7 +33,8 @@ const driver: {
   save: (payload: Record<string, unknown>) => WorkflowSaveAnswer;
   use: (payload: Record<string, unknown>) => WorkflowUseAnswer;
   announced: string[];
-} = { plan: () => HOLDS, save: () => HOLDS, use: () => USED, announced: [] };
+  show: (payload: Record<string, unknown>) => Promise<unknown> | unknown;
+} = { plan: () => HOLDS, save: () => HOLDS, use: () => USED, announced: [], show: () => SHOWN };
 
 const USED: WorkflowUseAnswer = { done: true, refused: null, message: 'engine now follows it.', changed: true, reach: [] };
 
@@ -47,13 +48,14 @@ beforeEach(() => {
   driver.save = (payload) => ({ ...HOLDS, id: String(payload.id), version: 1, written: true, message: `${String(payload.id)} v1, a new workflow, from the page.` });
   driver.use = () => USED;
   driver.announced = [];
+  driver.show = () => SHOWN;
   invoke.mockImplementation(async (_module, type, options) => {
     const payload = (options as { payload: Record<string, unknown> }).payload;
     switch (type) {
       case 'WORKFLOW_LIST': return { ...LIST, ...(driver.announced.length > 0 ? { use: driver.announced } : {}) };
       case 'WORKFLOW_PALETTE': return PALETTE;
       case 'ROLE_STRUCTURE': return STRUCTURE;
-      case 'WORKFLOW_SHOW': return SHOWN;
+      case 'WORKFLOW_SHOW': return driver.show(payload);
       case 'WORKFLOW_SAVE': return payload.plan ? driver.plan(payload) : driver.save(payload);
       case 'WORKFLOW_USE': return driver.use(payload);
       default: return null;
@@ -237,6 +239,29 @@ describe('Use here', () => {
     await user.click(await screen.findByRole('button', { name: 'Use here' }));
     await waitFor(() => expect(asked('WORKFLOW_USE')).toHaveLength(1));
     expect(asked('WORKFLOW_USE')[0]).toEqual({ repository: 'engine', workflow: 'docs-release', version: 2, kind: 'docs' });
+  });
+
+  it('does not take a told draft for the saved version: the baseline is that version read, and Use here waits for it (REVIEW2 P4)', async () => {
+    const told ={ ...MERGE_GRAPH, nodes: [...MERGE_GRAPH.nodes, { id: 'extra', kind: 'line', version: 1, reach: 'observed' }] };
+    let answer = () => {};
+    driver.show = (payload) => new Promise((resolve) => {
+      answer = () => resolve({ ...SHOWN, version: payload.version, body: MERGE_GRAPH });
+    });
+    render(wrap(<Editor startFrom={{ graph: told, id: 'docs-release', name: 'Docs release', base: 2, told: true }} />));
+    await screen.findByRole('list', { name: 'How the steps go on' });
+
+    // The version the draft was made from is asked for, and until it is read the draft is not that version.
+    await waitFor(() => expect(asked('WORKFLOW_SHOW')[0]).toMatchObject({ id: 'docs-release', version: 2 }));
+    expect(screen.queryByRole('button', { name: 'Use here' })).toBeNull();
+    answer();
+    // Read, the draft differs from it: still unsaved, never the version chosen without its changes.
+    await screen.findByText('Save these changes first: Use here chooses the version as it is saved.');
+    expect(screen.queryByRole('button', { name: 'Use here' })).toBeNull();
+  });
+
+  it('offers Use here on a told draft once the version read is the draft itself (REVIEW2 P4)', async () => {    driver.show = (payload) => ({ ...SHOWN, version: payload.version, body: MERGE_GRAPH });
+    render(wrap(<Editor startFrom={{ graph: MERGE_GRAPH, id: 'docs-release', name: 'Docs release', base: 2, told: true }} />));
+    expect(await screen.findByRole('button', { name: 'Use here' })).toBeInTheDocument();
   });
 
   it('reads the plan of the choice where the driver announces one, and presses it with the plan\'s token', async () => {
