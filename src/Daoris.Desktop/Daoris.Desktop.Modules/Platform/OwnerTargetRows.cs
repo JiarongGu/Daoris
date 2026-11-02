@@ -110,6 +110,8 @@ internal static class OwnerTargetRows
                  {
                      "SET_LINE", "SET_LANGUAGE", "SET_LANDING", "SET_REVIEW", "SET_OPINION", "SET_HELPERS", "SET_HAND_OVER", "SET_COMMITS", "SET_ACCESS", "SET_GIT_ACCESS",
                      "SET_READ_ACROSS", "WORKFLOW_LANDED", "WORKFLOW_USE",
+                     // GITAUTH1e: which git identity a repository's or a workspace's acts carry.
+                     "GIT_USE",
                  })
         {
             Row(route, Repository(), Workspace());
@@ -137,7 +139,7 @@ internal static class OwnerTargetRows
         None(OwnerNone.MachineSetting,
             "SET_ACTOR", "STAFFING_FOUND_ANSWER", "SET_ROLE", "SET_ROLES", "SET_AGENT_SETTINGS", "SET_CAP", "SET_COOLOFF", "SET_HELP_MODE", "SET_HELP_GRANT", "SET_KEEP", "SET_NOTIFY", "SET_STRIKES",
             "TRUST_FOLDER", "ACCOUNT_USE", "HARNESS_ACTION", "HARNESSES_REFRESH", "TOOLS_DELETE", "TOOLS_DOWNLOAD", "TOOLS_LOCATION", "TOOLS_STOP",
-            "TOOLS_USE", "TOOLS_GIT", "TOOLS_GIT_SET", "GIT_IDENTITY", "GIT_USE", "SYSTEM_DOWNLOADS_CLEAR", "SYSTEM_SPACE_FREE", "SET_STANDING_CONFIRMATION", "PLUGIN_ACTION", "PLUGIN_UPDATE",
+            "TOOLS_USE", "TOOLS_GIT", "TOOLS_GIT_SET", "GIT_IDENTITY", "SYSTEM_DOWNLOADS_CLEAR", "SYSTEM_SPACE_FREE", "SET_STANDING_CONFIRMATION", "PLUGIN_ACTION", "PLUGIN_UPDATE",
             "PLUGIN_NEW", "PLUGIN_TRY", "PLUGIN_TOOLS", "PLUGIN_TOOL_FIX", "PLUGIN_ADD", "PLUGIN_INSTALL", "WORKFLOW_SAVE",
             PipeTargets.Key("DAORIS.REMOTES", "SET"), PipeTargets.Key("DAORIS.REMOTES", "REMOVE"));
 
