@@ -71,6 +71,10 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
     public bool JudgesHolds => Graph is not { } graph || !graph.Nodes.Any(node => node.Kind == NodeKinds.Land);
 
     /// <inheritdoc/>
+    public bool LandsByRuntime => Graph?.Nodes.Any(node => node.Kind == NodeKinds.Land) == true
+                                  && Binding is { IsCurrent: false, Digest: not null } && Problem is null && Unread is null;
+
+    /// <inheritdoc/>
     public BoundLand? Land(LandingSubject subject)
     {
         if (Graph?.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land) is not { } land

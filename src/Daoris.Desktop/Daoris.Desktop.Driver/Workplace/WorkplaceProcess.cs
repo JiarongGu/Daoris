@@ -58,6 +58,13 @@ public interface IWorkplaceProcess
     bool JudgesHolds => true;
 
     /// <summary>
+    /// Whether the runtime performs this work's landing (WORKFLOWCLEAN1 1c): a run bound to a readable graph version holding a <c>land</c>. Its
+    /// doors write the review's word and wait, the look chooses nothing for it, and no door lands it in place; Current, a steps version and a
+    /// <c>handed</c> version land through today's doors until the transitional paths end (the cleanup design §4.7).
+    /// </summary>
+    bool LandsByRuntime => false;
+
+    /// <summary>
     /// The bound graph version's <c>land</c> for <paramref name="subject"/>'s work (LANDNODE1m), which a door's delivery is written from, as
     /// Current's is from its rule; null under Current, under a steps version and under a graph version that lands by a <c>handed</c>, which land
     /// through today's doors until they end (the land node design §4).
