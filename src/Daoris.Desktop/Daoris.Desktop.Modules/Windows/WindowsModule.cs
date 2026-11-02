@@ -1,3 +1,4 @@
+using Daoris.Driver;
 using Shenora.Core.Events;
 using Shenora.Core.Ipc;
 
@@ -65,7 +66,7 @@ public sealed class WindowsModule(
             {
                 if (PayloadHelper.GetOptionalValue<string>(request.Payload, "url") is { } url)
                 {
-                    var address = BrowserFavorites.Address(url)
+                    var address = BrowserAddress.Page(url)
                         ?? throw Refusals.Because(
                             Refusals.BrowserLinkNotAPage,
                             $"`{url}` is not a web page, so Daoris's browser will not open it.",

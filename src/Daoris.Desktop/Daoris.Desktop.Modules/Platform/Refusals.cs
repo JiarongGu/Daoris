@@ -29,7 +29,7 @@ public static class Refusals
     public const string UpdateModeUnknown = "UPDATE_MODE_UNKNOWN";
 
     /// <summary>A remote with an address but no key, or the reverse — no remote in any loader.</summary>
-    public const string RemoteHalfDeclared = "REMOTE_HALF_DECLARED";
+    public const string RemoteHalfDeclared = Daoris.Driver.HomeFileCodes.RemoteHalfDeclared;
 
     /// <summary>A declaration form pointed at a folder that has not adopted Daoris.</summary>
     public const string RepositoryNotAdopted = "REPOSITORY_NOT_ADOPTED";
@@ -320,19 +320,19 @@ public static class Refusals
     public const string PluginNothingKept = "PLUGIN_NOTHING_KEPT";
 
     /// <summary>A favorite that is no web page: the bar's rule keeps only `http` and `https` pages (CHR5).</summary>
-    public const string BrowserNotAPage = "BROWSER_NOT_A_PAGE";
+    public const string BrowserNotAPage = Daoris.Driver.HomeFileCodes.BrowserNotAPage;
 
     /// <summary>A favorites or settings file that could not be read, which an edit will not write over.</summary>
-    public const string BrowserFileUnreadable = "BROWSER_FILE_UNREADABLE";
+    public const string BrowserFileUnreadable = Daoris.Driver.HomeFileCodes.BrowserFileUnreadable;
 
     /// <summary>An extensions setting that is neither `offer` nor `refuse` (CHR7).</summary>
-    public const string BrowserSettingUnknown = "BROWSER_SETTING_UNKNOWN";
+    public const string BrowserSettingUnknown = Daoris.Driver.HomeFileCodes.BrowserSettingUnknown;
 
     /// <summary>A browser choice that is neither `daoris` nor `edge` (BRW12).</summary>
-    public const string BrowserChoiceUnknown = "BROWSER_CHOICE_UNKNOWN";
+    public const string BrowserChoiceUnknown = Daoris.Driver.HomeFileCodes.BrowserChoiceUnknown;
 
     /// <summary>A links setting that is neither `system` nor `daoris` (BRW7).</summary>
-    public const string BrowserLinksUnknown = "BROWSER_LINKS_UNKNOWN";
+    public const string BrowserLinksUnknown = Daoris.Driver.HomeFileCodes.BrowserLinksUnknown;
 
     /// <summary>
     /// A link the page asked Daoris's browser to open that is no web page (BRW7): the favorites' rule,

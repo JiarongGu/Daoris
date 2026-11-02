@@ -85,7 +85,7 @@ internal sealed class HelpBrowserProposals : IHelpProposalKind
         var typed = proposal.Target?.Trim() ?? "";
         if (typed.Length == 0) return Refused("a favorite names its address — the page to keep, or the one to stop keeping.");
         if (files.FavoritesProblem is { } problem) return Refused(Unreadable(problem));
-        if (files.Page(typed) is not { } page) return Refused($"`{typed}` is not a web page, so it cannot be a favorite.");
+        if (BrowserAddress.Page(typed) is not { } page) return Refused($"`{typed}` is not a web page, so it cannot be a favorite.");
 
         if (value == "remove")
         {
@@ -126,18 +126,17 @@ internal sealed class HelpBrowserProposals : IHelpProposalKind
     private static string Unreadable(string problem) =>
         $"{problem}. Fix it, or delete it to start from nothing: Daoris will not write over a file it could not read.";
 
-    // The values the screen's routes take, spelled as the modules' `BrowserChoice`, `LinksSetting` and
-    // `ExtensionsSetting` spell them — a twin duplicated deliberately, since the driver cannot reference the modules.
-    private const string Daoris = "daoris";
-    private const string Edge = "edge";
-    private const string SystemBrowser = "system";
-    private const string Offer = "offer";
-    private const string Refuse = "refuse";
+    // The values the screen's routes take, as the library's `BrowserChoice`, `LinksSetting` and `ExtensionsSetting` spell them.
+    private const string Daoris = BrowserChoice.Daoris;
+    private const string Edge = BrowserChoice.Edge;
+    private const string SystemBrowser = LinksSetting.System;
+    private const string Offer = ExtensionsSetting.Offer;
+    private const string Refuse = ExtensionsSetting.Refuse;
 }
 
 /// <summary>
 /// What Daoris's browser's two files hold, as the Browser screen reads them (HELP10): the settings and the favorites,
-/// why either could not be read, whether an Edge is installed, and the route's own reader of an address.
+/// why either could not be read, and whether an Edge is installed.
 /// </summary>
 /// <param name="Browser">`daoris` or `edge`.</param>
 /// <param name="Links">`system` or `daoris`.</param>
@@ -153,9 +152,6 @@ public sealed record HelpBrowserFacts(string Browser, string Links, string Exten
 
     /// <summary>Whether an Edge is installed here, which the screen says before Edge is chosen.</summary>
     public bool EdgeFound { get; init; } = true;
-
-    /// <summary>The route's own reading of an address as a web page (<c>BrowserFavorites.Address</c>): the page, or null for none.</summary>
-    public Func<string, string?> Page { get; init; } = _ => null;
 }
 
 public interface IHelpBrowserDoors

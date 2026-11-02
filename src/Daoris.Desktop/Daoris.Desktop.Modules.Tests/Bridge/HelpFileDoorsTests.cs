@@ -112,7 +112,7 @@ public sealed class HelpFileDoorsTests : Bridge
             (await Assert.ThrowsAnyAsync<Exception>(() => doors.SyncAsync("engine", null, new HashSet<string> { "engine:main" }, CancellationToken.None))).Message);
     }
 
-    /// <summary>HELP10: what a browser proposal is judged against is the files as the Browser screen reads them, and the route's reader of an address.</summary>
+    /// <summary>HELP10: what a browser proposal is judged against is the files as the Browser screen reads them.</summary>
     [Fact]
     public void The_browsers_facts_are_its_files_as_the_screen_reads_them()
     {
@@ -123,8 +123,6 @@ public sealed class HelpFileDoorsTests : Bridge
 
         Assert.Equal((BrowserChoice.Daoris, LinksSetting.Daoris, ExtensionsSetting.Offer), (facts.Browser, facts.Links, facts.Extensions));
         Assert.Equal(["https://site.example/board"], facts.Favorites);
-        Assert.Equal(BrowserFavorites.Address("docs.example/guide"), facts.Page("docs.example/guide"));
-        Assert.Null(facts.Page("javascript:alert(1)"));
         Assert.Equal((null, null), (facts.Problem, facts.FavoritesProblem));
     }
 }

@@ -84,73 +84,36 @@ public sealed class BrowserModule(IEventBus events) : ModuleBase(events: events)
     /// <summary>Keep a page: <c>ADD_FAVORITE</c>'s check and write, and Ask Daoris's door's (HELP10).</summary>
     public static void AddFavorite(string home, string address, string? title)
     {
-        if (BrowserFavorites.Address(address) is null)
-        {
-            throw Refusals.Because(
-                Refusals.BrowserNotAPage,
-                $"`{address}` is not a web page, so it cannot be a favorite.",
-                ("address", address));
-        }
-
-        Unreadable(BrowserFavorites.Read(home).Problem, BrowserFavorites.FilePath(home));
-        BrowserFavorites.Add(home, address, title);
+        Refused(() => BrowserFavorites.Add(home, address, title));
     }
 
     /// <summary>Stop keeping a page: <c>REMOVE_FAVORITE</c>'s write, and Ask Daoris's door's (HELP10).</summary>
     public static void RemoveFavorite(string home, string address)
     {
-        Unreadable(BrowserFavorites.Read(home).Problem, BrowserFavorites.FilePath(home));
-        BrowserFavorites.Remove(home, address);
+        Refused(() => BrowserFavorites.Remove(home, address));
     }
 
     /// <summary>Offer or refuse other software's extensions: <c>SET_EXTENSIONS</c>'s check and write, and Ask Daoris's door's (HELP10).</summary>
     public static void SetExtensions(string home, string extensions)
     {
-        if (extensions is not (ExtensionsSetting.Offer or ExtensionsSetting.Refuse))
-        {
-            throw Refusals.Because(
-                Refusals.BrowserSettingUnknown,
-                $"The extensions setting is `offer` or `refuse`, not `{extensions}`.",
-                ("value", extensions));
-        }
-
-        Unreadable(BrowserSettings.Read(home).Problem, BrowserSettings.FilePath(home));
-        BrowserSettings.SetExtensions(home, extensions);
+        Refused(() => BrowserSettings.SetExtensions(home, extensions));
     }
 
     /// <summary>Choose the browser (BRW12): <c>SET_BROWSER</c>'s check and write, and Ask Daoris's door's (HELP10).</summary>
     public static void SetBrowser(string home, string browser)
     {
-        if (browser is not (BrowserChoice.Daoris or BrowserChoice.Edge))
-        {
-            throw Refusals.Because(
-                Refusals.BrowserChoiceUnknown,
-                $"The browser is `daoris` or `edge`, not `{browser}`.",
-                ("value", browser));
-        }
-
-        Unreadable(BrowserSettings.Read(home).Problem, BrowserSettings.FilePath(home));
-        BrowserSettings.SetBrowser(home, browser);
+        Refused(() => BrowserSettings.SetBrowser(home, browser));
     }
 
     /// <summary>Choose where the page's links open (BRW7): <c>SET_LINKS</c>'s check and write, and Ask Daoris's door's (HELP10).</summary>
     public static void SetLinks(string home, string links)
     {
-        if (links is not (LinksSetting.System or LinksSetting.Daoris))
-        {
-            throw Refusals.Because(
-                Refusals.BrowserLinksUnknown,
-                $"Links open in `system` or `daoris`, not `{links}`.",
-                ("value", links));
-        }
-
-        Unreadable(BrowserSettings.Read(home).Problem, BrowserSettings.FilePath(home));
-        BrowserSettings.SetLinks(home, links);
+        Refused(() => BrowserSettings.SetLinks(home, links));
     }
 
     /// <summary>
     /// What Ask Daoris judges a browser proposal by (HELP10): the two files as <c>STATE</c> reads them, why either could
-    /// not be read, whether an Edge is installed, and this module's own reader of an address.
+    /// not be read, and whether an Edge is installed.
     /// </summary>
     public static HelpBrowserFacts HelpFacts(string home)
     {
@@ -161,18 +124,20 @@ public sealed class BrowserModule(IEventBus events) : ModuleBase(events: events)
             Problem = settings.Problem,
             FavoritesProblem = favorites.Problem,
             EdgeFound = EdgeBrowser.Locate() is not null,
-            Page = BrowserFavorites.Address,
         };
     }
 
-    /// <summary>A file this could not read is never written over, and the page says which, and why.</summary>
-    private static void Unreadable(string? problem, string file)
+    /// <summary>An edit's refusal, said in the code the library's table gives it (a file it could not read is never written over).</summary>
+    private static void Refused(Action edit)
     {
-        if (problem is null) return;
-        throw Refusals.Because(
-            Refusals.BrowserFileUnreadable,
-            $"{problem}. Fix it, or delete it to start from nothing: Daoris will not write over a file it could not read.",
-            ("file", file), ("problem", problem));
+        try
+        {
+            edit();
+        }
+        catch (HomeFileRefusal coded)
+        {
+            throw Refusals.Declared(HomeFileCodes.Of(coded), coded.Message, [.. coded.Facts]);
+        }
     }
 
     private static object State(string home)

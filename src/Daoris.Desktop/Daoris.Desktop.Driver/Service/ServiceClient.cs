@@ -202,6 +202,81 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     }
 
     /// <summary>
+    /// A repository's first registration from its working tree at <paramref name="root"/> (ONEWAY1u, D124 §3.3), at this client's
+    /// service, which may be any address: what <see cref="RegistryConnect.Plan"/> composes, taken or refused in the service's own
+    /// words. The workspace the service says it took is read back, since silence preserves whatever the row held.
+    /// </summary>
+    /// <exception cref="RegistryRefusal">The plan's refusal, or the service's; nothing was registered.</exception>
+    public async Task<ConnectDone> ConnectAsync(string root, string? workspace, CancellationToken ct = default)
+    {
+        var plan = RegistryConnect.Plan(root, workspace, _base);
+        var (ok, status, _, answer) = await PostJsonAsync("/api/registry", plan.Body.ToJsonString(), ct).ConfigureAwait(false);
+        if (!ok) throw Refused($"the service refused the registration: {ServiceSaid(status, answer)}", 2);
+        return new ConnectDone(plan, answer is { } landed ? Text(landed, "workspace") : null);
+    }
+
+    /// <summary>
+    /// Take a repository off the registry (ONEWAY1u): the service's own sentence, which says what retiring does not do. One that was
+    /// never registered is an answer, not a failure.
+    /// </summary>
+    /// <exception cref="RegistryRefusal">The service refused; nothing changed.</exception>
+    public async Task<string> RetireAsync(string repository, CancellationToken ct = default)
+    {
+        var answer = await SendAsync(ServiceVerb.Delete, $"/api/registry/{Uri.EscapeDataString(repository)}", null, ct).ConfigureAwait(false);
+        var root = AnswerOf(answer.Payload);
+        if (!answer.Ok) throw Refused(ServiceSaid(answer.Status, root), 1);
+        return (root is { } said ? Text(said, "message") : null) ?? $"{repository} is no longer registered.";
+    }
+
+    /// <summary>
+    /// Register everything a folder's subdirectories propose (ONEWAY1u, D48 §3). A folder is a machine path and goes only to a service on
+    /// this machine; none lets the service use its own knowledge root.
+    /// </summary>
+    /// <param name="folder">An absolute folder, or null.</param>
+    /// <exception cref="RegistryRefusal">A folder for a service elsewhere, or the service refused; nothing was sent or changed.</exception>
+    public async Task<string> ImportAsync(string? folder, string? workspace, CancellationToken ct = default)
+    {
+        if (folder is not null && !RegistryConnect.IsLocal(_base))
+        {
+            throw new RegistryRefusal(
+                RegistryRefusal.FolderNotLocal,
+                $"{_base} is not on this machine, and a folder here means nothing there — import a "
+                + "folder into this machine's own service; a deployment is fed by the machines that join it.",
+                2);
+        }
+
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            if (!string.IsNullOrEmpty(folder)) writer.WriteString("folder", folder);
+            if (!string.IsNullOrEmpty(workspace)) writer.WriteString("workspace", workspace);
+            writer.WriteEndObject();
+        });
+        var (ok, status, _, answer) = await PostJsonAsync("/api/registry/import", body, ct).ConfigureAwait(false);
+        if (!ok) throw Refused(ServiceSaid(status, answer), 1);
+        return (answer is { } said ? Text(said, "message") : null) ?? "imported.";
+    }
+
+    private static RegistryRefusal Refused(string message, int exit) => new(RegistryRefusal.ServiceRefused, message, exit);
+
+    /// <summary>The service's own sentence, or a bare status when it did not compose one.</summary>
+    private static string ServiceSaid(int status, JsonElement? answer) =>
+        (answer is { } said ? Text(said, "error") : null) ?? $"the service answered {status}";
+
+    private static JsonElement? AnswerOf(string payload)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(payload);
+            return document.RootElement.Clone();
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
     /// Ask the host to read the index again (the refresh every door has): registering does not re-index (D124 §3.3). Null
     /// when it did; else why not, in the service's words.
     /// </summary>

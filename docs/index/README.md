@@ -205,7 +205,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Review/Heavy/HeavyExecutor.cs` | 42 | 856 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Roles/QuestionSupervisorDecisions.cs` | 48 | 861 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Roles/RoleStaffing.cs` | 44 | 837 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs` | 194 | 3376 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs` | 198 | 3451 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Settings/DriverChoicesCommand.cs` | 50 | 860 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Settings/DriverConfig.cs` | 107 | 1792 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Store/DesktopStore.cs` | 50 | 1026 |

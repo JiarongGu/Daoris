@@ -119,37 +119,6 @@ public sealed class InAppBrowserTests : Bridge
         await serving;
     }
 
-    /// <summary>
-    /// What the person types. A host with no scheme is a site, over HTTPS unless it is this machine;
-    /// anything that is not a web page — a file, a script, a credential in the address — goes nowhere.
-    /// An agent drives the page over CDP and never passes through this.
-    /// </summary>
-    [Theory]
-    [InlineData("https://tickets.example/browse/T-1", "https://tickets.example/browse/T-1")]
-    [InlineData("tickets.example/browse/T-1", "https://tickets.example/browse/T-1")]
-    [InlineData("  tickets.example  ", "https://tickets.example/")]
-    [InlineData("localhost:4200", "http://localhost:4200/")]
-    [InlineData("127.0.0.1:5177/api/status", "http://127.0.0.1:5177/api/status")]
-    [InlineData("http://localhost:4200/", "http://localhost:4200/")]
-    [InlineData("about:blank", "about:blank")]
-    public void An_address_the_person_types_becomes_a_page(string typed, string expected)
-    {
-        Assert.Equal(expected, InAppBrowser.Address(typed));
-    }
-
-    [Theory]
-    [InlineData("")]
-    [InlineData("   ")]
-    [InlineData("file:///C:/secrets.txt")]
-    [InlineData("javascript:alert(1)")]
-    [InlineData("data:text/html,<script>1</script>")]
-    [InlineData("https://someone:password@tickets.example/")]
-    [InlineData("two words")]
-    public void Anything_that_is_not_a_web_page_goes_nowhere(string typed)
-    {
-        Assert.Null(InAppBrowser.Address(typed));
-    }
-
     // ——— The page's door (D50: a screen door; the browser has no terminal twin, because it IS a window).
 
     private sealed class Browser : IInAppBrowser
