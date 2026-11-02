@@ -28,7 +28,9 @@ public sealed record ClosingNote(string? Note, int Before);
 /// <param name="Account">The account it runs as, or null for the one the roster picks.</param>
 /// <param name="Why">One of <see cref="HandOverWhy"/>.</param>
 /// <param name="AskedBy">One of <see cref="HandOverBy"/>.</param>
-public sealed record HandOverRequest(string Agent, string? Account, string Why, string AskedBy, DateTimeOffset At);
+/// <param name="Model">The model of the choice it was offered and approved on (STAFFPOLICY1d), which the start takes and never picks again; null for the agent's own.</param>
+/// <param name="Effort">The effort of that choice, likewise.</param>
+public sealed record HandOverRequest(string Agent, string? Account, string Why, string AskedBy, DateTimeOffset At, string? Model = null, string? Effort = null);
 
 /// <summary>What a hand-over's ask came to (MIXAGENT1a-i): kept, or refused by a code, and its sentence.</summary>
 /// <param name="Kept">The box is kept: the shell's chat runner takes it.</param>

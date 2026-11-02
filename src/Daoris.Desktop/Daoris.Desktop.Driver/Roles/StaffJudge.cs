@@ -68,6 +68,9 @@ public static class StaffBy
     /// <summary>It is the only one of the role's choices taking the start's work.</summary>
     public const string Work = "work";
 
+    /// <summary>A part that followed another choice on a condition (a record's <c>chosen</c>; never an arrangement's answer).</summary>
+    public const string Moved = "moved";
+
     public static IReadOnlyList<string> Codes { get; } = [First, Weight, Share, Budget, Work];
 }
 

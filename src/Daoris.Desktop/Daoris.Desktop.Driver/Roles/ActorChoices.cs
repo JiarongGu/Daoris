@@ -233,6 +233,12 @@ public static class ActorChoices
 /// </summary>
 public sealed record ActorView(string Id, string State, IReadOnlyList<ActorEffective> Choices, string? Error)
 {
+    /// <summary>
+    /// The order a start would walk now where the role's set policy arranges it otherwise than its stored order (STAFFPOLICY1d), for the page's
+    /// hand-over offer; null where it is the stored order, or the role's is not asked.
+    /// </summary>
+    public IReadOnlyList<ActorEffective>? Arranged { get; init; }
+
     /// <summary>Every actor of <paramref name="config"/>, in the screen's order.</summary>
     public static IReadOnlyList<ActorView> All(DriverConfig config) => [.. ActorChoices.Ids.Select(id => Of(id, config))];
 

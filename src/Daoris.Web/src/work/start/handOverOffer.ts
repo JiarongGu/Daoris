@@ -18,7 +18,7 @@ export type HandOverOffer = {
    * Where the session's actor has an order of its own (MODELROLE1e, D205 §3.5(e)), the choice the offer names: its number in that order
    * and the model it asks (null for account default). Absent where the roster's order stands because the actor is as before.
    */
-  choice?: { n: string; model: string | null };
+  choice?: { n: string; model: string | null; effort?: string | null };
 };
 
 /**
@@ -61,7 +61,7 @@ export function handOverOffer({ session, workspace, doors, answer, now, actor }:
 
   // Candidates are the actor's entries on other tools (MODELROLE1e, D205 §3.5(e)), in its order; where the actor is as before they are
   // the roster's other tools (MIXAGENT1b-iii), each once by its first present door. A tool's other door is the same tool.
-  for (const { door, model, from } of nextChoices(session, doors, actor)) {
+  for (const { door, model, effort, from } of nextChoices(session, doors, actor)) {
     const agent = agentOf(answer, toolOf(door));
     const scope = agent ? scopeOf(agent) : null;
     const next = scope?.next;
@@ -79,7 +79,7 @@ export function handOverOffer({ session, workspace, doors, answer, now, actor }:
     if (taken === undefined) continue;
     return {
       why, until: why === 'limit' ? until : null, agent: door.harness, account: taken,
-      ...(from === 'roster' ? {} : { choice: { n: from, model } }),
+      ...(from === 'roster' ? {} : { choice: { n: from, model, effort } }),
     };
   }
   return null;
@@ -128,7 +128,7 @@ export function otherToolDoors(session: Pick<Session, 'adapter'>, doors: readonl
 }
 
 /** One step of a hand-over's order: the door it goes to, the model the actor's entry asks of it, and the choice it is. */
-export type NextChoice = { door: ToolDoor; model: string | null; from: string };
+export type NextChoice = { door: ToolDoor; model: string | null; effort: string | null; from: string };
 
 /**
  * The order a hand-over goes in (MODELROLE1e, D205 §3.5(e), round 4's Opus N1): every path takes the session's actor's effective
@@ -140,11 +140,12 @@ export type NextChoice = { door: ToolDoor; model: string | null; from: string };
 export function nextChoices(
   session: Pick<Session, 'adapter'>,
   doors: readonly ToolDoor[],
-  actor?: Pick<ActorRow, 'choices'> | null,
+  actor?: Pick<ActorRow, 'choices' | 'arranged'> | null,
 ): NextChoice[] {
-  const entries = actor?.choices ?? [];
+  // The order a start would walk (STAFFPOLICY1d): the role's policy arranges it where one is set, else the stored order stands.
+  const entries = actor?.arranged ?? actor?.choices ?? [];
   if (entries.length === 0 || entries.every((entry) => entry.from === 'before')) {
-    return otherToolDoors(session, doors).map((door) => ({ door, model: null, from: 'roster' }));
+    return otherToolDoors(session, doors).map((door) => ({ door, model: null, effort: null, from: 'roster' }));
   }
   const own = doors.find((each) => each.harness === session.adapter);
   const ownTool = own ? toolOf(own) : session.adapter;
@@ -152,7 +153,7 @@ export function nextChoices(
   for (const entry of entries) {
     const door = doors.find((each) => each.present && each.harness === entry.agent);
     if (!door || toolOf(door) === ownTool) continue;
-    found.push({ door, model: entry.model ?? null, from: entry.from });
+    found.push({ door, model: entry.model ?? null, effort: entry.effort ?? null, from: entry.from });
   }
   return found;
 }

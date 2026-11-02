@@ -129,7 +129,8 @@ public static class HandOver
     internal static async Task<HandOverAsked> AskAsync(
         ServiceClient service, ConversationMoves moves, Func<string, IReadOnlyList<string>?> accountsOf, string id, string agent, string? account,
         string why, string askedBy, DateTimeOffset now, CancellationToken ct = default, CourseRules? consent = null,
-        CourseBoundary boundary = CourseBoundary.BetweenTurns, Func<PriorSession, HandOverAnswer?>? before = null, Action<LineCourse>? decided = null)
+        CourseBoundary boundary = CourseBoundary.BetweenTurns, Func<PriorSession, HandOverAnswer?>? before = null, Action<LineCourse>? decided = null,
+        string? model = null, string? effort = null)
     {
         var judged = await JudgedAsync(service, accountsOf, id, agent, account, ct, askedBy, why, consent, boundary, decided).ConfigureAwait(false);
         if (judged.Refused is not null) return new HandOverAsked(judged.Refused, null, null);
@@ -139,12 +140,13 @@ public static class HandOver
         var where = ((LineCourse.Move)judged.Course!).Where;
         var named = where.Account;
         var begun = await moves.BeginAsync(
-            new MoveDecision(id, MoveExecutors.Conversation, MoveHows.Brief, why, askedBy) { Agent = where.Agent ?? agent, Account = named }, ct).ConfigureAwait(false);
+            new MoveDecision(id, MoveExecutors.Conversation, MoveHows.Brief, why, askedBy) { Agent = where.Agent ?? agent, Account = named, Model = model, Effort = effort }, ct)
+            .ConfigureAwait(false);
         if (begun.Move is { } move)
         {
             return new HandOverAsked(
                 new HandOverAnswer(true, null, $"it goes on with {agent} as soon as its turn is over, in a conversation of its own."), move,
-                new HandOverRequest(agent, named, why, askedBy, now));
+                new HandOverRequest(agent, named, why, askedBy, now, model, effort));
         }
 
         if (begun.Standing is { } standing)

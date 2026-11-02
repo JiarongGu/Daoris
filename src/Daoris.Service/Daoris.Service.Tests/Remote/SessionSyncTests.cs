@@ -94,14 +94,14 @@ public sealed class SessionSyncTests : IAsyncLifetime
     {
         var session = await _a.CreateAsync("q1", "Shared", "stub", Now, actor: "build");
         var value = System.Text.Json.JsonSerializer.SerializeToElement(new { model = "private-model" });
-        await _a.KeepActorAsync(session.Id, "before", value, value, value);
+        await _a.KeepActorAsync(session.Id, "before", value, value, value, value);
         await SyncAsync(_a, "a@one");
         await SyncAsync(_b, "b@two");
         foreach (var store in new[] { _remote, _b })
         {
             var mirrored = (await store.FindAsync($"a@one/{session.Id}"))!;
             Assert.Null(mirrored.Actor); Assert.Null(mirrored.Choice); Assert.Null(mirrored.Asked);
-            Assert.Null(mirrored.Override); Assert.Null(mirrored.Ran);
+            Assert.Null(mirrored.Override); Assert.Null(mirrored.Ran); Assert.Null(mirrored.Chosen);
         }
     }
 

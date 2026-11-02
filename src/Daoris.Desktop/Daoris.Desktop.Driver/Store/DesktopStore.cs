@@ -613,6 +613,15 @@ public sealed class DesktopStore : IDisposable
             );
             CREATE INDEX role_moves_line ON role_moves (line, at);
             """)),
+
+        // STAFFPOLICY1d (the staff policy design §11 point 4): the model and effort of the choice a hand-over was offered and approved on, kept
+        // with the move so a restart takes it as approved and never picks again. Each nullable, added to the table a step-16 build already
+        // writes, which names its own columns and leaves these empty, so the stamp stays where it is and the step runs at the first start.
+        new(18, PolicyWriter, write => write.Execute(
+            """
+            ALTER TABLE moves ADD COLUMN model TEXT;
+            ALTER TABLE moves ADD COLUMN effort TEXT;
+            """)),
     ];
 
     /// <summary>

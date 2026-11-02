@@ -248,6 +248,15 @@ public sealed class HandOverTests : IDisposable
 
         box.Clear("c0nv0001");
         Assert.Null(box.Read("c0nv0001"));
+
+        // STAFFPOLICY1d: the choice approved is kept with the ask; a box from before names none and reads as it did.
+        var approved = new HandOverRequest("codex-acp", null, HandOverWhy.Press, HandOverBy.Person, T0, "gpt-5", "high");
+        box.Write("c0nv0002", approved);
+        Assert.Equal(approved, box.Read("c0nv0002"));
+        box.Write("c0nv0003", new HandOverRequest("codex-acp", null, HandOverWhy.Press, HandOverBy.Person, T0));
+        Assert.DoesNotContain("model", File.ReadAllText(box.PathOf("c0nv0003")));
+        box.Clear("c0nv0002");
+        box.Clear("c0nv0003");
         Assert.Empty(box.Pending());
     }
 

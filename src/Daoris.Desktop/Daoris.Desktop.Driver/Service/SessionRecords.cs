@@ -50,6 +50,7 @@ public static class SessionRecords
                 Asked = ServiceClient.ActorRead<ActorAsked>(session, "asked"),
                 Override = ServiceClient.ActorRead<JsonElement?>(session, "override"),
                 Ran = ServiceClient.ActorRead<ActorRan>(session, "ran"),
+                Chosen = ServiceClient.ActorRead<ActorChosen>(session, "chosen"),
                 // COAGENT1b: a helper's or a partner's lead, and a partner's piece, kept only beside it, as the service keeps them.
                 Serves = Text(session, "serves") is { Length: > 0 } serves ? serves : null,
                 Piece = Text(session, "serves") is { Length: > 0 } && Text(session, "piece") is { Length: > 0 } piece ? piece : null,

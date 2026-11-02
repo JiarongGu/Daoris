@@ -993,7 +993,7 @@ internal sealed class StandInLedger : HttpMessageHandler
                 {
                     var id = path["/api/sessions/".Length..^"/actor".Length];
                     var session = _sessions.Single(s => s["id"]!.GetValue<string>() == id);
-                    foreach (var key in new[] { "choice", "asked", "override", "ran" })
+                    foreach (var key in new[] { "choice", "asked", "override", "ran", "chosen" })
                         if (body![key] is { } value) session[key] = value.DeepClone();
                     return Answer(HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "kept" });
                 }

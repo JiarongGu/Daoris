@@ -288,6 +288,19 @@ public sealed class StaffLedger(string home, Func<StoreSettled>? settled = null,
             if (!_bound.Remove(number, out binding)) return null;
         }
 
+        return Written(binding, session, condition);
+    }
+
+    /// <summary>
+    /// <see cref="Opened(long, string, string?)"/> for the selection the start opened on: a start with no account count (0) carries its binding
+    /// on the selection, so its row is written all the same.
+    /// </summary>
+    public StaffBinding? Opened(HarnessSelection selection, string session, string? condition = null) =>
+        Opened(selection.Number, session, condition)
+        ?? (selection.Number <= 0 && selection.Staffed is StaffBinding carried ? Written(carried, session, condition) : null);
+
+    private StaffBinding Written(StaffBinding binding, string session, string? condition)
+    {
         // A start under no policy is written down where the home keeps a store already, never made for it.
         if (binding.Reservation is null && !File.Exists(Location)) return binding;
         try

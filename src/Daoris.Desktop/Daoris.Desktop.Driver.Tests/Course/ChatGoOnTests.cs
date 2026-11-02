@@ -1236,7 +1236,7 @@ internal sealed class ChatLedger : HttpMessageHandler
                 {
                     var session = Find(IdOf(path, "/actor"));
                     var provenance = JsonNode.Parse(body!)!;
-                    foreach (var key in new[] { "choice", "asked", "override", "ran" })
+                    foreach (var key in new[] { "choice", "asked", "override", "ran", "chosen" })
                         if (provenance[key] is { } value) session[key] = value.DeepClone();
                     return (HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "kept" }.ToJsonString());
                 }

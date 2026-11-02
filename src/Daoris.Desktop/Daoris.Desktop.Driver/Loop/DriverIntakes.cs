@@ -238,7 +238,7 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
         RotatedOpening.Say(service, _context.Events, sessionId, adapterName, selection, carried: null);
         // Where a later choice of Intake's order ran, its actor line says which and why (D205 §4.6).
         RotatedOpening.SayActor(_context.Events, sessionId, "intake", chosen, passes);
-        RotatedOpening.SayStaff(_context.Events, _context.Harnesses.Staff(), sessionId, selection.Number, "intake");
+        await RotatedOpening.SayStaffAsync(_context.Events, _context.Harnesses.Staff(), service, null, sessionId, selection, "intake").ConfigureAwait(false);
 
         SessionStop? stoppedFirst = null;
 

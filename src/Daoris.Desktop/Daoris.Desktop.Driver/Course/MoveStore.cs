@@ -66,14 +66,19 @@ public sealed class MoveStore(
         + "effect, effect_begun, effect_outcome, effect_ended, fell_back_code, held_why, closed_why, "
         + string.Join(", ", Moments.Select(each => each.Column));
 
-    private static readonly string Columns = StepFourColumns + ", agent, refused_bound, quiet_at";
+    /// <summary>The store's step that added the offered choice's model and effort (STAFFPOLICY1d).</summary>
+    private const int EntryColumnsSince = 18;
+
+    private static readonly string Columns = StepFourColumns + ", agent, refused_bound, quiet_at, model, effort";
 
     /// <summary>
     /// The columns a read names in a store of <paramref name="version"/>: a store a step-4 build left, not yet opened for writing by this
-    /// one, has no step-5 column, which reads as empty.
+    /// one, has no step-5 column, and one from before step 17 no model or effort, which read as empty.
     /// </summary>
     private static string ColumnsAt(int version) =>
-        version >= BoxColumnsSince ? Columns : StepFourColumns + ", NULL AS agent, NULL AS refused_bound, NULL AS quiet_at";
+        version >= EntryColumnsSince ? Columns
+        : version >= BoxColumnsSince ? StepFourColumns + ", agent, refused_bound, quiet_at, NULL AS model, NULL AS effort"
+        : StepFourColumns + ", NULL AS agent, NULL AS refused_bound, NULL AS quiet_at, NULL AS model, NULL AS effort";
 
     private readonly Func<StoreSettled> _settled = settled ?? StartConfirmation.Read;
 
@@ -631,10 +636,11 @@ public sealed class MoveStore(
         write.Execute(
             """
             INSERT INTO moves (record_left, executor, how, from_why, from_by, phase, claim_run, claim_generation, account, recipe_why, recipe_bound, agent,
-                               refused_bound, destination, decided_at, old_ended_at, opened_at)
+                               refused_bound, destination, decided_at, old_ended_at, opened_at, model, effort)
             VALUES ($left, $executor, $how, $why, $by, $phase, $run, 1, $account, $recipeWhy, $recipeBound, $agent, $refusedBound, $destination, $decided,
-                    $oldEnded, $opened)
+                    $oldEnded, $opened, $model, $effort)
             """,
+            ("$model", decision.Model), ("$effort", decision.Effort),
             ("$left", decision.Left), ("$executor", decision.Executor), ("$how", decision.How), ("$why", decision.Why), ("$by", decision.By),
             ("$phase", MovePhases.Word(phase)), ("$run", Run), ("$account", decision.Account), ("$recipeWhy", decision.RecipeWhy),
             ("$recipeBound", decision.RecipeBound), ("$agent", decision.Agent), ("$refusedBound", decision.RefusedBound), ("$destination", destination),
@@ -743,6 +749,8 @@ public sealed class MoveStore(
             Agent = Text("agent"),
             RefusedBound = Number("refused_bound"),
             QuietAt = Text("quiet_at"),
+            Model = Text("model"),
+            Effort = Text("effort"),
         };
     }
 

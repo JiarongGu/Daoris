@@ -2523,12 +2523,13 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// machine no longer has is no failure; any other refusal throws.
     /// </summary>
     public async Task KeepActorAsync(string id, string? choice = null, ActorAsked? asked = null, ActorRan? ran = null,
-        object? changed = null, CancellationToken ct = default)
+        object? changed = null, CancellationToken ct = default, ActorChosen? chosen = null)
     {
         var body = WriteJson(writer =>
         {
             writer.WriteStartObject();
             if (choice is not null) writer.WriteString("choice", choice);
+            if (chosen is not null) { writer.WritePropertyName("chosen"); JsonSerializer.Serialize(writer, chosen, ActorWire.Json); }
             if (asked is not null) { writer.WritePropertyName("asked"); JsonSerializer.Serialize(writer, asked, ActorWire.Json); }
             if (ran is not null) { writer.WritePropertyName("ran"); JsonSerializer.Serialize(writer, ran, ActorWire.Json); }
             if (changed is not null) { writer.WritePropertyName("override"); JsonSerializer.Serialize(writer, changed, ActorWire.Json); }
@@ -2552,11 +2553,11 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// so a refusal or an unreachable service is logged and the run goes on. A cancellation still cancels.
     /// </summary>
     public async Task<bool> TryKeepActorAsync(string id, MachineLog? log, string? choice = null, ActorAsked? asked = null,
-        object? changed = null, CancellationToken ct = default)
+        object? changed = null, CancellationToken ct = default, ActorChosen? chosen = null)
     {
         try
         {
-            await KeepActorAsync(id, choice, asked, changed: changed, ct: ct).ConfigureAwait(false);
+            await KeepActorAsync(id, choice, asked, changed: changed, ct: ct, chosen: chosen).ConfigureAwait(false);
             return true;
         }
         catch (Exception error) when (error is not OperationCanceledException)
@@ -2647,6 +2648,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             Asked = ActorRead<ActorAsked>(session, "asked"),
             Override = ActorRead<JsonElement?>(session, "override"),
             Ran = ActorRead<ActorRan>(session, "ran"),
+            Chosen = ActorRead<ActorChosen>(session, "chosen"),
             Limit = Limit(session),
             NotOffered = NotOffered(session),
             // What an answered park is compared with, and where its evidence counts from (ANSWER1a, D131).

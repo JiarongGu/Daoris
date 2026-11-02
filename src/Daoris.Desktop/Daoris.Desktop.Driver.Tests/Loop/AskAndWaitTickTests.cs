@@ -394,7 +394,7 @@ public sealed class AskAndWaitTickTests : IDisposable
                         var id = path["/api/sessions/".Length..^"/actor".Length];
                         var session = _sessions.Single(s => s["id"]!.GetValue<string>() == id);
                         var provenance = Body();
-                        foreach (var key in new[] { "choice", "asked", "override", "ran" })
+                        foreach (var key in new[] { "choice", "asked", "override", "ran", "chosen" })
                             if (provenance[key] is { } value) session[key] = value.DeepClone();
                         return (200, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "kept" }.ToJsonString());
                     }

@@ -272,7 +272,9 @@ public sealed class ConversationRoutes(DriverContext context)
         var config = DriverConfig.Load(_loop.ConfigPath);
         var handed = await chat.HandOverAsync(
                 id, agent, Optional(request, "account"), why, HandOverAskedBy(why, Optional(request, "askedBy")), config,
-                onEnded: (session, state) => DriverLoop.Ended(_events, session, state), cancellationToken)
+                onEnded: (session, state) => DriverLoop.Ended(_events, session, state), cancellationToken,
+                // STAFFPOLICY1d: the choice the offer named, started as approved.
+                model: Optional(request, "model"), effort: Optional(request, "effort"))
             .ConfigureAwait(false);
         _loop.Nudge();
         return new { handed.SessionId, handed.Kept, handed.Why, handed.Message };
