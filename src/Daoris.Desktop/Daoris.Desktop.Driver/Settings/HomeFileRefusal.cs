@@ -52,8 +52,8 @@ public sealed record FileSaid(IReadOnlyList<string> Out, IReadOnlyList<string> E
 {
     public static FileSaid Said(IEnumerable<string> lines, int exit = 0) => new([.. lines], [], exit);
 
-    /// <summary>A refusal said in a line, <c>daoris: </c> and the sentence, exit 2 (D194 point 6).</summary>
-    public static FileSaid Refused(string message) => new([], [$"daoris: {message}"], 2);
+    /// <summary>A refusal said in a line, <c>daoris: </c> and the sentence, with the exit the verb gave it: 2, or 1 for a policy refusal (D194 point 6).</summary>
+    public static FileSaid Refused(string message, int exit = 2) => new([], [$"daoris: {message}"], exit);
 }
 
 /// <summary>
