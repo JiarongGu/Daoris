@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-02 - The confirmation for a remote's own sign-ins could be skipped (REVIEW2 P2)
+
+- **Symptom:** choosing *Own sign-ins* on a git remote opened the confirmation; *Never mind* or Escape closed it and left Save enabled with the choice still `own`, which sent `GIT_USE {value: 'own'}` unconfirmed.
+- **Root cause:** closing the confirmation cleared `asking` only, so the widening choice stayed while Save was enabled by the difference from what stands.
+- **Fix:** closing puts the choice back to what stands, and Save opens the confirmation whenever the choice is `own`.
+- **Verify:** `GitRemotes.test.tsx` (REVIEW2 P2, red first).
+
 ## 2026-11-02 - On Landed work, Use here wrote the default route's choice (REVIEW2 P1)
 
 - **Symptom:** an open *Change…* or editor panel stayed open when *Landed work* was picked; its *Use here* reached `WORKFLOW_USE` with no kind, which the driver reads as the default route.
