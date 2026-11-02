@@ -352,7 +352,8 @@ Every move an **applied** policy sets on a condition is a rule naming its role a
 (`StaffJudge.Today`, `Roles/StaffJudge.cs:249-255`) is no rule. A stale policy's moves, which apply to nothing today (the staff-policy
 design §2.1; `StaffCourse.cs:103` reads `Applied` alone), become no rule. The policy keeps what a start chooses: its rule, weights,
 shares, budget amounts and works. D226's fixed rules (the staff-policy design §4.1) stay fixed. The editor writes the `moves` rule at 3
-with a role's first move rule, so the bound `moves-unbounded` judges is there.
+with a role's first move rule, and the conversion writes it for a policy that sets a move and no `most` (D226's `MostByDefault`), so
+the bound `moves-unbounded` judges is there.
 
 ### 4.9 What a rule never does
 
