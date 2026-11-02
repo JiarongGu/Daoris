@@ -552,8 +552,10 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         // landing did with it goes to the machine log and the loop's record of its health (PLUGUI1d).
         // RPC1b3: the lines also go into the answer (`said`), so a terminal that sent the press prints them as the alone path does.
         var pluginLines = new List<string>();
-        var trees = new SessionTrees(_loop.Home, new LandingPlugins(
-            _loop.Home, say: SayTo(pluginLines), log: _loop.Log, health: _loop.Health));
+        // WORKFLOWCLEAN1 1c: the gate, the plan and the press that is only a run's Accept read through trees with no plugin wire; the wire is built
+        // where a landing is made here (a chat run's press, or the transitional in-place landing), never for a run whose `land` Daoris performs.
+        var trees = new SessionTrees(_loop.Home);
+        SessionTrees Landing() => new(_loop.Home, new LandingPlugins(_loop.Home, say: SayTo(pluginLines), log: _loop.Log, health: _loop.Health));
 
         // CHATFLOW1c (the chat-flow design §4.2, §4.3): a chat in a tree of its own is gated by its chat run's process. A press on a run
         // not bound yet binds it first; one the home cannot keep refuses the press (`bind-failed`), never falling back to Current. A graph
@@ -564,7 +566,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         // every part at one captured tip, asks the opinion where it is not asked, and lands that tip pinned.
         if (press && chatRun is not null)
         {
-            return await ChatPressAsync(request, service, id, tree, chatRun, records, recordsJson, trees, pluginLines, cancellationToken,
+            return await ChatPressAsync(request, service, id, tree, chatRun, records, recordsJson, Landing(), pluginLines, cancellationToken,
                 withoutLook ? new ChatLookPress(Optional(request, "words"), ReviewDoors.Screen) : null);
         }
 
@@ -629,7 +631,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         PressSteps.Reach(PressSteps.Landing);
         // LANDHOLD2: a landing of this tree still under way holds the press for up to five minutes; the page is told it waits.
         using var waiting = PressSteps.WhileWaiting(PressSteps.Landing);
-        var landed = await trees.LandAsync(tree, subject, cancellationToken, async token => await LinesRoutes.InUseAsync(service, token), gate: gate,
+        var landed = await Landing().LandAsync(tree, subject, cancellationToken, async token => await LinesRoutes.InUseAsync(service, token), gate: gate,
             joins: subject.Joins, judged: pressed?.Judged, beforePush: pressed?.BeforePush, beside: token => BranchTidying.BesideAsync(service, token));
         // Kept where the conversation is kept, so the landing and the plugin's word outlast the press (D100).
         if (landed.Landed) _loop.Events.Keep(id, LandingRules.Note(landed), line => _loop.Output.Append(id, line));
@@ -673,15 +675,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         if (gate.Refusal is { } held) return Pressed(id, held, gate, TreesWords.Land(held, []), []);
         if ((gate.Tip ?? gate.GraphPart()?.Commit) is not { } tip) return Refused(id, TreesWords.NotJudged(id));
 
-        AutoLander.Retry(_loop.Home, id, unit, tip);
-        await _loop.PassWholeAsync(GraphPasses.Bound, ct);
-        var deadline = DateTimeOffset.UtcNow + GraphPasses.Bound;
-        TreeLanding? outcome;
-        while ((outcome = LandOutcomes.Of(unit, tip)) is null && DateTimeOffset.UtcNow < deadline && !ct.IsCancellationRequested)
-        {
-            await Task.Delay(TimeSpan.FromMilliseconds(200), ct);
-        }
-
+        var outcome = await PerformedWaits.AwaitAsync(_loop, id, unit, tip, ct);
         var carried = outcome is { Landed: false } && process.Graph?.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Review) is { } review
                       && RunRepairs.Of(new NodeRecordFiles(_loop.Home), unit, review.Id) is not null;
         var landed = outcome is null ? new TreeLanding(false, "Accepted; landing. Daoris lands it at its pass, and this window shows it when it has.")

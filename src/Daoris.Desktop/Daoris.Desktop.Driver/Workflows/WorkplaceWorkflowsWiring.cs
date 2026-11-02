@@ -35,14 +35,14 @@ internal sealed class WorkplaceWorkflowsOperations : IWorkplaceWorkflows, IWorkp
         ChatCandidates.Submit(home, run, repository, workspace, branch, tip, at, landed);
     }
 
-    public ReviewWord KeepReviewWord(string home, Func<bool>? holdsLease, IWorkplaceProcess process, DateTimeOffset now)
+    public ReviewWord KeepReviewWord(string home, Func<bool>? holdsLease, IWorkplaceProcess process, DateTimeOffset now, string? words = null)
     {
         if (process is not WorkflowProcess { BoundRun: { } run, Graph: { } graph } || graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Review) is not { } review)
         {
             return new ReviewWord(false, false, null, null, null);
         }
 
-        var word = RunNodeWords.Word(new NodeRecordFiles(home, holdsLease), run, review.Id, NodeWordActs.Accept, null, () => now);
+        var word = RunNodeWords.Word(new NodeRecordFiles(home, holdsLease), run, review.Id, NodeWordActs.Accept, words, () => now);
         var kept = word.Done || word.Refused == RunNodeWords.Worded;
         // A review that does not wait for the word yet (not active) is no refusal: the word is given again when it does.
         var said = kept || word.Refused == NodeRefusal.NotInTable ? null : RunNodeWords.Said(word);
@@ -57,6 +57,9 @@ internal sealed class WorkplaceWorkflowsOperations : IWorkplaceWorkflows, IWorkp
 
     public int RepairCarries(string home, Func<bool>? holdsLease, string unit, string review) =>
         RunRepairs.Of(new NodeRecordFiles(home, holdsLease), unit, review)?.Carries ?? 0;
+
+    public bool FollowsSaved(DriverConfig config, string repository, string? workspace) =>
+        WorkflowSelection.Resolve(config, repository, workspace, null).Workflow != WorkflowSelection.Current;
 
     public (string Method, string Graph) CurrentLand(LandingRule rule)
     {

@@ -30,19 +30,29 @@ public static class IntegrateChoice
         DriverConfig config, string workflow, int version, NodeGraph graph, string repository, string? workspace, AcceptedGates? accepted)
     {
         var declared = WorkflowProcess.Current(config, repository, workspace);
-        var (steps, _) = WorkflowNamed.GateSteps(graph, version, declared.Landing.Rule);
-        // A version that does not read here has its own refusal, and a graph with no landing integrates nothing.
         var landNode = graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land);
-        if (steps is null || (landNode is null && !steps.Any(step => step.Kind == WorkflowKinds.Landing))) return new(repository, [], false);
-
         var binding = new WorkflowRunBinding("", repository, RemoteTarget.Workspace(workspace), workflow, WorkflowLevels.Repository, DateTimeOffset.MinValue)
         {
             Version = version,
         };
-        // WORKFLOWCLEAN1 1c: a `land` is judged as the intent it binds, with the derived defaults where it leaves options open.
-        var landing = WorkflowProcess.Of(
-            config, repository, workspace, binding, steps,
-            landNode is null ? null : LandNodes.RuleOf(landNode, LandNodes.Reviewed(graph), LandNodes.Resolve(landNode, platformPlugin: null), declared.Landing.Rule)).Landing.Rule;
+        // WORKFLOWCLEAN1 1c: a `land` is judged as the intent it binds, with the derived defaults where it leaves options open, its gates
+        // read from the options; a version that does not read here has its own refusal, and a graph with no landing integrates nothing.
+        LandingRule landing;
+        if (landNode is not null)
+        {
+            var gates = GraphGates.Of(graph, declared);
+            if (gates.Problem is not null) return new(repository, [], false);
+            landing = WorkflowProcess.Of(
+                config, repository, workspace, binding, gates,
+                LandNodes.RuleOf(landNode, LandNodes.Reviewed(graph), LandNodes.Resolve(landNode, platformPlugin: null), declared.Landing.Rule)).Landing.Rule;
+        }
+        else
+        {
+            var (steps, _) = WorkflowNamed.GateSteps(graph, version, declared.Landing.Rule);
+            if (steps is null || !steps.Any(step => step.Kind == WorkflowKinds.Landing)) return new(repository, [], false);
+            landing = WorkflowProcess.Of(config, repository, workspace, binding, steps).Landing.Rule;
+        }
+
         var integrates = graph.Nodes.Any(node => node.Kind == NodeKinds.Integrate);
         return new(repository, IntegrateCarry.Cannots(repository, graph, declared.Landing.Rule, landing, accepted), integrates && IntegrateCarry.NoGates(declared.Landing.Rule));
     }

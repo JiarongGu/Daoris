@@ -223,7 +223,10 @@ public sealed class EntriesRoutes(DriverContext context)
         new SessionTrees(_loop.Home, new LandingPlugins(_loop.Home, say: SayTo(plugins), log: _loop.Log, health: _loop.Health)),
         _loop.Events, KeptTo(notes),
         async token => await LinesRoutes.InUseAsync(service, token), _loop.Log, ReviewDoors.Screen,
-        token => BranchTidying.BesideAsync(service, token));
+        token => BranchTidying.BesideAsync(service, token))
+    {
+        Performs = (session, unit, tip, token) => PerformedWaits.AwaitAsync(_loop, session, unit, tip, token),
+    };
 
     /// <summary>A plugin's lines, said on the loop's output under its name and kept in <paramref name="lines"/> as the terminal says them.</summary>
     private Action<string, string> SayTo(List<string>? lines) => (plugin, line) =>

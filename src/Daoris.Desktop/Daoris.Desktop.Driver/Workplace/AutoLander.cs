@@ -438,14 +438,28 @@ public sealed class AutoLander(
         // LANDBACK1 part 1: the person's Accept kept on it lands it as their press does, by the rule's form whatever its switch says.
         var carried = choice.Run is null ? new CarriedAccepts(home).Of(entry.Session) : CarriedOf(entry, choice.Run);
         // WORKFLOWCLEAN1 1c: a run's landing is the person's where its graph holds a review (its word is the Accept), else the standing authority's.
-        var landed = await trees.LandAsync(entry.Tree, subject, ct, fresh.InUseAsync, carried is null ? AcceptedBy.Auto : AcceptedBy.Person, choice.Gate, subject.Joins,
-            judged: async (waited, token) =>
-            {
-                judgedAgain = await UnderHoldAsync(choice, waited, token).ConfigureAwait(false);
-                return judgedAgain is null ? null : new TreeLanding(false, judgedAgain) { Refusal = AutoLandingCode.Refused };
-            },
-            beforePush: (record, waited, token) => BeforePushAsync(choice, record, waited, token), uncommitted: choice.Uncommitted,
-            beside: fresh.BesideAsync).ConfigureAwait(false);
+        async Task<TreeLanding?> JudgedAsync(bool waited, CancellationToken token)
+        {
+            judgedAgain = await UnderHoldAsync(choice, waited, token).ConfigureAwait(false);
+            return judgedAgain is null ? null : new TreeLanding(false, judgedAgain) { Refusal = AutoLandingCode.Refused };
+        }
+
+        // WORKFLOWCLEAN1 1c (the land node design §9, LANDNODE1b3): a head bound into an operation bringing sessions together lands by its
+        // combined Accept, the head's unit's one delivery, its members brought into it; it waits while the operation is not ready.
+        var operation = choice.Run is null ? null : TogetherHeadOf(entry.Tree);
+        if (operation is not null && operation.Phase != TogetherPhase.Ready)
+        {
+            return Look.Retry("landing", $"landing  session {entry.Session}: brought together with other sessions' work ({operation.Phase}); "
+                + "it lands when the operation is ready.");
+        }
+
+        var landed = operation is not null
+            ? await trees.LandTogetherAsync(
+                operation.Id, subject, await MemberGatesAsync(operation, fresh, ct).ConfigureAwait(false), ct, fresh.InUseAsync, choice.Gate,
+                JudgedAsync, (record, waited, token) => BeforePushAsync(choice, record, waited, token), fresh.BesideAsync).ConfigureAwait(false)
+            : await trees.LandAsync(entry.Tree, subject, ct, fresh.InUseAsync, carried is null ? AcceptedBy.Auto : AcceptedBy.Person, choice.Gate, subject.Joins,
+                judged: JudgedAsync, beforePush: (record, waited, token) => BeforePushAsync(choice, record, waited, token), uncommitted: choice.Uncommitted,
+                beside: fresh.BesideAsync).ConfigureAwait(false);
         // WORKFLOWCLEAN1 1c: what the performer's landing came to, for the press that waits on it to answer from.
         if (choice.Run is { } performed) LandOutcomes.Kept(performed.Unit, performed.Tip, landed);
         // Judged again under the tree's hold and refused there: what that judgement kept is the try, so nothing more is kept for it.
@@ -462,6 +476,31 @@ public sealed class AutoLander(
         var told = landed is { Landed: false, Conflict: { } conflict } && await ToldRebaseAsync(fresh, entry, choice.Tip, conflict, ct).ConfigureAwait(false);
         return Tried(entry, code, choice.Tip, choice.Status, landed, plan.Plugin, plan.Target, unlanded, rebaseTold: told,
             carry: carried is null ? null : LandCarry.Accepted);
+    }
+
+    /// <summary>The open operation whose head is <paramref name="tree"/>; null where none, or where the record does not read (the landing's own guard refuses then).</summary>
+    private TogetherOperation? TogetherHeadOf(string tree)
+    {
+        try
+        {
+            return new TogetherOperations(home).All().FirstOrDefault(each => each.IsOpen && TogetherOperation.SameTree(each.Head.Tree, tree));
+        }
+        catch (IOException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Each member of <paramref name="operation"/> with its gate read as its own Accept reads it, for the head's combined landing.</summary>
+    private async Task<IReadOnlyDictionary<string, IWorkplaceGate?>> MemberGatesAsync(TogetherOperation operation, IWorkplaceLandingWorld fresh, CancellationToken ct)
+    {
+        var gates = new Dictionary<string, IWorkplaceGate?>(StringComparer.Ordinal);
+        foreach (var member in operation.Members)
+        {
+            gates[member.Session] = await trees.GateOfAsync(member.Tree, member.Quest, fresh, member.Session, ct).ConfigureAwait(false);
+        }
+
+        return gates;
     }
 
     /// <summary>
