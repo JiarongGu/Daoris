@@ -27,4 +27,31 @@ public sealed class ConversionCensusTests : Bridge
         Assert.Null(census.Wait());
         Assert.Equal(2, Raised.Count(each => each.Type == ConversionCensus.Event));
     }
+
+    /// <summary>
+    /// A burst of driver changes while one reading runs reads once more after it, not once each: the reading asks the service for the
+    /// registry and every quest. Each caller is answered by a reading that began after its call.
+    /// </summary>
+    [Fact]
+    public async Task Refreshes_asked_while_one_reads_are_one_more_reading_begun_after_them()
+    {
+        var census = new ConversionCensus(Bus);
+        var first = new TaskCompletionSource();
+        var readings = 0;
+        Task<LegacyCensus> Read(CancellationToken _)
+        {
+            var reading = Interlocked.Increment(ref readings);
+            return reading == 1 ? first.Task.ContinueWith(_ => Holding("aurora"), TaskScheduler.Default) : Task.FromResult(Holding("aurora", "borealis"));
+        }
+
+        var running = census.RefreshAsync(Read, default);
+        var asked = Enumerable.Range(0, 5).Select(_ => census.RefreshAsync(Read, default)).ToList();
+        Assert.All(asked, each => Assert.False(each.IsCompleted));
+
+        first.SetResult();
+        await Task.WhenAll([running, .. asked]).WaitAsync(Poll.Patience);
+
+        Assert.Equal(2, readings);
+        Assert.Equal(2, census.Wait()!["places"]!.GetValue<int>());
+    }
 }

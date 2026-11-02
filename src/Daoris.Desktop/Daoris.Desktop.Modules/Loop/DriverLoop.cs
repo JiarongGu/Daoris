@@ -1362,14 +1362,15 @@ public sealed class DriverLoop(
         // WORKFLOWCLEAN1g-ii: the conversion's census is read after it at the come-up, and again whenever the driver file moves (an apply or
         // an undo publishes that scope).
         var counting = _stopping.Token;
+        var census = ConversionCensus.Reading(service, ConfigPath, Home);
         Settling = Task.Run(async () =>
         {
             await SettlePlacesAsync(service, counting).ConfigureAwait(false);
-            await Conversion.RefreshAsync(service, ConfigPath, Home, counting).ConfigureAwait(false);
+            await Conversion.RefreshAsync(census, counting).ConfigureAwait(false);
         });
         _ = eventBus.Subscribe(StatePublisher.Module, StatePublisher.Type, message =>
         {
-            if (message.Payload is StateChanged changed && changed.Scopes.Contains("driver")) _ = Conversion.RefreshAsync(service, ConfigPath, Home, counting);
+            if (message.Payload is StateChanged changed && changed.Scopes.Contains("driver")) _ = Conversion.RefreshAsync(census, counting);
             return Task.CompletedTask;
         });
     }

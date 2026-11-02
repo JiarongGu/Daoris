@@ -15,7 +15,8 @@ public sealed class ConversionCensus(IEventBus? bus, MachineLog? log = null)
     public const string Event = "CONVERSION_CENSUS";
 
     private readonly Lock _gate = new();
-    private readonly SemaphoreSlim _reading = new(1, 1);
+    private Task _last = Task.CompletedTask;
+    private Task? _queued;
     private int? _places;
     private string? _since;
 
@@ -40,21 +41,37 @@ public sealed class ConversionCensus(IEventBus? bus, MachineLog? log = null)
         return true;
     }
 
-    /// <summary>Read the world again through <paramref name="service"/> and keep its census; a refused read keeps what was held.</summary>
-    public async Task RefreshAsync(ServiceClient service, string configPath, string home, CancellationToken ct)
+    /// <summary>The home's census as <paramref name="service"/> and the files read it now.</summary>
+    public static Func<CancellationToken, Task<LegacyCensus>> Reading(ServiceClient service, string configPath, string home) => async ct =>
     {
+        var world = await ConvertWorlds.ReadAsync(service.RegistryAsync, service.EveryQuestAsync, DriverConfig.Load(configPath), home, ct).ConfigureAwait(false);
+        return WorkflowLegacy.Census(world, new ConversionReceipts(home).HeldPlaces());
+    };
+
+    /// <summary>
+    /// Read the census again and keep it; a refused read keeps what was held. One reading runs at a time, and a call made while one runs
+    /// shares the one queued after it: a burst of changes is one more reading, each caller answered by a reading begun after its call.
+    /// </summary>
+    public Task RefreshAsync(Func<CancellationToken, Task<LegacyCensus>> read, CancellationToken ct)
+    {
+        lock (_gate)
+        {
+            if (_queued is { } queued) return queued;
+            var previous = _last;
+            _queued = _last = AfterAsync(previous, read, ct);
+            return _queued;
+        }
+    }
+
+    private async Task AfterAsync(Task previous, Func<CancellationToken, Task<LegacyCensus>> read, CancellationToken ct)
+    {
+        // Always yields, so the reading never begins inside RefreshAsync's lock, before it is the queued one.
+        await previous.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing | ConfigureAwaitOptions.ForceYielding);
+        // Reading begins: a change from here on is not covered by it, and queues the next.
+        lock (_gate) _queued = null;
         try
         {
-            await _reading.WaitAsync(ct).ConfigureAwait(false);
-            try
-            {
-                var world = await ConvertWorlds.ReadAsync(service.RegistryAsync, service.EveryQuestAsync, DriverConfig.Load(configPath), home, ct).ConfigureAwait(false);
-                Tell(WorkflowLegacy.Census(world, new ConversionReceipts(home).HeldPlaces()));
-            }
-            finally
-            {
-                _reading.Release();
-            }
+            Tell(await read(ct).ConfigureAwait(false));
         }
         catch (Exception failed) when (failed is not OperationCanceledException)
         {
