@@ -81,6 +81,9 @@ public enum CourseWaitWhy
 
     /// <summary>A transient retry's next try.</summary>
     TransientRetry,
+
+    /// <summary>A role's policy waits for the met choice's earliest moment back, at most its <c>upTo</c> (STAFFPOLICY1e).</summary>
+    PolicyWait,
 }
 
 /// <summary>Why a line holds for the person (<see cref="LineCourse.Hold"/>), by reason code.</summary>
@@ -115,6 +118,12 @@ public enum CourseHoldWhy
 
     /// <summary>The person's press does not apply to this line: refused by its code, nothing kept (<see cref="LineCourse.Hold.Code"/>).</summary>
     Refused,
+
+    /// <summary>A role's policy asks the person before it moves the line to another choice (<c>ask</c>, STAFFPOLICY1e); the code is the condition met.</summary>
+    PolicyAsk,
+
+    /// <summary>The line made its policy's bound of moves to another choice in 24 hours: the next waits for the person (<c>held.moves-bound</c>).</summary>
+    MovesBound,
 }
 
 /// <summary>A door out of a hold: what the person can press.</summary>
@@ -146,6 +155,9 @@ public enum CourseDoor
 
     /// <summary>The person's yes to an agent's ask to hand its session over, which the hand-over rule asks them (<c>ask</c>).</summary>
     LetAskGo,
+
+    /// <summary>The person's yes to a policy's ask: <i>Go on now with {next}</i>, one move (STAFFPOLICY1e).</summary>
+    GoOnNow,
 }
 
 /// <summary>Why a record takes no decision at all (<see cref="LineCourse.Never"/>).</summary>
@@ -248,6 +260,18 @@ public enum CourseFromWhy
 
     /// <summary>A replacement: the agent did not offer the model asked, so the record never began.</summary>
     NotOffered,
+
+    /// <summary>A role's policy moved the line off a choice whose service did not answer (STAFFPOLICY1e).</summary>
+    Transient,
+
+    /// <summary>A role's policy moved the line off a choice that failed again and again.</summary>
+    Failed,
+
+    /// <summary>A role's policy moved the line off a choice after a quiet stop.</summary>
+    Quiet,
+
+    /// <summary>A role's policy moved the line off a choice that reached its daily budget.</summary>
+    Budget,
 }
 
 /// <summary>Who asked for a new part (the foundation design §3.1, <c>from_by</c>): <see cref="HandOverBy"/>'s three authors one to one.</summary>
@@ -278,6 +302,10 @@ public static class CourseFrom
         HandOverWhy.CarryOn => CourseFromWhy.CarryOn,
         HandOverWhy.Retry => CourseFromWhy.Retry,
         HandOverWhy.NotOffered => CourseFromWhy.NotOffered,
+        HandOverWhy.Transient => CourseFromWhy.Transient,
+        HandOverWhy.Failed => CourseFromWhy.Failed,
+        HandOverWhy.Quiet => CourseFromWhy.Quiet,
+        HandOverWhy.Budget => CourseFromWhy.Budget,
         _ => null,
     };
 
@@ -292,6 +320,10 @@ public static class CourseFrom
         CourseFromWhy.Resume => HandOverWhy.Resume,
         CourseFromWhy.CarryOn => HandOverWhy.CarryOn,
         CourseFromWhy.Retry => HandOverWhy.Retry,
+        CourseFromWhy.Transient => HandOverWhy.Transient,
+        CourseFromWhy.Failed => HandOverWhy.Failed,
+        CourseFromWhy.Quiet => HandOverWhy.Quiet,
+        CourseFromWhy.Budget => HandOverWhy.Budget,
         _ => HandOverWhy.NotOffered,
     };
 

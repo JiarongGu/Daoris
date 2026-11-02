@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-02 - Thirty-seven chat Process tests red after the routing standing was told (COWORKVIEW1e-i)
+
+- **Symptom:** the driver's Process gate failed 37 tests across nine chat classes (`ChatGoesOnProcessTests`, `ChatPendingProcessTests`, `ProtocolChatTests`, `TurnStopTests`, `HandOverProcessTests` and four more): prompts read `Routing standing here: ...` where the person's words were expected, and stand-ins keyed on a prompt's text (`hold`, `refuse`, a reply's length as context) no longer matched.
+- **Root cause:** two together. The builder of COWORKVIEW1e-i ran no `Process` class. And `ChatMessage.Prompt` composed a new conversation's routing line before the person's words (a go-on's was already after them), so the first message of every chat in a registered repository began with Daoris's line; the Process stand-ins compared whole prompts to the words and failed on the line in either place.
+- **Fix:** `ChatMessage.Prompt` hands the line after the words, and `PromptWithFiles` (the three native and text doors' sites) puts a message's file path lines between the words and the line, as they followed the words before. The stand-ins strip it before they read the words (their one-line `replace`, and `StubFile.WithoutRouting` for a test's own strings) and set the standing apart in a `<heard>.routing` file (`StubFile.Routings`), so a test asserts the line where it is about a first message or a go-on (`ChatGoesOnInSyncProcessTests`, `ProtocolChatTests`) and every assertion about the words stays exact.
+- **Verify:** the nine classes, then the driver's Process half, green.
+
 ## 2026-11-02 - A flowchart placed by 16 px a rem under the window's zoom (CANVAS1a, trap 12)
 
 - **Symptom:** at the window's 200% a flowchart could choose top to bottom, or a track, its pane could not hold, and at 50% turn to the rail where its drawing fitted: its placement and its node track did not follow the zoom the page was drawn at.

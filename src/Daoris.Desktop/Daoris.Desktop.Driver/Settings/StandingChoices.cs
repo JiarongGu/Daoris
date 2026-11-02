@@ -53,10 +53,14 @@ public sealed class ChoiceRefusal(string check, string message, params (string K
 }
 
 /// <summary>What *Try again* did to a quest (SESSUX1b): <c>marked</c> at its failures, or <c>released</c> from a stop's session.</summary>
-public sealed record RetryDecision(string Quest, string Did, string? Session, Func<DriverConfig, DriverConfig> Change)
+/// <param name="Approve">The role whose policy asked: the press is its yes, one approval, written beside the moves (STAFFPOLICY1e).</param>
+public sealed record RetryDecision(string Quest, string Did, string? Session, Func<DriverConfig, DriverConfig> Change, string? Approve = null)
 {
     public const string Marked = "marked";
     public const string Released = "released";
+
+    /// <summary>A role policy's ask answered: one move to another choice is released.</summary>
+    public const string Approved = "approved";
 }
 
 /// <summary>What a review's procedure look found: the repositories of a workspace whose checkout lacks it, and whether it was looked for.</summary>

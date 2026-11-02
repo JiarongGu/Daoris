@@ -47,6 +47,18 @@ public static class HandOverWhy
     /// </summary>
     public const string NotOffered = "not-offered";
 
+    /// <summary>A role's policy moved the line to another choice because its service did not answer (STAFFPOLICY1e). A reason a record continues another by.</summary>
+    public const string Transient = "transient";
+
+    /// <summary>A role's policy moved the line to another choice after its fatal errors again (STAFFPOLICY1e).</summary>
+    public const string Failed = "failed";
+
+    /// <summary>A role's policy moved the line to another choice after a quiet stop (STAFFPOLICY1e).</summary>
+    public const string Quiet = "quiet";
+
+    /// <summary>A role's policy moved the line to another choice because its choice reached its daily budget (STAFFPOLICY1e).</summary>
+    public const string Budget = "budget";
+
     /// <summary>The reason as the brief's agent reads it, in Daoris's one English: after <c>because</c>.</summary>
     public static string Briefed(string why) => why switch
     {
@@ -59,6 +71,10 @@ public static class HandOverWhy
         CarryOn => "it stopped before its work was done",
         Retry => "its own conversation could not be resumed",
         NotOffered => "its agent did not offer the model asked on that account, so it never began",
+        Transient => "the service it ran on did not answer",
+        Failed => "it failed again and again",
+        Quiet => "it went quiet and was stopped",
+        Budget => "its choice reached its daily budget",
         _ => why,
     };
 
@@ -74,6 +90,10 @@ public static class HandOverWhy
         CarryOn => "it stopped before its work was done",
         Retry => "its own conversation could not be resumed",
         NotOffered => "its agent did not offer the model",
+        Transient => "its service did not answer",
+        Failed => "it failed again and again",
+        Quiet => "it went quiet and was stopped",
+        Budget => "its choice reached its daily budget",
         _ => why,
     };
 
@@ -84,5 +104,5 @@ public static class HandOverWhy
     public static bool Known(string? why) => why is Press or Near or Limit or Agent or Curve;
 
     /// <summary>Whether a word is one of the reasons a record continues another by (SESSCTX1b): each has its <c>note.handed.why.*</c> line.</summary>
-    public static bool Continues(string? why) => Known(why) || why is Resume or CarryOn or Retry or NotOffered;
+    public static bool Continues(string? why) => Known(why) || why is Resume or CarryOn or Retry or NotOffered or Transient or Failed or Quiet or Budget;
 }

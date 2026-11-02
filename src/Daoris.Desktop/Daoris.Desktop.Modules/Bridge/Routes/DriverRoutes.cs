@@ -335,9 +335,21 @@ public sealed class DriverRoutes(DriverContext context)
     [DriverRoute("ACTORS")]
     private object? Actors(IpcRequest request) => new
     {
-        Actors = ActorView.All(DriverConfig.Load(_loop.ConfigPath)),
+        Actors = ArrangedActors(DriverConfig.Load(_loop.ConfigPath)),
         Found = RoleStaffing.Of(_loop.ConfigPath)?.Found().Select(found => new { found.Id, found.At, found.Changes }).ToList() ?? [],
     };
+
+    // Build's and Chat's orders also as their policies arrange them (STAFFPOLICY1d), which the hand-over's offer draws its next choices from.
+    private IReadOnlyList<ActorView> ArrangedActors(DriverConfig config)
+    {
+        var ledger = new StaffLedger(_loop.Home);
+        return [.. ActorView.All(config).Select(view =>
+        {
+            if (view.Id is not ("build" or "chat") || view.State == "unreadable") return view;
+            var arranged = RoleOrders.Arranged(ledger, view.Id, view.Id, config);
+            return arranged.SequenceEqual(view.Choices) ? view : view with { Arranged = arranged };
+        })];
+    }
 
     // A found change answered (FOUNDATION1w-s, §19.15): the person's *Take it*, the actors as that file showed them, a turn-on of Intake or
     // Ask Daoris among them by this press, or *Dismiss*, the actors as they are. Through the staffing's one write, then a nudge.
@@ -681,6 +693,13 @@ public sealed class DriverRoutes(DriverContext context)
         // pause or a quest neither parked nor held is its coded refusal (ChoiceCodes), raised here by the module's one mapping.
         var decision = QuestRetry.Decide(quest, considered);
         _context.Change(decision.Change);
+        // STAFFPOLICY1e: the yes to a role policy's ask or bound is one approval beside the line's moves, which the next look reads.
+        if (decision.Approve is { } role && !new StaffMoves(_loop.Home).Approve(quest, role))
+        {
+            throw new DriverException("this machine's store would not take your yes, so nothing was approved; try again.");
+        }
+
+        if (decision.Approve is not null) _loop.Nudge();
         return State(_loop, new { Quest = quest, decision.Did, decision.Session });
     }
 

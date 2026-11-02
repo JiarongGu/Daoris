@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FlowNodeBox } from '../Flow';
-import { FlowCanvas } from '../FlowCanvas';
+import { FlowCanvas, type FlowNode } from '../FlowCanvas';
 import { DENSE, type Fixture, LIFECYCLE, type Said } from '../flowFixtures';
 import { inDark } from '../flowFrames';
 import { chinese } from '../storyLanguage';
@@ -18,12 +18,17 @@ import { observeWorld, readWorld } from './worldBoxes';
 // on (`measured/canvas.spec.ts`). Keyboard: Tab reaches the toolbar, then the drawing's one stop; the arrows walk it and the view follows.
 
 /** A fixture worded in the reader's language and drawn in the canvas, read or edited. */
-function CanvasFlow({ fixture, mode = 'display' }: { fixture: Fixture | number; mode?: 'display' | 'edit' }) {
+function CanvasFlow({ fixture, mode = 'display', marked = false }: { fixture: Fixture | number; mode?: 'display' | 'edit'; marked?: boolean }) {
   const { t, i18n } = useTranslation();
+  const marks = marked ? [
+    [{ word: t('workflow.edit.chart.markRefused'), kind: 'refused' as const }], [{ word: t('workflow.edit.proposal.mark.added'), kind: 'new' as const }],
+    [{ word: t('workflow.edit.proposal.mark.removed'), kind: 'remove' as const }], [{ word: t('workflow.edit.proposal.mark.changed'), kind: 'changed' as const }],
+  ] : [];
   const say = (words: Said) => (i18n.language.startsWith('zh') ? words.zh : words.en);
   const viewport: CanvasOptions = {
     mode, zoom: mode === 'edit' ? { min: 0.8, max: 2 } : { min: 0.5, max: 2 }, fit: t('workflow.canvas.fit'), moves: t('workflow.canvas.moves'),
   };
+  const marked12 = (nodes: FlowNode[]) => nodes.map((node, at) => (marks[at - 1] ? { ...node, marks: marks[at - 1]! } : node));
   const flow = typeof fixture === 'number' ? { label: `${fixture} steps`, ...syntheticFlow(fixture) } : {
     label: say(fixture.label),
     entries: fixture.entries,
@@ -35,7 +40,7 @@ function CanvasFlow({ fixture, mode = 'display' }: { fixture: Fixture | number; 
       id: edge.id, from: edge.from, to: edge.to, says: say(edge.says), label: edge.label && say(edge.label), style: edge.style,
     })),
   };
-  return <FlowCanvas {...flow} viewport={viewport} renderNode={(context) => <FlowNodeBox {...context} />} />;
+  return <FlowCanvas {...flow} nodes={marked12(flow.nodes)} viewport={viewport} renderNode={(context) => <FlowNodeBox {...context} />} />;
 }
 
 const meta: Meta<typeof CanvasFlow> = {
@@ -60,6 +65,16 @@ export const LifecycleDarkHalf: Story = { decorators: [storyWidths.half, inDark]
 export const LifecycleChineseDarkNarrow: Story = { decorators: [storyWidths.narrow, chinese, inDark] };
 /** Edited: zoom floored at 80%, so the ＋ and the ports stay usable. */
 export const LifecycleEdit: Story = { args: { mode: 'edit' } };
+
+/** Twelve steps plain, then with a mark of each kind on four of them (CANVAS1b): a chip beside each where it clears every box, no node moved. */
+export const Plain12: Story = { args: { fixture: 12 } };
+export const Marked: Story = { args: { fixture: 12, marked: true } };
+export const MarkedHalf: Story = { args: { fixture: 12, marked: true }, decorators: [storyWidths.half] };
+export const MarkedNarrow: Story = { args: { fixture: 12, marked: true }, decorators: [storyWidths.narrow] };
+export const MarkedChinese: Story = { args: { fixture: 12, marked: true }, decorators: [storyWidths.wide, chinese] };
+export const MarkedChineseHalf: Story = { args: { fixture: 12, marked: true }, decorators: [storyWidths.half, chinese] };
+export const MarkedDark: Story = { args: { fixture: 12, marked: true }, decorators: [storyWidths.wide, inDark] };
+export const MarkedChineseDarkNarrow: Story = { args: { fixture: 12, marked: true }, decorators: [storyWidths.narrow, chinese, inDark] };
 
 /** The dense graph at the bounds: folded after its entries, and drawn whole once *Show whole* is pressed, wider than 80rem, so it pans. */
 export const Dense: Story = { args: { fixture: DENSE } };

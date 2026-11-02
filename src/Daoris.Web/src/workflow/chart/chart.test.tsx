@@ -59,25 +59,39 @@ describe('StepNode', () => {
     expect(onFollow).toHaveBeenCalledWith('a', 'b');
   });
 
-  it('wears a refusal as declined\'s border and its words in the danger ink, and says it in the description (FLOWCHART2c)', () => {
+  it('wears a refusal as declined\'s outline and says it in the description, adding no line or border width to the step (FLOWCHART2c, CANVAS1b)', () => {
     const node: ChartNode = { id: 'a', title: 'The work', step: step({ refused: ['Its role does not do this step\'s work.'] }) };
     render(<StepNode context={context(node, { description: 'Next: Review.' })} step={node.step!} />);
     const item = screen.getByRole('listitem', { name: 'The work' });
     expect(item.className).toContain('border-st-declined');
+    expect(item.className).toContain('ring-st-declined');
+    expect(item.className).not.toContain('border-2');
     expect(item).toHaveAttribute('data-refused', 'true');
-    const words = within(item).getByText('Its role does not do this step\'s work.');
-    expect(words.closest('[data-flow-refusal]')?.className).toContain('text-ink-danger');
+    expect(item.querySelector('[data-flow-refusal]')).toBeNull();
     expect(item).toHaveAccessibleDescription('Next: Review. To put right: Its role does not do this step\'s work.');
   });
 
-  it('wears no refusal mark on a step the judgement holds, and one line for each refusal it has', () => {
+  it('wears no refusal mark on a step the judgement holds, and says each refusal it has in the description', () => {
     const plain: ChartNode = { id: 'a', title: 'The work', step: step({ refused: [] }) };
-    const { container, rerender } = render(<StepNode context={context(plain)} step={plain.step!} />);
-    expect(container.querySelector('[data-flow-refusal]')).toBeNull();
+    const { rerender } = render(<StepNode context={context(plain)} step={plain.step!} />);
     expect(screen.getByRole('listitem').className).not.toContain('border-st-declined');
     const two: ChartNode = { id: 'a', title: 'The work', step: step({ refused: ['First.', 'Second.'] }) };
     rerender(<StepNode context={context(two)} step={two.step!} />);
-    expect(container.querySelectorAll('[data-flow-refusal]')).toHaveLength(2);
+    expect(screen.getByRole('listitem')).toHaveAccessibleDescription('To put right: First. To put right: Second.');
+  });
+
+  it('keeps one border width in every state, so no state or mark moves a box (CANVAS1b, trap 8)', () => {
+    const states: ChartNode[] = [
+      { id: 'a', title: 'Plain', step: step() }, { id: 'a', title: 'Current', current: true, step: step() },
+      { id: 'a', title: 'Faint', reached: false, step: step() }, { id: 'a', title: 'Refused', step: step({ refused: ['No.'] }) },
+    ];
+    for (const node of states) {
+      const { unmount } = render(<StepNode context={context(node)} step={node.step!} />);
+      const className = screen.getByRole('listitem').className;
+      expect(className, node.title).toMatch(/(^| )border( |$)/);
+      expect(className, node.title).not.toMatch(/border-[2-9]\b/);
+      unmount();
+    }
   });
 
   const decision = (): [ChartNode, NodeContext] => {
@@ -233,6 +247,58 @@ describe('the release workflow through the components', () => {
     render(<FlowChart label={flow.label} nodes={flow.nodes} edges={flow.edges} entries={flow.entries} sections={flow.sections} track={flow.track} />);
     const ports = [...document.querySelectorAll('[data-flow-port]')].map((port) => port.getAttribute('data-flow-port'));
     expect(ports).toEqual(['find:release', 'find:again', 'find:none']);
+  });
+});
+
+// CANVAS1b (D224): a chart read selects a step too, one at a time; a press with Ctrl or Shift is told to the editor, which alone chooses many.
+describe('selection', () => {
+  const chart = (props: Partial<React.ComponentProps<typeof FlowChart>> = {}) => {
+    const flow = graphFlow(t, drawnFromJson(t, i18n, RELEASE_GRAPH), { label: 'How work moves' });
+    return render(<FlowChart label={flow.label} nodes={flow.nodes} edges={flow.edges} entries={flow.entries} sections={flow.sections} track={flow.track} {...props} />);
+  };
+
+  it('outlines the step pressed in a chart read, one at a time, and releases it on a press with Ctrl', async () => {
+    const user = userEvent.setup();
+    chart({ canvas: 'display' });
+    const review = screen.getByRole('listitem', { name: 'Your review' });
+    const checks = screen.getByRole('listitem', { name: 'The checks' });
+    expect(review).not.toHaveAttribute('data-selected');
+    await user.click(review);
+    expect(review).toHaveAttribute('data-selected', 'true');
+    await user.click(checks);
+    expect(checks).toHaveAttribute('data-selected', 'true');
+    expect(review).not.toHaveAttribute('data-selected');
+    await user.keyboard('{Control>}');
+    await user.click(checks);
+    await user.keyboard('{/Control}');
+    expect(checks).not.toHaveAttribute('data-selected');
+  });
+
+  it('selects nothing in a chart drawn inline, with no canvas', async () => {
+    chart();
+    const review = screen.getByRole('listitem', { name: 'Your review' });
+    await userEvent.click(review);
+    expect(review).not.toHaveAttribute('data-selected');
+    expect(review.className).not.toContain('cursor-pointer');
+  });
+
+  it('tells the editor how a press selects: plain, with Ctrl (toggle) and with Shift (add), and outlines every step chosen', async () => {
+    const onSelect = vi.fn();
+    const flow = graphFlow(t, drawnFromJson(t, i18n, RELEASE_GRAPH), { label: 'How work moves' });
+    render(<FlowChart label={flow.label} nodes={flow.nodes} edges={flow.edges} entries={flow.entries} sections={flow.sections} track={flow.track}
+      edit={{ selected: 'review', chosen: new Set(['check']), onSelect, onBox: vi.fn() }} canvas="edit" />);
+    const check = screen.getByRole('listitem', { name: 'The checks' });
+    expect(screen.getByRole('listitem', { name: 'Your review' })).toHaveAttribute('data-selected', 'true');
+    expect(check).toHaveAttribute('data-selected', 'true');
+    const user = userEvent.setup();
+    await user.click(check);
+    expect(onSelect).toHaveBeenLastCalledWith('check');
+    await user.keyboard('{Control>}');
+    await user.click(check);
+    await user.keyboard('{/Control}{Shift>}');
+    await user.click(check);
+    await user.keyboard('{/Shift}');
+    expect(onSelect.mock.calls.map((call) => call.slice(1))).toEqual([[], ['toggle'], ['add']]);
   });
 });
 

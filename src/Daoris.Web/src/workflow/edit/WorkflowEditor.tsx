@@ -1,7 +1,7 @@
 import { type KeyboardEvent, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Drawer, Inline, Prose, SkeletonRows } from '../../design/ui';
-import { useWidth } from '../../design/useWidth';
+import { useRootRem, useWidth } from '../../design/useWidth';
 import { isComposing } from '../../lib/composing';
 import { useDebounced } from '../../lib/useDebounced';
 import { fillAskDaoris, useCanFillAsk } from '../../help/askFill';
@@ -97,7 +97,8 @@ const JUDGE_MS = 250;
 const DRAFT_ID = 'draft';
 
 /** The editor's region holds the chart and the inspector side by side from 64rem (the flowchart design §2, §8.8); else a drawer. */
-const BESIDE = 64 * 16;
+/** The editor's width, in rem, from which the inspector stands beside the chart: read in the root's rem, so the window's zoom leaves the chart its room (CANVAS1b). */
+const BESIDE_REM = 64;
 
 /** The id the drawing gives the folded holds, by their first step (`graphFlow`). */
 const HOLDS = 'holds:';
@@ -140,11 +141,12 @@ export function WorkflowEditor(props: WorkflowEditorProps) {
   const { t } = useTranslation();
   const region = useRef<HTMLDivElement>(null);
   const width = useWidth(region);
+  const rem = useRootRem();
   const { list, palette, error } = props;
   return (
     <div ref={region} data-editor-region="" className="min-w-0">
       {palette && list
-        ? <Composing {...props} list={list} palette={palette} wide={width !== undefined && width >= BESIDE} />
+        ? <Composing {...props} list={list} palette={palette} wide={width !== undefined && width >= BESIDE_REM * rem} />
         : (
           <div aria-busy={!error || undefined} className="grid gap-2">
             <Prose className="text-small">{error ? t('workflow.edit.unread', { why: sentence(error) }) : t('workflow.edit.reading')}</Prose>
@@ -171,6 +173,9 @@ function Composing({
   const [history, setHistory] = useState(() => historyOf<Snapshot>({ draft: startFrom ? draftOf(startFrom.graph) : emptyDraft(), said: '' }));
   const draft = history.present.draft;
   const [chosen, setChosen] = useState<string | null>(null);
+  // The steps chosen with it by Ctrl- or Shift-press or a box: for Copy alone; every other act takes the primary (CANVAS1b).
+  // Kept with the primary it was chosen beside, so any act that moves the primary leaves it behind.
+  const [alsoOf, setAlso] = useState<{ of: string | null; ids: readonly string[] }>({ of: null, ids: [] });
   const [drawer, setDrawer] = useState(false);
   const [picker, setPicker] = useState<InsertAt | null>(null);
   const [choosing, setChoosing] = useState<Choosing | null>(null);
@@ -193,6 +198,7 @@ function Composing({
   const [focusing, setFocusing] = useState<{ at: string; n: number } | null>(null);
 
   const selected = chosen !== null && draft.nodes.some((node) => node.id === chosen) ? chosen : null;
+  const also = alsoOf.of !== null && alsoOf.of === selected ? alsoOf.ids.filter((id) => id !== selected && draft.nodes.some((node) => node.id === id)) : [];
 
   // A saved version to begin from, once its answer lands; a version of steps (schema 1) is no graph to compose, and leaves the draft as it was.
   useEffect(() => {
@@ -319,6 +325,7 @@ function Composing({
     [said, carriedSaid(t, i18n, palette, next, proposed, steps)].filter(Boolean).join(' ');
   const select = (id: string) => {
     setChosen(id);
+    setAlso({ of: null, ids: [] });
     setConfirming(null);
     if (!wide) setDrawer(true);
   };
@@ -404,10 +411,33 @@ function Composing({
     setDrawer(false);
     focusOn(made.id);
   };
+  // Ctrl or Shift on a step, or a box, chooses more than one, for Copy alone: the pressed step is the primary, the inspector's.
+  const chooseMore = (id: string, how: 'toggle' | 'add') => {
+    const present = selected === null ? [] : [selected, ...also];
+    setConfirming(null);
+    if (present.includes(id)) {
+      if (how === 'add') return;
+      const rest = present.filter((each) => each !== id);
+      setChosen(rest[0] ?? null);
+      setAlso({ of: rest[0] ?? null, ids: rest.slice(1) });
+      return;
+    }
+    setChosen(id);
+    setAlso({ of: id, ids: present });
+  };
+  const chooseBox = (ids: string[]) => {
+    const steps = ids.filter((id) => nodeOf(id));
+    setConfirming(null);
+    setChosen(steps[0] ?? null);
+    setAlso({ of: steps[0] ?? null, ids: steps.slice(1) });
+    if (steps.length > 0) setHeard(t('workflow.edit.said.chosen', { count: steps.length }));
+  };
+  // Copy takes every step chosen when it is aimed at one of them, else the one it is aimed at.
   const copy = (id: string | null) => {
     if (id === null) return;
-    setClip(copySteps(draft, stepsAt(id)));
-    setHeard(t('workflow.edit.said.copied', { step: titleOf(id) }));
+    const chosenAll = selected !== null && (id === selected || also.includes(id)) ? [selected, ...also] : [id];
+    setClip(copySteps(draft, [...new Set(chosenAll.flatMap(stepsAt))]));
+    setHeard(t('workflow.edit.said.copied', { step: chosenAll.map(titleOf).join(t('workflow.listJoin')) }));
   };
   const paste = () => {
     if (!clip || clip.nodes.length === 0) { setHeard(t('workflow.edit.said.nothingCopied')); return; }
@@ -589,7 +619,13 @@ function Composing({
 
   const edit: ChartEdit = {
     selected,
-    onSelect: (id) => (choosing ? take(id) : select(id)),
+    chosen: new Set(also),
+    onSelect: (id, how) => {
+      if (choosing) take(id);
+      else if (how && nodeOf(id)) chooseMore(id, how);
+      else select(id);
+    },
+    onBox: (ids) => { if (!choosing) chooseBox(ids); },
     insertOn: (edge) => {
       const wire = wireOf(edge.id);
       if (!wire || wire.from === null || !canInsertOn(draft, wire.id)) return null;

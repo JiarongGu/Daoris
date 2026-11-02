@@ -197,7 +197,7 @@ describe('handOverOffer', () => {
       const actor = build(['claude-code', 'opus', '1'], ['gemini', 'flash', '2'], ['codex', null, '3']);
 
       expect(offer(answer(cut, codex(), gemini), { actor })).toEqual(
-        { why: 'limit', until, agent: 'gemini', account: 'g1', choice: { n: '2', model: 'flash' } });
+        { why: 'limit', until, agent: 'gemini', account: 'g1', choice: { n: '2', model: 'flash', effort: null } });
     });
 
     it('goes on to a later entry when the earlier one has no account with room', () => {
@@ -205,7 +205,7 @@ describe('handOverOffer', () => {
       const none = agent('gemini', { scopes: [scope({ next: next(null, 'waits') })] });
 
       expect(offer(answer(cut, codex(), none), { actor })).toEqual(
-        { why: 'limit', until, agent: 'codex', account: 'team', choice: { n: '3', model: null } });
+        { why: 'limit', until, agent: 'codex', account: 'team', choice: { n: '3', model: null, effort: null } });
     });
 
     it('offers no maker outside the actor’s entries, however ready it is', () => {

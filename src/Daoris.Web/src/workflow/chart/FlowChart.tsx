@@ -1,12 +1,14 @@
-import { type PointerEvent, useRef } from 'react';
+import { useRef, useState } from 'react';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
-import type { CanvasOptions } from '../../design/canvas/Canvas';
+import type { CanvasOptions, CanvasSelection } from '../../design/canvas/Canvas';
+import type { Connect } from '../../design/canvas/useConnection';
 import { type FlowCanvasProps, type FlowEdge, type FlowPick, FlowCanvas, type LabelContext, type NodeContext } from '../../design/FlowCanvas';
 import { FlowNodeBox } from '../../design/Flow';
 import { EdgeChip } from './EdgeChip';
 import { GapInsert, type InsertOffer } from './GapInsert';
 import { HoldsGroup } from './HoldsGroup';
+import type { SelectHow } from './NodeFrame';
 import { StepNode } from './StepNode';
 import { Terminal } from './Terminal';
 import { type ChartNode, isChartNode } from './stepKinds';
@@ -23,7 +25,12 @@ import { type ChartNode, isChartNode } from './stepKinds';
  */
 export type ChartEdit = {
   selected: string | null;
-  onSelect: (id: string) => void;
+  /** The steps chosen with it, for Copy alone (CANVAS1b): outlined as it is, never the inspector's. */
+  chosen?: ReadonlySet<string>;
+  /** A press on a step; with Ctrl (`toggle`) or Shift (`add`) held it chooses more than one where `onBox` is given. */
+  onSelect: (id: string, how?: SelectHow) => void;
+  /** A Shift+drag box on the ground chose these steps, in reading order. */
+  onBox?: (ids: string[]) => void;
   insertOn?: (edge: FlowEdge) => InsertOffer | null;
   insertAt?: (node: ChartNode) => InsertOffer | null;
   /** A decision's port pressed or dragged from: the way it starts, by its outcome. */
@@ -58,52 +65,52 @@ export function workflowViewport(t: TFunction, mode: 'edit' | 'display'): Canvas
   };
 }
 
-export function FlowChart({ edit, canvas, ...props }: Omit<FlowCanvasProps, 'renderNode' | 'renderLabel' | 'renderInsert' | 'pick' | 'viewport'> & {
+export function FlowChart({ edit, canvas, ...props }: Omit<FlowCanvasProps, 'renderNode' | 'renderLabel' | 'renderInsert' | 'pick' | 'viewport' | 'selection' | 'connect'> & {
   edit?: ChartEdit;
   /** Drawn in the canvas's viewport from its floor (CANVAS1a): edited in the editor, read on a place's chart, the tab's and a run's. */
   canvas?: 'edit' | 'display';
 }) {
   const { t } = useTranslation();
-  // A drag from a port: where it started, read again at the release, where the editor's pick mode has begun.
-  const dragged = useRef<string | null>(null);
   const latest = useRef(edit);
   latest.current = edit;
+  // A chart read, not edited, still selects a step (an outline): one, released by the ground and by a second press with Ctrl (CANVAS1b).
+  const [shown, setShown] = useState<string | null>(null);
+  const reading = canvas === 'display' && !edit;
+  const acting: ChartEdit | undefined = edit ?? (reading
+    ? { selected: shown, onSelect: (id, how) => setShown((was) => (how === 'toggle' && was === id ? null : id)) }
+    : undefined);
 
-  const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
-    const port = (event.target as HTMLElement).closest<HTMLElement>('[data-flow-port]');
-    const at = port?.dataset.flowPort;
-    if (!edit?.onPort || !at || event.button !== 0) return;
-    const split = at.indexOf(':');
-    dragged.current = at;
-    edit.onPort(at.slice(0, split), at.slice(split + 1));
-  };
-  const onPointerUp = (event: PointerEvent<HTMLDivElement>) => {
-    const from = dragged.current;
-    dragged.current = null;
-    const now = latest.current;
-    if (from === null || !now) return;
-    const target = event.target as HTMLElement;
-    if (target.closest('[data-flow-port]')?.getAttribute('data-flow-port') === from) return;
-    const holder = target.closest<HTMLElement>('[data-flow-node]');
-    if (holder) {
-      const id = holder.dataset.flowNode!;
-      if (now.pick?.can(id)) now.pick.onPick(id);
-      return;
-    }
-    if (!target.closest('button, a, input, select, textarea')) now.onGround?.();
-  };
+  // The connection line from a port (CANVAS1b): the press begins the way and the editor's pick mode with it; a release over a step that
+  // can take it picks it, over open ground is the editor's, and Escape or a lost capture gives the way up.
+  const connect: Connect | null = edit?.onPort ? {
+    from: (target) => {
+      const at = target.closest('[data-flow-port]')?.getAttribute('data-flow-port');
+      if (!at) return null;
+      const split = at.indexOf(':');
+      return { id: at.slice(0, split), port: at.slice(split + 1) };
+    },
+    onStart: (id, port) => latest.current?.onPort?.(id, port),
+    can: (id) => latest.current?.pick?.can(id) ?? false,
+    onConnect: (to) => latest.current?.pick?.onPick(to),
+    onGround: () => latest.current?.onGround?.(),
+    onCancel: () => latest.current?.pick?.onCancel(),
+  } : null;
+  // The ground: released in display, nothing in edit, and open ground to choose in pick mode. Many are chosen in the editor, for Copy.
+  const selection: CanvasSelection | null = edit
+    ? { many: edit.onBox !== undefined, onGround: () => { if (latest.current?.pick) latest.current.onGround?.(); }, onBox: (ids) => latest.current?.onBox?.(ids) }
+    : reading ? { many: false, onGround: () => setShown(null), onBox: () => {} } : null;
 
   const offerOn = edit?.insertOn;
-  const drawn = (
+  return (
     <FlowCanvas
       {...props}
-      renderNode={(context) => drawNode(context, edit)}
+      renderNode={(context) => drawNode(context, acting)}
       renderLabel={(context) => drawLabel(context, edit)}
       {...(offerOn ? { renderInsert: (edge: FlowEdge) => { const offer = offerOn(edge); return offer ? <GapInsert offer={offer} /> : null; } } : {})}
       pick={edit?.pick ?? null}
       viewport={canvas ? workflowViewport(t, canvas) : 'none'}
+      selection={selection}
+      connect={connect}
     />
   );
-  // Only the editor's chart hears a drag; the place's and a run's are the canvas alone.
-  return edit ? <div className="min-w-0" onPointerDown={onPointerDown} onPointerUp={onPointerUp}>{drawn}</div> : drawn;
 }

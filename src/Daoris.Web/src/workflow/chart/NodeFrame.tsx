@@ -8,6 +8,9 @@ import type { NodeContext, NodeFoot } from '../../design/FlowCanvas';
 // presses. The components differ in what they draw inside. In the editor (FLOWCHART2b) a press selects the node, the one selected wears an
 // outline, and in pick mode the nodes that can take the way wear a dashed one, each said in words to a reader; an outline takes no room.
 
+/** How a press selects (CANVAS1b): Ctrl toggles the node in or out of the selection, Shift adds it, where many may be chosen. */
+export type SelectHow = 'toggle' | 'add';
+
 /** The ids a node's words carry, for its name. */
 export type FrameIds = { title: string; state: string };
 
@@ -20,10 +23,10 @@ export function NodeFrame({ context, shape = 'box', data, press, selected = fals
   shape?: 'box' | 'pill';
   /** Attributes of the component, such as its variant. */
   data?: Record<`data-${string}`, string | undefined>;
-  /** The editor's press on the node, its controls apart. */
-  press?: () => void;
+  /** The press on the node, its controls apart: a plain press, or one with Ctrl (`toggle`) or Shift (`add`) held. */
+  press?: (how?: SelectHow) => void;
   selected?: boolean;
-  /** What the judgement refused here: the border takes declined's hue, and each refusal is said to a reader (FLOWCHART2c). */
+  /** What the judgement refused here: an outline in declined's hue (its chip is the canvas's), and each refusal is said to a reader (FLOWCHART2c). */
   refused?: readonly string[];
   children: (ids: FrameIds) => ReactNode;
 }) {
@@ -52,11 +55,17 @@ export function NodeFrame({ context, shape = 'box', data, press, selected = fals
       aria-labelledby={node.state ? `${titleId} ${stateId}` : titleId}
       aria-describedby={descriptionId}
       style={style}
-      onClick={press ? (event) => { if (!onControl(event)) press(); } : undefined}
+      onClick={press ? (event) => {
+        if (!onControl(event)) press(event.ctrlKey || event.metaKey ? 'toggle' : event.shiftKey ? 'add' : undefined);
+      } : undefined}
       className={cn(
         'min-w-0 bg-raised',
         shape === 'pill' ? 'rounded-full px-3 py-1.5' : 'rounded-card px-3 py-2',
-        refused.length > 0 ? 'border-2 border-st-declined' : node.current ? 'border-2 border-ink-soft' : faint ? 'border border-dashed border-line-strong' : 'border border-line',
+        // Every state keeps the one-pixel border, so none moves a box (CANVAS1b, trap 8): the second pixel of a refusal or of the current
+        // step is an inset ring, which takes no room.
+        refused.length > 0 ? 'border border-st-declined ring-1 ring-inset ring-st-declined'
+          : node.current ? 'border border-ink-soft ring-1 ring-inset ring-ink-soft'
+            : faint ? 'border border-dashed border-line-strong' : 'border border-line',
         press && 'cursor-pointer',
         selected && 'outline outline-2 outline-offset-2 outline-accent',
         picking === true && !selected && 'outline outline-2 outline-offset-2 outline-dashed outline-accent',

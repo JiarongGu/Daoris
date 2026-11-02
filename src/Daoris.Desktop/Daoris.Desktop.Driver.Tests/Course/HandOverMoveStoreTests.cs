@@ -61,6 +61,19 @@ public sealed class HandOverMoveStoreTests : IDisposable
     private static MoveDecision Decision(string left, string why = HandOverWhy.Press, string by = HandOverBy.Person) =>
         new(left, MoveExecutors.Conversation, MoveHows.Brief, why, by) { Agent = "talk", Account = "account-2" };
 
+    /// <summary>STAFFPOLICY1d: the choice a hand-over was approved on is kept with its move and read back as the ask its take is handed; a move from before names none.</summary>
+    [Fact]
+    public void A_move_keeps_the_model_and_effort_of_the_choice_approved_and_a_move_from_before_reads_none()
+    {
+        Assert.NotNull(Store("run-a").Decide(Decision("c1") with { Model = "gpt-5", Effort = "high" }).Move);
+        Assert.NotNull(Store("run-b").Decide(Decision("c2")).Move);
+
+        var approved = ConversationMoves.AskOf(MoveFrom("c1")!)!;
+        Assert.Equal(("talk", "account-2", "gpt-5", "high"), (approved.Agent, approved.Account, approved.Model, approved.Effort));
+        var plain = ConversationMoves.AskOf(MoveFrom("c2")!)!;
+        Assert.Equal((null, null), (plain.Model, plain.Effort));
+    }
+
     private sealed class Talk(HarnessToolchain toolchain) : ISessionAdapter
     {
         public string Name => "talk";

@@ -296,7 +296,8 @@ public sealed class ChatAttachmentTests : IDisposable
             const send = (frame) => process.stdout.write(JSON.stringify(frame) + '\n');
             for await (const line of createInterface({ input: process.stdin })) {
               const frame = JSON.parse(line);
-              note('user: ' + frame.message.content.map((b) => b.text ?? '[' + b.type + ']').join(''));
+              // The routing standing line Daoris appends after the words is not the person's (StubFile.WithoutRouting).
+              note('user: ' + frame.message.content.map((b) => b.text ?? '[' + b.type + ']').join('').replace(/(\n\n| \| )?Routing standing here: [\s\S]*$/, ''));
               send({ type: 'assistant', message: { id: 'm', content: [{ type: 'text', text: 'read it' }] } });
               send({ type: 'result', subtype: 'success', is_error: false, result: 'read it' });
             }
@@ -329,12 +330,13 @@ public sealed class ChatAttachmentTests : IDisposable
                 note('settings: ' + (settings ? readFileSync(settings, 'utf8') : '(none)'));
                 send({ jsonrpc: '2.0', id: frame.id, result: { sessionId: 'acp-attach' } });
               } else if (frame.method === 'session/prompt') {
+                const unrouted = (text) => text.replace(/(\n\n| \| )?Routing standing here: [\s\S]*$/, '');
                 for (const block of frame.params.prompt) {
-                  if (block.type === 'text') note('prompt: ' + block.text);
+                  if (block.type === 'text') note('prompt: ' + unrouted(block.text));
                   else if (block.type === 'resource_link') note('link: ' + block.name + ' ' + block.uri);
                   else note('block: ' + block.type);
                 }
-                if (frame.params.prompt[0].text === 'hold') { holding = frame.id; return; }
+                if (unrouted(frame.params.prompt[0].text) === 'hold') { holding = frame.id; return; }
                 send({ jsonrpc: '2.0', id: frame.id, result: { stopReason: 'end_turn' } });
               } else if (frame.method === 'session/cancel') {
                 if (holding !== null) send({ jsonrpc: '2.0', id: holding, result: { stopReason: 'cancelled' } });

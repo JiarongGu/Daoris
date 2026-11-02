@@ -1685,7 +1685,7 @@ public sealed class AcpSession(
                     Said(() => retry.Began?.Invoke(first, retry.Clock.GetUtcNow() + TransientRetry.Delays[0]));
                 }
 
-                if (episode.Tries >= TransientRetry.Bound)
+                if (episode.Tries >= retry.Limit)
                 {
                     episode.Exhausted = true;
                     throw new AcpTransientExhausted(episode);
@@ -1695,7 +1695,7 @@ public sealed class AcpSession(
                 // The owner's check (§5.5): no try where no more turn is wanted; nothing was prompted, so the open fails as today.
                 if (!await retry.WantedAsync(ct).ConfigureAwait(false)) throw;
                 episode.Tries++;
-                var next = episode.Tries < TransientRetry.Bound ? retry.Clock.GetUtcNow() + TransientRetry.Delays[episode.Tries] : (DateTimeOffset?)null;
+                var next = episode.Tries < retry.Limit ? retry.Clock.GetUtcNow() + TransientRetry.Delays[episode.Tries] : (DateTimeOffset?)null;
                 var trying = episode;
                 Said(() => retry.Tried?.Invoke(trying, trying.Tries, next));
             }
@@ -1781,7 +1781,7 @@ public sealed class AcpSession(
             EpisodeWords?.Settling();
             if (await SettleAsync(Spent, ct).ConfigureAwait(false) is { } settled) atOnce = settled;
 
-            if (episode.Tries >= TransientRetry.Bound)
+            if (episode.Tries >= retry.Limit)
             {
                 episode.Exhausted = true;
                 throw new AcpTransientExhausted(episode);
@@ -1799,7 +1799,7 @@ public sealed class AcpSession(
             }
 
             episode.Tries++;
-            var next = episode.Tries < TransientRetry.Bound ? clock.GetUtcNow() + TransientRetry.Delays[episode.Tries] : (DateTimeOffset?)null;
+            var next = episode.Tries < retry.Limit ? clock.GetUtcNow() + TransientRetry.Delays[episode.Tries] : (DateTimeOffset?)null;
             Said(() => retry.Tried?.Invoke(episode, episode.Tries, next));
             string answered;
             try
@@ -1831,7 +1831,7 @@ public sealed class AcpSession(
         // A settling turn's failure takes one of the tries left, and once they are spent counts none (finding 2).
         void Spent()
         {
-            if (episode.Tries < TransientRetry.Bound)
+            if (episode.Tries < retry.Limit)
             {
                 episode.Tries++;
                 return;

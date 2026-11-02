@@ -195,15 +195,17 @@ internal sealed class ChatPending
 
     /// <summary>
     /// A pick's order for its every attempt (§3.5(d), round 4, Codex 2): the picked entry, then the actor's other entries for the same
-    /// agent, each still a pick. Any other order as it is.
+    /// agent, each still a pick. Any other order as it is. The alternatives are the <paramref name="role"/>'s (the work's role where none is
+    /// bound), in the order its set policy arranges them (STAFFPOLICY1d).
     /// </summary>
-    public static IReadOnlyList<ActorEffective> Recovering(string actor, IReadOnlyList<ActorEffective> order, DriverConfig config)
+    public static IReadOnlyList<ActorEffective> Recovering(
+        string actor, IReadOnlyList<ActorEffective> order, DriverConfig config, StaffLedger? staff = null, string? role = null)
     {
         if (order is not [{ From: "pick" } picked]) return order;
         IReadOnlyList<ActorEffective> stored;
         try
         {
-            stored = ActorChoices.Effective(actor, config);
+            stored = RoleOrders.Arranged(staff, role ?? actor, actor, config);
         }
         catch (ActorUnreadableException)
         {

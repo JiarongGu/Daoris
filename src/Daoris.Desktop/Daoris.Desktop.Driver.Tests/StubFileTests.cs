@@ -32,6 +32,16 @@ public sealed class StubFileTests : IDisposable
         Assert.Equal("initialize\nsession/new\n", StubFile.Text(_path));
     }
 
+    [Theory]
+    [InlineData("Make the port.\n\nRouting standing here: not driven. Work your rows yourself.", "Make the port.")]
+    [InlineData("Make the port. | Before this turn. | Routing standing here: open. Go.", "Make the port. | Before this turn.")]
+    [InlineData("Make the port.\\n\\nRouting standing here: open. Go.", "Make the port.")]
+    [InlineData("Make the port.", "Make the port.")]
+    public void A_prompt_is_read_without_the_routing_line_Daoris_appends(string prompt, string words)
+    {
+        Assert.Equal(words, StubFile.WithoutRouting(prompt));
+    }
+
     [Fact]
     public void A_file_not_written_yet_reads_as_nothing()
     {

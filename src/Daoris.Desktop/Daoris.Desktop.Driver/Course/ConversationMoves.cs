@@ -234,7 +234,8 @@ public sealed class ConversationMoves
         move.Agent is { } agent
             ? new HandOverRequest(
                 agent, move.Account, move.Why, move.By,
-                move.Moments.TryGetValue(MoveRecordPhase.Decided, out var decided) && DateTimeOffset.TryParse(decided, System.Globalization.CultureInfo.InvariantCulture, out var at) ? at : DateTimeOffset.UtcNow)
+                move.Moments.TryGetValue(MoveRecordPhase.Decided, out var decided) && DateTimeOffset.TryParse(decided, System.Globalization.CultureInfo.InvariantCulture, out var at) ? at : DateTimeOffset.UtcNow,
+                move.Model, move.Effort)
             : null;
 
     /// <summary>The conversation's standing hand-over that waits to be taken, whichever run holds it; null for none, or a store that will not answer.</summary>

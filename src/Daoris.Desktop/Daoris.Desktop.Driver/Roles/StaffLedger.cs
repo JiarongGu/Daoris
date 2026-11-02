@@ -209,6 +209,9 @@ public sealed class StaffLedger(string home, Func<StoreSettled>? settled = null,
     /// <summary>The store's file in this home.</summary>
     public string Location => DesktopStore.LocationIn(home);
 
+    /// <summary>The lines' moves to another choice, kept beside the starts (STAFFPOLICY1e).</summary>
+    public StaffMoves Moves => new(home, settled, clock);
+
     /// <summary><paramref name="role"/>'s policy as the store holds it; default where there is no store or it is before the policy's step.</summary>
     public StaffPolicyRead Policy(string role)
     {
@@ -285,6 +288,19 @@ public sealed class StaffLedger(string home, Func<StoreSettled>? settled = null,
             if (!_bound.Remove(number, out binding)) return null;
         }
 
+        return Written(binding, session, condition);
+    }
+
+    /// <summary>
+    /// <see cref="Opened(long, string, string?)"/> for the selection the start opened on: a start with no account count (0) carries its binding
+    /// on the selection, so its row is written all the same.
+    /// </summary>
+    public StaffBinding? Opened(HarnessSelection selection, string session, string? condition = null) =>
+        Opened(selection.Number, session, condition)
+        ?? (selection.Number <= 0 && selection.Staffed is StaffBinding carried ? Written(carried, session, condition) : null);
+
+    private StaffBinding Written(StaffBinding binding, string session, string? condition)
+    {
         // A start under no policy is written down where the home keeps a store already, never made for it.
         if (binding.Reservation is null && !File.Exists(Location)) return binding;
         try

@@ -8,7 +8,8 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../../locales/i18n';
 import { Menu } from '../ui';
 import { zoomBy, zoomLevel, zoomWheel } from '../zoom';
-import { Canvas, type CanvasHandle, type CanvasOptions } from './Canvas';
+import { Canvas, type CanvasHandle, type CanvasOptions, type CanvasSelection } from './Canvas';
+import type { Connect } from './useConnection';
 import type { WorldRead } from './worldBoxes';
 
 // CANVAS1a (D224; the canvas design §2.4, §5, traps 2-5 and 13): the viewport a placed world stands in. jsdom lays nothing out, so the
@@ -22,14 +23,16 @@ const WORLD: WorldRead = {
   nodes: new Map([['a', { x: 900, y: 40, w: 200, h: 80 }], ['b', { x: 1700, y: 600, w: 200, h: 80 }], ['c', { x: 100, y: 1800, w: 200, h: 80 }]]),
 };
 
-function Drawn({ handle, active = true, options = OPTIONS, selected = null }: {
+function Drawn({ handle, active = true, options = OPTIONS, selected = null, selection = null, connect = null }: {
   handle?: React.Ref<CanvasHandle>; active?: boolean; options?: CanvasOptions; selected?: string | null;
+  selection?: CanvasSelection | null; connect?: Connect | null;
 }) {
   const pane = useRef<HTMLDivElement>(null);
   return (
     <Tooltip.Provider>
       <Canvas ref={handle} active={active} options={options} label="How the steps go on" width={800} rem={16} pane={pane}
-        paneProps={{ 'data-flow-pane': '' }} tools={<button type="button">Show as list</button>} showTools entry="a" selected={selected}>
+        paneProps={{ 'data-flow-pane': '' }} tools={<button type="button">Show as list</button>} showTools entry="a" selected={selected}
+        selection={selection} connect={connect}>
         <div role="list">
           {[...WORLD.nodes.keys()].map((id) => (
             <div key={id} role="listitem" data-flow-node={id} tabIndex={id === 'a' ? 0 : -1}>
@@ -336,5 +339,204 @@ describe('the sizing menu', () => {
     await user.click(screen.getByRole('menuitem', { name: /Show the whole workflow/ }));
     // Edit is floored at 80%, so the ＋ and the ports stay usable.
     expect(scale()).toBe(0.8);
+  });
+});
+
+// CANVAS1b (D224; the canvas design §2.4, §2.5): the ground, the box, and the connection line.
+
+const selectionOf = (over: Partial<CanvasSelection> = {}): CanvasSelection => ({ many: true, onGround: vi.fn(), onBox: vi.fn(), ...over });
+
+describe('the ground and the box', () => {
+  it('a press on the ground that does not travel is the feature\'s ground press, and a press on a node or a drag is not', () => {
+    const selection = selectionOf();
+    const handle = createRef<CanvasHandle>();
+    render(<Drawn handle={handle} selection={selection} />);
+    act(() => handle.current!.measured(WORLD));
+    fireEvent.pointerDown(document.querySelector('[data-flow-node="a"]')!, { button: 0, clientX: 300, clientY: 100, pointerId: 1 });
+    fireEvent.pointerUp(region(), { pointerId: 1 });
+    expect(selection.onGround).not.toHaveBeenCalled();
+    fireEvent.pointerDown(region(), { button: 0, clientX: 300, clientY: 100, pointerId: 1 });
+    fireEvent.pointerMove(region(), { clientX: 250, clientY: 100, pointerId: 1 });
+    fireEvent.pointerUp(region(), { pointerId: 1 });
+    expect(selection.onGround).not.toHaveBeenCalled();
+    fireEvent.pointerDown(region(), { button: 0, clientX: 300, clientY: 100, pointerId: 1 });
+    fireEvent.pointerUp(region(), { pointerId: 1 });
+    expect(selection.onGround).toHaveBeenCalledOnce();
+  });
+
+  it('Shift+drag on the ground, where many may be chosen, draws a box and chooses what it touches, in reading order, and pans nothing', () => {
+    const selection = selectionOf();
+    const handle = createRef<CanvasHandle>();
+    render(<Drawn handle={handle} selection={selection} />);
+    act(() => handle.current!.measured(WORLD));
+    const start = view();
+    // Screen points that cover the world from (850, 0) to (1950, 700): the first node and the second.
+    const at = (x: number, y: number) => ({ clientX: (x - start.x) * start.k, clientY: (y - start.y) * start.k });
+    fireEvent.pointerDown(region(), { button: 0, shiftKey: true, pointerId: 1, ...at(850, 0) });
+    fireEvent.pointerMove(region(), { shiftKey: true, pointerId: 1, ...at(1950, 700) });
+    expect(region().querySelector('[data-canvas-box]')).not.toBeNull();
+    fireEvent.pointerUp(region(), { pointerId: 1, ...at(1950, 700) });
+    expect(selection.onBox).toHaveBeenCalledWith(['a', 'b']);
+    expect(selection.onGround).not.toHaveBeenCalled();
+    expect(view()).toEqual(start);
+    expect(region().querySelector('[data-canvas-box]')).toBeNull();
+  });
+
+  it('is a pan, not a box, where only one may be chosen; and Escape gives a box up', () => {
+    const one = selectionOf({ many: false });
+    const handle = createRef<CanvasHandle>();
+    const { unmount } = render(<Drawn handle={handle} selection={one} />);
+    act(() => handle.current!.measured(WORLD));
+    const start = view();
+    fireEvent.pointerDown(region(), { button: 0, shiftKey: true, clientX: 300, clientY: 100, pointerId: 1 });
+    fireEvent.pointerMove(region(), { clientX: 200, clientY: 100, pointerId: 1 });
+    expect(view().x).toBe(start.x + 100);
+    expect(one.onBox).not.toHaveBeenCalled();
+    unmount();
+
+    const many = selectionOf();
+    const second = createRef<CanvasHandle>();
+    render(<Drawn handle={second} selection={many} />);
+    act(() => second.current!.measured(WORLD));
+    fireEvent.pointerDown(region(), { button: 0, shiftKey: true, clientX: 300, clientY: 100, pointerId: 1 });
+    fireEvent.pointerMove(region(), { clientX: 200, clientY: 160, pointerId: 1 });
+    expect(region().querySelector('[data-canvas-box]')).not.toBeNull();
+    fireEvent.keyDown(region(), { key: 'Escape' });
+    expect(region().querySelector('[data-canvas-box]')).toBeNull();
+    fireEvent.pointerUp(region(), { pointerId: 1 });
+    expect(many.onBox).not.toHaveBeenCalled();
+  });
+});
+
+describe('the connection line', () => {
+  const connectOf = () => ({
+    from: (target: Element) => {
+      const at = target.closest('[data-flow-port]')?.getAttribute('data-flow-port');
+      return at ? { id: at.split(':')[0]!, port: at.split(':')[1]! } : null;
+    },
+    onStart: vi.fn(), can: (id: string) => id === 'b', onConnect: vi.fn(), onGround: vi.fn(), onCancel: vi.fn(),
+  }) satisfies Connect;
+  const port = () => document.querySelector<HTMLElement>('[data-flow-port="a:yes"]')!;
+  const node = (id: string) => document.querySelector<HTMLElement>(`[data-flow-node="${id}"]`)!;
+  const line = () => document.querySelector('[data-connection-line]');
+  /** What is under the pointer, which jsdom cannot say. */
+  const under = (element: Element | null) => { (document as unknown as { elementFromPoint: unknown }).elementFromPoint = () => element; };
+  afterEach(() => { delete (document as unknown as { elementFromPoint?: unknown }).elementFromPoint; });
+
+  const dragFrom = (to: Element | null, x = 400, y = 300) => {
+    fireEvent.pointerDown(port(), { button: 0, clientX: 120, clientY: 215, pointerId: 1 });
+    under(to);
+    fireEvent.pointerMove(region(), { clientX: x, clientY: y, pointerId: 1 });
+  };
+
+  it('begins the way at the press on a port, draws a rubber line to the pointer from inside the port\'s box, and pans nothing', () => {
+    const connect = connectOf();
+    const handle = createRef<CanvasHandle>();
+    render(<Drawn handle={handle} connect={connect} />);
+    act(() => handle.current!.measured(WORLD));
+    const start = view();
+    vi.spyOn(port(), 'getBoundingClientRect').mockReturnValue({ left: 100, top: 200, width: 40, height: 20, right: 140, bottom: 220, x: 100, y: 200, toJSON: () => ({}) } as DOMRect);
+    fireEvent.pointerDown(port(), { button: 0, clientX: 120, clientY: 215, pointerId: 1 });
+    expect(connect.onStart).toHaveBeenCalledWith('a', 'yes');
+    expect(line()).toBeNull();
+    under(null);
+    fireEvent.pointerMove(region(), { clientX: 400, clientY: 300, pointerId: 1 });
+    const drawn = line()!.querySelector('line')!;
+    expect(Number(drawn.getAttribute('x1'))).toBeGreaterThanOrEqual(100);
+    expect(Number(drawn.getAttribute('x1'))).toBeLessThanOrEqual(140);
+    expect(Number(drawn.getAttribute('y1'))).toBeGreaterThanOrEqual(200);
+    expect(Number(drawn.getAttribute('y1'))).toBeLessThanOrEqual(220);
+    expect([drawn.getAttribute('x2'), drawn.getAttribute('y2')]).toEqual(['400', '300']);
+    expect(view()).toEqual(start);
+  });
+
+  it('outlines the step under the pointer only where it can take the way, and commits one intent on a valid release', () => {
+    const connect = connectOf();
+    const handle = createRef<CanvasHandle>();
+    render(<Drawn handle={handle} connect={connect} />);
+    act(() => handle.current!.measured(WORLD));
+    dragFrom(node('c'));
+    expect(document.querySelector('[data-connection-target]')).toBeNull();
+    under(node('b'));
+    fireEvent.pointerMove(region(), { clientX: 410, clientY: 310, pointerId: 1 });
+    expect(document.querySelector('[data-connection-target]')).not.toBeNull();
+    fireEvent.pointerUp(region(), { clientX: 410, clientY: 310, pointerId: 1 });
+    expect(connect.onConnect).toHaveBeenCalledOnce();
+    expect(connect.onConnect).toHaveBeenCalledWith('b');
+    expect(line()).toBeNull();
+    expect(connect.onGround).not.toHaveBeenCalled();
+  });
+
+  it('does nothing on a release over a step that cannot take it, or over its own port, and gives open ground to the feature', () => {
+    const connect = connectOf();
+    const handle = createRef<CanvasHandle>();
+    render(<Drawn handle={handle} connect={connect} />);
+    act(() => handle.current!.measured(WORLD));
+    dragFrom(node('c'));
+    fireEvent.pointerUp(region(), { clientX: 400, clientY: 300, pointerId: 1 });
+    dragFrom(port());
+    fireEvent.pointerUp(region(), { clientX: 400, clientY: 300, pointerId: 1 });
+    expect(connect.onConnect).not.toHaveBeenCalled();
+    expect(connect.onGround).not.toHaveBeenCalled();
+    dragFrom(region());
+    fireEvent.pointerUp(region(), { clientX: 400, clientY: 300, pointerId: 1 });
+    expect(connect.onGround).toHaveBeenCalledOnce();
+    expect(connect.onCancel).not.toHaveBeenCalled();
+  });
+
+  it('is given up by Escape and a cancelled pointer, each once, and a lost capture after a release gives nothing up', () => {
+    const connect = connectOf();
+    const handle = createRef<CanvasHandle>();
+    render(<Drawn handle={handle} connect={connect} />);
+    act(() => handle.current!.measured(WORLD));
+    dragFrom(null);
+    expect(line()).not.toBeNull();
+    fireEvent.keyDown(port(), { key: 'Escape' });
+    expect(line()).toBeNull();
+    expect(connect.onCancel).toHaveBeenCalledTimes(1);
+    fireEvent.pointerUp(region(), { pointerId: 1 });
+    expect(connect.onGround).not.toHaveBeenCalled();
+
+    dragFrom(null);
+    fireEvent.pointerCancel(region(), { pointerId: 1 });
+    expect(line()).toBeNull();
+    expect(connect.onCancel).toHaveBeenCalledTimes(2);
+
+    dragFrom(node('b'));
+    fireEvent.pointerUp(region(), { clientX: 400, clientY: 300, pointerId: 1 });
+    fireEvent.lostPointerCapture(region(), { pointerId: 1 });
+    expect(connect.onCancel).toHaveBeenCalledTimes(2);
+    expect(connect.onConnect).toHaveBeenCalledTimes(1);
+  });
+
+  it('pans the view at the viewport\'s edge while the pointer rests there, and stops when it is released', () => {
+    vi.useFakeTimers({ toFake: ['requestAnimationFrame', 'cancelAnimationFrame'] });
+    try {
+      const connect = connectOf();
+      const handle = createRef<CanvasHandle>();
+      render(<Drawn handle={handle} connect={connect} />);
+      act(() => handle.current!.measured(WORLD));
+      vi.spyOn(region(), 'getBoundingClientRect').mockReturnValue({ left: 0, top: 0, width: 800, height: 400, right: 800, bottom: 400, x: 0, y: 0, toJSON: () => ({}) } as DOMRect);
+      const start = view();
+      dragFrom(null, 799, 200);
+      act(() => { vi.advanceTimersByTime(100); });
+      expect(view().x).toBeGreaterThan(start.x);
+      fireEvent.pointerUp(region(), { clientX: 799, clientY: 200, pointerId: 1 });
+      const stopped = view();
+      act(() => { vi.advanceTimersByTime(100); });
+      expect(view()).toEqual(stopped);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('works where the viewport is not offered: the press and the drop, with no line drawn', () => {
+    const connect = connectOf();
+    render(<Drawn active={false} connect={connect} />);
+    fireEvent.pointerDown(port(), { button: 0, clientX: 120, clientY: 215, pointerId: 1 });
+    expect(connect.onStart).toHaveBeenCalledWith('a', 'yes');
+    fireEvent.pointerUp(node('b'), { pointerId: 1 });
+    expect(connect.onConnect).toHaveBeenCalledWith('b');
+    expect(line()).toBeNull();
   });
 });

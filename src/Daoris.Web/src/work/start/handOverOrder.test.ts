@@ -16,9 +16,14 @@ type ActorRow = [
   name: string, own: string, doors: Door[], entries: [agent: string, model: string | null, from: string][],
   steps: [harness: string, model: string | null, from: string][],
 ];
+type Entries = [agent: string, model: string | null, from: string][];
+type ArrangedRow = [
+  name: string, own: string, doors: Door[], stored: Entries, arranged: Entries | null,
+  steps: [harness: string, model: string | null, from: string][],
+];
 const TABLE = JSON.parse(readFileSync(
   join(process.cwd(), '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Tests', 'fixtures', 'hand-over-order.json'), 'utf8')) as {
-  rows: Row[]; actorRows: ActorRow[];
+  rows: Row[]; actorRows: ActorRow[]; arrangedRows: ArrangedRow[];
 };
 const roster = (doors: Door[]): ToolDoor[] => doors.map(([harness, present, accountOf]) => ({ harness, present, accountOf }));
 
@@ -36,6 +41,16 @@ describe("the person's order a hand-over goes to, as the driver's table holds it
 describe("the actor's order a hand-over goes to, as the driver's table holds it", () => {
   it.each(TABLE.actorRows.map((row) => [row[0], row] as const))('%s', (_, [, own, doors, entries, steps]) => {
     const actor = { choices: entries.map(([agent, model, from]) => ({ agent, model, from })) };
+
+    expect(nextChoices({ adapter: own }, roster(doors), actor).map((step) => [step.door.harness, step.model, step.from])).toEqual(steps);
+  });
+});
+
+// STAFFPOLICY1d: the order a start would walk, which `ACTORS` answers as `arranged` where a role's policy arranges it, is the one taken.
+describe("the arranged order a hand-over goes to, as the driver's table holds it", () => {
+  it.each(TABLE.arrangedRows.map((row) => [row[0], row] as const))('%s', (_, [, own, doors, stored, arranged, steps]) => {
+    const entry = ([agent, model, from]: Entries[number]) => ({ agent, model, from });
+    const actor = { choices: stored.map(entry), ...(arranged ? { arranged: arranged.map(entry) } : {}) };
 
     expect(nextChoices({ adapter: own }, roster(doors), actor).map((step) => [step.door.harness, step.model, step.from])).toEqual(steps);
   });
