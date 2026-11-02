@@ -377,7 +377,7 @@ public sealed class PipeCensus
             "SET_ROLE",
             // AGENTSPLACE1g2: several roles' changes made as one, the Roles mode's suggested choices.
             "SET_ROLES",
-            "SETUP_PRESS", "SET_ACCESS", "SET_ACTOR", "SET_AGENT_SETTINGS", "SET_CAP", "SET_COMMITS", "SET_COOLOFF", "SET_DRIVABLE", "SET_HAND_OVER", "SET_HELPERS", "SET_HELP_MODE",
+            "SETUP_PRESS", "SET_ACCESS", "SET_GIT_ACCESS", "SET_ACTOR", "SET_AGENT_SETTINGS", "SET_CAP", "SET_COMMITS", "SET_COOLOFF", "SET_DRIVABLE", "SET_HAND_OVER", "SET_HELPERS", "SET_HELP_MODE",
             // HELPMODE1c2b: what Ask Daoris's housekeeping may do, the person's grant alone.
             "SET_HELP_GRANT",
             // FABRIC-PIPELINE1a: the landed route and the gates it runs unasked, accepted by their blob (D156).
@@ -527,7 +527,7 @@ public sealed class PipeCensus
             // A standing choice that changes only how later sessions run, what they reach or say, or what the person is told; a hold or a
             // drivable repository the drain's look holds whatever it says; a session's own option; Ask Daoris's access, which ends its
             // conversation at its turn's end and starts none.
-            "SET_ACCESS", "SET_AGENT_SETTINGS", "SET_CHECKOUT_WRITES", "SET_COMMITS", "SET_DRIVABLE", "SET_HELP_MODE", "SET_HELP_GRANT", "SET_HEAVY_GATES", "SET_HOLD",
+            "SET_ACCESS", "SET_GIT_ACCESS", "SET_AGENT_SETTINGS", "SET_CHECKOUT_WRITES", "SET_COMMITS", "SET_DRIVABLE", "SET_HELP_MODE", "SET_HELP_GRANT", "SET_HEAVY_GATES", "SET_HOLD",
             "SET_LANGUAGE", "SET_NOTIFY", "SET_READ_ACROSS", "SET_SESSION_OPTION", "SET_SESSION_CHECKS", "SET_STANDING", "SET_STRIKES", "SET_TREES",
             "SET_WRITE_ACROSS", "RULE_ACTION", "RULE_PROPOSAL",
             // INTEGRATE1d: an integration declaration's acceptance, which starts nothing: what it accepts runs only in a landing or a tidy,

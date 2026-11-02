@@ -3684,6 +3684,10 @@ public sealed class Driver(
 
         var rules = PermissionRules.Load(home);
         var composed = PermissionRules.Compose(rules, workspace, repository);
+        // GITAUTH1f (§6.8): `no-push`'s forms follow the session's git access, and the classifier is told as git access says it.
+        var gitWrite = GitAccessKeys.Resolve(home, repository, workspace).Of(GitAccessKeys.Write).Value;
+        composed = GitAccessPolicy.Compose(composed, gitWrite);
+        var pushTold = GitAccessPolicy.HardDeny(PermissionRules.HardDeny(rules), gitWrite);
         var folders = new[] { kept, said }.Concat(continued ?? []).OfType<string>().Where(folder => folder.Length > 0)
             .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         foreach (var folder in folders)
@@ -3718,10 +3722,10 @@ public sealed class Driver(
 
         var file = SpawnSettings.Write(
             home, sessionId, composed,
-            brainstorm is not null ? [.. PermissionRules.HardDeny(rules), BrainstormPermissions.HardDeny]
-            : partner ? [.. PermissionRules.HardDeny(rules), PartnerPermissions.HardDeny]
-            : helper ? [.. PermissionRules.HardDeny(rules), OpinionPermissions.HelperHardDeny]
-            : opinion ? [.. PermissionRules.HardDeny(rules), OpinionPermissions.HardDeny] : [.. PermissionRules.HardDeny(rules), .. heavyTold],
+            brainstorm is not null ? [.. pushTold, BrainstormPermissions.HardDeny]
+            : partner ? [.. pushTold, PartnerPermissions.HardDeny]
+            : helper ? [.. pushTold, OpinionPermissions.HelperHardDeny]
+            : opinion ? [.. pushTold, OpinionPermissions.HardDeny] : [.. pushTold, .. heavyTold],
             // A partner is held to its copy whatever the person's defaults say (COAGENT1b, the co-agent design §7.4).
             PermissionRules.GuardsTree(rules) || partner ? TreeGuard.For(home, tree, across?.Writes.Select(target => target.Path)) : null,
             // Which agent made each call, and each subagent's start and stop (FABRIC-C1a): the part's children bound by its lineage.

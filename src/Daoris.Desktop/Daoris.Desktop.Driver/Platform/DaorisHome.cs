@@ -441,6 +441,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry GitHeld = new("git-held", HomeCategory.Run, "run/git/held.json", "run/git/held.json");
     public static readonly HomeEntry GitGrants = new("git-grants", HomeCategory.Run, "run/git/grants", "run/git/grants");
     public static readonly HomeEntry GitUsed = new("git-used", HomeCategory.Run, "run/git/used", "run/git/used");
+    public static readonly HomeEntry GitAsks = new("git-asks", HomeCategory.Run, "run/git/asks", "run/git/asks");
     public static readonly HomeEntry GitCheckouts = new("git-checkouts", HomeCategory.Run, "run/git/checkouts.json", "run/git/checkouts.json");
     public static readonly HomeEntry GitHome = new("git-home", HomeCategory.Run, "run/git/home", "run/git/home");
     public static readonly HomeEntry Logs = new("logs", HomeCategory.Logs, "logs", "logs");
@@ -457,7 +458,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
         Trees, HelpRoom, HelpRooms, Intake, OpinionPackets, QuestFiles, AskFiles, SessionFiles, Proof, UsageRead, BrainstormRooms, RoleRooms,
         Toolchain, ToolVersions, Bin,
         HomeLease, DriverLock, Running, Locks, Spawn, Starts, Hooks, Probing, SessionPids, Requests, EdgeRecord, Pipe, HomeMove,
-        GitHeld, GitGrants, GitUsed, GitCheckouts, GitHome, Logs,
+        GitHeld, GitGrants, GitUsed, GitAsks, GitCheckouts, GitHome, Logs,
     ];
 
     /// <summary>The entry of this name, or null where the table holds none.</summary>

@@ -3,6 +3,7 @@ import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tansta
 import { useShenora } from '@shenora/react';
 import { keys } from '../../data/queries';
 import type { AccessChange, RepositoryAccess } from '../../settings/repository/Access';
+import type { GitAccessChange, RepositoryGitAccess } from '../../settings/repository/GitAccess';
 import type { CommitChange, RepositoryCommits } from '../../settings/repository/Commits';
 import type { HelperChange, RepositoryHelpers } from '../../settings/repository/Helpers';
 import type { HandOverChange, RepositoryHandOver } from '../../settings/repository/HandOver';
@@ -44,10 +45,13 @@ export type LinesAnswer = {
   // The access setup each one's sessions start under, every pause with its value and where it was set (AUTONOMY1a, D184 point 1):
   // never null, `default` where nothing is set; absent on an older shell, which offers no access section.
   access?: RepositoryAccess[];
+  // What each one's sessions may do on a git remote, each class with its value and where it was set (GITAUTH1f, the git-auth design
+  // §6.2); never null, `default` where nothing is set (Write then `as-today`); absent on an older shell.
+  gitAccess?: RepositoryGitAccess[];
 };
 
 // The shell's `LinesStateSlice.Fields`, in its order: a field left out here is pushed and never composed (AUTONOMY1d).
-const LINES_FIELDS = ['lines', 'landings', 'languages', 'reviews', 'opinions', 'helpers', 'handOver', 'commits', 'access'] as const;
+const LINES_FIELDS = ['lines', 'landings', 'languages', 'reviews', 'opinions', 'helpers', 'handOver', 'commits', 'access', 'gitAccess'] as const;
 
 /**
  * The lines as the shell pushes them (PUSH1b2, D182): a partition per repository, named by it, each holding that repository's rows
@@ -509,3 +513,10 @@ export const useSetHandOver = () => useDriverChange<HandOverChange>('SET_HAND_OV
  * refusal is the driver's sentence, verbatim. Full access is the person's press alone: no proposal names it (D184's rejected list).
  */
 export const useSetAccess = () => useDriverChange<AccessChange>('SET_ACCESS');
+
+/**
+ * Change git access for a repository, a workspace or this machine (GITAUTH1f, D198 points 8, 10 and 12): the classes it sets (a null
+ * taking one back to the level above), one value for Read and Write, or the level cleared, over the file `daoris-driver git access`
+ * edits. A separate route from `SET_ACCESS`. A refusal is the driver's sentence, verbatim; a widening is confirmed by the page first.
+ */
+export const useSetGitAccess = () => useDriverChange<GitAccessChange>('SET_GIT_ACCESS');

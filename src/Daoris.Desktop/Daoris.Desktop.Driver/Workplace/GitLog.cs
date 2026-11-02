@@ -42,6 +42,11 @@ public static class GitLog
         Write(home, "git.grant.used", ("repository", variable("DAORIS_REPOSITORY")), ("remote", remote), ("host", host),
             ("class", ClassName(GitAct.Write)), ("door", DoorOf(variable)), ("session", variable(SessionVariable)));
 
+    /// <summary>A git go-ahead answered at a door (§11 <c>git.asked</c>): allowed or refused, or not answered in the bound.</summary>
+    public static void Asked(string home, Func<string, string?> variable, bool allowed, GitAct act, string? remote, string? host) =>
+        Write(home, "git.asked", ("repository", variable("DAORIS_REPOSITORY")), ("remote", remote), ("host", host), ("class", ClassName(act)),
+            ("allowed", allowed), ("door", DoorOf(variable)), ("session", variable(SessionVariable)));
+
     /// <summary>
     /// How the driver's git is wired at its start (§11 <c>git.wired</c>): which git Tools runs (its way, and its version where Tools
     /// records one, never its path: asking git would be one more start on every launch), how the ssh door is named (<c>command</c>,
