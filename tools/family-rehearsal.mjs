@@ -4627,7 +4627,8 @@ const acpChat = run(
 check(
   'a conversation runs over the ACP door from a terminal, each message a turn on ONE session',
   acpChat.code === 0
-    && /acp heard: first over the protocol \(in acp-session-1\)/.test(acpChat.out)
+    // The first message carries the routing standing after the person's words (COWORKVIEW1e-i).
+    && /acp heard: first over the protocol[\s\S]*\(in acp-session-1\)/.test(acpChat.out)
     && /acp heard: second over the protocol \(in acp-session-1\)/.test(acpChat.out),
   acpChat.out,
 );
