@@ -15,7 +15,7 @@ import { byTool, doorLabel } from '../tools';
 import type { RoleSection } from '../modes';
 import { type ActorChoice, type Editing, newRoleEditing, RolesCard, roleName, type RoleScope } from './Roles';
 import { AppointedRoles } from './AppointedRoles';
-import { DiagramSection } from './RoleDiagram';
+import { DiagramSection } from './StructureCanvas';
 import { RoleSectionMain, type RolesView } from './RoleSections';
 import { type RoleDoors, AccountsSection, DiagramDetail, RepositorySection, WorkSection } from './StructureSections';
 import {

@@ -7,7 +7,7 @@ import { storyWidths } from '../../design/storyWidths';
 import { InTheme } from '../../plugins/storyIcons';
 import { CLAUDE_USE, CODEX_USE } from '../agentsFixtures';
 import { AllRolesView } from '../roles/AllRoles';
-import { DiagramSection } from '../roles/RoleDiagram';
+import { DiagramSection } from '../roles/StructureCanvas';
 import { buildStructure, NO_FILTERS, type StructureFilters } from '../roles/roleStructure';
 import type { RolesView } from '../roles/RoleSections';
 import { RolesCard, type RoleScope } from '../roles/Roles';

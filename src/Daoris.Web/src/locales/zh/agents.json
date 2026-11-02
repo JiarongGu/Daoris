@@ -271,6 +271,8 @@
   "agents.roles.diagram.label": "角色图：位置、角色与智能体",
   "agents.roles.diagram.keys": "方向键在位置、角色与智能体之间移动，Enter 选中一个，Tab 进入它的控件。",
   "agents.roles.diagram.narrow": "这里太窄，画不下角色图，所以以列表显示，连线用文字说明。",
+  "agents.roles.diagram.fit": "显示整个结构",
+  "agents.roles.diagram.moves": "按位置分行的结构：拖动或用滚轮移动，Ctrl+滚轮缩放",
   "agents.roles.diagram.column.place": "位置",
   "agents.roles.diagram.column.role": "角色",
   "agents.roles.diagram.column.agent": "智能体",

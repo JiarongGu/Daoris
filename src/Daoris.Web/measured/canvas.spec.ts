@@ -353,3 +353,101 @@ for (const [story, { nodes, target }] of Object.entries(SIZES)) {
     expect(await drawnCounts(page)).toEqual(atRest);
   });
 }
+
+// CANVAS1b (D224; the canvas design §2.3, §2.5, trap 8): a mark takes no room, and the connection line starts in its port's box.
+
+/** Every node's box in world units, by id. */
+const boxesOf = async (page: Page) => Object.fromEntries((await inkOf(page)).boxes);
+
+test('a mark takes no room: every node\'s box is equal with and without marks, across plain, current and refused (trap 8)', async ({ page }) => {
+  await open(page, 'canvas/Plain12');
+  const plain = await boxesOf(page);
+  await open(page, 'canvas/Marked');
+  const marked = await boxesOf(page);
+  expect(Object.keys(marked)).toEqual(Object.keys(plain));
+  for (const [id, box] of Object.entries(plain)) expect(marked[id], `box ${id}`).toEqual(box);
+  expect(await page.locator('[data-flow-chip]').count()).toBeGreaterThan(0);
+
+  // The driver's refusals on the editor's chart: the same graph judged and not.
+  await open(page, 'judgement/CouldNotBeJudged');
+  const unjudged = await boxesOf(page);
+  await open(page, 'judgement/Refused');
+  const refused = await boxesOf(page);
+  expect(await page.locator('[data-refused="true"]').count()).toBeGreaterThan(0);
+  expect(await page.locator('[data-flow-refusal]').count()).toBe(0);
+  for (const [id, box] of Object.entries(unjudged)) expect(refused[id], `refused box ${id}`).toEqual(box);
+});
+
+for (const story of ['canvas/Marked', 'canvas/MarkedHalf', 'canvas/MarkedChineseHalf', 'judgement/Refused']) {
+  test(`${story}: each chip shown clears every node, label and ＋, and a chip not shown is hidden`, async ({ page }) => {
+    await open(page, story);
+    const found = await page.evaluate(() => {
+      const rect = (element: Element) => { const r = element.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom }; };
+      const meets = (a: ReturnType<typeof rect>, b: ReturnType<typeof rect>) => a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;
+      const others = [...document.querySelectorAll('[data-flow-node], [data-flow-label][data-shown], [data-flow-insert][data-shown], [data-flow-chip][data-shown]')];
+      const chips = [...document.querySelectorAll<HTMLElement>('[data-flow-chip]')];
+      // A chip may straddle its own node's top edge like a tag, and meets nothing else.
+      const own = (chip: HTMLElement, other: Element) => other.getAttribute('data-flow-node') === chip.dataset.chipNode;
+      return {
+        chips: chips.length, shown: chips.filter((chip) => chip.hasAttribute('data-shown')).length,
+        hiddenShown: chips.filter((chip) => !chip.hasAttribute('data-shown') && chip.style.visibility !== 'hidden').length,
+        over: chips.filter((chip) => chip.hasAttribute('data-shown'))
+          .flatMap((chip) => others.filter((other) => other !== chip && !own(chip, other) && meets(rect(chip), rect(other))).map(() => chip.textContent)),
+      };
+    });
+    expect(found.chips).toBeGreaterThan(0);
+    expect(found.shown).toBeGreaterThan(0);
+    expect(found.hiddenShown).toBe(0);
+    expect(found.over).toEqual([]);
+  });
+}
+
+for (const k of [0.8, 1, 1.5, 2]) {
+  test(`the connection line starts inside its port's box at ${k * 100}%, ends at the pointer, and Escape gives the way up`, async ({ page }) => {
+    await open(page, 'editor/Release');
+    if (k !== 1) await zoomTo(page, k);
+    // A port standing wholly inside the region: the world panned by the wheel to one (the page's own scroll is smooth, and moves it).
+    const inView = () => page.evaluate(() => {
+      const area = document.querySelector('[role="region"][data-flow-pane]')!.getBoundingClientRect();
+      return [...document.querySelectorAll('[data-flow-port]')].findIndex((each) => {
+        const r = each.getBoundingClientRect();
+        return r.top > area.top + 24 && r.bottom < area.bottom - 24 && r.left > area.left + 24 && r.right < area.right - 24;
+      });
+    });
+    const area = (await region(page).boundingBox())!;
+    await page.mouse.move(area.x + area.width / 2, area.y + 40);
+    for (let tries = 0; tries < 24 && (await inView()) < 0; tries += 1) {
+      await page.mouse.wheel(0, 200);
+      await page.waitForTimeout(60);
+    }
+    const at = await inView();
+    expect(at, 'a port in view').toBeGreaterThanOrEqual(0);
+    const port = page.locator('[data-flow-port]').nth(at);
+    const box = (await port.boundingBox())!;
+    const [x, y] = [box.x + box.width / 2, box.y + box.height / 2];
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x + 30, y - 20, { steps: 4 });
+    await page.mouse.move(x + 60, y - 40, { steps: 4 });
+    const line = await page.evaluate(() => {
+      const svg = document.querySelector('[data-connection-line]');
+      const drawn = svg?.querySelector('line');
+      const region = document.querySelector('[role="region"][data-flow-pane]')!.getBoundingClientRect();
+      return drawn ? { from: [Number(drawn.getAttribute('x1')) + region.left, Number(drawn.getAttribute('y1')) + region.top], to: [Number(drawn.getAttribute('x2')) + region.left, Number(drawn.getAttribute('y2')) + region.top] } : null;
+    });
+    expect(line, 'the line is drawn').not.toBeNull();
+    // The view holds still under the pointer while the line is drawn: the port is where it was pressed.
+    const now = (await port.boundingBox())!;
+    expect([now.x, now.y]).toEqual([box.x, box.y]);
+    expect(line!.from[0]).toBeGreaterThanOrEqual(box.x - 0.5);
+    expect(line!.from[0]).toBeLessThanOrEqual(box.x + box.width + 0.5);
+    expect(line!.from[1]).toBeGreaterThanOrEqual(box.y - 0.5);
+    expect(line!.from[1]).toBeLessThanOrEqual(box.y + box.height + 0.5);
+    expect(Math.abs(line!.to[0] - (x + 60))).toBeLessThan(1);
+    expect(Math.abs(line!.to[1] - (y - 40))).toBeLessThan(1);
+    await page.keyboard.press('Escape');
+    expect(await page.locator('[data-connection-line]').count()).toBe(0);
+    await page.mouse.up();
+    expect(await page.locator('[data-connection-line]').count()).toBe(0);
+  });
+}
