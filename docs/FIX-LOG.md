@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-02 - A set-up card for an undriven repository hid its alone admission (REVIEW2 S6)
+
+- **Symptom:** the card for a set-up of a repository not driven here said nothing of the admission its press writes and the start it makes; the repository's other work stays held.
+- **Root cause:** `SetupPress` admits the set-up quest alone (`SetupPlan.Alone`) and the terminal says so, but neither the card nor `SetupRoutes.Shown` carried `Alone`.
+- **Fix:** the card says the repository is not driven here, so its set-up quest is admitted alone and starts by itself while its other work stays held; `Shown` carries `Alone`.
+- **Verify:** `HelpSetupProposalsTests.A_set_up_of_a_repository_not_driven_here_says_it_is_admitted_and_started_alone`.
+
 ## 2026-11-02 - A role card said "choices kept" while its Apply deleted or re-keyed the policy (REVIEW2 S2)
 
 - **Symptom:** a `default`, `default-all` or `remove` card for a role with a standing staffing policy said nothing of it, and a `set` of new choices with no `policy` re-keyed it unsaid; a policy set after the card was drawn was deleted too, because the card's revision is built from `Describe`/`Terminal`, which never read the policy.

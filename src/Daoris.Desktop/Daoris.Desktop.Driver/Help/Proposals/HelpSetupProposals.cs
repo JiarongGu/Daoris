@@ -90,7 +90,10 @@ internal sealed class HelpSetupProposals : IHelpProposalKind
             + $"“{setup.Title}”{carried}{lands}; and add the {SetupPressRules.RulesOf(setup).Count} "
             + $"{(setup.Index is null ? "doctrine commands" : "commands, the doctrine tool's and its index generator's,")} its session runs to "
             + $"`{setup.Repository}`'s rules. Daoris writes nothing into `{setup.Repository}`: its session does the work on a branch "
-            + "of its own.",
+            + "of its own."
+            + (setup.Alone
+                ? $" `{setup.Repository}` is not driven here, so its set-up quest is admitted alone and starts by itself, while its other work stays held."
+                : ""),
             terminal, null)
         {
             Setup = setup,

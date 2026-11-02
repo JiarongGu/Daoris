@@ -42,6 +42,17 @@ public sealed class HelpSetupProposalsTests : HelpProposalsFixture
         Assert.Same(Pressable, plan.Setup);
     }
 
+    /// <summary>REVIEW2 S6: a repository not driven here has its set-up quest admitted alone and started by itself, which the card says.</summary>
+    [Fact]
+    public void A_set_up_of_a_repository_not_driven_here_says_it_is_admitted_and_started_alone()
+    {
+        Assert.DoesNotContain("not driven here", HelpProposals.Plan(Of("setup", "setup", "atlas"), DriverConfig.Empty, With(Pressable)).Describe);
+
+        var alone = HelpProposals.Plan(Of("setup", "setup", "atlas"), DriverConfig.Empty, With(Pressable with { Alone = true }));
+
+        Assert.Contains("`atlas` is not driven here, so its set-up quest is admitted alone and starts by itself, while its other work stays held", alone.Describe);
+    }
+
     /// <summary>The registry's spelling is the plan's, so a name typed in another case is judged and said as Repositories lists it.</summary>
     [Fact]
     public void A_repository_is_found_whatever_its_case_and_said_as_the_registry_spells_it()
