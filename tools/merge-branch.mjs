@@ -1046,7 +1046,7 @@ export const PATH_CHECKS = Object.freeze([
   },
   {
     gate: 'censuses',
-    paths: ['src/Daoris.Desktop/**', 'src/Daoris.Web/src/locales/**', 'src/Daoris.Service/Daoris.Service.Tests/fixtures/**'],
+    paths: ['src/Daoris.Desktop/Daoris.Desktop.{Driver,Driver.Tests,Modules,Modules.Tests,App}/**/*.cs', 'src/Daoris.Service/Daoris.Service.Tests/fixtures/participant-work-readers.json'],
     why: 'the desktop\'s censuses, every test class that reads the sources by text (`--filter Category=Census`, REVIEW2 T6): a source they walk, or a table they hold it to; the CI beside ran them hours after a merge',
   },
 ]);
@@ -1061,12 +1061,12 @@ const pathCheckPaths = (check, paths, reach, lanes) => {
 };
 
 // The .NET suites with a test that reads the page's catalogues or sources: MOD9's incident was two of them.
-const PAGE_READERS = ['service', 'driver', 'modules'];
-const DESKTOP_SUITES = ['driver', 'modules', 'driver-process', 'driver-process-git', 'modules-process'];
+const PAGE_READERS = ['service', 'driver', 'modules', 'censuses'];
+const DESKTOP_SUITES = ['driver', 'modules', 'censuses', 'driver-process', 'driver-process-git', 'modules-process'];
 // What the CLI's sources reach; a narrow rule for one of its files names these as well, since the first rule decides.
 const CLI_READERS = ['driver', 'rehearse', 'rehearse-family', 'web', 'deployment'];
 // What the modules lane's sources reach, named by its narrow rule for the C# sources as well (MOD9c).
-const MODULES_READERS = ['modules', 'modules-process', 'deployment'];
+const MODULES_READERS = ['modules', 'censuses', 'modules-process', 'deployment'];
 // What the driver lane's sources reach, named by its narrow rule for the sources the page's twins parse as well (MOD9e).
 const DRIVER_READERS = [...DESKTOP_SUITES, 'rehearse-family', 'deployment'];
 

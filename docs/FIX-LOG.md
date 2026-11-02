@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-02 - A merge-branch test run from a builder's worktree registered a worktree of the real repository (REVIEW2)
+
+- **Symptom:** the `ci-keep` fixture's `--ci` run added `local/gate-tree` to the real repository's `git worktree list` and the run then stalled.
+- **Root cause:** the test helpers inherited `GIT_DIR`/`GIT_WORK_TREE` and the like, which a builder's worktree sets, so the fixture's git, and the tool it ran, reached the real `.git`.
+- **Fix:** the fixture's `git` helper and the tool's spawn drop the repository-locating `GIT_*` variables; a test sets `GIT_DIR` to the real repository and shows the fixture's git is its own and the real worktree list is unchanged after a `--ci` run.
+- **Verify:** `merge-branch.test.ts`, the end-to-end umbrella test (2 passes).
+
 ## 2026-11-02 - Censuses were found hours after a merge, by name in a skill's list (REVIEW2 T6)
 
 - **Symptom:** the censuses (every test class that reads the sources by text) were named by hand in the dispatch skill, so a builder ran the ones it remembered and the CI beside found the rest; the page's provider census, presentational and page-measure tests were not in `check:web-rules`.
