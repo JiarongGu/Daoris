@@ -223,6 +223,21 @@ describe('what needs a person, worded', () => {
     }
   });
 
+  /** WORKFLOWCLEAN1g-ii: the home's one conversion row is named by the places it counts, in each language, and offers no act of its own. */
+  it('names the conversion row by the places it counts and offers no act', async () => {
+    const item = words(row('workflow-convert', 'home', '2026-11-02T09:00:00Z', { convert: { places: 2 } }));
+    expect(item).toMatchObject({ kind: 'workflow-convert', title: '2 places follow old workflow shapes' });
+    expect(words(row('workflow-convert', 'home', null, { convert: { places: 1 } })).title).toBe('1 place follows old workflow shapes');
+    expect(attentionActs(item)).toEqual([]);
+    expect(attentionGroup(item)).toBe('word');
+    await i18n.changeLanguage('zh');
+    try {
+      expect(words(row('workflow-convert', 'home', null, { convert: { places: 2 } })).title).toBe('2 个地方沿用旧的工作流形态');
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
   /**
    * GITAUTH1a (the git auth design §5.2, §7.4): a held git remote, said once: its host and why as its title, per class; its repositories,
    * that Daoris does not try it again until *Try again* or a change, and git's own words, as written; *Try again* its one act; listed
@@ -765,7 +780,7 @@ describe('the groups', () => {
       'account-wait': 'holding', 'signed-out': 'holding',
       proposal: 'word', intake: 'word', departure: 'word', 'set-up': 'word', opinion: 'word', rule: 'word', helper: 'word',
       'hand-over': 'word', unanswerable: 'word', review: 'ready', work: 'word', space: 'word', 'git-held': 'word', memory: 'word',
-      integration: 'word',
+      integration: 'word', 'workflow-convert': 'word',
     });
   });
 
@@ -1156,7 +1171,7 @@ describe('the place each wait is counted at', () => {
       proposal: 'quests', intake: 'quests', unanswerable: 'quests', 'parked-quest': 'quests', 'steward-stopped': 'quests', 'policy-hold': 'quests', 'request-declined': 'quests', 'go-ahead': 'quests',
       departure: 'quests', 'set-up': 'quests', trust: 'quests',
       work: 'projects', integration: 'projects',
-      rule: 'agents', 'account-wait': 'agents', 'signed-out': 'agents',
+      rule: 'agents', 'account-wait': 'agents', 'signed-out': 'agents', 'workflow-convert': 'agents',
       space: 'settings',
       confirmation: null,
       'git-held': 'settings',
