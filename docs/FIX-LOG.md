@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-02 - A draft card's Open in the editor took the told draft for the saved version (REVIEW2 P4)
+
+- **Symptom:** *Use here* on an editor opened from a draft card chose a saved version without the draft's changes, and the save review compared the draft with itself.
+- **Root cause:** the editor set its baseline to `startFrom.graph`, which for a card is the draft the conversation was told, not version `base`.
+- **Fix:** a start marked `told` leaves the baseline unknown, reads `WORKFLOW_SHOW {id, version: base}` (`onShow` takes an optional version) and sets the baseline to that body; until then *Use here* is unsaved.
+- **Verify:** `WorkflowEditor.save.test.tsx` (two REVIEW2 P4 cases; the first red first).
+
 ## 2026-11-02 - A role saved from Taken by was applied to the draft as it was at the press (REVIEW2 P7)
 
 - **Symptom:** a change made to the draft while a role's save was on its way was lost when the save answered; the step named the role on the old draft.

@@ -52,7 +52,8 @@ export type WorkflowEditorBridge = {
   staffing?: StepStaffing;
   /** The saved version last asked for by `onShow`, once it is answered. */
   shown: WorkflowShownAnswer | null;
-  onShow: (id: string | null) => void;
+  /** Reads a saved workflow: its newest version, or the one named. */
+  onShow: (id: string | null, version?: number) => void;
   /** The newest planned save's answer, and whether one is on its way. */
   judged: WorkflowSaveAnswer | null;
   /** The fingerprint of the draft `judged` answered (`draftFingerprint.ts`); absent, the answer is not known to be of any draft. */
@@ -81,7 +82,7 @@ export type WorkflowEditorProps = WorkflowEditorBridge & {
   /** Where *Use here* chooses the saved version: the page the editor opened from. */
   place: { repository: string } | { workspace: string };
   /** The steps it opens on, a graph as a version holds it, and the saved workflow and version they are, where they are one. */
-  startFrom?: { graph: unknown; id?: string; name?: string; base?: number | null };
+  startFrom?: { graph: unknown; id?: string; name?: string; base?: number | null; told?: boolean };
   /** The route and the pipeline the place opened it for, where the caller knows them: Ask Daoris is told them with the draft. */
   route?: string | null;
   pipeline?: 'development' | 'verification' | null;
@@ -192,7 +193,22 @@ function Composing({
   // The places an append reaches that the person let follow it, as one key (`consentKey`): consent holds for exactly that set.
   const [consented, setConsented] = useState<string | null>(null);
   // The steps the draft began from, which a save is reviewed against and *Use here* needs the draft to still be.
-  const [baseline, setBaseline] = useState<unknown>(startFrom?.graph ?? null);
+  // A draft the conversation was told is not the version it came from: that version is read, and until it is the baseline is unknown.
+  const [readingBase, setReadingBase] = useState<{ id: string; version: number } | null>(
+    () => (startFrom?.told && startFrom.id && startFrom.base != null ? { id: startFrom.id, version: startFrom.base } : null),
+  );
+  const [baseline, setBaseline] = useState<unknown>(readingBase ? null : startFrom?.graph ?? null);
+  const askedBase = useRef(false);
+  useEffect(() => {
+    if (!readingBase || askedBase.current) return;
+    askedBase.current = true;
+    onShow(readingBase.id, readingBase.version);
+  }, [readingBase, onShow]);
+  useEffect(() => {
+    if (!readingBase || shown?.id !== readingBase.id || shown.version !== readingBase.version) return;
+    setReadingBase(null);
+    if (shown.schema === 2) setBaseline(shown.body);
+  }, [readingBase, shown]);
   const [reviewing, setReviewing] = useState<string | null>(null);
   const [planning, setPlanning] = useState(false);
   const [rebasing, setRebasing] = useState(false);

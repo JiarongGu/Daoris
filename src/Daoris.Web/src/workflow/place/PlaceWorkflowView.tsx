@@ -163,7 +163,7 @@ export function PlaceWorkflowView({
     const told = opens.draft ? toldGraph(opens.draft) : null;
     show({
       is: 'edit',
-      ...(told ? { from: { graph: told, ...(opens.base != null && opens.workflow ? { id: opens.workflow, base: opens.base } : {}), ...(opens.name ? { name: opens.name } : {}) } } : {}),
+      ...(told ? { from: { graph: told, ...(opens.base != null && opens.workflow ? { id: opens.workflow, base: opens.base, told: true } : {}), ...(opens.name ? { name: opens.name } : {}) } } : {}),
     });
     onOpened?.();
     // `show` reads this render's editor; the ask and the answer arriving are the reasons to open.
