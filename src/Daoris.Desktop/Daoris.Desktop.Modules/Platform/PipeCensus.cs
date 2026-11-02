@@ -315,7 +315,7 @@ public sealed class PipeCensus
             "HELPER_WAITS", "HELP_CONVERSATIONS", "HELP_PROPOSALS", "HELP_PUBLISHED", "HELP_WIRED", "HEAVY_MARKS", "INTEGRATION", "HEAVY_SLOT", "HISTORY_PLAN", "LANDING", "LINES", "OPINION_GATE",
             "OPINION_WAITS", "PERMISSION_WAITS", "PLUGIN", "PLUGINS", "PLUGIN_ACTIVITY", "PLUGIN_READ", "ROLES", "RULES", "SESSION_DIFF", "SESSION_FILE",
             "SESSION_FILES", "SESSION_GROUPS", "SESSION_HAND_OVER_ASK", "SESSION_HELPERS", "SESSION_PARTNERS", "SESSION_HISTORY", "SESSION_OPENINGS", "SESSION_OPTIONS",
-            "SESSION_PROCESS", "SESSION_QUESTION", "SESSION_SUPERVISOR", "SESSION_QUEUE", "SESSION_RECORD", "SESSION_SEARCH", "SESSION_SPENT", "SESSION_STREAMS", "SESSION_WHERE", "SETUP_PLAN", "STARTS",
+            "SESSION_PROCESS", "SESSION_QUESTION", "SESSION_SUPERVISOR", "SESSION_QUEUE", "SESSION_RECORD", "SESSION_SEARCH", "SESSION_SPENT", "SESSION_STREAMS", "SESSION_WHERE", "STARTS",
             // COWORKVIEW1a: who is at work on a session, from the slices and the lineage files.
             "SESSION_AT_WORK",
             // LINESTOGETHER1c: the sessions beside one, a read of git in their trees.
@@ -401,7 +401,7 @@ public sealed class PipeCensus
             "SET_ROLE",
             // AGENTSPLACE1g2: several roles' changes made as one, the Roles mode's suggested choices.
             "SET_ROLES",
-            "SETUP_PRESS", "SET_ACCESS", "SET_GIT_ACCESS", "SET_ACTOR", "SET_AGENT_SETTINGS", "SET_CAP", "SET_COMMITS", "SET_COOLOFF", "SET_DRIVABLE", "SET_HAND_OVER", "SET_HELPERS", "SET_HELP_MODE",
+            "SET_ACCESS", "SET_GIT_ACCESS", "SET_ACTOR", "SET_AGENT_SETTINGS", "SET_CAP", "SET_COMMITS", "SET_COOLOFF", "SET_DRIVABLE", "SET_HAND_OVER", "SET_HELPERS", "SET_HELP_MODE",
             // HELPMODE1c2b: what Ask Daoris's housekeeping may do, the person's grant alone.
             "SET_HELP_GRANT",
             // FABRIC-PIPELINE1a: the landed route and the gates it runs unasked, accepted by their blob (D156).
@@ -540,7 +540,7 @@ public sealed class PipeCensus
             "SESSION_PERMISSION_ANSWER",
             // A word kept whose going on is a quest's start or a park's resume, which the drain's look holds until the restart: a go-ahead, a
             // quest retried, a set-up's ask, a helper or hand-over declined, the supervisor's.
-            "SESSION_GO_AHEAD", "RETRY_QUEST", "SETUP_PRESS", "SESSION_HELPER_DECLINE", "SESSION_HAND_OVER_DECLINE", "SUPERVISOR_OVERRULE",
+            "SESSION_GO_AHEAD", "RETRY_QUEST", "SESSION_HELPER_DECLINE", "SESSION_HAND_OVER_DECLINE", "SUPERVISOR_OVERRULE",
             "SUPERVISOR_ANSWER", "SUPERVISOR_DEFER",
             // A record, a mark or a list cleared: no tree, no branch and no process (a history's clear never takes a tree). A memory row
             // decided, which the service's applier settles and no session runs.

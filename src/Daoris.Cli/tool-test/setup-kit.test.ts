@@ -247,7 +247,7 @@ test('the machine log\'s lines of one event are read as the data each carried, i
 // padded as C# pads it, then the pacing, the agent and the rule; a press's message and the rules it added; a steer's
 // message and where the plan stands.
 const WORKSPACE_LIST = [
-  'setup: workspace `meridian`, 2 repositories with a checkout here, the ones other work touches first',
+  'place: workspace `meridian`, 2 repositories with a checkout here, the ones other work touches first',
   `${''.padStart(3)}  ${'repository'.padEnd(10)} ${'asked'.padStart(5)}  ${'read'.padStart(4)}  ${'sessions'.padStart(8)}  now`,
   `${'1'.padStart(3)}  ${'beacon'.padEnd(10)} ${'0'.padStart(5)}  ${'0'.padStart(4)}  ${'0'.padStart(8)}  to go`,
   `${'2'.padStart(3)}  ${'quarry'.padEnd(10)} ${'3'.padStart(5)}  ${'12'.padStart(4)}  ${'1'.padStart(8)}  to go`,
@@ -265,7 +265,7 @@ const WORKSPACE_PLAN = [
 ];
 const WORKSPACE_PRESSED = [
   ...WORKSPACE_LIST,
-  'setup: the plan for workspace `meridian` is written: 2 repositories, one at a time, pausing once the first 1 have closed. '
+  'place: the plan for workspace `meridian` is written: 2 repositories, one at a time, pausing once the first 1 have closed. '
     + 'The driver\'s loop asks the next at each look while fewer are open; with no loop running, nothing is asked until one runs.',
   'added to workspace `meridian`\'s rules, so each set-up\'s session may run the doctrine tool:',
   ...SETUP_RULES.map((rule) => `  ${rule}`),
@@ -273,8 +273,8 @@ const WORKSPACE_PRESSED = [
   '',
 ];
 const WORKSPACE_RESUMED = [
-  'setup: the plan for workspace `meridian` carries on past its pilot.',
-  'setup: workspace `meridian`, a plan made 2026-10-02: one at a time, a pilot of 1',
+  'place: the plan for workspace `meridian` carries on past its pilot.',
+  'place: workspace `meridian`, a plan made 2026-10-02: one at a time, a pilot of 1',
   `${'1'.padStart(3)}  ${'beacon'.padEnd(6)}  waiting for your review — its set-up #q1 is done and waits for your review; once it is merged, *Bring up to date* registers it.`,
   `${'2'.padStart(3)}  ${'quarry'.padEnd(6)}  to go`,
   'Setting up — 1 waiting for your review · 1 to go',
@@ -332,7 +332,7 @@ test('a steer is read as its message, where each repository stands, and the head
 });
 
 test('what is not a workspace plan\'s output reads as nothing at all', () => {
-  const nothing = readWorkspaceSetup('setup: name the workspace: `--workspace <name>`.\nusage: daoris-driver setup --workspace <name> [--plan]\n');
+  const nothing = readWorkspaceSetup('place: name the workspace: `--workspace <name>`.\nusage: daoris-driver place --workspace <name> --adoption [--plan]\n');
   assert.equal(nothing.workspace, null);
   assert.deepEqual(nothing.rows, []);
   assert.deepEqual(nothing.standing, []);

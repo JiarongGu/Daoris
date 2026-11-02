@@ -3,7 +3,7 @@
  * the doctrine tool's launcher a child of Daoris finds by its bare name, the PATH that puts it first, and a
  * reading of what `daoris-driver setup` prints; for the registration that follows the landing (WSSETUP5a), a
  * reading of what `daoris-driver register` prints and of the machine log's lines; and, for a workspace set up one
- * repository at a time (WSSETUP6a), a reading of what `daoris-driver setup --workspace` prints.
+ * repository at a time (WSSETUP6a), a reading of what `daoris-driver place --workspace` prints.
  *
  * ## Why the workspace's CLI, and a launcher of the rehearsal's own
  *
@@ -176,15 +176,15 @@ export function readEvents(out, event) {
 const SETUP_STATES = ['set up', 'waiting for your review', 'setting up', 'parked', 'to go', 'skipped', 'declined', 'deleted'];
 
 /**
- * What `daoris-driver setup --workspace <name> …` printed (`WorkspaceSetupCommand`, WSSETUP6), read back. `rows` is the
+ * What `daoris-driver place --workspace <name> --adoption …` printed (`WorkspaceSetupCommand`, WSSETUP6), read back. `rows` is the
  * list a press works from (what touched each, its state now, and each refusal under it); `atOnce`, `pilot` and `agent`
  * the pacing rows; `rules` the ones a press would add or added; `refusals` the press's own, after `refused:`; `messages`
- * each `setup: …` sentence that is not a head (a press's, a steer's); `standing` where each repository of a plan stands,
+ * each `place: …` sentence that is not a head (a press's, a steer's); `standing` where each repository of a plan stands,
  * with `summary` its head line; `nothingWritten` whether a plan said it wrote, published and added nothing.
  */
 export function readWorkspaceSetup(out) {
   const lines = out.split(/\r?\n/);
-  const head = lines.map((line) => /^setup: workspace `([^`]+)`, /.exec(line)).find(Boolean);
+  const head = lines.map((line) => /^place: workspace `([^`]+)`, /.exec(line)).find(Boolean);
   const rows = [];
   const standing = [];
   for (const line of lines) {
@@ -218,7 +218,7 @@ export function readWorkspaceSetup(out) {
     agent: row(lines, 'agent', 10),
     rules: rulesAt < 0 ? [] : following(lines, rulesAt, '  ').filter((each) => /^Bash\(.+\)$/.test(each)),
     refusals: refusedAt < 0 ? [] : following(lines, refusedAt, '  - '),
-    messages: lines.filter((line) => line.startsWith('setup: ') && !/^setup: workspace `/.test(line)).map((line) => line.slice(7)),
+    messages: lines.filter((line) => line.startsWith('place: ') && !/^place: workspace `/.test(line)).map((line) => line.slice(7)),
     standing,
     summary: lines.find((line) => line.startsWith('Setting up — ')) ?? null,
     nothingWritten: lines.includes('--plan: nothing was written, published or added.'),

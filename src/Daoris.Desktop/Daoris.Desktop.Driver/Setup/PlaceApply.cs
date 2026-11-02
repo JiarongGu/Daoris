@@ -230,6 +230,12 @@ public static class PlaceApplies
         }
 
         var configuration = receipt.Of(PlaceOperations.Configuration)?.Outcome ?? PlaceOutcomes.Done;
+        if (configuration == PlaceOutcomes.Done)
+        {
+            // Under oldest-first and a small cap, many set-ups asked together would hold every slot for hours (D117 §9): one at a time unless said.
+            receipt = await PaceAsync(doors, receipts, receipt, receipt.Ask.AtOnce ?? WorkspaceSetupRules.DefaultAtOnce, ct).ConfigureAwait(false);
+        }
+
         foreach (var operation in receipt.Operations.Where(each => each.Kind == PlaceOperations.Adoption && each.Outcome == PlaceOutcomes.Pending).ToList())
         {
             if (configuration == PlaceOutcomes.Failed)
@@ -412,6 +418,49 @@ public static class PlaceApplies
         return Write(receipts, receipt.With(operation.Id, each => outcome.Published
             ? each with { Outcome = PlaceOutcomes.Done, Quest = outcome.QuestId, Note = outcome.Message }
             : each with { Outcome = PlaceOutcomes.Failed, Note = outcome.Message }));
+    }
+
+    /// <summary>
+    /// An adoption covering more of a workspace's repositories than <paramref name="atOnce"/> (the ask's, else the plan's default of one) is paced (WORKFLOWCLEAN1 1f): the apply writes that
+    /// workspace's plan, which the driver's tick works as it always has, and the operations are done once the plan is written. A workspace with
+    /// no more than <c>atOnce</c> of them is asked now, as a single adoption is. A plan already working for those repositories is the same write.
+    /// </summary>
+    private static async Task<PlaceReceipt> PaceAsync(
+        PlaceApplyDoors doors, PlaceReceipts receipts, PlaceReceipt receipt, int atOnce, CancellationToken ct)
+    {
+        var pending = receipt.Operations.Where(each => each.Kind == PlaceOperations.Adoption && each.Outcome == PlaceOutcomes.Pending).ToList();
+        if (pending.Count <= atOnce) return receipt;
+
+        var registry = await doors.Place.RegistryAsync(ct).ConfigureAwait(false);
+        var groups = pending
+            .Select(operation => (Operation: operation, Row: registry.FirstOrDefault(row => string.Equals(row.Repository, operation.Repository, StringComparison.OrdinalIgnoreCase))))
+            .Where(each => each.Row is not null)
+            .GroupBy(each => RemoteTarget.Workspace(each.Row!.Workspace), StringComparer.OrdinalIgnoreCase);
+        foreach (var group in groups.Where(each => each.Count() > atOnce))
+        {
+            var order = group.Select(each => each.Row!.Repository).ToList();
+            var existing = WorkspaceSetupFile.Load(doors.Home, group.Key).Plan;
+            var outcome = existing is { Live: true } && order.All(name => existing.Order.Contains(name, StringComparer.OrdinalIgnoreCase))
+                ? new WorkspaceSetupOutcome(true, "", existing, [])
+                : WorkspaceSetup.Write(doors.Home, group.Key, order, atOnce, receipt.Ask.Pilot ?? WorkspaceSetupRules.DefaultPilot, DateTimeOffset.UtcNow);
+            foreach (var (operation, _) in group)
+            {
+                receipt = Write(receipts, receipt.With(operation.Id, each => outcome.Written
+                    ? each with
+                    {
+                        Outcome = PlaceOutcomes.Done,
+                        Note = $"paced: workspace `{group.Key}`'s plan asks it with {order.Count - 1} other{(order.Count == 2 ? "" : "s")}, {atOnce} at a time.",
+                    }
+                    : each with { Outcome = PlaceOutcomes.Failed, Note = outcome.Message }));
+            }
+
+            if (outcome.Written && outcome.Plan is { } plan && doors.Setup is IWorkspaceSetupWorld world)
+            {
+                world.Said(SetupLine.Planned(plan.Workspace, plan.Order.Count, plan.AtOnce, plan.Pilot));
+            }
+        }
+
+        return receipt;
     }
 
     /// <summary>The quest to <paramref name="repository"/> whose body carries the plan's key, or null where none does.</summary>

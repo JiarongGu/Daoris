@@ -823,7 +823,6 @@
     "Setup/Domain/WorkspaceSetupRules.cs": "Setup",
     "Setup/SelfDescriptionFiles.cs": "Setup",
     "Setup/WorkOrdersSetupWiring.cs": "Setup",
-    "Setup/SetupCommand.cs": "Setup",
     "Setup/SetupPorts.cs": "Setup",
     "Setup/SetupPress.cs": "Setup",
     "Setup/SetupWorld.cs": "Setup",

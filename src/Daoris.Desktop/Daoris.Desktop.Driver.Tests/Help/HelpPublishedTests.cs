@@ -63,17 +63,6 @@ public sealed class HelpPublishedTests : HelpProposalsFixture
         Assert.Equal("a1b2c3d4", Assert.Single(new HelpPublished(_home).Read("h1")).Ask);
     }
 
-    [Fact]
-    public async Task A_setups_apply_keeps_its_ask_and_its_quest()
-    {
-        var doors = new HelpStandInDoors { SetUp = new SetupOutcome(true, "Published.", "a2b3c4d5", "q2b3c4d5", []) };
-
-        await ApplyAsync(new HelpProposal("p8", "setup", "setup", "atlas", null, null, null, "why", "h1", "proposed"), doors, SetupFacts);
-
-        var kept = Assert.Single(new HelpPublished(_home).Read("h1"));
-        Assert.Equal(("p8", "setup", "work", "a2b3c4d5", "q2b3c4d5"), (kept.Proposal, kept.Kind, kept.Workspace, kept.Ask, kept.Quest));
-    }
-
     /// <summary>A refused ask, an answer naming no id, and a change that publishes nothing keep nothing: there is nothing to open.</summary>
     [Fact]
     public async Task An_apply_that_published_nothing_keeps_nothing()
@@ -154,23 +143,4 @@ public sealed class HelpPublishedTests : HelpProposalsFixture
     }
 
     private static DateTimeOffset At(string when) => DateTimeOffset.Parse(when, System.Globalization.CultureInfo.InvariantCulture);
-
-    /// <summary>The machine a set-up is judged against: `atlas` nobody adopted, driven here in a tree of its own, as LAYOUT8's tests press it.</summary>
-    private static readonly HelpMachineFacts SetupFacts = Facts with
-    {
-        Setups =
-        [
-            new SetupPlan("atlas")
-            {
-                Workspace = "work",
-                Facts = new LayoutFacts { Line = "main", Commit = "0123456789abcdef0123456789abcdef01234567" },
-                Tools = new SetupTools("node", "v24.1.0", null, "daoris", "0.9.0", null),
-                Case = SetupCase.Whole,
-                Title = "Set up this repository for every agent (2026-10-22)",
-                Body = "What is asked, and whose it is.",
-                Landing = LandingRules.Choose(DriverConfig.Empty, "atlas", "work"),
-                Adapter = "claude-code-acp",
-            },
-        ],
-    };
 }

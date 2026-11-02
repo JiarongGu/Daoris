@@ -84,6 +84,8 @@ public static class PlaceDigests
         var ask = plan.Asked;
         var parts = new List<string[]>();
         parts.Add(["ask", ask.Preset, Flag(ask.Opinion), Flag(ask.Look), Flag(ask.Adoption), ask.Builds ?? "", Flag(ask.Drive), .. ask.Repositories]);
+        // Pacing joins the digest only where it is said, so a plan read without it keeps the digest it had.
+        if (ask.AtOnce is not null || ask.Pilot is not null) parts.Add(["pacing", ask.AtOnce?.ToString() ?? "", ask.Pilot?.ToString() ?? ""]);
         foreach (var row in plan.Repositories)
         {
             parts.Add(["repository", row.Repository, row.Workspace]);

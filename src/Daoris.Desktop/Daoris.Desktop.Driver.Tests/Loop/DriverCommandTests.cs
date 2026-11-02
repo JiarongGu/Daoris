@@ -354,40 +354,39 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
-    /// LAYOUT7 (D117 §6.1): the set-up press's terminal door is named in the usage, routed by the host to its console,
-    /// and spoken in the library's words, which <c>SetupPressTests</c> holds.
+    /// WORKFLOWCLEAN1 1f: the one adoption door is <c>place … --adoption</c>, named in the usage and routed by the host to the place console; the
+    /// <c>setup</c> verb is gone from both.
     /// </summary>
     [Fact]
-    public void The_usage_names_the_set_up_press_and_the_host_routes_it_to_the_librarys_words()
+    public void The_usage_names_place_adoption_and_the_setup_verb_is_gone()
     {
-        Assert.Contains("\n  setup <repository> [--plan] [--what-it-builds <kind>]\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
-        Assert.Equal("usage: daoris-driver setup <repository> [--plan] [--what-it-builds <kind>]", SetupCommand.Usage);
+        var usage = DriverCommand.Usage.ReplaceLineEndings("\n");
+        Assert.Contains("\n  place <repository>… --preset <id> [--with opinion,look] [--adoption [--what-it-builds <kind>] [--at-once <n>] [--pilot <n>]] [--drive] (--plan | --apply)\n", usage);
+        Assert.DoesNotContain("\n  setup ", usage);
+        Assert.StartsWith("usage: daoris-driver place <repository>… --preset <id> [--with opinion,look] [--adoption [--what-it-builds <kind>]", PlaceCommand.Usage);
 
         var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
-        Assert.Contains("if (args is [\"setup\", .. var setupArgs])", program);
-        Assert.Contains("SetupConsole.RunAsync(setupArgs, log)", program);
-
-        var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "SetupConsole.cs"));
-        Assert.Contains("SetupCommand.Problem(args)", console);
-        Assert.Contains("new SetupWorld(service, home), config, SetupWorld.DoorOf(config, home)", console);
+        Assert.DoesNotContain("args is [\"setup\"", program);
+        Assert.Contains("PlaceConsole.RunAsync(placeArgs, log)", program);
+        Assert.False(File.Exists(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "SetupConsole.cs")));
     }
 
     /// <summary>
-    /// WSSETUP6 (D124 §4.5): the workspace plan's terminal door is named in the usage, each form on its own line, and the host's
-    /// set-up console hands the words that name a workspace to the library's command, with the real world and this host's log.
+    /// WSSETUP6 (D124 §4.5): the workspace plan's terminal door is <c>place --workspace</c>, each form on its own line, and the place console
+    /// hands the words that name a workspace to the library's command, with the real world and this host's log.
     /// </summary>
     [Fact]
-    public void The_usage_names_the_workspace_plan_and_the_set_up_console_routes_it_to_the_librarys_words()
+    public void The_usage_names_the_workspace_plan_and_the_place_console_routes_it_to_the_librarys_words()
     {
         var usage = DriverCommand.Usage.ReplaceLineEndings("\n");
-        Assert.Contains("\n  setup --workspace <name> [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]\n", usage);
-        Assert.Contains("\n  setup --workspace <name> --pause | --resume | --stop\n", usage);
-        Assert.Contains("setup --workspace <name> --pause | --resume | --stop", WorkspaceSetupCommand.Usage);
+        Assert.Contains("\n  place --workspace <name> --adoption [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]\n", usage);
+        Assert.Contains("\n  place --workspace <name> --pause | --resume | --stop\n", usage);
+        Assert.Contains("place --workspace <name> --pause | --resume | --stop", WorkspaceSetupCommand.Usage);
 
-        var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "SetupConsole.cs"));
-        var workspace = console.IndexOf("WorkspaceSetupCommand.Asks(args)", StringComparison.Ordinal);
-        Assert.True(workspace >= 0 && workspace < console.IndexOf("SetupCommand.Problem(args)", StringComparison.Ordinal),
-            "the set-up console asks whether the words name a workspace before it reads them as one repository's");
+        var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "PlaceConsole.cs"));
+        var workspace = console.IndexOf("PlaceCommand.AsksWorkspace(args)", StringComparison.Ordinal);
+        Assert.True(workspace >= 0 && workspace < console.IndexOf("PlaceCommand.Read(args)", StringComparison.Ordinal),
+            "the place console asks whether the words name a workspace before it reads them as a place's repositories");
         Assert.Contains("WorkspaceSetupCommand.Problem(args)", console);
         Assert.Contains("new WorkspaceSetupWorld(service, home)", console);
         Assert.Contains("SessionLog.WriteSetup(log, line)", console);

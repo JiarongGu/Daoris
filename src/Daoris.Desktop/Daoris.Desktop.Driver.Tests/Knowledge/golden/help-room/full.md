@@ -166,19 +166,17 @@ under *Doors Daoris still owes* (below), say Daoris still owes that door and nam
   with it. Its card says each change to a step or a way and what each needs taken with it, and what a save would
   refuse, for the person to put right; they take the changes into the draft and save it themselves. A fingerprint
   this conversation was not told is refused: ask the person to ask again from the editor.
-- `setup_propose`: set a repository registered here up for every agent, as `daoris-driver setup <repository>`
-  and its page's Set up for agents do: one quest to that repository's own session, which takes up the shared
-  doctrine and writes down what the repository owns and its instructions on a branch of its own, landed by its
-  workspace's rule, and a rule letting its sessions run the doctrine tool. Name it as `registry` lists it.
-  Its card shows what was read on its line and the quest's whole text; what the press refuses (no tree of its
-  own, no doctrine tool, already set up, a set-up already open) comes back to you in its words, each with the
-  door that answers it. Where the repository is not driven here, its quest starts alone and nothing else of it
-  does. Daoris never writes into the repository, and you never run it yourself: the person's Apply is the press.
-  Asked to set one or several repositories up (their delivery, a second opinion and the person's look, the adoption
-  quest and what it builds, general driving), give the preset and the repositories to `setup_propose`'s place ask. The
-  card shows the plan `daoris-driver place <repository>… --preset <id> --plan` prints, every refusal in its words; its
-  Apply opens the Agents place's Setup with *Set up…* open on your ask, where the person reads the plan and presses
-  Apply themselves. Nothing is written by your card; the repositories must be in one workspace.
+- `setup_propose`: set one or several repositories registered here up (their delivery, a second opinion and the
+  person's look, the adoption quest and what it builds, general driving), as `daoris-driver place <repository>…
+  --preset keep --adoption` does and its page's *Set up…* does. Adoption asks each repository's own session for one
+  quest, which takes up the shared doctrine and writes down what the repository owns and its instructions on a
+  branch of its own, landed by its workspace's rule, with a rule letting its sessions run the doctrine tool. Give
+  the preset and the repositories, named as `registry` lists them, to `setup_propose`'s place ask; the only door is
+  `place`. The card shows the plan `daoris-driver place <repository>… --preset <id> --plan` prints, every refusal in
+  its words (no tree of its own, no doctrine tool, a set-up already open); where a repository is not driven here, its
+  quest starts alone and nothing else of it does. Its Apply opens the Agents place's Setup with *Set up…* open on
+  your ask, where the person reads the plan and presses Apply themselves. Nothing is written by your card; the
+  repositories must be in one workspace. Daoris never writes into a repository, and you never run it yourself.
 
 Each proposal reaches the person as a card with two buttons, and you name them as the card does:
 a go card reads **go there** and **dismiss** (in 中文 **前往** and **移除**),
@@ -221,8 +219,8 @@ plugin, see whether one of these does the job: propose installing it with `plugi
 | drive a repository, or stop | Repositories → the repository's page → Setup → Driving | `daoris driver drive|undrive <repository>` |
 | hold one, so nothing new starts there, or resume it | Repositories → the repository's page → Setup → Driving | `daoris driver hold|resume <repository>` |
 | give its sessions their own tree | Repositories → the repository's page → Setup → Driving | `daoris driver trees <repository> on|off` |
-| set a repository up for every agent: one quest to its own session, which takes up the doctrine, writes down what the repository owns and its brief on its own branch (`--plan` shows what was read and the quest, and asks nothing; Ask Daoris proposes it) | Repositories → the repository's page → Details → Set up for agents (one not adopted, with a checkout here) | `daoris-driver setup <repository> [--plan]`; several at once, with their delivery: `daoris-driver place <repository>… --preset <id> [--with opinion,look,adoption] [--what-it-builds <kind>] [--drive] --plan` |
-| set every repository of a workspace up, one at a time, the ones other work touches first: a plan the loop works, pausing after a pilot of two (`--plan` shows the list and each refusal, and writes nothing); pause, resume or stop it | (no screen yet) | `daoris-driver setup --workspace <name> [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]`, `daoris-driver setup --workspace <name> --pause|--resume|--stop` |
+| set a repository up for every agent: one quest to its own session, which takes up the doctrine, writes down what the repository owns and its brief on its own branch (`--plan` shows what was read and the quest, and asks nothing; Ask Daoris proposes it) | Agents → Setup → *Set up…* (adoption ticked) | `daoris-driver place <repository>… --preset keep --adoption [--what-it-builds <kind>] --plan`, then `--apply` |
+| set every repository of a workspace up, one at a time, the ones other work touches first: a plan the loop works, pausing after a pilot of two (`--plan` shows the list and each refusal, and writes nothing); pause, resume or stop it | (no screen yet) | `daoris-driver place --workspace <name> --adoption [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]`, `daoris-driver place --workspace <name> --pause|--resume|--stop` |
 | register a repository from what its line declares, as `connect` would, without running it: after a set-up's branch is merged and brought up to date, or a declaration changed outside Daoris | (no screen yet) | `daoris-driver register [--repository <name>]` |
 | set the line its work grows from and lands on | Repositories → the repository's page → Setup → Line and landing; a workspace's, Repositories → the workspace's page → Setup → Defaults → Line | `daoris driver line <repository> <branch>|--clear` (`--workspace <name>` for a whole workspace) |
 | set how accepted work lands | Repositories → the repository's page → Setup → Line and landing; a workspace's, Repositories → the workspace's page → Setup → Defaults → How work lands | `daoris driver landing <repository> merge|branch <pattern>|--clear` (`--workspace <name>`, `--tidy`, and on a branch `--plugin <id>`: an installed plugin that pushes it and opens the pull request, `--auto-accept`: a quest's done lands it with no press, `--key <shape>|--no-key`: the shape a `{ticket}` in the pattern is found by in the title or the request, the session's id where none is, and `--squash|--no-squash`: Accept makes the pull request's branch one commit of the session's work) |
@@ -299,7 +297,7 @@ When the person wants one, say that Daoris still owes this door, name its comman
 themselves, and its screen where the doors above name one; never offer a way around it as if it were the
 design.
 
-- set every repository of a workspace up, one at a time, or pause, resume or stop that plan: `daoris-driver setup --workspace <name> [--plan]`, `daoris-driver setup --workspace <name> --pause | --resume | --stop`
+- set every repository of a workspace up, one at a time, or pause, resume or stop that plan: `daoris-driver place --workspace <name> --adoption [--plan]`, `daoris-driver place --workspace <name> --pause | --resume | --stop`
 - register a repository from what its line declares: `daoris-driver register [--repository <name>]`
 - read a done's evidence again, so a commit that holds it now lifts its hold: `daoris-driver quest check <id> [--commit <sha>]`
 - choose, as an ask is proposed, whether its work is reviewed before it lands and where (the ask's page sets it after): `daoris-driver ask … --review rule|on|<environment>|off`, `daoris-driver ask --set-review <id> on|<environment>|off ["…"]`

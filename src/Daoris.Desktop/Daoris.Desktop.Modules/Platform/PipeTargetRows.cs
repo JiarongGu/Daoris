@@ -232,13 +232,6 @@ internal static class PipeTargetRows
             (a, p) => Text(At(Each(At(a, "proposals")).FirstOrDefault(each => Text(At(each, "id")) == PipeGround.Id(Text(p, "id"))), "state")) ?? ""));
         Row("TRUST_FOLDER", LoopGround.Wait("trust", "folder", "trustFile"));
 
-        // The set-up, and a repository's standing choices.
-        Row("SETUP_PRESS", new RepositoryGround("repository"), Plan("SETUP_PLAN", ["repository", "builds"], p => new { repository = Text(p, "repository"), builds = Text(p, "builds") },
-            (a, _) => Fp(
-                Pick(a, "repository", "workspace", "line", "layout", "adopted", "declares", "asks", "agent", "lands", "landsWith", "pressable", "builds"),
-                string.Join(",", Each(At(a, "rules")).Select(each => Text(each)).Order(StringComparer.Ordinal)),
-                string.Join(",", Each(At(a, "refusals")).Select(each => Text(At(each, "code"))).Order(StringComparer.Ordinal))),
-            TimeSpan.FromMinutes(2)));
         // AGENTSPLACE1b2: the plan the person read, by its digest, which pins each repository's changes, its declaration's blob and the acceptances
         // offered, read at the press's ask and again at its Confirm; a plan that moved between them is refused.
         Row("PLACE_APPLY", Plan("PLACE_PLAN",
