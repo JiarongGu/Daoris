@@ -24,7 +24,7 @@ export type WorkspaceTab = (typeof WORKSPACE_TABS)[number];
  * door may ask to see open. *Reach* is the workspace place's Sessions row that holds its rules and the machines its remote counts undeclared
  * (SETUPUX1v); the old tab keeps them under *remote*.
  */
-export type WorkspaceSection = 'defaults' | 'access' | 'supervisor' | 'remote' | 'reach';
+export type WorkspaceSection = 'defaults' | 'access' | 'git' | 'supervisor' | 'remote' | 'reach';
 
 /** Where the tab chosen is kept: one for the view, whichever repository it shows (§4.2, *remembered per view*). */
 const KEY = 'daoris.list.projects.tab';

@@ -45,6 +45,19 @@ public sealed class GitHeldToldTests
     }
 
     [Fact]
+    public void A_remote_nothing_serves_after_the_move_is_said_to_have_no_git_identity_and_not_to_be_tried()
+    {
+        var held = Held(failure: "no-identity");
+
+        Assert.Equal(
+            "**Git.** `origin` (ssh.dev.azure.com) has no git identity on this machine, so neither you nor Daoris can reach it now. Do not "
+            + "fetch, pull or push it: work from the line as this checkout has it, and say in your closing note that `origin` was not fetched. "
+            + "The person sees it in What needs you, where they set up a git identity for it.",
+            GitHolds.Told([held]));
+        Assert.StartsWith("`origin` is held: ssh.dev.azure.com has no git identity on this machine", GitHolds.Said(held), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Under_the_rewrite_a_session_is_told_what_git_remote_shows_and_to_name_its_tools_repository()
     {
         var told = GitHolds.Told([], rewritten: true, origin: "https://someone:s3cret@github.com/org-a/engine.git")!;

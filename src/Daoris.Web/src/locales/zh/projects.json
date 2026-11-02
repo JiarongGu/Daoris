@@ -387,6 +387,7 @@
   "projects.lineDoor": "在配置中修改",
   "projects.setup.section.driving": "驱动",
   "projects.setup.section.work": "主线与落地",
+  "projects.setup.section.git": "远程仓库",
   "projects.setup.section.access": "会话的访问",
   "projects.setup.section.heavy": "重型检查",
   "projects.setup.section.sessions": "会话",

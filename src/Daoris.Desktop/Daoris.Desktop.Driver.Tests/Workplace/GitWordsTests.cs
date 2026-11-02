@@ -93,12 +93,12 @@ public sealed class GitWordsTests
     [Fact]
     public void Each_class_has_one_code_and_the_codes_read_back()
     {
-        foreach (var failure in new[] { GitFailureClass.Refused, GitFailureClass.WriteRefused, GitFailureClass.HostUnknown, GitFailureClass.HostChanged })
+        foreach (var failure in new[] { GitFailureClass.Refused, GitFailureClass.WriteRefused, GitFailureClass.HostUnknown, GitFailureClass.HostChanged, GitFailureClass.NoIdentity })
         {
             Assert.Equal(failure, GitFailures.OfCode(GitFailures.Code(failure)));
         }
 
         Assert.Null(GitFailures.OfCode(GitFailures.Code(GitFailureClass.Unreachable)));
-        Assert.Null(GitFailures.OfCode("no-identity"));
+        Assert.Null(GitFailures.OfCode("denied"));
     }
 }

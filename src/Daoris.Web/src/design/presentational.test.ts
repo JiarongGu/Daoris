@@ -139,6 +139,8 @@ const ORGANISMS = new Set<string>([
   './agents/SignIn.tsx',
   // Settings → Get started (SETUP1a, D97): the organism over the guide, which reads the machine through `useMachine`.
   './help/setupGuide.tsx',
+  // Settings → Git (GITAUTH1e): the organism over the identities, its own folder's, which holds the presses the cards and rows beside it do not.
+  './settings/git/GitDomain.tsx',
 ]);
 
 /**

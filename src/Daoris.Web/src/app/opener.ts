@@ -250,6 +250,7 @@ const WORKSPACE_HOMES: Record<Exclude<WorkspaceSection, 'remote'>, PlaceAt> = {
   defaults: { section: 'workflow', row: 'defaults' },
   access: { section: 'sessions', row: 'access' },
   reach: { section: 'sessions', row: 'reach' },
+  git: { section: 'sessions', row: 'git' },
   supervisor: { section: 'roles', row: 'supervisor' },
 };
 

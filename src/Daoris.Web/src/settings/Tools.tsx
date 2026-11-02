@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ago, size } from '../locales/format';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
+import type { GitPageShown } from './git/Git';
 import {
   Button, Card, CardHeader, Inline, PathText, Pill, Prose, Segmented, SelectField, SettingList, SettingRow,
 } from '../design/ui';
@@ -70,6 +71,8 @@ export type ToolsShown = {
   /** Why the file does not read; every tool is then refused. */
   problem?: string | null;
   tools: ToolShown[];
+  /** Settings → Git's identities (GITAUTH1e), from the files alone. */
+  identities?: GitPageShown;
   locations: ToolListShown[];
   builtIn: ToolListShown;
 };

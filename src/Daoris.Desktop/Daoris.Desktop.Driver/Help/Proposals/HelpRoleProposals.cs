@@ -93,10 +93,12 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
         {
             var staffing = new RoleStaffing(home);
             var effective = choices ?? (config.Actors.TryGetValue(id, out var own) ? own : null);
-            var (resolved, notTaken) = StaffPolicyDoor.Judge(set, effective, policy, staffing.Policy(id), staffing.InUse());
+            var existing = staffing.Policy(id);
+            var (resolved, notTaken) = StaffPolicyDoor.Judge(set, effective, policy, existing, staffing.InUse());
             if (notTaken is not null) return Refused(notTaken.Said);
             policy = policy with { Policy = resolved, Preset = null, Clear = resolved is null };
-            return new HelpPlan(null, Describe(change, choices) + PolicyDescribe(resolved, effective), Terminal(change, choices) + PolicyTerminal(id, resolved, effective), null)
+            var before = (existing.Applied, config.Actors.TryGetValue(id, out var held) ? held : []);
+            return new HelpPlan(null, Describe(change, choices) + PolicyDescribe(set, before, existing, resolved, effective), Terminal(change, choices) + PolicyTerminal(id, resolved, effective), null)
             {
                 Role = new HelpRoleChange(change, choices, read, policy),
             };
@@ -105,8 +107,21 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
         return new HelpPlan(null, Describe(change, choices), Terminal(change, choices), null) { Role = new HelpRoleChange(change, choices, read) };
     }
 
-    private static string PolicyDescribe(StaffPolicy? policy, IReadOnlyList<ActorChoice>? choices) =>
-        policy is null ? " Its policy is cleared: its choices run in order." : $" Its policy: {StaffPolicyFlags.Said(policy, choices ?? [])}. This can spend differently.";
+    /// <summary>
+    /// The card's before and after in the fold's words (STAFFPOLICY1g): <i>Build: First that can run → Spread by weight (3:1); on a limit: next
+    /// by weight. This can spend differently.</i> A policy set for other choices ran in order, and the card says so.
+    /// </summary>
+    private static string PolicyDescribe(
+        RoleRecord role, (StaffPolicy? Policy, IReadOnlyList<ActorChoice> Choices) before, StaffPolicyRead existing, StaffPolicy? policy, IReadOnlyList<ActorChoice>? choices)
+    {
+        var was = existing.State == StaffPolicyRead.Stale
+            ? "First that can run (its policy was set for other choices, so it ran in order)"
+            : StaffPolicyFlags.Fold(before.Policy, before.Choices);
+        var name = role.Name.Texts.FirstOrDefault() ?? role.Id;
+        return policy is null
+            ? $" Policy, {name}: {was} → First that can run (its policy is cleared)."
+            : $" Policy, {name}: {was} → {StaffPolicyFlags.Fold(policy, choices ?? [])}. This can spend differently.";
+    }
 
     private static string PolicyTerminal(string id, StaffPolicy? policy, IReadOnlyList<ActorChoice>? choices) =>
         $" && daoris driver role policy {id} " + (policy is null ? "--clear" : StaffPolicyFlags.Terminal(policy, choices ?? []));

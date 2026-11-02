@@ -2460,7 +2460,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
     /// </summary>
     private bool SendText(string sessionId, ChatMessage said)
     {
-        var text = said.Prompt + ChatFiles.PathLines(said.Files);
+        var text = said.PromptWithFiles;
         var framed = _context.Talking.TryGetValue(sessionId, out var adapter) ? adapter.FrameMessage(text) : text;
         return _processes.Send(sessionId, framed);
     }
@@ -3875,7 +3875,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
                         foreach (var recorded in Recorded(message, Shown?.Invoke(message))) record(recorded);
                         // Each attached file named by its path, which the agent reads with its own tool
                         // (CONV4c, measured); the record keeps the person's words, not these lines.
-                        line = adapter.FrameMessage(message.Prompt + ChatFiles.PathLines(message.Files));
+                        line = adapter.FrameMessage(message.PromptWithFiles);
                     }
 
                     if (!processes.Send(sessionId, line))

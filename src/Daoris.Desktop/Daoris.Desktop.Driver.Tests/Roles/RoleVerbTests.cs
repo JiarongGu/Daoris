@@ -132,6 +132,34 @@ public sealed class RoleVerbTests : IDisposable
         Assert.Equal(StaffPolicyRead.Default, RoleStaffing.Of(File_)!.Policy("designer").State);
     }
 
+    /// <summary>
+    /// STAFFPOLICY1g (D205 point 9): in full access Ask Daoris has a shell, and the policy verb it runs there is a session's terminal, not the
+    /// person's: with no window to press it in, it is refused with the way to the person's Apply and writes nothing.
+    /// </summary>
+    [Fact]
+    public async Task The_policy_verb_run_from_a_session_s_terminal_is_refused_to_the_person_s_apply_and_writes_nothing()
+    {
+        var world = new DriverChoicesWorld
+        {
+            Verbs = DriverChoiceVerbs.All,
+            Instance = new InstanceWorld
+            {
+                Home = _home, Out = _out, Error = _error, Verb = "daoris",
+                Environment = name => name == DriverChoicesCommand.SessionVariable ? "s1a2b3c4" : null,
+            },
+            ConfigPath = File_,
+            Folder = _home,
+        };
+        Assert.Equal(0, await Run("set", "designer", "--name", "Designer", "--takes", "design", "claude-code-acp opus high"));
+        _out.GetStringBuilder().Clear();
+
+        var exit = await DriverChoicesCommand.RunAsync(["role", "policy", "designer", "--preset", "even"], world, CancellationToken.None);
+
+        Assert.Equal(1, exit);
+        Assert.Contains(DriverChoicesCommand.SessionsTerminal, _error.ToString());
+        Assert.Equal(StaffPolicyRead.Default, RoleStaffing.Of(File_)!.Policy("designer").State);
+    }
+
     [Fact]
     public void The_policy_verb_changes_the_home_and_so_joins_the_leased_changes()
     {

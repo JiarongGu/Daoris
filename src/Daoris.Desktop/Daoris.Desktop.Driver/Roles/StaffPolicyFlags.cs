@@ -94,6 +94,57 @@ internal static class StaffPolicyFlags
         return string.Join("; ", new[] { rule }.Concat(limits).Concat(moves.Any() ? [$"moves {string.Join(" ", moves)}"] : []).Concat(policy.Bound is { } most ? [$"at most {most} moves a day"] : []));
     }
 
+    /// <summary>
+    /// The policy in the fold's words (STAFFPOLICY1g, the staff policy design §6.5), as a card and the room say it: <i>Spread by weight (3:1);
+    /// on a limit: next by weight; at most 3 moves a day</i>. No policy, or one in use by order, is <i>First that can run</i>.
+    /// </summary>
+    public static string Fold(StaffPolicy? policy, IReadOnlyList<ActorChoice> choices)
+    {
+        if (policy is null) return "First that can run";
+        var parts = new List<string>
+        {
+            policy.Rule == StaffRules.Weight
+                ? $"Spread by weight ({string.Join(":", choices.Select(choice => policy.Of(StaffKey.Of(choice))?.Weight ?? 1))})"
+                : "First that can run",
+        };
+        parts.AddRange(policy.Choices.Select((choice, at) => (choice, at))
+            .Where(each => each.choice.Share is not null || each.choice.Budget is not null || each.choice.Takes is not null)
+            .Select(each => $"choice {each.at + 1}: " + string.Join(", ", new[]
+            {
+                each.choice.Share is { } share ? $"at most {share}%" : null,
+                each.choice.Budget?.Starts is { } starts ? $"{starts} starts a day" : null,
+                each.choice.Budget?.Tokens is { } tokens ? $"{tokens} reported tokens a day" : null,
+                each.choice.Takes is { } takes ? "takes " + string.Join("/", takes) : null,
+            }.OfType<string>())));
+        parts.AddRange(policy.Moves.OrderBy(each => each.Key, StringComparer.Ordinal).Select(move =>
+            $"on {Condition(move.Key)}: {Action(move.Value.Do)}" + (move.Value.After is { } after ? $" after {after}" : "") + (move.Value.UpTo is { } upTo ? $" for up to {upTo} minutes" : "")));
+        if (policy.Bound is { } most) parts.Add($"at most {most} moves a day");
+        return string.Join("; ", parts);
+    }
+
+    private static string Condition(string condition) => condition switch
+    {
+        StaffConditions.Limit => "a limit",
+        StaffConditions.SignedOut => "a signed-out account",
+        StaffConditions.ModelRefused => "a refused model",
+        StaffConditions.Transient => "a service that does not answer",
+        StaffConditions.Failed => "repeated errors",
+        StaffConditions.Quiet => "a quiet run",
+        StaffConditions.Budget => "a budget reached",
+        _ => condition,
+    };
+
+    private static string Action(string action) => action switch
+    {
+        StaffActions.Next => "next",
+        StaffActions.Weighted => "next by weight",
+        StaffActions.Wait => "wait for a reset",
+        StaffActions.Ask => "ask you",
+        StaffActions.Hold => "hold",
+        StaffActions.Retry => "try again",
+        _ => action,
+    };
+
     private static string Value(IReadOnlyList<string> words, int at, string grammar) =>
         at + 1 < words.Count ? words[at + 1] : throw new ChoiceWords($"`{words[at]}` needs its value: {grammar}.");
 

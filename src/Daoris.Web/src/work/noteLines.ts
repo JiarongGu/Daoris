@@ -703,6 +703,8 @@ export const NOTE_VALUES: Readonly<
   option: 'text', chosen: 'text', work: 'text', state: 'bgstate', repository: 'text',
   // SESSWATCH1a: the call a quiet session's agent was inside, its title as the record named it.
   call: 'text',
+  // STAFFPOLICY1c: why a role's policy chose the choice that ran, the judge's sentence as written.
+  said: 'text',
   // CHATFLOW1c: a chat run's workflow, by its id, and why it cannot be bound or land, in the driver's words.
   workflow: 'text', problem: 'text',
   // LIMITRESUME1b: the limit an attempt just after its reset met again, in the agent's own words.

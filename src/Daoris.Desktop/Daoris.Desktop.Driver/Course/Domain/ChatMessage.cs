@@ -106,8 +106,8 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files) : I
     public ProcessBriefing? Process { get; init; }
 
     /// <summary>
-    /// The routing standing a conversation is told at its start (COWORKVIEW1e-i, the cowork view design §R11.2 point 4), after the
-    /// process: a field of its own, so the record keeps it as its own note. Null for every other message.
+    /// The routing standing a conversation is told at its start (COWORKVIEW1e-i, the cowork view design §R11.2 point 4), handed after
+    /// the person's words: a field of its own, so the record keeps it as its own note. Null for every other message.
     /// </summary>
     public RoutingStanding? Routing { get; init; }
 
@@ -202,9 +202,20 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files) : I
     /// </summary>
     internal bool Said { get; init; }
 
-    /// <summary>What the agent is handed: the brief, the briefing, the process, the routing, the preface, the draft, then the person's words, each after a blank line.</summary>
-    public string Prompt => string.Join(
-        "\n\n", new[] { Brief?.Text, Briefing, Process?.Words, Routing?.Words, Preface, Draft?.Words }.Where(part => !string.IsNullOrEmpty(part)).Append(Text));
+    /// <summary>What the agent is handed: the brief, the briefing, the process, the preface, the draft, the person's words, then the routing, each after a blank line.</summary>
+    public string Prompt => Composed("");
+
+    /// <summary>
+    /// <see cref="Prompt"/> for a door that names a file by its path (CONV4c): the path lines follow the person's words, so the routing
+    /// standing is still the last thing the agent reads.
+    /// </summary>
+    public string PromptWithFiles => Composed(ChatFiles.PathLines(Files));
+
+    private string Composed(string afterWords) => string.Join(
+        "\n\n",
+        new[] { Brief?.Text, Briefing, Process?.Words, Preface, Draft?.Words }.Where(part => !string.IsNullOrEmpty(part))
+            .Append(Text + afterWords)
+            .Concat(string.IsNullOrEmpty(Routing?.Words) ? [] : [Routing!.Words]));
 
     /// <summary>A preface as a message carries it: trimmed, bounded, and null when there is none.</summary>
     public static string? Bound(string? preface) =>

@@ -32,6 +32,7 @@ const ACTS: Required<AttentionActs> = {
   answerAlone: () => {},
   handOver: () => {},
   gitTryAgain: () => {},
+  gitSetUp: () => {},
   quiet: () => {},
   passOver: () => {},
 };
@@ -631,6 +632,7 @@ const GIT_HELD: Attention[] = ([
   ['host-unknown', 'git.example.org', ['tools'], 'Host key verification failed.'],
   ['host-changed', 'gitlab.com', ['engine', 'game', 'tools'], 'WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!'],
   ['own-input', 'ssh.dev.azure.com', ['site'], ''],
+  ['no-identity', 'github.com', ['engine', 'tools'], ''],
 ] as const).map(([held, host, repositories, words], index): Attention => ({
   id: `default|${host}|${held}|all`, kind: 'git-held', where: 'origin', since: at(15 + index * 20), workspace: 'default',
   title: '', git: { host, class: held, holds: held === 'write-refused' ? 'writes' : 'all', remote: 'origin', repositories: [...repositories], words },

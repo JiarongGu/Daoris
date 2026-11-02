@@ -74,8 +74,19 @@ public static class GitOwnInput
         }
 
         GitHolds.Lift(home, root, remote, "setting", hold => hold.Class == GitFailures.Code(GitFailureClass.OwnInput));
+
+        // GITAUTH1e (§6.8): once the home has moved, an SSH remote nothing serves has no key to reach it with, so it is held before it
+        // connects; an HTTPS one reads anonymously and is classed where the host refuses it (GitMove.Reclass). A serving choice lifts it.
+        var nothing = GitMoved.Moved(home) && ServesNothing(home, repository, workspace, remote, address);
+        if (nothing && TreeRefs.ReachOf(address) == "ssh")
+            return GitHolds.Hold(home, root, repository, workspace, remote, address, git, GitFailureClass.NoIdentity, words: null, DateTimeOffset.UtcNow);
+        if (!nothing) GitHolds.Lift(home, root, remote, "identity", hold => hold.Class == GitFailures.Code(GitFailureClass.NoIdentity));
         return null;
     }
+
+    /// <summary>Whether nothing serves <paramref name="remote"/> at <paramref name="address"/> (§3.2) and the address names a host.</summary>
+    public static bool ServesNothing(string home, string repository, string? workspace, string remote, string address) =>
+        GitIdentityActs.GitAddressHost(address) is not null && Serves(home, repository, workspace, remote, address) == GitServeKind.None;
 
     /// <summary>Whether <paramref name="remote"/>'s SSH address resolves to <c>own</c> (§3.2): then nothing of the person's is held from it.</summary>
     public static bool ChoseOwn(string home, string repository, string? workspace, string remote, string address) =>

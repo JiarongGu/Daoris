@@ -8,7 +8,8 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../../locales/i18n';
 import { Menu } from '../ui';
 import { zoomBy, zoomLevel, zoomWheel } from '../zoom';
-import { Canvas, type CanvasHandle, type CanvasOptions, type CanvasSelection } from './Canvas';
+import { Canvas, type CanvasHandle, type CanvasMemory, type CanvasMinimap, type CanvasOptions, type CanvasSelection } from './Canvas';
+import { memoryKey } from './viewMemory';
 import type { Connect } from './useConnection';
 import type { WorldRead } from './worldBoxes';
 
@@ -23,16 +24,16 @@ const WORLD: WorldRead = {
   nodes: new Map([['a', { x: 900, y: 40, w: 200, h: 80 }], ['b', { x: 1700, y: 600, w: 200, h: 80 }], ['c', { x: 100, y: 1800, w: 200, h: 80 }]]),
 };
 
-function Drawn({ handle, active = true, options = OPTIONS, selected = null, selection = null, connect = null }: {
+function Drawn({ handle, active = true, options = OPTIONS, selected = null, selection = null, connect = null, remember = null, minimap = null }: {
   handle?: React.Ref<CanvasHandle>; active?: boolean; options?: CanvasOptions; selected?: string | null;
-  selection?: CanvasSelection | null; connect?: Connect | null;
+  selection?: CanvasSelection | null; connect?: Connect | null; remember?: CanvasMemory | null; minimap?: CanvasMinimap | null;
 }) {
   const pane = useRef<HTMLDivElement>(null);
   return (
     <Tooltip.Provider>
       <Canvas ref={handle} active={active} options={options} label="How the steps go on" width={800} rem={16} pane={pane}
         paneProps={{ 'data-flow-pane': '' }} tools={<button type="button">Show as list</button>} showTools entry="a" selected={selected}
-        selection={selection} connect={connect}>
+        selection={selection} connect={connect} remember={remember} minimap={minimap}>
         <div role="list">
           {[...WORLD.nodes.keys()].map((id) => (
             <div key={id} role="listitem" data-flow-node={id} tabIndex={id === 'a' ? 0 : -1}>
@@ -538,5 +539,83 @@ describe('the connection line', () => {
     fireEvent.pointerUp(node('b'), { pointerId: 1 });
     expect(connect.onConnect).toHaveBeenCalledWith('b');
     expect(line()).toBeNull();
+  });
+});
+
+// CANVAS1d (D224; the canvas design §4, trap 18): the minimap, switched in the sizing menu and remembered, and the viewer's place.
+
+describe('the minimap', () => {
+  const boxes = [...WORLD.nodes.values()];
+  afterEach(() => localStorage.clear());
+
+  it('stands where the world is past twice the viewport, its rectangle the view, and is switched in the sizing menu and remembered', async () => {
+    const handle = createRef<CanvasHandle>();
+    render(<Drawn handle={handle} minimap={{ boxes }} />);
+    act(() => handle.current!.measured(WORLD));
+    const map = document.querySelector<HTMLElement>('[data-canvas-minimap]');
+    expect(map).not.toBeNull();
+    expect(map).toHaveAttribute('aria-hidden', 'true');
+    const rect = document.querySelector<HTMLElement>('[data-canvas-minimap-view]')!;
+    // 160 px for the world's 2000: the viewport's 800 at 100% is 64 px wide.
+    expect(Number.parseFloat(rect.style.width)).toBeCloseTo(64, 1);
+    expect(Number.parseFloat(rect.style.left)).toBeCloseTo(view().x * 0.08, 1);
+    screen.getByRole('button', { name: 'Sizing: 100%' }).focus();
+    await user.keyboard('{Enter}');
+    await user.click(screen.getByRole('menuitemcheckbox', { name: 'Minimap' }));
+    expect(document.querySelector('[data-canvas-minimap]')).toBeNull();
+    expect(localStorage.getItem('daoris.canvas.minimap')).toBe('0');
+  });
+
+  it('is not offered to a drawing that gave none', () => {
+    const handle = createRef<CanvasHandle>();
+    render(<Drawn handle={handle} />);
+    act(() => handle.current!.measured(WORLD));
+    expect(document.querySelector('[data-canvas-minimap]')).toBeNull();
+  });
+});
+
+describe('the viewer\'s place', () => {
+  const memory = (over: Partial<CanvasMemory> = {}): CanvasMemory => ({ feature: 'code', key: 'repo', identity: 'same', ...over });
+  const kept = (identity: string) => localStorage.setItem(memoryKey('code', 'repo'), JSON.stringify({
+    identity, view: { x: 300, y: 500, k: 1.5 }, anchor: { id: 'a', group: null, screen: { x: 100, y: 60 } }, selected: 'c',
+  }));
+  afterEach(() => localStorage.clear());
+
+  it('opens an unchanged graph exactly where it was left', () => {
+    kept('same');
+    const handle = createRef<CanvasHandle>();
+    render(<Drawn handle={handle} remember={memory()} />);
+    act(() => handle.current!.measured(WORLD));
+    expect(view()).toEqual({ x: 300, y: 500, k: 1.5 });
+  });
+
+  it('keeps the surviving anchor where it stood on screen under a changed graph, and says the selection is gone', () => {
+    kept('older');
+    const onGone = vi.fn();
+    const handle = createRef<CanvasHandle>();
+    render(<Drawn handle={handle} remember={memory({ onGone })} />);
+    const without = { ...WORLD, nodes: new Map([...WORLD.nodes].filter(([id]) => id !== 'c')) };
+    act(() => handle.current!.measured(without));
+    // a's box is at x 900, y 40: its top left at (100, 60) on screen at 1.5.
+    expect(view().k).toBe(1.5);
+    expect((900 - view().x) * 1.5).toBeCloseTo(100, 3);
+    expect((40 - view().y) * 1.5).toBeCloseTo(60, 3);
+    expect(onGone).toHaveBeenCalledTimes(1);
+  });
+
+  it('claims nothing when nothing of the old graph survives, and keeps the place once the view has held still', () => {
+    kept('older');
+    const handle = createRef<CanvasHandle>();
+    vi.useFakeTimers();
+    try {
+      render(<Drawn handle={handle} remember={memory()} />);
+      act(() => handle.current!.measured({ ...WORLD, nodes: new Map([['z', { x: 0, y: 0, w: 200, h: 80 }]]) }));
+      expect(view().k).toBe(1);
+      act(() => { handle.current!.setView({ x: 120, y: 80, k: 1 }); });
+      act(() => { vi.advanceTimersByTime(500); });
+      expect(JSON.parse(localStorage.getItem(memoryKey('code', 'repo'))!)).toMatchObject({ identity: 'same', view: { x: 120, y: 80, k: 1 } });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
