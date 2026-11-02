@@ -312,7 +312,7 @@ public sealed class LimitWaitsTests : IDisposable
                 const text = frame.params.prompt.filter((block) => block.type === 'text').map((block) => block.text).join(' | ');
                 const links = frame.params.prompt.filter((block) => block.type === 'resource_link').map((block) => ' | link: ' + block.uri).join('');
                 note(`prompt[${account}]: ` + text.replace(/\r?\n/g, ' ') + links);
-                if (existsSync(join(gate, 'limited-' + account)) && text !== 'Earlier answered exchange.') {
+                if (existsSync(join(gate, 'limited-' + account)) && !text.startsWith('Earlier answered exchange.')) {
                   send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: "Internal error: You've hit your weekly limit" } });
                   return;
                 }
