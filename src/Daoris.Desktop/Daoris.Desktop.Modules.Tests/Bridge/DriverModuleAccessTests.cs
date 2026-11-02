@@ -20,13 +20,13 @@ public sealed class DriverModuleAccessTests : DriverModuleBridge
 
         await AnswerAsync(module, "SET_ACCESS", new { repository = "engine", access = new { goAheads = "never", permissions = "Asking" } });
         await AnswerAsync(module, "SET_ACCESS", new { workspace = "shop", access = "full" });
-        var state = await AnswerAsync(module, "SET_ACCESS", new { machine = true, access = new { landing = "rule" } });
+        var state = await AnswerAsync(module, "SET_ACCESS", new { machine = true, access = new { questions = "claude-code" } });
 
         Assert.Equal(
             """[{"repository":"engine","setting":{"full":false,"pauses":[{"pause":"permissions","value":"asking"},{"pause":"goAheads","value":"never"}]}}]""",
             state.GetProperty("access").GetRawText());
         Assert.Equal("""[{"workspace":"shop","setting":{"full":true,"pauses":[]}}]""", state.GetProperty("workspaceAccess").GetRawText());
-        Assert.Equal("""{"full":false,"pauses":[{"pause":"landing","value":"rule"}]}""", state.GetProperty("machineAccess").GetRawText());
+        Assert.Equal("""{"full":false,"pauses":[{"pause":"questions","value":"claude-code"}]}""", state.GetProperty("machineAccess").GetRawText());
 
         var resolved = AccessRules.Resolve(DriverConfig.Load(DriverConfigPath), "engine", "shop");
         Assert.Equal(("asking", "repository"), (resolved.Value(AccessRules.Permissions), resolved.Source(AccessRules.Permissions)));
@@ -42,9 +42,12 @@ public sealed class DriverModuleAccessTests : DriverModuleBridge
     public async Task A_pause_or_value_it_does_not_have_is_refused_and_nothing_is_written()
     {
         var module = Module();
-        await AnswerAsync(module, "SET_ACCESS", new { repository = "engine", access = new { landing = "rule" } });
+        await AnswerAsync(module, "SET_ACCESS", new { repository = "engine", access = new { routing = "intake" } });
         var before = File.ReadAllText(DriverConfigPath);
 
+        // WORKFLOWCLEAN1 1c (D228): how work lands is its workflow's, so the landing pause is refused too.
+        var landing = await RefusalAsync(module, "SET_ACCESS", new { repository = "engine", access = new { landing = "rule" } });
+        Assert.Contains(AccessRules.LandingRetired, landing);
         var pause = await RefusalAsync(module, "SET_ACCESS", new { repository = "engine", access = new { plan = "always" } });
         var value = await RefusalAsync(module, "SET_ACCESS", new { repository = "engine", access = new { permissions = "sometimes" } });
         var level = await RefusalAsync(module, "SET_ACCESS", new { access = "full" });
@@ -72,7 +75,7 @@ public sealed class DriverModuleAccessTests : DriverModuleBridge
         using var running = loop.Processes.OpenSetup("s1", now => started.SwapIn(now, adapter));
         IReadOnlyList<string> Console() => [.. loop.Output.Tail("s1").Lines.Select(line => line.Text)];
 
-        await AnswerAsync(module, "SET_ACCESS", new { repository = "engine", access = new { landing = "rule" } });
+        await AnswerAsync(module, "SET_ACCESS", new { repository = "engine", access = new { routing = "intake" } });
         Assert.Empty(Console());
 
         await AnswerAsync(module, "SET_ACCESS", new { repository = "engine", access = new { permissions = "unrestricted" } });
@@ -103,8 +106,8 @@ public sealed class DriverModuleAccessTests : DriverModuleBridge
         Assert.Contains("`engine`'s own: permissions asking.", Terminal(0, "engine"));
         Assert.Contains("  routing      intake        its workspace, `shop`", Terminal(0, "engine"));
 
-        var routed = await RefusalAsync(module, "SET_ACCESS", new { repository = "engine", access = new { landing = "sometimes" } });
-        var typed = Terminal(1, "engine", "landing=sometimes");
+        var routed = await RefusalAsync(module, "SET_ACCESS", new { repository = "engine", access = new { questions = "sometimes" } });
+        var typed = Terminal(1, "engine", "questions=sometimes");
         Assert.Contains(typed.Trim()["access: ".Length..], routed);
     }
 }

@@ -341,17 +341,18 @@ public sealed class GraphRunLandingTests : AutoLandingFixture
 
     /// <summary>A pull request land pushes through the platform's plugin, told the delivery's key.</summary>
     [Fact]
-    public async Task A_pull_request_land_tells_its_plugin_the_deliverys_key()
+    public async Task A_pull_request_land_tells_its_plugin_through_the_performer()
     {
+        InstallManifest();
         var (root, tree, branch, door) = await ReviewedRunAsync(ReviewedPullRequest($$"""{"method":"pull-request","plugin":"{{Plugin}}","pattern":"feature/{quest}-{slug}"}"""));
         Assert.True(RunNodeWords.Word(new NodeRecordFiles(_home, () => true), "q1", "review", NodeWordActs.Accept, null).Done);
         await PassAsync(root, branch, tree, door: door);
         await door.IdleAsync();
 
-        var frame = Assert.Single(_frames);
+        // The fixture's plugin declares no key, so the frame carries none (the frame's key is sent to a plugin that declares it).
+        Assert.Single(_frames);
         var delivery = Assert.Single(new DeliveryStore(_home).OfUnit("s1"));
-        Assert.Equal(delivery.Key, Json(frame).GetProperty("key").GetString());
-        Assert.Equal(DeliveryMethods.PullRequest, delivery.Intent.Method);
+        Assert.Equal((DeliveryMethods.PullRequest, Plugin), (delivery.Intent.Method, delivery.Intent.Plugin));
     }
 
     /// <summary>
