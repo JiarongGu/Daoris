@@ -255,7 +255,7 @@ public sealed class WorkplaceWorkflowsPortsTests : IDisposable
             WorkplaceWorkflows.Current = operations;
 
             // A bind the home could not keep refuses the press, before the record is read.
-            var code = await ChatLandCommand.RunAsync(world, "s1", Tree, "chat-s1", Ended("s1"), null, null);
+            var code = await ChatLandCommand.RunAsync(world, "s1", Tree, "chat-s1", Ended("s1"), null);
             Assert.NotEqual(0, code);
             Assert.Equal([$"bind:chat-s1:{Tree}"], operations.Calls);
             Assert.IsAssignableFrom<IWorkplacePluginCatalog>(operations.Catalog);
@@ -263,7 +263,7 @@ public sealed class WorkplaceWorkflowsPortsTests : IDisposable
             // One bound goes on to the press's view of the record: a live one is held by the running Daoris, and none is reached here.
             operations.Failed = null;
             operations.Calls.Clear();
-            await ChatLandCommand.RunAsync(world, "s1", Tree, "chat-s1", Ended("s1"), null, null);
+            await ChatLandCommand.RunAsync(world, "s1", Tree, "chat-s1", Ended("s1"), null);
             Assert.Equal([$"bind:chat-s1:{Tree}", "press:s1"], operations.Calls);
         }
         finally { WorkplaceWorkflows.Current = actual; }
@@ -363,6 +363,8 @@ public sealed class WorkplaceWorkflowsPortsTests : IDisposable
         public string? Failed { get; set; }
 
         public IWorkplacePluginCatalog? Catalog { get; private set; }
+
+        public string? SkippedLook(string home, string run, string? node) => null;
 
         public string? AcceptedGates(DriverConfig config, string repository, string? workspace)
         {

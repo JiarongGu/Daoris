@@ -22,7 +22,6 @@ const MACHINES = {
     harnesses: [door({ present: false, ownLogin: 'unknown' })],
     sessions: [],
     lines: [],
-    landings: [],
   },
   signedInNothingRegistered: {
     attached: true,
@@ -31,7 +30,6 @@ const MACHINES = {
     harnesses: [door()],
     sessions: [],
     lines: [],
-    landings: [],
   },
   everythingDone: {
     attached: true,
@@ -44,10 +42,6 @@ const MACHINES = {
       // Not driven, so its missing line is neither the setup's business nor a starter's (STARTERSCOPE1).
       { repository: 'game', workspace: 'aurora', source: 'none' as const },
     ],
-    landings: [
-      { repository: 'engine', workspace: 'aurora', source: 'workspace' as const, form: 'merge' },
-      { repository: 'game', workspace: 'aurora', source: 'default' as const, form: 'merge' },
-    ],
   },
   // A browser is handed nothing of the machine by its queries; handed some anyway, it reads none of it.
   browser: {
@@ -57,7 +51,6 @@ const MACHINES = {
     harnesses: [door()],
     sessions: [{ state: 'awaiting-person' as const }],
     lines: [{ repository: 'engine', workspace: 'aurora', source: 'none' as const }],
-    landings: [],
   },
 };
 
@@ -67,30 +60,30 @@ const states = (machine: keyof typeof MACHINES) =>
 describe('the machine, read once for the guide and the starters', () => {
   it('reads a fresh machine as lacking everything, and an absent tool as no agent', () => {
     expect(readMachine(MACHINES.fresh)).toMatchObject({
-      attached: true, repositories: [], drivable: [], waiting: 0, unnamedLines: [], helper: null, intake: null, unlanded: [],
+      attached: true, repositories: [], drivable: [], waiting: 0, unnamedLines: [], helper: null, intake: null,
     });
     expect(states('fresh')).toEqual({
-      agent: 'todo', helper: 'todo', repositories: 'todo', driven: 'todo', landing: 'todo', rules: 'optional',
+      agent: 'todo', helper: 'todo', repositories: 'todo', setUp: 'todo', rules: 'optional',
     });
   });
 
-  it('reads an agent signed in with nothing registered as one step of five', () => {
+  it('reads an agent signed in with nothing registered as one step of four', () => {
     expect(states('signedInNothingRegistered')).toEqual({
-      agent: 'done', helper: 'todo', repositories: 'todo', driven: 'todo', landing: 'todo', rules: 'optional',
+      agent: 'done', helper: 'todo', repositories: 'todo', setUp: 'todo', rules: 'optional',
     });
-    expect(setupProgress(setupSteps(readMachine(MACHINES.signedInNothingRegistered)))).toEqual({ done: 1, of: 5 });
+    expect(setupProgress(setupSteps(readMachine(MACHINES.signedInNothingRegistered)))).toEqual({ done: 1, of: 4 });
   });
 
   it('reads a machine with everything set as done, the rules optional and never counted', () => {
     const machine = readMachine(MACHINES.everythingDone);
     expect(machine).toMatchObject({
       repositories: ['engine', 'game'], drivable: ['engine'], helper: 'claude-code-acp', intake: 'claude-code-acp',
-      unnamedLines: [], unlanded: [], waiting: 0,
+      unnamedLines: [], waiting: 0,
     });
     expect(states('everythingDone')).toEqual({
-      agent: 'done', helper: 'done', repositories: 'done', driven: 'done', landing: 'done', rules: 'optional',
+      agent: 'done', helper: 'done', repositories: 'done', setUp: 'done', rules: 'optional',
     });
-    expect(setupProgress(setupSteps(machine))).toEqual({ done: 5, of: 5 });
+    expect(setupProgress(setupSteps(machine))).toEqual({ done: 4, of: 4 });
   });
 
   it('does not count a line not read yet (the pushed flag, PUSH1b2) among the lines that name none', () => {
@@ -132,7 +125,7 @@ describe('the machine, read once for the guide and the starters', () => {
       attached: false, repositories: ['engine'], drivable: [], tools: [], waiting: 0, unnamedLines: [], helper: null,
     });
     expect(states('browser')).toEqual({
-      agent: 'desktop', helper: 'desktop', repositories: 'done', driven: 'desktop', landing: 'desktop', rules: 'desktop',
+      agent: 'desktop', helper: 'desktop', repositories: 'done', setUp: 'desktop', rules: 'desktop',
     });
     // Unknowable, so no count and no opening at start.
     expect(setupProgress(setupSteps(machine))).toBeNull();
@@ -143,10 +136,10 @@ describe('the machine, read once for the guide and the starters', () => {
     expect(opensAtStart(setupSteps(readMachine(MACHINES.fresh)))).toBe(true);
     expect(opensAtStart(setupSteps(readMachine(MACHINES.signedInNothingRegistered)))).toBe(true);
     expect(opensAtStart(setupSteps(readMachine(MACHINES.everythingDone)))).toBe(false);
-    // Steps four and five left are counted, and do not open the guide.
+    // Step four left is counted, and does not open the guide.
     const undriven = readMachine({ ...MACHINES.everythingDone, driver: { ...MACHINES.everythingDone.driver, drivable: [] } });
     expect(opensAtStart(setupSteps(undriven))).toBe(false);
-    expect(setupProgress(setupSteps(undriven))).toEqual({ done: 3, of: 5 });
+    expect(setupProgress(setupSteps(undriven))).toEqual({ done: 3, of: 4 });
   });
 
   /**
@@ -178,7 +171,7 @@ describe('the machine, read once for the guide and the starters', () => {
 
       expect(said.includes('nothing-registered')).toBe(step.repositories === 'todo');
       expect(said.includes('helper-off')).toBe(step.helper === 'todo');
-      expect(said.includes('nothing-driven')).toBe(step.repositories === 'done' && step.driven === 'todo');
+      expect(said.includes('nothing-driven')).toBe(step.repositories === 'done' && step.setUp === 'todo');
       if (said.includes('agent-signed-out') && machine.tools.every((tool) => !tool.present || tool.accounts.every((account) => account.login === 'out'))) {
         expect(step.agent).toBe('todo');
       }
@@ -197,27 +190,24 @@ describe('each step: its state, its doors and its commands', () => {
       doors: [{ view: 'agents', agentPart: 'accounts' }],
       commands: ['daoris agent install <agent>', 'daoris agent login <agent>'],
     });
+    // Ask Daoris and the intake are roles, set on Agents → Roles and by `daoris driver role`.
     expect(steps.helper).toMatchObject({
-      doors: [{ view: 'settings', section: 'ai' }, { view: 'agents', agentsMode: 'setup' }],
-      commands: ['daoris driver helper <agent>', 'daoris driver intake <agent>'],
+      doors: [{ view: 'agents', agentsMode: 'setup', roleSection: 'working' }],
+      commands: ['daoris driver role'],
     });
     expect(steps.repositories).toMatchObject({
       doors: [{ view: 'projects', drawer: 'add' }, { view: 'projects', drawer: 'import' }],
       commands: ['daoris connect', 'daoris import <folder>'],
     });
-    expect(steps.driven).toMatchObject({ doors: [{ view: 'projects' }], commands: ['daoris driver drive <repository>'] });
-    expect(steps.landing).toMatchObject({
-      // The workspace's defaults (UX6g, D150 §4.3), where how work lands is set for every repository there.
-      doors: [{ view: 'projects', workspaceSection: 'defaults' }],
-      commands: ['daoris driver line <repository> <branch>', 'daoris driver landing <repository> merge|branch <pattern>'],
-    });
+    // One step for the place's Set up…, which chooses how its work lands and drives it.
+    expect(steps.setUp).toMatchObject({ doors: [{ view: 'agents', agentsMode: 'setup' }], commands: ['daoris-driver place <repository> --plan'] });
     // UX6e: what agents may do is on the page of the agent Daoris hands the rules file (D150 §3.1).
     expect(steps.rules).toMatchObject({ doors: [{ view: 'agents', agentPart: 'rules' }], commands: ['daoris agent rules'] });
   });
 
   it('lists the steps in the order a setup goes', () => {
     expect(setupSteps(readMachine(MACHINES.fresh)).map((step) => step.id))
-      .toEqual(['agent', 'helper', 'repositories', 'driven', 'landing', 'rules']);
+      .toEqual(['agent', 'helper', 'repositories', 'setUp', 'rules']);
   });
 
   it('counts only Daoris\'s accounts as signed in: an unknown one as in, a definite out or none as not (OWNSPACE1b-C)', () => {
@@ -230,16 +220,6 @@ describe('each step: its state, its doors and its commands', () => {
     // The tool's own sign-in is no account of Daoris's, signed in or not (D175).
     expect(state({ ownLogin: 'in', profiles: [] })).toBe('todo');
     expect(state({ ownLogin: 'out', profiles: profile('in') })).toBe('done');
-  });
-
-  it('leaves how work lands to do while a driven repository lands by the default, or has no line', () => {
-    const done = MACHINES.everythingDone;
-    const defaulted = byId({ ...done, landings: [{ ...done.landings[0]!, source: 'default' as const }, done.landings[1]!] });
-    expect(defaulted.landing).toMatchObject({ state: 'todo', doors: [{ view: 'projects', workspaceSection: 'defaults' }] });
-
-    // A missing line comes first, so the door opens the first such repository's Setup, where its line is set.
-    const lineless = byId({ ...done, lines: [{ repository: 'engine', workspace: 'aurora', source: 'none' as const }, done.lines[1]!] });
-    expect(lineless.landing).toMatchObject({ state: 'todo', doors: [{ view: 'projects', item: 'engine', tab: 'setup' }] });
   });
 
   it('offers a browser no door to a screen it does not have, and still says the commands', () => {

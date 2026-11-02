@@ -44,9 +44,8 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
  * - **A browser gets Details alone** (D47 §4): setup is this machine's, and so are its workflows (design §2.4, §6.1) and
  *   its branches and history (D147 §6); one tab is no tabs, so it has no tab row.
  * - **Adoption is the repository's own act** (D31, D32): one not adopted is offered the steps as text, and none of
- *   adoption's own acts, like *Manage*, which writes its declaration into it. Since LAYOUT8 (D117 §6.1, D170 point 1) one that
- *   can be asked is also offered *Set up for agents*, which asks its own session to take the steps, its plan first, and
- *   writes nothing into it.
+ *   adoption's own acts, like *Manage*, which writes its declaration into it. Asking its own session to take the steps is the
+ *   place's *Set up…* (its adoption part), plan first, which writes nothing into the repository.
  * - **An absent act is absent, never disabled**: *Manage* and Setup only where a shell answers (D48 §7), Setup's
  *   driving only where there is somewhere to start (INT3c).
  * - **A page never prints a machine path it was answered** (D47 §4): a checkout here is a mark, never its folder.

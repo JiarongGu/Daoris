@@ -60,10 +60,10 @@ public sealed class WorkplaceCoursePortsTests : IDisposable
         Assert.False(Directory.Exists(Requests));
 
         Assert.True(WorkplacePressTelling.Current.Tell(_home, TreesMarks.Land, "s1", At));
-        Assert.True(WorkplacePressTelling.Current.Tell(_home, TreesMarks.LandWithoutLook, "not/an/id", At.AddSeconds(1)));
+        Assert.True(WorkplacePressTelling.Current.Tell(_home, TreesMarks.LandEntry, "not/an/id", At.AddSeconds(1)));
         Assert.False(WorkplacePressTelling.Current.Tell(_home, "not a route", "s1", At));
         Assert.Equal(2, Directory.EnumerateFiles(Requests, "*" + PressesTold.Suffix).Count());
-        Assert.Equal([new PressTold(PressesTold.Land, "s1", At), new PressTold(PressesTold.LandWithoutLook, null, At.AddSeconds(1))],
+        Assert.Equal([new PressTold(PressesTold.Land, "s1", At), new PressTold(PressesTold.LandEntry, null, At.AddSeconds(1))],
             new PressesTold(_home).Take(At.AddSeconds(2)));
 
         GitSeed.Remove(Requests);
@@ -82,12 +82,11 @@ public sealed class WorkplaceCoursePortsTests : IDisposable
         try
         {
             WorkplacePressTelling.Current = spy;
-            Assert.Equal(1, await ChatLandCommand.RunAsync(world, "s1", ChatTree, "chat-s1", Ended("s1"), null, null));
-            Assert.Equal(1, await ChatLandCommand.RunAsync(World(client), "s1", ChatTree, "chat-s1", Ended("s1"), null, new ChatLookPress("why", "terminal")));
+            Assert.Equal(1, await ChatLandCommand.RunAsync(world, "s1", ChatTree, "chat-s1", Ended("s1"), null));
         }
         finally { WorkplacePressTelling.Current = actual; }
 
-        Assert.Equal([(_home, "LAND_SESSION_TREE", "s1"), (_home, "LAND_WITHOUT_LOOK", "s1")], spy.Told.Select(each => (each.Home, each.Route, each.Session)));
+        Assert.Equal([(_home, "LAND_SESSION_TREE", "s1")], spy.Told.Select(each => (each.Home, each.Route, each.Session)));
         Assert.All(spy.Told, each => Assert.InRange(each.At, DateTimeOffset.UtcNow.AddMinutes(-1), DateTimeOffset.UtcNow));
         // Told before the press's words are printed, and the false it answered changed nothing.
         Assert.Equal("", spy.SeenWords[0]);
@@ -104,20 +103,20 @@ public sealed class WorkplaceCoursePortsTests : IDisposable
         {
             WorkplacePressTelling.Current = null!;
             var missing = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                ChatLandCommand.RunAsync(World(client), "s1", ChatTree, "chat-s1", Ended("s1"), null, null));
+                ChatLandCommand.RunAsync(World(client), "s1", ChatTree, "chat-s1", Ended("s1"), null));
             Assert.Contains("Course installs it", missing.Message);
 
             // A live conversation, and a binding that failed, answer before any note is told.
-            Assert.Equal(1, await ChatLandCommand.RunAsync(World(client), "s1", ChatTree, "chat-s1", "[]", null, null));
+            Assert.Equal(1, await ChatLandCommand.RunAsync(World(client), "s1", ChatTree, "chat-s1", "[]", null));
             var failed = WorkflowRunBindings.PathOf(_home, "chat-s2");
             Directory.CreateDirectory(Path.GetDirectoryName(failed)!);
             File.WriteAllText(failed, "{broken");
-            Assert.Equal(1, await ChatLandCommand.RunAsync(World(client), "s2", ChatTree, "chat-s2", Ended("s2"), null, null));
+            Assert.Equal(1, await ChatLandCommand.RunAsync(World(client), "s2", ChatTree, "chat-s2", Ended("s2"), null));
 
             var failure = new IOException("refused");
             WorkplacePressTelling.Current = new Telling(_ => "") { Fail = failure };
             Assert.Same(failure, await Assert.ThrowsAsync<IOException>(() =>
-                ChatLandCommand.RunAsync(World(client), "s1", ChatTree, "chat-s1", Ended("s1"), null, null)));
+                ChatLandCommand.RunAsync(World(client), "s1", ChatTree, "chat-s1", Ended("s1"), null)));
         }
         finally { WorkplacePressTelling.Current = actual; }
     }

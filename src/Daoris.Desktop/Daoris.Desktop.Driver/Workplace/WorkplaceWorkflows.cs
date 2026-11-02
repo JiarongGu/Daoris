@@ -40,6 +40,12 @@ internal interface IWorkplaceWorkflows
     /// </summary>
     void SubmitChatCandidate(string home, string run, string repository, string? workspace, string branch, string tip, DateTimeOffset at, Func<string, bool> landed);
 
+    /// <summary>
+    /// The person's words where <paramref name="node"/>, the look of a chat run's graph, stands skipped by them or their skip waits on the run's
+    /// record; null otherwise (see <c>RunNodeWords.SkippedLook</c>).
+    /// </summary>
+    string? SkippedLook(string home, string run, string? node);
+
     /// <summary>Current's landing graph for <paramref name="rule"/>: the method its <c>land</c> names, and the graph's digest (see <c>NodeGraphHomes.Landing</c>).</summary>
     (string Method, string Graph) CurrentLand(LandingRule rule);
 

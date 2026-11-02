@@ -35,6 +35,9 @@ internal sealed class WorkplaceWorkflowsOperations : IWorkplaceWorkflows, IWorkp
         ChatCandidates.Submit(home, run, repository, workspace, branch, tip, at, landed);
     }
 
+    public string? SkippedLook(string home, string run, string? node) =>
+        RunNodeWords.SkippedLook(new NodeRecordFiles(home, () => false).Read(RunUnits.IdOf(run)), node);
+
     public ReviewWord KeepReviewWord(string home, Func<bool>? holdsLease, IWorkplaceProcess process, DateTimeOffset now, string? words = null)
     {
         if (process is not WorkflowProcess { BoundRun: { } run, Graph: { } graph } || graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Review) is not { } review)

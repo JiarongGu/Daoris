@@ -609,7 +609,6 @@
     "WorkOrders/RetryVerb.cs": "Work orders",
     "WorkOrders/SnapshotReads.cs": "Work orders",
     "WorkOrders/SyncForwardCommand.cs": "Work orders",
-    "Review/ChatLooks.cs": "Review",
     "Review/ChatSendBacks.cs": "Review",
     "Review/KnowledgeReviewReads.cs": "Review",
     "Review/Domain/LastOpinions.cs": "Review",
