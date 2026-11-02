@@ -291,7 +291,7 @@ public sealed class SshdFactAttribute : FactAttribute
     public SshdFactAttribute()
     {
         if (Named() is null)
-            Skip = "TEST_SSHD names no sshd.exe here (Win32-OpenSSH's portable build on Windows serves these), so no server runs";
+            Skip = "neither TEST_SSHD nor DAORIS_TEST_SSHD names an sshd.exe here (Win32-OpenSSH's portable build on Windows serves these), so no server runs";
     }
 
     /// <summary>The sshd the variable names, where it is a file on Windows; else null.</summary>
