@@ -545,7 +545,10 @@ lines assert its absence and stay. The census read main before WORKFLOWCLEAN1 1h
   `Web/agents/tools.ts:29-168`, `Web/agents/SignInSteps.tsx:40`, `:254` and its story); the pulls kept for an older shell
   (`Web/data/queries.ts:270`, `:368`, `:606`), the plain browser's path staying only as the harness of the stories and e2e, named so;
   the modules' routes kept for an older page. `ONEWAY1ab-ii` takes those in `Web/bridge/repositories/lines.ts`,
-  `Web/bridge/sessions/trees.ts` and `Web/bridge/shell.ts`, which the wave changes.
+  `Web/bridge/sessions/trees.ts` and `Web/bridge/shell.ts`, which the wave changes. The named files are examples: P3 covers every
+  older-shell branch in the page (about three hundred sites in ninety files, `bridge/driver.ts` the largest) and every pull kept beside
+  a slice, `USAGE` and `ACCOUNTS_READ` among them where no terminal or Ask Daoris reads them. `ONEWAY1ab-i` takes those in files the
+  wave left alone, in two parts that each typecheck: the pulls and the named files, then the rest of the fields.
 - *Kept:* a fallback for a record that travels between machines, such as a quest or a channel message, which another machine's build
   writes (D178). A fallback for the local service host, which a second install may run, is under the floor.
 
