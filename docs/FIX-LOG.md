@@ -12,6 +12,13 @@ repository.
 - **Fix:** `Problem` holds a target beside an explicit method other than `integrate`; `CurrentDeliveries.StartAsync` refuses a bound `land` whose target is not the tree's line before any delivery is written, so a saved version that carries one never lands. Noted on D145.
 - **Verify:** `LandTargetTests` and `LandNodeKindTests`' new rows, red first.
 
+## 2026-11-02 - A store held below step 18 threw "no such column: model" on every move (REVIEW2, STAFFPOLICY1d)
+
+- **Symptom:** while the start's confirmation of the step-16 stamp raise is awaited, steps 17 and 18 wait with it, and every move `Decide` or phase `Step` threw.
+- **Root cause:** `MoveStore` named `model` and `effort` in its insert and in `ReadIn`/`StandingIn` whatever the store's version; only its reads had `ColumnsAt`.
+- **Fix:** a write transaction knows the store's version (`DesktopWrite.Version`), and the insert and the in-write reads name the columns only from step 18.
+- **Verify:** `MoveStoreHeldStepTests` on a store held at step 15, red first.
+
 ## 2026-11-02 - Thirty-seven chat Process tests red after the routing standing was told (COWORKVIEW1e-i)
 
 - **Symptom:** the driver's Process gate failed 37 tests across nine chat classes (`ChatGoesOnProcessTests`, `ChatPendingProcessTests`, `ProtocolChatTests`, `TurnStopTests`, `HandOverProcessTests` and four more): prompts read `Routing standing here: ...` where the person's words were expected, and stand-ins keyed on a prompt's text (`hold`, `refuse`, a reply's length as context) no longer matched.

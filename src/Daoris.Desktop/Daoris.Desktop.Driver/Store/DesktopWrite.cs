@@ -13,11 +13,15 @@ public sealed class DesktopWrite
 
     private readonly SqliteTransaction _transaction;
 
-    internal DesktopWrite(SqliteConnection connection, SqliteTransaction transaction)
+    internal DesktopWrite(SqliteConnection connection, SqliteTransaction transaction, int version = int.MaxValue)
     {
         _connection = connection;
         _transaction = transaction;
+        Version = version;
     }
+
+    /// <summary>The store's schema version as this transaction read it; a write names a step's columns only at or past that step.</summary>
+    public int Version { get; }
 
     /// <summary>Statements run, each <c>$name</c> parameter bound; the rows they changed.</summary>
     public int Execute(string sql, params (string Name, object? Value)[] values)
