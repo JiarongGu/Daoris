@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-02 - Change… previewed one version and Use here chose another (REVIEW2 P8)
+
+- **Symptom:** the preview drew the version `WORKFLOW_SHOW` answered; *Use here* sent the newest version `WORKFLOW_LIST` named, which could be another.
+- **Root cause:** `ChangeWorkflow` took `versions.at(-1)` for the ask, independent of `shown`.
+- **Fix:** the ask carries `shown.version` of the selected workflow; until that preview is read, *Use here* is disabled.
+- **Verify:** `ChangeWorkflow.test.tsx` (two REVIEW2 P8 cases, red first).
+
 ## 2026-11-02 - The room said an off or unreadable role runs the machine's defaults (REVIEW2 S4)
 
 - **Symptom:** a role whose stored choices are empty (off) or whose `actors` entry does not read was said to have "no choices of its own, so this machine's defaults run".
