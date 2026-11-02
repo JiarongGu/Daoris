@@ -2249,6 +2249,8 @@ public sealed class Driver(
         var handedQuest = new HandedQuests(home).Read(quest.Id);
         // ROLESTEP1b: the role the run's work step names, which every walk of this start takes in place of the work's, never another.
         var stepRole = await StepRoleAsync(quest, start.Workspace, ct).ConfigureAwait(false);
+        // The role whose policy this start answers to: its step's, else the role its line was bound to, else the work's at its place (never the seeded Build's by default).
+        var policyRole = stepRole ?? StaffCourse.RoleOf(Context.Harnesses.StaffFor(home), start.Workspace, quest, start.Resumes);
         var agent = StartPlan.AgentFor(
             StartWork(quest), config, handed: handedQuest?.Agent, catalogue: CatalogueForReport(), place: PlaceOf(start), role: stepRole);
         // Each hold names the agent the start asked, which the look's report of a wait names (the design §2.4's second row).
@@ -2349,7 +2351,7 @@ public sealed class Driver(
                     // STAFFPOLICY1e: a role that waits on a limit keeps the choice and waits for its accounts' reset (D197's walk of its
                     // accounts stays inside the choice), until its `upTo` has passed.
                     if (limitWalks && policyMove is null && cut.Limit
-                        && StaffCourse.LimitWait(Context.Harnesses.StaffFor(home), stepRole ?? RoleWork.Build, cut, Context.Harnesses.Clock()) is LineCourse.Wait)
+                        && StaffCourse.LimitWait(Context.Harnesses.StaffFor(home), policyRole, cut, Context.Harnesses.Clock()) is LineCourse.Wait)
                     {
                         limitWalks = false;
                     }
@@ -2435,7 +2437,7 @@ public sealed class Driver(
                 // STAFFPOLICY1e: a limit's move to another choice counts against the line's bound, and spends the yes that released it.
                 if (limitedLine is { Limit: true } leftLimit && selection.Allowed)
                 {
-                    StaffCourse.LimitMoved(Context.Harnesses.StaffFor(home), stepRole ?? RoleWork.Build, quest.Id, leftLimit, chosen);
+                    StaffCourse.LimitMoved(Context.Harnesses.StaffFor(home), policyRole, quest.Id, leftLimit, chosen);
                 }
             }
             else
@@ -3034,7 +3036,7 @@ public sealed class Driver(
         if (movedOff is not null) RotatedOpening.SayMovedOff(Context.Events, sessionId, AccountNames.Said(AccountNames.Of(home, agent), movedOff));
         if (movedOffModel is { } refusedModel) RotatedOpening.SayMovedOffModel(Context.Events, sessionId, refusedModel.Agent, refusedModel.Model);
         // STAFFPOLICY1e2: a model its agent refused, or a sign-in that walked to another agent, is a move to another choice, counted against `most`.
-        var movedRole = stepRole ?? RoleWork.Build;
+        var movedRole = policyRole;
         if (movedOffModel is { } countedModel)
         {
             CountMove(quest.Id, movedRole, StaffConditions.ModelRefused, new ActorEffective(countedModel.Agent, countedModel.Model, null, ""), chosen?.From);
@@ -3048,7 +3050,7 @@ public sealed class Driver(
         // STAFFPOLICY1e2: a part the role's policy moved here says so, on the record and the opening note, after the start's own why.
         if (policyMove is { } movedByPolicy && start.Resumes is { } leftPart)
         {
-            await SayPolicyMoveAsync(service, sessionId, stepRole ?? RoleWork.Build, quest.Id, movedByPolicy, leftPart, chosen?.From).ConfigureAwait(false);
+            await SayPolicyMoveAsync(service, sessionId, policyRole, quest.Id, movedByPolicy, leftPart, chosen?.From).ConfigureAwait(false);
         }
         // A quest marked design says whose order it ran on: the role taking design, Build's while none does (FOUNDATION1x, MODELROLE1l).
         if (start.Resumes is null && StartWork(quest) == ParticipantWork.Design && DesignRoleName(start, stepRole) is { } designer)
@@ -4522,7 +4524,7 @@ public sealed class Driver(
                 Context.Adapters, adapter, Context.Harnesses, service, Context.Events, output, Watch, Log, sessionId, retried,
                 prior?.Profile, RetryClock, transientWanted,
                 // STAFFPOLICY1e: a driven run's bound is its role's `after` where the role moves on `transient`, else D210's five.
-                tries: StaffCourse.Tries(Context.Harnesses.StaffFor(home), actor))
+                tries: StaffCourse.Tries(Context.Harnesses.StaffFor(home), Context.Conversations.RoleOf(sessionId)?.Role ?? actor))
             : null;
         var acp = adapter.Wire == SessionWire.Acp
             // The posture rides with it, because it is the ADAPTER's (ACP3): three harnesses name the

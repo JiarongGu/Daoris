@@ -54,6 +54,25 @@ public sealed class StaffCourseLookTests : IDisposable
     private static readonly DriverConfig Config = DriverConfig.Empty with { Strikes = 3 };
 
     [Fact]
+    public void The_course_reads_the_policy_of_the_scoped_role_that_took_the_work_never_seeded_builds_by_the_records_actor()
+    {
+        var staff = Staffed(Policy("""{"quiet":"retry"}"""));
+        var staffing = new RoleStaffing(_home, () => StoreSettled.Yes);
+        var scoped = RoleCatalog.Seed[0] with { Id = "engine-build", Scope = new RoleScope(RoleScope.Repository, "engine") };
+        var choices = new[] { new ActorChoice("acp-stub", "sonnet", "low"), new ActorChoice("acp-other", "codex-mini", "high") };
+        RoleDoor.Apply(
+            staffing, RoleChange.Set(scoped), choices, null,
+            new RolePolicyPress(StaffPolicy.Parse(Policy("""{"quiet":"next"}""")).Policy!));
+
+        // The record's actor is the seeded id, as on every driven record: the scoped role that takes the quest's work is the one asked.
+        var snapshot = Looking(Ended("ended.quiet"));
+        Assert.Equal("engine-build", StaffCourse.RoleOf(staff, snapshot, snapshot.Quests[0], snapshot.LastRun["q1"]));
+        var (moving, _) = StaffCourse.Look(staff, snapshot, Config, Now);
+
+        Assert.Equal("s1", Assert.Single(moving).Value.Session);
+    }
+
+    [Fact]
     public void A_quiet_end_moves_the_line_when_the_role_moves_on_it_and_a_role_that_retries_decides_nothing()
     {
         var moves = Staffed(Policy("""{"quiet":"next"}""")).Moves;

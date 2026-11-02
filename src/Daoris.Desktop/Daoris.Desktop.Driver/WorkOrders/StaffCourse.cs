@@ -47,6 +47,31 @@ internal static class StaffCourse
         return $"{why}. {roleName}'s policy moves on that; {count}";
     }
 
+    /// <summary>
+    /// The role a record's line goes on under, whose policy the course reads: the role its start was bound to (<c>binding_roles</c>) while the
+    /// catalogue holds it, else the role taking the quest's work at its place now. The record's <c>actor</c> is the seeded role's id on every
+    /// driven record, so a scoped added role's policy is never read from it.
+    /// </summary>
+    internal static string RoleOf(StaffLedger staff, Snapshot snapshot, QuestView quest, PriorSession record) =>
+        RoleOf(staff, snapshot.Repositories.FirstOrDefault(repo => string.Equals(repo.Repository, quest.To, StringComparison.OrdinalIgnoreCase))?.Workspace, quest, record);
+
+    /// <inheritdoc cref="RoleOf(StaffLedger, Snapshot, QuestView, PriorSession)"/>
+    /// <param name="workspace">The circle the quest's repository is in; null for none.</param>
+    /// <param name="record">The record the line goes on from; null for a first start, which takes the role of the work at its place.</param>
+    internal static string RoleOf(StaffLedger staff, string? workspace, QuestView quest, PriorSession? record)
+    {
+        try
+        {
+            var bound = record is null ? null : new BindingStore(staff.Home, null, _ => null).RoleOf(record.Session)?.Role;
+            var work = string.Equals(quest.Weight, ParticipantWork.Design, StringComparison.Ordinal) ? ParticipantWork.Design : ParticipantWork.Build;
+            return RoleOrders.Bound(bound, work, RoleCatalog.ReadHome(staff.Home), new RolePlace(workspace, quest.To));
+        }
+        catch (Exception error) when (error is DriverException or DesktopStoreException or Microsoft.Data.Sqlite.SqliteException or IOException or UnauthorizedAccessException)
+        {
+            return record?.Actor is { Length: > 0 } kept ? kept : RoleWork.Build;
+        }
+    }
+
     /// <summary>The choice a record ran, as the policy keys it.</summary>
     internal static StaffKey? ChoiceOf(PriorSession record, StaffPolicy? policy) =>
         record.Asked is null && policy?.Choices.FirstOrDefault(each => string.Equals(each.Key.Agent, record.Adapter, StringComparison.OrdinalIgnoreCase)) is { } listed
@@ -73,8 +98,7 @@ internal static class StaffCourse
             if (quest.Status is not ("Open" or "Taken") || !snapshot.LastRun.TryGetValue(quest.Id, out var last)) continue;
             var condition = Planner.EndedTransient(last) ? StaffConditions.Transient : EndedQuiet(last) ? StaffConditions.Quiet : FailedStrike(last) ? StaffConditions.Failed : null;
             if (condition is null || (condition == StaffConditions.Transient && config.ReleasesTransient(quest.Id, last.Session, last.Updated))) continue;
-            // A record the service kept no role for was started by Build's walk, as a quest's session is.
-            var role = last.Actor is { Length: > 0 } kept ? kept : RoleWork.Build;
+            var role = RoleOf(staff, snapshot, quest, last);
             if (snapshot.Handed.TryGetValue(quest.Id, out var handed) && string.Equals(handed.From, last.Session, StringComparison.Ordinal)) continue;
             if (staff.Policy(role).Applied is not { } policy || !policy.Moves.TryGetValue(condition, out _)) continue;
 
@@ -183,7 +207,7 @@ internal static class StaffCourse
         {
             if (quest.Status is not ("Open" or "Taken") || !snapshot.LastRun.TryGetValue(quest.Id, out var last) || !last.Limit || last.State != "failed") continue;
             if (snapshot.Handed.ContainsKey(quest.Id)) continue;
-            var role = last.Actor is { Length: > 0 } kept ? kept : RoleWork.Build;
+            var role = RoleOf(staff, snapshot, quest, last);
             if (staff.Policy(role).Applied is not { } policy || !policy.Moves.ContainsKey(StaffConditions.Limit)) continue;
             var moved = staff.Moves.Of(quest.Id);
             var action = StaffJudge.OnCondition(policy, StaffConditions.Limit, new StaffLine(true, moved.Moves));

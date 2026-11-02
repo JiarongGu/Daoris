@@ -209,6 +209,9 @@ public sealed class StaffLedger(string home, Func<StoreSettled>? settled = null,
     /// <summary>The store's file in this home.</summary>
     public string Location => DesktopStore.LocationIn(home);
 
+    /// <summary>The home this ledger keeps its tables in.</summary>
+    public string Home => home;
+
     /// <summary>The lines' moves to another choice, kept beside the starts (STAFFPOLICY1e).</summary>
     public StaffMoves Moves => new(home, settled, clock);
 
