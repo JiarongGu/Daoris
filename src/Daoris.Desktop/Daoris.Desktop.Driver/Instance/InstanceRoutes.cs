@@ -61,6 +61,9 @@ public static class OpenRoutes
     /// <summary><c>place &lt;repository&gt;… --plan</c> (AGENTSPLACE1a2): a quick set-up's plan, read and never written.</summary>
     public static InstanceRoute PlacePlan { get; } = Open("PLACE_PLAN");
 
+    /// <summary><c>workflow convert --plan</c> and <c>--undo</c> (WORKFLOWCLEAN1 1e): the conversion plan, or the undo's, read and never written.</summary>
+    public static InstanceRoute ConvertPlan { get; } = Open("CONVERT_PLAN");
+
     /// <summary>
     /// Each verb of RPCOPEN1's and RPC1e's scope, the host's verbs with a window twin (the terminal RPC design §1.2), in the verb's words:
     /// the open route it reads where the instance answers, or null with the reason it stays off the pipe. A person's press is
@@ -93,6 +96,7 @@ public static class OpenRoutes
         ("opinion show <session|opinion>", OpinionGate, "the gate's reading"),
         ("place --workspace <name> --adoption", null, "alone: no route writes a workspace's paced plan; PLACE_APPLY writes one when an adoption covers more repositories than it asks at once"),
         ("place <repository>… --plan", PlacePlan, "the plan; with `--apply` the person's press (PLACE_APPLY)"),
+        ("workflow convert --plan", ConvertPlan, "the plan, or with `--undo` the undo's; `--apply <digest>` and `--undo <digest>` are the person's presses (CONVERT_APPLY, CONVERT_UNDO)"),
         ("ask channel <id>", null,
             "alone: the read moves the person's own mark (CHANNEL_MARK, the person's), a door of the service, which writes it once whoever "
             + "asks; with words the person's press (CHANNEL_POST)"),
@@ -251,6 +255,12 @@ public static class PersonPresses
     /// </summary>
     public static InstanceRoute PlaceApply { get; } = Person("PLACE_APPLY");
 
+    /// <summary><c>workflow convert --apply &lt;digest&gt;</c> (WORKFLOWCLEAN1 1e): the conversion plan applied, on the person's Confirm in the window.</summary>
+    public static InstanceRoute ConvertApply { get; } = Person("CONVERT_APPLY");
+
+    /// <summary><c>workflow convert --undo &lt;digest&gt;</c> (WORKFLOWCLEAN1 1e): the latest conversion taken back, on the person's Confirm in the window.</summary>
+    public static InstanceRoute ConvertUndo { get; } = Person("CONVERT_UNDO");
+
     /// <summary>
     /// <c>plugins approve &lt;id&gt; &lt;server&gt;</c> and <c>withdraw</c> (RPC1e): the tools a plugin's server offers Ask Daoris approved,
     /// its reads only or the writes named, or the approval withdrawn.
@@ -296,6 +306,8 @@ public static class PersonPresses
         ("opinion myself <session>", OpinionMyself),
         ("ask channel <id> \"…\"", ChannelPost),
         ("place <repository>… --preset <id> … --apply [--accept <repository>:<purpose>,…]", PlaceApply),
+        ("workflow convert --apply <digest> [--composed none|review] [--land-automatic review|none]", ConvertApply),
+        ("workflow convert --undo <digest>", ConvertUndo),
         ("plugins approve <id> <server>", PluginAction),
         ("plugins withdraw <id> <server>", PluginAction),
         ("workflow skip <run> <node> \"…\"", WorkflowNode),

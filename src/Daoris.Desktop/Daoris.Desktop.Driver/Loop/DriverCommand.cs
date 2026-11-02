@@ -327,6 +327,10 @@ public static class DriverCommand
           workflow stop <run> <node> ["…"]
               pass a node of a run bound to a graph version over, with your words, or stop it: kept on the run's record,
               and Daoris's next look applies it. `workflow run` names the run and its nodes. Daoris's window confirms it.
+          workflow convert --plan | --apply <digest> | --undo [<digest>]
+              convert the old workflow records (steps, `handed`, a `land` with `accept`, and the places that follow Current
+              from the rules) to saved graph workflows: the plan reads and writes nothing, `--apply` is your press, confirmed
+              in Daoris's window, and `--undo` puts the removed rules back. Needs the running Daoris.
           workflow changes <run> <node> "…"
               ask for changes on a run's review in place of its Accept, with your words: the work's session is told
               them as its next turn, and what it commits is reviewed again. Daoris's window confirms it.

@@ -309,6 +309,11 @@ using Daoris.Driver;
 //                 the person's Keep (WORKFLOW1f, design §4.4): where a kind's paths hold a session's work, keep the workflow
 //                 the kind chose for it, with their words, on its run, and print what the landing gate says after.
 //
+//   workflow convert --plan | --apply <digest> | --undo [<digest>]
+//                 the old workflow records converted to saved graph workflows (WORKFLOWCLEAN1 1e, D227): the plan reads and
+//                 writes nothing, --apply and --undo are the person's presses, confirmed in the running Daoris's window; with
+//                 none running it says so.
+//
 //   workflow skip <run> <node> "…"  ·  workflow stop <run> <node> ["…"]
 //                 the person's skip or stop of a node of a run bound to a graph version (FABRIC-CUTOVER1f, D190, design §5.2):
 //                 kept on the run's record, and the next look applies it; the running Daoris's window confirms it.

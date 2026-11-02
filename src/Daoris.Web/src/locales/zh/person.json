@@ -136,6 +136,8 @@
   "person.route.HELP_RENAME": "为与问道衍的一段对话改名",
   "person.route.HELP_PIN": "置顶与问道衍的一段对话，或取消置顶",
   "person.route.PLACE_APPLY": "应用一个位置的配置",
+  "person.route.CONVERT_APPLY": "把旧的工作流记录转换为已保存的工作流",
+  "person.route.CONVERT_UNDO": "撤销旧工作流记录的转换",
   "person.route.SET_ACCESS": "更改智能体可以触及的范围",
   "person.route.SET_GIT_ACCESS": "更改 Git 在远程仓库上可以做什么",
   "person.route.SET_ACTOR": "更改角色运行所用的智能体和模型",
