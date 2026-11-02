@@ -912,6 +912,9 @@ public static class LandingRules
     public static Landing Effective(DriverConfig config, string repository, string? workspace)
     {
         var chosen = Choose(config, repository, workspace);
+        // WORKFLOWCLEAN1 1c (the cleanup design §2.4): a place on a saved workflow lands by that workflow, so `full` opens no landing pause
+        // there; the composition is Current's transitional units' alone (§4.7).
+        if (WorkplaceWorkflows.Current.FollowsSaved(config, repository, workspace)) return chosen;
         var access = WorkplaceAccessSetup.Current.Resolve(config, repository, workspace);
         if (access.Value(AccessKey.Landing) != AccessKey.Rule || chosen.Rule is { AutoAccept: true }) return chosen;
         var source = access.Source(AccessKey.Landing);
