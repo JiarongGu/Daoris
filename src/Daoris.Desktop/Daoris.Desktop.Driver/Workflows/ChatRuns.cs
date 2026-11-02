@@ -1,10 +1,9 @@
 namespace Daoris.Driver;
 
-/// <summary>What a chat run's bind came to (CHATFLOW1c): bound, already bound, a graph version this build binds nothing to, or failed.</summary>
+/// <summary>What a chat run's bind came to (CHATFLOW1c): bound, already bound, or failed.</summary>
 /// <param name="Binding">The binding kept or already there; null where nothing was bound.</param>
-/// <param name="Graph">The graph version's workflow chosen, which binds nothing before CHATFLOW1f; null otherwise.</param>
 /// <param name="Failed">Why the home could not keep the binding; null otherwise.</param>
-public sealed record ChatRunBound(WorkflowRunBinding? Binding, string? Graph = null, string? Failed = null)
+public sealed record ChatRunBound(WorkflowRunBinding? Binding, string? Failed = null)
 {
     /// <summary>Whether this bind wrote the binding: false where it was there already, or nothing was bound.</summary>
     public bool Wrote { get; init; }
@@ -12,16 +11,16 @@ public sealed record ChatRunBound(WorkflowRunBinding? Binding, string? Graph = n
 
 /// <summary>
 /// A chat's run (CHATFLOW1c; the chat-flow design §4.1, §4.3): a conversation's work in a tree of its own runs its repository's workflow,
-/// keyed by the line the record stores, <c>chat-&lt;first&gt;</c>, and bound when its tree opens, to Current or a steps version only.
+/// keyed by the line the record stores, <c>chat-&lt;first&gt;</c>, and bound when its tree opens.
 /// </summary>
 /// <remarks>
 /// <para><b>The key</b> is the line's first record in that tree: the record its stored origin <c>session:&lt;first&gt;</c> names where that
 /// record names the same tree, else the line's earliest record there, else the record's own. A hand-over and a limit's go-on open a new
 /// record on the same tree in the same line, so they read the same run. A teammate's id holds <c>/</c> and is never a run's.</para>
 ///
-/// <para><b>Never a graph version before CHATFLOW1f</b> (§4.3, §4.5): a choice that gives a graph version binds nothing, and the view
-/// answers <see cref="WorkflowNoRun.ChatGraphLater"/>. A named workflow that cannot be read is bound with its <c>Problem</c>, which holds
-/// the press by it; only a home that cannot be written fails the bind.</para>
+/// <para><b>A graph version binds</b> (CHATFLOW1f, §4.3, §4.5): the run's subject is its candidate, submitted at the person's press
+/// (<see cref="ChatCandidates"/>), and its <c>land</c> is the runtime's. A named workflow that cannot be read, or whose graph holds a
+/// <c>quest.close</c>, is bound with its <c>Problem</c>, which holds the press by it; only a home that cannot be written fails the bind.</para>
 ///
 /// <para><b>Its files</b> go with the session delete of the record its key names (<see cref="Files"/>), and the leftover rule takes one
 /// whose record is gone.</para>
@@ -116,25 +115,23 @@ public static class ChatRuns
     }
 
     /// <summary>
-    /// The graph version a chat's choice would bind (§4.3), which this build binds nothing to: the workflow's id where the workflow design
-    /// §4.1's rows, with no task and no kind, choose a named workflow whose newest version is a graph; null otherwise.
+    /// Why a graph version cannot run a conversation's work (the chat-flow design §4.5): a conversation closes no quest, so a graph holding a
+    /// <c>quest.close</c> anywhere is refused at the bind, as a binding's problem; null for any other version.
     /// </summary>
-    public static string? GraphChosen(DriverConfig config, string home, string repository, string? workspace) =>
-        GraphChosen(config, WorkflowPorts.Store(home), repository, workspace);
-
-    /// <inheritdoc cref="GraphChosen(DriverConfig, string, string, string?)"/>
-    public static string? GraphChosen(DriverConfig config, IWorkflowStore store, string repository, string? workspace)
+    public static string? GraphRefusal(IWorkflowStore store, WorkflowRunBinding binding)
     {
-        var selected = WorkflowSelection.Resolve(config, repository, workspace, null);
-        if (selected.Workflow == WorkflowSelection.Current || !WorkflowNamed.IsId(selected.Workflow)) return null;
-        return store.Load(selected.Workflow) is { Read: { Problem: null, Versions.Count: > 0 } read } && read.Versions[^1].Graph is not null
-            ? selected.Workflow : null;
+        if (!GraphRun.Names(binding) || !WorkflowNamed.IsId(binding.Workflow)) return null;
+        var graph = store.Load(binding.Workflow)?.Read?.Versions.FirstOrDefault(each => each.Version == binding.Version)?.Graph;
+        return graph is not null && graph.Nodes.Any(node => node.Kind == NodeKinds.QuestClose)
+            ? $"`{binding.Workflow}` v{binding.Version} holds a `{NodeKinds.QuestClose}`, and a conversation closes no quest, so its work cannot follow it"
+            : null;
     }
 
     /// <summary>
     /// Bind a chat run where none is (§4.3): <see cref="WorkflowRunBindings.Plan(DriverConfig, string, string, string, string?, string?, WorkflowTaskChoice?, IReadOnlyList{WorkflowPlugin}, DateTimeOffset)"/>
-    /// with no ask and no task, so the rows from the repository's default down choose. A graph version binds nothing; a named workflow
-    /// that cannot be read is bound with its problem; a home that cannot be written fails, saying why. A run bound already is read back.
+    /// with no ask and no task, so the rows from the repository's default down choose. A graph version binds as a steps version does
+    /// (CHATFLOW1f), except one holding a <c>quest.close</c>, bound with that as its problem; a named workflow that cannot be read is bound
+    /// with its problem; a home that cannot be written fails, saying why. A run bound already is read back.
     /// </summary>
     public static ChatRunBound Bind(
         DriverConfig config, string home, string run, string repository, string? workspace, IReadOnlyList<WorkflowPlugin> plugins, DateTimeOffset at)
@@ -143,8 +140,8 @@ public static class ChatRuns
         {
             if (WorkflowRunBindings.Read(home, run) is { } kept) return new(kept);
             if (WorkflowRunBindings.Bound(home, run)) return new(null, Failed: "its stored run binding could not be read");
-            if (GraphChosen(config, home, repository, workspace) is { } graph) return new(null, graph);
             var binding = WorkflowRunBindings.Plan(config, home, run, repository, workspace, null, null, plugins, at);
+            if (binding.Problem is null && GraphRefusal(WorkflowPorts.Store(home), binding) is { } refused) binding = binding with { Problem = refused };
             var wrote = WorkflowRunBindings.Bind(home, binding);
             return new(wrote ? binding : WorkflowRunBindings.Read(home, run) ?? binding) { Wrote = wrote };
         }
@@ -156,7 +153,7 @@ public static class ChatRuns
 
     /// <summary>
     /// A press's bind-first (§4.3): a chat run not bound yet is bound before its press is gated, by its tree's owner, as the gate reads the
-    /// tree. A run bound already reads its binding back; a graph choice binds nothing and is gated as before; a home that cannot keep the
+    /// tree. A run bound already reads its binding back; a home that cannot keep the
     /// binding comes back <see cref="ChatRunBound.Failed"/>, which refuses the press (<c>bind-failed</c>).
     /// </summary>
     public static ChatRunBound BindFirst(DriverConfig config, string home, string run, string tree, IReadOnlyList<WorkflowPlugin> plugins, DateTimeOffset at)
@@ -195,7 +192,8 @@ public static class ChatRuns
     /// </summary>
     public static IReadOnlyList<string> Files(string home, string run) =>
         IsChatRun(run) && WorkflowRunBindings.IsRunId(run)
-            ? [WorkflowRunBindings.PathOf(home, run), Path.Combine(GatesFolder(home), run + ".json"), Path.Combine(LooksFolder(home), run + ".json")]
+            ? [WorkflowRunBindings.PathOf(home, run), Path.Combine(GatesFolder(home), run + ".json"), Path.Combine(LooksFolder(home), run + ".json"),
+                ChatCandidates.PathOf(home, run)]
             : [];
 
     /// <summary>The folder of the opinion gates' files, by chain or by chat run.</summary>

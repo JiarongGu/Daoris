@@ -325,11 +325,6 @@ describe("the session's Workflow view", () => {
         zh: '这个聊天在自己的工作树中工作，但这个版本还不为对话的工作读取工作流。',
       },
       {
-        code: 'chat-graph-later', workflow: 'reviewed',
-        en: "This chat's repository follows the workflow reviewed, which this build does not run for a conversation's work yet, so its work is landed as before.",
-        zh: '这个聊天所在仓库遵循工作流 reviewed，这个版本还不为对话的工作运行它，所以它的工作仍按以前的方式落地。',
-      },
-      {
         code: 'chat-tree-gone',
         en: "This chat's tree is gone, and its work was never bound to a workflow, so there is no run to show.",
         zh: '这个聊天的工作树已经不在了，它的工作也从未绑定工作流，所以没有进展可显示。',

@@ -694,6 +694,33 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     }
 
     /// <summary>
+    /// What a chat run's press waits for where the runtime performs its <c>land</c> (WORKFLOWCLEAN1 row 1d): the landing the pass starts at the
+    /// press's tip, within <see cref="GraphPasses.Bound"/>, or <i>accepted; landing</i> past it. As <see cref="PerformedPressAsync"/>, for the
+    /// conversation's press, which keeps its own reservation and answer.
+    /// </summary>
+    private async Task<TreeLanding> PerformedLandingAsync(string id, LandingGate gate, WorkflowProcess process, CancellationToken ct)
+    {
+        if (gate.Refusal is { } held) return held;
+        if ((gate.Tip ?? gate.GraphPart()?.Commit) is not { } tip) return new TreeLanding(false, TreesWords.NotJudged(id).Error.FirstOrDefault() ?? "nothing was judged.");
+
+        var unit = RunUnits.IdOf(process.BoundRun!);
+        AutoLander.Retry(_loop.Home, id, unit, tip);
+        await _loop.PassWholeAsync(GraphPasses.Bound, ct);
+        var deadline = DateTimeOffset.UtcNow + GraphPasses.Bound;
+        TreeLanding? outcome;
+        while ((outcome = LandOutcomes.Of(unit, tip)) is null && DateTimeOffset.UtcNow < deadline && !ct.IsCancellationRequested)
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(200), ct);
+        }
+
+        var carried = outcome is { Landed: false } && process.Graph?.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Review) is { } review
+                      && RunRepairs.Of(new NodeRecordFiles(_loop.Home), unit, review.Id) is not null;
+        return outcome is null ? new TreeLanding(false, "Accepted; landing. Daoris lands it at its pass, and this window shows it when it has.")
+            : carried ? outcome with { Message = "Accepted; its session was carried on to clear its tree, and it lands when the tree is clean." }
+            : outcome;
+    }
+
+    /// <summary>
     /// The person's press on a chat run's work (CHATFLOW1d, the chat-flow design §5.2): <see cref="ChatPresses.PressAsync"/>, reserved in this
     /// window's runner, its gate keyed by the run and read at the captured tip, a press's answer to what it showed kept by the run, and the
     /// landing pinned to that tip. It answers as every press does.
@@ -710,10 +737,17 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         PressSteps.Reach(PressSteps.Gate);
         var pressed = await ChatPresses.PressAsync(
             _loop.Home, new ChatPressAsk(id, tree, chatRun, repository, workspace, live) { WithoutLook = withoutLook }, _loop.Chat,
-            async (tip, token) => await presses.PressedAsync(
-                id, await trees.GateAsync(tree, null, world, id, token, tip: tip, run: chatRun), Optional(request, "answers"), tree, null, token, chatRun),
+            // CHATFLOW1f (the chat-flow design §4.5): a graph-bound run's gate is the quest's, its graph part judged by the pass this press asks
+            // after the candidate it submitted, and the press's Accept the review's word.
+            async (tip, token) => await GraphPasses.PressAsync(
+                async held => await presses.PressedAsync(
+                    id, await trees.GateAsync(tree, null, world, id, held, tip: tip, run: chatRun), Optional(request, "answers"), tree, null, held, chatRun),
+                held => trees.GateAsync(tree, null, world, id, held, tip: tip, run: chatRun), _loop.PassWholeAsync, token,
+                (review, _) => Task.FromResult(RunNodeWords.Word(new NodeRecordFiles(_loop.Home), review.Run, review.Node!, NodeWordActs.Accept, null).Done)),
             async (gate, token) =>
             {
+                // WORKFLOWCLEAN1 row 1d (the cleanup design §2.7): a run whose `land` the runtime performs is landed by that node, and this press waits.
+                if (gate.Process is WorkflowProcess { LandsByRuntime: true } performed) return await PerformedLandingAsync(id, gate, performed, token);
                 var subject = Entering(await trees.OwnSubjectAsync(
                     tree, id, null, records, quest => quests.FindAsync(quest, token),
                     named => _loop.Events.Openings([named]).GetValueOrDefault(named), gate.Process, token), request);
