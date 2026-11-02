@@ -39,6 +39,9 @@ public sealed partial class SyncStateSliceTests : DriverModuleBridge
     {
         var loop = Loop();
         await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(_service)));
+        // The come-up's own reads (the conversion's census) are not the slice's: settled, then forgotten.
+        await loop.Settling;
+        _service.Forget();
         return (loop, loop.Slices.Find(SyncStateSlice.Name)!);
     }
 
@@ -286,6 +289,11 @@ public sealed partial class SyncStateSliceTests : DriverModuleBridge
         public void Answer(string circle, JsonObject answer)
         {
             lock (_gate) _answers[circle] = answer.ToJsonString();
+        }
+
+        public void Forget()
+        {
+            lock (_gate) _asked.Clear();
         }
 
         public JsonObject Answered(string circle)

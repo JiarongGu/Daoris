@@ -6,13 +6,13 @@ namespace Daoris.Desktop.Modules.Tests;
 /// WORKFLOWCLEAN1g-ii: the census the loop keeps. The row's wait is the places it lists while it has not ended, told when that changes;
 /// none before the first reading, and none once it has ended.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed class ConversionCensusTests : Bridge
 {
     private static LegacyCensus Holding(params string[] places) =>
         new([], [.. places.Select(each => new LegacyPlaceRow(each, false, "default", ["steps"], false, false))], [], []);
 
     [Fact]
-    [Trait("Category", "Census")]
     public void A_census_that_holds_places_is_a_wait_with_their_count_until_it_ends()
     {
         var census = new ConversionCensus(Bus);
@@ -45,6 +45,14 @@ public sealed class ConversionCensusTests : Bridge
         }
 
         var running = census.RefreshAsync(Read, default);
+        // A reading yields before it begins, and a call made before then shares it: the burst comes once the first has begun.
+        var until = DateTime.UtcNow + Poll.Patience;
+        while (Volatile.Read(ref readings) < 1)
+        {
+            Assert.True(DateTime.UtcNow < until, "the first reading never began");
+            await Task.Delay(5);
+        }
+
         var asked = Enumerable.Range(0, 5).Select(_ => census.RefreshAsync(Read, default)).ToList();
         Assert.All(asked, each => Assert.False(each.IsCompleted));
 

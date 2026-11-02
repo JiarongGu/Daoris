@@ -143,7 +143,8 @@ public sealed class DriverModuleAddedTests : DriverModuleBridge
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             var body = request.Content is null ? "" : await request.Content.ReadAsStringAsync(ct);
-            lock (_heard) _heard.Add((request.RequestUri!.AbsolutePath, body));
+            // The registry is the come-up's own read (the conversion's census), not the route's.
+            if (request.RequestUri!.AbsolutePath != "/api/registry") lock (_heard) _heard.Add((request.RequestUri.AbsolutePath, body));
             var (status, said) = answer(request);
             return new HttpResponseMessage(status) { Content = new StringContent(said, Encoding.UTF8, "application/json") };
         }
