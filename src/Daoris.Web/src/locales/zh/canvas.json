@@ -5,5 +5,19 @@
   "canvas.zoomIn": "放大",
   "canvas.zoomOut": "缩小",
   "canvas.actual": "实际大小",
-  "canvas.toSelection": "缩放到所选"
+  "canvas.toSelection": "缩放到所选",
+  "canvas.minimap": "缩略图",
+  "canvas.fit": "显示整张图",
+  "canvas.moves": "一张图：拖动以移动",
+  "canvas.laying": "正在排布图…",
+  "canvas.find": "在图中查找",
+  "canvas.findAt": "第 {{at}} 个，共 {{count}} 个",
+  "canvas.findNone": "没有匹配",
+  "canvas.findResults": "匹配项",
+  "canvas.asList": "以列表显示",
+  "canvas.asGraph": "以图显示",
+  "canvas.items": "{{count}} 项",
+  "canvas.groupCard": "{{title}}，{{count}} 项。按下展开",
+  "canvas.foldAgain": "重新折叠",
+  "canvas.selectionGone": "你选中的项已不在图中。"
 }

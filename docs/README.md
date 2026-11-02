@@ -231,6 +231,7 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-11-02-comms-proposal-codex.md` | Proposal: COMMS1, Codex, sealed
 | `2026-11-02-comms-design.md` | Design: COMMS1, communication as a read over its records, one door for answers to the line's head, parts that address each other; accepted 2026-11-02 (D225)
 | `2026-11-02-comms-reads.md` | Reads: COMMS1, Opus's read, settled in the design's §13; Codex's owed
+| `2026-11-02-review2-findings.md` | Record: REVIEW2, the full review's findings by area and where each went; open
 
 ## UI, browser, tools and plugin contracts
 

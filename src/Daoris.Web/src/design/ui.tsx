@@ -1988,7 +1988,7 @@ export function EmptyState({ icon, headline, body, action }: {
   icon: IconName; headline: string; body: string; action?: ReactNode;
 }) {
   return (
-    <div className="grid justify-items-center gap-1.5 px-4 py-7 text-center text-ink-faint">
+    <div data-empty-state="" className="grid justify-items-center gap-1.5 px-4 py-7 text-center text-ink-faint">
       <Icon name={icon} size={26} />
       <p className="mt-1 text-body font-semibold text-ink">{headline}</p>
       <p className="max-w-[28rem] text-pretty text-body text-ink-soft"><Inline text={body} /></p>

@@ -24,6 +24,8 @@ export type SizingActs = {
   toSelection: (() => void) | null;
   actual: () => void;
   zoomTo: (k: number) => void;
+  /** The minimap's switch, where the world is large enough to offer one (`minimap.ts`). */
+  minimap?: { on: boolean; toggle: () => void } | null;
 };
 
 /**
@@ -76,6 +78,14 @@ export function CanvasToolbar({ tools, k, bounds, fit, acts }: {
               </Menu.RadioItem>
             ))}
           </Menu.RadioGroup>
+          {acts.minimap && (
+            <>
+              <Menu.Separator />
+              <Menu.CheckboxItem checked={acts.minimap.on} onCheckedChange={acts.minimap.toggle}>
+                <span className="flex-1 truncate">{t('canvas.minimap')}</span>
+              </Menu.CheckboxItem>
+            </>
+          )}
         </Menu.Content>
       </Menu.Root>
     </div>

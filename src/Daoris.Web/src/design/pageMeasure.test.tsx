@@ -44,7 +44,7 @@ const CONTROL = 'input, textarea, button, [role="combobox"], [role="switch"]';
 
 /** The caps a rendered story's page wears that no rule sets aside. */
 function pageCaps(root: Element): string[] {
-  root.querySelectorAll('[data-main-state="none"], [data-main-state="gone"]').forEach((notice) => notice.remove());
+  root.querySelectorAll('[data-main-state="none"], [data-main-state="gone"], [data-empty-state]').forEach((notice) => notice.remove());
   return [...root.querySelectorAll('[class*="max-w-"]')].flatMap((element) => {
     if (element.querySelector(CONTROL)) return [];
     return cappedBlocks(wrap(element)).filter((cap) => !STORY_FRAME.test(cap.split(' ')[1]!));
@@ -71,6 +71,7 @@ describe('every record page wraps at one edge', () => {
       '<p class="max-w-[40rem]">a note</p>',
       '<div class="grid max-w-[48rem]"><input /></div>',
       '<main data-main-state="none"><p class="max-w-[28rem]">Choose one in the list.</p></main>',
+      '<div data-empty-state=""><p class="max-w-[28rem]">No identity yet.</p></div>',
       '</div>',
     ].join('');
     expect(pageCaps(root)).toEqual(['<p> max-w-prose', '<p> max-w-[40rem]']);
