@@ -47,7 +47,7 @@ public static class TreesWords
     /// design §2.1): the review's word is kept under the verb's lease (<see cref="VerbLeases"/>) and the verb never performs. Null where the
     /// gate's run is not performed; what holds the work, said as a press says it, where the gate holds it; exit 0 once the word is kept.
     /// </summary>
-    public static TreesSaid? AcceptedForPass(string home, LandingGate gate)
+    public static TreesSaid? AcceptedForPass(string home, IWorkplaceGate gate)
     {
         if (gate.Process is not { LandsByRuntime: true } process) return null;
         if (gate.Refusal is { } held) return Land(held, []);

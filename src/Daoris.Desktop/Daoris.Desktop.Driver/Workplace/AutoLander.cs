@@ -413,7 +413,8 @@ public sealed class AutoLander(
         var operation = choice.Run is null ? null : TogetherHeadOf(entry.Tree);
         if (operation is not null && operation.Phase != TogetherPhase.Ready)
         {
-            return $"landing  session {entry.Session}: brought together with other sessions' work ({operation.Phase}); it lands when the operation is ready.";
+            return Look.Retry("landing", $"landing  session {entry.Session}: brought together with other sessions' work ({operation.Phase}); "
+                + "it lands when the operation is ready.");
         }
 
         var landed = operation is not null
