@@ -78,6 +78,8 @@
   "workflow.place.route.landedWords": "landed work",
   "workflow.place.route.chosen": "{{label}}: {{target}}, {{why}}",
   "workflow.place.chart.current": "Follows its old landing rule",
+  "workflow.place.update.says": "Daoris ships a newer {{name}}.",
+  "workflow.place.update.open": "Update…",
   "workflow.place.chart.saved": "{{name}} v{{version}}, the saved workflow {{route}} follows",
   "workflow.place.chart.show": "Show the chart",
   "workflow.place.chart.hide": "Hide the chart",

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, render as rtlRender, screen, within } from '@testing-library/react';
+import { act, render as rtlRender, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { type ReactElement, useState } from 'react';
@@ -8,7 +8,8 @@ import { code } from '../../test/code';
 import { PlaceAside } from '../../agents/setup/placeAside';
 import type { PlaceFlowHold, PlaceView } from '../../agents/setup/placeShell';
 import type { CurrentWorkflow, WorkflowEffective } from '../current';
-import { LIST, PALETTE } from '../edit/editFixtures';
+import { APPEND, judgedFor, LIST, PALETTE } from '../edit/editFixtures';
+import { draftOf, graphOf } from '../edit/graphDraft';
 import {
   cellOf, EFFECTIVE_CURRENT, EFFECTIVE_DOCS, EFFECTIVE_LANDED_NONE, EFFECTIVE_LANDED_VERIFIES, EFFECTIVE_RELEASE, EFFECTIVE_UNREAD,
 } from './effectiveFixtures';
@@ -433,6 +434,29 @@ describe('Change… and Edit steps…', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Convert…' }));
     expect(onConvert).toHaveBeenCalledTimes(2);
     expect(screen.queryByRole('button', { name: 'Use Current here' })).toBeNull();
+  });
+
+  // WORKFLOWCLEAN1h-b: a copy behind the default this build ships is offered the update, a plan of one that appends the shipped graph.
+  it("say Daoris ships a newer workflow, and plan the update as the copy's next version, with the shipped default it came from", async () => {
+    const onJudge = vi.fn();
+    const onSave = vi.fn(async (_ask: unknown) => ({ ...APPEND, written: true, version: 3 }));
+    const newer = { default: 'merge-after-accept', name: 'Merge after you accept', graph: MERGE_GRAPH };
+    const effective = { ...EFFECTIVE_RELEASE, newer };
+    const bridge = { ...editor(), onJudge, onSave, judged: APPEND, judgedOf: judgedFor(MERGE_GRAPH) };
+    draw({ editor: bridge, current: withRoute(effective, SAVED_DEFAULT) });
+
+    expect(screen.getByText('Daoris ships a newer Merge workflow.')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Update…' }));
+    await waitFor(() => expect(onJudge).toHaveBeenCalledWith({ id: 'release', graph: graphOf(draftOf(MERGE_GRAPH)), base: 2 }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Review and save' }));
+    await userEvent.click(screen.getByRole('checkbox', { name: /follow it/i }));
+    await userEvent.click(screen.getByRole('button', { name: 'Save v3' }));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ id: 'release', base: 2, updates: 'merge-after-accept' }));
+  });
+
+  it('offer no update where the copy is up to date', () => {
+    draw({ editor: editor(), current: withRoute(EFFECTIVE_RELEASE, SAVED_DEFAULT) });
+    expect(screen.queryByRole('button', { name: 'Update…' })).toBeNull();
   });
 
   it('say Current follows its old landing rule, with the conversion beside it', async () => {

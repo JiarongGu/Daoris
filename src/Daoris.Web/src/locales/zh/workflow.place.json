@@ -78,6 +78,8 @@
   "workflow.place.route.landedWords": "落地的工作",
   "workflow.place.route.chosen": "{{label}}：{{target}}，{{why}}",
   "workflow.place.chart.current": "沿用旧的合并规则",
+  "workflow.place.update.says": "Daoris 附带了更新的{{name}}。",
+  "workflow.place.update.open": "更新…",
   "workflow.place.chart.saved": "{{name}} v{{version}}，{{route}}所跟随的已保存工作流",
   "workflow.place.chart.show": "显示流程图",
   "workflow.place.chart.hide": "收起流程图",

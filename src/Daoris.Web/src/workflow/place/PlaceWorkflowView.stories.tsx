@@ -112,6 +112,16 @@ export const LandingUnderCurrentNarrow: Story = { ...LandingUnderCurrent, decora
 export const LandingUnderCurrentChinese: Story = { ...LandingUnderCurrent, decorators: [chinese] };
 export const LandingUnderCurrentDark: Story = { ...LandingUnderCurrent, decorators: [dark] };
 
+/** **A copy behind the default this build ships**: *Daoris ships a newer … · Update…*, a plan of one that appends the shipped graph. */
+const behind = (route: string): PlaceWorkflowProps['current'] => {
+  const answer = answerFor(route);
+  return answer && answer.effective ? { ...answer, effective: { ...answer.effective, newer: { default: 'merge-after-accept', name: 'Merge workflow', graph: answer.effective.graph } } } : answer;
+};
+export const ShippedUpdate: Story = { args: { route: behind } };
+export const ShippedUpdateHalf: Story = { ...ShippedUpdate, decorators: [storyWidths.half] };
+export const ShippedUpdateNarrowChinese: Story = { ...ShippedUpdate, decorators: [storyWidths.narrow, chinese] };
+export const ShippedUpdateDark: Story = { ...ShippedUpdate, decorators: [dark] };
+
 /** **A kind**: Documentation work follows its own saved workflow, chosen by the workspace. */
 export const DocumentsRoute: Story = { args: { first: { route: 'kind:docs' } } };
 export const DocumentsRouteNarrowChinese: Story = { ...DocumentsRoute, decorators: [storyWidths.narrow, chinese] };

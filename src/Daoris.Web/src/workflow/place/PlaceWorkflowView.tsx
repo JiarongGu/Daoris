@@ -12,7 +12,9 @@ import { FoldRow, type FoldSpec } from '../../projects/setup/FoldRow';
 import type { LandsHere } from '../../projects/setup/RepositorySetup';
 import { choiceLabel } from '../edit/editWords';
 import { draftOf, optionOf } from '../edit/graphDraft';
+import { presetName } from '../edit/presetWords';
 import { LandOptions } from './LandOptions';
+import { NextVersion } from './NextVersion';
 import type { IntegrationRequest } from '../../settings/repository/IntegrationDeclaration';
 import { type Answered, InlineConfirm } from '../../work/InlineConfirm';
 import type { WorkflowEffective, WorkflowStart } from '../current';
@@ -36,6 +38,50 @@ export type LandingHand = {
   /** How the chosen route lands: the followed version's land options, or Current's door to the conversion; none while the route is read. */
   lands: LandsHere | null;
 };
+
+/**
+ * *Daoris ships a newer … workflow · Update…* (WORKFLOWCLEAN1h-b; the cleanup design §1.1): a copy behind the default this build ships. *Update…*
+ * is a plan of one: the shipped graph judged and reviewed as the copy's next version, and saved only once the places it reaches are let follow it.
+ */
+function ShippedUpdate({ editor, effective, onReads }: {
+  editor: NonNullable<PlaceWorkflowProps['editor']>;
+  effective: WorkflowEffective;
+  onReads: (on: boolean) => void;
+}) {
+  const { t, i18n } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const newer = effective.newer;
+  useEffect(() => { onReads(open); return () => onReads(false); }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!newer || effective.version === null || !effective.graph) return null;
+  const base = draftOf(effective.graph);
+  return (
+    <div className="grid min-w-0 gap-1.5">
+      <p className="m-0 flex flex-wrap items-baseline gap-x-2 text-small text-ink-soft">
+        {t('workflow.place.update.says', { name: presetName(t, i18n, { id: newer.default, name: newer.name }) })}
+        <Button variant="ghost" className="min-h-0 border border-line py-0.5 text-small" aria-expanded={open} onClick={() => setOpen((was) => !was)}>
+          {t('workflow.place.update.open')}
+        </Button>
+      </p>
+      {open && (editor.palette
+        ? (
+          <NextVersion
+            palette={editor.palette}
+            base={base}
+            draft={draftOf(newer.graph)}
+            workflow={{ id: effective.workflow, version: effective.version }}
+            updates={newer.default}
+            judged={editor.judged}
+            judgedOf={editor.judgedOf ?? null}
+            onJudge={editor.onJudge}
+            saving={editor.saving}
+            onSave={editor.onSave}
+            onReread={() => setOpen(false)}
+          />
+        )
+        : <p className="m-0 text-small text-ink-soft">{t('workflow.reading')}</p>)}
+    </div>
+  );
+}
 
 /** The land options of the followed version, which read the palette only while they show. */
 function LandEditor({ editor, graph, workflow, lines, onReads }: {
@@ -191,8 +237,8 @@ export function PlaceWorkflowView({
   const reported = useRef<EditorHold | null>(held?.editor ?? null);
   const [discarding, setDiscarding] = useState(false);
   // The editor's reads are asked while a panel shows or the Landing row's options do.
-  const reads = useRef({ panel: false, land: false });
-  const tell = () => editor?.onOpen?.(reads.current.panel || reads.current.land);
+  const reads = useRef({ panel: false, land: false, update: false });
+  const tell = () => editor?.onOpen?.(reads.current.panel || reads.current.land || reads.current.update);
   const show = (next: Panel) => {
     setPanel(next);
     reads.current.panel = next !== null;
@@ -435,6 +481,9 @@ export function PlaceWorkflowView({
               </>
             )}
           </div>
+        )}
+        {editor && answered?.newer && !landed && !open && (
+          <ShippedUpdate key={`${answered.workflow}@${answered.version}`} editor={editor} effective={answered} onReads={(on) => { reads.current.update = on; tell(); }} />
         )}
         {onCurrent && !open && (
           <p className="m-0 flex flex-wrap items-baseline gap-x-2 text-small text-ink-soft">
