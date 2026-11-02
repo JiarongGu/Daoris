@@ -3280,7 +3280,6 @@ public sealed class Driver(
             };
             oneLook.Dispose();
             var (info, harnessNotice) = Prepare(adapter, target, selection);
-            await KeepHandedAsync(sessionId, info, ct).ConfigureAwait(false);
 
             // The creating sentence, on the record while the session runs (D51 rule 4): where it grew from and what a fresh
             // tree does not hold. The conclusion's note replaces it — by then the record's Tree field and the evidence say the rest.
@@ -4370,17 +4369,14 @@ public sealed class Driver(
         // TERMTRUST1a (D201 point 4): through the launcher, so the harness is born in this process's agents' job, and a partner's in its
         // piece's job beneath it; the process answered is the launcher's, which the doors read as the session's.
         var whose = resume is null ? StartClass.Background : StartClass.Person;
-        // COWORKVIEW1a: the process's own token, its start written before the spawn (at the move, for a run moved first) and handed
-        // it at the spawn.
-        var proc = Bracketed(home, sessionId, info, moved);
-        using var process = await Spawned(
-                proc, () => AgentStarts.StartAsync(info, piece is null ? ContainedKind.Agent : ContainedKind.Piece, whose, home, Log, ct, piece))
-                .ConfigureAwait(false)
-            ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
+        // AGENTPROVIDER1m-i (ONEWAY1h-i): the run over today's transports holds the process, its capture and its wait; the steps below are this
+        // executor's own, between the spawn and the open, as they were between the spawn and the capture. The run's spawn keeps the downloads
+        // the start is handed (KEEP1b) and brackets its process's lineage (COWORKVIEW1a: its own token, its start written before the spawn, or
+        // the token its move issued); it is tracked so who is driving Daoris's browser lasts exactly as long as it (BRW8), and reaped.
+        var start = new TransportStart(info, whose) { RefusesInput = refusesInput, DrivesBrowser = drivesBrowser, Piece = piece, Moved = moved };
+        await using var run = new TransportRun(new DriverTransportHost(this), adapter, start);
+        await run.SpawnAsync(sessionId, ct).ConfigureAwait(false);
         spawned?.Invoke();
-        // Kept beside the process, so who is driving Daoris's browser lasts exactly as long as it (BRW8).
-        using var tracked = Context.Processes.Track(sessionId, process, refusesInput, drivesBrowser);
-        using var reaper = new Disposer(() => SessionProcesses.EndIfRunning(process));
         // D205 row b: what this start's record already says, and what it asked, kept as reporting alone — a service that does not
         // answer here costs the record its provenance, never the run.
         PriorSession? prior = null;
@@ -4535,31 +4531,50 @@ public sealed class Driver(
                 // STAFFPOLICY1e: a driven run's bound is its role's `after` where the role moves on `transient`, else D210's five.
                 tries: StaffCourse.Tries(Context.Harnesses.StaffFor(home), Context.Conversations.RoleOf(sessionId)?.Role ?? actor))
             : null;
-        var acp = adapter.Wire == SessionWire.Acp
-            // The posture rides with it, because it is the ADAPTER's (ACP3): three harnesses name the
-            // same D37 boundary three different ways, and one of them does not name it on the wire. A driven session's repository's
-            // asking or unrestricted permission prompts name the adapter's mode for it, required (AUTONOMY1b, D184 point 3).
-            ? CaptureAcpAsync(
-                process, transcript, sessionId, cwd, prompt, target.Access?.Posture ?? PassPosture(target, adapter) ?? adapter.AcpPosture, harnessNotice, ct, scope, rules.Meta,
-                handedServers ?? Context.Servers, target.PersonSaid, inbox, said, keepAs, resume, account, waitsOnBackground, noConnector, ending,
+        var protocol = adapter.Wire == SessionWire.Acp;
+        // What the native door's harness says in its own words, apart from its agent's, for its ending (AGT3c).
+        var own = new HarnessWords();
+        var structured = !protocol && adapter.StructuredOutput() is not null;
+        // ACCESSSWAP1b, TURNFAIL1: the person's words the protocol door handed back or never delivered, as its session's run said them.
+        IReadOnlyList<ChatMessage> acpLeft = [];
+        run.HandStart(start with
+        {
+            // AGENTLYNTAI1s-i: a native harness's prompt on its input, once its output is being read, then closed. FOUNDATION1f-iv part b: the
+            // write's return is where a carry-on's moved words are `sent`, never the process's start, which a crash can precede the write by.
+            Prompt = protocol ? null : prompt,
+            Written = protocol ? null : written,
+            Minutes = minutes,
+            // BGWAIT2: said to the protocol door before the kill, so the stream's end it causes is said as the bound's or the watcher's.
+            TimingOut = ending is null ? null : bound => ending.Say(Observation.TimedOut(bound)),
+            Quiet = watched?.Ending ?? default,
+            QuietEnding = ending is null ? null : () => ending.Say(Observation.Quiet(watched!.EndedMinutes ?? 0)),
+            // ANSWER1a, MSG1b: a native resume told once its harness named its conversation, so its words went.
+            Named = resume is null ? null : () => resume.Named = resume.Prompted = true,
+            Protocol = !protocol ? null : DrivenProtocol(
+                run, sessionId, cwd, prompt,
+                // The posture rides with it, because it is the ADAPTER's (ACP3): three harnesses name the
+                // same D37 boundary three different ways, and one of them does not name it on the wire. A driven session's repository's
+                // asking or unrestricted permission prompts name the adapter's mode for it, required (AUTONOMY1b, D184 point 3).
+                target.Access?.Posture ?? PassPosture(target, adapter) ?? adapter.AcpPosture, scope, rules.Meta,
+                handedServers ?? Context.Servers, inbox, said, resume, keepAs, waitsOnBackground, noConnector, ending,
                 unoffered: target.Access is { } access ? access.Unoffered : PassPosture(target, adapter) is not null ? BrainstormPermissions.Unoffered : null,
-                setupChanged: setupChanged, handed: target.Handed,
+                setupChanged: setupChanged,
                 // D205 §3.2: what its actor asked, set on the session before the first prompt; what the agent would not take is kept as
                 // asked and not carried, so the record never says a choice was taken that was not.
                 asked: asked, carried: target.Brainstorm is not null ? null
                     : notCarried => _ = service.TryKeepActorAsync(sessionId, Log, choice, notCarried, ct: CancellationToken.None),
                 modelRefused: refusedAt, offerRead: offered, retry: retry, carriesOn: carriesOn, written: written,
-                typedFailures: adapter.Toolchain?.ErrorWords?.TypedFailures == true, proc: proc)
-            : null;
-        // What the native door's harness says in its own words, apart from its agent's, for its ending (AGT3c).
-        var own = new HarnessWords();
-        var structured = acp is null
-            ? Structured(adapter, process, transcript, sessionId, prompt, ct, preamble, target.PersonSaid, said, keepAs, resume, account, own, target.Handed, proc)
-            : null;
-        Task capture = acp ?? structured ?? CaptureAsync(process, transcript, sessionId, ct, preamble);
-        // AGENTLYNTAI1s-i: a native harness's prompt on its input, once its output is being read, then closed. FOUNDATION1f-iv part b: the
-        // write's return is where a carry-on's moved words are `sent`, never the process's start, which a crash can precede the write by.
-        if (await NativePrompt.WriteAsync(process, adapter, prompt, ct).ConfigureAwait(false)) written?.Invoke();
+                typedFailures: adapter.Toolchain?.ErrorWords?.TypedFailures == true, handedBack: words => acpLeft = words),
+        });
+        run.HandRecords(new RunRecords(
+            sessionId, transcript, output, Context.Events, LineageHome: home, KeepAs: keepAs, Own: own, Said: said,
+            // What was asked, first: the composed target and the person's answer it carries on from, as theirs; a resumed run's own first line and
+            // the answer (ANSWER1a), the target already in the conversation above.
+            Opening: resume?.Opening() ?? HarnessCapture.Opening(prompt, target.PersonSaid, account, target.Handed),
+            // The protocol door's transcript opens with what its harness is doing that Daoris could not govern (ACP3); the native door's with
+            // how its run was set up.
+            Preamble: protocol ? harnessNotice : preamble));
+        await (resume is null ? run.OpenAsync(ct) : run.ResumeAsync(resume.Conversation, ct)).ConfigureAwait(false);
 
         if (!movedFirst)
         {
@@ -4572,43 +4587,27 @@ public sealed class Driver(
             {
                 // 🔴 The record would not become this run's (ANSWER2: a second resume met working → working), so the run is ended
                 // here, and what was reading its output is observed: its failure is written with its reason, never left unawaited.
-                await AbandonedAsync(
-                        process, capture, sessionId, Log, output, exitRead: () => ChildLineage.Exited(home, sessionId, proc, clean: false))
-                    .ConfigureAwait(false);
+                await run.AbandonAsync().ConfigureAwait(false);
                 throw;
             }
         }
 
         working?.Invoke();
 
-        var exitCode = await WaitedAsync(
-                sessionId, proc,
-                WaitAsync(
-                    process, ct, minutes, timingOut: ending is null ? null : bound => ending.Say(Observation.TimedOut(bound)),
-                    quiet: watched?.Ending ?? default,
-                    quietEnding: ending is null ? null : () => ending.Say(Observation.Quiet(watched!.EndedMinutes ?? 0))),
-                ct)
-            .ConfigureAwait(false);
-        // 🔴 State E (SESSWATCH1a): a stray its agent started may hold the capture open past the exit; bounded, and concluded by the exit.
-        var drained = await DrainedAsync(sessionId, proc, capture).ConfigureAwait(false);
-
-        // What it consumed, where the door reported it (TOOL3/D57 §4). A pipe with only text reports
-        // nothing, and a surface then says "not measured" rather than zero.
-        var (outcome, turnFailed, acpLeft, refused) = acp is not null && drained ? await acp.ConfigureAwait(false) : (null, null, [], null);
-        // DONEEND1: an agent the run ended because it lingered after its session had ended exited as its session did, cleanly: on this
-        // door the agent exits 0 once its stdin closes whatever happened, and the kill was Daoris's own, never the agent's end.
-        if (ending?.EndedLingering == true && exitCode is not null) exitCode = 0;
-        // COWORKVIEW1a: this process's end at its drain, judged of it alone, before a retry's or a continuation's process starts.
-        Ended(sessionId, proc, exitCode);
+        // The exit, the capture bounded past it (SESSWATCH1a's state E), the process's lineage end at its drain, and what it consumed, where the
+        // door reported it (TOOL3/D57 §4): a pipe with only text reports nothing, and a surface then says "not measured" rather than zero.
+        var end = await run.EndAsync(ct).ConfigureAwait(false);
+        var exitCode = end.Exit;
+        var used = end.Usage;
+        var turnFailed = protocol ? end.Ending.Failure : null;
         List<ChatMessage> left = [.. acpLeft];
-        var used = acp is not null ? outcome?.Usage
-            : structured is not null && drained ? await structured.ConfigureAwait(false)
-            : null;
 
         // 🔴 SESSCTX1c (D189's amendment, the session-context design §2): a native resume whose harness ended on a failed exit before it
         // named its conversation proves nothing of its loss, so it is tried once more as the same resume, the same conversation, account
         // and access, before its conclusion reads a second such end as `exited`. Never after a stop.
-        if (structured is not null && resume is { Named: false, Refused: null, Retried: false } && exitCode is int early && early != 0
+        // ONEWAY1h-ii moves the retry and the go-on onto the run (RestartAsync, GoOnAsync); until then each is handed the first run's start and
+        // the keep list, as before.
+        if (structured && resume is { Named: false, Refused: null, Retried: false } && exitCode is int early && early != 0
             && !Context.Processes.WasStopRequested(sessionId))
         {
             (exitCode, used) = await GoOns.AgainAsync(
@@ -4635,21 +4634,16 @@ public sealed class Driver(
                 + $"never mid-turn, and the {left.Count} word(s) held for it go on in the same conversation under the new setup at the next look.");
         }
 
+        // The protocol door's ending is its run's (the provider's refusal, a cut turn, a choice not offered, the refusal it ended on). A native
+        // run's is read again of the last run's exit and the harness's own words since, a retry or a go-on having run after the first.
+        var ended = protocol ? end.Ending : TransportRun.Ending(protocol: false, structured, exitCode, turnFailed: null, own, transcript);
         var concluded = await conclude(
                 exitCode, used, turnFailed,
-                Ending(acp is not null, structured is not null, exitCode, turnFailed, own, transcript) with
+                ended with
                 {
                     SetupChanged = left.Count > 0 ? swapped : null,
-                    // APIREFUSAL1: the door's own word that its provider refused the turn it ended on.
-                    ProviderRefused = outcome?.ProviderRefused == true,
-                    // CODEXPERM1: its agent cut the turn it ended on.
-                    Cut = outcome?.Cut,
-                    // MODELROLE1c2: its agent refused its choice at the open, before any prompt.
-                    NotOffered = outcome?.NotOffered,
                     // AGENTERRORS1a: what its transient retry read and did, for the conclusion.
                     Transient = retry,
-                    // FOUNDATION1g part b: the refusal its turn ended on, read for a limit by a run with no transient retry.
-                    Refusal = refused,
                 })
             .ConfigureAwait(false);
 
@@ -4781,16 +4775,6 @@ public sealed class Driver(
     }
 
     /// <summary>
-    /// What the harness itself said about how its run ended (AGT3c), by its door: the protocol door's failure; the native
-    /// door's failed turn and the words it wrote outside its protocol and on its stderr; and for a door that carries only text,
-    /// all it gives, its transcript, beside the exit.
-    /// </summary>
-    internal static HarnessEnding Ending(bool protocol, bool structured, int? exit, string? turnFailed, HarnessWords own, string transcript) =>
-        protocol ? new HarnessEnding(exit, turnFailed, [])
-        : structured ? own.Ended(exit)
-        : HarnessEnding.Transcript(exit, transcript);
-
-    /// <summary>
     /// Exit code, or null when a pass's own minutes ran out and killed it. Either way the tree dies with it — a pass's bound
     /// AND a driver shutdown both end the process, because an orphaned agent session working a quest
     /// nobody is observing is the one thing worse than a failed one.
@@ -4837,20 +4821,6 @@ public sealed class Driver(
             return null; // timeout: the caller records "failed"
         }
     }
-
-    /// <summary>
-    /// Both streams into one transcript file — diagnostic, never the record (D46 §4) — and, since
-    /// D49 §2, teed into the live console as they pass.
-    /// </summary>
-    /// <remarks>
-    /// One pump, two destinations, and the file is written FIRST: the durable copy must never be the
-    /// thing that loses a line to an in-memory reader's problem. The console is optional because the
-    /// headless driver has nobody to show it to — the buffer exists only where something reads it.
-    /// </remarks>
-    private Task CaptureAsync(
-        Process process, string transcript, string sessionId, CancellationToken ct, string? preamble = null) =>
-        HarnessCapture.CaptureAsync(
-            Hearing(process.StandardOutput, sessionId), Hearing(process.StandardError, sessionId), transcript, sessionId, output, ct, preamble);
 
     /// <summary>
     /// The watcher's look (SESSWATCH1a, D200, the session-watch design §2): its steps this look, each said as a line, which is the
@@ -4919,31 +4889,9 @@ public sealed class Driver(
     internal TextReader Hearing(TextReader reader, string sessionId) => Watch.Hearing(reader, sessionId);
 
     /// <summary>
-    /// The structured capture for a pipe-door harness whose adapter reads its stdout (CONV3), or null
-    /// when the adapter has no reader and the door stays text.
-    /// </summary>
-    /// <param name="keepAs">The adapter a quest's session keeps its harness's conversation id under (ANSWER1a); null keeps none.</param>
-    /// <param name="resume">The conversation an answer continues: the record's transcript and conversation go on.</param>
-    /// <param name="account">What the prompt was composed of (CONTEXT1), kept beside it on its event.</param>
-    /// <param name="own">Where the harness's own words are kept for its run's ending (AGT3c).</param>
-    /// <param name="handed">A resume's words from the session that asked, shown after the target under their ids (SAYHELD1).</param>
-    private Task<AcpUsage?>? Structured(
-        ISessionAdapter adapter, Process process, string transcript, string sessionId, string prompt,
-        CancellationToken ct, string? preamble = null, string? personSaid = null, Action<JsonElement>? said = null,
-        string? keepAs = null, ResumeAsk? resume = null, InstructionAccount? account = null, HarnessWords? own = null,
-        IReadOnlyList<SaidWordView>? handed = null, string? proc = null) =>
-        adapter.StructuredOutput() is { } mapper
-            ? KeepingAsync(mapper, HarnessCapture.CaptureStructuredAsync(
-                Hearing(process.StandardOutput, sessionId), Hearing(process.StandardError, sessionId), transcript, sessionId, output,
-                Context.Events, mapper, resume is null ? prompt : null, ct, preamble, personSaid: personSaid, handed: handed,
-                opened: resume?.Opening(), append: resume is not null, said: said, account: account, own: own,
-                lineage: ChildLineage.Writer(home, sessionId, proc)),
-                sessionId, keepAs, resume)
-            : null;
-
-    /// <summary>
     /// The native door's conversation id, once its output has ended (ANSWER1a): kept for a quest's session, and told to a
-    /// resume, whose run that never named one ended before the harness opened its conversation.
+    /// resume, whose run that never named one ended before the harness opened its conversation. The continuations' until ONEWAY1h-ii moves
+    /// them onto the run, whose own twin then stays.
     /// </summary>
     internal async Task<AcpUsage?> KeepingAsync(IStreamMapper mapper, Task<AcpUsage?> capture, string sessionId, string? keepAs, ResumeAsk? resume)
     {
@@ -4969,17 +4917,18 @@ public sealed class Driver(
         + "`npm run publish:service -- --install` lands one in the home's `bin/`.";
 
     /// <summary>
-    /// The protocol door's capture (D53): an ACP session held over this process's stdio, with the
-    /// RENDERED updates reaching the transcript and the console rather than the wire itself.
+    /// The protocol door's driven session (D53) as its run opens it (ONEWAY1h-i): an ACP session the run holds over its process's stdio, the
+    /// RENDERED updates reaching the transcript and the console rather than the wire itself; this executor's closure is what it sets on the
+    /// session, the run that prompts it, and what it says beside the run's lines through <see cref="TransportRun.Say"/>.
     /// </summary>
     /// <remarks>
     /// <para><b>stdout belongs to the protocol; stderr is still text a person wants.</b> Agents log
     /// there, and its lines go to the same two destinations through the same tee, so a transcript
     /// stays one readable stream.</para>
     ///
-    /// <para><b>The ending is end-of-input, not a kill.</b> When the turn is over the driver closes
+    /// <para><b>The ending is end-of-input, not a kill.</b> When the turn is over the run closes
     /// stdin and the agent winds up and exits on its own — the same ending the chat door records as
-    /// `completed` (D49/SES2), and the exit the conclusion below is actually drawn from.</para>
+    /// `completed` (D49/SES2), and the exit the conclusion is actually drawn from.</para>
     ///
     /// <para><b>The wire's own ending is written down and nothing more.</b> It is a self-report, and
     /// the protocol flattens an aborted, blocked or errored turn into `end_turn`, so a record moved
@@ -4990,12 +4939,11 @@ public sealed class Driver(
     /// Null for a quest's session.
     /// </param>
     /// <param name="meta">What <c>session/new</c> carries for the rules composed for this session (PERM1).</param>
-    /// <param name="keepAs">The adapter a quest's session keeps its harness's conversation id under (ANSWER1a); null keeps none.</param>
     /// <param name="resume">
     /// The conversation an answer continues (ANSWER1a): resumed rather than opened, the record's transcript and
     /// conversation going on, and an agent that would not resume it told to the resume, never as a turn that failed.
     /// </param>
-    /// <param name="account">What the prompt was composed of (CONTEXT1), kept beside it on its event; null for a resume.</param>
+    /// <param name="keepAs">The adapter a quest's session keeps its harness's conversation id under (ANSWER1a), which a refused resume names.</param>
     /// <param name="waitsOnBackground">Whether a turn that ended on its own background work waits for it (BGWAIT1); null never.</param>
     /// <param name="carriesOn">What a turn's end reads of a done quest's tree, so its session is carried on to commit (LANDBACK1 part 2); null never.</param>
     /// <param name="written">
@@ -5010,259 +4958,209 @@ public sealed class Driver(
     /// </param>
     /// <param name="setupChanged">
     /// Asked at a turn's end before a held word is prompted, whether the setup the run started under changed (ACCESSSWAP1b,
-    /// <see cref="AcpSession.SetupChanged"/>): yes ends the run there, the held words handed back as <c>Left</c>. Null never asks.
+    /// <see cref="AcpSession.SetupChanged"/>): yes ends the run there, the held words handed back. Null never asks.
     /// </param>
-    private async Task<(AcpOutcome? Outcome, string? Failure, IReadOnlyList<ChatMessage> Left, AcpRefusal? Refused)> CaptureAcpAsync(
-        Process process, string transcript, string sessionId, string cwd, string prompt,
-        string? posture, string? harnessNotice, CancellationToken ct,
-        IReadOnlyDictionary<string, string>? scope = null, object? meta = null,
-        IReadOnlyList<AcpMcpServer>? servers = null, string? personSaid = null, DrivenInbox? inbox = null,
-        Action<JsonElement>? said = null, string? keepAs = null, ResumeAsk? resume = null, InstructionAccount? account = null,
-        Func<CancellationToken, Task<bool>>? waitsOnBackground = null, string? noConnector = null, AcpEnding? ending = null,
-        Func<string, string, string>? unoffered = null, Func<bool>? setupChanged = null, IReadOnlyList<SaidWordView>? handed = null,
-        ActorAsked? asked = null, Action<ActorAsked>? carried = null, Func<ModelRefusal, Task<ActorAsked?>>? modelRefused = null,
-        Action<IReadOnlyList<AcpConfigOption>>? offerRead = null, TransientRetry? retry = null,
-        Func<CancellationToken, Task<TurnCarry>>? carriesOn = null, Action? written = null, bool typedFailures = false,
-        string? proc = null)
+    /// <param name="handedBack">
+    /// Told the person's words its run handed back (ACCESSSWAP1b) or never delivered (TURNFAIL1, USERSHOWN1), which the run keeps on its
+    /// record once it ended, to go again.
+    /// </param>
+    private TransportProtocol DrivenProtocol(
+        TransportRun run, string sessionId, string cwd, string prompt, string? posture,
+        IReadOnlyDictionary<string, string>? scope, object? meta, IReadOnlyList<AcpMcpServer> servers, DrivenInbox? inbox,
+        Action<JsonElement>? said, ResumeAsk? resume, string? keepAs, Func<CancellationToken, Task<bool>>? waitsOnBackground, string? noConnector,
+        AcpEnding? ending, Func<string, string, string>? unoffered, Func<bool>? setupChanged, ActorAsked? asked,
+        Action<ActorAsked>? carried, Func<ModelRefusal, Task<ActorAsked?>>? modelRefused, Action<IReadOnlyList<AcpConfigOption>>? offerRead,
+        TransientRetry? retry, Func<CancellationToken, Task<TurnCarry>>? carriesOn, Action? written, bool typedFailures,
+        Action<IReadOnlyList<ChatMessage>> handedBack)
     {
-        await using var file = TranscriptFile.Open(transcript, append: resume is not null);
-
-        void Line(string text)
-        {
-            lock (file) file.WriteLine(text);
-            output?.Append(sessionId, text);
-        }
-
         // The record's half (D76 §2): a record that cannot be written costs a console line, never the session.
-        void Event(SessionEvent e) => Context.Events.Keep(sessionId, e, Line);
+        void Event(SessionEvent e) => Context.Events.Keep(sessionId, e, run.Say);
 
         // A driver line that is also part of the conversation: a note in the record as well.
         void Said(string text)
         {
-            Line(text);
+            run.Say(text);
             Event(new SessionEvent { Kind = SessionEventKind.Note, Text = text });
         }
 
         // The same by its code (CONVNOTE2d1): the console keeps the English, the record its parts too.
         void SaidByCode(Noted noted)
         {
-            Line(noted.Note);
+            run.Say(noted.Note);
             Event(new SessionEvent { Kind = SessionEventKind.Note, Text = noted.Note, Parts = noted.Parts.Count > 0 ? noted.Parts : null });
         }
 
-        var errors = HarnessCapture.PumpAsync(Hearing(process.StandardError, sessionId), file, sessionId, output, ct);
-        AcpSession? session = null;
-
-        try
+        return new TransportProtocol(cwd)
         {
-            // What was asked, first: the target the driver composed is the conversation's opening line,
-            // and a person's answer it carries on from follows it, as theirs. A resumed run opens with its own first
-            // line and the answer (ANSWER1a): the target is already in the conversation above.
-            if (resume is not null)
+            Posture = posture,
+            Meta = meta,
+            TypedFailures = typedFailures, // CODEXSTATUS1: asked for only by a door declared to need it
+            Ending = ending,
+            Configure = session =>
             {
-                foreach (var opening in resume.Opening())
-                {
-                    if (opening.Kind == SessionEventKind.Note && opening.Text is { } note) Line(note);
-                    Event(opening);
-                }
-            }
-            else
-            {
-                foreach (var opening in HarnessCapture.Opening(prompt, personSaid, account, handed)) Event(opening);
-            }
-
-            // What this harness is doing that daoris has not been able to govern (ACP3). On the
-            // transcript rather than swallowed: it is a fact about how this session ran, and the
-            // person can act on it in one command.
-            if (harnessNotice is { Length: > 0 }) Said(harnessNotice);
-
-            // The session's voice (ACP4). Located per run rather than once, because a machine can
-            // gain the host between ticks — and a machine that has none still drives, without a
-            // connector, exactly as it did before.
-            var connector = Connector(sessionId, scope, proc);
-            if (connector is null)
-            {
-                Said(noConnector ?? (scope is null ? NoConnectorForSession : DriverIntakes.NoConnectorForIntake));
-            }
-
-            // The knowledge host first, then whatever the plugins hand every session (D65 §1f): a
-            // browser, a ticket system — tools the session can reach, under the repository's own
-            // posture like every other tool it has.
-            var offered = new List<AcpMcpServer>();
-            if (connector is not null) offered.Add(connector);
-            offered.AddRange(servers ?? Context.Servers);
-
-            // What it runs beside itself, each its own console stream (CONSOLE2) — kept wherever the
-            // session's own console is — and stoppable from its tab while the session runs (CONSOLE3a).
-            session = new AcpSession(
-                Hearing(process.StandardOutput, sessionId), process.StandardInput, Line, closeTimeout: null, posture, meta, Event,
-                streams: output is null ? null : new SessionStreams(output, sessionId),
-                onConversation: keepAs is null ? null : conversation => Context.Conversations.Keep(sessionId, keepAs, conversation))
-            {
-                Unoffered = unoffered,
-                Lineage = ChildLineage.Writer(home, sessionId, proc),
-                TypedFailures = typedFailures, // CODEXSTATUS1: asked for only by a door declared to need it
-                Permissions = HeldPermissions.Of(Context.Events).For(sessionId), // AUTONOMY1b3a: held only under asking's mark
-                SetupChanged = setupChanged,
-                CarriesOn = carriesOn, // LANDBACK1 part 2: a done quest's uncommitted tree carries the session on before it ends
-                BackgroundLook = BackgroundLook, // DONEEND1: its quest read again while it waits on its own background work
-                Carry = asked, // MODELROLE1c (D205 §3.2): its actor's model and effort, set before the first prompt
-                Carried = carried,
-                ModelRefused = modelRefused, // MODELROLE1c2 (D205 §3.3): a choice refused at the open, re-asked before any prompt
-                OffersRead = offerRead, // and what the open listed, kept as its agent's offer reading (§9.2)
-            };
-            ending?.Open(session);
-            // SESSWATCH1a: whether it waits on its own background work, the watcher's state C.
-            var waitsOn = session;
-            Watch.OwnWork(sessionId, () => waitsOn.WaitsOnOwnWork, () => [.. waitsOn.BackgroundRunning.Select(task => task.Name)]);
-            // AGENTERRORS1a (D210 §5.1, amending D200): a wait between a transient episode's tries is Daoris's, never quiet.
-            if (retry is not null) Watch.Transient(sessionId, () => waitsOn.WaitsOnTransient);
-            // What it says about its account's windows, kept as it says it (TOOL6c).
-            if (said is not null) session.LimitsSaid += said;
-            using var stops = output is null ? null : Context.Processes.OpenTaskStops(sessionId, session.StopTaskAsync);
-            // FABRIC-PIPELINE1c (D192 point 5's fourth layer): under its run's light checks, a call or a background task past its bound is
-            // told to it once, as Daoris's urgent word, and never ended; the checks its start kept, so every run of it reads the same, and
-            // the bound kept beside them where its graph version set one (FABRIC-PIPELINE1b3).
-            var acpSession = session;
-            using var longCalls = LongCalls.Watch(
-                SessionChecks.Held(home, sessionId), sessionId, RunningCalls.Of(Context.Events), () => acpSession.BackgroundRunning, inbox,
-                inbox is null ? null : new SaidDoor(service, sessionId),
-                failed: error => Line($"— Daoris's look at this session's long calls failed, and tells it nothing more: {error}"),
-                minutes: SessionChecks.HeldMinutes(home, sessionId));
-            // The person's words in the record the moment they are said, with when they reach the session (STEER1, D136):
-            // the page shows them waiting in the turn they were said in, rather than nothing until they are handed over.
-            inbox?.OnSaid((message, reach) =>
-            {
-                // Another session's message on the ask's channel is that agent's claim, never the person's (SESSONE2b); at its next step
-                // where urgent, and beside words the session is told anyway when its turn ends otherwise (COWORK1d).
-                Line(message.Channel is { Person: false } claim
-                    ? reach == DrivenReach.NextStep
-                        ? $"— another session's message `{claim.Id}` on the ask's channel, which reaches the session at its next step"
-                        : $"— another session's message `{claim.Id}` on the ask's channel, which goes beside what the session is told when its turn ends"
-                    // COWORK1d: an urgent ask's helper answer, the helper's claim, never the person's.
-                    : message.Helped is { Helper: var helper }
-                        ? $"— helper `{helper}`'s answer, which reaches the session {(reach == DrivenReach.NextStep ? "at its next step" : "when its turn ends")}"
-                    // Daoris's own word (COWORK1b, FABRIC-PIPELINE1c): never said as the person's.
-                    : message.Daoris is not null
-                        ? $"— Daoris said, which reaches the session {(reach == DrivenReach.NextStep ? "at its next step" : "when its turn ends")}: {message.Text}"
-                    : reach switch
-                    {
-                        DrivenReach.NextStep => $"— the person added, which reaches the session at its next step: {message.Text}",
-                        // The person's *Send now* (STEER2a): steered into the running turn, cutting the step in flight.
-                        DrivenReach.Steered => $"— the person sent now, which the session takes at once: {message.Text}",
-                        _ => $"— the person added, which reaches the session when its turn ends: {message.Text}",
-                    });
-                // Its level beside its reach (COWORK1a): what was asked, and what the door gave.
-                Event(ChatMessage.Words(message) with { Reaches = SendNowWhy.Spelled(reach), Level = message.LevelSaid });
-            });
-            // A word the person took back or reworded while it waited is settled, by its id (QUEUEEDIT1a).
-            inbox?.OnWithdrawn(message =>
-            {
-                Line($"— the person took back what they added: {message.Text}");
-                Event(ChatTurns.Withdrawn(message.Id!));
-            });
-            var outcome = await session
-                .RunAsync(
-                    cwd, prompt, ct, offered, inbox,
-                    // The same words as the turn's ask where the session took them (SESS3, STEER1): recorded before
-                    // anything the agent did with them, so the answer never sits above the question.
-                    asked: delivered =>
-                    {
-                        var message = ChatMessage.FromAgent(delivered);
-                        Line(message.Channel is { Person: false } claim
-                            ? $"— the session took another session's message `{claim.Id}` on the ask's channel"
-                            : message.Helped is { Helper: var helper }
-                                ? $"— the session took helper `{helper}`'s answer"
-                                : $"— the session took what the person added: {message.Text}");
-                        Event(ChatMessage.Words(message));
-                        // COWORK1d: a channel message's entry acknowledges it taken, on the door's word.
-                        message.Acknowledge?.Invoke(ChannelAcks.Taken);
-                    },
-                    resume: resume?.Conversation,
-                    // Each of the person's words its own block (MSG1b, D137 §2.2), and taken once the prompt is on the wire.
-                    blocks: resume?.Blocks,
-                    // FOUNDATION1f-iv part b: and a carry-on's moved words are `sent` as its first prompt is on the wire.
-                    prompted: resume is null ? written : () =>
-                    {
-                        resume.Prompted = true;
-                        written?.Invoke();
-                    },
-                    // COWORK1c: marked attempted on the record before the opening prompt carrying them is written.
-                    // FOUNDATION1 row p (the design §3.4 rule 5): acknowledged, the opening narrowed to the words the record names marked, and
-                    // none named, nothing prompted.
-                    attempting: resume is null ? null : async () =>
-                    {
-                        var asked = resume.Ids.Count;
-                        resume.Narrow(await SaidDoor.AttemptedAsync(service, sessionId, resume.Words).ConfigureAwait(false));
-                        return asked > 0 && resume.Ids.Count == 0 ? null : (resume.Blocks, resume.Files);
-                    },
-                    // The files said with them, a link each after the blocks (MSG1d3, D137 §2.4).
-                    files: resume?.Files,
-                    waitsOnBackground: waitsOnBackground,
-                    retry: retry)
-                .ConfigureAwait(false);
-
-            Line($"— {outcome.TurnEnd}. The "
-                 + "session record is concluded from the exit code and the quest's own state, not "
-                 + "from this line (D46 §4).");
-            // ACCESSSWAP1b: the words a changed setup handed back, kept on the record once it concluded, to go on under the new one.
-            return (outcome, null, session.HandedBack.Select(ChatMessage.FromAgent).ToArray(), null);
-        }
-        catch (AcpResumeRefused refused) when (resume is not null)
-        {
-            // Not a turn that failed (ANSWER1a): nothing was prompted. The agent's own words stay in this machine's record of
-            // the conversation, and the reason goes to the resume, which ends the park and carries the answer on.
-            resume.Refused = refused.Why;
-            // Its reason by code, the agent's words its own (CONVNOTE2e). A resume keeps its conversation under the adapter it
-            // runs on, which is the one it ran on, so that is the agent `elsewhere` names. SESSCTX1c: a record that waits for the
-            // person (`elsewhere`) says no carry-on.
-            SaidByCode(refused.Why.Holds ? DoorNotes.ResumeRefused(refused, keepAs) : DoorNotes.AnswerCarriedOn(refused, keepAs));
-            return (null, null, [], null);
-        }
-        catch (DriverException error)
-        {
-            // A protocol failure is a fact about this run and belongs in its transcript — and it goes to
-            // the conclusion too (ACPEND1), beside the exit code and the quest's state. 🔴 The exit alone
-            // cannot carry it here: the driver closes stdin below and the agent winds up and exits 0,
-            // so an account limit that refused the turn mid-edit read as a clean exit, and a taken
-            // quest as a stand-down. A failed call is not the session describing its work, which is
-            // the self-report D46 §4 keeps out; it is the door saying the work was cut off. 🔴 BGWAIT2: a stream the timeout
-            // ended is said as the timeout, by its own line; the install's record said "the agent exited" of one.
-            SaidByCode(error is AcpEnded ended ? ended.Why : DoorNotes.Failed(error.Message));
-            // 🔴 The person's words it never took (TURNFAIL1, USERSHOWN1): sent behind the failed turn, or held for its end. They
-            // go back to the run, which keeps them on the record once it ended, to go again (WordsLeft); closed here, so the
-            // finally below says nothing of them.
-            return (null, error.Message, [.. (session?.Unreached ?? []).Select(ChatMessage.FromAgent), .. (session?.HandedBack ?? []).Select(ChatMessage.FromAgent), .. inbox?.Close() ?? []],
-                // FOUNDATION1g part b: the refusal as the door carried it, for a conclusion that reads its code (`HarnessEnding.Refusal`).
-                error as AcpRefusal ?? (error as AcpWordTurnFailed)?.Refusal);
-        }
-        finally
-        {
+                session.Unoffered = unoffered;
+                session.Permissions = HeldPermissions.Of(Context.Events).For(sessionId); // AUTONOMY1b3a: held only under asking's mark
+                session.SetupChanged = setupChanged;
+                session.CarriesOn = carriesOn; // LANDBACK1 part 2: a done quest's uncommitted tree carries the session on before it ends
+                session.BackgroundLook = BackgroundLook; // DONEEND1: its quest read again while it waits on its own background work
+                session.Carry = asked; // MODELROLE1c (D205 §3.2): its actor's model and effort, set before the first prompt
+                session.Carried = carried;
+                session.ModelRefused = modelRefused; // MODELROLE1c2 (D205 §3.3): a choice refused at the open, re-asked before any prompt
+                session.OffersRead = offerRead; // and what the open listed, kept as its agent's offer reading (§9.2)
+            },
+            Run = (session, conversation, ct) => RunDrivenAsync(session, conversation, ct),
             // What the person said that never reached it (SESS3): said, never dropped without a trace.
-            if (inbox?.Close() is { Count: > 0 } left)
+            Ended = () =>
             {
-                SaidByCode(WordsNotes.Unreached(left.Count, "never reached the session", UnreachedWhy.EndedFirst));
-            }
+                if (inbox?.Close() is { Count: > 0 } left)
+                {
+                    SaidByCode(WordsNotes.Unreached(left.Count, "never reached the session", UnreachedWhy.EndedFirst));
+                }
+            },
+        };
 
+        async Task<AcpOutcome> RunDrivenAsync(AcpSession session, string? conversation, CancellationToken ct)
+        {
             try
             {
-                process.StandardInput.Close();
-            }
-            catch (Exception error) when (error is InvalidOperationException or IOException or ObjectDisposedException)
-            {
-                // Already gone: the agent exited first, which is the ending this was asking for.
-            }
+                // The session's voice (ACP4). Located per run rather than once, because a machine can
+                // gain the host between ticks — and a machine that has none still drives, without a
+                // connector, exactly as it did before.
+                var connector = Connector(sessionId, scope, run.Proc);
+                if (connector is null)
+                {
+                    Said(noConnector ?? (scope is null ? NoConnectorForSession : DriverIntakes.NoConnectorForIntake));
+                }
 
-            // 🔴 DONEEND1: an agent whose session ended while its own background work ran (a test run its quest no longer waited on)
-            // may never exit, that work holding it, and the run would then wait for the timeout. Given a bound, its tree is ended
-            // here, the work with it, before the stderr it may hold is waited for.
-            if (session?.LeftRunning is { Count: > 0 } work && await EndedLingeringAsync(process, LingerBound, ending).ConfigureAwait(false))
-            {
-                Line($"— its agent had not exited {LingerBound.TotalSeconds:0} s after its session ended, its own background work still "
-                     + $"running ({string.Join(", ", work.Select(name => $"`{name}`"))}): Daoris ended its process tree.");
-            }
+                // The knowledge host first, then whatever the plugins hand every session (D65 §1f): a
+                // browser, a ticket system — tools the session can reach, under the repository's own
+                // posture like every other tool it has.
+                var offered = new List<AcpMcpServer>();
+                if (connector is not null) offered.Add(connector);
+                offered.AddRange(servers);
 
-            await errors.ConfigureAwait(false);
+                // SESSWATCH1a: whether it waits on its own background work, the watcher's state C.
+                Watch.OwnWork(sessionId, () => session.WaitsOnOwnWork, () => [.. session.BackgroundRunning.Select(task => task.Name)]);
+                // AGENTERRORS1a (D210 §5.1, amending D200): a wait between a transient episode's tries is Daoris's, never quiet.
+                if (retry is not null) Watch.Transient(sessionId, () => session.WaitsOnTransient);
+                // What it says about its account's windows, kept as it says it (TOOL6c).
+                if (said is not null) session.LimitsSaid += said;
+                using var stops = output is null ? null : Context.Processes.OpenTaskStops(sessionId, session.StopTaskAsync);
+                // FABRIC-PIPELINE1c (D192 point 5's fourth layer): under its run's light checks, a call or a background task past its bound is
+                // told to it once, as Daoris's urgent word, and never ended; the checks its start kept, so every run of it reads the same, and
+                // the bound kept beside them where its graph version set one (FABRIC-PIPELINE1b3).
+                using var longCalls = LongCalls.Watch(
+                    SessionChecks.Held(home, sessionId), sessionId, RunningCalls.Of(Context.Events), () => session.BackgroundRunning, inbox,
+                    inbox is null ? null : new SaidDoor(service, sessionId),
+                    failed: error => run.Say($"— Daoris's look at this session's long calls failed, and tells it nothing more: {error}"),
+                    minutes: SessionChecks.HeldMinutes(home, sessionId));
+                // The person's words in the record the moment they are said, with when they reach the session (STEER1, D136):
+                // the page shows them waiting in the turn they were said in, rather than nothing until they are handed over.
+                inbox?.OnSaid((message, reach) =>
+                {
+                    // Another session's message on the ask's channel is that agent's claim, never the person's (SESSONE2b); at its next step
+                    // where urgent, and beside words the session is told anyway when its turn ends otherwise (COWORK1d).
+                    run.Say(message.Channel is { Person: false } claim
+                        ? reach == DrivenReach.NextStep
+                            ? $"— another session's message `{claim.Id}` on the ask's channel, which reaches the session at its next step"
+                            : $"— another session's message `{claim.Id}` on the ask's channel, which goes beside what the session is told when its turn ends"
+                        // COWORK1d: an urgent ask's helper answer, the helper's claim, never the person's.
+                        : message.Helped is { Helper: var helper }
+                            ? $"— helper `{helper}`'s answer, which reaches the session {(reach == DrivenReach.NextStep ? "at its next step" : "when its turn ends")}"
+                        // Daoris's own word (COWORK1b, FABRIC-PIPELINE1c): never said as the person's.
+                        : message.Daoris is not null
+                            ? $"— Daoris said, which reaches the session {(reach == DrivenReach.NextStep ? "at its next step" : "when its turn ends")}: {message.Text}"
+                        : reach switch
+                        {
+                            DrivenReach.NextStep => $"— the person added, which reaches the session at its next step: {message.Text}",
+                            // The person's *Send now* (STEER2a): steered into the running turn, cutting the step in flight.
+                            DrivenReach.Steered => $"— the person sent now, which the session takes at once: {message.Text}",
+                            _ => $"— the person added, which reaches the session when its turn ends: {message.Text}",
+                        });
+                    // Its level beside its reach (COWORK1a): what was asked, and what the door gave.
+                    Event(ChatMessage.Words(message) with { Reaches = SendNowWhy.Spelled(reach), Level = message.LevelSaid });
+                });
+                // A word the person took back or reworded while it waited is settled, by its id (QUEUEEDIT1a).
+                inbox?.OnWithdrawn(message =>
+                {
+                    run.Say($"— the person took back what they added: {message.Text}");
+                    Event(ChatTurns.Withdrawn(message.Id!));
+                });
+                var outcome = await session
+                    .RunAsync(
+                        cwd, prompt, ct, offered, inbox,
+                        // The same words as the turn's ask where the session took them (SESS3, STEER1): recorded before
+                        // anything the agent did with them, so the answer never sits above the question.
+                        asked: delivered =>
+                        {
+                            var message = ChatMessage.FromAgent(delivered);
+                            run.Say(message.Channel is { Person: false } claim
+                                ? $"— the session took another session's message `{claim.Id}` on the ask's channel"
+                                : message.Helped is { Helper: var helper }
+                                    ? $"— the session took helper `{helper}`'s answer"
+                                    : $"— the session took what the person added: {message.Text}");
+                            Event(ChatMessage.Words(message));
+                            // COWORK1d: a channel message's entry acknowledges it taken, on the door's word.
+                            message.Acknowledge?.Invoke(ChannelAcks.Taken);
+                        },
+                        resume: conversation,
+                        // Each of the person's words its own block (MSG1b, D137 §2.2), and taken once the prompt is on the wire.
+                        blocks: resume?.Blocks,
+                        // FOUNDATION1f-iv part b: and a carry-on's moved words are `sent` as its first prompt is on the wire.
+                        prompted: resume is null ? written : () =>
+                        {
+                            resume.Prompted = true;
+                            written?.Invoke();
+                        },
+                        // COWORK1c: marked attempted on the record before the opening prompt carrying them is written.
+                        // FOUNDATION1 row p (the design §3.4 rule 5): acknowledged, the opening narrowed to the words the record names marked, and
+                        // none named, nothing prompted.
+                        attempting: resume is null ? null : async () =>
+                        {
+                            var asked = resume.Ids.Count;
+                            resume.Narrow(await SaidDoor.AttemptedAsync(service, sessionId, resume.Words).ConfigureAwait(false));
+                            return asked > 0 && resume.Ids.Count == 0 ? null : (resume.Blocks, resume.Files);
+                        },
+                        // The files said with them, a link each after the blocks (MSG1d3, D137 §2.4).
+                        files: resume?.Files,
+                        waitsOnBackground: waitsOnBackground,
+                        retry: retry)
+                    .ConfigureAwait(false);
+
+                // ACCESSSWAP1b: the words a changed setup handed back, kept on the record once it concluded, to go on under the new one.
+                handedBack([.. session.HandedBack.Select(ChatMessage.FromAgent)]);
+                return outcome;
+            }
+            catch (AcpResumeRefused refused) when (resume is not null)
+            {
+                // Not a turn that failed (ANSWER1a): nothing was prompted. The agent's own words stay in this machine's record of
+                // the conversation, and the reason goes to the resume, which ends the park and carries the answer on.
+                resume.Refused = refused.Why;
+                // Its reason by code, the agent's words its own (CONVNOTE2e). A resume keeps its conversation under the adapter it
+                // runs on, which is the one it ran on, so that is the agent `elsewhere` names. SESSCTX1c: a record that waits for the
+                // person (`elsewhere`) says no carry-on.
+                SaidByCode(refused.Why.Holds ? DoorNotes.ResumeRefused(refused, keepAs) : DoorNotes.AnswerCarriedOn(refused, keepAs));
+                throw;
+            }
+            catch (DriverException error)
+            {
+                // A protocol failure is a fact about this run and belongs in its transcript — and it goes to
+                // the conclusion too (ACPEND1), beside the exit code and the quest's state. 🔴 The exit alone
+                // cannot carry it here: the run closes stdin as it ends and the agent winds up and exits 0,
+                // so an account limit that refused the turn mid-edit read as a clean exit, and a taken
+                // quest as a stand-down. A failed call is not the session describing its work, which is
+                // the self-report D46 §4 keeps out; it is the door saying the work was cut off. 🔴 BGWAIT2: a stream the timeout
+                // ended is said as the timeout, by its own line; the install's record said "the agent exited" of one.
+                SaidByCode(error is AcpEnded ended ? ended.Why : DoorNotes.Failed(error.Message));
+                // 🔴 The person's words it never took (TURNFAIL1, USERSHOWN1): sent behind the failed turn, or held for its end. They
+                // go back to the run, which keeps them on the record once it ended, to go again (WordsLeft); closed here, so its end
+                // says nothing of them. The failure and its refusal go to the conclusion through the run's ending.
+                handedBack(
+                [
+                    .. session.Unreached.Select(ChatMessage.FromAgent), .. session.HandedBack.Select(ChatMessage.FromAgent), .. inbox?.Close() ?? [],
+                ]);
+                throw;
+            }
         }
     }
 

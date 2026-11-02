@@ -100,7 +100,7 @@ public sealed class RefusedByTheHarnessTests : IDisposable
         await HarnessCapture.CaptureStructuredAsync(
             new StringReader(string.Join('\n', stdout)), new StringReader(stderr), Transcript, "s1", output: null,
             events: null, new ClaudeStreamJson(), prompt: "test the error path", CancellationToken.None, own: own);
-        return Daoris.Driver.Driver.Ending(protocol: false, structured: true, exit, turnFailed: null, own, Transcript);
+        return TransportRun.Ending(protocol: false, structured: true, exit, turnFailed: null, own, Transcript);
     }
 
     /// <summary>The conclusion of a run that never touched its quest, read for a refused credential.</summary>
@@ -230,10 +230,10 @@ public sealed class RefusedByTheHarnessTests : IDisposable
         var roster = Roster(SessionWire.Acp, structured: false);
         File.WriteAllText(Transcript, $"The error path now prints the provider's line:\n{Measured}\n");
 
-        var quoted = Daoris.Driver.Driver.Ending(protocol: true, structured: false, 0, turnFailed: null, new HarnessWords(), Transcript);
+        var quoted = TransportRun.Ending(protocol: true, structured: false, 0, turnFailed: null, new HarnessWords(), Transcript);
         await HoldsNothingAsync(roster, Concluded(service, roster, quoted));
 
-        var refused = Daoris.Driver.Driver.Ending(
+        var refused = TransportRun.Ending(
             protocol: true, structured: false, 0, turnFailed: $"the ACP agent refused the call: {Measured}", new HarnessWords(), Transcript);
         await HoldsAsync(roster, Concluded(service, roster, refused));
     }
@@ -248,11 +248,11 @@ public sealed class RefusedByTheHarnessTests : IDisposable
         var roster = Roster(SessionWire.Pipe, structured: false);
         File.WriteAllText(Transcript, $"working on it\n{Measured}\n");
 
-        var clean = Daoris.Driver.Driver.Ending(protocol: false, structured: false, 0, turnFailed: null, new HarnessWords(), Transcript);
+        var clean = TransportRun.Ending(protocol: false, structured: false, 0, turnFailed: null, new HarnessWords(), Transcript);
         await HoldsNothingAsync(roster, Concluded(service, roster, clean));
 
         // The family rehearsal's refused stub: the measured line on its stdout, then exit 1.
-        var failed = Daoris.Driver.Driver.Ending(protocol: false, structured: false, 1, turnFailed: null, new HarnessWords(), Transcript);
+        var failed = TransportRun.Ending(protocol: false, structured: false, 1, turnFailed: null, new HarnessWords(), Transcript);
         Assert.Equal(["working on it", Measured], failed.Lines);
         await HoldsAsync(roster, Concluded(service, roster, failed));
     }

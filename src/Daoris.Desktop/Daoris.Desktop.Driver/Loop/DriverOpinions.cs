@@ -195,7 +195,6 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
                 Choice = choice.Effective?.From,
             };
             var (info, harnessNotice) = _driver.Prepare(adapter, target, selection);
-            await _driver.KeepHandedAsync(sessionId, info, ct).ConfigureAwait(false);
             await service.AdvanceAsync(sessionId, "starting", ct: ct).ConfigureAwait(false);
 
             var transcript = DaorisHome.Entry(home, HomeEntry.Sessions, $"{sessionId}.log");

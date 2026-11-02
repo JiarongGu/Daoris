@@ -3,9 +3,9 @@ using System.Diagnostics;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a <see cref="TransportRun"/> asks of the loop, answered from the driver that holds it (AGENTPROVIDER1m-i part 1): the run's wait, its
-/// bounded capture, its watch's reading, its kept conversations and downloads are the driver's own, so the run repeats none of them. The run sits
-/// in Agents and the driver above it, so this port is where the two meet.
+/// What a <see cref="TransportRun"/> asks of the loop, answered from the driver that holds it (AGENTPROVIDER1m-i): the run's wait, its bounded
+/// capture, its watch's reading, its kept conversations and downloads and its processes' lineage brackets are the driver's own, so the run
+/// repeats none of them. The run sits in Agents and the driver above it, so this port is where the two meet.
 /// </summary>
 internal sealed class DriverTransportHost(Driver driver) : ITransportHost
 {
@@ -17,11 +17,23 @@ internal sealed class DriverTransportHost(Driver driver) : ITransportHost
 
     public TextReader Hearing(TextReader reader, string sessionId) => driver.Hearing(reader, sessionId);
 
-    public Task<int?> WaitAsync(
-        Process process, CancellationToken ct, int? minutes, Action<int>? timingOut, CancellationToken quiet, Action? quietEnding) =>
-        driver.WaitAsync(process, ct, minutes, timingOut, quiet, quietEnding);
+    public string Bracketed(string sessionId, ProcessStartInfo info, string? moved) => Driver.Bracketed(Home, sessionId, info, moved);
 
-    public Task<bool> CaptureWithinAsync(Task capture, string sessionId) => driver.CaptureWithinAsync(capture, sessionId);
+    public Task<Process?> SpawnedAsync(string proc, Func<Task<Process?>> spawn) => Driver.Spawned(proc, spawn);
+
+    public Task<int?> WaitAsync(
+        string sessionId, string proc, Process process, CancellationToken ct, int? minutes, Action<int>? timingOut, CancellationToken quiet,
+        Action? quietEnding) =>
+        driver.WaitedAsync(sessionId, proc, driver.WaitAsync(process, ct, minutes, timingOut, quiet, quietEnding), ct);
+
+    public Task<bool> DrainedAsync(string sessionId, string proc, Task capture) => driver.DrainedAsync(sessionId, proc, capture);
+
+    public void Ended(string sessionId, string proc, int? exit) => driver.Ended(sessionId, proc, exit);
+
+    public Task AbandonedAsync(string sessionId, string proc, Process process, Task capture) =>
+        Driver.AbandonedAsync(
+            process, capture, sessionId, driver.Log, driver.Context.Output,
+            exitRead: () => ChildLineage.Exited(Home, sessionId, proc, clean: false));
 
     public Task KeepHandedAsync(string sessionId, ProcessStartInfo info, CancellationToken ct) => driver.KeepHandedAsync(sessionId, info, ct);
 

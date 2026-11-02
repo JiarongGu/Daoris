@@ -117,6 +117,104 @@ public sealed class TransportRunTests : IDisposable
     }
 
     /// <summary>
+    /// ONEWAY1h-i: the run's spawn keeps the downloads its start is handed (KEEP1b), brackets its process's lineage (COWORKVIEW1a) and starts
+    /// it, in that order, each through the host; a start the gate refuses refuses the spawn.
+    /// </summary>
+    [Fact]
+    public async Task The_runs_spawn_keeps_what_its_start_is_handed_then_brackets_and_starts_it_through_its_host()
+    {
+        var host = new RecordingHost(_home, _processes);
+        var run = new TransportRun(host, AdapterSet.Built().Resolve("stub"), new TransportStart(new ProcessStartInfo("never-started"), StartClass.Person));
+        using var refusing = ProcessStarts.Within(_ => throw new System.ComponentModel.Win32Exception(2, "The system cannot find the file specified."));
+
+        await Assert.ThrowsAsync<System.ComponentModel.Win32Exception>(() => run.SpawnAsync("s1", CancellationToken.None));
+
+        Assert.Equal(["keep s1", "bracket s1", "spawn p1"], host.Asked);
+        Assert.False(run.Started);
+    }
+
+    /// <summary>A start handed once the process is up is the same process's, and comes before the open.</summary>
+    [Fact]
+    public void A_start_handed_later_must_start_the_same_process()
+    {
+        var run = Over("stub");
+
+        var error = Assert.Throws<InvalidOperationException>(() => run.HandStart(new TransportStart(new ProcessStartInfo("another"), StartClass.Person)));
+
+        Assert.Contains("the same process", error.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// KEEP1b once (ONEWAY1h-i): the downloads a start is handed are kept by its run's spawn, and no executor keeps them beside it. The
+    /// conversation's runner keeps its own until ONEWAY1h-iii moves it onto the run.
+    /// </summary>
+    [Fact]
+    public void No_executor_keeps_a_starts_downloads_beside_its_runs_spawn()
+    {
+        var loop = Path.Combine(EveryChildIsHandedTheToolsTests.SourceRoot(), "Daoris.Desktop.Driver", "Loop");
+        var keeping = Directory.EnumerateFiles(loop, "*.cs", SearchOption.AllDirectories)
+            .Where(file => File.ReadAllText(file).Contains("KeepHandedAsync(", StringComparison.Ordinal))
+            .Select(file => Path.GetRelativePath(loop, file).Replace('\\', '/'))
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(["Chat/ChatRunner.cs", "Driver.cs", "DriverTransportHost.cs"], keeping);
+    }
+
+    /// <summary>A host that records what the run asks of it, in order, and answers nothing else.</summary>
+    private sealed class RecordingHost(string home, SessionProcesses processes) : ITransportHost
+    {
+        public List<string> Asked { get; } = [];
+
+        public string Home => home;
+
+        public SessionProcesses Processes => processes;
+
+        public MachineLog? Log => null;
+
+        public TimeSpan LingerBound => TimeSpan.Zero;
+
+        public TextReader Hearing(TextReader reader, string sessionId) => reader;
+
+        public Task KeepHandedAsync(string sessionId, ProcessStartInfo info, CancellationToken ct)
+        {
+            Asked.Add($"keep {sessionId}");
+            return Task.CompletedTask;
+        }
+
+        public string Bracketed(string sessionId, ProcessStartInfo info, string? moved)
+        {
+            Asked.Add($"bracket {sessionId}");
+            return "p1";
+        }
+
+        public Task<Process?> SpawnedAsync(string proc, Func<Task<Process?>> spawn)
+        {
+            Asked.Add($"spawn {proc}");
+            return spawn();
+        }
+
+        public Task<int?> WaitAsync(
+            string sessionId, string proc, Process process, CancellationToken ct, int? minutes, Action<int>? timingOut, CancellationToken quiet,
+            Action? quietEnding) => throw new NotSupportedException();
+
+        public Task<bool> DrainedAsync(string sessionId, string proc, Task capture) => throw new NotSupportedException();
+
+        public void Ended(string sessionId, string proc, int? exit) => throw new NotSupportedException();
+
+        public Task AbandonedAsync(string sessionId, string proc, Process process, Task capture) => throw new NotSupportedException();
+
+        public void KeepConversation(string sessionId, string adapter, string conversation) => throw new NotSupportedException();
+
+        public IReadOnlyList<string>? Command(string adapter) => throw new NotSupportedException();
+
+        public ProcessStartInfo Prepared(ISessionAdapter adapter, SessionTarget target, HarnessSelection selection, ProcessStartInfo next) =>
+            throw new NotSupportedException();
+
+        public Task<bool> EndedLingeringAsync(Process process, AcpEnding? ending) => throw new NotSupportedException();
+    }
+
+    /// <summary>
     /// The contract holds the five members every executor uses (design §4.1, round 5): the records, the carriers, the end, the go-on and
     /// the restart, and no word operation beyond the two it already had.
     /// </summary>
