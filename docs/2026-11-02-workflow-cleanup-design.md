@@ -459,8 +459,8 @@ the read's findings are settled here before wave 1 merges. Settled now:
 
 1. **WORKSETUP1 applies on wave 2.** The work workspace's set-up over its 29 repositories waits for waves 1 and 2 and applies on
    the new *Set up…*, so it is written once in the new shape and never converted.
-2. **Waves 1 and 2 are the next update the owner's install takes** after REVIEW2's page and checks fixes; DOGFOOD1's rows go
-   through that install.
+2. **The install's order** (§13 point 6): the next update carries REVIEW2's fixes, the sitting follows on it, and waves 1 and 2 ship
+   with 1y in the update after; DOGFOOD1's rows go through the install from the next update.
 3. **Row j** is taken only if the census on the owner's home finds a work cycle; the measurement in §11 decides it before wave 1 ends.
 
 ## 13. Settled after Opus's read
