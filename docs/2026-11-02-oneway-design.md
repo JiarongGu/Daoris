@@ -535,8 +535,10 @@ lines assert its absence and stay. The census read main before WORKFLOWCLEAN1 1h
   `PartsFlow`, `SessionFlow` with their `…Life.ts`), whose pieces move onto the canvas's nodes and edges beside CANVAS1e and f's maps.
   `Flow.tsx` is also imported by the workflow chart (`Web/workflow/chart/FlowChart.tsx:7`, `chart/stepKinds.ts:1`), `graphFlow.ts:2`,
   `workflowFlow.ts:2`, `WorkflowChart.tsx:4`, `WorkflowStartNode.tsx:3` and the canvas's own story (`Web/design/canvas/Canvas.stories.tsx:4`):
-  the chart's and its types' imports go with CANVAS1e and f, which move the workflow chart onto the canvas, and `WorkflowStartNode` with
-  SETUPUX1y. So the row waits for all three.
+  neither map imports it, so CANVAS1e and f do not retire it. What `ONEWAY1aa` needs from them is CANVAS1e's positioned world (a
+  supplied layout, a feature's own node and edge drawing, pressable typed lines), onto which aa moves the life-flows and the workflow
+  chart's imports; `WorkflowStartNode` goes with SETUPUX1y. CANVAS1's §6 kept `Flow.tsx` for the inline flows; this row supersedes that
+  keep (D228). So the row waits for CANVAS1e's seam and SETUPUX1y, not for CANVAS1f.
 - *Seen:* the same flows, with fit and focus. For the page builders: stories at 80, 39 and 25 rem, in en and zh.
 
 **P3. Branches for an older shell** (`ONEWAY1ab-i` now, `ONEWAY1ab-ii` after the wave)
