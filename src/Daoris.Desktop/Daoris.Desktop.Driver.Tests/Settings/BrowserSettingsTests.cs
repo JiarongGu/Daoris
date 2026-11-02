@@ -1,7 +1,7 @@
 using System.Text.Json.Nodes;
 using Daoris.Driver;
 
-namespace Daoris.Desktop.Modules.Tests;
+namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// CHR7: Daoris's browser's settings, kept in <c>&lt;home&gt;/browser/settings.json</c> and read by
@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// it too, and its <c>browser.test.ts</c> carries the same table. A case changed here is changed there,
 /// in the same commit.
 /// </summary>
-public sealed class BrowserSettingsTests : Bridge
+public sealed class BrowserSettingsTests : TestHome
 {
     private string File => BrowserSettings.FilePath(Home);
 
@@ -48,7 +48,7 @@ public sealed class BrowserSettingsTests : Bridge
         BrowserSettings.SetBrowser(Home, BrowserChoice.Edge);
 
         Assert.Equal(new BrowserSettingsRead(ExtensionsSetting.Refuse, BrowserChoice.Edge, LinksSetting.System, null), BrowserSettings.Read(Home));
-        Assert.Throws<InvalidOperationException>(() => BrowserSettings.SetBrowser(Home, "firefox"));
+        Assert.Equal(HomeFileCodes.BrowserChoiceUnknown, HomeFileCodes.Of(Assert.Throws<HomeFileRefusal>(() => BrowserSettings.SetBrowser(Home, "firefox"))));
     }
 
     /// <summary>
@@ -80,10 +80,10 @@ public sealed class BrowserSettingsTests : Bridge
         Assert.Equal(
             new BrowserSettingsRead(ExtensionsSetting.Refuse, BrowserChoice.Daoris, LinksSetting.Daoris, null),
             BrowserSettings.Read(Home));
-        Assert.Throws<InvalidOperationException>(() => BrowserSettings.SetLinks(Home, "chrome"));
+        Assert.Equal(HomeFileCodes.BrowserLinksUnknown, HomeFileCodes.Of(Assert.Throws<HomeFileRefusal>(() => BrowserSettings.SetLinks(Home, "chrome"))));
 
         Write("not json");
-        Assert.Throws<InvalidOperationException>(() => BrowserSettings.SetLinks(Home, LinksSetting.Daoris));
+        Assert.Equal(HomeFileCodes.BrowserFileUnreadable, HomeFileCodes.Of(Assert.Throws<HomeFileRefusal>(() => BrowserSettings.SetLinks(Home, LinksSetting.Daoris))));
         Assert.Equal("not json", System.IO.File.ReadAllText(File));
     }
 
@@ -112,7 +112,7 @@ public sealed class BrowserSettingsTests : Bridge
         var read = BrowserSettings.Read(Home);
         Assert.Equal(ExtensionsSetting.Offer, read.Extensions);
         Assert.NotNull(read.Problem);
-        Assert.Throws<InvalidOperationException>(() => BrowserSettings.SetExtensions(Home, ExtensionsSetting.Refuse));
+        Assert.Throws<HomeFileRefusal>(() => BrowserSettings.SetExtensions(Home, ExtensionsSetting.Refuse));
         Assert.Equal(content, System.IO.File.ReadAllText(File));
     }
 
@@ -132,7 +132,7 @@ public sealed class BrowserSettingsTests : Bridge
     [Fact]
     public void A_value_that_is_neither_is_refused_and_writes_nothing()
     {
-        Assert.Throws<InvalidOperationException>(() => BrowserSettings.SetExtensions(Home, "maybe"));
+        Assert.Throws<HomeFileRefusal>(() => BrowserSettings.SetExtensions(Home, "maybe"));
         Assert.False(System.IO.File.Exists(File));
     }
 
@@ -165,7 +165,7 @@ public sealed class BrowserSettingsTests : Bridge
     private const string KeptFile = "browser/settings.json";
 
     private static readonly JsonNode Table = JsonNode.Parse(System.IO.File.ReadAllText(
-        Path.Combine(RepositoryRoot(), "src", "Daoris.Cli", "test", "fixtures", "home-files-keep.json")))!;
+        Path.Combine(GitSeed.RepoRoot(), "src", "Daoris.Cli", "test", "fixtures", "home-files-keep.json")))!;
 
     private static string Lines(JsonNode lines) => string.Join("\n", lines.AsArray().Select(line => (string)line!));
 
@@ -202,16 +202,5 @@ public sealed class BrowserSettingsTests : Bridge
         }
 
         return rows;
-    }
-
-    private static string RepositoryRoot()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, ".git")) && !System.IO.File.Exists(Path.Combine(directory.FullName, ".git")))
-        {
-            directory = directory.Parent;
-        }
-
-        return directory?.FullName ?? throw new InvalidOperationException("no repository above the test's folder");
     }
 }

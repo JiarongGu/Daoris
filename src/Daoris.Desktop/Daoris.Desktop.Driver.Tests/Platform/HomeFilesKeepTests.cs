@@ -7,8 +7,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// KEEPALL1, KEEPALL1b, KEEPALL1c and KEEPALL1e (FIX-LOG 2026-10-17): every home file a door edits keeps what its writer does not own, as <c>driver.json</c>'s writers do
 /// (<see cref="DriverConfigKeepsTests"/>). One table both twins read, <c>test/fixtures/home-files-keep.json</c>, row for row with the
 /// CLI's <c>homefileskeep.test.ts</c>: an existing file in the writer's layout with keys neither twin knows at each level, one door's
-/// edit, and the bytes both write. <c>browser/settings.json</c>'s writer is the modules', so its rows are
-/// <c>BrowserSettingsTests</c>' there.
+/// edit, and the bytes both write. <c>browser/settings.json</c>'s rows are <c>BrowserSettingsTests</c>', and the remotes' go through
+/// <see cref="RemoteOperations"/>, the one writer.
 /// </summary>
 public sealed class HomeFilesKeepTests
 {
@@ -127,14 +127,13 @@ public sealed class HomeFilesKeepTests
                 return;
             case ("remotes.json", var op):
                 var map = Path.Combine(home, file);
-                var remotes = RemoteFile.Load(map);
-                between();
-                (op switch
+                switch (op)
                 {
-                    "remote-set" => remotes.With(Text("workspace"), new(Text("url"), Text("key"))),
-                    "remote-remove" => remotes.Without(Text("workspace")),
-                    _ => throw new InvalidOperationException($"the table names an edit this test does not make: {op}"),
-                }).Save(map);
+                    case "remote-set": RemoteOperations.Set(map, Text("workspace"), Text("url"), Text("key"), between); break;
+                    case "remote-remove": RemoteOperations.Remove(map, Text("workspace"), between); break;
+                    default: throw new InvalidOperationException($"the table names an edit this test does not make: {op}");
+                }
+
                 return;
             default:
                 throw new InvalidOperationException($"the table names an edit this test does not make: {file} {Text("op")}");

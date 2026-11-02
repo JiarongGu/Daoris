@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Daoris.Driver;
 using static Daoris.Driver.Json;
 
 namespace Daoris.Desktop;

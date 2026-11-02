@@ -45,24 +45,13 @@ public sealed class RemotesModule(IEventBus events, DriverLoop loop) : ModuleBas
 
             case "SET":
             {
-                var workspace = RemoteTarget.Workspace(
-                    PayloadHelper.GetRequiredValue<string>(request.Payload, "workspace"));
-                var url = PayloadHelper.GetRequiredValue<string>(request.Payload, "url").TrimEnd('/');
+                var workspace = PayloadHelper.GetRequiredValue<string>(request.Payload, "workspace");
+                var url = PayloadHelper.GetRequiredValue<string>(request.Payload, "url");
                 var key = PayloadHelper.GetRequiredValue<string>(request.Payload, "key");
-                if (string.IsNullOrWhiteSpace(url) || string.IsNullOrWhiteSpace(key))
-                {
-                    // Half a pair is no remote in every loader (D48 §5) — refused here rather than
-                    // written, so the file never holds an entry that silently does nothing.
-                    throw Refusals.Because(
-                        Refusals.RemoteHalfDeclared,
-                        $"`{workspace}` needs both an address and a key: a half-declared remote is no remote, "
-                        + "and one written into the map would simply be skipped.",
-                        ("workspace", workspace));
-                }
 
-                // The edit alone, made onto the file as it stands: what the page does not own stays (KEEPALL1e).
+                // The operation judges the pair and makes the edit alone onto the file as it stands (KEEPALL1e).
                 var path = Path;
-                Kept(() => RemoteFile.Load(path).With(workspace, new(url, key)).Save(path));
+                Kept(() => RemoteOperations.Set(path, workspace, url, key));
 
                 // The loop re-reads the map on its next pass; nudging means the person sees the first
                 // sync of a workspace they just wired, rather than waiting out a poll interval.
@@ -72,11 +61,10 @@ public sealed class RemotesModule(IEventBus events, DriverLoop loop) : ModuleBas
 
             case "REMOVE":
             {
-                var workspace = RemoteTarget.Workspace(
-                    PayloadHelper.GetRequiredValue<string>(request.Payload, "workspace"));
+                var workspace = PayloadHelper.GetRequiredValue<string>(request.Payload, "workspace");
                 // Nothing to take is an answer, not an error: the end state is the one that was asked for, and nothing is written.
                 var path = Path;
-                Kept(() => RemoteFile.Load(path).Without(workspace).Save(path));
+                Kept(() => RemoteOperations.Remove(path, workspace));
                 loop.Nudge();
                 return Task.FromResult<object?>(State());
             }
@@ -87,14 +75,18 @@ public sealed class RemotesModule(IEventBus events, DriverLoop loop) : ModuleBas
     }
 
     /// <summary>
-    /// An edit of the map, its refusal said with its sentence (a file that does not read, a key written twice, a lock held throughout),
-    /// as the driver's other doors say theirs; nothing was written.
+    /// An edit of the map, its refusal said in the code the library's table gives it, else with its sentence (a file that does not
+    /// read, a key written twice, a lock held throughout), as the driver's other doors say theirs; nothing was written.
     /// </summary>
-    private static void Kept(Action edit)
+    private static void Kept<T>(Func<T> edit)
     {
         try
         {
             edit();
+        }
+        catch (HomeFileRefusal coded)
+        {
+            throw Refusals.Declared(HomeFileCodes.Of(coded), coded.Message, [.. coded.Facts]);
         }
         catch (Exception error) when (error is DriverException or IOException)
         {
