@@ -23,7 +23,7 @@ namespace Daoris.Desktop.Driver.Tests;
 [Collection(Alone.Name)]
 public sealed class GitSshHoldsProcessTests : IDisposable
 {
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-git-ssh-holds-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _root = Path.Combine(GitSeed.RepoRoot(), "_fixtures", "git-ssh-holds", Guid.NewGuid().ToString("N")[..8]);
 
     private readonly Dictionary<string, string?> _was = [];
 
@@ -36,9 +36,6 @@ public sealed class GitSshHoldsProcessTests : IDisposable
     private string Repo => Path.Combine(_root, "engine");
 
     private string Keys => Path.Combine(_root, "keys");
-
-    private static string? Sshd() =>
-        Environment.GetEnvironmentVariable("DAORIS_TEST_SSHD") is { Length: > 0 } named && File.Exists(named) && OperatingSystem.IsWindows() ? named : null;
 
     public GitSshHoldsProcessTests()
     {
@@ -160,10 +157,10 @@ public sealed class GitSshHoldsProcessTests : IDisposable
         }
     }
 
-    [Fact]
+    [SshdFact]
     public async Task A_key_the_server_refuses_is_held_once_and_no_moment_connects_again_until_try_again()
     {
-        if (Sshd() is not { } sshd) return;
+        var sshd = SshdFactAttribute.Named()!;
         var (port, known) = await ServeAsync(sshd);
         await WireAsync(sshd, known);
         await Git("init", "-q", "-b", "main");
@@ -189,10 +186,10 @@ public sealed class GitSshHoldsProcessTests : IDisposable
         Assert.True(Connections() > connected);
     }
 
-    [Fact]
+    [SshdFact]
     public async Task A_server_whose_key_changed_is_held_as_changed()
     {
-        if (Sshd() is not { } sshd) return;
+        var sshd = SshdFactAttribute.Named()!;
         var (port, _) = await ServeAsync(sshd);
         var other = await KeyAsync(sshd, "other");
         await WireAsync(sshd, $"[127.0.0.1]:{port} {string.Join(' ', File.ReadAllText(other + ".pub").Split(' ')[..2])}");

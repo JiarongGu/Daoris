@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-02 - The SSH security proofs never ran under a gate (REVIEW2 T1)
+
+- **Symptom:** `GitSshdProcessTests` and `GitSshHoldsProcessTests` read `DAORIS_TEST_SSHD`, which the merge tool strips from every gate's environment, so both were skipped (or, for the holds, returned early and reported green) in every gate.
+- **Root cause:** the variable carried the `DAORIS_` prefix `GATE_REMOVED` takes out, and the holds class returned early instead of skipping.
+- **Fix:** the variable is `TEST_SSHD` (the old name still read for a person's run); the holds class uses `SshdFact`; `test-map --check --reports` names every class whose tests did not execute, so a skipped proof is seen. The two classes' roots moved from the OS temp to `_fixtures` (T9).
+- **Verify:** `test-map.test.ts` (`trxSkipped`); the holds class shows as skipped without the variable.
+
 ## 2026-11-02 - The room said an off or unreadable role runs the machine's defaults (REVIEW2 S4)
 
 - **Symptom:** a role whose stored choices are empty (off) or whose `actors` entry does not read was said to have "no choices of its own, so this machine's defaults run".
