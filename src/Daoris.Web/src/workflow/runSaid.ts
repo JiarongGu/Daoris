@@ -247,7 +247,7 @@ export function graphSaid(t: TFunction, graph: GraphRun): string[] {
 
 /** The codes of a read that names no run (CHATFLOW1a, `WorkflowNoRun`) this page words; another is the driver's sentence. */
 export const NO_RUN_CODES: readonly string[] = [
-  'no-session', 'no-quest', 'ask-no-quest', 'chat-checkout', 'chat-own-tree', 'chat-graph-later', 'chat-tree-gone', 'ask-daoris', 'reviewer',
+  'no-session', 'no-quest', 'ask-no-quest', 'chat-checkout', 'chat-own-tree', 'chat-tree-gone', 'ask-daoris', 'reviewer',
   'helper', 'partner', 'teammate', 'unanswered',
 ];
 

@@ -682,9 +682,9 @@ public sealed class WorkflowRoutes(DriverContext context)
             run.Session,
             run.At,
             run.Problem,
-            // CHATFLOW1c: a chat run's key and its checks, which are not yet enforced for a conversation (the chat-flow design §4.4); null for
-            // a quest's run, and from a driver before it.
-            Chat = run.ChatRun is { } chat ? new { Run = chat, Checks = WorkflowRunWords.ChecksOf(run), Enforced = false } : null,
+            // CHATFLOW1c: a chat run's key and its checks, which a conversation's execution is held to since CHATFLOW1h (the chat-flow design §4.4);
+            // null for a quest's run, and from a driver before it.
+            Chat = run.ChatRun is { } chat ? new { Run = chat, Checks = WorkflowRunWords.ChecksOf(run), Enforced = true } : null,
             // The workflow's wait, in the shape the Trees domain's landing gate answers it.
             WorkflowGate = TreesRoutes.WorkflowWaits(run.WorkflowGate),
             Workflow = new { run.Current.Version, run.Current.StartHolds, Limits = limits,

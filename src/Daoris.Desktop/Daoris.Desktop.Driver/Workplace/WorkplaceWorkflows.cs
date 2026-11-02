@@ -31,6 +31,15 @@ internal interface IWorkplaceWorkflows
     /// <summary>The press's view of a chat run's record: its line's ids, oldest first, and whether it is live (see <c>ChatRuns.PressOf</c>).</summary>
     (IReadOnlyList<string> Line, bool Live) ChatPressOf(string session, string recordsJson);
 
+    /// <summary>The quest whose work a record continues though its own is none (CHATFLOW1i; see <c>ChatRuns.TakenOf</c>).</summary>
+    string? TakenOf(string session, string recordsJson);
+
+    /// <summary>
+    /// A press's candidate on a graph-bound chat run (CHATFLOW1f; see <c>ChatCandidates.Submit</c>): submitted at <paramref name="tip"/>, the run's
+    /// binding read first, and none for a run bound to anything else or held by a problem.
+    /// </summary>
+    void SubmitChatCandidate(string home, string run, string repository, string? workspace, string branch, string tip, DateTimeOffset at, Func<string, bool> landed);
+
     /// <summary>Current's landing graph for <paramref name="rule"/>: the method its <c>land</c> names, and the graph's digest (see <c>NodeGraphHomes.Landing</c>).</summary>
     (string Method, string Graph) CurrentLand(LandingRule rule);
 

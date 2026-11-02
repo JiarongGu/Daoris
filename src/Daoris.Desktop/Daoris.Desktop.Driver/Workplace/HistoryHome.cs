@@ -168,7 +168,8 @@ internal static class HistoryHome
         }
 
         // A chat run's opinion gate and look (CHATFLOW1c) whose record is gone; a chain's gate file is its quest's, which this leaves.
-        foreach (var file in Files(WorkplaceRunFiles.GatesFolder(world.Home)).Concat(Files(WorkplaceRunFiles.LooksFolder(world.Home))))
+        foreach (var file in Files(WorkplaceRunFiles.GatesFolder(world.Home)).Concat(Files(WorkplaceRunFiles.LooksFolder(world.Home)))
+                     .Concat(Files(WorkplaceRunFiles.CandidatesFolder(world.Home))))
         {
             if (string.Equals(Path.GetExtension(file), ".json", StringComparison.Ordinal)
                 && WorkplaceRunFiles.RecordOf(Path.GetFileNameWithoutExtension(file)) is { } record && Gone(record))
