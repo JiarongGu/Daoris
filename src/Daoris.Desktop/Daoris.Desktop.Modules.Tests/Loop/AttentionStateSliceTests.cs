@@ -412,6 +412,23 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Is($$"""{"kind":"steward-stopped","id":"7a82cc","since":"2026-10-01T09:21:00+00:00","workspace":"default","where":"engine","session":"s1","sitting":{{steward.ToJsonString()}}}""", item);
     }
 
+    /// <summary>
+    /// STAFFPOLICY1e2 (D226, design §11 point 7): a quest its role's policy holds, for an ask or for the bound of moves, is a row waiting on the
+    /// person's Try again, read from the planner's typed verdict; and it is counted with the quests the person answers.
+    /// </summary>
+    [Fact]
+    public void A_quest_its_role_s_policy_holds_is_a_row_and_is_counted_where_a_parked_quest_is()
+    {
+        var asked = Parked("""{"verdict":"PolicyHeld","said":{"code":"policy-ask","session":"s1"},"reason":"its role's policy asks."}""");
+
+        var facts = new AttentionFacts { Quests = [Quest("""{"status":"Taken"}""")], Registry = [Registration("engine")], Considered = [asked] };
+        var item = Assert.Single(Rows(facts));
+
+        Is($$"""{"kind":"policy-hold","id":"7a82cc","since":"2026-10-01T09:21:00+00:00","workspace":"default","where":"engine","sitting":{{asked.ToJsonString()}}}""", item);
+        var counted = Assert.Single(NeedsAPerson.WaitingInSessions(facts));
+        Assert.Equal(("policy:7a82cc", "policy-hold"), (counted.Key, counted.Value["kind"]!.GetValue<string>()));
+    }
+
     /// <summary>A run the node runtime holds at a declined request, as <see cref="AttentionStateSlice.FactsAsync"/> writes one (INTEGRATE1o part o3).</summary>
     private static JsonObject Declined(string over = "{}") => With(
         """{"run":"r7","node":"requests","repository":"engine","workspace":"aurora","quest":"q9","to":"web","work":"7a82cc","since":"2026-10-30T11:00:00.0000000+00:00"}""",

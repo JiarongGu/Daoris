@@ -721,10 +721,40 @@ describe('a declaration owed acceptance, worded', () => {
 });
 
 /** UX6c (design §6.2): the three groups, in the order a person acts on them, and none shown empty. */
+/** STAFFPOLICY1e2 (D226, design §11 point 7): a quest its role's policy holds for the person's yes to one move. */
+describe('a quest its role’s policy holds, worded', () => {
+  const asked: Consideration = {
+    quest: 'q1', repository: 'engine', verdict: 'PolicyHeld', reason: 'the planner said so.', said: { code: 'policy-ask', session: 's1' },
+  };
+  const bound: Consideration = { ...asked, said: { code: 'moves-bound', session: 's1' } };
+
+  it('says the ask and the bound by the planner’s typed sentence, offers Try again alone and opens the quest', () => {
+    const item = words(row('policy-hold', 'q1', '2026-11-02T10:06:00Z', { where: 'engine', sitting: asked }), { quests: [quest({ id: 'q1', status: 'Taken' })] });
+    expect(item.kind).toBe('policy-hold');
+    expect(item.detail).toBe("Its role's policy asks before it moves this quest to another choice: Try again says yes to one move.");
+    expect(words(row('policy-hold', 'q1', null, { where: 'engine', sitting: bound })).detail)
+      .toBe("This quest made its role's policy's moves to another choice for today: Try again says yes to one more.");
+    expect(attentionActs(item)).toEqual(['retry']);
+    expect(rowRun(item)).toEqual({ quest: 'q1' });
+  });
+
+  it('holds work, the longest waiting first, and says it in 中文', async () => {
+    expect(keyed([
+      row('policy-hold', 'q-new', '2026-10-01T10:00:00+00:00'), row('parked-quest', 'q-old', '2026-09-30T10:00:00+00:00'),
+    ])).toEqual(['parked-quest:q-old', 'policy-hold:q-new']);
+    await i18n.changeLanguage('zh');
+    try {
+      expect(words(row('policy-hold', 'q1', null, { sitting: asked })).detail).toBe('它的角色策略在把这项委托改用其他选择之前先问你：「重试」表示同意改用一次。');
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+});
+
 describe('the groups', () => {
   it('puts each kind in its group', () => {
     expect(ATTENTION_GROUP).toEqual({
-      parked: 'holding', 'parked-quest': 'holding', 'steward-stopped': 'holding', 'request-declined': 'holding', 'go-ahead': 'holding',
+      parked: 'holding', 'parked-quest': 'holding', 'steward-stopped': 'holding', 'policy-hold': 'holding', 'request-declined': 'holding', 'go-ahead': 'holding',
       permission: 'holding', answer: 'holding',
       confirmation: 'holding', trust: 'holding', quiet: 'holding', 'helper-ended': 'holding',
       'account-wait': 'holding', 'signed-out': 'holding',
@@ -1118,7 +1148,7 @@ describe('the place each wait is counted at', () => {
     expect(ATTENTION_PLACE).toEqual({
       parked: 'sessions', review: 'sessions', opinion: 'sessions', helper: 'sessions', 'hand-over': 'sessions',
       permission: 'sessions', answer: 'sessions', quiet: 'sessions', 'helper-ended': 'sessions', memory: 'sessions',
-      proposal: 'quests', intake: 'quests', unanswerable: 'quests', 'parked-quest': 'quests', 'steward-stopped': 'quests', 'request-declined': 'quests', 'go-ahead': 'quests',
+      proposal: 'quests', intake: 'quests', unanswerable: 'quests', 'parked-quest': 'quests', 'steward-stopped': 'quests', 'policy-hold': 'quests', 'request-declined': 'quests', 'go-ahead': 'quests',
       departure: 'quests', 'set-up': 'quests', trust: 'quests',
       work: 'projects', integration: 'projects',
       rule: 'agents', 'account-wait': 'agents', 'signed-out': 'agents',
@@ -1195,6 +1225,7 @@ describe('what a row offers', () => {
   it('tries a parked quest again, accepts a departure, and answers a go-ahead, a folder and a widening', () => {
     expect(attentionActs(offered('parked-quest'))).toEqual(['retry']);
     expect(attentionActs(offered('steward-stopped'))).toEqual(['retry']);
+    expect(attentionActs(offered('policy-hold'))).toEqual(['retry']);
     expect(attentionActs(offered('request-declined', { declined: { node: 'requests', quest: 'q9', to: 'web' } }))).toEqual(['pass-over']);
     // INTEGRATE1p (C33): a run's own declined request offers its two words, never the work's pass-over.
     expect(attentionActs(offered('request-declined', { declined: { node: 'ask', quest: 'q9', to: 'web', request: true } }))).toEqual(['ask-again', 'go-on']);

@@ -7,6 +7,7 @@
   "work.attention.parked": "parked at a checkpoint",
   "work.attention.parked-quest": "parked after failed sessions",
   "work.attention.steward-stopped": "Stopped by the steward",
+  "work.attention.policy-hold": "waiting for your yes to move",
   "work.attention.stewardStoppedSession": "The steward stopped session `{{session}}`.",
   "work.attention.request-declined": "request declined",
   "work.attention.requestDeclinedWhy": "Quest #{{quest}} to `{{to}}` was declined, so the work holds here until you pass it over.",
