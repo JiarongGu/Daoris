@@ -506,6 +506,7 @@ out AnswersAloneTests.Every_door_keeps_a_helpers_answer_marked_as_the_helpers E
 out AnswersAloneTests.Mixed_and_alternating_answers_are_one_count_and_the_supervisor_never_resets_it R
 out AnswersAloneTests.A_forged_supervisor_event_only_raises_the_count R
 out AnswersAloneTests.The_hold_reads_the_bound_from_the_lines_events_here R
+out LimitGoesElsewhereProcessTests.A_conversation_of_an_added_role_at_its_agent_s_limit_goes_on_with_that_roles_next_choice R
 
 ## Suites the paths decide in: every case ([Fact] and [Theory]) of each is a row's source or left out above, however many it has
 # PlannerTests' carry-on cases are rows of K; its other cases are the planner's own (P), so it is not listed here.

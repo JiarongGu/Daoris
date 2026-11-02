@@ -205,9 +205,10 @@ public sealed class ChatNoteCodeTests
             Briefing = InAppBrowserServers.Told(["browser"]), Process = Process(), Routing = routing,
             Preface = "Where the person is now: the Sessions view.",
         };
+        // The routing standing is the last thing the agent reads, after the person's words (COWORKVIEW1e-i's fix).
         Assert.Equal(
-            $"{message.Briefing}\n\n{message.Process!.Words}\n\n{routing.Words}\n\nWhere the person is now: the Sessions view.\n\nopen the board", message.Prompt);
-        Assert.Equal($"{routing.Words}\n\nopen the board", new ChatMessage("open the board", []) { Routing = routing }.Prompt);
+            $"{message.Briefing}\n\n{message.Process!.Words}\n\nWhere the person is now: the Sessions view.\n\nopen the board\n\n{routing.Words}", message.Prompt);
+        Assert.Equal($"open the board\n\n{routing.Words}", new ChatMessage("open the board", []) { Routing = routing }.Prompt);
 
         var told = ChatRecorded.ToldRouting(routing)!;
         Assert.Equal(SessionEventKind.Note, told.Kind);
