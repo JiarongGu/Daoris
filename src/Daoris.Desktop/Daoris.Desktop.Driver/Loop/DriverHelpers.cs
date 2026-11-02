@@ -188,23 +188,58 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
     {
         var files = new HelperFiles(_context.Home);
         if (HelperWaits.Open(session, files.Asks(), files.ReadState).Count == 0) return false;
-        // A question on file that does not read is no proof that none was asked (Codex's round-2 #3): it parks, as one asked does.
-        if (new QuestionFiles(_context.Home).AskedSince(session, since) != false) return false;
-        return await AskedGoAheadAsync(session, quest.From, ct).ConfigureAwait(false) == false;
+        var exchanges = Exchanges.Of(await OwnLookAsync(session, quest.From, since, ct).ConfigureAwait(false), session);
+        return OwnHelperHolds(exchanges, session);
     }
 
     /// <summary>
-    /// Whether <paramref name="session"/> asked a go-ahead on its work's ask that still waits on the person (HELPERWAIT1): an ask
-    /// the service does not hold, or a quest on no ask, has none; one the service did not answer is unread, null, and its caller parks as
-    /// before rather than read a question as absent.
+    /// Whether the exchanges of <paramref name="session"/> end its turn on its own helper alone: an ask of its agent's still held, and no
+    /// question or go-ahead held on the person, nor one unread. A question on file that does not read is no proof that none was asked
+    /// (Codex's round-2 #3), and a go-ahead the service did not answer is the same: it parks, as one asked does.
     /// </summary>
-    private async Task<bool?> AskedGoAheadAsync(string session, string? from, CancellationToken ct)
+    internal static bool OwnHelperHolds(IReadOnlyList<Exchange> exchanges, string session)
     {
-        if (AskWords.AskOf(from) is not { } id) return false;
+        var own = exchanges.Where(exchange => string.Equals(exchange.Part, session, StringComparison.Ordinal)).ToList();
+        if (!own.Any(exchange => exchange.Holds && exchange.Id.StartsWith("helper:", StringComparison.Ordinal))) return false;
+        return !own.Any(exchange => exchange.Source == Exchanges.Unread
+                                    ? exchange.Id is "question:unread" or "go-ahead:unread"
+                                    : exchange.Holds && exchange.Expects is Exchanges.Answer or Exchanges.Decision
+                                      && exchange.To == Exchanges.Person);
+    }
+
+    /// <summary>
+    /// The look of <paramref name="session"/>'s own exchanges as the loop composes it (COMMS1d): the helper files, its question since
+    /// <paramref name="since"/> and the go-aheads on its work's ask. A source it cannot read is left null, which the read says as unread;
+    /// the sources a park does not wait on here are not read.
+    /// </summary>
+    internal async Task<ExchangeLook> OwnLookAsync(string session, string? from, DateTimeOffset since, CancellationToken ct)
+    {
+        var files = new HelperFiles(_context.Home);
+        var questions = new QuestionFiles(_context.Home);
+        var asked = questions.AskedSince(session, since);
+        return new ExchangeLook
+        {
+            Helpers = files.Asks(),
+            HelperState = files.ReadState,
+            Questions = asked is null ? null : questions.Read(session) is { } question ? [question] : [],
+            QuestionsSince = since,
+            Ask = AskWords.AskOf(from),
+            GoAheads = await GoAheadsAsync(from, ct).ConfigureAwait(false),
+        };
+    }
+
+    /// <summary>
+    /// The go-aheads on the ask <paramref name="from"/> names (HELPERWAIT1): none for an ask the service does not hold or a quest on no
+    /// ask; null where the service did not answer, unread, so its caller parks as before rather than read a question as absent.
+    /// </summary>
+    private async Task<IReadOnlyList<GoAheadView>?> GoAheadsAsync(string? from, CancellationToken ct)
+    {
+        if (AskWords.AskOf(from) is not { } id) return [];
         try
         {
             return await _context.Service.FindAskAsync(id, ct).ConfigureAwait(false) is { } ask
-                   && HelperWaits.AskedGoAhead(session, AskWords.Of(ask));
+                ? AskWords.Of(ask).GoAheads ?? []
+                : [];
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or JsonException or InvalidOperationException
                                           || (error is OperationCanceledException && !ct.IsCancellationRequested))
