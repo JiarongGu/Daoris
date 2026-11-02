@@ -3,9 +3,10 @@ using System.Diagnostics;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a <see cref="TransportRun"/> starts and how it holds it (AGENTPROVIDER1m-i part 1): the process a door's spawn prepared, whose it is
-/// at the start gate, and what the run needs beside it for its wait, its go-on and its retry. Built by the executor that holds the run, which
-/// is the one place that knows its target and its selection.
+/// What a <see cref="TransportRun"/> starts and how it holds it (AGENTPROVIDER1m-i): the process a door's spawn prepared, whose it is at the
+/// start gate, and what the run needs beside it for its open, its wait, its go-on and its retry. Built by the executor that holds the run,
+/// which is the one place that knows its target and its selection; an executor whose own steps come between the spawn and the open hands the
+/// rest once its process is up (<see cref="TransportRun.HandStart"/>).
 /// </summary>
 /// <param name="Info">The process to start, prepared and handed everything a start is handed.</param>
 /// <param name="Whose">
@@ -28,6 +29,24 @@ internal sealed record TransportStart(ProcessStartInfo Info, StartClass Whose)
 
     /// <summary>A partner's piece's job (COAGENT1b), which its harness joins beneath this process's agents' job; null for every other run.</summary>
     public string? Piece { get; init; }
+
+    /// <summary>
+    /// The lineage token its run's move issued (COWORKVIEW1a), whose <c>start</c> is written already: a resume moved before its spawn. The
+    /// first process takes it; null issues that process its own, as every later one is.
+    /// </summary>
+    public string? Moved { get; init; }
+
+    /// <summary>
+    /// The native door's prompt, written on the process's input once its output is being read, then closed (AGENTLYNTAI1s-i): a start's
+    /// composed target or a resume's words. The protocol door's goes on its wire (<see cref="TransportProtocol.Run"/>); null writes none.
+    /// </summary>
+    public string? Prompt { get; init; }
+
+    /// <summary>
+    /// Told as the first process's native prompt's write returns (FOUNDATION1f-iv part b): where a carry-on's moved words are <c>sent</c>,
+    /// never the process's start, which a crash can precede the write by.
+    /// </summary>
+    public Action? Written { get; init; }
 
     /// <summary>How long it may run before it is stopped, where that is not the machine's session timeout: a pass's own minutes (XAGENT1d).</summary>
     public int? Minutes { get; init; }
@@ -58,8 +77,9 @@ internal sealed record TransportStart(ProcessStartInfo Info, StartClass Whose)
 }
 
 /// <summary>
-/// The protocol door's session over a run's process (AGENTPROVIDER1m-i part 1): where it works, the rules it is handed and what the executor
-/// wires onto it, each as the driven capture (<c>Driver.CaptureAcpAsync</c>) does today.
+/// The protocol door's session over a run's process (AGENTPROVIDER1m-i): where it works, the rules it is handed and what the executor wires
+/// onto it. A driven executor's session is its own closure here (<see cref="Configure"/>, <see cref="Run"/>, <see cref="Ended"/>): what it
+/// sets on the session, the prompt it runs and what it says of the words that never reached it, beside the run's own lines.
 /// </summary>
 /// <param name="Cwd">The folder the session works in.</param>
 internal sealed record TransportProtocol(string Cwd)
@@ -88,6 +108,12 @@ internal sealed record TransportProtocol(string Cwd)
     /// </summary>
     public Func<AcpSession, string?, CancellationToken, Task<AcpOutcome>>? Run { get; init; }
 
+    /// <summary>
+    /// Told as a driven session's run ends, whatever ended it, once the turn's end is said and before the input closes: where the executor
+    /// says what the person said that never reached it (SESS3). Null tells nothing.
+    /// </summary>
+    public Action? Ended { get; init; }
+
     /// <summary>The driven shape: the session opened, prompted with <paramref name="prompt"/> and closed, as <c>AcpSession.RunAsync</c> does.</summary>
     public static TransportProtocol Driven(string cwd, string prompt, IReadOnlyList<AcpMcpServer>? servers = null) =>
         new(cwd)
@@ -98,9 +124,9 @@ internal sealed record TransportProtocol(string Cwd)
 }
 
 /// <summary>
-/// What a <see cref="TransportRun"/> asks of the loop that holds it (AGENTPROVIDER1m-i part 1): the driver's own waits, its watch, its
-/// kept conversations and downloads. A port because the run sits in Agents and the driver above it; <c>DriverTransportHost</c> answers it
-/// from the driver, so the run's steps are the driver's, not copies of them.
+/// What a <see cref="TransportRun"/> asks of the loop that holds it (AGENTPROVIDER1m-i): the driver's own waits, its watch, its kept
+/// conversations and downloads, and each process's lineage bracket (COWORKVIEW1a), whose file is Participants'. A port because the run sits in
+/// Agents and the driver above it; <c>DriverTransportHost</c> answers it from the driver, so the run's steps are the driver's, not copies of them.
 /// </summary>
 internal interface ITransportHost
 {
@@ -116,11 +142,37 @@ internal interface ITransportHost
     /// <summary>A stream a run reads, stamping its session heard at each line (SESSWATCH1a).</summary>
     TextReader Hearing(TextReader reader, string sessionId);
 
-    /// <summary>The exit, or null when a bound killed it; the tree dies with it (<c>Driver.WaitAsync</c>).</summary>
-    Task<int?> WaitAsync(Process process, CancellationToken ct, int? minutes, Action<int>? timingOut, CancellationToken quiet, Action? quietEnding);
+    /// <summary>
+    /// A process's lineage token (COWORKVIEW1a): issued, its <c>start</c> written and set on the spawn's environment, all before the spawn;
+    /// <paramref name="moved"/> where its run's move issued it already (<c>Driver.Bracketed</c>).
+    /// </summary>
+    string Bracketed(string sessionId, ProcessStartInfo info, string? moved);
 
-    /// <summary>Whether the capture finished within the bound past the exit, which ends a stray's hold on it (<c>Driver.CaptureWithinAsync</c>, SESSWATCH1a).</summary>
-    Task<bool> CaptureWithinAsync(Task capture, string sessionId);
+    /// <summary>The spawn under <paramref name="proc"/>: its process handed the token, or the token let go where it made none (<c>Driver.Spawned</c>).</summary>
+    Task<Process?> SpawnedAsync(string proc, Func<Task<Process?>> spawn);
+
+    /// <summary>
+    /// The exit, or null when a bound killed it; the tree dies with it (<c>Driver.WaitAsync</c>). The exit read is told the token set, and a
+    /// wait thrown as the loop closes writes the process's end unclean before it leaves (<c>Driver.WaitedAsync</c>).
+    /// </summary>
+    Task<int?> WaitAsync(
+        string sessionId, string proc, Process process, CancellationToken ct, int? minutes, Action<int>? timingOut, CancellationToken quiet,
+        Action? quietEnding);
+
+    /// <summary>
+    /// Whether the capture finished within the bound past the exit, which ends a stray's hold on it (SESSWATCH1a); one that faults writes the
+    /// process's end unclean before the fault leaves (<c>Driver.DrainedAsync</c>).
+    /// </summary>
+    Task<bool> DrainedAsync(string sessionId, string proc, Task capture);
+
+    /// <summary>A process's end once its exit was read and its capture drained: clean, or killed, stopped or failed (<c>Driver.Ended</c>).</summary>
+    void Ended(string sessionId, string proc, int? exit);
+
+    /// <summary>
+    /// A run let go before its end (ANSWER2, <c>Driver.AbandonedAsync</c>): its process ended, its end written unclean once its exit is read,
+    /// and its capture observed, a failure there written with its reason.
+    /// </summary>
+    Task AbandonedAsync(string sessionId, string proc, Process process, Task capture);
 
     /// <summary>The downloads a start is handed, kept on its record before it is spawned (KEEP1b).</summary>
     Task KeepHandedAsync(string sessionId, ProcessStartInfo info, CancellationToken ct);
