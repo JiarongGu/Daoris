@@ -322,7 +322,9 @@ public sealed class OpinionStoreTests : IAsyncLifetime
         Assert.Null((await _sessions.FindAsync(working.Id))!.Answer);
         Assert.Equal((working.Id, word.Id, Now.AddMinutes(6)), (handed.Opinion!.Handed!.Session, handed.Opinion.Handed.Word, handed.Opinion.Handed.At));
 
-        Assert.Equal(OpinionRefusal.NotHanded, (await _desk.HandAsync(opinion.Id, Now.AddMinutes(7))).Refusal);
+        var waiting = await _desk.HandAsync(opinion.Id, Now.AddMinutes(7));
+        Assert.True(waiting.Waiting, waiting.Message);
+        Assert.Equal(word.Id, waiting.Word!.Id);
         Assert.Single((await _sessions.FindAsync(working.Id))!.Said);
 
         var quiet = await WorkingAsync("quiet");
