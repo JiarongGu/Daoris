@@ -207,7 +207,6 @@
   "settings.ai.policy.limits.budgetTokens": "每天已报告的令牌",
   "settings.ai.policy.limits.tokensNote": "已报告的令牌是智能体今天报告的数量。一轮可能在其用量送达之前就超出预算：它只把关下一次启动，并不是上限。",
   "settings.ai.policy.limits.worksLegend": "它承担的工作",
-  "settings.ai.policy.limits.workOf": "第 {{n}} 个选择承担{{work}}",
   "settings.ai.policy.moves.title": "当某个选择无法继续时",
   "settings.ai.policy.when.limit": "额度用尽",
   "settings.ai.policy.when.transient": "它的服务没有响应",

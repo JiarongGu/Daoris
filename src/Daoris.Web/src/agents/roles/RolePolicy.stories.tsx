@@ -9,13 +9,13 @@ import { type Editing, RoleEditor } from './RoleEditor';
 
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
-const OFFERS = { 'claude-code': { models: ['opus', 'sonnet', 'haiku'], efforts: ['low', 'medium', 'high'] } };
+const OFFERS = { 'agent-a': { models: ['opus', 'sonnet', 'haiku'], efforts: ['low', 'medium', 'high'] } };
 
 const BASE: Editing = {
   id: 'build', mode: 'role', isNew: false, revision: 0, name: 'Build', nameIn: [['zh', '开发']], takes: ['build'], work: 'build', place: 'machine', placeId: '',
   drafts: [
-    { key: 1, agent: 'claude-code', model: 'sonnet', effort: 'high', weight: '3' },
-    { key: 2, agent: 'claude-code', model: 'opus', effort: 'high', weight: '1', budgetKind: 'starts', budget: '6', works: ['design'] },
+    { key: 1, agent: 'agent-a', model: 'sonnet', effort: 'high', weight: '3' },
+    { key: 2, agent: 'agent-a', model: 'opus', effort: 'high', weight: '1', budgetKind: 'starts', budget: '6', works: ['design'] },
   ],
   policy: {
     state: 'set', revision: 4, why: null, preset: 'weighted', carried: {}, most: '3',
@@ -29,13 +29,13 @@ const ORDER: Editing = {
   policy: { ...BASE.policy!, preset: 'first', moves: {}, most: '' },
 };
 
-const NEXT = { choice: '1', by: 'weight', said: 'by weight: 3 of the last 4 were choice 1, aim 3 in 4', agent: 'claude-code', model: 'sonnet', effort: 'high' };
+const NEXT = { choice: '1', by: 'weight', said: 'by weight: 3 of the last 4 were choice 1, aim 3 in 4', agent: 'agent-a', model: 'sonnet', effort: 'high' };
 
 const meta: Meta<typeof RoleEditor> = {
   title: 'Agents/Roles/Policy',
   component: RoleEditor,
   args: {
-    editing: BASE, onEditing: () => {}, title: 'Build', agents: [{ value: 'claude-code', label: 'Claude Code' }], offers: OFFERS,
+    editing: BASE, onEditing: () => {}, title: 'Build', agents: [{ value: 'agent-a', label: 'Agent A' }], offers: OFFERS,
     works: [{ value: 'build', label: 'building' }, { value: 'design', label: 'design and decisions' }],
     busy: false, held: false, placed: 'Placed on this machine; the place is fixed and the id is made for you.',
     consequence: 'Saving puts this role to work at once: new work takes its choices, and running work keeps its own.',

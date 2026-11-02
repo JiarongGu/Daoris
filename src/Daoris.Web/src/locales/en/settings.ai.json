@@ -207,7 +207,6 @@
   "settings.ai.policy.limits.budgetTokens": "Reported tokens a day",
   "settings.ai.policy.limits.tokensNote": "Reported tokens are what the agent reported today. A turn can pass the budget before its usage arrives: it guards the next start and is not a cap.",
   "settings.ai.policy.limits.worksLegend": "Works it serves",
-  "settings.ai.policy.limits.workOf": "choice {{n}} serves {{work}}",
   "settings.ai.policy.moves.title": "When a choice cannot go on",
   "settings.ai.policy.when.limit": "It reaches its limit",
   "settings.ai.policy.when.transient": "Its service does not answer",

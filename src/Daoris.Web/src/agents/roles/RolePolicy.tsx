@@ -2,7 +2,7 @@ import type { TFunction } from 'i18next';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { StaffCondition } from '../../data/wiring';
-import { SelectField } from '../../design/ui';
+import { CheckField, SelectField } from '../../design/ui';
 import {
   digits, FIXED_CONDITIONS, MOST_BOUND, type OfferedMove, OFFERED_MOVES, type PolicyDraft, type PolicyFields, type PolicyMove, type Preset, stepped, worksOf,
 } from './staffPolicyDraft';
@@ -99,17 +99,13 @@ export function LimitsFold({ n, fields, takes, labelOf, disabled, onChange }: {
           <fieldset className="m-0 flex flex-wrap gap-x-3 gap-y-1 border-0 p-0">
             <legend className="mb-1 p-0 text-small text-ink-soft">{t('settings.ai.policy.limits.worksLegend')}</legend>
             {works.map((work) => (
-              <label key={work} className="inline-flex items-center gap-1 text-small text-ink">
-                <input
-                  type="checkbox" checked={served.includes(work)} disabled={disabled}
-                  aria-label={t('settings.ai.policy.limits.workOf', { n, work: labelOf(work) })}
-                  onChange={(event) => {
-                    const next = event.target.checked ? works.filter((each) => each === work || served.includes(each)) : served.filter((each) => each !== work);
-                    onChange({ works: next.length === works.length || next.length === 0 ? null : next });
-                  }}
-                />
-                {labelOf(work)}
-              </label>
+              <CheckField
+                key={work} checked={served.includes(work)} disabled={disabled} label={labelOf(work)} className="text-small text-ink"
+                onChange={(checked) => {
+                  const next = checked ? works.filter((each) => each === work || served.includes(each)) : served.filter((each) => each !== work);
+                  onChange({ works: next.length === works.length || next.length === 0 ? null : next });
+                }}
+              />
             ))}
           </fieldset>
         )}
