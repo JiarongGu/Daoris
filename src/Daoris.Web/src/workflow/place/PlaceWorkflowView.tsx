@@ -60,7 +60,7 @@ export type PlaceWorkflowProps = WorkflowTabProps & {
   /** The editor's draft the page kept when this section was last unmounted, and where it keeps the draft as the editor reports it (REVIEW2 P5). */
   held?: PlaceFlowHold | null;
   onHold?: (held: PlaceFlowHold | null) => void;
-  /** Opens the home's conversion review (WORKFLOWCLEAN1g-i): the door the place's *Edit steps…* and *Current* are wired to by row 1h. */
+  /** Opens the home's conversion review (WORKFLOWCLEAN1g-i): the one door from a route, a Landing row or a tab that follows Current. */
   onConvert?: () => void;
 };
 
@@ -72,11 +72,11 @@ type Panel = { is: 'change'; route: string } | { is: 'edit'; route: string; from
 /**
  * What *Edit steps…* opens the editor on (SETUPUX1r): the graph the selected route follows. A saved workflow's newest version is the version
  * the edit appends to; Current's, or a version of steps drawn as the graph it decodes to, begins a workflow of its own. None where the
- * route draws no graph, or is still being read: the editor begins empty.
+ * route draws no graph, or is still being read: the editor begins empty. A route that follows Current has no editor: it goes to the conversion.
  */
 function editStart(effective: WorkflowEffective | null): { graph: unknown; id?: string; name?: string; base?: number | null } | undefined {
   if (effective === null || effective.graph === null || effective.graph === undefined) return undefined;
-  if (effective.workflow !== 'current' && effective.version !== null && effective.schema === 2) {
+  if (effective.version !== null && effective.schema === 2) {
     return { graph: effective.graph, id: effective.workflow, name: effective.name ?? effective.workflow, base: effective.version };
   }
   return { graph: effective.graph, ...(effective.name ? { name: effective.name } : {}) };
@@ -136,7 +136,7 @@ function Routes({ rows, chosen, onChoose }: { rows: readonly RouteRow[]; chosen:
  */
 export function PlaceWorkflowView({
   name, page = 'repository', current, reading = false, refusal = null, doors, onAcceptGates, accepting = false, onVerify, editor,
-  view, onView, onAcceptIntegration, landing, onOpenSection, opens = null, onOpened, held = null, onHold,
+  view, onView, onAcceptIntegration, landing, onOpenSection, opens = null, onOpened, held = null, onHold, onConvert,
 }: PlaceWorkflowProps) {
   const { t } = useTranslation();
   const canAsk = useCanFillAsk();
@@ -288,6 +288,7 @@ export function PlaceWorkflowView({
           onPlan={editor.onPlan}
           onSave={editor.onSave}
           onStartFrom={(from) => show({ is: 'edit', route: open.route, from })}
+          onConvert={onConvert}
           onClose={() => show(null)}
         />
       )
@@ -327,16 +328,21 @@ export function PlaceWorkflowView({
     : [];
 
   const canChange = editor !== undefined && !landed;
+  // A route that follows Current has no steps to edit: its door is the conversion (WORKFLOWCLEAN1h-b).
+  const onCurrent = !landed && answered?.workflow === 'current';
   // *Ask Daoris* opens the editor on the chart's graph, so the conversation is told that draft with the person's next words (FLOWCHART2d),
   // and puts the start of a request in its box. The editor, once open, is not opened again.
-  const openEdit = () => { if (open?.is !== 'edit') show({ is: 'edit', route: routeKey, from: editStart(answered) }); };
+  const openEdit = () => {
+    if (onCurrent) onConvert?.();
+    else if (open?.is !== 'edit') show({ is: 'edit', route: routeKey, from: editStart(answered) });
+  };
   // Change… replaces the editor, so a draft with changes in it is asked about first.
   const openChange = () => {
     if (open?.is === 'edit' && (reported.current?.history.past.length ?? 0) > 0) setDiscarding(true);
     else show({ is: 'change', route: routeKey });
   };
   const askDaoris = () => {
-    if (open?.is !== 'edit') openEdit();
+    if (!onCurrent && open?.is !== 'edit') openEdit();
     fillAskDaoris(t('workflow.place.ask.fill', { place: name }));
   };
   const buttons = 'min-h-0 border border-line py-0.5 text-small';
@@ -362,11 +368,17 @@ export function PlaceWorkflowView({
             {canChange && (
               <>
                 <Button variant="ghost" className={buttons} onClick={openChange}>{t('workflow.place.change.open')}</Button>
-                <Button variant="ghost" className={buttons} onClick={openEdit}>{t('workflow.place.steps.open')}</Button>
+                {(!onCurrent || onConvert) && <Button variant="ghost" className={buttons} onClick={openEdit}>{t('workflow.place.steps.open')}</Button>}
                 {canAsk && <Button variant="ghost" className={buttons} onClick={askDaoris}>{t('workflow.place.ask.open')}</Button>}
               </>
             )}
           </div>
+        )}
+        {onCurrent && !open && (
+          <p className="m-0 flex flex-wrap items-baseline gap-x-2 text-small text-ink-soft">
+            {t('agents.convert.follows')}
+            {onConvert && <Button variant="ghost" className={buttons} onClick={onConvert}>{t('agents.convert.open')}</Button>}
+          </p>
         )}
         {discarding && (
           <InlineConfirm
