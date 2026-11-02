@@ -558,7 +558,7 @@ test("--ci gates a commit in the gate tree, main's tip unless named; --watch fol
   assert.deepEqual([plain.ci, plain.ciCommit, plain.watch, plain.stop, plain.branches, plain.full], [true, null, false, false, [], false]);
   const named = tool.parseArgs(['--ci', 'abc1234', '--one-at-a-time']);
   assert.deepEqual([named.ci, named.ciCommit, named.oneAtATime], [true, 'abc1234', true]);
-  assert.equal(tool.parseArgs(['--ci', '--keep-going']).ci, true, 'a CI run keeps going anyway: the flag is taken and changes nothing');
+  assert.throws(() => tool.parseArgs(['--ci', '--keep-going']), /--keep-going is not taken beside --ci/, 'a CI run keeps going anyway: the flag would change nothing, so it is refused');
   const watch = tool.parseArgs(['--ci', '--watch']);
   assert.deepEqual([watch.ci, watch.watch, watch.ciCommit], [true, true, null]);
   assert.equal(tool.parseArgs(['--watch', '--ci']).watch, true);
@@ -586,7 +586,7 @@ test("--ci gates a commit in the gate tree, main's tip unless named; --watch fol
     [['--ci', '--watch', 'abc1234'], /--ci --watch gates main's tip as it moves: it takes no commit/],
     [['--ci', '--stop', 'abc1234'], /--ci --stop takes nothing else/],
     [['--ci', '--stop', '--watch'], /--ci --stop takes nothing else/],
-    [['--ci', '--full'], /--ci takes only a commit, --stage, --night, --watch, --stop, --keep-going and --one-at-a-time/],
+    [['--ci', '--full'], /--ci takes only a commit, --stage, --night, --watch, --stop and --one-at-a-time/],
     [['--stage'], /--stage is the CI's: --ci --stage \[<commit>\]/],
     [['--ci', '--watch', '--stage'], /--ci --watch owes the stage's rehearsals/],
     [['--ci', '--stop', '--stage'], /--ci --stop takes nothing else/],

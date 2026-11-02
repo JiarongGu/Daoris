@@ -835,8 +835,10 @@ export function parseArgs(argv) {
   if (options.ciNight && !options.ci) throw usageError("--night is the CI's: --ci --night [<commit>] runs every gate whole, as the nightly run does");
   if (options.ci) {
     // CI1: one run of the CI, its watch, or the stop asked of the watch; each a verb alone. CIFAST1: a run for a stage.
-    if (flags.some((flag) => !['--ci', '--stage', '--night', '--watch', '--stop', '--keep-going', '--one-at-a-time'].includes(flag))) {
-      throw usageError('--ci takes only a commit, --stage, --night, --watch, --stop, --keep-going and --one-at-a-time');
+    // REVIEW2 T5: a plain CI run always keeps going and a stage's ends at its first failure, so the flag would change nothing; refused rather than ignored.
+    if (flags.includes('--keep-going')) throw usageError('--keep-going is not taken beside --ci: a plain CI run keeps going past a failure anyway, and a --stage run ends at its first failure by design');
+    if (flags.some((flag) => !['--ci', '--stage', '--night', '--watch', '--stop', '--one-at-a-time'].includes(flag))) {
+      throw usageError('--ci takes only a commit, --stage, --night, --watch, --stop and --one-at-a-time');
     }
     if (options.ciNight && (options.ciStage || options.watch)) throw usageError('--ci --night is a run of its own: not with --stage or --watch, whose watch runs the night itself');
     if (flags.filter((flag) => flag === '--stage').length > 1) throw usageError('--stage is given once');
@@ -1042,6 +1044,11 @@ export const PATH_CHECKS = Object.freeze([
     paths: ['src/Daoris.Web/src/**', 'src/Daoris.Web/vite.config.ts', 'src/Daoris.Web/package.json', 'src/Daoris.Web/package-lock.json'],
     why: "the web's design and structure checks: the page's sources, what configures its tests, or what changes how every gate runs (MERGEWEBRULES1)",
   },
+  {
+    gate: 'censuses',
+    paths: ['src/Daoris.Desktop/**', 'src/Daoris.Web/src/locales/**', 'src/Daoris.Service/Daoris.Service.Tests/fixtures/**'],
+    why: 'the desktop\'s censuses, every test class that reads the sources by text (`--filter Category=Census`, REVIEW2 T6): a source they walk, or a table they hold it to; the CI beside ran them hours after a merge',
+  },
 ]);
 
 const pathCheckOf = (gate, pathChecks = PATH_CHECKS) => pathChecks.find((check) => check.gate === gate) ?? null;
@@ -1226,11 +1233,11 @@ export const REACH = Object.freeze([
       'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/provider-census.json',
       'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/provider-vocabulary.json',
     ],
-    gates: ['driver', 'service', 'web-unit', 'tool-tests'],
+    gates: ['driver', 'service', 'web-unit', 'tool-tests', 'censuses'],
     why: "the driver's ProviderCensusTests, the service's, the page's providerCensus.test.ts and the tools' provider-census.test.ts read the provider census's exceptions and the vocabulary it shares (AGENTPROVIDER1a)",
   },
-  { paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/**'], gates: ['driver', 'driver-process', 'driver-process-git'], why: "the driver's tests, the fast half and both Process halves" },
-  { paths: ['src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/**'], gates: ['modules', 'modules-process'], why: "the modules' tests, both halves" },
+  { paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/**'], gates: ['driver', 'driver-process', 'driver-process-git', 'censuses'], why: "the driver's tests, the fast half and both Process halves, and the censuses among them" },
+  { paths: ['src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/**'], gates: ['modules', 'modules-process', 'censuses'], why: "the modules' tests, both halves, and the censuses among them" },
   // Before the service's tests, which would place it first: the driver's twin reads it too.
   {
     paths: ['src/Daoris.Service/Daoris.Service.Tests/fixtures/history-words.json'],
@@ -1251,7 +1258,7 @@ export const REACH = Object.freeze([
   },
   {
     paths: ['src/Daoris.Service/Daoris.Service.Tests/fixtures/participant-work-readers.json'],
-    gates: ['service', 'driver', 'modules'],
+    gates: ['service', 'driver', 'modules', 'censuses'],
     why: "the service's, the driver's and the modules' ParticipantWorkReadersTests read the table of every reader of the marks that tells a work (FOUNDATION1c, census B)",
   },
   {

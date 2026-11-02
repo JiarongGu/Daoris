@@ -413,6 +413,10 @@
       "reads": "other",
       "note": "a gate's opinion or an ask id named in a request, not a record's mark"
     },
+    "Loop/AtWorkRead.cs": {
+      "reads": "other",
+      "note": "an at-work read's own `Ask` field (the ask it was taken for), tested for presence; no session's kind is told by it"
+    },
     "Loop/NeedsAPerson.cs": {
       "reads": "tells",
       "note": "tells Ask Daoris's record by its repository to leave it out of a wait; no row of this design moves it"

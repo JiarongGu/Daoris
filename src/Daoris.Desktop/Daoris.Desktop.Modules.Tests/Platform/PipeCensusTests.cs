@@ -10,6 +10,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// person's authority. An unclassed press is the person's and an unclassed module is refused, and the census fails on a route
 /// it does not class, so a route added later is classed in the change that adds it (`bridge-presses.md`).
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed class PipeCensusTests
 {
     [Fact]

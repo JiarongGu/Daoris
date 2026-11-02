@@ -5,6 +5,43 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-02 - Censuses were found hours after a merge, by name in a skill's list (REVIEW2 T6)
+
+- **Symptom:** the censuses (every test class that reads the sources by text) were named by hand in the dispatch skill, so a builder ran the ones it remembered and the CI beside found the rest; the page's provider census, presentational and page-measure tests were not in `check:web-rules`.
+- **Root cause:** no trait, no gate, and no check that a new census class joined any list.
+- **Fix:** `[Trait("Category","Census")]` on every such class (`CensusTraitTests` holds that each carries it), the `censuses` gate (`dotnet test <project> --filter Category=Census` for the driver's tests and the modules'; a path check on the desktop's sources), the three page tests in `check:web-rules`, and the skill names the one command. `LineAccountTests`' one census fact moved to its own class so the gate does not run its 350 s of cases. The first run of the modules' census found `Loop/AtWorkRead.cs` unlisted in `participant-work-readers.json` since COWORKVIEW1d; listed as `other`.
+- **Verify:** `CensusTraitTests`; both projects' `Category=Census` runs (driver about two minutes here, modules 23 s); `npm run check:web-rules`.
+
+## 2026-11-02 - `--keep-going` beside `--ci` was taken and read nowhere (REVIEW2 T5)
+
+- **Symptom:** `merge-branch --ci --keep-going` was accepted; the CI run hard-codes `keepGoing: true` and a stage's cut ignores it.
+- **Fix:** refused beside `--ci` with a sentence saying why.
+- **Verify:** `merge-branch.test.ts` (the flag's refusal and the `--ci` usage sentence).
+
+## 2026-11-02 - The course table's readings named a letter, and the added role's limit case was a reading (REVIEW2 T8)
+
+- **Symptom:** `out <case> R` said a case was "a reading the executor hands the course as a fact" without saying which fact; the added role's limit case (`LimitGoesElsewhereProcessTests.A_conversation_of_an_added_role…`) was left out as such though the course decides it by the role.
+- **Fix:** a reading names a `CourseFacts` member (`out <case> R <fact>`, checked against the record's own members); the added role's case is row D-09, whose `where=` names the role. `participant-work-readers.json`'s `reads` value (`tells` or `other`) is a judgement of what a line means (a workflow step's opinion, an ask's own field); no text separates the two, so it is not machine-checked.
+- **Verify:** `LineCourseTests`.
+
+## 2026-11-02 - The scratch census read only sources that name `_fixtures` and one spelling of a recursive delete (REVIEW2 T9)
+
+- **Symptom:** `Directory.Delete(x, true)` and every test rooted under the OS temp passed `GitSeedTests`' census; fifty test classes that start git deleted their scratch by hand, quietly leaving what git's read-only objects held.
+- **Fix:** the census reads every driver test source that starts git or roots under `_fixtures`, matches both spellings, and the fifty classes (and `QuestCloseTests`) now remove through `GitSeed.Discard` or `GitSeed.Remove`. The HTTPS and SSH classes' roots moved from the OS temp to `_fixtures`. The modules' tests link `TestGit` but have no `GitSeed`; their four such deletes are left.
+- **Verify:** `GitSeedTests`, then the classes changed.
+
+## 2026-11-02 - The measured specs' frame times failed once under load without a second look (REVIEW2 T10)
+
+- **Symptom:** `web-measured`'s timed specs (`measured/canvas.spec.ts`, `measured/large.spec.ts`) counted a frame time taken while the machine was loaded.
+- **Fix:** both timed loops run in a `describe` configured for one retry, FLAKE1's rerun once more alone as the Process halves have.
+- **Verify:** read; the measured run is the CI's.
+
+## 2026-11-02 - A decoder census exemption covered a whole file; two console checks accepted a wrong flag (REVIEW2 T11, T7, T12)
+
+- **Symptom:** `WorkflowGraphsTests` exempted every `WorkflowGraphs.Saved` in three files, so a second call passed; `NoConsoleWindowTests` read `CreateNoWindow` in the initializer only, and `console-windows.mjs` took `windowsHide: false` as hidden; the CLI usage's `role` words were compared to nothing.
+- **Fix:** each exemption is one code line pinned by its text; a later `CreateNoWindow = false` fails; only `windowsHide: true` hides; `RoleVerb.Changes` is the words the usage line names, held by `RoleVerbUsageTests`. T12's first part (the help room's *never* and *only when* sentences built from the doors' constants) is left: it reaches every row of the door table.
+- **Verify:** `WorkflowGraphsTests`, `NoConsoleWindowTests`, `console-windows.test.mjs`, `RoleVerbUsageTests`.
+
 ## 2026-11-02 - The yes to a policy hold was written by two doors and tested by neither (REVIEW2 T2)
 
 - **Symptom:** `RETRY_QUEST` and `driver retry` alone each write the approval a role policy's ask waits for; the one flow test approved through `StaffMoves.Approve` directly, so neither door's write, nor its absence on an ordinary retry, was held. The opening note's role name (`NameOf`) was tested nowhere.

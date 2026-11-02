@@ -8,6 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// nor a base class it inherits here sets or reads a variable of the process's environment, which every class beside it
 /// shares. The rules are held on sources made in memory, one case each, and then over this project's own tree.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed partial class CategoryTests
 {
     private const string Both = "[Trait(Category.Name, Category.Process)]\n[Trait(Category.Parallel, Category.Git)]\n";

@@ -8,6 +8,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// STARTFAST1: the desktop's start writes one <c>start.stages</c> line, each stage in ms from the process's start, every stage
 /// once and in the line's order whatever order they came in, so a slow start says where its seconds went.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed class StartStagesTests : IDisposable
 {
     private readonly string _home = Path.Combine(

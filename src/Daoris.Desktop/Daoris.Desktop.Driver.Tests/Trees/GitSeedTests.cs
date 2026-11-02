@@ -4,6 +4,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// What a copied seed keeps and mends (PROC1h): a copy is its own folder, its origin names its own bare repository, and no
 /// linked-worktree metadata comes with it. No git starts here; the seeds' use is held by the Git classes that copy them.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed class GitSeedTests : IDisposable
 {
     private readonly string _scratch;
@@ -148,7 +149,10 @@ public sealed class GitSeedTests : IDisposable
     [Fact]
     public void No_test_deletes_its_fixtures_scratch_by_itself_or_walks_to_the_root_by_itself()
     {
-        var plainDelete = new System.Text.RegularExpressions.Regex(@"Directory\.Delete\([^;]*recursive: true");
+        // REVIEW2 T9: any recursive delete, named or positional, in any source that roots scratch under _fixtures or starts git (whatever its root: the OS
+        // temp's scratch leaked as the fixtures' did).
+        var plainDelete = new System.Text.RegularExpressions.Regex(@"Directory\.Delete\([^;]*(recursive:\s*true|,\s*true\s*\))");
+        var startsGit = new System.Text.RegularExpressions.Regex(@"ProcessStartInfo\(""git""|TestGit\.|GitSeed\.|WorkingTree\.Git|GitStart\(");
         var ownWalk = new System.Text.RegularExpressions.Regex(@"Exists\(Path\.Combine\(\w+\.FullName, ""\.git""\)\)");
         var breaches = new List<string>();
         foreach (var path in SourceFiles.All(SourceFiles.DriverTestsProject, "*.cs"))
@@ -157,7 +161,7 @@ public sealed class GitSeedTests : IDisposable
             // TestGit is linked into the modules tests, which have no GitSeed; its walks use Path.Exists, as RootFrom does.
             if (name is "GitSeed.cs" or "TestGit.cs") continue;
             var text = File.ReadAllText(path);
-            if (text.Contains("_fixtures", StringComparison.Ordinal) && plainDelete.IsMatch(text)) breaches.Add($"{name}: deletes scratch with Directory.Delete; use GitSeed.Discard or GitSeed.Remove");
+            if ((text.Contains("_fixtures", StringComparison.Ordinal) || startsGit.IsMatch(text)) && plainDelete.IsMatch(text)) breaches.Add($"{name}: deletes scratch with Directory.Delete; use GitSeed.Discard or GitSeed.Remove");
             if (ownWalk.IsMatch(text)) breaches.Add($"{name}: walks to .git by itself; use GitSeed.RepoRoot()");
         }
 
