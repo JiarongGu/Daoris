@@ -95,6 +95,7 @@ public sealed class AutoLander(
     /// </summary>
     public async Task<string?> PerformAsync(LandStart start, CancellationToken ct = default)
     {
+        if (WorkplaceRunFiles.IsChatRun(start.Run)) return await PerformChatAsync(start, ct).ConfigureAwait(false);
         var fresh = world.Again();
         var records = await fresh.RecordsAsync(ct).ConfigureAwait(false);
         // The branch unit's newest executor with a tree; else the newest session on the run's own quest (a unit read with no executors named).
@@ -112,6 +113,41 @@ public sealed class AutoLander(
         if (Performed_(record.Id) is { Code: var code } && AutoLandingCode.Closes(code) && code != AutoLandingCode.CarryBound) TakeRepair(start);
 
         return landed;
+    }
+
+    /// <summary>
+    /// A conversation's <c>land</c> (WORKFLOWCLEAN1 1d; the cleanup design §2.7): the run has no quest, so its record is the line's newest in the
+    /// run's branch's tree, and its gate is read by the run at the tip the node is active at. Landed as the conversation's press lands, authorized
+    /// by the review's Accept where the graph holds one; a tree that moved past the tip, or holds uncommitted paths, is refused and tried again
+    /// only once it changes. Null where there is nothing to land from here.
+    /// </summary>
+    private async Task<string?> PerformChatAsync(LandStart start, CancellationToken ct)
+    {
+        var fresh = world.Again();
+        var records = await fresh.RecordsAsync(ct).ConfigureAwait(false);
+        var record = start.Executors.Reverse().Select(id => RecordOf(records, id)).FirstOrDefault(each => each is { Tree.Length: > 0 })
+            ?? (WorkplaceRunFiles.RecordOf(start.Run) is { } first ? RecordOf(records, first) : null);
+        if (record is not { Tree: { Length: > 0 } tree }) return null;
+        var tried = Performed_(record.Id);
+        var entry = new AutoLanding(record.Id, "", start.Repository, start.Workspace, tree, Now()) { Tries = tried is null ? [] : [tried] };
+        if (TreeFolders.TreeGone(tree)) return Tried(entry, AutoLandingCode.Gone, start.Tip, "gone", new TreeLanding(false, Words(AutoLandingCode.Gone, null)));
+        var (tip, status, uncommitted) = await ReadTreeAsync(tree, ct).ConfigureAwait(false);
+        if (!AutoLandingRules.ShouldTry(entry, tip, status)) return null;
+        var (gate, held, _) = await GateAsync(entry, record.Id, null, tree, fresh, ct, tip: start.Tip).ConfigureAwait(false);
+        if (held is not null) return Tried(entry, held.Refusal ?? AutoLandingCode.Refused, tip, status, held);
+        if (!string.Equals(tip, start.Tip, StringComparison.OrdinalIgnoreCase))
+        {
+            return Tried(entry, AutoLandingCode.Refused, tip, status, new TreeLanding(false, "the work moved since it was judged; press Accept again.") { Refusal = AutoLandingCode.Refused });
+        }
+
+        if (uncommitted > 0) return Tried(entry, AutoLandingCode.Uncommitted, tip, status, uncommitted: uncommitted);
+        var subject = await trees.OwnSubjectAsync(
+            tree, record.Id, null, records, id => fresh.QuestAsync(id, ct), named => events.Openings([named]).GetValueOrDefault(named), gate.Process, ct)
+            .ConfigureAwait(false);
+        var landed = await trees.LandAsync(tree, subject, ct, fresh.InUseAsync, start.Reviewed ? AcceptedBy.Person : AcceptedBy.Auto, gate.WithTip(start.Tip),
+            subject.Joins, beside: fresh.BesideAsync).ConfigureAwait(false);
+        LandOutcomes.Kept(start.Unit, start.Tip, landed);
+        return Tried(entry, AutoLandingRules.CodeOf(landed), tip, status, landed);
     }
 
     /// <summary>

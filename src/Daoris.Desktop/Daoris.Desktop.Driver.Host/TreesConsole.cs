@@ -410,14 +410,15 @@ internal static class TreesConsole
                     return partner.Code;
                 }
 
-                var questId = await service.SessionQuestAsync(session).ConfigureAwait(false);
+                var recordsJson = await service.SessionRecordsJsonAsync().ConfigureAwait(false);
+                // CHATFLOW1i: a chat that took a quest is gated by that quest's chain, as the window's press reads it.
+                var questId = await service.SessionQuestAsync(session).ConfigureAwait(false) ?? ChatRuns.TakenOf(session, recordsJson);
                 var events = new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions));
                 // A plugin's own lines, said as they come, under its name — as the console says them (D64 §4).
                 var landing = new SessionTrees(home, new LandingPlugins(home, say: (plugin, line) => Console.WriteLine($"  plugin:{plugin}  {line}"), log: log));
 
                 // CHATFLOW1d (the chat-flow design §5.2 point 1, Codex's finding 11): a chat in a tree of its own is gated by its chat run, and
                 // its press is the driver's one press operation, as the window's is; its plan reads that gate and writes nothing (point 5).
-                var recordsJson = await service.SessionRecordsJsonAsync().ConfigureAwait(false);
                 var chatRun = questId is null ? ChatRuns.ChatOf(session, recordsJson, landing.Holds) : null;
                 // CHATFLOW1d2 (§5.3): the person's way past the look is a chat run's alone, a press with their words, never a plan.
                 var withoutLook = args.Contains("--without-look");

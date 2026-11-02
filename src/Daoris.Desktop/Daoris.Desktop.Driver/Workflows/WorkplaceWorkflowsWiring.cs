@@ -27,6 +27,14 @@ internal sealed class WorkplaceWorkflowsOperations : IWorkplaceWorkflows, IWorkp
 
     public (IReadOnlyList<string> Line, bool Live) ChatPressOf(string session, string recordsJson) => ChatRuns.PressOf(session, recordsJson);
 
+    public string? TakenOf(string session, string recordsJson) => ChatRuns.TakenOf(session, recordsJson);
+
+    public void SubmitChatCandidate(string home, string run, string repository, string? workspace, string branch, string tip, DateTimeOffset at, Func<string, bool> landed)
+    {
+        if (WorkflowRunBindings.Read(home, run) is not { Problem: null } binding || !GraphRun.Names(binding)) return;
+        ChatCandidates.Submit(home, run, repository, workspace, branch, tip, at, landed);
+    }
+
     public ReviewWord KeepReviewWord(string home, Func<bool>? holdsLease, IWorkplaceProcess process, DateTimeOffset now, string? words = null)
     {
         if (process is not WorkflowProcess { BoundRun: { } run, Graph: { } graph } || graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Review) is not { } review)

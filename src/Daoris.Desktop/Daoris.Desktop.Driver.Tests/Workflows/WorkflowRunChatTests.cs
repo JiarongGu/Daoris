@@ -224,7 +224,8 @@ public sealed class WorkflowRunChatTests
             var said = WorkflowRunWords.Say(read.Runs, asked);
             Assert.Contains("engine · Current workflow", said);
             Assert.Contains("chat run chat-c1", said);
-            Assert.Contains(WorkflowRunWords.ChatChecks("light"), said);
+            // CHATFLOW1h: the checks are enforced on its tree, so the terminal no longer marks them as not.
+            Assert.DoesNotContain("not yet enforced", said);
         }
 
         Assert.False(Directory.Exists(sources.Home));

@@ -104,6 +104,7 @@ public static class ChatPresses
                 return Refused("git could not read the commit that would land, so nothing was judged or landed.");
             }
 
+            SubmitCandidate(home, ask, tip);
             var judged = await gate(tip, ct).ConfigureAwait(false) with { Tip = tip };
             // CHATFLOW1d2 (§5.3): the person's way past a look no set-up step can show is kept at the tip captured, and the gate read again
             // there; the landing is pinned to that tip, so a tree that moved past it is refused, never landed under the skip.
@@ -151,6 +152,27 @@ public static class ChatPresses
     }
 
     private static TreeLanding Refusal(string message, string code) => new(false, message) { Refusal = code };
+
+    /// <summary>
+    /// A graph-bound run's candidate (CHATFLOW1f, the chat-flow design §4.5), submitted at this press and no other: the next one where the newest
+    /// has landed, the newest taking this tip in place where it is submitted and unlanded at another, and nothing for a tip already submitted. A
+    /// run bound to anything else, or held by a problem, submits none.
+    /// </summary>
+    private static void SubmitCandidate(string home, ChatPressAsk ask, string tip)
+    {
+        try
+        {
+            if (new SessionTrees(home).BranchOfTree(ask.Tree) is not { } of) return;
+            var landings = new LandedBranches(home).All();
+            WorkplaceWorkflows.Current.SubmitChatCandidate(home, ask.Run, ask.Repository, ask.Workspace, of.Branch, tip, DateTimeOffset.UtcNow,
+                landed => landings.Any(each => string.Equals(each.Branch, of.Branch, StringComparison.Ordinal)
+                    && (string.Equals(each.Tip, landed, StringComparison.OrdinalIgnoreCase) || string.Equals(each.Squashed, landed, StringComparison.OrdinalIgnoreCase))));
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // A candidate the home cannot keep is no submission: the gate reads the run without one and holds the press.
+        }
+    }
 
     /// <summary>
     /// The person's turn count over a line (§6.1 (b), the Opus check's finding 4): their own words in the line's conversation history, each
