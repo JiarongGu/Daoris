@@ -386,6 +386,43 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// Settings → Git's acts (GITAUTH1e): the list answers the identities with what points at them and no secret, an act on an
+    /// identity is the terminal's operation, a pointer is written and read back, and a scope the page does not know is refused.
+    /// </summary>
+    [Fact]
+    public async Task The_git_page_lists_identities_and_acts_on_them_as_the_terminal_does()
+    {
+        GitIdentities.Change(Home, _ =>
+        [
+            new GitIdentity("gi-00000000000a", "Work", "github.com", GitIdentity.Ssh, null, null, null, "ed25519", "SHA256:abc", false, null, Default: true),
+        ]);
+        var module = Module();
+
+        await AnswerAsync(module, "GIT_USE", new { scope = "machine", host = "github.com", value = "own" });
+        await AnswerAsync(module, "GIT_USE", new { scope = "workspace", workspace = "games", host = "github.com", value = "gi-00000000000a" });
+        var listed = (await AnswerAsync(module, "TOOLS_LIST", new { })).GetProperty("identities");
+        var work = listed.GetProperty("identities")[0];
+        Assert.Equal(["github.com"], listed.GetProperty("own").EnumerateArray().Select(each => each.GetString()).ToArray());
+        Assert.False(listed.GetProperty("moved").GetBoolean());
+        Assert.Equal(("Work", "ssh", true), (work.GetProperty("label").GetString(), work.GetProperty("way").GetString(), work.GetProperty("default").GetBoolean()));
+        Assert.Equal(1, work.GetProperty("workspaces").GetInt32());
+        Assert.False(work.TryGetProperty("privateKey", out _));
+
+        await AnswerAsync(module, "GIT_IDENTITY", new { action = "rename", identity = "gi-00000000000a", label = "Work two" });
+        await AnswerAsync(module, "GIT_IDENTITY", new { action = "commits-as", identity = "gi-00000000000a", name = "Ada", email = "ada@example.invalid" });
+        await AnswerAsync(module, "GIT_IDENTITY", new { action = "read-only", identity = "gi-00000000000a", on = true });
+        var changed = GitIdentities.Read(Home).Single();
+        Assert.Equal(("Work two", "Ada", true), (changed.Label, changed.CommitsName, changed.ReadOnly));
+
+        Assert.Contains("not a scope", await RefusalAsync(module, "GIT_USE", new { scope = "planet" }));
+        Assert.Contains("no git identity", await RefusalAsync(module, "GIT_IDENTITY", new { action = "rename", identity = "nobody", label = "x" }));
+
+        var removed = await AnswerAsync(module, "GIT_IDENTITY", new { action = "remove", identity = "gi-00000000000a" });
+        Assert.Single(removed.GetProperty("pointing").EnumerateArray());
+        Assert.Empty(GitIdentities.Read(Home));
+    }
+
+    /// <summary>
     /// Look for updates (§3.7) fetches each location on the person's press, keeps the copy of a list that reads and says
     /// what it added, and says a location that could not be fetched rather than failing the look.
     /// </summary>

@@ -51,7 +51,7 @@ describe('the Settings registry', () => {
    */
   it('holds what is the machine\'s or the person\'s: eight domains, no agent, workspace, permissions or plugins domain', () => {
     expect(SETTINGS_DOMAINS.map((domain) => domain.id)).toEqual([
-      'start', 'appearance', 'ai', 'wiring', 'driver', 'tools', 'browser', 'logs',
+      'start', 'appearance', 'ai', 'wiring', 'driver', 'tools', 'git', 'browser', 'logs',
     ]);
     for (const gone of ['Workspace', 'Permissions', 'Agents', 'Plugins']) {
       expect(Object.keys(files)).not.toContain(`./${gone}Domain.tsx`);

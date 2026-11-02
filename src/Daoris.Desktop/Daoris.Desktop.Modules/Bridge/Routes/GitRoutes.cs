@@ -50,11 +50,26 @@ public sealed class GitRoutes(DriverLoop loop)
             .Where(row => string.Equals(row.Repository, each.Repository, StringComparison.Ordinal)
                 && string.Equals(RemoteTarget.Workspace(row.Workspace), each.Workspace, StringComparison.Ordinal))
             .Select(row => row.Root)];
+        // GITAUTH1e: a repository's Setup asks for its remotes with what serves each (the git-auth design §7.3), beside the list.
+        var remotes = new Dictionary<(string, string), IReadOnlyList<GitRemoteRow>>();
+        if (Flag(request, "remotes") && (named is not null || Optional(request, "workspace") is not null))
+        {
+            foreach (var each in list.Repositories)
+            {
+                if (RootsOf(each).FirstOrDefault(root => !string.IsNullOrEmpty(root) && Directory.Exists(root)) is { } root)
+                {
+                    remotes[(each.Repository, each.Workspace)] = await GitRemoteRows.ReadAsync(
+                        _loop.Home, root, each.Repository, each.Workspace == RemoteTarget.DefaultWorkspace ? null : each.Workspace, cancellationToken).ConfigureAwait(false);
+                }
+            }
+        }
+
         return new
         {
             Repositories = list.Repositories.Select(each => new
             {
                 each.Repository, each.Workspace, each.Line, each.Fetch, each.Holds, each.Missing, each.Commands,
+                Remotes = remotes.TryGetValue((each.Repository, each.Workspace), out var rows2) ? rows2 : null,
                 Problem = WithoutRoots(each.Problem, RootsOf(each), each.Repository),
                 Branches = each.Branches.Select(branch => new
                 {

@@ -90,7 +90,14 @@ public static class GitDoors
         var serves = Serving(home, folder, call, variable);
         if (serves.Kind == GitServeKind.Identity) return IdentitySsh(home, serves.Identity!, call, variable, error, folder, act, host);
 
-        // Under own, and where nothing serves (which keeps today's ambient credentials until GITAUTH1e, §6.8): what git would have run.
+        // Once the home has moved (GITAUTH1e, §6.8), nothing serving a host means no key to reach it with.
+        if (serves.Kind == GitServeKind.None && GitMoved.Moved(home))
+        {
+            GitLog.Refused(home, variable, "no-identity", act, null, host);
+            return Refuse(error, GitMoved.SshLine(host));
+        }
+
+        // Under own, and where nothing serves before the move (today's ambient credentials, §6.8): what git would have run.
         var (file, prefix, problem) = SshCommand(folder, variable);
         if (problem is not null)
         {
@@ -398,7 +405,9 @@ public static class GitDoors
 
         var serves = ServingHttps(home, folder ?? Environment.CurrentDirectory, address, variable);
         var identity = serves.Kind == GitServeKind.Identity ? serves.Identity : null;
-        if (identity is not null && GitHttps.HasPassword(address))
+        // GITAUTH1e: once the home has moved, a remote nothing serves reads anonymously, as an identity's with no sign-in would.
+        var anonymous = serves.Kind == GitServeKind.None && GitMoved.Moved(home);
+        if ((identity is not null || anonymous) && GitHttps.HasPassword(address))
             return Refuse(error, "git-remote-daoris: refuses an address carrying a password: a git identity's sign-in is stored through Git Credential Manager, not written into an address.");
 
         // Not the tools' environment (TOOLS5): git's own transport, with git's environment less Daoris's routing (§4.3).
@@ -414,12 +423,16 @@ public static class GitDoors
         };
         info.ArgumentList.Add(arguments[0]);
         // Under an identity the transport is given no user-info; GCM's choice of account is the identity's user (§4.3 step 3).
-        info.ArgumentList.Add(identity is null ? address : GitHttps.Bare(address));
+        info.ArgumentList.Add(identity is null && !anonymous ? address : GitHttps.Bare(address));
         GitRouting.Unroute(info.Environment);
         if (identity is not null)
         {
             GitHttps.Apply(info.Environment, home, identity.User ?? GitHttps.UserOf(address), GitHttps.Manager(variable));
             GitSshFiles.Used(home, identity.Id);
+        }
+        else if (anonymous)
+        {
+            GitHttps.Apply(info.Environment, home, null, null);
         }
 
         environment?.Invoke(info.Environment);

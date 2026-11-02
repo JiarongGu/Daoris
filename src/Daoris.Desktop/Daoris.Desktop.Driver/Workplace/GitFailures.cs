@@ -38,6 +38,12 @@ public enum GitFailureClass
     /// Holds reads and writes.
     /// </summary>
     OwnInput,
+
+    /// <summary>
+    /// Nothing serves the remote once the move off ambient credentials has happened (<see cref="GitMove"/>, §6.8), and the host refused
+    /// anonymous use: an SSH remote is found before the act, an HTTPS one is a refusal read where nothing served it. Holds reads and writes.
+    /// </summary>
+    NoIdentity,
 }
 
 /// <summary>
@@ -63,6 +69,7 @@ public static class GitFailures
         "could not read Password for",
         "The requested URL returned error: 401",
         "Too many authentication failures",
+        "has no git identity on this machine", // the ssh door (GITAUTH1e): the home has moved and nothing serves the host
     ];
 
     private const string Forbidden = "The requested URL returned error: 403";
@@ -108,6 +115,7 @@ public static class GitFailures
         GitFailureClass.HostUnknown => "host-unknown",
         GitFailureClass.HostChanged => "host-changed",
         GitFailureClass.OwnInput => "own-input",
+        GitFailureClass.NoIdentity => "no-identity",
         GitFailureClass.Unreachable => "unreachable",
         _ => "unclassed",
     };
@@ -120,6 +128,7 @@ public static class GitFailures
         "host-unknown" => GitFailureClass.HostUnknown,
         "host-changed" => GitFailureClass.HostChanged,
         "own-input" => GitFailureClass.OwnInput,
+        "no-identity" => GitFailureClass.NoIdentity,
         _ => null,
     };
 

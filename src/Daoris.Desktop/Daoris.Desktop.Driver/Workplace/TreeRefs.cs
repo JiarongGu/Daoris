@@ -136,6 +136,7 @@ internal static class TreeRefs
         }
 
         var failure = GitFailures.Class(err, GitAct.Read);
+        if (home is not null) failure = GitMove.Reclass(home, repository, workspace, "origin", address, failure);
         if (home is not null
             && GitHolds.Hold(home, root, repository, workspace, "origin", address, git, failure, err, DateTimeOffset.UtcNow) is { } hold)
         {

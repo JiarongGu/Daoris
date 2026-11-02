@@ -453,6 +453,7 @@ export function App() {
           notify={notify}
           onOpenPlugin={(plugin) => open('plugins', plugin)}
           onOpenAppointed={() => agentsModes.onPlaceAt(placeIdOf(place.row), { section: 'roles', row: 'appointed' })}
+          onOpenGit={() => open('settings', 'git')}
         />
       ),
     }),
@@ -1021,6 +1022,8 @@ export function App() {
     onOpenAgent: (agent) => open('agents', agent),
     // Setup's supervisor line opens Agents → Roles → Appointed roles, where it is appointed (COMPANYVIEW1e).
     onOpenAppointed: () => open('agents', null, { roleSection: 'appointed' }),
+    // A remote nothing serves opens Settings → Git, where an identity is set up for it (GITAUTH1e).
+    onOpenGit: () => open('settings', 'git'),
     // A landing rule's plugin opens its page (PLUGUI1c2c).
     onOpenPlugin: (plugin) => open('plugins', plugin),
     // A repository's Setup is the place's page once the Setup mode is lit, which `apply` opens for a door into the tab (AGENTSPLACE1f).
@@ -1089,6 +1092,8 @@ export function App() {
     'steward-stopped': (item) => openQuest(item.id),
     // A run held at a declined request (INTEGRATE1o part o3) opens its work quest's page, where the run and the request are read.
     'request-declined': (item) => { if (item.declined?.work) openQuest(item.declined.work); },
+    // A held git remote nothing serves leads to Settings → Git, where its identity is set up (GITAUTH1e); a browser has no such page.
+    ...(attached ? { 'git-held': () => open('settings', 'git') } : {}),
     // A go-ahead opens the ask it was asked on, where every go-ahead of it is listed (KNOWUSE1a).
     'go-ahead': (item) => { if (item.ask) openAsk(item.ask); },
     // A departure opens its quest's page, where what was required and how its done answered are quoted (DRIFT1d2).
