@@ -787,7 +787,7 @@ function Composing({
     onRemove: (options) => remove(id, options),
   });
   const inspector = node && (
-    <Inspector palette={palette} draft={draft} roles={roles} place={rolePlace} staffing={staffing} lines={lines} node={node} titleOf={titleOf}
+    <Inspector key={node.id} palette={palette} draft={draft} roles={roles} place={rolePlace} staffing={staffing} lines={lines} node={node} titleOf={titleOf}
       problems={{ atStep: atStep(node.id), atWire }} confirming={confirming} onConfirm={setConfirming} acts={acts(node.id)} />
   );
 

@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -190,6 +190,27 @@ describe('a step\'s Taken by', () => {
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(setRoles()).toHaveLength(1));
     expect(setRoles()[0]).toMatchObject({ change: 'set', id: 'designer-engine', revision: 0 });
+  });
+
+  it('does not carry an open role editor to the next step chosen (REVIEW2 P6)', async () => {
+    const user = userEvent.setup();
+    const two = {
+      ...MERGE_GRAPH,
+      nodes: [
+        { id: 'work', kind: 'claimed', version: 1, reach: 'observed' },
+        { id: 'second', kind: 'claimed', version: 1, reach: 'observed' },
+      ],
+      wires: [{ id: 'a', kind: 'after', from: 'work', to: 'second' }],
+    };
+    render(wrap(<Editor startFrom={{ graph: two, name: 'Two' }} />));
+    const chart = await screen.findByRole('list', { name: 'How the steps go on' });
+    await user.click(within(chart).getAllByRole('listitem', { name: 'The work' })[0]!);
+    await user.click(await screen.findByRole('button', { name: 'Give engine its own role for design and decisions…' }));
+    expect(await screen.findByRole('form', { name: 'A new role' })).toBeInTheDocument();
+
+    const second = chart.querySelector<HTMLElement>('[data-flow-node="second"]')!;
+    await fireEvent.click(second.closest<HTMLElement>('[role="listitem"]') ?? second);
+    expect(screen.queryByRole('form', { name: 'A new role' })).toBeNull();
   });
 
   it('says it in Chinese', async () => {
