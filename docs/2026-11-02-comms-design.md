@@ -187,7 +187,7 @@ absent event resets it. It becomes one serialized admission per line in the desk
 attempted, taken, cancelled, uncertain), shared by driven and chat executors, so two answers queued together cannot each think they
 are the second. Only the person's own words or an act the person authorized reset the epoch; Daoris's wrapper, a brief, a retry or a
 hand-over never do; a role's answer counts, and so does a waited quest's result (§11, settled 2026-11-03). **The count is a fact,
-not a built-in limit** (amending D188 point 5's bound): no number is fixed in the product. The line's supervisor reads the count,
+not a built-in limit** (amending D188 point 4's bound): no number is fixed in the product. The line's supervisor reads the count,
 *unknown* where the history is incomplete, and decides whether the line goes on, holds for the person, or is redirected, saying why on
 the line. A supervisor is either an appointed agent (SUPERVISOR1's role, a model judging) or a rule the person sets, a supervisor with
 no agent: a hard limit such as *hold for me after n answers alone*, set for a role, a place or a line and read with no model. With
