@@ -4,8 +4,10 @@ Status: proposed 2026-11-02 under D228, from the census (`docs/2026-11-02-oneway
 `wave/workflowclean1` at `b022cc80c`. Revised 2026-11-03 on main at `f3ebcb986` after an independent Opus read found eight blocking
 points and the steward checked three against the code (§14 lists each and where it is settled), and after the owner chose one name for
 every command (§11). The reading was read-only and no tests were run. It widens a foundation (the conversion becomes every area's, and a
-register holds every kept read), so under D191 it takes both makers' reads before the steward accepts it; the rows marked *now* in §10
-may start beside those reads, each within the files §10.1 names. WORKFLOWCLEAN1's areas (the workflows, adoption A1 to A3, page P1) are
+register holds every kept read), so under D191 it takes both makers' reads before the steward accepts it. **Accepted 2026-11-03** by the
+steward after two Opus reads (the second read the revision; §14 holds what each found and where it is settled), the other maker's read
+owed while its workspace's spend cap holds and folded in as a revision if it finds anything; the rows marked *now* in §10 start, each
+within the files §10.1 names. WORKFLOWCLEAN1's areas (the workflows, adoption A1 to A3, page P1) are
 its design's (`docs/2026-11-02-workflow-cleanup-design.md`) and are cited here, never re-designed.
 
 Paths as the census spells them: `Drv/` `src/Daoris.Desktop/Daoris.Desktop.Driver/`, `Mod/` `src/Daoris.Desktop/Daoris.Desktop.Modules/`,
@@ -85,7 +87,7 @@ existed reads as one workflow part with no build, since a stored shape is never 
 ends). `Stands`, which the rollback refusal reads, becomes: some receipt not undone has a part `done` or `uncertain`, or a receipt does
 not read; the wave's reads the workflow part's `configuration` operation alone (`ConversionReceipts.cs:129`).
 
-**Undo** reverts the home's latest settled receipt whole, its done parts in reverse order, under WORKFLOWCLEAN1 §4.5's conditions widened
+**Undo** reverts the home's latest receipt whole, once it is settled (a newer receipt that is not settled refuses Undo, never reaching back past it), its done parts in reverse order, under WORKFLOWCLEAN1 §4.5's conditions widened
 to every part. It is offered only where:
 - every write the receipt made still reads as written. Each part checks its own: the staffing part each `role_staffing` row and policy
   it wrote, and `driver.json`'s four keys it removed; the settings part each key; the git part each `own` it wrote; the workflow part as
@@ -206,7 +208,7 @@ already decided. Each has its end.
     and its service twin;
   - the room's `driver actor` lines and the owed actor door (`HelpRoomOwed.cs:93-102`);
   - their usage, catalogue keys and Help coverage rows.
-- *Why after `ONEWAY1c-i`:* on a home `DAORIS_DRIVER_CONFIG` names, `SET_ROLE` and `SET_ROLES` refuse (`DriverRoutes.cs:563-564`,
+- *Why after `ONEWAY1c-i`:* on a home `DAORIS_DRIVER_CONFIG` names, `SET_ROLE` and `SET_ROLES` refuse (`DriverRoutes.cs:566-567`,
   `:578-579`; `Drv/Roles/RoleStaffing.cs:104-105`), so `SET_ACTOR` is that home's only editor until the named file ends.
 - *Records and transitional reads:* none.
 - *Seen:* every role is edited by the one editor. *Clear order* reads *Use the default* and shows what it writes. At the terminal,
@@ -474,7 +476,10 @@ rows: COMMS1 was accepted before D228 and carries none. `k` needs COMMS1e (a pre
 
 **X3. Remotes, browser favorites and the registry's verbs** (`ONEWAY1u`)
 - *One way:* the driver library's typed operations, in D194's shape, called by the window's modules and by the terminal. The
-  registry's `retire`, `wire` and `import` join them, and `connect` is the driver's own registration, which `register` already runs.
+  registry's `connect`, `retire`, `wire` and `import` join them. `connect` is its own typed operation, not `register`: it makes a
+  repository's first registration from its working tree, takes `--workspace`, and targets any service URL, a remote one included
+  (`Cli/service/connect.ts:38-44`, `:80`, `:185-192`), where `register` only re-follows the rows this machine's host already holds
+  (`Drv/Instance/RegisterCommand.cs:3-5`). The family rehearsal's `connect --workspace` against two hosts is its proof.
 - *Retires:* `Cli/service/remotes.ts`, `Cli/service/remotemap.ts`, `Cli/browser/browser.ts`, `Cli/service/connect.ts` and
   `Cli/service/manage.ts`, with their tests and twins, at `ONEWAY1ai-i`, when `daoris remote`, `daoris browser` and `daoris repository`
   become the driver program's groups (§11).
@@ -574,7 +579,8 @@ lines assert its absence and stay. The census read main before WORKFLOWCLEAN1 1h
    - `ONEWAY1t`: `Drv/WorkOrders/BrainstormCommand.cs`, `MeetingCommand.cs`, `Drv/Loop/DriverBrainstorms.cs`, `DriverMeetings.cs`, the
      service's `BrainstormDesk`, and their tests. Not the host's `Program.cs` or the CLI, which the tree takes.
    - `ONEWAY1u`: new typed operations in the driver library and the window modules' calls onto them. Not the CLI, which the tree takes.
-   - `ONEWAY1ab-i`: the web files P3 names, apart from the three `ab-ii` takes.
+   - `ONEWAY1ab-i`: the web files P3 names, apart from the three `ab-ii` takes, and no module route the wave changed: its modules part
+     waits for `ab-ii` where a pull route it retires sits in a route file the wave touched.
    - `ONEWAY1h-i`, `ONEWAY1h-ii`: the executors' files, `Drv/Loop/Driver.cs` outside the nine lines the wave adds (`:738-746`). Not
      `DriverWatch.cs`, `DriverCommand.cs`, `Loop/Chat/`, `Participants/Chat/` or `Participants/Domain/AccessRules.cs`, which the wave
      changes.
@@ -623,7 +629,7 @@ Each row is sized for one builder's sitting.
 | **ONEWAY1aa** the life-flows on the canvas (web; CANVAS1e, f, SETUPUX1y) | §8 P2 | each flow's tests on the canvas; stories at 80, 39 and 25 rem, en and zh; `Flow.tsx` gone | after those |
 | **Wave 3** (its own wave branch) | | | |
 | **ONEWAY1ai-i** the tree's routing (driver, cli, tools; a, d, j, s, t, u) | §11 | `fixtures/command-tree.json` held equal to both programs' routers and usage; each old form refused naming its new; the CLI's TypeScript editors and wrappers gone; doctrine reaching no spawn; the install's `daoris` launcher with no Node for a desktop group | the tree's wave |
-| **ONEWAY1ai-ii** the driver's words (driver, service for the room's twin) | §11 | usage, briefs, continuation lines, refusals and the room's goldens name `daoris …` alone; `HelpCoverageTests` | the tree's wave |
+| **ONEWAY1ai-ii** the driver's words (driver, modules, service for the room's twin) | §11 | usage, briefs, continuation lines, refusals and the room's goldens name `daoris …` alone; an appointed role's terminal allowlist (`Mod/Platform/HolderTerminal.cs:29`, `:45-47`) rewritten to the new forms, as narrow as today's; the root README's `daoris connect` held; `HelpCoverageTests` | the tree's wave |
 | **ONEWAY1ai-iii** the page's words (web) | §11 | catalogues en and zh, the glossary, stories, tests and e2e specs; `i18n:check`, `names:check --strict` | the tree's wave |
 | **ONEWAY1ai-iv** tools, rehearsals and documents (tools, docs) | §11 | the rehearsals and the user guides name `daoris …` alone; the `daoris-driver` launcher a refusal; D194's note; rehearsals run by the parent | the tree's wave |
 | **Wave 4** (inside COMMS1's wave 1) | | | |
@@ -634,7 +640,7 @@ Each row is sized for one builder's sitting.
 | **Wave 5** (measured on the install first) | | | |
 | **POOL1d** the accounts part read on the install (the parent; v on the install) | §1.4 | the plan rule by rule in the private notes, then the owner's press | the install |
 | **HOMELAYOUT5** what D172 never moves, measured (the parent) | §6 X5 | its measurements in D172's note | the install; a sign-in per harness, the owner's yes |
-| **ONEWAY1w** the home part (driver, modules for the launcher; HOMELAYOUT5, ae) | §6 X5, §1.1 | a fixture home with an entry at each place, and one at both; offered alone once the rest is settled; moved at the restart its press makes; not offered again before; Undo at a restart | after its measure |
+| **ONEWAY1w** the home part (driver, the launcher project `Daoris.Desktop.Launcher`, which links `DaorisHome.cs` and gains the receipt's reader; HOMELAYOUT5, ae) | §6 X5, §1.1 | a fixture home with an entry at each place, and one at both; offered alone once the rest is settled; moved at the restart its press makes; not offered again before; Undo at a restart; a home started without the install's launcher (a development run) is moved by the driver's own start before anything else opens, through the same reader | after its measure |
 | **ONEWAY1x** the quests part (service, driver; the install's census) | §6 X6 | the service's remover of a closed quest, tombstoned where it travelled; closed six-character quests cleared; the same words published again make a new quest; the legacy lookups gone | after its census |
 | **ONEWAY1ac** the notes part (driver, web; the install's census) | §8 P4 | finished notes cleared; the readers gone; an unreadable record drawn by the one rule | after its census |
 | **ONEWAY1y** INTEGRATE1 row k, widened (the owner's sitting) | §7 | as row k names it | the owner |
@@ -672,7 +678,7 @@ second ways, so they retire in the tree's own wave (`ONEWAY1ai`).
 - **The desktop's program** (the driver's host) owns every other group. The verbs the CLI still carries in TypeScript move onto the
   driver library's typed operations, as D194 moved the four families: `brainstorm` (`Cli/service/brainstorm.ts`), `remote` and
   `browser` (§6 X3), and the registry's `connect`, `retire`, `wire` and `import` (`Cli/service/connect.ts`, `Cli/service/manage.ts`),
-  `connect` onto the driver's own registration, which `register` already runs.
+  `connect` as a typed operation of its own beside `register` (§6 X3).
 - **The hand-off.** The CLI hands every word outside its own commands, whole, to the desktop's program under D194 point 1's program
   rule (`DAORIS_DRIVER_PROGRAM`, else the install's own; else refused, exit 2, saying where the program is). An install's `daoris`
   launcher in `app/bin/` runs the desktop's program, which needs no Node; that program hands the doctrine commands to the CLI the
@@ -695,7 +701,7 @@ second ways, so they retire in the tree's own wave (`ONEWAY1ai`).
 | `convert` | `--plan`, `--apply`, `--undo` | the wave's *d:workflow convert* |
 | `drive` | (one verb, the headless loop) | *d:drive* |
 | `gate` | run, verify | *d:run-heavy*, *d:verify* |
-| `git` | branches, branch, tag, fetch, pick, revert, rebase, review | *d:git* |
+| `git` | branches, branch, tag, fetch, pick, revert, rebase, review, identity, use, access, asks, answer | *d:git*, *d:git identity*, *d:git use*, *d:git access*, *d:git asks*, *d:git answer* |
 | `history` | (read), clear | *d:history* |
 | `integrate` | (one verb) | *d:integrate* |
 | `logs`, `notices`, `trace`, `wiring`, `update` | as today | *d:logs*, *d:notices*, *d:trace*, *d:wiring*, *d:update* |
@@ -704,10 +710,10 @@ second ways, so they retire in the tree's own wave (`ONEWAY1ai`).
 | `press` | result, withdraw | *d:result*, *d:withdraw* |
 | `quest` | pause, resume, abandon, delete, accept, done, reopen, go-on, check, review, workflow, clear, retry | *d:quest …*, *driver retry* |
 | `remote` | list, add, remove; sync (status, dismiss, forward) | the CLI's `remote`; *d:sync*, whose name the doctrine's `sync` holds |
-| `repository` | connect, retire, wire, import | the CLI's `connect`, `retire`, `wire`, `import`; *d:register*, the same act as `connect` |
+| `repository` | connect, register, retire, wire, import | the CLI's `connect`, `retire`, `wire`, `import`; *d:register* |
 | `role` | `[<id>]`, set, remove, default, policy, brief | *driver role*, *d:roles brief*; *driver actor*, *adapter*, *intake* and *helper* retired at `ONEWAY1a` |
-| `session` | list, stop, finish, decline, archive, unarchive, delete, say, take-back, reword, start-from, hand-over, helper, partner, handback, opinion, answer | *d:sessions …*, *d:opinion …*, *d:answer* (until `ONEWAY1k`); *go-on-new* retired at `ONEWAY1j` |
-| `settings` | notify, strikes, cooloff, keep, cap | *driver notify*, *strikes*, *cooloff*, *keep*, *cap*; *driver timeout* retired at `ONEWAY1s` |
+| `session` | list, stop, finish, decline, archive, unarchive, delete, say, take-back, reword, start-from, hand-over, helper, partner, handback, opinion, answer, supervise | *d:sessions …*, *d:sessions supervise*, *d:opinion …*, *d:answer* (until `ONEWAY1k`); *go-on-new* retired at `ONEWAY1j` |
+| `settings` | notify, strikes, cooloff, keep, cap, handover, brainstorms | *driver notify*, *strikes*, *cooloff*, *keep*, *cap*, *handover*, *brainstorms*; *driver timeout* retired at `ONEWAY1s` |
 | `space` | (read), free | *d:space*, *d:space free* |
 | `steward` | as today | *d:steward* |
 | `tool` | as today | *tool …* |
@@ -772,8 +778,8 @@ the condition that would end it is the two programs becoming one, which no row p
 - **P4.** A code the page does not know, and a current driver sentence with no code, are not old shapes.
 - **I2.** The twins are two implementations of one merge. Their end is one implementation with two callers, not the loss of git's
   driver.
-- **Outside the census.** The CLI's `connect` and the driver's `register` are one act at two verbs; the tree keeps `repository
-  connect`, the driver's (the one a start and a moved line already run).
+- **Outside the census, and not a second way.** The CLI's `connect` (a first registration from a working tree, any service) and the
+  driver's `register` (re-following the rows this host holds) are two acts; the tree keeps both under `repository`.
 
 ## 13. Rejected
 
@@ -814,3 +820,9 @@ settled here:
 | Row letters collide | every row id prefixed `ONEWAY1` |
 | The parity oracle over `AdapterSet.Built()`, and D213's stand-ins kept as the old side | §3 step 4, by D213's note of 2026-11-03 |
 | The owner's question | §11, the command tree |
+
+A second read of the revision found seven of the eight settled and four more points, each settled in place: Undo reaches only the latest
+receipt once settled (§1.1); `connect` is a typed operation of its own beside `register`, the two acts kept apart (§6 X3, §11); the tree
+maps `git identity|use|access|asks|answer`, `session supervise`, and `settings handover|brainstorms`, so no shipped verb is dropped (§11);
+an appointed role's terminal allowlist is rewritten with the words (`ONEWAY1ai-ii`); the home part's mover is the launcher project's, and
+a home started without it is moved by the driver's start (`ONEWAY1w`); `ONEWAY1ab-i` takes no module route the wave changed (§10.1).
