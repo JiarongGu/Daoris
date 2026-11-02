@@ -18,7 +18,7 @@ public static class WorkflowLevels
     /// <summary>Row 2: the repository's choice for the task's kind.</summary>
     public const string RepositoryKind = "repository-kind";
 
-    /// <summary>Row 3: the repository's default, Current where a repository that chooses names none.</summary>
+    /// <summary>Row 3: the repository's default; where a repository that chooses names none, row 6's.</summary>
     public const string Repository = "repository";
 
     /// <summary>Row 4: the workspace's choice for the task's kind.</summary>

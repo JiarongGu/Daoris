@@ -450,6 +450,11 @@ public static class WorkflowOperations
         return rows;
     }
 
+    /// <summary>The scope of the home's default: every repository that follows it with nothing written.</summary>
+    public const string HomeLevel = "home";
+
+    public const string HomeName = "this machine";
+
     /// <summary>The places a saved workflow is chosen for, in the order the file keeps them: what appending a version to it reaches.</summary>
     public static IReadOnlyList<WorkflowScope> ScopesOf(DriverConfig choices, string id)
     {
@@ -466,6 +471,8 @@ public static class WorkflowOperations
 
         Level("repository", choices.Workflows);
         Level("workspace", choices.WorkspaceWorkflows);
+        // The home's default reaches every place that names nothing of its own (WORKFLOWCLEAN1 1a), so editing its copy asks consent for them all.
+        if (choices.DefaultWorkflow == id) scopes.Add(new WorkflowScope(HomeLevel, HomeName, "default", null));
         return scopes;
     }
 
@@ -477,12 +484,10 @@ public static class WorkflowOperations
     public static async Task<WorkflowVersionSource> SourceAsync(
         DriverConfig choices, string home, RegistryRead registry, string from, bool opinion, bool look, CancellationToken ct)
     {
+        // WORKFLOWCLEAN1 1a: converting Current has one door, and it is not a copy made by hand.
         if (from.StartsWith("current:", StringComparison.Ordinal))
         {
-            var repository = from["current:".Length..];
-            if (repository.Length == 0) throw new ChoiceWords($"`current:` names a repository, such as `current:web-app` — {DriverWorkflowsCommand.Usage}");
-            var drawn = (await CurrentOfAsync(choices, home, registry, repository, ct).ConfigureAwait(false));
-            return CurrentSource(drawn, repository, opinion, look);
+            throw new ChoiceWords(CurrentRetired);
         }
 
         if (!from.Contains('@', StringComparison.Ordinal) && WorkflowDefaults.Of(from) is { } shipped && WorkflowPresets.GraphOf(shipped.Id) is { } graphPreset)
@@ -512,6 +517,11 @@ public static class WorkflowOperations
         var (shown, raw) = VersionOf(found, wanted);
         return new($"`{sourceId}` v{shown.Version}", found.Read.Name!, WorkflowPresets.WithGates(raw, opinion, look), null, null, null);
     }
+
+    /// <summary>What <c>new --from current:&lt;repository&gt;</c> is told: the conversion is the one door for what a place follows under Current.</summary>
+    public const string CurrentRetired =
+        "retired: a workflow is no longer copied from a repository's Current by hand. `daoris driver workflow convert` converts what a place follows "
+        + "under Current into a saved workflow, as you press it. Nothing was written.";
 
     /// <summary>
     /// Current as a workflow's source, the one handler behind <c>new --from current:&lt;repository&gt;</c> and the effective graph a place's chart
@@ -772,6 +782,12 @@ public static class WorkflowOperations
             {
                 var own = read.Checkouts?.FirstOrDefault(each => InScope(each.Repository, scope.Name)) ?? default;
                 reached.Add(own.Repository is null ? (scope.Name, null, null) : own);
+            }
+            else if (scope.Level == HomeLevel)
+            {
+                // Every place that follows the home's default with nothing written.
+                reached.AddRange((read.Checkouts ?? []).Where(each =>
+                    WorkflowSelection.Resolve(choices, each.Repository, each.Workspace, null).Level == WorkflowLevels.Home));
             }
             else if (read.Checkouts is { } checkouts)
             {

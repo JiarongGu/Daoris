@@ -454,33 +454,43 @@ public sealed class WorkflowRunBindingTests : IDisposable
              "wires":[{"id":"a","kind":"after","from":"work","to":"review"},{"id":"r","kind":"after","from":"review","to":"landing"},
                       {"id":"b","kind":"after","from":"landing","to":"pushed"},{"id":"c","kind":"after","from":"pushed","to":"pull-request"}]}
             """)), kept: []);
+        // WORKFLOWCLEAN1 1a (transitional, until the conversion): a place that still has a landing rule resolves over it, though a derived
+        // default would say otherwise; one with no rule resolves from the derived defaults.
         var before = Config("""
-            {"workflows":{"web-app":{"default":"open-land"}},
-             "landings":{"web-app":{"form":"branch","pattern":"a/{ticket}-{quest}","plugin":"acme.pr","key":"AAA-\\d+"}}}
+            {"workflows":{"web-app":{"default":"open-land"},"api":{"default":"open-land"}},
+             "landings":{"web-app":{"form":"branch","pattern":"a/{ticket}-{quest}","plugin":"other.pr","key":"AAA-\\d+"}}}
             """);
 
-        var planned = WorkflowRunBindings.Plan(before, _home, "a1b2c3", "web-app", null, null, null, [], At);
+        var planned = WorkflowRunBindings.Plan(before, WorkflowPorts.Store(_home), "a1b2c3", "web-app", null, null, null, Plugins, At, remoteHost: "github.com");
         Assert.True(WorkflowRunBindings.Bind(_home, planned));
         var bound = WorkflowRunBindings.Read(_home, "a1b2c3")!;
 
         Assert.Null(bound.Problem);
         Assert.Equal(
-            new Dictionary<string, string> { ["pattern"] = "a/{ticket}-{quest}", ["plugin"] = "acme.pr", ["key"] = "AAA-\\d+" }.OrderBy(each => each.Key),
+            new Dictionary<string, string> { ["pattern"] = "a/{ticket}-{quest}", ["plugin"] = "other.pr", ["key"] = "AAA-\\d+" }.OrderBy(each => each.Key),
             bound.Land.OrderBy(each => each.Key));
 
-        var after = Config("""
-            {"workflows":{"web-app":{"default":"open-land"}},
-             "landings":{"web-app":{"form":"branch","pattern":"b/{quest}","plugin":"other.pr"}}}
-            """);
-        var version = WorkflowStore.Load(_home, "open-land")!.Read.Versions[^1];
-        var (steps, problem) = WorkflowNamed.GateSteps(version.Graph!, 1, LandingRules.Effective(after, "web-app", null).Rule, bound.Land);
-        var process = WorkflowProcess.Of(after, "web-app", null, bound, steps!);
+        var derived = WorkflowRunBindings.Plan(before, WorkflowPorts.Store(_home), "j1k2l3", "api", null, null, null, Plugins, At, remoteHost: "github.com");
+        Assert.Equal(
+            new Dictionary<string, string> { ["pattern"] = LandNodes.DefaultPattern, ["plugin"] = "acme.github" }.OrderBy(each => each.Key),
+            derived.Land.OrderBy(each => each.Key));
 
-        Assert.Null(problem);
-        Assert.Equal(("a/{ticket}-{quest}", "acme.pr", "AAA-\\d+"), (process.Landing.Rule.Pattern, process.Landing.Rule.Plugin, process.Landing.Rule.Key));
-        var fresh = WorkflowRunBindings.Plan(after, _home, "d4e5f6", "web-app", null, null, null, [], At);
-        Assert.Equal("b/{quest}", fresh.Land["pattern"]);
+        // A pattern the version writes with {ticket} resolves the default key, not the rule's.
+        WorkflowStore.Add(_home, new WorkflowVersionAdded("ticketed", "Ticketed", "terminal", "2026-11-01T09:00:00Z", null, JsonNode.Parse(
+            """
+            {"schemaVersion":2,"entries":["work"],"end":"pull-request","nodes":[{"id":"work","kind":"claimed","version":1,"reach":"observed"},
+              {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"pull-request","pattern":"t/{ticket}"}},
+              {"id":"pushed","kind":"pushed","version":1,"reach":"observed"},{"id":"pull-request","kind":"pull-request","version":1,"reach":"observed"}],
+             "wires":[{"id":"a","kind":"after","from":"work","to":"landing"},{"id":"b","kind":"after","from":"landing","to":"pushed"},
+                      {"id":"c","kind":"after","from":"pushed","to":"pull-request"}]}
+            """)), kept: []);
+        var ticketed = Config("""{"workflows":{"api":{"default":"ticketed"}}}""");
+        var keyed = WorkflowRunBindings.Plan(ticketed, WorkflowPorts.Store(_home), "d4e5f6", "api", null, null, null, Plugins, At, remoteHost: "github.com");
+        Assert.Equal(LandingKey.DefaultKey, keyed.Land["key"]);
+        Assert.False(keyed.Land.ContainsKey("pattern"));
     }
+
+    private static readonly IReadOnlyList<WorkflowPlugin> Plugins = [new("acme.github", [HookPoints.Land])];
 
     /// <summary>A pull request whose plugin neither the version nor the rule names is held at the bind with why.</summary>
     [Fact]
@@ -497,7 +507,16 @@ public sealed class WorkflowRunBindingTests : IDisposable
 
         var planned = WorkflowRunBindings.Plan(Config("""{"workflows":{"web-app":{"default":"no-plugin"}}}"""), _home, "a1b2c3", "web-app", null, null, null, [], At);
 
-        Assert.Contains("names one", planned.Problem);
+        Assert.Contains("no plugin serves", planned.Problem);
+
+        // A plugin that serves the remote's platform is the one the open option resolves to; one for another platform is none.
+        var served = WorkflowRunBindings.Plan(
+            Config("""{"workflows":{"web-app":{"default":"no-plugin"}}}"""), WorkflowPorts.Store(_home), "d4e5f6", "web-app", null, null, null, Plugins, At, remoteHost: "github.com");
+        Assert.Null(served.Problem);
+        Assert.Equal("acme.github", served.Land["plugin"]);
+        var other = WorkflowRunBindings.Plan(
+            Config("""{"workflows":{"web-app":{"default":"no-plugin"}}}"""), WorkflowPorts.Store(_home), "g7h8i9", "web-app", null, null, null, Plugins, At, remoteHost: "gitlab.com");
+        Assert.Contains("no plugin serves", other.Problem);
     }
 
     /// <summary>A graph whose work and opinion steps name the role that takes each (ROLESTEP1b).</summary>
@@ -515,7 +534,7 @@ public sealed class WorkflowRunBindingTests : IDisposable
             """)), kept: []);
 
     private static DriverConfig Staffed => Config("""
-        {"workflows":{"web-app":{"default":"staffed"}},"landings":{"web-app":{"form":"branch","pattern":"a/{quest}","plugin":"acme.pr"}}}
+        {"workflows":{"web-app":{"default":"staffed"}}}
         """);
 
     private static RoleCatalog Roles(params RoleRecord[] roles) => RoleCatalog.Of([.. roles.Select(role => RoleCatalogTests.Stored(role, 4))]);
@@ -528,7 +547,7 @@ public sealed class WorkflowRunBindingTests : IDisposable
         var roles = Roles(
             RoleCatalogTests.Working("frontend", "build", new RoleScope(RoleScope.Repository, "web-app")), RoleCatalogTests.Working("security", "review"));
 
-        var planned = WorkflowRunBindings.Plan(Staffed, WorkflowPorts.Store(_home), "a1b2c3", "web-app", "work", null, null, [], At, roles: () => roles);
+        var planned = WorkflowRunBindings.Plan(Staffed, WorkflowPorts.Store(_home), "a1b2c3", "web-app", "work", null, null, Plugins, At, remoteHost: "github.com", roles: () => roles);
         Assert.True(WorkflowRunBindings.Bind(_home, planned));
         var bound = WorkflowRunBindings.Read(_home, "a1b2c3")!;
 
@@ -550,7 +569,7 @@ public sealed class WorkflowRunBindingTests : IDisposable
         SaveStaffed("frontend", "security");
         var roles = Roles(RoleCatalogTests.Working("frontend", "build"), RoleCatalogTests.Working("security", "build"));
 
-        var planned = WorkflowRunBindings.Plan(Staffed, WorkflowPorts.Store(_home), "a1b2c3", "web-app", "work", null, null, [], At, roles: () => roles);
+        var planned = WorkflowRunBindings.Plan(Staffed, WorkflowPorts.Store(_home), "a1b2c3", "web-app", "work", null, null, Plugins, At, remoteHost: "github.com", roles: () => roles);
 
         Assert.Equal(
             "`staffed` v1's step `second` names the role `security`, which cannot take it: The role `security` does not take `review`, so the starts "
@@ -558,7 +577,7 @@ public sealed class WorkflowRunBindingTests : IDisposable
             planned.Problem);
         Assert.Equal("security", planned.RoleOf(NodeKinds.Opinion)?.Role);
 
-        var unknown = WorkflowRunBindings.Plan(Staffed, WorkflowPorts.Store(_home), "a1b2c3", "web-app", "work", null, null, [], At, roles: () => RoleCatalog.Of([]));
+        var unknown = WorkflowRunBindings.Plan(Staffed, WorkflowPorts.Store(_home), "a1b2c3", "web-app", "work", null, null, Plugins, At, remoteHost: "github.com", roles: () => RoleCatalog.Of([]));
         Assert.StartsWith("`staffed` v1's step `work` names the role `frontend`, which cannot take it: No role `frontend` is in the catalogue", unknown.Problem);
         Assert.Equal("frontend", unknown.RoleOf(NodeKinds.Claimed)?.Role);
     }

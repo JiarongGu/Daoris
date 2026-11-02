@@ -84,7 +84,6 @@ public static class ChoiceRoutes
     public static InstanceRoute Retry { get; } = Person("RETRY_QUEST");
     public static InstanceRoute Line { get; } = Person("SET_LINE");
     public static InstanceRoute Language { get; } = Person("SET_LANGUAGE");
-    public static InstanceRoute Landing { get; } = Person("SET_LANDING");
     public static InstanceRoute ReadAcross { get; } = Person("SET_READ_ACROSS");
     public static InstanceRoute WriteAcross { get; } = Person("SET_WRITE_ACROSS");
     public static InstanceRoute Standing { get; } = Person("SET_STANDING");
@@ -116,7 +115,7 @@ public static class ChoiceRoutes
         ("driver retry <quest>", Retry, "the quest's *Try again*, which judges from the planner's verdict whether to mark or release it"),
         ("driver line", Line, "the repository's or the workspace's line"),
         ("driver language", Language, "the session language"),
-        ("driver landing", Landing, "the landing rule, sent with its key and its squash named so the rule is replaced whole, as the verb replaces it"),
+        ("driver landing", null, "alone: retired, it writes nothing and says where its two halves went"),
         ("driver across … read", ReadAcross, "reading across"),
         ("driver across … write-to", WriteAcross, "writing across"),
         ("driver standing", Standing, "the standing answer"),
@@ -134,7 +133,6 @@ public static class ChoiceRoutes
         ("driver timeout <minutes>", null, "alone: no route sets a session's timeout"),
         ("driver retry <quest> --at <n>", null, "alone: RETRY_QUEST marks at the failures its verdict counts, never at a number the person gives"),
         ("driver retry <quest> --session <id>", null, "alone: RETRY_QUEST releases the stop its verdict names, never a session the person names"),
-        ("driver landing … --cycle <file>|--no-cycle", null, "alone: SET_LANDING has no field for the cycle, and keeps the one the rule holds"),
         ("driver work-cycle", null, "alone: no route sets a quest's or an ask's cycle of work"),
         ("driver brainstorms", null, "alone: no route sets the brainstorm policy"),
         ("driver workflow new|edit|apply|import", ChoiceRoutes.WorkflowSave, "the window's workflow save, a version at a time"),
@@ -179,9 +177,7 @@ public static class DriverChoicesCommand
                daoris-driver driver intake <adapter>|off · helper <adapter>|off
                daoris-driver driver retry <quest> [--at <n> | --session <id>]
                daoris-driver driver line <repository>|--workspace <name> <branch>|--clear
-               daoris-driver driver landing <repository>|--workspace <name> merge|branch <pattern>|--clear
-                      [--tidy] [--plugin <id>] [--auto-accept|--no-auto-accept] [--key <shape>|--no-key] [--squash|--no-squash]
-                      [--cycle <file>|--no-cycle]
+               daoris-driver driver landing — retired: it writes nothing (use place, workflow use)
                daoris-driver driver work-cycle <repository>|--workspace <name> quest|ask <file>|--clear
                daoris-driver driver across <repository>|--workspace <name> read on|off|--clear
                daoris-driver driver across <repository> write-to <other> [--clear]

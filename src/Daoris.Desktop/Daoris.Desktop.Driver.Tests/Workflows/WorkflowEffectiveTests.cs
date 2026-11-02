@@ -37,6 +37,10 @@ public sealed class WorkflowEffectiveTests : IDisposable
     private WorkflowEffective Read(DriverConfig config, string route, string? repository = Repo, string? workspace = Space) =>
         WorkflowEffectives.Read(config, Store, repository, workspace, route, Plugins);
 
+    /// <summary>A file that still holds <c>current</c> for the repository: read as before, though no door writes it as a development choice any more.</summary>
+    private static DriverConfig StoredCurrent(DriverConfig config) =>
+        config with { Workflows = new Dictionary<string, WorkflowChoice>(StringComparer.OrdinalIgnoreCase) { [Repo] = new WorkflowChoice("current", []) } };
+
     /// <summary>A saved default, an inherited kind, an explicit Current and a cleared choice each carry the identity <c>Resolve</c> gives.</summary>
     [Fact]
     public void Its_identity_is_the_selections_for_a_default_a_kind_Current_and_a_cleared_choice()
@@ -47,7 +51,7 @@ public sealed class WorkflowEffectiveTests : IDisposable
         {
             ("a saved default", Edit(DriverConfig.Empty, new WorkflowUse("release", Repo, null, null)), "default", null),
             ("an inherited kind", Edit(Declared(DriverConfig.Empty), new WorkflowUse("docs-flow", null, Space, "docs")), "kind:docs", "docs"),
-            ("explicit Current", Edit(DriverConfig.Empty, new WorkflowUse("release", null, Space, null), new WorkflowUse("current", Repo, null, null)), "default", null),
+            ("explicit Current", StoredCurrent(Edit(DriverConfig.Empty, new WorkflowUse("release", null, Space, null))), "default", null),
             ("a cleared choice", Edit(DriverConfig.Empty, new WorkflowUse("release", Repo, null, null), new WorkflowUse(null, Repo, null, null)), "default", null),
             ("the workspace's default", Edit(DriverConfig.Empty, new WorkflowUse("release", null, Space, null)), "default", null),
         };
@@ -79,7 +83,7 @@ public sealed class WorkflowEffectiveTests : IDisposable
     public void A_kind_its_workspace_does_not_declare_is_no_route_and_a_workspace_resolves_for_itself()
     {
         Save("release", "Release", null, Release());
-        var config = Edit(Declared(DriverConfig.Empty), new WorkflowUse("release", null, Space, "docs"), new WorkflowUse("current", Repo, null, null));
+        var config = StoredCurrent(Edit(Declared(DriverConfig.Empty), new WorkflowUse("release", null, Space, "docs")));
 
         Assert.Throws<DriverException>(() => Read(config, "kind:missing"));
         Assert.Throws<DriverException>(() => Read(config, "nonsense"));
@@ -102,7 +106,10 @@ public sealed class WorkflowEffectiveTests : IDisposable
             """));
         WorkflowOperations.RegistryRead registry = _ => Task.FromResult(new ChoicesRegistry([(Repo, (string?)Space, (string?)null)], null));
 
-        var written = await WorkflowOperations.SourceAsync(config, _home, registry, "current:" + Repo, opinion: false, look: false, CancellationToken.None);
+        // `new --from current:` is retired (WORKFLOWCLEAN1 1a); the handler the chart draws from is the conversion's to read.
+        await Assert.ThrowsAsync<ChoiceWords>(() => WorkflowOperations.SourceAsync(config, _home, registry, "current:" + Repo, opinion: false, look: false, CancellationToken.None));
+        var written = WorkflowOperations.CurrentSource(
+            await WorkflowOperations.CurrentOfAsync(config, _home, registry, Repo, CancellationToken.None), Repo, opinion: false, look: false);
         var repository = Read(config, "default");
         Assert.Equal(written.Graph!.ToJsonString(), repository.Graph!.ToJsonString());
         Assert.Contains(repository.Graph!["nodes"]!.AsArray(), node => (string?)node!["kind"] == NodeKinds.Look);

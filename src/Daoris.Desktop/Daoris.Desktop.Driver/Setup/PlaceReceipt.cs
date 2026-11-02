@@ -87,7 +87,10 @@ public static class PlaceDigests
         foreach (var row in plan.Repositories)
         {
             parts.Add(["repository", row.Repository, row.Workspace]);
-            parts.AddRange(row.Changes.Select(change => (string[])["change", change.Key, change.Part, change.Said, change.Before, change.After]));
+            // The copy's saving is its own operation, done once; the choice that names it is in the digest, so a plan read again after the
+            // copy is saved is the plan that was read.
+            parts.AddRange(row.Changes.Where(change => change.Key != PlacePlans.WorkflowSaveKey)
+                .Select(change => (string[])["change", change.Key, change.Part, change.Said, change.Before, change.After]));
             if (row.Declaration is { } declaration)
             {
                 parts.Add(["declaration", declaration.Line, declaration.Blob, .. declaration.Acceptances.Select(each => $"{each.Purpose}={each.Standing}")]);

@@ -257,10 +257,10 @@ public static class PlaceApplies
     /// gates. The operation is idempotent, so a newest version with the planned digest already there reads as done.
     /// </summary>
     private static bool CopySaved(string home, PlaceOperation save) =>
-        WorkflowPorts.Store(home).Load(save.Workflow!) is { Read: { Problem: null, Versions: [.., { From: { } from, Graph: { } graph }] } }
+        WorkflowDefaults.Of(save.Default) is { } shipped
+        && WorkflowPorts.Store(home).Load(save.Workflow!) is { Read: { Problem: null, Versions: [.., { From: { } from, Digest: { } digest }] } }
         && from.Default == save.Default
-        && graph.Nodes.Any(node => node.Kind == NodeKinds.Opinion) == save.Opinion
-        && graph.Nodes.Any(node => node.Kind == NodeKinds.Look) == save.Look;
+        && digest == NodeGraphs.Digest(NodeGraphs.Read(WorkflowPresets.WithGraphGates(shipped.Graph(), save.Opinion, save.Look).ToJsonString()).Graph!);
 
     /// <summary>
     /// The first operation of an apply, one copy of a shipped default saved (<c>WORKFLOW_SAVE</c>) through the window's own save. <c>uncertain</c>

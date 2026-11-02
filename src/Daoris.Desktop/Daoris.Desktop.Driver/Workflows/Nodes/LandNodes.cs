@@ -47,9 +47,27 @@ public static class LandNodes
     /// null where none does), and the default key where the pattern says <c>{ticket}</c>. A merge has none to resolve, and an integrate no
     /// plugin. Called once, at the run's bind, and kept; a written option stands.
     /// </summary>
-    public static IReadOnlyDictionary<string, string> Resolve(NodeDeclaration land, string? platformPlugin)
+    public static IReadOnlyDictionary<string, string> Resolve(NodeDeclaration land, string? platformPlugin) => Resolve(land, null, platformPlugin);
+
+    /// <summary>
+    /// <see cref="Resolve(NodeDeclaration, string?)"/> over a landing rule where the place has one set: that rule's pattern, plugin and key
+    /// resolve the open options as before. A transitional path, ended by the conversion, which writes those options into the version and
+    /// removes the rule (the cleanup design §4.7); with no rule the derived defaults resolve them.
+    /// </summary>
+    public static IReadOnlyDictionary<string, string> Resolve(NodeDeclaration land, LandingRule? rule, string? platformPlugin)
     {
         var method = Written(land, "method");
+        if (rule is not null)
+        {
+            if (method == Merge || rule.Form != LandingForm.Branch) return NoResolved;
+            var fromRule = new Dictionary<string, string>(StringComparer.Ordinal);
+            var named = Written(land, "pattern");
+            if (named is null && rule.Pattern is { } ruled) fromRule["pattern"] = named = ruled;
+            if (method != Integrate && Written(land, "plugin") is null && rule.Plugin is { } plugin) fromRule["plugin"] = plugin;
+            if (named?.Contains("{ticket}", StringComparison.Ordinal) == true && rule.Key is { } key) fromRule[KeyOption] = key;
+            return fromRule.Count == 0 ? NoResolved : fromRule;
+        }
+
         if (method is null or Merge) return NoResolved;
         var resolved = new Dictionary<string, string>(StringComparer.Ordinal);
         var pattern = Written(land, "pattern");

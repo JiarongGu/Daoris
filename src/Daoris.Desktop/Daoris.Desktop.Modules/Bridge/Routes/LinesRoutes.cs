@@ -220,12 +220,57 @@ public sealed class LinesRoutes(DriverContext context)
     [Publishes("SET_LANDING", StateScopes.Landing | StateScopes.Lines)]
     private object? SetLanding(IpcRequest request)
     {
-        // WORKFLOWCLEAN1 1a: how work lands is the workflow's now, and the line's policy is the line's; nothing writes a rule any more.
-        _ = request;
-        throw new DriverException(RetiredLanding);
+        var repository = Optional(request, "repository");
+        var workspace = Optional(request, "workspace");
+        if ((repository is null) == (workspace is null))
+        {
+            throw new DriverException("a landing rule is set for a `repository` or a `workspace` — name one of them.");
+        }
+
+        // WORKFLOWCLEAN1 1a: where the place follows a saved workflow, how work lands is that workflow's and the line's policy is the line's, so no
+        // rule is written. It stays working for an unconverted place on Current until the lit wave (row 1y) retires it whole.
+        if (WorkflowSelection.Resolve(DriverConfig.Load(_loop.ConfigPath), repository, workspace, null).Workflow != WorkflowSelection.Current)
+        {
+            throw new DriverException(RetiredLanding);
+        }
+
+        // *Accept automatically* rides the rule (LAND2a, D145): a save that dropped it would switch it off unasked.
+        var rule = Optional(request, "form") is { } form
+            ? new LandingRule(form, Optional(request, "pattern"), Flag(request, "tidy"), Optional(request, "plugin"), Flag(request, "autoAccept"))
+            : null;
+        // The ticket's key and the squash (DOORS1b, D164's DOORS1a note) are set where the press names them, an empty key taking
+        // it away; a press naming neither keeps the ones the rule set here holds, where the new rule can hold them.
+        if (rule is not null)
+        {
+            var config = DriverConfig.Load(_loop.ConfigPath);
+            var standing = (workspace is not null ? config.WorkspaceLandings : config.Landings)
+                .TryGetValue((workspace ?? repository)!, out var own) ? own : null;
+            rule = LandingKept(rule, standing, request.Payload);
+        }
+
+        // AGENTSPLACE1d: `integrate` is set where the press names an object, withdrawn on null, and kept when it is not named.
+        var withdraw = false;
+        if (rule is not null && request.Payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty("integrate", out var asked))
+        {
+            if (asked.ValueKind == JsonValueKind.Null) withdraw = true;
+            else rule = rule with { Integrate = LandingKey.IntegrateOf(asked, out var shape) ?? throw new DriverException(shape!) };
+        }
+
+        var catalog = PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names);
+        _context.Change(config =>
+        {
+            if (withdraw && (workspace is not null ? config.WorkspaceLandings : config.Landings).TryGetValue((workspace ?? repository)!, out var held)
+                && held.Integrate is not null)
+            {
+                config = workspace is not null ? config.WithWorkspaceLandingIntegrate(workspace, null) : config.WithLandingIntegrate(repository!, null);
+            }
+
+            return LandingRules.Put(config, repository, workspace, rule, catalog);
+        });
+        return DriverRoutes.State(_loop);
     }
 
-    /// <summary>What a press of the retired <c>SET_LANDING</c> is told (the cleanup design §1.4): where its two halves went.</summary>
+    /// <summary>What a press of <c>SET_LANDING</c> is told where the place follows a saved workflow (the cleanup design §1.4): where its two halves went.</summary>
     internal const string RetiredLanding =
         "retired: a landing rule is no longer written. How work lands is the workflow a place follows (Workflow › Landing, or Set up…), "
         + "and how the line integrates is its policy (Line).";

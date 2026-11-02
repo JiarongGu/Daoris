@@ -78,8 +78,9 @@ public sealed record WorkflowDrop(string Kind, string Workspace) : WorkflowChoic
 /// <c>workflowchoice.ts</c>, left with the driver family's TypeScript (PUSH1f2b).</para>
 ///
 /// <para><b>A repository's choice replaces its workspace's whole</b> (§4.1), as its landing, review and opinion rules do: a
-/// repository that names any workflow follows its own kinds and its own default, Current where it names none, and the
-/// workspace's mapping of a kind does not reach it. <c>current</c> at any level is a choice like any other.</para>
+/// repository that names any workflow follows its own kinds and its own default, the home's default where it names none (Current
+/// only where the home names none), and the workspace's mapping of a kind does not reach it. <c>current</c> is read where a file holds
+/// it, but no door writes it as a development route's choice any more (WORKFLOWCLEAN1 1a).</para>
 ///
 /// <para><b>Additive</b>: two keys <c>driver.json</c> never had, written only when set, and nothing else in the file is read
 /// again. With neither, every repository's work follows Current, which is today's behaviour.</para>
@@ -116,6 +117,10 @@ public static class WorkflowSelection
     public const string KindsProblem = WorkflowKey.KindsProblem;
 
     public const string ManyProblem = WorkflowKey.ManyProblem;
+
+    /// <summary>What a choice of <c>current</c> for a place's work is told: a place follows a saved workflow, or the home's default.</summary>
+    public const string CurrentRefused =
+        "`current` is no longer chosen for a place's work: a place follows a saved workflow. Choose one, or clear the choice to follow this machine's default.";
 
     public const string NamedProblem = "a choice names the repository or the workspace it is for.";
 
@@ -270,6 +275,8 @@ public static class WorkflowSelection
         var name = (use.Repository ?? use.Workspace)?.Trim() ?? "";
         if (name.Length == 0) throw new DriverException(NamedProblem);
         if (use.Workflow is { } workflow && !IsWorkflow(workflow)) throw new DriverException(WorkflowProblem(workflow));
+        // WORKFLOWCLEAN1 1a (B1): Current is no development route's choice any more; the landed route's `current` ("no verification") stays.
+        if (!use.Landed && use.Workflow == Current) throw new DriverException(CurrentRefused);
         if (use.Kind is { } kind && !IsKindId(kind)) throw new DriverException(KindIdProblem(kind));
 
         // FABRIC-PIPELINE1a: the landed route names only a verification pipeline, and a default or a kind never one, by the mark the

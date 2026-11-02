@@ -1071,6 +1071,7 @@ try
         // below, which is this door's exit-2 contract; what that look had said before it failed, a
         // stop among it, is printed first (DEV3c).
         // The machine log rides each look, where a run's failure nothing else awaits is written with its place (ANSWER2).
+        HomeSeed.Once(configPath, home);
         watching = new DriverWatch(service, configPath, home, processes, sync, hooks: hooks, events: events) { Log = log, Share = held.Beside is not null };
         await watching.RunAsync(
             async (report, ticked) =>

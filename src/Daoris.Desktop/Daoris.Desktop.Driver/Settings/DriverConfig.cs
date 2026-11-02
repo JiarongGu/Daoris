@@ -476,7 +476,9 @@ public sealed record DriverConfig(
     /// The saved workflow a place follows where nothing above it names one (WORKFLOWCLEAN1 1a; the cleanup design §1.1): the home's default,
     /// row 6 of the choosing order at level <see cref="WorkflowLevels.Home"/>. A fresh home is seeded once with the copy of
     /// <c>merge-after-accept</c>. Null names none, and a place then follows Current (the transitional path, design §4.7). Older builds keep
-    /// the key and read none of it.
+    /// the key and read none of it. Only <see cref="HomeSeed"/> writes it in this row; editing the copy it names is the workflow's own door
+    /// (a new version, with the consent the home scope asks). Where the named workflow is removed, a start binds with the problem "no workflow
+    /// is saved here" and holds, as any choice of a removed workflow does.
     /// </summary>
     public string? DefaultWorkflow { get; init; }
 

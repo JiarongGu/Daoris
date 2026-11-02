@@ -49,7 +49,7 @@ public sealed class PlaceApplyTests : IDisposable
 
         Assert.True(result.Done);
         Assert.Null(result.Refused);
-        Assert.Equal("configuration applied; adoption asked.", result.Message);
+        Assert.Equal("workflow `merge-after-accept` saved; configuration applied; adoption asked.", result.Message);
         Assert.Equal(1, stand.Changes);
         Assert.True(stand.Config.OpensOwnTree("atlas"));
         var published = Assert.Single(stand.Setup.Published);
@@ -57,6 +57,29 @@ public sealed class PlaceApplyTests : IDisposable
         var kept = new PlaceReceipts(_home).Read(digest)!;
         Assert.All(kept.Operations, operation => Assert.Equal(PlaceOutcomes.Done, operation.Outcome));
         Assert.Equal("q-1", kept.Of(PlaceOperations.AdoptionOf("atlas"))!.Quest);
+    }
+
+    /// <summary>WORKFLOWCLEAN1 1a: the copy is saved first as its own operation, the place then follows it, and a second press saves nothing again.</summary>
+    [Fact]
+    public async Task The_copy_is_saved_before_the_configuration_chooses_it_and_a_second_press_saves_nothing_again()
+    {
+        var stand = Make();
+        var ask = new PlaceAsk(["atlas"], SetupPresets.Merge) { Look = false };
+        var digest = await DigestOf(stand, ask);
+        Assert.Null(WorkflowPorts.Store(_home).Load("merge-after-accept"));
+
+        var result = await Apply(stand, ask, digest);
+
+        Assert.True(result.Done, result.Message);
+        Assert.Equal(PlaceOutcomes.Done, new PlaceReceipts(_home).Read(digest)!.Of(PlaceOperations.WorkflowSaveOf("merge-after-accept"))!.Outcome);
+        var saved = WorkflowPorts.Store(_home).Load("merge-after-accept")!.Read.Versions[^1];
+        Assert.Equal("merge-after-accept", saved.From!.Default);
+        Assert.Equal("merge-after-accept", WorkflowSelection.Resolve(stand.Config, "atlas", "aurora", null).Workflow);
+        Assert.Empty(stand.Config.Landings);
+
+        var again = await Apply(stand, ask, digest);
+        Assert.True(again.Done);
+        Assert.Equal(1, WorkflowPorts.Store(_home).Load("merge-after-accept")!.Read.Versions.Count);
     }
 
     [Fact]
@@ -84,7 +107,7 @@ public sealed class PlaceApplyTests : IDisposable
         var stopped = await Apply(stand, ask, digest);
 
         Assert.False(stopped.Done);
-        Assert.Equal("configuration uncertain; adoption pending — the file was held", stopped.Message);
+        Assert.Equal("workflow `merge-after-accept` saved; configuration uncertain; adoption pending — the file was held", stopped.Message);
         Assert.Empty(stand.Setup.Published);
         Assert.Equal((PlaceOutcomes.Uncertain, PlaceOutcomes.Pending), Outcomes(stand, digest, PlaceOperations.Configuration, PlaceOperations.AdoptionOf("atlas")));
 
@@ -174,7 +197,7 @@ public sealed class PlaceApplyTests : IDisposable
         var stopped = await Apply(stand, ask, digest);
 
         Assert.False(stopped.Done);
-        Assert.Equal("configuration applied; adoption uncertain — the answer was lost", stopped.Message);
+        Assert.Equal("workflow `merge-after-accept` saved; configuration applied; adoption uncertain — the answer was lost", stopped.Message);
         Assert.Equal((PlaceOutcomes.Done, PlaceOutcomes.Uncertain), Outcomes(stand, digest, PlaceOperations.Configuration, PlaceOperations.AdoptionOf("atlas")));
         Assert.Single(stand.Setup.Published);
 
@@ -242,7 +265,7 @@ public sealed class PlaceApplyTests : IDisposable
         var kept = new PlaceReceipts(_home).Read(digest)!;
         Assert.Equal(PlaceOutcomes.Failed, kept.Of(PlaceOperations.Configuration)!.Outcome);
         Assert.Equal(PlaceOutcomes.Failed, kept.Of(PlaceOperations.AdoptionOf("atlas"))!.Outcome);
-        Assert.Equal("configuration not applied; adoption refused", result.Message[..result.Message.IndexOf(" —", StringComparison.Ordinal)]);
+        Assert.Equal("workflow `merge-after-accept` saved; configuration not applied; adoption refused", result.Message[..result.Message.IndexOf(" —", StringComparison.Ordinal)]);
     }
 
     [Fact]
@@ -336,7 +359,7 @@ public sealed class PlaceApplyTests : IDisposable
         Assert.Equal(0, code);
         Assert.StartsWith("place: `engine` — ", lines[0], StringComparison.Ordinal);
         Assert.DoesNotContain(lines, line => line.StartsWith("--plan:", StringComparison.Ordinal));
-        Assert.Equal("place: configuration applied.", lines[^1]);
+        Assert.Equal("place: workflow `integrated` saved; configuration applied.", lines[^1]);
         Assert.Equal(Blob, IntegrationAcceptance.Of(stand.Config, "engine"));
         Assert.Equal(1, stand.Changes);
 
