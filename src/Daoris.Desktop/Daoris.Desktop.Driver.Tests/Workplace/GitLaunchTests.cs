@@ -209,7 +209,7 @@ public sealed class GitLaunchTests
     /// <summary>The files that may start a process, each for the seam it is (how many starts a listed file makes is not pinned, CENSUSRULES1).</summary>
     private static readonly string[] StartingFiles =
     [
-        "ActSteps.cs", "AgentStarts.cs", "ChatRunner.cs", "ChildProcess.cs", "CodexUsage.cs", "DriverContinuations.cs",
+        "ActSteps.cs", "AgentStarts.cs", "ChatRunner.cs", "ChildProcess.cs", "CodexUsage.cs",
         "GeneratedWriters.cs", "GitDoors.cs", "GitIdentityActs.cs", "HarnessActions.cs", "HarnessSelection.cs",
         "HeavyStep.cs", "HookProcess.cs", "PieceLauncher.cs", "PluginToolRuns.cs", "PluginToolSetUp.cs", "PluginTrialProcess.cs",
         "ProcessStarts.cs", "SetupWorld.cs", "ToolQuestions.cs", "TransportRun.cs", "WorkingTree.cs",

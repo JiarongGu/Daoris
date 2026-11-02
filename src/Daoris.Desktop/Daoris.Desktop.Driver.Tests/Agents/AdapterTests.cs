@@ -240,17 +240,17 @@ public sealed class AdapterTests
     }
 
     /// <summary>
-    /// AGENTLYNTAI1s-i: the resume's words are the standard input's too, so a person's answer is never an argument. The stub, which
-    /// takes its prompt where it always did, redirects nothing (<c>ProvidersBuiltTests</c> pins it); the chat is untouched.
+    /// AGENTLYNTAI1s-i: the resume's words are the standard input's too, so a person's answer is never an argument: the resume is prepared
+    /// without them (ONEWAY1h-ii), its input open for the driver to write them. The stub, which takes its prompt where it always did,
+    /// redirects nothing (<c>ProvidersBuiltTests</c> pins it); the chat is untouched.
     /// </summary>
     [Fact]
     public void A_native_resume_carries_its_words_on_its_input_and_not_in_its_arguments()
     {
-        var info = new ClaudeCodeAdapter().PrepareResume(Target(), ["claude"], "0b5e7c1a", "Port 8080. 端口 😀")!;
+        var info = new ClaudeCodeAdapter().PrepareResume(Target(), ["claude"], "0b5e7c1a")!;
 
         var print = info.ArgumentList.IndexOf("-p");
         Assert.True(print >= 0 && info.ArgumentList[print + 1] == "--resume", string.Join(' ', info.ArgumentList));
-        Assert.DoesNotContain(info.ArgumentList, a => a.Contains("Port 8080."));
         Assert.True(info.RedirectStandardInput);
         Assert.Empty(info.StandardInputEncoding!.GetPreamble());
     }
@@ -547,7 +547,7 @@ public sealed class AdapterTests
                 "Game", adapter);
             var target = Target() with { Access = access };
 
-            foreach (var info in new[] { adapter.Prepare(target, null), adapter.PrepareResume(target, null, "0b5e7c1a", "Port 8080.")! })
+            foreach (var info in new[] { adapter.Prepare(target, null), adapter.PrepareResume(target, null, "0b5e7c1a")! })
             {
                 var arguments = info.ArgumentList.ToList();
                 Assert.Single(arguments, argument => argument == "--permission-mode");

@@ -1535,10 +1535,10 @@ public interface ISessionAdapter
     bool Resumes => Wire == SessionWire.Acp;
 
     /// <summary>
-    /// The native door's resume (ANSWER1a, D131 §1): the harness run on the conversation it kept, with
-    /// <paramref name="prompt"/> as its next turn, under the same posture a start has. Null where this adapter knows none.
+    /// The native door's resume (ANSWER1a, D131 §1): the harness run on the conversation it kept, under the same posture a start has;
+    /// its next turn goes on its input, written by the driver (AGENTLYNTAI1s-i, <see cref="NativePrompt"/>). Null where this adapter knows none.
     /// </summary>
-    ProcessStartInfo? PrepareResume(SessionTarget target, IReadOnlyList<string>? command, string conversation, string prompt) => null;
+    ProcessStartInfo? PrepareResume(SessionTarget target, IReadOnlyList<string>? command, string conversation) => null;
 }
 
 /// <summary>What every adapter shares: the process shell, and the target riding in the environment.</summary>
@@ -2261,11 +2261,11 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
     /// <summary>
     /// <c>claude -p --resume &lt;id&gt;</c>, with the posture and the structured output a start has. The answer is
     /// the conversation's next turn as it is: the conversation already holds the target, so it is not sent again. It goes on the
-    /// harness's input, never in its arguments (AGENTLYNTAI1s-i): the driver writes <paramref name="prompt"/> there as it starts
-    /// the run (<see cref="NativePrompt"/>).
+    /// harness's input, never in its arguments (AGENTLYNTAI1s-i): the driver writes it there as it starts the run
+    /// (<see cref="NativePrompt"/>).
     /// 🔴 The flag is the maker's documented one, not yet run on this machine by a driven session (design §6).
     /// </summary>
-    public ProcessStartInfo PrepareResume(SessionTarget target, IReadOnlyList<string>? command, string conversation, string prompt)
+    public ProcessStartInfo PrepareResume(SessionTarget target, IReadOnlyList<string>? command, string conversation)
     {
         var resolved = Resolve(command);
         var arguments = resolved.Skip(1)

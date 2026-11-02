@@ -5,11 +5,11 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// AGENTPROVIDER1m-i: <see cref="TransportRun"/> over both of today's doors, run as real model-free processes, observed as a start observes
-/// them. Every executor's first run holds it (ONEWAY1h-i, through <c>Driver.HoldAsync</c>), so this is that run's unit: the downloads kept,
+/// them. Every executor's run holds it (ONEWAY1h-i and h-ii, through <c>Driver.HoldAsync</c>), so this is that run's unit: the downloads kept,
 /// the process bracketed by its own lineage token, started through the agents' route and tracked, a reaper beside it, the capture reading its
 /// streams into the transcript and the record, a native prompt on its input, the wait on its exit, the capture bounded past it, and the end
-/// read the way the conclusion reads it; the go-on and the retry are the continuations' until ONEWAY1h-ii moves them here. A native door's one
-/// program is a Node script that speaks the stream the Claude Code mapper reads; a protocol door's is the stand-in's own.
+/// read the way the conclusion reads it, for its first process, its go-on's and its retry's alike. A native door's one program is a Node
+/// script that speaks the stream the Claude Code mapper reads; a protocol door's is the stand-in's own.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 public sealed class TransportRunProcessTests : IDisposable
@@ -27,7 +27,13 @@ public sealed class TransportRunProcessTests : IDisposable
             if (!fs.existsSync(rest[0])) { fs.writeFileSync(rest[0], '1'); console.log('not a frame'); process.exit(1); }
             init('conv-1'); said('second run'); result(); break;
           }
-          case 'resume': init('conv-1'); said('args: ' + rest.join(' ')); result(); break;
+          case 'resume': {
+            let heard = '';
+            process.stdin.setEncoding('utf8');
+            process.stdin.on('data', chunk => { heard += chunk; });
+            process.stdin.on('end', () => { init('conv-1'); said('args: ' + rest.join(' ')); said('heard: ' + heard); result(); });
+            break;
+          }
           case 'token': console.log('token ' + (process.env.DAORIS_LINEAGE_PROC ?? '')); break;
           case 'stdin': {
             let heard = '';
@@ -81,7 +87,10 @@ public sealed class TransportRunProcessTests : IDisposable
 
     private SessionTarget Target() => new("q-1", "title", "body", "asker", "engine", Path.Combine(_home, "engine"), "http://127.0.0.1:9") { Home = _home };
 
-    /// <summary>The scripted native harness: the Claude Code mapper over its stream, a resume that says its arguments, flags for its carriers.</summary>
+    /// <summary>
+    /// The scripted native harness: the Claude Code mapper over its stream, a resume that says its arguments and what its input carried, flags
+    /// for its carriers.
+    /// </summary>
     private sealed class Scripted(string home, bool structured) : ISessionAdapter
     {
         public string Name => "scripted";
@@ -90,8 +99,12 @@ public sealed class TransportRunProcessTests : IDisposable
 
         public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => Start(target, "claude");
 
-        public ProcessStartInfo? PrepareResume(SessionTarget target, IReadOnlyList<string>? command, string conversation, string prompt) =>
-            Start(target, "resume", "--resume", conversation, "-p", prompt);
+        public ProcessStartInfo? PrepareResume(SessionTarget target, IReadOnlyList<string>? command, string conversation)
+        {
+            var info = Start(target, "resume", "--resume", conversation);
+            info.RedirectStandardInput = true;
+            return info;
+        }
 
         public void HandSettings(ProcessStartInfo info, string settingsFile) => info.ArgumentList.Add("--settings:" + settingsFile);
 
@@ -173,28 +186,41 @@ public sealed class TransportRunProcessTests : IDisposable
     }
 
     /// <summary>
-    /// The go-on (MSG1b, D137 §2.1): the next process resumes the kept conversation with the held words as its one prompt, under the settings
-    /// and servers the start was handed, its output appended to the same transcript with its own opening; both runs tracked until the run is let go.
+    /// The go-on (MSG1b, D137 §2.1): the next process resumes the kept conversation with the held words as its one prompt on its input
+    /// (AGENTLYNTAI1s-i), under the settings and servers the start was handed, its output appended to the same transcript with its own opening;
+    /// its executor told once that process is up and before anything reads it, where the words it carries are sent (COWORK1c); a conversation
+    /// it names kept, never told to the resume the run began with, whose own words it does not carry; both processes tracked until the run is
+    /// let go.
     /// </summary>
     [Fact]
     public async Task A_go_on_resumes_the_kept_conversation_under_the_carriers_and_appends_to_the_transcript()
     {
         var adapter = new Scripted(_home, structured: true);
-        await using var run = Over(adapter, adapter.Prepare(Target(), null).WithArguments("claude"));
+        var named = 0;
+        await using var run = Over(adapter, adapter.Prepare(Target(), null).WithArguments("claude"), start => start with { Named = () => named++ });
         run.HandRecords(new RunRecords("s1", Transcript, Events: _events, KeepAs: "scripted", Own: new HarnessWords()));
         run.HandCarriers(new RunCarriers("settings.json", "servers.json"));
         await run.OpenAsync(Bound);
         await run.EndAsync(Bound);
+        var first = run.Process;
+        Assert.Equal(1, named);
 
+        var told = new List<Process?>();
         var end = await run.GoOnAsync(
-            "conv-1", "Also log the port.", [new SessionEvent { Kind = SessionEventKind.Note, Text = "resumed on `scripted`" }], Bound);
+            "conv-1", "Also log the port.", [new SessionEvent { Kind = SessionEventKind.Note, Text = "resumed on `scripted`" }],
+            started: () => told.Add(run.Process), Bound);
 
         Assert.Equal(0, end.Exit);
         Assert.True(end.Named);
+        Assert.Equal(1, named);
+        var up = Assert.Single(told);
+        Assert.NotSame(first, up);
+        Assert.Same(run.Process, up);
         var transcript = File.ReadAllText(Transcript);
         Assert.Contains("Logged the port.", transcript);
         Assert.Contains("resumed on `scripted`", transcript);
-        Assert.Contains("args: --resume conv-1 -p Also log the port. --settings:settings.json --mcp-config:servers.json", transcript);
+        Assert.Contains("args: --resume conv-1 --settings:settings.json --mcp-config:servers.json", transcript);
+        Assert.Contains("heard: Also log the port.", transcript);
         Assert.True(transcript.IndexOf("Logged the port.", StringComparison.Ordinal) < transcript.IndexOf("resumed on `scripted`", StringComparison.Ordinal));
         Assert.True(_processes.RunsHere("s1"));
 
@@ -243,7 +269,7 @@ public sealed class TransportRunProcessTests : IDisposable
         Assert.StartsWith("the record's earlier lines", transcript, StringComparison.Ordinal);
         Assert.Contains("not a frame", transcript);
         Assert.Contains("second run", transcript);
-        // The retry's line is the console's, as AgainAsync says it: the transcript is the capture's, which says only the stream.
+        // The retry's line is the console's: the transcript is the capture's, which says only the stream.
         lock (onConsole) Assert.Contains(onConsole, line => line.Contains("the same resume is tried once more", StringComparison.Ordinal));
         var said = opening.First(e => e.Kind == SessionEventKind.Note).Text!;
         Assert.Equal(1, transcript.Split(said).Length - 1);

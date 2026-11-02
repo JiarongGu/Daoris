@@ -163,7 +163,7 @@ public sealed class ProvidersBuiltTests
         Assert.Empty(Compared(old.Toolchain, door.Toolchain));
         Assert.Equal(Shape(old.Prepare(target, command)), Shape(door.Prepare(target, command)));
         Assert.Equal(Shape(old.PrepareChat(chat, command)), Shape(door.PrepareChat(chat, command)));
-        Assert.Null(door.PrepareResume(target, command, "conversation", "prompt"));
+        Assert.Null(door.PrepareResume(target, command, "conversation"));
         Assert.Null(door.StructuredOutput());
         Assert.Null(door.FrameInterrupt());
         Assert.Equal("a message", door.FrameMessage("a message"));

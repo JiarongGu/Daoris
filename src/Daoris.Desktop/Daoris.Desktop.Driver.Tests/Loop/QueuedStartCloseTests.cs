@@ -99,26 +99,33 @@ public sealed class QueuedStartCloseTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A native run going on with words the person said while it worked (MSG1b): the driver closed while its next run waited for a
-    /// place. That run never started, so the words it took are said never to have reached the session, never dropped unsaid.
+    /// 🔴 A native run going on with words the person said while it worked (MSG1b): the driver closed while its run's go-on waited for a
+    /// place. That process never started, so the words it took are said never to have reached the session, never dropped unsaid.
     /// </summary>
     [Fact]
     public async Task A_go_on_run_closed_before_its_start_says_the_words_it_took_never_reached_the_session()
     {
         var driver = Driver();
-        new HarnessConversations(_home).Keep("s1", "stub", "conv-1");
+        var adapter = new ClaudeCodeAdapter();
+        new HarnessConversations(_home).Keep("s1", adapter.Name, "conv-1");
         var held = driver.Context.Processes.OpenInbox("s1");
         Assert.True(held.Hold(new ChatMessage("And log it.", [])));
         using var closed = new CancellationTokenSource();
         await closed.CancelAsync();
+        var target = new SessionTarget("q1", "Serve it", "", "game", "engine", Tree("s-1"), "http://localhost:5177") { Home = _home };
+        await using var run = new TransportRun(
+            new DriverTransportHost(driver), adapter,
+            new TransportStart(new ProcessStartInfo(Nowhere), StartClass.Person) { Target = target, Selection = new HarnessSelection(null) });
+        run.HandRecords(new RunRecords("s1", Path.Combine(_home, "s1.log"), Events: driver.Context.Events));
+        var ended = new AgentRunEnd(0, null, new HarnessEnding(0, null, []), Named: true);
 
         using (Refusing())
         {
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() => new DriverContinuations(driver.Context, driver).GoOnAsync(
-                held, (_, _) => new ProcessStartInfo(Nowhere), AdapterSet.Built().Resolve("stub"), "s1", Path.Combine(_home, "s1.log"),
-                refusesInput: null, drivesBrowser: false, exitCode: 0, used: null, resume: null, said: null, keep: [], left: [],
-                closed.Token).WaitAsync(Poll.Patience));
+                run, held, adapter, "s1", ended, resume: null, left: [], closed.Token).WaitAsync(Poll.Patience));
         }
+
+        Assert.False(run.Started);
 
         Assert.Empty(_seen);
         var note = Assert.Single(driver.Context.Events.After("s1", 0).Events);
