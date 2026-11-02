@@ -45,7 +45,7 @@ public abstract class AgentRun
 
     /// <summary>
     /// The carriers handed to the start and to each go-on (design §4.1): the settings and the servers files the run before it was handed, so
-    /// each go-on runs under the same rules. Kept: the downloads a start hands are kept by the run's open, as today's start's are.
+    /// each go-on runs under the same rules. Kept: the downloads a start hands are kept by the run's spawn, as a start's are.
     /// </summary>
     public abstract void HandCarriers(RunCarriers carriers);
 

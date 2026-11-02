@@ -27,8 +27,8 @@ public sealed record MeetingTranscript(IReadOnlyList<MeetingMessage> Messages, I
 
 /// <summary>
 /// A meeting's records (AGENTROOM1a, D177 points 1 and 7), under the brainstorms' entry and apart from them:
-/// <c>&lt;home&gt;/brainstorms/meetings/&lt;id&gt;/</c> holds <c>request.json</c> (the verb's), <c>sent/&lt;round&gt;.json</c> (the
-/// person's press for each round), <c>stop.json</c> (theirs), and <c>state.json</c>, <c>packets/&lt;round&gt;.json</c>,
+/// <c>&lt;home&gt;/brainstorms/meetings/&lt;id&gt;/</c> holds <c>request.json</c>, <c>sent/&lt;round&gt;.json</c> (the
+/// person's press for each round) and <c>stop.json</c>, all three the service desk's writing (ONEWAY1t), and <c>state.json</c>, <c>packets/&lt;round&gt;.json</c>,
 /// <c>transcript.json</c>, <c>passes/</c> and <c>read/</c> (the driver's); <c>answers/&lt;turn&gt;.json</c> is what a turn wrote. The
 /// rooms are under <c>brainstorm-rooms/meetings/&lt;id&gt;/</c>, and go when a round ends. Kept on this machine: nothing travels.
 /// </summary>
@@ -46,31 +46,6 @@ public sealed class MeetingFiles(string home)
 
     /// <summary>A turn's id, which names its pass record, its answer and its room: <c>r1-a1</c> for round 1's first participant.</summary>
     public static string Turn(int round, string participant) => string.Create(CultureInfo.InvariantCulture, $"r{round}-{participant}");
-
-    /// <summary>
-    /// The request the person's terminal writes, atomically. An id the caller names makes it idempotent: one already on file under
-    /// it is kept as it is, never written again.
-    /// </summary>
-    public string WriteRequest(string question, string? repository, IReadOnlyList<string> agents, DateTimeOffset at, string? named = null)
-    {
-        var id = named ?? Guid.NewGuid().ToString("N")[..8];
-        if (named is not null && File.Exists(PathOf(id, "request.json"))) return id;
-        BrainstormFiles.Write(PathOf(id, "request.json"), writer =>
-        {
-            writer.WriteStartObject();
-            writer.WriteNumber("meeting", MeetingPackets.Version);
-            writer.WriteString("id", id);
-            writer.WriteString("question", question);
-            if (repository is null) writer.WriteNull("repository");
-            else writer.WriteString("repository", repository);
-            writer.WriteStartArray("agents");
-            foreach (var agent in agents) writer.WriteStringValue(agent);
-            writer.WriteEndArray();
-            writer.WriteString("at", Moments.Write(at));
-            writer.WriteEndObject();
-        });
-        return id;
-    }
 
     /// <summary>Every meeting on file, oldest first; one whose request does not read is none.</summary>
     public IReadOnlyList<MeetingRequest> Requests()
@@ -136,17 +111,6 @@ public sealed class MeetingFiles(string home)
 
     private string PacketPath(string id, int round) => PathOf(id, "packets", string.Create(CultureInfo.InvariantCulture, $"{round}.json"));
 
-    /// <summary>The person's press for one round (D177 point 4): the digest of the packet they saw, which is the one that goes.</summary>
-    public void WriteSent(string id, int round, string digest, DateTimeOffset at) =>
-        BrainstormFiles.Write(SentPath(id, round), writer =>
-        {
-            writer.WriteStartObject();
-            writer.WriteNumber("round", round);
-            writer.WriteString("packet", digest);
-            writer.WriteString("at", Moments.Write(at));
-            writer.WriteEndObject();
-        });
-
     /// <summary>The digest the person sent for a round, or null where they have not.</summary>
     public string? Sent(string id, int round)
     {
@@ -156,9 +120,7 @@ public sealed class MeetingFiles(string home)
 
     private string SentPath(string id, int round) => PathOf(id, "sent", string.Create(CultureInfo.InvariantCulture, $"{round}.json"));
 
-    /// <summary>The person's stop (D177's trap, the person leaving): the meeting ends at once, and nothing more goes.</summary>
-    public void WriteStop(string id, DateTimeOffset at) => Turns.WriteStop(id, at);
-
+    /// <summary>Whether the person stopped it (D177's trap, the person leaving): the desk's file; the meeting ends at once, and nothing more goes.</summary>
     public bool Stopped(string id) => Turns.Stopped(id);
 
     public MeetingTranscript ReadTranscript(string id)

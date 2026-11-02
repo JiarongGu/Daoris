@@ -70,6 +70,8 @@ public sealed class PersonDoorTableTests
         ("POST", "/api/quests", Agent),
         ("POST", "/api/asks/{id}/publish", Agent),
         ("POST", "/api/confirmations", Agent),
+        // ONEWAY1n-i: an asker's withdrawal of its own ask, by the token its ask was answered with.
+        ("POST", "/api/confirmations/{id}/withdraw", Agent),
 
         ("POST", "/api/quests/{id}/evidence", Driver),
         ("POST", "/api/quests/{id}/set-up", Driver),
@@ -146,6 +148,7 @@ public sealed class PersonDoorTableTests
         // BRAINSTORM1a3 (D176 point 9): only the person starts one, sends its packet and clears it; an agent asks them instead.
         ("POST", "/api/brainstorms", Person),
         ("POST", "/api/brainstorms/{id}/send", Person),
+        ("POST", "/api/brainstorms/{id}/stop", Person),
         ("DELETE", "/api/brainstorms/{id}", Person),
         ("POST", "/api/quests/{id}/conflicts/dismiss", Person),
         // SYNCMERGE1a (D178 point 3): the person's bring-forward of their machine's lost take; a local host's alone.
@@ -187,7 +190,7 @@ public sealed class PersonDoorTableTests
         // change stream (FABRIC-EVENT3b), a read of which families moved, and a closure graph's bind and close, the driver's two
         // posts (FABRIC-CLOSE1a), and its question of what became of a close (FABRIC-CLOSE1u), and the person's reopen of a sealed
         // submission and their word to go on with the step it held (FABRIC-CLOSE1c), and a brainstorm's two reads and the person's
-        // three presses: its question, its send and its clear (BRAINSTORM1a3), and the person's bring-forward of a lost take (SYNCMERGE1a),
+        // four presses: its question, its send, its stop and its clear (BRAINSTORM1a3, ONEWAY1t), and the person's bring-forward of a lost take (SYNCMERGE1a),
         // and the mode an Ask Daoris conversation going on runs under, the driver's (HELPMODE1a2), and the setup a resumed driven record now runs under (AUTONOMY1b2),
         // and a quest's moves, a read (FLOWCHART1a2), and a word's attempt, the driver's (COWORK1c), and an entry's acknowledgment of a
         // channel message, the driver's (COWORK1d), and a quest's own kind and workflow, the person's (WORKFLOW1e2), and the downloaded
@@ -196,11 +199,12 @@ public sealed class PersonDoorTableTests
         // not hand put back, the driver's (SUPERVISOR1a-i), and a finished tree's record and its age, the driver's (KEEPSIZE1b), and the host's protocol, a read (FOUNDATION1 row p),
         // and one quest's handback, a read (HANDBACK1), and the event journal's rows after a position, a read (FOUNDATION1 l-i), and a session's finished tree's record, a read (KEEPSIZE1),
         // and the person's move of a held word to the head (LINESTOGETHER1b), and a session's memory changes, a read, and the person's
-        // decision of a memory end and Keep or Drop of an ended session's staged changes (KNOWCENTRAL2d).
+        // decision of a memory end and Keep or Drop of an ended session's staged changes (KNOWCENTRAL2d), and an asker's withdrawal of
+        // its own confirmation (ONEWAY1n-i).
         Assert.Equal(35, Routes.Count(route => route.Class == Open));
-        Assert.Equal(4, Routes.Count(route => route.Class == Agent));
+        Assert.Equal(5, Routes.Count(route => route.Class == Agent));
         Assert.Equal(31, Routes.Count(route => route.Class == Driver));
-        Assert.Equal(36, Routes.Count(route => route.Class == Person));
+        Assert.Equal(37, Routes.Count(route => route.Class == Person));
         // And a shared host's two channel doors, a feed and a page (SESSONE2d), and its retirement of a machine (FABRIC-CLOSE1i2).
         Assert.Equal(10, Routes.Count(route => route.Class == Shared));
     }

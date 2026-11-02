@@ -9,9 +9,16 @@ namespace Daoris.Driver;
 public sealed record ConfirmationsWaiting(string Since, IReadOnlyList<JsonElement> Waiting);
 
 /// <summary>
-/// The local host's confirmation doors, as the desktop's host reads them (NOTIFY2j, D196 point 4; <c>GET /api/confirmations</c> and
-/// <c>/waiting</c>): a class over the service's client, reached as its <see cref="ServiceClient.Confirmations"/> (PART8). Reads only:
-/// the person answers a confirmation in the window, with the key, at the service's own door.
+/// How the person's answer at the service's door went (ONEWAY1n-i): <see cref="Done"/> where the door took it, a Confirm's request
+/// made; otherwise the host's <see cref="Code"/> where it gave one (<c>not-made</c>, <c>restarted</c>) and its sentence.
+/// </summary>
+public sealed record ConfirmationAnswered(bool Done, string? Code, string Message);
+
+/// <summary>
+/// The local host's confirmation doors, as the desktop's host reads and answers them (NOTIFY2j, D196 point 4; ONEWAY1n-i;
+/// <c>GET /api/confirmations</c>, <c>/waiting</c>, and <c>POST /api/confirmations/{id}/confirm</c> and <c>/refuse</c>): a class over the
+/// service's client, reached as its <see cref="ServiceClient.Confirmations"/> (PART8). The window answers through the bridge's
+/// <c>PERSON_CONFIRM</c>, which the person's Confirm reaches here.
 /// </summary>
 public sealed class ConfirmationDoors
 {
@@ -58,4 +65,32 @@ public sealed class ConfirmationDoors
             ? [.. answer.RootElement.EnumerateArray().Select(each => each.Clone())]
             : throw new DriverException($"the service at {_service.BaseUrl} answered `{List}` with no list.");
     }
+
+    /// <summary>
+    /// The person's Confirm or Refuse of <paramref name="id"/> at the service's door: at a Confirm the host makes the request then and
+    /// there, and this answers how its door took it. A refusal is answered, never thrown; a host that does not answer throws.
+    /// </summary>
+    public async Task<ConfirmationAnswered> AnswerAsync(string id, bool confirm, CancellationToken ct = default)
+    {
+        var path = $"{List}/{Uri.EscapeDataString(id)}/{(confirm ? "confirm" : "refuse")}";
+        var reply = await _service.SendAsync(ServiceVerb.Post, path, null, ct).ConfigureAwait(false);
+        string? code = null, said = null;
+        try
+        {
+            using var answer = JsonDocument.Parse(reply.Payload);
+            if (answer.RootElement.ValueKind == JsonValueKind.Object)
+            {
+                said = Text(answer.RootElement, reply.Ok ? "message" : "error");
+                code = reply.Ok ? null : Text(answer.RootElement, "code");
+            }
+        }
+        catch (JsonException)
+        {
+        }
+
+        return new ConfirmationAnswered(reply.Ok, code, said ?? $"the service at {_service.BaseUrl} answered `{path}` with {reply.Status}.");
+    }
+
+    private static string? Text(JsonElement root, string name) =>
+        root.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 }

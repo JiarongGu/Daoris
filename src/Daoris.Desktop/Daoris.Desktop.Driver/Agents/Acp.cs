@@ -328,7 +328,7 @@ public sealed class AcpSession(
     /// driven start's repository's permission prompts (AUTONOMY1b, <see cref="DrivenAccess.Unoffered"/>). Null says Ask Daoris's full
     /// access, whose required posture came first (HELPMODE1a1).
     /// </summary>
-    public Func<string, string, string>? Unoffered { get; init; }
+    public Func<string, string, string>? Unoffered { get; set; }
 
     /// <summary>The part's lineage, told each child the streams beside it announce and end (COWORKVIEW1a); null tells none.</summary>
     public ILineageWriter? Lineage { get; init; }
@@ -344,7 +344,7 @@ public sealed class AcpSession(
     /// posture carries <see cref="PersonAnswers"/>. Null, or a posture without the mark, refuses each as it comes, as every other
     /// posture always has (D52).
     /// </summary>
-    public PermissionHolds? Permissions { get; init; }
+    public PermissionHolds? Permissions { get; set; }
 
     /// <summary>
     /// Asked at a turn's end before a word held for it is prompted (ACCESSSWAP1b, D183's note): whether the setup this session opened
@@ -355,7 +355,7 @@ public sealed class AcpSession(
     /// Asked only where a held word would open a turn of Daoris's: a word already sent is the agent's and is waited for, and the turn a
     /// session's own background work wakes is its own (BGWAIT1), so neither is cut.
     /// </remarks>
-    public Func<bool>? SetupChanged { get; init; }
+    public Func<bool>? SetupChanged { get; set; }
 
     /// <summary>
     /// Whether this client asks the agent for AIR's typed session failures (CODEXSTATUS1, the agent-errors design §4.3): set for an
@@ -369,7 +369,7 @@ public sealed class AcpSession(
     /// also waits for the session's own background work as a park would have it wait (<see cref="Waits"/>), never cutting that wait on
     /// the closed quest. Null never carries on, and the end is as before.
     /// </summary>
-    public Func<CancellationToken, Task<TurnCarry>>? CarriesOn { get; init; }
+    public Func<CancellationToken, Task<TurnCarry>>? CarriesOn { get; set; }
 
     // LANDBACK1 part 2: the carry-ons written in this run, bounded by TurnCarry.Bound, and whether the bound was said.
     private int _carried;
@@ -395,7 +395,7 @@ public sealed class AcpSession(
     /// How often a session that waits on its own background work reads its quest again (DONEEND1, D83's note): once it no longer
     /// waits on that work, the session ends. The driver sets every fourth of its own ticks; this default is that at its default tick.
     /// </summary>
-    public TimeSpan BackgroundLook { get; init; } = TimeSpan.FromSeconds(60);
+    public TimeSpan BackgroundLook { get; set; } = TimeSpan.FromSeconds(60);
 
     /// <summary>
     /// How long a session whose quest no longer waits (RUNENDS1, D83's note) lets a turn run silent before it ends anyway: a turn its
@@ -688,13 +688,13 @@ public sealed class AcpSession(
     /// category, <c>model</c> and then <c>thought_level</c>, before the posture and the first prompt, on a new session and a resumed one
     /// alike. Null, or account default, sets nothing: today's cascade decides.
     /// </summary>
-    public ActorAsked? Carry { get; init; }
+    public ActorAsked? Carry { get; set; }
 
     /// <summary>
     /// Told what was carried where it differs from <see cref="Carry"/>: a value the agent offers no option for, refuses, or answers with
     /// another value it offers, kept as asked and not carried (D205 §3.3, §5), so the record never says a choice was taken that was not.
     /// </summary>
-    public Action<ActorAsked>? Carried { get; init; }
+    public Action<ActorAsked>? Carried { get; set; }
 
     /// <summary>
     /// Asked where the agent does not offer, or refuses, <see cref="Carry"/>'s model at the open, before any prompt (D205 §3.3,
@@ -702,13 +702,13 @@ public sealed class AcpSession(
     /// session (the same agent on the same account), or null, where the record ends <c>choice-not-offered</c> before any prompt
     /// (<see cref="AcpChoiceNotOffered"/>). Null keeps MODELROLE1c's reading: the model runs at account default, said as not carried.
     /// </summary>
-    public Func<ModelRefusal, Task<ActorAsked?>>? ModelRefused { get; init; }
+    public Func<ModelRefusal, Task<ActorAsked?>>? ModelRefused { get; set; }
 
     /// <summary>
     /// Told the options its open listed, as <c>session/new</c> (or the resume) answered them before the posture or any set: the reading
     /// <c>data/agent-offers.json</c> keeps for its agent, version and account (D205 §9.2).
     /// </summary>
-    public Action<IReadOnlyList<AcpConfigOption>>? OffersRead { get; init; }
+    public Action<IReadOnlyList<AcpConfigOption>>? OffersRead { get; set; }
 
     /// <summary>
     /// The options as the open listed them, before the posture or any set, never overwritten (D205 §3.3, round 4, Opus N6): what a refused

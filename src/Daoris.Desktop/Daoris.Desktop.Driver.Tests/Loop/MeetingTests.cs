@@ -143,7 +143,8 @@ public sealed class MeetingTests : IDisposable
         return [.. events, .. driver.Running.Drain().Select(run => run.Line)];
     }
 
-    private int Verb(params string[] args) => MeetingCommand.Run(args, _home, TextWriter.Null, At);
+    /// <summary>The person's send of the round the look froze, as the desk writes it.</summary>
+    private void Send(string id, int round) => Files.WriteSent(id, round, Files.ReadState(id)!.Packet!, At);
 
     private string Shown(string id)
     {
@@ -160,15 +161,14 @@ public sealed class MeetingTests : IDisposable
     {
         foreach (var id in ids)
         {
-            string[] asked = ["ask", Question, "--agents", "stub,acp-stub", "--id", id];
-            Assert.Equal(0, Verb(repository is null ? asked : [.. asked, "--repository", repository]));
+            Files.WriteRequest(Question, repository, ["stub", "acp-stub"], At, id);
         }
 
         var lines = await LookAsync(driver);
         foreach (var id in ids)
         {
             Assert.Contains(lines, line => line.Contains($"meeting `{id}` frozen", StringComparison.Ordinal));
-            Assert.Equal(0, Verb("send", id));
+            Send(id, 1);
         }
 
         return ids;
@@ -187,7 +187,7 @@ public sealed class MeetingTests : IDisposable
     [Fact]
     public async Task Under_the_watch_a_meeting_s_first_packet_is_frozen_beside_the_look_and_once()
     {
-        Assert.Equal(0, Verb("ask", Question, "--agents", "stub,acp-stub", "--id", "m1", "--repository", "engine"));
+        Files.WriteRequest(Question, "engine", ["stub", "acp-stub"], At, "m1");
         var reading = new TaskCompletionSource<(string? Root, string? Revision)>(TaskCreationOptions.RunContinuationsAsynchronously);
         var read = 0;
         var driver = new Daoris.Driver.Driver(
@@ -304,11 +304,10 @@ public sealed class MeetingTests : IDisposable
         await LookAsync(driver);
         await LookAsync(driver);
         Assert.Equal(["r1-a1", "r1-a2"], script.Started);
-        Assert.Equal(1, Verb("send", id));
         await LookAsync(driver);
         Assert.Equal(2, script.Started.Count);
 
-        Assert.Equal(0, Verb("send", id, "--round", "2"));
+        Send(id, 2);
         script.Answers["r2-a1"] = Say("Then both: inclusive, and read once.");
         script.Answers["r2-a2"] = Say("Agreed.");
         var lines = await LookAsync(driver);
@@ -322,7 +321,6 @@ public sealed class MeetingTests : IDisposable
         Assert.All(transcript.Where(message => message.Round == 2), message => Assert.Equal(second.Digest, message.Packet));
         Assert.Equal((BrainstormStates.Ended, null), (Files.ReadState(id)!.State, Files.ReadState(id)!.Code));
         Assert.Contains(lines, line => line.Contains($"meeting `{id}` ended after round 2", StringComparison.Ordinal));
-        Assert.Equal(1, Verb("send", id, "--round", "3"));
         Assert.Contains("[round 2] a2 `acp-stub`", Shown(id), StringComparison.Ordinal);
     }
 
@@ -446,7 +444,7 @@ public sealed class MeetingTests : IDisposable
         var id = await SentAsync(driver);
         script.Behaviours["r1-a1"] = async (turn, ct) =>
         {
-            Assert.Equal(0, Verb("stop", id));
+            Files.WriteStop(id, At);
             return await Hang(turn, ct);
         };
 
@@ -460,8 +458,6 @@ public sealed class MeetingTests : IDisposable
         Assert.Null(Files.PacketBytes(id, 2));
         Assert.False(Directory.Exists(Files.Turns.Rooms(id)));
         Assert.Contains(lines, line => line.Contains($"meeting `{id}` stopped by the person in round 1", StringComparison.Ordinal));
-        Assert.Equal(1, Verb("send", id));
-        Assert.Equal(1, Verb("send", id, "--round", "2"));
         await LookAsync(driver);
         Assert.Equal(["r1-a1"], script.Started);
     }
@@ -472,7 +468,7 @@ public sealed class MeetingTests : IDisposable
     {
         var (driver, script) = Start(Second);
         var id = await SentAsync(driver);
-        Assert.Equal(0, Verb("stop", id));
+        Files.WriteStop(id, At);
 
         await LookAsync(driver);
 
@@ -543,7 +539,7 @@ public sealed class MeetingTests : IDisposable
         var id = (await SentAllAsync(driver, "reports", "asked"))[0];
         foreach (var turn in new[] { "r1-a1", "r1-a2", "r2-a1", "r2-a2" }) script.Answers[turn] = Say($"Turn {turn}: make the window inclusive.");
         await LookAsync(driver);
-        Assert.Equal(0, Verb("send", id, "--round", "2"));
+        Send(id, 2);
         await LookAsync(driver);
 
         Assert.Equal(4, script.Rooms.Count);

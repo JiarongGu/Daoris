@@ -510,7 +510,8 @@ public sealed class SharedHostTests(SharedHost host) : IClassFixture<SharedHost>
         foreach (var (method, path) in new[]
                  {
                      ("GET", "/api/brainstorms"), ("POST", "/api/brainstorms"), ("GET", "/api/brainstorms/abcd1234"),
-                     ("POST", "/api/brainstorms/abcd1234/send"), ("DELETE", "/api/brainstorms/abcd1234"),
+                     ("POST", "/api/brainstorms/abcd1234/send"), ("POST", "/api/brainstorms/abcd1234/stop"),
+                     ("DELETE", "/api/brainstorms/abcd1234"), ("POST", "/api/brainstorms/abcd1234/send?kind=meeting&round=2"),
                  })
         {
             var refused = await host.SendAsync(method, path, DaorisHost.Loopback, key, method == "POST" ? """{ "question": "Why?" }""" : null);

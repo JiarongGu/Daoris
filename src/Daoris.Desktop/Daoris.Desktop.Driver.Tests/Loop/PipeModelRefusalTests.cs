@@ -53,7 +53,7 @@ public sealed class PipeModelRefusalTests : IDisposable
         await HarnessCapture.CaptureStructuredAsync(
             new StringReader(string.Join('\n', stdout)), new StringReader(""), Transcript, "s1", output: null,
             events: null, new ClaudeStreamJson(), prompt: "fix the gate", CancellationToken.None, own: own);
-        return Daoris.Driver.Driver.Ending(protocol: false, structured: true, exit, turnFailed: null, own, Transcript);
+        return TransportRun.Ending(protocol: false, structured: true, exit, turnFailed: null, own, Transcript);
     }
 
     private sealed class Adapter : ISessionAdapter

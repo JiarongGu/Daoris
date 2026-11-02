@@ -590,12 +590,17 @@ public sealed record OpinionHandRequest(string? To = null);
 public sealed record HelperActionResponse(string Message, SessionResponse? Session = null, SaidWordResponse? Said = null, string? Settled = null);
 // BRAINSTORM1a3 (D176 points 1, 2 and 8): a person's question for a brainstorm, every part nullable so one left out is refused by
 // the desk naming which. `Repository` is the one whose knowledge the packet is frozen from, none for the question alone.
-public sealed record BrainstormAskRequest(string? Question, string? Repository = null, IReadOnlyList<string?>? Agents = null);
+// ONEWAY1t: `Kind` is `brainstorm` (none) or `meeting`; `Id` the caller's own, which makes the ask idempotent; `Sources` the repository's
+// paths the packet takes in.
+public sealed record BrainstormAskRequest(
+    string? Question, string? Repository = null, IReadOnlyList<string?>? Agents = null, string? Kind = null, string? Id = null,
+    IReadOnlyList<string?>? Sources = null);
 // One brainstorm as its records stand: `State` is `asked` before the driver's look froze its packet, then the driver's own
 // (`frozen`, `running`, `ended`); `Packet` the frozen packet's digest, `Sent` the digest the person sent, each null for none.
+// A meeting's carries its `Kind` and the `Round` its state is of; a brainstorm's leaves both out.
 public sealed record BrainstormResponse(
     string Id, string Question, string? Repository, IReadOnlyList<string> Agents, DateTimeOffset At, string State, string? Code,
-    string? Packet, string? Sent);
+    string? Packet, string? Sent, string? Kind = null, int? Round = null);
 // One brainstorm shown: the packet as frozen, whole and as written (null before the look froze one), and the document's Markdown.
 public sealed record BrainstormShownResponse(BrainstormResponse Brainstorm, JsonElement? Frozen, string? Document);
 // A press's answer: the brainstorm as it now stands, and the desk's sentence.
@@ -880,26 +885,32 @@ public sealed record ErrorResponse(string Error, string? Code = null);
 /// </summary>
 public sealed record FeedRefusalResponse(string Error, bool Information);
 
-// PERSONDOOR1b (D156 point 4, design §4.2): a terminal's ask for the person's confirmation. `Path` is the refused request's
-// path and query exactly as sent, `Body` its body exactly as sent (absent for none), and `SecretSha256` the SHA-256 of a
-// secret the client made (32 random bytes in base64url, a person key's form), in hex. The secret travels only once the
-// person has confirmed, as `Daoris-Person-Grant` on the same request sent again.
-public sealed record ConfirmationAskRequest(string? Method, string? Path, string? Body, string? SecretSha256);
+// PERSONDOOR1b (D156 point 4, design §4.2; ONEWAY1n-i): an ask for the person's confirmation. `Path` is the refused request's
+// path and query exactly as sent, `Body` its body exactly as sent (absent for none), and `Session` the session asking, as its
+// record names it, or absent for a terminal's ask (PERSONDOOR1j). The host makes that request itself at the Confirm.
+public sealed record ConfirmationAskRequest(string? Method, string? Path, string? Body, string? Session);
+// An asker's withdrawal of its own ask (ONEWAY1n-i): the token its ask was answered with.
+public sealed record ConfirmationWithdrawRequest(string? Token);
 // One value the request carries: an address's (a route's parameter, then the query's, by name) or the body's, by its JSON
 // pointer (`/setUp/machine`, `/units/0/id`; `~0` and `~1` escape a name's `~` and `/`). `Type` is its JSON type (`string`,
 // `number`, `boolean`, `null`, `object`, `array`), so a string "3" and a number 3 read apart; `Value` is a string as it is
 // and anything else as its JSON. Only names the door binds are ever shown: an ask carrying another is refused.
 public sealed record ConfirmationFieldResponse(string Name, string Type, string Value);
-// A confirmation as the window shows it and the terminal polls it: `State` is `waiting`, `confirmed`, `refused`,
-// `expired` or `used`; `Route` the door's pattern and `Act` its own name in the host's table (the form's, where the body
-// makes one); `Values` the address's values and `Fields` every value of the body, so nothing the grant would carry is out
-// of sight. Never the secret's hash. `Expires` is two minutes after `Asked`: the wait and the grant's use, both.
+// A confirmation as the window shows it and its asker polls it (ONEWAY1n-i): `State` is `waiting`, `making`, `made`, `refused`,
+// `withdrawn`, `stale` or `failed`; `Route` the door's pattern and `Act` its own name in the host's table (the form's, where the
+// body makes one); `Values` the address's values and `Fields` every value of the body, so nothing the request made would carry is
+// out of sight; `Session` the session the ask named, absent for a terminal's. No clock ends one. Once it ends, `Ended`; once made,
+// the door's `Status` and its `Answer` as text (absent past 64 KB), and where the door refused or failed it, its `Reason`, the
+// door's own sentence. Never the asker's token.
 public sealed record ConfirmationResponse(
     string Id, string State, string Method, string Path, string Route, string Act,
     IReadOnlyList<ConfirmationFieldResponse> Values, IReadOnlyList<ConfirmationFieldResponse> Fields, string? Body,
-    DateTimeOffset Asked, DateTimeOffset Expires);
-// An ask's, a confirm's or a refusal's answer: the confirmation as it now stands, and a sentence the caller says.
+    DateTimeOffset Asked, string? Session, DateTimeOffset? Ended, int? Status, string? Answer, string? Reason);
+// A confirm's, a refusal's or a withdrawal's answer: the confirmation as it now stands, and a sentence the caller says.
 public sealed record ConfirmationActionResponse(ConfirmationResponse Confirmation, string Message);
+// An ask's answer (ONEWAY1n-i): the confirmation, the sentence its asker says while it waits, and the token that withdraws it,
+// answered here alone.
+public sealed record ConfirmationAskedResponse(ConfirmationResponse Confirmation, string Message, string Token);
 // NOTIFY2j: what waits for the person, as a held wait answers it. `Since` is the cursor to ask from next (`<epoch>.<n>`), and
 // `Waiting` every confirmation waiting now, whole, oldest first, as `GET /api/confirmations` lists them.
 public sealed record ConfirmationsWaitingResponse(string Since, IReadOnlyList<ConfirmationResponse> Waiting);
@@ -999,10 +1010,12 @@ public sealed record ChangesJournalResponse(string Store, long Floor, long Newes
 [JsonSerializable(typeof(HistoryClearRequest))]
 [JsonSerializable(typeof(HistoryClearResponse))]
 [JsonSerializable(typeof(ConfirmationAskRequest))]
+[JsonSerializable(typeof(ConfirmationWithdrawRequest))]
 [JsonSerializable(typeof(ConfirmationResponse))]
 [JsonSerializable(typeof(IEnumerable<ConfirmationResponse>))]
 [JsonSerializable(typeof(ConfirmationsWaitingResponse))]
 [JsonSerializable(typeof(ConfirmationActionResponse))]
+[JsonSerializable(typeof(ConfirmationAskedResponse))]
 
 [JsonSerializable(typeof(FeedEntriesRequest))]
 [JsonSerializable(typeof(FeedCodeMapRequest))]

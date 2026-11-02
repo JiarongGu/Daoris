@@ -112,7 +112,7 @@ public sealed class DriverModulePersonTests : DriverModuleBridge
         Assert.Empty(none.GetProperty("waiting").EnumerateArray());
 
         using var waiting = System.Text.Json.JsonDocument.Parse(
-            """[{"id":"a1b2c3d4e5f60718","state":"waiting","method":"POST","route":"/api/asks","act":"an ask","values":[],"fields":[{"name":"/sentence","type":"string","value":"Rename it."}],"asked":"2026-10-22T12:00:00+00:00","expires":"2026-10-22T12:02:00+00:00"}]""");
+            """[{"id":"a1b2c3d4e5f60718","state":"waiting","method":"POST","route":"/api/asks","act":"an ask","values":[],"fields":[{"name":"/sentence","type":"string","value":"Rename it."}],"asked":"2026-10-22T12:00:00+00:00"}]""");
         Assert.True(loop.ServiceConfirmations.Tell([.. waiting.RootElement.EnumerateArray()]));
         Assert.False(loop.ServiceConfirmations.Tell([.. waiting.RootElement.EnumerateArray()]));
 
@@ -121,6 +121,81 @@ public sealed class DriverModulePersonTests : DriverModuleBridge
         var shown = Assert.Single(read.GetProperty("waiting").EnumerateArray());
         Assert.Equal("an ask", shown.GetProperty("act").GetString());
         Assert.Equal("Rename it.", shown.GetProperty("fields")[0].GetProperty("value").GetString());
+    }
+
+    /// <summary>
+    /// ONEWAY1n-i (the oneway design §4 M4): the window answers a confirmation at the service's door through <c>PERSON_CONFIRM</c>,
+    /// by its source, as it answers a terminal's: made is answered; a request its door refused at the Confirm is said by the host's
+    /// sentence and code; one no longer waiting is <c>gone</c>; and a service not come up is said, nothing taken. A press on the pipe
+    /// with the same id is left alone.
+    /// </summary>
+    [Fact]
+    public async Task The_window_answers_a_service_confirmation_through_PERSON_CONFIRM_by_its_source()
+    {
+        var heard = new List<string>();
+        var standIn = new StandIn(request =>
+        {
+            lock (heard) heard.Add($"{request.Method} {request.RequestUri!.AbsolutePath}");
+            return request.RequestUri!.AbsolutePath switch
+            {
+                "/api/confirmations/h1/confirm" => (System.Net.HttpStatusCode.OK,
+                    """{"confirmation":{"id":"h1","state":"made"},"message":"Confirmed and done, as it was asked; its asker reads how it went."}"""),
+                "/api/confirmations/h2/confirm" => (System.Net.HttpStatusCode.Conflict, """{"error":"Not done: This quest is closed.","code":"not-made"}"""),
+                "/api/confirmations/h3/refuse" => (System.Net.HttpStatusCode.OK, """{"confirmation":{"id":"h3","state":"refused"},"message":"Refused."}"""),
+                "/api/confirmations/h4/confirm" => (System.Net.HttpStatusCode.Conflict, """{"error":"This act was refused already, and nothing was done."}"""),
+                _ => (System.Net.HttpStatusCode.NotFound, """{"error":"none"}"""),
+            };
+        });
+        var services = new ServiceCollection();
+        services.AddSingleton<Shenora.Core.Events.IEventBus>(Bus);
+        services.UseMessageDispatcher((_, _) => { });
+        using var composed = services.BuildServiceProvider();
+        var loop = Loop();
+        using var pipe = new InstancePipe(composed.GetRequiredService<IMessageDispatcher>(), Bus, Home);
+        loop.Pipe = pipe;
+        var module = new DriverModule(Bus, loop);
+        var press = pipe.Confirmations.Ask(DriverModule.Name, "SESSION_DELETE", [new PipeConfirmationField("/id", "string", "s5e6f7a8")], new PipeAsker(null, null))!.Value;
+
+        // Not come up: nothing reaches the service, and the card still waits.
+        var away = await AnswerAsync(module, "PERSON_CONFIRM", new { id = "h1", confirm = true, source = "service" });
+        Assert.False(away.GetProperty("answered").GetBoolean());
+        Assert.Equal("unreachable", away.GetProperty("why").GetString());
+
+        await loop.ComeUpAsync(new Daoris.Driver.ServiceClient("http://stand-in", null, new HttpClient(standIn)));
+        var made = await AnswerAsync(module, "PERSON_CONFIRM", new { id = "h1", confirm = true, source = "service" });
+        Assert.True(made.GetProperty("answered").GetBoolean());
+        Assert.True(made.GetProperty("confirmed").GetBoolean());
+
+        var stale = await AnswerAsync(module, "PERSON_CONFIRM", new { id = "h2", confirm = true, source = "service" });
+        Assert.False(stale.GetProperty("answered").GetBoolean());
+        Assert.Equal("not-made", stale.GetProperty("why").GetString());
+        Assert.Equal("Not done: This quest is closed.", stale.GetProperty("message").GetString());
+
+        var refused = await AnswerAsync(module, "PERSON_CONFIRM", new { id = "h3", confirm = false, source = "service" });
+        Assert.True(refused.GetProperty("answered").GetBoolean());
+        Assert.False(refused.GetProperty("confirmed").GetBoolean());
+
+        var gone = await AnswerAsync(module, "PERSON_CONFIRM", new { id = "h4", confirm = true, source = "service" });
+        Assert.Equal("gone", gone.GetProperty("why").GetString());
+        Assert.Equal("This act was refused already, and nothing was done.", gone.GetProperty("message").GetString());
+
+        // The pipe's press is answered by the pipe alone, its id never posted to the service.
+        var piped = await AnswerAsync(module, "PERSON_CONFIRM", new { id = press.Shown.Id, confirm = false });
+        Assert.True(piped.GetProperty("answered").GetBoolean());
+        Assert.Equal(PipeConfirmationEnd.Refused, (await press.Ended).End);
+        Assert.Equal(
+            ["POST /api/confirmations/h1/confirm", "POST /api/confirmations/h2/confirm", "POST /api/confirmations/h3/refuse", "POST /api/confirmations/h4/confirm"],
+            heard.Where(each => each.StartsWith("POST /api/confirmations", StringComparison.Ordinal)));
+    }
+
+    /// <summary>A service standing in: each request answered as the test says.</summary>
+    private sealed class StandIn(Func<HttpRequestMessage, (System.Net.HttpStatusCode Status, string Body)> answer) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            var (status, said) = answer(request);
+            return Task.FromResult(new HttpResponseMessage(status) { Content = new StringContent(said, System.Text.Encoding.UTF8, "application/json") });
+        }
     }
 
     /// <summary>
