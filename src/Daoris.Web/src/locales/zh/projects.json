@@ -69,6 +69,8 @@
   "projects.setUp.landsMerge": "合并到主线，已落地的历史即是审阅",
   "projects.setUp.landsBranch": "作为分支落地，供你审阅",
   "projects.setUp.landsBranchWith": "作为分支落地，供你审阅，由 `{{plugin}}` 推送并发起拉取请求",
+  "projects.setUp.admission": "准入",
+  "projects.setUp.alone": "这里未驱动它，所以它的配置委托单独准入并自行开始，它的其他工作仍被搁置",
   "projects.setUp.tools": "工具",
   "projects.setUp.versions": "node {{node}} · daoris {{daoris}}",
   "projects.setUp.notFound": "未找到",

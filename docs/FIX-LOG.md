@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-02 - The page's set-up card did not draw that the repository is admitted alone (REVIEW2 S6, page half)
+
+- **Symptom:** `SETUP_PLAN` now carries `alone` and the Ask Daoris card says it, but the set-up card on the page drew nothing of it.
+- **Root cause:** `SetupShown` had no `alone`, and `SetupPlanFacts` drew no row for it.
+- **Fix:** `SetupShown.alone`, and an *Admission* fact in `SetupPlanFacts` (both catalogues) when it is true.
+- **Verify:** `SetUpForAgents.test.tsx` (red first).
+
 ## 2026-11-02 - Clear on a git access class loosened it without asking (REVIEW2 P3)
 
 - **Symptom:** *Clear* on a class set at this level sent `{access: {class: null}}` at once, though the level above could be looser (the design's §8 lists that as a widening to confirm).
