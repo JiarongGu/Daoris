@@ -5094,7 +5094,7 @@ check('it is retired again, so no later phase meets it', unadoptedRetired.status
 
 section('17c. A repository nobody adopted is set up by its own session, and registered from its line (LAYOUT7, D117 §6, D124 §2–§3)');
 
-// The set-up press (LAYOUT7): `daoris-driver setup <repository>` reads the repository's LINE as git objects, says
+// The set-up press (LAYOUT7): `daoris-driver place <repository>… --preset keep --adoption` reads the repository's LINE as git objects, says
 // every refusal with its door, and publishes one ask to it as the person's, adding the doctrine tool's exact verbs to
 // its rules. Its own session then takes up the doctrine with the tool found by its bare name, in a tree of its own,
 // and the person lands the work. The ACP stub above is that session: a set-up's title takes its set-up branch. The
@@ -5152,7 +5152,7 @@ writeFileSync(unreadyConfig, `${JSON.stringify({
 const unready = onSetupMachine('setup atlas --plan', { config: unreadyConfig });
 const unreadyRead = readSetup(unready.out);
 check(
-  '`daoris-driver setup --plan` refuses a repository with no tree of its own, saying its door, and not for being undriven',
+  '`daoris-driver place … --adoption --plan` refuses a repository with no tree of its own, saying its door, and not for being undriven',
   atlasAdded.status === 200 && unready.code === 1 && unreadyRead.refusals.length === 1
     && /`daoris driver trees atlas on`/.test(unreadyRead.refusals[0]) && !/is not driven here/.test(unready.out)
     && unreadyRead.nothingPublished && unreadyRead.title === null,
@@ -5164,7 +5164,7 @@ const asksBeforePlan = await askCount();
 const planned = onSetupMachine('setup atlas --plan');
 const plan = readSetup(planned.out);
 check(
-  '`setup --plan` prints what it read from the line: the commit, nothing for agents yet, the agent, the landing, and the tool a child finds',
+  '`place … --adoption --plan` prints what it read from the line: the commit, nothing for agents yet, the agent, the landing, and the tool a child finds',
   planned.code === 0 && plan.repository === 'atlas' && plan.workspace === 'default'
     && plan.line === 'main' && plan.commit === atlasBorn.slice(0, 12)
     && plan.layout === 'none · adopted no · declares no · the whole set-up'
@@ -5407,7 +5407,7 @@ check(
 
 section('17d. A workspace is set up one repository at a time, pausing after its pilot (WSSETUP6, D124 §4)');
 
-// The workspace plan (WSSETUP6): `daoris-driver setup --workspace <name>` writes a plan of single set-ups and adds the
+// The workspace plan (WSSETUP6): `daoris-driver place --workspace <name> --adoption` writes a plan of single set-ups and adds the
 // doctrine tool's verbs once, at the workspace's scope; each look of the loop publishes the next to go while fewer than its
 // `atOnce` are open (never the last slot: `cap − 1`), and once its pilot has closed the plan pauses itself until the person
 // resumes it. Nothing in the plan is a count: each state is read from the registry and the quests.

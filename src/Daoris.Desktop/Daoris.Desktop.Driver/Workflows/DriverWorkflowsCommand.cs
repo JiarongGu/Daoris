@@ -34,7 +34,7 @@ public static class DriverWorkflowsCommand
     public const string Usage = "`driver workflow` takes list; defaults [<default> [--to <file>]]; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; "
         + "new <id> --from <default>|<id>[@<version>] [--with-opinion] [--with-look] [--name \"…\"]; "
         + "apply <id> <file> [--base <version>]; export <id> [--to <file>]; import <file>; "
-        + "use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed]; "
+        + "use <id>|--clear --repository <name>|--workspace <name> [--kind <kind>|--landed] (current only with --landed: no verification); "
         + "kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop. "
         + "new, apply, import, use and kind print their change, and with --plan save nothing — e.g. "
         + "`daoris driver workflow new docs --from merge-after-accept --plan`.";
@@ -244,7 +244,7 @@ public static class DriverWorkflowsCommand
                     + (reads is null ? "; no version of it reads here." : $"; v{reads.Version} is the newest that reads."));
             }
 
-            Say("Presets built in, for `daoris driver workflow new <id> --from <preset>` (`--with-opinion`, `--with-look`):");
+            Say("Defaults built in, for `daoris driver workflow new <id> --from <default>` (`--with-opinion`, `--with-look`):");
             foreach (var preset in WorkflowPresets.GraphTable)
             {
                 Say($"  `{preset.Id}` — {preset.Name}, a graph. {WorkflowPresets.GraphLine(preset.Graph())}");
@@ -468,7 +468,7 @@ public static class DriverWorkflowsCommand
         /// </summary>
         private async Task<int> UseAsync()
         {
-            const string usage = "`driver workflow use` takes <id>|current|--clear, then --repository <name>|--workspace <name>, and --kind <kind> "
+            const string usage = "`driver workflow use` takes <id>|--clear (`current` only with --landed), then --repository <name>|--workspace <name>, and --kind <kind> "
                 + "for a kind of task or --landed for the work that lands — e.g. `daoris driver workflow use docs-to-pr --workspace work --kind docs`.";
             string[] valued = ["--repository", "--workspace", "--kind"];
             var operands = new List<string>();
