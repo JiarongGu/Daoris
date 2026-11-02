@@ -568,7 +568,7 @@ public static class WorkflowNamed
     }
 
     /// <summary>A field's value read, or why not: a sentence after the step's prefix. Absent and JSON null are both absence.</summary>
-    private static (object? Value, string? Problem) ReadField(WorkflowKindField field, JsonElement? raw)
+    internal static (object? Value, string? Problem) ReadField(WorkflowKindField field, JsonElement? raw)
     {
         (object?, string?) wrong = (null, $"its `{field.Name}` is {What(field)}.");
         if (raw is not { } value || value.ValueKind == JsonValueKind.Null) return field.Required ? wrong : (field.Default, null);

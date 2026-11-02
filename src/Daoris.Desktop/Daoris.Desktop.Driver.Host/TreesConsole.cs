@@ -459,6 +459,14 @@ internal static class TreesConsole
                     return planned.Code;
                 }
 
+                // WORKFLOWCLEAN1 1c (the cleanup design §2.1): a terminal with no loop keeps the word under the verb's lease and never performs a
+                // run's `land`: the running Daoris lands it at its next pass.
+                if (TreesWords.AcceptedForPass(home, gate) is { } accepted)
+                {
+                    accepted.Print(Console.Out, Console.Error);
+                    return accepted.Code;
+                }
+
                 // FABRIC-CLOSE1h3 (D173's note): the result the press is made on, judged again under the tree's hold and before the push,
                 // as the route's press is.
                 var pressed = await quests.PressedAsync(session, questId).ConfigureAwait(false);

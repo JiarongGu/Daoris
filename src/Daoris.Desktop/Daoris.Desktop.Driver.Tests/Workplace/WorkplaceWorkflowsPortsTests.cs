@@ -400,7 +400,9 @@ public sealed class WorkplaceWorkflowsPortsTests : IDisposable
             return (rule.Form, "gph-0");
         }
 
-        public ReviewWord KeepReviewWord(string home, Func<bool>? holdsLease, IWorkplaceProcess process, DateTimeOffset now) => new(false, false, null, null, null);
+        public bool FollowsSaved(DriverConfig config, string repository, string? workspace) => false;
+
+        public ReviewWord KeepReviewWord(string home, Func<bool>? holdsLease, IWorkplaceProcess process, DateTimeOffset now, string? words = null) => new(false, false, null, null, null);
 
         public void KeepRepair(string home, Func<bool>? holdsLease, string unit, string review, string tip, string turn, int carries, DateTimeOffset at)
         {

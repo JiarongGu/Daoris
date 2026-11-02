@@ -38,7 +38,8 @@ internal interface IWorkplaceWorkflows
     /// The person's Accept kept as the review's word of <paramref name="process"/>'s run (WORKFLOWCLEAN1 1c), where its graph holds a review
     /// (see <c>RunNodeWords.Word</c>); a process whose graph holds none, or that is no run's, answers <see cref="ReviewWord.HasReview"/> false.
     /// </summary>
-    ReviewWord KeepReviewWord(string home, Func<bool>? holdsLease, IWorkplaceProcess process, DateTimeOffset now);
+    /// <param name="words">What the word carries: for a head's combined Accept, the operation bringing sessions together it delivers.</param>
+    ReviewWord KeepReviewWord(string home, Func<bool>? holdsLease, IWorkplaceProcess process, DateTimeOffset now, string? words = null);
 
     /// <summary>Keeps the repair a carried review Accept waits on, on the run's record (see <c>RunRepairs.Keep</c>).</summary>
     void KeepRepair(string home, Func<bool>? holdsLease, string unit, string review, string tip, string turn, int carries, DateTimeOffset at);
@@ -48,6 +49,12 @@ internal interface IWorkplaceWorkflows
 
     /// <summary>How many times the session was carried on for the review's Accept; 0 where no repair is kept (see <c>RunRepairs.Of</c>).</summary>
     int RepairCarries(string home, Func<bool>? holdsLease, string unit, string review);
+
+    /// <summary>
+    /// Whether work in <paramref name="repository"/> follows a saved workflow (a version of the person's own or the home's default), not
+    /// Current (WORKFLOWCLEAN1 1c, the cleanup design §2.4): its landing is that workflow's, which the access setup's pauses do not compose into.
+    /// </summary>
+    bool FollowsSaved(DriverConfig config, string repository, string? workspace);
 }
 
 /// <summary>What keeping the person's Accept as a run's review word came to (WORKFLOWCLEAN1 1c).</summary>

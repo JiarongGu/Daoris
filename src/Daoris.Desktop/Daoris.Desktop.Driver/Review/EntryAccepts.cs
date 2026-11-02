@@ -78,19 +78,30 @@ public sealed class EntryAccepts(
 
         // WORKFLOWCLEAN1 1c (the cleanup design §2.2, §13 point 3): a part whose run's `land` the runtime performs is accepted by its review's
         // word and landed by that node at its pass; only the others land in place here, as the transitional path (§4.7).
-        var accepted = new List<EntryPartLanding>();
-        foreach (var part in pressed.Where(each => each.Gate?.Process is { LandsByRuntime: true }).ToList())
+        var performing = pressed.Where(each => each.Gate?.Process is { LandsByRuntime: true }).ToList();
+        foreach (var part in performing) pressed.Remove(part);
+        var accepted = await AcceptPerformedAsync(performing, pressed, cancellationToken).ConfigureAwait(false);
+        if (pressed.Count == 0)
         {
-            pressed.Remove(part);
-            var word = WorkplaceWorkflows.Current.KeepReviewWord(home, null, part.Gate!.Process!, DateTimeOffset.UtcNow);
-            accepted.Add(new EntryPartLanding(part.Session, EntryPartOutcome.Accepted,
-                new TreeLanding(false, word.Said ?? "Accepted; Daoris lands it at its next pass.")));
+            return new EntryLanding(
+                accepted.Count > 0 && accepted.All(part => part.Outcome is EntryPartOutcome.Landed or EntryPartOutcome.BroughtInto),
+                accepted.Any(part => part.Outcome == EntryPartOutcome.Accepted) ? "Accepted; Daoris lands each part at its next pass."
+                    : accepted.Any(part => part.Outcome == EntryPartOutcome.Refused) ? "Accepted; its landing was refused: see each part."
+                    : "Landed.", null, accepted);
         }
 
-        if (pressed.Count == 0) return new EntryLanding(false, "Accepted; Daoris lands each part at its next pass.", null, accepted);
         var together = await TogetherAsync(pressed, presses, cancellationToken).ConfigureAwait(false);
         var landed = await trees.LandEntryAsync(pressed, subject, leaveOut, cancellationToken, inUse, together, beside).ConfigureAwait(false);
-        if (accepted.Count > 0) landed = landed with { Parts = [.. landed.Parts, .. accepted] };
+        if (accepted.Count > 0)
+        {
+            // A mixed entry (the cleanup design §13 point 7): some parts follow a saved workflow whose `land` the runtime performs, the rest land here.
+            landed = landed with
+            {
+                Message = $"{landed.Message} {accepted.Count} part{(accepted.Count == 1 ? "" : "s")} of this entry follow{(accepted.Count == 1 ? "s" : "")} "
+                    + "a saved workflow whose `land` Daoris performs, so they are accepted by their review and land at its pass, not here.",
+                Parts = [.. landed.Parts, .. accepted],
+            };
+        }
         // ACCEPTALL1c (D167's amendment point 3): a part the person left out is recorded with the landing, on its conversation, so its
         // review says so and leads with Discard; only where the entry's work landed somewhere.
         var landedAny = landed.Parts.Any(part => part.Outcome == EntryPartOutcome.Landed);
@@ -110,7 +121,7 @@ public sealed class EntryAccepts(
 
         foreach (var part in landed.Parts)
         {
-            if (part.Landing is not { } its || part.Outcome == EntryPartOutcome.Accepted) continue;
+            if (part.Landing is not { } its || pressed.All(each => each.Session != part.Session)) continue;
             if (its.Landed) events.Keep(part.Session, LandingRules.Note(its), line => say(part.Session, line));
             var gate = pressed.First(each => each.Session == part.Session);
             if (log is not null && gate.Gate!.Held(part.Session, trees.Owner(gate.Tree), its, door) is { } held)
@@ -120,6 +131,58 @@ public sealed class EntryAccepts(
         }
 
         return landed;
+    }
+
+    /// <summary>
+    /// Waits for what the performer's landing of a part came to: asks the loop for a whole pass, then reads the outcome within the bound
+    /// (<see cref="LandOutcomes"/>). Null where the surface has no loop (the terminal alone), or the landing has not ended by the bound.
+    /// </summary>
+    public Func<string, string, string, CancellationToken, Task<TreeLanding?>>? Performs { get; init; }
+
+    /// <summary>
+    /// The parts whose run's <c>land</c> the runtime performs, accepted (WORKFLOWCLEAN1 1c; the cleanup design §2.2, §13 point 3): each head's
+    /// review word carries the operation bringing sessions together it delivers, the performer delivers the head's unit, and a member brought into
+    /// it takes no word of its own. A part the landing came to is said as the landing says it; else it is accepted, to land at the pass.
+    /// </summary>
+    private async Task<List<EntryPartLanding>> AcceptPerformedAsync(
+        IReadOnlyList<EntryLandingPart> performing, IReadOnlyList<EntryLandingPart> others, CancellationToken ct)
+    {
+        var accepted = new List<EntryPartLanding>();
+        if (performing.Count == 0) return accepted;
+        TogetherOperation? operation = null;
+        try
+        {
+            operation = new TogetherOperations(home).All().FirstOrDefault(each => each.IsOpen
+                && performing.Concat(others).Any(part => TogetherOperation.SameTree(each.Head.Tree, part.Tree)));
+        }
+        catch (IOException)
+        {
+            // A store that does not read binds nothing here: the landing's own guard refuses then.
+        }
+
+        foreach (var part in performing)
+        {
+            if (operation is not null && operation.Members.Any(member => TogetherOperation.SameTree(member.Tree, part.Tree)))
+            {
+                accepted.Add(new EntryPartLanding(part.Session, EntryPartOutcome.BroughtInto,
+                    new TreeLanding(false, $"Brought into operation {operation.Id}: its head's landing carries it.")));
+                continue;
+            }
+
+            var heads = operation is not null && TogetherOperation.SameTree(operation.Head.Tree, part.Tree);
+            var word = WorkplaceWorkflows.Current.KeepReviewWord(
+                home, null, part.Gate!.Process!, DateTimeOffset.UtcNow,
+                heads ? $"brought together with {string.Join(", ", operation!.Members.Select(each => each.Session))}, operation {operation.Id}" : null);
+            var tip = ((LandingGate)part.Gate).Tip ?? ((LandingGate)part.Gate).GraphPart()?.Commit;
+            var outcome = word.Kept && word.Unit is { } unit && tip is not null && Performs is { } waits
+                ? await waits(part.Session, unit, tip, ct).ConfigureAwait(false) : null;
+            accepted.Add(outcome is null
+                ? new EntryPartLanding(part.Session, EntryPartOutcome.Accepted,
+                    new TreeLanding(false, word.Said ?? "Accepted; Daoris lands it at its next pass."))
+                : new EntryPartLanding(part.Session, outcome.Landed ? EntryPartOutcome.Landed : EntryPartOutcome.Refused, outcome));
+        }
+
+        return accepted;
     }
 
     /// <summary>
