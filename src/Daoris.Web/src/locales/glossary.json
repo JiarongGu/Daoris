@@ -378,7 +378,7 @@
         "work.act.pauseQuest", "contextMenu.act.*",
         "agents.account.remove", "agents.account.settings",
         "agents.account.rename", "agents.head.pin", "agents.roles.diagram.on",
-        "map.when.open", "map.when.week", "map.zoomIn", "map.zoomOut", "menu.about", "menu.edit.*", "menu.go.*",
+        "map.when.open", "map.when.week", "menu.about", "menu.edit.*", "menu.go.*",
         "menu.help.*", "menu.language", "menu.refresh", "menu.refreshing", "menu.settings", "menu.setup", "menu.terminal.*",
         "menu.view.*", "menu.workspace.*", "plugin.list.ask", "plugin.list.make", "plugin.list.tryFolder", "projects.list.import",
         "work.list.archiveEnded", "work.list.byAsk", "work.list.byRepository", "work.list.byState", "work.list.showArchived", "work.menu.*",

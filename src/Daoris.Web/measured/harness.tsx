@@ -27,6 +27,7 @@ import * as proposal from '../src/workflow/edit/WorkflowEditor.proposal.stories'
 import * as judgement from '../src/workflow/edit/WorkflowEditor.judgement.stories';
 import * as canvas from '../src/design/canvas/Canvas.stories';
 import * as large from '../src/design/canvas/LargeGraph.stories';
+import * as mapWorld from '../src/map/MapWorld.stories';
 import { applyZoom } from '../src/design/zoom';
 
 // The measured-box checks' page (FLOWCHART1a1; the flowchart design §7, trap 3; UIFIT1, the UI/UX design §5's first trap):
@@ -82,6 +83,8 @@ const books: Record<string, Record<string, ComponentType>> = {
   canvas: composeStories(canvas) as unknown as Record<string, ComponentType>,
   // The large positioned worlds (CANVAS1d): 100, 1,000, 5,000 and 10,000 nodes in the viewport, tiers, culling, the minimap, find.
   large: composeStories(large) as unknown as Record<string, ComponentType>,
+  // The reference map on the canvas (CANVAS1e): the ring, the layers, several workspaces and a chosen line at the three widths.
+  map: composeStories(mapWorld) as unknown as Record<string, ComponentType>,
 };
 
 const query = new URLSearchParams(window.location.search);
