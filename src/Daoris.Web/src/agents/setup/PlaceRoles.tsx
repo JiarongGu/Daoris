@@ -2,13 +2,14 @@ import { type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { refusedNoRoute } from '../../bridge/shell';
 import { useRoleStructureChain } from '../../bridge/driver';
-import type { RoleStructure, StructurePlaceAsk, StructureWork } from '../../data/wiring';
+import type { RolePolicyRow, RoleStructure, StructurePlaceAsk, StructureWork } from '../../data/wiring';
 import { Button, Icon, type Notify, SettingList, SettingRow } from '../../design/ui';
 import type { Authored } from '../../locales/authored';
 import { InlineConfirm } from '../../work/InlineConfirm';
 import { AppointedRoles } from '../roles/AppointedRoles';
-import { type Editing, editingOfLine, entryText, type Line, mayEditLine, nameFields, newRoleEditing, placeText, roleName, RolesCard } from '../roles/Roles';
+import { type Editing, editingOfLine, entryText, type Line, mayEditLine, nameFields, newRoleEditing, placeText, policyLine, roleName, RolesCard } from '../roles/Roles';
 import { useRoleEditing } from '../roles/RolesView';
+import { fieldsOf, policyDraftOf } from '../roles/staffPolicyDraft';
 import { stateText } from '../roles/StructureSections';
 import { PlaceSupervisor } from './PlaceSupervisor';
 
@@ -29,16 +30,21 @@ const READS_FINE = new Set(['ready', 'unknown', 'not-read']);
 const needsLook = (work: StructureWork): boolean => !!work.held || !!work.choicesFailed || work.choices.length === 0 || !READS_FINE.has(work.choices[0]!.state.code);
 
 /** A work's first choice as one line: the agent, model and effort in the tool's words, and the last reading it rests on. */
-function ChoiceLine({ work }: { work: StructureWork }) {
+function ChoiceLine({ work, policy, role }: { work: StructureWork; policy?: RolePolicyRow | null; role?: string }) {
   const { t } = useTranslation();
   const first = work.choices[0];
   if (!first) return <p className="m-0 text-small text-ink-faint wrap-anywhere">{work.held ?? t('agents.setup.roles.noChoice')}</p>;
+  const how = policyLine(t, policy);
   return (
-    <p className="m-0 text-small text-ink-soft wrap-anywhere">
-      {entryText(t, { agent: first.agent, model: first.model, effort: first.effort })}
-      {' · '}
-      {stateText(t, first.state)}
-    </p>
+    <>
+      <p className="m-0 text-small text-ink-soft wrap-anywhere">
+        {entryText(t, { agent: first.agent, model: first.model, effort: first.effort })}
+        {' · '}
+        {stateText(t, first.state)}
+        {how && ` · ${how}`}
+      </p>
+      {policy?.policyState === 'stale' && <p role="status" className="m-0 text-small text-ink-soft wrap-anywhere">{role} {t('settings.ai.policy.place.stale')}</p>}
+    </>
   );
 }
 
@@ -117,19 +123,29 @@ export function PlaceRolesView({ place, read, answer, editor, supervisor, appoin
     id, row: catalogue?.roles.find((each) => each.id === id) ?? null, actor: staffing.find((each) => each.id === id) ?? null,
   });
 
+  const policyOf = (id: string) => catalogue?.policies?.find((each) => each.role === id) ?? null;
+
+  /** The parent's policy, copied with its choices: kept as a new role's to set, so it saves with the role and its revision is none. */
   const give = (work: StructureWork) => {
     const base = newRoleEditing(catalogue?.works ?? [], editor.agents, kind === 'machine' ? null : { kind, id: here }, nextKey());
     const beside = (text: string) => (text ? `${text} · ${placeName}` : '');
     const named = work.role ? nameFields(work.role.name, '') : { name: workName(work.work), nameIn: [] };
     const choices = work.choices.filter((choice) => /^[1-4]$/.test(choice.from));
+    const inherited = work.role && choices.length > 0 && work.work !== 'brainstorm' ? policyOf(work.role.id) : null;
     setOpen({
       work: work.work,
       editing: {
         ...base, work: work.work, takes: [work.work], name: beside(named.name) || (named.nameIn.length > 0 ? '' : beside(workName(work.work))),
         nameIn: named.nameIn.map(([tag, text]): [string, string] => [tag, beside(text)]),
         drafts: choices.length > 0
-          ? choices.map((choice) => ({ key: nextKey(), agent: choice.agent, model: choice.model ?? '', effort: choice.effort ?? '' }))
+          ? choices.map((choice) => {
+            const agent = choice.agent;
+            const model = choice.model ?? '';
+            const effort = choice.effort ?? '';
+            return { key: nextKey(), agent, model, effort, ...(inherited ? fieldsOf(inherited.staffPolicy, agent, model, effort) : {}) };
+          })
           : base.drafts,
+        ...(inherited && kept ? { policy: { ...policyDraftOf(inherited), state: 'default' as const, revision: null, why: null } } : {}),
       },
     });
   };
@@ -137,7 +153,9 @@ export function PlaceRolesView({ place, read, answer, editor, supervisor, appoin
     const line = lineOf(id);
     setOpen({
       work,
-      editing: editingOfLine(line, { kept, works: catalogue?.works ?? [], agents: editor.agents, name: line.row ? name(line.row) : id, key: nextKey }),
+      editing: editingOfLine(line, {
+        kept, works: catalogue?.works ?? [], agents: editor.agents, name: line.row ? name(line.row) : id, key: nextKey, policy: policyOf(id),
+      }),
     });
   };
 
@@ -218,7 +236,7 @@ export function PlaceRolesView({ place, read, answer, editor, supervisor, appoin
             onClose={() => setBacking(null)}
           />
         )}
-        {!asking && open?.work !== work.work && <ChoiceLine work={work} />}
+        {!asking && open?.work !== work.work && <ChoiceLine work={work} policy={role ? policyOf(role.id) : null} role={role ? name(role) : undefined} />}
         {!asking && open?.work !== work.work && alongside && <p className="m-0 text-small text-ink-faint wrap-anywhere">{t('agents.setup.roles.shared', { works: alongside })}</p>}
         {open?.work === work.work && (
           <RolesCard

@@ -22,7 +22,7 @@ export type PolicyMove = { do: string; after: string; upTo: string };
 export type PolicyDraft = {
   state: RolePolicyRow['policyState'];
   /** The policy revision read when the editor opened; a save against a moved one is refused. */
-  revision: number;
+  revision: number | null;
   why: string | null;
   preset: Preset;
   moves: Partial<Record<StaffCondition, PolicyMove>>;
