@@ -7,8 +7,14 @@ namespace Daoris.Driver.Host;
 /// </summary>
 internal static class PlaceConsole
 {
-    public static async Task<int> RunAsync(string[] args)
+    public static async Task<int> RunAsync(string[] args, MachineLog log)
     {
+        // A workspace is named by its flag, and asked before the words are read as a place's repositories.
+        if (PlaceCommand.AsksWorkspace(args))
+        {
+            return await WorkspaceAsync(args, log).ConfigureAwait(false);
+        }
+
         // The usage before the service is asked for: a mistyped line needs no service to be told so.
         if (PlaceCommand.Read(args).Problem is { } problem)
         {
@@ -29,5 +35,25 @@ internal static class PlaceConsole
             change => change(DriverConfig.Load(configPath)).Save(configPath), DateOnly.FromDateTime(DateTime.Now));
         return await PlaceCommand.RunAsync(
             args, Console.Out, new PlaceWorld(service), config, home, plugins, door, InstanceHost.World(home, "place"), apply).ConfigureAwait(false);
+    }
+
+    private static async Task<int> WorkspaceAsync(string[] args, MachineLog log)
+    {
+        if (WorkspaceSetupCommand.Problem(args) is { } problem)
+        {
+            Console.Error.WriteLine($"place: {problem}");
+            Console.Error.WriteLine(WorkspaceSetupCommand.Usage);
+            return 2;
+        }
+
+        var configPath = DriverConfig.ResolvePath();
+        var config = DriverConfig.Load(configPath);
+        var home = DriverConfig.HomeOf(configPath);
+        using var service = ServiceClient.FromEnvironment();
+        service.SetupLined += line => SessionLog.WriteSetup(log, line);
+
+        return await WorkspaceSetupCommand.RunAsync(
+            args, Console.Out, new WorkspaceSetupWorld(service, home), config, SetupWorld.DoorOf(config, home), home,
+            DateOnly.FromDateTime(DateTime.Now), DateTimeOffset.UtcNow).ConfigureAwait(false);
     }
 }

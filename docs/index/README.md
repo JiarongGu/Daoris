@@ -50,11 +50,11 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/design/ui.tsx` | 97 | 2027 |
 | `src/Daoris.Web/src/help/AskConversation.tsx` | 64 | 1166 |
 | `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 109 | 2166 |
-| `src/Daoris.Web/src/help/ProposalCard.test.tsx` | 46 | 848 |
+| `src/Daoris.Web/src/help/ProposalCard.test.tsx` | 44 | 803 |
 | `src/Daoris.Web/src/locales/names.test.ts` | 41 | 721 |
 | `src/Daoris.Web/src/menus/commands.ts` | 43 | 831 |
 | `src/Daoris.Web/src/projects/ProjectsView.git.test.tsx` | 82 | 1345 |
-| `src/Daoris.Web/src/projects/ProjectsView.test.tsx` | 109 | 1901 |
+| `src/Daoris.Web/src/projects/ProjectsView.test.tsx` | 107 | 1875 |
 | `src/Daoris.Web/src/projects/setup/RepositorySetup.test.tsx` | 52 | 906 |
 | `src/Daoris.Web/src/projects/setup/RepositorySetup.tsx` | 44 | 910 |
 | `src/Daoris.Web/src/quests/QuestPage.tsx` | 59 | 1073 |
@@ -95,7 +95,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs` | 75 | 1145 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs` | 74 | 1132 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/TreesConsole.cs` | 48 | 705 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AccountRotationGoalTests.cs` | 43 | 817 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AccountRotationWalkTests.cs` | 42 | 633 |
@@ -114,7 +114,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Course/LimitWaitsProcessTests.cs` | 75 | 1317 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Course/LineCourseTests.cs` | 59 | 816 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Events/NoteCodesTests.cs` | 44 | 828 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 157 | 2369 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 156 | 2360 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpSettingProposalsTests.cs` | 57 | 833 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Install/StagedBuildTests.cs` | 41 | 957 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Install/ToolInstallTests.cs` | 41 | 724 |
@@ -122,16 +122,16 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Instance/InstanceDoorTests.cs` | 40 | 911 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/HelpFactsTests.cs` | 64 | 1217 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/TraceTests.cs` | 56 | 926 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/golden/help-room/empty.md` | 54 | 395 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/golden/help-room/full-access.md` | 60 | 450 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/golden/help-room/full.md` | 62 | 478 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/golden/help-room/scoped.md` | 58 | 454 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/golden/help-room/sparse.md` | 54 | 394 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/golden/help-room/empty.md` | 54 | 393 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/golden/help-room/full-access.md` | 60 | 448 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/golden/help-room/full.md` | 62 | 476 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/golden/help-room/scoped.md` | 58 | 452 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/golden/help-room/sparse.md` | 54 | 392 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/AccountRotationTickTests.cs` | 68 | 1114 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/ChatGoesOnProcessTests.cs` | 52 | 893 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/ChatTransientProcessTests.cs` | 48 | 803 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/ChatTurnsTests.cs` | 78 | 1588 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/DriverCommandTests.cs` | 49 | 773 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/DriverCommandTests.cs` | 49 | 772 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/HelperLookTests.cs` | 79 | 1638 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/SessionMessagesTickTests.cs` | 107 | 1796 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/SessionsOutliveTheirLookTests.cs` | 43 | 957 |
@@ -252,11 +252,11 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/PipeConfirmTests.cs` | 85 | 1568 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/PipeStandingTests.cs` | 49 | 915 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/StandingConfirmationTests.cs` | 59 | 1078 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/StatePublisherTests.cs` | 47 | 889 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/StatePublisherTests.cs` | 47 | 886 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/ConversationRoutes.cs` | 42 | 640 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs` | 61 | 951 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/GitRoutes.cs` | 46 | 697 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/HelpRoutes.cs` | 88 | 1471 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/HelpRoutes.cs` | 86 | 1442 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/LinesRoutes.cs` | 72 | 1166 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/SessionsRoutes.cs` | 78 | 1222 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/TreesRoutes.cs` | 72 | 1186 |
@@ -266,7 +266,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/SessionWords.cs` | 70 | 1336 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/InstancePipe.cs` | 101 | 1995 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/PipeCensus.cs` | 43 | 575 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/PipeTargetRows.cs` | 42 | 537 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/PipeTargetRows.cs` | 41 | 530 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/StandingConfirmation.cs` | 93 | 1710 |
 
 ### Service (`service`)

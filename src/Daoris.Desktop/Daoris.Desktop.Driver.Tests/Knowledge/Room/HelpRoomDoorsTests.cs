@@ -33,8 +33,8 @@ public sealed class HelpRoomDoorsTests
             "daoris driver adapter <agent>",
             // LEFT3's default and its clear left with POOL1b (D197 point 6).
             "daoris browser use daoris|edge", "daoris browser links system|daoris",
-            // LAYOUT7: the set-up press, Ask Daoris's `setup` kind since LAYOUT8, its screen the repository page's Set up for agents.
-            "daoris-driver setup <repository> [--plan]",
+            // WORKFLOWCLEAN1 1f: the one adoption door, Ask Daoris's `setup` kind through its `place` door, its screen the place's Set up….
+            "daoris-driver place <repository>… --preset keep --adoption [--what-it-builds <kind>] --plan",
             // TOOL4e (D125 §6): the order, *Try now* and the default cool-off, the terminal's doors (on the screen since TOOL4g).
             "daoris agent profile order <agent> <profile>…|--clear",
             "daoris agent profile ready <agent> <profile>|--own", "daoris driver cooloff <minutes>",

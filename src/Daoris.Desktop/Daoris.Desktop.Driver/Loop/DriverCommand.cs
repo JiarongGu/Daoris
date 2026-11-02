@@ -66,19 +66,19 @@ public static class DriverCommand
           ask --abandon <id> [--reason "…" --yes]  ·  quest abandon <id> [--reason "…" --yes]
               list what abandoning it would decline, discard and archive, and what it keeps and why; with
               --reason and --yes, give up what the list holds, each quest declined with your reason.
-          setup <repository> [--plan] [--what-it-builds <kind>]
-              ask a repository's own session to set it up for every agent: the doctrine, its knowledge, its
-              brief, on its own branch. The press adds the doctrine tool's exact verbs to its rules; --plan
-              prints what was read, the rule and the quest, and publishes nothing. --what-it-builds library,
-              service, desktop or tooling names the checks its session is asked to declare.
-          place <repository>… --preset <id> [--with opinion,look,adoption] [--what-it-builds <kind>] [--drive] --plan
-              a quick set-up's plan: a delivery preset (not-driven, merge-after-accept, branch-to-push,
-              pull-request, integrated), its second opinion and your look, a set-up quest and general
-              driving, read before and after through the driver's own readers, every refusal at once, what
-              lowers your part, the work driving releases and each declaration to accept. Writes nothing.
-          setup --workspace <name> [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]
-          setup --workspace <name> --pause | --resume | --stop
-              set a workspace up one repository at a time, the ones other work touches first: a press
+          place <repository>… --preset <id> [--with opinion,look] [--adoption [--what-it-builds <kind>] [--at-once <n>] [--pilot <n>]] [--drive] (--plan | --apply)
+              a quick set-up: a delivery preset (not-driven, merge-after-accept, branch-to-push,
+              pull-request, integrated; keep leaves how it lands), its second opinion and your look,
+              adoption (a repository's own session asked to set it up for every agent, on its own branch,
+              the doctrine tool's exact verbs added to its rules; --what-it-builds library, service,
+              desktop or tooling names the checks it is asked to declare) and general driving, read
+              before and after through the driver's own readers, every refusal at once, what lowers your
+              part, the work driving releases and each declaration to accept. --plan writes nothing;
+              --apply is your press, and an adoption of more repositories than --at-once asks is paced
+              by a workspace plan the loop works.
+          place --workspace <name> --adoption [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]
+          place --workspace <name> --pause | --resume | --stop
+              adopt a workspace one repository at a time, the ones other work touches first: a press
               writes a plan the loop works, adding the doctrine tool's verbs to the workspace's rules
               once, and pausing after a pilot of two. --plan prints the list and each refusal; --pause,
               --resume (which judges the skipped again) and --stop steer a plan already made.

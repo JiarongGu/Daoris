@@ -326,13 +326,6 @@ public sealed record HelpMachineFacts(
     // The setup kind's.
 
     /// <summary>
-    /// What a press would do for each repository a set-up proposal names (LAYOUT8), <see cref="SetupPress.PlanAsync"/>'s plan as
-    /// <c>daoris-driver setup &lt;repository&gt; --plan</c> prints it, refusals and all: what a set-up proposal is judged by and
-    /// what its Apply presses. Read only for one, since a plan reads the line with git and asks the doctrine tool its version.
-    /// </summary>
-    public IReadOnlyList<SetupPlan> Setups { get; init; } = [];
-
-    /// <summary>
     /// A place's plan for each <c>place</c> proposal (AGENTSPLACE1k), by the proposal's id: <see cref="PlacePlans.PlanAsync"/> over its ask,
     /// as <c>daoris-driver place … --plan</c> prints it. Read only for one; nothing is written.
     /// </summary>
@@ -475,12 +468,6 @@ public sealed record HelpPlan(string? Refusal, string Describe, string Terminal,
 
     // The setup kind's.
 
-    /// <summary>
-    /// For a set-up the press would publish (LAYOUT8): the press's own plan, what the card shows (what was read on the line, the
-    /// rule and the quest's whole text) and what Apply presses; null for a refusal and for every other kind.
-    /// </summary>
-    public SetupPlan? Setup { get; init; }
-
     /// <summary>For a <c>place</c> the plan allows (AGENTSPLACE1k): the ask, the workspace and what the plan changes, for the card; null for a refusal and every other kind.</summary>
     public HelpPlaceSetUp? Place { get; init; }
 
@@ -520,7 +507,7 @@ public sealed record HelpApplied(bool Applied, string Told)
 public interface IHelpDoors :
     IHelpAcceptDoors, IHelpAccountDoors, IHelpAgentDoors, IHelpAskDoors, IHelpBrowserDoors, IHelpClearDoors,
     IHelpDeleteDoors, IHelpHandDoors, IHelpPauseDoors, IHelpPluginDoors, IHelpRepositoryDoors, IHelpSessionDoors,
-    IHelpSettingDoors, IHelpSetupDoors, IHelpSyncDoors
+    IHelpSettingDoors, IHelpSyncDoors
 {
 }
 

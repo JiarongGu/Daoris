@@ -70,7 +70,7 @@ public sealed class HelpRoomPlacesTests
             places);
         Assert.Contains(
             "- Settings domains: `start` (Get started), `appearance` (Appearance), `ai` (AI features), `wiring` (This Daoris), `driver` (Driver), "
-            + "`browser` (Browser), `logs` (Machine log).",
+            + "`git` (Git), `browser` (Browser), `logs` (Machine log).",
             places);
         Assert.DoesNotContain("Parts of `workspace`", places);
         Assert.DoesNotContain("Parts of `permissions`", places);

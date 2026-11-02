@@ -34,7 +34,7 @@
     },
     {
       "name": "a repository declaring integration, integrated, with its set-up asked for a library",
-      "args": ["engine", "--preset", "integrated", "--with", "adoption", "--what-it-builds", "library", "--plan"],
+      "args": ["engine", "--preset", "integrated", "--adoption", "--what-it-builds", "library", "--plan"],
       "exit": 0,
       "lines": [
         "place: `engine` — Integrated into the line; adoption, for a library or package",
@@ -53,7 +53,7 @@
     },
     {
       "name": "adoption without driving, its set-up quest started alone (AGENTSPLACE1b)",
-      "args": ["atlas", "--preset", "merge-after-accept", "--with", "adoption", "--plan"],
+      "args": ["atlas", "--preset", "merge-after-accept", "--adoption", "--plan"],
       "exit": 0,
       "lines": [
         "place: `atlas` — Merge after you accept; adoption",
@@ -91,7 +91,9 @@
       "exit": 2,
       "lines": [
         "place: name `--plan` to read the plan, or `--apply` to apply it.",
-        "usage: daoris-driver place <repository>… --preset <id> [--with opinion,look,adoption] [--what-it-builds <kind>] [--drive] (--plan | --apply [--accept <repository>:landed|integration,…])"
+        "usage: daoris-driver place <repository>… --preset <id> [--with opinion,look] [--adoption [--what-it-builds <kind>] [--at-once <n>] [--pilot <n>]] [--drive] (--plan | --apply [--accept <repository>:landed|integration,…])",
+        "       daoris-driver place --workspace <name> --adoption [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]",
+        "       daoris-driver place --workspace <name> --pause | --resume | --stop"
       ]
     },
     {
@@ -112,8 +114,10 @@
       "args": ["engine", "--preset", "merge-after-accept", "--with", "opinions", "--plan"],
       "exit": 2,
       "lines": [
-        "place: `opinions` is not something `--with` takes — `opinion`, `look` or `adoption`.",
-        "usage: daoris-driver place <repository>… --preset <id> [--with opinion,look,adoption] [--what-it-builds <kind>] [--drive] (--plan | --apply [--accept <repository>:landed|integration,…])"
+        "place: `opinions` is not something `--with` takes — `opinion` or `look`; adoption is `--adoption`.",
+        "usage: daoris-driver place <repository>… --preset <id> [--with opinion,look] [--adoption [--what-it-builds <kind>] [--at-once <n>] [--pilot <n>]] [--drive] (--plan | --apply [--accept <repository>:landed|integration,…])",
+        "       daoris-driver place --workspace <name> --adoption [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]",
+        "       daoris-driver place --workspace <name> --pause | --resume | --stop"
       ]
     }
   ]

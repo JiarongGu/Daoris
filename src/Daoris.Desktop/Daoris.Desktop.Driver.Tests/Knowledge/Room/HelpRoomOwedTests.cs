@@ -40,7 +40,7 @@ public sealed class HelpRoomOwedTests
         var agents = HelpRoom.Render(new HelpMachine());
         var owed = agents[agents.IndexOf("## Doors Daoris still owes", StringComparison.Ordinal)..];
 
-        Assert.DoesNotContain("`daoris-driver setup <repository> [--plan]`", owed);
+        Assert.DoesNotContain("`daoris-driver setup", owed);
         Assert.Contains("`daoris-driver register [--repository <name>]`", owed);
         Assert.Contains(HelpRoomOwed.Register, HelpRoomOwed.All);
     }

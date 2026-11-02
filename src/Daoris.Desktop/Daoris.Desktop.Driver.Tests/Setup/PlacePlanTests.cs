@@ -263,7 +263,7 @@ public sealed class PlacePlanTests
             Assert.Equal(atlas.Before.Values.Landing, atlas.After.Values.Landing);
             Assert.Equal(atlas.Before.Values.Workflow, atlas.After.Values.Workflow);
             Assert.Equal("kept", WorkflowSelection.Resolve(chosen, "atlas", "aurora", task: null).Workflow);
-            Assert.Equal("daoris-driver place atlas --preset keep --with adoption --drive --plan", kept.Terminal);
+            Assert.Equal("daoris-driver place atlas --preset keep --adoption --drive --plan", kept.Terminal);
 
             // A tick under Keep is refused: a step is added at the workflow's own door.
             var ticked = await PlanAsync(new World(), Ask(SetupPresets.Keep, "engine") with { Opinion = true }, chosen);

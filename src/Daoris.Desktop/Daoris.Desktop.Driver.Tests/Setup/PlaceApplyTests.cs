@@ -499,6 +499,94 @@ public sealed class PlaceApplyTests : IDisposable
         Assert.Equal(3, new[] { one, other, moved }.Distinct().Count());
     }
 
+    /// <summary>
+    /// WORKFLOWCLEAN1 1f: an adoption covering more of a workspace's repositories than it asks at once writes that workspace's plan (its rule added
+    /// once) and asks nothing itself; the driver's tick publishes it. A second press of the digest writes and asks nothing again.
+    /// </summary>
+    [Fact]
+    public async Task An_adoption_of_more_repositories_than_it_asks_at_once_writes_the_workspaces_plan_and_asks_nothing()
+    {
+        var stand = Make();
+        var ask = Adopt("atlas", "engine", "docs") with { AtOnce = 1, Pilot = 0 };
+        var digest = await DigestOf(stand, ask);
+
+        var result = await Apply(stand, ask, digest);
+
+        Assert.True(result.Done, result.Message);
+        Assert.Empty(stand.Setup.Published);
+        var plan = WorkspaceSetupFile.Load(_home, "aurora").Plan!;
+        Assert.Equal(["atlas", "engine", "docs"], plan.Order);
+        Assert.Equal((1, 0, true, null), (plan.AtOnce, plan.Pilot, plan.Live, plan.Paused));
+        Assert.Equal(SetupPressRules.Rules, PermissionRules.Load(_home).Workspaces["aurora"].Allow);
+        var adoptions = result.Operations.Where(each => each.Kind == PlaceOperations.Adoption).ToList();
+        Assert.Equal(3, adoptions.Count);
+        Assert.All(adoptions, each => Assert.StartsWith("paced: workspace `aurora`'s plan asks it with 2 others, 1 at a time", each.Note));
+
+        var again = await Apply(stand, ask, digest);
+
+        Assert.True(again.Done);
+        Assert.Empty(stand.Setup.Published);
+        Assert.Equal(plan.Created, WorkspaceSetupFile.Load(_home, "aurora").Plan!.Created);
+    }
+
+    /// <summary>An adoption that says no pace is one at a time, the plan's default (D117 §9): two repositories of a workspace are a plan, not two quests.</summary>
+    [Fact]
+    public async Task An_adoption_that_says_no_pace_of_two_repositories_of_a_workspace_is_paced_one_at_a_time()
+    {
+        var stand = Make();
+        var ask = Adopt("atlas", "engine");
+        var digest = await DigestOf(stand, ask);
+
+        var result = await Apply(stand, ask, digest);
+
+        Assert.True(result.Done, result.Message);
+        Assert.Empty(stand.Setup.Published);
+        var plan = WorkspaceSetupFile.Load(_home, "aurora").Plan!;
+        Assert.Equal((1, WorkspaceSetupRules.DefaultPilot), (plan.AtOnce, plan.Pilot));
+    }
+
+    [Fact]
+    public async Task An_adoption_of_no_more_than_it_asks_at_once_is_asked_now_as_a_single_adoption_is()
+    {
+        var stand = Make(each => each.Config = each.Config with { Cap = 3 });
+        var ask = Adopt("atlas") with { AtOnce = 2 };
+        var digest = await DigestOf(stand, ask);
+
+        var result = await Apply(stand, ask, digest);
+
+        Assert.True(result.Done, result.Message);
+        Assert.Single(stand.Setup.Published);
+        Assert.Null(WorkspaceSetupFile.Load(_home, "aurora").Plan);
+    }
+
+    [Theory]
+    [InlineData(0, "at-once")]
+    [InlineData(9, "at-once")]
+    public async Task A_pace_the_cap_does_not_leave_is_refused_and_nothing_is_written(int atOnce, string code)
+    {
+        var stand = Make();
+        var ask = Adopt("atlas", "engine") with { AtOnce = atOnce };
+
+        var plan = await PlacePlans.PlanAsync(stand.Place, stand.Config, stand.Home, Plugins, SessionWire.Acp, ask);
+
+        Assert.Contains(plan.Refusals, each => each.Code == code);
+        Assert.False(plan.Applies);
+    }
+
+    [Fact]
+    public async Task Pacing_without_adoption_is_refused_and_the_digest_moves_with_it()
+    {
+        var stand = Make();
+        var plain = new PlaceAsk(["atlas"], SetupPresets.Merge);
+        var paced = plain with { AtOnce = 1 };
+
+        var plan = await PlacePlans.PlanAsync(stand.Place, stand.Config, stand.Home, Plugins, SessionWire.Acp, paced);
+
+        Assert.Contains(plan.Refusals, each => each.Code == "pacing");
+        Assert.NotEqual(await DigestOf(stand, plain), plan.Digest);
+        Assert.Equal(await DigestOf(stand, Adopt("atlas")), await DigestOf(stand, Adopt("atlas") with { AtOnce = null }));
+    }
+
     private const string Blob = "fedcba9876543210fedcba9876543210fedcba98";
 
     /// <summary>The outcomes the receipt on disk holds now for two operations.</summary>

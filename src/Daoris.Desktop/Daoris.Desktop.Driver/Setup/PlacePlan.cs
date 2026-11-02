@@ -11,6 +11,15 @@ public sealed record PlaceAsk(IReadOnlyList<string> Repositories, string Preset)
     public bool Adoption { get; init; }
     public string? Builds { get; init; }
     public bool Drive { get; init; }
+
+    /// <summary>
+    /// How many adoption quests the driver keeps open at once; an adoption covering more of a workspace's repositories than this is paced by that
+    /// workspace's plan (WORKFLOWCLEAN1 1f). None said is the plan's default, one.
+    /// </summary>
+    public int? AtOnce { get; init; }
+
+    /// <summary>How many adoptions go alone before the paced plan pauses itself; none said is the workspace plan's default.</summary>
+    public int? Pilot { get; init; }
 }
 
 /// <summary>What a place's plan reads: the service's registry and quests, and each repository's line as its checkout here holds it.</summary>
@@ -154,6 +163,34 @@ public static class PlacePlans
             }
         }
 
+        return refusals;
+    }
+
+    /// <summary>
+    /// The pacing an adoption asks (the workspace plan's, D124 §4.1): <c>atOnce</c> at least one and held to the cap less one so other work keeps a
+    /// slot, <c>pilot</c> not negative, and neither without adoption.
+    /// </summary>
+    public static IReadOnlyList<PlaceRefusal> PacingRefusals(PlaceAsk ask, DriverConfig config)
+    {
+        var refusals = new List<PlaceRefusal>();
+        if (ask.AtOnce is null && ask.Pilot is null) return refusals;
+
+        if (!ask.Adoption)
+        {
+            refusals.Add(new(null, Adoption, "pacing", "how many set-ups are asked at once and the pilot pace an adoption: ask for adoption too, or leave them out."));
+            return refusals;
+        }
+
+        var most = WorkspaceSetupRules.MostAtOnce(config.Cap);
+        if (ask.AtOnce is { } atOnce && (atOnce < 1 || atOnce > most))
+        {
+            refusals.Add(new(null, Adoption, "at-once", atOnce < 1
+                ? "at least one set-up must be open at once, or the plan would never ask anything."
+                : $"{atOnce} at once is more than this machine's cap of {config.Cap} leaves: at most {most}, so other work always keeps a slot. "
+                  + "Raise the cap with `daoris driver cap <n>` first, or ask for fewer."));
+        }
+
+        if (ask.Pilot is < 0) refusals.Add(new(null, Adoption, "pilot", "the pilot is a number, zero for none."));
         return refusals;
     }
 
@@ -327,6 +364,7 @@ public static class PlacePlans
         var names = ask.Repositories.Select(each => each.Trim()).Where(each => each.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         ask = ask with { Repositories = names };
         var refusals = AskRefusals(ask).ToList();
+        refusals.AddRange(PacingRefusals(ask, config));
         var planned = refusals.Count == 0;
         var registry = await world.RegistryAsync(ct).ConfigureAwait(false);
         IReadOnlyList<QuestView> quests = ask.Drive || ask.Adoption ? await world.QuestsAsync(ct).ConfigureAwait(false) : [];

@@ -22939,6 +22939,12 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 
 **Outcome** 2026-11-02: built. A list of steps, a `handed` and a `land` with no method are refused at the one save point, in the same words at every door (the step presets deleted, `workflow new --from` steps, `edit`, `apply` of steps, `apply --as-graph` folded into `convert`, `import`, `WORKFLOW_SAVE` with `steps`, Ask Daoris's steps door); a stored version of each still reads, shows and binds. The palette's `offered` hides `handed` and a landing's tail from the picker. Detail: D227's 1b note; `SavesRefusedTests`, `WorkflowAsGraphCommandTests`, `HelpWorkflowProposalsTests`, `DriverModuleWorkflowWritesTests`.
 
+## WORKFLOWCLEAN1f — one adoption door (2026-11-02, D227)
+
+> **1f** one adoption door (driver, modules, web-shell, service; after a). Contract and proof: the cleanup design's §5 *One adoption door*, §9 row 1f, and the one-way census's A1 and A2.
+
+**Outcome** 2026-11-02: built. `PLACE_APPLY`'s adoption part, over `SetupPress`, is the one door that adopts a repository: `SETUP_PLAN` and `SETUP_PRESS`, `daoris-driver setup`, the repository page's *Set up for agents* with its routes and strings, the shell's set-up plan door, and Ask Daoris's `setup` door are gone; `daoris-driver place <repo> --preset keep --adoption [--what-it-builds …]` is the terminal's, and `setup_propose` is a place's. An adoption covering more of a workspace's repositories than `--at-once` (the plan's default, one) is paced: the apply writes the workspace plan (rule added once) and the tick publishes it, an existing plan file unchanged; `place --workspace <ws> --adoption --at-once <n> --pilot <n>` and `--pause`/`--resume`/`--stop` steer it. Detail: D227's 1f note and D221's; `PlaceApplyTests`, `WorkspaceSetupLoopTests`, `WorkspaceSetupCommandTests`, `HelpSetupProposalsTests`, `HelpSetupDoorTests`.
+
 ## The parked backlog triaged against D228: dropped rows (2026-11-02)
 
 > **Triage of 2026-11-02** (`docs/2026-11-02-parked-triage.md`; D228 and its note): 55 rows of `docs/backlog-parked.md` and 26 of its pointer lines, each superseded by work the owner's direction of that day put in a chunk or a decision. The rows' whole text is in git at `cb884a6b6:docs/backlog-parked.md`.

@@ -14,10 +14,10 @@ namespace Daoris.Driver;
 /// </remarks>
 internal sealed class HelpRoomOwed : IHelpRoomSection
 {
-    /// <summary>WSSETUP6's <c>daoris-driver setup --workspace</c> (D124 §4.5): owed until WSSETUP7's doors of the <c>setup</c> kind.</summary>
+    /// <summary>WSSETUP6's <c>daoris-driver place --workspace</c> (D124 §4.5): owed until WSSETUP7's doors of the <c>setup</c> kind.</summary>
     public static readonly HelpOwedDoor Workspace = new(
         "set every repository of a workspace up, one at a time, or pause, resume or stop that plan",
-        ["daoris-driver setup --workspace <name> [--plan]", "daoris-driver setup --workspace <name> --pause | --resume | --stop"],
+        ["daoris-driver place --workspace <name> --adoption [--plan]", "daoris-driver place --workspace <name> --pause | --resume | --stop"],
         "setting a workspace up writes a plan that publishes a quest to each repository in turn and adds a rule at the "
         + "workspace's scope, a widening the person applies as a card, and pausing, resuming or stopping it changes only what "
         + "the person already said, so Ask Daoris should propose each; that waits on WSSETUP7's `workspace`, `pause`, `resume` "
