@@ -9,7 +9,8 @@ import { areas } from '.';
  * delivery added to the data with no key here would be shown in English alone.
  */
 const folder = join(process.cwd(), '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver', 'Defaults', 'workflows');
-type Delivery = { id: string; name: string; for: string };
+// Since WORKFLOWCLEAN1 1a a delivery is its workflow's own: it carries a name and a purpose, and its id is the workflow's.
+type Delivery = { name: string; for: string };
 type Shipped = { id: string; name: string; for: string; delivery?: Delivery };
 const shipped: Shipped[] = readdirSync(folder).filter((file) => file.endsWith('.json'))
   .map((file) => JSON.parse(readFileSync(join(folder, file), 'utf8')) as Shipped);
@@ -24,14 +25,14 @@ describe('the shipped workflows and deliveries are worded in every locale', () =
     expect(locales).toEqual(expect.arrayContaining(['en', 'zh']));
     expect(shipped.every((each) => typeof each.name === 'string')).toBe(true);
     expect(delivered.length).toBeGreaterThanOrEqual(6);
-    expect(delivered.every((each) => typeof each.delivery.id === 'string')).toBe(true);
+    expect(delivered.every((each) => typeof each.delivery.name === 'string')).toBe(true);
   });
 
   it.each(['en', 'zh'] as const)('names every workflow and delivery id in %s', (locale) => {
     const catalogue = areas[locale]['workflow.shipped'] as Record<string, string>;
     const keys = shipped.flatMap((each) => [
       `workflow.shipped.${each.id}.name`, `workflow.shipped.${each.id}.for`,
-      ...(each.delivery ? [`workflow.shipped.delivery.${each.delivery.id}.name`, `workflow.shipped.delivery.${each.delivery.id}.for`] : []),
+      ...(each.delivery ? [`workflow.shipped.delivery.${each.id}.name`, `workflow.shipped.delivery.${each.id}.for`] : []),
     ]);
     expect(keys.filter((key) => !(catalogue[key]?.trim()))).toEqual([]);
   });
@@ -42,7 +43,7 @@ describe('the shipped workflows and deliveries are worded in every locale', () =
     const en = areas.en['workflow.shipped'] as Record<string, string>;
     for (const each of shipped) {
       expect(en[`workflow.shipped.${each.id}.name`]).toBe(each.name);
-      if (each.delivery) expect(en[`workflow.shipped.delivery.${each.delivery.id}.name`]).toBe(each.delivery.name);
+      if (each.delivery) expect(en[`workflow.shipped.delivery.${each.id}.name`]).toBe(each.delivery.name);
     }
   });
 });
