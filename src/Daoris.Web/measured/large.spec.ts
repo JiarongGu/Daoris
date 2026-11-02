@@ -170,11 +170,11 @@ test('find reaches a culled node and keeps the focus in the field (trap 14)', as
 test('twenty opens and closes retain no worker, no node and no growth; at rest no frame is asked for (trap 22)', async ({ page }) => {
   test.setTimeout(240_000);
   await page.addInitScript(() => {
-    const live = { workers: 0, frames: 0 };
+    const live = { workers: 0, made: 0, frames: 0 };
     (window as unknown as { live: typeof live }).live = live;
     const Real = window.Worker;
     window.Worker = class extends Real {
-      constructor(url: string | URL, options?: WorkerOptions) { super(url, options); live.workers += 1; }
+      constructor(url: string | URL, options?: WorkerOptions) { super(url, options); live.workers += 1; live.made += 1; }
       terminate() { live.workers -= 1; super.terminate(); }
     } as typeof Worker;
     const frame = window.requestAnimationFrame.bind(window);
@@ -192,6 +192,7 @@ test('twenty opens and closes retain no worker, no node and no growth; at rest n
   }
   const after = await count();
   console.log(`large: twenty opens and closes of Five: ${closed.elements} elements and ${closed.workers} workers closed, ${after.elements} and ${after.workers} after`);
+  expect(await page.evaluate(() => (window as unknown as { live: { made: number } }).live.made), 'the layout ran in a worker').toBeGreaterThanOrEqual(20);
   expect(after.workers).toBe(0);
   expect(after.elements).toBeLessThanOrEqual(closed.elements + 5);
 
