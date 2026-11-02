@@ -303,7 +303,8 @@ public sealed class DrivenAccessTests : IDisposable
 
         Assert.Null(started.ChangedIn(config, adapter));
         Assert.Null(started.ChangedIn(With(new AccessEdit { Repository = "editor", Set = [new(AccessRules.Permissions, AccessRules.Unrestricted)] }), adapter));
-        Assert.Null(started.ChangedIn(With(new AccessEdit { Repository = "engine", Set = [new(AccessRules.Landing, AccessRules.Rule)] }), adapter));
+        // Another pause: no access setup sets `landing` since WORKFLOWCLEAN1 1c, so routing stands for a pause that is not the prompts'.
+        Assert.Null(started.ChangedIn(With(new AccessEdit { Repository = "engine", Set = [new(AccessRules.Routing, AccessRules.Intake)] }), adapter));
         Assert.Null(started.ChangedIn(With(new AccessEdit { Repository = "engine", Set = [new(AccessRules.Permissions, AccessRules.Auto)] }), adapter));
 
         var widened = started.ChangedIn(With(new AccessEdit { Repository = "engine", Set = [new(AccessRules.Permissions, AccessRules.Unrestricted)] }), adapter);
@@ -347,7 +348,7 @@ public sealed class DrivenAccessTests : IDisposable
             + "conversation under the new setup.",
             line);
 
-        Assert.Empty(Told(widened, widened.WithAccess(new AccessEdit { Repository = "engine", Set = [new(AccessRules.Landing, AccessRules.Rule)] })));
+        Assert.Empty(Told(widened, widened.WithAccess(new AccessEdit { Repository = "engine", Set = [new(AccessRules.Routing, AccessRules.Intake)] })));
         Assert.Empty(Told(widened, widened.WithAccess(new AccessEdit { Repository = "editor", Set = [new(AccessRules.Permissions, AccessRules.Auto)] })));
         Assert.Contains("now names `auto`", Assert.Single(Told(widened, Engine(AccessRules.Auto, widened))).Line);
         Assert.Equal(
