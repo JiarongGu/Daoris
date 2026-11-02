@@ -561,6 +561,9 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     {
         var loop = Loop();
         await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(service)));
+        // The come-up's own reads (the census) are not the press's: settled, then forgotten.
+        await loop.Settling;
+        service.Forget();
         return new DriverModule(Bus, loop);
     }
 
@@ -646,6 +649,11 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
         public IReadOnlyList<string> Asked
         {
             get { lock (_asked) return [.. _asked]; }
+        }
+
+        public void Forget()
+        {
+            lock (_asked) _asked.Clear();
         }
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)

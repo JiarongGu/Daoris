@@ -622,6 +622,13 @@ public sealed partial class HelpCoverageTests
         ("agents", "usePlaceApply", null, new Exempt(
             "a place's Apply is the person's own press, with no standing cover (AGENTSPLACE1b3): Ask Daoris proposes the plan through the "
             + "`setup` kind's `place` door (AGENTSPLACE1k), whose Apply only opens this page seeded, and never applies one.")),
+        // WORKFLOWCLEAN1g: the conversion's review, over CONVERT_APPLY and CONVERT_UNDO.
+        ("agents", "useConvertApply", null, new Exempt(
+            "converting the old workflow records is the person's own press over the plan they read, by its digest (D227): Ask Daoris "
+            + "opens the review and names `workflow convert --plan`, and never proposes the apply.")),
+        ("agents", "useConvertUndo", null, new Exempt(
+            "undoing the conversion is the person's own press over its own plan's digest, offered on the review while the receipt "
+            + "stands (D227); Ask Daoris takes the person to the review and never proposes it.")),
 
         // Quests: a quest's own page, and the list's presses, in `quests/QuestsView` (STRUCT5c).
         ("quests", "usePublishQuest", null, Own("quests",

@@ -60,6 +60,8 @@ export type PlaceWorkflowProps = WorkflowTabProps & {
   /** The editor's draft the page kept when this section was last unmounted, and where it keeps the draft as the editor reports it (REVIEW2 P5). */
   held?: PlaceFlowHold | null;
   onHold?: (held: PlaceFlowHold | null) => void;
+  /** Opens the home's conversion review (WORKFLOWCLEAN1g-i): the door the place's *Edit steps…* and *Current* are wired to by row 1h. */
+  onConvert?: () => void;
 };
 
 type EditStart = NonNullable<WorkflowEditorProps['startFrom']>;
