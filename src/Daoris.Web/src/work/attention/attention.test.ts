@@ -1146,11 +1146,11 @@ describe('the place each wait is counted at', () => {
     expect(placeCounts([])).toEqual({});
   });
 
-  /** GITAUTH1a: a held git remote's one act is on its row, so no place counts it until Settings → Git holds it (GITAUTH1e); the bell does. */
-  it('counts a held git remote at no place, though the bell counts it', () => {
+  /** GITAUTH1a, GITAUTH1e: a held git remote is set right in Settings → Git, where it is counted beside Disk space; the bell counts it too. */
+  it('counts a held git remote at Settings, where its identity is set up, and at the bell', () => {
     const held = row('git-held', 'default|github.com|refused|all', '2026-10-22T09:00:00Z');
-    expect(placeOf(held, undefined)).toBeNull();
-    expect(placeCounts([held, row('space', 'D:', null)])).toEqual({ settings: 1 });
+    expect(placeOf(held, undefined)).toBe('settings');
+    expect(placeCounts([held, row('space', 'D:', null)])).toEqual({ settings: 2 });
     expect(needsListed([held])).toHaveLength(1);
   });
 

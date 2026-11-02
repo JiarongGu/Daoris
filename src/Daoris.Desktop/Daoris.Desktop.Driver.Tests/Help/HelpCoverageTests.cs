@@ -991,6 +991,20 @@ public sealed partial class HelpCoverageTests
             + "their own press (D121 §4.3).")),
         ("tools", "useToolLocation", "remove", new Owed(HelpRoomOwed.ToolLocation)),
         ("tools", "useToolPick", null, new Exempt("it is the system's file picker, for the person's own choice.")),
+        // GITAUTH1e (D198, the git-auth design §9): Settings → Git and the remote rows on Setup. An identity is the person's own to set up,
+        // test, trust, rename and remove: it holds a key or a stored sign-in, and Ask Daoris never enters, sees or tests one.
+        ("git", "useGitIdentity", null, new Exempt(
+            "an identity holds a key or a stored sign-in, so setting one up, importing a key file, testing it, trusting a host's key and removing "
+            + "it are the person's own presses; Ask Daoris never creates, imports, tests, renames or removes one (D198, the design §9).")),
+        // The `git-use` door (a remote's or a workspace's host pointed at an existing identity, never `own`) goes into the service's list
+        // and writer with the driver's, which `HelpProposalKindsTests` holds equal: GITAUTH1e leaves it, saying so in D198's note.
+        ("git", "useSetGitUse", null, new Exempt(
+            "it points a scope at an identity, or at the person's own sign-ins, which is a widening only the person confirms; the `git-use` "
+            + "door for an existing identity (never `own`) is owed with the service's list (D198's GITAUTH1e note).")),
+        ("git", "useToolPick", null, new Exempt("it is the system's file picker, for the key file the person imports.")),
+        ("projects", "useSetGitUse", null, new Exempt(
+            "a remote's or a workspace's choice of identity, as Settings → Git's: the `git-use` door for an existing identity is owed with the "
+            + "service's list (D198's GITAUTH1e note), and choosing the person's own sign-ins stays their press.")),
         ("agents", "useHarnessInput", null, new Exempt("it types into a running sign-in, the person's own words to it; " + SignIn)),
         ("agents", "useHarnessCancel", null, new Exempt("it stops a sign-in the person started, theirs to stop; " + SignIn)),
         // UX6e (D150 §3.1): what the agent may do moved to its page, the rules for every session and the proposals with it.
