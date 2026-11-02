@@ -172,7 +172,7 @@ internal static class ConformanceLiveCases
             return;
         }
 
-        var resumed = adapter.PrepareResume(run.Target(), Program(run), "c-1", "go on");
+        var resumed = adapter.PrepareResume(run.Target(), Program(run), "c-1");
         if (door.Abilities.Resumes is not { IsKnown: true, Value: true })
         {
             // The unsupported resume's fallback, answered as today: nothing to resume with, so the continuation hands the brief.

@@ -7,9 +7,9 @@ namespace Daoris.Driver;
 /// <see cref="AcpSession"/> held over the process's stdio on a protocol door, the native capture over its streams on a native one. It is the
 /// unit a start is: the downloads it is handed kept, the process bracketed by its own lineage token, started through the agents' route and
 /// tracked, a reaper beside it, the capture, a native prompt on its input, the wait for the exit and the capture bounded past it, written once
-/// beneath the contract so each executor holds the run and none prepares a process itself. Every executor's first run holds it (ONEWAY1h-i,
-/// through <c>Driver.HoldAsync</c>); the go-on and the retry stay the continuations' until ONEWAY1h-ii moves them onto
-/// <see cref="GoOnAsync"/> and <see cref="RestartAsync"/>.
+/// beneath the contract so each executor holds the run and none prepares a process itself. Every executor's run holds it (ONEWAY1h-i,
+/// through <c>Driver.HoldAsync</c>), a native run's go-on with held words and its resume's one retry too (ONEWAY1h-ii, <see cref="GoOnAsync"/>
+/// and <see cref="RestartAsync"/>).
 /// </summary>
 /// <remarks>
 /// <para><b>Admitted by the run's own evidence</b> (design §2.4): its door's wire and its resume. An operation the door's evidence does not
@@ -75,6 +75,12 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
 
     /// <summary>Set where a protocol resume was refused by the agent: nothing was prompted, and this is why (ANSWER1a).</summary>
     public AcpResumeRefused? ResumeRefused { get; private set; }
+
+    /// <summary>
+    /// Whether the run admits a native go-on with held words (MSG1b): a native door that resumes, handed the target and the selection its
+    /// resume is prepared from. Where it admits none, its executor holds no words for it.
+    /// </summary>
+    public bool GoesOn => !IsProtocol && adapter.Resumes && _start.Target is not null && _start.Selection is not null;
 
     private bool IsProtocol => adapter.Wire == SessionWire.Acp;
 
@@ -151,19 +157,30 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
         return await ConcludedAsync(leg, exit, first: true).ConfigureAwait(false);
     }
 
-    public override async Task<AgentRunEnd> GoOnAsync(string conversation, string prompt, IReadOnlyList<SessionEvent> opening, CancellationToken ct)
-    {
-        if (IsProtocol || !adapter.Resumes || _start.Target is not { } target || _start.Selection is not { } selection) throw Unsupported("a go-on");
+    public override Task<AgentRunEnd> GoOnAsync(string conversation, string prompt, IReadOnlyList<SessionEvent> opening, CancellationToken ct) =>
+        GoOnAsync(conversation, prompt, opening, started: null, ct);
 
-        // The adapter's own resume of the kept conversation, the words its prompt, then the settings and servers the run before it was handed, so it
-        // runs under the same rules (twin of DriverContinuations.GoOnStart; the executors' move deletes it).
-        var next = adapter.PrepareResume(target, host.Command(adapter.Name), conversation, prompt) ?? throw Unsupported("a resume");
+    /// <summary>
+    /// The go-on, its executor told once its process is up and before anything reads it (<paramref name="started"/>): where the words it carries
+    /// are sent (COWORK1c), and the line between a go-on that never started and one that did. A conversation it names is kept, and never told
+    /// to the resume this run began with (<see cref="TransportStart.Named"/>), whose own words it does not carry.
+    /// </summary>
+    internal async Task<AgentRunEnd> GoOnAsync(
+        string conversation, string prompt, IReadOnlyList<SessionEvent> opening, Action? started, CancellationToken ct)
+    {
+        if (!GoesOn) throw Unsupported("a go-on");
+
+        // The adapter's own resume of the kept conversation, then the settings and servers the run before it was handed, so it runs under the
+        // same rules; the words go on its input.
+        var (target, selection) = (_start.Target!, _start.Selection!);
+        var next = adapter.PrepareResume(target, host.Command(adapter.Name), conversation) ?? throw Unsupported("a resume");
         if (_carriers.Settings is not null) adapter.HandSettings(next, _carriers.Settings);
         if (_carriers.Servers is not null) adapter.HandServers(next, _carriers.Servers);
         var info = host.Prepared(adapter, target, selection, next);
 
         var (process, proc) = await StartProcessAsync(Records().SessionId, info, StartClass.Person, piece: null, moved: null, ct).ConfigureAwait(false);
-        var leg = Captured(process, proc, append: true, opening, preamble: null, ct);
+        started?.Invoke();
+        var leg = Captured(process, proc, append: true, opening, preamble: null, named: null, ct);
         await PromptedAsync(process, prompt, ct).ConfigureAwait(false);
         var exit = await host.WaitAsync(Records().SessionId, proc, process, ct, null, null, default, null).ConfigureAwait(false);
         return await ConcludedAsync(leg, exit, first: false).ConfigureAwait(false);
@@ -179,7 +196,7 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
         // The first run's start again, already the launcher's where that one was (TERMTRUST1a): left as it is, and said again, under a token of
         // its own (COWORKVIEW1a).
         var (process, proc) = await StartProcessAsync(records.SessionId, _start.Info, StartClass.Person, piece: null, moved: null, ct).ConfigureAwait(false);
-        var leg = Captured(process, proc, append: true, opening: null, preamble: null, ct);
+        var leg = Captured(process, proc, append: true, opening: null, preamble: null, _start.Named, ct);
         if (_start.Prompt is { } prompt) await PromptedAsync(process, prompt, ct).ConfigureAwait(false);
         var exit = await host.WaitAsync(records.SessionId, proc, process, ct, null, null, default, null).ConfigureAwait(false);
         return await ConcludedAsync(leg, exit, first: false).ConfigureAwait(false);
@@ -257,7 +274,7 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
 
         _opened = IsProtocol
             ? await OpenedProtocolAsync(process, proc, conversation, ct).ConfigureAwait(false)
-            : Captured(process, proc, append: conversation is not null, records.Opening, records.Preamble, ct);
+            : Captured(process, proc, append: conversation is not null, records.Opening, records.Preamble, _start.Named, ct);
         // FOUNDATION1f-iv part b: the write's return is where a carry-on's moved words are `sent`, never the process's start.
         if (_start.Prompt is { } prompt && await PromptedAsync(process, prompt, ct).ConfigureAwait(false)) _start.Written?.Invoke();
     }
@@ -285,8 +302,12 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
     /// <summary>A native harness's prompt on its input, once its output is being read, then closed (AGENTLYNTAI1s-i); whether the write returned.</summary>
     private Task<bool> PromptedAsync(Process process, string prompt, CancellationToken ct) => NativePrompt.WriteAsync(process, adapter, prompt, ct);
 
-    /// <summary>The native door's capture of one run: its structured stream where the adapter reads one, else the plain text (D76, CONV3).</summary>
-    private Leg Captured(Process process, string proc, bool append, IReadOnlyList<SessionEvent>? opening, string? preamble, CancellationToken ct)
+    /// <summary>
+    /// The native door's capture of one run: its structured stream where the adapter reads one, else the plain text (D76, CONV3); a
+    /// conversation the stream names told to <paramref name="named"/>.
+    /// </summary>
+    private Leg Captured(
+        Process process, string proc, bool append, IReadOnlyList<SessionEvent>? opening, string? preamble, Action? named, CancellationToken ct)
     {
         var records = Records();
         var id = records.SessionId;
@@ -298,7 +319,7 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
                     host.Hearing(process.StandardOutput, id), host.Hearing(process.StandardError, id), records.Transcript, id, records.Output,
                     records.Events, mapper, prompt: null, ct, preamble, opened: opening, append: append, said: records.Said, own: _own,
                     lineage: records.LineageHome is { } home ? LineageStreams.Current.Writer(home, id, proc) : null),
-                id, records.KeepAs);
+                id, records.KeepAs, named);
             _captures.Add(structured);
             return new Leg(process, proc, structured) { Mapper = mapper, Structured = structured };
         }
@@ -311,16 +332,16 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
 
     /// <summary>
     /// The native door's conversation id, once its output has ended (ANSWER1a): kept for a quest's session and told to a resume, whose run that
-    /// never named one ended before the harness opened its conversation (twin of <c>Driver.KeepingAsync</c>, which the continuations' move deletes).
+    /// never named one ended before the harness opened its conversation.
     /// </summary>
-    private async Task<AcpUsage?> KeepingAsync(IStreamMapper mapper, Task<AcpUsage?> capture, string sessionId, string? keepAs)
+    private async Task<AcpUsage?> KeepingAsync(IStreamMapper mapper, Task<AcpUsage?> capture, string sessionId, string? keepAs, Action? named)
     {
         var usage = await capture.ConfigureAwait(false);
         if (mapper.Conversation is { } conversation)
         {
             if (keepAs is not null) host.KeepConversation(sessionId, keepAs, conversation);
-            // It opened the conversation its argument carried the person's words to, so the words went (MSG1b).
-            _start.Named?.Invoke();
+            // It opened the conversation its input carried the person's words to, so the words went (MSG1b).
+            named?.Invoke();
         }
 
         return usage;

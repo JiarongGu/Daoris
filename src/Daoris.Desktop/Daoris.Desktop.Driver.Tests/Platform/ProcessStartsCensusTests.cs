@@ -93,7 +93,6 @@ public sealed class ProcessStartsCensusTests
     /// <summary>The starts the row named, and the file manager's three doors: each passes the gate (the agents' route passes it too).</summary>
     [Theory]
     [InlineData("Daoris.Desktop.Driver/Agents/TransportRun.cs", "AgentStarts.StartAsync(")]
-    [InlineData("Daoris.Desktop.Driver/Loop/DriverContinuations.cs", "AgentStarts.StartAsync(")]
     [InlineData("Daoris.Desktop.Driver/Loop/Chat/ChatRunner.cs", "AgentStarts.StartAsync(")]
     [InlineData("Daoris.Desktop.Driver/Plugins/HookProcess.cs", "AgentStarts.StartAsync(")]
     [InlineData("Daoris.Desktop.Driver/Platform/AgentStarts.cs", "ProcessStarts.Shared.StartAsync(info, whose, ct)")]
@@ -128,13 +127,10 @@ public sealed class ProcessStartsCensusTests
         ["Daoris.Desktop.Driver/Agents/CodexUsage.cs"] = StartClass.Background,
         // A git identity's key made, or its host's keys read and its test run, at the person's own verb (GITAUTH1c).
         ["Daoris.Desktop.Driver/Workplace/GitIdentityActs.cs"] = StartClass.Person,
-        // A conversation's agent, a session going on with the person's words, a press, a terminal, and the host the window
-        // waits on.
+        // A conversation's agent, a press, a terminal, and the host the window waits on.
         ["Daoris.Desktop.Driver/Loop/Chat/ChatRunner.cs"] = StartClass.Person,
-        ["Daoris.Desktop.Driver/Loop/DriverContinuations.cs"] = StartClass.Person,
-        // The run over today's transports (AGENTPROVIDER1m-i), every executor's first start (ONEWAY1h-i): that start's class is its
-        // executor's, handed in (the loop's, or a person's for a run going on with the person's words); its go-on and its retry are a
-        // person's, as the continuations' are.
+        // The run over today's transports (AGENTPROVIDER1m-i), every executor's start: its first start's class is its executor's, handed in
+        // (the loop's, or a person's for a run going on with the person's words); its go-on and its retry are a person's (ONEWAY1h-ii).
         ["Daoris.Desktop.Driver/Agents/TransportRun.cs"] = StartClass.Person,
         ["Daoris.Desktop.Driver/Agents/HarnessActions.cs"] = StartClass.Person,
         ["Daoris.Desktop.Driver/Plugins/PluginTrialProcess.cs"] = StartClass.Person,
@@ -182,10 +178,9 @@ public sealed class ProcessStartsCensusTests
     /// </summary>
     private static readonly Dictionary<string, string> Routed = new(StringComparer.Ordinal)
     {
-        // A native run going on with the person's words (MSG1b), and its retry (SESSCTX1c), until ONEWAY1h-ii moves both onto the run.
-        ["Daoris.Desktop.Driver/Loop/DriverContinuations.cs"] = "ContainedKind.Agent",
-        // The run over today's transports (AGENTPROVIDER1m-i), every executor's first start since ONEWAY1h-i: driven sessions, answers'
-        // resumes, intakes, helpers, reviewers, brainstorm passes, workflow nodes, carry-ons and partners, and its own go-on and retry.
+        // The run over today's transports (AGENTPROVIDER1m-i), every executor's start: driven sessions, answers' resumes, intakes, helpers,
+        // reviewers, brainstorm passes, workflow nodes, carry-ons and partners (ONEWAY1h-i), and a native run's go-on with the person's words
+        // (MSG1b) and its resume's one retry (SESSCTX1c) since ONEWAY1h-ii.
         ["Daoris.Desktop.Driver/Agents/TransportRun.cs"] = "piece is null ? ContainedKind.Agent : ContainedKind.Piece",
         // A conversation, Ask Daoris's among them.
         ["Daoris.Desktop.Driver/Loop/Chat/ChatRunner.cs"] = "ContainedKind.Agent",
