@@ -43,7 +43,7 @@ public sealed record BrainstormOutcome(BrainstormRefusal Refusal, string Message
 /// <summary>
 /// The local host's brainstorm desk (BRAINSTORM1a3; D176 points 1, 2 and 8): the one writer of a brainstorm's request (ONEWAY1t),
 /// which a terminal's verbs reach. It writes the request the driver's look takes, the person's send and stop, and the clear; it
-/// reads where each brainstorm stands. A meeting is a kind of brainstorm (<c>BrainstormDesk.Meetings.cs</c>). It runs no pass and
+/// reads where each brainstorm stands. A meeting is a kind of brainstorm, asked of <see cref="MeetingDesk"/>. It runs no pass and
 /// spawns nothing: the passes are the driver's, in whichever process holds the loop.
 /// </summary>
 /// <remarks>
@@ -56,7 +56,7 @@ public sealed record BrainstormOutcome(BrainstormRefusal Refusal, string Message
 /// machine only; a shared host keeps no brainstorm, and nothing here is a quest operation or synced.</para>
 /// </remarks>
 /// <param name="home">The home the records are under, or null when there is none: every door then says so.</param>
-public sealed partial class BrainstormDesk(string? home)
+public sealed class BrainstormDesk(string? home)
 {
     public const string BrainstormKind = "brainstorm";
 
@@ -81,7 +81,7 @@ public sealed partial class BrainstormDesk(string? home)
     public const string Ended = "ended";
 
     /// <summary>One id shape for a brainstorm and a meeting (ONEWAY1t): the stricter of the two writers' before, so it is a folder's name and nothing more.</summary>
-    private static readonly Regex PlainName = new("^[A-Za-z0-9][A-Za-z0-9-]{0,31}$", RegexOptions.CultureInvariant);
+    internal static readonly Regex PlainName = new("^[A-Za-z0-9][A-Za-z0-9-]{0,31}$", RegexOptions.CultureInvariant);
 
     public string? Home { get; } = home;
 
@@ -196,7 +196,7 @@ public sealed partial class BrainstormDesk(string? home)
         && !path.Replace('\\', '/').Split('/').Contains("..");
 
     /// <summary>Whether the request on file is of these very words: the question, the repository, the agents in order and the sources.</summary>
-    private static bool Same(JsonElement on, string question, string? repository, IReadOnlyList<string> agents, IReadOnlyList<string> sources)
+    internal static bool Same(JsonElement on, string question, string? repository, IReadOnlyList<string> agents, IReadOnlyList<string> sources)
     {
         static List<string> Strings(JsonElement element, string name) =>
             element.TryGetProperty(name, out var listed) && listed.ValueKind == JsonValueKind.Array
@@ -326,16 +326,16 @@ public sealed partial class BrainstormDesk(string? home)
     private string PathOf(string id, string file) => DaorisHome.Entry(Home!, HomeEntry.Brainstorms, id, file);
 
     /// <summary>A new id, as the driver's verb makes one: eight hex digits, and never one a brainstorm here already has.</summary>
-    private string NewId(params string[] under)
+    private string NewId()
     {
         while (true)
         {
             var id = Guid.NewGuid().ToString("N")[..8];
-            if (!Directory.Exists(DaorisHome.Entry(Home!, HomeEntry.Brainstorms, [.. under, id]))) return id;
+            if (!Directory.Exists(DaorisHome.Entry(Home!, HomeEntry.Brainstorms, id))) return id;
         }
     }
 
-    private static string? Remove(string folder)
+    internal static string? Remove(string folder)
     {
         if (!Directory.Exists(folder)) return null;
         try
@@ -351,7 +351,7 @@ public sealed partial class BrainstormDesk(string? home)
     }
 
     /// <summary>A file written whole and atomically, indented, LF, as the driver writes its own.</summary>
-    private static void Write(string path, Action<Utf8JsonWriter> body)
+    internal static void Write(string path, Action<Utf8JsonWriter> body)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         using var stream = new MemoryStream();
@@ -378,7 +378,7 @@ public sealed partial class BrainstormDesk(string? home)
     }
 
     /// <summary>A file's root when it is a JSON object; null where it is missing, does not read, or is not one.</summary>
-    private static JsonElement? Parse(string path) => Read(path) is { } text ? JsonFields.ParseObject(text) : null;
+    internal static JsonElement? Parse(string path) => Read(path) is { } text ? JsonFields.ParseObject(text) : null;
 
-    private static string? Text(JsonElement element, string name) => JsonFields.Text(element, name);
+    internal static string? Text(JsonElement element, string name) => JsonFields.Text(element, name);
 }

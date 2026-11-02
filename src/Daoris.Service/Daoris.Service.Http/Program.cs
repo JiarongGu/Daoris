@@ -1908,6 +1908,7 @@ if (mode == ServiceMode.Local)
 if (mode == ServiceMode.Local)
 {
     var brainstorms = BrainstormDesk.FromEnvironment();
+    var meetings = MeetingDesk.FromEnvironment();
 
     app.MapGet("/api/brainstorms", (HttpContext http) =>
         MachineLocal(http) ? Results.Ok(brainstorms.List().Select(ToBrainstorm)) : OffMachineBrainstorm());
@@ -1920,7 +1921,7 @@ if (mode == ServiceMode.Local)
         {
             BrainstormDesk.MeetingKind when body.Sources is { Count: > 0 } =>
                 BrainstormReply(new(BrainstormRefusal.BadShape, "A meeting takes no named sources. Nothing was asked.")),
-            BrainstormDesk.MeetingKind => BrainstormReply(brainstorms.AskMeeting(body.Question, body.Repository, body.Agents, DateTimeOffset.UtcNow, body.Id)),
+            BrainstormDesk.MeetingKind => BrainstormReply(meetings.Ask(body.Question, body.Repository, body.Agents, DateTimeOffset.UtcNow, body.Id)),
             BrainstormDesk.BrainstormKind => BrainstormReply(
                 brainstorms.Ask(body.Question, body.Repository, body.Agents, DateTimeOffset.UtcNow, body.Id, body.Sources)),
             _ => BrainstormReply(BadBrainstormKind(body.Kind)),
@@ -1941,7 +1942,7 @@ if (mode == ServiceMode.Local)
         if (!MachineLocal(http)) return OffMachineBrainstorm();
         return BrainstormKindOf(kind) switch
         {
-            BrainstormDesk.MeetingKind => BrainstormReply(brainstorms.SendMeeting(id, round, DateTimeOffset.UtcNow)),
+            BrainstormDesk.MeetingKind => BrainstormReply(meetings.Send(id, round, DateTimeOffset.UtcNow)),
             BrainstormDesk.BrainstormKind when round is not null => BrainstormReply(
                 new(BrainstormRefusal.BadShape, "A brainstorm has one packet to send, no rounds; a round is a meeting's.")),
             BrainstormDesk.BrainstormKind => BrainstormReply(brainstorms.Send(id, DateTimeOffset.UtcNow)),
@@ -1954,7 +1955,7 @@ if (mode == ServiceMode.Local)
         if (!MachineLocal(http)) return OffMachineBrainstorm();
         return BrainstormKindOf(kind) switch
         {
-            BrainstormDesk.MeetingKind => BrainstormReply(brainstorms.StopMeeting(id, DateTimeOffset.UtcNow)),
+            BrainstormDesk.MeetingKind => BrainstormReply(meetings.Stop(id, DateTimeOffset.UtcNow)),
             BrainstormDesk.BrainstormKind => BrainstormReply(brainstorms.Stop(id, DateTimeOffset.UtcNow)),
             _ => BrainstormReply(BadBrainstormKind(kind)),
         };
@@ -1965,7 +1966,7 @@ if (mode == ServiceMode.Local)
         if (!MachineLocal(http)) return OffMachineBrainstorm();
         return BrainstormKindOf(kind) switch
         {
-            BrainstormDesk.MeetingKind => BrainstormReply(brainstorms.ClearMeeting(id)),
+            BrainstormDesk.MeetingKind => BrainstormReply(meetings.Clear(id)),
             BrainstormDesk.BrainstormKind => BrainstormReply(brainstorms.Clear(id)),
             _ => BrainstormReply(BadBrainstormKind(kind)),
         };

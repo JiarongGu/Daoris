@@ -39,11 +39,11 @@ public sealed class MeetingDeskTests : IDisposable
     [Fact]
     public void Every_meeting_row_of_the_files_table_reads_as_the_driver_reads_it()
     {
-        var desk = new BrainstormDesk(_home);
+        var desk = new MeetingDesk(_home);
         var rows = Table()["meetings"]!.AsArray();
 
         Put("ab12cd37", "request.json", rows[0]!["file"]!.GetValue<string>());
-        var read = desk.FindMeeting("ab12cd37")!;
+        var read = desk.Find("ab12cd37")!;
         var reads = rows[0]!["reads"]!;
         Assert.Equal((reads["question"]!.GetValue<string>(), reads["repository"]!.GetValue<string>()), (read.Question, read.Repository));
         Assert.Equal(reads["agents"]!.AsArray().Select(agent => agent!.GetValue<string>()), read.Agents);
@@ -51,7 +51,7 @@ public sealed class MeetingDeskTests : IDisposable
         foreach (var row in new[] { rows[1], rows[2] })
         {
             Put("ab12cd37", "state.json", row!["state"]!.GetValue<string>());
-            var stood = desk.FindMeeting("ab12cd37")!;
+            var stood = desk.Find("ab12cd37")!;
             Assert.Equal(
                 (row["reads"]!["state"]!.GetValue<string>(), row["reads"]!["round"]!.GetValue<int>(), row["reads"]!["packet"]!.GetValue<string>()),
                 (stood.State, stood.Round!.Value, stood.Packet!));
@@ -60,15 +60,15 @@ public sealed class MeetingDeskTests : IDisposable
         var send = rows[3]!;
         Put("ab12cd37", "state.json", """{"state":"frozen","round":2,"packet":"sha256:5f1c"}""");
         Put("ab12cd37", Path.Combine("sent", $"{send["round"]!.GetValue<int>()}.json"), send["sent"]!.GetValue<string>());
-        Assert.Equal(send["reads"]!["sent"]!.GetValue<string>(), desk.FindMeeting("ab12cd37")!.Sent);
+        Assert.Equal(send["reads"]!["sent"]!.GetValue<string>(), desk.Find("ab12cd37")!.Sent);
     }
 
     [Fact]
     public void A_meeting_is_asked_as_a_request_under_the_meetings_folder_in_the_tables_shape()
     {
-        var desk = new BrainstormDesk(_home);
+        var desk = new MeetingDesk(_home);
 
-        var asked = desk.AskMeeting(" Which window? ", " reports ", ["stub", " acp-stub "], At);
+        var asked = desk.Ask(" Which window? ", " reports ", ["stub", " acp-stub "], At);
 
         Assert.Equal(BrainstormRefusal.None, asked.Refusal);
         var id = asked.Brainstorm!.Id;
@@ -81,39 +81,39 @@ public sealed class MeetingDeskTests : IDisposable
         Assert.Equal(shape.Select(pair => pair.Key), written.Select(pair => pair.Key));
         Assert.Equal(1, written["meeting"]!.GetValue<int>());
         Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.Brainstorms, id)));
-        Assert.Empty(desk.List());
+        Assert.Empty(new BrainstormDesk(_home).List());
     }
 
     [Fact]
     public void A_meeting_names_two_to_four_different_agents_a_question_in_bounds_and_no_sources()
     {
-        var desk = new BrainstormDesk(_home);
+        var desk = new MeetingDesk(_home);
 
-        var one = desk.AskMeeting("Which?", null, ["stub"], At);
+        var one = desk.Ask("Which?", null, ["stub"], At);
         Assert.Equal(BrainstormRefusal.BadShape, one.Refusal);
         Assert.Contains("names 2 to 4 different agents, each once; 1 were named", one.Message);
-        Assert.Equal(BrainstormRefusal.BadShape, desk.AskMeeting("Which?", null, ["stub", "STUB"], At).Refusal);
-        Assert.Equal(BrainstormRefusal.BadShape, desk.AskMeeting("Which?", null, ["a", "b", "c", "d", "e"], At).Refusal);
-        Assert.Equal(BrainstormRefusal.BadShape, desk.AskMeeting("Which?", null, null, At).Refusal);
-        Assert.Equal(BrainstormRefusal.BadShape, desk.AskMeeting("Which?", null, ["a b", "c"], At).Refusal);
-        Assert.Equal(BrainstormRefusal.BadShape, desk.AskMeeting(" ", null, ["a", "b"], At).Refusal);
-        Assert.Contains("1 to 4000 characters; this one is 4001", desk.AskMeeting(new string('x', 4001), null, ["a", "b"], At).Message);
-        Assert.Equal(BrainstormRefusal.BadShape, desk.AskMeeting("Which?", null, ["a", "b"], At, "../x").Refusal);
-        Assert.Equal(BrainstormRefusal.NoHome, new BrainstormDesk(null).AskMeeting("Which?", null, ["a", "b"], At).Refusal);
+        Assert.Equal(BrainstormRefusal.BadShape, desk.Ask("Which?", null, ["stub", "STUB"], At).Refusal);
+        Assert.Equal(BrainstormRefusal.BadShape, desk.Ask("Which?", null, ["a", "b", "c", "d", "e"], At).Refusal);
+        Assert.Equal(BrainstormRefusal.BadShape, desk.Ask("Which?", null, null, At).Refusal);
+        Assert.Equal(BrainstormRefusal.BadShape, desk.Ask("Which?", null, ["a b", "c"], At).Refusal);
+        Assert.Equal(BrainstormRefusal.BadShape, desk.Ask(" ", null, ["a", "b"], At).Refusal);
+        Assert.Contains("1 to 4000 characters; this one is 4001", desk.Ask(new string('x', 4001), null, ["a", "b"], At).Message);
+        Assert.Equal(BrainstormRefusal.BadShape, desk.Ask("Which?", null, ["a", "b"], At, "../x").Refusal);
+        Assert.Equal(BrainstormRefusal.NoHome, new MeetingDesk(null).Ask("Which?", null, ["a", "b"], At).Refusal);
         Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.Brainstorms)));
     }
 
     [Fact]
     public void A_meetings_own_id_makes_the_ask_idempotent_and_other_words_under_it_are_refused()
     {
-        var desk = new BrainstormDesk(_home);
-        Assert.Equal(BrainstormRefusal.None, desk.AskMeeting("Which?", null, ["a", "b"], At, "weekly").Refusal);
+        var desk = new MeetingDesk(_home);
+        Assert.Equal(BrainstormRefusal.None, desk.Ask("Which?", null, ["a", "b"], At, "weekly").Refusal);
         var written = File.ReadAllText(Path.Combine(Folder("weekly"), "request.json"));
 
-        var again = desk.AskMeeting("Which?", null, ["a", "b"], At.AddHours(1), "weekly");
+        var again = desk.Ask("Which?", null, ["a", "b"], At.AddHours(1), "weekly");
         Assert.Equal(BrainstormRefusal.None, again.Refusal);
         Assert.Contains("is already asked: the same meeting, never a second spend", again.Message);
-        var other = desk.AskMeeting("Which?", null, ["b", "a"], At, "weekly");
+        var other = desk.Ask("Which?", null, ["b", "a"], At, "weekly");
         Assert.Equal(BrainstormRefusal.State, other.Refusal);
         Assert.Contains("was asked with other words; an id names one meeting", other.Message);
         Assert.Equal(written, File.ReadAllText(Path.Combine(Folder("weekly"), "request.json")));
@@ -123,82 +123,82 @@ public sealed class MeetingDeskTests : IDisposable
     [Fact]
     public void A_round_is_sent_once_by_its_number_and_only_when_the_look_froze_its_packet()
     {
-        var desk = new BrainstormDesk(_home);
-        var id = desk.AskMeeting("Which?", null, ["a", "b"], At).Brainstorm!.Id;
+        var desk = new MeetingDesk(_home);
+        var id = desk.Ask("Which?", null, ["a", "b"], At).Brainstorm!.Id;
 
-        Assert.Equal(BrainstormRefusal.NotFound, desk.SendMeeting("ffffffff", null, At).Refusal);
-        var early = desk.SendMeeting(id, null, At);
+        Assert.Equal(BrainstormRefusal.NotFound, desk.Send("ffffffff", null, At).Refusal);
+        var early = desk.Send(id, null, At);
         Assert.Equal(BrainstormRefusal.State, early.Refusal);
         Assert.Contains("has no packet yet", early.Message);
 
         Put(id, "state.json", """{ "id": "x", "state": "frozen", "round": 1, "packet": "sha256:aa", "code": null }""");
-        var first = desk.SendMeeting(id, null, At);
+        var first = desk.Send(id, null, At);
         Assert.Equal(BrainstormRefusal.None, first.Refusal);
         Assert.Contains("round 1 sent, packet `sha256:aa`", first.Message);
         var sent = JsonNode.Parse(File.ReadAllText(Path.Combine(Folder(id), "sent", "1.json")))!.AsObject();
         var shape = JsonNode.Parse(Table()["meetings"]![3]!["sent"]!.GetValue<string>())!.AsObject();
         Assert.Equal(shape.Select(pair => pair.Key), sent.Select(pair => pair.Key));
-        Assert.Contains("already sent: the same round, never a second spend", desk.SendMeeting(id, 1, At).Message);
+        Assert.Contains("already sent: the same round, never a second spend", desk.Send(id, 1, At).Message);
 
         Put(id, "state.json", """{ "state": "running", "round": 1, "packet": "sha256:aa" }""");
-        Assert.Contains("round 1 is already sent, and running", desk.SendMeeting(id, null, At).Message);
-        var busy = desk.SendMeeting(id, 2, At);
+        Assert.Contains("round 1 is already sent, and running", desk.Send(id, null, At).Message);
+        var busy = desk.Send(id, 2, At);
         Assert.Equal(BrainstormRefusal.State, busy.Refusal);
         Assert.Contains("round 1 is running; round 2 can be sent once it ends", busy.Message);
 
         Put(id, "state.json", """{ "state": "frozen", "round": 2, "packet": "sha256:bb" }""");
-        var unnamed = desk.SendMeeting(id, null, At);
+        var unnamed = desk.Send(id, null, At);
         Assert.Equal(BrainstormRefusal.State, unnamed.Refusal);
         Assert.Contains("waits for round 2", unnamed.Message);
-        Assert.Contains("not round 3", desk.SendMeeting(id, 3, At).Message);
-        Assert.Equal(BrainstormRefusal.None, desk.SendMeeting(id, 2, At).Refusal);
+        Assert.Contains("not round 3", desk.Send(id, 3, At).Message);
+        Assert.Equal(BrainstormRefusal.None, desk.Send(id, 2, At).Refusal);
         Assert.True(File.Exists(Path.Combine(Folder(id), "sent", "2.json")));
     }
 
     [Fact]
     public void A_stopped_or_ended_meeting_sends_nothing_and_stop_writes_the_file_unless_it_ended()
     {
-        var desk = new BrainstormDesk(_home);
-        var id = desk.AskMeeting("Which?", null, ["a", "b"], At).Brainstorm!.Id;
+        var desk = new MeetingDesk(_home);
+        var id = desk.Ask("Which?", null, ["a", "b"], At).Brainstorm!.Id;
         Put(id, "state.json", """{ "state": "frozen", "round": 1, "packet": "sha256:aa" }""");
 
-        Assert.Equal(BrainstormRefusal.NotFound, desk.StopMeeting("ffffffff", At).Refusal);
-        var stopped = desk.StopMeeting(id, At);
+        Assert.Equal(BrainstormRefusal.NotFound, desk.Stop("ffffffff", At).Refusal);
+        var stopped = desk.Stop(id, At);
         Assert.Equal(BrainstormRefusal.None, stopped.Refusal);
         Assert.Contains($"Meeting `{id}`: stop asked", stopped.Message);
         Assert.True(File.Exists(Path.Combine(Folder(id), "stop.json")));
-        var refused = desk.SendMeeting(id, null, At);
+        var refused = desk.Send(id, null, At);
         Assert.Equal(BrainstormRefusal.State, refused.Refusal);
         Assert.Contains("was stopped: nothing more goes to any agent", refused.Message);
 
         File.Delete(Path.Combine(Folder(id), "stop.json"));
         Put(id, "state.json", """{ "state": "ended", "round": 2, "packet": "sha256:aa", "code": "rounds-ended" }""");
-        Assert.Contains("ended (rounds-ended): nothing more goes", desk.SendMeeting(id, null, At).Message);
-        Assert.Contains("already ended (rounds-ended)", desk.StopMeeting(id, At).Message);
+        Assert.Contains("ended (rounds-ended): nothing more goes", desk.Send(id, null, At).Message);
+        Assert.Contains("already ended (rounds-ended)", desk.Stop(id, At).Message);
         Assert.False(File.Exists(Path.Combine(Folder(id), "stop.json")));
     }
 
     [Fact]
     public void A_meeting_is_cleared_with_its_rooms_never_while_a_round_runs_and_no_brainstorm_is_touched()
     {
-        var desk = new BrainstormDesk(_home);
-        var kept = desk.Ask("Why?", null, null, At).Brainstorm!.Id;
-        var id = desk.AskMeeting("Which?", null, ["a", "b"], At).Brainstorm!.Id;
+        var desk = new MeetingDesk(_home);
+        var kept = new BrainstormDesk(_home).Ask("Why?", null, null, At).Brainstorm!.Id;
+        var id = desk.Ask("Which?", null, ["a", "b"], At).Brainstorm!.Id;
         var room = DaorisHome.Entry(_home, HomeEntry.BrainstormRooms, "meetings", id, "r1-a1");
         Directory.CreateDirectory(room);
         Put(id, "state.json", """{ "state": "running", "round": 1, "packet": "sha256:aa" }""");
 
-        var running = desk.ClearMeeting(id);
+        var running = desk.Clear(id);
         Assert.Equal(BrainstormRefusal.State, running.Refusal);
         Assert.Contains("is running; it is cleared once its round ends", running.Message);
 
         Put(id, "state.json", """{ "state": "ended", "round": 1, "packet": "sha256:aa" }""");
-        var cleared = desk.ClearMeeting(id);
+        var cleared = desk.Clear(id);
         Assert.Equal(BrainstormRefusal.None, cleared.Refusal);
         Assert.Contains("its records, its packets and its transcript are gone", cleared.Message);
         Assert.False(Directory.Exists(Folder(id)));
         Assert.False(Directory.Exists(room));
-        Assert.Equal(BrainstormRefusal.NotFound, desk.ClearMeeting(id).Refusal);
-        Assert.NotNull(desk.Find(kept));
+        Assert.Equal(BrainstormRefusal.NotFound, desk.Clear(id).Refusal);
+        Assert.NotNull(new BrainstormDesk(_home).Find(kept));
     }
 }
