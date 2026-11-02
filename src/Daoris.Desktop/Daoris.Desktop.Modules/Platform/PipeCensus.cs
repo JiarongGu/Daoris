@@ -43,8 +43,8 @@ public enum PipeDrain
 /// field holds one of <see cref="Values"/>, <see cref="Otherwise"/> where it holds another or is absent.
 /// </summary>
 /// <remarks>
-/// Every property whose name is <see cref="Field"/> ignoring case is read, and the strictest class any of them gives is the
-/// route's, so neither another casing nor a name said twice opens what the handler would read as the press. A value is compared
+/// The handlers read the field exact-case and once, so a name that matches <see cref="Field"/> only ignoring case, a name said twice,
+/// or one of <see cref="Unless"/> beside it is no form the rule names: it takes the strict class of the two (never Open). A value is compared
 /// as the handler reads it: a string by its text, whatever its escapes; <c>true</c>, <c>false</c> and <c>null</c> by kind.
 /// </remarks>
 /// <param name="Field">The payload's field.</param>
@@ -61,13 +61,23 @@ public sealed record PipeRule(string Field, IReadOnlyList<JsonElement> Values, P
     public PipeClass For(JsonElement? payload)
     {
         if (payload is not { ValueKind: JsonValueKind.Object } named) return Otherwise;
-        var classes = named.EnumerateObject()
-            .Where(property => string.Equals(property.Name, Field, StringComparison.OrdinalIgnoreCase))
-            .Select(property => Values.Any(value => Same(value, property.Value)) ? Class : Otherwise)
-            .ToList();
-        if (classes.Count == 0) return Otherwise;
-        return classes.FirstOrDefault(each => each != PipeClass.Open, PipeClass.Open);
+        var properties = named.EnumerateObject().ToList();
+        var fields = properties.Where(property => string.Equals(property.Name, Field, StringComparison.OrdinalIgnoreCase)).ToList();
+        if (fields.Count == 0) return Otherwise;
+        // The handler reads the field exact-case and once: another casing or a second say is no form it would read as named.
+        if (fields.Count > 1 || fields[0].Name != Field || properties.Any(property => Unless.Contains(property.Name, StringComparer.OrdinalIgnoreCase)))
+        {
+            return Class != PipeClass.Open ? Class : Otherwise;
+        }
+
+        return Values.Any(value => Same(value, fields[0].Value)) ? Class : Otherwise;
     }
+
+    /// <summary>
+    /// Fields that, said beside <see cref="Field"/>, make the payload no form <see cref="Field"/> names: the handler reads one of
+    /// these first (a history edit's <c>said</c>, run as the press whatever <c>plan</c> says).
+    /// </summary>
+    public IReadOnlyList<string> Unless { get; init; } = [];
 
     private static bool Same(JsonElement expected, JsonElement actual) =>
         expected.ValueKind == actual.ValueKind
@@ -452,7 +462,7 @@ public sealed class PipeCensus
         // KEEP1e: Free up space's list (`plan: true`) changes nothing; every other form starts a run removing what it names, their delete.
         table.Add("SYSTEM_SPACE_FREE", PipeRule.Of("plan", PipeClass.Open, PipeClass.Person, "true"));
         // GITAPP2m: a history edit's plan (`plan: true`) changes nothing; every other form moves the person's branch, pinned to what it showed.
-        table.Add("GIT_HISTORY_EDIT", PipeRule.Of("plan", PipeClass.Open, PipeClass.Person, "true"));
+        table.Add("GIT_HISTORY_EDIT", PipeRule.Of("plan", PipeClass.Open, PipeClass.Person, "true") with { Unless = ["said"] });
         return table;
 
         void Add(PipeClass @class, params string[] routes)

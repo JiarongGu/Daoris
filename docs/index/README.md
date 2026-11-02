@@ -255,7 +255,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/StatePublisherTests.cs` | 47 | 888 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/ConversationRoutes.cs` | 42 | 640 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs` | 60 | 945 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/GitRoutes.cs` | 46 | 695 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/GitRoutes.cs` | 46 | 697 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/HelpRoutes.cs` | 88 | 1465 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/LinesRoutes.cs` | 68 | 1094 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/SessionsRoutes.cs` | 78 | 1222 |
@@ -265,7 +265,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/NeedsAPerson.cs` | 56 | 912 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/SessionWords.cs` | 70 | 1336 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/InstancePipe.cs` | 101 | 1994 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/PipeCensus.cs` | 41 | 551 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/PipeCensus.cs` | 42 | 561 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/PipeTargetRows.cs` | 41 | 535 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/StandingConfirmation.cs` | 93 | 1710 |
 

@@ -493,6 +493,15 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
         Assert.Contains(Refusals.DriverRefused, await RefusalAsync(module, "GIT_HISTORY_EDIT", new { repository = "engine", edit = "pick", branch = "topic" }));
     }
 
+    /// <summary>REVIEW2 1: a payload asking for the plan and for the terminal's words at once is refused, so no reading order turns a look into a run.</summary>
+    [Fact]
+    public async Task A_history_edit_asking_for_its_plan_and_its_words_at_once_is_refused()
+    {
+        var module = await UpAsync(Checkout("engine", git: true));
+
+        Assert.Contains(Refusals.DriverRefused, await RefusalAsync(module, "GIT_HISTORY_EDIT", new { repository = "engine", edit = "pick", branch = "topic", target = "main", plan = true, said = true }));
+    }
+
     /// <summary>
     /// GITAPP2m: the plan form answers what the edit would take and writes nothing; the press with the plan's ids runs the act and answers it
     /// done, the branch's new tip and its old one's recovery ref, no machine path; the line is refused as data.

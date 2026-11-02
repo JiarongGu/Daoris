@@ -12876,3 +12876,13 @@ mis-rooted instance.
 **Fix.** `tools/index-hook.mjs` puts a blank line before each glued `**Note, ` line in every staged decision file and re-stages it, before the index is regenerated (pre-commit, which also finishes a conflicted merge); a file staged in part is left with a note. A clean merge commits without pre-commit, and git ignores what a `pre-merge-commit` hook stages (the tree is fixed before it runs), so `--install` also sets a `notes` merge driver (`merge.notes.*`, `tools/index-hook.mjs --merge-notes`) that `.gitattributes` names for `docs/decisions/*.md`: git's union merge, then the separation, inside the merge itself. No commit is remade, so the ids that delivery and landing records hold stay right. A clone without the driver merges those files as plain text, which fails the merge rather than gluing.
 
 **Verified.** Red first: the new `index-hook.test.mjs` cases (clean union merge, conflicted merge finished by `git commit`, glued note separated and a clean file untouched, a partly staged decision) failed; all pass after, with the driver configured by install, the merge commit as git made it, and the driver-absent fallback.
+
+## 2026-11-02 — a person-only git act and Free up space's delete ran as an open read through a payload's casing or a second flag
+
+**Symptom.** `{…, "Plan": true}` to `GIT_HISTORY_EDIT` or `SYSTEM_SPACE_FREE`, and `{…, "plan": true, "said": true}` to `GIT_HISTORY_EDIT`, were classed Open by the pipe's census and ran the press (a branch edit, a delete) with no card and no standing judgement (REVIEW2 findings 1 and 2).
+
+**Root cause.** `PipeRule.For` matched the field ignoring case and let an Open value decide, while the handlers read `plan` exact-case (`Flag`); and the history edit's handler read `said` before `plan`, which the census could not see.
+
+**Fix.** A name matching only ignoring case, or a field said twice, takes the strict class of the rule's two (`PipeRule.For`); `GIT_HISTORY_EDIT`'s rule names `said` as `Unless`, and its handler refuses `plan` beside `said`. The other rules (`TOOLS_GIT`, `PLUGIN_UPDATE`) read their field exact-case and first, and take the same casing rule.
+
+**Verified.** Red first: the new `PipeCensusTests` payloads and `A_history_edit_asking_for_its_plan_and_its_words_at_once_is_refused` failed (7); all pipe classes green after.
