@@ -39,20 +39,35 @@ public static class GitOwnInput
     public static async Task<string?> CertificateAsync(string root, string address, CancellationToken ct)
     {
         if (TreeRefs.ReachOf(address) is not ("https" or "http")) return null;
-        var (code, said, _) = await WorkingTree.GitAsync(
-            root, ["config", "--name-only", "--get-regexp", @"^http\.(.+\.)?ssl(cert|key)$"], ct).ConfigureAwait(false);
-        if (code != 0) return null;
-        foreach (var line in said.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        // git's own urlmatch decides which scoped setting wins for this address (a longer path, a user), not a prefix guess.
+        foreach (var name in new[] { "sslCert", "sslKey" })
         {
-            var name = line.EndsWith("sslcert", StringComparison.OrdinalIgnoreCase) ? "sslCert" : "sslKey";
-            // git names a scoped key `http.<url>.sslcert`, its url as written.
-            var last = line.LastIndexOf('.');
-            var scope = last >= "http.".Length ? line["http.".Length..last] : "";
-            if (scope.Length > 0 && !address.StartsWith(scope.TrimEnd('/'), StringComparison.OrdinalIgnoreCase)) continue;
-            return scope.Length == 0 ? $"http.{name}" : $"http.{scope}.{name}";
+            if (await UrlMatchedAsync(root, $"http.{name}", address, ct).ConfigureAwait(false)) return $"http.{name}";
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// The authentication-bearing setting an HTTPS act at <paramref name="address"/> would carry that Daoris's empty reset of the unscoped
+    /// key does not reach: a URL-scoped <c>http.&lt;url&gt;.extraHeader</c> or <c>cookieFile</c> wins by git's urlmatch (§3.3). Null where none.
+    /// </summary>
+    public static async Task<string?> ScopedInputAsync(string root, string address, CancellationToken ct)
+    {
+        if (TreeRefs.ReachOf(address) is not ("https" or "http")) return null;
+        foreach (var name in new[] { "extraHeader", "cookieFile" })
+        {
+            if (await UrlMatchedAsync(root, $"http.{name}", address, ct).ConfigureAwait(false)) return $"http.{name}";
+        }
+
+        return null;
+    }
+
+    /// <summary>Whether git's urlmatch finds a non-empty value of <paramref name="key"/> for the address; the value is never kept.</summary>
+    private static async Task<bool> UrlMatchedAsync(string root, string key, string address, CancellationToken ct)
+    {
+        var (code, said, _) = await WorkingTree.GitAsync(root, ["config", "--get-urlmatch", key, GitHttps.Bare(address)], ct).ConfigureAwait(false);
+        return code == 0 && said.Trim().Length > 0;
     }
 
     /// <summary>
@@ -71,6 +86,10 @@ public static class GitOwnInput
             // The certificate binds only where an HTTPS identity of Daoris's serves (GITAUTH1d): else today's credentials carry it, as before.
             if (serves == GitServeKind.Identity && await CertificateAsync(root, address, ct).ConfigureAwait(false) is { } certificate)
                 return GitHolds.Hold(home, root, repository, workspace, remote, address, git, GitFailureClass.OwnInput, certificate, DateTimeOffset.UtcNow);
+            // A scoped header or cookie file is the person's own authentication where an identity serves, or the move has left nothing to serve.
+            if ((serves == GitServeKind.Identity || (serves == GitServeKind.None && GitMoved.Moved(home)))
+                && await ScopedInputAsync(root, address, ct).ConfigureAwait(false) is { } scoped)
+                return GitHolds.Hold(home, root, repository, workspace, remote, address, git, GitFailureClass.OwnInput, scoped, DateTimeOffset.UtcNow);
         }
 
         GitHolds.Lift(home, root, remote, "setting", hold => hold.Class == GitFailures.Code(GitFailureClass.OwnInput));

@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-02 - A pasted token kept on disk, a lone checkout remembered, scoped headers and a erase-after-remove (REVIEW2, GITAUTH1e)
+
+- **Symptom:** (3) an HTTPS token sent over the pipe was written to `data/pipe-waiting/` and shown on the card; (4) pointing one repository's remote from the window dropped every other checkout from `run/git/checkouts.json`, so their pointers read as none in the doors and the author; (5) a repository's URL-scoped `http.<url>.extraHeader` or `cookieFile` still reached an identity's act, and a scoped certificate was matched by prefix; (6) removing an HTTPS identity dropped it before GCM's erase, and with no GCM said nothing; (10) a local remote's machine path was answered by `GIT_BRANCHES`.
+- **Root cause:** (3) `GIT_IDENTITY` was not a keyed route and read `token` from any payload; (4) `GIT_USE` remembered `Checkouts(registry, repository, …)` into a file written whole; (5) Daoris's reset covers only the unscoped keys, and git's urlmatch lets a scoped one win; (6) `RemoveAsync` removed first and `EraseAsync` returned when no GCM was found; (10) the row kept the address when it named no host.
+- **Fix:** (3) `PipeCensus.SecretRefusal` refuses a `token` on the pipe before anything is recorded, and the route is keyed; (4) `ToolsRoutes.UseGitAsync` remembers every checkout; (5) `GitOwnInput.ScopedInputAsync` and `CertificateAsync` ask `git config --get-urlmatch` and hold the remote as own-input; (6) erase first, remove on success, `no-gcm` refused with the identity kept; (10) a local remote is its folder's name (`GitRemoteRows.LocalName`).
+- **Verify:** `PipeCensusTests`, `GitOwnInputScopedGitTests` (a real git and repository-local scoped settings), `GitHttpsTests`, `GitRemoteRowsTests`. Written beside the fixes, not before them: the reds were not seen.
+
 ## 2026-11-02 - Thirty-seven chat Process tests red after the routing standing was told (COWORKVIEW1e-i)
 
 - **Symptom:** the driver's Process gate failed 37 tests across nine chat classes (`ChatGoesOnProcessTests`, `ChatPendingProcessTests`, `ProtocolChatTests`, `TurnStopTests`, `HandOverProcessTests` and four more): prompts read `Routing standing here: ...` where the person's words were expected, and stand-ins keyed on a prompt's text (`hold`, `refuse`, a reply's length as context) no longer matched.

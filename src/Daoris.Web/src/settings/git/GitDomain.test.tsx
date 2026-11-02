@@ -39,7 +39,7 @@ describe('the git domain', () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
     invoke.mockImplementation(async (module: string, type: string, options?: { payload?: Payload }) => {
       if (module !== 'DAORIS.DRIVER') return undefined;
-      return answers[type]?.(options?.payload) ?? DRIVER_STATE;
+      return answers[type]?.(options?.payload) ?? { ...DRIVER_STATE, machineGitAccess: [{ class: 'read', value: 'ask' }] };
     });
   });
   afterEach(() => {
@@ -54,7 +54,7 @@ describe('the git domain', () => {
       .toHaveAttribute('aria-current', 'page');
     await waitFor(() => expect(document.querySelector('[data-git-identity="gi-00000000000c"]')).not.toBeNull());
     expect(screen.getAllByRole('article').map((article) => article.querySelector('header span')?.textContent))
-      .toEqual(['Git identities', 'Defaults by host', 'Your own git sign-ins']);
+      .toEqual(['Git identities', 'Defaults by host', 'Your own git sign-ins', 'Git access on this machine']);
     expect(serviceCalls()).toEqual([]);
   });
 

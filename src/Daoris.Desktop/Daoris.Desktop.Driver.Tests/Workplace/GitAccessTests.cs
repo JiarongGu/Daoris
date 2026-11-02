@@ -21,10 +21,7 @@ public sealed class GitAccessTests : IDisposable
         File.WriteAllText(Path.Combine(_root, DaorisHome.InstallMarker), "# Daoris — installed desktop\n");
     }
 
-    public void Dispose()
-    {
-        try { Directory.Delete(_root, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
-    }
+    public void Dispose() => GitSeed.Discard(_root);
 
     private void Put(string json)
     {

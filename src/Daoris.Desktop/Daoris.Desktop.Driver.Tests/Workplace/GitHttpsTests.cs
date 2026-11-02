@@ -24,6 +24,31 @@ public sealed class GitHttpsTests : IDisposable
         return pairs.GroupBy(pair => pair.Key).ToDictionary(group => group.Key, group => group.Last().Value);
     }
 
+    /// <summary>REVIEW2: an HTTPS identity is erased before it is removed; with no GCM found it is kept and the refusal says so.</summary>
+    [Fact]
+    public async Task Removing_an_https_identity_with_no_GCM_found_keeps_the_identity_and_says_so()
+    {
+        var home = Path.Combine(_root, "data");
+        Directory.CreateDirectory(home);
+        File.WriteAllText(Path.Combine(_root, DaorisHome.InstallMarker), "# Daoris — installed desktop\n");
+        GitIdentities.Change(home, _ => [new("gi-0000000000c1", "Work", "example.invalid", GitIdentity.Https, null, null, null, null, null, false, null, true)]);
+        var path = Environment.GetEnvironmentVariable("PATH");
+        Directory.CreateDirectory(Path.Combine(_root, "empty"));
+        try
+        {
+            Environment.SetEnvironmentVariable("PATH", Path.Combine(_root, "empty"));
+            var refused = await Assert.ThrowsAsync<DriverException>(() => GitIdentityHttps.RemoveAsync(home, "Work", CancellationToken.None));
+
+            Assert.Contains("(no-gcm)", refused.Message);
+            Assert.Contains("identity was kept", refused.Message);
+            Assert.Single(GitIdentities.Read(home));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("PATH", path);
+        }
+    }
+
     [Fact]
     public void An_identitys_act_loses_every_authentication_input_of_the_persons_and_gains_GCM_in_Daoris_namespace()
     {

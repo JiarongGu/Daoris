@@ -1023,6 +1023,7 @@ public sealed class InstancePipe : IDisposable
         IReadOnlyList<PipeConfirmationField>? fields = null;
         if (@class == PipeClass.Person)
         {
+            if (PipeCensus.SecretRefusal(request.Type, request.Payload) is { } secret) return (IpcJson.Serialize(Refuse(request, Shape, $"{Capitalized(secret)} Nothing was asked.")), null);
             var (shown, unshown) = PipeConfirmations.FieldsOf(request.Payload);
             if (unshown is not null) return (IpcJson.Serialize(Refuse(request, Shape, $"{Capitalized(unshown)} Nothing was asked.")), null);
             fields = shown;

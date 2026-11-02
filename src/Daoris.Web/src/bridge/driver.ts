@@ -8,6 +8,7 @@ import type {
 import { keys, SYNC_SLICE } from '../data/queries';
 import type { AccountWaitTick, Consideration, TrustHold } from '../data/signals';
 import type { AccessLevel } from '../settings/repository/Access';
+import type { GitAccessLevel } from '../settings/repository/GitAccess';
 import type { CommitRule } from '../settings/repository/Commits';
 import type { HeavyGate, HeavyMarks } from '../settings/repository/HeavyGates';
 import type { SessionChecksValue } from '../settings/repository/SessionChecks';

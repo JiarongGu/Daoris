@@ -351,11 +351,13 @@ public sealed class ToolsRoutes(DriverContext context)
             {
                 repository ??= throw new DriverException("`repository` is needed.");
                 service ??= throw new DriverException("Daoris is not ready to read its repositories yet.");
-                var rows = LinesRoutes.Checkouts(await service.RegistryAsync(cancellationToken).ConfigureAwait(false), repository, workspace);
+                var registry = await service.RegistryAsync(cancellationToken).ConfigureAwait(false);
+                var rows = LinesRoutes.Checkouts(registry, repository, workspace);
                 var root = rows.Select(row => row.Root).FirstOrDefault(each => !string.IsNullOrEmpty(each) && Directory.Exists(each))
                     ?? throw new DriverException($"{repository} has no checkout here.");
                 var addresses = await GitRemoteRows.AddressesAsync(root, cancellationToken).ConfigureAwait(false);
-                GitFolders.Remember(home, rows.Where(row => !string.IsNullOrEmpty(row.Root)).Select(row => (row.Root!, row.Repository, row.Workspace)));
+                // Every checkout, as the verb remembers them: the file is written whole, so a lone repository's would drop the rest.
+                GitFolders.Remember(home, LinesRoutes.Checkouts(registry, null, null).Select(row => (row.Root!, row.Repository, row.Workspace ?? "")));
                 GitIdentityActs.UseRepository(home, repository, remote ?? "origin", value, addresses);
                 break;
             }
