@@ -701,7 +701,7 @@ async function post<T>(path: string, body: unknown, method: 'POST' | 'DELETE' = 
   if (!response.ok) {
     // The service's refusal sentence IS the contract — a publish to a non-adopter, a decline with no
     // reason, a respond racing a take that already won. It reaches the person verbatim (D38). Its code rides along where the
-    // host gives one (D156 §5.2's `person-only`, `stale`, `grant`), so a reader can tell the person's door from the rest.
+    // host gives one (D156 §5.2's `person-only`, `stale`; a confirmation's `not-made`), so a reader can tell the person's door from the rest.
     const parsed = await response.json().catch(() => null);
     throw Object.assign(new Error(parsed?.error ?? `${response.status} ${response.statusText}`), {
       status: response.status, ...(typeof parsed?.code === 'string' ? { code: parsed.code } : {}),
