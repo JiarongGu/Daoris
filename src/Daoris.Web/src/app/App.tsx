@@ -1107,6 +1107,8 @@ export function App() {
     'request-declined': (item) => { if (item.declined?.work) openQuest(item.declined.work); },
     // A held git remote nothing serves leads to Settings → Git, where its identity is set up (GITAUTH1e); a browser has no such page.
     ...(attached ? { 'git-held': () => open('settings', 'git') } : {}),
+    // The home's conversion (WORKFLOWCLEAN1g-ii) opens the review the place head's Convert… opens. A shell's alone: the census is this machine's.
+    ...(attached ? { 'workflow-convert': () => openConversion() } : {}),
     // A go-ahead opens the ask it was asked on, where every go-ahead of it is listed (KNOWUSE1a).
     'go-ahead': (item) => { if (item.ask) openAsk(item.ask); },
     // A departure opens its quest's page, where what was required and how its done answered are quoted (DRIFT1d2).
