@@ -22927,3 +22927,73 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 > **d** large graphs (web; c). Contract and proof: the canvas design's §9 row d, §4, §4.1 and §11: positioned worlds, the spatial grid, culling past 400, the tiers, the budget, the worker layout with revisions, find, the minimap's rule, the view by feature key and graph identity, `aria-setsize` and `aria-posinset`, `CanvasList` grouped.
 
 **Outcome** 2026-11-02: built. `PositionedCanvas` draws a scene of nodes, groups and edges in the canvas: laid out inline or in a worker under a revision, culled past 400, drawn by tier, a grouped world past 1,000 an overview opened one group at a time, with find, the minimap, the viewer's kept place and the grouped list. No feature draws on it yet (rows e and f). Detail: D224's CANVAS1d note, with the measured figures; `largeGraph.test.ts`, `PositionedCanvas.test.tsx`, `Canvas.test.tsx`, `measured/large.spec.ts`.
+
+## The parked backlog triaged against D228: dropped rows (2026-11-02)
+
+> **Triage of 2026-11-02** (`docs/2026-11-02-parked-triage.md`; D228 and its note): 55 rows of `docs/backlog-parked.md` and 26 of its pointer lines, each superseded by work the owner's direction of that day put in a chunk or a decision. The rows' whole text is in git at `cb884a6b6:docs/backlog-parked.md`.
+
+**Outcome** 2026-11-02: dropped, each superseded by what is named.
+
+- **By WORKFLOWCLEAN1 and D227:**
+  - **LAYOUT8c** — the setup door on the install, in both languages. Dropped: superseded by WORKFLOWCLEAN1.
+  - **LAYOUT8b** — the rest of §6.5 on the screen. Dropped: superseded by WORKFLOWCLEAN1.
+  - **WSSETUP7** — workspace setup UI/proposal. Dropped: superseded by WORKFLOWCLEAN1.
+  - **RPC1b6** — a real landing through the land presses with the registry followed. Dropped: superseded by WORKFLOWCLEAN1.
+  - **FABRIC-END4c** — the configured cleanup. Dropped: superseded by WORKFLOWCLEAN1.
+  - **FABRIC-END5** — the CLI, a quest's page and Ask Daoris read the cycle. Dropped: superseded by WORKFLOWCLEAN1.
+  - **PRESSSTEP2** — a landing says merging, replaying or handing off. Dropped: superseded by WORKFLOWCLEAN1.
+  - **LAND2e** — post-landing advances. Dropped: superseded by WORKFLOWCLEAN1.
+  - **LAND2d** — automatic acceptance UI/rehearsal. Dropped: superseded by WORKFLOWCLEAN1.
+  - **LAND4b** — failed automatic landing. Dropped: superseded by WORKFLOWCLEAN1.
+  - **WORKFLOW1j** — wait on pull request. Dropped: superseded by WORKFLOWCLEAN1, into FABRIC-PERFORM1l.
+  - **WORKFLOW1k** — outside checks. Dropped: superseded by WORKFLOWCLEAN1, into FABRIC-PERFORM1l.
+  - **WORKFLOW1l** — stages and go-aheads. Dropped: superseded by WORKFLOWCLEAN1, into FABRIC-PIPELINE1h.
+  - **WORKFLOW1m** — workflow rehearsal. Dropped: superseded by WORKFLOWCLEAN1, steps retire.
+  - **WORKFLOW1n** — installed workflows. Dropped: superseded by WORKFLOWCLEAN1, into SETUPUX1x.
+  - **XAGENT1f5** — answers under steps rules. Dropped: superseded by WORKFLOWCLEAN1.
+  - **XAGENT1f3** — omitted gate behavior. Dropped: superseded by WORKFLOWCLEAN1.
+  - **XAGENT1g2** — quest/ask/struck doors. Dropped: superseded by WORKFLOWCLEAN1.
+  - **REVIEWENV1f** — intake review choice. Dropped: superseded by WORKFLOWCLEAN1.
+- **By FLOWCHART2 and CANVAS1:**
+  - **WORKFLOW1g** — workflow editor. Dropped: superseded by FLOWCHART2 and CANVAS1.
+  - **WORKFLOW1h2** — workflow proposal, changes and kinds. Dropped: superseded by FLOWCHART2 and CANVAS1.
+  - **FABRIC-GRAPHEDIT1** — one graph editor. Dropped: superseded by FLOWCHART2 and CANVAS1.
+  - **FABRIC-GRAPHVIEW1** — the running view. Dropped: superseded by FLOWCHART2 and CANVAS1.
+- **By D225, COWORKVIEW1 and ONEWAY1:**
+  - **PARTNERLINE1** — a piece's hand past sixteen links reaches a part its lead's line has left. Dropped: superseded by D225 (COMMS1 row b retires the 16-link limit).
+  - **ANSWER1d** — installed same-record resume. Dropped: superseded by ONEWAY1 row k.
+  - **FABRIC-C1b** — a part's native children on its record. Dropped: superseded by COWORKVIEW1 and ONEWAY1.
+- **By D226:**
+  - **SESSUX1k** — limit-ended list state. Dropped: superseded by D226.
+  - **TOOL4i** — installed rotation. Dropped: superseded by D226.
+  - **MODELROLE1** — Daoris's own sessions spend as this development learned to: actors, each a range of agents and models. Dropped: superseded by D226 (the parent row; its parts live on).
+  - **SUBLOAD1c** — the model trial. Dropped: superseded by D226.
+  - **XAGENT1h** — intake reviewer choice. Dropped: superseded by D226.
+- **By D215 and INTEGRATE1:**
+  - **DEV5** — landing queue. Dropped: superseded by D215 and INTEGRATE1.
+  - **DEV6** — concurrent lanes. Dropped: superseded by D215 and INTEGRATE1.
+  - **DEV7** — ready/verdict. Dropped: superseded by D215 and INTEGRATE1.
+  - **DEV8** — queue UI/proposal. Dropped: superseded by D215 and INTEGRATE1.
+  - **DEV9** — steward. Dropped: superseded by STEWARDROLE1.
+  - **DEV10** — first real user. Dropped: superseded by INTEGRATE1 row k's sitting.
+  - **DEV11** — second user/retirement. Dropped: superseded by ONEWAY1 row y.
+  - **LAYOUT9** — lane rooms. Dropped: superseded by D215 and INTEGRATE1.
+  - **EVID1d** — queue proof. Dropped: superseded by D215 and INTEGRATE1.
+  - **CISCOPE1** — a scoped CI: a merge runs what it reaches, the full set in the background. Dropped: superseded by FABRIC-PIPELINE1j and OPTIMIZE1 part d.
+  - **CISCOPE1c2** — recall's historical runs. Dropped: superseded by D215 and INTEGRATE1.
+  - **CISCOPE1d2** — the stage built from the gate tree alone, and the attempt-level records. Dropped: superseded by D215 and INTEGRATE1.
+  - **CISCOPE1e2** — the admission's job objects and background side, and the queue's timed proof. Dropped: superseded by D215 and INTEGRATE1.
+  - **REHPAIR1** — the family and deployment rehearsals side by side on the stage's path. Dropped: superseded by D215 and INTEGRATE1.
+  - **GATEWT1b** — the first full set beside a merge, measured. Dropped: superseded by D215 and INTEGRATE1.
+- **By GITAPP and GITAUTH, and duplicates:**
+  - **GIT1f** — commit/history/blame/compare tabs. Dropped: superseded by GITAPP and GITAUTH.
+  - **GIT1g** — fetch/create/delete. Dropped: superseded by GITAPP and GITAUTH.
+  - **GIT1h** — explicit push/PR. Dropped: superseded by GITAPP and GITAUTH.
+  - **GIT1i** — session Git doors. Dropped: superseded by GITAPP and GITAUTH.
+  - **GITAPP2** — the person's git acts and writes. Dropped: superseded by the GITAPP2 row in TASKS.md (this was its parked copy).
+  - **UNBLOCK4c** — push canary. Dropped: superseded by GITAPP and GITAUTH.
+  - **TERMTRUST1** — the person may trust this machine's terminal for management presses, once, in the window. Dropped: superseded by TERMTRUST1a in TASKS.md (this was the parent's parked copy).
+  - **ACCEPTALL1w** — one Accept for an entry and an ask, on the window. Dropped: a duplicate of work already built or kept elsewhere (the triage).
+  - **HELPBROWSERBEFORE1** — what browser Ask Daoris reached before 2026-10-16. Dropped: a duplicate of work already built or kept elsewhere (the triage).
+
+The 26 pointer lines of the parked file's head (the owner's reports and features whose rows are built, archived, moved into `TASKS.md` or triaged above) are removed with them.
