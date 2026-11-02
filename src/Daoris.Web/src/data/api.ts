@@ -717,13 +717,15 @@ function nonce(): string {
 }
 
 /**
- * A terminal's ask the window confirms at the service's own door (PERSONDOOR1b, D156 §4.2): the door's act in the host's table and
- * every value the request carries, as `GET /api/confirmations` lists them. Never its secret's hash.
+ * An ask the window confirms at the service's own door (PERSONDOOR1b, D156 §4.2; ONEWAY1n-i): the door's act in the host's table and
+ * every value the request carries, as `GET /api/confirmations` lists them. No clock ends one: it waits until the person answers or its
+ * asker withdraws it, and the host makes the request at the Confirm. `session` is the session that asked, absent for a terminal's;
+ * once it ends, `ended`, and for one made, the door's `status`, its `answer` and, where it refused, its `reason`. Never its token.
  */
 export type ServiceConfirmation = {
   id: string; state: string; method: string; path: string; route: string; act: string;
   values: { name: string; type: string; value: string }[]; fields: { name: string; type: string; value: string }[];
-  asked: string; expires: string;
+  asked: string; session?: string | null; ended?: string | null; status?: number | null; answer?: string | null; reason?: string | null;
 };
 
 /**
@@ -750,7 +752,10 @@ export const api = {
     typeof (await get<Status & { proof?: unknown }>(`/api/status${qs({ prove: nonce() })}`, signal)).proof === 'string',
   /** What waits at the service for the person's confirmation (PERSONDOOR1b): a read, whatever key the page holds. */
   confirmations: (signal?: AbortSignal) => get<ServiceConfirmation[]>('/api/confirmations', signal),
-  /** The person's Confirm or Refuse of one, a door of theirs alone, which takes the key `post` sends. */
+  /**
+   * The person's Confirm or Refuse of one, a door of theirs alone, which takes the key `post` sends. At a Confirm the host makes the
+   * request (ONEWAY1n-i): one its door refused is a 409 with that door's sentence, said as every refusal is.
+   */
   answerConfirmation: (id: string, confirm: boolean) =>
     post<{ confirmation: ServiceConfirmation; message: string }>(
       `/api/confirmations/${encodeURIComponent(id)}/${confirm ? 'confirm' : 'refuse'}`, undefined),
