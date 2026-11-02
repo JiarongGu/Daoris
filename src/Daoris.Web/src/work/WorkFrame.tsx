@@ -12,7 +12,7 @@ import {
   useDecideSessionMemory, useSessionMemory,
   useSetSessionOption, useStartChat, useStopTask, useSweepPlan, useTreeFiles, useTreeFile, useReviewedPatch,
   logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, useGoOnBrief, type WordsAnswer,
-  useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch, useLanding, useLandSessionTree, useLandWithoutLook, useSessionDiff,
+  useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch, useLanding, useLandSessionTree, useSessionDiff,
   useDiscardSessionTree, useDriver, useOpinionGate, useWorkflowRun, useRules, useSessionEvents, stoppedWaiting, useUnderWay,
   useEntryLanding, useLandEntry, useSessionHelpers, useSessionPartners, useUnderWaySubject, useSessionProcess, useWorkState, usePushedCalls, withCall,
   useAnswerPermission, usePermissionWaits, useSessionHandOverAsk, useApproveHandOver, useDeclineHandOver, type HandOverWord,
@@ -1843,7 +1843,6 @@ export function WorkFrame({
   // Another session's page is another ask: a name typed for one is not carried to the next.
   useEffect(() => setLandName(''), [attended?.id]);
   const land = useLandSessionTree();
-  const landWithoutLook = useLandWithoutLook();
   // CHATFLOW1d (the chat-flow design §5.2): a chat run's press refused for what the page can word says it in the reader's language; any
   // other refusal is the driver's sentence, as before.
   const pressRefusal = (result: { message: string; press?: string | null }) =>
@@ -1878,7 +1877,7 @@ export function WorkFrame({
   const headReview: HeadReview | null = gateHolds && attended ? {
     step: gateStep,
     served: inReview && gateHolds.quest ? inReview.find((row) => row.quest === gateHolds.quest)?.served ?? false : null,
-    busy: reviewActs.busy || landWithoutLook.isPending,
+    busy: reviewActs.busy || runNodeWord.isPending,
     acts: {
       ...reviewActs.actsFor({
         state: reviewState(gateHolds.state),
@@ -1887,9 +1886,17 @@ export function WorkFrame({
         work: attended.quest ?? null,
         open: gateHolds.quest && onOpenQuest ? () => onOpenQuest(gateHolds.quest!) : undefined,
       }),
-      // CHATFLOW1d2 (the chat-flow design §5.3): a chat run's way past the look no set-up step can show, the person's own press.
-      ...(gateHolds.chatRun && here ? {
-        withoutLook: (words: string | null, answered: Answered) => landWithoutLook.mutate({ id: attended.id, words }, landed(answered)),
+      // A chat run's look is a node of its graph: the person's skip of it, then the one Accept (WORKFLOWCLEAN1h).
+      ...(gateHolds.chatRun && gateHolds.lookNode && here ? {
+        withoutLook: (words: string | null, answered: Answered) => runNodeWord.mutate(
+          { run: gateHolds.chatRun!, node: gateHolds.lookNode!, act: 'skip', words: words ?? undefined },
+          {
+            onSuccess: (skipped) => {
+              if (!skipped.done) { answered.refused(skipped.message ?? skipped.refused ?? ''); return; }
+              land.mutate({ id: attended.id }, landed(answered));
+            },
+            onError: (error: unknown) => answered.refused(sentence(error)),
+          }),
       } : {}),
     },
   } : null;
@@ -1910,8 +1917,7 @@ export function WorkFrame({
   // Its line of work's one Accept, or its ask's, lands it too (ACCEPTALL1h): the head's own press waits while either is under way.
   const lineLandsNow = useUnderWaySubject('LAND_ENTRY', attendedEntry?.entry ?? null);
   const askLandsNow = useUnderWaySubject('LAND_ASK', channelAsk);
-  const withoutLookNow = useUnderWay('LAND_WITHOUT_LOOK', attended?.id ?? null);
-  const landsNow = useUnderWay('LAND_SESSION_TREE', attended?.id ?? null) || withoutLookNow || lineLandsNow || askLandsNow;
+  const landsNow = useUnderWay('LAND_SESSION_TREE', attended?.id ?? null) || lineLandsNow || askLandsNow;
   const discardsNow = useUnderWay('DISCARD_SESSION_TREE', attended?.id ?? null);
   // Its one press, for the head and, in Accept's place, the review (SQUASHTIDY1f): never forced from here, a refusal the
   // driver's sentence inside the ask, and the review's Discard the door that asks twice.

@@ -19,17 +19,7 @@ public interface IChatPressing
 /// <summary>What the person's press on a chat run's work asks the operation (CHATFLOW1d): the record pressed and its run.</summary>
 /// <param name="Session">The record the door lands, the line's newest in its tree.</param>
 /// <param name="Live">Whether that record is still a live conversation, which some runner holds; an ended one needs no reservation.</param>
-public sealed record ChatPressAsk(string Session, string Tree, string Run, string Repository, string Workspace, bool Live)
-{
-    /// <summary>
-    /// <i>Accept without the look…</i> (CHATFLOW1d2, the chat-flow design §5.3): the person's way past a look no set-up step can show, kept with
-    /// their words at the tip this press captures; null for a plain <i>Accept…</i>.
-    /// </summary>
-    public ChatLookPress? WithoutLook { get; init; }
-}
-
-/// <summary>The person's way past the look as their press says it (CHATFLOW1d2): their words, and the door they pressed it at.</summary>
-public sealed record ChatLookPress(string? Words, string Door);
+public sealed record ChatPressAsk(string Session, string Tree, string Run, string Repository, string Workspace, bool Live);
 
 /// <summary>What the press came to: the landing, or its refusal, and the gate it was judged by at the captured tip; and the tip.</summary>
 public sealed record ChatPressed(TreeLanding Landed, LandingGate? Gate, string? Tip)
@@ -106,20 +96,6 @@ public static class ChatPresses
 
             SubmitCandidate(home, ask, tip);
             var judged = await gate(tip, ct).ConfigureAwait(false) with { Tip = tip };
-            // CHATFLOW1d2 (§5.3): the person's way past a look no set-up step can show is kept at the tip captured, and the gate read again
-            // there; the landing is pinned to that tip, so a tree that moved past it is refused, never landed under the skip.
-            if (ask.WithoutLook is { } without)
-            {
-                if (judged.Review is not { State: ReviewStates.CannotStart, Decision.ChatRun: not null })
-                {
-                    return new(Refusal($"no look waits for this work, so there is nothing to accept it without: {judged.Review.Says}", AutoLandingCode.Refused),
-                        judged, tip);
-                }
-
-                new ChatLooks(home).Skip(ask.Run, new ChatLookSkip(tip, DateTimeOffset.UtcNow, without.Words, without.Door));
-                judged = await gate(tip, ct).ConfigureAwait(false) with { Tip = tip };
-            }
-
             // The opinion's part holds for want of a pass, every part before it letting go: the press asks it, at the landing occasion, with the
             // tip it captured and the person's turn count, and is refused saying so. One a press asked already, the look not started yet, asks
             // nothing again.

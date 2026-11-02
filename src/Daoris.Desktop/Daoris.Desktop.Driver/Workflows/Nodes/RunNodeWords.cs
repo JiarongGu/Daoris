@@ -99,6 +99,17 @@ public static class RunNodeWords
     }
 
     /// <summary>
+    /// The person's words where <paramref name="node"/> of the run's record stands skipped by them, or their skip waits there for the next
+    /// look to apply; null otherwise. The gate of a chat run's look reads it (CHATFLOW1d2).
+    /// </summary>
+    public static string? SkippedLook(NodeRecord? record, string? node)
+    {
+        if (node is null || record is null) return null;
+        if (record.Statuses.GetValueOrDefault(node) is { State: NodeStates.Skipped, By: NodeCause.Person, Words: { Length: > 0 } words }) return words;
+        return record.Pending.LastOrDefault(each => each.Node == node && each.Act == NodeWordActs.Skip && !string.IsNullOrWhiteSpace(each.Words))?.Words;
+    }
+
+    /// <summary>
     /// <see cref="Word"/> for the doors the person presses through (INTEGRATE1n part n3, F50): a stop first reads the integration record through
     /// <paramref name="door"/> for the run's nodes whose open request's member promoted, so it is refused before anything is kept. A skip, a run
     /// that is not bound and a record with no request of an <c>integrate</c> of its own read nothing of it. The pass judges the word again.

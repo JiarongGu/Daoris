@@ -355,7 +355,7 @@ public sealed class PipeCensus
             "GIT_TRY_AGAIN");
         Add(PipeClass.Person,
             // The yes, and what answers for the person's verdict: a landing, a hand-off, an opinion overridden or taken on.
-            "LAND_SESSION_TREE", "LAND_WITHOUT_LOOK", "LAND_ENTRY", "LAND_ASK", "HANDOFF", "OPINION_ANYWAY", "OPINION_MYSELF",
+            "LAND_SESSION_TREE", "LAND_ENTRY", "LAND_ASK", "HANDOFF", "OPINION_ANYWAY", "OPINION_MYSELF",
             // Deletes, clears and closes: a discard, a sweep, an archive, a delete, a stop, an end, an abandon.
             "DISCARD_SESSION_TREE", "DISCARD_SESSION_BRANCH", "WITHDRAW_LANDING_BRANCH", "RECOVERY_DROP", "SWEEP", "HISTORY_CLEAR", "SYSTEM_DOWNLOADS_CLEAR", "SESSION_ARCHIVE", "SESSION_DELETE",
             "STOP_SESSION", "STOP_OPINION", "STOP_TASK", "CANCEL_TURN", "END_CHAT", "WORK_ABANDON", "WORK_PAUSE", "WORK_RESUME",
@@ -528,7 +528,7 @@ public sealed class PipeCensus
             "PLUGIN_TRY", "PLUGIN_TOOLS", "PLUGIN_TOOL_FIX", "HARNESS_ACTION", "TOOLS_DOWNLOAD", "TOOLS_USE",
             // A repository changed through git: a landing, a hand-off, a discard, a drop of recovery refs, a sweep, a sync, an abandon
             // and a delete, each of which removes a tree or a branch, and Free up space's run, which takes finished trees too.
-            "LAND_SESSION_TREE", "LAND_WITHOUT_LOOK", "LAND_ENTRY", "LAND_ASK", "HANDOFF", "DISCARD_SESSION_TREE", "DISCARD_SESSION_BRANCH",
+            "LAND_SESSION_TREE", "LAND_ENTRY", "LAND_ASK", "HANDOFF", "DISCARD_SESSION_TREE", "DISCARD_SESSION_BRANCH",
             "WITHDRAW_LANDING_BRANCH", "RECOVERY_DROP", "SWEEP", "TREES_SYNC", "WORK_ABANDON", "SESSION_DELETE", "SYSTEM_SPACE_FREE",
             // GITAPP2c: a ref act moves the person's repository's refs through git; GITAPP2m: so does a history edit, its plan's git included.
             "GIT_REF_CREATE", "GIT_REF_UNDO", "GIT_REF_DELETE", "GIT_REF_RENAME", "GIT_REF_FINISH", "GIT_HISTORY_EDIT", "GIT_FETCH",
