@@ -66,7 +66,8 @@ export function unhidden(src) {
     // A declaration (`function spawn(`, `async spawn(`) is no call.
     if (/\b(?:function|async)\s+$/.test(src.slice(Math.max(0, m.index - 12), m.index))) continue;
     const open = m.index + m[0].length - 1;
-    if (src.slice(open, closing(src, open) + 1).includes('windowsHide')) continue;
+    // REVIEW2 T7: `windowsHide: false` hides nothing, so only the literal `true` (or a spread of options that name it) is a hidden start.
+    if (/windowsHide\s*:\s*true\b/.test(src.slice(open, closing(src, open) + 1))) continue;
     if (lines[line - 1].includes(MARK) || (lines[line - 2] ?? '').includes(MARK)) {
       marked++;
       continue;

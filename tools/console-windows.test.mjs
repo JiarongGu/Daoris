@@ -44,6 +44,16 @@ test('a start that says windowsHide passes, wherever the option sits in its argu
   }
 });
 
+test('a start that names windowsHide as anything but true is refused (REVIEW2 T7)', () => {
+  for (const call of [
+    "spawnSync('git', ['status'], { cwd, windowsHide: false })",
+    "spawn('node', [x], { windowsHide: hide })",
+    "execFileSync('git', args, { windowsHide })",
+  ]) {
+    assert.equal(unhidden(`${head}${call};\n`).found.length, 1, call);
+  }
+});
+
 test('a start marked as a window on purpose passes and is counted, on its line or the one above', () => {
   const above = unhidden(`${head}// console-window: the application's own window\nspawn(exe, [], { detached: true });\n`);
   assert.deepEqual(above, { found: [], marked: 1 });
