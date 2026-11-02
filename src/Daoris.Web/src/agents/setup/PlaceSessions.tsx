@@ -34,6 +34,7 @@ export function PlaceWorkflowBodyView({ setup, workflow = null, landingAsked = f
             {...setup}
             only={FOLD_SECTIONS}
             lead={hand.lead}
+            lands={hand.lands}
             gatesApart
             open={hand.asked ?? (landingAsked ? 'landing' : undefined)}
             openAgain={hand.again}

@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import {
-  useAcceptIntegration, useAcross, useDriver, useHarnesses, useHeavyMarks, useLines, usePlugins, useRuleAction, useRules, useSetAccess, useSetCheckoutWrites,
-  useSetCommits, useSetDrivable, useSetHandOver, useSetHeavyGates, useSetHelpers, useSetHold, useSetLanded, useSetLanding, useSetLanguage, useSetLine,
+  useAcceptIntegration, useAcross, useDriver, useHarnesses, useHeavyMarks, useLines, useRuleAction, useRules, useSetAccess, useSetCheckoutWrites,
+  useSetCommits, useSetDrivable, useSetHandOver, useSetHeavyGates, useSetHelpers, useSetHold, useSetLanded, useSetLanguage, useSetLine,
   useSetOpinion, useSetReadAcross, useSetReview, useSetSessionChecks, useSetStanding, useSetTrees, useSetWriteAcross, useWorkflowCurrent, standingOf,
   useGitRemotes, useSetGitUse, useTools,
 } from '../../bridge/shell';
@@ -17,7 +17,6 @@ import { type CommitEdit, commitToast } from '../../settings/repository/Commits'
 import { heavyToast } from '../../settings/repository/HeavyGates';
 import { type HandOverEdit, handOverToast } from '../../settings/repository/HandOver';
 import { type HelperEdit, helperToast } from '../../settings/repository/Helpers';
-import type { LandingRule } from '../../settings/repository/Landings';
 import { type OpinionEdit, opinionToast } from '../../settings/repository/Opinions';
 import { type ReviewEdit, reviewToast } from '../../settings/repository/Reviews';
 import { sessionChecksToast, type SessionChecksValue } from '../../settings/repository/SessionChecks';
@@ -60,7 +59,6 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenPlugin
   const setStanding = useSetStanding();
   const setLanguage = useSetLanguage();
   const setLine = useSetLine();
-  const setLanding = useSetLanding();
   const setReview = useSetReview();
   const setOpinion = useSetOpinion();
   const setCommits = useSetCommits();
@@ -91,10 +89,6 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenPlugin
   const checkoutSessions = useSessions(target, false, shown && checkoutOn);
   // Whether its own daoris.gates.json marks heavy gates, so wins over this machine's list (HEAVYRUN1b2c): the driver's reading.
   const heavyMarks = useHeavyMarks(target ?? '', { enabled: shown });
-  const catalog = usePlugins({ enabled: shown });
-  const landers = (catalog.data?.plugins ?? [])
-    .filter((plugin) => plugin.enabled && !plugin.problem && plugin.points.includes('work/land'))
-    .map((plugin) => plugin.id);
   // FABRIC-PIPELINE1a: the route row reads its Workflow answer's start node.
   const current = useWorkflowCurrent(target === null ? null : { repository: target }, { enabled: shown });
   useErrorNotify(shown ? across.error : null, notify);
@@ -192,7 +186,6 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenPlugin
   const line = resolved<Row<'lines'>>(lines.data?.lines);
   const landing = resolved<Row<'landings'>>(lines.data?.landings);
   const workspace = line?.workspace ?? landing?.workspace ?? registration.workspace ?? 'default';
-  const above = ofWorkspace(state.workspaceLandings, workspace);
 
   const work: RepositorySetupProps['work'] = lines.data === undefined ? null : {
     line: line ?? null,
@@ -202,9 +195,13 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenPlugin
         : t('settings.lines.cleared', { name: registration.repository })),
       onError: onDriverError,
     }),
+    onLinePolicy: (policy) => setLine.mutate({ repository, policy }, {
+      onSuccess: () => notify(policy
+        ? t('settings.lines.policySaved', { name: registration.repository })
+        : t('settings.lines.policyCleared', { name: registration.repository })),
+      onError: onDriverError,
+    }),
     landing: landing ?? null,
-    landingAbove: above ? { ...above } : { form: 'merge' },
-    landers,
     // FABRIC-GRAPH1d: a rule the file keeps that reads as no rule, its own, else its workspace's where Daoris's merge stands.
     landingUnread: (() => {
       const own = (state.unreadLandings ?? []).find((row) => same(row.repository));
@@ -212,18 +209,6 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenPlugin
       const shared = landing?.source === 'default' ? ofWorkspace(state.workspaceUnreadLandings, workspace) : undefined;
       return shared ? { name: shared.workspace, why: shared.why, said: shared.said } : null;
     })(),
-    onLanding: (rule?: LandingRule) => setLanding.mutate(rule ? { repository, ...rule } : { repository }, {
-      onSuccess: () => notify(!rule
-        ? t('settings.landing.cleared', { name: registration.repository })
-        : rule.form === 'branch'
-          ? rule.plugin
-            ? t('settings.landing.savedBranchPlugin', { name: registration.repository, pattern: rule.pattern, plugin: rule.plugin })
-            : t('settings.landing.savedBranch', { name: registration.repository, pattern: rule.pattern })
-          : t('settings.landing.savedMerge', { name: registration.repository })),
-      // A rule the driver refuses is said under *Save*, in LandingKey's sentence (AGENTSPLACE1d); a clear has no such place.
-      onError: rule ? undefined : onDriverError,
-    }),
-    landingRefusal: setLanding.error ? sentence(setLanding.error) : null,
     // Where its work is reviewed before it lands (REVIEWENV1a); a shell older than it answers no reviews, and no row is offered.
     review: Array.isArray(lines.data?.reviews) ? resolved<NonNullable<RepositorySetupProps['work']>['review'] & object>(lines.data.reviews) ?? { repository, workspace } : undefined,
     onReview: Array.isArray(lines.data?.reviews)
@@ -427,7 +412,7 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenPlugin
     reach,
     git,
     onOpenPlugin,
-    busy: setLine.isPending || setLanding.isPending || setReview.isPending || setOpinion.isPending || setLanguage.isPending
+    busy: setLine.isPending || setReview.isPending || setOpinion.isPending || setLanguage.isPending
       || setCommits.isPending || setHelpers.isPending || setHandOver.isPending || setAccess.isPending || setHeavy.isPending || setStanding.isPending
       || setRead.isPending || setWrite.isPending || ruleAction.isPending || setLanded.isPending || acceptIntegration.isPending,
   };

@@ -383,29 +383,17 @@ describe("a repository's Setup on its page (UX6f)", () => {
     expect(within(repositoryMain()).getByRole('button', { name: 'Line and landing' })).toHaveAttribute('aria-expanded', 'true');
   });
 
-  it('sets its line and how its work lands, each on DAORIS.DRIVER, and says what changed', async () => {
+  it('sets its line on DAORIS.DRIVER, and says what changed', async () => {
     const notify = vi.fn();
     show(<ProjectsView notify={notify} />);
     await chooseRepository('engine');
     await openSetup('Line and landing');
     const work = within(repositoryMain()).getByRole('region', { name: 'Line and landing' });
 
-    const [line, landing] = within(work).getAllByRole('button', { name: 'Set for this repository' });
-    await userEvent.click(line!);
+    await userEvent.click(within(work).getByRole('button', { name: 'Set for this repository' }));
     await userEvent.type(within(work).getByRole('textbox', { name: 'The line for engine' }), 'develop{Enter}');
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_LINE', { payload: { repository: 'engine', branch: 'develop' } });
     await vi.waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringContaining('In engine, work grows from `develop`')));
-
-    // Every control waits while a change is on its way.
-    await vi.waitFor(() => expect(landing).toBeEnabled());
-    await userEvent.click(landing!);
-    await userEvent.click(within(work).getByRole('radio', { name: 'Branch' }));
-    // The line's field is still open beside it, since this bridge answers the line as its workspace's still.
-    await userEvent.click(within(work).getAllByRole('button', { name: 'Save' }).at(-1)!);
-    // A branch says its squash whole (DOORS1b), so a press never leaves one standing that the field shows off.
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_LANDING', {
-      payload: { repository: 'engine', form: 'branch', pattern: 'feature/{quest}-{slug}', squash: false },
-    });
   });
 
   /**

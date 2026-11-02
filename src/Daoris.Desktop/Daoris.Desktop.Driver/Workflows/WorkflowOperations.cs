@@ -672,9 +672,11 @@ public static class WorkflowOperations
     /// goes on only when the caller authorized exactly those; its reach of a graph that integrates is judged as a choice's is.
     /// </summary>
     /// <param name="Source">Exactly one of <c>from</c> (a new id), <c>steps</c> or <c>graph</c>.</param>
+    /// <param name="updates">The shipped default an appended version updates its copy to (WORKFLOWCLEAN1h): the version keeps that default's <c>from</c> stamp.</param>
     public static async Task<WorkflowSaved> SaveAsync(
         DriverConfig choices, string home, RegistryRead registry, string id, string? from, JsonNode? steps, JsonNode? graph,
-        bool opinion, bool look, string? name, string? @base, IReadOnlyCollection<string>? authorized, bool plan, string at, CancellationToken ct)
+        bool opinion, bool look, string? name, string? @base, IReadOnlyCollection<string>? authorized, bool plan, string at, CancellationToken ct,
+        string? updates = null)
     {
         WorkflowSaved Refuse(string code, string message, IReadOnlyList<WorkflowScope>? scopes = null, IReadOnlyList<WorkflowReach>? reach = null, bool appended = false) =>
             new(id, false, code, message, null, false, appended, scopes ?? [], reach ?? []);
@@ -718,7 +720,9 @@ public static class WorkflowOperations
             }
 
             var version = newest;
-            var planAgainst = PlanGraph(home, found, id, version, null, "screen", at, graph);
+            // An update to a copy's shipped default keeps where the version came from, so the copy follows the shipped digest it was updated to.
+            if (updates is not null && WorkflowDefaults.Of(updates) is null) return Refuse("refused", $"this build ships no default `{updates}` to update `{id}` from. Nothing was written.");
+            var planAgainst = PlanGraph(home, found, id, version, null, "screen", at, graph, updates is null ? null : WorkflowDefaults.Of(updates)!.From);
             if (planAgainst.Same) return new(id, true, null, $"`{id}` v{version.Version} already says this: nothing was written.", version.Version, false, true, [], []);
 
             var scopes = ScopesOf(choices, id);

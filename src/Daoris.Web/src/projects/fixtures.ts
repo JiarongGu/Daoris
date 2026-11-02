@@ -88,10 +88,8 @@ export const SETUP_DEFAULTS: RepositorySetupProps = {
   work: {
     line: { repository: 'engine', workspace: 'default', branch: 'main', source: 'workspace' },
     onLine: nothing,
+    onLinePolicy: nothing,
     landing: { repository: 'engine', workspace: 'default', form: 'merge', source: 'default' },
-    landingAbove: { form: 'merge' },
-    landers: ['github-pull-request'],
-    onLanding: nothing,
   },
   sessions: {
     language: { resolved: null, table: LANGUAGES, onSet: nothing },
@@ -195,15 +193,6 @@ export const SETUP_INTEGRATING: RepositorySetupProps = {
       repository: 'engine', workspace: 'default', form: 'branch', pattern: 'work/{quest}', source: 'repository',
       integrate: { batch: 4, order: 'arrival', gates: 'declared' },
     },
-  },
-};
-
-/** The same rule after a save the driver refused, its sentence under *Save*. */
-export const SETUP_INTEGRATING_REFUSED: RepositorySetupProps = {
-  ...SETUP_INTEGRATING,
-  work: {
-    ...SETUP_INTEGRATING.work,
-    landingRefusal: '`request: steward` needs `gates: declared` — a role\'s act never lands ungated work on the line.',
   },
 };
 
