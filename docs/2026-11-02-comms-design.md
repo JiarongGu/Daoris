@@ -187,10 +187,12 @@ absent event resets it. It becomes one serialized admission per line in the desk
 attempted, taken, cancelled, uncertain), shared by driven and chat executors, so two answers queued together cannot each think they
 are the second. Only the person's own words or an act the person authorized reset the epoch; Daoris's wrapper, a brief, a retry or a
 hand-over never do; a role's answer counts, and so does a waited quest's result (§11, settled 2026-11-03). **The count is a fact,
-not a hard limit** (amending D188 point 5's bound): no fixed number holds a line. The line's supervisor (the appointed role, SUPERVISOR1)
-reads the count, *unknown* where the history is incomplete, and decides whether the line goes on, holds for the person, or is
-redirected, saying why on the line. With no supervisor appointed, nothing holds a line on the count alone: it is shown on the line and
-in the co-working view, and drive, cap and strikes still bound the line.
+not a built-in limit** (amending D188 point 5's bound): no number is fixed in the product. The line's supervisor reads the count,
+*unknown* where the history is incomplete, and decides whether the line goes on, holds for the person, or is redirected, saying why on
+the line. A supervisor is either an appointed agent (SUPERVISOR1's role, a model judging) or a rule the person sets, a supervisor with
+no agent: a hard limit such as *hold for me after n answers alone*, set for a role, a place or a line and read with no model. With
+neither, nothing holds a line on the count alone: it is shown on the line and in the co-working view, and drive, cap and strikes still
+bound the line.
 
 ### 5.4 Restart, hand-over, machines
 
@@ -279,7 +281,7 @@ built and merged as one wave, after REVIEW2 by the chunks' order. Each row write
 | **COMMS1d** the exchanges, read (driver, modules; 1) | §3.4, delivery and outcome apart, `available` and `source`; `HelperWaits`, `Observation`'s input and `SessionGroups` read it with no behaviour change | `ExchangesTests` per case, delivery and outcome; `ObservationTests`, `HelperWaitsTests`, `SessionGroupsTests` unchanged; the read equal across a restart; after a hand-over the head's read holds its predecessor's open exchanges; an unread source said, never empty |
 | **COMMS1e** a question's answer names the question (service, driver, web; 1) | §5.2 | a question replaced while the person answers: the older press refused beside its control, the newer one shown; a double press taken once; free words never read as a choice |
 | **COMMS1f** the brief says what the line waits on (driver; 1) | §5.4's piece, bounded, Daoris's words | `ContextBriefTests` golden; a hand-over while a helper reads tells the new part |
-| **COMMS1g** the answers-alone count, kept (driver; 1) | §5.3; a store step and its writer stamp; the legacy reader kept | a mixed helper, opinion and supervisor sequence; two answers queued together; a hand-over and a restart keep the count; missing history reads as *unknown*; no reset by a wrapper; the chat's no-wake rule unchanged; a waited quest's result counts; no fixed number holds a line, the supervisor's reading decides and is said on the line, and with none appointed the line goes on with its count shown |
+| **COMMS1g** the answers-alone count, kept (driver; 1) | §5.3; a store step and its writer stamp; the legacy reader kept | a mixed helper, opinion and supervisor sequence; two answers queued together; a hand-over and a restart keep the count; missing history reads as *unknown*; no reset by a wrapper; the chat's no-wake rule unchanged; a waited quest's result counts; no number is fixed in the product: an appointed supervisor agent, or a person's hard-limit rule read with no model, decides and says so on the line; with neither, the line goes on with its count shown |
 | **COMMS1h** the conversation draws each message once (web, modules; 2) | §7: the exchange card, the sender chips, the reference line, the receipts' words | page tests in en and zh; stories at 80, 39 and 25rem and the 300 px dock, both themes; keyboard order |
 | **COMMS1i** *Waiting on* and *Co-workers* (web, modules, driver; 2) | §7; *At work*'s co-workers; `sessions at-work`; Ask Daoris's room reads the exchanges | `AtWorkView` and `stripVersusView` tests; the verb's text and JSON; a story per member state; `HelpCoverageTests`' row |
 | **COMMS1j** *What needs you* by obligation (modules, web; 2) | §4.1 clause 3; one key per obligation | the same wait on the head, the foot and *Notifications* counted once; an unread message makes no count; a supervisor's held decision is no wait, its deferral is |
@@ -291,7 +293,7 @@ built and merged as one wave, after REVIEW2 by the chunks' order. Each row write
 ## 11. Open
 
 - **Settled 2026-11-03 (the owner's):** a quest's result that a line waited on (D79's resume) counts, and the count is no hard
-  limit: the line's supervisor judges from it (§5.3). Row g builds the count with the waited quest's result as a cause, and the
+  limit fixed in the product: the line's supervisor, an agent or a rule the person sets, judges from it (§5.3). Row g builds the count with the waited quest's result as a cause, the rule supervisor, and the
   supervisor's reading of it, and no fixed hold.
 - **Unmeasured:** a real agent's helper answer across a hand-over; two alongside parts posting to each other; zh at 300 px in the
   dock; whether agents use sibling posts as the doctrine says.
