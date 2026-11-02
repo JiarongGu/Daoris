@@ -22951,6 +22951,12 @@ The row is quoted by its head; its whole text and proof are the foundation desig
 
 **Outcome** 2026-11-02: built. The pass starts a run's `land` once, on `ILandingDoor`, and `LandingDoor` lands it off the pass from the node's bound intent, authorized by the review's Accept or the standing authority; a press and a pass land one delivery. The run's process carries the bound `land` (`LandNodes.RuleOf`) in place of the live rule; the look chooses nothing for it, closes the entries written before the update with their kept Accepts adopted as the review's word and repair (`NodeRecord.Repairs`), and the conversion writes no due entry. `LAND_SESSION_TREE` keeps the word and waits for the landing; an entry's Accept keeps each such part's word; `SET_ACCESS` refuses `landing`. Left: `GraphGates.Of`, `TOGETHER_PRESS` and a combined head's delivery, the terminal alone keeping the word, and `full` still reaching the landing pause. Detail: D227's 1c note, D215's, D145's, D190's and D184's; `GraphRunLandingTests`.
 
+## WORKFLOWCLEAN1e — the conversion (2026-11-02, D227)
+
+> **1e** the conversion (driver, modules; after a, b, c). Contract and proof: the cleanup design's §4, §9 row 1e and §13 point 4.
+
+**Outcome** 2026-11-02: built. `WorkflowLegacy.Census` finds every old shape the home holds, and one plan, `CONVERT_PLAN`, saves each steps, `handed` and `land`+`accept` newest as the next version of its id, gives each place that follows Current a saved workflow (the home default where it has no rule, a shipped copy by shape, else its own), moves `integrate` to the line's policy and removes the converted rules; `CONVERT_APPLY` is the person's press (receipt first, `moved` where the plan changed, judged again inside the one edit, a place with a Current unit open keeping its rules), `CONVERT_UNDO` takes it back, and `workflow convert --plan|--apply|--undo` is the terminal's through the running Daoris. Left to 1g: the page. Detail: D227's 1e note; `ConversionTests`, `DriverModuleConvertTests`.
+
 ## The parked backlog triaged against D228: dropped rows (2026-11-02)
 
 > **Triage of 2026-11-02** (`docs/2026-11-02-parked-triage.md`; D228 and its note): 55 rows of `docs/backlog-parked.md` and 26 of its pointer lines, each superseded by work the owner's direction of that day put in a chunk or a decision. The rows' whole text is in git at `cb884a6b6:docs/backlog-parked.md`.

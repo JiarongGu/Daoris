@@ -45,7 +45,7 @@ public static class ConversionApplies
     /// <summary>The conversion plan <paramref name="digest"/> names, applied. A digest that holds a receipt goes on from it.</summary>
     public static async Task<ConvertResult> ApplyAsync(ConvertDoors doors, ConversionChoices choices, string digest, CancellationToken ct = default)
     {
-        if (!PlaceDigests.Is(digest)) return Refuse(digest, ConversionRefusals.Digest, "name the plan's digest, as its plan says it: 64 lower-case hex.");
+        if (!ConversionOutcomes.IsDigest(digest)) return Refuse(digest, ConversionRefusals.Digest, "name the plan's digest, as its plan says it: 64 lower-case hex.");
         if (choices.Problem is { } problem) return Refuse(digest, ConversionRefusals.Choices, problem);
         var receipts = new ConversionReceipts(doors.Home);
         ConversionReceipt? receipt;
@@ -84,8 +84,8 @@ public static class ConversionApplies
 
     private static ConversionReceipt Begin(ConversionPlan plan, DriverConfig config)
     {
-        var operations = plan.Saves.Select(each => new ConversionOp($"save:{each.Id}", "workflow-save", $"{(each.Mode == "append" ? "a new version of" : "a new workflow")} `{each.Id}`: {each.Said}", PlaceOutcomes.Pending)).ToList();
-        operations.Add(new(Configuration, Configuration, "the choices, the home default, the line policies and the removed rules, in one change", PlaceOutcomes.Pending));
+        var operations = plan.Saves.Select(each => new ConversionOp($"save:{each.Id}", "workflow-save", $"{(each.Mode == "append" ? "a new version of" : "a new workflow")} `{each.Id}`: {each.Said}", ConversionOutcomes.Pending)).ToList();
+        operations.Add(new(Configuration, Configuration, "the choices, the home default, the line policies and the removed rules, in one change", ConversionOutcomes.Pending));
         var before = new ConversionBefore(config.DefaultWorkflow, [], [], [], []);
         foreach (var removal in plan.Removals)
         {
@@ -117,10 +117,10 @@ public static class ConversionApplies
     /// <summary>A restart's read of a receipt: the uncertain operations settled by their postconditions, never replayed blind.</summary>
     public static ConversionReceipt Settle(ConvertDoors doors, ConversionReceipts receipts, ConversionReceipt receipt)
     {
-        foreach (var operation in receipt.Operations.Where(each => each.Outcome == PlaceOutcomes.Uncertain).ToList())
+        foreach (var operation in receipt.Operations.Where(each => each.Outcome == ConversionOutcomes.Uncertain).ToList())
         {
             var done = operation.Id == Configuration ? Posted(doors.Config(), receipt) : operation.Kind == "workflow-save" && SaveHeld(doors.Home, receipt.Saves.First(each => $"save:{each.Id}" == operation.Id));
-            receipt = receipt.With(operation.Id, each => each with { Outcome = done ? PlaceOutcomes.Done : PlaceOutcomes.Pending, Note = null });
+            receipt = receipt.With(operation.Id, each => each with { Outcome = done ? ConversionOutcomes.Done : ConversionOutcomes.Pending, Note = null });
         }
 
         receipts.Write(receipt);
@@ -131,7 +131,7 @@ public static class ConversionApplies
     public static IReadOnlyList<ConversionReceipt> SettleAll(ConvertDoors doors)
     {
         var receipts = new ConversionReceipts(doors.Home);
-        return [.. receipts.All().Select(each => each.Undone || each.Operations.All(op => op.Outcome != PlaceOutcomes.Uncertain) ? each : Settle(doors, receipts, each))];
+        return [.. receipts.All().Select(each => each.Undone || each.Operations.All(op => op.Outcome != ConversionOutcomes.Uncertain) ? each : Settle(doors, receipts, each))];
     }
 
     private static bool SaveHeld(string home, ConvertSave save) =>
@@ -142,19 +142,19 @@ public static class ConversionApplies
         foreach (var save in receipt.Saves)
         {
             var id = $"save:{save.Id}";
-            if (receipt.Of(id) is not { Outcome: PlaceOutcomes.Pending }) continue;
+            if (receipt.Of(id) is not { Outcome: ConversionOutcomes.Pending }) continue;
             receipt = SaveOne(doors, receipts, receipt, save);
         }
 
         string? refused = null;
         var saving = receipt.Operations.Where(each => each.Kind == "workflow-save").ToList();
-        if (receipt.Of(Configuration) is { Outcome: PlaceOutcomes.Pending })
+        if (receipt.Of(Configuration) is { Outcome: ConversionOutcomes.Pending })
         {
-            if (saving.Any(each => each.Outcome == PlaceOutcomes.Failed))
+            if (saving.Any(each => each.Outcome == ConversionOutcomes.Failed))
             {
-                receipt = Write(receipts, receipt.With(Configuration, each => each with { Outcome = PlaceOutcomes.Failed, Note = "a workflow it chooses was not saved, so the configuration was not applied." }));
+                receipt = Write(receipts, receipt.With(Configuration, each => each with { Outcome = ConversionOutcomes.Failed, Note = "a workflow it chooses was not saved, so the configuration was not applied." }));
             }
-            else if (saving.All(each => each.Outcome == PlaceOutcomes.Done))
+            else if (saving.All(each => each.Outcome == ConversionOutcomes.Done))
             {
                 (receipt, refused) = Configure(doors, receipts, receipt);
             }
@@ -162,7 +162,7 @@ public static class ConversionApplies
 
         var done = receipt.Applied;
         var held = receipt.Held.Count == 0 ? "" : $" {receipt.Held.Count} place{(receipt.Held.Count == 1 ? "" : "s")} keep their rules until their open unit ends.";
-        return new(done, refused, done ? $"the conversion is applied.{held}" : "the conversion is not done: " + string.Join("; ", receipt.Operations.Where(each => each.Outcome != PlaceOutcomes.Done).Select(Said)),
+        return new(done, refused, done ? $"the conversion is applied.{held}" : "the conversion is not done: " + string.Join("; ", receipt.Operations.Where(each => each.Outcome != ConversionOutcomes.Done).Select(Said)),
             receipt.Digest, receipt.Operations);
     }
 
@@ -177,30 +177,30 @@ public static class ConversionApplies
     private static ConversionReceipt SaveOne(ConvertDoors doors, ConversionReceipts receipts, ConversionReceipt receipt, ConvertSave save)
     {
         var id = $"save:{save.Id}";
-        if (SaveHeld(doors.Home, save)) return Write(receipts, receipt.With(id, each => each with { Outcome = PlaceOutcomes.Done, Note = null }));
+        if (SaveHeld(doors.Home, save)) return Write(receipts, receipt.With(id, each => each with { Outcome = ConversionOutcomes.Done, Note = null }));
         var store = WorkflowPorts.Store(doors.Home);
         var found = store.Load(save.Id);
         if (save.Mode == "new" && found is not null)
         {
-            return Write(receipts, receipt.With(id, each => each with { Outcome = PlaceOutcomes.Failed, Note = $"`{save.Id}` is a workflow here already that is not this one: plan it again." }));
+            return Write(receipts, receipt.With(id, each => each with { Outcome = ConversionOutcomes.Failed, Note = $"`{save.Id}` is a workflow here already that is not this one: plan it again." }));
         }
 
         if (save.Mode == "append" && !(found?.Read is { Problem: null, Versions: [.., var newest] } && newest.Version == save.Base))
         {
-            return Write(receipts, receipt.With(id, each => each with { Outcome = PlaceOutcomes.Failed, Note = $"`{save.Id}` moved since it was planned: plan it again." }));
+            return Write(receipts, receipt.With(id, each => each with { Outcome = ConversionOutcomes.Failed, Note = $"`{save.Id}` moved since it was planned: plan it again." }));
         }
 
-        receipt = Write(receipts, receipt.With(id, each => each with { Outcome = PlaceOutcomes.Uncertain, Note = null }));
+        receipt = Write(receipts, receipt.With(id, each => each with { Outcome = ConversionOutcomes.Uncertain, Note = null }));
         try
         {
             var base_ = found?.Read.Versions[^1];
             var planned = WorkflowOperations.PlanGraph(doors.Home, found, save.Id, base_, save.Name, "screen", PlannedWorkflows.At, save.Graph, save.From);
             store.Write(save.Id, planned.Plan.Result!);
-            return Write(receipts, receipt.With(id, each => each with { Outcome = PlaceOutcomes.Done, Note = null }));
+            return Write(receipts, receipt.With(id, each => each with { Outcome = ConversionOutcomes.Done, Note = null }));
         }
         catch (ChoiceWords refused)
         {
-            return Write(receipts, receipt.With(id, each => each with { Outcome = PlaceOutcomes.Failed, Note = refused.Message }));
+            return Write(receipts, receipt.With(id, each => each with { Outcome = ConversionOutcomes.Failed, Note = refused.Message }));
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -236,7 +236,7 @@ public static class ConversionApplies
 
     private static (ConversionReceipt Receipt, string? Refused) Configure(ConvertDoors doors, ConversionReceipts receipts, ConversionReceipt receipt)
     {
-        receipt = Write(receipts, receipt.With(Configuration, each => each with { Outcome = PlaceOutcomes.Uncertain, Note = null }));
+        receipt = Write(receipts, receipt.With(Configuration, each => each with { Outcome = ConversionOutcomes.Uncertain, Note = null }));
         IReadOnlyList<string> held = [];
         try
         {
@@ -250,7 +250,7 @@ public static class ConversionApplies
         catch (DriverException refused)
         {
             var moved = refused.Message.StartsWith("moved", StringComparison.Ordinal);
-            return (Write(receipts, receipt.With(Configuration, each => each with { Outcome = PlaceOutcomes.Failed, Note = refused.Message })),
+            return (Write(receipts, receipt.With(Configuration, each => each with { Outcome = ConversionOutcomes.Failed, Note = refused.Message })),
                 moved ? ConversionRefusals.Moved : "refused");
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -260,7 +260,7 @@ public static class ConversionApplies
 
         // The places the judge left their rules at: what a later plan offers to remove.
         var kept2 = receipt.Removals.Select(each => Key(each.Place, each.IsWorkspace)).Where(held.Contains).Concat(receipt.Held).Distinct().ToList();
-        receipt = Write(receipts, (receipt with { Held = kept2 }).With(Configuration, each => each with { Outcome = PlaceOutcomes.Done, Note = null }));
+        receipt = Write(receipts, (receipt with { Held = kept2 }).With(Configuration, each => each with { Outcome = ConversionOutcomes.Done, Note = null }));
         return (receipt, null);
     }
 
@@ -407,7 +407,7 @@ public static class ConversionApplies
     /// <summary>The undo pressed: the keys put back in one change, and the receipt marked undone. Refused <c>moved</c> where anything was moved since.</summary>
     public static ConvertResult Undo(ConvertDoors doors, string digest)
     {
-        if (!PlaceDigests.Is(digest)) return Refuse(digest, ConversionRefusals.Digest, "name the undo plan's digest, as its plan says it: 64 lower-case hex.");
+        if (!ConversionOutcomes.IsDigest(digest)) return Refuse(digest, ConversionRefusals.Digest, "name the undo plan's digest, as its plan says it: 64 lower-case hex.");
         var plan = UndoPlan(doors.Home, doors.Config());
         if (plan.Receipt is null || plan.Refusal is not null)
         {

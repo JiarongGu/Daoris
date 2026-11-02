@@ -125,5 +125,5 @@ public static class ConvertCommand
 
     /// <summary>A press's answer in the terminal's words.</summary>
     public static IReadOnlyList<string> Lines(ConvertResult result) =>
-        [$"workflow convert: {result.Message}", .. result.Operations.Where(each => each.Outcome != PlaceOutcomes.Done).Select(each => $"  {each.Outcome}  {each.Said}{(each.Note is { } note ? $" — {note}" : "")}")];
+        [$"workflow convert: {result.Message}", .. result.Operations.Where(each => each.Outcome != ConversionOutcomes.Done).Select(each => $"  {each.Outcome}  {each.Said}{(each.Note is { } note ? $" — {note}" : "")}")];
 }

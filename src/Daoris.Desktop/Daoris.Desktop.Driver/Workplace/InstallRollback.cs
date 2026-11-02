@@ -37,7 +37,7 @@ public static class InstallRollback
         if (!(Numbered(staged) is { } older && Numbered(running) is { } newer && older < newer)) return null;
         var rollback = new DeliveryStore(home).Rollback();
         if (!rollback.Allowed) return (Deliveries, rollback.Refused!);
-        return (conversionStands ?? ConversionReceipts.Stands)(home)
+        return conversionStands?.Invoke(home) == true
             ? (Workflows, "This home's workflows were converted, and an older build cannot read how its places land: it would draw them as the default merge. Going back waits until you undo the conversion.")
             : null;
     }

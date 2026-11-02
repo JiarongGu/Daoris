@@ -215,7 +215,7 @@ public sealed class ConversionTests : IDisposable
         Assert.NotNull(store.Load("engine-workflow")!.Read.Versions[0].Graph);
         Assert.Equal(["merge-after-accept"], new ConversionReceipts(_home).All().Select(each => each.DefaultWorkflow!).ToList());
         Assert.True(ConversionReceipts.Stands(_home));
-        Assert.NotNull(InstallRollback.Refused(_home, "0.41.0", "0.42.0"));
+        Assert.Equal(InstallRollback.Workflows, InstallRollback.Refused(_home, "0.41.0", "0.42.0", ConversionReceipts.Stands)!.Value.Code);
 
         // Again: only the leftovers, the work cycle and the bound runs remain, and nothing is left to write.
         var again = Plan();
@@ -355,7 +355,7 @@ public sealed class ConversionTests : IDisposable
         // The versions it saved stay saved, unchosen.
         Assert.NotNull(WorkflowPorts.Store(_home).Load("engine-workflow"));
         Assert.False(ConversionReceipts.Stands(_home));
-        Assert.Null(InstallRollback.Refused(_home, "0.41.0", "0.42.0"));
+        Assert.Null(InstallRollback.Refused(_home, "0.41.0", "0.42.0", ConversionReceipts.Stands));
         Assert.NotNull(ConversionApplies.UndoPlan(_home, config).Refusal);
     }
 

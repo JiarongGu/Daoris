@@ -31,7 +31,8 @@ public sealed class ConvertRoutes(DriverContext context)
 
         var choices = ChoicesOf(request);
         if (choices.Problem is { } problem) throw new DriverException(problem);
-        var world = await ConvertWorlds.ReadAsync(new PlaceWorld(_loop.Service ?? throw NotReady()), config, _loop.Home, cancellationToken).ConfigureAwait(false);
+        var service = _loop.Service ?? throw NotReady();
+        var world = await ConvertWorlds.ReadAsync(service.RegistryAsync, service.EveryQuestAsync, config, _loop.Home, cancellationToken).ConfigureAwait(false);
         var plan = ConversionPlans.Plan(world, choices, new ConversionReceipts(_loop.Home).HeldPlaces());
         return Flag(request, "said") ? Said(ConvertCommand.Lines(plan), 0) : Answer(plan);
     }
@@ -44,11 +45,10 @@ public sealed class ConvertRoutes(DriverContext context)
     private async Task<object?> ApplyAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var service = _loop.Service ?? throw NotReady();
-        var place = new PlaceWorld(service);
-        var quests = await place.QuestsAsync(cancellationToken).ConfigureAwait(false);
+        var quests = await service.EveryQuestAsync(cancellationToken).ConfigureAwait(false);
         var read = DateTimeOffset.UtcNow;
         var doors = new ConvertDoors(
-            _loop.Home, token => ConvertWorlds.ReadAsync(place, DriverConfig.Load(_loop.ConfigPath), _loop.Home, token), _context.Change,
+            _loop.Home, token => ConvertWorlds.ReadAsync(service.RegistryAsync, service.EveryQuestAsync, DriverConfig.Load(_loop.ConfigPath), _loop.Home, token), _context.Change,
             () => DriverConfig.Load(_loop.ConfigPath), () => ConvertWorlds.OpenCurrentNow(_loop.Home, quests, read));
         var result = await ConversionApplies.ApplyAsync(doors, ChoicesOf(request), Optional(request, "digest") ?? "", cancellationToken).ConfigureAwait(false);
         _loop.Nudge();

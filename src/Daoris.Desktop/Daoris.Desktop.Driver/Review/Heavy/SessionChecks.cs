@@ -91,7 +91,9 @@ public static class SessionChecks
     {
         var named = repository?.Trim() is { Length: > 0 } r ? r : throw new DriverException(Scope);
         // WORKFLOWCLEAN1 1e: the checks of a place on a saved workflow are the workflow's `claimed.checks`; the conversion moved the rule there.
-        if (checks is not null && WorkflowSelection.Resolve(config, named, null, null).Level != WorkflowLevels.Current)
+        // The place's workspace is not known here, so a workspace's own choice is not weighed: its own choice, else the home's default.
+        var chosen = config.Workflows.TryGetValue(named, out var own) ? own.Default : null;
+        if (checks is not null && (chosen ?? config.DefaultWorkflow) is { } followed && followed != WorkflowKey.Current)
         {
             throw new DriverException(OnGraph(named));
         }

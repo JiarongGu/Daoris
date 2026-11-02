@@ -3,12 +3,13 @@ namespace Daoris.Driver;
 /// <summary>The conversion's reads on this machine: the file, the registry, the saved workflows and the bound runs with the state of their units.</summary>
 public static class ConvertWorlds
 {
-    /// <summary>The world now, through the place's world (the registry and the quests) and the home's files.</summary>
-    public static async Task<ConvertWorld> ReadAsync(IPlaceWorld place, DriverConfig config, string home, CancellationToken ct)
+    /// <summary>The world now, through the service's registry and quests and the home's files.</summary>
+    public static async Task<ConvertWorld> ReadAsync(
+        Func<CancellationToken, Task<IReadOnlyList<RepoView>>> registry, Func<CancellationToken, Task<IReadOnlyList<QuestView>>> quests, DriverConfig config, string home, CancellationToken ct)
     {
-        var registry = await place.RegistryAsync(ct).ConfigureAwait(false);
-        var quests = await place.QuestsAsync(ct).ConfigureAwait(false);
-        return new(config, home, registry, WorkflowPorts.Store(home), RunsOf(home, quests));
+        var rows = await registry(ct).ConfigureAwait(false);
+        var every = await quests(ct).ConfigureAwait(false);
+        return new(config, home, rows, WorkflowPorts.Store(home), RunsOf(home, every));
     }
 
     private static string Bare(string id) => id.Trim().TrimStart('#');

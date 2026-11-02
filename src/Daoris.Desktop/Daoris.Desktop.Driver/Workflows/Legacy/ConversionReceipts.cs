@@ -3,7 +3,19 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>One operation of an applied conversion and where it stands (<see cref="PlaceOutcomes"/>'s words): a workflow save, or the one edit of <c>driver.json</c>.</summary>
+/// <summary>The outcomes a conversion's receipt keeps for an operation, in the words a place's receipt uses; one in flight is <see cref="Uncertain"/> until it is known.</summary>
+public static class ConversionOutcomes
+{
+    public const string Pending = "pending";
+    public const string Uncertain = "uncertain";
+    public const string Done = "done";
+    public const string Failed = "failed";
+
+    /// <summary>Whether a word is a plan's digest: 64 lower-case hex.</summary>
+    public static bool IsDigest(string? value) => value is { Length: 64 } && value.All(each => each is >= '0' and <= '9' or >= 'a' and <= 'f');
+}
+
+/// <summary>One operation of an applied conversion and where it stands (<see cref="ConversionOutcomes"/>): a workflow save, or the one edit of <c>driver.json</c>.</summary>
 public sealed record ConversionOp(string Id, string Kind, string Said, string Outcome)
 {
     public string? Note { get; init; }
@@ -38,7 +50,7 @@ public sealed record ConversionReceipt(
         this with { Operations = [.. Operations.Select(each => each.Id == id ? change(each) : each)] };
 
     /// <summary>Whether every operation is done: the conversion stands unless it was undone.</summary>
-    public bool Applied => Operations.All(each => each.Outcome == PlaceOutcomes.Done);
+    public bool Applied => Operations.All(each => each.Outcome == ConversionOutcomes.Done);
 }
 
 /// <summary>
@@ -84,7 +96,7 @@ public sealed class ConversionReceipts(string home)
         foreach (var file in Directory.EnumerateFiles(folder, "conversion-*.json").Order(StringComparer.Ordinal))
         {
             var digest = Path.GetFileNameWithoutExtension(file)["conversion-".Length..];
-            if (!PlaceDigests.Is(digest)) continue;
+            if (!ConversionOutcomes.IsDigest(digest)) continue;
             try
             {
                 if (ReadFile(file, digest) is { } receipt) found.Add(receipt);
@@ -114,7 +126,7 @@ public sealed class ConversionReceipts(string home)
         var folder = DaorisHome.Entry(home, HomeEntry.PlaceReceipts);
         if (!Directory.Exists(folder) || !Directory.EnumerateFiles(folder, "conversion-*.json").Any()) return false;
         var receipts = new ConversionReceipts(home);
-        return receipts.All().Any(each => !each.Undone && each.Of("configuration")?.Outcome is PlaceOutcomes.Done or PlaceOutcomes.Uncertain)
+        return receipts.All().Any(each => !each.Undone && each.Of("configuration")?.Outcome is ConversionOutcomes.Done or ConversionOutcomes.Uncertain)
             || Directory.EnumerateFiles(folder, "conversion-*.json").Count() > receipts.All().Count;
     }
 
