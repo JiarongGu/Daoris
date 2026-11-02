@@ -12896,3 +12896,23 @@ mis-rooted instance.
 **Fix.** `DriverWorkflowsCommand` plans and says as before, then defers the write: `InstanceDoor.PressAsync` on the matching route (a file imported goes a version at a time; a verification-marked one, which the save cannot carry, is refused while Daoris runs), and the write is done here only where no instance answers or a named file is used; the session-terminal refusal now guards that alone path alone (output held until then), so the window's Confirm is the guard beside a running Daoris, as for every other press. The four routes join `ChoiceRoutes`.
 
 **Verified.** `Beside_the_running_Daoris_a_workflows_write_is_its_route_and_this_process_writes_nothing` (kind, use, new): the old code wrote the file here and sent nothing; the driver's workflow, verb-lease, choice and help-coverage classes green (633).
+
+## 2026-11-02 — `daoris-driver place … --apply` acting alone did not refuse a session's terminal
+
+**Symptom.** From a session's terminal with no Daoris running, `place <repository> --preset … --apply` planned, wrote the configuration and asked the adoption quest, though every other person's press acting alone refuses `DAORIS_SESSION_ID` (REVIEW2 finding 4).
+
+**Root cause.** `PlaceCommand.ApplyAloneAsync` was written without the check `GitHistoryCommand`, `GitRefCommand` and `GitFetchCommand` carry in their alone callbacks.
+
+**Fix.** `ApplyAloneAsync` takes the terminal and says `DriverChoicesCommand.SessionsTerminal`, exit 1, before the plan is read; the route's own `said` run (no terminal) is unaffected.
+
+**Verified.** Red first: `The_verb_applying_alone_from_a_sessions_terminal_is_refused_and_writes_nothing` (applied, exit 0).
+
+## 2026-11-02 — `PLACE_APPLY` accepted a single `repository` its owner row and grounds never read
+
+**Symptom.** `{"repository":"x", "preset":…}` to `PLACE_APPLY` planned and applied for `x` while the card's owner target and grounds judged `repositories`, which was absent (REVIEW2 finding 5).
+
+**Root cause.** The handler shared `Names` with `PLACE_PLAN`, whose single-`repository` fallback is harmless for a read, but the press must be judged on the places it acts on.
+
+**Fix.** `PlaceApplyAsync` refuses a payload carrying `repository`; `repositories` is the apply's one way (the verb and the page send it).
+
+**Verified.** Red first: `An_apply_naming_a_single_repository_is_refused_and_nothing_is_written` (the apply ran).
