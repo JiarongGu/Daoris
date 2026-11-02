@@ -28,7 +28,7 @@ import { PlaceRoles } from './setup/PlaceRoles';
 import type { PlaceDriving } from './setup/PlacePage';
 import { doorOf, draftOfAsk, type PlaceAsk, type SetUpDoor, type SetUpPage, type SetUpPlace, useSetUpPage } from './setup/placePlan';
 import { type PlaceAt, type PlaceEdit, type PlaceFlowHold, type PlaceSection, type PlaceView, usePlaceShell } from './setup/placeShell';
-import { findPlace, placeAsk, rowOfFound, SetupList, SetupMain, setUpPlaceOf, sourceDoor, useSetupPlaces } from './setup/SetupPlaces';
+import { type ConvertHand, findPlace, placeAsk, rowOfFound, SetupList, SetupMain, setUpPlaceOf, sourceDoor, useSetupPlaces } from './setup/SetupPlaces';
 import { RoleSectionList } from './roles/RoleSections';
 import { type RoleOpeners, RolesMode, useRolesPage } from './roles/RolesView';
 import { usedByAgent } from './roles/roleStructure';
@@ -115,12 +115,17 @@ export type PlaceHold = {
  *
  * **Every act has its terminal twin** (D50): `daoris agent …`, named at the page's foot.
  */
-export function useAgentsView({ active, chosen, onChoose, notify, part = null, onAnchored, onOpenPlugin, say, modes, roleDoors, bodies, driving, setUp }: {
+export function useAgentsView({ active, chosen, onChoose, notify, part = null, onAnchored, onOpenPlugin, say, modes, roleDoors, bodies, driving, setUp, convert }: {
   /**
    * A place's *Set up…* (AGENTSPLACE1j), opened in its main area and handed in by the application for the same reason: it reads the plan and
    * presses Apply, the person's own act. The set-up's draft per place is held here, so a door out of it and back finds it as left.
    */
   setUp?: (place: SetUpPlace, page: SetUpPage, doorFor: SetUpDoor) => ReactNode;
+  /**
+   * The home's *Convert…* (WORKFLOWCLEAN1g-i), handed in by the application for the same reason: its review reads the plan and presses Apply and Undo.
+   * `shown` puts the review in the place's main area in place of its sections; `follows` says which places follow an old landing rule.
+   */
+  convert?: ConvertHand;
   /**
    * A place's Workflow and Sessions sections' bodies (AGENTSPLACE1f, 1h), handed in by the application, which holds the presses the rows
    * make: this place imports none of them, so Ask Daoris's census of what the place presses does not take them for its own. A section
@@ -319,6 +324,7 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
               panel: setUp(setUpPlace, setUpPage, doorFor),
             }
             : undefined}
+          convert={convert}
         />
       ),
     };
