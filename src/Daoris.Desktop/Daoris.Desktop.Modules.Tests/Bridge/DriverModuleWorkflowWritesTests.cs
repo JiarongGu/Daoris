@@ -205,7 +205,7 @@ public sealed class DriverModuleWorkflowWritesTests : DriverModuleBridge
     [Fact]
     public async Task A_choice_says_where_a_repository_integrates_with_no_gates_and_refuses_one_that_cannot_start()
     {
-        File.WriteAllText(DriverConfigPath, """{"landings":{"engine":{"form":"branch","pattern":"w/{quest}"},"game":{"form":"merge"}}}""");
+        File.WriteAllText(DriverConfigPath, """{"landings":{"engine":{"form":"branch","pattern":"w/{quest}"},"game":{"form":"branch","pattern":"g/{quest}","plugin":"acme.pr"}}}""");
         var (module, _) = await UpAsync();
         await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "line", from = "integrated" });
 

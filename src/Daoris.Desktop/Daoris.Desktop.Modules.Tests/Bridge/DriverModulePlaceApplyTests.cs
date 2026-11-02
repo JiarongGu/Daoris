@@ -41,9 +41,13 @@ public sealed class DriverModulePlaceApplyTests : DriverModuleBridge
 
         Assert.True(answer.GetProperty("done").GetBoolean(), answer.ToString());
         Assert.Equal(digest, answer.GetProperty("digest").GetString());
-        Assert.Equal("configuration applied.", answer.GetProperty("message").GetString());
-        var operation = Assert.Single(answer.GetProperty("operations").EnumerateArray());
+        // A delivery is a saved workflow's now (WORKFLOWCLEAN1 1a): its copy is saved first, then the configuration chooses it.
+        Assert.Equal("workflow `merge-after-accept` saved; configuration applied.", answer.GetProperty("message").GetString());
+        var operations = answer.GetProperty("operations").EnumerateArray().ToList();
+        Assert.Equal(2, operations.Count);
+        var operation = Assert.Single(operations, each => each.GetProperty("id").GetString() == PlaceOperations.Configuration);
         Assert.Equal((PlaceOperations.Configuration, PlaceOutcomes.Done), (operation.GetProperty("id").GetString(), operation.GetProperty("outcome").GetString()));
+        Assert.All(operations, each => Assert.Equal(PlaceOutcomes.Done, each.GetProperty("outcome").GetString()));
         Assert.True(DriverConfig.Load(DriverConfigPath).OpensOwnTree("atlas"));
         Assert.Equal(PlaceOutcomes.Done, new PlaceReceipts(Home).Read(digest)!.Of(PlaceOperations.Configuration)!.Outcome);
     }
@@ -63,7 +67,7 @@ public sealed class DriverModulePlaceApplyTests : DriverModuleBridge
         var lines = answer.GetProperty("out").EnumerateArray().Select(line => line.GetString()).ToList();
         Assert.Equal(0, answer.GetProperty("code").GetInt32());
         Assert.Equal(plan, lines.Take(plan.Count));
-        Assert.Equal("place: configuration applied.", lines[^1]);
+        Assert.Equal("place: workflow `merge-after-accept` saved; configuration applied.", lines[^1]);
         Assert.DoesNotContain(lines, line => line!.StartsWith("--plan:", StringComparison.Ordinal));
         Assert.True(DriverConfig.Load(DriverConfigPath).OpensOwnTree("atlas"));
     }
