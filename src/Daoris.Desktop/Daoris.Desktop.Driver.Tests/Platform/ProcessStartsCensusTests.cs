@@ -279,6 +279,28 @@ public sealed class ProcessStartsCensusTests
     private static int GateCalls(string source) =>
         Regex.Matches(source, @"\bProcessStarts\.Shared\.(?:StartAsync|RunAsync)\(|\bstarts\.StartAsync\(").Count;
 
+    /// <summary>
+    /// KEEP1b once (ONEWAY1h-i): the downloads an agent's start is handed are kept by its run's spawn (<see cref="TransportRun"/> through the
+    /// driver's port), and no executor keeps them beside it. The conversation's runner keeps its own until ONEWAY1h-iii moves it onto the run.
+    /// </summary>
+    [Fact]
+    public void A_starts_downloads_are_kept_by_its_runs_spawn_and_by_no_executor_beside_it()
+    {
+        var keeping = Sources()
+            .Where(each => each.Source.Contains("KeepHandedAsync(", StringComparison.Ordinal))
+            .Select(each => each.File)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(
+            [
+                "Daoris.Desktop.Driver/Agents/TransportRun.cs", "Daoris.Desktop.Driver/Agents/TransportStart.cs",
+                "Daoris.Desktop.Driver/Loop/Chat/ChatRunner.cs", "Daoris.Desktop.Driver/Loop/Driver.cs",
+                "Daoris.Desktop.Driver/Loop/DriverTransportHost.cs", "Daoris.Desktop.Driver/Workplace/DownloadKeeping.cs",
+            ],
+            keeping);
+    }
+
     /// <summary>The one runner's runs are questions read to their end: the background's (PARALLEL1d).</summary>
     [Fact]
     public void The_child_runner_starts_as_the_background()

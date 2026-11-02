@@ -144,23 +144,6 @@ public sealed class TransportRunTests : IDisposable
         Assert.Contains("the same process", error.Message, StringComparison.Ordinal);
     }
 
-    /// <summary>
-    /// KEEP1b once (ONEWAY1h-i): the downloads a start is handed are kept by its run's spawn, and no executor keeps them beside it. The
-    /// conversation's runner keeps its own until ONEWAY1h-iii moves it onto the run.
-    /// </summary>
-    [Fact]
-    public void No_executor_keeps_a_starts_downloads_beside_its_runs_spawn()
-    {
-        var loop = Path.Combine(EveryChildIsHandedTheToolsTests.SourceRoot(), "Daoris.Desktop.Driver", "Loop");
-        var keeping = Directory.EnumerateFiles(loop, "*.cs", SearchOption.AllDirectories)
-            .Where(file => File.ReadAllText(file).Contains("KeepHandedAsync(", StringComparison.Ordinal))
-            .Select(file => Path.GetRelativePath(loop, file).Replace('\\', '/'))
-            .Order(StringComparer.Ordinal)
-            .ToArray();
-
-        Assert.Equal(["Chat/ChatRunner.cs", "Driver.cs", "DriverTransportHost.cs"], keeping);
-    }
-
     /// <summary>A host that records what the run asks of it, in order, and answers nothing else.</summary>
     private sealed class RecordingHost(string home, SessionProcesses processes) : ITransportHost
     {
