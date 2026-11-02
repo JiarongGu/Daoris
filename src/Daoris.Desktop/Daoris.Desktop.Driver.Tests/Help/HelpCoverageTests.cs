@@ -1057,7 +1057,6 @@ public sealed partial class HelpCoverageTests
             + "files in conflict for the person to resolve; Ask Daoris's git kind proposes cards for git acts, never applies them, so the person "
             + "presses it in the Changes tab.")),
         ("projects", "useSetLine", null, new Door("setting", "line")),
-        ("projects", "useSetLanding", null, new Door("setting", "landing")),
         ("projects", "useSetLanguage", null, new Door("setting", "language")),
         // REVIEWENV1a: *Review before landing*, on a repository's Setup and a workspace's Defaults.
         ("projects", "useSetReview", null, new Door("setting", "review")),
