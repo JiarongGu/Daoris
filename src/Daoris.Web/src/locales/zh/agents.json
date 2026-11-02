@@ -360,7 +360,7 @@
   "agents.setup.set.chooser.more": "还有 {{count}} 个匹配：缩小搜索范围即可看到。",
   "agents.setup.set.lands": "落地方式",
   "agents.setup.set.keep": "保持落地方式",
-  "agents.setup.set.keepLine": "不写入落地方式，也不写入工作流的选择。只能再设置驱动和接入：要加步骤，请在工作流自己的入口里加。",
+  "agents.setup.set.keepLine": "不写入落地方式或工作流的选择。仍可设置驱动和采用。",
   "agents.setup.set.keepFollowing": "它现在依循 `{{workflow}}`。",
   "agents.setup.set.notDriven": "未驱动",
   "agents.setup.set.notDrivenLine": "Daoris 不在此启动任何工作。",

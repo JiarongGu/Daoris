@@ -1889,7 +1889,7 @@ export function WorkFrame({
       // A chat run's look is a node of its graph: the person's skip of it, then the one Accept (WORKFLOWCLEAN1h).
       ...(gateHolds.chatRun && gateHolds.lookNode && here ? {
         withoutLook: (words: string | null, answered: Answered) => runNodeWord.mutate(
-          { run: gateHolds.chatRun!, node: gateHolds.lookNode!, act: 'skip', words: words ?? undefined },
+          { run: gateHolds.chatRun!, node: gateHolds.lookNode!, act: 'skip', words },
           {
             onSuccess: (skipped) => {
               if (!skipped.done) { answered.refused(skipped.message ?? skipped.refused ?? ''); return; }

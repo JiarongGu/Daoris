@@ -29,7 +29,7 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         // steps by these titles, so it is told the guide exists and what each step is done on. UX6i2a: named Get started
         // since UX6j (D150 §2), in Settings and on Help's row.
         ("walk through setting this machine up: an agent, Ask Daoris's agent, a workspace and its repositories, "
-            + "what is driven, how work lands, what agents may do", "Settings → Get started (Help → *Get started*)",
+            + "setting a place up, what agents may do", "Settings → Get started (Help → *Get started*)",
             "(each step shows its own command there)"),
         // HELPSETUP1: a repository's own values are on its Setup since UX6f (D150 §4.2); a workspace's are on its page
         // since UX6g (D150 §3.1).

@@ -360,7 +360,7 @@
   "agents.setup.set.chooser.more": "{{count}} more match: narrow the search to see them.",
   "agents.setup.set.lands": "How it lands",
   "agents.setup.set.keep": "Keep how it lands",
-  "agents.setup.set.keepLine": "Writes no landing and no workflow choice. Only driving and adoption can still be set: a step is added at the workflow's own door.",
+  "agents.setup.set.keepLine": "Writes no landing and no workflow choice. Driving and adoption can still be set.",
   "agents.setup.set.keepFollowing": "It follows `{{workflow}}` now.",
   "agents.setup.set.notDriven": "Not driven",
   "agents.setup.set.notDrivenLine": "Daoris starts no work here.",

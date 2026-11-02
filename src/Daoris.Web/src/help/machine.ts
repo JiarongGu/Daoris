@@ -1,5 +1,4 @@
 import type { Session } from '../data/api';
-import type { RepositoryLanding } from '../settings/repository/Landings';
 import type { RepositoryLine } from '../settings/repository/Lines';
 import { byTool, type Tool, type ToolDoor } from '../agents/tools';
 import { answeredPark } from '../design/ui';
@@ -29,8 +28,6 @@ export type Machine = {
   helper: string | null;
   /** The agent an ask the declarations leave opens an intake on, or null. */
   intake: string | null;
-  /** Driven repositories whose work lands by the default: no rule set for them or their workspace. */
-  unlanded: readonly string[];
 };
 
 /**
@@ -49,12 +46,11 @@ export function readMachine(answers: {
   harnesses?: readonly ToolDoor[];
   sessions?: readonly Pick<Session, 'state' | 'answer'>[];
   lines?: readonly RepositoryLine[];
-  landings?: readonly RepositoryLanding[];
 }): Machine {
   const repositories = (answers.registry ?? []).map((row) => row.repository);
   if (!answers.attached) {
     return {
-      attached: false, repositories, drivable: [], tools: [], waiting: 0, unnamedLines: [], helper: null, intake: null, unlanded: [],
+      attached: false, repositories, drivable: [], tools: [], waiting: 0, unnamedLines: [], helper: null, intake: null,
     };
   }
 
@@ -70,8 +66,5 @@ export function readMachine(answers: {
       .map((line) => line.repository),
     helper: answers.driver?.helperAdapter || null,
     intake: answers.driver?.intakeAdapter || null,
-    unlanded: (answers.landings ?? [])
-      .filter((landing) => landing.source === 'default' && drivable.includes(landing.repository))
-      .map((landing) => landing.repository),
   };
 }
