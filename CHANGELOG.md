@@ -5,6 +5,17 @@ with the version and date at release.
 
 ## Unreleased
 
+- **One command, `daoris`.** Everything is `daoris …` now, in one tree of groups: `daoris help` names them, and `daoris help <group>`
+  one group. The doctrine commands (`check`, `sync`, `status` and the rest) are where they were. What `daoris-driver` and the nested
+  families did has a group of its own: `daoris session say` for `daoris-driver sessions say`, `daoris tree land` for `trees land`,
+  `daoris place drive` and `daoris settings notify` for `daoris driver drive` and `daoris driver notify`, `daoris role` for
+  `daoris driver role`, `daoris gate run` for `run-heavy`, `daoris repository connect` for `daoris connect`, `daoris ask publish` for
+  `ask --publish`, and `daoris brainstorm … --kind meeting` for `meeting`. An old spelling runs nothing and says its new one. A few flags
+  have one name now: `--agent` and `--account` for `chat`'s `--adapter` and `--profile`, `--account` for `agent login`, `trust` and
+  `settings`, `--agent` for `session opinion ask`'s `--reviewer`, and `--agents` for `place opinion`'s `--reviewers`; `daoris agent
+  profile …` is `daoris agent account …`. An install's `daoris` runs Daoris's desktop program, which needs no Node for its own groups;
+  `daoris-driver` stays one release, only to say what each of its words is now. `daoris status --machine` is gone: `daoris remote list`
+  shows this machine's remotes.
 - **Fixed: `daoris status` reported no update while the canon had moved.** It looked for one only when the canon's version changed, and the version stays the same through every 0.0.x build, so a repository missing a canon file heard nothing. `status` now compares the files whatever the versions say and names each one that would change or arrive. `sync` records the digest of the canon it wrote from in `daoris.lock`. When the lock's version is older, the files are behind and `status` says to run `sync`. When the version is the same but the canon differs, `status` says the two differ and that it cannot tell which is newer, names both digests, and does not offer `sync`, which run from an older daoris would put the older text back. Drift is still the disk against the lock.
 - Every session Daoris runs on Claude Code (a build, a go-on, a hand-over, a helper, an intake and a chat in a repository, not only Ask Daoris) now has the Daoris connector's tools for knowledge, memory, quests and its line loaded with its first request, rather than as names it has to look up first. Claude Code's switch for this loads every MCP server the session has, the repository's own included: Daoris's 58 tools take about 96 KB of definitions (roughly 24,000 tokens) in each session's context, where their names alone took about 2 KB. Codex sessions already had them and are unchanged.
 - Fixed: a finished session you were still talking to could lose its tree to the look's tidy, and your next words then had no way on but a new conversation that knew nothing of the session. The tidy now leaves a session's tree for an hour after you last spoke to it, and where a finished quest's session's tree is gone anyway, *Go on with Daoris's brief* is offered: your words go on in a new part of it, in a fresh tree, handed Daoris's brief of the session (TREEGONE2).
