@@ -404,3 +404,39 @@ describe('what a message reached', () => {
     expect(within(message).getAllByRole('button', { name: /发给它的会话/ })).toHaveLength(2);
   });
 });
+
+// COMMS1k (the comms design §4.4, §7): the messages to one part each, kept apart from the channel and read-only, with their receipts.
+describe('an ask’s messages to one part alone', () => {
+  afterEach(async () => {
+    await i18n.changeLanguage('en');
+  });
+
+  const ADDRESSED: ChannelItem[] = [
+    MESSAGE('p1a2b3c4d5', 8, { part: 's9', channel: 'ask:a1', urgent: true, text: 'The contract changed.', receipt: 'taken' }),
+    MESSAGE('p2b3c4d5e6', 9, { person: true, session: null, repository: null, agent: null, entry: null, part: 's1', channel: 'ask:a1', text: 'Keep it short.', receipt: 'waiting' }),
+  ];
+
+  it('COMMS1k lists each apart from the channel with the part it is to and what it reached, and offers no press', () => {
+    render(<ChannelSection channel={CHANNEL({ addressed: ADDRESSED })} onPost={() => {}} />);
+
+    const list = within(screen.getByRole('list', { name: 'To one part alone' }));
+    const rows = list.getAllByRole('listitem');
+    expect(rows).toHaveLength(2);
+    expect(within(rows[0]!).getByText('to part s9 alone')).toBeInTheDocument();
+    expect(within(rows[0]!).getByText('The contract changed.')).toBeInTheDocument();
+    expect(within(rows[0]!).getByText('taken by that part')).toBeInTheDocument();
+    expect(within(rows[1]!).getByText('waiting for that part')).toBeInTheDocument();
+    for (const row of rows) expect(within(row).queryAllByRole('button')).toEqual([]);
+    // Never among the channel's own items.
+    expect(within(screen.getByRole('list', { name: 'Channel' })).queryByText('The contract changed.')).toBeNull();
+  });
+
+  it('COMMS1k says them in Chinese, and draws nothing of them where there are none', async () => {
+    await i18n.changeLanguage('zh');
+    const { rerender } = render(<ChannelSection channel={CHANNEL({ addressed: ADDRESSED })} onPost={() => {}} />);
+    expect(screen.getByText('只发给段 s9')).toBeInTheDocument();
+    expect(screen.getByText('那一段已收下')).toBeInTheDocument();
+    rerender(<ChannelSection channel={CHANNEL()} onPost={() => {}} />);
+    expect(screen.queryByText('只发给某一段的消息')).toBeNull();
+  });
+});

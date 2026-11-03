@@ -64,9 +64,11 @@ describe('an ask’s channel', () => {
   /** A shell before the channel answers something else, which is no channel: the section is then not drawn. */
   it('reads the shell’s answer as a channel, and an answer of another shape as none', () => {
     expect(channelOf({ ask: 'a1', entry: 'person', items: ITEMS, unread: 2, mark: '2026-10-14T09:00:00Z' }))
-      .toEqual({ ask: 'a1', entry: 'person', items: ITEMS, unread: 2, mark: '2026-10-14T09:00:00Z' });
+      .toEqual({ ask: 'a1', entry: 'person', items: ITEMS, unread: 2, mark: '2026-10-14T09:00:00Z', addressed: [] });
     expect(channelOf({ ask: 'a1', entry: 'person', items: [{ kind: 'message' }, ...ITEMS, 'junk'], unread: 'many' }))
-      .toEqual({ ask: 'a1', entry: 'person', items: ITEMS, unread: 0, mark: null });
+      .toEqual({ ask: 'a1', entry: 'person', items: ITEMS, unread: 0, mark: null, addressed: [] });
+    // COMMS1k: the messages to one part each are read apart from the items, an item of another shape passed over.
+    expect(channelOf({ ask: 'a1', entry: 'person', items: [], unread: 0, addressed: [ITEMS[1], 'junk'] })?.addressed).toEqual([ITEMS[1]]);
     expect(channelOf({ drivable: [] })).toBeNull();
     expect(channelOf(null)).toBeNull();
     expect(postedOf({ posted: false, code: 'bad-to' })).toEqual({ posted: false, code: 'bad-to', message: null });
