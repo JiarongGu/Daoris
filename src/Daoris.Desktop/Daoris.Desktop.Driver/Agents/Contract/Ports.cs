@@ -20,8 +20,11 @@ public interface ISpawn
     /// <summary>The process that would be a conversation: the same spawn with stdin open.</summary>
     ProcessStartInfo Chat(ChatTarget target, IReadOnlyList<string>? command);
 
-    /// <summary>The native door's resume of a conversation the agent kept; null where the door knows none.</summary>
-    ProcessStartInfo? Resume(SessionTarget target, IReadOnlyList<string>? command, string conversation, string prompt) => null;
+    /// <summary>
+    /// The native door's resume of a conversation the agent kept, its next turn written on the input by the driver (AGENTLYNTAI1s-i); null
+    /// where the door knows none.
+    /// </summary>
+    ProcessStartInfo? Resume(SessionTarget target, IReadOnlyList<string>? command, string conversation) => null;
 
     /// <summary>The variables that load a session's tools with its first request; empty where there is no such switch.</summary>
     IReadOnlyDictionary<string, string> ToolsUpFront => ReadOnlyDictionary<string, string>.Empty;

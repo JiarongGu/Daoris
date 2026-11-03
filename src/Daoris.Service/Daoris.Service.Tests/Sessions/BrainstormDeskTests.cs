@@ -269,4 +269,114 @@ public sealed class BrainstormDeskTests : IDisposable
         Assert.True(File.Exists(kept));
         Assert.True(Directory.Exists(Folder("ab12cd34")));
     }
+
+    /// <summary>ONEWAY1t: the caller's own id names one brainstorm: asked twice the same it is kept, asked in other words it is refused.</summary>
+    [Fact]
+    public void A_callers_id_makes_the_ask_idempotent_and_other_words_under_it_are_refused()
+    {
+        var desk = new BrainstormDesk(_home);
+
+        var first = desk.Ask("Why does the report drop its last day?", "reports", ["stub"], At, "daily-report");
+        Assert.Equal(BrainstormRefusal.None, first.Refusal);
+        Assert.Equal("daily-report", first.Brainstorm!.Id);
+        var written = File.ReadAllText(Path.Combine(Folder("daily-report"), "request.json"));
+
+        var again = desk.Ask("  Why does the report drop its last day?", "reports", ["stub"], At.AddHours(1), "daily-report");
+        Assert.Equal(BrainstormRefusal.None, again.Refusal);
+        Assert.Contains("is already asked: the same brainstorm, never a second spend", again.Message);
+        Assert.Equal(written, File.ReadAllText(Path.Combine(Folder("daily-report"), "request.json")));
+
+        var other = desk.Ask("Why is the report slow?", "reports", ["stub"], At, "daily-report");
+        Assert.Equal(BrainstormRefusal.State, other.Refusal);
+        Assert.Contains("was asked with other words; an id names one brainstorm", other.Message);
+        Assert.Equal(BrainstormRefusal.State, desk.Ask("Why does the report drop its last day?", "reports", ["acp-stub"], At, "daily-report").Refusal);
+        Assert.Equal(written, File.ReadAllText(Path.Combine(Folder("daily-report"), "request.json")));
+    }
+
+    /// <summary>ONEWAY1t: one id shape, the stricter of the two the writers had: a letter or digit, then letters, digits and dashes, at most 32.</summary>
+    [Fact]
+    public void An_id_the_caller_names_is_a_plain_name_of_at_most_32_and_never_the_reserved_one()
+    {
+        var desk = new BrainstormDesk(_home);
+
+        foreach (var id in new[] { "-lead", "a_b", "../other", "a b", new string('a', 33), "meetings", "Meetings" })
+        {
+            var refused = desk.Ask("Why?", null, null, At, id);
+            Assert.Equal(BrainstormRefusal.BadShape, refused.Refusal);
+            Assert.Contains("Nothing was asked", refused.Message);
+        }
+
+        Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.Brainstorms)));
+        Assert.Equal(BrainstormRefusal.None, desk.Ask("Why?", null, null, At, new string('a', 32)).Refusal);
+        Assert.Null(desk.Find("a_b"));
+    }
+
+    /// <summary>ONEWAY1t: named sources are repository-relative paths of a named repository, at most twelve, written after the moment.</summary>
+    [Fact]
+    public void Sources_are_written_with_the_request_and_refused_where_they_do_not_hold()
+    {
+        var desk = new BrainstormDesk(_home);
+
+        var asked = desk.Ask("Why?", "daoris", null, At, null, ["docs/a.md", " src\\B.cs ", "docs/a.md"]);
+        Assert.Equal(BrainstormRefusal.None, asked.Refusal);
+        var written = JsonNode.Parse(File.ReadAllText(Path.Combine(Folder(asked.Brainstorm!.Id), "request.json")))!.AsObject();
+        Assert.Equal(["brainstorm", "id", "question", "repository", "agents", "at", "sources"], written.Select(pair => pair.Key));
+        Assert.Equal(["docs/a.md", "src/B.cs"], written["sources"]!.AsArray().Select(each => each!.GetValue<string>()));
+
+        Assert.Equal(BrainstormRefusal.BadShape, desk.Ask("Why?", null, null, At, null, ["docs/a.md"]).Refusal);
+        foreach (var wrong in new[] { "/etc/passwd", "C:\\x", "../up/a.md", "a/../b", "\\share\\x" })
+        {
+            var refused = desk.Ask("Why?", "daoris", null, At, null, [wrong]);
+            Assert.Equal(BrainstormRefusal.BadShape, refused.Refusal);
+            Assert.Contains("is not a path from the repository's root", refused.Message);
+        }
+
+        var many = desk.Ask("Why?", "daoris", null, At, null, Enumerable.Range(0, 13).Select(each => $"docs/{each}.md").ToList());
+        Assert.Equal(BrainstormRefusal.BadShape, many.Refusal);
+        Assert.Contains("at most 12 named sources; 13 were named", many.Message);
+
+        var named = desk.Ask("Why?", "daoris", null, At, "with-sources", ["docs/a.md"]);
+        Assert.Contains("is already asked", desk.Ask("Why?", "daoris", null, At, "with-sources", ["docs/a.md"]).Message);
+        Assert.Equal(BrainstormRefusal.State, desk.Ask("Why?", "daoris", null, At, "with-sources", ["docs/b.md"]).Refusal);
+        Assert.Equal(BrainstormRefusal.None, named.Refusal);
+    }
+
+    /// <summary>ONEWAY1t: the person's stop is a file of its own the driver looks for; an ended brainstorm has nothing to stop.</summary>
+    [Fact]
+    public void Stop_writes_its_file_unless_the_brainstorm_ended_or_is_not_there()
+    {
+        var desk = new BrainstormDesk(_home);
+        var id = desk.Ask("Why?", null, null, At).Brainstorm!.Id;
+
+        Assert.Equal(BrainstormRefusal.NotFound, desk.Stop("ffffffff", At).Refusal);
+        Assert.Equal(BrainstormRefusal.NotFound, desk.Stop("meetings", At).Refusal);
+
+        var stopped = desk.Stop(id, At);
+        Assert.Equal(BrainstormRefusal.None, stopped.Refusal);
+        Assert.Contains($"Brainstorm `{id}`: stop asked", stopped.Message);
+        Assert.Equal(At, DateTimeOffset.Parse(JsonNode.Parse(File.ReadAllText(Path.Combine(Folder(id), "stop.json")))!["at"]!.GetValue<string>(), System.Globalization.CultureInfo.InvariantCulture));
+
+        Put(id, "state.json", """{ "state": "ended", "packet": "sha256:5f1c", "code": "no-agent" }""");
+        File.Delete(Path.Combine(Folder(id), "stop.json"));
+        var ended = desk.Stop(id, At);
+        Assert.Equal(BrainstormRefusal.None, ended.Refusal);
+        Assert.Contains("already ended (no-agent)", ended.Message);
+        Assert.False(File.Exists(Path.Combine(Folder(id), "stop.json")));
+    }
+
+    /// <summary>ONEWAY1t, 🔴 the twin: the stop and the request's sources are held to the same table the driver's reader reads.</summary>
+    [Fact]
+    public void The_files_table_names_the_stop_and_the_requests_sources_as_this_desk_writes_them()
+    {
+        var table = Table();
+        var stop = JsonNode.Parse(table["stops"]![0]!["file"]!.GetValue<string>())!.AsObject();
+        var sourced = JsonNode.Parse(table["requests"]!.AsArray().Single(row => row!["name"]!.GetValue<string>() == "named sources")!["file"]!.GetValue<string>())!.AsObject();
+        var desk = new BrainstormDesk(_home);
+
+        var id = desk.Ask("Why?", "daoris", null, At, null, ["docs/a.md"]).Brainstorm!.Id;
+        desk.Stop(id, At);
+
+        Assert.Equal(stop.Select(pair => pair.Key), JsonNode.Parse(File.ReadAllText(Path.Combine(Folder(id), "stop.json")))!.AsObject().Select(pair => pair.Key));
+        Assert.Equal(sourced.Select(pair => pair.Key), JsonNode.Parse(File.ReadAllText(Path.Combine(Folder(id), "request.json")))!.AsObject().Select(pair => pair.Key));
+    }
 }

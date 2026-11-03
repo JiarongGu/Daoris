@@ -565,7 +565,7 @@ internal static class ConformanceCases
 
         Assert.True(resumes.IsKnown, "a resume is stated on every door");
         Assert.Equal(resumes.Value, adapter.Resumes);
-        var resumed = adapter.PrepareResume(run.Target(), run.Command(), "c-1", "go on");
+        var resumed = adapter.PrepareResume(run.Target(), run.Command(), "c-1");
         if (Protocol(door))
         {
             // The transport's default: eligibility to negotiate at the open, never a resume known (X; §2.6).

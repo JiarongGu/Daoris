@@ -1,15 +1,18 @@
+using System.Text.Json;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// BRAINSTORM1a (D176 points 1, 2 and 8): <c>daoris-driver brainstorm</c> at the terminal. The verb writes a request the driver's look
-/// takes; <c>show</c> prints the packet the person sends, whole, and the document once there is one; <c>send</c> is the person's press
-/// and sends the packet they saw; <c>clear</c> removes the records and the packet. Files only: no service, no process.
+/// BRAINSTORM1a (D176 points 1, 2 and 8), ONEWAY1t: <c>daoris-driver brainstorm</c> at the terminal. An ask, a send, a stop and a clear
+/// are presses of the running service's desk, which writes the records and says the sentence the verb prints; <c>show</c> and
+/// <c>list</c> read the records here. With no service the verb says so and writes nothing.
 /// </summary>
 public sealed class BrainstormCommandTests : IDisposable
 {
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-brainstorm-verb-" + Guid.NewGuid().ToString("N")[..8]);
+
+    private readonly BrainstormDoorStandIn _service = new();
 
     private static readonly DateTimeOffset At = DateTimeOffset.Parse("2026-10-19T10:00:00Z");
 
@@ -25,9 +28,11 @@ public sealed class BrainstormCommandTests : IDisposable
     private (int Code, string Out) Run(params string[] args)
     {
         var output = new StringWriter();
-        var code = BrainstormCommand.Run(args, _home, output, At);
+        var code = BrainstormCommand.Run(args, _home, output, At, _service);
         return (code, output.ToString());
     }
+
+    private string Asked() => Files.WriteRequest("Why does the report drop its last day?", "reports", [], At);
 
     /// <summary>The look's freeze, as the driver writes it: the packet and the state naming its digest.</summary>
     private string Freeze(string id)
@@ -42,78 +47,128 @@ public sealed class BrainstormCommandTests : IDisposable
     }
 
     [Fact]
-    public void The_verb_writes_a_request_the_look_takes_and_says_so()
+    public void An_ask_is_one_press_of_the_desk_with_the_words_as_typed_and_prints_the_desks_sentence()
     {
-        var (code, said) = Run("Why does the report drop its last day?", "--repository", "reports", "--agents", "stub,acp-stub");
+        _service.Answer = (_, _, _) => new ServiceReply(200, """{ "brainstorm": { "id": "ab12cd34" }, "message": "Brainstorm `ab12cd34` asked. Daoris freezes its packet at its next look." }""");
+
+        var (code, said) = Run("Why does the report drop its last day?", "--repository", "reports", "--agents", "stub, acp-stub", "--id", "daily");
 
         Assert.Equal(0, code);
-        var request = Assert.Single(Files.Requests());
-        Assert.Equal(("Why does the report drop its last day?", "reports"), (request.Question, request.Repository));
-        Assert.Equal(["stub", "acp-stub"], request.Agents);
-        Assert.Contains(request.Id, said, StringComparison.Ordinal);
-        Assert.Contains("next look", said, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void An_agent_no_adapter_names_is_refused_with_the_names_there_are_and_nothing_is_written()
-    {
-        var (code, said) = Run("Why?", "--agents", "claude,stub");
-
-        Assert.Equal(1, code);
-        Assert.Contains("claude", said, StringComparison.Ordinal);
-        Assert.Contains("claude-code-acp", said, StringComparison.Ordinal);
-        Assert.Contains("codex-acp", said, StringComparison.Ordinal);
+        var (verb, path, json) = Assert.Single(_service.Sent);
+        Assert.Equal((ServiceVerb.Post, "/api/brainstorms"), (verb, path));
+        var body = JsonDocument.Parse(json!).RootElement;
+        Assert.Equal("Why does the report drop its last day?", body.GetProperty("question").GetString());
+        Assert.Equal("reports", body.GetProperty("repository").GetString());
+        Assert.Equal(["stub", "acp-stub"], body.GetProperty("agents").EnumerateArray().Select(agent => agent.GetString()));
+        Assert.Equal("daily", body.GetProperty("id").GetString());
+        Assert.False(body.TryGetProperty("kind", out _));
+        Assert.Equal("Brainstorm `ab12cd34` asked. Daoris freezes its packet at its next look.", said.Trim());
         Assert.Empty(Files.Requests());
     }
 
     [Fact]
-    public void A_plugins_adapter_the_set_carries_is_accepted()
+    public void Each_source_is_sent_as_typed_for_the_desk_to_judge()
     {
-        var stub = AdapterSet.Built().Resolve("stub");
-        var set = new AdapterSet(new Dictionary<string, ISessionAdapter> { ["stand-agent"] = stub });
-        var output = new StringWriter();
+        Run("Why?", "--repository", "daoris", "--source", "docs/a.md", "--source", "src\\B.cs");
 
-        var code = BrainstormCommand.Run(["Why?", "--agents", "stand-agent"], _home, output, At, _ => set);
+        var body = JsonDocument.Parse(Assert.Single(_service.Sent).Json!).RootElement;
+        Assert.Equal(["docs/a.md", "src\\B.cs"], body.GetProperty("sources").EnumerateArray().Select(source => source.GetString()));
+    }
 
-        Assert.Equal(0, code);
-        Assert.Equal(["stand-agent"], Assert.Single(Files.Requests()).Agents);
+    [Fact]
+    public void A_refusal_of_the_desk_is_printed_as_its_sentence_and_is_exit_1()
+    {
+        _service.Answer = (_, _, _) => new ServiceReply(409, """{ "error": "Brainstorm `daily` was asked with other words; an id names one brainstorm. Nothing was asked." }""");
+
+        var (code, said) = Run("Why is the report slow?", "--id", "daily");
+
+        Assert.Equal(1, code);
+        Assert.Equal("daoris-driver: Brainstorm `daily` was asked with other words; an id names one brainstorm. Nothing was asked.", said.Trim());
+    }
+
+    /// <summary>🔴 One writer: with no service the verb says so, says what to start, and writes no file of its own.</summary>
+    [Fact]
+    public void With_no_service_the_verb_says_so_and_writes_nothing()
+    {
+        _service.Down = new DriverException("no DAORIS_SERVICE_URL — the driver watches a service.");
+
+        foreach (var line in new[] { new[] { "Why?" }, ["send", "ab12cd34"], ["stop", "ab12cd34"], ["clear", "ab12cd34"] })
+        {
+            var (code, said) = Run(line);
+            Assert.Equal(1, code);
+            Assert.Contains("Daoris is not running", said, StringComparison.Ordinal);
+            Assert.Contains("Start Daoris", said, StringComparison.Ordinal);
+            Assert.Contains("nothing was written", said, StringComparison.Ordinal);
+        }
+
+        Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.Brainstorms)));
+    }
+
+    [Fact]
+    public void A_service_that_stopped_answering_is_the_same_refusal()
+    {
+        _service.Down = new HttpRequestException("connection refused");
+
+        var (code, said) = Run("Why?");
+
+        Assert.Equal(1, code);
+        Assert.Contains("connection refused", said, StringComparison.Ordinal);
     }
 
     [Theory]
     [InlineData]
     [InlineData("--agents")]
-    [InlineData("send")]
     [InlineData("show", "a", "b")]
     [InlineData("Why?", "--colour", "red")]
-    public void A_mistyped_line_is_told_its_usage(params string[] args)
+    [InlineData("Why?", "--kind", "party")]
+    [InlineData("Why?", "--kind")]
+    public void A_mistyped_line_is_told_its_usage_and_asks_the_service_nothing(params string[] args)
     {
         var (code, said) = Run(args);
 
         Assert.Equal(2, code);
         Assert.Contains("daoris-driver brainstorm", said, StringComparison.Ordinal);
-        Assert.Empty(Files.Requests());
+        Assert.Empty(_service.Sent);
     }
 
     [Fact]
-    public void A_question_past_its_bound_is_refused()
+    public void Send_stop_and_clear_are_presses_on_the_brainstorm_by_its_id()
     {
-        var (code, said) = Run(new string('q', 4_001));
+        Assert.Equal(0, Run("send", "ab12cd34").Code);
+        Assert.Equal(0, Run("stop", "ab12cd34").Code);
+        Assert.Equal(0, Run("clear", "ab12cd34").Code);
 
-        Assert.Equal(1, code);
-        Assert.Contains("4000", said, StringComparison.Ordinal);
-        Assert.Empty(Files.Requests());
+        Assert.Equal(
+            [(ServiceVerb.Post, "/api/brainstorms/ab12cd34/send"), (ServiceVerb.Post, "/api/brainstorms/ab12cd34/stop"), (ServiceVerb.Delete, "/api/brainstorms/ab12cd34")],
+            _service.Sent.Select(each => (each.Verb, each.Path)));
     }
 
     [Fact]
-    public void Show_prints_the_packet_whole_and_send_sends_the_one_the_person_saw()
+    public void The_kind_meeting_asks_and_presses_a_meeting_of_the_same_desk()
     {
-        Run("Why does the report drop its last day?", "--repository", "reports");
-        var id = Files.Requests().Single().Id;
+        Run("Which window?", "--kind", "meeting", "--agents", "stub,acp-stub", "--id", "weekly");
+        Run("send", "weekly", "--kind", "meeting", "--round", "2");
+        Run("stop", "--kind", "meeting", "weekly");
+        Run("clear", "weekly", "--kind", "meeting");
 
-        // Before the look froze it, there is nothing to show and nothing to send.
+        Assert.Equal(
+            [
+                (ServiceVerb.Post, "/api/brainstorms"), (ServiceVerb.Post, "/api/brainstorms/weekly/send?kind=meeting&round=2"),
+                (ServiceVerb.Post, "/api/brainstorms/weekly/stop?kind=meeting"), (ServiceVerb.Delete, "/api/brainstorms/weekly?kind=meeting"),
+            ],
+            _service.Sent.Select(each => (each.Verb, each.Path)));
+        var body = JsonDocument.Parse(_service.Sent[0].Json!).RootElement;
+        Assert.Equal("meeting", body.GetProperty("kind").GetString());
+        Assert.Equal("Which window?", body.GetProperty("question").GetString());
+    }
+
+    [Fact]
+    public void Show_prints_the_packet_whole_and_says_where_the_send_is()
+    {
+        var id = Asked();
+
+        // Before the look froze it, there is nothing to show.
         Assert.Contains("next look", Run("show", id).Out, StringComparison.Ordinal);
-        Assert.Equal(1, Run("send", id).Code);
-        Assert.Null(Files.Sent(id));
 
         var digest = Freeze(id);
         var (shown, printed) = Run("show", id);
@@ -122,20 +177,13 @@ public sealed class BrainstormCommandTests : IDisposable
         Assert.Contains("S1  decision  docs/decisions/D7.md:3-9 at 0123456789ab", printed, StringComparison.Ordinal);
         Assert.Contains("The window is exclusive of its end.", printed, StringComparison.Ordinal);
         Assert.Contains($"brainstorm send {id}", printed, StringComparison.Ordinal);
-
-        Assert.Equal(0, Run("send", id).Code);
-        Assert.Equal(digest, Files.Sent(id));
-        // Sent again, it is the same brainstorm: never a second spend.
-        var (again, said) = Run("send", id);
-        Assert.Equal(0, again);
-        Assert.Contains("already", said, StringComparison.Ordinal);
+        Assert.Empty(_service.Sent);
     }
 
     [Fact]
     public void Show_prints_the_document_once_there_is_one_and_list_names_each()
     {
-        Run("Why does the report drop its last day?");
-        var id = Files.Requests().Single().Id;
+        var id = Asked();
         var digest = Freeze(id);
         var packet = BrainstormPackets.Read(Files.PacketBytes(id)!)!;
         Files.WriteDocument(id, BrainstormDocuments.Unranked(id, packet, [], [], [], "every answer said it had no proposal"));
@@ -143,22 +191,6 @@ public sealed class BrainstormCommandTests : IDisposable
 
         Assert.Contains($"# Brainstorm `{id}`", Run("show", id).Out, StringComparison.Ordinal);
         Assert.Contains($"{id}  ended", Run("list").Out, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void Clear_removes_the_records_and_the_packet_and_never_a_running_one()
-    {
-        Run("Why does the report drop its last day?");
-        var id = Files.Requests().Single().Id;
-        var digest = Freeze(id);
-        Files.WriteState(new BrainstormState(id, BrainstormStates.Running, digest, null, At));
-
-        Assert.Equal(1, Run("clear", id).Code);
-        Assert.True(Directory.Exists(Files.Folder(id)));
-
-        Files.WriteState(new BrainstormState(id, BrainstormStates.Ended, digest, null, At));
-        Assert.Equal(0, Run("clear", id).Code);
-        Assert.False(Directory.Exists(Files.Folder(id)));
-        Assert.Equal(1, Run("show", id).Code);
+        Assert.Equal(1, Run("show", "ffffffff").Code);
     }
 }

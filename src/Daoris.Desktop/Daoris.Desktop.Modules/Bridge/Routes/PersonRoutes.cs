@@ -1,3 +1,4 @@
+using Daoris.Driver;
 using Shenora.Core.Ipc;
 
 namespace Daoris.Desktop;
@@ -42,6 +43,9 @@ public sealed class PersonRoutes(DriverLoop loop)
     // `{ answered: false, why: "unrecorded" }` where its record could not say the answer, nothing taken. The page waits for it as long as
     // the press's `checkWithin`.
     // The confirmed press runs on the pipe, in its terminal's name, and publishes what it changes as it runs.
+    // ONEWAY1n-i (the oneway design §4 M4): `source: "service"` answers one waiting at the service's door instead, where the host makes
+    // the request at the Confirm: `{ answered: true }` where its door took it, else the host's code as `why` (`not-made` with the door's
+    // own sentence, `restarted`), `gone` where none, and `unreachable` where the service did not answer, nothing taken.
     [DriverRoute("PERSON_CONFIRM")]
     private async Task<object?> PersonConfirmAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -51,6 +55,11 @@ public sealed class PersonRoutes(DriverLoop loop)
         if (PipeDoor.Now == PipeDoor.Terminal)
         {
             return new PersonConfirmRefused(false, "window-only", "Only Daoris's window answers a confirmation.");
+        }
+
+        if (PayloadHelper.GetOptionalValue<string>(request.Payload, "source") == "service")
+        {
+            return await ServiceConfirmAsync(id, confirm, cancellationToken).ConfigureAwait(false);
         }
 
         if (_loop.Pipe is not { } pipe) return Gone();
@@ -73,6 +82,28 @@ public sealed class PersonRoutes(DriverLoop loop)
 
         static PersonConfirmRefused Gone() => new(false, "gone",
             "This no longer waits: it was answered in another window, or its terminal took it back.");
+    }
+
+    // One waiting at the service's door, answered there; a refusal is the host's sentence, by its code.
+    private async Task<object> ServiceConfirmAsync(string id, bool confirm, CancellationToken cancellationToken)
+    {
+        const string Away = "Daoris's service did not answer just now; nothing was done, and this still waits.";
+        if (_loop.Service is not { } service) return new PersonConfirmRefused(false, "unreachable", Away);
+
+        ConfirmationAnswered answered;
+        try
+        {
+            answered = await service.Confirmations.AnswerAsync(id, confirm, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException
+            || (error is TaskCanceledException && !cancellationToken.IsCancellationRequested))
+        {
+            return new PersonConfirmRefused(false, "unreachable", Away);
+        }
+
+        return answered.Done
+            ? new PersonConfirmed(true, confirm)
+            : new PersonConfirmRefused(false, answered.Code ?? "gone", answered.Message);
     }
 
     // CONFIRMSEEN1: the window's word that a terminal's press is drawn in front of the person, in a window that is in front: kept once as

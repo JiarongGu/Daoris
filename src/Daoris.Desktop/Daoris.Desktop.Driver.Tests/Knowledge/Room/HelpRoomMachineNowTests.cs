@@ -361,7 +361,7 @@ public sealed class HelpRoomMachineNowTests
     [Fact]
     public void The_browser_is_described_from_its_files_as_the_desktop_read_them()
     {
-        var files = new HelpBrowserFacts("daoris", "system", "offer", ["https://site.example/board"]) { Page = typed => typed };
+        var files = new HelpBrowserFacts("daoris", "system", "offer", ["https://site.example/board"]);
 
         var machine = HelpRoom.Describe(DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0, browser: files);
 

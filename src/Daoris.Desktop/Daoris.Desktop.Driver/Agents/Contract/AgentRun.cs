@@ -45,7 +45,7 @@ public abstract class AgentRun
 
     /// <summary>
     /// The carriers handed to the start and to each go-on (design §4.1): the settings and the servers files the run before it was handed, so
-    /// each go-on runs under the same rules. Kept: the downloads a start hands are kept by the run's open, as today's start's are.
+    /// each go-on runs under the same rules. Kept: the downloads a start hands are kept by the run's spawn, as a start's are.
     /// </summary>
     public abstract void HandCarriers(RunCarriers carriers);
 
@@ -59,7 +59,7 @@ public abstract class AgentRun
     /// <summary>
     /// A native run's next process with the held words as one <paramref name="prompt"/>, resuming <paramref name="conversation"/> under the
     /// carriers (MSG1b, D137 §2.1), its opening the events said first; the run's end is the one it answers. <b>Replaced at m-ii</b> by the
-    /// native retry and <c>DoorInput</c>; today's <c>GoOnWith</c> factory it stands in place of.
+    /// native retry and <c>DoorInput</c>.
     /// </summary>
     public abstract Task<AgentRunEnd> GoOnAsync(string conversation, string prompt, IReadOnlyList<SessionEvent> opening, CancellationToken ct);
 

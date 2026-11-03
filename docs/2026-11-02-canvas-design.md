@@ -324,7 +324,7 @@ from memory until this reading replaces it.
 
 | Today | Becomes |
 |---|---|
-| `design/Flow.tsx` and its inline callers: `quests/QuestFlow.tsx`, `work/head/SessionFlow.tsx`, `work/head/PartsFlow.tsx`, `projects/git/LandingFlow.tsx`, `workflow/WorkflowStartNode.tsx` | **kept, with no viewport**: small reads in a scrolling page, where a viewport would trap the wheel and add chrome; one opts in only on a measured need. Codex's row e, moving every `Flow` caller, is not taken |
+| `design/Flow.tsx` and its inline callers: `quests/QuestFlow.tsx`, `work/head/SessionFlow.tsx`, `work/head/PartsFlow.tsx`, `projects/git/LandingFlow.tsx`, `workflow/WorkflowStartNode.tsx` | **kept, with no viewport**: small reads in a scrolling page, where a viewport would trap the wheel and add chrome; one opts in only on a measured need. Codex's row e, moving every `Flow` caller, is not taken. *Superseded 2026-11-03 by ONEWAY1 (D228, `docs/2026-11-02-oneway-design.md` §8 P2): `ONEWAY1aa` moves these callers onto row e's positioned world in display mode (no wheel trap), and `Flow.tsx` goes.* |
 | `design/FlowCanvas.tsx` | split into `design/canvas/*` and `design/RankedFlow.tsx`, the export and its props kept with `viewport`; `measure` (`:993-1027`) reads world units through `worldBoxes`; its 16 px rem (`:173`, `:298`) becomes the root's measured size; `focusNode` (`:333-336`) takes `preventScroll` |
 | `design/flowLayout.ts`, `flowFolds.ts`, `groupFolds.ts`, `flowInk.ts` | kept whole; `placementFor` gains the canvas floor; `flowInk`'s boxes are world units by contract, its label and ＋ placing moved to `design/canvas/ink.ts` |
 | `design/zoom.ts` | unchanged: the canvas takes its wheel before the window hears it |

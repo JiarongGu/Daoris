@@ -4,11 +4,12 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1m-i part 1: <see cref="TransportRun"/> over both of today's doors, run as real model-free processes, observed as today's
-/// start observes them (<c>Driver.HoldAsync</c>'s unit and <c>DriverContinuations.GoOnAsync</c>, <c>AgainAsync</c>): the process started
-/// through the agents' route and tracked, a reaper beside it, the capture reading its streams into the transcript and the record, the wait
-/// on its exit, the capture bounded past it, and the end read the way the conclusion reads it. A native door's one program is a Node script
-/// that speaks the stream the Claude Code mapper reads; a protocol door's is the stand-in's own. No executor holds the run yet.
+/// AGENTPROVIDER1m-i: <see cref="TransportRun"/> over both of today's doors, run as real model-free processes, observed as a start observes
+/// them. Every executor's run holds it (ONEWAY1h-i and h-ii, through <c>Driver.HoldAsync</c>), so this is that run's unit: the downloads kept,
+/// the process bracketed by its own lineage token, started through the agents' route and tracked, a reaper beside it, the capture reading its
+/// streams into the transcript and the record, a native prompt on its input, the wait on its exit, the capture bounded past it, and the end
+/// read the way the conclusion reads it, for its first process, its go-on's and its retry's alike. A native door's one program is a Node
+/// script that speaks the stream the Claude Code mapper reads; a protocol door's is the stand-in's own.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 public sealed class TransportRunProcessTests : IDisposable
@@ -26,7 +27,22 @@ public sealed class TransportRunProcessTests : IDisposable
             if (!fs.existsSync(rest[0])) { fs.writeFileSync(rest[0], '1'); console.log('not a frame'); process.exit(1); }
             init('conv-1'); said('second run'); result(); break;
           }
-          case 'resume': init('conv-1'); said('args: ' + rest.join(' ')); result(); break;
+          case 'resume': {
+            let heard = '';
+            process.stdin.setEncoding('utf8');
+            process.stdin.on('data', chunk => { heard += chunk; });
+            process.stdin.on('end', () => { init('conv-1'); said('args: ' + rest.join(' ')); said('heard: ' + heard); result(); });
+            break;
+          }
+          case 'token': console.log('token ' + (process.env.DAORIS_LINEAGE_PROC ?? '')); break;
+          case 'stdin': {
+            let heard = '';
+            process.stdin.setEncoding('utf8');
+            process.stdin.on('data', chunk => { heard += chunk; });
+            process.stdin.on('end', () => { init('conv-1'); said('heard: ' + heard); result(); });
+            break;
+          }
+          case 'hangs': setInterval(() => {}, 1000); break;
         }
         """;
 
@@ -71,7 +87,10 @@ public sealed class TransportRunProcessTests : IDisposable
 
     private SessionTarget Target() => new("q-1", "title", "body", "asker", "engine", Path.Combine(_home, "engine"), "http://127.0.0.1:9") { Home = _home };
 
-    /// <summary>The scripted native harness: the Claude Code mapper over its stream, a resume that says its arguments, flags for its carriers.</summary>
+    /// <summary>
+    /// The scripted native harness: the Claude Code mapper over its stream, a resume that says its arguments and what its input carried, flags
+    /// for its carriers.
+    /// </summary>
     private sealed class Scripted(string home, bool structured) : ISessionAdapter
     {
         public string Name => "scripted";
@@ -80,8 +99,12 @@ public sealed class TransportRunProcessTests : IDisposable
 
         public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => Start(target, "claude");
 
-        public ProcessStartInfo? PrepareResume(SessionTarget target, IReadOnlyList<string>? command, string conversation, string prompt) =>
-            Start(target, "resume", "--resume", conversation, "-p", prompt);
+        public ProcessStartInfo? PrepareResume(SessionTarget target, IReadOnlyList<string>? command, string conversation)
+        {
+            var info = Start(target, "resume", "--resume", conversation);
+            info.RedirectStandardInput = true;
+            return info;
+        }
 
         public void HandSettings(ProcessStartInfo info, string settingsFile) => info.ArgumentList.Add("--settings:" + settingsFile);
 
@@ -163,28 +186,41 @@ public sealed class TransportRunProcessTests : IDisposable
     }
 
     /// <summary>
-    /// The go-on (MSG1b, D137 §2.1): the next process resumes the kept conversation with the held words as its one prompt, under the settings
-    /// and servers the start was handed, its output appended to the same transcript with its own opening; both runs tracked until the run is let go.
+    /// The go-on (MSG1b, D137 §2.1): the next process resumes the kept conversation with the held words as its one prompt on its input
+    /// (AGENTLYNTAI1s-i), under the settings and servers the start was handed, its output appended to the same transcript with its own opening;
+    /// its executor told once that process is up and before anything reads it, where the words it carries are sent (COWORK1c); a conversation
+    /// it names kept, never told to the resume the run began with, whose own words it does not carry; both processes tracked until the run is
+    /// let go.
     /// </summary>
     [Fact]
     public async Task A_go_on_resumes_the_kept_conversation_under_the_carriers_and_appends_to_the_transcript()
     {
         var adapter = new Scripted(_home, structured: true);
-        await using var run = Over(adapter, adapter.Prepare(Target(), null).WithArguments("claude"));
+        var named = 0;
+        await using var run = Over(adapter, adapter.Prepare(Target(), null).WithArguments("claude"), start => start with { Named = () => named++ });
         run.HandRecords(new RunRecords("s1", Transcript, Events: _events, KeepAs: "scripted", Own: new HarnessWords()));
         run.HandCarriers(new RunCarriers("settings.json", "servers.json"));
         await run.OpenAsync(Bound);
         await run.EndAsync(Bound);
+        var first = run.Process;
+        Assert.Equal(1, named);
 
+        var told = new List<Process?>();
         var end = await run.GoOnAsync(
-            "conv-1", "Also log the port.", [new SessionEvent { Kind = SessionEventKind.Note, Text = "resumed on `scripted`" }], Bound);
+            "conv-1", "Also log the port.", [new SessionEvent { Kind = SessionEventKind.Note, Text = "resumed on `scripted`" }],
+            started: () => told.Add(run.Process), Bound);
 
         Assert.Equal(0, end.Exit);
         Assert.True(end.Named);
+        Assert.Equal(1, named);
+        var up = Assert.Single(told);
+        Assert.NotSame(first, up);
+        Assert.Same(run.Process, up);
         var transcript = File.ReadAllText(Transcript);
         Assert.Contains("Logged the port.", transcript);
         Assert.Contains("resumed on `scripted`", transcript);
-        Assert.Contains("args: --resume conv-1 -p Also log the port. --settings:settings.json --mcp-config:servers.json", transcript);
+        Assert.Contains("args: --resume conv-1 --settings:settings.json --mcp-config:servers.json", transcript);
+        Assert.Contains("heard: Also log the port.", transcript);
         Assert.True(transcript.IndexOf("Logged the port.", StringComparison.Ordinal) < transcript.IndexOf("resumed on `scripted`", StringComparison.Ordinal));
         Assert.True(_processes.RunsHere("s1"));
 
@@ -233,11 +269,138 @@ public sealed class TransportRunProcessTests : IDisposable
         Assert.StartsWith("the record's earlier lines", transcript, StringComparison.Ordinal);
         Assert.Contains("not a frame", transcript);
         Assert.Contains("second run", transcript);
-        // The retry's line is the console's, as AgainAsync says it: the transcript is the capture's, which says only the stream.
+        // The retry's line is the console's: the transcript is the capture's, which says only the stream.
         lock (onConsole) Assert.Contains(onConsole, line => line.Contains("the same resume is tried once more", StringComparison.Ordinal));
         var said = opening.First(e => e.Kind == SessionEventKind.Note).Text!;
         Assert.Equal(1, transcript.Split(said).Length - 1);
         Assert.Equal(1, Heard().Count(e => e.Text == said));
+        // Each process the run started its own lineage token, the retry's beside the first's.
+        var started = Lineage().Where(line => line.GetProperty("by").GetString() == "start").Select(line => line.GetProperty("proc").GetString()).ToList();
+        Assert.Equal(2, started.Distinct().Count());
+    }
+
+    private List<System.Text.Json.JsonElement> Lineage() =>
+        [.. File.ReadAllLines(ChildLineage.PathOf(_home, "s1")).Select(line => System.Text.Json.JsonDocument.Parse(line).RootElement)];
+
+    /// <summary>
+    /// ONEWAY1h-i, the lineage bracket (COWORKVIEW1a): the run's process is issued its own token, its <c>start</c> written before the spawn, the
+    /// token on the spawn's environment, its <c>end</c> written clean once the exit is read and the capture drained, and the token let go at the
+    /// exit, as a start's always was.
+    /// </summary>
+    [Fact]
+    public async Task A_runs_process_is_bracketed_by_its_own_token_from_its_start_to_its_end()
+    {
+        var tokens = new LineageTokens(Environment.ProcessId, DateTime.UtcNow);
+        using var within = LineageTokens.Within(tokens);
+        var adapter = new Scripted(_home, structured: false);
+        await using var run = Over(adapter, adapter.Prepare(Target(), null).WithArguments("token"));
+        run.HandRecords(new RunRecords("s1", Transcript, Events: _events, LineageHome: _home));
+
+        await run.OpenAsync(Bound);
+        var end = await run.EndAsync(Bound);
+
+        var proc = run.Proc!;
+        Assert.Equal(0, end.Exit);
+        Assert.Matches("^[0-9a-f]{16}$", proc);
+        Assert.Contains($"token {proc}", File.ReadAllText(Transcript));
+        var lines = Lineage();
+        Assert.Equal([("start", proc), ("end", proc)], lines.Select(line => (line.GetProperty("by").GetString(), line.GetProperty("proc").GetString())));
+        Assert.True(lines[^1].GetProperty("clean").GetBoolean());
+        Assert.Equal(TokenReading.Gone, tokens.Reading(proc));
+    }
+
+    /// <summary>A run its move issued a token for (a resume moved first) starts its first process under that token, its start not written again.</summary>
+    [Fact]
+    public async Task A_run_moved_first_starts_its_first_process_under_the_token_its_move_issued()
+    {
+        var tokens = new LineageTokens(Environment.ProcessId, DateTime.UtcNow);
+        using var within = LineageTokens.Within(tokens);
+        var moved = ChildLineage.Opened(_home, "s1");
+        var adapter = new Scripted(_home, structured: false);
+        await using var run = Over(adapter, adapter.Prepare(Target(), null).WithArguments("token"), start => start with { Moved = moved });
+        run.HandRecords(new RunRecords("s1", Transcript, Events: _events, LineageHome: _home));
+
+        await run.OpenAsync(Bound);
+        await run.EndAsync(Bound);
+
+        Assert.Equal(moved, run.Proc);
+        Assert.Contains($"token {moved}", File.ReadAllText(Transcript));
+        Assert.Single(Lineage(), line => line.GetProperty("by").GetString() == "start");
+    }
+
+    /// <summary>
+    /// ONEWAY1h-i, the native prompt (AGENTLYNTAI1s-i): written on the process's input once its output is being read, the input closed, and
+    /// the write's return told (FOUNDATION1f-iv part b).
+    /// </summary>
+    [Fact]
+    public async Task A_native_runs_prompt_goes_on_its_input_and_its_write_is_told()
+    {
+        var adapter = new Scripted(_home, structured: true);
+        var info = adapter.Prepare(Target(), null).WithArguments("stdin");
+        info.RedirectStandardInput = true;
+        var written = 0;
+        await using var run = Over(adapter, info, start => start with { Prompt = "Log the port.", Written = () => written++ });
+        run.HandRecords(new RunRecords("s1", Transcript, Events: _events, Own: new HarnessWords()));
+
+        await run.OpenAsync(Bound);
+        var end = await run.EndAsync(Bound);
+
+        Assert.Equal(0, end.Exit);
+        Assert.Equal(1, written);
+        Assert.Contains("heard: Log the port.", File.ReadAllText(Transcript));
+    }
+
+    /// <summary>
+    /// ONEWAY1h-i: an executor whose own steps come between its spawn and its capture (its actor kept, its watch and inbox opened) spawns
+    /// first, the process up and tracked with nothing reading it, then hands the run its completed start and its records and opens over the
+    /// same process.
+    /// </summary>
+    [Fact]
+    public async Task An_executor_spawns_first_then_hands_its_start_and_records_and_opens_over_the_same_process()
+    {
+        var adapter = new Scripted(_home, structured: true);
+        var info = adapter.Prepare(Target(), null).WithArguments("stdin");
+        info.RedirectStandardInput = true;
+        var start = new TransportStart(info, StartClass.Person);
+        await using var run = new TransportRun(new DriverTransportHost(_driver), adapter, start);
+
+        await run.SpawnAsync("s1", Bound);
+
+        Assert.True(run.Started);
+        Assert.True(_processes.RunsHere("s1"));
+        Assert.False(File.Exists(Transcript));
+        var process = run.Process;
+        run.HandStart(start with { Prompt = "Log the port." });
+        run.HandRecords(new RunRecords("s1", Transcript, Events: _events, Own: new HarnessWords()));
+        await run.OpenAsync(Bound);
+        var end = await run.EndAsync(Bound);
+
+        Assert.Equal(0, end.Exit);
+        Assert.Same(process, run.Process);
+        Assert.Contains("heard: Log the port.", File.ReadAllText(Transcript));
+    }
+
+    /// <summary>
+    /// A run let go before its end (ANSWER2, ONEWAY1h-i): its process ended, its <c>end</c> written unclean once the exit is read and its token
+    /// let go, and its capture observed.
+    /// </summary>
+    [Fact]
+    public async Task A_run_let_go_before_its_end_ends_its_process_and_writes_its_end_unclean()
+    {
+        var tokens = new LineageTokens(Environment.ProcessId, DateTime.UtcNow);
+        using var within = LineageTokens.Within(tokens);
+        var adapter = new Scripted(_home, structured: false);
+        await using var run = Over(adapter, adapter.Prepare(Target(), null).WithArguments("hangs"));
+        run.HandRecords(new RunRecords("s1", Transcript, Events: _events));
+        await run.OpenAsync(Bound);
+        var proc = run.Proc!;
+
+        await run.AbandonAsync();
+
+        Assert.True(run.Process!.HasExited);
+        var end = Lineage()[^1];
+        Assert.Equal(("end", proc, false), (end.GetProperty("by").GetString(), end.GetProperty("proc").GetString(), end.GetProperty("clean").GetBoolean()));
+        Assert.Equal(TokenReading.Gone, tokens.Reading(proc));
     }
 
     private (TransportRun Run, string Seen) OverProtocol(string scenario, TransportProtocol protocol)
@@ -276,6 +439,55 @@ public sealed class TransportRunProcessTests : IDisposable
         // The transcript is the run's until it is let go, as a session's is open until its capture ends.
         await run.DisposeAsync();
         Assert.Contains("heard: Go on.", File.ReadAllText(Transcript));
+    }
+
+    /// <summary>
+    /// ONEWAY1h-i, the driven session's wider setup as the executor's closure: what it sets on the session the run made, its lines said
+    /// through the run beside the session's, and its word at the session's end said after the turn's end and before the input closes.
+    /// </summary>
+    [Fact]
+    public async Task A_protocol_runs_executor_sets_its_session_runs_it_and_says_its_last_word_after_the_turns_end()
+    {
+        TransportRun? held = null;
+        var cwd = Path.Combine(_home, "engine");
+        var protocol = new TransportProtocol(cwd)
+        {
+            Configure = session => session.BackgroundLook = TimeSpan.FromSeconds(7),
+            Run = async (session, conversation, ct) =>
+            {
+                held!.Say($"— it looks again every {session.BackgroundLook.TotalSeconds:0} s");
+                return await session.RunAsync(cwd, "Go on.", ct, resume: conversation);
+            },
+            Ended = () => held!.Say("— the executor's last word"),
+        };
+        var (run, _) = OverProtocol("open", protocol);
+        held = run;
+        await using var _ = run;
+
+        await run.OpenAsync(Bound);
+        var end = await run.EndAsync(Bound);
+        await run.DisposeAsync();
+
+        Assert.Equal(0, end.Exit);
+        var transcript = File.ReadAllText(Transcript);
+        Assert.Contains("— it looks again every 7 s", transcript);
+        var turnEnd = transcript.IndexOf("session record is concluded from the exit code", StringComparison.Ordinal);
+        Assert.True(turnEnd >= 0, transcript);
+        Assert.True(turnEnd < transcript.IndexOf("— the executor's last word", StringComparison.Ordinal), transcript);
+    }
+
+    /// <summary>The refusal a protocol turn ended on is the ending's, for a conclusion that reads its code (FOUNDATION1g part b).</summary>
+    [Fact]
+    public async Task A_protocol_refusal_is_the_endings_refusal()
+    {
+        var (run, _) = OverProtocol("limit", TransportProtocol.Driven(Path.Combine(_home, "engine"), "Go on."));
+        await using var _ = run;
+
+        await run.OpenAsync(Bound);
+        var end = await run.EndAsync(Bound);
+
+        Assert.NotNull(end.Ending.Refusal);
+        Assert.False(string.IsNullOrEmpty(end.Ending.Failure));
     }
 
     /// <summary>A protocol failure at the prompt is the ending's failure, as the conclusion reads it beside the exit (ACPEND1).</summary>

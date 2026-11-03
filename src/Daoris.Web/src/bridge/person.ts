@@ -103,7 +103,7 @@ function serviceOf(told: unknown): ServiceConfirmationsTold | null {
   if (!Array.isArray(shaped?.waiting)) return null;
   return {
     seq: typeof shaped.seq === 'number' ? shaped.seq : null,
-    waiting: (shaped.waiting as ServiceConfirmation[]).filter((each) => typeof each?.id === 'string' && typeof each.expires === 'string'),
+    waiting: (shaped.waiting as ServiceConfirmation[]).filter((each) => typeof each?.id === 'string'),
   };
 }
 
@@ -165,7 +165,8 @@ export function useServiceConfirmations(held: boolean): { waiting: Confirmation[
     fields: [...(each.values ?? []), ...(each.fields ?? [])],
     asker: null,
     asked: each.asked ?? null,
-    expires: each.expires,
+    // ONEWAY1n-i: no clock ends one.
+    expires: null,
   })), read: list !== undefined };
 }
 

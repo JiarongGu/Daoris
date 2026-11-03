@@ -19,6 +19,7 @@
     { "name": "Plugins", "folder": "Plugins", "domain": true, "moved": true },
     { "name": "Workflows", "folder": "Workflows", "domain": true, "moved": true },
     { "name": "Setup", "folder": "Setup", "domain": true, "moved": true },
+    { "name": "Transitional", "folder": "Transitional", "domain": true, "moved": true },
     { "name": "Help", "folder": "Help", "domain": false, "moved": true },
     { "name": "Loop", "folder": "Loop", "domain": false, "moved": true }
   ],

@@ -1,0 +1,1144 @@
+{
+  "note": "ONEWAY1u (D194 point 6): what `daoris connect`, `retire`, `wire` and `import` said for each case of their tests, run once through the CLI's TypeScript verbs before they retire, over a stand-in service that answers as the row says (`service` and `reply`; the requests it was sent are `calls`) and a working tree of the row's files at `<root>`, named `engine`. A row of the `command` door is the verb's own grammar and its service address, held for the command tree's table. `DriverRegistryTextTests` reads it row for row; a sentence the port changes on purpose says why under `changed`.",
+  "rows": [
+    {
+      "name": "connect --dry-run, a local service is told the root and the remote declaration",
+      "door": "operation",
+      "argv": [
+        "connect",
+        "--dry-run"
+      ],
+      "op": "connect",
+      "args": {
+        "dry": true
+      },
+      "service": "http://localhost:5177",
+      "before": {
+        "daoris.json": "{\"source\":\"s\",\"packs\":[\"desktop-app\"],\"domain\":{\"summary\":\"A test repo.\",\"owns\":[\"itself\",\"its docs\"],\"accepts\":[\"a quest\"],\"uses\":[\"Parts\",\"parts\",\"engine\"]},\"remote\":{\"join\":true,\"knowledge\":true}}"
+      },
+      "exit": 0,
+      "out": [
+        "{\n  \"repository\": \"engine\",\n  \"packs\": [\n    \"desktop-app\"\n  ],\n  \"domain\": {\n    \"summary\": \"A test repo.\",\n    \"owns\": [\n      \"itself\",\n      \"its docs\"\n    ],\n    \"accepts\": [\n      \"a quest\"\n    ],\n    \"uses\": [\n      \"Parts\"\n    ]\n  },\n  \"join\": true,\n  \"shareKnowledge\": true,\n  \"lanes\": [],\n  \"root\": \"<root>\"\n}",
+        "daoris: would register with http://localhost:5177/api/registry"
+      ],
+      "err": [],
+      "calls": []
+    },
+    {
+      "name": "connect --dry-run, a remote service is not told the root",
+      "door": "operation",
+      "argv": [
+        "connect",
+        "--dry-run"
+      ],
+      "op": "connect",
+      "args": {
+        "dry": true
+      },
+      "service": "https://daoris.example.com",
+      "before": {
+        "daoris.json": "{\"source\":\"s\",\"packs\":[\"desktop-app\"],\"domain\":{\"summary\":\"A test repo.\",\"owns\":[\"itself\",\"its docs\"],\"accepts\":[\"a quest\"],\"uses\":[\"Parts\",\"parts\",\"engine\"]},\"remote\":{\"join\":true,\"knowledge\":true}}"
+      },
+      "exit": 0,
+      "out": [
+        "{\n  \"repository\": \"engine\",\n  \"packs\": [\n    \"desktop-app\"\n  ],\n  \"domain\": {\n    \"summary\": \"A test repo.\",\n    \"owns\": [\n      \"itself\",\n      \"its docs\"\n    ],\n    \"accepts\": [\n      \"a quest\"\n    ],\n    \"uses\": [\n      \"Parts\"\n    ]\n  },\n  \"join\": true,\n  \"shareKnowledge\": true,\n  \"lanes\": []\n}",
+        "daoris: would register with https://daoris.example.com/api/registry"
+      ],
+      "err": [],
+      "calls": []
+    },
+    {
+      "name": "connect --dry-run, an unparseable address withholds the root",
+      "door": "operation",
+      "argv": [
+        "connect",
+        "--dry-run"
+      ],
+      "op": "connect",
+      "args": {
+        "dry": true
+      },
+      "service": "not a url",
+      "before": {
+        "daoris.json": "{\"source\":\"s\",\"packs\":[\"desktop-app\"],\"domain\":{\"summary\":\"A test repo.\",\"owns\":[\"itself\",\"its docs\"],\"accepts\":[\"a quest\"],\"uses\":[\"Parts\",\"parts\",\"engine\"]},\"remote\":{\"join\":true,\"knowledge\":true}}"
+      },
+      "exit": 0,
+      "out": [
+        "{\n  \"repository\": \"engine\",\n  \"packs\": [\n    \"desktop-app\"\n  ],\n  \"domain\": {\n    \"summary\": \"A test repo.\",\n    \"owns\": [\n      \"itself\",\n      \"its docs\"\n    ],\n    \"accepts\": [\n      \"a quest\"\n    ],\n    \"uses\": [\n      \"Parts\"\n    ]\n  },\n  \"join\": true,\n  \"shareKnowledge\": true,\n  \"lanes\": []\n}",
+        "daoris: would register with not a url/api/registry"
+      ],
+      "err": [],
+      "calls": []
+    },
+    {
+      "name": "connect --dry-run --workspace, a wiring statement",
+      "door": "operation",
+      "argv": [
+        "connect",
+        "--workspace",
+        "aurora",
+        "--dry-run"
+      ],
+      "op": "connect",
+      "args": {
+        "dry": true,
+        "workspace": "aurora"
+      },
+      "service": "http://localhost:5177",
+      "before": {
+        "daoris.json": "{\"source\":\"s\",\"packs\":[\"desktop-app\"],\"domain\":{\"summary\":\"A test repo.\",\"owns\":[\"itself\",\"its docs\"],\"accepts\":[\"a quest\"],\"uses\":[\"Parts\",\"parts\",\"engine\"]},\"remote\":{\"join\":true,\"knowledge\":true}}"
+      },
+      "exit": 0,
+      "out": [
+        "{\n  \"repository\": \"engine\",\n  \"packs\": [\n    \"desktop-app\"\n  ],\n  \"domain\": {\n    \"summary\": \"A test repo.\",\n    \"owns\": [\n      \"itself\",\n      \"its docs\"\n    ],\n    \"accepts\": [\n      \"a quest\"\n    ],\n    \"uses\": [\n      \"Parts\"\n    ]\n  },\n  \"join\": true,\n  \"shareKnowledge\": true,\n  \"lanes\": [],\n  \"root\": \"<root>\",\n  \"workspace\": \"aurora\"\n}",
+        "daoris: would register with http://localhost:5177/api/registry"
+      ],
+      "err": [],
+      "calls": []
+    },
+    {
+      "name": "connect --dry-run --workspace, a remote service is told the workspace too",
+      "door": "operation",
+      "argv": [
+        "connect",
+        "--workspace",
+        "aurora",
+        "--dry-run"
+      ],
+      "op": "connect",
+      "args": {
+        "dry": true,
+        "workspace": "aurora"
+      },
+      "service": "https://daoris.example.com",
+      "before": {
+        "daoris.json": "{\"source\":\"s\",\"packs\":[\"desktop-app\"],\"domain\":{\"summary\":\"A test repo.\",\"owns\":[\"itself\",\"its docs\"],\"accepts\":[\"a quest\"],\"uses\":[\"Parts\",\"parts\",\"engine\"]},\"remote\":{\"join\":true,\"knowledge\":true}}"
+      },
+      "exit": 0,
+      "out": [
+        "{\n  \"repository\": \"engine\",\n  \"packs\": [\n    \"desktop-app\"\n  ],\n  \"domain\": {\n    \"summary\": \"A test repo.\",\n    \"owns\": [\n      \"itself\",\n      \"its docs\"\n    ],\n    \"accepts\": [\n      \"a quest\"\n    ],\n    \"uses\": [\n      \"Parts\"\n    ]\n  },\n  \"join\": true,\n  \"shareKnowledge\": true,\n  \"lanes\": [],\n  \"workspace\": \"aurora\"\n}",
+        "daoris: would register with https://daoris.example.com/api/registry"
+      ],
+      "err": [],
+      "calls": []
+    },
+    {
+      "name": "connect --dry-run, the lanes' words, none of the globs",
+      "door": "operation",
+      "argv": [
+        "connect",
+        "--dry-run"
+      ],
+      "op": "connect",
+      "args": {
+        "dry": true
+      },
+      "service": "http://localhost:5177",
+      "before": {
+        "daoris.json": "{\"source\":\"s\",\"packs\":[\"desktop-app\"],\"domain\":{\"summary\":\"A test repo.\",\"owns\":[\"itself\",\"its docs\"],\"accepts\":[\"a quest\"],\"uses\":[\"Parts\",\"parts\",\"engine\"]},\"remote\":{\"join\":true,\"knowledge\":true}}",
+        "daoris.lanes.json": "{\"lanes\":[{\"id\":\"web\",\"title\":\"The web\",\"summary\":\"pages\",\"paths\":[\"web/**\"]},{\"id\":\"records\",\"title\":\"Records\",\"steward\":true,\"paths\":[\"docs/**\"]}]}"
+      },
+      "exit": 0,
+      "out": [
+        "{\n  \"repository\": \"engine\",\n  \"packs\": [\n    \"desktop-app\"\n  ],\n  \"domain\": {\n    \"summary\": \"A test repo.\",\n    \"owns\": [\n      \"itself\",\n      \"its docs\"\n    ],\n    \"accepts\": [\n      \"a quest\"\n    ],\n    \"uses\": [\n      \"Parts\"\n    ]\n  },\n  \"join\": true,\n  \"shareKnowledge\": true,\n  \"lanes\": [\n    {\n      \"id\": \"web\",\n      \"title\": \"The web\",\n      \"summary\": \"pages\",\n      \"steward\": false\n    },\n    {\n      \"id\": \"records\",\n      \"title\": \"Records\",\n      \"summary\": \"\",\n      \"steward\": true\n    }\n  ],\n  \"root\": \"<root>\"\n}",
+        "daoris: would register with http://localhost:5177/api/registry"
+      ],
+      "err": [],
+      "calls": []
+    },
+    {
+      "name": "connect --dry-run, a manifest with no remote says local",
+      "door": "operation",
+      "argv": [
+        "connect",
+        "--dry-run"
+      ],
+      "op": "connect",
+      "args": {
+        "dry": true
+      },
+      "service": "http://localhost:5177",
+      "before": {
+        "daoris.json": "{\"source\":\"s\",\"domain\":{\"summary\":\"A test repo.\",\"owns\":[],\"accepts\":[]},\"remote\":null}"
+      },
+      "exit": 0,
+      "out": [
+        "{\n  \"repository\": \"engine\",\n  \"packs\": [],\n  \"domain\": {\n    \"summary\": \"A test repo.\",\n    \"owns\": [],\n    \"accepts\": []\n  },\n  \"join\": false,\n  \"shareKnowledge\": false,\n  \"lanes\": [],\n  \"root\": \"<root>\"\n}",
+        "daoris: would register with http://localhost:5177/api/registry"
+      ],
+      "err": [],
+      "calls": []
+    },
+    {
+      "name": "connect --dry-run, a submodule checkout is registrable",
+      "door": "operation",
+      "argv": [
+        "connect",
+        "--dry-run"
+      ],
+      "op": "connect",
+      "args": {
+        "dry": true
+      },
+      "service": "http://localhost:5177",
+      "before": {
+        "daoris.json": "{\"source\":\"s\",\"packs\":[\"desktop-app\"],\"domain\":{\"summary\":\"A test repo.\",\"owns\":[\"itself\",\"its docs\"],\"accepts\":[\"a quest\"],\"uses\":[\"Parts\",\"parts\",\"engine\"]},\"remote\":{\"join\":true,\"knowledge\":true}}",
+        ".git": "gitdir: ../.git/modules/sub\n"
+      },
+      "exit": 0,
+      "out": [
+        "{\n  \"repository\": \"engine\",\n  \"packs\": [\n    \"desktop-app\"\n  ],\n  \"domain\": {\n    \"summary\": \"A test repo.\",\n    \"owns\": [\n      \"itself\",\n      \"its docs\"\n    ],\n    \"accepts\": [\n      \"a quest\"\n    ],\n    \"uses\": [\n      \"Parts\"\n    ]\n  },\n  \"join\": true,\n  \"shareKnowledge\": true,\n  \"lanes\": [],\n  \"root\": \"<root>\"\n}",
+        "daoris: would register with http://localhost:5177/api/registry"
+      ],
+      "err": [],
+      "calls": []
+    },
+    {
+      "name": "connect, registered, the workspace the service took",
+      "door": "operation",
+      "argv": [
+        "connect",
+        "--workspace",
+        "aurora"
+      ],
+      "op": "connect",
+      "args": {
+        "workspace": "aurora"
+      },
+      "service": "http://localhost:5177",
+      "reply": {
+        "status": 200,
+        "payload": {
+          "workspace": "aurora"
+        }
+      },
+      "before": {
+        "daoris.json": "{\"source\":\"s\",\"packs\":[\"desktop-app\"],\"domain\":{\"summary\":\"A test repo.\",\"owns\":[\"itself\",\"its docs\"],\"accepts\":[\"a quest\"],\"uses\":[\"Parts\",\"parts\",\"engine\"]},\"remote\":{\"join\":true,\"knowledge\":true}}",
+        "daoris.lanes.json": "{\"lanes\":[{\"id\":\"web\",\"title\":\"The web\",\"summary\":\"pages\",\"paths\":[\"web/**\"]},{\"id\":\"records\",\"title\":\"Records\",\"steward\":true,\"paths\":[\"docs/**\"]}]}"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: registered engine with http://localhost:5177",
+        "  owns 2 area(s); accepts 1 kind(s)",
+        "  uses Parts",
+        "  lanes web, records (the steward's): a quest addresses one as engine:<lane>, or several as engine:<lane>+<lane>",
+        "  workspace: aurora — this machine's wiring; nothing was written here",
+        "  siblings can now address quests here, and see what is worth asking."
+      ],
+      "err": [],
+      "calls": [
+        {
+          "method": "POST",
+          "path": "/api/registry",
+          "body": {
+            "repository": "engine",
+            "packs": [
+              "desktop-app"
+            ],
+            "domain": {
+              "summary": "A test repo.",
+              "owns": [
+                "itself",
+                "its docs"
+              ],
+              "accepts": [
+                "a quest"
+              ],
+              "uses": [
+                "Parts"
+              ]
+            },
+            "join": true,
+            "shareKnowledge": true,
+            "lanes": [
+              {
+                "id": "web",
+                "title": "The web",
+                "summary": "pages",
+                "steward": false
+              },
+              {
+                "id": "records",
+                "title": "Records",
+                "summary": "",
+                "steward": true
+              }
+            ],
+            "root": "<root>",
+            "workspace": "aurora"
+          }
+        }
+      ]
+    },
+    {
+      "name": "connect, registered, a service that names no workspace",
+      "door": "operation",
+      "argv": [
+        "connect"
+      ],
+      "op": "connect",
+      "args": {},
+      "service": "http://localhost:5177",
+      "reply": {
+        "status": 200,
+        "payload": {
+          "ok": true
+        }
+      },
+      "before": {
+        "daoris.json": "{\"source\":\"s\",\"packs\":[\"desktop-app\"],\"domain\":{\"summary\":\"A test repo.\",\"owns\":[\"itself\",\"its docs\"],\"accepts\":[\"a quest\"],\"uses\":[\"Parts\",\"parts\",\"engine\"]},\"remote\":{\"join\":true,\"knowledge\":true}}"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: registered engine with http://localhost:5177",
+        "  owns 2 area(s); accepts 1 kind(s)",
+        "  uses Parts",
+        "  siblings can now address quests here, and see what is worth asking."
+      ],
+      "err": [],
+      "calls": [
+        {
+          "method": "POST",
+          "path": "/api/registry",
+          "body": {
+            "repository": "engine",
+            "packs": [
+              "desktop-app"
+            ],
+            "domain": {
+              "summary": "A test repo.",
+              "owns": [
+                "itself",
+                "its docs"
+              ],
+              "accepts": [
+                "a quest"
+              ],
+              "uses": [
+                "Parts"
+              ]
+            },
+            "join": true,
+            "shareKnowledge": true,
+            "lanes": [],
+            "root": "<root>"
+          }
+        }
+      ]
+    },
+    {
+      "name": "connect, the service refuses in its own words",
+      "door": "operation",
+      "argv": [
+        "connect"
+      ],
+      "op": "connect",
+      "args": {},
+      "service": "http://localhost:5177",
+      "reply": {
+        "status": 409,
+        "payload": {
+          "error": "that workspace is outside this host's circle"
+        }
+      },
+      "before": {
+        "daoris.json": "{\"source\":\"s\",\"packs\":[\"desktop-app\"],\"domain\":{\"summary\":\"A test repo.\",\"owns\":[\"itself\",\"its docs\"],\"accepts\":[\"a quest\"],\"uses\":[\"Parts\",\"parts\",\"engine\"]},\"remote\":{\"join\":true,\"knowledge\":true}}"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: the service refused the registration: that workspace is outside this host's circle"
+      ],
+      "calls": [
+        {
+          "method": "POST",
+          "path": "/api/registry",
+          "body": {
+            "repository": "engine",
+            "packs": [
+              "desktop-app"
+            ],
+            "domain": {
+              "summary": "A test repo.",
+              "owns": [
+                "itself",
+                "its docs"
+              ],
+              "accepts": [
+                "a quest"
+              ],
+              "uses": [
+                "Parts"
+              ]
+            },
+            "join": true,
+            "shareKnowledge": true,
+            "lanes": [],
+            "root": "<root>"
+          }
+        }
+      ]
+    },
+    {
+      "name": "connect, the service answers with no sentence",
+      "door": "operation",
+      "argv": [
+        "connect"
+      ],
+      "op": "connect",
+      "args": {},
+      "service": "http://localhost:5177",
+      "reply": {
+        "status": 500,
+        "payload": {}
+      },
+      "before": {
+        "daoris.json": "{\"source\":\"s\",\"packs\":[\"desktop-app\"],\"domain\":{\"summary\":\"A test repo.\",\"owns\":[\"itself\",\"its docs\"],\"accepts\":[\"a quest\"],\"uses\":[\"Parts\",\"parts\",\"engine\"]},\"remote\":{\"join\":true,\"knowledge\":true}}"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: the service refused the registration: the service answered 500"
+      ],
+      "calls": [
+        {
+          "method": "POST",
+          "path": "/api/registry",
+          "body": {
+            "repository": "engine",
+            "packs": [
+              "desktop-app"
+            ],
+            "domain": {
+              "summary": "A test repo.",
+              "owns": [
+                "itself",
+                "its docs"
+              ],
+              "accepts": [
+                "a quest"
+              ],
+              "uses": [
+                "Parts"
+              ]
+            },
+            "join": true,
+            "shareKnowledge": true,
+            "lanes": [],
+            "root": "<root>"
+          }
+        }
+      ]
+    },
+    {
+      "name": "connect, a repository that has not said what it is",
+      "door": "operation",
+      "argv": [
+        "connect"
+      ],
+      "op": "connect",
+      "args": {},
+      "service": "http://localhost:5177",
+      "before": {
+        "daoris.json": "{\"source\":\"s\"}"
+      },
+      "exit": 1,
+      "out": [],
+      "err": [
+        "daoris: engine has not said what it is. Fill in 'domain' in daoris.json first:\n  summary — one line, for someone who has never opened this repository\n  owns    — the areas where a change belongs here rather than anywhere else\n  accepts — the kinds of work it is worth asking of you\n  That declaration is how siblings know whether a quest is yours."
+      ],
+      "calls": []
+    },
+    {
+      "name": "connect, from a linked worktree, naming the main tree",
+      "door": "operation",
+      "argv": [
+        "connect",
+        "--dry-run"
+      ],
+      "op": "connect",
+      "args": {
+        "dry": true
+      },
+      "service": "http://localhost:5177",
+      "before": {
+        "daoris.json": "{\"source\":\"s\",\"packs\":[\"desktop-app\"],\"domain\":{\"summary\":\"A test repo.\",\"owns\":[\"itself\",\"its docs\"],\"accepts\":[\"a quest\"],\"uses\":[\"Parts\",\"parts\",\"engine\"]},\"remote\":{\"join\":true,\"knowledge\":true}}",
+        ".git": "gitdir: /srv/Repo/.git/worktrees/session-ab12cd34\n"
+      },
+      "exit": 1,
+      "out": [],
+      "err": [
+        "daoris: this is a linked worktree — a session's scratch checkout, not the repository's home. Registering it would point the machine's registry at a tree that is removed when its session's work is merged. Run `daoris connect` from the main tree instead:\n  /srv/Repo"
+      ],
+      "calls": []
+    },
+    {
+      "name": "connect, no daoris.json",
+      "door": "operation",
+      "argv": [
+        "connect",
+        "--dry-run"
+      ],
+      "op": "connect",
+      "args": {
+        "dry": true
+      },
+      "service": "http://localhost:5177",
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: no daoris.json in '<root>' — run 'daoris init' first"
+      ],
+      "calls": []
+    },
+    {
+      "name": "connect, a manifest with no source",
+      "door": "operation",
+      "argv": [
+        "connect",
+        "--dry-run"
+      ],
+      "op": "connect",
+      "args": {
+        "dry": true
+      },
+      "service": "http://localhost:5177",
+      "before": {
+        "daoris.json": "{\"domain\":{\"summary\":\"x\",\"owns\":[],\"accepts\":[]}}"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: daoris.json has no 'source'"
+      ],
+      "calls": []
+    },
+    {
+      "name": "connect, knowledge without a join",
+      "door": "operation",
+      "argv": [
+        "connect",
+        "--dry-run"
+      ],
+      "op": "connect",
+      "args": {
+        "dry": true
+      },
+      "service": "http://localhost:5177",
+      "before": {
+        "daoris.json": "{\"source\":\"s\",\"domain\":{\"summary\":\"x\",\"owns\":[],\"accepts\":[]},\"remote\":{\"knowledge\":true}}"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: daoris.json declares remote.knowledge without remote.join — knowledge feeds only from a joined repository"
+      ],
+      "calls": [],
+      "changed": "The manifest's refusal is the one the registry follows a line by (`LineRegistration`), a single line without the example."
+    },
+    {
+      "name": "connect, a daoris.lanes.json that cannot be read, before anything is sent",
+      "door": "operation",
+      "argv": [
+        "connect"
+      ],
+      "op": "connect",
+      "args": {},
+      "service": "http://localhost:5177",
+      "before": {
+        "daoris.json": "{\"source\":\"s\",\"packs\":[\"desktop-app\"],\"domain\":{\"summary\":\"A test repo.\",\"owns\":[\"itself\",\"its docs\"],\"accepts\":[\"a quest\"],\"uses\":[\"Parts\",\"parts\",\"engine\"]},\"remote\":{\"join\":true,\"knowledge\":true}}",
+        "daoris.lanes.json": "{\"lanes\":[{\"title\":\"no id\"}]}"
+      },
+      "exit": 1,
+      "out": [],
+      "err": [
+        "daoris: daoris.lanes.json cannot be read:\n  lane 1: its id must be lower-case letters, digits and dashes, starting with a letter\n  lane 1: it has no paths"
+      ],
+      "calls": []
+    },
+    {
+      "name": "connect, --workspace with no name",
+      "door": "command",
+      "argv": [
+        "connect",
+        "--workspace"
+      ],
+      "service": "http://localhost:5177",
+      "before": {
+        "daoris.json": "{\"source\":\"s\",\"packs\":[\"desktop-app\"],\"domain\":{\"summary\":\"A test repo.\",\"owns\":[\"itself\",\"its docs\"],\"accepts\":[\"a quest\"],\"uses\":[\"Parts\",\"parts\",\"engine\"]},\"remote\":{\"join\":true,\"knowledge\":true}}"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: --workspace needs a name — e.g. `--workspace aurora`"
+      ],
+      "calls": []
+    },
+    {
+      "name": "connect, no service address",
+      "door": "command",
+      "argv": [
+        "connect",
+        "--dry-run"
+      ],
+      "service": "http://localhost:5177",
+      "before": {
+        "daoris.json": "{\"source\":\"s\",\"packs\":[\"desktop-app\"],\"domain\":{\"summary\":\"A test repo.\",\"owns\":[\"itself\",\"its docs\"],\"accepts\":[\"a quest\"],\"uses\":[\"Parts\",\"parts\",\"engine\"]},\"remote\":{\"join\":true,\"knowledge\":true}}"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: no DAORIS_SERVICE_URL — this command talks to a knowledge service, and needs\n  to know where one is. Set it in your environment; a local service is usually\n  http://localhost:5177. Everything else daoris does works without one."
+      ],
+      "calls": []
+    },
+    {
+      "name": "retire, this repository when nothing else is named",
+      "door": "operation",
+      "argv": [
+        "retire"
+      ],
+      "op": "retire",
+      "args": {
+        "repository": "engine"
+      },
+      "service": "http://localhost:5177",
+      "reply": {
+        "status": 200,
+        "payload": {
+          "message": "engine is no longer registered. No file was touched."
+        }
+      },
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: engine is no longer registered. No file was touched."
+      ],
+      "err": [],
+      "calls": [
+        {
+          "method": "DELETE",
+          "path": "/api/registry/engine",
+          "body": null
+        }
+      ]
+    },
+    {
+      "name": "retire, another repository by name",
+      "door": "operation",
+      "argv": [
+        "retire",
+        "aurora-engine"
+      ],
+      "op": "retire",
+      "args": {
+        "repository": "aurora-engine"
+      },
+      "service": "http://localhost:5177",
+      "reply": {
+        "status": 200,
+        "payload": {
+          "message": "aurora-engine is no longer registered."
+        }
+      },
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: aurora-engine is no longer registered."
+      ],
+      "err": [],
+      "calls": [
+        {
+          "method": "DELETE",
+          "path": "/api/registry/aurora-engine",
+          "body": null
+        }
+      ]
+    },
+    {
+      "name": "retire, one never registered is an answer",
+      "door": "operation",
+      "argv": [
+        "retire",
+        "nobody"
+      ],
+      "op": "retire",
+      "args": {
+        "repository": "nobody"
+      },
+      "service": "http://localhost:5177",
+      "reply": {
+        "status": 200,
+        "payload": {}
+      },
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: nobody is no longer registered."
+      ],
+      "err": [],
+      "calls": [
+        {
+          "method": "DELETE",
+          "path": "/api/registry/nobody",
+          "body": null
+        }
+      ]
+    },
+    {
+      "name": "retire --dry-run asks nothing of the service",
+      "door": "operation",
+      "argv": [
+        "retire",
+        "--dry-run"
+      ],
+      "op": "retire",
+      "args": {
+        "repository": "engine",
+        "dry": true
+      },
+      "service": "http://localhost:5177",
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: would retire engine — the registration only; no file is ever touched"
+      ],
+      "err": [],
+      "calls": []
+    },
+    {
+      "name": "retire, a refusal reaches the person verbatim",
+      "door": "operation",
+      "argv": [
+        "retire",
+        "aurora"
+      ],
+      "op": "retire",
+      "args": {
+        "repository": "aurora"
+      },
+      "service": "http://localhost:5177",
+      "reply": {
+        "status": 403,
+        "payload": {
+          "error": "this host is shared; ask its operator"
+        }
+      },
+      "before": {},
+      "exit": 1,
+      "out": [],
+      "err": [
+        "daoris: this host is shared; ask its operator"
+      ],
+      "calls": [
+        {
+          "method": "DELETE",
+          "path": "/api/registry/aurora",
+          "body": null
+        }
+      ]
+    },
+    {
+      "name": "retire, no service address",
+      "door": "command",
+      "argv": [
+        "retire",
+        "aurora"
+      ],
+      "service": "http://localhost:5177",
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: no DAORIS_SERVICE_URL — this command talks to a knowledge service, and needs\n  to know where one is. Set it in your environment; a local service is usually\n  http://localhost:5177. Everything else daoris does works without one."
+      ],
+      "calls": []
+    },
+    {
+      "name": "wire, moves a named repository by the re-wiring route",
+      "door": "operation",
+      "argv": [
+        "wire",
+        "aurora-engine",
+        "--workspace",
+        "work"
+      ],
+      "op": "wire",
+      "args": {
+        "repository": "aurora-engine",
+        "workspace": "work"
+      },
+      "service": "http://localhost:5177",
+      "reply": {
+        "status": 200,
+        "payload": {
+          "repository": "aurora-engine",
+          "workspace": "work"
+        }
+      },
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: `aurora-engine` is now in workspace `work`."
+      ],
+      "err": [],
+      "calls": [
+        {
+          "method": "POST",
+          "path": "/api/registry/aurora-engine/workspace",
+          "body": {
+            "workspace": "work"
+          }
+        }
+      ]
+    },
+    {
+      "name": "wire --dry-run asks nothing of the service",
+      "door": "operation",
+      "argv": [
+        "wire",
+        "aurora-engine",
+        "--workspace",
+        "work",
+        "--dry-run"
+      ],
+      "op": "wire",
+      "args": {
+        "repository": "aurora-engine",
+        "workspace": "work",
+        "dry": true
+      },
+      "service": "http://localhost:5177",
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: would move `aurora-engine` to workspace `work`"
+      ],
+      "err": [],
+      "calls": []
+    },
+    {
+      "name": "wire, an unknown repository in the service's words",
+      "door": "operation",
+      "argv": [
+        "wire",
+        "ghost",
+        "--workspace",
+        "work"
+      ],
+      "op": "wire",
+      "args": {
+        "repository": "ghost",
+        "workspace": "work"
+      },
+      "service": "http://localhost:5177",
+      "reply": {
+        "status": 404,
+        "payload": {
+          "error": "no repository named ghost is registered"
+        }
+      },
+      "before": {},
+      "exit": 1,
+      "out": [],
+      "err": [
+        "daoris: no repository named ghost is registered"
+      ],
+      "calls": [
+        {
+          "method": "POST",
+          "path": "/api/registry/ghost/workspace",
+          "body": {
+            "workspace": "work"
+          }
+        }
+      ]
+    },
+    {
+      "name": "wire, a shared host's boundary in the service's words",
+      "door": "operation",
+      "argv": [
+        "wire",
+        "aurora",
+        "--workspace",
+        "other"
+      ],
+      "op": "wire",
+      "args": {
+        "repository": "aurora",
+        "workspace": "other"
+      },
+      "service": "http://localhost:5177",
+      "reply": {
+        "status": 409,
+        "payload": {
+          "error": "this host serves workspace work only"
+        }
+      },
+      "before": {},
+      "exit": 1,
+      "out": [],
+      "err": [
+        "daoris: this host serves workspace work only"
+      ],
+      "calls": [
+        {
+          "method": "POST",
+          "path": "/api/registry/aurora/workspace",
+          "body": {
+            "workspace": "other"
+          }
+        }
+      ]
+    },
+    {
+      "name": "wire, without a workspace",
+      "door": "command",
+      "argv": [
+        "wire",
+        "aurora"
+      ],
+      "service": "http://localhost:5177",
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: usage: daoris wire <repository> --workspace <name> — e.g. `daoris wire aurora-engine --workspace work`."
+      ],
+      "calls": []
+    },
+    {
+      "name": "wire, no service address",
+      "door": "command",
+      "argv": [
+        "wire",
+        "aurora",
+        "--workspace",
+        "work"
+      ],
+      "service": "http://localhost:5177",
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: no DAORIS_SERVICE_URL — this command talks to a knowledge service, and needs\n  to know where one is. Set it in your environment; a local service is usually\n  http://localhost:5177. Everything else daoris does works without one."
+      ],
+      "calls": []
+    },
+    {
+      "name": "import, posts the folder",
+      "door": "operation",
+      "argv": [
+        "import",
+        "/srv/team"
+      ],
+      "op": "import",
+      "args": {
+        "folder": "/srv/team"
+      },
+      "service": "http://localhost:5177",
+      "reply": {
+        "status": 200,
+        "payload": {
+          "message": "imported 3 repositories."
+        }
+      },
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: imported 3 repositories."
+      ],
+      "err": [],
+      "calls": [
+        {
+          "method": "POST",
+          "path": "/api/registry/import",
+          "body": {
+            "folder": "/srv/team"
+          }
+        }
+      ]
+    },
+    {
+      "name": "import --workspace, names the circle every row lands in",
+      "door": "operation",
+      "argv": [
+        "import",
+        "/srv/team",
+        "--workspace",
+        "aurora"
+      ],
+      "op": "import",
+      "args": {
+        "folder": "/srv/team",
+        "workspace": "aurora"
+      },
+      "service": "http://localhost:5177",
+      "reply": {
+        "status": 200,
+        "payload": {
+          "message": "imported 3 repositories into aurora."
+        }
+      },
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: imported 3 repositories into aurora."
+      ],
+      "err": [],
+      "calls": [
+        {
+          "method": "POST",
+          "path": "/api/registry/import",
+          "body": {
+            "folder": "/srv/team",
+            "workspace": "aurora"
+          }
+        }
+      ]
+    },
+    {
+      "name": "import, no folder lets the service use its own root",
+      "door": "operation",
+      "argv": [
+        "import"
+      ],
+      "op": "import",
+      "args": {},
+      "service": "http://localhost:5177",
+      "reply": {
+        "status": 200,
+        "payload": {}
+      },
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: imported."
+      ],
+      "err": [],
+      "calls": [
+        {
+          "method": "POST",
+          "path": "/api/registry/import",
+          "body": {}
+        }
+      ]
+    },
+    {
+      "name": "import --dry-run asks nothing of the service",
+      "door": "operation",
+      "argv": [
+        "import",
+        "/srv/team",
+        "--workspace",
+        "aurora",
+        "--dry-run"
+      ],
+      "op": "import",
+      "args": {
+        "folder": "/srv/team",
+        "workspace": "aurora",
+        "dry": true
+      },
+      "service": "http://localhost:5177",
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: would import /srv/team into workspace `aurora`"
+      ],
+      "err": [],
+      "calls": []
+    },
+    {
+      "name": "import --dry-run, no folder",
+      "door": "operation",
+      "argv": [
+        "import",
+        "--dry-run"
+      ],
+      "op": "import",
+      "args": {
+        "dry": true
+      },
+      "service": "http://localhost:5177",
+      "before": {},
+      "exit": 0,
+      "out": [
+        "daoris: would import the service's own knowledge root"
+      ],
+      "err": [],
+      "calls": []
+    },
+    {
+      "name": "import, a folder named to a service that is not on this machine",
+      "door": "operation",
+      "argv": [
+        "import",
+        "/srv/team"
+      ],
+      "op": "import",
+      "args": {
+        "folder": "/srv/team"
+      },
+      "service": "https://daoris.example.com",
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: https://daoris.example.com is not on this machine, and a folder here means nothing there — import a folder into this machine's own service; a deployment is fed by the machines that join it."
+      ],
+      "calls": []
+    },
+    {
+      "name": "import, a refusal reaches the person verbatim",
+      "door": "operation",
+      "argv": [
+        "import",
+        "/srv/team"
+      ],
+      "op": "import",
+      "args": {
+        "folder": "/srv/team"
+      },
+      "service": "http://localhost:5177",
+      "reply": {
+        "status": 400,
+        "payload": {
+          "error": "that folder holds no repository"
+        }
+      },
+      "before": {},
+      "exit": 1,
+      "out": [],
+      "err": [
+        "daoris: that folder holds no repository"
+      ],
+      "calls": [
+        {
+          "method": "POST",
+          "path": "/api/registry/import",
+          "body": {
+            "folder": "/srv/team"
+          }
+        }
+      ]
+    },
+    {
+      "name": "import, --workspace with no name",
+      "door": "command",
+      "argv": [
+        "import",
+        "--workspace"
+      ],
+      "service": "http://localhost:5177",
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: --workspace needs a name — e.g. `--workspace aurora`"
+      ],
+      "calls": []
+    }
+  ]
+}

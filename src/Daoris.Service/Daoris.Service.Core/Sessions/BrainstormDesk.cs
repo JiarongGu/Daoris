@@ -8,9 +8,10 @@ namespace Daoris.Knowledge;
 /// <param name="State"><c>asked</c> before the driver's look froze its packet, then the driver's own: <c>frozen</c>, <c>running</c>, <c>ended</c>.</param>
 /// <param name="Packet">The frozen packet's digest; null before the look froze one.</param>
 /// <param name="Sent">The digest the person sent; null where they have not.</param>
+/// <param name="Kind"><c>brainstorm</c>, or <c>meeting</c> (ONEWAY1t), whose <paramref name="Round"/> is the one the state is of.</param>
 public sealed record BrainstormStanding(
     string Id, string Question, string? Repository, IReadOnlyList<string> Agents, DateTimeOffset At, string State, string? Code,
-    string? Packet, string? Sent);
+    string? Packet, string? Sent, string Kind = BrainstormDesk.BrainstormKind, int? Round = null);
 
 /// <summary>A brainstorm shown: where it stands, the packet as frozen (null before the look froze one) and the document's Markdown.</summary>
 public sealed record BrainstormShown(BrainstormStanding Brainstorm, JsonElement? Frozen, string? Document);
@@ -40,9 +41,10 @@ public enum BrainstormRefusal
 public sealed record BrainstormOutcome(BrainstormRefusal Refusal, string Message, BrainstormStanding? Brainstorm = null);
 
 /// <summary>
-/// The local host's brainstorm desk (BRAINSTORM1a3; D176 points 1, 2 and 8): the door a terminal's <c>daoris brainstorm</c> reaches.
-/// It writes the request the driver's look takes, the person's send, and the clear; it reads where each brainstorm stands. It runs
-/// no pass and spawns nothing: the passes are the driver's, in whichever process holds the loop.
+/// The local host's brainstorm desk (BRAINSTORM1a3; D176 points 1, 2 and 8): the one writer of a brainstorm's request (ONEWAY1t),
+/// which a terminal's verbs reach. It writes the request the driver's look takes, the person's send and stop, and the clear; it
+/// reads where each brainstorm stands. A meeting is a kind of brainstorm, asked of <see cref="MeetingDesk"/>. It runs no pass and
+/// spawns nothing: the passes are the driver's, in whichever process holds the loop.
 /// </summary>
 /// <remarks>
 /// <para><b>A twin of the driver's <c>BrainstormFiles</c></b>, sharing no code: the files under the home's <c>brainstorms</c> folder
@@ -56,6 +58,13 @@ public sealed record BrainstormOutcome(BrainstormRefusal Refusal, string Message
 /// <param name="home">The home the records are under, or null when there is none: every door then says so.</param>
 public sealed class BrainstormDesk(string? home)
 {
+    public const string BrainstormKind = "brainstorm";
+
+    public const string MeetingKind = "meeting";
+
+    /// <summary>A request's most named sources: the driver's <c>DriverBrainstormLimits.MostSources</c>, duplicated deliberately.</summary>
+    public const int MostSources = 12;
+
     /// <summary>A question's most characters: the driver's <c>BrainstormBounds.Question</c>, duplicated deliberately (twins.md).</summary>
     public const int MostQuestion = 4_000;
 
@@ -71,7 +80,8 @@ public sealed class BrainstormDesk(string? home)
 
     public const string Ended = "ended";
 
-    private static readonly Regex PlainName = new("^[A-Za-z0-9_-]{1,64}$", RegexOptions.CultureInvariant);
+    /// <summary>One id shape for a brainstorm and a meeting (ONEWAY1t): the stricter of the two writers' before, so it is a folder's name and nothing more.</summary>
+    internal static readonly Regex PlainName = new("^[A-Za-z0-9][A-Za-z0-9-]{0,31}$", RegexOptions.CultureInvariant);
 
     public string? Home { get; } = home;
 
@@ -80,9 +90,14 @@ public sealed class BrainstormDesk(string? home)
 
     /// <summary>
     /// The person's question, written as a request the driver's look freezes into a packet: the words trimmed, a blank repository
-    /// none, the agents named in order without blanks. Refused, with nothing written, out of the driver verb's bounds.
+    /// none, the agents named in order without blanks. Refused, with nothing written, out of the driver verb's bounds. The caller's own
+    /// <paramref name="own"/> id (D176 point 6) makes it idempotent: asked again in the same words it is the same brainstorm, in other
+    /// words it is refused. A named agent is judged by the look, which resolves it at the pass's start and says the refusal in the
+    /// brainstorm's state; this desk reads no adapter.
     /// </summary>
-    public BrainstormOutcome Ask(string? question, string? repository, IReadOnlyList<string?>? agents, DateTimeOffset at)
+    public BrainstormOutcome Ask(
+        string? question, string? repository, IReadOnlyList<string?>? agents, DateTimeOffset at, string? own = null,
+        IReadOnlyList<string?>? sources = null)
     {
         var words = question?.Trim() ?? "";
         if (words.Length == 0)
@@ -111,7 +126,21 @@ public sealed class BrainstormDesk(string? home)
         if (Home is null) return new(BrainstormRefusal.NoHome, $"{DaorisHome.Sentence} Nothing was asked.");
 
         var of = string.IsNullOrWhiteSpace(repository) ? null : repository.Trim();
-        var id = NewId();
+        if (Sourced(sources, of, out var paths) is { } unsourced) return unsourced;
+        if (own is not null && (!PlainName.IsMatch(own) || Reserved(own)))
+        {
+            return new(BrainstormRefusal.BadShape,
+                $"A brainstorm's own id is a letter or digit, then letters, digits and dashes, at most 32, and not `meetings`; `{own}` is not. Nothing was asked.");
+        }
+
+        var id = own ?? NewId();
+        if (own is not null && Parse(PathOf(id, "request.json")) is { } on)
+        {
+            return Same(on, words, of, named, paths)
+                ? new(BrainstormRefusal.None, $"Brainstorm `{id}` is already asked: the same brainstorm, never a second spend.", Find(id))
+                : new(BrainstormRefusal.State, $"Brainstorm `{id}` was asked with other words; an id names one brainstorm. Nothing was asked.", Find(id));
+        }
+
         Write(PathOf(id, "request.json"), writer =>
         {
             writer.WriteNumber("brainstorm", 1);
@@ -123,6 +152,12 @@ public sealed class BrainstormDesk(string? home)
             foreach (var agent in named) writer.WriteStringValue(agent);
             writer.WriteEndArray();
             writer.WriteString("at", Moments.Write(at));
+            if (paths.Count > 0)
+            {
+                writer.WriteStartArray("sources");
+                foreach (var path in paths) writer.WriteStringValue(path);
+                writer.WriteEndArray();
+            }
         });
 
         return new(BrainstormRefusal.None,
@@ -130,6 +165,62 @@ public sealed class BrainstormDesk(string? home)
             + (of is null ? "the question alone" : $"its knowledge of `{of}`")
             + "; with no Daoris running, it waits. Read the packet before you send it: nothing goes to any agent until you do.",
             Find(id));
+    }
+
+    /// <summary>The named sources as paths from the repository's root, slashes forward and each once; or the refusal where they do not hold.</summary>
+    private static BrainstormOutcome? Sourced(IReadOnlyList<string?>? sources, string? repository, out List<string> paths)
+    {
+        paths = [];
+        foreach (var source in (sources ?? []).Select(each => each?.Trim() ?? "").Where(each => each.Length > 0))
+        {
+            if (!RelativePath(source))
+            {
+                return new(BrainstormRefusal.BadShape,
+                    $"A source `{source}` is not a path from the repository's root; name a document or a code file by its repository-relative path. Nothing was asked.");
+            }
+
+            var path = source.Replace('\\', '/');
+            if (!paths.Contains(path, StringComparer.Ordinal)) paths.Add(path);
+        }
+
+        if (paths.Count == 0) return null;
+        if (repository is null) return new(BrainstormRefusal.BadShape, "Sources are paths of a repository; name it with the repository. Nothing was asked.");
+        return paths.Count > MostSources
+            ? new(BrainstormRefusal.BadShape, $"A brainstorm takes at most {MostSources} named sources; {paths.Count} were named. Nothing was asked.")
+            : null;
+    }
+
+    /// <summary>The driver's <c>BrainstormPackets.Relative</c>, duplicated deliberately (twins.md).</summary>
+    private static bool RelativePath(string path) =>
+        path.Length > 0 && !Path.IsPathRooted(path) && !path.Contains(':') && !path.StartsWith('/') && !path.StartsWith('\\')
+        && !path.Replace('\\', '/').Split('/').Contains("..");
+
+    /// <summary>Whether the request on file is of these very words: the question, the repository, the agents in order and the sources.</summary>
+    internal static bool Same(JsonElement on, string question, string? repository, IReadOnlyList<string> agents, IReadOnlyList<string> sources)
+    {
+        static List<string> Strings(JsonElement element, string name) =>
+            element.TryGetProperty(name, out var listed) && listed.ValueKind == JsonValueKind.Array
+                ? [.. listed.EnumerateArray().Where(each => each.ValueKind == JsonValueKind.String).Select(each => each.GetString()!)]
+                : [];
+        return Text(on, "question") == question && string.Equals(Text(on, "repository"), repository, StringComparison.Ordinal)
+               && Strings(on, "agents").SequenceEqual(agents, StringComparer.Ordinal) && Strings(on, "sources").SequenceEqual(sources, StringComparer.Ordinal);
+    }
+
+    /// <summary>
+    /// The person's stop (D176 point 6), a file of its own the driver looks for while the brainstorm runs, and at its next look before
+    /// it does: every pass ends, what answered is kept, and nothing runs again by itself. An ended brainstorm has nothing to stop.
+    /// </summary>
+    public BrainstormOutcome Stop(string id, DateTimeOffset at)
+    {
+        if (Find(id) is not { } brainstorm) return NotFound(id);
+        if (brainstorm.State == Ended)
+        {
+            return new(BrainstormRefusal.None, $"Brainstorm `{id}` already ended ({brainstorm.Code ?? "with its document"}).", brainstorm);
+        }
+
+        Write(PathOf(id, "stop.json"), writer => writer.WriteString("at", Moments.Write(at)));
+        return new(BrainstormRefusal.None,
+            $"Brainstorm `{id}`: stop asked. Every pass ends where Daoris runs it, what answered is kept, and nothing runs again by itself.", brainstorm);
     }
 
     /// <summary>Every brainstorm on this machine, oldest first, as the driver lists them; a request that does not read is none.</summary>
@@ -244,7 +335,7 @@ public sealed class BrainstormDesk(string? home)
         }
     }
 
-    private static string? Remove(string folder)
+    internal static string? Remove(string folder)
     {
         if (!Directory.Exists(folder)) return null;
         try
@@ -260,7 +351,7 @@ public sealed class BrainstormDesk(string? home)
     }
 
     /// <summary>A file written whole and atomically, indented, LF, as the driver writes its own.</summary>
-    private static void Write(string path, Action<Utf8JsonWriter> body)
+    internal static void Write(string path, Action<Utf8JsonWriter> body)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         using var stream = new MemoryStream();
@@ -287,7 +378,7 @@ public sealed class BrainstormDesk(string? home)
     }
 
     /// <summary>A file's root when it is a JSON object; null where it is missing, does not read, or is not one.</summary>
-    private static JsonElement? Parse(string path) => Read(path) is { } text ? JsonFields.ParseObject(text) : null;
+    internal static JsonElement? Parse(string path) => Read(path) is { } text ? JsonFields.ParseObject(text) : null;
 
-    private static string? Text(JsonElement element, string name) => JsonFields.Text(element, name);
+    internal static string? Text(JsonElement element, string name) => JsonFields.Text(element, name);
 }

@@ -3,9 +3,12 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import '../locales/i18n';
 import { setZoom, ZOOM_KEY, zoomLevel } from '../design/zoom';
-import { LayeredMap } from '../map/LayeredMap';
+import { MapWorld } from '../map/MapWorld';
 import type { MapNode, Topology } from '../map/topology';
 import { useZoomKeys, useZoomWheel } from './windowZoom';
+
+// jsdom lays nothing out: the map is given a width past the canvas floor, so it stands in its viewport.
+vi.mock('../design/useWidth', async (original) => ({ ...(await original<typeof import('../design/useWidth')>()), useWidth: () => 900 }));
 
 // ZOOM1 (the UI/UX design §3.11): Ctrl+wheel and the keys step the window's zoom, the engine's own zoom never beside it, and a
 // surface that zooms itself (the Map) keeps its own Ctrl+wheel.
@@ -17,8 +20,9 @@ function Window({ wheel = true, keys = false, children }: { wheel?: boolean; key
 }
 
 const node = (id: string): MapNode => ({ id, owns: [], accepts: [], open: 0, working: false, parked: false, sessions: 0 });
+// Past the ring's twelve, so the map is the layers, which zoom.
 const TOPOLOGY: Topology = {
-  nodes: [node('engine'), node('game')],
+  nodes: [node('engine'), node('game'), ...Array.from({ length: 12 }, (_, at) => node(`repo-${at}`))],
   quests: [{ from: 'game', to: 'engine', quests: [], open: 1, live: null }],
   asks: [], chains: [], depends: [], knowledge: [], outside: 0, circles: 1,
 };
@@ -51,13 +55,13 @@ describe("the window's zoom, by the wheel and the keys", () => {
   });
 
   it('leaves the Map its own Ctrl+wheel: the map zooms, the window does not', () => {
-    render(<Window><LayeredMap topology={TOPOLOGY} selected={null} onSelect={vi.fn()} /></Window>);
-    const svg = screen.getByRole('group', { name: 'the workspace map' });
-    const width = () => Number(svg.getAttribute('viewBox')!.split(' ')[2]);
-    const before = width();
+    render(<Window><MapWorld topology={TOPOLOGY} selected={null} onSelect={vi.fn()} storeKey="test" /></Window>);
+    const map = screen.getByRole('region', { name: 'the workspace map' });
+    const scale = () => Number(map.querySelector('[data-canvas-scale]')!.getAttribute('data-canvas-scale'));
+    const before = scale();
 
-    fireEvent.wheel(svg, { deltaY: -100, ctrlKey: true });
-    expect(width()).toBeLessThan(before);
+    fireEvent.wheel(map, { deltaY: -100, ctrlKey: true });
+    expect(scale()).toBeGreaterThan(before);
     expect(zoomLevel()).toBe(100);
 
     // Off the map, the same wheel is the window's.

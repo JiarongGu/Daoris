@@ -92,6 +92,61 @@ public sealed class BrainstormHostTests(LocalHost host) : IClassFixture<LocalHos
         Assert.True(File.Exists(Path.Combine(meeting, "request.json")));
     }
 
+    /// <summary>ONEWAY1t: the caller's own id and named sources reach the desk, and a stop is its own door; the same id again is the same brainstorm.</summary>
+    [Fact]
+    public async Task An_ask_with_an_id_and_sources_is_idempotent_and_a_stop_writes_its_file()
+    {
+        var body = new { question = "Why does the report drop its last day?", repository = "reports", id = "host-daily", sources = new[] { "docs/a.md" } };
+        var first = await host.PostAsync("/api/brainstorms", body);
+        Assert.Equal(200, first.Status);
+        Assert.Equal("host-daily", first.Json.GetProperty("brainstorm").GetProperty("id").GetString());
+        Assert.Contains("docs/a.md", File.ReadAllText(Path.Combine(Folder("host-daily"), "request.json")));
+
+        var again = await host.PostAsync("/api/brainstorms", body);
+        Assert.Equal(200, again.Status);
+        Assert.Contains("never a second spend", again.Json.GetProperty("message").GetString());
+        var other = await host.PostAsync("/api/brainstorms", new { question = "Why is it slow?", repository = "reports", id = "host-daily", sources = new[] { "docs/a.md" } });
+        Assert.Equal(409, other.Status);
+        Assert.Contains("an id names one brainstorm", other.Error);
+        Assert.Equal(400, (await host.PostAsync("/api/brainstorms", new { question = "Why?", id = "../x" })).Status);
+        Assert.Equal(400, (await host.PostAsync("/api/brainstorms", new { question = "Why?", kind = "party" })).Status);
+
+        Assert.Equal(404, (await host.SendAsync("POST", "/api/brainstorms/ffffffff/stop", DaorisHost.Loopback)).Status);
+        var stopped = await host.SendAsync("POST", "/api/brainstorms/host-daily/stop", DaorisHost.Loopback);
+        Assert.Equal(200, stopped.Status);
+        Assert.Contains("stop asked", stopped.Json.GetProperty("message").GetString());
+        Assert.True(File.Exists(Path.Combine(Folder("host-daily"), "stop.json")));
+    }
+
+    /// <summary>ONEWAY1t: `kind=meeting` reaches the meeting's records, apart from the brainstorms', through the same doors.</summary>
+    [Fact]
+    public async Task A_meeting_is_asked_sent_by_round_stopped_and_cleared_through_the_same_doors()
+    {
+        var folder = Path.Combine(Folder("meetings"), "host-weekly");
+        var asked = await host.PostAsync("/api/brainstorms", new { kind = "meeting", question = "Which window?", agents = new[] { "stub", "acp-stub" }, id = "host-weekly" });
+        Assert.Equal(200, asked.Status);
+        Assert.Equal("meeting", asked.Json.GetProperty("brainstorm").GetProperty("kind").GetString());
+        Assert.True(File.Exists(Path.Combine(folder, "request.json")));
+        Assert.Equal(400, (await host.PostAsync("/api/brainstorms", new { kind = "meeting", question = "Which?", agents = new[] { "stub" } })).Status);
+        Assert.Equal(400, (await host.PostAsync("/api/brainstorms", new { kind = "meeting", question = "Which?", agents = new[] { "a", "b" }, repository = "r", sources = new[] { "x" } })).Status);
+
+        Assert.Equal(409, (await host.SendAsync("POST", "/api/brainstorms/host-weekly/send?kind=meeting", DaorisHost.Loopback)).Status);
+        File.WriteAllText(Path.Combine(folder, "state.json"), """{ "state": "frozen", "round": 1, "packet": "sha256:aa", "code": null }""");
+        var sent = await host.SendAsync("POST", "/api/brainstorms/host-weekly/send?kind=meeting&round=1", DaorisHost.Loopback);
+        Assert.Equal(200, sent.Status);
+        Assert.Equal(1, sent.Json.GetProperty("brainstorm").GetProperty("round").GetInt32());
+        Assert.True(File.Exists(Path.Combine(folder, "sent", "1.json")));
+        Assert.Equal(400, (await host.SendAsync("POST", "/api/brainstorms/host-weekly/send?round=1", DaorisHost.Loopback)).Status);
+        Assert.Equal(404, (await host.SendAsync("POST", "/api/brainstorms/host-weekly/send", DaorisHost.Loopback)).Status);
+
+        Assert.Equal(200, (await host.SendAsync("POST", "/api/brainstorms/host-weekly/stop?kind=meeting", DaorisHost.Loopback)).Status);
+        Assert.True(File.Exists(Path.Combine(folder, "stop.json")));
+        File.WriteAllText(Path.Combine(folder, "state.json"), """{ "state": "ended", "round": 1, "packet": "sha256:aa", "code": "stopped" }""");
+        var cleared = await host.SendAsync("DELETE", "/api/brainstorms/host-weekly?kind=meeting", DaorisHost.Loopback);
+        Assert.Equal(200, cleared.Status);
+        Assert.False(Directory.Exists(folder));
+    }
+
     /// <summary>🔴 A caller off this machine is answered by no brainstorm door, with the sentence that says why, and nothing is written.</summary>
     [Fact]
     public async Task The_brainstorm_doors_answer_no_caller_off_this_machine()
@@ -103,6 +158,7 @@ public sealed class BrainstormHostTests(LocalHost host) : IClassFixture<LocalHos
                  {
                      ("GET", "/api/brainstorms", null), ("POST", "/api/brainstorms", """{ "question": "Why?" }"""), ("GET", $"/api/brainstorms/{id}", null),
                      ("POST", $"/api/brainstorms/{id}/send", null), ("DELETE", $"/api/brainstorms/{id}", null),
+                     ("POST", $"/api/brainstorms/{id}/stop", null), ("POST", $"/api/brainstorms/{id}/stop?kind=meeting", null),
                  })
         {
             var refused = await host.SendAsync(method, path, DaorisHost.OffMachine, json: body);

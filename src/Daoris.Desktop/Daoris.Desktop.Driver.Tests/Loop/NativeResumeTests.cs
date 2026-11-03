@@ -22,7 +22,7 @@ public sealed class NativeResumeTests
     [Fact]
     public void A_resume_runs_the_answer_as_the_next_turn_of_the_kept_conversation()
     {
-        var info = new ClaudeCodeAdapter().PrepareResume(Target(), ["claude"], "0b5e7c1a", "Port 8080.")!;
+        var info = new ClaudeCodeAdapter().PrepareResume(Target(), ["claude"], "0b5e7c1a")!;
 
         var arguments = info.ArgumentList.ToList();
         Assert.Equal("claude", info.FileName);
@@ -44,7 +44,7 @@ public sealed class NativeResumeTests
     public void A_resume_takes_the_settings_and_servers_flags_as_a_start_does()
     {
         var adapter = new ClaudeCodeAdapter();
-        var info = adapter.PrepareResume(Target(), ["claude"], "0b5e7c1a", "Port 8080.")!;
+        var info = adapter.PrepareResume(Target(), ["claude"], "0b5e7c1a")!;
 
         adapter.HandSettings(info, "D:/daoris-data/sessions/s1.settings.json");
         adapter.HandServers(info, "D:/daoris-data/sessions/s1.mcp.json");
@@ -63,7 +63,7 @@ public sealed class NativeResumeTests
         Assert.True(adapters.Resolve("claude-code-acp").Resumes);
         Assert.True(adapters.Resolve("acp-stub").Resumes);
         Assert.False(adapters.Resolve("stub").Resumes);
-        Assert.Null(adapters.Resolve("stub").PrepareResume(Target(), ["node", "stub.mjs"], "abc", "go on"));
+        Assert.Null(adapters.Resolve("stub").PrepareResume(Target(), ["node", "stub.mjs"], "abc"));
     }
 
     /// <summary>The conversation's id is the <c>init</c> line's <c>session_id</c>, read without a line rendered for it.</summary>
@@ -96,27 +96,6 @@ public sealed class NativeResumeTests
     }
 
     /// <summary>
-    /// 🔴 Words held while a native run worked go on in its own conversation before the record concludes (MSG1b, D137 §2.1):
-    /// <c>claude -p &lt;words&gt; --resume &lt;kept id&gt;</c>, under the rules and servers the run before it was handed.
-    /// </summary>
-    [Fact]
-    public void Words_held_while_it_worked_resume_its_own_conversation_under_the_same_rules()
-    {
-        var info = DriverContinuations.GoOnStart(
-            new ClaudeCodeAdapter(), Target(), ["claude"], "0b5e7c1a", "Also log the port.",
-            settings: "D:/daoris-data/sessions/s1.settings.json", servers: "D:/daoris-data/sessions/s1.mcp.json")!;
-
-        var arguments = info.ArgumentList.ToList();
-        Assert.Equal("--resume", arguments[arguments.IndexOf("-p") + 1]);
-        Assert.DoesNotContain("Also log the port.", arguments);
-        Assert.True(info.RedirectStandardInput);
-        Assert.Equal("0b5e7c1a", arguments[arguments.IndexOf("--resume") + 1]);
-        Assert.Equal("D:/daoris-data/sessions/s1.settings.json", arguments[arguments.IndexOf("--settings") + 1]);
-        Assert.Equal("D:/daoris-data/sessions/s1.mcp.json", arguments[arguments.IndexOf("--mcp-config") + 1]);
-        Assert.DoesNotContain(arguments, argument => argument.Contains("Fix the flaky gate"));
-    }
-
-    /// <summary>
     /// XAGENT1e (D155 point 7, design §6.3): another agent's findings waiting on an ended record go on in the session's own
     /// conversation on the native door as the one argument it takes, in Daoris's fixed words exactly as the host composed
     /// them, after the person's word and a blank line, never the target again.
@@ -135,7 +114,7 @@ public sealed class NativeResumeTests
             ],
             Continuations.Opening("claude-code", null, null, answer: false, findings: true, persons: true));
 
-        var info = new ClaudeCodeAdapter().PrepareResume(Target(), ["claude"], resume.Conversation, resume.Prompt)!;
+        var info = new ClaudeCodeAdapter().PrepareResume(Target(), ["claude"], resume.Conversation)!;
 
         var arguments = info.ArgumentList.ToList();
         // The prompt is the resume's own, written on the input (AGENTLYNTAI1s-i), so it is read where it is composed.
@@ -146,13 +125,6 @@ public sealed class NativeResumeTests
         Assert.DoesNotContain(arguments, argument => argument.Contains("Fix the flaky gate"));
         // The record shows them as Daoris's turn around another agent's claims, never the person's words.
         Assert.Equal(["person", "target"], resume.Opening().Skip(1).Select(e => e.Origin));
-    }
-
-    /// <summary>A door that cannot resume has no run to go on in: it holds no words, so nothing waits on it.</summary>
-    [Fact]
-    public void A_door_that_cannot_resume_goes_on_with_nothing()
-    {
-        Assert.Null(DriverContinuations.GoOnStart(AdapterSet.Built().Resolve("stub"), Target(), ["node", "stub.mjs"], "abc", "go on", null, null));
     }
 
     /// <summary>

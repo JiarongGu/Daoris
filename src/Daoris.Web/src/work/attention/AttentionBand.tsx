@@ -393,7 +393,7 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
   // A row of What needs you says the sign-in's line alone, its phase now with what it says (SIGNIN1, the UI/UX design §3.2).
   const ends = {
     refused: harnessRun.refusal, failed: harnessRun.failure?.sentence, failedAt: harnessRun.failure?.at,
-    pressedAt: harnessRun.pressedAt, onRetry: harnessRun.retry, onClose: harnessRun.dismiss, shown: 'line' as const,
+    onRetry: harnessRun.retry, onClose: harnessRun.dismiss, shown: 'line' as const,
     // The other way in, where the agent has one (CODEXLOGIN1): Codex's device code beside its browser.
     other: harnessRun.otherWay, onSwitch: harnessRun.switchWay,
   };

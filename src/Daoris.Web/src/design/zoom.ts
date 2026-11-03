@@ -115,7 +115,7 @@ const travelled = (event: WheelEvent) => (event.deltaMode === 1 ? event.deltaY *
  *
  * @remarks
  * Heard on the window, after every surface under the pointer: **a surface that zooms itself takes the wheel first** (the Map,
- * `LayeredMap`'s own listener prevents it), and a wheel already taken is left alone, so the Map keeps its Ctrl+wheel. A plain
+ * the canvas's own listener prevents it), and a wheel already taken is left alone, so the Map keeps its Ctrl+wheel. A plain
  * wheel scrolls, untouched.
  */
 export function zoomWheel(onStep: (direction: 1 | -1) => void): (event: WheelEvent) => void {

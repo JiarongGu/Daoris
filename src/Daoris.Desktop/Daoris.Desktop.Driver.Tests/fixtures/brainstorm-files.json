@@ -7,6 +7,11 @@
       "reads": { "question": "Why does the daily report drop its last day?", "repository": "reports", "agents": ["stub", "acp-stub"], "at": "2026-10-19T10:00:00.0000000+00:00" }
     },
     {
+      "name": "named sources",
+      "file": "{\n  \"brainstorm\": 1,\n  \"id\": \"ab12cd36\",\n  \"question\": \"Why?\",\n  \"repository\": \"daoris\",\n  \"agents\": [],\n  \"at\": \"2026-10-19T10:00:00.0000000+00:00\",\n  \"sources\": [\n    \"docs/a.md\",\n    \"src/B.cs\"\n  ]\n}",
+      "reads": { "question": "Why?", "repository": "daoris", "agents": [], "at": "2026-10-19T10:00:00.0000000+00:00", "sources": ["docs/a.md", "src/B.cs"] }
+    },
+    {
       "name": "no repository and no agents",
       "file": "{\"brainstorm\":1,\"id\":\"ab12cd35\",\"question\":\"What next?\",\"repository\":null,\"agents\":[],\"at\":\"2026-10-19T10:00:00Z\"}",
       "reads": { "question": "What next?", "repository": null, "agents": [], "at": "2026-10-19T10:00:00.0000000+00:00" }
@@ -29,6 +34,33 @@
     { "name": "a blank question is no request", "file": "{\"question\":\"\",\"agents\":[]}", "reads": null },
     { "name": "a question that is not a string is no request", "file": "{\"question\":4}", "reads": null },
     { "name": "a file that does not read is no request", "file": "{\"question\":", "reads": null }
+  ],
+  "stops": [
+    { "name": "the person's stop", "file": "{\n  \"at\": \"2026-10-19T10:04:00.0000000+00:00\"\n}", "reads": true },
+    { "name": "no file is no stop", "file": null, "reads": false }
+  ],
+  "meetings": [
+    {
+      "name": "a meeting's request, under brainstorms/meetings",
+      "file": "{\n  \"meeting\": 1,\n  \"id\": \"ab12cd37\",\n  \"question\": \"Which window?\",\n  \"repository\": \"reports\",\n  \"agents\": [\n    \"stub\",\n    \"acp-stub\"\n  ],\n  \"at\": \"2026-10-19T10:00:00.0000000+00:00\"\n}",
+      "reads": { "question": "Which window?", "repository": "reports", "agents": ["stub", "acp-stub"], "at": "2026-10-19T10:00:00.0000000+00:00" }
+    },
+    {
+      "name": "a meeting's state names its round",
+      "state": "{\"id\":\"ab12cd37\",\"state\":\"frozen\",\"round\":2,\"packet\":\"sha256:5f1c\",\"code\":null,\"at\":\"2026-10-19T10:02:00Z\"}",
+      "reads": { "state": "frozen", "round": 2, "packet": "sha256:5f1c" }
+    },
+    {
+      "name": "a state with no round is round one",
+      "state": "{\"state\":\"frozen\",\"packet\":\"sha256:5f1c\"}",
+      "reads": { "state": "frozen", "round": 1, "packet": "sha256:5f1c" }
+    },
+    {
+      "name": "a round's send, sent/<round>.json",
+      "sent": "{\n  \"round\": 2,\n  \"packet\": \"sha256:5f1c\",\n  \"at\": \"2026-10-19T10:03:00.0000000+00:00\"\n}",
+      "round": 2,
+      "reads": { "sent": "sha256:5f1c" }
+    }
   ],
   "states": [
     {

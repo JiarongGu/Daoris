@@ -36,7 +36,7 @@ public static class BrainstormStates
 
 /// <summary>
 /// A brainstorm's records under <c>&lt;home&gt;/brainstorms/&lt;id&gt;/</c> (D176 point 8, D172's <c>data/brainstorms</c>), each file written
-/// atomically by one writer: <c>request.json</c> by the verb, <c>sent.json</c> by the person's send, <c>state.json</c>,
+/// atomically by one writer: <c>request.json</c>, <c>sent.json</c> and <c>stop.json</c> by the service's desk (ONEWAY1t), <c>state.json</c>,
 /// <c>packet.json</c>, <c>passes/</c> and the document by the driver, and <c>answers/&lt;turn&gt;.json</c> by the pass's result tool.
 /// The rooms are under <c>brainstorm-rooms/&lt;id&gt;/</c> (D172's <c>work/</c>), and go when the brainstorm ends.
 /// </summary>
@@ -66,39 +66,6 @@ public sealed class BrainstormFiles(string home)
 
     /// <summary>The file a turn's result tool writes its answer to: <c>brainstorm_give</c>'s or <c>brainstorm_synthesize</c>'s.</summary>
     public string AnswerPath(string id, string turn) => PathOf(id, "answers", $"{turn}.json");
-
-    /// <summary>
-    /// The request a person's terminal writes, atomically: its id, which names the brainstorm everywhere. An id the caller names
-    /// (BRAINSTORM1b, D176 point 6) makes the request idempotent: one already on file under it is kept as it is, never written again.
-    /// </summary>
-    public string WriteRequest(
-        string question, string? repository, IReadOnlyList<string> agents, DateTimeOffset at, string? named = null, IReadOnlyList<string>? sources = null)
-    {
-        var id = named ?? Guid.NewGuid().ToString("N")[..8];
-        if (named is not null && File.Exists(PathOf(id, "request.json"))) return id;
-        Write(PathOf(id, "request.json"), writer =>
-        {
-            writer.WriteStartObject();
-            writer.WriteNumber("brainstorm", BrainstormAnswers.Schema);
-            writer.WriteString("id", id);
-            writer.WriteString("question", question);
-            if (repository is null) writer.WriteNull("repository");
-            else writer.WriteString("repository", repository);
-            writer.WriteStartArray("agents");
-            foreach (var agent in agents) writer.WriteStringValue(agent);
-            writer.WriteEndArray();
-            writer.WriteString("at", Moments.Write(at));
-            if (sources is { Count: > 0 })
-            {
-                writer.WriteStartArray("sources");
-                foreach (var source in sources) writer.WriteStringValue(source);
-                writer.WriteEndArray();
-            }
-
-            writer.WriteEndObject();
-        });
-        return id;
-    }
 
     /// <summary>Every request on file, oldest first; one unreadable is not a request here, and the meetings' folder is none.</summary>
     public IReadOnlyList<BrainstormRequest> Requests()
@@ -160,16 +127,6 @@ public sealed class BrainstormFiles(string home)
 
     public byte[]? PacketBytes(string id) => ReadBytes(PathOf(id, BrainstormInstruction.PacketFile));
 
-    /// <summary>The person's send (D176 point 2): the digest of the packet they saw, which is the one that goes.</summary>
-    public void WriteSent(string id, string digest, DateTimeOffset at) =>
-        Write(PathOf(id, "sent.json"), writer =>
-        {
-            writer.WriteStartObject();
-            writer.WriteString("packet", digest);
-            writer.WriteString("at", Moments.Write(at));
-            writer.WriteEndObject();
-        });
-
     /// <summary>The digest the person sent, or null where they have not.</summary>
     public string? Sent(string id)
     {
@@ -177,16 +134,7 @@ public sealed class BrainstormFiles(string home)
         using (root) return Text(root.RootElement, "packet");
     }
 
-    /// <summary>The person's stop (BRAINSTORM1b, D176 point 6), a file of its own their verb writes: every pass ends, and what answered is kept.</summary>
-    public void WriteStop(string id, DateTimeOffset at) =>
-        Write(PathOf(id, "stop.json"), writer =>
-        {
-            writer.WriteStartObject();
-            writer.WriteString("at", Moments.Write(at));
-            writer.WriteEndObject();
-        });
-
-    /// <summary>Whether the person stopped it.</summary>
+    /// <summary>Whether the person stopped it (BRAINSTORM1b, D176 point 6): the desk's file, which ends every pass and keeps what answered.</summary>
     public bool Stopped(string id) => File.Exists(PathOf(id, "stop.json"));
 
     /// <summary>Each pass's record as it was last written, in pass order; one unreadable is not a pass here.</summary>

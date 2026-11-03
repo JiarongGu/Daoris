@@ -15,6 +15,7 @@ public static class GitMoved
     /// <summary>Whether this home has moved: a remote nothing serves is then reached with no credential of the person's.</summary>
     public static bool Moved(string home)
     {
+        // transitional: git-moved-key
         try
         {
             var path = DaorisHome.Entry(home, HomeEntry.DriverConfig);

@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CodeMapCanvas, CodeMapDetail } from './CodeMap';
-import { MapCanvas, type MapSelection } from './MapCanvas';
-import { LayeredMap } from './LayeredMap';
-import { RING_MAX } from './layers';
+import { CodeMapDetail, CodeMapWorld } from './CodeMap';
+import type { MapSelection } from './MapLines';
+import { MapWorld } from './MapWorld';
 import { LinesMenu, lineCounts, useMapWhen, useShownLines } from './LinesMenu';
 import { MapDetail } from './MapDetail';
 import { buildTopology, keepQuests, type LineKind, showLines } from './topology';
@@ -99,12 +98,13 @@ export function MapView({ notify, code: opening = null, onOpenConvergence, onOpe
           // Beside the code map by the main area's own width, as the workspace map's detail is (D118 §3b).
           <div className="grid items-start gap-4 @4xl/main:grid-cols-[minmax(0,1fr)_20rem]">
             <Card>
-              <CodeMapCanvas
+              <CodeMapWorld
                 repository={code}
                 modules={answer.modules}
                 dependencies={answer.dependencies}
                 selected={module}
                 onSelect={setModule}
+                version={answer.fed?.commit}
               />
               <p className="m-0 mt-2 text-meta text-ink-faint">{t('code.legend')}</p>
             </Card>
@@ -174,15 +174,8 @@ export function MapView({ notify, code: opening = null, onOpenConvergence, onOpe
           in the main area: a view's own detail never goes to the side bar (§3c, §4). */}
       <div className="grid items-start gap-4 @4xl/main:grid-cols-[minmax(0,1fr)_20rem]">
         <Card>
-          {/* A ring holds a handful; a bigger circle is laid out in layers, which pan and zoom (MAP4). */}
-          {topology.nodes.length > RING_MAX
-            ? <LayeredMap topology={topology} selected={selected} onSelect={(next) => setSelected(next)} tools={lines} />
-            : (
-              <>
-                <div className="mb-1 flex justify-end">{lines}</div>
-                <MapCanvas topology={topology} selected={selected} onSelect={(next) => setSelected(next)} />
-              </>
-            )}
+          {/* A ring holds a handful; a bigger circle is laid out in layers, which pan and zoom (MAP4): one canvas either way. */}
+          <MapWorld topology={topology} selected={selected} onSelect={setSelected} tools={lines} storeKey={workspace ?? 'all'} />
           {/* The key, in words: each line's meaning is its shape as well as its hue (D41) — and the
               number in a node, which no key named until the window showed it (POLISH4). A kind out of
               sight leaves the key with its lines. */}

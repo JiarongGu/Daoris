@@ -4,7 +4,7 @@ Open rows set aside on 2026-10-30 and triaged on 2026-11-02 against D228 (`docs/
 
 ## The next installed sitting, once WORKFLOWCLEAN1's waves reach the install
 
-The looks of ASKQUESTS1, ZOOM1, STARTFAST1, WAITPANEL1 and NOTIFY1 come with that sitting; those of PARKVIEW1, PARKWORDS1 and PARKANSWER1 after ONEWAY1 row k.
+The looks of ASKQUESTS1, ZOOM1, STARTFAST1, WAITPANEL1 and NOTIFY1 come with that sitting; those of PARKVIEW1, PARKWORDS1 and PARKANSWER1 after ONEWAY1k.
 
 - [ ] **HELPPLUGPROOF1 — plugin servers and skills proven on the install** (parent; after republish). Ask Daoris calls an approved read and is refused an unaccepted write; a session on each door invokes a plugin skill (the protocol door's `plugins` option was read from source only). D170's HELPPLUG1 notes.
 

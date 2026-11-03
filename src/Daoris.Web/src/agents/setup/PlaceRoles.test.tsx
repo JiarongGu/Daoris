@@ -387,4 +387,42 @@ describe('A place page, Roles', () => {
     expect(design.getByRole('button', { name: '为engine设置专属角色…，设计与决策' })).toBeTruthy();
     expect(rowOf('开发').getByRole('button', { name: '回到aurora的角色，开发' })).toBeTruthy();
   });
+
+  // STAFFPOLICY1f (the staff policy design §6.2): the fold reads the role's policy, says a stale one, and its give copies the parent's.
+  describe('its staffing policy', () => {
+    const policy = (role: string, over: Record<string, unknown> = {}) => ({
+      role, policyState: 'set', revision: 2, next: null,
+      staffPolicy: { rule: 'weight', choices: [{ agent: 'claude-code', model: 'opus', effort: 'high', weight: 3 }], moves: { limit: 'weighted' }, most: 3 },
+      ...over,
+    });
+
+    it("says the rule and its moves on a role's line", async () => {
+      roles = { ...CATALOGUE, policies: [policy('engine-build'), policy('build')] } as typeof CATALOGUE;
+      await openEngine();
+      expect(rowOf('building').getByText(/cannot run: signed out.* · spread 3 · moves on a limit · at most 3 moves/)).toBeTruthy();
+    });
+
+    it('says a stale policy as running in order, and no rule beside it', async () => {
+      roles = { ...CATALOGUE, policies: [policy('engine-build', { policyState: 'stale' }), policy('build')] } as typeof CATALOGUE;
+      await openEngine();
+      expect(rowOf('building').getByText(/Engine build.*its policy was set for other choices; it runs them in order until you save it again/)).toBeTruthy();
+      expect(rowOf('building').queryByText(/spread 3/)).toBeNull();
+    });
+
+    it("copies the parent's policy with its choices when the place is given its own role", async () => {
+      roles = { ...CATALOGUE, policies: [policy('build')] } as typeof CATALOGUE;
+      await openEngine();
+      await unfold();
+      await userEvent.click(rowOf('design and decisions').getByRole('button', { name: 'Give engine its own… for design and decisions' }));
+      const editor = within(await screen.findByRole('form', { name: 'A new role' }));
+      expect(editor.getByRole('textbox', { name: "choice 1's weight" })).toHaveValue('3');
+      expect(editor.getByRole('combobox', { name: 'It reaches its limit' })).toHaveTextContent('Move to the next by weight');
+      await userEvent.click(editor.getByRole('button', { name: 'Save' }));
+      await waitFor(() => expect(sent()).toEqual([expect.objectContaining({
+        change: 'set', id: 'build-engine', policyRevision: null,
+        choices: [{ agent: 'claude-code', model: 'opus', effort: 'high' }],
+        policy: { rule: 'weight', choices: [{ agent: 'claude-code', model: 'opus', effort: 'high', weight: 3 }], moves: { limit: 'weighted' }, most: 3 },
+      })]));
+    });
+  });
 });

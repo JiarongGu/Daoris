@@ -26,7 +26,7 @@ const CODEX = [
 const meta: Meta<typeof SignInSteps> = {
   title: 'Agents/SignInSteps',
   component: SignInSteps,
-  args: { title: 'Signing in to account-2', tool: 'Claude Code', action: 'login', phases: UP, texts: CLAUDE_LINK, acts: ACTS },
+  args: { title: 'Signing in to account-2', tool: 'Claude Code', phases: UP, texts: CLAUDE_LINK, acts: ACTS },
   decorators: [(Story) => <div className="w-[40rem] max-w-full rounded-card border border-line bg-raised p-3"><Story /></div>],
 };
 export default meta;
@@ -44,7 +44,7 @@ export const WaitingLink: Story = {};
 
 /** Waiting, device code: Codex's code to enter on its page, with its own bound and the link. */
 export const WaitingDeviceCode: Story = {
-  args: { title: 'Signing in to another Codex account', tool: 'Codex', action: 'login-new', texts: CODEX },
+  args: { title: 'Signing in to another Codex account', tool: 'Codex', texts: CODEX },
 };
 
 /** Code asked: the tool waits on a code the page showed, and the box takes it. */
@@ -59,7 +59,7 @@ export const CheckingWho: Story = { args: { phases: [...UP, { phase: 'who', at: 
 /** Refused at the start: the first phase failed with the driver's sentence whole, *Try again* and *Close*. */
 export const RefusedAtTheStart: Story = {
   args: {
-    title: 'Signing in to another Codex account', tool: 'Codex', action: 'login-new', phases: [], texts: [],
+    title: 'Signing in to another Codex account', tool: 'Codex', phases: [], texts: [],
     refused: '`codex` is pinned to 0.160.0 on this machine, and nothing is installed at that version, so nothing was signed in.',
   },
 };
@@ -72,9 +72,6 @@ export const FailedAtAPhase: Story = {
 /** The line alone, as a row of *What needs you* says it: the phase now and what it says. */
 export const Line: Story = { args: { shown: 'line', title: 'Signing in to another Codex account', tool: 'Codex', texts: CODEX } };
 
-/** From an older host that writes no phases: the steps as they were. */
-export const OlderHost: Story = { args: { phases: [] } };
-
 // ——— CODEXLOGIN1: Codex's browser first, its device code beside it, either way switched to at any time.
 
 /** What `codex login` 0.160.0 printed (D125's CODEXLOGIN1 note), the page's query values replaced. */
@@ -84,7 +81,7 @@ const CODEX_BROWSER = [
   'https://auth.openai.com/oauth/authorize?response_type=code&client_id=CLIENT&redirect_uri=http%3A%2F%2F127.0.0.1%3A1455%2Fauth%2Fcallback&state=STATE',
   '', 'On a remote or headless machine? Use `codex login --device-auth` instead.',
 ];
-const CODEX_NEW = { title: 'Signing in to another Codex account', tool: 'Codex', action: 'login-new' as const };
+const CODEX_NEW = { title: 'Signing in to another Codex account', tool: 'Codex' };
 const HELD = '`codex login` waits for your browser on port 1455, else 1457, and neither can be taken now: 1455 is held by '
   + 'another program; 1457 is held by a range Windows reserves, which a restart may move. Nothing was signed in — sign in with '
   + 'a device code instead.';

@@ -237,6 +237,9 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-11-02-oneway-census.md` | Census: ONEWAY1, every job that still has two ways, beside the workflows (D228)
 | `2026-11-02-workflow-cleanup-design.md` | Design: WORKFLOWCLEAN1, a place follows a saved graph, the runtime lands it, the old shapes convert on the person's press; accepted 2026-11-02 (D227)
 | `2026-11-02-workflow-cleanup-reads.md` | Reads: WORKFLOWCLEAN1, Opus's read, settled in the design's §13; Codex's owed
+| `2026-11-02-oneway-design.md` | Design: ONEWAY1, each job done one way: one conversion door in parts, a register of kept reads with their ends, one name (`daoris`) with one command tree, the waves; accepted 2026-11-03 after two Opus reads, the other maker's read owed (D228)
+| `2026-11-03-context-counters-brief.md` | Brief: CONTEXTDRIVE1, behaviors counted in a session's context and a supervisor that acts on them, an agent or a rule the person sets, within the structure (D229 reserved)
+| `2026-11-03-context-counters-design.md` | Design: CONTEXTDRIVE1, a line's behaviors counted from their records and seen by the session, today's caps as the person's rules, the supervisor an agent or a rule; accepted 2026-11-03 after two Opus reads (D229)
 
 ## UI, browser, tools and plugin contracts
 

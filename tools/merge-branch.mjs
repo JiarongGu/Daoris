@@ -1276,8 +1276,8 @@ export const REACH = Object.freeze([
   { paths: ['src/Daoris.Cli/test/fixtures/name-case.json'], gates: ['driver'], why: "the driver's NameCaseTests reads the shared name-case table (CASEFOLD1d)" },
   {
     paths: ['src/Daoris.Cli/test/fixtures/home-files-keep.json'],
-    gates: ['service', 'driver', 'modules'],
-    why: "the driver's HomeFilesKeepTests reads the shared table of the bytes an edit of each other home file a door edits writes (KEEPALL1), the service's RemoteConfigKeepTests its remotes.json rows' reads (KEEPALL1e), and the modules' BrowserSettingsTests browser/settings.json's (KEEPALL1c)",
+    gates: ['service', 'driver'],
+    why: "the driver's HomeFilesKeepTests and BrowserSettingsTests read the shared table of the bytes an edit of each other home file a door edits writes (KEEPALL1, KEEPALL1c), and the service's RemoteConfigKeepTests its remotes.json rows' reads (KEEPALL1e)",
   },
   {
     paths: ['src/Daoris.Cli/test/fixtures/fence-cases.json'],
@@ -1428,6 +1428,11 @@ export const REACH = Object.freeze([
     paths: ['docs/index/**'],
     gates: [],
     why: 'written into every merge by tools/orient-index.mjs and held by its check, which every merge runs; no suite reads it',
+  },
+  {
+    paths: ['docs/code-map.json'],
+    gates: ['service', 'web-unit'],
+    why: "the service's scan, and the page's codeClusters vitest lays out this repository's own map (CANVAS1f)",
   },
   {
     paths: ['docs/model-roles.md'],

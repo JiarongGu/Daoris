@@ -424,7 +424,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
   // The session that proposed a rule is found in the list while a proposal names one and a door to it was handed (PROPOSEHERE1c).
   const proposalSessions = useSessions(null, true, Boolean(say) && Array.isArray(rules.data?.proposals) && rules.data.proposals.some((one) => one.session));
   const {
-    running, runningProfile, signingInNew, busy: acting, run, added, settleAdded, refusal, retry, dismiss, pressedAt,
+    running, runningProfile, signingInNew, busy: acting, run, added, settleAdded, refusal, retry, dismiss,
     failure: failed, otherWay, switchWay,
   } = useHarnessRun();
   const onError = failure(notify);
@@ -612,7 +612,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
         ? (
           <SignIn
             id={running} harness={door} profile={labelOf(runningProfile)} tool={product} refused={refusal}
-            failed={failed?.sentence} failedAt={failed?.at} pressedAt={pressedAt} onRetry={retry} onClose={dismiss}
+            failed={failed?.sentence} failedAt={failed?.at} onRetry={retry} onClose={dismiss}
             other={otherWay} onSwitch={switchWay}
           />
         )
@@ -621,7 +621,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
         ? (
           <SignIn
             id={`${door}:login-new`} harness={door} action="login-new" tool={product} refused={refusal}
-            failed={failed?.sentence} failedAt={failed?.at} pressedAt={pressedAt} onRetry={retry} onClose={dismiss}
+            failed={failed?.sentence} failedAt={failed?.at} onRetry={retry} onClose={dismiss}
             other={otherWay} onSwitch={switchWay}
           />
         )

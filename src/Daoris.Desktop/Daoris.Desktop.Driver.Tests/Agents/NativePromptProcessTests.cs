@@ -47,7 +47,7 @@ public sealed class NativePromptProcessTests : IDisposable
 
     /// <summary>The real adapter's resume start, built as the driver builds it, over <paramref name="script"/>.</summary>
     private ProcessStartInfo Resume(string script) =>
-        new ClaudeCodeAdapter().PrepareResume(Target(_root), ["node", script], "0b5e7c1a", Prompt)!;
+        new ClaudeCodeAdapter().PrepareResume(Target(_root), ["node", script], "0b5e7c1a")!;
 
     [Fact]
     public async Task The_prompt_arrives_whole_as_bom_less_utf8_and_the_input_is_closed()
