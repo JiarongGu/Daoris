@@ -169,8 +169,8 @@ export type Attention = {
   integration?: IntegrationWait;
   /** A `git-held` row's held group (GITAUTH1a): the repositories its *Try again* lifts, and why, which its mark's ink says. */
   git?: GitHeld;
-  /** A `workflow-convert` row's count (WORKFLOWCLEAN1g-ii): the places the home's census lists, which its title says. */
-  convert?: { places: number };
+  /** A `workflow-convert` row's count (ONEWAY1ae): the old records every part holds, which its title says, and their count by part, its detail. */
+  convert?: { records: number; parts?: Record<string, number> };
   /** The workspace a `git-held` row was judged in, which its *Try again* names; absent where .NET scoped it to none. */
   workspace?: string;
   /**

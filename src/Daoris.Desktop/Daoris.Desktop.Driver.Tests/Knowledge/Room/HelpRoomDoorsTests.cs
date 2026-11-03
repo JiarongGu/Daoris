@@ -153,7 +153,7 @@ public sealed class HelpRoomDoorsTests
     [Fact]
     public void The_room_teaches_the_converted_way_and_names_the_conversion()
     {
-        var convert = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("workflow convert --plan", StringComparison.Ordinal));
+        var convert = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris convert --plan", StringComparison.Ordinal));
         Assert.Contains("Convert…", convert.Screen);
         Assert.Contains("Review conversion…", convert.Screen);
         Assert.Contains("Ask Daoris opens the page and never proposes the apply", convert.To);

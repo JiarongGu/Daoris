@@ -20,6 +20,7 @@ public sealed record HandedResolution(string Form, bool AutoAccept, string? Key,
 /// The translations of the old shapes into graphs (WORKFLOWCLEAN1 1e; the cleanup design §4.2). Pure: a graph in, a graph or a refusal out,
 /// the rules handed in as facts. A refusal names why the old version is kept as it is.
 /// </summary>
+// transitional: conversion-readers
 public static class LegacyGraphs
 {
     private const string Review = "review";

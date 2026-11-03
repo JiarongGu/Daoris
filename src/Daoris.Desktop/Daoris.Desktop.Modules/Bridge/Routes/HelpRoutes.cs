@@ -216,7 +216,9 @@ public sealed class HelpRoutes(DriverContext context)
             WorkflowStore.List(_loop.Home),
             // What the person approved of the servers plugins offer it (HELPPLUG1a's tightening, D170's note).
             HelpGrants.Read(_loop.Home, plugins), read.Work?.Units, read.Work?.Unread, read.Work?.Recovery,
-            read.NotReadYet);
+            read.NotReadYet,
+            // ONEWAY1ad-ii: This machine's list of old records, as its page reads it.
+            kept: TransitionalRegister.List(_loop.Home, _loop.Conversion.Parts()));
     }
 
     /// <summary>

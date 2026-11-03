@@ -237,7 +237,7 @@ public static class HelpRoom
         IReadOnlyList<HeldQuest>? held = null, IKnowledgeSessionLook? sessions = null, IReadOnlyList<HistoryReading>? history = null,
         IReadOnlyList<WorkflowFileFound>? workflows = null, HelpGrantSet? grants = null,
         IReadOnlyList<IKnowledgeMilestone>? work = null, IReadOnlyList<InventoryUnread>? workUnread = null, IReadOnlyList<InventoryEntry>? workRecovery = null,
-        HelpNotReadYet? notReadYet = null, string? workspace = null)
+        HelpNotReadYet? notReadYet = null, string? workspace = null, IReadOnlyList<KeptLine>? kept = null)
     {
         var sources = new HelpMachineSources(
             config, snapshot, lines, roster, product, asks, standing ?? [], plugins ?? PluginCatalog.None, landed ?? [], offers ?? [],
@@ -245,6 +245,7 @@ public static class HelpRoom
         {
             Held = held ?? [], Sessions = sessions, History = history, Workflows = workflows, Grants = grants,
             Work = work, WorkUnread = workUnread ?? [], WorkRecovery = workRecovery ?? [], NotReadYet = notReadYet ?? HelpNotReadYet.None,
+            Kept = kept ?? [],
         };
         return Describe(sources, ScopeOf(workspace));
     }
@@ -324,6 +325,9 @@ internal sealed record HelpMachineSources(
 
     /// <summary>What the facts the judges keep had not read yet (PARALLEL1a).</summary>
     public HelpNotReadYet NotReadYet { get; init; } = HelpNotReadYet.None;
+
+    /// <summary>This machine's list of old records (ONEWAY1ad-ii), as its page reads it.</summary>
+    public IReadOnlyList<KeptLine> Kept { get; init; } = [];
 
     /// <summary>The workspace these are projected to (ASKSCOPE1b, <see cref="HelpRoomScope"/>); null for the whole machine.</summary>
     public string? Workspace { get; init; }

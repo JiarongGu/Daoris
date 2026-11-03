@@ -803,7 +803,7 @@ describe('an account’s row', () => {
   it('opens the conversion review from the home’s row, which has no act of its own', async () => {
     vi.useRealTimers();
     const row: Attention = {
-      id: 'home', kind: 'workflow-convert', title: '2 places follow old workflow shapes', where: '', since: '2026-11-02T09:00:00Z',
+      id: 'home', kind: 'workflow-convert', title: '2 old records wait for your conversion', where: '', since: '2026-11-02T09:00:00Z',
     };
     const onOpen = vi.fn();
     render(<AttentionRow item={row} acts={everyAct()} onOpen={onOpen} />);

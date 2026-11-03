@@ -212,7 +212,7 @@ public static class ConversionPlans
                 var cycled = place.IsWorkspace ? config.WorkspaceWorkCycles.ContainsKey(place.Place) : config.WorkCycles.ContainsKey(place.Place);
                 if (defaultWrite is not null && cycled)
                 {
-                    working = ConversionApplies.PinnedToCurrent(working, place.Place, place.IsWorkspace);
+                    working = WorkflowPart.PinnedToCurrent(working, place.Place, place.IsWorkspace);
                     uses.Add(new(place.Place, place.IsWorkspace, WorkflowSelection.Current, null, $"`{place.Place}` stays on Current, as its work cycle needs"));
                 }
 

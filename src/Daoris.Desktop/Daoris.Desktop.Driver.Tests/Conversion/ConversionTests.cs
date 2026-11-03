@@ -337,7 +337,7 @@ public sealed class ConversionTests : IDisposable
         var before = DriverConfig.Load(ConfigPath);
         var plan = Plan();
         await ConversionApplies.ApplyAsync(Doors(), new ConversionChoices(), plan.Digest);
-        var undo = ConversionApplies.UndoPlan(_home, DriverConfig.Load(ConfigPath));
+        var undo = ConversionApplies.UndoPlan(Doors());
         Assert.Null(undo.Refusal);
 
         var result = ConversionApplies.Undo(Doors(), undo.Digest!);
@@ -356,7 +356,7 @@ public sealed class ConversionTests : IDisposable
         Assert.NotNull(WorkflowPorts.Store(_home).Load("engine-workflow"));
         Assert.False(ConversionReceipts.Stands(_home));
         Assert.Null(InstallRollback.Refused(_home, "0.41.0", "0.42.0", ConversionReceipts.Stands));
-        Assert.NotNull(ConversionApplies.UndoPlan(_home, config).Refusal);
+        Assert.NotNull(ConversionApplies.UndoPlan(Doors()).Refusal);
     }
 
     [Fact]
@@ -367,7 +367,7 @@ public sealed class ConversionTests : IDisposable
         await ConversionApplies.ApplyAsync(Doors(), new ConversionChoices(), plan.Digest);
         DriverConfig.Load(ConfigPath).WithLanding("engine", new LandingRule(LandingForm.Merge)).Save(ConfigPath);
 
-        var undo = ConversionApplies.UndoPlan(_home, DriverConfig.Load(ConfigPath));
+        var undo = ConversionApplies.UndoPlan(Doors());
 
         Assert.StartsWith("moved:", undo.Refusal);
         Assert.Contains("engine", undo.Refusal);
