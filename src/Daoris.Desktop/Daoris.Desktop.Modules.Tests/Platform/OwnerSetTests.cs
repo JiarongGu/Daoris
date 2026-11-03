@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -35,17 +36,8 @@ public sealed class OwnerSetTests : IDisposable
         Directory.CreateDirectory(_home);
     }
 
-    public void Dispose()
-    {
-        try
-        {
-            Directory.Delete(_home, recursive: true);
-        }
-        catch (IOException)
-        {
-            // A log still held by a pipe that closes after us: the scratch is the checkout's, and its parent is ignored.
-        }
-    }
+    // A log still held by a pipe that closes after us is waited for, then left: the scratch is the checkout's, and its parent is ignored.
+    public void Dispose() => GitSeed.Discard(_home);
 
     // ——— What the owner's doors name and mark.
 

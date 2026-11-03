@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text;
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Modules.Tests;
@@ -17,10 +18,7 @@ public sealed class DriverLoopSendsBackTests : IDisposable
 
     public DriverLoopSendsBackTests() => Directory.CreateDirectory(_home);
 
-    public void Dispose()
-    {
-        try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
-    }
+    public void Dispose() => GitSeed.Discard(_home);
 
     /// <summary>
     /// 🔴 The loop's watch is built with the shell's chat runner as <c>SendsBack</c>, beside <c>HandsOver</c>, and the watch hands it to every
