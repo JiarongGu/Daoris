@@ -2,19 +2,42 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The exchanges half of <i>At work</i> (COMMS1i, the comms design §7, §13 point 12): the attended line's requests of others, read by the
-/// one read (<see cref="Exchanges.Of"/>) over the home's helper, piece and hand-over files and the quests and records the caller holds,
-/// each file taken with its health. The window's read and the terminal's verb fill the composition's port with it.
+/// one read (<see cref="Exchanges.Of"/>) over the home's helper, piece and hand-over files, the quests and records the caller holds, and
+/// the reviewers' records, each file taken with its health. The window's read and the terminal's verb fill the composition's port with it.
 /// </summary>
 public static class AtWorkExchangeReading
 {
     /// <summary>
-    /// The sources it reads: what the line asked of others. A question and a go-ahead are asked of the person, whose waits the head and
-    /// <i>What needs you</i> draw, and an opinion's reviewer is the landing gate's; none of them is read here, so none is said unread.
+    /// The sources it reads: what the line asked of others, its reviewers among them. A question and a go-ahead are asked of the person,
+    /// whose waits the head and <i>What needs you</i> draw; neither is read here, so neither is said unread.
     /// </summary>
-    public static readonly IReadOnlyList<string> Sources = ["helper", "piece", "hand-over", "quest"];
+    public static readonly IReadOnlyList<string> Sources = ["helper", "piece", "hand-over", "quest", "opinion"];
 
-    public static AtWorkExchanging Reading(string home, IReadOnlyDictionary<string, PriorSession> records, IReadOnlyList<QuestView>? quests) =>
-        attended => Of(Look(home, records, quests), attended);
+    /// <param name="reviewers">The reviewers' records as opinions on the lines they serve (<see cref="Reviewer"/>); null where none were read.</param>
+    public static AtWorkExchanging Reading(
+        string home, IReadOnlyDictionary<string, PriorSession> records, IReadOnlyList<QuestView>? quests, IReadOnlyList<ExchangeOpinion>? reviewers) =>
+        attended => Of(Look(home, records, quests, reviewers), attended);
+
+    /// <summary>
+    /// A reviewer's record as an opinion asked on the line it serves (COMMS1i, D203's <c>serves</c>): reading while its session runs, failed
+    /// where it failed, else ended. Null for a record that reads no opinion, or one that names no line it serves (an opinion from before the
+    /// mark), which is on no line.
+    /// </summary>
+    public static ExchangeOpinion? Reviewer(string session, string? opinion, string? serves, string? adapter, string? state) =>
+        opinion is { Length: > 0 } && serves is { Length: > 0 }
+            ? new ExchangeOpinion(opinion, serves, session, adapter ?? "reviewer", adapter, ReviewerState(state), HandedTo: null)
+            : null;
+
+    /// <summary>The reviewers among <paramref name="records"/>, as <see cref="Reviewer"/> reads each.</summary>
+    public static IReadOnlyList<ExchangeOpinion> Reviewers(IEnumerable<SessionRecord> records) =>
+        [.. records.Select(record => Reviewer(record.Id, record.Opinion, record.Serves, record.Adapter, record.State)).OfType<ExchangeOpinion>()];
+
+    private static string ReviewerState(string? state) => state?.ToLowerInvariant() switch
+    {
+        "queued" or "starting" or "working" => "reading",
+        "failed" => "failed",
+        _ => "ended",
+    };
 
     /// <summary>The records a line is walked in, as the read takes them, from the records a listing holds.</summary>
     public static IReadOnlyDictionary<string, PriorSession> Priors(IEnumerable<SessionRecord> records) =>
@@ -26,7 +49,8 @@ public static class AtWorkExchangeReading
             },
             StringComparer.Ordinal);
 
-    public static ExchangeLook Look(string home, IReadOnlyDictionary<string, PriorSession> records, IReadOnlyList<QuestView>? quests)
+    public static ExchangeLook Look(
+        string home, IReadOnlyDictionary<string, PriorSession> records, IReadOnlyList<QuestView>? quests, IReadOnlyList<ExchangeOpinion>? reviewers)
     {
         var helpers = new HelperFiles(home);
         var pieces = new PartnerFiles(home);
@@ -41,6 +65,7 @@ public static class AtWorkExchangeReading
             HandOvers = Try(handOvers.Asks),
             HandOverState = handOvers.ReadState,
             Quests = quests,
+            Opinions = reviewers,
         };
     }
 

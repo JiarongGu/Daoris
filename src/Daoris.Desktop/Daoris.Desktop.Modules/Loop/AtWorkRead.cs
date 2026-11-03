@@ -136,19 +136,29 @@ public static class AtWorkRead
         if (home is null) return null;
         var (views, _) = Stores([], quests, sessions);
         var priors = new Dictionary<string, PriorSession>(StringComparer.Ordinal);
+        var reviewers = new List<ExchangeOpinion>();
         foreach (var partition in sessions?.Partitions ?? [])
         {
             if (Node(partition.Data) is not JsonObject keyed) continue;
             foreach (var (id, record) in keyed)
             {
-                priors.TryAdd(id, new PriorSession(id, Text(record, "tree"), Text(record, "state") ?? "", null, Text(record, "repository"))
+                if (!priors.TryAdd(id, new PriorSession(id, Text(record, "tree"), Text(record, "state") ?? "", null, Text(record, "repository"))
+                    {
+                        From = Text(record, "from"), FromWhy = Text(record, "fromWhy"), Quest = Text(record, "quest"), TookQuest = Text(record, "tookQuest"),
+                    }))
                 {
-                    From = Text(record, "from"), FromWhy = Text(record, "fromWhy"), Quest = Text(record, "quest"), TookQuest = Text(record, "tookQuest"),
-                });
+                    continue;
+                }
+
+                // COMMS1i: a reviewer's record names the line it serves, so the line's co-workers list it.
+                if (AtWorkExchangeReading.Reviewer(id, Text(record, "opinion"), Text(record, "serves"), Text(record, "adapter"), Text(record, "state")) is { } reviewer)
+                {
+                    reviewers.Add(reviewer);
+                }
             }
         }
 
-        return AtWorkExchangeReading.Reading(home, priors, views);
+        return AtWorkExchangeReading.Reading(home, priors, views, reviewers);
     }
 
     private static string ExchangedKey(AtWorkExchanges exchanges) => JsonSerializer.Serialize(exchanges, Written);

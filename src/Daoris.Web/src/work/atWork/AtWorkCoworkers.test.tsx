@@ -3,7 +3,7 @@ import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../../locales/i18n';
 import { AtWorkView, WaitingOnLine } from './AtWorkView';
-import { COWORKERS, LEAD_WAITING_ON_HELPER, LEAD_WAITING_ON_LANE } from './atWork.fixtures';
+import { COWORKERS, LEAD_WAITING_ON_HELPER, LEAD_WAITING_ON_LANE, REVIEWERS } from './atWork.fixtures';
 import type { AtWorkA } from './types';
 
 /**
@@ -51,6 +51,25 @@ describe('COMMS1i co-workers', () => {
     expect(screen.getByText('协作者')).toBeTruthy();
     expect(container.querySelector('[data-coworker="helper:h8"]')?.textContent).toContain('Codex，作为助手');
     expect(container.querySelector('[data-coworker="helper:h8"]')?.textContent).toContain('已回答 · 已收下');
+  });
+
+  it('COMMS1i lists the line’s reviewers among its co-workers, the one reading what the line waits on, in English and Chinese', async () => {
+    const view = render(<AtWorkView held={REVIEWERS} nameOf={nameOf} />);
+    const row = (id: string) => view.container.querySelector(`[data-coworker="${id}"]`)?.textContent ?? '';
+    expect(row('opinion:o1')).toContain('Codex, as reviewer');
+    expect(row('opinion:o1')).toContain('asked');
+    expect(row('opinion:o0')).toContain('claude-code, as reviewer');
+    expect(row('opinion:o0')).toContain('reading ended');
+    expect(row('opinion:o2')).toContain('a reviewer');
+    expect(row('opinion:o2')).toContain('declined');
+    expect(view.container.querySelector('[data-wait-line]')?.textContent).toContain('Codex, as reviewer');
+    view.unmount();
+
+    await i18n.changeLanguage('zh');
+    const zh = render(<AtWorkView held={REVIEWERS} nameOf={nameOf} />);
+    expect(zh.container.querySelector('[data-coworker="opinion:o1"]')?.textContent).toContain('Codex，作为阅读者');
+    expect(zh.container.querySelector('[data-coworker="opinion:o0"]')?.textContent).toContain('阅读已结束');
+    expect(zh.container.querySelector('[data-coworker="opinion:o2"]')?.textContent).toContain('一位阅读者');
   });
 
   it('COMMS1i draws no co-workers for a line that asked none, and a quest is no co-worker', () => {
