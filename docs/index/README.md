@@ -309,7 +309,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/test/dogfood.test.ts` | 49 | 847 |
 | `src/Daoris.Cli/test/usage-report.test.ts` | 87 | 1455 |
 | `src/Daoris.Cli/tool-test/desktop-publish.test.ts` | 82 | 1391 |
-| `src/Daoris.Cli/tool-test/merge-branch.test.ts` | 539 | 7907 |
+| `src/Daoris.Cli/tool-test/merge-branch.test.ts` | 550 | 8074 |
 | `src/Daoris.Cli/tool-test/merge-queue.test.ts` | 235 | 3458 |
 | `src/Daoris.Cli/tool-test/setup-kit.test.ts` | 56 | 1039 |
 
@@ -322,7 +322,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/desktop.mjs` | 54 | 1098 |
 | `tools/family-rehearsal.mjs` | 371 | 6431 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
-| `tools/merge-branch.mjs` | 505 | 8489 |
+| `tools/merge-branch.mjs` | 511 | 8613 |
 | `tools/merge-queue.mjs` | 66 | 1039 |
 | `tools/orient-index.mjs` | 70 | 1505 |
 | `tools/process-reach.mjs` | 43 | 907 |
