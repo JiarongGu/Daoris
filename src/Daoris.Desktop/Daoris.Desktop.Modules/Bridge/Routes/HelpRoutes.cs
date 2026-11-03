@@ -185,7 +185,7 @@ public sealed class HelpRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// The machine as Ask Daoris's room says it (HELP1a), from the facts the judges keep (PARALLEL1a, <see cref="HelpFacts"/>) and the
+    /// The machine as Ask Daoris's room says it, from the facts the judges keep (<see cref="HelpFacts"/>) and the
     /// driver's own files: its file, the registry and each repository's line, the roster, the asks, the plugins and offers, the
     /// landings, what the loop parked and held, and the browser's files. What every open writes the room from, and since ASKHIST1 a
     /// conversation going on too. Reads no git and asks the service nothing: what the facts have not judged yet is said so.
@@ -193,32 +193,32 @@ public sealed class HelpRoutes(DriverContext context)
     private HelpMachine HelpMachineOf(DriverConfig config, HelpFactsRead read)
     {
         var whole = read.Whole;
-        // The asks by id too (HELP6), so a delete of one made by mistake can name it; counted by the rule a workspace's room counts
+        // The asks by id too, so a delete of one made by mistake can name it; counted by the rule a workspace's room counts
         // its own by (ASKSCOPE1b).
         var asks = HelpRoom.AsksWaiting(whole.Standing);
-        // This machine's sessions as the Sessions list places them (SESSUX1h3), with what holds them as the loop's last look says.
+        // This machine's sessions as the Sessions list places them, with what holds them as the loop's last look says.
         var sessions = read.Sessions is SessionLook look ? look with { Waits = _loop.Look.Waits } : null;
-        // And the branches landings made here (WSR5b), so a hand-off names one the record holds.
+        // And the branches landings made here, so a hand-off names one the record holds.
         var plugins = PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names);
         return HelpRoom.Describe(
             config, whole.Snapshot, read.Lines, whole.Roster, adapter => _loop.Harnesses.Toolchain(adapter)?.Product, asks, whole.Standing,
             plugins, new LandedBranches(_loop.Home).All(),
             // The install's own plugins (PLUG9 d), which the helper may propose installing by id.
             PluginOffers.Load(OffersFolder, _loop.Home, AdapterSet.Built().Names),
-            // What the last tick parked by its strikes (HELP10), so a retry names a quest the drawer offers Retry on.
+            // What the last tick parked by its strikes, so a retry names a quest the drawer offers Retry on.
             _loop.Parked.Latest,
-            // Daoris's browser as its files hold it (HELP10), so a favorite removed is one kept.
+            // Daoris's browser as its files hold it, so a favorite removed is one kept.
             BrowserModule.HelpFacts(BrowserModule.Home),
-            // And what its last look held by the person's stop (SESSUX1b), so a retry names a stop Try again releases.
+            // And what its last look held by the person's stop, so a retry names a stop Try again releases.
             HeldQuest.From(_loop.Look.Latest),
             sessions, read.History,
-            // The named workflows saved here, so each repository's Workflow column names the version it follows (WORKFLOW1h-c).
+            // The named workflows saved here, so each repository's Workflow column names the version it follows.
             WorkflowStore.List(_loop.Home),
-            // What the person approved of the servers plugins offer it (HELPPLUG1a's tightening, D170's note).
+            // What the person approved of the servers plugins offer it.
             HelpGrants.Read(_loop.Home, plugins), read.Work?.Units, read.Work?.Unread, read.Work?.Recovery,
             read.NotReadYet,
-            // ONEWAY1ad-ii: This machine's list of old records, as its page reads it.
-            kept: TransitionalRegister.List(_loop.Home, _loop.Conversion.Parts()));
+            // This machine's list of old records as its page reads it, and what each line waits on.
+            kept: TransitionalRegister.List(_loop.Home, _loop.Conversion.Parts()), waits: read.Waits);
     }
 
     /// <summary>
@@ -369,6 +369,7 @@ public sealed class HelpRoutes(DriverContext context)
         {
             Trees = help.TreesAsync,
             Sweep = help.SweepPartAsync,
+            Exchanges = ct => HelpWaitsFact.JudgeAsync(help._loop.Service, help._loop.Home, ct),
         });
         var catchUp = new HelpRoomCatchUp(help._loop.Home, () =>
         {

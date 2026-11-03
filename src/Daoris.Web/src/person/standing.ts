@@ -48,7 +48,8 @@ export type StandingConfirmationNow = {
 /**
  * One request at the steward's desk, as `STATE`'s `standingConfirmation.stewardDesk` says it (STEWARDROLE1c; the steward design §6.2):
  * the act any caller asked the steward to make, on what, and why, all three the caller's own words, which grant nothing; when it was
- * filed; whether it still waits, was answered by the steward's act, or was declined by the steward with a reason. Never the caller.
+ * filed; whether it still waits, was answered by the steward's act, was declined by the steward with a reason, or was left open when
+ * Daoris stopped (COMMS1l: the desk is kept across a restart, and nothing answers a request from before it). Never the caller.
  */
 export type DeskRequestNow = {
   id: string;
@@ -56,7 +57,7 @@ export type DeskRequestNow = {
   target: string;
   why: string;
   filed: string;
-  state: 'open' | 'answered' | 'declined';
+  state: 'open' | 'answered' | 'declined' | 'interrupted';
   closed: string | null;
   answeredBy: string | null;
   reason: string | null;

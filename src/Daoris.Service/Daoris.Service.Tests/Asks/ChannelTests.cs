@@ -125,7 +125,8 @@ public sealed class ChannelTests : IAsyncLifetime
         Assert.Equal(ChannelRefusal.None, (await _channel.PostAsSessionAsync(session.Id, new string('x', ChannelBounds.MaxText), null, null, false, Now)).Refusal);
         Assert.Equal(ChannelRefusal.NoSession, (await _channel.PostAsSessionAsync(null, "hello", null, null, false, Now)).Refusal);
         Assert.Equal(ChannelRefusal.NoSession, (await _channel.PostAsSessionAsync("nosuch1", "hello", null, null, false, Now)).Refusal);
-        Assert.Equal(ChannelRefusal.NoAsk, (await _channel.PostAsSessionAsync(chat.Id, "hello", null, null, false, Now)).Refusal);
+        // A chat on no ask posts on its own line's channel; only a helper and a reviewer have none.
+        Assert.Equal(ChannelRefusal.None, (await _channel.PostAsSessionAsync(chat.Id, "hello", null, null, false, Now)).Refusal);
         Assert.Equal(ChannelRefusal.Helper, (await _channel.PostAsSessionAsync(helper.Id, "hello", null, null, false, Now)).Refusal);
         Assert.Equal(ChannelRefusal.BadTo, (await _channel.PostAsSessionAsync(session.Id, "hello", "nowhere", null, false, Now)).Refusal);
         Assert.Equal(ChannelRefusal.BadRe, (await _channel.PostAsSessionAsync(session.Id, "hello", null, "nosuchid", false, Now)).Refusal);
@@ -133,6 +134,7 @@ public sealed class ChannelTests : IAsyncLifetime
         Assert.Equal(ChannelRefusal.Empty, (await _channel.PostAsPersonAsync(ask.Id, " ", null, null, Now)).Refusal);
         Assert.Equal(ChannelRefusal.BadTo, (await _channel.PostAsPersonAsync(ask.Id, "hello", "checker", null, Now)).Refusal);
     }
+
 
     /// <summary>A message may be addressed to one repository the ask reaches, by the name the registry gives it, however it is cased.</summary>
     [Fact]

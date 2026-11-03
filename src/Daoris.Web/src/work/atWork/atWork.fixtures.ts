@@ -138,6 +138,18 @@ export const COWORKERS = routed([routedPart('s2', 2, { state: 'working' }), rout
   unread: ['piece'],
 }, 's2');
 
+/**
+ * COMMS1i (wave 2's rest): a finished line's reviewers, read from their records that serve it: one reading, which the line waits on,
+ * one whose reading ended and one that failed.
+ */
+export const REVIEWERS = routed([routedPart('s1', 1, { state: 'completed' })], {
+  exchanges: [
+    { id: 'opinion:o1', part: 's1', expects: 'opinion', to: 'codex-acp', delivery: 'kept', outcome: 'asked', holds: true, session: 'r1', agent: 'codex-acp' },
+    { id: 'opinion:o0', part: 's1', expects: 'opinion', to: 'claude-code', delivery: 'taken', outcome: 'ended', holds: false, session: 'r0', agent: 'claude-code' },
+    { id: 'opinion:o2', part: 's1', expects: 'opinion', to: 'reviewer', delivery: 'not-reached', outcome: 'declined', holds: false, session: 'r2' },
+  ],
+}, 's1');
+
 /** A session that published three quests and waits on none: two lane parts alongside it. */
 export const PUBLISHED_AND_WAITS_ON_NONE = routed([
   routedPart('s1', 1, { state: 'completed' }),

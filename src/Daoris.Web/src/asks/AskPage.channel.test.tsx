@@ -44,7 +44,7 @@ describe('an ask’s page and its channel', () => {
     const section = screen.getByRole('region', { name: 'Channel' });
     expect(within(section).getByText('Which column?')).toBeInTheDocument();
     expect(within(section).getByText('1 unread')).toBeInTheDocument();
-    expect(section).toHaveTextContent('daoris-driver ask channel c98a7e');
+    expect(section).toHaveTextContent('daoris ask channel c98a7e');
 
     // The ask's own lines of work (app, db) are offered as recipients beside those the channel names.
     const user = userEvent.setup();

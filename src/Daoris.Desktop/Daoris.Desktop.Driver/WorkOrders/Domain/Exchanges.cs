@@ -40,7 +40,8 @@ public sealed record ExchangeSaid(string Session, string Question, DateTimeOffse
 
 /// <summary>
 /// An opinion asked on a working line, as plain values (Review is above this subdomain, so Loop maps its view): <c>reading</c>, <c>given</c>
-/// or <c>failed</c>, and the session its findings were handed to.
+/// or <c>failed</c>, and the session its findings were handed to; or, read from the reviewer's record alone (COMMS1i), <c>ended</c> once
+/// its session stopped, the opinion's own words being the landing gate's.
 /// </summary>
 public sealed record ExchangeOpinion(string Id, string Working, string Session, string Label, string? Adapter, string State, string? HandedTo);
 
@@ -309,6 +310,7 @@ public static class Exchanges
                     "given" when opinion.HandedTo is not null => (Taken, "taken-in"),
                     "given" => (Kept, "produced"),
                     "failed" => (NotReached, "declined"),
+                    "ended" => (Taken, "ended"),
                     _ => (Kept, "asked"),
                 };
                 return new Exchange(

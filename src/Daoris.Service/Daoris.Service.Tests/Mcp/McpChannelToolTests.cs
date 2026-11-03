@@ -160,15 +160,38 @@ public sealed class McpChannelToolTests : IAsyncLifetime
         var (ask, session) = await RunningAsync();
         var chat = (await _ledger.OpenChatAsync("reports", "stub", Now, tree: Path.Combine(_root, "chat"))).Session!;
 
-        Assert.Contains("publish a quest", await As(_channel, chat.Id).PostAsync("hello"));
         Assert.Contains("no words", await As(_channel, session.Id).PostAsync("  "));
         Assert.Contains("4000", await As(_channel, session.Id).PostAsync(new string('x', 4001)));
-        Assert.Contains("not one of this ask's repositories", await As(_channel, session.Id).PostAsync("hello", to: "nowhere"));
+        Assert.Contains("not one of this channel's repositories", await As(_channel, session.Id).PostAsync("hello", to: "nowhere"));
+        // COMMS1k: a session of another line named in `to` is no sibling part.
+        Assert.Contains("no other part of your own line of work", await As(_channel, session.Id).PostAsync("hello", to: chat.Id));
         Assert.Contains("no message", await As(_channel, session.Id).PostAsync("hello", re: "nosuchid"));
         Assert.Contains("no session", await As(_channel, null).PostAsync("hello"));
         Assert.Contains("no session", await As(_channel, null).ReadAsync());
-        Assert.Contains("publish a quest", await As(_channel, chat.Id).ReadAsync());
         Assert.Contains("moment", await As(_channel, session.Id).ReadAsync(since: "yesterday-ish"));
         Assert.Empty((await _channel.ReadAsync(ask.Id, ChannelDesk.PersonEntry, null, false))!.Messages);
+    }
+
+    /// <summary>
+    /// COMMS1k: a chat on no ask posts on its own line's channel, which the session on the quest it published reads with its poster named,
+    /// and the chat's own read says its line's channel holds nothing new for it; the line every answer ends with names that channel.
+    /// </summary>
+    [Fact]
+    public async Task COMMS1k_a_chat_posts_on_its_own_line_s_channel_and_the_quest_it_published_reads_it()
+    {
+        var chat = (await _ledger.OpenChatAsync("reports", "stub", Now, tree: Path.Combine(_root, "chat"))).Session!;
+        var published = await _exchange.PublishAsync(new QuestAsk("reports", "checker", "Check the export", "Please.") { PublishedBy = chat.Id }, Now);
+        var checker = (await _ledger.OpenAsync(published.Quest!.Id, "stub", Now, tree: Path.Combine(_root, "check"))).Session!;
+
+        var posted = await As(_channel, chat.Id).PostAsync("the export's schema moved to v4");
+        var line = await new WaitingLine(_channel, new IntakeScope(null, checker.Id)).NextAsync(default);
+        var read = await As(_channel, checker.Id).ReadAsync();
+
+        Assert.StartsWith("Posted to your line's own channel", posted);
+        Assert.Contains("1 message waits for you on your line's own channel", line);
+        Assert.StartsWith("Your line's own channel, oldest first:", read);
+        Assert.Contains("the export's schema moved to v4", read);
+        Assert.Contains("another session's claim", read);
+        Assert.StartsWith("Nothing new on your line's own channel", await As(_channel, chat.Id).ReadAsync());
     }
 }
