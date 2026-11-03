@@ -64,6 +64,8 @@ public sealed class SessionOpenDoors
     private int _opens;
     // FOUNDATION1d-ii (§19.12): the say door's `continued`, naming the line's head; kept beside `opens` by the same run.
     private int _head;
+    // COMMS1b: the one door for solicited answers, kept beside the others by the same run.
+    private int _answers;
     private readonly object _marks = new();
     private readonly HashSet<string> _lost = new(StringComparer.Ordinal);
     private readonly SemaphoreSlim _step = new(1, 1);
@@ -82,7 +84,7 @@ public sealed class SessionOpenDoors
     {
         var reply = await _service.SendAsync(ServiceVerb.Get, "/api/protocol", null, ct).ConfigureAwait(false);
         string? run = null;
-        int opens = 0, head = 0;
+        int opens = 0, head = 0, answers = 0;
         if (reply.Ok)
         {
             using var json = JsonDocument.Parse(reply.Payload);
@@ -91,12 +93,31 @@ public sealed class SessionOpenDoors
             {
                 opens = Mark(marks, "opens");
                 head = Mark(marks, "head");
+                answers = Mark(marks, "answers");
             }
         }
 
         lock (_marks)
         {
-            (_run, _opens, _head, _known) = (run, opens, head, true);
+            (_run, _opens, _head, _answers, _known) = (run, opens, head, answers, true);
+        }
+    }
+
+    /// <summary>The marks as the host's run answers them, read again once an answer named another run or none; none where the protocol does not read.</summary>
+    private async Task<bool> KnownAsync(CancellationToken ct)
+    {
+        bool known;
+        lock (_marks) known = _known;
+        if (known) return true;
+        try
+        {
+            await ReadProtocolAsync(ct).ConfigureAwait(false);
+            return true;
+        }
+        catch (Exception error) when (error is HttpRequestException or IOException or JsonException or DriverException
+                                          || (error is OperationCanceledException && !ct.IsCancellationRequested))
+        {
+            return false;
         }
     }
 
@@ -112,22 +133,20 @@ public sealed class SessionOpenDoors
     /// </summary>
     public async Task<int> HeadAsync(CancellationToken ct = default)
     {
-        bool known;
-        lock (_marks) known = _known;
-        if (!known)
-        {
-            try
-            {
-                await ReadProtocolAsync(ct).ConfigureAwait(false);
-            }
-            catch (Exception error) when (error is HttpRequestException or IOException or JsonException or DriverException
-                                              || (error is OperationCanceledException && !ct.IsCancellationRequested))
-            {
-                return 0;
-            }
-        }
-
+        if (!await KnownAsync(ct).ConfigureAwait(false)) return 0;
         lock (_marks) return _head;
+    }
+
+    /// <summary>
+    /// Whether the host's <c>answers</c> mark is 1 or more (COMMS1b, the comms design §4.2, §13 point 12): its helper, partner and opinion hand
+    /// doors are the one door for solicited answers, which walks the line to the store's bound, takes an answered park, answers a word already
+    /// waiting with its holder and keys the opinion, so the looks hand through it alone. False for a host without it, or one that does not answer
+    /// the protocol, whose looks keep their own hand; never throws for it.
+    /// </summary>
+    public async Task<bool> AnswersAsync(CancellationToken ct = default)
+    {
+        if (!await KnownAsync(ct).ConfigureAwait(false)) return false;
+        lock (_marks) return _answers >= 1;
     }
 
     /// <summary>

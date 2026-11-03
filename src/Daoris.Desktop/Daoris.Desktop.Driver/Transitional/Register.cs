@@ -74,7 +74,46 @@ public static class TransitionalRegister
             Row = "ONEWAY1af",
             Ended = home => Read(home, HomeEntry.Harnesses) is { } root && !PooledSections.Any(root.ContainsKey),
         },
+        new()
+        {
+            Id = "solicited-older-host",
+            Kept = "Loop/DriverHelpers.cs:758, Loop/DriverPartners.cs:484, Loop/OpinionDeliverer.cs:182",
+            Reaches = "A host with no `answers` mark, before COMMS1b: the helper's sixteen-link walk and read-back, and the partner's and the opinion's pre-check of the record named.",
+            Ends = "The floor passes COMMS1b's build: the host and the driver ship together, so no host without the mark is reached.",
+            Row = "ONEWAY1af",
+            Ended = Floor,
+        },
+        new()
+        {
+            Id = "solicited-old-files",
+            Kept = "Loop/DriverHelpers.cs:806, Loop/DriverPartners.cs:464",
+            Reaches = "A helper state or a partner receipt whose attempt an older build wrote, with no `keyed` mark: read back along the line, else uncertain.",
+            Ends = "No open helper or partner ask holds an attempt without `keyed`, and the floor passes COMMS1b's build.",
+            Row = "ONEWAY1af",
+            Ended = Floor,
+        },
+        new()
+        {
+            Id = "solicited-old-guards",
+            Kept = "Loop/DriverHelpers.cs:835, Loop/DriverPartners.cs:496",
+            Reaches = "A driver rolled back before COMMS1b, or a host that drops its mark mid-hand: the helper state's and the partner receipt's attempt, still written.",
+            Ends = "The floor passes COMMS1b's build.",
+            Row = "ONEWAY1af",
+            Ended = Floor,
+        },
+        new()
+        {
+            Id = "opinion-handed-guard",
+            Kept = "Loop/OpinionDeliverer.cs:95",
+            Reaches = "An opinion handed before the one door, whose findings word has no key: its `handed` is the only guard that hands it once.",
+            Ends = "No opinion waits with an unkeyed findings word (census), and the floor passes COMMS1b's build.",
+            Row = "ONEWAY1af",
+            Ended = Floor,
+        },
     ];
+
+    /// <summary>The floor of the builds that reach a home is no file of the home: an entry that ends with it never reads as ended, and its row deletes it.</summary>
+    private static bool Floor(string _) => false;
 
     /// <summary>The home's entry as a JSON object; an absent file is an empty one, and one that does not read is null.</summary>
     private static JsonObject? Read(string home, HomeEntry entry)

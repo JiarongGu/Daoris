@@ -21,8 +21,10 @@ public sealed partial class SettledReadersCensusTests
     private static readonly Dictionary<string, string> First = new()
     {
         ["ServiceClient.cs"] = "reads `settled` before `said` and carries it as SayAnswer.Settled, kept, with no word",
-        ["HelperDoors.cs"] = "reads `settled` before `said` and answers HelperHanded.Settled, with no word",
-        ["PartnerDoors.cs"] = "reads `settled` before `said` and answers it as the fifth member of a hand, with no word",
+        ["HelperDoors.cs"] = "reads `settled` before `said` through SolicitedHand.Read and answers SolicitedFate.Settled, with no word",
+        ["PartnerDoors.cs"] = "reads `settled` before `said` through SolicitedHand.Read and answers SolicitedFate.Settled, with no word",
+        ["OpinionDoors.cs"] = "the findings' hand to the working session's line asks settled and reads it through SolicitedHand.Read as SolicitedFate.Settled, with no word",
+        ["OpinionDeliverer.cs"] = "the findings' hand reads a settled answer as handed, with nothing said for it; the chat run's send-back asks none",
         ["ChatTurns.cs"] = "answers a retry of a word it holds already: holds, queues, steers, attempts and takes nothing",
         ["DrivenInbox.cs"] = "answers a retry of a word it holds already: holds, sends, steers, attempts and takes nothing",
         ["ChatRunner.cs"] = "maps the turns' settled answer to ChatSaid.Settled, with no reach and no word",
@@ -60,7 +62,7 @@ public sealed partial class SettledReadersCensusTests
     [GeneratedRegex(@"(?<receiver>[\w.]+)\s*\.SayAsync\(")]
     private static partial Regex Say();
 
-    [GeneratedRegex(@"\.(Helpers|Partners)\s*\.HandAsync\(|\bdoor\.KeepAsync\(|\.KeepOrHoldAsync\(")]
+    [GeneratedRegex(@"\.(Helpers|Partners)\s*\.HandAsync\(|\.Opinions\s*\.Hand(Word)?Async\(|\bdoor\.KeepAsync\(|\.KeepOrHoldAsync\(")]
     private static partial Regex Other();
 
     /// <summary>The names the code gives a service client the say door is called on.</summary>
@@ -115,7 +117,7 @@ public sealed partial class SettledReadersCensusTests
         var named = new SortedSet<string>([.. First.Keys, .. AsKept.Keys, .. Today.Keys], StringComparer.Ordinal);
         var readers = new SortedSet<string>(found.Where(file => file is not "ServiceClient.cs"), StringComparer.Ordinal);
         Assert.Empty(readers.Except(named));
-        Assert.Empty(named.Except(readers.Concat(["ServiceClient.cs", "HelperDoors.cs", "PartnerDoors.cs", "ChatRunner.cs", "SaidDoor.cs", "SessionSay.cs"])));
+        Assert.Empty(named.Except(readers.Concat(["ServiceClient.cs", "HelperDoors.cs", "PartnerDoors.cs", "OpinionDoors.cs", "ChatRunner.cs", "SaidDoor.cs", "SessionSay.cs"])));
     }
 
     [Fact]
