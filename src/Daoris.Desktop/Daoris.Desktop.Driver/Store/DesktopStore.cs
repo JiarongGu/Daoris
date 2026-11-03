@@ -622,6 +622,33 @@ public sealed class DesktopStore : IDisposable
             ALTER TABLE moves ADD COLUMN model TEXT;
             ALTER TABLE moves ADD COLUMN effort TEXT;
             """)),
+
+        // CONTEXTDRIVE1c (the context counters design §4.4): a place's supervisor rules, one row per rule, and each place's set as written with
+        // its revision, Roles'. No raise: an older build reads no table it does not know and drives by the numbers compiled into it.
+        new(19, PolicyWriter, write => write.Execute(
+            """
+            CREATE TABLE supervisor_rules (
+              place    TEXT NOT NULL,
+              ord      INTEGER NOT NULL,
+              id       TEXT NOT NULL,
+              roles    TEXT,
+              count    TEXT NOT NULL,
+              window   TEXT NOT NULL,
+              at       INTEGER NOT NULL,
+              do       TEXT NOT NULL,
+              up_to    INTEGER,
+              revision INTEGER NOT NULL,
+              PRIMARY KEY (place, ord)
+            );
+            CREATE TABLE supervisor_rule_revisions (
+              place    TEXT NOT NULL,
+              revision INTEGER NOT NULL,
+              rules    TEXT NOT NULL,
+              at       TEXT NOT NULL,
+              door     TEXT NOT NULL,
+              PRIMARY KEY (place, revision)
+            );
+            """)),
     ];
 
     /// <summary>
