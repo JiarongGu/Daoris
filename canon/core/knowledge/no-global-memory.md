@@ -2,6 +2,7 @@
 name: no-global-memory
 applies_when: about to save a project fact to the assistant's global or cross-project memory
 enforces: project facts live in the repository, versioned and reviewable; global memory is the person's preferences only
+rule: true
 ---
 
 # No global memory for project facts — they belong in the repository

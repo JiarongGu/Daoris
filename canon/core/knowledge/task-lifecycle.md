@@ -2,6 +2,7 @@
 name: task-lifecycle
 applies_when: adding or finishing a task, or editing the backlog
 enforces: the backlog holds open work only, a row of a line or two; a finished task leaves it and the archive gains one line
+rule: true
 ---
 
 # Task lifecycle — the backlog is open work; finished work moves to the archive

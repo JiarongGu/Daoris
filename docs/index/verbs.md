@@ -10,7 +10,7 @@ Each verb is a module of `src/Daoris.Cli/src/cli/`, its row in `COMMANDS` (`src/
 |---|---|---|---|---|
 | `analyze` | doctrine | `cli/analyze.ts:5` | `doctrine/analyze.ts:267` commandAnalyze | [packs...] what adopting would do here: collisions, duplicates… |
 | `init` | doctrine | `cli/init.ts:5` | `doctrine/commands.ts:56` commandInit | detect what this repo has, write daoris.json |
-| `sync` | doctrine | `cli/sync.ts:5` | `doctrine/materialize.ts:864` commandSync | materialize the manifest's packs; write daoris.lock |
+| `sync` | doctrine | `cli/sync.ts:5` | `doctrine/materialize.ts:862` commandSync | materialize the manifest's packs; write daoris.lock |
 | `check` | doctrine | `cli/check.ts:5` | `doctrine/drift.ts:331` commandCheck | drift, staleness, index freshness (offline); the core budget is… |
 | `upstream` | doctrine | `cli/upstream.ts:5` | `doctrine/upstream.ts:238` commandUpstream | <file> propose a locally-edited canonical file to the canon: the |
 | `index` | doctrine | `cli/index.ts:6` | `doctrine/indexgen.ts:149` commandIndex | say where the roster is: the rules in AGENTS.md, the |

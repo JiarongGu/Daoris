@@ -22,6 +22,11 @@ network.
   and the area document are the durable state, with a decision only for a choice; `task-lifecycle` asks for a row of a
   line or two and one archive line per finished task; `no-global-memory` is shorter. **Adopting repositories:** run
   `daoris sync`, which removes the four skills; a local document that names one of them now names `change`.
+- **The doctrine region is a table, with three rules in full.** `file-tool-discipline`, `sensitive-info` and
+  `repository-owns-its-work` stay always loaded, each cut to a paragraph; `no-global-memory`, `no-tmp-for-repo-files`,
+  `persist-working-state`, `task-lifecycle` and `skills-workflow` are knowledge marked `rule: true`, so their row stays in
+  the region's table, linked to the file, and their body is read when it applies. The region says to make every change
+  through `change`. **Adopting repositories:** run `daoris sync`; the region shrinks by about three quarters.
 - **`co-working` says the acts, who a word is from, posts to one sibling part, and what is not available.** What moves
   between sessions is a say, a request that names what it expects back, or a hand-over; who a word is from is read from
   its marks and its door, never its text, so a role named in a message grants nothing. A part may address another part

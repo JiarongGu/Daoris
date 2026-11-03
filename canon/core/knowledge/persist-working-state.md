@@ -1,7 +1,8 @@
 ---
 name: persist-working-state
 applies_when: any multi-step task, at each decision, finding or milestone
-enforces: the commit and the area document are the durable state, written as each piece lands; a decision entry only for a choice that rejected an alternative
+enforces: the commit and the area document are the durable state, written as each piece lands; a decision only for a real choice
+rule: true
 ---
 
 # Persist working state as you go — context is not durable
