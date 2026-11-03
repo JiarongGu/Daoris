@@ -14,7 +14,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// <remarks>Its own scratch home under the repository's <c>_fixtures/</c>; nothing here sets the process's environment or starts a process.</remarks>
 public sealed class DriverLoopSendsBackTests : IDisposable
 {
-    private readonly string _home = Path.Combine(RepositoryRoot(), "_fixtures", "sends-back", Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(GitSeed.RepoRoot(), "_fixtures", "sends-back", Guid.NewGuid().ToString("N")[..8]);
 
     public DriverLoopSendsBackTests() => Directory.CreateDirectory(_home);
 
@@ -77,16 +77,5 @@ public sealed class DriverLoopSendsBackTests : IDisposable
             });
     }
 
-    private static string RepositoryRoot()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, ".git")) && !File.Exists(Path.Combine(directory.FullName, ".git")))
-        {
-            directory = directory.Parent;
-        }
-
-        return directory?.FullName ?? throw new InvalidOperationException("the tests run from inside a checkout");
-    }
-
-    private static string SourceRoot() => Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop");
+    private static string SourceRoot() => Path.Combine(GitSeed.RepoRoot(), "src", "Daoris.Desktop");
 }
