@@ -72,7 +72,7 @@ public static class CommandWords
         new("repository", ["connect", "register", "retire", "wire", "import"]),
         new("role", ["set", "remove", "default", "policy", "brief"], Takes: "[<id>]"),
         new("session", ["list", "stop", "finish", "decline", "archive", "unarchive", "delete", "say", "take-back", "reword", "go-on-new", "start-from",
-            "hand-over", "helper", "partner", "handback", "opinion", "supervise"])
+            "hand-over", "helper", "partner", "handback", "opinion", "supervise", "at-work"])
         {
             Nested = new Dictionary<string, IReadOnlyList<string>> { ["opinion"] = ["ask", "show", "stop", "anyway", "myself"] },
         },
