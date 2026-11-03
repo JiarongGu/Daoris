@@ -110,6 +110,10 @@ public sealed class ContextPortsTests : IDisposable
             Calls.Add("channel-bounded");
             return ([messages[^1]], [.. messages.Take(messages.Count - 1)]);
         }
+
+        public Task<IReadOnlyList<BriefWait>> WaitsAsync(
+            ServiceClient service, string home, IReadOnlyDictionary<string, PriorSession> records, string session, CancellationToken ct) =>
+            Task.FromResult<IReadOnlyList<BriefWait>>([]);
     }
 
     [Fact]
