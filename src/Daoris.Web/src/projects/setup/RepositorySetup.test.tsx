@@ -53,6 +53,31 @@ describe("a repository's Setup", () => {
     expect(head('Driving')).toHaveAttribute('aria-expanded', 'false');
   });
 
+  // GITAUTH1f (the git-auth design §7.3): its Git remote section carries its git access, each class with where it came from; a value set
+  // here opens the section, and a change is this repository's.
+  it('carries its git access in its Git remote section, set for this repository', async () => {
+    const onChange = vi.fn();
+    draw({
+      ...SETUP_DEFAULTS,
+      git: {
+        remotes: [], identities: [], acts: { use: vi.fn() },
+        access: {
+          workspace: 'Games',
+          classes: [{ class: 'read', value: 'allow', source: 'workspace' }, { class: 'write', value: 'ask', source: 'repository' }],
+          above: [{ class: 'read', value: 'allow', source: 'workspace' }, { class: 'write', value: 'as-today', source: 'default' }],
+          onChange,
+        },
+      },
+    });
+
+    expect(head('Git remote')).toHaveAttribute('aria-expanded', 'true');
+    const git = section('Git remote');
+    expect(within(git).getByText('Read')).toBeInTheDocument();
+    expect(within(git).getByText('Write')).toBeInTheDocument();
+    await userEvent.click(within(within(git).getByRole('radiogroup', { name: `Write for ${SETUP_DEFAULTS.repository}` })).getByRole('radio', { name: 'deny' }));
+    expect(onChange).toHaveBeenCalledWith({ access: { write: 'deny' } }, expect.anything());
+  });
+
   it('opens and folds a section on a press of its head', async () => {
     draw(SETUP_DEFAULTS);
 

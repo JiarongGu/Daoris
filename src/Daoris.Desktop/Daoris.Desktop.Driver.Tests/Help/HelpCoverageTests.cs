@@ -50,6 +50,10 @@ public sealed partial class HelpCoverageTests
 
     private const string SignIn = "a sign-in is the person's own press, where it already is (D89).";
 
+    private const string GitAccess =
+        "git access decides what a session's git may do on a remote and whether it asks, so loosening it is the person's own press, confirmed "
+        + "in place; no proposal names it, as none names full access (D198, the design §9).";
+
     private const string Key = "a key is the person's own, typed where it already is (D89).";
 
     /// <summary>Settings → Tools' *System* and *Use this version* (TOOLS7): the `tool` kind's `use` door, TOOLS8's.</summary>
@@ -1001,9 +1005,10 @@ public sealed partial class HelpCoverageTests
         ("git", "useToolPick", null, new Exempt("it is the system's file picker, for the key file the person imports.")),
         ("projects", "useSetGitUse", null, new Door("setting", "git-use")),
         // GITAUTH1f (D198, the git-auth design §9): git access is the person's own, as `SET_ACCESS` is, so no proposal sets it.
-        ("git", "useSetGitAccess", null, new Exempt(
-            "git access decides what a session's git may do on a remote and whether it asks, so loosening it is the person's own press, confirmed "
-            + "in place; no proposal names it, as none names full access (D198, the design §9).")),
+        ("git", "useSetGitAccess", null, new Exempt(GitAccess)),
+        // GITAUTH1f (§7.3): the same rows on a repository's and a workspace's Setup and in Settings → Driver's access card.
+        ("projects", "useSetGitAccess", null, new Exempt(GitAccess)),
+        ("driver", "useSetGitAccess", null, new Exempt(GitAccess)),
         ("agents", "useHarnessInput", null, new Exempt("it types into a running sign-in, the person's own words to it; " + SignIn)),
         ("agents", "useHarnessCancel", null, new Exempt("it stops a sign-in the person started, theirs to stop; " + SignIn)),
         // UX6e (D150 §3.1): what the agent may do moved to its page, the rules for every session and the proposals with it.
