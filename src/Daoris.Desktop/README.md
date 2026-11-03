@@ -396,6 +396,14 @@ row of the call layer's table (`CallTable`, read by the work of the record its `
 repository's own `.mcp.json` server inherits): a session in a repository the 18 tools of `CallTable.CoreServed` and its own kind's (a
 build 25, about 39 KB of definitions; a chat 22; an intake 16; a helper 12), Ask Daoris every tool but four (54, about 95 KB, of 102 KB
 for all 58). Nothing new rides the spawn: the kind is the record's, and the table is the one the connector already refused calls by.
+Since CONTEXTONE1e every Claude session's own settings file (`SpawnSettings`, handed by `--settings` on the pipe door and
+`_meta.claudeCode.options.settings` on the protocol door, both Claude Code's command-line tier) carries `SpawnSettings.OwnContext`:
+`autoMemoryEnabled: false`, `syncClaudeAiSkills: false`, `syncClaudeAiPlugins: false` and `disableClaudeAiConnectors: true`. Its skills are
+then the tree's and the per-session plugin copy's (`SpawnSkills`), its connectors the ones it is handed and the tree's, and its memory
+Daoris's (D220); the file is written for every such session, rules or none. Claude Code 2.1.314's own schema says that tier stops the
+account's synced skills and plugins for that invocation alone and moves nothing, so the account's home is never written
+(`HarnessSettings.ProfileHome`). Its bundled skills stay, the same for every account. Codex takes no settings and is unchanged: it reads
+the tree's skills by path.
 
 A conversation's turn (Ask Daoris and a repository's chat, on the protocol door) is tried again the same way since AGENTERRORS1b, inside
 the turn, on the conversation's own process: `ProtocolChat` hands its session the same `TransientRetry` once it is open (`ChatRetry`, the
