@@ -139,7 +139,7 @@ public sealed class DoorAccountTests : IDisposable
         var selection = await roster.SelectAsync("owner-acp", Config(), null, null);
 
         Assert.False(selection.Allowed);
-        Assert.Contains("daoris agent login owner --profile stale", selection.Refusal);
+        Assert.Contains("daoris agent login owner --account stale", selection.Refusal);
     }
 
     /// <summary>The door's roster rows ARE the owner's accounts — the same homes, so the page shows one list.</summary>

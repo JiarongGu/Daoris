@@ -355,7 +355,7 @@ public sealed class ReviewerChoiceTests : IDisposable
 
         Assert.Equal(ReviewerHeld.SignedOut, Assert.Single(choice.Tried).Held);
         Assert.StartsWith("No second opinion: no listed reviewer of another maker has an account signed in. `codex-acp`: ", choice.Sentence);
-        Assert.Contains("daoris agent login codex --profile work", choice.Sentence);
+        Assert.Contains("daoris agent login codex --account work", choice.Sentence);
     }
 
     [Fact]

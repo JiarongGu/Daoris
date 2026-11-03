@@ -11,5 +11,5 @@ namespace Daoris.Driver;
 internal static class PluginLease
 {
     [ModuleInitializer]
-    internal static void Install() => VerbLeases.Answer("plugin", new(PluginCommand.Changes, PluginCommand.Verbs));
+    internal static void Install() => VerbLeases.Answer("plugin", new(PluginCommand.Changes));
 }

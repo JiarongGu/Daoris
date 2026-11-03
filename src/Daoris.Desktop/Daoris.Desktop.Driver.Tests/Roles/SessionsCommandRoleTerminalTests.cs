@@ -137,7 +137,7 @@ public sealed class SessionsCommandRoleTerminalTests : IDisposable
         Assert.StartsWith($"Daoris roles brief, revision {RolesBrief.Revision}.", brief, StringComparison.Ordinal);
         Assert.Contains("The supervisor (主管)", brief, StringComparison.Ordinal);
         Assert.Contains("The steward (管家)", brief, StringComparison.Ordinal);
-        Assert.Contains("daoris-driver roles brief", brief, StringComparison.Ordinal);
+        Assert.Contains("daoris role brief", brief, StringComparison.Ordinal);
         Assert.DoesNotContain(HolderKey.Variable, brief, StringComparison.Ordinal);
         Assert.DoesNotContain("generation", brief, StringComparison.OrdinalIgnoreCase);
         Assert.Equal($"roles held: steward, supervisor · brief {RolesBrief.Revision}", RolesBrief.Said(["steward", "supervisor"]));

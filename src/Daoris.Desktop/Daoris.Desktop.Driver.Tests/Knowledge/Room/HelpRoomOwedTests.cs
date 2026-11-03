@@ -40,8 +40,8 @@ public sealed class HelpRoomOwedTests
         var agents = HelpRoom.Render(new HelpMachine());
         var owed = agents[agents.IndexOf("## Doors Daoris still owes", StringComparison.Ordinal)..];
 
-        Assert.DoesNotContain("`daoris-driver setup", owed);
-        Assert.Contains("`daoris-driver register [--repository <name>]`", owed);
+        Assert.DoesNotContain("`daoris place setup", owed);
+        Assert.Contains("`daoris repository register [--repository <name>]`", owed);
         Assert.Contains(HelpRoomOwed.Register, HelpRoomOwed.All);
     }
 
@@ -61,26 +61,17 @@ public sealed class HelpRoomOwedTests
     }
 
     /// <summary>
-    /// Each command is spelled as its own usage spells it, so the helper never sends the person to a verb that is not there:
-    /// the headless host's by <see cref="DriverCommand.Usage"/>, the CLI's by its command table.
+    /// ONEWAY1ai-ii: each command is a command of the one tree, so the helper never sends the person to a verb that is not there: it
+    /// is spelled <c>daoris …</c> and the tree runs its words, neither refusing them as an old form nor answering with its usage.
     /// </summary>
     [Fact]
-    public void Each_command_owed_is_spelled_as_its_usage_spells_it()
+    public void ONEWAY1ai_ii_each_command_owed_is_one_the_tree_runs()
     {
-        string Cli(string file) => File.ReadAllText(Path.Combine(HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Cli", "src", "cli", file));
-        var usages = new (string Prefix, string Usage)[]
-        {
-            ("daoris-driver ", DriverCommand.Usage),
-            ("daoris driver ", Cli("driver.ts")),
-            ("daoris agent ", Cli("agent.ts")),
-            ("daoris tool ", Cli("tool.ts")),
-        };
-
         foreach (var command in HelpRoomOwed.All.SelectMany(owed => owed.Terminal))
         {
-            var (prefix, usage) = usages.SingleOrDefault(each => command.StartsWith(each.Prefix, StringComparison.Ordinal));
-            Assert.True(prefix is not null, $"`{command}` is no command a usage this test reads spells.");
-            Assert.True(usage.Contains(command[prefix.Length..], StringComparison.Ordinal), $"its usage no longer spells `{command}`.");
+            Assert.StartsWith("daoris ", command);
+            var route = CommandTree.Route(command["daoris ".Length..].Split(' '));
+            Assert.True(route.Kind == TreeRouteKind.Run, $"`{command}` is no command the tree runs: {route.Kind} {route.Said}");
         }
     }
 

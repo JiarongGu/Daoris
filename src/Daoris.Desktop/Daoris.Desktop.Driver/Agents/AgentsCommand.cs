@@ -162,25 +162,24 @@ public static class AgentsCommand
 
     public const string Usage =
         """
-        usage: daoris-driver agent [list]
-               daoris-driver agent rules [list] · allow|ask|deny|remove <rule> [--workspace <name> | --repository <name>]
-               daoris-driver agent rules default <id> on|off · proposals · accept|decline <id> [--note "…"]
-               daoris-driver agent trust <agent> <folder> [--profile <account>] [--yes | --dry-run]
-               daoris-driver agent settings <agent> [--account <account>] [model <name>|unset] [effort <level>|unset [--for <model>]]
-               daoris-driver agent which <agent> [--workspace <name>] [--json]
-               daoris-driver agent unpin <agent> [--workspace <name>]
-               daoris-driver agent profile [list] · add|remove <agent> <profile>
-               daoris-driver agent profile order <agent> <profile>…|--clear · ready <agent> <profile>|--own
-               daoris-driver agent profile use <agent> [goal|order] [--keep <account>|--no-keep] [--switch smart|curve|off]
+        usage: daoris agent list
+               daoris agent rules [list] · allow|ask|deny|remove <rule> [--workspace <name> | --repository <name>]
+               daoris agent rules default <id> on|off · proposals · accept|decline <id> [--note "…"]
+               daoris agent trust <agent> <folder> [--account <account>] [--yes | --dry-run]
+               daoris agent settings <agent> [--account <account>] [model <name>|unset] [effort <level>|unset [--for <model>]]
+               daoris agent which <agent> [--workspace <name>] [--json]
+               daoris agent unpin <agent> [--workspace <name>]
+               daoris agent account [list] · add|remove <agent> <account>
+               daoris agent account order <agent> <account>…|--clear · ready <agent> <account>|--own
+               daoris agent account use <agent> [goal|order] [--keep <account>|--no-keep] [--switch smart|curve|off]
                      [--curve <window>=<elapsed>:<used>,…]… [--no-curve] · use <agent> --clear
-               daoris-driver agent profile rename <agent> <account> <name>
-               daoris-driver agent install <agent>
-               daoris-driver agent key <agent> [--account <account>]     the key read from standard input, never an argument
-               daoris-driver agent login <agent> [--profile <account>] [--device-code]
-               daoris-driver agent login <agent> --new [--name <name>] [--device-code]
-               daoris-driver agent update <agent> [--workspace <name>]
-               daoris-driver agent pin <agent> <version> [--workspace <name>]
-        `daoris agent …` runs these, every verb of the family.
+               daoris agent account rename <agent> <account> <name>
+               daoris agent install <agent>
+               daoris agent key <agent> [--account <account>]     the key read from standard input, never an argument
+               daoris agent login <agent> [--account <account>] [--device-code]
+               daoris agent login <agent> --new [--name <name>] [--device-code]
+               daoris agent update <agent> [--workspace <name>]
+               daoris agent pin <agent> <version> [--workspace <name>]
         Each change takes --wait <minutes> (0 to 30, the default 30) or --no-wait: how long to wait on its Confirm in Daoris's window.
         """;
 
@@ -194,7 +193,7 @@ public static class AgentsCommand
     /// <summary>The flags that take a value, as the CLI's agent family read them: a flag's value is no operand.</summary>
     internal static readonly HashSet<string> Valued = new(StringComparer.Ordinal)
     {
-        "--profile", "--workspace", "--account", "--for", "--keep", "--switch", "--curve", "--early", "--near", "--name", "--join",
+        "--workspace", "--account", "--for", "--keep", "--switch", "--curve", "--early", "--near", "--name", "--join",
     };
 
     /// <summary>
@@ -682,7 +681,7 @@ public static class AgentsCommand
 
         var owner = toolchain.Owner(name);
         if (owner != name) Say($"{Prefix}: `{name}` runs as `{owner}`'s accounts — this is one of them.");
-        var profile = FlagValue(args, "--profile") is { } named ? AccountNamed(home, owner, named) : null;
+        var profile = FlagValue(args, "--account") is { } named ? AccountNamed(home, owner, named) : null;
         // With no account named, the set in its order (the account-pool design §5.1): the order's accounts that are here, then the rest.
         IReadOnlyList<string> accounts = profile is not null ? [profile] : SetOf(path, home, owner);
         if (accounts.Count == 0)
@@ -779,7 +778,7 @@ public static class AgentsCommand
             return null;
         }
 
-        var given = FlagValue(args, "--account") ?? FlagValue(args, "--profile");
+        var given = FlagValue(args, "--account");
         // With none named, the order's first (POOL1b, the account-pool design §5.1), where the machine's default was.
         var account = (given is not null ? AccountNamed(home, owner, given) : null)
             ?? HarnessSettings.LoadSet(path, [owner]).FirstOf(owner)

@@ -311,7 +311,7 @@ public sealed class DriverModuleOpinionGateTests : DriverModuleBridge
         {
             ("STOP_OPINION", new { opinion = "o9", said = true }, ["stop", "o9"]),
             ("OPINION_GATE", new { id = "s9", said = true }, ["show", "s9"]),
-            ("ASK_OPINION", new { id = "s9", reviewer = "codex-acp", said = true }, ["ask", "s9", "--reviewer", "codex-acp"]),
+            ("ASK_OPINION", new { id = "s9", reviewer = "codex-acp", said = true }, ["ask", "s9", "--agent", "codex-acp"]),
             ("OPINION_ANYWAY", new { id = "s9", words = "fine", said = true }, ["anyway", "s9", "fine"]),
             ("OPINION_MYSELF", new { id = "s9", said = true }, ["myself", "s9"]),
         })

@@ -98,7 +98,8 @@ public sealed class HistoryCommandTests : IDisposable
         var usage = DriverCommand.Usage.ReplaceLineEndings("\n");
         Assert.Contains("\n  history [--workspace <name>] [--json]\n", usage);
         Assert.Contains("\n  history clear --workspace <name> [--yes]\n", usage);
-        Assert.Contains("\n  quest clear <id> [--failed] [--yes]  ·  ask --clear <id> [--yes]\n", usage);
+        Assert.Contains("\n  quest clear <id> [--failed] [--yes]\n", usage);
+        Assert.Contains("\n  ask clear <id> [--yes]\n", usage);
     }
 
     /// <summary>What each verb's words ask: a reading of one workspace or every one, a workspace's clear, a quest's, its failed sessions', an ask's.</summary>

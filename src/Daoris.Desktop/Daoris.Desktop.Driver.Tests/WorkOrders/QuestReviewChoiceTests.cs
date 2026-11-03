@@ -181,7 +181,6 @@ public sealed class QuestReviewChoiceTests
         // The usage string is built from joined literals, so each form is read where it ends its literal.
         Assert.Contains("quest review <id> reviewed|not-yet|skip [\\\"…\\\"]  ·  \"", program);
         Assert.Contains("+ \"quest review <id> off [\\\"…\\\"]  ·  quest review <id> on|<environment>  ·  \"", program);
-        Assert.Contains("//   quest review <id> off [\"…\"]  ·  quest review <id> on|<environment>", program);
     }
 
     /// <summary>The console hands the world this machine's review rule, which the set-up's door reads.</summary>

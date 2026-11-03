@@ -114,7 +114,7 @@ public static class RoleTerminal
     public static int? AtEntry(IReadOnlyList<string> args, TextWriter error)
     {
         if (!HolderKey.RoleTerminal || Runs(args)) return null;
-        error.WriteLine(Refusal("daoris-driver"));
+        error.WriteLine(Refusal("daoris"));
         return 2;
     }
 }

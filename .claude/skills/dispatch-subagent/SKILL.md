@@ -298,7 +298,7 @@ once three batches hold the targets (MODELROLE1).
    **A worker merged into the parent's batch goes at once, not at the landing**: once its tip is an ancestor of the batch
    branch and its tree has no change, unlock and remove its worktree and delete its branch; the batch holds its commits.
    On 2026-10-30, 21 merged workers' trees stood waiting for their batches to land. **After each landing**, `--prune`, then
-   the install's `daoris-driver trees clean --workspace <w> --yes` for its own session branches, then a look at the
+   the install's `daoris tree clean --workspace <w> --yes` for its own session branches, then a look at the
    machine's processes for anything a finished run left: a CI run on a superseded commit, a rehearsal's stand-in
    install, idle build nodes. What the parent started it ends; what it did not start it names to the owner.
 8. **Measure the batch.** `node tools/subagent-usage.mjs <the harness's transcripts folder for this

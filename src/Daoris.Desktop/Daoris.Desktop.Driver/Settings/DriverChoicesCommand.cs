@@ -190,7 +190,7 @@ public static class DriverChoicesCommand
                daoris-driver driver language <repository>|--workspace <name> en|zh|--clear
                daoris-driver driver review <repository>|--workspace <name> <environment> --kind local|deployed --procedure <path>
                       [--address <url>] [--run "…"] [--required|--not-required]; none, --drop <environment>, or --clear
-               daoris-driver driver opinion <repository>|--workspace <name> --reviewers <adapter,adapter> [--on landing,steps]
+               daoris-driver driver opinion <repository>|--workspace <name> --agents <adapter,adapter> [--on landing,steps]
                       [--required|--not-required] [--verify|--no-verify] [--minutes <n>] [--recheck|--no-recheck]; none, or --clear
                daoris-driver driver helpers <repository>|--workspace <name> [--mode ask|on|off] [--agents <a,b>] | --clear
                daoris-driver driver handover <repository>|--workspace <name> --mode ask|on|off | --clear

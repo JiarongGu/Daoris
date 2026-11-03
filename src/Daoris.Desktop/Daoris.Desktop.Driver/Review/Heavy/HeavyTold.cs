@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What a driven session is told of its repository's heavy gates (HEAVYRUN1b1, D180's HEAVYRUN1 notes): to run the checks that cover
-/// what it changes while it works, and those gates once, at its end, through <c>daoris-driver run-heavy</c>, which holds the
+/// what it changes while it works, and those gates once, at its end, through <c>daoris gate run</c>, which holds the
 /// repository's one heavy-run slot, so two sessions reaching their ends together run them one after the other. Said before how to
 /// take the quest (<see cref="SessionTarget.Heavy"/>), on a first start, a resume and a carry-on alike.
 /// </summary>
@@ -17,7 +17,7 @@ namespace Daoris.Driver;
 public static class HeavyTold
 {
     /// <summary>The verb a session runs, by its bare name on its PATH.</summary>
-    public const string Verb = "daoris-driver";
+    public const string Verb = "daoris";
 
     /// <summary>The launchers an install's <c>app/bin/</c> carries for <see cref="Verb"/>, either of which its PATH finds.</summary>
     private static readonly string[] Launchers = [Verb + ".cmd", Verb];
@@ -42,7 +42,7 @@ public static class HeavyTold
     /// <summary>The words, naming the gates in the order the repository declares them.</summary>
     public static string Words(IReadOnlyList<string> gates) =>
         "While you work, run the checks that cover what you change. Once, when the work is done, run this repository's heavy gates "
-        + $"({string.Join(", ", gates.Select(gate => $"`{gate}`"))}) through `{Verb} run-heavy`, from this tree's root: it waits its "
+        + $"({string.Join(", ", gates.Select(gate => $"`{gate}`"))}) through `{Verb} gate run`, from this tree's root: it waits its "
         + "turn behind another session's run of this repository rather than running beside it. Never run those gates whole another way.";
 
     /// <summary>
@@ -67,8 +67,8 @@ public static class HeavyTold
     /// than running beside them and slowing them all. Project-agnostic: it names no repository's gate and no decision.
     /// </summary>
     public static string Focused { get; } =
-        $"Run a test command you expect to take a minute or more, a filtered test class or a test file, through `{Verb} run-heavy -- <command>` "
-        + $"(for example `{Verb} run-heavy -- dotnet test --filter <class>`), from this tree: when the machine already runs as many heavy runs "
+        $"Run a test command you expect to take a minute or more, a filtered test class or a test file, through `{Verb} gate run -- <command>` "
+        + $"(for example `{Verb} gate run -- dotnet test --filter <class>`), from this tree: when the machine already runs as many heavy runs "
         + "as it admits, the merge queue's gates among them, it waits for a place and says what for, rather than running beside them and slowing "
         + "them all. A quick command needs no wait.";
 
@@ -92,7 +92,7 @@ public static class HeavyTold
         + (light.Count > 0 ? $"its light gates ({Ticked(light)}) and " : "")
         + "the checks your change reaches, filtered: a test class, a test file, a census. "
         + $"Its heavy gates ({Ticked(heavy)}) are not this session's: they run in the repository's verification after the work lands. "
-        + $"Never run them, whole or another way: `{Verb} run-heavy` refuses this tree"
+        + $"Never run them, whole or another way: `{Verb} gate run` refuses this tree"
         + (takesRules
             ? ", and your harness refuses each one's declared command."
             : ". Your agent takes no rules from Daoris, so nothing refuses their commands in your shell: they are said to you instead.");
@@ -100,7 +100,7 @@ public static class HeavyTold
     /// <summary>The words under <c>heavy-at-end</c>: today's, said as the pipeline's.</summary>
     public static string AtEndWords(IReadOnlyList<string> heavy) =>
         "This repository's development pipeline runs its heavy gates once, at a session's end. While you work, run the checks that cover "
-        + $"what you change. Once, when the work is done, run its heavy gates ({Ticked(heavy)}) through `{Verb} run-heavy`, from this tree's "
+        + $"what you change. Once, when the work is done, run its heavy gates ({Ticked(heavy)}) through `{Verb} gate run`, from this tree's "
         + "root: it waits its turn behind another session's run of this repository rather than running beside it. Never run those gates "
         + "whole another way.";
 

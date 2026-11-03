@@ -6,11 +6,7 @@ export const command: CliCommand = {
   kind: 'doctrine',
   usage: [
     '  status               summary of packs, drift, local files, and any pending',
-    "                       canon update; --machine adds this machine's wiring;",
-    '                       --json for an agent to act on',
-  ],
-  options: [
-    "  --machine            report this machine's wiring too (status only)",
+    '                       canon update; --json for an agent to act on',
   ],
   run: commandStatus,
 };

@@ -15,7 +15,7 @@ namespace Daoris.Desktop;
 /// </summary>
 /// <remarks>
 /// <para><b>The files are the terminal's</b> (D50): <c>harnesses.json</c>'s lists and settings, which
-/// <c>daoris agent profile order|use</c> write, and <c>cooling.json</c>, which <c>profile ready</c> ends. Each edit asks
+/// <c>daoris agent account order|use</c> write, and <c>cooling.json</c>, which <c>profile ready</c> ends. Each edit asks
 /// the terminal's own rules first (<see cref="HarnessSettings.OrderProblem"/>, <see cref="ScopeProblem.Of"/>), refuses in
 /// a code the page translates, and writes nothing then.</para>
 /// <para><b>Read, never probed</b>: <c>ACCOUNTS</c> starts no process, so the page may ask at every tick; only
@@ -382,7 +382,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
 
     /// <summary>
     /// The screen's edits to how an agent's accounts are used (TOOL4g), each the terminal's door's twin: <c>order</c> a list
-    /// written whole (<c>daoris agent profile order</c>, none clearing it), <c>use</c> how it is used (<c>profile use</c>),
+    /// written whole (<c>daoris agent account order</c>, none clearing it), <c>use</c> how it is used (<c>profile use</c>),
     /// <c>ready</c> a cool-off ended early (<c>profile ready</c>, <i>Try now</i>), and <c>inherit</c> a workspace returned
     /// to this machine's accounts: its default, list and settings cleared at once (D130 §3.2); <c>said</c> the fold's receipts the
     /// page showed, by id (POOL1a).
@@ -443,7 +443,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
         Refusals.Because(
             Refusals.AccountsOneSet,
             $"every account signed in for Daoris serves every workspace (D197), so {what} names nothing here — the order says where "
-            + $"starts begin: `daoris agent profile order {owner} <account>` puts one first.",
+            + $"starts begin: `daoris agent account order {owner} <account>` puts one first.",
             ("agent", owner));
 
     /// <summary>An agent's unsaid receipts (POOL1a, the account-pool design §5.2): ids, kinds and values, never words.</summary>
@@ -471,7 +471,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
         .Owner(harness);
 
     /// <summary>
-    /// A scope's list written whole (D125 §3.1, D130 §3.1, §4.6), as <c>daoris agent profile order</c> writes it: each name an
+    /// A scope's list written whole (D125 §3.1, D130 §3.1, §4.6), as <c>daoris agent account order</c> writes it: each name an
     /// account here, once; and the list holding the scope's default and its kept account, with another beside the kept one.
     /// None clears the list, its settings with it.
     /// </summary>
@@ -495,7 +495,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
     }
 
     /// <summary>
-    /// How a scope's list is used (D130 §16.6), as <c>daoris agent profile use</c> writes it: each choice as made, refused where
+    /// How a scope's list is used (D130 §16.6), as <c>daoris agent account use</c> writes it: each choice as made, refused where
     /// the scope has no list of its own, a value this build does not know (a way to use accounts, when to switch, a near), or a
     /// kept account outside the list or alone in it. A curve that breaks a rule is refused as it is read (SWITCH1d). Null clears
     /// the scope back to today's defaults.

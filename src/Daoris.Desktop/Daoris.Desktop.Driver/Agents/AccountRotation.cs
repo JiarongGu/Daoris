@@ -806,7 +806,7 @@ public static class RotationWords
         ? wait
         : wait.Then(" ", Noted.Of(
             code, SignIn(agent, accounts, lead)[1..],
-            ("logins", (IReadOnlyList<string>)[.. accounts.Select(account => $"daoris agent login {agent} --profile {ShellWord.Of(account, ShellWord.Account)}")])));
+            ("logins", (IReadOnlyList<string>)[.. accounts.Select(account => $"daoris agent login {agent} --account {ShellWord.Of(account, ShellWord.Account)}")])));
 
     /// <summary>
     /// A start whose scope names no account, with no Daoris account of the agent's signed in (OWNSPACE1a, D175 point 2): it waits
@@ -830,7 +830,7 @@ public static class RotationWords
     /// </summary>
     private static string SignIn(string agent, IReadOnlyList<string> accounts, string lead) => accounts.Count == 0
         ? ""
-        : $" {lead}: {string.Join(", ", accounts.Select(account => $"`daoris agent login {agent} --profile {ShellWord.Of(account, ShellWord.Account)}`"))}, "
+        : $" {lead}: {string.Join(", ", accounts.Select(account => $"`daoris agent login {agent} --account {ShellWord.Of(account, ShellWord.Account)}`"))}, "
           + "or Agents → the agent's page → Accounts.";
 
     /// <summary>
@@ -1183,7 +1183,7 @@ public static class RotationWords
         IReadOnlyDictionary<string, string>? names = null)
     {
         var who = workspace is { } name ? $"`{name}`" : "this machine's starts";
-        var door = $"daoris agent profile order {agent} {ShellWord.Words([.. listed, outside[0]], ShellWord.Account)}"
+        var door = $"daoris agent account order {agent} {ShellWord.Words([.. listed, outside[0]], ShellWord.Account)}"
                    + (workspace is { } scoped ? $" --workspace {ShellWord.Of(scoped, ShellWord.Workspace)}" : "");
         var said = $"Not cooling, and not among the accounts {who} may use: {string.Join(", ", outside.Select(account => $"`{AccountNames.Said(names, account)}`"))} — "
                    + $"Daoris starts nothing on them unless a list names them; `{door}` adds `{AccountNames.Said(names, outside[0])}`.";

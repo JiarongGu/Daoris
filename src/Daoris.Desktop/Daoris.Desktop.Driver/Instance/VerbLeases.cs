@@ -8,19 +8,18 @@ namespace Daoris.Driver;
 /// driver's assembly loads (<see cref="VerbLeases.Answer"/>), before any host reads a lease.
 /// </summary>
 /// <param name="Holds">Whether the words after the verb change a home, so the verb holds its lease from the top.</param>
-/// <param name="Verbs">The second words that are the verb's own, which a lease may name (<see cref="VerbLeases.Name"/>); null where it has none.</param>
 /// <param name="Isolated">
 /// Whether the words after the verb act on a file a terminal's variable names, which is no instance's, so they hold nothing
 /// (<see cref="VerbLeases.HoldsHere"/>); null where the verb never does.
 /// </param>
 public sealed record VerbLeaseReading(
     Func<IReadOnlyList<string>, bool> Holds,
-    IReadOnlyList<string>? Verbs = null,
     Func<IReadOnlyList<string>, Func<string, string?>, bool>? Isolated = null);
 
 /// <summary>
-/// Which of <c>daoris-driver</c>'s verbs hold the home's lease while they act alone (HOMELEASE1, the terminal RPC design §5,
-/// §7.1): a verb's mutation does, for its run; a read never does. Read off its words, as the host routes them. The host takes it in
+/// Which of the desktop program's commands hold the home's lease while they act alone (HOMELEASE1, the terminal RPC design §5,
+/// §7.1): a command's mutation does, for its run; a read never does. Read off the words the tree routes them into (ONEWAY1ai-i), the
+/// commands' own; a lease names the command as the person typed it (<see cref="CommandWords.Named"/>). The host takes it in
 /// the home the loop drives and holds, the folder the driver's config is in (<see cref="DriverConfig.FindHome(Func{string, string?})"/>,
 /// LEASEHOME2).
 /// </summary>
@@ -110,6 +109,11 @@ public static class VerbLeases
             // look hold it from the top; a read and the long verbs none, a download taking it itself to publish (the alone-path design §1.4).
             "tool" => ToolsCommand.Changes([.. args.Skip(1)]),
             "update" => args.Skip(1).Any(arg => arg is "--when-idle" or "--now" or "--cancel"),
+            // ONEWAY1ai-i: the remotes' and the browser's edits write the home; their reads, and the registry, whose one writer is the
+            // service, hold nothing.
+            "remote" => next is "add" or "remove",
+            "browser" => next == "favorite" ? args.Count > 2 && args[2] is "add" or "remove" : args.Count > 2,
+            "repository" => false,
             _ => true,
         };
     }
@@ -125,22 +129,4 @@ public static class VerbLeases
         Holds(args) && !(args[0] == "driver" && DriverConfig.Overridden(environment))
         && !(Readings.TryGetValue(args[0], out var reading) && reading.Isolated?.Invoke([.. args.Skip(1)], environment) == true);
 
-    /// <summary>The words a lease names a verb by: its verb, and its sub-verb where it has one; never an argument.</summary>
-    public static string Name(IReadOnlyList<string> args) =>
-        args.Count > 1 && IsWord(args[1]) && (SubVerbs.Contains(args[1]) || (args[0] == "driver" && DriverChoicesCommand.Verbs.Contains(args[1]))
-            || (args[0] == "tool" && ToolsCommand.Verbs.Contains(args[1]))
-            || (Readings.TryGetValue(args[0], out var reading) && reading.Verbs?.Contains(args[1]) == true))
-            ? $"daoris-driver {args[0]} {args[1]}"
-            : $"daoris-driver {(args.Count > 0 ? args[0] : "")}".TrimEnd();
-
-    /// <summary>The second words that are a verb's own, which a lease may name; anything else may be a name or a path.</summary>
-    private static readonly HashSet<string> SubVerbs = new(StringComparer.Ordinal)
-    {
-        "land", "remove", "clean", "sync", "hand", "stop", "finish", "decline", "say", "take-back", "reword", "archive",
-        "unarchive", "delete", "go-on-new", "helper", "partner", "pause", "resume", "abandon", "clear", "rename", "pin", "unpin", "ask",
-        "anyway", "myself", "install", "new", "try", "keep", "dismiss", "forward","--pause", "--resume", "--abandon", "--clear",
-        "--workspace", "--when-idle", "--now", "--cancel", "recovery", "held", "mode", "skip",
-    };
-
-    private static bool IsWord(string value) => value.Length > 0 && value.All(c => c is >= 'a' and <= 'z' or '-');
 }

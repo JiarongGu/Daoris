@@ -601,7 +601,7 @@ public sealed class HandOverTests : IDisposable
         Assert.Null(SessionsCommand.Read(["hand-over", "--agent", "codex-acp"], out _));
         Assert.Null(SessionsCommand.Read(["hand-over", "s1", "--agent"], out _));
         Assert.Contains("sessions hand-over <id> --agent <adapter> [--account <name>]", SessionsCommand.Usage);
-        Assert.Contains("sessions hand-over <id> --agent <adapter> [--account <name>]", DriverCommand.Usage);
+        Assert.Contains("session hand-over <id> --agent <adapter> [--account <name>]", DriverCommand.Usage);
     }
 
     /// <summary>The verb opens nothing itself: the host's seam does, as start-from's, and its exit is the verb's.</summary>

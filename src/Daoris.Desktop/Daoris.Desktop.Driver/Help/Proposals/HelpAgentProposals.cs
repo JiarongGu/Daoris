@@ -14,14 +14,14 @@ namespace Daoris.Driver;
 /// what the Apply did (<see cref="HelpProposals.ApplyAsync"/>).</para>
 ///
 /// <para>Since HELP10 (D110) a third door, <c>default</c>: which of its accounts an agent runs as by default, its value
-/// the account and its workspace one for a single workspace, judged as <c>daoris agent profile default</c> judges it —
+/// the account and its workspace one for a single workspace, judged as <c>daoris agent account default</c> judges it —
 /// an account that exists, and since TOOL4g one its scope's own list holds (D130 §3.1) — and applied as
 /// <c>HARNESS_ACTION</c>'s own <c>profile-default</c>.</para>
 ///
 /// <para>Since TOOL4g the <c>use</c> door's judge (D130 §9, §16.6): how a scope's list is used — <c>use</c> (<c>goal</c> or
 /// <c>order</c>), <c>keep</c> (an account of the list, or JSON null for none), since SWITCH1d <c>switch</c> and <c>curve</c>
 /// (each window's points, or JSON null for none), and the old <c>early</c> and <c>near</c>, still read, each a field of
-/// the proposal's file beside its target and workspace — judged as <c>daoris agent profile use</c> judges it and applied as
+/// the proposal's file beside its target and workspace — judged as <c>daoris agent account use</c> judges it and applied as
 /// the screen's <c>ACCOUNT_USE</c>. Since TOOL4l-b it is listed in <see cref="Doors"/>, with <c>order</c> (a scope's list written
 /// whole, or a workspace sent back to the machine's accounts) and <c>ready</c> (<i>Try now</i>, an account's cool-off ended),
 /// since the service's <c>agent_propose</c> writes all three (TOOL4l-a).</para>
@@ -206,7 +206,7 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
     private static IReadOnlyList<string> SetOf(HarnessSettings? wiring, string owner) => wiring?.Set(owner).List ?? [];
 
     /// <summary>
-    /// <c>use</c> (TOOL4g, D130 §16.6; POOL1b, §5.3): how the set is used, its one entry of settings, as <c>daoris agent profile use</c>
+    /// <c>use</c> (TOOL4g, D130 §16.6; POOL1b, §5.3): how the set is used, its one entry of settings, as <c>daoris agent account use</c>
     /// takes it — an agent with an account of Daoris's, a way to use accounts and a switch this build knows, a curve that keeps its rules
     /// (SWITCH1d), a near from 50 to 99, and a kept account of the set that leaves driven work another — said in its words, the switch and
     /// the curve in the curve's terms. A door's accounts are its owner's (AGT7), so the command and the sentence name the owner.
@@ -225,7 +225,7 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
         var curve = change.Curve is { } set
             ? string.Concat(UseCurve.Windows.Where(window => set[window] is not null).Select(window => $" --curve {window}={Spelled(set[window]!, ",")}"))
             : "";
-        var terminal = $"daoris agent profile use {owner}"
+        var terminal = $"daoris agent account use {owner}"
             + (change.Use is { Length: > 0 } mode ? $" {mode}" : "")
             + (change.Keep?.Trim() is { Length: > 0 } kept ? $" --keep {ShellWord.Of(kept, ShellWord.Account)}" : change.NoKeep ? " --no-keep" : "")
             + (change.Early is { } early ? $" --early {(early ? "on" : "off")}" : "")
@@ -315,7 +315,7 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
         string.Join(by, points.Select(point => $"{point.Elapsed}:{point.Used}"));
 
     /// <summary>
-    /// <c>order</c> (TOOL4l-b, D130 §9; POOL1b, §5.3): the set's order, as <c>daoris agent profile order</c> takes it — the accounts named
+    /// <c>order</c> (TOOL4l-b, D130 §9; POOL1b, §5.3): the set's order, as <c>daoris agent account order</c> takes it — the accounts named
     /// first, in that order, each an account here and once, and the rest after in their order — or <c>clear</c>, the ids' order again,
     /// clearing no setting; said in its words. A door's accounts are its owner's (AGT7).
     /// </summary>
@@ -331,8 +331,8 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
         var change = proposal.AccountOrder ?? new AccountOrder([], false);
         IReadOnlyList<string> list = [.. change.Accounts.Select(each => each.Trim()).Where(each => each.Length > 0)];
         var terminal = change.Clear
-            ? $"daoris agent profile order {owner} --clear"
-            : $"daoris agent profile order {owner} {ShellWord.Words(list, ShellWord.Account)}";
+            ? $"daoris agent account order {owner} --clear"
+            : $"daoris agent account order {owner} {ShellWord.Words(list, ShellWord.Account)}";
         HelpPlan Refused(string why) => new(why, "", terminal, null);
 
         if (WorkspaceRefused(proposal) is { } scoped) return Refused(scoped);
@@ -364,7 +364,7 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
     }
 
     /// <summary>
-    /// <c>ready</c> (TOOL4l-b, D125 §2.3): <i>Try now</i>, an account's cool-off ended early as <c>daoris agent profile ready</c>
+    /// <c>ready</c> (TOOL4l-b, D125 §2.3): <i>Try now</i>, an account's cool-off ended early as <c>daoris agent account ready</c>
     /// ends it, since the person may know the limit was raised. An account of the door's owner (AGT7) that is cooling, or
     /// <c>own</c>, the tool's own sign-in, when that is; one not cooling has nothing to end, as the terminal says.
     /// </summary>
@@ -379,7 +379,7 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
         var owner = door.AccountsOf;
         var account = proposal.ReadyAccount?.Trim() ?? "";
         var own = account == OwnSignIn;
-        var terminal = $"daoris agent profile ready {owner} " + (own ? "--own" : ShellWord.Of(account, ShellWord.Account));
+        var terminal = $"daoris agent account ready {owner} " + (own ? "--own" : ShellWord.Of(account, ShellWord.Account));
         HelpPlan Refused(string why) => new(why, "", terminal, null);
 
         if (account.Length == 0)

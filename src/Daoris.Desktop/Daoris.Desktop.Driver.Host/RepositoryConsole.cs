@@ -1,0 +1,100 @@
+namespace Daoris.Driver.Host;
+
+/// <summary>
+/// The registry from a terminal (ONEWAY1ai-i; the oneway design §6 X3, §12): <c>daoris repository connect|retire|wire|import</c>, on the
+/// typed operations the window's registry calls (<see cref="RegistryConnect"/>, <see cref="ServiceClient"/>), said by
+/// <see cref="RegistryWords"/>. <c>connect</c> registers this checkout's repository from its working tree with any service the
+/// terminal names (<c>DAORIS_SERVICE_URL</c>, else the running Daoris's); <c>register</c> is the host's own re-following, beside it.
+/// </summary>
+internal static class RepositoryConsole
+{
+    private const string Usage =
+        "usage: daoris repository connect [--workspace <name>] [--dry-run]  ·  daoris repository retire [<name>] [--dry-run]\n"
+        + "       daoris repository wire <repository> --workspace <name> [--dry-run]  ·  daoris repository import [<folder>] [--workspace <name>] [--dry-run]";
+
+    public static async Task<int> RunAsync(string[] args)
+    {
+        var verb = args.Length > 0 ? args[0] : null;
+        var words = args.Skip(1).ToArray();
+        var dry = words.Contains("--dry-run");
+        var workspace = Flag(words, "--workspace");
+        var operands = Operands(words);
+        var root = Environment.CurrentDirectory;
+        try
+        {
+            using var service = ServiceClient.FromEnvironment();
+            switch (verb)
+            {
+                case "connect" when operands.Count == 0:
+                    if (dry)
+                    {
+                        foreach (var line in RegistryWords.ConnectDry(RegistryConnect.Plan(root, workspace, service.BaseUrl))) Console.WriteLine(line);
+                        return 0;
+                    }
+
+                    foreach (var line in RegistryWords.Connected(await service.ConnectAsync(root, workspace).ConfigureAwait(false))) Console.WriteLine(line);
+                    return 0;
+                case "retire" when operands.Count <= 1:
+                {
+                    var repository = operands.Count == 1 ? operands[0] : Path.GetFileName(Path.TrimEndingDirectorySeparator(root));
+                    Console.WriteLine(dry ? RegistryWords.RetireDry(repository) : RegistryWords.Retired(await service.RetireAsync(repository).ConfigureAwait(false)));
+                    return 0;
+                }
+
+                case "wire" when operands.Count == 1 && workspace is not null:
+                {
+                    if (dry)
+                    {
+                        Console.WriteLine(RegistryWords.WireDry(operands[0], workspace));
+                        return 0;
+                    }
+
+                    var (ok, message) = await service.WireRepositoryAsync(operands[0], workspace).ConfigureAwait(false);
+                    (ok ? Console.Out : Console.Error).WriteLine($"daoris: {message}");
+                    return ok ? 0 : 1;
+                }
+
+                case "import" when operands.Count <= 1:
+                {
+                    // Absolute, always: the service is another process, which may sit in another folder.
+                    var folder = operands.Count == 1 ? Path.GetFullPath(operands[0], root) : null;
+                    Console.WriteLine(dry ? RegistryWords.ImportDry(folder, workspace) : RegistryWords.Imported(await service.ImportAsync(folder, workspace).ConfigureAwait(false)));
+                    return 0;
+                }
+
+                default:
+                    Console.Error.WriteLine(Usage);
+                    return 2;
+            }
+        }
+        catch (RegistryRefusal refused)
+        {
+            Console.Error.WriteLine($"daoris: {refused.Message}");
+            return refused.Exit;
+        }
+        catch (Exception failed) when (failed is DriverException or HttpRequestException or TaskCanceledException or InvalidOperationException)
+        {
+            Console.Error.WriteLine($"daoris: {failed.Message}");
+            return 2;
+        }
+    }
+
+    private static string? Flag(string[] words, string name)
+    {
+        var at = Array.IndexOf(words, name);
+        return at >= 0 && at + 1 < words.Length ? words[at + 1] : null;
+    }
+
+    /// <summary>The words that are neither a flag nor <c>--workspace</c>'s value.</summary>
+    private static List<string> Operands(string[] words)
+    {
+        List<string> found = [];
+        for (var at = 0; at < words.Length; at++)
+        {
+            if (words[at] == "--workspace") at++;
+            else if (!words[at].StartsWith('-')) found.Add(words[at]);
+        }
+
+        return found;
+    }
+}
