@@ -6,7 +6,7 @@ Your target is quest `#abc123`, asked by `console-api`:
 
 The report needs a note column.
 
-This repository's development pipeline is light. While you work, run its light gates (`universal`, `code-map`) and the checks your change reaches, filtered: a test class, a test file, a census. Its heavy gates (`build`, `test`) are not this session's: they run in the repository's verification after the work lands. Never run them, whole or another way: `daoris-driver run-heavy` refuses this tree, and your harness refuses each one's declared command.
+This repository's development pipeline is light. While you work, run its light gates (`universal`, `code-map`) and the checks your change reaches, filtered: a test class, a test file, a census. Its heavy gates (`build`, `test`) are not this session's: they run in the repository's verification after the work lands. Never run them, whole or another way: `daoris gate run` refuses this tree, and your harness refuses each one's declared command.
 
 First take the quest (respond to `#abc123` with `take`), then do the work inside this
 repository under its own doctrine and gates, then close it: `done` when it has landed, or

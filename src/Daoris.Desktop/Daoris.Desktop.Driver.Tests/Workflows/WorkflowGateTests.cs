@@ -140,8 +140,8 @@ public sealed class WorkflowGateTests : IDisposable
             """[{"id":"work","kind":"work"},{"id":"opinion","kind":"opinion"},{"id":"look","kind":"look","environment":"local"},{"id":"land","kind":"landing","form":"branch","accept":"you"}]"""));
 
         Assert.Equal(
-            "its second opinion `opinion` reads with reviewers `web-app` declares, and it declares none: `daoris driver opinion web-app "
-            + "--reviewers <adapter,adapter>` declares them.",
+            "its second opinion `opinion` reads with reviewers `web-app` declares, and it declares none: `daoris place opinion web-app "
+            + "--agents <adapter,adapter>` declares them.",
             process.OpinionCannot);
         Assert.Equal(
             "its look `look` reads the work in `local`, and `web-app` declares no review environment: `daoris driver review web-app local "
@@ -160,7 +160,7 @@ public sealed class WorkflowGateTests : IDisposable
             """[{"id":"work","kind":"work"},{"id":"opinion","kind":"opinion","reviewers":["dsh","claude-code"]},{"id":"look","kind":"look","environment":"staging"},{"id":"land","kind":"landing","form":"merge","accept":"you"}]"""));
         Assert.Equal(
             "its second opinion `opinion` names `claude-code`, which `web-app` does not declare among its reviewers (`codex-acp` and `dsh`): "
-            + "a step chooses among them, and `daoris driver opinion web-app --reviewers <adapter,adapter>` declares more.",
+            + "a step chooses among them, and `daoris place opinion web-app --agents <adapter,adapter>` declares more.",
             beyond.OpinionCannot);
         Assert.Equal(
             "its look `look` reads the work in `staging`, which `web-app` does not declare (it declares `local` and `dev`): `daoris driver "
@@ -227,7 +227,7 @@ public sealed class WorkflowGateTests : IDisposable
         Assert.Equal(OpinionGateStates.CannotStart, sits.State);
         Assert.False(sits.LetsGo);
         Assert.StartsWith("Waits for a second opinion, and it cannot start: its second opinion `opinion` names `claude-code`", sits.Says);
-        Assert.EndsWith("`daoris-driver opinion anyway s1 \"…\"` lets it land without one, or `daoris-driver opinion myself s1 \"…\"` records "
+        Assert.EndsWith("`daoris session opinion anyway s1 \"…\"` lets it land without one, or `daoris session opinion myself s1 \"…\"` records "
             + "your own reading.", sits.Says);
 
         var anyway = await OpinionGate.JudgeAsync(facts with { Person = [new OpinionPersonWord(OpinionPersonSaid.Anyway, "abc", At)] }, NoOpinions());

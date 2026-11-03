@@ -169,7 +169,7 @@ public sealed class AskWorkflowCommandTests : IDisposable
     {
         var usage = DriverCommand.Usage.ReplaceLineEndings("\n");
         Assert.Contains("\n  ask … --kind <kind> [--workflow <id>|current] [--workflow-words \"…\"]\n", usage);
-        Assert.Contains("\n  ask --set-workflow <id> [--kind <kind>] [--workflow <id>|current]|--clear [\"…\"]\n", usage);
+        Assert.Contains("\n  ask workflow <id> [--kind <kind>] [--workflow <id>|current]|--clear [\"…\"]\n", usage);
 
         var console = File.ReadAllText(Path.Combine(
             Daoris.Driver.Tests.HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host", "AskConsole.cs"));

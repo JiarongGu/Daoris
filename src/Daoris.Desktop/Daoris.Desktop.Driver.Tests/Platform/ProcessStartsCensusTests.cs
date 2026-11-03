@@ -121,6 +121,8 @@ public sealed class ProcessStartsCensusTests
     /// </summary>
     private static readonly Dictionary<string, StartClass> Whose = new(StringComparer.Ordinal)
     {
+        // A doctrine command at the person's own words (ONEWAY1ai-i).
+        ["Daoris.Desktop.Driver.Host/DoctrineConsole.cs"] = StartClass.Person,
         // git's own streams, a plugin's hook program, and the usage probe.
         ["Daoris.Desktop.Driver/Workplace/WorkingTree.cs"] = StartClass.Background,
         ["Daoris.Desktop.Driver/Plugins/HookProcess.cs"] = StartClass.Background,
@@ -197,6 +199,7 @@ public sealed class ProcessStartsCensusTests
     {
         [AgentRoute] = "the agents' route itself: the launcher's start, or a start it could not contain, through the gate",
         ["Daoris.Desktop.Driver/Workplace/WorkingTree.cs"] = "git's own runs in the trees, Daoris's acts: routed, each run in the look would cost a launcher's start (§3.4)",
+        ["Daoris.Desktop.Driver.Host/DoctrineConsole.cs"] = "a doctrine command handed to the CLI the install carries, on node, at the person's own words (ONEWAY1ai-i)",
         ["Daoris.Desktop.Driver/Platform/ChildProcess.cs"] = "the one runner of Daoris's own questions read to their end: git, and the harness probes' --version",
         ["Daoris.Desktop.Driver/Workplace/GitIdentityActs.cs"] = "a git identity's key made, or its host's keys read, at the person's own verb: ssh-keygen and ssh",
         ["Daoris.Desktop.Driver/Agents/HarnessActions.cs"] = "an agent's install or sign-in at the person's press: Daoris's start of the agent's own tool, never a session (§3.4)",

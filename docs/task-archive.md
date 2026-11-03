@@ -23080,3 +23080,15 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 - [x] **CHATGRAPH1 — a chat's press under a graph choice is refused "not judged yet"** (driver; CI 45 on 7d5ebdb, after the workflow wave). `ReviewLandingTests.A_chat_s_press_under_a_graph_choice_lands_as_before_and_is_never_refused_bind_failed` fails alone: the press answers "Daoris has not judged run chat-…'s graph at `<sha>` yet: its next look does, and this asks for it now." where the test wants it to land as before (WORKFLOWCLEAN1d, a chat's run binds its graph). Decide which is right against the workflow-cleanup design §9's 1d and fix the code or the test. Proof: the class passes alone. Also seen in that run: `large/Hundred`'s p95 frame 28.9 ms against its 25 ms bound, run alone while the git Process lane still ran; judged at the scope's full CI.
 
   **Outcome** 2026-11-04: the code was right by WORKFLOWCLEAN1d: a chat run binds its graph version, so a press before any pass is held "not judged yet" (`GraphGate.cs:193`), as a quest run's is. The test is brought to that contract (`ReviewLandingTests`, renamed), and two comments that still said a graph choice binds nothing are corrected; FIX-LOG's entry of 2026-11-04. `large/Hundred`'s frame time is judged at the scope's full CI.
+
+## LANDPIN3b (2026-11-04)
+
+- [x] **LANDPIN3b — an older example copy that was edited is said, and not overwritten** (driver; after LANDPIN3; D119). An older copy that is also edited is said as older only, since nothing records the earlier shipped files: record a digest of the files an offer install copies in `.daoris-source.json` and compare it at the judgement; copies from before the digest are said as unjudged. Proof: an installed older copy with an edited file is said as changed and its update refused. *Back from the parked list, 2026-11-02: a defect.*
+
+  **Outcome** 2026-11-04: the offer install records a digest of the files it copies in `.daoris-source.json` (`PluginFolders.Digest`); `PluginShipped.Judge` says an older copy whose files differ `changed`, with both versions, and `PlanUpdate` and `daoris plugin update` refuse it; a copy from before the digest is said unjudged, its update still offered; D119's note of 2026-11-04, FIX-LOG's entry.
+
+## OWNSPACE1b-B2 (2026-11-04)
+
+- [x] **OWNSPACE1b-B2 — the sign-in's toast says Daoris's accounts serve in turn** (web; D175's OWNSPACE1b note, settlement 5). `harness.loginNew.doneNowhere` and `unnamedNowhere` key on `places` alone, so after a sign-in they say "no list holds it yet" even where nothing is named and Daoris's accounts serve in turn: key them on the accounts answer's `inherited` too, and say the account serves in turn there. Proof: an `AgentsView.test.tsx` end-of-sign-in test with `inherited` true, en and zh. *Back from the parked list, 2026-11-02: a defect.*
+
+  **Outcome** 2026-11-04: superseded by POOL1c (84eab5d75, D197): the two keys are gone and the accounts answer has no `inherited`; a sign-in says it joined Daoris's accounts (D175's POOL1 note). No code.

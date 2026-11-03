@@ -50,7 +50,7 @@ public sealed class LineEventFilesTests : IDisposable
             new() { Kind = SessionEventKind.Turn, StopReason = "end_turn", At = At(10) },
             new() { Kind = SessionEventKind.User, Id = "w2", Text = "Use the system setting.", Origin = "person", At = At(11) },
             new() { Kind = SessionEventKind.Note, Text = "The account is near its limit.", At = At(12) },
-            new() { Kind = SessionEventKind.Receipt, Id = "w2", Receipt = Receipts.Answered, At = At(13) },
+            new() { Kind = SessionEventKind.Receipt, Id = "w2", Receipt = Receipts.Ended, At = At(13) },
         ];
 
         foreach (var e in said) events.Append("b2", e);
@@ -74,7 +74,7 @@ public sealed class LineEventFilesTests : IDisposable
         """{"seq":11,"at":"2026-10-20T10:00:10+00:00","kind":"turn","stopReason":"end_turn"}""",
         """{"seq":12,"at":"2026-10-20T10:00:11+00:00","kind":"user","id":"w2","text":"Use the system setting.","origin":"person"}""",
         """{"seq":13,"at":"2026-10-20T10:00:12+00:00","kind":"note","text":"The account is near its limit."}""",
-        """{"seq":14,"at":"2026-10-20T10:00:13+00:00","kind":"receipt","id":"w2","receipt":"answered"}""",
+        """{"seq":14,"at":"2026-10-20T10:00:13+00:00","kind":"receipt","id":"w2","receipt":"ended"}""",
     ];
 
     /// <summary>

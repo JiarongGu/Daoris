@@ -12,31 +12,21 @@ import { command as index } from './cli/index.ts';
 import { command as status } from './cli/status.ts';
 import { command as reconcile } from './cli/reconcile.ts';
 import { command as doctor } from './cli/doctor.ts';
-import { command as connect } from './cli/connect.ts';
-import { command as retire } from './cli/retire.ts';
-import { command as wire } from './cli/wire.ts';
-import { command as importFolders } from './cli/import.ts';
-import { command as brainstorm } from './cli/brainstorm.ts';
-import { command as remote } from './cli/remote.ts';
-import { command as agent } from './cli/agent.ts';
-import { command as driver } from './cli/driver.ts';
-import { command as plugin } from './cli/plugin.ts';
-import { command as browser } from './cli/browser.ts';
-import { command as tool } from './cli/tool.ts';
-import { command as convert } from './cli/convert.ts';
-import { runDriverProgram, type DriverProgramSeam } from './platform/driverprogram.ts';
+import { HANDED_VARIABLE, runDriverProgram, type DriverProgramSeam } from './platform/driverprogram.ts';
+
+export { HANDED_VARIABLE };
 
 /** The package root — `src/` sits one level below it, `dist/` likewise once built. */
 export const packageRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 
 /**
- * The commands, in the order `daoris --help` prints them (MOD7). Each is a module of its own under
- * `cli/` carrying its verb, its usage lines and its handler, so a new verb is a new file, one row here,
- * and its lines in the golden usage (`test/fixtures/cli-usage/help.txt`).
+ * The doctrine commands, in the order `daoris --help` prints them (MOD7), and nothing else: the tree's other groups are the desktop's
+ * program's (ONEWAY1ai-i, the oneway design §11), which this dispatcher hands every other word to, whole. Each row is a module of its
+ * own under `cli/` carrying its verb, its usage lines and its handler, and its lines in the golden usage
+ * (`test/fixtures/cli-usage/help.txt`); `cli-tree.test.ts` holds the rows to the tree's `fixtures/command-tree.json`.
  *
- * Only this file imports the rows, and no row imports this file: a row that reached the table would
- * reach every other command through it, and a doctrine command would then reach the management
- * class's network and spawning. `cli.test.ts` and `dogfood.test.ts` hold both halves.
+ * Only this file imports the rows, and no row imports this file: a row that reached the table would reach the hand-off through it,
+ * and a doctrine command would then reach the one spawn. `cli.test.ts` and `dogfood.test.ts` hold both halves.
  */
 export const COMMANDS: readonly CliCommand[] = [
   analyze,
@@ -48,18 +38,6 @@ export const COMMANDS: readonly CliCommand[] = [
   status,
   reconcile,
   doctor,
-  connect,
-  retire,
-  wire,
-  importFolders,
-  brainstorm,
-  remote,
-  agent,
-  driver,
-  plugin,
-  browser,
-  tool,
-  convert,
 ];
 
 const USAGE = [
@@ -67,21 +45,10 @@ const USAGE = [
   '',
   ...COMMANDS.flatMap((command) => command.usage),
   '',
-  '  connect, retire, wire and import are the MANAGEMENT commands: opt-in, they talk to a',
-  '  service, and no gate ever runs them; brainstorm too, to this machine\'s own service',
-  '  only. remote, agent, driver, plugin, browser, tool and',
-  '  convert are management too — they edit files under the Daoris home ($DAORIS_HOME,',
-  "  the installed application's own data folder; nothing lives under your profile).",
-  "  Every agent, driver, plugin, tool and convert verb is run by Daoris's own",
-  '  driver program, the one this install carries in app/daoris-driver/ (or the one',
-  "  DAORIS_DRIVER_PROGRAM names), which spawns each agent's own tooling, reaches a",
-  "  maker's release channel for agent pin and update, and a tool's maker and a",
-  '  resource location for tool download, use … managed, update and look; a daoris',
-  '  with neither says so and does nothing.',
-  '  While Daoris runs on that home, the program sends what they change to it over',
-  '  its own pipe, and its window asks you to confirm it; with none running it edits',
-  '  the files itself.',
-  '  Every doctrine command is offline.',
+  '  These are the doctrine commands, and every one is offline. Every other command',
+  "  (`daoris help` names them) is the desktop's program's: this daoris hands it the",
+  '  words whole, the one an install carries in app/daoris-driver/ or the one',
+  '  DAORIS_DRIVER_PROGRAM names; with neither it says so and does nothing.',
   '',
   'Options:',
   '  --dry-run            print the plan; write nothing',
@@ -89,44 +56,53 @@ const USAGE = [
   '  --help, --version',
 ].join('\n');
 
+/** Who handed this process its words, read once and taken out of what it passes on, so a word handed once is never handed back. */
+function takeHanded(): string | null {
+  const handed = process.env[HANDED_VARIABLE] ?? null;
+  delete process.env[HANDED_VARIABLE];
+  return handed;
+}
+
 /**
- * @param driverProgram Daoris's driver program, which a management family hands its verbs to (PUSH1f2a, D194 point 1): the real one, or
- * the dispatcher's test's stand-in, which records what it was handed. `--help` stays this dispatcher's own, wherever it stands.
+ * @param driverProgram the desktop's program, which every word outside the doctrine commands is handed to (D194 point 1, ONEWAY1ai-i):
+ * the real one, or a test's stand-in, which records what it was handed.
+ * @param handedBy the program that handed these words here, `driver` where the desktop's program did; read from the environment.
  */
 export function runCli(
   argv: string[],
   cwd: string,
   write: (line: string) => void = console.log,
-  driverProgram: DriverProgramSeam = (family, words) => runDriverProgram(family, words),
+  driverProgram: DriverProgramSeam = (words) => runDriverProgram(words),
+  handedBy: string | null = takeHanded(),
 ): ExitCode | Promise<ExitCode> {
   try {
-    if (argv.includes('--help')) {
-      write(USAGE);
-      return 0;
-    }
-    if (argv.includes('--version')) {
-      write(JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8')).version);
-      return 0;
-    }
-
     const command = argv[0];
-    if (!command) {
+    if (command === undefined) {
       write(USAGE);
       return 2;
     }
 
-    // By the table's own verbs: an object lookup also answered for `toString` and `constructor`,
-    // Object's members, and ran them as handlers.
+    // By the table's own verbs: an object lookup also answered for `toString` and `constructor`, Object's members, and ran them.
     const handler = COMMANDS.find((entry) => entry.name === command)?.run;
-    if (!handler) {
-      // A verb that moved says where to, once — it is not a second name for the new one (AGT1).
-      const moved = COMMANDS.find((entry) => entry.formerly?.includes(command));
-      throw new DaorisError(moved
-        ? `unknown command '${command}' — it is \`daoris ${moved.name}\` now`
-        : `unknown command '${command}' — run 'daoris --help'`);
+    if (!handler && command !== '--help' && command !== '--version') {
+      // A word handed once is never handed back (the design §11): the desktop's program sent it, and it is no doctrine command.
+      if (handedBy === 'driver') {
+        throw new DaorisError(`\`${command}\` is no doctrine command, and the desktop's program that handed it here has none either — `
+          + "`daoris help` names each.");
+      }
+      return driverProgram(argv);
     }
 
-    const result = handler({ root: cwd, argv: argv.slice(1), write, packageRoot, driverProgram });
+    if (argv.includes('--help')) {
+      write(USAGE);
+      return 0;
+    }
+    if (!handler || argv.includes('--version')) {
+      write(JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8')).version);
+      return 0;
+    }
+
+    const result = handler({ root: cwd, argv: argv.slice(1), write, packageRoot });
 
     // A command may be async, and a `try` does not catch a rejected promise — so a DaorisError thrown
     // inside it escaped as an unhandled rejection and printed a stack trace instead of its message.

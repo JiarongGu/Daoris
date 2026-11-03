@@ -15,18 +15,18 @@ public sealed class SessionChecksHandTests : IDisposable
     private const string Light =
         "This repository's development pipeline is light. While you work, run its light gates (`lint`, `unit`) and the checks your change "
         + "reaches, filtered: a test class, a test file, a census. Its heavy gates (`build`, `e2e`) are not this session's: they run in "
-        + "the repository's verification after the work lands. Never run them, whole or another way: `daoris-driver run-heavy` refuses "
+        + "the repository's verification after the work lands. Never run them, whole or another way: `daoris gate run` refuses "
         + "this tree, and your harness refuses each one's declared command.";
 
     private const string LightSaid =
         "This repository's development pipeline is light. While you work, run its light gates (`lint`, `unit`) and the checks your change "
         + "reaches, filtered: a test class, a test file, a census. Its heavy gates (`build`, `e2e`) are not this session's: they run in "
-        + "the repository's verification after the work lands. Never run them, whole or another way: `daoris-driver run-heavy` refuses "
+        + "the repository's verification after the work lands. Never run them, whole or another way: `daoris gate run` refuses "
         + "this tree. Your agent takes no rules from Daoris, so nothing refuses their commands in your shell: they are said to you instead.";
 
     private const string AtEnd =
         "This repository's development pipeline runs its heavy gates once, at a session's end. While you work, run the checks that cover "
-        + "what you change. Once, when the work is done, run its heavy gates (`build`, `e2e`) through `daoris-driver run-heavy`, from this "
+        + "what you change. Once, when the work is done, run its heavy gates (`build`, `e2e`) through `daoris gate run`, from this "
         + "tree's root: it waits its turn behind another session's run of this repository rather than running beside it. Never run those "
         + "gates whole another way.";
 
@@ -48,7 +48,7 @@ public sealed class SessionChecksHandTests : IDisposable
     {
         var bin = Path.Combine([Install, .. Tools.InstallBinLayout]);
         Directory.CreateDirectory(bin);
-        File.WriteAllText(Path.Combine(bin, "daoris-driver.cmd"), "");
+        File.WriteAllText(Path.Combine(bin, "daoris.cmd"), "");
     }
 
     private void Marked() =>

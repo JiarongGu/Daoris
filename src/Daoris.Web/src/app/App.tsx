@@ -11,7 +11,7 @@ import { type MessageNames, messagesCount, whoWords } from '../notifications/Mes
 import { HELP_REPOSITORY } from '../data/api';
 import { askName, sessionTitle } from '../work/identity';
 import { AttentionBand } from '../work/attention/AttentionBand';
-import { needsListed, placeCounts } from '../work/attention/attention';
+import { bellCount, needsListed, placeCounts } from '../work/attention/attention';
 import { useScope } from '../data/scope';
 import { AskDaoris } from '../help/AskDaoris';
 import { registerAskFill } from '../help/askFill';
@@ -580,9 +580,10 @@ export function App() {
     : driver.isError ? 'stopped' : attached ? 'starting' : 'absent';
   // The bell's count (NOTIFY2b, the notification design §2.1): each press of either source once, and every other row of What needs
   // you as .NET judged them (PUSH1d4), a press's own row being its card. Two answers to "how many need me" would disagree the first
-  // time either was edited. Before the first judgement the rows are no count yet, and the presses count alone.
+  // time either was edited. Before the first judgement the rows are no count yet, and the presses count alone. Each obligation once
+  // (COMMS1j), and an unread message none.
   const needsRows = attention.state === 'known' ? needsListed(attention.rows).length : 0;
-  const waiting = presses.length + needsRows;
+  const waiting = bellCount(presses, attention.state === 'known' ? attention.rows : []);
   // While any press waits unshown, the bell wears the warning hue with the presses' own count (§3.3, Fable's F1.1).
   const pressUnshown = presses.some((each) => each.shown !== true);
   // The same count on the window's taskbar button and in its title (NOTIFY1b), so it is seen with the window behind others.

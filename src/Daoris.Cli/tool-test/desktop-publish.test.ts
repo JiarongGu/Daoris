@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { delimiter, dirname, join, posix, resolve } from 'node:path';
+import { dirname, join, posix, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import { driverFile } from '../test/_csharp.ts';
@@ -13,7 +13,7 @@ import {
   BUILD_MANIFEST, CLI_BIN, CLI_ENTRY, CLI_HOME, CLI_LAUNCHERS, CLI_PACKAGE, CONNECTOR_EXE, CONNECTOR_HOME, GATE_COMMAND, HOME, HOST_EXE, HOST_HOME,
   KEPT_LOCALES, LAUNCHER, MANIFEST_SCHEMA, MARKER, MARKER_HEADER, OFFERED_PLUGINS, OWN, PLUGIN_OFFERS, RESOURCES, RESOURCES_SOURCE, RETIRED_IN_APP,
   RETIRED_LAUNCHERS, SHELL_EXE, SHELL_FILES, SHELL_HOME, STAGE, STAGED, STAGED_REQUIRED, SWAP_JOURNAL, buildId, cliLaunchers, insideFixtures,
-  DRIVER_EXE, DRIVER_HOME, DRIVER_LAUNCHERS, DRIVER_PROJECT, driverLaunchers, driverPublishCommand, layDriverLaunchers,
+  DRIVER_EXE, DRIVER_HOME, DRIVER_LAUNCHERS, DRIVER_PROJECT, OLD_NAME_VARIABLE, driverLaunchers, driverPublishCommand, layDriverLaunchers,
   APP_PROJECT, LAUNCHER_PROJECT, appPublishCommand, artifactsOf, launcherPublishCommand, publishStages,
   installedNote, isInstall, layCli, layOffers, layResources, promoteStage, recordedShellFiles, refusal, retiredPaths, servicePlan, stageRefusal,
   stagedManifest, ungatedRefusal, unstage, writeManifest, GATE_TREE_LOCK, GATE_TREE_RECORD, childArgs, gatedSource, recordStaged, recordStage, stageReport, stagedAdvice,
@@ -27,8 +27,10 @@ import { renameHeld } from '../../../tools/fsx.mjs';
 import { resolveCanonRoot } from '../src/doctrine/canon.ts';
 import { DRIVER_PROGRAM_FILE, DRIVER_PROGRAM_HOME } from '../src/platform/driverprogram.ts';
 import { INSTALL_APP, INSTALL_DATA, INSTALL_MARKER, installOf } from '../src/platform/home.ts';
-import { RUNNING_FILE } from '../src/service/service.ts';
 import { makeFixture } from '../test/_fixture.ts';
+
+/** The address file the running desktop leaves in its home (the driver's `RunningAddress.FileName`); the CLI reads it no more (ONEWAY1ai-i). */
+const RUNNING_FILE = 'running.json';
 import { TAR_END, tarEntry } from '../test/_tar.ts';
 
 /**
@@ -538,7 +540,7 @@ test('the stage says the install drains, what it holds, and that update --cancel
     assert.match(words, /drain/i);
     assert.match(words, /starts nothing new/);
     assert.match(words, /holds the presses that would start work/);
-    assert.match(words, /daoris-driver update --cancel/);
+    assert.match(words, /daoris update --cancel/);
     assert.match(words, /not now/i);
     assert.match(words, /update --when-idle/);
   }
@@ -587,8 +589,8 @@ test('the install note says where both service hosts are, and that they come bef
  */
 test('the install note says where the doctrine tool is, how each shell runs it, and that your PATH is untouched', () => {
   const note: string = installedNote();
-  assert.ok(note.includes('## The doctrine tool'), 'the note has no section for the doctrine tool');
-  const section = note.slice(note.indexOf('## The doctrine tool')).split('\n## ')[0] ?? '';
+  assert.ok(note.includes('## The command'), 'the note has no section for the doctrine tool');
+  const section = note.slice(note.indexOf('## The command')).split('\n## ')[0] ?? '';
   assert.ok(section.includes(`\`${CLI_BIN.join('/')}/\``), 'names app/bin/');
   assert.ok(section.includes(`\`${CLI_HOME.join('/')}/\``), 'names app/cli/');
   for (const launcher of CLI_LAUNCHERS) assert.ok(section.includes(`\`${launcher}\``), `names ${launcher}`);
@@ -608,7 +610,7 @@ test('the install note says where the doctrine tool is, how each shell runs it, 
  */
 test('the install note says Daoris’s own children find the doctrine tool first on their PATH, and your account’s PATH is untouched', () => {
   const note: string = installedNote();
-  const section = note.slice(note.indexOf('## The doctrine tool')).split('\n## ')[0] ?? '';
+  const section = note.slice(note.indexOf('## The command')).split('\n## ')[0] ?? '';
   const prose = section.replace(/\s+/g, ' ');
   assert.match(prose, /Every program Daoris starts finds it by its bare name/);
   for (const child of ['a driven session', 'a conversation', 'an intake', 'a hook', 'a landing plugin', 'every shell of its terminal panel']) {
@@ -1168,41 +1170,41 @@ test('the launchers are where the tools’ environment puts them first on every 
   assert.ok(driver.includes(`InstallBinLayout = [${CLI_BIN.map((part: string) => `"${part}"`).join(', ')}]`), 'DaorisHome.InstallBinLayout');
 });
 
-test('a launcher for each shell runs the package’s bin entry on the node PATH finds, and names no machine path', () => {
+test('ONEWAY1ai-i daoris’s launcher for each shell runs the desktop’s program with no Node, and names no machine path', () => {
   const launchers: Record<string, string> = cliLaunchers();
   assert.deepEqual(Object.keys(launchers).sort(), [...CLI_LAUNCHERS].sort());
   assert.deepEqual([...CLI_LAUNCHERS].sort(), ['daoris', 'daoris.cmd']);
-  const entry = [...CLI_PACKAGE, ...CLI_ENTRY].join('/');
+  const program = [...DRIVER_HOME, DRIVER_EXE].join('/');
 
   // Git Bash: a shell script, LF, finding its own folder from how it was called.
   const sh = launchers['daoris'] ?? '';
   assert.ok(sh.startsWith('#!/bin/sh\n'), 'Git Bash runs a file by its shebang');
   assert.ok(!sh.includes('\r'), 'a carriage return ends the shebang line in the wrong place');
-  const shPath = /exec node "\$basedir\/([^"]+)" "\$@"/.exec(sh)?.[1] ?? '';
-  assert.equal(posix.normalize(posix.join(CLI_BIN.join('/'), shPath)), entry, `the script runs ${shPath}`);
+  const shPath = /\nexec "\$basedir\/([^"]+)" "\$@"/.exec(sh)?.[1] ?? '';
+  assert.equal(posix.normalize(posix.join(CLI_BIN.join('/'), shPath)), program, `the script runs ${shPath}`);
 
   // Command Prompt, and PowerShell by PATHEXT: a batch file, CRLF as cmd.exe reads one, every argument passed on.
   const cmd = launchers['daoris.cmd'] ?? '';
   assert.ok(cmd.split('\r\n').slice(0, -1).every((line) => !line.includes('\n')), 'every line ends CRLF');
   assert.ok(cmd.endsWith('\r\n'));
-  const cmdPath = /node "%~dp0([^"]+)" %\*/.exec(cmd)?.[1] ?? '';
-  assert.equal(posix.normalize(posix.join(CLI_BIN.join('/'), cmdPath.replace(/\\/g, '/'))), entry, `the batch file runs ${cmdPath}`);
+  const cmdPath = /\r\n"%~dp0([^"]+)" %\*/.exec(cmd)?.[1] ?? '';
+  assert.equal(posix.normalize(posix.join(CLI_BIN.join('/'), cmdPath.replace(/\\/g, '/'))), program, `the batch file runs ${cmdPath}`);
 
   for (const [name, text] of Object.entries(launchers)) {
     // cmd.exe reads a batch file in the console's code page, so a non-ASCII byte prints as something else.
     assert.ok(/^[\x00-\x7F]*$/.test(text), `${name} is ASCII`);
     assert.doesNotMatch(text, /[A-Za-z]:[\\/]|\/home\/|\/Users\//, `a machine path in ${name}`);
-    // Bare `node`: the one the child's PATH finds, which is the one Tools resolves (D124 §1.3).
-    assert.match(text, /no node on PATH/, `${name} says so when there is no node`);
+    // A desktop group needs no Node: the program hands the doctrine commands to the CLI the install carries itself.
+    assert.doesNotMatch(text, /\bnode\b|DAORIS_OLD_NAME/, `${name} runs the program alone`);
   }
 });
 
 /**
- * DRIVERDOOR1: the install ships the driver's own verbs (`trees clean`, `sessions archive`, `history clear`, `update`) as
- * `daoris-driver`, the Host published framework-dependent into `app/daoris-driver/` and run from `app/bin/` by a launcher
- * for each shell, so a terminal that finds `daoris` finds the driver's door.
+ * DRIVERDOOR1, ONEWAY1ai-i: the desktop's program is published framework-dependent into `app/daoris-driver/`, which keeps its name
+ * for good; `daoris-driver`'s launchers stay one release, beside `daoris`'s, for a session an older build told of them: they run the
+ * program only to say what their words are now (`CommandWords.OldLauncher`), and do nothing.
  */
-test('the driver’s door is its own folder under app/ and one launcher for each shell beside the doctrine tool’s', () => {
+test('ONEWAY1ai-iv the program is its own folder under app/, and the old name’s launchers are a refusal beside daoris’s', () => {
   assert.deepEqual([...DRIVER_HOME], [SHELL_HOME[0], 'daoris-driver']);
   assert.equal(DRIVER_EXE, 'daoris-driver.exe');
   assert.deepEqual([...DRIVER_LAUNCHERS], ['daoris-driver', 'daoris-driver.cmd']);
@@ -1230,6 +1232,12 @@ test('the driver’s door is its own folder under app/ and one launcher for each
     assert.ok(/^[\x00-\x7F]*$/.test(text), `${name} is ASCII`);
     assert.doesNotMatch(text, /[A-Za-z]:[\\/]|\/home\/|\/Users\//, `a machine path in ${name}`);
   }
+  // The program reads the old name's mark (`CommandWords.OldNameVariable`) and refuses the words; a launcher that ran them is a second way.
+  assert.equal(OLD_NAME_VARIABLE, 'DAORIS_OLD_NAME');
+  assert.match(sh, /\nDAORIS_OLD_NAME=daoris-driver exec "\$basedir\//);
+  assert.match(cmd, /\r\nsetlocal\r\nset "DAORIS_OLD_NAME=daoris-driver"\r\n"%~dp0/);
+  const tree = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver', 'Platform', 'CommandWords.cs'), 'utf8');
+  assert.ok(tree.includes(`OldNameVariable = "${OLD_NAME_VARIABLE}"`) && tree.includes(`OldName = "${DRIVER_LAUNCHERS[0]}"`), 'the program reads the mark the launchers set');
 });
 
 test('laying the driver’s launchers adds them to app/bin and leaves the doctrine tool’s; a republish replaces them', async () => {
@@ -1249,13 +1257,16 @@ test('laying the driver’s launchers adds them to app/bin and leaves the doctri
   fx.cleanup();
 });
 
-test('the install note says the driver’s verbs are in app/bin as daoris-driver, and what a re-publish does to its folder', () => {
+test('ONEWAY1ai-iv the install note says daoris runs the desktop’s program, and the old name’s launchers run nothing', () => {
   const note: string = installedNote();
   const row = note.split('\n').find((line) => line.startsWith(`| \`${SHELL_HOME[0]}/\``)) ?? '';
-  assert.ok(row.includes(`\`${DRIVER_HOME.slice(1).join('/')}/\``), 'the driver’s folder in the app row');
-  const section = note.slice(note.indexOf('## The doctrine tool')).split('\n## ')[0] ?? '';
+  assert.ok(row.includes(`\`${DRIVER_HOME.slice(1).join('/')}/\``), 'the program’s folder in the app row');
+  const section = note.slice(note.indexOf('## The command')).split('\n## ')[0] ?? '';
+  const prose = section.replace(/\s+/g, ' ');
+  assert.ok(prose.includes(`desktop's program this install carries in \`${DRIVER_HOME.join('/')}/\`, which needs no Node`), 'daoris runs the program');
   for (const launcher of DRIVER_LAUNCHERS) assert.ok(section.includes(`\`${launcher}\``), `names ${launcher}`);
-  assert.match(section.replace(/\s+/g, ' '), /`daoris-driver trees list\|clean\|land`, `sessions archive\|take-back`, `history clear` and `update`/);
+  assert.match(prose, /they run nothing, and say what their words are now under `daoris`/);
+  assert.doesNotMatch(note, /daoris driver |`daoris-driver [a-z]/, 'the note teaches no old form');
 });
 
 test('laying the doctrine tool out retries a held rename at each package and launcher step', async () => {
@@ -1358,34 +1369,3 @@ test('a package that is not the release’s daoris stops the publish, naming why
   fx.cleanup();
 });
 
-/** The PATH a child gets, with `folder` first, under whichever spelling of the name this environment uses. */
-function pathFirst(folder: string): NodeJS.ProcessEnv {
-  const env = { ...process.env };
-  const key = Object.keys(env).find((name) => name.toUpperCase() === 'PATH') ?? 'PATH';
-  env[key] = `${folder}${delimiter}${env[key] ?? ''}`;
-  return env;
-}
-
-/**
- * The launcher this platform's shell finds by the bare name, run for real: from another folder, an
- * argument with a space in it handed on whole, and the tool's exit code handed back, which is the
- * contract a gate reads (0 clean, 1 policy, 2 tool error). Command Prompt on Windows, `sh` elsewhere;
- * Git Bash and PowerShell are the deployment rehearsal's to measure, on the published install.
- */
-test('the launcher this platform’s shell finds runs the package from any folder, passing arguments and the exit code through', async () => {
-  const fx = makeFixture('publish-cli-run');
-  const install = join(fx.root, 'install');
-  await layCli(packed(fx.root, 'daoris-0.4.2', releasePackage()), install);
-  const elsewhere = join(fx.root, 'a-repository');
-  mkdirSync(elsewhere, { recursive: true });
-  const env = pathFirst(join(install, ...CLI_BIN));
-
-  const ran = process.platform === 'win32'
-    ? spawnSync(process.env.ComSpec ?? 'cmd.exe', ['/d /s /c "daoris "two words" --exit 3"'],
-      { cwd: elsewhere, env, encoding: 'utf8', windowsVerbatimArguments: true, windowsHide: true })
-    : spawnSync('sh', ['-c', 'daoris "two words" --exit 3'], { cwd: elsewhere, env, encoding: 'utf8', windowsHide: true });
-
-  assert.equal(ran.stdout.trim(), JSON.stringify(['two words', '--exit', '3']), ran.stderr);
-  assert.equal(ran.status, 3, 'the exit code is the tool’s');
-  fx.cleanup();
-});

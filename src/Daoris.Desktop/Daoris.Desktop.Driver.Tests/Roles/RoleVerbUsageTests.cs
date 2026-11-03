@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// REVIEW2 T12: the CLI's usage line for <c>driver role</c> is held to the driver's own verb, so the one golden of the usage carries the fact
-/// and a word the driver adds or drops fails here rather than in a text no test compares.
+/// REVIEW2 T12: the tree's usage line for <c>daoris role</c> (ONEWAY1ai-i: the CLI hands it whole and keeps no usage of its own) is held
+/// to the driver's own verb, so a word the driver adds or drops fails here rather than in a text no test compares.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
 public sealed class RoleVerbUsageTests
@@ -12,9 +12,7 @@ public sealed class RoleVerbUsageTests
     [Fact]
     public void The_cli_usage_names_the_words_the_role_verb_changes_the_catalogue_by()
     {
-        var usage = File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Cli", "src", "cli", "driver.ts"));
-
-        Assert.Contains($"role [<id>] · role {string.Join('|', RoleVerb.Changes)} <id> …", usage, StringComparison.Ordinal);
+        Assert.Contains($"role [<id>]  ·  role {string.Join('|', RoleVerb.Changes)} <id> …", DriverCommand.Usage, StringComparison.Ordinal);
     }
 
     [Fact]

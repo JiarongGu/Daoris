@@ -160,8 +160,8 @@ public sealed class OpinionGateTests
         Assert.Equal(OpinionGateStates.WaitsChain, gate.State);
         Assert.False(gate.LetsGo);
         Assert.Contains("quest `#q2` still works there", gate.Says);
-        Assert.Contains("`daoris-driver opinion ask s1`", gate.Says);
-        Assert.Contains("`daoris-driver opinion anyway s1 \"…\"`", gate.Says);
+        Assert.Contains("`daoris session opinion ask s1`", gate.Says);
+        Assert.Contains("`daoris session opinion anyway s1 \"…\"`", gate.Says);
     }
 
     [Fact]
@@ -171,7 +171,7 @@ public sealed class OpinionGateTests
         var held = await JudgeAsync(Facts(Rule(), quest: Quest(held: true)));
 
         Assert.Equal((OpinionGateStates.NotAsked, false, false), (open.State, open.LetsGo, open.Held));
-        Assert.Equal("Waits for a second opinion: it is asked at the driver's next look. `daoris-driver opinion ask s1` asks it now.", open.Says);
+        Assert.Equal("Waits for a second opinion: it is asked at the driver's next look. `daoris session opinion ask s1` asks it now.", open.Says);
         Assert.True(held.Held);
         Assert.Equal("Waits for a second opinion: it is asked once the hold on its quest is lifted, since that comes first.", held.Says);
         Assert.True(OpinionGateStates.AtWork(open.State));
@@ -188,7 +188,7 @@ public sealed class OpinionGateTests
         Assert.Equal((OpinionGateStates.Unavailable, false), (required.State, required.LetsGo));
         Assert.StartsWith("No second opinion: no listed reviewer of another maker is installed. The rule requires one, so the work waits for you:", required.Says);
         Assert.Contains("with `--same-agent` asks the same agent in a fresh conversation", required.Says);
-        Assert.Contains("`daoris-driver opinion myself s1 \"…\"`", required.Says);
+        Assert.Contains("`daoris session opinion myself s1 \"…\"`", required.Says);
         Assert.Equal((OpinionGateStates.Unavailable, true), (optional.State, optional.LetsGo));
         Assert.EndsWith("The rule does not require one, so nothing waits for it.", optional.Says);
         Assert.Equal(new LandingOpinion(OpinionGateStates.Unavailable) { Code = ReviewerUnavailable.NoReviewer }.Code, optional.Landing!.Code);
@@ -233,7 +233,7 @@ public sealed class OpinionGateTests
 
         Assert.Equal((OpinionGateStates.Reading, false), (gate.State, gate.LetsGo));
         Assert.Equal("Waits for a second opinion: being read by Codex (OpenAI), another maker's agent, for at most 20 minutes. "
-            + "`daoris-driver opinion stop o1` stops it.", gate.Says);
+            + "`daoris session opinion stop o1` stops it.", gate.Says);
     }
 
     [Fact]

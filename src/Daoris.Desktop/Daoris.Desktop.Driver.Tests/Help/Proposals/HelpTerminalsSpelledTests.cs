@@ -37,16 +37,16 @@ public sealed class HelpTerminalsSpelledTests : HelpProposalsFixture
 
     /// <summary>A stored <c>default</c>'s refusal names the account <c>order</c> would put first, spelled for any shell (POOL1b, §5.3).</summary>
     [Theory]
-    [InlineData("my acct", "`daoris agent profile order claude-code \"my acct\"` puts one first")]
-    [InlineData("R&D", "`daoris agent profile order claude-code <account>` puts one first")]
+    [InlineData("my acct", "`daoris agent account order claude-code \"my acct\"` puts one first")]
+    [InlineData("R&D", "`daoris agent account order claude-code <account>` puts one first")]
     public void A_default_s_refusal_spells_the_account_order_would_put_first(string account, string door)
     {
         Assert.Contains(door, Plan(Agent("default", account, null)).Refusal);
     }
 
     [Theory]
-    [InlineData("my acct", "daoris agent profile use claude-code --keep \"my acct\"")]
-    [InlineData("R&D", "daoris agent profile use claude-code --keep <account>")]
+    [InlineData("my acct", "daoris agent account use claude-code --keep \"my acct\"")]
+    [InlineData("R&D", "daoris agent account use claude-code --keep <account>")]
     public void A_use_s_terminal_spells_its_kept_account(string keep, string terminal)
     {
         var plan = Plan(Agent("use", null, null, new UseChange(Keep: keep)));
@@ -61,7 +61,7 @@ public sealed class HelpTerminalsSpelledTests : HelpProposalsFixture
         var plan = Plan(Agent("order", null, null) with { AccountOrder = new AccountOrder(["my acct", "R&D"], false) });
 
         Assert.Null(plan.Refusal);
-        Assert.Equal("daoris agent profile order claude-code \"my acct\" <account>", plan.Terminal);
+        Assert.Equal("daoris agent account order claude-code \"my acct\" <account>", plan.Terminal);
     }
 
     [Theory]

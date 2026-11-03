@@ -27,7 +27,11 @@ public sealed record PluginPackageOrigin(string Package, string Version, string 
 /// <para>The record and its rules are pure (STRUCT3a, FLAT1b-i); <c>Read</c>, <c>Write</c> and <c>FromFolder</c> touch the
 /// machine through <see cref="PluginFolders"/>, which does the I/O, so this file names none itself.</para>
 /// </remarks>
-public sealed record PluginSource(string? Folder, string? Offer, PluginPackageOrigin? Package = null)
+/// <param name="Digest">
+/// The files an install from an offer copied (<see cref="PluginFolders.Digest"/>, LANDPIN3b), so a copy edited since is told
+/// from one as it was installed; null on a record written before it, and on a folder's or a package's.
+/// </param>
+public sealed record PluginSource(string? Folder, string? Offer, PluginPackageOrigin? Package = null, string? Digest = null)
 {
     public const string FileName = ".daoris-source.json";
 
@@ -42,9 +46,16 @@ public sealed record PluginSource(string? Folder, string? Offer, PluginPackageOr
             ? Parse(text)
             : (null, null);
 
-    /// <summary>Written into a staged copy before it is renamed into place, so the record and the install move together.</summary>
+    /// <summary>
+    /// Written into a staged copy before it is renamed into place, so the record and the install move together. An offer's
+    /// record carries the digest of the copy it is written into.
+    /// </summary>
     internal static void Write(string installFolder, PluginSource source) =>
-        PluginFolders.WriteFile(Path.Combine(installFolder, FileName), source.Json());
+        PluginFolders.WriteFile(Path.Combine(installFolder, FileName),
+            (source.Offer is not null ? source with { Digest = PluginFolders.Digest(installFolder) } : source).Json());
+
+    /// <summary>A digest as <see cref="PluginFolders.Digest"/> writes one: <c>sha256:</c> and 64 lowercase hex digits.</summary>
+    private static readonly Regex FilesDigest = new(@"^sha256:[0-9a-f]{64}\z", RegexOptions.CultureInvariant);
 
     public static PluginSource FromPackage(PluginPackageOrigin package) => new(null, null, package);
 
@@ -100,7 +111,15 @@ public sealed record PluginSource(string? Folder, string? Offer, PluginPackageOr
             if (package is not null && offer is not null) return Unread("it names both a package and an offer");
             if (folder is not null && offer is not null) return Unread("it names both a folder and an offer");
             if (folder is not null) return Path.IsPathFullyQualified(folder) ? (new PluginSource(folder, null), null) : Unread("its folder is not a whole path");
-            if (offer is not null) return PluginCatalog.IsId(offer) ? (new PluginSource(null, offer), null) : Unread("its offer is not a plugin id");
+            if (offer is not null)
+            {
+                if (!PluginCatalog.IsId(offer)) return Unread("its offer is not a plugin id");
+                // LANDPIN3b: what the install copied; a record from before it has none, which is said as unjudged.
+                var digest = Text(root, "digest");
+                return digest is null || FilesDigest.IsMatch(digest)
+                    ? (new PluginSource(null, offer, Digest: digest), null)
+                    : Unread("its digest is not a SHA-256 of its files");
+            }
             if (package is null) return Unread("it names no folder, offer or package");
 
             // A package's record (PLUGDIST1a), each field judged in the CLI's order and words.
@@ -134,6 +153,7 @@ public sealed record PluginSource(string? Folder, string? Offer, PluginPackageOr
                 break;
             case { Offer: { } offer }:
                 writer.WriteString("offer", offer);
+                if (Digest is { } digest) writer.WriteString("digest", digest);
                 break;
             default:
                 writer.WriteString("folder", Folder);

@@ -121,7 +121,8 @@ export type SessionEvent = {
   code?: string | null;
   /**
    * For `receipt` (COWORK1c, the message-urgency design §7): what the door observed of the word under `id`, `sent` (the write to its
-   * harness returned) or `answered` (the turn that took it ended so). Each written only where it was observed.
+   * harness returned) or `ended` (the turn that took it ended so; COMMS1h, an older build's `answered`). Each written only where it
+   * was observed.
    */
   receipt?: string | null;
   /**
@@ -332,14 +333,19 @@ export type Ask = {
   continues?: string;
   /**
    * What the door observed of these words (COWORK1c, the message-urgency design §7, §8.2), each moment only where it was: `sent` when
-   * the write to the harness returned, `taken` the ask's own moment, `answered` when the turn that took them ended so. Absent on
-   * words whose door told no receipt, a record from before among them.
+   * the write to the harness returned, `taken` the ask's own moment, `ended` when the turn that took them ended (COMMS1h: what
+   * Daoris saw, never an answer). Absent on words whose door told no receipt, a record from before among them.
    */
   receipts?: Receipts;
+  /** For a helper's or a partner's answer (COMMS1h): the session it is from, which its exchange card is joined on. */
+  helper?: string;
 };
 
-/** A word's receipts as its conversation folds them (COWORK1c): each the driver's moment it was observed. */
-export type Receipts = { sent?: string; taken?: string; answered?: string };
+/**
+ * A word's receipts as its conversation folds them (COWORK1c): each the driver's moment it was observed. `answered` is an older build's
+ * receipt for the turn that took the word, drawn as it was (COMMS1h).
+ */
+export type Receipts = { sent?: string; taken?: string; ended?: string; answered?: string };
 
 /**
  * A message as the driver tells the page of one it has not sent yet, or handed back (CONV4a/c): the
@@ -500,6 +506,7 @@ export function toTurns(
     // PARKVIEW1: an answer of its park's question pressed, by its mark, never read out of the words.
     ...(event.choice && (event.origin ?? 'person') === 'person' ? { choice: event.choice } : {}),
     ...(event.origin === 'target' && event.continues ? { continues: event.continues } : {}),
+    ...(event.origin === 'target' && event.helper ? { helper: event.helper } : {}),
     // What a target was composed of (CONTEXT1), or null where its record keeps none: said missing, never left out. Another
     // agent's findings are no composed target (XAGENT1g): they name the opinion they are from instead. Nor are Daoris's own words
     // (COWORK1b), named by their mark, never their sentence.
@@ -739,9 +746,11 @@ export function toTurns(
         break;
       case 'receipt': {
         // COWORK1c (the design §7, §8.2): no block of its own; it folds under the ask its word became, below.
-        if (event.id && (event.receipt === 'sent' || event.receipt === 'answered')) {
+        if (event.id && (event.receipt === 'sent' || event.receipt === 'ended')) {
           receipts.set(event.id, { ...receipts.get(event.id), [event.receipt]: event.at });
         }
+        // transitional: receipt-answered
+        if (event.id && event.receipt === 'answered') receipts.set(event.id, { ...receipts.get(event.id), answered: event.at });
         break;
       }
       default:
@@ -963,7 +972,7 @@ const isWork = (item: Block) => WORK.has(item.kind) || (item.kind === 'note' && 
  * so the whole-turn fold hid the agent's narration of hundreds of calls behind one row, and a run that
  * never ended folded nothing at all (the first real workspace, 2026-09-28).
  */
-export function segments(items: readonly Block[], tailOpen: boolean): Segment[] {
+export function segments(items: readonly Block[], tailOpen: boolean, standsAlone?: (block: Block) => boolean): Segment[] {
   const parts: Segment[] = [];
   let run: Block[] = [];
   const close = () => {
@@ -973,7 +982,8 @@ export function segments(items: readonly Block[], tailOpen: boolean): Segment[] 
   };
 
   for (const item of items) {
-    if (isWork(item)) run.push(item);
+    // A call drawn as its exchange's card (COMMS1h) is never folded into a run: it is where the request is read.
+    if (isWork(item) && !standsAlone?.(item)) run.push(item);
     else {
       close();
       parts.push({ kind: 'block', block: item });

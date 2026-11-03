@@ -46,15 +46,16 @@ public static class AtWorkVerb
         var look = await SessionGroups.LookAsync(world.Service, world.Config, world.Door, lastLook: null, world.Home, ct: ct, coolingOf: world.CoolingOf)
             .ConfigureAwait(false);
         var tokens = new LineageTokens(Environment.ProcessId, DateTime.UtcNow);
-        var held = Compose(look, session, record => ChildLineage.Reading(world.Home, record.Id, record.Kind, tokens));
+        var held = Compose(look, session, record => ChildLineage.Reading(world.Home, record.Id, record.Kind, tokens), world.Home);
         return Say(held, session, ask.Json, output, Console.Error);
     }
 
     /// <summary>
     /// The answer over a look the listing reads: the same function the window's read composes by, its routing half (COWORKVIEW1b-i) taken
-    /// from the look's entries, rows and quests where the window takes it from the groups and quests slices.
+    /// from the look's entries, rows and quests where the window takes it from the groups and quests slices, and its exchanges (COMMS1i)
+    /// from <paramref name="home"/>'s files where one is named.
     /// </summary>
-    public static AtWorkHeld Compose(SessionLook look, string session, Func<AtWorkRecord, LineageReading> lineage)
+    public static AtWorkHeld Compose(SessionLook look, string session, Func<AtWorkRecord, LineageReading> lineage, string? home = null)
     {
         var records = look.Records.GroupBy(each => each.Id, StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
         var parts = SessionGroups.ReadEntries(look).FirstOrDefault(each => each.Parts.Any(part => part.Session == session))
@@ -68,6 +69,7 @@ public static class AtWorkVerb
             parts ?? [], id => rows.GetValueOrDefault(id), id => quests.GetValueOrDefault(id), id => published.GetValueOrDefault(id), new SliceHealth(true))
         {
             Asking = AtWorkQuests.Reading(look.Quests, look.Records, id => rows.GetValueOrDefault(id)),
+            Exchanging = home is null ? null : AtWorkExchangeReading.Reading(home, AtWorkExchangeReading.Priors(look.Records), look.Quests),
         };
         return AtWork.Compose(
             session, parts?.Select(part => part.Session).ToList(),
@@ -147,6 +149,20 @@ public static class AtWorkVerb
         }
 
         if (answer.AskedBy is { } asker) lines.Add($"asked by: #{asker.Quest} · {Asker(asker.By)}");
+        // COMMS1i: what the line waits on, the window's head's and this view's one line, then its co-workers, each as the read found it.
+        var exchanges = answer.Exchanges ?? [];
+        if (exchanges.Where(each => each.Holds).ToList() is { Count: > 0 } holds)
+        {
+            lines.Add($"waiting on: {string.Join("; ", holds.Select(each => Exchange(each, answer.Attended)))}");
+        }
+
+        if (exchanges.Where(each => !each.Id.StartsWith("quest:", StringComparison.Ordinal)).ToList() is { Count: > 0 } coworkers)
+        {
+            lines.Add("co-workers:");
+            lines.AddRange(coworkers.Select(each => $"  {Exchange(each, answer.Attended)}"));
+        }
+
+        if (answer.Unread is { Count: > 0 } unread) lines.Add($"not read: {string.Join(", ", unread)}, so what the line waits on may be more");
         lines.Add($"subagents: {answer.Subagents.Working} working");
         foreach (var child in answer.Subagents.Children)
         {
@@ -174,6 +190,35 @@ public static class AtWorkVerb
             _ => quest.Status.ToLowerInvariant(),
         });
         if (quest.Waits is { } wait) words.Add(Wait(wait));
+        return string.Join(" · ", words);
+    }
+
+    /// <summary>
+    /// One request of the line (COMMS1i): what was asked, of whom, and where it stands, delivery and outcome apart; a predecessor's names
+    /// its part.
+    /// </summary>
+    internal static string Exchange(AtWorkExchange each, string attended)
+    {
+        var id = each.Id[(each.Id.IndexOf(':') + 1)..];
+        var lanes = each.Lanes is { Count: > 0 } named ? $" ({string.Join(", ", named)} lane)" : "";
+        List<string> words =
+        [
+            each.Id.Split(':')[0] switch
+            {
+                "helper" => $"helper {id} · {each.Agent ?? each.To}",
+                "piece" => $"piece {id} · {each.Agent ?? each.To}",
+                "quest" => $"#{id} of {each.To}{lanes}",
+                "hand-over" => $"a successor · {each.Agent ?? each.To}",
+                _ => each.Id,
+            },
+        ];
+        if (each.At is { } at) words.Add($"asked {at:HH:mm}");
+        words.Add(each.Outcome);
+        if (each.Delivery != each.Outcome) words.Add($"delivery {each.Delivery}");
+        if (each.Answered is { } answered) words.Add($"answered {answered:HH:mm}");
+        if (each.Session is { } session) words.Add($"by {session}");
+        if (each.Part != attended) words.Add($"asked by part {each.Part}");
+        if (each.Stale == true) words.Add("read earlier than the rest");
         return string.Join(" · ", words);
     }
 

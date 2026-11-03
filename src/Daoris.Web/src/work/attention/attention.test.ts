@@ -9,7 +9,7 @@ import type { Attention } from './AttentionRow';
 import type { SessionGrouping } from '../groups';
 import {
   ASKS_ONCE, ATTENTION_GROUP, ATTENTION_PLACE, attentionActs, attentionGroup, attentionGroups, attentionInOrder, attentionOf, attentionOffers,
-  attentionWorded, type AttentionNames, needsListed, placeCounts, placeOf, type PushedAttention, type QuietWait, rowRun, staleGoAheads,
+  attentionWorded, type AttentionNames, bellCount, needsListed, obligationOf, placeCounts, placeOf, type PushedAttention, type QuietWait, rowRun, staleGoAheads,
 } from './attention';
 import { entryDetail } from '../head/milestone';
 
@@ -1202,6 +1202,26 @@ describe('the groups', () => {
     expect(needsListed([row('review', 'r1', null), row('confirmation', 'c1', at), row('parked', 'p1', at)]).map((each) => `${each.kind}:${each.id}`))
       .toEqual(['review:r1', 'parked:p1']);
     expect(needsListed([])).toEqual([]);
+  });
+
+  /**
+   * COMMS1j (the comms design §4.1 clause 3, §7): *What needs you* keys each obligation once, by its exchange's id where .NET names
+   * one and else by its kind and id, so the bell, the places and *Notifications* count one wait once however it reached the rows.
+   */
+  it('COMMS1j lists and counts each obligation once', () => {
+    const at = '2026-09-21T09:00:00Z';
+    const goAhead = { ...row('go-ahead', 'a1#1', at), obligation: 'go-ahead:a1/1', session: 's1' } as PushedAttention;
+    const again = { ...row('go-ahead', 'a1#1', at), obligation: 'go-ahead:a1/1', session: 's1' } as PushedAttention;
+    const helper = row('helper', 'h7', at);
+    expect(needsListed([goAhead, again, helper, row('helper', 'h7', at)]).map(obligationOf)).toEqual(['go-ahead:a1/1', 'helper:h7']);
+    expect(Object.values(placeCounts([goAhead, again, helper])).reduce((sum, each) => sum + each, 0)).toBe(2);
+  });
+
+  /** COMMS1j: an unread message is no obligation: the bell counts the presses and the obligations, never the channel's unread. */
+  it('COMMS1j counts no unread message on the bell', () => {
+    const at = '2026-09-21T09:00:00Z';
+    expect(bellCount([{ shown: true }], [row('parked', 'p1', at)])).toBe(2);
+    expect(bellCount([], [])).toBe(0);
   });
 });
 

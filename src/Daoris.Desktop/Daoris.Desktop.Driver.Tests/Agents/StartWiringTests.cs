@@ -177,7 +177,7 @@ public sealed class StartWiringTests : IDisposable
         var selection = await roster.SelectAsync("agent", Config(), "aurora", chosen: null);
 
         Assert.Equal(selection.Refusal, wiring.Refusal);
-        Assert.Contains("daoris agent login agent --profile stale", wiring.Refusal);
+        Assert.Contains("daoris agent login agent --account stale", wiring.Refusal);
         Assert.Equal("stale", wiring.Profile);
     }
 

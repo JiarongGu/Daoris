@@ -32,7 +32,7 @@ public static class ChoiceArgs
             if (valued.Contains(token)) at++;
             else if (token.StartsWith("--", StringComparison.Ordinal) && !switches.Contains(token))
             {
-                throw new ChoiceWords($"`{token}` is not a flag `driver {verb}` takes — {usage}");
+                throw new ChoiceWords($"`{token}` is not a flag `{CommandWords.Now($"driver {verb}")}` takes — {usage}");
             }
         }
     }

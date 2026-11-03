@@ -88,6 +88,8 @@
   "plugin.shipped.older": "当前是 {{installed}}；这份安装自带 {{shipped}}。",
   "plugin.shipped.brings": "新版本：{{changes}}",
   "plugin.shipped.changed": "它的文件与这份安装自带的 {{shipped}} 不同，所以 Daoris 不会动它们。",
+  "plugin.shipped.olderChanged": "当前是 {{installed}}，安装后有文件已在本机修改；这份安装自带 {{shipped}}，所以 Daoris 不会动它。",
+  "plugin.shipped.unjudged": "没有记录它安装时的文件，所以无法判断是否有文件已在本机修改：更新会替换全部文件。",
   "plugin.shipped.changedPill": "已在本机修改",
   "plugin.icon.problem": "图标未显示：{{problem}}",
   "plugin.row.points": "{{count}} 个挂点",

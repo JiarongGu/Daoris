@@ -281,14 +281,14 @@ public sealed class CheckoutLockProcessTests : TreeSyncFixture
         using (var writing = TreeLock.TryWriting(Home, root, "engine", TreeLock.Promoting))
         {
             Assert.NotNull(writing);
-            var (code, said) = await VerbAsync(service, "trees", "sync", "--repository", "engine", "--yes");
+            var (code, said) = await VerbAsync(service, "tree", "sync", "--repository", "engine", "--yes");
 
             Assert.True(code == 1, said);
             Assert.Contains("`engine`'s line was being moved to what its integration promoted, so `main` was left for another look.", said);
             Assert.Equal(before, await CheckoutAsync(root));
         }
 
-        var (pulled, words) = await VerbAsync(service, "trees", "sync", "--repository", "engine", "--yes");
+        var (pulled, words) = await VerbAsync(service, "tree", "sync", "--repository", "engine", "--yes");
         Assert.True(pulled == 0, words);
         Assert.Equal(await RevAsync(root, "origin/main"), await RevAsync(root, "main"));
     }

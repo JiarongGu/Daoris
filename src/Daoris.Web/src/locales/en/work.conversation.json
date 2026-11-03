@@ -48,5 +48,22 @@
   "work.conversation.raw": "an update this version does not know: {{title}}",
   "work.conversation.textOnly": "No conversation is kept for this session: its door carries only text, or it ran before conversations were kept. Its words are in the console.",
   "work.conversation.nothingYet": "Nothing said yet. What you send appears here, with the agent’s answer under it.",
-  "work.conversation.nothingSaid": "Nothing was said in this conversation."
+  "work.conversation.nothingSaid": "Nothing was said in this conversation.",
+  "work.conversation.asked.helper": "Asked {{agent}}, as helper",
+  "work.conversation.asked.anyHelper": "Asked a helper",
+  "work.conversation.asked.state.asked": "asked",
+  "work.conversation.asked.state.waiting": "waiting for your yes",
+  "work.conversation.asked.state.approved": "starting",
+  "work.conversation.asked.state.started": "reading",
+  "work.conversation.asked.state.answered": "answered",
+  "work.conversation.asked.state.refused": "refused",
+  "work.conversation.asked.state.cooling": "waiting for its account",
+  "work.conversation.asked.answeredAt": "answered {{time}}",
+  "work.conversation.asked.takenNext": "taken as the next turn",
+  "work.conversation.asked.comesBack": "Its answer comes back to this session as its next turn.",
+  "work.conversation.asked.answer": "{{agent}}’s answer · a claim to check, not your words",
+  "work.conversation.asked.answerAny": "The helper’s answer · a claim to check, not your words",
+  "work.conversation.asked.open": "Open its conversation",
+  "work.conversation.asked.began": "Began with {{agent}}’s answer",
+  "work.conversation.asked.beganAny": "Began with the helper’s answer"
 }

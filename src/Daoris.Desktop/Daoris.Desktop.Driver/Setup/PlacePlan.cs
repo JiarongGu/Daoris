@@ -300,7 +300,7 @@ public static class PlacePlans
         {
             refuse(Delivery, "no-reviewers",
                 $"a second opinion names the agents that read `{name}`'s work, and none is set for it: they are yours to name, never guessed. "
-                + $"Name them on its Setup → Second opinion, or with `daoris driver opinion {name}`.");
+                + $"Name them on its Setup → Second opinion, or with `daoris place opinion {name}`.");
             refused = true;
         }
 

@@ -35,12 +35,12 @@ public sealed record OpinionCommandAsk(string Verb, string Id)
 public static class OpinionCommand
 {
     public const string Usage =
-        "usage: daoris-driver opinion ask <session> [--reviewer <adapter>] [--same-agent] [\"…\"]  ·  opinion show <session|opinion>\n"
-        + "       opinion stop <opinion>  ·  opinion anyway <session> [\"…\"]  ·  opinion myself <session> [\"…\"]\n"
+        "usage: daoris session opinion ask <session> [--agent <adapter>] [--same-agent] [\"…\"]  ·  session opinion show <session|opinion>\n"
+        + "       session opinion stop <opinion>  ·  session opinion anyway <session> [\"…\"]  ·  session opinion myself <session> [\"…\"]\n"
         + "       ask another agent to read a session's work before it lands, one of its rule's reviewers by name, or the working\n"
         + "       agent in a fresh conversation, from the driver's next look; say where its second opinion stands, its findings and\n"
         + "       their answers; stop a reviewer reading; go on without a settled opinion; or record your own reading in its place.\n"
-        + "       Each prints what the gate says after it. `sessions say` sends the work back with your words.";
+        + "       Each prints what the gate says after it. `session say` sends the work back with your words.";
 
     /// <summary>Whether a line asks for the second opinion's doors.</summary>
     public static bool Asks(IReadOnlyList<string> args) => args is ["opinion", ..];
@@ -74,11 +74,11 @@ public static class OpinionCommand
                 {
                     switch (rest[at])
                     {
-                        case "--reviewer" when at + 1 < rest.Count && !rest[at + 1].StartsWith('-'):
+                        case "--agent" when at + 1 < rest.Count && !rest[at + 1].StartsWith('-'):
                             reviewer = rest[++at];
                             break;
-                        case "--reviewer":
-                            problem = "`--reviewer` names an adapter, one of the rule's reviewers.";
+                        case "--agent":
+                            problem = "`--agent` names an adapter, one of the rule's reviewers.";
                             return null;
                         case "--same-agent":
                             same = true;
@@ -89,7 +89,7 @@ public static class OpinionCommand
                         default:
                             if (rest[at].StartsWith("--", StringComparison.Ordinal))
                             {
-                                problem = $"`{rest[at]}` is not a flag `opinion ask` takes: `--reviewer <adapter>`, `--same-agent`.";
+                                problem = $"`{rest[at]}` is not a flag `session opinion ask` takes: `--agent <adapter>`, `--same-agent`.";
                                 return null;
                             }
 

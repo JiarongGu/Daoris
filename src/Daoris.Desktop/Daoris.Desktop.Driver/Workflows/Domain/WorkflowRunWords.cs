@@ -448,7 +448,7 @@ public static class WorkflowRunWords
         // The second opinion's gate holding the work on the person (XAGENT1f): its presses are this terminal's own.
         if (kind == WorkflowKinds.Opinion && step.State == WorkflowRunStates.WaitingOnYou && step.Session is { } held)
         {
-            yield return $"`daoris-driver opinion show {held}` lists what is unsettled; `daoris-driver opinion anyway {held} \"…\"` "
+            yield return $"`daoris session opinion show {held}` lists what is unsettled; `daoris session opinion anyway {held} \"…\"` "
                 + "goes on without it.";
         }
 
