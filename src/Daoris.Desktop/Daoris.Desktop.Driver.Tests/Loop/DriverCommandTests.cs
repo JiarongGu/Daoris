@@ -494,6 +494,15 @@ public sealed class DriverCommandTests
         Assert.Contains("sessions say <id> \"…\" [--file <path>]…", SessionsCommand.Usage);
 
         var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
+        // ONEWAY1l's usage lines, which followed the workflow wave: the usage and the host's header name `--level` alone for a say.
+        foreach (var text in new[] { usage, program.ReplaceLineEndings("\n") })
+        {
+            var say = text.Split('\n').Single(line => line.Contains("sessions say <id>", StringComparison.Ordinal));
+            Assert.Contains("[--level ordinary|urgent|now]", say);
+            Assert.DoesNotContain("--now", say);
+            Assert.DoesNotContain("--now is --level now", text);
+        }
+
         Assert.Contains("if (args is [\"sessions\", .. var sessionsArgs])", program);
         Assert.Contains("SessionsConsole.RunAsync(sessionsArgs, log)", program);
         // Every loop on the home watches the requests: the headless loop as the desktop's does.

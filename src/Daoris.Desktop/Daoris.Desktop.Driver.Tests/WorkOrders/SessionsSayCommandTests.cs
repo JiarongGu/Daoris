@@ -167,24 +167,6 @@ public sealed class SessionsSayCommandTests : IDisposable
     }
 
     /// <summary>
-    /// ONEWAY1l's usage lines, which followed the workflow wave: the driver's usage and the host's own header name <c>--level</c> alone for
-    /// a say, never <c>--now</c>; <c>update --now</c> is another verb's and stays.
-    /// </summary>
-    [Fact]
-    public void The_usage_and_the_hosts_header_name_the_level_alone_for_a_say()
-    {
-        var usage = DriverCommand.Usage.ReplaceLineEndings("\n");
-        var header = File.ReadAllText(Path.Combine(SourceFiles.Project("Daoris.Desktop.Driver.Host"), "Program.cs")).ReplaceLineEndings("\n");
-        foreach (var text in new[] { usage, header })
-        {
-            var say = text.Split('\n').Single(line => line.Contains("sessions say <id>", StringComparison.Ordinal));
-            Assert.Contains("--level ordinary|urgent|now", say);
-            Assert.DoesNotContain("--now", say);
-            Assert.DoesNotContain("--now is --level now", text);
-        }
-    }
-
-    /// <summary>
     /// COWORK1a (the message-urgency design §8.6): <c>--level ordinary|urgent|now</c> says when the words should reach a working
     /// session, beside the words and no part of them; <c>--level now</c> is <c>--now</c>; any other word is a problem said.
     /// </summary>
