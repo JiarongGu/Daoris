@@ -2528,12 +2528,14 @@ The first version: doctrine that installs, is checked, and flows back.
 
 ### The tool
 
-- **Nineteen commands.** `analyze` reports what adopting would do before it does it; `init` writes a
+- **Twenty commands.** `analyze` reports what adopting would do before it does it; `init` writes a
   manifest and reports what is available without guessing;
   `sync` materializes the selected packs and writes the lock; `check` gates on drift, staleness and
   index freshness, and **reports** the always-loaded budget rather than failing on it (a fact gates, a
-  judgement reports — D54); `upstream` promotes a locally-improved file back into the
-  canon (`--all` for every edit at once); `index` says where the roster went — the `AGENTS.md`
+  judgement reports — D54); `upstream` proposes a locally-improved file to the canon, writing it there
+  only in the canon's own checkout and elsewhere printing the request's words (`--all` for every edit at once);
+  `reconcile` lists every difference from the canon for the repository's own session to adopt, keep with
+  its reason, or propose upstream (D230); `index` says where the roster went — the `AGENTS.md`
   region, which `sync` regenerates (D59);
   `status` summarizes — the remote disclosure declaration included, and this machine's wiring with
   `--machine` — and reports when a newer canon is available; `doctor` reports local documents that
