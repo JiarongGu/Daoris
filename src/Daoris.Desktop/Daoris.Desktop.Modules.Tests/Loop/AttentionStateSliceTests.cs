@@ -796,8 +796,54 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
 
         Is("""
            {"kind":"go-ahead","id":"7c1e9a04b2d5#1","since":"2026-09-21T09:10:00Z","workspace":"aurora","ask":"7c1e9a04b2d5","number":1,
-            "goAhead":{"kind":"push","on":"prod","act":"the report’s menu entries"},"detail":"The menu ships with the release.","session":"s1a2b3c4"}
+            "goAhead":{"kind":"push","on":"prod","act":"the report’s menu entries"},"detail":"The menu ships with the release.","session":"s1a2b3c4",
+            "obligation":"go-ahead:7c1e9a04b2d5/1"}
            """, Assert.Single(rows));
+    }
+
+    // ---- COMMS1j: one row per obligation (the comms design §4.1 clause 3, §7) ----
+
+    /// <summary>
+    /// COMMS1j: a session parked on the go-ahead it asked waits on one decision of the person's, so it is one row: the go-ahead's, keyed by
+    /// its exchange's id, holding work; its park is no second row, and the bell counts the wait once. A park on nothing else stays its own.
+    /// </summary>
+    [Fact]
+    public void COMMS1j_a_park_on_its_own_go_ahead_is_one_row_keyed_by_the_go_ahead()
+    {
+        var parked = Session("""{"state":"awaiting-person","quest":"7a82cc","note":"May I push?"}""");
+        var rows = Rows(new() { Sessions = [parked], Asks = [Ask($$"""{"state":"Published","goAheads":[{{GoAhead().ToJsonString()}}]}""")] });
+
+        var row = Assert.Single(rows);
+        Assert.Equal(("go-ahead", "go-ahead:7c1e9a04b2d5/1"), (row["kind"]!.GetValue<string>(), row["obligation"]!.GetValue<string>()));
+        Assert.Single(Rows(new() { Sessions = [parked] }), each => each["kind"]!.GetValue<string>() == "parked");
+    }
+
+    /// <summary>COMMS1j: a session parked on its agent's ask to hand it over is that ask's one row, which stands for the work it holds.</summary>
+    [Fact]
+    public void COMMS1j_a_park_on_its_own_hand_over_ask_is_one_row_that_holds_work()
+    {
+        var rows = Rows(new()
+        {
+            Sessions = [Session("""{"state":"awaiting-person","quest":"7a82cc","note":"Hand me over?"}""")],
+            HandOvers = [JsonNode.Parse("""{"id":"h1","session":"s1a2b3c4","note":"Go on with Codex.","agent":"codex","at":"2026-10-21T09:30:00Z"}""")!.AsObject()],
+        });
+
+        var row = Assert.Single(rows);
+        Assert.Equal("hand-over", row["kind"]!.GetValue<string>());
+        Assert.True(row["stands"]!.GetValue<bool>());
+    }
+
+    /// <summary>
+    /// COMMS1j: a supervisor's held decision answers for the park, so it is no wait of the person's; a deferral, which leaves the park to
+    /// them, is no decision answering for it, and the park is theirs again.
+    /// </summary>
+    [Fact]
+    public void COMMS1j_a_supervisors_held_decision_is_no_wait_and_its_deferral_is()
+    {
+        var facts = new AttentionFacts { Sessions = [Session("""{"state":"awaiting-person","quest":"7a82cc","note":"two ways forward."}""")] };
+
+        Assert.Empty(Rows(facts with { Supervised = new HashSet<string>(StringComparer.Ordinal) { "s1a2b3c4" } }));
+        Assert.Single(Rows(facts), row => row["kind"]!.GetValue<string>() == "parked");
     }
 
     // ---- a go-ahead nothing on its ask waits for any more (GOAHEADSTALE1) ----
@@ -1841,6 +1887,8 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
             Sessions =
             [
                 Session("""{"id":"parked","state":"awaiting-person","note":"why","noteParts":[]}"""),
+                // COMMS1j: "parked" waits on its hand-over ask's one row; this park waits on nothing else, so it is a row of its own.
+                Session("""{"id":"alone","state":"awaiting-person","note":"why","noteParts":[]}"""),
                 Intake("""{"state":"awaiting-person"}"""),
                 Session("""{"id":"r3v13w00","state":"completed"}"""),
             ],

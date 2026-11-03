@@ -224,6 +224,8 @@ public static class NeedsAPerson
             {
                 var first = Objects(goAhead["asked"]).FirstOrDefault();
                 var row = Row("go-ahead", $"{Text(ask, "id")}#{Part(goAhead["number"])}", Text(first, "at") ?? Text(ask, "updated"), Scope(ask));
+                // COMMS1j: keyed by its exchange's id, the one obligation its askers' parks wait on too.
+                row["obligation"] = $"go-ahead:{Text(ask, "id")}/{Part(goAhead["number"])}";
                 row["ask"] = Text(ask, "id");
                 row["number"] = goAhead["number"]?.DeepClone();
                 row["goAhead"] = new JsonObject { ["kind"] = Text(goAhead, "kind"), ["on"] = Text(goAhead, "on"), ["act"] = Text(goAhead, "act") };
@@ -285,9 +287,13 @@ public static class NeedsAPerson
         // A park the person answered goes on at the driver's next look (ANSWER1c): it no longer needs them. A parked intake whose ask is
         // live is the ask's row.
         var standsFor = live.Select(ask => Truthy(ask, "intake")).OfType<string>().ToHashSet(StringComparer.Ordinal);
-        // SUPERVISOR1a-i (the supervisor design §4.2): nor a park a supervisor's held or released decision answers for.
+        // SUPERVISOR1a-i (the supervisor design §4.2): nor a park a supervisor's held or released decision answers for. COMMS1j (the comms
+        // design §4.1 clause 3): nor a park on a go-ahead its session asked, or on its agent's ask to hand it over, still asked: the person's
+        // one decision is that row's, which holds the work, so the bell counts the obligation once.
+        var decided = OwnAsks(facts);
         foreach (var session in facts.Sessions.Where(session =>
-                     Parks(session) && !standsFor.Contains(Text(session, "id") ?? "") && !facts.Supervised.Contains(Text(session, "id") ?? "")))
+                     Parks(session) && !standsFor.Contains(Text(session, "id") ?? "") && !facts.Supervised.Contains(Text(session, "id") ?? "")
+                     && !decided.Contains(Text(session, "id") ?? "")))
         {
             var row = Row("parked", Text(session, "id"), Text(session, "updated"), Scope(session));
             row["where"] = Text(session, "repository");
@@ -896,6 +902,23 @@ public static class NeedsAPerson
         if (record.TryGetPropertyValue("note", out var english)) note["note"] = english?.DeepClone();
         if (record.TryGetPropertyValue("noteParts", out var parts)) note["parts"] = parts?.DeepClone();
         return note;
+    }
+
+    /// <summary>
+    /// The sessions whose park is a row of its own request (COMMS1j): one that asked a go-ahead still asked on an ask not closed, or whose
+    /// agent's ask to hand it over waits on the person. Their parks wait on that one decision.
+    /// </summary>
+    private static HashSet<string> OwnAsks(AttentionFacts facts)
+    {
+        var sessions = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var goAhead in facts.Asks.Where(ask => Text(ask, "state") != "Closed").SelectMany(ask => Objects(ask["goAheads"]))
+                     .Where(goAhead => Text(goAhead, "state") == "asked"))
+        {
+            foreach (var asked in Objects(goAhead["asked"])) if (Text(asked, "session") is { } session) sessions.Add(session);
+        }
+
+        foreach (var wait in facts.HandOvers) if (Text(wait, "session") is { } session) sessions.Add(session);
+        return sessions;
     }
 
     /// <summary>A row of <paramref name="kind"/>, with <c>workspace</c> where it is judged from a record a window's scope filters.</summary>
