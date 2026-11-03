@@ -158,8 +158,8 @@ test('every template beside a canon skill is named by it, and every template it 
  * The roles a manifest may declare are the canon's (ORIENT2b; D122 §2.7, D151 point 4). `ROLES`' jobs
  * are the canon's roles table cut short, so a role the canon teaches that the CLI does not know is a
  * declaration every adopter is refused, and one the CLI knows that the canon does not teach is a row no
- * adopter has a reason to write. `knowledge` and `skill` are the canon's and never declared: the index
- * lists them from the target.
+ * adopter has a reason to write. `knowledge`, `skill` and `area` are never declared: the index
+ * lists two, the brief its own.
  */
 test("the canon's roles table and the roles a manifest may declare name the same roles, in one order", () => {
   const text = readText(join(repoRoot, 'canon', 'core', 'knowledge', 'development-documents.md'));
@@ -167,7 +167,7 @@ test("the canon's roles table and the roles a manifest may declare name the same
   const canonRoles = [...table.matchAll(/^\| \*\*([a-z]+)\*\* \|/gm)].map((match) => match[1]!);
   assert.ok(canonRoles.length >= 10, `the scan found ${canonRoles.length} roles in the canon's table, so it proved nothing`);
 
-  assert.deepEqual(canonRoles.filter((role) => role !== 'knowledge' && role !== 'skill'), ROLES.map((row) => row.role));
+  assert.deepEqual(canonRoles.filter((role) => !['knowledge', 'skill', 'area'].includes(role)), ROLES.map((row) => row.role));
 });
 
 /**

@@ -6,12 +6,10 @@
 **Why.** <The reason, and the evidence it rests on.>
 
 **Rejected.**
-- **<An alternative that was weighed>**: <why not>. <Only what was actually weighed; an alternative
-  invented after the fact teaches the next reader nothing.>
+- **<An alternative that was weighed>**: <why not>. <A decision is for a choice: with no alternative
+  actually weighed, it is an area document's sentence, not a decision.>
 
 **What it amends.** <Each earlier decision this changes, by number, or *none*.>
-
-**What the checks do not cover.** <What this relies on that no check verifies, or *none*.>
 
 **Amended <date> (<the work that amended it>): <what changed, in one line>.** <An amendment is added
 here, under the entry it amends. The number never changes and is never reused.>

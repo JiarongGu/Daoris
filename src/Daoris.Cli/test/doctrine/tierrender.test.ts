@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { renderIndex, renderTier, tierRuleBody } from '../../src/doctrine/tierrender.ts';
+import { CHANGE_SKILL, onDemandExtras, renderIndex, renderTier, tierRuleBody } from '../../src/doctrine/tierrender.ts';
 import type { CanonFile } from '../../src/doctrine/records.ts';
 
 /**
@@ -18,6 +18,8 @@ import type { CanonFile } from '../../src/doctrine/records.ts';
  * 3. **The rules rows stay in the table** — cheap, and they carry the `applies_when`/`enforces` the
  *    stripped frontmatter held. The knowledge and skills rows moved to `<target>/INDEX.md`, which the
  *    region names (WSSETUP14a, D128 §2): they grew with the repository, and pushed the rules down.
+ * 4. **Only the rules tier is in full** (CONSOLIDATE1). A knowledge document marked `rule: true` is a
+ *    row linked to its file, and its body is read when it applies.
  */
 
 const file = (name: string): CanonFile => ({
@@ -105,6 +107,53 @@ test('the region points at the index, and the index lists knowledge and skills b
   assert.match(index, /^\| `\.claude\/knowledge\/reaching-in\.md` \| you have written into another repository \| stop and report \|$/m);
   // A skill is named by its entry file: an agent whose skill roots hold nothing activates it by reading it.
   assert.match(index, /^\| `\.claude\/skills\/fix-log\/SKILL\.md` \| Record a fix after landing it\. \|$/m);
+});
+
+const onDemand = (name: string, applies: string, enforces: string, body: string) => ({
+  file: { pack: 'core', source: `core/knowledge/${name}.md`, target: `knowledge/${name}.md` },
+  text: `---\nname: ${name}\napplies_when: ${applies}\nenforces: ${enforces}\nrule: true\n---\n\n${body}\n`,
+});
+
+/**
+ * A rule read on demand keeps its row in the always-loaded table, linked to the file that holds its body, and its
+ * body stays out of the region: that is what keeps the region small while every rule's trigger is still loaded.
+ */
+test('a rule read on demand is a linked row, and its body stays in its file', () => {
+  const region = renderTier({
+    rules: two,
+    onDemand: [onDemand('no-tmp-for-repo-files', 'composing a repository file', 'never OS temp', '# No temp\n\nScratch here.')],
+    version: '0.0.1',
+  });
+
+  assert.match(region, /^\| \[`no-tmp-for-repo-files`\]\(\.claude\/knowledge\/no-tmp-for-repo-files\.md\) \| composing a repository file \| never OS temp \|$/m);
+  assert.doesNotMatch(region, /Scratch here\.|# No temp/);
+  // The rules in full come first, and the on-demand rows after them, all in the one table.
+  assert.ok(region.indexOf('| `task-lifecycle` |') < region.indexOf('[`no-tmp-for-repo-files`]'));
+  assert.ok(region.indexOf('[`no-tmp-for-repo-files`]') < region.indexOf('## Read on demand'));
+});
+
+test('the region sends every change through the change skill only where that skill is installed', () => {
+  assert.match(renderTier({ rules: two, change: true, version: '0.0.1' }), /^Make every change through the `change` skill\.$/m);
+  assert.doesNotMatch(renderTier({ rules: two, version: '0.0.1' }), /`change` skill/);
+});
+
+/**
+ * What a sync writes decides the extras: only the canon's knowledge files marked `rule: true` become rows (a span, a
+ * skill or an unmarked document never does), and the `change` line follows the skill's own target.
+ */
+test('the extras come from the canon writes: the marked knowledge files, and the change skill', () => {
+  const marked = onDemand('task-lifecycle', 'finishing a task', 'open work only', '# Task lifecycle');
+  const writes = [
+    { ...marked.file, content: marked.text },
+    { pack: 'core', source: 'core/knowledge/reaching-in.md', target: 'knowledge/reaching-in.md', content: '---\nname: reaching-in\napplies_when: w\nenforces: e\n---\n\nbody\n' },
+    { pack: 'core', source: 'core/rules/sensitive-info.md', target: 'rules/sensitive-info.md', content: 'body', in: 'AGENTS.md' },
+    { pack: 'core', source: `core/${CHANGE_SKILL}`, target: CHANGE_SKILL, content: '---\nname: change\ndescription: d\nrule: true\n---\n' },
+  ];
+
+  const extras = onDemandExtras(writes);
+  assert.deepEqual(extras.onDemand!.map((document) => document.file.target), ['knowledge/task-lifecycle.md']);
+  assert.equal(extras.change, true);
+  assert.equal(onDemandExtras(writes.slice(0, 3)).change, false);
 });
 
 /** Deterministic, or every sync is a diff and every drift check is a lie. */

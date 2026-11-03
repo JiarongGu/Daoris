@@ -1,0 +1,5 @@
+{
+  "name": "co-working",
+  "apiVersion": 1,
+  "description": "Sessions a coordinating service runs: how a working agent talks to the other sessions on its ask through the service's channel, helper and quest tools. Take it where such a service drives this repository's sessions."
+}

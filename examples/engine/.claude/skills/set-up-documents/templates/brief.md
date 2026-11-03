@@ -13,14 +13,22 @@
 ## Layout
 
 <Only what reading the tree would not tell: which folders are generated, which are copies of another,
-which have instructions of their own, what must never be edited by hand, and where each part's design
-document is. Not a tour of the folders.>
+which have instructions of their own, and what must never be edited by hand. Not a tour of the folders.>
+
+## Areas
+
+<One row per area document. A change starts at its area's document.>
+
+| Area | Document |
+|---|---|
+| <the part of the code> | `<path>` |
 
 ## Build, test, verify
 
+- Quick checks, after every change: `<the commands>`.
 - Done means: `<the one command>`.
-- <The few commands a session runs most, exact. The rest are in the gates declaration, at `<path>`.>
-- <What never to run, and why: a check that needs the machine quiet, a command that publishes.>
+- <The rest are in the gates declaration, at `<path>`. What never to run, and why: a check that needs
+  the machine quiet, a command that publishes.>
 
 ## Conventions
 
@@ -33,12 +41,9 @@ the records there and let it write the list.>
 
 | Role | Where |
 |---|---|
-| router | `<path>` |
-| index | `<path>`: open it before searching |
 | decisions | `<path>` |
 | backlog | `<path>` |
 | archive | `<path>` |
 | fixes | `<path>` |
 | changelog | `<path>` |
-| glossary | `<path>` |
 | gates | `<path>` |

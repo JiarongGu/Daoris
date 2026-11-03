@@ -11,7 +11,7 @@ import { holds, keepStates } from './keep.ts';
 import { lockIndex, readLock, readManifest, writeLock } from './config.ts';
 import { refuseNewerLock } from './lockversion.ts';
 import { indexInput, rosterExtras } from './indexgen.ts';
-import { indexPath, renderIndex, renderTier, spanBody, tierRuleBody } from './tierrender.ts';
+import { indexPath, onDemandExtras, renderIndex, renderTier, spanBody, tierRuleBody } from './tierrender.ts';
 import { ensureImport, findRegion, writeRegion } from './region.ts';
 import { resolveHarness } from '../layout/harness.ts';
 import {
@@ -682,7 +682,6 @@ export function applySync(
   const from = plan.layout.from.target;
   const to = plan.layout.to.target;
   const files = plan.writes.filter((write) => !write.in);
-  const spans = plan.writes.filter((write) => write.in);
 
   const writes = files.map((write) => ({
     write,
@@ -772,7 +771,7 @@ export function applySync(
 
   // The region LAST: its rooms' rows read each room as it stands, and its pointer names the index
   // this sync just wrote.
-  writeSpans({ root, manifest, spans, canonVersion, off: plan.switchedOff ?? [], from });
+  writeSpans({ root, manifest, writes: plan.writes, canonVersion, off: plan.switchedOff ?? [], from });
   writePointers(root, plan);
   writeLock(root, lock);
   return lock;
@@ -791,19 +790,17 @@ function writePointers(root: string, plan: SyncPlan): void {
 }
 
 /**
- * Assemble every span into its region, and point the harness's own file at it (D59).
- *
- * @remarks
- * One write per region file, never one per rule: the region is a single span, and eight successive
- * rewrites of the same file would each re-read what the last one wrote.
+ * Assemble every span into its region, and point the harness's own file at it (D59). One write per region
+ * file, never one per rule: each rewrite of the same file would re-read all that the last one just wrote.
  */
 function writeSpans(
-  { root, manifest, spans, canonVersion, off, from }:
+  { root, manifest, writes, canonVersion, off, from }:
   {
-    root: string; manifest: Manifest; spans: PlannedWrite[]; canonVersion: string;
+    root: string; manifest: Manifest; writes: PlannedWrite[]; canonVersion: string;
     off: CoreSwitch[]; from: string;
   },
 ): void {
+  const spans = writes.filter((write) => write.in);
   if (!spans.length) return;
   const harness: Harness = manifest.harnessDescriptor ?? resolveHarness(manifest.harness);
 
@@ -818,6 +815,7 @@ function writeSpans(
         // Carried from `planSync`, where the canon was in hand — a span holds its body alone.
         ...(write.meta ? { meta: write.meta } : {}),
       })),
+      ...onDemandExtras(writes),
       version: canonVersion,
       target: manifest.target,
       // The rows this repository switched off (D71): the session loading the region learns what is
