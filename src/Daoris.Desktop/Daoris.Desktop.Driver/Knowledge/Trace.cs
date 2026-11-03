@@ -277,7 +277,7 @@ public static class Trace
                 Ask = Filled(session, "ask"),
                 Note = Filled(session, "note"),
                 Evidence = Filled(session, "evidence"),
-                Answer = Filled(session, "answer"),
+                Answer = SaidWordView.PersonsJoined(ServiceClient.ReadSaid(session)),
                 Created = Moment(session, "created"),
                 Updated = Moment(session, "updated"),
                 Took = Flag(session, "took"),

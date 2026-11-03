@@ -29,8 +29,7 @@ public static class SessionRecords
                 Ask = Text(session, "ask"),
                 Created = Time(session, "created"),
                 Updated = Time(session, "updated"),
-                // The service keeps a blank answer as its own words, so an empty one is none.
-                Answer = Text(session, "answer") is { Length: > 0 } answer ? answer : null,
+                Said = ServiceClient.ReadSaid(session),
                 // A host older than the field says nothing, and nothing is no delete (SESSUX1f).
                 Deletable = session.TryGetProperty("deletable", out var deletable) && deletable.ValueKind == JsonValueKind.True,
                 BaseCommit = Text(session, "baseCommit") is { Length: > 0 } baseCommit ? baseCommit : null,

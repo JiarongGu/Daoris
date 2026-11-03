@@ -103,10 +103,12 @@ public sealed class OpinionDeliveryTests : IDisposable
         Assert.Empty(host.Hands);
 
         host.Set("s1", "answer", "Yes, go on.");
+        host.Set("s1", "said", PersonWords.Wire("Yes, go on."));
         var handed = await Deliver(host);
 
         Assert.Equal((OpinionDeliveryStates.Handed, "s1"), (handed.State, handed.Session));
-        var word = Assert.Single(host.Said("s1"));
+        // Beside the person's own word, which stays.
+        var word = Assert.Single(host.Said("s1"), each => each!["by"] is not null);
         Assert.Equal(("op1", "opinion:op1"), (word!["by"]!.GetValue<string>(), word["key"]!.GetValue<string>()));
     }
 

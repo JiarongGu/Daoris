@@ -390,9 +390,9 @@ public static class SessionGroups
     /// answered one goes on at the driver's next look (ANSWER1c, D131), and not a teammate's, whose park waits on them (D47
     /// §6). One rule, which Ask Daoris's room lists its waiting sessions by (ENTRY1f2).
     /// </summary>
-    /// <param name="answer">The person's answer to the park, null where none was given.</param>
-    public static bool WaitsOnYou(string id, string state, string? answer) =>
-        state == "awaiting-person" && answer is null && !id.Contains('/');
+    /// <param name="answered">Whether the person has said a word to the park (a person's word among its said words).</param>
+    public static bool WaitsOnYou(string id, string state, bool answered) =>
+        state == "awaiting-person" && !answered && !id.Contains('/');
 
     /// <summary>Every session's place, in the order a list shows them; with <paramref name="only"/>, those sessions' alone.</summary>
     /// <param name="only">The sessions asked about. The rest still decide theirs: a tree is one session's to review.</param>
@@ -899,7 +899,7 @@ public static class SessionGroups
                 if (record.Answered) return row with { Group = SessionGroup.Working, Shown = ShownState.Answered };
 
                 // A teammate's park waits on them: nothing this window sends reaches its process (D47 §6).
-                return row with { Group = WaitsOnYou(record.Id, record.State, record.Answer) ? SessionGroup.You : SessionGroup.Working };
+                return row with { Group = WaitsOnYou(record.Id, record.State, record.Answered) ? SessionGroup.You : SessionGroup.Working };
             }
 
             if (record.Teammate) return Rest(row);

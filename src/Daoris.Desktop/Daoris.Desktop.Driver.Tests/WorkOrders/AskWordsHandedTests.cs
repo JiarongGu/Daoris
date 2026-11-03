@@ -65,12 +65,12 @@ public sealed class AskWordsHandedTests
     {
         var runs = ServiceClient.ReadLastRun(
             $$"""
-            [{"id":"s3","quest":"q2","state":"completed","answer":"{{Answer}}","profile":"account-1","created":"2026-10-01T04:08:00Z"},
+            [{"id":"s3","quest":"q2","state":"completed","said":[{"id":"answer","text":"{{Answer}}","at":"2026-10-01T04:30:00Z","files":[]}],"profile":"account-1","created":"2026-10-01T04:08:00Z"},
              {"id":"s4","quest":"q2","state":"failed","note":"{{Limit}}","limit":true,"profile":"account-1","created":"2026-10-01T08:14:00Z"},
              {"id":"s5","quest":"q2","state":"failed","note":"{{Limit}}","limit":true,"profile":"account-1","created":"2026-10-01T08:20:00Z"}]
             """);
         var prior = runs["q2"];
-        Assert.Equal(("s5", (string?)null), (prior.Session, prior.Answer));
+        Assert.Equal(("s5", (string?)null), (prior.Session, SaidWordView.PersonsJoined(prior.Waiting)));
 
         var standIn = new StandIn(request => request.RequestUri!.AbsolutePath switch
         {
@@ -84,7 +84,7 @@ public sealed class AskWordsHandedTests
         var carryOn = SessionTarget.ForQuest(Quest(), "C:/somewhere/report", service.BaseUrl) with
         {
             CutOff = prior.Note,
-            PersonSaid = prior.Answer,
+            PersonSaid = SaidWordView.PersonsJoined(prior.Waiting),
             AccountChanged = prior.Limit && AccountIdentity.OnAnotherAccount(prior, "account-2"),
         };
 

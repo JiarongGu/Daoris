@@ -162,7 +162,7 @@ public sealed class ResumeAccountTests : IDisposable
     public void The_line_follows_the_reason_on_every_note_that_says_it()
     {
         var why = ContinueWhy.AccountHeld(NextHold.SignedOut);
-        var park = new PriorSession("s1", "/trees/s-1", "awaiting-person", "It stopped to ask you.", "engine", Answer: "Port 8080.");
+        var park = new PriorSession("s1", "/trees/s-1", "awaiting-person", "It stopped to ask you.", "engine") { Said = PersonWords.Of("Port 8080.") };
         var ended = new PriorSession("s1", "/trees/s-1", "completed", "The quest reached done.", "engine");
 
         Assert.EndsWith("this start runs on another. That account is not signed in any more.", Continuations.EndedNote(park, why).Note);
