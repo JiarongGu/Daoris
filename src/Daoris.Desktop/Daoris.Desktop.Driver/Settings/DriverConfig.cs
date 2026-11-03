@@ -906,70 +906,43 @@ public sealed record DriverConfig(
         return next;
     }
 
-    public const string PathVariable = "DAORIS_DRIVER_CONFIG";
-
     /// <summary>The file's name, as a sentence names the file that keeps something (CACHECLEAR1's reasons): never a path to read.</summary>
     public static string FileName => Path.GetFileName(HomeEntry.DriverConfig.New);
 
     /// <summary>
-    /// Whether <paramref name="environment"/> names a file of its own (D194 point 2): one no running instance holds, so a change to it
-    /// is written alone and sent nowhere.
-    /// </summary>
-    public static bool Overridden(Func<string, string?> environment) => Named(environment) is { Length: > 0 };
-
-    /// <summary>The file the variable names, read here alone.</summary>
-    private static string? Named(Func<string, string?> environment) => environment(PathVariable);
-
-    /// <summary>
-    /// The conventional home, beside the store the driver watches — under the Daoris home (D63). A
-    /// machine with no home and no override is refused, naming what to set, rather than written to. The file is the home's
-    /// <see cref="HomeEntry.DriverConfig"/>, asked here alone (CONFIGSEAM1): a reader that joined it to its home itself read another
-    /// file than the loop's wherever the override named one, and so landed without the override's landing and review rules.
+    /// The conventional home, beside the store the driver watches — under the Daoris home (D63). A machine with no home is refused,
+    /// naming what to set, rather than written to. The file is the home's <see cref="HomeEntry.DriverConfig"/>, asked here alone
+    /// (CONFIGSEAM1). No variable names another file (ONEWAY1c-i): a run that wants other choices runs on a home of its own.
     /// </summary>
     public static string DefaultPath => DaorisHome.Require(HomeEntry.DriverConfig);
 
     /// <summary>
-    /// The one resolution of the person's choices (D63, CONFIGSEAM1): the override where set, the home's <c>driver.json</c>
-    /// otherwise, and null on a machine that names neither. Every reader comes here, through this or a <c>ResolvePath</c>, and
-    /// <c>ConfigSeamTests</c> scans for one that does not.
+    /// The one resolution of the person's choices (D63, CONFIGSEAM1): the home's <c>driver.json</c>, and null on a machine that names no
+    /// home. Every reader comes here, through this or a <c>ResolvePath</c>, and <c>ConfigSeamTests</c> scans for one that does not.
     /// </summary>
-    public static string? FindPath(Func<string, string?> environment) =>
-        Named(environment) ?? DaorisHome.File(environment, HomeEntry.DriverConfig);
+    public static string? FindPath(Func<string, string?> environment) => DaorisHome.File(environment, HomeEntry.DriverConfig);
 
     /// <summary>The same, from the process environment: for a reader with no home in hand that reads nothing on a machine with none.</summary>
     public static string? FindPath() => FindPath(Environment.GetEnvironmentVariable);
 
     /// <summary>
     /// The home this environment's loop drives, where the loop holds the home's lease and a verb takes it too (LEASEHOME2, the terminal
-    /// RPC design §5): the folder <see cref="FindPath(Func{string, string?})"/>'s file is in, as <see cref="HomeOf"/> undoes it, so the
-    /// override's where one is named and <c>DAORIS_HOME</c> otherwise; null where neither is. Found without reading or making anything and
-    /// never refused for a file in both its places, so a verb takes its lease before its door reads the file, and meets the loop's
-    /// lease wherever the override names a file.
+    /// RPC design §5): <c>DAORIS_HOME</c>, null where none is named. Found without reading or making anything, so a verb takes its lease
+    /// before its door reads the file.
     /// </summary>
-    public static string? FindHome(Func<string, string?> environment) =>
-        Named(environment) is { } named && !string.IsNullOrWhiteSpace(named) ? HomeOf(named) : DaorisHome.Resolve(environment);
+    public static string? FindHome(Func<string, string?> environment) => DaorisHome.Resolve(environment);
 
     /// <summary>The same, from the process environment.</summary>
     public static string? FindHome() => FindHome(Environment.GetEnvironmentVariable);
 
-    /// <summary>The file every door reads and writes — the override, or the conventional home; refused, naming what to set, with neither.</summary>
+    /// <summary>The file every door reads and writes, the home's; refused, naming what to set, with no home.</summary>
     public static string ResolvePath() => FindPath() ?? DefaultPath;
 
     /// <summary>
     /// The same file, for a door that holds its home rather than the path — the trees and every landing, a plugin's page, a chat
-    /// going on (CONFIGSEAM1): the one resolution where it is a file in this home, as every home is the folder its config sits in
-    /// (<see cref="HomeOf"/>), and this home's <c>driver.json</c> otherwise. Never another home's file: an override naming one
-    /// elsewhere is another machine's, or another test's.
+    /// going on (CONFIGSEAM1): this home's <c>driver.json</c>.
     /// </summary>
-    public static string ResolvePath(string home) => ResolvePath(Environment.GetEnvironmentVariable, home);
-
-    /// <summary>The same, over an environment a test hands in.</summary>
-    public static string ResolvePath(Func<string, string?> environment, string home) =>
-        FindPath(environment) is { Length: > 0 } found && SameFolder(HomeOf(found), home) ? found : DaorisHome.Entry(home, HomeEntry.DriverConfig);
-
-    private static bool SameFolder(string left, string right) => string.Equals(
-        Path.TrimEndingDirectorySeparator(Path.GetFullPath(left)), Path.TrimEndingDirectorySeparator(Path.GetFullPath(right)),
-        OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
+    public static string ResolvePath(string home) => DaorisHome.Entry(home, HomeEntry.DriverConfig);
 
     /// <summary>
     /// The Daoris home a config file lives in, which every door derives the home from (REV3 CLEAN1): the home whose

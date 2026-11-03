@@ -228,7 +228,7 @@ public static class HeavyRun
         // is read only then, and one that does not read is a tool error, never "none set".
         var keyedAs = world.Variable(RepositoryVariable)?.Trim() is { Length: > 0 } handed ? handed : repository;
         var declared = HeavyGates.Resolve(
-            checkout, keyedAs, () => HeavyMapping.For(DriverConfig.Load(DriverConfig.ResolvePath(world.Variable, world.Home)), keyedAs));
+            checkout, keyedAs, () => HeavyMapping.For(DriverConfig.Load(DriverConfig.ResolvePath(world.Home)), keyedAs));
         var choice = HeavyGates.Choose(declared, ask.Gate);
         if (choice.Refusal is { } refusal)
         {

@@ -55,7 +55,7 @@ public sealed class DriverWorkflowsLandedProcessTests : IDisposable
             Instance = new InstanceWorld
             {
                 Home = _home,
-                Environment = name => name == DriverConfig.PathVariable ? Config : null,
+                Environment = name => name == DaorisHome.Variable ? _home : null,
                 Out = _out,
                 Error = _error,
                 Verb = "daoris",

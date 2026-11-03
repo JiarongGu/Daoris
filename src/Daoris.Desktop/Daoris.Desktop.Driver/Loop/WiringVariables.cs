@@ -54,7 +54,6 @@ public static class WiringVariables
     public const string Home = "DAORIS_HOME";
     public const string ServiceUrl = ServiceClient.UrlVariable;
     public const string ServiceKey = ServiceClient.KeyVariable;
-    public const string ConfigFile = DriverConfig.PathVariable;
     public const string HarnessFile = HarnessSettings.PathVariable;
     public const string RemotesFile = RemoteTarget.PathVariable;
     public const string KnowledgeDb = "DAORIS_KNOWLEDGE_DB";
@@ -72,7 +71,6 @@ public static class WiringVariables
     public static IReadOnlyList<WiringVariable> Shown { get; } =
     [
         new(Home, WiringValue.Path, "install-data", WiringReaders.Desktop, WiringReaders.DriverLibrary, WiringReaders.Cli, WiringReaders.Service),
-        new(ConfigFile, WiringValue.Path, "home", WiringReaders.Desktop, WiringReaders.DriverLibrary, WiringReaders.Cli),
         new(HarnessFile, WiringValue.Path, "home", WiringReaders.Desktop, WiringReaders.DriverLibrary, WiringReaders.Cli),
         new(RemotesFile, WiringValue.Path, "home", WiringReaders.Desktop, WiringReaders.DriverLibrary, WiringReaders.Cli, WiringReaders.Service),
         new(KnowledgeDb, WiringValue.Path, "home", WiringReaders.DriverLibrary, WiringReaders.Service),

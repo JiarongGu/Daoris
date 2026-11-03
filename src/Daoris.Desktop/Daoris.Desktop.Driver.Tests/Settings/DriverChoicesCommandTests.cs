@@ -5,8 +5,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// <c>daoris-driver driver</c>, the standing choices <c>daoris driver …</c> hands on (PUSH1f2a, D194 points 1, 2 and 5; the alone-path
 /// design §1.2 and §2): a change goes to the running Daoris's route where one answers, confirmed in its window whatever the
-/// terminal's environment says; with none it is the verb's own act, on the terminal's word, refused from a session's terminal; a file
-/// <c>DAORIS_DRIVER_CONFIG</c> names is written alone and never sent; a read is never refused; and a verb it does not have is its usage.
+/// terminal's environment says; with none it is the verb's own act, on the terminal's word, refused from a session's terminal; a read is
+/// never refused; and a verb it does not have is its usage.
 /// </summary>
 public sealed class DriverChoicesCommandTests : IDisposable
 {
@@ -48,17 +48,6 @@ public sealed class DriverChoicesCommandTests : IDisposable
         Assert.Equal(1, exit);
         Assert.Equal(Refused, _error.ToString().TrimEnd());
         Assert.Equal("", _out.ToString());
-        Assert.False(File.Exists(Config));
-    }
-
-    [Fact]
-    public async Task A_named_file_from_a_sessions_terminal_is_refused_as_well()
-    {
-        var exit = await DriverChoicesCommand.RunAsync(["hold", "engine"],
-            World(("DAORIS_SESSION_ID", "s1a2b3c4"), (DriverConfig.PathVariable, Config)), CancellationToken.None);
-
-        Assert.Equal(1, exit);
-        Assert.Equal(Refused, _error.ToString().TrimEnd());
         Assert.False(File.Exists(Config));
     }
 
@@ -342,15 +331,16 @@ public sealed class DriverChoicesCommandTests : IDisposable
     }
 
     /// <summary>
-    /// A file `DAORIS_DRIVER_CONFIG` names is no instance's (D194 point 2): beside a running Daoris on this home, its change is written
-    /// to that file alone, and nothing is sent.
+    /// ONEWAY1c-i: the variable that once named a file no instance holds is read nowhere, so beside a running Daoris on this home a
+    /// change is its route whatever the variable says; nothing is written alone.
     /// </summary>
     [Fact]
-    public async Task A_named_file_is_written_alone_and_nothing_is_sent()
+    public async Task ONEWAY1c_i_beside_the_running_Daoris_the_retired_variable_writes_nothing_alone()
     {
         if (!OperatingSystem.IsWindows()) return;
         await using var running = new InstanceTestHome();
         var standIn = running.Serve();
+        standIn.Confirming = true;
         var instance = running.World("daoris");
         var world = new DriverChoicesWorld
         {
@@ -358,22 +348,22 @@ public sealed class DriverChoicesCommandTests : IDisposable
             Instance = new InstanceWorld
             {
                 Home = running.Home,
-                Environment = name => name == DriverConfig.PathVariable ? Config : null,
+                Environment = name => name == "DAORIS_DRIVER_CONFIG" ? Config : null,
                 BaseDirectory = instance.BaseDirectory,
                 Status = instance.Status,
-                Out = _out,
-                Error = _error,
+                Out = running.Out,
+                Error = running.Error,
                 Verb = "daoris",
+                Answer = instance.Answer,
+                Wait = instance.Wait,
             },
-            ConfigPath = Config,
+            ConfigPath = DaorisHome.Entry(running.Home, HomeEntry.DriverConfig),
         };
 
-        var exit = await DriverChoicesCommand.RunAsync(["hold", "engine"], world, CancellationToken.None);
+        await DriverChoicesCommand.RunAsync(["hold", "engine"], world, CancellationToken.None);
 
-        Assert.Equal(0, exit);
-        Assert.Equal(["engine"], DriverConfig.Load(Config).Holds);
-        Assert.Empty(standIn.Presses);
-        Assert.Equal(0, standIn.Connections);
+        Assert.Single(standIn.Presses);
+        Assert.False(File.Exists(Config), "the retired variable's file was written alone");
     }
 
     /// <summary>

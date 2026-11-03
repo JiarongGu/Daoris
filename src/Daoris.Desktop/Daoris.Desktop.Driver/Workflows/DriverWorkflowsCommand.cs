@@ -118,7 +118,6 @@ public static class DriverWorkflowsCommand
                 return 0;
             }
 
-            if (DriverConfig.Overridden(world.Instance.Environment)) return await Alone().ConfigureAwait(false);
             if (write.Cannot is { } cannot && world.Instance is InstanceWorld door
                 && (await InstanceDoor.FindAsync(door, ct).ConfigureAwait(false)).Found == InstanceFound.Answers)
             {

@@ -102,8 +102,8 @@ public sealed record StaffingChecked(StaffingChecks How, long? Found = null, str
 /// today's reader (<see cref="ActorChoices.Read"/>) into <c>role_staffing</c>, an entry that does not read kept as found with why, and
 /// records the file's four staffing paths as <c>written</c>. <b>The file is never written</b>: it already is the projection of what was
 /// imported (<see cref="ImportClass.Projected"/>). A kill before the commit leaves the store as it was, and the next start imports again.</para>
-/// <para><b>Only the home's own <c>driver.json</c></b>: a file <c>DAORIS_DRIVER_CONFIG</c> names is read and written as today, with no store.
-/// A home with no <c>driver.json</c>, or one that does not read, imports nothing and is asked again at the next start.</para>
+/// <para><b>The home's own <c>driver.json</c></b>, the only one a home has (ONEWAY1c-i). A home with no <c>driver.json</c>, or one that
+/// does not read, imports nothing and is asked again at the next start.</para>
 /// <para><b>Opened for one use and closed</b>, as every family's store is, a read never creating or writing the store.</para>
 /// </remarks>
 /// <param name="home">The home whose store and <c>driver.json</c> these are.</param>
@@ -112,8 +112,7 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
 {
     /// <summary>
     /// Wire the staffing of <paramref name="home"/>'s own <c>driver.json</c> to Settings' port (FOUNDATION1w-s part 3), once before the root's
-    /// first load: from then on a load of that file fills its five staffing fields from the store where it holds an import. A file
-    /// <c>DAORIS_DRIVER_CONFIG</c> names is another path and is never wired.
+    /// first load: from then on a load of that file fills its five staffing fields from the store where it holds an import.
     /// </summary>
     public static RoleStaffing Wire(string home, Func<StoreSettled>? settled = null)
     {
@@ -287,15 +286,15 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
     /// <summary>Run by the check after the file's replacement and before <c>written</c>'s update: the second seam of the repair.</summary>
     internal Action? AfterRepair { get; init; }
 
-    /// <summary>The staffing wired for <paramref name="file"/>, or null where none is: a file nobody wired, one the variable names among them.</summary>
+    /// <summary>The staffing wired for <paramref name="file"/>, or null where a composition root wired none.</summary>
     public static RoleStaffing? Of(string file) => RoleStaffingPort.Of(file) as RoleStaffing;
 
     /// <summary>
-    /// A composition root's wiring (§19.15): the home its environment names, wired before its first load, or nothing where
-    /// <c>DAORIS_DRIVER_CONFIG</c> names a file, which is read and written as today with no store, or where no home is named.
+    /// A composition root's wiring (§19.15): the home its environment names, wired before its first load, or nothing where no home is
+    /// named. A variable that named another file is read nowhere (ONEWAY1c-i): every home's staffing is its store's.
     /// </summary>
     public static RoleStaffing? WireHome(Func<string, string?> environment) =>
-        DriverConfig.Overridden(environment) || DriverConfig.FindHome(environment) is not { } home ? null : Wire(home);
+        DriverConfig.FindHome(environment) is { } home ? Wire(home) : null;
 
     /// <summary>
     /// The staffing's writers' one door (§19.15, every writer of the census): <see cref="Set(string, IReadOnlyList{ActorChoice}?)"/> where

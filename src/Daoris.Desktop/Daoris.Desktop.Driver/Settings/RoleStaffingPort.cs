@@ -24,9 +24,8 @@ public interface IRoleStaffing
 }
 
 /// <summary>
-/// Which <c>driver.json</c> reads its staffing through a port (FOUNDATION1w-s part 3): a file a composition root wired, the home's own and
-/// never one <c>DAORIS_DRIVER_CONFIG</c> names, which is read and written as today with no store. Keyed by the file, so two homes in one
-/// process (a test's) never share a port.
+/// Which <c>driver.json</c> reads its staffing through a port (FOUNDATION1w-s part 3): the home's own, which a composition root wired.
+/// Keyed by the file, so two homes in one process (a test's) never share a port.
 /// </summary>
 public static class RoleStaffingPort
 {

@@ -148,8 +148,8 @@ public static class ChoiceRoutes
 /// <c>daoris-driver driver</c> (PUSH1f2a, PUSH1f2b, D194, the alone-path design §1.2): the driver family from a terminal, the words
 /// <c>daoris driver …</c> hands this program, every one of them since PUSH1f2b. Each change is its route through
 /// <see cref="IChoiceTerminal.PressAsync"/> where the running Daoris answers, confirmed in its window; else the choice's own operation, on
-/// the terminal's word (D50), refused from a session's terminal (D194 point 5); and alone, holding nothing and sending nothing, on a
-/// file <c>DAORIS_DRIVER_CONFIG</c> names. A change no route takes acts alone even beside a running Daoris (<see cref="ChoiceRoutes"/>):
+/// the terminal's word (D50), refused from a session's terminal (D194 point 5). A change no route takes acts alone even beside a running
+/// Daoris (<see cref="ChoiceRoutes"/>):
 /// a landing's cycle, <c>work-cycle</c> and <c>brainstorms</c>; the workflows' writes are routes (<see cref="DriverWorkflowsCommand"/>). Its words
 /// are one function per verb on both paths, today's text kept (<c>fixtures/driver-choices-text.json</c>,
 /// <c>fixtures/driver-workflows-text.json</c>). The settings' own keys' verbs are here; a rule a subdomain above owns has its verb
@@ -339,8 +339,7 @@ public static class DriverChoicesCommand
             return press.Words(fields);
         }
 
-        // A file DAORIS_DRIVER_CONFIG names is no instance's (D194 point 2): written alone, and nothing sent.
-        if (press.Route is null || DriverConfig.Overridden(world.Instance.Environment)) return await Alone().ConfigureAwait(false);
+        if (press.Route is null) return await Alone().ConfigureAwait(false);
         return await world.Instance.PressAsync(press.Route, press.Payload, Alone, answer => press.Words(press.Fields(answer)), ct)
             .ConfigureAwait(false);
     }

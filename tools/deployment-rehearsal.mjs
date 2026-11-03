@@ -1069,7 +1069,6 @@ if (!done.ok) throw new Error(done.text);
     ASPNETCORE_URLS: base,
     DAORIS_KNOWLEDGE_DB: homeEntry(home, 'knowledge'),
     DAORIS_KNOWLEDGE_ROOT: family,
-    DAORIS_DRIVER_CONFIG: homeEntry(home, 'driver'),
     ...debugEnvironment(cdpPort),
     // The kit reads its development switch from `DOTNET_ENVIRONMENT` first, and the host the shell
     // starts inherits it. A host in development can serve a PROJECT's `wwwroot` through ASP.NET's

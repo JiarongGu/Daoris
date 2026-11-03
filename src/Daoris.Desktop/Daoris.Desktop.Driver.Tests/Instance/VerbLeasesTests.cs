@@ -265,17 +265,14 @@ public sealed class VerbLeasesTests
     public void No_words_hold_nothing() => Assert.False(VerbLeases.Holds([]));
 
     /// <summary>
-    /// A file `DAORIS_DRIVER_CONFIG` names is no instance's (D194 point 2, the alone-path design §1.2): the driver family acts on that
-    /// file's home alone, holding nothing; with none named, the same change holds the home.
+    /// ONEWAY1c-i: no variable names another driver file, so a driver choice holds the home whatever the retired variable says.
     /// </summary>
     [Fact]
-    public void A_driver_choice_on_a_named_file_holds_nothing()
+    public void ONEWAY1c_i_a_driver_choice_holds_the_home_whatever_the_retired_variable_names()
     {
         string[] words = ["driver", "drive", "engine"];
-        Assert.False(VerbLeases.HoldsHere(words, name => name == DriverConfig.PathVariable ? "X:/daoris/elsewhere/driver.json" : null));
+        Assert.True(VerbLeases.HoldsHere(words, name => name == "DAORIS_DRIVER_CONFIG" ? "X:/daoris/elsewhere/driver.json" : null));
         Assert.True(VerbLeases.HoldsHere(words, _ => null));
-        // Another family's verb is not the driver family's file: a named driver file isolates only what it names.
-        Assert.True(VerbLeases.HoldsHere(["trees", "land", "s-1"], name => name == DriverConfig.PathVariable ? "X:/daoris/elsewhere/driver.json" : null));
     }
 
     /// <summary>

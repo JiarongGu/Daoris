@@ -32,8 +32,7 @@ public sealed record VerbLeaseReading(
 /// <item><b>Reads</b>: <c>trace</c>, <c>git</c>, <c>logs</c>, <c>workflow run</c>, the lists (<c>sessions</c>, <c>history</c>,
 /// <c>trees</c>, <c>trees list</c>, <c>trees state</c>, <c>work state</c>, <c>work held</c> naming no word), <c>plugins show</c> and <c>activity</c>, <c>sync status</c>,
 /// <c>help list</c>, <c>help mode</c> naming no mode, <c>access</c> and <c>heavy</c> naming no change, <c>opinion show</c>, an <c>update</c> that only asks where it stands, any <c>--plan</c>, and asking for
-/// the usage; the driver's standing choices' <c>list</c> (PUSH1f2a), and any of them on a file <c>DAORIS_DRIVER_CONFIG</c> names
-/// (<see cref="HoldsHere"/>); the tools' <c>list</c>, <c>path</c> and a bare <c>locations</c> (PUSH1f2c); the agents' <c>rules</c> and
+/// the usage; the driver's standing choices' <c>list</c> (PUSH1f2a); the tools' <c>list</c>, <c>path</c> and a bare <c>locations</c> (PUSH1f2c); the agents' <c>rules</c> and
 /// <c>rules proposals</c>, a <c>settings</c> naming no change, a <c>trust</c> asked or dry-run, and an agent's settings or trust on a file
 /// <c>DAORIS_HARNESS_CONFIG</c> names (PUSH1f2d).</item>
 /// <item><b>A long verb</b> (PUSH1f2c, the alone-path design §1.4): <c>tool download</c>, <c>update</c> and <c>use … managed</c> hold
@@ -115,15 +114,13 @@ public static class VerbLeases
     }
 
     /// <summary>
-    /// <see cref="Holds"/> on this terminal's variables: a file <c>DAORIS_DRIVER_CONFIG</c> names is no instance's (D194 point 2, the
-    /// alone-path design §1.2), so the driver family acting on it holds nothing, as it sends nothing; and a file
-    /// <c>DAORIS_HARNESS_CONFIG</c> names is no instance's either, so an agent's settings and trust on its home hold nothing, while the
-    /// rules, <c>DAORIS_HOME</c>'s whatever it names, hold the home's lease (PUSH1f2d). A verb that holds takes the lease in the home the
-    /// loop drives, <see cref="DriverConfig.FindHome(Func{string, string?})"/>, where the loop holds it (LEASEHOME2).
+    /// <see cref="Holds"/> on this terminal's variables: a file <c>DAORIS_HARNESS_CONFIG</c> names is no instance's (D194 point 2, the
+    /// alone-path design §1.2), so an agent's settings and trust on its home hold nothing, while the rules, <c>DAORIS_HOME</c>'s whatever
+    /// it names, hold the home's lease (PUSH1f2d). A verb that holds takes the lease in the home the loop drives,
+    /// <see cref="DriverConfig.FindHome(Func{string, string?})"/>, where the loop holds it (LEASEHOME2).
     /// </summary>
     public static bool HoldsHere(IReadOnlyList<string> args, Func<string, string?> environment) =>
-        Holds(args) && !(args[0] == "driver" && DriverConfig.Overridden(environment))
-        && !(Readings.TryGetValue(args[0], out var reading) && reading.Isolated?.Invoke([.. args.Skip(1)], environment) == true);
+        Holds(args) && !(Readings.TryGetValue(args[0], out var reading) && reading.Isolated?.Invoke([.. args.Skip(1)], environment) == true);
 
     /// <summary>The words a lease names a verb by: its verb, and its sub-verb where it has one; never an argument.</summary>
     public static string Name(IReadOnlyList<string> args) =>
