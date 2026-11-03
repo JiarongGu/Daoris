@@ -1219,6 +1219,52 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     }
 
     /// <summary>
+    /// What waits for one part this loop runs (COMMS1k's <c>GET /api/channel/addressed?session=</c>): the messages to it alone and on its
+    /// line's own channel, each with what its line acknowledged. The call is how the driver says it reads them. Null where the host holds
+    /// no such session or is one from before the door, so nothing is handed and they wait for the part's own <c>channel_read</c>.
+    /// </summary>
+    /// <exception cref="DriverException">The host answered something other than the list.</exception>
+    public async Task<IReadOnlyList<ChannelItemView>?> AddressedAsync(string session, CancellationToken ct = default)
+    {
+        var answer = await _doors.SendAsync(ServiceVerb.Get, $"/api/channel/addressed?session={Uri.EscapeDataString(session)}", null, ct).ConfigureAwait(false);
+        if (answer.Status == (int)System.Net.HttpStatusCode.NotFound) return null;
+        if (!answer.Ok) throw new DriverException($"the service would not read what waits for session `{session}`: {answer.Payload}");
+
+        using var document = JsonDocument.Parse(answer.Payload);
+        return document.RootElement.ValueKind == JsonValueKind.Object
+               && document.RootElement.TryGetProperty("messages", out var listed) && listed.ValueKind == JsonValueKind.Array
+            ? [.. listed.EnumerateArray().Select(ChannelView.ReadItem).OfType<ChannelItemView>()]
+            : throw new DriverException($"the service answered something other than what waits for session `{session}`: {answer.Payload}");
+    }
+
+    /// <summary>
+    /// One part's acknowledgment of messages to it by their ids (COMMS1k's <c>POST /api/channel/addressed/ack</c>), as an entry's of an
+    /// ask's channel. Answers the ids it changed; a host without the door changes none.
+    /// </summary>
+    /// <exception cref="DriverException">The host refused the acknowledgment.</exception>
+    public async Task<IReadOnlyList<string>> AddressedAckAsync(string session, string state, IReadOnlyList<string> messages, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("session", session);
+            writer.WriteString("state", state);
+            writer.WriteStartArray("messages");
+            foreach (var message in messages) writer.WriteStringValue(message);
+            writer.WriteEndArray();
+            writer.WriteEndObject();
+        });
+        var (ok, status, payload, root) = await PostJsonAsync("/api/channel/addressed/ack", body, ct).ConfigureAwait(false);
+        if (status == (int)System.Net.HttpStatusCode.NotFound) return [];
+        if (!ok) throw new DriverException($"the service would not keep session `{session}`'s {state} of the messages to it: {payload}");
+
+        return root is { ValueKind: JsonValueKind.Object } answered
+               && answered.TryGetProperty("acknowledged", out var changed) && changed.ValueKind == JsonValueKind.Array
+            ? [.. changed.EnumerateArray().Where(id => id.ValueKind == JsonValueKind.String).Select(id => id.GetString()!)]
+            : [];
+    }
+
+    /// <summary>
     /// Move the person's own read mark on an ask's channel (SESSONE2c, <c>POST …/channel/read</c> with no entry), through
     /// <paramref name="through"/> or the newest item, and answer the channel as it then reads. Null where the host holds no such ask,
     /// or is one from before the channel.

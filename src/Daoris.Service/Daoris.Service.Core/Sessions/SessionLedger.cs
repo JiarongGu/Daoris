@@ -887,6 +887,12 @@ public sealed class SessionLedger(
     public Task<Session?> FindAsync(string sessionId, CancellationToken ct = default) => sessions.FindAsync(sessionId, ct);
 
     /// <summary>
+    /// The line <paramref name="named"/> is on, walked forward to its head as the say door walks it (<see cref="Lines.WalkAsync"/>):
+    /// what a message to one part reaches (COMMS1k), so a replacement part of that line takes it.
+    /// </summary>
+    public Task<LineWalk> WalkLineAsync(Session named, CancellationToken ct = default) => Lines.WalkAsync(sessions, named, ct);
+
+    /// <summary>
     /// The records as the store lists them, live work first (<see cref="SessionStore.ListAsync"/>): what the channel reads to judge
     /// whether a part of an entry is still here before it says a message was never reached (COWORK1d).
     /// </summary>

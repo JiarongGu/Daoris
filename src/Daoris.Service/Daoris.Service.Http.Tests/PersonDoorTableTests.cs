@@ -40,6 +40,7 @@ public sealed class PersonDoorTableTests
         ("GET", "/api/asks/{id}", Open),
         ("GET", "/api/asks/{id}/channel", Open),
         ("GET", "/api/channel/elsewhere", Open),
+        ("GET", "/api/channel/addressed", Open),
         ("GET", "/api/sessions", Open),
         ("GET", "/api/sessions/{id}/deletable", Open),
         ("GET", "/api/sessions/{id}/record", Open),
@@ -103,6 +104,7 @@ public sealed class PersonDoorTableTests
         ("POST", "/api/sessions/{id}/restore", Driver),
         // COWORK1d: an entry's acknowledgment of a channel message, the driver's as it hands one to a part.
         ("POST", "/api/asks/{id}/channel/ack", Driver),
+        ("POST", "/api/channel/addressed/ack", Driver),
         ("POST", "/api/sync", Driver),
         ("DELETE", "/api/registry/retired/{repository}", Driver),
         ("POST", "/api/registry", Driver),
@@ -199,10 +201,11 @@ public sealed class PersonDoorTableTests
         // and one quest's handback, a read (HANDBACK1), and the event journal's rows after a position, a read (FOUNDATION1 l-i), and a session's finished tree's record, a read (KEEPSIZE1),
         // and the person's move of a held word to the head (LINESTOGETHER1b), and a session's memory changes, a read, and the person's
         // decision of a memory end and Keep or Drop of an ended session's staged changes (KNOWCENTRAL2d), and an asker's withdrawal of
-        // its own confirmation (ONEWAY1n-i); less the park's answer route, whose job is the say door's alone (ONEWAY1k).
-        Assert.Equal(35, Routes.Count(route => route.Class == Open));
+        // its own confirmation (ONEWAY1n-i); less the park's answer route, whose job is the say door's alone (ONEWAY1k); and what waits
+        // for one part on its line's channel, a read, and that part's acknowledgment, the driver's (COMMS1k).
+        Assert.Equal(36, Routes.Count(route => route.Class == Open));
         Assert.Equal(5, Routes.Count(route => route.Class == Agent));
-        Assert.Equal(31, Routes.Count(route => route.Class == Driver));
+        Assert.Equal(32, Routes.Count(route => route.Class == Driver));
         Assert.Equal(36, Routes.Count(route => route.Class == Person));
         // And a shared host's two channel doors, a feed and a page (SESSONE2d), and its retirement of a machine (FABRIC-CLOSE1i2).
         Assert.Equal(10, Routes.Count(route => route.Class == Shared));

@@ -22,8 +22,8 @@ public sealed class WaitingLine(ChannelDesk? channel, IntakeScope? intake)
     {
         if (channel is null || intake?.Session is not { Length: > 0 } session) return null;
 
-        var (ask, waiting) = await channel.WaitingForAsync(session, ct).ConfigureAwait(false);
-        if (ask is null || waiting.Count == 0) return null;
+        var (ask, _, waiting) = await channel.WaitingForAsync(session, ct).ConfigureAwait(false);
+        if (waiting.Count == 0) return null;
         lock (_gate)
         {
             var told = 0;
@@ -33,7 +33,8 @@ public sealed class WaitingLine(ChannelDesk? channel, IntakeScope? intake)
 
         var urgent = waiting.Count(message => message.Urgent == true);
         var count = waiting.Count == 1 ? "1 message waits" : $"{waiting.Count} messages wait";
-        return $"Daoris: {count} for you on ask `#{ask.Id}`'s channel"
+        // COMMS1k: a line on no ask has its own channel, and a message to one part waits on the line's too.
+        return $"Daoris: {count} for you on {(ask is null ? "your line's own channel" : $"ask `#{ask.Id}`'s channel")}"
                + (urgent > 0 ? $", {urgent} of them urgent" : "")
                + ". channel_read reads them, at a point you choose between steps.";
     }

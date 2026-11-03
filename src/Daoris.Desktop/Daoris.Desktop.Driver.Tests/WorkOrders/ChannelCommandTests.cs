@@ -174,8 +174,37 @@ public sealed class ChannelCommandTests
         Assert.Null(ChannelCommand.Reached(new ChannelItemView(ChannelItemView.Line, DateTimeOffset.UnixEpoch)));
     }
 
+    /// <summary>
+    /// COMMS1k (the comms design §7: <c>ask channel</c> gains the addressed rows): a read prints the messages to one part each beneath the
+    /// channel, apart from it, each with what it reached in that part's line.
+    /// </summary>
+    [Fact]
+    public async Task COMMS1k_reading_prints_the_messages_to_one_part_each_with_what_they_reached()
+    {
+        const string channel = """
+            {"ask":"a1","entry":"person","items":[
+             {"kind":"message","at":"2026-10-14T09:02:00Z","id":"m1","person":true,"urgent":true,"text":"To everyone."}],
+             "addressed":[
+             {"kind":"message","at":"2026-10-14T09:05:00Z","id":"p1a2b3c4d5","session":"s1","repository":"web","agent":"codex","part":"s2",
+              "channel":"ask:a1","urgent":true,"text":"The contract changed.","receipt":"read"}],
+             "unread":0}
+            """;
+        var standIn = new StandIn(_ => (HttpStatusCode.OK, channel));
+        using var service = new ServiceClient("http://stand-in", null, new HttpClient(standIn));
+        var output = new StringWriter();
+
+        Assert.Equal(0, await ChannelCommand.RunAsync(new ChannelAsk("a1", null, null, null), service, output));
+
+        var lines = output.ToString().Split(Environment.NewLine);
+        Assert.Equal("To one part alone:", lines[2]);
+        Assert.Contains("web · codex → session s2 alone (urgent): The contract changed.", lines[3]);
+        Assert.Equal("      What it reached: read by session s2's line.", lines[4]);
+    }
+
     /// <summary>Each refusal is a code the service answers, said in a sentence, exit 1; a post to everyone says so.</summary>
     [Theory]
+    [InlineData("bad-part", "is no part of a line of work on ask #a1")]
+    [InlineData("part-elsewhere", "runs on another machine")]
     [InlineData("empty", "words are empty")]
     [InlineData("too-long", "at most 4,000 characters")]
     [InlineData("bad-to", "not one of the ask's repositories")]

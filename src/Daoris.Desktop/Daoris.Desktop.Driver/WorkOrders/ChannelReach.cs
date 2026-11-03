@@ -26,11 +26,29 @@ public interface IChannelDoors
     /// Their author where not the person (COWORK1d): <c>agent</c> for another agent's claim the person passed on, never their words.
     /// </param>
     Task<SayAnswer> SayAsync(string session, string text, string channel, string? from, CancellationToken ct);
+
+    /// <summary>
+    /// What waits for one part (COMMS1k): the messages to it alone and on its line's own channel, each with its line's acknowledgment;
+    /// null where the host holds no such session or has no such door, so nothing is handed.
+    /// </summary>
+    Task<IReadOnlyList<ChannelItemView>?> AddressedAsync(string session, CancellationToken ct) => Task.FromResult<IReadOnlyList<ChannelItemView>?>(null);
+
+    /// <summary>One part's acknowledgment of messages to it by their ids (COMMS1k); the messages whose acknowledgment changed.</summary>
+    Task<IReadOnlyList<string>> AcknowledgeAddressedAsync(string session, string state, IReadOnlyList<string> messages, CancellationToken ct) =>
+        Task.FromResult<IReadOnlyList<string>>([]);
 }
 
-/// <summary>The channel's doors through the loop's service: <c>GET /api/asks/{id}/channel</c>, <c>POST …/channel/ack</c> and the say door.</summary>
+/// <summary>
+/// The channel's doors through the loop's service: <c>GET /api/asks/{id}/channel</c>, <c>POST …/channel/ack</c>, the say door, and since
+/// COMMS1k <c>GET /api/channel/addressed</c> with its acknowledgment.
+/// </summary>
 public sealed class ServiceChannelDoors(ServiceClient service) : IChannelDoors
 {
+    public Task<IReadOnlyList<ChannelItemView>?> AddressedAsync(string session, CancellationToken ct) => service.AddressedAsync(session, ct);
+
+    public Task<IReadOnlyList<string>> AcknowledgeAddressedAsync(string session, string state, IReadOnlyList<string> messages, CancellationToken ct) =>
+        service.AddressedAckAsync(session, state, messages, ct);
+
     public Task<ChannelView?> ReadAsync(string ask, string entry, CancellationToken ct) => service.ChannelAsync(ask, entry, ct);
 
     public Task<IReadOnlyList<string>> AcknowledgeAsync(
@@ -46,6 +64,9 @@ public sealed class ServiceChannelDoors(ServiceClient service) : IChannelDoors
 /// it and its door takes words (SESS3); none where the part is parked or ended.
 /// </summary>
 public sealed record ChannelPart(ChannelEntry Entry, string Session, DrivenInbox? Inbox);
+
+/// <summary>A part this loop runs on any line, as a message to it alone reaches it (COMMS1k): its session and its inbox.</summary>
+public sealed record AddressedPart(string Session, DrivenInbox Inbox);
 
 /// <summary>
 /// The look's half of an ask's channel (SESSONE2b, D167 point 7; the co-working design §2.3; COWORK1d, D188, the message-urgency
@@ -108,6 +129,20 @@ public sealed class ChannelReach
     }
 
     /// <summary>
+    /// The parts a look hands what waits for them alone and on their line's own channel (COMMS1k, the comms design §4.4): every part this
+    /// loop runs whose door takes words, on any line, a teammate's record none. One read each.
+    /// </summary>
+    public static IReadOnlyList<AddressedPart> Addressed(Snapshot snapshot, SessionProcesses processes) =>
+    [
+        .. snapshot.LastRun.Values
+            .Where(part => !part.Teammate && part.Entry is { Length: > 0 })
+            .Select(part => (part.Session, Inbox: processes.InboxOf(part.Session)))
+            .Where(part => part.Inbox is not null)
+            .DistinctBy(part => part.Session, StringComparer.Ordinal)
+            .Select(part => new AddressedPart(part.Session, part.Inbox!)),
+    ];
+
+    /// <summary>
     /// What a starting part of <paramref name="entry"/> is handed from the ask's channel (design §2.3, <i>held for the next part</i>):
     /// the messages for its entry it has not acknowledged, which it acknowledges once it has started (<see cref="HandedAsync"/>). Null
     /// where nothing waits, or the channel could not be read: a start is never held by it.
@@ -157,8 +192,10 @@ public sealed class ChannelReach
     /// is made (NOTIFY2h2): a channel not read the next look's, a message's reach what the ask's channel says.
     /// </summary>
     /// <param name="said">The look's classing; none classes and keeps nothing.</param>
+    /// <param name="addressed">The parts this loop runs that are handed what waits for them alone (COMMS1k, <see cref="Addressed"/>); none, none.</param>
     /// <exception cref="OperationCanceledException">The loop is closing.</exception>
-    public async Task<IReadOnlyList<string>> LookAsync(IChannelDoors doors, IReadOnlyList<ChannelPart> parts, CancellationToken ct, LookSaid? said = null)
+    public async Task<IReadOnlyList<string>> LookAsync(
+        IChannelDoors doors, IReadOnlyList<ChannelPart> parts, CancellationToken ct, LookSaid? said = null, IReadOnlyList<AddressedPart>? addressed = null)
     {
         var lines = new LookLines(said ?? LookSaid.None, "channel");
         foreach (var part in parts)
@@ -171,6 +208,19 @@ public sealed class ChannelReach
                                               || (error is OperationCanceledException && !ct.IsCancellationRequested))
             {
                 lines.Retry($"channel  ask #{part.Entry.Ask}'s channel was not read for `{part.Entry.Repository}` at this look, and the next tries again: {error.Message}");
+            }
+        }
+
+        foreach (var part in addressed ?? [])
+        {
+            try
+            {
+                await AddressedAtAsync(doors, part, lines, ct).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is DriverException or HttpRequestException or JsonException or InvalidOperationException
+                                              || (error is OperationCanceledException && !ct.IsCancellationRequested))
+            {
+                lines.Retry($"channel  what waits for session {part.Session} alone was not read at this look, and the next tries again: {error.Message}");
             }
         }
 
@@ -199,6 +249,70 @@ public sealed class ChannelReach
         {
             if (refused.ContainsKey(message.Id!)) continue;
             await ReachAsync(doors, part, message, refused, lines, ct).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// What waits for one running part alone and on its line's own channel (COMMS1k, the comms design §4.4): each message its line has not
+    /// acknowledged, claimed by this part and held at its level, as an ask's message to it is; one its agent read itself leaves the inbox.
+    /// A part named whose line moved on is not handed it: the service answers it to that line's head, the part that continues it.
+    /// </summary>
+    private static async Task AddressedAtAsync(IChannelDoors doors, AddressedPart part, LookLines lines, CancellationToken ct)
+    {
+        if (await doors.AddressedAsync(part.Session, ct).ConfigureAwait(false) is not { Count: > 0 } waiting) return;
+        var readAlready = waiting.Where(item => item.IsMessage && item.Ack == ChannelAcks.Read).Select(item => item.Id!).ToHashSet(StringComparer.Ordinal);
+        if (readAlready.Count > 0) part.Inbox.DropClaims(readAlready);
+
+        foreach (var message in waiting.Where(item => item.IsMessage && (item.Ack is null || item.Ack == ChannelAcks.Partly)))
+        {
+            var id = message.Id!;
+            var level = message.Urgent == false ? MessageLevel.Ordinary : MessageLevel.Urgent;
+            if (!message.Person && !part.Inbox.TakesClaims) continue;
+            var claimed = await doors.AcknowledgeAddressedAsync(part.Session, ChannelAcks.Taking, [id], ct).ConfigureAwait(false);
+            if (!claimed.Contains(id, StringComparer.Ordinal)) continue;
+
+            var acknowledge = AddressedAcknowledger(doors, part.Session, id);
+            var words = new ChatMessage(message.Person ? message.Text! : ChannelText.Claim(message), [])
+            {
+                Channel = message, Level = level, Acknowledge = acknowledge, Went = () => acknowledge(ChannelAcks.Sent),
+            };
+            var reach = part.Inbox.ReachAt(level);
+            if (!(message.Person ? part.Inbox.Hold(words) : part.Inbox.HoldClaim(words)))
+            {
+                await doors.AcknowledgeAddressedAsync(part.Session, ChannelAcks.Released, [id], ct).ConfigureAwait(false);
+                continue;
+            }
+
+            var when = reach == DrivenReach.NextStep ? "at its next step" : "when its turn ends";
+            var whose = message.Person ? "the person's message" : $"message `{id}` from session {message.Session}";
+            lines.Progress($"channel  {whose} to session {part.Session} alone reaches it {when}{(message.Person ? ", as their words" : ", as that agent's claim")}");
+        }
+    }
+
+    /// <summary>What tells one part's line a message to it reached a state (COMMS1k), in order, as <see cref="Acknowledger"/> tells an entry's.</summary>
+    private static Action<string> AddressedAcknowledger(IChannelDoors doors, string session, string id)
+    {
+        var gate = new object();
+        var chain = Task.CompletedTask;
+        return state =>
+        {
+            lock (gate)
+            {
+                chain = chain.ContinueWith(_ => AcknowledgeAsync(state), CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default).Unwrap();
+            }
+        };
+
+        async Task AcknowledgeAsync(string state)
+        {
+            try
+            {
+                await doors.AcknowledgeAddressedAsync(session, state, [id], CancellationToken.None).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is DriverException or HttpRequestException or JsonException or InvalidOperationException
+                                              or ObjectDisposedException or OperationCanceledException)
+            {
+                // The words went either way; the receipt waits for what the next look or read says.
+            }
         }
     }
 

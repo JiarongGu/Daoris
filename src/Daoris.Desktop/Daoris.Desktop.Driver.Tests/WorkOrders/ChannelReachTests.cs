@@ -102,7 +102,27 @@ public sealed class ChannelReachTests
         }
 
         public IEnumerable<string> States(string id) => Acknowledged.Where(ack => ack.Message == id).Select(ack => ack.State);
+
+        /// <summary>COMMS1k: what waits for each part alone, by its session, as the service answers it; a part absent reads as an older host's none.</summary>
+        public Dictionary<string, List<ChannelItemView>> ForPart { get; } = new(StringComparer.Ordinal);
+
+        public Task<IReadOnlyList<ChannelItemView>?> AddressedAsync(string session, CancellationToken ct)
+        {
+            lock (Acks)
+            {
+                return Task.FromResult<IReadOnlyList<ChannelItemView>?>(ForPart.TryGetValue(session, out var waiting)
+                    ? [.. waiting.Select(item => Acks.TryGetValue(item.Id!, out var ack) ? item with { Ack = ack.State, AckSession = ack.Session } : item)]
+                    : null);
+            }
+        }
+
+        public Task<IReadOnlyList<string>> AcknowledgeAddressedAsync(string session, string state, IReadOnlyList<string> messages, CancellationToken ct) =>
+            AcknowledgeAsync("", "", session, state, messages, ct);
     }
+
+    /// <summary>A message to one part alone (COMMS1k), from another part of its line of work: kept apart from the ask's channel.</summary>
+    private static ChannelItemView ToPart(string id, string part, string from, string text, bool? urgent = true) =>
+        Message(id, 1, text, session: from, entry: Key, urgent: urgent) with { Part = part, Channel = "ask:" + Ask, Repository = "console-ui" };
 
     /// <summary>A running part's inbox on the next-step door, its turn under way: what it sends is recorded as the session takes it.</summary>
     private static (DrivenInbox Inbox, List<ChatMessage> Sent) NextStep()
@@ -139,6 +159,58 @@ public sealed class ChannelReachTests
         }
 
         return null;
+    }
+
+    // ——— COMMS1k: parts that hear each other.
+
+    /// <summary>
+    /// Two alongside parts of one line of work post to each other: each message reaches the part it names alone, as that agent's claim
+    /// said to be to it alone, claimed by that part and acknowledged sent once written; the poster is handed nothing of its own.
+    /// </summary>
+    [Fact]
+    public async Task COMMS1k_two_alongside_parts_hear_each_other_and_only_the_part_named()
+    {
+        var doors = new Doors();
+        doors.ForPart["s2"] = [ToPart("p1", "s2", "s1", "The contract changed: the bridge takes a region.")];
+        doors.ForPart["s1"] = [ToPart("p2", "s1", "s2", "Taken; the page reads region now.", urgent: false)];
+        var (lead, leadSent) = NextStep();
+        var (lane, laneSent) = NextStep();
+
+        await new ChannelReach().LookAsync(doors, [], CancellationToken.None, addressed: [new AddressedPart("s1", lead), new AddressedPart("s2", lane)]);
+
+        var taken = Assert.Single(laneSent);
+        Assert.Contains("Your line of work's part, `console-ui`'s session `s1` on claude-code wrote to you alone", taken.Text);
+        Assert.Contains("  > The contract changed: the bridge takes a region.", taken.Text);
+        Assert.Equal("p1", taken.Channel!.Id);
+        Assert.Contains(("s2", ChannelAcks.Taking, "p1"), doors.Acknowledged);
+        // The ordinary one rides what the lead is told anyway: nothing at its next step.
+        Assert.Empty(leadSent);
+        Assert.Contains(("s1", ChannelAcks.Taking, "p2"), doors.Acknowledged);
+        Assert.DoesNotContain(doors.Acknowledged, ack => ack.Session == "s1" && ack.Message == "p1");
+
+        taken.Went!();
+        await Poll.Until(() => doors.States("p1").Contains(ChannelAcks.Sent), () => string.Join(", ", doors.States("p1")));
+    }
+
+    /// <summary>
+    /// A host that answers no such door (an older build's) hands nothing and acknowledges nothing: a message to one part is never widened
+    /// to the ask's channel, and waits for the part's own read; one its agent read itself is not handed again.
+    /// </summary>
+    [Fact]
+    public async Task COMMS1k_an_older_host_hands_nothing_and_a_read_message_is_not_handed_again()
+    {
+        var doors = new Doors();
+        var (inbox, sent) = NextStep();
+
+        await new ChannelReach().LookAsync(doors, [], CancellationToken.None, addressed: [new AddressedPart("s2", inbox)]);
+        Assert.Empty(sent);
+        Assert.Empty(doors.Acknowledged);
+
+        doors.ForPart["s2"] = [ToPart("p1", "s2", "s1", "Read already.")];
+        doors.Acks["p1"] = (ChannelAcks.Read, "s2");
+        await new ChannelReach().LookAsync(doors, [], CancellationToken.None, addressed: [new AddressedPart("s2", inbox)]);
+        Assert.Empty(sent);
+        Assert.Empty(doors.Acknowledged);
     }
 
     // ——— A running part.
