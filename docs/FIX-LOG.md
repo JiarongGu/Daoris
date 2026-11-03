@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-03 - A press on a card or line partly out of view moved it from under the pointer, and its click was lost (CANVAS1e)
+
+- **Symptom:** CI on main: `measured/map.spec.ts` "a line is pressed through its stroke" left the line `aria-pressed="false"`, and `e2e/platform.spec.ts` "a repository opens its own code map" never showed "game keeps no code map": the press on game's card did not choose it, so the engine's code map stayed.
+- **Root cause:** the canvas followed a focus by the smallest pan at once (`Canvas.tsx` `onFocus`), and a mouse press focuses on pointer-down, so a card or line cut by the region's edge was panned away before the pointer-up and the click went to the ground (measured: the line moved 562 px between down and up). Only a port press deferred the pan. The measured spec also aimed at the curve's middle, which the wide layers open past the region's edge and so no press can reach.
+- **Fix:** a press on the canvas (`pressing`) defers the focus pan to its pointer-up, as a port press already did, and a press that was no drag then follows the focus. The spec presses the point nearest the middle that reaches the line.
+- **Verify:** `Canvas.test.tsx` holds the view while a node is pressed; both specs and their whole files pass; with the deferral removed the e2e fails again.
+
 ## 2026-11-02 - A git hold named `http.sslCert` for a certificate scoped to an address, and the proof of the fixtures' git broke the tests beside it
 
 - **Symptom:** CI on main: `GitCertificateHoldTests` expected the hold to name `http.https://github.com/.sslCert` and it named `http.sslCert`; two end-to-end merge-branch tests found no merge in progress in their fixture; the fixture-variables test found the real repository's worktree list changed.

@@ -42,7 +42,19 @@ test('map/Layered: a line is pressed through its stroke, and chosen alone', asyn
   const stroke = line.locator('path').first();
   const box = (await stroke.boundingBox())!;
   // The wide invisible stroke is the target: press where the curve leaves its card, not on a card.
-  const at = await stroke.evaluate((path: SVGPathElement) => { const p = path.getPointAtLength(path.getTotalLength() / 2); const m = path.getScreenCTM()!; return { x: p.x * m.a + m.e, y: p.y * m.d + m.f }; });
+  // The layers open wider than the region, so the middle of a long curve can lie past its edge: press the point nearest the middle that is drawn
+  // and reaches this line.
+  const at = await stroke.evaluate((path: SVGPathElement) => {
+    const total = path.getTotalLength();
+    const m = path.getScreenCTM()!;
+    for (let step = 0; step <= 100; step += 1) {
+      const along = 0.5 + (step % 2 === 0 ? 1 : -1) * Math.ceil(step / 2) * 0.01;
+      const p = path.getPointAtLength(total * along);
+      const point = { x: p.x * m.a + m.e, y: p.y * m.d + m.f };
+      if (path.parentElement!.contains(document.elementFromPoint(point.x, point.y))) return point;
+    }
+    throw new Error('no point of the line is reachable');
+  });
   expect(box.width).toBeGreaterThan(0);
   await page.mouse.click(at.x, at.y);
   await expect(line).toHaveAttribute('aria-pressed', 'true');
