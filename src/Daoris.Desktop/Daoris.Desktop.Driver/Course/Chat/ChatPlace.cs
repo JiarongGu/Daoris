@@ -10,13 +10,9 @@ namespace Daoris.Driver;
 /// it; a repository's own `.mcp.json` wires it on the pipe, and a room has none.
 /// </param>
 /// <param name="Posture">The protocol door's mode for this conversation, or null for the adapter's own (D81).</param>
-/// <param name="ToolsUpFront">
-/// Whether its tools load with the first request, by the adapter's own switch (HELP5): true for the room,
-/// whose every answer reads the family, and false for a repository, which keeps the harness's default.
-/// </param>
 internal sealed record ChatPlace(
     string Name, string Tree, Func<PermissionFile, string, RuleLists> Rules, bool Plugins, bool ConnectorOnPipe,
-    string? Posture, bool ToolsUpFront)
+    string? Posture)
 {
     /// <summary>
     /// The routing standing of its repository as this start found it (COWORKVIEW1e-i), told to its agent: with a new conversation's first
