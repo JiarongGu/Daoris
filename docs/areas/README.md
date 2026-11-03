@@ -21,22 +21,10 @@ the decisions it replaces. The decisions under `docs/decisions/` are history, op
 | [Plugins](plugins.md) | the kit, manifests, offers and updates, plugin harnesses, queries, the plugins page |
 | [Code structure and the process](code-structure-and-process.md) | the structure gates, one way, D231's units, `change`, the gates, merging and measuring |
 
-## Choices only the owner can settle
+## Choices settled
 
-The area documents list about 140 places where a decision's text and the code, or two decisions, disagree. Nearly all are older
-text a later decision or the code replaced, and the area document now states what holds. These are the ones that need a choice:
-
-1. **Trees between lines.** D214 hands a free tree from one line of work to the next; D51 never reuses one, and the code follows D51.
-   Build D214, or keep D51?
-2. **Starting a conversation from words.** Ask Daoris's start-from hands the earlier transcript (D158 point 4); a repository's
-   *Start a conversation with these words* hands the words alone. Which one way?
-3. **The person's denies on Codex.** D184 promises the person's denies hold in every setup; Codex takes no rules file, so they do
-   not reach it. Enforce them another way, or say Codex holds none?
-4. **Naming a model.** D24 and D98 say Daoris names no model; the role suggestions name `sonnet` and `opus` (D205). Keep the
-   suggestions, or drop the names?
-5. **Delivery acts as proposals.** D161 says no quest-delivery act becomes a proposal; Ask Daoris proposes Accept and hand-over. Keep
-   those proposals, or remove them?
-6. **An older build at a closed start.** The launcher's swap at a closed start never asks whether rolling back is allowed, so the
-   home's floor can be wrong after it. Refuse such a swap, or let it and mend the floor?
-7. **The git move.** Every home is moved off ambient credentials at its first start and its SSH remotes with no identity are held
-   (GITMOVED1); D198's steward note says a release without the doors leaves git as it was. Which is right?
+The seven choices the area documents raised were settled on 2026-11-04 (D233 point 4): a tree is never reused; a fresh start
+keeps the words alone and Ask Daoris's start-from hands the brief; Codex holds no denies and the git doors enforce push, force and
+delete for every agent; role suggestions name models; the Accept and hand-over proposals go; the launcher refuses an older build;
+a home moves off ambient git credentials only when the git doors are on. The every-door rule is retired, the supervisor and the
+steward become roles of the one role system, and the speculative parts are frozen (D233). No older reader is kept (D232).
