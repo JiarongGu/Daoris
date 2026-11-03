@@ -34,13 +34,15 @@ public sealed record MovesAnswer(int N, string State)
 /// <param name="FailedRuns">Its failures in a row on one choice by quest.</param>
 /// <param name="Forgiven">The failures each quest's <i>Try again</i> marked forgiven.</param>
 /// <param name="Moves">The line's moves, as the store answered for its key.</param>
+/// <param name="Alone">The line's answers-alone count as its admission keeps it (COMMS1g); null where none is kept, so the events count it.</param>
 public sealed record LineEvidence(
     IReadOnlyDictionary<string, PriorSession>? Records,
     IReadOnlyDictionary<string, PartEvents?> Events,
     IReadOnlyDictionary<string, int> Strikes,
     IReadOnlyDictionary<string, int> FailedRuns,
     IReadOnlyDictionary<string, int> Forgiven,
-    MovesAnswer Moves);
+    MovesAnswer Moves,
+    AloneCount? Alone = null);
 
 /// <summary>
 /// Every count of a line, from what was read once (CONTEXTDRIVE1a, the context-counters design §2.2): pure, and nothing stored beside the
@@ -107,7 +109,9 @@ public static class LineCounts
 
     private static LineCount AnswersAloneOf(LineKey key, IReadOnlyList<string> parts, LineEvidence evidence)
     {
-        // Oldest part first; a part whose log does not read ends the line before it, as the bound's own reader leaves it.
+        if (evidence.Alone is { } kept) return new LineCount(AnswersAlone, "line", key.Key, "in-a-row", kept.N, kept.Known, kept.Why, kept.From);
+
+        // Until the line's admission is kept: oldest part first; a part whose log does not read ends the line before it, as the bound's own reader leaves it.
         var line = new List<SessionEvent>();
         var trimmed = false;
         var missing = false;

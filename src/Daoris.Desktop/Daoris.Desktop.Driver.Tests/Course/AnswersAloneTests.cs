@@ -267,7 +267,7 @@ public sealed class AnswersAloneTests
         try
         {
             var events = new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions));
-            var hold = new AnswersAloneHold(events, new GoOnMarks(home));
+            var hold = new AnswersAloneHold(events, new GoOnMarks(home), new ContinuationAdmissions(home, () => StoreSettled.Yes));
             foreach (var e in Turn(Started())) events.Append("s0", e);
             foreach (var e in Turn(Supervisor())) events.Append("s0", e);
             var records = new Dictionary<string, PriorSession>(StringComparer.Ordinal)

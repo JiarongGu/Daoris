@@ -616,7 +616,7 @@ internal sealed class ChatGoOn
         // 🔴 COWORK1e (D188 point 4; the message-urgency design §2.3): answers alone that would take its line on a third time in a row with
         // nobody between wait for the person, marked before any mark is cleared; a word of theirs, or their *Go on with this answer*, lets
         // them go. Its line is read over the records already in hand.
-        if (new AnswersAloneHold(_context.Events, _context.Marks).Holds(record, ServiceClient.ReadRecords(json), DateTimeOffset.UtcNow))
+        if (new AnswersAloneHold(_context.Events, _context.Marks, new ContinuationAdmissions(_context.Home)).Holds(record, ServiceClient.ReadRecords(json), DateTimeOffset.UtcNow))
         {
             Decide(record, alone: true);
             return new(null, $"conversation `{sessionId}`'s answer waits for you: it would take its work on a third time with nobody between.");

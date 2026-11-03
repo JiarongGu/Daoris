@@ -301,8 +301,8 @@ public static class SupervisorDoor
             }
         }
 
-        // SUPERVISOR1b (§4.3): D188's one count, read from this machine's events across the line's parts, as the look's hold reads it.
-        var atBound = record.Parked && new AnswersAloneHold(loop.Events, new GoOnMarks(loop.Home))
+        // SUPERVISOR1b (§4.3): D188's one count, the line's admission (COMMS1g), as the look's hold reads it.
+        var atBound = record.Parked && new AnswersAloneHold(loop.Events, new GoOnMarks(loop.Home), new ContinuationAdmissions(loop.Home))
             .AtBound(id, await AnswersAloneHold.RecordsAsync(service, ct).ConfigureAwait(false));
         return new SupervisedPark(record.Repository ?? "", record.Parked, record.Quest is not null, filed, ownerWaits, open, unread, atBound);
     }

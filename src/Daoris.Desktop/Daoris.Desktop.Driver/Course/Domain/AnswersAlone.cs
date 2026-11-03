@@ -3,8 +3,9 @@ namespace Daoris.Driver;
 /// <summary>
 /// The answers-alone bound (COWORK1e, D188 point 4; the message-urgency design §2.3, trap 11): a line of work goes on by solicited
 /// answers alone, a helper's answer or a second opinion's findings with no word of the person's or Daoris's beside them, at most
-/// <see cref="Bound"/> times in a row, and the next such answer waits for the person (§8.3). Pure: counted from the line's events,
-/// oldest first, as its parts keep them, so it survives a restart and needs no counter of its own.
+/// <see cref="Bound"/> times in a row, and the next such answer waits for the person (§8.3). Pure: what the line's events say to the
+/// count, oldest first, as its parts keep them; the count itself is kept in the line's admission (COMMS1g, <c>ContinuationAdmissions</c>),
+/// so a trimmed or lost event resets nothing.
 /// </summary>
 /// <remarks>
 /// <para><b>A go-on is a turn whose prompt took only solicited answers.</b> A turn's prompt is the words a record took before its agent
@@ -41,51 +42,68 @@ internal static class AnswersAlone
     /// </summary>
     public static bool AtBound(IEnumerable<SessionEvent> line) => Count(line) >= Bound;
 
-    /// <summary>The go-ons by answers alone at the line's end, in a row, back to the last word of the person's or Daoris's.</summary>
-    public static int Count(IEnumerable<SessionEvent> line)
-    {
-        var count = 0;
-        // Whether the events read now are a turn's prompt, before its agent acted; and what that prompt took so far.
-        var prompting = true;
-        var said = false;
-        var answered = false;
+    /// <summary>
+    /// The go-ons by answers alone at the line's end, in a row, back to the last word of the person's or Daoris's: the events read whole,
+    /// as the count was kept before its admission (COMMS1g), which a line with none is seeded from.
+    /// </summary>
+    // transitional: answers-alone-events
+    public static int Count(IEnumerable<SessionEvent> line) =>
+        Read(AloneScan.Start, line.Select(e => (Part: "", Event: e))).Steps
+            .Aggregate(0, (count, step) => step.Kind switch { AloneStep.GoOn => count + 1, AloneStep.Reset => 0, _ => count });
 
-        foreach (var e in line)
+    /// <summary>
+    /// What the line's events say to its count, read on from where a reading stopped (COMMS1g): each go-on by answers alone at the event
+    /// its agent acted on, each word of the person's or Daoris's at that word, and each prompt whose answers went beside such a word. A
+    /// turn's prompt runs from a turn's end to the agent's first act; a reset in it takes its answers with it, and one taken while the
+    /// agent acts resets at once. A prompt not yet acted on is no go-on: it is carried in the scan to the next reading.
+    /// </summary>
+    public static (AloneScan Scan, IReadOnlyList<AloneStep> Steps) Read(AloneScan from, IEnumerable<(string Part, SessionEvent Event)> line)
+    {
+        var steps = new List<AloneStep>();
+        var prompting = from.Prompting;
+        var said = from.Said;
+        var answers = from.Answers;
+        var answered = new List<string>(from.Answered);
+
+        foreach (var (part, e) in line)
         {
             if (e.Kind == SessionEventKind.Turn)
             {
-                Close(acted: true);
+                Close(part, e, acted: true);
                 prompting = true;
                 continue;
             }
 
             if (Acting(e.Kind))
             {
-                if (prompting) Close(acted: true);
+                if (prompting) Close(part, e, acted: true);
                 prompting = false;
                 continue;
             }
 
             if (Resets(e))
             {
-                if (prompting) said = true;
-                else count = 0;
+                steps.Add(new AloneStep(AloneStep.Reset, part, e.Seq, e.At, []));
+                said |= prompting;
                 continue;
             }
 
-            if (prompting && Answers(e)) answered = true;
+            if (prompting && Answers(e))
+            {
+                answers = true;
+                if (e.Id is { Length: > 0 } id) answered.Add(id);
+            }
         }
 
-        // A prompt nothing acted on yet: the person's word in it still resets, an answer in it is no go-on.
-        Close(acted: false);
-        return count;
+        return (new AloneScan(prompting, said, answers, [.. answered]), steps);
 
-        void Close(bool acted)
+        void Close(string part, SessionEvent e, bool acted)
         {
-            if (said) count = 0;
-            else if (answered && acted) count++;
+            if (said && answers) steps.Add(new AloneStep(AloneStep.Beside, part, e.Seq, e.At, [.. answered]));
+            else if (!said && answers && acted) steps.Add(new AloneStep(AloneStep.GoOn, part, e.Seq, e.At, [.. answered]));
             said = false;
-            answered = false;
+            answers = false;
+            answered.Clear();
         }
     }
 
@@ -110,6 +128,37 @@ internal static class AnswersAlone
     private static bool Answers(SessionEvent e) =>
         e.Kind == SessionEventKind.User && e.Reaches is null
         && (e.Helper is not null || e.Opinion is not null || e.From == SupervisorHanded.From);
+}
+
+/// <summary>Where a reading of a line's events stopped (COMMS1g): whether a turn's prompt is open, whether a reset was taken in it, and its answers.</summary>
+/// <param name="Prompting">The events read last are a turn's prompt, its agent not yet acting.</param>
+/// <param name="Said">A word of the person's or Daoris's was taken in that prompt.</param>
+/// <param name="Answers">A solicited answer was taken in it.</param>
+/// <param name="Answered">The ids of the answers it took.</param>
+public sealed record AloneScan(bool Prompting, bool Said, bool Answers, IReadOnlyList<string> Answered)
+{
+    /// <summary>A line's first event is a prompt's.</summary>
+    public static AloneScan Start { get; } = new(true, false, false, []);
+
+    /// <summary>Equal by value, its answers in order.</summary>
+    public bool Same(AloneScan other) =>
+        Prompting == other.Prompting && Said == other.Said && Answers == other.Answers && Answered.SequenceEqual(other.Answered, StringComparer.Ordinal);
+}
+
+/// <summary>One thing a line's events said to its count (<see cref="AnswersAlone.Read"/>), at the event that said it.</summary>
+/// <param name="Kind"><see cref="GoOn"/>, <see cref="Reset"/> or <see cref="Beside"/>.</param>
+/// <param name="Part">The session whose log holds the event.</param>
+/// <param name="Words">The ids of the answers the prompt took; none for a reset.</param>
+public sealed record AloneStep(string Kind, string Part, long Seq, DateTimeOffset At, IReadOnlyList<string> Words)
+{
+    /// <summary>A turn's prompt took only answers, and its agent acted on it.</summary>
+    public const string GoOn = "go-on";
+
+    /// <summary>A word of the person's or Daoris's, or the person's press that let an answer go on.</summary>
+    public const string Reset = "reset";
+
+    /// <summary>A prompt's answers went on beside a resetting word: no go-on by answers alone.</summary>
+    public const string Beside = "beside";
 }
 
 /// <summary>

@@ -1,30 +1,34 @@
 using Daoris.Driver;
+using Microsoft.Data.Sqlite;
 
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// The answers-alone bound held where a line would go on (COWORK1e, D188 point 4; the message-urgency design §2.3, §8.3, trap 11): the
-/// line's events read back over its parts on this machine, and a third answer in a row with nobody between marked
+/// line's count kept in its admission (COMMS1g), and a third answer in a row with nobody between marked
 /// <see cref="GoOnMarks.AnswersAlone"/> with the agent that answered, said once in the conversation, so every look leaves it waiting for
 /// the person. The person's *Go on with this answer* takes the mark away and counts as their word; their *Not now* keeps the answer for
 /// them, so it goes on only beside words of theirs.
 /// </summary>
 public sealed class AnswersAloneHoldTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-alone-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "answers-alone-hold", Guid.NewGuid().ToString("N")[..8]);
 
     private static readonly DateTimeOffset At = DateTimeOffset.Parse("2026-10-21T09:00:00Z");
 
     public void Dispose()
     {
-        try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        SqliteConnection.ClearAllPools();
+        GitSeed.Discard(_home);
     }
 
     private SessionEvents Events => new(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
     private GoOnMarks Marks => new(_home);
 
-    private AnswersAloneHold Hold => new(Events, Marks);
+    private ContinuationAdmissions Admissions => new(_home, () => StoreSettled.Yes);
+
+    private AnswersAloneHold Hold => new(Events, Marks, Admissions);
 
     /// <summary>The session's record of a start, then each go-on by a helper's answer, as the go-on's opening keeps them.</summary>
     private void GoneOn(string session, int times, bool started = true)
@@ -99,7 +103,167 @@ public sealed class AnswersAloneHoldTests : IDisposable
         var asker = Asker("s1", from: "s0", Answer());
 
         Assert.True(Hold.Holds(asker, Records(asker, Asker("s0"), HelperRecord), At));
-        Assert.False(new AnswersAloneHold(Events, Marks).Holds(Asker("s2", from: null, Answer()), Records(HelperRecord), At));
+        Assert.False(new AnswersAloneHold(Events, Marks, Admissions).Holds(Asker("s2", from: null, Answer()), Records(HelperRecord), At));
+    }
+
+    // ——— COMMS1g: the count kept in the line's admission.
+
+    /// <summary>Each go-on's prompt as its session takes it: the answer, the agent acting on it, the turn's end.</summary>
+    private void Took(string session, SessionEvent word)
+    {
+        var events = Events;
+        events.Append(session, word);
+        events.Append(session, new SessionEvent { Kind = SessionEventKind.Message, Text = "Read it, and went on." });
+        events.Append(session, new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" });
+    }
+
+    private static SessionEvent Taken(SaidWordView word) => new()
+    {
+        Kind = SessionEventKind.User, Origin = "target", Id = word.Id, Text = word.Text, Helper = word.Helper, Opinion = word.By,
+        From = word.Supervisors ? SupervisorHanded.From : null,
+    };
+
+    private static readonly SaidWordView Findings = new("w2", "A second opinion's findings.", At, [], true) { By = "o1" };
+
+    private static readonly SaidWordView Supervised = new("w3", SupervisorHanded.Text("The monthly one"), At, [], false) { From = SupervisorHanded.From, Decision = "d1" };
+
+    private AloneCount CountOf(string session, IReadOnlyDictionary<string, PriorSession> records) => Admissions.Count(Hold.History(session, records))!;
+
+    /// <summary>A helper's answer, an opinion's findings and the supervisor's word are one count, each go-on admitted then taken.</summary>
+    [Fact]
+    public void A_mixed_helper_opinion_and_supervisor_sequence_holds_the_third()
+    {
+        GoneOn("s1", 0);
+        var records = Records(Asker(), HelperRecord);
+
+        Assert.False(Hold.Holds(Asker(said: [Answer("w1")]), records, At));
+        Took("s1", Taken(Answer("w1")));
+        Assert.False(Hold.Holds(Asker(said: [Findings]), records, At));
+        Took("s1", Taken(Findings));
+
+        Assert.True(Hold.Holds(Asker(said: [Supervised]), records, At));
+        var count = CountOf("s1", records);
+        Assert.Equal((2, LineCounts.Exact, "admission"), (count.N, count.Known, count.From));
+        Assert.All(Admissions.Of("s1")!.Admitted, row => Assert.NotNull(row.Taken));
+        Assert.Equal(GoOnMarks.AnswersAlone, Marks.Read("s1")!.Why);
+    }
+
+    /// <summary>Two answers judged before either went on, as two executors queue them: the first is admitted, the second held for the person.</summary>
+    [Fact]
+    public void Two_answers_queued_together_are_admitted_once()
+    {
+        GoneOn("s1", 1);
+        var records = Records(Asker(), HelperRecord);
+
+        Assert.False(Hold.Holds(Asker(said: [Answer("a1")]), records, At, [Answer("a1")]));
+        Assert.True(Hold.Holds(Asker(said: [Answer("a2")]), records, At, [Answer("a2")]));
+        // The first judged again is the same go-on, and still admitted.
+        Assert.False(Hold.Holds(Asker(said: [Answer("a1")]), records, At, [Answer("a1")]));
+        Assert.Equal(["a2"], Marks.Read("s1")!.Said);
+    }
+
+    /// <summary>
+    /// A hand-over's brief and a restart keep the count, and the log the count was seeded from going (D195's retention, or a file lost)
+    /// resets nothing, where the events alone counted it again from nothing.
+    /// </summary>
+    [Fact]
+    public void A_hand_over_and_a_restart_keep_the_count_and_a_lost_log_resets_nothing()
+    {
+        GoneOn("s0", 1);
+        var records = Records(Asker("s0"), HelperRecord);
+        Assert.False(Hold.Holds(Asker("s0", said: [Answer("w1")]), records, At));
+        Took("s0", Taken(Answer("w1")));
+
+        File.Delete(Path.Combine(DaorisHome.Entry(_home, HomeEntry.Sessions), "s0.events.jsonl"));
+        Events.Append("s1", new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Continues = "s0", Text = "The brief of the line." });
+        var handed = Asker("s1", from: "s0", Answer("w2"));
+        var restarted = new AnswersAloneHold(Events, new GoOnMarks(_home), new ContinuationAdmissions(_home, () => StoreSettled.Yes));
+
+        Assert.True(restarted.Holds(handed, Records(handed, Asker("s0"), HelperRecord), At));
+        Assert.Equal(2, CountOf("s1", Records(handed, Asker("s0"), HelperRecord)).N);
+        Assert.False(AnswersAlone.Holds([Answer("w2")], Events.After("s1", 0).Events));
+    }
+
+    /// <summary>A wrapper Daoris composed, a brief, a retry's instruction and a hand-over reset nothing; the person's word and Daoris's fact word do.</summary>
+    [Fact]
+    public void The_persons_and_Daoriss_fact_words_reset_and_no_wrapper_brief_retry_or_hand_over_does()
+    {
+        GoneOn("s1", 2);
+        var records = Records(Asker(), HelperRecord);
+        Assert.True(Hold.Holds(Asker(said: [Answer("w9")]), records, At));
+        Marks.Clear("s1");
+
+        Took("s1", new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = "— the answer, in Daoris's words around it." });
+        Took("s1", new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Continues = "s0", Text = "The brief of the line." });
+        Took("s1", new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = "Try that again." });
+        Assert.True(Hold.Holds(Asker(said: [Answer("w9")]), records, At));
+        Marks.Clear("s1");
+
+        Took("s1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "Carry on." });
+        Assert.False(Hold.Holds(Asker(said: [Answer("w9")]), records, At));
+        Took("s1", Taken(Answer("w9")));
+        Assert.False(Hold.Holds(Asker(said: [Answer("w10")]), records, At));
+        Took("s1", Taken(Answer("w10")));
+        Assert.True(Hold.Holds(Asker(said: [Answer("w11")]), records, At));
+        Marks.Clear("s1");
+
+        Took("s1", new SessionEvent { Kind = SessionEventKind.User, Origin = "target", From = DaorisWords.From, Text = "Daoris's go-on." });
+        Assert.False(Hold.Holds(Asker(said: [Answer("w11")]), records, At));
+    }
+
+    /// <summary>
+    /// D79's resume opens a run of its quest with no <c>from</c>: it is on its quest's line (<see cref="LineKeys.Of"/>), so the count the
+    /// first run left carries to it, where the record's own <c>from</c> walk started again from nothing.
+    /// </summary>
+    [Fact]
+    public void D79s_resume_is_on_its_quests_line_and_keeps_the_count()
+    {
+        GoneOn("s1", 2);
+        GoneOn("s2", 0);
+        var first = Asker("s1") with { Kind = "driven", Quest = "q1", Created = At };
+        var resumed = Asker("s2", said: [Answer()]) with { Kind = "driven", Quest = "q1", Created = At.AddMinutes(5) };
+
+        Assert.True(Hold.Holds(resumed, Records(first, resumed, HelperRecord), At));
+        Assert.Equal("q1", CountOf("s2", Records(first, resumed, HelperRecord)).Line);
+    }
+
+    /// <summary>A waited quest's result counts (the comms design §11): the resume that takes it is reserved on its line once, held by nothing.</summary>
+    [Fact]
+    public void A_waited_quests_result_counts_once()
+    {
+        GoneOn("s1", 1);
+        var asker = Asker() with { Kind = "driven", Quest = "q1" };
+        var records = Records(asker, HelperRecord);
+
+        Assert.Equal(2, Hold.Waited(asker, "q9", [], records)!.N);
+        Assert.Equal(2, Hold.Waited(asker, "q9", [], records)!.N);
+
+        Assert.True(Hold.Holds(asker with { Said = [Answer()] }, records, At));
+    }
+
+    /// <summary>A conversation never waits on a quest (COWORKVIEW1 R11.2 point 5), so no quest's result counts on its line or wakes it.</summary>
+    [Fact]
+    public void A_conversation_is_never_counted_a_quests_result()
+    {
+        GoneOn("c1", 1);
+        var chat = Asker("c1") with { Kind = "chat" };
+
+        Assert.Null(Hold.Waited(chat, "q9", [], Records(chat)));
+        Assert.Null(Admissions.Of("c1"));
+    }
+
+    /// <summary>The supervisor's route reads the same count: at the bound once two go-ons were admitted, whatever the events say.</summary>
+    [Fact]
+    public void The_supervisors_bound_reads_the_admission()
+    {
+        GoneOn("s1", 1);
+        var records = Records(Asker(), HelperRecord);
+        Assert.False(Hold.AtBound("s1", records));
+
+        Assert.False(Hold.Holds(Asker(said: [Answer("w1")]), records, At));
+
+        Assert.True(Hold.AtBound("s1", records));
+        Assert.False(AnswersAlone.AtBound(Events.After("s1", 0).Events));
     }
 
     /// <summary>The steward's choice 2: a line with no events here counts nothing, and a teammate's record is never this machine's.</summary>

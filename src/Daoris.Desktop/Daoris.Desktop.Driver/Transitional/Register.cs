@@ -83,6 +83,15 @@ public static class TransitionalRegister
             Row = "ONEWAY1af",
             Ended = home => Read(home, HomeEntry.DriverConfig) is not null && !WaitingNowAlone(home),
         },
+        new()
+        {
+            Id = "answers-alone-events",
+            Kept = "Course/Domain/AnswersAlone.cs:49, Course/ContinuationAdmissions.cs:305, Course/GoOn/AnswersAloneHold.cs:97, Course/GoOn/AnswersAloneHold.cs:130",
+            Reaches = "A line no admission keeps yet, seeded once from its events as the count was read before; and a store short of step 20, or records that did not read, counted from the events as before.",
+            Ends = "No event log on the home was begun before its store kept the admissions, so no line holds history an admission did not read.",
+            Row = "ONEWAY1af",
+            Ended = ContinuationAdmissions.Begun,
+        },
     ];
 
     /// <summary>Whether a request file waiting in the home's requests folder says <c>now: true</c> with no <c>level</c>.</summary>
