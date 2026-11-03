@@ -12,6 +12,12 @@ public sealed record OlderBuild(string Said)
 
     /// <summary>For what the desktop store holds: the writer stamp whose writers are waited out; passed once the store's stamp is above it.</summary>
     public int? StoreWriter { get; init; }
+
+    /// <summary>
+    /// Builds older than every build that stamps its receipt (ONEWAY1c-ii): passed by any floor that names a build, since a receipt carries its
+    /// build only from the parts' door on, which every such build lacks.
+    /// </summary>
+    public bool BeforeStamps { get; init; }
 }
 
 /// <summary>
@@ -54,7 +60,8 @@ public sealed record HomeFloor(string? Build, int? StoreWriter)
 
     /// <summary>Whether no build that writes the old way <paramref name="waits"/> names can write this home any more.</summary>
     public bool Passes(OlderBuild waits) =>
-        waits.StoreWriter is { } stamp
+        waits.BeforeStamps ? Build is { Length: > 0 }
+        : waits.StoreWriter is { } stamp
             ? StoreWriter > stamp
             : waits.Version is { } version && InstallRollback.Numbered(Build) is { } floor && InstallRollback.Numbered(version) is { } waited && floor > waited;
 }

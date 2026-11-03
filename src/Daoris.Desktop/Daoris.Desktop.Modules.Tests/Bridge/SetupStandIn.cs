@@ -27,6 +27,15 @@ internal sealed class SetupStandIn : ISetupWorld
 
     public Task<SetupTools> ToolsAsync(CancellationToken ct) => Task.FromResult(Tools);
 
+    /// <summary>What the doctrine tool says of a checkout: by default, that nothing has moved.</summary>
+    public DoctrineReading Doctrine { get; set; } = new(new DoctrineStatus { Synced = true }, null);
+
+    /// <summary>The read itself, where a test runs the doctrine tool over a fixture; null answers <see cref="Doctrine"/>.</summary>
+    public Func<RepoView, CancellationToken, Task<DoctrineReading>>? Reads { get; init; }
+
+    public Task<DoctrineReading> StatusAsync(RepoView repository, CancellationToken ct) =>
+        Reads?.Invoke(repository, ct) ?? Task.FromResult(Doctrine);
+
     public Task<IReadOnlyList<QuestView>> QuestsAsync(CancellationToken ct) => Task.FromResult<IReadOnlyList<QuestView>>([]);
 
     public Task<IReadOnlyList<string>> EntriesAsync(string repository, CancellationToken ct) => Task.FromResult<IReadOnlyList<string>>([]);

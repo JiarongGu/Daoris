@@ -53,6 +53,10 @@ is the row's, not its kind's: `attentionGroup` reads it, and the band, its order
 - **Several waits of one record can be one kind.** INTEGRATE1h's `integration` row names its wait in a field (`decide`, `superseded`,
   `card`, `declaration`): its label is picked by that field in `AttentionRow`, its words in `attentionWorded`, and its group by the row's `stands`, which
   `attentionGroup` and its twin `NoticesRead.Group` both read, so every place but the label and the words stays the kind's one entry.
+- **A wait another process holds can be read from the band's own rows.** A git go-ahead (GITAUTH1f) is files a door writes, so
+  the slice watches their folder, and the frame builds the session's wait from the pushed `git-ask` rows (`useAttention`) rather
+  than a read route of its own; the head, the foot and the band then read one judgement and press one door (`useGitAnswer`).
+  A held git remote's classes are one kind, `git-held`, each worded and acted by its `class` (`gitHeldOffers`), as `integration`'s are.
 - **A quest-level hold is a row of the band alone.** `steward-stopped` and STAFFPOLICY1e2's `policy-hold` (a role's policy asking before a
   move, or at its bound of moves) are read from the planner's typed verdict by its code, answered by *Try again* (the retry door approves
   one move), and have no session wait in `waits.ts` yet; a plan with no look (the retry door, a terminal) must read the same hold

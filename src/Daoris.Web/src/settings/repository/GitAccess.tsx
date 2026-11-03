@@ -55,6 +55,16 @@ export function wideningSays(t: TFunction, name: string, cls: string, now: strin
 
 const valueName = (t: TFunction, value: string) => (value === 'as-today' ? t('settings.git.access.asToday') : t(`settings.git.access.value.${value}`, { defaultValue: `\`${value}\`` }));
 
+/** A level's git access folded to a line (a Setup section's summary): each class and its value, Daoris's default named once. */
+export function gitAccessSummary(t: TFunction, classes: readonly ResolvedGitClass[]): string {
+  return t('settings.git.access.summary', {
+    classes: classes.map((each) => t('settings.git.access.summaryClass', {
+      class: t(`settings.git.access.class.${each.class}`, { defaultValue: each.class }),
+      value: each.value === 'as-today' ? t('settings.git.access.summaryDefault') : valueName(t, each.value),
+    })).join(', '),
+  });
+}
+
 /**
  * **A level's git access rows** (GITAUTH1f, the git-auth design §7.3): Read and Write, each its value and where it came from, and
  * *Use one value for both…*. The same rows on a repository's Setup, a workspace's and Settings → Git for this machine.

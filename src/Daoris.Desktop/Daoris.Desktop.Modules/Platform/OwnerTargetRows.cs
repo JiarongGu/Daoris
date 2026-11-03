@@ -88,6 +88,8 @@ internal static class OwnerTargetRows
         Row("GIT_HISTORY_EDIT", Repository(), Workspace());
         // AGENTSPLACE1b2: a place's apply acts on every repository its plan names.
         rows.Add("PLACE_APPLY", OwnerTarget.Of(new OwnerField("repositories", OwnerKinds.Repository, Many: true)));
+        // D230: a reconcile asks one repository's own session.
+        Row("RECONCILE_APPLY", Repository());
         // GITAPP2h, GITAPP2i, GITAPP2j, GITAPP2k, GITAPP2l: the Changes tab's acts on one repository's checkout.
         foreach (var route in new[] { "GIT_STAGE", "GIT_UNSTAGE", "GIT_UNDO", "GIT_MAKE_COMMIT", "GIT_AMEND", "GIT_RESOLVE", "GIT_MARK_RESOLVED", "GIT_SWITCH", "GIT_STASH", "GIT_STASH_APPLY" })
         {
@@ -132,7 +134,9 @@ internal static class OwnerTargetRows
         // (whose press is marked as it runs), a rule.
         None(OwnerNone.ActsOnNothing,
             "SESSION_OPEN_FOLDER", "PLUGIN_OPEN_FOLDER", "WORK_RECORDS_FOLDER", "NOTICES_READ", "NOTICE_DISMISS", "HELP_DISMISS", "CHANNEL_MARK",
-            "PERSON_CONFIRM", "PERSON_CONFIRM_SHOWN", "RULE_ACTION", "RULE_PROPOSAL");
+            "PERSON_CONFIRM", "PERSON_CONFIRM_SHOWN", "RULE_ACTION", "RULE_PROPOSAL",
+            // GITAUTH1f: a git go-ahead answered, a file its door reads; the act it lets on is its own session's, which goes on as it was.
+            "GIT_ANSWER");
 
         // The machine's own settings and programs: its plugins, its agents' accounts and its tools.
         None(OwnerNone.MachineSetting,

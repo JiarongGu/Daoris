@@ -43,6 +43,12 @@ public sealed class TransportRunProcessTests : IDisposable
             break;
           }
           case 'hangs': setInterval(() => {}, 1000); break;
+          case 'talks': {
+            init('conv-1'); said('ready'); result();
+            process.stdin.on('data', () => {});
+            process.stdin.on('end', () => process.exit(0));
+            break;
+          }
         }
         """;
 
@@ -520,16 +526,29 @@ public sealed class TransportRunProcessTests : IDisposable
     }
 
     /// <summary>
-    /// The conversation's shape: a protocol door's session opened and held, words and turns beside it on <see cref="TransportRun.Session"/>,
-    /// closed by the run, the process gone with the close.
+    /// The conversation's shape (ONEWAY1h-iii): a protocol door's session opened and held, its open on its way as the run's open returns and
+    /// told once made, words and turns beside it on <see cref="TransportRun.Session"/>, closed by the run, the process gone with the close; its
+    /// transcript closed once both its streams ended, before the run is let go, so a record concluded over it is read, and a line said later
+    /// dropped.
     /// </summary>
     [Fact]
-    public async Task A_protocol_session_can_be_held_open_and_closed_by_the_run()
+    public async Task A_protocol_session_held_open_is_told_opened_closed_by_the_run_and_its_transcript_closed_at_its_end()
     {
-        var (run, seen) = OverProtocol("open", new TransportProtocol(Path.Combine(_home, "engine")));
+        var opened = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        TransportRun? held = null;
+        var (run, seen) = OverProtocol("open", new TransportProtocol(Path.Combine(_home, "engine"))
+        {
+            Opened = () =>
+            {
+                held!.Say("— the conversation opened");
+                opened.TrySetResult();
+            },
+        });
+        held = run;
         await using var _ = run;
 
         await run.OpenAsync(Bound);
+        await opened.Task.WaitAsync(Bound);
 
         Assert.NotNull(run.Session);
         Assert.Equal(["initialize", "session/new"], Methods(seen));
@@ -539,6 +558,108 @@ public sealed class TransportRunProcessTests : IDisposable
 
         Assert.Equal(0, end.Exit);
         Assert.Equal(["initialize", "session/new", "session/close"], Methods(seen));
+        Assert.Contains("— the conversation opened", File.ReadAllText(Transcript));
+        run.Say("— a late line");
+        Assert.DoesNotContain("— a late line", File.ReadAllText(Transcript));
+    }
+
+    /// <summary>
+    /// ONEWAY1h-iii: a held open the agent refuses is told to its executor before the run ends its process, so what it says is the transcript's;
+    /// the session that never opened is no session, and the run's end says it could not open, as the conversation's record concludes it.
+    /// </summary>
+    [Fact]
+    public async Task A_held_open_the_agent_refuses_is_told_before_its_process_ends_and_its_end_says_it_could_not_open()
+    {
+        Exception? told = null;
+        TransportRun? held = null;
+        var (run, seen) = OverProtocol("missing", new TransportProtocol(Path.Combine(_home, "engine"))
+        {
+            Unopened = error =>
+            {
+                told = error;
+                held!.Say("— the executor says why");
+            },
+        });
+        held = run;
+        await using var _ = run;
+
+        await run.ResumeAsync("s-gone", Bound);
+        var error = await Assert.ThrowsAsync<DriverException>(() => run.EndAsync(Bound));
+
+        Assert.IsType<AcpResumeRefused>(told);
+        Assert.StartsWith("the ACP session could not open: ", error.Message, StringComparison.Ordinal);
+        Assert.Null(run.Session);
+        Assert.True(run.Process!.HasExited);
+        Assert.Contains("— the executor says why", File.ReadAllText(Transcript));
+        Assert.DoesNotContain("session/prompt", Methods(seen));
+    }
+
+    /// <summary>
+    /// ONEWAY1h-iii, the native conversation: each event its capture keeps told once the record holds it, which is how its turn's end lets its
+    /// next words go (CONV4a); the conversation its stream names kept and told the moment it is named, while the harness still runs (MSG1c); and
+    /// its close the end of its input, after which the harness winds up and exits on its own.
+    /// </summary>
+    [Fact]
+    public async Task A_native_conversation_is_told_each_event_keeps_what_its_stream_names_at_once_and_closes_on_its_input()
+    {
+        var adapter = new Scripted(_home, structured: true);
+        var info = adapter.Prepare(Target(), null).WithArguments("talks");
+        info.RedirectStandardInput = true;
+        var turns = 0;
+        var named = 0;
+        await using var run = Over(adapter, info, start => start with
+        {
+            Observed = e =>
+            {
+                if (e.Kind == SessionEventKind.Turn) Interlocked.Increment(ref turns);
+            },
+            Named = () => Interlocked.Increment(ref named),
+        });
+        run.HandRecords(new RunRecords("s1", Transcript, Events: _events, KeepAs: "scripted"));
+
+        await run.OpenAsync(Bound);
+        await Poll.Until(() => Volatile.Read(ref turns) == 1, () => "no turn's end was told", Poll.Patience);
+
+        Assert.Equal("conv-1", _driver.Context.Conversations.Read("s1")?.Conversation);
+        Assert.Equal(1, Volatile.Read(ref named));
+        Assert.False(run.Process!.HasExited);
+
+        await run.CloseAsync(Bound);
+        var end = await run.EndAsync(Bound);
+
+        Assert.Equal(0, end.Exit);
+        Assert.True(end.Named);
+    }
+
+    /// <summary>
+    /// ONEWAY1h-iii: an executor that composes what names its process before the spawn (the conversation's connector, COWORKVIEW1a) has the run
+    /// bracket it first: the downloads kept and the token issued, the spawn under that token, and a run let go before its spawn lets it go.
+    /// </summary>
+    [Fact]
+    public async Task A_run_bracketed_before_its_spawn_starts_under_that_token_and_one_let_go_unspawned_lets_it_go()
+    {
+        var tokens = new LineageTokens(Environment.ProcessId, DateTime.UtcNow);
+        using var within = LineageTokens.Within(tokens);
+        var adapter = new Scripted(_home, structured: false);
+        var never = Over(adapter, adapter.Prepare(Target(), null).WithArguments("token"));
+        var unspawned = await never.BracketAsync("s1", Bound);
+
+        Assert.Equal(TokenReading.Unwatched, tokens.Reading(unspawned));
+        await never.DisposeAsync();
+        Assert.False(never.Started);
+        Assert.Equal(TokenReading.Gone, tokens.Reading(unspawned));
+
+        await using var run = Over(adapter, adapter.Prepare(Target(), null).WithArguments("token"));
+        run.HandRecords(new RunRecords("s1", Transcript, Events: _events, LineageHome: _home));
+        var proc = await run.BracketAsync("s1", Bound);
+        await run.SpawnAsync("s1", Bound);
+        await run.OpenAsync(Bound);
+        var end = await run.EndAsync(Bound);
+
+        Assert.Equal(0, end.Exit);
+        Assert.Equal(proc, run.Proc);
+        Assert.Contains($"token {proc}", File.ReadAllText(Transcript));
+        Assert.Equal(1, Lineage().Count(line => line.GetProperty("by").GetString() == "start" && line.GetProperty("proc").GetString() == proc));
     }
 }
 

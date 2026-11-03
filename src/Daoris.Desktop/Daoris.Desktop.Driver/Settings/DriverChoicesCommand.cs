@@ -124,8 +124,7 @@ public static class ChoiceRoutes
         ("driver commits", Commits, "the commit rule"),
         ("driver keep <kind> …", Keep, "the Disk space card's rule of that kind"),
         ("driver role set|remove|default|policy <id> …", Role, "a working role of the catalogue, its record, its choices and its policy (FOUNDATION1y-i, STAFFPOLICY1b)"),
-        ("driver role rules --place …", Role, "the supervisor's rules for a place, written whole at the revision read (CONTEXTDRIVE1d)"),
-        ("driver actor import <file>", null, "alone: no route takes a file of the terminal's; the staffing's lock serializes it with the window's presses"),
+        ("driver role rules --place …", Role, "the supervisor's rules for a place, written whole at the revision read"),
         ("driver actor found take|dismiss <n>", null, "alone: the staffing's lock serializes it with the window's Take it and Dismiss"),
         ("driver timeout <minutes>", null, "alone: no route sets a session's timeout"),
         ("driver retry <quest> --at <n>", null, "alone: RETRY_QUEST marks at the failures its verdict counts, never at a number the person gives"),
@@ -204,8 +203,8 @@ public static class DriverChoicesCommand
                       (a workflow's writes say their change, and with --plan save nothing)
                daoris-driver driver keep [set-aside <days>|whole|slim|default · downloads <days>|never|default · logs <days>|default
                       · history <days>|never|default · floor <n>GB|<n>%|off|default]
-               daoris-driver driver actor export [<file>] · actor import <file> · actor found [take|dismiss <n>]
-                      (actor <role> is retired: `daoris role set` sets a role's agents)
+               daoris-driver driver actor found [take|dismiss <n>]
+                      (actor <role>, export and import are retired: `daoris role set` sets a role's agents)
                daoris-driver driver role [<id>] · role set <id> [--name "…"] [--name-in <tag>="…"]… [--takes <work,…>]
                       [--scope machine|workspace:<id>|repository:<id>] ["<agent> [<model>|-] [<effort>|-]" … | off]
                       · role remove|default <id> · role suggested [--use]

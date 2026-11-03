@@ -270,11 +270,17 @@ describe('what needs a person, worded', () => {
     const own = words(row('git-held', 'own', null, { git: { ...git, class: 'own-input', words: '' } }));
     expect(own.title).toBe("github.com is reached by the repository's own ssh command, past Daoris's door");
     expect(own.detail).toMatch(/^engine, game: the repository names its own ssh command \(core\.sshCommand\).*until that setting is removed from the repository\.$/);
-    // GITAUTH1e (§6.8): a remote nothing serves once the home has moved offers the two ways out, both in Settings → Git, and no Try again.
-    const nothing = words(row('git-held', 'none', null, { git: { ...git, class: 'no-identity', words: '' } }));
-    expect(nothing.title).toBe('github.com has no git identity yet');
-    expect(nothing.detail).toMatch(/^engine, game: Daoris's git no longer uses your own git sign-ins.*Settings → Git\.$/);
+    // GITAUTH1e (§6.8): the move is one row for every remote nothing serves, counted, its hosts named, the repositories whose own
+    // configuration names authentication listed apart; it offers the two ways out, both in Settings → Git, and no Try again.
+    const nothing = words(row('git-held', 'none', null, {
+      git: { ...git, class: 'no-identity', words: '', hosts: ['github.com', 'gitlab.com'], ownInput: ['lib'] },
+    }));
+    expect(nothing.title).toBe("Daoris's git no longer uses your own git sign-ins");
+    expect(nothing.detail).toBe('2 git remotes on github.com, gitlab.com have no git identity yet, so Daoris\'s git does not reach them. '
+      + 'Repositories: engine, game. Held apart, since their own configuration names authentication: lib.');
     expect(attentionActs(nothing)).toEqual(['git-set-up', 'git-keep-own']);
+    // A row a session waits on holds work (§6.8).
+    expect(attentionGroup({ ...nothing, stands: true })).toBe('holding');
     // A row from a shell that sent no group offers nothing to lift.
     expect(attentionActs(words(row('git-held', 'bare', null)))).toEqual([]);
     // After a volume below its floor, before a quest nobody can take, where they waited as long.
@@ -289,6 +295,66 @@ describe('what needs a person, worded', () => {
       expect(titled('host-changed')).toBe('github.com 的主机密钥自 ssh 上次信任后已改变');
       expect(words(held).detail).toBe('engine, game：在你按“重试”、或它的地址或 Daoris 运行的 Git 改变之前，Daoris 不会再尝试这个远程仓库。'
         + 'Git 的原话：git@github.com: Permission denied (publickey).');
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
+  /**
+   * GITAUTH1e (the git auth design §7.4): each class names what serves it and offers what mends it, then *Try again*: a refused SSH
+   * identity its key to copy and its host's key page, a refused HTTPS one a sign-in again, the person's own sign-ins Settings → Git; a
+   * push refused another identity or the identity marked read only; a repository's own setting the person's own sign-ins for it, in
+   * the setting's name and never its value; a host's key under an identity its comparison, under the person's own ssh the terminal.
+   */
+  it('words and mends each held class by what serves it', async () => {
+    const base: NonNullable<PushedAttention['git']> = {
+      host: 'github.com', class: 'refused', holds: 'all', remote: 'origin', repositories: ['engine'], words: 'denied',
+      way: 'ssh', served: 'identity', identity: 'Work', identityId: 'gi-000000000001', keyPage: 'https://github.com/settings/keys',
+    };
+    const said = (git: Partial<typeof base>) => words(row('git-held', 'g', null, { git: { ...base, ...git } }));
+    expect(said({}).title).toBe('github.com refused Work');
+    expect(attentionActs(said({}))).toEqual(['git-copy-key', 'git-key-page', 'git-try-again']);
+    expect(attentionActs(said({ keyPage: null }))).toEqual(['git-copy-key', 'git-try-again']);
+    expect(attentionActs(said({ way: 'https' }))).toEqual(['git-sign-in', 'git-try-again']);
+    expect(attentionActs(said({ served: 'own', identity: null, identityId: null }))).toEqual(['git-open', 'git-try-again']);
+    expect(said({ class: 'write-refused', holds: 'writes' }).title).toBe('github.com let Work read origin and refused its push');
+    expect(attentionActs(said({ class: 'write-refused' }))).toEqual(['git-choose', 'git-read-only', 'git-try-again']);
+    expect(attentionActs(said({ class: 'host-changed' }))).toEqual(['git-compare', 'git-try-again']);
+    expect(said({ class: 'host-unknown', served: 'own' }).title).toBe('github.com is not yet trusted: trust github.com with your own ssh at the terminal');
+    expect(attentionActs(said({ class: 'host-unknown', served: 'own' }))).toEqual(['git-try-again']);
+    const setting = said({ class: 'own-input', words: 'http.https://github.com/.sslCert' });
+    expect(setting.title).toBe("engine's configuration names its own authentication for github.com");
+    expect(setting.detail).toContain('(http.https://github.com/.sslCert)');
+    expect(attentionActs(setting)).toEqual(['git-use-own', 'git-try-again']);
+    await i18n.changeLanguage('zh');
+    try {
+      expect(said({}).title).toBe('github.com 拒绝了 Work');
+      expect(said({ class: 'own-input', words: 'http.sslKey' }).title).toBe('engine 的配置为 github.com 指定了它自己的认证');
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
+  /**
+   * GITAUTH1f (the git auth design §6.6, §7.4): a git go-ahead names the session that asks and the remote, offers Allow and Refuse, holds
+   * work, is counted at Sessions, and says a door that has gone with its Allow kept for the retry.
+   */
+  it('words a git go-ahead by who asks and the remote, offers its two answers and holds work', async () => {
+    const gitAsk: NonNullable<PushedAttention['gitAsk']> = {
+      repository: 'engine', remote: 'origin', host: 'github.com', class: 'write', session: 'fix-ranking', gone: false,
+    };
+    const item = words(row('git-ask', '0123456789abcdef0123456789abcdef', new Date(Date.now() - 3 * 60_000).toISOString(), { session: 'fix-ranking', gitAsk }));
+    expect(item.title).toBe('fix-ranking asks to push to origin');
+    expect(item.detail).toMatch(/has waited 3m of its 15 minutes/);
+    expect(attentionActs(item)).toEqual(['git-allow', 'git-refuse']);
+    expect(attentionGroup(item)).toBe('holding');
+    expect(placeOf(item, [])).toBe('sessions');
+    const gone = words(row('git-ask', 'g', null, { gitAsk: { ...gitAsk, session: null, class: 'read', gone: true } }));
+    expect(gone.title).toBe('A fetch from origin of engine waits for your go-ahead');
+    expect(gone.detail).toMatch(/^Its command has stopped waiting/);
+    await i18n.changeLanguage('zh');
+    try {
+      expect(words(row('git-ask', 'g', null, { gitAsk })).title).toBe('fix-ranking 请求推送到 origin');
     } finally {
       await i18n.changeLanguage('en');
     }
@@ -785,7 +851,7 @@ describe('the groups', () => {
       'account-wait': 'holding', 'signed-out': 'holding',
       proposal: 'word', intake: 'word', departure: 'word', 'set-up': 'word', opinion: 'word', rule: 'word', helper: 'word',
       'hand-over': 'word', unanswerable: 'word', review: 'ready', work: 'word', space: 'word', 'git-held': 'word', memory: 'word',
-      integration: 'word', 'workflow-convert': 'word',
+      integration: 'word', 'workflow-convert': 'word', 'git-ask': 'holding',
     });
   });
 
@@ -1200,6 +1266,7 @@ describe('the place each wait is counted at', () => {
       space: 'settings',
       confirmation: null,
       'git-held': 'settings',
+      'git-ask': 'sessions',
     });
   });
 

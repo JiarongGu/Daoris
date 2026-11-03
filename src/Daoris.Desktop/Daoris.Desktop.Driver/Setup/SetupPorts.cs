@@ -16,6 +16,9 @@ public interface ISetupWorld
     /// <summary>The <c>node</c> and the <c>daoris</c> a child of Daoris would find, and what each answered.</summary>
     Task<SetupTools> ToolsAsync(CancellationToken ct);
 
+    /// <summary>What that <c>daoris</c> says of the repository's checkout against the canon it carries (<c>status --json</c>), or why it said nothing.</summary>
+    Task<DoctrineReading> StatusAsync(RepoView repository, CancellationToken ct);
+
     /// <summary>Every quest, closed ones included.</summary>
     Task<IReadOnlyList<QuestView>> QuestsAsync(CancellationToken ct);
 

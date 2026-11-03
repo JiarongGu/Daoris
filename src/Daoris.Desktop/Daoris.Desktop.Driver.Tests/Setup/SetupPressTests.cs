@@ -103,9 +103,10 @@ public sealed class SetupPressTests : IDisposable
     }
 
     /// <summary>
-    /// D230: a reconcile is a case of the press, asked of a repository the registry marks adopted (the driver reads no
-    /// <c>status --json</c>, so the body says one that finds nothing closes done). Its quest carries the standing answer's lines among
-    /// its items, its rule is the set-up's verbs with <c>reconcile</c> and <c>upstream --all</c>, and a press publishes it.
+    /// D230: a reconcile is a case of the press, asked of a repository the registry marks adopted. The plan holds what the doctrine tool's
+    /// <c>status --json</c> said of its checkout, which the body says (one that finds nothing still closes done). Its quest carries the
+    /// standing answer's lines among its items, its rule is the set-up's verbs with <c>reconcile</c> and <c>upstream --all</c>, and a press
+    /// publishes it.
     /// </summary>
     [Fact]
     public async Task A_reconcile_is_the_press_case_for_an_adopted_repository_carrying_the_standing_answers_rule_line()
@@ -117,7 +118,11 @@ public sealed class SetupPressTests : IDisposable
 
         Assert.Empty(plan.Refusals);
         Assert.Equal(SetupCase.Reconcile, plan.Case);
+        Assert.Equal(world.Doctrine.Status, plan.Doctrine);
+        Assert.Equal(["billing"], world.Statused);
         Assert.Equal("Reconcile this repository with the shared doctrine (2026-10-01)", plan.Title);
+        Assert.Contains("said its canon differs from the one this repository synced from at the same version, `0.0.1`", plan.Body);
+        Assert.Contains("a sync would add 1 file.", plan.Body);
         Assert.Contains("Run `daoris reconcile`", plan.Body);
         Assert.Contains("> Run the whole test suite before every commit.", plan.Body);
         Assert.Contains("> Test in staging.", plan.Body);
@@ -145,6 +150,30 @@ public sealed class SetupPressTests : IDisposable
         var unadopted = await SetupPress.PlanReconcileAsync(new World(), Driven, SessionWire.Acp, "reports", Day);
         Refused(unadopted, SetupRefusals.NotAdopted, "has not taken up the shared doctrine");
         Assert.Null(unadopted.Title);
+    }
+
+    /// <summary>
+    /// D230, WSSETUP4: a lock a newer canon wrote is never reconciled back, and a status the tool could not read is said; where no tool runs,
+    /// the status is not asked. Each is refused before a quest is composed.
+    /// </summary>
+    [Fact]
+    public async Task A_reconcile_is_refused_over_a_newer_lock_and_a_status_the_tool_could_not_read()
+    {
+        var adopted = Clean(declares: true, index: "docs/index/README.md");
+        var newer = new World { Facts = adopted, Doctrine = new(new DoctrineStatus { Synced = true, Carried = "0.0.1", NewerLock = "9.9.9" }, null) };
+        var unread = new World { Facts = adopted, Doctrine = new(null, "`daoris status --json` said: daoris.json is not valid JSON") };
+        var toolless = new World { Facts = adopted, Tools = new("node", "v22.11.0", null, null, null, null) };
+
+        var refused = await SetupPress.PlanReconcileAsync(newer, Driven, SessionWire.Acp, "billing", Day);
+        Refused(refused, SetupRefusals.NewerLock, "9.9.9");
+        Assert.Null(refused.Title);
+        Assert.Equal("9.9.9", refused.Doctrine?.NewerLock);
+        Refused(await SetupPress.PlanReconcileAsync(unread, Driven, SessionWire.Acp, "billing", Day), SetupRefusals.StatusUnread, "daoris.json is not valid JSON");
+
+        var none = await SetupPress.PlanReconcileAsync(toolless, Driven, SessionWire.Acp, "billing", Day);
+        Refused(none, SetupRefusals.NoTool, "no `daoris`");
+        Assert.Empty(toolless.Statused);
+        Assert.Null(none.Doctrine);
     }
 
     /// <summary>ORIENT2c: each stack the press knows has one form, the first the reading names.</summary>
@@ -546,6 +575,19 @@ public sealed class SetupPressTests : IDisposable
             Task.FromResult(Line ?? new LineReading(Facts, null));
 
         public Task<SetupTools> ToolsAsync(CancellationToken ct) => Task.FromResult(Tools);
+
+        /// <summary>What the doctrine tool says of a checkout: by default, a canon that differs and one file it adds.</summary>
+        public DoctrineReading Doctrine { get; init; } =
+            new(new DoctrineStatus { Synced = true, Update = DoctrineUpdates.Differs, Carried = "0.0.1", Locked = "0.0.1", Added = 1 }, null);
+
+        /// <summary>Each repository whose status was asked.</summary>
+        public List<string> Statused { get; } = [];
+
+        public Task<DoctrineReading> StatusAsync(RepoView repository, CancellationToken ct)
+        {
+            Statused.Add(repository.Repository);
+            return Task.FromResult(Doctrine);
+        }
 
         public Task<IReadOnlyList<QuestView>> QuestsAsync(CancellationToken ct) => Task.FromResult<IReadOnlyList<QuestView>>(Quests);
 

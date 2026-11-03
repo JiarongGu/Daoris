@@ -352,7 +352,9 @@ public sealed class DriverRoutes(DriverContext context)
     }
 
     // A found change answered (FOUNDATION1w-s, §19.15): the person's *Take it*, the actors as that file showed them, a turn-on of Intake or
-    // Ask Daoris among them by this press, or *Dismiss*, the actors as they are. Through the staffing's one write, then a nudge.
+    // Ask Daoris among them by this press, or *Dismiss*, the actors as they are. Through the staffing's one write, then a nudge. Only the
+    // copy's check finds a change, so a converted home has none to answer (ONEWAY1c-ii).
+    // transitional: staffing-copy
     [DriverRoute("STAFFING_FOUND_ANSWER")]
     [Publishes("STAFFING_FOUND_ANSWER", StateScopes.Driver | StateScopes.Harnesses)]
     private object? AnswerStaffingFound(IpcRequest request)

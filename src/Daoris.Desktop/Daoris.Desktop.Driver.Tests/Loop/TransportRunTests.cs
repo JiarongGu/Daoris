@@ -150,7 +150,27 @@ public sealed class TransportRunTests : IDisposable
         Assert.False(run.Started);
     }
 
-    /// <summary>A start handed once the process is up is the same process's, and comes before the open.</summary>
+    /// <summary>
+    /// ONEWAY1h-iii: a run bracketed before its spawn (the conversation's, whose connector names its process) keeps its start's downloads and
+    /// issues its token through its host once, and its spawn starts under that token without either again.
+    /// </summary>
+    [Fact]
+    public async Task A_run_bracketed_first_keeps_and_brackets_once_and_its_spawn_starts_under_that_token()
+    {
+        var host = new RecordingTransportHost(_home, _processes);
+        var run = new TransportRun(host, AdapterSet.Built().Resolve("stub"), new TransportStart(new ProcessStartInfo("never-started"), StartClass.Person));
+        using var refusing = ProcessStarts.Within(_ => throw new System.ComponentModel.Win32Exception(2, "The system cannot find the file specified."));
+
+        Assert.Equal("p1", await run.BracketAsync("s1", CancellationToken.None));
+        Assert.Equal(["keep s1", "bracket s1"], host.Asked);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => run.BracketAsync("s1", CancellationToken.None));
+        await Assert.ThrowsAsync<System.ComponentModel.Win32Exception>(() => run.SpawnAsync("s1", CancellationToken.None));
+
+        Assert.Equal(["keep s1", "bracket s1", "spawn p1"], host.Asked);
+        Assert.False(run.Started);
+    }
+
+    /// <summary>A start handed before the open, once the process is up or before its spawn, is the same process's.</summary>
     [Fact]
     public void A_start_handed_later_must_start_the_same_process()
     {

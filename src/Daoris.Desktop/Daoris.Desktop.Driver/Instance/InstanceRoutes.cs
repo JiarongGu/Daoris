@@ -215,6 +215,21 @@ public static class PersonPresses
     /// </summary>
     public static InstanceRoute GitHistoryEdit { get; } = Person("GIT_HISTORY_EDIT");
 
+    /// <summary>
+    /// <c>git identity add-ssh … --import</c>, <c>test … --trust-host</c>, <c>read-only … off</c> and <c>remove</c> (GITAUTH1e, the git-auth
+    /// design §8): a git identity's widening, as Settings → Git presses it.
+    /// </summary>
+    public static InstanceRoute GitIdentity { get; } = Person("GIT_IDENTITY");
+
+    /// <summary><c>git use … own</c> (GITAUTH1e): the person's own git sign-ins chosen for a remote, a workspace's host or this machine's.</summary>
+    public static InstanceRoute GitUse { get; } = Person("GIT_USE");
+
+    /// <summary><c>git access …</c> where it loosens a class (GITAUTH1f): a level's git access widened.</summary>
+    public static InstanceRoute SetGitAccess { get; } = Person("SET_GIT_ACCESS");
+
+    /// <summary><c>git answer &lt;ask&gt; allow|refuse</c> (GITAUTH1f, §6.6): a git go-ahead answered, as its row in What needs you answers it.</summary>
+    public static InstanceRoute GitAnswer { get; } = Person("GIT_ANSWER");
+
     /// <summary><c>ask --pause &lt;id&gt;</c> and <c>quest pause &lt;id&gt;</c> (RPC1e): a work paused on this machine, what of it runs stopped.</summary>
     public static InstanceRoute WorkPause { get; } = Person("WORK_PAUSE");
 

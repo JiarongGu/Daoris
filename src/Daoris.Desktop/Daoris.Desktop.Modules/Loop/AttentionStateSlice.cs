@@ -75,7 +75,7 @@ public static class AttentionStateSlice
             "departed", "setUp", "local", "environment", "shows", "opinion", "placed", "sitting", "trust", "quest", "proposal", "title",
             "permission", "blocked", "held", "unreadable", "wholeWorkspace", "holding", "read", "account", "answer", "ended",
             "confirmation", "agent", "stands", "stale", "space", "git", "quiet", "declined", "memory", "integration",
-            "convert", "obligation",
+            "convert", "gitAsk", "obligation",
         ],
         ["waiting"] = ["kind", "workspace"],
         ["working"] = ["workspace"],
@@ -120,8 +120,11 @@ public static class AttentionStateSlice
         ["space"] = ["root", "free", "total", "floor", "freed", "could"],
         // ONEWAY1ae: the old records every part's kept census holds, and their count by part.
         ["convert"] = ["records", "parts"],
-        // GITAUTH1a: a held group of git remotes that cannot authenticate.
-        ["git"] = ["host", "class", "holds", "remote", "repositories", "words"],
+        // GITAUTH1a: a held group of git remotes that cannot authenticate. GITAUTH1e: its way and what serves it (§7.4); the move's row
+        // (`no-identity`) names every host and lists apart the repositories whose own configuration names authentication.
+        ["git"] = ["host", "class", "holds", "remote", "repositories", "words", "way", "served", "identity", "identityId", "keyPage", "hosts", "ownInput"],
+        // GITAUTH1f: a git go-ahead a door holds while its act waits.
+        ["gitAsk"] = ["repository", "remote", "host", "class", "session", "gone"],
         // SESSWATCH1a: a quiet session brought to the person, or a busy one nothing is heard from.
         ["quiet"] = ["minutes", "busy", "intake", "words", "heavy"],
         // INTEGRATE1o part o3: a run held at a declined request, its node and the quest declined.
@@ -166,6 +169,7 @@ public static class AttentionStateSlice
         ["confirmation.asker"] = "asker",
         ["row.space"] = "space",
         ["row.git"] = "git",
+        ["row.gitAsk"] = "gitAsk",
         ["row.convert"] = "convert",
         ["row.declined"] = "declined",
         ["row.memory"] = "memory",
@@ -199,7 +203,7 @@ public static class AttentionStateSlice
         Of(ct => FactsAsync(loop, ct), bus,
             [
                 wake => HearSlices(loop.Slices, wake), wake => HearHolds(HeldPermissions.Of(loop.Events), wake), wake => HearRegistry(loop.Facts, wake),
-                wake => HearFloors(SpaceFloors.Shared, wake), wake => HearGitHolds(loop.Home, wake),
+                wake => HearFloors(SpaceFloors.Shared, wake), wake => HearGitHolds(loop.Home, wake), wake => HearGitAsks(loop.Home, wake),
                 wake => HearQuiet(SessionWatch.Of(loop.Events), wake),
             ],
             loop.Log, new HeldCallAnnouncements(bus, () => NotifyRule.Tells(NewsKind.HeldCall, loop.Notifying())));
@@ -311,6 +315,8 @@ public static class AttentionStateSlice
             Space = Written(SpaceWaits(SpaceFloors.Shared, loop.Home)),
             // GITAUTH1a: each remote held since it could not authenticate, from the home's run/git/held.json.
             Git = Written(GitWaits(loop.Home)),
+            // GITAUTH1f: each git go-ahead a door holds, from the home's run/git/asks/.
+            GitAsks = Written(GitAskWaits(loop.Home)),
             // WORKFLOWCLEAN1g-ii: the places still on old workflow shapes, from the census the loop keeps.
             Conversion = loop.Conversion.Wait(),
             // INTEGRATE1o part o3: each run held at a declined request, from the node runtime's last look and its node records.
@@ -564,21 +570,40 @@ public static class AttentionStateSlice
 
     /// <summary>
     /// Each remote the home holds since it could not authenticate (GITAUTH1a, the git-auth design §5.2), oldest first: its repository,
-    /// workspace, remote, host, class, what it holds, what the transport said (redacted when it was kept) and since when. No machine path:
-    /// the checkout it is keyed by stays in the file.
+    /// workspace, remote, host, class, what it holds, what the transport said (redacted when it was kept) and since when; its way, and what
+    /// serves it now as the doors resolve it (GITAUTH1e, §7.4: the identity a refusal names, or <c>own</c>). No machine path: the checkout
+    /// it is keyed by stays in the file.
     /// </summary>
-    public static IReadOnlyList<object> GitWaits(string home) =>
-    [
-        .. GitHolds.Read(home)
-            .OrderBy(each => each.Since).ThenBy(each => each.Repository, StringComparer.Ordinal)
-            .Select(each => (object)new
-            {
-                each.Repository,
-                Workspace = each.Workspace ?? RemoteTarget.DefaultWorkspace,
-                each.Remote, each.Host, each.Class, each.Holds, each.Words,
-                Since = Moments.Write(each.Since),
-            }),
-    ];
+    public static IReadOnlyList<object> GitWaits(string home)
+    {
+        var holds = GitHolds.Read(home);
+        if (holds.Count == 0) return [];
+        var identities = GitIdentities.Read(home);
+        var pointers = GitIdentityUse.Read(home);
+        return
+        [
+            .. holds
+                .OrderBy(each => each.Since).ThenBy(each => each.Repository, StringComparer.Ordinal)
+                .Select(each =>
+                {
+                    var way = each.Address.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? GitIdentity.Https : GitIdentity.Ssh;
+                    var workspace = each.Workspace ?? RemoteTarget.DefaultWorkspace;
+                    var serves = each.Host is { Length: > 0 } host
+                        ? GitIdentityUse.Resolve(identities, pointers, each.Repository, workspace, [each.Remote], GitHosts.Canonical(host), way)
+                        : GitServes.Nothing([]);
+                    return (object)new
+                    {
+                        each.Repository, Workspace = workspace, each.Remote, each.Host, each.Class, each.Holds, each.Words,
+                        Since = Moments.Write(each.Since),
+                        Way = way,
+                        Served = serves.Kind switch { GitServeKind.Identity => "identity", GitServeKind.Own => GitIdentityUse.Own, _ => "none" },
+                        Identity = serves.Identity?.Label,
+                        IdentityId = serves.Identity?.Id,
+                        KeyPage = serves.Identity is { Way: GitIdentity.Ssh } ssh && GitHosts.Known.TryGetValue(ssh.Host, out var known) ? known.KeyPage : null,
+                    };
+                }),
+        ];
+    }
 
     /// <summary>
     /// The integration's waits on the owner (INTEGRATE1h; the integration design §5.8, §17.4), oldest first by kind: each standing candidate
@@ -644,6 +669,35 @@ public static class AttentionStateSlice
 
         GitHolds.Changed += Heard;
         return new Hearing(() => GitHolds.Changed -= Heard);
+    }
+
+    /// <summary>
+    /// Each git go-ahead a door holds (GITAUTH1f, the git-auth design §6.6), oldest first: its id, repository, workspace, remote, host,
+    /// class, session, since when and whether its door has gone. Never its address's key, which only the door and a grant compare.
+    /// </summary>
+    public static IReadOnlyList<object> GitAskWaits(string home) =>
+    [
+        .. GitAsks.List(home, DateTimeOffset.UtcNow).Select(each => (object)new
+        {
+            each.Id, each.Repository, each.Workspace, each.Remote, each.Host, each.Class, each.Session, At = Moments.Write(each.At), each.Gone,
+        }),
+    ];
+
+    /// <summary>
+    /// Wake the slice where a door raises, or a person answers, a git go-ahead (GITAUTH1f): the doors are other processes, so the home's
+    /// <c>run/git/asks/</c> is watched, made where it is not there yet.
+    /// </summary>
+    public static IDisposable HearGitAsks(string home, Action wake)
+    {
+        var folder = DaorisHome.Entry(home, HomeEntry.GitAsks);
+        Directory.CreateDirectory(folder);
+        var watcher = new FileSystemWatcher(folder) { IncludeSubdirectories = false, NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite };
+        void Heard(object? _, FileSystemEventArgs __) => wake();
+        watcher.Created += Heard;
+        watcher.Deleted += Heard;
+        watcher.Renamed += (_, _) => wake();
+        watcher.EnableRaisingEvents = true;
+        return watcher;
     }
 
     /// <summary>Wake the slice where a stretch below the free-space floor is said or ends (KEEP1f, <see cref="SpaceFloors.Changed"/>).</summary>

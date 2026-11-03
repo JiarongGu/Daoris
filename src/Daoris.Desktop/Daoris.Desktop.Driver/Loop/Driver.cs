@@ -750,7 +750,8 @@ public sealed class Driver(
     /// The door this machine's starts ride — the protocol door where any entry of Build's order rides it, else the first entry's wire
     /// (MODELROLE1c, D205 §4.1's <c>no-connector</c>: the planner asks whether any entry can drive a repository that has not adopted
     /// Daoris, and the start passes each entry that cannot), read against this tick's adapters so a plugin's harness counts. An adapter
-    /// nobody knows is the pipe: the stricter door plans nothing more than it should, and the spawn names the unknown adapter itself.
+    /// nobody knows is the pipe: the stricter door plans nothing more than it should, and the spawn names the unknown adapter itself. An
+    /// order that does not read is the pipe too, as the start that reads it holds.
     /// </summary>
     private SessionWire Door()
     {
@@ -761,7 +762,7 @@ public sealed class Driver(
         }
         catch (DriverException)
         {
-            order = [new ActorEffective(config.Adapter, null, null, "before")];
+            order = [];
         }
 
         SessionWire? first = null;
@@ -4610,14 +4611,15 @@ public sealed class Driver(
                 modelRefused: refusedAt, offerRead: offered, retry: retry, carriesOn: carriesOn, written: written,
                 typedFailures: adapter.Toolchain?.ErrorWords?.TypedFailures == true, handedBack: words => acpLeft = words),
         });
+        // What was asked, first: the composed target and the person's answer it carries on from, as theirs; a resumed run's own first line and
+        // the answer (ANSWER1a), the target already in the conversation above.
+        IReadOnlyList<SessionEvent> opening = resume?.Opening() ?? HarnessCapture.Opening(prompt, target.PersonSaid, account, target.Handed);
         run.HandRecords(new RunRecords(
             sessionId, transcript, output, Context.Events, LineageHome: home, KeepAs: keepAs, Own: own, Said: said,
-            // What was asked, first: the composed target and the person's answer it carries on from, as theirs; a resumed run's own first line and
-            // the answer (ANSWER1a), the target already in the conversation above.
-            Opening: resume?.Opening() ?? HarnessCapture.Opening(prompt, target.PersonSaid, account, target.Handed),
-            // The protocol door's transcript opens with what its harness is doing that Daoris could not govern (ACP3); the native door's with
-            // how its run was set up.
-            Preamble: protocol ? harnessNotice : preamble));
+            // The protocol door's opening goes on with what its harness is doing that Daoris could not govern, said as a note (ACP3); the native
+            // door's transcript opens with how its run was set up.
+            Opening: protocol && harnessNotice is { Length: > 0 } notice ? [.. opening, new SessionEvent { Kind = SessionEventKind.Note, Text = notice }] : opening,
+            Preamble: protocol ? null : preamble));
         // MSG1b: the rules and servers a go-on runs under, the ones this start was handed.
         run.HandCarriers(new RunCarriers(rules.File, handed));
         await (resume is null ? run.OpenAsync(ct) : run.ResumeAsync(resume.Conversation, ct)).ConfigureAwait(false);

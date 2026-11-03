@@ -460,11 +460,11 @@ internal sealed class StartPlan
             if (record is not null) return ContinuedOn(record, config, work, bound, catalogue, place);
             var taken = role is { Length: > 0 } ? (catalogue ?? RoleCatalog.Of([])).Named(role, work, place).Role?.Id
                 : catalogue is null ? RoleOf(work) : catalogue.RoleFor(work, place).Role?.Id ?? RoleOf(work);
-            return (taken is null ? null : ActorChoices.FirstAgent(taken, config)) ?? ActorKey.Before(RoleOf(work), config) ?? config.Adapter;
+            return (taken is null ? null : ActorChoices.FirstAgent(taken, config)) ?? config.Adapter;
         }
         catch (DriverException)
         {
-            return ActorKey.Before(RoleOf(work), config) ?? config.Adapter;
+            return config.Adapter;
         }
     }
 

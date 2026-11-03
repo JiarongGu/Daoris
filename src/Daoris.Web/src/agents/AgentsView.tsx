@@ -25,6 +25,7 @@ import { type AgentsMode, isRoleSection, MACHINE, readAgentsMode, repositoryId, 
 import { AllRoles } from './roles/AllRoles';
 import { MachineNotes } from './setup/MachineNotes';
 import { OldRecords } from './setup/OldRecords';
+import { ReconcileNote } from './setup/ReconcileNote';
 import { PlaceRoles } from './setup/PlaceRoles';
 import type { PlaceDriving } from './setup/PlacePage';
 import { doorOf, draftOfAsk, type PlaceAsk, type SetUpDoor, type SetUpPage, type SetUpPlace, useSetUpPage } from './setup/placePlan';
@@ -320,7 +321,10 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
             : {}}
           notes={placed?.kind === 'machine'
             ? <MachineNotes onShow={() => { rolesPage.onView('list'); shell.arrive(MACHINE, { section: 'allRoles' }); }} />
-            : undefined}
+            // D230 point 2: an adopted repository's page offers its reconcile where the doctrine tool's status says the canon moved.
+            : placed?.kind === 'repository' && row?.adopted && row.repository
+              ? <ReconcileNote key={row.repository} repository={row.repository} />
+              : undefined}
           drive={driving}
           onGo={onGo}
           setUp={setUp && setUpPlace

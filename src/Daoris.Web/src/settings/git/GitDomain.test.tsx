@@ -73,6 +73,16 @@ describe('the git domain', () => {
     expect(screen.getByText('ssh-ed25519 AAAAExample daoris')).toBeInTheDocument();
   });
 
+  // GITAUTH1e (§7.4): a held remote's door opens Settings → Git with its add form on the remote's host, and tells the door when it closes.
+  it('opens its add form on the host a door names', async () => {
+    const closed = vi.fn();
+    show(<SettingsView notify={() => {}} section="git" gitHost="gitlab.com" onGitHostClosed={closed} />);
+
+    expect(await screen.findByLabelText('Host')).toHaveValue('gitlab.com');
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(closed).toHaveBeenCalledOnce();
+  });
+
   it('chooses the person\'s own sign-ins for a host only after the confirmation, and stops them in one press', async () => {
     show(<SettingsView notify={() => {}} section="git" />);
     await userEvent.click(await screen.findByRole('button', { name: 'Use for…' }));

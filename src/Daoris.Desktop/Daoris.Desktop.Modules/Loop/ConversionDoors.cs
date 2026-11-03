@@ -4,8 +4,8 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// The conversion's doors on this machine (ONEWAY1ae): the workflow part's world through the service and the home's files, a part whose source does
-/// not answer said as unread; the plans this Daoris answered; and the register's floor for Undo. The routes, the census and the come-up's settling
-/// read the same doors.
+/// not answer said as unread; the staffing part over the home's staffing (ONEWAY1b); the plans this Daoris answered; and the register's floor for
+/// Undo. The routes, the census and the come-up's settling read the same doors.
 /// </summary>
 internal static class ConversionDoors
 {
@@ -17,6 +17,7 @@ internal static class ConversionDoors
         () => DriverConfig.Load(loop.ConfigPath),
         () => ConvertWorlds.OpenCurrentNow(loop.Home, quests ?? [], quests is null ? DateTimeOffset.MinValue : read ?? DateTimeOffset.UtcNow))
     {
+        Others = [new StaffingPart(RoleStaffing.Of(loop.ConfigPath) ?? new RoleStaffing(loop.Home))],
         FloorNeeded = TransitionalRegister.FloorNeeded,
         Answered = loop.Conversion.Answered,
     };

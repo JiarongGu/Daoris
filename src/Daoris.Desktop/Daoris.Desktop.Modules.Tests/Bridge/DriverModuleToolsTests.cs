@@ -423,6 +423,24 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// GITAUTH1f (the git-auth design §6.6): a git go-ahead's row answers through <c>GIT_ANSWER</c>, the door that waits takes it, and an
+    /// answer that is neither allow nor refuse, or an ask that is not there, is refused.
+    /// </summary>
+    [Fact]
+    public async Task A_git_go_ahead_is_answered_through_its_route()
+    {
+        var module = Module();
+        var id = GitAsks.Raise(Home, "engine", "games", "origin", "github.com", "write", "s1", "github.com/o/engine", DateTimeOffset.UtcNow);
+
+        var answered = await AnswerAsync(module, "GIT_ANSWER", new { ask = id, answer = "allow" });
+
+        Assert.True(answered.GetProperty("waiting").GetBoolean());
+        Assert.True(GitAsks.Answered(Home, id));
+        Assert.Contains("allow or refuse", await RefusalAsync(module, "GIT_ANSWER", new { ask = id, answer = "maybe" }));
+        Assert.Contains("(no-ask)", await RefusalAsync(module, "GIT_ANSWER", new { ask = new string('a', 32), answer = "refuse" }));
+    }
+
+    /// <summary>
     /// Look for updates (§3.7) fetches each location on the person's press, keeps the copy of a list that reads and says
     /// what it added, and says a location that could not be fetched rather than failing the look.
     /// </summary>

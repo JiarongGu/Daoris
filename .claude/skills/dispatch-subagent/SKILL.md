@@ -115,6 +115,14 @@ machine): the tool reads it once at its start for the admission alone and hands 
 without it the confirm run cannot hold the whole admission, so every confirm run reads inconclusive and a failure that
 would not recur hands the batch back (2026-10-30: three candidates lost so, before the home was given).
 
+**Every brief carries D231:** new behaviour goes in a unit of its own, named for its job, in the subdomain that owns it; a file
+on `tools/size-ratchet.json` does not grow, and a composition root only wires; comments say why, never the row or its history. A
+brief points at the subdomain a unit belongs in, not only at the hub's lines where the area lives today.
+
+**Inside a big scope** (D180's note of 2026-11-04) the brief asks for less: the builder takes a whole wave or more, builds it
+row after row with a commit each, writes its tests, compiles and hands back once, running none; the parent merges with no gates;
+every check runs once when the scope's development is done. Outside one:
+
 A builder runs before it hands back the checks a candidate runs that its lines reach, not only its own classes: on
 2026-10-30 three candidates of one batch went red on checks no member's builder had run (the mark census, `optional-locks`,
 `test-map --check`'s hand rows, the pack-safety read of the CLI package, a route answer's pinned field list, and the

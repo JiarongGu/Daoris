@@ -41,6 +41,9 @@ public static class ImportClass
     /// the import recorded, since the newer build writes it again; unlike <see cref="SetAside"/> it is never renamed.
     /// </summary>
     public const string Projected = "projected";
+
+    /// <summary>Nothing was in the file to import: a fresh home's rows were written from their seeds, and nothing is projected (ONEWAY1b).</summary>
+    public const string Seeded = "seeded";
 }
 
 /// <summary>One file imported into a family (§13.3's <c>imports</c>), as the row records it.</summary>

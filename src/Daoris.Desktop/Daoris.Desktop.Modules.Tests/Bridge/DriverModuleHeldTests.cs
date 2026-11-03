@@ -30,6 +30,7 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
         ["WORKFLOW_SHOW"] = new { id = "web-verify" },
         ["WORKFLOW_PALETTE"] = new { },
         ["PLACE_PLAN"] = new { repositories = new[] { "engine" }, preset = "merge-after-accept" },
+        ["RECONCILE_PLAN"] = new { repository = "engine" },
         ["CONVERT_PLAN"] = new { },
         ["KEPT_READS"] = new { },
         ["HELP_PROPOSALS"] =new { session = "a1b2c3d4" },

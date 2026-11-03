@@ -9,9 +9,13 @@ namespace Daoris.Driver.Host;
 /// </summary>
 internal static class GitConsole
 {
+    /// <summary>A widening's or an answer's press, through the running Daoris's window, or done here where none runs (§8).</summary>
+    private static GitPress Pressing(string home) =>
+        (route, payload, alone, words) => InstanceDoor.PressAsync(route, payload, alone, words, InstanceHost.World(home, "git"));
+
     public static async Task<int> RunAsync(string[] args)
     {
-        // Git access and the git go-aheads (GITAUTH1f): the library's words, with the home and the window looked for before a widening or an answer.
+        // Git access and the git go-aheads (GITAUTH1f): the library's words, a widening or an answer pressed through the running window.
         if (GitAccessCommand.Answers(args))
         {
             try
@@ -20,8 +24,7 @@ internal static class GitConsole
                 var home = DriverConfig.HomeOf(configPath);
                 var world = new GitAccessWorld(
                     home,
-                    async () => (await InstanceDoor.PeekAsync(new InstanceWorld { Home = home, Verb = "git" }).ConfigureAwait(false)).Found
-                        is not (InstanceFound.None or InstanceFound.Headless),
+                    Pressing(home),
                     Environment.GetEnvironmentVariable,
                     async repository =>
                     {
@@ -39,7 +42,7 @@ internal static class GitConsole
         }
 
         // The identities, the defaults and the pointers (GITAUTH1c): the library's words, with the home, the registry asked only by
-        // `git use` of a repository, and the window looked for only before a widening.
+        // `git use` of a repository, and a widening pressed through the running window (GITAUTH1e).
         if (GitIdentityCommand.Answers(args))
         {
             try
@@ -54,8 +57,7 @@ internal static class GitConsole
                         var registry = await service.RegistryAsync().ConfigureAwait(false);
                         return [.. registry.Where(row => row.Root is { Length: > 0 }).Select(row => (row.Root!, row.Repository, row.Workspace))];
                     },
-                    async () => (await InstanceDoor.PeekAsync(new InstanceWorld { Home = home, Verb = "git" }).ConfigureAwait(false)).Found
-                        is not (InstanceFound.None or InstanceFound.Headless),
+                    Pressing(home),
                     Environment.GetEnvironmentVariable,
                     () => Console.In.ReadLineAsync());
                 return await GitIdentityCommand.RunAsync(args, world, Console.Out, Console.Error).ConfigureAwait(false);

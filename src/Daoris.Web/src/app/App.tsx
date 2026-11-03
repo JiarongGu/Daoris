@@ -201,6 +201,8 @@ export function App() {
   const settingsSection: SettingsSection = rememberedDomain(lists.pane('settings').chosen);
   // The part of a Settings domain a menu item named, brought into view once it is drawn (UX5 U72).
   const [settingsAnchor, setSettingsAnchor] = useState<SettingsAnchor | null>(null);
+  // And the host a door into Settings → Git named (GITAUTH1e), whose add form it opens filled, until that form closes.
+  const [settingsGitHost, setSettingsGitHost] = useState<string | null>(null);
   // And the part of an agent's page a door named (UX6e, D150 §2.4): its accounts, what it may do, its usage.
   const [agentPart, setAgentPart] = useState<AgentPart | null>(null);
   // And the group of Sessions' or Quests' list a door into what waits on the person named (ENTRY1b): brought into view once
@@ -711,6 +713,7 @@ export function App() {
       lists.reopen(plan.view === 'knowledge' ? plan.knowledge ?? knowledgeMode : plan.view);
     }
     if (plan.anchor !== undefined) setSettingsAnchor(plan.anchor);
+    if (plan.gitHost !== undefined) setSettingsGitHost(plan.gitHost);
     setAgentPart(plan.agentPart ?? null);
     setListGroup(plan.group ?? null);
     if (plan.drawer) setDrawerWorkspace(plan.drawerWorkspace ?? null);
@@ -1106,8 +1109,20 @@ export function App() {
     'policy-hold': (item) => openQuest(item.id),
     // A run held at a declined request (INTEGRATE1o part o3) opens its work quest's page, where the run and the request are read.
     'request-declined': (item) => { if (item.declined?.work) openQuest(item.declined.work); },
-    // A held git remote nothing serves leads to Settings → Git, where its identity is set up (GITAUTH1e); a browser has no such page.
-    ...(attached ? { 'git-held': () => open('settings', 'git') } : {}),
+    // A held git remote (GITAUTH1e, §7.4) leads to Settings → Git on its host, where its identity is set up, signed in again or
+    // compared; one whose push was refused, or whose repository names its own authentication, to that repository's git remote row,
+    // where another identity or the person's own sign-ins are chosen. A browser has no such page.
+    ...(attached ? {
+      'git-held': (item: Attention) => {
+        const held = item.git;
+        const repository = held?.repositories[0];
+        if (repository && (held.class === 'write-refused' || held.class === 'own-input')) {
+          open('projects', repository, { tab: 'setup', placeSection: 'sessions', placeRow: 'git' });
+        } else open('settings', 'git', held?.host ? { gitHost: held.host } : {});
+      },
+    } : {}),
+    // A git go-ahead (GITAUTH1f) opens its session, whose head draws it; one no session's marker named has its row alone.
+    ...(attached ? { 'git-ask': (item: Attention) => { if (item.session) openInWork(item.session); } } : {}),
     // The home's conversion (WORKFLOWCLEAN1g-ii) opens the review the place head's Convert… opens. A shell's alone: the census is this machine's.
     ...(attached ? { 'workflow-convert': () => openConversion() } : {}),
     // A go-ahead opens the ask it was asked on, where every go-ahead of it is listed (KNOWUSE1a).
@@ -1191,6 +1206,8 @@ export function App() {
     onSection: chooseSettings,
     anchor: settingsAnchor,
     onAnchored: () => setSettingsAnchor(null),
+    gitHost: settingsGitHost,
+    onGitHostClosed: () => setSettingsGitHost(null),
     onGo: go,
     // Ask Daoris is the shell's (HELP1): a browser's guide offers no hand-off.
     onAskSetup: attached ? askSetup : undefined,

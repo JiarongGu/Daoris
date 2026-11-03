@@ -34,6 +34,7 @@ import { hasNote, noteBlocks, noteLines } from '../noteLines';
 import { processCommitsSays, processLandingSays, type SessionProcess } from './process';
 import { heldFor, PermissionAsks, type PermissionWaits } from '../waits/PermissionAsks';
 import { AnswerAlone, answerFor, type AnswerWaits } from '../waits/AnswerAlone';
+import { GitAsk, gitAsksFor, type GitAskWaits } from '../waits/GitAsk';
 import { ProposedRules, type RuleAsk, type RuleWaits } from '../waits/ProposedRules';
 import { movedAt } from '../rail/rail';
 import { RunningIntake } from './RunningIntake';
@@ -109,7 +110,7 @@ export function SessionHead({
   session, quest, opening, taking, lastTurn, resolving = false, onResolve, onAnswerAsk,
   onAnswerSession, onAnswerChoice, answerPick, branch, ownBranch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
   ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind, opinion, onOpenQuest,
-  continues, helps, onOpenSession, heavy, process, workAsk, workBusy = false, toEvent, rules, ruleAsk, seek, helpers, permissions, answers,
+  continues, helps, onOpenSession, heavy, process, workAsk, workBusy = false, toEvent, rules, ruleAsk, seek, helpers, permissions, answers, gitAsks,
   question = null, parkBox = false, pieces, entry, waitingOn,
 }: {
   /**
@@ -149,6 +150,8 @@ export function SessionHead({
    * strip alike: every request the shell read, its own drawn, the answer's one door and its pending. Absent, none is drawn.
    */
   permissions?: PermissionWaits | null;
+  /** The git go-aheads its git door holds (GITAUTH1f), the frame's, handed to the foot's strip alike. */
+  gitAsks?: GitAskWaits | null;
   /**
    * The wait a raising block's *To the wait* leads to while the head's waits are on screen (WAITFOOT2b, D168's WAITFOOT2 note),
    * counted so the same one pressed again is shown again: its line takes the focus, outlined, as the strip's does.
@@ -324,6 +327,7 @@ export function SessionHead({
   const proposed = rulesAsked(rules?.proposals, session.id);
   const held = heldFor(permissions?.waits ?? [], session.id);
   const alone = answerFor(answers?.waits ?? [], session.id);
+  const gitAsked = gitAsksFor(gitAsks?.waits ?? [], session.id);
   const own = useRef<HTMLElement>(null);
   const { sought, letGo } = useSought(own, seek);
 
@@ -411,6 +415,20 @@ export function SessionHead({
             inConversation={toEvent?.permissions}
             marked={sought?.startsWith('permission:') ? sought.slice('permission:'.length) : undefined}
           />
+        </section>
+      )}
+      {/* The git go-aheads its git door holds (GITAUTH1f, D198 point 12): the act on the remote stands still until they answer, or its
+          bound. A wait's section where an answer can be given here, so the strip stands aside for it too. */}
+      {gitAsked.length > 0 && (
+        <section
+          aria-labelledby={`git-asks-${session.id}`}
+          data-wait-section={gitAsks?.onAnswer ? '' : undefined}
+          className="grid gap-1"
+        >
+          <h3 id={`git-asks-${session.id}`} className="m-0 text-small font-semibold">{t('work.wait.gitAsk.title')}</h3>
+          {gitAsked.map((ask) => (
+            <GitAsk key={ask.id} ask={ask} onAnswer={gitAsks?.onAnswer} busy={gitAsks?.busy} marked={sought === `gitAsk:${ask.id}`} />
+          ))}
         </section>
       )}
       {/* A third answer in a row with nobody between, which the answers-alone bound holds for the person (COWORK1e, §8.3): its line
