@@ -504,10 +504,11 @@
         "INSTALLED.md": "# Daoris — installed desktop\n",
         "app/plugin-offers/acme.offered/README.md": "# Acme offered\n\n## What it needs\n\n- **GitHub CLI**, signed in: `gh auth login`\n- Git, which\n  pushes the branch\n\n## Else\n\n- not this\n",
         "app/plugin-offers/acme.offered/plugin.json": "{ \"id\": \"acme.offered\", \"name\": \"Acme offered\", \"version\": \"3.0.0\", \"hooks\": { \"command\": [\"node\", \"${plugin}/x.mjs\"], \"points\": [\"work/land\"] } }",
-        "data/plugins/acme.offered/.daoris-source.json": "{\n  \"offer\": \"acme.offered\"\n}\n",
+        "data/plugins/acme.offered/.daoris-source.json": "{\n  \"offer\": \"acme.offered\",\n  \"digest\": \"sha256:526cc9185d3b966df4cf5cf4d31d59869ddb2856b01ab6149e87e5f652d85a71\"\n}\n",
         "data/plugins/acme.offered/README.md": "# Acme offered\n\n## What it needs\n\n- **GitHub CLI**, signed in: `gh auth login`\n- Git, which\n  pushes the branch\n\n## Else\n\n- not this\n",
         "data/plugins/acme.offered/plugin.json": "{ \"id\": \"acme.offered\", \"name\": \"Acme offered\", \"version\": \"3.0.0\", \"hooks\": { \"command\": [\"node\", \"${plugin}/x.mjs\"], \"points\": [\"work/land\"] } }"
-      }
+      },
+      "changed": "an offer's record carries the digest of the files its install copied, so a copy edited since is told from one as it was installed (LANDPIN3b, D119)"
     },
     {
       "name": "add --offer by another case",
@@ -531,9 +532,10 @@
       "after": {
         "INSTALLED.md": "# Daoris — installed desktop\n",
         "app/plugin-offers/acme.offered/plugin.json": "{ \"id\": \"acme.offered\" }",
-        "data/plugins/acme.offered/.daoris-source.json": "{\n  \"offer\": \"acme.offered\"\n}\n",
+        "data/plugins/acme.offered/.daoris-source.json": "{\n  \"offer\": \"acme.offered\",\n  \"digest\": \"sha256:dc2fdd24559bdacd85dee369aebb241519c8dbbf0f5c766e283c0d7cd9381cc5\"\n}\n",
         "data/plugins/acme.offered/plugin.json": "{ \"id\": \"acme.offered\" }"
-      }
+      },
+      "changed": "an offer's record carries the digest of the files its install copied, so a copy edited since is told from one as it was installed (LANDPIN3b, D119)"
     },
     {
       "name": "add, no home",
@@ -686,9 +688,38 @@
       "after": {
         "INSTALLED.md": "# Daoris — installed desktop\n",
         "app/plugin-offers/acme.offered/plugin.json": "{ \"id\": \"acme.offered\", \"version\": \"3.1.0\" }",
-        "data/plugins/acme.offered/.daoris-source.json": "{\n  \"offer\": \"acme.offered\"\n}\n",
+        "data/plugins/acme.offered/.daoris-source.json": "{\n  \"offer\": \"acme.offered\",\n  \"digest\": \"sha256:a821cc3ce3d90578a98ff24678dfee467205018f9f2fe4c782f16ae73401ec39\"\n}\n",
         "data/plugins/acme.offered/plugin.json": "{ \"id\": \"acme.offered\", \"version\": \"3.1.0\" }"
-      }
+      },
+      "changed": "an offer's record carries the digest of the files its update copied, so a copy edited since is told from one as it was installed (LANDPIN3b, D119)"
+    },
+    {
+      "name": "update, an offer's copy changed since it was installed",
+      "argv": [
+        "update",
+        "acme.offered",
+        "--yes"
+      ],
+      "before": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "app/plugin-offers/acme.offered/plugin.json": "{ \"id\": \"acme.offered\", \"version\": \"3.1.0\" }",
+        "data/plugins/acme.offered/.daoris-source.json": "{\"offer\":\"acme.offered\",\"digest\":\"sha256:9070b82bde075925117ef5bdeef736cf1bce3118877da7144520592150fa7d73\"}",
+        "data/plugins/acme.offered/mine.mjs": "// mine",
+        "data/plugins/acme.offered/plugin.json": "{ \"id\": \"acme.offered\", \"version\": \"3.0.0\" }"
+      },
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: plugin `acme.offered` has files changed here since it was installed, so an update does not replace them and it is left as it is. Move your changes out, `daoris plugin remove` it and install it again to take the newer one. Nothing was replaced."
+      ],
+      "after": {
+        "INSTALLED.md": "# Daoris — installed desktop\n",
+        "app/plugin-offers/acme.offered/plugin.json": "{ \"id\": \"acme.offered\", \"version\": \"3.1.0\" }",
+        "data/plugins/acme.offered/.daoris-source.json": "{\"offer\":\"acme.offered\",\"digest\":\"sha256:9070b82bde075925117ef5bdeef736cf1bce3118877da7144520592150fa7d73\"}",
+        "data/plugins/acme.offered/mine.mjs": "// mine",
+        "data/plugins/acme.offered/plugin.json": "{ \"id\": \"acme.offered\", \"version\": \"3.0.0\" }"
+      },
+      "changed": "a copy whose record says what its install copied is never replaced once its files are not those any more (LANDPIN3b, D119)"
     },
     {
       "name": "update, not installed",

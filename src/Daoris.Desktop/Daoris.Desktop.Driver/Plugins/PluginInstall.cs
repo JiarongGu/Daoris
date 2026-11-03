@@ -160,8 +160,11 @@ public static class PluginInstall
             }
 
             var (written, _) = PluginCatalog.ReadAsWritten(installed, Path.Combine(entry.Folder, PluginCatalog.ManifestName));
-            switch (PluginOffers.ShippedOf(entry.Folder, written, offer)?.State)
+            var judged = PluginOffers.ShippedOf(entry.Folder, written, offer);
+            switch (judged?.State)
             {
+                case PluginShipped.Changed when PluginShipped.Compare(judged.Installed, judged.Shipped) < 0:
+                    return Refuse(ChangedSinceInstalled(installed));
                 case PluginShipped.Changed:
                     return Refuse($"plugin `{installed}` has files changed here that this install's {offer.Manifest.Version} does not have, "
                         + "so it is left as it is. Move your changes out, `daoris plugin remove` it and install it again to take the shipped one.");
@@ -199,6 +202,9 @@ public static class PluginInstall
                 + $"A newer package takes its place: `daoris plugin remove {installed}`, then "
                 + "`daoris-driver plugins install <file.nupkg>`, and what it kept stays where it is.");
         }
+
+        // LANDPIN3b: a copy whose record says what its install copied is never replaced once its files are not those any more.
+        if (source.Digest is { } digest && !PluginFolders.HoldsDigest(entry.Folder, digest)) return Refuse(ChangedSinceInstalled(installed));
 
         string from;
         if (shippedFrom is not null)
@@ -398,6 +404,10 @@ public static class PluginInstall
 
     /// <summary>What an update changes, from what is installed to what the source now holds, each as written (<see cref="PluginChange.Between"/>).</summary>
     public static IReadOnlyList<PluginChange> Changes(PluginManifest was, PluginManifest now) => PluginChange.Between(was, now);
+
+    private static string ChangedSinceInstalled(string id) =>
+        $"plugin `{id}` has files changed here since it was installed, so an update does not replace them and it is left as it is. "
+        + "Move your changes out, `daoris plugin remove` it and install it again to take the newer one.";
 
     internal static string NotAnId(string id) =>
         $"`{id}` is not a plugin id — one is lowercase letters, digits, dots and dashes, like `acme.quiet-hours`; "
