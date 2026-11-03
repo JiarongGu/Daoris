@@ -1179,9 +1179,7 @@ public sealed class Driver(
         // INTEGRATE1l (the integration design §9): what each running unit changed, one git read per running session, and the quests whose
         // integration request is open, for the planner's comparison at a start; two running units changing one path are each told once.
         var committedLook = snapshot;
-        var integrating = config.Landings.Values.Concat(config.WorkspaceLandings.Values).Any(rule => rule.Integrate is not null)
-            ? new IntegrationStore(home).Open().Select(request => request.Quest).OfType<string>().ToHashSet(StringComparer.OrdinalIgnoreCase)
-            : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var integrating = new IntegrationStore(home).Open().Select(request => request.Quest).OfType<string>().ToHashSet(StringComparer.OrdinalIgnoreCase);
         snapshot = await Stages.TimeAsync("overlaps", () => WorkOverlaps.LookAsync(committedLook, integrating, WorkOverlaps.DiffAsync, ct)).ConfigureAwait(false);
         var overlapLook = snapshot;
         await Stages.TimeAsync("overlaps-told", () => WorkOverlaps.TellAsync(home, overlapLook, async (session, text, key, token) =>

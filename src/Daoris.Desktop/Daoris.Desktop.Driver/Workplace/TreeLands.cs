@@ -116,7 +116,7 @@ internal sealed class TreeLands(
         var (workspace, repository) = context.OwnerOf(full);
         // The rule it lands by, its access setup's landing composed in (AUTONOMY1c2): the session is told it is accepted automatically
         // exactly where the look would land it.
-        var landing = process is { Named: true } named ? named.Landing : LandingRules.Effective(context.Config(), repository, workspace);
+        var landing = process is { Named: true } named ? named.Landing : LandingRules.Line(context.Config(), repository, workspace);
         // A named workflow's landing that cannot start says so before the press, as the press would be refused (design §3.7).
         if (process?.LandingCannot is not null)
         {
@@ -631,7 +631,7 @@ internal sealed class TreeLands(
         // edited, so nothing changes under it. Under Current the rule is read again here, as before.
         var process = gate?.Process;
         var named = delivering is null && process is { Named: true } ? process : null;
-        var landing = named?.Landing ?? LandingRules.Effective(context.Config(), repository, workspace);
+        var landing = named?.Landing ?? LandingRules.Line(context.Config(), repository, workspace);
         // LANDNODE1b2: a delivery lands as its intent says, and keeps of the rule only what setup keeps.
         if (delivering is not null) landing = delivering.Over(landing);
         // 🔴 Read again here, not only where the look chose it (LAND2b): a rule changed between the two must never let a landing
@@ -710,7 +710,7 @@ internal sealed class TreeLands(
             // which is never edited, its graph holding no review before its `land`.
             Func<string?> standing = named is { } version
                 ? () => version.Landing.Rule.AutoAccept ? null : "its workflow's graph holds a review before its landing"
-                : () => LandingRules.Effective(context.Config(), repository, workspace).Rule is { AutoAccept: true } ? null : "its repository's rule no longer accepts automatically";
+                : () => LandingRules.Line(context.Config(), repository, workspace).Rule is { AutoAccept: true } ? null : "its repository's rule no longer accepts automatically";
             var (delivery, refusal) = await CurrentDeliveries.StartAsync(
                 context.Home, context.Plugins, landing, repository, workspace, root, subject, tip, line, tree, name, acceptedBy, hold?.Waited == true,
                 standing, ct, bound).ConfigureAwait(false);
@@ -1499,7 +1499,7 @@ internal sealed class TreeLands(
         var lead = leadTree is { Length: > 0 } && Directory.Exists(leadTree) ? Path.GetFullPath(leadTree) : null;
         var full = lead ?? Path.GetFullPath(anyTree);
         var (workspace, repository) = context.OwnerOf(full);
-        var landing = LandingRules.Choose(context.Config(), repository, workspace);
+        var landing = LandingRules.Line(context.Config(), repository, workspace);
         if (lead is not null) return await ForWorkAsync(lead, workspace, repository, landing.Rule, entry, ct).ConfigureAwait(false);
         return context.Recorded.Landing(entry.Session) is { } landed
             ? await ForWorkAsync(full, workspace, repository, landing.Rule, entry, ct, landed.Tip).ConfigureAwait(false)

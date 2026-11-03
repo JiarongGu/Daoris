@@ -23,8 +23,6 @@ public static class DriverChoiceVerbs
         new HandOverVerb(),
         new RetiredStaffingVerb("actor"),
         new RoleVerb(),
-        new LandingVerb(),
-        new WorkCycleVerb(),
         new WorkflowVerb(),
         new ReviewVerb(),
         new OpinionVerb(home => AdapterSet.Built().WithPlugins(PluginCatalog.Load(home, AdapterSet.Built().Names))),

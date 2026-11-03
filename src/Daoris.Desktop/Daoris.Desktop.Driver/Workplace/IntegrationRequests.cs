@@ -32,7 +32,7 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
     public async Task<IntegrationAdmission> AdmitAsync(IntegrationAsk ask, CancellationToken ct = default)
     {
         var settings = config();
-        var landing = LandingRules.Effective(settings, ask.Repository, ask.Workspace);
+        var landing = LandingRules.Line(settings, ask.Repository, ask.Workspace);
         if (ask.Route == IntegrationRoutes.Node || ask.Requester.Door == IntegrationDoors.Node) return await NodeAsync(ask, landing, settings, ct).ConfigureAwait(false);
         if (landing.Rule is not { Form: LandingForm.Branch, Integrate: { } integrate })
         {
@@ -65,7 +65,7 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
     /// </param>
     public IntegrationAdmission Press(string repository, string? workspace, string branch, string tip, string line, bool delivered = false)
     {
-        var landing = delivered ? null : LandingRules.Effective(config(), repository, workspace);
+        var landing = delivered ? null : LandingRules.Line(config(), repository, workspace);
         if (landing is { Rule.Form: not LandingForm.Merge })
         {
             return Refuse(IntegrationRefusals.Door, $"`{repository}`'s landing rule is no merge rule, so its press is not carried as one: nothing was requested.");
@@ -159,7 +159,7 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
     /// </summary>
     public async Task<IReadOnlyList<IntegrationAdmission>> SweepAsync(string repository, string? workspace, string root, CancellationToken ct = default)
     {
-        var landing = LandingRules.Effective(config(), repository, workspace);
+        var landing = LandingRules.Line(config(), repository, workspace);
         if (landing.Rule is not { Form: LandingForm.Branch, Integrate: { } integrate } || integrate.Resolved().Request != LandingIntegrate.Done) return [];
         var answers = new List<IntegrationAdmission>();
         var standing = records.Landings()

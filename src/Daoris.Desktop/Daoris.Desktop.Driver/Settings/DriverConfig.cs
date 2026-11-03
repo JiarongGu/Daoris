@@ -701,96 +701,6 @@ public sealed record DriverConfig(
     public DriverConfig WithWorkspaceLine(string workspace, string? branch) =>
         this with { WorkspaceLines = Set(WorkspaceLines, workspace, branch) };
 
-    /// <summary>
-    /// How work lands, as the person set it (WSR1, D87), by repository. It wins over the workspace's;
-    /// empty — the default — is the merge door as it always was (<see cref="LandingRules.Choose"/>).
-    /// </summary>
-    public IReadOnlyDictionary<string, LandingRule> Landings { get; init; } =
-        new Dictionary<string, LandingRule>(StringComparer.OrdinalIgnoreCase);
-
-    /// <summary>A workspace's landing rule, for every repository in it that sets none of its own.</summary>
-    public IReadOnlyDictionary<string, LandingRule> WorkspaceLandings { get; init; } =
-        new Dictionary<string, LandingRule>(StringComparer.OrdinalIgnoreCase);
-
-    /// <summary>Set a repository's landing rule, or clear it with null to take its workspace's or the merge.</summary>
-    public DriverConfig WithLanding(string repository, LandingRule? rule) =>
-        this with { Landings = Set(Landings, repository, rule, Verifies(Workflows, repository)) };
-
-    /// <summary>Set a workspace's landing rule, or clear it with null.</summary>
-    public DriverConfig WithWorkspaceLanding(string workspace, LandingRule? rule) =>
-        this with { WorkspaceLandings = Set(WorkspaceLandings, workspace, rule, Verifies(WorkspaceWorkflows, workspace)) };
-
-    /// <summary>
-    /// Set or clear the <c>integrate</c> of a repository's own landing rule (INTEGRATE1d), the rest of the rule as it is; judged as the
-    /// rule is (<see cref="LandingKey.Problem(LandingRule, bool)"/>), <c>land</c> only where the repository's own landed route verifies its line.
-    /// </summary>
-    /// <exception cref="DriverException">The repository has no rule of its own, or the rule would be refused with it.</exception>
-    public DriverConfig WithLandingIntegrate(string repository, LandingIntegrate? integrate) =>
-        this with { Landings = SetIntegrate(Landings, repository, integrate, Verifies(Workflows, repository)) };
-
-    /// <summary>Set or clear the <c>integrate</c> of a workspace's landing rule, as <see cref="WithLandingIntegrate"/> does a repository's.</summary>
-    public DriverConfig WithWorkspaceLandingIntegrate(string workspace, LandingIntegrate? integrate) =>
-        this with { WorkspaceLandings = SetIntegrate(WorkspaceLandings, workspace, integrate, Verifies(WorkspaceWorkflows, workspace)) };
-
-    /// <summary>
-    /// Whether a whole-set verification runs on the line a level's rule integrates, as this file can tell (INTEGRATE1d; the integration
-    /// design §4.5): the level's own landed route names a verification pipeline whose gates the person accepted (D192 point 7). A
-    /// route the level takes from its workspace, or a verification run outside Daoris, is not seen here, so <c>land</c> is refused there.
-    /// </summary>
-    private static bool Verifies(IReadOnlyDictionary<string, WorkflowChoice> routes, string key) =>
-        routes.TryGetValue(key.Trim(), out var choice) && choice.Landed is { Gates: not null } landed
-        && !string.Equals(landed.Workflow, WorkflowKey.Current, StringComparison.Ordinal);
-
-    /// <summary>
-    /// The cycles of the kinds of work that do not land (FABRIC-GRAPH1; §D7's <c>workCycles</c>): by repository, then by unit kind
-    /// (<see cref="NodeGraphHomes.WorkCycleKinds"/>), each a whole graph's JSON text, compact. Absent is none, today's.
-    /// </summary>
-    public IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> WorkCycles { get; init; } =
-        new Dictionary<string, IReadOnlyDictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
-
-    /// <summary>A workspace's work cycles (§D7's <c>workspaceWorkCycles</c>), by kind, for each repository in it naming none of that kind.</summary>
-    public IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> WorkspaceWorkCycles { get; init; } =
-        new Dictionary<string, IReadOnlyDictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
-
-    /// <summary>
-    /// The work cycles under <paramref name="name"/>: each repository's or workspace's kinds of work, every kind kept as written, compact, null
-    /// being none (the review's finding 2: a kind with no work cycle, or a cycle that is not an object, was dropped by an edit beside it).
-    /// Only <see cref="NodeGraphHomes.WorkCycleKinds"/> govern; whether a graph holds is said where it is read (<see cref="NodeGraphHomes.Work"/>),
-    /// and a kind no unit reads by <see cref="NodeGraphHomes.Strays"/>. An owner naming no kind is not read, and the first owner written in
-    /// any case governs (finding 3).
-    /// </summary>
-    private static IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> WorkCycleMap(JsonElement root, string name)
-    {
-        var map = new Dictionary<string, IReadOnlyDictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
-        if (!root.TryGetProperty(name, out var element) || element.ValueKind != JsonValueKind.Object) return map;
-        foreach (var owner in element.EnumerateObject())
-        {
-            if (owner.Value.ValueKind != JsonValueKind.Object || map.ContainsKey(owner.Name)) continue;
-            var kinds = new Dictionary<string, string>(StringComparer.Ordinal);
-            foreach (var kind in owner.Value.EnumerateObject())
-            {
-                if (kind.Value.ValueKind != JsonValueKind.Null) kinds.TryAdd(kind.Name, CycleText.Compact(kind.Value));
-            }
-
-            if (kinds.Count > 0) map[owner.Name] = kinds;
-        }
-
-        return map;
-    }
-
-    private static void WriteWorkCycles(Utf8JsonWriter writer, string name, IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> map)
-    {
-        if (map.Count == 0) return;
-        writer.WriteStartObject(name);
-        foreach (var (owner, kinds) in map.OrderBy(pair => pair.Key, StringComparer.Ordinal))
-        {
-            writer.WriteStartObject(owner);
-            foreach (var (kind, cycle) in kinds.OrderBy(pair => pair.Key, StringComparer.Ordinal)) CycleText.Write(writer, kind, cycle);
-            writer.WriteEndObject();
-        }
-
-        writer.WriteEndObject();
-    }
 
     /// <summary>
     /// Whether a repository's checkout may be read by agents outside it (READ1, D107), as the person set
@@ -862,42 +772,6 @@ public sealed record DriverConfig(
         if (value is { } set) next[key.Trim()] = set;
         else next.Remove(key.Trim());
         return next;
-    }
-
-    private static IReadOnlyDictionary<string, LandingRule> Set(
-        IReadOnlyDictionary<string, LandingRule> map, string key, LandingRule? rule, bool wholeSet)
-    {
-        var next = new Dictionary<string, LandingRule>(map, StringComparer.OrdinalIgnoreCase);
-        if (rule is null) next.Remove(key);
-        else
-        {
-            // FABRIC-GRAPH1: a door with no field for the cycle (Setup's landing row, Ask Daoris, the terminal) keeps the one the rule
-            // has; only WithLandingCycle sets or clears it. A cycle the new form no longer reaches is said where it is read, never dropped.
-            if (rule.Cycle is null && map.TryGetValue(key, out var held) && held.Cycle is not null) rule = rule with { Cycle = held.Cycle };
-            // INTEGRATE1d: so too the rule's `integrate`, which only WithLandingIntegrate sets or clears. A form that cannot carry it (a
-            // merge, a plugin, a squash) refuses the edit, naming it, rather than dropping the person's integration unseen.
-            if (rule.Integrate is null && map.TryGetValue(key, out var integrating) && integrating.Integrate is not null)
-            {
-                rule = rule with { Integrate = integrating.Integrate };
-            }
-
-            next[key] = LandingKey.Problem(rule, wholeSet) is { } problem ? throw new DriverException(problem) : LandingKey.Kept(rule);
-        }
-
-        return next;
-    }
-
-    private static IReadOnlyDictionary<string, LandingRule> SetIntegrate(
-        IReadOnlyDictionary<string, LandingRule> map, string key, LandingIntegrate? integrate, bool wholeSet)
-    {
-        if (!map.TryGetValue(key.Trim(), out var held))
-        {
-            throw new DriverException($"`{key.Trim()}` has no landing rule of its own to integrate by: set its branch rule first.");
-        }
-
-        var rule = held with { Integrate = integrate };
-        if (LandingKey.Problem(rule, wholeSet) is { } problem) throw new DriverException(problem);
-        return new Dictionary<string, LandingRule>(map, StringComparer.OrdinalIgnoreCase) { [key.Trim()] = LandingKey.Kept(rule) };
     }
 
     private static IReadOnlyDictionary<string, string> Set(IReadOnlyDictionary<string, string> map, string key, string? branch)
@@ -1177,12 +1051,6 @@ public sealed record DriverConfig(
             // Written only when set (LANG1c), as the CLI writes them: absent is no language, and no line handed.
             WriteMap(writer, "languages", Languages);
             WriteMap(writer, "workspaceLanguages", WorkspaceLanguages);
-            // Written only when set (WSR1), for the same reason: absent is the merge it always was.
-            LandingKey.WriteRules(writer, "landings", Landings);
-            LandingKey.WriteRules(writer, "workspaceLandings", WorkspaceLandings);
-            // Written only when set (FABRIC-GRAPH1), as the CLI writes them: absent is no cycle for a quest or an ask, today's.
-            WriteWorkCycles(writer, "workCycles", WorkCycles);
-            WriteWorkCycles(writer, "workspaceWorkCycles", WorkspaceWorkCycles);
             // Written only when set (REVIEWENV1a), as the CLI writes them: absent is no review environment, today's behaviour.
             ReviewKey.WriteMap(writer, "reviews", Reviews);
             ReviewKey.WriteMap(writer, "workspaceReviews", WorkspaceReviews);
@@ -1485,36 +1353,6 @@ public sealed record DriverConfig(
     }
 
     /// <summary>
-    /// The rules of <paramref name="name"/> (<c>landings</c> or <c>workspaceLandings</c>) that read as no rule (FABRIC-GRAPH1d), each by
-    /// its name as written, in the file's order: why, <c>object</c> (no rule's object), <c>form</c> (no <c>form</c>) or <c>refused</c> (one
-    /// <see cref="LandingRules.Problem"/> refuses), and the driver's sentence. Setup names them through the bridge's landing rows, as
-    /// <see cref="NodeGraphHomes.Strays"/> does for the terminal; a rule written null is none, and none here.
-    /// </summary>
-    public IReadOnlyList<UnreadLanding> UnreadLandings(string name)
-    {
-        if (Source is null) return [];
-        using var document = JsonDocument.Parse(Source);
-        if (!document.RootElement.TryGetProperty(name, out var map) || map.ValueKind != JsonValueKind.Object) return [];
-        var unread = new List<UnreadLanding>();
-        foreach (var entry in map.EnumerateObject())
-        {
-            if (RuleOf(entry.Value, out var said) is not null || said is null) continue;
-            var why = entry.Value.ValueKind != JsonValueKind.Object ? "object" : Json.NonEmpty(entry.Value, "form") is null ? "form" : "refused";
-            unread.Add(new(entry.Name, why, said));
-        }
-
-        return unread;
-    }
-
-    /// <summary>
-    /// A landing rule as the file holds it, read as the settings' <see cref="LandingKey.RuleMap"/> reads it, or null where it is none or
-    /// does not read: then <paramref name="unread"/> says why (FABRIC-GRAPH1d) — no object, no <c>form</c>, or a rule
-    /// <see cref="LandingRules.Problem(LandingRule)"/> refuses — and is null for a rule written null, which is none. Both readers skip such
-    /// a rule, and <see cref="NodeGraphHomes.Strays"/> says it; <c>daoris-driver driver list</c> says it too.
-    /// </summary>
-    internal static LandingRule? RuleOf(JsonElement value, out string? unread) => LandingKey.RuleOf(value, out unread);
-
-    /// <summary>
     /// The session languages (LANG1c): each name a code of the table, read in any case without the spaces around it. A code
     /// the table does not hold, a value that is not text, a blank name and a map that is not one are not read; a name written
     /// twice in any case is read where first written.
@@ -1646,10 +1484,6 @@ public sealed record DriverConfig(
             WorkspaceLines = BranchMap(root, "workspaceLines"),
             Languages = LanguageMap(root, "languages"),
             WorkspaceLanguages = LanguageMap(root, "workspaceLanguages"),
-            Landings = LandingKey.RuleMap(root, "landings"),
-            WorkspaceLandings = LandingKey.RuleMap(root, "workspaceLandings"),
-            WorkCycles = WorkCycleMap(root, "workCycles"),
-            WorkspaceWorkCycles = WorkCycleMap(root, "workspaceWorkCycles"),
             // A rule with a problem is not read, and `false` only for a repository (REVIEWENV1a).
             Reviews = ReviewKey.Map(root, "reviews", allowNone: true),
             WorkspaceReviews = ReviewKey.Map(root, "workspaceReviews", allowNone: false),
@@ -1829,9 +1663,3 @@ public interface IRoleStarts
     /// </summary>
     void HeldForOwner(string quest);
 }
-
-/// <summary>A landing rule <c>driver.json</c> keeps that reads as no rule (FABRIC-GRAPH1d, <see cref="DriverConfig.UnreadLandings"/>).</summary>
-/// <param name="Name">The repository or workspace it is written under, as written.</param>
-/// <param name="Why"><c>object</c>, <c>form</c> or <c>refused</c>, which the page words.</param>
-/// <param name="Said">The driver's sentence for why, which the page passes through for <c>refused</c>.</param>
-public sealed record UnreadLanding(string Name, string Why, string Said);

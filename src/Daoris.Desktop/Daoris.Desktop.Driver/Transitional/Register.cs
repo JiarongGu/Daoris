@@ -322,16 +322,6 @@ public static class TransitionalRegister
         // the service's runs as well as the home's files.
         new()
         {
-            Id = "current-followed",
-            Kept = "Workplace/Landing.cs:887, Workflows/Nodes/NodeGraphs.cs:1121",
-            Reaches = "A place on Current, and a unit bound to Current, on a home not converted: its landing rule chosen and drawn as the workflow it follows.",
-            Ends = "The workflow part's census has ended: no place resolves to Current, no Current-bound unit is open, and no leftover rule is held.",
-            Row = "WORKFLOWCLEAN1z",
-            Part = ConversionParts.Workflows,
-            Ended = Never,
-        },
-        new()
-        {
             Id = "auto-lander",
             Kept = "Workplace/AutoLander.cs:57",
             Reaches = "Work landed by the old doors (the auto lander's choosing, the presses' landing in place, the tidy) for a run on Current, steps or `handed`.",
@@ -339,15 +329,6 @@ public static class TransitionalRegister
             Row = "WORKFLOWCLEAN1z",
             Part = ConversionParts.Workflows,
             Ended = Never,
-        },
-        new()
-        {
-            Id = "work-cycles",
-            Kept = "Workflows/Nodes/NodeGraphs.cs:1205",
-            Reaches = "A place on Current whose quests close by a work cycle, which a saved workflow does not run yet.",
-            Ends = "driver.json holds no `workCycles` and no `workspaceWorkCycles`, once a saved workflow runs a work cycle and the place is converted.",
-            Row = "WORKFLOWCLEAN1j",
-            Ended = home => Read(home, HomeEntry.DriverConfig) is { } root && !Holds(root, "workCycles") && !Holds(root, "workspaceWorkCycles"),
         },
         new()
         {
