@@ -16,6 +16,7 @@
     <IsPackable>false</IsPackable>
     <RootNamespace>Daoris.Contracts</RootNamespace>
     <AssemblyName>Daoris.Contracts</AssemblyName>
+    <Description>the service's HTTP API, declared once: each route as its request record, and the records it answers</Description>
   </PropertyGroup>
 
 </Project>

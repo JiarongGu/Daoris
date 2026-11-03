@@ -20,6 +20,9 @@ public sealed partial record RouteDeclaration(Type Request, Type Answer, string 
     /// <summary>Whether the record's other values travel in the body rather than the query.</summary>
     public bool TakesBody => Method is not ("GET" or "DELETE");
 
+    /// <summary>The path with each <c>{name}</c> segment filled by <paramref name="value"/>, escaped.</summary>
+    public string PathWith(Func<string, string> value) => Segment().Replace(Path, match => Uri.EscapeDataString(value(match.Groups[1].Value)));
+
     /// <summary>The declaration of <paramref name="request"/>, which implements <see cref="IRoute{TAnswer}"/> once.</summary>
     /// <exception cref="ArgumentException">A type that declares no route, or more than one.</exception>
     public static RouteDeclaration Of(Type request) => Read.GetOrAdd(request, static type =>
