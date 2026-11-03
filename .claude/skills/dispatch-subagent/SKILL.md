@@ -5,8 +5,9 @@ description: The parent's half of dispatching a subagent to work a branch of thi
 
 # dispatch-subagent
 
-A feature is built by two agents (D160, D187): a **branch-scout** orients it and returns the brief's lines, and a
-**branch-worker** builds it on its own branch and worktree, end to end across the lanes it needs. Each one's
+A feature is built by two agents (D160, D187), each through the `change` skill: a **branch-scout** takes its reading
+steps and returns the brief's lines, and a **branch-worker** builds it on its own branch and worktree, end to end
+across the lanes it needs. Each one's
 instructions are its definition in `.claude/agents/`, so a dispatch prompt carries only what differs per branch. The
 unit is a feature a person can see working; the rows it covers become one block row when it is dispatched.
 
@@ -37,7 +38,7 @@ The worker, with `subagent_type: branch-worker` and the model its role takes:
 
 ```
 Task: <ROW>: <the outcome a person sees>, because <why>.
-Area: <the contract: document, section>. Beyond it: <design §>, or none.
+Area: <the area document, or the contract: document, section>. Beyond it: <design §>, or none.
 Start from: main at <sha>.
 Change: <file>:<a-b> <symbol>; the new unit goes in <folder>.
 Mirror: <file>:<a-b>.
@@ -46,7 +47,7 @@ Words or fields read by suites you cannot run: <term> -> <file>:<line>, or none.
 Do not touch: <files a branch in flight holds>.
 Decision: D<n> reserved, or none.
 Done when: <one line per point of the proof>.
-Hand back as your definition says.
+Follow the `change` skill. Hand back as your definition says.
 ```
 
 Fill the lines from the scout's pack, opening any pointer that looks wrong. A brief that reaches the service says to

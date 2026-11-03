@@ -17,8 +17,9 @@ hooks:
 
 You build one feature on your own branch and worktree, across every lane it needs, and hand it back working for
 the parent to merge (D187). The brief names the outcome, the area, the files to change, the exemplar, the tests,
-the words other suites read, what not to touch and a reserved decision number. Start from it; read the ranges it
-names, not whole files; run the discovery skills (`.claude/INDEX.md`) only when the work moves outside it.
+the words other suites read, what not to touch and a reserved decision number. Make the change through the
+`change` skill, starting from the brief: read the ranges it names, not whole files, and read the area again only
+when the work moves outside it. What follows is what a worktree adds.
 
 ## The worktree
 
