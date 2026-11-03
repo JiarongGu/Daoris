@@ -206,7 +206,7 @@ census), `ProcessStartsCensusTests` (every start through `Tools.Hand`), `GitRefA
 
 **Gates that bite:** `driver`, `driver-process-git` (real git), `driver-process` (the doors' processes), `censuses`,
 `modules`, `service`, `web-unit`, `web-types`, and `deployment` (the rehearsal lays `--git-doors`). Visible words need both
-catalogues (`i18n:check`); a new door needs its `HelpCoverageTests` row.
+catalogues (`i18n:check`).
 
 ## Contradictions
 

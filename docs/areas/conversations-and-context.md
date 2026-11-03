@@ -175,8 +175,8 @@ of everything it handed, section by section.
   `ResumeAsk` only hand it on. A new section needs its `HandedSections`/`HandedCuts` code and both catalogues' twin rows.
 - **Counts:** `Course/Domain/LineCounts.cs` reads them, `Roles/Domain/CountTexts.cs` words them, and the supervisor's
   rules are the roles area's.
-- **Ask Daoris:** history in `Context/HelpConversations.cs`; a door's answer in `Help/Proposals/` with its
-  `HelpCoverageTests` row.
+- **Ask Daoris:** history in `Context/HelpConversations.cs`; a door's answer, where one is wanted, in `Help/Proposals/` with its
+  row in the room's doors table.
 - **Never grow the hubs.** `Loop/Chat/ChatRunner.cs` (232 KB), `ChatTurns.cs` (72 KB) and `Course/Chat/ChatGoOn.cs`
   (66 KB) are over budget. New behaviour goes in its own file (D231). Agents comes before Participants and Context in the
   structure gate (D166).

@@ -61,7 +61,7 @@ are all you can see, say what you could not see: never build a repository's stat
 present it as the tree.
 
 Where you have no door to propose what the person wants, that is never a limit of yours: where the act is
-under *Doors Daoris still owes* (below), say Daoris still owes that door and name its command.
+under *Done at a terminal* (below), name its command for the person to run.
 
 ## What you may propose
 
@@ -280,13 +280,10 @@ session named; never propose adding one that has not landed.
 | find an earlier conversation with Ask Daoris and go on in it, start a new one from its words, or name, pin or delete one; they are kept on this machine only (Ask Daoris never proposes it: the conversations are yours) | Ask Daoris → History | `daoris-driver help list [--workspace <name> | --all] [--search "…"]`, `daoris-driver help resume <id> "…"`, `daoris-driver help rename|pin|unpin|delete <id>` |
 | answer a go-ahead a session asked on an ask, for an act outside its repository: yes or no, which every session on the ask is handed | Quests → the ask's page → Go-aheads | `daoris-driver ask --go-ahead <id> <n> approve|refuse ["…"]` |
 
-## Doors Daoris still owes
+## Done at a terminal
 
-Each act below is one a person can start at a terminal and you cannot propose yet: Daoris still owes you
-its door. That is a door missing from Daoris, not a limit of yours and not how the act is meant to be done.
-When the person wants one, say that Daoris still owes this door, name its command so they can run it
-themselves, and its screen where the doors above name one; never offer a way around it as if it were the
-design.
+Each act below is one the person runs at a terminal, and no proposal of yours takes it. When the person
+wants one, name its command so they can run it themselves, and its screen where the doors above name one.
 
 - set every repository of a workspace up, one at a time, or pause, resume or stop that plan: `daoris place --workspace <name> --adoption [--plan]`, `daoris place --workspace <name> --pause | --resume | --stop`
 - register a repository from what its line declares: `daoris repository register [--repository <name>]`

@@ -114,8 +114,7 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "[--verify|--no-verify] [--minutes <n>] [--recheck|--no-recheck]` (`--workspace <name>` for a whole workspace), "
             + "`daoris place opinion <repository> none|--clear`"),
         // WORKFLOW1c4: the workflow a place follows drawn as it stands (WORKFLOW1a's verb, WORKFLOW1b's tab, D157 point 7); a place
-        // still on Current is drawn from its old landing rule (D227). Exempt from Ask Daoris, since it reads (HelpCoverageTests'
-        // `workflow show`); a change is the workflow's, in the editor, or the Setup row a step opens for Current.
+        // still on Current is drawn from its old landing rule (D227). Never proposed, since it reads; a change is the workflow's, in the editor, or the Setup row a step opens for Current.
         new("see how a repository's work moves, or a workspace's, at each gate: the workflow it follows, or for a place still on "
             + "Current its old landing rule's, as they stand; each step (the work, a second opinion, your look, the landing, a pull "
             + "request a plugin opens after it) and the plugins that may hold a start, who takes part (agent alone, agent + you, "
@@ -125,8 +124,8 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "`daoris driver workflow show --repository <name>|--workspace <name>`",
             new HelpDoorAsk.Never("it reads and changes nothing")),
         // WORKFLOW1d (D157 points 5 and 6): a named workflow, its versions never edited; its screen is WORKFLOW1g's. Ask Daoris's
-        // `workflow` kind takes `new` and `edit` since WORKFLOW1h-b, a whole version; `apply` and `import` are WORKFLOW1h2's
-        // (HelpCoverageTests). WORKFLOW1e chooses one, and every gate reads the version a run bound (WORKFLOW1f).
+        // `workflow` kind takes `new` and `edit` since WORKFLOW1h-b, a whole version; `apply` and `import` are done at a
+        // terminal. WORKFLOW1e chooses one, and every gate reads the version a run bound (WORKFLOW1f).
         new("name a workflow: a graph of steps from a default Daoris ships or another saved workflow, each change saved as its next "
             + "version, never edited, said step by step with your part first; a list of steps is no longer saved",
             "(no screen yet)",
@@ -147,7 +146,7 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "`daoris driver workflow show --repository <name>|--workspace <name> [--kind <kind>]`",
             new HelpDoorAsk.Proposes("workflow", "use", "the choice with a version it proposes, as a repository's or a workspace's default; not a kind yet")),
         // ONEWAY1ae (the oneway design §1.1): the home's one conversion door over every area's part, which is the person's press over
-        // the plan they read. Ask Daoris opens the page and names the plan, and never proposes the apply (HelpCoverageTests).
+        // the plan they read. Ask Daoris opens the page and names the plan, and never proposes the apply.
         new("convert this home's old records, every area's part in one plan: in the workflow part, a workflow saved as steps or "
             + "holding a `handed` step, and a place still on Current, which follows its old landing rule, become saved graphs that each "
             + "place follows, with a home default workflow for a place that chooses none (`--plan` shows every operation and writes "
@@ -199,16 +198,16 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         ("start a quest your stop holds again: carry a taken one on in its tree, or plan an open one", "Quests → the quest's page, "
             + "whose *Sitting* names the session", "`daoris driver retry <quest> --session <id>`"),
         // TOOL4e: the terminal's door onto the default cool-off; TOOL4g gave it Settings → Driver's control, and TOOL4l-b
-        // Ask Daoris's `setting` kind's `cooloff` (HelpCoverageTests).
+        // Ask Daoris's `setting` kind's `cooloff`.
         ("set how long an account cools when its agent hits a limit and names no time", "Settings → Driver → Cool-off when no time is named",
             "`daoris driver cooloff <minutes>`"),
         // GITAUTH1e (D198, the git-auth design §9): a repository's remote or a workspace's host pointed at a git identity that exists, Ask
-        // Daoris's `setting` kind's `git-use` (HelpCoverageTests); never the person's own sign-ins, never an identity set up, tested or removed.
+        // Daoris's `setting` kind's `git-use`; never the person's own sign-ins, never an identity set up, tested or removed.
         new("point a repository's remote, or a workspace's host, at a git identity already set up",
             "Repository → Setup → Git remote → Change…, and Workspace → Setup → Git",
             "`daoris-driver git use <repository> [--remote <name>] <identity>|--clear`, `daoris-driver git use --workspace <workspace> --host <host> <identity>|--clear`",
             new HelpDoorAsk.Proposes("setting", "git-use", "and never sets one up or chooses your own sign-ins")),
-        // KEEP1d (D195 point 2): how long each kind Daoris keeps is kept, Ask Daoris's `setting` kind's `keep` (HelpCoverageTests).
+        // KEEP1d (D195 point 2): how long each kind Daoris keeps is kept, Ask Daoris's `setting` kind's `keep`.
         ("set how long Daoris keeps set-aside trees, unused downloads, the machine log or finished work's records", "Settings → This Daoris → Disk space → Change…",
             "`daoris driver keep <kind> <rule>`"),
         ("bound how many sessions run at once", "Settings → Driver → Sessions at once on this machine", "`daoris driver cap <n>`"),
@@ -243,7 +242,7 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         ("name an account: its id stays, so every list, default and record keeps it", "(no screen yet)",
             "`daoris agent account rename <agent> <account> <name>`"),
         // TOOL4e (D125 §6): the order and *Try now*, the terminal's doors; TOOL4g gave them the screen, and TOOL4l-b Ask Daoris's
-        // `order` and `ready` (HelpCoverageTests); one set's since POOL1b.
+        // `order` and `ready`; one set's since POOL1b.
         ("choose the order of Daoris's accounts, one set for every workspace: where starts begin one by one, and the last tie "
             + "otherwise", Agent + "How accounts are used → Use, up and down",
             "`daoris agent account order <agent> <profile>…|--clear` (the accounts named first, the rest after; `--clear` "
@@ -265,7 +264,7 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         ("set an account's own model and effort", Agent + "Model and effort",
             "`daoris agent settings <agent> --account <name> model <model> effort <effort>`"),
         // PAUSE1b (D132 §7.2): the terminal's doors; PAUSE1e's pages' and a session's acts (§7.1), and Ask Daoris's `pause` kind,
-        // its `pause` and `resume` doors, since PAUSE1f-b (HelpCoverageTests).
+        // its `pause` and `resume` doors, since PAUSE1f-b.
         ("pause an ask's work, or one quest's, on this machine: what of it runs is stopped as your stop, and nothing of it "
             + "starts until you resume it, which carries it on where it stood",
             "Quests → the ask's page or the quest's page → Pause…, Resume; Sessions → the session's header or its row's ⋯ → "
@@ -308,8 +307,7 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         new("mark a quest done as yours, with a note if you give one: what a finish at a checkpoint says, said on the quest itself",
             "Quests → the quest's page → Mark done…", "`daoris-driver quest done <id> [--note \"…\"]`",
             new HelpDoorAsk.Never("it takes you to the quest's page, and the done is yours to write")),
-        // EVID1b (D144 §5): reading a done's evidence again, the terminal's door; the quest page's *Check again* and Ask Daoris's
-        // check card are EVID1c's, owed meanwhile (HelpCoverageTests).
+        // EVID1b (D144 §5): reading a done's evidence again, the terminal's door beside the quest page's *Check again*.
         ("read a done's evidence again, so a commit that holds it now lifts its hold: at the commit a session's end here read, "
             + "or one named after it on the same history (a done no session here ended needs the commit named)",
             "(no screen yet)", "`daoris-driver quest check <id> [--commit <sha>]`"),
@@ -367,8 +365,8 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "`daoris-driver ask … --kind <kind> [--workflow <id>|current]`, `daoris-driver ask --set-workflow <id> [--kind <kind>] "
             + "[--workflow <id>|current]|--clear [\"…\"]`, and for a quest no ask published, before it starts (WORKFLOW1e2), "
             + "`daoris-driver quest workflow <id> [--kind <kind>] [--workflow <id>|current]|--clear [\"…\"]`"),
-        // WORKFLOW1f (D157 point 10, the workflow design §4.4): the person's Keep where a kind's paths hold its work. Exempt from Ask
-        // Daoris (HelpCoverageTests): keeping a workflow that asks less of the person is their say-so, as going on without a second
+        // WORKFLOW1f (D157 point 10, the workflow design §4.4): the person's Keep where a kind's paths hold its work. Never proposed:
+        // keeping a workflow that asks less of the person is their say-so, as going on without a second
         // opinion is. The screen's press, and §4.4's other two, are the editor's row (WORKFLOW1g).
         new("keep the workflow a kind of task chose for a piece of work that changed paths outside the kind's, where that workflow "
             + "asks less of you than the one it would follow without the kind, with your words; nothing switches by itself",
@@ -376,13 +374,13 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "`daoris-driver workflow keep <session> [\"…\"]`",
             new HelpDoorAsk.Never("it is yours alone")),
         // FABRIC-CUTOVER1f (D190 point 6, the cutover design §5.2): the person's skip and stop of a node of a run bound to a graph version.
-        // Exempt from Ask Daoris (HelpCoverageTests): passing a step over or stopping it is the person's word on the work, as a held attempt's is.
+        // Never proposed: passing a step over or stopping it is the person's word on the work, as a held attempt's is.
         new("pass a step of a run that follows a saved graph over, with your words, such as a go-ahead nobody will raise, or stop it, which "
             + "ends the run once nothing else of it can move (kept on the run's record, and Daoris's next look applies it)",
             "Sessions → the session's *Workflow* view, *Pass over…* and *Stop…* under the step",
             "`daoris-driver workflow skip <run> <node> \"…\"`, `daoris-driver workflow stop <run> <node> [\"…\"]`",
             new HelpDoorAsk.Never("it is yours alone")),
-        // DECIDE1c: the person's changes on a run's review, its rejection with their words. Exempt from Ask Daoris as skip and stop are (HelpCoverageTests).
+        // DECIDE1c: the person's changes on a run's review, its rejection with their words. Never proposed, as skip and stop never are.
         new("ask for changes on a run's review in place of your Accept, with your words: the work's session is told them as its next "
             + "turn, and what it commits is reviewed again before anything lands (kept on the run's record, and Daoris's next look "
             + "applies it)",
@@ -390,7 +388,7 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "`daoris-driver workflow changes <run> <node> \"…\"`",
             new HelpDoorAsk.Never("it is yours alone")),
         // XAGENT1f4 (D155 point 10, design §8.5, §9): the person's presses at the second opinion's gate, the terminal's
-        // `daoris session opinion` and the screen's (XAGENT1g). Each is exempt from Ask Daoris (HelpCoverageTests): a pass spends an
+        // `daoris session opinion` and the screen's (XAGENT1g). None is proposed: a pass spends an
         // account at the person's choice and a stop is theirs, and going on, or reading it themselves, is their judgement (D110).
         new("ask another agent to read a session's work now, again, or after it could not, or the same agent in a fresh "
             + "conversation, which is never an independent reading; see where its second opinion stands; or stop a reading, which "

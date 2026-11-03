@@ -178,8 +178,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 58. Full access runs its harness's unrestricted mode. Only the person chooses it (Settings, the panel's chip, `help
     mode`), never Ask Daoris. A change of mode or access takes the next turn and is said. (from D183)
 59. What each start handed is recorded at the start and shown on the panel, never worked out again. (from D183)
-60. Every driver verb and Settings control is a proposal's door, a door owed, or exempt with a reason, held by
-    `HelpCoverageTests`. A door owed is said as owed. (from D110, D170)
+60. A proposal kind, a room's door row or a terminal verb exists only where one is wanted; no census asks one of every
+    action. The room's doors table says where each change is and whether Ask Daoris proposes it, a proposing row naming a
+    door its kind takes; *Done at a terminal* names the acts no proposal takes, by their commands. (from D110, D170, D233)
 61. A plugin's servers and skills reach Ask Daoris only where its manifest declares them for it, approved by the person
     in restricted mode. A plugin changes Daoris only through the proposal doors. (from D170, D183)
 62. The room says each role's staffing, policy and last seven days, so *why did this run on Opus?* is answered from
@@ -198,13 +199,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 - **The agent supervisor:** `QuestionSupervisorDecisions`, `SupervisorDecision`, `Modules/Bridge/SupervisorDoor.cs`.
 - **A steward act:** a row in `Modules/Bridge/StewardActRows.cs`, behind its own look.
 - **An Ask Daoris door:** a file of its own in `Help/Proposals/`, registered by one line in `HelpProposalKinds.All`, with
-  the service's writer `HelpProposalBox.<Kind>.cs`, the page's card, and its coverage row.
+  the service's writer `HelpProposalBox.<Kind>.cs`, the page's card, and its row in the room's doors table. Only where one is wanted.
 - **The page:** `Web/agents/roles/` and `Web/agents/setup/`.
 - **An old way kept:** an entry in `Transitional/Register.cs`.
 
 **Tests that pin it.** Driver: `Roles/*Tests` (catalogue, door, verbs, staffing, walk, judge, ledger, rules, decisions,
 holder key, steward), `Conversion/StaffingPartTests`, `Course/LineCourseTests`, `Course/StaffCourseLookTests`,
-`Loop/StaffPolicy*TickTests`, `Help/HelpCoverageTests`, `Help/HelpProposalKindsTests`, `Help/Proposals/*Tests`, and
+`Loop/StaffPolicy*TickTests`, `Help/HelpProposalKindsTests`, `Help/Proposals/*Tests`, and
 `Knowledge/HelpRoom*Tests` with the room goldens. Modules: `Bridge/DriverModuleRoleTests`, `DriverModuleAppointmentTests`,
 `Platform/StandingConfirmationTests`, `RoleActTests`, `Holder*Tests`, `SupervisorScopeTests`. Service:
 `Help/HelpRoleProposalTests`, `Help/HelpProposalBoxKindsTests`, `Mcp/McpRoleFilterTests`, `Sessions/SupervisorWordTests`.

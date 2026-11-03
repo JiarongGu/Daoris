@@ -59,13 +59,13 @@ public sealed class HelpRoomDoorAsksTests
     }
 
     [Fact]
-    public void A_door_still_owed_is_never_said_to_be_proposed()
+    public void An_act_done_at_a_terminal_is_never_said_to_be_proposed()
     {
-        var owed = HelpRoomOwed.All.SelectMany(door => door.Terminal).ToList();
+        var terminal = HelpRoomTerminalActs.All.SelectMany(act => act.Terminal).ToList();
 
         foreach (var door in HelpRoomDoors.Doors.Where(door => door.Ask?.Through is not null))
         {
-            Assert.DoesNotContain(owed, command => door.Terminal.Contains($"`{command}`", StringComparison.Ordinal));
+            Assert.DoesNotContain(terminal, command => door.Terminal.Contains($"`{command}`", StringComparison.Ordinal));
         }
     }
 

@@ -27,9 +27,8 @@ internal interface IHelpProposalKind
     /// The doors it takes, as the file's <c>door</c> spells them and its judge reads them: a door not here is refused.
     /// </summary>
     /// <remarks>
-    /// HELP9 (D110): what Ask Daoris's coverage is held against — each <c>daoris driver</c> verb and each Settings
-    /// control is one of these doors, a door owed, or exempt with its reason — and what the service's writer of the
-    /// same kind spells, which the kinds' structural test reads.
+    /// What the service's writer of the same kind spells, which the kinds' structural test reads, and what the room's doors table
+    /// names where a row proposes (D233 point 1: a door only where one is wanted).
     /// </remarks>
     IReadOnlyList<string> Doors { get; }
 

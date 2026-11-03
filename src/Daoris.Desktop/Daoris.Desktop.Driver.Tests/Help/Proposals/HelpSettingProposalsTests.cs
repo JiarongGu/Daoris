@@ -585,8 +585,8 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// HELP9: every door the kind names is one it plans, so the doors Ask Daoris's coverage is held against
-    /// (<c>HelpCoverageTests</c>) are doors a proposal can take, and none is named that falls to the refusal.
+    /// HELP9: every door the kind names is one it plans, so a door the room says it proposes is one a proposal can take, and none
+    /// is named that falls to the refusal.
     /// </summary>
     [Fact]
     public void Every_door_the_kind_names_is_one_it_plans()
