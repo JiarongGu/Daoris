@@ -5,8 +5,8 @@ namespace Daoris.Driver;
 /// <summary>
 /// What a <see cref="TransportRun"/> starts and how it holds it (AGENTPROVIDER1m-i): the process a door's spawn prepared, whose it is at the
 /// start gate, and what the run needs beside it for its open, its wait, its go-on and its retry. Built by the executor that holds the run,
-/// which is the one place that knows its target and its selection; an executor whose own steps come between the spawn and the open hands the
-/// rest once its process is up (<see cref="TransportRun.HandStart"/>).
+/// which is the one place that knows its target and its selection; an executor whose own steps come between the bracket or the spawn and the
+/// open hands the rest before the open (<see cref="TransportRun.HandStart"/>).
 /// </summary>
 /// <param name="Info">The process to start, prepared and handed everything a start is handed.</param>
 /// <param name="Whose">
@@ -64,10 +64,16 @@ internal sealed record TransportStart(ProcessStartInfo Info, StartClass Whose)
     public Action? QuietEnding { get; init; }
 
     /// <summary>
-    /// Told when the native harness named its conversation (SESSCTX1c): what a resume learns on the way, <c>Named</c> and <c>Prompted</c>. Null for
-    /// a run that is no resume.
+    /// Told the moment the native harness names its conversation, once that conversation is kept (SESSCTX1c, MSG1c): what a resume learns on the
+    /// way, <c>Named</c> and <c>Prompted</c>, and where a conversation going on says its words went. Null tells none.
     /// </summary>
     public Action? Named { get; init; }
+
+    /// <summary>
+    /// Told each event the native capture keeps, once the record holds it (CONV4a): how a conversation learns its turn ended, so its next words
+    /// land behind that end. Null tells none.
+    /// </summary>
+    public Action<SessionEvent>? Observed { get; init; }
 
     /// <summary>
     /// Told as the same start is made once more (SESSCTX1c): the resume's retry mark. Null where the run is no resume, which
@@ -107,7 +113,7 @@ internal sealed record TransportProtocol(string Cwd)
 
     /// <summary>
     /// What the session does once its process is up, given the conversation a resume names (null for a start). Null holds the session open
-    /// instead: opened or resumed and left to the words beside it, the conversation's shape (<see cref="TransportRun.Session"/>).
+    /// instead: opened or resumed and left to the words beside it, the conversation's shape (<see cref="TransportRun.Session"/>, <see cref="Opened"/>).
     /// </summary>
     public Func<AcpSession, string?, CancellationToken, Task<AcpOutcome>>? Run { get; init; }
 
@@ -116,6 +122,21 @@ internal sealed record TransportProtocol(string Cwd)
     /// says what the person said that never reached it (SESS3). Null tells nothing.
     /// </summary>
     public Action? Ended { get; init; }
+
+    /// <summary>Told the session's config options each time they change (AGT6b, D98), as the session is made with them; null tells none.</summary>
+    public Action<IReadOnlyList<AcpConfigOption>>? Options { get; init; }
+
+    /// <summary>
+    /// Told once a held session opened or resumed (the conversation's shape, <see cref="Run"/> null): its turns may begin, on the run's
+    /// <see cref="TransportRun.Session"/>. Null tells nothing.
+    /// </summary>
+    public Action? Opened { get; init; }
+
+    /// <summary>
+    /// Told the failure that ended a held session's open, before the run ends its process: where the executor says why in its transcript and lets
+    /// go of what waited on the open. Null tells nothing.
+    /// </summary>
+    public Action<Exception>? Unopened { get; init; }
 
     /// <summary>The driven shape: the session opened, prompted with <paramref name="prompt"/> and closed, as <c>AcpSession.RunAsync</c> does.</summary>
     public static TransportProtocol Driven(string cwd, string prompt, IReadOnlyList<AcpMcpServer>? servers = null) =>
