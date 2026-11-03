@@ -5,324 +5,97 @@ description: The parent's half of dispatching a subagent to work a branch of thi
 
 # dispatch-subagent
 
-## The workflow: main is the development branch (the owner's direction, 2026-11-01)
+A feature is built by two agents (D160, D187): a **branch-scout** orients it and returns the brief's lines, and a
+**branch-worker** builds it on its own branch and worktree, end to end across the lanes it needs. Each one's
+instructions are its definition in `.claude/agents/`, so a dispatch prompt carries only what differs per branch. The
+unit is a feature a person can see working; the rows it covers become one block row when it is dispatched.
 
-This overrides every batch step below.
-- **Branch from main.** Each builder branches from main's current tip (`git merge main` first in its worktree). There are no `parent/batch-*` branches, and no batch is stacked on another.
-- **Keep every branch on fresh main.** Each branch has its own focus, so branches drift from each other.
-  - A builder brings main in (`git merge main`, or a rebase onto it) at each milestone of its work, and again just before it hands back.
-  - It reruns its touched tests after that last merge, so what it hands back is tested against today's main, not the main it started on.
-  - The parent merges handed-back branches the same hour, so main stays fresh for the next one.
-- **Merge into main when it is done.** The parent merges a finished branch straight into main with `git merge --no-ff`. Do it at once, not held for a batch, so branches stay short and conflicts small.
-  - Before merging, the builder has run only the tests its change touches, plus the censuses its files need. The parent runs no full pre-merge pass.
-  - A conflict goes back to its builder, which merges main and resolves.
-- **CI and development run on separate cycles.** Development never waits for a CI run. The CI runs over main's tip in the background, its reds come back as small fixes on main, and the install updates whenever a run is green.
-- **Merge through the tool, test after the merge once.** Merge a branch with `node tools/merge-branch.mjs <branch>`, whose default runs the blocking set (universal, code-map, orient-index, test-map) and the path checks its paths reach in minutes; a plain `git merge --no-ff` runs none of them (REVIEW2's T4: a stray tracked file reached CI). After merges land, run plain `node tools/merge-branch.mjs --ci <main>` in the background: it keeps going past a red, so one run shows every red, where `--ci --stage` ends at the first and kills the gates still running (T5); run `--ci --stage <main>` only to stage from a tip already green. Commit only after the tool exits 0 and `git status` shows no `UU` path: a conflict exits 1, and a chained `git add -A && git commit` stages the markers (the CONTEXTDRIVE1 design's merge of 2026-11-03 committed them into TASKS.md). A merge the tool leaves *NOT committed* is committed after `git add -A`: its gates read the tree as `git add -A` would stage it, so a fix made in the merge and left unstaged passes there and is missing from the commit (the reds' merge of 2026-11-02 sent CI red on a test the merge had fixed). Fix a red forward on main with its own small branch. Before starting it, run the censuses on the merged tree, which builders most often skip: `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter Category=Census` and the same for `Daoris.Desktop.Modules.Tests` (every test class that reads the sources by text carries the `Census` trait, which `CensusTraitTests` holds; the `censuses` gate runs both), and the page's `npm run check:web-rules` (COWORKVIEW1b-i's merge sent a run red on the mark census, ADOSIGNIN1's on the start census, STAFFPOLICY1's and GITAUTH1's on the course table, a verb's text and a test's own scratch delete; FABRIC2's waves 3 and 4 of 2026-11-01 on the page's rules). Every merge runs `node tools/test-map.mjs --check`, which refuses a tracked file no module or lane places (GITAUTH1e's merge carried a stray marker at the root and sent a run red). A change under `tools/` also runs the CLI gate's scans, `node tools/optional-locks.mjs` and `node tools/console-windows.mjs` (INDEXAUTO1's merge sent a run red on both). A change to a desktop test project runs `node --test src/Daoris.Cli/test/platform/home-census.test.ts`, which refuses a home path joined by hand (SETUPUX1b's merge sent a run red on it), and `node tools/partials.mjs`, which refuses a hand-written `partial` (COWORKVIEW1b-i's). A change to the page runs its own censuses, which `npm run check:web-rules` holds (its provider census, presentational and page-measure tests: SETUPUX1l and m sent a run red on the first two).
-  - The install is staged only from a green CI (`npm run publish:desktop -- … --stage --from-gated <commit>`).
-- **Never wrap a queue or CI command in `timeout`.** Git Bash's timeout kills the detached runner and its gates (FIX-LOG, 2026-11-01).
-- **Clean up as you go.** Remove a builder's worktree and branch once its work is on main; `node tools/merge-branch.mjs --prune` removes what main holds.
-- **Briefs ask for code first:** the fewest tests that prove the contract, and a one-line archive outcome.
+## The workflow: main is the development branch
 
-A feature is built by two agents: a **branch-scout** orients it and returns an orientation pack, and a
-**branch-worker** builds it from the pack on its own branch, end to end across the lanes it needs (D160, D187).
-The unit is a feature a person can see working, named by its outcome; the backlog rows it covers become one
-block row when it is dispatched. Each one's brief is its agent
-definition in `.claude/agents/`, which the harness loads as that agent's instructions, so a dispatch prompt
-carries only what differs per branch (MOD9, `docs/2026-09-30-parallel-development-design.md` §3 rule 7).
-This skill is the parent's half; a worker never reads it.
+- **Branch from main's tip.** A builder merges main in at the start and again before it hands back, and reruns its
+  touched tests after that last merge. No batch branch is stacked on another.
+- **Merge a finished branch into main the same hour**, through `node tools/merge-branch.mjs <branch>`. Its default runs
+  the blocking set (`universal`, `code-map`, `test-map`) and the path checks its paths reach; a plain `git merge`
+  runs none. A conflict goes back to its builder.
+- **Commit only after the tool exits 0** and `git status` shows no `UU` path. A merge it leaves *NOT committed* is
+  committed after `git add -A`, since its gates read the tree as `git add -A` would stage it.
+- **The CI runs on its own cycle**: `--ci <main>` in the background after merges land, never wrapped in `timeout`; its
+  reds come back as small fixes on main. The install is staged only from a green run (`--stage --from-gated <commit>`).
+- **Clean up as you go**: `--prune` removes each worktree and branch main holds. Lock a worktree you make by hand, or
+  the next prune takes it as merged.
 
-## Why two agents
-
-Every turn re-reads the whole context, so what a branch loads before its first edit is paid again by every
-turn after it; that load, not the work, was most of what branches cost (D160,
-`docs/2026-10-10-subagent-load-evidence.md`). The scout pays for orienting once, on a smaller model and a
-context it hands back; the worker starts from a page of pointers.
-
-## The dispatch prompts
+## The briefs
 
 The scout, read-only and outside any worktree:
 
 ```
-Row: <ROW> in TASKS.md. Contract: <design document, section>. Main is at <sha>.
+Row: <ROW> in TASKS.md. Contract: <document, section>. Main is at <sha>.
 Lanes the row names: <lane ids>. Branches in flight hold: <files>.
 ```
 
-The scout preloads `doc-loader` and `pattern-finder` (D160's SUBLOAD1c note); a pack whose *Knowledge routed* line is
-empty goes back to it.
-
-The worker, with `subagent_type: branch-worker` and the model the table below chooses:
+The worker, with `subagent_type: branch-worker` and the model its role takes:
 
 ```
-Task: <FEATURE>: <the outcome a person will see working, and why>. It gathers <ROWS> in TASKS.md; the contract is
-<design document, section>. Build it end to end across the lanes it needs and hand it back working (D187).
-Model: <model>, because <the row's kind in the table>.
-Start from: main at <sha> or later.
-Lanes: <lane ids in daoris.lanes.json, e.g. cli, tools>. Do not touch: <files a branch in flight holds>.
-Decision number: D<n>, reserved for this branch: write docs/decisions/D<n>.md. (Or: none. Write no decision.)
-How you work: edit files only with Edit and Write, never through python, sed, perl, cat/printf redirection or any
-shell redirect (a hook refuses them; that includes appending a decision note); write
-each failing test first and RUN it to watch it fail before writing the code (a compile failure is a red: run it),
-and say which you saw fail; commit each piece once its tests pass. Tests prove the row's proof and nothing beside it: one
-test per point the proof names; add no count pin, census entry or wording twin the change does not force. Records are the
-commit message and the hand-back's outcome line; a decision's note only for a reading the code and tests cannot show, at
-most 100 words. A README changes only where a command or a shape its reader uses changed. Code comments are short and
-only where the code cannot say it: no `<remarks>` retelling the design, no row or section ids beside every member. New words on the page run `src/locales`' tests too:
-`names:check --strict` does not hold a sentence's glossary words, `names.test.ts` does (WORKFLOW1h-d's 这台机器).
-Run only your own tests, filtered (the ones you add or change and those covering the code you change), and the quick
-checks before hand-back; never a whole project, a fast half, the web's whole suite or `npm run verify`: the CI beside
-runs those after the merge (the owner, 2026-10-19). A control moved or renamed: search the other views' tests for its
-name and run those files (HEAD2d's *Pause…*, pressed in QuestsView.work.test.tsx). A machine path in a fixture is neutral,
-`X:/daoris/…`: the universal gate's sensitive scan refuses a home-shaped one (`C:/home/…`, `/home/…`, `C:/Users/…`), and
-two merges on 2026-10-19 stopped on it. A desktop test that uses `_fixtures` removes its scratch through `GitSeed.Discard`
-or `GitSeed.Remove`, never `Directory.Delete` (`GitSeedTests`), and waits on `Poll.Patience`, never a shorter fixed bound
-without a listed reason (`ShortWaitsCensusTests`): run both classes with your filter, since three branches on 2026-10-29
-reached the merge failing one of them. A change to a tool's `.ts` test runs `npm run typecheck -w daoris`. A case added to a suite
-FOUNDATION1e's course table ports (`Driver.Tests/Course/course-cases.txt`'s `suite` lines) gains a row or an `out` line and the
-suite's count, or `LineCourseTests` fails; `node tools/partials.mjs` and `node tools/read-shares.mjs` stay clean (partial is for
-generated code; a source that writes through `AtomicFile` reads through it), as three batches on 2026-10-30 found at the queue. An archive entry is appended at the file's end, after one
-blank line, in its neighbours' shape (`## ROW — title (date, Dn)`, the quoted row, `**Outcome** date: …`). A record (a
-decision's note, a row, an archive entry, a README, a comment, a commit message) states what was decided and why in its own
-words, and never quotes the owner: the owner's words in this brief are context for you, not text for a record.
-Orientation pack:
-<the scout's pack, as it came back, with any pointer you corrected marked>
+Task: <ROW>: <the outcome a person sees>, because <why>.
+Area: <the contract: document, section>. Beyond it: <design §>, or none.
+Start from: main at <sha>.
+Change: <file>:<a-b> <symbol>; the new unit goes in <folder>.
+Mirror: <file>:<a-b>.
+Tests: <file>; filter: <command>.
+Words or fields read by suites you cannot run: <term> -> <file>:<line>, or none.
+Do not touch: <files a branch in flight holds>.
+Decision: D<n> reserved, or none.
+Done when: <one line per point of the proof>.
+Hand back as your definition says.
 ```
+
+Fill the lines from the scout's pack, opening any pointer that looks wrong. A brief that reaches the service says to
+copy `local/lyntai-local.props` from the main checkout's `local/` into the worktree's.
+
+**Every brief carries D231** (the worker's definition spells it out): its *Change* line names the subdomain a new unit
+belongs in, not only the hub's lines where the area lives today, and a composition root only wires.
+
+**Inside a big scope** (D180's note of 2026-11-04) the brief asks for less: the builder takes a whole wave or more,
+builds it row after row with a commit each, writes its tests, compiles and hands back once, running none; the parent
+merges with no gates; every check runs once when the scope's development is done. Outside one, the builder runs its
+own filtered tests, `npm run quick`, the censuses of each desktop test project it changes (`--filter Category=Census`),
+and the `Process` classes it added or changed.
 
 ## Choosing the model (D160, D174)
 
-Choose by role, never by a remembered name: the current model, version and effort for each role, its evidence, what is
-on trial and when to ask an agent of another maker are in [`docs/model-roles.md`](../../../docs/model-roles.md). Each
-role's model is its definition's `model:`, and the Agent call's `model` overrides it for one dispatch with the role's
-current entry.
+Choose by role: [`docs/model-roles.md`](../../../docs/model-roles.md) names each role's model and effort. The Agent
+call's `model` overrides the definition's for one dispatch.
 
 | Role in this skill | The reference's role |
 |---|---|
 | Parent: plan, review, merge | steward |
 | `branch-scout` | orient |
-| `branch-worker`, one lane, the pack names the change exactly | build-exact |
-| `branch-worker`, a row whose design is accepted: UI, more than one lane, deletion or concurrency the design decided | build-settled |
-| `branch-worker`, writing a design or a decision, answering a design's reads, a row whose design is the work | build-judgement |
+| `branch-worker`, one lane, the change named exactly | build-exact |
+| `branch-worker`, an accepted design: UI, several lanes, a decided deletion or concurrency | build-settled |
+| `branch-worker`, writing a design or a decision, or a row whose design is the work | build-judgement |
 | A read of a design, a decision or a risky merge by another maker | decide-support or review |
-
-The worker's definition names the model most rows take (build-settled, Sonnet); a build-judgement dispatch passes
-`model: opus` and the role's effort. A dispatch that passes no `model` runs the definition's: on 2026-10-30 every builder of
-a batch ran on Opus because the definition still named it, though the reference had moved settled builds to Sonnet five
-days before. The worker's definition also fixes `isolation: worktree`, which a dispatch cannot turn off, so each worker
-gets a fresh tree; a finished worker's tree cannot be handed to the next one, and it goes with the prune once its branch
-is in main.
-
-The queue's invocation carries the Daoris home whose machine admission it shares (`DAORIS_HOME`, the install's on this
-machine): the tool reads it once at its start for the admission alone and hands it to no gate (INTEGRATE1a, F20), and
-without it the confirm run cannot hold the whole admission, so every confirm run reads inconclusive and a failure that
-would not recur hands the batch back (2026-10-30: three candidates lost so, before the home was given).
-
-**Every brief carries D231:** new behaviour goes in a unit of its own, named for its job, in the subdomain that owns it; a file
-on `tools/size-ratchet.json` does not grow, and a composition root only wires; comments say why, never the row or its history. A
-brief points at the subdomain a unit belongs in, not only at the hub's lines where the area lives today.
-
-**Inside a big scope** (D180's note of 2026-11-04) the brief asks for less: the builder takes a whole wave or more, builds it
-row after row with a commit each, writes its tests, compiles and hands back once, running none; the parent merges with no gates;
-every check runs once when the scope's development is done. Outside one:
-
-A builder runs before it hands back the checks a candidate runs that its lines reach, not only its own classes: on
-2026-10-30 three candidates of one batch went red on checks no member's builder had run (the mark census, `optional-locks`,
-`test-map --check`'s hand rows, the pack-safety read of the CLI package, a route answer's pinned field list, and the
-page's twins of a driver code list). Its brief names them: `node tools/optional-locks.mjs`, `node tools/test-map.mjs
---check`, the censuses of each desktop test project it changes (`dotnet test <project> --no-build --filter Category=Census`: a new
-file naming a door's wire, a new process start, any git write with its `HeldIn` row, a new reader of a keyed answer, a new type or a
-name crossing a folder, a case added to a ported suite), and for a new code in a list the page copies, the page's twin test. A brief that reaches the service names `local/lyntai-local.props`, the ignored file without which the service does not
-restore, to copy from the main checkout's `local/` into the worktree's (STAFFPOLICY1b's builder had to find it). A page's brief
-says never to name a non-hook value `use…`: `HelpCoverageTests` reads every such name as a start the page offers (SETUPUX1s's
-merge failed it). Never a whole fast half: the parent runs the halves once per batch, before it queues. A Process or Git class that calls what the builder changed is its own to run too, found by searching the test projects for the
-changed method's name, not by the class's name; a change to what a start, a go-on or a chat's message is told runs the chat
-Process classes (`ChatGoesOnProcessTests`, `ChatPendingProcessTests`, `ProtocolChatTests`, `TurnStopTests` and their kin), since
-COWORKVIEW1e-i's routing line sent 37 of them red on main: batch s's candidate failed `CommandShimTests`, a Process class that prepares a
-driven start, after a member moved that start's prompt onto its input, and two more candidate failures that day were tests reading
-a path or a prompt no builder searched for. A builder that changes a public signature in the driver builds the modules' and the
-app's projects too, which call it: batch u's modules did not compile after one did. Before a batch is queued, the parent runs the driver's, the modules' and the service's fast halves whole on it, and
-`npm run verify` and `npm run test:web:unit` (minutes each, against a candidate's forty): on 2026-10-30 the fast halves found
-batch s's three census misses before a candidate did, and batch w's three candidates failed on a web census, a record's
-link and a glued note, each of which those two would have caught. When the batch changes the driver, the parent also runs the
-driver's Process half whole, alone on the machine: batch z's candidate lost an hour to three Process classes that half finds in
-twenty minutes. When the batch changes the web, the parent also runs `npm run test:web:measured`: the queue defers the measured specs to its
-background run, so batch 1031b landed with a stale count of the head's blocks that only the install's stage then met. While a
-candidate runs, the machine is its own, with read-only work (a design's reads, Codex) beside it: batch
-1031a's second and third candidates each lost their run to a class that passes alone (`MeetingTests`, INTEGRATE1b's drop) while
-builders ran their own classes beside them. The parent, running a class with `--no-build`, builds that
-class's own project first: a build of another project leaves the test assembly stale, and twice that day it read as a
-red that was not there.
-
-Measure each batch (step 8) against the reference's targets, note the numbers under D160, and move the reference when
-they say so. A trial candidate takes one or two rows of its role in a batch. Daoris's managed sessions take the same roles
-once three batches hold the targets (MODELROLE1).
 
 ## The parent's half
 
-1. **Orient with a scout.** Dispatch `branch-scout` with the row. Scouts read and build nothing, so they do
-   not count toward the three workers below, and several may run at once. Read the pack it returns,
-   open any pointer that looks wrong, and correct it before passing the pack on. A pack whose
-   *Size* says the row is more than one sitting is split first (step 3). Never skip it, a design row least of all: NEW1b
-   went with the parent's pointers alone and ran 184 turns, 77 of them before its first edit (D160's twelfth batch).
-   For a judgement row (an Opus row: a race, a format, a destructive path, a protocol), ask the other maker of step 9 for
-   a pre-mortem beside the scout: the row, its contract and the code it touches, and "what will a builder get wrong
-   here". Put its verified findings in the brief. A review after the build costs a rework round each time: on
-   2026-10-18 LANDRACE1 took three rounds (a later commit hidden by `already`, path aliases, the wall clock, the
-   hand-off, linked worktrees), GRAPH1b two and CLOSE1b one, each 30 to 60 minutes of building and a re-check.
-2. **Reserve the decision number** before dispatching. It is the next number after both the highest file
-   in `docs/decisions/` and every number already reserved for a branch in flight. Name it in the prompt.
-3. **Dispatch a feature, end to end** (D187). One builder takes one feature a person can see working, across every
-   lane it needs, driver to page, and hands it back working; its rows become one block row in the backlog, with one
-   decision note where something is decided and one archive entry. A part of a row writes no archive entry and no
-   note of its own: its commit message is its record, and the row's entry is written once, when its last part lands. Never split a feature into a host half and a page
-   half: each slice's scout, brief, merge, records and CI pass were round trips, and the person saw nothing until the
-   last landed. Split only a feature too large for one builder's context, into parts that each work and are each
-   seen working. The longer branch's cost per turn (D160: branches of 100 to 200 turns cost three times those under
-   100) is accepted against those rounds. A hand-back proposes no new row; a follow-up is done in the branch or
-   dropped, and a row is filed only from the owner or for something a person would see broken.
-4. **Name the lanes by id** (`daoris.lanes.json`, design §5) and the files the branch must not touch,
-   which is anything a branch in flight holds. When two features need the same file, one waits for the
-   other.
-5. **Run at most five workers at once, and a CI run beside never lowers that** (the owner's decision, 2026-10-19: more
-   workers, and development keeps going while a CI run is beside, never held back for a full set; the CI
-   is the guest, below normal (CIPRIO1), so it slows and development does not; three before, while every merge
-   ran its suites and rehearsals in the main checkout; since D180 a merge runs only its blocking checks and the CI runs
-   beside, so a worker's own gates are the load that remains). More load makes real-process tests flake, and the owner's installed window shares
-   the machine: on 2026-10-15 seven workers, a full gate set and one worker's CPU-load script (briefed to "reproduce under
-   load") froze it for minutes while the owner worked. Never brief a worker to generate load, and while the owner works keep
-   the builds and tests below normal priority, so the window always wins the processor. **Dispatch between merges: before one
-   starts, or after its commit and before `--continue`.** The harness's worktree isolation reads the checkout's git
-   metadata, refuses while the merge tool is writing it, and leaves a locked worktree behind. A dispatch made once a merge's
-   first gates had passed was refused the same way (2026-10-10), so a merge's gates are no safe moment either. Unlock it
-   (`git worktree unlock`) so the next prune takes it, and dispatch again. The same refusal ("git could not be run to
-   resolve it") comes while a git-heavy run goes on beside (the driver's git half, a rehearsal): on 2026-10-19 one
-   `git rev-parse` took five seconds then, and the harness's check gave up. Remove the half-made tree it leaves (look
-   first: a clean checkout of an old commit, no commits of its own), and dispatch again; a retry usually goes through. Two dispatched in one message
-   while a merge's gates ran were both refused the same way (2026-10-08), each a half-made tree holding only
-   `.git` and `.claude`: remove each (`git worktree remove --force`, then its branch), and dispatch one at a time. Use that
-   removal only on such a half-made tree: `git worktree remove --force` follows a junction out of the tree (TREELINK1, probed
-   2026-10-19), and a worker's tree that ran `npm ci` holds workspace junctions; the merge tool's prune removes those.
-   **Nothing the parent or a worker starts outlives its work.** A background loop ends when the work that wanted it ends
-   (a stop file, a parent's pid it watches, a time it gives up at): the parent's own `renice.ps1` loop ran a hundred hours
-   past its session, asking the machine's management service for every process every ten seconds (2026-10-19 audit). A
-   watch on the queue's log is a loop that ends on the outcome it waits for (`until grep -q …; do sleep 30; done`, run in the
-   background), never an open-ended `tail -F | grep` pipeline: on 2026-10-30 another session found 75 such pipelines of
-   the parent's, one left behind by each monitor since 2026-10-27, slowing every process start on the machine. A
-   worker's builds run without the build servers staying behind (`-nodeReuse:false`, or `MSBUILDDISABLENODEREUSE=1`, and
-   `dotnet build-server shutdown` at the end); the audit found thirteen MSBuild nodes holding 1.4 GB, three orphaned.
-   **Never brief a worker to run or time a long run** (a `Process` half, a rehearsal, or a measurement of either):
-   PROCSPEED1 (2026-10-19) waited 120 of its 140 minutes on three runs of the driver's git half it was asked to time on
-   a shared machine, and no number made under that load meant anything. Such a measurement is the parent's, on a quiet
-   machine. A worker that has waited on one run past fifteen minutes is looked at then, not when it hands back. The
-   command guard refuses those runs inline, and PROCSPEED1, told to run them, put the command in a script to get past it:
-   a brief that asks for what the guard exists to stop invites exactly that, so the brief never asks, and says that a
-   command the guard refuses is never routed through a script.
-6. **Merge with `tools/merge-branch.mjs`**, from the main checkout with a clean tree:
-   - **Through the queue, in this order: records commit, preview, queue** (CISCOPE1e, D207). Make the records commit **on the
-     branch** first (the row moved to the archive, `TASKS.md`, the changelog, a FIX-LOG entry); then `<branch> --preview`
-     prints the merge's diff against main's tip and its scoped run, committing nothing, and records the tip you read; then
-     write the merge commit's message (`Merge <ROW>: <what>`, a body, the `Co-Authored-By:` line) to a file under `local/`
-     and run `<branch> --message <file>`. The queue refuses a tip that differs from its last preview, so a records commit
-     made after the preview is previewed again. A detached runner merges up to eight queued branches as one candidate in
-     `local/scope-tree`, one merge commit each, runs the scoped set there, and fast-forwards main only onto a clean checkout;
-     the invocation waits and says *in main* or *handed back* with why. `--queue` says where everything stands; a failing
-     gate that names no test on main's own tip stops the queue until a direct commit fixes it or `--queue --recheck` finds it
-     gone. Records you can only write after the merge landed are a direct commit on main. The bullets below are the merge
-     in place, which still works and is no longer the way a branch lands.
-   - `--plan <branch>` shows the lanes, the commit check, the prune and the gate order, and merges nothing.
-   - `<branch>` merges with `--no-ff --no-commit`, writes `docs/index/` from the merged tree (ORIENT1), then runs
-     **the blocking checks only** (GATESLIM1): the universal gates (with the sensitive scan), the code map and the
-     orientation index's check. Every other gate the paths reach (the suites, `verify`, `tool-tests`, the rehearsals) is
-     listed and skipped, "in the CI beside"; the `Process` halves and the deployment rehearsal say "in the full set before
-     staging" (GATE5). `--gated` runs what the paths reach by the tool's lane table (GATE3), for a merge you judge risky.
-     **After a merge, or a batch, start the CI beside on main's tip with `--full --beside`** and route its failures as fixes
-     (a worker, or you for a record); do not wait on it to dispatch. Every run and `--plan` prints why each gate runs or is skipped. `--full` runs every gate `daoris.gates.json` declares and
-     every rehearsal the release workflow adds. The light gates run beside the serial Process lane
-     (GATELANES1); add `--one-at-a-time` on a loaded machine. Each gate's whole log goes to
-     `local/scratch/merge-<branch>/`; a Process half also leaves a `.trx` there, with its ten slowest
-     classes printed after it (PROC1). The lane report names lanes by id and title. Look harder at the
-     diff of a branch that crossed lanes or touched the steward's records.
-   - **The full set is owed before the install is built**, the long halves with it. `publish:desktop`
-     refuses a tree no full set passed (`merge-branch --passed`). Run `node tools/merge-branch.mjs --full`
-     on the checkout, or `--full` on the day's last merge, or `--full --beside` to gate main's tip in `local/gate-tree`
-     while the merges go on, then stage it with `--from-gated <commit>` (GATEWT1); it copies `local/sensitive-patterns.txt` into the tree and keeps its logs in `local/scratch/beside-<sha7>/`. 🔴 Never `--full` on a `--batch`: it runs every gate,
-     the long halves included, for EVERY merge in the batch (a docs-only design paid forty minutes of the driver's
-     Process half, 2026-10-09). Merge the batch plain, then `--stale` once. A verdict stands until a path its gate reaches
-     changes (GATE6), and records written after the gates are forgiven; a refusal names each stale gate and
-     the path that made it so. After the full set, on a clean checkout with no merge open, `--rerun <gate>…`
-     runs a gate that flaked, with each stale gate, and `--stale` runs only the stale ones after a fix you
-     committed (GATE6b). A refusal names the smallest of these that would pass the tree, and `--full` only
-     when nothing smaller would. `--force-ungated` is the person's override.
-   - On a conflict the tool stops and names the files. Resolve them, `git add` them, then run
-     `--continue`. On a failed gate, read that gate's log, then fix it in the merge and run
-     `--rerun <gate>` (it re-runs that gate, any gate not yet run and any whose verdict the fix's paths
-     reach, keeping the other verdicts; outside `--full` it runs a long half only when named), or
-     `--continue` to gate the merge again whole, or run `git merge --abort`.
-   - For several branches, run `<first> --batch <second> …`. Each merge gets the blocking checks.
-     Commit it, then `--continue` merges the next. The CI beside runs once, after the last, and the full set before any stage.
-     **Two or more branches ready merge as one batch**, never one after another: a service branch alone paid 11
-     minutes of light gates and 27 of the family rehearsal (CLOSE1c24, 2026-10-19), and a batch pays the light gates once.
-   - Bisecting a failure, run the test five times at each commit: one pass proves nothing of a test that fails some of
-     the time. A single pass at an earlier merge once blamed the wrong change; the test failed 5 of 8 there (AUTOTIDY1r).
-   - A FLAKE line is a real-process test that failed in the suite and passed alone, or a rehearsal that
-     died (its process ended, or it printed nothing) and passed when run again. Record it under FLAKE1;
-     never let it through unrecorded.
-   - The gate prunes (GATE2) at each merge's start, after its refusals, and at a batch's last
-     `--continue`. Each local branch merged into main is deleted with its worktree, one line each. It
-     keeps, and says why, a worktree locked for any reason but the agent harness's, one with modified,
-     staged or untracked files, one with anything under `local/` but logs and scratch, and whatever git
-     refuses. The harness's lock (`claude agent <id> (pid N)`), held for its session's life, is lifted
-     when the branch is not at main's tip and no running process names the folder (CLEANUP2). A folder
-     under `.claude/worktrees/` git does not list, with no `.git`, is removed; one a process holds is named
-     with its pid, and the process is never stopped. It never forces a removal or uses `-D`. `--prune
-     --plan` shows it, `--prune` runs it alone, and `--no-prune` skips it for one merge, for an agent you
-     mean to continue in its worktree.
-     🔴 **Lock a worktree you make by hand** (`git worktree add --lock …`, or `git worktree lock` after):
-     an integration worktree at main's tip before its first commit counts as merged and clean, and the
-     next merge's prune would take it. Unlock it once it has landed, so the prune can clear it.
-   - **A builder runs its own feature's `Process` classes, filtered, before it hands back** (D187 point 4). A hand-back that
-     still names `Process` tests it wrote and did not run (one from before D187, or one the load made flake) is run by the parent on the open merge before
-     the commit: `dotnet test <the test project> --settings src/Daoris.Desktop/process.runsettings --filter
-     "FullyQualifiedName~<class>"`, or `git.process.runsettings` for a class marked `Parallel=Git` (PROC1c), which
-     the first file's filter leaves out: run with it, such a class matches no test. A merge never runs those halves,
-     so nothing else would until the full set. XAGENT1g3's
-     equivalence test failed on its first run there (a fixture seeded another state than the test named, 2026-10-12).
-7. **Commit the merge yourself.** The tool never commits. Read `git diff --cached` and write the
-   records, as the `records` lane's steward: move the row from `TASKS.md` to the archive with the
-   hand-back's one-line outcome and its pointer, add the changelog entry, and update the counts in
-   `TASKS.md`'s State. `doc-shapes` reports an outcome or a row over its shape.
-   Then commit as `Merge <ROW>: <what>`, with a body and the `Co-Authored-By:` line.
-   The parent's own builds and runs leave no server behind while builders run: `-nodeReuse:false -p:UseSharedCompilation=false`
-   on `dotnet build`/`test`, `--disable-build-servers` on `dotnet run`, never `dotnet build-server shutdown` (it ends the compiler
-   server a builder's build is using); on 2026-10-30 one `dotnet run` of the scan left fourteen MSBuild nodes.
-   **Scan what you staged first** (`daoris-devkit scan`): records written after the gates, and every records
-   commit made outside a merge, are the one change no universal gate reads before it is committed. A
-   backlog row quoting a window's caption put a private name into history that way (2026-10-08).
-   **A records commit that appends a decision note regenerates the index with it** (`node tools/orient-index.mjs`,
-   then `--check`): `docs/index/decisions.md` reads every note, and `verify` does not run that check. A records commit
-   without it stopped the full set at `orient-index` on 2026-10-18.
-   **The next merge's prune removes the worker's worktree and branch**, its harness lock with them, once nothing is
-   left inside; `--prune` does it at once. Read the kept lines: each names what holds a tree (work, a file under
-   `local/`, a running process), and what holds it is yours to settle. 43 subagent worktrees had piled up by
-   2026-10-15, and 24 stood with three agents running on 2026-10-18, the leftover the owner cleared by hand.
-   **A worker merged into the parent's batch goes at once, not at the landing**: once its tip is an ancestor of the batch
-   branch and its tree has no change, unlock and remove its worktree and delete its branch; the batch holds its commits.
-   On 2026-10-30, 21 merged workers' trees stood waiting for their batches to land. **After each landing**, `--prune`, then
-   the install's `daoris tree clean --workspace <w> --yes` for its own session branches, then a look at the
-   machine's processes for anything a finished run left: a CI run on a superseded commit, a rehearsal's stand-in
-   install, idle build nodes. What the parent started it ends; what it did not start it names to the owner.
-8. **Measure the batch.** `node tools/subagent-usage.mjs <the harness's transcripts folder for this
-   repository> --since <the batch's first day>` prints each agent type and model's turns and its context
-   at the start, at the first edit and at the end. Feed the hand-back's *pack's gaps* into the next pack.
-9. **Ask an agent of another maker for a different opinion, on your own initiative, where the owner has granted one**
-   (the private notes name it and how it runs, read-only, in its own detached worktree). Not a step every batch passes
-   through, but a habit: reach for it whenever a second view would help, such as a decision or a design before it is
-   built on, a choice between two shapes, a defect whose cause will not show, or the backlog's order. Its words are
-   findings, never facts: verify each against the code, then route it as a fix, a row or a decision note, and say which
-   were dropped and why. It runs remotely, so it costs nothing beside the gates.
-
-## Why
-
-Each rule here is here because a branch broke it. Two branches took one decision number. A hand-typed
-gate chain lost a rehearsal's reason. A "web only" batch skipped the .NET suites and broke main unseen.
-Three worktrees building at once made tests fail that pass alone. A prompt that restates all of this
-drifts from the last one. A brief is read the same way every time. And branch after branch spent its first
-fifty turns finding what a page of pointers could have named (D160).
+1. **Orient with a scout**, every row, a design row most of all. Scouts build nothing and do not count toward the cap.
+   For a judgement row, ask another maker for a pre-mortem beside the scout and put its verified findings in the brief.
+2. **Reserve the decision number**: the next after both the highest file in `docs/decisions/` and every number reserved
+   for a branch in flight.
+3. **Dispatch a feature, end to end.** Never split it into a host half and a page half; split only a feature too large
+   for one builder, into parts that each work. A hand-back proposes no new row.
+4. **Name the lanes by id** (`daoris.lanes.json`) and the files a branch in flight holds. Two features needing one file
+   go one after the other.
+5. **Run at most five workers at once; a CI run beside never lowers that.** Never brief a worker to generate load or to
+   run or time a long run. Dispatch between merges, never while the merge tool writes git metadata; a refused dispatch
+   leaves a half-made tree to remove first. Nothing started outlives its work: a watch is a loop that ends on its outcome.
+6. **Merge through the queue: records commit, preview, queue** (D207). The records commit goes on the branch (the row to
+   the archive, `TASKS.md`, the changelog, a FIX-LOG entry); `<branch> --preview` records the tip read; then
+   `<branch> --message <file>`. Before a batch is queued, run the desktop's and the service's fast halves, `npm run
+   verify` and `npm run test:web:unit` on it. The other modes are in the tool's header; the full set is owed before the
+   install is built.
+7. **Scan what you commit** (`daoris-devkit scan`): no universal gate reads records written after the gates. Then
+   `--prune`; end what you started, and name to the owner what you did not.
+8. **Measure the batch**: `node tools/subagent-usage.mjs <transcripts folder> --since <day>` against the reference's
+   targets, noted under D160.
+9. **Ask another maker for a second opinion** where the owner granted one and a decision, a design or a stubborn defect
+   would gain from it. Its words are findings: verify each, then route it.
