@@ -24,8 +24,8 @@ public sealed record AloneEpoch(int Epoch, string Cause, string? Source, int N, 
 
 /// <summary>
 /// One go-on of a line by answers alone and its disposition (the comms design §5.3): reserved when admitted, attempted once a prompt took
-/// its answers, then taken once its agent acted on them, or cancelled where they went beside the person's word. Uncertain is a delivery's,
-/// which no reader here writes yet.
+/// its answers, then taken once its agent acted on them, or cancelled where they went beside the person's word. Uncertain is for a
+/// delivery that cannot tell whether its attempt reached the agent. Every disposition but cancelled counts.
 /// </summary>
 /// <param name="Id">Its row; 0 for one not kept yet.</param>
 /// <param name="Source">What it goes on by: <c>answers:</c> and its answers' ids, <c>quest:</c> and a waited quest's, or <c>seen:part:seq</c> for one the events showed.</param>
@@ -46,14 +46,10 @@ public sealed record AloneRows(
     string Line, IReadOnlyList<AloneEpoch> Epochs, IReadOnlyList<AloneAdmitted> Admitted, IReadOnlyDictionary<string, long> Read, AloneScan Carry);
 
 /// <summary>
-/// The answers-alone count kept as one serialized admission per line (COMMS1g; the comms design §5.3, §13 point 8): in the desktop store
-/// under the line's one key, shared by the driven and the chat executors. A line with none is seeded once from its events, zero where none
-/// read and at least where its walk was cut or a log trimmed or unread. Each read goes on from the last event it read of each part: the
-/// person's word, Daoris's own fact word and the person's press that let an answer go on open a new epoch; a go-on the events show takes
-/// the admission that reserved it, or is counted as shown. A go-on is judged and reserved inside one write, so two answers queued
-/// together cannot each be the second. A store short of the step, or one that does not read or take the write, answers null.
+/// The answers-alone count kept as one admission per line in the desktop store, under the line's one key (the comms design §5.3, §13 point
+/// 8). A go-on is judged and reserved inside one write, so two answers queued together are never both the second; the <c>at</c> it is
+/// judged against is handed in. A store short of the step, or one that does not read or take the write, answers null.
 /// </summary>
-/// <remarks>The count judges the <c>at</c> it is handed and holds no number of its own.</remarks>
 public sealed class ContinuationAdmissions(string home, Func<StoreSettled>? settled = null, TimeProvider? clock = null)
 {
     /// <summary>The family a write moves.</summary>
