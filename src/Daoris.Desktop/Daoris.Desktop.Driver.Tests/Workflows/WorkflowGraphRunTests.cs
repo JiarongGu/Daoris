@@ -102,7 +102,7 @@ public sealed class WorkflowGraphRunTests
         {
             Quests = quests,
             Sessions = [Session("s1", quests[^1].Id)],
-            Process = WorkflowProcess.Current(DriverConfig.Empty, "engine", "default") with { Binding = Binding, Run = Run },
+            Process = WorkflowProcess.Declared(DriverConfig.Empty, "engine", "default") with { Binding = Binding, Run = Run },
         };
 
     private static NodeStatus Status(string node, string state, string? subject = null, string? revision = null, int attempt = 1) =>

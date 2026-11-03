@@ -31,18 +31,6 @@ public sealed class ConversionCensusTests : Bridge
         Assert.Equal(3, Raised.Count(each => each.Type == ConversionCensus.Event));
     }
 
-    [Fact]
-    public async Task ONEWAY1ae_a_part_that_does_not_answer_keeps_what_was_held()
-    {
-        var census = new ConversionCensus(Bus);
-        census.Tell(Holding(2));
-        var doors = new ConvertDoors(Path.Combine(AppContext.BaseDirectory, "never-read"), _ => throw new ConversionUnread("the service did not answer"), _ => { }, () => DriverConfig.Empty, () => new HashSet<string>());
-
-        await census.RefreshAsync(ConversionCensus.Reading(() => doors), default);
-
-        Assert.Equal(2, census.Wait()!["records"]!.GetValue<int>());
-    }
-
     /// <summary>
     /// A burst of driver changes while one reading runs reads once more after it, not once each: the reading asks the service for the
     /// registry and every quest. Each caller is answered by a reading that began after its call.

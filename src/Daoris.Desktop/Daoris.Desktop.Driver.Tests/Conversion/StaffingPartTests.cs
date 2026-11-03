@@ -50,9 +50,7 @@ public sealed class StaffingPartTests : IDisposable
         return Staffing;
     }
 
-    private ConvertDoors Doors() => new(
-        _home, _ => Task.FromResult(new ConvertWorld(DriverConfig.Load(File_), _home, [], WorkflowPorts.Store(_home), [])),
-        edit => edit(DriverConfig.Load(File_)).Save(File_), () => DriverConfig.Load(File_), () => new HashSet<string>())
+    private ConvertDoors Doors() => new(_home, edit => edit(DriverConfig.Load(File_)).Save(File_), () => DriverConfig.Load(File_))
     {
         Others = [new StaffingPart(Staffing)], Build = "0.42.0",
     };

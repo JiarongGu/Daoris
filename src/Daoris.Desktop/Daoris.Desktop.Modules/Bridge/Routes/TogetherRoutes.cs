@@ -46,7 +46,7 @@ public sealed class TogetherRoutes(DriverContext context)
         var records = await service.SessionRecordsAsync(cancellationToken).ConfigureAwait(false);
         var snapshot = await service.SnapshotAsync(cancellationToken).ConfigureAwait(false);
         var config = DriverConfig.Load(_loop.ConfigPath);
-        var plugins = WorkflowCurrent.PluginsOf(PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names));
+        var plugins = WorkflowSteps.PluginsOf(PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names));
         string? WorkspaceOf(string repository) => snapshot.Repositories
             .FirstOrDefault(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase))?.Workspace;
         var sources = new WorkflowRunSources(service, _loop.Home, config, plugins, WorkspaceOf);

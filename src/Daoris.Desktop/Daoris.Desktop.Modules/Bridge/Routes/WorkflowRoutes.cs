@@ -8,8 +8,8 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// How work moves in a repository or a workspace, the page's `bridge/workflow.ts` (WORKFLOW1b; D157 point 7, the workflow
-/// design §2.7, §6.1): its Current workflow, which <see cref="WorkflowCurrent.Derive"/> draws from this machine's driver file,
-/// its plugins and its registry exactly as `daoris workflow show` reads them; and where a piece of work stands in it
+/// design §2.7, §6.1): the routes its start node takes and the graph each follows, read from this machine's driver file, its plugins
+/// and its registry exactly as `daoris workflow show` reads them; and where a piece of work stands in it
 /// (WORKFLOW1c), the runs <see cref="WorkflowRunReader"/> reads. Read-only but three: <c>WORKFLOW_LANDED</c>, the person's press that sets
 /// the landed route and accepts the gates it runs unasked (FABRIC-PIPELINE1a); <c>INTEGRATION_GATES</c>, their acceptance of a
 /// repository's integration declaration by its blob (INTEGRATE1d); <c>WORKFLOW_NODE</c>, their skip or stop of a graph run's
@@ -21,11 +21,11 @@ public sealed class WorkflowRoutes(DriverContext context)
     private readonly DriverContext _context = context;
     private readonly DriverLoop _loop = context.Loop;
 
-    // A repository's Current, or a workspace's: `{repository}` or `{workspace}`, exactly one. A repository's workspace is the
+    // A repository's routes, or a workspace's: `{repository}` or `{workspace}`, exactly one. A repository's workspace is the
     // registry's, so it waits for the driver as the lines do; one the registry does not hold is read as in no workspace, and
-    // the answer says so. A workspace's Current is the file's alone, and beside it each repository the registry holds there,
-    // with whether a rule of its own makes it follow something else, or none where the registry is not up yet. An optional `route`
-    // (`default`, `kind:<name>` or `landed`) adds `effective`: the graph that route follows (SETUPUX1b, D221), read and never written.
+    // the answer says so. Beside a workspace's, each repository the registry holds there, with whether a choice of its own makes it
+    // follow something else, or none where the registry is not up yet. An optional `route` (`default`, `kind:<name>` or `landed`) adds
+    // `effective`: the graph that route follows (SETUPUX1b, D221), read and never written.
     [DriverRoute("WORKFLOW_CURRENT")]
     private async Task<object?> WorkflowCurrentAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -38,21 +38,20 @@ public sealed class WorkflowRoutes(DriverContext context)
 
         var config = DriverConfig.Load(_loop.ConfigPath);
         // The plugins beside the file, switched on and sound, as the landing's and the terminal's doors read them.
-        var plugins = WorkflowCurrent.PluginsOf(PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names));
+        var plugins = WorkflowSteps.PluginsOf(PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names));
         var route = Optional(request, "route");
+        var drawn = new CurrentWorkflow(WorkflowSteps.StartHolds(plugins), [], "");
 
         if (repository is not null)
         {
             var service = _loop.Service ?? throw NotReady();
             var snapshot = await service.SnapshotAsync(cancellationToken).ConfigureAwait(false);
             var known = snapshot.Repositories.FirstOrDefault(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase));
-            var drawn = WorkflowCurrent.Derive(config, repository, known?.Workspace, plugins);
             var start = await StartAsync(config, repository, known?.Workspace, cancellationToken).ConfigureAwait(false);
             var effective = route is null ? null : WorkflowEffectives.Read(config, new WorkflowFiles(_loop.Home), repository, known?.Workspace, route, plugins);
             return Answer(drawn, repository, RemoteTarget.Workspace(known?.Workspace), registered: known is not null, repositories: null, start, effective);
         }
 
-        var shared = WorkflowCurrent.Derive(config, null, workspace, plugins);
         IReadOnlyList<object>? here = null;
         if (_loop.Service is { } up)
         {
@@ -63,9 +62,11 @@ public sealed class WorkflowRoutes(DriverContext context)
                 .Select(each => new
                 {
                     each.Repository,
-                    Own = Shape(WorkflowCurrent.Derive(config, each.Repository, each.Workspace, plugins)) != Shape(shared),
+                    Own = config.Workflows.TryGetValue(each.Repository, out var own) && own.NamesDevelopment,
                 })];
         }
+
+        var shared = drawn;
 
         return Answer(shared, null, workspace!, registered: null, repositories: here,
             await StartAsync(config, null, workspace, cancellationToken).ConfigureAwait(false),
@@ -539,7 +540,7 @@ public sealed class WorkflowRoutes(DriverContext context)
                 Workspace = workspace,
                 Registered = registered,
                 drawn.StartHolds,
-                Steps = drawn.Steps.Select(step => JsonDocument.Parse(WorkflowCurrent.ToJson(step)).RootElement.Clone()).ToArray(),
+                Steps = drawn.Steps.Select(step => JsonDocument.Parse(WorkflowSteps.ToJson(step)).RootElement.Clone()).ToArray(),
                 drawn.Version,
                 Limits = limits,
                 Repositories = repositories,
@@ -554,7 +555,7 @@ public sealed class WorkflowRoutes(DriverContext context)
             Workspace = workspace,
             Registered = registered,
             drawn.StartHolds,
-            Steps = drawn.Steps.Select(step => JsonDocument.Parse(WorkflowCurrent.ToJson(step)).RootElement.Clone()).ToArray(),
+            Steps = drawn.Steps.Select(step => JsonDocument.Parse(WorkflowSteps.ToJson(step)).RootElement.Clone()).ToArray(),
             drawn.Version,
             Limits = limits,
             Repositories = repositories,
@@ -581,20 +582,13 @@ public sealed class WorkflowRoutes(DriverContext context)
             Source = new { effective.Source.Level, effective.Source.Kind, effective.Source.Label, effective.Source.Paths },
             effective.Verifies,
             effective.Graph,
-            Cells = effective.Cells.Select(cell => new { cell.Node, Step = JsonDocument.Parse(WorkflowCurrent.ToJson(cell.Step)).RootElement.Clone() }).ToArray(),
+            Cells = effective.Cells.Select(cell => new { cell.Node, Step = JsonDocument.Parse(WorkflowSteps.ToJson(cell.Step)).RootElement.Clone() }).ToArray(),
             Limits = limits,
             effective.Problem,
             // A copy of a shipped default this build ships changed since: left out, as null, where it is up to date (WORKFLOWCLEAN1h).
             Newer = effective.Newer is null ? null : new { effective.Newer.Default, effective.Newer.Name, effective.Newer.Graph },
         };
     }
-
-    /// <summary>
-    /// What a repository's process is, apart from the words handed to its sessions: its steps without the work's standing
-    /// answer, which only a repository has. A repository whose shape is its workspace's sets no rule of its own.
-    /// </summary>
-    private static string Shape(CurrentWorkflow drawn) =>
-        string.Join('\n', drawn.Steps.Select(step => WorkflowCurrent.ToJson(step.Kind == WorkflowKinds.Work ? step with { Settings = [] } : step)));
 
     // Where a piece of work stands in its workflow (WORKFLOW1c; D157 point 11, design §5.1–§5.2, §7): the runs
     // `WorkflowRunReader` reads from this machine's records for `{session}`, `{quest}` or `{ask}`, exactly one, each step
@@ -614,7 +608,7 @@ public sealed class WorkflowRoutes(DriverContext context)
         var service = _loop.Service ?? throw NotReady();
         var snapshot = await service.SnapshotAsync(cancellationToken).ConfigureAwait(false);
         var config = DriverConfig.Load(_loop.ConfigPath);
-        var plugins = WorkflowCurrent.PluginsOf(PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names));
+        var plugins = WorkflowSteps.PluginsOf(PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names));
         // A repository's workspace is the registry's, read as `WORKFLOW_CURRENT` reads it; one it does not hold is in none.
         string? WorkspaceOf(string repository) => snapshot.Repositories
             .FirstOrDefault(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase))?.Workspace;
@@ -696,7 +690,7 @@ public sealed class WorkflowRoutes(DriverContext context)
                 Route = run.Process?.Binding is { } bound ? new { bound.Level, bound.Kind, bound.Label } : null },
             Steps = run.Steps.Select(step => new
             {
-                Step = JsonDocument.Parse(WorkflowCurrent.ToJson(step.Step)).RootElement.Clone(),
+                Step = JsonDocument.Parse(WorkflowSteps.ToJson(step.Step)).RootElement.Clone(),
                 step.State,
                 step.Detail,
                 step.Added,

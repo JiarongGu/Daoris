@@ -92,7 +92,7 @@ public sealed record WorkflowDrop(string Kind, string Workspace) : WorkflowChoic
 /// </remarks>
 public static class WorkflowSelection
 {
-    /// <summary>The workflow drawn from the rules as they stand (design §2.7), which no saved workflow's id may take.</summary>
+    /// <summary>The word for no workflow chosen, which no saved workflow's id may take: the landed route's no verification, and work nothing runs.</summary>
     public const string Current = WorkflowKey.Current;
 
     /// <summary>The most kinds one choice holds (design §4.2).</summary>
@@ -206,9 +206,9 @@ public static class WorkflowSelection
 
     /// <summary>
     /// The workflow a chain's work in <paramref name="repository"/> follows (design §4.1): the task's choice, then the repository's
-    /// for the task's kind, its default, the workspace's for the kind, its default, then Current. The first level that names a
-    /// workflow decides, and a repository that names any replaces its workspace's whole. The task's kind is read only where its
-    /// workspace declares it, and said otherwise.
+    /// for the task's kind, its default, the workspace's for the kind, its default, then the home's default. The first level that names a
+    /// workflow decides, and a repository that names any replaces its workspace's whole; where none names one it is <see cref="Current"/>,
+    /// no workflow. The task's kind is read only where its workspace declares it, and said otherwise.
     /// </summary>
     /// <param name="repository">The repository, or null for the workspace's own choice, which no repository's reaches.</param>
     /// <param name="workspace">The repository's workspace, or null for none, read as the default workspace.</param>
@@ -231,7 +231,7 @@ public static class WorkflowSelection
         if (declared?.Workflow is { } sharedKind) return Pick(sharedKind, WorkflowLevels.WorkspaceKind);
         return shared?.Default is { } fallback ? Pick(fallback, WorkflowLevels.Workspace) : Home(Pick);
 
-        // Row 6 (WORKFLOWCLEAN1 1a): the home's default; Current only where the home names none (the transitional path, design §4.7).
+        // Row 6 (WORKFLOWCLEAN1 1a): the home's default, else no workflow.
         WorkflowSelected Home(Func<string, string, WorkflowSelected> pick) =>
             config.DefaultWorkflow is { } home ? pick(home, WorkflowLevels.Home) : pick(Current, WorkflowLevels.Current);
     }

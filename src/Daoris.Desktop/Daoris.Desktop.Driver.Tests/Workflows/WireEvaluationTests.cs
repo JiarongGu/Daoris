@@ -1090,7 +1090,7 @@ public sealed class WireEvaluationTests
     [Fact]
     public void A_go_ahead_on_the_run_is_answered_only_through_the_list_handed_in_for_it()
     {
-        var go = Node("go", NodeKinds.GoAhead) with { Options = new Dictionary<string, string> { ["act"] = WorkflowCurrent.Quoted(Act) } };
+        var go = Node("go", NodeKinds.GoAhead) with { Options = new Dictionary<string, string> { ["act"] = WorkflowSteps.Quoted(Act) } };
         var run = new WorkUnit(RunRecord, WorkUnitKind.Run, new WorkOwner("engine", "default", null, WorkRecord.DriverWriter), new WorkSubject("r", null),
             new MilestoneEnd(WorkEndState.NotEnded, null, null, null, null, "running"), []);
         IReadOnlyList<GoAheadView> yes =

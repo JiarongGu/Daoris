@@ -84,7 +84,7 @@ public sealed class WorkflowsBoundaryTests : IDisposable
             new("h2", "Daoris:Help", "working") { Kind = "chat", Entry = "session:h2/daoris:help" },
             new("c1", "engine", "working") { Kind = "chat", Tree = "trees/default/engine/s-c1c1c1c1", Entry = "session:c1/engine" },
         ];
-        var trees = new WorkflowRunTests.Trees(holds: tree => tree.StartsWith("trees/", StringComparison.Ordinal));
+        var trees = new Trees(holds: tree => tree.StartsWith("trees/", StringComparison.Ordinal));
 
         foreach (var id in new[] { "h1", "h2" })
         {
@@ -95,5 +95,29 @@ public sealed class WorkflowsBoundaryTests : IDisposable
 
         // A chat in a tree of its own beside it reads its chat run.
         Assert.Equal("c1", WorkflowRunReader.ChainsOf(new(Session: "c1"), [], sessions, trees).Chat?.Id);
+    }
+
+    /// <summary>The run's records with nothing in them but which trees Daoris holds.</summary>
+    private sealed class Trees(Func<string, bool> holds) : IWorkflowRunRecords
+    {
+        public IReadOnlyList<LandedBranch> Landings() => [];
+
+        public IReadOnlyList<AutoLanding> AutoLandings() => [];
+
+        public IReadOnlyDictionary<string, DateTimeOffset> Acceptances(IReadOnlyList<TracedSession> sessions) => new Dictionary<string, DateTimeOffset>();
+
+        public bool Stands(string tree) => true;
+
+        public bool Holds(string tree) => holds(tree);
+
+        public NodeRecord? Record(string unit) => null;
+
+        public IReadOnlyList<GrownBranch> Branches() => [];
+
+        public bool Bound(string run) => false;
+
+        public bool Between(string session) => false;
+
+        public Task<ChatTreeTip?> TipAsync(string tree, CancellationToken ct) => Task.FromResult<ChatTreeTip?>(null);
     }
 }

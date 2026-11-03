@@ -55,18 +55,16 @@ internal static class TreeGateWorkflows
     }
 
     /// <summary>
-    /// The process a quest's work here follows (WORKFLOW1f, <see cref="WorkflowProcesses"/>): its run's bound version, or the rules live. A
-    /// conversation's work, which serves no quest, reads its chat run's (CHATFLOW1c, the chat-flow design §4.2), so the view and the gate
-    /// decide by one process; one with no chat run named reads the rules live.
+    /// The process a quest's work here follows (WORKFLOW1f, <see cref="WorkflowProcesses"/>): its run's bound version. A conversation's work,
+    /// which serves no quest, reads its chat run's (CHATFLOW1c, the chat-flow design §4.2), so the view and the gate decide by one process;
+    /// one with no chat run named follows no workflow.
     /// </summary>
     /// <param name="run">The chat run's key, <c>chat-&lt;first&gt;</c>, where the work serves no quest; null for none.</param>
     internal static async Task<WorkflowProcess> ProcessAsync(
         TreeGates gates, DriverConfig config, string repository, string? workspace, string? quest, IReviewWorld world, CancellationToken ct, string? run) =>
         quest is not null
             ? await WorkflowProcesses.ReadAsync(gates.Context.Home, config, world, quest, repository, workspace, ct).ConfigureAwait(false)
-            : ChatRuns.IsChatRun(run)
-                ? WorkflowProcesses.Read(gates.Context.Home, config, repository, workspace, run)
-                : WorkflowProcess.Current(config, repository, workspace);
+            : WorkflowProcesses.Read(gates.Context.Home, config, repository, workspace, ChatRuns.IsChatRun(run) ? run : null);
 
     /// <summary>
     /// The run's own part of the gate for a tree (WORKFLOW1f, the workflow design §4.4): the process judged, and where its kind chose

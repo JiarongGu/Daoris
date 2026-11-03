@@ -338,12 +338,12 @@ public sealed class WorkplacePluginsBoundaryTests : IDisposable
     [Fact]
     public void A_workflow_reads_the_plugins_switched_on_and_sound_in_the_catalogues_order_with_their_points()
     {
-        var plugins = WorkflowCurrent.PluginsOf(Standing());
+        var plugins = WorkflowSteps.PluginsOf(Standing());
 
         Assert.Equal(
             [("acme.gate", [HookPoints.QuestConsider]), ("acme.lands", [HookPoints.Land]), ("acme.mute", []), ("acme.ready", [HookPoints.Land, HookPoints.State]), ("acme.states", [HookPoints.State])],
             plugins.Select(plugin => (plugin.Id, (IReadOnlyList<string>)plugin.Points)));
-        Assert.Empty(WorkflowCurrent.PluginsOf(PluginCatalog.None));
+        Assert.Empty(WorkflowSteps.PluginsOf(PluginCatalog.None));
     }
 
     // ——— Helpers

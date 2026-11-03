@@ -140,9 +140,6 @@ public sealed class WorkflowRunFiles(string home) : IWorkflowRunStore
                     : [],
                 Undeclared = Text(root, "undeclared"),
                 Problem = Text(root, "problem"),
-                CurrentSteps = root.TryGetProperty("current", out var steps) && steps.ValueKind == JsonValueKind.Array
-                    ? [.. steps.EnumerateArray().Select(step => step.GetRawText())]
-                    : [],
                 Land = root.TryGetProperty("land", out var land) && land.ValueKind == JsonValueKind.Object
                     ? land.EnumerateObject().Where(each => each.Value.ValueKind == JsonValueKind.String).ToDictionary(each => each.Name, each => each.Value.GetString()!)
                     : LandNodes.NoResolved,
@@ -205,13 +202,6 @@ public sealed class WorkflowRunFiles(string home) : IWorkflowRunStore
 
         if (binding.Undeclared is { } undeclared) writer.WriteString("undeclared", undeclared);
         if (binding.Problem is { } problem) writer.WriteString("problem", problem);
-        if (binding.CurrentSteps.Count > 0)
-        {
-            writer.WriteStartArray("current");
-            foreach (var step in binding.CurrentSteps) writer.WriteRawValue(step);
-            writer.WriteEndArray();
-        }
-
         if (binding.Land.Count > 0)
         {
             writer.WriteStartObject("land");

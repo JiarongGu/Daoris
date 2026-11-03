@@ -318,31 +318,12 @@ public static class TransitionalRegister
             Row = "CONTEXTDRIVE1l",
             Ended = SupervisorRuleCensus.Ended,
         },
-        new()
-        {
-            Id = "conversion-receipt-before-parts",
-            Kept = "Conversion/HomeReceipts.cs:89",
-            Reaches = "A conversion receipt the workflow wave wrote before the door had parts: read as one workflow part with no build, which gives the floor nothing.",
-            Ends = "No receipt in the home's receipts folder is in the shape before parts; a press on one writes it again in the new shape.",
-            Row = "ONEWAY1ag",
-            Ended = home => Read(home, HomeEntry.DriverConfig) is not null && !HomeReceipts.AnyBeforeParts(home),
-        },
         // WORKFLOWCLEAN1 §4.7's kept reads (ONEWAY1ad-ii): the old workflow engine's, each ending with the workflow part's census, which reads
         // the service's runs as well as the home's files.
         new()
         {
-            Id = "steps-engine",
-            Kept = "Workflows/WorkflowProcesses.cs:106",
-            Reaches = "A run bound to a version saved as steps, and a new start on a steps workflow not converted yet: D157's engine runs it.",
-            Ends = "The workflow part's census has ended: no open steps run and no steps newest.",
-            Row = "WORKFLOWCLEAN1z",
-            Part = ConversionParts.Workflows,
-            Ended = Never,
-        },
-        new()
-        {
             Id = "current-followed",
-            Kept = "Workplace/Landing.cs:887, Workflows/Nodes/NodeGraphs.cs:1121, Workflows/Domain/WorkflowCurrent.cs:162",
+            Kept = "Workplace/Landing.cs:887, Workflows/Nodes/NodeGraphs.cs:1121",
             Reaches = "A place on Current, and a unit bound to Current, on a home not converted: its landing rule chosen and drawn as the workflow it follows.",
             Ends = "The workflow part's census has ended: no place resolves to Current, no Current-bound unit is open, and no leftover rule is held.",
             Row = "WORKFLOWCLEAN1z",
@@ -367,15 +348,6 @@ public static class TransitionalRegister
             Ends = "driver.json holds no `workCycles` and no `workspaceWorkCycles`, once a saved workflow runs a work cycle and the place is converted.",
             Row = "WORKFLOWCLEAN1j",
             Ended = home => Read(home, HomeEntry.DriverConfig) is { } root && !Holds(root, "workCycles") && !Holds(root, "workspaceWorkCycles"),
-        },
-        new()
-        {
-            Id = "conversion-readers",
-            Kept = "Conversion/WorkflowLegacy.cs:44, Conversion/LegacyGraphs.cs:23",
-            Reaches = "A home updated across WORKFLOWCLEAN1z whose old workflow records were never converted: the conversion's census and translator still read them.",
-            Ends = "The owner says no older home remains, which no file of the home says, so it never reads as ended here and the row deletes it.",
-            Row = "ONEWAY1ag",
-            Ended = Never,
         },
     ];
 

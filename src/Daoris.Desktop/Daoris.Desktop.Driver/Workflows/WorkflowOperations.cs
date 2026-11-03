@@ -48,8 +48,7 @@ public sealed record WorkflowScope(string Level, string Name, string Role, strin
 }
 
 /// <summary>Where a new version comes from, resolved: steps or a graph, its name, and how the terminal says its source.</summary>
-public sealed record WorkflowVersionSource(
-    string Description, string Name, JsonArray? Steps, JsonObject? Graph, WorkflowGraphPreset? GraphPreset, CurrentWorkflow? Drawn)
+public sealed record WorkflowVersionSource(string Description, string Name, JsonArray? Steps, JsonObject? Graph, WorkflowGraphPreset? GraphPreset)
 {
     /// <summary>The default it copies, which the version keeps as <c>from</c>; null for every other source.</summary>
     public WorkflowFrom? From { get; init; }
@@ -250,9 +249,6 @@ public static class WorkflowOperations
                     ? [$"what {(wasSteps is null ? was : now)} asks of you could not be read here, so it is taken as more"]
                     : Involvement.Lowers(nowSteps, wasSteps);
                 places.Add(new WorkflowUsePlace(place.Repository, was, now, lowers));
-                // Current moves with the rules, so a place that follows it before or after is judged at its digest too.
-                if (was == "Current") seen.Add(WorkflowCurrent.Derive(choices, place.Repository, place.Workspace, []).Version);
-                if (now == "Current") seen.Add(WorkflowCurrent.Derive(edited, place.Repository, place.Workspace, []).Version);
             }
 
             if (chosen is null && kind is null)
@@ -264,8 +260,8 @@ public static class WorkflowOperations
                 {
                     var said = string.Join(", ", mapped.Select(pair => $"kind `{pair.Key}` to `{pair.Value}`"));
                     keeps = new WorkflowUseKeeps(repository is not null
-                        ? $"`{repository}` still maps {said}: while a repository maps a kind of its own, its default work follows Current, not the "
-                            + "workspace's. Clearing a kind's mapping is that kind's own press."
+                        ? $"`{repository}` still maps {said}: while a repository maps a kind of its own, its default work follows this machine's "
+                            + "default, not the workspace's. Clearing a kind's mapping is that kind's own press."
                         : $"The workspace `{workspace}` still maps {said}: those kinds keep their own workflows, and only its default work changes.",
                         mapped);
                 }
@@ -493,7 +489,7 @@ public static class WorkflowOperations
         if (!from.Contains('@', StringComparison.Ordinal) && WorkflowDefaults.Of(from) is { } shipped && WorkflowPresets.GraphOf(shipped.Id) is { } graphPreset)
         {
             var name = $"{graphPreset.Name}{(opinion ? " + second opinion" : "")}{(look ? " + your look" : "")}";
-            return new($"the default `{shipped.Id}`", name, null, WorkflowPresets.WithGraphGates(graphPreset.Graph(), opinion, look), graphPreset, null)
+            return new($"the default `{shipped.Id}`", name, null, WorkflowPresets.WithGraphGates(graphPreset.Graph(), opinion, look), graphPreset)
             {
                 From = shipped.From,
             };
@@ -516,38 +512,6 @@ public static class WorkflowOperations
     public const string CurrentRetired =
         "retired: a workflow is no longer copied from a repository's Current by hand. `daoris convert` converts what a place follows "
         + "under Current into a saved workflow, as you press it. Nothing was written.";
-
-    /// <summary>
-    /// Current as a workflow's source, the one handler behind <c>new --from current:&lt;repository&gt;</c> and the effective graph a place's chart
-    /// draws (SETUPUX1b): <paramref name="drawn"/> is a repository's Current, or a workspace's from <see cref="WorkflowCurrent.Derive"/> over
-    /// its own rules. LANDNODE1h: Current's landing is written out as a <c>land</c> node, so what is saved is a graph.
-    /// </summary>
-    /// <param name="name">The repository, or the workspace, <paramref name="drawn"/> was drawn for.</param>
-    public static WorkflowVersionSource CurrentSource(CurrentWorkflow drawn, string name, bool opinion, bool look) =>
-        new($"`{name}`'s Current (version {drawn.Version})", $"{name}'s Current", null, WorkflowWords.GraphOfCurrent(drawn, opinion, look), null, drawn);
-
-    /// <summary>A repository's Current, drawn as <c>review</c> reads it, for a workflow made from it.</summary>
-    public static async Task<CurrentWorkflow> CurrentOfAsync(DriverConfig choices, string home, RegistryRead registry, string name, CancellationToken ct)
-    {
-        var read = await registry(ct).ConfigureAwait(false);
-        string? inWorkspace = null;
-        if (read.Checkouts is not { } checkouts)
-        {
-            if (choices.WorkspaceLandings.Count > 0 || choices.WorkspaceReviews.Count > 0 || choices.WorkspaceOpinions.Count > 0
-                || choices.WorkspaceWorkflows.Count > 0)
-            {
-                throw new ChoiceWords($"cannot say which workspace's rules reach `{name}`: the registry could not be read — "
-                    + $"{read.Unread} — and this file sets rules for a workspace. Nothing was drawn. `--workspace <name>` draws a "
-                    + "workspace's Current from this file alone.");
-            }
-        }
-        else
-        {
-            inWorkspace = checkouts.FirstOrDefault(each => InScope(each.Repository, name)).Workspace;
-        }
-
-        return WorkflowCurrent.Derive(choices, name, inWorkspace, WorkflowCurrent.PluginsOf(PluginCatalog.Load(home, AdapterSet.Built().Names)));
-    }
 
     /// <summary><c>&lt;id&gt;</c> or <c>&lt;id&gt;@&lt;version&gt;</c>.</summary>
     public static (string Id, int? Version) Named(string? token)

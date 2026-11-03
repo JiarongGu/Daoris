@@ -699,7 +699,7 @@ public sealed class Driver(
     private Task BindRunsAsync(IReadOnlyList<Consideration> opened, List<string> events, CancellationToken ct) =>
         WorkflowRunStart.BindAsync(
             [.. opened.Select(start => new WorkflowStarted(start.Quest, start.Workspace))], new StartWorld(service), home, config,
-            WorkflowCurrent.PluginsOf(Context.Catalog), () => DateTimeOffset.UtcNow, events, ct, Lines, made: [.. Context.Runs.TakeBound().Cast<WorkflowBind>()]);
+            WorkflowSteps.PluginsOf(Context.Catalog), () => DateTimeOffset.UtcNow, events, ct, Lines, made: [.. Context.Runs.TakeBound().Cast<WorkflowBind>()]);
 
     /// <summary>
     /// A start's bind of its run before its take (FABRIC-CUTOVER1g, D190's binding moment; the cutover design §8): Workflows' use case
@@ -709,7 +709,7 @@ public sealed class Driver(
     private async Task<WorkflowBind> BindAtStartAsync(QuestView quest, string? workspace, CancellationToken ct)
     {
         var bound = await WorkflowRunStart.AtStartAsync(
-                new WorkflowStarted(quest, workspace), new StartWorld(service), home, config, WorkflowCurrent.PluginsOf(Context.Catalog),
+                new WorkflowStarted(quest, workspace), new StartWorld(service), home, config, WorkflowSteps.PluginsOf(Context.Catalog),
                 () => DateTimeOffset.UtcNow, ct)
             .ConfigureAwait(false);
         if (bound.Came == WorkflowBindCame.Bound) Context.Runs.Bound(bound);
@@ -723,7 +723,7 @@ public sealed class Driver(
     /// </summary>
     internal async Task<string?> StepRoleAsync(QuestView quest, string? workspace, CancellationToken ct) =>
         (await WorkflowRunStart.PlannedAsync(
-                new WorkflowStarted(quest, workspace), new StartWorld(service), home, config, WorkflowCurrent.PluginsOf(Context.Catalog),
+                new WorkflowStarted(quest, workspace), new StartWorld(service), home, config, WorkflowSteps.PluginsOf(Context.Catalog),
                 () => DateTimeOffset.UtcNow, ct)
             .ConfigureAwait(false))?.RoleOf(NodeKinds.Claimed)?.Role;
 

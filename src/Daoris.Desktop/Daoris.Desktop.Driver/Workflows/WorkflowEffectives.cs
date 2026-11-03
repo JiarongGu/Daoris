@@ -13,17 +13,17 @@ public sealed record ShippedNewer(string Default, string Name, JsonNode Graph);
 public sealed record EffectiveCell(string Node, WorkflowStep Step);
 
 /// <summary>
-/// The workflow a route follows, as the place's chart draws it (SETUPUX1b; D221): which workflow and how it was chosen, its version, or
-/// Current's digest, its graph as a version saves it, and each node's cell.
+/// The workflow a route follows, as the place's chart draws it (SETUPUX1b; D221): which workflow and how it was chosen, its version, its
+/// graph as a version saves it, and each node's cell.
 /// </summary>
 /// <param name="Route"><c>default</c>, <c>kind:&lt;name&gt;</c> or <c>landed</c>.</param>
-/// <param name="Workflow">A saved workflow's id, or <c>current</c>.</param>
-/// <param name="Name">The saved workflow's name; null under Current.</param>
-/// <param name="Version">The saved version followed (the newest, which a run binds); null under Current.</param>
-/// <param name="Digest">The version's digest, or under Current the digest of what it draws.</param>
-/// <param name="Schema">1 for a version of steps, drawn as the graph it decodes to; 2 for a graph; null under Current and where nothing is drawn.</param>
-/// <param name="Verifies">The landed route follows a verification pipeline; false under Current, which is no verification.</param>
-/// <param name="Graph">The graph to draw; null where none is: the landed route under Current, or a workflow that does not read (<paramref name="Problem"/>).</param>
+/// <param name="Workflow">A saved workflow's id, or <c>current</c> where none is chosen.</param>
+/// <param name="Name">The saved workflow's name; null where none is chosen.</param>
+/// <param name="Version">The saved version followed (the newest, which a run binds); null where none is chosen.</param>
+/// <param name="Digest">The version's digest.</param>
+/// <param name="Schema">2 for a graph; null where nothing is drawn.</param>
+/// <param name="Verifies">The landed route follows a verification pipeline.</param>
+/// <param name="Graph">The graph to draw; null where none is: no workflow chosen, or a workflow that does not read (<paramref name="Problem"/>).</param>
 /// <param name="Problem">Why a saved workflow cannot be drawn, in the driver's words.</param>
 /// <param name="Newer">The shipped default a copy was made from, where this build ships it changed since (<see cref="ShippedNewer"/>); else null.</param>
 public sealed record WorkflowEffective(
@@ -36,10 +36,8 @@ public sealed record WorkflowEffective(
 
 /// <summary>
 /// The graph a route actually follows (SETUPUX1b; D221, the setup design §2.3, §5 row b): <see cref="WorkflowSelection.Resolve"/> (or
-/// <see cref="WorkflowSelection.ResolveLanded"/>) says which workflow, so the identity is the selection's; Current's graph is
-/// <see cref="WorkflowOperations.CurrentSource"/>'s, the handler <c>new --from current:&lt;repository&gt;</c> writes through, over
-/// <see cref="WorkflowCurrent.Derive"/> for a repository or for a workspace; a saved workflow is its newest version that reads, as a run binds it.
-/// Pure: it reads the file and the store and writes nothing.
+/// <see cref="WorkflowSelection.ResolveLanded"/>) says which workflow, so the identity is the selection's; a saved workflow is its newest
+/// version that reads, as a run binds it, and where none is chosen nothing is drawn. Pure: it reads the file and the store and writes nothing.
 /// </summary>
 public static class WorkflowEffectives
 {
@@ -73,28 +71,14 @@ public static class WorkflowEffectives
             (workflow, source) = (selected.Workflow, new EffectiveSource(selected.Level, selected.Kind, selected.Label, selected.Paths));
         }
 
-        var process = WorkflowProcess.Current(config, repository ?? "", workspace);
+        // No workflow chosen draws nothing: the landed route's is no verification, and a development route's work is held.
         if (workflow == WorkflowSelection.Current)
         {
-            // Landed Current means no verification: no graph is drawn (WorkflowSelection.ResolveLanded).
-            return route == LandedRoute
-                ? new(route, workflow, null, null, null, null, source, false, null, [], null)
-                : OfCurrent(config, repository, workspace, route, source, process, plugins);
+            return new(route, workflow, null, null, null, null, source, false, null, [],
+                route == LandedRoute ? null : WorkflowProcess.NoWorkflow(repository ?? workspace ?? ""));
         }
 
-        return OfSaved(store, workflow, route, source, verifies, process);
-    }
-
-    private static WorkflowEffective OfCurrent(
-        DriverConfig config, string? repository, string? workspace, string route, EffectiveSource source, WorkflowProcess process, IReadOnlyList<WorkflowPlugin> plugins)
-    {
-        var drawn = WorkflowCurrent.Derive(config, repository, workspace, plugins);
-        var graph = WorkflowOperations.CurrentSource(drawn, repository ?? workspace ?? "", opinion: false, look: false).Graph!;
-        var nodes = NodeGraphs.Read(graph.ToJsonString()).Graph?.Nodes ?? [];
-        // Current's own cell where it draws one (its ids are its kinds, as the graph's nodes are), else the cell a run answers for the node.
-        var cells = nodes.Select(node => new EffectiveCell(
-            node.Id, drawn.Steps.FirstOrDefault(step => step.Id == node.Id) ?? WorkflowGraphRuns.Cell(node, process, source.Level))).ToList();
-        return new(route, WorkflowSelection.Current, null, null, drawn.Version, null, source, false, graph, cells, null);
+        return OfSaved(store, workflow, route, source, verifies, WorkflowProcess.Declared(config, repository ?? "", workspace));
     }
 
     private static WorkflowEffective OfSaved(IWorkflowStore store, string id, string route, EffectiveSource source, bool verifies, WorkflowProcess process)
@@ -106,14 +90,11 @@ public static class WorkflowEffectives
         // The newest version, as a run's bind takes it: one that does not read is the problem every run will hold on, not a reason to draw an older.
         var newest = found.Read.Versions.LastOrDefault();
         if (newest is null) return Unread($"`{id}` keeps no version that reads here.");
-        if (newest.Steps is null && newest.Graph is null) return Unread($"`{id}` v{newest.Version} cannot be read here: {newest.Problem}");
+        if (newest.Graph is not { } held) return Unread($"`{id}` v{newest.Version} cannot be read here: {newest.Problem ?? "it is no graph"}");
 
-        // A graph version is drawn as the file holds it; a version of steps as the graph it decodes to (no run binds that, D190 point 1).
-        var (graph, nodes) = newest.Graph is { } held
-            ? (found.File!["versions"]![found.Read.Versions.ToList().IndexOf(newest)]!["graph"]!.DeepClone(), held.Nodes)
-            : ((JsonNode)WorkflowGraphs.Saved(newest.Steps!), WorkflowGraphs.Graph(newest.Steps!).Nodes);
-        var cells = nodes.Select(node => new EffectiveCell(node.Id, WorkflowGraphRuns.Cell(node, process, source.Level))).ToList();
-        return new(route, id, found.Read.Name, newest.Version, newest.Digest, newest.Graph is not null ? WorkflowNamed.GraphSchema : 1, source, verifies, graph, cells, null,
+        var graph = found.File!["versions"]![found.Read.Versions.ToList().IndexOf(newest)]!["graph"]!.DeepClone();
+        var cells = held.Nodes.Select(node => new EffectiveCell(node.Id, WorkflowGraphRuns.Cell(node, process, source.Level))).ToList();
+        return new(route, id, found.Read.Name, newest.Version, newest.Digest, WorkflowNamed.GraphSchema, source, verifies, graph, cells, null,
             WorkflowDefaults.NewerThan(newest.From, newest.Graph));
     }
 }

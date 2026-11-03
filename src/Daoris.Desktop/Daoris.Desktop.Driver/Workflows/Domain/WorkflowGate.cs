@@ -29,36 +29,35 @@ public static class WorkflowGateStates
 
 /// <summary>
 /// The process a chain's work in a repository follows at its gate (WORKFLOW1f, D157 points 4 and 6; the workflow design §2.3,
-/// §4.6): how it lands, the review rule its look reads and what rows 5 and 6 say, and the second opinion it waits for. Under
-/// Current, or with no binding here, the rules as they stand, read live as every gate reads them today; under a named workflow,
-/// its bound version's steps over what the repository declares, each step choosing among what is declared and never beyond it.
+/// §4.6): how it lands, the review rule its look reads and what rows 5 and 6 say, and the second opinion it waits for: its bound graph
+/// version over what the repository declares, each node choosing among what is declared and never beyond it. Work with no binding follows
+/// no workflow and is held.
 /// </summary>
-/// <param name="Landing">The landing rule the work lands by: the declared rule, or the version's landing step over it.</param>
+/// <param name="Landing">The landing intent the work lands by: the bound version's <c>land</c>.</param>
 /// <param name="Review">The review rule as declared: its environments, which the chain's and the ask's <c>on</c> reads (§2.3).</param>
-/// <param name="Opinion">The second-opinion rule the gate reads; null where none is set, or the version has no opinion step.</param>
+/// <param name="Opinion">The second-opinion rule the gate reads; null where none is set, or the version has no opinion node.</param>
 public sealed record WorkflowProcess(string Repository, Landing Landing, ResolvedReview? Review, ResolvedOpinion? Opinion) : IWorkplaceProcess, IReviewedProcess, ICheckedProcess
 {
     /// <summary>The run it was read for: the chain's first quest in the repository; null where none was named.</summary>
     public string? Run { get; init; }
 
-    /// <summary>The run's binding here, Current's or a named workflow's; null where it has none.</summary>
+    /// <summary>The run's binding here; null where it has none.</summary>
     public WorkflowRunBinding? Binding { get; init; }
 
-    /// <summary>The bound version's steps; empty under Current, or where the version could not be read.</summary>
+    /// <summary>The bound version's person part as steps; empty where the version could not be read.</summary>
     public IReadOnlyList<NamedStep> Steps { get; init; } = [];
 
     /// <summary>
     /// The options of the bound graph version's <c>claimed</c> node, each its JSON text as written (FABRIC-PIPELINE1b3; the pipeline design
-    /// §3.1): its sessions' <c>checks</c> and its <c>callMinutes</c>; empty where the graph holds no <c>claimed</c>. Null under Current, under a
-    /// steps version, whose <c>work</c> step says its checks, and where the graph version is not the one its run bound.
+    /// §3.1): its sessions' <c>checks</c> and its <c>callMinutes</c>; empty where the graph holds no <c>claimed</c>. Null where the graph
+    /// version is not the one its run bound.
     /// </summary>
     public IReadOnlyDictionary<string, string>? Claimed { get; init; }
 
     /// <summary>
-    /// The bound graph version's graph, as its file holds it and never decoded (FABRIC-CUTOVER1e; D190 point 4, the cutover design §4: the
-    /// process carries the graph beside the steps its gates read): what the run's view draws from the run's record, and the landing gate's
-    /// graph part reads it from (FABRIC-CUTOVER1d). Null under Current, under a steps version, and where the graph
-    /// version is not the one its run bound.
+    /// The bound graph version's graph, as its file holds it and never decoded (FABRIC-CUTOVER1e; D190 point 4, the cutover design §4):
+    /// what the run's view draws from the run's record, and the landing gate's graph part reads it from (FABRIC-CUTOVER1d). Null where the
+    /// graph version is not the one its run bound.
     /// </summary>
     public NodeGraph? Graph { get; init; }
 
@@ -72,20 +71,19 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
 
     /// <inheritdoc/>
     public bool LandsByRuntime => Graph?.Nodes.Any(node => node.Kind == NodeKinds.Land) == true
-                                  && Binding is { IsCurrent: false, Digest: not null } && Problem is null && Unread is null;
+                                  && Binding is { Digest: not null } && Problem is null && Unread is null;
 
     /// <inheritdoc/>
     public BoundLand? Land(LandingSubject subject)
     {
         if (Graph?.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land) is not { } land
-            || Binding is not { IsCurrent: false, Digest: { } digest } binding || Problem is not null || Unread is not null)
+            || Binding is not { Digest: { } digest } binding || Problem is not null || Unread is not null)
         {
             return null;
         }
 
         string? Text(string name) => land.Options.TryGetValue(name, out var raw) ? NodeOptions.Value(raw) as string : null;
         var rule = Landing.Rule;
-        // A method left open is the landing step's it stands for, as Current derives its own from the rule.
         var method = Text("method") ?? (rule.Form == LandingForm.Merge ? LandNodes.Merge : rule.Plugin is not null ? LandNodes.PullRequest : LandNodes.Branch);
         var squash = (land.Options.TryGetValue("squash", out var written) ? NodeOptions.Value(written) as bool? : null) ?? rule.Squash;
         squash &= method is LandNodes.Branch or LandNodes.Push or LandNodes.PullRequest;
@@ -103,7 +101,7 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
             options.ToJsonString(), digest, $"workflow:{binding.Workflow}@{binding.Version}:{Repository}");
     }
 
-    /// <summary>Rows 5 and 6 of D154's table as the version says them; null under Current, where the rule says them, as today.</summary>
+    /// <summary>Rows 5 and 6 of D154's table as the version says them; null where no version was read.</summary>
     public WorkflowLook? Look { get; init; }
 
     /// <summary>Why the version's opinion step cannot start (§3.7): it names reviewers the repository does not declare.</summary>
@@ -118,15 +116,15 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
     /// <summary>Why it could not be read whether a named workflow governs this work: the service named no chain.</summary>
     public string? Unread { get; init; }
 
-    /// <summary>Whether a named workflow governs this work: its run was bound to one.</summary>
+    /// <summary>Whether a saved workflow governs this work: its run was bound to one.</summary>
     public bool Named => Binding is { IsCurrent: false };
 
-    /// <summary>How the work is said to follow it: <c>`docs-to-pr` v2</c>, or Current.</summary>
+    /// <summary>How the work is said to follow it: <c>`docs-to-pr` v2</c>, or no workflow.</summary>
     public string Name => Binding is { IsCurrent: false } named
         ? named.Version is { } version ? $"`{named.Workflow}` v{version}" : $"`{named.Workflow}`"
-        : "Current";
+        : "no workflow";
 
-    /// <summary>What the landing record keeps of it (design §5.5): the named version that decided; null under Current.</summary>
+    /// <summary>What the landing record keeps of it (design §5.5): the version that decided; null where none was read.</summary>
     public LandingWorkflow? Record => Binding is { IsCurrent: false, Version: { } version } named && Problem is null && Unread is null
         ? new LandingWorkflow(named.Workflow, version, named.Level) { Kind = named.Kind }
         : null;
@@ -144,94 +142,16 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
     public string? WorkChecks => (string?)Steps.FirstOrDefault(step => step.Kind == WorkflowKinds.Work)?.Field("checks");
 
     /// <summary>
-    /// The rules as they stand, read live as every gate reads them today: Current, and work with no binding here. Its landing is the rule
-    /// work lands by, the access setup's landing composed in (AUTONOMY1c2, <see cref="LandingRules.Effective"/>), so the look's judgement
-    /// and the opinion's gate read what the conclusion and the landing read.
+    /// What the place declares, before any workflow: the review rule's environments and the opinion rule's reviewers, which a graph's look and
+    /// opinion choose among. It lands nothing of its own: its landing is the merge a graph's <c>land</c> replaces.
     /// </summary>
-    public static WorkflowProcess Current(DriverConfig config, string repository, string? workspace) =>
-        new(repository, LandingRules.Effective(config, repository, workspace), ReviewRules.Resolve(config, repository, workspace),
+    public static WorkflowProcess Declared(DriverConfig config, string repository, string? workspace) =>
+        new(repository, new Landing(LandingRule.Merge, LandingSource.Default), ReviewRules.Resolve(config, repository, workspace),
             OpinionRules.Resolve(config, repository, workspace));
 
-    /// <summary>
-    /// A named version's process over what the repository declares (design §2.3, §3.2, §4.6). Pure: the state table
-    /// (<c>WorkflowGateTests</c>) holds every row without a file.
-    /// </summary>
-    /// <remarks>
-    /// <para><b>A step chooses among what is declared, never beyond it</b> (§2.3). A look names one of the environments the review
-    /// rule declares, or takes its first; an opinion names reviewers from the rule's list, or takes it, with the rule's
-    /// <c>verify</c> and <c>minutes</c>; a landing names its form and its press, and a pattern and a plugin where it wants its own,
-    /// the rule's otherwise, with the rule's <c>tidy</c>. A step that needs what is not declared cannot start, and sits saying so
-    /// (§3.7).</para>
-    /// </remarks>
-    /// <param name="bound">
-    /// The landing rule a graph version holding a <c>land</c> carries (<see cref="LandNodes.RuleOf"/>; WORKFLOWCLEAN1 1c), in place of one read from a
-    /// landing step and the live rule. Null reads the landing step as before: a steps version and a <c>handed</c> graph.
-    /// </param>
-    public static WorkflowProcess Of(
-        DriverConfig config, string repository, string? workspace, WorkflowRunBinding binding, IReadOnlyList<NamedStep> steps, LandingRule? bound = null)
-    {
-        var declared = Current(config, repository, workspace);
-
-        // The landing: its form and its press the step's; a pattern and a plugin its own where it names them, the rule's otherwise.
-        var land = bound is null ? steps.First(step => step.Kind == WorkflowKinds.Landing) : null!;
-        var rule = declared.Landing.Rule;
-        string? landingCannot = null;
-        LandingRule landing;
-        if (bound is not null)
-        {
-            landing = bound;
-            landingCannot = BoundCannot(bound);
-        }
-        else if ((string?)land.Field("form") == LandingForm.Merge)
-        {
-            // LANDNODE1k: a graph's merge with no review before its `land` lands with no press (D145's note of 2026-11-01), so the look lands it as
-            // the graph says; a steps version's merge is refused `automatic` where its steps are read, and never reaches here with it.
-            landing = new LandingRule(LandingForm.Merge, Tidy: rule.Tidy, AutoAccept: (string?)land.Field("accept") == "automatic");
-        }
-        else
-        {
-            var branch = rule.Form == LandingForm.Branch;
-            var pattern = (string?)land.Field("pattern") ?? (branch ? rule.Pattern : null);
-            var plugin = (string?)land.Field("plugin") switch
-            {
-                "none" => null,
-                null => branch ? rule.Plugin : null,
-                var id => id,
-            };
-            if (pattern is null)
-            {
-                landingCannot = $"its landing `{land.Id}` puts the work on a branch, and neither the step nor `{repository}`'s landing rule "
-                    + $"names a pattern for it: `daoris place landing {repository} branch <pattern>` declares one.";
-            }
-
-            // The rule's ticket key rides with it where the pattern, the step's or the rule's, says `{ticket}` (PROCESS1b-i).
-            // A land version's key was resolved at the bind, and no later rule edit reaches it (LANDNODE1h).
-            var key = binding.Land.TryGetValue(LandNodes.KeyOption, out var resolvedKey) ? resolvedKey
-                : branch && pattern?.Contains("{ticket}", StringComparison.Ordinal) == true ? rule.Key : null;
-            // The rule's squash rides with it too (PROCESS1b-ii): it is how the repository wants its pull request's branch made.
-            landing = new LandingRule(LandingForm.Branch, pattern, rule.Tidy, plugin, (string?)land.Field("accept") == "automatic", key,
-                branch && rule.Squash);
-        }
-
-        var lookStep = steps.FirstOrDefault(step => step.Kind == WorkflowKinds.Look);
-        var look = ReadLook(declared, repository, lookStep?.Id, (string?)lookStep?.Field("environment"));
-        var reads = steps.FirstOrDefault(step => step.Kind == WorkflowKinds.Opinion);
-        var (opinion, opinionCannot) = reads is null
-            ? (null, null)
-            : ReadOpinion(declared, repository, reads.Id, reads.Field("reviewers") as IReadOnlyList<string>, (bool?)reads.Field("steps") == true,
-                (bool?)reads.Field("required") == true, (bool?)reads.Field("recheck") != false);
-
-        return declared with
-        {
-            Landing = new Landing(landing, declared.Landing.Source),
-            Opinion = opinion,
-            Binding = binding,
-            Steps = steps,
-            Look = look,
-            OpinionCannot = opinionCannot,
-            LandingCannot = landingCannot,
-        };
-    }
+    /// <summary>Why work that follows no saved workflow is held: nothing runs or lands it.</summary>
+    public static string NoWorkflow(string repository) =>
+        $"no workflow is chosen for `{repository}`, so nothing runs or lands its work: Set up… chooses one.";
 
     /// <summary>
     /// A graph version holding a <c>land</c> as a process (WORKFLOWCLEAN1 1c, design §2.6): the landing is the intent it binds
@@ -239,7 +159,7 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
     /// </summary>
     public static WorkflowProcess Of(DriverConfig config, string repository, string? workspace, WorkflowRunBinding binding, GraphGateReading gates, LandingRule bound)
     {
-        var declared = Current(config, repository, workspace);
+        var declared = Declared(config, repository, workspace);
         return declared with
         {
             Landing = new Landing(bound, declared.Landing.Source),
@@ -418,39 +338,6 @@ public static class Involvement
     /// <summary>An <c>integrate</c> step's <c>request</c>, the owner's where it names none or a value that is no choice (the install's table).</summary>
     private static string RequestOf(NamedStep step) =>
         step.Field("request") is string request && LandingIntegrate.Requests.Contains(request) ? request : LandingIntegrate.Owner;
-
-    /// <summary>
-    /// Current as steps (design §2.7's <i>Save as a workflow…</i>, the CLI's <c>stepsOfCurrent</c>): the opinion with its reviewers
-    /// and switches, the look in its environment, the landing with its form and press, the pull request; the standing answer and
-    /// the landing's <c>tidy</c> stay declarations (§2.3).
-    /// </summary>
-    public static IReadOnlyList<NamedStep> StepsOf(CurrentWorkflow current) =>
-    [
-        .. current.Steps.Select(step =>
-        {
-            object? Setting(string name) => step.Settings.FirstOrDefault(setting => setting.Name == name)?.Value;
-            IReadOnlyList<WorkflowSetting> fields = step.Kind switch
-            {
-                WorkflowKinds.Opinion =>
-                [
-                    new("reviewers", Setting("reviewers")), new("required", Setting("required")),
-                    new("steps", (Setting("on") as IEnumerable<string>)?.Contains(OpinionRules.Steps) == true), new("recheck", Setting("recheck")),
-                ],
-                WorkflowKinds.Look => [new("environment", Setting("environment"))],
-                // The checks its sessions run, where its repository sets them (FABRIC-PIPELINE1b), which the lowering table reads.
-                WorkflowKinds.Work => Setting("checks") is string checks ? [new("checks", checks)] : [],
-                WorkflowKinds.Landing =>
-                [
-                    new("form", Setting("form")), new("accept", Setting("accept")), new("pattern", Setting("pattern")),
-                    new("plugin", Setting("plugin")),
-                ],
-                // INTEGRATE1r: the rule's request, so the comparison does not read Current's `done` as the owner's (its id is its node's, §2.5).
-                NodeKinds.Integrate => [new("request", Setting("request"))],
-                _ => [],
-            };
-            return new NamedStep(step.Id, step.Kind, fields);
-        }),
-    ];
 
     /// <summary>
     /// A graph version's person part as the steps <see cref="Lowers"/> reads (FABRIC-CUTOVER1e; D190 point 4, the cutover design §11.1): its

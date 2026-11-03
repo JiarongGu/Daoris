@@ -210,10 +210,9 @@ public sealed class TransitionalRegisterTests : IDisposable
     public void ONEWAY1ad_ii_the_workflow_waves_kept_reads_are_registered()
     {
         Assert.Equal(
-            [("steps-engine", "WORKFLOWCLEAN1z"), ("current-followed", "WORKFLOWCLEAN1z"), ("auto-lander", "WORKFLOWCLEAN1z"), ("work-cycles", "WORKFLOWCLEAN1j"),
-                ("conversion-readers", "ONEWAY1ag")],
-            new[] { "steps-engine", "current-followed", "auto-lander", "work-cycles", "conversion-readers" }.Select(id => (id, Entry(id).Row)));
-        Assert.All(new[] { "steps-engine", "current-followed", "auto-lander" }, id => Assert.Equal(ConversionParts.Workflows, Entry(id).Part));
+            [("current-followed", "WORKFLOWCLEAN1z"), ("auto-lander", "WORKFLOWCLEAN1z"), ("work-cycles", "WORKFLOWCLEAN1j")],
+            new[] { "current-followed", "auto-lander", "work-cycles" }.Select(id => (id, Entry(id).Row)));
+        Assert.All(new[] { "current-followed", "auto-lander" }, id => Assert.Equal(ConversionParts.Workflows, Entry(id).Part));
         Put(HomeEntry.DriverConfig, """{"workCycles":{"engine":{"quest":"{}"}}}""");
         Assert.False(Entry("work-cycles").Ended(_home));
         Put(HomeEntry.DriverConfig, """{"workCycles":{}}""");

@@ -3,17 +3,10 @@ using System.Text;
 
 namespace Daoris.Driver;
 
-/// <summary>What an apply reads and writes: the workflow part's world and its one edit of <c>driver.json</c>, and what the door composes beside it.</summary>
-/// <param name="World">The world as it stands now: the file, the registry, the workflows and the bound runs with their units' state.</param>
-/// <param name="OpenCurrent">
-/// Inside the edit, under the file's lock: the places (<see cref="WorkflowLegacy.Held"/>'s keys) with a Current unit open now, read from the run
-/// files as they are then, so a start that bound after the plan is seen.
-/// </param>
-public sealed record ConvertDoors(
-    string Home, Func<CancellationToken, Task<ConvertWorld>> World, Action<Func<DriverConfig, DriverConfig>> Change, Func<DriverConfig> Config,
-    Func<IReadOnlySet<string>> OpenCurrent)
+/// <summary>What an apply reads and writes: the home, its one edit of <c>driver.json</c>, and the parts the door composes.</summary>
+public sealed record ConvertDoors(string Home, Action<Func<DriverConfig, DriverConfig>> Change, Func<DriverConfig> Config)
 {
-    /// <summary>The parts beside the workflow part, each an area's; the door orders them (<see cref="ConversionParts.Order"/>).</summary>
+    /// <summary>The parts, each an area's; the door orders them (<see cref="ConversionParts.Order"/>).</summary>
     public IReadOnlyList<IConversionPart> Others { get; init; } = [];
 
     /// <summary>The build a receipt is stamped with (<see cref="InstallRollback.This"/>), the floor's source.</summary>
@@ -69,9 +62,6 @@ public sealed record HomePlan(string Digest, ConversionChoices Choices, IReadOnl
     public int Count => Parts.Sum(each => each.Census.Count);
 
     public PartPlan? Of(string part) => Parts.FirstOrDefault(each => each.Part == part);
-
-    /// <summary>The workflow part's own plan, where it read.</summary>
-    public ConversionPlan? Workflows => Of(ConversionParts.Workflows)?.Detail is WorkflowPartPlan planned ? planned.Plan : null;
 
     /// <summary>Each part that writes something, by name, with its digest: what a press of this plan names.</summary>
     public IReadOnlyDictionary<string, string> Pressed => Parts.Where(each => !each.Empty).ToDictionary(each => each.Part, each => each.Digest, StringComparer.Ordinal);

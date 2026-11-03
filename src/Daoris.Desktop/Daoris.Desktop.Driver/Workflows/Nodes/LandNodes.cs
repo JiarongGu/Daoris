@@ -47,27 +47,9 @@ public static class LandNodes
     /// null where none does), and the default key where the pattern says <c>{ticket}</c>. A merge has none to resolve, and an integrate no
     /// plugin. Called once, at the run's bind, and kept; a written option stands.
     /// </summary>
-    public static IReadOnlyDictionary<string, string> Resolve(NodeDeclaration land, string? platformPlugin) => Resolve(land, null, platformPlugin);
-
-    /// <summary>
-    /// <see cref="Resolve(NodeDeclaration, string?)"/> over a landing rule where the place has one set: that rule's pattern, plugin and key
-    /// resolve the open options as before. A transitional path, ended by the conversion, which writes those options into the version and
-    /// removes the rule (the cleanup design §4.7); with no rule the derived defaults resolve them.
-    /// </summary>
-    public static IReadOnlyDictionary<string, string> Resolve(NodeDeclaration land, LandingRule? rule, string? platformPlugin)
+    public static IReadOnlyDictionary<string, string> Resolve(NodeDeclaration land, string? platformPlugin)
     {
         var method = Written(land, "method");
-        if (rule is not null)
-        {
-            if (method == Merge || rule.Form != LandingForm.Branch) return NoResolved;
-            var fromRule = new Dictionary<string, string>(StringComparer.Ordinal);
-            var named = Written(land, "pattern");
-            if (named is null && rule.Pattern is { } ruled) fromRule["pattern"] = named = ruled;
-            if (method != Integrate && Written(land, "plugin") is null && rule.Plugin is { } plugin) fromRule["plugin"] = plugin;
-            if (named?.Contains("{ticket}", StringComparison.Ordinal) == true && rule.Key is { } key) fromRule[KeyOption] = key;
-            return fromRule.Count == 0 ? NoResolved : fromRule;
-        }
-
         if (method is null or Merge) return NoResolved;
         var resolved = new Dictionary<string, string>(StringComparer.Ordinal);
         var pattern = Written(land, "pattern");
@@ -102,26 +84,23 @@ public static class LandNodes
     }
 
     /// <summary>
-    /// The landing rule a run bound to a version holding this <c>land</c> carries in place of the live one (WORKFLOWCLEAN1 1c; the cleanup design
-    /// §13 point 3): the node's written options, the open ones the bind resolved (<paramref name="resolved"/>), and its press from the graph. A
-    /// squash is the node's own, the door's tidy is retired, and the rule's ticket key is the bind's. Only an option a version left open that the
-    /// bind did not resolve (a run bound before the update) and a method left out read <paramref name="declared"/>, a transitional read the
-    /// conversion ends by writing them into the version.
+    /// The landing intent a run bound to a version holding this <c>land</c> carries (WORKFLOWCLEAN1 1c; the cleanup design §13 point 3): the node's
+    /// written options, the open ones the bind resolved (<paramref name="resolved"/>), and its press from the graph. A squash is the node's own,
+    /// and the ticket key is the bind's.
     /// </summary>
-    public static LandingRule RuleOf(NodeDeclaration land, bool reviewed, IReadOnlyDictionary<string, string>? resolved, LandingRule declared)
+    public static LandingRule RuleOf(NodeDeclaration land, bool reviewed, IReadOnlyDictionary<string, string>? resolved)
     {
-        var method = Written(land, "method") ?? (declared.Form == LandingForm.Merge ? Merge : declared.Plugin is not null ? PullRequest : Branch);
+        var method = Written(land, "method") ?? Merge;
         if (method == Merge) return new LandingRule(LandingForm.Merge, AutoAccept: !reviewed);
 
-        var branchRule = declared.Form == LandingForm.Branch;
-        var pattern = Written(land, "pattern") ?? resolved?.GetValueOrDefault("pattern") ?? (branchRule ? declared.Pattern : null);
+        var pattern = Written(land, "pattern") ?? resolved?.GetValueOrDefault("pattern");
         var plugin = Written(land, "plugin") switch
         {
             NoPlugin => null,
-            null => resolved?.GetValueOrDefault("plugin") ?? (branchRule ? declared.Plugin : null),
+            null => resolved?.GetValueOrDefault("plugin"),
             var id => id,
         };
-        var key = resolved?.GetValueOrDefault(KeyOption) ?? (pattern?.Contains("{ticket}", StringComparison.Ordinal) == true ? declared.Key : null);
+        var key = resolved?.GetValueOrDefault(KeyOption);
         var squash = land.Options.TryGetValue("squash", out var written) && NodeOptions.Value(written) is true && method is Branch or Push or PullRequest;
         return new LandingRule(LandingForm.Branch, pattern, Tidy: false, plugin, AutoAccept: !reviewed, key, squash);
     }

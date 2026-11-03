@@ -230,25 +230,10 @@ public static class WorkflowRunReader
                 : WorkOf(session, sessions) is { } work && ids.Contains(work) ? session with { Quest = work } : null)
             .OfType<TracedSession>()
             .ToList();
-        // A chat whose line took a quest of this part is that quest's from the take on (CHATFLOW1c, the Opus check's finding 3): a landing or
-        // an acceptance on a record of its line whose own quest is null counts only where it was made after the take (Planner.TakenAt), so
-        // what its chat run landed before is never read as the quest's.
-        var takers = sessions
-            .Where(session => session.Quest is null && TookQuest(session, sessions) is { } taken && ids.Contains(taken))
-            .ToDictionary(session => session.Id, session => TookQuest(session, sessions)!, StringComparer.OrdinalIgnoreCase);
-        var takenAt = new Dictionary<string, DateTimeOffset?>(StringComparer.OrdinalIgnoreCase);
-        foreach (var quest in takers.Values.Distinct(StringComparer.OrdinalIgnoreCase))
-        {
-            takenAt[quest] = await reads.TakenAtAsync(part.First(each => Same(each.Id, quest))).ConfigureAwait(false);
-        }
-
-        bool Counts(string session, DateTimeOffset at) =>
-            !takers.TryGetValue(session, out var quest) || takenAt.GetValueOrDefault(quest) is not { } taken || at >= taken;
         var workspace = RemoteTarget.Workspace(sources.WorkspaceOf(repository));
-        var current = WorkflowCurrent.Derive(sources.Config, repository, sources.WorkspaceOf(repository), sources.Plugins);
         var process = WorkflowProcesses.Read(sources.Home, sources.Config, repository, sources.WorkspaceOf(repository),
             WorkflowRunBindings.RunOf(chain, repository));
-        current = WorkflowRunGraph.Read(process, current, sources.Plugins);
+        var current = new CurrentWorkflow(WorkflowSteps.StartHolds(sources.Plugins), [], process.Binding?.Digest ?? "unread");
 
         // FABRIC-CUTOVER1e (D190 points 2 and 3): a run bound to a graph version is the runtime's, so it is drawn from its record, and its gates
         // read the version from its nodes (CUTOVER1d).
@@ -257,60 +242,11 @@ public static class WorkflowRunReader
             return await GraphRunAsync(chain, repository, part, mine, sessions, workspace, current, process, graph, run, reads).ConfigureAwait(false);
         }
 
-        if (process.Problem is not null || process.Unread is not null)
-            return new WorkflowRun(repository, workspace, current, [.. part.Select(quest => quest.Id)], [])
-            {
-                Process = process, Problem = process.Problem ?? process.Unread,
-                Session = mine.MaxBy(session => session.Created ?? DateTimeOffset.MinValue)?.Id,
-            };
-
-        var askId = chain.Select(quest => AskWords.AskOf(quest.From)).FirstOrDefault(id => id is not null);
-        var (ask, askUnread) = askId is null ? (null, null) : await reads.AskAsync(askId).ConfigureAwait(false);
-        var sessionIds = new HashSet<string>(mine.Select(session => session.Id), StringComparer.OrdinalIgnoreCase);
-
-        // The work's newest tree here that still stands: where both gates read the commit that would land, as a landing door does.
-        var work = new HashSet<string>(part.Where(quest => quest.SetUpIn is null).Select(quest => quest.Id), StringComparer.OrdinalIgnoreCase);
-        var standing = mine
-            .Where(session => session.Quest is { } quest && work.Contains(quest) && !session.Teammate && session.Tree is { Length: > 0 })
-            .OrderBy(session => session.Created ?? DateTimeOffset.MinValue)
-            .LastOrDefault(session => reads.Records.Stands(session.Tree!));
-        var review = await ReviewAsync(chain, repository, ask, askUnread, standing?.Tree, reads, process).ConfigureAwait(false);
-        var trees = new SessionTrees(sources.Home);
-        var workflow = process.Named && standing is not null
-            ? await trees.WorkflowAsync(standing.Tree!, process, standing.Id, reads.Ct).ConfigureAwait(false) : null;
-
-        // The second opinion's gate as every landing door reads it, through this same process. With no tree here it cannot be read.
-        OpinionGateState? opinion = null;
-        if (standing is not null && current.Steps.Any(step => step.Kind == WorkflowKinds.Opinion))
+        return new WorkflowRun(repository, workspace, current, [.. part.Select(quest => quest.Id)], [])
         {
-            opinion = await trees.OpinionAsync(
-                standing.Tree!, repository, workspace, standing.Quest, standing.Id, reads.World, review, OpinionRules.Landing, reads.Ct, process).ConfigureAwait(false);
-        }
-        else if (process.OpinionCannot is { } cannot)
-        {
-            opinion = new OpinionGateState(OpinionGateStates.CannotStart, repository) { Rule = process.Opinion, Problem = cannot };
-        }
-
-        var facts = new WorkflowRunFacts(repository, current)
-        {
-            Quests = part,
-            // FABRIC-WORKFLOW2d: the whole chain, where a submission's next step another repository holds is read to seal it (§E5).
-            Chain = chain,
-            Sessions = mine,
-            GoAheads = ask?.GoAheads ?? [],
-            Review = review,
-            Opinion = opinion,
-            Process = process,
-            WorkflowGate = workflow,
-            Requests = RequestsOf(part, mine, sessions, reads),
-            Landings = [.. reads.Landings.Where(entry => sessionIds.Any(id => entry.Names(id) && Counts(id, entry.AcceptedAt(id))))],
-            Accepted = reads.Records.Acceptances(mine)
-                .Where(pair => Counts(pair.Key, pair.Value))
-                .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase),
-            Brought = TogetherInclusion.All(sources.Home),
-            AutoLandings = [.. reads.AutoLandings.Where(entry => sessionIds.Contains(entry.Session))],
+            Process = process, Problem = process.Problem ?? process.Unread ?? WorkflowProcess.NoWorkflow(repository),
+            Session = mine.MaxBy(session => session.Created ?? DateTimeOffset.MinValue)?.Id,
         };
-        return WorkflowRuns.Derive(facts, workspace, askId);
     }
 
     /// <summary>
@@ -327,14 +263,13 @@ public static class WorkflowRunReader
         var newest = line[^1];
         var named = sources.WorkspaceOf(repository);
         var workspace = RemoteTarget.Workspace(named);
-        var current = WorkflowCurrent.Derive(sources.Config, repository, named, sources.Plugins);
         var process = WorkflowProcesses.Read(sources.Home, sources.Config, repository, named, run);
-        current = WorkflowRunGraph.Read(process, current, sources.Plugins);
-        if (process.Problem is not null || process.Unread is not null)
+        var current = new CurrentWorkflow(WorkflowSteps.StartHolds(sources.Plugins), [], process.Binding?.Digest ?? "unread");
+        if (process.Problem is not null || process.Unread is not null || process is not { Graph: { } graph, BoundRun: { } bound })
         {
             return new WorkflowRun(repository, workspace, current, [], [])
             {
-                Process = process, Problem = process.Problem ?? process.Unread, Session = newest.Id, ChatRun = run,
+                Process = process, Problem = process.Problem ?? process.Unread ?? WorkflowProcess.NoWorkflow(repository), Session = newest.Id, ChatRun = run,
             };
         }
 
@@ -350,15 +285,10 @@ public static class WorkflowRunReader
             ? new ReviewGateState(ReviewStates.None, new ReviewDecision(ReviewLevels.Nothing, null) { Repository = repository })
             : await ReviewGate.ReadAsync(reads.World, sources.Config, tree, repository, workspace, null, reads.Ct, process, tip.Head, run, sources.Home, newest.Id)
                 .ConfigureAwait(false);
-        var opinion = tip is not null && current.Steps.Any(step => step.Kind == WorkflowKinds.Opinion)
-            ? await trees.OpinionAsync(tree, repository, workspace, null, newest.Id, reads.World, review, OpinionRules.Landing, reads.Ct, process, tip.Head, run)
-                .ConfigureAwait(false)
-            : null;
         var facts = new WorkflowRunFacts(repository, current)
         {
             Sessions = line,
             Review = review,
-            Opinion = opinion,
             Process = process,
             WorkflowGate = workflow,
             Landings = [.. reads.Landings.Where(entry => ids.Any(entry.Names))],
@@ -366,18 +296,13 @@ public static class WorkflowRunReader
             Chat = new ChatRunFacts(run) { Tip = tip?.Head, Beyond = tip?.Beyond, Between = reads.Records.Between(newest.Id) },
         };
         // CHATFLOW1f: a run bound to a graph version is drawn from its record, as a quest's is, its subject the candidate a press submitted.
-        if (process is { Graph: { } graph, BoundRun: { } bound })
-        {
-            var record = reads.Records.Record(RunUnits.IdOf(bound));
-            return WorkflowGraphRuns.Derive(
-                new WorkflowGraphRunFacts(facts, bound, graph, record)
-                {
-                    Branches = reads.Branches, Failures = FailedGates(sources.Home, bound, graph, record), Integration = IntegrationOf(sources.Home, graph, record),
-                },
-                workspace) with { Session = newest.Id, ChatRun = run };
-        }
-
-        return WorkflowRuns.Derive(facts, workspace);
+        var record = reads.Records.Record(RunUnits.IdOf(bound));
+        return WorkflowGraphRuns.Derive(
+            new WorkflowGraphRunFacts(facts, bound, graph, record)
+            {
+                Branches = reads.Branches, Failures = FailedGates(sources.Home, bound, graph, record), Integration = IntegrationOf(sources.Home, graph, record),
+            },
+            workspace) with { Session = newest.Id, ChatRun = run };
     }
 
     /// <summary>

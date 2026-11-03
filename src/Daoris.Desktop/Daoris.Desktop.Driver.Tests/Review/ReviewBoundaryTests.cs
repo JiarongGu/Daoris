@@ -47,7 +47,7 @@ public sealed class ReviewBoundaryTests
     public void A_run_takes_its_checks_from_the_work_step_of_a_steps_version_and_nothing_from_current()
     {
         var config = DriverConfig.Empty.WithSessionChecks("web-app", SessionChecks.Light);
-        var current = WorkflowProcess.Current(config, "web-app", null);
+        var current = WorkflowProcess.Declared(config, "web-app", null);
         var named = current with { Binding = new WorkflowRunBinding("q2", "web-app", "default", "docs", "repository", DateTimeOffset.UnixEpoch) { Version = 1 } };
         var heavy = named with { Steps = [new("work", WorkflowKinds.Work, [new("checks", SessionChecks.HeavyAtEnd)])] };
 
@@ -62,7 +62,7 @@ public sealed class ReviewBoundaryTests
     [Fact]
     public void The_landing_gate_says_the_run_s_part_and_the_graph_s_in_its_plan_and_keeps_their_lines_in_the_log()
     {
-        var current = WorkflowProcess.Current(DriverConfig.Empty, "web-app", null);
+        var current = WorkflowProcess.Declared(DriverConfig.Empty, "web-app", null);
         var named = current with { Binding = new WorkflowRunBinding("q2", "web-app", "default", "docs", "repository", DateTimeOffset.UnixEpoch) { Version = 1 } };
         var cannot = new WorkflowGateState(WorkflowGateStates.CannotStart, named);
         var open = LandingGate.Open("web-app");
