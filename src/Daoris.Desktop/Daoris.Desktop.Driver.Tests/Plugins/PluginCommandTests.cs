@@ -160,7 +160,7 @@ public sealed class PluginCommandTests : IDisposable
         Assert.Contains("daoris-driver plugins new|try", PluginCommand.Usage, StringComparison.Ordinal);
         // CONFIRMWAIT1b (the confirm-wait design §4.1): every change waits on its Confirm, and the usage says for how long.
         Assert.Contains(InstanceDoor.WaitUsage, PluginCommand.Usage, StringComparison.Ordinal);
-        Assert.Contains("plugin [list | add <folder>", DriverCommand.Usage, StringComparison.Ordinal);
+        Assert.Contains("plugin list  ·  plugin add <folder>", DriverCommand.Usage, StringComparison.Ordinal);
     }
 
     /// <summary>Every file under the root and its bytes, so a refusal can be held to have changed nothing.</summary>

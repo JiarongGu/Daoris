@@ -426,7 +426,7 @@ public sealed class AgentsRoutes(DriverContext context)
         {
             "unpin" => Unpin(harness),
             // 🔴 The credential profiles, from a SCREEN (DEPLOY3). They existed only as
-            // `daoris agent profile add|remove|default`, so the Machine view could list a
+            // `daoris agent account add|remove|default`, so the Machine view could list a
             // profile and log into one and never make one — D50 violated in the direction
             // nothing tests, since the rule is written "whatever a screen can set, a
             // terminal can" and the converse had no check.
@@ -581,7 +581,7 @@ public sealed class AgentsRoutes(DriverContext context)
     /// <remarks>
     /// Idempotent, exactly as the CLI verb is — asking for one that exists is an answer, not a
     /// failure. The page makes accounts by signing in (<c>login-new</c>, D66 §3); this is the
-    /// bridge's half of <c>daoris agent profile add</c>, for a name a person picks before signing in.
+    /// bridge's half of <c>daoris agent account add</c>, for a name a person picks before signing in.
     /// </remarks>
     private int ProfileAdd(string harness, IpcRequest request)
     {
@@ -597,7 +597,7 @@ public sealed class AgentsRoutes(DriverContext context)
     /// delete the account. The old rule un-pointed it and kept any directory the tool would not
     /// call signed out, so a removed account stayed listed and signed in — the leftover the person
     /// pressed the button to be rid of. The page asks twice before it sends this; the terminal twin
-    /// is <c>daoris agent profile remove</c>.</para>
+    /// is <c>daoris agent account remove</c>.</para>
     ///
     /// <para>Only ever a profile: the tool's own configuration home is not under Daoris's directory,
     /// and no name reaches it.</para>

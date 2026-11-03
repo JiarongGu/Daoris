@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// <remarks>
 /// <para>🔴 <b>There was nowhere to manage credentials.</b> The Machine view could LIST a harness's
 /// profiles and log into one, and there was no way to make, un-point or choose one. Those three
-/// verbs existed only as `daoris agent profile add|remove|default` (then `daoris harness`).</para>
+/// verbs existed only as `daoris agent account add|remove|default` (then `daoris harness`).</para>
 ///
 /// <para><b>That is D50 violated in the direction nothing checks.</b> The rule is written "whatever
 /// a screen can set, a terminal can", and the converse had no test anywhere — so a capability

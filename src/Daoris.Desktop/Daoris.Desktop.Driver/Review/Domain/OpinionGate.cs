@@ -390,7 +390,7 @@ public static class OpinionGate
 
     /// <summary>The terminal's verb for a door, naming the session where the state knows it.</summary>
     private static string Verb(OpinionGateState gate, string verb, string? words = null) =>
-        $"`daoris-driver opinion {verb} {gate.Session ?? "<session>"}{(words is null ? "" : $" {words}")}`";
+        $"`daoris session opinion {verb} {gate.Session ?? "<session>"}{(words is null ? "" : $" {words}")}`";
 
     /// <summary>
     /// What the gate says (design §8.5's table): the state, why, and the terminal's doors that move it, where it holds; what let
@@ -419,7 +419,7 @@ public static class OpinionGate
             OpinionGateStates.Reading =>
                 $"Waits for a second opinion: being read by {who}, {LabelSaid(gate.Opinion!.Label)}"
                 + (gate.Opinion.Minutes is { } minutes ? string.Create(CultureInfo.InvariantCulture, $", for at most {minutes} minutes") : "")
-                + $". `daoris-driver opinion stop {gate.Opinion.Id}` stops it.",
+                + $". `daoris session opinion stop {gate.Opinion.Id}` stops it.",
             OpinionGateStates.WithSession =>
                 $"Waits for a second opinion: the working session is answering {Plural(gate.Opinion!.Findings!.Count, "finding")} by {who}.",
             OpinionGateStates.ReadAgain => $"Waits for a second opinion: read again by {who}, the commits made in answer.",

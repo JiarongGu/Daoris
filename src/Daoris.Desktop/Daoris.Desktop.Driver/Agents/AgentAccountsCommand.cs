@@ -87,7 +87,7 @@ internal static class AgentAccountsCommand
         var home = HarnessSettings.HomeOf(path);
         // Read as the set (POOL1b, the account-pool design §2.4), so a file an older build wrote is the set here too.
         var settings = HarnessSettings.LoadSet(path, AgentsCommand.Agents(world, path));
-        var context = new Context(args, world, path, home, settings, $"profile {action}");
+        var context = new Context(args, world, path, home, settings, $"account {action}");
 
         switch (action)
         {
@@ -209,7 +209,7 @@ internal static class AgentAccountsCommand
                 at.Say(existed
                     ? $"{Prefix}: `{owner}` profile `{profile}` already exists — {where}"
                     : $"{Prefix}: `{owner}` profile `{profile}` — {where}");
-                at.Say($"  It is empty until you log into it: `daoris agent login {owner} --profile {ShellWord.Of(profile, ShellWord.Account)}`.");
+                at.Say($"  It is empty until you log into it: `daoris agent login {owner} --account {ShellWord.Of(profile, ShellWord.Account)}`.");
                 return 0;
             });
     }
@@ -274,8 +274,8 @@ internal static class AgentAccountsCommand
         {
             if (named.Length > 0)
             {
-                throw new AgentWords($"`--clear` names no account — `daoris agent profile order {owner} --clear` returns the order to the "
-                    + $"accounts' ids, and `daoris agent profile order {owner} {ShellWord.Words(named, ShellWord.Account)}` puts those first.");
+                throw new AgentWords($"`--clear` names no account — `daoris agent account order {owner} --clear` returns the order to the "
+                    + $"accounts' ids, and `daoris agent account order {owner} {ShellWord.Words(named, ShellWord.Account)}` puts those first.");
             }
 
             return new AgentPress(at.Verb, AgentRoutes.Account, at.Isolated, Payload([]),
@@ -298,7 +298,7 @@ internal static class AgentAccountsCommand
 
         if (named.Length == 0)
         {
-            throw new AgentWords($"`agent profile order` needs the accounts to put first, in order, or --clear — e.g. `daoris agent profile "
+            throw new AgentWords($"`agent account order` needs the accounts to put first, in order, or --clear — e.g. `daoris agent account "
                 + $"order {owner} account-2`.");
         }
 
@@ -335,13 +335,13 @@ internal static class AgentAccountsCommand
         var account = at.Operand(3) is { } given ? at.Account(owner, given) : null;
         if (own && account is not null)
         {
-            throw new AgentWords($"`--own` names no account — `daoris agent profile ready {owner} --own` is the tool's own sign-in, and "
-                + $"`daoris agent profile ready {owner} {ShellWord.Of(account, ShellWord.Account)}` is that account.");
+            throw new AgentWords($"`--own` names no account — `daoris agent account ready {owner} --own` is the tool's own sign-in, and "
+                + $"`daoris agent account ready {owner} {ShellWord.Of(account, ShellWord.Account)}` is that account.");
         }
 
         if (!own && account is null)
         {
-            throw new AgentWords($"`agent profile ready` needs <agent> <profile>|--own — e.g. `daoris agent profile ready {owner} account-1`, "
+            throw new AgentWords($"`agent account ready` needs <agent> <profile>|--own — e.g. `daoris agent account ready {owner} account-1`, "
                 + "or `--own` for the tool's own sign-in.");
         }
 
@@ -422,14 +422,14 @@ internal static class AgentAccountsCommand
         at.NoWorkspace();
         if (at.Args.Skip(2).FirstOrDefault(word => word.StartsWith("--", StringComparison.Ordinal) && !UseFlags.Contains(word)) is { } stray)
         {
-            throw new AgentWords($"`{stray}` is not a flag of `agent profile use` — it takes {UseShape}.");
+            throw new AgentWords($"`{stray}` is not a flag of `agent account use` — it takes {UseShape}.");
         }
 
         string[] chosen = [.. AgentsCommand.Operands(at.Args, AgentsCommand.Valued).Skip(3)];
         string[] modes = [.. RotationUse.Modes.Select(mode => $"{mode} ({UseWords[mode].Name})")];
         if (chosen.Length > 1)
         {
-            throw new AgentWords($"`agent profile use` takes one way to use accounts, and `{string.Join(' ', chosen)}` names more — {Either(modes)}.");
+            throw new AgentWords($"`agent account use` takes one way to use accounts, and `{string.Join(' ', chosen)}` names more — {Either(modes)}.");
         }
 
         if (chosen.Length == 1 && !RotationUse.Modes.Contains(chosen[0], StringComparer.Ordinal))
@@ -450,7 +450,7 @@ internal static class AgentAccountsCommand
         var clear = at.Args.Contains("--clear");
         if (clear && named)
         {
-            throw new AgentWords($"`--clear` sets no setting beside it — `daoris agent profile use {owner} --clear` returns the settings to "
+            throw new AgentWords($"`--clear` sets no setting beside it — `daoris agent account use {owner} --clear` returns the settings to "
                 + "today's defaults, and the setting is set on its own.");
         }
 
@@ -815,7 +815,7 @@ internal static class AgentAccountsCommand
     /// <summary>The line a cooling account is given (D125 §2.4): until when, how long that is, why, and how to try it now.</summary>
     internal static string CoolingLine(CoolingEntry entry, DateTimeOffset now, TimeZoneInfo zone)
     {
-        var ready = $"`daoris agent profile ready {entry.Agent} {(entry.Account is null ? "--own" : ShellWord.Of(entry.Account, ShellWord.Account))}`";
+        var ready = $"`daoris agent account ready {entry.Agent} {(entry.Account is null ? "--own" : ShellWord.Of(entry.Account, ShellWord.Account))}`";
         return $"cooling until {CoolingWords.When(entry.Until, zone)}, in {Span(entry.Until - now)} — {CoolingWords.Why(entry)}; {ready} tries it now";
     }
 
@@ -876,7 +876,7 @@ internal static class AgentAccountsCommand
         var owner = at.Owner();
         var account = at.Account(owner, at.Bare(3, "<agent> <account> <name>"));
         var wanted = at.Operand(4) ?? throw new AgentWords(
-            $"`agent profile rename` needs <agent> <account> <name> — e.g. `daoris agent profile rename {owner} "
+            $"`agent account rename` needs <agent> <account> <name> — e.g. `daoris agent account rename {owner} "
             + $"{ShellWord.Of(account, ShellWord.Account)} work`; naming it `{account}` gives it none.");
         var accounts = HarnessSettings.Profiles(at.Home, owner);
         var names = AccountNames.Of(at.Home, owner);

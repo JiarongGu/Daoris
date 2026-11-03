@@ -284,7 +284,7 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
         {
             return (new ResolvedOpinion(new OpinionRule(named ?? [], on, required, Recheck: recheck), declared.Opinion?.Source ?? OpinionSource.Repository),
                 $"its second opinion `{id}` reads with reviewers `{repository}` declares, and it declares none: "
-                + $"`daoris driver opinion {repository} --reviewers <adapter,adapter>` declares them.");
+                + $"`daoris place opinion {repository} --agents <adapter,adapter>` declares them.");
         }
 
         string? cannot = null;
@@ -292,7 +292,7 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
         if (beyond.Count > 0)
         {
             cannot = $"its second opinion `{id}` names {And(beyond)}, which `{repository}` does not declare among its reviewers "
-                + $"({And(listed.Rule.Reviewers)}): a step chooses among them, and `daoris driver opinion {repository} --reviewers "
+                + $"({And(listed.Rule.Reviewers)}): a step chooses among them, and `daoris place opinion {repository} --agents "
                 + "<adapter,adapter>` declares more.";
         }
 

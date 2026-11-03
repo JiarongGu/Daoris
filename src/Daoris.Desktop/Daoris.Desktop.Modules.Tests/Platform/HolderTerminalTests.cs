@@ -85,14 +85,22 @@ public sealed class HolderTerminalTests : Bridge
         Assert.Equal(
             [
                 "--setting-sources", "user", "--settings", "{\"disableAllHooks\":true}", "--strict-mcp-config", "--mcp-config", "{\"mcpServers\":{}}",
-                "--allowedTools", "Read", "Grep", "Glob", "Bash(daoris-driver sessions supervise:*)", "Bash(daoris-driver steward:*)",
-                "Bash(daoris-driver roles brief)", "Bash(daoris-driver sessions --json:*)", "Bash(daoris-driver notices:*)",
-                "Bash(daoris-driver history:*)",
-                "You hold a role Daoris appointed. Run `daoris-driver roles brief` and do as it says.",
+                "--allowedTools", "Read", "Grep", "Glob", "Bash(daoris session supervise:*)", "Bash(daoris steward:*)",
+                "Bash(daoris role brief)", "Bash(daoris session list --json:*)", "Bash(daoris notices:*)",
+                "Bash(daoris history:*)",
+                "You hold a role Daoris appointed. Run `daoris role brief` and do as it says.",
             ],
             HolderTerminal.SessionArguments);
         Assert.Equal(HolderTerminal.InitialPrompt, HolderTerminal.SessionArguments[^1]);
-        Assert.DoesNotContain(HolderTerminal.SessionArguments, each => each.StartsWith("Bash(daoris-driver sessions:", StringComparison.Ordinal));
+        // ONEWAY1ai-ii: as narrow as before, in the tree's words: no whole group, and each allowed form one the tree runs as the role's.
+        Assert.DoesNotContain(HolderTerminal.SessionArguments, each => each.StartsWith("Bash(daoris session:", StringComparison.Ordinal)
+            || each.Contains("daoris-driver", StringComparison.Ordinal));
+        foreach (var allowed in HolderTerminal.SessionArguments.Where(each => each.StartsWith("Bash(daoris ", StringComparison.Ordinal)))
+        {
+            var words = allowed["Bash(daoris ".Length..].TrimEnd(')').Replace(":*", "", StringComparison.Ordinal).Split(' ');
+            var route = CommandTree.Route(words);
+            Assert.True(route.Kind == TreeRouteKind.Run && RoleTerminal.Runs(route.Words), $"{allowed} is no role's command the tree runs");
+        }
         // The prompt names no key, no appointment and no particular role.
         Assert.DoesNotContain(HolderKey.Variable, HolderTerminal.InitialPrompt, StringComparison.Ordinal);
         Assert.DoesNotContain(Roles.Supervisor, HolderTerminal.InitialPrompt, StringComparison.Ordinal);

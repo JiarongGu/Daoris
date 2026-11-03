@@ -201,7 +201,7 @@ public sealed class StartInSyncTickTests : IDisposable
         var install = Path.Combine(_home, "install");
         var bin = Path.Combine([install, .. Tools.InstallBinLayout]);
         Directory.CreateDirectory(bin);
-        File.WriteAllText(Path.Combine(bin, "daoris-driver.cmd"), "");
+        File.WriteAllText(Path.Combine(bin, "daoris.cmd"), "");
         var home = Path.Combine(install, DaorisHome.InstallData);
         Directory.CreateDirectory(home);
         File.WriteAllText(Path.Combine(install, DaorisHome.InstallMarker), "# Daoris — installed desktop\n");

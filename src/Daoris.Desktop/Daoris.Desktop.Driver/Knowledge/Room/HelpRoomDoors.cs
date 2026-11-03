@@ -107,9 +107,9 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "and how long a pass may take (never on unless you name a reviewer). Each door then says what the gate does: "
             + KnowledgeReviews.Current.GateWords,
             Setup + "Line and landing → Second opinion before landing; a workspace's, Repositories → the workspace's page → Setup → Defaults",
-            "`daoris driver opinion <repository> --reviewers <adapter,adapter> [--on landing,steps] [--required|--not-required] "
+            "`daoris place opinion <repository> --agents <adapter,adapter> [--on landing,steps] [--required|--not-required] "
             + "[--verify|--no-verify] [--minutes <n>] [--recheck|--no-recheck]` (`--workspace <name>` for a whole workspace), "
-            + "`daoris driver opinion <repository> none|--clear`"),
+            + "`daoris place opinion <repository> none|--clear`"),
         // WORKFLOW1c4: the workflow a place follows drawn as it stands (WORKFLOW1a's verb, WORKFLOW1b's tab, D157 point 7); a place
         // still on Current is drawn from its old landing rule (D227). Exempt from Ask Daoris, since it reads (HelpCoverageTests'
         // `workflow show`); a change is the workflow's, in the editor, or the Setup row a step opens for Current.
@@ -232,18 +232,18 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         // sign-in reaches the account named, never a new folder; a new account joins the lists named at its end. CODEXLOGIN1:
         // Codex's device code, in place of its browser, by `--device-code`.
         ("sign an agent in, or add an account", Agent + "Accounts",
-            "`daoris agent login <agent> --profile <account>` (an account that is here, never a new one), "
+            "`daoris agent login <agent> --account <account>` (an account that is here, never a new one), "
             + "`daoris agent login <agent> --new [--name <name>]` (it joins Daoris's accounts, which serve every workspace), "
             + "either with `--device-code` for Codex's device code in place of its browser"),
         // ACCT2: an account's name is the person's, its id the folder's. UX7b builds the screen's halves. ACCT1's join and HELP10's
         // default left with POOL1b (D197 point 6): Daoris's accounts are one set, and its order says where starts begin.
         ("name an account: its id stays, so every list, default and record keeps it", "(no screen yet)",
-            "`daoris agent profile rename <agent> <account> <name>`"),
+            "`daoris agent account rename <agent> <account> <name>`"),
         // TOOL4e (D125 §6): the order and *Try now*, the terminal's doors; TOOL4g gave them the screen, and TOOL4l-b Ask Daoris's
         // `order` and `ready` (HelpCoverageTests); one set's since POOL1b.
         ("choose the order of Daoris's accounts, one set for every workspace: where starts begin one by one, and the last tie "
             + "otherwise", Agent + "How accounts are used → Use, up and down",
-            "`daoris agent profile order <agent> <profile>…|--clear` (the accounts named first, the rest after; `--clear` "
+            "`daoris agent account order <agent> <profile>…|--clear` (the accounts named first, the rest after; `--clear` "
             + "returns to the ids' order)"),
         // TOOL6a (D130 §16.6): how the accounts are used, the terminal's door; TOOL4g gave it the screen's controls, and judges Ask
         // Daoris's `use` door (`use`, `keep`, since SWITCH1d `switch` and `curve`), listed since TOOL4l-b; one set's since POOL1b.
@@ -251,11 +251,11 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "in order (`order`), one kept for conversations, and when to switch accounts, by Daoris's usage curve, your own, "
             + "or not while a session runs",
             Agent + "How accounts are used → Use accounts, Keep for conversations, Switch accounts",
-            "`daoris agent profile use <agent> [goal|order] [--keep <account>|--no-keep] [--switch smart|curve|off] "
+            "`daoris agent account use <agent> [goal|order] [--keep <account>|--no-keep] [--switch smart|curve|off] "
             + "[--curve <window>=<elapsed>:<used>,…] [--no-curve]` (no flag prints them; `--clear` returns "
             + "to today's defaults)"),
         ("end an account's cool-off now, after its agent hit a limit", Agent + "the account's Try now",
-            "`daoris agent profile ready <agent> <profile>|--own` (`--own` only ends an old cool-off of the tool's own sign-in, which Daoris no longer starts sessions in)"),
+            "`daoris agent account ready <agent> <profile>|--own` (`--own` only ends an old cool-off of the tool's own sign-in, which Daoris no longer starts sessions in)"),
         // HELP6: the doors built since, which the helper now proposes too.
         ("update an agent, or pin it to one version", Agent + "Ways in → Update, Pin a version",
             "`daoris agent update <agent>`, `daoris agent pin <agent> <version>`"),
@@ -385,19 +385,19 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "Sessions → the session's *Workflow* view, *Ask for changes…* under the review",
             "`daoris-driver workflow changes <run> <node> \"…\"`"),
         // XAGENT1f4 (D155 point 10, design §8.5, §9): the person's presses at the second opinion's gate, the terminal's
-        // `daoris-driver opinion` and the screen's (XAGENT1g). Each is exempt from Ask Daoris (HelpCoverageTests): a pass spends an
+        // `daoris session opinion` and the screen's (XAGENT1g). Each is exempt from Ask Daoris (HelpCoverageTests): a pass spends an
         // account at the person's choice and a stop is theirs, and going on, or reading it themselves, is their judgement (D110).
         ("ask another agent to read a session's work now, again, or after it could not, or the same agent in a fresh "
             + "conversation, which is never an independent reading; see where its second opinion stands; or stop a reading, which "
             + "then gives no opinion (Ask Daoris never proposes these: a pass spends an account at your choice, and a stop is yours)",
             "Sessions → the session's page → Second opinion: *Ask now*, *Ask again*, *Try again*, *Ask the same agent, fresh*, *Stop…*",
-            "`daoris-driver opinion ask <session> [--reviewer <adapter>] [--same-agent] [\"…\"]`, "
-            + "`daoris-driver opinion show <session|opinion>`, `daoris-driver opinion stop <opinion>`"),
+            "`daoris session opinion ask <session> [--agent <adapter>] [--same-agent] [\"…\"]`, "
+            + "`daoris session opinion show <session|opinion>`, `daoris session opinion stop <opinion>`"),
         ("answer a second opinion's gate yourself: go on without a settled one, what is unsettled staying so, or say you looked "
             + "at the work yourself in place of another agent's reading; each is kept with your words at the commit it was given "
             + "at, and nothing lands by it (Ask Daoris never proposes these: each is your judgement)",
             "Sessions → the session's page → Second opinion, and What needs you: *Go on anyway…*, *I looked myself…*",
-            "`daoris-driver opinion anyway <session> [\"…\"]`, `daoris-driver opinion myself <session> [\"…\"]`"),
+            "`daoris session opinion anyway <session> [\"…\"]`, `daoris session opinion myself <session> [\"…\"]`"),
         ("answer what waits on the person", "Sessions, and what needs you", "`daoris-driver answer`"),
         // MSG1e (D137 §5.4): exempt from Ask Daoris, since the words are the person's (D133 §1); the room names both doors.
         ("say something to a session of this machine's, running, parked or ended: it reads your words at its next step or when "

@@ -298,8 +298,8 @@ public sealed class AccountRotationTickTests : IDisposable
         var selection = await roster.SelectAsync("stub", Config(signedOut: "account-1,account-2"), "default", null);
 
         Assert.False(selection.Allowed);
-        Assert.Contains("`daoris agent login stub --profile account-1`", selection.Refusal);
-        Assert.Contains("`daoris agent login stub --profile account-2`", selection.Refusal);
+        Assert.Contains("`daoris agent login stub --account account-1`", selection.Refusal);
+        Assert.Contains("`daoris agent login stub --account account-2`", selection.Refusal);
         Assert.Equal(["account-1", "account-2"], selection.SignedOut!.Accounts);
         Assert.Null(selection.Cooling);
     }

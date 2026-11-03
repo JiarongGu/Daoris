@@ -63,7 +63,7 @@ public sealed class DriverHostTests : IDisposable
         var (code, said) = await RunAsync(service, "watch");
 
         Assert.Equal(2, code);
-        Assert.Contains("no verb `watch`", said);
+        Assert.Contains("no command `watch`", said);
         Assert.Equal(0, service.Requests);
     }
 
@@ -110,7 +110,7 @@ public sealed class DriverHostTests : IDisposable
         await using var service = CountingService.Start();
         Plant("desktop", int.MaxValue, OurStart());
 
-        var (_, said) = await RunAsync(service, "--once");
+        var (_, said) = await RunAsync(service, "drive", "--once");
 
         Assert.True(service.Requests > 0, said);
         Assert.False(File.Exists(LockFile), "the loop kept the home after it ended");
@@ -126,13 +126,13 @@ public sealed class DriverHostTests : IDisposable
         await using var service = CountingService.Start();
         var package = Path.Combine(_home, "no-such-plugin.nupkg");
 
-        await RunAsync(service, "plugins", "install", package);
+        await RunAsync(service, "plugin", "install", package);
         Assert.False(File.Exists(LockFile), "the verb kept the home after it ended");
         Assert.True(File.Exists(HomeIdentity.PathIn(_home)), "the lease records the home's id, minted where it had none");
 
         Plant("desktop", Environment.ProcessId, OurStart());
         var planted = File.ReadAllText(LockFile);
-        await RunAsync(service, "plugins", "install", package);
+        await RunAsync(service, "plugin", "install", package);
         Assert.Equal(planted, File.ReadAllText(LockFile));
     }
 
@@ -151,7 +151,7 @@ public sealed class DriverHostTests : IDisposable
         File.WriteAllText(config, "{}");
         var named = new Dictionary<string, string> { [DriverConfig.PathVariable] = config };
 
-        var (code, said) = await RunAsync(service, named, "access", "permissions=asking");
+        var (code, said) = await RunAsync(service, named, "place", "access", "permissions=asking");
         Assert.True(code == 0, said);
         Assert.Contains("asking", File.ReadAllText(config));
         Assert.True(File.Exists(HomeIdentity.PathIn(_elsewhere)), $"the verb did not hold the home the loop drives: {said}");
@@ -162,7 +162,7 @@ public sealed class DriverHostTests : IDisposable
         // The loop on this config, as its lease says it: the verb acts beside it, holding nothing, and the loop meets that one lease.
         Plant(LeaseIn(_elsewhere), "headless", Environment.ProcessId, OurStart());
         var planted = File.ReadAllText(LeaseIn(_elsewhere));
-        (code, said) = await RunAsync(service, named, "access", "permissions=auto");
+        (code, said) = await RunAsync(service, named, "place", "access", "permissions=auto");
         Assert.True(code == 0, said);
         Assert.Contains("auto", File.ReadAllText(config));
         Assert.Equal(planted, File.ReadAllText(LeaseIn(_elsewhere)));

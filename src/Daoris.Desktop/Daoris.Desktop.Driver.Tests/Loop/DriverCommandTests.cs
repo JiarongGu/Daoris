@@ -4,9 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// What `daoris-driver` was asked for (DRV8a, D104). Run with no verb to read its usage, it started a
+/// What the desktop's program was asked for (DRV8a, D104). Run with no verb to read its usage, it started a
 /// headless loop on the install's home, and that loop took a quest two seconds before the desktop's
-/// own. The loop is asked for by its verb, and everything else is the usage.
+/// own. The loop is asked for by its verb, `drive`, and everything else is the usage.
 /// </summary>
 public sealed class DriverCommandTests
 {
@@ -18,16 +18,13 @@ public sealed class DriverCommandTests
         Assert.Null(problem);
     }
 
-    /// <summary>The loop by its verb, in each of its modes, and the spelling scripts already use.</summary>
+    /// <summary>The loop by its verb, in each of its modes; a mode flag before it is one spelling too many (ONEWAY1ai-i).</summary>
     [Theory]
     [InlineData(new[] { "drive" }, LoopMode.Watch, false)]
     [InlineData(new[] { "drive", "--once" }, LoopMode.Once, false)]
     [InlineData(new[] { "drive", "--until-idle" }, LoopMode.UntilIdle, false)]
     [InlineData(new[] { "drive", "--share" }, LoopMode.Watch, true)]
     [InlineData(new[] { "drive", "--until-idle", "--share" }, LoopMode.UntilIdle, true)]
-    [InlineData(new[] { "--once" }, LoopMode.Once, false)]
-    [InlineData(new[] { "--until-idle" }, LoopMode.UntilIdle, false)]
-    [InlineData(new[] { "--until-idle", "--share" }, LoopMode.UntilIdle, true)]
     public void The_loop_is_asked_for_by_name(string[] args, LoopMode mode, bool share)
     {
         var asked = DriverCommand.Read(args, out var problem);
@@ -42,7 +39,7 @@ public sealed class DriverCommandTests
     /// </summary>
     [Theory]
     [InlineData(new[] { "drive", "--once", "--quiet-end", "30" }, LoopMode.Once, 30, null)]
-    [InlineData(new[] { "--until-idle", "--quiet-end", "5", "--share" }, LoopMode.UntilIdle, 5, null)]
+    [InlineData(new[] { "drive", "--until-idle", "--quiet-end", "5", "--share" }, LoopMode.UntilIdle, 5, null)]
     [InlineData(new[] { "drive", "--once" }, LoopMode.Once, null, null)]
     [InlineData(new[] { "drive", "--quiet-end", "30" }, null, null, "the watch waits for the person")]
     [InlineData(new[] { "drive", "--once", "--quiet-end", "0" }, null, null, "at least 1")]
@@ -70,6 +67,7 @@ public sealed class DriverCommandTests
     [Theory]
     [InlineData(new[] { "watch" }, "`watch`")]
     [InlineData(new[] { "--share" }, "`--share`")]
+    [InlineData(new[] { "--once" }, "`--once`")]
     [InlineData(new[] { "drive", "--forever" }, "`--forever`")]
     [InlineData(new[] { "drive", "--once", "--until-idle" }, "one")]
     public void Anything_else_asks_for_no_loop_and_says_what_was_not_understood(string[] args, string named)
@@ -93,27 +91,44 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
-    /// The usage a bare invocation prints names every verb the host answers — read from the host's own
-    /// source, so a verb added there without a line here is a failing test rather than a door nobody
-    /// can find.
+    /// ONEWAY1ai-i: every word the host's commands are reached by is one the tree routes a person's words into, read from the host's
+    /// own source, so a command added there with no group is a failing test rather than a door nobody can find; and the usage names
+    /// every group with each of its sub-verbs.
     /// </summary>
     [Fact]
-    public void The_usage_names_every_verb_the_host_answers()
+    public void ONEWAY1ai_i_the_tree_reaches_every_verb_the_host_answers()
     {
         var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
         var verbs = Regex.Matches(program, @"args is \[""(?<verb>[a-z-]+)""")
             .Select(match => match.Groups["verb"].Value)
             .Distinct()
             .ToList();
-
         Assert.True(verbs.Count >= 8, $"expected the host's verbs, found {string.Join(", ", verbs)}");
-        // CONFIRMWAIT1b (the confirm-wait design §4.1, §4.3): `withdraw <id>` beside `result <id>`, and how long a press waits.
-        Assert.Contains("withdraw", verbs);
-        Assert.Contains("\n  --wait <minutes> | --no-wait\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
-        foreach (var verb in verbs.Append("drive"))
+
+        HashSet<string> reached = ["drive"];
+        foreach (var group in CommandTree.Groups)
         {
-            Assert.Contains($"\n  {verb} ", DriverCommand.Usage.ReplaceLineEndings("\n"));
+            foreach (var verb in group.Verbs.Prepend("x"))
+            {
+                var route = CommandTree.Route([group.Name, verb, "x"]);
+                if (route.Kind == TreeRouteKind.Run) reached.Add(route.Words[0]);
+            }
         }
+
+        reached.Add(CommandTree.Route(["brainstorm", "list", "--kind", "meeting"]).Words[0]);
+        Assert.Empty(verbs.Where(verb => !reached.Contains(verb)));
+
+        var usage = DriverCommand.Usage.ReplaceLineEndings("\n");
+        // CONFIRMWAIT1b (the confirm-wait design §4.1, §4.3): how long a press waits.
+        Assert.Contains("\n  --wait <minutes> | --no-wait\n", usage);
+        foreach (var group in CommandTree.Groups)
+        {
+            var lines = DriverCommand.UsageOf(group.Name);
+            Assert.True(lines is not null, $"the usage has no line for `{group.Name}`");
+            foreach (var verb in group.Verbs) Assert.Matches($@"(?<![\w-]){Regex.Escape(verb)}(?![\w-])", lines);
+        }
+
+        Assert.DoesNotContain("daoris-driver", usage);
     }
 
     /// <summary>
@@ -124,7 +139,7 @@ public sealed class DriverCommandTests
     [Fact]
     public void The_usage_names_bringing_a_repository_up_to_date()
     {
-        Assert.Contains("| sync [--repository <name>] [--workspace <name>] [--all] [--yes]", DriverCommand.Usage);
+        Assert.Contains("tree sync [--repository <name>] [--workspace <name>] [--all] [--yes]", DriverCommand.Usage);
         var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "TreesConsole.cs"));
         Assert.Contains("case [\"sync\", ..]", program);
         Assert.Contains("var scope = TreesCommand.Scope(ask);", program);
@@ -148,7 +163,7 @@ public sealed class DriverCommandTests
     [Fact]
     public void The_terminals_clean_up_and_bringing_up_to_date_take_one_workspaces_checkouts()
     {
-        Assert.Contains("| clean [--workspace <name>] [--yes]", DriverCommand.Usage);
+        Assert.Contains("tree clean [--workspace <name>] [--yes]", DriverCommand.Usage);
         Assert.Contains("--workspace takes one workspace's checkouts alone", DriverCommand.Usage);
 
         var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "TreesConsole.cs"));
@@ -177,7 +192,7 @@ public sealed class DriverCommandTests
     [Fact]
     public void The_usage_names_removing_a_sessions_branch_by_the_session_or_the_branch()
     {
-        Assert.Contains("remove <path|session|branch> [--repository <name>] [--force]", DriverCommand.Usage);
+        Assert.Contains("tree remove <path|session|branch> [--repository <name>] [--force]", DriverCommand.Usage);
         var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "TreesConsole.cs"));
         Assert.Contains("remove <path|session|branch> [--repository <name>] [--force]", program);
         Assert.Contains("RemoveSessionBranchAsync(trees, named, Option(args, \"--repository\"), force)", program);
@@ -218,7 +233,8 @@ public sealed class DriverCommandTests
         var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
 
         Assert.Contains("land <session> [--plan] [--branch <name>]", console);
-        Assert.Contains("land <session> [--plan] [--branch <name>]", program);
+        Assert.Contains("tree land <session> [--plan] [--branch <name>]", DriverCommand.Usage);
+        Assert.Contains("TreesConsole.RunAsync(treesArgs, log)", program);
         Assert.Contains("Option(args, \"--branch\")", console);
         Assert.Contains("{ Entered = entered }", console);
         Assert.Contains("`--branch` takes a branch name", console);
@@ -235,7 +251,7 @@ public sealed class DriverCommandTests
     {
         var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "TreesConsole.cs"));
 
-        Assert.Contains("| land --entry <id> | --ask <id> [--leave-out <session>]... [--plan]", DriverCommand.Usage);
+        Assert.Contains("tree land --entry <id> | --ask <id> [--leave-out <session>]... [--plan]", DriverCommand.Usage);
         Assert.Contains("| land --entry <id> | --ask <id> [--leave-out <session>]... [--plan]", console);
         Assert.Contains("case [\"land\", \"--entry\" or \"--ask\", ..]:", console);
         // Before the session's own `land`, which would take `--entry` for a session.
@@ -345,7 +361,7 @@ public sealed class DriverCommandTests
     [Fact]
     public void The_usage_names_installing_a_plugin_package_and_the_host_routes_it_first()
     {
-        Assert.Contains("\n  plugins install <file.nupkg>\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
+        Assert.Contains("\n  plugin install <file.nupkg>\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
         var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
         var install = program.IndexOf("if (args is [\"plugins\", \"install\", .. var installArgs])", StringComparison.Ordinal);
         var plugins = program.IndexOf("if (args is [\"plugins\", .. var pluginsArgs])", StringComparison.Ordinal);
@@ -463,7 +479,7 @@ public sealed class DriverCommandTests
     [Fact]
     public void The_usage_names_registering_from_the_line_and_the_host_routes_it_to_the_librarys_words()
     {
-        Assert.Contains("\n  register [--repository <name>]\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
+        Assert.Contains("\n  repository register [--repository <name>]\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
         Assert.Equal("usage: daoris-driver register [--repository <name>]", RegisterCommand.Usage);
 
         var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
@@ -485,12 +501,12 @@ public sealed class DriverCommandTests
     public void The_usage_names_sessions_and_the_host_routes_it_to_the_librarys_words()
     {
         var usage = DriverCommand.Usage.ReplaceLineEndings("\n");
-        Assert.Contains("\n  sessions [--group you|review|working|later|ended|archived] [--repository <name>] [--json]\n", usage);
-        Assert.Contains("\n  sessions stop <id> [--turn]  ·  sessions finish <id> [--note \"…\"]  ·  sessions decline <id> --reason \"…\"\n", usage);
-        Assert.Contains("\n  sessions archive <id>… | --ended [--yes]  ·  sessions unarchive <id>…  ·  sessions delete <id>\n", usage);
+        Assert.Contains("\n  session list [--group you|review|working|later|ended|archived] [--repository <name>] [--json]\n", usage);
+        Assert.Contains("\n  session stop <id> [--turn]  ·  session finish <id> [--note \"…\"]  ·  session decline <id> --reason \"…\"\n", usage);
+        Assert.Contains("\n  session archive <id>… | --ended [--yes]  ·  session unarchive <id>…  ·  session delete <id>\n", usage);
         Assert.Contains("sessions stop <id> [--turn]", SessionsCommand.Usage);
         // MSG1e (D137 §5.2): what the screen's box says to a session, a terminal says too, at a level (COWORK1a).
-        Assert.Contains("\n  sessions say <id> \"…\" [--file <path>]… [--level ordinary|urgent|now] [--now]\n", usage);
+        Assert.Contains("\n  session say <id> \"…\" [--file <path>]… [--level ordinary|urgent|now] [--now]\n", usage);
         Assert.Contains("sessions say <id> \"…\" [--file <path>]…", SessionsCommand.Usage);
 
         var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
@@ -507,7 +523,7 @@ public sealed class DriverCommandTests
         // MSG1f3 (D50, D137 §2.2): *Start a conversation with these words* at a terminal opens the terminal's own conversation,
         // as `chat` does, through the chat runner's one act the screen's `SESSION_START_FROM` calls, on Chat's order as the screen's press
         // walks it (FOUNDATION1j part iii, the foundation design §2.4's third row), never the machine's adapter.
-        Assert.Contains("\n  sessions start-from <id>\n", usage);
+        Assert.Contains("\n  session start-from <id>\n", usage);
         Assert.Contains("StartFrom = (id, _) => ChatConsole.StartFromAsync(id)", console);
         var chat = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "ChatConsole.cs"));
         Assert.Contains("ActorChoices.NewChat(config)", chat);
@@ -528,7 +544,7 @@ public sealed class DriverCommandTests
         var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
         var log = program.IndexOf("using var log = MachineLog.Open(", StringComparison.Ordinal);
         var check = program.IndexOf("QuestCheckCommand.Asks(questArgs)", StringComparison.Ordinal);
-        var questUsage = program.IndexOf("usage: daoris-driver quest delete <id>", StringComparison.Ordinal);
+        var questUsage = program.IndexOf("usage: daoris quest delete <id>", StringComparison.Ordinal);
         Assert.True(check > log && questUsage > check, $"`quest check` asked for at {check}, the log opened at {log}, the quest's usage at {questUsage}");
         Assert.Contains("QuestCheckConsole.RunAsync(questArgs, log)", program);
         Assert.Contains("quest check <id> [--commit <sha>]", program[questUsage..]);
@@ -550,12 +566,12 @@ public sealed class DriverCommandTests
         // FABRIC-CLOSE1c3: the person's reopen and go-on (QuestReopenCommandTests) are routed the same way, before the quest's usage.
         var reading = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
         var reopen = reading.IndexOf("QuestReopenCommand.Asks(questArgs)", StringComparison.Ordinal);
-        Assert.True(reopen > 0 && reading.IndexOf("usage: daoris-driver quest delete <id>", StringComparison.Ordinal) > reopen);
+        Assert.True(reopen > 0 && reading.IndexOf("usage: daoris quest delete <id>", StringComparison.Ordinal) > reopen);
         Assert.Contains("QuestReopenCommand.RunAsync(reopenAsk, reopenClient, Console.Out)", reading);
 
         var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
         var done = program.IndexOf("QuestDoneCommand.Asks(questArgs)", StringComparison.Ordinal);
-        var questUsage = program.IndexOf("usage: daoris-driver quest delete <id>", StringComparison.Ordinal);
+        var questUsage = program.IndexOf("usage: daoris quest delete <id>", StringComparison.Ordinal);
         Assert.True(done > 0 && questUsage > done, $"`quest done` asked for at {done}, the quest's usage at {questUsage}");
         Assert.Contains("QuestDoneCommand.Read(questArgs, out var doneProblem)", program);
         Assert.Contains("QuestDoneCommand.RunAsync(doneAsk, doneClient, Console.Out)", program);
@@ -574,7 +590,8 @@ public sealed class DriverCommandTests
         var usage = DriverCommand.Usage.ReplaceLineEndings("\n");
         Assert.Contains("\n  history [--workspace <name>] [--json]\n", usage);
         Assert.Contains("\n  history clear --workspace <name> [--yes]\n", usage);
-        Assert.Contains("\n  quest clear <id> [--failed] [--yes]  ·  ask --clear <id> [--yes]\n", usage);
+        Assert.Contains("\n  quest clear <id> [--failed] [--yes]\n", usage);
+        Assert.Contains("\n  ask clear <id> [--yes]\n", usage);
 
         var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
         var history = program.IndexOf("if (args is [\"history\", .. var historyArgs])", StringComparison.Ordinal);
@@ -586,7 +603,7 @@ public sealed class DriverCommandTests
         Assert.True(askClear > 0 && askWords > askClear, $"`ask --clear` asked for at {askClear}, an ask's words at {askWords}");
         Assert.Contains("HistoryConsole.RunAsync(WorkScope.Ask, clearArgs, log)", program);
         var questClear = program.IndexOf("HistoryCommand.Asks(WorkScope.Quest, questArgs)", StringComparison.Ordinal);
-        var questUsage = program.IndexOf("usage: daoris-driver quest delete <id>", StringComparison.Ordinal);
+        var questUsage = program.IndexOf("usage: daoris quest delete <id>", StringComparison.Ordinal);
         Assert.True(questClear > 0 && questUsage > questClear, $"`quest clear` asked for at {questClear}, the quest's usage at {questUsage}");
         Assert.Contains("HistoryConsole.RunAsync(WorkScope.Quest, questArgs, log)", program);
         Assert.Contains("quest clear <id> [--failed] [--yes]", program[questUsage..]);
@@ -692,7 +709,7 @@ public sealed class DriverCommandTests
     [Fact]
     public void The_usage_names_asking_a_landed_branchs_plugin_again_and_the_host_routes_it()
     {
-        Assert.Contains("| state <session|branch> [--repository <name>]", DriverCommand.Usage);
+        Assert.Contains("tree state <session|branch> [--repository <name>]", DriverCommand.Usage);
         var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "TreesConsole.cs"));
         Assert.Contains("case [\"state\", var named, ..]", console);
         Assert.Contains("| state <session|branch> [--repository <name>]", console);

@@ -94,7 +94,7 @@ public sealed class BrainstormsVerb : ChoiceVerb
             if (valued.Contains(token)) at++;
             else if (token.StartsWith("--", StringComparison.Ordinal) && token != "--clear")
             {
-                throw new ChoiceWords($"`{token}` is not a flag `driver brainstorms` takes — {usage}");
+                throw new ChoiceWords($"`{token}` is not a flag `settings brainstorms` takes — {usage}");
             }
             else if (!token.StartsWith("--", StringComparison.Ordinal))
             {

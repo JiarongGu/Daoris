@@ -138,6 +138,6 @@ public static class DshProfile
         return "— this dsh session runs in dsh's own configuration home, which daoris does not write "
                + "to. Two rows ship enabled there that send session material off this machine "
                + $"({string.Join(" and ", OutboundRows)}), and daoris has not turned them off. "
-               + "`daoris agent profile add dsh <name>` makes a home daoris owns, where it does.";
+               + "`daoris agent account add dsh <name>` makes a home daoris owns, where it does.";
     }
 }

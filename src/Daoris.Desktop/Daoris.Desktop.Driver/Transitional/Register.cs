@@ -137,6 +137,18 @@ public static class TransitionalRegister
             Row = "ONEWAY1af",
             Ended = ContinuationAdmissions.Begun,
         },
+        new()
+        {
+            Id = "old-command-names",
+            Kept = "Loop/CommandTree.cs:113, Loop/CommandTree.cs:324, ../Daoris.Desktop.Driver.Host/Program.cs:42",
+            Reaches = "A session an older build briefed with `daoris-driver …` or a nested family (`daoris driver …`), carried on over the update: "
+                + "each old form is refused naming its new one, and the install's `app/bin/daoris-driver` launcher, kept one release, runs nothing "
+                + "and says the same.",
+            Ends = "No open session was started before this install took the command tree's build (ONEWAY1ai), so none was briefed with an old name. "
+                + "The sessions' starts and the install's builds live in two stores, so it never reads as ended here and the row deletes it.",
+            Row = "ONEWAY1af",
+            Ended = Floor,
+        },
     ];
 
     /// <summary>The floor of the builds that reach a home is no file of the home: an entry that ends with it never reads as ended, and its row deletes it.</summary>

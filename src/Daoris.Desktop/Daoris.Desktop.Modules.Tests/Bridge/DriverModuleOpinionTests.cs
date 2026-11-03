@@ -5,7 +5,7 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// The second-opinion rule over the bridge (XAGENT1a, D155 point 3, the second-agent design §2.5): the screens' half of
-/// `daoris driver opinion`, over the same file, for a repository or a workspace; each edit judged by the twin's table in its
+/// `daoris place opinion`, over the same file, for a repository or a workspace; each edit judged by the twin's table in its
 /// words; the state answering what is set as rows, each rule naming the reviewers of the working agent's own family; and the
 /// lines answering what each repository resolves to and from where, which only the driver resolves. Declared only.
 /// </summary>

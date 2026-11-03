@@ -20,7 +20,6 @@ public sealed class InstancePortsTests
     {
         var reading = VerbLeases.Answered["agent"];
 
-        Assert.Same(AgentsCommand.Verbs, reading.Verbs);
         Assert.True(reading.Holds(["rules", "allow", "WebFetch"]));
         Assert.False(reading.Holds(["rules"]));
         string? Named(string name) => name == "DAORIS_HARNESS_CONFIG" ? "wiring.json" : null;
@@ -38,7 +37,6 @@ public sealed class InstancePortsTests
         Assert.True(reading.Holds(["engine", "--clear"]));
         Assert.False(reading.Holds(["engine"]));
         Assert.False(reading.Holds([]));
-        Assert.Null(reading.Verbs);
         Assert.Null(reading.Isolated);
     }
 
@@ -47,7 +45,6 @@ public sealed class InstancePortsTests
     {
         var reading = VerbLeases.Answered["plugin"];
 
-        Assert.Same(PluginCommand.Verbs, reading.Verbs);
         Assert.True(reading.Holds(["add", "D:/work/acme.gate"]));
         Assert.True(reading.Holds(["update", "acme.gate", "--yes"]));
         Assert.False(reading.Holds(["update", "acme.gate"]));
@@ -71,7 +68,6 @@ public sealed class InstancePortsTests
         Assert.False(checks.Holds(["engine"]));
         Assert.All(new[] { heavy, checks }, reading =>
         {
-            Assert.Null(reading.Verbs);
             Assert.Null(reading.Isolated);
         });
     }
@@ -95,7 +91,6 @@ public sealed class InstancePortsTests
         Assert.False(work.Holds([]));
         Assert.All(new[] { workflow, work }, reading =>
         {
-            Assert.Null(reading.Verbs);
             Assert.Null(reading.Isolated);
         });
     }
@@ -111,7 +106,6 @@ public sealed class InstancePortsTests
         Assert.False(git.Holds(["identity", "list"]));
         Assert.False(git.Holds(["identity", "public-key", "work"]));
         Assert.False(git.Holds(["branches"]));
-        Assert.Null(git.Verbs);
         Assert.Null(git.Isolated);
     }
 

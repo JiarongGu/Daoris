@@ -87,8 +87,8 @@ public static class OpinionRules
     /// <c>setting_propose</c>'s copy, held to the shared table's <c>gate</c> rows: the doors' words change together.
     /// </summary>
     public const string Waiting = "Where work here waits for another agent's reading, it lands only once that reading is settled, "
-        + "or once you go on without it, `daoris-driver opinion anyway <session>`, or say you looked yourself, "
-        + "`daoris-driver opinion myself <session>`.";
+        + "or once you go on without it, `daoris session opinion anyway <session>`, or say you looked yourself, "
+        + "`daoris session opinion myself <session>`.";
 
     /// <summary>
     /// Said after the sentences of a rule that reads at <see cref="Steps"/> (XAGENT1f4): the look sits the chain's next step while

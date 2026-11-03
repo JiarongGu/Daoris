@@ -27,8 +27,8 @@ public sealed class HelpSettingTool(IntakeScope? intake = null, HelpProposalBox?
     /// references neither, and held to the table by <c>HelpSettingProposalTests</c>, which reads its <c>gate</c> rows.
     /// </summary>
     private const string OpinionWaiting = "Where work here waits for another agent's reading, it lands only once that reading is "
-        + "settled, or once you go on without it, `daoris-driver opinion anyway <session>`, or say you looked yourself, "
-        + "`daoris-driver opinion myself <session>`.";
+        + "settled, or once you go on without it, `daoris session opinion anyway <session>`, or say you looked yourself, "
+        + "`daoris session opinion myself <session>`.";
 
     /// <summary>Said after a rule reading before each next step (XAGENT1f4): the twins' <c>StepWaiting</c>, by the same table.</summary>
     private const string OpinionStepWaiting = "Where a chain's next step here waits for another agent's reading of the step before "
@@ -62,7 +62,7 @@ public sealed class HelpSettingTool(IntakeScope? intake = null, HelpProposalBox?
         + "their look, so propose it only when they ask; the door then tells the person what the landing does with work "
         + "that waits: \"" + ReviewWaiting + "\"; "
         + "`opinion` declares which other agent reads a repository's or a workspace's work before it lands, in a copy of its own "
-        + "that nothing is taken back from: `--reviewers` names adapters in the order they are tried, only the agents the person "
+        + "that nothing is taken back from: `--agents` names adapters in the order they are tried, only the agents the person "
         + "names and never one you chose, ideally another maker's than the one doing the work; `--required` (work waits for "
         + "them when no reviewer can read it) and `--verify` (a reviewer may run what the repository declares safe) are their "
         + "say-so, so propose them only when they ask; the door then tells the person what the gate does with work that waits: "
