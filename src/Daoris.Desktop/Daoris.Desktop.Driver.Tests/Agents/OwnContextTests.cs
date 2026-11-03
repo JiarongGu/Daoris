@@ -25,10 +25,7 @@ public sealed class OwnContextTests : IDisposable
         Directory.CreateDirectory(Tree);
     }
 
-    public void Dispose()
-    {
-        try { Directory.Delete(_root, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
-    }
+    public void Dispose() => GitSeed.Discard(_root);
 
     /// <summary>🔴 Every session's settings file says the four keys, whatever else it hands or does not.</summary>
     [Fact]

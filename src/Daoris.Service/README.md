@@ -551,9 +551,9 @@ never proposed), and since HIST1f-a `clear_propose` (one quest's, ask's or works
 one file under
 `<home>/help/proposals/`, the same home as the rules proposals, checked here for its shape only:
 whether the route would take it is the driver's, which judges it with the route's own rules before
-the person sees a card, and settles it when they press Apply or Not now. Every connector carries the
-tools, but only the helper's room allows them, and a proposal is shown only in the conversation that
-made it.
+the person sees a card, and settles it when they press Apply or Not now. Of the sessions Daoris runs,
+only Ask Daoris is listed the tools (CONTEXTONE1d2), only the helper's room allows them, and a proposal is shown only in the
+conversation that made it.
 
 **The semantic pass has been proven on a real pair.** Two repositories derived the same principle
 independently and wrote it in different vocabulary; word overlap scores them at **25%**, below the
