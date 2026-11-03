@@ -48,6 +48,9 @@ public static class TransitionalRegister
     /// <summary>The builds before COMMS1b's, which wrote no answers mark and no keyed attempt. No release names COMMS1b's yet.</summary>
     private static readonly OlderBuild BeforeComms1b = new("the builds before COMMS1b's, which wrote no answers mark and no keyed attempt");
 
+    /// <summary>The builds before COMMS1h's, which wrote a turn's end as the receipt `answered`. No release names COMMS1h's yet.</summary>
+    private static readonly OlderBuild BeforeComms1h = new("the builds before COMMS1h's, which wrote a turn's end as the receipt `answered`");
+
     /// <summary>The builds before ONEWAY1l's, which wrote a say's `now` alone. No release names ONEWAY1l's yet.</summary>
     private static readonly OlderBuild BeforeOneway1l = new("the builds before ONEWAY1l's, which wrote a say's `now` alone");
 
@@ -185,9 +188,10 @@ public static class TransitionalRegister
             Id = "receipt-answered",
             Kept = "../../Daoris.Web/src/work/conversation/conversation.ts:752",
             Reaches = "An event log an older build wrote, holding the receipt `answered` for the turn that took a word, which COMMS1h's build writes `ended`: the page draws it as it was.",
-            Ends = "No event log on the home holds an `answered` receipt (the logs are history, cleared by their store's remover), and the floor passes COMMS1h's build.",
+            Ends = "No event log on the home holds an `answered` receipt (the logs are history, cleared by their store's remover), and the floor passes COMMS1h's build. The logs are every session's, so it never reads as ended here and the row deletes it.",
             Row = "ONEWAY1af",
-            Ended = Floor,
+            Waits = BeforeComms1h,
+            Ended = Never,
         },
         new()
         {
