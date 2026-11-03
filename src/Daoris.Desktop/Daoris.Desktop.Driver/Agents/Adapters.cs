@@ -1476,9 +1476,9 @@ public interface ISessionAdapter
     /// or nobody has read one in its binary.
     /// </summary>
     /// <remarks>
-    /// <para>Asked for by a conversation whose few tools are needed at once, which is Ask Daoris's: every
-    /// answer it gives reads the family. A repository's sessions never ask, and keep the harness's own
-    /// default, which is that harness's to change.</para>
+    /// <para>Every session Daoris runs carries it, a driven one's and a conversation's of every kind
+    /// (CONTEXTONE1d, D230 point 3), through <see cref="Driver.Equip"/>: its connector's tools are the ones it
+    /// is told to use, so they are in hand from the first request.</para>
     ///
     /// <para>Default empty, the silence-preserves rule every adapter default follows: an adapter opts in
     /// when the switch is read in the binary it runs, like every other claim about somebody else's tool.</para>
@@ -2485,6 +2485,11 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
     /// MCP tool waits behind a <c>ToolSearch</c> step, a whole model round trip before the agent's first real
     /// move; a value its parser reads as false loads every tool with the first request instead.
     /// </summary>
+    /// <remarks>
+    /// It loads every server's tools, not only the connector's (CONTEXTONE1d). Claude Code 2.1.314 also reads a server entry's
+    /// <c>alwaysLoad</c> and a tool's <c>_meta</c> <c>anthropic/alwaysLoad</c>, but the protocol door's servers are composed by its
+    /// adapter, not shown to carry the key, and a tool's mark does not hold the first request for a server still starting.
+    /// </remarks>
     internal static readonly IReadOnlyDictionary<string, string> LoadToolsUpFront =
         new Dictionary<string, string> { ["ENABLE_TOOL_SEARCH"] = "false" };
 
