@@ -338,14 +338,22 @@ daoris <command> [options]
                                                    the lists versions come from: yours in
                                                    order, then the one built in
                          look                      fetch every location; say what is newer
+  convert [verb]       this home's old records converted, every area's part in one
+                       plan, through the running Daoris:
+                         --plan                    what each part changes; writes nothing
+                         --apply <digest>          your press, confirmed in its window; a
+                                                   failed part is pressed again
+                         --apply <digest> --leave <part>
+                                                   a failed part left for a later plan
+                         --undo [<digest>]         the latest conversion taken back
 
   connect, retire, wire and import are the MANAGEMENT commands: opt-in, they talk to a
   service, and no gate ever runs them; brainstorm too, to this machine's own service
-  only. remote, agent, driver, plugin, browser and
-  tool are management too — they edit files under the Daoris home ($DAORIS_HOME,
+  only. remote, agent, driver, plugin, browser, tool and
+  convert are management too — they edit files under the Daoris home ($DAORIS_HOME,
   the installed application's own data folder; nothing lives under your profile).
-  Every agent, driver, plugin and tool verb is run by Daoris's own driver program,
-  the one this install carries in app/daoris-driver/ (or the one
+  Every agent, driver, plugin, tool and convert verb is run by Daoris's own
+  driver program, the one this install carries in app/daoris-driver/ (or the one
   DAORIS_DRIVER_PROGRAM names), which spawns each agent's own tooling, reaches a
   maker's release channel for agent pin and update, and a tool's maker and a
   resource location for tool download, use … managed, update and look; a daoris
