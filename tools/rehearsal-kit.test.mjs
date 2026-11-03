@@ -57,7 +57,7 @@ function printed(fn) {
 
 test('a check is named by its words, lower case and hyphened, cut at a word within sixty characters', () => {
   assert.equal(checkFolderName(LOSING), 'and-when-b-reaches-the-remote-again-its-driver-stops-its-own');
-  assert.equal(checkFolderName('`daoris-driver sync` exits 2 — naming the wall'), 'daoris-driver-sync-exits-2-naming-the-wall');
+  assert.equal(checkFolderName('`daoris remote sync` exits 2 — naming the wall'), 'daoris-remote-sync-exits-2-naming-the-wall');
   assert.equal(checkFolderName('中文 only'), 'only');
   assert.equal(checkFolderName('……'), 'check');
   assert.ok(checkFolderName('a'.repeat(90)).length <= 60);

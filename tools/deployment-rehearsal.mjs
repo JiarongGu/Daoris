@@ -11,7 +11,7 @@
  *       installer gives the HTTP host a directory of its own. Masked everywhere, because the next
  *       candidate is the workspace build and every machine it had run on had one. Fatal on the one
  *       machine it had never run on.
- *   4c  A transcript was written through the CONSOLE's codepage. `daoris-driver` sets its own
+ *   4c  A transcript was written through the CONSOLE's codepage. `daoris` sets its own
  *       console to UTF-8 at startup, so the family rehearsal decoded correctly and papered it over;
  *       the SHELL has no console, and a session record lost every non-ASCII character it held.
  *
@@ -1214,13 +1214,13 @@ if (!done.ok) throw new Error(done.text);
     run(`node "${cliBin}" sync`, newcomer, cliEnv).code === 0);
 
   // A session spawns only onto a clean git tree. Identity per-command: a machine with no git config
-  // at all must still be able to run this gate.
+  // must still be able to run this gate.
   const GIT_ID = '-c user.name="Deployment Rehearsal" -c user.email="rehearsal@example.invalid"';
   run('git init -q', newcomer);
   run(`git ${GIT_ID} add -A`, newcomer);
   run(`git ${GIT_ID} commit -q -m "the newcomer is born"`, newcomer);
 
-  const connected = run(`node "${cliBin}" connect`, newcomer, cliEnv);
+  const connected = run(`node "${cliBin}" repository connect`, newcomer, cliEnv);
   check('newcomer: connect reaches the deployed shell’s host', connected.code === 0, connected.out);
 
   const quest = await api('POST', '/api/quests', base, {

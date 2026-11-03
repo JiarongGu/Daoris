@@ -247,7 +247,7 @@ function connector(where) {
 if (flag('--retire')) {
   for (const repo of FAMILY) {
     try {
-      daoris(`retire ${repo.name}`, root);
+      daoris(`repository retire ${repo.name}`, root);
       console.log(`  retired  ${repo.name}  — every file still there`);
     } catch (error) {
       console.log(`  --       ${repo.name}: ${String(error.stdout ?? error.message).trim().split('\n')[0]}`);
@@ -285,7 +285,7 @@ for (const repo of FAMILY) {
   try {
     // `--workspace` is the wiring, and it is a REGISTRY row rather than anything on disk (WSP1):
     // nothing in the repository records which circle it joined, which is why re-running is safe.
-    const said = daoris(`connect --workspace ${WORKSPACE}`, where);
+    const said = daoris(`repository connect --workspace ${WORKSPACE}`, where);
     connected += 1;
     console.log(`  ok       ${repo.name}${packs}\n           ${said.trim().split('\n')[0]}`);
   } catch (error) {
@@ -302,7 +302,7 @@ if (connected < FAMILY.length) {
   console.log(`    DAORIS_SERVICE_URL=${service} node tools/testbed.mjs --root <folder>`);
 } else {
   console.log('\n  Try it:');
-  console.log(`    cd <root>/testbed-ui && daoris status --machine`);
+  console.log(`    cd <root>/testbed-ui && daoris remote list`);
   console.log(`    publish a quest from the platform's Quests view, or over MCP`);
   console.log(`    node tools/testbed.mjs --root <folder> --retire   # unwire, keeping every file`);
 }
