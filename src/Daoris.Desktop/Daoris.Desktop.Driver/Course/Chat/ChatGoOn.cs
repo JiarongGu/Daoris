@@ -779,10 +779,12 @@ internal sealed class ChatGoOn
         if (words.Count == 0) return await TakenBackAsync(record, ct).ConfigureAwait(false);
         // Each word's files where they were kept as it was said (MSG1d3, D137 §2.4), handed with the words; the conversation's
         // rules already read its own files folder (CONV4c). What its start did with its tree against the line after them (LANDSYNC2b).
+        // CONTEXTDRIVE1b (§3 point 2): and Daoris's count for its line, where one moved or stands near what Daoris does on it.
+        var counted = CountTexts.GoOn(LineCountsRead.FactsOf(_context.Home, sessionId, json).Counts);
         var ask = new ResumeAsk(
             kept.Conversation, words,
             woke is { } until ? LimitNotes.Resumed(until) : OpeningNote(words, adapter.Name, selection.Version, record.HarnessVersion),
-            Continuations.AfterWords(inSync, after: null),
+            Continuations.AfterWords(inSync, counted),
             files: word => ChatFiles.Kept(_context.Home, sessionId, word.Files))
         {
             Resent = Resent(sessionId, limited),

@@ -64,30 +64,46 @@ public sealed class SessionWorks(SessionLedger? ledger, IntakeScope? intake, Bra
 /// <summary>
 /// Every <c>tools/call</c> judged by the session's work before its tool runs (FOUNDATION1r, by <see cref="CallTable"/>): a refused call
 /// is answered with its sentence, its code in <c>_meta</c>, and never reaches the tool. A native child that inherits the connector's
-/// environment inherits its refusals.
+/// environment inherits its refusals. Its <c>tools/list</c> names only what the table serves it (CONTEXTONE1d2), so a harness that loads
+/// every listed tool at its start loads no definition the session may not call.
 /// </summary>
 public static class RoleFilter
 {
     /// <summary>The <c>_meta</c> key a refusal's code is answered under.</summary>
     public const string RefusalKey = "daoris/refusal";
 
-    /// <summary>Each call refused where the table refuses it to the session's work, else passed on; a work that cannot be read is unread.</summary>
+    /// <summary>
+    /// Each call refused, and each tool left out of the list, where the table refuses it to the session's work; a work that cannot be read
+    /// is unread.
+    /// </summary>
     public static IMcpServerBuilder RefuseOutsideRole(this IMcpServerBuilder builder, Func<CancellationToken, Task<SessionWork>> role) =>
-        builder.WithRequestFilters(filters => filters.AddCallToolFilter(next => async (request, cancellationToken) =>
+        builder.WithRequestFilters(filters =>
         {
-            var name = request.Params?.Name;
-            SessionWork work;
-            try
+            filters.AddListToolsFilter(next => async (request, cancellationToken) =>
             {
-                work = await role(cancellationToken).ConfigureAwait(false);
-            }
-            catch (Exception error) when (error is not OperationCanceledException)
+                var listed = await next(request, cancellationToken).ConfigureAwait(false);
+                var work = await WorkAsync(role, cancellationToken).ConfigureAwait(false);
+                listed.Tools = [.. listed.Tools.Where(tool => CallTable.Served(work, tool.Name))];
+                return listed;
+            });
+            filters.AddCallToolFilter(next => async (request, cancellationToken) =>
             {
-                work = SessionWork.Unread;
-            }
+                var work = await WorkAsync(role, cancellationToken).ConfigureAwait(false);
+                return CallTable.Refusal(work, request.Params?.Name) is { } refusal
+                    ? new CallToolResult { Content = [new TextContentBlock { Text = refusal.Text }], Meta = new JsonObject { [RefusalKey] = refusal.Code } }
+                    : await next(request, cancellationToken).ConfigureAwait(false);
+            });
+        });
 
-            return CallTable.Refusal(work, name) is { } refusal
-                ? new CallToolResult { Content = [new TextContentBlock { Text = refusal.Text }], Meta = new JsonObject { [RefusalKey] = refusal.Code } }
-                : await next(request, cancellationToken).ConfigureAwait(false);
-        }));
+    private static async Task<SessionWork> WorkAsync(Func<CancellationToken, Task<SessionWork>> role, CancellationToken ct)
+    {
+        try
+        {
+            return await role(ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            return SessionWork.Unread;
+        }
+    }
 }

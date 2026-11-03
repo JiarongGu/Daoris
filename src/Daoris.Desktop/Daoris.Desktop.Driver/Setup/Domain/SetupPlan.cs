@@ -18,6 +18,9 @@ public static class SetupRefusals
     /// <summary>Set up, naming no index, and built with a stack the press knows no generator for (ORIENT2c).</summary>
     public const string NoIndexForm = "no-index-form";
 
+    /// <summary>A reconcile asked of a repository the registry does not mark adopted, or whose line has not synced the doctrine (D230).</summary>
+    public const string NotAdopted = "not-adopted";
+
     public const string Open = "open";
 }
 

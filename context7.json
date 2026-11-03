@@ -29,7 +29,7 @@
     "CLAUDE.md"
   ],
   "rules": [
-    "Never edit a synced copy: a file under `.claude/` with a provenance header, or the `daoris:rules` region of `AGENTS.md`. `daoris check` reports the edit as drift; promote an improvement with `daoris upstream <file>`.",
+    "Never edit a synced copy: a file under `.claude/` with a provenance header, or the `daoris:rules` region of `AGENTS.md`. `daoris check` reports the edit as drift; `daoris reconcile` says how to keep or propose it.",
     "Write the repository's own text outside the `daoris:rules` region of `AGENTS.md`, which `sync` rewrites whole. `CLAUDE.md` loads it through its `@AGENTS.md` import.",
     "`daoris check` compares the disk with `daoris.lock`, never with the newest canon, and needs no network. A pack added to `daoris.json` fails it until `daoris sync` runs.",
     "After `daoris sync`, commit `daoris.json`, `daoris.lock`, `AGENTS.md`, `CLAUDE.md` and `.claude/` together: the lock is what `check` judges, and the diff is what a reviewer reads.",

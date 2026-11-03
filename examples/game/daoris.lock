@@ -1,6 +1,7 @@
 {
   "version": 1,
   "canonVersion": "0.0.1",
+  "canonDigest": "66fa7a27e2281d8809a7c7000a7eb326e2721784bb920414d4d4c68c60e2691b",
   "source": "daoris@0.0.1",
   "entries": [
     {

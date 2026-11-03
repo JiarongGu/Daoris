@@ -32,8 +32,18 @@ public static partial class SetupPressRules
     /// <summary>Whether a refusal is the machine's tools' rather than the repository's (<see cref="ToolRefusals"/>).</summary>
     public static bool IsToolRefusal(SetupRefusal refusal) => refusal.Code is SetupRefusals.NoNode or SetupRefusals.NoTool;
 
-    /// <summary>The rule a plan's press adds: the set-up's verbs, or an index quest's own (<see cref="IndexRules"/>).</summary>
-    public static IReadOnlyList<string> RulesOf(SetupPlan plan) => plan.Index is { } form ? IndexRules(form) : Rules;
+    /// <summary>The rule a plan's press adds: the set-up's verbs, an index quest's own (<see cref="IndexRules"/>), or a reconcile's.</summary>
+    public static IReadOnlyList<string> RulesOf(SetupPlan plan) =>
+        plan.Index is { } form ? IndexRules(form) : plan.Case == SetupCase.Reconcile ? ReconcileRules : Rules;
+
+    /// <summary>
+    /// A reconcile's verbs (D230): the set-up's, the brief's own, and <c>upstream --all</c>, which outside the canon's checkout
+    /// composes the request's words and writes nothing. 🔴 Each is a verb its body asks for, or one of the set-up's.
+    /// </summary>
+    public static readonly IReadOnlyList<string> ReconcileVerbs = [.. Verbs, "daoris reconcile", "daoris upstream --all"];
+
+    /// <summary>The rule a reconcile's press adds: <see cref="ReconcileVerbs"/>, each as an exact <c>Bash</c> allow.</summary>
+    public static IReadOnlyList<string> ReconcileRules { get; } = [.. ReconcileVerbs.Select(verb => $"Bash({verb})")];
 
     /// <summary>
     /// The doctrine tool's verbs an index quest's session runs (ORIENT2c): the version, the <c>sync</c> that renders the
