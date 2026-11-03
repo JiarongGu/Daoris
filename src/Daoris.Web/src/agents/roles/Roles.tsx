@@ -48,7 +48,7 @@ export function newRoleEditing(
   };
 }
 
-/** One row: the catalogue's role where there is one, and the staffing `ACTORS` answers for the same id. */
+/** One row: the catalogue's role, and the staffing its `ROLES` row carries. */
 export type Line = { id: string; row: RoleRow | null; actor: ActorRow | null };
 
 /** Whether a role's editor is offered: a catalogue role this home keeps, the one editor of its record and its choices (ONEWAY1a). */
@@ -100,10 +100,10 @@ export function editingOfLine(
 
 /** An entry's words: agent, model and effort, each in the tool's own words, account default where it names none. */
 export function entryText(t: TFunction, entry: ActorChoice): string {
-  return t('settings.ai.actors.entry', {
+  return t('settings.ai.role.entry', {
     agent: entry.agent,
-    model: entry.model || t('settings.ai.actors.accountDefault'),
-    effort: entry.effort || t('settings.ai.actors.accountDefault'),
+    model: entry.model || t('settings.ai.role.accountDefault'),
+    effort: entry.effort || t('settings.ai.role.accountDefault'),
   });
 }
 
@@ -112,22 +112,22 @@ export function entryText(t: TFunction, entry: ActorChoice): string {
  * *Off*, a fenced role's own words, or the driver's sentence where its stored entry does not read.
  */
 export function actorSummary(t: TFunction, row: ActorRow): string {
-  if (row.state === 'unreadable') return t('settings.ai.actors.unreadable', { error: row.error ?? '' });
-  if (row.state === 'off') return t(OFF_WORDS[row.id] ?? 'settings.ai.actors.off');
-  const before = row.state === 'before' ? ` · ${t('settings.ai.actors.asBefore')}` : '';
+  if (row.state === 'unreadable') return t('settings.ai.role.unreadable', { error: row.error ?? '' });
+  if (row.state === 'off') return t(OFF_WORDS[row.id] ?? 'settings.ai.role.off');
+  const before = row.state === 'before' ? ` · ${t('settings.ai.role.asBefore')}` : '';
   if (row.choices.length === 0) {
-    if (row.id === 'opinion') return t('settings.ai.actors.fencedRule', { state: t('settings.ai.actors.asBefore') });
-    if (row.id === 'partner') return t('settings.ai.actors.fencedAsk', { state: t('settings.ai.actors.asBefore') });
-    return t('settings.ai.actors.asBefore');
+    if (row.id === 'opinion') return t('settings.ai.role.fencedRule', { state: t('settings.ai.role.asBefore') });
+    if (row.id === 'partner') return t('settings.ai.role.fencedAsk', { state: t('settings.ai.role.asBefore') });
+    return t('settings.ai.role.asBefore');
   }
   const first = entryText(t, row.choices[0]!);
-  const more = row.choices.length > 1 ? ` ${t('settings.ai.actors.more', { count: row.choices.length - 1 })}` : '';
-  return row.id === 'brainstorm' ? t('settings.ai.actors.allAtOnce', { order: `${first}${more}` }) + before : `${first}${more}${before}`;
+  const more = row.choices.length > 1 ? ` ${t('settings.ai.role.more', { count: row.choices.length - 1 })}` : '';
+  return row.id === 'brainstorm' ? t('settings.ai.role.allAtOnce', { order: `${first}${more}` }) + before : `${first}${more}${before}`;
 }
 
 /** A role's name as authored, in the page's language where it has one; a seeded role with no record is its actor's name. */
 export function roleName(t: TFunction, language: string, row: Pick<RoleRow, 'id' | 'seeded' | 'name'>): string {
-  return authoredText(row.name, language) || (row.seeded ? t(`settings.ai.actors.name.${row.id}`) : row.id);
+  return authoredText(row.name, language) || (row.seeded ? t(`settings.ai.role.name.${row.id}`) : row.id);
 }
 
 /** Where a role works, in the page's words. */
@@ -149,7 +149,7 @@ export function policyLine(t: TFunction, read: RolePolicyRow | null | undefined)
   const conditions = [...OFFERED_MOVES.map((each) => each.condition as string), 'signed-out', 'model-refused', 'budget'].filter((each) => moved.includes(each));
   return [
     rule,
-    conditions.length > 0 ? t('settings.ai.policy.summary.moves', { conditions: conditions.map((each) => t(`settings.ai.policy.cond.${each}`)).join(t('settings.ai.actors.and')) }) : '',
+    conditions.length > 0 ? t('settings.ai.policy.summary.moves', { conditions: conditions.map((each) => t(`settings.ai.policy.cond.${each}`)).join(t('settings.ai.role.and')) }) : '',
     policy.most ? t('settings.ai.policy.summary.most', { count: policy.most }) : '',
   ].filter((part) => part !== '').join(' · ');
 }
@@ -158,13 +158,13 @@ export function policyLine(t: TFunction, read: RolePolicyRow | null | undefined)
 export function roleSummary(t: TFunction, row: RoleRow, actor?: ActorRow | null, policy?: RolePolicyRow | null): string {
   if (row.state === 'removed') return t('settings.ai.roles.removed');
   if (row.state === 'unreadable') return t('settings.ai.roles.unreadable', { error: row.error ?? '' });
-  const works = row.takes.map((work) => t(`settings.ai.roles.work.${work}`)).join(t('settings.ai.actors.and'));
+  const works = row.takes.map((work) => t(`settings.ai.roles.work.${work}`)).join(t('settings.ai.role.and'));
   const choices = row.choices ?? [];
   const order = actor
     ? ` · ${actorSummary(t, actor)}`
     : choices.length === 0
-      ? row.choices ? ` · ${t('settings.ai.actors.off')}` : ''
-      : ` · ${entryText(t, choices[0]!)}${choices.length > 1 ? ` ${t('settings.ai.actors.more', { count: choices.length - 1 })}` : ''}`;
+      ? row.choices ? ` · ${t('settings.ai.role.off')}` : ''
+      : ` · ${entryText(t, choices[0]!)}${choices.length > 1 ? ` ${t('settings.ai.role.more', { count: choices.length - 1 })}` : ''}`;
   const how = policyLine(t, policy);
   return `${works} · ${placeText(t, row.scopeKind, row.scopeId)}${order}${how ? ` · ${how}` : ''}`;
 }
@@ -206,7 +206,7 @@ function suggestionPress(role: SuggestedRole): RoleChangePress {
  * to four choices of agent, model and effort with *Move up*, *Move down* and *Remove*; *Save*, *Off* where the work allows it (intake and
  * Ask Daoris) and *Use the default* (a seeded role's record and choices given back their seed) all go out over `SET_ROLE`, the one door
  * (ONEWAY1a). *Add a role*, *Remove* and *Back to the default* are the catalogue's. A home that keeps no catalogue holds every press, and a
- * shell that answers no catalogue shows each role's order and edits none. Under the rows, the roles Daoris suggests and each change of
+ * shell that answers no catalogue draws no row. Under the rows, the roles Daoris suggests and each change of
  * the staffing another program made, as the driver kept it, with *Take it* and *Dismiss*. The page judges nothing: every press goes out
  * as its route takes it, and a refusal is the driver's sentence under its press.
  *
@@ -244,7 +244,7 @@ export function RolesCard({
   catalogue: RoleCatalogue | null;
   /** Why there is no catalogue: not offered by this shell, or a read that failed; `loading` says nothing. */
   read?: 'ok' | 'loading' | 'notOffered' | 'failed';
-  /** Each role's order as `ACTORS` answers it. */
+  /** Each seeded role's order as it runs, as its `ROLES` row carries it. */
   staffing?: readonly ActorRow[];
   /** The agents this machine has, to name in a choice. */
   agents: readonly { value: string; label: string }[];
@@ -284,9 +284,8 @@ export function RolesCard({
   const [foundRefused, setFoundRefused] = useState<{ id: number; sentence: string } | null>(null);
   const name = (row: Pick<RoleRow, 'id' | 'seeded' | 'name'>) => roleName(t, i18n.language, row);
   const kept = catalogue?.kept === true;
-  const all: Line[] = catalogue
-    ? catalogue.roles.map((row) => ({ id: row.id, row, actor: staffing.find((each) => each.id === row.id) ?? null }))
-    : staffing.map((actor) => ({ id: actor.id, row: null, actor }));
+  // The staffing is each role row's own, so with no catalogue there is no line to draw.
+  const all: Line[] = (catalogue?.roles ?? []).map((row) => ({ id: row.id, row, actor: staffing.find((each) => each.id === row.id) ?? null }));
   const lines = only === undefined ? all : all.filter((line) => line.id === only);
   const lineOf = (id: string) => all.find((line) => line.id === id);
   const nameOfLine = (line: Line) => name(line.row ?? { id: line.id, seeded: true });
@@ -405,7 +404,7 @@ export function RolesCard({
                   <span className="text-body text-ink wrap-anywhere">{row ? roleSummary(t, row, actor, policyOf(line.id)) : actorSummary(t, actor!)}</span>
                   {mayEdit && (
                     <Button variant="ghost" disabled={busy || editing !== null} aria-label={t('settings.ai.roles.editOf', { role: named })} onClick={() => open(line)}>
-                      {t('settings.ai.actors.edit')}
+                      {t('settings.ai.role.edit')}
                     </Button>
                   )}
                   {readOnly && onOpenPlace && row && (
@@ -548,7 +547,7 @@ export function RolesCard({
       ))}
       {catalogue?.suggested.map((role) => {
         const named = name({ id: role.id, seeded: false, name: role.name });
-        const taken = role.takes.map((work) => t(`settings.ai.roles.work.${work}`)).join(t('settings.ai.actors.and'));
+        const taken = role.takes.map((work) => t(`settings.ai.roles.work.${work}`)).join(t('settings.ai.role.and'));
         return (
           <section key={role.id} aria-label={t('settings.ai.roles.suggested.title', { role: named })} className="mt-3 rounded-control border border-line p-2">
             <p className="m-0 text-body font-medium text-ink">{t('settings.ai.roles.suggested.title', { role: named })}</p>
@@ -566,21 +565,21 @@ export function RolesCard({
       })}
       {found.length > 0 && (
         <section className="mt-3">
-          <p className="m-0 text-body font-medium text-ink">{t('settings.ai.actors.found.title')}</p>
-          <Prose className="mb-2 mt-0 text-small text-ink-soft">{t('settings.ai.actors.found.body')}</Prose>
-          <ul aria-label={t('settings.ai.actors.found.title')} className="m-0 flex list-none flex-col gap-2 p-0">
+          <p className="m-0 text-body font-medium text-ink">{t('settings.ai.role.found.title')}</p>
+          <Prose className="mb-2 mt-0 text-small text-ink-soft">{t('settings.ai.role.found.body')}</Prose>
+          <ul aria-label={t('settings.ai.role.found.title')} className="m-0 flex list-none flex-col gap-2 p-0">
             {found.map((each) => (
               <li key={each.id} className="rounded-control border border-line p-2">
                 {each.changes.map((moved) => (
                   <p key={moved.role} className="m-0 text-small text-ink wrap-anywhere">
-                    {t(moved.applied ? 'settings.ai.actors.found.changeApplied' : 'settings.ai.actors.found.change', {
+                    {t(moved.applied ? 'settings.ai.role.found.changeApplied' : 'settings.ai.role.found.change', {
                       role: name(lineOf(moved.role)?.row ?? { id: moved.role, seeded: true }), was: actorSummary(t, moved.was), now: actorSummary(t, moved.now),
                     })}
                   </p>
                 ))}
                 <div className="mt-2 flex gap-2">
-                  <Button disabled={busy} onClick={() => answer(each.id, 'take')}>{t('settings.ai.actors.found.take')}</Button>
-                  <Button variant="ghost" disabled={busy} onClick={() => answer(each.id, 'dismiss')}>{t('settings.ai.actors.found.dismiss')}</Button>
+                  <Button disabled={busy} onClick={() => answer(each.id, 'take')}>{t('settings.ai.role.found.take')}</Button>
+                  <Button variant="ghost" disabled={busy} onClick={() => answer(each.id, 'dismiss')}>{t('settings.ai.role.found.dismiss')}</Button>
                 </div>
                 {foundRefused?.id === each.id && <Refused sentence={foundRefused.sentence} />}
               </li>

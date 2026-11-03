@@ -23,7 +23,7 @@
     { "name": "quest", "verbs": ["pause", "resume", "abandon", "delete", "accept", "done", "reopen", "go-on", "check", "review", "workflow", "clear", "retry"] },
     { "name": "remote", "verbs": ["list", "add", "remove", "sync"], "nested": { "sync": ["status", "dismiss", "forward"] } },
     { "name": "repository", "verbs": ["connect", "register", "retire", "wire", "import"] },
-    { "name": "role", "takes": "[<id>]", "verbs": ["set", "remove", "default", "policy", "brief"] },
+    { "name": "role", "takes": "[<id>]", "verbs": ["set", "remove", "default", "policy", "rules", "brief"] },
     { "name": "session", "verbs": ["list", "stop", "finish", "decline", "archive", "unarchive", "delete", "say", "take-back", "reword", "go-on-new", "start-from", "hand-over", "helper", "partner", "handback", "opinion", "supervise", "at-work"],
       "nested": { "opinion": ["ask", "show", "stop", "anyway", "myself"] } },
     { "name": "settings", "verbs": ["notify", "strikes", "cooloff", "keep", "cap", "handover", "brainstorms", "timeout", "actor"] },

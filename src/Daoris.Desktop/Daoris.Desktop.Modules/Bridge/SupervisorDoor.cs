@@ -302,7 +302,7 @@ public static class SupervisorDoor
         }
 
         // SUPERVISOR1b (§4.3): D188's one count, the line's admission (COMMS1g), as the look's hold reads it.
-        var atBound = record.Parked && new AnswersAloneHold(loop.Events, new GoOnMarks(loop.Home), new ContinuationAdmissions(loop.Home))
+        var atBound = record.Parked && new AnswersAloneHold(loop.Events, new GoOnMarks(loop.Home), new ContinuationAdmissions(loop.Home), SupervisorRuleBook.Read(loop.Home))
             .AtBound(id, await AnswersAloneHold.RecordsAsync(service, ct).ConfigureAwait(false));
         // CONTEXTDRIVE1i (§5): the line's counts as the print hands them, which a reason's `count:` source names and the decision keeps.
         var counts = (await LineCountsRead.FactsAsync(service, loop.Home, id, ct).ConfigureAwait(false)).Counts;

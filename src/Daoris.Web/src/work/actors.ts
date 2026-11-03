@@ -8,16 +8,16 @@ import { sessionOrigin } from './identity';
 /** The agent's reported names, in first-use order. An absence never borrows the asked model. */
 export function ranLine(t: TFunction, session?: Pick<Session, 'ran'> | null): string {
   const ran = session?.ran;
-  const names = ran?.models.length ? ran.models.join(' · ') : t('work.actor.notReported');
-  return ran?.more ? `${names} · ${t('work.actor.more', { n: ran.more })}` : names;
+  const names = ran?.models.length ? ran.models.join(' · ') : t('work.role.notReported');
+  return ran?.more ? `${names} · ${t('work.role.more', { n: ran.more })}` : names;
 }
 
 function askedValue(t: TFunction, value?: ActorValue | null): string {
-  if (!value) return t('work.actor.notRecorded');
-  if (value.source === 'account-default') return t('work.actor.accountDefault');
-  const name = value.value ?? t('work.actor.notReported');
-  const source = value.source === 'entry' ? name : `${name} · ${t(`work.actor.source.${value.source}`)}`;
-  return value.source === 'entry' && !value.carried ? `${source} · ${t('work.actor.notCarried')}` : source;
+  if (!value) return t('work.role.notRecorded');
+  if (value.source === 'account-default') return t('work.role.accountDefault');
+  const name = value.value ?? t('work.role.notReported');
+  const source = value.source === 'entry' ? name : `${name} · ${t(`work.role.source.${value.source}`)}`;
+  return value.source === 'entry' && !value.carried ? `${source} · ${t('work.role.notCarried')}` : source;
 }
 
 /**
@@ -26,9 +26,9 @@ function askedValue(t: TFunction, value?: ActorValue | null): string {
  */
 export function choiceChip(t: TFunction, session: Pick<Session, 'choice' | 'chosen'>): string | null {
   const choice = session.choice;
-  if (choice === 'pick') return t('work.actor.chip.pick');
+  if (choice === 'pick') return t('work.role.chip.pick');
   if (!choice || !/^[2-4]$/.test(choice)) return null;
-  const number = t('work.actor.chip.choice', { n: Number(choice) });
+  const number = t('work.role.chip.choice', { n: Number(choice) });
   const reason = chipReason(t, session.chosen);
   return reason === null ? number : `${number} · ${reason}`;
 }
@@ -45,19 +45,19 @@ function reasonCode(chosen: ActorChosen): string | null {
 
 function chipReason(t: TFunction, chosen?: ActorChosen | null): string | null {
   const code = chosen ? reasonCode(chosen) : null;
-  return code === null ? null : t(`work.actor.chip.reason.${code}`);
+  return code === null ? null : t(`work.role.chip.reason.${code}`);
 }
 
 /** *Details*' sentence for how the choice was reached; the policy's absence on the record is said, not left blank. */
 export function chosenLine(t: TFunction, chosen?: ActorChosen | null): string {
-  if (!chosen) return t('work.actor.chosen.none');
+  if (!chosen) return t('work.role.chosen.none');
   if (chosen.by === 'moved') {
-    const from = chosen.from ? t('work.actor.chosen.movedFrom', { from: chosen.from }) : t('work.actor.chosen.movedAway');
+    const from = chosen.from ? t('work.role.chosen.movedFrom', { from: chosen.from }) : t('work.role.chosen.movedAway');
     return chosen.condition && CONDITION_CODES.includes(chosen.condition)
-      ? t('work.actor.chosen.movedOn', { from, why: t(`work.actor.chosen.on.${chosen.condition}`) })
-      : t('work.actor.chosen.movedBare', { from });
+      ? t('work.role.chosen.movedOn', { from, why: t(`work.role.chosen.on.${chosen.condition}`) })
+      : t('work.role.chosen.movedBare', { from });
   }
-  return t(`work.actor.chosen.by.${chosen.by === 'first' || BY_CODES.includes(chosen.by) ? chosen.by : 'other'}`);
+  return t(`work.role.chosen.by.${chosen.by === 'first' || BY_CODES.includes(chosen.by) ? chosen.by : 'other'}`);
 }
 
 /**
@@ -81,16 +81,16 @@ export function notStartedLine(t: TFunction, session: Pick<Session, 'id' | 'stat
 export function actorRows(t: TFunction, session: Session): DetailRow[] {
   const last = session.ran?.entries.at(-1);
   return [
-    { label: t('work.actor.title'), value: session.actor ? t(`work.actor.name.${session.actor}`, { defaultValue: session.actor }) : t('work.actor.notRecorded') },
-    { label: t('work.actor.choice'), value: session.choice === 'before' ? t('work.actor.before') : session.choice ?? t('work.actor.notRecorded') },
-    { label: t('work.actor.chosen.label'), value: chosenLine(t, session.chosen) },
-    { label: t('work.actor.asked'), value: `${askedValue(t, session.asked?.model)} · ${askedValue(t, session.asked?.effort)}` },
-    { label: t('work.actor.acknowledged'), value: last?.acknowledged ?? t('work.actor.notReported') },
-    { label: t('work.actor.ran'), value: ranLine(t, session) },
-    { label: t('work.actor.effort'), value: last?.effort ?? t('work.actor.notReported') },
-    { label: t('work.actor.changes'), value: session.ran?.entries.length ? [
-      ...session.ran.entries.map((entry) => `${stamp(entry.at)} · ${entry.acknowledged ?? t('work.actor.notReported')} · ${entry.effort ?? t('work.actor.notReported')}`),
-      ...(session.ran.entriesMore ? [t('work.actor.more', { n: session.ran.entriesMore })] : []),
+    { label: t('work.role.title'), value: session.actor ? t(`work.role.name.${session.actor}`, { defaultValue: session.actor }) : t('work.role.notRecorded') },
+    { label: t('work.role.choice'), value: session.choice === 'before' ? t('work.role.before') : session.choice ?? t('work.role.notRecorded') },
+    { label: t('work.role.chosen.label'), value: chosenLine(t, session.chosen) },
+    { label: t('work.role.asked'), value: `${askedValue(t, session.asked?.model)} · ${askedValue(t, session.asked?.effort)}` },
+    { label: t('work.role.acknowledged'), value: last?.acknowledged ?? t('work.role.notReported') },
+    { label: t('work.role.ran'), value: ranLine(t, session) },
+    { label: t('work.role.effort'), value: last?.effort ?? t('work.role.notReported') },
+    { label: t('work.role.changes'), value: session.ran?.entries.length ? [
+      ...session.ran.entries.map((entry) => `${stamp(entry.at)} · ${entry.acknowledged ?? t('work.role.notReported')} · ${entry.effort ?? t('work.role.notReported')}`),
+      ...(session.ran.entriesMore ? [t('work.role.more', { n: session.ran.entriesMore })] : []),
     ].join('; ') : null },
   ];
 }

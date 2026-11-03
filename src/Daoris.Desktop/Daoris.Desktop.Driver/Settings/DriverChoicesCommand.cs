@@ -66,8 +66,8 @@ public sealed class ChoiceWords(string message, int exit = 2) : Exception(messag
 }
 
 /// <summary>
-/// The routes <c>daoris-driver driver</c> sends while Daoris runs (PUSH1f2a; RPC1f, the terminal RPC design §9), each the window twin of
-/// the choice it edits, and the verbs no route takes, each with why it acts alone (D171's PUSH1f note, kept by D194 point 5): the CLI's
+/// The routes <c>daoris-driver driver</c> sends while Daoris runs, each the window twin of
+/// the choice it edits, and the verbs no route takes, each with why it acts alone: the CLI's
 /// <c>DRIVER_VERBS</c>, now this program's. Every one is the person's (D171's RPC1a note). Held to the census by <c>PipeCensusTests</c>.
 /// </summary>
 public static class ChoiceRoutes
@@ -123,7 +123,7 @@ public static class ChoiceRoutes
         ("driver handover", HandOver, "the hand-over rule"),
         ("driver commits", Commits, "the commit rule"),
         ("driver keep <kind> …", Keep, "the Disk space card's rule of that kind"),
-        ("driver role set|remove|default|policy <id> …", Role, "a working role of the catalogue, its record, its choices and its policy (FOUNDATION1y-i, STAFFPOLICY1b)"),
+        ("driver role set|remove|default|policy|rules …", Role, "a working role's record, choices and policy, or a place's supervisor rules"),
         ("driver actor found take|dismiss <n>", null, "alone: the staffing's lock serializes it with the window's Take it and Dismiss"),
         ("driver timeout <minutes>", null, "alone: no route sets a session's timeout"),
         ("driver retry <quest> --at <n>", null, "alone: RETRY_QUEST marks at the failures its verdict counts, never at a number the person gives"),
@@ -139,7 +139,7 @@ public static class ChoiceRoutes
 }
 
 /// <summary>
-/// <c>daoris-driver driver</c> (PUSH1f2a, PUSH1f2b, D194, the alone-path design §1.2): the driver family from a terminal, the words
+/// <c>daoris-driver driver</c>: the driver family from a terminal, the words
 /// <c>daoris driver …</c> hands this program, every one of them since PUSH1f2b. Each change is its route through
 /// <see cref="IChoiceTerminal.PressAsync"/> where the running Daoris answers, confirmed in its window; else the choice's own operation, on
 /// the terminal's word (D50), refused from a session's terminal (D194 point 5). A change no route takes acts alone even beside a running
@@ -250,7 +250,7 @@ public static class DriverChoicesCommand
             // `actor` naming one actor, or none, is refused as a read; its copy verbs write until ONEWAY1c-ii retires them.
             "actor" => args.Count > 2,
             // `role` naming one role, or none, says it, a read (FOUNDATION1y-i).
-            "role" => args.Count > 1 && args[1] is "set" or "remove" or "default" or "policy",
+            "role" => args.Count > 1 && args[1] is "set" or "remove" or "default" or "policy" or "rules",
             _ => Verbs.Contains(verb, StringComparer.Ordinal),
         };
     }
@@ -451,6 +451,7 @@ public static class DriverChoicesCommand
 
             case "strikes":
             {
+                if (world.Instance.Home is { } home && RuledPolicy.StrikesRefused(home) is { } ruled) throw new ChoiceWords(ruled);
                 var value = Number(Named(args, verb));
                 if (!IsWhole(value) || value < 0 || value > int.MaxValue)
                 {

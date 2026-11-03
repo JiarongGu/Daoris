@@ -379,7 +379,7 @@ function RepositoryWorkLine({ work }: { work: RepositoryWork }) {
     ?? (work.role
       ? t('agents.roles.repo.role', { role: nameOf(t, i18n.language, work.role), place: placeText(t, work.role) })
       : t('agents.roles.repo.noRole'));
-  const first = work.first ? ` · ${entryText(t, work.first)}${work.more > 0 ? ` ${t('settings.ai.actors.more', { count: work.more })}` : ''}` : '';
+  const first = work.first ? ` · ${entryText(t, work.first)}${work.more > 0 ? ` ${t('settings.ai.role.more', { count: work.more })}` : ''}` : '';
   return (
     <Line label={workName(t, work.work)}>
       {said}{work.held ? '' : first}

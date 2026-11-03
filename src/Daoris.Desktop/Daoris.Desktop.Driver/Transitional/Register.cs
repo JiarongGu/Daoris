@@ -266,7 +266,7 @@ public static class TransitionalRegister
         new()
         {
             Id = "staffing-copy",
-            Kept = "Roles/RoleStaffing.cs:664, Roles/StaffingVerbs.cs:14, ../Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs:357",
+            Kept = "Roles/RoleStaffing.cs:664, Roles/StaffingVerbs.cs:14, ../Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs:334",
             Reaches = "A home an older build may still open (D226): each staffing write is copied onto driver.json's staffing keys, the found check compares the file with what the store wrote, and a found change waits for Take it or Dismiss.",
             Ends = "The floor passes the w-s build on the home, which the conversion's first Apply makes so, or the home was seeded fresh: the writer and the check skip such a home (ONEWAY1c-ii), and the staffing part clears its found changes.",
             Row = "ONEWAY1af",
@@ -281,6 +281,42 @@ public static class TransitionalRegister
             Ends = "A conversation's moves are the supervisor's rules (CONTEXTDRIVE1n, which took STAFFPOLICY1e3's conversation half up; D229).",
             Row = "CONTEXTDRIVE1n",
             Ended = Unbuilt,
+        },
+        new()
+        {
+            Id = "answers-alone-bound",
+            Kept = "Course/GoOn/AnswersAloneHold.cs:34",
+            Reaches = "A home whose supervisor rules are not reached: the answers-alone hold, a conversation's course and the line's counts read Daoris's own two in a row.",
+            Ends = "The home's rules are reached, no policy moves and driver.json holds no `strikes`: the line's answers-alone rule decides everywhere.",
+            Row = "CONTEXTDRIVE1l",
+            Ended = SupervisorRuleCensus.Ended,
+        },
+        new()
+        {
+            Id = "strikes-key",
+            Kept = "WorkOrders/Domain/Planner.cs:1365",
+            Reaches = "A home whose rules are not reached: `strikes` parks a quest at the planner and the staffing course, the line's counts say it, and the save keeps the key as the file held it.",
+            Ends = "The conversion's rules part removed the key and wrote the failures rule; no door writes it again.",
+            Row = "CONTEXTDRIVE1l",
+            Ended = SupervisorRuleCensus.Ended,
+        },
+        new()
+        {
+            Id = "policy-moves",
+            Kept = "WorkOrders/StaffCourse.cs:34",
+            Reaches = "A home whose rules are not reached: a role's applied policy's moves and `most` move and bound its lines, and the next start's walk passes by them.",
+            Ends = "No policy holds moves or `most`: the line's effective rules are the staffing course's moves and bound.",
+            Row = "CONTEXTDRIVE1l",
+            Ended = SupervisorRuleCensus.Ended,
+        },
+        new()
+        {
+            Id = "transient-bound",
+            Kept = "WorkOrders/StaffCourse.cs:19",
+            Reaches = "A home whose rules are not reached: a driven run's transient episode tries five times, or its policy's `after`, before the hold.",
+            Ends = "The home's rules are reached: the lowest effective tries rule is the episode's limit, and its action the end's.",
+            Row = "CONTEXTDRIVE1l",
+            Ended = SupervisorRuleCensus.Ended,
         },
         new()
         {

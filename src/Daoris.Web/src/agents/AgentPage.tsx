@@ -780,7 +780,7 @@ export function AgentPage({
       {settingsShown && (
         <Fold section="settings" title={t('agents.section.settings')} summary={settingsSummary(tool)} open={open.has('settings')} onToggle={toggle}>
           {/* What an account's own model means now actors choose models (D205 §6.4, MODELROLE1c2): their *account default*. */}
-          <p className="m-0 pb-1.5 text-meta text-ink-soft">{t('agents.settings.actors')}</p>
+          <p className="m-0 pb-1.5 text-meta text-ink-soft">{t('agents.settings.roles')}</p>
           <ul className="m-0 list-none p-0">
             {tool.accounts.filter((account) => account.settings).map((account) => (
               <li key={account.home} className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line py-1.5 first:border-t-0">

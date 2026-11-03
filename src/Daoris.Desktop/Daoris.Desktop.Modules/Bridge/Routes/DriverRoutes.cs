@@ -267,18 +267,18 @@ public sealed class DriverRoutes(DriverContext context)
         return State(_loop);
     }
 
-    // How many failed sessions park a quest (DRV6/D58), and the person's way back in. Both
-    // edit what `daoris driver strikes|retry` edits — one truth, two doors (D50).
+    // How many failed sessions park a quest, as `settings strikes` edits it; refused where the failures rule decides.
     [DriverRoute("SET_STRIKES")]
     [Publishes("SET_STRIKES", StateScopes.Driver)]
     private object? SetStrikes(IpcRequest request)
     {
+        if (RuledPolicy.StrikesRefused(_loop.Home) is { } ruled) throw new DriverException(ruled);
         var strikes = PayloadHelper.GetRequiredValue<int>(request.Payload, "strikes");
         _context.Change(config => config.WithStrikes(strikes));
         return State(_loop);
     }
 
-    // How long an account cools when its agent names no time (TOOL4g, D125 §2.2, §6): whole minutes, at least one, the same
+    // How long an account cools when its agent names no time: whole minutes, at least one, the same
     // `cooloff` `daoris driver cooloff <minutes>` edits — one truth, two doors (D50). Less than one is the driver's refusal.
     [DriverRoute("SET_COOLOFF")]
     [Publishes("SET_COOLOFF", StateScopes.Driver)]
@@ -328,29 +328,6 @@ public sealed class DriverRoutes(DriverContext context)
         return State(_loop);
     }
 
-    // Each actor's order, where it came from and its effective entries (MODELROLE1c, D205 §9.4): a read, the same `daoris driver role`
-    // says. An actor whose stored entry does not read says why.
-    // FOUNDATION1w-s (the design §19.15): beside them, each change of driver.json's actors another program made that the check kept, with
-    // what it changed, none where the home's file is not the store's.
-    [DriverRoute("ACTORS")]
-    private object? Actors(IpcRequest request) => new
-    {
-        Actors = ArrangedActors(DriverConfig.Load(_loop.ConfigPath)),
-        Found = RoleStaffing.Of(_loop.ConfigPath)?.Found().Select(found => new { found.Id, found.At, found.Changes }).ToList() ?? [],
-    };
-
-    // Build's and Chat's orders also as their policies arrange them (STAFFPOLICY1d), which the hand-over's offer draws its next choices from.
-    private IReadOnlyList<ActorView> ArrangedActors(DriverConfig config)
-    {
-        var ledger = new StaffLedger(_loop.Home);
-        return [.. ActorView.All(config).Select(view =>
-        {
-            if (view.Id is not ("build" or "chat") || view.State == "unreadable") return view;
-            var arranged = RoleOrders.Arranged(ledger, view.Id, view.Id, config);
-            return arranged.SequenceEqual(view.Choices) ? view : view with { Arranged = arranged };
-        })];
-    }
-
     // A found change answered (FOUNDATION1w-s, §19.15): the person's *Take it*, the actors as that file showed them, a turn-on of Intake or
     // Ask Daoris among them by this press, or *Dismiss*, the actors as they are. Through the staffing's one write, then a nudge. Only the
     // copy's check finds a change, so a converted home has none to answer (ONEWAY1c-ii).
@@ -361,7 +338,7 @@ public sealed class DriverRoutes(DriverContext context)
     {
         var id = Number(request, "found") ?? throw new DriverException("the press named no found change.");
         var staffing = RoleStaffing.Of(_loop.ConfigPath)
-            ?? throw new DriverException("this home's actors are the file's own, so no found change is answered here.");
+            ?? throw new DriverException("this home's staffing is the file's own, so no found change is answered here.");
         switch (Optional(request, "answer"))
         {
             case "take": staffing.Take(id); break;
@@ -377,29 +354,32 @@ public sealed class DriverRoutes(DriverContext context)
     // stored choices, and the work codes a role may take; a read, the same `daoris driver role` says. Beside them, the roles Daoris
     // suggests adding (the Designer while no role takes design), each the person's press alone.
     [DriverRoute("ROLES")]
-    [ByEvent("ROLES", Untold = "the store's roles, role policies and starts, driver.json's staffing, and the machine log's starts that Use sums")]
+    [ByEvent("ROLES", Untold = "the store's roles, role policies, rules and starts, driver.json's staffing, and the machine log's starts that Use sums")]
     private Task<object?> RolesAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var catalogue = RoleCatalog.ReadHome(_loop.Home);
-        // Each role's last seven days (MODELROLE1f): names and counts from the machine log's actor.chose lines; a role with no start is not listed.
+        // Each role's last seven days: names and counts from the machine log's actor.chose lines; a role with no start is not listed.
         var use = RoleUse.Of(_loop.Home, DateTimeOffset.UtcNow);
         var config = DriverConfig.Load(_loop.ConfigPath);
         return Task.FromResult<object?>(new
         {
             Use = new { use.Days, use.Roles },
-            Roles = RoleDoor.Rows(catalogue, config),
-            // STAFFPOLICY1b: each role's policy (default, set or stale), its record and its next new start; a probe that reserves nothing and
+            Roles = RoleRowsRunning.Of(_loop.Home, catalogue, config),
+            // Each change of driver.json's staffing another program made that the copy's check kept.
+            Found = RoleStaffing.Of(_loop.ConfigPath)?.Found().Select(found => new { found.Id, found.At, found.Changes }).ToList() ?? [],
+            // Each role's policy (default, set or stale), its record and its next new start; a probe that reserves nothing and
             // asks no account. The fields this build enforces, and the presets, are what the doors take.
             Policies = RolePolicyRow.Of(new StaffLedger(_loop.Home), catalogue, config),
             PolicyFields = StaffCapabilities.Fields,
             PolicyPresets = StaffPresets.Names,
+            Supervisor = SupervisorRuleRows.Of(_loop.Home),
             Works = RoleWork.Codes,
             Kept = RoleStaffing.Of(_loop.ConfigPath) is not null,
             Suggested = RoleSuggestion.For(catalogue).Select(each => new
             {
                 each.Role.Id, each.Role.Name, each.Role.Takes, ScopeKind = each.Role.Scope.Kind, each.Choices,
             }),
-            // MODELROLE1g: the choices suggested for the seeded roles, whole; the page leaves out an agent this machine has not set up.
+            // The choices suggested for the seeded roles, whole; the page leaves out an agent this machine has not set up.
             SuggestedChoices = ActorSuggestion.Table.Select(each => new { each.Role, each.Choices }),
             SuggestedChoicesDated = ActorSuggestion.Dated,
         });
@@ -541,7 +521,7 @@ public sealed class DriverRoutes(DriverContext context)
         _ => null,
     };
 
-    // A working role added, changed, removed or given back its seed (FOUNDATION1y-i): the person's press, the same change `daoris driver
+    // A working role added, changed, removed or given back its seed: the person's press, the same change `daoris driver
     // role` makes and Ask Daoris's `role_propose` asks for: one door, `RoleDoor.Apply`, whose judge refuses with nothing written. A
     // removed role's work holds its starts, said; a running session goes on.
     [DriverRoute("SET_ROLE")]
@@ -549,14 +529,14 @@ public sealed class DriverRoutes(DriverContext context)
     private object? SetRole(IpcRequest request)
     {
         var staffing = RoleStaffing.Of(_loop.ConfigPath)
-            ?? throw new DriverException("this home's actors are the file's own (not this home's store), so its roles are not set here.");
+            ?? throw new DriverException("this home's staffing is the file's own (not this home's store), so its roles are not set here.");
         var press = RoleDoor.ReadPress(request.Payload);
         RoleDoor.Apply(staffing, press.Change, press.Choices, press.Read, press.Policy);
         _loop.Nudge();
         return State(_loop);
     }
 
-    // Several role changes made as one (AGENTSPLACE1g2, the Agents-place design §4): the Roles mode's suggested choices. Each change is
+    // Several role changes made as one: the Roles mode's suggested choices, or a role's policy with a place's rules. Each change is
     // a `SET_ROLE` press in `changes`, judged in order by `RoleDoor.ApplyAll` before anything is written; the first refusal refuses
     // the batch with nothing written.
     [DriverRoute("SET_ROLES")]
@@ -564,13 +544,13 @@ public sealed class DriverRoutes(DriverContext context)
     private object? SetRoles(IpcRequest request)
     {
         var staffing = RoleStaffing.Of(_loop.ConfigPath)
-            ?? throw new DriverException("this home's actors are the file's own (not this home's store), so its roles are not set here.");
+            ?? throw new DriverException("this home's staffing is the file's own (not this home's store), so its roles are not set here.");
         RoleDoor.ApplyAll(staffing, RoleDoor.ReadPresses(request.Payload));
         _loop.Nudge();
         return State(_loop);
     }
 
-    // Ask Daoris's access mode (HELPMODE1a2, D183 point 2): `restricted` or `full`, the person's press alone, over the same key
+    // Ask Daoris's access mode: `restricted` or `full`, the person's press alone, over the same key
     // `daoris-driver help mode` sets: one truth, two doors (D50). Each start reads it, and a conversation running under another ends
     // at its turn's end, its next words resuming it under the mode chosen (ACCESSSWAP1): nothing it runs with changes while it runs.
     // A mode it does not know, or none, is the driver's refusal, with nothing written.

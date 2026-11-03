@@ -28,7 +28,7 @@
   "work.parts.label": "How this line of work's parts follow one another",
   "work.parts.start": "Start",
   "work.parts.node": "Part {{n}}",
-  "work.parts.actor": "{{agent}}, began {{when}}",
+  "work.parts.ranBy":"{{agent}}, began {{when}}",
   "work.parts.leads": "shown by its row in the list",
   "work.parts.show": "Show part {{n}}",
   "work.parts.showAll": "Show the parts",

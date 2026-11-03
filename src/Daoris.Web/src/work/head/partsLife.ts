@@ -147,7 +147,7 @@ export function partsFlow(
       current: part.session === attended,
       state: shown ? { word: t(shownKey(shown)), tone: SESSION_TONE[shown] } : { word: part.shown, tone: 'neutral' },
       ...(facts
-        ? { actor: t('work.parts.actor', { agent: sessionTool({ adapter: facts.session.adapter }), when: ago(facts.session.created) }) }
+        ? { actor: t('work.parts.ranBy',{ agent: sessionTool({ adapter: facts.session.adapter }), when: ago(facts.session.created) }) }
         : {}),
     });
     const place = partPlace(t, facts);

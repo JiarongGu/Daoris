@@ -89,7 +89,6 @@ describe('AI features on Settings', () => {
     // It asks the driver nothing of roles.
     const asked = invoke.mock.calls.map((call) => call[1]);
     expect(asked).not.toContain('ROLES');
-    expect(asked).not.toContain('ACTORS');
   });
 });
 
@@ -111,7 +110,10 @@ describe('Ask Daoris’s access on Settings', () => {
       if (type === 'HARNESSES') return { harnesses: [] };
       if (type === 'STARTS') return { adapter: 'claude-code', starts: [] };
       if (type === 'PLUGINS') return { folder: 'plugins', plugins: [] };
-      if (type === 'ACTORS') return { actors: [{ id: 'ask-daoris', state: 'set', choices: [{ agent: 'claude-code-acp', from: '1' }] }] };
+      if (type === 'ROLES') {
+        const staffing = { id: 'ask-daoris', state: 'set', choices: [{ agent: 'claude-code-acp', from: '1' }] };
+        return { roles: [{ id: 'ask-daoris', state: 'seed', seeded: true, takes: ['ask-daoris'], revision: 0, staffing }], works: [], kept: true, suggested: [] };
+      }
       return undefined;
     });
   });

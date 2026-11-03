@@ -110,7 +110,7 @@ export const REDIRECTED = [
  * redirected `DAORIS_HOME`.
  *
  * The instance (RPC1b, the terminal RPC design §7.4) names the running Daoris's pipe that a verb sends its
- * press to. Inherited, a `daoris-driver` run from the scratch shell's terminal would press the real
+ * press to. Inherited, a `daoris` run from the scratch shell's terminal would press the real
  * instance's routes; unset, a workspace build reads no address file and acts alone on the scratch home.
  *
  * The machine's heavy-run admission (HEAVYQUEUE1) is read from two more. Its capacity override, inherited,
@@ -204,7 +204,7 @@ export function scratchEnvironment({ home, family, serviceUrl, httpHost, mcpHost
     // reason the HTTP one is: the locator prefers an INSTALLED binary, so a scratch run would hand
     // the session the real machine every time this one is behind it.
     DAORIS_MCP_HOST: mcpHost,
-    // The driver's program a `daoris driver …` typed in this run's terminal is handed to (PUSH1f2a, D194 point 1): this checkout's
+    // The driver's program a `daoris …` typed in this run's terminal is handed to (PUSH1f2a, D194 point 1): this checkout's
     // build, never one the parent shell named; with none built, none, and the CLI says where the program is.
     DAORIS_DRIVER_PROGRAM: driverProgram ?? '',
     // Nothing in this repository reads these: the debug port is the runtime's and the loader's, which
@@ -692,7 +692,7 @@ async function build(args) {
   // Daoris's browser is this same application started with the browser's argument (CHR8, D99), so
   // there is no second project to build.
   run('dotnet', ['build', DESKTOP_PROJECT, '-c', configuration]);
-  // The driver's program a scratch run's `daoris driver …` is handed to (PUSH1f2a): its apphost, named by the run's environment.
+  // The driver's program a scratch run's `daoris …` is handed to (PUSH1f2a): its apphost, named by the run's environment.
   run('dotnet', ['build', DRIVER_HOST_PROJECT, '-c', configuration]);
   console.log('\nbuilt — `node tools/desktop.mjs run` to look at it.');
 }
@@ -767,7 +767,7 @@ async function start(command, args) {
     if (!httpHost) fail('the service host is not built — `node tools/desktop.mjs build`.');
     // Optional: a run without it drives, and a session simply has no connector (ACP4).
     const mcpHost = assemblyExe(MCP_PROJECT) ?? '';
-    // Optional too: a run without it is the window, and its terminal's `daoris driver …` says where the program is.
+    // Optional too: a run without it is the window, and its terminal's `daoris …` says where the program is.
     const driverProgram = assemblyExe(DRIVER_HOST_PROJECT) ?? '';
 
     serviceUrl = `http://127.0.0.1:${await freePort(5188)}`;

@@ -206,7 +206,7 @@ public static class Observation
             "failed",
             Noted.Of(
                 NoteCodes.EndedChoiceNotOffered,
-                $"Not started: `{agent}` did not offer `{refusal.Value}` on its account, so nothing ran; the next look chooses again by its actor's order.",
+                $"Not started: `{agent}` did not offer `{refusal.Value}` on its account, so nothing ran; the next look chooses again by its role's order.",
                 ("agent", agent), ("model", refusal.Value)));
 
     /// <summary>

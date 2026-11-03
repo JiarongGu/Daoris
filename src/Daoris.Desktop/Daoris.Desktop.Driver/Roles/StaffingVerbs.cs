@@ -42,12 +42,12 @@ internal static class StaffingVerbs
             if (args[2] == "take")
             {
                 staffing.Take(id);
-                said.WriteLine($"daoris: #{id} taken: the actors are as that file showed them, and driver.json says so again.");
+                said.WriteLine($"daoris: #{id} taken: the roles are staffed as that file showed them, and driver.json says so again.");
             }
             else
             {
                 staffing.Dismiss(id);
-                said.WriteLine($"daoris: #{id} dismissed: the actors are as they were, and driver.json keeps saying so.");
+                said.WriteLine($"daoris: #{id} dismissed: the roles are staffed as they were, and driver.json keeps saying so.");
             }
 
             return 0;
@@ -63,11 +63,11 @@ internal static class StaffingVerbs
         var found = staffing.Found();
         if (found.Count == 0)
         {
-            said.WriteLine("daoris: no change of driver.json's actors waits on you.");
+            said.WriteLine("daoris: no change of driver.json's staffing waits on you.");
             return 0;
         }
 
-        said.WriteLine("daoris: changes of driver.json's actors another program made, each waiting on you:");
+        said.WriteLine("daoris: changes of driver.json's staffing another program made, each waiting on you:");
         foreach (var row in found)
         {
             said.WriteLine($"  #{row.Id}  found {row.At}");
@@ -78,12 +78,12 @@ internal static class StaffingVerbs
             }
         }
 
-        said.WriteLine("  `daoris settings actor found take <n>` takes one as it stands; `dismiss <n>` leaves the actors as they are.");
+        said.WriteLine("  `daoris settings actor found take <n>` takes one as it stands; `dismiss <n>` leaves the roles as they are.");
         return 0;
     }
 
     private static string Unkept(DriverChoicesWorld world) =>
-        $"{world.ConfigPath}'s actors are the file's own here (not this home's store), so nothing is found to take or dismiss.";
+        $"{world.ConfigPath}'s staffing is the file's own here (not this home's store), so nothing is found to take or dismiss.";
 
     /// <summary>A change from a session's terminal, refused as every person's change is (D194 point 5); null where it may go on.</summary>
     private static int? Session(DriverChoicesWorld world)

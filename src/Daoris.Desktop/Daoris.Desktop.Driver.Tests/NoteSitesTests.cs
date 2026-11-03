@@ -25,7 +25,7 @@ public sealed class NoteSitesTests
     {
         var ended = Observation.ChoiceNotOffered("claude-code-acp", new ModelRefusal("model", "opus", AgentOffers.NotOffered));
         Wrote(ended, "failed",
-            "Not started: `claude-code-acp` did not offer `opus` on its account, so nothing ran; the next look chooses again by its actor's order.",
+            "Not started: `claude-code-acp` did not offer `opus` on its account, so nothing ran; the next look chooses again by its role's order.",
             "ended.choice-not-offered");
         Assert.Equal(("claude-code-acp", "opus"), (ended.Parts![0].Value("agent"), ended.Parts[0].Value("model")));
     }

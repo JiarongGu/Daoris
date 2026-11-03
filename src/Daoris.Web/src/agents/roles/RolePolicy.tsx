@@ -55,7 +55,7 @@ export function WeightField({ n, value, onChange }: { n: number; value: string; 
 /** The limits of a choice in a line: none, or its works, daily budget and share. */
 export function limitsText(t: TFunction, fields: PolicyFields, labelOf: (work: string) => string): string {
   const parts = [
-    fields.works ? t('settings.ai.policy.limits.worksOnly', { works: fields.works.map(labelOf).join(t('settings.ai.actors.and')) }) : null,
+    fields.works ? t('settings.ai.policy.limits.worksOnly', { works: fields.works.map(labelOf).join(t('settings.ai.role.and')) }) : null,
     fields.budget?.trim() ? t(fields.budgetKind === 'tokens' ? 'settings.ai.policy.limits.tokens' : 'settings.ai.policy.limits.starts', { count: Number(fields.budget) }) : null,
     fields.share?.trim() ? t('settings.ai.policy.limits.share', { count: Number(fields.share) }) : null,
   ].filter((part): part is string => part !== null);

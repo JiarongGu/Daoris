@@ -116,7 +116,7 @@ internal sealed class ChatGoOn
     /// reading <see cref="AnswersAloneHold"/> made (the course never reads an event file). Where the course would answer another thing than the go-on
     /// does it keeps today's answer (D212's differences 6 and 9), so what it says is heard and the go-on's reading stays its own.
     /// </summary>
-    private LineCourse Decide(PriorSession record, string? judged = null, bool agentGone = false, bool alone = false, LineAnswer? answer = null)
+    private LineCourse Decide(PriorSession record, string? judged = null, bool agentGone = false, int? alone = null, LineAnswer? answer = null)
     {
         var course = CourseDecision.Decide(
             new CourseFacts(
@@ -129,7 +129,7 @@ internal sealed class ChatGoOn
                     Session: record.Session),
                 CourseBoundary.ProcessExited,
                 Account: new CourseAccount(Answer: answer, Picked: _context.Conversations.PickedOn(record.Session, record.Profile)),
-                Alone: alone ? new CourseAlone(AnswersAlone.Bound) : null, Rules: new CourseRules(Runner: true)),
+                Alone: alone is { } at ? new CourseAlone(at, at) : null, Rules: new CourseRules(Runner: true)),
             CourseTrigger.WordsKept);
         Decided?.Invoke(record.Session, course);
         return course;
@@ -613,12 +613,13 @@ internal sealed class ChatGoOn
             return new(null, $"conversation `{sessionId}` went on in conversation `{next}`, which takes its words.");
         }
 
-        // 🔴 COWORK1e (D188 point 4; the message-urgency design §2.3): answers alone that would take its line on a third time in a row with
-        // nobody between wait for the person, marked before any mark is cleared; a word of theirs, or their *Go on with this answer*, lets
-        // them go. Its line is read over the records already in hand.
-        if (new AnswersAloneHold(_context.Events, _context.Marks, new ContinuationAdmissions(_context.Home)).Holds(record, ServiceClient.ReadRecords(json), DateTimeOffset.UtcNow))
+        // 🔴 Answers alone that would take its line on past its number in a row with nobody between wait for the person, marked before any
+        // mark is cleared; a word of theirs, or their *Go on with this answer*, lets them go.
+        var lines = ServiceClient.ReadRecords(json);
+        var hold = AnswersAloneHold.For(_context.Events, _context.Marks, _context.Home);
+        if (hold.Holds(record, lines, DateTimeOffset.UtcNow))
         {
-            Decide(record, alone: true);
+            Decide(record, alone: hold.HeldAt(record.Session, lines));
             return new(null, $"conversation `{sessionId}`'s answer waits for you: it would take its work on a third time with nobody between.");
         }
 

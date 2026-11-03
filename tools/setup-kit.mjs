@@ -1,10 +1,10 @@
 /**
  * The family rehearsal's set-up phase, in the parts a test can hold without a host or a driver (LAYOUT7a):
  * the doctrine tool's launcher a child of Daoris finds by its bare name, the PATH that puts it first, and a
- * reading of what `daoris-driver place <repository> --preset keep --adoption` prints (the one adoption door, WORKFLOWCLEAN1
- * 1f); for the registration that follows the landing (WSSETUP5a), a reading of what `daoris-driver register` prints and of
+ * reading of what `daoris place <repository> --preset keep --adoption` prints (the one adoption door, WORKFLOWCLEAN1
+ * 1f); for the registration that follows the landing (WSSETUP5a), a reading of what `daoris repository register` prints and of
  * the machine log's lines; and, for a workspace set up one repository at a time (WSSETUP6a), a reading of what
- * `daoris-driver place --workspace` prints.
+ * `daoris place --workspace` prints.
  *
  * ## Why the workspace's CLI, and a launcher of the rehearsal's own
  *
@@ -87,7 +87,7 @@ const following = (lines, from, lead) => {
 };
 
 /**
- * What `daoris-driver place <repository> --preset keep --adoption [--plan]` printed (`PlaceCommand`, the one adoption door), read
+ * What `daoris place <repository> --preset keep --adoption [--plan]` printed (`PlaceCommand`, the one adoption door), read
  * back: null for a field it did not print. `repositories` and `adoption` are the head's; `rows` each repository's line (now,
  * after, suggested); `changes` the sentences under `changes, each said once:`; `refusals` each sentence after `refused:`;
  * `nothingWritten` whether it said a plan wrote and asked nothing; `message` the apply's outcome sentence; `quests` each
@@ -114,7 +114,7 @@ export function readPlace(out) {
 }
 
 /**
- * What `daoris-driver register [--repository <name>]` printed (`RegisterCommand`, WSSETUP5), read back: each
+ * What `daoris repository register [--repository <name>]` printed (`RegisterCommand`, WSSETUP5), read back: each
  * repository's line as its outcome's word, its name and the sentence its row says, and the counts the last line gives
  * (null where it gave none). A line per repository starts with two spaces, the outcome padded to sixteen, a space, the
  * name and two spaces; every other line starts `register: `.
@@ -133,7 +133,7 @@ export function readRegister(out) {
 }
 
 /**
- * The machine log's `registry.followed` lines (WSSETUP5, D124 §3.4), from what `daoris-driver logs --json` printed: each
+ * The machine log's `registry.followed` lines (WSSETUP5, D124 §3.4), from what `daoris logs --json` printed: each
  * as its repository's name, its outcome's word and the names of every field the line carried, in order, so a reader can
  * hold that it carried nothing else. Other events, and lines that are not the log's, are skipped.
  */
@@ -143,7 +143,7 @@ export function readFollowed(out) {
 }
 
 /**
- * The data of every machine log line of `event` (D94), from what `daoris-driver logs --json` printed, in the order the
+ * The data of every machine log line of `event` (D94), from what `daoris logs --json` printed, in the order the
  * lines were written. Other events, and lines that are not the log's, are skipped.
  */
 export function readEvents(out, event) {
@@ -162,7 +162,7 @@ export function readEvents(out, event) {
 const SETUP_STATES = ['set up', 'waiting for your review', 'setting up', 'parked', 'to go', 'skipped', 'declined', 'deleted'];
 
 /**
- * What `daoris-driver place --workspace <name> --adoption …` printed (`WorkspaceSetupCommand`, WSSETUP6), read back. `rows` is the
+ * What `daoris place --workspace <name> --adoption …` printed (`WorkspaceSetupCommand`, WSSETUP6), read back. `rows` is the
  * list a press works from (what touched each, its state now, and each refusal under it); `atOnce`, `pilot` and `agent`
  * the pacing rows; `rules` the ones a press would add or added; `refusals` the press's own, after `refused:`; `messages`
  * each `place: …` sentence that is not a head (a press's, a steer's); `standing` where each repository of a plan stands,

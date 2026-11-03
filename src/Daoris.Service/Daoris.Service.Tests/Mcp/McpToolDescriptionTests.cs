@@ -525,6 +525,19 @@ public sealed partial class McpToolDescriptionTests
         Assert.DoesNotContain("not enforce yet is refused. A change", text);
     }
 
+    /// <summary>CONTEXTDRIVE1d: the role tool says the supervisor's rules are a set of `supervisor`, names their counts and actions, and the revision read.</summary>
+    [Fact]
+    public void CONTEXTDRIVE1d_the_role_tool_names_the_supervisor_s_rules_their_counts_and_the_revision_read()
+    {
+        var text = string.Join(" ", Descriptions().Where(d => d.Tool == "role_propose").Select(d => d.Text));
+
+        Assert.Contains("a `set` of the id `supervisor`", text);
+        Assert.Contains("`answers-alone`", text);
+        Assert.Contains("`tries` cannot be removed", text);
+        Assert.Contains("the revision of the place's rules you read", text);
+        Assert.Contains("before and after: say what holds earlier or later", text);
+    }
+
     // Not after `#`: an entry id's example (`…/DECISIONS.md#D12`) is an anchor in the reader's own
     // repository, not a citation of this one's.
     [GeneratedRegex(@"(?<![#\w])D\d{1,3}\b")]
