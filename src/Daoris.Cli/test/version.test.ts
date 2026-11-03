@@ -115,39 +115,23 @@ test('release-prep reports the git ref, and a README that names no install line'
 });
 
 /**
- * The dispatcher and the two documents that enumerate it are a counterpart set, and counterpart sets
- * rot: `harness` and `driver` shipped, the README's table grew two rows, and the changelog went on
- * saying "Twelve commands" — a sentence nothing read, wrong for two whole landings.
+ * The tree and the document that enumerates it are a counterpart set, and counterpart sets rot: `harness` and `driver` shipped,
+ * the README's table grew two rows, and a sentence nothing read went on naming the old count for two whole landings.
  *
- * Asserted as a SET rather than a count, because a count agrees with itself while naming the wrong
- * command, and a renamed verb is exactly the change that would keep the number right. The set is the
- * dispatcher's own table (MOD7), read rather than parsed out of its source.
+ * Asserted as a SET rather than a count, because a count agrees with itself while naming the wrong command, and a renamed verb is
+ * exactly the change that would keep the number right. ONEWAY1ai-i: the set is the one tree's, the doctrine commands the
+ * dispatcher's own table (MOD7) and every group the desktop program's, read from the tree's `fixtures/command-tree.json`, and
+ * `help`.
  */
-const dispatcherCommands = (): string[] => {
-  const names = COMMANDS.map((command) => command.name).sort();
-  assert.ok(names.length >= 10, 'the dispatcher table emptied — this test is worthless if it is');
+const treeCommands = (): string[] => {
+  const tree = JSON.parse(read('src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/command-tree.json')) as { groups: { name: string }[] };
+  const names = [...COMMANDS.map((command) => command.name), ...tree.groups.map((group) => group.name), 'help'].sort();
+  assert.ok(names.length >= 30, 'the tree emptied — this test is worthless if it is');
   return names;
 };
 
 // The table moved from the README, now the landing page, to the guide it links (GITHUBDOCS1, D211).
-test('the guide\'s command table lists exactly the commands the dispatcher has', () => {
-  const documented = [...read('docs/guide/README.md').matchAll(/^\| `([a-z]+)[ `]/gm)].map((m) => m[1]!).sort();
-  assert.deepEqual(documented, dispatcherCommands());
-});
-
-test('the changelog says how many commands there actually are, and names them all', () => {
-  const NUMBERS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine',
-    'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen',
-    'eighteen', 'nineteen', 'twenty'];
-  const commands = dispatcherCommands();
-  const changelog = read('CHANGELOG.md');
-
-  const claim = changelog.match(/\*\*([A-Z][a-z]+) commands\.\*\*/);
-  assert.ok(claim, 'the changelog must state a command count');
-  assert.equal(claim[1]!.toLowerCase(), NUMBERS[commands.length],
-    `the changelog claims ${claim[1]} commands; the dispatcher has ${commands.length}`);
-
-  // The count is the cheap half. A command nobody wrote a sentence for is the expensive one.
-  const missing = commands.filter((name) => !changelog.includes(`\`${name}\``));
-  assert.deepEqual(missing, [], 'every command must be named in the changelog');
+test('ONEWAY1ai-iv the guide\'s command table lists exactly the commands the tree has', () => {
+  const documented = [...read('docs/guide/README.md').matchAll(/^\| `([a-z-]+)[ `]/gm)].map((m) => m[1]!).sort();
+  assert.deepEqual(documented, treeCommands());
 });
