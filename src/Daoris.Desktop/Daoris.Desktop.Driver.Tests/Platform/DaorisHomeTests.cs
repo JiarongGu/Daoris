@@ -438,6 +438,18 @@ public sealed class DaorisHomeTests
         Assert.Equal(table.IndexOf(HomeEntry.PlaceReceipts) + 1, table.IndexOf(HomeEntry.StewardDesk));
     }
 
+    /// <summary>D233 choice 6: the newest build that has run on the home, a data file of its own after the steward desk, as the three twins hold it.</summary>
+    [Fact]
+    public void The_last_build_is_a_data_file_after_the_steward_desk()
+    {
+        Assert.Same(HomeEntry.LastBuild, HomeEntry.Named("last-build"));
+        Assert.Equal(
+            (HomeCategory.Data, "data/last-build.json", "data/last-build.json"),
+            (HomeEntry.LastBuild.Category, HomeEntry.LastBuild.New, HomeEntry.LastBuild.Old));
+        var table = HomeEntry.Table.ToList();
+        Assert.Equal(table.IndexOf(HomeEntry.StewardDesk) + 1, table.IndexOf(HomeEntry.LastBuild));
+    }
+
     /// <summary>
     /// CONFIRMWAIT1 (the confirm-wait design §15.2 item 6): the keys of a terminal's sent presses, kept as long as the press's card lives, a
     /// profiles folder after the window's, as the three twins hold it. A file that holds a key is a sign-in (D172 point 3), and never under
