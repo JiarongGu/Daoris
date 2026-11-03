@@ -38,6 +38,7 @@
   "work.handed.section.proposing": "提议规则",
   "work.handed.section.set-up": "供你审阅的搭建",
   "work.handed.section.boundary": "边界",
+  "work.handed.section.block": "Daoris 的常驻说明",
   "work.handed.section.rules": "权限规则",
   "work.handed.section.intake": "受理的指令",
   "work.handed.section.brief-opening": "接续的是什么，以及最初的请求",
@@ -59,6 +60,7 @@
   "work.handed.source.checkouts": "你声明的检出",
   "work.handed.source.driver": "驱动自己的话",
   "work.handed.source.permissions": "本机的权限规则",
+  "work.handed.source.machine": "本机的设置、会话的树及其工作线",
   "work.handed.none.empty": "没有可交付的内容",
   "work.handed.none.no-ask": "这个委托不是由需求发起的",
   "work.handed.none.not-answered": "服务没有给出",
@@ -81,5 +83,6 @@
   "work.handed.cut.brief-clipped": "{{n}} 项各自超过自己的上限，已在原处注明截断",
   "work.handed.cut.brief-list": "超出列表的上限，略去 {{n}} 条",
   "work.handed.cut.brief-parts-bound": "超出 {{limit}} 个字符的上限，略去 {{n}} 段",
-  "work.handed.cut.brief-course-bound": "超出 {{limit}} 个字符的上限，略去 {{n}} 项计数"
+  "work.handed.cut.brief-course-bound": "超出 {{limit}} 个字符的上限，略去 {{n}} 项计数",
+  "work.handed.cut.block-filed": "放在单独的文件里交付，因为连同它的首个提示会超过 {{limit}} 个字符"
 }

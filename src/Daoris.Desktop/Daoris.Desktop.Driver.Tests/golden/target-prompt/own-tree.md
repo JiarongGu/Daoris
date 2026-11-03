@@ -23,9 +23,8 @@ The person's words on how a commit is written, to follow:
 
 > Subject in the imperative, the ticket key first: `T-9 Add the note field`.
 
-Look before you ask. The quest, its links and its files; this repository's own documents, code and
-history (its log, and the commits that last changed what you are changing); the workspace's
-knowledge, through your connector's `knowledge_search`. A question one of these
+Look before you ask: the quest, its links and its files, and the places Daoris's standing block names
+under *Where things are*. A question one of these
 settles is not a question: decide it, and keep what settled it for your closing note. Where the
 evidence leans one way without settling it, take that reading, carry on, and say in your closing
 note which reading you took and on what evidence, so the person can correct it in review rather than

@@ -31,6 +31,12 @@ public sealed class OpinionResumeTickTests : IDisposable
         "Another agent, Codex by OpenAI, read your work and claims what follows. These are its claims, not the person's words "
         + "and not facts.\n\nFinding 1 (must, sure), at `README.md:1`: The heading says \"engine\" and nothing else.";
 
+    /// <summary>
+    /// CONTEXTDRIVE1b (§3 point 2): a go-on's words end with Daoris's count for its line, here the findings' go-on by an answer alone
+    /// and the default rule that holds the line for the person, handed after them.
+    /// </summary>
+    private const string Counted = "Daoris's count for this line: 1 go-on by answers alone in a row; Daoris waits for the person after 2.";
+
     public OpinionResumeTickTests()
     {
         Directory.CreateDirectory(_home);
@@ -80,7 +86,10 @@ public sealed class OpinionResumeTickTests : IDisposable
         Assert.True(service.Said("s1").Count == 0, seen);
         Assert.Contains("op-w1", service.Attempted);
         var prompt = Heard().Last(line => line["method"]!.GetValue<string>() == "session/prompt");
-        Assert.Equal([Findings], prompt["blocks"]!.AsArray().Select(block => block!.GetValue<string>()));
+        var blocks = prompt["blocks"]!.AsArray().Select(block => block!.GetValue<string>()).ToList();
+        Assert.Equal(2, blocks.Count);
+        Assert.Equal(Findings, blocks[0]);
+        Assert.Equal(Counted, blocks[1]);
         Assert.True(prompt["resumed"]!.GetValue<bool>());
 
         Assert.Contains(Events("s1"), e => e is { Kind: SessionEventKind.User, Origin: "target", Opinion: "op1", Id: "op-w1" } && e.Text == Findings);
@@ -127,7 +136,8 @@ public sealed class OpinionResumeTickTests : IDisposable
 
         var runs = Heard();
         Assert.Equal(2, runs.Length);
-        Assert.Equal(("native-1", Findings), (runs[1]["resume"]!.GetValue<string>(), runs[1]["prompt"]!.GetValue<string>()));
+        Assert.Equal("native-1", runs[1]["resume"]!.GetValue<string>());
+        Assert.Equal($"{Findings}\n\n{Counted}", runs[1]["prompt"]!.GetValue<string>());
         Assert.True(runs[1]["answers"]!.GetValue<bool>(), "the resumed run's rules did not allow opinion_answer");
         Assert.Equal((1, "completed"), (service.SessionCount, service.State("s1")));
         Assert.Contains(Events("s1"), e => e is { Kind: SessionEventKind.User, Origin: "target", Opinion: "op1" } && e.Text == Findings);

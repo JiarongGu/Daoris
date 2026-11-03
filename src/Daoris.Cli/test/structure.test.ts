@@ -186,10 +186,11 @@ test('the map names declared modules and files that are there', () => {
 const mapFile = join(cliRoot, 'test', 'fixtures', 'structure.json');
 
 // PUSH1f2b (D194 point 7): `driver` and `workflows` left with the driver family's TypeScript, the family Daoris's driver program's whole;
-// PUSH1f2e `accounts`, and PUSH1f2f `agents` and `plugins`, the seam moved to `platform/driverprogram.ts`.
+// PUSH1f2e `accounts`, and PUSH1f2f `agents` and `plugins`, the seam moved to `platform/driverprogram.ts`. ONEWAY1ai-i: `service` and
+// `browser` left with the registry's, the remotes' and the browser's verbs, the desktop program's typed operations now.
 test("the map names the CLI's modules", () => {
   assert.deepEqual(readMap(readFileSync(mapFile, 'utf8')).modules,
-    ['cli', 'platform', 'doctrine', 'layout', 'tools', 'service', 'browser']);
+    ['cli', 'platform', 'doctrine', 'layout', 'tools']);
 });
 
 test("the CLI's own tree keeps its structure", () => {
@@ -200,9 +201,9 @@ test("the CLI's own tree keeps its structure", () => {
     .filter((entry) => entry.isFile())
     .map((entry) => relative(testsFolder, join(entry.parentPath, entry.name)).split('\\').join('/'));
 
-  // A floor for the walk, not a size the CLI keeps: the management families left it row by row (D194), 76 sources after PUSH1f2d,
-  // and 81 test files after PUSH1f2f, the last.
-  assert.ok(sources.length >= 50, `the gate read only ${sources.length} sources: its walk no longer reaches the sources' tree`);
+  // A floor for the walk, not a size the CLI keeps: the management families left it row by row (D194), and the last of its
+  // management verbs at ONEWAY1ai-i, which left the doctrine commands and the seam, 43 sources.
+  assert.ok(sources.length >= 35, `the gate read only ${sources.length} sources: its walk no longer reaches the sources' tree`);
   assert.ok(tests.length >= 70, `the gate read only ${tests.length} tests: its walk no longer reaches the tests' tree`);
   assert.deepEqual(checkStructure(map, sources, tests), [], "each breaks the CLI's structure (the code-structure design §5)");
 });

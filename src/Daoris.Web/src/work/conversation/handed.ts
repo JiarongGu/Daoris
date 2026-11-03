@@ -36,6 +36,8 @@ export const HANDED_CUTS: Readonly<Record<string, readonly CutValue[]>> = {
   'brief-parts-bound': ['n', 'limit'],
   // CONTEXTDRIVE1b: the line's course past its own bound.
   'brief-course-bound': ['n', 'limit'],
+  // CONTEXTONE1c: the standing block handed through its own file past the bound on the first prompt.
+  'block-filed': ['limit'],
 };
 
 type CutValue = 'n' | 'limit' | 'from' | 'to';

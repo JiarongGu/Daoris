@@ -48,5 +48,22 @@
   "work.conversation.raw": "此版本不认识的更新：{{title}}",
   "work.conversation.textOnly": "这个会话没有保存对话：它的通道只传文本，或者它运行于开始保存对话之前。它的输出在控制台里。",
   "work.conversation.nothingYet": "还没有说过话。你发出的消息会出现在这里，智能体的回答在它下面。",
-  "work.conversation.nothingSaid": "这次对话里没有说过任何话。"
+  "work.conversation.asked.helper": "已请 {{agent}} 作为助手",
+  "work.conversation.asked.anyHelper": "已请一位助手",
+  "work.conversation.asked.state.asked": "已请求",
+  "work.conversation.asked.state.waiting": "等你同意",
+  "work.conversation.asked.state.approved": "正在开始",
+  "work.conversation.asked.state.started": "正在读",
+  "work.conversation.asked.state.answered": "已回答",
+  "work.conversation.asked.state.refused": "已拒绝",
+  "work.conversation.asked.state.cooling": "等它的账户",
+  "work.conversation.asked.answeredAt": "{{time}} 已回答",
+  "work.conversation.asked.takenNext": "作为下一轮收下",
+  "work.conversation.asked.comesBack": "它的回答会作为本会话的下一轮回到这里。",
+  "work.conversation.asked.answer": "{{agent}} 的回答 · 待核实的说法，不是你的话",
+  "work.conversation.asked.answerAny": "助手的回答 · 待核实的说法，不是你的话",
+  "work.conversation.asked.open": "打开它的会话",
+  "work.conversation.asked.began": "以 {{agent}} 的回答开始",
+  "work.conversation.asked.beganAny": "以助手的回答开始",
+  "work.conversation.nothingSaid":"这次对话里没有说过任何话。"
 }

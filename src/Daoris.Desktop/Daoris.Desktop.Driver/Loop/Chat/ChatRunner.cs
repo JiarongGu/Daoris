@@ -399,8 +399,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
 
     // The process a new conversation in a tree of its own is told with its first message (PROCESS1d-ii), held until then. A map of
     // its own, never the browser's, which a hand-over's briefing appends: a conversation handed over is told Daoris's record instead.
-    // COWORKVIEW1e-i: the routing standing a new conversation is told with its first message, taken by it like its process.
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, RoutingStanding> _toldRouting =
+    // CONTEXTONE1c: what the standing block a new conversation is told with its first message is composed from, taken by it like its process.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, StandingFacts> _toldBlock =
         new(StringComparer.OrdinalIgnoreCase);
 
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, ProcessBriefing> _toldProcess =
@@ -818,7 +818,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             if (started?.SessionId is null)
             {
                 _toldProcess.TryRemove(sessionId, out _);
-                _toldRouting.TryRemove(sessionId, out _);
+                _toldBlock.TryRemove(sessionId, out _);
             }
         }
     }
@@ -846,7 +846,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         {
             Also = [.. across.Writes.Select(target => target.Path)],
             Keeps = true,
-            Routing = RoutingStanding.Told(ParticipantWork.Chat, config, known),
+            // CONTEXTONE1c: its standing block, its tree's facts with its repository's routing and the person's choices on this machine.
+            Block = StandingBlocks.OnMachine(StandingBlocks.OfTree(known.Repository, workTree), ParticipantWork.Chat, config, registry, known.Workspace),
         };
     }
 
@@ -1211,6 +1212,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             Housekeeping = housekeeping,
             Settings = access.Settings,
             CheckoutsOff = access.CheckoutsOff,
+            // CONTEXTONE1c: in no repository, its standing block is the workspace's part alone, its room's circle or the whole machine.
+            Block = new StandingFacts { Workspace = circle },
         };
     }
 
@@ -1488,13 +1491,9 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             // Its toolchain's environment and its tools at the start, as every driven session's (CONTEXTONE1d).
             Driver.Equip(resolved, info, selection);
 
-            // COWORKVIEW1e-i: its repository's routing standing, told with a new conversation's first message and at each go-on, since a
-            // drive may have moved since it began.
-            if (place.Routing is { } routing)
-            {
-                if (goOn is null) _toldRouting[sessionId] = routing;
-                else goOn.Ask.Routing = routing;
-            }
+            // CONTEXTONE1c (D230 point 3): its standing block, on its harness, told with a new conversation's first message and never at a
+            // go-on, which resumes the same conversation; a hand-over's adds the memory its brief hands on (WithProcess).
+            if (place.Block is { } block && goOn is null) _toldBlock[sessionId] = StandingBlocks.OnHarness(block, resolved, workTree);
 
             // The run's bracket, before what names its process is composed: what this start is handed of the downloads kept on its record
             // (KEEP1b), a go-on as a first start, and its process's lineage token issued (COWORKVIEW1a), a go-on's the one issued at its move,
@@ -2472,10 +2471,17 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         return told ? draft with { Palette = palette with { Text = null } } : draft;
     }
 
-    /// <summary>The start's process and maker, consumed by the first ordinary or handed-over message.</summary>
+    /// <summary>
+    /// The start's process, maker and standing block, consumed by the first ordinary or handed-over message: a hand-over's block says the
+    /// memory its brief hands on (CONTEXTONE1c).
+    /// </summary>
     internal ChatMessage WithProcess(string sessionId, ChatMessage message)
     {
-        if (_toldRouting.TryRemove(sessionId, out var routing)) message = message with { Routing = routing };
+        if (_toldBlock.TryRemove(sessionId, out var block))
+        {
+            message = message with { Block = StandingBlock.Compose(block with { Memory = message.Brief?.Memory ?? [] }) };
+        }
+
         return _toldProcess.TryRemove(sessionId, out var told) ? message with { Process = told } : message;
     }
 
@@ -2970,7 +2976,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             _context.Palettes.TryRemove(sessionId, out _);
             _toldProcess.TryRemove(sessionId, out _);
             LetGoChecks(sessionId);
-            _toldRouting.TryRemove(sessionId, out _);
+            _toldBlock.TryRemove(sessionId, out _);
             // Nothing waiting will be sent now, and the page is told its queue emptied. COWORK1c: words kept on its record wait there for
             // it to go on, unless the person stopped it, which ends them with it.
             var personStopped = _processes.StopMade(sessionId) is { Reason: null };

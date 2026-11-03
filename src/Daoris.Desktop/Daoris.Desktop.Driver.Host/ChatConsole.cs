@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// A conversation from a terminal: `daoris-driver chat --repository <name> [--adapter <name>]`.
+/// A conversation from a terminal: `daoris chat --repository <name> [--agent <name>]`.
 /// </summary>
 /// <remarks>
 /// <para><b>Why a headless door at all.</b> The desktop is where a person chats (D49 §3), and the
@@ -102,7 +102,7 @@ internal static class ChatConsole
         if (string.IsNullOrWhiteSpace(repository))
         {
             Console.Error.WriteLine(
-                "usage: daoris-driver chat --repository <name> [--adapter <name>] [--profile <name>] [--own-tree]\n"
+                "usage: daoris chat --repository <name> [--agent <name>] [--account <name>] [--own-tree]\n"
                 + "  Messages are read from stdin, one per line; the session's output goes to stdout.\n"
                 + "  A message sent while a turn runs waits for it. Ctrl+C during a turn stops the turn and\n"
                 + "  keeps the conversation, handing back what was waiting; from a script, a line holding only\n"
@@ -110,8 +110,8 @@ internal static class ChatConsole
                 + "  A line `:attach <path>` attaches that file to your next message; the agent reads it\n"
                 + "  where it is kept for this conversation, outside the repository.\n"
                 + "  End of input ends the conversation, and the record says how it finished.\n"
-                + "  --profile picks which account to run as; omitted takes the workspace's\n"
-                + "  default, then the machine's (`daoris agent profile ...`).\n"
+                + "  --account picks which account to run as; omitted takes the agent's\n"
+                + "  order (`daoris agent account ...`).\n"
                 + "  --own-tree opens the conversation in a session worktree of its own (D51), so your\n"
                 + "  uncommitted work in the checkout stays yours alone.");
             return 2;
@@ -119,18 +119,18 @@ internal static class ChatConsole
 
         var configPath = DriverConfig.ResolvePath();
         var config = DriverConfig.Load(configPath);
-        // `--adapter` is the person's pick; without it Chat's order is walked, as the screen's press walks it (FOUNDATION1j part iii).
-        var (adapter, order) = ActorChoices.NewChat(config, Flag(args, "--adapter"));
+        // `--agent` is the person's pick; without it Chat's order is walked, as the screen's press walks it (FOUNDATION1j part iii).
+        var (adapter, order) = ActorChoices.NewChat(config, Flag(args, "--agent"));
         return await ConverseAsync(configPath, async (runner, onEnded) =>
         {
             var start = await runner.StartAsync(
                 repository, adapter, config, onEnded, order: order,
                 // The per-session picker, on the surface a machine with no screen has (D49 §4, D50).
-                profile: Flag(args, "--profile"),
+                profile: Flag(args, "--account"),
                 // The per-conversation tree choice (D51) — beside the repository's standing opt-in.
                 ownTree: args.Contains("--own-tree") ? true : null,
                 // The account the person named is their pick, which the conversation then waits for (FOUNDATION1a-ii).
-                picked: !string.IsNullOrWhiteSpace(Flag(args, "--profile"))).ConfigureAwait(false);
+                picked: !string.IsNullOrWhiteSpace(Flag(args, "--account"))).ConfigureAwait(false);
 
             // A refusal is an answer the person acts on — the ledger's own sentence, verbatim.
             Console.Error.WriteLine($"chat: {start.Message}");

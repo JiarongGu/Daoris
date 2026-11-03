@@ -48,9 +48,13 @@ public sealed class AgentContextPortsTests
         var target = Target();
         Assert.Equal(SessionPartsText.Of(target), actual.Parts(target));
         TargetPrompt.Piece[] pieces = [new(HandedSections.Quest, "exact words")];
-        Assert.Equal(System.Text.Json.JsonSerializer.Serialize(InstructionAccounting.Account(target, pieces)),
-            System.Text.Json.JsonSerializer.Serialize(actual.Account(target, pieces)));
-        Assert.Equal(InstructionAccounting.Intake(target, "intake").Text, actual.Intake(target, "intake").Text);
+        Assert.Equal(System.Text.Json.JsonSerializer.Serialize(InstructionAccounting.Account(target, pieces, null)),
+            System.Text.Json.JsonSerializer.Serialize(actual.Account(target, pieces, null)));
+        Assert.Equal(InstructionAccounting.Intake(target, "intake", null).Text, actual.Intake(target, "intake", null).Text);
+        // CONTEXTONE1c: the standing block, composed and bound on the same operations.
+        var facts = new StandingFacts { Repository = "stand" };
+        Assert.Equal(StandingBlock.Fitted(facts, 0).Text, actual.Block(facts, 0).Text);
+        Assert.Equal(facts with { Skills = [] }, actual.OnHarness(facts, new ClaudeCodeAdapter(), "C:/nowhere"));
         var output = new SessionOutput();
         var streams = Assert.IsType<SessionStreams>(((ISessionOutput)output).ForSession("s1"));
         streams.Open(new("task", SessionStreamKind.Task, "Task", true));
@@ -107,7 +111,7 @@ public sealed class AgentContextPortsTests
                 AgentContext.Current = new ContextPort([]) { Failure = failure };
                 Assert.Same(failure, Assert.Throws(failure.GetType(), () => TargetPrompt.Composed(Target())));
                 Assert.Same(failure, Assert.Throws(failure.GetType(), () => TargetPrompt.Composed(Target() with { Prompt = "intake" })));
-                Assert.Same(failure, Assert.Throws(failure.GetType(), () => AgentContext.Current.Account(Target(), [])));
+                Assert.Same(failure, Assert.Throws(failure.GetType(), () => AgentContext.Current.Account(Target(), [], null)));
                 Assert.Same(failure, Assert.Throws(failure.GetType(), () => AgentContext.Current.Parts(Target())));
                 Assert.Same(failure, Assert.Throws(failure.GetType(), () => AgentContext.Current.OpenTranscript("stand", false)));
             }
@@ -151,6 +155,7 @@ public sealed class AgentContextPortsTests
     }
 
     private sealed class ContextPort(List<string> calls) : IAgentContext
+
     {
         public Exception? Failure;
         public SessionTarget? Target;
@@ -159,9 +164,11 @@ public sealed class AgentContextPortsTests
         public readonly ComposedInstruction Instruction = new("stand instruction", new(17, []));
         private void Check() { if (Failure is { } failure) throw failure; }
         public TextWriter OpenTranscript(string path, bool append) { Check(); calls.Add($"open:{path}:{append}"); return new Writer(calls); }
-        public ComposedInstruction Account(SessionTarget target, IReadOnlyList<TargetPrompt.Piece> pieces) { Check(); Target = target; Pieces = pieces; return Instruction; }
-        public ComposedInstruction Intake(SessionTarget target, string prompt) { Check(); Target = target; Prompt = prompt; return Instruction; }
+        public ComposedInstruction Account(SessionTarget target, IReadOnlyList<TargetPrompt.Piece> pieces, StandingBlockTold? block) { Check(); Target = target; Pieces = pieces; return Instruction; }
+        public ComposedInstruction Intake(SessionTarget target, string prompt, StandingBlockTold? block) { Check(); Target = target; Prompt = prompt; return Instruction; }
         public string Parts(SessionTarget target) { Check(); Target = target; return ""; }
+        public StandingBlockTold Block(StandingFacts facts, int before) { Check(); return new("stand block", new HandedSection(HandedSections.Block, HandedSources.Machine, "stand block")); }
+        public StandingFacts OnHarness(StandingFacts facts, ISessionAdapter adapter, string tree) { Check(); return facts; }
     }
     private sealed class Writer(List<string> calls) : StringWriter
     {

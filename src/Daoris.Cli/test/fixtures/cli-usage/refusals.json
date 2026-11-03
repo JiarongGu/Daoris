@@ -1,20 +1,9 @@
 [
-  {"argv":["frobnicate"],"code":2,"out":["daoris: unknown command 'frobnicate' — run 'daoris --help'"]},
-  {"argv":["harness"],"code":2,"out":["daoris: unknown command 'harness' — it is `daoris agent` now"]},
-  {"argv":["harness","list"],"code":2,"out":["daoris: unknown command 'harness' — it is `daoris agent` now"]},
   {"argv":["check"],"code":2,"out":["daoris: no daoris.json in '<cwd>' — run 'daoris init' first"]},
   {"argv":["sync"],"code":2,"out":["daoris: no daoris.json in '<cwd>' — run 'daoris init' first"]},
   {"argv":["index"],"code":2,"out":["daoris: no daoris.json in '<cwd>' — run 'daoris init' first"]},
   {"argv":["status"],"code":2,"out":["daoris: no daoris.json in '<cwd>' — run 'daoris init' first"]},
+  {"argv":["status","--machine"],"code":2,"out":["daoris: `status --machine` is no flag now: `daoris remote list` reads this machine's remotes; nothing was done."]},
   {"argv":["doctor"],"code":2,"out":["daoris: no daoris.json in '<cwd>' — run 'daoris init' first"]},
-  {"argv":["upstream"],"code":2,"out":["daoris: usage: daoris upstream <file> | daoris upstream --all"]},
-  {"argv":["retire","aurora","--dry-run"],"code":0,"out":["daoris: would retire aurora — the registration only; no file is ever touched"]},
-  {"argv":["wire","aurora"],"code":2,"out":["daoris: usage: daoris wire <repository> --workspace <name> — e.g. `daoris wire aurora-engine --workspace work`."]},
-  {"argv":["import","--dry-run"],"code":0,"out":["daoris: would import the service's own knowledge root"]},
-  {"argv":["remote","frobnicate"],"code":2,"out":["daoris: unknown remote verb 'frobnicate' — one of: list, add, remove"]},
-  {"argv":["remote","add"],"code":2,"out":["daoris: `remote add` needs a workspace name — e.g. `daoris remote add aurora`. The name is the workspace, and it is what a shared deployment declares itself to be."]},
-  {"argv":["browser"],"code":2,"out":["daoris: `browser` takes `daoris browser favorite list`, `daoris browser favorite add <address> [--title T]`, `daoris browser favorite remove <address>`, `daoris browser extensions [offer|refuse]`, `daoris browser use [daoris|edge]`, or `daoris browser links [system|daoris]`."]},
-  {"argv":["browser","frobnicate"],"code":2,"out":["daoris: `browser` takes `daoris browser favorite list`, `daoris browser favorite add <address> [--title T]`, `daoris browser favorite remove <address>`, `daoris browser extensions [offer|refuse]`, `daoris browser use [daoris|edge]`, or `daoris browser links [system|daoris]`."]},
-  {"argv":["browser","favorite","frobnicate"],"code":2,"out":["daoris: `browser favorite` does not know `frobnicate` — it takes `daoris browser favorite list`, `daoris browser favorite add <address> [--title T]`, `daoris browser favorite remove <address>`, `daoris browser extensions [offer|refuse]`, `daoris browser use [daoris|edge]`, or `daoris browser links [system|daoris]`."]},
-  {"argv":["browser","history"],"code":2,"out":["daoris: `browser history` is retired: Daoris's browser keeps the browser's own history now, on its History page, where it is cleared as well."]}
+  {"argv":["upstream"],"code":2,"out":["daoris: usage: daoris upstream <file> | daoris upstream --all"]}
 ]

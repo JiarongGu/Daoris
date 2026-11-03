@@ -4,7 +4,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// HEAVYRUN1b1 (D180's HEAVYRUN1 notes): a driven session in a repository that marks heavy gates is told to run the checks that
-/// cover what it changes while it works, and those gates once, at its end, through <c>daoris-driver run-heavy</c>, which waits its
+/// cover what it changes while it works, and those gates once, at its end, through <c>daoris gate run</c>, which waits its
 /// turn behind another session's run of the same repository. Said only where its PATH finds the verb: an install's launchers beside
 /// the home, which every session's PATH starts with. A repository that marks none, and a workspace build, are told nothing.
 /// Reads files only, so the fast half's.
@@ -13,7 +13,7 @@ public sealed class HeavyToldTests : IDisposable
 {
     private const string Said =
         "While you work, run the checks that cover what you change. Once, when the work is done, run this repository's heavy gates "
-        + "(`build`, `e2e`) through `daoris-driver run-heavy`, from this tree's root: it waits its turn behind another session's run "
+        + "(`build`, `e2e`) through `daoris gate run`, from this tree's root: it waits its turn behind another session's run "
         + "of this repository rather than running beside it. Never run those gates whole another way.";
 
     private readonly HeavyFixture _fixture = new("heavy-told");
@@ -44,7 +44,7 @@ public sealed class HeavyToldTests : IDisposable
     [Fact]
     public void A_repository_that_marks_heavy_gates_is_told_them_in_declared_order_with_the_verb()
     {
-        Launcher("daoris-driver.cmd");
+        Launcher("daoris.cmd");
         Marked();
 
         Assert.Equal(Said, HeavyTold.For(_fixture.Checkout, Home));
@@ -59,12 +59,12 @@ public sealed class HeavyToldTests : IDisposable
     public void A_long_test_command_is_told_to_go_through_the_verb_wherever_it_is_reached()
     {
         Assert.Null(HeavyTold.Hand(_fixture.Checkout, Home, "engine", checks: null, takesRules: true).Words);
-        Launcher("daoris-driver.cmd");
+        Launcher("daoris.cmd");
 
         var none = HeavyTold.Hand(_fixture.Checkout, Home, "engine", checks: null, takesRules: true);
 
         Assert.Equal(HeavyTold.Focused, none.Words);
-        Assert.Contains("`daoris-driver run-heavy -- <command>`", none.Words);
+        Assert.Contains("`daoris gate run -- <command>`", none.Words);
         Assert.Contains("the merge queue's gates among them", none.Words);
         Assert.Null(HeavyTold.For(_fixture.Checkout, Home));
         Assert.Empty(none.Deny);
@@ -77,7 +77,7 @@ public sealed class HeavyToldTests : IDisposable
     [Fact]
     public void A_repository_that_declares_no_gates_or_marks_none_heavy_is_told_nothing()
     {
-        Launcher("daoris-driver.cmd");
+        Launcher("daoris.cmd");
 
         Assert.Null(HeavyTold.For(_fixture.Checkout, Home));
 
@@ -98,7 +98,7 @@ public sealed class HeavyToldTests : IDisposable
     [Fact]
     public void A_repository_that_marks_none_is_told_this_machine_s_mapping_for_it()
     {
-        Launcher("daoris-driver.cmd");
+        Launcher("daoris.cmd");
         File.WriteAllText(
             DaorisHome.Entry(Home, HomeEntry.DriverConfig),
             """{"heavyGates":{"engine":[{"name":"build","run":"dotnet build"},{"name":"e2e","run":"npm run e2e"}],"shop":[{"name":"web","run":"npm test"}]}}""");
@@ -119,7 +119,7 @@ public sealed class HeavyToldTests : IDisposable
     [Fact]
     public void A_driver_file_that_does_not_read_tells_nothing_of_a_mapping()
     {
-        Launcher("daoris-driver.cmd");
+        Launcher("daoris.cmd");
         File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.DriverConfig), "{ not json");
 
         Assert.Null(HeavyTold.For(_fixture.Checkout, Home));
@@ -137,10 +137,8 @@ public sealed class HeavyToldTests : IDisposable
         Assert.Null(HeavyTold.For(_fixture.Checkout, Home));
         Assert.Null(HeavyTold.For(_fixture.Checkout, null));
 
-        Launcher("daoris.cmd");
-        Assert.Null(HeavyTold.For(_fixture.Checkout, Home));
-
-        Launcher("daoris-driver");
+        // ONEWAY1ai-ii: `daoris` is the desktop program's launcher now, so the shell's own is enough to reach `gate run`.
+        Launcher("daoris");
         Assert.Equal(Said, HeavyTold.For(_fixture.Checkout, Home));
     }
 

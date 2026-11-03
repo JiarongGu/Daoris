@@ -1,3 +1,5 @@
+using Daoris.Driver;
+
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
@@ -33,13 +35,14 @@ public sealed class StubFileTests : IDisposable
     }
 
     [Theory]
-    [InlineData("Make the port.\n\nRouting standing here: not driven. Work your rows yourself.", "Make the port.")]
-    [InlineData("Make the port. | Before this turn. | Routing standing here: open. Go.", "Make the port. | Before this turn.")]
-    [InlineData("Make the port.\\n\\nRouting standing here: open. Go.", "Make the port.")]
+    [InlineData("Make the port.\n\nDaoris's standing block for this session: where things are.\n\nRouting standing here: not driven. Go.", "Make the port.")]
+    [InlineData("Make the port. | Before this turn. | Daoris's standing block for this session: where. Routing standing here: open.", "Make the port. | Before this turn.")]
+    [InlineData("Make the port.\\n\\nDaoris's standing block for this session: where things are.", "Make the port.")]
     [InlineData("Make the port.", "Make the port.")]
-    public void A_prompt_is_read_without_the_routing_line_Daoris_appends(string prompt, string words)
+    public void A_prompt_is_read_without_the_standing_block_Daoris_appends(string prompt, string words)
     {
-        Assert.Equal(words, StubFile.WithoutRouting(prompt));
+        Assert.Equal(words, StubFile.WithoutBlock(prompt));
+        Assert.StartsWith(StubFile.BlockLead, StandingBlock.Opening, StringComparison.Ordinal);
     }
 
     [Fact]

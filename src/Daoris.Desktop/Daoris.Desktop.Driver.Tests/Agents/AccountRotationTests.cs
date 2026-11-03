@@ -427,7 +427,7 @@ public sealed class AccountRotationTests : IDisposable
         Assert.Equal(
             ["held.wait-some", "held.clause-signed-out", "held.clause-cooling", "held.wait-first", "held.sign-in-sooner"], NoteAssert.Codes(wait.Parts));
         Assert.Equal("default", wait.Parts[3].Value("why"));
-        Assert.Equal(["daoris agent login fake --profile account-1"], (IReadOnlyList<string>)wait.Parts[4].Value("logins")!);
+        Assert.Equal(["daoris agent login fake --account account-1"], (IReadOnlyList<string>)wait.Parts[4].Value("logins")!);
 
         var states = new List<AccountState>
         {
@@ -438,7 +438,7 @@ public sealed class AccountRotationTests : IDisposable
         Assert.Equal(
             ["held.wait-some", "held.clause-signed-out", "held.clause-refused", "held.clause-signed-out", "held.sign-in"], NoteAssert.Codes(none.Parts));
         Assert.Equal(
-            ["daoris agent login fake --profile account-1", "daoris agent login fake --profile \"my team\""],
+            ["daoris agent login fake --account account-1", "daoris agent login fake --account \"my team\""],
             (IReadOnlyList<string>)none.Parts[4].Value("logins")!);
 
         // A state that names no account cannot be said by code, so its sentence keeps its words.
@@ -568,7 +568,7 @@ public sealed class AccountRotationTests : IDisposable
             "no `fake` account this start may use is ready: `account-1` is not signed in, `account-2` is cooling until Oct 3, "
             + $"16:02 ({Zone.Id}); the first ready, `account-2`, at Oct 3, 16:02 ({Zone.Id}), Daoris's default: the agent named "
             + "no time. Daoris starts nothing on them until then. A sign-in starts it sooner: "
-            + "`daoris agent login fake --profile account-1`, or Agents → the agent's page → Accounts.",
+            + "`daoris agent login fake --account account-1`, or Agents → the agent's page → Accounts.",
             RotationWords.Wait("fake", [new("account-1", AccountReadiness.SignedOut), new("account-2", AccountReadiness.Cooling, cooling)], Zone));
     }
 
@@ -578,8 +578,8 @@ public sealed class AccountRotationTests : IDisposable
     {
         Assert.Equal(
             "no `claude-code` account this start may use is ready: `account-1` is not signed in, `account-2` was refused by its "
-            + "provider, `gmail` is not signed in. A sign-in starts it: `daoris agent login claude-code --profile account-1`, "
-            + "`daoris agent login claude-code --profile gmail`, or Agents → the agent's page → Accounts.",
+            + "provider, `gmail` is not signed in. A sign-in starts it: `daoris agent login claude-code --account account-1`, "
+            + "`daoris agent login claude-code --account gmail`, or Agents → the agent's page → Accounts.",
             RotationWords.NoneReady("claude-code", [
                 new("account-1", AccountReadiness.SignedOut), new("account-2", AccountReadiness.Refused), new("gmail", AccountReadiness.SignedOut),
             ]));

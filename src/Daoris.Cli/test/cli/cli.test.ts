@@ -7,9 +7,12 @@ import { COMMANDS, runCli } from '../../src/cli.ts';
 import type { CliCommand } from '../../src/platform/types.ts';
 import { makeFixture } from '../_fixture.ts';
 
+/** A stand-in for the desktop's program: the dispatcher's tests never start the real one. */
+const nowhere = () => 2 as const;
+
 test('--help prints usage and exits 0', () => {
   const out: string[] = [];
-  const code = runCli(['--help'], process.cwd(), (s) => out.push(s));
+  const code = runCli(['--help'], process.cwd(), (s) => out.push(s), nowhere, null);
   assert.equal(code, 0);
   assert.match(out.join('\n'), /daoris <command>/);
   for (const cmd of ['init', 'sync', 'check', 'upstream', 'index', 'status']) {
@@ -19,47 +22,46 @@ test('--help prints usage and exits 0', () => {
 
 test('--version prints the package version', () => {
   const out: string[] = [];
-  const code = runCli(['--version'], process.cwd(), (s) => out.push(s));
+  const code = runCli(['--version'], process.cwd(), (s) => out.push(s), nowhere, null);
   assert.equal(code, 0);
   assert.match(out.join('\n'), /^\d+\.\d+\.\d+$/m);
 });
 
-test('an unknown command is a tool error (exit 2)', () => {
-  const out: string[] = [];
-  const code = runCli(['frobnicate'], process.cwd(), (s) => out.push(s));
-  assert.equal(code, 2);
-  assert.match(out.join('\n'), /unknown command/i);
+/**
+ * ONEWAY1ai-i: a word that is no doctrine command is the desktop's program's, which says the command is unknown; with no program
+ * found, the CLI says where it is, a tool error (exit 2), and does nothing.
+ */
+test('a word outside the doctrine with no desktop program to hand it to is a tool error (exit 2) saying where the program is', () => {
+  const previous = process.env.DAORIS_DRIVER_PROGRAM;
+  delete process.env.DAORIS_DRIVER_PROGRAM;
+  try {
+    const out: string[] = [];
+    const code = runCli(['frobnicate'], process.cwd(), (s) => out.push(s), undefined, null);
+    assert.equal(code, 2);
+    assert.match(out.join('\n'), /^daoris: every command but the doctrine's is run by Daoris's desktop program/);
+  } finally {
+    if (previous !== undefined) process.env.DAORIS_DRIVER_PROGRAM = previous;
+  }
 });
 
 /**
  * The table answers for its own verbs only. Looked up as a plain object, `toString` and `constructor`
  * resolved to Object's own members, ran as handlers, and their return reached `process.exit`, which
- * threw: a stack trace and exit 1, the policy code. `__proto__` and `hasOwnProperty` printed a
- * TypeError's message. Found while MOD7 made the commands a table.
+ * threw: a stack trace and exit 1, the policy code. Found while MOD7 made the commands a table. Since
+ * ONEWAY1ai-i such a word is no doctrine command, handed to the desktop's program whole and never run here.
  */
-test('a verb named like a member of Object is an unknown command (exit 2), never a crash', async () => {
+test('a verb named like a member of Object is no handler: it is handed on whole, never a crash', async () => {
   for (const verb of ['toString', 'constructor', '__proto__', 'hasOwnProperty', 'valueOf']) {
+    const handed: (readonly string[])[] = [];
     const out: string[] = [];
-    const code = await runCli([verb], process.cwd(), (s) => out.push(s));
+    const code = await runCli([verb], process.cwd(), (s) => out.push(s), (words) => {
+      handed.push(words);
+      return 2;
+    }, null);
     assert.equal(code, 2, `daoris ${verb}`);
-    assert.deepEqual(out, [`daoris: unknown command '${verb}' — run 'daoris --help'`], `daoris ${verb}`);
+    assert.deepEqual(handed, [[verb]], `daoris ${verb}`);
+    assert.deepEqual(out, [], `daoris ${verb}`);
   }
-});
-
-/**
- * AGT1: the tools a session runs are AGENTS to a person — the owner, reading `daoris harness`:
- * *"I have no idea what harness is"*. The old verb is not a second name for the new one; it says
- * where the command went, once, and fails like any unknown command.
- */
-test('the agent tools are `daoris agent`, and the old verb says where it went', () => {
-  const out: string[] = [];
-  assert.equal(runCli(['harness', 'list'], process.cwd(), (s) => out.push(s)), 2);
-  assert.match(out.join('\n'), /`daoris agent`/);
-
-  const help: string[] = [];
-  runCli(['--help'], process.cwd(), (s) => help.push(s));
-  assert.match(help.join('\n'), /^ {2}agent \[verb\]/m);
-  assert.doesNotMatch(help.join('\n'), /^ {2}harness /m);
 });
 
 /**
@@ -79,7 +81,7 @@ test('a failure nobody anticipated is a tool error (exit 2) in one line, never a
 
 test('no arguments prints usage and exits 2', () => {
   const out: string[] = [];
-  assert.equal(runCli([], process.cwd(), (s) => out.push(s)), 2);
+  assert.equal(runCli([], process.cwd(), (s) => out.push(s), nowhere, null), 2);
 });
 
 /**
@@ -89,11 +91,11 @@ test('no arguments prints usage and exits 2', () => {
  */
 test('every registered command has its usage lines, and --help prints them in the table order', () => {
   const out: string[] = [];
-  runCli(['--help'], process.cwd(), (s) => out.push(s));
+  runCli(['--help'], process.cwd(), (s) => out.push(s), nowhere, null);
   const help = out.join('\n');
 
   const names = COMMANDS.map((command) => command.name);
-  assert.ok(names.length >= 10, `the table holds ${names.length} commands, so this proves little`);
+  assert.ok(names.length >= 6, `the table holds ${names.length} commands, so this proves little`);
   assert.equal(new Set(names).size, names.length, `a verb is registered twice: ${names.join(', ')}`);
 
   let after = 0;

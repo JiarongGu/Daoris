@@ -29,10 +29,10 @@ internal sealed class HelpSettingProposalWriter(HelpProposalFile file)
     private static readonly IReadOnlyList<string> ReviewFlags =
         ["--kind", "--procedure", "--address", "--run", "--drop", "--clear", "--required", "--not-required"];
 
-    /// <summary>The flags a second opinion's words may carry, as <c>daoris driver opinion</c> takes them (XAGENT1a).</summary>
+    /// <summary>The flags a second opinion's words may carry, as <c>daoris place opinion</c> takes them (XAGENT1a).</summary>
     private static readonly IReadOnlyList<string> OpinionFlags =
     [
-        "--reviewers", "--on", "--minutes", "--required", "--not-required", "--verify", "--no-verify", "--recheck", "--no-recheck",
+        "--agents", "--on", "--minutes", "--required", "--not-required", "--verify", "--no-verify", "--recheck", "--no-recheck",
         "--clear",
     ];
 
@@ -117,11 +117,11 @@ internal sealed class HelpSettingProposalWriter(HelpProposalFile file)
                       + "[--required|--not-required]`, `none`, `--drop <environment>`, `--required|--not-required` or `--clear`."
                     : null;
             case "opinion":
-                // XAGENT1a (D155 point 3): which other agent reads work before it lands, as `daoris driver opinion` takes its
+                // XAGENT1a (D155 point 3): which other agent reads work before it lands, as `daoris place opinion` takes its
                 // words; the rule itself, its reviewers and the registry are the driver's to judge, in the twins' words.
                 if (named == circle) return "a second-opinion rule is set for a repository or a workspace — name exactly one.";
                 return string.IsNullOrWhiteSpace(value) || Flags(value).Any(word => !OpinionFlags.Contains(word))
-                    ? "an opinion is `--reviewers <adapter,adapter> [--on landing,steps] [--required|--not-required] "
+                    ? "an opinion is `--agents <adapter,adapter> [--on landing,steps] [--required|--not-required] "
                       + "[--verify|--no-verify] [--minutes <n>] [--recheck|--no-recheck]`, `none` or `--clear`."
                     : null;
             case "helpers":

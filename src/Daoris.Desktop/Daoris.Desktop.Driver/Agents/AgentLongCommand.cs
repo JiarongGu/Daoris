@@ -189,8 +189,8 @@ internal static class AgentLongCommand
             Say($"{Prefix}: `{owner}` account `{account}` is the API key {HarnessKeys.Handle(key)}.");
             Say($"  Kept in {kept} — machine-local, tracked by nothing, shown back only as its last four.");
             var id = ShellWord.Of(account, "<account>");
-            Say($"  `daoris agent profile rename {owner} {id} <name>` gives it a name of yours (ACCT2), and");
-            Say($"  `daoris agent profile join {owner} {id} <workspace>…|--machine` puts it in a list a start runs on.");
+            Say($"  `daoris agent account rename {owner} {id} <name>` gives it a name of yours (ACCT2), and");
+            Say($"  `daoris agent account join {owner} {id} <workspace>…|--machine` puts it in a list a start runs on.");
         }
         else
         {

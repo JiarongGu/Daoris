@@ -60,8 +60,11 @@ public static class Receipts
     /// <summary>The write to the harness returned: the prompt, the steer or the resume's opening. Never the prompt's answer.</summary>
     public const string Sent = "sent";
 
-    /// <summary>The turn that took the word ended <c>end_turn</c>: acted upon, never obeyed.</summary>
-    public const string Answered = "answered";
+    /// <summary>
+    /// The turn that took the word ended <c>end_turn</c> (COMMS1h): what Daoris saw, said <i>taken, turn ended</i> and never an answer.
+    /// An older build wrote <c>answered</c> for the same moment, which the page draws as it was.
+    /// </summary>
+    public const string Ended = "ended";
 }
 
 /// <summary>

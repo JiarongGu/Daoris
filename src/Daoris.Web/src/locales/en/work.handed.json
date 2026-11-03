@@ -38,6 +38,7 @@
   "work.handed.section.proposing": "Proposing a rule",
   "work.handed.section.set-up": "The set-up for your review",
   "work.handed.section.boundary": "The boundary",
+  "work.handed.section.block": "Daoris's standing block",
   "work.handed.section.rules": "Permission rules",
   "work.handed.section.intake": "The intake's instruction",
   "work.handed.section.brief-opening": "What it continues, and the request",
@@ -59,6 +60,7 @@
   "work.handed.source.checkouts": "the checkouts you declared",
   "work.handed.source.driver": "the driver's own words",
   "work.handed.source.permissions": "this machine's permission rules",
+  "work.handed.source.machine": "this machine's settings, the session's tree and its line",
   "work.handed.none.empty": "nothing to hand",
   "work.handed.none.no-ask": "no ask asked this quest",
   "work.handed.none.not-answered": "the service answered none",
@@ -81,5 +83,6 @@
   "work.handed.cut.brief-clipped": "{{n}} items each clipped at its own bound, where it says so",
   "work.handed.cut.brief-list": "{{n}} entries of its lists left out past their bound",
   "work.handed.cut.brief-parts-bound": "{{n}} left out past its bound of {{limit}} characters",
-  "work.handed.cut.brief-course-bound": "{{n}} counts left out past its bound of {{limit}} characters"
+  "work.handed.cut.brief-course-bound": "{{n}} counts left out past its bound of {{limit}} characters",
+  "work.handed.cut.block-filed": "handed in its own file, since the first prompt with it would pass {{limit}} characters"
 }

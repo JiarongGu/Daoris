@@ -6,16 +6,15 @@ Your target is quest `#abc123`, asked by `console-api`:
 
 The report needs a note column.
 
-This repository's development pipeline is light. While you work, run its light gates (`universal`, `code-map`) and the checks your change reaches, filtered: a test class, a test file, a census. Its heavy gates (`build`, `test`) are not this session's: they run in the repository's verification after the work lands. Never run them, whole or another way: `daoris-driver run-heavy` refuses this tree. Your agent takes no rules from Daoris, so nothing refuses their commands in your shell: they are said to you instead.
+This repository's development pipeline is light. While you work, run its light gates (`universal`, `code-map`) and the checks your change reaches, filtered: a test class, a test file, a census. Its heavy gates (`build`, `test`) are not this session's: they run in the repository's verification after the work lands. Never run them, whole or another way: `daoris gate run` refuses this tree. Your agent takes no rules from Daoris, so nothing refuses their commands in your shell: they are said to you instead.
 
 First take the quest (respond to `#abc123` with `take`), then do the work inside this
 repository under its own doctrine and gates, then close it: `done` when it has landed, or
 `decline` with the reason — the reason is the part the asker can act on. If the quest is already
 taken or closed, stand down and finish without changing anything.
 
-Look before you ask. The quest, its links and its files; this repository's own documents, code and
-history (its log, and the commits that last changed what you are changing); the workspace's
-knowledge, through your connector's `knowledge_search`. A question one of these
+Look before you ask: the quest, its links and its files, and the places Daoris's standing block names
+under *Where things are*. A question one of these
 settles is not a question: decide it, and keep what settled it for your closing note. Where the
 evidence leans one way without settling it, take that reading, carry on, and say in your closing
 note which reading you took and on what evidence, so the person can correct it in review rather than

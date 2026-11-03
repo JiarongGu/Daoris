@@ -15,10 +15,11 @@ internal sealed record ChatPlace(
     string? Posture)
 {
     /// <summary>
-    /// The routing standing of its repository as this start found it (COWORKVIEW1e-i), told to its agent: with a new conversation's first
-    /// message and at each go-on. Null for Ask Daoris's, which publishes to no lane.
+    /// What its standing block is composed from as this start found it (CONTEXTONE1c, D230 point 3): told to its agent with a new
+    /// conversation's first message, a hand-over's with the memory its brief hands on, and never at a go-on, which resumes the same
+    /// conversation. A repository's routing among it; Ask Daoris's the workspace's part alone.
     /// </summary>
-    public RoutingStanding? Routing { get; init; }
+    public StandingFacts? Block { get; init; }
 
     /// <summary>The checkouts it may also write into (D107), which its tree guard lets a write reach.</summary>
     public IReadOnlyList<string> Also { get; init; } = [];

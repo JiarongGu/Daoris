@@ -29,7 +29,8 @@ public sealed class CodeMapPromptTests : IDisposable
         Root: "C:/somewhere/Game",
         ServiceUrl: "http://localhost:5177")
     {
-        CodeMap = codeMap,
+        // CONTEXTONE1c: the code map is the standing block's to name.
+        Block = new StandingFacts { Repository = "Game", CodeMap = codeMap },
     };
 
     private void Keep(string relative)
@@ -73,13 +74,17 @@ public sealed class CodeMapPromptTests : IDisposable
         Assert.DoesNotContain("code map", TargetPrompt.Compose(Target()));
     }
 
-    /// <summary>An intake answers an ask in a room under the home, not in a repository — its own words stand.</summary>
+    /// <summary>
+    /// An intake answers an ask in a room under the home, not in a repository — its own words stand, and its standing block is the
+    /// workspace's part alone (CONTEXTONE1c), which names no code map.
+    /// </summary>
     [Fact]
     public void An_intake_is_never_asked_about_a_code_map()
     {
-        var prompt = TargetPrompt.Compose(Target("docs/code-map.json") with { Prompt = "Answer the ask." });
+        var prompt = TargetPrompt.Compose(Target("docs/code-map.json") with { Prompt = "Answer the ask.", Block = new StandingFacts { Workspace = "work" } });
 
-        Assert.Equal("Answer the ask.", prompt);
+        Assert.StartsWith("Answer the ask.\n\n" + StandingBlock.Opening, prompt, StringComparison.Ordinal);
+        Assert.DoesNotContain("code map", prompt);
     }
 
     [Fact]
@@ -110,12 +115,12 @@ public sealed class CodeMapPromptTests : IDisposable
 
         var target = SessionTarget.ForQuest(quest, _tree, "http://localhost:5177");
 
-        Assert.Equal("docs/code-map.json", target.CodeMap);
+        Assert.Equal("docs/code-map.json", target.Block!.CodeMap);
         Assert.Equal(("abc123", "Platform", "Game", _tree), (target.QuestId, target.Asker, target.Repository, target.Root));
         Assert.Equal(["https://tickets.example/T-1"], target.Links);
         Assert.Equal("a1b2c3", target.Parent);
         var bare = Directory.CreateDirectory(Path.Combine(_tree, "a-tree-that-keeps-none")).FullName;
-        Assert.Null(SessionTarget.ForQuest(quest, bare, "http://localhost:5177").CodeMap);
+        Assert.Null(SessionTarget.ForQuest(quest, bare, "http://localhost:5177").Block!.CodeMap);
     }
 
     /// <summary>

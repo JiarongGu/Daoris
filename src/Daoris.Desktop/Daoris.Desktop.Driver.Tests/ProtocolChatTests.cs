@@ -627,11 +627,11 @@ public sealed class ProtocolChatTests : IDisposable
                 if (frame.params.configId === 'effort') effort = frame.params.value;
                 send({ jsonrpc: '2.0', id: frame.id, result: { configOptions: options() } });
               } else if (frame.method === 'session/prompt') {
-                // The routing standing line Daoris appends after the words is logged apart (StubFile.WithoutRouting).
+                // The standing block Daoris appends after the words is logged apart, its routing standing noted (StubFile.WithoutBlock).
                 const raw = frame.params.prompt[0].text;
-                const said = raw.replace(/(\n\n| \| )?Routing standing here: [\s\S]*$/, '');
+                const said = raw.replace(/(\n\n| \| )?Daoris's standing block for this session: [\s\S]*$/, '');
                 note('prompt: ' + said);
-                if (said !== raw) note('routing: ' + /Routing standing here: ([^.]*)\./.exec(raw)[1]);
+                if (/Routing standing here: /.test(raw)) note('routing: ' + /Routing standing here: ([^.]*)\./.exec(raw)[1]);
                 if (said === 'hold') continue;   // a turn that runs until someone stops it
                 if (said === 'refuse') {
                   send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: 'overloaded' } });

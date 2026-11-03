@@ -15,8 +15,8 @@ Every step between, including the judgement calls below, is the adopting reposit
 from `analyze --json` and this playbook. What makes that safe is that nothing destructive can happen
 without `--force`, and `--force` is only ever the answer to a question the tool asked.
 
-**A repository Daoris drives is set up by a quest** (D117 §6, D124 §2): `daoris-driver setup <repository>`
-publishes one to that repository, and its own session carries it on its branch. That session cannot read
+**A repository Daoris drives is set up by a quest** (D117 §6, D124 §2): a place's apply with its set-up (the window's
+*Set up for agents*, `PLACE_APPLY`, through `SetupPress`) publishes one to that repository, and its own session carries it on its branch. That session cannot read
 this file, which is Daoris's own, so the quest's body is this playbook in the canon's words
 (`SetupBrief` in the driver). The two are twins: a test holds that the body names each step below, so a
 step added here fails until the body says it too.

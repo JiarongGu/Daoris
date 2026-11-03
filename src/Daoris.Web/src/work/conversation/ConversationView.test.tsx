@@ -1030,6 +1030,32 @@ describe('ConversationView', () => {
   });
 
   /**
+   * COMMS1h (the comms design §7): a receipt says what Daoris saw. A turn that ended after taking the word reads *taken · turn ended*,
+   * never *answered*; an older build's `answered` receipt is drawn as it was. Both languages.
+   */
+  it('COMMS1h says a turn ended after the word was taken, and an older answered receipt as it was', async () => {
+    const received = (receipt: string) => [
+      ev({ kind: 'user', origin: 'person', id: 'w1', text: 'and the readme' }),
+      ev({ kind: 'turn', stopReason: 'end_turn' }),
+      { ...ev({ kind: 'receipt', id: 'w1' }), receipt },
+    ];
+    const { container, unmount } = view(received('ended'));
+    expect(container.querySelector('[data-receipts]')?.textContent).toMatch(/^taken [^·]+ · turn ended [^·]+$/);
+    unmount();
+    const { container: older, unmount: gone } = view(received('answered'));
+    expect(older.querySelector('[data-receipts]')?.textContent).toMatch(/^taken [^·]+ · answered [^·]+$/);
+    gone();
+
+    await i18n.changeLanguage('zh');
+    try {
+      const { container: zh } = view(received('ended'));
+      expect(zh.querySelector('[data-receipts]')?.textContent).toMatch(/^已收下 [^·]+ · 回合已结束 [^·]+$/);
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
+  /**
    * CONVNOTE1 (D125's SIGNIN1b note): a conversation its agent refused for its sign-in carries the driver's note with its
    * parts, and the page words it from them in the reader's language, as a session record's note is (LANG1b). The driver's
    * English is never shown where the page could word it, and a part the page cannot word shows as recorded, marked.

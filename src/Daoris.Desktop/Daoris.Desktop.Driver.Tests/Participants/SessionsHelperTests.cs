@@ -53,7 +53,7 @@ public sealed class SessionsHelperTests : IDisposable
     public void The_usage_spells_the_verb_in_both_places_a_person_reads_it()
     {
         Assert.Contains("sessions helper <id> \"<question>\" [--agent <name>]", SessionsCommand.Usage);
-        Assert.Contains("sessions helper <id> \"<question>\" [--agent <name>]", DriverCommand.Usage);
+        Assert.Contains("session helper <id> \"<question>\" [--agent <name>]", DriverCommand.Usage);
     }
 
     private (SessionsWorld World, OpinionStandIn Host) World(Action<OpinionStandIn>? set = null)
@@ -145,7 +145,7 @@ public sealed class SessionsHelperTests : IDisposable
     public void The_usage_spells_the_yes_and_the_no_in_both_places()
     {
         Assert.Contains("sessions helper --approve|--decline <ask>", SessionsCommand.Usage);
-        Assert.Contains("sessions helper --approve|--decline <ask>", DriverCommand.Usage);
+        Assert.Contains("session helper --approve|--decline <ask>", DriverCommand.Usage);
     }
 
     /// <summary>A yes to an ask waiting on the person's word is written as the page's is, and said again it is the same yes.</summary>

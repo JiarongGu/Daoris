@@ -1,9 +1,12 @@
 using System.Text;
 using Daoris.Driver;
 
-// The headless door to the driver (D46 §7): what the family rehearsal drives, and what the desktop
-// shell embeds. It watches a service, starts sessions where the person opted in, and prints every
-// verdict — a quest that is sitting must always say why.
+// The desktop's program (D46 §7, D194; ONEWAY1ai-i): every group of `daoris …`, which the install's launcher in app/bin/ runs, what
+// the family rehearsal drives, and what the desktop shell embeds. A person's words are routed once, at the entry, by the one command
+// tree (`CommandTree`, held to the driver tests' `fixtures/command-tree.json`), into the words each command below reads: a doctrine
+// command is handed to the CLI the install carries, an old form is refused naming its new one, and `DriverCommand.Usage` says each
+// group. The loop watches a service, starts sessions where the person opted in, and prints every verdict — a quest that is sitting
+// must always say why.
 //
 //   DAORIS_HOME            where every machine-local file lives (D63) — required unless each file's
 //                          own variable names it; the installed desktop sets it for the account, and a
@@ -17,379 +20,75 @@ using Daoris.Driver;
 //   DAORIS_REMOTE_WORKSPACE  for the workspace named here — absent: `default`)
 //   DAORIS_REMOTE_CONFIG   where the map is                    (default: $DAORIS_HOME/remotes.json)
 //
-//   drive [--once | --until-idle] [--quiet-end <minutes>] [--share]
-//                 the loop, asked for by name (DRV8a, D104): watch, ticking pollSeconds apart until
-//                 Ctrl+C; --once ticks once; --until-idle ticks until nothing starts, the deterministic
-//                 mode a gate drives. No session is ended on time (SESSWATCH1a, D200): a quiet one is said on
-//                 the console, and --quiet-end, for --once and --until-idle alone, ends one of this run
-//                 unheard that long and carries it on. A bare --once or --until-idle is the same ask. It takes the home's
-//                 lease first (home.lease, HOMELEASE1), and a home another live driver holds is refused, naming it
-//                 (exit 1) — unless --share, which runs beside it on purpose. A verb, the first-start move or an
-//                 update's swap holding it is waited for up to thirty seconds first.
-//
-// Every verb that changes the home while acting alone holds the same lease for its run (VerbLeases), and waits up
-// to thirty seconds where another such act holds it, then is refused naming it (exit 1); beside a running Daoris it
-// acts as it always did.
-//   (no verb)     the usage, exit 2 — never a loop: run to read its usage, a bare invocation used to
-//                 start one beside the desktop's.
-//
-//   chat --repository <name> [--adapter <name>] [--own-tree]
-//                 hold a conversation in a repository (D49 §3): stdin is the person, stdout is the
-//                 session, end of input ends it. One session per working tree (D51) — and --own-tree
-//                 opens the conversation in a worktree of its own, beside your work in the checkout.
-//
-//   ask [--workspace <name>] [--to <repo>] [--file <path>]… [--url <address>]… "…"
-//                 ask at a WORKSPACE (D65 §1a): the service answers with the tier that answered —
-//                 by declarations only (proposes, publishes nothing), or the receiver --to names.
-//   ask --publish <id> --to <repo> · ask --close <id> --reason "…" · ask --delete <id>
-//                 turn an ask into a quest, close it with the reason, or delete one made by mistake with
-//                 every quest asked by it (D95) — refused whole if any of them must stay. Where driver.json names an
-//                 `intakeAdapter` (`daoris driver intake <adapter>`), the loop answers an ask the
-//                 declarations left open with an INTAKE session (D65 §1b) in <home>/intake/<workspace>/:
-//                 it publishes onto the ask, or parks asking you — and ends when you answer the ask.
-//   ask --pause <id> · ask --resume <id> · quest pause <id> · quest resume <id>
-//                 pause an ask's work, or one quest's, on this machine (PAUSE1b, D132 §2): the pause is written to
-//                 driver.json first, then every live session of it this machine runs is stopped as your stop (one another
-//                 Daoris process runs through the request in <home>/sessions/requests/ its loop takes, `by: pause`), and
-//                 nothing of it starts until you resume it, which releases each stop the pause made and names what still
-//                 holds a quest. A session waiting on you stays parked, a running intake goes on, and a teammate's is named.
-//   ask --abandon <id> [--reason "…" --yes] · quest abandon <id> [--reason "…" --yes]
-//                 abandon an ask's work, or one quest's, on this machine (PAUSE1d, D132 §3): without --yes, the list of
-//                 what it would decline, discard and archive, and what it keeps and why, changing nothing. With --reason
-//                 and --yes: the scope paused, its sessions stopped, each quest declined with your reason (an open one
-//                 only while open), the ask closed with it, one sync pass, each tree and branch discarded only where no
-//                 commit of it is on any ref but this machine's local daoris/* branches, the sessions archived, and
-//                 <home>/abandoned.json written with each discarded branch's tip. A step that fails leaves it paused.
-//
-//   place <repository>… --preset <id> [--with opinion,look] [--adoption [--what-it-builds <kind>] [--at-once <n>] [--pilot <n>]]
-//                 [--drive] (--plan | --apply [--accept <repository>:landed|integration,…])
-//                 a quick set-up's plan (AGENTSPLACE1a2), PLACE_PLAN's twin: a delivery preset, its riders, adoption and
-//                 general driving, read before and after, every refusal at once. --plan writes nothing. --apply
-//                 (AGENTSPLACE1b3) is the person's press, PLACE_APPLY's twin: the running Daoris asks for the Confirm on its
-//                 card; each acceptance is named on its own, and none is made unless named. --adoption (the one door that
-//                 adopts a repository, WORKFLOWCLEAN1 1f; D117 §6, D124 §2) asks a repository's own session to set it up for
-//                 every agent on its own branch, and adds to its rules the doctrine tool's exact verbs; more repositories
-//                 than --at-once are paced by the workspace plan below.
-//
-//   place --workspace <name> --adoption [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]
-//   place --workspace <name> --pause | --resume | --stop
-//                 adopt a whole workspace (WSSETUP6, D124 §4): a press writes <home>/setup/<workspace>.json, a plan of
-//                 single set-ups in the order other work touches them, and adds the doctrine tool's verbs to the
-//                 workspace's rules once; the loop then publishes each in turn, one at a time by default and never
-//                 the cap's last slot, skipping a repository the press refuses and saying why, and pausing once a
-//                 pilot of two has closed. --plan prints the list and each refusal (or, with a plan working, where it
-//                 stands); --pause, --resume (which judges the skipped again) and --stop steer it.
-//
-//   register [--repository <name>]
-//                 register each repository with a checkout here, or the one named, from what its LINE declares
-//                 (WSSETUP5, D124 §3): daoris.json and daoris.lanes.json read as git objects, sent as `connect` would
-//                 send them, and only where the row holds something else. Each says what it came to. A start, and a
-//                 line Daoris moves (a merge landing, `trees sync`'s fast-forward), follow on their own.
-//
-//   quest delete <id>
-//                 delete a quest made by mistake (D95): only one nobody has started on — open, with no
-//                 session record naming it — goes, and the service's refusal says what to do instead.
-//                 A shared quest's delete travels to its remote as an operation. The drawer's Delete is
-//                 the other door.
-//   quest accept <id>
-//                 accept a done's departure from what you required (DRIFT1d, D133 §4): what the departure
-//                 held — the chain's next step, a quest waiting on it — goes on, and the yes travels like any
-//                 verb. A quest is otherwise answered by the session that takes it, bar the person's done below.
-//   quest done <id> [--note "…"]
-//                 mark an open or taken quest done as yours (QUESTCLOSE1, D126's note): what a finish at a checkpoint
-//                 that left its quest taken names. Its record says you marked it done, with your words, and it answers
-//                 none of its requirements one by one. The quest page's Mark done… is the other door.
-//   quest check <id> [--commit <sha>]
-//                 read a done's evidence again (EVID1b, D144 §3, §5): each path a met requirement names, at the commit
-//                 a driven end here read, or the one named, which must be that commit or come after it on the same
-//                 history; with no driven end on record, the commit must be named. Posts what it read to the evidence
-//                 door as the terminal's, and prints it: 0 when all is found, 1 when anything is missing or unread, 2
-//                 when a store did not answer. The quest page's Check again is EVID1c's door to the same read.
-//   quest review <id> reviewed|not-yet|skip ["…"]
-//                 the person's verdict on a review (REVIEWENV1c, D154 point 8): prints what the set-up step showed and how to
-//                 show it again, sends the verdict with that set-up, and says what the gate now says. not-yet needs your words,
-//                 which go to the step's session as its next turn; skip lets the work land without a review.
-//   quest review <id> off ["…"]  ·  quest review <id> on|<environment>
-//                 the person's choice at the gate (REVIEWENV1j): off is the skip; on, or an environment the repository
-//                 declares, publishes a set-up step to show the work there.
-//
-//   history [--workspace <name>] [--json]
-//   history clear --workspace <name> [--yes]
-//   quest clear <id> [--failed] [--yes] · ask --clear <id> [--yes]
-//                 finished history on this machine (HIST1d, D153, the history-clearing design §6.2): what the home keeps
-//                 of each workspace's finished work, or the one named, what a clear would take and what it keeps and why,
-//                 and --json HISTORY_PLAN's answer field for field; then a clear of a workspace's, one closed quest's work,
-//                 its failed sessions alone, or one ask's work. Without --yes a clear lists and changes nothing; with it,
-//                 each unit is judged again and what may go goes, records first and then what the home kept of them, and
-//                 the machine log says the terminal's door. Never a tree, a branch, open work, or the team's copy on a
-//                 remote. A quest's or an ask's page and the workspace's *Kept on this machine* are the other doors.
-//
-//   notices [--json]
-//                 what came to the person (NOTIFY2i, D196): the presses waiting for their confirmation, what needs them by
-//                 group, unread messages by ask and Done and failed, read through the running Daoris (NOTIFICATIONS); alone,
-//                 the notices' record, saying the rest is the running Daoris's to read. It changes nothing.
-//
-//   sessions [--group you|review|working|later|ended|archived] [--repository <name>] [--json]
-//   sessions stop <id> · finish <id> [--note "…"] · decline <id> --reason "…"
-//   sessions archive <id>… | --ended [--yes] · unarchive <id>… · delete <id>
-//                 this machine's sessions by what they need (SESSUX1g, D126 §7.1), from the reader Sessions' list reads;
-//                 --json prints its answer. stop, finish and decline reach a session another process runs through a
-//                 request in <home>/sessions/requests/ that its loop takes, waiting ten seconds for the record to move;
-//                 one nothing here runs is moved by the ledger, as the screen's stop moves an orphan. archive, unarchive
-//                 and delete are the screen's owners, and their log lines say this door. Sessions' rows are the other door.
-//   sessions say <id> "…" [--file <path>]… [--level ordinary|urgent|now]
-//                 say something to a session of this machine's, a park's answer among them, the one door that answers one
-//                 (MSG1e, D137 §5.2; ONEWAY1k): a say request in the same folder,
-//                 which the loop that runs it holds at its door, and any loop keeps on the record of one nothing here
-//                 runs, answering beside it. What never goes on is refused first, exit 1. Where no loop drives the
-//                 home, a driven session's words are kept on its record for the next, and a conversation's refused.
-//                 It waits up to ten seconds, and past them for the answer of a loop that took the words (FLAKE3), and
-//                 prints where the words stand. The session's box is the other door.
-//   sessions go-on-new <id>
-//                 words a resume holds while the account its session ran on cools (MSG1g, D137 §2.2): the person's choice
-//                 to go on now in a new session, kept under the home for the driver's next look, which carries them on
-//                 handed them, without the session's conversation. A conversation, a closed quest's session and an
-//                 account that is not cooling are refused, exit 1. The screen's *Go on in a new session* is the other door.
-//   sessions start-from <id>
-//                 words a session cannot go on with, which nothing carries on by itself (MSG1f3, D137 §2.2): a conversation
-//                 in this terminal, as `chat` opens one, its first message the words, which then leave that session naming
-//                 it, through the chat runner's act the screen's route calls. What never goes on, a session still running, no
-//                 words and a quest the driver carries on are refused, exit 1. *Start a conversation with these words* is the
-//                 other door.
-//   sessions hand-over <id> --agent <adapter> [--account <name>]
-//                 a conversation goes on with another agent (MIXAGENT1a-i, D163): the chat runner ends it and opens a new
-//                 conversation in its tree on that agent, in this terminal, as start-from does; a conversation that is
-//                 talking keeps the ask until its turn ends. A quest's session, Ask Daoris's and an intake are refused, exit 1.
-//   sessions hand-over <id> --approve|--decline
-//                 the person's yes or no to a session's agent's own ask to hand it over (MIXAGENT1c, D163 point 3), waiting under
-//                 the `handOver` rule's `ask`: the state the driver's look reads, as the page's presses write it. Exit 1 where the
-//                 judge refuses the word.
-//   sessions helper <id> "<question>" [--agent <name>]
-//   sessions helper --approve|--decline <ask>
-//                 the person's own ask for a helper (MIXAGENT2a-ii, D163): the ask `helper_ask` writes, as the person's, under the
-//                 home's `helpers` folder; the driver takes it at its next look and starts a read-only helper on another agent,
-//                 whose answer comes back to that session as its next turn, marked as the helper's. A helper, a reviewer and an
-//                 intake are refused, exit 1.
-//   sessions partner <id> "<piece>" --agent <name> [--paths <path>…]
-//   sessions partner <id> --list  ·  sessions partner <piece> --stop
-//                 the person's own ask of a piece (COAGENT1b, D199): the ask under the home's `partners` folder at the exact commit
-//                 the session's tree stands at, which the driver judges at its next look and starts only where the agent's
-//                 confinement as a partner was measured; the session's pieces; a working piece's stop, which is its partner's.
-//   sessions supervise [<id>]
-//   sessions supervise <id> --question <qid> --generation <g> --choice <label>|--leave <bound> (--reason "…" --source <where>)…
-//                 the supervisor's holder's verb (SUPERVISOR1a-ii, D208), run only in the terminal Daoris started at the owner's
-//                 appointment: what waits; one question's fenced print, the asking agent's claims never instructions; and the
-//                 answer, one offered label with one to five sourced reasons, its proof by the key in DAORIS_ROLE_KEY over the
-//                 hello's nonce sent only to the install's app/Daoris.Desktop.exe, never the key. No alone path: no-instance, exit 2.
-//                 `--leave` (SUPERVISOR1b) leaves the question to the owner by one of the design's §4.1 bounds, SUPERVISOR_DEFER.
-//   sessions handback <session|quest> [--json]
-//                 one quest's handback whole (HANDBACK1, D219), by the quest's id or the id of the session that served it, in any
-//                 state: the service's GET /api/handbacks/{id}, in the words the connector's handback_read answers. A read, so no
-//                 press and no instance. Exit 1 where the id names nothing here, 2 where the service has no such door.
-//   roles brief
-//                 the holder's brief (STEWARDROLE1a-i, D209 §2.2): what each role this build knows does, never does and how its
-//                 verbs answer, headed by its revision, from Daoris's own text; names no key and no appointment. In a role's
-//                 terminal only its roles' verbs and the open reads run: any other verb is refused role-terminal, exit 2.
-//   steward acts | drive|undrive|hold|resume <repo> | trees <repo> on | stop|finish <session> | retry <quest>
-//                 the steward's holder's verbs (STEWARDROLE1b, D209 §3.3): the run's acts (STEWARD_ACTS, an open read), or one
-//                 act sent as ROLE_ACT with its proof by the key in DAORIS_ROLE_KEY over the hello's nonce, only to the install's
-//                 app/Daoris.Desktop.exe, recorded as the steward's. No alone path: no-instance, exit 2.
-//   steward desk | desk decline <request> "<reason>" | request <act> <target> "<why>"
-//                 the steward's desk (STEWARDROLE1c, D209 §6.2): its requests fenced as their callers' claims (STEWARD_DESK, an
-//                 open read); the holder's decline of one, sent as an act is; and a request filed from any terminal with no key
-//                 (STEWARD_REQUEST, open), ten open per caller and a hundred in all, granting nothing.
-//
-//   driver [list | <choice> | work-cycle | brainstorms | workflow …]
-//                 this machine's standing choices, workflows and cycles (PUSH1f2a, PUSH1f2b, D194): the words `daoris driver …`
-//                 hands this program, each change a route takes the running Daoris's route, confirmed in its window, where one
-//                 runs on this home, else written here under the home's lease, refused from a session's terminal (exit 1); a
-//                 file DAORIS_DRIVER_CONFIG names is written alone.
-//
-//   tool [list | path <tool> | use <tool> system|managed [<version>]|file <path> | download <tool> [<version>] | update <tool>
-//        | delete <tool> <version> | locations [add|remove <address>] | look]
-//                 the programs Daoris runs beside its agents (PUSH1f2c, D194): the words `daoris tool …` hands this program, each
-//                 short change the running Daoris's route, confirmed in its window, where one runs on this home, else written here
-//                 under the home's lease; a download holds nothing while it fetches, stages under this process's name, and publishes
-//                 under the lease, waited for. A person's press from a session's terminal is refused, exit 1.
-//
-//   agent rules [list | allow|ask|deny|remove <rule> | default <id> on|off | proposals | accept|decline <id>]
-//         | trust <agent> <folder> [--yes] | settings <agent> [model|effort …]
-//                 the agents' rules, trust and settings (PUSH1f2d, D194): the words `daoris agent rules|trust|settings …` hands
-//                 this program, each change a route takes the running Daoris's route, confirmed in its window, where one runs on
-//                 DAORIS_HOME, else written here under the home's lease; a trust no route takes is written here. The rules are
-//                 DAORIS_HOME's whatever DAORIS_HARNESS_CONFIG names; a setting or a trust on a file it names is written alone.
-//                 A person's press from a session's terminal is refused, exit 1.
-//
-//   trees [list | remove <path|session|branch> [--repository <name>] [--force] | clean [--workspace <name>] [--yes]
-//         | land <session> [--plan] [--branch <name>] | hand <session|branch> [...]
-//         | sync [--repository <name>] [--workspace <name>] [--all] [--yes]]
-//                 the session worktrees this machine has grown (D51): list them, or remove one, or a session's
-//                 branch by the session or the branch (LAND3) —
-//                 refusing while it holds uncommitted changes or unmerged commits, unless forced —
-//                 or withdraw a branch a landing made whose work the line will never hold, on --why (LANDRETIRE1) —
-//                 or list every session branch and, with --yes, remove the empty and landed (D88),
-//                 or accept a session's work as the review's Accept does, by the workspace's rule (D87),
-//                 or bring each repository up to date after its pull request merged (WSR6, D109). The clean-up
-//                 and bringing up to date take one workspace's checkouts with --workspace (BRSCOPE1a).
-//
-//   work state [<unit>] [--entries]
-//                 each unit of work's milestone (FABRIC-MILESTONE1a): its end reached, the result kept, the cleanup pending or
-//                 completed, the recovery retained, derived read-only from the tree lifecycle's records; `trees state` says the same.
-//
-//   work held [--unit <id>]  |  work held <unit> <node> <attempt> happened|did-not|stop|record|resend
-//                 the steps whose attempt is held for the person, and why; with a word, theirs on one (FABRIC-PERFORM1g):
-//                 a plugin's step, it happened, it did not (a new attempt with a new key), or stop; a quest's close (FABRIC-CLOSE1q),
-//                 record its door's answer again, resend the same close, or stop the work's further steps; only the process
-//                 holding the home records it.
-//
-//   work recovery drop <ref>... --repository <name> | --unheld [--repository <name>] [--plan]
-//                 delete the recovery refs (`refs/daoris/discarded/*`) no branch or tag of yours holds, which Daoris keeps at any
-//                 age until you say so (RECOVERYDROP1, CLEANUP1): each in one transaction that verifies the commit it names, a ref
-//                 a holder keeps or that moved is kept and said; only the process holding the home acts; --plan lists, changes nothing.
-//
-//   result <id>  ·  withdraw <id>
-//                 how a press this terminal sent ended, asked again by its id and the key it was sent with (RPC1j), and
-//                 while it waits for your Confirm, taken back by the pipe's own WITHDRAW (CONFIRMWAIT1b), never a confirmed one.
-//   --wait <minutes> | --no-wait
-//                 with any verb that presses: how long it waits on the window's Confirm, 0 to 30 (the default 30), taken
-//                 from the words first; --no-wait returns once the press is asked, its id said (CONFIRMWAIT1b).
-//
-//   sync [status | dismiss <quest>] [--workspace <name>]
-//                 one pass now, the tick's own, for every circle with a remote or the one named; with
-//                 `status`, where each circle stands — ahead, behind, in conflict, last synced (SYNC6a);
-//                 with `dismiss`, the conflicts a quest carries go, here and at the next pass (SYNC6c).
-//   sync forward <quest> <machine> <sequence>
-//                 bring forward one side of two machines' work on a quest (SYNCMERGE1c3, D178).
-//
-//   logs [--since <30m|2h|3d>] [--source <name>] [--event <name>] [--level <warn|error>] [--json]
-//                 the machine log (LOG1c, D94): every source's lines under the home, merged by time,
-//                 one readable line each, or as written with --json. A line that cannot be read is
-//                 skipped and counted. Settings → Logs is the screen's door to the same reading.
-//
-//   run-heavy [--gate <name> | --look | -- <command>]
-//                 a checkout's heavy gates (HEAVYRUN1a, D180's HEAVYRUN1 note), run in it: those its daoris.gates.json
-//                 marks "heavy": true, one after another, or the one named, holding its repository's one heavy-run slot
-//                 under the home's locks/, which a run from any tree of it waits for, saying behind whom and how long.
-//                 Every gate's processes are in one job, ended and waited for before the slot is let go; Ctrl+C stops
-//                 the run the same way. 0 every gate passed · 1 one failed, was not heavy, or was stopped · 2 could not run.
-//                 --look runs nothing: who holds the slot, at which gate and for how long, and who waits (HEAVYSLOT1).
-//                 Every run, gates or command, also takes a place in the machine's heavy-run admission (HEAVYQUEUE1),
-//                 the one the merge queue's heavy gates take theirs in, and says what it waits for. -- <command> runs a
-//                 command of your own (a filtered dotnet test, a test file's run) as such a run: 0 it passed · 1 it failed or was stopped.
-//   heavy [<repository> [<name>=<command> [--cwd <folder>]… | --clear]]
-//                 this machine's heavy gates for a repository whose own daoris.gates.json marks none (HEAVYRUN1b2a, D180's
-//                 HEAVYRUN1b2a note), in the order they run: what run-heavy runs there and its sessions are told of. Kept in
-//                 the driver's file, never in the repository; a command may bound its own workers. Alone, lists each
-//                 repository's; with a repository alone, says its gates. A change holds the home's lease.
-//   checks [<repository> [light | heavy-at-end | --clear]]
-//                 which checks a repository's sessions run under Current (FABRIC-PIPELINE1b, D192 point 4): light, the gates
-//                 its daoris.gates.json does not mark heavy and the checks a change reaches, its heavy gates refused to them
-//                 and left to the verification; heavy-at-end, those gates once at a session's end; none, as they did. Kept in
-//                 the driver's file. Alone, lists each repository's; with a repository alone, says its rule.
-//
-//   trace <commit|session|quest> · trace commit|session|quest <id>
-//                 one read back to the ask (TRACE1, D143): from a commit (a landing's tip, or in a session's evidence), a
-//                 session or a quest, the ask and the person's words and go-aheads, the quest's requirements and answers,
-//                 each session's agent, account, harness, tree and base commit, its instruction by event and size, its rules,
-//                 its landing, and what stood when it started, each from the store that keeps it, and a link nothing keeps
-//                 said missing. It writes nothing; the screen's door to the same read is a row of its own.
-//
-//   workflow run --session <id> | --quest <id> | --ask <id>
-//                 where a piece of work stands in the workflow it follows (WORKFLOW1c2, D157, design §5.2, §7): the session's
-//                 Workflow view's twin, read by the reader its route reads, one line per step with its state and what it says,
-//                 the step it stands at marked. A chat has no run, and says so. It writes nothing.
-//
-//   workflow keep <session> ["…"]
-//                 the person's Keep (WORKFLOW1f, design §4.4): where a kind's paths hold a session's work, keep the workflow
-//                 the kind chose for it, with their words, on its run, and print what the landing gate says after.
-//
-//   convert --plan | --apply <digest> [--leave <part>] | --undo [<digest>]
-//                 the home's old records converted, part by part, through one door (ONEWAY1ae, D228; WORKFLOWCLEAN1 1e's workflow
-//                 part among them): the plan reads and writes nothing, --apply and --undo are the person's presses, confirmed in
-//                 the running Daoris's window, and --leave closes a failed part; with none running it says so.
-//
-//   workflow skip <run> <node> "…"  ·  workflow stop <run> <node> ["…"]
-//                 the person's skip or stop of a node of a run bound to a graph version (FABRIC-CUTOVER1f, D190, design §5.2):
-//                 kept on the run's record, and the next look applies it; the running Daoris's window confirms it.
-//
-//   git branches [--repository <name>] [--all] [--json]
-//                 each repository's line and branches by kind (GIT1c, D147 §2.2, §3.3): the line with how it stands to
-//                 origin's copy and when the checkout last fetched, the sessions' branches named by their sessions, the
-//                 landed ones with whether they are on origin and their pull request, yours, and how many only origin
-//                 holds, each with its distance from the line, from one `git for-each-ref` per repository through the git
-//                 Tools resolves; and the git each read ran, ready to copy. The repositories holding Daoris's branches, the
-//                 rest named (D112); --all every one. It writes nothing.
-//
-//   git review <session> [--json] [--time]
-//                 Review's read of a session from a terminal (GITAPP1a-i, D202 point 2, the git-app design P1.5): the route's
-//                 own code (SessionReviews), its answer said or written as JSON without patches; --time each git start by node
-//                 and budget with the gate's wait, the creation and the run apart, and `review.read` appended to the log.
-//
-//   update [--install <folder>] · update --when-idle | --now | --cancel [--install <folder>]
-//                 an install's update (UPDATE1, D139): what `publish:desktop --stage` put beside the install, what holds
-//                 for it and how the last swap ended; or the word on it, written to <home>/update.json as the window's
-//                 banner writes it. When idle (the default for a staged build): the desktop starts nothing new, lets what
-//                 runs end or park, closes, and its launcher swaps app/ and starts again. Now: the close ends what runs as
-//                 any close does, each driven session carried on at the next start. Cancel: not now, for that build.
-//
-//   plugins install <file.nupkg>
-//                 a plugin package (PLUGDIST1a, D120): read before anything is extracted (the type
-//                 `DaorisPlugin` at a plugin API this build speaks, no dependencies, `plugin/plugin.json`),
-//                 its `plugin/` folder alone extracted and read as the catalogue reads one, and added under
-//                 its id, never over an installed one, with the package recorded. Nothing reaches a network.
-//
-//   plugins new <id> --point <point>… [--in <folder>]
-//   plugins try <folder|id> [--point <point>] [--frame <file.json>]
-//                 the plugin kit (PLUG8, D101): `new` writes a plugin's folder — a manifest, a wire script
-//                 answering each point, its self-contained wire test (`node --test`) and a README — into a
-//                 new or empty folder, and installs nothing. `try` starts a plugin as the driver would,
-//                 speaks the handshake, one frame at each point and the shutdown, and checks every answer
-//                 by the driver's own reader: 0 when all are ones it reads, 1 when the plugin failed a check.
-//                 The Plugins place is the other door.
-//   plugins show <id> [--json]
-//   plugins activity <id> [--since <30m|2h|3d>] [--json]
-//                 a plugin's page and what it did (PLUGUI1d, D119 §4.4): what it declares as written, a
-//                 server's environment by name only, its health from the machine log's last word, said with
-//                 when; and its activity from the machine log over the last 7 days, or the span --since names.
-//   plugins approve <id> <server> [--reads-only | --writes <tool,…>]
-//   plugins withdraw <id> <server>
-//                 the person's approval of the exact tools a plugin's server offers Ask Daoris (HELPPLUG1a, D170's
-//                 note), its writes outside Daoris too unless --reads-only, or its withdrawal: the page's twin.
+// Every command that changes the home while acting alone holds the home's lease for its run (VerbLeases), and waits up to thirty
+// seconds where another such act holds it, then is refused naming it (exit 1); beside a running Daoris it sends the person's press
+// to it, confirmed in its window. With no words, the usage, exit 2 — never a loop: only `drive` starts one (DRV8a, D104).
 //
 // While watching, a line marked `!` is what would have been a toast on a machine with a screen
-// (SURF5b): a session parked, or one ended without the person asking. `daoris driver notify off`
+// (SURF5b): a session parked, or one ended without the person asking. `daoris settings notify off`
 // turns it off here exactly as the desktop's checkbox does — one file, two doors (D50).
 //
-// Exit codes keep the family contract: 0 clean · 2 tool error.
+// Exit codes keep the family contract: 0 clean · 1 a refusal · 2 tool error.
 // SUPERVISOR1a-ii (D208 §2.2): the holder key leaves this process first, so no start it builds can copy it. The verb is its one reader:
-// `sessions supervise` reads what was taken, and nothing else does.
+// `session supervise` reads what was taken, and nothing else does.
 HolderKey.Take();
+
+if (OperatingSystem.IsWindows())
+{
+    Console.OutputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+}
+
+// ONEWAY1ai-i (the oneway design §11): the old launcher runs nothing, and says what its words are now.
+// transitional: old-command-names
+if (Environment.GetEnvironmentVariable(CommandWords.OldNameVariable) == CommandWords.OldName)
+{
+    Console.Error.WriteLine($"daoris: {CommandWords.OldLauncher(args)}");
+    return 2;
+}
+
+// A word handed once is never handed back: who handed these words is read, and taken out of what this process passes on.
+var handedBy = Environment.GetEnvironmentVariable(CommandWords.HandedVariable);
+Environment.SetEnvironmentVariable(CommandWords.HandedVariable, null);
 
 // CONFIRMWAIT1b (the confirm-wait design §4.1): how long a press waits on its Confirm, taken from the words before any verb, lease or
 // family reads them, and set once on every world a verb is given (`InstanceHost.World`).
 if (!InstanceDoor.TakeWait(args, out var verbArgs, out var pressWait, out var waitProblem))
 {
-    Console.Error.WriteLine($"daoris-driver: {waitProblem}");
+    Console.Error.WriteLine($"daoris: {waitProblem}");
     return 2;
 }
 
-args = verbArgs;
 Daoris.Driver.Host.InstanceHost.Wait = pressWait;
+
+// ONEWAY1ai-i: the one tree routes the words once, into the words the commands below read; an old form never reaches one.
+var typed = verbArgs;
+var route = CommandTree.Route(typed, handedBy);
+switch (route.Kind)
+{
+    case TreeRouteKind.Refused:
+        Console.Error.WriteLine($"daoris: {route.Said}");
+        return 2;
+    case TreeRouteKind.Usage:
+        if (route.Said is not null) Console.Error.WriteLine($"daoris: {route.Said}");
+        (route.Asked ? Console.Out : Console.Error).WriteLine(
+            route.Group is { } group ? DriverCommand.UsageOf(group) ?? DriverCommand.Usage : DriverCommand.Usage);
+        return route.Asked ? 0 : 2;
+}
+
+args = [.. route.Words];
 
 // STEWARDROLE1a-i (D209 §3.3): a role's terminal, by the entry's marker, runs its roles' verbs and the open reads its holder needs, and
 // nothing else: no person's press and no verb acting alone. Those it runs refuse their own alone paths (`InstanceDoor`).
 if (RoleTerminal.AtEntry(args, Console.Error) is { } roleRefused) return roleRefused;
+
+// A doctrine command is the CLI's: handed to the one this install carries.
+if (route.Kind == TreeRouteKind.Doctrine) return await Daoris.Driver.Host.DoctrineConsole.RunAsync(args);
 
 // The holder's brief (STEWARDROLE1a-i, D209 §2.2): Daoris's own text, an open verb that reads nothing and names no key.
 if (args is ["roles", "brief"])
 {
     Console.Out.Write(RolesBrief.Text);
     return 0;
-}
-
-if (OperatingSystem.IsWindows())
-{
-    Console.OutputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 }
 
 // A terminal finds the Daoris that runs (FINDDAORIS1, D171 point 1): the install's launcher sets no variable, so a host the
@@ -414,16 +113,16 @@ if (VerbLeases.HoldsHere(args, Environment.GetEnvironmentVariable) && DriverConf
 {
     try
     {
-        verbLease = HomeLease.ForVerb(leaseHome, VerbLeases.Name(args), out var leaseRefused);
+        verbLease = HomeLease.ForVerb(leaseHome, CommandWords.Named(typed), out var leaseRefused);
         if (verbLease is null)
         {
-            Console.Error.WriteLine($"daoris-driver: {leaseRefused}");
+            Console.Error.WriteLine($"daoris: {leaseRefused}");
             return 1;
         }
     }
     catch (HomeLeaseException error)
     {
-        Console.Error.WriteLine($"daoris-driver: {error.Message}");
+        Console.Error.WriteLine($"daoris: {error.Message}");
         return 2;
     }
 }
@@ -615,7 +314,7 @@ try
         {
             if (QuestWorkflowCommand.Read(questArgs, out var workflowProblem) is not { } workflowAsk)
             {
-                Console.Error.WriteLine($"daoris-driver: {workflowProblem}");
+                Console.Error.WriteLine($"daoris: {workflowProblem}");
                 Console.Error.WriteLine(QuestWorkflowCommand.Usage);
                 return 2;
             }
@@ -633,7 +332,7 @@ try
         {
             if (QuestDoneCommand.Read(questArgs, out var doneProblem) is not { } doneAsk)
             {
-                Console.Error.WriteLine($"daoris-driver: {doneProblem}");
+                Console.Error.WriteLine($"daoris: {doneProblem}");
                 Console.Error.WriteLine(QuestDoneCommand.Usage);
                 return 2;
             }
@@ -648,7 +347,7 @@ try
         {
             if (QuestReopenCommand.Read(questArgs, out var reopenProblem) is not { } reopenAsk)
             {
-                Console.Error.WriteLine($"daoris-driver: {reopenProblem}");
+                Console.Error.WriteLine($"daoris: {reopenProblem}");
                 Console.Error.WriteLine(QuestReopenCommand.Usage);
                 return 2;
             }
@@ -660,7 +359,7 @@ try
         if (questArgs is not [("delete" or "accept") and var verb, var questId])
         {
             Console.Error.WriteLine(
-                "usage: daoris-driver quest delete <id>  ·  quest accept <id>  ·  quest done <id> [--note \"…\"]  ·  "
+                "usage: daoris quest delete <id>  ·  quest accept <id>  ·  quest done <id> [--note \"…\"]  ·  "
                 + "quest reopen <id> [--note \"…\"]  ·  quest go-on <id>  ·  "
                 + "quest pause <id>  ·  quest resume <id>  ·  "
                 + "quest abandon <id> [--reason \"…\" --yes]  ·  quest clear <id> [--failed] [--yes]  ·  "
@@ -674,7 +373,7 @@ try
         var (ok, message) = verb == "delete"
             ? await client.DeleteQuestAsync(questId)
             : await client.AcceptDepartureAsync(questId);
-        Console.WriteLine($"daoris-driver: {message}");
+        Console.WriteLine($"daoris: {message}");
         // A refusal — something stands on the quest, or nothing waits for a yes — is an answer, not a tool error.
         return ok ? 0 : 1;
     }
@@ -716,11 +415,10 @@ try
         return await Daoris.Driver.Host.AccessConsole.RunAsync(accessArgs);
     }
 
-    // The CLI's management families, handed to this program (PUSH1f2a, D194 point 1): `daoris driver …` runs `daoris-driver driver …`
-    // with the same words, `daoris tool …` `daoris-driver tool …` (PUSH1f2c), `daoris agent …` `daoris-driver agent …` (PUSH1f2d-e), and
-    // `daoris plugin …` `daoris-driver plugin …` (PUSH1f2f), beside the host's own `plugins` below. One Ctrl+C handler for the
-    // families, registered here and not where `closing` is made, so a verb routed above keeps the runtime's own Ctrl+C: it keeps the
-    // process and cancels `closing`, whose token each family command is handed, so a wait stops and is said, never a torn write.
+    // The standing choices (`place`, `settings`, `role`, `workflow`'s saved graphs and `quest retry`, which the tree routes as the
+    // choices' own words), `tool`, `agent` and `plugin`'s list and edits (PUSH1f2a-f, D194 point 1). One Ctrl+C handler for these,
+    // registered here and not where `closing` is made, so a command routed above keeps the runtime's own Ctrl+C: it keeps the
+    // process and cancels `closing`, whose token each command is handed, so a wait stops and is said, never a torn write.
     if (args is ["driver" or "tool" or "agent" or "plugin", ..])
     {
         Console.CancelKeyPress += (_, press) =>
@@ -759,11 +457,27 @@ try
         return await Daoris.Driver.Host.HistoryConsole.RunAsync(historyArgs, log);
     }
 
-    // The tree lifecycle from a terminal (D51, D50): the verbs live on the binary that already owns git —
-    // the CLI's `daoris driver trees <repo> on|off` is the standing opt-in, a file edit; these are disk.
+    // The tree lifecycle from a terminal (D51, D50): `daoris place trees <repo> on|off` is the standing opt-in, a file edit; these are disk.
     if (args is ["trees", .. var treesArgs])
     {
         return await Daoris.Driver.Host.TreesConsole.RunAsync(treesArgs, log);
+    }
+
+    // The machine's remotes, Daoris's browser and the registry (ONEWAY1ai-i; the oneway design §6 X3): the typed operations the window
+    // calls, and what the CLI's TypeScript did before them.
+    if (args is ["remote", .. var remoteArgs])
+    {
+        return Daoris.Driver.Host.RemoteConsole.Run(remoteArgs);
+    }
+
+    if (args is ["browser", .. var browserArgs])
+    {
+        return Daoris.Driver.Host.BrowserConsole.Run(browserArgs);
+    }
+
+    if (args is ["repository", .. var repositoryArgs])
+    {
+        return await Daoris.Driver.Host.RepositoryConsole.RunAsync(repositoryArgs);
     }
 
     // Each unit of work's milestone (FABRIC-MILESTONE1a, D50): a look, read from the records and changing nothing.
@@ -844,7 +558,7 @@ try
             closing.Cancel();
         };
         return await SpaceFreeCommand.RunAsync(
-            freeArgs, SpaceFreeWorld.OfThisTerminal(freeHome, log), Daoris.Driver.Host.InstanceHost.World(freeHome, "daoris-driver"), closing.Token);
+            freeArgs, SpaceFreeWorld.OfThisTerminal(freeHome, log), Daoris.Driver.Host.InstanceHost.World(freeHome, "daoris"), closing.Token);
     }
 
     // The disk space from a terminal (KEEP1c, D195 point 5, D50): This Daoris's Disk space card is the other door to the same reader.
@@ -878,7 +592,7 @@ try
     if (DriverCommand.Read(args, out var problem) is not { } loop)
     {
         var help = DriverCommand.AskedForHelp(args);
-        if (problem is not null) Console.Error.WriteLine($"daoris-driver: {problem}");
+        if (problem is not null) Console.Error.WriteLine($"daoris: {problem}");
         (help ? Console.Out : Console.Error).WriteLine(DriverCommand.Usage);
         return help ? 0 : 2;
     }

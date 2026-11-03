@@ -255,7 +255,7 @@ public static class ClaudeTrust
         + (profile is null
             ? "The conversation goes on in your own sign-in, outside Daoris's accounts: trust the folder with the tool itself, at "
               + "your terminal (run `claude` there once and accept its trust prompt). Daoris writes nothing in your own sign-in's file."
-            : $"`daoris agent trust claude-code \"{tree}\" --profile {ShellWord.Of(profile, ShellWord.Account)} --yes` trusts it for "
+            : $"`daoris agent trust claude-code \"{tree}\" --account {ShellWord.Of(profile, ShellWord.Account)} --yes` trusts it for "
               + "the Daoris account the session runs as. Daoris sets that flag only when you tell it to: it is your grant to give.");
 
     /// <summary>

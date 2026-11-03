@@ -48,7 +48,6 @@ public sealed class WorkflowKeepCommandTests
         Assert.Contains("WorkflowKeepCommand.Read(args, out var problem)", console);
         Assert.Contains("Console.Error.WriteLine(WorkflowKeepCommand.Usage);", console);
         Assert.Contains("WorkflowKeepCommand.RunAsync(", console);
-        Assert.Contains("//   workflow keep <session> [\"…\"]", File.ReadAllText(Path.Combine(host, "Program.cs")));
     }
 
     /// <summary>The checkout this build runs from: a linked worktree's <c>.git</c> is a file, so it stops there too.</summary>

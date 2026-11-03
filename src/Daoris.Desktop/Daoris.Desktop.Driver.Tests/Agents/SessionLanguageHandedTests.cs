@@ -31,7 +31,7 @@ public sealed class SessionLanguageHandedTests
         Assert.DoesNotContain("Write what you say to a person", unset);
         Assert.Equal(1, Count(set, Line));
         Assert.Equal(unset.Replace(close, close + "\n\n" + Line, StringComparison.Ordinal), set);
-        Assert.True(set.IndexOf(Line, StringComparison.Ordinal) < set.IndexOf("Look before you ask.", StringComparison.Ordinal), which);
+        Assert.True(set.IndexOf(Line, StringComparison.Ordinal) < set.IndexOf("Look before you ask:", StringComparison.Ordinal), which);
     }
 
     /// <summary>Unset is today's instruction: the golden files are composed from targets that name no language.</summary>

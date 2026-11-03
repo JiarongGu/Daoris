@@ -14,35 +14,35 @@ namespace Daoris.Driver;
 /// </remarks>
 internal sealed class HelpRoomOwed : IHelpRoomSection
 {
-    /// <summary>WSSETUP6's <c>daoris-driver place --workspace</c> (D124 §4.5): owed until WSSETUP7's doors of the <c>setup</c> kind.</summary>
+    /// <summary>WSSETUP6's <c>daoris place --workspace</c> (D124 §4.5): owed until WSSETUP7's doors of the <c>setup</c> kind.</summary>
     public static readonly HelpOwedDoor Workspace = new(
         "set every repository of a workspace up, one at a time, or pause, resume or stop that plan",
-        ["daoris-driver place --workspace <name> --adoption [--plan]", "daoris-driver place --workspace <name> --pause | --resume | --stop"],
+        ["daoris place --workspace <name> --adoption [--plan]", "daoris place --workspace <name> --pause | --resume | --stop"],
         "setting a workspace up writes a plan that publishes a quest to each repository in turn and adds a rule at the "
         + "workspace's scope, a widening the person applies as a card, and pausing, resuming or stopping it changes only what "
         + "the person already said, so Ask Daoris should propose each; that waits on WSSETUP7's `workspace`, `pause`, `resume` "
         + "and `stop` doors of LAYOUT8's `setup` kind, judged against the same plan (D124 §4.5).");
 
-    /// <summary>WSSETUP5's <c>daoris-driver register</c> (D124 §3.1): owed until WSSETUP7's <c>register</c> door.</summary>
+    /// <summary>WSSETUP5's <c>daoris repository register</c> (D124 §3.1): owed until WSSETUP7's <c>register</c> door.</summary>
     public static readonly HelpOwedDoor Register = new(
         "register a repository from what its line declares",
-        ["daoris-driver register [--repository <name>]"],
+        ["daoris repository register [--repository <name>]"],
         "registering a repository from its line changes only what the line already says, so Ask Daoris should propose it and "
         + "the person apply it; that waits on WSSETUP7's `register` door of LAYOUT8's `setup` kind, judged against the same "
         + "line (D124 §4.5).");
 
-    /// <summary>EVID1b's <c>daoris-driver quest check</c> (D144 §5): owed until EVID1c's check card.</summary>
+    /// <summary>EVID1b's <c>daoris quest check</c> (D144 §5): owed until EVID1c's check card.</summary>
     public static readonly HelpOwedDoor Check = new(
         "read a done's evidence again, so a commit that holds it now lifts its hold",
-        ["daoris-driver quest check <id> [--commit <sha>]"],
+        ["daoris quest check <id> [--commit <sha>]"],
         "reading a done's evidence again posts a verdict that can lift its hold and publish what it held, a move the person "
         + "applies as a card, so Ask Daoris should propose it; that is EVID1c's check card beside the quest page's Check again "
-        + "(D144 §5), and until then `daoris-driver quest check` is the terminal's door.");
+        + "(D144 §5), and until then `daoris quest check` is the terminal's door.");
 
     /// <summary>An ask's review choice (REVIEWENV1b): owed until ENTRY1c widens the <c>ask</c> door with it.</summary>
     public static readonly HelpOwedDoor AskReview = new(
         "choose, as an ask is proposed, whether its work is reviewed before it lands and where (the ask's page sets it after)",
-        ["daoris-driver ask … --review rule|on|<environment>|off", "daoris-driver ask --set-review <id> on|<environment>|off [\"…\"]"],
+        ["daoris ask … --review rule|on|<environment>|off", "daoris ask review <id> on|<environment>|off [\"…\"]"],
         "an ask's review choice says how its work is shown to the person before it lands, a choice the person applies, so "
         + "Ask Daoris should carry it when it proposes the ask; the `ask` door takes the sentence, workspace and why only, "
         + "which ENTRY1c widens with the review and the kind, and until then the ask's page is its door (REVIEWENV1b).");
@@ -51,8 +51,8 @@ internal sealed class HelpRoomOwed : IHelpRoomSection
     public static readonly HelpOwedDoor AskKind = new(
         "say, as an ask is proposed, what kind of task it is and which workflow its work follows (the ask's page sets it after)",
         [
-            "daoris-driver ask … --kind <kind> [--workflow <id>|current]",
-            "daoris-driver ask --set-workflow <id> [--kind <kind>] [--workflow <id>|current]|--clear [\"…\"]",
+            "daoris ask … --kind <kind> [--workflow <id>|current]",
+            "daoris ask workflow <id> [--kind <kind>] [--workflow <id>|current]|--clear [\"…\"]",
         ],
         "an ask's kind choice says which workflow its work follows (D157), a choice the person applies, here an intake's "
         + "proposal applied from the ask's page (WORKFLOW1i-c); Ask Daoris should carry the kind when it proposes the ask, "
@@ -65,13 +65,13 @@ internal sealed class HelpRoomOwed : IHelpRoomSection
     public static readonly HelpOwedDoor Workflow = new(
         "apply a workflow's version from a file, import a workflow whole, or declare a workspace's kind of task",
         [
-            "daoris driver workflow apply <id> <file> [--base <v>]",
-            "daoris driver workflow import <file>",
-            "daoris driver workflow kind <name> <kind> --label \"…\" [--paths <p,…>]",
+            "daoris workflow apply <id> <file> [--base <v>]",
+            "daoris workflow import <file>",
+            "daoris workflow kind <name> <kind> --label \"…\" [--paths <p,…>]",
         ],
         "a version applied from a file, a workflow imported whole and a kind of task are changes to how work moves that the person "
         + "applies, so Ask Daoris should propose them as the `workflow` kind's card, its part said first (D157 point 13, the "
-        + "workflow design §8, §4.7), which WORKFLOW1h2 builds; until then `daoris driver workflow` is its terminal's door, and every "
+        + "workflow design §8, §4.7), which WORKFLOW1h2 builds; until then `daoris workflow` is its terminal's door, and every "
         + "gate reads the version each run bound (WORKFLOW1f).");
 
     /// <summary>Settings → Tools' *System* and *Use this version* (TOOLS7): the <c>tool</c> kind's <c>use</c> door, TOOLS8's.</summary>
@@ -91,15 +91,15 @@ internal sealed class HelpRoomOwed : IHelpRoomSection
         + "`daoris tool locations remove` is the terminal's door.");
 
     /// <summary>
-    /// MODELROLE1c's <c>daoris driver actor</c> and Settings → AI features' *Actors* (D205 §8.1): the <c>actor_propose</c> tool,
+    /// MODELROLE1c's <c>daoris settings actor</c> and Settings → AI features' *Actors* (D205 §8.1): the <c>actor_propose</c> tool,
     /// MODELROLE1h's.
     /// </summary>
     public static readonly HelpOwedDoor Actor = new(
         "choose each actor's order of agents, models and efforts (Agents → Roles → Working roles)",
-        ["daoris driver actor [<actor>] [\"<agent> [<model>|-] [<effort>|-]\" …]"],
+        ["daoris settings actor [<actor>] [\"<agent> [<model>|-] [<effort>|-]\" …]"],
         "an actor's order says which models this machine's accounts spend on, so Ask Daoris should propose it and the person apply "
         + "it, judged by the one judge the screen and the terminal take; that is the `actor_propose` tool, which MODELROLE1h builds "
-        + "(D205 §8.1), and until then Working roles and `daoris driver actor` are its doors.");
+        + "(D205 §8.1), and until then Working roles and `daoris settings actor` are its doors.");
 
     /// <summary>
     /// Every door owed, in the order a person meets the tasks, as the doors table runs. LEFT3's clear of an account's default left with

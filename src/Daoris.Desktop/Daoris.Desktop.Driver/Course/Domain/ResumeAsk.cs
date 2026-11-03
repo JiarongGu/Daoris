@@ -78,21 +78,16 @@ internal sealed class ResumeAsk(
         [.. Resent.Select(word => word.Text + ChatFiles.PathLines(word.Files)), .. _words.Select((word, at) => word.Handed + ChatFiles.PathLines(_files[at]))]);
 
     /// <summary>
-    /// The routing standing a conversation going on is told (COWORKVIEW1e-i, the cowork view design §R11.2 point 4), as it stands now: a
-    /// drive may have moved since the conversation began. Handed after the words and the appendix, kept as a note of its own in the
-    /// opening. Null for a driven session's resume and for Ask Daoris's.
+    /// What the conversation is resumed with on the native door: the words, then the appendix, after a blank line. Never the standing
+    /// block, which its first message carried (CONTEXTONE1c): a go-on is the same conversation.
     /// </summary>
-    public RoutingStanding? Routing { get; set; }
-
-    /// <summary>What the conversation is resumed with on the native door: the words, then the appendix and the routing, each after a blank line.</summary>
     public string Prompt => string.Join("\n\n", new[] { Answer }.Concat(Afterwards));
 
-    /// <summary>The same on the protocol door (D137 §2.2): each word its own text block in order, then the appendix and the routing as one more each.</summary>
+    /// <summary>The same on the protocol door (D137 §2.2): each word its own text block in order, then the appendix as one more.</summary>
     public IReadOnlyList<string> Blocks =>
         [.. Resent.Select(word => word.Text), .. _words.Select(word => word.Handed), .. Afterwards];
 
-    private IEnumerable<string> Afterwards =>
-        new[] { appendix, Routing?.Words }.Where(each => !string.IsNullOrEmpty(each)).Select(each => each!);
+    private IEnumerable<string> Afterwards => appendix is { Length: > 0 } after ? [after] : [];
 
     /// <summary>The ids of the words its record keeps, for the service to take off once the session took them; none from before <c>said</c>.</summary>
     public IReadOnlyList<string> Ids => [.. _words.Select(word => word.Id).OfType<string>()];
@@ -144,7 +139,6 @@ internal sealed class ResumeAsk(
         return
         [
             new SessionEvent { Kind = SessionEventKind.Note, Text = firstLine, Parts = FirstParts is { Count: > 0 } ? FirstParts : null },
-            .. Routing?.Note() is { } routed ? new[] { new SessionEvent { Kind = SessionEventKind.Note, Text = routed.Note, Parts = routed.Parts } } : [],
             .. _words.Select(word => new SessionEvent
             {
                 Kind = SessionEventKind.User,

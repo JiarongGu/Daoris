@@ -90,8 +90,9 @@ public sealed class ChatGoesOnInSyncProcessTests : IDisposable
 
         Assert.Contains("session/resume: conv-1", HeardLines());
         Assert.Contains($"prompt: Also log the port. | {BroughtUp} Read the log before you go on: the commits you made have new ids.", HeardLines());
-        // COWORKVIEW1e-i: the routing standing is told after the words and Daoris's lines, with the first message and again at the go-on.
-        Assert.Equal(["not driven", "not driven"], StubFile.Routings(Heard));
+        // CONTEXTONE1c: the routing standing rides the standing block after the first message's words, and the go-on, the same
+        // conversation, is never handed it again.
+        Assert.Equal(["not driven"], StubFile.Routings(Heard));
         var head = Rev("main");
         Assert.Equal($"head: {head}", HeardLines().Last(line => line.StartsWith("head: ", StringComparison.Ordinal)));
         Assert.Equal(head, GitIn(tree, "rev-parse", "HEAD"));
@@ -132,9 +133,9 @@ public sealed class ChatGoesOnInSyncProcessTests : IDisposable
                 send({ jsonrpc: '2.0', id: frame.id, result: {} });
               } else if (frame.method === 'session/prompt') {
                 const raw = frame.params.prompt.filter((block) => block.type === 'text').map((block) => block.text).join(' | ');
-                // The routing standing line Daoris appends after the words and its own lines is kept apart (StubFile.Routings).
-                const text = raw.replace(/(\n\n| \| )?Routing standing here: [\s\S]*$/, '');
-                if (text !== raw) appendFileSync(heard + '.routing', /Routing standing here: ([^.]*)\./.exec(raw)[1] + '\n');
+                // The standing block Daoris appends after the words and its own lines is kept apart, its routing set aside (StubFile.Routings).
+                const text = raw.replace(/(\n\n| \| )?Daoris's standing block for this session: [\s\S]*$/, '');
+                if (/Routing standing here: /.test(raw)) appendFileSync(heard + '.routing', /Routing standing here: ([^.]*)\./.exec(raw)[1] + '\n');
                 note('prompt: ' + text);
                 note('head: ' + git('rev-parse', 'HEAD'));
                 if (!resumed) {

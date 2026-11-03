@@ -2775,6 +2775,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             // Its session entry and its quest (SESSONE1a): what a later quest of the same line goes into its tree by (SESSONE1d).
             Entry = Text(session, "entry") is { Length: > 0 } entry ? entry : null,
             Quest = Text(session, "quest") is { Length: > 0 } quest ? quest : null,
+            TookQuest = Text(session, "tookQuest") is { Length: > 0 } took ? took : null,
             // The mode an Ask Daoris record last ran under (HELPMODE1a2), which a conversation going on is compared with.
             HelpMode = Text(session, "helpMode") is { Length: > 0 } mode ? mode : null,
             // The setup a driven record started under (AUTONOMY1a), which a run going on from it compares its own with: its permission

@@ -684,13 +684,13 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
 
     /// <summary>What an <c>opinion</c> proposal's words may say, in the refusal that names the shape.</summary>
     private const string OpinionUsage =
-        "`opinion` is `--reviewers <adapter,adapter> [--on landing,steps] [--required|--not-required] [--verify|--no-verify] "
+        "`opinion` is `--agents <adapter,adapter> [--on landing,steps] [--required|--not-required] [--verify|--no-verify] "
         + "[--minutes <n>] [--recheck|--no-recheck]`, `none` or `--clear` — e.g. "
-        + "`daoris driver opinion web-app --reviewers codex-acp --required`.";
+        + "`daoris place opinion web-app --agents codex-acp --required`.";
 
     /// <summary>
-    /// <c>opinion</c> (XAGENT1a, D155 point 3, the second-agent design §2.5), as <c>daoris driver opinion</c> reads its words:
-    /// <c>--reviewers</c> and the switches set over the rule set there, <c>none</c> or <c>--clear</c>, for a repository or a
+    /// <c>opinion</c> (XAGENT1a, D155 point 3, the second-agent design §2.5), as <c>daoris place opinion</c> reads its words:
+    /// <c>--agents</c> and the switches set over the rule set there, <c>none</c> or <c>--clear</c>, for a repository or a
     /// whole workspace, a quoted word kept whole. Judged by the twin's table (<see cref="OpinionRules.Apply"/>); the card says
     /// what the rule lets a reviewer do, names the reviewers of the working agent's own family over this machine's agents, a
     /// plugin's among them (XAGENT1b2), and says what the gate does with it (<see cref="OpinionRules.Gate"/>, XAGENT1f4).
@@ -709,7 +709,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
         for (var at = 0; at < words.Count; at++)
         {
             var word = words[at];
-            if (word is "--reviewers" or "--on" or "--minutes")
+            if (word is "--agents" or "--on" or "--minutes")
             {
                 if (at + 1 >= words.Count || words[at + 1].StartsWith("--", StringComparison.Ordinal)) return ($"`{word}` needs its value — {OpinionUsage}", default);
                 flags[word] = words[++at];
@@ -737,7 +737,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
         var minutes = flags.GetValueOrDefault("--minutes");
         var set = new OpinionSet
         {
-            Reviewers = Listed(flags.GetValueOrDefault("--reviewers")),
+            Reviewers = Listed(flags.GetValueOrDefault("--agents")),
             On = Listed(flags.GetValueOrDefault("--on")),
             Required = Switch("--required", "--not-required"),
             Verify = Switch("--verify", "--no-verify"),
@@ -783,7 +783,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
             ? [.. OpinionRules.Says(standing, OpinionRules.SameAgent(standing, config.Adapter, adapters)), .. OpinionRules.Gate(standing)]
             : [];
         var scope = circle ? $"--workspace {ShellWord.Of(workspace!, ShellWord.Workspace)}" : target!;
-        return (null, (string.Join(" ", [head, .. said]), $"daoris driver opinion {scope} {value}", c => OpinionRules.Apply(c, edit)));
+        return (null, (string.Join(" ", [head, .. said]), $"daoris place opinion {scope} {value}", c => OpinionRules.Apply(c, edit)));
     }
 
     /// <summary>What a <c>helpers</c> proposal's words may say, in the refusal that names the shape.</summary>

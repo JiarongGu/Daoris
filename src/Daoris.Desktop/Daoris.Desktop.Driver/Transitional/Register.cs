@@ -48,6 +48,9 @@ public static class TransitionalRegister
     /// <summary>The builds before COMMS1b's, which wrote no answers mark and no keyed attempt. No release names COMMS1b's yet.</summary>
     private static readonly OlderBuild BeforeComms1b = new("the builds before COMMS1b's, which wrote no answers mark and no keyed attempt");
 
+    /// <summary>The builds before COMMS1h's, which wrote a turn's end as the receipt `answered`. No release names COMMS1h's yet.</summary>
+    private static readonly OlderBuild BeforeComms1h = new("the builds before COMMS1h's, which wrote a turn's end as the receipt `answered`");
+
     /// <summary>The builds before ONEWAY1l's, which wrote a say's `now` alone. No release names ONEWAY1l's yet.</summary>
     private static readonly OlderBuild BeforeOneway1l = new("the builds before ONEWAY1l's, which wrote a say's `now` alone");
 
@@ -182,6 +185,16 @@ public static class TransitionalRegister
         },
         new()
         {
+            Id = "receipt-answered",
+            Kept = "../../Daoris.Web/src/work/conversation/conversation.ts:752",
+            Reaches = "An event log an older build wrote, holding the receipt `answered` for the turn that took a word, which COMMS1h's build writes `ended`: the page draws it as it was.",
+            Ends = "No event log on the home holds an `answered` receipt (the logs are history, cleared by their store's remover), and the floor passes COMMS1h's build. The logs are every session's, so it never reads as ended here and the row deletes it.",
+            Row = "ONEWAY1af",
+            Waits = BeforeComms1h,
+            Ended = Never,
+        },
+        new()
+        {
             Id = "answers-alone-events",
             Kept = "Course/Domain/AnswersAlone.cs:49, Course/ContinuationAdmissions.cs:301, Course/GoOn/AnswersAloneHold.cs:97, Course/GoOn/AnswersAloneHold.cs:130",
             Reaches = "A line no admission keeps yet, seeded once from its events as the count was read before; and a store short of step 20, or records that did not read, counted from the events as before.",
@@ -293,6 +306,18 @@ public static class TransitionalRegister
             Reaches = "A window whose browser storage still holds the retired Roles mode: it opens on Setup, which replaced it.",
             Ends = "One release after SETUPUX1y. The storage is the window's, so it never reads as ended here and the row deletes it.",
             Row = "WORKFLOWCLEAN1z",
+            Ended = Never,
+        },
+        new()
+        {
+            Id = "old-command-names",
+            Kept = "Platform/CommandWords.cs:93, Platform/CommandWords.cs:214, ../Daoris.Desktop.Driver.Host/Program.cs:43",
+            Reaches = "A session an older build briefed with `daoris-driver …` or a nested family (`daoris driver …`), carried on over the update: "
+                + "each old form is refused naming its new one, and the install's `app/bin/daoris-driver` launcher, kept one release, runs nothing "
+                + "and says the same.",
+            Ends = "No open session was started before this install took the command tree's build (ONEWAY1ai), so none was briefed with an old name. "
+                + "The sessions' starts and the install's builds live in two stores, so it never reads as ended here and the row deletes it.",
+            Row = "ONEWAY1af",
             Ended = Never,
         },
     ];

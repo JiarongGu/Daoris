@@ -1553,17 +1553,23 @@ if (!done.ok) throw new Error(done.text);
     check('…and a tool error comes back through the script as exit 2', bashUnknown.code === 2, bashUnknown.out);
   }
 
-  // DRIVERDOOR1: the driver's verbs by their bare name too (D50's terminal door), on a scratch home of their own so
-  // nothing of any install's is read: the shipped host, complete with its libraries, answers `trees list`.
+  // DRIVERDOOR1, ONEWAY1ai: a group of the one tree by the same bare name (D50's terminal door), on a scratch home of its own so
+  // nothing of any install's is read: the shipped program, complete with its libraries, answers `tree list`. The old name's launcher,
+  // kept one release, runs nothing and names the new form, exit 2.
   const driverHome = join(scratch, 'driver-door-home');
   mkdirSync(driverHome, { recursive: true });
   const driverEnvironment = { ...toolEnvironment, DAORIS_HOME: driverHome };
-  const driverPrompt = spawnSync(process.env.ComSpec ?? 'cmd.exe', ['/d /s /c "daoris-driver trees list"'], {
+  const promptOn = (line) => spawnSync(process.env.ComSpec ?? 'cmd.exe', [`/d /s /c "${line}"`], {
     cwd: doctrine, env: driverEnvironment, encoding: 'utf8', timeout: 120_000, windowsVerbatimArguments: true, windowsHide: true,
   });
+  const driverPrompt = promptOn('daoris tree list');
   const driverOut = `${driverPrompt.stdout ?? ''}${driverPrompt.stderr ?? ''}`;
-  check(`Command Prompt runs \`daoris-driver trees list\` from ${CLI_BIN.join('/')}/ and it answers (exit 0)`,
+  check(`Command Prompt runs \`daoris tree list\` from ${CLI_BIN.join('/')}/ and it answers (exit 0)`,
     driverPrompt.status === 0, driverOut);
+  const oldName = promptOn('daoris-driver trees list');
+  const oldOut = `${oldName.stdout ?? ''}${oldName.stderr ?? ''}`;
+  check('…and the old name `daoris-driver trees list` runs nothing, naming `daoris tree` (exit 2)',
+    oldName.status === 2 && oldOut.includes('`daoris tree') && oldOut.includes('nothing was done'), oldOut);
 
   // -------------------------------------------------------------- 9. the install updates when its work allows
 
@@ -1759,7 +1765,7 @@ if (!done.ok) throw new Error(done.text);
     const beforeRollback = applicationsAt(shellExe);
     stageLiveBuild(install, { id: 'fails-to-start', version: canonVersion, application: exitsAtOnce });
     const now = driverUpdate('--now');
-    check('`daoris-driver update --now` writes the word for the staged build', now.code === 0 && /installed now/.test(now.out), now.out);
+    check('`daoris update --now` writes the word for the staged build', now.code === 0 && /installed now/.test(now.out), now.out);
     const rolledBack = await waitFor(async () => (journal()?.phase === 'rolled-back' ? journal() : null), 300);
     check('a build that will not come up is rolled back: the launcher put the build before it back',
       rolledBack?.id === 'fails-to-start' && rolledBack?.reason === 'exited', JSON.stringify(journal()));
@@ -1777,7 +1783,7 @@ if (!done.ok) throw new Error(done.text);
         && (await waitFor(async () => ((await updateState())?.outcome?.phase === 'rolled-back' ? true : null), 60)) !== null,
       `${JSON.stringify(logged('update.rolled-back'))}; the window's last read: ${lastUpdateRead}`);
     const status = driverUpdate('');
-    check('`daoris-driver update` says the last swap rolled back', status.code === 0 && /rolled back/.test(status.out), status.out);
+    check('`daoris update` says the last swap rolled back', status.code === 0 && /rolled back/.test(status.out), status.out);
 
     // 9f. Refused: a build whose file changed after its manifest is refused by the application's check, which closes nothing.
     const runningNow = applicationsAt(shellExe);

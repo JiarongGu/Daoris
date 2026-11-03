@@ -100,7 +100,7 @@ public sealed class GoAheadsHandedTests
             var body = prompt.IndexOf("Look at the tile in production.", StringComparison.Ordinal);
             var said = prompt.IndexOf("  > " + Sentence, StringComparison.Ordinal);
             var goAhead = prompt.IndexOf("- Go-ahead 1, write on production", StringComparison.Ordinal);
-            var look = prompt.IndexOf("Look before you ask.", StringComparison.Ordinal);
+            var look = prompt.IndexOf("Look before you ask:", StringComparison.Ordinal);
             Assert.True(body >= 0 && body < said && said < goAhead && goAhead < look, prompt);
         }
     }
@@ -284,7 +284,7 @@ public sealed class GoAheadsHandedTests
     [Fact]
     public void The_hosts_usage_spells_the_go_ahead_door()
     {
-        Assert.Contains("ask --go-ahead <id> <n> approve|refuse [\"…\"]", DriverCommand.Usage);
+        Assert.Contains("ask go-ahead <id> <n> approve|refuse [\"…\"]", DriverCommand.Usage);
         var host = File.ReadAllText(Path.Combine(
             Daoris.Driver.Tests.HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host", "AskConsole.cs"));
         Assert.Contains("case \"--go-ahead\":", host);

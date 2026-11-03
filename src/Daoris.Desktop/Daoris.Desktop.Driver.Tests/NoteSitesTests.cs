@@ -222,7 +222,7 @@ public sealed class NoteSitesTests
         var named = RefusedAccounts.SignedOutNote("claude-code", "work");
         Line(named,
             "The agent refused the `claude-code` account `work` for its sign-in, so it reads signed out and Daoris starts nothing "
-            + "more on it until it is signed in: `daoris agent login claude-code --profile work`, or Agents → the agent's page → "
+            + "more on it until it is signed in: `daoris agent login claude-code --account work`, or Agents → the agent's page → "
             + "Accounts.",
             "account.signed-out");
         Assert.Equal("claude-code", Assert.Single(named.Parts[0].Values, value => value.Key == "owner").Value);

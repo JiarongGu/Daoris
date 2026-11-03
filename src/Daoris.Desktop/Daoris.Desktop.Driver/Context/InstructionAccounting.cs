@@ -18,12 +18,30 @@ internal static class InstructionAccounting
     /// <summary>The sections whose absence is said, in the instruction's order.</summary>
     private static readonly string[] SaidWhenAbsent =
     [
-        HandedSections.Requirements, HandedSections.Words, HandedSections.GoAheads, HandedSections.Standing,
-        HandedSections.Language, HandedSections.Map, HandedSections.Indexes,
+        HandedSections.Requirements, HandedSections.Words, HandedSections.GoAheads, HandedSections.Language,
     ];
 
-    /// <summary>The instruction joined from its pieces, and the account of it: each section once, in the order it first appears.</summary>
-    internal static ComposedInstruction Account(SessionTarget target, IReadOnlyList<TargetPrompt.Piece> pieces)
+    /// <summary>
+    /// The instruction joined from its pieces, and the account of it: each section once, in the order it first appears; then its standing
+    /// block (CONTEXTONE1c), after a blank line counted with it, where the target carries one.
+    /// </summary>
+    internal static ComposedInstruction Account(SessionTarget target, IReadOnlyList<TargetPrompt.Piece> pieces, StandingBlockTold? block)
+    {
+        var joined = Account(target, pieces);
+        return block is null ? joined : Ended(joined, block);
+    }
+
+    /// <summary>An instruction with its standing block at its end: the block's section among those handed, before the ones that were not.</summary>
+    private static ComposedInstruction Ended(ComposedInstruction instruction, StandingBlockTold block)
+    {
+        var text = instruction.Text + StandingBlock.Joint + block.Text;
+        var handed = instruction.Account.Sections.TakeWhile(section => section.None is null).ToList();
+        var section = block.Account with { Chars = StandingBlock.Joint.Length + block.Text.Length };
+        return new ComposedInstruction(
+            text, new InstructionAccount(text.Length, [.. handed, section, .. instruction.Account.Sections.Skip(handed.Count)]));
+    }
+
+    private static ComposedInstruction Account(SessionTarget target, IReadOnlyList<TargetPrompt.Piece> pieces)
     {
         var sizes = new Dictionary<string, int>(StringComparer.Ordinal);
         var order = new List<string>();
@@ -48,8 +66,17 @@ internal static class InstructionAccounting
         return new ComposedInstruction(text, new InstructionAccount(text.Length, sections));
     }
 
-    /// <summary>An intake's instruction (<see cref="IntakePrompt"/>), its own composer's: one section, its parts not counted apart.</summary>
-    internal static ComposedInstruction Intake(SessionTarget target, string prompt) => new(
+    /// <summary>
+    /// An instruction its own composer wrote (<see cref="IntakePrompt"/>, a helper's, a partner's, a reviewer's, a brainstorm's pass): one
+    /// section, its parts not counted apart; then its standing block (CONTEXTONE1c) where the target carries one.
+    /// </summary>
+    internal static ComposedInstruction Intake(SessionTarget target, string prompt, StandingBlockTold? block)
+    {
+        var own = Intake(target, prompt);
+        return block is null ? own : Ended(own, block);
+    }
+
+    private static ComposedInstruction Intake(SessionTarget target, string prompt) => new(
         prompt,
         new InstructionAccount(prompt.Length,
         [
@@ -80,7 +107,6 @@ internal static class InstructionAccounting
             HandedSections.Requirements => Requirements(target, chars, size),
             HandedSections.Words => Words(target, chars, size),
             HandedSections.GoAheads => GoAheads(target, chars, size),
-            HandedSections.Standing => Standing(target, chars, size),
             HandedSections.WrittenTo => new HandedSection(
                 name, HandedSources.Written, $"the person's words to an earlier session on this quest: {size}, quoted whole")
             {
@@ -111,23 +137,16 @@ internal static class InstructionAccounting
                 Chars = chars,
                 From = target.Language.Code,
             },
-            HandedSections.Map => new HandedSection(name, HandedSources.Tree, $"the code map: {size}, naming `{target.CodeMap}` in its tree")
-            {
-                Chars = chars,
-                From = target.CodeMap,
-            },
             HandedSections.Landing => new HandedSection(name, HandedSources.Landing, Landing(target, size))
             {
                 Chars = chars,
                 From = target.LandsOn?.Target,
             },
             HandedSections.Reading => Reading(target, chars, size),
-            HandedSections.Look => Own("where to look before asking"),
-            HandedSections.Indexes => Indexes(target, chars, size),
             HandedSections.Attributed => Own("the person's words met second-hand"),
             HandedSections.Asking => Own(AskSender.AskOf(target.Asker) is null
-                ? "asking another repository, and stopping for the person"
-                : "asking another repository, and stopping for the person, a go-ahead asked once on the ask"),
+                ? "looking before asking, asking another repository, and stopping for the person"
+                : "looking before asking, asking another repository, and stopping for the person, a go-ahead asked once on the ask"),
             HandedSections.Closing => Own("the closing note's two lists, each item naming its source"),
             HandedSections.Proposing => Own("proposing a rule"),
             HandedSections.SetUp => SetUp(target, chars, size),
@@ -316,31 +335,6 @@ internal static class InstructionAccounting
         };
     }
 
-    private static HandedSection Standing(SessionTarget target, int chars, string size)
-    {
-        var standing = target.Standing!;
-        var over = standing.Says.Length - StandingText.Limit;
-        return new HandedSection(
-            HandedSections.Standing, HandedSources.Repository,
-            $"the standing answer: {size}, the person's for `{target.Repository}` on this machine"
-            + (standing.At is { } at ? $", set {When(at)}" : ""))
-        {
-            Chars = chars,
-            From = target.Repository,
-            At = standing.At,
-            Cuts = over <= 0
-                ? null
-                :
-                [
-                    new HandedCut(HandedCuts.StandingLong, $"{N(over)} characters of it left out past its bound of {N(StandingText.Limit)}")
-                    {
-                        Count = over,
-                        Limit = StandingText.Limit,
-                    },
-                ],
-        };
-    }
-
     /// <summary>
     /// A further part's account of the parts before it (SESSONE1d): how many, and where its tree stands to theirs, from their
     /// records and this machine's trees. Named by the session it went into, ran beside, or whose tree it grew again for.
@@ -462,29 +456,6 @@ internal static class InstructionAccounting
         };
     }
 
-    private static HandedSection Indexes(SessionTarget target, int chars, string size)
-    {
-        var of = target.Indexes.Count;
-        var shown = Math.Min(of, TargetPrompt.IndexLimit);
-        return new HandedSection(
-            HandedSections.Indexes, HandedSources.Tree, $"the repository's indexes: {size}, naming {shown} of the {of} its tree keeps")
-        {
-            Chars = chars,
-            Shown = shown,
-            Of = of,
-            Cuts = of <= TargetPrompt.IndexLimit
-                ? null
-                :
-                [
-                    new HandedCut(HandedCuts.IndexesBound, $"{N(of - TargetPrompt.IndexLimit)} more counted, not named, past the {TargetPrompt.IndexLimit} it names")
-                    {
-                        Count = of - TargetPrompt.IndexLimit,
-                        Limit = TargetPrompt.IndexLimit,
-                    },
-                ],
-        };
-    }
-
     /// <summary>A section that could have been handed and was not, saying why (D143 point 3).</summary>
     private static HandedSection Absent(string name, SessionTarget target)
     {
@@ -512,23 +483,10 @@ internal static class InstructionAccounting
                     {
                         Chars = 0, From = ask, None = HandedNones.Empty,
                     },
-            HandedSections.Standing => new HandedSection(
-                name, HandedSources.Repository, $"the standing answer: none set for `{target.Repository}` on this machine")
-            {
-                Chars = 0, From = target.Repository, None = HandedNones.NotSet,
-            },
             HandedSections.Language => new HandedSection(
                 name, HandedSources.Repository, "the session language: none set for its repository or its workspace on this machine")
             {
                 Chars = 0, None = HandedNones.NotSet,
-            },
-            HandedSections.Map => new HandedSection(name, HandedSources.Tree, "the code map: none, since its tree keeps none")
-            {
-                Chars = 0, None = HandedNones.Empty,
-            },
-            HandedSections.Indexes => new HandedSection(name, HandedSources.Tree, "the repository's indexes: none, since its tree names none")
-            {
-                Chars = 0, None = HandedNones.Empty,
             },
             _ => throw new InvalidOperationException($"no absence is said for the section `{name}`"),
         };
