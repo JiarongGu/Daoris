@@ -85,16 +85,10 @@ public sealed class StandInReadersTests
         Assert.Contains("codex", registry.Operands());
     }
 
-    /// <summary>The roles' verbs and the brainstorm's provenance read the flag from the registration: a stand-in's doors are stand-ins.</summary>
+    /// <summary>The brainstorm's provenance reads the flag from the registration: a stand-in's doors are stand-ins.</summary>
     [Fact]
-    public void The_roles_verbs_and_the_brainstorm_read_the_stand_in_flag_from_the_registration()
+    public void The_brainstorm_reads_the_stand_in_flag_from_the_registration()
     {
-        Assert.False(ActorPress.Managed("stub"));
-        Assert.False(ActorPress.Managed("acp-stub"));
-        Assert.True(ActorPress.Managed("claude-code"));
-        Assert.True(ActorPress.Managed("codex"));
-        Assert.False(ActorPress.Managed("acme"));
-
         Assert.True(new BrainstormBy("g1", "stub", "stub", null).Stub);
         Assert.True(new BrainstormBy("g1", "stub", "acp-stub", null).Stub);
         Assert.False(new BrainstormBy("g1", "anthropic", "claude-code", null).Stub);

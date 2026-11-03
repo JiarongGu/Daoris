@@ -101,11 +101,10 @@ public sealed record SessionTree(string Path, string Workspace, string Repositor
 /// The plugin wire a branch rule's landing speaks (WSR4, D100) — the home's own plugins by default; the
 /// shell and the terminal hand one that says the plugin's lines where each says things.
 /// </param>
-/// <param name="variable">The environment the trees read (ENVSEAM1): this process's by default, a test's own where it hands one.</param>
-public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = null, Func<string, string?>? variable = null) : IWorkTrees
+public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = null) : IWorkTrees
 {
     /// <summary>What the parts share (PART10i): the home, the plugin wire, the seams.</summary>
-    private readonly TreeContext _context = new(home, plugins ?? WorkplacePlugins.Current.Wire(home), variable);
+    private readonly TreeContext _context = new(home, plugins ?? WorkplacePlugins.Current.Wire(home));
 
     /// <summary>The shared context, for Review's graph (GITAPP1a-ii), which reads what <see cref="ReviewRanges"/> and <see cref="LandedReviews"/> read.</summary>
     internal TreeContext Context => _context;
@@ -948,7 +947,7 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
     internal string LandingsPath => _context.Recorded.FilePath;
 
     /// <summary>The choices a tree's walk reads its line from (TREELOOK1's stamp).</summary>
-    internal string ConfigPath => DriverConfig.ResolvePath(_context.Variable, _context.Home);
+    internal string ConfigPath => DriverConfig.ResolvePath(_context.Home);
 
     /// <inheritdoc cref="TreeWorkReads.DiscardOfferAsync"/>
     public Task<DiscardOffer?> DiscardOfferAsync(string tree, CancellationToken ct = default) => WorkReads.DiscardOfferAsync(tree, ct);

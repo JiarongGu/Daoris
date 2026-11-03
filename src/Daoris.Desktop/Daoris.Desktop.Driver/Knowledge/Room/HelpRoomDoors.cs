@@ -177,13 +177,10 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         new("ask a landed branch's plugin again whether its pull request completed, and see what that answer proves on this machine",
             "(no screen yet)", "`daoris-driver trees state <session|branch> [--repository <name>]`",
             new HelpDoorAsk.Never("it changes nothing of yours or on the platform, and the room already says what was last answered")),
-        // MODELROLE1d (D205 §6.4): the Intake and Ask Daoris cards folded into their actor rows; each verb writes a one-choice order.
-        ("choose the agent that answers asks", "Agents → Roles → Working roles, Intake", "`daoris driver intake <agent>|off`"),
-        ("choose the agent Ask Daoris runs on", "Agents → Roles → Working roles, Ask Daoris", "`daoris driver helper <agent>|off`"),
-        // HELP9: every `daoris driver` verb that changes something is a row, the two a terminal alone set among them.
-        ("choose the agent driven sessions start on", "Agents → Roles → Working roles, Build", "`daoris driver adapter <agent>`"),
-        // MODELROLE1c (D205 §8.3): who does each kind of work, with which model, in order; its proposal door is owed (MODELROLE1h).
-        ("choose who does each kind of work, and with which model", "Agents → Roles → Working roles", "`daoris driver actor <actor> …`"),
+        // ONEWAY1a (the oneway design §2 S1): a role's agents through the role door alone, Build, Intake and Ask Daoris among them;
+        // `role_propose` proposes it.
+        ("choose who does each kind of work, with which agent and model: driven sessions (Build), asks (Intake), Ask Daoris and every "
+            + "other role", "Agents → Roles → Working roles", "`daoris role set <role> \"<agent> [<model>|-] [<effort>|-]\" …|off`"),
         // FOUNDATION1y-i (§2.7): the role catalogue, a role added, changed, removed or given back its seed; `role_propose` proposes it.
         // DEFAULTCONFIG1b: every seeded role given back its default at once, added roles kept.
         ("add, change or remove a role that takes a kind of work, give a seeded one back its default, or every seeded one at once, "

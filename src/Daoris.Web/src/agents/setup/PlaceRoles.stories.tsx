@@ -58,7 +58,7 @@ function Roles({ shared = false, refuse, supervisor, policy }: Args) {
   const catalogue = policy ? { ...base, policies: policies(policy) } : base;
   if (supervisor) {
     // A workspace's Roles hold its supervisor's line between the works and the appointed roles (SETUPUX1v).
-    const editor = { agents: AGENTS, offers: {}, staffing: [], catalogue, read: 'ok' as const, busy: false, onSet: nothing, onSetActor: nothing };
+    const editor = { agents: AGENTS, offers: {}, staffing: [], catalogue, read: 'ok' as const, busy: false, onSet: nothing };
     return (
       <PlaceRolesView
         place={AURORA} read="ok" answer={CHAIN(AURORA)} editor={editor} onSource={nothing}
@@ -77,7 +77,6 @@ function Roles({ shared = false, refuse, supervisor, policy }: Args) {
   const editor = {
     agents: AGENTS, offers: { 'claude-code': { models: ['opus', 'sonnet', 'haiku'], efforts: ['low', 'medium', 'high'] } }, staffing: [], catalogue, read: 'ok' as const, busy: false,
     onSet: refuse ? (_press: unknown, answered: Answered) => answered.refused(refuse) : nothing,
-    onSetActor: nothing,
   };
   return <PlaceRolesView place={ENGINE} read="ok" answer={shared ? SHARED_CHAIN() : CHAIN(ENGINE)} editor={editor} appointed={null} onSource={nothing} />;
 }
