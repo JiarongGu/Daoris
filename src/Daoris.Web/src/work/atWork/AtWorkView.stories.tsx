@@ -3,7 +3,7 @@ import { atWidths, inDark, inLight } from '../../design/flowFrames';
 import { chinese } from '../../design/storyLanguage';
 import { AtWorkView } from './AtWorkView';
 import {
-  ASKED_BY, BOUND, CHAIN_AND_QUESTION, CHAT_TOOK_A_QUEST, CODEX, CODEX_NONE, CONSIDERED, CONTINUED, ELSEWHERE, EMPTY, FAILED, HINTED, HISTORY, IDS_ONLY,
+  ASKED_BY, BOUND, CHAIN_AND_QUESTION, CHAT_TOOK_A_QUEST, CODEX, CODEX_NONE, CONSIDERED, CONTINUED, COWORKERS, ELSEWHERE, EMPTY, FAILED, HINTED, HISTORY, IDS_ONLY,
   JOINED_EACH_WAY, LANES_ALONGSIDE_AND_UNTAKEN, LEAD_WAITING_ON_HELPER, LEAD_WAITING_ON_LANE, LOST, NO_PARENT, NOW, OVERFLOW_AND_EARLIER, PARTS,
   PUBLISHED_AND_WAITS_ON_NONE, QUESTS_EACH_TAKER, READING, SAID, RESUMED_AND_EARLIER, STALE, THREE, TURN_WAITS, UNCERTAIN, UNREADABLE,
 } from './atWork.fixtures';
@@ -172,3 +172,12 @@ export const HintOneAtATimeChinese: Story = { args: { held: HINTED('one-at-a-tim
 /** An ended first process's child *ended with its agent* beside its continuation's child working. */
 export const EndedBesideItsContinuation: Story = { args: { held: CONTINUED }, decorators: light };
 export const EndedBesideItsContinuationChinese: Story = { args: { held: CONTINUED }, decorators: zhDark };
+
+// COMMS1i: the line's co-workers, a member in each state (asked, starting, reading, answered and taken, refused, a successor asked by an
+// earlier part with its delivery not certain) and a source not read, at the main area's three widths and the 300 px dock floor.
+const NAMES: Record<string, string> = { 'codex-acp': 'Codex' };
+const named = (agent: string) => NAMES[agent] ?? agent;
+
+/** Each co-worker state, and the *Waiting on* line that reads the same requests. */
+export const Coworkers: Story = { args: { held: COWORKERS, nameOf: named }, decorators: routingLight };
+export const CoworkersChinese: Story = { args: { held: COWORKERS, nameOf: named }, decorators: routingZh };

@@ -63,6 +63,11 @@ public sealed record AtWorkDependencies(
     /// whole stores, so it is compared as a result, and a write that moves none of it wakes nothing.
     /// </summary>
     public string? Asked { get; init; }
+
+    /// <summary>The home the exchanges half read (COMMS1i), and what it read, written out: compared as a result, as the quests half is.</summary>
+    public string? Home { get; init; }
+
+    public string? Exchanged { get; init; }
 }
 
 /// <summary>
@@ -76,9 +81,10 @@ public static class AtWorkRead
     /// <param name="lineage">A part's lineage reading, this window's tokens in it.</param>
     /// <param name="pathOf">Where a part's lineage file is, whose stamp is taken before the read; none keeps no file's.</param>
     /// <param name="standing">A repository's routing standing word for the hint; none draws no hint.</param>
+    /// <param name="home">The home whose helper, piece and hand-over files the exchanges half reads (COMMS1i); none reads no exchanges.</param>
     public static AtWorkHeld Compose(
         string session, StateSlice? groups, StateSlice? sessions, StateSlice? quests, Func<AtWorkRecord, LineageReading> lineage,
-        Func<string, string>? pathOf = null, Func<string, string>? standing = null)
+        Func<string, string>? pathOf = null, Func<string, string>? standing = null, string? home = null)
     {
         var (groupsSnapshot, groupsHealth) = Taken(groups);
         var (sessionsSnapshot, sessionsHealth) = Taken(sessions);
@@ -100,6 +106,9 @@ public static class AtWorkRead
             Asking = Asking(session, entry, questsSnapshot, sessionsSnapshot, rows),
             StandingOf = standing is null ? null : repository => standings[repository] = standing(repository),
         };
+        // What the exchanges half read, kept as it read it, so a read again compares like with like.
+        AtWorkExchanges? exchanged = null;
+        if (Exchanging(home, questsSnapshot, sessionsSnapshot) is { } exchanging) routing = routing with { Exchanging = attended => exchanged = exchanging(attended) };
         var held = AtWork.Compose(session, entry?.Select(part => part.Session).ToList(), id => asked[id] = records.GetValueOrDefault(id), record =>
         {
             var file = AtWorkFile.Read(pathOf?.Invoke(record.Id) ?? "", () => lineage(record));
@@ -112,9 +121,41 @@ public static class AtWorkRead
             {
                 Rows = askedRows, Quests = askedQuests, Published = askedPublished, QuestsHealth = questsHealth, Standings = standings,
                 Asked = held.Answer is { } answer ? AskedKey(answer.Quests, answer.MoreQuests ?? 0, answer.AskedBy) : null,
+                Home = home,
+                Exchanged = exchanged is null ? null : ExchangedKey(exchanged),
             },
         };
     }
+
+    /// <summary>
+    /// The exchanges half (COMMS1i): the home's helper, piece and hand-over files read by the driver's one read, the line walked in the
+    /// sessions slice's records and its quests the quests slice's. None without a home.
+    /// </summary>
+    private static AtWorkExchanging? Exchanging(string? home, SliceSnapshot? quests, SliceSnapshot? sessions)
+    {
+        if (home is null) return null;
+        var (views, _) = Stores([], quests, sessions);
+        var priors = new Dictionary<string, PriorSession>(StringComparer.Ordinal);
+        foreach (var partition in sessions?.Partitions ?? [])
+        {
+            if (Node(partition.Data) is not JsonObject keyed) continue;
+            foreach (var (id, record) in keyed)
+            {
+                priors.TryAdd(id, new PriorSession(id, Text(record, "tree"), Text(record, "state") ?? "", null, Text(record, "repository"))
+                {
+                    From = Text(record, "from"), FromWhy = Text(record, "fromWhy"), Quest = Text(record, "quest"), TookQuest = Text(record, "tookQuest"),
+                });
+            }
+        }
+
+        return AtWorkExchangeReading.Reading(home, priors, views);
+    }
+
+    private static string ExchangedKey(AtWorkExchanges exchanges) => JsonSerializer.Serialize(exchanges, Written);
+
+    /// <summary>Whether the exchanges half, read again now, is what <paramref name="read"/> read: a helper's answer moves it.</summary>
+    private static bool ExchangedStands(AtWorkDependencies read, SliceSnapshot? quests, SliceSnapshot? sessions) =>
+        read.Exchanged is null || Exchanging(read.Home, quests, sessions) is not { } exchanging || ExchangedKey(exchanging(read.Session)) == read.Exchanged;
 
     /// <summary>
     /// Who is at work on an ask (COWORKVIEW1d): its lines of work from the groups slice's entries whose origin is the ask, its quests from the
@@ -295,7 +336,8 @@ public static class AtWorkRead
         var index = QuestIndex.Of(questsSnapshot);
         return read.Quests.All(each => Equals(index.ById.GetValueOrDefault(each.Key), each.Value))
             && read.Published.All(each => index.Published.GetValueOrDefault(each.Key) == each.Value)
-            && AskedStands(read, questsSnapshot, sessionsSnapshot, rows);
+            && AskedStands(read, questsSnapshot, sessionsSnapshot, rows)
+            && ExchangedStands(read, questsSnapshot, sessionsSnapshot);
     }
 
     /// <summary>The quests by id, and how many each session published.</summary>

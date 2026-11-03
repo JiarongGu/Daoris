@@ -70,6 +70,9 @@ public sealed record AtWorkRouting(
     /// <summary>The quests half's port (COWORKVIEW1b-ii); null reads no quests and no asker.</summary>
     public AtWorkAsking? Asking { get; init; }
 
+    /// <summary>The exchanges half's port (COMMS1i): what the attended line waits on and its co-workers; null reads none.</summary>
+    public AtWorkExchanging? Exchanging { get; init; }
+
     /// <summary>
     /// The routing standing word of a repository on this machine (COWORKVIEW1e-iii): <see cref="RoutingStanding"/>'s, or <see cref="Unheard"/>
     /// before the registry or the driver's choices have answered, or <see cref="Unnamed"/> for a repository the registry does not name.

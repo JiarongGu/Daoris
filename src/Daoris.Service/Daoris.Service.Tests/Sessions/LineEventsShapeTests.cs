@@ -26,7 +26,7 @@ public sealed class LineEventsShapeTests : IDisposable
         """{"seq":11,"at":"2026-10-20T10:00:10+00:00","kind":"turn","stopReason":"end_turn"}""",
         """{"seq":12,"at":"2026-10-20T10:00:11+00:00","kind":"user","id":"w2","text":"Use the system setting.","origin":"person"}""",
         """{"seq":13,"at":"2026-10-20T10:00:12+00:00","kind":"note","text":"The account is near its limit."}""",
-        """{"seq":14,"at":"2026-10-20T10:00:13+00:00","kind":"receipt","id":"w2","receipt":"answered"}""",
+        """{"seq":14,"at":"2026-10-20T10:00:13+00:00","kind":"receipt","id":"w2","receipt":"ended"}""",
     ];
 
     private readonly string _home = Path.Combine(AppContext.BaseDirectory, "line-events-" + Guid.NewGuid().ToString("N")[..8]);

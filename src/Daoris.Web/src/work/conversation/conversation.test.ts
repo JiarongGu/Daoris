@@ -437,6 +437,27 @@ describe('toTurns', () => {
   });
 
   /**
+   * COMMS1h (the comms design §7): a turn that ended after taking a word is the receipt `ended`, said as what Daoris saw and never as
+   * an answer; an `answered` receipt an older build wrote folds as it was.
+   */
+  it('COMMS1h folds the ended receipt, and an older answered one as it was', () => {
+    const said = (receipt: string) => toTurns([
+      e(1, { kind: 'user', origin: 'person', id: 'w1', text: 'and the readme' }),
+      e(2, { kind: 'turn', stopReason: 'end_turn' }),
+      { seq: 3, at: '2026-09-25T00:09:00Z', kind: 'receipt', id: 'w1', receipt },
+    ]).turns[0]!.ask?.receipts;
+
+    expect(said('ended')).toEqual({ taken: e(1, {}).at, ended: '2026-09-25T00:09:00Z' });
+    expect(said('answered')).toEqual({ taken: e(1, {}).at, answered: '2026-09-25T00:09:00Z' });
+  });
+
+  /** COMMS1h: a helper's or a partner's answer names the session it is from, which its exchange card is joined on. */
+  it('COMMS1h carries the session a solicited answer is from', () => {
+    const { turns } = toTurns([e(1, { kind: 'user', origin: 'target', helper: 'h-session', text: 'Yes, the lock is held.' })]);
+    expect(turns[0]!.ask).toMatchObject({ from: 'helper', helper: 'h-session' });
+  });
+
+  /**
    * CONVNOTE1 (D125's SIGNIN1b note): a driver's note whose lines are worded by code carries its parts, as a session record's
    * note does (LANG1a), so the page words each line in the reader's language. Its English stays beside them.
    */

@@ -10,11 +10,12 @@ public sealed class AtWorkRoutes(DriverContext context)
 
     /// <summary>
     /// Who is at work on a session (COWORKVIEW1a, the design §4.1): its entry's parts and the attended part's subagents, composed from
-    /// the groups, sessions and quests slices in memory and each part's lineage file, this window's tokens read where it issued them. Numbered,
+    /// the groups, sessions and quests slices in memory and each part's lineage file, this window's tokens read where it issued them, and
+    /// what its line waits on and its co-workers from the home's helper, piece and hand-over files (COMMS1i). Numbered,
     /// so a failure is answered with its words and an older delivery never replaces a newer one.
     /// </summary>
     [DriverRoute("SESSION_AT_WORK")]
-    [ByEvent("SESSION_AT_WORK", Numbered = true, Untold = "each part's lineage file and this window's lineage tokens, which the read's own judge watches")]
+    [ByEvent("SESSION_AT_WORK", Numbered = true, Untold = "each part's lineage file, this window's lineage tokens and the helper, piece and hand-over files, which the read's own judge watches")]
     private async Task<object?> SessionAtWorkAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         // An ask's view (COWORKVIEW1d) is keyed `{ ask }`, a session's `{ session }`.
@@ -27,7 +28,7 @@ public sealed class AtWorkRoutes(DriverContext context)
                 slices.Find(AsksStateSlice.Name), record => ChildLineage.Reading(_loop.Home, record.Id, record.Kind, LineageTokens.Shared), id => ChildLineage.PathOf(_loop.Home, id))
             : AtWorkRead.Compose(session, slices.Find(GroupsStateSlice.Name), slices.Find(SessionsStateSlice.Name),
                 slices.Find(QuestsStateSlice.Name), record => ChildLineage.Reading(_loop.Home, record.Id, record.Kind, LineageTokens.Shared), id => ChildLineage.PathOf(_loop.Home, id),
-                _loop.HintStanding.Word);
+                _loop.HintStanding.Word, _loop.Home);
 
         // The source fence (rule 11): an input moved while it composed is composed again, at most three times; the last lands.
         var held = Compose();
