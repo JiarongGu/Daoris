@@ -30,7 +30,7 @@ public sealed class SetupQuestsTests
     [Fact]
     public void Every_title_the_press_composes_is_a_set_up()
     {
-        Assert.Equal(4, SetupQuests.Titles.Count);
+        Assert.Equal(5, SetupQuests.Titles.Count);
         foreach (var title in SetupQuests.Titles)
         {
             Assert.True(SetupQuests.IsSetup($"{title} (2027-01-31)"), title);

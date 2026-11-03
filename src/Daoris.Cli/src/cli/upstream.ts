@@ -5,10 +5,12 @@ export const command: CliCommand = {
   name: 'upstream',
   kind: 'doctrine',
   usage: [
-    '  upstream <file>      promote a locally-edited canonical file back to the canon',
+    '  upstream <file>      propose a locally-edited canonical file to the canon: the',
+    "                       request's words, written into the canon only in its own",
+    '                       checkout',
   ],
   options: [
-    '  --all                promote every drifted file (upstream only)',
+    '  --all                every drifted file (upstream only)',
   ],
   run: commandUpstream,
 };

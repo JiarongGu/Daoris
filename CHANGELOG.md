@@ -5,6 +5,7 @@ with the version and date at release.
 
 ## Unreleased
 
+- **`daoris reconcile`: a canon update is decided in the repository, not imposed.** It prints, offline, a brief of every difference between the canon and the repository (what a sync would change or add, the files edited here, a keep the canon moved past, a set-up gap such as an `AGENTS.md` too long for one agent to read whole) for the repository's own session to adopt, keep with its reason, or propose upstream. A kept file is recorded in `daoris.json`'s `kept` with its reason and the canon file's digest it was judged against: `sync` and `sync --force` pass over it, `check` names it without calling it drift, and `status` reports it again only once that canon file moves. A core file cannot be kept absent. Outside the canon's own checkout, `daoris upstream` now prints a request's words for the repository that keeps the shared doctrine and writes nothing there.
 - A session is told its line's course as Daoris counts it: a brief handed on a move, and a start whose quest failed here before, carry a short item (*Answers alone in a row: 2. Daoris waits for the person after 2.*, failed sessions, moves, hand-overs, each said *at least* or *cannot count* where part of its history is missing), and a go-on's words end with one line where the count of go-ons by answers alone moved or a count stands near where Daoris waits for you. The handed account shows it as *The line's course*. The supervisor's `sessions supervise <id>` print fences the same counts with their sources, the line's parts and its last ten go-ons; a reason may cite one as `count:answers-alone=2 (exact)`, and one naming a count it was not handed is refused.
 - **Fixed: `daoris status` reported no update while the canon had moved.** It looked for one only when the canon's version changed, and the version stays the same through every 0.0.x build, so a repository missing a canon file heard nothing. `status` now compares the files whatever the versions say and names each one that would change or arrive. `sync` records the digest of the canon it wrote from in `daoris.lock`. When the lock's version is older, the files are behind and `status` says to run `sync`. When the version is the same but the canon differs, `status` says the two differ and that it cannot tell which is newer, names both digests, and does not offer `sync`, which run from an older daoris would put the older text back. Drift is still the disk against the lock.
 - Every session Daoris runs on Claude Code (a build, a go-on, a hand-over, a helper, an intake and a chat in a repository, not only Ask Daoris) now has the Daoris connector's tools for knowledge, memory, quests and its line loaded with its first request, rather than as names it has to look up first. Claude Code's switch for this loads every MCP server the session has, the repository's own included. So the connector now lists each session only the tools it may call: a session in a repository gets a core set of 18 (knowledge, memory, quests, its line, the registry, asking a helper, the ask's channel and handbacks, about 28 KB of definitions) and its own kind's. A build gets its go-ahead, its question to you, a hand-over, a rule proposal, its answer to a second opinion and a set-up step's two (25 tools, about 39 KB); a chat the first four of those (22, about 34 KB); an intake the core set alone (16, about 26 KB); a helper its reading tools and its answer (12, about 11 KB). Ask Daoris still gets every tool it had (54, about 95 KB), where all 58 are about 102 KB. A tool a session is not listed is refused if it calls it. Codex sessions already had their tools at the start, and are listed the same sets.
@@ -2529,12 +2530,14 @@ The first version: doctrine that installs, is checked, and flows back.
 
 ### The tool
 
-- **Nineteen commands.** `analyze` reports what adopting would do before it does it; `init` writes a
+- **Twenty commands.** `analyze` reports what adopting would do before it does it; `init` writes a
   manifest and reports what is available without guessing;
   `sync` materializes the selected packs and writes the lock; `check` gates on drift, staleness and
   index freshness, and **reports** the always-loaded budget rather than failing on it (a fact gates, a
-  judgement reports — D54); `upstream` promotes a locally-improved file back into the
-  canon (`--all` for every edit at once); `index` says where the roster went — the `AGENTS.md`
+  judgement reports — D54); `upstream` proposes a locally-improved file to the canon, writing it there
+  only in the canon's own checkout and elsewhere printing the request's words (`--all` for every edit at once);
+  `reconcile` lists every difference from the canon for the repository's own session to adopt, keep with
+  its reason, or propose upstream (D230); `index` says where the roster went — the `AGENTS.md`
   region, which `sync` regenerates (D59);
   `status` summarizes — the remote disclosure declaration included, and this machine's wiring with
   `--machine` — and reports when a newer canon is available; `doctor` reports local documents that

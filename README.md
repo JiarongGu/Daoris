@@ -16,7 +16,8 @@ for work instead of reaching into it.
 
 - **Copied doctrine diverges.** Every repository that writes its own agent rules writes a slightly
   different version of the same ones. Daoris tracks where each copy came from, reports a local edit as
-  drift, and carries a reviewed improvement back to the canon with `daoris upstream`.
+  drift, and `daoris reconcile` has the repository's own session adopt each canon change, keep its own
+  text with the reason, or propose that text upstream with `daoris upstream`.
 - **The tier is the location.** The rules every task needs land in a region of `AGENTS.md`, the one
   file every agent harness reads; knowledge is read on demand; a skill is invoked by name. Nothing
   loads what a task does not need.
@@ -50,7 +51,7 @@ Nothing is published until the first release (D105); from a checkout of this rep
 | Shared agent rules, knowledge and skills in a repository | `daoris init`, `sync`, `check` | [the guide](https://github.com/JiarongGu/Daoris/blob/main/docs/guide/README.md#commands) |
 | Stack-specific doctrine (.NET libraries, desktop apps, SQL, web views, …) | a pack in the manifest's `packs` | [three layers](https://github.com/JiarongGu/Daoris/blob/main/docs/guide/README.md#three-layers) |
 | To know what adopting would change before it does | `daoris analyze`, `doctor` | [the guide](https://github.com/JiarongGu/Daoris/blob/main/docs/guide/README.md#commands) |
-| A local improvement carried back to the canon | `daoris upstream <file>` | [the guide](https://github.com/JiarongGu/Daoris/blob/main/docs/guide/README.md#commands) |
+| A canon update decided in the repository: adopted, kept with its reason, or proposed upstream | `daoris reconcile`, `upstream <file>` | [the guide](https://github.com/JiarongGu/Daoris/blob/main/docs/guide/README.md#commands) |
 | Gates every repository needs: links, docs freshness, sensitive data | `daoris-devkit verify` | [the devkit](https://github.com/JiarongGu/Daoris/blob/main/src/Daoris.Devkit/README.md) |
 | Knowledge searched across repositories, and quests between them | the knowledge service and its connector | [the service](https://github.com/JiarongGu/Daoris/blob/main/src/Daoris.Service/README.md) |
 | Agent sessions driven per repository, with accounts and review | the desktop | [the desktop](https://github.com/JiarongGu/Daoris/blob/main/src/Daoris.Desktop/README.md) |
@@ -82,7 +83,7 @@ says what changed, and [the roadmap](https://github.com/JiarongGu/Daoris/blob/ma
 What an agent working in a repository that adopted Daoris most often gets wrong:
 
 <!-- agent-rules:begin — llms.txt and context7.json repeat this block; tools/doc-links.mjs holds the three equal (D211) -->
-- Never edit a synced copy: a file under `.claude/` with a provenance header, or the `daoris:rules` region of `AGENTS.md`. `daoris check` reports the edit as drift; promote an improvement with `daoris upstream <file>`.
+- Never edit a synced copy: a file under `.claude/` with a provenance header, or the `daoris:rules` region of `AGENTS.md`. `daoris check` reports the edit as drift; `daoris reconcile` says how to keep or propose it.
 - Write the repository's own text outside the `daoris:rules` region of `AGENTS.md`, which `sync` rewrites whole. `CLAUDE.md` loads it through its `@AGENTS.md` import.
 - `daoris check` compares the disk with `daoris.lock`, never with the newest canon, and needs no network. A pack added to `daoris.json` fails it until `daoris sync` runs.
 - After `daoris sync`, commit `daoris.json`, `daoris.lock`, `AGENTS.md`, `CLAUDE.md` and `.claude/` together: the lock is what `check` judges, and the diff is what a reviewer reads.

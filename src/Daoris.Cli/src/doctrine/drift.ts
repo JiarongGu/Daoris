@@ -89,19 +89,24 @@ export function inspect(
     return held?.kind === 'present' ? held.body : null;
   };
 
+  // A file the manifest keeps is this repository's own text (D230): its difference from the lock is a decision recorded,
+  // never drift, and it is named on every run as a switched-off row is.
+  const keeps = manifest.kept ?? {};
+  const kept = Object.entries(keeps).sort(([a], [b]) => a.localeCompare(b)).map(([target, keep]) => ({ target, reason: keep.reason }));
+
   for (const entry of lock?.entries ?? []) {
     if (entry.in) {
       // A span inside a file the repository owns (D59). Its identity is still `rules/<name>.md`, and
       // what is hashed is the rule's BODY — which is what keeps drift per rule inside one region.
       const body = spanBody(root, harness, entry, fileText);
       if (body === null) missing.push(entry.target);
-      else if (sha256(body) !== entry.sha256) drifted.push(entry.target);
+      else if (sha256(body) !== entry.sha256 && !keeps[entry.target]) drifted.push(entry.target);
       continue;
     }
 
     const abs = join(root, target, entry.target);
     if (!existsSync(abs)) missing.push(entry.target);
-    else if (sha256(readText(abs)) !== entry.sha256) drifted.push(entry.target);
+    else if (sha256(readText(abs)) !== entry.sha256 && !keeps[entry.target]) drifted.push(entry.target);
   }
 
   const staleLayout = lock && (was.harness.id !== manifestHarness.id || was.target !== manifest.target)
@@ -315,7 +320,7 @@ export function inspect(
     && !roomsWithoutInstructions.length && !roomPointersMissing.length && !links.length
     && !documentsStale && !documentsMissing.length && !documentLinksFound.length;
   return {
-    drifted, missing, stalePacks, coreBytes, overBudget, index, indexStale, rosterStale, switchedOff, staleSwitches,
+    drifted, missing, stalePacks, coreBytes, overBudget, index, indexStale, rosterStale, switchedOff, staleSwitches, kept,
     staleLayout, mirrorsDrifted, mirrorsMissing, mirrorsBehind, roomsWithoutInstructions, roomPointersMissing,
     links, agentsBytes, agentsOwnBytes, agentsRegionBytes, agentsLargestRules, unlisted, readAlone, withoutFrontmatter,
     documentsStale, documentsMissing, documentLinks: documentLinksFound, documentsOver, ceilingsUnmeasured, recordsUndeclared,
@@ -336,6 +341,7 @@ export function commandCheck({ root, write }: Pick<CommandArgs, 'root' | 'write'
   // Every run, whatever else it finds (D71): a core row that is off is never a surprise, and it is not
   // a failure either — it is a decision the manifest records.
   for (const row of report.switchedOff) write(`  off       ${row.target} (switched off by pack '${row.by}')`);
+  for (const keep of report.kept) write(`  kept      ${keep.target} — this repository's own text: ${keep.reason}`);
   if (report.overBudget) {
     write(
       `  budget    ${manifest.target} always-loaded is ${report.coreBytes} of ` +
@@ -410,6 +416,6 @@ export function commandCheck({ root, write }: Pick<CommandArgs, 'root' | 'write'
       : `daoris: clean — ${report.coreBytes} of ${manifest.coreBudgetBytes} bytes of always-loaded core`);
     return 0;
   }
-  write("daoris: run 'daoris sync' to reconcile, or 'daoris upstream <file>' to keep a local edit");
+  write("daoris: run 'daoris sync' to take the canon's text, or 'daoris reconcile' to decide each difference");
   return 1;
 }

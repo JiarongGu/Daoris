@@ -7,6 +7,7 @@ import { readText, sha256, writeBytesAtomic, writeTextAtomic } from '../platform
 import { parseFrontmatter, renderCanonFile, stripFrontmatter, stripHeader } from './document.ts';
 import { significantTokens, containment } from './twins.ts';
 import { canonDigest, isSwitchedOff, readCanon, resolveCanonRoot, resolveSelection } from './canon.ts';
+import { holds, keepStates } from './keep.ts';
 import { lockIndex, readLock, readManifest, writeLock } from './config.ts';
 import { refuseNewerLock } from './lockversion.ts';
 import { indexInput, rosterExtras } from './indexgen.ts';
@@ -83,9 +84,12 @@ export function planSync(
     return regionText.get(file)!;
   };
 
+  const keeps = manifest.kept ?? {};
+
   for (const file of selected) {
     const body = readText(join(canon.root, file.source));
     const region = regionOf(file.target);
+    const keep = keeps[file.target];
 
     if (region) {
       // A span: `content` is the rule's BODY, and the region is assembled in `applySync` from every
@@ -98,6 +102,17 @@ export function planSync(
       const trimmed = stripFrontmatter(body);
       const digest = sha256(trimmed);
       const entry = locked.get(file.target);
+      const { meta } = parseFrontmatter(body, []);
+
+      // Kept (D230): the region is rebuilt with this repository's own text of the rule, and its lock entry is carried as it
+      // was. A kept rule with no text here writes nothing; for a core rule that is refused, by `keepStates` below.
+      if (keep) {
+        if (onDisk !== null) {
+          const was = entry ?? { pack: file.pack, source: file.source, target: file.target, canonVersion: canon.version, sha256: sha256(onDisk), in: region.file };
+          writes.push({ ...file, content: onDisk, sha256: was.sha256, state: 'unchanged', in: region.file, ...(meta ? { meta } : {}), kept: was });
+        }
+        continue;
+      }
 
       let state: PlannedWrite['state'] = 'create';
       if (onDisk !== null) {
@@ -107,7 +122,6 @@ export function planSync(
         if (entry && sha256(onDisk) !== entry.sha256 && onDisk !== trimmed) drifted.push(file.target);
       }
 
-      const { meta } = parseFrontmatter(body, []);
       writes.push({
         ...file,
         content: trimmed,
@@ -123,6 +137,14 @@ export function planSync(
     const digest = sha256(content);
     const abs = join(root, to, file.target);
     const entry = locked.get(file.target);
+
+    // Kept (D230): nothing is written, `--force` included. A file the lock names keeps its entry, so its copy and its index
+    // row stay; one the lock never named is this repository's own file at that path (D5), and stays invisible.
+    if (keep) {
+      const at = join(root, from, file.target);
+      if (entry && isFile(at)) writes.push({ ...file, content: readText(at), sha256: entry.sha256, state: 'unchanged', kept: entry });
+      continue;
+    }
 
     // A canonical document the lock holds under the old root: the move's cells, before D19's apply
     // at the new one. "Settled" is the new file matching what the lock recorded or what the canon
@@ -327,9 +349,13 @@ export function planSync(
       .filter((doc) => !documentLinksFound.some((link) => link.declared === doc.path) && present(root, doc.path) === null),
   };
 
+  // The keeps against this canon (D230): each passed over above, said with whether its canon file moved since it was judged.
+  const keepsRead = keepStates(manifest, canon, selected, (file) => holds(root, harness, from, file));
+
   return {
     writes, deletes, leavesRegion, drifted, collisions, renames, editedRetirements,
     switchedOff: selection.switchedOff, offers: selection.offers, editedSwitchedOff,
+    kept: keepsRead.kept, keepsDropped: keepsRead.dropped,
     layout: { from: { harness: was.harness.id, target: from }, to: { harness: harness.id, target: to } },
     moves, moveCollisions, ...behind, mirrors, rooms, index, links, documents,
   };
@@ -451,8 +477,11 @@ export function planChanges(
   const changed: string[] = [];
 
   const harness = manifest.harnessDescriptor ?? resolveHarness(manifest.harness);
+  const keeps = manifest.kept ?? {};
 
   for (const file of selected) {
+    // A kept file is no update (D230): `status` names it apart, again once the canon's file moves since it was judged.
+    if (keeps[file.target]) continue;
     const entry = locked.get(file.target);
     if (!entry) {
       added.push(file.target);
@@ -539,6 +568,27 @@ function refuseWhatForceCannot(plan: SyncPlan): void {
       + `${plan.documents.links.map((link) => `  ${describeDocumentLink(link)}`).join('\n')}\n`
       + "  then 'daoris sync'",
       1);
+  }
+  // D4 and D71 (D230): a keep is this repository's own text of a rule, never a core rule's absence, which only a pack's
+  // switch the repository confirms takes out.
+  const absentCore = (plan.kept ?? []).filter((keep) => keep.absentCore).map((keep) => keep.target);
+  if (absentCore.length) {
+    throw new DaorisError(
+      `${absentCore.length} core file(s) kept in daoris.json and absent here: ${absentCore.join(', ')}\n`
+      + "  a keep is this repository's own text of a file, never a core file's absence: write its text, or take the keep\n"
+      + "  out of daoris.json's kept, then 'daoris sync'",
+      1);
+  }
+  // A kept file stays where it is, and a move would leave it behind its layout: the move waits for the keep.
+  if (plan.layout.from.target !== plan.layout.to.target) {
+    const moving = plan.writes.filter((write) => write.kept && !write.in).map((write) => write.target);
+    if (moving.length) {
+      throw new DaorisError(
+        `the move to ${plan.layout.to.target}/ would carry ${moving.length} kept file(s): ${moving.join(', ')}\n`
+        + "  the move waits for each: adopt the canon's text, or copy yours aside as this repository's own document, then\n"
+        + "  take the keep out of daoris.json's kept and 'daoris sync'",
+        1);
+    }
   }
 }
 
@@ -664,6 +714,7 @@ export function applySync(
   });
 
   for (const { write, abs } of writes) {
+    if (write.kept) continue;
     if (write.state !== 'unchanged' || force) writeTextAtomic(abs, write.content);
   }
   for (const abs of deletes) {
@@ -696,7 +747,8 @@ export function applySync(
     // Which canon of that version: `status` tells two apart by it, and never orders them by it.
     ...(canonDigest !== undefined ? { canonDigest } : {}),
     source: manifest.source,
-    entries: plan.writes.map(({ pack, source, target, sha256: digest, in: within }) => ({
+    // A kept file's entry as it was (D230): the disk against it stays what this repository changed.
+    entries: plan.writes.map(({ pack, source, target, sha256: digest, in: within, kept }) => kept ? { ...kept } : ({
       pack,
       source,
       target,
@@ -840,6 +892,16 @@ export function commandSync({ root, argv, write, packageRoot }: CommandArgs): Ex
       write(`            it stays on; to confirm, add to daoris.json: "switchedOff": { "${offer.target}": "${offer.by}" }`);
     }
   };
+  // Never silent either (D230): each keep this sync passed over, `--force` included, and each it dropped.
+  const sayWhatIsKept = () => {
+    for (const keep of plan.kept) {
+      write(`  kept      ${keep.target} — this repository's own text: ${keep.reason}`
+        + (keep.reopened ? "; the canon's file moved since it was kept, and 'daoris reconcile' lists it" : ''));
+    }
+    for (const target of plan.keepsDropped) {
+      write(`  dropped   the keep of ${target} — the canon no longer ships it here; take it out of daoris.json's kept`);
+    }
+  };
 
   // What a move and the layout do, said beside what D19 does (D117 §5.2): each move with both paths,
   // each pointer, and every old `rules/` file that stays where only one agent reads it.
@@ -880,6 +942,8 @@ export function commandSync({ root, argv, write, packageRoot }: CommandArgs): Ex
     }
     sayTheLayout(true);
     sayWhatIsOff();
+    sayWhatIsKept();
+    for (const keep of plan.kept.filter((each) => each.absentCore)) write(`  ABSENT    ${keep.target} (a core file kept, with no text here)`);
     for (const problem of plan.links) write(`  LINK      ${problem.path} — ${shortLink(problem)}`);
     for (const link of plan.documents.links) write(`  LINK      ${link.declared} (${link.role}) — ${shortDocumentLink(link)}`);
     for (const doc of plan.leftBehind) write(`  LEFT BEHIND ${doc.path} — ${doc.move}`);
@@ -921,6 +985,7 @@ export function commandSync({ root, argv, write, packageRoot }: CommandArgs): Ex
   for (const rename of plan.renames) write(`  renamed   ${rename.from} -> ${rename.to}`);
   sayTheLayout(false);
   sayWhatIsOff();
+  sayWhatIsKept();
   const retired = plan.deletes.length - plan.renames.length - offDeletes.size;
   const mirrored = plan.mirrors.writes.length ? `; mirrored ${plan.mirrors.writes.length}` : '';
   write(`daoris: synced ${plan.writes.length} file(s); retired ${retired}${mirrored}`);
@@ -929,7 +994,7 @@ export function commandSync({ root, argv, write, packageRoot }: CommandArgs): Ex
 
 /** Whether applying this plan would refuse without `--force` — the dry run's exit code. */
 function refuses(plan: SyncPlan): boolean {
-  return plan.index.collision || [
+  return plan.index.collision || plan.kept.some((keep) => keep.absentCore) || [
     plan.links, plan.documents.links, plan.leftBehind, plan.bothRoots, plan.rooms.missing, plan.drifted, plan.collisions,
     plan.moveCollisions, plan.editedRetirements, plan.editedSwitchedOff,
     plan.mirrors.edited, plan.mirrors.collisions, plan.mirrors.editedGone,
