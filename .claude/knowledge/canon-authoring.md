@@ -75,8 +75,10 @@ the frontmatter fails the build.
   every adopting repository pays for it, so put a document here only if nearly every task needs it. The
   core budget measures exactly this span and **reports** it rather than failing on it
   (`docs/decisions/D54.md`) — a fact gates, a judgement reports.
+  Every rule there is written in full, so keep each one short: the region stays under 6 KB.
 - **`knowledge/` is read on demand** — the right home for anything long, or anything that only matters
-  when touching one area.
+  when touching one area. A knowledge document marked `rule: true` in its frontmatter is a rule whose
+  body is read on demand: its row stays in the region's always-loaded table, linked to its file.
 - **`skills/` is invoked by name** — a procedure, not a rule. Only its `description` is ever loaded
   unasked, so a skill's body is cheap and its description is not.
 - There is no `tier` field; the **location** *is* the tier (`docs/decisions/D7.md`, as amended by D59) —

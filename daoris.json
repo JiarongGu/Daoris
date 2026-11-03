@@ -1,6 +1,6 @@
 {
   "source": "daoris@0.0.1",
-  "packs": ["localized-ui"],
+  "packs": ["co-working", "localized-ui"],
   "target": ".claude",
   "coreBudgetBytes": 26000,
   "documents": {

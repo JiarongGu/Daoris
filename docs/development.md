@@ -1,8 +1,8 @@
 # Developing Daoris
 
 Read [AGENTS.md](../AGENTS.md), the [document router](README.md), the
-orientation index (`docs/index/README.md`, written in each checkout) and the relevant contract before exploring code. The
-discovery skills in `.claude/INDEX.md` route the on-demand knowledge. [TASKS.md](../TASKS.md)
+orientation index (`docs/index/README.md`, written in each checkout) and the relevant contract before exploring code, and make
+every change through the `change` skill; `.claude/INDEX.md` lists the on-demand knowledge. [TASKS.md](../TASKS.md)
 holds acceptance criteria and dependencies; [ROADMAP.md](../ROADMAP.md) gives the sequence.
 
 ## Prepare the workspace
@@ -304,7 +304,7 @@ reached. Browser specs and rehearsals are deferred to the background run. A gate
 kept. Each verdict is recorded as `scoped`, and each run is a line in `local/scope-runs.jsonl`. On green, main fast-forwards
 to the candidate. That happens only when the main checkout is clean (no tracked change, no merge open, on `main`); otherwise the
 candidate is held, said, and tried each tick. If main moved meanwhile by a direct commit, the candidate is formed again on it
-from the same frozen requests. A move by records only (the records lane, `docs/**`, `docs/index/**`) defers `service`.
+from the same frozen requests. A move by records only (the records lane, `docs/**`) defers `service`.
 
 On red, each failure is judged by its signature (`tools/test-failures.mjs`). A failing test still known red on the base is
 inherited with no run. Every other failure first meets its gate's **confirm run** (INTEGRATE1b, D215's note): the gate runs once
@@ -516,8 +516,8 @@ fixture as a leak; a literal home path in a test fails the merge, not the worker
 
 Record plans and findings while working, in the backlog or the matching review/design record. A
 load-bearing decision belongs under `docs/decisions/`, with its rejected alternatives and limits.
-A non-trivial defect needs the `fix-log` entry. Run `post-feature` over the actual diff, then move
-completed task wording and a short dated outcome to `docs/task-archive.md`. The changelog describes
+A regression gets its entry in `docs/FIX-LOG.md`, and any fix's commit body names the root cause.
+A finished task moves to `docs/task-archive.md` with a short dated outcome. The changelog describes
 release-facing behavior; it does not retell a documentation audit.
 
 ## Review and refactor
