@@ -220,24 +220,6 @@ public sealed class ContinuationAdmissionsTests : IDisposable
         Assert.Null(unsettled.Count(History(Twice())));
     }
 
-    /// <summary>The seed's end (ONEWAY1af): once the admissions are kept and no event log here was begun before them.</summary>
-    [Fact]
-    public void The_seed_ends_once_no_log_here_was_begun_before_the_admissions()
-    {
-        var entry = TransitionalRegister.Entries.Single(each => each.Id == "answers-alone-events");
-        var log = Path.Combine(DaorisHome.Entry(_home, HomeEntry.Sessions), "s0.events.jsonl");
-        Directory.CreateDirectory(Path.GetDirectoryName(log)!);
-        File.WriteAllText(log, "");
-        File.SetCreationTimeUtc(log, DateTime.UtcNow.AddDays(-1));
-        Assert.False(entry.Ended(_home));
-
-        Assert.NotNull(Admissions.Admit(History(Twice()), "answers:w3", ["w3"], "s1", 2));
-        Assert.False(entry.Ended(_home));
-
-        File.Delete(log);
-        Assert.True(entry.Ended(_home));
-    }
-
     private long Revision()
     {
         using var store = DesktopStoreReader.Open(DesktopStore.LocationIn(_home))!;

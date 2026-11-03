@@ -27,7 +27,7 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 | Author | `GitAuthor.cs` | The `commitsAs` of origin's identity on a session's or Daoris's commit |
 | Config and floors | `Install/GitGlobalFile.cs`, `Install/GitVersions.cs`, `GitForWindows.cs` | `profiles/git/global.gitconfig`; the version floors; Git for Windows' launcher started past |
 | Failures and holds | `GitFailures.cs`, `GitHolds.cs`, `GitOwnInput.cs` | Class a failure; hold in `run/git/held.json`; find `own-input` and `no-identity` before the act |
-| The move | `GitMove.cs`, `GitMoved.cs` | Marks `gitMoved` at the first start with the doors laid; after it, a remote nothing serves gets no credential of the person's |
+| The move | `GitMove.cs`, `GitMoved.cs` | Where both doors are laid, a remote nothing serves gets no credential of the person's; the ssh door's one line |
 | Redaction and log | `GitWords.cs`, `GitLog.cs`, `GitUnended.cs` | One redaction for every git, ssh, GCM or plugin text; coded `git.*` machine-log lines |
 | Git access | `GitAccessKeys.cs`, `GitAccessActs.cs`, `GitAccessCommand.cs` | The three levels in `driver.json`, their resolution, `SET_GIT_ACCESS`, `git access` |
 | The judge, grants | `GitAccessRules.cs` (`GitGrants`), `GitPushUpdates.cs` | One verdict per act; a push's force and delete read and judged; the landing's grant in `run/git/grants` |
@@ -83,9 +83,9 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 
 **The move and the holds**
 
-16. The first start of a release that lays both doors marks the home moved (`gitMoved` in `driver.json`). Then a remote
+16. A home has moved where both doors lie in the install's `app/bin/` (`GitMove.Moved`); no mark is kept. Then a remote
     nothing serves gets no credential of the person's: SSH is held `no-identity` before it connects; HTTPS reads anonymously.
-    Without the doors laid a home is not moved, marked or not, and its git is as it was. Nothing is pre-applied. (from D198, D233)
+    Without the doors laid its git is as it was. Nothing is pre-applied. (from D198, D232, D233)
 17. The move is one *What needs you* row per workspace: *Set up identity…* or *Keep using my own sign-ins…*. A held row
     holds work where a session of one of its repositories runs or is parked. (from D198)
 18. `own` is a widening. It is confirmed before it is written, on the page or in the window for a terminal's press. No
@@ -236,7 +236,6 @@ catalogues (`i18n:check`).
 - **GITAUTH1h:** the install, seen (the owner).
 - **GITAPP2g:** push one branch, on the person's press with a grant (after GITAUTH1f).
 - **GITAPP2n:** push a lightweight tag (after GITAUTH1g). Stash Drop stays deferred. Ask Daoris's fetch card is not built.
-- **`git-moved-key`:** the transitional `gitMoved` key (`Transitional/Register.cs:120`) goes by ONEWAY1af.
 - **D178 point 6:** *Hand mine to the winner*, no row until a way to publish a branch is asked for.
 - **D47:** OIDC sign-in for people on a shared deployment, and the platform served from it; only machine keys are built.
 - **FABRIC-PERFORM1l:** the pull request's fields kept on the wire evidence (`WorkWire.cs:354`).

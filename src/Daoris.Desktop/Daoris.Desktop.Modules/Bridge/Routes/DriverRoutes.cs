@@ -317,28 +317,6 @@ public sealed class DriverRoutes(DriverContext context)
         return State(_loop);
     }
 
-    // A found change answered (FOUNDATION1w-s, §19.15): the person's *Take it*, the actors as that file showed them, a turn-on of Intake or
-    // Ask Daoris among them by this press, or *Dismiss*, the actors as they are. Through the staffing's one write, then a nudge. Only the
-    // copy's check finds a change, so a converted home has none to answer (ONEWAY1c-ii).
-    // transitional: staffing-copy
-    [DriverRoute("STAFFING_FOUND_ANSWER")]
-    [Publishes("STAFFING_FOUND_ANSWER", StateScopes.Driver | StateScopes.Harnesses)]
-    private object? AnswerStaffingFound(IpcRequest request)
-    {
-        var id = Number(request, "found") ?? throw new DriverException("the press named no found change.");
-        var staffing = RoleStaffing.Of(_loop.ConfigPath)
-            ?? throw new DriverException("this home's staffing is the file's own, so no found change is answered here.");
-        switch (Optional(request, "answer"))
-        {
-            case "take": staffing.Take(id); break;
-            case "dismiss": staffing.Dismiss(id); break;
-            default: throw new DriverException("a found change is taken (`take`) or dismissed (`dismiss`).");
-        }
-
-        _loop.Nudge();
-        return State(_loop);
-    }
-
     // The role catalogue (FOUNDATION1y-i, the foundation design §2.7): every role, the seed's and the person's, with its work, scope and
     // stored choices, and the work codes a role may take; a read, the same `daoris role` says. Beside them, the roles Daoris
     // suggests adding (the Designer while no role takes design), each the person's press alone.
@@ -354,8 +332,6 @@ public sealed class DriverRoutes(DriverContext context)
         {
             Use = new { use.Days, use.Roles },
             Roles = RoleRowsRunning.Of(_loop.Home, catalogue, config),
-            // Each change of driver.json's staffing another program made that the copy's check kept.
-            Found = RoleStaffing.Of(_loop.ConfigPath)?.Found().Select(found => new { found.Id, found.At, found.Changes }).ToList() ?? [],
             // Each role's policy (default, set or stale), its record and its next new start; a probe that reserves nothing and
             // asks no account. The fields this build enforces, and the presets, are what the doors take.
             Policies = RolePolicyRow.Of(new StaffLedger(_loop.Home), catalogue, config),

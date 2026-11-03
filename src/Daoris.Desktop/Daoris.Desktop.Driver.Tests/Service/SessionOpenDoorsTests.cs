@@ -233,32 +233,6 @@ public sealed class SessionOpenDoorsTests
         Assert.Equal(0, await client.Opens.HeadAsync());
     }
 
-    /// <summary>
-    /// COMMS1b (the comms design §4.2, §13 point 12): the <c>answers</c> mark is read beside the head by the host's run, once while answers name that
-    /// run; a host without it, one replaced by a host before the row, and a protocol that does not read keep none, never a throw.
-    /// </summary>
-    [Fact]
-    public async Task The_answers_mark_is_kept_by_the_hosts_run_and_a_host_without_it_keeps_none()
-    {
-        using var host = new Host { AnswersMark = 1 };
-        using var client = new ServiceClient(host);
-
-        Assert.True(await client.Opens.AnswersAsync());
-        Assert.True(await client.Opens.AnswersAsync());
-        Assert.Equal(0, await client.Opens.HeadAsync());
-        Assert.Equal(1, host.Heard.Count(call => call.Path == "/api/protocol"));
-
-        host.AnswerRun = "second";
-        host.Run = "second";
-        host.AnswersMark = null;
-        await client.SayAsync("c1", "words", key: "press/2");
-        Assert.False(await client.Opens.AnswersAsync());
-
-        using var unread = new Host { RawProtocol = "{" };
-        using var older = new ServiceClient(unread);
-        Assert.False(await older.Opens.AnswersAsync());
-    }
-
     // ---- FOUNDATION1d-ii part 3 (§3.4 rule 3, §19.12): the open moves the words, asked only of a host whose `opens` is 2 ----
 
     private static readonly MoveWords Moves = new("left", ["w1"], ["w1", "w0"]);

@@ -3,10 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The move off ambient credentials (GITAUTH1e, the git-auth design §6.8): a home beside the laid doors is marked once; before it a remote
-/// nothing serves is not held, after it an SSH remote nothing serves is held as <c>no-identity</c> before the act and an HTTPS refusal is
-/// classed so; a serving identity or the person's own choice lifts the hold; the ssh door refuses a host nothing serves in one line. A
-/// home with no doors laid is never marked, and a marked one holds nothing once its doors are gone (GITMOVED1, D233 choice 7).
+/// No ambient credentials (GITAUTH1e, the git-auth design §6.8): where the doors are laid, an SSH remote nothing serves is held as
+/// <c>no-identity</c> before the act and an HTTPS refusal is classed so; a serving identity or the person's own choice lifts the hold; the
+/// ssh door refuses a host nothing serves in one line. A home with no doors laid holds nothing (GITMOVED1, D233 choice 7).
 /// </summary>
 [Collection(Alone.Name)]
 public sealed class GitMoveTests : IDisposable
@@ -50,38 +49,9 @@ public sealed class GitMoveTests : IDisposable
         GitOwnInput.HeldAsync(Home, Repo, "engine", "games", "origin", address, "git-a", CancellationToken.None);
 
     [Fact]
-    public void A_home_is_marked_once_and_a_home_never_started_has_not_moved()
+    public async Task An_ssh_remote_nothing_serves_is_held_as_no_identity()
     {
-        Assert.False(GitMove.Moved(Home));
-
-        Assert.True(GitMove.Ensure(Home, DateTimeOffset.UtcNow));
-        Assert.False(GitMove.Ensure(Home, DateTimeOffset.UtcNow));
-
         Assert.True(GitMove.Moved(Home));
-    }
-
-    [Fact]
-    public async Task A_home_with_no_doors_laid_is_never_marked_and_a_marked_one_without_them_holds_nothing()
-    {
-        File.Delete(Path.Combine(Bin, GitWiring.RemoteHelper));
-
-        Assert.False(GitMove.Ensure(Home, DateTimeOffset.UtcNow));
-        Assert.False(GitMoved.Moved(Home));
-
-        File.WriteAllText(Path.Combine(Bin, GitWiring.RemoteHelper), "");
-        Assert.True(GitMove.Ensure(Home, DateTimeOffset.UtcNow));
-        Directory.Delete(Bin, recursive: true);
-
-        Assert.False(GitMove.Moved(Home));
-        Assert.Null(await HeldAsync());
-    }
-
-    [Fact]
-    public async Task Before_the_move_an_ssh_remote_nothing_serves_is_not_held_and_after_it_is_held_as_no_identity()
-    {
-        Assert.Null(await HeldAsync());
-
-        GitMove.Ensure(Home, DateTimeOffset.UtcNow);
         var held = Assert.IsType<GitHold>(await HeldAsync());
 
         Assert.Equal(("no-identity", "all", "github.com"), (held.Class, held.Holds, held.Host));
@@ -89,9 +59,19 @@ public sealed class GitMoveTests : IDisposable
     }
 
     [Fact]
+    public async Task A_home_with_no_doors_laid_holds_nothing()
+    {
+        File.Delete(Path.Combine(Bin, GitWiring.RemoteHelper));
+
+        Assert.False(GitMove.Moved(Home));
+        Assert.Null(await HeldAsync());
+        Assert.Equal(GitFailureClass.Refused,
+            GitMove.Reclass(Home, "engine", "games", "origin", "https://github.com/org-a/engine.git", GitFailureClass.Refused));
+    }
+
+    [Fact]
     public async Task The_hold_is_lifted_by_the_person_choosing_their_own_sign_ins_for_the_host()
     {
-        GitMove.Ensure(Home, DateTimeOffset.UtcNow);
         Assert.NotNull(await HeldAsync());
 
         GitIdentityActs.UseMachine(Home, "github.com", own: true);
@@ -103,19 +83,13 @@ public sealed class GitMoveTests : IDisposable
     [Fact]
     public async Task A_local_path_needs_no_identity_and_is_not_held()
     {
-        GitMove.Ensure(Home, DateTimeOffset.UtcNow);
-
         Assert.Null(await HeldAsync(Path.Combine(_root, "elsewhere")));
     }
 
     [Fact]
-    public void An_https_refusal_where_nothing_serves_is_classed_no_identity_only_after_the_move()
+    public void An_https_refusal_where_nothing_serves_is_classed_no_identity()
     {
         const string Address = "https://github.com/org-a/engine.git";
-        Assert.Equal(GitFailureClass.Refused, GitMove.Reclass(Home, "engine", "games", "origin", Address, GitFailureClass.Refused));
-
-        GitMove.Ensure(Home, DateTimeOffset.UtcNow);
-
         Assert.Equal(GitFailureClass.NoIdentity, GitMove.Reclass(Home, "engine", "games", "origin", Address, GitFailureClass.Refused));
         Assert.Equal(GitFailureClass.HostChanged, GitMove.Reclass(Home, "engine", "games", "origin", Address, GitFailureClass.HostChanged));
         Assert.Equal("no-identity", GitFailures.Code(GitFailureClass.NoIdentity));

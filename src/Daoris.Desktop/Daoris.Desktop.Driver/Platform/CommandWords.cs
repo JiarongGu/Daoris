@@ -39,7 +39,6 @@ public static class CommandWords
             Nested = new Dictionary<string, IReadOnlyList<string>> { ["favorite"] = ["list", "add", "remove"] },
         },
         new("chat", [], Whole: true),
-        new("convert", [], Whole: true),
         new("drive", [], Whole: true),
         new("gate", ["run", "verify"]),
         new("git", ["branches", "branch", "tag", "fetch", "pick", "revert", "rebase", "review", "identity", "use", "access", "asks", "answer"], Whole: true),

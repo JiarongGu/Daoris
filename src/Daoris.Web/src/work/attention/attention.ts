@@ -106,8 +106,6 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
   // An integration's wait on the owner (INTEGRATE1h): a superseded commit's answer holds nothing running; a candidate held for their decide
   // holds its line's next, and a landing waiting for their card its unit's flow, which hold work (`attentionGroup`).
   integration: 'word',
-  // Places still on old workflow shapes (WORKFLOWCLEAN1g-ii, the cleanup design §4.3): nothing running is held; the review converts them.
-  'workflow-convert': 'word',
   unanswerable: 'word',
   review: 'ready',
 };
@@ -201,8 +199,6 @@ export const ATTENTION_PLACE: Readonly<Record<AttentionKind, AttentionPlace | nu
   rule: 'agents',
   'account-wait': 'agents',
   'signed-out': 'agents',
-  // WORKFLOWCLEAN1g-ii: the conversion's review opens in the Agents place's Setup.
-  'workflow-convert': 'agents',
   // This Daoris's *Disk space* card.
   space: 'settings',
   confirmation: null,
@@ -753,7 +749,7 @@ export type AttentionPushed = {
  */
 const KIND_ORDER: readonly AttentionKind[] = [
   'account-wait', 'signed-out', 'parked', 'helper-ended', 'parked-quest', 'steward-stopped', 'policy-hold', 'request-declined', 'go-ahead', 'permission', 'git-ask', 'answer', 'confirmation', 'trust',
-  'quiet', 'proposal', 'departure', 'set-up', 'opinion', 'rule', 'helper', 'hand-over', 'memory', 'integration', 'work', 'space', 'git-held', 'workflow-convert', 'unanswerable',
+  'quiet', 'proposal', 'departure', 'set-up', 'opinion', 'rule', 'helper', 'hand-over', 'memory', 'integration', 'work', 'space', 'git-held', 'unanswerable',
   'review',
 ];
 
@@ -1125,15 +1121,6 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
         ...(row.gitAsk ? { gitAsk: row.gitAsk } : {}),
         ...(row.session ? { session: row.session } : {}),
         ...(row.workspace ? { workspace: row.workspace } : {}),
-      };
-    // ONEWAY1ae: the old records every part holds, said as a count, and the count by part in its detail.
-    case 'workflow-convert':
-      return {
-        ...base,
-        title: i18n.t('work.attention.convertTitle', { count: row.convert?.records ?? 0 }),
-        detail: Object.entries(row.convert?.parts ?? {})
-          .map(([part, count]) => i18n.t('work.attention.convertPart', { part: i18n.t(`agents.convert.part.${part}`, { defaultValue: part }), count }))
-          .join(' · ') || null,
       };
     default:
       return { ...base, title: row.title ?? row.id };

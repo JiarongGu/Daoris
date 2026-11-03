@@ -38,7 +38,6 @@ internal static class PipeTargetRows
         ["RULE_ACTION"] = "edits a rule list in place",
         ["SET_KEEP"] = "merges into a kind's keeping rule",
         ["SET_AGENT_SETTINGS"] = "merges into a profile's settings",
-        ["STAFFING_FOUND_ANSWER"] = "answers a found change, which then leaves the list",
         ["SET_ROLE"] = "edits a role's row of the catalogue in place, its revision moving",
         ["SET_ROLES"] = "edits several roles' rows of the catalogue in place, each revision moving, in one transaction",
         ["WORKFLOW_LANDED"] = "reads the gates at the line's tip and accepts them by their blob",
@@ -247,14 +246,6 @@ internal static class PipeTargetRows
         Row("RECONCILE_APPLY", Plan("RECONCILE_PLAN", ["repository"], p => new { repository = Text(p, "repository") },
             (a, _) => Fp(Raw(At(a, "status")), Text(At(a, "pressable"))),
             TimeSpan.FromMinutes(2)));
-        // WORKFLOWCLEAN1 1e, ONEWAY1ae: the conversion plan the person read, by its digest, which pins every part's operations, the census inputs and
-        // the row's choices; one that moved between the ask and the Confirm is refused. A failed part's Leave it rides the same press, its receipt
-        // named by the digest. The undo is pinned the same, by its own plan's digest.
-        Row("CONVERT_APPLY", Plan("CONVERT_PLAN", ["digest", "composed", "landAutomatic", "leave"],
-            p => new { composed = Text(p, "composed"), landAutomatic = Text(p, "landAutomatic") },
-            (a, _) => Fp(Text(At(a, "digest"))),
-            TimeSpan.FromMinutes(2)));
-        Row("CONVERT_UNDO", Plan("CONVERT_PLAN", ["digest"], _ => new { undo = true }, (a, _) => Fp(Text(At(a, "digest"))), TimeSpan.FromMinutes(2)));
         Row("SET_DRIVABLE", new RepositoryGround("repository"), Listed("drivable", "drivable"));
         Row("SET_HOLD", new RepositoryGround("repository"), Listed("holds", "held"));
         Row("SET_TREES", new RepositoryGround("repository"), Listed("trees", "ownTree"));
@@ -311,7 +302,6 @@ internal static class PipeTargetRows
             (a, p) => Each(At(Named(At(a, "helpGrants"), "id", Text(p, "grant") ?? "housekeeping"), "chosen")).Any(each => Text(each) == Text(p, "operation"))
                 ? "true" : "false",
             p => Raw(Field(p, "chosen"))));
-        Row("STAFFING_FOUND_ANSWER", Setting("ROLES", ["found", "answer"], _ => null, (a, _) => Fp(Raw(At(a, "found")))));
         Row("SET_ROLE", Setting("ROLES", ["change", "id"], _ => null, (a, p) => Fp(Raw(Named(At(a, "roles"), "id", Text(p, "id"))))));
         // AGENTSPLACE1g2: the rows of every role the batch names, in the order it names them.
         Row("SET_ROLES", Setting("ROLES", ["changes"], _ => null,

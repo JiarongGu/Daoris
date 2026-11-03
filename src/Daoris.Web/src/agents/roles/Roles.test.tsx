@@ -3,7 +3,7 @@ import { fireEvent, render as rtlRender, screen, within } from '@testing-library
 import userEvent from '@testing-library/user-event';
 import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { ActorRow, RoleCatalogue, RoleRow, StaffingFound } from '../../data/wiring';
+import type { ActorRow, RoleCatalogue, RoleRow } from '../../data/wiring';
 import i18n from '../../locales/i18n';
 import { RolesCard, roleIdFor, roleName } from './Roles';
 
@@ -347,32 +347,6 @@ describe('The roles', () => {
       expect(screen.getByText('No role is set yet.')).toBeTruthy();
       expect(screen.queryByText(/could not be read/)).toBeNull();
       expect(screen.queryByText(/Not offered by this shell/)).toBeNull();
-    });
-  });
-
-  describe('the changes found outside Daoris', () => {
-    const before = (id: string, agent: string): ActorRow => ({ id, state: 'before', choices: [{ agent, from: 'before' }] });
-    const FOUND: StaffingFound[] = [{
-      id: 7,
-      at: '2026-10-30T10:00:00Z',
-      changes: [
-        { role: 'build', was: before('build', 'claude-code-acp'), now: before('build', 'codex-acp'), applied: false },
-        { role: 'intake', was: before('intake', 'codex-acp'), now: { id: 'intake', state: 'off', choices: [] }, applied: true },
-      ],
-    }];
-
-    it('says each change against what Daoris last wrote, a turn-off applied at once, and presses Take it and Dismiss', () => {
-      const onAnswerFound = vi.fn();
-      card({ found: FOUND, onAnswerFound });
-      const found = within(screen.getByRole('list', { name: 'Changed outside Daoris' }));
-
-      expect(found.getByText(/Build: claude-code-acp · account default · account default · as before → codex-acp/)).toBeTruthy();
-      expect(found.getByText(/Intake: .* → Off — declarations only \(turned off at once\)/)).toBeTruthy();
-      fireEvent.click(found.getByRole('button', { name: 'Take it' }));
-      fireEvent.click(found.getByRole('button', { name: 'Dismiss' }));
-
-      expect(onAnswerFound).toHaveBeenNthCalledWith(1, 7, 'take', expect.anything());
-      expect(onAnswerFound).toHaveBeenNthCalledWith(2, 7, 'dismiss', expect.anything());
     });
   });
 

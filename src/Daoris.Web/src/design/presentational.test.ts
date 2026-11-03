@@ -100,19 +100,13 @@ const ORGANISMS = new Set<string>([
   './agents/setup/PlaceSessions.tsx',
   // A place's Set up… (AGENTSPLACE1j): the plan's read and the person's Apply, so the page below it holds neither.
   './agents/setup/PlaceSetUpPanel.tsx',
-  // A home's Convert… (WORKFLOWCLEAN1g-i): the conversion's plan, apply and undo, and the census the place heads read, so the review below holds none.
-  './agents/setup/ConvertPanel.tsx',
-  './agents/setup/useConversion.ts',
   // A repository's driving for its page head (SETUPUX1h): the hold and the ⋯'s drive and trees, so the page's molecule holds none.
   './agents/setup/PlaceDriving.tsx',
-  // This machine's All roles and its notes (SETUPUX1m): the Roles mode's read and the found changes' answer, so the cards below hold none.
+  // This machine's All roles and its notes (SETUPUX1m): the Roles mode's read, so the cards below hold none.
   './agents/roles/AllRoles.tsx',
   './agents/setup/MachineNotes.tsx',
   // An adopted repository's note of the shared doctrine (D230 point 2): the reconcile's plan and its press, so the note's molecule holds neither.
   './agents/setup/ReconcileNote.tsx',
-  // This machine's Old records (ONEWAY1ad-ii): the kept reads' one query, and the stories' fixture of its answer's type.
-  './agents/setup/OldRecords.tsx',
-  './agents/setup/keptFixtures.ts',
   './projects/setup/useRepositorySetup.ts',
   // A repository's Workflow as its molecules take it (AGENTSPLACE1h): its Current, the acceptance and the step editor's bridge, held by the
   // Repositories view and a place's Sessions, so the Workflow tab and the place's Workflow below hold none.

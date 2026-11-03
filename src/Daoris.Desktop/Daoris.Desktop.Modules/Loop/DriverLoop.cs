@@ -600,9 +600,6 @@ public sealed class DriverLoop(
     /// <summary>The memory changes that wait on the person (KNOWCENTRAL2e), read from the service on a poll of the loop's own; <i>What needs you</i> judges them.</summary>
     public MemoryWaits MemoryWaits { get; } = new(eventBus, log);
 
-    /// <summary>The conversion's census as last read (WORKFLOWCLEAN1g-ii): at the come-up and whenever the driver file moves; <i>What needs you</i> judges its row.</summary>
-    public ConversionCensus Conversion { get; } = new(eventBus, log);
-
     /// <summary>
     /// The second-opinion gates the last tick judged (XAGENT1g3), replaced whole each tick: what <c>OPINION_WAITS</c> answers, as of
     /// that tick, at most one poll old. Null before the first.
@@ -1359,23 +1356,11 @@ public sealed class DriverLoop(
 
         // AGENTSPLACE1b2: a place's apply that a stop left uncertain is read by its postcondition, in the background, asking and writing nothing
         // but the receipt: what it found is the receipt's, and a press of the same plan goes on from there.
-        // ONEWAY1ae: every part's census is read after it at the come-up, and again whenever the driver file moves (an apply or an undo
-        // publishes that scope).
         var counting = _stopping.Token;
-        var census = ConversionCensus.Reading(() => ConversionDoors.Of(this));
-        Settling = Task.Run(async () =>
-        {
-            await SettlePlacesAsync(service, counting).ConfigureAwait(false);
-            await Conversion.RefreshAsync(census, counting).ConfigureAwait(false);
-        });
-        _ = eventBus.Subscribe(StatePublisher.Module, StatePublisher.Type, message =>
-        {
-            if (message.Payload is StateChanged changed && changed.Scopes.Contains("driver")) _ = Conversion.RefreshAsync(census, counting);
-            return Task.CompletedTask;
-        });
+        Settling = Task.Run(() => SettlePlacesAsync(service, counting));
     }
 
-    /// <summary>The come-up's reading of the receipts of places' applies (AGENTSPLACE1b2) and then of the conversion's census; complete where it ended or was not begun, so a test holds it.</summary>
+    /// <summary>The come-up's reading of the receipts of places' applies (AGENTSPLACE1b2); complete where it ended or was not begun, so a test holds it.</summary>
     public Task Settling { get; private set; } = Task.CompletedTask;
 
     private async Task SettlePlacesAsync(ServiceClient service, CancellationToken ct)
@@ -1387,9 +1372,6 @@ public sealed class DriverLoop(
                 new PlaceWorld(service), new SetupWorld(service, Home), Home, PluginCatalog.Load(Home, AdapterSet.Built().Names), DriverContext.DoorOf(this, config),
                 () => DriverConfig.Load(ConfigPath), _ => throw new InvalidOperationException("settling writes no configuration"), DateOnly.FromDateTime(DateTime.Now));
             await PlaceApplies.SettleAllAsync(doors, ct).ConfigureAwait(false);
-            // ONEWAY1ae: a conversion's receipt a stop left uncertain is read the same way, each part by its postconditions, and a press of
-            // its plan goes on from it.
-            ConversionApplies.SettleAll(ConversionDoors.Of(this));
         }
         catch (Exception error) when (error is not OperationCanceledException)
         {

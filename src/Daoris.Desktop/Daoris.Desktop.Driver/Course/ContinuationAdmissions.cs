@@ -156,24 +156,6 @@ public sealed class ContinuationAdmissions(string home, Func<StoreSettled>? sett
         }
     }
 
-    /// <summary>Whether no event log on <paramref name="home"/> was begun before its admissions were, so no line's history predates them.</summary>
-    public static bool Begun(string home)
-    {
-        try
-        {
-            using var store = DesktopStoreReader.Open(DesktopStore.LocationIn(home));
-            if (store is null || store.Version < Step) return false;
-            var made = store.Query("SELECT at FROM continuation_made", row => row.GetString(0)).SingleOrDefault();
-            if (!DateTime.TryParse(made, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var began)) return false;
-            var sessions = DaorisHome.Entry(home, HomeEntry.Sessions);
-            return !Directory.Exists(sessions) || new DirectoryInfo(sessions).EnumerateFiles("*.events.jsonl").All(log => log.CreationTimeUtc >= began);
-        }
-        catch (Exception error) when (Unread(error))
-        {
-            return false;
-        }
-    }
-
     // ——— Pure: the rows read on, judged and counted.
 
     /// <summary>
@@ -298,7 +280,6 @@ public sealed class ContinuationAdmissions(string home, Func<StoreSettled>? sett
         }
 
         var why = history.Cut is not null ? LineCounts.WalkCut : trimmed ? LineCounts.LogTrimmed : missing ? LineCounts.EventsMissing : null;
-        // transitional: answers-alone-events
         var n = AnswersAlone.Count(line.Select(each => each.Event));
         var epoch = new AloneEpoch(0, Seed, null, n, why is null ? LineCounts.Exact : LineCounts.AtLeast, why, now);
         return new AloneRows(history.Line, [epoch], [], read, AnswersAlone.Read(AloneScan.Start, line).Scan);

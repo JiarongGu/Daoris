@@ -27,11 +27,11 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// FOUNDATION1w-s (the design §19.15): on a home whose staffing the store keeps, the press is the staffing's one write, the store's
-    /// staffing changed and the file its projection; a hand edit since is read nowhere until the person takes it.
+    /// FOUNDATION1w-s (the design §19.15): on a home whose staffing the store keeps, the press is the staffing's one write, in the store alone;
+    /// a hand edit of the file is read nowhere (D232).
     /// </summary>
     [Fact]
-    public async Task On_a_wired_home_the_press_writes_the_store_and_projects_the_file_and_a_hand_edit_waits_found()
+    public async Task On_a_wired_home_the_press_writes_the_store_alone_and_a_hand_edit_is_read_nowhere()
     {
         var staffing = Wired("""{ "adapter": "claude-code", "intakeAdapter": "claude-code" }""");
         try
@@ -41,45 +41,9 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
             await AnswerAsync(module, "SET_ROLE", Staff("intake", "intake", []));
 
             Assert.Empty(staffing.Read()!.Actors["intake"]);
-            Assert.DoesNotContain("intakeAdapter", File.ReadAllText(DriverConfigPath));
             File.WriteAllText(DriverConfigPath, File.ReadAllText(DriverConfigPath).Replace("\"claude-code\"", "\"codex-acp\""));
-            Assert.Equal(StaffingChecks.Found, staffing.Check(StaffingCheckAt.Look).How);
+            Assert.Equal(StaffingChecks.Same, staffing.Check(StaffingCheckAt.Look).How);
             Assert.Equal("claude-code", DriverConfig.Load(DriverConfigPath).Adapter);
-        }
-        finally
-        {
-            RoleStaffingPort.Unwire(DriverConfigPath);
-        }
-    }
-
-    /// <summary>The role read answers what the copy's check kept, and the screen's *Take it* and *Dismiss* press it.</summary>
-    [Fact]
-    public async Task Roles_answers_each_found_change_and_the_screens_take_it_and_dismiss_answer_it()
-    {
-        var staffing = Wired("""{ "adapter": "claude-code", "intakeAdapter": "claude-code" }""");
-        try
-        {
-            var module = Module();
-            File.WriteAllText(DriverConfigPath, """{ "adapter": "codex-acp" }""");
-            staffing.Check(StaffingCheckAt.Look);
-
-            var found = Assert.Single((await AnswerAsync(module, "ROLES")).GetProperty("found").EnumerateArray().ToList());
-            var changes = found.GetProperty("changes").EnumerateArray().ToList();
-            Assert.Contains(changes, change => change.GetProperty("role").GetString() == "intake" && change.GetProperty("applied").GetBoolean());
-            Assert.Contains(changes, change => change.GetProperty("role").GetString() == "build"
-                && change.GetProperty("now").GetProperty("choices")[0].GetProperty("agent").GetString() == "codex-acp");
-
-            await AnswerAsync(module, "STAFFING_FOUND_ANSWER", new { found = found.GetProperty("id").GetInt64(), answer = "take" });
-
-            Assert.Equal("codex-acp", DriverConfig.Load(DriverConfigPath).Adapter);
-            Assert.Empty((await AnswerAsync(module, "ROLES")).GetProperty("found").EnumerateArray());
-
-            File.WriteAllText(DriverConfigPath, """{ "adapter": "other-acp" }""");
-            staffing.Check(StaffingCheckAt.Look);
-            var second = staffing.Found().Single().Id;
-            await AnswerAsync(module, "STAFFING_FOUND_ANSWER", new { found = second, answer = "dismiss" });
-            Assert.Equal("codex-acp", DriverConfig.Load(DriverConfigPath).Adapter);
-            Assert.Contains("is taken (`take`) or dismissed", await RefusalAsync(module, "STAFFING_FOUND_ANSWER", new { found = second, answer = "keep" }));
         }
         finally
         {

@@ -25,12 +25,11 @@ public sealed partial class RoleCatalogCensusTests : IDisposable
     /// <summary>
     /// Each writer and the files that reach the judge or the staffing's write for it. FOUNDATION1y-i: the role door, which `SET_ROLE`,
     /// `daoris role` and `role_propose` call; since ONEWAY1a the one door, `SET_ACTOR`, the actor verbs and `setting_propose`'s
-    /// staffing doors gone. ONEWAY1c-ii retired the staffing copy's `actor import`; ONEWAY1b's staffing part writes the five roles' orders
-    /// through the conversion's door, the person's Apply.
+    /// staffing doors gone. D232: the release's migration writes an older home's five orders once.
     /// </summary>
     private static readonly (string Writer, string[] Files)[] Census =
     [
-        ("the staffing part", ["Daoris.Desktop.Driver/Conversion/StaffingPart.cs"]),
+        ("the migration's staffing step", ["Daoris.Desktop.Driver/Install/Migration/StaffingStep.cs"]),
         ("the import and the check", ["Daoris.Desktop.Driver/Roles/RoleStaffing.cs"]),
         ("the judges themselves", ["Daoris.Desktop.Driver/Roles/ActorChoices.cs", "Daoris.Desktop.Driver/Roles/RoleCatalog.cs"]),
         ("the role door", ["Daoris.Desktop.Driver/Roles/RoleDoor.cs"]),
@@ -64,7 +63,7 @@ public sealed partial class RoleCatalogCensusTests : IDisposable
 
         Assert.Equal(named, Reaching().Order(StringComparer.Ordinal).ToList());
         Assert.Equal(
-            ["the staffing part", "the import and the check", "the judges themselves", "the role door", "SET_ROLE", "daoris role", "role_propose"],
+            ["the migration's staffing step", "the import and the check", "the judges themselves", "the role door", "SET_ROLE", "daoris role", "role_propose"],
             Census.Select(each => each.Writer));
     }
 

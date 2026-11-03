@@ -23,7 +23,6 @@ public sealed partial class OrderReadersCensusTests
         ("Daoris.Desktop.Driver/Loop/DriverBrainstorms.cs", "Brainstorm's voices are read once and frozen; the judge refuses a policy on it"),
         ("Daoris.Desktop.Driver/Loop/Chat/ChatRunner.cs", "tells whether a caller's order is the seeded Chat order, which an added role's own replaces"),
         ("Daoris.Desktop.Modules/Bridge/Routes/HelpRoutes.cs", "Ask Daoris's own order, handed to the placing walk, which arranges it"),
-        ("Daoris.Desktop.Driver/Conversion/StaffingPart.cs", "the staffing part writes an as-before order as stored, the order the person's policy then arranges (ONEWAY1b)"),
     ];
 
     [GeneratedRegex(@"ActorChoices\.Effective\(")]

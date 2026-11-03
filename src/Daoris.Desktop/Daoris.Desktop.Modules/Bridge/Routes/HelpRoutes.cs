@@ -217,8 +217,8 @@ public sealed class HelpRoutes(DriverContext context)
             // What the person approved of the servers plugins offer it.
             HelpGrants.Read(_loop.Home, plugins), read.Work?.Units, read.Work?.Unread, read.Work?.Recovery,
             read.NotReadYet,
-            // This machine's list of old records as its page reads it, and what each line waits on.
-            kept: TransitionalRegister.List(_loop.Home, _loop.Conversion.Parts()), waits: read.Waits);
+            // What each line waits on.
+            waits: read.Waits);
     }
 
     /// <summary>

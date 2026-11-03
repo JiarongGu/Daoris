@@ -223,25 +223,6 @@ describe('what needs a person, worded', () => {
     }
   });
 
-  /**
-   * WORKFLOWCLEAN1g-ii, ONEWAY1ae: the home's one conversion row is named by the old records every part holds, counted by part in its detail, in
-   * each language, and offers no act of its own.
-   */
-  it('names the conversion row by the old records it counts, by part in its detail, and offers no act', async () => {
-    const item = words(row('workflow-convert', 'home', '2026-11-02T09:00:00Z', { convert: { records: 5, parts: { workflows: 3, settings: 2 } } }));
-    expect(item).toMatchObject({ kind: 'workflow-convert', title: '5 old records wait for your conversion', detail: 'Workflows: 3 · Settings: 2' });
-    expect(words(row('workflow-convert', 'home', null, { convert: { records: 1 } })).title).toBe('1 old record waits for your conversion');
-    expect(attentionActs(item)).toEqual([]);
-    expect(attentionGroup(item)).toBe('word');
-    await i18n.changeLanguage('zh');
-    try {
-      const zh = words(row('workflow-convert', 'home', null, { convert: { records: 2, parts: { workflows: 2 } } }));
-      expect(zh.detail).toBe('工作流：2');
-      expect(zh.title).toBe('2 条旧记录等待你的转换');
-    } finally {
-      await i18n.changeLanguage('en');
-    }
-  });
 
   /**
    * GITAUTH1a (the git auth design §5.2, §7.4): a held git remote, said once: its host and why as its title, per class; its repositories,
@@ -851,7 +832,7 @@ describe('the groups', () => {
       'account-wait': 'holding', 'signed-out': 'holding',
       proposal: 'word', intake: 'word', departure: 'word', 'set-up': 'word', opinion: 'word', rule: 'word', helper: 'word',
       'hand-over': 'word', unanswerable: 'word', review: 'ready', work: 'word', space: 'word', 'git-held': 'word', memory: 'word',
-      integration: 'word', 'workflow-convert': 'word', 'git-ask': 'holding',
+      integration: 'word', 'git-ask': 'holding',
     });
   });
 
@@ -1262,7 +1243,7 @@ describe('the place each wait is counted at', () => {
       proposal: 'quests', intake: 'quests', unanswerable: 'quests', 'parked-quest': 'quests', 'steward-stopped': 'quests', 'policy-hold': 'quests', 'request-declined': 'quests', 'go-ahead': 'quests',
       departure: 'quests', 'set-up': 'quests', trust: 'quests',
       work: 'projects', integration: 'projects',
-      rule: 'agents', 'account-wait': 'agents', 'signed-out': 'agents', 'workflow-convert': 'agents',
+      rule: 'agents', 'account-wait': 'agents', 'signed-out': 'agents',
       space: 'settings',
       confirmation: null,
       'git-held': 'settings',

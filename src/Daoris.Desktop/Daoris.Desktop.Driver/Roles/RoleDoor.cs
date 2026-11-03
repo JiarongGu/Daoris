@@ -190,10 +190,9 @@ public static class RoleDoor
             if (moved) write.Moved(StaffPolicies.Family);
         }
 
-        // The seeded roles' staffing is the file's projection too, so it goes through Set; the rest is one transaction beside it.
+        // The seeded roles' staffing goes through Set; the rest is one transaction beside it.
         if (seeded.Count > 0) staffing.Set(seeded, write => { RoleStaffing.AddedRows(write, rows); Also(write); });
         else staffing.Publish(rows, Also);
-        staffing.Check(StaffingCheckAt.Write);
         return revisions;
     }
 

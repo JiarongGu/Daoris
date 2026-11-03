@@ -10,8 +10,6 @@ import { WORKSPACE as WORKSPACE_ANSWER } from '../../workflow/fixtures';
 import { answerFor, PLACE_SETUP, SAVED_ROUTES } from '../../workflow/place/placeWorkflowFixtures';
 import { PlaceWorkflowView } from '../../workflow/place/PlaceWorkflowView';
 import { PlacePageView, type PlaceDriving } from './PlacePage';
-import { KEPT } from './keptFixtures';
-import { OldRecordsView } from './OldRecords';
 import { PlaceRolesView } from './PlaceRoles';
 import { PlaceWorkflowBodyView } from './PlaceSessions';
 import { foldedLines, headOf, type PlaceKind, type PlaceSection, type PlaceView, sectionsOf } from './placeShell';
@@ -84,7 +82,6 @@ function Page({ row = ENGINE, kind = 'repository', opened, driving = DRIVING, ba
     roles: <PlaceRolesView place={ask} read="ok" answer={CHAIN(ask)} editor={editor} appointed={null} onSource={nothing} />,
     sessions: <p className="m-0 pb-3 pl-3 text-small text-ink-soft">Access, language, helpers and the reach.</p>,
     allRoles: <p className="m-0 pb-3 pl-3 text-small text-ink-soft">Every role once; drawn in full by MachineRoles' stories.</p>,
-    oldRecords: <OldRecordsView read={KEPT} />,
   };
   const name = kind === 'machine' ? t('agents.setup.machine') : kind === 'workspace' ? row.workspace ?? '' : row.repository ?? '';
   return (

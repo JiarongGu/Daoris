@@ -124,7 +124,6 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   SET_COOLOFF: { scopes: ['driver'] },
   SET_CAP: { scopes: ['driver'] },
   SET_KEEP: { scopes: ['driver', 'wiring'] },
-  STAFFING_FOUND_ANSWER: { scopes: ['driver', 'harnesses'] },
   SET_ROLE: { scopes: ['driver', 'harnesses'] },
   SET_ROLES: { scopes: ['driver', 'harnesses'] },
   SET_HELP_MODE: { scopes: ['driver'] },
@@ -178,8 +177,6 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   // A reconcile asked: its quest and ask, its admission alone, and its rules.
   RECONCILE_APPLY: { scopes: ['quests', 'asks', 'driver', 'rules'] },
   // The conversion of the old records, and its undo: the configuration, the rules and each place's lines.
-  CONVERT_APPLY: { scopes: ['lines', 'driver', 'rules'] },
-  CONVERT_UNDO: { scopes: ['lines', 'driver', 'rules'] },
   TOOLS_USE: { scopes: ['tools'] },
   TOOLS_DOWNLOAD: { scopes: ['tools'] },
   TOOLS_DELETE: { scopes: ['tools'] },

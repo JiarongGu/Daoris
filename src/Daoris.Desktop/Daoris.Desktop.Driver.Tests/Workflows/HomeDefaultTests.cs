@@ -114,13 +114,9 @@ public sealed class HomeDefaultTests : IDisposable
     }
 
     [Fact]
-    public void An_applied_conversion_refuses_a_going_back_with_the_workflows_code_and_a_delivery_with_its_own()
+    public void A_going_back_with_no_delivery_unresolved_is_not_refused()
     {
         Assert.Null(InstallRollback.Refused(_home, "0.41.0", "0.42.0"));
-
-        var refused = InstallRollback.Refused(_home, "0.41.0", "0.42.0", conversionStands: _ => true);
-
-        Assert.Equal(InstallRollback.Workflows, refused!.Value.Code);
-        Assert.Null(InstallRollback.Refused(_home, "0.42.1", "0.42.0", conversionStands: _ => true));
+        Assert.Null(InstallRollback.Refused(_home, "0.42.1", "0.42.0"));
     }
 }

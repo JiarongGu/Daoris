@@ -251,52 +251,6 @@ public sealed class SessionStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// MSG1a (D137 §2.4): a store from before `said` kept a park's answer in its `answer` column. It reads as the record's
-    /// first word, and a word kept after it joins it in the record's one list, so an answered park from before goes on
-    /// with both and the old column holds nothing the list does not.
-    /// </summary>
-    [Fact]
-    public async Task An_answer_from_before_said_reads_as_its_first_word_and_a_later_word_joins_it()
-    {
-        await using var old = new SqliteConnection("Data Source=:memory:");
-        await old.OpenAsync();
-        await using (var create = old.CreateCommand())
-        {
-            create.CommandText = """
-                CREATE TABLE sessions (
-                  id TEXT PRIMARY KEY, quest TEXT NULL, repository TEXT NOT NULL, adapter TEXT NOT NULL,
-                  state TEXT NOT NULL, note TEXT NULL, evidence TEXT NULL, transcript TEXT NULL,
-                  created TEXT NOT NULL, updated TEXT NOT NULL, answer TEXT NULL
-                );
-                INSERT INTO sessions (id, quest, repository, adapter, state, note, created, updated, answer)
-                  VALUES ('abcd1234', 'q1', 'Owner', 'stub', 'AwaitingPerson', 'which port?', '2026-10-02T10:00:00Z',
-                          '2026-10-02T10:05:00Z', '8080.');
-                """;
-            await create.ExecuteNonQueryAsync();
-        }
-
-        var store = await SessionStore.OpenAsync(old);
-
-        var before = (await store.FindAsync("abcd1234"))!;
-        var first = Assert.Single(before.Said);
-        Assert.Equal(("answer", "8080.", DateTimeOffset.Parse("2026-10-02T10:05:00Z"), false), (first.Id, first.Text, first.At, first.Reopens));
-        Assert.Empty(first.Files);
-        Assert.True(before.PersonSaid);
-        // XAGENT1c: a record from before reads as before: its answer is the person's, and it names no opinion.
-        Assert.Null(first.By);
-        Assert.Null(before.Opinion);
-
-        await store.KeepSaidAsync("abcd1234", new SaidWord("w2", "9090, not 8080.", Now, []));
-
-        var joined = (await store.FindAsync("abcd1234"))!;
-        Assert.Equal(["answer", "w2"], joined.Said.Select(word => word.Id));
-        Assert.Equal(["8080.", "9090, not 8080."], joined.Said.Select(word => word.Text));
-        await using var column = old.CreateCommand();
-        column.CommandText = "SELECT answer FROM sessions WHERE id = 'abcd1234'";
-        Assert.Equal(DBNull.Value, await column.ExecuteScalarAsync());
-    }
-
-    /// <summary>
     /// MSG1a: a word a later build wrote with fields this one does not know reads as the word it is, and a malformed one —
     /// no id, no text, no moment — is passed over, never a failed read of the record.
     /// </summary>

@@ -219,7 +219,6 @@
   "note.chat.told-where": "The agent was told where you are:",
   "note.chat.told-browser": "The agent was told it has Daoris's browser:",
   "note.chat.told-process": "The agent was told this repository's process, its commit rule `{{mode}}` ({{source}}):",
-  "note.chat.told-routing": "The agent was told this repository's routing standing, {{standing}}:",
   "note.chat.told-block": "The agent was told Daoris's standing block:",
   "note.chat.told-draft": "The agent was told the workflow draft open in your editor:",
   "note.chat.handed-over": "This conversation went on with {{agent}}, in conversation {{session}}.",

@@ -239,12 +239,6 @@ export type ActorRow = {
   arranged?: ActorEntry[] | null;
 };
 
-/**
- * A change of driver.json's staffing another program made, as `ROLES` answers it beside the rows (`found`): each role it moved, as Daoris last wrote it and as that file showed it, `applied` where it turned Intake or Ask Daoris off at
- * once. It waits for the person's *Take it* or *Dismiss* (`STAFFING_FOUND_ANSWER`).
- */
-export type StaffingFound = { id: number; at: string; changes: { role: string; was: ActorRow; now: ActorRow; applied: boolean }[] };
-
 /** A role's choice as the catalogue stores it: an agent, its model and effort in the tool's own words, absent for account default. */
 export type RoleChoice = { agent: string; model?: string | null; effort?: string | null };
 
@@ -305,8 +299,6 @@ export type RoleCatalogue = {
   policies?: RolePolicyRow[]; policyFields?: string[]; policyPresets?: string[];
   /** The choices Daoris suggests for the seeded roles (MODELROLE1g) and the day of the reference they were read from; absent from a driver before them. */
   suggestedChoices?: { role: string; choices: RoleChoice[] }[]; suggestedChoicesDated?: string;
-  /** The changes of driver.json's staffing another program made that wait for the person; none where the copy has ended. */
-  found?: StaffingFound[];
 };
 
 /** A role's change as `SET_ROLE` takes it: set with its record and choices, removed, given back its seed, or every seeded role given back (`default-all`, whose id is `*`). */

@@ -44,9 +44,8 @@ internal static class AnswersAlone
 
     /// <summary>
     /// The go-ons by answers alone at the line's end, in a row, back to the last word of the person's or Daoris's: the events read whole,
-    /// as the count was kept before its admission (COMMS1g), which a line with none is seeded from.
+    /// which a line with no admission yet is seeded from.
     /// </summary>
-    // transitional: answers-alone-events
     public static int Count(IEnumerable<SessionEvent> line) =>
         Read(AloneScan.Start, line.Select(e => (Part: "", Event: e))).Steps
             .Aggregate(0, (count, step) => step.Kind switch { AloneStep.GoOn => count + 1, AloneStep.Reset => 0, _ => count });

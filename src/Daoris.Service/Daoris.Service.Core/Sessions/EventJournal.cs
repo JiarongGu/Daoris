@@ -179,7 +179,7 @@ internal static class EventJournal
         CREATE TRIGGER IF NOT EXISTS event_journal_said AFTER UPDATE OF said ON sessions
         WHEN OLD.said IS NOT NEW.said AND NEW.origin IS NULL AND {ListsAreArrays}
         BEGIN
-          {WordRows("word-added", "NEW", "OLD", "AND NOT (OLD.said IS NULL AND OLD.answer IS NOT NULL AND json_extract(w.value, '$.id') = 'answer')", "")}
+          {WordRows("word-added", "NEW", "OLD", "", "")}
           {WordRows("word-removed", "OLD", "NEW", "", "-")}
           {Trim}
         END;
