@@ -52,7 +52,7 @@ public sealed partial class DriverFilesTextTests
         Directory.CreateDirectory(home);
         try
         {
-            var remotes = Path.Combine(home, "remotes.json");
+            var remotes = DaorisHome.Entry(home, HomeEntry.Remotes);
             string PathOf(string file) => file switch
             {
                 "remotes" => remotes,
