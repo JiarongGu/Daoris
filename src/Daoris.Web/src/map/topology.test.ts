@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Convergence, Quest, Registration, Session } from '../data/api';
 import { fitRadius, frameMap, placeLabel, ringAt } from './ring';
 import { textWidth } from './measure';
+import { said } from '../test/said';
 import { ASKS, buildTopology, keepQuests, LINE_KINDS, type LineKind, layoutRing, showLines } from './topology';
 
 // MAP2 (D67 §3, `docs/2026-09-23-map-design.md` §1): the workspace's repositories and what actually
@@ -184,8 +185,8 @@ describe('the workspace topology', () => {
    * marked as a queued session is: neither parked nor working, on a node or on a line.
    */
   it('marks no park the person answered as parked, on a node or on its quest\'s line', () => {
-    const answered: Session = { ...session('engine', 'awaiting-person'), quest: 'q1', answer: 'the second one' };
-    const asking: Session = { ...session('game', 'awaiting-person'), quest: 'q2', answer: null };
+    const answered: Session = { ...session('engine', 'awaiting-person'), quest: 'q1', said: said('the second one') };
+    const asking: Session = { ...session('game', 'awaiting-person'), quest: 'q2', said: null };
     const map = buildTopology([repo('engine'), repo('game')], [quest('q1', 'game', 'engine'), quest('q2', 'engine', 'game')], [], [
       answered, asking,
     ]);

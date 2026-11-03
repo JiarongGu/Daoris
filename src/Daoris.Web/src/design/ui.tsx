@@ -20,7 +20,8 @@ import {
   Undo2, UserCheck, Users, Workflow, Wrench, WrapText, X, ZoomIn, ZoomOut,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { type Quest, SESSION_ACTIVE, type SessionState } from '../data/api';
+import { type Quest, type SaidWord, SESSION_ACTIVE, type SessionState } from '../data/api';
+import { wordSenderOf } from '../work/conversation/sender';
 import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
 import { TOAST_LIMIT, withNotice } from '../data/signals';
@@ -356,13 +357,22 @@ export function limitedOr(session: { state: SessionState; limit?: boolean; noteP
 }
 
 /**
- * A park the person answered (ANSWER1c, D131): the service keeps the record `awaiting-person` with the answer set until
+ * The person's words waiting on a record, joined by a blank line, or null where none wait (ONEWAY1m): read from its keyed `said`
+ * words by the one sender rule, so Daoris's, a helper's, a partner's and a second opinion's words are never theirs.
+ */
+export function personsSaid(session: { said?: readonly SaidWord[] | null }): string | null {
+  const persons = (session.said ?? []).filter((word) => wordSenderOf(word) === 'person').map((word) => word.text);
+  return persons.length > 0 ? persons.join('\n\n') : null;
+}
+
+/**
+ * A park the person answered (ANSWER1c, D131): the service keeps the record `awaiting-person` with the answer kept until
  * the driver's next look takes it up (ANSWER1b), and the same session goes on then, so nothing about it waits on the
- * person. The answer is answered to this machine only, so a teammate's park, or one read over a keyed remote, is never
+ * person. The words are answered to this machine only, so a teammate's park, or one read over a keyed remote, is never
  * one: it stays as its record says.
  */
-export function answeredPark(session: { state: SessionState; answer?: string | null }): boolean {
-  return session.state === 'awaiting-person' && Boolean(session.answer);
+export function answeredPark(session: { state: SessionState; said?: readonly SaidWord[] | null }): boolean {
+  return session.state === 'awaiting-person' && personsSaid(session) !== null;
 }
 
 /**
@@ -380,7 +390,7 @@ export function answeredPark(session: { state: SessionState; answer?: string | n
  */
 export function shownState(
   session: {
-    kind?: 'driven' | 'chat'; state: SessionState; answer?: string | null; limit?: boolean;
+    kind?: 'driven' | 'chat'; state: SessionState; said?: readonly SaidWord[] | null; limit?: boolean;
     noteParts?: readonly { code?: string | null }[] | null;
   },
   taking: boolean | undefined,
@@ -388,7 +398,7 @@ export function shownState(
   const ended = limitedOr(session);
   if (ended === 'limited' || ended === 'not-started') return ended;
   if (answeredPark(session)) return 'answered';
-  if (session.state !== 'awaiting-person' && SESSION_ACTIVE.has(session.state) && session.answer) return 'going-on';
+  if (session.state !== 'awaiting-person' && SESSION_ACTIVE.has(session.state) && personsSaid(session) !== null) return 'going-on';
   return session.kind === 'chat' && session.state === 'working' && taking === false ? 'idle' : session.state;
 }
 

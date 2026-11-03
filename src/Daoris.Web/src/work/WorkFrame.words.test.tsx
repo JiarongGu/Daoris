@@ -10,6 +10,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 vi.mock('@shenora/react', async () => (await import('../test/workFrameBridge')).shenoraMock());
 
 import { eventHandlers, invoke } from '../test/workFrameBridge';
+import { said } from '../test/said';
 import {
   CHAT, DRIVEN, DRIVER_STATE, PARKED, PARKED_INTAKE, QUESTS, REGISTRY, ROSTER, RUNNING_INTAKE, UNANSWERED, show, timedOut,
   userEvent,
@@ -282,7 +283,7 @@ describe('the box on every session that takes words', () => {
 
   /** §3.2: a record going on with the person's words shows it, while its run opens with them. */
   it('shows a record going on with the person’s words as going on', async () => {
-    SESSIONS = [{ ...DRIVEN, answer: 'also cap it' }];
+    SESSIONS = [{ ...DRIVEN, said: said('also cap it') }];
     driver({});
     show('s1a2b3c4');
 
@@ -538,7 +539,6 @@ describe('clearing a parked session', () => {
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
       payload: { id: 'p4rk3d00', text: 'go ahead with the PUT' },
     }));
-    expect(vi.mocked(fetch)).not.toHaveBeenCalledWith('/api/sessions/p4rk3d00/answer', expect.anything());
   });
 
   /**
@@ -569,7 +569,6 @@ describe('clearing a parked session', () => {
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
       payload: { id: 'p4rk3d00', text: 'yes' },
     }));
-    expect(vi.mocked(fetch)).not.toHaveBeenCalledWith('/api/sessions/p4rk3d00/answer', expect.anything());
     await waitFor(() => expect(notify).toHaveBeenCalledWith("Answered — the same session goes on with your words at the driver's next look."));
   });
 
@@ -654,7 +653,7 @@ describe('clearing a parked session', () => {
     const notify = vi.fn();
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'SESSION_INPUT') {
-        SESSIONS = [{ ...PARKED, answer: 'go ahead with the PUT', note: `${PARKED.note}\n\nAnswered: go ahead with the PUT` }];
+        SESSIONS = [{ ...PARKED, said: said('go ahead with the PUT'), note: `${PARKED.note}\n\nAnswered: go ahead with the PUT` }];
         return { sent: true, reaches: 'resume' };
       }
       if (type === 'SESSION_QUEUE') return { session: 'p4rk3d00', queued: [], taking: false, reaches: 'resume' };

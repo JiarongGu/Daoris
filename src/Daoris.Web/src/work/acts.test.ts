@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Quest, Session } from '../data/api';
 import type { SessionGrouping } from './groups';
 import { folderOf, handOverLabel, offeredActs, primaryAct, stopAsk, workTargetOf } from './acts';
+import { said } from '../test/said';
 
 // Which acts a session is offered, by the one rule its row's ⋯ and its page header share (SESSUX1d, D126 §3.1): each
 // offered where it applies and absent where it does not, never disabled (D119 §3.2). Pure, so every session a person
@@ -77,7 +78,7 @@ describe('the acts a session is offered', () => {
   /** ANSWER1c (D131): answered, the same session goes on at the driver's next look, and there is no box to answer in. */
   it('offers no answer to a park the person has answered, and keeps its stop', () => {
     const answered = {
-      session: session({ state: 'awaiting-person', answer: 'Use the second.' }),
+      session: session({ state: 'awaiting-person', said: said('Use the second.') }),
       grouping: placed({ group: 'working', shown: 'answered' }),
       root: ROOT,
     };
@@ -274,7 +275,7 @@ describe('what a stop says before it is meant', () => {
     expect(stopAsk(session({ state: 'queued' }), quest('Open'))).toEqual({ key: 'work.stop.drivenOpen', values: { quest: 'abc123' } });
     expect(stopAsk(session({ state: 'awaiting-person' }), quest('Taken'))).toEqual({ key: 'work.stop.parked', values: {} });
     // ANSWER1c: answered, it is not stopped unanswered; it holds its quest as a driven session at work does.
-    expect(stopAsk(session({ state: 'awaiting-person', answer: 'carry on.' }), quest('Taken')))
+    expect(stopAsk(session({ state: 'awaiting-person', said: said('carry on.') }), quest('Taken')))
       .toEqual({ key: 'work.stop.drivenHeld', values: {} });
     expect(stopAsk(session({ quest: null, kind: 'chat' }), null)).toEqual({ key: 'work.stop.chat', values: {} });
     expect(stopAsk(session({ quest: null, kind: 'chat', ask: '0fda18' }), null)).toEqual({ key: 'work.intake.stopMeans', values: {} });

@@ -122,7 +122,6 @@ public static class OpenRoutes
         ("drive", null, "alone: it is a loop, the home's lease's holder, refused where the desktop holds the home unless `--share` (DRV8a)"),
         ("update", null, "alone: a request file under the home the desktop's updater watches (D139); its window twin is the update banner, no route"),
         ("quest delete|accept|done|reopen|go-on|check|review", null, "alone: the service's door, its one writer, as the page's own HTTP call is (§7.1)"),
-        ("answer", null, "alone: the service's door, its one writer, as the page's own HTTP call is (§7.1)"),
         ("ask \"…\"", null, "alone: the service publishes an ask, its one writer, as the page's own HTTP call does (§7.1)"),
         ("sync status", null, "alone: a read of the service's own standing (`/api/sync`), as the page's read is"),
     ];

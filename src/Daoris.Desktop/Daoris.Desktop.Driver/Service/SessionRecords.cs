@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
@@ -62,6 +63,15 @@ public static class SessionRecords
 
         return records;
     }
+
+    /// <summary>
+    /// The person's words waiting on a record as the service answers it, joined by a blank line, or null where none wait (ONEWAY1m): read
+    /// from its keyed <c>said</c> words by the one sender rule, never from a joined field.
+    /// </summary>
+    public static string? PersonsSaid(JsonObject record) =>
+        record["said"] is JsonArray said
+            ? SaidWordView.PersonsJoined(said.OfType<JsonNode>().Select(word => ServiceClient.ReadWord(JsonSerializer.SerializeToElement(word))).OfType<SaidWordView>())
+            : null;
 
     /// <summary>Whether a record's note carries a line of <paramref name="code"/>, read from its parts without composing them.</summary>
     private static bool Carries(JsonElement session, string code) =>

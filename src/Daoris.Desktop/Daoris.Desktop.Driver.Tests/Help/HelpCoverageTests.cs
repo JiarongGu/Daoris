@@ -708,8 +708,6 @@ public sealed partial class HelpCoverageTests
             "stopping a session ends its process and holds its quest until the person tries again (D126 §7.3)")),
         ("work", "useResolveSession", null, Own("sessions",
             "finishing, declining or stopping a session parked at a checkpoint is the person's answer to it (D126 §7.3)")),
-        ("work", "useAnswerSession", null, Own("sessions",
-            "answering a session parked to ask the person sends its own conversation on with their words (STANDDOWN2, D131)")),
         ("work", "useParkGoAhead", null, Own("sessions",
             "a go-ahead a parked session asked is answered on the session's own page (KNOWUSE1a2, D135 §2)")),
         ("work", "useLandSessionTree", null, Own("sessions",

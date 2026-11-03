@@ -149,9 +149,6 @@ public static class DriverCommand
           quest clear <id> [--failed] [--yes]  ·  ask --clear <id> [--yes]
               list what clearing a workspace's finished history, one closed quest's work (or, with --failed, its
               failed sessions) or one ask's work would take and keep; with --yes, clear it from this machine.
-          answer <session> ["…"]
-              answer a session that parked to ask you; the same session goes on with your words at the
-              driver's next look.
           notices [--json]
               what came to you, changing nothing: what waits for your confirmation (by act and session), what needs
               you by group, unread messages by ask, and Done and failed, as the running Daoris holds them; without
@@ -165,12 +162,12 @@ public static class DriverCommand
               waiting for its turn's end go next, where its door can.
           sessions archive <id>… | --ended [--yes]  ·  sessions unarchive <id>…  ·  sessions delete <id>
               take ended sessions out of the list, or bring them back; delete a conversation that served no quest.
-          sessions say <id> "…" [--file <path>]… [--level ordinary|urgent|now] [--now]
+          sessions say <id> "…" [--file <path>]… [--level ordinary|urgent|now]
               say something to a session of this machine's: read at its next step or when its turn ends while it
-              works, or, parked or ended, the same session goes on with it. Prints where the words stand. --level
-              is when it reads them while it works: ordinary at its turn's end, urgent (the default) at its next
-              step, now cutting its step where its agent steers; no level stops its turn. --now is --level now. It
-              says what the door did, and why where it could not.
+              works, or, parked or ended, the same session goes on with it: a park's answer is said here. Prints
+              where the words stand. --level is when it reads them while it works: ordinary at its turn's end,
+              urgent (the default) at its next step, now cutting its step where its agent steers; no level stops
+              its turn. It says what the door did, and why where it could not.
           sessions take-back <id> [<word>]  ·  sessions reword <id> <word> "…"
               take back one of your words waiting on a parked or ended session before it goes on with them, or put
               new words in its place; with no word, list those waiting with their ids.

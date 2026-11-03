@@ -873,11 +873,11 @@ public static class NeedsAPerson
             .Select(path => path.Replace('\\', '/').TrimEnd('/').Split('/')[^1]).FirstOrDefault(name => name.Length > 0);
 
     /// <summary>
-    /// A session parked to ask that nobody answered yet (ANSWER1c): the person's answer goes on at the driver's next look. Never Ask
-    /// Daoris's conversation, which is answered in its own panel (ASKRAIL1).
+    /// A session parked to ask that nobody answered yet (ANSWER1c): the person's answer, read from its keyed words (ONEWAY1m), goes on at
+    /// the driver's next look. Never Ask Daoris's conversation, which is answered in its own panel (ASKRAIL1).
     /// </summary>
     private static bool Parks(JsonObject session) =>
-        Text(session, "state") == "awaiting-person" && Truthy(session, "answer") is null && !AskDaoris(session);
+        Text(session, "state") == "awaiting-person" && SessionRecords.PersonsSaid(session) is null && !AskDaoris(session);
 
     /// <summary>Ask Daoris's conversation (HELP1a, D89), by the repository it is recorded in: no session row of Sessions' (ASKRAIL1).</summary>
     private static bool AskDaoris(JsonObject? session) => Text(session, "repository") == HelpRoom.Repository;

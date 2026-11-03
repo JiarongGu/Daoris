@@ -1,8 +1,9 @@
+import type { SaidWord } from '../../data/api';
 import type { SessionEvent } from './conversation';
 
 /**
- * Who said a word (COMMS1a, the comms design §3.3), read once from an event's marks and never stored. This is the page's twin of the
- * service's `Senders` and the driver's, held with them to `fixtures/senders.json` among the service's tests, row for row.
+ * Who said a word (COMMS1a, the comms design §3.3), read once from an event's marks, or a kept word's, and never stored. This is the
+ * page's twin of the service's `Senders` and the driver's, held with them to `fixtures/senders.json` among the service's tests, row for row.
  *
  * `composed` is an event's only: the target Daoris composed, which carries no mark of a sender.
  */
@@ -38,6 +39,21 @@ export function senderOf(
   if (event.opinion) return 'opinion';
   if (event.helper) return helperWork === 'partner' ? 'partner' : 'helper';
   if (target) return event.channel ? 'channel' : 'composed';
+  return 'person';
+}
+
+/**
+ * The sender of a word kept on a record, by its marks as the service's `Senders.Of` reads them (ONEWAY1m: a park's answer is read from
+ * these words): Daoris's mark is its own here, never the person's, and a helper's word with a `partner:` key is a partner's.
+ */
+export function wordSenderOf(word: Pick<SaidWord, 'from' | 'by' | 'helper' | 'key'>): Sender {
+  if (word.from) {
+    if (word.from === 'supervisor') return 'supervisor';
+    if (word.from === 'daoris') return 'daoris';
+    return word.from === 'agent' ? 'channel' : 'unattributed';
+  }
+  if (word.by) return 'opinion';
+  if (word.helper) return word.key?.startsWith('partner:') ? 'partner' : 'helper';
   return 'person';
 }
 

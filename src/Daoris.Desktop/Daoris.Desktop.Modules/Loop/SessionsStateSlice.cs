@@ -24,8 +24,8 @@ namespace Daoris.Desktop;
 /// conversation's end and the service coming up, on the kit's bus; and the change stream's <c>sessions</c> family, heard where the
 /// watch tells the loop its moves (<see cref="DriverLoop.HeardMove"/>), which is how a connector's write arrives.</para>
 ///
-/// <para><b>Desktop-only.</b> A record's tree is a machine path, which only this machine's windows read (D47, D182 point 2); the
-/// transcript, the words waiting and the rest the page does not read stay the pull's.</para>
+/// <para><b>Desktop-only.</b> A record's tree is a machine path and its words waiting are the person's own, which only this machine's
+/// windows read (D47, D182 point 2); the transcript and the rest the page does not read stay the pull's.</para>
 /// </remarks>
 public static class SessionsStateSlice
 {
@@ -39,7 +39,9 @@ public static class SessionsStateSlice
     public static readonly IReadOnlyList<string> Fields =
     [
         "id", "quest", "repository", "adapter", "state", "kind", "note", "evidence", "created", "updated", "workspace", "harnessVersion",
-        "profile", "tree", "baseCommit", "ask", "opinion", "serves", "from", "fromWhy", "fromBy", "answer", "access", "noteParts", "piece",
+        "profile", "tree", "baseCommit", "ask", "opinion", "serves", "from", "fromWhy", "fromBy", "access", "noteParts", "piece",
+        // ONEWAY1m: the words waiting, each with whose it is, which the page reads a park's answer from.
+        "said",
         // An account's limit made its failure: every list words it limited (LIMITRESUME1a, D206 point 1).
         "limit",
         // D205 §9.3: the machine-local provenance, absent on a mirror and a sync.
@@ -52,13 +54,13 @@ public static class SessionsStateSlice
     ];
 
     /// <summary>
-    /// What the service answers of a record that is never pushed: the transcript's path, the words waiting, and what no view reads
-    /// from the list (whether its quest was taken by its connector, a stop's cause, its delete, its line of work, its mode, and why
+    /// What the service answers of a record that is never pushed: the transcript's path, and what no view reads from the list
+    /// (whether its quest was taken by its connector, a stop's cause, its delete, its line of work, its mode, and why
     /// its take's bind lapsed, which the driver's end line reads, CLOSETAKE1; and the downloaded versions its starts were handed,
     /// which the downloads' rule reads, KEEP1b; and the part its line ends at, which the groups slice's entries carry for the page, LINESTOGETHER1a).
     /// </summary>
     public static readonly IReadOnlyList<string> PulledOnly =
-        ["transcript", "took", "interrupted", "deletable", "said", "entry", "helpMode", "tookBind", "resolved", "head"];
+        ["transcript", "took", "interrupted", "deletable", "entry", "helpMode", "tookBind", "resolved", "head"];
 
     /// <summary>
     /// What wakes it on the kit's bus: a change declared to the sessions, a conversation's end and the service coming up. The
