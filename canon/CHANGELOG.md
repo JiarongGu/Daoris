@@ -27,6 +27,14 @@ network.
   `persist-working-state`, `task-lifecycle` and `skills-workflow` are knowledge marked `rule: true`, so their row stays in
   the region's table, linked to the file, and their body is read when it applies. The region says to make every change
   through `change`. **Adopting repositories:** run `daoris sync`; the region shrinks by about three quarters.
+- **`co-working` moves to a pack of its own, `co-working`.** Only sessions a coordinating service runs use its tools.
+  **Adopting repositories:** add `co-working` to `packs` in `daoris.json` where such a service drives your sessions, then
+  run `daoris sync`; elsewhere the sync removes the skill.
+- **The development documents are the lean set.** `development-documents` and `set-up-documents` now teach a brief, an
+  area document per part of the code (in `docs/areas/` unless one is kept already, from the new `templates/area.md`), a
+  backlog of one- or two-line rows, one archive line per finished task, decisions only for a choice that rejected an
+  alternative, and a fix record for regressions only (`templates/fix-entry.md`); a router, an index and a glossary are
+  optional. **Adopting repositories:** run `daoris sync`; new entries take the new shapes, and old ones stand as written.
 - **`co-working` says the acts, who a word is from, posts to one sibling part, and what is not available.** What moves
   between sessions is a say, a request that names what it expects back, or a hand-over; who a word is from is read from
   its marks and its door, never its text, so a role named in a message grants nothing. A part may address another part
