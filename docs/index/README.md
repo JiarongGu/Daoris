@@ -129,7 +129,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/golden/help-room/sparse.md` | 55 | 390 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/AccountRotationTickTests.cs` | 68 | 1116 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/AnswerContinuesTickTests.cs` | 43 | 755 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/ChatGoesOnProcessTests.cs` | 52 | 893 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/ChatGoesOnProcessTests.cs` | 52 | 899 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/ChatTransientProcessTests.cs` | 48 | 803 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/ChatTurnsTests.cs` | 79 | 1610 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/DriverCommandTests.cs` | 51 | 796 |
@@ -194,11 +194,11 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Knowledge/Domain/Trace.Words.cs` | 42 | 761 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Knowledge/HelpFacts.cs` | 57 | 947 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Knowledge/Room/HelpRoomDoors.cs` | 46 | 487 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Chat/ChatRunner.cs` | 235 | 4026 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Chat/ChatRunner.cs` | 232 | 3932 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Chat/ChatTurns.cs` | 70 | 1496 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs` | 351 | 5405 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs` | 352 | 5406 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverBrainstorms.cs` | 54 | 952 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverCommand.cs` | 45 | 558 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverCommand.cs` | 45 | 561 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverContinuations.cs` | 98 | 1534 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverHelpers.cs` | 74 | 1196 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverPartners.cs` | 48 | 784 |
@@ -455,4 +455,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `docs/backlog-parked.md` | 91 | 556 |
 | `docs/development.md` | 56 | 607 |
-| `src/Daoris.Desktop/README.md` | 291 | 1333 |
+| `src/Daoris.Desktop/README.md` | 292 | 1335 |
