@@ -1405,7 +1405,7 @@ public static class Planner
             // starts saying so. A unit is earlier while it is taken, running, started at this look or still integrating.
             var overlap = continuing || quest.Status != "Open" ? null : OverlapOf(quest);
             if (overlap is not null
-                && LandingRules.Choose(config, quest.To, repo.Workspace).Rule.Integrate?.Overlap == LandingIntegrate.Wait)
+                && config.LinePolicyOf(quest.To, repo.Workspace)?.Overlap == LandingIntegrate.Wait)
             {
                 return new(quest, StartVerdict.RepositoryBusy, $"{overlap.Said} — it starts once that work is integrated.")
                 {

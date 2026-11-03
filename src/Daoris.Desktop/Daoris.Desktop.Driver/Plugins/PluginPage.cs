@@ -76,7 +76,7 @@ public static class PluginPage
             {
                 To = server.To, Allow = server.Allow, Writes = server.Writes,
             }, server))],
-            manifest.Hooks?.Points.Contains(HookPoints.Land, StringComparer.Ordinal) == true ? Landing(home, plugin, catalog) : null,
+            manifest.Hooks?.Points.Contains(HookPoints.Land, StringComparer.Ordinal) == true ? Landing(plugin, catalog) : null,
             Source(home, entry, offers),
             Count(entry.Data, CountBound, CountTime),
             PluginFolders.Tests(entry.Folder, CountBound))
@@ -112,18 +112,8 @@ public static class PluginPage
 
     private static bool DrivesBrowser(string text) => text.Contains(InAppBrowserServers.Placeholder, StringComparison.Ordinal);
 
-    /// <summary>The rules in <c>driver.json</c> that name the plugin, a repository's before a workspace's, and whether it can land work here.</summary>
-    private static PageLanding Landing(string home, string plugin, PluginCatalog catalog)
-    {
-        var config = DriverConfig.Load(DriverConfig.ResolvePath(home));
-        IEnumerable<PageRule> Naming(IReadOnlyDictionary<string, LandingRule> rules, string scope) => rules
-            .Where(pair => string.Equals(pair.Value.Plugin, plugin, StringComparison.OrdinalIgnoreCase))
-            .OrderBy(pair => pair.Key, StringComparer.Ordinal)
-            .Select(pair => new PageRule(scope, pair.Key, pair.Value.Pattern));
-        return new PageLanding(
-            [.. Naming(config.Landings, LandingSource.Repository), .. Naming(config.WorkspaceLandings, LandingSource.Workspace)],
-            LandingRules.PluginProblem(plugin, catalog));
-    }
+    /// <summary>Whether the plugin can land work here; no rule names it, since a workflow's <c>land</c> does.</summary>
+    private static PageLanding Landing(string plugin, PluginCatalog catalog) => new([], LandingRules.PluginProblem(plugin, catalog));
 
     /// <summary>Where it came from, and what an update would do: <c>waits</c> with what changes, <c>current</c>, or the refusal.</summary>
     private static PageSource Source(string home, PluginEntry entry, string? offers)

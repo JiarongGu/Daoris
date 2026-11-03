@@ -55,7 +55,7 @@ internal static class IntegrationAuthority
             return null;
         }
 
-        var landing = LandingRules.Effective(config, request.Repository, request.Workspace);
+        var landing = LandingRules.Line(config, request.Repository, request.Workspace);
         if (landing.Rule is not { Form: LandingForm.Branch, Integrate: { } integrate })
         {
             return $"`{request.Repository}`'s landing rule no longer carries `integrate`, so a request made under it is no longer admitted";

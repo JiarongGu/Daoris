@@ -379,49 +379,7 @@ public sealed class NodeRuntime(
     public DateTimeOffset? NextDue { get; private set; }
 
     /// <summary>
-    /// Whether any graph the choices set names a plugin's performed node: a landing rule's <c>cycle</c>, a repository's or a workspace's
-    /// <c>workCycles</c>. Read from the choices alone, so an install that names none is judged without a file, a git call or a process.
-    /// </summary>
-    /// <remarks>
-    /// FABRIC-PERFORM1i: a plugin's observed node arms it too, the parent's ruling for the row (the owner's aim, "maximize the automation", and a
-    /// graph a person wrote naming the step): RUN1 armed on performed nodes alone. Choices naming neither still read, tell, write and start nothing.
-    /// INTEGRATE1n (§17.4, F51): a landing rule carrying <c>integrate</c> arms it too, for the branch units of the repositories whose rule
-    /// carries it alone (<see cref="Integrates"/> on the rule's own landing graph, read with no cycle parsed): a rule with none arms nothing.
-    /// </remarks>
-    public static bool Armed(DriverConfig config) =>
-        config.Landings.Values.Concat(config.WorkspaceLandings.Values)
-            .Any(rule => (rule.Cycle is not null && Acts(NodeGraphHomes.OfLanding(rule, LandingSource.Repository).Graph))
-                         || (rule.Integrate is not null && Integrates(NodeGraphHomes.Landing(rule))))
-        || config.WorkCycles.Values.Concat(config.WorkspaceWorkCycles.Values).SelectMany(kinds => kinds.Values)
-            .Any(json => NodeGraphs.Read(json).Graph is var graph && (Acts(graph) || QuestClosing.Holds(graph)));
-
-    /// <summary>
-    /// Whether the choices arm the runtime by <c>integrate</c> alone (INTEGRATE1n part n3, F51): a landing rule carries it, and no plugin's node,
-    /// no cycle that acts and no closure graph is named beside it. Only then can the look's inventory read be narrowed to the integrating
-    /// repositories' branch units, since nothing else the pass governs reads another's.
-    /// </summary>
-    public static bool IntegratesAlone(DriverConfig config)
-    {
-        var rules = config.Landings.Values.Concat(config.WorkspaceLandings.Values).ToList();
-        return rules.Any(rule => rule.Integrate is not null && Integrates(NodeGraphHomes.Landing(rule)))
-               && !rules.Any(rule => rule.Cycle is not null && Acts(NodeGraphHomes.OfLanding(rule, LandingSource.Repository).Graph))
-               && !config.WorkCycles.Values.Concat(config.WorkspaceWorkCycles.Values).SelectMany(kinds => kinds.Values)
-                   .Any(json => NodeGraphs.Read(json).Graph is var graph && (Acts(graph) || QuestClosing.Holds(graph)));
-    }
-
-    /// <summary>Whether a repository's Current branch graph holds <c>integrate</c> (INTEGRATE1n, F51): its branch units are the pass's, and no other's.</summary>
-    public static bool Integrating(DriverConfig config, string repository, string? workspace) =>
-        Integrates(NodeGraphHomes.Work(config, repository, workspace, WorkUnitKind.Branch).Graph);
-
-    /// <summary>
-    /// Whether the look's inventory read may be narrowed to the integrating repositories' branch units (INTEGRATE1n part n3, F51):
-    /// <see cref="IntegratesAlone"/>, with no closure graph kept and no run bound to a graph version, whose quests, sessions and branches the
-    /// wider read links. Read before each look, so a run opening or a rule changing widens the next read.
-    /// </summary>
-    public bool ReadsIntegratingOnly(DriverConfig config) => IntegratesAlone(config) && !KeepsClosures && !ArmsRuns;
-
-    /// <summary>
-    /// The units a graph naming a plugin's performed node governs (<see cref="NodeGraphHomes.Work"/>), in id order, each with its graph, run
+    /// The units a graph governs, in id order, each with its graph, run
     /// and declarations. A plugin's performed node is evaluated and started under its plugin's step (<paramref name="steps"/>): that step's
     /// <c>perform</c>, and its retry, timeout and evidence where the graph's node declares none. A node whose plugin declares no such step at
     /// the graph's version and reach is never sent.
@@ -450,25 +408,19 @@ public sealed class NodeRuntime(
         var quests = Quests(read);
         var owners = new RunOwners(quests, runs ?? [], read.Unread.Count == 0);
 
-        // INTEGRATE1n (F51): a graph is judged once for each repository, workspace and kind, never again for every unit of it, so the units of
-        // a repository whose rule carries no `integrate` (nor any plugin's node) cost a lookup each, and only an integrating repository's are governed.
-        var homes = new Dictionary<(string Repository, string? Workspace, string Kind), NodeGraph?>();
         foreach (var each in read.Units.OrderBy(unit => unit.Id, StringComparer.Ordinal))
         {
             var unit = each;
             var repository = unit.Owner.Repository ?? "";
-            if (!homes.TryGetValue((repository, unit.Owner.Workspace, unit.Kind), out var graph))
-            {
-                homes[(repository, unit.Owner.Workspace, unit.Kind)] = graph = NodeGraphHomes.Work(config, repository, unit.Owner.Workspace, unit.Kind).Graph;
-            }
+            // Only a run's own record and a closure graph a quest was bound to govern a unit: no graph is drawn from the choices.
+            NodeGraph? graph = null;
 
             // FABRIC-CLOSE1b: a closure graph governs a quest bound to it at its take, and only that quest; any other keeps today's done.
-            // FABRIC-CLOSE1l, the review's finding 6: the graph it was bound to, kept by this home where the choices hold another or none.
+            // FABRIC-CLOSE1l, the review's finding 6: the graph it was bound to, kept by this home.
             var closes = false;
             if (unit.Kind == WorkUnitKind.Quest && unit.Records.Quest is { Closure: { Length: > 0 } bound } quest)
             {
-                if (graph is not null && QuestClosing.Holds(graph) && NodeGraphs.Digest(graph) == bound) closes = true;
-                else if (kept?.Invoke(bound) is { } bin)
+                if (kept?.Invoke(bound) is { } bin)
                 {
                     graph = bin;
                     closes = true;
@@ -731,7 +683,7 @@ public sealed class NodeRuntime(
     /// </summary>
     public async Task<bool> WithdrawAsync(DriverConfig config, CancellationToken ct)
     {
-        if (Armed(config) || KeepsClosures || ArmsRuns) return false;
+        if (KeepsClosures || ArmsRuns) return false;
         if (!Holding) return true;
         await _one.WaitAsync(ct).ConfigureAwait(false);
         try
@@ -821,11 +773,7 @@ public sealed class NodeRuntime(
                 foreach (var unit in read.Units) ends[unit.Id] = WorkEndState.Over(unit.End.State);
                 _ends = ends;
                 QuestReads.Keep(home, _quests); // FABRIC-CLOSE1q5: the terminal's `work held` judges on it; the lease is held here.
-                if (_closer is not null)
-                {
-                    Keep(look.Config, _governed.Values);
-                    bindings.AddRange(Bindings(look.Config, read, _governed));
-                }
+                if (_closer is not null) bindings.AddRange(Bindings(look.Config, read, _governed));
             }
 
             var governed = _governed!;
@@ -1136,7 +1084,7 @@ public sealed class NodeRuntime(
 
         // The landing's acceptance read first, with no git and no write: where it was no request, the node waits ready for the owner's card
         // or the steward's act, and nothing is written (a rule gaining `integrate` over standing landings requests none of them).
-        var landing = LandingRules.Effective(settings, repository, governed.Watched.Workspace);
+        var landing = LandingRules.Line(settings, repository, governed.Watched.Workspace);
         if (IntegrationRequests.NodeJudgement(ask, landed.Entry, landing).Refused is { } waits)
         {
             // INTEGRATE1h: the owner's card made this landing's request at its tip (the recorded-landing door keeps its unit), so the node
@@ -1824,19 +1772,6 @@ public sealed class NodeRuntime(
     }
 
     /// <summary>
-    /// Keeps each closure graph a governed quest is closed by, as the choices hold it now (FABRIC-CLOSE1l, the review's finding 6): a quest
-    /// bound before a graph was edited or removed is closed by the graph it was bound to. Kept once, by its digest.
-    /// </summary>
-    private void Keep(DriverConfig config, IEnumerable<GovernedUnit> governed)
-    {
-        foreach (var each in governed.Where(each => each.Closes))
-        {
-            var home = NodeGraphHomes.Work(config, each.Unit.Owner.Repository ?? "", each.Unit.Owner.Workspace, WorkUnitKind.Quest);
-            if (home.Graph is { } graph && home.Cycle is { } json && NodeGraphs.Digest(graph) == each.GraphDigest) ClosureGraphs.Keep(records.Home, each.GraphDigest, json);
-        }
-    }
-
-    /// <summary>
     /// What a fresh read says of the open quests bound to a closure graph the choices no longer hold (FABRIC-CLOSE1k; D190, design §8), one
     /// line each, so once a pass: one closed through the graph this home keeps for it, naming the nodes that graph runs which the choices'
     /// graph does not, and those the choices' graph runs which it does not; one whose graph is kept nowhere here, so nothing here closes it
@@ -1848,8 +1783,7 @@ public sealed class NodeRuntime(
         foreach (var unit in read.Units.Where(unit => unit.Kind == WorkUnitKind.Quest).OrderBy(unit => unit.Id, StringComparer.Ordinal))
         {
             if (unit.Records.Quest is not { Closure: { Length: > 0 } bound, Status: not "Done" } quest) continue;
-            var choices = NodeGraphHomes.Work(config, unit.Owner.Repository ?? "", unit.Owner.Workspace, WorkUnitKind.Quest).Graph;
-            var held = QuestClosing.Holds(choices) ? choices : null;
+            NodeGraph? held = null;
             if (governed.GetValueOrDefault(unit.Id) is not { Closes: true } own)
             {
                 lines.Add($"work  {unit.Id}: #{quest.Id} is bound to the closure graph `{bound}`, which is kept nowhere here and is not the "

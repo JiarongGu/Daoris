@@ -34,10 +34,10 @@ public static class DriverStateSlice
         ["choices"] =
         [
             "drivable", "holds", "trees", "notify", "strikes", "coolOff", "forgiven", "intakeAdapter", "helperAdapter", "helpMode", "helpGrants",
-            "lines", "workspaceLines", "landings", "workspaceLandings", "readAcross", "workspaceReadAcross", "writeAcross", "checkoutWrites", "standing",
+            "lines", "workspaceLines", "readAcross", "workspaceReadAcross", "writeAcross", "checkoutWrites", "standing",
             "languages", "workspaceLanguages", "languageTable", "reviews", "workspaceReviews", "opinions", "workspaceOpinions",
             "helpers", "workspaceHelpers", "handOver", "workspaceHandOver", "commits", "workspaceCommits", "access", "workspaceAccess", "machineAccess", "heavyGates",
-            "sessionChecks", "unreadLandings", "workspaceUnreadLandings",
+            "sessionChecks",
             // TERMTRUST1a (D201): the standing confirmation, as This Daoris's row, Notifications' line and the hold's mark read it.
             "standingConfirmation",
             // GITAUTH1f (D198): git access at each level, as Settings → Git and the remote rows read it.

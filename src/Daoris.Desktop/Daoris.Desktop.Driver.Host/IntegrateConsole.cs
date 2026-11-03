@@ -59,7 +59,7 @@ internal static class IntegrateConsole
                 return 1;
             }
 
-            var line = LandingRules.Effective(config, repository, row.Workspace).Rule?.Integrate?.Resolved().Line
+            var line = config.LinePolicyOf(repository, row.Workspace)?.Resolved().Line
                        ?? (await CanonicalLine.ResolveAsync(row.Root!, repository, row.Workspace, config, closing).ConfigureAwait(false)).Branch;
             if (line is null)
             {

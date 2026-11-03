@@ -144,7 +144,7 @@ internal sealed class TogetherAccepts(TreeContext context, TreeLands lands)
         TogetherOperation operation, LandingSubject subject, IWorkplaceGate? gate, string repository, string workspace, CancellationToken ct)
     {
         var plan = await lands.PlanAsync(operation.Head.Tree, subject, ct, gate?.Process).ConfigureAwait(false);
-        var rule = LandingRules.Effective(context.Config(), repository, workspace).Rule;
+        var rule = LandingRules.Line(context.Config(), repository, workspace).Rule;
         return (plan.Form == LandingForm.Merge ? TogetherForms.Merge : rule.Squash ? TogetherForms.Squash : TogetherForms.Branch, plan.Target);
     }
 
