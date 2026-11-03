@@ -26,6 +26,12 @@ public sealed record BriefTree(string? Head, IReadOnlyList<string> Uncommitted, 
 /// <summary>What a brief is composed from: the line a new part continues, oldest part first, and what was read beside it.</summary>
 /// <param name="Why">Why the session moves on now, one of <see cref="HandOverWhy"/>.</param>
 /// <param name="Parts">The line, one chain back by each part's <c>from</c>: the part moved from last, never a part beside it.</param>
+/// <summary>
+/// One thing a line waits on, as plain values (COMMS1f): the request's id, the session that owns it, whom it asked, its delivery and
+/// outcome as the exchanges' read gives them, and the words of the ask where it has some.
+/// </summary>
+public sealed record BriefWait(string Id, string Owner, string To, string Delivery, string Outcome, string? Detail = null);
+
 public sealed record BriefLine(string Why, IReadOnlyList<BriefPart> Parts)
 {
     /// <summary>A conversation's line: its request is its first word, which item 3 does not tell again. A driven line's is its quest.</summary>
@@ -55,8 +61,8 @@ public sealed record BriefLine(string Why, IReadOnlyList<BriefPart> Parts)
     /// <summary>The entry's other parts, beside the line, one line each (§3.1 item 7).</summary>
     public IReadOnlyList<string> Others { get; init; } = [];
 
-    /// <summary>The questions the session asked that no word answered yet: a go-ahead, a helper's ask still open.</summary>
-    public IReadOnlyList<string> Open { get; init; } = [];
+    /// <summary>What the line waits on: each request its parts sent that nothing has answered, or whose answer is kept and not yet handed.</summary>
+    public IReadOnlyList<BriefWait> Open { get; init; } = [];
 
     /// <summary>
     /// The memory the line read, newest first, each entry in one line as the service rechecked it when the brief was composed, never as it
@@ -131,6 +137,9 @@ public static class ContextBrief
 
     /// <summary>The most memory entries the line read that the state names, the newest; each clipped at <see cref="MemoryItemLimit"/>.</summary>
     public const int MemoryLimit = 5;
+
+    /// <summary>The most things the line waits on that the state names, the oldest; the rest are counted.</summary>
+    public const int WaitLimit = 8;
 
     /// <summary>The most one memory entry's line weighs.</summary>
     public const int MemoryItemLimit = 400;
@@ -566,7 +575,9 @@ public static class ContextBrief
                 : $"\n- The last check that failed, `{failedCheck.Gate}`, kept no output.");
         }
 
-        fixedLines.AddRange(line.Open.Select(open => $"\n- Asked and not answered yet: {TextBounds.OneLine(open)}"));
+        fixedLines.AddRange(line.Open.Take(WaitLimit).Select(WaitText));
+        var waitsLeft = Math.Max(0, line.Open.Count - WaitLimit);
+        if (waitsLeft > 0) fixedLines.Add($"\n- … and {waitsLeft} more things this line waits on.");
         fixedLines.AddRange(line.Memory.Take(MemoryLimit).Select(entry =>
             $"\n- Memory this line read, as it stands now: {TextBounds.Clip(TextBounds.OneLine(entry), MemoryItemLimit)}"));
         var memoryLeft = Math.Max(0, line.Memory.Count - MemoryLimit);
@@ -615,6 +626,26 @@ public static class ContextBrief
 
     private static string List(IReadOnlyList<string> entries, int shown) =>
         string.Concat(entries.Take(shown).Select(entry => $"\n    - {entry}")) + (entries.Count > shown ? $"\n    - … and {entries.Count - shown} more" : "");
+
+    private static string WaitText(BriefWait wait)
+    {
+        var delivery = wait.Outcome == "answered"
+            ? "answered, and the answer is kept, not yet handed"
+            : wait.Delivery switch
+            {
+                "kept" => "kept by Daoris, not yet taken up",
+                "attempted" => "tried, not yet confirmed",
+                "sent" => "sent, not yet taken up",
+                "taken" => "taken up, not yet answered",
+                "uncertain" => "sent once and not known to have arrived, so it waits for the person",
+                "not-reached" => "did not reach its receiver",
+                "elsewhere" => "waiting on another repository",
+                _ => wait.Delivery,
+            };
+        var detail = wait.Detail is { Length: > 0 } text ? $": {TextBounds.Clip(TextBounds.OneLine(text), StepLimit)}" : "";
+        return $"\n- What this line waits on: `{wait.Id}`, asked by session `{wait.Owner}` of {TextBounds.OneLine(wait.To)}; {delivery}. "
+               + $"Its answer comes to this line{detail}";
+    }
 
     private static (string? Text, int Left) Others(IReadOnlyList<string> others)
     {

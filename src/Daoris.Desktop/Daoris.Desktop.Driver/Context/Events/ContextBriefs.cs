@@ -90,7 +90,7 @@ internal static class ContextBriefs
             Note = note,
             NoteAsked = noteAsked,
             Others = Others(json, line),
-            Open = Open(home, line),
+            Open = await WaitsAsync(service, home, json, session, ct).ConfigureAwait(false),
             Memory = await MemoryAsync(service, session, ct).ConfigureAwait(false),
         });
     }
@@ -253,21 +253,16 @@ internal static class ContextBriefs
         ];
     }
 
-    /// <summary>The asks the line's parts made that no answer settled yet (design §3.1 item 5): a helper's ask still open.</summary>
-    private static IReadOnlyList<string> Open(string home, IReadOnlyList<LinePart> line)
+    /// <summary>What the line waits on (COMMS1f), as the work orders' read of its exchanges gives it; none where it could not be had.</summary>
+    private static async Task<IReadOnlyList<BriefWait>> WaitsAsync(
+        ServiceClient service, string home, string json, string session, CancellationToken ct)
     {
-        var on = line.Select(part => part.Session).ToHashSet(StringComparer.Ordinal);
-        var helpers = new HelperFiles(home);
         try
         {
-            return
-            [
-                .. helpers.Asks()
-                    .Where(ask => on.Contains(ask.Asker) && !HelperWaits.Settled(helpers.ReadState(ask.Id)))
-                    .Select(ask => $"a helper's answer to session `{ask.Asker}`'s question: {TextBounds.Clip(TextBounds.OneLine(ask.Question), ContextBrief.StepLimit)}"),
-            ];
+            return await ContextWorkOrders.Current.WaitsAsync(service, home, ServiceClient.ReadRecords(json), session, ct).ConfigureAwait(false);
         }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
+        catch (Exception error) when (error is HttpRequestException or DriverException or System.Text.Json.JsonException or InvalidOperationException
+                                          || (error is OperationCanceledException && !ct.IsCancellationRequested))
         {
             return [];
         }
