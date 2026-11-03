@@ -177,8 +177,8 @@ public sealed class RepositoryIndexesTests : IDisposable
         Declare("{ \"router\": \"docs/README.md\" }");
         var quest = new QuestView("abc123", "Platform", "Game", "Split the loader", "Two jobs.", "Open");
 
-        Assert.Equal(["docs/README.md", ".claude/INDEX.md"], SessionTarget.ForQuest(quest, _tree, "http://localhost:5177").Indexes);
+        Assert.Equal(["docs/README.md", ".claude/INDEX.md"], SessionTarget.ForQuest(quest, _tree, "http://localhost:5177").Block!.Indexes);
         var bare = Directory.CreateDirectory(Path.Combine(_tree, "a-tree-that-keeps-none")).FullName;
-        Assert.Empty(SessionTarget.ForQuest(quest, bare, "http://localhost:5177").Indexes);
+        Assert.Empty(SessionTarget.ForQuest(quest, bare, "http://localhost:5177").Block!.Indexes);
     }
 }

@@ -568,8 +568,20 @@ describe('noteLines', () => {
       expect(noteLines(t, { parts: [coded('chat.told-process', '…', { source: 'default' })] }, 'en')[0].kind).toBe('recorded');
     });
 
+    it('words the standing block a conversation was told under its own lead, in both languages, the block as written', () => {
+      // CONTEXTONE1c: the block after the lead is Daoris's English to the agent, its routing among it, shown as written.
+      const told = coded('chat.told-block', "told the agent Daoris's standing block:");
+      const block = words("Daoris's standing block for this session: where things are, …\n\nRouting standing here: open. …", 'program');
+      expect(noteLines(t, { parts: [told, block] }, 'en')).toEqual([
+        { kind: 'said', text: "The agent was told Daoris's standing block:" },
+        { kind: 'words', text: block.words, by: 'program' },
+      ]);
+      expect(noteLines(zh, { parts: [told] }, 'zh')[0].text).toBe('已告知智能体 Daoris 的常驻说明：');
+    });
+
     it('words the routing standing a conversation was told by the judge’s four, under its own lead, in both languages', () => {
-      // COWORKVIEW1e-i: the words after the lead are Daoris's English to the agent, shown as written.
+      // COWORKVIEW1e-i, read for the records that hold it since the standing block carries the routing (CONTEXTONE1c): the words after
+      // the lead are Daoris's English to the agent, shown as written.
       const told = (standing: string) => coded('chat.told-routing', "told the agent this repository's routing standing, …:", { standing });
       const routing = words('Routing standing here: open. This repository is driven on this machine, …', 'program');
       expect(noteLines(t, { parts: [told('one-at-a-time'), routing] }, 'en')).toEqual([

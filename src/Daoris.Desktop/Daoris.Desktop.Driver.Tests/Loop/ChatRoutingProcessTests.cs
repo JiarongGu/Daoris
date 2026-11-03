@@ -3,9 +3,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COWORKVIEW1e-i (the cowork view design §R11.2 point 4): a chat in a repository is told its routing standing with its first message
-/// and again at each go-on, as the standing is then, and the record keeps a note of what it was told. A real process (node) on the
-/// protocol door, with no model and no account, and the in-process ledger of <see cref="ChatGoOnTests"/>.
+/// COWORKVIEW1e-i (the cowork view design §R11.2 point 4) as CONTEXTONE1c places it: a chat in a repository is told its routing standing in
+/// its standing block, with its first message, and the record keeps a note of the block; a go-on resumes the same conversation and is never
+/// handed it again. A real process (node) on the protocol door, with no model and no account, and the in-process ledger of
+/// <see cref="ChatGoOnTests"/>.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 public sealed class ChatRoutingProcessTests : IDisposable
@@ -39,7 +40,7 @@ public sealed class ChatRoutingProcessTests : IDisposable
     }
 
     private static IReadOnlyList<SessionEvent> Told(SessionEvents events, string id) =>
-        [.. events.Page(id).Events.Where(e => e.Parts?.Any(part => part.Code == "chat.told-routing") == true)];
+        [.. events.Page(id).Events.Where(e => e.Parts?.Any(part => part.Code == "chat.told-block") == true)];
 
     private ChatRunner Runner(ChatLedger ledger, SessionEvents events)
     {
@@ -49,7 +50,7 @@ public sealed class ChatRoutingProcessTests : IDisposable
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 
-    /// <summary>The first message tells a driven repository's chat its standing after the person's words, once, and the record keeps the note.</summary>
+    /// <summary>The first message tells a driven repository's chat its standing block after the person's words, once, and the record keeps the note.</summary>
     [Fact]
     public async Task A_new_chats_first_message_is_told_its_standing_once_and_the_record_keeps_a_note_of_it()
     {
@@ -69,21 +70,23 @@ public sealed class ChatRoutingProcessTests : IDisposable
         var told = "Routing standing here: one at a time.";
         Assert.Contains(told, heard);
         Assert.Contains("`engine:core`, `engine:web`", heard);
-        Assert.True(heard.IndexOf(told, StringComparison.Ordinal) > heard.IndexOf("open the board", StringComparison.Ordinal));
+        var block = heard.IndexOf(StubFile.BlockLead, StringComparison.Ordinal);
+        Assert.True(block > heard.IndexOf("open the board", StringComparison.Ordinal) && block < heard.IndexOf(told, StringComparison.Ordinal));
         Assert.Equal(heard.IndexOf(told, StringComparison.Ordinal), heard.LastIndexOf(told, StringComparison.Ordinal));
+        Assert.Equal(block, heard.LastIndexOf(StubFile.BlockLead, StringComparison.Ordinal));
 
         var note = Assert.Single(Told(events, id));
-        Assert.Equal("one-at-a-time", note.Parts![0].Value("standing"));
         Assert.Contains(told, note.Text);
+        Assert.DoesNotContain(events.Page(id).Events, e => e.Parts?.Any(part => part.Code == "chat.told-routing") == true);
         Assert.Equal(
             ["open the board", "and the next page"], events.Page(id).Events.Where(e => e.Kind == SessionEventKind.User).Select(e => e.Text));
     }
 
     /// <summary>A repository nothing drives here is told so, not left to guess, and a repository the registry gives no lanes is told it has none.</summary>
     [Theory]
-    [InlineData(false, "not driven", "not-driven")]
-    [InlineData(true, "no lanes", "no-lanes")]
-    public async Task A_chat_in_a_repository_that_cannot_be_routed_to_is_told_why(bool driven, string said, string standing)
+    [InlineData(false, "not driven")]
+    [InlineData(true, "no lanes")]
+    public async Task A_chat_in_a_repository_that_cannot_be_routed_to_is_told_why(bool driven, string said)
     {
         var ledger = driven ? new ChatLedger().Register("engine", _root) : new ChatLedger().Register("engine", _root, "core");
         var config = Config(driven);
@@ -96,15 +99,15 @@ public sealed class ChatRoutingProcessTests : IDisposable
         await Poll.Until(() => HeardText().Contains("hello", StringComparison.Ordinal), () => HeardText());
 
         Assert.Contains($"Routing standing here: {said}.", HeardText());
-        Assert.Equal(standing, Assert.Single(Told(events, id)).Parts![0].Value("standing"));
+        Assert.Contains($"Routing standing here: {said}.", Assert.Single(Told(events, id)).Text);
     }
 
     /// <summary>
-    /// A go-on is told the standing as it is then: the repository driven when the chat began and undriven by <c>driver.json</c> while
-    /// it was away is told <c>not-driven</c>, after the person's words, and the note says so.
+    /// A go-on resumes the same conversation, which its first message told the standing block (the resume contract, CONTEXTONE1c): it is
+    /// handed the person's words alone, whatever <c>driver.json</c> says of the drive by then, and the record keeps no second note.
     /// </summary>
     [Fact]
-    public async Task A_go_on_after_driver_json_undrives_the_repository_is_told_it_is_not_driven()
+    public async Task A_go_on_is_never_handed_the_standing_block_again()
     {
         var ledger = new ChatLedger().Register("engine", _root, "core");
         var events = Events;
@@ -116,7 +119,7 @@ public sealed class ChatRoutingProcessTests : IDisposable
         await Poll.Until(() => HeardText().Contains("first", StringComparison.Ordinal), () => HeardText());
         Assert.True(runner.Finish(id));
         await Poll.Until(() => ledger.State(id) == "completed", () => HeardText());
-        Assert.Equal("one-at-a-time", Assert.Single(Told(events, id)).Parts![0].Value("standing"));
+        Assert.Contains("Routing standing here: one at a time.", Assert.Single(Told(events, id)).Text);
 
         Config(driven: false);
         ledger.For(id).Say("w1", "Also log the port.");
@@ -130,8 +133,9 @@ public sealed class ChatRoutingProcessTests : IDisposable
 
         var heard = HeardText();
         Assert.Contains("session/resume: conv-1", heard);
-        Assert.Contains("prompt: Also log the port. | Routing standing here: not driven.", heard);
-        Assert.Equal(["one-at-a-time", "not-driven"], Told(events, id).Select(e => e.Parts![0].Value("standing")));
+        Assert.Contains("prompt: Also log the port.\n", heard);
+        Assert.DoesNotContain("Routing standing here: not driven.", heard);
+        Assert.Single(Told(events, id));
     }
 
     /// <summary>The protocol door's stand-in: it names its conversation <c>conv-1</c>, resumes it, and writes each prompt's blocks down.</summary>

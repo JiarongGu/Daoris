@@ -874,6 +874,8 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
             BrainstormAnswer = turn.Answer,
             Session = sessionId,
             Prompt = turn.Instruction,
+            // CONTEXTONE1c: in no repository and reading only its room, its standing block is the workspace's part alone.
+            Block = new StandingFacts { Knowledge = false },
         };
         var (info, notice) = _driver.Prepare(adapter, target, selection);
         var transcript = files.PathOf(turn.Id, "passes", $"{turn.Turn}.log");

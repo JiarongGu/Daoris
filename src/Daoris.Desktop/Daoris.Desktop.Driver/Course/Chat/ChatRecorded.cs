@@ -37,8 +37,8 @@ internal static class ChatRecorded
             // SESSCTX1c part B (the session-context design §2): a part that goes on from a lost conversation is handed the person's
             // words that waited there after the brief, in the same prompt; they are the person's, as they said them. FOUNDATION1d-ii part 4:
             // the words a keyed open moved are each shown under its id, so each word shown waiting pairs with where it was asked.
-            // COWORKVIEW1e-i: the routing standing a hand-over's briefing carries, noted beside the brief it rides with.
-            if (ToldRouting(message.Routing) is { } routed) yield return routed;
+            // CONTEXTONE1c: the standing block a hand-over's first prompt carries, noted beside the brief it rides with.
+            if (ToldBlock(message.Block) is { } blocked) yield return blocked;
             if (shown is not null)
             {
                 foreach (var each in shown) yield return each;
@@ -81,7 +81,7 @@ internal static class ChatRecorded
 
         if (ToldBrowser(message) is { } toldBrowser) yield return toldBrowser;
         if (ToldProcess(message) is { } toldProcess) yield return toldProcess;
-        if (ToldRouting(message.Routing) is { } toldRouting) yield return toldRouting;
+        if (ToldBlock(message.Block) is { } toldBlock) yield return toldBlock;
         if (Told(message) is { } told) yield return told;
         if (ToldDraft(message) is { } toldDraft) yield return toldDraft;
         if (shown is null)
@@ -133,12 +133,12 @@ internal static class ChatRecorded
     }
 
     /// <summary>
-    /// The routing standing the agent was told at a start (COWORKVIEW1e-i), as the record keeps it: a note of its own under its own lead,
-    /// the standing a fact, the words Daoris's one-copy English (D142 point 6), shown as written. Null where none was told.
+    /// The standing block the agent was told with its first message (CONTEXTONE1c), as the record keeps it: a note of its own under its own
+    /// lead, the block Daoris's one-copy English (D142 point 6), shown as written. Null where none was told.
     /// </summary>
-    internal static SessionEvent? ToldRouting(RoutingStanding? routing)
+    internal static SessionEvent? ToldBlock(StandingBlockTold? block)
     {
-        if (routing?.Note() is not { } told) return null;
+        if (block?.Note() is not { } told) return null;
         return new SessionEvent { Kind = SessionEventKind.Note, Text = told.Note, Parts = told.Parts };
     }
 

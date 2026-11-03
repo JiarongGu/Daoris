@@ -126,18 +126,11 @@ public sealed record SessionTarget(
     public string? Prompt { get; init; }
 
     /// <summary>
-    /// The code map the session's tree keeps, repository-relative, or null when it keeps none. Where
-    /// there is one, the session is asked to keep it current as it works (MAP3d, the agent producer).
+    /// What the session's standing block is composed from (CONTEXTONE1c, D230 point 3; <see cref="StandingBlock"/>), set by every start that
+    /// composes an instruction and bound to its harness at the spawn (<see cref="TargetPrompt.ForStart"/>): appended to the instruction, or
+    /// named there where it goes through its file. Null hands none, and the instruction reads as it did.
     /// </summary>
-    public string? CodeMap { get; init; }
-
-    /// <summary>
-    /// The indexes the session's tree keeps for the repository's own documents (KNOWUSE1c, D135 §4), repository-relative:
-    /// the router its manifest declares, then each file named as an index where documents and doctrine are kept
-    /// (<see cref="RepositoryIndexes"/>). The look before asking names them; empty where it keeps none, and the look reads
-    /// as it did.
-    /// </summary>
-    public IReadOnlyList<string> Indexes { get; init; } = [];
+    public StandingFacts? Block { get; init; }
 
     /// <summary>
     /// For a session that RESUMES a waiting quest (D79): the question an earlier session asked another
@@ -214,13 +207,6 @@ public sealed record SessionTarget(
     /// channel that could not be read, or nothing waiting, and the instruction reads as it did.
     /// </summary>
     public ChannelHeld? Channel { get; init; }
-
-    /// <summary>
-    /// What the person has told this machine holds for every quest in this repository (KNOWUSE1b, D135 §3), read from
-    /// <c>driver.json</c> for this start and handed beneath the quest: a claim, a resume, a carry-on and a follow-up alike.
-    /// Null where the repository keeps none, and the instruction reads as it did.
-    /// </summary>
-    public StandingAnswer? Standing { get; init; }
 
     /// <summary>
     /// The language the work asks its sessions to write to the person in (LANG1c, D142 point 7): its repository's, else its
@@ -345,16 +331,9 @@ public sealed record SessionTarget(
     public string? Browser { get; init; }
 
     /// <summary>
-    /// The routing standing of this session's repository on this machine (COWORKVIEW1e-i; the judge's words), a block
-    /// of the instruction beside the browser's, set where the driver starts a quest's session. Null says nothing, and the instruction
-    /// reads as it did; a helper's, a partner's, a reviewer's and an intake's instruction never carry it.
-    /// </summary>
-    public string? Routing { get; init; }
-
-    /// <summary>
     /// The target a quest's session is handed: the quest as the service answered it, run in
     /// <paramref name="workTree"/> — the repository's own tree where it opted in (D51), its root
-    /// otherwise — naming the code map that tree keeps.
+    /// otherwise — its standing block naming what that tree keeps: its code map and its indexes (CONTEXTONE1c).
     /// </summary>
     public static SessionTarget ForQuest(QuestView quest, string workTree, string serviceUrl) =>
         new(quest.Id, quest.Title, quest.Body, quest.From, quest.To, workTree, serviceUrl)
@@ -364,8 +343,7 @@ public sealed record SessionTarget(
             Then = quest.Then,
             Parent = quest.Parent,
             Requirements = quest.Requirements,
-            CodeMap = CodeMapFile.Find(workTree),
-            Indexes = RepositoryIndexes.Find(workTree),
+            Block = new StandingFacts { Repository = quest.To, CodeMap = CodeMapFile.Find(workTree), Indexes = RepositoryIndexes.Find(workTree) },
         };
 
     /// <summary>
@@ -453,10 +431,15 @@ public static class TargetPrompt
 {
     /// <summary>
     /// Bind the maker of this start, including a start continuing another maker's work: told that maker's trailer too where the part
-    /// before it left work uncommitted in the tree (MAKERTRAIL2).
+    /// before it left work uncommitted in the tree (MAKERTRAIL2). Its standing block is bound to the harness too: the tree's skills where
+    /// it loads none itself, and the rules where it cuts the native instruction file (CONTEXTONE1c).
     /// </summary>
     internal static SessionTarget ForStart(SessionTarget target, ISessionAdapter adapter) =>
-        target with { CommitTrailer = CommitTrailers.For(adapter, target.InFlight.Count > 0 ? target.LeftBy : null) };
+        target with
+        {
+            CommitTrailer = CommitTrailers.For(adapter, target.InFlight.Count > 0 ? target.LeftBy : null),
+            Block = target.Block is { } block ? AgentContext.Current.OnHarness(block, adapter, target.Root) : null,
+        };
 
     /// <summary>
     /// The instruction a session is handed — an intake's own where the target carries one, so every
@@ -471,13 +454,29 @@ public static class TargetPrompt
     /// </summary>
     public static ComposedInstruction Composed(SessionTarget target)
     {
-        if (target.Prompt is { } prompt) return AgentContext.Current.Intake(target, prompt);
+        if (target.Prompt is { } prompt) return AgentContext.Current.Intake(target, prompt, Block(target, prompt.Length));
 
         var pieces = target.Answered is { } answered ? ResumingPieces(target, answered)
             : target.CutOff is { } cutOff ? CarryingOnPieces(target, cutOff)
             : ClaimingPieces(target);
-        return AgentContext.Current.Account(target, pieces);
+        return AgentContext.Current.Account(target, pieces, Block(target, pieces.Sum(piece => piece.Text.Length)));
     }
+
+    /// <summary>
+    /// The standing block the instruction ends with (CONTEXTONE1c), fitted to the <paramref name="before"/> characters composed ahead of
+    /// it: inline, or the line naming its file; null where the target carries none.
+    /// </summary>
+    internal static StandingBlockTold? Block(SessionTarget target, int before) =>
+        target.Block is { } facts ? AgentContext.Current.Block(facts, before) : null;
+
+    /// <summary>Whether the target's standing block goes through its file (CONTEXTONE1c): what the start writes, and lets the session read.</summary>
+    internal static bool Filed(SessionTarget target) => Block(target, Before(target)) is { Filed: true };
+
+    private static int Before(SessionTarget target) => target.Prompt is { } prompt
+        ? prompt.Length
+        : (target.Answered is { } answered ? ResumingPieces(target, answered)
+            : target.CutOff is { } cutOff ? CarryingOnPieces(target, cutOff)
+            : ClaimingPieces(target)).Sum(piece => piece.Text.Length);
 
     /// <summary>A piece of an instruction: the section it belongs to, and its words.</summary>
     internal readonly record struct Piece(string Section, string Text);
@@ -498,7 +497,6 @@ public static class TargetPrompt
         new(HandedSections.Requirements, Required(target)),
         new(HandedSections.Words, Words(target)),
         new(HandedSections.GoAheads, GoAheads(target)),
-        new(HandedSections.Standing, Standing(target)),
         // What waited on the ask's channel for this line of work (SESSONE2b), counted with what the sessions before it left, as the
         // parts before it are (SESSONE1d), so no page catalogue changed.
         new(HandedSections.CarryOn, AgentWorkWords.Current.Channel(target.Channel)),
@@ -507,8 +505,8 @@ public static class TargetPrompt
     ];
 
     /// <summary>
-    /// The close paragraph and everything after it, as every instruction ends: the language line inside the close's line, the
-    /// map, the landing and the checkouts to read, the look, asking, the closing note, proposing and the boundary.
+    /// The close paragraph and everything after it, as every instruction ends before its standing block: the language line inside the
+    /// close's line, the landing and the checkouts to read, asking, the closing note, proposing and the boundary.
     /// </summary>
     private static IEnumerable<Piece> Tail(SessionTarget target, string close) =>
     [
@@ -526,12 +524,9 @@ public static class TargetPrompt
         new(HandedSections.Close, target.CommitTrailer is { } trailer ? $"\n\n{trailer}\n" : ""),
         new(HandedSections.Language, Language(target)),
         new(HandedSections.Close, "\n"),
-        new(HandedSections.Map, Mapped(target)),
         new(HandedSections.Landing, Landing(target)),
         // The browser handed, a block of its own (BRWHINT1b); the driver's own words, so counted with the close.
         new(HandedSections.Close, target.Browser is { } browser ? $"\n{browser}\n" : ""),
-        // Its repository's routing standing (COWORKVIEW1e-i), the driver's own words beside the browser's, counted with the close.
-        new(HandedSections.Close, target.Routing is { Length: > 0 } routing ? $"\n{routing}\n" : ""),
         new(HandedSections.Reading, Reading(target)),
         .. AskingPieces(target, lead: "\n"),
         new(HandedSections.Proposing, "\n\n" + Proposing),
@@ -677,8 +672,8 @@ public static class TargetPrompt
     /// that asks the person does the same, and their answer goes on in its own conversation (ANSWER1a).
     /// Beside the look, that the person's words met second-hand are a reading (KNOWUSE1d, D135 §5); last,
     /// how what reaches the person is written (KNOWUSE1c, D135 §4): what only they can give, apart from the
-    /// readings the session took, each naming its source. Each its own section of the account (CONTEXT1): the look,
-    /// the indexes inside its first sentence, the words met second-hand, asking, and the closing note.
+    /// readings the session took, each naming its source. Each its own section of the account (CONTEXT1): asking, which opens with the
+    /// look whose places the standing block names (CONTEXTONE1c), the words met second-hand, and the closing note.
     /// </summary>
     /// <remarks>
     /// The person's stop once offered "a choice between options that is theirs", and a session read which
@@ -693,14 +688,10 @@ public static class TargetPrompt
     /// <param name="lead">What comes before the look: the line break after the lines above it.</param>
     private static IEnumerable<Piece> AskingPieces(SessionTarget target, string lead) =>
     [
-        new(HandedSections.Look,
+        new(HandedSections.Asking,
             lead
-            + "Look before you ask. The quest, its links and its files; this repository's own documents, code and\n"
-            + "history (its log, and the commits that last changed what you are changing); the workspace's\n"
-            + $"knowledge, through your connector's `knowledge_search`{Checkouts(target)}."),
-        new(HandedSections.Indexes, Indexes(target)),
-        new(HandedSections.Look,
-            " A question one of these\n"
+            + "Look before you ask: the quest, its links and its files, and the places Daoris's standing block names\n"
+            + "under *Where things are*. A question one of these\n"
             + "settles is not a question: decide it, and keep what settled it for your closing note. Where the\n"
             + "evidence leans one way without settling it, take that reading, carry on, and say in your closing\n"
             + "note which reading you took and on what evidence, so the person can correct it in review rather than\n"
@@ -762,12 +753,6 @@ public static class TargetPrompt
     /// was refused and what still waits, each by its number. Nothing where the ask holds none, or for a quest no ask asked.
     /// </summary>
     private static string GoAheads(SessionTarget target) => AgentWorkWords.Current.GoAheads(target.Words);
-
-    /// <summary>
-    /// The person's standing answer for this repository (KNOWUSE1b, D135 §3), beneath the quest and beside what was said on
-    /// its ask: their words, verbatim, with when they set them. Nothing where the repository keeps none.
-    /// </summary>
-    private static string Standing(SessionTarget target) => StandingText.Beneath(target.Standing, target.Repository);
 
     /// <summary>
     /// The work's session language (LANG1c, the language design §7), as a paragraph of its own after the close instruction it
@@ -999,28 +984,6 @@ public static class TargetPrompt
         """;
 
     /// <summary>
-    /// The most indexes the look names (KNOWUSE1c): a pointer to where the look starts, not a listing. The repository the
-    /// evidence read kept four, and this one two; past the limit the rest are counted, beside those named.
-    /// </summary>
-    internal const int IndexLimit = 8;
-
-    /// <summary>
-    /// The indexes the session's tree keeps for the repository's own documents (KNOWUSE1c, D135 §4), named as where the
-    /// look starts, at most <see cref="IndexLimit"/> of them. Nothing where it keeps none, so the look reads as it did.
-    /// </summary>
-    private static string Indexes(SessionTarget target)
-    {
-        if (target.Indexes.Count == 0) return "";
-        var named = target.Indexes.Take(IndexLimit).Select(path => $"`{path}`").ToList();
-        var more = target.Indexes.Count - named.Count;
-        var listed = more > 0 ? $"{string.Join(", ", named)} and {more} more like them"
-            : named.Count == 1 ? named[0]
-            : $"{string.Join(", ", named.Take(named.Count - 1))} and {named[^1]}";
-        return $" This repository indexes its own documents in {listed}: start the look there, and read every document "
-               + "whose entry matches this work.";
-    }
-
-    /// <summary>
     /// Which go-aheads the session asks, by its repository's access setup (AUTONOMY1c, D184 points 3 and 5): under <c>named</c>,
     /// today's, one for an act outside the repository or on a production system and one the repository or the quest names; under
     /// <c>never</c> only what the quest or the person's words demand, since the person wrote it there, and the rest is done and said.
@@ -1044,21 +1007,6 @@ public static class TargetPrompt
         : " A go-ahead is asked once, on the ask: where your connector offers `go_ahead_ask`, ask it there, naming the act's "
           + "kind, where it lands and what it touches, before you stop for it; an act already asked joins the first and tells "
           + "you its answer.";
-
-    /// <summary>
-    /// The other checkouts as a source to look in, only where the session may read across (D107), pointed to
-    /// where this instruction lists them: the read-only ones above it, a declared target in the boundary
-    /// below. Empty where reading is off, so the look names no checkout.
-    /// </summary>
-    private static string Checkouts(SessionTarget target)
-    {
-        if (target.ReadsAcross.Count == 0) return "";
-        var above = target.ReadsAcross.Any(read => !target.WritesAcross.Any(write =>
-            string.Equals(write.Repository, read.Repository, StringComparison.OrdinalIgnoreCase)));
-        var below = target.WritesAcross.Count > 0;
-        var where = above && below ? "above and below" : below ? "below" : "above";
-        return $"; and the other checkouts listed {where}";
-    }
 
     private const string Proposing =
         """
@@ -1138,26 +1086,6 @@ public static class TargetPrompt
     /// <summary>Each checkout on a line of its own, its path as git and its rule spell it.</summary>
     private static string Listed(IEnumerable<AcrossCheckout> checkouts) =>
         string.Join("\n", checkouts.Select(checkout => $"- `{checkout.Repository}` — `{AcrossRules.GitPath(checkout.Path)}`"));
-
-    /// <summary>
-    /// The agent producer (MAP3d): a repository that keeps a code map is asked to keep it moving with
-    /// its code — only where one exists, because a map nobody started is not this session's to invent.
-    /// It says "the repository's own tool where it has one" because nothing here can tell which
-    /// producer wrote the file, and the file itself does not say. Empty when there is no map, so the
-    /// target reads exactly as it did before.
-    /// </summary>
-    private static string Mapped(SessionTarget target) => target.CodeMap is not { } map
-        ? ""
-        : $"""
-
-          This repository keeps a code map in `{map}`: its modules, a line on what each is for, and which
-          depends on which. If your work adds, removes, moves or rewires a module, bring the map up to date
-          in the same change: with the repository's own tool for it where it has one, otherwise by hand in
-          the same shape — each module's `id` unique, its `path` relative to the repository, its `summary`
-          one line, and each dependency naming two modules by `id`. A map that breaks that shape is shown as
-          nothing at all, so leave it whole.
-
-          """;
 
     /// <summary>
     /// A set-up step's section (REVIEWENV1c, D154 points 4–6; the review environment design §2.2–§2.6, §3.4): the environment, its
@@ -1492,6 +1420,18 @@ public interface ISessionAdapter
     /// when the switch is read in the binary it runs, like every other claim about somebody else's tool.</para>
     /// </remarks>
     IReadOnlyDictionary<string, string> ToolsUpFront => ReadOnlyDictionary<string, string>.Empty;
+
+    /// <summary>
+    /// Whether this harness loads the tree's own skills itself (CONTEXTONE1c, D230 §3 E): where it does not, the standing block names
+    /// their folders so the session reads them by path. Default false, so a harness nobody measured is told where they are.
+    /// </summary>
+    bool LoadsTreeSkills => false;
+
+    /// <summary>
+    /// The most bytes of the tree's instruction file (<c>AGENTS.md</c>) this harness reads itself, or null where it reads it whole or
+    /// reads another (CONTEXTONE1c): past it, the standing block carries the repository's rule index. Default null.
+    /// </summary>
+    int? InstructionFileLimit => null;
 
     /// <summary>The process that would be a CHAT: the same spawn, with stdin open.</summary>
     ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command) =>
@@ -1874,6 +1814,9 @@ public sealed class ClaudeAcpAdapter : ISessionAdapter
     /// </summary>
     public string? AcpPosture => "auto|acceptEdits";
 
+    /// <summary>Claude Code loads the tree's <c>.claude/skills</c> and its <c>CLAUDE.md</c> whole itself (CONTEXTONE1c).</summary>
+    public bool LoadsTreeSkills => true;
+
     /// <summary>
     /// <c>bypassPermissions</c>, Claude Code's mode that asks nothing, offered on <c>session/new</c> (the evaluation's §1a), and
     /// only by the person's own setting: Ask Daoris's full access (HELPMODE1a1, D183), a repository's unrestricted permission prompts
@@ -2165,6 +2108,12 @@ public sealed class CodexAcpAdapter : ISessionAdapter
         // Its typed failure categories, marked only for a client that asks for them (CODEXSTATUS1).
         ErrorWords: CodexErrors.Words);
 
+    /// <summary>
+    /// Codex reads the tree's <c>AGENTS.md</c> up to its <c>project_doc_max_bytes</c>, 32 KiB unless set (what <c>check</c> reports past,
+    /// <c>drift.ts</c>), and loads no skills of the tree's (CONTEXTONE1c).
+    /// </summary>
+    public int? InstructionFileLimit => 32_768;
+
     private IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) =>
         command is { Count: > 0 } ? command : Toolchain!.Binary;
 }
@@ -2217,6 +2166,9 @@ public static class ClaudeAcp
 public sealed class ClaudeCodeAdapter : ISessionAdapter
 {
     public string Name => "claude-code";
+
+    /// <summary>Claude Code loads the tree's <c>.claude/skills</c> and its <c>CLAUDE.md</c> whole itself (CONTEXTONE1c).</summary>
+    public bool LoadsTreeSkills => true;
 
     /// <summary>
     /// The supported harness holds a conversation (D49 §3): run without a one-shot prompt it takes
