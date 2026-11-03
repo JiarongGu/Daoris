@@ -366,6 +366,7 @@ public sealed class WorkplaceContextPortsTests : IDisposable
         public IReadOnlyList<SessionEvent> ReadAll(string id) { Calls.Add("read:" + id); return Rows[id]; }
         public bool Forget(string id) { Calls.Add("forget:" + id); return Remove(id); }
         public IReadOnlyDictionary<string, string> Openings(IEnumerable<string> ids) { Calls.Add("openings:" + string.Join(',', ids)); return new Dictionary<string, string>(); }
+        public DateTimeOffset? LastPersonAt(string id) { Calls.Add("last-person:" + id); return null; }
         public void Keep(string id, SessionEvent e, Action<string>? say) { Calls.Add("keep:" + id); Evented?.Invoke(id, e); }
     }
 

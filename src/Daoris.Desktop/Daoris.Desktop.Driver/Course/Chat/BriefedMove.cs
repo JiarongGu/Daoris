@@ -20,11 +20,12 @@ public static class GoOnBrief
 /// <remarks>
 /// <para><b>Refused before anything starts</b>, by a code: what never goes on (<see cref="WordsNever"/>), a session that runs or parks
 /// (<see cref="StartFrom.Running"/>), no words of the person's waiting (<see cref="StartFrom.NoWords"/>), a quest still open or taken,
-/// whose words the driver carries on by itself (<see cref="StartFrom.Carried"/>), a tree that is gone (<see cref="HandOver.TreeGone"/>)
+/// whose words the driver carries on by itself (<see cref="StartFrom.Carried"/>), a conversation's tree that is gone (<see cref="HandOver.TreeGone"/>)
 /// and an agent this machine no longer has (<see cref="GoOnBrief.AgentGone"/>), which only the hand-over's choice of agent answers.</para>
 ///
 /// <para><b>A closed quest's session goes on as a conversation</b> in its own tree (the steward's choice): a closed quest opens no
-/// driven record. <b>Ask Daoris's goes on in its own room</b>, a conversation of its workspace's, its link kept in the room's history
+/// driven record. Where the look's tidy took that tree, the person's press grows a fresh one from the line (TREEGONE2, ONEWAY1's design
+/// §3 C5). <b>Ask Daoris's goes on in its own room</b>, a conversation of its workspace's, its link kept in the room's history
 /// (<see cref="HelpConversations.StartedFrom"/>), since the room's record takes no <c>from</c>, on its own agent: the one path that places
 /// Ask Daoris's new part on another agent is <see cref="LimitMove"/>'s, a limit with no account of its agent left (LIMITGOON2, D205
 /// §3.5(e)).</para>
@@ -190,7 +191,8 @@ internal sealed class BriefedMove(ChatContext context, IChatRunning runner, Chat
         var started = help
             ? await HelpStartAsync(record, agent.Name, config, onEnded, ct).ConfigureAwait(false)
             : await runner.StartAsync(
-                    record.Repository!, agent.Name, config, onEnded, record.Profile, ct: ct, tree: tree,
+                    // TREEGONE2: a closed quest's session whose tree went (the course moves no conversation's) grows a fresh tree from the line.
+                    record.Repository!, agent.Name, config, onEnded, record.Profile, ownTree: tree is null ? true : null, ct: ct, tree: tree,
                     from: new ContinuedFrom(sessionId, HandOverWhy.Resume, by), ownFirst: move.Where.Source != CourseAccountSource.Pick,
                     moves: Moves(record, words))
                 .ConfigureAwait(false);
