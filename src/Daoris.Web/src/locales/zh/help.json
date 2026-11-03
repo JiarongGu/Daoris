@@ -110,7 +110,7 @@
   "help.checking": "正在确认这段对话能否继续…",
   "help.head.untitled": "对话",
   "help.goOn": "在此继续",
-  "help.startedFrom": "这段对话从「{{title}}」开始：它的内容会作为文件随你的第一条消息交给问道衍。",
+  "help.startedFrom": "这段对话从「{{title}}」开始：Daoris 对它的简报会随你的第一条消息一起发出。",
   "help.history.open": "历史",
   "help.history.back": "返回对话历史",
   "help.history.title": "对话历史",

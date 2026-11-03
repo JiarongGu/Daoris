@@ -1315,9 +1315,9 @@ public sealed class HelpRoutes(DriverContext context)
         return new { Session = id, kept.Read(id).Pinned };
     }
 
-    // A new Ask Daoris conversation from an earlier one's words (ASKHIST1): opened as START_HELP opens one, on the helper's
-    // agent, its workspace's running conversation set aside first, and the earlier one's transcript handed with the person's first
-    // words. Its end reaches the page as a start's does.
+    // A new Ask Daoris conversation from an earlier one (ASKHIST1): opened as START_HELP opens one, on the helper's agent, its
+    // workspace's running conversation set aside first, and Daoris's brief of the earlier line handed with the person's first
+    // words (D233). Its end reaches the page as a start's does.
     [DriverRoute("HELP_START_FROM")]
     [Publishes("HELP_START_FROM", Kept, Session = "id")]
     private async Task<object?> HelpStartFromAsync(IpcRequest request, CancellationToken cancellationToken)

@@ -162,8 +162,9 @@ of everything it handed, section by section.
     change. A limit move opens it again in its room. (from D89, D170, D183, D158)
 42. Its conversations stay on this machine. Only those the person spoke in or named are listed, pinned first, then newest.
     They resume by kept id. A briefed continuation stays one history row. (from D158, D189)
-43. A new Ask Daoris conversation started from an earlier one is handed that one's words as a file: both sides, the newest
-    48,000 characters. (from D158)
+43. A new Ask Daoris conversation started from an earlier one is handed Daoris's brief of that one's line, why `press`, ahead
+    of the person's first message, and keeps it as Daoris's first prompt. A repository's *Start a conversation with these
+    words* carries the words alone. (from D158, D233)
 
 ## Where a change goes
 
@@ -206,19 +207,16 @@ of everything it handed, section by section.
    uncommitted) vs D189 point 4 and `Context/Domain/ContextBrief.cs:171`: every new part gets the brief. D189 reads right.
 6. D163's MIXAGENT1a-i note point 1 (the ask is the box `<id>.hand-over.json`) vs `Course/HandOver/HandOver.cs:115-118`: a
    move row in the store; boxes are imported only. The code reads right. `HandOver.cs:1-5`'s comment is stale.
-7. D158 point 4 (Ask Daoris's start-from hands the earlier transcript, 48,000 characters) vs D163's rejected transcript and
-   D228: `Context/HelpConversations.cs:117-118` hands a transcript, `Course/Chat/ChatRunner.StartFrom.cs` the person's words
-   alone. Two ways to seed a conversation; the code holds both, and the owner should settle it.
-8. `Events/Domain/HandOverWhy.cs:9-10` and D163's note (`near` means the account is near its limit) vs
+7. `Events/Domain/HandOverWhy.cs:9-10` and D163's note (`near` means the account is near its limit) vs
    `Roles/Domain/CountTexts.cs:104` ("handed over near its context's end"). D163 reads right; the count's words are wrong.
-9. D206's body cites `Conversations/Chat/ChatGoOn.cs`. The driver has no `Conversations` folder; the unit is
+8. D206's body cites `Conversations/Chat/ChatGoOn.cs`. The driver has no `Conversations` folder; the unit is
    `Course/Chat/ChatGoOn.cs`. The code reads right.
-10. D188's status line says *proposed*. Its own note (`docs/decisions/D188.md:178`) says accepted and built by COWORK1a-d.
+9. D188's status line says *proposed*. Its own note (`docs/decisions/D188.md:178`) says accepted and built by COWORK1a-d.
     The note reads right.
-11. `TASKS.md`'s LIMITGOON1 line and `Course/Chat/LimitMove.cs:4` say a limit move goes on "in the same conversation". D189
+10. `TASKS.md`'s LIMITGOON1 line and `Course/Chat/LimitMove.cs:4` say a limit move goes on "in the same conversation". D189
     points 1-2 and `LimitMove.cs:12-13` make it a new part handed the brief. The new part is right; the wording mixes up the
     line and the agent's conversation.
-12. SESSCTX1e's re-cut (*Go on fresh* as a hand-over to the same agent and account) vs `LineCourse.Decide.cs:500`, which
+11. SESSCTX1e's re-cut (*Go on fresh* as a hand-over to the same agent and account) vs `LineCourse.Decide.cs:500`, which
     refuses exactly that (`HandOver.SameAgent`). The code is today's; the re-cut must change the refusal when it is built.
 
 ## Open

@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text;
 using System.Text.Json;
 
 namespace Daoris.Driver;
@@ -114,12 +113,9 @@ public sealed class HelpConversations(string home)
 {
     public const string Suffix = SessionHomeFiles.HelpConversationsSuffix;
 
-    /// <summary>What a conversation started from an earlier one is handed: that one's words, both sides, as kept here.</summary>
-    public const string Transcript = "transcript";
-
     /// <summary>
-    /// What a conversation that went on from an earlier one in a new part is handed (SESSCTX1c part B): Daoris's brief of it, then the
-    /// words that waited there, where its own conversation was proven lost or the person went on with the brief.
+    /// What a conversation started from an earlier one, or one that went on from it in a new part (SESSCTX1c part B), is handed: Daoris's
+    /// brief of that line, then the person's words (D233).
     /// </summary>
     public const string Brief = "brief";
 
@@ -387,71 +383,4 @@ public sealed class HelpConversations(string home)
     }
 
     private static DateTimeOffset? Time(JsonElement element, string name) => Moments.Read(element, name);
-}
-
-/// <summary>
-/// An earlier Ask Daoris conversation's words, handed to a new one as a file (ASKHIST1): the person's words and Ask Daoris's
-/// answers in order, as this machine kept them, under its title and id.
-/// </summary>
-/// <remarks>
-/// <para><b>The transcript, never a summary.</b> Daoris makes no model call (D24), so it has no summary of its own to give; one
-/// asked of the earlier conversation's agent would spend a turn and reopen that conversation, which the person did not ask for.
-/// The transcript is what was said, read the same way every time, and the new conversation's agent reads it as a file its rules
-/// already let it read (CONV4c), handed with the person's first message.</para>
-///
-/// <para><b>Bounded by its newest words.</b> A long conversation keeps its end, where it got to, and says the start was left
-/// out. The tools it used and what Daoris told it (where the person was) are left out: they are the record's, not the talk.</para>
-/// </remarks>
-public static class HelpTranscript
-{
-    /// <summary>The most a transcript carries, in characters: a long conversation's end, not a log.</summary>
-    public const int Limit = 48_000;
-
-    /// <summary>The name of the file the new conversation is handed.</summary>
-    public static string FileName(string session) => $"earlier-conversation-{session}.md";
-
-    /// <summary>What the new conversation's agent is told beside the person's first words. Its own language, as a preface is.</summary>
-    public static string Preface(string session) =>
-        $"This conversation starts from an earlier Ask Daoris conversation, `{session}`: its words are the attached file "
-        + $"`{FileName(session)}`, which the person handed you. Read it before you answer.";
-
-    /// <summary>The transcript, or null where nothing was said.</summary>
-    /// <param name="title">The conversation's title, its name or first question, for the head.</param>
-    public static string? Of(SessionEvents events, string session, string? title, int limit = Limit)
-    {
-        var (said, _) = events.Spoken(session);
-        if (said.Count == 0) return null;
-
-        var turns = said
-            .Where(passage => passage.Text.Trim().Length > 0)
-            .Select(passage => $"## {(passage.Kind == SessionEventKind.User ? "The person" : "Ask Daoris")}\n\n{passage.Text.Trim().ReplaceLineEndings("\n")}\n")
-            .ToList();
-        if (turns.Count == 0) return null;
-
-        // The newest turns that fit, whole where they fit; the start is what goes.
-        var kept = new List<string>();
-        var length = 0;
-        for (var at = turns.Count - 1; at >= 0; at--)
-        {
-            var turn = turns[at];
-            if (length + turn.Length + 1 > limit)
-            {
-                if (kept.Count == 0) kept.Insert(0, turn[^Math.Min(turn.Length, limit)..]);
-                break;
-            }
-
-            kept.Insert(0, turn);
-            length += turn.Length + 1;
-        }
-
-        var cut = kept.Count < turns.Count || kept[0] != turns[turns.Count - kept.Count];
-        var head = new StringBuilder()
-            .Append("# An earlier Ask Daoris conversation: ").Append(title is { Length: > 0 } named ? named : session).Append('\n')
-            .Append('\n')
-            .Append("Session `").Append(session).Append("`, as this machine kept it: the person's words and Ask Daoris's answers, in ")
-            .Append("order. The tools it used and what Daoris told it are left out.")
-            .Append(cut ? " It was longer than this file carries, so its start is left out and it begins part of the way through." : "")
-            .Append("\n\n");
-        return head + string.Join("\n", kept);
-    }
 }

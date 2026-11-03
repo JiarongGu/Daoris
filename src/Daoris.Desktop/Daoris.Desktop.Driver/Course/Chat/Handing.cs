@@ -1,4 +1,4 @@
 namespace Daoris.Driver;
 
-/// <summary>The earlier conversation's words, kept as this conversation's file, and the line its agent is told beside them.</summary>
-internal sealed record Handing(IReadOnlyList<KeptFile> Files, string Preface);
+/// <summary>Daoris's brief of the line an Ask Daoris conversation started from, handed ahead of the person's first words.</summary>
+internal sealed record Handing(ComposedBrief Brief);

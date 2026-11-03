@@ -110,7 +110,7 @@
   "help.checking": "Checking whether this conversation can go on…",
   "help.head.untitled": "Conversation",
   "help.goOn": "Go on in it",
-  "help.startedFrom": "This conversation starts from “{{title}}”: its words go to Ask Daoris as a file with your first message.",
+  "help.startedFrom": "This conversation starts from “{{title}}”: Daoris's brief of it goes with your first message.",
   "help.history.open": "History",
   "help.history.back": "Back to history",
   "help.history.title": "Conversation history",
