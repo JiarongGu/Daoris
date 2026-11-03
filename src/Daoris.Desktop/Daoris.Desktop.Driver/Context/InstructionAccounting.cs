@@ -132,7 +132,7 @@ internal static class InstructionAccounting
             HandedSections.Proposing => Own("proposing a rule"),
             HandedSections.SetUp => SetUp(target, chars, size),
             HandedSections.BriefOpening or HandedSections.BriefWords or HandedSections.BriefTurns or HandedSections.BriefState
-                or HandedSections.BriefNote or HandedSections.BriefParts or HandedSections.BriefLeft => BriefSection(name, target, chars),
+                or HandedSections.BriefCourse or HandedSections.BriefNote or HandedSections.BriefParts or HandedSections.BriefLeft => BriefSection(name, target, chars),
             HandedSections.Boundary => target.WritesAcross.Count == 0
                 ? Own("the boundary")
                 : new HandedSection(
@@ -421,9 +421,12 @@ internal static class InstructionAccounting
         };
     }
 
-    /// <summary>A section of a carry-on's brief (SESSCTX1b, the session-context design §3.4), as the brief accounted it, at its size here.</summary>
+    /// <summary>
+    /// A section of a carry-on's brief (SESSCTX1b, the session-context design §3.4), or a start's course (CONTEXTDRIVE1b), as the brief
+    /// accounted it, at its size here.
+    /// </summary>
     private static HandedSection BriefSection(string name, SessionTarget target, int chars) =>
-        target.Brief?.Sections.FirstOrDefault(section => section.Name == name) is { } section
+        (target.Brief ?? target.Course)?.Sections.FirstOrDefault(section => section.Name == name) is { } section
             ? section with { Chars = chars }
             : new HandedSection(name, HandedSources.Record, $"{name}: {N(chars)} characters") { Chars = chars };
 

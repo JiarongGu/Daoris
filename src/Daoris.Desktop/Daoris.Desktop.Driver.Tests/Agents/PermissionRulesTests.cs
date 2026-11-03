@@ -489,12 +489,19 @@ public sealed class PermissionRulesTests : IDisposable
         Assert.False(File.Exists(path));
     }
 
+    /// <summary>No rules to hand still hands the session its own context (CONTEXTONE1e), and nothing else: no hooks, no classifier.</summary>
     [Fact]
-    public void Nothing_to_hand_writes_no_file()
+    public void Nothing_to_hand_still_hands_the_sessions_own_context()
     {
         var file = Off(PermissionRules.Load(_home), "connector", "commit", "no-push");
 
-        Assert.Null(SpawnSettings.Write(_home, "s1", PermissionRules.Compose(file, "default", "engine"), PermissionRules.HardDeny(file)));
+        var path = SpawnSettings.Write(_home, "s1", PermissionRules.Compose(file, "default", "engine"), PermissionRules.HardDeny(file));
+
+        using var document = JsonDocument.Parse(File.ReadAllText(path));
+        Assert.Equal(
+            ["permissions", .. SpawnSettings.OwnContext.Select(pair => pair.Key)],
+            document.RootElement.EnumerateObject().Select(property => property.Name));
+        Assert.All(SpawnSettings.OwnContext, pair => Assert.Equal(pair.Value, document.RootElement.GetProperty(pair.Key).GetBoolean()));
     }
 
     // ——— PERM4: a driven session may commit.

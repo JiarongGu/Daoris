@@ -204,15 +204,21 @@ const refused = daoris('sync');
 check('`sync` refuses rather than discarding the edit', refused.code === 1, refused.out);
 check('...and points at `upstream`', /upstream/.test(refused.out), refused.out);
 
-// A consumer cannot upstream into a read-only install, which is correct: the
-// canon lives in the package. Point at a writable copy, as a canon developer does.
+// A consumer never writes into the canon: outside the canon's own checkout `upstream` composes the request's words and
+// writes nothing (D230). Point at a writable copy, which plays the canon's repository, and take the request there as its
+// maintainer would.
 copyTree(join(consumer, 'node_modules', 'daoris', 'canon'), canonV2);
+const lifecycle = join(canonV2, 'core/rules/task-lifecycle.md');
 const upstreamed = withV2('upstream task-lifecycle.md');
-check('`upstream` promotes the edit into the canon', upstreamed.code === 0, upstreamed.out);
+check('`upstream` composes the request, carrying the edit', upstreamed.code === 0
+  && /nothing was written; the request below is for the repository that keeps the shared doctrine/.test(upstreamed.out)
+  && upstreamed.out.includes('A local improvement.'), upstreamed.out);
+check('...and writes nothing into the canon', !readFileSync(lifecycle, 'utf8').includes('A local improvement.'));
+writeFileSync(lifecycle, readFileSync(lifecycle, 'utf8').replace('# Task lifecycle', '# Task lifecycle\n\nA local improvement.'));
 check(
-  '...and the canon now carries it, without the provenance header',
+  '...which the canon\'s repository takes, without the provenance header',
   (() => {
-    const promoted = readFileSync(join(canonV2, 'core/rules/task-lifecycle.md'), 'utf8');
+    const promoted = readFileSync(lifecycle, 'utf8');
     return promoted.includes('A local improvement.') && !promoted.includes('<!-- daoris:');
   })(),
 );
@@ -418,9 +424,13 @@ const mirrorRefused = withV2('sync');
 check('`sync` refuses, pointing at upstream from the mirror', mirrorRefused.code === 1
   && /daoris upstream \.claude\/skills\/doc-loader\/SKILL\.md/.test(mirrorRefused.out), mirrorRefused.out);
 const mirrorUp = withV2('upstream .claude/skills/doc-loader/SKILL.md');
-check('`upstream` takes the mirror\'s path', mirrorUp.code === 0, mirrorUp.out);
+check('`upstream` takes the mirror\'s path, its request carrying the edit', mirrorUp.code === 0
+  && mirrorUp.out.includes('made in the mirror') && !mirrorUp.out.includes('<!-- daoris:'), mirrorUp.out);
+// The canon's repository takes the request (D230): the mirror's text without its header, which is the canon's file and the edit.
+const loader = join(canonV2, 'core/skills/doc-loader/SKILL.md');
+writeFileSync(loader, `${readFileSync(loader, 'utf8')}\nA local improvement, made in the mirror.\n`);
 check('...and the canon carries the edit without either header', (() => {
-  const promoted = readFileSync(join(canonV2, 'core/skills/doc-loader/SKILL.md'), 'utf8');
+  const promoted = readFileSync(loader, 'utf8');
   return promoted.includes('made in the mirror') && !promoted.includes('<!-- daoris:') && promoted.startsWith('---\n');
 })());
 const mirrorClosed = withV2('sync');

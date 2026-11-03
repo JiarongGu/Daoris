@@ -213,6 +213,8 @@ export interface DriftReport {
   switchedOff: { target: string; by: string }[];
   /** Rows the manifest and the lock disagree about: a fact, so it fails like a stale pack. */
   staleSwitches: string[];
+  /** The files `daoris.json` keeps this repository's own text of, with each reason (D230): named on every run, never drift. */
+  kept: { target: string; reason: string }[];
   /** The manifest names a layout the files were not written under: a move `sync` has not made yet. */
   staleLayout: string | null;
   /** Mirrors edited here, each with its source (D117 §3.3). */
@@ -312,6 +314,11 @@ export interface Manifest {
    */
   switchedOff?: Record<string, string>;
   /**
+   * The canonical files this repository keeps its own text of (D230): target → why, and the digest of the canon's file it
+   * was judged against. `sync` passes over each, `--force` too, and `status` names one again once the canon's file moves.
+   */
+  kept?: Record<string, Keep>;
+  /**
    * Folders with an `AGENTS.md` of their own (D117 §2.2): declared, never found, since a walk of the
    * tree meets build output and worktrees. Relative to the repository, with forward slashes; empty
    * when none are declared.
@@ -324,6 +331,23 @@ export interface Manifest {
   documents: DeclaredDocument[];
   /** Resolved at read time so an unknown name fails at the edge, naming what exists. */
   harnessDescriptor: Harness;
+}
+
+/** One keep in `daoris.json` (D230): the repository's reason, and the canon file's digest (`canonFileDigest`) it was judged against. */
+export interface Keep {
+  reason: string;
+  canon: string;
+}
+
+/** A keep as `status` and `reconcile` read it against this daoris's canon. */
+export interface KeepState extends Keep {
+  target: string;
+  /** The canon's file digest now; null where the canon no longer ships the file here, which drops the keep. */
+  now: string | null;
+  /** The canon's file moved since the keep was judged, so the repository decides it again. */
+  reopened: boolean;
+  /** A core rule kept with its file absent: a keep is a text, never a core rule's absence (D4, D71), so `sync` refuses it. */
+  absentCore: boolean;
 }
 
 /** One role the manifest's `documents` declares (D122 §2.7). */
@@ -439,6 +463,11 @@ export interface PlannedWrite extends CanonFile {
    * the one place it is not holding it.
    */
   meta?: Record<string, string>;
+  /**
+   * The lock's entry for a file this repository keeps (D230): written nowhere, `--force` included, and carried into the new
+   * lock as it was, so the disk against the lock stays what this repository changed. `content` is its text as it stands.
+   */
+  kept?: LockEntry;
 }
 
 /** A canonical file that moved rather than being retired and re-added. */
@@ -475,6 +504,10 @@ export interface SyncPlan {
    * edited retirement: the canonical file still exists, so `upstream` can still save the edit.
    */
   editedSwitchedOff: string[];
+  /** The keeps this sync passes over, each with whether the canon's file moved since it was judged (D230). */
+  kept: KeepState[];
+  /** Keeps naming a file the canon no longer ships here: dropped, so D19's rows apply to the file as to any other. */
+  keepsDropped: string[];
   /**
    * The layout the lock was written under, and the one the manifest names (D117 §5.1). A move when
    * the two targets differ: files are read and deleted at `from`, written at `to`.

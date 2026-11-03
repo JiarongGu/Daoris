@@ -277,8 +277,8 @@ public static class SupervisorDoor
 
     /// <summary>
     /// The park as the keeping reads it (§3.1's checks the driver makes): its repository, whether it is parked here and holds a quest, the
-    /// question on file, whether a word of the owner's waits, whether its ask's go-aheads are open or cannot be read, and whether its line
-    /// is at D188's answers-alone bound (SUPERVISOR1b). Null where no record of this machine has the id.
+    /// question on file, whether a word of the owner's waits, whether its ask's go-aheads are open or cannot be read, whether its line
+    /// is at D188's answers-alone bound (SUPERVISOR1b), and its line's counts (CONTEXTDRIVE1i). Null where no record of this machine has the id.
     /// </summary>
     public static async Task<SupervisedPark?> ParkAsync(DriverLoop loop, ServiceClient service, string id, CancellationToken ct)
     {
@@ -304,7 +304,12 @@ public static class SupervisorDoor
         // SUPERVISOR1b (§4.3): D188's one count, the line's admission (COMMS1g), as the look's hold reads it.
         var atBound = record.Parked && new AnswersAloneHold(loop.Events, new GoOnMarks(loop.Home), new ContinuationAdmissions(loop.Home))
             .AtBound(id, await AnswersAloneHold.RecordsAsync(service, ct).ConfigureAwait(false));
-        return new SupervisedPark(record.Repository ?? "", record.Parked, record.Quest is not null, filed, ownerWaits, open, unread, atBound);
+        // CONTEXTDRIVE1i (§5): the line's counts as the print hands them, which a reason's `count:` source names and the decision keeps.
+        var counts = (await LineCountsRead.FactsAsync(service, loop.Home, id, ct).ConfigureAwait(false)).Counts;
+        return new SupervisedPark(record.Repository ?? "", record.Parked, record.Quest is not null, filed, ownerWaits, open, unread, atBound)
+        {
+            Counts = counts,
+        };
     }
 
     private static KeptAnswer Refused(string why) => new(false, null, null, why);

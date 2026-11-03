@@ -1525,8 +1525,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
                     _home, sessionId, composed, [.. PermissionRules.HardDeny(file), .. heavy.HardDeny is { } sentence ? [sentence] : (IEnumerable<string>)[]], guard,
                     // Which agent made each call, and each subagent's start and stop (FABRIC-C1a).
                     ChildLineage.HookFor(_home, sessionId));
-                if (rules is not null && resolved.Wire == SessionWire.Pipe) resolved.HandSettings(info, rules);
-                else if (rules is not null) meta = resolved.AcpSessionMeta(rules, skillPlugins);
+                if (resolved.Wire == SessionWire.Pipe) resolved.HandSettings(info, rules);
+                else meta = resolved.AcpSessionMeta(rules, skillPlugins);
             }
 
             // The plugins' servers, resolved once for both doors — with Daoris's own browser brought up

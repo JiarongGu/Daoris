@@ -128,6 +128,10 @@ internal static class AnswersAlone
     private static bool Answers(SessionEvent e) =>
         e.Kind == SessionEventKind.User && e.Reaches is null
         && (e.Helper is not null || e.Opinion is not null || e.From == SupervisorHanded.From);
+
+    /// <summary>Who a solicited answer is from, by the same marks (CONTEXTDRIVE1i): a helper, a second opinion or the supervisor; null for any other word.</summary>
+    public static string? AnsweredBy(SessionEvent e) =>
+        !Answers(e) ? null : e.Helper is not null ? GoOnBy.Helper : e.Opinion is not null ? GoOnBy.Opinion : GoOnBy.Supervisor;
 }
 
 /// <summary>Where a reading of a line's events stopped (COMMS1g): whether a turn's prompt is open, whether a reset was taken in it, and its answers.</summary>

@@ -6,13 +6,15 @@ public sealed record CallRefusal(string Code, string Text);
 /// <summary>
 /// The call layer's table (FOUNDATION1r; the foundation design §2.3): which tools a named session is served, by where the connector
 /// places it (<see cref="SessionWork"/>), over every tool the host registers. A tool <see cref="ToolClasses"/> does not class, and a work
-/// the table does not know, refuse.
+/// the table does not know, refuse. What a session is served is all its <c>tools/list</c> names (CONTEXTONE1d2).
 /// </summary>
 /// <remarks>
 /// <c>McpRoleFilterTests</c> holds every cell to <c>fixtures/call-table.json</c> over the host's registration. A box that judges by the
 /// work alone keeps its check as its store's guard, and the table refuses the same cells first in its words: the channel's, Ask Daoris's
 /// checkouts, housekeeping and settings, and a brainstorm's turn. A named session the connector cannot place is served the reads alone
-/// (the foundation design §7 row 10), and a reviewer and a brainstorm's voice only what their handed rules allow (row 11).
+/// (the foundation design §7 row 10), and a reviewer and a brainstorm's voice only what their handed rules allow (row 11). A session
+/// working in a repository is served <see cref="CoreServed"/> and its own work's tools, since its harness loads every tool it is listed at
+/// its start (D230 point 3); Ask Daoris is served every tool but the turns and the memory changes.
 /// </remarks>
 public static class CallTable
 {
@@ -59,6 +61,38 @@ public static class CallTable
 
     private static readonly HashSet<string> Reviewer = new(ReviewerServed, StringComparer.Ordinal);
 
+    /// <summary>
+    /// What every session working in a repository is served (CONTEXTONE1d2): the knowledge and its memory, quests, its line, the
+    /// registry, a helper's ask, the ask's channel and the handbacks, less what its work is refused below.
+    /// </summary>
+    public static IReadOnlyList<string> CoreServed { get; } =
+    [
+        "channel_post", "channel_read", "handback_read", "helper_ask", "knowledge_convergence", "knowledge_get", "knowledge_repositories",
+        "knowledge_search", "line_read", "memory_end", "memory_get", "memory_propose", "memory_search", "memory_write", "quest_list",
+        "quest_publish", "quest_respond", "registry",
+    ];
+
+    private static readonly HashSet<string> Core = new(CoreServed, StringComparer.Ordinal);
+
+    /// <summary>
+    /// A quest's session's own beside the core set: its go-ahead and its question to the person, its ask to hand over, its proposal of a
+    /// rule, its answer to a second opinion, and a set-up step's serving and saying.
+    /// </summary>
+    private static readonly HashSet<string> Working = new(
+    [
+        "go_ahead_ask", "handover_propose", "opinion_answer", "permission_propose", "question_ask", "review_ready", "review_serve",
+    ], StringComparer.Ordinal);
+
+    /// <summary>A conversation's own: a quest's session's but the question it parks on and a set-up step's two.</summary>
+    private static readonly HashSet<string> Conversing = new(
+        ["go_ahead_ask", "handover_propose", "opinion_answer", "permission_propose"], StringComparer.Ordinal);
+
+    /// <summary>A helper's own: its answer.</summary>
+    private static readonly HashSet<string> Helping = new(["helper_answer"], StringComparer.Ordinal);
+
+    /// <summary>An intake's own: none, since it publishes through the core set's quests.</summary>
+    private static readonly HashSet<string> Intaking = new(StringComparer.Ordinal);
+
     private static readonly HashSet<string> Turns = new([BrainstormBox.GiveTool, BrainstormBox.SynthesizeTool], StringComparer.Ordinal);
 
     /// <summary>Ask Daoris's own tools, whose boxes serve its record alone.</summary>
@@ -101,14 +135,21 @@ public static class CallTable
             // §7 row 11: a reviewer is served what its handed rules offer, on every door.
             { Work: ParticipantWork.Review } => Reviewer.Contains(name) ? null : Forbidden(Words.Reviewer(name)),
             { Work: ParticipantWork.AskDaoris } => Ordinary(name, askDaoris: true) ?? Unowned(name, "Ask Daoris"),
-            { Work: ParticipantWork.Help } => Serving(name) ?? Channelled(name) ?? Ordinary(name),
-            { Work: ParticipantWork.Intake } => Ordinary(name) ?? Unowned(name, "an intake"),
-            { Work: ParticipantWork.Build or ParticipantWork.Design or ParticipantWork.Chat } => Ordinary(name),
+            { Work: ParticipantWork.Help } => Serving(name) ?? Channelled(name) ?? Ordinary(name) ?? Outside(name, Helping, "a helper"),
+            { Work: ParticipantWork.Intake } => Ordinary(name) ?? Unowned(name, "an intake") ?? Outside(name, Intaking, "an intake"),
+            { Work: ParticipantWork.Build or ParticipantWork.Design } => Ordinary(name) ?? Outside(name, Working, "a quest's session"),
+            { Work: ParticipantWork.Chat } => Ordinary(name) ?? Outside(name, Conversing, "a conversation"),
             _ => Unknown(name, kind),
         };
     }
 
     private static CallRefusal Forbidden(string text) => new(ForbiddenWork, text);
+
+    /// <summary>A tool neither in the core set nor among the work's own (CONTEXTONE1d2): not listed to it, and refused if called.</summary>
+    private static CallRefusal? Outside(string name, IReadOnlySet<string> own, string who) =>
+        Core.Contains(name) || own.Contains(name) ? null : Forbidden(
+            $"`{name}` is not served to this session: Daoris serves {who} its connector's core tools and its own, and this is neither. "
+            + "Nothing was done.");
 
     /// <summary>A pass's own result tool alone; the other turn's is refused in its box's words, anything else in the pass's.</summary>
     private static CallRefusal? Turn(string name, string own, string turn) =>

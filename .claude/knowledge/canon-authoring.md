@@ -123,5 +123,9 @@ description: <what it does, and when to use it — this is the trigger>
 
 Consumers hold a hash. Any edit shows up in their next `sync` as an update, which is intended — but a
 consumer who had improved that file locally will see drift instead. That is also intended: it is the
-conversation the tool exists to force. Prefer `daoris upstream` from the repository that found the
-improvement over editing the canon directly, so the reasoning arrives with the change.
+conversation the tool exists to force, and `daoris reconcile` is where the consumer's session holds it,
+adopting the change, keeping its own text with the reason in `daoris.json`, or proposing its text
+upstream. A consumer's improvement arrives here as a request: outside this checkout `daoris upstream`
+composes the request's words and writes nothing across, and the improvement lands when this repository
+takes it, so the reasoning arrives with the change. Only in this checkout does `daoris upstream` write
+into `canon/`.

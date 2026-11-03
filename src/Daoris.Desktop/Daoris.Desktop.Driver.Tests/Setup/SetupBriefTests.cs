@@ -44,6 +44,7 @@ public sealed partial class SetupBriefTests
     [InlineData(SetupCase.Move, SetupQuests.Move)]
     [InlineData(SetupCase.Declare, SetupQuests.Declare)]
     [InlineData(SetupCase.Index, SetupQuests.Index)]
+    [InlineData(SetupCase.Reconcile, SetupQuests.Reconcile)]
     public void The_title_is_the_press_words_with_the_day_so_the_log_knows_it_for_a_set_up(SetupCase kind, string stem)
     {
         var (title, _) = SetupBrief.Compose(Input(kind));
@@ -128,6 +129,7 @@ public sealed partial class SetupBriefTests
     [InlineData(SetupCase.Move)]
     [InlineData(SetupCase.Declare)]
     [InlineData(SetupCase.Index)]
+    [InlineData(SetupCase.Reconcile)]
     public void The_body_is_in_the_canons_words(SetupCase kind)
     {
         var (title, body) = SetupBrief.Compose(Input(kind));
@@ -139,6 +141,54 @@ public sealed partial class SetupBriefTests
         {
             Assert.DoesNotContain(path, text);
         }
+    }
+
+    /// <summary>
+    /// D230: the reconcile asks the session to run the doctrine tool's brief and decide each item there, adopt, keep with
+    /// its reason, or propose upstream, keeping the checks green; every verb it asks for is one its press allows.
+    /// </summary>
+    [Fact]
+    public void The_reconcile_asks_each_item_decided_with_the_checks_kept_green_in_verbs_its_press_allows()
+    {
+        var (_, body) = SetupBrief.Compose(Input(SetupCase.Reconcile));
+
+        foreach (var words in new[]
+        {
+            "`daoris reconcile`", "**Adopt**", "**Keep, with its reason**", "**Upstream**", "`daoris.json`'s `kept`",
+            "before the first change", "green where they were green before", "if `daoris reconcile` finds nothing",
+        })
+        {
+            Assert.Contains(words, body);
+        }
+
+        // What it asks for, before the bounds name what it never runs.
+        var asked = body[..body.IndexOf("**What this writes", StringComparison.Ordinal)];
+        foreach (var verb in Regex.Matches(asked, "`(daoris [^`]+)`").Select(match => match.Groups[1].Value).Distinct())
+        {
+            Assert.True(SetupPressRules.ReconcileVerbs.Contains(verb), $"the body asks for `{verb}`, which the reconcile's press does not allow.");
+        }
+
+        Assert.Contains("daoris reconcile", SetupPressRules.ReconcileVerbs);
+        Assert.Equal([.. SetupPressRules.Verbs, "daoris reconcile", "daoris upstream --all"], SetupPressRules.ReconcileVerbs);
+    }
+
+    /// <summary>
+    /// D230 point 4, D135 §3 as amended: the machine's standing answer for the repository is put among the items, each line
+    /// quoted, for the session to move a line that states a rule of the repository's own development into its records.
+    /// </summary>
+    [Fact]
+    public void The_reconcile_carries_the_standing_answers_lines_for_the_session_to_move_a_repository_rule()
+    {
+        var standing = new StandingAnswer("Run the whole test suite before every commit.\n\nTest in the staging environment.", null);
+        var (_, body) = SetupBrief.Compose(Input(SetupCase.Reconcile) with { Standing = standing });
+
+        Assert.Contains("> Run the whole test suite before every commit.", body);
+        Assert.Contains("> Test in the staging environment.", body);
+        Assert.Contains("a rule about this repository's own development", body);
+        Assert.Contains("into this repository's records", body);
+
+        var (_, without) = SetupBrief.Compose(Input(SetupCase.Reconcile));
+        Assert.DoesNotContain("standing answer", without);
     }
 
     /// <summary>

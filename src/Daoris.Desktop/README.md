@@ -72,7 +72,10 @@ choice, under the name its callers use. The supervisor's quarantine reads and re
 bounds, is Roles', and `QuestionFiles` keeps the file and aliases the bounds. `sessions supervise` reads its world and ask through
 `ISupervisorWorld` and `ISupervisorAsk`, which `SessionsWorld` and `SessionsAsk` implement, and builds the ask it returns with the factory
 the sessions verb hands it; the question file and the ask's words come from `IRolesWorkOrders`, which
-`WorkOrders/Work/RolesWorkOrdersWiring.cs` installs. The supervisor's proof, the holder key and the decisions' memory are unchanged.
+`WorkOrders/Work/RolesWorkOrdersWiring.cs` installs. Its print also fences the line's course as Daoris's facts (CONTEXTDRIVE1i, D229:
+`CountTexts.Print` over `ILineFactsReads`), each count cited as a reason's source names it (`count:answers-alone=2 (exact)`); the
+keeping refuses a `count:` source naming none of the counts the park read (`no-source`) and the decision's file keeps them as `counts`.
+The supervisor's proof, the holder key and the decisions' memory are unchanged.
 Context owns instruction accounting and session-part composition (`Context/InstructionAccounting.cs`, `SessionPartsText.cs`), and supplies the required `AgentContext` operations (`Context/AgentContextWiring.cs`). Agents owns the composed brief and part carriers; Events owns handed codes and stream shapes. Event history, console output and streams are supplied through lower interfaces while Context retains storage, buffering and lifecycle.
 The driver's `Context/` owns the context's own files (FOUNDATION1 mod-xiii, D212): the briefs (`Domain/ContextBrief.cs`, `Events/ContextBriefs.cs`), the session event record with its reads and last words (`Events/SessionEventLog.cs`, `SessionEventReads.cs`, `SessionLastWords.cs`), the console output window (`Domain/SessionOutput.cs`), the transcript file (`TranscriptFile.cs`), the instruction accounting, the session parts' text and the agent context's wiring, with `WorkplaceEventRecordsWiring.cs`. The files kept their sub-folders below the old `Accounts/`, `Conversations/` or `Sessions/` (`Domain/`, `Events/`); tests are mirrored under `Driver.Tests/Context/`. Namespaces remain `Daoris.Driver`, and the files moved byte-identically.
 
@@ -106,6 +109,8 @@ The driver's `Workflows/` owns the workflows and the node runtime (FOUNDATION1 m
 Workflows names nothing above it: no Setup, Help or Loop type. A chat run's test (`ChatRuns.ChatOf`) and a workflow run's read (`WorkflowRunReader.ChainsOf`) tell Ask Daoris's room by the participants' work rule's spelling, `ParticipantWork.HelpRepository`, which is `HelpRoom.Repository` (`daoris:help`) said below Help; the comparison, its case rule and the codes it answers are unchanged.
 
 The driver's `Setup/` owns the set-up of a repository and of a workspace (FOUNDATION1 mod-xix, D212): the set-up press, its plan, order and brief and the description's forms (`Domain/`, pure), the use cases `SetupPress`, `WorkspaceSetup` and their three commands, the two worlds and the ports they are written against (`SetupPorts`), the plan's file, the description's files (`SelfDescriptionFiles`) and the wiring Setup installs for Work orders (`WorkOrdersSetupWiring`). Its tests are mirrored under `Driver.Tests/Setup/`. Namespaces remain `Daoris.Driver`.
+
+The press has a reconcile case (D230, CONTEXTONE1b): `SetupPress.PlanReconcileAsync` asks an adopted repository's own session to run `daoris reconcile` and decide each item it lists, adopting the canon's text, keeping its own with the reason in `daoris.json`'s `kept`, or proposing it upstream, with its checks kept green (`ReconcileBrief`, in the canon's words). The driver adds the machine's items to the quest, never to the verb: each line of the person's standing answer for the repository, for the session to move a line that states a rule of the repository's own development into its records. Its rule is the set-up's verbs with `daoris reconcile` and `daoris upstream --all` (`SetupPressRules.ReconcileVerbs`), and one is open per repository, beside any set-up (`SetupQuests.Reconcile`). It is offered for a repository the registry marks adopted, since the driver reads no `status --json` of the doctrine tool's; the body says a reconcile that finds nothing closes done. No door of the window or the terminal calls it.
 
 The driver's `Help/` owns Ask Daoris (FOUNDATION1 mod-xx, D212): its room (`HelpRoom`, `HelpRoomScope`, `HelpRoomDescriptions`), its access mode and the swap of it under a running conversation (`HelpMode`, `HelpSwap`), the judges of its housekeeping and chosen settings (`HelpHousekeeping`, `HelpSettings`) and of its proposals (`HelpProposals`, `HelpProposalKinds`, `HelpProposalScope` and the kinds' files in `Proposals/`), what a start handed its agent (`HelpWired`), what an Apply published (`HelpPublished`), the `help` verb (`HelpCommand`), the home topic (`HelpHomeTopic`) and the wiring Help installs for Course and Knowledge (`CourseHelpWiring`, `KnowledgeHelpReads`). It keeps its judges and every grant exactly as they read; the move changes none. Its tests are mirrored under `Driver.Tests/Help/`. The room's section tests and goldens, the checkouts', circle's and facts' tests, and the port tests Knowledge's cut gave are Knowledge's (`Driver.Tests/Knowledge/`, the structure map's test list), as `HelpGrantsTests` is Plugins' and `HelpModeNamesTests` Settings'. Namespaces remain `Daoris.Driver`.
 
@@ -391,7 +396,19 @@ holds it; a session handed no server sends none, and an adapter that does not re
 Since CONTEXTONE1d (D230 point 3) every session's spawn, of every kind and on either door, is equipped by `Driver.Equip`: its
 toolchain's environment, then the adapter's `ToolsUpFront`, which on both Claude Code doors is `ENABLE_TOOL_SEARCH=false` (HELP5), so the
 connector's tools come with the first request rather than behind a tool search; Codex holds them already and is handed nothing. The
-switch loads every MCP server the session has, the repository's own too: the connector's 58 tools are about 96 KB of definitions.
+switch loads every MCP server the session has, the repository's own too, so since CONTEXTONE1d2 the connector lists a session only its
+row of the call layer's table (`CallTable`, read by the work of the record its `DAORIS_SESSION_ID` names, which every spawn carries and a
+repository's own `.mcp.json` server inherits): a session in a repository the 18 tools of `CallTable.CoreServed` and its own kind's (a
+build 25, about 39 KB of definitions; a chat 22; an intake 16; a helper 12), Ask Daoris every tool but four (54, about 95 KB, of 102 KB
+for all 58). Nothing new rides the spawn: the kind is the record's, and the table is the one the connector already refused calls by.
+Since CONTEXTONE1e every Claude session's own settings file (`SpawnSettings`, handed by `--settings` on the pipe door and
+`_meta.claudeCode.options.settings` on the protocol door, both Claude Code's command-line tier) carries `SpawnSettings.OwnContext`:
+`autoMemoryEnabled: false`, `syncClaudeAiSkills: false`, `syncClaudeAiPlugins: false` and `disableClaudeAiConnectors: true`. Its skills are
+then the tree's and the per-session plugin copy's (`SpawnSkills`), its connectors the ones it is handed and the tree's, and its memory
+Daoris's (D220); the file is written for every such session, rules or none. Claude Code 2.1.314's own schema says that tier stops the
+account's synced skills and plugins for that invocation alone and moves nothing, so the account's home is never written
+(`HarnessSettings.ProfileHome`). Its bundled skills stay, the same for every account. Codex takes no settings and is unchanged: it reads
+the tree's skills by path.
 
 A conversation's turn (Ask Daoris and a repository's chat, on the protocol door) is tried again the same way since AGENTERRORS1b, inside
 the turn, on the conversation's own process: `ProtocolChat` hands its session the same `TransientRetry` once it is open (`ChatRetry`, the
@@ -713,7 +730,13 @@ five reasons, and `resume` for SESSCTX1c; no box takes those three), each part's
 and the entry's other parts. It carries every word the session took once by its id (a word taken back left out, a channel's
 message by its event's own `channel` mark, another agent's findings by `opinion`, each as that agent's claim), each turn's last
 message and what it did, the plan with its turn, the last check each part ran by a declared gate and the last failed one's kept
-output, under a 40,000 bound with a Han character weighing three, every cut said and accounted in its `brief-*` sections. A
+output, and the line's course as Daoris counts it (CONTEXTDRIVE1b, D229: each count of `LineCounts` that is not zero or that Daoris
+acts on, with the number it acts at, worded by `Roles/Domain/CountTexts.cs` from codes and numbers alone, under its own 1,000 cap),
+under a 40,000 bound with a Han character weighing three, every cut said and accounted in its `brief-*` sections. A start with no
+brief carries that item where any count of its line is not zero (`SessionTarget.Course`), and a go-on's words end with one line of
+the count a go-on moves or one near what Daoris does on it (`CountTexts.GoOn`). The counts, the parts and the go-ons are read once by
+`LineCountsRead.FactsOf`, which Context and Roles reach through `ILineFactsReads` (`Roles/LineFactsReads.cs`, installed by
+`Course/LineFactsWiring.cs`). A
 hand-over's new conversation keeps it as its first prompt (`origin: target`, its account, `continues`), never read as its
 opening; a driven carry-on carries it as part of its instruction, accounted within it. The new part reads its line's kept folders.
 Every start's instruction also says how its agent signs its commits (MAKERTRAIL1, `CommitTrailers.For`): an agent of another
