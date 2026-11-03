@@ -886,17 +886,10 @@ public sealed partial class HelpCoverageTests
         ("workflow use", new Door("workflow", "use")),
         ("workflow kind", WorkflowOwed),
         ("notify", new Door("setting", "notify")),
-        // ONEWAY1a (the oneway design §2 S1): `intake`, `helper` and `adapter` are gone from the family, a role's agents the role door's
-        // alone, `role` below.
         ("actor", new Exempt(
-            "it is retired and changes nothing: a role's agents are the role door's, `daoris role set`, which Ask Daoris proposes through "
-            + "`role_propose`; its `export`, `import` and `found` are the staffing copy's, the person's own, which ONEWAY1c-ii retires.")),
-        ("strikes", new Door("setting", "strikes")),
+            "its `found` is the staffing copy's, the person's own to take or dismiss: a role's agents are the role door's, `daoris role set`, "
+            + "which Ask Daoris proposes through `role_propose`.")),
         ("retry", new Door("setting", "retry")),
-        // SESSWATCH1a (D200, the session-watch design §3): retired; the door is kept only to refuse a helper reading an older room.
-        ("timeout", new Exempt(
-            "it is retired and changes nothing: sessions are no longer limited by time, so the verb, its door and its tool answer why, "
-            + "and the room no longer offers it.")),
         // TOOL4e: the default cool-off's terminal door (D125 §6); TOOL4g built Settings → Driver's control, TOOL4l-b its Ask Daoris door.
         ("cooloff", new Door("setting", "cooloff")),
         // KEEP1d (D195 point 2): each kind's keep rule, the Disk space card's Change… and Ask Daoris's `keep` door.
@@ -941,7 +934,6 @@ public sealed partial class HelpCoverageTests
             + "helper can never grant itself housekeeping or a setting, nor take back what the person granted.")),
 
         ("driver", "useSetNotify", null, new Door("setting", "notify")),
-        ("driver", "useSetStrikes", null, new Door("setting", "strikes")),
         ("driver", "useSetCoolOff", null, new Door("setting", "cooloff")),
         // CAPSET1: the cap of sessions Daoris starts at once, set from the card as `setting cap` already proposes it.
         ("driver", "useSetCap", null, new Door("setting", "cap")),

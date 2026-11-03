@@ -398,7 +398,7 @@ public static class SessionsCommand
 
     /// <summary>
     /// <c>say &lt;id&gt; "…" [--file &lt;path&gt;]… [--level ordinary|urgent|now]</c>: the words after the id joined by a space,
-    /// each path after its flag, and the level after its own (COWORK1a). <c>--now</c> is retired (ONEWAY1l) and refused naming <c>--level now</c>.
+    /// each path after its flag, and the level after its own (COWORK1a).
     /// </summary>
     private static SessionsAsk? ReadSay(IReadOnlyList<string> args, out string? problem)
     {
@@ -411,12 +411,6 @@ public static class SessionsCommand
         string? level = null;
         for (var at = 2; at < args.Count; at++)
         {
-            if (args[at] == "--now")
-            {
-                problem = "`--now` is no longer a flag: say `--level now` for when it reads your words.";
-                return null;
-            }
-
             if (args[at] == "--level")
             {
                 if (at + 1 >= args.Count || MessageLevels.Read(args[at + 1]) is null)

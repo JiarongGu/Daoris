@@ -304,7 +304,6 @@ internal static class PipeTargetRows
 
         // The machine's standing choices.
         Row("SET_NOTIFY", State(["notify"], (a, _) => Raw(At(a, "notify")) ?? "", p => Raw(Field(p, "notify"))));
-        Row("SET_STRIKES", State(["strikes"], (a, _) => Raw(At(a, "strikes")) ?? "", p => Raw(Field(p, "strikes"))));
         Row("SET_COOLOFF", State(["minutes"], (a, _) => Raw(At(a, "coolOff")) ?? "", p => Raw(Field(p, "minutes"))));
         Row("SET_CAP", State(["cap"], (a, _) => Raw(At(a, "cap")) ?? "", p => Raw(Field(p, "cap"))));
         Row("SET_HELP_MODE", State(["mode"], (a, _) => Text(At(a, "helpMode")) ?? "", p => Text(p, "mode")));

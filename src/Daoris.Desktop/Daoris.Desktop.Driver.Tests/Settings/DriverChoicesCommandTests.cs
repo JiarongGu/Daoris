@@ -51,26 +51,6 @@ public sealed class DriverChoicesCommandTests : IDisposable
         Assert.False(File.Exists(Config));
     }
 
-    /// <summary>
-    /// ONEWAY1a (the oneway design §2 S1): `settings actor`, naming a role or none, is refused naming the role door, exit 2, and writes
-    /// nothing; its copy verbs stay until ONEWAY1c-ii. `adapter`, `intake` and `helper` are no verb of the family any more (the tree refuses
-    /// their old forms, `CommandTreeTests`), and no route is `SET_ACTOR`.
-    /// </summary>
-    [Theory]
-    [InlineData("actor build claude-code")]
-    [InlineData("actor")]
-    public async Task ONEWAY1a_settings_actor_is_refused_naming_the_role_door(string words)
-    {
-        var exit = await DriverChoicesCommand.RunAsync(words.Split(' '), World(), CancellationToken.None);
-
-        Assert.Equal(2, exit);
-        Assert.Equal($"daoris: {RetiredStaffingVerb.Refusal("actor")}", _error.ToString().TrimEnd());
-        Assert.Contains("daoris role set", _error.ToString());
-        Assert.False(File.Exists(Config));
-        Assert.DoesNotContain(ChoiceRoutes.Verbs, row => row.Route?.Route == "SET_ACTOR");
-        Assert.DoesNotContain(DriverChoicesCommand.Verbs, verb => verb is "adapter" or "intake" or "helper");
-    }
-
     [Fact]
     public async Task A_read_from_a_sessions_terminal_is_said()
     {
@@ -79,27 +59,6 @@ public sealed class DriverChoicesCommandTests : IDisposable
         Assert.Equal(0, exit);
         Assert.StartsWith($"daoris: {Config}", _out.ToString(), StringComparison.Ordinal);
         Assert.Equal("", _error.ToString());
-    }
-
-    /// <summary>
-    /// SESSWATCH1a (D200, the session-watch design §3): the retired <c>timeout</c> changes nothing, from any terminal, and says that
-    /// sessions are no longer limited by time, exit 1; a file that holds the key keeps it as written.
-    /// </summary>
-    [Theory]
-    [InlineData(null)]
-    [InlineData("s1a2b3c4")]
-    public async Task The_retired_timeout_changes_nothing_and_says_why(string? session)
-    {
-        Directory.CreateDirectory(Path.GetDirectoryName(Config)!);
-        const string Kept = """{ "cap": 2, "timeoutMinutes": 90 }""";
-        File.WriteAllText(Config, Kept);
-
-        var exit = await DriverChoicesCommand.RunAsync(["timeout", "120"], session is null ? World() : World(("DAORIS_SESSION_ID", session)), CancellationToken.None);
-
-        Assert.Equal(1, exit);
-        Assert.Equal($"daoris: {DriverChoicesCommand.TimeoutRetired}", _error.ToString().TrimEnd());
-        Assert.Equal(Kept, File.ReadAllText(Config));
-        Assert.Equal(90, DriverConfig.Load(Config).KeptTimeoutMinutes);
     }
 
     [Fact]
@@ -206,8 +165,7 @@ public sealed class DriverChoicesCommandTests : IDisposable
     public void The_family_is_this_programs_whole_and_its_usage_names_each_verb()
     {
         Assert.Equal(
-            // ONEWAY1a: `adapter`, `helper` and `intake` left the family, a role's agents the role door's.
-            ["list", "drive", "undrive", "hold", "resume", "trees", "notify", "cap", "strikes", "retry", "timeout", "cooloff", "line", "landing", "across", "standing", "language", "review", "opinion", "helpers", "handover", "commits", "work-cycle",
+            ["list", "drive", "undrive", "hold", "resume", "trees", "notify", "cap", "retry", "cooloff", "line", "landing", "across", "standing", "language", "review", "opinion", "helpers", "handover", "commits", "work-cycle",
                 "brainstorms", "workflow", "keep", "actor",
                 // FOUNDATION1y-i: the role catalogue's door.
                 "role"],

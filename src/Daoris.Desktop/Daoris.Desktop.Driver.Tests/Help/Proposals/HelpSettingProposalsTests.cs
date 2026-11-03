@@ -12,7 +12,6 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     [InlineData("line", "engine", null, "develop", "daoris driver line engine develop", "`engine`'s line to `develop`")]
     [InlineData("line", null, "work", "--clear", "daoris driver line --workspace work --clear", "Clear workspace `work`'s line")]
     [InlineData("landing", null, "work", "branch feature/{quest}-{slug} --tidy", "daoris driver landing --workspace work branch feature/{quest}-{slug} --tidy", "on a branch `feature/{quest}-{slug}`")]
-    [InlineData("strikes", null, null, "5", "daoris driver strikes 5", "5 failed sessions")]
     [InlineData("notify", null, null, "off", "daoris driver notify off", "Stop saying")]
     // HELP9: reading and writing across (D107), and the two dials the terminal alone had.
     [InlineData("across", "engine", null, "read off", "daoris driver across engine read off", "read by no agent outside it")]
@@ -47,24 +46,6 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
         Assert.Equal(terminal, plan.Terminal);
         Assert.Contains(says, plan.Describe);
         Assert.NotNull(plan.Apply);
-    }
-
-    /// <summary>
-    /// 🔴 ONEWAY1a (the oneway design §2 S1): the staffing doors `setting_propose` once had are refused naming `role_propose`, whatever
-    /// they are given, and plan nothing; the service's twin says the same words.
-    /// </summary>
-    [Theory]
-    [InlineData("adapter", "claude-code-acp")]
-    [InlineData("intake", "off")]
-    [InlineData("intake", "claude-code")]
-    [InlineData("helper", "claude-code")]
-    public void ONEWAY1a_a_staffing_door_is_refused_naming_the_role_door(string door, string value)
-    {
-        var plan = HelpProposals.Plan(Setting(door, null, null, value), DriverConfig.Empty with { Adapter = "claude-code" }, Facts);
-
-        Assert.Equal(HelpSettingProposals.StaffingRetired, plan.Refusal);
-        Assert.Null(plan.Apply);
-        Assert.DoesNotContain(door, new HelpSettingProposals().Doors);
     }
 
     /// <summary>
@@ -502,18 +483,6 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
         Assert.Equal(new LandingRule("branch", "feature/{quest}-{slug}", Tidy: true), config.WorkspaceLandings["work"]);
     }
 
-    /// <summary>SESSWATCH1a (D200, the session-watch design §3): the retired `timeout` door refuses whatever it is given, in the verb's words.</summary>
-    [Theory]
-    [InlineData("120")]
-    [InlineData("0")]
-    public void The_retired_timeout_door_refuses_saying_sessions_are_no_longer_limited_by_time(string minutes)
-    {
-        var plan = HelpProposals.Plan(Setting("timeout", value: minutes), DriverConfig.Empty, Facts);
-
-        Assert.Null(plan.Apply);
-        Assert.Equal(DriverChoicesCommand.TimeoutRetired, plan.Refusal);
-    }
-
     /// <summary>HELP9: across (D107) and a cap, applied as `SET_READ_ACROSS`, `SET_WRITE_ACROSS` and the terminal make them.</summary>
     [Fact]
     public void Applying_across_and_a_cap_makes_the_edit_the_terminal_makes()
@@ -598,14 +567,12 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
             ("landing", "engine", null, "merge"), ("across", "engine", null, "read on"), ("standing", "engine", null, "dev only"),
             ("language", null, "work", "zh"), ("review", "engine", null, "none"), ("opinion", "engine", null, "none"),
             ("helpers", "engine", null, "--mode on"), ("commits", null, "work", "--mode ask"),
-            ("strikes", null, null, "0"), ("retry", "q1a2b3c4", null, null),
-            ("timeout", null, null, "30"), ("notify", null, null, "on"), ("cap", null, null, "1"),
+            ("retry", "q1a2b3c4", null, null), ("notify", null, null, "on"), ("cap", null, null, "1"),
             ("cooloff", null, null, "90"), ("keep", null, null, "logs 14"), ("git-use", "engine", null, "--clear"),
         ];
 
         Assert.Equal(new HelpSettingProposals().Doors, samples.Select(sample => sample.Door));
-        // SESSWATCH1a (D200): the retired `timeout` door is kept only to refuse, saying why.
-        foreach (var (door, target, workspace, value) in samples.Where(sample => sample.Door != "timeout"))
+        foreach (var (door, target, workspace, value) in samples)
         {
             Assert.Null(HelpProposals.Plan(Setting(door, target, workspace, value), DriverConfig.Empty, Facts).Refusal);
         }

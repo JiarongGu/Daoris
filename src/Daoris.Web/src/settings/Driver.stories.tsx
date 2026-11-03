@@ -20,7 +20,6 @@ const FACTS: DriverFacts = {
   placeAnswers: true,
   pluginsFolder: 'C:/somewhere/Daoris/plugins',
   notify: true,
-  strikes: 3,
   coolOff: 60,
   cap: 2,
   machineAccess: { full: false, pauses: [{ pause: 'goAheads', value: 'never' }] },
@@ -33,7 +32,7 @@ const meta: Meta<typeof DriverCards> = {
   args: {
     facts: FACTS,
     busy: { access: false, update: false },
-    onGo: nothing, onNotify: nothing, onStrikes: nothing, onCoolOff: nothing, onCap: nothing, onAccess: nothing, onSayUpdate: nothing,
+    onGo: nothing, onNotify: nothing, onCoolOff: nothing, onCap: nothing, onAccess: nothing, onSayUpdate: nothing,
   },
   decorators: [storyWidths.wide],
 };
@@ -82,6 +81,3 @@ export const OlderShell: Story = {
     },
   },
 };
-
-/** Zero strikes: the one value whose consequence is invisible, said under the number. */
-export const NeverParks: Story = { args: { facts: { ...FACTS, strikes: 0 } } };

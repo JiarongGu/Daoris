@@ -34,7 +34,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
     public IReadOnlyList<string> Doors { get; } =
     [
         "drive", "undrive", "hold", "resume", "trees", "line", "landing", "across", "standing", "language", "review", "opinion",
-        "helpers", "commits", "strikes", "retry", "timeout", "notify", "cap", "cooloff", "keep", "git-use",
+        "helpers", "commits", "retry", "notify", "cap", "cooloff", "keep", "git-use",
     ];
 
     /// <summary>
@@ -53,7 +53,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
     /// <summary>
     /// STEWARDROLE1a-ii (D209 §5.4): each door's target, which its Apply marks the owner's: the quest for <c>retry</c>; for every other
     /// door its repository, or its workspace where the plan is the workspace's (a line, a landing, a language). A machine's door
-    /// (<c>strikes</c>, <c>timeout</c>, <c>notify</c>, <c>cap</c>, <c>cooloff</c>, <c>keep</c>) names neither, and marks nothing.
+    /// (<c>notify</c>, <c>cap</c>, <c>cooloff</c>, <c>keep</c>) names neither, and marks nothing.
     /// </summary>
     public HelpOwned Owned(HelpProposal proposal)
     {
@@ -220,23 +220,11 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
                 planned = commits;
                 break;
             }
-            // ONEWAY1a (the oneway design §2 S1): a role's agents are the role door's alone, which `role_propose` proposes; a helper
-            // reading an older room is told so, and nothing is planned.
-            case "intake" or "helper" or "adapter":
-                return Refused(StaffingRetired, "", "");
-            case "strikes" when int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var strikes):
-                planned = (strikes == 0 ? "Never park a quest for its failed sessions." : $"Park a quest after {strikes} failed sessions.",
-                    $"daoris driver strikes {strikes}", c => c.WithStrikes(strikes));
-                break;
-            // SESSWATCH1a (D200, the session-watch design §3): the door is retired and refuses whatever it is given, with the verb's
-            // words, for a helper reading an older room.
-            case "timeout":
-                return Refused(DriverChoicesCommand.TimeoutRetired, "", "");
             case "notify" when value is "on" or "off":
                 planned = (value == "on" ? "Say so when a session parks, or ends without being asked." : "Stop saying so when a session parks.",
                     $"daoris driver notify {value}", c => c.WithNotify(value == "on"));
                 break;
-            // HELP9: the two dials only a terminal set before, judged as `daoris driver cap|adapter` takes them.
+            // HELP9: the dial only a terminal set before, judged as `daoris driver cap` takes it.
             case "cap" when int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var cap) && cap >= 1:
                 planned = (cap == 1 ? "Run one session at a time on this machine, across every repository."
                         : $"Run at most {cap} sessions at once on this machine, across every repository.",
@@ -287,14 +275,6 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
 
         return new HelpPlan(null, planned.Describe, planned.Terminal, planned.Edit);
     }
-
-    /// <summary>
-    /// What <c>setting_propose</c>'s retired <c>adapter</c>, <c>intake</c> and <c>helper</c> answer (ONEWAY1a): a role's agents are the role
-    /// door's, proposed through <c>role_propose</c>. The service's twin says the same words.
-    /// </summary>
-    public const string StaffingRetired =
-        "a role's agents are no longer a setting: propose them through `role_propose` (the role door), as Agents → Roles and "
-        + "`daoris role set` set them; nothing was planned.";
 
     /// <summary>
     /// <c>retry</c> (HELP10, D110), as <c>daoris driver retry</c> reads it: a quest by id, <c>#</c> or not, which the

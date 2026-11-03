@@ -27,11 +27,4 @@ public static class RuledPolicy
 
     /// <summary>The supervisor's place a role's scope is: the machine, a workspace or a repository.</summary>
     public static string PlaceOf(RoleScope scope) => scope.Kind == RoleScope.Machine ? SupervisorRules.Machine : $"{scope.Kind}:{scope.Id}";
-
-    /// <summary>The refusal of the <c>strikes</c> doors on a reached home, where the failures rule decides; null on a home not reached.</summary>
-    public static string? StrikesRefused(string home) =>
-        new SupervisorRuleStore(home).Reached()
-            ? "on this home the failed sessions that park a quest are the supervisor's rule, so `strikes` was not changed: set it with "
-              + "`daoris role rules --place machine --set failures=<n>:hold`."
-            : null;
 }

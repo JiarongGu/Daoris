@@ -268,41 +268,14 @@ describe('the driver domain', () => {
    */
   it('lays each setting out as a row, with its why one hover away rather than on the page', async () => {
     invoke.mockImplementation(async (module: string) => (
-      module === 'DAORIS.DRIVER' ? { ...DRIVER_STATE, notify: true, strikes: 3 } : WIRING));
+      module === 'DAORIS.DRIVER' ? { ...DRIVER_STATE, notify: true, cap: 2 } : WIRING));
     show(<SettingsView notify={() => {}} section="driver" />);
     await screen.findByRole('checkbox', { checked: true });
 
     // The number dial is reachable by its label, and the why is a note, not a paragraph.
-    expect(screen.getByLabelText('Failures before a quest parks')).toBeTruthy();
+    expect(screen.getByLabelText('Sessions at once on this machine')).toBeTruthy();
     expect(screen.getByRole('note', { name: /Nobody should have to watch a driver/ })).toBeTruthy();
     expect(screen.queryByText(/Nobody should have to watch a driver/)).toBeNull();
-  });
-
-  /**
-   * REV3: passing through the field was a write. `Number(null)` and `Number('')` are both 0, which is
-   * the one value that means "never park" — and a keyboard user tabbing through the card sent it, with
-   * a toast that read like a confirmation.
-   */
-  it('writes the strikes only when the person changed them — focus, blur and a cleared box write nothing', async () => {
-    invoke.mockImplementation(async (module: string) => (
-      module === 'DAORIS.DRIVER' ? { ...DRIVER_STATE, strikes: 3 } : WIRING));
-    show(<SettingsView notify={() => {}} section="driver" />);
-    const field = await screen.findByLabelText('Failures before a quest parks');
-
-    await userEvent.click(field);
-    await userEvent.tab();
-    await userEvent.clear(field);
-    await userEvent.tab();
-    await userEvent.clear(field);
-    await userEvent.type(field, '3');
-    await userEvent.tab();
-    expect(invoke.mock.calls.some(([, type]) => type === 'SET_STRIKES')).toBe(false);
-    expect((field as HTMLInputElement).value).toBe('3');
-
-    await userEvent.clear(field);
-    await userEvent.type(field, '5');
-    await userEvent.tab();
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_STRIKES', { payload: { strikes: 5 } });
   });
 
   /**
@@ -340,8 +313,8 @@ describe('the driver domain', () => {
 
   /**
    * TOOL4g (D125 §2.2, §6): how long an account cools when its agent names no reset, the `cooloff` `daoris driver cooloff`
-   * edits. Written only when changed to a whole number of at least one, as the strikes are; an older shell that answers no
-   * such field is offered no row.
+   * edits. Written only when changed to a whole number of at least one; an older shell that answers no such field is offered no
+   * row.
    */
   it('sets the cool-off a limit naming no time takes, and offers nothing to a shell older than it', async () => {
     const notify = vi.fn();

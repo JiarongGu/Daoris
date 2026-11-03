@@ -79,20 +79,6 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
         Assert.DoesNotContain("never on a merge", tool);
     }
 
-    /// <summary>
-    /// ONEWAY1a (the oneway design §2 S1): the staffing doors are refused naming `role_propose`, whatever they are given, in the words of
-    /// the driver's twin, and are no door the tool lists.
-    /// </summary>
-    [Theory]
-    [InlineData("adapter", "claude-code-acp")]
-    [InlineData("intake", "off")]
-    [InlineData("helper", "claude-code")]
-    public void ONEWAY1a_a_staffing_door_is_refused_naming_the_role_door(string door, string value)
-    {
-        Assert.Equal(HelpSettingProposalWriter.StaffingRetired, HelpSettingProposalWriter.Refusal(new SettingChange(door, null, null, value)));
-        Assert.DoesNotContain(door, HelpSettingProposalWriter.Doors);
-    }
-
     /// <summary>HELP9: reading and writing across (D107) and a cap pass the shape as the terminal spells them.</summary>
     [Theory]
     [InlineData("across", "engine", null, "read off")]
@@ -372,10 +358,6 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     // LANDSVC1: a merge carrying the switch is no shape the box takes, and its sentence says the switch rides a branch.
     [InlineData("landing", "engine", null, "merge --auto-accept", "`branch <pattern>` (with `--tidy`")]
     [InlineData("landing", "engine", null, "merge --auto-accept", "`--auto-accept` for a quest's done")]
-    [InlineData("strikes", null, null, "many", "a whole number")]
-    // SESSWATCH1a (D200): the retired door is refused whatever it is given.
-    [InlineData("timeout", null, null, "0", "no longer limited by time")]
-    [InlineData("timeout", null, null, "90", "no longer limited by time")]
     [InlineData("notify", null, null, "loud", "`on` or `off`")]
     [InlineData("across", null, null, "read off", "a repository or a workspace")]
     [InlineData("across", "engine", "work", "read off", "a repository or a workspace")]

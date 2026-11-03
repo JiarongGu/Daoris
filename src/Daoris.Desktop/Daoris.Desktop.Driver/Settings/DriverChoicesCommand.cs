@@ -78,7 +78,6 @@ public static class ChoiceRoutes
     public static InstanceRoute Hold { get; } = Person("SET_HOLD");
     public static InstanceRoute Trees { get; } = Person("SET_TREES");
     public static InstanceRoute Notify { get; } = Person("SET_NOTIFY");
-    public static InstanceRoute Strikes { get; } = Person("SET_STRIKES");
     public static InstanceRoute CoolOff { get; } = Person("SET_COOLOFF");
     public static InstanceRoute Cap { get; } = Person("SET_CAP");
     public static InstanceRoute Retry { get; } = Person("RETRY_QUEST");
@@ -107,7 +106,6 @@ public static class ChoiceRoutes
         ("driver hold|resume <repo>", Hold, "the window's hold"),
         ("driver trees <repo> on|off", Trees, "the window's own-tree switch"),
         ("driver notify on|off", Notify, "the window's notify switch"),
-        ("driver strikes <n>", Strikes, "the window's strike limit"),
         ("driver cooloff <minutes>", CoolOff, "the window's cool-off"),
         ("driver cap <n>", Cap, "the window's session cap"),
         ("driver retry <quest>", Retry, "the quest's *Try again*, which judges from the planner's verdict whether to mark or release it"),
@@ -125,7 +123,6 @@ public static class ChoiceRoutes
         ("driver keep <kind> …", Keep, "the Disk space card's rule of that kind"),
         ("driver role set|remove|default|policy|rules …", Role, "a working role's record, choices and policy, or a place's supervisor rules"),
         ("driver actor found take|dismiss <n>", null, "alone: the staffing's lock serializes it with the window's Take it and Dismiss"),
-        ("driver timeout <minutes>", null, "alone: no route sets a session's timeout"),
         ("driver retry <quest> --at <n>", null, "alone: RETRY_QUEST marks at the failures its verdict counts, never at a number the person gives"),
         ("driver retry <quest> --session <id>", null, "alone: RETRY_QUEST releases the stop its verdict names, never a session the person names"),
         ("driver landing … --cycle <file>|--no-cycle", null, "alone: SET_LANDING has no field for the cycle, and keeps the one the rule holds"),
@@ -159,7 +156,7 @@ public static class DriverChoicesCommand
     /// <summary>The verbs this program has, each the CLI hands on (the CLI's allow-list is held to it).</summary>
     public static IReadOnlyList<string> Verbs { get; } =
     [
-        "list", "drive", "undrive", "hold", "resume", "trees", "notify", "cap", "strikes", "retry", "timeout", "cooloff", "line", "landing", "across", "standing", "language", "review", "opinion", "helpers", "handover", "commits", "work-cycle",
+        "list", "drive", "undrive", "hold", "resume", "trees", "notify", "cap", "retry", "cooloff", "line", "landing", "across", "standing", "language", "review", "opinion", "helpers", "handover", "commits", "work-cycle",
         "brainstorms", "workflow", "keep", "actor", "role",
     ];
 
@@ -168,7 +165,7 @@ public static class DriverChoicesCommand
         usage: daoris-driver driver [list]
                daoris-driver driver drive|undrive|hold|resume <repository>
                daoris-driver driver trees <repository> on|off · notify on|off
-               daoris-driver driver cap <n> · strikes <n> · timeout <minutes> · cooloff <minutes>
+               daoris-driver driver cap <n> · cooloff <minutes>
                daoris-driver driver retry <quest> [--at <n> | --session <id>]
                daoris-driver driver line <repository>|--workspace <name> <branch>|--clear
                daoris-driver driver landing <repository>|--workspace <name> merge|branch <pattern>|--clear
@@ -203,7 +200,6 @@ public static class DriverChoicesCommand
                daoris-driver driver keep [set-aside <days>|whole|slim|default · downloads <days>|never|default · logs <days>|default
                       · history <days>|never|default · floor <n>GB|<n>%|off|default]
                daoris-driver driver actor found [take|dismiss <n>]
-                      (actor <role>, export and import are retired: `daoris role set` sets a role's agents)
                daoris-driver driver role [<id>] · role set <id> [--name "…"] [--name-in <tag>="…"]… [--takes <work,…>]
                       [--scope machine|workspace:<id>|repository:<id>] ["<agent> [<model>|-] [<effort>|-]" … | off]
                       · role remove|default <id> · role suggested [--use]
@@ -222,14 +218,6 @@ public static class DriverChoicesCommand
         "this change is the person's, and this terminal is a session's (`DAORIS_SESSION_ID`): make it in Daoris's window, through Ask "
         + "Daoris's proposal and its Apply, or from your own terminal; nothing was done.";
 
-    /// <summary>
-    /// What the retired <c>timeout</c> verb, Ask Daoris's <c>timeout</c> door and the service's <c>settings_timeout</c> answer (SESSWATCH1a,
-    /// D200, the session-watch design §3): sessions are no longer limited by time. The service's twin says the same words.
-    /// </summary>
-    public const string TimeoutRetired =
-        "sessions are no longer limited by time: a working session runs as long as it works, and Daoris looks in on one that has gone "
-        + "quiet and brings it to you; nothing was changed.";
-
     internal const string Prefix = "daoris";
 
     /// <summary>
@@ -247,7 +235,7 @@ public static class DriverChoicesCommand
             "brainstorms" => args.Any(arg => arg is "--clear" or "--mode" or "--agents" || ChoiceGrammar.BrainstormMinuteFlags.Contains(arg)),
             // `keep` naming no kind says each rule, a read (KEEP1d).
             "keep" => args.Count > 1,
-            // `actor` naming one actor, or none, is refused as a read; its copy verbs write until ONEWAY1c-ii retires them.
+            // `actor found` says the staffing copy's found changes, a read; `take` and `dismiss` write.
             "actor" => args.Count > 2,
             // `role` naming one role, or none, says it, a read (FOUNDATION1y-i).
             "role" => args.Count > 1 && args[1] is "set" or "remove" or "default" or "policy" or "rules",
@@ -448,42 +436,6 @@ public static class DriverChoicesCommand
                     return 0;
                 });
             }
-
-            case "strikes":
-            {
-                if (world.Instance.Home is { } home && RuledPolicy.StrikesRefused(home) is { } ruled) throw new ChoiceWords(ruled);
-                var value = Number(Named(args, verb));
-                if (!IsWhole(value) || value < 0 || value > int.MaxValue)
-                {
-                    throw new ChoiceWords("`driver strikes` needs a whole number of failed sessions, 0 or more — "
-                        + "e.g. `daoris driver strikes 3`, or `0` to never park a quest.");
-                }
-
-                var strikes = (int)value;
-                return Change(ChoiceRoutes.Strikes, new JsonObject { ["strikes"] = strikes }, config => config.WithStrikes(strikes), () =>
-                {
-                    Say(strikes == 0
-                        ? "daoris: this machine never parks a quest — it keeps trying, as it did before this setting."
-                        : $"daoris: a quest is parked after {strikes} failed session(s), and waits for you.");
-                    if (strikes == 0)
-                    {
-                        Say("  🔴 A quest that fails for a reason no retry can fix will be started again every tick,");
-                        Say("     and every start spends a real login. That is the behaviour this setting exists for.");
-                    }
-                    else
-                    {
-                        Say("  A failure is a session that ended without landing anything. A stand-down, a decline,");
-                        Say("  a stop and a held repository are not failures and never count toward this.");
-                    }
-
-                    Say($"  Written to {path} — the driver re-reads it every tick, so nothing restarts.");
-                    return 0;
-                });
-            }
-
-            // SESSWATCH1a (D200, the session-watch design §3): retired, changing nothing, and saying why.
-            case "timeout":
-                throw new ChoiceWords(TimeoutRetired, exit: 1);
 
             case "cooloff":
             {

@@ -104,22 +104,6 @@ public sealed class McpChosenSettingsToolTests : McpToolsFixture
     }
 
     /// <summary>
-    /// SESSWATCH1a (D200, the session-watch design §3): the retired <c>settings_timeout</c> answers why and writes no request, so
-    /// nothing is changed whoever calls it.
-    /// </summary>
-    [Fact]
-    public async Task The_retired_timeout_tool_answers_why_and_writes_nothing()
-    {
-        var (tools, _) = await ConnectorAsync(AskDaorisAsync);
-
-        var said = await tools.TimeoutAsync(45);
-
-        Assert.Equal($"Refused: {SettingsBox.TimeoutRetired}", said);
-        Assert.Contains("no longer limited by time", said);
-        Assert.False(Directory.Exists(Requests) && Directory.GetFiles(Requests).Length > 0);
-    }
-
-    /// <summary>
     /// Each tool's typed value is written as the driver's door spells it: notify's flag as <c>on</c> or <c>off</c>, the numbers as
     /// numbers, and a language with the one repository or workspace it is set for.
     /// </summary>

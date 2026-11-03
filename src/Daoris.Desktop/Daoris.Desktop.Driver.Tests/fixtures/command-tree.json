@@ -26,7 +26,7 @@
     { "name": "role", "takes": "[<id>]", "verbs": ["set", "remove", "default", "policy", "rules", "brief"] },
     { "name": "session", "verbs": ["list", "stop", "finish", "decline", "archive", "unarchive", "delete", "say", "take-back", "reword", "go-on-new", "start-from", "hand-over", "helper", "partner", "handback", "opinion", "supervise", "at-work"],
       "nested": { "opinion": ["ask", "show", "stop", "anyway", "myself"] } },
-    { "name": "settings", "verbs": ["notify", "strikes", "cooloff", "keep", "cap", "handover", "brainstorms", "timeout", "actor"] },
+    { "name": "settings", "verbs": ["notify", "cooloff", "keep", "cap", "handover", "brainstorms", "actor"] },
     { "name": "space", "takes": "(read)", "whole": true, "verbs": ["free"] },
     { "name": "steward", "whole": true, "verbs": ["acts", "drive", "undrive", "hold", "resume", "trees", "stop", "finish", "retry", "desk", "request"] },
     { "name": "tool", "whole": true, "verbs": ["list", "path", "use", "download", "update", "delete", "locations", "look", "git"] },

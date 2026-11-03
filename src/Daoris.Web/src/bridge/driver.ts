@@ -438,12 +438,6 @@ export function useDriverChange<TVariables extends Record<string, unknown>>(type
 export const useSetNotify = () => useDriverChange<{ notify: boolean }>('SET_NOTIFY');
 
 /**
- * How many failed sessions park a quest (D58) — `0` never parks, which is how every machine behaved
- * before it existed. The same field `daoris driver strikes <n>` edits.
- */
-export const useSetStrikes = () => useDriverChange<{ strikes: number }>('SET_STRIKES');
-
-/**
  * How long an account cools when its agent names no time (TOOL4g, D125 §2.2): whole minutes, at least one, the same
  * `cooloff` `daoris driver cooloff <minutes>` edits; less than one is the driver's refusal.
  */

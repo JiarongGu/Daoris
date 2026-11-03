@@ -426,7 +426,7 @@ public sealed class PipeCensus
             "SET_HEAVY_GATES", "SET_HOLD", "SET_LANDING", "SET_LANGUAGE", "SET_LINE", "SET_NOTIFY", "SET_OPINION", "SET_READ_ACROSS",
             "SET_REVIEW", "SET_SESSION_OPTION",
             // FABRIC-PIPELINE1b: which checks a repository's sessions run, the person's standing choice; light lowers their part.
-            "SET_SESSION_CHECKS", "SET_STANDING", "SET_STRIKES", "SET_TREES", "SET_WRITE_ACROSS", "TRUST_FOLDER",
+            "SET_SESSION_CHECKS", "SET_STANDING", "SET_TREES", "SET_WRITE_ACROSS", "TRUST_FOLDER",
             // GITAPP2b: the person lets Daoris change a checkout's files; the switch itself writes nothing to a repository.
             "SET_CHECKOUT_WRITES",
             // KEEP1d: how long each kind Daoris keeps is kept, the person's standing choice.
@@ -563,7 +563,7 @@ public sealed class PipeCensus
             // drivable repository the drain's look holds whatever it says; a session's own option; Ask Daoris's access, which ends its
             // conversation at its turn's end and starts none.
             "SET_ACCESS", "SET_GIT_ACCESS", "SET_AGENT_SETTINGS", "SET_CHECKOUT_WRITES", "SET_COMMITS", "SET_DRIVABLE", "SET_HELP_MODE", "SET_HELP_GRANT", "SET_HEAVY_GATES", "SET_HOLD",
-            "SET_LANGUAGE", "SET_NOTIFY", "SET_READ_ACROSS", "SET_SESSION_OPTION", "SET_SESSION_CHECKS", "SET_STANDING", "SET_STRIKES", "SET_TREES",
+            "SET_LANGUAGE", "SET_NOTIFY", "SET_READ_ACROSS", "SET_SESSION_OPTION", "SET_SESSION_CHECKS", "SET_STANDING", "SET_TREES",
             "SET_WRITE_ACROSS", "RULE_ACTION", "RULE_PROPOSAL",
             // INTEGRATE1d: an integration declaration's acceptance, which starts nothing: what it accepts runs only in a landing or a tidy,
             // each a press or a look of its own the drain already holds.

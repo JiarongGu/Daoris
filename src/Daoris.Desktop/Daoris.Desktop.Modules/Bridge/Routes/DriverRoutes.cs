@@ -267,17 +267,6 @@ public sealed class DriverRoutes(DriverContext context)
         return State(_loop);
     }
 
-    // How many failed sessions park a quest, as `settings strikes` edits it; refused where the failures rule decides.
-    [DriverRoute("SET_STRIKES")]
-    [Publishes("SET_STRIKES", StateScopes.Driver)]
-    private object? SetStrikes(IpcRequest request)
-    {
-        if (RuledPolicy.StrikesRefused(_loop.Home) is { } ruled) throw new DriverException(ruled);
-        var strikes = PayloadHelper.GetRequiredValue<int>(request.Payload, "strikes");
-        _context.Change(config => config.WithStrikes(strikes));
-        return State(_loop);
-    }
-
     // How long an account cools when its agent names no time: whole minutes, at least one, the same
     // `cooloff` `daoris driver cooloff <minutes>` edits — one truth, two doors (D50). Less than one is the driver's refusal.
     [DriverRoute("SET_COOLOFF")]

@@ -4,7 +4,7 @@ using static Daoris.Knowledge.HelpProposalFile;
 namespace Daoris.Knowledge;
 
 /// <summary>A setting Ask Daoris proposes (HELP1c, D89): one of the driver's doors, spelled as the CLI's verbs are.</summary>
-/// <param name="Door">One of <see cref="HelpSettingProposalWriter.Doors"/>: `drive`, `undrive`, `hold`, `resume`, `trees`, `line`, `landing`, `across`, `standing`, `language`, `review`, `opinion`, `helpers`, `commits`, `strikes`, `retry`, `timeout`, `notify`, `cap`, `cooloff`, `keep` or `git-use`.</param>
+/// <param name="Door">One of <see cref="HelpSettingProposalWriter.Doors"/>: `drive`, `undrive`, `hold`, `resume`, `trees`, `line`, `landing`, `across`, `standing`, `language`, `review`, `opinion`, `helpers`, `commits`, `retry`, `notify`, `cap`, `cooloff`, `keep` or `git-use`.</param>
 /// <param name="Target">The repository, for the doors that take one; for `retry`, the quest its failed sessions parked or the person's stop holds.</param>
 /// <param name="Workspace">The workspace, for a line, a landing, a session language, a review rule, a second-opinion rule, a helpers rule, a commit rule or reading across set for a whole workspace.</param>
 /// <param name="Value">What it is set to, as the CLI takes it: `on`, a branch, `branch &lt;pattern&gt; --tidy`, `read off`, `write-to &lt;other&gt;`, `zh`, `--mode ask`, an agent, `set-aside 30`…</param>
@@ -22,19 +22,8 @@ internal sealed class HelpSettingProposalWriter(HelpProposalFile file)
     public static readonly IReadOnlyList<string> Doors =
     [
         "drive", "undrive", "hold", "resume", "trees", "line", "landing", "across", "standing", "language", "review", "opinion",
-        "helpers", "commits", "strikes", "retry", "timeout", "notify", "cap", "cooloff", "keep", "git-use",
+        "helpers", "commits", "retry", "notify", "cap", "cooloff", "keep", "git-use",
     ];
-
-    /// <summary>The doors that set a role's agents before the role door was the one (ONEWAY1a), each refused with <see cref="StaffingRetired"/>.</summary>
-    private static readonly IReadOnlyList<string> Retired = ["adapter", "intake", "helper"];
-
-    /// <summary>
-    /// What a retired staffing door answers (ONEWAY1a, the oneway design §2 S1): the twin of the driver's
-    /// <c>HelpSettingProposals.StaffingRetired</c>, word for word.
-    /// </summary>
-    public const string StaffingRetired =
-        "a role's agents are no longer a setting: propose them through `role_propose` (the role door), as Agents → Roles and "
-        + "`daoris role set` set them; nothing was planned.";
 
     /// <summary>The flags a review's words may carry, as <c>daoris driver review</c> takes them (REVIEWENV1a).</summary>
     private static readonly IReadOnlyList<string> ReviewFlags =
@@ -66,7 +55,6 @@ internal sealed class HelpSettingProposalWriter(HelpProposalFile file)
     public static string? Refusal(SettingChange change)
     {
         var door = change.Door;
-        if (Retired.Contains(door)) return StaffingRetired;
         if (!Doors.Contains(door)) return $"`{door}` is not a door — one of {string.Join(", ", Doors.Select(d => $"`{d}`"))}.";
 
         var value = change.Value?.Trim();
@@ -91,17 +79,12 @@ internal sealed class HelpSettingProposalWriter(HelpProposalFile file)
                       + "installed plugin that pushes it and opens the pull request, `--auto-accept` for a quest's done to land it "
                       + "with no press, `--key <shape>` for the shape `{ticket}` is found by, and `--squash` for the pull request's "
                       + "branch as one commit), or `--clear`.";
-            case "strikes":
-                return int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out _) ? null : "`strikes` is a whole number, 0 or more.";
             case "retry":
                 // HELP10: the quest by id, as `daoris driver retry <quest>` takes it; whether it is parked, or held by the
                 // person's stop (SESSUX1b), is the driver's to judge, so the box takes either id unchanged.
                 return !named || circle || !string.IsNullOrWhiteSpace(value) || Word(change.Target!.Trim(), "a quest") is not null
                     ? "`retry` names the quest its failed sessions parked or the person's stop holds, by id, as the target — and nothing else."
                     : null;
-            // SESSWATCH1a (D200): retired, refused whatever it is given, for a helper reading an older room.
-            case "timeout":
-                return SettingsBox.TimeoutRetired;
             case "across":
                 return AcrossShape(named, circle, value);
             case "standing":

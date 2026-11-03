@@ -204,7 +204,6 @@ describe('The Agents place, Roles mode', () => {
         choices: [{ agent: 'claude-code', model: 'opus', effort: null }],
       },
     });
-    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_ACTOR', expect.anything());
     await waitFor(() => expect(notify).toHaveBeenCalledWith(i18n.t('settings.ai.roles.saved', { role: 'Build' })));
     await waitFor(() => expect(screen.queryByRole('form', { name: 'Build' })).toBeNull());
   });

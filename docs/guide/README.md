@@ -26,8 +26,7 @@ One name, `daoris`, and one command tree (D228; the oneway design §11). The pac
 commands, offline, and hands every other word, whole, to Daoris's desktop program: the one an install carries, or the one
 `DAORIS_DRIVER_PROGRAM` names. An install's own `daoris`, in its `app/bin/`, runs that program, which needs no Node and
 hands the doctrine commands back to the package the install carries. `daoris help [<group>]` prints the tree, or one
-group. An old spelling (`daoris driver …`, `daoris-driver …`, `daoris sessions …`) is refused, naming its new one, and
-does nothing.
+group.
 
 | Command | What it does |
 |---|---|
@@ -63,7 +62,7 @@ does nothing.
 | `repository` | The registry: `connect` this checkout's repository to any knowledge service (`--workspace` wires it on this machine), `register` from what each line declares, `retire`, `wire <repo> --workspace W`, `import <folder>` |
 | `role` | The role catalogue (`role [<id>]`, `set`, `remove`, `default`, `policy`) and a role holder's `brief`; the one way to set the agents each kind of work runs on, Build's, Intake's and Ask Daoris's among them (`role set <role> "<agent> [<model>\|-] [<effort>\|-]" …` or `off`) |
 | `session` | This machine's sessions: `list`, `stop`, `finish`, `decline`, `archive`, `unarchive`, `delete`, `say`, `take-back`, `reword`, `go-on-new`, `start-from`, `hand-over`, `helper`, `partner`, `handback`, a second `opinion`, and the supervisor's `supervise`; a park's answer is `say` |
-| `settings` | This machine's standing choices: `notify`, `strikes`, `cooloff`, `keep`, `cap`, `handover`, `brainstorms`, the staffing copy's `actor found` on a home not converted yet, and the retired `timeout`, `adapter`, `intake`, `helper` and `actor export\|import`, each refused naming its door |
+| `settings` | This machine's standing choices: `notify`, `cooloff`, `keep`, `cap`, `handover`, `brainstorms`, and the staffing copy's `actor found` on a home not converted yet |
 | `space` | The free space and each kind Daoris keeps, and `space free` |
 | `steward` | The steward's holder's acts and desk, and a request any terminal may file |
 | `tool` | Which Git, Node.js, PowerShell, GitHub CLI and Azure CLI Daoris runs. **One file under the home** |

@@ -121,7 +121,6 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   SET_HEAVY_GATES: { scopes: ['driver'] },
   SET_SESSION_CHECKS: { scopes: ['driver'] },
   SET_NOTIFY: { scopes: ['driver'] },
-  SET_STRIKES: { scopes: ['driver'] },
   SET_COOLOFF: { scopes: ['driver'] },
   SET_CAP: { scopes: ['driver'] },
   SET_KEEP: { scopes: ['driver', 'wiring'] },

@@ -640,8 +640,8 @@ with the version and date at release.
   counts), *Hand over…*, *Stop…* and *Leave it running*. A busy row never offers *End and carry on*. A quest's own session can now
   be handed over from its page. A finished run whose leftover process held its output is ended a minute after it exited, as it
   finished. `daoris-driver drive --once` and `--until-idle` say a quiet session on the console, and `--quiet-end <minutes>` ends
-  and carries on one of that run unheard that long. `daoris driver timeout`, Ask Daoris's `timeout` door and `settings_timeout`
-  now say sessions are no longer limited by time and change nothing. A `timeoutMinutes` in `driver.json` is kept for an older
+  and carries on one of that run unheard that long. Sessions are no longer limited by time: the timeout's verb, Ask Daoris's
+  `timeout` door and `settings_timeout` are gone. A `timeoutMinutes` in `driver.json` is kept for an older
   Daoris, and `driver list` says so. A reviewer's, a helper's and a partner's pass keep their own minutes, no longer cut by it.
 
 - You can ask another agent to write one piece of a driven session's work (COAGENT1b, D199). A session's head has a *Pieces*

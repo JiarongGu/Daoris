@@ -150,20 +150,12 @@ public sealed class SessionsSayCommandTests : IDisposable
         Assert.Equal(["notes.md", "b.txt"], ask.Files);
     }
 
-    /// <summary>ONEWAY1l: <c>--now</c> is retired and refused naming <c>--level now</c>, wherever it stands; a say with no level asks none.</summary>
+    /// <summary>A say with no level asks none.</summary>
     [Fact]
-    public void Now_is_refused_naming_the_level_that_replaced_it()
+    public void A_say_with_no_level_asks_none()
     {
         var plain = SessionsCommand.Read(["say", "d0ne0000", "also the changelog"], out _);
         Assert.Null(plain!.Level);
-
-        foreach (var args in new[] { new[] { "say", "d0ne0000", "also", "--now", "the", "changelog" }, ["say", "d0ne0000", "--now"] })
-        {
-            Assert.Null(SessionsCommand.Read(args, out var problem));
-            Assert.Contains("--level now", problem);
-        }
-
-        Assert.DoesNotContain("--now", SessionsCommand.Usage.Split('\n').Single(line => line.Contains("sessions say", StringComparison.Ordinal)));
     }
 
     /// <summary>
