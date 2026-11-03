@@ -140,18 +140,20 @@ describe('The Roles mode, Work, Accounts and By repository', () => {
     });
 
     it.each([
-      ['en', 'May call', /^every tool but .*brainstorm_give.*settings_timeout$/],
-      ['zh', '可调用', /^除 .*brainstorm_give.*settings_timeout 外的所有工具$/],
-    ])('names, read only, what each work may call when opened, in %s', async (language, label, buildCalls) => {
+      ['en', 'May call', /^every tool but .*memory_end, memory_write$/],
+      ['zh', '可调用', /^除 .*memory_end, memory_write 外的所有工具$/],
+    ])('names, read only, what each work may call when opened, in %s', async (language, label, askDaorisCalls) => {
       const user = await open();
       await act(() => i18n.changeLanguage(language));
       const row = (work: string) => document.querySelector(`[data-structure-row="work:${work}"]`) as HTMLElement;
       await waitFor(() => expect(row('build')).toBeTruthy());
-      for (const work of ['partner', 'build']) await user.click(within(row(work)).getAllByRole('button')[0]!);
+      for (const work of ['partner', 'build', 'ask-daoris']) await user.click(within(row(work)).getAllByRole('button')[0]!);
       const calls = (work: string) => [...row(work).querySelectorAll('p')].find((p) => p.textContent?.startsWith(label))?.lastElementChild?.textContent;
       expect(calls('partner')).toMatch(/^knowledge_convergence, knowledge_get, .*, partner_answer, registry$/);
-      expect(calls('build')).toMatch(buildCalls);
-      expect(calls('build')).not.toContain('quest_publish');
+      // CONTEXTONE1d2: a quest's session is served the core set and its own tools, named; Ask Daoris every tool but four.
+      expect(calls('build')).toMatch(/^channel_post, channel_read, .*quest_publish, .*review_serve$/);
+      expect(calls('build')).not.toContain('setting_propose');
+      expect(calls('ask-daoris')).toMatch(askDaorisCalls);
       expect(within(row('partner')).queryByRole('textbox')).toBeNull();
     });
 

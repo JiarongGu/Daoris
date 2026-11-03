@@ -10,6 +10,7 @@ import { command as check } from './cli/check.ts';
 import { command as upstream } from './cli/upstream.ts';
 import { command as index } from './cli/index.ts';
 import { command as status } from './cli/status.ts';
+import { command as reconcile } from './cli/reconcile.ts';
 import { command as doctor } from './cli/doctor.ts';
 import { command as connect } from './cli/connect.ts';
 import { command as retire } from './cli/retire.ts';
@@ -45,6 +46,7 @@ export const COMMANDS: readonly CliCommand[] = [
   upstream,
   index,
   status,
+  reconcile,
   doctor,
   connect,
   retire,

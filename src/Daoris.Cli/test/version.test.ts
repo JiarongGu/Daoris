@@ -138,11 +138,11 @@ test('the guide\'s command table lists exactly the commands the dispatcher has',
 test('the changelog says how many commands there actually are, and names them all', () => {
   const NUMBERS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine',
     'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen',
-    'eighteen', 'nineteen', 'twenty'];
+    'eighteen', 'nineteen', 'twenty', 'twenty-one', 'twenty-two', 'twenty-three'];
   const commands = dispatcherCommands();
   const changelog = read('CHANGELOG.md');
 
-  const claim = changelog.match(/\*\*([A-Z][a-z]+) commands\.\*\*/);
+  const claim = changelog.match(/\*\*([A-Z][a-z]+(?:-[a-z]+)?) commands\.\*\*/);
   assert.ok(claim, 'the changelog must state a command count');
   assert.equal(claim[1]!.toLowerCase(), NUMBERS[commands.length],
     `the changelog claims ${claim[1]} commands; the dispatcher has ${commands.length}`);

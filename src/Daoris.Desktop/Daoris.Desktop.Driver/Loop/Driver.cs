@@ -3831,8 +3831,6 @@ public sealed class Driver(
             // Which agent made each call, and each subagent's start and stop (FABRIC-C1a): the part's children bound by its lineage.
             ChildLineage.HookFor(home, sessionId));
         var handed = RulesHanded(takes: true, rules, composed, workspace, repository);
-        if (file is null) return (null, null, handed);
-
         if (adapter.Wire == SessionWire.Pipe)
         {
             adapter.HandSettings(info, file);

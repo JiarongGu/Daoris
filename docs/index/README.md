@@ -195,7 +195,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Knowledge/Room/HelpRoomDoors.cs` | 44 | 431 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Chat/ChatRunner.cs` | 234 | 4020 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Chat/ChatTurns.cs` | 70 | 1496 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs` | 351 | 5404 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs` | 351 | 5402 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverBrainstorms.cs` | 54 | 950 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverContinuations.cs` | 98 | 1534 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverHelpers.cs` | 74 | 1194 |
@@ -302,13 +302,13 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Tests/Sessions/SaidSettledTests.cs` | 61 | 1142 |
 | `src/Daoris.Service/Daoris.Service.Tests/Sessions/SessionLedgerTests.cs` | 120 | 2282 |
 | `src/Daoris.Service/Daoris.Service.Tests/Sessions/SessionStoreTests.cs` | 47 | 924 |
-| `src/Daoris.Service/README.md` | 136 | 953 |
+| `src/Daoris.Service/README.md` | 137 | 961 |
 
 ### CLI (`cli`)
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Cli/src/doctrine/materialize.ts` | 47 | 937 |
+| `src/Daoris.Cli/src/doctrine/materialize.ts` | 51 | 1002 |
 | `src/Daoris.Cli/test/desktop-tool.test.ts` | 48 | 898 |
 | `src/Daoris.Cli/test/dogfood.test.ts` | 49 | 847 |
 | `src/Daoris.Cli/test/usage-report.test.ts` | 87 | 1455 |
@@ -453,4 +453,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `docs/backlog-parked.md` | 91 | 556 |
 | `docs/development.md` | 56 | 607 |
-| `src/Daoris.Desktop/README.md` | 286 | 1305 |
+| `src/Daoris.Desktop/README.md` | 289 | 1319 |

@@ -19,6 +19,12 @@ public enum SetupCase
 
     /// <summary>Set up and naming its index: nothing to ask, refused.</summary>
     Done,
+
+    /// <summary>
+    /// Adopted, and asked to reconcile with the canon this machine's doctrine tool carries (<see cref="SetupQuests.Reconcile"/>,
+    /// D230): never found from the line, only asked for (<see cref="SetupPress.PlanReconcileAsync"/>).
+    /// </summary>
+    Reconcile,
 }
 
 /// <summary>What the quest is composed from.</summary>
@@ -31,10 +37,11 @@ public enum SetupCase
 /// <param name="Neighbours">The names the workspace knows its other repositories by.</param>
 /// <param name="Index">The generator the index quest names (<see cref="IndexForms"/>); required for <see cref="SetupCase.Index"/> alone.</param>
 /// <param name="Builds">What it builds (<see cref="SetupBuilds"/>), which shapes the safe work's checks; null for none said.</param>
+/// <param name="Standing">The person's standing answer for it on this machine, which a reconcile's quest carries among its items (D230 point 4); null for none.</param>
 public sealed record SetupBriefInput(
     SetupCase Case, DateOnly Day, string Repository, LayoutFacts Facts, string Version,
     RepositoryDescription? Description, IReadOnlyList<string> Entries, IReadOnlyList<string> Neighbours,
-    IndexForm? Index = null, string? Builds = null);
+    IndexForm? Index = null, string? Builds = null, StandingAnswer? Standing = null);
 
 /// <summary>
 /// The set-up quest's words (LAYOUT7; D117 §6.2–§6.3 as D124 §2.2–§2.7 amends them): a title from
@@ -63,6 +70,7 @@ public static class SetupBrief
     public static (string Title, string Body) Compose(SetupBriefInput input)
     {
         if (input.Case == SetupCase.Index) return IndexBrief.Compose(input);
+        if (input.Case == SetupCase.Reconcile) return ReconcileBrief.Compose(input);
 
         var stem = input.Case switch
         {
