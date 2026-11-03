@@ -307,7 +307,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Cli/src/doctrine/materialize.ts` | 47 | 937 |
+| `src/Daoris.Cli/src/doctrine/materialize.ts` | 51 | 1002 |
 | `src/Daoris.Cli/test/desktop-tool.test.ts` | 48 | 898 |
 | `src/Daoris.Cli/test/dogfood.test.ts` | 49 | 847 |
 | `src/Daoris.Cli/test/usage-report.test.ts` | 87 | 1455 |
