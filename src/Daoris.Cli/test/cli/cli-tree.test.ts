@@ -16,15 +16,9 @@ const TREE = JSON.parse(readFileSync(
   doctrine: string[]; groups: { name: string }[];
 };
 
-/** A doctrine command whose row another row in flight adds: its merge fills it in and takes it out of here. */
-const IN_FLIGHT = ['reconcile'];
-
 test('ONEWAY1ai-i the CLI\'s commands are the tree\'s doctrine commands, and every one is doctrine', () => {
   const names = COMMANDS.map((command) => command.name);
-  for (const name of names) assert.ok(TREE.doctrine.includes(name), `\`${name}\` is a CLI command the tree does not name as doctrine`);
-  for (const name of TREE.doctrine) {
-    assert.ok(names.includes(name) || IN_FLIGHT.includes(name), `the tree names \`${name}\` as doctrine, and the CLI has no row for it`);
-  }
+  assert.deepEqual([...names].sort(), [...TREE.doctrine].sort());
   assert.deepEqual(COMMANDS.filter((command) => command.kind !== 'doctrine').map((command) => command.name), []);
   for (const group of TREE.groups) assert.ok(!names.includes(group.name), `\`${group.name}\` is a group of the desktop's program, not the CLI's`);
 });

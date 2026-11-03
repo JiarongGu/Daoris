@@ -1,7 +1,8 @@
-import type { ConvertApplied, ConvertChoices, ConvertPlanned, ConvertUndoPlan } from './convertPlan';
+import type { ConvertApplied, ConvertChoices, ConvertPlanned, ConvertUndoPlan, WorkflowsPlan } from './convertPlan';
 
-// The conversion's plan as `CONVERT_PLAN` answers it, for the review's tests and stories (WORKFLOWCLEAN1g-i): a home with a steps workflow, a
-// `handed` one shared by two places, a place on Current and a bound run, whose old rules the plan removes.
+// The conversion's plan as `CONVERT_PLAN` answers it, for the review's tests and stories (WORKFLOWCLEAN1g-i, ONEWAY1ae): a home whose workflow part
+// holds a steps workflow, a `handed` one shared by two places, a place on Current and a bound run, whose old rules the plan removes; and the same
+// home with a second part that clears finished history and a part whose service did not answer.
 
 const hash = (text: string) => {
   let value = 11;
@@ -9,10 +10,7 @@ const hash = (text: string) => {
   return value.toString(16).padStart(8, '0').repeat(8);
 };
 
-export const planOf = (choices: ConvertChoices): ConvertPlanned => ({
-  digest: hash(JSON.stringify(choices)),
-  empty: false,
-  choices,
+const workflowsOf = (choices: ConvertChoices): WorkflowsPlan => ({
   saves: [
     { id: 'release', name: 'Release', mode: 'append', shape: 'steps', said: 'its steps become a workflow of nodes', base: 2, places: ['engine'] },
     { id: 'merge-after-accept', name: 'Merge after accept', mode: 'append', shape: 'handed', said: 'its `handed` landing becomes `land merge` with your review', base: 1, places: ['engine', 'site'] },
@@ -40,10 +38,44 @@ export const planOf = (choices: ConvertChoices): ConvertPlanned => ({
   },
 });
 
+export const planOf = (choices: ConvertChoices): ConvertPlanned => {
+  const digest = hash(JSON.stringify(choices));
+  return {
+    digest,
+    empty: false,
+    ended: false,
+    count: 5,
+    choices,
+    parts: [{ part: 'workflows', digest, empty: false, count: 5, ended: false, lines: [], clears: [], workflows: workflowsOf(choices) }],
+    unread: [],
+  };
+};
+
+const WORKFLOWS_EMPTY: WorkflowsPlan = {
+  ...workflowsOf({ composed: 'none', landAutomatic: 'review' }),
+  saves: [], uses: [], defaultWorkflow: null, policies: [], removals: [], kept: [], lowers: [],
+  census: { ended: true, versions: [], places: [], runs: [], leftovers: [] },
+};
+
 export const NOTHING: ConvertPlanned = {
   ...planOf({ composed: 'none', landAutomatic: 'review' }),
-  empty: true, saves: [], uses: [], defaultWorkflow: null, policies: [], removals: [], kept: [], lowers: [],
-  census: { ended: true, versions: [], places: [], runs: [], leftovers: [] },
+  empty: true, ended: true, count: 0,
+  parts: [{ part: 'workflows', digest: hash('nothing'), empty: true, count: 0, ended: true, lines: [], clears: [], workflows: WORKFLOWS_EMPTY }],
+};
+
+/** The workflow part beside a notes part that clears finished history, and a quests part whose service did not answer. */
+export const PARTED: ConvertPlanned = {
+  ...planOf({ composed: 'none', landAutomatic: 'review' }),
+  digest: hash('parted'),
+  count: 9,
+  parts: [
+    ...planOf({ composed: 'none', landAutomatic: 'review' }).parts,
+    {
+      part: 'notes', digest: hash('notes'), empty: false, count: 4, ended: false, lines: ['  clear  4 finished notes from before codes'],
+      clears: [{ said: 'finished notes from before codes', count: 4, from: '2026-03-01T00:00:00Z', to: '2026-06-30T00:00:00Z', bytes: 18432 }],
+    },
+  ],
+  unread: [{ part: 'quests', said: 'the service did not answer' }],
 };
 
 export const APPLIED: ConvertApplied = {
@@ -55,6 +87,20 @@ export const APPLIED: ConvertApplied = {
     { id: 'save:release', kind: 'workflow-save', said: 'a new version of `release`: its steps become a workflow of nodes', outcome: 'done', note: null },
     { id: 'save:site-workflow', kind: 'workflow-save', said: 'a new workflow `site-workflow`', outcome: 'failed', note: 'the save was refused: a node has no door.' },
     { id: 'configuration', kind: 'config', said: 'the choices, the default workflow and the removed rules written', outcome: 'done', note: null },
+  ],
+  parts: [{ part: 'workflows', digest: planOf({ composed: 'none', landAutomatic: 'review' }).digest, outcome: 'done', said: null, operations: [] }],
+};
+
+/** A receipt whose workflow part is done and whose quests part was not read at Apply: failed, pressed again or left. */
+export const FAILED_PART: ConvertApplied = {
+  done: false,
+  refused: null,
+  message: 'the conversion is not done: `quests` (failed: not read: the service did not answer)',
+  digest: PARTED.digest,
+  operations: [{ id: 'configuration', kind: 'configuration', said: 'the choices, in one change', outcome: 'done', note: null }],
+  parts: [
+    { part: 'workflows', digest: hash('w'), outcome: 'done', said: null, operations: [{ id: 'configuration', kind: 'configuration', said: 'the choices, in one change', outcome: 'done', note: null }] },
+    { part: 'quests', digest: hash('q'), outcome: 'failed', said: 'not read: the service did not answer', operations: [] },
   ],
 };
 

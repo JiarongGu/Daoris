@@ -3,8 +3,9 @@ import { useShenora } from '@shenora/react';
 import type { ConvertApplied, ConvertApplyAsk, ConvertAsk, ConvertPlanned, ConvertUndoPlan } from '../../agents/setup/convertPlan';
 import { call } from '../call';
 
-// The conversion of the old workflow records (WORKFLOWCLEAN1 1e): the plan, the twin of `daoris-driver workflow convert --plan`, and the person's
-// two presses, the apply and the undo. The driver library's `ConversionPlans` and `ConversionApplies` answer them, which the terminal calls too (D50).
+// The home's one conversion door (ONEWAY1ae, the workflow part WORKFLOWCLEAN1 1e's): the plan over every part, the twin of `daoris convert --plan`,
+// and the person's presses, the apply (a receipt pressed again, or a failed part left, among them) and the undo. The driver library's
+// `ConversionApplies` answers them, which the terminal calls too (D50).
 
 /** The plan reads the registry, the quests and every saved workflow: the page waits two minutes, as long as the apply may take. */
 const CONVERT_BOUND = 2 * 60_000;
@@ -41,8 +42,8 @@ export const useConvertPlan = (choices: ConvertAsk, { enabled = true }: { enable
 export const useConvertUndoPlan = ({ enabled }: { enabled: boolean }) => useConvertRead<ConvertUndoPlan>({ undo: true }, enabled);
 
 /**
- * The apply (`CONVERT_APPLY`, the person's own press): the plan's digest and the choices. A refusal is an answer with nothing written, and a stale
- * digest is refused `moved` with the plan read again. The plans are read again after it.
+ * The apply (`CONVERT_APPLY`, the person's own press): the plan's digest and the choices, or a receipt's digest and the failed part it leaves. A
+ * refusal is an answer with nothing written, and a stale digest is refused `moved` with the plan read again. The plans are read again after it.
  */
 export const useConvertApply = () => {
   const client = useQueryClient();

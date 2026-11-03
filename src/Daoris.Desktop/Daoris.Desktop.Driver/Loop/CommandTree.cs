@@ -92,7 +92,7 @@ public static class CommandTree
         new("repository", ["connect", "register", "retire", "wire", "import"]),
         new("role", ["set", "remove", "default", "policy", "brief"], Takes: "[<id>]"),
         new("session", ["list", "stop", "finish", "decline", "archive", "unarchive", "delete", "say", "take-back", "reword", "go-on-new", "start-from",
-            "hand-over", "helper", "partner", "handback", "opinion", "answer", "supervise"])
+            "hand-over", "helper", "partner", "handback", "opinion", "supervise"])
         {
             Nested = new Dictionary<string, IReadOnlyList<string>> { ["opinion"] = ["ask", "show", "stop", "anyway", "myself"] },
         },
@@ -127,7 +127,7 @@ public static class CommandTree
         new("run-heavy", "gate run"),
         new("verify", "gate verify"),
         new("opinion", "session opinion"),
-        new("answer", "session answer"),
+        new("answer", "session say"),
         new("result", "press result"),
         new("withdraw", "press withdraw"),
         new("register", "repository register"),
@@ -263,7 +263,6 @@ public static class CommandTree
             "agent" when verb == "account" => ["agent", "profile", .. after],
             "ask" when verb is not null && AskActs.TryGetValue(verb, out var act) => ["ask", act, .. after],
             "ask-daoris" => ["help", .. rest],
-            "convert" => ["workflow", "convert", .. rest],
             "gate" => [verb == "run" ? "run-heavy" : "verify", .. after],
             "place" when verb is "access" or "heavy" or "checks" => [verb, .. after],
             "place" when verb is not null && Group("place")!.Verbs.Contains(verb, StringComparer.Ordinal) => ["driver", .. rest],
@@ -276,7 +275,7 @@ public static class CommandTree
             "role" when verb == "brief" => ["roles", "brief", .. after],
             "role" => ["driver", "role", .. rest],
             "session" when verb == "list" => ["sessions", .. after],
-            "session" when verb is "opinion" or "answer" => [verb, .. after],
+            "session" when verb == "opinion" => [verb, .. after],
             "session" => ["sessions", .. rest],
             "settings" => ["driver", .. rest],
             "tree" => ["trees", .. rest],

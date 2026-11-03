@@ -130,7 +130,7 @@ export const Answered: Story = {
       created: at(52),
       updated: at(1),
       note: 'Two ways forward; I recommend the second.\n\nAnswered: The second: cap it on the chunk API. Apply it to dev first.',
-      answer: 'The second: cap it on the chunk API. Apply it to dev first.',
+      said: [{ id: 'w1', text: 'The second: cap it on the chunk API. Apply it to dev first.', at: at(1), files: [] }],
     },
     onResolve: () => {},
     onAnswerSession: () => {},
@@ -226,7 +226,7 @@ export const OneGoAheadAnsweredOneOpen: Story = {
 export const AnsweredWithAGoAheadWaiting: Story = {
   args: {
     session: {
-      ...SESSION, state: 'awaiting-person', created: at(52), updated: at(1), answer: 'carry on.',
+      ...SESSION, state: 'awaiting-person', created: at(52), updated: at(1), said: [{ id: 'w1', text: 'carry on.', at: at(1), files: [] }],
       note: 'The cap is written; it needs go-aheads 1 and 2 to reach production.\n\nAnswered: carry on.',
     },
     goAheads: [{ ...GO_AHEADS[0]!, state: 'approved', answer: { approved: true, words: 'dev first', at: at(1) } }, GO_AHEADS[1]!],

@@ -793,8 +793,8 @@ public static class DriverWorkflowsCommand
             var id = Named(argv[2]).Id;
             if (asGraph)
             {
-                throw new ChoiceWords($"`apply {id} --as-graph` is folded into `daoris driver workflow convert`, which converts what was saved as steps as you press it: "
-                    + "`daoris driver workflow convert --plan`. Nothing was written.", 1);
+                throw new ChoiceWords($"`apply {id} --as-graph` is folded into `daoris convert`, which converts what was saved as steps as you press it: "
+                    + "`daoris convert --plan`. Nothing was written.", 1);
             }
 
             var found = Required(id);

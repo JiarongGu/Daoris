@@ -91,10 +91,10 @@ export function AwaitingPerson({
    */
   onResolve?: (state: Resolution, note: string | null, close?: QuestClose, answered?: Answered) => void;
   /**
-   * The answer to a session with no process left — its quest carried on with the words (STANDDOWN2). It may settle with the
+   * The answer to a session with no process left, its words said through the say door (STANDDOWN2, ONEWAY1k). It may settle with the
    * sentence it was refused in (PARKANSWER1), said here with the words kept; nothing, and the answer was taken.
    */
-  onAnswer?: (answer: string | null) => Promise<string | null> | void;
+  onAnswer?: (answer: string) => Promise<string | null> | void;
   /** Its question's answer selected, sent with the card's words (PARKANSWER1, QUESTIONUI1a): settled as `onAnswer` is. */
   onChoice?: (label: string, words: string) => Promise<string | null> | void;
   /** The answer selected, the frame's and shared with the box below (QUESTIONUI1a); absent, the card holds its own. */
@@ -184,10 +184,11 @@ export function AwaitingPerson({
             </label>
             {refused && <p role="status" className="m-0 text-small text-ink-danger [overflow-wrap:anywhere]">{refused}</p>}
             <div className="flex flex-wrap gap-2">
+              {/* ONEWAY1k: the say door keeps words, so an answer with none waits for them, as the box below does. */}
               <Button
                 variant="primary"
-                disabled={pending || sending}
-                onClick={() => { void send(selected && onChoice ? onChoice(selected, words) : onAnswer(words.trim() || null)); }}
+                disabled={pending || sending || (!(selected && onChoice) && !words.trim())}
+                onClick={() => { void send(selected && onChoice ? onChoice(selected, words) : onAnswer(words.trim())); }}
               >
                 {t('work.awaiting.answerConfirm')}
               </Button>

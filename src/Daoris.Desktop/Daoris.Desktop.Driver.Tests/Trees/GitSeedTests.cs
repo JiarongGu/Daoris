@@ -155,10 +155,11 @@ public sealed class GitSeedTests : IDisposable
         var startsGit = new System.Text.RegularExpressions.Regex(@"ProcessStartInfo\(""git""|TestGit\.|GitSeed\.|WorkingTree\.Git|GitStart\(");
         var ownWalk = new System.Text.RegularExpressions.Regex(@"Exists\(Path\.Combine\(\w+\.FullName, ""\.git""\)\)");
         var breaches = new List<string>();
-        foreach (var path in SourceFiles.All(SourceFiles.DriverTestsProject, "*.cs"))
+        // REVIEW2-LEFT1: the modules tests compile GitSeed in too, so their sources are held to it as the driver tests' are.
+        foreach (var path in SourceFiles.All(SourceFiles.DriverTestsProject, "*.cs").Concat(SourceFiles.All(SourceFiles.ModulesTestsProject, "*.cs")))
         {
             var name = Path.GetFileName(path);
-            // TestGit is linked into the modules tests, which have no GitSeed; its walks use Path.Exists, as RootFrom does.
+            // TestGit's walks use Path.Exists, as RootFrom does.
             if (name is "GitSeed.cs" or "TestGit.cs") continue;
             var text = File.ReadAllText(path);
             if ((text.Contains("_fixtures", StringComparison.Ordinal) || startsGit.IsMatch(text)) && plainDelete.IsMatch(text)) breaches.Add($"{name}: deletes scratch with Directory.Delete; use GitSeed.Discard or GitSeed.Remove");

@@ -493,12 +493,30 @@ public static class PermissionRules
 /// One session's composed rules as the harness's own settings file, under the home beside the servers
 /// file the same session is handed (<see cref="SpawnServers"/>) — and gone when the session is.
 /// </summary>
+/// <remarks>
+/// <b>Its own context</b> (CONTEXTONE1e, D230 point 3): every file also says <see cref="OwnContext"/>, so a session's skills are its
+/// tree's and its per-session plugin copy's (<see cref="SpawnSkills"/>), its connectors the ones it is handed, and its memory Daoris's.
+/// Claude Code 2.1.314 reads each key from the command-line tier for that invocation alone, and moves nothing in the account's home; the
+/// account's home is never written (<see cref="HarnessSettings.ProfileHome"/>).
+/// </remarks>
 public static class SpawnSettings
 {
     /// <summary>The harness's own hard denials, kept by naming them in the list (UNBLOCK4).</summary>
     public const string HarnessDefaults = TraceSpawnFiles.HarnessDefaults;
 
-    /// <summary>Write the file for one session, or answer null when there is nothing to hand.</summary>
+    /// <summary>
+    /// The keys that keep a session's context its own: no auto-memory, and none of the skills, plugins or connectors the vendor syncs to
+    /// the account it runs as.
+    /// </summary>
+    public static IReadOnlyList<(string Key, bool Value)> OwnContext { get; } =
+    [
+        ("autoMemoryEnabled", false),
+        ("syncClaudeAiSkills", false),
+        ("syncClaudeAiPlugins", false),
+        ("disableClaudeAiConnectors", true),
+    ];
+
+    /// <summary>Write the file for one session, which every session is handed for its own context at least.</summary>
     /// <param name="hardDeny">
     /// What auto mode's classifier is told as hard denials (<see cref="PermissionRules.HardDeny"/>), or
     /// empty for none. Required, so no spawn forgets to say (UNBLOCK4): a session on either door is handed
@@ -509,11 +527,10 @@ public static class SpawnSettings
     /// The lineage hook for this session (FABRIC-C1a), or null for none: on the connector's calls and each subagent's start and
     /// stop, beside the guard, never instead of it.
     /// </param>
-    public static string? Write(
+    public static string Write(
         string home, string sessionId, RuleLists rules, IReadOnlyList<string> hardDeny, TreeGuardHook? guard = null, LineageHook? lineage = null)
     {
         var told = hardDeny.Where(entry => entry != HarnessDefaults).Distinct(StringComparer.Ordinal).ToList();
-        if (rules.IsEmpty && guard is null && lineage is null && told.Count == 0) return null;
 
         var folder = DaorisHome.Entry(home, HomeEntry.Spawn);
         Directory.CreateDirectory(folder);
@@ -528,6 +545,7 @@ public static class SpawnSettings
                 ["deny"] = new JsonArray([.. rules.Deny.Select(rule => (JsonNode)rule)]),
             },
         };
+        foreach (var (key, value) in OwnContext) document[key] = value;
 
         // 🔴 `$defaults` FIRST, always (D122 §3.7): a `hard_deny` list without it replaces the harness's
         // built-in list, whose entry is the rule against sending data out. No `autoMode` key at all when

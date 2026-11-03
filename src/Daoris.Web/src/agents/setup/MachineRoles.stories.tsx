@@ -12,7 +12,9 @@ import { buildStructure, NO_FILTERS, type StructureFilters } from '../roles/role
 import type { RolesView } from '../roles/RoleSections';
 import { RolesCard, type RoleScope } from '../roles/Roles';
 import { DRIVER, LINES, PLUGINS, REGISTRY, STRUCTURE, TOOLS, WORKFLOWS } from '../roles/structureFixtures';
+import { KEPT } from './keptFixtures';
 import { MachineNotesView } from './MachineNotes';
+import { OldRecordsView } from './OldRecords';
 import { PlacePageView } from './PlacePage';
 import { foldedLines, headOf, type PlaceSection, sectionsOf } from './placeShell';
 import { AGENTS, CATALOGUE, PLACES } from './setupFixtures';
@@ -77,6 +79,7 @@ function Page({ view: first = 'list', search: typed = '', scope: chosen = 'all',
     sessions: null,
     roles: <p className="m-0 pb-3 pl-3 text-small text-ink-soft">One row for each work that differs; the rest fold.</p>,
     allRoles: <AllRolesView view={view} onView={setView}>{view === 'diagram' ? diagram : list}</AllRolesView>,
+    oldRecords: <OldRecordsView read={KEPT} onReview={nothing} />,
   };
   return (
     <PlacePageView

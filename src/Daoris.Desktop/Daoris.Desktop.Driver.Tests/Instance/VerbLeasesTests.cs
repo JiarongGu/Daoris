@@ -168,7 +168,6 @@ public sealed class VerbLeasesTests
     [InlineData("quest review 12 reviewed")]
     [InlineData("quest reopen 12")]
     [InlineData("quest go-on 12")]
-    [InlineData("answer s-1 go on")]
     [InlineData("ask words of an ask")]
     [InlineData("ask --publish a-1 --to r")]
     [InlineData("ask channel a-1")]

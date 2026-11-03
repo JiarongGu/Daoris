@@ -108,6 +108,9 @@ const ORGANISMS = new Set<string>([
   // This machine's All roles and its notes (SETUPUX1m): the Roles mode's read and the found changes' answer, so the cards below hold none.
   './agents/roles/AllRoles.tsx',
   './agents/setup/MachineNotes.tsx',
+  // This machine's Old records (ONEWAY1ad-ii): the kept reads' one query, and the stories' fixture of its answer's type.
+  './agents/setup/OldRecords.tsx',
+  './agents/setup/keptFixtures.ts',
   './projects/setup/useRepositorySetup.ts',
   // A repository's Workflow as its molecules take it (AGENTSPLACE1h): its Current, the acceptance and the step editor's bridge, held by the
   // Repositories view and a place's Sessions, so the Workflow tab and the place's Workflow below hold none.

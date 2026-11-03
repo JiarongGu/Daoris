@@ -10,6 +10,7 @@ import { planChanges } from './materialize.ts';
 import { notesBetween } from './notes.ts';
 import { newerLock } from './lockversion.ts';
 import { inspect } from './drift.ts';
+import { holds, keepStates } from './keep.ts';
 import { HARNESSES, DEFAULT_HARNESS, resolveHarness } from '../layout/harness.ts';
 import { formerDocuments, lockLayout } from '../layout/layout.ts';
 import { describeLink, linkProblems } from '../layout/links.ts';
@@ -201,6 +202,14 @@ export function commandStatus(
   }));
   const offers = selection?.offers ?? [];
 
+  // The keeps (D230): each with whether the canon's file moved since it was judged, where this daoris's canon can say.
+  // A kept file is never an update or drift below, so it is named here alone, and again once its canon file moves.
+  const keeps = canon && selection
+    ? keepStates(manifest, canon, selection.files, (file) => holds(root, manifest.harnessDescriptor, was.target, file))
+    : null;
+  const kept = keeps?.kept ?? Object.entries(manifest.kept ?? {})
+    .map(([target, keep]) => ({ target, ...keep, now: null, reopened: false, absentCore: false }));
+
   // A lock a newer canon wrote is not an update: `sync` and `upstream` refuse it (WSSETUP4, D124 §1.4), so
   // this says so and names the tool at the lock's version, rather than sending the person to `sync`.
   const behind = canon && lock ? newerLock(lock, canon.version) : null;
@@ -277,6 +286,10 @@ export function commandStatus(
       documentsStale: inspection?.documentsStale ?? false,
       switchedOff,
       offers,
+      // Each keep with the canon file's digest it was judged against and the canon's now (null where unread), and the
+      // keeps the canon no longer ships here, which are dropped (D230).
+      kept,
+      keepsDropped: keeps?.dropped ?? [],
       selectionProblem,
       // The one disclosure control in the manifest (D47 §4) — "what is this repository sharing?" is
       // exactly the question status exists to answer, and silence means local.
@@ -331,6 +344,14 @@ export function commandStatus(
   for (const offer of offers) {
     write(`  offered       ${offer.target} — pack '${offer.by}' would switch it off: ${offer.because}`);
     write(`                it stays on until daoris.json confirms it: "switchedOff": { "${offer.target}": "${offer.by}" }`);
+  }
+  for (const keep of kept) {
+    write(`  kept          ${keep.target} — this repository's own text: ${keep.reason}`
+      + (keep.reopened ? "; the canon's file moved since it was kept, and 'daoris reconcile' lists it" : '')
+      + (keep.absentCore ? '; a core file with no text here, which sync refuses' : ''));
+  }
+  for (const target of keeps?.dropped ?? []) {
+    write(`  kept          ${target} — the canon no longer ships it here, so the keep is dropped; take it out of daoris.json`);
   }
 
   if (local.length) write(`  local         ${local.join(', ')}`);

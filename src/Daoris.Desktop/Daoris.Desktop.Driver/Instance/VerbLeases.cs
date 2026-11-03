@@ -85,7 +85,7 @@ public static class VerbLeases
 
         return verb switch
         {
-            "chat" or "answer" => false,
+            "chat" => false,
             "drive" or "--once" or "--until-idle" => false,
             "run-heavy" => false,
             // FABRIC-PIPELINE1d: writes only its run's binding, once; the running driver governs it.

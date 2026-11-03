@@ -671,10 +671,13 @@ export const GitHeldRowsNarrowChinese: StoryObj = {
   ),
 };
 
-/** WORKFLOWCLEAN1g-ii: the home's one conversion row, its door its one control, worded by a reader of `language`. */
+/** WORKFLOWCLEAN1g-ii, ONEWAY1ae: the home's one conversion row, its door its one control, counted by part, worded by a reader of `language`. */
 function convertRow(language: 'en' | 'zh'): Attention {
   const reader = readerIn(language);
-  return { id: 'home', kind: 'workflow-convert', where: '', since: at(25), title: reader.t('work.attention.convertTitle', { count: 3 }), convert: { places: 3 } };
+  return {
+    id: 'home', kind: 'workflow-convert', where: '', since: at(25), title: reader.t('work.attention.convertTitle', { count: 3 }),
+    detail: reader.t('work.attention.convertPart', { part: reader.t('agents.convert.part.workflows'), count: 3 }), convert: { records: 3, parts: { workflows: 3 } },
+  };
 }
 
 function ConvertWidths({ language }: { language: 'en' | 'zh' }) {

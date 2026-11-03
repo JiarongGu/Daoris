@@ -8,12 +8,13 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import {
   Button, Card, CardStack, CodeText, CountBadge, Dot, Drawer, EmptyState, FIELD_WIDTHS, FormField, FormGrid, FormRow, FRAME_HELD,
   FrameHeld, Icon, Inline, limitedOr, Menu,
-  MetaLine, MonoWell, PathText, Pill, QuickPanel, Segmented, SelectField, SESSION_ACTIVE, SESSION_DOT, SESSION_TONE, SETTING_TRACK,
+  MetaLine, MonoWell, PathText, personsSaid, Pill, QuickPanel, Segmented, SelectField, SESSION_ACTIVE, SESSION_DOT, SESSION_TONE, SETTING_TRACK,
   SettingList, SettingRow, shownKey, type ShownState, shownState, StripMark, Tile, Tip, Toasts, WaitingCard,
 } from './ui';
 import { code } from '../test/code';
 import { CommandPalette } from '../work/strip/CommandPalette';
 import { InlineConfirm } from '../work/InlineConfirm';
+import { said } from '../test/said';
 
 describe('the primitives', () => {
   it('a pill always carries its text label — status never rides on hue alone', () => {
@@ -793,14 +794,18 @@ describe('the session tone map', () => {
   /**
    * ANSWER1c (D131): a park the person answered stays parked until the driver's next look, with the answer set, and the
    * same session goes on then. Its state still says it waits on the person; it shows as answered, so no surface asks
-   * the person again. An answer this machine was not told (a teammate's, or none) leaves it waiting.
+   * the person again. An answer this machine was not told (a teammate's, or none) leaves it waiting. ONEWAY1m: the answer is
+   * read from the keyed `said` words, the person's alone, so Daoris's own word on a park leaves it waiting.
    */
   it('shows a park the person answered as answered until the driver takes it up', () => {
-    expect(shownState({ kind: 'driven', state: 'awaiting-person', answer: 'Use the second.' }, undefined)).toBe('answered');
-    expect(shownState({ kind: 'driven', state: 'awaiting-person', answer: null }, undefined)).toBe('awaiting-person');
-    expect(shownState({ kind: 'driven', state: 'awaiting-person', answer: '' }, undefined)).toBe('awaiting-person');
+    expect(shownState({ kind: 'driven', state: 'awaiting-person', said: said('Use the second.') }, undefined)).toBe('answered');
+    expect(shownState({ kind: 'driven', state: 'awaiting-person', said: null }, undefined)).toBe('awaiting-person');
+    expect(shownState({ kind: 'driven', state: 'awaiting-person', said: [] }, undefined)).toBe('awaiting-person');
+    expect(shownState({ kind: 'driven', state: 'awaiting-person', said: [{ ...said('It reopened.')[0]!, from: 'daoris' }] }, undefined))
+      .toBe('awaiting-person');
+    expect(personsSaid({ said: [...said('Port 8080.', 'Port 9090.'), { ...said('a helper says')[0]!, helper: 'h1' }] })).toBe('Port 8080.\n\nPort 9090.');
     // Once the driver takes it up the record says so: going on while the words still wait for its first prompt (MSG1f).
-    expect(shownState({ kind: 'driven', state: 'working', answer: 'Use the second.' }, undefined)).toBe('going-on');
+    expect(shownState({ kind: 'driven', state: 'working', said: said('Use the second.') }, undefined)).toBe('going-on');
   });
 
   /**
@@ -810,11 +815,11 @@ describe('the session tone map', () => {
    */
   it('shows a record whose words wait for its run to open as going on', () => {
     for (const state of ['queued', 'starting', 'working'] as const) {
-      expect(shownState({ kind: 'driven', state, answer: 'also cap it' }, undefined)).toBe('going-on');
+      expect(shownState({ kind: 'driven', state, said: said('also cap it') }, undefined)).toBe('going-on');
     }
-    expect(shownState({ kind: 'chat', state: 'working', answer: 'also cap it' }, false)).toBe('going-on');
-    expect(shownState({ kind: 'driven', state: 'working', answer: null }, undefined)).toBe('working');
-    expect(shownState({ kind: 'driven', state: 'completed', answer: 'also cap it' }, undefined)).toBe('completed');
+    expect(shownState({ kind: 'chat', state: 'working', said: said('also cap it') }, false)).toBe('going-on');
+    expect(shownState({ kind: 'driven', state: 'working', said: null }, undefined)).toBe('working');
+    expect(shownState({ kind: 'driven', state: 'completed', said: said('also cap it') }, undefined)).toBe('completed');
     expect(SESSION_TONE['going-on']).toBe('neutral');
     expect(SESSION_DOT['going-on']).toBe('idle');
     expect(shownKey('going-on')).toBe('work.shown.goingOn');

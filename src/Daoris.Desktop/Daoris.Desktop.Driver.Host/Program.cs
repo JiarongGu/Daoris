@@ -149,6 +149,12 @@ if (args is ["workflow", .. var workflowArgs])
     return await Daoris.Driver.Host.WorkflowConsole.RunAsync(workflowArgs);
 }
 
+// The home's one conversion door (ONEWAY1ae): through the running Daoris alone, routed before the machine log opens, with its own catch.
+if (args is ["convert", .. var convertArgs])
+{
+    return await Daoris.Driver.Host.ConvertConsole.RunAsync(convertArgs);
+}
+
 // A checkout's heavy gates under its repository's one slot (HEAVYRUN1a, D180's HEAVYRUN1 note). Routed before the machine log opens,
 // with its own catch: it runs for minutes beside everything else, holds no home lease (VerbLeases), and writes only its slot's files.
 if (args is ["run-heavy", .. var heavyArgs])
@@ -369,16 +375,6 @@ try
             : await client.AcceptDepartureAsync(questId);
         Console.WriteLine($"daoris: {message}");
         // A refusal — something stands on the quest, or nothing waits for a yes — is an answer, not a tool error.
-        return ok ? 0 : 1;
-    }
-
-    // Answering a session that parked to ask the person (STANDDOWN2, D50): the page's box is the other door.
-    if (args is ["answer", var answered, .. var words])
-    {
-        using var client = ServiceClient.FromEnvironment();
-        var (ok, message) = await client.AnswerSessionAsync(answered, words.Length == 0 ? null : string.Join(" ", words));
-        Console.WriteLine($"daoris: {message}");
-        // A refusal — nothing parked by that id — is an answer, not a tool error.
         return ok ? 0 : 1;
     }
 

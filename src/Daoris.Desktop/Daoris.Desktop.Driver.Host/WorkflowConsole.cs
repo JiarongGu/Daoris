@@ -12,7 +12,6 @@ internal static class WorkflowConsole
     public static async Task<int> RunAsync(string[] args)
     {
         if (args is ["keep", ..]) return await KeepAsync(args).ConfigureAwait(false);
-        if (args is ["convert", .. var convertArgs]) return await ConvertAsync(convertArgs).ConfigureAwait(false);
         if (WorkflowNodeCommand.Asks(args)) return await NodeAsync(args).ConfigureAwait(false);
 
         // The usage before the service is asked for: a mistyped line needs no service to be told so.
@@ -59,31 +58,6 @@ internal static class WorkflowConsole
 
         var home = DriverConfig.HomeOf(DriverConfig.ResolvePath());
         return await WorkflowNodeCommand.RunAsync(asked, new NodeRecordFiles(home), Console.Out, InstanceHost.World(home, "workflow")).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// <c>workflow convert --plan | --apply &lt;digest&gt; | --undo</c> (WORKFLOWCLEAN1 1e): the conversion of the old records, through the running
-    /// Daoris alone, which plans it and asks the person to confirm the press; with none running it says so.
-    /// </summary>
-    private static async Task<int> ConvertAsync(string[] args)
-    {
-        if (ConvertCommand.Read(args, out var problem) is not { } asked)
-        {
-            Console.Error.WriteLine($"workflow: {problem}");
-            Console.Error.WriteLine(ConvertCommand.Usage);
-            return 2;
-        }
-
-        try
-        {
-            var home = DriverConfig.HomeOf(DriverConfig.ResolvePath());
-            return await ConvertCommand.RunAsync(asked, Console.Out, InstanceHost.World(home, "workflow")).ConfigureAwait(false);
-        }
-        catch (Exception error) when (error is DriverException or System.Text.Json.JsonException or IOException)
-        {
-            Console.Error.WriteLine($"workflow: {error.Message}");
-            return 2;
-        }
     }
 
     /// <summary><c>workflow keep &lt;session&gt; ["…"]</c>: the person's <i>Keep</i>, through the library's press.</summary>

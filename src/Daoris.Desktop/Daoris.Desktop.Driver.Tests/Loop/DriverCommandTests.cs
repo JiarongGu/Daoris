@@ -506,10 +506,17 @@ public sealed class DriverCommandTests
         Assert.Contains("\n  session archive <id>… | --ended [--yes]  ·  session unarchive <id>…  ·  session delete <id>\n", usage);
         Assert.Contains("sessions stop <id> [--turn]", SessionsCommand.Usage);
         // MSG1e (D137 §5.2): what the screen's box says to a session, a terminal says too, at a level (COWORK1a).
-        Assert.Contains("\n  session say <id> \"…\" [--file <path>]… [--level ordinary|urgent|now] [--now]\n", usage);
+        Assert.Contains("\n  session say <id> \"…\" [--file <path>]… [--level ordinary|urgent|now]\n", usage);
         Assert.Contains("sessions say <id> \"…\" [--file <path>]…", SessionsCommand.Usage);
 
         var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
+        // ONEWAY1l's usage lines: the usage names `--level` alone for a say (ONEWAY1ai-i: the host's header teaches no verb now).
+        var say = usage.Split('\n').Single(line => line.Contains("session say <id>", StringComparison.Ordinal));
+        Assert.Contains("[--level ordinary|urgent|now]", say);
+        Assert.DoesNotContain("--now", say);
+        Assert.DoesNotContain("--now is --level now", usage);
+        Assert.DoesNotContain("sessions say <id>", program);
+
         Assert.Contains("if (args is [\"sessions\", .. var sessionsArgs])", program);
         Assert.Contains("SessionsConsole.RunAsync(sessionsArgs, log)", program);
         // Every loop on the home watches the requests: the headless loop as the desktop's does.

@@ -23,17 +23,20 @@ public sealed record BriefPart(string Session, string? Agent, IReadOnlyList<Sess
 /// <param name="Commits">The commits on it since the line's first part began, newest first, short id and subject.</param>
 public sealed record BriefTree(string? Head, IReadOnlyList<string> Uncommitted, IReadOnlyList<string> Commits);
 
-/// <summary>What a brief is composed from: the line a new part continues, oldest part first, and what was read beside it.</summary>
-/// <param name="Why">Why the session moves on now, one of <see cref="HandOverWhy"/>.</param>
-/// <param name="Parts">The line, one chain back by each part's <c>from</c>: the part moved from last, never a part beside it.</param>
 /// <summary>
 /// One thing a line waits on, as plain values (COMMS1f): the request's id, the session that owns it, whom it asked, its delivery and
 /// outcome as the exchanges' read gives them, and the words of the ask where it has some.
 /// </summary>
 public sealed record BriefWait(string Id, string Owner, string To, string Delivery, string Outcome, string? Detail = null);
 
+/// <summary>What a brief is composed from: the line a new part continues, oldest part first, and what was read beside it.</summary>
+/// <param name="Why">Why the session moves on now, one of <see cref="HandOverWhy"/>.</param>
+/// <param name="Parts">The line, one chain back by each part's <c>from</c>: the part moved from last, never a part beside it.</param>
 public sealed record BriefLine(string Why, IReadOnlyList<BriefPart> Parts)
 {
+    /// <summary>The line's counts as Daoris read them (CONTEXTDRIVE1b), each with what Daoris does on it; none read, none said.</summary>
+    public IReadOnlyList<CountFact> Counts { get; init; } = [];
+
     /// <summary>A conversation's line: its request is its first word, which item 3 does not tell again. A driven line's is its quest.</summary>
     public bool Conversation { get; init; }
 
@@ -82,8 +85,8 @@ public sealed record BriefLine(string Why, IReadOnlyList<BriefPart> Parts)
 /// the record marks it (the person's verbatim; another agent's findings and a channel's message as that agent's claim, told by their
 /// marks, a channel's from before its mark by the claim's opening); each turn's last message and one line of what it did; the work's
 /// state, the tree read now, the plan with the turn it was written in, the last check each part ran and the last failed one's kept
-/// output, what is still asked, the files attached and the memory the line read as rechecked now; the outgoing agent's note; the
-/// entry's other parts; what was left out.</para>
+/// output, what is still asked, the files attached and the memory the line read as rechecked now; the line's course as Daoris counts it
+/// (CONTEXTDRIVE1b); the outgoing agent's note; the entry's other parts; what was left out.</para>
 ///
 /// <para><b>What it never carries</b> (§3.3): a thought, a tool's output but the last failed check's, Daoris's own composed words
 /// (an instruction, an earlier brief, its own words to a session), a summary any model wrote, or a machine path beyond where the
@@ -119,6 +122,9 @@ public static class ContextBrief
 
     /// <summary>The entry's other parts (item 7).</summary>
     public const int PartsCap = 1_000;
+
+    /// <summary>The line's course as Daoris counts it (CONTEXTDRIVE1b; the context-counters design §3 point 1).</summary>
+    public const int CourseCap = 1_000;
 
     /// <summary>The words the session took (item 3), the newest kept.</summary>
     public const int WordsCap = 12_000;
@@ -183,6 +189,7 @@ public static class ContextBrief
             // SESSCTX1c part B: a closing note asked and not written in its one turn is said absent, in the note's own section.
             : line.NoteAsked ? "\n\n" + OutgoingNote.Absent : null;
         var (others, othersLeft) = Others(line.Others);
+        var course = Course(line.Counts);
 
         // Item 3: the newest words under their cap, the oldest after the request left out first.
         var words = read.Turns.SelectMany(turn => turn.Words).ToList();
@@ -204,7 +211,8 @@ public static class ContextBrief
 
         // Item 4: the newest outcomes under what the rest leave.
         foreach (var turn in read.Turns) turn.Outcome = Outcome(turn, line.Tree);
-        var fixedWeight = Weight(opening) + Weight(state ?? "") + Weight(note ?? "") + Weight(others ?? "") + Weight(Intro) + NoticeRoom;
+        var fixedWeight = Weight(opening) + Weight(state ?? "") + Weight(course.Text ?? "") + Weight(note ?? "") + Weight(others ?? "") + Weight(Intro)
+                          + NoticeRoom;
         var budget = Math.Max(TurnsFloor, Bound - fixedWeight - wordsUsed) - Frames(read, line);
         var turnsUsed = 0;
         foreach (var turn in Enumerable.Reverse(read.Turns).Where(turn => turn.Outcome is not null))
@@ -218,8 +226,11 @@ public static class ContextBrief
         // The bound holds whatever the frames came to: the oldest kept outcome, then the oldest kept word, goes until it fits.
         while (true)
         {
-            var pieces = Pieces(line, read, opening, state, note, others, othersLeft, stateLeft, planLeft, clipped);
-            if (Weight(string.Concat(pieces.Select(piece => piece.Text))) <= Bound || !DropOldest(read)) return Accounted(line, read, pieces, clipped, stateLeft, planLeft, othersLeft);
+            var pieces = Pieces(line, read, opening, state, course.Text, note, others, othersLeft, stateLeft, planLeft, clipped);
+            if (Weight(string.Concat(pieces.Select(piece => piece.Text))) <= Bound || !DropOldest(read))
+            {
+                return Accounted(line, read, pieces, clipped, stateLeft, planLeft, othersLeft, course);
+            }
         }
     }
 
@@ -716,11 +727,57 @@ public static class ContextBrief
         return (text.ToString(), others.Count - shown);
     }
 
+    /// <summary>
+    /// The line's course as Daoris counts it (CONTEXTDRIVE1b; the context-counters design §3 point 1) under <see cref="CourseCap"/>: one
+    /// line per count that is not zero or that Daoris acts on, as facts; those past the cap counted. None where nothing is said.
+    /// </summary>
+    private static (string? Text, int Shown, int Of) Course(IReadOnlyList<CountFact> counts)
+    {
+        var lines = CountTexts.Lines(counts);
+        if (lines.Count == 0) return (null, 0, 0);
+        var text = new StringBuilder($"\n\n{CountTexts.Heading}:");
+        var shown = 0;
+        foreach (var each in lines)
+        {
+            var row = $"\n- {each}";
+            if (Weight(text.ToString()) + Weight(row) > CourseCap - 40) break;
+            text.Append(row);
+            shown++;
+        }
+
+        if (shown < lines.Count) text.Append($"\n- … and {lines.Count - shown} more counts");
+        return (text.ToString(), shown, lines.Count);
+    }
+
+    private static HandedSection CourseSection(int chars, int shown, int of) => new(
+        HandedSections.BriefCourse, HandedSources.Record,
+        $"the line's course: {InstructionAccounting.N(chars)} characters: {shown} of {of} counts, as Daoris counts them")
+    {
+        Chars = chars,
+        Shown = shown,
+        Of = of,
+        Cuts = shown == of ? null :
+        [
+            new HandedCut(HandedCuts.BriefCourseBound, $"{of - shown} left out past its bound of {CourseCap} characters") { Count = of - shown, Limit = CourseCap },
+        ],
+    };
+
+    /// <summary>
+    /// What a start whose line holds no brief carries of its course (§3 point 2): the brief's item, accounted as the brief accounts it, where
+    /// any count is not zero, as on a quest that failed here before; null where none is.
+    /// </summary>
+    public static ComposedBrief? Counted(IReadOnlyList<CountFact> counts)
+    {
+        if (!counts.Any(count => count.N > 0)) return null;
+        var (text, shown, of) = Course(counts);
+        return text is null ? null : new ComposedBrief([new BriefPiece(HandedSections.BriefCourse, text)], [CourseSection(text.Length, shown, of)]);
+    }
+
     // ——— The brief, piece by piece, and its account.
 
     private static List<BriefPiece> Pieces(
-        BriefLine line, LineRead read, string opening, string? state, string? note, string? others, int othersLeft, int stateLeft, int planLeft,
-        Clips clipped)
+        BriefLine line, LineRead read, string opening, string? state, string? course, string? note, string? others, int othersLeft, int stateLeft,
+        int planLeft, Clips clipped)
     {
         var pieces = new List<BriefPiece> { new(HandedSections.BriefOpening, opening) };
         var exchange = read.Turns.Where(turn => turn.Kept || turn.Words.Any(word => word.Kept)).ToList();
@@ -743,6 +800,7 @@ public static class ContextBrief
         }
 
         if (state is not null) pieces.Add(new(HandedSections.BriefState, state));
+        if (course is not null) pieces.Add(new(HandedSections.BriefCourse, course));
         if (note is not null) pieces.Add(new(HandedSections.BriefNote, note));
         if (others is not null) pieces.Add(new(HandedSections.BriefParts, others));
 
@@ -777,7 +835,8 @@ public static class ContextBrief
          read.Turns.Count(turn => turn.Outcome is not null && !turn.Kept));
 
     private static ComposedBrief Accounted(
-        BriefLine line, LineRead read, List<BriefPiece> pieces, Clips clipped, int stateLeft, int planLeft, int othersLeft)
+        BriefLine line, LineRead read, List<BriefPiece> pieces, Clips clipped, int stateLeft, int planLeft, int othersLeft,
+        (string? Text, int Shown, int Of) course)
     {
         var chars = pieces.GroupBy(piece => piece.Section, StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.Sum(piece => piece.Text.Length));
         var order = pieces.Select(piece => piece.Section).Distinct(StringComparer.Ordinal).ToList();
@@ -829,6 +888,7 @@ public static class ContextBrief
                         planLeft > 0 ? new HandedCut(HandedCuts.PlanBound, $"{planLeft} plan steps left out past its bound of {ListLimit}") { Count = planLeft, Limit = ListLimit } : null,
                         stateLeft > 0 ? new HandedCut(HandedCuts.BriefList, $"{stateLeft} entries of its lists left out past their bound") { Count = stateLeft } : null),
                 },
+                HandedSections.BriefCourse => CourseSection(chars[name], course.Shown, course.Of),
                 HandedSections.BriefNote => new HandedSection(name, HandedSources.Record, $"the outgoing agent's note: {size}, as its claim"),
                 HandedSections.BriefParts => new HandedSection(name, HandedSources.Record, $"the session's other parts: {size}: {line.Others.Count - othersLeft} of {line.Others.Count}")
                 {

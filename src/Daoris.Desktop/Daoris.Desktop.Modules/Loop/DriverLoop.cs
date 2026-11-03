@@ -1359,10 +1359,10 @@ public sealed class DriverLoop(
 
         // AGENTSPLACE1b2: a place's apply that a stop left uncertain is read by its postcondition, in the background, asking and writing nothing
         // but the receipt: what it found is the receipt's, and a press of the same plan goes on from there.
-        // WORKFLOWCLEAN1g-ii: the conversion's census is read after it at the come-up, and again whenever the driver file moves (an apply or
-        // an undo publishes that scope).
+        // ONEWAY1ae: every part's census is read after it at the come-up, and again whenever the driver file moves (an apply or an undo
+        // publishes that scope).
         var counting = _stopping.Token;
-        var census = ConversionCensus.Reading(service, ConfigPath, Home);
+        var census = ConversionCensus.Reading(() => ConversionDoors.Of(this));
         Settling = Task.Run(async () =>
         {
             await SettlePlacesAsync(service, counting).ConfigureAwait(false);
@@ -1387,10 +1387,9 @@ public sealed class DriverLoop(
                 new PlaceWorld(service), new SetupWorld(service, Home), Home, PluginCatalog.Load(Home, AdapterSet.Built().Names), DriverContext.DoorOf(this, config),
                 () => DriverConfig.Load(ConfigPath), _ => throw new InvalidOperationException("settling writes no configuration"), DateOnly.FromDateTime(DateTime.Now));
             await PlaceApplies.SettleAllAsync(doors, ct).ConfigureAwait(false);
-            // WORKFLOWCLEAN1 1e: a conversion's receipt a stop left uncertain is read the same way, and a press of its plan goes on from it.
-            ConversionApplies.SettleAll(new ConvertDoors(
-                Home, _ => throw new InvalidOperationException("settling reads no world"), _ => throw new InvalidOperationException("settling writes no configuration"),
-                () => DriverConfig.Load(ConfigPath), () => new HashSet<string>()));
+            // ONEWAY1ae: a conversion's receipt a stop left uncertain is read the same way, each part by its postconditions, and a press of
+            // its plan goes on from it.
+            ConversionApplies.SettleAll(ConversionDoors.Of(this));
         }
         catch (Exception error) when (error is not OperationCanceledException)
         {

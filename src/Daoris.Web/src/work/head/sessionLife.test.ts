@@ -6,6 +6,7 @@ import { SESSION_ACTIVE, SESSION_TONE } from '../../design/ui';
 import i18n from '../../locales/i18n';
 import { en, zh } from '../../locales';
 import { ENDED_STATES, LIVE_STATES, SESSION_MOVES, SESSION_STATES, sessionFlow } from './sessionLife';
+import { said } from '../../test/said';
 
 // FLOWCHART1b (the flowchart design §2.2, §7 traps 8, 10, 11, 18 and 19): a session's states and the moves between them,
 // drawn at the head of its Timeline view. The moves are a page constant, so this holds them to the code's own table,
@@ -109,11 +110,11 @@ describe('the states a session\'s Timeline view draws (§2.2)', () => {
 
   it('says the shown word the page reads over the record\'s state, in the tone that word wears', () => {
     expect(lit('working', {}, 'idle')[0]!.state).toEqual({ word: 'idle', tone: SESSION_TONE.idle });
-    expect(lit('awaiting-person', { answer: 'go ahead' }, 'answered')[0]!.state).toEqual({ word: 'answered', tone: 'neutral' });
+    expect(lit('awaiting-person', { said: said('go ahead') }, 'answered')[0]!.state).toEqual({ word: 'answered', tone: 'neutral' });
     // A quest parked on its failed sessions: the record failed, the reader says parked, in open's hue.
     expect(lit('failed', {}, 'parked')[0]!.state).toEqual({ word: 'parked', tone: 'open' });
     expect(lit('completed', {}, 'awaiting-reply')[0]!.state).toEqual({ word: 'awaiting reply', tone: 'neutral' });
-    expect(lit('starting', { answer: 'go ahead' }, 'going-on')[0]!.state).toEqual({ word: 'going on', tone: 'neutral' });
+    expect(lit('starting', { said: said('go ahead') }, 'going-on')[0]!.state).toEqual({ word: 'going on', tone: 'neutral' });
   });
 
   it('claims no path: nothing before the current state is reached or not, and a live record has not ended (trap 19)', () => {

@@ -524,10 +524,11 @@ const afterStandDown = await api('POST', '/api/sessions', { body: { quest: cutQu
 check('…and once its last session stood down, the take is somebody else’s and nothing opens', afterStandDown.status === 409, afterStandDown.text);
 await api('POST', `/api/quests/${cutQuestId}/respond`, { body: { action: 'done', reason: 'Profiled.' } });
 
-// Answering a session that parked to ask the person (STANDDOWN2): the answer KEEPS the park (ANSWER1b, D131), its
-// words kept and said on its note, for the driver's next look to go on with that same record — 17a drives that look
-// over the protocol door. While it is parked nothing new opens on its quest. Where the driver cannot go on with it, its
-// fallback ends the park with the answer kept (D131 §2), and a session then opens on the taken quest, as after a cut-off.
+// Answering a session that parked to ask the person (STANDDOWN2), through the say door alone (ONEWAY1k): the answer KEEPS the
+// park (ANSWER1b, D131), its words kept on `said` and said on its note, for the driver's next look to go on with that same record
+// — 17a drives that look over the protocol door. While it is parked nothing new opens on its quest. Where the driver cannot go on
+// with it, its fallback ends the park with the answer kept (D131 §2), and a session then opens on the taken quest, as after a cut-off.
+const saidOf = (session) => (session?.said ?? []).map((word) => word.text);
 const askingQuest = await api('POST', '/api/quests', {
   body: { from: 'game', to: 'engine', title: 'Check the budget on the device', body: 'It needs a sign-in first.' },
 });
@@ -539,22 +540,25 @@ for (const state of ['starting', 'working']) {
 }
 await api('POST', `/api/quests/${askingQuestId}/respond`, { body: { action: 'take', reason: null } });
 await api('POST', `/api/sessions/${askingId}/state`, { body: { state: 'awaiting-person', note: 'it needs a sign-in.' } });
-const answered = await api('POST', `/api/sessions/${askingId}/answer`, { body: { answer: 'Signed in.' } });
+const answered = await api('POST', `/api/sessions/${askingId}/say`, { body: { text: 'Signed in.' } });
 check(
   'a session parked to ask the person is answered, and its record stays parked with the words, said on its note',
-  answered.status === 200 && answered.json?.session?.state === 'awaiting-person' && answered.json?.session?.answer === 'Signed in.'
+  answered.status === 200 && answered.json?.session?.state === 'awaiting-person'
+    && JSON.stringify(saidOf(answered.json?.session)) === JSON.stringify(['Signed in.'])
     && answered.json?.session?.note === 'it needs a sign-in.\n\nAnswered: Signed in.',
   answered.text,
 );
-// A second answer joins the first (MSG1a, D137 §2.4): the person's words are all kept, and `answer` is them joined.
-const reanswered = await api('POST', `/api/sessions/${askingId}/answer`, { body: { answer: 'Signed in on the device.' } });
+// A second answer joins the first (MSG1a, D137 §2.4): the person's words are all kept, each its own word.
+const reanswered = await api('POST', `/api/sessions/${askingId}/say`, { body: { text: 'Signed in on the device.' } });
 check(
   '…a second answer before the driver looks joins the first, on the record and on its note',
   reanswered.status === 200 && reanswered.json?.session?.state === 'awaiting-person'
-    && reanswered.json?.session?.answer === 'Signed in.\n\nSigned in on the device.'
+    && JSON.stringify(saidOf(reanswered.json?.session)) === JSON.stringify(['Signed in.', 'Signed in on the device.'])
     && reanswered.json?.session?.note === 'it needs a sign-in.\n\nAnswered: Signed in.\n\nAnswered: Signed in on the device.',
   reanswered.text,
 );
+const retired = await api('POST', `/api/sessions/${askingId}/answer`, { body: { answer: 'Signed in.' } });
+check('…and the park’s own answer route is gone, its job the say door’s alone (ONEWAY1k)', retired.status === 404, retired.text);
 const whileParked = await api('POST', '/api/sessions', { body: { quest: askingQuestId, adapter: 'stub' } });
 check('…and nothing new opens on its quest while the park holds it', whileParked.status === 409, whileParked.text);
 await api('POST', `/api/sessions/${askingId}/state`, {
@@ -568,7 +572,8 @@ const endedPark = ((await api('GET', '/api/sessions?repository=engine&includeClo
   .find((s) => s.id === askingId);
 check(
   '…and once the driver’s fallback ends the park, its answer kept, a session opens on the taken quest to carry it on',
-  afterAnswer.status === 200 && endedPark?.state === 'completed' && endedPark?.answer === 'Signed in.\n\nSigned in on the device.',
+  afterAnswer.status === 200 && endedPark?.state === 'completed'
+    && JSON.stringify(saidOf(endedPark)) === JSON.stringify(['Signed in.', 'Signed in on the device.']),
   `${afterAnswer.text}\n${JSON.stringify(endedPark)}`,
 );
 await api('POST', `/api/sessions/${afterAnswer.json?.session?.id}/state`, { body: { state: 'stopped' } });
@@ -4814,12 +4819,13 @@ check(
   `${portParkRun.out}\n${JSON.stringify(portPark)}\n${JSON.stringify(portKept)}`,
 );
 
-const portAnswer = driver({ serviceUrl: BASE, config: acpConfig, mode: `answer ${portPark?.id} "Port 8080."` });
+// ONEWAY1k: a park is answered through the say door alone, `sessions say` at the terminal.
+const portAnswer = driver({ serviceUrl: BASE, config: acpConfig, mode: `sessions say ${portPark?.id} "Port 8080."` });
 const portAnswered = (await portRecords()).find((s) => s.id === portPark?.id) ?? null;
 check(
-  '`daoris-driver answer` answers it, and the record stays parked with the words for the driver’s next look',
-  portAnswer.code === 0 && /it carries on with `#[^`]+` at the driver's next look/.test(portAnswer.out)
-    && portAnswered?.state === 'awaiting-person' && portAnswered?.answer === 'Port 8080.',
+  '`daoris-driver sessions say` answers it, and the record stays parked with the words for the driver’s next look',
+  portAnswer.code === 0 && portAnswered?.state === 'awaiting-person'
+    && JSON.stringify((portAnswered?.said ?? []).map((word) => word.text)) === JSON.stringify(['Port 8080.']),
   `${portAnswer.out}\n${JSON.stringify(portAnswered)}`,
 );
 

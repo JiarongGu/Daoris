@@ -2,7 +2,7 @@ import type { CommandArgs } from '../platform/types.ts';
 import type { Lock, LockEntry, Manifest, MirrorEntry } from './records.ts';
 import type { ExitCode } from '../platform/errors.ts';
 import { existsSync } from 'node:fs';
-import { join, resolve, sep } from 'node:path';
+import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { readText, sha256, writeTextAtomic } from '../platform/fsx.ts';
 import { frontmatterEnd, stripHeader } from './document.ts';
 import { resolveCanonRoot } from './canon.ts';
@@ -12,18 +12,55 @@ import { spanBody } from './tierrender.ts';
 import { declared, lockLayout } from '../layout/layout.ts';
 import { DaorisError } from '../platform/errors.ts';
 
+/** One file's text going back to the canon: whose, and the repository's text without the tool's header. */
+interface Promotion {
+  target: string;
+  source: string;
+  body: string;
+  /** A rule held as a span (D59): only its body goes, under the canon's own frontmatter. */
+  span: boolean;
+}
+
 /**
  * The 衍 half: a refinement found in one repo flows back and evolves the canon.
  * A one-way push would be distribution; this is what keeps the canon from
  * ossifying, which is why it ships in v0.1 rather than later.
  *
  * It takes a canonical document's own path, a mirror's path (D117 §3.3), or an old path after a move,
- * which it answers with where the document went.
+ * which it answers with where the document went. It writes into the canon, which only the canon's own checkout does
+ * (`commandUpstream`); anywhere else the same text becomes a request's words (D230).
  */
 export function upstreamFile(
   { root, manifest, lock, canonRoot, file }:
   { root: string; manifest: Manifest; lock: Lock | null; canonRoot: string; file: string },
 ): { target: string; source: string } {
+  const promotion = promotionOf({ root, manifest, lock, file });
+  writePromotion(canonRoot, promotion);
+  return { target: promotion.target, source: promotion.source };
+}
+
+/** Into the canon: a span's body under the canon's own frontmatter, a file's text whole. */
+function writePromotion(canonRoot: string, { source, body, span }: Promotion): void {
+  if (!existsSync(canonRoot)) throw new DaorisError(`no canon at '${canonRoot}'`);
+  const canonFile = canonPath(canonRoot, source);
+  if (!span) {
+    writeTextAtomic(canonFile, body);
+    return;
+  }
+  // The region carries PROSE; the frontmatter was stripped on the way in, so the canon's own is kept and only the body is
+  // replaced. That is the honest limit of promoting from a region, and it is stated rather than discovered: an
+  // improvement to `applies_when` or `enforces` is a canon edit, not something a repository can push from its
+  // instruction file.
+  const held = existsSync(canonFile) ? readText(canonFile) : '';
+  const end = frontmatterEnd(held);
+  const front = end === -1 ? '' : `${held.slice(0, end)}\n`;
+  writeTextAtomic(canonFile, `${front}${body}\n`);
+}
+
+/** What `file` promotes, refused as `upstreamFile` refuses it; reads only this repository. */
+function promotionOf(
+  { root, manifest, lock, file }: { root: string; manifest: Manifest; lock: Lock | null; file: string },
+): Promotion {
   const locked = lockIndex(lock);
   // Where the files are is the lock's answer (D117 §5.1): between a flip and the sync that moves them,
   // the manifest's root holds nothing yet.
@@ -31,7 +68,7 @@ export function upstreamFile(
   const path = declared(file);
 
   const mirror = lock?.mirrors?.find((candidate) => candidate.path === path);
-  if (mirror) return upstreamMirror({ root, locked, canonRoot, mirror, file, base });
+  if (mirror) return mirrorPromotion({ root, locked, mirror, file, base });
 
   const strip = (prefix: string) => (path.startsWith(`${prefix}/`) ? path.slice(prefix.length + 1) : null);
   const normalized = strip(base) ?? strip(manifest.target) ?? path;
@@ -51,14 +88,10 @@ export function upstreamFile(
       `'${file}' is not canonical in this repo — it is local, so there is nothing to upstream`,
     );
   }
-  if (!existsSync(canonRoot)) throw new DaorisError(`no canon at '${canonRoot}'`);
-  const canonFile = canonPath(canonRoot, entry.source);
-
+  // D18 before anything is read for it: a source that leaves the canon names no canon file, to write or to propose.
+  canonPath(resolve(sep, 'canon'), entry.source);
   if (entry.in) {
-    // A span (D59). The region carries PROSE; the frontmatter was stripped on the way in, so the
-    // canon's own is kept and only the body is replaced. That is the honest limit of promoting from a
-    // region, and it is stated rather than discovered: an improvement to `applies_when` or `enforces`
-    // is a canon edit, not something a repository can push from its instruction file.
+    // A span (D59): its body alone, which `writePromotion` puts under the canon's own frontmatter.
     const body = spanBody(root, manifest.harnessDescriptor, entry);
     if (body === null) {
       throw new DaorisError(
@@ -66,17 +99,10 @@ export function upstreamFile(
         + "  run 'daoris sync' to put it back, then edit it there.",
       );
     }
-
-    const held = existsSync(canonFile) ? readText(canonFile) : '';
-    const end = frontmatterEnd(held);
-    const front = end === -1 ? '' : `${held.slice(0, end)}\n`;
-    writeTextAtomic(canonFile, `${front}${body}\n`);
-    return { target: entry.target, source: entry.source };
+    return { target: entry.target, source: entry.source, body, span: true };
   }
 
-  const body = stripHeader(readText(join(root, base, entry.target)));
-  writeTextAtomic(canonFile, body);
-  return { target: entry.target, source: entry.source };
+  return { target: entry.target, source: entry.source, body: stripHeader(readText(join(root, base, entry.target))), span: false };
 }
 
 /**
@@ -104,13 +130,10 @@ function canonPath(canonRoot: string, source: string): string {
  * source is where the edit belongs — and for a mirror whose source was edited too: two edits are a merge
  * only a person can make.
  */
-function upstreamMirror(
-  { root, locked, canonRoot, mirror, file, base }:
-  {
-    root: string; locked: Map<string, LockEntry>; canonRoot: string; mirror: MirrorEntry; file: string;
-    base: string;
-  },
-): { target: string; source: string } {
+function mirrorPromotion(
+  { root, locked, mirror, file, base }:
+  { root: string; locked: Map<string, LockEntry>; mirror: MirrorEntry; file: string; base: string },
+): Promotion {
   const target = mirror.of.startsWith(`${base}/`) ? mirror.of.slice(base.length + 1) : mirror.of;
   const entry = locked.get(target);
   if (!entry || entry.in) {
@@ -124,9 +147,7 @@ function upstreamMirror(
       + 'make. Keep the one you mean in the source, then upstream that path',
       1);
   }
-  if (!existsSync(canonRoot)) throw new DaorisError(`no canon at '${canonRoot}'`);
-  writeTextAtomic(canonPath(canonRoot, entry.source), stripHeader(readText(join(root, mirror.path))));
-  return { target: entry.target, source: entry.source };
+  return { target: entry.target, source: entry.source, body: stripHeader(readText(join(root, mirror.path))), span: false };
 }
 
 /**
@@ -141,21 +162,30 @@ export function upstreamAll(
   { root, manifest, lock, canonRoot }:
   { root: string; manifest: Manifest; lock: Lock | null; canonRoot: string },
 ): Array<{ target: string; source: string }> {
-  const promoted = [];
+  const promotions = promotionsAll({ root, manifest, lock });
+  for (const promotion of promotions) writePromotion(canonRoot, promotion);
+  return promotions.map(({ target, source }) => ({ target, source }));
+}
+
+/** Every edited canonical file's promotion, each refused as one alone would be, before any is written. */
+function promotionsAll(
+  { root, manifest, lock }: { root: string; manifest: Manifest; lock: Lock | null },
+): Promotion[] {
+  const promoted: Promotion[] = [];
   const { target: base } = lockLayout(root, lock, manifest);
   const locked = lockIndex(lock);
   for (const entry of lock?.entries ?? []) {
     if (entry.in) {
       const body = spanBody(root, manifest.harnessDescriptor, entry);
       if (body === null || sha256(body) === entry.sha256) continue;
-      promoted.push(upstreamFile({ root, manifest, lock, canonRoot, file: entry.target }));
+      promoted.push(promotionOf({ root, manifest, lock, file: entry.target }));
       continue;
     }
 
     const abs = join(root, base, entry.target);
     if (!existsSync(abs)) continue;
     if (sha256(readText(abs)) === entry.sha256) continue;
-    promoted.push(upstreamFile({ root, manifest, lock, canonRoot, file: entry.target }));
+    promoted.push(promotionOf({ root, manifest, lock, file: entry.target }));
   }
 
   for (const mirror of lock?.mirrors ?? []) {
@@ -164,9 +194,45 @@ export function upstreamAll(
     const target = mirror.of.startsWith(`${base}/`) ? mirror.of.slice(base.length + 1) : mirror.of;
     const entry = locked.get(target);
     if (!entry || entry.in || promoted.some((done) => done.target === entry.target)) continue;
-    promoted.push(upstreamFile({ root, manifest, lock, canonRoot, file: mirror.path }));
+    promoted.push(promotionOf({ root, manifest, lock, file: mirror.path }));
   }
   return promoted;
+}
+
+/**
+ * Whether this is the canon's own checkout: the canon this tool reads sits inside the repository (D230). Only there does
+ * `upstream` write; anywhere else the canon is an installed package's copy, or another repository's checkout.
+ */
+export function insideCanon(root: string, canonRoot: string): boolean {
+  const rel = relative(resolve(root), resolve(canonRoot));
+  return rel !== '' && !rel.startsWith('..') && !isAbsolute(rel);
+}
+
+/**
+ * The request's words, offline (D230): a title and a body for the repository that keeps the shared doctrine, carrying this
+ * repository's text of each file whole, for the person or the session to send. In the canon's words, as a quest is.
+ */
+export function composeRequest(
+  { manifest, lock, promotions }: { manifest: Manifest; lock: Lock | null; promotions: readonly Promotion[] },
+): string {
+  const title = promotions.length === 1
+    ? `Take this repository's text of \`${promotions[0]!.source}\` into the shared doctrine`
+    : `Take this repository's text of ${promotions.length} files into the shared doctrine`;
+  const from = lock ? `\`${lock.source}\`, canon ${lock.canonVersion}` : `\`${manifest.source}\``;
+  const lines = [
+    title,
+    '',
+    `A repository that took up the shared doctrine (from ${from}) holds its own text of the canon's `
+      + `${promotions.length === 1 ? 'file' : 'files'} below, and proposes it: it was found where the doctrine is used. `
+      + 'Judge each as that: take it, take part of it, or decline with the reason. A rule held in an instruction file '
+      + "carries its body alone, so the canon's own frontmatter stays as it is.",
+    '',
+  ];
+  for (const promotion of promotions) {
+    lines.push(`**\`${promotion.source}\`**, its \`${promotion.target}\` there:`, '', '~~~~markdown', promotion.body.trimEnd(), '~~~~', '');
+  }
+  lines.push('Why it was changed there: <say what was found that this text answers>');
+  return `${lines.join('\n')}\n`;
 }
 
 export function commandUpstream({ root, argv, write, packageRoot }: CommandArgs): ExitCode {
@@ -177,34 +243,34 @@ export function commandUpstream({ root, argv, write, packageRoot }: CommandArgs)
   const carried = canonVersionAt(canonRoot);
   if (carried !== null) refuseNewerLock(lock, carried, ['upstream', ...argv]);
 
-  if (argv.includes('--all')) {
-    const promoted = upstreamAll({
-      root,
-      manifest: readManifest(root),
-      lock,
-      canonRoot,
-    });
-    if (!promoted.length) {
-      write('daoris: nothing to upstream — no canonical file differs from the lock');
-      return 0;
-    }
-    for (const result of promoted) write(`  ${result.target} -> canon ${result.source}`);
-    write(`daoris: promoted ${promoted.length} file(s)`);
-    write("daoris: review and commit them in the canon repo, then 'daoris sync' here");
+  const all = argv.includes('--all');
+  const file = argv.find((arg) => !arg.startsWith('--'));
+  if (!all && !file) throw new DaorisError('usage: daoris upstream <file> | daoris upstream --all');
+  const manifest = readManifest(root);
+  const promotions = all ? promotionsAll({ root, manifest, lock }) : [promotionOf({ root, manifest, lock, file: file! })];
+  if (!promotions.length) {
+    write('daoris: nothing to upstream — no canonical file differs from the lock');
     return 0;
   }
 
-  const file = argv.find((arg) => !arg.startsWith('--'));
-  if (!file) throw new DaorisError('usage: daoris upstream <file> | daoris upstream --all');
+  // Outside the canon's own checkout nothing is written across (D230): the edit travels as a request, and its words are
+  // composed here, offline, for whoever sends it.
+  if (!insideCanon(root, canonRoot)) {
+    write(`daoris: nothing was written; the request below is for the repository that keeps the shared doctrine `
+      + `(${lock?.source ?? manifest.source}) — publish it there, or hand it to its owner`);
+    write('');
+    write(composeRequest({ manifest, lock, promotions }).trimEnd());
+    return 0;
+  }
 
-  const result = upstreamFile({
-    root,
-    manifest: readManifest(root),
-    lock,
-    canonRoot,
-    file,
-  });
-  write(`daoris: ${result.target} -> canon ${result.source}`);
-  write("daoris: review and commit it in the canon repo, then 'daoris sync' here");
+  for (const promotion of promotions) writePromotion(canonRoot, promotion);
+  if (!all) {
+    write(`daoris: ${promotions[0]!.target} -> canon ${promotions[0]!.source}`);
+    write("daoris: review and commit it in the canon repo, then 'daoris sync' here");
+    return 0;
+  }
+  for (const result of promotions) write(`  ${result.target} -> canon ${result.source}`);
+  write(`daoris: promoted ${promotions.length} file(s)`);
+  write("daoris: review and commit them in the canon repo, then 'daoris sync' here");
   return 0;
 }

@@ -34,7 +34,7 @@ export type WaitProps = {
    * And its answer's door, the card's: the box's own say door where the box below answers the park too, else the park's answer door
    * (PARKANSWER1). Settles with a refusal's sentence, or nothing.
    */
-  onAnswerSession?: (answer: string | null) => Promise<string | null> | void;
+  onAnswerSession?: (answer: string) => Promise<string | null> | void;
   /** A press of its question's answer from the card, with the card's words, through the box's door (PARKANSWER1). */
   onAnswerChoice?: (label: string, words: string) => Promise<string | null> | void;
   /** The answer selected in its question, the frame's, shared by the box and the head's card (QUESTIONUI1a, the design §8.4). */

@@ -1,4 +1,4 @@
-import { type ReactNode, useContext, useEffect, useRef, useState } from 'react';
+import { type ReactNode, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { PlaceAside } from '../../agents/setup/placeAside';
@@ -197,6 +197,16 @@ function Routes({ rows, chosen, onChoose }: { rows: readonly RouteRow[]; chosen:
   );
 }
 
+/** Puts the element the chart is drawn into inside `into`, and takes it out where the chart is not drawn. */
+function Placed({ host, into }: { host: HTMLElement; into: HTMLElement | null }) {
+  useLayoutEffect(() => {
+    if (!into) return undefined;
+    into.appendChild(host);
+    return () => host.remove();
+  }, [host, into]);
+  return null;
+}
+
 /**
  * **A place's Workflow** (AGENTSPLACE1h, SETUPUX1o; the Setup design's §2.3): how a repository's or a workspace's work moves. The routes are
  * a selection, default work, each kind the workspace declares and landed work, each with the workflow it follows and what chose it; choosing
@@ -225,6 +235,10 @@ export function PlaceWorkflowView({
   const [local, setLocal] = useState<PlaceView>(DEFAULT_VIEW);
   const [panel, setPanel] = useState<Panel>(() => (held ? { is: 'edit', route: held.route, ...(held.from ? { from: held.from } : {}) } : null));
   const [chartShown, setChartShown] = useState(false);
+  // The chart is drawn into this one element at one place in the tree, and the element is moved where the layout wants it, so a
+  // change of layout keeps the chart and the editor mounted, with their selection and open drawer (REVIEW2 P5).
+  const [host] = useState(() => Object.assign(document.createElement('div'), { className: 'min-w-0' }));
+  const [slot, setSlot] = useState<HTMLElement | null>(null);
   const [asked, setAsked] = useState<{ section: 'landing' | null; n: number }>({ section: null, n: 0 });
   const place = page === 'workspace' ? { workspace: name } : { repository: name };
   const shown = view ?? local;
@@ -456,6 +470,7 @@ export function PlaceWorkflowView({
   const buttons = 'min-h-0 border border-line py-0.5 text-small';
   const chartPress = !wide && !open;
   const hasActs = chartPress || canChange;
+  const drawn = wide || open !== null || chartShown;
 
   return (
     <div
@@ -505,10 +520,12 @@ export function PlaceWorkflowView({
           <LandedLines landed={start.landed} page={page} repository={page === 'repository' ? name : null} onVerify={onVerify} apart />
         )}
         {!editor && <p className="m-0 text-meta text-ink-faint"><Inline text={t('workflow.compose.twin')} /></p>}
-        {!wide && (open || chartShown) && chart}
+        {!wide && drawn && <div ref={setSlot} className="min-w-0" />}
         {landing ? landing({ asked: asked.section, again: asked.n, lead: [...gates, ...repositories], lands }) : gates.length + repositories.length > 0 && <FoldRow folds={[...gates, ...repositories]} />}
       </div>
-      {wide && (aside ? createPortal(<div className="min-w-0">{chart}</div>, aside) : <div className="min-w-0">{chart}</div>)}
+      {wide && !aside && <div ref={setSlot} className="min-w-0" />}
+      {drawn && createPortal(chart, host)}
+      <Placed host={host} into={drawn ? (wide && aside ? aside : slot) : null} />
     </div>
   );
 }

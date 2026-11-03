@@ -74,7 +74,7 @@ public static class TraceEventGaps
 /// <summary>Why the rules a session was handed are missing (PERM1).</summary>
 public static class TraceRuleGaps
 {
-    /// <summary>A running session: no file, since its agent takes none or there was nothing to hand.</summary>
+    /// <summary>A running session: no file, since its agent takes none (every Claude session is handed one, CONTEXTONE1e).</summary>
     public const string NoneWhileRunning = "none-while-running";
 
     /// <summary>The file goes when its session ends, and a parked session's when its run does.</summary>

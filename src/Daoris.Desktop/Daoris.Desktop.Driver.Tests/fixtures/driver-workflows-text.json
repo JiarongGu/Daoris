@@ -315,7 +315,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: retired: a workflow is no longer copied from a repository's Current by hand. `daoris driver workflow convert` converts what a place follows under Current into a saved workflow, as you press it. Nothing was written."
+        "daoris: retired: a workflow is no longer copied from a repository's Current by hand. `daoris convert` converts what a place follows under Current into a saved workflow, as you press it. Nothing was written."
       ],
       "after": null,
       "changed": "WORKFLOWCLEAN1 1a: a workflow is no longer copied from a place's Current by hand; the verb refuses and names `convert`, and writes nothing."
@@ -436,7 +436,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: retired: a workflow is no longer copied from a repository's Current by hand. `daoris driver workflow convert` converts what a place follows under Current into a saved workflow, as you press it. Nothing was written."
+        "daoris: retired: a workflow is no longer copied from a repository's Current by hand. `daoris convert` converts what a place follows under Current into a saved workflow, as you press it. Nothing was written."
       ],
       "after": "{\"workspaceLandings\":{\"work\":{\"form\":\"branch\",\"pattern\":\"work/{quest}-{slug}\",\"autoAccept\":true}},\"workspaceReviews\":{\"work\":{\"required\":true,\"environments\":[{\"name\":\"local\",\"kind\":\"local\",\"procedure\":\"README.md\",\"address\":\"http://localhost:4200\"}]}}}",
       "changed": "WORKFLOWCLEAN1 1a: a workflow is no longer copied from a place's Current by hand; the verb refuses and names `convert`, and writes nothing."
@@ -457,7 +457,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: retired: a workflow is no longer copied from a repository's Current by hand. `daoris driver workflow convert` converts what a place follows under Current into a saved workflow, as you press it. Nothing was written."
+        "daoris: retired: a workflow is no longer copied from a repository's Current by hand. `daoris convert` converts what a place follows under Current into a saved workflow, as you press it. Nothing was written."
       ],
       "after": "{\"workspaceLandings\":{\"work\":{\"form\":\"branch\",\"pattern\":\"work/{quest}-{slug}\",\"autoAccept\":true}},\"workspaceReviews\":{\"work\":{\"required\":true,\"environments\":[{\"name\":\"local\",\"kind\":\"local\",\"procedure\":\"README.md\",\"address\":\"http://localhost:4200\"}]}}}",
       "changed": "WORKFLOWCLEAN1 1a: a workflow is no longer copied from a place's Current by hand; the verb refuses and names `convert`, and writes nothing."
@@ -482,7 +482,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: retired: a workflow is no longer copied from a repository's Current by hand. `daoris driver workflow convert` converts what a place follows under Current into a saved workflow, as you press it. Nothing was written."
+        "daoris: retired: a workflow is no longer copied from a repository's Current by hand. `daoris convert` converts what a place follows under Current into a saved workflow, as you press it. Nothing was written."
       ],
       "after": "{\"sessionChecks\":{\"web-app\":\"light\"}}",
       "changed": "WORKFLOWCLEAN1 1a: a workflow is no longer copied from a place's Current by hand; the verb refuses and names `convert`, and writes nothing."
@@ -507,7 +507,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: retired: a workflow is no longer copied from a repository's Current by hand. `daoris driver workflow convert` converts what a place follows under Current into a saved workflow, as you press it. Nothing was written."
+        "daoris: retired: a workflow is no longer copied from a repository's Current by hand. `daoris convert` converts what a place follows under Current into a saved workflow, as you press it. Nothing was written."
       ],
       "after": "{\"landings\":{\"web-app\":{\"form\":\"branch\",\"pattern\":\"work/{session}\",\"integrate\":{}}}}",
       "changed": "WORKFLOWCLEAN1 1a: a workflow is no longer copied from a place's Current by hand; the verb refuses and names `convert`, and writes nothing."
@@ -566,7 +566,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: retired: a workflow is no longer copied from a repository's Current by hand. `daoris driver workflow convert` converts what a place follows under Current into a saved workflow, as you press it. Nothing was written."
+        "daoris: retired: a workflow is no longer copied from a repository's Current by hand. `daoris convert` converts what a place follows under Current into a saved workflow, as you press it. Nothing was written."
       ],
       "after": "{\"sessionChecks\":{\"web-app\":\"light\"}}",
       "changed": "WORKFLOWCLEAN1 1a: a workflow is no longer copied from a place's Current by hand; the verb refuses and names `convert`, and writes nothing."
@@ -588,7 +588,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: retired: a workflow is no longer copied from a repository's Current by hand. `daoris driver workflow convert` converts what a place follows under Current into a saved workflow, as you press it. Nothing was written."
+        "daoris: retired: a workflow is no longer copied from a repository's Current by hand. `daoris convert` converts what a place follows under Current into a saved workflow, as you press it. Nothing was written."
       ],
       "after": "{\"sessionChecks\":{\"web-app\":\"light\"}}",
       "changed": "WORKFLOWCLEAN1 1a: a workflow is no longer copied from a place's Current by hand; the verb refuses and names `convert`, and writes nothing."

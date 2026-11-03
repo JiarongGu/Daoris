@@ -138,10 +138,12 @@ public sealed class HelpRoomDoorsTests
     public void The_room_says_ask_daoris_proposes_a_workflow_s_version_and_its_choice()
     {
         var named = HelpRoomDoors.Doors.Single(door => door.Terminal.StartsWith("`daoris driver workflow new <id>", StringComparison.Ordinal));
-        Assert.Contains("(Ask Daoris proposes a whole version, new or after the newest, which you apply; not an import yet)", named.To);
+        Assert.Equal(("workflow", "new"), named.Ask?.Through);
+        Assert.EndsWith("(Ask Daoris proposes it, a whole version, new or after the newest, which you apply; not an import yet)", named.To);
 
         var chosen = HelpRoomDoors.Doors.Single(door => door.Terminal.StartsWith("`daoris driver workflow use <id>", StringComparison.Ordinal));
-        Assert.Contains("(Ask Daoris proposes the choice with a version it proposes, as a repository's or a workspace's default; not a "
+        Assert.Equal(("workflow", "use"), chosen.Ask?.Through);
+        Assert.EndsWith("(Ask Daoris proposes it, the choice with a version it proposes, as a repository's or a workspace's default; not a "
             + "kind yet)", chosen.To);
     }
 
@@ -153,10 +155,11 @@ public sealed class HelpRoomDoorsTests
     [Fact]
     public void The_room_teaches_the_converted_way_and_names_the_conversion()
     {
-        var convert = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("workflow convert --plan", StringComparison.Ordinal));
+        var convert = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris convert --plan", StringComparison.Ordinal));
         Assert.Contains("Convert…", convert.Screen);
         Assert.Contains("Review conversion…", convert.Screen);
-        Assert.Contains("Ask Daoris opens the page and never proposes the apply", convert.To);
+        Assert.IsType<HelpDoorAsk.Never>(convert.Ask);
+        Assert.Contains("it opens the page and names the plan, and the apply is your press", convert.To);
 
         var landing = HelpRoomDoors.Doors.Single(door => door.To.StartsWith("set how accepted work lands", StringComparison.Ordinal));
         Assert.Contains("only a place still on Current", landing.To);
@@ -216,12 +219,12 @@ public sealed class HelpRoomDoorsTests
         }
 
         // In the order a person meets them: how work moves beside the rules it is drawn from, before a named workflow; where a
-        // piece of work stands after starting one, before answering what waits on the person.
+        // piece of work stands after starting one, before saying something to a session, a park's answer among them (ONEWAY1k).
         var order = HelpRoomDoors.Doors.Select(door => door.To).ToList();
         int At(string to) => order.FindIndex(each => each.StartsWith(to, StringComparison.Ordinal));
         Assert.Equal(At("declare which other agent reads") + 1, order.IndexOf(current.To));
         Assert.Equal(order.IndexOf(current.To) + 1, At("name a workflow"));
-        Assert.True(order.IndexOf(run.To) > At("start a task") && order.IndexOf(run.To) < At("answer what waits on the person"));
+        Assert.True(order.IndexOf(run.To) > At("start a task") && order.IndexOf(run.To) < At("say something to a session"));
 
         // WORKFLOW1d's row keeps the named workflows' verbs, its `show` the one that names a saved workflow, so the two shows
         // are not read as one.
@@ -247,7 +250,7 @@ public sealed class HelpRoomDoorsTests
         var keep = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris-driver workflow keep", StringComparison.Ordinal));
         Assert.Equal("`daoris-driver workflow keep <session> [\"…\"]`", keep.Terminal);
         Assert.Equal("(no screen yet)", keep.Screen);
-        Assert.Contains("Ask Daoris never proposes it", keep.To);
+        Assert.Equal(new HelpDoorAsk.Never("it is yours alone"), keep.Ask);
         Assert.Contains("nothing switches by itself", keep.To);
     }
 
@@ -276,7 +279,7 @@ public sealed class HelpRoomDoorsTests
         Assert.Contains("daoris session opinion show", ask.Terminal);
         Assert.Contains("daoris session opinion stop", ask.Terminal);
         Assert.Contains("daoris session opinion myself", answer.Terminal);
-        foreach (var door in new[] { ask, answer }) Assert.Contains("Ask Daoris never proposes", door.To);
+        foreach (var door in new[] { ask, answer }) Assert.IsType<HelpDoorAsk.Never>(door.Ask);
         Assert.Contains("*Go on anyway…*", answer.Screen);
         Assert.Contains("*I looked myself…*", answer.Screen);
     }
@@ -304,7 +307,7 @@ public sealed class HelpRoomDoorsTests
         foreach (var door in new[] { helpers, commits })
         {
             Assert.Contains("`--workspace <name>` for a whole workspace", door.Terminal);
-            Assert.Contains("Ask Daoris proposes it", door.To);
+            Assert.IsType<HelpDoorAsk.Proposes>(door.Ask);
         }
 
         Assert.Contains("from the repository's own instructions", commits.To);
@@ -349,7 +352,7 @@ public sealed class HelpRoomDoorsTests
             + "Pause quest…, Pause ask…, Resume quest, Resume ask",
             pause.Screen);
         Assert.Equal("Quests → the ask's page or the quest's page → Abandon…", abandon.Screen);
-        Assert.Contains("Ask Daoris never proposes it: the reason is your answer", abandon.To);
+        Assert.Equal(new HelpDoorAsk.Never("the reason is your answer"), abandon.Ask);
     }
 
     /// <summary>

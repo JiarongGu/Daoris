@@ -84,6 +84,8 @@ test('a word outside the doctrine goes to the desktop\'s program whole, with not
     ['browser', 'favorite', 'add', 'https://example.com', '--title', 'R&D'],
     ['repository', 'import', 'C:/Work Trees', '--workspace', 'Work & play'],
     ['brainstorm', 'why is it slow?', '--agents', 'codex,claude-code'],
+    // ONEWAY1ae: `daoris convert` is the home's one conversion door, a group of the tree, a leave among its words.
+    ['convert', '--apply', 'a'.repeat(64), '--leave', 'quests'],
     ['tool', '--help'],
     ['driver', 'drive', 'engine'],
     ['connect', '--dry-run'],

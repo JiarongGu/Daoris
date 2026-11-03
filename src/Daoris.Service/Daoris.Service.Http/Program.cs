@@ -1664,7 +1664,7 @@ if (mode == ServiceMode.Local)
         if (outcome.SettledOn is { } settledOn) return Results.Ok(new SettledResponse(outcome.Message, settledOn));
         if (outcome.Refusal == SessionSayRefusal.None)
         {
-            // Words to a park are its answer, kept on its ask at once as the answer door keeps one (DRIFT1a); words to an
+            // Words to a park are its answer, the one door that answers one (ONEWAY1k), kept on its ask at once (DRIFT1a); words to an
             // ended session are kept there once a session took them (the taken door, D137 §2.4), and words for a running
             // session's run as its run takes them (COWORK1c). Words that are a channel message are on the ask already, as
             // `channel` (SESSONE2e), so neither door keeps them again. Daoris's own words (COWORK1b) are never the person's,
@@ -1712,7 +1712,7 @@ if (mode == ServiceMode.Local)
 
     // The words a session took off its record (MSG1a, D137 §2.4): the resumed run's first prompt went, or the session a
     // fallback handed them to took them. Each of the person's said after the record ended is kept on the ask its work is for,
-    // as `reopened`, said to the session that took it, beside the take as the answer door keeps an answer (DRIFT1a). Another
+    // as `reopened`, said to the session that took it, beside the take as the say door keeps a park's answer (DRIFT1a). Another
     // agent's claims never are (XAGENT1c): on the ask they would reach every later session as the person's requirements.
     app.MapPost("/api/sessions/{id}/taken", async (
         ComposedService s, HttpContext http, string id, TakenRequest body, CancellationToken ct) =>
@@ -2280,31 +2280,6 @@ app.MapPost("/api/sessions/{id}/state", async (
             or SessionAdvanceRefusal.WordsChanged =>
             Results.Conflict(new ErrorResponse(outcome.Message)),
         _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
-    };
-});
-
-// The person answers a driven session that parked to ask them (STANDDOWN2): the record stays parked with
-// their words, and the reply is the session as it now stands, for the driver's next look to go on with
-// (ANSWER1b, D131) — its own conversation resumed, or its quest carried on in the same tree.
-app.MapPost("/api/sessions/{id}/answer", async (
-    ComposedService s, HttpContext http, string id, AnswerSessionRequest body, CancellationToken ct) =>
-{
-    var now = DateTimeOffset.UtcNow;
-    var outcome = await s.Ledger.AnswerAsync(id, body.Answer, now, ct);
-    // DRIFT1a (D133 §1): the answer is the person's word on the ask the session's quest was asked by, so
-    // it is kept there too, beside the answer and never inside it. A blank one says nothing to keep, and a
-    // session on no ask has nowhere to keep it; either way the answer stands as it was given.
-    if (outcome.Refusal == SessionAdvanceRefusal.None)
-    {
-        await s.Ledger.KeepOnAskAsync(id, AskWordKind.Answered, body.Answer, now, ct);
-    }
-
-    return outcome.Refusal switch
-    {
-        SessionAdvanceRefusal.None => Results.Ok(
-            new SessionActionResponse(await ToSessionAsync(s, outcome.Session!, MachineLocal(http)), outcome.Message)),
-        SessionAdvanceRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
-        _ => Results.Conflict(new ErrorResponse(outcome.Message)),
     };
 });
 
@@ -3128,14 +3103,11 @@ static SessionResponse ToSession(Session s, bool loopback) => new(
     BaseCommit: loopback ? s.BaseCommit : null,
     Ask: s.Ask,
     Took: s.Took,
-    // The person's own words, which may name anything on this machine: answered to it only, like a transcript.
-    // The wire's `answer` is derived from the keyed words at this door alone, for the modules and the page that still read it
-    // (ONEWAY1m part ii removes it); no reader in the service or the driver reads it.
-    Answer: loopback ? PersonsJoined(s.Said) : null,
     Interrupted: s.Interrupted,
     // A limit names no account (TOOL4c), so it is answered to every caller, as the state beside it is.
     Limit: s.Limit,
-    // The same words, one by one (MSG1a), under the same guard.
+    // The person's own words, which may name anything on this machine, one by one (MSG1a): answered to it only, like a transcript,
+    // and the one read of a park's answer (ONEWAY1m).
     Said: loopback ? s.Said.Select(ToSaid).ToList() : null,
     // The note's lines by code (LANG1a), beside it and cleaned as it is for any other caller.
     NoteParts: NoteParts.Element(loopback ? s.NoteParts : NoteParts.ForAnotherMachine(s.NoteParts, s)),
@@ -3165,10 +3137,6 @@ static SessionResponse ToSession(Session s, bool loopback) => new(
     Asked: loopback ? s.Asked : null, Override: loopback ? s.Override : null, Ran: loopback ? s.Ran : null, Chosen: loopback ? s.Chosen : null,
     // The work its marks read as (FOUNDATION1c): this machine's, like the opinion, so answered to it only; a mirror reads none.
     Work: loopback ? ParticipantWork.Of(s) : null);
-
-// The person's words joined by a blank line, or null when none wait; never another agent's or Daoris's own.
-static string? PersonsJoined(IReadOnlyList<SaidWord> said) =>
-    said.Where(word => word.Persons).Select(word => word.Text).ToList() is { Count: > 0 } persons ? string.Join("\n\n", persons) : null;
 
 // A word with whose it is (XAGENT1c): `by` names the second opinion whose findings these are, and is absent for the person's.
 static SaidWordResponse ToSaid(SaidWord word) =>

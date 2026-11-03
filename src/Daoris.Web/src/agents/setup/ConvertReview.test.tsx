@@ -2,16 +2,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// WORKFLOWCLEAN1g-i (the cleanup design §4.3-§4.6): the conversion's review, a molecule: what changes by shape, the two choices, what lowers your
-// part, what stays, what it never touches, the terminal line and one Apply; then the done state with its outcomes and Undo.
+// WORKFLOWCLEAN1g-i, ONEWAY1ae (the cleanup design §4.3-§4.6, the oneway design §1.1): the conversion's review, a molecule: what changes, by shape
+// for the workflow part and by part for the others, the two choices, what lowers your part, what stays, what it never touches, what is removed
+// for good, the terminal line and one Apply; then the done state with its outcomes, a failed part pressed again or left, and Undo.
 
 import i18n from '../../locales/i18n';
-import { APPLIED, MOVED, NOTHING, planOf, UNDO_OFFERED, UNDONE } from './convertFixtures';
+import { APPLIED, FAILED_PART, MOVED, NOTHING, PARTED, planOf, UNDO_OFFERED, UNDONE } from './convertFixtures';
 import { ConvertReview, type ConvertReviewProps } from './ConvertReview';
 import { DEFAULT_CHOICES } from './convertPlan';
 
 const show = (props: Partial<ConvertReviewProps> = {}) => {
-  const on = { onChoose: vi.fn(), onApply: vi.fn(), onUndo: vi.fn(), onClose: vi.fn() };
+  const on = { onChoose: vi.fn(), onApply: vi.fn(), onAgain: vi.fn(), onLeave: vi.fn(), onUndo: vi.fn(), onClose: vi.fn() };
   render(
     <ConvertReview
       plan={planOf(DEFAULT_CHOICES)}
@@ -84,9 +85,40 @@ describe('Convert…, the review', () => {
 
   it('shows the terminal line for the plan, with its digest', () => {
     show();
-    expect(screen.getByText(/workflow convert --plan/)).toBeTruthy();
-    expect(screen.getByText(new RegExp(`workflow convert --apply ${planOf(DEFAULT_CHOICES).digest}`))).toBeTruthy();
-    expect(screen.getByText(/workflow convert --undo/)).toBeTruthy();
+    expect(screen.getByText(/daoris convert --plan/)).toBeTruthy();
+    expect(screen.getByText(new RegExp(`daoris convert --apply ${planOf(DEFAULT_CHOICES).digest}`))).toBeTruthy();
+    expect(screen.getByText(/daoris convert --undo/)).toBeTruthy();
+  });
+
+  it('ONEWAY1ae: says each other part by its lines, a part not read, and what is removed for good, counted, dated and sized', () => {
+    show({ plan: PARTED });
+    const changes = screen.getByRole('list', { name: 'What converting changes' });
+    expect(within(changes).getByText('Notes')).toBeTruthy();
+    expect(within(changes).getByText('clear 4 finished notes from before codes')).toBeTruthy();
+    expect(screen.getByText(/Quests was not read:/).textContent).toContain('the service did not answer');
+    expect(headings()).toEqual(['What converting changes', 'Your two choices', 'What stays as it is', 'What it never touches', 'Removed for good']);
+    const removed = screen.getByRole('list', { name: 'Removed for good' });
+    expect(removed.textContent).toContain('finished notes from before codes — 4 records');
+    expect(removed.textContent).toContain('18 KB');
+  });
+
+  it('ONEWAY1ae: a failed part says its outcome, and is pressed again or left by name', async () => {
+    const on = show({ plan: NOTHING, result: FAILED_PART });
+    const parts = screen.getByRole('list', { name: 'Each part' });
+    expect(parts.textContent).toContain('Workflows — done');
+    expect(parts.textContent).toContain('Quests — failed: not read: the service did not answer');
+    await userEvent.click(screen.getByRole('button', { name: 'Leave Quests for a later plan' }));
+    expect(on.onLeave).toHaveBeenCalledWith('quests');
+    await userEvent.click(screen.getByRole('button', { name: 'Press again' }));
+    expect(on.onAgain).toHaveBeenCalledTimes(1);
+  });
+
+  it('ONEWAY1ae: reads in Chinese, a part and its outcome too', () => {
+    i18n.changeLanguage('zh');
+    show({ plan: PARTED, result: FAILED_PART });
+    expect(screen.getByText('永久移除')).toBeTruthy();
+    expect(screen.getByRole('list', { name: '各部分' }).textContent).toContain('委托 — 失败');
+    expect(screen.getByRole('button', { name: '将委托留待之后的计划' }).textContent).toBe('暂且不管');
   });
 
   it('presses Apply once, and waits while the plan is read or the apply is made', async () => {

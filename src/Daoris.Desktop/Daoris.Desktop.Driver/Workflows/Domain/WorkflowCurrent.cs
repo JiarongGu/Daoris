@@ -159,6 +159,7 @@ public static class WorkflowCurrent
     /// <paramref name="repository"/> draws the workspace's Current, which no repository's rule and no standing answer reach.
     /// </summary>
     /// <param name="plugins">The plugins switched on and sound, in catalogue order (<see cref="PluginsOf"/>).</param>
+    // transitional: current-followed
     public static CurrentWorkflow Derive(DriverConfig config, string? repository, string? workspace, IReadOnlyList<WorkflowPlugin> plugins)
     {
         // The workspace's Current reads the same resolvers with nothing set for any repository.

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { isPartnerRecord, SENDERS, senderOf } from './sender';
+import { isPartnerRecord, SENDERS, senderOf, wordSenderOf } from './sender';
 
 /**
  * COMMS1a (the comms design §3.3, §13 point 11): who said a word, read once from an event's marks. The shared table is
@@ -9,14 +9,16 @@ import { isPartnerRecord, SENDERS, senderOf } from './sender';
  * the `event` shape, and tells a partner from a helper by the work of the record the event's `helper` names.
  */
 type EventMarks = { origin: string; from?: string; opinion?: string; helper?: string; helperWork?: string | null; channel?: string };
+type WordMarks = { from?: string; by?: string; helper?: string; key?: string; channel?: string };
 type Row = {
-  name: string; word: object | null; event: EventMarks | null; sender: string;
+  name: string; word: WordMarks | null; event: EventMarks | null; sender: string;
   today: { persons: boolean | null; drawn: string }; disagrees: Record<string, string>;
 };
 const TABLE = JSON.parse(readFileSync(join(process.cwd(), '..', 'Daoris.Service', 'Daoris.Service.Tests', 'fixtures', 'senders.json'), 'utf8')) as {
   senders: string[]; decisions: Record<string, string>; rows: Row[];
 };
 const EVENT_ROWS = TABLE.rows.filter((row): row is Row & { event: EventMarks } => row.event !== null);
+const WORD_ROWS = TABLE.rows.filter((row): row is Row & { word: WordMarks } => row.word !== null);
 
 describe('who said a word (COMMS1a)', () => {
   it('has the closed set of senders the table names, the composed prompt apart', () => {
@@ -26,6 +28,11 @@ describe('who said a word (COMMS1a)', () => {
   it.each(EVENT_ROWS.map((row) => [row.name, row] as const))('reads %s as the table says', (_name, row) => {
     const { helperWork, ...marks } = row.event;
     expect(senderOf(marks, helperWork)).toBe(row.sender);
+  });
+
+  /** ONEWAY1m: the page reads a park's answer from a record's kept words, so it reads a kept word's marks by the service's rule too. */
+  it.each(WORD_ROWS.map((row) => [row.name, row] as const))('reads a kept word of %s as the table says', (_name, row) => {
+    expect(wordSenderOf(row.word)).toBe(row.sender);
   });
 
   it('lists every difference from what the page drew before, each with its decision', () => {

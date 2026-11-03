@@ -113,10 +113,10 @@ public static class DriverCommand
               whether links on Daoris's page open in the system's browser or Daoris's. Each is read when it starts.
           chat --repository <name> [--agent <name>] [--account <name>] [--own-tree]
               a conversation in a repository: stdin is you, stdout the session.
-          convert --plan | --apply <digest> | --undo [<digest>]
-              convert the old workflow records (steps, `handed`, a `land` with `accept`, and the places that follow Current
-              from the rules) to saved graph workflows: the plan reads and writes nothing, `--apply` is your press, confirmed
-              in Daoris's window, and `--undo` puts the removed rules back. Needs the running Daoris.
+          convert --plan | --apply <digest> [--leave <part>] | --undo [<digest>]
+              convert this home's old records, every area's part in one plan: the plan reads and writes nothing,
+              `--apply` is your press, confirmed in Daoris's window, a failed part is pressed again or left with
+              `--leave`, and `--undo` takes the latest back. Needs the running Daoris.
           drive [--once | --until-idle] [--quiet-end <minutes>] [--share]
               drive this home: start a session for each quest a repository opted in here can take, and
               watch until Ctrl+C. --once ticks once; --until-idle ticks until nothing starts. A home
@@ -296,12 +296,12 @@ public static class DriverCommand
               waiting for its turn's end go next, where its door can.
           session archive <id>… | --ended [--yes]  ·  session unarchive <id>…  ·  session delete <id>
               take ended sessions out of the list, or bring them back; delete a conversation that served no quest.
-          session say <id> "…" [--file <path>]… [--level ordinary|urgent|now] [--now]
+          session say <id> "…" [--file <path>]… [--level ordinary|urgent|now]
               say something to a session of this machine's: read at its next step or when its turn ends while it
-              works, or, parked or ended, the same session goes on with it. Prints where the words stand. --level
-              is when it reads them while it works: ordinary at its turn's end, urgent (the default) at its next
-              step, now cutting its step where its agent steers; no level stops its turn. --now is --level now. It
-              says what the door did, and why where it could not.
+              works, or, parked or ended, the same session goes on with it: a park's answer is said here. Prints
+              where the words stand. --level is when it reads them while it works: ordinary at its turn's end,
+              urgent (the default) at its next step, now cutting its step where its agent steers; no level stops
+              its turn. It says what the door did, and why where it could not.
           session take-back <id> [<word>]  ·  session reword <id> <word> "…"
               take back one of your words waiting on a parked or ended session before it goes on with them, or put
               new words in its place; with no word, list those waiting with their ids.
@@ -338,9 +338,6 @@ public static class DriverCommand
               a session's second opinion before its work lands: ask another agent to read it (one of its rule's reviewers by
               name, or the working agent fresh), say where it stands with its findings and their answers, stop a reviewer
               reading, go on without a settled one, or record your own reading in its place. `session say` sends it back.
-          session answer <session> ["…"]
-              answer a session that parked to ask you; the same session goes on with your words at the
-              driver's next look.
           session supervise [<id>]  ·  session supervise <id> --question <qid> --generation <g> --choice <label>|--leave <bound> (--reason "…" --source <where>)…
               the supervisor's holder's verb (D208), only in the terminal Daoris started for it: what waits, one
               question's fenced print, and the answer or the question left to the owner. No alone path.
