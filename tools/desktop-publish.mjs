@@ -14,7 +14,7 @@
  *                                                           which the desktop installs when idle (D139): it drains
  *                                                           (starts nothing new, holds the presses that would start
  *                                                           work) until every driven session ends;
- *                                                           `daoris-driver update --cancel` stages it *not now*
+ *                                                           `daoris update --cancel` stages it *not now*
  *   … --git-doors                                           …with Daoris's two git doors in app/bin/ (GITAUTH1b,
  *                                                           D198), left out until their owed measurements pass
  *   … --force-ungated                                       …a tree the full set of gates has not passed
@@ -315,61 +315,63 @@ export const CLI_PACKAGE = Object.freeze([...CLI_HOME, 'node_modules', 'daoris']
 export const CLI_ENTRY = Object.freeze(['bin', 'daoris.mjs']);
 
 /**
- * The launchers' folder, beside the application, and the launchers in it (D124 §1.2): `daoris`, a shell
- * script, for Git Bash, and `daoris.cmd` for Command Prompt, which PowerShell finds too by `PATHEXT`. The
- * shapes npm writes for a global `bin`, less its `daoris.ps1`, which a machine's execution policy may refuse.
- * Nothing here puts the folder on any `PATH`: the account's stays the person's (D124 §10).
+ * The launchers' folder, beside the application, and `daoris`'s launchers in it (D124 §1.2; ONEWAY1ai): `daoris`, a
+ * shell script, for Git Bash, and `daoris.cmd` for Command Prompt, which PowerShell finds too by `PATHEXT`. Nothing here
+ * puts the folder on any `PATH`: the account's stays the person's (D124 §10).
  */
 export const CLI_BIN = Object.freeze(['app', 'bin']);
 export const CLI_LAUNCHERS = Object.freeze(['daoris', 'daoris.cmd']);
 
 /**
- * The text of each launcher, by name. Each runs the package's bin entry, found from the launcher's own
- * folder, on the bare `node` the caller's `PATH` finds: in a child Daoris starts, the one Tools resolves
- * (D124 §1.3). No machine path, so the files are the same in every install.
+ * The text of each `daoris` launcher, by name (ONEWAY1ai, the oneway design §11): the desktop's program, found from the
+ * launcher's own folder, with the words whole; it needs no Node, and hands the doctrine commands to the CLI this install
+ * carries itself. No machine path, so the files are the same in every install.
  *
- * The batch file is CRLF and both are ASCII: cmd.exe reads a batch file a line at a time in the console's
- * code page, which is how npm's own shims are written. The shell script turns its folder into a Windows
- * path with `cygpath` where one exists, as npm's does, so Git Bash hands `node.exe` a path it can open.
+ * The batch file is CRLF and both are ASCII: cmd.exe reads a batch file a line at a time in the console's code page. The
+ * shell script turns its folder into a Windows path with `cygpath` where one exists, so Git Bash hands the program a path
+ * it can open.
  */
 export function cliLaunchers() {
-  const entry = posix.relative(CLI_BIN.join('/'), [...CLI_PACKAGE, ...CLI_ENTRY].join('/'));
-  const noNode = 'daoris: no node on PATH; the doctrine tool runs on Node.js 22 or later.';
-  const sh = [
-    '#!/bin/sh',
-    '# Daoris\'s doctrine tool, the package this install carries (WSSETUP2, D124), run on the node PATH finds.',
-    '# Written by the publish, and replaced by the next one.',
-    'basedir=$(dirname "$(echo "$0" | sed -e \'s,\\\\,/,g\')")',
-    'if command -v cygpath >/dev/null 2>&1; then basedir=$(cygpath -w "$basedir"); fi',
-    'if ! command -v node >/dev/null 2>&1; then',
-    `  echo '${noNode}' >&2`,
-    '  exit 2',
-    'fi',
-    `exec node "$basedir/${entry}" "$@"`,
-    '',
-  ].join('\n');
-  const cmd = [
-    '@echo off',
-    'rem Daoris\'s doctrine tool, the package this install carries (WSSETUP2, D124), run on the node PATH finds.',
-    'rem Written by the publish, and replaced by the next one.',
-    `where node >nul 2>nul || (echo ${noNode} 1>&2 & exit /b 2)`,
-    `node "%~dp0${entry.replace(/\//g, '\\')}" %*`,
-    '',
-  ].join('\r\n');
-  return { [CLI_LAUNCHERS[0]]: sh, [CLI_LAUNCHERS[1]]: cmd };
+  return launchersOf(CLI_LAUNCHERS, "Daoris's command, the desktop's program this install carries (ONEWAY1ai), run from its own folder.", null);
 }
 
 /**
- * The driver's own verbs as an install's door (DRIVERDOOR1): `trees clean`, `sessions archive`, `history clear` and
- * `update` are `daoris-driver` verbs, and the install shipped only `daoris`, so a terminal outside the window had no
- * way to them. The Host is published framework-dependent into a folder of its own under `app/`, replaced whole by a
- * republish (and carried by an update's swap of `app/`), and run from `app/bin/` by a launcher for each shell, so the
- * PATH every child Daoris starts has it by its bare name. It finds the home by `DAORIS_HOME`, as the CLI does (D105).
+ * The desktop's program (DRIVERDOOR1, ONEWAY1ai): the Host, published framework-dependent into a folder of its own under
+ * `app/` that keeps its name for good, replaced whole by a republish (and carried by an update's swap of `app/`), and run
+ * from `app/bin/` by `daoris`'s launchers, so the PATH every child Daoris starts has it by that bare name. It finds the
+ * home by `DAORIS_HOME`, as the CLI does (D105). `DRIVER_LAUNCHERS` are its old name's, kept one release for a session an
+ * older build told of them: they run the program only to say what their words are now, and do nothing.
  */
 export const DRIVER_PROJECT = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Host';
 export const DRIVER_HOME = Object.freeze(['app', 'daoris-driver']);
 export const DRIVER_EXE = 'daoris-driver.exe';
 export const DRIVER_LAUNCHERS = Object.freeze(['daoris-driver', 'daoris-driver.cmd']);
+
+/** The variable the old name's launchers set, which makes the program refuse their words naming the new form (`CommandTree.OldNameVariable`). */
+export const OLD_NAME_VARIABLE = 'DAORIS_OLD_NAME';
+
+/** Each shell's launcher of the program, by the names given; `oldName` set, the program is told the words are that name's. */
+function launchersOf(names, says, oldName) {
+  const exe = posix.relative(CLI_BIN.join('/'), [...DRIVER_HOME, DRIVER_EXE].join('/'));
+  const sh = [
+    '#!/bin/sh',
+    `# ${says}`,
+    '# Written by the publish, and replaced by the next one.',
+    'basedir=$(dirname "$(echo "$0" | sed -e \'s,\\\\,/,g\')")',
+    'if command -v cygpath >/dev/null 2>&1; then basedir=$(cygpath -w "$basedir"); fi',
+    `${oldName === null ? '' : `${OLD_NAME_VARIABLE}=${oldName} `}exec "$basedir/${exe}" "$@"`,
+    '',
+  ].join('\n');
+  const cmd = [
+    '@echo off',
+    `rem ${says}`,
+    'rem Written by the publish, and replaced by the next one.',
+    ...(oldName === null ? [] : ['setlocal', `set "${OLD_NAME_VARIABLE}=${oldName}"`]),
+    `"%~dp0${exe.replace(/\//g, '\\')}" %*`,
+    '',
+  ].join('\r\n');
+  return { [names[0]]: sh, [names[1]]: cmd };
+}
 
 /**
  * The publish of the Host into `folder`: a runtime-dependent folder, the shape the application and the launcher have. Its
@@ -420,29 +422,16 @@ export function artifactsOf(argv, cwd = process.cwd()) {
   return { artifacts: isAbsolute(given) ? given : resolve(cwd, given), refusal: null };
 }
 
-/** The text of each driver launcher, by name: the Host's executable found from the launcher's own folder. */
+/**
+ * The text of each old-name launcher, by name (ONEWAY1ai): the program, told the words are `daoris-driver`'s, says what they are
+ * now and does nothing. Kept one release, the register's `old-command-names`; ONEWAY1af deletes them.
+ */
 export function driverLaunchers() {
-  const exe = posix.relative(CLI_BIN.join('/'), [...DRIVER_HOME, DRIVER_EXE].join('/'));
-  const sh = [
-    '#!/bin/sh',
-    '# Daoris\'s driver verbs, the host this install carries (DRIVERDOOR1), run from its own folder.',
-    '# Written by the publish, and replaced by the next one.',
-    'basedir=$(dirname "$(echo "$0" | sed -e \'s,\\\\,/,g\')")',
-    'if command -v cygpath >/dev/null 2>&1; then basedir=$(cygpath -w "$basedir"); fi',
-    `exec "$basedir/${exe}" "$@"`,
-    '',
-  ].join('\n');
-  const cmd = [
-    '@echo off',
-    'rem Daoris\'s driver verbs, the host this install carries (DRIVERDOOR1), run from its own folder.',
-    'rem Written by the publish, and replaced by the next one.',
-    `"%~dp0${exe.replace(/\//g, '\\')}" %*`,
-    '',
-  ].join('\r\n');
-  return { [DRIVER_LAUNCHERS[0]]: sh, [DRIVER_LAUNCHERS[1]]: cmd };
+  return launchersOf(DRIVER_LAUNCHERS, "The old name of Daoris's command, kept one release (ONEWAY1ai): it runs nothing, and says what its words are now.",
+    DRIVER_LAUNCHERS[0]);
 }
 
-/** Write the driver's launchers into `<install>/app/bin/`, beside the doctrine tool's (which {@link layCli} replaces whole). */
+/** Write the old name's launchers into `<install>/app/bin/`, beside `daoris`'s (which {@link layCli} replaces whole). */
 export function layDriverLaunchers(install) {
   const bin = join(install, ...CLI_BIN);
   mkdirSync(bin, { recursive: true });
@@ -757,7 +746,7 @@ Published from a Daoris workspace by \`tools/desktop-publish.mjs\`.
 | | |
 |---|---|
 | \`${LAUNCHER}\` | **the application** — the only thing to run. A small launcher that starts \`${[...SHELL_HOME, SHELL_EXE].join('/')}\`. |
-| \`${SHELL_HOME[0]}/\` | the application itself, on the Chromium it carries (its files are listed in \`${SHELL_FILES.join('/')}\`), which is also Daoris's own browser; when published with \`--service\`, the HTTP host in \`${HOST_HOME.slice(1).join('/')}/\` and, in \`${CONNECTOR_HOME.slice(1).join('/')}/\`, the knowledge connector a session on the protocol door is handed, each run ahead of any in \`bin/\` under the home; and Daoris's own example plugins in \`${PLUGIN_OFFERS.slice(1).join('/')}/\` (${OFFERED_PLUGINS.join(', ')}), offered in the Plugins place and by \`daoris plugin list\`, none installed until you install one; and \`${RESOURCES.slice(1).join('/')}\`, the list of where each version of the tools Daoris runs downloads from, read and never rewritten; and the doctrine tool, in \`${CLI_HOME.slice(1).join('/')}/\` and \`${CLI_BIN.slice(1).join('/')}/\` (below), with the driver's verbs in \`${DRIVER_HOME.slice(1).join('/')}/\`. Nothing to open. |
+| \`${SHELL_HOME[0]}/\` | the application itself, on the Chromium it carries (its files are listed in \`${SHELL_FILES.join('/')}\`), which is also Daoris's own browser; when published with \`--service\`, the HTTP host in \`${HOST_HOME.slice(1).join('/')}/\` and, in \`${CONNECTOR_HOME.slice(1).join('/')}/\`, the knowledge connector a session on the protocol door is handed, each run ahead of any in \`bin/\` under the home; and Daoris's own example plugins in \`${PLUGIN_OFFERS.slice(1).join('/')}/\` (${OFFERED_PLUGINS.join(', ')}), offered in the Plugins place and by \`daoris plugin list\`, none installed until you install one; and \`${RESOURCES.slice(1).join('/')}\`, the list of where each version of the tools Daoris runs downloads from, read and never rewritten; and the command, \`daoris\`, in \`${CLI_BIN.slice(1).join('/')}/\` (below), which runs the desktop's program in \`${DRIVER_HOME.slice(1).join('/')}/\` and hands the doctrine commands to the package in \`${CLI_HOME.slice(1).join('/')}/\`. Nothing to open. |
 | \`${STAGE[0]}/\` | an update: a build staged with \`--stage\` in \`${STAGED.slice(1).join('/')}/\`, which the application installs once its work allows, and the launcher's record of the last swap, \`${SWAP_JOURNAL}\` (D139). Present only once something was staged. |
 | \`${HOME}/\` | **your settings and records**, the Daoris home: your choices, the registry and the knowledge store, the conversations, the plugins you installed. Back it up: it is the only copy of each, and it holds no key, so it can be copied or handed to someone helping without handing over an account. |
 | \`profiles/\` | **sign-ins**: the API and deployment keys, Daoris's browser's profile, the window's own memory (\`profiles/window/\`: its engine profile, its place and its theme) and the agents' accounts made since. Lose it and you sign in again; keep a copy only somewhere as private as this machine. |
@@ -789,27 +778,27 @@ that first start (its \`bin/\` stays: an install published with \`--service\` ca
 Deleting this folder removes the application and its machine — nothing else on the machine changes.
 
 Starting it starts the driver loop, so **a drivable repository with an open quest gets a real agent
-session.** \`daoris driver list\` shows what this machine will drive.
+session.** \`daoris place list\` shows what this machine will drive.
 
-## The doctrine tool
+## The command
 
 \`${CLI_BIN.join('/')}/\` holds \`${CLI_LAUNCHERS[0]}\`, for Git Bash, and \`${CLI_LAUNCHERS[1]}\`, for Command Prompt and
-PowerShell. Each runs the \`daoris\` package this install carries in \`${CLI_HOME.join('/')}/\`, packed from the same
-build as the application, as the release packs the one it publishes to npm (\`daoris --version\` says
-which), on the \`node\` your PATH finds: it needs Node.js 22 or later.
+PowerShell: Daoris's one command, \`daoris …\` (ONEWAY1ai), and \`daoris help\` names each of its groups. Each runs the
+desktop's program this install carries in \`${DRIVER_HOME.join('/')}/\`, which needs no Node. Its doctrine commands
+(\`check\`, \`sync\`, \`status\` and the rest) it hands to the \`daoris\` package this install carries in
+\`${CLI_HOME.join('/')}/\`, packed from the same build as the application, as the release packs the one it publishes to npm
+(\`daoris --version\` says which), on the \`node\` your PATH finds: they need Node.js 22 or later.
 Every program Daoris starts finds it by its bare name: a driven session, a conversation, an intake, a hook,
 a landing plugin and every shell of its terminal panel begin their PATH with \`${CLI_BIN.join('/')}/\`, because
-this install's home, \`${HOME}/\`, sits beside \`${CLI_BIN[0]}/\` (D124).
+this install's home, \`${HOME}/\`, sits beside \`${CLI_BIN[0]}/\` (D124). It reads the same home (\`DAORIS_HOME\`) the
+application does; with none it takes this install's \`${HOME}/\`, and with no \`DAORIS_SERVICE_URL\` the service of the
+Daoris running on that home, by the address the application leaves there while it runs (D171).
 Nothing puts \`${CLI_BIN.join('/')}/\` on your account's PATH, so a terminal of yours outside Daoris still runs whatever
 \`daoris\` you installed; run this one by its path there, from the repository it should look at. A re-publish
-replaces both folders whole.
+replaces these folders whole.
 
-The same folder holds \`${DRIVER_LAUNCHERS[0]}\` and \`${DRIVER_LAUNCHERS[1]}\`, which run the driver's own verbs
-from \`${DRIVER_HOME.join('/')}/\` (it needs no Node): \`daoris-driver trees list|clean|land\`, \`sessions archive|take-back\`,
-\`history clear\` and \`update\`. They read the same home (\`DAORIS_HOME\`) the application and \`daoris\` do, so what the
-window's lists offer is at a terminal too (\`daoris driver\` says which verbs are which). With no \`DAORIS_HOME\` they take
-this install's \`${HOME}/\`, and with no \`DAORIS_SERVICE_URL\` the service of the Daoris running on that home, by the
-address the application leaves there while it runs (D171); with Daoris not running, a verb that needs its service says so.
+The same folder holds \`${DRIVER_LAUNCHERS[0]}\` and \`${DRIVER_LAUNCHERS[1]}\` for one release, for a session an older build
+told of them: they run nothing, and say what their words are now under \`daoris\`.
 
 ## Pinning it to the taskbar
 
@@ -825,9 +814,9 @@ a pin of that kind, unpin it, start Daoris, and pin its running window once.
 Stage a new build beside it while it runs: \`npm run publish:desktop -- --to <this folder> --service --stage\`. The
 application then starts nothing new, lets the running sessions end or park, closes, and \`${LAUNCHER}\` checks the
 staged build, swaps \`${SHELL_HOME[0]}/\` and starts it again, putting the build before it back if the new one does not
-come up (D139). The banner in the window and \`daoris-driver update --when-idle|--now|--cancel\` say when.
+come up (D139). The banner in the window and \`daoris update --when-idle|--now|--cancel\` say when.
 While it drains the application starts nothing new and holds the presses that would start work;
-\`daoris-driver update --cancel\` stages the build *not now* (installed at the next start, or \`update --when-idle\` later).
+\`daoris update --cancel\` stages the build *not now* (installed at the next start, or \`update --when-idle\` later).
 Re-publishing over this folder with the application closed still works, with \`--service\` while it carries the hosts
 (a re-publish without it is refused rather than leave the last build's); nothing here is edited by hand.
 `;
@@ -1048,8 +1037,8 @@ export function stageReport(home, commit) {
 export function stagedAdvice() {
   return [
     '  The desktop drains for it: it starts nothing new and holds the presses that would start work until every driven',
-    '  session and turn has ended, then installs it and starts again (D139). `daoris-driver update` says where it stands;',
-    '  `daoris-driver update --cancel` stages it *not now* (installed at the next start, or `update --when-idle` later),',
+    '  session and turn has ended, then installs it and starts again (D139). `daoris update` says where it stands;',
+    '  `daoris update --cancel` stages it *not now* (installed at the next start, or `update --when-idle` later),',
     '  and --now installs without waiting.',
   ];
 }
