@@ -5,6 +5,12 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-04 - A chat's press under a graph choice was held "not judged yet" where its test wanted it landed as before (CHATGRAPH1)
+
+- **Symptom:** CI 45 on main, and alone: `ReviewLandingTests.A_chat_s_press_under_a_graph_choice_lands_as_before_and_is_never_refused_bind_failed` got "Daoris has not judged run chat-c1a2b3c4's graph at `<sha>` yet: its next look does, and this asks for it now." where it wanted the press landed and the run left unbound.
+- **Root cause:** the test pinned CHATFLOW1c's contract, in which a graph choice bound nothing and the press was gated by Current. WORKFLOWCLEAN1 row 1d (e01d2112f) made `ChatRuns.Bind` (`Driver/Workflows/ChatRuns.cs:146-162`) bind the graph version, so the gate's graph part judges by the run, and before any pass it holds the press (`GraphGate.cs:193`); the route's press asks that pass (`GraphPasses.PressAsync`), the test's helper asks none. The code is right by the cleanup design §2.7 and D227's 1d note; the test, a `Process` class 1d's branch did not run, kept the old contract. Two comments still said a graph choice binds nothing (`TreesRoutes.cs`, `ChatRunBinds.cs`).
+- **Fix:** the test, renamed to 1d's contract, asserts that the press's bind-first binds `web-graph` v1 with no problem, is never refused `bind-failed`, and is held unjudged with the press waiting on the pass, nothing landed; the landing after a pass stays `ChatGraphRunTests`'. The two comments say the graph binds.
+- **Verify:** `ReviewLandingTests` alone, its old test failing first with the words above, then 17 of 17.
 ## 2026-11-04 - The staffing judge passed a marked agent before the choice its line had just left (REVIEW2 L4)
 
 - **Symptom:** of two choices, one this line moved off within the 30-minute hold and one on an agent marked not answering, the walk kept the one it had just left and passed the other.

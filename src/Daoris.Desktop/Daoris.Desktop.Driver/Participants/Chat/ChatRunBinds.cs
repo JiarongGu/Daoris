@@ -2,21 +2,21 @@ using System.Collections.Concurrent;
 
 namespace Daoris.Driver;
 
+/// <summary>The checks a conversation's run holds it to at an execution: the choice, its long-call minutes, and the repository they are keyed by.</summary>
+internal sealed record ChatChecked(string Checks, int? Minutes, string Repository);
+
 /// <summary>
 /// A conversation's chat run bound (CHATFLOW1c; the chat-flow design §4.3): when its tree opens, beside where it is told its process, and
-/// at a turn's end for a chat whose tree grew before this build or whose bind failed, by the same code. Bound to Current or a steps
-/// version only; a graph version binds nothing before CHATFLOW1f.
+/// at a turn's end for a chat whose tree grew before this build or whose bind failed, by the same code. A graph version binds as a steps
+/// version does (CHATFLOW1f, WORKFLOWCLEAN1 row 1d).
 /// </summary>
 /// <remarks>
 /// <para><b>Said once.</b> Under a named workflow, the conversation's first Daoris line says which and who chose it, as the look says a
 /// start's; under Current nothing is said. A bind the home could not keep is said once a run, and the next turn's end tries again: the
 /// conversation goes on, and only the landing waits.</para>
 ///
-/// <para><b>Nothing of its checks</b> is told here: they are not enforced on its tree before CHATFLOW1h (§4.4).</para>
+/// <para><b>Nothing of its checks</b> is told here: each execution's hold tells them (CHATFLOW1h, §4.4; <c>ChatRunner.HeldChecksAsync</c>).</para>
 /// </remarks>
-/// <summary>The checks a conversation's run holds it to at an execution: the choice, its long-call minutes, and the repository they are keyed by.</summary>
-internal sealed record ChatChecked(string Checks, int? Minutes, string Repository);
-
 internal sealed class ChatRunBinds(string home, ServiceClient service, ISessionEvents events)
 {
     // Each conversation's run once its key was read, and each run whose failed bind was said, so a turn's end asks the service once.

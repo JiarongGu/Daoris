@@ -338,11 +338,13 @@ public sealed class ReviewLandingTests : IDisposable
     // ——— the world and the fixtures
 
     /// <summary>
-    /// CHATFLOW1c (the chat-flow design §4.3): a press on a chat run whose repository chooses a graph version binds nothing first, and is
-    /// gated and landed as before, never refused <c>bind-failed</c>.
+    /// WORKFLOWCLEAN1 row 1d (the cleanup design §2.7; the chat-flow design §4.5 as amended): a press on a chat run whose repository chooses a
+    /// graph version binds that version at its bind-first, never refused <c>bind-failed</c> and never gated by Current, and its gate holds it
+    /// until the run's graph is judged, nothing landed in place. Row 1d superseded CHATFLOW1c's graph choice that bound nothing and landed as
+    /// before. The pass that judges the run and the runtime's landing are <see cref="ChatGraphRunTests"/>'.
     /// </summary>
     [Fact]
-    public async Task A_chat_s_press_under_a_graph_choice_lands_as_before_and_is_never_refused_bind_failed()
+    public async Task A_chat_s_press_under_a_graph_choice_binds_that_graph_and_waits_for_its_judgement_never_refused_bind_failed()
     {
         var root = await RepositoryAsync("web-app");
         StoredSteps.AddGraph(WorkflowPorts.Store(_home), "web-graph", "A graph", "2026-10-21T09:00:00Z", System.Text.Json.Nodes.JsonNode.Parse(
@@ -355,9 +357,15 @@ public sealed class ReviewLandingTests : IDisposable
         var (landed, refused) = await ChatPressAsync(tree);
 
         Assert.Null(refused);
-        Assert.True(landed!.Landed, landed.Message);
-        Assert.NotEqual(line, await HeadAsync(root));
-        Assert.False(WorkflowRunBindings.Bound(_home, "chat-c1a2b3c4"));
+        var bound = WorkflowRunBindings.Read(_home, ChatRun)!;
+        Assert.True(GraphRun.Names(bound));
+        Assert.Equal(("web-graph", 1, null), (bound.Workflow, bound.Version, bound.Problem));
+        Assert.False(landed!.Landed, landed.Message);
+        Assert.Equal(AutoLandingCode.Refused, landed.Refusal);
+        Assert.StartsWith($"Daoris has not judged run {ChatRun}'s graph at", landed.Message);
+        Assert.Equal(line, await HeadAsync(root));
+        var gate = await new SessionTrees(_home).GateAsync(tree, null, _world, ChatSession, run: ChatRun);
+        Assert.Equal((GraphGateStates.NotJudged, true), (gate.Graph!.State, gate.GraphPart()!.PressWaits));
     }
 
     /// <summary>CHATFLOW1c (§4.3): a home that cannot keep the binding refuses the press, <c>bind-failed</c>, with nothing landed.</summary>
@@ -468,7 +476,7 @@ public sealed class ReviewLandingTests : IDisposable
 
     /// <summary>
     /// A chat's press, as <c>LAND_SESSION_TREE</c> makes it (CHATFLOW1c): its run bound first, refused where the home cannot keep it, then
-    /// the gate read by its run's process and handed to the landing.
+    /// the gate read by its run's process and handed to the landing. No pass is asked, so a graph-bound run's gate reads as before any pass.
     /// </summary>
     private async Task<(TreeLanding? Landed, TreesSaid? Refused)> ChatPressAsync(string tree)
     {
