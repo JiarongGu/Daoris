@@ -30,7 +30,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | Holds | `Workflows/Nodes/HoldNodes.cs`, `WorkRequestsNode.cs`, `Workplace/ContentHolds.cs` | `quest.holds`, `content.holds` and `work.requests` before the landing |
 | Land node | `Workflows/Nodes/LandNodes.cs` | `land`'s options, their resolution at the bind, the intent a run lands by |
 | Landing door | `Workplace/LandingDoor.cs`, `Workplace/AutoLander.cs` | The runtime's landing off the pass, under the tree's hold and the delivery key |
-| Tree landing | `Workplace/SessionTrees.cs`, `Workplace/TreeLands.cs`, `Workplace/Landing.cs` | The merge, the branch and the squash; the plan and its refusals; `LandingRules` for Current |
+| Tree landing | `Workplace/SessionTrees.cs`, `Workplace/TreeLands.cs`, `Workplace/Landing.cs` | The merge, the branch and the squash; the plan and its refusals; `LandingRules`, a landing's shape and the line's landing outside a run |
 | Delivery record | `Workplace/DeliveryStore.cs`, `DeliveryReconciler.cs`, `CurrentDeliveries.cs` | Each landing's phases written ahead, settled after a restart |
 | Landed branches, pull requests | `Workplace/LandedBranches.cs`, `PullRequestAsks.cs`, `PullRequestStates.cs`, `PullRequestBounds.cs`, `BranchTidying.cs` | `landings.json`, a pull request's state from its plugin, the look's tidy |
 | Integration | `Workflows/Nodes/IntegrateNode.cs`, `Workflows/IntegrationTransport.cs`, `Workplace/IntegrationRequests.cs`, `IntegrationStore.cs`, `IntegrationLines.cs`, `Review/Integration/` | One request door, one run per line, its gates and judgement |
@@ -128,14 +128,14 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     (`commits`) may say `ask` or `at-end`. Daoris follows a tree an agent moved anyway. (from D164)
 36. A chain's next step in the same repository starts on the step before's branch, and the chain lands on one branch, which
     advances only while its pull request can take it. (from D82, D149)
-37. Branches a landing made are kept in `<home>/landings.json`, with traces once gone. A session branch goes only behind D88's
-    proof: every commit is on a branch that is not Daoris's. The look's own tidy removes what the press would, never forced.
-    (from D88, D102)
+37. Branches a landing made are kept in `<home>/landings.json`, with traces once gone. A landing removes no tree and no other
+    session branch. A session branch goes only by its own door or the look's tidy, behind D88's proof: every commit is on a branch
+    that is not Daoris's, never forced. (from D88, D102, D232)
 38. A pull request's state is asked of the plugin that opened it, at most once a minute per pull request. A landed session's
     review reads its landed branch. (from D113, D148)
 39. Integration is one run per line, outside every run, with fixed steps. `done` and `steward` requests need declared, accepted
-    gates. The line's policy is `linePolicies`, read before a rule's own `integrate`. A failure is confirmed once before it is
-    blamed. (from D215, D227)
+    gates. The line's policy is `linePolicies`, the only `integrate` read. A failure is confirmed once before it is blamed.
+    (from D215, D227, D232)
 40. A verification pipeline's `check` is Daoris's, with no agent session, never skipped. One run per line at a time, each batch
     run to its verdict. A failure becomes a fix ask, by the person's press or a standing `ask`. (from D192)
 41. `SET_ACCESS` refuses the `landing` pause, and `full` access opens no landing pause on a saved-graph place. (from D184, D227)
@@ -150,10 +150,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     `land`+`accept` newest gets the next version as a graph; each place on the landing rules follows the home default or a saved
     copy of what its rules drew; a rule's `integrate` becomes its line's policy; the landing rules and work cycles leave
     `driver.json`. A version the save refuses is left, said. (from D232)
-45. Under Current, a place still lands by its landing rule (`landings`, `workspaceLandings`): form, pattern, key, squash, plugin,
-    `autoAccept`, tidy, cycle. `SET_LANDING` and `driver landing` refuse a place on a saved workflow. (from D87, D164, D227)
-46. Each old way still read is registered with the condition that ends it and the row that deletes it: Current's rule and the
-    auto lander end with WORKFLOWCLEAN1z. (from D227, D228)
+45. No landing rule or work cycle is read or written: `driver.json` holds no `landings`, `workspaceLandings` or work cycles, and no
+    door sets one. A hand-off pushes to the plugin its card names. (from D232)
+46. Each old way still read is registered with the condition that ends it and the row that deletes it: the auto lander's look ends
+    with WORKFLOWCLEAN1z. (from D227, D228)
 
 **Drawing**
 
@@ -170,7 +170,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - **Which workflow work follows:** `Workflows/Domain/WorkflowSelection.cs`, held cell for cell by `fixtures/workflow-selection.json`.
 - **A shipped workflow or delivery:** a JSON file under `Defaults/workflows/`; `WorkflowDefaults` reads it, and the presets derive.
 - **How a landing behaves:** the method's options in `LandNodes.cs`; the act in `Workplace/` (`LandingDoor`, `SessionTrees`,
-  `TreeLands`, the delivery files). Nothing new goes into `AutoLander`'s choosing or `LandingRules`: both are transitional.
+  `TreeLands`, the delivery files). Nothing new goes into `AutoLander`'s choosing: it is transitional.
 - **Integration:** `Workplace/Integration*.cs` and `Review/Integration/`; the node's half in `Workflows/Nodes/IntegrateNode.cs`.
 - **A gate or a hold at landing:** `Review/Domain/` (look, opinion) or `Workflows/Domain/GraphGate.cs` (the graph's part).
 - **An old shape to convert:** the release migration's workflow step, `Workflows/Migration/WorkflowMigration.cs`.
@@ -178,7 +178,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - **The tests that pin it:** driver `Workflows/` (`NodeGraphsTests`, `SavesRefusedTests`, `WorkflowSelectionTests`,
   `WorkflowRunBindingTests`, `GraphRunLandingTests`, `GraphGatesTests`, `ChatGraphRunTests`, `HomeDefaultTests`,
   `SetupPresetsTests`, `NodeRuntime*Tests`, `WorkflowMigrationTests`), `Review/` (`ReviewGateTests`, `OpinionGateTests`), `Workplace/`
-  (`Landing*Tests`, `Delivery*Tests`, `AutoLanding*Tests`, `Integration*Tests`, `PullRequest*Tests`),
+  (`Landing*Tests`, `Delivery*Tests`, `Integration*Tests`, `PullRequest*Tests`, each landing through a run bound by `GraphLand`),
   `Setup/PlacePlanTests` and `PlaceApplyTests`; modules `DriverModuleWorkflow*Tests`,
   `DriverModulePlace*Tests`, `PipeCensusTests`, `OwnerSetCensusTests`; web `src/workflow/**/*.test.ts*` and
   `src/agents/setup/*.test.tsx`; the family rehearsal's 17c set-up phase (`tools/setup-kit.mjs`).
@@ -195,11 +195,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - D157 point 1 (a workflow is a list of steps) vs `WorkflowNamed.ReadVersion(onSave)` refusing steps: D227 point 2 reads right.
 - D157 point 15 (nothing set is Current) vs `WorkflowSelection.cs:234-236` (the home default first): D227 reads right.
 - D157's rejection of *merging with nobody* vs the shipped `Defaults/workflows/merge-automatic.json` and `integrated-no-press.json`: the code reads right.
-- D87 (how work lands is a workspace's landing rule) vs `LandingRules.Choose` marked transitional (`Landing.cs:887`) and `LandingVerb.cs:19`: D227 reads right.
-- D164 amendment point 2 (the rule holds pattern, key, squash) vs `LandNodes.cs:7` (`land`'s options): D227 reads right; the rule stands only under Current.
+- D87 (how work lands is a workspace's landing rule) vs no rule read (`LandingRules.Line`, `Landing.cs`): D227 and D232 read right.
+- D164 amendment point 2 (the rule holds pattern, key, squash) vs `LandNodes.cs:7` (`land`'s options): D227 reads right.
 - D145 point 1 (a branch rule's `autoAccept`) vs `LandNodes.Reviewed` (no `review` step means no press): D227 reads right.
 - D88 (without `tidy` the tree stays; clean-up is the person's press) vs `BranchTidying.cs` (the look's own tidy): the code reads right.
-- D215 point 2 (the install's policy on a branch rule's `integrate`) vs `Landing.cs:892` (`linePolicies` first): D227's 1a note reads right.
+- D215 point 2 (the install's policy on a branch rule's `integrate`) vs `LandingRules.Line` (`linePolicies` alone): D227's 1a note reads right.
 - D215 point 5 (no node added to any graph) vs `NodeContract.cs:60` (`integrate` kind) and `land` method `integrate`: the code reads right.
 - D221's rejection of a place's choice changing through `PLACE_APPLY` vs `PlacePlan.cs:336` (Apply chooses the copy): D227 reads right.
 - D227's 1e note (`daoris-driver workflow convert`) vs `Driver.Host/Program.cs:150` (`daoris-driver convert`): the code reads right.
@@ -213,8 +213,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - **SETUPUX1x:** the installed sitting of the place page, and its fixes.
 - **SETUPUX1y:** `daoris.agents.setup` lit by default (`src/agents/modes.ts:40` is still off); the old Workflow and Setup tabs, Roles mode and opener removed.
 - **WORKFLOWCLEAN1j:** a saved workflow that runs a work cycle, only if a place with one is found.
-- **WORKFLOWCLEAN1z (NOCOMPAT1b):** Current's landing rules, the work cycles, Current's graphs in the runtime, the auto lander and the
-  in-place landing doors, `handed`, and the old Workflow and Setup tabs.
+- **WORKFLOWCLEAN1z (NOCOMPAT1b2):** the auto lander's look, the presses' in-place landing, `handed`, a landing's `tidy` field, and the
+  old Workflow and Setup tabs; the runtime suites still driven by work cycles in `driver.json` (`NodeRuntime*Tests`, `ObservedEvent*`,
+  `IntegrateNodeTests`) rebound onto graph runs.
 - **CHATFLOW1 (1g, the rest):** the terminal's `ChatLandCommand` still lands a graph-bound chat in place; the installed window.
 - **PROCESS1d-iii:** a session told its squash from `land`'s options, and a conversation's process proven.
 - **INTEGRATE1 k, i, m:** the flip of this repository's integrator, the steward's acts, a sibling repository's declared integration; h's installed proof.
