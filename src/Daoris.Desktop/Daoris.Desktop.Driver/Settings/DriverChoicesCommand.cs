@@ -124,6 +124,7 @@ public static class ChoiceRoutes
         ("driver commits", Commits, "the commit rule"),
         ("driver keep <kind> …", Keep, "the Disk space card's rule of that kind"),
         ("driver role set|remove|default|policy <id> …", Role, "a working role of the catalogue, its record, its choices and its policy (FOUNDATION1y-i, STAFFPOLICY1b)"),
+        ("driver role rules --place …", Role, "the supervisor's rules for a place, written whole at the revision read (CONTEXTDRIVE1d)"),
         ("driver actor import <file>", null, "alone: no route takes a file of the terminal's; the staffing's lock serializes it with the window's presses"),
         ("driver actor found take|dismiss <n>", null, "alone: the staffing's lock serializes it with the window's Take it and Dismiss"),
         ("driver timeout <minutes>", null, "alone: no route sets a session's timeout"),
@@ -251,7 +252,7 @@ public static class DriverChoicesCommand
             // `actor` naming one actor, or none, is refused as a read; its copy verbs write until ONEWAY1c-ii retires them.
             "actor" => args.Count > 2,
             // `role` naming one role, or none, says it, a read (FOUNDATION1y-i).
-            "role" => args.Count > 1 && args[1] is "set" or "remove" or "default" or "policy",
+            "role" => args.Count > 1 && args[1] is "set" or "remove" or "default" or "policy" or "rules",
             _ => Verbs.Contains(verb, StringComparer.Ordinal),
         };
     }

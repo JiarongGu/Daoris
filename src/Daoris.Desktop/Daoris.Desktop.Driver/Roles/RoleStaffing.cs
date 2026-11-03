@@ -149,6 +149,9 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
     /// <summary>The store's file in this home.</summary>
     public string Location => DesktopStore.LocationIn(home);
 
+    /// <summary>The home whose store this is.</summary>
+    public string Home => home;
+
     /// <summary>The home's own <c>driver.json</c>, which the import reads and never writes.</summary>
     public string FileOfHome => DaorisHome.Entry(home, HomeEntry.DriverConfig);
 

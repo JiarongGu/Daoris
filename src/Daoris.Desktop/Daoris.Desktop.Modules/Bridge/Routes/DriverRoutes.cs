@@ -375,7 +375,7 @@ public sealed class DriverRoutes(DriverContext context)
     // stored choices, and the work codes a role may take; a read, the same `daoris driver role` says. Beside them, the roles Daoris
     // suggests adding (the Designer while no role takes design), each the person's press alone.
     [DriverRoute("ROLES")]
-    [ByEvent("ROLES", Untold = "the store's roles, role policies and starts, driver.json's staffing, and the machine log's starts that Use sums")]
+    [ByEvent("ROLES", Untold = "the store's roles, role policies, supervisor rules and starts, driver.json's staffing, and the machine log's starts that Use sums")]
     private Task<object?> RolesAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var catalogue = RoleCatalog.ReadHome(_loop.Home);
@@ -391,6 +391,8 @@ public sealed class DriverRoutes(DriverContext context)
             Policies = RolePolicyRow.Of(new StaffLedger(_loop.Home), catalogue, config),
             PolicyFields = StaffCapabilities.Fields,
             PolicyPresets = StaffPresets.Names,
+            // CONTEXTDRIVE1d: the supervisor's rules by place, whether this home's rules are reached, and what each count takes.
+            Supervisor = SupervisorRows(_loop.Home),
             Works = RoleWork.Codes,
             Kept = RoleStaffing.Of(_loop.ConfigPath) is not null,
             Suggested = RoleSuggestion.For(catalogue).Select(each => new
@@ -401,6 +403,20 @@ public sealed class DriverRoutes(DriverContext context)
             SuggestedChoices = ActorSuggestion.Table.Select(each => new { each.Role, each.Choices }),
             SuggestedChoicesDated = ActorSuggestion.Dated,
         });
+    }
+
+    private static object SupervisorRows(string home)
+    {
+        var store = new SupervisorRuleStore(home);
+        return new
+        {
+            Reached = store.Reached(),
+            Sets = store.All().Select(set => new { set.Place, set.Revision, set.Rules }),
+            Counts = SupervisorRules.Windows.Select(pair => new
+            {
+                Count = pair.Key, Window = pair.Value, Actions = SupervisorRules.Actions(pair.Key), Least = SupervisorRules.Bounds(pair.Key).Low, Most = SupervisorRules.Bounds(pair.Key).High,
+            }),
+        };
     }
 
     // The roles' structure (COMPANYVIEW1c, the company-view design §4): for each place asked (none is this machine) and each work asked

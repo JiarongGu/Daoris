@@ -41,7 +41,11 @@ public sealed record SupervisorRuleWorld(
     bool Reached = true,
     bool ReferOffered = false,
     Func<string, bool>? Known = null,
-    Func<string, IReadOnlyList<string>>? Wider = null);
+    Func<string, IReadOnlyList<string>>? Wider = null)
+{
+    /// <summary>The person's doors: <see cref="Reached"/> read from the store inside the write, so a home not reached refuses every rule.</summary>
+    public bool ReadReached { get; init; }
+}
 
 /// <summary>A count as read for a line (the course's <c>LineCount</c>): its code, what it stands at and whether that is known.</summary>
 /// <param name="N">What the count stands at; none where it is not known.</param>
@@ -252,14 +256,20 @@ public static class SupervisorRules
             return Refuse("upTo", rule.Do == Wait ? "wait takes 5 to 600 minutes." : "only wait takes upTo.");
         }
 
-        var (low, high) = rule.Count switch
-        {
-            AnswersAlone or Failures => (1, 20),
-            FailuresOnChoice => (1, 19),
-            Tries => (1, 5),
-            Moves => (1, 8),
-            _ => (1, 1),
-        };
+        var (low, high) = Bounds(rule.Count);
         return rule.At < low || rule.At > high ? Refuse("at", $"{rule.Count} takes {low} to {high}.") : null;
     }
+
+    /// <summary>The actions <paramref name="count"/> allows (§4.2), <c>refer</c> among them though it is offered only once the actor is.</summary>
+    public static IReadOnlyList<string> Actions(string count) => Allowed.TryGetValue(count, out var actions) ? actions : [];
+
+    /// <summary>The <c>at</c> a rule on <paramref name="count"/> takes (§4.1); failures in a row on one choice below the failures rule's, judged apart.</summary>
+    public static (int Low, int High) Bounds(string count) => count switch
+    {
+        AnswersAlone or Failures => (1, 20),
+        FailuresOnChoice => (1, 19),
+        Tries => (1, 5),
+        Moves => (1, 8),
+        _ => (1, 1),
+    };
 }

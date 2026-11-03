@@ -21,6 +21,9 @@ public abstract record RoleChange
     /// <summary><i>Back to the default</i> for the whole structure: every seeded role the seed's again; added roles are kept.</summary>
     public static RoleChange DefaultAll() => new DefaultAllRoles();
 
+    /// <summary>The supervisor's rules at one place (CONTEXTDRIVE1d), written to their own family, never a <c>roles</c> row.</summary>
+    public static RoleChange Rules(SupervisorRulesPress press) => new SetRules(press);
+
     /// <summary>The id the change is of.</summary>
     public abstract string Id { get; }
 
@@ -43,5 +46,11 @@ public abstract record RoleChange
     public sealed record DefaultAllRoles : RoleChange
     {
         public override string Id => "*";
+    }
+
+    /// <summary>A place's rules for the supervisor; the catalogue's judge never sees it, the rules' judge does.</summary>
+    public sealed record SetRules(SupervisorRulesPress Press) : RoleChange
+    {
+        public override string Id => SupervisorRuleDoor.Id;
     }
 }

@@ -18,7 +18,7 @@ public sealed class RoleVerbUsageTests
     [Fact]
     public void Each_word_after_role_is_taken_by_the_verb_and_any_other_is_its_grammar()
     {
-        Assert.Equal(["set", "remove", "default", "policy"], RoleVerb.Changes);
+        Assert.Equal(["set", "remove", "default", "policy", "rules"], RoleVerb.Changes);
         var verb = DriverChoiceVerbs.All.OfType<RoleVerb>().Single();
         var world = new DriverChoicesWorld
         {

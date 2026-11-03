@@ -197,4 +197,29 @@ public sealed class HelpRoleProposalsTests : HelpProposalsFixture, IDisposable
         Assert.Contains("changed since it was read (revision 0, now 1)", HelpProposals.Plan(Role("default", "intake", """{ "revision": 0 }"""), DriverConfig.Empty, Machine).Refusal);
         Assert.Null(HelpProposals.Plan(Role("default", "intake", """{ "revision": 1 }"""), DriverConfig.Empty, Machine).Refusal);
     }
+
+    /// <summary>
+    /// CONTEXTDRIVE1d (the context counters design §7.6): <c>role_propose</c>'s rules, a <c>set</c> of the supervisor naming the place, judged by
+    /// the rules' judge, said before and after on the card with the terminal's twin, and applied by the person's press alone.
+    /// </summary>
+    [Fact]
+    public void CONTEXTDRIVE1d_the_supervisor_s_rules_are_judged_described_and_applied_by_the_press_alone()
+    {
+        const string Press = """{ "place": "repository:daoris", "rulesRevision": 0, "rules": [{ "count": "answers-alone", "at": 3, "do": "hold" }] }""";
+        Assert.Contains("(convert-first)", HelpProposals.Plan(Role("set", "supervisor", Press), DriverConfig.Empty, Machine).Refusal);
+
+        var store = new SupervisorRuleStore(_home, () => StoreSettled.Yes);
+        store.Write("machine", 0, [new SupervisorRule("m-t", "tries", "episode", 5, "hold", null, "machine", null)], "test", new SupervisorRuleWorld(["build"]));
+        var plan = HelpProposals.Plan(Role("set", "supervisor", Press), DriverConfig.Empty, Machine);
+
+        Assert.Null(plan.Refusal);
+        Assert.Equal("Supervisor, repository:daoris: none here → answers-alone at 3: hold for every role. Lines here read it at their next go-on or start.", plan.Describe);
+        Assert.Equal("daoris role rules --place repository:daoris --clear all --set answers-alone=3:hold", plan.Terminal);
+        Assert.Equal(0, store.Of("repository:daoris").Revision);
+
+        RoleDoor.Apply(Staffing, plan.Role!.Change);
+        Assert.Equal(3, Assert.Single(store.Of("repository:daoris").Rules).At);
+        Assert.Contains("(revision)", HelpProposals.Plan(Role("set", "supervisor", Press), DriverConfig.Empty, Machine).Refusal);
+        Assert.Contains("appointed shape", HelpProposals.Plan(Role("set", "supervisor", """{ "takes": ["build"], "place": "machine", "rulesRevision": 1, "rules": [] }"""), DriverConfig.Empty, Machine).Refusal);
+    }
 }
