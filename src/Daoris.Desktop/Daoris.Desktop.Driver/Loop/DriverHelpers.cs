@@ -1061,6 +1061,8 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                 Helper = ask.Ask.Id,
                 Session = sessionId,
                 Prompt = HelperInstruction.Compose(packet),
+                // CONTEXTONE1c: its standing block, its copy's facts and the person's choices for its repository.
+                Block = StandingBlocks.OnMachine(StandingBlocks.OfTree(ask.Repository, copy.Path), ParticipantWork.Help, _context.Config, [], null),
                 // MODELROLE1e (D205 §3.2, §4.4): the entry's model and effort, carried on either door, and the choice its record keeps.
                 Asked = choice.Effective?.Asked,
                 Choice = choice.Effective?.From,

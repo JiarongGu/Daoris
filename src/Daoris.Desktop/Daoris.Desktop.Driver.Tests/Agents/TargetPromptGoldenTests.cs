@@ -51,7 +51,7 @@ public sealed class TargetPromptGoldenTests
 
     /// <summary>
     /// A quest an ask asked, with everything the look and the close speak to: a link, a requirement, the person's words, the
-    /// go-aheads, a standing answer, a checkout it may read, and the indexes its tree keeps.
+    /// go-aheads, a checkout it may read, and its standing block naming the indexes its tree keeps and the person's choices.
     /// </summary>
     internal static readonly SessionTarget Full = new(
         QuestId: "abc123",
@@ -72,9 +72,15 @@ public sealed class TargetPromptGoldenTests
             },
         ],
         Words = Words,
-        Standing = new StandingAnswer("dev writes allowed; test locally against dev; prod only on a yes.", Asked.AddDays(-1)),
         ReadsAcross = [new AcrossCheckout("bridge", "C:/work/bridge")],
-        Indexes = ["docs/README.md", ".claude/rules/RULES_INDEX.md", ".claude/rules/RULES_INDEX_CROSS.md"],
+        Block = new StandingFacts
+        {
+            Repository = "reports",
+            Workspace = "work",
+            Checkouts = true,
+            Indexes = ["docs/README.md", ".claude/rules/RULES_INDEX.md", ".claude/rules/RULES_INDEX_CROSS.md"],
+            Choices = new StandingAnswer("dev writes allowed; test locally against dev; prod only on a yes.", Asked.AddDays(-1)),
+        },
     };
 
     /// <summary>A carry-on after the person answered a parked session, the answer among their words on the ask.</summary>
@@ -92,6 +98,8 @@ public sealed class TargetPromptGoldenTests
     /// </summary>
     internal static readonly SessionTarget CarryOnBrief = CarryOn with
     {
+        // CONTEXTONE1c: the memory its line read is its standing block's, handed with the brief.
+        Block = CarryOn.Block! with { Memory = ["reports: the totals row reads the bridge's daily figure, never the hourly one"] },
         PersonSaid = null,
         CutOff = "the agent's turn failed with the quest still taken.",
         Brief = ContextBrief.Compose(new BriefLine(
@@ -228,14 +236,19 @@ public sealed class TargetPromptGoldenTests
     internal static string GoldenPath(string file) =>
         Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "golden", "target-prompt", file);
 
-    /// <summary>The standing the judge answers for `console-ui`, declaring two lanes, under the drive and trees <paramref name="standing"/> names.</summary>
-    private static RoutingStanding Routed(string standing)
+    /// <summary>
+    /// The standing block a build's start composes for `console-ui`, declaring two lanes, under the drive and trees
+    /// <paramref name="standing"/> names (CONTEXTONE1c): its routing among it.
+    /// </summary>
+    internal static StandingFacts Routed(string standing)
     {
         var config = standing == RoutingStanding.NotDriven ? DriverConfig.Empty : DriverConfig.Empty.WithDrivable("console-ui", true);
         if (standing == RoutingStanding.Open) config = config.WithTrees("console-ui", true);
-        var told = RoutingStanding.Of(config, new RepoView("console-ui", true, "C:/work/console-ui") { Lanes = ["core", "web"] });
-        Assert.Equal(standing, told.Standing);
-        return told;
+        var facts = StandingBlocks.OnMachine(
+            new StandingFacts { Repository = "console-ui" }, ParticipantWork.Build, config,
+            [new RepoView("console-ui", true, "C:/work/console-ui") { Lanes = ["core", "web"] }], "work");
+        Assert.Equal(standing, facts.Routing);
+        return facts;
     }
 
     internal static SessionTarget Of(string which) => which switch
@@ -253,10 +266,10 @@ public sealed class TargetPromptGoldenTests
         // FABRIC-CLOSE1l (CLOSE1g): a quest its closure graph closes, bound at its take: its session says `ready`, never `done`.
         "ready" => Bare with { Ready = true },
         // COWORKVIEW1e-i: a quest's session in a driven repository that declares lanes and opens trees of its own, told its routing standing
-        // beside the browser's block.
-        "routed" => Bare with { Browser = "Daoris has handed you its browser.", Routing = Routed("open").Words },
-        "routed-one-at-a-time" => Bare with { Routing = Routed("one-at-a-time").Words },
-        "routed-not-driven" => Bare with { Routing = Routed("not-driven").Words },
+        // in its standing block (CONTEXTONE1c).
+        "routed" => Bare with { Browser = "Daoris has handed you its browser.", Block = Routed("open") },
+        "routed-one-at-a-time" => Bare with { Block = Routed("one-at-a-time") },
+        "routed-not-driven" => Bare with { Block = Routed("not-driven") },
         // HEAVYRUN1b1: a repository that marks heavy gates, its session told to run them once, at its end, through `run-heavy`.
         "heavy" => Bare with { Heavy = HeavyTold.Words(["build", "test"]) },
         // FABRIC-PIPELINE1b: a light development pipeline, its light gates and its heavy gates as the verification's, refused by the
@@ -367,26 +380,28 @@ public sealed class TargetPromptGoldenTests
     }
 
     /// <summary>
-    /// COWORKVIEW1e-i: the line stands in the instruction's close beside the browser's block, once, for a quest's session of every kind of
-    /// start, and an instruction told none reads as it always did. An intake's instruction is its own, and carries none whatever its
-    /// target holds; the helper's, the partner's and the reviewer's compose from their own packets, which hold no such field.
+    /// COWORKVIEW1e-i as CONTEXTONE1c places it: the routing rides the standing block at the instruction's end, once, for a quest's session
+    /// of every kind of start, and nowhere else in it. An intake's block, composed for a work that publishes to no lane of its own, carries
+    /// none.
     /// </summary>
     [Fact]
-    public void The_line_rides_a_quest_sessions_close_after_the_browser_and_an_intake_s_instruction_never_carries_it()
+    public void The_routing_rides_the_standing_block_once_at_the_end_and_an_intake_s_block_never_carries_it()
     {
         const string Head = "Routing standing here: ";
-        var routed = TargetPrompt.Compose(Of("routed"));
-        Assert.Equal(routed.IndexOf(Head, StringComparison.Ordinal), routed.LastIndexOf(Head, StringComparison.Ordinal));
-        Assert.True(routed.IndexOf("Daoris has handed you its browser.", StringComparison.Ordinal) < routed.IndexOf(Head, StringComparison.Ordinal));
-        foreach (var target in new[] { CarryOn, Full, Retried, SetUpStep, OwnTree })
+        foreach (var target in new[] { Bare, CarryOn, Full, Retried, SetUpStep, OwnTree })
         {
-            var line = Routed("open").Words;
-            Assert.Contains(line, TargetPrompt.Compose(target with { Routing = line }));
+            var routed = TargetPrompt.Compose(target with { Block = Routed("open") });
+            var at = routed.IndexOf(Head, StringComparison.Ordinal);
+            Assert.Equal(at, routed.LastIndexOf(Head, StringComparison.Ordinal));
+            Assert.True(routed.IndexOf(StandingBlock.Opening, StringComparison.Ordinal) is var opening && opening >= 0 && opening < at);
+            Assert.True(routed.IndexOf("Never write outside this repository", StringComparison.Ordinal) < opening);
             Assert.DoesNotContain(Head, TargetPrompt.Compose(target));
         }
 
-        var intake = Bare with { Prompt = "You are the intake for ask #a1b2c3.", Routing = Routed("open").Words };
+        var intakeBlock = StandingBlocks.OnMachine(new StandingFacts(), ParticipantWork.Intake, DriverConfig.Empty, [], "work");
+        var intake = Bare with { Prompt = "You are the intake for ask #a1b2c3.", Block = intakeBlock };
         Assert.DoesNotContain(Head, TargetPrompt.Compose(intake));
+        Assert.EndsWith(StandingBlock.Compose(intakeBlock).Text, TargetPrompt.Compose(intake), StringComparison.Ordinal);
     }
 
     /// <summary>The account as the record's JSON spells it, indented and LF, so a golden reads the same on every machine.</summary>

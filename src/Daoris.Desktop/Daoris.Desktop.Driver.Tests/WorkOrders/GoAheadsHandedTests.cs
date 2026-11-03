@@ -100,7 +100,7 @@ public sealed class GoAheadsHandedTests
             var body = prompt.IndexOf("Look at the tile in production.", StringComparison.Ordinal);
             var said = prompt.IndexOf("  > " + Sentence, StringComparison.Ordinal);
             var goAhead = prompt.IndexOf("- Go-ahead 1, write on production", StringComparison.Ordinal);
-            var look = prompt.IndexOf("Look before you ask.", StringComparison.Ordinal);
+            var look = prompt.IndexOf("Look before you ask:", StringComparison.Ordinal);
             Assert.True(body >= 0 && body < said && said < goAhead && goAhead < look, prompt);
         }
     }

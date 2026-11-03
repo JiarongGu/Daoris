@@ -770,8 +770,12 @@ public static class NoteCodes
     // was set are facts, the words after the lead Daoris's one-copy English.
     public static readonly NoteCode ChatToldProcess = new("chat.told-process", ["mode", "source"]);
     // The routing standing a chat's agent was told at a start (COWORKVIEW1e-i): the standing is a fact, the words after the lead
-    // Daoris's one-copy English.
+    // Daoris's one-copy English. Written no more since the standing block carries the routing (CONTEXTONE1c); kept for the records
+    // that hold it, which the page words as they were.
     public static readonly NoteCode ChatToldRouting = new("chat.told-routing", ["standing"]);
+    // The standing block a conversation's agent was told with its first message (CONTEXTONE1c, D230 point 3): the lead by its code, the
+    // block after it Daoris's one-copy English.
+    public static readonly NoteCode ChatToldBlock = new("chat.told-block", []);
     // The workflow draft open in the editor a chat's agent was told beside the person's words (FLOWCHART2d): the lead by its code, then
     // what the agent was handed, the draft's JSON last and whole, which the draft door finds it by again.
     public static readonly NoteCode ChatToldDraft = new("chat.told-draft", []);

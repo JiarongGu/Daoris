@@ -265,6 +265,8 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
                 // Its workspace's session language (LANG1c): an intake answers a workspace's ask, in no repository.
                 Prompt = IntakePrompt.Compose(
                     ask, SessionLanguages.OfWorkspace(config, ask.Workspace), InAppBrowserServers.Told(browserDrivers), routedByIntake),
+                // CONTEXTONE1c: in no repository, its standing block is its workspace's part alone.
+                Block = new StandingFacts { Workspace = ask.Workspace },
             };
             var (info, harnessNotice) = _driver.Prepare(adapter, target, selection);
 

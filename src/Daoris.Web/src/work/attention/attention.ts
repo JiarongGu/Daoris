@@ -125,9 +125,30 @@ export function attentionGroup(row: { kind: AttentionKind; stands?: boolean; sta
  * whose card is drawn from the confirmation channel. The bell, the taskbar, *Notifications*' group and Overview's summary read this
  * one answer, so a count never holds a row the list does not.
  */
-export function needsListed<T extends { kind: string }>(rows: readonly T[]): T[] {
-  return rows.filter((row) => row.kind !== 'confirmation');
+export function needsListed<T extends { kind: string; id?: string; obligation?: string }>(rows: readonly T[]): T[] {
+  // COMMS1j: each obligation once, the first row that names it standing for it.
+  const seen = new Set<string>();
+  return rows.filter((row) => {
+    if (row.kind === 'confirmation') return false;
+    const key = obligationOf(row);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
+
+/**
+ * The obligation a row is (COMMS1j, the comms design §4.1 clause 3): the exchange's id .NET keys it by where it names one (a go-ahead's
+ * `go-ahead:<ask>/<n>`), else its kind and id, which for a helper's and a hand-over's ask is that exchange's id already.
+ */
+export const obligationOf = (row: { kind: string; id?: string; obligation?: string }): string => row.obligation ?? `${row.kind}:${row.id ?? ''}`;
+
+/**
+ * The bell's count (NOTIFY2b, the notification design §2.1; COMMS1j): each press of either source once, and each obligation of
+ * *What needs you* once. A message unread in a channel is no obligation, and is marked by the channel's own dot, never counted here.
+ */
+export const bellCount = (presses: readonly unknown[], rows: readonly { kind: string; id?: string; obligation?: string }[]): number =>
+  presses.length + needsListed(rows).length;
 
 /** The places of the activity bar a wait can be counted at (BADGEUX1): those a row's door opens. */
 export type AttentionPlace = 'sessions' | 'quests' | 'projects' | 'agents' | 'settings';
@@ -500,6 +521,11 @@ export type PushedAttention = {
   kind: AttentionKind;
   id: string;
   since: string | null;
+  /**
+   * The obligation it is, by its exchange's id where that is not its kind and id (COMMS1j): a go-ahead's `go-ahead:<ask>/<n>`, which
+   * the park of each session that asked it waits on too. `obligationOf` reads it.
+   */
+  obligation?: string;
   /** The record's workspace, for a row judged from the service's sessions, quests or asks: a scoped window shows its own. */
   workspace?: string;
   /** Where it waits, where that is a value: a repository, a circle, an agent's product; absent or null where the page words it. */

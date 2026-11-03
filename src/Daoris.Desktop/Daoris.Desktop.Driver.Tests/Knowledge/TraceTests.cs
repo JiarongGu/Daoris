@@ -334,7 +334,7 @@ public sealed class TraceTests : IDisposable
         events.Append("s1", new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = "the quest, from before", At = At(9, 5) });
         var composed = TargetPrompt.Composed(TargetPromptGoldenTests.Full with
         {
-            Indexes = [.. Enumerable.Range(1, 10).Select(n => $"docs/INDEX{n}.md")],
+            Block = TargetPromptGoldenTests.Full.Block! with { Indexes = [.. Enumerable.Range(1, 10).Select(n => $"docs/INDEX{n}.md")] },
         });
         var account = composed.Account.Beside(new HandedSection(HandedSections.Rules, HandedSources.Permissions, "the permission rules: 12 handed beside it") { Shown = 12 });
         events.Append("s2", new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = composed.Text, Account = account, At = At(9, 40) });
@@ -348,12 +348,11 @@ public sealed class TraceTests : IDisposable
         Assert.Contains(string.Create(System.Globalization.CultureInfo.InvariantCulture, $"    its sections, as the driver composed them (event 1, {composed.Text.Length:N0} characters):"), s2);
         Assert.Contains("      the quest: ", s2);
         Assert.Contains("      the person's words: ", s2);
-        Assert.Contains("      the repository's indexes: ", s2);
-        Assert.Contains("        left out: 2 more counted, not named, past the 8 it names", s2);
+        Assert.Contains("      the standing block: ", s2);
+        Assert.Contains("        left out: 2 indexes counted, not named, past the 8 it names", s2);
         Assert.Contains("      the permission rules: 12 handed beside it", s2);
         // What could have been handed and was not, after what was.
         Assert.Contains("      not handed:\n        the session language: none set for its repository or its workspace on this machine\n", s2);
-        Assert.Contains("        the code map: none, since its tree keeps none\n", s2);
         Assert.True(s2.IndexOf("the permission rules", StringComparison.Ordinal) < s2.IndexOf("not handed:", StringComparison.Ordinal), s2);
         Assert.DoesNotContain("The ticket asks for a daily comparison report", said);
     }

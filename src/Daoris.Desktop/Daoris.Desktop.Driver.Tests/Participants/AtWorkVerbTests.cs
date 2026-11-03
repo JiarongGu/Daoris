@@ -113,6 +113,64 @@ public sealed class AtWorkVerbTests : IDisposable
         Assert.Equal(["s2", "s1"], parts.EnumerateArray().Select(part => part.GetProperty("key").GetString()).ToArray());
     }
 
+    private void AskHelper(string id, string asker, string question)
+    {
+        var files = new HelperFiles(_home);
+        Directory.CreateDirectory(Path.GetDirectoryName(files.PathOf(id, "ask"))!);
+        File.WriteAllText(files.PathOf(id, "ask"), new JsonObject
+        {
+            ["id"] = id, ["asker"] = asker, ["question"] = question, ["agent"] = "codex-acp", ["askedBy"] = "agent",
+            ["at"] = Moments.Write(new DateTimeOffset(2026, 11, 4, 16, 29, 0, TimeSpan.Zero)),
+        }.ToJsonString());
+    }
+
+    /// <summary>
+    /// COMMS1i (the comms design §7): the verb is the window's twin. A lead whose agent asked a helper and waits on a quest says what it
+    /// waits on and its co-workers, in text and in JSON, from the same read the window's <i>At work</i> and head draw.
+    /// </summary>
+    [Fact]
+    public async Task COMMS1i_the_verb_says_what_the_line_waits_on_and_its_co_workers_in_text_and_json()
+    {
+        var tree = DaorisHome.Entry(_home, HomeEntry.Trees, "s-1");
+        Directory.CreateDirectory(tree);
+        _ledger.Publish("q2", "core");
+        _ledger.Driven("s1", "q1", tree, state: "completed");
+        _ledger.Awaiting("q1", "q2");
+        AskHelper("h7", "s1", "Is the lock held across the import?");
+        var text = new StringWriter();
+        var json = new StringWriter();
+
+        Assert.Equal(0, await SessionsCommand.RunAsync(Read("at-work", "s1"), World(), text));
+        Assert.Equal(0, await SessionsCommand.RunAsync(Read("at-work", "s1", "--json"), World(), json));
+
+        var said = text.ToString();
+        Assert.Contains("waiting on: #q2 of core · asked · delivery kept; helper h7 · codex-acp · asked 16:29 · asked · delivery kept", said, StringComparison.Ordinal);
+        Assert.Contains("co-workers:\n  helper h7 · codex-acp", said.ReplaceLineEndings("\n"), StringComparison.Ordinal);
+        Assert.DoesNotContain("not read:", said, StringComparison.Ordinal);
+        var exchanges = JsonDocument.Parse(json.ToString()).RootElement.GetProperty("answer").GetProperty("exchanges");
+        Assert.Equal(["helper:h7", "quest:q2"], exchanges.EnumerateArray().Select(each => each.GetProperty("id").GetString()).Order().ToArray());
+        Assert.All(exchanges.EnumerateArray(), each => Assert.True(each.GetProperty("holds").GetBoolean()));
+    }
+
+    /// <summary>COMMS1i: the composition takes the exchanges from its port, a quest's worded with its lanes, and says a source not read.</summary>
+    [Fact]
+    public void COMMS1i_the_composition_carries_the_line_s_exchanges_and_its_unread_sources()
+    {
+        var routing = new AtWorkRouting(
+            [], _ => null, id => id == "q2" ? new AtWorkQuest("q2", "Open") { To = "core", Lanes = "docs" } : null, _ => 0, new SliceHealth(true))
+        {
+            Exchanging = _ => new AtWorkExchanges([new AtWorkExchange("quest:q2", "s1", "work", "core", "kept", "asked", true)], ["helper"]),
+        };
+
+        var answer = AtWork.Compose(
+            "s1", null, id => new AtWorkRecord(id, "completed"), _ => LineageReading.None, new SliceHealth(true), new SliceHealth(true), routing).Answer!;
+
+        Assert.Equal(["docs"], Assert.Single(answer.Exchanges!).Lanes);
+        Assert.Equal(["helper"], answer.Unread);
+        Assert.Null(AtWork.Compose("s1", null, id => new AtWorkRecord(id, "completed"), _ => LineageReading.None, new SliceHealth(true), new SliceHealth(true),
+            routing with { Exchanging = _ => AtWorkExchanges.None }).Answer!.Exchanges);
+    }
+
     [Fact]
     public async Task With_no_window_a_lead_that_waits_on_a_question_says_so_and_its_lane_part_says_how_it_joined()
     {

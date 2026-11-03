@@ -2809,13 +2809,13 @@ public sealed class AcpSession(
             _lastRefused = null;
             _cancelAsked = false;
 
-            // COWORK1c (the design §7): the turn that took the words ended with an answer, their receipt `answered`. Acted upon, never
-            // obeyed; and only where the words were taken here.
+            // COWORK1c (the design §7), COMMS1h: the turn that took the words ended, their receipt `ended`: what Daoris saw, never an
+            // answer; and only where the words were taken here.
             bool took;
             lock (_promptsGate) took = open.Taken;
             if (took && stopReason == "end_turn" && open.Words?.Id is { } word)
             {
-                Emit(new SessionEvent { Kind = SessionEventKind.Receipt, Id = word, Receipt = Receipts.Answered });
+                Emit(new SessionEvent { Kind = SessionEventKind.Receipt, Id = word, Receipt = Receipts.Ended });
             }
         }
         else

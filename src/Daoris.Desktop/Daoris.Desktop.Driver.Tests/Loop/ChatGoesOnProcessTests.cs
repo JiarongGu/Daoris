@@ -786,9 +786,9 @@ public sealed class ChatGoesOnProcessTests : IDisposable
                 }
               } else if (frame.method === 'session/prompt') {
                 const raw = frame.params.prompt.filter((block) => block.type === 'text').map((block) => block.text).join(' | ');
-                // The routing standing line Daoris appends after the words is kept apart (StubFile.WithoutRouting, StubFile.Routings).
-                const text = raw.replace(/(\n\n| \| )?Routing standing here: [\s\S]*$/, '');
-                if (text !== raw) appendFileSync(heard + '.routing', /Routing standing here: ([^.]*)\./.exec(raw)[1] + '\n');
+                // The standing block Daoris appends after the words is kept apart, its routing standing set aside (StubFile.WithoutBlock, StubFile.Routings).
+                const text = raw.replace(/(\n\n| \| )?Daoris's standing block for this session: [\s\S]*$/, '');
+                if (/Routing standing here: /.test(raw)) appendFileSync(heard + '.routing', /Routing standing here: ([^.]*)\./.exec(raw)[1] + '\n');
                 note('prompt: ' + text);
                 if (text === 'hold') {
                   held.push(frame.id);
@@ -861,8 +861,8 @@ public sealed class ChatGoesOnProcessTests : IDisposable
               const frame = JSON.parse(line);
               if (frame.type !== 'user') return;
               const raw = frame.message.content.filter((block) => block.type === 'text').map((block) => block.text).join('');
-              const text = raw.replace(/(\n\n| \| )?Routing standing here: [\s\S]*$/, '');
-              if (text !== raw) appendFileSync(log + '.routing', /Routing standing here: ([^.]*)\./.exec(raw)[1] + '\n');
+              const text = raw.replace(/(\n\n| \| )?Daoris's standing block for this session: [\s\S]*$/, '');
+              if (/Routing standing here: /.test(raw)) appendFileSync(log + '.routing', /Routing standing here: ([^.]*)\./.exec(raw)[1] + '\n');
               appendFileSync(log, `message=${text.replace(/\n/g, '\\n')}\n`);
               if (!named) {
                 out({ type: 'system', subtype: 'init', session_id: resume ?? 'native-1', cwd: process.cwd(), tools: [], model: 'stub' });

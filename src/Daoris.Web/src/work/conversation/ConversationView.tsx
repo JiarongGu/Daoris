@@ -19,6 +19,8 @@ import { Note } from '../Note';
 import { noteText } from '../noteLines';
 import { briefOffered, type NewSessionAnswer, newSessionSaid, reasonOf, type ReasonValues } from '../say';
 import { ToolCard } from './ToolCard';
+import { ExchangeCardView, TakenLine } from './ExchangeCard';
+import { type Exchanges, NO_EXCHANGES } from './exchanges';
 import { WaitMark } from '../waits/WaitAnchor';
 import type { Wait } from '../waits/waits';
 
@@ -67,6 +69,14 @@ type Said = {
 const SaidDoors = createContext<Said>({ chat: false, reasons: {} });
 
 /**
+ * The requests the session's agent made, each drawn as its card at its call (COMMS1h, the comms design §7): the cards, the doors to a
+ * helper's conversation and to a card from the turn that took its answer.
+ */
+const AskedCards = createContext<{ exchanges: Exchanges; onOpenHelper?: (session: string) => void; onShow?: (call: string) => void }>({
+  exchanges: NO_EXCHANGES,
+});
+
+/**
  * A session's conversation (D76, CONV2): what was asked, what the agent said and did, and how each
  * turn ended — drawn from the typed events the driver keeps, never parsed from the console.
  *
@@ -98,7 +108,14 @@ const SaidDoors = createContext<Said>({ chat: false, reasons: {} });
 export function ConversationView({
   turns, tree, structured, chat = false, live = false, turnRunning, loaded = true, earlier = false, onLoadEarlier,
   reveal, toolbar, began, onSession, onStartFrom, onGoOnBrief, onSayAgain, reasons = {}, cooling, names, marks, onToWait, callMark,
+  exchanges = NO_EXCHANGES, onOpenHelper, onShow,
 }: {
+  /** The requests its agent made, each drawn as its card at its call, its answer folded in (COMMS1h); none, every call is a tool card. */
+  exchanges?: Exchanges;
+  /** Open a helper's conversation from its card; absent, the card offers none. */
+  onOpenHelper?: (session: string) => void;
+  /** Bring the page to a card from the turn that took its answer, by the card's call; absent, that turn's line opens nothing. */
+  onShow?: (call: string) => void;
   /**
    * *Go on with Daoris's brief* (SESSCTX1c part B, D189 point 3): beside the fresh start under a line saying the words wait for the person,
    * the session goes on in a new part of itself, handed Daoris's brief and then the words. Absent, no press is drawn.
@@ -196,6 +213,7 @@ export function ConversationView({
     // A chat's words go on with the next word said to it, never by themselves at a reset (MSG1c), so its cool-off is not said.
     <SaidDoors.Provider value={{ chat, onSession, onStartFrom, onGoOnBrief, onSayAgain, reasons, cooling: chat ? undefined : cooling, names }}>
       <WaitMarks.Provider value={onToWait ? { marks, onToWait } : {}}>
+        <AskedCards.Provider value={{ exchanges, onOpenHelper, onShow }}>
         <section aria-label={t('work.conversation.label')} className="grid w-full grid-cols-[minmax(0,1fr)] gap-3">
           {/* Pinned beneath the session's page header where one is pinned above it (SESSUX1d, D126 §3.2): the header says its
               height on the main area as `--session-head`, and a window with none (a detached session) pins at the top. */}
@@ -220,6 +238,7 @@ export function ConversationView({
             />
           ))}
         </section>
+        </AskedCards.Provider>
       </WaitMarks.Provider>
     </SaidDoors.Provider>
   );
@@ -274,17 +293,24 @@ function TurnView({ turn, tree, running, onLoadEarlier, reveal, callMark }: {
 }) {
   const { t } = useTranslation();
   const { marks } = useContext(WaitMarks);
+  const { exchanges, onShow } = useContext(AskedCards);
   // The run in hand stays open while the turn goes on, and where the session ended inside it.
-  const parts = segments(turn.items, running || Boolean(turn.cut));
+  const parts = segments(turn.items, running || Boolean(turn.cut), (block) => block.key in exchanges.cards);
   const calling = running ? runningCall([turn]) : null;
+  // COMMS1h: an answer its card holds is drawn there; the turn that took it holds a line that opens the card.
+  const taken = turn.ask ? exchanges.cards[exchanges.takenAt[turn.ask.key] ?? ''] : undefined;
 
   return (
     <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1.5">
-      {turn.ask && <Held id={turn.ask.key} reveal={reveal}><AskView ask={turn.ask} /></Held>}
+      {turn.ask && (
+        <Held id={turn.ask.key} reveal={reveal}>
+          {taken ? <TakenLine card={taken} onShow={onShow} /> : <AskView ask={turn.ask} />}
+        </Held>
+      )}
       {onLoadEarlier && <Earlier onLoadEarlier={onLoadEarlier} />}
       {parts.map((part) => (part.kind === 'run'
         ? <RunView key={part.key} items={part.items} open={part.open} tree={tree} reveal={reveal} />
-        : <Held key={part.block.key} id={part.block.key} reveal={reveal}><BlockView block={part.block} tree={tree} /></Held>))}
+        : <Held key={part.block.key} id={part.block.key} reveal={reveal}><BlockView block={part.block} tree={tree} reveal={reveal} /></Held>))}
       {turn.waiting && <NewSessionDoor turn={turn} />}
       {running && <Dot tone="live" label={t('work.conversation.working')} className="mt-1" />}
       {/* A resumed conversation can wait many minutes on its model before anything shows (WAITSHOWN1): said, with the count. */}
@@ -456,12 +482,13 @@ function AskView({ ask }: { ask: Ask }) {
 }
 
 /**
- * What the door observed of these words (COWORK1c, the message-urgency design §7, §8.2): *sent 14:02 · taken 14:03 · answered 14:09*,
- * each only where it was observed, folded under them as a quiet line.
+ * What the door observed of these words (COWORK1c, the message-urgency design §7, §8.2): *sent 14:02 · taken 14:03 · turn ended 14:09*,
+ * each only where it was observed, folded under them as a quiet line. A turn's end is what Daoris saw, never an answer (COMMS1h); an
+ * older build's `answered` is drawn as it was.
  */
 function ReceiptsLine({ receipts }: { receipts: Receipts }) {
   const { t, i18n } = useTranslation();
-  const seen = (['sent', 'taken', 'answered'] as const)
+  const seen = (['sent', 'taken', 'ended', 'answered'] as const)
     .filter((receipt) => receipts[receipt])
     .map((receipt) => `${t(`work.receipt.${receipt}`)} ${clockOf(receipts[receipt]!, new Date(), i18n.language)}`);
   if (seen.length === 0) return null;
@@ -697,14 +724,19 @@ function NewSessionDoor({ turn }: { turn: Turn }) {
   );
 }
 
-function BlockView({ block, tree }: { block: Block; tree?: string | null }) {
+function BlockView({ block, tree, reveal }: { block: Block; tree?: string | null; reveal?: string }) {
+  const { exchanges, onOpenHelper } = useContext(AskedCards);
   switch (block.kind) {
     case 'message':
       return <Markdown text={block.text ?? ''} />;
     case 'thought':
       return <ThoughtRow text={block.text ?? ''} />;
-    case 'tool':
+    case 'tool': {
+      // A call that asked a helper is that request's card (COMMS1h), its answer folded in.
+      const card = exchanges.cards[block.key];
+      if (card) return <ExchangeCardView card={card} revealed={reveal === block.key} onOpen={onOpenHelper} />;
       return <ToolCard call={block} tree={tree} />;
+    }
     case 'plan':
       return <PlanView entries={block.entries ?? []} />;
     case 'note':

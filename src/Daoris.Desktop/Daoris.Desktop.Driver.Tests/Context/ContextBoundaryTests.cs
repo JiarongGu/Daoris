@@ -139,8 +139,9 @@ public sealed class ContextBoundaryTests : IDisposable
 
         var onAsk = Section(TargetPrompt.Composed(TargetPromptGoldenTests.Full with { Asker = "ask #a1b2c3" }).Account, HandedSections.Asking);
         var onRepository = Section(TargetPrompt.Composed(TargetPromptGoldenTests.Full with { Asker = "bridge" }).Account, HandedSections.Asking);
-        Assert.StartsWith("asking another repository, and stopping for the person, a go-ahead asked once on the ask: ", onAsk.Said);
-        Assert.StartsWith("asking another repository, and stopping for the person: ", onRepository.Said);
+        // CONTEXTONE1c: the look's sentence opens the asking section, its places the standing block's.
+        Assert.StartsWith("looking before asking, asking another repository, and stopping for the person, a go-ahead asked once on the ask: ", onAsk.Said);
+        Assert.StartsWith("looking before asking, asking another repository, and stopping for the person: ", onRepository.Said);
     }
 
     [Fact]

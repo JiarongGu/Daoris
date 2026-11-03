@@ -227,11 +227,11 @@ public sealed class AcpSteerTests
     /// <summary>
     /// 🔴 COWORK1c (the message-urgency design §6, §7, trap 8): a word kept on the record and held for the turn's end is marked
     /// attempted before its prompt is written, never after; once written it is <c>sent</c> and leaves the record; it is taken at the
-    /// first thing the agent does for it, never before the wire; and its turn ending <c>end_turn</c> is its <c>answered</c>. Each
-    /// receipt under the word's id, and <c>sent</c> is the write's return, never the prompt's answer.
+    /// first thing the agent does for it, never before the wire; and its turn ending <c>end_turn</c> is its <c>ended</c> (COMMS1h: what
+    /// Daoris saw, never an answer). Each receipt under the word's id, and <c>sent</c> is the write's return, never the prompt's answer.
     /// </summary>
     [Fact]
-    public async Task A_kept_words_prompt_is_attempted_before_the_wire_sent_taken_at_its_first_update_and_answered()
+    public async Task A_kept_words_prompt_is_attempted_before_the_wire_sent_taken_at_its_first_update_and_its_turn_ended()
     {
         var record = new Daoris.Driver.Tests.StandInSaid();
         var first = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -284,7 +284,7 @@ public sealed class AcpSteerTests
                 "taken:w1:put PINEAPPLE after the words",
                 "message:on it",
                 "turn:end_turn",
-                "receipt:answered:w1",
+                "receipt:ended:w1",
             ],
             lines.Lines);
     }

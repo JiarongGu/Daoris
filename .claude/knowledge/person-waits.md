@@ -46,6 +46,10 @@ is the row's, not its kind's: `attentionGroup` reads it, and the band, its order
   (`Scope`, `SessionScope`, `UnitScope`), however its wait reaches the judge, the driver's own lists included; only what is the
   machine's carries none, with a comment saying why. The page keeps a row without one in every window, so a row that forgets it is
   counted and listed in a window on another workspace (NEEDSSCOPE1).
+- **One row per obligation** (COMMS1j, D225). A row is keyed by the exchange it is (`obligationOf`: its `obligation` where .NET names
+  one, a go-ahead's `go-ahead:<ask>/<n>`, else its kind and id), and the bell, the places and the band list each key once. A park on
+  a request of its own session's (a go-ahead it asked, its agent's ask to hand it over) is that request's row, never a `parked` row
+  beside it (`NeedsAPerson.OwnAsks`). An unread channel message is no row and no count.
 - **Several waits of one record can be one kind.** INTEGRATE1h's `integration` row names its wait in a field (`decide`, `superseded`,
   `card`, `declaration`): its label is picked by that field in `AttentionRow`, its words in `attentionWorded`, and its group by the row's `stands`, which
   `attentionGroup` and its twin `NoticesRead.Group` both read, so every place but the label and the words stays the kind's one entry.
