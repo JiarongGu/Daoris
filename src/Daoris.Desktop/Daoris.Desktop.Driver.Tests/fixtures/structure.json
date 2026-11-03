@@ -1495,6 +1495,8 @@
     "SessionLanguageHandedTests.cs": "Agents",
     "StartInSyncHandedTests.cs": "Agents",
     "DrivenBrowserToldTests.cs": "Agents",
+    "ToolsAtTheStartTests.cs": "Agents",
+    "ToolsAtTheStartCensusTests.cs": "Agents",
     "BashRuleTests.cs": "Agents",
     "AgentStartsProcessTests.cs": "Platform",
     "AgentStartsTests.cs": "Platform",

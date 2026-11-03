@@ -839,7 +839,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         return new ChatPlace(
             known.Repository, workTree,
             (file, id) => RulesFor(file, known.Workspace, repository, workTree, ChatFiles.Folder(_home, id), across, kept, answers),
-            Plugins: true, ConnectorOnPipe: false, Posture: null, ToolsUpFront: false)
+            Plugins: true, ConnectorOnPipe: false, Posture: null)
         {
             Also = [.. across.Writes.Select(target => target.Path)],
             Keeps = true,
@@ -879,8 +879,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
     /// allow-list and the person's denies, and none of the plugins' servers — a browser brought up for a
     /// tool it is not allowed would be a window for nothing.</para>
     ///
-    /// <para><b>Its tools load with the first request</b> (HELP5), by the adapter's own switch where it names
-    /// one, so the first answer is not a search for the tools it was handed.</para>
+    /// <para><b>Its tools load with the first request</b> (HELP5), as every session's do since CONTEXTONE1d
+    /// (<see cref="Driver.Equip"/>), so the first answer is not a search for the tools it was handed.</para>
     ///
     /// <para><b>One at a time in each workspace</b> (ASKSCOPE1a): the ledger refuses a second while one runs, naming it. The caller hands
     /// the person the running one rather than asking for another.</para>
@@ -1198,7 +1198,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
                 var grants = HelpGrants.Read(home, PluginCatalog.Load(home, AdapterSet.Built().Names));
                 return HelpRoom.Rules(file, ChatFiles.Folder(home, id), handed, grants.Allow, grants.Ask, circle, housekeeping, access.Settings);
             },
-            Plugins: true, ConnectorOnPipe: true, Posture: HelpRoom.Posture, ToolsUpFront: true)
+            Plugins: true, ConnectorOnPipe: true, Posture: HelpRoom.Posture)
         {
             Keeps = true,
             ServersTo = PluginServerTo.Help,
@@ -1481,12 +1481,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
                     Session = sessionId,
                 },
                 config.Commands.GetValueOrDefault(resolved.Name));
-            if (resolved.Toolchain is { } toolchain)
-            {
-                HarnessProbe.Apply(
-                    info, toolchain, selection.ProfileHome, selection.Binary, selection.ClaudeExecutable,
-                    selection.Environment);
-            }
+            // Its toolchain's environment and its tools at the start, as every driven session's (CONTEXTONE1d).
+            Driver.Equip(resolved, info, selection);
 
             // COWORKVIEW1e-i: its repository's routing standing, told with a new conversation's first message and at each go-on, since a
             // drive may have moved since it began.
@@ -1499,13 +1495,6 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             // KEEP1b: what this run is handed of the downloads, on its record before it is spawned, a go-on as a first start.
             await DownloadKeeping.KeepHandedAsync(_service, _home, sessionId, info, ct).ConfigureAwait(false);
             proc = Driver.Bracketed(_home, sessionId, info, proc);
-
-            // HELP5: the helper paid a model round trip to find its own knowledge tools. Which variable
-            // stops that is a fact about the harness, so the adapter names it, and nothing here does.
-            if (place.ToolsUpFront)
-            {
-                foreach (var (name, value) in resolved.ToolsUpFront) info.Environment[name] = value;
-            }
 
             // HELPPLUG1b (D170 point 4): the skills plugins hand this conversation's destination, composed under the home and
             // handed by the harness's own session-only door; the protocol door carries them beside its rules below.

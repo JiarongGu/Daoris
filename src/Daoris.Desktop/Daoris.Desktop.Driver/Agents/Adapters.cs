@@ -1476,9 +1476,9 @@ public interface ISessionAdapter
     /// or nobody has read one in its binary.
     /// </summary>
     /// <remarks>
-    /// <para>Asked for by a conversation whose few tools are needed at once, which is Ask Daoris's: every
-    /// answer it gives reads the family. A repository's sessions never ask, and keep the harness's own
-    /// default, which is that harness's to change.</para>
+    /// <para>Every session Daoris runs carries it, a driven one's and a conversation's of every kind
+    /// (CONTEXTONE1d, D230 point 3), through <see cref="Driver.Equip"/>: its connector's tools are the ones it
+    /// is told to use, so they are in hand from the first request.</para>
     ///
     /// <para>Default empty, the silence-preserves rule every adapter default follows: an adapter opts in
     /// when the switch is read in the binary it runs, like every other claim about somebody else's tool.</para>
