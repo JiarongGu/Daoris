@@ -588,8 +588,8 @@ check(
     && reanswered.json?.session?.note === 'it needs a sign-in.\n\nAnswered: Signed in.\n\nAnswered: Signed in on the device.',
   reanswered.text,
 );
-const retired = await api('POST', `/api/sessions/${askingId}/answer`, { body: { answer: 'Signed in.' } });
-check('…and the park’s own answer route is gone, its job the say door’s alone (ONEWAY1k)', retired.status === 404, retired.text);
+const answerRetired = await api('POST', `/api/sessions/${askingId}/answer`, { body: { answer: 'Signed in.' } });
+check('…and the park’s own answer route is gone, its job the say door’s alone (ONEWAY1k)', answerRetired.status === 404, answerRetired.text);
 const whileParked = await api('POST', '/api/sessions', { body: { quest: askingQuestId, adapter: 'stub' } });
 check('…and nothing new opens on its quest while the park holds it', whileParked.status === 409, whileParked.text);
 await api('POST', `/api/sessions/${askingId}/state`, {

@@ -5,6 +5,7 @@ with the version and date at release.
 
 ## Unreleased
 
+- `DAORIS_DRIVER_CONFIG` is no longer read: Daoris's standing choices are always the home's own `driver.json`, so a second set of choices is a second home (`DAORIS_HOME`). This Daoris's list of variables no longer shows it.
 - `daoris-driver sessions say` takes its level one way, `--level ordinary|urgent|now`: `--now` is refused, naming `--level now`, and the usage no longer lists it.
 - A session waiting on you is answered one way: through its box, its card or `daoris-driver sessions say <id> "…"`. The terminal's `daoris-driver answer` is gone, and an answer needs words: the card's *Carry on with this answer* waits for them, as the box does.
 - **`daoris reconcile`: a canon update is decided in the repository, not imposed.** It prints, offline, a brief of every difference between the canon and the repository (what a sync would change or add, the files edited here, a keep the canon moved past, a set-up gap such as an `AGENTS.md` too long for one agent to read whole) for the repository's own session to adopt, keep with its reason, or propose upstream. A kept file is recorded in `daoris.json`'s `kept` with its reason and the canon file's digest it was judged against: `sync` and `sync --force` pass over it, `check` names it without calling it drift, and `status` reports it again only once that canon file moves. A core file cannot be kept absent. Outside the canon's own checkout, `daoris upstream` now prints a request's words for the repository that keeps the shared doctrine and writes nothing there.
