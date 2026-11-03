@@ -96,10 +96,12 @@ public static class RoleDoor
         var saves = new List<(string Role, StaffPolicy? Policy, IReadOnlyList<ActorChoice>? Choices, long Read)>();
         var cleared = new List<string>();
         var ruled = new List<SupervisorRulesPress>();
+        var presetRules = new List<(string Place, IReadOnlyList<SupervisorRule> Rules)>();
+        var reached = new SupervisorRuleStore(staffing.Ledger.Home).Reached();
         foreach (var press in batch)
         {
             var (change, choices, read, policy) = (press.Change, press.Choices, press.Read, press.Policy);
-            // CONTEXTDRIVE1d: the supervisor's rules, judged by their own judge inside the one transaction below.
+            // A place's rules are judged by their own judge inside the one transaction below.
             if (change is RoleChange.SetRules { Press: var rules })
             {
                 if (choices is not null || policy is not null) throw new ArgumentException("a place's rules carry no staffing and no policy", nameof(batch));
@@ -127,6 +129,14 @@ public static class RoleDoor
                     var existing = staffing.Policy(role.Id);
                     var (resolved, refusedPolicy) = StaffPolicyDoor.Judge(role, effective, policy, existing, held is not null);
                     if (refusedPolicy is not null) throw new RoleRefusedException(refusedPolicy);
+                    if (reached)
+                    {
+                        var (kept, brought, notSaved) = RuledPolicy.On(role, policy, resolved);
+                        if (notSaved is not null) throw new RoleRefusedException(notSaved);
+                        resolved = kept;
+                        if (brought.Count > 0) presetRules.Add((RuledPolicy.PlaceOf(role.Scope), brought));
+                    }
+
                     saves.Add((role.Id, resolved, effective, policy.Read ?? existing.Revision));
                 }
             }
@@ -145,13 +155,15 @@ public static class RoleDoor
         if (rows.Count > 0 && held is null) throw RoleStaffing.NotInStore();
         IReadOnlyList<long> revisions = [];
         var changes = batch.Select(each => each.Change).Where(change => change is not RoleChange.SetRules).ToList();
-        var world = ruled.Count > 0 ? SupervisorRuleDoor.World(staffing.Home) : null;
+        var world = ruled.Count > 0 || presetRules.Count > 0 ? SupervisorRuleDoor.World(staffing.Ledger.Home) : null;
         void Also(DesktopWrite write)
         {
             var written = new Queue<long>(RoleCatalog.WriteIn(write, changes));
             if (changes.Count > 0) write.Moved("roles");
             var rulesWritten = new Queue<long>(ruled.Select(rules => SupervisorRuleStore.WriteIn(write, rules.Place, rules.Read, rules.Rules, door, world!)));
             revisions = [.. batch.Select(each => each.Change is RoleChange.SetRules ? rulesWritten.Dequeue() : written.Dequeue())];
+            // A preset's limit move and bound, written as rules naming the role in the press that writes its policy.
+            foreach (var (place, rules) in presetRules) SupervisorRuleStore.MergeIn(write, place, rules, door, world!);
             if (!StaffPolicies.Has(write))
             {
                 if (saves.Count > 0) throw new DriverException("this home's store is not yet at the version that keeps policies, so nothing was saved; try again after the next start.");

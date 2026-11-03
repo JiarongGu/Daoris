@@ -613,15 +613,13 @@ internal sealed class ChatGoOn
             return new(null, $"conversation `{sessionId}` went on in conversation `{next}`, which takes its words.");
         }
 
-        // 🔴 COWORK1e (D188 point 4; the message-urgency design §2.3): answers alone that would take its line on a third time in a row with
-        // nobody between wait for the person, marked before any mark is cleared; a word of theirs, or their *Go on with this answer*, lets
-        // them go. Its line is read over the records already in hand.
+        // 🔴 Answers alone that would take its line on past its number in a row with nobody between wait for the person, marked before any
+        // mark is cleared; a word of theirs, or their *Go on with this answer*, lets them go.
         var lines = ServiceClient.ReadRecords(json);
-        var hold = new AnswersAloneHold(_context.Events, _context.Marks, new ContinuationAdmissions(_context.Home), SupervisorRuleBook.Read(_context.Home));
+        var hold = AnswersAloneHold.For(_context.Events, _context.Marks, _context.Home);
         if (hold.Holds(record, lines, DateTimeOffset.UtcNow))
         {
-            // transitional: answers-alone-bound
-            Decide(record, alone: hold.At(record.Session, lines) ?? AnswersAlone.Bound);
+            Decide(record, alone: hold.HeldAt(record.Session, lines));
             return new(null, $"conversation `{sessionId}`'s answer waits for you: it would take its work on a third time with nobody between.");
         }
 

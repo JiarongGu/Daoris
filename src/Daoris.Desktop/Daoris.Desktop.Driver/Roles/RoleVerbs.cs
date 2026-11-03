@@ -95,6 +95,10 @@ public sealed class RoleVerb : ChoiceVerb
         var press = StaffPolicyFlags.Read(args.Skip(3).ToList(), choices, existing, PolicyGrammar);
         var (policy, refused) = StaffPolicyDoor.Judge(role, choices, press, existing, kept: true);
         if (refused is not null) throw new ChoiceWords($"`driver role policy`: {refused.Said}");
+        if (new SupervisorRuleStore(staffing.Ledger.Home).Reached() && RuledPolicy.On(role, press, policy).Refused is { } ruled)
+        {
+            throw new ChoiceWords($"`role policy`: {ruled.Said}");
+        }
 
         var payload = new JsonObject
         {
@@ -106,7 +110,7 @@ public sealed class RoleVerb : ChoiceVerb
                 ["takes"] = new JsonArray([.. role.Takes.Select(work => (JsonNode)JsonValue.Create(work))]),
                 ["scope"] = new JsonObject { ["kind"] = role.Scope.Kind, ["id"] = role.Scope.Id },
             },
-            ["policy"] = policy is null ? null : JsonNode.Parse(policy.Write()),
+            ["policy"] = policy is null ? null : press.Preset is { } preset && new SupervisorRuleStore(staffing.Ledger.Home).Reached() ? preset : JsonNode.Parse(policy.Write()),
             ["policyRevision"] = existing.Revision,
         };
         return new(Word, ChoiceRoutes.Role, payload, _ =>
@@ -152,7 +156,8 @@ public sealed class RoleVerb : ChoiceVerb
         }
 
         if (place is null || steps.Count == 0) throw new ChoiceWords($"{RulesGrammar}.");
-        var stored = new SupervisorRuleStore(staffing.Home).Of(place);
+        var home = staffing.Ledger.Home;
+        var stored = new SupervisorRuleStore(home).Of(place);
         var rules = stored.Rules.ToList();
         bool Same(SupervisorRule rule, string count) =>
             rule.Count == count && (rule.Roles is null ? roles is null : roles is not null && rule.Roles.Order().SequenceEqual(roles.Order()));
@@ -181,7 +186,7 @@ public sealed class RoleVerb : ChoiceVerb
 
         var named = Named(rules);
         var press = new SupervisorRulesPress(place, stored.Revision, named);
-        if (SupervisorRuleDoor.Judge(staffing.Home, press) is { } refused) throw new ChoiceWords($"`role rules`: {refused.Message} ({refused.Code})");
+        if (SupervisorRuleDoor.Judge(home, press) is { } refused) throw new ChoiceWords($"`role rules`: {refused.Message} ({refused.Code})");
         var payload = new JsonObject
         {
             ["id"] = SupervisorRuleDoor.Id, ["place"] = place, ["rules"] = SupervisorRuleDoor.Wire(named), ["rulesRevision"] = stored.Revision,
@@ -224,7 +229,7 @@ public sealed class RoleVerb : ChoiceVerb
         var said = world.Instance.Out;
         var place = args.Count > 3 && args[2] == "--place" ? args[3] : args.Count > 2 ? throw new ChoiceWords($"`role supervisor` takes `--place <place>` alone: {RulesGrammar}.") : null;
         var staffing = RoleStaffing.Of(world.ConfigPath) ?? throw new ChoiceWords(Unkept(world));
-        var store = new SupervisorRuleStore(staffing.Home);
+        var store = new SupervisorRuleStore(staffing.Ledger.Home);
         var sets = store.All();
         if (!store.Reached())
         {

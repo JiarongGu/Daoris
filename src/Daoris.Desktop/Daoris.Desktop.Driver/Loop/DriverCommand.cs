@@ -283,8 +283,7 @@ public static class DriverCommand
               take a repository off this machine's registry (the registration only, no file touched); move a
               registered one to a workspace; or register a folder's subdirectories in one go, safe to run again.
           role [<id>]  ·  role set|remove|default|policy|rules <id> …
-              the role catalogue: a role takes a kind of work in a place, on its choices. `role supervisor` says the
-              supervisor's rules, and `role rules --place <place> --set <count>=<at>:<do>` sets a place's.
+              the role catalogue: a role takes a work in a place, on its choices.
           role brief
               the brief of a role's holder (D209): what each role does, never does and how its verbs answer, by its
               revision; names no key. In a role's terminal only its roles' verbs and the reads they need run.

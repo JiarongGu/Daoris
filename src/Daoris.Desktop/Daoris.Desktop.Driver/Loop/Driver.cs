@@ -921,8 +921,8 @@ public sealed class Driver(
             Log = Log,
             Gate = Gate,
             Staff = Context.Harnesses.StaffFor(home),
-            // The choices this quest's line moved off in the last 30 minutes are passed (STAFFPOLICY1e2), where its rules move on them (CONTEXTDRIVE1e).
-            LineFacts = LineMovedOff(quest, start.Workspace, role),
+            // The choices this quest's line moved off in the last 30 minutes are passed.
+            LineFacts = StaffCourse.LineFacts(Context.Harnesses.StaffFor(home), quest, start.Workspace, role),
         };
     }
 
@@ -934,10 +934,8 @@ public sealed class Driver(
         ServiceClient service, string sessionId, string role, string line, StaffMoving moving, PriorSession left, string? to)
     {
         var staff = Context.Harnesses.StaffFor(home);
-        // CONTEXTDRIVE1e: the move's reason is the line's rule's on a reached home, its policy's on one not reached.
-        var policy = StaffCourse.CourseOf(staff, role, new StaffPlace(left.Repository, left.Workspace, line));
         var read = staff.Moves.Of(line);
-        var said = StaffCourse.MovedSaid(moving.Condition, policy, read.Moves, ActorWords.Name(role), staff.Rules().Reached);
+        var (policy, said) = StaffCourse.MoveSaid(staff, role, line, left, moving.Condition, read.Moves);
         ActorMoves.Write(Log, role, line, left.Choice, to, moving.Condition, StaffCourse.ActionOf(policy, moving.Condition), read.Moves);
         await service.TryKeepActorAsync(
                 sessionId, Log, chosen: new ActorChosen(policy?.Rule ?? StaffRules.Order, StaffBy.Moved, moving.Condition, left.Choice))
@@ -958,22 +956,6 @@ public sealed class Driver(
         catch (Exception error) when (error is DesktopStoreException or Microsoft.Data.Sqlite.SqliteException or IOException or UnauthorizedAccessException)
         {
             Log?.Write("warn", "actor.moves-unkept", [("line", line), ("why", error.Message)]);
-        }
-    }
-
-    private StaffFacts? LineMovedOff(QuestView quest, string? workspace, string? role)
-    {
-        try
-        {
-            var staff = Context.Harnesses.StaffFor(home);
-            var facts = staff.Moves.LineFacts(quest.Id);
-            if (!staff.Rules().Reached) return facts;
-            var named = role ?? StaffCourse.RoleOf(staff, workspace, quest, null);
-            return facts with { Moves = StaffCourse.CourseOf(staff, named, new StaffPlace(quest.To, workspace, quest.Id))?.Moves ?? new Dictionary<string, StaffMove>() };
-        }
-        catch (Exception error) when (error is DesktopStoreException or Microsoft.Data.Sqlite.SqliteException or IOException or UnauthorizedAccessException)
-        {
-            return null;
         }
     }
 
@@ -1157,7 +1139,7 @@ public sealed class Driver(
             (await service.TakeBackAsync(session, word, ct: token).ConfigureAwait(false)).Done;
         var undecided = snapshot;
         // SUPERVISOR1b (§4.3): D188's bound asked again at each release, the records read once a look and only where one is due.
-        var alone = new AnswersAloneHold(Context.Events, Context.Marks, new ContinuationAdmissions(home), SupervisorRuleBook.Read(home));
+        var alone = AnswersAloneHold.For(Context.Events, Context.Marks, home);
         IReadOnlyDictionary<string, PriorSession>? lines = null;
         SupervisorBound bound = async (session, token) =>
             alone.AtBound(session, lines ??= await AnswersAloneHold.RecordsAsync(service, token).ConfigureAwait(false));
@@ -1186,7 +1168,6 @@ public sealed class Driver(
         snapshot = await Stages.TimeAsync("handovers", () => HandOversAsync(read, events, ct)).ConfigureAwait(false);
         // STAFFPOLICY1e: a quest whose last session ended past its transient bound under a role that moves on it: the course decides once, and
         // the move is written down before the planner reads it, so a restart or a second look reads the one decision.
-        // CONTEXTDRIVE1e: each open quest's failures rule, where this home's rules are reached, read before anything weighs its failures.
         snapshot = snapshot with { FailuresAt = StaffCourse.FailuresAt(Context.Harnesses.StaffFor(home), snapshot) };
         var (policyMoving, policyHolds) = StaffCourse.Look(Context.Harnesses.StaffFor(home), snapshot, config, Context.Harnesses.Clock());
         var limitHolds = StaffCourse.LimitHolds(Context.Harnesses.StaffFor(home), snapshot);

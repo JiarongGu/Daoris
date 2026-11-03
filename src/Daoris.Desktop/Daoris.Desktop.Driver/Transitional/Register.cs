@@ -284,6 +284,42 @@ public static class TransitionalRegister
         },
         new()
         {
+            Id = "answers-alone-bound",
+            Kept = "Course/GoOn/AnswersAloneHold.cs:34",
+            Reaches = "A home whose supervisor rules are not reached: the answers-alone hold, a conversation's course and the line's counts read Daoris's own two in a row.",
+            Ends = "The home's rules are reached, no policy moves and driver.json holds no `strikes`: the line's answers-alone rule decides everywhere.",
+            Row = "CONTEXTDRIVE1l",
+            Ended = SupervisorRuleCensus.Ended,
+        },
+        new()
+        {
+            Id = "strikes-key",
+            Kept = "WorkOrders/Domain/Planner.cs:1365",
+            Reaches = "A home whose rules are not reached: `strikes` parks a quest at the planner and the staffing course, the line's counts say it, and the save keeps the key as the file held it.",
+            Ends = "The conversion's rules part removed the key and wrote the failures rule; no door writes it again.",
+            Row = "CONTEXTDRIVE1l",
+            Ended = SupervisorRuleCensus.Ended,
+        },
+        new()
+        {
+            Id = "policy-moves",
+            Kept = "WorkOrders/StaffCourse.cs:34",
+            Reaches = "A home whose rules are not reached: a role's applied policy's moves and `most` move and bound its lines, and the next start's walk passes by them.",
+            Ends = "No policy holds moves or `most`: the line's effective rules are the staffing course's moves and bound.",
+            Row = "CONTEXTDRIVE1l",
+            Ended = SupervisorRuleCensus.Ended,
+        },
+        new()
+        {
+            Id = "transient-bound",
+            Kept = "WorkOrders/StaffCourse.cs:19",
+            Reaches = "A home whose rules are not reached: a driven run's transient episode tries five times, or its policy's `after`, before the hold.",
+            Ends = "The home's rules are reached: the lowest effective tries rule is the episode's limit, and its action the end's.",
+            Row = "CONTEXTDRIVE1l",
+            Ended = SupervisorRuleCensus.Ended,
+        },
+        new()
+        {
             Id = "conversion-receipt-before-parts",
             Kept = "Conversion/HomeReceipts.cs:89",
             Reaches = "A conversion receipt the workflow wave wrote before the door had parts: read as one workflow part with no build, which gives the floor nothing.",

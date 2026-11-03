@@ -53,7 +53,9 @@ internal static class StaffPolicyFlags
             };
         }
 
-        return new RolePolicyPress(policy, Read: existing.Revision);
+        // A preset named alone is carried by name too, so on a home whose rules are reached its moves are written as rules.
+        var alone = preset is not null && !words.Contains("--on", StringComparer.Ordinal) && !words.Contains("--most", StringComparer.Ordinal);
+        return new RolePolicyPress(policy, alone ? preset : null, Read: existing.Revision);
     }
 
     /// <summary>The flags that make <paramref name="policy"/> from a blank draft (<c>--preset first</c>), as the verb reads them back.</summary>

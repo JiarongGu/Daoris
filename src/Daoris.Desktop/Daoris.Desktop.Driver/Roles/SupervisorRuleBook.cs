@@ -110,9 +110,9 @@ public sealed record SupervisorRuleBook(bool Reached, IReadOnlyList<SupervisorRu
     /// conversion's <c>rules</c> part to seed on the person's press.
     /// </summary>
     /// <returns>Whether the rules were written.</returns>
-    public static bool SeedFresh(string home, DriverConfig config)
+    public static bool SeedFresh(string home, DriverConfig config, Func<StoreSettled>? settled = null)
     {
-        var store = new SupervisorRuleStore(home);
+        var store = new SupervisorRuleStore(home, settled);
         if (store.Reached()) return false;
         var world = SupervisorRuleDoor.World(home) with { ReadReached = false, Reached = true };
         return store.Write(SupervisorRules.Machine, 0, Seeded(config.Strikes), SeedDoor, world).Stored;

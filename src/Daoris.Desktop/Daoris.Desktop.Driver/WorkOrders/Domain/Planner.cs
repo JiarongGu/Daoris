@@ -216,10 +216,7 @@ public sealed record Snapshot(
     /// <summary>The quests a role's policy holds for the person's yes (STAFFPOLICY1e), by quest: <c>policy-ask</c> or <c>moves-bound</c>.</summary>
     public IReadOnlyDictionary<string, string> PolicyHolds { get; init; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>
-    /// The failed sessions that park each open quest, by quest, where this home's rules are reached (CONTEXTDRIVE1e): its line's failures rule, 0
-    /// where none holds it. A quest absent is parked by the home's <c>strikes</c>.
-    /// </summary>
+    /// <summary>On a reached home, the failed sessions that park each open quest, 0 for none; a quest absent is parked by <c>strikes</c>.</summary>
     public IReadOnlyDictionary<string, int> FailuresAt { get; init; } = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
@@ -270,7 +267,7 @@ public sealed record Snapshot(
         new Dictionary<string, PausedBy>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// The closed quests whose last session here has the person's words waiting (MSG1b, D137 §2.2): no open list holds them,
+    /// The closed quests whose last session here has the person's words waiting: no open list holds them,
     /// and the session goes on all the same, its quest staying as it closed. Absent is none.
     /// </summary>
     public IReadOnlyList<QuestView> Closed { get; init; } = [];
@@ -347,7 +344,7 @@ public sealed record Snapshot(
     public IReadOnlySet<string> Integrating { get; init; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// The sessions a supervisor's decision holds (SUPERVISOR1a-i, D208; the supervisor design §6.3), read from the decisions' memory at
+    /// The sessions a supervisor's decision holds, read from the decisions' memory at
     /// each look (<see cref="SupervisorQuarantine.DecideAsync"/>): while one is <c>held</c> and no word of the owner's waits, the record is
     /// held whatever else waits, so a helper's answer or Daoris's own words cannot cut the overrule window. Absent is none.
     /// </summary>
@@ -398,7 +395,7 @@ public enum StartVerdict
 
     /// <summary>
     /// Enough sessions have failed on this quest that trying again is spending an account rather than
-    /// making progress (DRV6). The person restarts it deliberately.
+    /// making progress. The person restarts it deliberately.
     /// </summary>
     Exhausted,
 
@@ -439,14 +436,14 @@ public enum StartVerdict
     TakenElsewhere,
 
     /// <summary>
-    /// A set-up step this machine cannot honestly start (REVIEWENV1c, D154 point 4; the review environment design §2.1): no review
+    /// A set-up step this machine cannot honestly start: no review
     /// rule here names its environment, or a local one has no address or no window here to show the work in (a headless loop).
     /// The reason names the door that would let it start. No strike: nothing ran.
     /// </summary>
     CannotShow,
 
     /// <summary>
-    /// Waits for a second opinion (XAGENT1f, D155 point 9; the second-agent design §7, §8.1): a set-up step while an agent is still
+    /// Waits for a second opinion: a set-up step while an agent is still
     /// at work on the opinion of the work it shows, or, under <c>steps</c>, a chain's next step while the opinion on the step
     /// before is unsettled. The reason says which, and what moves it. No strike: nothing ran.
     /// </summary>
@@ -460,7 +457,7 @@ public enum StartVerdict
     SourceReopened,
 
     /// <summary>
-    /// Held for the person (AGENTERRORS1a, D210, the agent-errors design §5.1): its last session here ended past its transient bound,
+    /// Held for the person: its last session here ended past its transient bound,
     /// <c>ended.transient</c>, read by that code. Nothing carries it on, starts it afresh or resumes it until a word of the person's said
     /// after that end, or a hand-over from that record; never a loop with nobody between. No strike and no slot.
     /// </summary>
@@ -549,7 +546,7 @@ public sealed record Consideration(
     public SittingFact? Said { get; init; }
 
     /// <summary>
-    /// For a start the person's words make (MSG1b, D137 §2.2): <see cref="Resumes"/> is the record they wait on, parked or
+    /// For a start the person's words make:<see cref="Resumes"/> is the record they wait on, parked or
     /// ended, which goes on in its own conversation where it can, and else hands them on.
     /// </summary>
     public bool GoesOn { get; init; }
@@ -569,7 +566,7 @@ public sealed record Consideration(
 
     /// <summary>
     /// For a quest its failed sessions park (<see cref="StartVerdict.Exhausted"/>): how many have failed on it here in all, as
-    /// the records count them (<see cref="Snapshot.Strikes"/>), before any mark (RETRY1b). *Try again* marks the quest at this
+    /// the records count them (<see cref="Snapshot.Strikes"/>), before any mark. *Try again* marks the quest at this
     /// count, so it starts and the limit's count parks it again; a mark at the limit left a quest parked a second time
     /// parked. Null for every other verdict.
     /// </summary>
@@ -716,7 +713,7 @@ public static class Planner
                 continue;
             }
 
-            // The person wrote to its last session here, parked or ended (MSG1b, D137 §2.2): that record goes on with their
+            // The person wrote to its last session here, parked or ended: that record goes on with their
             // words. Before the person's stop, which the words release as Try again does: the same session goes on with them.
             // Or the session its reopen names was told it (FABRIC-CLOSE1c9): see WordsOn.
             if (WordsOn(quest) is { } written)
@@ -967,7 +964,7 @@ public static class Planner
             && snapshot.LastRun.TryGetValue(quest.Id, out var last)
             && last.Parked;
 
-        // The record the person's words wait on for this quest (MSG1b, D137 §2.2), parked or ended, and not all words a reopen
+        // The record the person's words wait on for this quest, parked or ended, and not all words a reopen
         // already found it could not take (MSG1a's open point): its last session here, or null. A taken quest waiting on a
         // question waits with them: D79's resume is its next start, which is handed them (SAYHELD1, Driver's handsOn). Once that
         // resume began (ResumedOnAnswer), the quest waits on nothing, and words to its session go on in it as any record's do. A
@@ -996,7 +993,7 @@ public static class Planner
                     && Told(DrivenCourse.PastBound(record, quest.Status, TransientReleased(quest, record))) is LineCourse.Hold { Why: CourseHoldWhy.TransientBound });
         }
 
-        // Words going on in the record they were said to (MSG1b, D137 §2.2), `continuing` it: a park is still an active record
+        // Words going on in the record they were said to, `continuing` it: a park is still an active record
         // holding its tree, its quest and its slot, which it is never busy with itself; an ended record holds nothing, so it
         // takes a slot, ahead of every start planned after it. The sentence names whose words: a park's answer, as ANSWER1a
         // said it, or what the person wrote to a session that had ended.
@@ -1344,7 +1341,7 @@ public static class Planner
                 return new(quest, StartVerdict.CannotShow, sits.Reason) { CannotShow = sits.Fact };
             }
 
-            // The second opinion (XAGENT1f, the second-agent design §7, §8.1): a set-up step sits while an agent is still at work on
+            // The second opinion: a set-up step sits while an agent is still at work on
             // the opinion of the work it shows, and under `steps` a chain's next step sits while the opinion on the step before is
             // unsettled. The look reads each from its facts; the planner holds no copy of the gate. No strike: nothing ran.
             if (snapshot.Opinions.TryGetValue(quest.Id, out var opinion))
@@ -1363,12 +1360,10 @@ public static class Planner
             var strikes = snapshot.Strikes.TryGetValue(quest.Id, out var failures)
                 ? failures - config.ForgivenAt(quest.Id)
                 : 0;
-            // The person's words to its session are their Try again (MSG1b, D137 §2.2): a failure they write to is forgiven as
+            // The person's words to its session are their Try again: a failure they write to is forgiven as
             // its record leaves `failed`, and a quest the strikes parked goes on with them, as a retry would start it.
-            // CONTEXTDRIVE1e: the number is the quest's failures rule where the home is reached.
-            var parks = snapshot.FailuresAt.TryGetValue(quest.Id, out var ruled) ? ruled
-                // transitional: strikes-key
-                : config.Strikes;
+            // transitional: strikes-key
+            var parks = snapshot.FailuresAt.TryGetValue(quest.Id, out var ruled) ? ruled : config.Strikes;
             if (parks > 0 && strikes >= parks && !(continuing && into is { WordsWaiting: true }))
             {
                 return new(quest, StartVerdict.Exhausted,

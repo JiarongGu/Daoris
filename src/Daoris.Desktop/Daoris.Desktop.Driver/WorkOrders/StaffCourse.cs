@@ -36,6 +36,32 @@ internal static class StaffCourse
         return SupervisorRuleBook.Course(applied, book.For(role, place.Repository, place.Workspace, place.Line));
     }
 
+    /// <summary>
+    /// The facts a driven quest's next start arranges by: the choices its line moved off within the hold, and on a reached home the moves its
+    /// rules set, which decide whether those passes apply. A store that does not answer arranges by none.
+    /// </summary>
+    internal static StaffFacts? LineFacts(StaffLedger staff, QuestView quest, string? workspace, string? role)
+    {
+        try
+        {
+            var facts = staff.Moves.LineFacts(quest.Id);
+            if (!staff.Rules().Reached) return facts;
+            var named = role ?? RoleOf(staff, workspace, quest, null);
+            return facts with { Moves = CourseOf(staff, named, new StaffPlace(quest.To, workspace, quest.Id))?.Moves ?? new Dictionary<string, StaffMove>() };
+        }
+        catch (Exception error) when (error is DesktopStoreException or Microsoft.Data.Sqlite.SqliteException or IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>The policy a part's move was made under and the opening note's sentence for it, the rule's words on a reached home.</summary>
+    internal static (StaffPolicy? Policy, string Said) MoveSaid(StaffLedger staff, string role, string line, PriorSession left, string condition, int moves)
+    {
+        var policy = CourseOf(staff, role, new StaffPlace(left.Repository, left.Workspace, line));
+        return (policy, MovedSaid(condition, policy, moves, ActorWords.Name(role), staff.Rules().Reached));
+    }
+
     /// <summary>A driven quest's line as the rules place it: its repository, the repository's workspace and the quest's id, the line's key.</summary>
     internal static StaffPlace PlaceOf(Snapshot snapshot, QuestView quest) =>
         new(quest.To, snapshot.Repositories.FirstOrDefault(repo => string.Equals(repo.Repository, quest.To, StringComparison.OrdinalIgnoreCase))?.Workspace, quest.Id);

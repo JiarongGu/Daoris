@@ -99,7 +99,21 @@ public sealed class SupervisorRuleStore(string home, Func<StoreSettled>? settled
         return next;
     }
 
-    /// <summary>Whether this home's rules are reached: the machine's place holds a revision row (the context counters design §4.4).</summary>
+    /// <summary>
+    /// <paramref name="rules"/> laid over <paramref name="place"/>'s set as this transaction reads it: each rule there on the same count naming the
+    /// same roles replaced, the rest kept, and the set written at the revision it stands at. What a preset's rules are written by.
+    /// </summary>
+    /// <exception cref="RuleRefusedException">The judge's refusal of the set as it would stand.</exception>
+    public static long MergeIn(DesktopWrite write, string place, IReadOnlyList<SupervisorRule> rules, string door, SupervisorRuleWorld world)
+    {
+        var held = Sets(write.Query(RulesSql, RuleOf), write.Query(RevisionsSql, row => (row.GetString(0), row.GetInt64(1))));
+        var set = held.FirstOrDefault(each => each.Place == place) ?? new SupervisorRuleSet(place, 0, []);
+        static string Roles(SupervisorRule rule) => rule.Roles is null ? "" : string.Join(",", rule.Roles.Order(StringComparer.Ordinal));
+        var kept = set.Rules.Where(old => !rules.Any(rule => rule.Count == old.Count && Roles(rule) == Roles(old)));
+        return WriteIn(write, place, set.Revision, [.. kept, .. rules], door, world);
+    }
+
+    /// <summary>Whether this home's rules are reached: the machine's place holds a revision row.</summary>
     public bool Reached() => All().Any(set => set.Place == SupervisorRules.Machine);
 
     /// <summary>Whether the store this write is in has the rules' tables.</summary>

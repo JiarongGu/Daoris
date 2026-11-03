@@ -21,9 +21,13 @@ namespace Daoris.Driver;
 /// </remarks>
 public sealed class AnswersAloneHold(SessionEvents events, GoOnMarks marks, ContinuationAdmissions admissions, SupervisorRuleBook? rules = null)
 {
+    /// <summary>The hold of <paramref name="home"/>, judged by the rules its store holds now.</summary>
+    public static AnswersAloneHold For(SessionEvents events, GoOnMarks marks, string home) =>
+        new(events, marks, new ContinuationAdmissions(home), SupervisorRuleBook.Read(home));
+
     /// <summary>
-    /// The answers alone in a row <paramref name="session"/>'s line goes on by (CONTEXTDRIVE1e; the context counters design §4.5): on a reached
-    /// home its line's effective rule, null where none holds it; else D188's bound.
+    /// The answers alone in a row <paramref name="session"/>'s line goes on by: on a reached home its line's effective rule, null where none
+    /// holds it; else Daoris's own bound.
     /// </summary>
     public int? At(string session, IReadOnlyDictionary<string, PriorSession> records)
     {
@@ -32,6 +36,11 @@ public sealed class AnswersAloneHold(SessionEvents events, GoOnMarks marks, Cont
         var record = records.GetValueOrDefault(session);
         return SupervisorRuleBook.AnswersAloneAt(book.For(SupervisorRuleBook.RoleOf(record), record?.Repository, record?.Workspace, LineKeys.Of(session, records).Key));
     }
+
+    /// <summary>The number a held line was held at: its rule's, or Daoris's own bound on a home not reached.</summary>
+    public int HeldAt(string session, IReadOnlyDictionary<string, PriorSession> records) =>
+        // transitional: answers-alone-bound
+        At(session, records) ?? AnswersAlone.Bound;
 
     /// <summary>
     /// Whether going on with <paramref name="words"/> on <paramref name="record"/> now would take its line on by answers alone past the

@@ -267,18 +267,18 @@ public sealed class DriverRoutes(DriverContext context)
         return State(_loop);
     }
 
-    // How many failed sessions park a quest (DRV6/D58), and the person's way back in. Both
-    // edit what `daoris driver strikes|retry` edits — one truth, two doors (D50).
+    // How many failed sessions park a quest, as `settings strikes` edits it; refused where the failures rule decides.
     [DriverRoute("SET_STRIKES")]
     [Publishes("SET_STRIKES", StateScopes.Driver)]
     private object? SetStrikes(IpcRequest request)
     {
+        if (RuledPolicy.StrikesRefused(_loop.Home) is { } ruled) throw new DriverException(ruled);
         var strikes = PayloadHelper.GetRequiredValue<int>(request.Payload, "strikes");
         _context.Change(config => config.WithStrikes(strikes));
         return State(_loop);
     }
 
-    // How long an account cools when its agent names no time (TOOL4g, D125 §2.2, §6): whole minutes, at least one, the same
+    // How long an account cools when its agent names no time: whole minutes, at least one, the same
     // `cooloff` `daoris driver cooloff <minutes>` edits — one truth, two doors (D50). Less than one is the driver's refusal.
     [DriverRoute("SET_COOLOFF")]
     [Publishes("SET_COOLOFF", StateScopes.Driver)]
@@ -377,48 +377,33 @@ public sealed class DriverRoutes(DriverContext context)
     // stored choices, and the work codes a role may take; a read, the same `daoris driver role` says. Beside them, the roles Daoris
     // suggests adding (the Designer while no role takes design), each the person's press alone.
     [DriverRoute("ROLES")]
-    [ByEvent("ROLES", Untold = "the store's roles, role policies, supervisor rules and starts, driver.json's staffing, and the machine log's starts that Use sums")]
+    [ByEvent("ROLES", Untold = "the store's roles, role policies, rules and starts, driver.json's staffing, and the machine log's starts that Use sums")]
     private Task<object?> RolesAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var catalogue = RoleCatalog.ReadHome(_loop.Home);
-        // Each role's last seven days (MODELROLE1f): names and counts from the machine log's actor.chose lines; a role with no start is not listed.
+        // Each role's last seven days: names and counts from the machine log's actor.chose lines; a role with no start is not listed.
         var use = RoleUse.Of(_loop.Home, DateTimeOffset.UtcNow);
         var config = DriverConfig.Load(_loop.ConfigPath);
         return Task.FromResult<object?>(new
         {
             Use = new { use.Days, use.Roles },
             Roles = RoleDoor.Rows(catalogue, config),
-            // STAFFPOLICY1b: each role's policy (default, set or stale), its record and its next new start; a probe that reserves nothing and
+            // Each role's policy (default, set or stale), its record and its next new start; a probe that reserves nothing and
             // asks no account. The fields this build enforces, and the presets, are what the doors take.
             Policies = RolePolicyRow.Of(new StaffLedger(_loop.Home), catalogue, config),
             PolicyFields = StaffCapabilities.Fields,
             PolicyPresets = StaffPresets.Names,
-            // CONTEXTDRIVE1d: the supervisor's rules by place, whether this home's rules are reached, and what each count takes.
-            Supervisor = SupervisorRows(_loop.Home),
+            Supervisor = SupervisorRuleRows.Of(_loop.Home),
             Works = RoleWork.Codes,
             Kept = RoleStaffing.Of(_loop.ConfigPath) is not null,
             Suggested = RoleSuggestion.For(catalogue).Select(each => new
             {
                 each.Role.Id, each.Role.Name, each.Role.Takes, ScopeKind = each.Role.Scope.Kind, each.Choices,
             }),
-            // MODELROLE1g: the choices suggested for the seeded roles, whole; the page leaves out an agent this machine has not set up.
+            // The choices suggested for the seeded roles, whole; the page leaves out an agent this machine has not set up.
             SuggestedChoices = ActorSuggestion.Table.Select(each => new { each.Role, each.Choices }),
             SuggestedChoicesDated = ActorSuggestion.Dated,
         });
-    }
-
-    private static object SupervisorRows(string home)
-    {
-        var store = new SupervisorRuleStore(home);
-        return new
-        {
-            Reached = store.Reached(),
-            Sets = store.All().Select(set => new { set.Place, set.Revision, set.Rules }),
-            Counts = SupervisorRules.Windows.Select(pair => new
-            {
-                Count = pair.Key, Window = pair.Value, Actions = SupervisorRules.Actions(pair.Key), Least = SupervisorRules.Bounds(pair.Key).Low, Most = SupervisorRules.Bounds(pair.Key).High,
-            }),
-        };
     }
 
     // The roles' structure (COMPANYVIEW1c, the company-view design §4): for each place asked (none is this machine) and each work asked
@@ -557,7 +542,7 @@ public sealed class DriverRoutes(DriverContext context)
         _ => null,
     };
 
-    // A working role added, changed, removed or given back its seed (FOUNDATION1y-i): the person's press, the same change `daoris driver
+    // A working role added, changed, removed or given back its seed: the person's press, the same change `daoris driver
     // role` makes and Ask Daoris's `role_propose` asks for: one door, `RoleDoor.Apply`, whose judge refuses with nothing written. A
     // removed role's work holds its starts, said; a running session goes on.
     [DriverRoute("SET_ROLE")]
@@ -572,7 +557,7 @@ public sealed class DriverRoutes(DriverContext context)
         return State(_loop);
     }
 
-    // Several role changes made as one (AGENTSPLACE1g2, the Agents-place design §4): the Roles mode's suggested choices. Each change is
+    // Several role changes made as one: the Roles mode's suggested choices, or a role's policy with a place's rules. Each change is
     // a `SET_ROLE` press in `changes`, judged in order by `RoleDoor.ApplyAll` before anything is written; the first refusal refuses
     // the batch with nothing written.
     [DriverRoute("SET_ROLES")]
@@ -586,7 +571,7 @@ public sealed class DriverRoutes(DriverContext context)
         return State(_loop);
     }
 
-    // Ask Daoris's access mode (HELPMODE1a2, D183 point 2): `restricted` or `full`, the person's press alone, over the same key
+    // Ask Daoris's access mode: `restricted` or `full`, the person's press alone, over the same key
     // `daoris-driver help mode` sets: one truth, two doors (D50). Each start reads it, and a conversation running under another ends
     // at its turn's end, its next words resuming it under the mode chosen (ACCESSSWAP1): nothing it runs with changes while it runs.
     // A mode it does not know, or none, is the driver's refusal, with nothing written.
