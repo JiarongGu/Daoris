@@ -43,11 +43,17 @@ public sealed class StaffingPart(RoleStaffing staffing) : IConversionPart
 
     public string Name => Part;
 
-    public Task<PartCensus> CensusAsync(CancellationToken ct) => Task.FromResult(CensusOf(Now()));
+    public Task<PartCensus> CensusAsync(CancellationToken ct) => Task.FromResult(Now() is { } plan ? CensusOf(plan) : new PartCensus(Part, 0, true));
 
     public Task<PartPlan> PlanAsync(ConversionChoices choices, CancellationToken ct)
     {
-        var plan = Now();
+        // Before the staffing's import there is nothing in the store to convert: the start imports it, and the next plan reads it.
+        if (Now() is not { } plan)
+        {
+            return Task.FromResult(new PartPlan(Part, System.Convert.ToHexStringLower(SHA256.HashData("staffing\nnot imported\n"u8)), true, new PartCensus(Part, 0, true),
+                ["  the roles' staffing is not in this home's store yet: the next start imports it, and the next plan reads it."], []));
+        }
+
         var census = CensusOf(plan);
         return Task.FromResult(new PartPlan(Part, Digest(plan), census.Ended, census, Lines(plan),
             plan.Found.Count == 0 ? [] : [new PartClear("changes found in driver.json's staffing copy, each an older build's or a hand's (Take it stays offered until Apply)", plan.Found.Count)])
@@ -90,15 +96,16 @@ public sealed class StaffingPart(RoleStaffing staffing) : IConversionPart
     private static PartCensus CensusOf(StaffingPartPlan plan) =>
         new(Part, plan.Writes.Count + (plan.Keys == None ? 0 : 1) + plan.Found.Count, plan.Writes.Count == 0 && plan.Keys == None && plan.Found.Count == 0);
 
-    /// <summary>The staffing now: the store's rows and found changes, and the file's four keys. Unread where either does not answer.</summary>
-    private StaffingPartPlan Now()
+    /// <summary>The staffing now: the store's rows and found changes, and the file's four keys; null before the import. Unread where either does not answer.</summary>
+    private StaffingPartPlan? Now()
     {
         StaffingRead read;
         IReadOnlyList<StaffingRow> rows;
         IReadOnlyList<StaffingFound> found;
         try
         {
-            read = staffing.Read() ?? throw new ConversionUnread("the roles' staffing is not in this home's store yet: the next start imports it");
+            if (staffing.Read() is not { } held) return null;
+            read = held;
             rows = staffing.Rows();
             found = staffing.Found();
         }

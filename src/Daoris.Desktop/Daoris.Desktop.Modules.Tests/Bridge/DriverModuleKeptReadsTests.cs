@@ -21,9 +21,11 @@ public sealed class DriverModuleKeptReadsTests : DriverModuleBridge
         var answer = await AnswerAsync(module, "KEPT_READS", new { });
 
         var lines = answer.GetProperty("lines").EnumerateArray().ToList();
-        Assert.Equal(TransitionalRegister.Entries.Count + 1, lines.Count);
-        Assert.Equal(("part", "workflows", false), (lines[0].GetProperty("kind").GetString(), lines[0].GetProperty("id").GetString(), lines[0].GetProperty("ended").GetBoolean()));
-        Assert.True(lines[0].GetProperty("count").GetInt32() > 0);
+        // ONEWAY1b: the staffing part's census beside the workflow part's, in apply order; this home's staffing is not imported, so it holds nothing.
+        Assert.Equal(TransitionalRegister.Entries.Count + 2, lines.Count);
+        Assert.Equal([("part", "staffing", true), ("part", "workflows", false)], lines.Take(2).Select(each =>
+            (each.GetProperty("kind").GetString(), each.GetProperty("id").GetString(), each.GetProperty("ended").GetBoolean())));
+        Assert.True(lines[1].GetProperty("count").GetInt32() > 0);
         var cycles = lines.Single(each => each.GetProperty("id").GetString() == "work-cycles");
         Assert.True(cycles.GetProperty("ended").GetBoolean());
         Assert.Equal("WORKFLOWCLEAN1j", cycles.GetProperty("row").GetString());
