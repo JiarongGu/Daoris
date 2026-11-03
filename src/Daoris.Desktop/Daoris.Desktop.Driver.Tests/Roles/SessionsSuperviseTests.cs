@@ -52,7 +52,7 @@ public sealed class SessionsSuperviseTests : IAsyncLifetime
         {
             var json = request.RequestUri!.AbsolutePath switch
             {
-                "/api/sessions" => """[{"id":"s1","repository":"engine","state":"awaiting-person","quest":"q1","kind":"driven","created":"2026-10-22T08:00:00Z"}]""",
+                "/api/sessions" => """[{"id":"s1","repository":"engine","state":"awaiting-person","quest":"q1","kind":"driven","created":"2026-10-22T08:00:00Z","entry":"ask:a1/engine"}]""",
                 "/api/quests" => """[{"id":"q1","from":"ask #a1","to":"engine","title":"Report","body":"Write the report.","status":"taken"}]""",
                 "/api/asks/a1" => """{"id":"a1","workspace":"w","sentence":"Write the report","state":"open","tier":"t","words":[],"goAheads":[{"number":1,"kind":"production","on":"engine","act":"push to origin","asked":[],"answer":{"approved":false,"at":"2026-10-24T08:00:00Z"}}]}""",
                 _ => null,
