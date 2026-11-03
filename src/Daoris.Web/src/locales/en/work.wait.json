@@ -51,6 +51,8 @@
   "work.wait.permission.waited": "waiting {{span}} · refused if nobody answers within {{minutes}} minutes",
   "work.wait.permission.waitedUnbounded": "waiting {{span}}",
   "work.wait.permission.answered.allow": "Allowed once: the call goes on.",
+  "work.wait.name.gitAsk": "a git go-ahead",
+  "work.wait.gitAsk.title": "Git go-ahead",
   "work.wait.gitAsk.allow": "Allow",
   "work.wait.gitAsk.refuse": "Refuse",
   "work.wait.gitAsk.allowed": "Allowed: the act goes on.",

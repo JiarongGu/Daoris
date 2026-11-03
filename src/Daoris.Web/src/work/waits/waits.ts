@@ -13,6 +13,7 @@ import type { LandingPlan } from '../review/Lands';
 import { acceptAnswers, opinionAsked, opinionHolds, opinionState, opinionTone } from '../gates/opinion';
 import { heldFor, type PermissionWait } from './PermissionAsks';
 import { answerFor, type AnswerWait } from './AnswerAlone';
+import { gitAsksFor, type GitAskRow } from './GitAsk';
 import { REVIEW_TONE, reviewHolds, reviewState } from '../gates/review';
 
 /**
@@ -28,6 +29,7 @@ export type Wait =
   | { kind: 'intake'; ask: string }
   | { kind: 'goAhead'; number: number }
   | { kind: 'permission'; request: string }
+  | { kind: 'gitAsk'; id: string }
   | { kind: 'answerAlone' }
   | { kind: 'rule'; id: string }
   | { kind: 'helper'; id: string }
@@ -120,6 +122,8 @@ export type WaitFacts = {
   permissions?: { waits?: readonly PermissionWait[]; onAnswer?: unknown } | null;
   /** The answers the answers-alone bound holds for the person as the shell read them, and the door that answers one (COWORK1e). */
   answers?: { waits?: readonly AnswerWait[]; onAnswer?: unknown } | null;
+  /** The git go-aheads the shell pushed, and the door that answers one (GITAUTH1f). */
+  gitAsks?: { waits?: readonly GitAskRow[]; onAnswer?: unknown } | null;
   /** The machine's rule proposals as the shell read them, and the door that answers them (PROPOSEHERE1b). */
   rules?: { proposals?: unknown; onAnswer?: unknown } | null;
   /** The helpers it asked for as the driver's look left them, and the yes that answers one (MIXAGENT2c). */
@@ -163,6 +167,10 @@ export function waitsOf(facts: WaitFacts): Wait[] {
   // answer, or the bound refuses it, so it comes before what only waits beside a running turn.
   if (facts.permissions?.onAnswer) {
     for (const held of heldFor(facts.permissions.waits ?? [], session.id)) waits.push({ kind: 'permission', request: held.request });
+  }
+  // A git go-ahead its git door holds (GITAUTH1f, D198 point 12): the act on the remote stands still until they answer, or its bound.
+  if (facts.gitAsks?.onAnswer) {
+    for (const ask of gitAsksFor(facts.gitAsks.waits ?? [], session.id)) waits.push({ kind: 'gitAsk', id: ask.id });
   }
   // A third answer in a row with nobody between, which the answers-alone bound holds for the person (COWORK1e, D188 point 4): its
   // line stands still until they answer, whatever the session's state, so it comes next.

@@ -31,6 +31,7 @@ import type { LineBehind } from './review/diff';
 import type { HelperWaits } from './waits/HelperAsks';
 import type { PermissionWaits } from './waits/PermissionAsks';
 import type { AnswerWaits } from './waits/AnswerAlone';
+import type { GitAskWaits } from './waits/GitAsk';
 import type { RuleAsk, RuleWaits } from './waits/ProposedRules';
 import type { Seek } from './waits/WaitAnchor';
 import { type HeadLink, type HeadOpinion, type HeadReview, type LandingPlan, SessionHead, type WorkAsk } from './head/SessionHead';
@@ -75,7 +76,7 @@ export function AttendedSession({
   chain = [], onSession, onQuest, onReview, relations, related, relatedOwn, onRelated, together, memory, timeline = 'dock', branch, ownBranch, onDiscardBranch, discardingBranch,
   headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind,
   opinion, continues, helps, heavy, process, parts, entryAccept, channel, workAsk, workBusy, toEvent, rules, ruleAsk, seek, helpers, permissions,
-  answers, milestone, record, onOpenBranch, question, parkBox, pieces, waitingOn,
+  answers, gitAsks, milestone, record, onOpenBranch, question, parkBox, pieces, waitingOn,
 }: {
   /** Its pieces (COAGENT1b, D199), the frame's: handed to its head's Pieces section. Absent, none is drawn. */
   pieces?: PieceSection | null;
@@ -87,6 +88,8 @@ export function AttendedSession({
   parkBox?: boolean;
   /** Passed straight through to the head: the answers the answers-alone bound holds for the person, with their two presses (COWORK1e). */
   answers?: AnswerWaits | null;
+  /** Passed straight through to the head: the git go-aheads its git door holds, with their Allow and Refuse (GITAUTH1f). */
+  gitAsks?: GitAskWaits | null;
   /** Passed straight through to the head: the process its own tree runs under, *Details*' rows (PROCESS1e). */
   process?: SessionProcess | null;
   /** Passed straight through to the head: the helpers it asked for, with the person's yes (MIXAGENT2b). */
@@ -317,6 +320,7 @@ export function AttendedSession({
         waitingOn={waitingOn}
         permissions={permissions}
         answers={answers}
+        gitAsks={gitAsks}
         entry={entryAccept}
       />
       {/* Its parts as a flowchart, the strip its rail (FLOWCHART1b); Accept's plan, once read, is where they would land. Folded to one

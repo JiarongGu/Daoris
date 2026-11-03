@@ -51,6 +51,8 @@
   "work.wait.permission.waited": "已等待 {{span}} · {{minutes}} 分钟内无人答复则拒绝",
   "work.wait.permission.waitedUnbounded": "已等待 {{span}}",
   "work.wait.permission.answered.allow": "已允许这一次：该调用继续。",
+  "work.wait.name.gitAsk": "一次 Git 放行",
+  "work.wait.gitAsk.title": "Git 放行",
   "work.wait.gitAsk.allow": "允许",
   "work.wait.gitAsk.refuse": "拒绝",
   "work.wait.gitAsk.allowed": "已允许：该操作继续。",
