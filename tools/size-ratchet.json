@@ -53,7 +53,7 @@
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Setup/WorkspaceSetupTests.cs": 42186,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/StandInLedger.cs": 66579,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Store/DesktopStoreTests.cs": 65325,
-  "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/StructureTests.cs": 59398,
+  "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/StructureTests.cs": 50993,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/WorkOrders/AbandonTests.cs": 46569,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/WorkOrders/IntakeTests.cs": 63679,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/WorkOrders/PlannerTests.cs": 121845,
