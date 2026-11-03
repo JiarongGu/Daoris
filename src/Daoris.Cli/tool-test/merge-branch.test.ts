@@ -191,6 +191,9 @@ const tool = await import(
   flakeDecision: (output: string, isProcess?: (test: string) => boolean) => { rerun: string[]; reason?: string };
   timedDecision: (output: string) => { playwright: boolean; rerun: string[]; reason?: string };
   timedRerunCommand: (run: string, specs: string[]) => string;
+  nodeTestDirs: (root: string, gate: Gate) => string[];
+  nodeTestDecision: (output: string) => { node: boolean; rerun: { file: string; tests: string[] }[]; reason?: string };
+  nodeTestRerunCommand: (file: string, title: string) => string;
   rerunCommand: (run: string, test: string) => string;
   prefixCommand: (gate: { run: string }, failure: { names: string; unit?: string; test?: string }) => string;
   rerunPassed: (output: string) => boolean;
@@ -4452,6 +4455,173 @@ test('MEASUREDALONE1: one gate in turn runs the timed spec alone after the last 
     oneAtATime: true, run: (root, gate, dir, given) => tool.runGate(root, gate, dir, { ...given, step: fake.step }), print: () => {},
   });
   assert.deepEqual(fake.asked, [measured.run, after.run, `${measured.run} -- -- measured/large.spec.ts:73`]);
+  assert.deepEqual(results.map((each) => each.verdict), ['FLAKE', 'PASS']);
+  fx.cleanup();
+});
+
+// The end of the 2026-11-03 CI's tool-tests log: a git child that exited 4294967295 beside builders, and a test the run's own clock ended.
+const NODE_TITLE_A = "INTEGRATE1j: a tree the caller hands is the run's tree: the runner makes none, takes no lock and copies no private file; one at another commit is refused";
+const NODE_TITLE_B = 'INTEGRATE1b: a gate that fails once beside a held load and passes quiet holding the whole admission is a sighting; under split, the default with no policy written, the candidate splits (a+b) [x]';
+const nodeLog = (failures: [string, string][], fail = failures.length) => [
+  '$ npm run tooltests',
+  '> daoris@0.0.1 tooltests',
+  '> node --test "tool-test/**/*.ts" ../../tools/as-merged.test.mjs',
+  'ℹ tests 685', 'ℹ suites 21', 'ℹ pass 677', `ℹ fail ${fail}`, 'ℹ duration_ms 1592628.3636', '',
+  '✖ failing tests:', '',
+  ...failures.flatMap(([file, title]) => [
+    `test at ${file}:2334:3`,
+    `✖ ${title} (219308.091ms)`,
+    '  AssertionError [ERR_ASSERTION]: git add -A: ',
+    '  ',
+    '  4294967295 !== 0',
+    '  ',
+    '      at sh (file:///x/src/Daoris.Cli/tool-test/merge-queue.test.ts:1279:10) {',
+    "    code: 'ERR_ASSERTION',",
+    '  }',
+    '',
+  ]),
+  '(exited 1)',
+].join('\n');
+
+test('NODEALONE1: a node test run names its failed tests by file and title, and only a list that adds up to its count is re-run', () => {
+  const log = nodeLog([['tool-test\\merge-queue.test.ts', NODE_TITLE_A], ['..\\..\\tools\\as-merged.test.mjs', NODE_TITLE_B]]);
+  const decision = tool.nodeTestDecision(log);
+  assert.equal(decision.node, true);
+  assert.deepEqual(decision.rerun, [
+    { file: 'tool-test/merge-queue.test.ts', tests: [NODE_TITLE_A] },
+    { file: '../../tools/as-merged.test.mjs', tests: [NODE_TITLE_B] },
+  ]);
+  // A title is named once, and a file's tests stay together.
+  const twice = tool.nodeTestDecision(nodeLog([['tool-test\\a.test.ts', 'one'], ['tool-test\\a.test.ts', 'two'], ['tool-test\\a.test.ts', 'one']], 3));
+  assert.deepEqual(twice.rerun, [{ file: 'tool-test/a.test.ts', tests: ['one', 'two'] }]);
+
+  const counted = tool.nodeTestDecision(nodeLog([['tool-test\\a.test.ts', 'one']], 2));
+  assert.deepEqual(counted.rerun, []);
+  assert.match(counted.reason!, /2 failed but 1 are named/);
+  const none = tool.nodeTestDecision('$ npm run verify\nerror: the docs are stale\n(exited 1)\n');
+  assert.equal(none.node, false);
+  assert.deepEqual(none.rerun, []);
+  assert.match(none.reason!, /no failed node test is named/);
+});
+
+test('NODEALONE1: a test is named for node by its own title, anchored, with every character that means something escaped', () => {
+  const command = tool.nodeTestRerunCommand('tool-test/a.test.ts', NODE_TITLE_B);
+  assert.equal(command, `node --test --test-name-pattern="^INTEGRATE1b: a gate that fails once beside a held load and passes quiet holding the whole admission is a sighting; under split, the default with no policy written, the candidate splits \\(a\\+b\\) \\[x\\]$" tool-test/a.test.ts`);
+  // What a shell would read inside double quotes is matched by a dot, never passed through.
+  assert.match(tool.nodeTestRerunCommand('f.ts', 'a "b" 100% $x'), /^node --test --test-name-pattern="\^a \.b\. 100\. \.x\$" f\.ts$/);
+  // The pattern reaches that test alone: a nested test, by the title it prints, and no sibling.
+  const fx = makeFixture('merge-branch-node-pattern');
+  fx.write('n.test.mjs', "import { test, describe } from 'node:test';\ndescribe('outer', () => {\n  test('inner one; a+b', () => { console.log('RAN one'); });\n  test('inner two', () => { console.log('RAN two'); });\n});\ntest('top', () => { console.log('RAN top'); });\n");
+  const { NODE_TEST_CONTEXT: _inherited, ...env } = process.env;
+  const ran = spawnSync(tool.nodeTestRerunCommand('n.test.mjs', 'inner one; a+b'), { cwd: fx.root, shell: true, encoding: 'utf8', env });
+  assert.equal(ran.status, 0, ran.stdout + ran.stderr);
+  assert.match(ran.stdout, /RAN one/);
+  assert.doesNotMatch(ran.stdout, /RAN two|RAN top/);
+  assert.match(ran.stdout, /ℹ pass 1\b/);
+  fx.cleanup();
+});
+
+/**
+ * A `tooltests` gate (read from the fixture's package.json files, not named) and a light gate that ends only once the first
+ * has printed its line, run as `runGates` runs them; `second` answers each re-run asked.
+ */
+async function nodeRun(name: string, firstLog: string, second: { out: string; code: number }, { run = 'npm run tooltests', hold = true } = {}) {
+  const fx = makeFixture(name);
+  fx.write('package.json', JSON.stringify({ workspaces: ['pkg'], scripts: { tooltests: 'npm run tooltests -w cli', verify: 'npm run check -w cli && node --test tools/x.test.mjs && node tools/doc.mjs', other: 'node tools/other.mjs' } }));
+  fx.write('pkg/package.json', JSON.stringify({ name: 'cli', scripts: { tooltests: 'node --test "tool-test/**/*.ts"', check: 'tsc --noEmit' } }));
+  for (const file of ['pkg/tool-test/merge-queue.test.ts', 'pkg/tool-test/a.test.ts', 'tools/x.test.mjs']) fx.write(file, '');
+  const tests = { ...planned('tool-tests', run), clock: true } as Gate;
+  const beside = planned('u', 'node u.mjs');
+  const firstLine = signal();
+  const asked: { command: string; cwd: string }[] = [];
+  const printed: string[] = [];
+  let runs = 0;
+  const step: Step = async (command, cwd, fd) => {
+    asked.push({ command, cwd });
+    if (command === beside.run && hold) await within(firstLine.promise, "the tests gate's first line");
+    const answer = command === beside.run ? { out: 'ok\n', code: 0 } : ++runs === 1 ? { out: firstLog, code: 1 } : second;
+    writeSync(fd, `$ ${command}\n${answer.out}`);
+    return answer.code;
+  };
+  const results = await tool.runGates(fx.root, [tests, beside], fx.root, {
+    run: (root, gate, dir, given) => tool.runGate(root, gate, dir, { ...given, step }),
+    print: (line) => {
+      printed.push(line);
+      if (/^\s+(FAIL|FLAKE|PASS)\s+tool-tests/.test(line)) firstLine.resolve();
+    },
+  });
+  firstLine.resolve();
+  const root = fx.root;
+  fx.cleanup();
+  return { results, asked, printed, tests, root };
+}
+
+test('NODEALONE1: a test that failed beside another gate runs alone in its package folder once the others have ended: a pass is a FLAKE', async () => {
+  const firstLog = nodeLog([['tool-test\\merge-queue.test.ts', NODE_TITLE_A]]);
+  const { results, asked, printed, root } = await nodeRun('merge-branch-node-flake', firstLog, { out: 'ℹ tests 1\nℹ pass 1\nℹ fail 0\n', code: 0 });
+  assert.deepEqual(asked.map((each) => each.command), ['npm run tooltests', 'node u.mjs', tool.nodeTestRerunCommand('tool-test/merge-queue.test.ts', NODE_TITLE_A)], 'asked once, after the other gate ended');
+  assert.equal(asked[2]!.cwd, join(root, 'pkg'), 'in the folder its script runs in');
+  const [result] = results;
+  assert.equal(result!.verdict, 'FLAKE');
+  assert.deepEqual(result!.flakes, [NODE_TITLE_A]);
+  assert.match(result!.note, /1 test failed beside other gates and passed alone: .*run's tree.*tool-tests\.rerun\.log/);
+  assert.deepEqual(summary(printed), ['FLAKE tool-tests', 'PASS u']);
+  assert.match(printed.join('\n'), /run again alone, every other gate having ended: tool-tests/);
+  assert.equal(tool.endsStageRun(result!), false);
+});
+
+test('NODEALONE1: a test that fails again alone is a FAIL naming it, and a test that matched nothing is no pass', async () => {
+  const firstLog = nodeLog([['tool-test\\merge-queue.test.ts', NODE_TITLE_A]]);
+  for (const second of [{ out: 'ℹ pass 0\nℹ fail 1\n', code: 1 }, { out: 'ℹ tests 0\nℹ pass 0\nℹ fail 0\n', code: 0 }]) {
+    const { results, asked } = await nodeRun('merge-branch-node-twice', firstLog, second);
+    assert.equal(asked.filter((each) => each.command.startsWith('node --test')).length, 1, 're-run once, not until it passes');
+    const [result] = results;
+    assert.equal(result!.verdict, 'FAIL');
+    assert.equal(result!.flakes, undefined);
+    assert.match(result!.note, /failed again alone: INTEGRATE1j: a tree the caller hands.*tool-tests\.rerun\.log/);
+  }
+});
+
+test('NODEALONE1: a failure that names no test, or whose count does not match its list, is a FAIL, never re-run, and says why', async () => {
+  const unnamed = '$ npm run verify\n> daoris@0.0.1 typecheck\nerror TS2322: nothing\n(exited 1)\n';
+  for (const [log, run, why] of [
+    [unnamed, 'npm run verify', /^exit 1; no failed node test is named.*; not re-run$/],
+    [nodeLog([['tool-test\\a.test.ts', 'one']], 2), 'npm run tooltests', /^exit 1; 2 failed but 1 are named; not re-run$/],
+    [nodeLog([['tool-test\\a.test.ts', 'one']]), 'npm run other', /^exit 1$/],
+  ] as const) {
+    const { results, asked } = await nodeRun('merge-branch-node-unnamed', log, { out: 'ℹ pass 1\n', code: 0 }, { run });
+    assert.equal(asked.filter((each) => each.command !== 'node u.mjs').length, 1, 'the gate ran once');
+    assert.equal(results[0]!.verdict, 'FAIL');
+    assert.match(results[0]!.note, why);
+  }
+});
+
+test('NODEALONE1: which gates run node tests is read from the scripts they run, through npm and its workspace', () => {
+  const fx = makeFixture('merge-branch-node-scripts');
+  fx.write('package.json', JSON.stringify({ workspaces: ['pkg'], scripts: { tooltests: 'npm run tooltests -w cli', verify: 'npm run check -w cli && node --test tools/x.test.mjs && node tools/doc.mjs', other: 'node tools/other.mjs', loop: 'npm run loop' } }));
+  fx.write('pkg/package.json', JSON.stringify({ name: 'cli', scripts: { tooltests: 'node --test "tool-test/**/*.ts"', check: 'tsc --noEmit' } }));
+  const dirs = (run: string) => tool.nodeTestDirs(fx.root, planned('g', run));
+  assert.deepEqual(dirs('npm run tooltests'), [join(fx.root, 'pkg')]);
+  assert.deepEqual(dirs('npm run verify'), [fx.root]);
+  assert.deepEqual(dirs('npm run other'), []);
+  assert.deepEqual(dirs('npm run loop'), []);
+  assert.deepEqual(dirs('dotnet test src/Daoris.Service'), []);
+  assert.deepEqual(tool.nodeTestDirs(fx.root, { ...planned('g', 'npm run tooltests'), cwd: 'pkg' } as Gate), [join(fx.root, 'pkg')]);
+  fx.cleanup();
+});
+
+test('NODEALONE1: one gate in turn runs the failed test alone after the last gate', async () => {
+  const fx = makeFixture('merge-branch-node-turn');
+  fx.write('package.json', JSON.stringify({ scripts: { verify: 'node --test t/x.test.mjs' } }));
+  fx.write('t/x.test.mjs', '');
+  const verify = { ...planned('cli', 'npm run verify'), clock: true } as Gate;
+  const after = planned('u', 'node u.mjs');
+  let runs = 0;
+  const fake = fakeStep((command) => (command === verify.run && ++runs === 1 ? { out: nodeLog([['t\\x.test.mjs', 'one']]), code: 1 } : { out: 'ℹ pass 1\nℹ fail 0\n', code: 0 }));
+  const results = await tool.runGates(fx.root, [verify, after], fx.root, {
+    oneAtATime: true, run: (root, gate, dir, given) => tool.runGate(root, gate, dir, { ...given, step: fake.step }), print: () => {},
+  });
+  assert.deepEqual(fake.asked, [verify.run, after.run, tool.nodeTestRerunCommand('t/x.test.mjs', 'one')]);
   assert.deepEqual(results.map((each) => each.verdict), ['FLAKE', 'PASS']);
   fx.cleanup();
 });
