@@ -61,7 +61,7 @@ public static class OpenRoutes
     /// <summary><c>place &lt;repository&gt;… --plan</c> (AGENTSPLACE1a2): a quick set-up's plan, read and never written.</summary>
     public static InstanceRoute PlacePlan { get; } = Open("PLACE_PLAN");
 
-    /// <summary><c>workflow convert --plan</c> and <c>--undo</c> (WORKFLOWCLEAN1 1e): the conversion plan, or the undo's, read and never written.</summary>
+    /// <summary><c>convert --plan</c> and <c>--undo</c> (ONEWAY1ae): the home's conversion plan over every part, or the undo's, read and never written.</summary>
     public static InstanceRoute ConvertPlan { get; } = Open("CONVERT_PLAN");
 
     /// <summary>
@@ -96,7 +96,7 @@ public static class OpenRoutes
         ("opinion show <session|opinion>", OpinionGate, "the gate's reading"),
         ("place --workspace <name> --adoption", null, "alone: no route writes a workspace's paced plan; PLACE_APPLY writes one when an adoption covers more repositories than it asks at once"),
         ("place <repository>… --plan", PlacePlan, "the plan; with `--apply` the person's press (PLACE_APPLY)"),
-        ("workflow convert --plan", ConvertPlan, "the plan, or with `--undo` the undo's; `--apply <digest>` and `--undo <digest>` are the person's presses (CONVERT_APPLY, CONVERT_UNDO)"),
+        ("convert --plan", ConvertPlan, "the plan, or with `--undo` the undo's; `--apply <digest>` and `--undo <digest>` are the person's presses (CONVERT_APPLY, CONVERT_UNDO)"),
         ("ask channel <id>", null,
             "alone: the read moves the person's own mark (CHANNEL_MARK, the person's), a door of the service, which writes it once whoever "
             + "asks; with words the person's press (CHANNEL_POST)"),
@@ -255,10 +255,10 @@ public static class PersonPresses
     /// </summary>
     public static InstanceRoute PlaceApply { get; } = Person("PLACE_APPLY");
 
-    /// <summary><c>workflow convert --apply &lt;digest&gt;</c> (WORKFLOWCLEAN1 1e): the conversion plan applied, on the person's Confirm in the window.</summary>
+    /// <summary><c>convert --apply &lt;digest&gt; [--leave &lt;part&gt;]</c> (ONEWAY1ae): the plan applied, or its receipt pressed again or a failed part left, on the person's Confirm in the window.</summary>
     public static InstanceRoute ConvertApply { get; } = Person("CONVERT_APPLY");
 
-    /// <summary><c>workflow convert --undo &lt;digest&gt;</c> (WORKFLOWCLEAN1 1e): the latest conversion taken back, on the person's Confirm in the window.</summary>
+    /// <summary><c>convert --undo &lt;digest&gt;</c> (ONEWAY1ae): the latest conversion taken back, on the person's Confirm in the window.</summary>
     public static InstanceRoute ConvertUndo { get; } = Person("CONVERT_UNDO");
 
     /// <summary>
@@ -306,8 +306,9 @@ public static class PersonPresses
         ("opinion myself <session>", OpinionMyself),
         ("ask channel <id> \"…\"", ChannelPost),
         ("place <repository>… --preset <id> … --apply [--accept <repository>:<purpose>,…]", PlaceApply),
-        ("workflow convert --apply <digest> [--composed none|review] [--land-automatic review|none]", ConvertApply),
-        ("workflow convert --undo <digest>", ConvertUndo),
+        ("convert --apply <digest> [--composed none|review] [--land-automatic review|none]", ConvertApply),
+        ("convert --apply <digest> --leave <part>", ConvertApply),
+        ("convert --undo <digest>", ConvertUndo),
         ("plugins approve <id> <server>", PluginAction),
         ("plugins withdraw <id> <server>", PluginAction),
         ("workflow skip <run> <node> \"…\"", WorkflowNode),

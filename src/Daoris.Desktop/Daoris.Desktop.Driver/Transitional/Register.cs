@@ -137,6 +137,15 @@ public static class TransitionalRegister
             Row = "ONEWAY1af",
             Ended = ContinuationAdmissions.Begun,
         },
+        new()
+        {
+            Id = "conversion-receipt-before-parts",
+            Kept = "Conversion/HomeReceipts.cs:89",
+            Reaches = "A conversion receipt the workflow wave wrote before the door had parts: read as one workflow part with no build, which gives the floor nothing.",
+            Ends = "No receipt in the home's receipts folder is in the shape before parts; a press on one writes it again in the new shape.",
+            Row = "ONEWAY1ag",
+            Ended = home => Read(home, HomeEntry.DriverConfig) is not null && !HomeReceipts.AnyBeforeParts(home),
+        },
     ];
 
     /// <summary>The floor of the builds that reach a home is no file of the home: an entry that ends with it never reads as ended, and its row deletes it.</summary>

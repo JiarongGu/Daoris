@@ -625,7 +625,7 @@ public sealed partial class HelpCoverageTests
         // WORKFLOWCLEAN1g: the conversion's review, over CONVERT_APPLY and CONVERT_UNDO.
         ("agents", "useConvertApply", null, new Exempt(
             "converting the old workflow records is the person's own press over the plan they read, by its digest (D227): Ask Daoris "
-            + "opens the review and names `workflow convert --plan`, and never proposes the apply.")),
+            + "opens the review and names `daoris convert --plan`, and never proposes the apply.")),
         ("agents", "useConvertUndo", null, new Exempt(
             "undoing the conversion is the person's own press over its own plan's digest, offered on the review while the receipt "
             + "stands (D227); Ask Daoris takes the person to the review and never proposes it.")),

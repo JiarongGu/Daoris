@@ -309,10 +309,10 @@ using Daoris.Driver;
 //                 the person's Keep (WORKFLOW1f, design §4.4): where a kind's paths hold a session's work, keep the workflow
 //                 the kind chose for it, with their words, on its run, and print what the landing gate says after.
 //
-//   workflow convert --plan | --apply <digest> | --undo [<digest>]
-//                 the old workflow records converted to saved graph workflows (WORKFLOWCLEAN1 1e, D227): the plan reads and
-//                 writes nothing, --apply and --undo are the person's presses, confirmed in the running Daoris's window; with
-//                 none running it says so.
+//   convert --plan | --apply <digest> [--leave <part>] | --undo [<digest>]
+//                 the home's old records converted, part by part, through one door (ONEWAY1ae, D228; WORKFLOWCLEAN1 1e's workflow
+//                 part among them): the plan reads and writes nothing, --apply and --undo are the person's presses, confirmed in
+//                 the running Daoris's window, and --leave closes a failed part; with none running it says so.
 //
 //   workflow skip <run> <node> "…"  ·  workflow stop <run> <node> ["…"]
 //                 the person's skip or stop of a node of a run bound to a graph version (FABRIC-CUTOVER1f, D190, design §5.2):
@@ -454,6 +454,12 @@ if (args is ["git", .. var gitArgs])
 if (args is ["workflow", .. var workflowArgs])
 {
     return await Daoris.Driver.Host.WorkflowConsole.RunAsync(workflowArgs);
+}
+
+// The home's one conversion door (ONEWAY1ae): through the running Daoris alone, routed before the machine log opens, with its own catch.
+if (args is ["convert", .. var convertArgs])
+{
+    return await Daoris.Driver.Host.ConvertConsole.RunAsync(convertArgs);
 }
 
 // A checkout's heavy gates under its repository's one slot (HEAVYRUN1a, D180's HEAVYRUN1 note). Routed before the machine log opens,
