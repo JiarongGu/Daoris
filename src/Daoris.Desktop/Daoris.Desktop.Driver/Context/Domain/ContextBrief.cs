@@ -144,6 +144,9 @@ public static class ContextBrief
     /// <summary>The most files a turn's line names, and failed commands; the rest counted.</summary>
     private const int Named = 8;
 
+    /// <summary>The most files read, and pages opened, a turn's line names: the rest are counted.</summary>
+    private const int ReadsNamed = 20;
+
     /// <summary>What a text weighs toward the bound: a Han character <see cref="HanWeight"/>, every other one.</summary>
     public static int Weight(string text)
     {
@@ -515,25 +518,74 @@ public static class ContextBrief
         return (quoted is null ? "" : "\n\n  It answered, in its last message of the turn:\n\n" + quoted) + (did is null ? "" : $"\n\n  {did}");
     }
 
-    /// <summary>One line of what a turn did: the files it edited and the commands that failed, as its calls' kind, files and status say.</summary>
+    /// <summary>
+    /// One line of what a turn did: the files it edited, the files it read or searched and the pages it opened (names only, never what
+    /// they held), and the commands that failed, as its calls' kind, files, inputs and status say.
+    /// </summary>
     private static string? Did(Turn turn, string? tree)
     {
         var edited = turn.Calls.Where(call => call.Kind is "edit" or "delete" or "move")
             .SelectMany(call => call.Locations).Select(path => Relative(path, tree)).Distinct(StringComparer.Ordinal).ToList();
+        var read = turn.Calls.Where(call => call.Kind is "read" or "search")
+            .SelectMany(call => call.Locations.Count > 0 ? call.Locations : PathsOf(call.Input)).Select(path => Relative(path, tree))
+            .Where(path => path.Length > 0).Distinct(StringComparer.Ordinal).Except(edited, StringComparer.Ordinal)
+            .Select(path => TextBounds.Clip(path, StepLimit)).ToList();
+        var opened = turn.Calls.Where(call => call.Kind is "fetch" || (call.Kind is "other" && call.Title is { } title && Navigates.IsMatch(title)))
+            .Select(call => PageOf(call.Input)).OfType<string>().Distinct(StringComparer.Ordinal).Select(page => TextBounds.Clip(page, StepLimit)).ToList();
         var failed = turn.Calls.Where(call => call is { Kind: "execute", Status: "failed" })
             .Select(call => TextBounds.Clip(TextBounds.OneLine(Unrooted(call.Title ?? call.Id, tree)), StepLimit)).ToList();
         var said = new List<string>();
         if (edited.Count > 0) said.Add($"It edited {Listed(edited)}");
+        if (read.Count > 0) said.Add($"it read {Listed(read, ReadsNamed)}");
+        if (opened.Count > 0) said.Add($"it opened {Listed(opened, ReadsNamed)}");
         if (failed.Count > 0) said.Add($"{(failed.Count == 1 ? "a command failed" : "commands failed")}: {Listed(failed)}");
         if (said.Count == 0) return null;
         var line = string.Join("; ", said);
         return char.ToUpperInvariant(line[0]) + line[1..] + ".";
     }
 
-    private static string Listed(IReadOnlyList<string> items)
+    private static readonly Regex Navigates = new("navigat|goto|open_?url|open_?page|preview_start", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+    /// <summary>The path a read or search call's input names: its file, notebook or folder; none where the input names none.</summary>
+    private static IEnumerable<string> PathsOf(string? input)
     {
-        var named = items.Take(Named).Select(item => $"`{item}`").ToList();
-        var more = items.Count > Named ? $" and {items.Count - Named} more" : "";
+        if (InputObject(input) is not { } root) yield break;
+        foreach (var name in new[] { "file_path", "notebook_path", "path" })
+        {
+            if (root.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String && value.GetString() is { Length: > 0 } path)
+            {
+                yield return path;
+                yield break;
+            }
+        }
+    }
+
+    /// <summary>The page address a call's input names, without its user, query or fragment; null where it names no http(s) or file address.</summary>
+    private static string? PageOf(string? input)
+    {
+        if (InputObject(input) is not { } root || !root.TryGetProperty("url", out var value) || value.ValueKind != JsonValueKind.String) return null;
+        if (!Uri.TryCreate(value.GetString()?.Trim(), UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https" or "file")) return null;
+        return uri.Scheme == "file" ? uri.LocalPath.Replace('\\', '/') : uri.GetLeftPart(UriPartial.Path);
+    }
+
+    private static JsonElement? InputObject(string? input)
+    {
+        if (input is not { Length: > 0 }) return null;
+        try
+        {
+            using var document = JsonDocument.Parse(input);
+            return document.RootElement.ValueKind == JsonValueKind.Object ? document.RootElement.Clone() : null;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private static string Listed(IReadOnlyList<string> items, int limit = Named)
+    {
+        var named = items.Take(limit).Select(item => $"`{item}`").ToList();
+        var more = items.Count > limit ? $" and {items.Count - limit} more" : "";
         return named.Count == 1 ? named[0] + more
             : more.Length > 0 ? string.Join(", ", named) + more
             : $"{string.Join(", ", named.Take(named.Count - 1))} and {named[^1]}";

@@ -28,13 +28,14 @@ public sealed record RoutingStanding(string Standing, string Words)
             return new(NotDriven, Line(
                 "not driven",
                 "This repository is not driven on this machine, so a quest published to "
-                + (lanes.Count > 0 ? $"its lanes ({addresses})" : "it") + " would not start here. Work your rows yourself."));
+                + (lanes.Count > 0 ? $"its lanes ({addresses})" : "it") + " would not start here. Work this repository's own rows yourself."));
         }
 
         if (lanes.Count == 0)
         {
             return new(NoLanes, Line(
-                "no lanes", "This repository declares no lanes, so there is no lane to publish a quest to. Work your rows yourself."));
+                "no lanes",
+                "This repository declares no lanes, so there is no lane of its own to publish a quest to. Work this repository's own rows yourself."));
         }
 
         if (!config.OpensOwnTree(repository.Repository))
@@ -69,5 +70,10 @@ public sealed record RoutingStanding(string Standing, string Words)
         Noted.Of(NoteCodes.ChatToldRouting, $"told the agent this repository's routing standing, `{Standing}`:", ("standing", Standing))
             .Then(" ", Noted.Said(Words, NoteBy.Program));
 
-    private static string Line(string standing, string sentences) => $"Routing standing here: {standing}. {sentences}";
+    /// <summary>The way to work that is not this repository's, told in every case.</summary>
+    internal const string OtherRepositories =
+        "Work another repository owns goes to that repository as a quest (`quest_publish`, naming the repository from the registry or this "
+        + "repository's `uses`), and a question about this repository goes to a helper (`helper_ask`).";
+
+    private static string Line(string standing, string sentences) => $"Routing standing here: {standing}. {sentences} {OtherRepositories}";
 }
