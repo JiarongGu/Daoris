@@ -984,7 +984,7 @@ public sealed class LinesRoutes(DriverContext context)
     };
 
     // XAGENT1a (D155 point 3, the second-agent design §2.5): which other agent reads each repository's work before it lands,
-    // the screens' half of `daoris driver opinion`, sent by `bridge/lines.ts`. Declared only: nothing here chooses a reviewer,
+    // the screens' half of `daoris place opinion`, sent by `bridge/lines.ts`. Declared only: nothing here chooses a reviewer,
     // starts a pass or holds a landing.
 
     /// <summary>

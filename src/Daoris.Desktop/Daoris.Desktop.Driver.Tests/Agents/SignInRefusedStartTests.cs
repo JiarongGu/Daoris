@@ -160,7 +160,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         Assert.Equal(AccountReadiness.SignedOut, held.NotReady);
         Assert.Equal(
             "the `fake` account `account-1` is not signed in, so a session would have nothing to run as — "
-            + "`daoris agent login fake --profile account-1` runs the agent's own sign-in into it. Daoris manages the directory "
+            + "`daoris agent login fake --account account-1` runs the agent's own sign-in into it. Daoris manages the directory "
             + "and the name; the credential stays in the agent's own store.",
             held.Refusal);
         Assert.Equal(["account-1"], held.SignedOut!.Accounts);
@@ -180,7 +180,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         Assert.False(held.Allowed);
         Assert.Equal(
             "no `fake` account this start may use is ready: `account-1` is not signed in, `account-2` is not signed in. A sign-in "
-            + "starts it: `daoris agent login fake --profile account-1`, `daoris agent login fake --profile account-2`, or Agents → "
+            + "starts it: `daoris agent login fake --account account-1`, `daoris agent login fake --account account-2`, or Agents → "
             + "the agent's page → Accounts.",
             held.Refusal);
         Assert.Equal(["account-1", "account-2"], held.SignedOut!.Accounts);
@@ -391,7 +391,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         Assert.Equal(
             "No account it may run on is ready: `account-2` needs a sign-in, and the rest are at their limit. It goes on by itself once the "
             + $"`fake` account `account-1` is ready again at Oct 4, 19:00 ({Zone.Id}). A sign-in starts it sooner: "
-            + "`daoris agent login fake --profile account-2`, or Agents → the agent's page → Accounts.",
+            + "`daoris agent login fake --account account-2`, or Agents → the agent's page → Accounts.",
             waits.Note);
         NoteAssert.Holds(waits.Note, waits.Parts);
         Assert.Equal(["held.limit-waits-sign-in", "held.sign-in-sooner"], NoteAssert.Codes(waits.Parts));
@@ -416,7 +416,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         Assert.Equal("failed", conclusion.State);
         Assert.Equal(
             $"{failed.Note} The agent refused the `stub` account `account-2` for its sign-in, so it reads signed out and Daoris "
-            + "starts nothing more on it until it is signed in: `daoris agent login stub --profile account-2`, or Agents → the "
+            + "starts nothing more on it until it is signed in: `daoris agent login stub --account account-2`, or Agents → the "
             + "agent's page → Accounts.",
             conclusion.Note);
         var line = conclusion.Parts![^1];
@@ -564,7 +564,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         Assert.Equal(new AccountRead(LoginState.Out, Seen), ReadOf("fake", "account-1"));
         Assert.Equal(
             "The agent refused the `fake` account `account-1` for its sign-in, so it reads signed out and Daoris starts nothing "
-            + "more on it until it is signed in: `daoris agent login fake --profile account-1`, or Agents → the agent's page → "
+            + "more on it until it is signed in: `daoris agent login fake --account account-1`, or Agents → the agent's page → "
             + "Accounts.",
             said!.Note);
         NoteAssert.Holds(said.Note, said.Parts);

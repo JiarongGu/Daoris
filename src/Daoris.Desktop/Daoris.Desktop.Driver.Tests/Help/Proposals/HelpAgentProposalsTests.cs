@@ -77,7 +77,7 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
         var plan = HelpProposals.Plan(Default(agent, account, workspace), DriverConfig.Empty, Machine);
 
         Assert.Equal("`default` is retired: every account of Daoris's serves every workspace (D197), and the order says where starts "
-            + $"begin — `daoris agent profile order claude-code {account ?? "<account>"}` puts one first. Propose `order` with the account "
+            + $"begin — `daoris agent account order claude-code {account ?? "<account>"}` puts one first. Propose `order` with the account "
             + "first.", plan.Refusal);
     }
 
@@ -124,7 +124,7 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
         new("p9", "agent", "use", agent, workspace, null, null, "the person asked", "h1", "proposed") { AccountUse = change, ForSet = set };
 
     /// <summary>
-    /// TOOL4g's <c>use</c> (D130 §9, §16.6; POOL1b, §5.3): how the set is used, as <c>daoris agent profile use</c> takes it, said in its
+    /// TOOL4g's <c>use</c> (D130 §9, §16.6; POOL1b, §5.3): how the set is used, as <c>daoris agent account use</c> takes it, said in its
     /// words; a door's accounts are its owner's (AGT7), so the command and the sentence name the owner. Before POOL1b it was said for
     /// the machine (<i>On this machine</i>) or a workspace (<i>In `lab`</i>), whose terminal named <c>--workspace</c>.
     /// </summary>
@@ -136,11 +136,11 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
         var none = HelpProposals.Plan(Use("claude-code", new UseChange(NoKeep: true)), DriverConfig.Empty, Listed);
 
         Assert.Null(machine.Refusal);
-        Assert.Equal("daoris agent profile use claude-code order --keep play --early off --near 85", machine.Terminal);
+        Assert.Equal("daoris agent account use claude-code order --keep play --early off --near 85", machine.Terminal);
         // SWITCH1d: the old names said in the curve's terms, as the file reads them on.
         Assert.Equal("For every workspace, `claude-code` uses its accounts one by one, in order, keeps `play` for conversations, does not "
             + "switch accounts while a session runs and holds its own curve's five-hour window at 85%.", machine.Describe);
-        Assert.Equal("daoris agent profile use claude-code --no-keep", none.Terminal);
+        Assert.Equal("daoris agent account use claude-code --no-keep", none.Terminal);
         Assert.Contains("keeps no account for conversations", none.Describe);
     }
 
@@ -195,11 +195,11 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
         var off = HelpProposals.Plan(Use("claude-code", new UseChange(Switch: "off", NoCurve: true)), DriverConfig.Empty, Listed);
 
         Assert.Null(own.Refusal);
-        Assert.Equal("daoris agent profile use claude-code --switch curve --curve weekly=0:30,50:70,100:100", own.Terminal);
+        Assert.Equal("daoris agent account use claude-code --switch curve --curve weekly=0:30,50:70,100:100", own.Terminal);
         Assert.Equal("For every workspace, `claude-code` switches accounts by its own curve and sets its own curve's weekly window to "
             + "0:30, 50:70, 100:100.", own.Describe);
         Assert.Equal("For every workspace, `claude-code` switches accounts by Daoris's curve.", smart.Describe);
-        Assert.Equal("daoris agent profile use claude-code --switch off --no-curve", off.Terminal);
+        Assert.Equal("daoris agent account use claude-code --switch off --no-curve", off.Terminal);
         Assert.Equal("For every workspace, `claude-code` does not switch accounts while a session runs and clears its own curve, every window "
             + "back to Daoris's.", off.Describe);
     }
@@ -362,7 +362,7 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
 
     /// <summary>
     /// TOOL4l-b (D130 §9; POOL1b, §5.3): the set's order, the accounts named first and the rest after in the set's order, or cleared back
-    /// to the ids' order, as <c>daoris agent profile order</c> takes it, said in its words; a door's accounts are its owner's (AGT7).
+    /// to the ids' order, as <c>daoris agent account order</c> takes it, said in its words; a door's accounts are its owner's (AGT7).
     /// Before POOL1b this wrote a scope's list whole (<i>its starts may run on those accounts</i>) or sent a workspace back to the
     /// machine's accounts, clearing its default with <c>profile default --clear</c>.
     /// </summary>
@@ -373,11 +373,11 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
         var back = HelpProposals.Plan(Order("claude-code", [], clear: true), DriverConfig.Empty, Walked);
 
         Assert.Null(first.Refusal);
-        Assert.Equal("daoris agent profile order claude-code spare", first.Terminal);
+        Assert.Equal("daoris agent account order claude-code spare", first.Terminal);
         Assert.Equal("`claude-code`'s order is `spare`, then `work`, then `play`, for every workspace: one by one, in order, begins at the "
             + "first, and make the most of them uses the order only to break a tie.", first.Describe);
         Assert.Null(back.Refusal);
-        Assert.Equal("daoris agent profile order claude-code --clear", back.Terminal);
+        Assert.Equal("daoris agent account order claude-code --clear", back.Terminal);
         Assert.Equal("`claude-code`'s order goes back to its accounts' ids: `play`, then `spare`, then `work`. No setting is cleared.", back.Describe);
     }
 
@@ -451,7 +451,7 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
         new("p14", "agent", "ready", agent, null, null, null, "the person asked", "h1", "proposed") { ReadyAccount = account };
 
     /// <summary>
-    /// TOOL4l-b (D125 §2.3): <i>Try now</i>, an account's cool-off ended early as <c>daoris agent profile ready</c> ends it, for an
+    /// TOOL4l-b (D125 §2.3): <i>Try now</i>, an account's cool-off ended early as <c>daoris agent account ready</c> ends it, for an
     /// account of the door's owner that is cooling, or for the tool's own sign-in; said in its words.
     /// </summary>
     [Fact]
@@ -461,11 +461,11 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
         var own = HelpProposals.Plan(Ready("claude-code", "own"), DriverConfig.Empty, Cooling);
 
         Assert.Null(account.Refusal);
-        Assert.Equal("daoris agent profile ready claude-code play", account.Terminal);
+        Assert.Equal("daoris agent account ready claude-code play", account.Terminal);
         Assert.StartsWith("Try `play` now: its cool-off ends", account.Describe);
         Assert.Contains("cools again", account.Describe);
         Assert.Null(own.Refusal);
-        Assert.Equal("daoris agent profile ready claude-code --own", own.Terminal);
+        Assert.Equal("daoris agent account ready claude-code --own", own.Terminal);
         Assert.StartsWith("End the old cool-off of `claude-code`'s own sign-in", own.Describe);
         Assert.Contains("Daoris starts no session in it", own.Describe);
         Assert.DoesNotContain("starts may run on it again", own.Describe);

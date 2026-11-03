@@ -6,7 +6,7 @@ Your target is quest `#abc123`, asked by `console-api`:
 
 The report needs a note column.
 
-While you work, run the checks that cover what you change. Once, when the work is done, run this repository's heavy gates (`build`, `test`) through `daoris-driver run-heavy`, from this tree's root: it waits its turn behind another session's run of this repository rather than running beside it. Never run those gates whole another way.
+While you work, run the checks that cover what you change. Once, when the work is done, run this repository's heavy gates (`build`, `test`) through `daoris gate run`, from this tree's root: it waits its turn behind another session's run of this repository rather than running beside it. Never run those gates whole another way.
 
 First take the quest (respond to `#abc123` with `take`), then do the work inside this
 repository under its own doctrine and gates, then close it: `done` when it has landed, or

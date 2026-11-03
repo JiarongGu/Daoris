@@ -144,7 +144,7 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.Null(SessionsCommand.Read(["start-from"], out problem));
         Assert.Equal("`start-from` takes one session's id.", problem);
         Assert.Contains("daoris-driver sessions start-from <id>", SessionsCommand.Usage);
-        Assert.Contains("\n  sessions start-from <id>\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
+        Assert.Contains("\n  session start-from <id>\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
     }
 
     /// <summary>
@@ -1060,7 +1060,7 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.Equal("`handback` takes one session's or quest's id, and `--json` for the service's answer as it gave it.", problem);
         Assert.Null(SessionsCommand.Read(["handback", "s1", "s2"], out _));
         Assert.Contains("daoris-driver sessions handback <session|quest> [--json]", SessionsCommand.Usage);
-        Assert.Contains("\n  sessions handback <session|quest> [--json]\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
+        Assert.Contains("\n  session handback <session|quest> [--json]\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
     }
 
     /// <summary>

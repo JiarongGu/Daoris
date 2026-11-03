@@ -65,13 +65,13 @@ public sealed class AgentsCommandTests : IDisposable
     {
         foreach (var name in new[] { "account-1", "account-2", "R&D" }) Account(Home, name);
 
-        Assert.Contains("`daoris agent profile order claude-code <account>` puts one first",
+        Assert.Contains("`daoris agent account order claude-code <account>` puts one first",
             await Refused("profile", "default", "claude-code", "R&D"));
-        Assert.Contains("`daoris agent profile order claude-code <account> account-1` puts those first",
+        Assert.Contains("`daoris agent account order claude-code <account> account-1` puts those first",
             await Refused("profile", "order", "claude-code", "R&D", "account-1", "--clear"));
-        Assert.Contains("`daoris agent profile ready claude-code <account>` is that account",
+        Assert.Contains("`daoris agent account ready claude-code <account>` is that account",
             await Refused("profile", "ready", "claude-code", "R&D", "--own"));
-        Assert.Contains("`daoris agent profile rename claude-code <account> work`; naming it `R&D` gives it none",
+        Assert.Contains("`daoris agent account rename claude-code <account> work`; naming it `R&D` gives it none",
             await Refused("profile", "rename", "claude-code", "R&D"));
 
         async Task<string> Refused(params string[] words)
@@ -166,7 +166,7 @@ public sealed class AgentsCommandTests : IDisposable
     [InlineData("rules")]
     [InlineData("rules proposals")]
     [InlineData("settings claude-code --account work")]
-    [InlineData("trust claude-code <folder> --profile work --dry-run")]
+    [InlineData("trust claude-code <folder> --account work --dry-run")]
     [InlineData("profile")]
     [InlineData("profile list")]
     [InlineData("profile use claude-code")]
@@ -246,7 +246,7 @@ public sealed class AgentsCommandTests : IDisposable
     /// </summary>
     [Theory]
     [InlineData("settings claude-code --account work model opus")]
-    [InlineData("trust claude-code <folder> --profile work --yes")]
+    [InlineData("trust claude-code <folder> --account work --yes")]
     public async Task A_setting_or_a_trust_on_a_named_wiring_file_is_written_alone_and_nothing_is_sent(string words)
     {
         if (!OperatingSystem.IsWindows()) return;
@@ -353,7 +353,7 @@ public sealed class AgentsCommandTests : IDisposable
         var standIn = running.Serve();
         Account(running.Home);
 
-        var exit = await AgentsCommand.RunAsync(["trust", "claude-code", Folder, "--profile", "work", "--yes"], Beside(running), CancellationToken.None);
+        var exit = await AgentsCommand.RunAsync(["trust", "claude-code", Folder, "--account", "work", "--yes"], Beside(running), CancellationToken.None);
 
         Assert.Equal(0, exit);
         Assert.Empty(standIn.Presses);
@@ -764,7 +764,7 @@ public sealed class AgentsCommandTests : IDisposable
             Assert.Null(AccountNames.NameOf(_held.Home, "stand-in", account));
             Assert.Equal(
                 $"daoris: stopped at your Ctrl+C — the account `{account}` was kept, signed in, and its end was not written: "
-                + $"`daoris agent profile rename stand-in {account} Seat` finishes it.",
+                + $"`daoris agent account rename stand-in {account} Seat` finishes it.",
                 _held._error.ToString().Trim());
         }
     }

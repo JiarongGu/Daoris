@@ -56,8 +56,8 @@ public static class PluginOffers
 
     /// <summary>
     /// What an installed plugin is against the offer of its own id (LANDPIN3): <see cref="PluginShipped"/> where it is older than the
-    /// one this install ships, or the same version with files that differ; null where it needs no word, and where there is no
-    /// sound offer of its id.
+    /// one this install ships, or has files that differ (from the shipped ones at its version, from those its install copied at an
+    /// older one, LANDPIN3b); null where it needs no word, and where there is no sound offer of its id.
     /// </summary>
     public static PluginShipped? ShippedOf(string installFolder, PluginManifest installed, PluginOffer? offer) =>
         offer is { Problem: null } && string.Equals(offer.Id, installed.Id, StringComparison.OrdinalIgnoreCase)
@@ -65,8 +65,16 @@ public static class PluginOffers
                 installed.Version,
                 offer.Manifest.Version,
                 () => PluginFolders.SameFiles(installFolder, offer.Folder),
+                () => AsInstalled(installFolder),
                 PluginFolders.TextIfThere(Path.Combine(offer.Folder, PluginCatalog.ManifestName)) is { } text ? PluginShipped.ChangesIn(text) : null)
             : null;
+
+    /// <summary>
+    /// Whether an installed copy's files are those its record says its install copied (LANDPIN3b): null where the record holds no
+    /// digest, a copy from before it, one with no record or one that does not read.
+    /// </summary>
+    public static bool? AsInstalled(string installFolder) =>
+        PluginSource.Read(installFolder).Source?.Digest is { } digest ? PluginFolders.HoldsDigest(installFolder, digest) : null;
 
     /// <summary>What a plugin needs on the machine, in its README's words (<see cref="PluginOffer.NeedsIn"/>); none without one.</summary>
     public static IReadOnlyList<string> Needs(string folder) =>

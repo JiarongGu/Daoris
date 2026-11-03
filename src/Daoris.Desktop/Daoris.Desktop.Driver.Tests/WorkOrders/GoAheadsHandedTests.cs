@@ -284,7 +284,7 @@ public sealed class GoAheadsHandedTests
     [Fact]
     public void The_hosts_usage_spells_the_go_ahead_door()
     {
-        Assert.Contains("ask --go-ahead <id> <n> approve|refuse [\"…\"]", DriverCommand.Usage);
+        Assert.Contains("ask go-ahead <id> <n> approve|refuse [\"…\"]", DriverCommand.Usage);
         var host = File.ReadAllText(Path.Combine(
             Daoris.Driver.Tests.HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host", "AskConsole.cs"));
         Assert.Contains("case \"--go-ahead\":", host);

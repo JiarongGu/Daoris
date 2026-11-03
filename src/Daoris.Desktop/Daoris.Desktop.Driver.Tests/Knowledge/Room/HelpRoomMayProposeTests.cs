@@ -191,7 +191,7 @@ public sealed class HelpRoomMayProposeTests
     /// <summary>
     /// POOL1b (D197 point 6, the account-pool design §5.3): the room words Daoris's accounts as one set, whose <c>use</c> and
     /// <c>order</c> name no workspace, and offers no default; HELP10 held here that an agent's default account, for the machine or a
-    /// workspace, was proposed, beside <c>daoris agent profile default</c>.
+    /// workspace, was proposed, beside <c>daoris agent account default</c>.
     /// </summary>
     [Fact]
     public void The_room_says_an_agents_accounts_are_one_set_and_offers_no_default()
@@ -201,7 +201,7 @@ public sealed class HelpRoomMayProposeTests
         Assert.Contains("Daoris's accounts for an agent are one set that serves every workspace, in one order, so these name no workspace", agents);
         Assert.Contains("`order` puts the\n  accounts named first, in that order, the rest after, or with `clear` returns to the ids' order", agents);
         Assert.DoesNotContain("by default, for the machine or one workspace", agents);
-        Assert.DoesNotContain("daoris agent profile default", agents);
+        Assert.DoesNotContain("daoris agent account default", agents);
         Assert.DoesNotContain("this machine's accounts", agents);
     }
 

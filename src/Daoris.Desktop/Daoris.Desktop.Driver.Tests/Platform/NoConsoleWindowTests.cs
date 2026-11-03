@@ -27,6 +27,9 @@ public sealed class NoConsoleWindowTests
         ["Daoris.Desktop.Driver/Platform/PieceLauncher.cs"] =
             "the agents' launcher (TERMTRUST1a): it joins the agents' job and any piece's, then starts the harness, which speaks its protocol "
             + "over the stdio the driver handed the launcher",
+        ["Daoris.Desktop.Driver.Host/DoctrineConsole.cs"] =
+            "a doctrine command at the person's terminal (ONEWAY1ai-i): the program hands it to the CLI on node, which writes to the terminal "
+            + "the program was run in",
     };
 
     /// <summary>The spawns that open a console the person is meant to see, marked <c>// console-window:</c> where taken (ADOSIGNIN1).</summary>

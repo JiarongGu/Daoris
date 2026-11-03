@@ -385,8 +385,8 @@ public sealed class HelpCommandTests : IDisposable
     public void The_usages_name_the_verb()
     {
         var usage = DriverCommand.Usage.ReplaceLineEndings("\n");
-        Assert.Contains("\n  help list [--search \"…\"] [--json]", usage);
-        Assert.Contains("help delete <id> [--yes]", usage);
+        Assert.Contains("\n  ask-daoris list [--search \"…\"] [--json]", usage);
+        Assert.Contains("ask-daoris delete <id> [--yes]", usage);
         foreach (var verb in HelpCommand.Verbs) Assert.Contains($"help {verb}", HelpCommand.Usage);
     }
 }

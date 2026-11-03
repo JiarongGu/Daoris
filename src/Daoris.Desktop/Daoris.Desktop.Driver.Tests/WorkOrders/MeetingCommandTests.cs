@@ -243,8 +243,8 @@ public sealed class MeetingCommandTests : IDisposable
     public void The_host_wires_the_verb_and_its_usage_names_it()
     {
         var usage = DriverCommand.Usage.ReplaceLineEndings("\n");
-        Assert.Contains("\n  meeting ask \"<question>\" --agents <a,b> [--repository <name>] [--id <id>]  ·  meeting show|stop|clear <id>\n", usage);
-        Assert.Contains("\n  meeting send <id> [--round <n>]  ·  meeting list\n", usage);
+        Assert.Contains("\n  brainstorm \"<question>\" --kind meeting --agents <a,b> [--repository <name>] [--id <id>]  ·  brainstorm show|stop|clear <id> --kind meeting\n", usage);
+        Assert.Contains("\n  brainstorm send <id> --kind meeting [--round <n>]  ·  brainstorm list --kind meeting\n", usage);
 
         var program = File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host", "Program.cs"));
         Assert.Contains("if (args is [\"meeting\", .. var meetingArgs])", program, StringComparison.Ordinal);

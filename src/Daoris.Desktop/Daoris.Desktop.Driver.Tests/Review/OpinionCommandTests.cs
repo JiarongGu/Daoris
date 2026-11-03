@@ -31,7 +31,7 @@ public sealed class OpinionCommandTests
     public static TheoryData<string, string?> Lines() => new()
     {
         { "ask s1", "ask s1 reviewer= same=False failure=False words=" },
-        { "ask #s1 --reviewer dsh please look at the parser", "ask s1 reviewer=dsh same=False failure=False words=please look at the parser" },
+        { "ask #s1 --agent dsh please look at the parser", "ask s1 reviewer=dsh same=False failure=False words=please look at the parser" },
         { "ask s1 --same-agent", "ask s1 reviewer= same=True failure=False words=" },
         { "ask s1 --failure stuck on the build", "ask s1 reviewer= same=False failure=True words=stuck on the build" },
         { "show o1", "show o1 reviewer= same=False failure=False words=" },
@@ -39,9 +39,9 @@ public sealed class OpinionCommandTests
         { "anyway s1 a comment only", "anyway s1 reviewer= same=False failure=False words=a comment only" },
         { "myself s1", "myself s1 reviewer= same=False failure=False words=" },
         { "ask", null },
-        { "ask --reviewer dsh", null },
-        { "ask s1 --reviewer", null },
-        { "ask s1 --reviewer dsh --same-agent", null },
+        { "ask --agent dsh", null },
+        { "ask s1 --agent", null },
+        { "ask s1 --agent dsh --same-agent", null },
         { "ask s1 --verify", null },
         { "show o1 extra", null },
         { "stop", null },
@@ -73,8 +73,8 @@ public sealed class OpinionCommandTests
         Assert.Equal(File.ReadAllText(GoldenPath("opinion-command", "usage.txt")).ReplaceLineEndings("\n").TrimEnd('\n'), OpinionCommand.Usage);
 
         var usage = DriverCommand.Usage.ReplaceLineEndings("\n");
-        Assert.Contains("\n  opinion ask <session> [--reviewer <adapter>] [--same-agent] [\"…\"]  ·  opinion show <session|opinion>\n", usage);
-        Assert.Contains("\n  opinion stop <opinion>  ·  opinion anyway <session> [\"…\"]  ·  opinion myself <session> [\"…\"]\n", usage);
+        Assert.Contains("\n  session opinion ask <session> [--agent <adapter>] [--same-agent] [\"…\"]  ·  session opinion show <session|opinion>\n", usage);
+        Assert.Contains("\n  session opinion stop <opinion>  ·  session opinion anyway <session> [\"…\"]  ·  session opinion myself <session> [\"…\"]\n", usage);
 
         var program = File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host", "Program.cs"));
         Assert.Contains("if (args is [\"opinion\", .. var opinionArgs])", program);

@@ -252,7 +252,7 @@ place (learned 2026-10-23 and 24, LIMITGOON1, LIMITRESUME1d and REVIEWLANDED1):
   (an expired sign-in, a limit), Daoris carries its quest on once an account is ready; publishing the quest again makes a second
   session doing the same work. On 2026-10-24 three quests were published again after such failures and each ran twice; only one of
   each was landed. Read the quest's sessions before publishing anything again.
-- **A landing is done when Daoris says so.** After committing a session's landing, `daoris-driver trees land <session>
+- **A landing is done when Daoris says so.** After committing a session's landing, `daoris tree land <session>
   --plan` must answer that its branch holds nothing `main` does not. Where it lists commits, `main` lacks them: a session
   told to rebase after its landing may have made new ones, and they are work to land, not a stale row. Work on `main` as a
   replay, its `quest/` branch merged and pruned or not, is read as landed by content (REVIEWLANDED1, D102's note): its session
@@ -370,7 +370,7 @@ what the queue and driven sessions start, never the owner's own sessions or anot
 `tools/machine-admission.mjs` (off with `MERGE_BRANCH_ADMISSION=off`, and under `MERGE_BRANCH_MEMORY=off`, the tool's own tests, unless
 `MERGE_BRANCH_ADMISSION=on`; with no `DAORIS_HOME` it shares nothing and nothing waits, and so a red candidate's confirm run is
 inconclusive), the driver's is `MachineAdmission.cs`, and `fixtures/machine-admission.json` is the table both carry. A confirm
-run takes every place at once, as that many ordinary entries in one write, and waits for every heavy run admitted before it. A session reaches it through `daoris-driver run-heavy` (D180's
+run takes every place at once, as that many ordinary entries in one write, and waits for every heavy run admitted before it. A session reaches it through `daoris gate run` (D180's
 HEAVYQUEUE1 note): its marked gates take a place after the repository's slot, and `run-heavy -- <command>` runs a command of its own,
 a filtered `dotnet test` or a test file's run, as a heavy run with no slot; a driven session is told to use it (`HeavyTold.Focused`).
 The queue's admission is the machine's: it does not read `local/admission.json`, whose reservations remain CISCOPE1e2's.

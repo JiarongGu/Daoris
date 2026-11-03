@@ -10,7 +10,7 @@ public static class OneSetWords
     /// <summary><c>profile default</c>, and Ask Daoris's retired <c>default</c>: the order says where starts begin.</summary>
     public static string Default(string agent, string? account = null) =>
         "every account of Daoris's serves every workspace (D197), and the order says where starts begin — "
-        + $"`daoris agent profile order {agent} {(account is null ? "<account>" : ShellWord.Of(account, ShellWord.Account))}` puts one first";
+        + $"`daoris agent account order {agent} {(account is null ? "<account>" : ShellWord.Of(account, ShellWord.Account))}` puts one first";
 
     /// <summary><c>profile join</c>, and <c>login</c>'s <c>--join</c> and <c>--join-machine</c>: the account joins by itself.</summary>
     public const string Join = "there is nothing to join: every account signed in for Daoris serves every workspace (D197)";

@@ -860,7 +860,7 @@
         "trust",
         "claude-code",
         "<root>/work/engine",
-        "--profile",
+        "--account",
         "work"
       ],
       "folders": [
@@ -886,7 +886,7 @@
         "trust",
         "claude-code",
         "<root>/work/engine",
-        "--profile",
+        "--account",
         "work",
         "--dry-run"
       ],
@@ -912,7 +912,7 @@
         "trust",
         "claude-code",
         "<root>/work/engine",
-        "--profile",
+        "--account",
         "work",
         "--yes"
       ],
@@ -1026,7 +1026,7 @@
         "trust",
         "claude-code-acp",
         "<root>/work/engine",
-        "--profile",
+        "--account",
         "work",
         "--yes"
       ],
@@ -1056,7 +1056,7 @@
         "trust",
         "claude-code",
         "<root>/work/engine",
-        "--profile",
+        "--account",
         "work",
         "--yes"
       ],
@@ -1086,7 +1086,7 @@
         "trust",
         "claude-code",
         "<root>/work/engine/",
-        "--profile",
+        "--account",
         "work",
         "--yes"
       ],
@@ -1116,7 +1116,7 @@
         "trust",
         "claude-code",
         "<root>/work/engine",
-        "--profile",
+        "--account",
         "work",
         "--yes"
       ],
@@ -1213,7 +1213,7 @@
         "trust",
         "claude-code",
         "<root>/work/engine",
-        "--profile",
+        "--account",
         "play",
         "--yes"
       ],
@@ -1261,7 +1261,7 @@
         "trust",
         "claude-code",
         "<root>/work/engine",
-        "--profile",
+        "--account",
         "Work account",
         "--yes"
       ],
@@ -1340,11 +1340,11 @@
       "after": {}
     },
     {
-      "name": "settings, read with --profile",
+      "name": "settings, read with --account",
       "argv": [
         "settings",
         "claude-code",
-        "--profile",
+        "--account",
         "work"
       ],
       "folders": [
@@ -2278,7 +2278,7 @@
       "exit": 0,
       "out": [
         "daoris: `claude-code` profile `work` — <root>/daoris/profiles/agents/claude-code/work",
-        "  It is empty until you log into it: `daoris agent login claude-code --profile work`."
+        "  It is empty until you log into it: `daoris agent login claude-code --account work`."
       ],
       "err": [],
       "after": {}
@@ -2299,7 +2299,7 @@
       "exit": 0,
       "out": [
         "daoris: `claude-code` profile `account-1` already exists — <root>/daoris/profiles/agents/claude-code/account-1",
-        "  It is empty until you log into it: `daoris agent login claude-code --profile account-1`."
+        "  It is empty until you log into it: `daoris agent login claude-code --account account-1`."
       ],
       "err": [],
       "after": {}
@@ -2318,7 +2318,7 @@
       "out": [
         "daoris: `claude-code-acp` runs as `claude-code`'s accounts — this is one of them.",
         "daoris: `claude-code` profile `work` — <root>/daoris/profiles/agents/claude-code/work",
-        "  It is empty until you log into it: `daoris agent login claude-code --profile work`."
+        "  It is empty until you log into it: `daoris agent login claude-code --account work`."
       ],
       "err": [],
       "after": {}
@@ -2335,7 +2335,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `agent profile add` needs <agent> <profile> — e.g. `daoris agent profile add claude-code`"
+        "daoris: `agent account add` needs <agent> <profile> — e.g. `daoris agent account add claude-code`"
       ],
       "after": {}
     },
@@ -2350,7 +2350,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `agent profile add` needs an agent — one of: claude-code, claude-code-acp, codex, codex-acp, dsh"
+        "daoris: `agent account add` needs an agent — one of: claude-code, claude-code-acp, codex, codex-acp, dsh"
       ],
       "after": {}
     },
@@ -2490,7 +2490,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: every account of Daoris's serves every workspace (D197), and the order says where starts begin — `daoris agent profile order claude-code account-1` puts one first"
+        "daoris: every account of Daoris's serves every workspace (D197), and the order says where starts begin — `daoris agent account order claude-code account-1` puts one first"
       ],
       "after": {},
       "changed": "The stored accounts fold into one set before the edit (POOL1a1, D197 §6). POOL1b (D197 point 6, the account-pool design §5.1): `profile default` is refused, saying the order says where starts begin, and nothing is written."
@@ -2515,7 +2515,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: every account of Daoris's serves every workspace (D197), and the order says where starts begin — `daoris agent profile order claude-code account-2` puts one first"
+        "daoris: every account of Daoris's serves every workspace (D197), and the order says where starts begin — `daoris agent account order claude-code account-2` puts one first"
       ],
       "after": {
         "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"account-1\"\n  }\n}\n"
@@ -2540,7 +2540,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: every account of Daoris's serves every workspace (D197), and the order says where starts begin — `daoris agent profile order claude-code account-2` puts one first"
+        "daoris: every account of Daoris's serves every workspace (D197), and the order says where starts begin — `daoris agent account order claude-code account-2` puts one first"
       ],
       "after": {
         "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"account-2\": {\n      \"name\": \"seat\"\n    }\n  }\n}\n"
@@ -2563,7 +2563,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: every account of Daoris's serves every workspace (D197), and the order says where starts begin — `daoris agent profile order claude-code typo` puts one first"
+        "daoris: every account of Daoris's serves every workspace (D197), and the order says where starts begin — `daoris agent account order claude-code typo` puts one first"
       ],
       "after": {},
       "changed": "POOL1b (D197 point 6, the account-pool design §5.1): `profile default` is refused, saying the order says where starts begin, and nothing is written."
@@ -2581,7 +2581,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: every account of Daoris's serves every workspace (D197), and the order says where starts begin — `daoris agent profile order claude-code typo` puts one first"
+        "daoris: every account of Daoris's serves every workspace (D197), and the order says where starts begin — `daoris agent account order claude-code typo` puts one first"
       ],
       "after": {},
       "changed": "POOL1b (D197 point 6, the account-pool design §5.1): `profile default` is refused, saying the order says where starts begin, and nothing is written."
@@ -2605,7 +2605,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: every account of Daoris's serves every workspace (D197), and the order says where starts begin — `daoris agent profile order claude-code account-3` puts one first"
+        "daoris: every account of Daoris's serves every workspace (D197), and the order says where starts begin — `daoris agent account order claude-code account-3` puts one first"
       ],
       "after": {
         "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
@@ -2632,7 +2632,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: every account of Daoris's serves every workspace (D197), and the order says where starts begin — `daoris agent profile order claude-code account-1` puts one first"
+        "daoris: every account of Daoris's serves every workspace (D197), and the order says where starts begin — `daoris agent account order claude-code account-1` puts one first"
       ],
       "after": {
         "daoris/data/harnesses.json": "{\n  \"workspaceRotation\": {\n    \"work\": {\n      \"claude-code\": [\n        \"account-2\"\n      ]\n    }\n  }\n}\n"
@@ -2657,7 +2657,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: every account of Daoris's serves every workspace (D197), and the order says where starts begin — `daoris agent profile order claude-code <account>` puts one first"
+        "daoris: every account of Daoris's serves every workspace (D197), and the order says where starts begin — `daoris agent account order claude-code <account>` puts one first"
       ],
       "after": {
         "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"account-1\"\n  }\n}\n"
@@ -2684,7 +2684,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: every account of Daoris's serves every workspace (D197), and the order says where starts begin — `daoris agent profile order claude-code <account>` puts one first"
+        "daoris: every account of Daoris's serves every workspace (D197), and the order says where starts begin — `daoris agent account order claude-code <account>` puts one first"
       ],
       "after": {
         "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"account-1\"\n  },\n  \"workspaces\": {\n    \"aurora\": {\n      \"claude-code\": \"account-2\"\n    }\n  }\n}\n"
@@ -2711,7 +2711,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: every account of Daoris's serves every workspace (D197), and the order says where starts begin — `daoris agent profile order claude-code <account>` puts one first"
+        "daoris: every account of Daoris's serves every workspace (D197), and the order says where starts begin — `daoris agent account order claude-code <account>` puts one first"
       ],
       "after": {
         "daoris/data/harnesses.json": "{\n  \"workspaces\": {\n    \"aurora\": {\n      \"claude-code\": \"account-2\"\n    }\n  }\n}\n"
@@ -2738,7 +2738,7 @@
         "daoris: `claude-code-acp` runs as `claude-code`'s accounts — this is one of them."
       ],
       "err": [
-        "daoris: every account of Daoris's serves every workspace (D197), and the order says where starts begin — `daoris agent profile order claude-code <account>` puts one first"
+        "daoris: every account of Daoris's serves every workspace (D197), and the order says where starts begin — `daoris agent account order claude-code <account>` puts one first"
       ],
       "after": {
         "daoris/data/harnesses.json": "{\n  \"defaults\": {\n    \"claude-code\": \"account-1\"\n  }\n}\n"
@@ -2762,7 +2762,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: every account of Daoris's serves every workspace (D197), and the order says where starts begin — `daoris agent profile order claude-code account-1` puts one first"
+        "daoris: every account of Daoris's serves every workspace (D197), and the order says where starts begin — `daoris agent account order claude-code account-1` puts one first"
       ],
       "after": {},
       "changed": "POOL1b (D197 point 6, the account-pool design §5.1): `profile default` is refused, saying the order says where starts begin, and nothing is written."
@@ -2782,7 +2782,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: every account of Daoris's serves every workspace (D197), and the order says where starts begin — `daoris agent profile order claude-code <account>` puts one first"
+        "daoris: every account of Daoris's serves every workspace (D197), and the order says where starts begin — `daoris agent account order claude-code <account>` puts one first"
       ],
       "after": {},
       "changed": "POOL1b (D197 point 6, the account-pool design §5.1): `profile default` is refused, saying the order says where starts begin, and nothing is written."
@@ -2803,7 +2803,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: every account of Daoris's serves every workspace (D197), and the order says where starts begin — `daoris agent profile order claude-code work` puts one first"
+        "daoris: every account of Daoris's serves every workspace (D197), and the order says where starts begin — `daoris agent account order claude-code work` puts one first"
       ],
       "after": {},
       "changed": "The stored accounts fold into one set before the edit (POOL1a1, D197 §6). POOL1b (D197 point 6, the account-pool design §5.1): `profile default` is refused, saying the order says where starts begin, and nothing is written."
@@ -2943,7 +2943,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `agent profile order` needs the accounts to put first, in order, or --clear — e.g. `daoris agent profile order claude-code account-2`."
+        "daoris: `agent account order` needs the accounts to put first, in order, or --clear — e.g. `daoris agent account order claude-code account-2`."
       ],
       "after": {},
       "changed": "POOL1b (D197 point 2, the account-pool design §5.1): `profile order` writes the set's order, the accounts named first and the rest after in their order, so a default or a kept account outside it no longer refuses, and the order is said whole."
@@ -3182,7 +3182,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `--clear` names no account — `daoris agent profile order claude-code --clear` returns the order to the accounts' ids, and `daoris agent profile order claude-code account-1` puts those first."
+        "daoris: `--clear` names no account — `daoris agent account order claude-code --clear` returns the order to the accounts' ids, and `daoris agent account order claude-code account-1` puts those first."
       ],
       "after": {},
       "changed": "POOL1b (D197 point 2, the account-pool design §5.1): `profile order` writes the set's order, the accounts named first and the rest after in their order, so a default or a kept account outside it no longer refuses, and the order is said whole."
@@ -3347,7 +3347,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `agent profile ready` needs <agent> <profile>|--own — e.g. `daoris agent profile ready claude-code account-1`, or `--own` for the tool's own sign-in."
+        "daoris: `agent account ready` needs <agent> <profile>|--own — e.g. `daoris agent account ready claude-code account-1`, or `--own` for the tool's own sign-in."
       ],
       "after": {}
     },
@@ -3365,7 +3365,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `--own` names no account — `daoris agent profile ready claude-code --own` is the tool's own sign-in, and `daoris agent profile ready claude-code account-1` is that account."
+        "daoris: `--own` names no account — `daoris agent account ready claude-code --own` is the tool's own sign-in, and `daoris agent account ready claude-code account-1` is that account."
       ],
       "after": {}
     },
@@ -3507,7 +3507,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `agent profile rename` needs <agent> <account> <name> — e.g. `daoris agent profile rename claude-code account-1 work`; naming it `account-1` gives it none."
+        "daoris: `agent account rename` needs <agent> <account> <name> — e.g. `daoris agent account rename claude-code account-1 work`; naming it `account-1` gives it none."
       ],
       "after": {}
     },
@@ -3929,7 +3929,7 @@
         "  no account has said what it has left yet: Daoris spreads starts across them by its own sessions",
         "  what each account last said:",
         "    account-1      nothing said about what it has left",
-        "    account-2      cooling until Oct 23, 06:00 (America/New_York), in 1 d — as the agent said; `daoris agent profile ready claude-code account-2` tries it now"
+        "    account-2      cooling until Oct 23, 06:00 (America/New_York), in 1 d — as the agent said; `daoris agent account ready claude-code account-2` tries it now"
       ],
       "err": [],
       "after": {
@@ -4255,7 +4255,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `--clear` sets no setting beside it — `daoris agent profile use claude-code --clear` returns the settings to today's defaults, and the setting is set on its own."
+        "daoris: `--clear` sets no setting beside it — `daoris agent account use claude-code --clear` returns the settings to today's defaults, and the setting is set on its own."
       ],
       "after": {
         "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"use\": \"order\",\n      \"switch\": \"off\"\n    }\n  }\n}\n"
@@ -4282,7 +4282,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `--clear` sets no setting beside it — `daoris agent profile use claude-code --clear` returns the settings to today's defaults, and the setting is set on its own."
+        "daoris: `--clear` sets no setting beside it — `daoris agent account use claude-code --clear` returns the settings to today's defaults, and the setting is set on its own."
       ],
       "after": {
         "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  },\n  \"rotationUse\": {\n    \"claude-code\": {\n      \"use\": \"order\",\n      \"switch\": \"off\"\n    }\n  }\n}\n"
@@ -4554,7 +4554,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `agent profile use` takes one way to use accounts, and `goal order` names more — goal (make the most of them) or order (one by one, in order)."
+        "daoris: `agent account use` takes one way to use accounts, and `goal order` names more — goal (make the most of them) or order (one by one, in order)."
       ],
       "after": {
         "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
@@ -5052,7 +5052,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `--prefer` is not a flag of `agent profile use` — it takes [goal|order] [--keep <account>|--no-keep] [--switch smart|curve|off] [--curve <window>=<elapsed>:<used>,…]… [--no-curve], or --clear (--early on|off and --near <percent> are the old names)."
+        "daoris: `--prefer` is not a flag of `agent account use` — it takes [goal|order] [--keep <account>|--no-keep] [--switch smart|curve|off] [--curve <window>=<elapsed>:<used>,…]… [--no-curve], or --clear (--early on|off and --near <percent> are the old names)."
       ],
       "after": {
         "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
@@ -5079,7 +5079,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `--parallel` is not a flag of `agent profile use` — it takes [goal|order] [--keep <account>|--no-keep] [--switch smart|curve|off] [--curve <window>=<elapsed>:<used>,…]… [--no-curve], or --clear (--early on|off and --near <percent> are the old names)."
+        "daoris: `--parallel` is not a flag of `agent account use` — it takes [goal|order] [--keep <account>|--no-keep] [--switch smart|curve|off] [--curve <window>=<elapsed>:<used>,…]… [--no-curve], or --clear (--early on|off and --near <percent> are the old names)."
       ],
       "after": {
         "daoris/data/harnesses.json": "{\n  \"rotation\": {\n    \"claude-code\": [\n      \"account-1\",\n      \"account-2\"\n    ]\n  }\n}\n"
@@ -5430,7 +5430,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `agent profile use` needs an agent — one of: claude-code, claude-code-acp, codex, codex-acp, dsh"
+        "daoris: `agent account use` needs an agent — one of: claude-code, claude-code-acp, codex, codex-acp, dsh"
       ],
       "after": {}
     },
@@ -5785,7 +5785,7 @@
         "                 `daoris agent pin claude-code 0.0.0-none` installs it",
         "                 account-1        unknown  ",
         "                 account-2        unknown  ",
-        "                                  cooling until Oct 22, 13:00 (America/New_York), in 5 h 0 min — as the agent said; `daoris agent profile ready claude-code account-2` tries it now",
+        "                                  cooling until Oct 22, 13:00 (America/New_York), in 5 h 0 min — as the agent said; `daoris agent account ready claude-code account-2` tries it now",
         "                 order            account-1, then account-2, for every workspace",
         "                                  use accounts: make the most of them",
         "                                  kept for conversations: none",
@@ -5857,9 +5857,9 @@
         "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
         "                 `daoris agent pin claude-code 0.0.0-none` installs it",
         "                 account-1        unknown  ",
-        "                                  cooling until Oct 22, 13:00 (America/New_York), in 5 h 0 min — as the agent said; `daoris agent profile ready claude-code account-1` tries it now",
+        "                                  cooling until Oct 22, 13:00 (America/New_York), in 5 h 0 min — as the agent said; `daoris agent account ready claude-code account-1` tries it now",
         "                 account-2        unknown  ",
-        "                                  cooling until Oct 22, 10:00 (America/New_York), in 2 h 0 min — Daoris's default: the agent named no time; `daoris agent profile ready claude-code account-2` tries it now",
+        "                                  cooling until Oct 22, 10:00 (America/New_York), in 2 h 0 min — Daoris's default: the agent named no time; `daoris agent account ready claude-code account-2` tries it now",
         "                 order            account-1, then account-2, for every workspace",
         "                                  use accounts: make the most of them",
         "                                  kept for conversations: none",
@@ -5933,9 +5933,9 @@
         "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
         "                 `daoris agent pin claude-code 0.0.0-none` installs it",
         "                 account-1        unknown  ",
-        "                                  cooling until Oct 22, 13:00 (America/New_York), in 5 h 0 min — as the agent said; `daoris agent profile ready claude-code account-1` tries it now",
+        "                                  cooling until Oct 22, 13:00 (America/New_York), in 5 h 0 min — as the agent said; `daoris agent account ready claude-code account-1` tries it now",
         "                 account-2        unknown  ",
-        "                                  cooling until Oct 22, 10:00 (America/New_York), in 2 h 0 min — as the agent said; `daoris agent profile ready claude-code account-2` tries it now",
+        "                                  cooling until Oct 22, 10:00 (America/New_York), in 2 h 0 min — as the agent said; `daoris agent account ready claude-code account-2` tries it now",
         "                 account-3        unknown  ",
         "                 order            account-1, then account-2, then account-3, for every workspace",
         "                                  use accounts: make the most of them",
@@ -6077,7 +6077,7 @@
         "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
         "                 `daoris agent pin claude-code 0.0.0-none` installs it",
         "                 account-1        unknown  ",
-        "                                  cooling until Oct 22, 11:00 (America/New_York), in 3 h 0 min — as the agent said; `daoris agent profile ready claude-code account-1` tries it now",
+        "                                  cooling until Oct 22, 11:00 (America/New_York), in 3 h 0 min — as the agent said; `daoris agent account ready claude-code account-1` tries it now",
         "                 account-2        unknown  ",
         "                 order            account-1, then account-2, for every workspace",
         "                                  use accounts: one by one, in order — one limit stops every session on that account",
@@ -6563,7 +6563,7 @@
         "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
         "                 `daoris agent pin claude-code 0.0.0-none` installs it",
         "                 account-1        unknown  ",
-        "                                  cooling until Oct 23, 08:00 (America/New_York), in 1 d — as the agent said; `daoris agent profile ready claude-code account-1` tries it now",
+        "                                  cooling until Oct 23, 08:00 (America/New_York), in 1 d — as the agent said; `daoris agent account ready claude-code account-1` tries it now",
         "                 account-2        unknown  ",
         "                 order            account-2, then account-1, for every workspace",
         "                                  use accounts: make the most of them",
@@ -6573,7 +6573,7 @@
         "                                  no account has said what it has left yet: Daoris spreads starts across them by its own sessions",
         "                                  held now: `account-1` is cooling until Oct 23, 08:00 (America/New_York)",
         "                                  Agents → the agent's page → How accounts are used names the account it takes, from the sessions Daoris runs and its last starts, which this terminal does not read",
-        "                 its own sign-in: cooling until Oct 23, 08:00 (America/New_York), in 1 d — Daoris's default: the agent named no time; `daoris agent profile ready claude-code --own` tries it now",
+        "                 its own sign-in: cooling until Oct 23, 08:00 (America/New_York), in 1 d — Daoris's default: the agent named no time; `daoris agent account ready claude-code --own` tries it now",
         "",
         "  claude-code-acp Claude Code, by Anthropic",
         "                 absent — pinned to 0.0.0-none on this machine, and nothing is installed at that version — `daoris agent pin claude-code-acp 0.0.0-none` installs it, and `daoris agent unpin claude-code-acp` goes back to PATH",
@@ -7276,7 +7276,7 @@
         "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
         "                 `daoris agent pin claude-code 0.0.0-none` installs it",
         "                 R&D              unknown  ",
-        "                                  cooling until Oct 22, 12:02 (America/New_York), in 4 h 2 min — as the agent said; `daoris agent profile ready claude-code <account>` tries it now",
+        "                                  cooling until Oct 22, 12:02 (America/New_York), in 4 h 2 min — as the agent said; `daoris agent account ready claude-code <account>` tries it now",
         "                 account-2        unknown  ",
         "                 order            R&D, then account-2, for every workspace",
         "                                  use accounts: make the most of them",
@@ -7409,8 +7409,8 @@
       "out": [
         "daoris: `claude-code` account `<id>` is the API key …wxyz.",
         "  Kept in <root>/daoris/profiles/keys.json — machine-local, tracked by nothing, shown back only as its last four.",
-        "  `daoris agent profile rename claude-code <id> <name>` gives it a name of yours (ACCT2), and",
-        "  `daoris agent profile join claude-code <id> <workspace>…|--machine` puts it in a list a start runs on."
+        "  `daoris agent account rename claude-code <id> <name>` gives it a name of yours (ACCT2), and",
+        "  `daoris agent account join claude-code <id> <workspace>…|--machine` puts it in a list a start runs on."
       ],
       "err": [],
       "after": {
@@ -7435,8 +7435,8 @@
       "out": [
         "daoris: `claude-code` account `<id>` is the API key …9999.",
         "  Kept in <root>/daoris/profiles/keys.json — machine-local, tracked by nothing, shown back only as its last four.",
-        "  `daoris agent profile rename claude-code <id> <name>` gives it a name of yours (ACCT2), and",
-        "  `daoris agent profile join claude-code <id> <workspace>…|--machine` puts it in a list a start runs on."
+        "  `daoris agent account rename claude-code <id> <name>` gives it a name of yours (ACCT2), and",
+        "  `daoris agent account join claude-code <id> <workspace>…|--machine` puts it in a list a start runs on."
       ],
       "err": [],
       "after": {
@@ -7468,8 +7468,8 @@
       "out": [
         "daoris: `claude-code` account `<id>` is the API key …3333.",
         "  Kept in <root>/daoris/profiles/keys.json — machine-local, tracked by nothing, shown back only as its last four.",
-        "  `daoris agent profile rename claude-code <id> <name>` gives it a name of yours (ACCT2), and",
-        "  `daoris agent profile join claude-code <id> <workspace>…|--machine` puts it in a list a start runs on."
+        "  `daoris agent account rename claude-code <id> <name>` gives it a name of yours (ACCT2), and",
+        "  `daoris agent account join claude-code <id> <workspace>…|--machine` puts it in a list a start runs on."
       ],
       "err": [],
       "after": {
@@ -8148,12 +8148,12 @@
       "after": {}
     },
     {
-      "name": "login, --new beside --profile",
+      "name": "login, --new beside --account",
       "argv": [
         "login",
         "claude-code",
         "--new",
-        "--profile",
+        "--account",
         "work"
       ],
       "folders": [],
@@ -8161,7 +8161,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `--new` signs in to a new account and `--profile` to one that is here — `daoris agent login claude-code --new`, or `daoris agent login claude-code --profile work`."
+        "daoris: `--new` signs in to a new account and `--account` to one that is here — `daoris agent login claude-code --new`, or `daoris agent login claude-code --account work`."
       ],
       "after": {}
     },
@@ -8178,7 +8178,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `--name` names a new account as it is made (`--new`); an account that is here is named with `daoris agent profile rename claude-code <account> <name>`."
+        "daoris: `--name` names a new account as it is made (`--new`); an account that is here is named with `daoris agent account rename claude-code <account> <name>`."
       ],
       "after": {}
     },
@@ -8244,7 +8244,7 @@
       "argv": [
         "login",
         "claude-code",
-        "--profile",
+        "--account",
         "nobody"
       ],
       "folders": [

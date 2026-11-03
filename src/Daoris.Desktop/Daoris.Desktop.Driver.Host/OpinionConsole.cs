@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// The second opinion's gate from a terminal (XAGENT1f, D155 point 10, D50): <c>daoris-driver opinion ask|show|stop|anyway|myself</c>.
+/// The second opinion's gate from a terminal (XAGENT1f, D155 point 10, D50): <c>daoris session opinion ask|show|stop|anyway|myself</c>.
 /// The words are the library's (<see cref="OpinionCommand"/>), and every press the driver's own (<see cref="OpinionPresses"/>);
 /// this wires the real world: the service, this home's gate and its sessions' processes.
 /// </summary>
