@@ -81,7 +81,12 @@ test('status says when the shipped canon is newer than the lock', () => {
   repoFx.cleanup();
 });
 
-test('status is silent about updates when the lock matches the canon', () => {
+/**
+ * The stamp stays at 0.0.1 through every 0.0.x build, and `status` once looked for an update only when the versions
+ * differed, so an adopter missing a whole canon file heard nothing (CONTEXTONE1a). The plan runs whatever the versions
+ * say; with equal versions it cannot say which side is newer, so it names the difference and calls nothing behind.
+ */
+test('status is not silent when the versions match and the canon has a file the lock lacks', () => {
   const canonFx = canonFixture();
   const repoFx = makeFixture('cmd-status-current');
   repoFx.write('daoris.json', '{"source":"s","packs":[]}');
@@ -93,7 +98,10 @@ test('status is silent about updates when the lock matches the canon', () => {
 
   const out: string[] = [];
   commandStatus({ root: repoFx.root, write: (s: string) => out.push(s), packageRoot: '' });
-  assert.equal(/update available/i.test(out.join('\n')), false);
+  const text = out.join('\n');
+  assert.equal(/update available/i.test(text), false);
+  assert.match(text, /newer or older cannot be told/);
+  assert.match(text, /not in the lock {3}rules\/sensitive-info\.md/);
 
   delete process.env.DAORIS_CANON;
   canonFx.cleanup();
@@ -239,6 +247,7 @@ test('status --json emits the same facts as the text, machine-readable', () => {
   assert.deepEqual(report.packs, ['core']);
   assert.deepEqual(report.local, ['knowledge/house-style.md']);
   assert.equal(report.update.available, '0.1.0');
+  assert.equal(report.update.direction, 'newer');
   assert.equal(report.update.versionOnly, false);
   assert.ok(Array.isArray(report.drifted));
   // Silence means local (D47 §4), and status says so rather than omitting the question.

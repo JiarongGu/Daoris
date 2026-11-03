@@ -125,6 +125,8 @@ export function writeLock(root: string, lock: Lock): void {
   const sorted = {
     version: LOCK_VERSION,
     canonVersion: lock.canonVersion,
+    // Beside the version it qualifies; absent only in a lock written before it.
+    ...(lock.canonDigest !== undefined ? { canonDigest: lock.canonDigest } : {}),
     source: lock.source,
     entries: [...lock.entries].sort((a, b) => a.target.localeCompare(b.target)),
     // Only when something is off (D71), so a lock that switches nothing is byte-for-byte what it was.
