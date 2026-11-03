@@ -12,9 +12,10 @@ Each verb is a module of `src/Daoris.Cli/src/cli/`, its row in `COMMANDS` (`src/
 | `init` | doctrine | `cli/init.ts:5` | `doctrine/commands.ts:57` commandInit | detect what this repo has, write daoris.json |
 | `sync` | doctrine | `cli/sync.ts:5` | `doctrine/materialize.ts:864` commandSync | materialize the manifest's packs; write daoris.lock |
 | `check` | doctrine | `cli/check.ts:5` | `doctrine/drift.ts:331` commandCheck | drift, staleness, index freshness (offline); the core budget is… |
-| `upstream` | doctrine | `cli/upstream.ts:5` | `doctrine/upstream.ts:172` commandUpstream | <file> promote a locally-edited canonical file back to the canon |
+| `upstream` | doctrine | `cli/upstream.ts:5` | `doctrine/upstream.ts:238` commandUpstream | <file> propose a locally-edited canonical file to the canon: the |
 | `index` | doctrine | `cli/index.ts:6` | `doctrine/indexgen.ts:149` commandIndex | say where the roster is: the rules in AGENTS.md, the |
 | `status` | doctrine | `cli/status.ts:5` | `doctrine/commands.ts:144` commandStatus | summary of packs, drift, local files, and any pending |
+| `reconcile` | doctrine | `cli/reconcile.ts:5` | `doctrine/reconcile.ts:159` commandReconcile | a brief of every difference from the canon, for this |
 | `doctor` | doctrine | `cli/doctor.ts:5` | `doctrine/twins.ts:143` commandDoctor | report local documents that look like canonical ones |
 | `connect` | management | `cli/connect.ts:5` | `service/connect.ts:155` commandConnect | register this repo with a knowledge service: what it owns |
 | `retire` | management | `cli/retire.ts:5` | `service/manage.ts:31` commandRetire | [name] take a repository off this machine's registry. Ends the |
