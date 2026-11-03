@@ -32,7 +32,8 @@ public sealed class SaidSettledHostTests(LocalHost host) : IClassFixture<LocalHo
         // Row d-i adds replay alone; d-ii's say door adds `head` 1 (the `Continued` refusal), and its open, which moves the words, `opens` 2.
         // Row k adds `journal` 1: the change stream answers the event journal's family and place to a reader that asks for them.
         // COMMS1b adds `answers` 1: solicited answers go through one door (the head walk, answered parks, already waiting, the opinion key, `serves`).
-        Assert.Equal(["settled", "opens", "head", "journal", "answers"], first.Json.GetProperty("marks").EnumerateObject().Select(mark => mark.Name).ToArray());
+        Assert.Equal(["settled", "opens", "head", "journal", "answers", "presses"], first.Json.GetProperty("marks").EnumerateObject().Select(mark => mark.Name).ToArray());
+        Assert.Equal(1, first.Json.GetProperty("marks").GetProperty("presses").GetInt32());
         Assert.Equal(1, first.Json.GetProperty("marks").GetProperty("answers").GetInt32());
         Assert.Equal(2, first.Json.GetProperty("marks").GetProperty("opens").GetInt32());
         Assert.Equal(1, first.Json.GetProperty("marks").GetProperty("head").GetInt32());

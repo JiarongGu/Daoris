@@ -461,11 +461,14 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// The shell keeps the words on a record that winds up or moves (FOUNDATION1o, the foundation design §3.4 rule 4), for its next part to go on
     /// with; a host before the row ignores it and refuses them as <c>running</c>, which the shell then holds as before.
     /// </param>
+    /// <param name="question">The question id a person's press answers (COMMS1e), kept on the word; sent only to a host with the <c>presses</c> mark.</param>
     public async Task<SayAnswer> SayAsync(
         string id, string text, IReadOnlyList<string>? files = null, CancellationToken ct = default, string? channel = null,
         string? from = null, string? key = null, string? level = null, bool running = false,
-        (string Decision, string Question, string Choice)? supervised = null, bool ending = false)
+        (string Decision, string Question, string Choice)? supervised = null, bool ending = false, string? question = null)
     {
+        // COMMS1e: the person's press names its question only to a host that checks it (the `presses` mark); an older host refuses the field.
+        var presses = question is { Length: > 0 } && supervised is null && await Opens.PressesAsync(ct).ConfigureAwait(false);
         var body = WriteJson(writer =>
         {
             writer.WriteStartObject();
@@ -490,6 +493,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             if (level is { Length: > 0 }) writer.WriteString("level", level);
             if (running) writer.WriteBoolean("running", true);
             if (ending) writer.WriteBoolean("ending", true);
+            if (presses) writer.WriteString("question", question!);
             if (files is { Count: > 0 })
             {
                 writer.WriteStartArray("files");

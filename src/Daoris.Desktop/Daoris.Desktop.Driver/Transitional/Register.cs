@@ -76,6 +76,15 @@ public static class TransitionalRegister
         },
         new()
         {
+            Id = "say-now-field",
+            Kept = "Course/Requests/SessionRequests.cs:626",
+            Reaches = "A say request file written by an older build that waits with `now: true` and no `level`, read as `level: now`.",
+            Ends = "No waiting request file carries `now` without a `level`, once the floor passes the last build that wrote `now` alone.",
+            Row = "ONEWAY1af",
+            Ended = home => Read(home, HomeEntry.DriverConfig) is not null && !WaitingNowAlone(home),
+        },
+        new()
+        {
             Id = "solicited-older-host",
             Kept = "Loop/DriverHelpers.cs:758, Loop/DriverPartners.cs:484, Loop/OpinionDeliverer.cs:182",
             Reaches = "A host with no `answers` mark, before COMMS1b: the helper's sixteen-link walk and read-back, and the partner's and the opinion's pre-check of the record named.",
@@ -114,6 +123,26 @@ public static class TransitionalRegister
 
     /// <summary>The floor of the builds that reach a home is no file of the home: an entry that ends with it never reads as ended, and its row deletes it.</summary>
     private static bool Floor(string _) => false;
+
+    /// <summary>Whether a request file waiting in the home's requests folder says <c>now: true</c> with no <c>level</c>.</summary>
+    private static bool WaitingNowAlone(string home)
+    {
+        try
+        {
+            var folder = DaorisHome.Entry(home, HomeEntry.Requests);
+            if (!Directory.Exists(folder)) return false;
+            foreach (var path in Directory.EnumerateFiles(folder, "*.json"))
+            {
+                if (JsonNode.Parse(AtomicFile.ReadText(path)) is JsonObject root && root["now"] is JsonValue now && now.TryGetValue<bool>(out var on) && on && root["level"] is null) return true;
+            }
+
+            return false;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException or DriverException or InvalidOperationException)
+        {
+            return true;
+        }
+    }
 
     /// <summary>The home's entry as a JSON object; an absent file is an empty one, and one that does not read is null.</summary>
     private static JsonObject? Read(string home, HomeEntry entry)

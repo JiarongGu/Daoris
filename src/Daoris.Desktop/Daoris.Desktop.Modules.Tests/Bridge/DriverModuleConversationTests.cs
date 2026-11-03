@@ -155,6 +155,42 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
         Assert.Equal(0, loop.Nudges);
     }
 
+    /// <summary>
+    /// COMMS1e: a press is said to a host that checks it with its question's id, so the say door judges it inside its own step; to a host
+    /// without the mark it carries none, and the route's own check stands alone. The door's refusal `question-changed` is the answer as it is.
+    /// </summary>
+    [Theory]
+    [InlineData("""{"run":"r1","marks":{"settled":1,"presses":1}}""", true)]
+    [InlineData("""{"run":"r1","marks":{"settled":1}}""", false)]
+    public async Task A_press_names_its_question_to_a_host_that_checks_it(string protocol, bool named)
+    {
+        AskedQuestion("s1", "a1b2c3d4");
+        var ledger = new Ledger { Protocol = protocol, Records = Records(Record("s1", "awaiting-person")) };
+        var (_, module) = await UpAsync(ledger);
+
+        await AnswerAsync(module, "SESSION_INPUT", new { id = "s1", text = "1,200", question = "a1b2c3d4" });
+
+        var say = JsonDocument.Parse(Assert.Single(ledger.Posts, post => post.Path.EndsWith("/say", StringComparison.Ordinal)).Body).RootElement;
+        Assert.Equal(named ? "a1b2c3d4" : null, say.TryGetProperty("question", out var asked) ? asked.GetString() : null);
+    }
+
+    [Fact]
+    public async Task The_say_doors_question_changed_refusal_is_the_answer_beside_the_control()
+    {
+        AskedQuestion("s1", "a1b2c3d4");
+        var ledger = new Ledger
+        {
+            Protocol = """{"run":"r1","marks":{"presses":1}}""",
+            Records = Records(Record("s1", "awaiting-person")),
+            Say = _ => (HttpStatusCode.Conflict, """{"error":"The question on file is not `a1b2c3d4`.","refusal":"question-changed"}"""),
+        };
+        var (_, module) = await UpAsync(ledger);
+
+        var sent = await AnswerAsync(module, "SESSION_INPUT", new { id = "s1", text = "1,200", question = "a1b2c3d4" });
+
+        Assert.Equal((false, "question-changed"), (sent.GetProperty("sent").GetBoolean(), sent.GetProperty("why").GetString()));
+    }
+
     /// <summary>The question `question_ask` wrote for a session, under the home's sessions folder.</summary>
     private void AskedQuestion(string session, string id)
     {
@@ -826,7 +862,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
                      ("d3", "now", true, (string?)null),
                  })
         {
-            var sent = await AnswerAsync(module, "SESSION_INPUT", new { id, text = "start with the tests", now = true });
+            var sent = await AnswerAsync(module, "SESSION_INPUT", new { id, text = "start with the tests", level = "now" });
             var leveled = await AnswerAsync(module, "SESSION_INPUT", new { id, text = "and the readme", level = "now" });
             foreach (var answer in new[] { sent, leveled })
             {

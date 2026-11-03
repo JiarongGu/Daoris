@@ -64,6 +64,7 @@ public sealed class SessionOpenDoors
     private int _opens;
     // FOUNDATION1d-ii (§19.12): the say door's `continued`, naming the line's head; kept beside `opens` by the same run.
     private int _head;
+    private int _presses;
     // COMMS1b: the one door for solicited answers, kept beside the others by the same run.
     private int _answers;
     private readonly object _marks = new();
@@ -84,7 +85,7 @@ public sealed class SessionOpenDoors
     {
         var reply = await _service.SendAsync(ServiceVerb.Get, "/api/protocol", null, ct).ConfigureAwait(false);
         string? run = null;
-        int opens = 0, head = 0, answers = 0;
+        int opens = 0, head = 0, presses = 0, answers = 0;
         if (reply.Ok)
         {
             using var json = JsonDocument.Parse(reply.Payload);
@@ -93,31 +94,14 @@ public sealed class SessionOpenDoors
             {
                 opens = Mark(marks, "opens");
                 head = Mark(marks, "head");
+                presses = Mark(marks, "presses");
                 answers = Mark(marks, "answers");
             }
         }
 
         lock (_marks)
         {
-            (_run, _opens, _head, _answers, _known) = (run, opens, head, answers, true);
-        }
-    }
-
-    /// <summary>The marks as the host's run answers them, read again once an answer named another run or none; none where the protocol does not read.</summary>
-    private async Task<bool> KnownAsync(CancellationToken ct)
-    {
-        bool known;
-        lock (_marks) known = _known;
-        if (known) return true;
-        try
-        {
-            await ReadProtocolAsync(ct).ConfigureAwait(false);
-            return true;
-        }
-        catch (Exception error) when (error is HttpRequestException or IOException or JsonException or DriverException
-                                          || (error is OperationCanceledException && !ct.IsCancellationRequested))
-        {
-            return false;
+            (_run, _opens, _head, _presses, _answers, _known) = (run, opens, head, presses, answers, true);
         }
     }
 
@@ -133,19 +117,44 @@ public sealed class SessionOpenDoors
     /// </summary>
     public async Task<int> HeadAsync(CancellationToken ct = default)
     {
-        if (!await KnownAsync(ct).ConfigureAwait(false)) return 0;
+        bool known;
+        lock (_marks) known = _known;
+        if (!known)
+        {
+            try
+            {
+                await ReadProtocolAsync(ct).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is HttpRequestException or IOException or JsonException or DriverException
+                                              || (error is OperationCanceledException && !ct.IsCancellationRequested))
+            {
+                return 0;
+            }
+        }
+
         lock (_marks) return _head;
+    }
+
+    /// <summary>
+    /// Whether the host checks a person's press inside its say door (COMMS1e, the <c>presses</c> mark): a say naming the question it answers
+    /// is kept with it and refused <c>question-changed</c> where the question moved. False for a host without the mark, which refuses such a say
+    /// whole, so the caller sends no question there and the modules' own check stands alone. Never throws.
+    /// </summary>
+    public async Task<bool> PressesAsync(CancellationToken ct = default)
+    {
+        await HeadAsync(ct).ConfigureAwait(false);
+        lock (_marks) return _presses >= 1;
     }
 
     /// <summary>
     /// Whether the host's <c>answers</c> mark is 1 or more (COMMS1b, the comms design §4.2, §13 point 12): its helper, partner and opinion hand
     /// doors are the one door for solicited answers, which walks the line to the store's bound, takes an answered park, answers a word already
     /// waiting with its holder and keys the opinion, so the looks hand through it alone. False for a host without it, or one that does not answer
-    /// the protocol, whose looks keep their own hand; never throws for it.
+    /// the protocol, whose looks keep their own hand. Never throws.
     /// </summary>
     public async Task<bool> AnswersAsync(CancellationToken ct = default)
     {
-        if (!await KnownAsync(ct).ConfigureAwait(false)) return false;
+        await HeadAsync(ct).ConfigureAwait(false);
         lock (_marks) return _answers >= 1;
     }
 

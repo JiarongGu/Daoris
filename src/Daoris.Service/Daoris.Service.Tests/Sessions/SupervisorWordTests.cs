@@ -232,7 +232,8 @@ public sealed class SupervisorWordTests : GoAheadFixture
     {
         var core = Path.Combine(RepositoryRoot(), "src", "Daoris.Service", "Daoris.Service.Core");
         HashSet<string> covered = ["SessionLedger.KeepOwnersWordAsync"];
-        HashSet<string> exempt = ["Sessions.KeepSaidAsync", "SessionLedger.SuperviseAsync", "HelperDesk.*", "PartnerDesk.*", "OpinionDesk.*"];
+        // A helper's, a partner's or an opinion's answer is the asker's solicited word, not the person's: its one door keeps it (COMMS1b).
+        HashSet<string> exempt = ["Sessions.KeepSaidAsync", "SessionLedger.SuperviseAsync", "SolicitedAnswers.*"];
         var member = new Regex(@"^\s*(?:public|private|internal|protected)\b[^=;]*?\b(\w+)\s*(?:<[^>]*>)?\s*\(");
 
         var found = new List<string>();
