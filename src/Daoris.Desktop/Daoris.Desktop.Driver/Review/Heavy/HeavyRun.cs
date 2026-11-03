@@ -71,6 +71,7 @@ public sealed record HeavyMarker(string Slot, IReadOnlyList<string> Gates);
 /// <para>Full access (D184) neither passes the slot nor changes a gate: this reads no access setting at all; of the driver's file it
 /// reads only the heavy gates this machine sets for a repository that marks none.</para>
 /// </remarks>
+[CommandGroup("gate", "run", "verify")]
 public static class HeavyRun
 {
     /// <summary>The verb's usage, said with a word it does not take.</summary>

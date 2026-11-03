@@ -44,6 +44,7 @@ public sealed record NoticesLook(
 /// said not read rather than judged here.</para>
 /// <para><b>It changes nothing</b>: nothing is marked read, dismissed or answered. A notice read in a window is listed as read.</para>
 /// </remarks>
+[CommandGroup("notices", Whole = true)]
 public static class NoticesRead
 {
     /// <summary>The verb's usage line.</summary>

@@ -1,47 +1,39 @@
 namespace Daoris.Driver;
 
-/// <summary>What the tree made of the words: which program runs them, the usage, or a refusal.</summary>
+/// <summary>What the tree made of the words: which program runs them, or the usage.</summary>
 public enum TreeRouteKind
 {
     /// <summary>The desktop's program runs them, as <see cref="TreeRoute.Words"/>: the host's own words for the group's command.</summary>
     Run,
 
-    /// <summary>A doctrine command, the CLI's: handed to it whole.</summary>
+    /// <summary>A word no group owns: the CLI's, a doctrine command, handed to it whole.</summary>
     Doctrine,
 
-    /// <summary>The usage, the tree's or a group's (<see cref="TreeRoute.Group"/>); exit 0 where it was asked for, else 2.</summary>
+    /// <summary>
+    /// The usage, the tree's or a group's (<see cref="TreeRoute.Group"/>), after <see cref="TreeRoute.Said"/> where it says why; exit 0
+    /// where it was asked for, else 2. A word the CLI handed here that no group owns is refused so.
+    /// </summary>
     Usage,
-
-    /// <summary>A word handed back: refused, exit 2, saying <see cref="TreeRoute.Said"/>; nothing is done.</summary>
-    Refused,
 }
 
-/// <summary>The words routed: <paramref name="Words"/> are what the host runs, or the doctrine command's words.</summary>
+/// <summary>The words routed: <paramref name="Words"/> are what the host runs, or the words handed to the CLI.</summary>
 public sealed record TreeRoute(TreeRouteKind Kind, IReadOnlyList<string> Words, string? Said = null, string? Group = null, bool Asked = false);
 
 /// <summary>
-/// The one command tree's router (ONEWAY1ai-i, D228; the oneway design §11), by <see cref="CommandWords"/>' table: the host routes a
-/// person's words once, at its entry, into the words its commands read.
+/// The one command tree's router (D228), by the groups <see cref="CommandWords"/> collects: the host routes a person's words once, at its
+/// entry, into the words its commands read, and hands the CLI any word no group owns.
 /// </summary>
 public static class CommandTree
 {
     /// <summary>
-    /// A person's words at <c>daoris</c>, routed once: the host's own words for a group's command, the CLI's for a doctrine command, the
-    /// usage, or a refusal. <paramref name="handedBy"/> is the program that handed them here, if one did.
+    /// A person's words at <c>daoris</c>, routed once: the host's own words for a group's command, the CLI's for any other word, or the
+    /// usage. <paramref name="handedBy"/> is the program that handed them here, if one did.
     /// </summary>
     public static TreeRoute Route(IReadOnlyList<string> args, string? handedBy = null)
     {
         if (args.Count == 0) return new(TreeRouteKind.Usage, args);
         var first = args[0];
         if (first is "--help" or "-h") return new(TreeRouteKind.Usage, args, Asked: true);
-        if (first == "--version" || CommandWords.Doctrine.Contains(first, StringComparer.Ordinal))
-        {
-            // A word handed once is never handed back (the design §11): the CLI handed it, so it is no doctrine command of the CLI's.
-            return handedBy == "cli"
-                ? new(TreeRouteKind.Refused, args, $"`{first}` is no command the CLI that handed it here has; `daoris help` names each.")
-                : new(TreeRouteKind.Doctrine, args);
-        }
-
         if (first == "help")
         {
             if (args.Count == 1) return new(TreeRouteKind.Usage, args, Asked: true);
@@ -50,7 +42,13 @@ public static class CommandTree
                 : new(TreeRouteKind.Usage, args, $"no group `{args[1]}`.");
         }
 
-        if (CommandWords.Group(first) is not { } group) return new(TreeRouteKind.Usage, args, $"no command `{first}`.");
+        if (CommandWords.Group(first) is not { } group)
+        {
+            // A word handed once is never handed back: the CLI handed it, so neither program owns it.
+            return handedBy == "cli"
+                ? new(TreeRouteKind.Usage, args, $"no command `{first}`, here or in the CLI that handed it here.")
+                : new(TreeRouteKind.Doctrine, args);
+        }
 
         var rest = args.Skip(1).ToList();
         var verb = rest.Count > 0 ? rest[0] : null;
@@ -59,7 +57,7 @@ public static class CommandTree
             return new(TreeRouteKind.Usage, args, verb is null ? null : $"no `{verb}` in `daoris {group.Name}`.", group.Name);
         }
 
-        var acts = CommandWords.AskActs;
+        var acts = AskActs.Words;
         return group.Name switch
         {
             // The ask command's own words for its acts are no words of the tree's.
@@ -78,7 +76,7 @@ public static class CommandTree
         return group switch
         {
             "agent" when verb == "account" => ["agent", "profile", .. after],
-            "ask" when verb is not null && CommandWords.AskActs.TryGetValue(verb, out var act) => ["ask", act, .. after],
+            "ask" when verb is not null && AskActs.Words.TryGetValue(verb, out var act) => ["ask", act, .. after],
             "ask-daoris" => ["help", .. rest],
             "gate" => [verb == "run" ? "run-heavy" : "verify", .. after],
             "place" when verb is "access" or "heavy" or "checks" => [verb, .. after],

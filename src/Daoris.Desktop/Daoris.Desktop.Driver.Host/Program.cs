@@ -1,11 +1,11 @@
 using System.Text;
 using Daoris.Driver;
 
-// The desktop's program (D46 §7, D194; ONEWAY1ai-i): every group of `daoris …`, which the install's launcher in app/bin/ runs, what
-// the family rehearsal drives, and what the desktop shell embeds. A person's words are routed once, at the entry, by the one command
-// tree (`CommandTree`, held to the driver tests' `fixtures/command-tree.json`), into the words each command below reads: a doctrine
-// command is handed to the CLI the install carries, and `DriverCommand.Usage` says each group. The loop watches a service, starts sessions where the person opted in, and prints every verdict — a quest that is sitting
-// must always say why.
+// The desktop's program (D46 §7, D194): every group of `daoris …`, which the install's launcher in app/bin/ runs, what the family
+// rehearsal drives, and what the desktop shell embeds. A person's words are routed once, at the entry, by the one command tree
+// (`CommandTree`, over the groups the library's commands declare), into the words each command below reads: a word no group owns is
+// handed to the CLI the install carries, and `DriverCommand.Usage` says each group. The loop watches a service, starts sessions where
+// the person opted in, and prints every verdict — a quest that is sitting must always say why.
 //
 //   DAORIS_HOME            where every machine-local file lives (D63) — required unless each file's
 //                          own variable names it; the installed desktop sets it for the account, and a
@@ -27,7 +27,7 @@ using Daoris.Driver;
 // turns it off here exactly as the desktop's checkbox does — one file, two doors (D50).
 //
 // Exit codes keep the family contract: 0 clean · 1 a refusal · 2 tool error.
-// SUPERVISOR1a-ii (D208 §2.2): the holder key leaves this process first, so no start it builds can copy it. The verb is its one reader:
+// D208 §2.2: the holder key leaves this process first, so no start it builds can copy it. The verb is its one reader:
 // `session supervise` reads what was taken, and nothing else does.
 HolderKey.Take();
 
@@ -50,52 +50,49 @@ if (!InstanceDoor.TakeWait(args, out var verbArgs, out var pressWait, out var wa
 
 Daoris.Driver.Host.InstanceHost.Wait = pressWait;
 
-// ONEWAY1ai-i: the one tree routes the words once, into the words the commands below read.
+// The one tree routes the words once, into the words the commands below read.
 var typed = verbArgs;
 var route = CommandTree.Route(typed, handedBy);
-switch (route.Kind)
+if (route.Kind == TreeRouteKind.Usage)
 {
-    case TreeRouteKind.Refused:
-        Console.Error.WriteLine($"daoris: {route.Said}");
-        return 2;
-    case TreeRouteKind.Usage:
-        if (route.Said is not null) Console.Error.WriteLine($"daoris: {route.Said}");
-        (route.Asked ? Console.Out : Console.Error).WriteLine(
-            route.Group is { } group ? DriverCommand.UsageOf(group) ?? DriverCommand.Usage : DriverCommand.Usage);
-        return route.Asked ? 0 : 2;
+    if (route.Said is not null) Console.Error.WriteLine($"daoris: {route.Said}");
+    (route.Asked ? Console.Out : Console.Error).WriteLine(
+        route.Group is { } group ? DriverCommand.UsageOf(group) ?? DriverCommand.Usage : DriverCommand.Usage);
+    if (route.Asked && route.Group is null) await Daoris.Driver.Host.DoctrineConsole.UsageAsync();
+    return route.Asked ? 0 : 2;
 }
 
 args = [.. route.Words];
 
-// STEWARDROLE1a-i (D209 §3.3): a role's terminal, by the entry's marker, runs its roles' verbs and the open reads its holder needs, and
+// D209 §3.3: a role's terminal, by the entry's marker, runs its roles' verbs and the open reads its holder needs, and
 // nothing else: no person's press and no verb acting alone. Those it runs refuse their own alone paths (`InstanceDoor`).
 if (RoleTerminal.AtEntry(args, Console.Error) is { } roleRefused) return roleRefused;
 
-// A doctrine command is the CLI's: handed to the one this install carries.
+// A word no group owns is the CLI's: handed to the one this install carries, which refuses it where it is no doctrine command.
 if (route.Kind == TreeRouteKind.Doctrine) return await Daoris.Driver.Host.DoctrineConsole.RunAsync(args);
 
-// The holder's brief (STEWARDROLE1a-i, D209 §2.2): Daoris's own text, an open verb that reads nothing and names no key.
+// The holder's brief (D209 §2.2): Daoris's own text, an open verb that reads nothing and names no key.
 if (args is ["roles", "brief"])
 {
     Console.Out.Write(RolesBrief.Text);
     return 0;
 }
 
-// A terminal finds the Daoris that runs (FINDDAORIS1, D171 point 1): the install's launcher sets no variable, so a host the
+// A terminal finds the Daoris that runs (D171 point 1): the install's launcher sets no variable, so a host the
 // install carries takes the install's own `data/` as its home where none is named, as the desktop does (D63), before any door
 // reads one. The service is found where a door asks for it (`ServiceHttp.FromEnvironment`): the variable, else the address the
 // running desktop left in this home. A workspace build is no install, and keeps needing both named.
 DaorisHome.Adopt(AppContext.BaseDirectory);
 
-// FOUNDATION1w-s (the foundation design §19.15): the home's driver.json reads its staffing from the store, wired before any door or the
+// The foundation design §19.15: the home's driver.json reads its staffing from the store, wired before any door or the
 // loop loads it.
 RoleStaffing.WireHome(Environment.GetEnvironmentVariable);
 
-// One writer per home (HOMELEASE1, the terminal RPC design §5): a verb acting alone holds the home's lease for its mutation,
+// One writer per home (the terminal RPC design §5): a verb acting alone holds the home's lease for its mutation,
 // never for a read (`VerbLeases` says which). Beside a running instance it acts as it always did, holding nothing, until RPC1's
 // pipe makes it that instance's client; where another verb, the first-start move or the launcher's swap holds the home, it
 // waits up to thirty seconds and is then refused, exit 1, naming which. A home named nowhere takes none: the verb refuses as
-// it always did. The lease is let go as the verb ends. It is taken in the home the loop drives and holds (LEASEHOME2), `DAORIS_HOME`.
+// it always did. The lease is let go as the verb ends. It is taken in the home the loop drives and holds, `DAORIS_HOME`.
 HomeLease? verbLease = null;
 if (VerbLeases.HoldsHere(args, Environment.GetEnvironmentVariable) && DriverConfig.FindHome() is { } leaseHome)
 {

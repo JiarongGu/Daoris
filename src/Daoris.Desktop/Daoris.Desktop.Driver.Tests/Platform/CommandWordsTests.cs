@@ -1,37 +1,40 @@
-using System.Text.Json.Nodes;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// ONEWAY1ai-i (D228; the oneway design §11): the one command tree's words, declared once in <c>fixtures/command-tree.json</c> and held
-/// equal to the desktop program's table here (the CLI's is held to it in <c>cli-tree.test.ts</c>); <c>CommandTreeTests</c> holds the routing.
+/// The one command tree's words (D228): each group declared by the code that runs it and collected at start; <c>CommandTreeTests</c>
+/// holds that every word declared routes.
 /// </summary>
 public sealed class CommandWordsTests
 {
-    private static JsonObject Fixture() => (JsonObject)JsonNode.Parse(File.ReadAllText(
-        Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "command-tree.json")))!;
+    [CommandGroup("twice", "one")]
+    private static class FirstOwner { }
 
-    private static string[] Strings(JsonNode? node) => [.. (node as JsonArray ?? []).Select(item => (string)item!)];
+    [CommandGroup("twice", "two", Nested = ["two: a b"])]
+    private static class SecondOwner { }
 
+    /// <summary>A group has one owner: a name two units declare fails the collection, naming both.</summary>
     [Fact]
-    public void ONEWAY1ai_i_the_tree_is_the_fixtures()
+    public void A_group_two_units_declare_is_refused_naming_both()
     {
-        var fixture = Fixture();
-        Assert.Equal(Strings(fixture["doctrine"]), CommandWords.Doctrine);
+        var refused = Assert.Throws<InvalidOperationException>(() => CommandWords.Collect(typeof(CommandWordsTests).Assembly));
 
-        var groups = (JsonArray)fixture["groups"]!;
-        Assert.Equal(groups.Select(group => (string)group!["name"]!), CommandWords.Groups.Select(group => group.Name));
-        foreach (var node in groups)
-        {
-            var group = CommandWords.Group((string)node!["name"]!)!;
-            Assert.Equal(Strings(node["verbs"]), group.Verbs);
-            Assert.Equal((string?)node["takes"], group.Takes);
-            Assert.Equal((bool?)node["whole"] ?? false, group.Whole);
-            var nested = node["nested"] as JsonObject ?? [];
-            Assert.Equal(nested.Select(pair => pair.Key).Order(), group.Nested.Keys.Order());
-            foreach (var (verb, under) in nested) Assert.Equal(Strings(under), group.Nested[verb]);
-        }
+        Assert.Contains("`twice` is declared twice", refused.Message);
+        Assert.Contains(nameof(FirstOwner), refused.Message);
+        Assert.Contains(nameof(SecondOwner), refused.Message);
+    }
+
+    /// <summary>The groups are collected by name, each with what its mark declares, a nested sub-verb's own sub-verbs among it.</summary>
+    [Fact]
+    public void The_groups_are_the_marks_by_name()
+    {
+        Assert.Equal(CommandWords.Groups.Select(group => group.Name).Order(StringComparer.Ordinal), CommandWords.Groups.Select(group => group.Name));
+        var agent = CommandWords.Group("agent")!;
+        Assert.Contains("account", agent.Verbs);
+        Assert.Equal(["list", "add", "remove", "default", "order", "use", "ready", "rename", "join"], agent.Nested["account"]);
+        Assert.Equal("\"…\"", CommandWords.Group("ask")!.Takes);
+        Assert.True(CommandWords.Group("drive")!.Whole);
     }
 
     /// <summary>A lease names a command by its group and sub-verb as the person typed them, never an argument.</summary>

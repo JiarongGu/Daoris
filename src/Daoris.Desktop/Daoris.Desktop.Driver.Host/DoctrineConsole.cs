@@ -4,12 +4,18 @@ using System.Diagnostics;
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// A doctrine command handed to the CLI this install carries (ONEWAY1ai-i; the oneway design §11): <c>node &lt;app/cli/…/daoris.mjs&gt;
-/// &lt;words&gt;</c> on the tools' Node.js, with the terminal's own streams, marked as handed so the CLI never hands it back. Its exit is the
-/// run's; a start that fails is 2, said.
+/// A word no group owns, handed to the CLI this install carries as a doctrine command: <c>node &lt;app/cli/…/daoris.mjs&gt; &lt;words&gt;</c>
+/// on the tools' Node.js, with the terminal's own streams, marked as handed so the CLI refuses rather than hands back a word it does not
+/// own either. Its exit is the run's; a start that fails is 2, said.
 /// </summary>
 internal static class DoctrineConsole
 {
+    /// <summary>The doctrine half of <c>daoris help</c>: the carried CLI's own usage; nothing where no CLI is carried.</summary>
+    public static async Task UsageAsync()
+    {
+        if (CommandWords.CarriedCli(AppContext.BaseDirectory) is not null) await RunAsync(["--help"]).ConfigureAwait(false);
+    }
+
     public static async Task<int> RunAsync(IReadOnlyList<string> args)
     {
         if (CommandWords.CarriedCli(AppContext.BaseDirectory) is not { } cli)

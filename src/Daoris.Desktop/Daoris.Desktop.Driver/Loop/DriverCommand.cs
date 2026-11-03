@@ -26,22 +26,23 @@ public sealed record LoopRequest(LoopMode Mode, bool Share)
 }
 
 /// <summary>
-/// The loop a person asks for by its verb (DRV8a, D104), and the tree's usage (ONEWAY1ai-i): a bare invocation, or a word no command
-/// answers, is the usage and starts nothing. In the library rather than the host, so that is held by a test, as the plugin kit's command is.
+/// The loop a person asks for by its verb (D104), and the tree's usage: a bare invocation, or a word no command answers, is the usage
+/// and starts nothing. In the library rather than the host, so that is held by a test, as the plugin kit's command is.
 /// </summary>
+[CommandGroup("drive", Whole = true)]
 public static class DriverCommand
 {
     /// <summary>
-    /// What a bare <c>daoris</c> and <c>daoris help</c> print: the doctrine commands, then each group of the tree with its sub-verbs, a
+    /// What a bare <c>daoris</c> and <c>daoris help</c> print: the hand-off to the CLI, then each group of the tree with its sub-verbs, a
     /// group's lines beginning with its name (<see cref="UsageOf"/>). Every group has a line, held by a test against the tree.
     /// </summary>
     public const string Usage =
         """
         usage: daoris <command> …
 
-          analyze  ·  check  ·  doctor  ·  index  ·  init  ·  reconcile  ·  status  ·  sync  ·  upstream  ·  --version
-              the doctrine commands, offline: run by the CLI this install carries, on the node PATH finds (Node.js 22
-              or later); `daoris <command> --help` says each one's words. Every other command is the desktop's.
+          <command> …  ·  --version
+              a word no group below owns is the CLI's, a doctrine command, offline: run by the CLI this install
+              carries, on the node PATH finds (Node.js 22 or later); `daoris help` ends with the CLI's usage.
           help [<group>]
               this usage, or one group's.
           agent list  ·  agent install|update|pin|unpin|which <agent> …  ·  agent login|key <agent> …
