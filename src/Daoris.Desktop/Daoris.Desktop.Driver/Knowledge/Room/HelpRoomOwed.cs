@@ -91,22 +91,11 @@ internal sealed class HelpRoomOwed : IHelpRoomSection
         + "`daoris tool locations remove` is the terminal's door.");
 
     /// <summary>
-    /// MODELROLE1c's <c>daoris settings actor</c> and Settings → AI features' *Actors* (D205 §8.1): the <c>actor_propose</c> tool,
-    /// MODELROLE1h's.
-    /// </summary>
-    public static readonly HelpOwedDoor Actor = new(
-        "choose each actor's order of agents, models and efforts (Agents → Roles → Working roles)",
-        ["daoris settings actor [<actor>] [\"<agent> [<model>|-] [<effort>|-]\" …]"],
-        "an actor's order says which models this machine's accounts spend on, so Ask Daoris should propose it and the person apply "
-        + "it, judged by the one judge the screen and the terminal take; that is the `actor_propose` tool, which MODELROLE1h builds "
-        + "(D205 §8.1), and until then Working roles and `daoris settings actor` are its doors.");
-
-    /// <summary>
     /// Every door owed, in the order a person meets the tasks, as the doors table runs. LEFT3's clear of an account's default left with
     /// the default itself (POOL1b, D197 point 6): the order says where starts begin.
     /// </summary>
     public static readonly IReadOnlyList<HelpOwedDoor> All =
-        [Workspace, Register, Check, AskReview, AskKind, Workflow, ToolUse, ToolLocation, Actor];
+        [Workspace, Register, Check, AskReview, AskKind, Workflow, ToolUse, ToolLocation];
 
     public string Render(HelpMachine machine)
     {

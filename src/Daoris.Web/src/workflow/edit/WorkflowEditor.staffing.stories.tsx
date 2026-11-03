@@ -43,7 +43,6 @@ const staffing = (rows: RoleRow[], refuse: string | null = null): StepStaffing =
   offers: { [AGENT]: { models: ['opus', 'sonnet'], efforts: ['high', 'medium'] } },
   busy: false,
   onSet: (_press, answered) => (refuse === null ? answered.done() : answered.refused(refuse)),
-  onSetActor: (_actor, _choices, answered) => answered.done(),
 });
 
 const meta: Meta<typeof WorkflowEditor> = {

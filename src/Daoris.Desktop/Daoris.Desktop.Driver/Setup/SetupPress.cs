@@ -215,7 +215,7 @@ public static class SetupPress
             refusals.Add(new(SetupRefusals.NotDriven,
                 $"`{row.Repository}` is not driven here: it has not adopted, so only a session on the protocol door is "
                 + $"handed the connector it takes the quest with, and this machine's sessions start on `{config.Adapter}`, "
-                + "which rides the pipe. Choose an ACP agent with `daoris driver adapter <agent>`, in Settings → Driver."));
+                + "which rides the pipe. Choose an ACP agent for Build in Agents → Roles, or with `daoris role set build \"<agent>\"`."));
         }
 
         // HELPSETUP1: a tree per session is the repository's own, on its Setup → Driving since UX6f (D150 §4.2).

@@ -446,8 +446,8 @@ public sealed class ChatGoesOnProcessTests : IDisposable
     private const string HelpersWords = "Another agent says five.";
 
     /// <summary>
-    /// CONTEXTDRIVE1b (§3 point 2): a go-on's words end with Daoris's count for its line, here the helper's answer's go-on by an answer
-    /// alone and the default rule that holds the line for the person, handed after them as a block of its own.
+    /// CONTEXTDRIVE1b (§3 point 2): a go-on by an answer alone ends with Daoris's count for its line and the default rule that holds the
+    /// line for the person, handed after the answer.
     /// </summary>
     private const string Counted = "Daoris's count for this line: 1 go-on by answers alone in a row; Daoris waits for the person after 2.";
 
@@ -549,7 +549,6 @@ public sealed class ChatGoesOnProcessTests : IDisposable
 
         Helped(ledger, events, id, "hw1");
 
-        // The stand-in joins a prompt's blocks with ` | `: the answer, then the count line.
         await Poll.Until(() => ledger.Taken.Count == 1 && HeardLines().Contains($"prompt: {HelpersWords} | {Counted}"), () => Seen(ledger, events, id));
         Assert.Contains("session/resume: conv-1", HeardLines());
         Assert.Contains(Continuations.GoingOnWithHelper, ledger.Notes(id)[^1]);

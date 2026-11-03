@@ -485,10 +485,26 @@ public sealed class SystemWiringTests : IDisposable
         Assert.DoesNotContain("sk-very-secret", text, StringComparison.Ordinal);
 
         var elsewhere = Path.Combine(Scratch("override"), "mine.json");
-        var overridden = SystemWiring.Read(Terminal(home, driver, process: Env(("DAORIS_DRIVER_CONFIG", elsewhere))));
-        Assert.Equal("DAORIS_DRIVER_CONFIG", (string?)FileRow(overridden, "driver")["overriddenBy"]);
-        Assert.Equal(elsewhere, (string?)FileRow(overridden, "driver")["path"]);
-        Assert.False((bool)FileRow(overridden, "driver")["present"]!);
+        var overridden = SystemWiring.Read(Terminal(home, driver, process: Env(("DAORIS_HARNESS_CONFIG", elsewhere))));
+        Assert.Equal("DAORIS_HARNESS_CONFIG", (string?)FileRow(overridden, "harnesses")["overriddenBy"]);
+        Assert.Equal(elsewhere, (string?)FileRow(overridden, "harnesses")["path"]);
+        Assert.False((bool)FileRow(overridden, "harnesses")["present"]!);
+    }
+
+    [Fact]
+    public void ONEWAY1c_i_the_driver_file_is_the_homes_whatever_a_retired_variable_names()
+    {
+        var (_, home, driver) = Install();
+        File.WriteAllText(DaorisHome.Entry(home, HomeEntry.DriverConfig), """{ "pollSeconds": 45 }""");
+        var elsewhere = Path.Combine(Scratch("retired"), "mine.json");
+
+        var wiring = SystemWiring.Read(Terminal(home, driver, process: Env(("DAORIS_DRIVER_CONFIG", elsewhere))));
+
+        var config = FileRow(wiring, "driver");
+        Assert.Null(config["overriddenBy"]);
+        Assert.Equal(DaorisHome.Entry(home, HomeEntry.DriverConfig), (string?)config["path"]);
+        Assert.True((bool)config["present"]!);
+        Assert.DoesNotContain(WiringVariables.Shown, variable => variable.Name == "DAORIS_DRIVER_CONFIG");
     }
 
     [Fact]

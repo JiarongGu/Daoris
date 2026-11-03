@@ -38,7 +38,6 @@ internal static class PipeTargetRows
         ["RULE_ACTION"] = "edits a rule list in place",
         ["SET_KEEP"] = "merges into a kind's keeping rule",
         ["SET_AGENT_SETTINGS"] = "merges into a profile's settings",
-        ["SET_ACTOR"] = "edits an actor's row in place",
         ["STAFFING_FOUND_ANSWER"] = "answers a found change, which then leaves the list",
         ["SET_ROLE"] = "edits a role's row of the catalogue in place, its revision moving",
         ["SET_ROLES"] = "edits several roles' rows of the catalogue in place, each revision moving, in one transaction",
@@ -311,8 +310,6 @@ internal static class PipeTargetRows
             (a, p) => Each(At(Named(At(a, "helpGrants"), "id", Text(p, "grant") ?? "housekeeping"), "chosen")).Any(each => Text(each) == Text(p, "operation"))
                 ? "true" : "false",
             p => Raw(Field(p, "chosen"))));
-        Row("SET_ACTOR", Setting("ACTORS", ["actor"], _ => null,
-            (a, p) => Fp(Raw(Named(At(a, "actors"), "id", Text(p, "actor"))))));
         Row("STAFFING_FOUND_ANSWER", Setting("ACTORS", ["found", "answer"], _ => null, (a, _) => Fp(Raw(At(a, "found")))));
         Row("SET_ROLE", Setting("ROLES", ["change", "id"], _ => null, (a, p) => Fp(Raw(Named(At(a, "roles"), "id", Text(p, "id"))))));
         // AGENTSPLACE1g2: the rows of every role the batch names, in the order it names them.

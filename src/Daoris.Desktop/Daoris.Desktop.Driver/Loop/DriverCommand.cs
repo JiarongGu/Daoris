@@ -308,6 +308,9 @@ public static class DriverCommand
           session go-on-new <id>
               words that wait for the account a session ran on to cool: go on now in a new session at the driver's
               next look, handed them, without that session's conversation.
+          session at-work <session> [--json]
+              who is at work on a session: its line's parts, what it waits on of others and its co-workers, as the
+              window's *At work* draws them (COWORKVIEW1a, COMMS1i).
           session start-from <id>
               words a session cannot go on with: start a conversation here with them, as `chat` does, without that
               session's context; they leave that session, naming the conversation.
@@ -343,12 +346,11 @@ public static class DriverCommand
               question's fenced print, and the answer or the question left to the owner. No alone path.
           settings notify on|off  ·  settings strikes <n>  ·  settings cooloff <minutes>  ·  settings cap <n>
           settings keep [<kind> <rule>]  ·  settings handover …  ·  settings brainstorms …
-          settings timeout <minutes>  ·  settings adapter <name>  ·  settings intake|helper <adapter>|off
-          settings actor [<actor>] ["<agent> [<model>|-] [<effort>|-]" …]
+          settings timeout <minutes>  ·  settings actor export [<file>]|import <file>|found [take|dismiss <n>]
               this machine's standing choices: whether a park or an end you did not ask for is said, when a quest
               parks after failed sessions, how long an account cools, the cap, how long each kind is kept, a hand-over's
-              and a brainstorm's rules, and the agents each kind of work runs on; timeout is retired, no session is
-              limited by time.
+              and a brainstorm's rules, and the staffing copy's export, import and found changes; timeout is retired, no
+              session is limited by time, and the agents each kind of work runs on are `role set`'s.
           space [--json] [--measure]
               the free space and each kind Daoris keeps, This Daoris's Disk space twin: its size and when it was
               counted, its rule, when it next goes and when it was last cleaned. --measure counts each kind first,

@@ -12,8 +12,6 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     [InlineData("line", "engine", null, "develop", "daoris driver line engine develop", "`engine`'s line to `develop`")]
     [InlineData("line", null, "work", "--clear", "daoris driver line --workspace work --clear", "Clear workspace `work`'s line")]
     [InlineData("landing", null, "work", "branch feature/{quest}-{slug} --tidy", "daoris driver landing --workspace work branch feature/{quest}-{slug} --tidy", "on a branch `feature/{quest}-{slug}`")]
-    [InlineData("intake", null, null, "off", "daoris driver intake off", "Stop answering asks")]
-    [InlineData("helper", null, null, "claude-code", "daoris driver helper claude-code", "`claude-code`")]
     [InlineData("strikes", null, null, "5", "daoris driver strikes 5", "5 failed sessions")]
     [InlineData("notify", null, null, "off", "daoris driver notify off", "Stop saying")]
     // HELP9: reading and writing across (D107), and the two dials the terminal alone had.
@@ -24,7 +22,6 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     [InlineData("across", "game", null, "write-to engine", "daoris driver across game write-to engine", "your standing say-so")]
     [InlineData("across", "game", null, "write-to engine --clear", "daoris driver across game write-to engine --clear", "no longer write into `engine`")]
     [InlineData("cap", null, null, "3", "daoris driver cap 3", "at most 3 sessions at once")]
-    [InlineData("adapter", null, null, "claude-code-acp", "daoris driver adapter claude-code-acp", "`claude-code-acp`")]
     // TOOL4l-b: how long an account cools when its limit names no time, as `daoris driver cooloff` takes it.
     [InlineData("cooloff", null, null, "90", "daoris driver cooloff 90", "cools for 90 minutes")]
     [InlineData("cooloff", null, null, "1", "daoris driver cooloff 1", "cools for 1 minute before")]
@@ -53,22 +50,21 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// 🔴 MODELROLE1c (D205 §6.4, round 3's Codex 8): the legacy <c>adapter</c> door writes Build's order through the write
-    /// <c>SET_ACTOR</c> makes, so Chat and Brainstorm, still as before, keep the agent they ran and the card says so.
+    /// 🔴 ONEWAY1a (the oneway design §2 S1): the staffing doors `setting_propose` once had are refused naming `role_propose`, whatever
+    /// they are given, and plan nothing; the service's twin says the same words.
     /// </summary>
-    [Fact]
-    public void The_adapter_door_changes_build_and_keeps_chat_and_brainstorm_on_their_agent()
+    [Theory]
+    [InlineData("adapter", "claude-code-acp")]
+    [InlineData("intake", "off")]
+    [InlineData("intake", "claude-code")]
+    [InlineData("helper", "claude-code")]
+    public void ONEWAY1a_a_staffing_door_is_refused_naming_the_role_door(string door, string value)
     {
-        var config = DriverConfig.Empty with { Adapter = "claude-code" };
+        var plan = HelpProposals.Plan(Setting(door, null, null, value), DriverConfig.Empty with { Adapter = "claude-code" }, Facts);
 
-        var plan = HelpProposals.Plan(Setting("adapter", null, null, "claude-code-acp"), config, Facts);
-        var applied = plan.Apply!(config);
-
-        Assert.Contains("Chat and Brainstorm keep `claude-code`", plan.Describe, StringComparison.Ordinal);
-        Assert.Equal("claude-code-acp", applied.Adapter);
-        Assert.Equal([new ActorChoice("claude-code-acp")], applied.Actors["build"]);
-        Assert.Equal("claude-code", ActorChoices.FirstAgent("chat", applied));
-        Assert.Equal("claude-code", ActorChoices.FirstAgent("brainstorm", applied));
+        Assert.Equal(HelpSettingProposals.StaffingRetired, plan.Refusal);
+        Assert.Null(plan.Apply);
+        Assert.DoesNotContain(door, new HelpSettingProposals().Doors);
     }
 
     /// <summary>
@@ -518,22 +514,20 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
         Assert.Equal(DriverChoicesCommand.TimeoutRetired, plan.Refusal);
     }
 
-    /// <summary>HELP9: across (D107), a cap and an adapter, applied as `SET_READ_ACROSS`, `SET_WRITE_ACROSS` and the terminal make them.</summary>
+    /// <summary>HELP9: across (D107) and a cap, applied as `SET_READ_ACROSS`, `SET_WRITE_ACROSS` and the terminal make them.</summary>
     [Fact]
-    public void Applying_across_a_cap_and_an_adapter_makes_the_edit_the_terminal_makes()
+    public void Applying_across_and_a_cap_makes_the_edit_the_terminal_makes()
     {
         var config = DriverConfig.Empty;
         config = HelpProposals.Plan(Setting("across", "engine", null, "read off"), config, Facts).Apply!(config);
         config = HelpProposals.Plan(Setting("across", null, "work", "read off"), config, Facts).Apply!(config);
         config = HelpProposals.Plan(Setting("across", "game", null, "write-to engine"), config, Facts).Apply!(config);
         config = HelpProposals.Plan(Setting("cap", value: "3"), config, Facts).Apply!(config);
-        config = HelpProposals.Plan(Setting("adapter", value: "claude-code-acp"), config, Facts).Apply!(config);
 
         Assert.False(config.ReadAcross["engine"]);
         Assert.False(config.WorkspaceReadAcross["work"]);
         Assert.Equal(["engine"], config.WriteAcross["game"]);
         Assert.Equal(3, config.Cap);
-        Assert.Equal("claude-code-acp", config.Adapter);
 
         config = HelpProposals.Plan(Setting("across", "engine", null, "read --clear"), config, Facts).Apply!(config);
         config = HelpProposals.Plan(Setting("across", "game", null, "write-to engine --clear"), config, Facts).Apply!(config);
@@ -603,9 +597,9 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
             ("resume", "engine", null, null), ("trees", "engine", null, "off"), ("line", "engine", null, "main"),
             ("landing", "engine", null, "merge"), ("across", "engine", null, "read on"), ("standing", "engine", null, "dev only"),
             ("language", null, "work", "zh"), ("review", "engine", null, "none"), ("opinion", "engine", null, "none"),
-            ("helpers", "engine", null, "--mode on"), ("commits", null, "work", "--mode ask"), ("intake", null, null, "off"),
-            ("helper", null, null, "claude-code"), ("strikes", null, null, "0"), ("retry", "q1a2b3c4", null, null),
-            ("timeout", null, null, "30"), ("notify", null, null, "on"), ("cap", null, null, "1"), ("adapter", null, null, "claude-code"),
+            ("helpers", "engine", null, "--mode on"), ("commits", null, "work", "--mode ask"),
+            ("strikes", null, null, "0"), ("retry", "q1a2b3c4", null, null),
+            ("timeout", null, null, "30"), ("notify", null, null, "on"), ("cap", null, null, "1"),
             ("cooloff", null, null, "90"), ("keep", null, null, "logs 14"), ("git-use", "engine", null, "--clear"),
         ];
 
@@ -623,7 +617,6 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     [InlineData("line", null, "elsewhere", "develop", "no workspace `elsewhere`")]
     [InlineData("line", "engine", null, "bad..name", "not a branch name git would take")]
     [InlineData("landing", "engine", null, "branch feature/fixed", "`{quest}` or `{session}`")]
-    [InlineData("intake", null, null, "gpt-agent", "no agent `gpt-agent`")]
     // HELP9: what `daoris driver across` refuses, in its words, and the names a helper can invent.
     [InlineData("across", "engine", null, "write-to engine", "`engine` writes in its own tree already")]
     [InlineData("across", "engine", null, "write-to nowhere", "`nowhere` is not registered")]
@@ -634,7 +627,6 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     [InlineData("across", "engine", null, "read sometimes", "`read on|off|--clear`")]
     [InlineData("across", "engine", null, "peek", "`across` sets `read on|off|--clear` or `write-to <other> [--clear]`")]
     [InlineData("cap", null, null, "0", "`cap 0` is not a change the driver makes")]
-    [InlineData("adapter", null, null, "gpt-agent", "no agent `gpt-agent`")]
     [InlineData("cooloff", null, null, "0", "`cooloff 0` is not a change the driver makes")]
     [InlineData("cooloff", null, null, "soon", "`cooloff soon` is not a change the driver makes")]
     // KEEP1d: out of its kind's bounds, a choice its kind does not take, a kind not the person's, and words that are no rule.

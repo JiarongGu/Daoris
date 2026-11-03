@@ -19,8 +19,10 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
         var refusal = await RefusalAsync(Module(), "START_HELP");
 
         Assert.Contains(Refusals.DriverRefused, refusal);
-        Assert.Contains("Settings → AI features", refusal);
-        Assert.Contains("daoris driver helper <agent>", refusal);
+        Assert.Contains("Agents → Roles, Ask Daoris", refusal);
+        // ONEWAY1a: the role door names it, the retired `driver helper` never.
+        Assert.Contains("daoris role set ask-daoris", refusal);
+        Assert.DoesNotContain("driver helper", refusal);
     }
 
     /// <summary>
@@ -276,8 +278,8 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
     [Fact]
     public async Task Ask_Daoris_asked_for_before_the_loop_is_up_says_so()
     {
+        File.WriteAllText(DriverConfigPath, """{ "helperAdapter": "claude-code-acp" }""");
         var module = Module();
-        await AnswerAsync(module, "SET_ACTOR", new { actor = "ask-daoris", choices = new[] { new { agent = "claude-code-acp" } } });
 
         var refusal = await RefusalAsync(module, "START_HELP");
 

@@ -74,7 +74,7 @@ public sealed partial class DriverChoicesTextTests
                 Instance = new InstanceWorld
                 {
                     Home = home,
-                    Environment = variable => variable == DriverConfig.PathVariable ? config : variable == DaorisHome.Variable ? home : null,
+                    Environment = variable => variable == DaorisHome.Variable ? home : null,
                     Out = output,
                     Error = error,
                     Verb = "daoris",

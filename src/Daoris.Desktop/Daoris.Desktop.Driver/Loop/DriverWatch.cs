@@ -622,7 +622,7 @@ public sealed class DriverWatch(
             executor = new HeavyExecutor(home, new VerifyWorld
             {
                 Answered = (run, _) => NodesWoken(RunUnits.IdOf(run)),
-                Mapping = repository => HeavyMapping.For(DriverConfig.Load(DriverConfig.ResolvePath(Environment.GetEnvironmentVariable, home)), repository),
+                Mapping = repository => HeavyMapping.For(DriverConfig.Load(DriverConfig.ResolvePath(home)), repository),
             });
             nodes.Checks = new CheckExecution(executor, (unit, attempt, node) => VerifyRuns.SendOf(home, unit, attempt, node));
         }
@@ -634,7 +634,7 @@ public sealed class DriverWatch(
         {
             transport = new IntegrationTransport(home, new IntegrationTransportWorld
             {
-                Config = () => DriverConfig.Load(DriverConfig.ResolvePath(Environment.GetEnvironmentVariable, home)),
+                Config = () => DriverConfig.Load(DriverConfig.ResolvePath(home)),
                 Root = async (repository, workspace, token) => (await RefWatch.RepositoriesAsync(home, service.RegistryAsync, token).ConfigureAwait(false))
                     .FirstOrDefault(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase)
                                             && string.Equals(each.Workspace, workspace, StringComparison.OrdinalIgnoreCase))?.Root,

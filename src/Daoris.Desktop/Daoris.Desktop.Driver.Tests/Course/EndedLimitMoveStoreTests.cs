@@ -55,7 +55,7 @@ public sealed class EndedLimitMoveStoreTests : IDisposable
 
         public List<string> Prompts { get; } = [];
 
-        public Task FinishAsync(Action endInput) => Task.CompletedTask;
+        public Task FinishAsync(Func<Task> close) => Task.CompletedTask;
     }
 
     private static Turned Talking(ChatContext context, string id, Action<ChatMessage>? wire = null)

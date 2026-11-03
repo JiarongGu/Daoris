@@ -473,7 +473,7 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
 
         public List<string> Prompts { get; } = [];
 
-        public Task FinishAsync(Action endInput) => Task.CompletedTask;
+        public Task FinishAsync(Func<Task> close) => Task.CompletedTask;
     }
 
     private static Turned Talking(ChatContext context, string id, bool shows, Action<ChatMessage>? wire = null)
