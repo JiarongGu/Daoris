@@ -241,7 +241,7 @@ public static class ActorChoices
 }
 
 /// <summary>
-/// One actor as the screen, the terminal and <c>ACTORS</c> say it (D205 §7, §9.4): <c>State</c> is <c>set</c>, <c>before</c>, <c>off</c> or
+/// One role's staffing as the screen, the terminal and each seeded <c>ROLES</c> row say it: <c>State</c> is <c>set</c>, <c>before</c>, <c>off</c> or
 /// <c>unreadable</c>, with its effective order (empty for Second opinion and Partner, whose rule or ask names the agents, and for Helper as
 /// before) and, where it does not read, why.
 /// </summary>

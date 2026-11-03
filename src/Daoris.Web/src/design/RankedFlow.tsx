@@ -878,7 +878,7 @@ function describe(
   const title = (id: string) => byId.get(id)!.title;
   const sentences: string[] = [...(note?.before ?? [])];
   if (node.state) sentences.push(t('flow.state', { word: node.state.word }));
-  if (node.actor) sentences.push(t('flow.actor', { actor: node.actor }));
+  if (node.actor) sentences.push(t('flow.role', { role: node.actor }));
   if (node.mark) sentences.push(node.mark.foot ? `${node.mark.word}. ${node.mark.foot}` : node.mark.word);
   if (node.reached === false) sentences.push(t('flow.notReached'));
   for (const edge of edges) if (edge.to === node.id && byId.has(edge.from)) sentences.push(t('flow.from', { node: title(edge.from), says: edge.says }));

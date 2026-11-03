@@ -41,7 +41,7 @@ export function HandOverOfferLine({ offer, actorName, agentName, accountName, bu
   // MODELROLE1e (D205 §3.5(e)): where the actor has an order, the offer names the choice it is, with the model that choice asks.
   const choice = offer.choice && actorName
     ? t('work.handOver.offer.choice', {
-      actor: actorName, n: offer.choice.n, entry: `${agentName} · ${offer.choice.model ?? t('work.actor.accountDefault')}`,
+      actor: actorName, n: offer.choice.n, entry: `${agentName} · ${offer.choice.model ?? t('work.role.accountDefault')}`,
     })
     : null;
 

@@ -87,7 +87,6 @@ describe('A place page, Roles', () => {
         return read;
       }
       if (type === 'ROLES') return roles;
-      if (type === 'ACTORS') return { actors: [] };
       if (type === 'ROLE_STRUCTURE') return chain(options?.payload?.chain ?? {});
       return undefined;
     });
@@ -358,7 +357,6 @@ describe('A place page, Roles', () => {
       if (type === 'HARNESSES') return ROSTER;
       if (type === 'PLACES') return PLACES({});
       if (type === 'ROLES') return { ...CATALOGUE, kept: false };
-      if (type === 'ACTORS') return { actors: [] };
       if (type === 'ROLE_STRUCTURE') return CHAIN(options?.payload?.chain ?? {});
       return undefined;
     });

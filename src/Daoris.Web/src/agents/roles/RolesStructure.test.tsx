@@ -72,7 +72,6 @@ describe('The Roles mode, Work, Accounts and By repository', () => {
         case 'STATE': return { ...DRIVER_STATE, drivable: DRIVER.drivable, holds: DRIVER.holds };
         case 'HARNESSES': return ROSTER;
         case 'ACCOUNTS': return { agents: [CLAUDE_USE, CODEX_USE] };
-        case 'ACTORS': return { actors: [] };
         case 'ROLES': return { roles: [], works: ['build', 'design'], kept: true, suggested: [] };
         case 'STARTS': return { adapter: 'claude-code', starts: [] };
         case 'PLUGINS': return { folder: 'plugins', plugins: PLUGINS };

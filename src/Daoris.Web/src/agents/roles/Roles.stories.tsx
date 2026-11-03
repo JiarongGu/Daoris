@@ -7,7 +7,7 @@ import type { StartWiring } from '../../map/wiring';
 import { AskDaorisAbout, IntakeAbout } from '../../settings/ai/ActorAbout';
 import { type Editing, RolesCard } from './Roles';
 
-// The roles on AI features (FOUNDATION1y-i, MODELROLE1c, COMPANYVIEW1a), one row for each, in the shapes `ROLES` and `ACTORS` answer
+// The roles on AI features (FOUNDATION1y-i, MODELROLE1c, COMPANYVIEW1a), one row for each, in the shapes `ROLES` answers
 // with: the seeded roles with their staffing, Chat removed and waiting, an added role in a workspace with its choices, and the Designer
 // Daoris suggests while no role takes design.
 

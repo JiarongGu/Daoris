@@ -922,9 +922,9 @@ public sealed partial class HelpCoverageTests
         // COMPANYVIEW1e: the supervisor's and the steward's Appoint… and Turn off moved from Setup and This Daoris to the Roles mode's
         // Appointed roles section (`agents/roles/AppointedRoles.tsx`); the owner's press alone (D208 §2.1 point 1, D209 §2.3).
         ("agents", "useSetAppointment", null, new Exempt(Appointment)),
-        // FOUNDATION1w-s: *Take it* and *Dismiss* of a change of the actors another program made.
+        // FOUNDATION1w-s: *Take it* and *Dismiss* of a change of the roles another program made.
         ("agents", "useAnswerStaffingFound", null, new Exempt(
-            "A change of driver.json's actors another program made is the person's to take or dismiss (the foundation design §19.15): "
+            "A change of driver.json's roles another program made is the person's to take or dismiss (the foundation design §19.15): "
             + "a take may turn Intake or Ask Daoris on, so no proposal names it, and a helper never answers what another program wrote.")),
         // D230 point 2: an adopted repository's *Reconcile…* on its place's page (`agents/setup/ReconcileNote.tsx`), over RECONCILE_APPLY.
         ("agents", "useReconcileApply", null, new Exempt(

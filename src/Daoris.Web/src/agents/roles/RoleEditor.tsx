@@ -108,9 +108,9 @@ export function RoleEditor({
   const labelOf = (work: string) => works.find((each) => each.value === work)?.label ?? work;
   const moving = policy !== null && Object.keys({ ...policy.moves, ...policy.carried }).length > 0;
   const how = [
-    t(rule === 'weight' ? 'settings.ai.policy.later' : 'settings.ai.actors.later'), t('settings.ai.actors.outranks'),
-    t(moving ? 'settings.ai.policy.movesNote' : conversing ? 'settings.ai.actors.goesOn' : 'settings.ai.actors.neverMoves'),
-    t(rule === 'weight' ? 'settings.ai.policy.choicesNote' : 'settings.ai.roles.choicesNote'), t('settings.ai.actors.most', { count: MOST }),
+    t(rule === 'weight' ? 'settings.ai.policy.later' : 'settings.ai.role.later'), t('settings.ai.role.outranks'),
+    t(moving ? 'settings.ai.policy.movesNote' : conversing ? 'settings.ai.role.goesOn' : 'settings.ai.role.neverMoves'),
+    t(rule === 'weight' ? 'settings.ai.policy.choicesNote' : 'settings.ai.roles.choicesNote'), t('settings.ai.role.most', { count: MOST }),
     ...(policy && rule === 'order' ? [t('settings.ai.policy.lighter')] : []),
   ].join(' ');
   const columns: readonly ('name' | 'short' | 'number' | 'long' | 'acts')[] = policy
@@ -136,9 +136,9 @@ export function RoleEditor({
       )}
       <FormGrid columns={columns} floor="40rem">
         <FormRow head>
-          <span className="text-meta text-ink-faint">{t('settings.ai.actors.field.agent')}</span>
-          <span className="text-meta text-ink-faint">{t('settings.ai.actors.field.model')}</span>
-          <span className="text-meta text-ink-faint">{t('settings.ai.actors.field.effort')}</span>
+          <span className="text-meta text-ink-faint">{t('settings.ai.role.field.agent')}</span>
+          <span className="text-meta text-ink-faint">{t('settings.ai.role.field.model')}</span>
+          <span className="text-meta text-ink-faint">{t('settings.ai.role.field.effort')}</span>
           {policy && rule === 'weight' && <span className="text-meta text-ink-faint">{t('settings.ai.policy.field.weight')}</span>}
           {policy && rule === 'weight' && <span className="text-meta text-ink-faint">{t('settings.ai.policy.field.aim')}</span>}
           {policy && <span className="text-meta text-ink-faint">{t('settings.ai.policy.field.limits')}</span>}
@@ -151,25 +151,25 @@ export function RoleEditor({
           const options = draft.agent && !agents.some((agent) => agent.value === draft.agent) ? [...agents, { value: draft.agent, label: draft.agent }] : agents;
           return (
             <FormRow key={draft.key}>
-              <FormField label={t('settings.ai.actors.field.agent')} when="stacked">
-                <SelectField value={draft.agent} onChange={(value) => change(draft.key, 'agent', value)} options={[...options]} ariaLabel={t('settings.ai.actors.agentOf', { n })} />
+              <FormField label={t('settings.ai.role.field.agent')} when="stacked">
+                <SelectField value={draft.agent} onChange={(value) => change(draft.key, 'agent', value)} options={[...options]} ariaLabel={t('settings.ai.role.agentOf', { n })} />
               </FormField>
-              <FormField label={t('settings.ai.actors.field.model')} when="stacked">
+              <FormField label={t('settings.ai.role.field.model')} when="stacked">
                 <OfferedField
                   key={draft.agent}
                   value={draft.model}
                   offered={offers[draft.agent]?.models}
-                  label={t('settings.ai.actors.modelOf', { n })}
+                  label={t('settings.ai.role.modelOf', { n })}
                   otherLabel={t('settings.ai.roles.offers.modelOther', { n })}
                   onChange={(value) => change(draft.key, 'model', value)}
                 />
               </FormField>
-              <FormField label={t('settings.ai.actors.field.effort')} when="stacked">
+              <FormField label={t('settings.ai.role.field.effort')} when="stacked">
                 <OfferedField
                   key={draft.agent}
                   value={draft.effort}
                   offered={offers[draft.agent]?.efforts}
-                  label={t('settings.ai.actors.effortOf', { n })}
+                  label={t('settings.ai.role.effortOf', { n })}
                   otherLabel={t('settings.ai.roles.offers.effortOther', { n })}
                   onChange={(value) => change(draft.key, 'effort', value)}
                 />
@@ -191,13 +191,13 @@ export function RoleEditor({
                 </div>
               )}
               <span className="flex items-center">
-                <Button variant="ghost" disabled={busy || index === 0} aria-label={t('settings.ai.actors.up', { n })} onClick={() => move(index, index - 1)}>
+                <Button variant="ghost" disabled={busy || index === 0} aria-label={t('settings.ai.role.up', { n })} onClick={() => move(index, index - 1)}>
                   <Icon name="chevronUp" size={12} />
                 </Button>
                 <Button
                   variant="ghost"
                   disabled={busy || index === now.drafts.length - 1}
-                  aria-label={t('settings.ai.actors.down', { n })}
+                  aria-label={t('settings.ai.role.down', { n })}
                   onClick={() => move(index, index + 1)}
                 >
                   <Icon name="chevronDown" size={12} />
@@ -205,7 +205,7 @@ export function RoleEditor({
                 <Button
                   variant="ghost"
                   disabled={busy || now.drafts.length === 1}
-                  aria-label={t('settings.ai.actors.remove', { n })}
+                  aria-label={t('settings.ai.role.remove', { n })}
                   onClick={() => onEditing((was) => ({ ...was, drafts: was.drafts.filter((each) => each.key !== draft.key) }))}
                 >
                   <Icon name="x" size={12} />
@@ -218,7 +218,7 @@ export function RoleEditor({
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="ghost" disabled={busy || now.drafts.length >= MOST} onClick={add}>
           <Icon name="plus" size={12} />
-          {t('settings.ai.actors.add')}
+          {t('settings.ai.role.add')}
         </Button>
         <span className="inline-flex items-center gap-1 text-small text-ink-soft">
           <WhyGlyph why={how} />
@@ -262,7 +262,7 @@ export function RoleEditor({
           <Button variant="ghost" onClick={() => set({ nameIn: [...now.nameIn, ['', '']] })}>{t('settings.ai.roles.field.nameInAdd')}</Button>
           {shared ? (
             <p className="m-0 text-small text-ink-soft">
-              {t('settings.ai.roles.field.takesAll', { works: now.takes.map(labelOf).join(t('settings.ai.actors.and')) })}
+              {t('settings.ai.roles.field.takesAll', { works: now.takes.map(labelOf).join(t('settings.ai.role.and')) })}
             </p>
           ) : (
             <FormField label={t('settings.ai.roles.field.work')}>
@@ -273,9 +273,9 @@ export function RoleEditor({
       </details>
       <p className="m-0 text-small text-ink-soft">{consequence}</p>
       <div className="flex flex-wrap gap-2">
-        <Button type="submit" disabled={locked}>{t('settings.ai.actors.save')}</Button>
+        <Button type="submit" disabled={locked}>{t('settings.ai.role.save')}</Button>
         {mayOff && !isOff && !now.isNew && (
-          <Button variant="ghost" disabled={locked} onClick={() => onSave(true)}>{t('settings.ai.actors.off')}</Button>
+          <Button variant="ghost" disabled={locked} onClick={() => onSave(true)}>{t('settings.ai.role.off')}</Button>
         )}
         {mayClear && <Button variant="ghost" disabled={locked} onClick={onClear}>{t('settings.ai.roles.useDefault')}</Button>}
         <Button variant="ghost" disabled={busy} onClick={onCancel}>{t('common.cancel')}</Button>

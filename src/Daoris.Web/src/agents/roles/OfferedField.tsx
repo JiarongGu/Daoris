@@ -26,7 +26,7 @@ export function OfferedField({ value, offered, label, otherLabel, onChange }: {
       aria-label={offered ? otherLabel : label}
       value={value}
       spellCheck={false}
-      placeholder={t('settings.ai.actors.accountDefault')}
+      placeholder={t('settings.ai.role.accountDefault')}
       onChange={(event) => onChange(event.target.value)}
       className={FIELD}
     />
@@ -40,7 +40,7 @@ export function OfferedField({ value, offered, label, otherLabel, onChange }: {
         value={offered.includes(shown) || shown === DEFAULT || shown === OTHER ? shown : OTHER}
         ariaLabel={label}
         options={[
-          { value: DEFAULT, label: t('settings.ai.actors.accountDefault') },
+          { value: DEFAULT, label: t('settings.ai.role.accountDefault') },
           ...offered.map((each) => ({ value: each, label: each })),
           { value: OTHER, label: t('settings.ai.roles.otherName') },
         ]}

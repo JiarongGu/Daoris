@@ -299,7 +299,7 @@ describe('The roles', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Edit Intake' }));
 
       expect(within(screen.getByRole('form', { name: 'Intake' })).queryByRole('button', { name: 'Use the default' })).toBeNull();
-      expect(new Set([i18n.t('settings.ai.actors.off'), i18n.t('settings.ai.roles.useDefault'), i18n.t('settings.ai.actors.save')]).size).toBe(3);
+      expect(new Set([i18n.t('settings.ai.role.off'), i18n.t('settings.ai.roles.useDefault'), i18n.t('settings.ai.role.save')]).size).toBe(3);
     });
 
     it('says a refusal of Use the default under the editor, the editor still open', () => {

@@ -59,12 +59,15 @@ const before = (id: string, agent?: string) => ({
   id, state: agent || id === 'opinion' || id === 'partner' || id === 'helper' ? 'before' : 'off',
   choices: agent ? [{ agent, from: 'before' }] : [],
 });
-const ACTORS = {
-  actors: [
-    before('build', 'claude-code'), before('intake'), before('opinion'), before('helper'), before('partner'),
-    before('brainstorm', 'claude-code'), before('ask-daoris'), before('chat', 'claude-code'),
-  ],
-};
+const STAFFING = [
+  before('build', 'claude-code'), before('intake'), before('opinion'), before('helper'), before('partner'),
+  before('brainstorm', 'claude-code'), before('ask-daoris'), before('chat', 'claude-code'),
+];
+
+/** The catalogue with each row carrying its staffing, as `ROLES` answers it. */
+const staffed = <T extends { roles: { id: string }[] }>(catalogue: T, staffing: readonly { id: string }[] = STAFFING) => ({
+  ...catalogue, roles: catalogue.roles.map((row) => ({ ...row, staffing: staffing.find((each) => each.id === row.id) ?? null })),
+});
 
 const ROLES = {
   roles: [{ id: 'build', state: 'seed', seeded: true, name: { en: 'Build', zh: '开发' }, takes: ['build'], scopeKind: 'machine', revision: 0 }],
@@ -97,8 +100,7 @@ describe('The Agents place, Roles mode', () => {
       if (type === 'SET_ROLE' && refuseRole) throw new Error('`build` may not be off: a role must take it on the machine.');
       if (type === 'STATE' || type === 'SET_ROLE') return DRIVER_STATE;
       if (type === 'HARNESSES') return ROSTER;
-      if (type === 'ACTORS') return ACTORS;
-      if (type === 'ROLES') return catalogue === 'roles' ? ROLES : catalogue === 'seeded' ? SEEDED : undefined;
+      if (type === 'ROLES') return catalogue === 'roles' ? staffed(ROLES) : catalogue === 'seeded' ? staffed(SEEDED) : undefined;
       if (type === 'STARTS') return { adapter: 'claude-code', starts: [] };
       return undefined;
     });
@@ -162,17 +164,24 @@ describe('The Agents place, Roles mode', () => {
     expect(screen.getByRole('button', { name: /^Appointed roles/ })).toHaveAttribute('aria-current', 'true');
   });
 
-  it('ONEWAY1a: folds each role to one line on a shell with no catalogue, as before where it reads today\'s settings, and edits none', async () => {
+  it('draws no role and edits none on a shell with no catalogue, since each order is its role row\'s', async () => {
     window.localStorage.setItem('daoris.list.agents.mode', 'roles');
     catalogue = 'none';
     show(<Place />);
 
     expect(await screen.findByText(/Not offered by this shell/)).toBeTruthy();
     expect(screen.queryByText('Actors')).toBeNull();
-    expect(screen.getAllByText('claude-code · account default · account default · as before').length).toBe(2);
+    expect(screen.queryAllByText('claude-code · account default · account default · as before')).toHaveLength(0);
     expect(screen.queryAllByRole('button', { name: /^Edit / })).toHaveLength(0);
-    expect(screen.getByText('Off — declarations only')).toBeTruthy();
-    expect(screen.getByText('Off — starters only')).toBeTruthy();
+  });
+
+  it("reads each order from the role read alone, its row's staffing", async () => {
+    window.localStorage.setItem('daoris.list.agents.mode', 'roles');
+    catalogue = 'seeded';
+    show(<Place />);
+
+    expect((await screen.findAllByText('claude-code · account default · account default · as before')).length).toBeGreaterThan(0);
+    expect(invoke.mock.calls.map((call) => call[1])).not.toContain('ACTORS');
   });
 
   it("ONEWAY1a: saves Build's order over SET_ROLE, one choice's model named", async () => {
@@ -238,12 +247,12 @@ describe('The Agents place, Roles mode', () => {
     await i18n.changeLanguage(language);
     show(<Place />);
     const user = userEvent.setup();
-    await screen.findAllByRole('button', { name: i18n.t('settings.ai.roles.editOf', { role: i18n.t('settings.ai.actors.name.build') }) });
+    await screen.findAllByRole('button', { name: i18n.t('settings.ai.roles.editOf', { role: i18n.t('settings.ai.role.name.build') }) });
 
     for (const [id, words] of [['ask-daoris', 'goesOn'], ['chat', 'goesOn'], ['intake', 'neverMoves']] as const) {
-      await user.click(screen.getByRole('button', { name: i18n.t('settings.ai.roles.editOf', { role: i18n.t(`settings.ai.actors.name.${id}`) }) }));
-      const editor = screen.getByRole('form', { name: i18n.t(`settings.ai.actors.name.${id}`) });
-      expect(within(editor).getByRole('note', { name: new RegExp(i18n.t(`settings.ai.actors.${words}`).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')) })).toBeTruthy();
+      await user.click(screen.getByRole('button', { name: i18n.t('settings.ai.roles.editOf', { role: i18n.t(`settings.ai.role.name.${id}`) }) }));
+      const editor = screen.getByRole('form', { name: i18n.t(`settings.ai.role.name.${id}`) });
+      expect(within(editor).getByRole('note', { name: new RegExp(i18n.t(`settings.ai.role.${words}`).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')) })).toBeTruthy();
       await user.click(within(editor).getByRole('button', { name: i18n.t('common.cancel') }));
     }
     await i18n.changeLanguage('en');
@@ -341,10 +350,8 @@ describe('The Agents place, Roles mode', () => {
     invoke.mockImplementation(async (module: string, type: string, request?: unknown) => {
       if (module === 'DAORIS.DRIVER' && type === 'STATE') return { ...DRIVER_STATE, helpMode: 'full' };
       if (module === 'DAORIS.DRIVER' && type === 'ROLES') {
-        return { ...ROLES, roles: [{ id: 'ask-daoris', state: 'seed', seeded: true, name: { en: 'Ask Daoris', zh: '问道衍' }, takes: ['ask-daoris'], scopeKind: 'machine', revision: 0 }] };
-      }
-      if (module === 'DAORIS.DRIVER' && type === 'ACTORS') {
-        return { actors: [{ id: 'ask-daoris', state: 'set', choices: [{ agent: 'claude-code-acp', from: '1' }] }] };
+        const staffing = { id: 'ask-daoris', state: 'set', choices: [{ agent: 'claude-code-acp', from: '1' }] };
+        return { ...ROLES, roles: [{ id: 'ask-daoris', state: 'seed', seeded: true, name: { en: 'Ask Daoris', zh: '问道衍' }, takes: ['ask-daoris'], scopeKind: 'machine', revision: 0, staffing }] };
       }
       return answer(module, type, request);
     });
@@ -358,7 +365,6 @@ describe('The Agents place, Roles mode', () => {
     await screen.findByRole('list', { name: 'Agents' });
     const asked = invoke.mock.calls.map((call) => call[1]);
     expect(asked).not.toContain('ROLES');
-    expect(asked).not.toContain('ACTORS');
   });
 });
 
@@ -390,8 +396,7 @@ describe('Intake in the Roles mode', () => {
       if (module !== 'DAORIS.DRIVER') return WIRING;
       if (type === 'SET_ROLE' && request?.payload?.id === 'intake') intake = request.payload.choices ?? [];
       if (type === 'STATE' || type === 'SET_ROLE') return { ...DRIVER_STATE, intakeAdapter: intake[0]?.agent ?? '' };
-      if (type === 'ACTORS') return actors();
-      if (type === 'ROLES') return SEEDED;
+      if (type === 'ROLES') return staffed(SEEDED, actors().actors);
       if (type === 'HARNESSES') return ROSTER;
       if (type === 'STARTS') {
         return { adapter: 'claude-code', starts: [start('work', 'claude-code'), ...(intake[0] ? [start('intake', intake[0].agent)] : [])] };
@@ -462,7 +467,7 @@ describe('Intake in the Roles mode', () => {
     show(<Place />);
 
     await screen.findByRole('heading', { name: 'Working roles' });
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ACTORS', expect.anything()));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ROLES', expect.anything()));
     expect(screen.queryByText('Intake')).toBeNull();
   });
 });

@@ -42,7 +42,7 @@ export function handOverOffer({ session, workspace, doors, answer, now, actor }:
   doors: readonly ToolDoor[];
   answer: AccountsAnswer | null | undefined;
   now: Date;
-  /** The session's actor (Build's for a driven line, Chat's for a conversation) as `ACTORS` answers it; its order is the offer's. */
+  /** The session's actor (Build's for a driven line, Chat's for a conversation) as its `ROLES` row carries it; its order is the offer's. */
   actor?: ActorRow | null;
 }): HandOverOffer | null {
   const scopeOf = (agent: NonNullable<ReturnType<typeof agentOf>>): AccountScope =>

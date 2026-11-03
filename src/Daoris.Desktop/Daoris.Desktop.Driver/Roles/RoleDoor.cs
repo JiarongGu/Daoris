@@ -12,7 +12,14 @@ public sealed class RoleRefusedException(RoleRefusal refusal) : DriverException(
 /// <param name="Choices">Its stored staffing; null where none is stored (a seeded role <i>as before</i>, a removed one).</param>
 public sealed record RoleRow(
     string Id, string State, bool Seeded, AuthoredText? Name, IReadOnlyList<string> Takes, string? ScopeKind, string? ScopeId,
-    long Revision, string? Error, IReadOnlyList<ActorChoice>? Choices);
+    long Revision, string? Error, IReadOnlyList<ActorChoice>? Choices)
+{
+    /// <summary>
+    /// A seeded role's order as it runs (set, before, off or unreadable), with the order its policy arranges where that differs; null for an
+    /// added role, and on every answer but the window's role read.
+    /// </summary>
+    public ActorView? Staffing { get; init; }
+}
 
 /// <summary>
 /// The person's one door into the role catalogue (FOUNDATION1y-i, the foundation design §2.7): Settings' <c>SET_ROLE</c>,

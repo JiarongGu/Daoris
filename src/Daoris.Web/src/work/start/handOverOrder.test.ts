@@ -46,7 +46,7 @@ describe("the actor's order a hand-over goes to, as the driver's table holds it"
   });
 });
 
-// STAFFPOLICY1d: the order a start would walk, which `ACTORS` answers as `arranged` where a role's policy arranges it, is the one taken.
+// STAFFPOLICY1d: the order a start would walk, which a `ROLES` row's staffing carries as `arranged` where a role's policy arranges it, is the one taken.
 describe("the arranged order a hand-over goes to, as the driver's table holds it", () => {
   it.each(TABLE.arrangedRows.map((row) => [row[0], row] as const))('%s', (_, [, own, doors, stored, arranged, steps]) => {
     const entry = ([agent, model, from]: Entries[number]) => ({ agent, model, from });

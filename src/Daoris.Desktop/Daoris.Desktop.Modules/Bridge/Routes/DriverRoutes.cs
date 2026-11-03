@@ -328,29 +328,6 @@ public sealed class DriverRoutes(DriverContext context)
         return State(_loop);
     }
 
-    // Each actor's order, where it came from and its effective entries (MODELROLE1c, D205 §9.4): a read, the same `daoris driver role`
-    // says. An actor whose stored entry does not read says why.
-    // FOUNDATION1w-s (the design §19.15): beside them, each change of driver.json's actors another program made that the check kept, with
-    // what it changed, none where the home's file is not the store's.
-    [DriverRoute("ACTORS")]
-    private object? Actors(IpcRequest request) => new
-    {
-        Actors = ArrangedActors(DriverConfig.Load(_loop.ConfigPath)),
-        Found = RoleStaffing.Of(_loop.ConfigPath)?.Found().Select(found => new { found.Id, found.At, found.Changes }).ToList() ?? [],
-    };
-
-    // Build's and Chat's orders also as their policies arrange them (STAFFPOLICY1d), which the hand-over's offer draws its next choices from.
-    private IReadOnlyList<ActorView> ArrangedActors(DriverConfig config)
-    {
-        var ledger = new StaffLedger(_loop.Home);
-        return [.. ActorView.All(config).Select(view =>
-        {
-            if (view.Id is not ("build" or "chat") || view.State == "unreadable") return view;
-            var arranged = RoleOrders.Arranged(ledger, view.Id, view.Id, config);
-            return arranged.SequenceEqual(view.Choices) ? view : view with { Arranged = arranged };
-        })];
-    }
-
     // A found change answered (FOUNDATION1w-s, §19.15): the person's *Take it*, the actors as that file showed them, a turn-on of Intake or
     // Ask Daoris among them by this press, or *Dismiss*, the actors as they are. Through the staffing's one write, then a nudge. Only the
     // copy's check finds a change, so a converted home has none to answer (ONEWAY1c-ii).
@@ -361,7 +338,7 @@ public sealed class DriverRoutes(DriverContext context)
     {
         var id = Number(request, "found") ?? throw new DriverException("the press named no found change.");
         var staffing = RoleStaffing.Of(_loop.ConfigPath)
-            ?? throw new DriverException("this home's actors are the file's own, so no found change is answered here.");
+            ?? throw new DriverException("this home's staffing is the file's own, so no found change is answered here.");
         switch (Optional(request, "answer"))
         {
             case "take": staffing.Take(id); break;
@@ -387,7 +364,9 @@ public sealed class DriverRoutes(DriverContext context)
         return Task.FromResult<object?>(new
         {
             Use = new { use.Days, use.Roles },
-            Roles = RoleDoor.Rows(catalogue, config),
+            Roles = RoleRowsRunning.Of(_loop.Home, catalogue, config),
+            // Each change of driver.json's staffing another program made that the copy's check kept.
+            Found = RoleStaffing.Of(_loop.ConfigPath)?.Found().Select(found => new { found.Id, found.At, found.Changes }).ToList() ?? [],
             // STAFFPOLICY1b: each role's policy (default, set or stale), its record and its next new start; a probe that reserves nothing and
             // asks no account. The fields this build enforces, and the presets, are what the doors take.
             Policies = RolePolicyRow.Of(new StaffLedger(_loop.Home), catalogue, config),
@@ -549,7 +528,7 @@ public sealed class DriverRoutes(DriverContext context)
     private object? SetRole(IpcRequest request)
     {
         var staffing = RoleStaffing.Of(_loop.ConfigPath)
-            ?? throw new DriverException("this home's actors are the file's own (not this home's store), so its roles are not set here.");
+            ?? throw new DriverException("this home's staffing is the file's own (not this home's store), so its roles are not set here.");
         var press = RoleDoor.ReadPress(request.Payload);
         RoleDoor.Apply(staffing, press.Change, press.Choices, press.Read, press.Policy);
         _loop.Nudge();
@@ -564,7 +543,7 @@ public sealed class DriverRoutes(DriverContext context)
     private object? SetRoles(IpcRequest request)
     {
         var staffing = RoleStaffing.Of(_loop.ConfigPath)
-            ?? throw new DriverException("this home's actors are the file's own (not this home's store), so its roles are not set here.");
+            ?? throw new DriverException("this home's staffing is the file's own (not this home's store), so its roles are not set here.");
         RoleDoor.ApplyAll(staffing, RoleDoor.ReadPresses(request.Payload));
         _loop.Nudge();
         return State(_loop);

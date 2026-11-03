@@ -181,7 +181,7 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
     {
         var role = applying.Plan.Role!;
         var staffing = RoleStaffing.Of(DaorisHome.Entry(applying.Home, HomeEntry.DriverConfig))
-            ?? throw new DriverException("this home's actors are the file's own (not this home's store), so its roles are not set here.");
+            ?? throw new DriverException("this home's staffing is the file's own (not this home's store), so its roles are not set here.");
         RoleDoor.Apply(staffing, role.Change, role.Choices, role.Read, role.Policy);
         return Task.FromResult(applying.Settled(true, $"Applied: `#{applying.Id}` — {applying.Plan.Describe} (`{applying.Plan.Terminal}`)", null));
     }

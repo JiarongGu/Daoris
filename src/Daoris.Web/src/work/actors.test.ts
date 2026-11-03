@@ -59,7 +59,7 @@ describe('D205 actor provenance', () => {
     const codes = ['weight', 'share', 'budget', 'work', 'limit', 'signed-out', 'model-refused', 'transient', 'failed', 'quiet', 'moved', 'other'];
     for (const [language, max] of [['en', 16], ['zh', 5]] as const) {
       await i18n.changeLanguage(language);
-      for (const code of codes) expect([...i18n.t(`work.actor.chip.reason.${code}`)].length, `${language} ${code}`).toBeLessThanOrEqual(max);
+      for (const code of codes) expect([...i18n.t(`work.role.chip.reason.${code}`)].length, `${language} ${code}`).toBeLessThanOrEqual(max);
     }
   });
   it('says the Chosen row in a sentence, or that the policy was not recorded', async () => {

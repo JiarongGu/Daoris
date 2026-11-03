@@ -266,7 +266,7 @@ public static class TransitionalRegister
         new()
         {
             Id = "staffing-copy",
-            Kept = "Roles/RoleStaffing.cs:664, Roles/StaffingVerbs.cs:14, ../Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs:357",
+            Kept = "Roles/RoleStaffing.cs:664, Roles/StaffingVerbs.cs:14, ../Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs:334",
             Reaches = "A home an older build may still open (D226): each staffing write is copied onto driver.json's staffing keys, the found check compares the file with what the store wrote, and a found change waits for Take it or Dismiss.",
             Ends = "The floor passes the w-s build on the home, which the conversion's first Apply makes so, or the home was seeded fresh: the writer and the check skip such a home (ONEWAY1c-ii), and the staffing part clears its found changes.",
             Row = "ONEWAY1af",
