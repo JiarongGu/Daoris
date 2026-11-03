@@ -24,7 +24,7 @@ public sealed partial class SessionsStateSliceTests : DriverModuleBridge
         ["note"] = "it read the plan", ["evidence"] = "commit abc", ["transcript"] = $"X:/daoris/transcripts/{id}.jsonl",
         ["created"] = "2026-10-19T08:00:00+00:00", ["updated"] = "2026-10-19T09:00:00+00:00", ["workspace"] = workspace,
         ["kind"] = "driven", ["harnessVersion"] = "2.1.4", ["profile"] = "work", ["tree"] = $"X:/daoris/trees/engine/{id}",
-        ["baseCommit"] = new string('a', 40), ["ask"] = null, ["took"] = false, ["answer"] = null, ["interrupted"] = false,
+        ["baseCommit"] = new string('a', 40), ["ask"] = null, ["took"] = false, ["interrupted"] = false,
         ["limit"] = false, ["deletable"] = true, ["said"] = new JsonArray(), ["noteParts"] = new JsonArray(new JsonObject { ["words"] = "done" }),
         ["opinion"] = null, ["serves"] = null, ["from"] = null, ["fromWhy"] = null, ["fromBy"] = null, ["entry"] = "local/engine",
         ["helpMode"] = null, ["access"] = new JsonObject { ["permissions"] = "ask" }, ["piece"] = null,
@@ -119,6 +119,30 @@ public sealed partial class SessionsStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// ONEWAY1m (the oneway design §4 M3): the page reads a park's answer from the keyed <c>said</c> words, pushed as the service answers
+    /// them, each with whose it is; no joined <c>answer</c> is pushed or answered.
+    /// </summary>
+    [Fact]
+    public async Task The_words_waiting_are_pushed_as_the_keyed_said_words_and_no_joined_answer()
+    {
+        var parked = Record("s1", "default", "awaiting-person");
+        parked["said"] = new JsonArray(
+            new JsonObject { ["id"] = "w1", ["text"] = "Port 8080.", ["at"] = "2026-10-19T09:05:00+00:00", ["files"] = new JsonArray(), ["reopens"] = false },
+            new JsonObject { ["id"] = "w2", ["text"] = "It reopened.", ["at"] = "2026-10-19T09:06:00+00:00", ["files"] = new JsonArray(), ["reopens"] = false, ["from"] = "daoris" });
+        _service.Sessions = Records(parked);
+        var (_, slice) = await UpAsync();
+
+        await slice.JudgeAsync();
+        var pushed = Written(slice.Snapshot().Partitions.Single().Data)["s1"]!.AsObject();
+
+        Assert.Contains("said", SessionsStateSlice.Fields);
+        Assert.DoesNotContain("answer", SessionsStateSlice.Fields);
+        Assert.DoesNotContain("answer", ServiceSessionFields());
+        Assert.Equal(parked["said"]!.ToJsonString(), pushed["said"]!.ToJsonString());
+        Assert.False(pushed.ContainsKey("answer"));
+    }
+
+    /// <summary>
     /// FOUNDATION1c (D212; the foundation design §2.1): the allow-list gains <c>work</c> beside <c>kind</c>, an additive field the page
     /// draws a record by where the host sends it. The kind stays driven or chat; a record answered no <c>work</c> (an older service, a
     /// teammate's mirror) is pushed with none, so the page reads today's predicates for it.
@@ -176,7 +200,6 @@ public sealed partial class SessionsStateSliceTests : DriverModuleBridge
     {
         var hostile = Record("s1", "default");
         hostile["token"] = "sk-hostile-top";
-        hostile["said"] = new JsonArray(new JsonObject { ["text"] = "sk-hostile-said" });
         hostile["helpMode"] = "sk-hostile-mode";
         hostile["entry"] = "sk-hostile-entry";
         _service.Sessions = Records(hostile);

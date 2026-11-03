@@ -97,8 +97,10 @@ internal static class HelpRoomDescriptions
             History = sources.History,
             // PARALLEL1a: what the judges' facts had not read yet, which each section says where it says its part.
             NotReadYet = sources.NotReadYet,
+            // ONEWAY1ad-ii: the list This machine's page shows, read the same.
+            Kept = sources.Kept,
         };
-    
+
         private static string? First(string actor, DriverConfig config) => ActorKey.FirstAgent(actor, config);
     
         /// <summary>

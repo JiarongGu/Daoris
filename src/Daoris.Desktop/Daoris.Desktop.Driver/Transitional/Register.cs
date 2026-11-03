@@ -27,14 +27,61 @@ public sealed record TransitionalEntry
 
     /// <summary>Whether the condition holds on <c>home</c>: a pure read of the home's files, false where one does not read.</summary>
     public required Func<string, bool> Ended { get; init; }
+
+    /// <summary>For a read kept for an older build: the build whose writes it waits out, which the home's floor passes (ONEWAY1ad-ii).</summary>
+    public OlderBuild? Waits { get; init; }
+
+    /// <summary>
+    /// For a read that ends with a conversion part's census (WORKFLOWCLEAN1 §4.7): the part, whose census the list reads, since the census reads
+    /// the service and <see cref="Ended"/> reads the home alone.
+    /// </summary>
+    public string? Part { get; init; }
 }
 
-/// <summary>Every transitional read the driver keeps, in one plain list (oneway design §1.3).</summary>
+/// <summary>Every transitional read the driver keeps, in one plain list (oneway design §1.3), and This machine's list of them.</summary>
 public static class TransitionalRegister
 {
     private static readonly string[] Actors = ["build", "chat", "brainstorm", "intake", "ask-daoris"];
     private static readonly string[] OldNames = ["early", "near", "prefer", "parallel"];
     private static readonly string[] PooledSections = ["defaults", "workspaces", "workspaceVersions", "workspaceRotation", "workspaceRotationUse"];
+
+    /// <summary>The builds before COMMS1b's, which wrote no answers mark and no keyed attempt. No release names COMMS1b's yet.</summary>
+    private static readonly OlderBuild BeforeComms1b = new("the builds before COMMS1b's, which wrote no answers mark and no keyed attempt");
+
+    /// <summary>The builds before ONEWAY1l's, which wrote a say's `now` alone. No release names ONEWAY1l's yet.</summary>
+    private static readonly OlderBuild BeforeOneway1l = new("the builds before ONEWAY1l's, which wrote a say's `now` alone");
+
+    /// <summary>The builds before COMMS1e's, whose host sends no `presses` mark. No release names COMMS1e's yet.</summary>
+    private static readonly OlderBuild BeforeComms1e = new("the builds before COMMS1e's, whose host sends no `presses` mark");
+
+    /// <summary>The builds before the staffing part's w-s, which read the staffing keys from driver.json. No release names it yet.</summary>
+    private static readonly OlderBuild BeforeStaffingStore = new("the builds before the staffing part's w-s, which read the staffing keys from driver.json");
+
+    /// <summary>
+    /// This machine's list (ONEWAY1ad-ii; the oneway design §1.3): each conversion part's census first, as last read (WORKFLOWCLEAN1's
+    /// <i>Workflows: nothing old here</i> its first line), then each kept read with its condition's state; a read that ends with a part's census
+    /// reads that census. What This machine's page and Ask Daoris's room read alike.
+    /// </summary>
+    /// <param name="parts">Each part's census as last read; null or empty where none was read yet.</param>
+    /// <param name="entries">The register read; <see cref="Entries"/> by default.</param>
+    public static IReadOnlyList<KeptLine> List(string home, IReadOnlyList<PartCensus>? parts, IReadOnlyList<TransitionalEntry>? entries = null)
+    {
+        var lines = new List<KeptLine>();
+        foreach (var part in parts ?? []) lines.Add(new(KeptLine.Part, part.Part, part.Ended) { Count = part.Count });
+        foreach (var entry in entries ?? Entries)
+        {
+            var ended = entry.Part is { } of ? parts?.FirstOrDefault(each => each.Part == of)?.Ended == true : entry.Ended(home);
+            lines.Add(new(KeptLine.Read, entry.Id, ended) { Reaches = entry.Reaches, Ends = entry.Ends, Row = entry.Row, Waits = entry.Waits?.Said });
+        }
+
+        return lines;
+    }
+
+    /// <summary>
+    /// The first build that deleted a read the floor ended (a ONEWAY1af step, or FOUNDATION1 row v), from which the conversion's Undo is refused:
+    /// Undo lifts the rollback refusal that holds the floor. Null while no such read is deleted; the row that deletes one names its build here.
+    /// </summary>
+    public static string? FloorNeeded => null;
 
     public static IReadOnlyList<TransitionalEntry> Entries { get; } =
     [
@@ -81,7 +128,8 @@ public static class TransitionalRegister
             Reaches = "A say request file written by an older build that waits with `now: true` and no `level`, read as `level: now`.",
             Ends = "No waiting request file carries `now` without a `level`, once the floor passes the last build that wrote `now` alone.",
             Row = "ONEWAY1af",
-            Ended = home => Read(home, HomeEntry.DriverConfig) is not null && !WaitingNowAlone(home),
+            Waits = BeforeOneway1l,
+            Ended = home => Read(home, HomeEntry.DriverConfig) is not null && !WaitingNowAlone(home) && HomeFloor.Of(home).Passes(BeforeOneway1l),
         },
         new()
         {
@@ -90,16 +138,18 @@ public static class TransitionalRegister
             Reaches = "A host with no `answers` mark, before COMMS1b: the helper's sixteen-link walk and read-back, and the partner's and the opinion's pre-check of the record named.",
             Ends = "The floor passes COMMS1b's build: the host and the driver ship together, so no host without the mark is reached.",
             Row = "ONEWAY1af",
-            Ended = Floor,
+            Waits = BeforeComms1b,
+            Ended = home => HomeFloor.Of(home).Passes(BeforeComms1b),
         },
         new()
         {
             Id = "solicited-old-files",
             Kept = "Loop/DriverHelpers.cs:806, Loop/DriverPartners.cs:464",
             Reaches = "A helper state or a partner receipt whose attempt an older build wrote, with no `keyed` mark: read back along the line, else uncertain.",
-            Ends = "No open helper or partner ask holds an attempt without `keyed`, and the floor passes COMMS1b's build.",
+            Ends = "No open helper or partner ask holds an attempt without `keyed`, and the floor passes COMMS1b's build. The open asks are the line's, so it never reads as ended here and the row deletes it.",
             Row = "ONEWAY1af",
-            Ended = Floor,
+            Waits = BeforeComms1b,
+            Ended = Never,
         },
         new()
         {
@@ -108,7 +158,7 @@ public static class TransitionalRegister
             Reaches = "A session row from before `said` that holds an `answer` and no `said`: the service's store reads it as the first said word, id `answer`, and the next word written empties the column.",
             Ends = "No session row in the service's store holds an `answer` and no `said` (a census over the store; finished ones go with their history's clear). The condition lives in the service's store, so it never reads as ended here and the row deletes it.",
             Row = "ONEWAY1af",
-            Ended = Floor,
+            Ended = Never,
         },
         new()
         {
@@ -117,16 +167,18 @@ public static class TransitionalRegister
             Reaches = "A driver rolled back before COMMS1b, or a host that drops its mark mid-hand: the helper state's and the partner receipt's attempt, still written.",
             Ends = "The floor passes COMMS1b's build.",
             Row = "ONEWAY1af",
-            Ended = Floor,
+            Waits = BeforeComms1b,
+            Ended = home => HomeFloor.Of(home).Passes(BeforeComms1b),
         },
         new()
         {
             Id = "opinion-handed-guard",
             Kept = "Loop/OpinionDeliverer.cs:95",
             Reaches = "An opinion handed before the one door, whose findings word has no key: its `handed` is the only guard that hands it once.",
-            Ends = "No opinion waits with an unkeyed findings word (census), and the floor passes COMMS1b's build.",
+            Ends = "No opinion waits with an unkeyed findings word (census), and the floor passes COMMS1b's build. The waiting opinions are the service's, so it never reads as ended here and the row deletes it.",
             Row = "ONEWAY1af",
-            Ended = Floor,
+            Waits = BeforeComms1b,
+            Ended = Never,
         },
         new()
         {
@@ -137,10 +189,140 @@ public static class TransitionalRegister
             Row = "ONEWAY1af",
             Ended = ContinuationAdmissions.Begun,
         },
+        new()
+        {
+            Id = "presses-older-host",
+            Kept = "Service/ServiceClient.cs:447",
+            Reaches = "A host with no `presses` mark, before COMMS1e: a person's press is said with no question, the modules' own check before the say standing alone.",
+            Ends = "The floor passes COMMS1e's build: the host and the driver ship together, so no host without the mark is reached.",
+            Row = "ONEWAY1af",
+            Waits = BeforeComms1e,
+            Ended = home => HomeFloor.Of(home).Passes(BeforeComms1e),
+        },
+        new()
+        {
+            Id = "held-press-unasked",
+            Kept = "../Daoris.Desktop.Modules/Loop/SessionWords.cs:1219",
+            Reaches = "A press of a park's question held at a door before COMMS1e, which names its choice and no question: forwarded with no question for the head to check.",
+            Ends = "No held word names a choice without its question, once the census of the held words finds none.",
+            Row = "ONEWAY1af",
+            Ended = home => Read(home, HomeEntry.DriverConfig) is not null && !HeldPressUnasked(home),
+        },
+        new()
+        {
+            Id = "staffing-copy",
+            Kept = "Roles/RoleStaffing.cs:578",
+            Reaches = "A home an older build may still open (D226): each staffing write is copied onto driver.json's staffing keys, and the found check compares the file with what the store wrote.",
+            Ends = "The floor passes the w-s build on the home, which the staffing part's first Apply makes so; ONEWAY1c-ii makes the writer skip such a home first.",
+            Row = "ONEWAY1af",
+            Waits = BeforeStaffingStore,
+            Ended = home => HomeFloor.Of(home).Passes(BeforeStaffingStore),
+        },
+        new()
+        {
+            Id = "conversation-moves-refused",
+            Kept = "Roles/StaffPolicyDoor.cs:41",
+            Reaches = "A role that takes a conversation's work, whose policy names a limit's wait or ask, or `most`: refused at the door, since a conversation's limit moves by its own order only (D226).",
+            Ends = "A conversation's moves are the supervisor's rules (CONTEXTDRIVE1n, which took STAFFPOLICY1e3's conversation half up; D229).",
+            Row = "CONTEXTDRIVE1n",
+            Ended = Unbuilt,
+        },
+        new()
+        {
+            Id = "conversion-receipt-before-parts",
+            Kept = "Conversion/HomeReceipts.cs:89",
+            Reaches = "A conversion receipt the workflow wave wrote before the door had parts: read as one workflow part with no build, which gives the floor nothing.",
+            Ends = "No receipt in the home's receipts folder is in the shape before parts; a press on one writes it again in the new shape.",
+            Row = "ONEWAY1ag",
+            Ended = home => Read(home, HomeEntry.DriverConfig) is not null && !HomeReceipts.AnyBeforeParts(home),
+        },
+        // WORKFLOWCLEAN1 §4.7's kept reads (ONEWAY1ad-ii): the old workflow engine's, each ending with the workflow part's census, which reads
+        // the service's runs as well as the home's files.
+        new()
+        {
+            Id = "steps-engine",
+            Kept = "Workflows/WorkflowProcesses.cs:106",
+            Reaches = "A run bound to a version saved as steps, and a new start on a steps workflow not converted yet: D157's engine runs it.",
+            Ends = "The workflow part's census has ended: no open steps run and no steps newest.",
+            Row = "WORKFLOWCLEAN1z",
+            Part = ConversionParts.Workflows,
+            Ended = Never,
+        },
+        new()
+        {
+            Id = "current-followed",
+            Kept = "Workplace/Landing.cs:887, Workflows/Nodes/NodeGraphs.cs:1121, Workflows/Domain/WorkflowCurrent.cs:162",
+            Reaches = "A place on Current, and a unit bound to Current, on a home not converted: its landing rule chosen and drawn as the workflow it follows.",
+            Ends = "The workflow part's census has ended: no place resolves to Current, no Current-bound unit is open, and no leftover rule is held.",
+            Row = "WORKFLOWCLEAN1z",
+            Part = ConversionParts.Workflows,
+            Ended = Never,
+        },
+        new()
+        {
+            Id = "auto-lander",
+            Kept = "Workplace/AutoLander.cs:57",
+            Reaches = "Work landed by the old doors (the auto lander's choosing, the presses' landing in place, the tidy) for a run on Current, steps or `handed`.",
+            Ends = "The workflow part's census has ended, as the three reads above end.",
+            Row = "WORKFLOWCLEAN1z",
+            Part = ConversionParts.Workflows,
+            Ended = Never,
+        },
+        new()
+        {
+            Id = "work-cycles",
+            Kept = "Workflows/Nodes/NodeGraphs.cs:1205",
+            Reaches = "A place on Current whose quests close by a work cycle, which a saved workflow does not run yet.",
+            Ends = "driver.json holds no `workCycles` and no `workspaceWorkCycles`, once a saved workflow runs a work cycle and the place is converted.",
+            Row = "WORKFLOWCLEAN1j",
+            Ended = home => Read(home, HomeEntry.DriverConfig) is { } root && !Holds(root, "workCycles") && !Holds(root, "workspaceWorkCycles"),
+        },
+        new()
+        {
+            Id = "conversion-readers",
+            Kept = "Conversion/WorkflowLegacy.cs:44, Conversion/LegacyGraphs.cs:23",
+            Reaches = "A home updated across WORKFLOWCLEAN1z whose old workflow records were never converted: the conversion's census and translator still read them.",
+            Ends = "The owner says no older home remains, which no file of the home says, so it never reads as ended here and the row deletes it.",
+            Row = "ONEWAY1ag",
+            Ended = Never,
+        },
+        new()
+        {
+            Id = "roles-mode-setup",
+            Kept = "../../Daoris.Web/src/agents/modes.ts:31",
+            Reaches = "A window whose browser storage still holds the retired Roles mode: it opens on Setup, which replaced it.",
+            Ends = "One release after SETUPUX1y. The storage is the window's, so it never reads as ended here and the row deletes it.",
+            Row = "WORKFLOWCLEAN1z",
+            Ended = Never,
+        },
     ];
 
-    /// <summary>The floor of the builds that reach a home is no file of the home: an entry that ends with it never reads as ended, and its row deletes it.</summary>
-    private static bool Floor(string _) => false;
+    /// <summary>A condition no file of the home answers (the floor of a build no release names, a store elsewhere, the owner's word): it never reads as ended, and its row deletes it.</summary>
+    private static bool Never(string _) => false;
+
+    /// <summary>Whether <paramref name="key"/> holds an object with an entry.</summary>
+    private static bool Holds(JsonObject root, string key) => root[key] is JsonObject map && map.Count > 0;
+
+    /// <summary>An entry that ends when its row is built is no file of the home either: it never reads as ended, and that row deletes it.</summary>
+    private static bool Unbuilt(string _) => false;
+
+    /// <summary>Whether the home's held words hold a press that names its choice and no question; true where the file does not read.</summary>
+    private static bool HeldPressUnasked(string home)
+    {
+        try
+        {
+            var path = HeldWordsFile.PathOf(home);
+            if (!File.Exists(path)) return false;
+            if (JsonNode.Parse(AtomicFile.ReadText(path)) is not JsonObject root || root["held"] is not JsonArray held) return false;
+            return held.OfType<JsonObject>().Any(word =>
+                word["choice"] is JsonValue choice && choice.TryGetValue<string>(out var label) && label.Length > 0
+                && (word["question"] is not JsonValue question || !question.TryGetValue<string>(out var asked) || asked.Length == 0));
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException or DriverException or InvalidOperationException)
+        {
+            return true;
+        }
+    }
 
     /// <summary>Whether a request file waiting in the home's requests folder says <c>now: true</c> with no <c>level</c>.</summary>
     private static bool WaitingNowAlone(string home)

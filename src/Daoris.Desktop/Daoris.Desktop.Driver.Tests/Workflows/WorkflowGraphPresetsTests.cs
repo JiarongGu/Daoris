@@ -270,7 +270,7 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
 
         Assert.Equal(2, exit);
         Assert.Contains("retired", _error.ToString());
-        Assert.Contains("workflow convert", _error.ToString());
+        Assert.Contains("daoris convert", _error.ToString());
         Assert.Null(WorkflowStore.Load(_home, "made"));
     }
 

@@ -3,6 +3,7 @@ import i18n from '../locales/i18n';
 import type { Session } from '../data/api';
 import type { AccountsAnswer, AgentAccounts } from '../settings/accounts/accounts';
 import type { ToolDoor } from '../agents/tools';
+import { said } from '../test/said';
 import {
   boxOf, coolingFor, NATIVE_WORDS_LIMIT, NEVER, neverSentence, NEW_SESSION_REFUSED, newSessionSaid, reasonOf, startFromRefusal,
   goesLine, moveSaid, takesWords, tooLong,
@@ -87,7 +88,7 @@ describe('boxOf', () => {
   it('offers a parked driven session the answer, and once answered the box where the same session goes on', () => {
     const parked = session({ state: 'awaiting-person' });
     expect(boxOf(facts({ session: parked }))).toEqual({ kind: 'say', mode: 'answer' });
-    expect(boxOf(facts({ session: { ...parked, answer: 'go ahead' }, reach: { reaches: 'resume', why: null } })))
+    expect(boxOf(facts({ session: { ...parked, said: said('go ahead') }, reach: { reaches: 'resume', why: null } })))
       .toEqual({ kind: 'say', mode: 'goOn' });
   });
 

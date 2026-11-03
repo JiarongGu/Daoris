@@ -159,6 +159,7 @@ export const keys = {
   systemDownloads: ['system', 'downloads'] as const,
   /** The *Disk space* card (KEEP1c) — shell-only: each kind's size, rule, next and last clean, read again as each kind's walk ends. */
   systemSpace: ['system', 'space'] as const,
+  keptReads: ['system', 'kept-reads'] as const,
   /**
    * Git's reads (GIT1d-b, D147) — shell-only: they read this machine's checkouts. The branch list moves, so it is keyed by its
    * scope alone; every other read is named by whole commit ids (D147 §4.2), so a commit is cached by its commit and never changes.
@@ -852,24 +853,6 @@ export const usePersonDone = () => {
   return useMutation({
     mutationFn: ({ id, note }: { id: string; note: string | null }) => api.personDone(id, note),
     onSuccess: invalidate,
-  });
-};
-
-/**
- * Answer a driven session that parked to ask the person (STANDDOWN2): its record stays parked with
- * their words (ANSWER1b), and the same session goes on with them at the driver's next tick (D131). The
- * sessions are read again, so the page shows it going on (ANSWER1c) rather than still waiting.
- */
-export const useAnswerSession = () => {
-  const invalidate = useInvalidateQuestWork();
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, answer }: { id: string; answer: string | null }) => api.answerSession(id, answer),
-    onSuccess: () => {
-      invalidate();
-      // The record's move is pushed where the shell pushes the sessions (PUSH1d2): the service's change stream tells it.
-      void client.invalidateQueries({ queryKey: keys.allSessions, predicate: notPushed(client) });
-    },
   });
 };
 

@@ -641,18 +641,23 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     public void The_sessions_badge_leaves_a_teammate_s_parked_session_to_its_own_machine() =>
         Assert.Equal(0, InSessions(new() { Sessions = [Session("""{"id":"laptop/c4a7c4a7","kind":"chat","state":"awaiting-person"}""")] }));
 
-    /// <summary>ANSWER1c (D131): a park the person answered goes on at the driver's next look: neither the badge nor the band counts it.</summary>
+    /// <summary>
+    /// ANSWER1c (D131): a park the person answered goes on at the driver's next look: neither the badge nor the band counts it. ONEWAY1m:
+    /// the answer is read from the keyed <c>said</c> words alone, the person's by the one sender rule, so a park holding only Daoris's
+    /// own word still waits on them.
+    /// </summary>
     [Fact]
     public void No_park_the_person_answered_is_counted_or_listed()
     {
         var sessions = new[]
         {
             Session("""{"id":"p4rk3d00","quest":"7a82cc","state":"awaiting-person"}"""),
-            Session("""{"id":"an5wered","quest":"7a82cd","state":"awaiting-person","answer":"Use the second."}"""),
+            Session("""{"id":"an5wered","quest":"7a82cd","state":"awaiting-person","said":[{"id":"w1","text":"Use the second.","at":"2026-09-21T09:00:00Z","files":[]}]}"""),
+            Session("""{"id":"d4or1s00","quest":"7a82ce","state":"awaiting-person","said":[{"id":"w2","text":"It reopened.","at":"2026-09-21T09:00:00Z","files":[],"from":"daoris"}]}"""),
         };
 
-        Assert.Equal(1, InSessions(new() { Sessions = sessions }));
-        Assert.Equal(["parked:p4rk3d00"], Keys(Rows(new() { Sessions = sessions })));
+        Assert.Equal(2, InSessions(new() { Sessions = sessions }));
+        Assert.Equal(["parked:d4or1s00", "parked:p4rk3d00"], Keys(Rows(new() { Sessions = sessions })).Order(StringComparer.Ordinal));
     }
 
     /// <summary>
@@ -1425,20 +1430,26 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.True(woken >= 2);
     }
 
-    /// <summary>WORKFLOWCLEAN1g-ii: while the kept census holds places, one row for the home says how many, and it is pushed.</summary>
+    /// <summary>
+    /// WORKFLOWCLEAN1g-ii, ONEWAY1ae: while any part's kept census holds old records, one row for the home, its stored kind kept, says how many
+    /// and how many by part, and it is pushed; a part that has ended is not counted.
+    /// </summary>
     [Fact]
     [Trait("Category", "Census")]
-    public void A_census_that_holds_places_is_one_row_for_the_home()
+    public void A_census_that_holds_old_records_is_one_row_for_the_home_counted_by_part()
     {
         var conversion = new ConversionCensus(null);
-        conversion.Tell(new([], [new("aurora", false, "default", ["steps"], false, false)], [], []));
+        conversion.Tell([new("workflows", 3, false), new("settings", 2, false), new("git", 0, true)]);
         var row = Assert.Single(Rows(new() { Conversion = conversion.Wait() }));
         Assert.Equal("workflow-convert:home", $"{row["kind"]}:{row["id"]}");
-        Assert.Equal(1, row["convert"]!["places"]!.GetValue<int>());
+        Assert.Equal(5, row["convert"]!["records"]!.GetValue<int>());
+        Assert.Equal((3, 2), (row["convert"]!["parts"]!["workflows"]!.GetValue<int>(), row["convert"]!["parts"]!["settings"]!.GetValue<int>()));
+        Assert.Null(row["convert"]!["parts"]!["git"]);
         var pushed = AttentionStateSlice.Judge(new() { Conversion = conversion.Wait() })!.Single(each => each.Partition == AttentionStateSlice.Rows);
-        Assert.Contains("\"places\"", JsonSerializer.Serialize(pushed.Data, IpcJson.Options));
+        Assert.Contains("\"records\"", JsonSerializer.Serialize(pushed.Data, IpcJson.Options));
+        Assert.False(conversion.Tell([new("settings", 2, false), new("workflows", 3, false)]));
 
-        conversion.Tell(new([], [], [], []));
+        conversion.Tell([new("workflows", 0, true)]);
         Assert.Empty(Rows(new() { Conversion = conversion.Wait() }));
     }
 
@@ -2132,7 +2143,8 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.Equal(read, AttentionStateSlice.SessionsRead([With(working, """{"updated":"2026-09-21T10:05:00Z"}""")]));
         Assert.NotEqual(read, AttentionStateSlice.SessionsRead([With(working, """{"state":"awaiting-person"}""")]));
         var parked = Session("""{"state":"awaiting-person"}""");
-        Assert.NotEqual(AttentionStateSlice.SessionsRead([parked]), AttentionStateSlice.SessionsRead([With(parked, """{"answer":"go"}""")]));
+        // ONEWAY1m: the person's answer is read from the keyed `said` words.
+        Assert.NotEqual(AttentionStateSlice.SessionsRead([parked]), AttentionStateSlice.SessionsRead([With(parked, """{"said":[{"id":"w1","text":"go","at":"2026-09-21T10:06:00Z","files":[]}]}""")]));
     }
 
     /// <summary>

@@ -2,13 +2,14 @@ import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { chinese } from '../../design/storyLanguage';
 import { storyWidths } from '../../design/storyWidths';
 import { InTheme } from '../../plugins/storyIcons';
-import { APPLIED, MOVED, NOTHING, planOf, UNDO_OFFERED } from './convertFixtures';
+import { APPLIED, FAILED_PART, MOVED, NOTHING, PARTED, planOf, UNDO_OFFERED } from './convertFixtures';
 import { DEFAULT_CHOICES } from './convertPlan';
 import { ConvertReview } from './ConvertReview';
 
-// The conversion's review (WORKFLOWCLEAN1g-i; the cleanup design §4.3): what converting changes, the two choices, what stays and what it never
-// touches, the terminal line and one Apply; the done state with its outcomes and Undo; a moved plan. At the main area's 80, 39 and 25 rem, in
-// 中文 and in dark. Two columns at 80 rem and one below it.
+// The conversion's review (WORKFLOWCLEAN1g-i, ONEWAY1ae; the cleanup design §4.3, the oneway design §1.1): what converting changes, the two choices,
+// what stays and what it never touches, what is removed for good, the terminal line and one Apply; a second part and a part not read; the done
+// state with its outcomes and Undo; a failed part pressed again or left; a moved plan. At the main area's 80, 39 and 25 rem, in 中文 and in dark.
+// Two columns at 80 rem and one below it.
 
 const nothing = () => {};
 
@@ -19,7 +20,7 @@ const meta: Meta<typeof ConvertReview> = {
   component: ConvertReview,
   args: {
     plan: planOf(DEFAULT_CHOICES), choices: DEFAULT_CHOICES, reading: false, stale: false, problem: null, applying: false, undoing: false,
-    result: null, undo: null, undone: null, onChoose: nothing, onApply: nothing, onUndo: nothing, onClose: nothing,
+    result: null, undo: null, undone: null, onChoose: nothing, onApply: nothing, onAgain: nothing, onLeave: nothing, onUndo: nothing, onClose: nothing,
   },
   decorators: [storyWidths.wide],
 };
@@ -52,6 +53,18 @@ export const AppliedHalf: Story = { args: DONE, decorators: [storyWidths.half] }
 export const AppliedNarrow: Story = { args: DONE, decorators: [storyWidths.narrow] };
 export const AppliedChinese: Story = { args: DONE, decorators: [chinese] };
 export const AppliedDark: Story = { args: DONE, decorators: [dark] };
+
+/** ONEWAY1ae: a second part said by its lines, a part not read, and what is removed for good, counted, dated and sized. */
+export const Parts: Story = { args: { plan: PARTED } };
+export const PartsHalf: Story = { ...Parts, decorators: [storyWidths.half] };
+export const PartsNarrow: Story = { ...Parts, decorators: [storyWidths.narrow] };
+export const PartsChinese: Story = { ...Parts, decorators: [chinese] };
+export const PartsChineseNarrow: Story = { ...Parts, decorators: [storyWidths.narrow, chinese] };
+
+/** ONEWAY1ae: a receipt with a failed part: each part's outcome, Leave it on the failed one, and the receipt pressed again. */
+export const FailedPart: Story = { args: { plan: PARTED, result: FAILED_PART } };
+export const FailedPartNarrow: Story = { ...FailedPart, decorators: [storyWidths.narrow] };
+export const FailedPartChinese: Story = { ...FailedPart, decorators: [chinese] };
 
 /** The plan moved since it was read: the driver's sentence, and nothing written. */
 export const Moved: Story = { args: { result: MOVED } };

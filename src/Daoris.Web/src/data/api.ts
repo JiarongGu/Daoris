@@ -499,11 +499,11 @@ export type Session = {
   fromWhy?: string | null;
   fromBy?: string | null;
   /**
-   * The person's answer to a driven session that parked to ask them (STANDDOWN2). The service keeps the record parked
-   * with it until the driver's next look (ANSWER1b, D131), so a parked record that holds one goes on rather than waits
-   * (ANSWER1c). The person's own words, answered to this machine only: null over a keyed remote and on a teammate's.
+   * The words waiting on the record (MSG1a, D137 §2.4), each with the marks that say whose it is. A park holding a word of the
+   * person's is answered (ANSWER1b, D131) and goes on at the driver's next look rather than waits (ANSWER1c): `personsSaid` reads
+   * it, the one read of a park's answer (ONEWAY1m). Answered to this machine only: absent over a keyed remote and on a teammate's.
    */
-  answer?: string | null;
+  said?: SaidWord[] | null;
   /**
    * An account's limit made its failure (TOOL4c): a `failed` record the page says is *limited*, quietly (LIMITRESUME1a, D206
    * point 1). It names no account, so every caller is told; false or absent on any other record and from a host before it.
@@ -533,6 +533,15 @@ export type Session = {
    * chat's wait by it (COWORKVIEW1b-i). Absent for every other record.
    */
   tookQuest?: string | null;
+};
+
+/**
+ * One word waiting on a record, as the service answers it to this machine (MSG1a): its id, words, when and its files' names, and the
+ * marks whose it is is read from (`from`, `by`, `helper`, `key`; COMMS1a's one rule, `wordSenderOf`), each absent on the person's.
+ */
+export type SaidWord = {
+  id: string; text: string; at: string; files: string[]; reopens?: boolean;
+  from?: string | null; by?: string | null; helper?: string | null; key?: string | null; level?: string | null; question?: string | null;
 };
 
 /**
@@ -919,9 +928,4 @@ export const api = {
   // Through the same helper as every write, so the service's refusal — a shared deployment is fed,
   // not scanned — reaches the person as the sentence, never as a bare status code.
   refresh: () => post<RefreshReport>('/api/refresh', {}),
-  // The person's answer to a driven session that parked to ask them (STANDDOWN2): the record stays parked
-  // with their words, and the same session goes on with them at the driver's next look (D131); where it
-  // cannot, a new session carries the quest on in the same tree — `daoris-driver answer` is the twin.
-  answerSession: (id: string, answer: string | null) =>
-    post<{ message: string }>(`/api/sessions/${encodeURIComponent(id)}/answer`, { answer }),
 };

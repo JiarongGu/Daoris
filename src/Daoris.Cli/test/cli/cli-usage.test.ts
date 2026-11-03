@@ -95,6 +95,10 @@ test('a handed verb goes to the driver\'s program whole, with nothing written fi
     [['tool', 'download', 'gh', '2.62.0'], ['download', 'gh', '2.62.0']],
     [['tool', 'locations', 'add', 'https://lists.example/r.json'], ['locations', 'add', 'https://lists.example/r.json']],
     [['tool', 'frobnicate'], ['frobnicate']],
+    // ONEWAY1ae: `daoris convert` is the home's one conversion door, handed whole, a leave among it.
+    [['convert', '--plan'], ['--plan']],
+    [['convert', '--apply', 'a'.repeat(64), '--leave', 'quests'], ['--apply', 'a'.repeat(64), '--leave', 'quests']],
+    [['convert'], []],
     // PUSH1f2d: `daoris agent`'s rules, trust and settings, its allow-list until PUSH1f2e handed the family whole.
     [['agent', 'rules'], ['rules']],
     [['agent', 'rules', 'frobnicate'], ['rules', 'frobnicate']],

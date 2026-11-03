@@ -82,6 +82,8 @@ public sealed class AccountRotationTickTests : IDisposable
     public async Task A_carry_on_whose_account_is_cooling_runs_on_the_next_account_of_the_order_in_the_same_tree()
     {
         await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
+        // The line is on ask #a1 by its entry's origin (COMMS1c), as the service keys a quest's sessions an ask asked.
+        service.Entries["q1"] = "ask:a1/engine";
         var adapters = AdapterSet.Built();
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
         using var client = new ServiceClient(service.Url, null);

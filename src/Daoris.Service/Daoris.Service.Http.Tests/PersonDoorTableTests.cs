@@ -136,7 +136,6 @@ public sealed class PersonDoorTableTests
         ("POST", "/api/sessions/{id}/take-back", Person),
         // LINESTOGETHER1b: the person's held word moved to the head; a local host's alone.
         ("POST", "/api/sessions/{id}/move", Person),
-        ("POST", "/api/sessions/{id}/answer", Person),
         // KNOWCENTRAL2d: a memory end's approval, and an ended session's staged changes kept or dropped; a local host's alone.
         ("POST", "/api/memory/{id}/decide", Person),
         ("POST", "/api/sessions/{id}/memory", Person),
@@ -200,11 +199,11 @@ public sealed class PersonDoorTableTests
         // and one quest's handback, a read (HANDBACK1), and the event journal's rows after a position, a read (FOUNDATION1 l-i), and a session's finished tree's record, a read (KEEPSIZE1),
         // and the person's move of a held word to the head (LINESTOGETHER1b), and a session's memory changes, a read, and the person's
         // decision of a memory end and Keep or Drop of an ended session's staged changes (KNOWCENTRAL2d), and an asker's withdrawal of
-        // its own confirmation (ONEWAY1n-i).
+        // its own confirmation (ONEWAY1n-i); less the park's answer route, whose job is the say door's alone (ONEWAY1k).
         Assert.Equal(35, Routes.Count(route => route.Class == Open));
         Assert.Equal(5, Routes.Count(route => route.Class == Agent));
         Assert.Equal(31, Routes.Count(route => route.Class == Driver));
-        Assert.Equal(37, Routes.Count(route => route.Class == Person));
+        Assert.Equal(36, Routes.Count(route => route.Class == Person));
         // And a shared host's two channel doors, a feed and a page (SESSONE2d), and its retirement of a machine (FABRIC-CLOSE1i2).
         Assert.Equal(10, Routes.Count(route => route.Class == Shared));
     }
@@ -256,8 +255,9 @@ public sealed class PersonDoorTableTests
         Assert.Equal(OwnerMarkKinds.None, PersonDoors.Find("POST", "/api/sessions/{id}/added")!.Marks!.Kind);
         Assert.Equal(OwnerMarkKinds.None, PersonDoors.Find("POST", "/api/quests/{id}/set-up-step")!.Marks!.Kind);
         Assert.Equal(OwnerMark.Of(OwnerMarkKinds.Status, "note:quest.person-done"), PersonDoors.Find("POST", "/api/quests/{id}/done")!.Marks);
-        Assert.Equal(OwnerMarkKinds.SessionMove, PersonDoors.Find("POST", "/api/sessions/{id}/answer")!.Marks!.Kind);
         Assert.Equal(OwnerMarkKinds.SessionWord, PersonDoors.Find("POST", "/api/sessions/{id}/say")!.Marks!.Kind);
+        // ONEWAY1k (the oneway design §4 M1): a park is answered through the say door alone; its own answer route is gone.
+        Assert.Null(PersonDoors.Find("POST", "/api/sessions/{id}/answer"));
         Assert.Equal("instance:WORK_ABANDON", PersonDoors.Respond.Form!.Marks!.Evidence);
     }
 

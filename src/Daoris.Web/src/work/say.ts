@@ -54,7 +54,7 @@ export type Box =
 
 /** What decides a session's box: its record, whether it is this machine's, and what the module answered. */
 export type BoxFacts = {
-  session: Pick<Session, 'kind' | 'state' | 'answer' | 'opinion'> | null;
+  session: Pick<Session, 'kind' | 'state' | 'said' | 'opinion'> | null;
   /** The record is this machine's: a teammate's runs on their machine and account (D47 §6). */
   here: boolean;
   /** An intake, answered through its ask (INT4h). */

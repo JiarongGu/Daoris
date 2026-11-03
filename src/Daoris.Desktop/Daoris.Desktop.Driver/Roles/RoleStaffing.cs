@@ -575,6 +575,7 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
         StaffingRead read, DriverConfig after, IReadOnlyDictionary<string, string> asFound, Action<DesktopWrite>? also, IReadOnlyList<string>? rekey = null)
     {
         var projection = StaffingProjection.Project(after, asFound, read.Written.Actors, Narrowing(after));
+        // transitional: staffing-copy
         var filed = StaffingFile.Project(FileOfHome, read.Written, projection, FileWait, Seams);
         if (filed.How == StaffingFiled.Unread) throw new DriverException($"{filed.Said} Nothing was written.");
         if (filed.How is StaffingFiled.Moved or StaffingFiled.Refused)

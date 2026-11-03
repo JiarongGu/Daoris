@@ -146,14 +146,15 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "`daoris driver workflow kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop`, "
             + "`daoris driver workflow show --repository <name>|--workspace <name> [--kind <kind>]`",
             new HelpDoorAsk.Proposes("workflow", "use", "the choice with a version it proposes, as a repository's or a workspace's default; not a kind yet")),
-        // WORKFLOWCLEAN1 1i (the cleanup design §4.3): the conversion of the old workflow records, which is the person's press over
+        // ONEWAY1ae (the oneway design §1.1): the home's one conversion door over every area's part, which is the person's press over
         // the plan they read. Ask Daoris opens the page and names the plan, and never proposes the apply (HelpCoverageTests).
-        new("convert the old workflow records: a workflow saved as steps or holding a `handed` step, and a place still on Current, which "
-            + "follows its old landing rule, become saved graphs that each place follows, with a home default workflow for a place that "
-            + "chooses none (`--plan` shows every operation and writes nothing; the apply is your press over the plan you read, by its "
-            + "digest, and is undone)",
+        new("convert this home's old records, every area's part in one plan: in the workflow part, a workflow saved as steps or "
+            + "holding a `handed` step, and a place still on Current, which follows its old landing rule, become saved graphs that each "
+            + "place follows, with a home default workflow for a place that chooses none (`--plan` shows every operation and writes "
+            + "nothing; the apply is your press over the plan you read, by its digest; a part that failed is pressed again or left; the "
+            + "latest receipt is undone)",
             "Agents → Setup → the place's head *Convert…*, or *What needs you* → *Review conversion…*",
-            "`daoris-driver workflow convert --plan`, then `--apply <digest>` or `--undo`, through the running Daoris",
+            "`daoris convert --plan`, then `--apply <digest>` (`--leave <part>` for a failed part) or `--undo`, through the running Daoris",
             new HelpDoorAsk.Never("it opens the page and names the plan, and the apply is your press")),
         // WSR6: after a pull request merges — the line pulled, what merged deleted, what still works replayed onto it. It
         // takes the repositories holding Daoris's branches, and the others where included (WSR7, D112); one workspace's
@@ -407,10 +408,10 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "Sessions → the session's page → Second opinion, and What needs you: *Go on anyway…*, *I looked myself…*",
             "`daoris-driver opinion anyway <session> [\"…\"]`, `daoris-driver opinion myself <session> [\"…\"]`",
             new HelpDoorAsk.Never("each is your judgement")),
-        ("answer what waits on the person", "Sessions, and what needs you", "`daoris-driver answer`"),
-        // MSG1e (D137 §5.4): exempt from Ask Daoris, since the words are the person's (D133 §1); the room names both doors.
-        new("say something to a session of this machine's, running, parked or ended: it reads your words at its next step or when "
-            + "its turn ends, or the same session goes on with them",
+        // MSG1e (D137 §5.4): exempt from Ask Daoris, since the words are the person's (D133 §1); the room names both doors. A park's
+        // answer is said here, its one door (ONEWAY1k).
+        new("say something to a session of this machine's, running, parked or ended, a park's answer among them: it reads your words "
+            + "at its next step or when its turn ends, or the same session goes on with them",
             "Sessions → the session's page → its box", "`daoris-driver sessions say <id> \"…\" [--file <path>]…`",
             new HelpDoorAsk.Never("the words are yours")),
         // ASKHIST1: exempt from Ask Daoris, since its conversations and what the person keeps of them are the person's own; the
