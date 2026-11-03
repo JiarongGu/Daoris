@@ -16,7 +16,6 @@ using Shenora.Windows;
 //                          launchers set nothing for (FINDDAORIS1, D171)
 //   DAORIS_DEVTOOLS_PORT   the engine's DevTools port, in development only     (absent: none)
 //   DAORIS_SERVICE_KEY     sent as a bearer token when set                     (absent: local trust, D21)
-//   DAORIS_DRIVER_CONFIG   the person's standing choices                       (default: $DAORIS_HOME/driver.json)
 //   DAORIS_HTTP_HOST       the host executable, when it lives somewhere unusual
 //   DAORIS_REMOTE_URL      one workspace's remote, with its key                (or $DAORIS_HOME/remotes.json — D48 §5)
 //   DAORIS_REMOTE_KEY        either env var present means the environment is the answer, whole,
@@ -88,8 +87,8 @@ internal static class Program
             return;
         }
 
-        // FOUNDATION1w-s (the foundation design §19.15): the home's own driver.json reads its staffing from the store, wired before the loop
-        // and the routes load it; a file DAORIS_DRIVER_CONFIG names is read and written as today, with no store.
+        // FOUNDATION1w-s (the foundation design §19.15): the home's driver.json reads its staffing from the store, wired before the loop
+        // and the routes load it.
         Daoris.Driver.RoleStaffing.WireHome(Environment.GetEnvironmentVariable);
 
         var serviceUrl = Environment.GetEnvironmentVariable(Daoris.Driver.ServiceClient.UrlVariable)

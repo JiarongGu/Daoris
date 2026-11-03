@@ -239,7 +239,7 @@ public static class SessionsSuperviseCommand
         Part(print, fence, "the owner's own words, from the ask's record", words.Beneath.Trim() is { Length: > 0 } said ? said : "none");
         if (record.Repository is { } repository && world.Config.StandingFor(repository) is { } standing)
         {
-            Part(print, fence, "the standing answer for the repository, the owner's", StandingText.Beneath(standing, repository).Trim());
+            Part(print, fence, "the standing answer for the repository, the owner's", StandingText.Quoted(standing));
         }
 
         // CONTEXTDRIVE1i (the context-counters design §5): the line's course, Daoris's own facts from its records, fenced as every part is.

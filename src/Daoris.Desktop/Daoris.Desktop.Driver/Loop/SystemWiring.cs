@@ -220,7 +220,7 @@ public static class SystemWiring
     /// <summary>The settings files a person's choice lives in (design §3.4), each with the variable that overrides it and the door to where it is edited.</summary>
     private static readonly (HomeEntry Entry, string? Override, string Door)[] SettingsFiles =
     [
-        (HomeEntry.DriverConfig, WiringVariables.ConfigFile, "driver"),
+        (HomeEntry.DriverConfig, null, "driver"),
         (HomeEntry.Harnesses, WiringVariables.HarnessFile, "agents"),
         (HomeEntry.Accounts, null, "agents"),
         (HomeEntry.Permissions, null, "agents"),

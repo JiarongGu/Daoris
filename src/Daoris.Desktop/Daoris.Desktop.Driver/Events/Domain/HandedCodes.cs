@@ -22,6 +22,7 @@ public static class HandedSections
 
     public const string GoAheads = "go-aheads";
 
+    /// <summary>The standing answer beneath the quest, before the standing block carried it (CONTEXTONE1c); kept for the records that hold it.</summary>
     public const string Standing = "standing";
 
     /// <summary>The person's words to an earlier session on the quest after it ended, handed to a first start.</summary>
@@ -38,6 +39,7 @@ public static class HandedSections
 
     public const string Language = "language";
 
+    /// <summary>The code map, before the standing block carried it (CONTEXTONE1c); kept for the records that hold it.</summary>
     public const string Map = "map";
 
     public const string Landing = "landing";
@@ -45,11 +47,17 @@ public static class HandedSections
     /// <summary>The other checkouts the session may read and not change.</summary>
     public const string Reading = "reading";
 
-    /// <summary>Where to look before asking.</summary>
+    /// <summary>Where to look before asking, before the standing block carried it (CONTEXTONE1c); kept for the records that hold it.</summary>
     public const string Look = "look";
 
-    /// <summary>The indexes the session's tree keeps, where the look starts.</summary>
+    /// <summary>The indexes the session's tree keeps, before the standing block carried them (CONTEXTONE1c); kept for the records that hold it.</summary>
     public const string Indexes = "indexes";
+
+    /// <summary>
+    /// The standing block (CONTEXTONE1c, D230 point 3): where things are, the routing, the person's choices on this machine, the
+    /// repository's and workspace's facts, and the memory the line read; or the line naming its file where it went through one.
+    /// </summary>
+    public const string Block = "block";
 
     /// <summary>That the person's words met second-hand are only a reading.</summary>
     public const string Attributed = "attributed";
@@ -143,6 +151,9 @@ public static class HandedSources
 
     /// <summary>This machine's permission rules.</summary>
     public const string Permissions = "permissions";
+
+    /// <summary>The standing block's: this machine's settings, the session's tree and its line's record, composed by the driver.</summary>
+    public const string Machine = "machine";
 }
 
 /// <summary>Why nothing of a section was handed (CONTEXT1): <c>work.handed.none.*</c>.</summary>
@@ -224,6 +235,9 @@ public static class HandedCuts
     /// <summary>A line's counts past the bound on the course's item (CONTEXTDRIVE1b).</summary>
     public const string BriefCourseBound = "brief-course-bound";
 
+    /// <summary>The standing block went through the door's file channel, past the bound on the whole first prompt (CONTEXTONE1c).</summary>
+    public const string BlockFiled = "block-filed";
+
     /// <summary>The values each cut's entry says, by name: <c>n</c> and <c>limit</c> numbers, <c>from</c> and <c>to</c> moments.</summary>
     public static IReadOnlyDictionary<string, IReadOnlyList<string>> Values { get; } = new Dictionary<string, IReadOnlyList<string>>
     {
@@ -245,5 +259,6 @@ public static class HandedCuts
         [BriefList] = ["n"],
         [BriefPartsBound] = ["n", "limit"],
         [BriefCourseBound] = ["n", "limit"],
+        [BlockFiled] = ["limit"],
     };
 }

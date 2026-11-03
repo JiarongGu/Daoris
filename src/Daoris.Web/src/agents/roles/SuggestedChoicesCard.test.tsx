@@ -37,7 +37,7 @@ type Props = Partial<Parameters<typeof RolesCard>[0]>;
 
 const card = (props: Props = {}) => {
   const onSetAll = vi.fn((_presses, answered) => answered.done());
-  render(<RolesCard catalogue={CATALOGUE} staffing={AT_FIRST_RUN} agents={AGENTS} onSet={() => {}} onSetAll={onSetAll} onSetActor={() => {}} {...props} />);
+  render(<RolesCard catalogue={CATALOGUE} staffing={AT_FIRST_RUN} agents={AGENTS} onSet={() => {}} onSetAll={onSetAll} {...props} />);
   return { onSetAll };
 };
 

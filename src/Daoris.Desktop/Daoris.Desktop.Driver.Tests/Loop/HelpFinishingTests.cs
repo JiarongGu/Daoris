@@ -32,7 +32,7 @@ public sealed class HelpFinishingTests : IDisposable
 
         public int Finished { get; private set; }
 
-        public Task FinishAsync(Action endInput)
+        public Task FinishAsync(Func<Task> close)
         {
             Finished++;
             return Task.CompletedTask;

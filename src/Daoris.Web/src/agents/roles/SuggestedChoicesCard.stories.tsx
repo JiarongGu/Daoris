@@ -39,7 +39,6 @@ const meta: Meta<typeof RolesCard> = {
     agents: [{ value: 'claude-code', label: 'Claude Code — claude-code' }],
     onSet: () => {},
     onSetAll: () => {},
-    onSetActor: () => {},
   },
   decorators: [storyWidths.wide],
 };

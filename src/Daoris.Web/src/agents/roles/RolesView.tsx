@@ -2,7 +2,7 @@ import { type ComponentType, type Dispatch, type SetStateAction, useEffect, useS
 import { useTranslation } from 'react-i18next';
 import {
   helpModeOf, refusedNoRoute, standingOf, useAccounts, useActors, useAnswerStaffingFound, useDriver, useHarnesses, useLines, usePlugins, useRoles,
-  useSetActor, useSetRole, useSetRoles, useStaffingFound, useStarts, useWorkflowCurrents, type RoleChangePress,
+  useSetRole, useSetRoles, useStaffingFound, useStarts, useWorkflowCurrents, type RoleChangePress,
 } from '../../bridge/shell';
 import { useRegistry } from '../../data/queries';
 import { workspacesOf } from '../../data/workspaces';
@@ -13,7 +13,7 @@ import { namer } from '../../settings/accounts/namer';
 import { AskDaorisAbout, IntakeAbout } from '../../settings/ai/ActorAbout';
 import { byTool, doorLabel } from '../tools';
 import type { RoleSection } from '../modes';
-import { type ActorChoice, type Editing, newRoleEditing, RolesCard, roleName, type RoleScope } from './Roles';
+import { type Editing, newRoleEditing, RolesCard, roleName, type RoleScope } from './Roles';
 import { AppointedRoles } from './AppointedRoles';
 import { DiagramSection } from './StructureCanvas';
 import { RoleSectionMain, type RolesView } from './RoleSections';
@@ -37,7 +37,7 @@ type Answered = { done: () => void; refused: (sentence: string) => void };
 
 /**
  * **The role editor's reads and presses** (COMPANYVIEW1a, AGENTSPLACE1g1): the catalogue over `ROLES`, each order over `ACTORS`, the agents
- * this machine has and what each offers, and the two presses `SET_ROLE` and `SET_ACTOR` with their toasts. Held once, so the Roles mode's
+ * this machine has and what each offers, and the presses `SET_ROLE` and `SET_ROLES` with their toasts. Held once, so the Roles mode's
  * card and a place's rows press the same acts.
  */
 export function useRoleEditing(notify: Notify) {
@@ -50,27 +50,9 @@ export function useRoleEditing(notify: Notify) {
   // What each agent itself offers for a model and an effort (the account editor's source), so a choice is picked and not typed.
   const offers = Object.fromEntries(harnesses.map((door) => [door.harness, door.settingsChoices ?? null]));
 
-  // Each order as the driver reads it, set through SET_ACTOR, the person's press. A change of Build's agent keeps Chat and Brainstorm,
-  // still as before, on the agent they ran, written for them, and says so.
+  // Each order as the driver reads it; every change of it is a role's, over SET_ROLE (ONEWAY1a).
   const actors = useActors();
-  const setActor = useSetActor();
   const staffing = actors.data ?? [];
-  const saveActor = (actor: string, choices: ActorChoice[] | null, answered: Answered) => {
-    const build = staffing.find((row) => row.id === 'build')?.choices[0]?.agent;
-    const followers = staffing.filter((row) => (row.id === 'chat' || row.id === 'brainstorm') && row.state === 'before')
-      .map((row) => t(`settings.ai.actors.name.${row.id}`));
-    const named = t(`settings.ai.actors.name.${actor}`);
-    setActor.mutate({ actor, choices }, {
-      onSuccess: () => {
-        notify(t(choices === null ? 'settings.ai.actors.cleared' : 'settings.ai.actors.saved', { actor: named }));
-        if (actor === 'build' && build && choices?.[0] && choices[0].agent !== build && followers.length > 0) {
-          notify(t('settings.ai.actors.kept', { agent: build, actors: followers.join(t('settings.ai.actors.and')) }));
-        }
-        answered.done();
-      },
-      onError: (error) => answered.refused(sentence(error)),
-    });
-  };
 
   // The role catalogue, each change the person's press over SET_ROLE, judged by the driver's role door.
   const roles = useRoles();
@@ -110,7 +92,7 @@ export function useRoleEditing(notify: Notify) {
   };
   return {
     harnesses, agents, offers, staffing, catalogue: roles.data ?? null, read: read as 'ok' | 'loading' | 'notOffered' | 'failed',
-    busy: setRole.isPending || setRoles.isPending || setActor.isPending, onSet: pressRole, onSetAll: pressRoles, onSetActor: saveActor,
+    busy: setRole.isPending || setRoles.isPending, onSet: pressRole, onSetAll: pressRoles,
   };
 }
 
@@ -120,7 +102,7 @@ export function useRoleEditing(notify: Notify) {
  *
  * @remarks
  * **The mode's one owner** (D168 point 3): this hook holds the open editor and every pending press, and hands the molecule its
- * answers, so `RolesCard` imports nothing of the bridge. Each press goes out as its route takes it (`SET_ROLE`, `SET_ACTOR`,
+ * answers, so `RolesCard` imports nothing of the bridge. Each press goes out as its route takes it (`SET_ROLE`, `SET_ROLES`,
  * `STAFFING_FOUND_ANSWER`) and the driver judges; a refusal is its sentence under the press. It is mounted only while the mode is in
  * front, so opening the place asks the driver nothing of roles (D150 point 5).
  */
@@ -137,7 +119,7 @@ export function useRolesMode({ notify, section = 'working', doors = {}, page: gi
   const workspaces = workspacesOf(registry.data ?? []);
   const starts = useStarts(workspaces);
   const [editing, setEditing] = useState<Editing | null>(null);
-  const { harnesses, agents, offers, staffing, catalogue, read, busy: editBusy, onSet: pressRole, onSetAll: pressRoles, onSetActor: saveActor } = useRoleEditing(notify);
+  const { harnesses, agents, offers, staffing, catalogue, read, busy: editBusy, onSet: pressRole, onSetAll: pressRoles } = useRoleEditing(notify);
   const startRows = Array.isArray(starts.data?.starts) ? starts.data.starts : [];
 
   // The changes of driver.json's actors another program made, which the driver kept for the person.
@@ -224,7 +206,7 @@ export function useRolesMode({ notify, section = 'working', doors = {}, page: gi
     <RolesCard
       catalogue={catalogue} read={read} staffing={staffing} agents={agents} about={about}
       busy={editBusy || answerFound.isPending}
-      onSet={pressRole} onSetAll={pressRoles} onSetActor={saveActor} found={found.data ?? []} onAnswerFound={answerStaffingFound}
+      onSet={pressRole} onSetAll={pressRoles} found={found.data ?? []} onAnswerFound={answerStaffingFound}
       editor={editing} onEditor={(next) => {
         setEditing(next);
         if (next && !next.isNew) page.onSelected(roleId(next.id));

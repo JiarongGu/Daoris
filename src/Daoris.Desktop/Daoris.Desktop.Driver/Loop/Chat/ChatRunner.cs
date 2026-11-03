@@ -29,6 +29,9 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
 {
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, Task> _opening = new();
 
+    /// <summary>Each running conversation's run over its process (ONEWAY1h-iii), which a person's finish closes.</summary>
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, TransportRun> _runs = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Each conversation's composer change as last kept (D205 §4.2), which the next change is reconciled with.</summary>
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, ActorOverride> _overrides = new(StringComparer.Ordinal);
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, byte> _updateCuts = new();
@@ -396,8 +399,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
 
     // The process a new conversation in a tree of its own is told with its first message (PROCESS1d-ii), held until then. A map of
     // its own, never the browser's, which a hand-over's briefing appends: a conversation handed over is told Daoris's record instead.
-    // COWORKVIEW1e-i: the routing standing a new conversation is told with its first message, taken by it like its process.
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, RoutingStanding> _toldRouting =
+    // CONTEXTONE1c: what the standing block a new conversation is told with its first message is composed from, taken by it like its process.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, StandingFacts> _toldBlock =
         new(StringComparer.OrdinalIgnoreCase);
 
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, ProcessBriefing> _toldProcess =
@@ -815,7 +818,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             if (started?.SessionId is null)
             {
                 _toldProcess.TryRemove(sessionId, out _);
-                _toldRouting.TryRemove(sessionId, out _);
+                _toldBlock.TryRemove(sessionId, out _);
             }
         }
     }
@@ -843,7 +846,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         {
             Also = [.. across.Writes.Select(target => target.Path)],
             Keeps = true,
-            Routing = RoutingStanding.Told(ParticipantWork.Chat, config, known),
+            // CONTEXTONE1c: its standing block, its tree's facts with its repository's routing and the person's choices on this machine.
+            Block = StandingBlocks.OnMachine(StandingBlocks.OfTree(known.Repository, workTree), ParticipantWork.Chat, config, registry, known.Workspace),
         };
     }
 
@@ -935,8 +939,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             return new(
                 null,
                 $"the `{resolved.Name}` adapter does not hold conversations — it spawns an agent that "
-                + "takes its target once and runs to completion. Name another under Settings → AI features, "
-                + "or `daoris driver helper <agent>`.");
+                + "takes its target once and runs to completion. Name another under Agents → Roles, Ask Daoris, "
+                + "or `daoris role set ask-daoris \"<agent>\"`.");
         }
 
         // HELPMODE1a1 (D183 point 3): full access on an agent with no mode that asks nothing is refused before anything is opened.
@@ -1208,6 +1212,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             Housekeeping = housekeeping,
             Settings = access.Settings,
             CheckoutsOff = access.CheckoutsOff,
+            // CONTEXTONE1c: in no repository, its standing block is the workspace's part alone, its room's circle or the whole machine.
+            Block = new StandingFacts { Workspace = circle },
         };
     }
 
@@ -1438,7 +1444,10 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         else _overrides.TryRemove(sessionId, out _);
         var carrying = actorAsked.Overlaid(overriding);
 
-        Process process;
+        // AGENTPROVIDER1m-i (ONEWAY1h-iii): the run over today's transports holds the conversation's process, its capture and its end, its stop
+        // and its close; its words stay beside it, on the session and the process the run holds, until m-ii.
+        TransportRun? run = null;
+        TransportStart? start = null;
         string? rules = null;
         string? servers = null;
         string? skills = null;
@@ -1451,8 +1460,6 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         var drivesBrowser = false;
         string? modeSaid = null;
         string? helpMode = null;
-        // COWORKVIEW1a: this process's own lineage token, a go-on's issued at its move, its retry's its own.
-        var proc = goOn?.Proc;
         try
         {
             // A conversation going on is working already: the ledger moved it there before anything was spawned.
@@ -1484,17 +1491,16 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             // Its toolchain's environment and its tools at the start, as every driven session's (CONTEXTONE1d).
             Driver.Equip(resolved, info, selection);
 
-            // COWORKVIEW1e-i: its repository's routing standing, told with a new conversation's first message and at each go-on, since a
-            // drive may have moved since it began.
-            if (place.Routing is { } routing)
-            {
-                if (goOn is null) _toldRouting[sessionId] = routing;
-                else goOn.Ask.Routing = routing;
-            }
+            // CONTEXTONE1c (D230 point 3): its standing block, on its harness, told with a new conversation's first message and never at a
+            // go-on, which resumes the same conversation; a hand-over's adds the memory its brief hands on (WithProcess).
+            if (place.Block is { } block && goOn is null) _toldBlock[sessionId] = StandingBlocks.OnHarness(block, resolved, workTree);
 
-            // KEEP1b: what this run is handed of the downloads, on its record before it is spawned, a go-on as a first start.
-            await DownloadKeeping.KeepHandedAsync(_service, _home, sessionId, info, ct).ConfigureAwait(false);
-            proc = Driver.Bracketed(_home, sessionId, info, proc);
+            // The run's bracket, before what names its process is composed: what this start is handed of the downloads kept on its record
+            // (KEEP1b), a go-on as a first start, and its process's lineage token issued (COWORKVIEW1a), a go-on's the one issued at its move,
+            // its retry's its own.
+            start = new TransportStart(info, StartClass.Person) { Moved = goOn?.Proc };
+            run = new TransportRun(new ChatTransportHost(_home, _processes, _service, _context.Conversations, config, _output), resolved, start);
+            var proc = await run.BracketAsync(sessionId, ct).ConfigureAwait(false);
 
             // HELPPLUG1b (D170 point 4): the skills plugins hand this conversation's destination, composed under the home and
             // handed by the harness's own session-only door; the protocol door carries them beside its rules below.
@@ -1588,11 +1594,13 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
                 await _service.TryKeepActorAsync(sessionId, startLog, choice, ActorAsked.ForSpawn(resolved.Name, info, actorAsked), ct: ct)
                     .ConfigureAwait(false);
             }
-            // Through the start gate (PROCSTART2): a conversation's press may reach here before its first wait. Through the launcher
-            // (TERMTRUST1a, D201 point 4): its harness born in this process's agents' job, the launcher read as the conversation's process.
+            // Never once the driver is closing. The run's spawn passes the start gate (PROCSTART2), which a conversation's press may reach before
+            // its first wait, through the launcher (TERMTRUST1a, D201 point 4): its harness born in this process's agents' job, the launcher read
+            // as the conversation's process.
             if (_context.Closing)
             {
-                if (proc is not null) LineageTokens.Current.Unspawned(proc);
+                // Let go before its spawn, the run lets its token go.
+                await run.DisposeAsync().ConfigureAwait(false);
                 SpawnSettings.Remove(rules);
                 SpawnServers.Remove(servers);
                 SpawnSkills.Remove(skills);
@@ -1600,14 +1608,18 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
                 if (_processes.Close.Build is { } build) KeepRestart(sessionId, build);
                 return new(sessionId, message);
             }
-            process = await Driver.Spawned(
-                    proc, () => AgentStarts.StartAsync(info, ContainedKind.Agent, StartClass.Person, _home, log: null, CancellationToken.None))
-                .ConfigureAwait(false)
-                ?? throw new DriverException($"the {resolved.Name} adapter's process did not start");
+
+            // Tracked from its spawn, so who is driving Daoris's browser lasts exactly as long as it (BRW8), and reaped; a conversation is not
+            // ended by the request that started it, so its spawn is on no request's token.
+            start = start with { DrivesBrowser = drivesBrowser };
+            run.HandStart(start);
+            await run.SpawnAsync(sessionId, CancellationToken.None).ConfigureAwait(false);
         }
         catch (Exception error)
         {
-            if (proc is not null) LineageTokens.Current.Unspawned(proc);
+            // What the run was handed goes with it: a token never spawned, a go-on's among them, or one its spawn let go.
+            if (run is not null) await run.DisposeAsync().ConfigureAwait(false);
+            else if (goOn?.Proc is { } moved) LineageTokens.Current.Unspawned(moved);
             // The record exists and must say what happened, or it sits at `queued` or `starting` forever
             // holding the repository — the same rule the driven path follows. EVERY failure: a client
             // timeout is an OperationCanceledException too, and filtering those out left the record
@@ -1638,6 +1650,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         // moves when the process does. Watched on an unbound token deliberately — a chat is not ended
         // by the request that started it.
         _context.Talking[sessionId] = resolved;
+        _runs[sessionId] = run!;
         // One at a time in each workspace (ASKHIST1, ASKSCOPE1a): going back to an earlier conversation of its workspace sets this one
         // aside first, and one of another workspace's leaves it be.
         if (string.Equals(place.Name, HelpRoom.Repository, StringComparison.Ordinal)) _context.Rooms[sessionId] = RemoteTarget.Workspace(place.Workspace);
@@ -1684,13 +1697,13 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             // A turn the person's words started has ended (NOTIFY1a): judged last, so a listener's failure moves nothing above.
             if (_answers.Turned(sessionId, place.Name, queue) is { } answered) Answered?.Invoke(answered);
         }
-        // A conversation going on hands its words to the native door only once its process is tracked, so a word the person
-        // says meanwhile goes after them; the protocol door waits for its session to open anyway (MSG1c).
+        // A conversation going on hands its words to the native door only once its watch began, so a word the person says meanwhile goes
+        // after them; the protocol door waits for its session to open anyway (MSG1c).
         var tracked = goOn is null ? null : new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         if (resolved.Wire == SessionWire.Acp)
         {
             chat = new ProtocolChat(
-                place.Posture ?? resolved.AcpPosture, meta, workTree, offered, Changed,
+                Changed,
                 stopped: () => _processes.WasStopRequested(sessionId),
                 limited: (failure, byCode) =>
                 {
@@ -1730,7 +1743,6 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
                 // MODELROLE1d (D205 §3.2): its actor's model and effort set before its first prompt, the composer opening on them; what
                 // the agent would not take kept as asked and not carried, and what its open listed kept as its agent's reading (§9.2).
                 Asked = carrying,
-                TypedFailures = resolved.Toolchain?.ErrorWords?.TypedFailures == true, // CODEXSTATUS1
                 Carried = overriding is not null ? null
                     : notCarried => _ = _service.TryKeepActorAsync(sessionId, null, choice, notCarried, ct: CancellationToken.None),
                 OffersRead = options => KeepOffers(resolved.Name, selection, sessionId, options),
@@ -1812,13 +1824,29 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             }
         }
 
+        // What the run is handed before its open: a native door's events and its conversation named, the protocol door's session held open.
+        run!.HandStart(start! with
+        {
+            // The turn's end, once the record holds it, lets the next message go (CONV4a).
+            Observed = native is null ? null : e =>
+            {
+                if (e.Kind == SessionEventKind.Turn) native.TurnEnded();
+            },
+            // 🔴 Its harness opened the conversation its words went to, so they went (MSG1c): off the record by their ids.
+            Named = goOn is null ? null : () =>
+            {
+                if (goOn.Named()) _ = _goOn.WentOnAsync(sessionId, goOn, resolved.Name);
+            },
+            Protocol = chat is null ? null : Held(run, chat, sessionId, workTree, place.Posture ?? resolved.AcpPosture, meta, offered, resolved, Said),
+        });
+
         var watch = WatchAsync(
-            sessionId, process, transcript, onEnded, Measured, rules, mapper, chat, native, servers, drivesBrowser, Said,
-            new Watched(resolved.Name, place.Keeps, goOn) { Skills = skills, Preamble = modeSaid, Proc = proc }, actorRun, actorLog);
+            sessionId, run, transcript, onEnded, Measured, rules, mapper, chat, native, servers, Said,
+            new Watched(resolved.Name, place.Keeps, goOn) { Skills = skills, Preamble = modeSaid }, actorRun, actorLog);
         _context.Watching[sessionId] = watch;
         _ = watch.ContinueWith(
             _ => _context.Watching.TryRemove(new KeyValuePair<string, Task>(sessionId, watch)), TaskScheduler.Default);
-        // Its process is tracked now (the watch's first statements): the words it goes on with may reach it.
+        // Its watch began: the words it goes on with may reach it.
         tracked?.TrySetResult(true);
         // MODELROLE1d2 (D205 §3.5(b)): where its open was refused and the re-ask answered another session, the replacement opens once this
         // run let its process, its files and its turns go, in the same call as far as the person is concerned.
@@ -2208,16 +2236,17 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
     /// </remarks>
     public bool Finish(string sessionId)
     {
-        // On the native door too, the turns already asked for run first: finishing is not withdrawing (CONV4a).
+        // On the native door too, the turns already asked for run first: finishing is not withdrawing (CONV4a). Then its run's close.
         if (_context.Turned.TryGetValue(sessionId, out var chat))
         {
             _context.Finishing[sessionId] = 0;
-            _ = chat.FinishAsync(() => _processes.CloseInput(sessionId));
+            _ = chat.FinishAsync(() => _runs.TryGetValue(sessionId, out var turned) ? turned.CloseAsync(CancellationToken.None) : Task.CompletedTask);
             return true;
         }
 
-        if (!_processes.CloseInput(sessionId)) return false;
+        if (!_runs.TryGetValue(sessionId, out var run)) return false;
         _context.Finishing[sessionId] = 0;
+        _ = run.CloseAsync(CancellationToken.None);
         return true;
     }
 
@@ -2442,10 +2471,17 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         return told ? draft with { Palette = palette with { Text = null } } : draft;
     }
 
-    /// <summary>The start's process and maker, consumed by the first ordinary or handed-over message.</summary>
+    /// <summary>
+    /// The start's process, maker and standing block, consumed by the first ordinary or handed-over message: a hand-over's block says the
+    /// memory its brief hands on (CONTEXTONE1c).
+    /// </summary>
     internal ChatMessage WithProcess(string sessionId, ChatMessage message)
     {
-        if (_toldRouting.TryRemove(sessionId, out var routing)) message = message with { Routing = routing };
+        if (_toldBlock.TryRemove(sessionId, out var block))
+        {
+            message = message with { Block = StandingBlock.Compose(block with { Memory = message.Brief?.Memory ?? [] }) };
+        }
+
         return _toldProcess.TryRemove(sessionId, out var told) ? message with { Process = told } : message;
     }
 
@@ -2886,9 +2922,6 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         /// (HELPMODE1a1, D183 point 3). Null says nothing.
         /// </summary>
         public string? Preamble { get; init; }
-
-        /// <summary>Its process's lineage token, on every line written for it and its end.</summary>
-        public string? Proc { get; init; }
     }
 
     /// <summary>What a conversation's ending note adds where Daoris kept no id for its harness conversation (<see cref="ChatEnded.NotKept"/>).</summary>
@@ -2900,13 +2933,13 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
     /// <summary>How a conversation that simply ended says so (<see cref="ChatEnded.EndedNote"/>).</summary>
     internal static Noted EndedNote(bool stopped, bool notKept) => ChatEnded.EndedNote(stopped, notKept);
 
+    /// <param name="run">The run over its process, spawned and tracked, its start completed and not yet open (ONEWAY1h-iii).</param>
     /// <param name="measured">Told the conversation's high-water context at its end, where its door reported one (USAGE1).</param>
     /// <param name="rules">The conversation's rules file (PERM1), which goes when the conversation does.</param>
     /// <param name="mapper">The harness's structured-output reader (CONV3), or null where its door is text.</param>
     /// <param name="chat">The conversation's session on the protocol door (CONV3b), or null on the pipe.</param>
     /// <param name="native">The conversation's turns on the native door's structured wire (CONV4a), or null.</param>
     /// <param name="servers">The plugins' servers file handed on the pipe door, which goes when the conversation does.</param>
-    /// <param name="drivesBrowser">Whether it was handed a server that drives Daoris's browser (BRW8), kept beside its process.</param>
     /// <param name="said">Told what its door says about its account's windows (TOOL6c), on either structured door.</param>
     /// <param name="watched">Its adapter, whether its conversation is kept, and the ended chat it goes on with (MSG1c).</param>
     /// <returns>
@@ -2914,9 +2947,9 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
     /// exit before it named its conversation, the first time. The record is left working, and nothing is concluded.
     /// </returns>
     private async Task<bool> WatchAsync(
-        string sessionId, Process process, string transcript, Func<string, string, Task>? onEnded,
+        string sessionId, TransportRun run, string transcript, Func<string, string, Task>? onEnded,
         Action<AcpUsage>? measured, string? rules, IStreamMapper? mapper, ProtocolChat? chat, NativeChat? native,
-        string? servers, bool drivesBrowser, Action<JsonElement>? said, Watched watched, ActorRun actorRun, MachineLog actorLog)
+        string? servers, Action<JsonElement>? said, Watched watched, ActorRun actorRun, MachineLog actorLog)
     {
         // 🔴 CHATGOONWAKE1: declared first, so disposed last: a word shown to its ended record while this run still held it goes on once
         // everything of this run is let go.
@@ -2925,15 +2958,13 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         await using var actorWatching = actorRun;
         using var actorUnbound = new Disposer(() => _context.ActorRuns.TryRemove(sessionId, out _));
         var goOn = watched.GoOn;
-        // Its harness conversation's id, kept for its record the moment its door names it (MSG1c, D137 §4.2).
-        var keep = watched.Keeps ? _context.Conversations.Keeping(sessionId, watched.Adapter) : null;
 
-        // Declared first, so it is disposed LAST — after the process is untracked and every map that
-        // talks to it has let go (REV3: nothing disposed a conversation's process or its pipes).
-        using var owned = process;
-        using var tracked = _processes.Track(sessionId, process, drivesBrowser: drivesBrowser);
+        // Declared first, so it is let go LAST — its process ended, untracked and disposed after every map that talks to it has let go
+        // (REV3: nothing disposed a conversation's process or its pipes).
+        await using var held = run;
         using var talking = new Disposer(() =>
         {
+            _runs.TryRemove(sessionId, out _);
             _context.Talking.TryRemove(sessionId, out _);
             _context.Turned.TryRemove(sessionId, out _);
             _context.Rooms.TryRemove(sessionId, out _);
@@ -2945,7 +2976,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             _context.Palettes.TryRemove(sessionId, out _);
             _toldProcess.TryRemove(sessionId, out _);
             LetGoChecks(sessionId);
-            _toldRouting.TryRemove(sessionId, out _);
+            _toldBlock.TryRemove(sessionId, out _);
             // Nothing waiting will be sent now, and the page is told its queue emptied. COWORK1c: words kept on its record wait there for
             // it to go on, unless the person stopped it, which ends them with it.
             var personStopped = _processes.StopMade(sessionId) is { Reason: null };
@@ -2954,52 +2985,36 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             // Last, so the queue told empty above judges nothing it still waited on (NOTIFY1a).
             _answers.Forget(sessionId);
         });
-        // What its end waits for once its exit is read (COWORKVIEW1a).
-        Task? drain = null;
+        // Its background work stoppable from its tab for as long as the conversation lasts (CONSOLE3a), on the session the run holds.
+        using var stops = chat is null || _output is null
+            ? null
+            : _processes.OpenTaskStops(sessionId, (task, ct) => run.Session is { } session ? session.StopTaskAsync(task, ct) : Task.FromResult(false));
+        // Whether its end was asked of the run: before it, a failure lets the run go with its process ended (ANSWER2).
+        var ending = false;
         try
         {
-            // The conversation's messages are recorded as the person sends them (`Say`), so the
-            // capture opens with no composed prompt of its own.
-            var protocol = chat is not null
-                ? CaptureProtocolAsync(sessionId, process, transcript, chat, said, keep, watched.Adapter, watched.Preamble, watched.Proc)
-                : null;
-            Task capture = protocol
-                ?? (mapper is not null
-                    ? HarnessCapture.CaptureStructuredAsync(
-                        process.StandardOutput, process.StandardError, transcript, sessionId, _output, _events, mapper,
-                        prompt: null, CancellationToken.None, preamble: watched.Preamble,
-                        // The turn's end, once the record holds it, lets the next message go (CONV4a).
-                        observed: e =>
-                        {
-                            if (e.Kind == SessionEventKind.Turn) native?.TurnEnded();
-                        },
-                        // A conversation going on appends to the transcript of the run before it (MSG1c).
-                        append: goOn is not null,
-                        said: said,
-                        named: conversation =>
-                        {
-                            keep?.Invoke(conversation);
-                            // 🔴 Its harness opened the conversation its words went to, so they went (MSG1c): off the record by their ids.
-                            if (goOn is not null && goOn.Named()) _ = _goOn.WentOnAsync(sessionId, goOn, watched.Adapter);
-                        },
-                        lineage: ChildLineage.Writer(_home, sessionId, watched.Proc))
-                    : HarnessCapture.CaptureAsync(process, transcript, sessionId, _output, CancellationToken.None, watched.Preamble));
-            drain = capture;
+            // The conversation's messages are recorded as the person sends them (`Say`), so the capture opens with no composed prompt of its
+            // own, its first line how the run was set up; one going on appends to the transcript of the run before it, its own conversation
+            // resumed (MSG1c), its id kept for its record the moment its door names it (D137 §4.2).
+            run.HandRecords(new RunRecords(
+                sessionId, transcript, _output, _events, LineageHome: _home, KeepAs: watched.Keeps ? watched.Adapter : null, Said: said,
+                Preamble: watched.Preamble));
+            await (goOn is null ? run.OpenAsync(CancellationToken.None) : run.ResumeAsync(goOn.Ask.Conversation, CancellationToken.None))
+                .ConfigureAwait(false);
 
             // A conversation going on is working already: the ledger moved it out of its ended state before the spawn.
             if (goOn is null) await _service.AdvanceAsync(sessionId, "working", transcript: transcript).ConfigureAwait(false);
 
-            await process.WaitForExitAsync().ConfigureAwait(false);
-            // COWORKVIEW1a: the exit read here told to the token set, which may not watch this process.
-            if (watched.Proc is { } exited) LineageTokens.Current.Exited(exited);
-            await capture.ConfigureAwait(false);
+            // Its exit, then its capture read to its end, then its process's lineage end (COWORKVIEW1a).
+            ending = true;
+            var end = await run.EndAsync(CancellationToken.None).ConfigureAwait(false);
 
             // 🔴 The native door's harness ended on a failed exit before naming its conversation: it never opened it, which a
             // crash, a failed sign-in or a flag it rejected ends the same way, so it proves nothing of its loss (SESSCTX1c, D189's
             // amendment). The same resume is tried once more, once this watch has let its process go; a second such end is
             // `exited`, never `gone`. Read from the structure, never from its words.
             if (goOn is { Ask.Refused: null } && mapper is not null && chat is null && !goOn.Ask.Named
-                && process.ExitCode != 0 && !_processes.WasStopRequested(sessionId))
+                && end.Exit != 0 && !_processes.WasStopRequested(sessionId))
             {
                 if (!goOn.Ask.Retried)
                 {
@@ -3018,10 +3033,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
 
             // What it consumed, where its door reported it — measured before the record moves, so a page
             // told of the ending finds the account's usage already counting it.
-            if ((protocol is not null ? await protocol.ConfigureAwait(false) : mapper?.Usage) is { } used)
-            {
-                measured?.Invoke(used);
-            }
+            if (end.Usage is { } used) measured?.Invoke(used);
 
             // The person's stop outranks the observation, exactly as for a driven session: a killed
             // process leaves the same signals as one that ended on its own, and only this flag knows
@@ -3038,8 +3050,10 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         {
             // 🔴 The harness first, while it is still tracked (REV3): a record that could not move to
             // `working` — a stop pressed during `starting` ends it so — used to conclude here and leave
-            // the agent running, untracked and unmarked, until the application exited.
-            SessionProcesses.EndIfRunning(process);
+            // the agent running, untracked and unmarked, until the application exited. The run let go before
+            // its end ends it, and writes its process's end unclean once its exit is read (ANSWER2); one whose
+            // end was asked has exited.
+            if (!ending) await run.AbandonAsync().ConfigureAwait(false);
 
             // An agent that would not resume the conversation (MSG1c): nothing went, so the record goes back to how it ended.
             if (goOn?.Ask.Refused is { } refused)
@@ -3072,23 +3086,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             SpawnSettings.Remove(rules);
             SpawnServers.Remove(servers);
             SpawnSkills.Remove(watched.Skills);
-            await EndedAsync(_home, sessionId, process, drain, watched.Proc, () => _processes.WasStopRequested(sessionId)).ConfigureAwait(false);
         }
-    }
-
-    /// <summary>
-    /// A conversation's process's end in its lineage (FABRIC-C1a): lost where it was stopped or failed, ended where it ended clean. Only
-    /// once its exit is read within <paramref name="within"/> (<see cref="Driver.AbandonedWait"/>; the catch's kill is not waited for),
-    /// then its capture waited for within the same bound (COWORKVIEW1a): past it no end, its token leaving at the exit the set sees.
-    /// </summary>
-    internal static async Task EndedAsync(
-        string home, string sessionId, Process process, Task? drain, string? proc, Func<bool> stopped, TimeSpan? within = null)
-    {
-        var bound = within ?? Driver.AbandonedWait;
-        if (!await Driver.ExitReadAsync(process, bound).ConfigureAwait(false)) return;
-        if (proc is not null) LineageTokens.Current.Exited(proc);
-        if (drain is not null) await Task.WhenAny(drain, Task.Delay(bound)).ConfigureAwait(false);
-        ChildLineage.End(home, sessionId, clean: EndedClean(process) && !stopped(), DateTimeOffset.UtcNow, proc);
     }
 
     private Noted EndedNoteFor(string session, Watched watched, bool stopped)
@@ -3098,19 +3096,6 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         using var log = new MachineLog(_home, "driver");
         log.Warn("conversation.unkept", ("session", session), ("adapter", watched.Adapter), ("error", "MissingId"));
         return note.Then(" ", Noted.Of(NoteCodes.ChatNotKept, NotKept));
-    }
-
-    /// <summary>Whether a run's process ended on its own with exit 0 (FABRIC-C1a); one still running, or that cannot say, did not.</summary>
-    private static bool EndedClean(Process process)
-    {
-        try
-        {
-            return process.HasExited && process.ExitCode == 0;
-        }
-        catch (InvalidOperationException)
-        {
-            return false;
-        }
     }
 
     /// <summary>
@@ -3145,149 +3130,85 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         KnowledgeConnector.SessionScope(home, sessionId, HelpCircle.Scope(circle), proc, role);
 
     /// <summary>
-    /// A conversation's capture on the protocol door (CONV3b): its session opened on the wire, what each
-    /// turn renders reaching the transcript and the console, what it means reaching the record — the
-    /// driven path's split (<c>Driver.CaptureAcpAsync</c>), held open for as many turns as the person takes.
+    /// A conversation's session on the protocol door (CONV3b), as its run holds it open (ONEWAY1h-iii): what it is handed on <c>session/new</c>
+    /// and what is set on it before its first prompt, the turns let go once it opened, and what its open's failure says. Its lines, what each
+    /// turn renders, reach the transcript and the console through the run, and what they mean the record — the driven path's split, held open
+    /// for as many turns as the person takes.
     /// </summary>
     /// <remarks>
-    /// A session that cannot be opened is one nothing can be said to: its process is ended, and the
-    /// failure is what the record concludes with — the driver saw it, and it is not the person's.
+    /// A session that cannot be opened is one nothing can be said to: the run ends its process once this has said why, and the failure is
+    /// what the record concludes with — the driver saw it, and it is not the person's.
     /// </remarks>
-    /// <param name="keep">Told the id <c>session/new</c>'s answer names, kept for the record (MSG1c); null keeps none.</param>
-    /// <param name="ranOn">The adapter it runs on, which a refused resume's <c>elsewhere</c> names (CONVNOTE2e).</param>
-    /// <param name="preamble">A fact about how the run was set up, written ahead of anything the agent says (HELPMODE1a1); null writes none.</param>
-    /// <returns>The session's high-water context, or null when it reported none.</returns>
-    private async Task<AcpUsage?> CaptureProtocolAsync(
-        string sessionId, Process process, string transcript, ProtocolChat chat, Action<JsonElement>? said,
-        Action<string>? keep, string ranOn, string? preamble = null, string? proc = null)
+    /// <param name="cwd">The folder the session works in.</param>
+    /// <param name="servers">What its door is handed of the servers (HELPWIRED1).</param>
+    /// <param name="said">Told what it says about its account's windows (TOOL6c).</param>
+    private TransportProtocol Held(
+        TransportRun run, ProtocolChat chat, string sessionId, string cwd, string? posture, object? meta, IReadOnlyList<AcpMcpServer> servers,
+        ISessionAdapter resolved, Action<JsonElement> said)
     {
-        // A conversation going on appends to the transcript of the run before it (MSG1c).
-        await using var file = TranscriptFile.Open(transcript, append: chat.GoOn is not null);
-        var closed = false;
+        void Record(SessionEvent e) => _events.Keep(sessionId, e, run.Say);
 
-        void Line(string text)
+        return new TransportProtocol(cwd)
         {
-            lock (file)
-            {
-                // A late frame after the transcript closed is dropped from the file, never a throw
-                // inside the reader.
-                if (closed) return;
-                file.WriteLine(text);
-            }
-
-            _output?.Append(sessionId, text);
-        }
-
-        if (preamble is { Length: > 0 }) Line(preamble);
-
-        void Record(SessionEvent e) => _events.Keep(sessionId, e, Line);
-
-        var errors = HarnessCapture.PumpAsync(process.StandardError, file, sessionId, _output, CancellationToken.None);
-        var session = new AcpSession(
-            process.StandardOutput, process.StandardInput, Line, closeTimeout: null, chat.Posture, chat.Meta, Record,
-            streams: _output is null ? null : new SessionStreams(_output, sessionId),
+            Posture = posture,
+            Meta = meta,
+            Servers = servers,
+            TypedFailures = resolved.Toolchain?.ErrorWords?.TypedFailures == true, // CODEXSTATUS1
             // Its model and effort, told each time they change, so the page offers what the agent does (AGT6b).
-            onOptions: options => OptionsChanged?.Invoke(sessionId, ThePersons(options)),
-            onConversation: keep)
-        {
-            Lineage = ChildLineage.Writer(_home, sessionId, proc),
-            TypedFailures = chat.TypedFailures,
-            Carry = chat.Asked,
-            Carried = chat.Carried,
-            OffersRead = chat.OffersRead,
-            ModelRefused = chat.ModelRefused,
+            Options = options => OptionsChanged?.Invoke(sessionId, ThePersons(options)),
+            Configure = session =>
+            {
+                chat.Configure(session);
+                // What it says about its account's windows, kept as it says it (TOOL6c).
+                session.LimitsSaid += said;
+                // The person's words said during a turn, as the record keeps them where the session took them (MSG1c, D136 §3).
+                session.OnTaken(delivered =>
+                {
+                    var words = ChatMessage.FromAgent(delivered);
+                    // Daoris's own go-on (AGENTERRORS1b), told beside the person's words a transient try carries, is Daoris's, never the person's.
+                    run.Say(words.Daoris is not null
+                        ? $"— the conversation was told: {words.Text}"
+                        : $"— the conversation took what the person added: {words.Text}");
+                    Record(ChatMessage.Words(words));
+                });
+            },
+            Opened = () => chat.Opened(run, run.Say, Record),
+            Unopened = error =>
+            {
+                switch (error)
+                {
+                    case AcpResumeRefused refused when chat.GoOn is { } goOn:
+                        // Not a turn that failed: nothing was prompted. The agent's own words stay in this machine's record of the
+                        // conversation; the reason goes back to the record, which goes back to how it ended (MSG1b's rule). Its reason by code,
+                        // the agent's words its own (CONVNOTE2e); the English as it always was.
+                        goOn.Refused = refused.Why;
+                        chat.Opened(null, run.Say, Record);
+                        var refusal = DoorNotes.ResumeRefused(refused, resolved.Name);
+                        run.Say(refusal.Note);
+                        Record(new SessionEvent { Kind = SessionEventKind.Note, Text = refusal.Note, Parts = refusal.Parts });
+                        break;
+                    case AcpChoiceNotOffered refused when chat.Pending is { } pending:
+                        // MODELROLE1d2 (D205 §3.5(b)): its agent refused the choice before any prompt, and the re-ask answered another session. Its
+                        // words move to the pending start before the queue lets them go, each said meanwhile joining them, so the replacement takes
+                        // each once; nothing was prompted, and the record ends `choice-not-offered`.
+                        chat.NotOffered = refused.Refusal;
+                        pending.Moving(chat.Turns.MoveOut(word => pending.Join(word) || Onward(pending, sessionId, word)));
+                        chat.Opened(null, run.Say, Record);
+                        break;
+                    default:
+                        // 🔴 EVERY failure ends the open (REV3): one that escaped — an unreadable answer, a pipe that broke mid-write — left the
+                        // queue waiting on a session that never came.
+                        chat.Opened(null, run.Say, Record);
+                        var notOpen = DoorNotes.NotOpen(error.Message);
+                        run.Say($"— {notOpen.Note}");
+                        Record(new SessionEvent { Kind = SessionEventKind.Note, Text = notOpen.Note, Parts = notOpen.Parts });
+                        // A refused sign-in may come at `session/new` as well as at a prompt: which one Claude Code's adapter answers with
+                        // was not seen (D125 ROSTER1b), so both are read (SIGNIN1b).
+                        chat.ReadSignIn(error);
+                        break;
+                }
+            },
         };
-        // What it says about its account's windows, kept as it says it (TOOL6c).
-        if (said is not null) session.LimitsSaid += said;
-        // Its background work stoppable from its tab for as long as the conversation lasts (CONSOLE3a).
-        using var stops = _output is null ? null : _processes.OpenTaskStops(sessionId, session.StopTaskAsync);
-        // The person's words said during a turn, as the record keeps them where the session took them (MSG1c, D136 §3).
-        session.OnTaken(delivered =>
-        {
-            var words = ChatMessage.FromAgent(delivered);
-            // Daoris's own go-on (AGENTERRORS1b), told beside the person's words a transient try carries, is Daoris's, never the person's.
-            Line(words.Daoris is not null
-                ? $"— the conversation was told: {words.Text}"
-                : $"— the conversation took what the person added: {words.Text}");
-            Record(ChatMessage.Words(words));
-        });
-
-        Exception? failed = null;
-        try
-        {
-            // 🔴 An ended chat goes on in its own conversation (MSG1c, D137 §2.2): resumed by the id kept for it, never a
-            // new session, which would be a new conversation under the same record.
-            if (chat.GoOn is { } goOn) await session.ResumeAsync(chat.Cwd, goOn.Conversation, CancellationToken.None, chat.Servers).ConfigureAwait(false);
-            else await session.OpenAsync(chat.Cwd, CancellationToken.None, chat.Servers).ConfigureAwait(false);
-            chat.Opened(session, Line, Record);
-        }
-        catch (AcpResumeRefused refused) when (chat.GoOn is { } goOn)
-        {
-            // Not a turn that failed: nothing was prompted. The agent's own words stay in this machine's record of the
-            // conversation; the reason goes back to the record, which goes back to how it ended (MSG1b's rule).
-            failed = refused;
-            goOn.Refused = refused.Why;
-            chat.Opened(null, Line, Record);
-            // Its reason by code, the agent's words its own (CONVNOTE2e); the English as it always was.
-            var refusal = DoorNotes.ResumeRefused(refused, ranOn);
-            Line(refusal.Note);
-            Record(new SessionEvent { Kind = SessionEventKind.Note, Text = refusal.Note, Parts = refusal.Parts });
-            try
-            {
-                process.Kill(entireProcessTree: true);
-            }
-            catch (InvalidOperationException)
-            {
-                // Already gone.
-            }
-        }
-        catch (AcpChoiceNotOffered refused) when (chat.Pending is { } pending)
-        {
-            // MODELROLE1d2 (D205 §3.5(b)): its agent refused the choice before any prompt, and the re-ask answered another session. Its
-            // words move to the pending start before the queue lets them go, each said meanwhile joining them, so the replacement takes each
-            // once; nothing was prompted, and the record ends `choice-not-offered`.
-            failed = refused;
-            chat.NotOffered = refused.Refusal;
-            pending.Moving(chat.Turns.MoveOut(word => pending.Join(word) || Onward(pending, sessionId, word)));
-            chat.Opened(null, Line, Record);
-            try
-            {
-                process.Kill(entireProcessTree: true);
-            }
-            catch (InvalidOperationException)
-            {
-                // Already gone.
-            }
-        }
-        catch (Exception error)
-        {
-            // 🔴 EVERY failure ends the open here (REV3): one that escaped — an unreadable answer, a pipe
-            // that broke mid-write — left the queue waiting on a session that never came, and skipped
-            // the wait below, so the transcript closed under a stderr pump still writing to it.
-            failed = error;
-            chat.Opened(null, Line, Record);
-            var notOpen = DoorNotes.NotOpen(error.Message);
-            Line($"— {notOpen.Note}");
-            Record(new SessionEvent { Kind = SessionEventKind.Note, Text = notOpen.Note, Parts = notOpen.Parts });
-            // A refused sign-in may come at `session/new` as well as at a prompt: which one Claude Code's adapter answers with
-            // was not seen (D125 ROSTER1b), so both are read (SIGNIN1b).
-            chat.ReadSignIn(error);
-            try
-            {
-                process.Kill(entireProcessTree: true);
-            }
-            catch (InvalidOperationException)
-            {
-                // Already gone, which is usually why it could not open.
-            }
-        }
-
-        await Task.WhenAll(errors, session.Ended).ConfigureAwait(false);
-        lock (file) closed = true;
-        session.Release();
-
-        if (failed is not null) throw new DriverException($"the ACP session could not open: {failed.Message}");
-        return session.Usage;
     }
 
     /// <summary>
@@ -3312,7 +3233,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
     {
         IChatTurns ITurnedChat.Turns => Turns;
 
-        private readonly TaskCompletionSource<AcpSession?> _open = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        // Its run once its session opened, or null where it could not: its session is the run's (ONEWAY1h-iii).
+        private readonly TaskCompletionSource<TransportRun?> _open = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly Func<bool> _stopped;
         private readonly Func<string, LimitSeen?, Noted?>? _limited;
         private readonly Func<string, Noted?>? _signedOut;
@@ -3345,7 +3267,6 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         /// <param name="goOn">The ended chat's conversation this one goes on in, resumed rather than opened (MSG1c); null for a new one.</param>
         /// <param name="wentOn">Told once the words it goes on with are on the wire (MSG1c).</param>
         public ProtocolChat(
-            string? posture, object? meta, string cwd, IReadOnlyList<AcpMcpServer> servers,
             Action<ChatQueue> changed, Func<bool> stopped, Func<string, LimitSeen?, Noted?>? limited = null,
             Func<string, Noted?>? signedOut = null, ResumeAsk? goOn = null, Action? wentOn = null)
         {
@@ -3353,10 +3274,6 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             _limited = limited;
             _signedOut = signedOut;
             _wentOn = wentOn;
-            Posture = posture;
-            Meta = meta;
-            Cwd = cwd;
-            Servers = servers;
             GoOn = goOn;
             Turns = new ChatTurns(
                 ready: async () => await _open.Task.ConfigureAwait(false) is not null,
@@ -3374,15 +3291,6 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         /// failure at the open keeps today's end. Null keeps today's end for every failure.
         /// </summary>
         public ChatRetry? Retry { get; init; }
-
-        public string? Posture { get; }
-
-        public object? Meta { get; }
-
-        public string Cwd { get; }
-
-        /// <summary>Whether its agent is asked for typed session failures (CODEXSTATUS1, <see cref="AcpSession.TypedFailures"/>).</summary>
-        public bool TypedFailures { get; init; }
 
         /// <summary>What its actor asks, set on the session before its first prompt (D205 §3.2, MODELROLE1d); null sets nothing.</summary>
         public ActorAsked? Asked { get; init; }
@@ -3411,28 +3319,35 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         /// <summary>The refusal that ended its open before any prompt (D205 §3.5(b)), or null.</summary>
         public ModelRefusal? NotOffered { get; set; }
 
-        public IReadOnlyList<AcpMcpServer> Servers { get; }
-
         public ChatTurns Turns { get; }
 
         /// <summary>The ended chat's conversation this one goes on in (MSG1c), or null for a new conversation.</summary>
         public ResumeAsk? GoOn { get; }
 
-        /// <summary>The session, once it opened; null while it opens, or when it could not.</summary>
-        public AcpSession? Session => _open.Task.IsCompletedSuccessfully ? _open.Task.Result : null;
+        /// <summary>The session, once it opened, as its run holds it (ONEWAY1h-iii); null while it opens, or when it could not.</summary>
+        public AcpSession? Session => _open.Task.IsCompletedSuccessfully ? _open.Task.Result?.Session : null;
 
-        /// <summary>The session is open — or could not be, and then every turn asked for is dropped.</summary>
-        public void Opened(AcpSession? session, Action<string> line, Action<SessionEvent> record)
+        /// <summary>What its actor asked, set on the session the run made before its open (D205 §3.2, §3.5(b), §9.2).</summary>
+        public void Configure(AcpSession session)
+        {
+            session.Carry = Asked;
+            session.Carried = Carried;
+            session.OffersRead = OffersRead;
+            session.ModelRefused = ModelRefused;
+        }
+
+        /// <summary>The session is open on its run — or could not be, and then every turn asked for is dropped.</summary>
+        public void Opened(TransportRun? run, Action<string> line, Action<SessionEvent> record)
         {
             _line = line;
             _record = record;
-            if (session is not null && Retry is { } retry)
+            if (run?.Session is { } session && Retry is { } retry)
             {
                 _retried = Retried(retry);
                 session.Retries(_retried, this);
             }
 
-            _open.TrySetResult(session);
+            _open.TrySetResult(run);
         }
 
         /// <summary>
@@ -3606,7 +3521,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
 
         private async Task TurnAsync(ChatMessage message, Action sent)
         {
-            if (await _open.Task.ConfigureAwait(false) is not { } session) return;
+            if (await _open.Task.ConfigureAwait(false) is not { Session: { } session }) return;
 
             // AGENTERRORS1b: this turn's own cut and stop, and the answers of words steered into an earlier turn, all over.
             CancellationToken cut;
@@ -3796,7 +3711,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
 
         private async Task CancelAsync()
         {
-            if (!_open.Task.IsCompletedSuccessfully || _open.Task.Result is not { } session) return;
+            if (!_open.Task.IsCompletedSuccessfully || _open.Task.Result is not { Session: { } session } run) return;
 
             // 🔴 A person's stop is never refused, even with a word on its way (D137 §2.1): the agent may still act on that
             // word with its answer dropped (STEER1 §3), and its record says so once the word is answered.
@@ -3820,7 +3735,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
 
             try
             {
-                await session.CancelTurnAsync().ConfigureAwait(false);
+                // The run's stop that keeps the conversation: `session/cancel`.
+                await run.StopTurnAsync(CancellationToken.None).ConfigureAwait(false);
             }
             catch (Exception error) when (error is IOException or ObjectDisposedException or InvalidOperationException)
             {
@@ -3830,18 +3746,14 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         }
 
         /// <summary>
-        /// The turns already asked for, then <c>session/close</c>, then the end of input — after which the
-        /// agent exits on its own, and that exit is what the record concludes from.
+        /// The turns already asked for, then its run's close, once its open settled: <c>session/close</c>, then the end of input — after which
+        /// the agent exits on its own, and that exit is what the record concludes from.
         /// </summary>
-        public async Task FinishAsync(Action endInput)
+        public async Task FinishAsync(Func<Task> close)
         {
             await Turns.FinishAsync().ConfigureAwait(false);
-            if (await _open.Task.ConfigureAwait(false) is { } session)
-            {
-                await session.CloseAsync(CancellationToken.None).ConfigureAwait(false);
-            }
-
-            endInput();
+            await _open.Task.ConfigureAwait(false);
+            await close().ConfigureAwait(false);
         }
     }
 
@@ -3962,11 +3874,11 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             TurnEnded();
         }
 
-        /// <summary>The turns already asked for, then the end of input: the harness winds up and exits on its own.</summary>
-        public async Task FinishAsync(Action endInput)
+        /// <summary>The turns already asked for, then its run's close, the end of input: the harness winds up and exits on its own.</summary>
+        public async Task FinishAsync(Func<Task> close)
         {
             await Turns.FinishAsync().ConfigureAwait(false);
-            endInput();
+            await close().ConfigureAwait(false);
         }
     }
 

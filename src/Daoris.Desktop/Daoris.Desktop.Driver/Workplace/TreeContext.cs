@@ -6,11 +6,10 @@ namespace Daoris.Driver;
 /// </summary>
 internal sealed class TreeContext
 {
-    internal TreeContext(string home, IWorkplacePluginWire plugins, Func<string, string?>? variable = null)
+    internal TreeContext(string home, IWorkplacePluginWire plugins)
     {
         Home = home;
         Plugins = plugins;
-        Variable = variable ?? Environment.GetEnvironmentVariable;
         Worktrees = new TreeWorktrees(this);
         Leftovers = new TreeLeftovers(this);
     }
@@ -26,12 +25,6 @@ internal sealed class TreeContext
 
     /// <summary>The plugin wire a branch rule's landing speaks (WSR4, D100).</summary>
     internal IWorkplacePluginWire Plugins { get; }
-
-    /// <summary>
-    /// The environment the trees read their variables from (ENVSEAM1, D63's seam): this process's, unless a test hands in its own,
-    /// so a test naming an override sets nothing every class beside it shares.
-    /// </summary>
-    internal Func<string, string?> Variable { get; }
 
     /// <summary>The test seam (SQUASHTIDY1c): run with the branch's name between a judgement and the delete it cleared. Production sets none.</summary>
     internal Func<string, Task>? BeforeDeleting { get; set; }
@@ -85,11 +78,8 @@ internal sealed class TreeContext
         DaorisHome.Places(Home, HomeEntry.Trees, workspace, repository, name).FirstOrDefault(Directory.Exists)
         ?? Path.Combine(TreesRoot, workspace, repository, name);
 
-    /// <summary>
-    /// The person's choices, from the file the loop and the planner read (CONFIGSEAM1): this home's <c>driver.json</c> alone
-    /// ignored an override's landing and review rules, so the work merged into the line while the planner sat a review for it.
-    /// </summary>
-    internal DriverConfig Config() => DriverConfig.Load(DriverConfig.ResolvePath(Variable, Home));
+    /// <summary>The person's choices, from the file the loop and the planner read (CONFIGSEAM1): this home's <c>driver.json</c>.</summary>
+    internal DriverConfig Config() => DriverConfig.Load(DriverConfig.ResolvePath(Home));
 
     /// <summary>
     /// The repository's line (WSR2), from the choices beside this home, read per call: the person may
@@ -129,7 +119,7 @@ internal sealed class TreeContext
     {
         try
         {
-            var config = DriverConfig.Load(DriverConfig.ResolvePath(Environment.GetEnvironmentVariable, home));
+            var config = DriverConfig.Load(DriverConfig.ResolvePath(home));
             var line = (await CanonicalLine.ResolveAsync(root, repository, workspace, config, s_gitGuess, ct).ConfigureAwait(false)).Branch;
             return await TreeScratch.AcceptedAsync(config, root, repository, line, ct).ConfigureAwait(false);
         }

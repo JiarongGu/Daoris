@@ -363,7 +363,7 @@ describe('A place page, Roles', () => {
       return undefined;
     });
     await openEngine();
-    expect(await screen.findByText(/driver\.json is the file's own|not this home's|the file's own/i)).toBeTruthy();
+    expect(await screen.findByText(/keeps no role catalogue yet/i)).toBeTruthy();
     await unfold();
     expect(rowOf('design and decisions').getByRole('button', { name: 'Give engine its own… for design and decisions' })).toBeDisabled();
     expect(rowOf('building').getByRole('button', { name: "Back to aurora's, for building" })).toBeDisabled();

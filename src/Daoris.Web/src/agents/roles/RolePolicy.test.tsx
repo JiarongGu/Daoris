@@ -45,7 +45,7 @@ async function choose(name: string, option: string) {
 
 const open = (read: RoleCatalogue = catalogue(), refuse?: string, title = 'Build') => {
   const onSet = vi.fn((_press, answered) => (refuse ? answered.refused(refuse) : answered.done()));
-  render(<RolesCard catalogue={read} staffing={[build]} agents={AGENTS} onSet={onSet} onSetActor={vi.fn()} />);
+  render(<RolesCard catalogue={read} staffing={[build]} agents={AGENTS} onSet={onSet} />);
   fireEvent.click(screen.getByRole('button', { name: 'Edit Build' }));
   return { onSet, form: within(screen.getByRole('form', { name: title })) };
 };
@@ -175,12 +175,11 @@ describe('The role editor, its policy', () => {
     expect(form.getByRole('textbox', { name: "choice 1's weight" })).toHaveValue('3');
   });
 
-  it('says the store holds no policies here and offers none, for an editor over the staffing alone', () => {
-    const { form } = open(catalogue(POLICY, { kept: false }), undefined, 'Build: your order');
+  it('ONEWAY1a: opens no editor on a home that keeps no catalogue yet, so no policy is offered there', () => {
+    render(<RolesCard catalogue={catalogue(POLICY, { kept: false })} staffing={[build]} agents={AGENTS} onSet={vi.fn()} />);
 
-    expect(form.getByText("Policies are kept in this machine's store, which this home does not use yet.")).toBeTruthy();
-    expect(form.queryByRole('combobox', { name: 'How it chooses' })).toBeNull();
-    expect(form.queryByText('When a choice cannot go on')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Edit Build' })).toBeNull();
+    expect(screen.queryByRole('combobox', { name: 'How it chooses' })).toBeNull();
   });
 
   it('offers no policy to a driver before policies', () => {
@@ -195,7 +194,7 @@ describe('The role editor, its policy', () => {
       ...catalogue({ ...POLICY, role: 'chat', staffPolicy: { rule: 'order', choices: [{ agent: 'claude-code', weight: 1 }] } }),
       roles: [{ id: 'chat', state: 'seed', seeded: true, name: { en: 'Chat', zh: '对话' }, takes: ['chat'], scopeKind: 'machine', revision: 0 }],
     };
-    render(<RolesCard catalogue={chat} staffing={[{ id: 'chat', state: 'set', choices: [{ agent: 'claude-code', from: '1' }] }]} agents={AGENTS} onSet={vi.fn()} onSetActor={vi.fn()} />);
+    render(<RolesCard catalogue={chat} staffing={[{ id: 'chat', state: 'set', choices: [{ agent: 'claude-code', from: '1' }] }]} agents={AGENTS} onSet={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Edit Chat' }));
     const form = within(screen.getByRole('form', { name: 'Chat' }));
     fireEvent.click(form.getByText('When a choice cannot go on'));
@@ -209,7 +208,7 @@ describe('The role editor, its policy', () => {
 
   it('is in Chinese', async () => {
     await i18n.changeLanguage('zh');
-    render(<RolesCard catalogue={catalogue()} staffing={[build]} agents={AGENTS} onSet={vi.fn()} onSetActor={vi.fn()} />);
+    render(<RolesCard catalogue={catalogue()} staffing={[build]} agents={AGENTS} onSet={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: '编辑开发' }));
     const form = within(screen.getByRole('form', { name: '开发' }));
 

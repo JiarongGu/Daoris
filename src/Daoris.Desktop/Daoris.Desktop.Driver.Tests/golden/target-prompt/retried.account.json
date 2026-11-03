@@ -1,5 +1,5 @@
 {
-  "chars": 6559,
+  "chars": 6440,
   "sections": [
     {
       "name": "quest",
@@ -50,22 +50,16 @@
       "chars": 433
     },
     {
-      "name": "look",
+      "name": "asking",
       "source": "driver",
-      "said": "where to look before asking: 585 characters, the driver's own words",
-      "chars": 585
+      "said": "looking before asking, asking another repository, and stopping for the person: 1,607 characters, the driver's own words",
+      "chars": 1607
     },
     {
       "name": "attributed",
       "source": "driver",
       "said": "the person's words met second-hand: 481 characters, the driver's own words",
       "chars": 481
-    },
-    {
-      "name": "asking",
-      "source": "driver",
-      "said": "asking another repository, and stopping for the person: 1,141 characters, the driver's own words",
-      "chars": 1141
     },
     {
       "name": "closing",
@@ -108,33 +102,11 @@
       "none": "no-ask"
     },
     {
-      "name": "standing",
-      "source": "repository",
-      "said": "the standing answer: none set for `console-ui` on this machine",
-      "chars": 0,
-      "from": "console-ui",
-      "none": "not-set"
-    },
-    {
       "name": "language",
       "source": "repository",
       "said": "the session language: none set for its repository or its workspace on this machine",
       "chars": 0,
       "none": "not-set"
-    },
-    {
-      "name": "map",
-      "source": "tree",
-      "said": "the code map: none, since its tree keeps none",
-      "chars": 0,
-      "none": "empty"
-    },
-    {
-      "name": "indexes",
-      "source": "tree",
-      "said": "the repository's indexes: none, since its tree names none",
-      "chars": 0,
-      "none": "empty"
     }
   ]
 }

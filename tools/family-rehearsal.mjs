@@ -98,12 +98,43 @@ const DRIVE_TIMEOUT = 90_000;
 // mode (a flag) is asked for as `drive`; any other verb this helper carries (`ask`, `quest delete`) goes
 // as it is. Prefixing every mode sent `drive ask …` and failed fourteen checks.
 const verbOf = (mode) => (mode.startsWith('--') ? `drive ${mode}` : mode);
+
+// ONEWAY1c-i (the oneway design §2 S2): no variable names another driver file, so a run is on the home its config sits in, as
+// the loop always took it, named as `DAORIS_HOME`. That home's own `driver.json` holds the config for the run, and what the run
+// wrote there is kept back into the config, so each phase keeps a file of its own while the phases that share a home share its
+// records. A home's staffing is its store's: the first config a home holds is imported at its first start, a later config's
+// never written over it, and a change goes through the role door (`staffRole`).
+const STAFFING = ['adapter', 'intakeAdapter', 'helperAdapter', 'actors'];
+const onHome = (config, act) => {
+  const home = dirname(config);
+  const file = homeEntry(home, 'driver');
+  if (file === config) return act(home);
+  const choices = JSON.parse(readFileSync(config, 'utf8'));
+  const staffed = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : choices;
+  const held = Object.fromEntries(Object.entries(choices).filter(([key]) => !STAFFING.includes(key)));
+  for (const key of STAFFING) if (staffed[key] !== undefined) held[key] = staffed[key];
+  const before = `${JSON.stringify(held, null, 2)}\n`;
+  mkdirSync(dirname(file), { recursive: true });
+  writeFileSync(file, before);
+  const keep = (result) => {
+    const after = existsSync(file) ? readFileSync(file, 'utf8') : before;
+    if (after !== before) writeFileSync(config, after);
+    return result;
+  };
+  const result = act(home);
+  return result instanceof Promise ? result.then(keep) : keep(result);
+};
+// A run of the driver's program, or of `daoris` handing it a family, on the home `config` sits in.
+const runOn = (config, command, env = {}, timeout = undefined) =>
+  onHome(config, (home) => run(command, scratch, { ...env, DAORIS_HOME: home }, timeout));
+// A role's staffing on the home `config` sits in, set through the role door as the person sets it from a terminal.
+const staffRole = (config, role, agent) => runOn(config, `node "${cliBin}" role set ${role} "${agent}"`, PERSON);
+
 // `env` is the machine a phase stands up for itself (17c: the PATH its sessions find the doctrine tool on, and a
 // home whose machine log holds only its own lines), laid over the guards like the remote and harness pairs.
 const driver = ({ serviceUrl, config, remote = {}, harness = {}, env = {}, mode = '--once' }) =>
-  run(`dotnet "${driverDll}" ${verbOf(mode)}`, scratch, {
+  runOn(config, `dotnet "${driverDll}" ${verbOf(mode)}`, {
     DAORIS_SERVICE_URL: serviceUrl,
-    DAORIS_DRIVER_CONFIG: config,
     ...NO_REMOTE,
     ...NO_HARNESS,
     ...remote,
@@ -123,7 +154,7 @@ const driver = ({ serviceUrl, config, remote = {}, harness = {}, env = {}, mode 
  * run had started against the record's own times.
  */
 const driverInBackground = ({ serviceUrl, config, remote = {}, harness = {}, mode = '--once', signal, timeout = DRIVE_TIMEOUT }) =>
-  new Promise((resolve) => {
+  onHome(config, (home) => new Promise((resolve) => {
     const started = Date.now();
     const child = spawn('dotnet', [driverDll, 'drive', ...(mode ? [mode] : [])], {
       cwd: scratch,
@@ -131,11 +162,11 @@ const driverInBackground = ({ serviceUrl, config, remote = {}, harness = {}, mod
       env: {
         ...process.env,
         DAORIS_SERVICE_URL: serviceUrl,
-        DAORIS_DRIVER_CONFIG: config,
         ...NO_REMOTE,
         ...NO_HARNESS,
         ...remote,
         ...harness,
+        DAORIS_HOME: home,
       },
     });
     children.push(child);
@@ -156,7 +187,7 @@ const driverInBackground = ({ serviceUrl, config, remote = {}, harness = {}, mod
         startedAt: new Date(started).toISOString(),
       });
     });
-  });
+  }));
 
 const API_TIMEOUT = 30_000;
 
@@ -557,8 +588,8 @@ check(
     && reanswered.json?.session?.note === 'it needs a sign-in.\n\nAnswered: Signed in.\n\nAnswered: Signed in on the device.',
   reanswered.text,
 );
-const retired = await api('POST', `/api/sessions/${askingId}/answer`, { body: { answer: 'Signed in.' } });
-check('…and the park’s own answer route is gone, its job the say door’s alone (ONEWAY1k)', retired.status === 404, retired.text);
+const answerRetired = await api('POST', `/api/sessions/${askingId}/answer`, { body: { answer: 'Signed in.' } });
+check('…and the park’s own answer route is gone, its job the say door’s alone (ONEWAY1k)', answerRetired.status === 404, answerRetired.text);
 const whileParked = await api('POST', '/api/sessions', { body: { quest: askingQuestId, adapter: 'stub' } });
 check('…and nothing new opens on its quest while the park holds it', whileParked.status === 409, whileParked.text);
 await api('POST', `/api/sessions/${askingId}/state`, {
@@ -985,8 +1016,9 @@ const doneAnswer = await respond('done', 'Landed by the stub session.', answers)
 if (!doneAnswer.ok) throw new Error('done failed: ' + doneAnswer.text);
 `);
 
-// The person's standing choices, scratch-local: only the newcomer is drivable, and the stub spawns.
-const driverConfig = join(scratch, 'driver.json');
+// The person's standing choices, scratch-local: only the newcomer is drivable, and the stub spawns. The scratch is the home its
+// runs are on, whose own `driver.json` holds each config in turn (`onHome`).
+const driverConfig = join(scratch, 'driver-main.json');
 writeFileSync(driverConfig, `${JSON.stringify({
   drivable: ['newcomer'],
   adapter: 'stub',
@@ -998,7 +1030,7 @@ writeFileSync(driverConfig, `${JSON.stringify({
 const drive = (mode = '--until-idle') => driver({ serviceUrl: BASE, config: driverConfig, mode });
 
 // It carries a link and a file (D65 §2), so the loop proves the file reaches the session whole — kept
-// by the host under ITS home, which is not the driver's (the driver's is wherever driver.json lives),
+// by the host under ITS home, which is not the driver's (the driver's is the folder its config sits in),
 // and handed over by the path the host answered rather than one the driver guessed.
 const BRIEF = 'the brief the asker attached, read back by the session';
 const driven = await api('POST', '/api/quests', {
@@ -1182,7 +1214,10 @@ check(
 // one unserved ask in the circle is the one this phase makes.
 const keptAskId = /kept as `#([0-9a-f]{6})`/.exec(refusedAsk.out)?.[1] ?? '';
 askVerb(`--close ${keptAskId} --reason "Asked again with a receiver that exists."`);
-const intakeConfig = join(scratch, 'driver-intake.json');
+// A home of its own, whose Intake is staffed: the scratch home's staffing is the main config's, imported at its first start.
+const intakeHome = join(scratch, 'intake-home');
+mkdirSync(intakeHome, { recursive: true });
+const intakeConfig = join(intakeHome, 'driver-intake.json');
 writeFileSync(intakeConfig, `${JSON.stringify({
   ...JSON.parse(readFileSync(driverConfig, 'utf8')),
   intakeAdapter: 'stub',
@@ -1203,7 +1238,7 @@ check(
     && /[\\/]intake[\\/]default$/.test(intakeSession.tree ?? ''),
   `${intakeRun.out}\n${JSON.stringify(intakeSession)}`,
 );
-const intakeRoom = homeEntry(scratch, 'intake', 'default');
+const intakeRoom = homeEntry(intakeHome, 'intake', 'default');
 check(
   '…its room holds the circle’s declarations, and the session saw an ask and itself — never a quest',
   existsSync(join(intakeRoom, 'AGENTS.md')) && readFileSync(join(intakeRoom, 'AGENTS.md'), 'utf8').includes('`newcomer`')
@@ -1568,7 +1603,7 @@ check(
 
 // And the person's way back in, from a terminal — the second door (D50). It counts the quest's failures from this
 // machine's records, as the driver does (RETRY1b), so it asks the host the driver watches.
-const retried = run(`node "${cliBin}" quest retry ${doomedId}`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig, DAORIS_SERVICE_URL: BASE, ...PERSON });
+const retried = runOn(driverConfig, `node "${cliBin}" quest retry ${doomedId}`, { DAORIS_SERVICE_URL: BASE, ...PERSON });
 const afterRetry = drive();
 const retriedSessions = await api('GET', '/api/sessions?includeClosed=true');
 check(
@@ -1580,7 +1615,7 @@ check(
 
 // 🔴 RETRY1b: parked a second time, six failures against a mark of three. A mark at the limit (3) left it parked, as both
 // doors did on the install; a retry marks it at its six, and it runs again.
-const retriedAgain = run(`node "${cliBin}" quest retry ${doomedId}`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig, DAORIS_SERVICE_URL: BASE, ...PERSON });
+const retriedAgain = runOn(driverConfig, `node "${cliBin}" quest retry ${doomedId}`, { DAORIS_SERVICE_URL: BASE, ...PERSON });
 const afterSecondRetry = drive();
 const retriedAgainSessions = await api('GET', '/api/sessions?includeClosed=true');
 check(
@@ -3506,10 +3541,10 @@ writeFileSync(chatConfig, `${JSON.stringify({
 const chatInput = join(scratch, 'chat-input.txt');
 writeFileSync(chatInput, 'what is this repository for?\npublish something\n');
 
-const chatRun = run(
+const chatRun = runOn(
+  chatConfig,
   `dotnet "${driverDll}" chat --repository newcomer --agent stub < "${chatInput}"`,
-  scratch,
-  { DAORIS_SERVICE_URL: BASE, DAORIS_DRIVER_CONFIG: chatConfig, ...NO_HARNESS },
+  { DAORIS_SERVICE_URL: BASE, ...NO_HARNESS },
   DRIVE_TIMEOUT,
 );
 check(
@@ -4007,7 +4042,7 @@ check(
 
 // And the driving choices themselves, from a terminal (D50): the same `driver.json` the desktop's
 // checkboxes edit and the loop re-reads every tick.
-const cliDriver = (args) => run(`node "${cliBin}" place ${args}`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig, ...PERSON });
+const cliDriver = (args) => runOn(driverConfig, `node "${cliBin}" place ${args}`, PERSON);
 const held = cliDriver('hold newcomer');
 check(
   '`daoris driver hold` pauses a repository from a terminal',
@@ -4031,7 +4066,7 @@ check(
 // PUSH1f2a (D194 point 5): the same press from a session's terminal, acting in the driver's program with no window to confirm it, is
 // refused, exit 1, and nothing is written: the marker refuses an agent's honest attempt, the person's own terminal carrying none.
 const heldBefore = readFileSync(driverConfig, 'utf8');
-const marked = run(`node "${cliBin}" place drive marked-elsewhere`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig, DAORIS_SESSION_ID: 's-rehearsal' });
+const marked = runOn(driverConfig, `node "${cliBin}" place drive marked-elsewhere`, { DAORIS_SESSION_ID: 's-rehearsal' });
 check(
   '`daoris driver` from a session\'s terminal is refused, exit 1, and the file is as it was',
   marked.code === 1 && /this terminal is a session's \(`DAORIS_SESSION_ID`\)/.test(marked.out)
@@ -4108,14 +4143,13 @@ check(
 
 // The lifecycle from a terminal (D50): the tree is listed, refuses to die holding unmerged work —
 // the stub's commit is real work the canonical line has not taken — and goes when the person means it.
-const treesListed = run(`dotnet "${driverDll}" tree list`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig });
+const treesListed = runOn(driverConfig, `dotnet "${driverDll}" tree list`);
 check(
   '`daoris-driver trees list` names the tree, its circle and its branch',
   treesListed.code === 0 && /newcomer/.test(treesListed.out) && /daoris\//.test(treesListed.out),
   treesListed.out,
 );
-const refusedRemove = run(
-  `dotnet "${driverDll}" tree remove "${treePath}"`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig });
+const refusedRemove = runOn(driverConfig, `dotnet "${driverDll}" tree remove "${treePath}"`);
 check(
   'removal refuses while the tree holds commits the canonical line has not taken, naming them',
   refusedRemove.code === 1 && /stub: answer quest/.test(refusedRemove.out) && existsSync(treePath),
@@ -4147,7 +4181,8 @@ check(
 
 // The clean-up from a terminal (WSR3, D88): the list first, and work no branch of the person's holds
 // is kept and named — even when the press is made.
-const cleanEnv = { DAORIS_DRIVER_CONFIG: driverConfig, DAORIS_SERVICE_URL: BASE };
+// The scratch home, whose own file holds the main config since the run before (`onHome`).
+const cleanEnv = { DAORIS_HOME: dirname(driverConfig), DAORIS_SERVICE_URL: BASE };
 const cleanListed = run(`dotnet "${driverDll}" tree clean`, scratch, cleanEnv);
 const cleanKept = run(`dotnet "${driverDll}" tree clean --yes`, scratch, cleanEnv);
 check(
@@ -4167,9 +4202,7 @@ check(
   landPlan.out,
 );
 
-const forcedRemove = run(
-  `dotnet "${driverDll}" tree remove "${treePath}" --force`, scratch,
-  { DAORIS_DRIVER_CONFIG: driverConfig });
+const forcedRemove = runOn(driverConfig, `dotnet "${driverDll}" tree remove "${treePath}" --force`);
 check(
   '…and --force is the person meaning it: the tree and its branch are gone',
   forcedRemove.code === 0 && !existsSync(treePath)
@@ -4326,7 +4359,7 @@ check(
 );
 
 // Leave the newcomer as the phases after this one expect it: no tree, no landing rule, no `origin`.
-run(`dotnet "${driverDll}" tree remove "${syncTree}" --force`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig });
+runOn(driverConfig, `dotnet "${driverDll}" tree remove "${syncTree}" --force`);
 run('git remote remove origin', newcomer);
 cliDriver('landing newcomer --clear');
 cliDriver('trees newcomer off');
@@ -4515,7 +4548,7 @@ if ((await abandonQuests()).find((q) => q.id === abandonThirdId)?.status === 'Op
   });
 }
 if (abandonSecondTree) {
-  run(`dotnet "${driverDll}" tree remove "${abandonSecondTree}" --force`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig });
+  runOn(driverConfig, `dotnet "${driverDll}" tree remove "${abandonSecondTree}" --force`);
 }
 run('git remote remove origin', newcomer);
 cliDriver('trees newcomer off');
@@ -4530,7 +4563,10 @@ section('17. The protocol door — a session held over ACP (D53/ACP1)');
 const acpAgent = join(scratch, 'acp-agent.mjs');
 writeFileSync(acpAgent, ACP_STUB_AGENT);
 
-const acpConfig = join(scratch, 'driver-acp.json');
+// A home of its own, staffed by the protocol door (`onHome`): the scratch home's staffing is the stub's.
+const acpHome = join(scratch, 'acp-home');
+mkdirSync(acpHome, { recursive: true });
+const acpConfig = join(acpHome, 'driver-acp.json');
 writeFileSync(acpConfig, `${JSON.stringify({
   drivable: ['newcomer'],
   adapter: 'acp-stub',
@@ -4623,10 +4659,10 @@ check(
 // per message, the person's words in the record, and end of input finishing it through `session/close`.
 const acpChatInput = join(scratch, 'acp-chat-input.txt');
 writeFileSync(acpChatInput, 'first over the protocol\nsecond over the protocol\n');
-const acpChat = run(
+const acpChat = runOn(
+  acpConfig,
   `dotnet "${driverDll}" chat --repository newcomer --agent acp-stub < "${acpChatInput}"`,
-  scratch,
-  { DAORIS_SERVICE_URL: BASE, DAORIS_DRIVER_CONFIG: acpConfig, ...NO_HARNESS },
+  { DAORIS_SERVICE_URL: BASE, ...NO_HARNESS },
   DRIVE_TIMEOUT,
 );
 check(
@@ -4649,8 +4685,8 @@ check(
   `${JSON.stringify(acpChatRecord)}\n${acpChatTranscript.slice(0, 600)}`,
 );
 
-// The record is the driver's home's (D76 §2): this run's config names the scratch folder as its home.
-const acpChatEvents = homeEntry(scratch, 'sessions', `${acpChatRecord?.id}.events.jsonl`);
+// The record is the driver's home's (D76 §2): the folder this run's config sits in.
+const acpChatEvents = homeEntry(acpHome, 'sessions', `${acpChatRecord?.id}.events.jsonl`);
 const acpSaid = existsSync(acpChatEvents)
   ? readFileSync(acpChatEvents, 'utf8').split('\n').filter(Boolean).map((line) => JSON.parse(line))
     .filter((e) => e.kind === 'user' || e.kind === 'turn').map((e) => (e.kind === 'user' ? `${e.origin}: ${e.text}` : 'turn'))
@@ -4666,11 +4702,11 @@ check(
 // and stopping it. Typed by a person it is Ctrl+C; from a script it is a line holding only ETX, the
 // character Ctrl+C is. Driven live rather than from a file, because the stop has to land while the turn
 // is running at the agent — a file's lines all arrive before the session has even opened.
-const stopChat = await new Promise((resolve) => {
+const stopChat = await onHome(acpConfig, (home) => new Promise((resolve) => {
   const child = spawn('dotnet', [driverDll, 'chat', '--repository', 'newcomer', '--agent', 'acp-stub'], {
     cwd: scratch,
     windowsHide: true,
-    env: { ...process.env, DAORIS_SERVICE_URL: BASE, DAORIS_DRIVER_CONFIG: acpConfig, ...NO_REMOTE, ...NO_HARNESS },
+    env: { ...process.env, DAORIS_SERVICE_URL: BASE, ...NO_REMOTE, ...NO_HARNESS, DAORIS_HOME: home },
   });
   children.push(child);
   let out = '';
@@ -4695,7 +4731,7 @@ const stopChat = await new Promise((resolve) => {
     clearTimeout(timer);
     resolve({ code: code ?? -1, out });
   });
-});
+}));
 check(
   'a person stops a turn from a terminal, and what was waiting behind it is handed back unsent',
   stopChat.code === 0
@@ -4713,7 +4749,7 @@ check(
 const stopRecords = (await api('GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? [];
 const stopRecord = stopRecords
   .find((s) => s.kind === 'chat' && s.adapter === 'acp-stub' && s.id !== acpChatRecord?.id);
-const stopEvents = homeEntry(scratch, 'sessions', `${stopRecord?.id}.events.jsonl`);
+const stopEvents = homeEntry(acpHome, 'sessions', `${stopRecord?.id}.events.jsonl`);
 const stopSaid = existsSync(stopEvents)
   ? readFileSync(stopEvents, 'utf8').split('\n').filter(Boolean).map((line) => JSON.parse(line))
     .filter((e) => e.kind === 'user' || e.kind === 'turn').map((e) => (e.kind === 'user' ? `${e.origin}: ${e.text}` : `turn ${e.stopReason}`))
@@ -4732,11 +4768,11 @@ const attachedFile = join(scratch, 'crash.log');
 writeFileSync(attachedFile, 'panic at chunk 12\n');
 const attachInput = join(scratch, 'acp-attach-input.txt');
 writeFileSync(attachInput, `:attach ${attachedFile}\nwhat does this log say?\n`);
-const attachChat = run(
+const attachChat = runOn(
+  acpConfig,
   // stderr folded in: the terminal door says what it attached there, and `run` keeps stdout alone on success.
   `dotnet "${driverDll}" chat --repository newcomer --agent acp-stub < "${attachInput}" 2>&1`,
-  scratch,
-  { DAORIS_SERVICE_URL: BASE, DAORIS_DRIVER_CONFIG: acpConfig, ...NO_HARNESS },
+  { DAORIS_SERVICE_URL: BASE, ...NO_HARNESS },
   DRIVE_TIMEOUT,
 );
 check(
@@ -4749,12 +4785,12 @@ check(
 
 const attachRecord = ((await api('GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? [])
   .find((s) => s.kind === 'chat' && s.adapter === 'acp-stub' && s.id !== acpChatRecord?.id && s.id !== stopRecord?.id);
-const attachEvents = homeEntry(scratch, 'sessions', `${attachRecord?.id}.events.jsonl`);
+const attachEvents = homeEntry(acpHome, 'sessions', `${attachRecord?.id}.events.jsonl`);
 const attachAsked = existsSync(attachEvents)
   ? readFileSync(attachEvents, 'utf8').split('\n').filter(Boolean).map((line) => JSON.parse(line)).find((e) => e.kind === 'user')
   : null;
 // A conversation's kept files: `work/files/sessions/<id>/` in a home made since HOMELAYOUT3.
-const keptFolder = homeEntry(scratch, 'session-files', attachRecord?.id ?? 'none');
+const keptFolder = homeEntry(acpHome, 'session-files', attachRecord?.id ?? 'none');
 check(
   '…kept for the conversation under the home, named in its record, and never written into the repository',
   attachAsked?.text === 'what does this log say?' && JSON.stringify(attachAsked?.files) === '["crash.log"]'
@@ -4796,12 +4832,12 @@ const portParkRun = driver({ serviceUrl: BASE, config: acpConfig, mode: '--once'
 const portPark = (await portRecords()).find((s) => s.id !== portCutId) ?? null;
 let portKept = null;
 try {
-  portKept = JSON.parse(readFileSync(homeEntry(scratch, 'sessions', `${portPark?.id}.harness.json`), 'utf8'));
+  portKept = JSON.parse(readFileSync(homeEntry(acpHome, 'sessions', `${portPark?.id}.harness.json`), 'utf8'));
 } catch {
   // Not a file: FOUNDATION1 z-iii keeps a conversation in the desktop store once a look has imported the home's binding files.
   try {
     const { DatabaseSync } = await import('node:sqlite');
-    const store = new DatabaseSync(homeEntry(scratch, 'desktop-db'), { readOnly: true });
+    const store = new DatabaseSync(homeEntry(acpHome, 'desktop-db'), { readOnly: true });
     try {
       portKept = store.prepare('SELECT adapter, conversation FROM bindings WHERE session = ?').get(portPark?.id ?? '') ?? null;
     } finally {
@@ -4853,7 +4889,7 @@ check(
   portTranscript.slice(-1600) || `${portGoneOn?.transcript}`,
 );
 
-const portEvents = homeEntry(scratch, 'sessions', `${portGoneOn?.id}.events.jsonl`);
+const portEvents = homeEntry(acpHome, 'sessions', `${portGoneOn?.id}.events.jsonl`);
 const portPersonSaid = existsSync(portEvents)
   ? readFileSync(portEvents, 'utf8').split('\n').filter(Boolean).map((line) => JSON.parse(line))
     .filter((e) => e.kind === 'user' && e.origin === 'person')
@@ -4901,13 +4937,13 @@ check(
   `${heardAsk.text}\n${heardRun.out}\n${JSON.stringify([heardEnded, ...heardMore])}`,
 );
 
-// The loop's own config: the protocol door's, and a watch whose next look is ten minutes away.
-const sayConfig = join(scratch, 'driver-say.json');
+// The loop's own config: the protocol door's, and a watch whose next look is ten minutes away, on the same home.
+const sayConfig = join(acpHome, 'driver-say.json');
 writeFileSync(sayConfig, `${JSON.stringify({ ...JSON.parse(readFileSync(acpConfig, 'utf8')), pollSeconds: 600 }, null, 2)}\n`);
 const sayFromTerminal = (id, words) => driver({ serviceUrl: BASE, config: sayConfig, mode: `sessions say ${id} "${words}"` });
 const heardTranscript = (record) => (existsSync(record?.transcript ?? '') ? readFileSync(record.transcript, 'utf8') : '');
 const heardEvents = () => {
-  const path = homeEntry(scratch, 'sessions', `${heardId}.events.jsonl`);
+  const path = homeEntry(acpHome, 'sessions', `${heardId}.events.jsonl`);
   return existsSync(path) ? readFileSync(path, 'utf8').split('\n').filter(Boolean).map((line) => JSON.parse(line)) : [];
 };
 // Ended again, its words taken and the stub's resumed turn heard them: read until then, or for 45 seconds.
@@ -5057,7 +5093,7 @@ check(
 
 // The protocol door hands the session its connector on the wire (ACP4), so the same quest is driven
 // to done — with nothing of Daoris's written into the tree to make it possible.
-const unadoptedAcp = join(scratch, 'driver-unadopted-acp.json');
+const unadoptedAcp = join(acpHome, 'driver-unadopted-acp.json');
 writeFileSync(unadoptedAcp, `${JSON.stringify({
   drivable: ['unadopted'], adapter: 'acp-stub', cap: 1, timeoutMinutes: 2,
   commands: { 'acp-stub': ['node', acpAgent] },
@@ -5129,7 +5165,8 @@ const setupHome = join(scratch, 'setup-home');
 mkdirSync(setupHome, { recursive: true });
 const SETUP_MACHINE = { ...withFirstOnPath(doctrineBin), DAORIS_HOME: setupHome };
 
-const setupConfig = join(scratch, 'driver-setup.json');
+// The set-up machine's home is the one its config sits in (`onHome`): its records, its rules and its usage, apart from the rest.
+const setupConfig = join(setupHome, 'driver-setup.json');
 writeFileSync(setupConfig, `${JSON.stringify({
   drivable: ['atlas'], adapter: 'acp-stub', cap: 1, timeoutMinutes: 2, trees: ['atlas'],
   commands: { 'acp-stub': ['node', acpAgent] },
@@ -5138,9 +5175,9 @@ const onSetupMachine = (mode, { config = setupConfig, env = {} } = {}) =>
   driver({ serviceUrl: BASE, config, mode, env: { ...SETUP_MACHINE, ...env } });
 const atlasQuests = async () => (await api('GET', '/api/quests?repository=atlas&includeClosed=true')).json ?? [];
 const askCount = async () => ((await api('GET', '/api/asks?includeClosed=true')).json ?? []).length;
-// The press's rule lands in the home its driver's choices sit in (`permissions.json`, PERM1), this run's scratch.
+// The press's rule lands in the home its driver's choices sit in (`permissions.json`, PERM1), the set-up machine's.
 const atlasAllows = () => {
-  const file = homeEntry(scratch, 'permissions');
+  const file = homeEntry(setupHome, 'permissions');
   return existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')).repositories?.atlas?.allow ?? [] : [];
 };
 const sessionStarts = (out) => out.split(/\r?\n/).filter((line) => line.trim()).flatMap((line) => {
@@ -5153,7 +5190,7 @@ const sessionStarts = (out) => out.split(/\r?\n/).filter((line) => line.trim()).
 
 // Each refusal that applies is said with its door (LAYOUT7): here, no tree of its own, read by the same binary from the
 // same line. Not being driven is none: the set-up's quest would be admitted alone (AGENTSPLACE1b).
-const unreadyConfig = join(scratch, 'driver-setup-unready.json');
+const unreadyConfig = join(setupHome, 'driver-setup-unready.json');
 writeFileSync(unreadyConfig, `${JSON.stringify({
   drivable: [], adapter: 'acp-stub', cap: 1, timeoutMinutes: 2, commands: { 'acp-stub': ['node', acpAgent] },
 }, null, 2)}\n`);
@@ -5444,15 +5481,15 @@ for (const name of PLANNED) {
 const planHome = join(scratch, 'plan-home');
 mkdirSync(planHome, { recursive: true });
 const PLAN_MACHINE = { ...withFirstOnPath(doctrineBin), DAORIS_HOME: planHome };
-const planConfig = join(scratch, 'driver-plan.json');
+const planConfig = join(planHome, 'driver-plan.json');
 writeFileSync(planConfig, `${JSON.stringify({
   drivable: PLANNED, adapter: 'acp-stub', cap: 2, timeoutMinutes: 2, trees: PLANNED,
   commands: { 'acp-stub': ['node', acpAgent] },
 }, null, 2)}\n`);
 const onPlanMachine = (mode, env = {}) => driver({ serviceUrl: BASE, config: planConfig, mode, env: { ...PLAN_MACHINE, ...env } });
-// The plan is the driver's file under the home its choices sit in (`<home>/setup/<workspace>.json`), this run's scratch;
+// The plan is the driver's file under the home its choices sit in (`<home>/setup/<workspace>.json`), the plan machine's;
 // the press's rule lands beside it in `permissions.json`, under the workspace's key.
-const planFile = () => homeEntry(scratch, 'setup', `${PLAN_WORKSPACE}.json`);
+const planFile = () => homeEntry(planHome, 'setup', `${PLAN_WORKSPACE}.json`);
 const readPlan = () => {
   try {
     return JSON.parse(readFileSync(planFile(), 'utf8'));
@@ -5461,7 +5498,7 @@ const readPlan = () => {
   }
 };
 const allowsOf = (scope, name) => {
-  const file = homeEntry(scratch, 'permissions');
+  const file = homeEntry(planHome, 'permissions');
   return existsSync(file) ? JSON.parse(readFileSync(file, 'utf8'))[scope]?.[name]?.allow ?? [] : [];
 };
 const questsTo = async (name) => (await api('GET', `/api/quests?repository=${name}&includeClosed=true`)).json ?? [];
@@ -5627,7 +5664,7 @@ section('17e. Work is reviewed where it runs before it lands: a set-up said, the
 const REVIEW_LOCAL = 'http://localhost:4210';
 const REVIEW_DEV = 'https://dev.example.test';
 // A home of its own, whose `driver.json` is this phase's config, as an install's is: a landing reads its rules from its home's
-// `driver.json` (`SessionTrees`), whatever other file the per-file override names, which the loop and the CLI read instead.
+// `driver.json` (`SessionTrees`), as the loop and the CLI do.
 const reviewHome = join(scratch, 'review-home');
 mkdirSync(reviewHome, { recursive: true });
 const reviewConfig = join(reviewHome, 'driver.json');
@@ -5637,7 +5674,7 @@ writeFileSync(reviewConfig, `${JSON.stringify({ ...JSON.parse(readFileSync(acpCo
 const REVIEW_STORE = { DAORIS_KNOWLEDGE_ROOT: family, DAORIS_KNOWLEDGE_DB: join(scratch, 'knowledge.db') };
 const reviewDrive = (mode = '--until-idle') => driver({ serviceUrl: BASE, config: reviewConfig, env: REVIEW_STORE, mode });
 // `daoris driver review` looks for a procedure in the checkouts the registry names, so it is handed the host to read them from.
-const reviewCli = (args) => run(`node "${cliBin}" place ${args}`, scratch, { DAORIS_DRIVER_CONFIG: reviewConfig, DAORIS_SERVICE_URL: BASE, ...PERSON });
+const reviewCli = (args) => runOn(reviewConfig, `node "${cliBin}" place ${args}`, { DAORIS_SERVICE_URL: BASE, ...PERSON });
 const reviewQuests = async () => (await api('GET', '/api/quests?repository=newcomer&includeClosed=true')).json ?? [];
 const reviewRecords = async (quest) => (quest
   ? ((await api('GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? []).filter((s) => s.quest === quest)
@@ -5920,8 +5957,8 @@ section('17f. A brainstorm from a terminal: asked, shown, sent and kept on this 
 // `daoris brainstorm` reaches the host's machine-only door, which writes the request under the host's home; the driver's look
 // freezes its packet from the newcomer's knowledge, the person reads it and sends it, and the ACP stub answers each pass through
 // its connector's result tool, over MCP, as a maker does. No model, no account and no credential. The driver's home is its
-// config's folder (D63's per-file override), so this phase's config sits in the host's own home: the two read one set of records,
-// as an install's desktop and host do. Nothing is driven (`drivable` is empty), so what the loop does here is the brainstorm alone.
+// config's folder (`onHome`), so this phase's config sits in the host's own home: the two read one set of records, as an
+// install's desktop and host do. Nothing is driven (`drivable` is empty), so what the loop does here is the brainstorm alone.
 const brainstormHome = process.env.DAORIS_HOME;
 mkdirSync(brainstormHome, { recursive: true });
 const brainstormConfig = join(brainstormHome, 'driver-brainstorm.json');
@@ -6040,8 +6077,8 @@ section('18. Three plugins: one declares a harness, one hands a server, one hold
 // TRACKED examples under `examples/plugins/`, installed with the real `daoris plugin add`, so the
 // example somebody copies is the one this gate drives. No code of any of them loads anywhere.
 //
-// The driver's home is the directory its config sits in (the per-file override wins, D63), which in
-// this rehearsal is `scratch` — so the plugins live there, and the CLI's two doors onto the same
+// The driver's home is the directory its config sits in (`onHome`), which for the main config is
+// `scratch` — so the plugins live there, and the CLI's two doors onto the same
 // folder are pointed there too, for this phase only. `daoris plugin` is the driver program's since PUSH1f2f, and each of its
 // changes is a person's press, so the phase's calls are the person's (`PERSON`): no session's marker.
 const PLUGIN_HOME = { DAORIS_HOME: scratch, ...PERSON };
@@ -6091,11 +6128,14 @@ check(
 );
 
 // Driven on the DECLARED harness: nothing in driver.json names a command, because the declaration
-// carries it. Two quests — one the gate lets through, one it holds.
+// carries it. Two quests — one the gate lets through, one it holds. Build takes the declared agent through the role door, as
+// the person staffs it (ONEWAY1c-i): the scratch home's staffing is its store's, the stub's until now.
 const gateConfig = join(scratch, 'driver-gate.json');
 writeFileSync(gateConfig, `${JSON.stringify({
-  drivable: ['newcomer'], adapter: 'gate-agent', cap: 2, timeoutMinutes: 2,
+  drivable: ['newcomer'], cap: 2, timeoutMinutes: 2,
 }, null, 2)}\n`);
+const gateStaffed = staffRole(gateConfig, 'build', 'gate-agent');
+check('Build takes the declared agent through the role door', gateStaffed.code === 0, gateStaffed.out);
 
 const gatePass = await api('POST', '/api/quests', {
   body: { from: 'game', to: 'newcomer', title: 'Carry this one on a declared harness',
@@ -6241,7 +6281,7 @@ const standInDoor = (standIn, door) => {
   const folder = join(scratch, 'stand-ins', door.id);
   const config = (scenario = 'open', at = folder) => {
     mkdirSync(at, { recursive: true });
-    const file = join(at, scenario === 'open' ? 'driver.json' : `driver-${scenario}.json`);
+    const file = join(at, `driver-${scenario}.json`);
     const more = [...(scenario === 'open' ? [] : ['--scenario', scenario]), ...(door.kind === 'protocol' ? ['--seen', join(at, 'seen.txt')] : [])];
     writeFileSync(file, `${JSON.stringify({
       drivable: ['newcomer'], adapter: door.id, cap: 2, timeoutMinutes: 2,
@@ -6273,10 +6313,10 @@ const standInDrives = {
     const input = join(place.folder, 'turn-input.txt');
     writeFileSync(input, `${lines.join('\n')}\n`);
     const before = new Set((await standInRecords()).map((s) => s.id));
-    const chat = run(
+    const chat = runOn(
+      place.config(),
       `dotnet "${driverDll}" chat --repository newcomer --agent ${place.door.id} < "${input}"`,
-      scratch,
-      { DAORIS_SERVICE_URL: BASE, DAORIS_DRIVER_CONFIG: place.config(), ...NO_REMOTE, ...NO_HARNESS },
+      { DAORIS_SERVICE_URL: BASE, ...NO_REMOTE, ...NO_HARNESS },
       DRIVE_TIMEOUT,
     );
     const record = (await standInRecords()).find((s) => !before.has(s.id) && s.kind === 'chat' && s.adapter === place.door.id);

@@ -85,9 +85,9 @@ function bringAppointed() {
 export type SourceDoor = (scope: { kind: 'workspace' | 'machine'; id?: string }, work: string) => void;
 
 /** What the section needs of the role editor's hook: the molecule reads no bridge. */
-export type PlaceRoleEditor = Pick<ReturnType<typeof useRoleEditing>, 'agents' | 'offers' | 'staffing' | 'catalogue' | 'read' | 'busy' | 'onSet' | 'onSetActor'>;
+export type PlaceRoleEditor = Pick<ReturnType<typeof useRoleEditing>, 'agents' | 'offers' | 'staffing' | 'catalogue' | 'read' | 'busy' | 'onSet'>;
 
-/** The section drawn from its reads, and every press out (`SET_ROLE`, `SET_ACTOR`): a molecule, so a story reaches every state by props. */
+/** The section drawn from its reads, and every press out (`SET_ROLE`): a molecule, so a story reaches every state by props. */
 export function PlaceRolesView({ place, read, answer, editor, supervisor, appointed, onSource }: {
   place: StructurePlaceAsk;
   /** A workspace's supervisor line and its door to Appointed, between the works and the appointed roles. */
@@ -245,7 +245,7 @@ export function PlaceRolesView({ place, read, answer, editor, supervisor, appoin
               ? t('agents.setup.roles.thenGive', { place: placeName, works: open.editing.takes.map(workName).join(t('settings.ai.actors.and')) })
               : undefined}
             catalogue={catalogue} read={editor.read} staffing={staffing} agents={editor.agents} offers={editor.offers} busy={busy}
-            onSet={editor.onSet} onSetActor={editor.onSetActor}
+            onSet={editor.onSet}
             editor={open.editing} onEditor={(next) => setOpen(next ? { work: work.work, editing: next } : null)}
           />
         )}

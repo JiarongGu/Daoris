@@ -325,7 +325,10 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // the words following as a program's.
   'chat.told-process': { values: ['mode', 'source'] },
   // The routing standing a chat's agent was told at a start (COWORKVIEW1e-i): the standing, the words following as a program's.
+  // Written no more since the standing block carries the routing (CONTEXTONE1c), and read as it was for the records that hold it.
   'chat.told-routing': { values: ['standing'] },
+  // The standing block a conversation's agent was told with its first message (CONTEXTONE1c): the block follows as a program's words.
+  'chat.told-block': { values: [] },
   // The workflow draft open in the editor a chat's agent was told (FLOWCHART2d): what it was handed follows as a program's words.
   'chat.told-draft': { values: [] },
   // A conversation handed to another agent (MIXAGENT1a-i): where the old one went, and where the new one came from and why.

@@ -446,6 +446,12 @@ public sealed class ChatGoesOnProcessTests : IDisposable
     private const string HelpersWords = "Another agent says five.";
 
     /// <summary>
+    /// CONTEXTDRIVE1b (§3 point 2): a go-on by an answer alone ends with Daoris's count for its line and the default rule that holds the
+    /// line for the person, handed after the answer.
+    /// </summary>
+    private const string Counted = "Daoris's count for this line: 1 go-on by answers alone in a row; Daoris waits for the person after 2.";
+
+    /// <summary>
     /// A helper's answer as the driver leaves it (MIXAGENT2a-iii): kept on the asker's record marked as the helper's, and shown in
     /// its conversation as Daoris's words (`target`), reaching it on `resume`, which is what the chat runner hears.
     /// </summary>
@@ -543,7 +549,7 @@ public sealed class ChatGoesOnProcessTests : IDisposable
 
         Helped(ledger, events, id, "hw1");
 
-        await Poll.Until(() => ledger.Taken.Count == 1 && HeardLines().Contains($"prompt: {HelpersWords}"), () => Seen(ledger, events, id));
+        await Poll.Until(() => ledger.Taken.Count == 1 && HeardLines().Contains($"prompt: {HelpersWords} | {Counted}"), () => Seen(ledger, events, id));
         Assert.Contains("session/resume: conv-1", HeardLines());
         Assert.Contains(Continuations.GoingOnWithHelper, ledger.Notes(id)[^1]);
         Assert.Contains(events.After(id, 0).Events, e => e.Kind == SessionEventKind.Note && e.Text!.StartsWith("— a helper's answer is the next turn", StringComparison.Ordinal));
@@ -786,9 +792,9 @@ public sealed class ChatGoesOnProcessTests : IDisposable
                 }
               } else if (frame.method === 'session/prompt') {
                 const raw = frame.params.prompt.filter((block) => block.type === 'text').map((block) => block.text).join(' | ');
-                // The routing standing line Daoris appends after the words is kept apart (StubFile.WithoutRouting, StubFile.Routings).
-                const text = raw.replace(/(\n\n| \| )?Routing standing here: [\s\S]*$/, '');
-                if (text !== raw) appendFileSync(heard + '.routing', /Routing standing here: ([^.]*)\./.exec(raw)[1] + '\n');
+                // The standing block Daoris appends after the words is kept apart, its routing standing set aside (StubFile.WithoutBlock, StubFile.Routings).
+                const text = raw.replace(/(\n\n| \| )?Daoris's standing block for this session: [\s\S]*$/, '');
+                if (/Routing standing here: /.test(raw)) appendFileSync(heard + '.routing', /Routing standing here: ([^.]*)\./.exec(raw)[1] + '\n');
                 note('prompt: ' + text);
                 if (text === 'hold') {
                   held.push(frame.id);
@@ -861,8 +867,8 @@ public sealed class ChatGoesOnProcessTests : IDisposable
               const frame = JSON.parse(line);
               if (frame.type !== 'user') return;
               const raw = frame.message.content.filter((block) => block.type === 'text').map((block) => block.text).join('');
-              const text = raw.replace(/(\n\n| \| )?Routing standing here: [\s\S]*$/, '');
-              if (text !== raw) appendFileSync(log + '.routing', /Routing standing here: ([^.]*)\./.exec(raw)[1] + '\n');
+              const text = raw.replace(/(\n\n| \| )?Daoris's standing block for this session: [\s\S]*$/, '');
+              if (/Routing standing here: /.test(raw)) appendFileSync(log + '.routing', /Routing standing here: ([^.]*)\./.exec(raw)[1] + '\n');
               appendFileSync(log, `message=${text.replace(/\n/g, '\\n')}\n`);
               if (!named) {
                 out({ type: 'system', subtype: 'init', session_id: resume ?? 'native-1', cwd: process.cwd(), tools: [], model: 'stub' });

@@ -44,10 +44,6 @@ Go-aheads the person was asked for on ask `#a1b2c3`, one per act: do not ask for
 
 - Go-ahead 2, release on production: "report menu entries" — still waiting on the person, first asked 2026-10-01 06:26 UTC.
 
-What the person has told this machine holds for every quest in `reports`, in their own words, set 2026-09-30 02:26 UTC: it answers what it covers, so do not ask them for what it already says. The quest's own words, and theirs on its ask, are newer and win where they differ.
-
-  > dev writes allowed; test locally against dev; prod only on a yes.
-
 An earlier session on this quest stopped to ask the person, and they answered: their answer is quoted among their words above.
 
 Its record reads: asked the person (merge, sign-in), and was answered: use the common-report module What it did is in this tree — any commits it made are on this branch,
@@ -66,9 +62,8 @@ You may read these other repositories' checkouts on this machine, and change not
 Read their files where they lie, and see how each stands with `git -C <path> status` and
 `git -C <path> branch --list`, the path written as above.
 
-Look before you ask. The quest, its links and its files; this repository's own documents, code and
-history (its log, and the commits that last changed what you are changing); the workspace's
-knowledge, through your connector's `knowledge_search`; and the other checkouts listed above. This repository indexes its own documents in `docs/README.md`, `.claude/rules/RULES_INDEX.md` and `.claude/rules/RULES_INDEX_CROSS.md`: start the look there, and read every document whose entry matches this work. A question one of these
+Look before you ask: the quest, its links and its files, and the places Daoris's standing block names
+under *Where things are*. A question one of these
 settles is not a question: decide it, and keep what settled it for your closing note. Where the
 evidence leans one way without settling it, take that reading, carry on, and say in your closing
 note which reading you took and on what evidence, so the person can correct it in review rather than
@@ -123,3 +118,13 @@ Never write outside this repository. Work another repository needs is a quest pu
 never an edit — that is the rule the whole arrangement rests on. Anything that cannot be taken
 back or that leaves the repository — a push, a publish, a release — is not yours to do; surface
 it and finish.
+
+Daoris's standing block for this session: where things are, and what holds on this machine. Daoris composed it, with no model, and hands it once, at the session's start.
+
+Where things are. This repository's own documents, code and history: its log, and the commits that last changed what you are changing. The workspace's knowledge and its memory, through your connector's `knowledge_search` and `memory_search`. The other checkouts listed above, which you may read. This repository indexes its own documents in `docs/README.md`, `.claude/rules/RULES_INDEX.md` and `.claude/rules/RULES_INDEX_CROSS.md`: start a look there, and read every document whose entry matches the work.
+
+The person's choices on this machine for `reports`, in their own words, set 2026-09-30 02:26 UTC. They answer what they cover, so do not ask them for what they already say; the work's own words, and theirs on its ask, are newer and win where they differ.
+
+  > dev writes allowed; test locally against dev; prod only on a yes.
+
+The repository and its workspace: you work in `reports`, of the workspace `work`.

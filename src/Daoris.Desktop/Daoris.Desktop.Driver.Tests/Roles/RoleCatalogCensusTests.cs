@@ -24,13 +24,12 @@ public sealed partial class RoleCatalogCensusTests : IDisposable
 
     /// <summary>
     /// Each writer and the files that reach the judge or the staffing's write for it. FOUNDATION1y-i: the role door, which `SET_ROLE`,
-    /// `daoris driver role` and `role_propose` call.
+    /// `daoris driver role` and `role_propose` call; since ONEWAY1a the one door, `SET_ACTOR`, the actor verbs and `setting_propose`'s
+    /// staffing doors gone. `daoris driver actor import` is the staffing copy's, which ONEWAY1c-ii retires.
     /// </summary>
     private static readonly (string Writer, string[] Files)[] Census =
     [
-        ("SET_ACTOR", ["Daoris.Desktop.Modules/Bridge/DriverContext.cs"]),
-        ("daoris driver actor", ["Daoris.Desktop.Driver/Roles/ActorVerbs.cs", "Daoris.Desktop.Driver/Roles/StaffingVerbs.cs"]),
-        ("Ask Daoris's proposals", ["Daoris.Desktop.Driver/Help/Proposals/HelpSettingProposals.cs"]),
+        ("daoris driver actor import", ["Daoris.Desktop.Driver/Roles/StaffingVerbs.cs"]),
         ("the import and the check", ["Daoris.Desktop.Driver/Roles/RoleStaffing.cs"]),
         ("the judges themselves", ["Daoris.Desktop.Driver/Roles/ActorChoices.cs", "Daoris.Desktop.Driver/Roles/RoleCatalog.cs"]),
         ("the role door", ["Daoris.Desktop.Driver/Roles/RoleDoor.cs"]),
@@ -64,7 +63,7 @@ public sealed partial class RoleCatalogCensusTests : IDisposable
 
         Assert.Equal(named, Reaching().Order(StringComparer.Ordinal).ToList());
         Assert.Equal(
-            ["SET_ACTOR", "daoris driver actor", "Ask Daoris's proposals", "the import and the check", "the judges themselves", "the role door", "SET_ROLE", "daoris driver role", "role_propose"],
+            ["daoris driver actor import", "the import and the check", "the judges themselves", "the role door", "SET_ROLE", "daoris driver role", "role_propose"],
             Census.Select(each => each.Writer));
     }
 

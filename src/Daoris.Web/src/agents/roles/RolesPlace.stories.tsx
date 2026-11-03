@@ -49,7 +49,7 @@ function Strip() {
 function Main({ section = 'working' }: { section?: RoleSection }) {
   return (
     <RoleSectionMain section={section}>
-      <RolesCard catalogue={CATALOGUE} agents={AGENTS} onSet={nothing} onSetActor={nothing} />
+      <RolesCard catalogue={CATALOGUE} agents={AGENTS} onSet={nothing} />
     </RoleSectionMain>
   );
 }

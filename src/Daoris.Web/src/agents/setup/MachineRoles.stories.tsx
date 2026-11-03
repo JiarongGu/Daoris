@@ -69,7 +69,7 @@ function Page({ view: first = 'list', search: typed = '', scope: chosen = 'all',
   const list = (
     <RolesCard
       bare catalogue={ROLES} agents={AGENTS} offers={{ 'claude-code': { models: ['opus', 'sonnet', 'haiku'], efforts: ['low', 'medium', 'high'] } }}
-      onSet={nothing} onSetAll={nothing} onSetActor={nothing} found={found ? FOUND : []} onAnswerFound={nothing}
+      onSet={nothing} onSetAll={nothing} found={found ? FOUND : []} onAnswerFound={nothing}
       scope={scope} onScope={setScope} search={search} onSearch={setSearch} onOpenPlace={nothing}
     />
   );
