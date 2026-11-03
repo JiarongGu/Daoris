@@ -145,7 +145,7 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "`daoris driver workflow show --repository <name>|--workspace <name> [--kind <kind>]`"),
         // ONEWAY1ae (the oneway design §1.1): the home's one conversion door over every area's part, which is the person's press over
         // the plan they read. Ask Daoris opens the page and names the plan, and never proposes the apply (HelpCoverageTests).
-        ("convert this home's old records, every area's part in one plan: today the workflow part, where a workflow saved as steps or "
+        ("convert this home's old records, every area's part in one plan: in the workflow part, a workflow saved as steps or "
             + "holding a `handed` step, and a place still on Current, which follows its old landing rule, become saved graphs that each "
             + "place follows, with a home default workflow for a place that chooses none (`--plan` shows every operation and writes "
             + "nothing; the apply is your press over the plan you read, by its digest; a part that failed is pressed again or left; the "
