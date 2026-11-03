@@ -757,7 +757,7 @@ public sealed class PlannerTests
 
         Assert.Equal(StartVerdict.Start, only.Verdict);
         Assert.Equal(answered, only.Resumes);
-        Assert.Contains("you answered", only.Reason);
+        Assert.Contains("you wrote to", only.Reason);
         Assert.Contains("Signed in; go ahead.", only.Reason);
     }
 
@@ -1069,13 +1069,10 @@ public sealed class PlannerTests
     public void Every_carry_on_asks_whose_the_take_is()
     {
         var interrupted = new PriorSession("s1", "D:/trees/s1", "stopped", Orphans.Note, Interrupted: true);
-        var answered = new PriorSession("s1", "D:/trees/s1", "completed", "asked the person") { Said = PersonWords.Of("Go ahead.") };
-
         foreach (var (why, last, config) in new[]
                  {
                      ("interrupted", interrupted, Config()),
                      ("released", PersonStop, Config().WithReleased("q1", "s1")),
-                     ("answered", answered, Config()),
                  })
         {
             var only = Assert.Single(Planner.Plan(TakenAfter(last, new QuestTake("none")), config));

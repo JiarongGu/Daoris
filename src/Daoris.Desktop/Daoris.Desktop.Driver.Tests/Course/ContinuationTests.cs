@@ -191,7 +191,7 @@ public sealed class ContinuationTests : IDisposable
     [Fact]
     public void A_record_the_answer_already_ended_falls_back()
     {
-        var why = Continuations.Judge(Park(state: "completed"), "claude-code-acp", doorResumes: true, profile: "account-1", Kept);
+        var why = Continuations.Judge(Park(state: "completed") with { Said = null }, "claude-code-acp", doorResumes: true, profile: "account-1", Kept);
 
         Assert.Equal((ContinueWhy.Ended, "its record had already ended"), (why?.Code, why?.Sentence));
     }
@@ -201,7 +201,7 @@ public sealed class ContinuationTests : IDisposable
     public void The_record_having_ended_is_said_before_anything_else()
     {
         var why = Continuations.Judge(
-            Park(state: "completed", profile: "account-2", adapter: "claude-code"), "claude-code-acp", doorResumes: false, profile: "account-1", kept: null);
+            Park(state: "completed", profile: "account-2", adapter: "claude-code") with { Said = null }, "claude-code-acp", doorResumes: false, profile: "account-1", kept: null);
 
         Assert.Equal(ContinueWhy.Ended, why?.Code);
     }
@@ -491,7 +491,7 @@ public sealed class ContinuationTests : IDisposable
     /// record from before the list reaches here already as the one word the service reads its old answer column as.
     /// </summary>
     [Fact]
-    public void Words_wait_where_said_holds_any()
+    public void Words_wait_where_said_holds_any_or_on_an_answered_park_from_before_said()
     {
         Assert.True(Written("completed", Word).WordsWaiting);
         Assert.False((Park(state: "completed") with { Said = [] }).WordsWaiting);

@@ -289,6 +289,7 @@ public sealed class PartnerLookTests : IDisposable
         Assert.Equal(0, host.PartnerHandsAsked);
 
         host.Set("s1", "answer", "Yes, go on.");
+        host.Set("s1", "said", PersonWords.Wire("Yes, go on."));
         var (_, events) = await Look(driver);
 
         var (partner, to, _) = Assert.Single(host.PartnerHands);

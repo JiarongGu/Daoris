@@ -171,8 +171,20 @@ public static class SolicitedHand
     private static PriorSession Holder(JsonElement session, string id) =>
         new(id, Text(session, "tree"), Text(session, "state") ?? "")
         {
-            Said = ServiceClient.ReadSaid(session),
+            Said = Authors(session),
             Kind = Text(session, "kind") ?? "driven",
             From = Text(session, "from"),
         };
+
+    /// <summary>The record's said words as far as a dispatch reads them: whose each is, which is all that tells an answered park.</summary>
+    private static IReadOnlyList<SaidWordView>? Authors(JsonElement session) =>
+        session.TryGetProperty("said", out var said) && said.ValueKind == JsonValueKind.Array
+            ? [.. said.EnumerateArray().Where(word => word.ValueKind == JsonValueKind.Object).Select(word => new SaidWordView(
+                Text(word, "id"), Text(word, "text") ?? "", DateTimeOffset.MinValue, [], false)
+            {
+                By = Text(word, "by") is { Length: > 0 } by ? by : null,
+                Helper = Text(word, "helper") is { Length: > 0 } helper ? helper : null,
+                From = Text(word, "from") is { Length: > 0 } from ? from : null,
+            })]
+            : null;
 }
