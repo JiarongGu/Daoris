@@ -79,14 +79,27 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
         Assert.DoesNotContain("never on a merge", tool);
     }
 
-    /// <summary>HELP9: reading and writing across (D107), a cap and an adapter pass the shape as the terminal spells them.</summary>
+    /// <summary>
+    /// ONEWAY1a (the oneway design §2 S1): the staffing doors are refused naming `role_propose`, whatever they are given, in the words of
+    /// the driver's twin, and are no door the tool lists.
+    /// </summary>
+    [Theory]
+    [InlineData("adapter", "claude-code-acp")]
+    [InlineData("intake", "off")]
+    [InlineData("helper", "claude-code")]
+    public void ONEWAY1a_a_staffing_door_is_refused_naming_the_role_door(string door, string value)
+    {
+        Assert.Equal(HelpSettingProposalWriter.StaffingRetired, HelpSettingProposalWriter.Refusal(new SettingChange(door, null, null, value)));
+        Assert.DoesNotContain(door, HelpSettingProposalWriter.Doors);
+    }
+
+    /// <summary>HELP9: reading and writing across (D107) and a cap pass the shape as the terminal spells them.</summary>
     [Theory]
     [InlineData("across", "engine", null, "read off")]
     [InlineData("across", null, "work", "read --clear")]
     [InlineData("across", "plugins", null, "write-to engine")]
     [InlineData("across", "plugins", null, "write-to engine --clear")]
     [InlineData("cap", null, null, "3")]
-    [InlineData("adapter", null, null, "claude-code-acp")]
     [InlineData("cooloff", null, null, "90")]
     // GITAUTH1e: a repository's remote or a workspace's host pointed at an identity, or taken back.
     [InlineData("git-use", "engine", null, "Work")]
@@ -359,7 +372,6 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     // LANDSVC1: a merge carrying the switch is no shape the box takes, and its sentence says the switch rides a branch.
     [InlineData("landing", "engine", null, "merge --auto-accept", "`branch <pattern>` (with `--tidy`")]
     [InlineData("landing", "engine", null, "merge --auto-accept", "`--auto-accept` for a quest's done")]
-    [InlineData("intake", null, null, null, "an agent, or `off`")]
     [InlineData("strikes", null, null, "many", "a whole number")]
     // SESSWATCH1a (D200): the retired door is refused whatever it is given.
     [InlineData("timeout", null, null, "0", "no longer limited by time")]
@@ -382,8 +394,6 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("keep", null, null, "trees 30", "`keep` names a kind and its rule")]
     [InlineData("keep", null, null, "set-aside", "`keep` names a kind and its rule")]
     [InlineData("keep", "engine", null, "set-aside 30", "for this machine")]
-    [InlineData("adapter", null, null, null, "an agent")]
-    [InlineData("adapter", null, null, "two words", "an agent")]
     [InlineData("standing", null, null, "dev only", "names the repository it holds for")]
     [InlineData("standing", "engine", "work", "dev only", "names the repository it holds for")]
     [InlineData("standing", "engine", null, null, "the person's words, or `--clear`")]

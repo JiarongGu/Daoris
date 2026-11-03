@@ -11,7 +11,7 @@ import { RowMore } from './RowMore';
 import { conversational, fieldsOf, OFFERED_MOVES, policyDraftOf, policyIsDefault, recordOf } from './staffPolicyDraft';
 import { SuggestedChoicesCard } from './SuggestedChoicesCard';
 
-/** An entry as `SET_ACTOR` takes it: an agent, and its model and effort in the tool's own words, absent for account default. */
+/** A choice as `SET_ROLE` takes it: an agent, and its model and effort in the tool's own words, absent for account default. */
 export type ActorChoice = { agent: string; model?: string | null; effort?: string | null };
 
 /** How far a role's place reaches: a wider place is what a narrower one falls back to. */
@@ -29,9 +29,6 @@ export function roleIdFor(name: string, work: string, taken: readonly string[]):
   return id;
 }
 
-/** The roles whose staffing editor over `SET_ACTOR` this build offers (MODELROLE1c, 1d; the rest come with MODELROLE1e). */
-const EDITABLE = new Set(['build', 'intake', 'ask-daoris', 'chat']);
-
 /** The roles whose running conversation goes on with the next choice at its agent's limit (D205 §3.5(e)). */
 const CONVERSING = new Set(['ask-daoris', 'chat']);
 
@@ -46,7 +43,7 @@ export function newRoleEditing(
   works: readonly string[], agents: readonly { value: string }[], place: { kind: 'workspace' | 'repository'; id: string } | null = null, key = 0,
 ): Editing {
   return {
-    id: '', mode: 'role', isNew: true, revision: null, name: '', nameIn: [], takes: [], work: works[0] ?? 'build',
+    id: '', isNew: true, revision: null, name: '', nameIn: [], takes: [], work: works[0] ?? 'build',
     place: place?.kind ?? 'machine', placeId: place?.id ?? '', drafts: [{ key, agent: agents[0]?.value ?? '', model: '', effort: '' }],
   };
 }
@@ -54,13 +51,9 @@ export function newRoleEditing(
 /** One row: the catalogue's role where there is one, and the staffing `ACTORS` answers for the same id. */
 export type Line = { id: string; row: RoleRow | null; actor: ActorRow | null };
 
-/** A row whose record is not this home's to change keeps the order editor alone. */
-const staffingOnlyLine = (line: Line, kept: boolean) => !line.row || (!kept && line.row.seeded);
-
-/** Whether a role's editor is offered: a catalogue role this home keeps, or a staffing's order where its editor is built. */
-export const mayEditLine = (line: Line, kept: boolean): boolean => (line.row
-  ? (line.row.state === 'seed' || line.row.state === 'set') && (staffingOnlyLine(line, kept) ? !!line.actor && EDITABLE.has(line.id) : kept)
-  : !!line.actor && EDITABLE.has(line.id));
+/** Whether a role's editor is offered: a catalogue role this home keeps, the one editor of its record and its choices (ONEWAY1a). */
+export const mayEditLine = (line: Line, kept: boolean): boolean =>
+  !!line.row && (line.row.state === 'seed' || line.row.state === 'set') && kept;
 
 /**
  * A role's order as drafts: the staffing's where it has one, else the record's, else one empty choice on the first agent; each carries the
@@ -95,11 +88,10 @@ export function editingOfLine(
   },
 ): Editing {
   const row = line.row;
-  const mode = staffingOnlyLine(line, kept) ? 'staffing' : 'role';
-  const keeps = mode === 'role' && kept && !!policy && !!row && row.state !== 'removed' && !row.takes.includes('brainstorm')
+  const keeps = kept && !!policy && !!row && row.state !== 'removed' && !row.takes.includes('brainstorm')
     && ((line.actor?.choices.length ?? 0) > 0 || (row.choices?.length ?? 0) > 0);
   return {
-    id: line.id, mode, isNew: false, revision: row?.revision ?? null,
+    id: line.id, isNew: false, revision: row?.revision ?? null,
     ...nameFields(row?.name, name), takes: row?.takes ?? [],
     work: row?.takes[0] ?? works[0] ?? 'build', place: row?.scopeKind ?? 'machine', placeId: row?.scopeId ?? '',
     drafts: draftsOf(line, agents, key, keeps ? policy : null), ...(keeps && policy ? { policy: policyDraftOf(policy) } : {}),
@@ -211,18 +203,17 @@ function suggestionPress(role: SuggestedRole): RoleChangePress {
 /**
  * **Roles** (FOUNDATION1y-i, MODELROLE1c, COMPANYVIEW1a): every role that takes Daoris's work, a row each, the seed's and the person's:
  * its name as authored, the work it takes, where, and its choices folded to one line. A row's editor holds its names, work, place and one
- * to four choices of agent, model and effort with *Move up*, *Move down* and *Remove*; *Save* and, where the work allows it (intake and
- * Ask Daoris), *Off* go out over `SET_ROLE`, and *Clear order* (a seeded role's order back to as before) over `SET_ACTOR` alone, which an
- * added role never has. *Add a role*, *Remove* and *Back to the default* (a seeded role's names, work and place) are the catalogue's.
- * A home whose `driver.json` is the file's own keeps each seeded row's order editor over `SET_ACTOR` and holds the rest; a shell that
- * answers the staffing and no catalogue keeps one order editor per role. Under the rows, the roles Daoris suggests and each change of
+ * to four choices of agent, model and effort with *Move up*, *Move down* and *Remove*; *Save*, *Off* where the work allows it (intake and
+ * Ask Daoris) and *Use the default* (a seeded role's record and choices given back their seed) all go out over `SET_ROLE`, the one door
+ * (ONEWAY1a). *Add a role*, *Remove* and *Back to the default* are the catalogue's. A home that keeps no catalogue holds every press, and a
+ * shell that answers no catalogue shows each role's order and edits none. Under the rows, the roles Daoris suggests and each change of
  * the staffing another program made, as the driver kept it, with *Take it* and *Dismiss*. The page judges nothing: every press goes out
  * as its route takes it, and a refusal is the driver's sentence under its press.
  *
  * A molecule: every state is reached by its props, and every press goes out.
  */
 export function RolesCard({
-  catalogue, read = catalogue ? 'ok' : 'notOffered', staffing = [], agents, about = {}, busy = false, onSet, onSetAll, onSetActor, found = [], onAnswerFound,
+  catalogue, read = catalogue ? 'ok' : 'notOffered', staffing = [], agents, about = {}, busy = false, onSet, onSetAll, found = [], onAnswerFound,
   editor: held, onEditor, only, editorOnly = false, onDiagram, offers = {}, onOpenPlace, scope: heldScope, onScope, consequence,
   bare = false, search: heldSearch, onSearch,
 }: {
@@ -264,8 +255,6 @@ export function RolesCard({
   onSet: (press: RoleChangePress, answered: Answered) => void;
   /** Several roles' changes as one over `SET_ROLES`, judged whole by the driver; where none is given there is no suggested-choices card. */
   onSetAll?: (presses: RoleChangePress[], answered: Answered) => void;
-  /** A role's whole order over `SET_ACTOR`, or null back to as before. */
-  onSetActor: (actor: string, choices: ActorChoice[] | null, answered: Answered) => void;
   /** The changes the driver kept for the person, oldest first. */
   found?: readonly StaffingFound[];
   /** A found change taken or dismissed; the answer says whether it landed or the driver's sentence. */
@@ -306,10 +295,6 @@ export function RolesCard({
     setRefused(null);
     onSet(change, { done: () => done?.(), refused: (sentence) => setRefused({ at, sentence }) });
   };
-  const pressActor = (at: string, actor: string, choices: ActorChoice[] | null) => {
-    setRefused(null);
-    onSetActor(actor, choices, { done: () => setEditing(null), refused: (sentence) => setRefused({ at, sentence }) });
-  };
   const open = (line: Line | null) => {
     setRefused(null);
     if (!line) {
@@ -331,12 +316,8 @@ export function RolesCard({
     const works = now.takes.length > 0 ? now.takes : [now.work];
     return { policy: empty ? null : recordOf(now.drafts, policy, conversational(works)), policyRevision: policy.revision };
   };
-  /** *Save* (the editor's choices) or *Off* (`[]`): over `SET_ROLE` from the catalogue's editor, over `SET_ACTOR` from the order editor. */
+  /** *Save* (the editor's choices) or *Off* (`[]`), over `SET_ROLE`. */
   const save = (now: Editing, off = false) => {
-    if (now.mode === 'staffing') {
-      pressActor(now.id, now.id, off ? [] : entries(now));
-      return;
-    }
     const id = now.id.trim() || roleIdFor(now.name.trim(), now.work, catalogue?.roles.map((row) => row.id) ?? []);
     press(now.isNew ? '' : now.id, {
       change: 'set', id, revision: now.revision,
@@ -367,13 +348,14 @@ export function RolesCard({
   const editor = (now: Editing) => {
     const line = lineOf(now.id);
     const named = now.isNew ? t('settings.ai.roles.newTitle') : line ? nameOfLine(line) : now.id;
-    const title = now.mode === 'staffing' ? t('settings.ai.actors.editorTitle', { actor: named }) : named;
+    const title = named;
     const actor = line?.actor;
-    const seeded = line?.row ? line.row.seeded : true;
+    const row = line?.row;
     // *Off* where the work allows it, for a seeded or an added role; not where it is already off.
-    const mayOff = now.mode === 'staffing' ? now.id in OFF_WORDS : OFF_WORKS.has(now.work);
-    const isOff = actor ? actor.state === 'off' : line?.row?.choices?.length === 0;
-    const mayClear = !now.isNew && seeded && !!actor && actor.state !== 'before';
+    const mayOff = OFF_WORKS.has(now.work);
+    const isOff = actor ? actor.state === 'off' : row?.choices?.length === 0;
+    // *Use the default* (ONEWAY1a, what *Clear order* became): a seeded role whose order is stored or whose record moved from its seed.
+    const mayClear = !now.isNew && !!row?.seeded && ((!!actor && actor.state !== 'before') || row.state !== 'seed');
     const at = now.isNew ? '' : now.id;
     return (
       <RoleEditor
@@ -383,8 +365,9 @@ export function RolesCard({
         consequence={consequence ?? t('settings.ai.roles.editor.then')} conversing={CONVERSING.has(now.id)}
         mayOff={mayOff} isOff={!!isOff} mayClear={mayClear} refused={refused && refused.at === at ? refused.sentence : null}
         next={policyOf(now.id)?.next ?? null} fields={catalogue?.policyFields}
-        noStore={!!catalogue?.policies && !kept && !now.isNew && !now.takes.includes('brainstorm')}
-        onSave={(off) => save(now, off)} onClear={() => pressActor(at, now.id, null)} onCancel={() => { setRefused(null); setEditing(null); }}
+        onSave={(off) => save(now, off)}
+        onClear={() => press(at, { change: 'default', id: now.id, revision: row?.revision ?? null }, () => setEditing(null))}
+        onCancel={() => { setRefused(null); setEditing(null); }}
       />
     );
   };

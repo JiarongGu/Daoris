@@ -123,7 +123,6 @@ export function StepRole({ id, value, roleTakes, roles, place, staffing, onChoos
           offers={staffing.offers}
           busy={staffing.busy}
           onSet={set}
-          onSetActor={staffing.onSetActor}
           editor={editing}
           onEditor={setEditing}
         />

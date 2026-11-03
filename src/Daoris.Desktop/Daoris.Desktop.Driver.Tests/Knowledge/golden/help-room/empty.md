@@ -218,10 +218,7 @@ session named; never propose adding one that has not landed.
 | discard a failed or superseded session's branch, with its tree where it is still here | Sessions → the session's review → Discard, while its tree is here | `daoris-driver trees remove <session|branch> [--repository <name>] --force` |
 | hand a branch a landing made to a landing plugin, to push it and open the pull request | Sessions → the session's review → Hand to <plugin> | `daoris-driver trees hand <session|branch> [--plugin <id>]` |
 | ask a landed branch's plugin again whether its pull request completed, and see what that answer proves on this machine (Ask Daoris never proposes it: it changes nothing of yours or on the platform, and the room already says what was last answered) | (no screen yet) | `daoris-driver trees state <session|branch> [--repository <name>]` |
-| choose the agent that answers asks | Agents → Roles → Working roles, Intake | `daoris driver intake <agent>|off` |
-| choose the agent Ask Daoris runs on | Agents → Roles → Working roles, Ask Daoris | `daoris driver helper <agent>|off` |
-| choose the agent driven sessions start on | Agents → Roles → Working roles, Build | `daoris driver adapter <agent>` |
-| choose who does each kind of work, and with which model | Agents → Roles → Working roles | `daoris driver actor <actor> …` |
+| choose who does each kind of work, with which agent and model: driven sessions (Build), asks (Intake), Ask Daoris and every other role | Agents → Roles → Working roles | `daoris driver role set <role> "<agent> [<model>|-] [<effort>|-]" …|off` |
 | add, change or remove a role that takes a kind of work, give a seeded one back its default, or every seeded one at once, added roles kept | Agents → Roles → Working roles, and its *Restore all role defaults* | `daoris driver role set|remove|default <id> …`, `daoris driver role default --all` |
 | choose how a role spends its choices: first that can run, or spread by weight, with a share, a daily budget, the work a choice takes and what a limit or a service that does not answer does | Agents → Roles → Working roles, a role's Edit | `daoris driver role policy <id> [--preset first|even|weighted] [--rule order|weight] [--weight <n>=<0-10>] [--on <condition>=<action>] [--most <n>] [--clear]` |
 | park a quest after failed sessions | Settings → Driver | `daoris driver strikes <n>` |
@@ -286,7 +283,6 @@ design.
 - apply a workflow's version from a file, import a workflow whole, or declare a workspace's kind of task: `daoris driver workflow apply <id> <file> [--base <v>]`, `daoris driver workflow import <file>`, `daoris driver workflow kind <name> <kind> --label "…" [--paths <p,…>]`
 - choose which version of a tool Daoris runs: the one on the PATH, or one kept in the home (Settings → Tools): `daoris tool use <tool> system`, `daoris tool use <tool> managed [<version>]`
 - remove a location tool versions are offered from (Settings → Tools): `daoris tool locations [add|remove <address>]`
-- choose each actor's order of agents, models and efforts (Agents → Roles → Working roles): `daoris driver actor [<actor>] ["<agent> [<model>|-] [<effort>|-]" …]`
 
 A landing pattern may say `{quest}`, `{session}`, `{slug}` (the quest's title, as words) and
 `{repository}`. It needs `{quest}` or `{session}`, or every session's work would land on one branch,

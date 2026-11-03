@@ -126,7 +126,7 @@ daoris <command> [options]
                          rules proposals|accept|decline <id>
                                                    what agents asked to change
   driver [verb]        what this machine drives ($DAORIS_HOME/driver.json):
-                         list                      adapter, cap, what is opted in
+                         list                      cap, what is opted in
                          drive|undrive <repo>      opt a repository in, or out
                          hold|resume <repo>        hold one, or resume it
                          trees <repo> on|off       sessions there open their own
@@ -260,11 +260,6 @@ daoris <command> [options]
                                                    work keeps to; --drop removes it
                          notify on|off           say so when a session parks,
                                                    or ends without you asking
-                         intake <adapter>|off      answer an ask the declarations
-                                                   do not settle with a session
-                                                   on that harness, a login each
-                         helper <adapter>|off      the agent Ask Daoris runs on;
-                                                   it proposes, and you apply
                          strikes <n>               park a quest after n failed
                                                    sessions; 0 never parks
                          retry <quest> [--at <n>]  start a parked quest again,
@@ -282,16 +277,13 @@ daoris <command> [options]
                                                    downloads <days>|never, logs
                                                    <days>, history <days>|never,
                                                    each or default
-                         cap <n> · adapter <name>
-                         actor [<actor>] ["<agent> [<model>|-] [<effort>|-]" …]
-                                                   each kind of work's order of
-                                                   agents and models; off for
-                                                   intake|ask-daoris; --clear
-                                                   goes back to as before
+                         cap <n>
                          role [<id>] · role set|remove|default|policy <id> …
                                                    the role catalogue: a role
                                                    takes a kind of work in a
-                                                   place, on its choices
+                                                   place, on its choices (off
+                                                   for intake|ask-daoris); Build,
+                                                   Intake and Ask Daoris too
                        trees list|clean|land, sessions archive|take-back, history
                        clear and update are `daoris-driver`, not verbs here:
                        the install's app/bin/ holds it (sh and .cmd).

@@ -52,8 +52,8 @@ public sealed class HelpRoutes(DriverContext context)
         if (config.HelperAdapter is not { Length: > 0 } helper)
         {
             throw new DriverException(
-                "Ask Daoris has no agent to run on — name one under Settings → AI features, or "
-                + "`daoris driver helper <agent>`. Its starters need none.");
+                "Ask Daoris has no agent to run on — name one under Agents → Roles, Ask Daoris, or "
+                + "`daoris driver role set ask-daoris \"<agent>\"`. Its starters need none.");
         }
 
         var named = WorkspaceAsked(request);
@@ -643,9 +643,6 @@ public sealed class HelpRoutes(DriverContext context)
 
         // SET_DRIVABLE, SET_LINE, SET_LANDING…: an edit to the driver's file, then a nudge.
         public void Change(Func<DriverConfig, DriverConfig> edit) => context.Change(edit);
-
-        // SET_ACTOR's own write: the staffing's (FOUNDATION1w-s).
-        public void SetActor(string actor, IReadOnlyList<ActorChoice>? choices) => context.SetActor(actor, choices);
 
         // GIT_USE's own write (GITAUTH1e): the pointer in the identities' file, and the holds it lifts.
         public Task UseGitAsync(HelpGitUse use, CancellationToken ct) =>
@@ -1375,8 +1372,8 @@ public sealed class HelpRoutes(DriverContext context)
         if (config.HelperAdapter is not { Length: > 0 } helper)
         {
             throw new DriverException(
-                "Ask Daoris has no agent to run on — name one under Settings → AI features, or "
-                + "`daoris driver helper <agent>`. Its starters need none.");
+                "Ask Daoris has no agent to run on — name one under Agents → Roles, Ask Daoris, or "
+                + "`daoris driver role set ask-daoris \"<agent>\"`. Its starters need none.");
         }
 
         var id = await HelpConversationOfAsync(PayloadHelper.GetRequiredValue<string>(request.Payload, "id"), cancellationToken)

@@ -62,7 +62,6 @@ const meta: Meta<typeof RolesCard> = {
       { value: 'codex-acp', label: 'Codex — codex-acp' },
     ],
     onSet: () => {},
-    onSetActor: () => {},
   },
   // The main area at its wide width, as the frame gives it (the UI/UX design R6, UIFIT1).
   decorators: [storyWidths.wide],
@@ -124,7 +123,7 @@ export const WeekOfAYoungLog: Story = { args: { catalogue: { ...WEEK, use: { ...
 const OFFERS = { 'claude-code': { models: ['opus', 'sonnet', 'haiku'], efforts: ['low', 'medium', 'high'] }, 'codex-acp': { models: ['gpt-5'], efforts: ['low', 'high'] } };
 
 const EDITING: Editing = {
-  id: 'night', mode: 'role', isNew: false, revision: 3, name: 'Night shift', nameIn: [['zh', '夜班']], takes: ['build'], work: 'build',
+  id: 'night', isNew: false, revision: 3, name: 'Night shift', nameIn: [['zh', '夜班']], takes: ['build'], work: 'build',
   place: 'workspace', placeId: 'studio',
   drafts: [{ key: 1, agent: 'codex-acp', model: 'gpt-5', effort: 'high' }, { key: 2, agent: 'claude-code', model: 'o-4', effort: '' }],
 };

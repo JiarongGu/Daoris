@@ -321,9 +321,10 @@ public sealed class RoleStaffingTests : IDisposable
 
         Assert.Equal(
             [
-                "../Daoris.Desktop.App/Program.cs", "../Daoris.Desktop.Driver.Host/Program.cs", "../Daoris.Desktop.Modules/Bridge/DriverContext.cs",
+                // ONEWAY1a: SET_ACTOR, its context write and the retired verbs' press are gone, so the role door alone writes the family.
+                "../Daoris.Desktop.App/Program.cs", "../Daoris.Desktop.Driver.Host/Program.cs",
                 "../Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs",
-                "Help/Proposals/HelpRoleProposals.cs", "Loop/DriverWatch.cs", "Roles/ActorVerbs.cs", "Roles/RoleDoor.cs", "Roles/RoleVerbs.cs", "Roles/StaffingVerbs.cs",
+                "Help/Proposals/HelpRoleProposals.cs", "Loop/DriverWatch.cs", "Roles/RoleDoor.cs", "Roles/RoleVerbs.cs", "Roles/StaffingVerbs.cs",
                 // ONEWAY1o: the register names the copy's kept site, and touches nothing of the family.
                 "Transitional/Register.cs",
             ],

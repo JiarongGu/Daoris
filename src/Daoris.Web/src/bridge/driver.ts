@@ -505,7 +505,7 @@ export const useSetHelpGrant = () => useDriverChange<{ grant: string; operation:
 export type { ActorEntry, ActorRow, StaffingFound } from '../data/wiring';
 
 /**
- * Each actor's order, where it came from (MODELROLE1c): a read of `driver.json`'s `actors`, the same `daoris driver actor` says. Kept
+ * Each actor's order, where it came from (MODELROLE1c): a read of the staffing, the same `daoris driver role` says. Kept
  * under the driver's key, so every press that changes the driver's state asks it again. Empty in a browser.
  */
 export const useActors = ({ enabled = true }: { enabled?: boolean } = {}) => {
@@ -519,16 +519,6 @@ export const useActors = ({ enabled = true }: { enabled?: boolean } = {}) => {
     enabled: isAvailable && enabled,
   });
 };
-
-/**
- * One actor's order set, made off (`[]`, Intake and Ask Daoris only) or back to as before (`null`) (MODELROLE1c, D205 §8.2): the
- * person's press, judged by the driver's one judge, written through the legacy keys, Chat and Brainstorm kept where a change of Build's
- * agent would move them. `daoris driver actor` is its terminal twin (D50), and `driver intake|helper` write Intake's and Ask Daoris's
- * one-choice order through it (MODELROLE1d). What an intake in each circle would run on moves with Intake's order, so the route
- * publishes the roster's key too (STATEHUB1h, D169).
- */
-export const useSetActor = () =>
-  useDriverChange<{ actor: string; choices: { agent: string; model?: string | null; effort?: string | null }[] | null }>('SET_ACTOR');
 
 /**
  * The changes of driver.json's actors another program made, which the driver kept for the person (FOUNDATION1w-s, §19.15): `ACTORS`'

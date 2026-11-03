@@ -213,38 +213,60 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
     [Fact]
     public async Task The_intake_harness_is_off_until_named_and_every_other_edit_keeps_it()
     {
-        var module = Module();
+        RoleStaffing.Wire(Home, () => StoreSettled.Yes);
+        try
+        {
+            var module = Module();
 
-        Assert.Equal("", (await AnswerAsync(module, "STATE")).GetProperty("intakeAdapter").GetString());
+            Assert.Equal("", (await AnswerAsync(module, "STATE")).GetProperty("intakeAdapter").GetString());
 
-        var on = await AnswerAsync(module, "SET_ACTOR", new { actor = "intake", choices = new[] { new { agent = "claude-code-acp" } } });
-        Assert.Equal("claude-code-acp", on.GetProperty("intakeAdapter").GetString());
+            var on = await AnswerAsync(module, "SET_ROLE", Staff("intake", [new { agent = "claude-code-acp" }]));
+            Assert.Equal("claude-code-acp", on.GetProperty("intakeAdapter").GetString());
 
-        await AnswerAsync(module, "SET_NOTIFY", new { notify = false });
-        Assert.Equal("claude-code-acp", DriverConfig.Load(DriverConfigPath).IntakeAdapter);
+            await AnswerAsync(module, "SET_NOTIFY", new { notify = false });
+            Assert.Equal("claude-code-acp", DriverConfig.Load(DriverConfigPath).IntakeAdapter);
 
-        var off = await AnswerAsync(module, "SET_ACTOR", new { actor = "intake", choices = Array.Empty<object>() });
-        Assert.Equal("", off.GetProperty("intakeAdapter").GetString());
-        Assert.Null(DriverConfig.Load(DriverConfigPath).IntakeAdapter);
-        Assert.Empty(DriverConfig.Load(DriverConfigPath).Actors["intake"]);
+            var off = await AnswerAsync(module, "SET_ROLE", Staff("intake", []));
+            Assert.Equal("", off.GetProperty("intakeAdapter").GetString());
+            Assert.Null(DriverConfig.Load(DriverConfigPath).IntakeAdapter);
+            Assert.Empty(DriverConfig.Load(DriverConfigPath).Actors["intake"]);
+        }
+        finally
+        {
+            RoleStaffingPort.Unwire(DriverConfigPath);
+        }
     }
 
-    /// <summary>Ask Daoris's own agent (HELP1, D89): the screen's half of `daoris driver helper`, apart from the intake's, both now an actor's one-choice order (MODELROLE1d).</summary>
+    /// <summary>Ask Daoris's own agent (HELP1, D89), apart from the intake's, both a role's order set through the role door (ONEWAY1a).</summary>
     [Fact]
     public async Task Ask_daoris_runs_on_an_agent_of_its_own_off_until_named()
     {
-        var module = Module();
-        Assert.Equal("", (await AnswerAsync(module, "STATE")).GetProperty("helperAdapter").GetString());
+        RoleStaffing.Wire(Home, () => StoreSettled.Yes);
+        try
+        {
+            var module = Module();
+            Assert.Equal("", (await AnswerAsync(module, "STATE")).GetProperty("helperAdapter").GetString());
 
-        await AnswerAsync(module, "SET_ACTOR", new { actor = "intake", choices = new[] { new { agent = "claude-code-acp" } } });
-        var on = await AnswerAsync(module, "SET_ACTOR", new { actor = "ask-daoris", choices = new[] { new { agent = "codex-acp" } } });
-        Assert.Equal("codex-acp", on.GetProperty("helperAdapter").GetString());
-        Assert.Equal("claude-code-acp", on.GetProperty("intakeAdapter").GetString());
+            await AnswerAsync(module, "SET_ROLE", Staff("intake", [new { agent = "claude-code-acp" }]));
+            var on = await AnswerAsync(module, "SET_ROLE", Staff("ask-daoris", [new { agent = "codex-acp" }]));
+            Assert.Equal("codex-acp", on.GetProperty("helperAdapter").GetString());
+            Assert.Equal("claude-code-acp", on.GetProperty("intakeAdapter").GetString());
 
-        var off = await AnswerAsync(module, "SET_ACTOR", new { actor = "ask-daoris", choices = Array.Empty<object>() });
-        Assert.Equal("", off.GetProperty("helperAdapter").GetString());
-        Assert.Null(DriverConfig.Load(DriverConfigPath).HelperAdapter);
+            var off = await AnswerAsync(module, "SET_ROLE", Staff("ask-daoris", []));
+            Assert.Equal("", off.GetProperty("helperAdapter").GetString());
+            Assert.Null(DriverConfig.Load(DriverConfigPath).HelperAdapter);
+        }
+        finally
+        {
+            RoleStaffingPort.Unwire(DriverConfigPath);
+        }
     }
+
+    /// <summary>A seeded role's order set over <c>SET_ROLE</c>, its record the work it takes on the machine.</summary>
+    private static object Staff(string id, object[] choices) => new
+    {
+        change = "set", id, role = new { name = id, takes = new[] { id }, scope = new { kind = "machine" } }, choices,
+    };
 
     /// <summary>
     /// The screen's half of trusting a folder (D73): the person confirms a hold the driver is showing,

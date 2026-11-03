@@ -51,6 +51,27 @@ public sealed class DriverChoicesCommandTests : IDisposable
         Assert.False(File.Exists(Config));
     }
 
+    /// <summary>
+    /// ONEWAY1a (the oneway design §2 S1): the verbs that set a role's agents before the role door was the one door are refused naming it,
+    /// exit 2, and write nothing; `actor`'s copy verbs stay until ONEWAY1c-ii.
+    /// </summary>
+    [Theory]
+    [InlineData("adapter claude-code")]
+    [InlineData("intake off")]
+    [InlineData("helper claude-code")]
+    [InlineData("actor build claude-code")]
+    [InlineData("actor")]
+    public async Task ONEWAY1a_a_retired_staffing_verb_is_refused_naming_the_role_door(string words)
+    {
+        var exit = await DriverChoicesCommand.RunAsync(words.Split(' '), World(), CancellationToken.None);
+
+        Assert.Equal(2, exit);
+        Assert.Equal($"daoris: {RetiredStaffingVerb.Refusal(words.Split(' ')[0])}", _error.ToString().TrimEnd());
+        Assert.Contains("daoris driver role set", _error.ToString());
+        Assert.False(File.Exists(Config));
+        Assert.DoesNotContain(ChoiceRoutes.Verbs, row => row.Route?.Route == "SET_ACTOR");
+    }
+
     [Fact]
     public async Task A_read_from_a_sessions_terminal_is_said()
     {

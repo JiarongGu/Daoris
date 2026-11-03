@@ -180,7 +180,7 @@ public static class ActorChoices
         ActorKey.Read(root);
 
     /// <summary>
-    /// A press's <c>choices</c> (<c>SET_ACTOR</c>'s payload): null where absent or null, as before; an empty list, off; else each entry
+    /// A press's <c>choices</c> (<c>SET_ROLE</c>'s payload): null where absent or null, as before; an empty list, off; else each entry
     /// <c>{ agent, model?, effort? }</c>, a blank model or effort read as account default.
     /// </summary>
     /// <exception cref="DriverException">A list whose entry is not one: nothing is read from it.</exception>
@@ -216,7 +216,7 @@ public static class ActorChoices
 
     /// <summary>
     /// Which harness answers asks here, or null for none — the declarations tier alone. Intake's actor goes back to <i>as before</i>, so
-    /// the key this writes is what it reads (D205 §6.4, until row d writes it through <c>SET_ACTOR</c>).
+    /// the key this writes is what it reads (D205 §6.4); a test's way to the old key, every writer going through the role door.
     /// </summary>
     public static DriverConfig WithIntake(this DriverConfig config, string? adapter) =>
         With(config, "intake", null) with { IntakeAdapter = string.IsNullOrWhiteSpace(adapter) ? null : adapter.Trim() };
@@ -255,7 +255,7 @@ public sealed record ActorView(string Id, string State, IReadOnlyList<ActorEffec
 
 /// <summary>An actor's stored entry in <c>driver.json</c> that does not read: the start that reads it holds with this sentence (§6.4).</summary>
 public sealed class ActorUnreadableException(string actor, string why)
-    : DriverException($"driver.json's `actors.{actor}` {why}, so {actor} starts nothing until it is set again (`daoris driver actor {actor}`).")
+    : DriverException($"driver.json's `actors.{actor}` {why}, so {actor} starts nothing until it is set again (`daoris driver role set {actor} …`).")
 {
     public string Actor { get; } = actor;
 }

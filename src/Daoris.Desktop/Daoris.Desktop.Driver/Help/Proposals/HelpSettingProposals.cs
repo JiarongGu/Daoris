@@ -34,7 +34,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
     public IReadOnlyList<string> Doors { get; } =
     [
         "drive", "undrive", "hold", "resume", "trees", "line", "landing", "across", "standing", "language", "review", "opinion",
-        "helpers", "commits", "intake", "helper", "strikes", "retry", "timeout", "notify", "cap", "adapter", "cooloff", "keep", "git-use",
+        "helpers", "commits", "strikes", "retry", "timeout", "notify", "cap", "cooloff", "keep", "git-use",
     ];
 
     /// <summary>
@@ -105,8 +105,6 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
         var scope = workspace is { Length: > 0 } ? $"--workspace {ShellWord.Of(workspace, ShellWord.Workspace)}" : target ?? "";
         var whose = workspace is { Length: > 0 } ? $"workspace `{workspace}`" : $"`{target}`";
         (string Describe, string Terminal, Func<DriverConfig, DriverConfig> Edit) planned;
-        // FOUNDATION1w-s: an actor's order is applied through the staffing's one write; Edit stays the judgement the card is made by.
-        HelpStaffing? staffing = null;
         switch (proposal.Door)
         {
             case "drive":
@@ -222,28 +220,10 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
                 planned = commits;
                 break;
             }
-            case "intake" or "helper":
-            {
-                var agent = value == "off" ? null : value;
-                if (agent is not null && !facts.Agents.Contains(agent, StringComparer.Ordinal))
-                {
-                    return Refused($"there is no agent `{agent}` on this machine — one of {Names(facts.Agents)}.", "", "");
-                }
-
-                // Intake's or Ask Daoris's one-choice order at account default, or off, the write SET_ACTOR makes, judged by its one
-                // judge (MODELROLE1d, D205 §6.4), until MODELROLE1h retires the door into actor_propose.
-                var intake = proposal.Door == "intake";
-                var actor = intake ? "intake" : "ask-daoris";
-                IReadOnlyList<ActorChoice> choices = agent is null ? [] : [new ActorChoice(agent)];
-                if (ActorChoices.Judge(actor, choices) is { } refusedOrder) return Refused(refusedOrder, "", "");
-                planned = (intake
-                        ? agent is null ? "Stop answering asks with an agent: the declarations alone propose." : $"Answer asks with `{agent}`."
-                        : agent is null ? "Turn Ask Daoris's agent off: it offers its starters only." : $"Run Ask Daoris on `{agent}`.",
-                    $"daoris driver {proposal.Door} {value}",
-                    c => ActorChoices.With(c, actor, choices));
-                staffing = new HelpStaffing(actor, choices);
-                break;
-            }
+            // ONEWAY1a (the oneway design §2 S1): a role's agents are the role door's alone, which `role_propose` proposes; a helper
+            // reading an older room is told so, and nothing is planned.
+            case "intake" or "helper" or "adapter":
+                return Refused(StaffingRetired, "", "");
             case "strikes" when int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var strikes):
                 planned = (strikes == 0 ? "Never park a quest for its failed sessions." : $"Park a quest after {strikes} failed sessions.",
                     $"daoris driver strikes {strikes}", c => c.WithStrikes(strikes));
@@ -290,22 +270,6 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
                 planned = ($"{char.ToUpperInvariant(said[0])}{said[1..]}.", $"daoris driver keep {set.Kind} {words[1]}", c => KeepRules.Apply(c, set));
                 break;
             }
-            case "adapter":
-                // The CLI leaves the name to the driver, which knows its adapters: the same names an intake is judged by.
-                if (!facts.Agents.Contains(value, StringComparer.Ordinal))
-                {
-                    return Refused($"there is no agent `{value}` on this machine — one of {Names(facts.Agents)}.", "", "");
-                }
-
-                // Build's one-choice order at account default, the write SET_ACTOR makes (MODELROLE1c, D205 §6.4): a Chat and a Brainstorm
-                // still as before are written as the agent they ran, so a change of Build's agent never moves them.
-                ActorChoices.With(config, "build", [new ActorChoice(value)], out var kept);
-                planned = (
-                    $"Start this machine's driven sessions on `{value}`."
-                    + (kept.Count > 0 ? $" {string.Join(" and ", kept.Select(actor => actor == "chat" ? "Chat" : "Brainstorm"))} keep `{config.Adapter}`, written for them." : ""),
-                    $"daoris driver adapter {value}", c => ActorChoices.With(c, "build", [new ActorChoice(value)]));
-                staffing = new HelpStaffing("build", [new ActorChoice(value)]);
-                break;
             default:
                 return Refused($"`{proposal.Door} {value}` is not a change the driver makes.", "", "");
         }
@@ -321,8 +285,16 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
             return Refused(refused.Message, planned.Describe, planned.Terminal);
         }
 
-        return new HelpPlan(null, planned.Describe, planned.Terminal, planned.Edit) { Staffing = staffing };
+        return new HelpPlan(null, planned.Describe, planned.Terminal, planned.Edit);
     }
+
+    /// <summary>
+    /// What <c>setting_propose</c>'s retired <c>adapter</c>, <c>intake</c> and <c>helper</c> answer (ONEWAY1a): a role's agents are the role
+    /// door's, proposed through <c>role_propose</c>. The service's twin says the same words.
+    /// </summary>
+    public const string StaffingRetired =
+        "a role's agents are no longer a setting: propose them through `role_propose` (the role door), as Agents → Roles and "
+        + "`daoris driver role set` set them; nothing was planned.";
 
     /// <summary>
     /// <c>retry</c> (HELP10, D110), as <c>daoris driver retry</c> reads it: a quest by id, <c>#</c> or not, which the
@@ -980,8 +952,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
 
     public async Task<HelpApplied> ApplyAsync(HelpApplying applying, CancellationToken ct)
     {
-        if (applying.Plan.Staffing is { } staffing) applying.Doors.SetActor(staffing.Actor, staffing.Choices);
-        else if (applying.Plan.GitUse is { } use)
+        if (applying.Plan.GitUse is { } use)
         {
             try
             {
@@ -1054,9 +1025,6 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
         "`git-use` takes an identity's label, or `--clear`: for a repository `[--remote <name>] <identity>|--clear`, and for a workspace `--host <host> <identity>|--clear`.";
 }
 
-/// <summary>An actor's order a setting proposal sets (FOUNDATION1w-s): applied as <c>SET_ACTOR</c> applies it, through the staffing's one write.</summary>
-public sealed record HelpStaffing(string Actor, IReadOnlyList<ActorChoice>? Choices);
-
 /// <summary>A git identity a <c>git-use</c> proposal chooses (GITAUTH1e): applied as <c>GIT_USE</c> applies it. A null <c>Identity</c> takes the choice back.</summary>
 public sealed record HelpGitUse(string Scope, string? Repository, string? Workspace, string? Remote, string? Host, string? Identity);
 
@@ -1071,8 +1039,5 @@ public interface IHelpSettingDoors
 
     /// <summary>An edit to the driver's file, as the `SET_*` routes and `RETRY_QUEST` make it.</summary>
     void Change(Func<DriverConfig, DriverConfig> edit);
-
-    /// <summary>An actor's order set, as <c>SET_ACTOR</c> sets it (FOUNDATION1w-s): the staffing's one write, then the loop's nudge.</summary>
-    void SetActor(string actor, IReadOnlyList<ActorChoice>? choices);
 }
 

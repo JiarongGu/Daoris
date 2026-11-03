@@ -94,7 +94,6 @@ public static class ChoiceRoutes
     public static InstanceRoute HandOver { get; } = Person("SET_HAND_OVER");
     public static InstanceRoute Commits { get; } = Person("SET_COMMITS");
     public static InstanceRoute Keep { get; } = Person("SET_KEEP");
-    public static InstanceRoute Actor { get; } = Person("SET_ACTOR");
     public static InstanceRoute Role { get; } = Person("SET_ROLE");
     public static InstanceRoute WorkflowSave { get; } = Person("WORKFLOW_SAVE");
     public static InstanceRoute WorkflowUse { get; } = Person("WORKFLOW_USE");
@@ -111,8 +110,6 @@ public static class ChoiceRoutes
         ("driver strikes <n>", Strikes, "the window's strike limit"),
         ("driver cooloff <minutes>", CoolOff, "the window's cool-off"),
         ("driver cap <n>", Cap, "the window's session cap"),
-        ("driver intake <adapter>|off", Actor, "Intake's order, one choice at account default or off (D205 §6.4)"),
-        ("driver helper <adapter>|off", Actor, "Ask Daoris's order, one choice at account default or off (D205 §6.4)"),
         ("driver retry <quest>", Retry, "the quest's *Try again*, which judges from the planner's verdict whether to mark or release it"),
         ("driver line", Line, "the repository's or the workspace's line"),
         ("driver language", Language, "the session language"),
@@ -126,8 +123,6 @@ public static class ChoiceRoutes
         ("driver handover", HandOver, "the hand-over rule"),
         ("driver commits", Commits, "the commit rule"),
         ("driver keep <kind> …", Keep, "the Disk space card's rule of that kind"),
-        ("driver actor <actor> …", Actor, "an actor's order (D205 §9.4)"),
-        ("driver adapter <name>", Actor, "Build's order, one choice at account default (D205 §6.4)"),
         ("driver role set|remove|default|policy <id> …", Role, "a working role of the catalogue, its record, its choices and its policy (FOUNDATION1y-i, STAFFPOLICY1b)"),
         ("driver actor import <file>", null, "alone: no route takes a file of the terminal's; the staffing's lock serializes it with the window's presses"),
         ("driver actor found take|dismiss <n>", null, "alone: the staffing's lock serializes it with the window's Take it and Dismiss"),
@@ -175,8 +170,7 @@ public static class DriverChoicesCommand
         usage: daoris-driver driver [list]
                daoris-driver driver drive|undrive|hold|resume <repository>
                daoris-driver driver trees <repository> on|off · notify on|off
-               daoris-driver driver cap <n> · strikes <n> · timeout <minutes> · cooloff <minutes> · adapter <name>
-               daoris-driver driver intake <adapter>|off · helper <adapter>|off
+               daoris-driver driver cap <n> · strikes <n> · timeout <minutes> · cooloff <minutes>
                daoris-driver driver retry <quest> [--at <n> | --session <id>]
                daoris-driver driver line <repository>|--workspace <name> <branch>|--clear
                daoris-driver driver landing <repository>|--workspace <name> merge|branch <pattern>|--clear
@@ -210,11 +204,10 @@ public static class DriverChoicesCommand
                       (a workflow's writes say their change, and with --plan save nothing)
                daoris-driver driver keep [set-aside <days>|whole|slim|default · downloads <days>|never|default · logs <days>|default
                       · history <days>|never|default · floor <n>GB|<n>%|off|default]
-               daoris-driver driver actor [<actor>] · actor <actor> "<agent> [<model>|-] [<effort>|-]" … · actor <actor> --clear
-                      · actor intake|ask-daoris off
                daoris-driver driver actor export [<file>] · actor import <file> · actor found [take|dismiss <n>]
+                      (adapter, intake, helper and actor <role> are retired: `role set` sets a role's agents)
                daoris-driver driver role [<id>] · role set <id> [--name "…"] [--name-in <tag>="…"]… [--takes <work,…>]
-                      [--scope machine|workspace:<id>|repository:<id>] ["<agent> [<model>|-] [<effort>|-]" …]
+                      [--scope machine|workspace:<id>|repository:<id>] ["<agent> [<model>|-] [<effort>|-]" … | off]
                       · role remove|default <id> · role suggested [--use]
         `daoris driver …` runs these.
         Each change takes --wait <minutes> (0 to 30, the default 30) or --no-wait: how long to wait on its Confirm in Daoris's window.
@@ -256,7 +249,7 @@ public static class DriverChoicesCommand
             "brainstorms" => args.Any(arg => arg is "--clear" or "--mode" or "--agents" || ChoiceGrammar.BrainstormMinuteFlags.Contains(arg)),
             // `keep` naming no kind says each rule, a read (KEEP1d).
             "keep" => args.Count > 1,
-            // `actor` naming one actor, or none, says its order, a read (MODELROLE1c).
+            // `actor` naming one actor, or none, is refused as a read; its copy verbs write until ONEWAY1c-ii retires them.
             "actor" => args.Count > 2,
             // `role` naming one role, or none, says it, a read (FOUNDATION1y-i).
             "role" => args.Count > 1 && args[1] is "set" or "remove" or "default" or "policy",
@@ -658,7 +651,7 @@ public static class DriverChoicesCommand
         void Say(string line) => write.WriteLine(line);
         void Section(string word) => Registered(world, word)?.Listed(choices, world);
         Say($"daoris: {world.ConfigPath}");
-        Say($"  adapter    {choices.Adapter}");
+        Say("  roles      `daoris driver role` says each role's agents, and `role set` changes them");
         Say($"  cap        {choices.Cap} concurrent session(s)");
         Say($"  strikes    {(choices.Strikes == 0
             ? "off — a quest is never parked, and it keeps trying at the cost of a login each time"
@@ -685,8 +678,6 @@ public static class DriverChoicesCommand
             : $"  cooloff    {(int)CoolOffDefault.Value.TotalMinutes} minutes an account cools when its agent names no time for its limit  (the default — "
               + "`daoris driver cooloff <minutes>` changes it)");
         Say($"  notify     {(choices.Notify ? "on" : "off")}  (a session parking, or ending without you asking{(choices.Notify ? "" : " — not said")})");
-        Section("helper");
-        Section("intake");
 
         if (choices.Drivable.Count == 0)
         {

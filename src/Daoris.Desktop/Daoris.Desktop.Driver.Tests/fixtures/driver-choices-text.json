@@ -10,13 +10,11 @@
       "exit": 0,
       "out": [
         "daoris: <config>",
-        "  adapter    claude-code",
+        "  roles      `daoris driver role` says each role's agents, and `role set` changes them",
         "  cap        2 concurrent session(s)",
         "  strikes    3 failed session(s) park a quest",
         "  cooloff    60 minutes an account cools when its agent names no time for its limit  (the default — `daoris driver cooloff <minutes>` changes it)",
         "  notify     on  (a session parking, or ending without you asking)",
-        "  helper     off — Ask Daoris offers its starters; `daoris driver helper <adapter>` names an agent",
-        "  intake     off — asks are answered by declarations only; `daoris driver intake <adapter>` names a harness",
         "  drivable   nothing — this machine drives no repository, which is the default (D46 §2).",
         "             `daoris driver drive <repository>` opts one in.",
         "  language   none set — sessions are asked for no language; `daoris driver language <repository> en|zh` sets one",
@@ -29,7 +27,7 @@
       ],
       "err": [],
       "after": null,
-      "changed": "SESSWATCH1a (D200, the session-watch design §3): sessions are no longer limited by time. The default timeout line is gone; a timeout a file holds is said once, as kept for an older Daoris."
+      "changed": "SESSWATCH1a (D200, the session-watch design §3): sessions are no longer limited by time. The default timeout line is gone; a timeout a file holds is said once, as kept for an older Daoris. ONEWAY1a (the oneway design §2 S1): a role's agents are the role door's, so the adapter, helper and intake lines are one line naming it."
     },
     {
       "name": "list, the bare family word",
@@ -38,13 +36,11 @@
       "exit": 0,
       "out": [
         "daoris: <config>",
-        "  adapter    claude-code",
+        "  roles      `daoris driver role` says each role's agents, and `role set` changes them",
         "  cap        2 concurrent session(s)",
         "  strikes    3 failed session(s) park a quest",
         "  cooloff    60 minutes an account cools when its agent names no time for its limit  (the default — `daoris driver cooloff <minutes>` changes it)",
         "  notify     on  (a session parking, or ending without you asking)",
-        "  helper     off — Ask Daoris offers its starters; `daoris driver helper <adapter>` names an agent",
-        "  intake     off — asks are answered by declarations only; `daoris driver intake <adapter>` names a harness",
         "  drivable   nothing — this machine drives no repository, which is the default (D46 §2).",
         "             `daoris driver drive <repository>` opts one in.",
         "  language   none set — sessions are asked for no language; `daoris driver language <repository> en|zh` sets one",
@@ -57,7 +53,7 @@
       ],
       "err": [],
       "after": null,
-      "changed": "SESSWATCH1a (D200, the session-watch design §3): sessions are no longer limited by time. The default timeout line is gone; a timeout a file holds is said once, as kept for an older Daoris."
+      "changed": "SESSWATCH1a (D200, the session-watch design §3): sessions are no longer limited by time. The default timeout line is gone; a timeout a file holds is said once, as kept for an older Daoris. ONEWAY1a (the oneway design §2 S1): a role's agents are the role door's, so the adapter, helper and intake lines are one line naming it."
     },
     {
       "name": "list, a home holding every choice",
@@ -68,7 +64,7 @@
       "exit": 0,
       "out": [
         "daoris: <config>",
-        "  adapter    claude-code-acp",
+        "  roles      `daoris driver role` says each role's agents, and `role set` changes them",
         "  cap        3 concurrent session(s)",
         "  strikes    off — a quest is never parked, and it keeps trying at the cost of a login each time",
         "  retried    #q1  (counting from 3 failure(s))",
@@ -78,8 +74,6 @@
         "  timeout    90  (no longer limits a session; kept for an older Daoris)",
         "  cooloff    45 minutes an account cools when its agent names no time for its limit",
         "  notify     off  (a session parking, or ending without you asking — not said)",
-        "  helper     claude-code-acp  (Ask Daoris, full access: it acts on this machine itself, with no asking — `daoris-driver help mode` says and sets it)",
-        "  intake     claude-code  (an ask the declarations do not settle opens a session — a login each)",
         "  drivable   engine  (sessions open their own tree — D51)",
         "  drivable   game  (held by you — `daoris driver resume` releases it)",
         "  trees      docs  (sessions there open their own tree when anything spawns one)",
@@ -112,7 +106,7 @@
       ],
       "err": [],
       "after": "{\n  \"drivable\": [\n    \"engine\",\n    \"game\"\n  ],\n  \"holds\": [\n    \"game\",\n    \"tools\"\n  ],\n  \"trees\": [\n    \"engine\",\n    \"docs\"\n  ],\n  \"cap\": 3,\n  \"adapter\": \"claude-code-acp\",\n  \"intakeAdapter\": \"claude-code\",\n  \"helperAdapter\": \"claude-code-acp\",\n  \"notify\": false,\n  \"timeoutMinutes\": 90,\n  \"strikes\": 0,\n  \"cooloff\": 45,\n  \"forgiven\": {\n    \"q1\": 3\n  },\n  \"released\": {\n    \"q2\": \"s1a2b3c4\"\n  },\n  \"standing\": {\n    \"engine\": {\n      \"says\": \"dev writes allowed\",\n      \"at\": \"<at>\"\n    }\n  },\n  \"lines\": {\n    \"engine\": \"develop\"\n  },\n  \"workspaceLines\": {\n    \"aurora\": \"main\"\n  },\n  \"languages\": {\n    \"engine\": \"zh\"\n  },\n  \"workspaceLanguages\": {\n    \"aurora\": \"en\"\n  },\n  \"landings\": {\n    \"engine\": {\n      \"form\": \"branch\",\n      \"pattern\": \"feature/{ticket}\",\n      \"key\": \"TK-\\\\d+\",\n      \"tidy\": true,\n      \"autoAccept\": true,\n      \"squash\": true\n    },\n    \"stray\": {\n      \"form\": \"sideways\"\n    }\n  },\n  \"workspaceLandings\": {\n    \"aurora\": {\n      \"form\": \"merge\"\n    }\n  },\n  \"reviews\": {\n    \"legacy\": false,\n    \"storefront\": {\n      \"required\": true,\n      \"environments\": [\n        {\n          \"name\": \"local\",\n          \"kind\": \"local\",\n          \"procedure\": \"README.md\",\n          \"address\": \"http://localhost:4200\"\n        }\n      ]\n    }\n  },\n  \"workspaceReviews\": {\n    \"shop\": {\n      \"environments\": [\n        {\n          \"name\": \"dev\",\n          \"kind\": \"deployed\",\n          \"procedure\": \"docs/deploy.md\"\n        }\n      ]\n    }\n  },\n  \"opinions\": {\n    \"engine\": {\n      \"on\": [\n        \"landing\"\n      ],\n      \"reviewers\": [\n        \"codex-acp\"\n      ],\n      \"required\": true,\n      \"verify\": true\n    },\n    \"legacy\": false\n  },\n  \"workspaceOpinions\": {\n    \"aurora\": {\n      \"on\": [\n        \"landing\",\n        \"steps\"\n      ],\n      \"reviewers\": [\n        \"codex-acp\",\n        \"dsh\"\n      ],\n      \"minutes\": 20,\n      \"recheck\": false\n    }\n  },\n  \"helpers\": {\n    \"engine\": {\n      \"mode\": \"on\",\n      \"agents\": [\n        \"codex-acp\"\n      ]\n    }\n  },\n  \"workspaceHelpers\": {\n    \"aurora\": {\n      \"mode\": \"off\",\n      \"agents\": []\n    }\n  },\n  \"handOver\": {\n    \"engine\": {\n      \"mode\": \"on\"\n    }\n  },\n  \"workspaceHandOver\": {\n    \"aurora\": {\n      \"mode\": \"off\"\n    }\n  },\n  \"brainstorms\": {\n    \"mode\": \"ask\",\n    \"agents\": [\n      \"claude-code\",\n      \"codex-acp\"\n    ],\n    \"minutes\": {\n      \"pass\": 10,\n      \"synthesis\": 10,\n      \"challenge\": 10,\n      \"request\": 30\n    }\n  },\n  \"workspaceBrainstorms\": {\n    \"aurora\": {\n      \"mode\": \"off\",\n      \"agents\": [],\n      \"minutes\": {\n        \"pass\": 10,\n        \"synthesis\": 10,\n        \"challenge\": 10,\n        \"request\": 30\n      }\n    }\n  },\n  \"commits\": {\n    \"engine\": {\n      \"mode\": \"ask\",\n      \"convention\": \"Imperative-subject\"\n    }\n  },\n  \"workspaceCommits\": {\n    \"aurora\": {\n      \"mode\": \"at-end\"\n    }\n  },\n  \"readAcross\": {\n    \"engine\": false\n  },\n  \"workspaceReadAcross\": {\n    \"aurora\": true\n  },\n  \"writeAcross\": {\n    \"game\": [\n      \"engine\"\n    ]\n  },\n  \"helpMode\": \"full\",\n  \"pausedAsks\": {\n    \"a1\": {\n      \"at\": \"<at>\",\n      \"stopped\": {\n        \"q3\": \"s9\"\n      }\n    }\n  },\n  \"pausedQuests\": {\n    \"q4\": {}\n  }\n}\n",
-      "changed": "SESSWATCH1a (D200, the session-watch design §3): sessions are no longer limited by time. A timeout the file holds is said as kept for an older Daoris, and nothing reads it for a bound."
+      "changed": "SESSWATCH1a (D200, the session-watch design §3): sessions are no longer limited by time. A timeout the file holds is said as kept for an older Daoris, and nothing reads it for a bound. ONEWAY1a (the oneway design §2 S1): a role's agents are the role door's, so the adapter, helper and intake lines are one line naming it."
     },
     {
       "name": "drive",
@@ -590,186 +584,49 @@
       "after": null
     },
     {
-      "name": "adapter, a managed one",
+      "name": "adapter, retired",
       "argv": [
         "adapter",
         "claude-code"
       ],
       "before": null,
-      "exit": 0,
-      "out": [
-        "daoris: sessions on this machine spawn via `claude-code`.",
-        "  build: 1 claude-code · account default · account default; it was 1 claude-code · account default · account default (as before).",
-        "  Written to <config> — the driver re-reads it every tick, so nothing restarts."
-      ],
-      "err": [],
-      "after": "{\n  \"actors\": {\n    \"build\": [\n      {\n        \"agent\": \"claude-code\"\n      }\n    ]\n  }\n}\n",
-      "changed": "MODELROLE1c (D205 §6.4): `adapter` sets Build's order, one choice at account default, through SET_ACTOR; it says the order it replaced, and Chat and Brainstorm, still as before, are written as the agent they ran, so a change of Build's agent never moves them."
-    },
-    {
-      "name": "adapter, one with no toolchain",
-      "argv": [
-        "adapter",
-        "stub"
-      ],
-      "before": null,
-      "exit": 0,
-      "out": [
-        "daoris: sessions on this machine spawn via `stub`.",
-        "  Daoris manages no toolchain for that name — `daoris agent list` shows the ones it does.",
-        "  build: 1 stub · account default · account default; it was 1 claude-code · account default · account default (as before).",
-        "  Chat and Brainstorm keep `claude-code`, written for them: a change of Build's agent no longer moves them.",
-        "  Written to <config> — the driver re-reads it every tick, so nothing restarts."
-      ],
-      "err": [],
-      "after": "{\n  \"adapter\": \"stub\",\n  \"actors\": {\n    \"build\": [\n      {\n        \"agent\": \"stub\"\n      }\n    ],\n    \"brainstorm\": [\n      {\n        \"agent\": \"claude-code\"\n      }\n    ],\n    \"chat\": [\n      {\n        \"agent\": \"claude-code\"\n      }\n    ]\n  }\n}\n",
-      "changed": "MODELROLE1c (D205 §6.4): `adapter` sets Build's order, one choice at account default, through SET_ACTOR; it says the order it replaced, and Chat and Brainstorm, still as before, are written as the agent they ran, so a change of Build's agent never moves them."
-    },
-    {
-      "name": "adapter, no name",
-      "argv": [
-        "adapter"
-      ],
-      "before": null,
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver adapter` needs a name — e.g. `daoris driver adapter aurora-engine`."
+        "daoris: `driver adapter` is retired: a role's agents are set through the role door, `daoris driver role set <role> \"<agent> [<model>|-] [<effort>|-]\" …` (`off` for Intake and Ask Daoris), and said by `daoris driver role <role>`; nothing was changed."
       ],
-      "after": null
+      "after": null,
+      "changed": "ONEWAY1a (the oneway design §2 S1): Build's order is set through the role door alone, `driver role set build …`; the verb is refused naming it."
     },
     {
-      "name": "helper",
+      "name": "helper, retired",
       "argv": [
         "helper",
         "claude-code-acp"
       ],
       "before": null,
-      "exit": 0,
-      "out": [
-        "daoris: Ask Daoris runs on `claude-code-acp`. It reads, and proposes; every change is yours to apply (D89).",
-        "  ask-daoris: 1 claude-code-acp · account default · account default; it was off.",
-        "  Written to <config> — the driver re-reads it every tick, so nothing restarts."
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `driver helper` is retired: a role's agents are set through the role door, `daoris driver role set <role> \"<agent> [<model>|-] [<effort>|-]\" …` (`off` for Intake and Ask Daoris), and said by `daoris driver role <role>`; nothing was changed."
       ],
-      "err": [],
-      "after": "{\n  \"helperAdapter\": \"claude-code-acp\",\n  \"actors\": {\n    \"ask-daoris\": [\n      {\n        \"agent\": \"claude-code-acp\"\n      }\n    ]\n  }\n}\n",
-      "changed": "MODELROLE1d (D205 §6.4): `helper` sets Ask Daoris's order, one choice at account default or off, through SET_ACTOR; it says the order it replaced."
+      "after": null,
+      "changed": "ONEWAY1a (the oneway design §2 S1): Ask Daoris's order is set through the role door alone, `driver role set ask-daoris …`; the verb is refused naming it."
     },
     {
-      "name": "helper off",
+      "name": "intake, retired",
       "argv": [
-        "helper",
+        "intake",
         "off"
-      ],
-      "before": "{\n  \"drivable\": [\n    \"engine\",\n    \"game\"\n  ],\n  \"holds\": [\n    \"game\",\n    \"tools\"\n  ],\n  \"trees\": [\n    \"engine\",\n    \"docs\"\n  ],\n  \"cap\": 3,\n  \"adapter\": \"claude-code-acp\",\n  \"intakeAdapter\": \"claude-code\",\n  \"helperAdapter\": \"claude-code-acp\",\n  \"notify\": false,\n  \"timeoutMinutes\": 90,\n  \"strikes\": 0,\n  \"cooloff\": 45,\n  \"forgiven\": {\n    \"q1\": 3\n  },\n  \"released\": {\n    \"q2\": \"s1a2b3c4\"\n  },\n  \"standing\": {\n    \"engine\": {\n      \"says\": \"dev writes allowed\",\n      \"at\": \"2026-10-01T10:00:00.000Z\"\n    }\n  },\n  \"lines\": {\n    \"engine\": \"develop\"\n  },\n  \"workspaceLines\": {\n    \"aurora\": \"main\"\n  },\n  \"languages\": {\n    \"engine\": \"zh\"\n  },\n  \"workspaceLanguages\": {\n    \"aurora\": \"en\"\n  },\n  \"landings\": {\n    \"engine\": {\n      \"form\": \"branch\",\n      \"pattern\": \"feature/{ticket}\",\n      \"key\": \"TK-\\\\d+\",\n      \"tidy\": true,\n      \"autoAccept\": true,\n      \"squash\": true\n    },\n    \"stray\": {\n      \"form\": \"sideways\"\n    }\n  },\n  \"workspaceLandings\": {\n    \"aurora\": {\n      \"form\": \"merge\"\n    }\n  },\n  \"reviews\": {\n    \"legacy\": false,\n    \"storefront\": {\n      \"required\": true,\n      \"environments\": [\n        {\n          \"name\": \"local\",\n          \"kind\": \"local\",\n          \"procedure\": \"README.md\",\n          \"address\": \"http://localhost:4200\"\n        }\n      ]\n    }\n  },\n  \"workspaceReviews\": {\n    \"shop\": {\n      \"environments\": [\n        {\n          \"name\": \"dev\",\n          \"kind\": \"deployed\",\n          \"procedure\": \"docs/deploy.md\"\n        }\n      ]\n    }\n  },\n  \"opinions\": {\n    \"engine\": {\n      \"on\": [\n        \"landing\"\n      ],\n      \"reviewers\": [\n        \"codex-acp\"\n      ],\n      \"required\": true,\n      \"verify\": true\n    },\n    \"legacy\": false\n  },\n  \"workspaceOpinions\": {\n    \"aurora\": {\n      \"on\": [\n        \"landing\",\n        \"steps\"\n      ],\n      \"reviewers\": [\n        \"codex-acp\",\n        \"dsh\"\n      ],\n      \"minutes\": 20,\n      \"recheck\": false\n    }\n  },\n  \"helpers\": {\n    \"engine\": {\n      \"mode\": \"on\",\n      \"agents\": [\n        \"codex-acp\"\n      ]\n    }\n  },\n  \"workspaceHelpers\": {\n    \"aurora\": {\n      \"mode\": \"off\",\n      \"agents\": []\n    }\n  },\n  \"handOver\": {\n    \"engine\": {\n      \"mode\": \"on\"\n    }\n  },\n  \"workspaceHandOver\": {\n    \"aurora\": {\n      \"mode\": \"off\"\n    }\n  },\n  \"brainstorms\": {\n    \"mode\": \"ask\",\n    \"agents\": [\n      \"claude-code\",\n      \"codex-acp\"\n    ],\n    \"minutes\": {\n      \"pass\": 10,\n      \"synthesis\": 10,\n      \"challenge\": 10,\n      \"request\": 30\n    }\n  },\n  \"workspaceBrainstorms\": {\n    \"aurora\": {\n      \"mode\": \"off\",\n      \"agents\": [],\n      \"minutes\": {\n        \"pass\": 10,\n        \"synthesis\": 10,\n        \"challenge\": 10,\n        \"request\": 30\n      }\n    }\n  },\n  \"commits\": {\n    \"engine\": {\n      \"mode\": \"ask\",\n      \"convention\": \"Imperative-subject\"\n    }\n  },\n  \"workspaceCommits\": {\n    \"aurora\": {\n      \"mode\": \"at-end\"\n    }\n  },\n  \"readAcross\": {\n    \"engine\": false\n  },\n  \"workspaceReadAcross\": {\n    \"aurora\": true\n  },\n  \"writeAcross\": {\n    \"game\": [\n      \"engine\"\n    ]\n  },\n  \"helpMode\": \"full\",\n  \"pausedAsks\": {\n    \"a1\": {\n      \"at\": \"2026-10-02T08:00:00Z\",\n      \"stopped\": {\n        \"q3\": \"s9\"\n      }\n    }\n  },\n  \"pausedQuests\": {\n    \"q4\": {}\n  }\n}\n",
-      "exit": 0,
-      "out": [
-        "daoris: Ask Daoris runs no agent here — it offers its starters, each a door to the screen that fixes it.",
-        "  ask-daoris: off; it was 1 claude-code-acp · account default · account default (as before).",
-        "  Written to <config> — the driver re-reads it every tick, so nothing restarts."
-      ],
-      "err": [],
-      "after": "{\n  \"drivable\": [\n    \"engine\",\n    \"game\"\n  ],\n  \"holds\": [\n    \"game\",\n    \"tools\"\n  ],\n  \"trees\": [\n    \"engine\",\n    \"docs\"\n  ],\n  \"cap\": 3,\n  \"adapter\": \"claude-code-acp\",\n  \"intakeAdapter\": \"claude-code\",\n  \"actors\": {\n    \"ask-daoris\": []\n  },\n  \"notify\": false,\n  \"timeoutMinutes\": 90,\n  \"strikes\": 0,\n  \"cooloff\": 45,\n  \"forgiven\": {\n    \"q1\": 3\n  },\n  \"released\": {\n    \"q2\": \"s1a2b3c4\"\n  },\n  \"standing\": {\n    \"engine\": {\n      \"says\": \"dev writes allowed\",\n      \"at\": \"<at>\"\n    }\n  },\n  \"lines\": {\n    \"engine\": \"develop\"\n  },\n  \"workspaceLines\": {\n    \"aurora\": \"main\"\n  },\n  \"languages\": {\n    \"engine\": \"zh\"\n  },\n  \"workspaceLanguages\": {\n    \"aurora\": \"en\"\n  },\n  \"landings\": {\n    \"engine\": {\n      \"form\": \"branch\",\n      \"pattern\": \"feature/{ticket}\",\n      \"key\": \"TK-\\\\d+\",\n      \"tidy\": true,\n      \"autoAccept\": true,\n      \"squash\": true\n    },\n    \"stray\": {\n      \"form\": \"sideways\"\n    }\n  },\n  \"workspaceLandings\": {\n    \"aurora\": {\n      \"form\": \"merge\"\n    }\n  },\n  \"reviews\": {\n    \"legacy\": false,\n    \"storefront\": {\n      \"required\": true,\n      \"environments\": [\n        {\n          \"name\": \"local\",\n          \"kind\": \"local\",\n          \"procedure\": \"README.md\",\n          \"address\": \"http://localhost:4200\"\n        }\n      ]\n    }\n  },\n  \"workspaceReviews\": {\n    \"shop\": {\n      \"environments\": [\n        {\n          \"name\": \"dev\",\n          \"kind\": \"deployed\",\n          \"procedure\": \"docs/deploy.md\"\n        }\n      ]\n    }\n  },\n  \"opinions\": {\n    \"engine\": {\n      \"on\": [\n        \"landing\"\n      ],\n      \"reviewers\": [\n        \"codex-acp\"\n      ],\n      \"required\": true,\n      \"verify\": true\n    },\n    \"legacy\": false\n  },\n  \"workspaceOpinions\": {\n    \"aurora\": {\n      \"on\": [\n        \"landing\",\n        \"steps\"\n      ],\n      \"reviewers\": [\n        \"codex-acp\",\n        \"dsh\"\n      ],\n      \"minutes\": 20,\n      \"recheck\": false\n    }\n  },\n  \"helpers\": {\n    \"engine\": {\n      \"mode\": \"on\",\n      \"agents\": [\n        \"codex-acp\"\n      ]\n    }\n  },\n  \"workspaceHelpers\": {\n    \"aurora\": {\n      \"mode\": \"off\",\n      \"agents\": []\n    }\n  },\n  \"handOver\": {\n    \"engine\": {\n      \"mode\": \"on\"\n    }\n  },\n  \"workspaceHandOver\": {\n    \"aurora\": {\n      \"mode\": \"off\"\n    }\n  },\n  \"brainstorms\": {\n    \"mode\": \"ask\",\n    \"agents\": [\n      \"claude-code\",\n      \"codex-acp\"\n    ],\n    \"minutes\": {\n      \"pass\": 10,\n      \"synthesis\": 10,\n      \"challenge\": 10,\n      \"request\": 30\n    }\n  },\n  \"workspaceBrainstorms\": {\n    \"aurora\": {\n      \"mode\": \"off\",\n      \"agents\": [],\n      \"minutes\": {\n        \"pass\": 10,\n        \"synthesis\": 10,\n        \"challenge\": 10,\n        \"request\": 30\n      }\n    }\n  },\n  \"commits\": {\n    \"engine\": {\n      \"mode\": \"ask\",\n      \"convention\": \"Imperative-subject\"\n    }\n  },\n  \"workspaceCommits\": {\n    \"aurora\": {\n      \"mode\": \"at-end\"\n    }\n  },\n  \"readAcross\": {\n    \"engine\": false\n  },\n  \"workspaceReadAcross\": {\n    \"aurora\": true\n  },\n  \"writeAcross\": {\n    \"game\": [\n      \"engine\"\n    ]\n  },\n  \"helpMode\": \"full\",\n  \"pausedAsks\": {\n    \"a1\": {\n      \"at\": \"<at>\",\n      \"stopped\": {\n        \"q3\": \"s9\"\n      }\n    }\n  },\n  \"pausedQuests\": {\n    \"q4\": {}\n  }\n}\n",
-      "changed": "MODELROLE1d (D205 §6.4): `helper` sets Ask Daoris's order, one choice at account default or off, through SET_ACTOR; it says the order it replaced."
-    },
-    {
-      "name": "helper, one with no toolchain",
-      "argv": [
-        "helper",
-        "dsh"
-      ],
-      "before": null,
-      "exit": 0,
-      "out": [
-        "daoris: Ask Daoris runs on `dsh`. It reads, and proposes; every change is yours to apply (D89).",
-        "  ask-daoris: 1 dsh · account default · account default; it was off.",
-        "  Written to <config> — the driver re-reads it every tick, so nothing restarts."
-      ],
-      "err": [],
-      "after": "{\n  \"helperAdapter\": \"dsh\",\n  \"actors\": {\n    \"ask-daoris\": [\n      {\n        \"agent\": \"dsh\"\n      }\n    ]\n  }\n}\n",
-      "changed": "MODELROLE1d (D205 §6.4): `helper` sets Ask Daoris's order, one choice at account default or off, through SET_ACTOR; it says the order it replaced."
-    },
-    {
-      "name": "helper, none named",
-      "argv": [
-        "helper"
       ],
       "before": null,
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver helper` needs <adapter>|off — e.g. `daoris driver helper claude-code-acp`."
+        "daoris: `driver intake` is retired: a role's agents are set through the role door, `daoris driver role set <role> \"<agent> [<model>|-] [<effort>|-]\" …` (`off` for Intake and Ask Daoris), and said by `daoris driver role <role>`; nothing was changed."
       ],
-      "after": null
-    },
-    {
-      "name": "intake",
-      "argv": [
-        "intake",
-        "codex-acp"
-      ],
-      "before": null,
-      "exit": 0,
-      "out": [
-        "daoris: an ask the declarations do not settle opens an intake session via `codex-acp`.",
-        "  It reads the workspace's declarations, publishes the quests itself, and asks you where they do not",
-        "  settle it. 🔴 Every intake spends a real login on that harness's account.",
-        "  intake: 1 codex-acp · account default · account default; it was off.",
-        "  Written to <config> — the driver re-reads it every tick, so nothing restarts."
-      ],
-      "err": [],
-      "after": "{\n  \"intakeAdapter\": \"codex-acp\",\n  \"actors\": {\n    \"intake\": [\n      {\n        \"agent\": \"codex-acp\"\n      }\n    ]\n  }\n}\n",
-      "changed": "MODELROLE1d (D205 §6.4): `intake` sets Intake's order, one choice at account default or off, through SET_ACTOR; it says the order it replaced."
-    },
-    {
-      "name": "intake off",
-      "argv": [
-        "intake",
-        "off"
-      ],
-      "before": "{\n  \"drivable\": [\n    \"engine\",\n    \"game\"\n  ],\n  \"holds\": [\n    \"game\",\n    \"tools\"\n  ],\n  \"trees\": [\n    \"engine\",\n    \"docs\"\n  ],\n  \"cap\": 3,\n  \"adapter\": \"claude-code-acp\",\n  \"intakeAdapter\": \"claude-code\",\n  \"helperAdapter\": \"claude-code-acp\",\n  \"notify\": false,\n  \"timeoutMinutes\": 90,\n  \"strikes\": 0,\n  \"cooloff\": 45,\n  \"forgiven\": {\n    \"q1\": 3\n  },\n  \"released\": {\n    \"q2\": \"s1a2b3c4\"\n  },\n  \"standing\": {\n    \"engine\": {\n      \"says\": \"dev writes allowed\",\n      \"at\": \"2026-10-01T10:00:00.000Z\"\n    }\n  },\n  \"lines\": {\n    \"engine\": \"develop\"\n  },\n  \"workspaceLines\": {\n    \"aurora\": \"main\"\n  },\n  \"languages\": {\n    \"engine\": \"zh\"\n  },\n  \"workspaceLanguages\": {\n    \"aurora\": \"en\"\n  },\n  \"landings\": {\n    \"engine\": {\n      \"form\": \"branch\",\n      \"pattern\": \"feature/{ticket}\",\n      \"key\": \"TK-\\\\d+\",\n      \"tidy\": true,\n      \"autoAccept\": true,\n      \"squash\": true\n    },\n    \"stray\": {\n      \"form\": \"sideways\"\n    }\n  },\n  \"workspaceLandings\": {\n    \"aurora\": {\n      \"form\": \"merge\"\n    }\n  },\n  \"reviews\": {\n    \"legacy\": false,\n    \"storefront\": {\n      \"required\": true,\n      \"environments\": [\n        {\n          \"name\": \"local\",\n          \"kind\": \"local\",\n          \"procedure\": \"README.md\",\n          \"address\": \"http://localhost:4200\"\n        }\n      ]\n    }\n  },\n  \"workspaceReviews\": {\n    \"shop\": {\n      \"environments\": [\n        {\n          \"name\": \"dev\",\n          \"kind\": \"deployed\",\n          \"procedure\": \"docs/deploy.md\"\n        }\n      ]\n    }\n  },\n  \"opinions\": {\n    \"engine\": {\n      \"on\": [\n        \"landing\"\n      ],\n      \"reviewers\": [\n        \"codex-acp\"\n      ],\n      \"required\": true,\n      \"verify\": true\n    },\n    \"legacy\": false\n  },\n  \"workspaceOpinions\": {\n    \"aurora\": {\n      \"on\": [\n        \"landing\",\n        \"steps\"\n      ],\n      \"reviewers\": [\n        \"codex-acp\",\n        \"dsh\"\n      ],\n      \"minutes\": 20,\n      \"recheck\": false\n    }\n  },\n  \"helpers\": {\n    \"engine\": {\n      \"mode\": \"on\",\n      \"agents\": [\n        \"codex-acp\"\n      ]\n    }\n  },\n  \"workspaceHelpers\": {\n    \"aurora\": {\n      \"mode\": \"off\",\n      \"agents\": []\n    }\n  },\n  \"handOver\": {\n    \"engine\": {\n      \"mode\": \"on\"\n    }\n  },\n  \"workspaceHandOver\": {\n    \"aurora\": {\n      \"mode\": \"off\"\n    }\n  },\n  \"brainstorms\": {\n    \"mode\": \"ask\",\n    \"agents\": [\n      \"claude-code\",\n      \"codex-acp\"\n    ],\n    \"minutes\": {\n      \"pass\": 10,\n      \"synthesis\": 10,\n      \"challenge\": 10,\n      \"request\": 30\n    }\n  },\n  \"workspaceBrainstorms\": {\n    \"aurora\": {\n      \"mode\": \"off\",\n      \"agents\": [],\n      \"minutes\": {\n        \"pass\": 10,\n        \"synthesis\": 10,\n        \"challenge\": 10,\n        \"request\": 30\n      }\n    }\n  },\n  \"commits\": {\n    \"engine\": {\n      \"mode\": \"ask\",\n      \"convention\": \"Imperative-subject\"\n    }\n  },\n  \"workspaceCommits\": {\n    \"aurora\": {\n      \"mode\": \"at-end\"\n    }\n  },\n  \"readAcross\": {\n    \"engine\": false\n  },\n  \"workspaceReadAcross\": {\n    \"aurora\": true\n  },\n  \"writeAcross\": {\n    \"game\": [\n      \"engine\"\n    ]\n  },\n  \"helpMode\": \"full\",\n  \"pausedAsks\": {\n    \"a1\": {\n      \"at\": \"2026-10-02T08:00:00Z\",\n      \"stopped\": {\n        \"q3\": \"s9\"\n      }\n    }\n  },\n  \"pausedQuests\": {\n    \"q4\": {}\n  }\n}\n",
-      "exit": 0,
-      "out": [
-        "daoris: asks on this machine are answered by declarations only — proposed, never published unasked.",
-        "  An intake already waiting on you still waits; answering its ask ends it.",
-        "  intake: off; it was 1 claude-code · account default · account default (as before).",
-        "  Written to <config> — the driver re-reads it every tick, so nothing restarts."
-      ],
-      "err": [],
-      "after": "{\n  \"drivable\": [\n    \"engine\",\n    \"game\"\n  ],\n  \"holds\": [\n    \"game\",\n    \"tools\"\n  ],\n  \"trees\": [\n    \"engine\",\n    \"docs\"\n  ],\n  \"cap\": 3,\n  \"adapter\": \"claude-code-acp\",\n  \"helperAdapter\": \"claude-code-acp\",\n  \"actors\": {\n    \"intake\": []\n  },\n  \"notify\": false,\n  \"timeoutMinutes\": 90,\n  \"strikes\": 0,\n  \"cooloff\": 45,\n  \"forgiven\": {\n    \"q1\": 3\n  },\n  \"released\": {\n    \"q2\": \"s1a2b3c4\"\n  },\n  \"standing\": {\n    \"engine\": {\n      \"says\": \"dev writes allowed\",\n      \"at\": \"<at>\"\n    }\n  },\n  \"lines\": {\n    \"engine\": \"develop\"\n  },\n  \"workspaceLines\": {\n    \"aurora\": \"main\"\n  },\n  \"languages\": {\n    \"engine\": \"zh\"\n  },\n  \"workspaceLanguages\": {\n    \"aurora\": \"en\"\n  },\n  \"landings\": {\n    \"engine\": {\n      \"form\": \"branch\",\n      \"pattern\": \"feature/{ticket}\",\n      \"key\": \"TK-\\\\d+\",\n      \"tidy\": true,\n      \"autoAccept\": true,\n      \"squash\": true\n    },\n    \"stray\": {\n      \"form\": \"sideways\"\n    }\n  },\n  \"workspaceLandings\": {\n    \"aurora\": {\n      \"form\": \"merge\"\n    }\n  },\n  \"reviews\": {\n    \"legacy\": false,\n    \"storefront\": {\n      \"required\": true,\n      \"environments\": [\n        {\n          \"name\": \"local\",\n          \"kind\": \"local\",\n          \"procedure\": \"README.md\",\n          \"address\": \"http://localhost:4200\"\n        }\n      ]\n    }\n  },\n  \"workspaceReviews\": {\n    \"shop\": {\n      \"environments\": [\n        {\n          \"name\": \"dev\",\n          \"kind\": \"deployed\",\n          \"procedure\": \"docs/deploy.md\"\n        }\n      ]\n    }\n  },\n  \"opinions\": {\n    \"engine\": {\n      \"on\": [\n        \"landing\"\n      ],\n      \"reviewers\": [\n        \"codex-acp\"\n      ],\n      \"required\": true,\n      \"verify\": true\n    },\n    \"legacy\": false\n  },\n  \"workspaceOpinions\": {\n    \"aurora\": {\n      \"on\": [\n        \"landing\",\n        \"steps\"\n      ],\n      \"reviewers\": [\n        \"codex-acp\",\n        \"dsh\"\n      ],\n      \"minutes\": 20,\n      \"recheck\": false\n    }\n  },\n  \"helpers\": {\n    \"engine\": {\n      \"mode\": \"on\",\n      \"agents\": [\n        \"codex-acp\"\n      ]\n    }\n  },\n  \"workspaceHelpers\": {\n    \"aurora\": {\n      \"mode\": \"off\",\n      \"agents\": []\n    }\n  },\n  \"handOver\": {\n    \"engine\": {\n      \"mode\": \"on\"\n    }\n  },\n  \"workspaceHandOver\": {\n    \"aurora\": {\n      \"mode\": \"off\"\n    }\n  },\n  \"brainstorms\": {\n    \"mode\": \"ask\",\n    \"agents\": [\n      \"claude-code\",\n      \"codex-acp\"\n    ],\n    \"minutes\": {\n      \"pass\": 10,\n      \"synthesis\": 10,\n      \"challenge\": 10,\n      \"request\": 30\n    }\n  },\n  \"workspaceBrainstorms\": {\n    \"aurora\": {\n      \"mode\": \"off\",\n      \"agents\": [],\n      \"minutes\": {\n        \"pass\": 10,\n        \"synthesis\": 10,\n        \"challenge\": 10,\n        \"request\": 30\n      }\n    }\n  },\n  \"commits\": {\n    \"engine\": {\n      \"mode\": \"ask\",\n      \"convention\": \"Imperative-subject\"\n    }\n  },\n  \"workspaceCommits\": {\n    \"aurora\": {\n      \"mode\": \"at-end\"\n    }\n  },\n  \"readAcross\": {\n    \"engine\": false\n  },\n  \"workspaceReadAcross\": {\n    \"aurora\": true\n  },\n  \"writeAcross\": {\n    \"game\": [\n      \"engine\"\n    ]\n  },\n  \"helpMode\": \"full\",\n  \"pausedAsks\": {\n    \"a1\": {\n      \"at\": \"<at>\",\n      \"stopped\": {\n        \"q3\": \"s9\"\n      }\n    }\n  },\n  \"pausedQuests\": {\n    \"q4\": {}\n  }\n}\n",
-      "changed": "MODELROLE1d (D205 §6.4): `intake` sets Intake's order, one choice at account default or off, through SET_ACTOR; it says the order it replaced."
-    },
-    {
-      "name": "intake, one with no toolchain",
-      "argv": [
-        "intake",
-        "dsh"
-      ],
-      "before": null,
-      "exit": 0,
-      "out": [
-        "daoris: an ask the declarations do not settle opens an intake session via `dsh`.",
-        "  It reads the workspace's declarations, publishes the quests itself, and asks you where they do not",
-        "  settle it. 🔴 Every intake spends a real login on that harness's account.",
-        "  intake: 1 dsh · account default · account default; it was off.",
-        "  Written to <config> — the driver re-reads it every tick, so nothing restarts."
-      ],
-      "err": [],
-      "after": "{\n  \"intakeAdapter\": \"dsh\",\n  \"actors\": {\n    \"intake\": [\n      {\n        \"agent\": \"dsh\"\n      }\n    ]\n  }\n}\n",
-      "changed": "MODELROLE1d (D205 §6.4): `intake` sets Intake's order, one choice at account default or off, through SET_ACTOR; it says the order it replaced."
-    },
-    {
-      "name": "intake, none named",
-      "argv": [
-        "intake"
-      ],
-      "before": null,
-      "exit": 2,
-      "out": [],
-      "err": [
-        "daoris: `driver intake` needs <adapter>|off — e.g. `daoris driver intake claude-code-acp`, or `off` to answer asks by declarations only."
-      ],
-      "after": null
+      "after": null,
+      "changed": "ONEWAY1a (the oneway design §2 S1): Intake's order is set through the role door alone, `driver role set intake …|off`; the verb is refused naming it."
     },
     {
       "name": "line",
@@ -3024,184 +2881,41 @@
         "  ask-daoris  Ask Daoris · takes ask-daoris on the machine · its actor's order (the seed)",
         "  chat        Chat · takes chat on the machine · its actor's order (the seed)",
         "  <config>'s actors are the file's own here (not this home's store), so its roles are not set here.",
-        "  Change one: `driver role set <id> [--name \"…\"] [--name-in <tag>=\"…\"]… [--takes <work,…>] [--scope machine|workspace:<id>|repository:<id>] [\"<agent> [<model>|-] [<effort>|-]\" …]`, `driver role remove <id>`, `driver role default <id>` or `driver role default --all`.",
+        "  Change one: `driver role set <id> [--name \"…\"] [--name-in <tag>=\"…\"]… [--takes <work,…>] [--scope machine|workspace:<id>|repository:<id>] [\"<agent> [<model>|-] [<effort>|-]\" … | off]`, `driver role remove <id>`, `driver role default <id>` or `driver role default --all`.",
         "  Set how a role's choices share new starts: `driver role policy <id> [--preset first|even|weighted] [--rule order|weight] [--weight <n>=<0-10>]… [--share <n>=<1-99>]… [--budget <n>=<starts>/day]… [--takes <n>=<work,…>]… [--on <condition>=<action>[:<after>|:<minutes>]]… [--most <1-8>] [--clear]` (<n> is a choice's number in the role's staffing)."
       ],
       "err": [],
       "after": null
     },
     {
-      "name": "actor, every actor as before",
+      "name": "actor, an order set, retired",
+      "argv": [
+        "actor",
+        "build",
+        "claude-code opus high"
+      ],
+      "before": "{\n  \"adapter\": \"claude-code\"\n}\n",
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `driver actor` is retired: a role's agents are set through the role door, `daoris driver role set <role> \"<agent> [<model>|-] [<effort>|-]\" …` (`off` for Intake and Ask Daoris), and said by `daoris driver role <role>`; nothing was changed."
+      ],
+      "after": "{\n  \"adapter\": \"claude-code\"\n}\n",
+      "changed": "ONEWAY1a (the oneway design §2 S1): a role's order is set through the role door alone; the verb is refused naming it, and the file stays as it was."
+    },
+    {
+      "name": "actor, a read, retired",
       "argv": [
         "actor"
       ],
       "before": null,
-      "exit": 0,
-      "out": [
-        "daoris: <config>",
-        "  build      1 claude-code · account default · account default (as before)",
-        "  intake     off",
-        "  opinion    as before: the agents a rule or an ask names, at account default",
-        "  helper     as before: every agent of another maker than the asker's, at account default",
-        "  partner    as before: the agents a rule or an ask names, at account default",
-        "  brainstorm 1 claude-code · account default · account default (as before)",
-        "  ask-daoris off",
-        "  chat       1 claude-code · account default · account default (as before)",
-        "  Each runs the first of its choices that can run, in order. Set one: `daoris driver actor <actor> \"<agent> [<model>|-] [<effort>|-]\" …`; `--clear` goes back to as before."
-      ],
-      "err": [],
-      "after": null
-    },
-    {
-      "name": "actor, one actor set",
-      "argv": [
-        "actor",
-        "build"
-      ],
-      "before": "{\n  \"adapter\": \"claude-code\",\n  \"actors\": {\n    \"build\": [\n      { \"agent\": \"claude-code\", \"model\": \"opus\", \"effort\": \"high\" },\n      { \"agent\": \"codex-acp\" }\n    ]\n  }\n}\n",
-      "exit": 0,
-      "out": [
-        "daoris: <config>",
-        "  build      1 claude-code · opus · high, 2 codex-acp · account default · account default",
-        "  Each runs the first of its choices that can run, in order. Set one: `daoris driver actor <actor> \"<agent> [<model>|-] [<effort>|-]\" …`; `--clear` goes back to as before."
-      ],
-      "err": [],
-      "after": "{\n  \"adapter\": \"claude-code\",\n  \"actors\": {\n    \"build\": [\n      { \"agent\": \"claude-code\", \"model\": \"opus\", \"effort\": \"high\" },\n      { \"agent\": \"codex-acp\" }\n    ]\n  }\n}\n"
-    },
-    {
-      "name": "actor, an order set",
-      "argv": [
-        "actor",
-        "build",
-        "claude-code opus high",
-        "codex-acp - -"
-      ],
-      "before": null,
-      "exit": 0,
-      "out": [
-        "daoris: build runs the first of its choices that can run, in order.",
-        "  build: 1 claude-code · opus · high, 2 codex-acp · account default · account default; it was 1 claude-code · account default · account default (as before).",
-        "  Written to <config> — the driver re-reads it every tick, so nothing restarts."
-      ],
-      "err": [],
-      "after": "{\n  \"actors\": {\n    \"build\": [\n      {\n        \"agent\": \"claude-code\",\n        \"model\": \"opus\",\n        \"effort\": \"high\"\n      },\n      {\n        \"agent\": \"codex-acp\"\n      }\n    ]\n  }\n}\n"
-    },
-    {
-      "name": "actor, an order whose first agent changes adapter",
-      "argv": [
-        "actor",
-        "build",
-        "codex-acp - -",
-        "claude-code sonnet"
-      ],
-      "before": "{\n  \"adapter\": \"claude-code\"\n}\n",
-      "exit": 0,
-      "out": [
-        "daoris: build runs the first of its choices that can run, in order.",
-        "  build: 1 codex-acp · account default · account default, 2 claude-code · sonnet · account default; it was 1 claude-code · account default · account default (as before).",
-        "  Chat and Brainstorm keep `claude-code`, written for them: a change of Build's agent no longer moves them.",
-        "  Written to <config> — the driver re-reads it every tick, so nothing restarts."
-      ],
-      "err": [],
-      "after": "{\n  \"adapter\": \"codex-acp\",\n  \"actors\": {\n    \"build\": [\n      {\n        \"agent\": \"codex-acp\"\n      },\n      {\n        \"agent\": \"claude-code\",\n        \"model\": \"sonnet\"\n      }\n    ],\n    \"brainstorm\": [\n      {\n        \"agent\": \"claude-code\"\n      }\n    ],\n    \"chat\": [\n      {\n        \"agent\": \"claude-code\"\n      }\n    ]\n  }\n}\n"
-    },
-    {
-      "name": "actor, intake off",
-      "argv": [
-        "actor",
-        "intake",
-        "off"
-      ],
-      "before": "{\n  \"intakeAdapter\": \"claude-code\"\n}\n",
-      "exit": 0,
-      "out": [
-        "daoris: intake is off.",
-        "  intake: off; it was 1 claude-code · account default · account default (as before).",
-        "  Written to <config> — the driver re-reads it every tick, so nothing restarts."
-      ],
-      "err": [],
-      "after": "{\n  \"actors\": {\n    \"intake\": []\n  }\n}\n"
-    },
-    {
-      "name": "actor, back to as before",
-      "argv": [
-        "actor",
-        "build",
-        "--clear"
-      ],
-      "before": "{\n  \"adapter\": \"codex-acp\",\n  \"actors\": {\n    \"build\": [\n      { \"agent\": \"codex-acp\" }\n    ]\n  }\n}\n",
-      "exit": 0,
-      "out": [
-        "daoris: build is as before again: today's agent settings, at account default.",
-        "  build: as before; it was 1 codex-acp · account default · account default.",
-        "  Written to <config> — the driver re-reads it every tick, so nothing restarts."
-      ],
-      "err": [],
-      "after": "{\n  \"adapter\": \"codex-acp\"\n}\n"
-    },
-    {
-      "name": "actor, build cannot be off",
-      "argv": [
-        "actor",
-        "build",
-        "off"
-      ],
-      "before": null,
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `driver actor`: build cannot be off: only intake and ask-daoris have no agent; give it one to 4 choices."
+        "daoris: `driver actor` is retired: a role's agents are set through the role door, `daoris driver role set <role> \"<agent> [<model>|-] [<effort>|-]\" …` (`off` for Intake and Ask Daoris), and said by `daoris driver role <role>`; nothing was changed."
       ],
-      "after": null
-    },
-    {
-      "name": "actor, five choices",
-      "argv": [
-        "actor",
-        "build",
-        "a",
-        "b",
-        "c",
-        "d",
-        "e"
-      ],
-      "before": null,
-      "exit": 2,
-      "out": [],
-      "err": [
-        "daoris: `driver actor`: build takes at most 4 choices, not 5."
-      ],
-      "after": null
-    },
-    {
-      "name": "actor, not an actor",
-      "argv": [
-        "actor",
-        "builder",
-        "claude-code"
-      ],
-      "before": null,
-      "exit": 2,
-      "out": [],
-      "err": [
-        "daoris: `builder` is not an actor — one of build, intake, opinion, helper, partner, brainstorm, ask-daoris, chat."
-      ],
-      "after": null
-    },
-    {
-      "name": "actor, a choice of four words",
-      "argv": [
-        "actor",
-        "build",
-        "claude-code opus high extra"
-      ],
-      "before": null,
-      "exit": 2,
-      "out": [],
-      "err": [
-        "daoris: `claude-code opus high extra` is not a choice: an agent, then its model or `-`, then its effort or `-`, in one quoted word."
-      ],
-      "after": null
+      "after": null,
+      "changed": "ONEWAY1a (the oneway design §2 S1): `daoris driver role` says each role's order; the verb is refused naming it."
     }
   ]
 }

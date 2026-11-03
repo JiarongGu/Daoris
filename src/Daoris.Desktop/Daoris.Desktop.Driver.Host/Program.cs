@@ -42,8 +42,8 @@ using Daoris.Driver;
 //                 by declarations only (proposes, publishes nothing), or the receiver --to names.
 //   ask --publish <id> --to <repo> · ask --close <id> --reason "…" · ask --delete <id>
 //                 turn an ask into a quest, close it with the reason, or delete one made by mistake with
-//                 every quest asked by it (D95) — refused whole if any of them must stay. Where driver.json names an
-//                 `intakeAdapter` (`daoris driver intake <adapter>`), the loop answers an ask the
+//                 every quest asked by it (D95) — refused whole if any of them must stay. Where the Intake role has an
+//                 agent (`daoris driver role set intake "<agent>"`), the loop answers an ask the
 //                 declarations left open with an INTAKE session (D65 §1b) in <home>/intake/<workspace>/:
 //                 it publishes onto the ask, or parks asking you — and ends when you answer the ask.
 //   ask --pause <id> · ask --resume <id> · quest pause <id> · quest resume <id>

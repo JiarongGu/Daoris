@@ -4,7 +4,7 @@ import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // COMPANYVIEW1b (the company-view design §1, §3, §3.1): the Agents place's Roles mode, beside Agents, switched by the list's head. Its
-// five sections, Working roles the one built, and the working roles' presses reaching their doors (`SET_ROLE`, `SET_ACTOR`) from here.
+// five sections, Working roles the one built, and the working roles' presses reaching their one door (`SET_ROLE`, ONEWAY1a) from here.
 // The roles' tests moved from AI features' suite with the card they test (`settings/AiDomain.test.tsx` until COMPANYVIEW1b).
 
 const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({
@@ -73,29 +73,32 @@ const ROLES = {
   suggested: [{ id: 'designer', name: { en: 'Designer', zh: '设计师' }, takes: ['design'], scopeKind: 'machine', choices: [{ agent: 'claude-code', model: 'opus', effort: 'high' }] }],
 };
 
+/** A seeded role as `ROLES` answers it with no record of its own: named by its actor's words. */
+const seeded = (id: string) => ({ id, state: 'seed', seeded: true, takes: [id], scopeKind: 'machine', revision: 0 });
+
+/** The catalogue with the seeded roles whose editors these tests open. */
+const SEEDED = { ...ROLES, roles: ['build', 'intake', 'ask-daoris', 'chat'].map(seeded), works: ['build', 'intake', 'ask-daoris', 'chat'], suggested: [] };
+
 /** Open the Roles mode from the list's head. */
 const openRoles = async () => userEvent.click(await screen.findByRole('radio', { name: 'Setup' }));
 
 describe('The Agents place, Roles mode', () => {
-  let refuseActor = false;
   let refuseRole = false;
-  let catalogue = true;
+  let catalogue: 'roles' | 'seeded' | 'none' = 'roles';
 
   beforeEach(() => {
-    refuseActor = false;
     refuseRole = false;
-    catalogue = true;
+    catalogue = 'roles';
     window.localStorage.clear();
     i18n.changeLanguage('en');
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
     invoke.mockImplementation(async (module: string, type: string) => {
       if (module !== 'DAORIS.DRIVER') return WIRING;
-      if (type === 'SET_ACTOR' && refuseActor) throw new Error('build takes at most 4 choices, not 5.');
       if (type === 'SET_ROLE' && refuseRole) throw new Error('`build` may not be off: a role must take it on the machine.');
-      if (type === 'STATE' || type === 'SET_ACTOR' || type === 'SET_ROLE') return DRIVER_STATE;
+      if (type === 'STATE' || type === 'SET_ROLE') return DRIVER_STATE;
       if (type === 'HARNESSES') return ROSTER;
       if (type === 'ACTORS') return ACTORS;
-      if (type === 'ROLES') return catalogue ? ROLES : undefined;
+      if (type === 'ROLES') return catalogue === 'roles' ? ROLES : catalogue === 'seeded' ? SEEDED : undefined;
       if (type === 'STARTS') return { adapter: 'claude-code', starts: [] };
       return undefined;
     });
@@ -159,53 +162,58 @@ describe('The Agents place, Roles mode', () => {
     expect(screen.getByRole('button', { name: /^Appointed roles/ })).toHaveAttribute('aria-current', 'true');
   });
 
-  it('folds each role to one line, as before where it reads today\'s settings', async () => {
+  it('ONEWAY1a: folds each role to one line on a shell with no catalogue, as before where it reads today\'s settings, and edits none', async () => {
     window.localStorage.setItem('daoris.list.agents.mode', 'roles');
-    catalogue = false;
+    catalogue = 'none';
     show(<Place />);
 
     expect(await screen.findByText(/Not offered by this shell/)).toBeTruthy();
     expect(screen.queryByText('Actors')).toBeNull();
     expect(screen.getAllByText('claude-code · account default · account default · as before').length).toBe(2);
-    expect(screen.getAllByRole('button', { name: /^Edit / })).toHaveLength(4);
+    expect(screen.queryAllByRole('button', { name: /^Edit / })).toHaveLength(0);
     expect(screen.getByText('Off — declarations only')).toBeTruthy();
     expect(screen.getByText('Off — starters only')).toBeTruthy();
   });
 
-  it("saves Build's order over SET_ACTOR, one choice's model named", async () => {
+  it("ONEWAY1a: saves Build's order over SET_ROLE, one choice's model named", async () => {
     window.localStorage.setItem('daoris.list.agents.mode', 'roles');
-    catalogue = false;
+    catalogue = 'seeded';
     const notify = vi.fn();
     show(<Place notify={notify} />);
     const user = userEvent.setup();
 
     await user.click(await screen.findByRole('button', { name: 'Edit Build' }));
-    const editor = screen.getByRole('form', { name: 'Build: your order' });
+    const editor = screen.getByRole('form', { name: 'Build' });
     expect(within(editor).getByRole('note', { name: /Running work never moves to another choice\./ })).toBeTruthy();
     await user.type(within(editor).getByRole('textbox', { name: "choice 1's model" }), 'opus');
     await user.click(within(editor).getByRole('button', { name: 'Save' }));
 
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_ACTOR', {
-      payload: { actor: 'build', choices: [{ agent: 'claude-code', model: 'opus', effort: null }] },
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_ROLE', {
+      payload: {
+        change: 'set', id: 'build', revision: 0,
+        role: expect.objectContaining({ takes: ['build'], scope: { kind: 'machine', id: null } }),
+        choices: [{ agent: 'claude-code', model: 'opus', effort: null }],
+      },
     });
-    await waitFor(() => expect(notify).toHaveBeenCalledWith("Build's order is saved; new work takes it."));
-    await waitFor(() => expect(screen.queryByRole('form', { name: 'Build: your order' })).toBeNull());
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_ACTOR', expect.anything());
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(i18n.t('settings.ai.roles.saved', { role: 'Build' })));
+    await waitFor(() => expect(screen.queryByRole('form', { name: 'Build' })).toBeNull());
   });
 
   it('says a refusal under its Save and keeps the editor open as it was (R3)', async () => {
     window.localStorage.setItem('daoris.list.agents.mode', 'roles');
-    catalogue = false;
-    refuseActor = true;
+    catalogue = 'seeded';
+    refuseRole = true;
     const notify = vi.fn();
     show(<Place notify={notify} />);
     const user = userEvent.setup();
 
     await user.click(await screen.findByRole('button', { name: 'Edit Build' }));
-    const editor = screen.getByRole('form', { name: 'Build: your order' });
+    const editor = screen.getByRole('form', { name: 'Build' });
     await user.type(within(editor).getByRole('textbox', { name: "choice 1's model" }), 'opus');
     await user.click(within(editor).getByRole('button', { name: 'Save' }));
 
-    expect(await within(editor).findByRole('alert')).toHaveTextContent('at most 4 choices');
+    expect(await within(editor).findByRole('alert')).toHaveTextContent('may not be off');
     expect(within(editor).getByRole('textbox', { name: "choice 1's model" })).toHaveValue('opus');
     expect(notify).not.toHaveBeenCalledWith(expect.stringContaining('saved'));
   });
@@ -213,20 +221,20 @@ describe('The Agents place, Roles mode', () => {
   /** The editor is the mode's, held above the card (D168 point 3): a refresh of the roles read does not close it. */
   it('keeps an open editor while the roles are read again', async () => {
     window.localStorage.setItem('daoris.list.agents.mode', 'roles');
-    catalogue = false;
+    catalogue = 'seeded';
     show(<Place />);
     const user = userEvent.setup();
 
     await user.click(await screen.findByRole('button', { name: 'Edit Build' }));
     await user.type(screen.getByRole('textbox', { name: "choice 1's model" }), 'opus');
     expect(screen.getByRole('textbox', { name: "choice 1's model" })).toHaveValue('opus');
-    expect(screen.getByRole('form', { name: 'Build: your order' })).toBeTruthy();
+    expect(screen.getByRole('form', { name: 'Build' })).toBeTruthy();
   });
 
   /** Chat's and Ask Daoris's editors say what a running conversation does; every other role's says it never moves. */
   it.each(['en', 'zh'])("says in Chat's and Ask Daoris's editors that a conversation goes on with the next choice, in %s", async (language) => {
     window.localStorage.setItem('daoris.list.agents.mode', 'roles');
-    catalogue = false;
+    catalogue = 'seeded';
     await i18n.changeLanguage(language);
     show(<Place />);
     const user = userEvent.setup();
@@ -234,9 +242,7 @@ describe('The Agents place, Roles mode', () => {
 
     for (const [id, words] of [['ask-daoris', 'goesOn'], ['chat', 'goesOn'], ['intake', 'neverMoves']] as const) {
       await user.click(screen.getByRole('button', { name: i18n.t('settings.ai.roles.editOf', { role: i18n.t(`settings.ai.actors.name.${id}`) }) }));
-      const editor = screen.getByRole('form', {
-        name: i18n.t('settings.ai.actors.editorTitle', { actor: i18n.t(`settings.ai.actors.name.${id}`) }),
-      });
+      const editor = screen.getByRole('form', { name: i18n.t(`settings.ai.actors.name.${id}`) });
       expect(within(editor).getByRole('note', { name: new RegExp(i18n.t(`settings.ai.actors.${words}`).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')) })).toBeTruthy();
       await user.click(within(editor).getByRole('button', { name: i18n.t('common.cancel') }));
     }
@@ -356,7 +362,7 @@ describe('The Agents place, Roles mode', () => {
   });
 });
 
-/** Intake's row (MODELROLE1d, D205 §7): its order set in its editor over SET_ACTOR, off in its own words, with what an intake runs as. */
+/** Intake's row (MODELROLE1d, D205 §7): its order set in its editor over SET_ROLE (ONEWAY1a), off in its own words, with what an intake runs as. */
 describe('Intake in the Roles mode', () => {
   const start = (job: 'work' | 'intake', adapter: string) => ({
     job, workspace: 'default', adapter, owner: 'claude-code', product: 'Claude Code',
@@ -380,11 +386,12 @@ describe('Intake in the Roles mode', () => {
     window.localStorage.setItem('daoris.list.agents.mode', 'roles');
     i18n.changeLanguage('en');
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
-    invoke.mockImplementation(async (module: string, type: string, request?: { payload?: { actor?: string; choices?: { agent: string }[] | null } }) => {
+    invoke.mockImplementation(async (module: string, type: string, request?: { payload?: { id?: string; choices?: { agent: string }[] | null } }) => {
       if (module !== 'DAORIS.DRIVER') return WIRING;
-      if (type === 'SET_ACTOR' && request?.payload?.actor === 'intake') intake = request.payload.choices ?? [];
-      if (type === 'STATE' || type === 'SET_ACTOR') return { ...DRIVER_STATE, intakeAdapter: intake[0]?.agent ?? '' };
+      if (type === 'SET_ROLE' && request?.payload?.id === 'intake') intake = request.payload.choices ?? [];
+      if (type === 'STATE' || type === 'SET_ROLE') return { ...DRIVER_STATE, intakeAdapter: intake[0]?.agent ?? '' };
       if (type === 'ACTORS') return actors();
+      if (type === 'ROLES') return SEEDED;
       if (type === 'HARNESSES') return ROSTER;
       if (type === 'STARTS') {
         return { adapter: 'claude-code', starts: [start('work', 'claude-code'), ...(intake[0] ? [start('intake', intake[0].agent)] : [])] };
@@ -403,24 +410,24 @@ describe('Intake in the Roles mode', () => {
     show(<Place />);
 
     const row = await rowOf('Intake');
-    expect(within(row).getByText('Off — declarations only')).toBeTruthy();
+    expect(within(row).getByText(/Off — declarations only/)).toBeTruthy();
     expect(within(row).getByText(/answered from the workspace's declarations/)).toBeTruthy();
   });
 
-  it("sets Intake's order over SET_ACTOR", async () => {
+  it("ONEWAY1a: sets Intake's order over SET_ROLE", async () => {
     const notify = vi.fn();
     show(<Place notify={notify} />);
     const user = userEvent.setup();
 
     await user.click(within(await rowOf('Intake')).getByRole('button', { name: 'Edit Intake' }));
-    const editor = screen.getByRole('form', { name: 'Intake: your order' });
+    const editor = screen.getByRole('form', { name: 'Intake' });
     expect(within(editor).getByRole('note', { name: /Running work never moves to another choice\./ })).toBeTruthy();
     await user.click(within(editor).getByRole('button', { name: 'Save' }));
 
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_ACTOR', {
-      payload: { actor: 'intake', choices: [{ agent: 'claude-code', model: null, effort: null }] },
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_ROLE', {
+      payload: expect.objectContaining({ change: 'set', id: 'intake', choices: [{ agent: 'claude-code', model: null, effort: null }] }),
     });
-    await waitFor(() => expect(notify).toHaveBeenCalledWith("Intake's order is saved; new work takes it."));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(i18n.t('settings.ai.roles.saved', { role: 'Intake' })));
   });
 
   it("says which account an intake runs as, from the driver's answer, under Intake's row", async () => {
@@ -432,15 +439,15 @@ describe('Intake in the Roles mode', () => {
     expect(within(here).getByText('personal')).toBeTruthy();
   });
 
-  it('turns Intake off as the terminal does: an empty order', async () => {
+  it('ONEWAY1a: turns Intake off as the terminal does, by the role door: an empty order', async () => {
     intake = [{ agent: 'claude-code-acp' }];
     show(<Place />);
     const user = userEvent.setup();
 
     await user.click(within(await rowOf('Intake')).getByRole('button', { name: 'Edit Intake' }));
-    await user.click(within(screen.getByRole('form', { name: 'Intake: your order' })).getByRole('button', { name: 'Off' }));
+    await user.click(within(screen.getByRole('form', { name: 'Intake' })).getByRole('button', { name: 'Off' }));
 
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_ACTOR', { payload: { actor: 'intake', choices: [] } });
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_ROLE', { payload: expect.objectContaining({ change: 'set', id: 'intake', choices: [] }) });
   });
 
   /** A shell that answers no actors has never heard of them: no row, not a disabled one. */
