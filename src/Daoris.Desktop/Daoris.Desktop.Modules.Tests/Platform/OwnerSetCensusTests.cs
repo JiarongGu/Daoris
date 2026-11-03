@@ -52,7 +52,6 @@ public sealed class OwnerSetCensusTests
     {
         ["strikes"] = "the machine's strikes", ["timeout"] = "the machine's timeout", ["notify"] = "the machine's notifications",
         ["cap"] = "the machine's cap", ["cooloff"] = "the machine's cool-off", ["keep"] = "how long the machine keeps what it keeps",
-        ["adapter"] = "the machine's default agent", ["intake"] = "the machine's intake", ["helper"] = "the machine's helper agent",
     };
 
     // The fields that name a target, as a handler reads them: what the sweep tells a naming route by.
