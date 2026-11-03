@@ -147,6 +147,8 @@ export const HOME_ENTRIES = [
   row('act-files', 'data', 'data/act-files/*', 'data/act-files/*'),
   // AGENTSPLACE1b2: a place's apply, written before its first effect; named here, never read by the CLI.
   row('place-receipts', 'data', 'data/place-receipts', 'data/place-receipts'),
+  // COMMS1l: the steward desk's requests kept across a restart; named here, never read by the CLI.
+  row('steward-desk', 'data', 'data/steward-desk.json', 'data/steward-desk.json'),
   row('keys', 'profiles', 'profiles/keys.json', 'keys.json'),
   row('remotes', 'profiles', 'profiles/remotes.json', 'remotes.json'),
   row('agent-homes', 'profiles', 'profiles/agents/*/*', 'harnesses/*/*'),

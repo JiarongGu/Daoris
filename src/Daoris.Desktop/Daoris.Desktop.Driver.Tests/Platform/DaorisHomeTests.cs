@@ -426,6 +426,18 @@ public sealed class DaorisHomeTests
         Assert.Equal(table.IndexOf(HomeEntry.ActFiles) + 1, table.IndexOf(HomeEntry.PlaceReceipts));
     }
 
+    /// <summary>COMMS1l: the steward desk's history, a data file of its own after the place receipts, as the three twins hold it.</summary>
+    [Fact]
+    public void COMMS1l_the_steward_desk_is_a_data_file_after_the_place_receipts()
+    {
+        Assert.Same(HomeEntry.StewardDesk, HomeEntry.Named("steward-desk"));
+        Assert.Equal(
+            (HomeCategory.Data, "data/steward-desk.json", "data/steward-desk.json"),
+            (HomeEntry.StewardDesk.Category, HomeEntry.StewardDesk.New, HomeEntry.StewardDesk.Old));
+        var table = HomeEntry.Table.ToList();
+        Assert.Equal(table.IndexOf(HomeEntry.PlaceReceipts) + 1, table.IndexOf(HomeEntry.StewardDesk));
+    }
+
     /// <summary>
     /// CONFIRMWAIT1 (the confirm-wait design §15.2 item 6): the keys of a terminal's sent presses, kept as long as the press's card lives, a
     /// profiles folder after the window's, as the three twins hold it. A file that holds a key is a sign-in (D172 point 3), and never under

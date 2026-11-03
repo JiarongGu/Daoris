@@ -437,10 +437,11 @@ public sealed class StandingConfirmation : IDecisionAdmission
         Walk = walk ?? HolderWalk.System;
         RunStarted = _clock.GetUtcNow();
         DeskCaller = desk ?? (Caller is StandingCaller jobs ? Desktop.DeskCaller.System(jobs) : new DeskCaller(_ => null, new SystemProcesses(), _clock, Environment.ProcessId));
-        Desk = new StewardDesk(_clock);
+        // COMMS1l: kept across a restart where this build offers the steward, every request left open read as interrupted.
+        Desk = new StewardDesk(_clock, StewardOffered ? DaorisHome.Entry(home, HomeEntry.StewardDesk) : null);
     }
 
-    /// <summary>The steward's desk (STEWARDROLE1c, D209 §6.2): the run's requests, which grant nothing.</summary>
+    /// <summary>The steward's desk (STEWARDROLE1c, D209 §6.2): its requests, which grant nothing, kept with their history (COMMS1l).</summary>
     public StewardDesk Desk { get; }
 
     /// <summary>Who a desk request is counted against.</summary>
