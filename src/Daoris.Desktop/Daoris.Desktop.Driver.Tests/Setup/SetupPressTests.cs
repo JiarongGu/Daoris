@@ -102,6 +102,51 @@ public sealed class SetupPressTests : IDisposable
         Assert.Contains("`tools/index.mjs`", plan.Body);
     }
 
+    /// <summary>
+    /// D230: a reconcile is a case of the press, asked of a repository the registry marks adopted (no reading of
+    /// <c>status --json</c> reaches the driver yet, so the body says so). Its quest carries the standing answer's lines among
+    /// its items, its rule is the set-up's verbs with <c>reconcile</c> and <c>upstream --all</c>, and a press publishes it.
+    /// </summary>
+    [Fact]
+    public async Task A_reconcile_is_the_press_case_for_an_adopted_repository_carrying_the_standing_answers_rule_line()
+    {
+        var world = new World { Facts = Clean(declares: true, index: "docs/index/README.md") };
+        var config = Driven.WithStanding("billing", "Run the whole test suite before every commit.\nTest in staging.", DateTimeOffset.UnixEpoch);
+
+        var plan = await SetupPress.PlanReconcileAsync(world, config, SessionWire.Acp, "billing", Day);
+
+        Assert.Empty(plan.Refusals);
+        Assert.Equal(SetupCase.Reconcile, plan.Case);
+        Assert.Equal("Reconcile this repository with the shared doctrine (2026-10-01)", plan.Title);
+        Assert.Contains("Run `daoris reconcile`", plan.Body);
+        Assert.Contains("> Run the whole test suite before every commit.", plan.Body);
+        Assert.Contains("> Test in staging.", plan.Body);
+        Assert.Contains("a rule about this repository's own development", plan.Body);
+        Assert.Equal(SetupPressRules.ReconcileVerbs.Select(verb => $"Bash({verb})"), SetupPressRules.RulesOf(plan));
+        Assert.All(SetupPressRules.RulesOf(plan), rule => Assert.Null(PermissionRules.Refusal(rule)));
+
+        var outcome = await SetupPress.ApplyAsync(plan, world, _home);
+        Assert.True(outcome.Published);
+        var (_, sentence, to) = Assert.Single(world.Published);
+        Assert.Equal("billing", to);
+        Assert.StartsWith(plan.Title + "\n\n", sentence);
+        Assert.Contains("Run the whole test suite before every commit.", sentence);
+    }
+
+    /// <summary>D230: one open reconcile per repository, and none beside an open set-up; one the registry does not mark adopted is refused.</summary>
+    [Fact]
+    public async Task A_reconcile_is_refused_beside_an_open_one_and_for_a_repository_not_adopted()
+    {
+        var world = new World { Facts = Clean(declares: true, index: "docs/index/README.md") };
+        world.Quests.Add(new QuestView("q7", "ask #a7", "billing", "Reconcile this repository with the shared doctrine (2026-09-30)", "", "Taken"));
+
+        Refused(await SetupPress.PlanReconcileAsync(world, Driven, SessionWire.Acp, "billing", Day), SetupRefusals.Open, "`#q7`");
+
+        var unadopted = await SetupPress.PlanReconcileAsync(new World(), Driven, SessionWire.Acp, "reports", Day);
+        Refused(unadopted, SetupRefusals.NotAdopted, "has not taken up the shared doctrine");
+        Assert.Null(unadopted.Title);
+    }
+
     /// <summary>ORIENT2c: each stack the press knows has one form, the first the reading names.</summary>
     [Theory]
     [InlineData(".NET", "tools/index.cs", "dotnet run tools/index.cs", "dotnet run tools/index.cs -- --check")]
