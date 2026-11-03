@@ -297,6 +297,58 @@
         "quiet": { "n": 0, "known": "exact" },
         "failures": { "n": 0, "known": "exact" }
       }
+    },
+    {
+      "name": "an admission's count stands though the log it read was trimmed since",
+      "records": [
+        { "id": "s1", "kind": "driven", "quest": "q1", "state": "working", "created": "2026-11-03T09:00:00Z" }
+      ],
+      "named": ["s1"],
+      "events": { "s1": { "trimmed": true, "tokens": ["answer", "acts", "end"] } },
+      "admission": { "epochs": [{ "cause": "seed", "n": 3, "known": "exact" }], "read": { "s1": 7 } },
+      "expect": {
+        "answers-alone": { "n": 3, "known": "exact" }
+      }
+    },
+    {
+      "name": "an admission seeded over a trimmed log reads at least, and counts a go-on read on after it",
+      "records": [
+        { "id": "s1", "kind": "driven", "quest": "q1", "state": "working", "created": "2026-11-03T09:00:00Z" }
+      ],
+      "named": ["s1"],
+      "events": { "s1": { "trimmed": true, "tokens": ["answer", "acts", "end", "answer", "acts", "end"] } },
+      "admission": { "epochs": [{ "cause": "seed", "n": 2, "known": "at-least", "why": "log-trimmed" }], "read": { "s1": 7 } },
+      "expect": {
+        "answers-alone": { "n": 3, "known": "at-least", "why": "log-trimmed" }
+      }
+    },
+    {
+      "name": "the person's word read on after an admission's seed starts its count again, and it is exact",
+      "records": [
+        { "id": "s1", "kind": "driven", "quest": "q1", "state": "working", "created": "2026-11-03T09:00:00Z" },
+        { "id": "s2", "kind": "driven", "quest": "q1", "from": "s1", "fromWhy": "carry-on", "state": "working", "created": "2026-11-03T09:10:00Z" }
+      ],
+      "named": ["s1", "s2"],
+      "events": {
+        "s1": { "tokens": ["answer", "acts", "end", "person", "acts", "end"] },
+        "s2": { "tokens": ["brief", "answer", "acts", "end"] }
+      },
+      "admission": { "epochs": [{ "cause": "seed", "n": 2, "known": "at-least", "why": "walk-cut" }], "read": { "s1": 3, "s2": 0 } },
+      "expect": {
+        "answers-alone": { "n": 1, "known": "exact" }
+      }
+    },
+    {
+      "name": "a go-on the admission reserved counts before its events show it",
+      "records": [
+        { "id": "s1", "kind": "driven", "quest": "q1", "state": "working", "created": "2026-11-03T09:00:00Z" }
+      ],
+      "named": ["s1"],
+      "events": { "s1": { "tokens": ["started", "acts", "end", "answer", "acts", "end"] } },
+      "admission": { "epochs": [{ "cause": "seed", "n": 1, "known": "exact" }], "admitted": [{ "source": "answers:w9", "words": ["w9"] }], "read": { "s1": 6 } },
+      "expect": {
+        "answers-alone": { "n": 2, "known": "exact" }
+      }
     }
   ]
 }

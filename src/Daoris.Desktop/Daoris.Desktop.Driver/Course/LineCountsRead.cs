@@ -5,11 +5,13 @@ namespace Daoris.Driver;
 /// <summary>
 /// Reads what <see cref="LineCounts.Of"/> answers from, once for a line (CONTEXTDRIVE1a, the context-counters design §2.2): the service's
 /// records, read once and handed to the readers that count them today (<see cref="ServiceClient.ReadStrikes"/>,
-/// <see cref="ServiceClient.ReadFailedRuns"/>), the line's events, and its moves from <see cref="StaffMoves"/>. It keeps nothing: a count is
-/// read from its record each time, so a restart reads it equal.
+/// <see cref="ServiceClient.ReadFailedRuns"/>), the line's events, its moves from <see cref="StaffMoves"/>, and its answers alone from its
+/// admission (<see cref="ContinuationAdmissions"/>, COMMS1g) once one is kept. It keeps nothing: a count is read from its record each time,
+/// so a restart reads it equal.
 /// </summary>
 public sealed class LineCountsRead(
-    ServiceClient service, SessionEvents events, StaffMoves moves, string home, Func<IReadOnlyDictionary<string, int>> forgiven)
+    ServiceClient service, SessionEvents events, StaffMoves moves, ContinuationAdmissions admissions, string home,
+    Func<IReadOnlyDictionary<string, int>> forgiven)
 {
     /// <summary>Every count of the line <paramref name="session"/> is on; none for a teammate's record.</summary>
     public async Task<IReadOnlyList<LineCount>> OfAsync(string session, CancellationToken ct)
@@ -24,17 +26,19 @@ public sealed class LineCountsRead(
             // The service did not answer: the counts that come from its records read unknown.
         }
 
-        var evidence = Gather(session, json, id => EventsOf(events, id), line => MovesOf(home, line, moves), forgiven());
+        var evidence = Gather(
+            session, json, id => EventsOf(events, id), line => MovesOf(home, line, moves), forgiven(),
+            history => admissions.Count(history) is { From: ContinuationAdmissions.Admission } kept ? kept : null);
         return LineCounts.Of(session, evidence);
     }
 
     /// <summary>
     /// The evidence for the line <paramref name="session"/> is on, from the records' text as the service answered it (null where it did not) and
-    /// the readers of its parts' events and of its moves by line key.
+    /// the readers of its parts' events, of its moves by line key and of its admission's count (none kept, null).
     /// </summary>
     public static LineEvidence Gather(
         string session, string? recordsJson, Func<string, PartEvents?> eventsOf, Func<string, MovesAnswer> movesOf,
-        IReadOnlyDictionary<string, int> forgiven)
+        IReadOnlyDictionary<string, int> forgiven, Func<LineHistory, AloneCount?>? aloneOf = null)
     {
         if (recordsJson is null)
         {
@@ -45,9 +49,10 @@ public sealed class LineCountsRead(
 
         var records = ServiceClient.ReadRecords(recordsJson);
         var key = LineKeys.Of(session, records);
+        var kept = key.Parts.Count == 0 || aloneOf is null ? null : aloneOf(ContinuationAdmissions.History(session, records, eventsOf));
         return new LineEvidence(
             records, EventsFor(LineKeys.Members(key, records).Select(member => member.Session), eventsOf),
-            ServiceClient.ReadStrikes(recordsJson), ServiceClient.ReadFailedRuns(recordsJson), forgiven, movesOf(key.Key));
+            ServiceClient.ReadStrikes(recordsJson), ServiceClient.ReadFailedRuns(recordsJson), forgiven, movesOf(key.Key), kept);
     }
 
     /// <summary>The line's moves in 24 hours; a home with no store or one before the table reads at least, and a store that does not read, unreadable.</summary>
@@ -69,7 +74,7 @@ public sealed class LineCountsRead(
         parts.Distinct(StringComparer.Ordinal).ToDictionary(part => part, eventsOf, StringComparer.Ordinal);
 
     /// <summary>A part's events as this machine keeps them; null where the log does not read, a teammate's or another machine's.</summary>
-    private static PartEvents? EventsOf(SessionEvents events, string id)
+    public static PartEvents? EventsOf(SessionEvents events, string id)
     {
         if (!SessionEventText.IsLocalId(id)) return null;
         try

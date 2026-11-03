@@ -1142,7 +1142,7 @@ public sealed class Driver(
             (await service.TakeBackAsync(session, word, ct: token).ConfigureAwait(false)).Done;
         var undecided = snapshot;
         // SUPERVISOR1b (§4.3): D188's bound asked again at each release, the records read once a look and only where one is due.
-        var alone = new AnswersAloneHold(Context.Events, Context.Marks);
+        var alone = new AnswersAloneHold(Context.Events, Context.Marks, new ContinuationAdmissions(home));
         IReadOnlyDictionary<string, PriorSession>? lines = null;
         SupervisorBound bound = async (session, token) =>
             alone.AtBound(session, lines ??= await AnswersAloneHold.RecordsAsync(service, token).ConfigureAwait(false));
@@ -2587,6 +2587,14 @@ public sealed class Driver(
         var handsOn = answered is not null || (carryingOn && Observation.IsQuietPressed(start.Resumes!.NoteParts))
             ? await GoOns.ResumeWordsAsync(start.Resumes!, ct).ConfigureAwait(false)
             : null;
+
+        // COMMS1g (the comms design §11): the waited quest's result counts on the line this resume carries on, reserved before the run is
+        // handed it and once however often the start is tried. Nothing here holds it.
+        if (answered is not null)
+        {
+            new AnswersAloneHold(Context.Events, Context.Marks, new ContinuationAdmissions(home)).Waited(
+                start.Resumes!, answered.Id, handsOn?.Waiting ?? [], await AnswersAloneHold.RecordsAsync(service, ct).ConfigureAwait(false));
+        }
 
         // LANDSYNC2 (D87's 2026-10-15 amendment point 7): a session going on in a tree that stands — a resume, words going on, a
         // carry-on, a further part gone into its session's tree — starts from the line where the line came to hold some of its commits,
