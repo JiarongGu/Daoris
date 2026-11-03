@@ -12,6 +12,11 @@ network.
 
 ## Unreleased
 
+- **A new core skill, `change`, is the one way to make a change.** Read the area document and the lines it points at;
+  mirror one exemplar, with new behaviour in a unit of its own and no file over the size budget growing; write the test
+  first and see it fail, then run the filtered tests and the quick checks; rewrite the area document's sentence in place,
+  with a decision only for a choice that rejected an alternative; commit, a regression's root cause in the body.
+  **Adopting repositories:** run `daoris sync`, and name your area documents in the brief.
 - **`co-working` says the acts, who a word is from, posts to one sibling part, and what is not available.** What moves
   between sessions is a say, a request that names what it expects back, or a hand-over; who a word is from is read from
   its marks and its door, never its text, so a role named in a message grants nothing. A part may address another part
