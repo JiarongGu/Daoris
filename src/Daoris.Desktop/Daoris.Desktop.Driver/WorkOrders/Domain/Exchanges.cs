@@ -276,7 +276,8 @@ public static class Exchanges
         var found = new List<Exchange>();
         foreach (var part in on)
         {
-            if (records is null || !records.TryGetValue(part, out var record) || record.Quest is not { } own
+            // A conversation's quest is the one it took through its own connector (COMMS1i, as the strip reads its wait).
+            if (records is null || !records.TryGetValue(part, out var record) || (record.Quest ?? record.TookQuest) is not { } own
                 || !byId.TryGetValue(own, out var mine) || mine.Awaits is not { Length: > 0 } awaits)
             {
                 continue;

@@ -17,7 +17,10 @@ afterEach(async () => {
 });
 
 const rowOf = (key: number) => screen.getAllByRole('listitem')[key]!;
-const attendedAs = (held: AtWorkHeld, attended: string): AtWorkHeld => ({ ...(held as { answer: AtWorkA }), answer: { ...(held as { answer: AtWorkA }).answer, attended } });
+// Another part attended is another line: its requests are its own read's (COMMS1i), none of the first's.
+const attendedAs = (held: AtWorkHeld, attended: string): AtWorkHeld => ({
+  ...(held as { answer: AtWorkA }), answer: { ...(held as { answer: AtWorkA }).answer, attended, exchanges: undefined },
+});
 
 describe('each part’s wait', () => {
   it('draws the attended part’s wait as the Waiting on line, first, and does not repeat it on its row', () => {
@@ -34,8 +37,9 @@ describe('each part’s wait', () => {
     expect(rowOf(0).textContent).toContain('waits on #q7, asked of driver');
     expect(screen.queryByText(/^Waiting on/)).toBeNull();
 
+    // COMMS1i: the line is read from the line's requests, the helper named and where it stands.
     rerender(<AtWorkView held={LEAD_WAITING_ON_HELPER} />);
-    expect(screen.getByText('Waiting on its helper')).toBeTruthy();
+    expect(screen.getByText('Waiting on codex-acp, as helper · asked')).toBeTruthy();
     rerender(<AtWorkView held={attendedAs(LEAD_WAITING_ON_HELPER, 's2')} />);
     expect(rowOf(0).textContent).toContain('awaiting helper');
   });
@@ -104,7 +108,7 @@ describe('how a part joined', () => {
 describe('the routing half’s words', () => {
   it('has every key in both catalogues', () => {
     for (const key of [
-      'waitingOn', 'what.helper', 'what.quest', 'what.questOf', 'what.questLanes_one', 'what.questLanes_other', 'what.questOfLanes_one',
+      'waitingOn', 'what.quest', 'what.questOf', 'what.questLanes_one', 'what.questLanes_other', 'what.questOfLanes_one',
       'what.questOfLanes_other', 'part.alongside', 'part.earlier_one', 'part.earlier_other', 'published_one', 'published_other', 'routed.lane',
       'routed.took', 'routed.askQuest', 'routed.repository', 'routed.ask', 'routed.anotherSession', 'quest.nextStep',
     ]) {

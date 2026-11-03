@@ -207,6 +207,9 @@ public sealed record PriorSession(
 
     /// <summary>The quest it served, as its record names it; null for a conversation's. What a later part is told it worked on.</summary>
     public string? Quest { get; init; }
+
+    /// <summary>The quest a conversation took through its own connector, its <see cref="Quest"/> staying null (COWORKVIEW1b-i).</summary>
+    public string? TookQuest { get; init; }
 }
 
 /// <summary>

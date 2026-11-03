@@ -1,6 +1,6 @@
 import type { Consideration } from '../../data/signals';
 import type { ChannelItem } from '../channel';
-import type { AtWorkA, AtWorkAsker, AtWorkChild, AtWorkHeld, AtWorkHint, AtWorkPart, AtWorkSubagents } from './types';
+import type { AtWorkA, AtWorkAsker, AtWorkChild, AtWorkExchange, AtWorkHeld, AtWorkHint, AtWorkPart, AtWorkSubagents } from './types';
 
 // Who is at work (COWORKVIEW1a): the answers the view's stories and tests draw, each a state the cowork view design §5.3 names.
 
@@ -101,18 +101,42 @@ export const LEAD_WAITING_ON_LANE = routed([
   routedPart('s2', 2, {
     joined: { began: 'opened', quest: 'q7', lanes: ['core'], byPart: 1, of: 'driver' }, alongside: true,
   }),
-]);
+], {
+  exchanges: [{ id: 'quest:q7', part: 's1', expects: 'work', to: 'driver', delivery: 'taken', outcome: 'taken-in', holds: true, lanes: ['core'] }],
+});
+
+/** COMMS1i: a helper the line asked, by its exchange as the driver's read answers it. */
+export const helperAsked = (over: Partial<AtWorkExchange> = {}): AtWorkExchange => ({
+  id: 'helper:h7', part: 's1', expects: 'answer', to: 'codex-acp', delivery: 'taken', outcome: 'asked', holds: true, at: AT,
+  session: 'h-session', agent: 'codex-acp', ...over,
+});
 
 /** A lead waiting on its helper, which the strip words *awaiting helper*. */
 export const LEAD_WAITING_ON_HELPER = routed([
   routedPart('s1', 1, { state: 'completed', waits: { helper: true } }),
   routedPart('s2', 2, { state: 'completed', joined: { began: 'retried', after: 1 } }),
-]);
+], { exchanges: [helperAsked()] });
 
 /** A chat that took a quest and waits on the question the quest asked. */
 export const CHAT_TOOK_A_QUEST = routed([
   routedPart('c1', 1, { state: 'completed', joined: { began: 'opened', quest: 'q1', took: true, of: 'driver' }, waits: { quest: 'q9', of: 'docs' } }),
-]);
+], { exchanges: [{ id: 'quest:q9', part: 'c1', expects: 'work', to: 'docs', delivery: 'kept', outcome: 'asked', holds: true }] });
+
+/**
+ * COMMS1i: a line's co-workers in each state a member can stand in: a helper asked and waiting for the person's yes, one reading, one
+ * answered and taken, a partner refused, and a successor asked by the part before a hand-over; one source not read.
+ */
+export const COWORKERS = routed([routedPart('s2', 2, { state: 'working' }), routedPart('s1', 1, { state: 'completed' })], {
+  exchanges: [
+    helperAsked({ id: 'helper:h5', outcome: 'asked', delivery: 'kept', session: undefined, agent: undefined, to: 'helper' }),
+    helperAsked({ id: 'helper:h6', outcome: 'approved', delivery: 'kept', session: undefined }),
+    helperAsked({ id: 'helper:h7', part: 's2' }),
+    helperAsked({ id: 'helper:h8', part: 's2', outcome: 'taken-in', holds: false, answered: LATER }),
+    { id: 'piece:p1', part: 's2', expects: 'piece', to: 'claude-code', delivery: 'not-reached', outcome: 'refused', holds: false },
+    { id: 'hand-over:o1', part: 's1', expects: 'successor', to: 'successor', delivery: 'uncertain', outcome: 'approved', holds: true },
+  ],
+  unread: ['piece'],
+}, 's2');
 
 /** A session that published three quests and waits on none: two lane parts alongside it. */
 export const PUBLISHED_AND_WAITS_ON_NONE = routed([

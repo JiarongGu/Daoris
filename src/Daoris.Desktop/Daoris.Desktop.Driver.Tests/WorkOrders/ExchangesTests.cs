@@ -45,6 +45,27 @@ public sealed class ExchangesTests
         Assert.All(read.Values, exchange => Assert.Equal((Exchanges.Yes, Exchanges.Read), (exchange.Available, exchange.Source)));
     }
 
+    /// <summary>
+    /// COMMS1i: a conversation's quest is the one it took through its own connector, its <c>quest</c> empty, so the question that quest
+    /// asked is what the line waits on, as the strip reads its wait; a driven part's own quest is read as before.
+    /// </summary>
+    [Fact]
+    public void COMMS1i_a_conversation_waits_on_the_question_of_the_quest_it_took()
+    {
+        var look = Look([]) with
+        {
+            Records = new Dictionary<string, PriorSession>(StringComparer.Ordinal)
+            {
+                ["c1"] = new PriorSession("c1", null, "completed") { TookQuest = "q1" },
+            },
+            Quests = [new QuestView("q1", "ask #a1", "core", "Take it", "", "Taken") { Awaits = "q9" }, new QuestView("q9", "core", "docs", "Ask docs", "", "Open")],
+        };
+
+        var exchange = Assert.Single(Exchanges.Of(look, "c1"), each => each.Id.StartsWith("quest:", StringComparison.Ordinal));
+
+        Assert.Equal(("quest:q9", "docs", true), (exchange.Id, exchange.To, exchange.Holds));
+    }
+
     [Fact]
     public void A_refused_ask_was_not_reached_and_holds_nothing_and_a_persons_ask_never_holds()
     {

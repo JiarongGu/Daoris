@@ -106,6 +106,17 @@ public sealed record AtWorkAnswer(AtWorkOf Of, string Attended, IReadOnlyList<At
     public AtWorkAsker? AskedBy { get; init; }
 
     /// <summary>
+    /// The attended line's requests (COMMS1i): those that hold are its <i>Waiting on</i>, the head's and this view's one line; its helpers,
+    /// partners and successors are its co-workers. Null where it asked none, and where the exchanges half is not read.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<AtWorkExchange>? Exchanges { get; init; }
+
+    /// <summary>The exchanges' sources that could not be read, by name; null where every one read.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<string>? Unread { get; init; }
+
+    /// <summary>
     /// Where the attended part's newest generation started at least two subagents and the repository's routing standing is not open
     /// (COWORKVIEW1e-iii, the design §6.4 point 3): <c>not-driven</c>, <c>no-lanes</c> or <c>one-at-a-time</c>.
     /// </summary>
@@ -302,6 +313,7 @@ public static class AtWork
 
         var stale = groups.Failing ?? sessions.Failing ?? routing?.Quests.Failing;
         var asked = routing?.Asking?.Invoke(session, ids, routing.Parts, attended);
+        var exchanges = routing?.Exchanging?.Invoke(session);
         return new AtWorkHeld
         {
             Answer = new AtWorkAnswer(new AtWorkOf(session), session, parts, Subagents(attended, Teammate(session) ? null : attendedReading))
@@ -313,6 +325,13 @@ public static class AtWork
                 MoreQuests = asked?.More is > 0 and var more ? more : null,
                 AskedBy = asked?.By,
                 Hint = Hint(routing, attended, Teammate(session) ? null : attendedReading),
+                // A quest waited on is worded with its lanes, as the strip words it (COMMS1i).
+                Exchanges = exchanges is { Rows.Count: > 0 }
+                    ? [.. exchanges.Rows.Select(each => each.Id.StartsWith("quest:", StringComparison.Ordinal)
+                        ? each with { Lanes = routing!.Quest(each.Id["quest:".Length..])?.LaneList }
+                        : each)]
+                    : null,
+                Unread = exchanges is { Unread.Count: > 0 } ? exchanges.Unread : null,
             },
             Stale = stale is null ? null : new AtWorkWhy(stale),
         };

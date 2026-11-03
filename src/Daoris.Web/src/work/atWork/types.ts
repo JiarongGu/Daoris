@@ -115,6 +115,32 @@ export type AtWorkAsker = {
   by: { session?: string; step?: string; ask?: string; person?: true };
 };
 
+/**
+ * One request of the attended line (COMMS1i, the comms design §7), as the driver's exchanges read found it: an ask of a helper or a
+ * partner, a quest waited on, a successor asked for. What Daoris saw of its delivery and the protocol's own outcome are apart.
+ */
+export type AtWorkExchange = {
+  /** `helper:<ask>`, `piece:<ask>`, `quest:<id>` or `hand-over:<id>`. */
+  id: string;
+  /** The part of the line that asked it: after a hand-over, a predecessor's. */
+  part: string;
+  expects: 'answer' | 'piece' | 'work' | 'successor' | string;
+  /** The agent asked, the repository a quest went to, or the request's own word where none is known yet. */
+  to: string;
+  delivery: string;
+  /** The protocol's own word: asked, approved, answered, taken-in, refused, done, and the like. */
+  outcome: string;
+  /** The line waits on it: it has not come back. */
+  holds: boolean;
+  at?: string;
+  /** The session that took it up, and its agent. */
+  session?: string;
+  agent?: string;
+  answered?: string;
+  lanes?: string[];
+  stale?: true;
+};
+
 /** The routing standing the hint says: the driver's judge, in its own words. */
 export type AtWorkHint = 'not-driven' | 'no-lanes' | 'one-at-a-time';
 
@@ -132,6 +158,10 @@ export type AtWorkA = {
   /** How many more the bound left out. */
   moreQuests?: number;
   askedBy?: AtWorkAsker;
+  /** The attended line's requests (COMMS1i): those that hold are its *Waiting on*, the rest of its co-workers beside them. */
+  exchanges?: AtWorkExchange[];
+  /** The exchanges' sources that could not be read: said, never drawn as none. */
+  unread?: string[];
   /** Where its newest generation started two subagents and the repository's routing standing is not open (the design §6.4 point 3). */
   hint?: AtWorkHint;
   subagents: AtWorkSubagents;

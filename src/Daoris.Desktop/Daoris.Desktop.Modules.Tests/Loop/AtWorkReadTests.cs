@@ -63,6 +63,46 @@ public sealed class AtWorkReadTests
         return (groups, sessions, quests);
     }
 
+    /// <summary>
+    /// COMMS1i (the comms design §7, §13 point 12): the read's exchanges half reads the home's helper files by the driver's one read, the
+    /// line walked in the sessions slice's records; a helper's answer written after the read moves it, so the window reads again.
+    /// </summary>
+    [Fact]
+    public async Task COMMS1i_the_read_carries_the_line_s_exchanges_and_a_helper_s_answer_moves_it()
+    {
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        while (root is not null && !Directory.Exists(Path.Combine(root.FullName, ".git")) && !File.Exists(Path.Combine(root.FullName, ".git"))) root = root.Parent;
+        var home = Path.Combine(root!.FullName, "_fixtures", "at-work-exchanges", Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            var files = new HelperFiles(home);
+            Directory.CreateDirectory(Path.GetDirectoryName(files.PathOf("h7", "ask"))!);
+            File.WriteAllText(files.PathOf("h7", "ask"), new JsonObject
+            {
+                ["id"] = "h7", ["asker"] = "s1", ["question"] = "Is the lock held?", ["agent"] = "codex-acp", ["askedBy"] = "agent",
+                ["at"] = "2026-11-04T16:29:00Z",
+            }.ToJsonString());
+            // s2 continues s1 by a hand-over: the ask s1 made is the line's, and s2's head holds it.
+            _records = new JsonObject { ["s1"] = Record("s1", "completed"), ["s2"] = Record("s2", "working") };
+            _records["s2"]!["from"] = "s1";
+            var (groups, sessions, quests) = await JudgedAsync();
+
+            var held = AtWorkRead.Compose("s2", groups, sessions, quests, _ => LineageReading.None, home: home);
+
+            var exchange = Assert.Single(held.Answer!.Exchanges!);
+            Assert.Equal(("helper:h7", "s1", true), (exchange.Id, exchange.Part, exchange.Holds));
+            var read = Assert.IsType<AtWorkDependencies>(held.Dependencies);
+            Assert.True(AtWorkRead.SlicesStand(read, groups, sessions, quests));
+            files.WriteState(new HelperState("h7", HelperStates.Answered, null, "h-session", DateTimeOffset.Parse("2026-11-04T16:41:00Z")));
+            Assert.False(AtWorkRead.SlicesStand(read, groups, sessions, quests));
+            Assert.Null(AtWorkRead.Compose("s2", groups, sessions, quests, _ => LineageReading.None).Answer!.Exchanges);
+        }
+        finally
+        {
+            if (Directory.Exists(home)) Directory.Delete(home, recursive: true);
+        }
+    }
+
     [Fact]
     public async Task It_reads_until_every_slice_judges_and_then_answers_the_entry_s_parts_with_their_records_read_fields()
     {

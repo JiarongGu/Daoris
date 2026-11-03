@@ -8,7 +8,10 @@ import { Dot, Inline, SectionTitle } from '../../design/ui';
 import { ExternalLink } from '../../design/links';
 import { type Consideration, sittingBecause, sittingSentence } from '../../data/signals';
 import type { AtWorkA, AtWorkChild, AtWorkHeld, AtWorkPart, AtWorkQuest, AtWorkSubagents } from './types';
-import { askerLine, CHILD_STATE_KEY, childTone, HINT_KEY, joinedLine, LANES_GUIDE, LAST_SEEN, partStateKey, waitLine, waitWhat } from './words';
+import {
+  askerLine, CHILD_STATE_KEY, childTone, exchangeSource, exchangeState, exchangeWhat, HINT_KEY, joinedLine, LANES_GUIDE, LAST_SEEN, partStateKey,
+  waitingOnLine, waitLine,
+} from './words';
 
 /**
  * The newest messages of the page's own channel read (COWORKVIEW1c, the design §3.3): the lines the session's panel already holds, so the
@@ -43,6 +46,8 @@ export type AtWorkViewProps = {
   onOpenStream?: (stream: string) => void;
   /** The clock a time is read against; the window's now by default. */
   now?: Date;
+  /** An agent's name as the person calls it, for its co-workers (COMMS1i); its word where none is given. */
+  nameOf?: (agent: string) => string;
 };
 
 /**
@@ -50,7 +55,7 @@ export type AtWorkViewProps = {
  * attended one first, and its subagents, each with its state and its end, read from Daoris's records and never from the
  * conversation's text. Reading is never *nobody*, a failure says its words, and a stale answer keeps its rows dimmed.
  */
-export function AtWorkView({ held, error, onOpen, onOpenQuest, considered, onRetry, streamOf, onOpenStream, now, channel }: AtWorkViewProps) {
+export function AtWorkView({ held, error, onOpen, onOpenQuest, considered, onRetry, streamOf, onOpenStream, now, channel, nameOf }: AtWorkViewProps) {
   const { t } = useTranslation();
   if (!held || 'reading' in held) {
     if (!held && error) return <Failed why={error} onRetry={onRetry} />;
@@ -77,8 +82,9 @@ export function AtWorkView({ held, error, onOpen, onOpenQuest, considered, onRet
         </p>
       )}
       <div className={cn('grid min-w-0 gap-3', stale !== null && 'opacity-60')}>
-        <WaitingOn answer={answer} />
+        <WaitingOn answer={answer} nameOf={nameOf} />
         <Parts answer={answer} onOpen={onOpen} channel={channel} />
+        <Coworkers answer={answer} nameOf={nameOf} onOpen={onOpen} />
         <Subagents answer={answer} quiet={stale !== null} now={now} streamOf={streamOf} onOpenStream={onOpenStream} />
         <Quests answer={answer} considered={considered ?? []} onOpenQuest={onOpenQuest} />
         <AskedBy answer={answer} onOpenQuest={onOpenQuest} />
@@ -100,15 +106,65 @@ export function Failed({ why, onRetry }: { why: string; onRetry?: () => void }) 
 }
 
 /**
- * The attended part's own wait, first (the design §R11.3 row 3): *Waiting on #q7 in core (docs lane)*. Where it waits on nothing and the
- * session published quests, and no part of the entry waits, *published 3, waits on none*.
+ * What the line waits on, first (the design §R11.3 row 3; COMMS1i, the comms design §7): read from its requests that hold, a quest as
+ * *Waiting on #q7 in core (docs lane)* and a co-worker by whom and where it stands. The head draws the same line from the same read.
+ * Where it waits on nothing and the session published quests, and no part of the entry waits, *published 3, waits on none*.
  */
-function WaitingOn({ answer }: { answer: AtWorkA }) {
+function WaitingOn({ answer, nameOf }: { answer: AtWorkA; nameOf?: (agent: string) => string }) {
   const { t } = useTranslation();
-  const wait = answer.parts.find((part) => part.key === answer.attended)?.waits;
-  if (wait) return <p data-wait-line className="m-0 text-small text-ink">{t('work.atWork.waitingOn', { what: waitWhat(t, wait) })}</p>;
+  const line = waitingOnLine(t, answer.exchanges ?? [], nameOf);
+  if (line) return <p data-wait-line className="m-0 text-small text-ink">{line}</p>;
   if (!answer.published || answer.parts.some((part) => part.waits)) return null;
   return <p className="m-0 text-small text-ink-soft">{t('work.atWork.published', { count: answer.published })}</p>;
+}
+
+/**
+ * The head's *Waiting on* (COMMS1i, the comms design §7): *At work*'s line, the same words from the same read, and a door that opens
+ * *At work*. Nothing where the line waits on nothing it asked.
+ */
+export function WaitingOnLine({ answer, nameOf, onOpen }: { answer: AtWorkA; nameOf?: (agent: string) => string; onOpen?: () => void }) {
+  const { t } = useTranslation();
+  const line = waitingOnLine(t, answer.exchanges ?? [], nameOf);
+  if (!line) return null;
+  return (
+    <p data-waiting-on className="m-0 flex min-w-0 flex-wrap items-baseline gap-x-2 text-small text-ink">
+      <span className="min-w-0 wrap-anywhere">{line}</span>
+      {onOpen && <button type="button" className="text-accent underline" onClick={onOpen}>{t('work.atWork.openAtWork')}</button>}
+    </p>
+  );
+}
+
+/**
+ * Who the line asked to work with it (COMMS1i, the comms design §6, §7): each helper, partner and successor it asked, by whom and
+ * where it stands, its door where one took it up. A quest is *Asked through quests*' row. A source not read is said, never drawn as none.
+ */
+function Coworkers({ answer, nameOf, onOpen }: { answer: AtWorkA; nameOf?: (agent: string) => string; onOpen?: (session: string) => void }) {
+  const { t } = useTranslation();
+  const rows = (answer.exchanges ?? []).filter((exchange) => exchangeSource(exchange) !== 'quest');
+  const unread = answer.unread ?? [];
+  if (rows.length === 0 && unread.length === 0) return null;
+  return (
+    <section className="grid min-w-0 gap-1">
+      <SectionTitle>{t('work.atWork.coworkers')}</SectionTitle>
+      {rows.length > 0 && (
+        <ul className="m-0 grid list-none gap-1 p-0">
+          {rows.map((exchange) => (
+            <li key={exchange.id} data-coworker={exchange.id} className="flex min-w-0 flex-wrap items-baseline gap-x-2 text-small text-ink">
+              <span className="min-w-0 wrap-anywhere">{exchangeWhat(t, exchange, nameOf)}</span>
+              <span className="text-ink-soft">{exchangeState(t, exchange)}</span>
+              {exchange.part !== answer.attended && <span className="text-ink-faint">{t('work.atWork.coworker.earlierPart')}</span>}
+              {exchange.session && onOpen && (
+                <button type="button" className="text-accent underline" onClick={() => onOpen(exchange.session!)}>{t('work.atWork.open')}</button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+      {unread.length > 0 && (
+        <p className="m-0 text-small text-ink-soft">{t('work.atWork.coworker.unread', { sources: unread.map((source) => t(`work.atWork.source.${source}`)).join(', ') })}</p>
+      )}
+    </section>
+  );
 }
 
 /** Whether the list says anything a lone part's page does not: a wait, how it joined, or parts folded away. */

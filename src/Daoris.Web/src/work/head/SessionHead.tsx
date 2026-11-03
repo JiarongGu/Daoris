@@ -10,6 +10,8 @@ import {
   answeredPark, Button, Inline, PathText, Pill, SESSION_ACTIVE, SESSION_TONE, shownKey, shownState, WaitingCard,
 } from '../../design/ui';
 import { cn } from '../../lib/cn';
+import { WaitingOnLine } from '../atWork/AtWorkView';
+import type { AtWorkA } from '../atWork/types';
 import { AnsweredPark } from '../waits/AnsweredPark';
 import { AwaitingIntake } from '../waits/AwaitingIntake';
 import { type AnswerPick, AwaitingPerson, type QuestClose, type Resolution } from '../waits/AwaitingPerson';
@@ -108,8 +110,13 @@ export function SessionHead({
   onAnswerSession, onAnswerChoice, answerPick, branch, ownBranch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
   ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind, opinion, onOpenQuest,
   continues, helps, onOpenSession, heavy, process, workAsk, workBusy = false, toEvent, rules, ruleAsk, seek, helpers, permissions, answers,
-  question = null, parkBox = false, pieces, entry,
+  question = null, parkBox = false, pieces, entry, waitingOn,
 }: {
+  /**
+   * What its line waits on (COMMS1i, the comms design §7): *At work*'s answer, whose *Waiting on* line the head draws in the same words,
+   * and the door that opens *At work*. Absent where the frame holds no answer for it.
+   */
+  waitingOn?: { answer: AtWorkA; nameOf?: (agent: string) => string; onOpen?: () => void } | null;
   /** The session's one *Accept…* where its parts offer work to land, in the place of a part's own (REVIEWFLOW1a, D168). */
   entry?: EntryPress | null;
   /**
@@ -327,6 +334,8 @@ export function SessionHead({
       {/* `running` counts a park as alive; a parked intake is AwaitingIntake's, below. */}
       {running && !parked && intake && <RunningIntake ask={session.ask!} onOpen={onAnswerAsk} />}
       {answered && <AnsweredPark answer={session.answer!} />}
+      {/* COMMS1i: what the line waits on of others, At work's line from the same read; the person's own waits stand below. */}
+      {waitingOn && <WaitingOnLine answer={waitingOn.answer} nameOf={waitingOn.nameOf} onOpen={waitingOn.onOpen} />}
       {/* Each section a wait stands in is marked (WAITFOOT2a): the frame watches them, and the strip at the foot stands aside
           while they are on screen. */}
       {waiting && intake && (onResolve || onAnswerAsk) && (

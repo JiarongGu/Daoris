@@ -75,10 +75,12 @@ export function AttendedSession({
   chain = [], onSession, onQuest, onReview, relations, related, relatedOwn, onRelated, together, memory, timeline = 'dock', branch, ownBranch, onDiscardBranch, discardingBranch,
   headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind,
   opinion, continues, helps, heavy, process, parts, entryAccept, channel, workAsk, workBusy, toEvent, rules, ruleAsk, seek, helpers, permissions,
-  answers, milestone, record, onOpenBranch, question, parkBox, pieces,
+  answers, milestone, record, onOpenBranch, question, parkBox, pieces, waitingOn,
 }: {
   /** Its pieces (COAGENT1b, D199), the frame's: handed to its head's Pieces section. Absent, none is drawn. */
   pieces?: PieceSection | null;
+  /** What its line waits on (COMMS1i): *At work*'s answer, handed to its head's *Waiting on*. Absent, none is drawn. */
+  waitingOn?: Parameters<typeof SessionHead>[0]['waitingOn'];
   /** Passed straight through to the head: its park's question as its agent asked it, its waiting card's (PARKVIEW1). */
   question?: ParkQuestion | null;
   /** Passed straight through to the head: the box below is the park's answer box, with the presses of what it asks (PARKVIEW1). */
@@ -312,6 +314,7 @@ export function AttendedSession({
         seek={seek}
         helpers={helpers}
         pieces={pieces}
+        waitingOn={waitingOn}
         permissions={permissions}
         answers={answers}
         entry={entryAccept}

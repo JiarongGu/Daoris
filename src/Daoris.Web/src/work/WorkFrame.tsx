@@ -1171,12 +1171,9 @@ export function WorkFrame({
     ? !collapsed && panelView === 'workflow'
     : !dockClosed && dock === 'workflow');
   const workflowRun = useWorkflowRun(following ? { session: following.id } : null, { enabled: workflowShown });
-  // Who is at work on the followed session (COWORKVIEW1a): asked only while *At work* shows, and again at each `atWork` wake.
-  const atWorkShown = following !== null && (placed.places.atWork === 'panel'
-    ? !collapsed && panelView === 'atWork'
-    : !dockClosed && dock === 'atWork');
-  // Also asked while the followed session works, for the head's *working with it* (§3.7), at its mount and each wake.
-  const atWork = useSessionAtWork(atWorkShown || (following !== null && following.state === 'working') ? following?.id : null);
+  // Who is at work on the followed session (COWORKVIEW1a), asked whatever its state and whether *At work* shows (COMMS1i): the head's
+  // *Waiting on* is this read's line, and *working with it* (§3.7) its count, at its mount and each `atWork` wake.
+  const atWork = useSessionAtWork(following?.id ?? null);
   const atWorkHeld = atWork.data;
   // Why an untaken quest sits is the driver's last look's, read beside the answer from memory (COWORKVIEW1b-ii).
   const considered = useConsidered().data;
@@ -1489,6 +1486,8 @@ export function WorkFrame({
             onOpen={(id) => { attend(id); if (elsewhere) onOpenSessions?.(); }}
             onOpenQuest={onOpenQuest}
             considered={considered}
+            // COMMS1i: its co-workers' agents as the person calls them, as the head's *Waiting on* names them.
+            nameOf={(agent) => agentRoster.names?.[agent] ?? agent}
             // The newest three messages of the page's own channel read, the panel's (COWORKVIEW1c); none for a session with no ask.
             channel={attendedEntry && channelAsk && channel.available && channel.channel ? {
               words: lastWords(channel.channel, { entry: attendedEntry.entry, repository: attendedEntry.repository }),
@@ -2567,6 +2566,12 @@ export function WorkFrame({
             {...waits}
             // Its pieces (COAGENT1b): what other agents write for it, and the ask of one; no wait of the person's.
             pieces={pieceSection}
+            // COMMS1i: what its line waits on of others, At work's line from At work's read, a door to At work.
+            waitingOn={following?.id === attended.id && atWorkHeld && 'answer' in atWorkHeld ? {
+              answer: atWorkHeld.answer,
+              nameOf: (agent: string) => agentRoster.names?.[agent] ?? agent,
+              onOpen: () => openView('atWork'),
+            } : null}
             workAsk={workAskAt('head')}
             ruleAsk={ruleAskAt('head')}
             toEvent={toEvent}
