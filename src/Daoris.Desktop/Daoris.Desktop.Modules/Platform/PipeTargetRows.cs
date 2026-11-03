@@ -89,6 +89,8 @@ internal static class PipeTargetRows
             (a, p) => Each(At(a, "streams")).Any(each => Text(At(each, "key")) == Text(p, "key") && True(At(each, "live")) && True(At(each, "canStop")))
                 ? "open" : ""));
         Row("SESSION_GO_AHEAD", LoopGround.Wait("go-ahead", "ask", "number"));
+        // GITAUTH1f: a git go-ahead, so one answered or gone between the ask and the Confirm is never answered again unseen.
+        Row("GIT_ANSWER", LoopGround.Wait("git-ask", "ask"));
         // KNOWCENTRAL2e: the session whose memory is decided; the service refuses an end no longer awaiting or a session running again.
         Row("SESSION_MEMORY_DECIDE", new SessionGround("session"));
         // LINESTOGETHER1d: the head the sessions are brought into; the press judges every member again under its locks.
@@ -239,6 +241,11 @@ internal static class PipeTargetRows
                 adoption = Field(p, "adoption"), builds = Text(p, "builds"), drive = Field(p, "drive"),
             },
             (a, _) => Fp(Text(At(a, "digest"))),
+            TimeSpan.FromMinutes(2)));
+        // D230: the reconcile the person read, the doctrine tool's status for the checkout and whether it presses, read at the press's ask and again
+        // at its Confirm; a status that moved between them is refused.
+        Row("RECONCILE_APPLY", Plan("RECONCILE_PLAN", ["repository"], p => new { repository = Text(p, "repository") },
+            (a, _) => Fp(Raw(At(a, "status")), Text(At(a, "pressable"))),
             TimeSpan.FromMinutes(2)));
         // WORKFLOWCLEAN1 1e, ONEWAY1ae: the conversion plan the person read, by its digest, which pins every part's operations, the census inputs and
         // the row's choices; one that moved between the ask and the Confirm is refused. A failed part's Leave it rides the same press, its receipt

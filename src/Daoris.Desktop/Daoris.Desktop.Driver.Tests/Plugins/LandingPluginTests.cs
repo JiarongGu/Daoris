@@ -149,6 +149,40 @@ public sealed class LandingPluginTests : LandingPluginFixture
     }
 
     /// <summary>
+    /// GITAUTH1f (the git-auth design §6.7): the landing asks the judge before it starts its plugin. Where the repository's git access
+    /// denies writes, the plugin is not started and the landing says so, naming origin; the branch stands. Under ask, the person's
+    /// Accept is the yes for exactly that push, and the plugin is started.
+    /// </summary>
+    [Fact]
+    public async Task A_git_access_that_denies_writes_refuses_the_plugins_push_before_it_starts_and_ask_takes_the_accept()
+    {
+        var (root, _) = await RepositoryWithOriginAsync("engine");
+        InstallManifest();
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Id));
+        var asked = 0;
+        var trees = new SessionTrees(Home, Plugins(_ => { asked++; return Answer(true, null, "pushed"); }));
+        GitAccessActs.Apply(Home, new GitAccessEdit { Repository = "engine", Set = [new("write", "deny")] });
+        var opened = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(opened.Path, "work.txt", "the session's work", "the work");
+
+        var landed = await trees.LandAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix"));
+
+        Assert.True(landed.Landed, landed.Message);
+        Assert.Equal(0, asked);
+        var plugin = Assert.IsType<PluginLanding>(landed.Plugin);
+        Assert.True(plugin.Failed);
+        Assert.Contains("git access denies writes to origin", plugin.Message, StringComparison.Ordinal);
+        Assert.Contains("the work", await GitAsync(root, "log", "feature/0fda18-fix", "--oneline"));
+
+        GitAccessActs.Apply(Home, new GitAccessEdit { Repository = "engine", Set = [new("write", "ask")] });
+        var again = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(again.Path, "more.txt", "more", "more work");
+        var accepted = await trees.LandAsync(again.Path, new LandingSubject("s5e6f7a8", "1abc23", "More"));
+        Assert.True(accepted.Landed, accepted.Message);
+        Assert.Equal(1, asked);
+    }
+
+    /// <summary>
     /// A plugin that fails, refuses, times out or does not push never undoes the branch: the branch
     /// stands, the landing is still a landing, and the sentence says the plugin's step failed and how
     /// the person does it by hand.

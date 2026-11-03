@@ -29,6 +29,7 @@ import { Inheritable, landingRowSays, landingSays, SetupSection, type UnreadLand
 import { StandingAnswer } from './StandingAnswer';
 import type { GitIdentityShown } from '../../settings/git/Git';
 import { GitRemotes, type GitRemoteActs, type GitRemoteShown } from '../../settings/git/GitRemotes';
+import { type GitAccessEdit, GitAccessRows, gitAccessSummary, type ResolvedGitClass } from '../../settings/repository/GitAccess';
 
 /**
  * The sections of a repository's Setup (UX6f, D150 §4.2; *Sessions' access* since AUTONOMY1d, *Heavy gates* since HEAVYRUN1b2b), in
@@ -48,6 +49,16 @@ export type GitSetup = {
   /** The machine's identities, from which a remote's choice is offered. */
   identities: GitIdentityShown[];
   acts: GitRemoteActs;
+  /** Its git access (GITAUTH1f, §7.3): each class as it resolves here, as the level above resolves it, and the change at this level. */
+  access?: GitAccessSetup | null;
+};
+
+/** A level's git access as Setup draws it: the workspace a value from it names, the classes here and above, and a change here. */
+export type GitAccessSetup = {
+  workspace?: string;
+  classes: readonly ResolvedGitClass[];
+  above: readonly ResolvedGitClass[];
+  onChange: (edit: GitAccessEdit, answered?: Answered) => void;
 };
 
 /**
@@ -373,8 +384,8 @@ export function RepositorySetup({ repository, lands = null, driving, work, acces
     // An unread landing rule opens it too (FABRIC-GRAPH1d): the person wrote something nothing reads.
     // A declaration owed acceptance opens it too (INTEGRATE1h): *What needs you*'s door brings the person here to read it and accept.
     work: lineOwn || landingOwn || Boolean(work?.landingUnread) || commitsOwn || reviewOwn || opinionOwn || landedOwn || integrationOwed,
-    // A remote nothing serves opens it: the person has something to do there (GITAUTH1e).
-    git: Boolean(git?.remotes.some((remote) => remote.serves === 'none')),
+    // A remote nothing serves opens it: the person has something to do there (GITAUTH1e); so does git access set here (GITAUTH1f).
+    git: Boolean(git?.remotes.some((remote) => remote.serves === 'none') || git?.access?.classes.some((each) => each.source === 'repository')),
     access: accessOwn,
     // This machine's heavy gates are set for this repository alone, so a list set is its own; and so are its sessions' checks.
     heavy: (heavy?.gates.length ?? 0) > 0 || Boolean(heavy?.checks?.set),
@@ -587,12 +598,30 @@ export function RepositorySetup({ repository, lands = null, driving, work, acces
       body: <>{lineRow}{landingRow}{commitsRow}{reviewRow}{opinionRow}{landedRow}{integrationRow}</>,
     });
   }
-  if (git && git.remotes.length > 0) {
+  if (git && (git.remotes.length > 0 || git.access)) {
     sections.push({
       id: 'git',
-      summary: git.remotes.map((remote) => `${remote.name}: ${remote.serves === 'identity' ? remote.label : remote.serves === 'own'
-        ? t('settings.git.own') : remote.serves === 'none' ? t('settings.git.none') : t('settings.git.remotes.local')}`).join(JOIN),
-      body: <GitRemotes remotes={git.remotes} identities={git.identities} acts={git.acts} />,
+      summary: [
+        ...git.remotes.map((remote) => `${remote.name}: ${remote.serves === 'identity' ? remote.label : remote.serves === 'own'
+          ? t('settings.git.own') : remote.serves === 'none' ? t('settings.git.none') : t('settings.git.remotes.local')}`),
+        ...(git.access ? [gitAccessSummary(t, git.access.classes)] : []),
+      ].join(JOIN),
+      body: (
+        <>
+          {git.remotes.length > 0 && <GitRemotes remotes={git.remotes} identities={git.identities} acts={git.acts} />}
+          {git.access && (
+            <GitAccessRows
+              owner="repository"
+              name={repository}
+              workspace={git.access.workspace}
+              classes={git.access.classes}
+              above={git.access.above}
+              busy={busy}
+              onChange={git.access.onChange}
+            />
+          )}
+        </>
+      ),
     });
   }
   if (accessShown) {

@@ -7,6 +7,7 @@ import type { Answered } from '../work/InlineConfirm';
 import type { PluginShown } from '../plugins/catalog';
 import { PluginSettings } from './plugins/PluginSettings';
 import { type AccessEdit, type AccessLevel, AccessRows, resolveAccess } from './repository/Access';
+import { type GitAccessEdit, type GitAccessLevel, GitAccessRows, resolveGitAccess } from './repository/GitAccess';
 import { UpdateSection } from './Update';
 
 /**
@@ -48,6 +49,8 @@ export type DriverFacts = {
   cap?: number | null;
   /** This machine's sessions' access (AUTONOMY1d); absent on a shell older than it. */
   machineAccess?: AccessLevel | null;
+  /** This machine's git access as set (GITAUTH1f); absent on a shell older than it. */
+  machineGitAccess?: GitAccessLevel | null;
   /** The install's update (UPDATE1b). */
   update?: UpdateState;
 };
@@ -58,9 +61,9 @@ export type DriverFacts = {
  * the facts here; a story hands a fixture, so the domain is drawn at the frame's widths (the UI/UX design R6, UIFIT1).
  * A molecule: every state by props, every press out.
  */
-export function DriverCards({ facts, busy, onGo, onNotify, onStrikes, onCoolOff, onCap, onAccess, onSayUpdate }: {
+export function DriverCards({ facts, busy, onGo, onNotify, onStrikes, onCoolOff, onCap, onAccess, onGitAccess, onSayUpdate }: {
   facts: DriverFacts;
-  busy: { access: boolean; update: boolean };
+  busy: { access: boolean; update: boolean; gitAccess?: boolean };
   onGo: (door: StarterDoor) => void;
   onNotify: (on: boolean) => void;
   /** A strikes count the person typed and left: whole, zero or more, and not the one held. */
@@ -70,6 +73,8 @@ export function DriverCards({ facts, busy, onGo, onNotify, onStrikes, onCoolOff,
   /** A cap the person typed and left: whole, one or more, and not the one held (CAPSET1). */
   onCap: (cap: number) => void;
   onAccess: (edit: AccessEdit, answered?: Answered) => void;
+  /** A change to this machine's git access (GITAUTH1f), a loosening confirmed in its row first. */
+  onGitAccess?: (edit: GitAccessEdit, answered?: Answered) => void;
   onSayUpdate: ComponentProps<typeof UpdateSection>['onSay'];
 }) {
   const { t } = useTranslation();
@@ -290,6 +295,17 @@ export function DriverCards({ facts, busy, onGo, onNotify, onStrikes, onCoolOff,
                 setHere={t('settings.access.setHere.machine')}
                 onChange={onAccess}
               />
+              {/* GITAUTH1f (the git-auth design §7.3): this machine's git access, the level under every workspace's and repository's,
+                  untouched by full access; Settings → Git draws the same rows. */}
+              {facts.machineGitAccess && onGitAccess && (
+                <GitAccessRows
+                  owner="machine"
+                  classes={resolveGitAccess([{ classes: facts.machineGitAccess, source: 'machine' }])}
+                  above={resolveGitAccess([])}
+                  busy={busy.gitAccess}
+                  onChange={onGitAccess}
+                />
+              )}
             </SettingList>
           </section>
         </Card>

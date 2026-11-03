@@ -772,6 +772,7 @@ public static class NoteCodes
     // The routing standing a chat's agent was told at a start (COWORKVIEW1e-i): the standing is a fact, the words after the lead
     // Daoris's one-copy English. Written no more since the standing block carries the routing (CONTEXTONE1c); kept for the records
     // that hold it, which the page words as they were.
+    // transitional: chat-told-routing
     public static readonly NoteCode ChatToldRouting = new("chat.told-routing", ["standing"]);
     // The standing block a conversation's agent was told with its first message (CONTEXTONE1c, D230 point 3): the lead by its code, the
     // block after it Daoris's one-copy English.

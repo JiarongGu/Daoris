@@ -55,6 +55,11 @@ describe('the opener', () => {
     expect(opening('settings', 'start', { anchor: 'step-setUp' })).toEqual({
       view: 'settings', chosen: { view: 'settings', item: 'start' }, anchor: 'step-setUp',
     });
+    // GITAUTH1e: Settings → Git opens its add form on the host a door names, in view; a door naming none lets a host left before go.
+    expect(opening('settings', 'git', { gitHost: 'github.com' })).toEqual({
+      view: 'settings', chosen: { view: 'settings', item: 'git' }, anchor: 'git-add', gitHost: 'github.com',
+    });
+    expect(opening('settings', 'git')).toEqual({ view: 'settings', chosen: { view: 'settings', item: 'git' }, anchor: null, gitHost: null });
     // The gear names no domain: Settings opens on the one it had, at its top as it was.
     expect(opening('settings')).toEqual({ view: 'settings' });
   });

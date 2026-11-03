@@ -25,11 +25,12 @@ public sealed partial class RoleCatalogCensusTests : IDisposable
     /// <summary>
     /// Each writer and the files that reach the judge or the staffing's write for it. FOUNDATION1y-i: the role door, which `SET_ROLE`,
     /// `daoris driver role` and `role_propose` call; since ONEWAY1a the one door, `SET_ACTOR`, the actor verbs and `setting_propose`'s
-    /// staffing doors gone. `daoris driver actor import` is the staffing copy's, which ONEWAY1c-ii retires.
+    /// staffing doors gone. ONEWAY1c-ii retired the staffing copy's `actor import`; ONEWAY1b's staffing part writes the five roles' orders
+    /// through the conversion's door, the person's Apply.
     /// </summary>
     private static readonly (string Writer, string[] Files)[] Census =
     [
-        ("daoris driver actor import", ["Daoris.Desktop.Driver/Roles/StaffingVerbs.cs"]),
+        ("the staffing part", ["Daoris.Desktop.Driver/Conversion/StaffingPart.cs"]),
         ("the import and the check", ["Daoris.Desktop.Driver/Roles/RoleStaffing.cs"]),
         ("the judges themselves", ["Daoris.Desktop.Driver/Roles/ActorChoices.cs", "Daoris.Desktop.Driver/Roles/RoleCatalog.cs"]),
         ("the role door", ["Daoris.Desktop.Driver/Roles/RoleDoor.cs"]),
@@ -38,7 +39,7 @@ public sealed partial class RoleCatalogCensusTests : IDisposable
         ("role_propose", ["Daoris.Desktop.Driver/Help/Proposals/HelpRoleProposals.cs"]),
     ];
 
-    [GeneratedRegex(@"ActorChoices\.(Judge|Judged|With)\(|RoleStaffing\.SetAt\(|\.WithIntake\(|\.WithHelper\(|RoleCatalog\.Write(In)?\(|RoleDoor\.Apply\(|public static DriverConfig With(Intake|Helper)\(")]
+    [GeneratedRegex(@"ActorChoices\.(Judge|Judged|With)\(|RoleStaffing\.SetAt\(|staffing\.Replace\(|\.WithIntake\(|\.WithHelper\(|RoleCatalog\.Write(In)?\(|RoleDoor\.Apply\(|public static DriverConfig With(Intake|Helper)\(")]
     private static partial Regex Reaches();
 
     private static IEnumerable<string> Reaching()
@@ -63,7 +64,7 @@ public sealed partial class RoleCatalogCensusTests : IDisposable
 
         Assert.Equal(named, Reaching().Order(StringComparer.Ordinal).ToList());
         Assert.Equal(
-            ["daoris driver actor import", "the import and the check", "the judges themselves", "the role door", "SET_ROLE", "daoris driver role", "role_propose"],
+            ["the staffing part", "the import and the check", "the judges themselves", "the role door", "SET_ROLE", "daoris driver role", "role_propose"],
             Census.Select(each => each.Writer));
     }
 

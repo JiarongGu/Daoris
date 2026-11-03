@@ -23,7 +23,7 @@ public sealed record RoleRow(
 /// <remarks>
 /// Removing a role touches no session: a running one goes on with what it opened on, and a continuation reads the role that takes its work
 /// now. A removed role's work holds its starts, said (<see cref="RoleCatalog.NoRole"/>), until the person gives it a role; the store keeps a
-/// seeded role's staffing, so <i>Back to the default</i> starts it as before.
+/// seeded role's staffing, and <i>Use the default</i> writes its seed (<see cref="ActorChoices.Seed"/>).
 /// </remarks>
 public static class RoleDoor
 {
@@ -117,9 +117,9 @@ public static class RoleDoor
             {
                 if (policy is not null) throw new RoleRefusedException(new RoleRefusal(StaffPolicy.Code, $"a policy goes with a role's set: `{change.Id}` is removed or given its seed."));
                 if (!isSeeded && change is not RoleChange.DefaultAllRoles) rows.Add((change.Id, null));
-                // ONEWAY1a: a seeded role given its seed is given its default staffing too, the one door the window's *Use the default* presses.
-                if (change is RoleChange.DefaultRole && isSeeded) seeded.Add((change.Id, null));
-                if (change is RoleChange.DefaultAllRoles) seeded.AddRange(ActorChoices.Ids.Select(id => (id, (IReadOnlyList<ActorChoice>?)null)));
+                // A seeded role given its seed is given its seed's staffing too (ONEWAY1a, ONEWAY1b): a written order, or its caller's rule.
+                if (change is RoleChange.DefaultRole && isSeeded) seeded.Add((change.Id, ActorChoices.Seed(change.Id)));
+                if (change is RoleChange.DefaultAllRoles) seeded.AddRange(ActorChoices.Ids.Select(id => (id, ActorChoices.Seed(id))));
                 cleared.AddRange(change is RoleChange.DefaultAllRoles ? ActorChoices.Ids : [change.Id]);
             }
         }

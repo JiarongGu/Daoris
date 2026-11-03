@@ -19,8 +19,9 @@ import {
   useSetReadAcross,
   useSetReview, useStarts, useSyncNow,
   useSweep, useSweepLook, useSweepPlan, useTreesSync, useTreesSyncPlan, useTreesSyncScope, useUnwireRemote, useWireRemote, useWorkflowCurrent,
-  useWithdrawLandingBranch, useWorkState, useWorkflowEditor, useGitRemotes, useSetGitUse, useTools,
+  useWithdrawLandingBranch, useWorkState, useWorkflowEditor, useGitRemotes, useSetGitAccess, useSetGitUse, useTools,
 } from '../../bridge/shell';
+import { resolveGitAccess } from '../../settings/repository/GitAccess';
 import type { GitHostShown } from '../../settings/git/GitRemotes';
 import { supervisorOf } from '../../agents/setup/PlaceSupervisor';
 import { byTool } from '../../agents/tools';
@@ -477,6 +478,7 @@ export function WorkspaceSetupPart({ workspace, notify, open, wiring = false, ro
   const gitIdentities = useTools().data?.identities;
   const gitRemotes = useGitRemotes({ workspace });
   const setGitUse = useSetGitUse();
+  const setGitAccess = useSetGitAccess();
   useErrorNotify(wiringError ?? across.error ?? rules.error, notify);
   const onError = failure(notify);
 
@@ -509,18 +511,31 @@ export function WorkspaceSetupPart({ workspace, notify, open, wiring = false, ro
     open,
     wiring,
     onOpenAppointed,
-    git: gitIdentities && gitRemotes.data
+    git: (gitIdentities && gitRemotes.data) || state?.workspaceGitAccess
       ? {
-          hosts: gitHosts,
-          identities: gitIdentities.identities,
+          hosts: gitIdentities && gitRemotes.data ? gitHosts : [],
+          identities: gitIdentities?.identities ?? [],
           acts: {
             use: (host, value) => setGitUse.mutateAsync({ scope: 'workspace', workspace, host, ...(value ? { value } : {}) }),
             ...(onOpenGit ? { onSetUp: onOpenGit } : {}),
           },
+          // GITAUTH1f (§7.3): its git access as STATE sets it, over this machine's; absent on a shell older than it.
+          access: state?.workspaceGitAccess ? {
+            classes: resolveGitAccess([
+              { classes: ofWorkspace(state.workspaceGitAccess)?.classes, source: 'workspace' },
+              { classes: state.machineGitAccess, source: 'machine' },
+            ]),
+            above: resolveGitAccess([{ classes: state.machineGitAccess, source: 'machine' }]),
+            onChange: (edit, answered) => setGitAccess.mutate({ workspace, ...edit }, {
+              onSuccess: () => answered?.done(),
+              onError: (error) => (answered ? answered.refused(sentence(error)) : onError(error)),
+            }),
+          } : null,
         }
       : null,
     busy: setLine.isPending || setLanguage.isPending || setReview.isPending || setOpinion.isPending
       || setCommits.isPending || setHelpers.isPending || setHandOver.isPending || setAccess.isPending || setRead.isPending || act.isPending || wiringBusy
+      || setGitAccess.isPending
       || retire.isPending,
     supervisor,
     // The access its repositories' sessions start under (AUTONOMY1d): the workspace's over this machine's, resolved on the page from

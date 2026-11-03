@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import {
-  useDriver, usePlugins, useSayUpdate, useSetAccess, useSetCap, useSetCoolOff, useSetNotify, useSetStrikes, useUpdateState,
+  useDriver, usePlugins, useSayUpdate, useSetAccess, useSetCap, useSetCoolOff, useSetGitAccess, useSetNotify, useSetStrikes, useUpdateState,
 } from '../bridge/shell';
 import { useSystemWiring } from '../bridge/system';
 import { failure } from '../design/ui';
@@ -48,6 +48,7 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
   const sayUpdate = useSayUpdate();
   // This machine's sessions' access (AUTONOMY1d, D184 point 1): the default under every workspace's and repository's.
   const setAccess = useSetAccess();
+  const setGitAccess = useSetGitAccess();
   const onError = failure(notify);
 
   return (
@@ -65,9 +66,15 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
         coolOff: driver.data?.coolOff,
         cap: driver.data?.cap,
         machineAccess: driver.data?.machineAccess,
+        machineGitAccess: driver.data?.machineGitAccess,
         update: update.data,
       }}
-      busy={{ access: setAccess.isPending, update: sayUpdate.isPending }}
+      busy={{ access: setAccess.isPending, update: sayUpdate.isPending, gitAccess: setGitAccess.isPending }}
+      // GITAUTH1f: this machine's git access, as Settings → Git sets it.
+      onGitAccess={(edit, answered) => setGitAccess.mutate({ machine: true, ...edit }, {
+        onSuccess: () => answered?.done(),
+        onError: (error) => (answered ? answered.refused(sentence(error)) : onError(error)),
+      })}
       onGo={onGo}
       onNotify={(on) => setNotify.mutate({ notify: on }, {
         onSuccess: () => notify(t(on ? 'settings.notify.on' : 'settings.notify.off')),

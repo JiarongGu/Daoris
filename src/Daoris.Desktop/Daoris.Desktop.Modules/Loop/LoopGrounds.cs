@@ -115,6 +115,14 @@ public sealed class LoopGrounds(DriverLoop loop, InstancePipe pipe) : IPipeGroun
                     : null;
             }
 
+            case "git-ask":
+                // A git go-ahead (GIT_ANSWER, GITAUTH1f): open while its door waits, gone once the door stopped; none once answered or past
+                // its bound.
+                return PipeGround.Text(payload, "ask") is { } gitAsk
+                    && GitAsks.List(loop.Home, DateTimeOffset.UtcNow).FirstOrDefault(each => each.Id == gitAsk) is { } waiting
+                    ? waiting.Gone ? "gone" : "open"
+                    : null;
+
             case "trust":
                 // The trust hold the loop keeps for a folder (TRUST_FOLDER), from its last tick.
                 return PipeGround.Text(payload, "folder") is { } folder && PipeGround.Text(payload, "trustFile") is { } file

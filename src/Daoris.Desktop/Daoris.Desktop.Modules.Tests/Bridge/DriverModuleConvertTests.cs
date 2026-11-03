@@ -37,14 +37,15 @@ public sealed class DriverModuleConvertTests : DriverModuleBridge
         var digest = plan.GetProperty("digest").GetString()!;
         Assert.False(plan.GetProperty("empty").GetBoolean());
         Assert.False(plan.GetProperty("ended").GetBoolean());
-        var workflows = plan.GetProperty("parts")[0];
-        Assert.Equal(("workflows", digest), (workflows.GetProperty("part").GetString(), workflows.GetProperty("digest").GetString()));
+        // ONEWAY1b: the staffing part plans beside it, writing nothing on a home whose staffing is not imported, so the digest is the workflows'.
+        var workflows = plan.GetProperty("parts").EnumerateArray().Single(each => each.GetProperty("part").GetString() == "workflows");
+        Assert.Equal(digest, workflows.GetProperty("digest").GetString());
         Assert.False(workflows.GetProperty("workflows").GetProperty("census").GetProperty("ended").GetBoolean());
 
         var answer = await AnswerAsync(module, "CONVERT_APPLY", new { digest });
 
         Assert.True(answer.GetProperty("done").GetBoolean(), answer.ToString());
-        Assert.Equal("done", answer.GetProperty("parts")[0].GetProperty("outcome").GetString());
+        Assert.Equal("done", answer.GetProperty("parts").EnumerateArray().Single(each => each.GetProperty("part").GetString() == "workflows").GetProperty("outcome").GetString());
         var config = DriverConfig.Load(DriverConfigPath);
         Assert.Equal("merge-after-accept", config.DefaultWorkflow);
         Assert.Equal("merge-automatic", WorkflowSelection.Resolve(config, "atlas", "aurora", null).Workflow);
@@ -81,8 +82,8 @@ public sealed class DriverModuleConvertTests : DriverModuleBridge
 
         var plan = await AnswerAsync(module, "CONVERT_PLAN", new { });
 
-        Assert.Empty(plan.GetProperty("parts").EnumerateArray());
-        var unread = plan.GetProperty("unread")[0];
+        Assert.DoesNotContain(plan.GetProperty("parts").EnumerateArray(), each => each.GetProperty("part").GetString() == "workflows");
+        var unread = Assert.Single(plan.GetProperty("unread").EnumerateArray());
         Assert.Equal("workflows", unread.GetProperty("part").GetString());
         Assert.Contains("did not answer", unread.GetProperty("said").GetString());
     }

@@ -687,6 +687,9 @@ public sealed class PlaceApplyTests : IDisposable
 
         public Task<SetupTools> ToolsAsync(CancellationToken ct) => Task.FromResult(new SetupTools("node", "v22.11.0", null, "daoris", "0.0.1", null));
 
+        public Task<DoctrineReading> StatusAsync(RepoView repository, CancellationToken ct) =>
+            Task.FromResult(new DoctrineReading(new DoctrineStatus { Synced = true }, null));
+
         public Task<IReadOnlyList<QuestView>> QuestsAsync(CancellationToken ct) => Task.FromResult<IReadOnlyList<QuestView>>([.. Quests]);
 
         public Task<IReadOnlyList<string>> EntriesAsync(string repository, CancellationToken ct) => Task.FromResult<IReadOnlyList<string>>([]);

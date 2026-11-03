@@ -1935,6 +1935,14 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
             ],
             // GITAUTH1a: a held git remote, every field set.
             Git = [GitHeld()],
+            // GITAUTH1f: a git go-ahead, every field set.
+            GitAsks =
+            [
+                JsonNode.Parse("""
+                    {"id":"0123456789abcdef0123456789abcdef","repository":"engine","workspace":"aurora","remote":"origin","host":"github.com",
+                     "class":"write","session":"s1","at":"2026-11-02T09:00:00Z","gone":true}
+                    """)!.AsObject(),
+            ],
             // INTEGRATE1h: an integration's wait on the owner, every field set.
             Integration =
             [
@@ -1948,8 +1956,8 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.Contains(rows, row => row["ended"] is JsonObject);
         Assert.Contains(rows, row => row["blocked"] is JsonObject blocked && blocked["entries"]![0]!["facts"] is JsonObject);
 
-        // Every kind but the accounts': twenty-one.
-        Assert.Equal(21, rows.Select(row => row["kind"]!.GetValue<string>()).Distinct().Count());
+        // Every kind but the accounts': twenty-two.
+        Assert.Equal(22, rows.Select(row => row["kind"]!.GetValue<string>()).Distinct().Count());
         foreach (var row in rows) Assert.Equal(Normal(row), Normal(AttentionStateSlice.Picked(row)));
     }
 
@@ -2004,6 +2012,95 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Assert.Contains(rows, row => row["id"]!.GetValue<string>() == "aurora|ssh.dev.azure.com|write-refused|writes");
         Assert.Equal("default", rows.Single(row => row["id"]!.GetValue<string>() == "default|github.com|refused|all")["workspace"]!.GetValue<string>());
         Assert.Empty(Rows(new() { Git = [] }));
+    }
+
+    /// <summary>
+    /// GITAUTH1e (the git-auth design §6.8, §7.4): a refusal names the identity that serves its group, and a group served by another is a
+    /// row of its own; the move is one row for a workspace however many hosts its remotes nothing serves are on, naming each host and the
+    /// repositories, listing apart those whose own configuration names authentication; a row holds work where a session of one of its
+    /// repositories runs or waits on the person, and none where every one has ended.
+    /// </summary>
+    [Fact]
+    public void A_refusal_names_its_identity_and_the_move_is_one_row_holding_work_where_a_session_waits()
+    {
+        var rows = Rows(new()
+        {
+            Git =
+            [
+                GitHeld("""{"served":"identity","identity":"Work","identityId":"gi-000000000001","way":"ssh"}"""),
+                GitHeld("""{"repository":"tools","served":"identity","identity":"Org","identityId":"gi-000000000002","way":"ssh"}"""),
+                GitHeld("""{"repository":"site","class":"no-identity","host":"github.com","served":"none","way":"https","words":"","since":"2026-10-22T09:01:00Z"}"""),
+                GitHeld("""{"repository":"web","class":"no-identity","host":"gitlab.com","served":"none","way":"ssh","words":"","since":"2026-10-22T09:02:00Z"}"""),
+                GitHeld("""{"repository":"lib","class":"own-input","host":"github.com","served":"none","way":"ssh","words":""}"""),
+            ],
+            Sessions =
+            [
+                JsonNode.Parse("""{"id":"s1","repository":"web","workspace":"aurora","state":"working"}""")!.AsObject(),
+                JsonNode.Parse("""{"id":"s2","repository":"engine","workspace":"aurora","state":"landed"}""")!.AsObject(),
+            ],
+        });
+
+        var refused = rows.Where(row => row["git"]?["class"]?.GetValue<string>() == "refused").ToList();
+        Assert.Equal(2, refused.Count);
+        var work = refused.Single(row => row["git"]!["identityId"]!.GetValue<string>() == "gi-000000000001");
+        Assert.Equal("Work", work["git"]!["identity"]!.GetValue<string>());
+        Assert.Equal(["engine"], work["git"]!["repositories"]!.AsArray().Select(each => each!.GetValue<string>()));
+        Assert.Null(work["stands"]);
+
+        var moved = Assert.Single(rows, row => row["git"]?["class"]?.GetValue<string>() == "no-identity");
+        Assert.Equal("aurora|no-identity", moved["id"]!.GetValue<string>());
+        Assert.Equal("2026-10-22T09:01:00Z", moved["since"]!.GetValue<string>());
+        Assert.Equal(["github.com", "gitlab.com"], moved["git"]!["hosts"]!.AsArray().Select(each => each!.GetValue<string>()));
+        Assert.Equal(["site", "web"], moved["git"]!["repositories"]!.AsArray().Select(each => each!.GetValue<string>()));
+        Assert.Equal(["lib"], moved["git"]!["ownInput"]!.AsArray().Select(each => each!.GetValue<string>()));
+        Assert.True(moved["stands"]!.GetValue<bool>());
+    }
+
+    /// <summary>
+    /// GITAUTH1f (the git-auth design §6.6, §7.4): each git go-ahead a door holds is a row of its own, holding work, scoped as its
+    /// repository's workspace, naming its session where its marker named one, and saying whether its door has gone.
+    /// </summary>
+    [Fact]
+    public void A_git_go_ahead_is_a_row_holding_its_act()
+    {
+        var rows = Rows(new()
+        {
+            GitAsks =
+            [
+                JsonNode.Parse("""
+                    {"id":"0123456789abcdef0123456789abcdef","repository":"engine","workspace":"aurora","remote":"origin","host":"github.com",
+                     "class":"write","session":"s1","at":"2026-11-02T09:00:00Z","gone":false}
+                    """)!.AsObject(),
+            ],
+        });
+
+        Is("""
+            {"kind":"git-ask","id":"0123456789abcdef0123456789abcdef","since":"2026-11-02T09:00:00Z","workspace":"aurora","where":"engine",
+             "session":"s1","gitAsk":{"repository":"engine","remote":"origin","host":"github.com","class":"write","session":"s1","gone":false}}
+            """, Assert.Single(rows));
+    }
+
+    /// <summary>GITAUTH1f: the slice reads the home's git go-aheads, and hears one raised.</summary>
+    [Fact]
+    public void The_slice_reads_the_homes_git_go_aheads_and_hears_one_raised()
+    {
+        var home = Path.Combine(Path.GetTempPath(), "daoris-attention-git-ask-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            using var woken = new SemaphoreSlim(0);
+            using var hearing = AttentionStateSlice.HearGitAsks(home, () => woken.Release());
+
+            var id = GitAsks.Raise(home, "engine", "aurora", "origin", "github.com", "write", "s1", "github.com/o/engine", DateTimeOffset.UtcNow);
+
+            Assert.True(woken.Wait(TimeSpan.FromSeconds(10)), "the slice never heard the go-ahead");
+            var waits = System.Text.Json.JsonSerializer.Serialize(AttentionStateSlice.GitAskWaits(home));
+            Assert.Contains($"\"Id\":\"{id}\"", waits);
+            Assert.DoesNotContain("github.com/o/engine", waits);
+        }
+        finally
+        {
+            try { Directory.Delete(home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
     }
 
     /// <summary>GITAUTH1a: the slice reads the home's holds with no machine path, and hears a hold kept or lifted.</summary>

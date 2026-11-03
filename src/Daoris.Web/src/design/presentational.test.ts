@@ -108,6 +108,8 @@ const ORGANISMS = new Set<string>([
   // This machine's All roles and its notes (SETUPUX1m): the Roles mode's read and the found changes' answer, so the cards below hold none.
   './agents/roles/AllRoles.tsx',
   './agents/setup/MachineNotes.tsx',
+  // An adopted repository's note of the shared doctrine (D230 point 2): the reconcile's plan and its press, so the note's molecule holds neither.
+  './agents/setup/ReconcileNote.tsx',
   // This machine's Old records (ONEWAY1ad-ii): the kept reads' one query, and the stories' fixture of its answer's type.
   './agents/setup/OldRecords.tsx',
   './agents/setup/keptFixtures.ts',

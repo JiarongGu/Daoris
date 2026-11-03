@@ -5,7 +5,7 @@ import { useAcceptQuest, useAnswerGoAhead, useAsks, usePublishAsk, useQuests, us
 import {
   retryNotice, useApproveHelper, useAttention, useDeclineHelper, useHarnesses, useNudge, useRefreshHarnesses,
   useOpenWorkRecords, useResolveHeld, useRetryQuest, useTrustFolder, useAnswerPermission, useAnswerAlone, useApproveHandOver,
-  useDeclineHandOver, useGitTryAgain, useQuietCarryOn, useQuietLeave, useRunNodeWord, useStopSession,
+  useDeclineHandOver, useGitAnswer, useGitIdentity, useGitTryAgain, useQuietCarryOn, useQuietLeave, useRunNodeWord, useStopSession,
 } from '../../bridge/shell';
 import { permissionSaid } from '../waits/PermissionAsks';
 import { answerAloneSaid } from '../waits/AnswerAlone';
@@ -113,6 +113,8 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
   const resolveHeld = useResolveHeld();
   const openRecords = useOpenWorkRecords();
   const gitTryAgain = useGitTryAgain();
+  const gitIdentity = useGitIdentity();
+  const gitAnswer = useGitAnswer();
   const quietCarryOn = useQuietCarryOn();
   const quietLeave = useQuietLeave();
   const stopSession = useStopSession();
@@ -320,9 +322,26 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
         else notify(permissionSaid(t, answer.why, answer.message), 'error');
       });
     },
-    // A remote nothing serves (GITAUTH1e, §6.8): both presses lead to Settings → Git, where the identity is set up and the person's own
-    // sign-ins are kept after the confirmation that names what they let Daoris's git use; a browser has no such door.
+    // A held remote's doors (GITAUTH1e, §6.8, §7.4): the row's own door, which opens Settings → Git on its host or its first repository's
+    // git remote row by its class, where the identity is set up, signed in again or compared, and the person's own sign-ins are kept after
+    // the confirmation that names what they let Daoris's git use; a browser has no such door.
     gitSetUp: (item) => doors['git-held']?.(item),
+    gitChoose: (item) => doors['git-held']?.(item),
+    // A git go-ahead allowed or refused (GITAUTH1f, §6.6), as its session's head answers it: said in the page's words, a door that had gone
+    // said with its Allow kept for the identical retry; a refusal in the driver's words.
+    gitAnswer: (item, allow) => {
+      run(item, () => gitAnswer.mutateAsync({ ask: item.id, answer: allow ? 'allow' : 'refuse' }),
+        (answer) => notify(t(!allow ? 'work.wait.gitAsk.refused' : answer.waiting ? 'work.wait.gitAsk.allowed' : 'work.wait.gitAsk.kept')));
+    },
+    // The host's own page for SSH keys, in the system's browser, as Settings → Git's link opens it.
+    gitKeyPage: (item) => { if (item.git?.keyPage) window.open(item.git.keyPage, '_blank', 'noreferrer'); },
+    // The identity a push was refused with marked read only on its host (§7.4): the hard form of Write deny, a narrowing.
+    gitReadOnly: (item) => {
+      const held = item.git;
+      if (!held?.identityId) return;
+      run(item, () => gitIdentity.mutateAsync({ action: 'read-only', identity: held.identityId!, on: true }),
+        () => notify(t('work.attention.git.readOnlyDone', { identity: held.identity ?? '' })));
+    },
     // A quiet session's presses (SESSWATCH1a, the session-watch design §2.3): *End and carry on* and *Stop…* asked once under the row,
     // *Leave it running* one press, *Hand over…* its session's page, whose head asks it; a refusal said in its words.
     quiet: (item, act, answered) => {

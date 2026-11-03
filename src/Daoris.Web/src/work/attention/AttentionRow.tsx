@@ -9,7 +9,8 @@ import type { AccountRowFacts } from './accountWords';
 import type { RuleProposal } from '../../settings/repository/AgentRules';
 import type { GraphEnd, HeldAttempt, HeldResolution, UnreadableRecord } from '../head/milestone';
 import {
-  ASKS_ONCE, type AttentionActId, type AttentionOffer, attentionOffers, type DeclinedRequest, type GitHeld, type IntegrationWait, type MemoryWait, type QuietWait,
+  ASKS_ONCE, type AttentionActId, type AttentionOffer, attentionOffers, type DeclinedRequest, type GitAskWait, type GitHeld, type IntegrationWait, type MemoryWait,
+  type QuietWait,
   type StaleSince,
 } from './attention';
 import { Note } from '../Note';
@@ -25,7 +26,7 @@ import { TrustAsk } from '../waits/TrustAsk';
 export type AttentionKind =
   | 'parked' | 'parked-quest' | 'steward-stopped' | 'policy-hold' | 'go-ahead' | 'trust' | 'account-wait' | 'signed-out'
   | 'proposal' | 'intake' | 'departure' | 'set-up' | 'rule' | 'unanswerable'
-  | 'review' | 'opinion' | 'helper' | 'hand-over' | 'work' | 'permission' | 'answer' | 'confirmation' | 'space' | 'git-held'
+  | 'review' | 'opinion' | 'helper' | 'hand-over' | 'work' | 'permission' | 'answer' | 'confirmation' | 'space' | 'git-held' | 'git-ask'
   | 'quiet' | 'helper-ended' | 'request-declined' | 'memory' | 'integration' | 'workflow-convert';
 
 /**
@@ -169,6 +170,8 @@ export type Attention = {
   integration?: IntegrationWait;
   /** A `git-held` row's held group (GITAUTH1a): the repositories its *Try again* lifts, and why, which its mark's ink says. */
   git?: GitHeld;
+  /** A `git-ask` row's go-ahead (GITAUTH1f): the act it holds, which its *Allow* and *Refuse* answer. */
+  gitAsk?: GitAskWait;
   /** A `workflow-convert` row's count (ONEWAY1ae): the old records every part holds, which its title says, and their count by part, its detail. */
   convert?: { records: number; parts?: Record<string, number> };
   /** The workspace a `git-held` row was judged in, which its *Try again* names; absent where .NET scoped it to none. */
@@ -230,8 +233,19 @@ export type AttentionActs = {
   answerAlone?: (item: Attention, goOn: boolean) => void;
   /** A held git remote's *Try again* (GITAUTH1a): its repositories' holds lifted, so the next act connects once. */
   gitTryAgain?: (item: Attention) => void;
-  /** A remote nothing serves (GITAUTH1e): the door to Settings → Git, where an identity is set up or the person's own sign-ins are kept. */
+  /**
+   * A held remote's door to Settings → Git on its host (GITAUTH1e, §7.4): an identity set up or the person's own sign-ins kept, the
+   * refused identity's key copied or signed in again, a host's key compared and trusted.
+   */
   gitSetUp?: (item: Attention) => void;
+  /** A held remote's door to its first repository's git remote row (§7.4), where another identity or the person's own sign-ins are chosen. */
+  gitChoose?: (item: Attention) => void;
+  /** The host's own page for SSH keys, opened (§7.4). */
+  gitKeyPage?: (item: Attention) => void;
+  /** The identity a push was refused with marked read only on its host (§7.4), so Daoris never tries a write with it. */
+  gitReadOnly?: (item: Attention) => void;
+  /** A git go-ahead allowed (`allow`) or refused (GITAUTH1f, §6.6), as its session's head answers it. */
+  gitAnswer?: (item: Attention, allow: boolean) => void;
   /**
    * A quiet session's presses (SESSWATCH1a): *End and carry on*, *Hand over…* (its page's hand-over asked), *Stop…* and *Leave it
    * running*, each told how it ended where it asked once.
@@ -281,6 +295,16 @@ const HANDLER: Record<AttentionActId, keyof AttentionActs> = {
   'git-try-again': 'gitTryAgain',
   'git-set-up': 'gitSetUp',
   'git-keep-own': 'gitSetUp',
+  'git-copy-key': 'gitSetUp',
+  'git-sign-in': 'gitSetUp',
+  'git-open': 'gitSetUp',
+  'git-compare': 'gitSetUp',
+  'git-key-page': 'gitKeyPage',
+  'git-choose': 'gitChoose',
+  'git-use-own': 'gitChoose',
+  'git-read-only': 'gitReadOnly',
+  'git-allow': 'gitAnswer',
+  'git-refuse': 'gitAnswer',
   'quiet-carry-on': 'quiet',
   'quiet-hand-over': 'quiet',
   'quiet-stop': 'quiet',
@@ -409,7 +433,12 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
     else if (act === 'open-records') acts.openRecords?.(item);
     else if (act === 'again-step') acts.held?.(item, 'again');
     else if (act === 'git-try-again') acts.gitTryAgain?.(item);
-    else if (act === 'git-set-up' || act === 'git-keep-own') acts.gitSetUp?.(item);
+    else if (act === 'git-set-up' || act === 'git-keep-own' || act === 'git-copy-key' || act === 'git-sign-in' || act === 'git-open'
+      || act === 'git-compare') acts.gitSetUp?.(item);
+    else if (act === 'git-choose' || act === 'git-use-own') acts.gitChoose?.(item);
+    else if (act === 'git-key-page') acts.gitKeyPage?.(item);
+    else if (act === 'git-read-only') acts.gitReadOnly?.(item);
+    else if (act === 'git-allow' || act === 'git-refuse') acts.gitAnswer?.(item, act === 'git-allow');
     else if (act === 'quiet-hand-over') acts.quiet?.(item, 'hand-over');
     else if (act === 'quiet-leave') acts.quiet?.(item, 'leave');
   };
@@ -469,6 +498,18 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
       // GITAUTH1e: the two presses of a remote nothing serves, the words of Settings → Git's own.
       case 'git-set-up': return t('settings.git.moved.setUp');
       case 'git-keep-own': return t('settings.git.moved.keep');
+      // GITAUTH1e (§7.4): what mends a held remote, by its class.
+      case 'git-copy-key': return t('work.attention.git.copyKey');
+      case 'git-key-page': return t('settings.git.keyPage', { host: item.git?.host ?? '' });
+      case 'git-sign-in': return t('work.attention.git.signIn');
+      case 'git-open': return t('work.attention.git.open');
+      case 'git-compare': return t('work.attention.git.compare');
+      case 'git-choose': return t('work.attention.git.choose');
+      case 'git-use-own': return t('work.attention.git.useOwn');
+      case 'git-read-only': return t('work.attention.git.readOnly');
+      // GITAUTH1f: a git go-ahead's answers, the head's own words.
+      case 'git-allow': return t('work.wait.gitAsk.allow');
+      case 'git-refuse': return t('work.wait.gitAsk.refuse');
       // SESSWATCH1a: the quiet row's own presses, and the session page's own *Hand over…* and *Stop…*.
       case 'quiet-carry-on': return t('work.attention.act.carryOn');
       case 'quiet-hand-over': return t('work.attention.act.handOver');

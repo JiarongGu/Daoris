@@ -63,7 +63,7 @@ does nothing.
 | `repository` | The registry: `connect` this checkout's repository to any knowledge service (`--workspace` wires it on this machine), `register` from what each line declares, `retire`, `wire <repo> --workspace W`, `import <folder>` |
 | `role` | The role catalogue (`role [<id>]`, `set`, `remove`, `default`, `policy`) and a role holder's `brief`; the one way to set the agents each kind of work runs on, Build's, Intake's and Ask Daoris's among them (`role set <role> "<agent> [<model>\|-] [<effort>\|-]" …` or `off`) |
 | `session` | This machine's sessions: `list`, `stop`, `finish`, `decline`, `archive`, `unarchive`, `delete`, `say`, `take-back`, `reword`, `go-on-new`, `start-from`, `hand-over`, `helper`, `partner`, `handback`, a second `opinion`, and the supervisor's `supervise`; a park's answer is `say` |
-| `settings` | This machine's standing choices: `notify`, `strikes`, `cooloff`, `keep`, `cap`, `handover`, `brainstorms`, the staffing copy's `actor export\|import\|found`, and the retired `timeout`, `adapter`, `intake` and `helper`, each refused naming its door |
+| `settings` | This machine's standing choices: `notify`, `strikes`, `cooloff`, `keep`, `cap`, `handover`, `brainstorms`, the staffing copy's `actor found` on a home not converted yet, and the retired `timeout`, `adapter`, `intake`, `helper` and `actor export\|import`, each refused naming its door |
 | `space` | The free space and each kind Daoris keeps, and `space free` |
 | `steward` | The steward's holder's acts and desk, and a request any terminal may file |
 | `tool` | Which Git, Node.js, PowerShell, GitHub CLI and Azure CLI Daoris runs. **One file under the home** |

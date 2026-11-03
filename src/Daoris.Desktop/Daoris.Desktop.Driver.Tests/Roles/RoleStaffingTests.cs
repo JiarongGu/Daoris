@@ -156,18 +156,21 @@ public sealed class RoleStaffingTests : IDisposable
         Assert.Equal(0, Rows("SELECT COUNT(*) FROM role_staffing_found", row => row.GetInt32(0))[0]);
     }
 
+    /// <summary>ONEWAY1b: a file with none of the four keys is a fresh home, seeded with the five roles' written orders, every path none.</summary>
     [Fact]
-    public void A_file_with_no_staffing_imports_an_empty_one_and_every_path_is_none()
+    public void ONEWAY1b_a_file_with_no_staffing_is_seeded_and_every_path_is_none()
     {
         Write("""{ "cap": 2 }""");
 
         Assert.Equal(StaffingImported.Done, Staffing().ImportFile().How);
 
         var read = Staffing().Read()!;
-        Assert.Empty(read.Actors);
+        Assert.Equal(ActorChoices.Ordered.Order(), read.Actors.Keys.Order());
         Assert.Empty(read.Errors);
-        Assert.Equal((null, null, null), (read.Adapter, read.IntakeAdapter, read.HelperAdapter));
+        Assert.Equal(("claude-code", null, null), (read.Adapter, read.IntakeAdapter, read.HelperAdapter));
         Assert.Equal(new StaffingPaths(null, null, null, null), read.Written);
+        Assert.True(Staffing().Seeded());
+        Assert.Equal(["seeded"], Rows("SELECT class FROM imports WHERE family = 'role_staffing'", row => row.GetString(0)));
     }
 
     [Fact]
@@ -246,14 +249,12 @@ public sealed class RoleStaffingTests : IDisposable
         Assert.Equal(["build", "chat", "intake"], Staffing().Read()!.Actors.Keys.Order());
     }
 
-    // ——— No file, or one that does not read, is no import.
+    // ——— A file that does not read is no import; no file is a fresh home, seeded (ONEWAY1b's StaffingPartTests).
 
     [Fact]
-    public void No_file_and_a_file_that_does_not_read_import_nothing_and_make_no_store()
+    public void A_file_that_does_not_read_imports_nothing_and_makes_no_store()
     {
         var staffing = Staffing();
-
-        Assert.Equal(StaffingImported.NoFile, staffing.ImportFile().How);
 
         Write("{ half a file");
         var unread = staffing.ImportFile();
@@ -324,8 +325,10 @@ public sealed class RoleStaffingTests : IDisposable
                 // ONEWAY1a: SET_ACTOR, its context write and the retired verbs' press are gone, so the role door alone writes the family.
                 "../Daoris.Desktop.App/Program.cs", "../Daoris.Desktop.Driver.Host/Program.cs",
                 "../Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs",
+                // ONEWAY1b: the staffing part converts the family through the conversion's one door, which the modules hand it.
+                "../Daoris.Desktop.Modules/Loop/ConversionDoors.cs", "Conversion/StaffingPart.cs",
                 "Help/Proposals/HelpRoleProposals.cs", "Loop/DriverWatch.cs", "Roles/RoleDoor.cs", "Roles/RoleVerbs.cs", "Roles/StaffingVerbs.cs",
-                // ONEWAY1o: the register names the copy's kept site, and touches nothing of the family.
+                // ONEWAY1o, ONEWAY1c-ii: the register names the copy's kept site and reads whether the home was seeded.
                 "Transitional/Register.cs",
             ],
             naming);

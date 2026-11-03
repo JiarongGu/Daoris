@@ -35,6 +35,20 @@ public static class ActorChoices
     /// <summary>Whether <paramref name="actor"/> may be <i>off</i>: Intake and Ask Daoris, whose absent key is off today.</summary>
     public static bool MayBeOff(string actor) => ActorKey.MayBeOff(actor);
 
+    /// <summary>The five roles with an order of their own (the oneway design §2): each holds a written order, never <i>as before</i>.</summary>
+    public static IReadOnlyList<string> Ordered { get; } = ["build", "chat", "brainstorm", "intake", "ask-daoris"];
+
+    /// <summary>
+    /// A role's seed (ONEWAY1b): the written order a fresh home starts with and the role door's <c>default</c> writes, what a home with none
+    /// of the old keys ran; null for Second opinion, Partner and Helper, whose caller's rule decides who runs.
+    /// </summary>
+    public static IReadOnlyList<ActorChoice>? Seed(string role) => role switch
+    {
+        "build" or "chat" or "brainstorm" => [new ActorChoice(DriverConfig.Empty.Adapter)],
+        "intake" or "ask-daoris" => [],
+        _ => null,
+    };
+
     /// <summary>
     /// Whether <paramref name="choices"/> may be <paramref name="actor"/>'s order: null (back to <i>as before</i>) always; otherwise the
     /// refusal's sentence, or null where it may (the settings' <see cref="ActorKey.Judge"/>).

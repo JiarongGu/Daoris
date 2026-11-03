@@ -176,6 +176,8 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   REGISTRY_REFRESH: { scopes: ['registry'] },
   // A place's apply: the configuration, an adoption's asks and quests, and the rules.
   PLACE_APPLY: { scopes: ['quests', 'asks', 'driver', 'rules'] },
+  // A reconcile asked: its quest and ask, its admission alone, and its rules.
+  RECONCILE_APPLY: { scopes: ['quests', 'asks', 'driver', 'rules'] },
   // The conversion of the old records, and its undo: the configuration, the rules and each place's lines.
   CONVERT_APPLY: { scopes: ['lines', 'driver', 'rules'] },
   CONVERT_UNDO: { scopes: ['lines', 'driver', 'rules'] },
@@ -191,6 +193,7 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   // GITAUTH1e: Settings → Git's identities are the tools list's; a pointer is also read in the checkouts' remote rows.
   GIT_IDENTITY: { scopes: ['tools'] },
   GIT_USE: { scopes: ['driver', 'tools'] },
+  GIT_ANSWER: { scopes: ['tools'] },
   START_HELP: { scopes: ['sessions'] },
   HELP_RENAME: { scopes: ['sessions', 'help'], session: 'id' },
   HELP_PIN: { scopes: ['sessions', 'help'], session: 'id' },

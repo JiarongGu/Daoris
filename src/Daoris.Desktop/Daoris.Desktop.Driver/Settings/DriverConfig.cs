@@ -982,7 +982,8 @@ public sealed record DriverConfig(
     /// </exception>
     public static DriverConfig Load(string path)
     {
-        if (!File.Exists(path)) return Empty with { Source = "{}", SourceFile = Path.GetFullPath(path) };
+        // A fresh home's staffing is in the store before it has a file (ONEWAY1b), so a missing file is filled too.
+        if (!File.Exists(path)) return RoleStaffingPort.Fill(Empty with { Source = "{}", SourceFile = Path.GetFullPath(path) }, path);
 
         string text;
         try

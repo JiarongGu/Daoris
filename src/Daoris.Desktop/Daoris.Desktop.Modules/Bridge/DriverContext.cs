@@ -164,7 +164,10 @@ public sealed class DriverContext(IEventBus events, DriverLoop loop, OpenFolder?
         Loop.Nudge();
     }
 
-    /// <summary>The configured adapter's wire, as the loop plans by it (D70); the pipe, the stricter door, when it names none this build has.</summary>
+    /// <summary>
+    /// Build's first agent's wire, as the loop plans by it (D70; ONEWAY1b: read from Build's order, never the old key); the pipe, the stricter
+    /// door, when it names none this build has or Build's order does not read.
+    /// </summary>
     public SessionWire Door(DriverConfig config) => DoorOf(Loop, config);
 
     /// <summary>
@@ -175,7 +178,7 @@ public sealed class DriverContext(IEventBus events, DriverLoop loop, OpenFolder?
     {
         try
         {
-            return loop.Harnesses.Adapters.Resolve(config.Adapter).Wire;
+            return ActorChoices.FirstAgent("build", config) is { } first ? loop.Harnesses.Adapters.Resolve(first).Wire : SessionWire.Pipe;
         }
         catch (DriverException)
         {

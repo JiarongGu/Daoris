@@ -323,11 +323,20 @@ public sealed class GitAccessTests : IDisposable
 
     // ── The terminal (§8) ───────────────────────────────────────────────────────────────────────────
 
+    /// <summary>The presses sent to the running Daoris's window, each its route and payload as JSON.</summary>
+    private readonly List<(string Route, string Payload)> _pressed = [];
+
     private (int Code, string Out, string Err) Run(bool window, string session, params string[] args)
     {
         var output = new StringWriter();
         var error = new StringWriter();
-        var world = new GitAccessWorld(Home, () => Task.FromResult(window), name => name == "DAORIS_SESSION_ID" ? session : null, _ => Task.FromResult<string?>("Games"));
+        GitPress press = (route, payload, alone, words) =>
+        {
+            if (!window) return alone();
+            _pressed.Add((route.Route, JsonSerializer.Serialize(payload)));
+            return Task.FromResult(words(JsonDocument.Parse("""{"waiting":true}""").RootElement));
+        };
+        var world = new GitAccessWorld(Home, press, name => name == "DAORIS_SESSION_ID" ? session : null, _ => Task.FromResult<string?>("Games"));
         var code = GitAccessCommand.RunAsync(args, world, output, error).GetAwaiter().GetResult();
         return (code, output.ToString(), error.ToString());
     }
@@ -356,18 +365,32 @@ public sealed class GitAccessTests : IDisposable
         Assert.Equal("ask", GitAccessKeys.Resolve(Home, "engine", null).Of("write").Value);
     }
 
+    /// <summary>
+    /// GITAUTH1f (§8, D194 point 5): while the window runs, a widening and an answer are pressed there as the page presses them, the
+    /// window's confirmation before each, and nothing is done here; a narrowing runs here; with no window each runs here.
+    /// </summary>
     [Fact]
-    public void While_the_window_runs_a_widening_and_an_answer_wait_for_it_and_a_narrowing_does_not()
+    public void While_the_window_runs_a_widening_and_an_answer_are_pressed_there_and_a_narrowing_is_not()
     {
-        var (code, _, error) = Run(true, "", "access", "--machine", "write=allow");
-        Assert.Equal((1, true), (code, error.Contains("window-first")));
+        var (code, text, error) = Run(true, "", "access", "--machine", "write=allow");
+        Assert.True(code == 0, error);
+        Assert.Contains("confirmed in Daoris's window", text);
         Assert.True(GitAccessKeys.Resolve(Home, "engine", null).Default);
+        Assert.Equal(("SET_GIT_ACCESS", """{"machine":true,"access":{"write":"allow"}}"""), Assert.Single(_pressed));
+
+        Assert.Equal(0, Run(true, "", "access", "engine", "--one-value", "allow").Code);
+        Assert.Equal("""{"repository":"engine","oneValue":"allow"}""", _pressed[1].Payload);
 
         Assert.Equal(0, Run(true, "", "access", "--machine", "write=deny").Code);
+        Assert.Equal(2, _pressed.Count);
+        Assert.Equal("deny", GitAccessKeys.Resolve(Home, "engine", null).Of("write").Value);
 
         var id = GitAsks.Raise(Home, "engine", null, "origin", "h", "write", null, "h/o/e", DateTimeOffset.UtcNow);
-        Assert.Contains("window-first", Run(true, "", "answer", id, "allow").Err);
+        Assert.Equal(0, Run(true, "", "answer", id, "allow").Code);
+        Assert.Equal(("GIT_ANSWER", $$"""{"ask":"{{id}}","answer":"allow"}"""), _pressed[2]);
+        Assert.Null(GitAsks.Answered(Home, id));
         Assert.Equal(0, Run(false, "", "answer", id, "refuse").Code);
+        Assert.False(GitAsks.Answered(Home, id));
     }
 
     [Fact]

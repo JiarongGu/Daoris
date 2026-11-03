@@ -183,6 +183,8 @@ public static class PipeWording
         Row("GIT_HISTORY_EDIT", W("repository", PipeRole.Repository), W("branch", PipeRole.Words));
         // AGENTSPLACE1b2: a place's apply names the repositories, the delivery and what it builds; the digest and the chosen acceptances are listed under it.
         Row("PLACE_APPLY", W("repositories", PipeRole.Repository), W("preset", PipeRole.Form), W("builds", PipeRole.Form));
+        // D230: a reconcile names the repository whose own session is asked.
+        Row("RECONCILE_APPLY", W("repository", PipeRole.Repository));
         // WORKFLOWCLEAN1 1e: the conversion's presses; the apply names the two choices of its plan, the undo names nothing.
         Row("CONVERT_APPLY", W("composed", PipeRole.Form), W("landAutomatic", PipeRole.Form));
         Row("CONVERT_UNDO");
@@ -219,7 +221,7 @@ public static class PipeWording
             "SET_ACCESS", "SET_GIT_ACCESS", "STAFFING_FOUND_ANSWER", "SET_ROLE", "SET_ROLES", "SET_CAP", "SET_COMMITS", "SET_COOLOFF", "SET_HAND_OVER", "SET_HELPERS", "SET_HELP_MODE", "SET_HELP_GRANT", "SET_KEEP",
             "SET_NOTIFY", "SET_OPINION", "SET_REVIEW", "SET_STRIKES", "TRUST_FOLDER", "RULE_ACTION", "RULE_PROPOSAL", "PLUGIN_ACTION",
             "PLUGIN_ADD", "PLUGIN_INSTALL", "PLUGIN_NEW", "PLUGIN_TRY", "PLUGIN_TOOLS", "PLUGIN_TOOL_FIX", "TOOLS_DELETE", "TOOLS_DOWNLOAD", "TOOLS_LOCATION", "TOOLS_STOP",
-            "TOOLS_USE", "TOOLS_GIT_SET", "GIT_IDENTITY", "GIT_USE", "ASK_OPINION",
+            "TOOLS_USE", "TOOLS_GIT_SET", "GIT_IDENTITY", "GIT_USE", "GIT_ANSWER", "ASK_OPINION",
             // A look in one form and the person's press in another (a `PipeRule`): worded for the press.
             "TOOLS_GIT", "PLUGIN_UPDATE", "SYSTEM_SPACE_FREE");
 
