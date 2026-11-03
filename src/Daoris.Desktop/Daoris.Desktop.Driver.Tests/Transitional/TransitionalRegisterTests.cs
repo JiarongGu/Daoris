@@ -62,14 +62,25 @@ public sealed class TransitionalRegisterTests : IDisposable
         Assert.All(TransitionalRegister.Entries, entry => Assert.False(entry.Ended(_home), entry.Id));
     }
 
+    /// <summary>ONEWAY1b: the old keys' reading ends with the staffing part's census, once the store holds a written order for each of the five.</summary>
     [Fact]
-    public void The_actor_key_ends_when_every_role_holds_a_stored_entry()
+    public void ONEWAY1b_the_actor_key_ends_when_the_store_holds_an_order_for_each_of_the_five()
     {
-        Assert.False(Entry("actor-key-before").Ended(_home));
-        Put(HomeEntry.DriverConfig, """{"actors":{"build":[],"chat":[]}}""");
-        Assert.False(Entry("actor-key-before").Ended(_home));
-        Put(HomeEntry.DriverConfig, """{"actors":{"build":[],"chat":[],"brainstorm":[],"intake":[],"ask-daoris":[]}}""");
-        Assert.True(Entry("actor-key-before").Ended(_home));
+        try
+        {
+            Assert.False(Entry("actor-key-before").Ended(_home));
+            Assert.Equal(StaffingPart.Part, Entry("actor-key-before").Part);
+            Put(HomeEntry.DriverConfig, """{"adapter":"claude-code","actors":{"build":[{"agent":"claude-code"}],"chat":[{"agent":"claude-code"}]}}""");
+            var staffing = new RoleStaffing(_home, () => StoreSettled.Yes);
+            Assert.Equal(StaffingImported.Done, staffing.ImportFile().How);
+            Assert.False(Entry("actor-key-before").Ended(_home));
+            staffing.Set([("brainstorm", [new ActorChoice("claude-code")]), ("intake", []), ("ask-daoris", [])]);
+            Assert.True(Entry("actor-key-before").Ended(_home));
+        }
+        finally
+        {
+            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+        }
     }
 
     [Fact]

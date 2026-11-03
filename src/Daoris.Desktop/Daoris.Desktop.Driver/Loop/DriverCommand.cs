@@ -343,11 +343,11 @@ public static class DriverCommand
               question's fenced print, and the answer or the question left to the owner. No alone path.
           settings notify on|off  ·  settings strikes <n>  ·  settings cooloff <minutes>  ·  settings cap <n>
           settings keep [<kind> <rule>]  ·  settings handover …  ·  settings brainstorms …
-          settings timeout <minutes>  ·  settings actor export [<file>]|import <file>|found [take|dismiss <n>]
+          settings timeout <minutes>  ·  settings actor found [take|dismiss <n>]
               this machine's standing choices: whether a park or an end you did not ask for is said, when a quest
               parks after failed sessions, how long an account cools, the cap, how long each kind is kept, a hand-over's
-              and a brainstorm's rules, and the staffing copy's export, import and found changes; timeout is retired, no
-              session is limited by time, and the agents each kind of work runs on are `role set`'s.
+              and a brainstorm's rules, and the staffing copy's found changes; timeout is retired, no session is limited
+              by time, and the agents each kind of work runs on are `role set`'s.
           space [--json] [--measure]
               the free space and each kind Daoris keeps, This Daoris's Disk space twin: its size and when it was
               counted, its rule, when it next goes and when it was last cleaned. --measure counts each kind first,

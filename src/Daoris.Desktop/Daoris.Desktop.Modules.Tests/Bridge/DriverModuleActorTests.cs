@@ -129,8 +129,9 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
             await AnswerAsync(module, "SET_ROLE", Staff("intake", "intake", []));
             Assert.Empty(ActorChoices.Effective("intake", DriverConfig.Load(DriverConfigPath)));
 
+            // ONEWAY1b: the default is the seed's written order, off for Intake, never as before.
             await AnswerAsync(module, "SET_ROLE", new { change = "default", id = "intake" });
-            Assert.False(DriverConfig.Load(DriverConfigPath).Actors.ContainsKey("intake"));
+            Assert.Empty(DriverConfig.Load(DriverConfigPath).Actors["intake"]);
 
             var before = File.ReadAllText(DriverConfigPath);
             var refusal = await RefusalAsync(module, "SET_ROLE", Staff("build", "build", []));
@@ -153,6 +154,20 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
         await RefusalAsync(module, "SET_ACTOR", new { actor = "build", choices = new object[] { new { agent = "codex-acp" } } });
 
         Assert.Equal("claude-code", DriverConfig.Load(DriverConfigPath).Adapter);
+    }
+
+    /// <summary>ONEWAY1b: the door's wire is Build's first agent's, read from its order rather than the old key; the pipe where it does not resolve.</summary>
+    [Fact]
+    public void ONEWAY1b_the_doors_wire_reads_builds_first_agent_and_is_the_pipe_where_it_does_not_resolve()
+    {
+        var loop = Loop();
+        var build = new Dictionary<string, IReadOnlyList<ActorChoice>>(StringComparer.Ordinal) { ["build"] = [new ActorChoice("claude-code-acp")] };
+
+        Assert.Equal(SessionWire.Acp, DriverContext.DoorOf(loop, DriverConfig.Empty with { Adapter = "claude-code", Actors = build }));
+        Assert.Equal(SessionWire.Pipe, DriverContext.DoorOf(loop, DriverConfig.Empty with
+        {
+            Adapter = "claude-code-acp", Actors = new Dictionary<string, IReadOnlyList<ActorChoice>>(StringComparer.Ordinal) { ["build"] = [new ActorChoice("nobody-knows")] },
+        }));
     }
 
     /// <summary>
