@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// (no door set) asks nothing; and the look's inventory read names only the integrating repositories' branch units, with none of the service's
 /// quests or asks read for them, its cost measured over many repositories.
 /// </summary>
-public sealed class IntegrateWatchTests(ITestOutputHelper output) : IDisposable
+public sealed class IntegrateWatchTests : IDisposable
 {
     private const string T1 = "1111111111111111111111111111111111111111";
 

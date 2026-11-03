@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the first's outcome (F41), and waits queued: nothing here runs the integration. The same over real git is
 /// <see cref="IntegrateNodeGitTests"/>.
 /// </summary>
-public sealed class IntegrateNodeTests(ITestOutputHelper output) : IDisposable
+public sealed class IntegrateNodeTests : IDisposable
 {
     private const string Unit = "unit-a";
     private const string Branch = "feature/q1-ship";

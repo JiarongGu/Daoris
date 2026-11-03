@@ -133,7 +133,6 @@ public sealed class LandingBranchesTests : IDisposable
 
         Assert.True(landed.Landed, landed.Message);
         Assert.True(await BranchAsync(root, first.Branch));
-        Assert.Null(landed.Tidied);
     }
 
     /// <summary>

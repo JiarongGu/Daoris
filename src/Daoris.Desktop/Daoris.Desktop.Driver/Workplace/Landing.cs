@@ -179,13 +179,8 @@ public sealed record LeftOutCommit(string Sha, string Subject, string Why, strin
 public sealed record LandingConflict(string Says, string Words);
 
 /// <summary>What came of a press. A refusal is an answer, as the merge door's are, and names what the person would do.</summary>
-/// <param name="Plugin">What the rule's plugin answered once the branch was made (D100) — null where no plugin was spoken to.</param>
-/// <param name="Tidied">
-/// What the rule's tidy did with the other session branches the landed work holds (LAND3), each removed or kept and why —
-/// null where no tidy ran. The message says the same, so the landing's note keeps it.
-/// </param>
-public sealed record TreeLanding(
-    bool Landed, string Message, string? Branch = null, PluginLanding? Plugin = null, IReadOnlyList<TidiedBranch>? Tidied = null)
+/// <param name="Plugin">What the landing's plugin answered once the branch was made (D100) — null where no plugin was spoken to.</param>
+public sealed record TreeLanding(bool Landed, string Message, string? Branch = null, PluginLanding? Plugin = null)
 {
     /// <summary>
     /// A refusal's code (LAND2b), one of <see cref="AutoLandingCode"/>: <c>uncommitted</c>, <c>nothing</c>, <c>exists</c> or, where a
