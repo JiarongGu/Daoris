@@ -5,6 +5,7 @@
   "settings.access.full.off": "关闭：会话按下面每一处停顿的设定停下。",
   "settings.access.full.offs": "完全访问会关掉权限提示、需求等你采纳去向、落地前的采纳…，以及放行。",
   "settings.access.full.stays": "它从不关掉你自己的拒绝规则，也不关掉需求本身要求的放行。",
+  "settings.access.full.codex": "Codex 不读取规则文件，所以在任何设置下，你的拒绝规则都到不了 Codex 会话。除非 Git 访问权限允许，Daoris 的 git 门仍会拒绝它的推送、强制推送和删除分支。",
   "settings.access.confirm.label": "为 {{name}} 启用完全访问",
   "settings.access.confirm.named": "允许 {{name}} 中的会话不弹出权限提示地运行、按受理的分派接下需求、按落地规则落地完成的工作而无需采纳…，并且无需放行就行动？你自己的拒绝规则依然有效，需求本身要求的放行依然会问。它对从现在起启动的会话生效。",
   "settings.access.confirm.machine": "允许本机的会话在工作区和仓库都没有自己的设定时，不弹出权限提示地运行、按受理的分派接下需求、按落地规则落地完成的工作而无需采纳…，并且无需放行就行动？你自己的拒绝规则依然有效，需求本身要求的放行依然会问。它对从现在起启动的会话生效。",

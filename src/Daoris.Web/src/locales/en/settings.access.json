@@ -5,6 +5,7 @@
   "settings.access.full.off": "Off: sessions stop at each pause as it stands below.",
   "settings.access.full.offs": "Full access turns off permission prompts, an ask waiting for you to accept its route, Accept… before landing, and go-aheads.",
   "settings.access.full.stays": "It never turns off your own deny rules, nor a go-ahead the ask itself demands.",
+  "settings.access.full.codex": "Codex takes no rules file, so none of your deny rules reaches a Codex session in any setup. Daoris's git doors still refuse its push, force-push and branch delete unless git access allows them.",
   "settings.access.confirm.label": "Turn on full access for {{name}}",
   "settings.access.confirm.named": "Let sessions in {{name}} run with no permission prompt, take an ask where its intake routed it, land finished work by the landing rule with no Accept…, and act without go-aheads? Your own deny rules still hold, and a go-ahead the ask itself demands is still asked. It applies to sessions that start from now on.",
   "settings.access.confirm.machine": "Let sessions on this machine run with no permission prompt, take an ask where its intake routed it, land finished work by the landing rule with no Accept…, and act without go-aheads, wherever a workspace or a repository sets none of its own? Your own deny rules still hold, and a go-ahead the ask itself demands is still asked. It applies to sessions that start from now on.",

@@ -41,6 +41,11 @@ public static class StandingBlock
         "Work another repository owns goes to that repository as a quest (`quest_publish`, naming the repository from the registry or this "
         + "repository's `uses`), and a question about this repository goes to a helper (`helper_ask`).";
 
+    /// <summary>What a session whose harness takes no rules file is told (D233 choice 3): no deny of the person's reaches it, and what still refuses.</summary>
+    internal const string NoDenies =
+        "Your harness takes no rules file, so none of the person's deny rules reaches you: hold to what they asked in their words. "
+        + "Daoris's git doors still refuse a push, a force-push and a branch delete from here unless the person's git access allows them.";
+
     /// <summary>The block of <paramref name="facts"/>, with its account.</summary>
     public static StandingBlockTold Compose(StandingFacts facts)
     {
@@ -73,6 +78,12 @@ public static class StandingBlock
         }
 
         text.Append("\n\n").Append(Facts(facts));
+        if (facts.NoDenies)
+        {
+            text.Append("\n\n").Append(NoDenies);
+            said.Add("that none of the person's denies reaches its harness");
+        }
+
         if (Memory(facts.Memory) is { } memory)
         {
             text.Append("\n\n").Append(memory);

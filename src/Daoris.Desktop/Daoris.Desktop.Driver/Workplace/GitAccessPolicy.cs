@@ -4,8 +4,9 @@ namespace Daoris.Driver;
 /// The harness's rules composed from a session's git access (GITAUTH1f, D198 point 8; the git-auth design §6.8): <c>no-push</c> keeps its
 /// id and becomes the policy's rule writer. Write <i>deny</i> (and Daoris's default, which is deny for a session) leaves the four push
 /// forms denied, so a start reads exactly as before; Write <i>ask</i> or <i>allow</i> allows the plain push forms, so the harness lets
-/// the command start and the door asks (§6.6), and denies the force, delete and tag forms as before, since Dangerous cannot be set
-/// until the transport judge reads each update. The option-first forms stay denied: an allow so written is the harness's own warning.
+/// the command start and the door asks (§6.6), and denies the force, delete and tag forms as before; the doors refuse a force and a
+/// delete themselves, for a harness that takes no rules (D233 choice 3). The option-first forms stay denied: an allow so written is the
+/// harness's own warning.
 /// </summary>
 public static class GitAccessPolicy
 {

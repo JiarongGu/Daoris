@@ -174,8 +174,28 @@ public sealed class StandingBlockTests(ITestOutputHelper output) : IDisposable
         // An instruction file the harness reads whole carries no rule index.
         File.WriteAllText(Path.Combine(_tree, "AGENTS.md"), new string('a', 32_768));
         Assert.Null(StandingBlocks.OnHarness(facts, new CodexAcpAdapter(), _tree).Rules);
-        // A kind with no repository is told neither.
-        Assert.Equal(new StandingFacts(), StandingBlocks.OnHarness(new StandingFacts(), new CodexAcpAdapter(), _tree));
+        // A kind with no repository is told neither, only that its harness holds none of the person's denies.
+        Assert.Equal(new StandingFacts { NoDenies = true }, StandingBlocks.OnHarness(new StandingFacts(), new CodexAcpAdapter(), _tree));
+    }
+
+    /// <summary>
+    /// D233 choice 3: a harness that takes no rules file (Codex) holds none of the person's denies, and its block says so with what the git
+    /// doors still refuse; one that takes the rules is told nothing of it.
+    /// </summary>
+    [Fact]
+    public void A_harness_that_takes_no_rules_is_told_it_holds_none_of_the_persons_denies()
+    {
+        var facts = new StandingFacts { Repository = "engine" };
+
+        var codex = StandingBlocks.OnHarness(facts, new CodexAcpAdapter(), _tree);
+        var claude = StandingBlocks.OnHarness(facts, new ClaudeCodeAdapter(), _tree);
+
+        Assert.True(codex.NoDenies);
+        Assert.False(claude.NoDenies);
+        var told = StandingBlock.Compose(codex);
+        Assert.Contains(StandingBlock.NoDenies, told.Text, StringComparison.Ordinal);
+        Assert.Contains("refuse a push, a force-push and a branch delete", told.Text, StringComparison.Ordinal);
+        Assert.DoesNotContain(StandingBlock.NoDenies, StandingBlock.Compose(claude).Text, StringComparison.Ordinal);
     }
 
     // ——— The bound: the whole first prompt under the native door's single argument, the block through its file past it.
