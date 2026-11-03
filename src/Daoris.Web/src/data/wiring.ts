@@ -233,7 +233,7 @@ export type SpaceStarted = {
 /** One entry of an actor's effective order (D205 §4.0): `from` is what a start's record keeps as its choice. */
 export type ActorEntry = { agent: string; model?: string | null; effort?: string | null; from: string };
 
-/** One actor as `ACTORS` answers it (MODELROLE1c, D205 §9.4): set, as before, off, or an entry in driver.json that does not read. */
+/** A seeded role's order as it runs, as each `ROLES` row carries it (`staffing`): set, as before, off, or an entry that does not read. */
 export type ActorRow = {
   id: string; state: 'set' | 'before' | 'off' | 'unreadable'; choices: ActorEntry[]; error?: string | null;
   /** STAFFPOLICY1d: the order a start would walk where the role's policy arranges it otherwise than as stored (Build, Chat); the offer's order. */
@@ -241,8 +241,7 @@ export type ActorRow = {
 };
 
 /**
- * A change of driver.json's actors another program made, as `ACTORS` answers it beside the rows (FOUNDATION1w-s, the foundation design
- * §19.15): each role it moved, as Daoris last wrote it and as that file showed it, `applied` where it turned Intake or Ask Daoris off at
+ * A change of driver.json's staffing another program made, as `ROLES` answers it beside the rows (`found`): each role it moved, as Daoris last wrote it and as that file showed it, `applied` where it turned Intake or Ask Daoris off at
  * once. It waits for the person's *Take it* or *Dismiss* (`STAFFING_FOUND_ANSWER`).
  */
 export type StaffingFound = { id: number; at: string; changes: { role: string; was: ActorRow; now: ActorRow; applied: boolean }[] };
@@ -257,6 +256,8 @@ export type RoleChoice = { agent: string; model?: string | null; effort?: string
 export type RoleRow = {
   id: string; state: 'seed' | 'set' | 'removed' | 'unreadable'; seeded: boolean; name?: Authored | null;
   takes: string[]; scopeKind?: string | null; scopeId?: string | null; revision: number; error?: string | null; choices?: RoleChoice[] | null;
+  /** A seeded role's order as it runs; absent for an added role. */
+  staffing?: ActorRow | null;
 };
 
 /** A role Daoris suggests adding (FOUNDATION1y-i): the Designer while no role takes design, applied only by the person's press. */
@@ -305,6 +306,8 @@ export type RoleCatalogue = {
   policies?: RolePolicyRow[]; policyFields?: string[]; policyPresets?: string[];
   /** The choices Daoris suggests for the seeded roles (MODELROLE1g) and the day of the reference they were read from; absent from a driver before them. */
   suggestedChoices?: { role: string; choices: RoleChoice[] }[]; suggestedChoicesDated?: string;
+  /** The changes of driver.json's staffing another program made that wait for the person; none where the copy has ended. */
+  found?: StaffingFound[];
 };
 
 /** A role's change as `SET_ROLE` takes it: set with its record and choices, removed, given back its seed, or every seeded role given back (`default-all`, whose id is `*`). */

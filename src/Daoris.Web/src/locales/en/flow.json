@@ -3,7 +3,7 @@
   "flow.asChart": "Show as flowchart",
   "flow.keys": "Arrow keys move between steps, Enter opens one, Tab reaches its controls.",
   "flow.state": "{{word}}.",
-  "flow.actor": "{{actor}}.",
+  "flow.role": "{{role}}.",
   "flow.notReached": "Not reached.",
   "flow.from": "From {{node}}: {{says}}.",
   "flow.next": "Next: {{moves}}.",

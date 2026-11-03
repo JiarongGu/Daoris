@@ -27,7 +27,7 @@ export function drawnOf(t: TFunction, language: string, node: DiagramNode): Omit
       const lines = [
         ...(node.takes.length > 0 ? [workList(t, language, node.takes)] : []),
         node.first
-          ? `${entryText(t, node.first)}${node.more > 0 ? ` ${t('settings.ai.actors.more', { count: node.more })}` : ''}`
+          ? `${entryText(t, node.first)}${node.more > 0 ? ` ${t('settings.ai.role.more', { count: node.more })}` : ''}`
           : t('agents.roles.choices.none'),
       ];
       return { id: node.id, kind: 'role', title: nameOf(t, language, node.role), lines, dashed: false };

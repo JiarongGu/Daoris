@@ -70,7 +70,6 @@ describe('The Agents place, Setup mode', () => {
       if (type === 'PLACES') return PLACES(options?.payload ?? {});
       if (type === 'ROLE_STRUCTURE') return CHAIN(options?.payload?.chain ?? {});
       if (type === 'ROLES') return CATALOGUE;
-      if (type === 'ACTORS') return { actors: [] };
       return undefined;
     });
   });

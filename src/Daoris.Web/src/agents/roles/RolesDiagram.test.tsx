@@ -81,7 +81,6 @@ describe('The Roles mode, the diagram', () => {
         case 'STATE': return { ...DRIVER_STATE, drivable: DRIVER.drivable, holds: DRIVER.holds, standingConfirmation: STANDING };
         case 'HARNESSES': return { settingsPath: 'x', adapter: 'claude-code', harnesses: DOORS };
         case 'ACCOUNTS': return { agents: [CLAUDE_USE, CODEX_USE] };
-        case 'ACTORS': return { actors: [] };
         case 'ROLES': return { roles: STRUCTURE.roles, works: WORKS, kept: true, suggested: [] };
         case 'STARTS': return { adapter: 'claude-code', starts: [] };
         case 'PLUGINS': return { folder: 'plugins', plugins: PLUGINS };

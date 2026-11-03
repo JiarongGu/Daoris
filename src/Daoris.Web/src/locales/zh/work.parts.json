@@ -28,7 +28,7 @@
   "work.parts.label": "这条工作线的各段如何接续",
   "work.parts.start": "起点",
   "work.parts.node": "第 {{n}} 段",
-  "work.parts.actor": "{{agent}}，{{when}}开始",
+  "work.parts.ranBy":"{{agent}}，{{when}}开始",
   "work.parts.leads": "列表中的行显示这一段",
   "work.parts.show": "显示第 {{n}} 段",
   "work.parts.showAll": "展开各段",

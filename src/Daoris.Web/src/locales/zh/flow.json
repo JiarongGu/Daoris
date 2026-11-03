@@ -3,7 +3,7 @@
   "flow.asChart": "以流程图显示",
   "flow.keys": "方向键在步骤之间移动，Enter 打开一步，Tab 进入它的控件。",
   "flow.state": "{{word}}。",
-  "flow.actor": "{{actor}}。",
+  "flow.role": "{{role}}。",
   "flow.notReached": "尚未到达。",
   "flow.from": "来自 {{node}}：{{says}}。",
   "flow.next": "下一步：{{moves}}。",

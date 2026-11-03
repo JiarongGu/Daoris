@@ -2319,7 +2319,7 @@ export function WorkFrame({
           // Keyed by the session: a refusal or a kept answer said in one is never another's.
           key={attended.id}
           offer={offer}
-          actorName={attendedActor ? t(`work.actor.name.${attendedActor.id}`) : undefined}
+          actorName={attendedActor ? t(`work.role.name.${attendedActor.id}`) : undefined}
           agentName={offerTo?.product || offer.agent}
           accountName={offer.account ? nameOf(offerTo ? toolOf(offerTo) : offer.agent, offer.account) : null}
           busy={actions.handingOver}

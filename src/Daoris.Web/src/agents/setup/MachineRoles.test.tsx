@@ -90,8 +90,7 @@ describe('This machine\'s page, lit', () => {
       if (type === 'STATE' || type === 'SET_ROLE' || type === 'SET_ROLES') return DRIVER_STATE;
       if (type === 'HARNESSES') return ROSTER;
       if (type === 'PLACES') return PLACES((options?.payload ?? {}) as Parameters<typeof PLACES>[0]);
-      if (type === 'ROLES') return roles;
-      if (type === 'ACTORS') return { actors: [], found };
+      if (type === 'ROLES') return { ...roles, found };
       // A chain is asked of the Roles section; the whole structure, with no chain, of the diagram.
       if (type === 'ROLE_STRUCTURE') return options?.payload?.chain ? CHAIN(options.payload.chain) : STRUCTURE;
       return undefined;

@@ -36,7 +36,7 @@ export type RoleOpeners = {
 type Answered = { done: () => void; refused: (sentence: string) => void };
 
 /**
- * **The role editor's reads and presses** (COMPANYVIEW1a, AGENTSPLACE1g1): the catalogue over `ROLES`, each order over `ACTORS`, the agents
+ * **The role editor's reads and presses** (COMPANYVIEW1a, AGENTSPLACE1g1): the catalogue and each order over `ROLES`, the agents
  * this machine has and what each offers, and the presses `SET_ROLE` and `SET_ROLES` with their toasts. Held once, so the Roles mode's
  * card and a place's rows press the same acts.
  */
@@ -84,7 +84,7 @@ export function useRoleEditing(notify: Notify) {
     });
     setRoles.mutate({ changes: presses }, {
       onSuccess: () => {
-        notify(t('settings.ai.roles.savedAll', { roles: named.join(t('settings.ai.actors.and')) }));
+        notify(t('settings.ai.roles.savedAll', { roles: named.join(t('settings.ai.role.and')) }));
         answered.done();
       },
       onError: (error) => answered.refused(sentence(error)),
@@ -128,7 +128,7 @@ export function useRolesMode({ notify, section = 'working', doors = {}, page: gi
   const answerStaffingFound = (id: number, answer: 'take' | 'dismiss', answered: Answered) =>
     answerFound.mutate({ found: id, answer }, {
       onSuccess: () => {
-        notify(t(answer === 'take' ? 'settings.ai.actors.found.taken' : 'settings.ai.actors.found.dismissed'));
+        notify(t(answer === 'take' ? 'settings.ai.role.found.taken' : 'settings.ai.role.found.dismissed'));
         answered.done();
       },
       onError: (error) => answered.refused(sentence(error)),

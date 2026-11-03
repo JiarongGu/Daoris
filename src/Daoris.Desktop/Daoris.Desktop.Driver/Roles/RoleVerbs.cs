@@ -196,7 +196,7 @@ public sealed class RoleVerb : ChoiceVerb
                 "removed" => "removed",
                 "unreadable" => $"unreadable: {row.Error}",
                 _ => $"{row.Name?.In("en")} · {Shape(row.Takes, row.ScopeKind, row.ScopeId)}"
-                    + (row.Choices is { } staffed ? $" · {(staffed.Count == 0 ? "off" : Choices(staffed))}" : row.Seeded ? " · its actor's order" : "")
+                    + (row.Choices is { } staffed ? $" · {(staffed.Count == 0 ? "off" : Choices(staffed))}" : row.Seeded ? " · its staffing's order" : "")
                     + (row.State == "seed" ? " (the seed)" : $" (revision {row.Revision})"),
             };
             said.WriteLine($"  {row.Id,-12}{shape}");
@@ -306,5 +306,5 @@ public sealed class RoleVerb : ChoiceVerb
         string.Join(", ", choices.Select((choice, i) => $"{i + 1} {choice.Agent} · {choice.Model ?? "account default"} · {choice.Effort ?? "account default"}"));
 
     private static string Unkept(DriverChoicesWorld world) =>
-        $"{world.ConfigPath}'s actors are the file's own here (not this home's store), so its roles are not set here.";
+        $"{world.ConfigPath}'s staffing is the file's own here (not this home's store), so its roles are not set here.";
 }
