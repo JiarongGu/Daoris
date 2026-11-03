@@ -397,6 +397,9 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry PlaceReceipts = new("place-receipts", HomeCategory.Data, "data/place-receipts", "data/place-receipts");
     // COMMS1l (D209 §6.2): the steward desk's requests kept across a restart, an open one read as interrupted; no caller's key, no grant.
     public static readonly HomeEntry StewardDesk = new("steward-desk", HomeCategory.Data, "data/steward-desk.json", "data/steward-desk.json");
+    // NOCOMPAT1 (D232): which release's migration converted the home, and the copies it took of each file before it changed it.
+    public static readonly HomeEntry Migration = new("migration", HomeCategory.Data, "data/migration.json", "data/migration.json");
+    public static readonly HomeEntry Salvage = new("salvage", HomeCategory.Data, "data/salvage", "data/salvage");
     public static readonly HomeEntry Keys = new("keys", HomeCategory.Profiles, "profiles/keys.json", "keys.json");
     public static readonly HomeEntry Remotes = new("remotes", HomeCategory.Profiles, "profiles/remotes.json", "remotes.json");
     public static readonly HomeEntry AgentHomes = new("agent-homes", HomeCategory.Profiles, "profiles/agents/*/*", "harnesses/*/*");
@@ -456,6 +459,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
         Landings, SessionBranches, LinesMoved, OverlapsTold, RegistryFollowed, Abandoned, Update, Knowledge, DesktopDb, Sessions, Helpers, Partners, Handed, Setup,
         Workflows, HelpProposals, ConfiguredAccess, OpinionGates, OpinionDues, BrowserSettings, BrowserFavorites, HomeId, Brainstorms,
         UsageHistory, Keeping, Notices, GitIdentities, StandingConfirmation, AgentOffers, PipeWaiting, ActFiles, PlaceReceipts, StewardDesk,
+        Migration, Salvage,
         Keys, Remotes, AgentHomes, BrowserEngine, BrowserEdge, EdgeCookies, GitKeys, GitSshConfig, GitKnownHosts, GitConfig, Window, PipeSent,
         Trees, HelpRoom, HelpRooms, Intake, OpinionPackets, QuestFiles, AskFiles, SessionFiles, Proof, UsageRead, BrainstormRooms, RoleRooms,
         Toolchain, ToolVersions, Bin,

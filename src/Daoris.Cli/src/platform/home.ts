@@ -149,6 +149,9 @@ export const HOME_ENTRIES = [
   row('place-receipts', 'data', 'data/place-receipts', 'data/place-receipts'),
   // COMMS1l: the steward desk's requests kept across a restart; named here, never read by the CLI.
   row('steward-desk', 'data', 'data/steward-desk.json', 'data/steward-desk.json'),
+  // NOCOMPAT1 (D232): the desktop's migration record and its copies; named here, never read by the CLI.
+  row('migration', 'data', 'data/migration.json', 'data/migration.json'),
+  row('salvage', 'data', 'data/salvage', 'data/salvage'),
   row('keys', 'profiles', 'profiles/keys.json', 'keys.json'),
   row('remotes', 'profiles', 'profiles/remotes.json', 'remotes.json'),
   row('agent-homes', 'profiles', 'profiles/agents/*/*', 'harnesses/*/*'),

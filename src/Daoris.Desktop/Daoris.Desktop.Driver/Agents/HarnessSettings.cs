@@ -526,7 +526,7 @@ public sealed record HarnessSettings(
                 + $"not written. `daoris agent pin {harness} {version}` installs it again."), agents: agents);
 
     /// <summary><see cref="Save"/> for a writer already holding the file's <see cref="KeepLock"/>.</summary>
-    private void SaveHolding(string path)
+    internal void SaveHolding(string path)
     {
         if (Problem is not null)
         {

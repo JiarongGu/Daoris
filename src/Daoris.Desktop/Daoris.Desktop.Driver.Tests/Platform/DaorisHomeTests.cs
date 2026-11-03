@@ -438,6 +438,18 @@ public sealed class DaorisHomeTests
         Assert.Equal(table.IndexOf(HomeEntry.PlaceReceipts) + 1, table.IndexOf(HomeEntry.StewardDesk));
     }
 
+    /// <summary>NOCOMPAT1 (D232): the migration's record and its copies are data, after the steward desk, as the three twins hold them.</summary>
+    [Fact]
+    public void NOCOMPAT1_the_migration_record_and_salvage_are_data_after_the_steward_desk()
+    {
+        Assert.Equal(
+            (HomeCategory.Data, "data/migration.json", HomeCategory.Data, "data/salvage"),
+            (HomeEntry.Migration.Category, HomeEntry.Migration.New, HomeEntry.Salvage.Category, HomeEntry.Salvage.New));
+        var table = HomeEntry.Table.ToList();
+        Assert.Equal(table.IndexOf(HomeEntry.StewardDesk) + 1, table.IndexOf(HomeEntry.Migration));
+        Assert.Equal(table.IndexOf(HomeEntry.Migration) + 1, table.IndexOf(HomeEntry.Salvage));
+    }
+
     /// <summary>
     /// CONFIRMWAIT1 (the confirm-wait design §15.2 item 6): the keys of a terminal's sent presses, kept as long as the press's card lives, a
     /// profiles folder after the window's, as the three twins hold it. A file that holds a key is a sign-in (D172 point 3), and never under
