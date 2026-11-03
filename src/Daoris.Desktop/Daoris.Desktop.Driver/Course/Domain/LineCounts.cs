@@ -149,4 +149,59 @@ public static class LineCounts
         MovesAnswer.BeforeStep => new LineCount(Moves, "line", key.Key, "24-hours", moves.N, AtLeast, StoreBeforeStep, "role_moves"),
         _ => new LineCount(Moves, "line", key.Key, "24-hours", null, Unknown, StoreUnreadable, "role_moves"),
     };
+
+    /// <summary>The most go-ons the supervisor's print names (the context-counters design §5): the line's last ten.</summary>
+    public const int GoOnsShown = 10;
+
+    /// <summary>
+    /// The counts as facts below the course (CONTEXTDRIVE1b, CONTEXTDRIVE1i), each with the number Daoris acts on it at today: the
+    /// answers-alone bound, and the home's failed sessions, none where it is 0.
+    /// </summary>
+    public static IReadOnlyList<CountFact> Facts(IReadOnlyList<LineCount> counts, int strikes) =>
+    [
+        .. counts.Select(count => new CountFact(count.Count, count.N, count.Known, count.Why, count.From)
+        {
+            Watch = count.Count switch
+            {
+                AnswersAlone => new CountWatch(global::Daoris.Driver.AnswersAlone.Bound, SupervisorRules.Hold),
+                Failures when strikes > 0 => new CountWatch(strikes, SupervisorRules.Hold),
+                _ => null,
+            },
+        }),
+    ];
+
+    /// <summary>The line <paramref name="session"/> is on, oldest part first, each with why it began; the part alone where the records did not read.</summary>
+    public static IReadOnlyList<LinePartFact> Parts(string session, LineEvidence evidence)
+    {
+        if (evidence.Records is not { } records) return SessionEventText.IsLocalId(session) ? [new LinePartFact(session, null)] : [];
+        var key = LineKeys.Of(session, records);
+        return [.. LineKeys.Members(key, records).Select(member => new LinePartFact(member.Session, member.From is { Length: > 0 } ? member.FromWhy : null))];
+    }
+
+    /// <summary>
+    /// The line's last <see cref="GoOnsShown"/> go-ons, oldest first, as its events show them (the context-counters design §5): each prompt
+    /// its agent acted on by answers alone, or beside a word, and each word of the person's or Daoris's, with who answered.
+    /// </summary>
+    public static IReadOnlyList<GoOnFact> GoOns(string session, LineEvidence evidence)
+    {
+        IEnumerable<string> parts = evidence.Records is { } records
+            ? LineKeys.Members(LineKeys.Of(session, records), records).Select(member => member.Session)
+            : [session];
+        var line = parts.SelectMany(part => (evidence.Events.GetValueOrDefault(part)?.Events ?? []).Select(e => (Part: part, Event: e))).ToList();
+        var steps = global::Daoris.Driver.AnswersAlone.Read(AloneScan.Start, line).Steps.TakeLast(GoOnsShown);
+        return [.. steps.Select(step => new GoOnFact(step.At, step.Part, By(step, line), [.. Answered(step, line)]))];
+    }
+
+    private static string By(AloneStep step, IReadOnlyList<(string Part, SessionEvent Event)> line)
+    {
+        if (step.Kind == AloneStep.GoOn) return GoOnBy.Alone;
+        if (step.Kind == AloneStep.Beside) return GoOnBy.Beside;
+        var word = line.FirstOrDefault(each => each.Part == step.Part && each.Event.Seq == step.Seq).Event;
+        return word?.Kind == SessionEventKind.Note ? GoOnBy.Passed : word?.From == DaorisWords.From ? GoOnBy.Daoris : GoOnBy.Person;
+    }
+
+    private static IEnumerable<string> Answered(AloneStep step, IReadOnlyList<(string Part, SessionEvent Event)> line) =>
+        line.Where(each => each.Event.Id is { } id && step.Words.Contains(id, StringComparer.Ordinal))
+            .Select(each => global::Daoris.Driver.AnswersAlone.AnsweredBy(each.Event))
+            .OfType<string>().Distinct(StringComparer.Ordinal);
 }
