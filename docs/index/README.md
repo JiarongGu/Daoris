@@ -128,7 +128,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/golden/help-room/scoped.md` | 59 | 454 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/golden/help-room/sparse.md` | 55 | 394 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/AccountRotationTickTests.cs` | 68 | 1114 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/AnswerContinuesTickTests.cs` | 42 | 741 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/AnswerContinuesTickTests.cs` | 43 | 755 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/ChatGoesOnProcessTests.cs` | 52 | 893 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/ChatTransientProcessTests.cs` | 48 | 803 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/ChatTurnsTests.cs` | 79 | 1610 |

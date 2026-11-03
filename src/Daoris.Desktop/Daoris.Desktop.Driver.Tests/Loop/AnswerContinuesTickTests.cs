@@ -685,6 +685,20 @@ public sealed class AnswerContinuesTickTests : IDisposable
                         }.ToJsonString());
                     }
 
+                    // COWORK1c: a word's attempt is marked before its dispatcher writes it, so a restart never writes it twice.
+                    case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/attempt", StringComparison.Ordinal):
+                    {
+                        var id = path["/api/sessions/".Length..^"/attempt".Length];
+                        var named = Body()["said"]?.AsArray().Select(each => each?.GetValue<string>()).ToHashSet() ?? [];
+                        var session = _sessions.Single(s => s["id"]!.GetValue<string>() == id);
+                        foreach (var word in (session["said"] as JsonArray ?? []).OfType<JsonObject>())
+                        {
+                            if (named.Contains(word["id"]!.GetValue<string>()) && word["attempt"] is null) word["attempt"] = DateTimeOffset.UtcNow.ToString("O");
+                        }
+
+                        return (200, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "marked", ["unmarked"] = new JsonArray() }.ToJsonString());
+                    }
+
                     // MSG1a: the words a session took come off its record by their ids.
                     case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/taken", StringComparison.Ordinal):
                     {
