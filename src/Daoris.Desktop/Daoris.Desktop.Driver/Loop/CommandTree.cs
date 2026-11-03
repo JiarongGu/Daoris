@@ -87,7 +87,7 @@ public static class CommandTree
         new("quest", ["pause", "resume", "abandon", "delete", "accept", "done", "reopen", "go-on", "check", "review", "workflow", "clear", "retry"]),
         new("remote", ["list", "add", "remove", "sync"])
         {
-            Nested = new Dictionary<string, IReadOnlyList<string>> { ["sync"] = ["status", "dismiss", "forward"] },
+            Nested = new Dictionary<string, IReadOnlyList<string>> { ["sync"] = ["status", "dismiss", "forward"] }, // optional-locks: no git runs; the remotes' sync sub-verbs
         },
         new("repository", ["connect", "register", "retire", "wire", "import"]),
         new("role", ["set", "remove", "default", "policy", "brief"], Takes: "[<id>]"),

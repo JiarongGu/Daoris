@@ -392,7 +392,7 @@ check('the game says it uses the engine, read from its manifest', usesOf(registr
 
 section('3. `daoris connect` — the real client, through the real door');
 for (const name of EXAMPLES) {
-  const connect = run(`node "${cliBin}" connect`, join(examplesRoot, name), {
+  const connect = run(`node "${cliBin}" repository connect`, join(examplesRoot, name), {
     DAORIS_SERVICE_URL: BASE,
   });
   check(`${name}: connect exits 0`, connect.code === 0, connect.out);
@@ -685,7 +685,7 @@ const newcomerSync = run(`node "${cliBin}" sync`, newcomer);
 check('newcomer: sync materializes the canon', newcomerSync.code === 0, newcomerSync.out);
 const newcomerCheck = run(`node "${cliBin}" check`, newcomer);
 check('newcomer: check is clean on first contact', newcomerCheck.code === 0, newcomerCheck.out);
-const newcomerConnect = run(`node "${cliBin}" connect`, newcomer, {
+const newcomerConnect = run(`node "${cliBin}" repository connect`, newcomer, {
   DAORIS_SERVICE_URL: BASE,
 });
 check('newcomer: connect exits 0', newcomerConnect.code === 0, newcomerConnect.out);
@@ -1568,7 +1568,7 @@ check(
 
 // And the person's way back in, from a terminal — the second door (D50). It counts the quest's failures from this
 // machine's records, as the driver does (RETRY1b), so it asks the host the driver watches.
-const retried = run(`node "${cliBin}" driver retry ${doomedId}`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig, DAORIS_SERVICE_URL: BASE, ...PERSON });
+const retried = run(`node "${cliBin}" quest retry ${doomedId}`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig, DAORIS_SERVICE_URL: BASE, ...PERSON });
 const afterRetry = drive();
 const retriedSessions = await api('GET', '/api/sessions?includeClosed=true');
 check(
@@ -1580,7 +1580,7 @@ check(
 
 // 🔴 RETRY1b: parked a second time, six failures against a mark of three. A mark at the limit (3) left it parked, as both
 // doors did on the install; a retry marks it at its six, and it runs again.
-const retriedAgain = run(`node "${cliBin}" driver retry ${doomedId}`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig, DAORIS_SERVICE_URL: BASE, ...PERSON });
+const retriedAgain = run(`node "${cliBin}" quest retry ${doomedId}`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig, DAORIS_SERVICE_URL: BASE, ...PERSON });
 const afterSecondRetry = drive();
 const retriedAgainSessions = await api('GET', '/api/sessions?includeClosed=true');
 check(
@@ -1703,7 +1703,7 @@ const foundry = circleMember('foundry', 'A workshop in the tools circle.', 'Cap 
 // `--workspace` is the wiring statement (D48 §2). The repository's own files are untouched by it,
 // which the next check proves by hashing the manifest across the call.
 const manifestBefore = readFileSync(join(atelier, 'daoris.json'), 'utf8');
-const wireAtelier = run(`node "${cliBin}" connect --workspace aurora`, atelier, { DAORIS_SERVICE_URL: BASE });
+const wireAtelier = run(`node "${cliBin}" repository connect --workspace aurora`, atelier, { DAORIS_SERVICE_URL: BASE });
 check(
   'a repository is wired to a workspace, and its manifest is not touched',
   wireAtelier.code === 0
@@ -1711,11 +1711,11 @@ check(
     && readFileSync(join(atelier, 'daoris.json'), 'utf8') === manifestBefore,
   wireAtelier.out,
 );
-const wireFoundry = run(`node "${cliBin}" connect --workspace tools`, foundry, { DAORIS_SERVICE_URL: BASE });
+const wireFoundry = run(`node "${cliBin}" repository connect --workspace tools`, foundry, { DAORIS_SERVICE_URL: BASE });
 check('a second repository is wired to a different workspace', wireFoundry.code === 0, wireFoundry.out);
 
 // engine joins the aurora circle, so that circle has someone to ask.
-const wireEngine = run(`node "${cliBin}" connect --workspace aurora`, join(examplesRoot, 'engine'), {
+const wireEngine = run(`node "${cliBin}" repository connect --workspace aurora`, join(examplesRoot, 'engine'), {
   DAORIS_SERVICE_URL: BASE,
 });
 check('an existing member is re-wired without re-adopting anything', wireEngine.code === 0, wireEngine.out);
@@ -1723,7 +1723,7 @@ check('an existing member is re-wired without re-adopting anything', wireEngine.
 // The ordinary re-registration — what every sync tick runs — says nothing about the workspace, and
 // must therefore leave it alone. Silence that reset the wiring would quietly collapse every circle
 // back into one, and nothing would report it.
-const silentReconnect = run(`node "${cliBin}" connect`, atelier, { DAORIS_SERVICE_URL: BASE });
+const silentReconnect = run(`node "${cliBin}" repository connect`, atelier, { DAORIS_SERVICE_URL: BASE });
 const wiringAfter = await api('GET', '/api/registry');
 check(
   'a connect that names no workspace preserves the wiring',
@@ -1835,7 +1835,7 @@ check(
 );
 
 // …and the verb that adds it. `import` is the old scan, demoted to something a person runs.
-const imported = run(`node "${cliBin}" import "${family}"`, scratch, { DAORIS_SERVICE_URL: BASE });
+const imported = run(`node "${cliBin}" repository import "${family}"`, scratch, { DAORIS_SERVICE_URL: BASE });
 const afterImport = await api('GET', '/api/registry');
 check(
   '`daoris import` registers the folder, uninvited included',
@@ -1850,7 +1850,7 @@ check(
 );
 
 // Retiring: the one control a person is right to be nervous about, so it says what it does not do.
-const retired = run(`node "${cliBin}" retire`, uninvited, { DAORIS_SERVICE_URL: BASE });
+const retired = run(`node "${cliBin}" repository retire`, uninvited, { DAORIS_SERVICE_URL: BASE });
 const afterRetire = await api('GET', '/api/registry');
 check(
   '`daoris retire` takes it off the map, and the sentence says nothing was deleted',
@@ -1864,7 +1864,7 @@ check(
     && existsSync(join(uninvited, '.claude', 'knowledge', 'uninvited.md')),
   'retiring a registration deleted files',
 );
-const retiredAgain = run(`node "${cliBin}" retire`, uninvited, { DAORIS_SERVICE_URL: BASE });
+const retiredAgain = run(`node "${cliBin}" repository retire`, uninvited, { DAORIS_SERVICE_URL: BASE });
 check(
   'retiring what is already retired is an answer, not a failure',
   retiredAgain.code === 0 && /not registered/.test(retiredAgain.out),
@@ -1873,7 +1873,7 @@ check(
 
 // A registered checkout that vanished is NAMED. The ghost fix taught the other direction of this:
 // a repository that quietly stops contributing looks exactly like one with nothing to say.
-run(`node "${cliBin}" import "${family}"`, scratch, { DAORIS_SERVICE_URL: BASE });
+run(`node "${cliBin}" repository import "${family}"`, scratch, { DAORIS_SERVICE_URL: BASE });
 rmSync(uninvited, { recursive: true, force: true });
 const absent = await api('POST', '/api/refresh');
 check(
@@ -1881,7 +1881,7 @@ check(
   absent.status === 200 && (absent.json?.absent ?? []).includes('uninvited'),
   absent.text,
 );
-run(`node "${cliBin}" retire uninvited`, scratch, { DAORIS_SERVICE_URL: BASE });
+run(`node "${cliBin}" repository retire uninvited`, scratch, { DAORIS_SERVICE_URL: BASE });
 
 // -------------------------------------------------- 11. the remote
 
@@ -1994,7 +1994,7 @@ const hostBEnv = {
 };
 let hostB = await startServer(hostBEnv, HOST_B_BASE);
 check('machine b’s host is up, carrying its remote', hostB !== null);
-const borealisConnect = run(`node "${cliBin}" connect`, borealis, { DAORIS_SERVICE_URL: HOST_B_BASE });
+const borealisConnect = run(`node "${cliBin}" repository connect`, borealis, { DAORIS_SERVICE_URL: HOST_B_BASE });
 check('borealis connects on machine b', borealisConnect.code === 0, borealisConnect.out);
 
 // Machine A opts the newcomer in and restarts its host carrying the remote — the relay is a
@@ -2025,7 +2025,7 @@ check('machine a’s host restarts carrying its remote', await startHost({
   DAORIS_REMOTE_URL: REMOTE_BASE,
   DAORIS_REMOTE_KEY: keyA,
 }));
-const rejoin = run(`node "${cliBin}" connect`, newcomer, { DAORIS_SERVICE_URL: BASE });
+const rejoin = run(`node "${cliBin}" repository connect`, newcomer, { DAORIS_SERVICE_URL: BASE });
 check('the newcomer re-registers with its declaration', rejoin.code === 0, rejoin.out);
 await api('POST', '/api/refresh');
 await api('POST', '/api/refresh', { base: HOST_B_BASE });
@@ -2067,10 +2067,10 @@ const driveB = (mode = '--once') => driver({
 
 // The sync on demand, from a terminal (SYNC6a): the tick's own pass when asked, and where a circle
 // stands — read from the machine's host, reaching no remote.
-const syncA = (args) => run(`dotnet "${driverDll}" sync ${args}`, scratch, {
+const syncA = (args) => run(`dotnet "${driverDll}" remote sync ${args}`, scratch, {
   DAORIS_SERVICE_URL: BASE, ...NO_REMOTE, DAORIS_REMOTE_URL: REMOTE_BASE, DAORIS_REMOTE_KEY: keyA,
 }, DRIVE_TIMEOUT);
-const syncB = (args) => run(`dotnet "${driverDll}" sync ${args}`, scratch, {
+const syncB = (args) => run(`dotnet "${driverDll}" remote sync ${args}`, scratch, {
   DAORIS_SERVICE_URL: HOST_B_BASE, ...NO_REMOTE, DAORIS_REMOTE_URL: REMOTE_BASE, DAORIS_REMOTE_KEY: keyB,
 }, DRIVE_TIMEOUT);
 
@@ -2589,7 +2589,7 @@ revised.domain = { ...revised.domain, summary: 'Machine B revised this declarati
 writeFileSync(join(borealis, 'daoris.json'), `${JSON.stringify(revised, null, 2)}\n`);
 run(`git ${GIT_ID} add daoris.json`, borealis);
 run(`git ${GIT_ID} commit -q -m "borealis revises its declaration"`, borealis);
-run(`node "${cliBin}" connect`, borealis, { DAORIS_SERVICE_URL: HOST_B_BASE });
+run(`node "${cliBin}" repository connect`, borealis, { DAORIS_SERVICE_URL: HOST_B_BASE });
 driveB('--once');
 driveA('--once');
 const revisedHead = run('git rev-parse HEAD', borealis).out.trim();
@@ -2627,8 +2627,8 @@ check(
 );
 
 // A retire undone before any pass ran never reaches the circle: joining again takes the tombstone back.
-run(`node "${cliBin}" retire`, borealis, { DAORIS_SERVICE_URL: HOST_B_BASE });
-run(`node "${cliBin}" connect`, borealis, { DAORIS_SERVICE_URL: HOST_B_BASE });
+run(`node "${cliBin}" repository retire`, borealis, { DAORIS_SERVICE_URL: HOST_B_BASE });
+run(`node "${cliBin}" repository connect`, borealis, { DAORIS_SERVICE_URL: HOST_B_BASE });
 const owedAfterUndo = await api('GET', '/api/registry/retired?workspace=default', { base: HOST_B_BASE });
 check(
   'a retire undone by joining again before any pass owes the circle nothing',
@@ -2637,7 +2637,7 @@ check(
 );
 
 // A retire that stands travels: b owes it, the next pass carries it, and a's copy goes with it.
-const retiredOnB = run(`node "${cliBin}" retire`, borealis, { DAORIS_SERVICE_URL: HOST_B_BASE });
+const retiredOnB = run(`node "${cliBin}" repository retire`, borealis, { DAORIS_SERVICE_URL: HOST_B_BASE });
 const retireOwed = await api('GET', '/api/registry/retired?workspace=default', { base: HOST_B_BASE });
 check(
   'retiring a joined checkout on machine b leaves a retire owed to its circle, and the sentence says so',
@@ -2661,7 +2661,7 @@ check(
 );
 
 // Joining again registers it afresh — the deployment keeps no tombstone of its own — and it comes back down.
-run(`node "${cliBin}" connect`, borealis, { DAORIS_SERVICE_URL: HOST_B_BASE });
+run(`node "${cliBin}" repository connect`, borealis, { DAORIS_SERVICE_URL: HOST_B_BASE });
 driveB('--once');
 driveA('--once');
 check(
@@ -2747,7 +2747,7 @@ const readingOf = (workspace) => {
     return { ...read, plan: null };
   }
 };
-const syncBAgain = (args) => run(`dotnet "${driverDll}" sync ${args}`, scratch, {
+const syncBAgain = (args) => run(`dotnet "${driverDll}" remote sync ${args}`, scratch, {
   DAORIS_SERVICE_URL: HOST_B_BASE, ...NO_REMOTE, DAORIS_REMOTE_URL: REMOTE_BASE, DAORIS_REMOTE_KEY: keyBAgain,
 }, DRIVE_TIMEOUT);
 const questOn = async (id, base = BASE, key) =>
@@ -3035,13 +3035,13 @@ check(
     && !listed.out.includes(keyC),
   listed.out,
 );
+// ONEWAY1ai-i: the machine's wiring is `daoris remote list`'s alone; `status` says the repository, and its old flag names that.
 const machineStatus = run(`node "${cliBin}" status --machine`, atelier, {
   DAORIS_REMOTE_CONFIG: remotesFile,
 });
 check(
-  '`status --machine` reports the machine’s wiring beside the repository’s declaration',
-  machineStatus.code === 0 && /aurora/.test(machineStatus.out) && machineStatus.out.includes(AURORA_BASE)
-    && !machineStatus.out.includes(keyC),
+  '`status --machine` is refused, naming `daoris remote list`, which reports the machine’s wiring',
+  machineStatus.code === 2 && machineStatus.out.includes('`daoris remote list`') && !machineStatus.out.includes(keyC),
   machineStatus.out,
 );
 
@@ -3062,7 +3062,7 @@ declareJoin(atelier, true);
 declareJoin(foundry, true);
 declareJoin(lantern, true);
 for (const [directory, workspace] of [[atelier, 'aurora'], [foundry, 'tools'], [lantern, 'aurora']]) {
-  run(`node "${cliBin}" connect --workspace ${workspace}`, directory, { DAORIS_SERVICE_URL: BASE });
+  run(`node "${cliBin}" repository connect --workspace ${workspace}`, directory, { DAORIS_SERVICE_URL: BASE });
 }
 
 // Machine A's host restarts carrying the MAP rather than an env pair — the relay resolves a quest's
@@ -3152,7 +3152,7 @@ check(
 // It needs someone in that circle to ask. Addressed to a name nobody registered, the quest was refused
 // as unaddressable and the check passed without a remote ever being consulted (REV3).
 const anvil = circleMember('anvil', 'An anvil in the tools circle.', 'Temper before you strike.');
-run(`node "${cliBin}" connect --workspace tools`, anvil, { DAORIS_SERVICE_URL: BASE });
+run(`node "${cliBin}" repository connect --workspace tools`, anvil, { DAORIS_SERVICE_URL: BASE });
 const toolsQuest = await api('POST', '/api/quests', {
   body: {
     from: 'foundry',
@@ -3507,7 +3507,7 @@ const chatInput = join(scratch, 'chat-input.txt');
 writeFileSync(chatInput, 'what is this repository for?\npublish something\n');
 
 const chatRun = run(
-  `dotnet "${driverDll}" chat --repository newcomer --adapter stub < "${chatInput}"`,
+  `dotnet "${driverDll}" chat --repository newcomer --agent stub < "${chatInput}"`,
   scratch,
   { DAORIS_SERVICE_URL: BASE, DAORIS_DRIVER_CONFIG: chatConfig, ...NO_HARNESS },
   DRIVE_TIMEOUT,
@@ -4007,7 +4007,7 @@ check(
 
 // And the driving choices themselves, from a terminal (D50): the same `driver.json` the desktop's
 // checkboxes edit and the loop re-reads every tick.
-const cliDriver = (args) => run(`node "${cliBin}" driver ${args}`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig, ...PERSON });
+const cliDriver = (args) => run(`node "${cliBin}" place ${args}`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig, ...PERSON });
 const held = cliDriver('hold newcomer');
 check(
   '`daoris driver hold` pauses a repository from a terminal',
@@ -4031,7 +4031,7 @@ check(
 // PUSH1f2a (D194 point 5): the same press from a session's terminal, acting in the driver's program with no window to confirm it, is
 // refused, exit 1, and nothing is written: the marker refuses an agent's honest attempt, the person's own terminal carrying none.
 const heldBefore = readFileSync(driverConfig, 'utf8');
-const marked = run(`node "${cliBin}" driver drive marked-elsewhere`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig, DAORIS_SESSION_ID: 's-rehearsal' });
+const marked = run(`node "${cliBin}" place drive marked-elsewhere`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig, DAORIS_SESSION_ID: 's-rehearsal' });
 check(
   '`daoris driver` from a session\'s terminal is refused, exit 1, and the file is as it was',
   marked.code === 1 && /this terminal is a session's \(`DAORIS_SESSION_ID`\)/.test(marked.out)
@@ -4108,14 +4108,14 @@ check(
 
 // The lifecycle from a terminal (D50): the tree is listed, refuses to die holding unmerged work —
 // the stub's commit is real work the canonical line has not taken — and goes when the person means it.
-const treesListed = run(`dotnet "${driverDll}" trees list`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig });
+const treesListed = run(`dotnet "${driverDll}" tree list`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig });
 check(
   '`daoris-driver trees list` names the tree, its circle and its branch',
   treesListed.code === 0 && /newcomer/.test(treesListed.out) && /daoris\//.test(treesListed.out),
   treesListed.out,
 );
 const refusedRemove = run(
-  `dotnet "${driverDll}" trees remove "${treePath}"`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig });
+  `dotnet "${driverDll}" tree remove "${treePath}"`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig });
 check(
   'removal refuses while the tree holds commits the canonical line has not taken, naming them',
   refusedRemove.code === 1 && /stub: answer quest/.test(refusedRemove.out) && existsSync(treePath),
@@ -4124,7 +4124,7 @@ check(
 
 // `connect` from inside the linked worktree is refused NAMING the main tree — a registration
 // re-pointed at an ephemeral tree keeps working right up until the tree is removed.
-const fromTree = run(`node "${cliBin}" connect --dry-run`, treePath, { DAORIS_SERVICE_URL: BASE });
+const fromTree = run(`node "${cliBin}" repository connect --dry-run`, treePath, { DAORIS_SERVICE_URL: BASE });
 check(
   '`daoris connect` from a linked worktree is refused, naming the main tree',
   fromTree.code === 1 && /linked worktree/.test(fromTree.out)
@@ -4148,8 +4148,8 @@ check(
 // The clean-up from a terminal (WSR3, D88): the list first, and work no branch of the person's holds
 // is kept and named — even when the press is made.
 const cleanEnv = { DAORIS_DRIVER_CONFIG: driverConfig, DAORIS_SERVICE_URL: BASE };
-const cleanListed = run(`dotnet "${driverDll}" trees clean`, scratch, cleanEnv);
-const cleanKept = run(`dotnet "${driverDll}" trees clean --yes`, scratch, cleanEnv);
+const cleanListed = run(`dotnet "${driverDll}" tree clean`, scratch, cleanEnv);
+const cleanKept = run(`dotnet "${driverDll}" tree clean --yes`, scratch, cleanEnv);
 check(
   '`daoris-driver trees clean` lists the tree’s branch as kept, holding work no branch of yours holds — and --yes keeps it',
   cleanListed.code === 0 && /kept\s+newcomer\s+daoris\/\S+\s+1 commit\(s\) no branch of yours holds/.test(cleanListed.out)
@@ -4160,7 +4160,7 @@ check(
 // Accepting a session's work from a terminal (WSR1, D87): D50's second door, which the landing had not
 // had until TK-2202's work was landed. --plan says where it would go by the workspace's rule, and does
 // nothing: with no rule set, a merge into the line.
-const landPlan = run(`dotnet "${driverDll}" trees land ${isolatedRecord?.id} --plan`, scratch, cleanEnv);
+const landPlan = run(`dotnet "${driverDll}" tree land ${isolatedRecord?.id} --plan`, scratch, cleanEnv);
 check(
   '`daoris-driver trees land <session> --plan` says where accepting its work would put it, and moves nothing',
   landPlan.code === 0 && /would merge its work into `\S+` \(default\)/.test(landPlan.out) && existsSync(treePath),
@@ -4168,7 +4168,7 @@ check(
 );
 
 const forcedRemove = run(
-  `dotnet "${driverDll}" trees remove "${treePath}" --force`, scratch,
+  `dotnet "${driverDll}" tree remove "${treePath}" --force`, scratch,
   { DAORIS_DRIVER_CONFIG: driverConfig });
 check(
   '…and --force is the person meaning it: the tree and its branch are gone',
@@ -4179,8 +4179,8 @@ check(
 
 // A session branch that holds nothing goes on the press, after the list says it would.
 run('git branch daoris/s-rehearse', newcomer);
-const emptyListed = run(`dotnet "${driverDll}" trees clean`, scratch, cleanEnv);
-const emptyCleaned = run(`dotnet "${driverDll}" trees clean --yes`, scratch, cleanEnv);
+const emptyListed = run(`dotnet "${driverDll}" tree clean`, scratch, cleanEnv);
+const emptyCleaned = run(`dotnet "${driverDll}" tree clean --yes`, scratch, cleanEnv);
 check(
   '…and a session branch holding nothing is listed to go, then removed by --yes',
   /goes\s+newcomer\s+daoris\/s-rehearse\s+nothing beyond/.test(emptyListed.out)
@@ -4198,8 +4198,8 @@ check(
 run('git branch daoris/s-rehearse-default', newcomer);
 run('git branch daoris/s-rehearse-tools', foundry);
 const branchRow = (repository) => new RegExp(`\\b${repository}\\s+daoris/`);
-const toolsListed = run(`dotnet "${driverDll}" trees clean --workspace tools`, scratch, cleanEnv);
-const defaultListed = run(`dotnet "${driverDll}" trees clean --workspace default`, scratch, cleanEnv);
+const toolsListed = run(`dotnet "${driverDll}" tree clean --workspace tools`, scratch, cleanEnv);
+const defaultListed = run(`dotnet "${driverDll}" tree clean --workspace default`, scratch, cleanEnv);
 check(
   '`daoris-driver trees clean --workspace <name>` lists that workspace’s session branches alone, and its press carries the workspace',
   toolsListed.code === 0 && /goes\s+foundry\s+daoris\/s-rehearse-tools\s+nothing beyond/.test(toolsListed.out)
@@ -4209,7 +4209,7 @@ check(
     && !branchRow('foundry').test(defaultListed.out),
   toolsListed.out + defaultListed.out,
 );
-const toolsCleaned = run(`dotnet "${driverDll}" trees clean --workspace tools --yes`, scratch, cleanEnv);
+const toolsCleaned = run(`dotnet "${driverDll}" tree clean --workspace tools --yes`, scratch, cleanEnv);
 check(
   '…and `--yes` removes that workspace’s branch alone: the other workspace’s stands',
   toolsCleaned.code === 0 && /removed\s+foundry\s+daoris\/s-rehearse-tools/.test(toolsCleaned.out)
@@ -4218,7 +4218,7 @@ check(
     && /daoris\/s-rehearse-default/.test(run('git branch --list "daoris/*"', newcomer).out),
   toolsCleaned.out,
 );
-const toolsSynced = run(`dotnet "${driverDll}" trees sync --workspace tools`, scratch, cleanEnv);
+const toolsSynced = run(`dotnet "${driverDll}" tree sync --workspace tools`, scratch, cleanEnv);
 check(
   '`daoris-driver trees sync --workspace <name>` looks at that workspace’s checkouts alone, never the other’s branch',
   toolsSynced.code === 0
@@ -4227,8 +4227,8 @@ check(
     && !/newcomer/.test(toolsSynced.out),
   toolsSynced.out,
 );
-const nowhereCleaned = run(`dotnet "${driverDll}" trees clean --workspace nowhere --yes`, scratch, cleanEnv);
-const nowhereSynced = run(`dotnet "${driverDll}" trees sync --workspace nowhere --yes`, scratch, cleanEnv);
+const nowhereCleaned = run(`dotnet "${driverDll}" tree clean --workspace nowhere --yes`, scratch, cleanEnv);
+const nowhereSynced = run(`dotnet "${driverDll}" tree sync --workspace nowhere --yes`, scratch, cleanEnv);
 check(
   '…and a workspace the registry does not name is refused by both, naming it, with nothing changed',
   nowhereCleaned.code === 1 && /trees: there is no workspace `nowhere` on this machine — one of [^\n]*`tools`/.test(nowhereCleaned.out)
@@ -4261,7 +4261,7 @@ const syncRun = driver({ serviceUrl: BASE, config: driverConfig, harness: HARNES
 const syncRecord = ((await api('GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? [])
   .find((s) => s.quest === syncQuest.json?.quest?.id);
 const syncTree = syncRecord?.tree ?? '';
-const syncLanded = run(`dotnet "${driverDll}" trees land ${syncRecord?.id}`, scratch, cleanEnv);
+const syncLanded = run(`dotnet "${driverDll}" tree land ${syncRecord?.id}`, scratch, cleanEnv);
 const landedBranch = /put the work on `([^`]+)`/.exec(syncLanded.out)?.[1] ?? '';
 check(
   '`daoris-driver trees land` under a branch rule puts a session’s work on a branch of its own, for a pull request',
@@ -4287,7 +4287,7 @@ run(`git ${GIT_ID} add -A`, syncTree);
 run(`git ${GIT_ID} commit -q -m "carried on after its landing"`, syncTree);
 
 const lineBefore = run(`git rev-parse ${syncLine}`, newcomer).out.trim();
-const syncListed = run(`dotnet "${driverDll}" trees sync --repository newcomer`, scratch, cleanEnv);
+const syncListed = run(`dotnet "${driverDll}" tree sync --repository newcomer`, scratch, cleanEnv);
 check(
   '`daoris-driver trees sync` fetches and lists the line’s fast-forward, the session branch’s replay with what it leaves out, and the landed branch going — and moves nothing',
   syncListed.code === 0
@@ -4300,7 +4300,7 @@ check(
 );
 
 const originBefore = run('git for-each-ref', syncOrigin).out;
-const syncPressed = run(`dotnet "${driverDll}" trees sync --repository newcomer --yes`, scratch, {
+const syncPressed = run(`dotnet "${driverDll}" tree sync --repository newcomer --yes`, scratch, {
   ...cleanEnv,
   GIT_AUTHOR_NAME: 'Family Rehearsal', GIT_AUTHOR_EMAIL: 'rehearsal@example.invalid',
   GIT_COMMITTER_NAME: 'Family Rehearsal', GIT_COMMITTER_EMAIL: 'rehearsal@example.invalid',
@@ -4326,7 +4326,7 @@ check(
 );
 
 // Leave the newcomer as the phases after this one expect it: no tree, no landing rule, no `origin`.
-run(`dotnet "${driverDll}" trees remove "${syncTree}" --force`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig });
+run(`dotnet "${driverDll}" tree remove "${syncTree}" --force`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig });
 run('git remote remove origin', newcomer);
 cliDriver('landing newcomer --clear');
 cliDriver('trees newcomer off');
@@ -4515,7 +4515,7 @@ if ((await abandonQuests()).find((q) => q.id === abandonThirdId)?.status === 'Op
   });
 }
 if (abandonSecondTree) {
-  run(`dotnet "${driverDll}" trees remove "${abandonSecondTree}" --force`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig });
+  run(`dotnet "${driverDll}" tree remove "${abandonSecondTree}" --force`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig });
 }
 run('git remote remove origin', newcomer);
 cliDriver('trees newcomer off');
@@ -4624,7 +4624,7 @@ check(
 const acpChatInput = join(scratch, 'acp-chat-input.txt');
 writeFileSync(acpChatInput, 'first over the protocol\nsecond over the protocol\n');
 const acpChat = run(
-  `dotnet "${driverDll}" chat --repository newcomer --adapter acp-stub < "${acpChatInput}"`,
+  `dotnet "${driverDll}" chat --repository newcomer --agent acp-stub < "${acpChatInput}"`,
   scratch,
   { DAORIS_SERVICE_URL: BASE, DAORIS_DRIVER_CONFIG: acpConfig, ...NO_HARNESS },
   DRIVE_TIMEOUT,
@@ -4667,7 +4667,7 @@ check(
 // character Ctrl+C is. Driven live rather than from a file, because the stop has to land while the turn
 // is running at the agent — a file's lines all arrive before the session has even opened.
 const stopChat = await new Promise((resolve) => {
-  const child = spawn('dotnet', [driverDll, 'chat', '--repository', 'newcomer', '--adapter', 'acp-stub'], {
+  const child = spawn('dotnet', [driverDll, 'chat', '--repository', 'newcomer', '--agent', 'acp-stub'], {
     cwd: scratch,
     windowsHide: true,
     env: { ...process.env, DAORIS_SERVICE_URL: BASE, DAORIS_DRIVER_CONFIG: acpConfig, ...NO_REMOTE, ...NO_HARNESS },
@@ -4734,7 +4734,7 @@ const attachInput = join(scratch, 'acp-attach-input.txt');
 writeFileSync(attachInput, `:attach ${attachedFile}\nwhat does this log say?\n`);
 const attachChat = run(
   // stderr folded in: the terminal door says what it attached there, and `run` keeps stdout alone on success.
-  `dotnet "${driverDll}" chat --repository newcomer --adapter acp-stub < "${attachInput}" 2>&1`,
+  `dotnet "${driverDll}" chat --repository newcomer --agent acp-stub < "${attachInput}" 2>&1`,
   scratch,
   { DAORIS_SERVICE_URL: BASE, DAORIS_DRIVER_CONFIG: acpConfig, ...NO_HARNESS },
   DRIVE_TIMEOUT,
@@ -5637,7 +5637,7 @@ writeFileSync(reviewConfig, `${JSON.stringify({ ...JSON.parse(readFileSync(acpCo
 const REVIEW_STORE = { DAORIS_KNOWLEDGE_ROOT: family, DAORIS_KNOWLEDGE_DB: join(scratch, 'knowledge.db') };
 const reviewDrive = (mode = '--until-idle') => driver({ serviceUrl: BASE, config: reviewConfig, env: REVIEW_STORE, mode });
 // `daoris driver review` looks for a procedure in the checkouts the registry names, so it is handed the host to read them from.
-const reviewCli = (args) => run(`node "${cliBin}" driver ${args}`, scratch, { DAORIS_DRIVER_CONFIG: reviewConfig, DAORIS_SERVICE_URL: BASE, ...PERSON });
+const reviewCli = (args) => run(`node "${cliBin}" place ${args}`, scratch, { DAORIS_DRIVER_CONFIG: reviewConfig, DAORIS_SERVICE_URL: BASE, ...PERSON });
 const reviewQuests = async () => (await api('GET', '/api/quests?repository=newcomer&includeClosed=true')).json ?? [];
 const reviewRecords = async (quest) => (quest
   ? ((await api('GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? []).filter((s) => s.quest === quest)
@@ -6274,7 +6274,7 @@ const standInDrives = {
     writeFileSync(input, `${lines.join('\n')}\n`);
     const before = new Set((await standInRecords()).map((s) => s.id));
     const chat = run(
-      `dotnet "${driverDll}" chat --repository newcomer --adapter ${place.door.id} < "${input}"`,
+      `dotnet "${driverDll}" chat --repository newcomer --agent ${place.door.id} < "${input}"`,
       scratch,
       { DAORIS_SERVICE_URL: BASE, DAORIS_DRIVER_CONFIG: place.config(), ...NO_REMOTE, ...NO_HARNESS },
       DRIVE_TIMEOUT,

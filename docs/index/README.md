@@ -326,7 +326,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/deployment-rehearsal.mjs` | 108 | 1852 |
 | `tools/desktop-publish.mjs` | 85 | 1482 |
 | `tools/desktop.mjs` | 54 | 1098 |
-| `tools/family-rehearsal.mjs` | 372 | 6442 |
+| `tools/family-rehearsal.mjs` | 373 | 6442 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
 | `tools/merge-branch.mjs` | 511 | 8617 |
 | `tools/merge-queue.mjs` | 66 | 1039 |
