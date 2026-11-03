@@ -168,7 +168,9 @@ describe("a level's access rows", () => {
     expect(full).toHaveTextContent(
       'Full access turns off permission prompts, an ask waiting for you to accept its route, Accept… before landing, and go-aheads.');
     expect(full).toHaveTextContent('It never turns off your own deny rules, nor a go-ahead the ask itself demands.');
-    const box = within(full).getByRole('checkbox', { name: 'Full access' });
+    // D233 choice 3: Codex holds none of the person's denies, and the setup says so beside what stays.
+    expect(full).toHaveTextContent('none of your deny rules reaches a Codex session in any setup');
+    const box =within(full).getByRole('checkbox', { name: 'Full access' });
     expect(box).not.toBeChecked();
 
     await userEvent.click(box);

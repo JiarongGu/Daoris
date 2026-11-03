@@ -16,7 +16,8 @@ public sealed record GitVerdict(bool Allowed, string Code, string? Line, bool As
 /// doors at the remote command. Until the person can set git access (GITAUTH1f) it answers Daoris's default, door by door, which is
 /// today's behaviour: <b>Read</b> is allowed; <b>Write</b> is allowed to the landing alone, by the grant the driver writes for its
 /// plugin's push on the person's yes (<see cref="GitGrants"/>), and refused to every other process, a session on any harness among
-/// them; <b>Dangerous</b> stays the harness's rules' (<c>no-push</c>'s force, delete and tag forms) until the transport judge.
+/// them; <b>Dangerous</b>, a push's force or delete, is judged at the doors for every agent whatever its harness (D233 choice 3),
+/// refused unless the person's git access allows it (<see cref="JudgeDangerous"/>).
 /// </summary>
 /// <remarks>
 /// <para><b>A machine whose person switched <c>no-push</c> off</b> keeps today's: its sessions push, so Write is allowed there. GITAUTH1f
@@ -71,6 +72,18 @@ public static class GitAccessRules
             _ => Judge(act, pushesHere, granted),
         };
     }
+
+    /// <summary>
+    /// The answer for a force-push or a branch delete (D233 choice 3) under Dangerous's value: the landing's grant passes it, as it
+    /// passes the landing's Write; <c>allow</c> passes; <c>ask</c> is asked at the door; anything else, the default among them, refuses.
+    /// </summary>
+    public static GitVerdict JudgeDangerous(string value, bool granted) => value switch
+    {
+        _ when granted => new(true, "granted", null),
+        GitAccessKeys.Allow => new(true, "access", null),
+        GitAccessKeys.Ask => new(false, "ask", null, Ask: true),
+        _ => new(false, "dangerous-denied", GitPushUpdates.DeniedLine),
+    };
 
     /// <summary>
     /// Whether the person switched <c>no-push</c> off in the home's <c>permissions.json</c> (<c>defaultsOff</c>). A file that is absent or

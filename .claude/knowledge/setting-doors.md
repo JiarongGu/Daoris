@@ -20,10 +20,8 @@ DOORS1a (`helpers` and `commits`, D164's note) went into every place below, and 
   door the helper was never told. `HelpProposalKindsTests` holds the two lists equal and in one order.
 - **The tool's words lag.** The helper is told which doors exist only by the tool's description. A door it is not told
   of is never proposed, and a flag it is not told of is never spelled.
-- **The coverage row stays `Exempt`.** D110 holds every verb and control as a door, a door owed or an exemption with its
-  reason; a row that still says *owed* when the door is built fails nothing but lies to the next reader. An owed answer
-  is a row of the room's `HelpRoomOwed` (HELPOWED1, D170 point 2), which the helper reads as a door Daoris still owes:
-  building the door removes that row with the coverage answer, and the coverage test fails on either one left alone.
+- **The act stays under *Done at a terminal*.** An act no door took is a row of the room's `HelpRoomTerminalActs`; building
+  its door removes that row, and `HelpRoomDoorAsksTests` fails on a proposing row whose command is still listed there.
 - **The room does not teach it.** Ask Daoris answers *how do I* from the room's doors; a door absent from them is one
   the person is never shown, and the three goldens and the settings golden fail to say so.
 
@@ -47,15 +45,15 @@ settings' own keys, and for a rule a subdomain above owns, that subdomain's `Cho
 | 3 | The service's list | `HelpSettingProposalWriter.Doors`, `Daoris.Service/Daoris.Service.Core/Help/HelpSettingProposalWriter.cs`, and its summary naming the row | The same name in the same position (row 1). The `<param name="Door">` sentence on `SettingChange` at the top of the file spells the list too. |
 | 4 | The service's shape check | `HelpSettingProposalWriter.Refusal(SettingChange)`, the same file: a `case`, and its flags list (`OpinionFlags`, `HelpersFlags`, `CommitsFlags`) when the door takes flags | Only the shape: target or workspace and exactly one of them for a rule set for a repository or a workspace, a value that is present, every flag one the verb takes. The rule's own judgement is the driver's, which knows the registry and the machine. The refusal sentence names the verb's usage. |
 | 5 | The tool's words | `HelpSettingTool`, `Daoris.Service/Daoris.Service.Mcp/HelpSettingTool.cs`: the tool's description (the *Each door is a `daoris driver` verb:* list, and a sentence on what the door takes and what it never is), and the `ProposeSetting` parameters `door`, `target`, `workspace` and `value` | The name in the door list and in the `door` parameter's list; `target` and `workspace` name the door where it is set for a repository or a workspace; `value` spells the flags in the verb's own words. A seed from a repository's own instructions is said to be a proposal the person applies, never the process (D164's amendment point 5). Every one of these four is a sentence a helper reads, so a flag missing in one is a flag never proposed. |
-| 6 | The coverage row | `HelpCoverageTests`, `Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs`: the verbs table, `("<verb>", new Door("setting", "<door>"))` in place of an `Exempt` or an owed row, and a comment naming the row that built it | One row per verb (or per form: `across read`, `across write-to`). Where the Setup page has a control for it, the controls table gets `("projects", "useSet<Name>", null, new Door("setting", "<door>"))` (D110 §1; the hook the page presses, not the route). A door in neither table fails the test. |
-| 7 | The room's row | `HelpRoomDoors.Doors`, `Daoris.Desktop/Daoris.Desktop.Driver/Knowledge/Room/HelpRoomDoors.cs`: a `HelpDoor` row, `new(act, screen, terminal, new HelpDoorAsk.Proposes("setting", "<door>"))`, and its comment naming the row and the decision point | `act` says what the person wants done and never how Ask Daoris meets it: its `HelpDoorAsk` says that (`Proposes`, `OnlyWhenAsked` or `Never`), and `HelpRoomDoorAsksTests` holds a proposing row's kind and door to `HelpProposals.DoorsOf`; `screen` the Setup name (and the workspace's *Defaults* name) or, while Setup has none, the reason; `terminal` the verb's usage, backticked. The order is the order a person meets them: a process rule's row (`commits`, `helpers`) sits before the review and opinion rows; the workflow rows (`current`, `name a workflow`, `choose which workflow`) come **after** the opinion row, and `HelpRoomDoorsTests` fixes that order (`At("declare which other agent reads") + 1` is `Current`, then `name a workflow`). A row placed past opinion breaks it. A changed verb (a new flag) changes its row's terminal text, in place. |
+| 6 | No coverage row | none | A door exists only where one is wanted (D233 point 1): no census asks a door of every verb or control, so nothing is added here. |
+| 7 | The room's row | `HelpRoomDoors.Doors`, `Daoris.Desktop/Daoris.Desktop.Driver/Knowledge/Room/HelpRoomDoors.cs`: a `HelpDoor` row, `new(act, screen, terminal, new HelpDoorAsk.Proposes("setting", "<door>"))`, and its comment naming the row and the decision point | `act` says what the person wants done and never how Ask Daoris meets it: its `HelpDoorAsk` says that (`Proposes` or `Never`), and `HelpRoomDoorAsksTests` holds a proposing row's kind and door to `HelpProposals.DoorsOf`; `screen` the Setup name (and the workspace's *Defaults* name) or, while Setup has none, the reason; `terminal` the verb's usage, backticked. The order is the order a person meets them: a process rule's row (`commits`, `helpers`) sits before the review and opinion rows; the workflow rows (`current`, `name a workflow`, `choose which workflow`) come **after** the opinion row, and `HelpRoomDoorsTests` fixes that order (`At("declare which other agent reads") + 1` is `Current`, then `name a workflow`). A row placed past opinion breaks it. A changed verb (a new flag) changes its row's terminal text, in place. |
 | 8 | The goldens | `Daoris.Desktop.Driver.Tests/Knowledge/golden/help-room/`: `empty.md`, `full.md`, `sparse.md`, `settings.json` | Never by hand. `DAORIS_GOLDEN_WRITE=1 dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter "FullyQualifiedName~HelpRoomGoldenTests"` writes them from the render (PowerShell: `$env:DAORIS_GOLDEN_WRITE = '1'` first, unset after); read `git diff` on that folder and see only the new row. Run it again unset: it compares. (`src/Daoris.Desktop/README.md`, GOLDEN1.) |
 | 9 | The records | The decision's dated note (D110 for the mechanism, the decision the verb's rule belongs to for the door), `CHANGELOG.md` for what a person sees | Point to the commits. D164's DOORS1a note is the worked example of what to say: the door, how its words are read, what a card keeps, what is seeded and what is never authority, the room's rows, what is left. |
 
 ### Check before saying done
 
-1. `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter Category!=Process`, which holds rows 1, 2, 6, 7, 8
-   (`HelpSettingProposalsTests`, `HelpCoverageTests`, `HelpRoomDoorsTests`, `HelpRoomGoldenTests`) and row 3 against row 1
+1. `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter Category!=Process`, which holds rows 1, 2, 7, 8
+   (`HelpSettingProposalsTests`, `HelpRoomDoorsTests`, `HelpRoomGoldenTests`) and row 3 against row 1
    through `HelpProposalKinds`.
 2. `dotnet test src/Daoris.Service/Daoris.Service.Tests`, which holds rows 3, 4 and 5 (`HelpSettingProposalTests`,
    `HelpProposalBoxKindsTests`).
@@ -93,8 +91,7 @@ branch in the service lane too: `HelpProposalKindsTests` fails until the kind's 
 door, so the writer, its `Help<Kind>Tool.cs` parameters and `HelpProposalBox`'s `Propose…` move with the judge. The kinds'
 folder holds one file per kind and nothing else (`Every_kind_is_a_class_in_a_file_of_its_own`), so a door's judge goes in
 its kind's file; the fields it reads join `HelpProposal` and `HelpPlan` under the kind's comment, its card data
-`HELP_PROPOSALS`' `CardBody`, its doors `IHelp<Kind>Doors`, `ScreenDoors` and `HelpStandInDoors`; and a page control the
-door now answers for turns its `HelpCoverageTests` row from `Exempt` into a `Door`.
+`HELP_PROPOSALS`' `CardBody`, and its doors `IHelp<Kind>Doors`, `ScreenDoors` and `HelpStandInDoors`.
 
 ## A door granted without Apply
 

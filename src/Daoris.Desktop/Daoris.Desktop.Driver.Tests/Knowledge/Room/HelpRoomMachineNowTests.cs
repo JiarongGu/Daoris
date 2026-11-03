@@ -63,8 +63,7 @@ public sealed class HelpRoomMachineNowTests
     }
 
     /// <summary>
-    /// WSR5b: the room lists the branches landings made here, so a hand-off names one the record holds, and
-    /// says what `hand_propose` does and its doors.
+    /// WSR5b: the room lists the branches landings made here, and the terminal's hand-off of one.
     /// </summary>
     [Fact]
     public void The_room_lists_the_branches_landings_made_and_how_one_is_handed_on()
@@ -81,7 +80,7 @@ public sealed class HelpRoomMachineNowTests
         Assert.Contains("- Landed branches: `feature/q2-second` in `engine` (session `s2a3b4c5`, not pushed), "
             + "`feature/q3-third` in `game` (session `s3`, pushed, pull request https://example.test/pr/3).", some);
         Assert.Contains("- Landed branches: none recorded.", HelpRoom.Render(HelpRoomFixture.Machine));
-        Assert.Contains("`hand_propose`", some);
+        Assert.DoesNotContain("`hand_propose`", some);
         Assert.Contains("`daoris tree hand <session|branch> [--plugin <id>]`", some);
     }
 

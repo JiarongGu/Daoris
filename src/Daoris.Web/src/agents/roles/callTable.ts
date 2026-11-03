@@ -4,8 +4,8 @@
 
 /** Every tool the connector registers. */
 export const REGISTERED_TOOLS: readonly string[] = [
-  'accept_propose', 'agent_propose', 'agent_settings_propose', 'ask_propose', 'brainstorm_give', 'brainstorm_synthesize', 'browser_propose',
-  'channel_post', 'channel_read', 'checkout_read', 'clear_propose', 'delete_propose', 'go_ahead_ask', 'go_propose', 'hand_propose',
+  'agent_propose', 'agent_settings_propose', 'ask_propose', 'brainstorm_give', 'brainstorm_synthesize', 'browser_propose',
+  'channel_post', 'channel_read', 'checkout_read', 'clear_propose', 'delete_propose', 'go_ahead_ask', 'go_propose',
   'handback_read', 'handover_propose', 'helper_answer', 'helper_ask', 'housekeeping_clean_up', 'housekeeping_discard_branch',
   'housekeeping_inspect', 'knowledge_convergence', 'knowledge_get', 'knowledge_refresh', 'knowledge_repositories', 'knowledge_search',
   'line_read', 'memory_end', 'memory_get', 'memory_propose', 'memory_search', 'memory_write', 'opinion_answer', 'opinion_give',

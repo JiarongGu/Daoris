@@ -1,7 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { ago } from '../locales/format';
 import type { PlaceAsk } from '../agents/setup/placePlan';
-import { RequirementItem } from '../quests/Requirements';
 import { Button, Inline } from '../design/ui';
 
 /**
@@ -43,7 +42,7 @@ export type HelpProposal = {
   /** A move to a workspace (`repository`, ENTRY1d1) has no card of its own: its sentence, Apply and Not now. */
   /** Archiving or unarchiving sessions (`session`, SESSUX1h2a) is the generic card too, with its command. */
   /** A change of the role catalogue (`role`, FOUNDATION1y-i) is the generic card: its sentence, its `daoris role` command, Apply. */
-  kind: 'setting' | 'ask' | 'agent' | 'account' | 'delete' | 'go' | 'plugin' | 'hand' | 'browser' | 'sync' | 'accept' | 'repository' | 'session' | 'pause' | 'clear' | 'workflow' | 'setup' | 'role';
+  kind: 'setting' | 'ask' | 'agent' | 'account' | 'delete' | 'go' | 'plugin' | 'browser' | 'sync' | 'repository' | 'session' | 'pause' | 'clear' | 'workflow' | 'setup' | 'role';
   describe: string;
   terminal: string;
   why: string;
@@ -52,8 +51,6 @@ export type HelpProposal = {
   grant?: HelpGrantShown | null;
   /** Bringing up to date (HELP10): whether the person has looked, and every row the look listed. */
   sync?: HelpSyncShown | null;
-  /** A yes to a departure (DRIFT1d2): the quest, and each departure its done answered. */
-  accept?: HelpAcceptShown | null;
   /** A workflow version (`workflow`, WORKFLOW1h-a): drawn as the design's card (WORKFLOW1h-d). */
   workflow?: HelpWorkflowShown | null;
   /** A place's quick set-up (`setup`'s `place` door, AGENTSPLACE1k): the ask and the plan's changes; Apply opens *Set up…* on the ask. */
@@ -152,17 +149,6 @@ export type WorkflowGraphChange = {
   fields: string[];
   needs: string[];
   said: string;
-};
-
-/**
- * What an accept card shows (DRIFT1d2, D133 §4), as the driver's judge read the quest: each departure by its requirement's
- * number, the person's words the requirement quotes and its check, the done's reason, and the person's words the reason
- * relied on — each as the service answered it.
- */
-export type HelpAcceptShown = {
-  quest: string;
-  title: string;
-  departures: { requirement: number; quote: string; check: string; departed: string; words: string }[];
 };
 
 /**
@@ -399,17 +385,12 @@ function SyncApart({ apart }: { apart: string[] }) {
  * the drawer's own confirmation does, and its press is *delete*; a go is a suggestion, not a change, so
  * it carries no command and its press is *go there*, and its second press *dismiss* only takes the card away, told to nobody
  * (ASKDISMISS1); a go to a quest says, in the driver's sentence, whether it is taken. A plugin (PLUG9) shows what will run before Apply,
- * and an add says its folder is copied in and that nothing starts at the press. A hand-off (WSR5b) says
- * before Apply that its plugin pushes the branch as the person, the one card whose press leads to a push.
+ * and an add says its folder is copied in and that nothing starts at the press.
  *
  * **Bringing up to date has the screen's two presses** (HELP10, D109): looking fetches as the person, so the
  * card's first press is *look for updates*, and only once the driver has listed what the press would do does it
  * show those rows, each as the terminal says it, with Apply, which does only the rows that move. Beside them it says
  * what they do not (LEFT3): the lines the look could not fetch, and the repositories it left apart (D112).
- *
- * **A yes to a departure shows each departure first** (DRIFT1d2, D133 §4): its requirement in the person's words, its
- * check, the done's reason and the words that reason relied on, drawn as the quest's page draws them (`RequirementItem`),
- * so the person reads what they say yes to; its press is *accept*, the quest page's word.
  *
  * **A workflow version reads in the design's order** (WORKFLOW1h-d, §8.2): *Your part* first, then the steps' diff, the acts that
  * become standing, what is needed first and who it applies to. A draft (needs present) offers only *Not now*. A change to the draft open in
@@ -428,11 +409,8 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
   const going = proposal.kind === 'go';
   const plugin = proposal.kind === 'plugin' ? proposal.plugin ?? null : null;
   const grant = proposal.kind === 'plugin' ? proposal.grant ?? null : null;
-  const handing = proposal.kind === 'hand';
   const syncing = proposal.kind === 'sync' ? proposal.sync ?? { looked: false, rows: [] } : null;
   const looking = syncing !== null && !syncing.looked;
-  const accepting = proposal.kind === 'accept';
-  const departures = accepting ? proposal.accept?.departures ?? [] : [];
   const workflow = proposal.kind === 'workflow' ? proposal.workflow ?? null : null;
   const place = proposal.kind === 'setup' ? proposal.place ?? null : null;
   // A draft (WORKFLOW1h-b): what is still needed leaves no Apply, only Not now.
@@ -450,10 +428,9 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
           : going ? 'help.proposal.titleGo'
             : grant ? (grant.withdraw ? 'help.proposal.titleWithdraw' : 'help.proposal.titleGrant')
             : proposal.kind === 'plugin' ? 'help.proposal.titlePlugin'
-              : handing ? 'help.proposal.titleHand'
-                : syncing ? 'help.proposal.titleSync'
-                  : accepting ? 'help.proposal.titleAccept' : composing ? 'help.proposal.titleDraft' : workflow ? 'help.proposal.titleWorkflow'
-                    : proposal.kind === 'setup' ? 'help.proposal.titleSetup' : 'help.proposal.title')}
+              : syncing ? 'help.proposal.titleSync'
+                : composing ? 'help.proposal.titleDraft' : workflow ? 'help.proposal.titleWorkflow'
+                  : proposal.kind === 'setup' ? 'help.proposal.titleSetup' : 'help.proposal.title')}
       </p>
       {workflow
         ? composing ? <DraftChange workflow={workflow} /> : <WorkflowChange workflow={workflow} />
@@ -461,20 +438,6 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
       {plugin && <PluginRuns plugin={plugin} />}
       {grant && <GrantTools grant={grant} />}
       {place && <PlaceChanges place={place} />}
-      {departures.length > 0 && (
-        <ol aria-label={t('help.proposal.departures')} className="m-0 mt-2 grid list-none gap-2.5 p-0">
-          {departures.map((departure) => (
-            <RequirementItem
-              key={departure.requirement}
-              number={departure.requirement}
-              requirement={{ quote: departure.quote, check: departure.check }}
-              answer={{ requirement: departure.requirement, departed: departure.departed, quote: departure.words }}
-              waiting
-            />
-          ))}
-        </ol>
-      )}
-      {accepting && <p className="m-0 mt-2 text-meta text-ink-soft">{t('help.proposal.acceptNote')}</p>}
       {looking && <p className="m-0 mt-1 text-meta text-ink-soft">{t('help.proposal.syncLook')}</p>}
       {syncing?.looked && (
         <>
@@ -506,7 +469,6 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
       {deleting && <p className="m-0 mt-1 text-meta text-ink-danger">{t('help.proposal.deleteNote')}</p>}
       {going && <p className="m-0 mt-1 text-meta text-ink-faint">{t('help.proposal.goNote')}</p>}
       {place && <p className="m-0 mt-1 text-meta text-ink-soft">{t('help.proposal.place.note')}</p>}
-      {handing && <p className="m-0 mt-1 text-meta text-ink-soft">{t('help.proposal.handNote')}</p>}
       {proposal.terminal && (
         <p className="m-0 mt-1 text-meta text-ink-faint"><Inline text={t('help.proposal.command', { command: proposal.terminal })} /></p>
       )}
@@ -519,8 +481,7 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
               : going ? 'help.proposal.go'
                 : place ? 'help.proposal.place.open'
                 : composing ? 'help.proposal.workflow.openEditor'
-                : looking ? 'help.proposal.look'
-                  : accepting ? 'help.proposal.accept' : 'help.proposal.apply')}
+                : looking ? 'help.proposal.look' : 'help.proposal.apply')}
           </Button>
         )}
         <Button variant="ghost" disabled={pending} onClick={() => onDismiss(proposal.id)}>

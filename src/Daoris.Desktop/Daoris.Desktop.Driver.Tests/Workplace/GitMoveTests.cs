@@ -3,9 +3,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The move off ambient credentials (GITAUTH1e, the git-auth design §6.8): a home is marked once; before it a remote nothing serves is
-/// not held, after it an SSH remote nothing serves is held as <c>no-identity</c> before the act and an HTTPS refusal is classed so;
-/// a serving identity or the person's own choice lifts the hold; the ssh door refuses a host nothing serves in one line.
+/// The move off ambient credentials (GITAUTH1e, the git-auth design §6.8): a home beside the laid doors is marked once; before it a remote
+/// nothing serves is not held, after it an SSH remote nothing serves is held as <c>no-identity</c> before the act and an HTTPS refusal is
+/// classed so; a serving identity or the person's own choice lifts the hold; the ssh door refuses a host nothing serves in one line. A
+/// home with no doors laid is never marked, and a marked one holds nothing once its doors are gone (GITMOVED1, D233 choice 7).
 /// </summary>
 [Collection(Alone.Name)]
 public sealed class GitMoveTests : IDisposable
@@ -20,10 +21,16 @@ public sealed class GitMoveTests : IDisposable
 
     private string Repo => Path.Combine(_root, "engine");
 
+    private string Bin => Path.Combine([_root, .. Tools.InstallBinLayout]);
+
     public GitMoveTests()
     {
         Directory.CreateDirectory(Home);
         Directory.CreateDirectory(Repo);
+        File.WriteAllText(Path.Combine(_root, DaorisHome.InstallMarker), "# Daoris — installed desktop\n");
+        Directory.CreateDirectory(Bin);
+        File.WriteAllText(Path.Combine(Bin, GitWiring.SshDoor), "");
+        File.WriteAllText(Path.Combine(Bin, GitWiring.RemoteHelper), "");
         var empty = Path.Combine(_root, "global");
         File.WriteAllText(empty, "");
         foreach (var (name, value) in new[] { ("GIT_CONFIG_NOSYSTEM", "1"), ("GIT_CONFIG_GLOBAL", empty) })
@@ -51,6 +58,22 @@ public sealed class GitMoveTests : IDisposable
         Assert.False(GitMove.Ensure(Home, DateTimeOffset.UtcNow));
 
         Assert.True(GitMove.Moved(Home));
+    }
+
+    [Fact]
+    public async Task A_home_with_no_doors_laid_is_never_marked_and_a_marked_one_without_them_holds_nothing()
+    {
+        File.Delete(Path.Combine(Bin, GitWiring.RemoteHelper));
+
+        Assert.False(GitMove.Ensure(Home, DateTimeOffset.UtcNow));
+        Assert.False(GitMoved.Moved(Home));
+
+        File.WriteAllText(Path.Combine(Bin, GitWiring.RemoteHelper), "");
+        Assert.True(GitMove.Ensure(Home, DateTimeOffset.UtcNow));
+        Directory.Delete(Bin, recursive: true);
+
+        Assert.False(GitMove.Moved(Home));
+        Assert.Null(await HeldAsync());
     }
 
     [Fact]

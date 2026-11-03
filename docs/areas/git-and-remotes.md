@@ -27,10 +27,10 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 | Author | `GitAuthor.cs` | The `commitsAs` of origin's identity on a session's or Daoris's commit |
 | Config and floors | `Install/GitGlobalFile.cs`, `Install/GitVersions.cs`, `GitForWindows.cs` | `profiles/git/global.gitconfig`; the version floors; Git for Windows' launcher started past |
 | Failures and holds | `GitFailures.cs`, `GitHolds.cs`, `GitOwnInput.cs` | Class a failure; hold in `run/git/held.json`; find `own-input` and `no-identity` before the act |
-| The move | `GitMove.cs`, `GitMoved.cs` | Marks `gitMoved` at first start; after it, a remote nothing serves gets no credential of the person's |
+| The move | `GitMove.cs`, `GitMoved.cs` | Marks `gitMoved` at the first start with the doors laid; after it, a remote nothing serves gets no credential of the person's |
 | Redaction and log | `GitWords.cs`, `GitLog.cs`, `GitUnended.cs` | One redaction for every git, ssh, GCM or plugin text; coded `git.*` machine-log lines |
 | Git access | `GitAccessKeys.cs`, `GitAccessActs.cs`, `GitAccessCommand.cs` | The three levels in `driver.json`, their resolution, `SET_GIT_ACCESS`, `git access` |
-| The judge, grants | `GitAccessRules.cs` (`GitGrants`) | One verdict per act; the landing's grant in `run/git/grants` |
+| The judge, grants | `GitAccessRules.cs` (`GitGrants`), `GitPushUpdates.cs` | One verdict per act; a push's force and delete read and judged; the landing's grant in `run/git/grants` |
 | Harness rules | `GitAccessPolicy.cs` | `no-push`'s rules and classifier sentence composed from a session's Write |
 | Go-aheads | `GitAsks.cs` | A door's `ask` as `run/git/asks/{id}.json`, its answer and its late grant |
 | The act engine | `ActRuns.cs`, `ActJournal.cs`, `ActReconciler.cs`, `ActSteps.cs`, `RefTransaction.cs` | Checkout lock, journal, steps in a named job, postconditions, recovery refs |
@@ -83,8 +83,9 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 
 **The move and the holds**
 
-16. A build's first start marks the home moved (`gitMoved` in `driver.json`). Then a remote nothing serves gets no
-    credential of the person's: SSH is held `no-identity` before it connects; HTTPS reads anonymously. Nothing is pre-applied. (from D198)
+16. The first start of a release that lays both doors marks the home moved (`gitMoved` in `driver.json`). Then a remote
+    nothing serves gets no credential of the person's: SSH is held `no-identity` before it connects; HTTPS reads anonymously.
+    Without the doors laid a home is not moved, marked or not, and its git is as it was. Nothing is pre-applied. (from D198, D233)
 17. The move is one *What needs you* row per workspace: *Set up identity…* or *Keep using my own sign-ins…*. A held row
     holds work where a session of one of its repositories runs or is parked. (from D198)
 18. `own` is a widening. It is confirmed before it is written, on the page or in the window for a terminal's press. No
@@ -105,13 +106,18 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 24. Git access is apart from `access`: full access never touches it. A loosening is a widening and is confirmed. (from
     D198, D184)
 25. The doors judge by the remote command: `push`, `list for-push` and `receive-pack` are Write. `deny` refuses and no
-    grant lifts it; `allow` passes; `ask` holds the act at the door. (from D198)
+    grant lifts it; `allow` passes; `ask` holds the act at the door. A push's force or branch delete is Dangerous, judged
+    at the doors for every agent whatever its harness: the helper reads git's `push` lines (`+src:dst`, `:dst`), the ssh
+    door reads receive-pack's commands before it forwards them (`GitPushUpdates`) and asks git whether each keeps its ref's
+    history. It is refused unless Dangerous allows it; the landing's grant carries it as it carries the landing's push.
+    (from D198, D233)
 26. A held `ask` is a git go-ahead, `run/git/asks/{id}.json`, answered *Allow* or *Refuse* in *What needs you*, the
     session's head or `git answer`. The door waits up to 15 minutes; a late allow is a grant the identical retry takes once. (from D198, D135)
 27. Under `as-today`, a machine whose person switched `no-push` off lets its sessions push. The judge reads that switch at
     each act. (from D198)
 28. A session's harness rules follow its Write. `deny` or the default keeps every push form denied; `ask` or `allow` opens
-    the plain push and still denies force, delete, tag, mirror and prune. Publishing and releases stay the person's. (from D198, D72)
+    the plain push and still denies force, delete, tag, mirror and prune. Publishing and releases stay the person's. Codex
+    takes no rules file and holds none of the person's denies; its block and the access setup say so. (from D198, D72, D233)
 29. Identity is who, access is what. A read-only identity refuses writes; today only the landing's check reads it.
     (from D198)
 
@@ -200,7 +206,7 @@ census), `ProcessStartsCensusTests` (every start through `Tools.Hand`), `GitRefA
 
 **Gates that bite:** `driver`, `driver-process-git` (real git), `driver-process` (the doors' processes), `censuses`,
 `modules`, `service`, `web-unit`, `web-types`, and `deployment` (the rehearsal lays `--git-doors`). Visible words need both
-catalogues (`i18n:check`); a new door needs its `HelpCoverageTests` row.
+catalogues (`i18n:check`).
 
 ## Contradictions
 
@@ -216,9 +222,6 @@ catalogues (`i18n:check`); a new door needs its `HelpCoverageTests` row.
   `LandingPlugins.cs:107` does): the code is today's truth, so a session's push under a read-only identity reaches the host.
 - D198 point 14 (a switched-off `no-push` read once as the machine's Write *allow*) vs `GitAccessRules.cs:41-47,79` and
   `GitDoors.cs:513` (read live at each act): the code reads right.
-- D198's 2026-10-22 steward note (a release without `--git-doors` leaves an install's git as it was) vs
-  `DriverWatch.cs:405` and `GitOwnInput.cs:119-121` (every home moves at first start and holds an SSH remote nothing serves,
-  doors laid or not): the code is today's truth.
 - D87 and D100's plugin push "with whatever that platform's tools are signed in as" (still said at `LandingPlugins.cs:8-10`)
   vs D198 point 13 and `LandingPlugins.cs:122-131` (its git push passes the door under origin's identity and a grant): D198 reads right.
 
@@ -229,7 +232,7 @@ catalogues (`i18n:check`); a new door needs its `HelpCoverageTests` row.
 - **GITAUTH1e:** the sign-in's `PhaseList` and its Cancel; the sync card's screen door.
 - **GITAUTH1f:** the session's record of its git access with *Tighten…* and `git access --session`; the head's access facts;
   the doors passing a read-only identity; a running-Daoris check before a door waits on an ask; proofs against a real server.
-- **GITAUTH1g:** the transport judge: each push's updates read and judged, Dangerous settable at the doors.
+- **GITAUTH1g:** the rest of the transport judge: Dangerous settable on the page, tag, mirror and prune judged, a grant bound to its ref.
 - **GITAUTH1h:** the install, seen (the owner).
 - **GITAPP2g:** push one branch, on the person's press with a grant (after GITAUTH1f).
 - **GITAPP2n:** push a lightweight tag (after GITAUTH1g). Stash Drop stays deferred. Ask Daoris's fetch card is not built.

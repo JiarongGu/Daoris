@@ -401,7 +401,7 @@ public sealed class DriverWatch(
     {
         try
         {
-            // GITAUTH1e (§6.8): the first start of this build marks the home as moved off ambient credentials, once.
+            // GITAUTH1e (§6.8): a start with the doors laid marks the home moved off ambient credentials, once.
             GitMove.Ensure(home, DateTimeOffset.UtcNow);
             var git = Tools.Resolve(Tools.Read(home), home, "git");
             GitLog.Wired(home, git.Way?.ToString().ToLowerInvariant(), git.Version, GitWiring.SshForm(home),

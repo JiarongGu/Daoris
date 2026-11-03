@@ -340,6 +340,14 @@ public sealed class DaorisHomeTests
         Assert.Equal((HomeCategory.Data, "data/steward-desk.json"), (HomeEntry.StewardDesk.Category, HomeEntry.StewardDesk.New));
     }
 
+    /// <summary>D233 choice 6: the newest build that has run on the home, a data file the service's table names as its twins do, and never reads.</summary>
+    [Fact]
+    public void The_last_build_is_a_data_file()
+    {
+        Assert.Same(HomeEntry.LastBuild, HomeEntry.Named("last-build"));
+        Assert.Equal((HomeCategory.Data, "data/last-build.json"), (HomeEntry.LastBuild.Category, HomeEntry.LastBuild.New));
+    }
+
     /// <summary>
     /// CONFIRMWAIT1 (the confirm-wait design §15.2 item 6): the keys of a terminal's sent presses, a profiles folder the service's table names
     /// as its twins do, and never reads; a sign-in's place, never under <c>run/</c>.

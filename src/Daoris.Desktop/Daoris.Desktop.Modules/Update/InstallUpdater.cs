@@ -187,6 +187,16 @@ public sealed class InstallUpdater(
             // A journal that cannot be read or written is no outcome to say; the swap's own record stays as it was.
         }
 
+        try
+        {
+            // D233 choice 6: a start nothing can roll back is the home's newest build, which the launcher refuses an older one by.
+            if (StartConfirmation.Read(install).Is) HomeLastBuild.Keep(home, Running);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
+        {
+            // Kept at the next start; until then the launcher refuses by the build kept before.
+        }
+
         lock (_gate) _outcome = outcome;
         await LookAsync().ConfigureAwait(false);
     }
