@@ -108,7 +108,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/ProviderConformanceCases.cs` | 45 | 788 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/ResumeAccountTests.cs` | 42 | 747 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Course/ChatGoOnTests.cs` | 78 | 1440 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Course/ContinuationTests.cs` | 47 | 876 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Course/ContinuationTests.cs` | 48 | 880 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Course/DrivenInboxTests.cs` | 44 | 964 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Course/HandOverTests.cs` | 58 | 1010 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Course/LimitWaitsProcessTests.cs` | 75 | 1317 |
@@ -150,7 +150,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/WorkOrders/IntakeTests.cs` | 62 | 1257 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/WorkOrders/PlannerTests.cs` | 119 | 2272 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/WorkOrders/ReopenTellingTests.cs` | 43 | 846 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/WorkOrders/SessionGroupsTests.cs` | 80 | 1356 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/WorkOrders/SessionGroupsTests.cs` | 80 | 1357 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/WorkOrders/SessionsCommandTests.cs` | 66 | 1262 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/WorkOrders/SessionsSayCommandTests.cs` | 79 | 1568 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workflows/NodeLifecycleTests.cs` | 73 | 1127 |

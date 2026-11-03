@@ -14,9 +14,9 @@ public sealed class AnswerContinuesPlanTests
     private static readonly RepoView Repo = new("Game", true, "D:/fam/Game");
 
     private static readonly PriorSession Park =
-        new("s1", "D:/trees/s-1", "awaiting-person", "It stopped with its quest still taken, to ask you:\n\nWhich port?", "Game",
-            Answer: "Port 8080.")
+        new("s1", "D:/trees/s-1", "awaiting-person", "It stopped with its quest still taken, to ask you:\n\nWhich port?", "Game")
         {
+            Said = PersonWords.Of("Port 8080."),
             Profile = "account-1",
             Adapter = "claude-code-acp",
         };
@@ -103,7 +103,7 @@ public sealed class AnswerContinuesPlanTests
     {
         var snapshot = new Snapshot([Taken()], [Repo], [Parked])
         {
-            LastRun = new Dictionary<string, PriorSession> { ["q1"] = Park with { Answer = null } },
+            LastRun = new Dictionary<string, PriorSession> { ["q1"] = Park with { Said = [] } },
         };
 
         Assert.Empty(Planner.Plan(snapshot, Config()));
@@ -127,7 +127,8 @@ public sealed class AnswerContinuesPlanTests
     {
         var last = ServiceClient.ReadLastRun("""
             [{ "id": "s1", "quest": "q1", "state": "awaiting-person", "adapter": "claude-code-acp", "baseCommit": "abc123",
-               "answer": "Port 8080.", "created": "2026-10-02T10:00:00Z" },
+               "said": [{ "id": "answer", "text": "Port 8080.", "at": "2026-10-02T10:05:00Z", "files": [] }],
+               "created": "2026-10-02T10:00:00Z" },
              { "id": "s2", "quest": "q2", "state": "failed", "created": "2026-10-02T10:00:00Z" }]
             """);
 

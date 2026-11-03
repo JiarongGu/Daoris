@@ -167,10 +167,11 @@ public static class SolicitedHand
     public static SolicitedAnswer Lost(string door, string service, string why) =>
         new(SolicitedFate.Uncertain, $"the service at {service} gave no answer to `{door}` ({why})");
 
-    /// <summary>The record the host answers holding the word, as far as a dispatch reads it: its id, state, kind, tree and the person's answer.</summary>
+    /// <summary>The record the host answers holding the word, as far as a dispatch reads it: its id, state, kind, tree and its said words.</summary>
     private static PriorSession Holder(JsonElement session, string id) =>
-        new(id, Text(session, "tree"), Text(session, "state") ?? "", Answer: Text(session, "answer"))
+        new(id, Text(session, "tree"), Text(session, "state") ?? "")
         {
+            Said = ServiceClient.ReadSaid(session),
             Kind = Text(session, "kind") ?? "driven",
             From = Text(session, "from"),
         };

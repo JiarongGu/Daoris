@@ -2378,8 +2378,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
                 BaseCommit = Text(session, "baseCommit") is { Length: > 0 } baseCommit ? baseCommit : null,
                 // Its note's lines by code (LANG1a), handed on wherever the note is; null for a record from before parts.
                 NoteParts = NotePart.Read(session),
-                // The person's answer to its park (ENTRY1f2), read as SessionRecords reads it: a blank one is none.
-                Answer = Text(session, "answer") is { Length: > 0 } answer ? answer : null,
+                // Its words (ENTRY1f2), read as SessionRecords reads them: the person's make an answered park.
+                Said = ReadSaid(session),
                 // Its workspace (ASKSCOPE1a), as SessionRecords reads it: none from a host from before is `default`.
                 Workspace = RemoteTarget.Workspace(Text(session, "workspace")),
                 // What the cap counts by (CAPCOUNT1): its kind, and the mark of each conversation the driver opens for itself, an
@@ -2756,7 +2756,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     private static PriorSession Prior(JsonElement session) =>
         new(
             Text(session, "id") ?? "", Text(session, "tree"), Text(session, "state") ?? "", Text(session, "note"),
-            Text(session, "repository"), Text(session, "answer"), Interrupted(session))
+            Text(session, "repository"), Interrupted(session))
         {
             // Which account it ran on and whether a limit cut it off (TOOL4f): what a carry-on is compared with and told.
             Profile = Text(session, "profile"),
@@ -2853,7 +2853,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// its words or a moment is skipped, a file's name that is not text is none. Null where the record answers no list, a
     /// host from before MSG1a, which is not the same as nothing waiting.
     /// </summary>
-    private static IReadOnlyList<SaidWordView>? ReadSaid(JsonElement session)
+    internal static IReadOnlyList<SaidWordView>? ReadSaid(JsonElement session)
     {
         if (!session.TryGetProperty("said", out var said) || said.ValueKind != JsonValueKind.Array) return null;
         return [.. said.EnumerateArray().Select(ReadWord).OfType<SaidWordView>()];

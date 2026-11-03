@@ -751,7 +751,7 @@ public sealed class PlannerTests
     [Fact]
     public void A_parked_session_the_person_answered_is_carried_on_from_it()
     {
-        var answered = new PriorSession("s1", "D:/trees/s-1", "completed", "asked the person", Answer: "Signed in; go ahead.");
+        var answered = new PriorSession("s1", "D:/trees/s-1", "completed", "asked the person") { Said = PersonWords.Of("Signed in; go ahead.") };
 
         var only = Assert.Single(Planner.Plan(Ran([Quest(status: "Taken")], ("q1", answered)), Config()));
 
@@ -1069,7 +1069,7 @@ public sealed class PlannerTests
     public void Every_carry_on_asks_whose_the_take_is()
     {
         var interrupted = new PriorSession("s1", "D:/trees/s1", "stopped", Orphans.Note, Interrupted: true);
-        var answered = new PriorSession("s1", "D:/trees/s1", "completed", "asked the person", Answer: "Go ahead.");
+        var answered = new PriorSession("s1", "D:/trees/s1", "completed", "asked the person") { Said = PersonWords.Of("Go ahead.") };
 
         foreach (var (why, last, config) in new[]
                  {
@@ -1896,7 +1896,7 @@ public sealed class PlannerTests
     [Fact]
     public void An_answered_park_and_an_answered_wait_each_wait_for_Resume()
     {
-        var answered = new PriorSession("s1", "D:/trees/s1", "awaiting-person", Answer: "use the second one");
+        var answered = new PriorSession("s1", "D:/trees/s1", "awaiting-person") { Said = PersonWords.Of("use the second one") };
         var waited = new PriorSession("s1", "D:/trees/s1", "completed");
 
         Assert.Equal(
@@ -2025,7 +2025,7 @@ public sealed class PlannerTests
             StoppedByReopen(),
             new("s1", "D:/trees/s1", "failed", "timed out.", Repository: "Game"),
             PersonStop,
-            new("s1", "D:/trees/s1", "awaiting-person", "asked the person", Answer: "Yes, go on."),
+            new("s1", "D:/trees/s1", "awaiting-person", "asked the person") { Said = PersonWords.Of("Yes, go on.") },
             new("s1", "D:/trees/s1", "completed", "reached done.") { Said = [said] },
         ];
 
@@ -2121,7 +2121,7 @@ public sealed class PlannerTests
             EndedNormally() with { Updated = Ended.AddMinutes(20) },
             EndedNormally("working"),
             EndedNormally() with { Said = [said] },
-            EndedNormally() with { Answer = "Yes." },
+            EndedNormally() with { Said = PersonWords.Of("Yes.") },
             EndedNormally("failed"),
             EndedNormally("stopped"),
             EndedNormally("stood-down"),

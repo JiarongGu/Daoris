@@ -19,8 +19,9 @@ public sealed class ContinuationTests : IDisposable
     }
 
     private PriorSession Park(string? profile = "account-1", string adapter = "claude-code-acp", string state = "awaiting-person") =>
-        new("s1", _tree, state, "It stopped with its quest still taken, to ask you:\n\nWhich port?", "engine", Answer: "Port 8080.")
+        new("s1", _tree, state, "It stopped with its quest still taken, to ask you:\n\nWhich port?", "engine")
         {
+            Said = PersonWords.Of("Port 8080."),
             Profile = profile,
             Adapter = adapter,
         };
@@ -408,7 +409,9 @@ public sealed class ContinuationTests : IDisposable
     public void Only_a_parked_record_with_an_answer_is_an_answered_park()
     {
         Assert.True(Park().AnsweredPark);
-        Assert.False((Park() with { Answer = null }).AnsweredPark);
+        Assert.False((Park() with { Said = [] }).AnsweredPark);
+        Assert.False((Park() with { Said = null }).AnsweredPark);
+        Assert.False((Park() with { Said = [Word with { From = SaidFrom.Daoris }] }).AnsweredPark);
         Assert.False(Park(state: "completed").AnsweredPark);
     }
 
@@ -416,7 +419,7 @@ public sealed class ContinuationTests : IDisposable
 
     /// <summary>A record of this machine's with the person's words waiting (MSG1a's <c>said</c>), as the last run reads it.</summary>
     private PriorSession Written(string state, params SaidWordView[] said) =>
-        Park(state: state) with { Answer = string.Join("\n\n", said.Select(word => word.Text)), Said = said };
+        Park(state: state) with { Said = said };
 
     /// <summary>
     /// 🔴 Words to an ended session go on in its own record (MSG1b, D137 §2.2): completed, declined, stopped and failed each
@@ -437,7 +440,7 @@ public sealed class ContinuationTests : IDisposable
     public void An_ended_record_with_no_words_waiting_has_ended()
     {
         var why = Continuations.Judge(
-            Park(state: "completed") with { Answer = null, Said = [] }, "claude-code-acp", doorResumes: true, profile: "account-1", Kept);
+            Park(state: "completed") with { Said = [] }, "claude-code-acp", doorResumes: true, profile: "account-1", Kept);
 
         Assert.Equal(ContinueWhy.Ended, why?.Code);
     }
@@ -484,16 +487,17 @@ public sealed class ContinuationTests : IDisposable
     }
 
     /// <summary>
-    /// Words wait for a record where its <c>said</c> holds any; a host from before MSG1a answers no <c>said</c>, and there an
-    /// answered park is the one case that waits.
+    /// Words wait for a record where its <c>said</c> holds any, and nowhere else: a record whose <c>said</c> is absent has none, and a
+    /// record from before the list reaches here already as the one word the service reads its old answer column as.
     /// </summary>
     [Fact]
-    public void Words_wait_where_said_holds_any_or_on_an_answered_park_from_before_said()
+    public void Words_wait_where_said_holds_any()
     {
         Assert.True(Written("completed", Word).WordsWaiting);
-        Assert.False((Park(state: "completed") with { Answer = null, Said = [] }).WordsWaiting);
+        Assert.False((Park(state: "completed") with { Said = [] }).WordsWaiting);
+        Assert.False((Park(state: "completed") with { Said = null }).WordsWaiting);
+        Assert.Empty((Park(state: "completed") with { Said = null }).Waiting);
         Assert.True(Park().WordsWaiting);
-        Assert.False(Park(state: "completed").WordsWaiting);
         Assert.Equal(["Port 8080."], Park().Waiting.Select(word => word.Text));
         Assert.Equal(["w1", "w2"], Written("failed", Word, Word with { Id = "w2" }).Waiting.Select(word => word.Id));
     }

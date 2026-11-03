@@ -877,7 +877,7 @@ public sealed class HelperLookTests : IDisposable
         Assert.Empty(host.HelperHands);
 
         host.Set("s1", "answer", "Port 8080.");
-        var events = await Look(driver, active: [Active("awaiting-person") with { Answer = "Port 8080." }]);
+        var events = await Look(driver, active: [Active("awaiting-person") with { Said = PersonWords.Of("Port 8080.") }]);
 
         Assert.Empty(host.Moves);
         var (to, text) = Assert.Single(host.HelperHands);

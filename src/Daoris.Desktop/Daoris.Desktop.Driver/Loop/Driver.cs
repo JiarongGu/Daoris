@@ -2777,7 +2777,7 @@ public sealed class Driver(
         // Whether the roster's switch moved the words off a cooling own account to a new part (LIMITSWITCH1, LIMITSWITCH2, LIMITSWITCH3).
         var switched = false;
         if (start.Resumes is { } park
-            && (start.GoesOn || park is { State: "completed", Answer: not null, Said: null })
+            && start.GoesOn
             && !resuming)
         {
             // Where its own account could not carry the words, the walk's pick did, and the reason says why (MSG1g).
@@ -3255,7 +3255,7 @@ public sealed class Driver(
                 // the person's checkout is told nothing. Under a named workflow the rule applies as everywhere.
                 Commits = Context.Trees.Holds(workTree) ? CommitRules.Resolve(config, quest.To, start.Workspace) : null,
                 // The person's answer, when the session before parked to ask them (STANDDOWN2).
-                PersonSaid = carryingOn ? start.Resumes!.Answer : null,
+                PersonSaid = carryingOn ? SaidWordView.PersonsJoined(start.Resumes!.Waiting) : null,
                 // SAYHELD1 (A): a resume's, the words said to the session that asked while it waited, each under its id.
                 // LIMITSWITCH3: and a carry-on a cooling account's switch made, Daoris's own words it carries (the person's come by the ask).
                 // FOUNDATION1d-ii part 5: the words the open moved here, where it moved them, as this record holds them.
@@ -3294,7 +3294,7 @@ public sealed class Driver(
             // the person's words in its own record, where they read the question. A resume that was tried already put
             // them there (ANSWER1a).
             // Words to a session that had ended are in its conversation already, where the person wrote them (MSG1b).
-            if (carryingOn && !answerKept && start.Resumes!.Answer is { Length: > 0 } answeredWith && written is { Parked: true } or { Said: null })
+            if (carryingOn && !answerKept && SaidWordView.PersonsJoined(start.Resumes!.Waiting) is { Length: > 0 } answeredWith && written is { Parked: true })
             {
                 Context.Events.Keep(start.Resumes.Session, new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = answeredWith }, say: null);
             }
@@ -4185,7 +4185,7 @@ public sealed class Driver(
 
         var session = resumes!.Session;
         (string Name, object? Value)[] facts = [("quest", quest.Id), ("session", session)];
-        var carried = resumes.Answer is not null
+        var carried = resumes.PersonSaid
             ? (written is { Parked: false, Said: not null }
                 // Words to a session that had ended (MSG1b): no answer, and an open quest is started.
                 ? quest.Status == "Open"
