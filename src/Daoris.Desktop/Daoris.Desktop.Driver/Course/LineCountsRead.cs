@@ -20,14 +20,20 @@ public sealed class LineCountsRead(
         return LineCounts.Of(session, Gather(session, json, events, moves, admissions, home, forgiven()));
     }
 
-    /// <summary>The service's records as it answered them, closed ones included; null where it did not, so their counts read unknown.</summary>
+    /// <summary>
+    /// The service's records as it answered them, closed ones included; null where it did not, or answered no list of records, so their
+    /// counts read unknown.
+    /// </summary>
     public static async Task<string?> RecordsJsonAsync(ServiceClient service, CancellationToken ct)
     {
         try
         {
-            return await service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
+            var json = await service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
+            using var document = System.Text.Json.JsonDocument.Parse(json);
+            return document.RootElement.ValueKind == System.Text.Json.JsonValueKind.Array ? json : null;
         }
-        catch (Exception error) when (error is HttpRequestException or DriverException || (error is OperationCanceledException && !ct.IsCancellationRequested))
+        catch (Exception error) when (error is HttpRequestException or DriverException or System.Text.Json.JsonException
+                                          || (error is OperationCanceledException && !ct.IsCancellationRequested))
         {
             return null;
         }

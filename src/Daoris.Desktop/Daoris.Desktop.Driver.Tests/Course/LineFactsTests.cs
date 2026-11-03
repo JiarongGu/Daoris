@@ -73,4 +73,18 @@ public sealed class LineFactsTests : IDisposable
         Assert.Equal("unknown", unread.Counts.Single(count => count.Count == "failures").Known);
         Assert.Equal([new LinePartFact("s1", null)], unread.Parts);
     }
+
+    /// <summary>A go-on and a start read the facts on their way: an answer that is no list of records is the service not answering, never a throw.</summary>
+    [Theory]
+    [InlineData("not json")]
+    [InlineData("""{"records":[]}""")]
+    public async Task CONTEXTDRIVE1b_records_that_do_not_read_count_as_unknown_and_the_course_installs_the_read(string answer)
+    {
+        using var service = QuestStandIn.Client(_ => (System.Net.HttpStatusCode.OK, answer));
+
+        var facts = await LineFactsReads.Current.OfAsync(service, _home, "s1", CancellationToken.None);
+
+        Assert.IsType<LineFactsOperations>(LineFactsReads.Current);
+        Assert.All(facts.Counts.Where(count => count.From == "records"), count => Assert.Equal(("unknown", "service-unanswered"), (count.Known, count.Why)));
+    }
 }
