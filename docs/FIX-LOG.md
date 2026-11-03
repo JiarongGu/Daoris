@@ -13139,3 +13139,28 @@ mis-rooted instance.
 **Fix.** `PlaceApplyAsync` refuses a payload carrying `repository`; `repositories` is the apply's one way (the verb and the page send it).
 
 **Verified.** Red first: `An_apply_naming_a_single_repository_is_refused_and_nothing_is_written` (the apply ran).
+
+## 2026-11-03 — A finished session the person was talking to lost its tree to the tidy, and its words had no way on with its context (TREEGONE1)
+
+**Symptom.** On the install a driven session finished its quest; its branch landed, empty after landing. Four minutes after its last
+turn, while the person was still talking to it, the look's tidy moved its tree aside (`branch.tidied`, kind `empty`). The next words
+got "It cannot go on in this session, because its tree is gone.", and the one press, *Start a conversation*, opened a part with no
+brief: the new agent asked what "this" meant.
+
+**Root cause.** Two. The tidy's keep rule (`BranchTidying.InUseAsync`) held a tree only while its session ran, waited, or had words
+waiting; an ended session between the person's words held nothing, so a pass took it. And the course's *cannot go on* for a closed
+quest's session judged `tree` offered only *Start a conversation* (`LineCourse.Decide.cs`'s `CannotGoOn`), its briefed press refused a
+gone tree (`Briefed`), and the page left the press out for `tree` (`BRIEF_WAITS`), so nothing went on with the session's context.
+
+**Fix.** The look's tidy also keeps a tree whose session the person spoke to within `BranchTidying.SpokenWithin` (an hour), read from
+the session's events (`SessionEvents.LastPersonAt`), only for records that moved within it. A closed quest's session whose tree is gone
+is offered *Go on with Daoris's brief* (`CannotGoOn`); the press moves it (`Briefed`) and `BriefedMove` opens the new part in a fresh
+tree grown from the line (`ownTree`), `from` the old part, handed the brief and the words; a conversation's gone tree is still refused.
+The page offers the press for `tree` on a driven session (`briefOffered`). This is ONEWAY1's design §3 C5's case pulled forward; D189's
+note of 2026-11-03 says what is left for ONEWAY1j.
+
+**Verified.** Red first: `course-cases.txt`'s A-27 (doors `StartFrom` only) and J-10 (refused `tree-gone`) in
+`LineCourseTests.Every_row_answers_as_its_path_answers_today`; `BriefedMoveTests.A_closed_quests_session_whose_tree_is_gone_goes_on_in_a_fresh_tree_handed_the_brief`
+(ran in the checkout without the fresh tree); `ConversationView.test.tsx`'s driven tree-gone offer, en and zh (no press);
+`BranchTidyingTests.A_session_the_person_spoke_to_within_the_quiet_window_keeps_its_tree` (did not build without the window). The
+installed window is not yet seen.
