@@ -73,7 +73,7 @@ public sealed class WorkflowBindingLookTests : IDisposable
             var first = File.ReadAllText(WorkflowRunBindings.PathOf(_home, "q1"));
             var binding = WorkflowRunBindings.Read(_home, "q1")!;
             Assert.Equal((WorkflowSelection.Current, WorkflowLevels.Task, "f00d01"), (binding.Workflow, binding.Level, binding.Ask));
-            Assert.NotEmpty(binding.CurrentSteps);
+            Assert.NotNull(binding.Problem);
 
             // The chain's next step in the same repository is the same run: a choice changed since reaches new work only.
             runs.End("q1");

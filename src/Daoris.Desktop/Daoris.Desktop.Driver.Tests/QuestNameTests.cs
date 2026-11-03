@@ -339,24 +339,6 @@ public sealed class QuestNameTests
         Assert.Throws<DriverException>(() => DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Merge, Squash: true)));
     }
 
-    /// <summary>A named workflow's landing step on a branch carries the rule's squash; a merge step makes no branch to squash into.</summary>
-    [Fact]
-    public void A_named_workflows_branch_landing_carries_the_rules_squash()
-    {
-        var config = DriverConfig.Parse("""{"landings":{"web-app":{"form":"branch","pattern":"feature/{quest}","squash":true}}}""");
-        WorkflowProcess Of(string landing)
-        {
-            using var document = System.Text.Json.JsonDocument.Parse($$"""[{"id":"work","kind":"work"},{{landing}}]""");
-            var (steps, problem) = WorkflowNamed.ReadSteps(document.RootElement.Clone(), 2);
-            Assert.True(problem is null, problem);
-            return WorkflowProcess.Of(config, "web-app", "work",
-                new WorkflowRunBinding("q1", "web-app", "work", "docs-to-pr", WorkflowLevels.Repository, DateTimeOffset.UnixEpoch) { Version = 2 }, steps!);
-        }
-
-        Assert.True(Of("""{"id":"land","kind":"landing","form":"branch","accept":"you"}""").Landing.Rule.Squash);
-        Assert.False(Of("""{"id":"land","kind":"landing","form":"merge","accept":"you"}""").Landing.Rule.Squash);
-    }
-
     /// <summary>
     /// The one commit's message where the rule squashes (PROCESS1b-ii, D164's PROCESS1b-ii note point 2): the quest's title as its
     /// subject, the session's commits' subjects oldest first as its body, one line each, and the line naming the session last.

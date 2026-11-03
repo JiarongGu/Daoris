@@ -271,7 +271,6 @@ public static class PlaceProjection
     public static PlaceValues ValuesAt(DriverConfig config, string repository, string? workspace, string level, IWorkflowStore? workflows = null)
     {
         var line = CanonicalLine.Choose(config, repository, workspace, guess: null);
-        var landing = LandingRules.Choose(config, repository, workspace);
         var flow = WorkflowSelection.Resolve(config, level == PlaceSource.RepositoryLevel ? repository : null, workspace, task: null);
         var landed = WorkflowSelection.ResolveLanded(config, level == PlaceSource.RepositoryLevel ? repository : null, workspace);
         var commits = CommitRules.Resolve(config, repository, workspace);
@@ -286,18 +285,20 @@ public static class PlaceProjection
         var helpers = HelperRules.Resolve(config, repository, workspace);
         var standing = level == PlaceSource.RepositoryLevel ? config.StandingFor(repository) : null;
         var scope = level == PlaceSource.RepositoryLevel ? repository : "";
-        var steps = StepsFollowed(config, scope, workspace, flow.Workflow, workflows);
+        var steps = StepsFollowed(flow.Workflow, workflows);
         var lands = steps is null ? null : SetupPresets.Match(driven: true, SetupPresets.LandOf(steps));
         // WORKFLOWCLEAN1 1a: a saved workflow's delivery is the default its version was copied from, and what the copy changed.
-        if (flow.Workflow != WorkflowSelection.Current && FollowsOf(flow.Workflow, null, workflows) is { Default: { } copied } held
-            && SetupPresets.Of(copied) is not null)
+        if (FollowsOf(flow.Workflow, workflows) is { Default: { } copied } held && SetupPresets.Of(copied) is not null)
         {
             lands = new SetupMatch(copied, held.Differs);
         }
 
+        // How its work lands is its workflow's `land`: a merge, or a branch every other method makes.
+        var land = steps?.FirstOrDefault(step => step.Kind == WorkflowKinds.Landing);
+        var form = land is null ? null : (string?)land.Field("method") == LandNodes.Merge ? LandingForm.Merge : LandingForm.Branch;
         return new PlaceValues(
             new(line.Branch, PlaceSource.At(line.Source, level)),
-            new(landing.Rule.Form, PlaceSource.At(landing.Source, level)),
+            new(form, PlaceSource.At(flow.Level, level)),
             new(flow.Workflow, PlaceSource.At(flow.Level, level)),
             new(landed.Workflow, PlaceSource.At(landed.Level, level)),
             new(commits.Rule.Mode, PlaceSource.At(commits.Source, level)),
@@ -305,7 +306,7 @@ public static class PlaceProjection
             new(handOver.Rule.Mode, PlaceSource.At(handOver.Source, level)),
             language is null ? new(null, PlaceSource.Default) : new(language.Code, PlaceSource.At(language.Source, level)),
             new(access.Full ? "full" : access.Today ? "today" : "custom", sources is [var one] ? one : "mixed"),
-            FollowsOf(flow.Workflow, lands, workflows),
+            FollowsOf(flow.Workflow, workflows),
             lands,
             review is null ? new(null, PlaceSource.Default) : new(review.Rule is { IsNone: false, Required: true } ? "on" : "off", PlaceSource.At(review.Source, level)),
             new(helpers.Rule.Mode, PlaceSource.At(helpers.Source, level)),
@@ -313,30 +314,25 @@ public static class PlaceProjection
     }
 
     /// <summary>
-    /// The steps a place's workflow follows, as <c>WorkflowProcesses.Otherwise</c> reads them for a start: Current drawn, or the newest version of
-    /// a saved workflow that reads. Null for a version this build cannot read here.
+    /// The steps a place's workflow follows, as <c>WorkflowProcesses.Otherwise</c> reads them for a start: the newest graph version of the saved
+    /// workflow. Null where none is chosen, or no version reads here.
     /// </summary>
-    private static IReadOnlyList<NamedStep>? StepsFollowed(DriverConfig config, string repository, string? workspace, string chosen, IWorkflowStore? workflows)
-    {
-        if (chosen == WorkflowSelection.Current) return Involvement.StepsOf(WorkflowCurrent.Derive(config, repository, workspace, []));
-        var newest = WorkflowNamed.IsId(chosen) ? workflows?.Load(chosen)?.Read.Versions.LastOrDefault(each => each.Steps is not null || each.Graph is not null) : null;
-        return newest is null ? null : newest.Steps ?? Involvement.StepsOf(newest.Graph!);
-    }
+    private static IReadOnlyList<NamedStep>? StepsFollowed(string chosen, IWorkflowStore? workflows) =>
+        Newest(chosen, workflows)?.Graph is { } graph ? Involvement.StepsOf(graph) : null;
 
     /// <summary>
-    /// The default a place's workflow follows: under Current, the one its landing rule's delivery matches
-    /// (<paramref name="lands"/>), with what the rule says otherwise; for a saved workflow, the default its newest version that reads was
-    /// copied from, with what the copy changed. Null for a version copied from none, or one this build cannot read.
+    /// The default a place's saved workflow follows: the default its newest graph version was copied from, with what the copy changed. Null for a
+    /// version copied from none, one this build cannot read, or where none is chosen.
     /// </summary>
-    private static PlaceDefault? FollowsOf(string chosen, SetupMatch? lands, IWorkflowStore? workflows)
+    private static PlaceDefault? FollowsOf(string chosen, IWorkflowStore? workflows)
     {
-        if (chosen == WorkflowSelection.Current) return lands is null ? null : new PlaceDefault(lands.Preset, lands.Own);
-
-        var newest = WorkflowNamed.IsId(chosen) ? workflows?.Load(chosen)?.Read.Versions.LastOrDefault(each => each.Steps is not null || each.Graph is not null) : null;
-        if (newest?.From is not { } from) return null;
+        if (Newest(chosen, workflows) is not { From: { } from, Graph: { } graph }) return null;
         if (WorkflowDefaults.Of(from.Default) is not { } shipped) return new PlaceDefault(from.Default, ["unknown here"]);
-        return new PlaceDefault(shipped.Id, newest.Graph is { } graph ? WorkflowDefaults.Differs(shipped, graph) : ["steps"]);
+        return new PlaceDefault(shipped.Id, WorkflowDefaults.Differs(shipped, graph));
     }
+
+    private static NamedVersion? Newest(string chosen, IWorkflowStore? workflows) =>
+        chosen != WorkflowSelection.Current && WorkflowNamed.IsId(chosen) ? workflows?.Load(chosen)?.Read.Versions.LastOrDefault(each => each.Graph is not null) : null;
 
     private static string Cursor(string workspace, string repository) => workspace + "\u001f" + repository;
 

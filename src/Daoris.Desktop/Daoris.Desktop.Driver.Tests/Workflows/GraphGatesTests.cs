@@ -25,7 +25,7 @@ public sealed class GraphGatesTests
         };
 
     private static GraphGateReading Read(string config, params NodeDeclaration[] nodes) =>
-        GraphGates.Of(Graph(nodes), WorkflowProcess.Current(DriverConfig.Parse(config), "web-app", "work"));
+        GraphGates.Of(Graph(nodes), WorkflowProcess.Declared(DriverConfig.Parse(config), "web-app", "work"));
 
     [Fact]
     public void A_look_names_a_declared_environment_or_takes_the_first()

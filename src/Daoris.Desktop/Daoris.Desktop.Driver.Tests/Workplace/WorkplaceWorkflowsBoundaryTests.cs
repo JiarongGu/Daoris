@@ -242,7 +242,7 @@ public sealed class WorkplaceWorkflowsBoundaryTests : IDisposable
     {
         Choose();
         var config = Config();
-        var current = WorkflowProcess.Current(config, "engine", "aurora");
+        var current = WorkflowProcess.Declared(config, "engine", "aurora");
         Assert.False(current.Named);
         Assert.Equal("Current", current.Name);
         Assert.Null(current.Record);

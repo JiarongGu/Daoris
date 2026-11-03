@@ -261,7 +261,7 @@ public sealed class WorkflowRunCommandTests : IDisposable
     [Fact]
     public void An_opinion_waiting_on_you_names_its_terminal_presses()
     {
-        var current = WorkflowCurrent.Derive(DriverConfig.Parse("""{"opinions":{"engine":{"reviewers":["codex-acp"]}}}"""), "engine", "aurora", []);
+        var current = new CurrentWorkflow([], [], "");
         var opinion = Step(WorkflowKinds.Opinion, WorkflowRunStates.WaitingOnYou, OpinionGateStates.CommitsSince) with { Session = "s1", Count = 2 };
         var run = new WorkflowRun("engine", "aurora", current, ["q1"], [opinion]);
 

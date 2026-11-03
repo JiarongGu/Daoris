@@ -738,7 +738,7 @@ public static class WorkflowNamed
         var lines = new List<string> { "workflow" };
         void Write(NamedStep step, string indent)
         {
-            lines.Add($"{indent}step {WorkflowCurrent.Quoted(step.Id)} {step.Kind}");
+            lines.Add($"{indent}step {WorkflowSteps.Quoted(step.Id)} {step.Kind}");
             var row = WorkflowKindTable.Of(step.Kind);
             foreach (var each in step.Fields)
             {
@@ -767,8 +767,8 @@ public static class WorkflowNamed
     {
         null => "-",
         bool flag => flag ? "true" : "false",
-        string text => WorkflowCurrent.Quoted(text),
-        IEnumerable<string> list => $"[{string.Join(',', list.Select(WorkflowCurrent.Quoted))}]",
+        string text => WorkflowSteps.Quoted(text),
+        IEnumerable<string> list => $"[{string.Join(',', list.Select(WorkflowSteps.Quoted))}]",
         _ => throw new ArgumentException($"a field is text, a switch or a list of names, not {value.GetType().Name}."),
     };
 

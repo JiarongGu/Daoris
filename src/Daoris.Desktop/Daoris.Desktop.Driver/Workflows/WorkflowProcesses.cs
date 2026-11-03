@@ -24,10 +24,10 @@ namespace Daoris.Driver;
 public static class WorkflowProcesses
 {
     /// <summary>
-    /// The process of a run (design §2.6, §4.5): its binding read from the home, and a named workflow's version from the store by the
-    /// number the run kept, which must still be the version it bound (a version is never edited). Current, or no binding, is the
-    /// rules live; a named workflow that cannot be read here holds the run with why. A graph version is read from its gate nodes (FABRIC-CUTOVER1d),
-    /// its <c>claimed</c> node's options kept for its sessions (<see cref="WorkflowProcess.Claimed"/>, FABRIC-PIPELINE1b3).
+    /// The process of a run (design §2.6, §4.5): its binding read from the home, and its graph version from the store by the number the run
+    /// kept, which must still be the version it bound (a version is never edited). Work with no binding follows no workflow and is held; a
+    /// workflow that cannot be read here holds the run with why. A graph version is read from its gate nodes (FABRIC-CUTOVER1d), its
+    /// <c>claimed</c> node's options kept for its sessions (<see cref="WorkflowProcess.Claimed"/>, FABRIC-PIPELINE1b3).
     /// </summary>
     /// <param name="run">The run: the chain's first quest in the repository (<see cref="WorkflowRunBindings.RunOf"/>); null for none.</param>
     /// <param name="accepted">
@@ -47,15 +47,17 @@ public static class WorkflowProcesses
         AcceptedGates? accepted = null)
     {
         if (run is not null && runs.Read(run) is { } binding) return Bound(store, config, repository, workspace, run, binding, accepted);
-        var current = WorkflowProcess.Current(config, repository, workspace) with { Run = run };
-        // Absence keeps legacy work on Current; a damaged record may name gates we cannot safely replace.
-        return run is not null && runs.Bound(run) ? current with { Unread = "its stored run binding could not be read." } : current;
+        var declared = WorkflowProcess.Declared(config, repository, workspace) with { Run = run };
+        // A damaged record may name gates we cannot safely replace.
+        return run is not null && runs.Bound(run)
+            ? declared with { Unread = "its stored run binding could not be read." }
+            : declared with { Problem = WorkflowProcess.NoWorkflow(repository) };
     }
 
     /// <summary>
     /// The process of a run whose binding its start's bind came to (FABRIC-PIPELINE1b3; the cutover design §8): read from that binding, so
     /// neither the service's quests nor the run's file is read again for the start, and its first session is told and takes what its run
-    /// was bound to. No binding, where the bind named no run, is the rules live.
+    /// was bound to. No binding, where the bind named no run, follows no workflow.
     /// </summary>
     /// <param name="run">The run the bind named; null for none.</param>
     /// <param name="binding">Its binding as the bind kept or read it; null where it named no run.</param>
@@ -68,12 +70,11 @@ public static class WorkflowProcesses
         IWorkflowStore store, DriverConfig config, string repository, string? workspace, string? run, WorkflowRunBinding? binding,
         AcceptedGates? accepted = null)
     {
-        var current = WorkflowProcess.Current(config, repository, workspace) with { Run = run };
-        if (binding is null) return current;
-        if (binding.IsCurrent) return current with { Binding = binding };
+        var declared = WorkflowProcess.Declared(config, repository, workspace) with { Run = run };
+        if (binding is null) return declared with { Problem = WorkflowProcess.NoWorkflow(repository) };
 
         // Held before any step: no opinion is asked for a run whose workflow cannot be read.
-        var held = current with { Binding = binding, Opinion = null };
+        var held = declared with { Binding = binding, Opinion = null };
         if (binding.Problem is { } problem) return held with { Problem = problem };
         if (binding.Version is not { } number) return held with { Problem = $"its run names no version of `{binding.Workflow}`." };
         var found = WorkflowNamed.IsId(binding.Workflow) ? store.Load(binding.Workflow) : null;
@@ -81,41 +82,31 @@ public static class WorkflowProcesses
         if (found.Read.Problem is { } unread) return held with { Problem = $"`{binding.Workflow}` cannot be read: {unread}" };
         var version = found.Read.Versions.FirstOrDefault(each => each.Version == number);
         if (version is null) return held with { Problem = $"`{binding.Workflow}` v{number} is no longer saved here." };
-        if (version.Steps is null)
+        if (version is not { Graph: { } graph, Digest: { } identity })
         {
-            if (version is not { Graph: { } graph, Digest: { } identity }) return held with { Problem = $"`{binding.Workflow}` v{number} cannot be read here: {version.Problem}" };
-            if (!string.Equals(identity, binding.Digest, StringComparison.Ordinal))
-            {
-                return held with
-                {
-                    Problem = $"`{binding.Workflow}` v{number} is not the version its run was bound to: its graph changed since, and a version is never edited.",
-                };
-            }
-
-            return Graphed(config, repository, workspace, run, binding, number, graph, held, accepted);
+            return held with { Problem = $"`{binding.Workflow}` v{number} cannot be read here: {version.Problem ?? "it is no graph"}" };
         }
-        if (binding.Digest is { } digest && !string.Equals(digest, version.Digest, StringComparison.Ordinal))
+
+        if (!string.Equals(identity, binding.Digest, StringComparison.Ordinal))
         {
             return held with
             {
-                Problem = $"`{binding.Workflow}` v{number} is not the version its run was bound to: its steps changed since, and a version "
-                    + "is never edited.",
+                Problem = $"`{binding.Workflow}` v{number} is not the version its run was bound to: its graph changed since, and a version is never edited.",
             };
         }
 
-        // transitional: steps-engine
-        return WorkflowProcess.Of(config, repository, workspace, binding, version.Steps) with { Run = run };
+        return Graphed(config, repository, workspace, run, binding, number, graph, held, accepted);
     }
 
     /// <summary>
-    /// A graph version read as a process (FABRIC-CUTOVER1d; D190 point 4, the cutover design §4): its gate nodes' options read back as the steps
-    /// <see cref="WorkflowProcess.Of"/> reads (<see cref="WorkflowNamed.GateSteps"/>), each choosing among what the repository declares, and the
-    /// graph carried beside, as its file holds it and never decoded, which the landing's graph part and the run's view read from the run's
-    /// record. Its steps are its person part (<see cref="Involvement.StepsOf(NodeGraph)"/>), so its kind's paths are judged on what a graph
-    /// version's are judged on where it is the workflow the work would follow without its kind. A gate node whose option does not read holds
-    /// the run, saying which; so does a graph that closes its quests (<c>quest.close</c>), whose close this build does not make for a run yet
-    /// (FABRIC-CUTOVER1h). FABRIC-PIPELINE1b3: its <c>claimed</c> node's options are its sessions' either way. INTEGRATE1r part r2: so does a graph
-    /// whose <c>integrate</c> or plugin nodes the repository's declarations cannot carry (<see cref="IntegrateCarry.Cannots"/>), each case its sentence.
+    /// A graph version read as a process (FABRIC-CUTOVER1d; D190 point 4, the cutover design §4): its <c>land</c> carried as the intent it binds
+    /// (<see cref="LandNodes.RuleOf"/>) and its gates read from the node options (<see cref="GraphGates"/>), each choosing among what the
+    /// repository declares, and the graph carried beside, as its file holds it and never decoded, which the landing's graph part and the run's
+    /// view read from the run's record. Its steps are its person part (<see cref="Involvement.StepsOf(NodeGraph)"/>). A graph with no <c>land</c>
+    /// lands nothing, so no chain's work follows it; a gate node whose option does not read holds the run, saying which; so does a graph that
+    /// closes its quests (<c>quest.close</c>), whose close this build does not make for a run yet (FABRIC-CUTOVER1h). FABRIC-PIPELINE1b3: its
+    /// <c>claimed</c> node's options are its sessions' either way. INTEGRATE1r part r2: so does a graph whose <c>integrate</c> or plugin nodes the
+    /// repository's declarations cannot carry (<see cref="IntegrateCarry.Cannots"/>), each case its sentence.
     /// </summary>
     private static WorkflowProcess Graphed(
         DriverConfig config, string repository, string? workspace, string? run, WorkflowRunBinding binding, int number, NodeGraph graph,
@@ -123,29 +114,14 @@ public static class WorkflowProcesses
     {
         var claimed = graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Claimed)?.Options ?? new Dictionary<string, string>();
         held = held with { Claimed = claimed, Graph = graph };
-        // WORKFLOWCLEAN1 1c: a `land` is carried as the intent it binds (LandNodes.RuleOf) and its gates read from the node options
-        // (GraphGates); only a `handed` graph is still read back as steps (the transitional path of the design's §4.7).
-        var landNode = graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land);
-        IReadOnlyList<NamedStep>? steps = null;
-        GraphGateReading? gates = null;
-        if (landNode is null)
+        if (graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land) is not { } landNode)
         {
-            var (read, problem) = WorkflowNamed.GateSteps(graph, number, held.Landing.Rule, binding.Land);
-            if (read is null) return held with { Problem = $"`{binding.Workflow}` v{number} cannot be read here: {problem}" };
-            if (!read.Any(step => step.Kind == WorkflowKinds.Landing))
-            {
-                // A verification pipeline's graph lands nothing (FABRIC-PIPELINE1a), so no chain's work follows it.
-                return held with { Problem = $"`{binding.Workflow}` v{number}'s graph holds no landing (`{NodeKinds.Handed}`), so no chain's work lands by it." };
-            }
-
-            steps = read;
-        }
-        else
-        {
-            gates = GraphGates.Of(graph, held);
-            if (gates.Problem is { } unread) return held with { Problem = $"`{binding.Workflow}` v{number} cannot be read here: v{number}, {unread}" };
+            // A verification pipeline's graph lands nothing (FABRIC-PIPELINE1a), so no chain's work follows it.
+            return held with { Problem = $"`{binding.Workflow}` v{number}'s graph holds no landing (`{NodeKinds.Land}`), so no chain's work lands by it." };
         }
 
+        var gates = GraphGates.Of(graph, held);
+        if (gates.Problem is { } unread) return held with { Problem = $"`{binding.Workflow}` v{number} cannot be read here: v{number}, {unread}" };
         if (graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.QuestClose) is { } close)
         {
             return held with
@@ -155,14 +131,12 @@ public static class WorkflowProcesses
             };
         }
 
-        var bound = landNode is null ? null : LandNodes.RuleOf(landNode, LandNodes.Reviewed(graph), binding.Land, held.Landing.Rule);
-        var process = (gates is null
-            ? WorkflowProcess.Of(config, repository, workspace, binding, steps!, bound)
-            : WorkflowProcess.Of(config, repository, workspace, binding, gates, bound!)) with
+        var bound = LandNodes.RuleOf(landNode, LandNodes.Reviewed(graph), binding.Land);
+        var process = WorkflowProcess.Of(config, repository, workspace, binding, gates, bound) with
         {
             Run = run, Steps = Involvement.StepsOf(graph), Claimed = claimed, Graph = graph,
         };
-        var cannots = IntegrateCarry.Cannots(repository, graph, held.Landing.Rule, process.Landing.Rule, accepted);
+        var cannots = IntegrateCarry.Cannots(repository, graph, config.LinePolicyOf(repository, workspace), process.Landing.Rule, accepted);
         return cannots.Count == 0 ? process : process with { Problem = string.Join(' ', cannots) };
     }
 
@@ -229,9 +203,8 @@ public static class WorkflowProcesses
 
     /// <summary>
     /// The workflow a run would follow without its task's kind (design §4.4): §4.1 resolved again with the task's kind left out, as
-    /// the choices stand now. A named workflow's newest version that reads, or Current drawn; null where the named one does not read.
-    /// A graph version is a version that reads (FABRIC-CUTOVER1e): its steps are its person part, read from its gate and go-ahead nodes
-    /// (<see cref="Involvement.StepsOf(NodeGraph)"/>).
+    /// the choices stand now. Its newest graph version's person part, read from its gate and go-ahead nodes
+    /// (<see cref="Involvement.StepsOf(NodeGraph)"/>); null where none is chosen or it does not read.
     /// </summary>
     /// <returns>Its name as said, and its steps, or null steps where they could not be read.</returns>
     /// <param name="kind">A kind its workspace declares, to read what a task of that kind would follow (WORKFLOW1i-b's room); null for none.</param>
@@ -245,14 +218,9 @@ public static class WorkflowProcesses
         IWorkflowStore store, DriverConfig config, string repository, string? workspace, string? kind = null)
     {
         var selected = WorkflowSelection.Resolve(config, repository, workspace, kind is null ? null : new WorkflowTaskChoice(kind, null));
-        if (selected.Workflow == WorkflowSelection.Current)
-        {
-            return ("Current", Involvement.StepsOf(WorkflowCurrent.Derive(config, repository, workspace, [])));
-        }
-
+        if (selected.Workflow == WorkflowSelection.Current) return ("no workflow", null);
         var found = WorkflowNamed.IsId(selected.Workflow) ? store.Load(selected.Workflow) : null;
-        var newest = found?.Read.Versions.LastOrDefault(each => each.Steps is not null || each.Graph is not null);
-        return newest is null ? ($"`{selected.Workflow}`", null)
-            : ($"`{selected.Workflow}` v{newest.Version}", newest.Steps ?? Involvement.StepsOf(newest.Graph!));
+        var newest = found?.Read.Versions.LastOrDefault(each => each.Graph is not null);
+        return newest is null ? ($"`{selected.Workflow}`", null) : ($"`{selected.Workflow}` v{newest.Version}", Involvement.StepsOf(newest.Graph!));
     }
 }

@@ -355,27 +355,23 @@ public static class DriverWorkflowsCommand
                 var selected = WorkflowSelection.Resolve(choices, null, workspace, task);
                 var whose = $"the workspace `{workspace}`{KindSaid(selected)}";
                 if (selected.Workflow != WorkflowSelection.Current) return ShowNamed(selected, whose, workspace, null, [], workspace);
-                var said = WorkflowWords.CurrentSaid(WorkflowCurrent.Derive(choices, null, workspace, Plugins()), whose,
-                    "for each repository there that sets none of its own");
-                foreach (var line in WithChoice(said, selected, workspace, null, [], workspace, kind)) Say(line);
+                foreach (var line in WithChoice([NoneSaid(whose)], selected, workspace, null, [], workspace, kind)) Say(line);
                 return 0;
             }
 
-            var current = await CurrentOfAsync(repository!).ConfigureAwait(false);
-            var chosen = WorkflowSelection.Resolve(choices, repository, current.InWorkspace, task);
+            var (notes, inWorkspace) = await WorkspaceOfAsync(repository!).ConfigureAwait(false);
+            var chosen = WorkflowSelection.Resolve(choices, repository, inWorkspace, task);
             var named = $"`{repository}`{KindSaid(chosen)}";
-            var circle = RemoteTarget.Workspace(current.InWorkspace);
-            if (chosen.Workflow != WorkflowSelection.Current) return ShowNamed(chosen, named, circle, repository, current.Notes, current.InWorkspace);
-            foreach (var line in WithChoice(WorkflowWords.CurrentSaid(current.Drawn, named, current.Where), chosen, circle, repository, current.Notes,
-                current.InWorkspace, kind))
-            {
-                Say(line);
-            }
-
+            var circle = RemoteTarget.Workspace(inWorkspace);
+            if (chosen.Workflow != WorkflowSelection.Current) return ShowNamed(chosen, named, circle, repository, notes, inWorkspace);
+            foreach (var line in WithChoice([NoneSaid(named)], chosen, circle, repository, notes, inWorkspace, kind)) Say(line);
             return 0;
         }
 
-        /// <summary>Current's lines, with the registry's notes and, where a choice or a kind is read, what chose it under the header; then the routes.</summary>
+        private static string NoneSaid(string whose) =>
+            $"{whose} follows no workflow: nothing runs or lands its work. `daoris driver workflow use <id> …` chooses one.";
+
+        /// <summary>The lines of a place that follows no workflow, with the registry's notes and, where a choice or a kind is read, what chose it under the header; then the routes.</summary>
         private List<string> WithChoice(
             IReadOnlyList<string> said, WorkflowSelected selected, string circle, string? owner, IReadOnlyList<string> notes, string? inWorkspace, string? kind)
         {
@@ -395,7 +391,7 @@ public static class DriverWorkflowsCommand
         private List<string> RoutesSaid(string? owner, string circle, string? inWorkspace)
         {
             string Target(WorkflowSelected selected) =>
-                $"{(selected.Workflow == WorkflowSelection.Current ? "Current" : $"`{selected.Workflow}`")}, {WorkflowWords.WhyChosen(selected, owner, circle)}";
+                $"{(selected.Workflow == WorkflowSelection.Current ? "no workflow" : $"`{selected.Workflow}`")}, {WorkflowWords.WhyChosen(selected, owner, circle)}";
             var lines = new List<string>
             {
                 "  Its start node routes the work that comes here:",
@@ -701,45 +697,37 @@ public static class DriverWorkflowsCommand
             return 0;
         }
 
-        /// <summary>The plugins of the home the choices are in, as the driver reads them: the landing's and the opinion's doors with it.</summary>
-        private IReadOnlyList<WorkflowPlugin> Plugins() => WorkflowCurrent.PluginsOf(PluginCatalog.Load(_home, AdapterSet.Built().Names));
-
         /// <summary>
-        /// A repository's Current: its workspace is the registry's, read as <c>review</c> reads it; unread, it is drawn only where no rule
-        /// in the file is set for a workspace, since none could then reach it.
+        /// A repository's workspace, the registry's, read as <c>review</c> reads it; unread, it is read only where no choice in the file is set
+        /// for a workspace, since none could then reach it.
         /// </summary>
-        private async Task<(CurrentWorkflow Drawn, string Where, List<string> Notes, string? InWorkspace)> CurrentOfAsync(string name)
+        private async Task<(List<string> Notes, string? InWorkspace)> WorkspaceOfAsync(string name)
         {
             var read = await world.Registry(ct).ConfigureAwait(false);
             var notes = new List<string>();
             string? inWorkspace = null;
-            string where;
             if (read.Checkouts is not { } checkouts)
             {
-                if (choices.WorkspaceLandings.Count > 0 || choices.WorkspaceReviews.Count > 0 || choices.WorkspaceOpinions.Count > 0
-                    || choices.WorkspaceWorkflows.Count > 0)
+                if (choices.WorkspaceWorkflows.Count > 0)
                 {
-                    throw new ChoiceWords($"cannot say which workspace's rules reach `{name}`: the registry could not be read — "
-                        + $"{read.Unread} — and this file sets rules for a workspace. Nothing was drawn. `--workspace <name>` draws a "
-                        + "workspace's Current from this file alone.");
+                    throw new ChoiceWords($"cannot say which workspace's choices reach `{name}`: the registry could not be read — "
+                        + $"{read.Unread} — and this file sets choices for a workspace. `--workspace <name>` shows a workspace's from this file alone.");
                 }
 
-                where = "its workspace not read";
-                notes.Add($"  The registry was not read ({read.Unread}); no rule here is set for a workspace, so none reaches it.");
+                notes.Add($"  The registry was not read ({read.Unread}); no choice here is set for a workspace, so none reaches it.");
             }
             else
             {
                 var checkout = checkouts.FirstOrDefault(each => InScope(each.Repository, name));
                 inWorkspace = checkout.Workspace;
-                where = $"in the workspace `{RemoteTarget.Workspace(inWorkspace)}`";
                 if (checkout.Repository is null)
                 {
                     notes.Add($"  `{name}` is not in the registry, so it is read as in no workspace: the `{RemoteTarget.Workspace(null)}` "
-                        + "workspace's rules reach it.");
+                        + "workspace's choices reach it.");
                 }
             }
 
-            return (WorkflowCurrent.Derive(choices, name, inWorkspace, Plugins()), where, notes, inWorkspace);
+            return (notes, inWorkspace);
         }
 
         private async Task<int> CreateAsync()

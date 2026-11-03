@@ -20,7 +20,7 @@ public sealed class GateNodesTests
 
     private static NodeDeclaration Node(string kind) => new(kind, kind, 1, NodeAuthorities.BuiltIn[kind].Reach)
     {
-        Options = kind == NodeKinds.GoAhead ? new Dictionary<string, string> { ["act"] = WorkflowCurrent.Quoted(Act) } : new Dictionary<string, string>(),
+        Options = kind == NodeKinds.GoAhead ? new Dictionary<string, string> { ["act"] = WorkflowSteps.Quoted(Act) } : new Dictionary<string, string>(),
     };
 
     private static NodeAcceptance Binding(string kind) => new(Unit, Tip, Scope.GraphDigest, kind, 1, 1);

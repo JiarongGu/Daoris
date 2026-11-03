@@ -322,18 +322,8 @@ public static class TransitionalRegister
         // the service's runs as well as the home's files.
         new()
         {
-            Id = "steps-engine",
-            Kept = "Workflows/WorkflowProcesses.cs:106",
-            Reaches = "A run bound to a version saved as steps, and a new start on a steps workflow not converted yet: D157's engine runs it.",
-            Ends = "The workflow part's census has ended: no open steps run and no steps newest.",
-            Row = "WORKFLOWCLEAN1z",
-            Part = ConversionParts.Workflows,
-            Ended = Never,
-        },
-        new()
-        {
             Id = "current-followed",
-            Kept = "Workplace/Landing.cs:887, Workflows/Nodes/NodeGraphs.cs:1121, Workflows/Domain/WorkflowCurrent.cs:162",
+            Kept = "Workplace/Landing.cs:887, Workflows/Nodes/NodeGraphs.cs:1121",
             Reaches = "A place on Current, and a unit bound to Current, on a home not converted: its landing rule chosen and drawn as the workflow it follows.",
             Ends = "The workflow part's census has ended: no place resolves to Current, no Current-bound unit is open, and no leftover rule is held.",
             Row = "WORKFLOWCLEAN1z",
