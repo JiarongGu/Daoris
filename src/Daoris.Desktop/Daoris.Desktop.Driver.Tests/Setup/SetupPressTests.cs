@@ -103,8 +103,8 @@ public sealed class SetupPressTests : IDisposable
     }
 
     /// <summary>
-    /// D230: a reconcile is a case of the press, asked of a repository the registry marks adopted (no reading of
-    /// <c>status --json</c> reaches the driver yet, so the body says so). Its quest carries the standing answer's lines among
+    /// D230: a reconcile is a case of the press, asked of a repository the registry marks adopted (the driver reads no
+    /// <c>status --json</c>, so the body says one that finds nothing closes done). Its quest carries the standing answer's lines among
     /// its items, its rule is the set-up's verbs with <c>reconcile</c> and <c>upstream --all</c>, and a press publishes it.
     /// </summary>
     [Fact]

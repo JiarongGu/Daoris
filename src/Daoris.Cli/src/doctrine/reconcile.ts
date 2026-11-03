@@ -141,8 +141,8 @@ export function composeReconcile(
       + 'to that file brings the item back. A core file is kept only as a text, never as its absence.',
     "- **Upstream**: propose this repository's text to the repository that keeps the shared doctrine. `daoris upstream "
       + "<file>` composes the request's words for one file, and `daoris upstream --all` for every edited one; outside that "
-      + "repository they write nothing. Put the words in your close, for the person to send, and keep the file meanwhile, "
-      + 'with the reason that it is proposed.',
+      + "repository they write nothing. Hand the words to the person to send, in your close or your report, and keep the "
+      + 'file meanwhile, with the reason that it is proposed.',
     '',
     "A set-up gap is no canon file: mend it in this repository's own files, or leave it and say why in your close.",
     '',
@@ -150,8 +150,8 @@ export function composeReconcile(
       + '`daoris check` among them. A check green before and red after means the reconcile does not close done; where its '
       + 'fix is outside these items, stop and say so.',
     '',
-    "**Close** with each item and what was decided: adopted; kept, with its reason; or proposed upstream, with the "
-      + "request's words.",
+    "**Close**, or report, with each item and what was decided: adopted; kept, with its reason; or proposed upstream, "
+      + "with the request's words.",
   );
   return `${lines.join('\n')}\n`;
 }

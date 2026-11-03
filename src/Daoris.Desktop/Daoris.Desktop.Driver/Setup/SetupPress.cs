@@ -114,8 +114,8 @@ public static class SetupPress
     /// </summary>
     /// <remarks>
     /// Offered for a repository the registry marks adopted. Whether the canon has moved is the doctrine tool's answer
-    /// (<c>status --json</c>), and no reading of it reaches the driver yet, so the body says a reconcile that finds nothing
-    /// closes done; the driver keeps no copy of the tool's table (D117).
+    /// (<c>status --json</c>), which the driver does not read, so the body says a reconcile that finds nothing closes done;
+    /// the driver keeps no copy of the tool's table (D117).
     /// </remarks>
     public static async Task<SetupPlan> PlanReconcileAsync(
         ISetupWorld world, DriverConfig config, SessionWire door, string repository, DateOnly day, CancellationToken ct = default)
