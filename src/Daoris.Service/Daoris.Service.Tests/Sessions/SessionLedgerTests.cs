@@ -834,9 +834,10 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         Assert.Equal(SessionAdvanceRefusal.None, answered.Refusal);
         Assert.Equal($"Answered session `{working.Id}`: it carries on with `#{quest.Id}` at the driver's next look.", answered.Message);
         var record = (await _sessions.FindAsync(working.Id))!;
-        Assert.Equal((record.State, record.Note, record.Answer), (answered.Session!.State, answered.Session.Note, answered.Session.Answer));
+        Assert.Equal((record.State, record.Note), (answered.Session!.State, answered.Session.Note));
+        Assert.Equal(record.Said.Select(word => word.Text), answered.Session.Said.Select(word => word.Text));
         Assert.Equal(SessionState.AwaitingPerson, record.State);
-        Assert.Equal("Signed in; apply to dev.", record.Answer);
+        Assert.Equal(["Signed in; apply to dev."], record.Said.Select(word => word.Text));
         var word = Assert.Single(record.Said);
         Assert.Equal(("Signed in; apply to dev.", Now.AddMinutes(5), false), (word.Text, word.At, word.Reopens));
         Assert.Equal("needs a merge, a sign-in and a go-ahead.\n\nAnswered: Signed in; apply to dev.", record.Note);
@@ -852,7 +853,8 @@ public sealed class SessionLedgerTests : IAsyncLifetime
 
         var answered = await _ledger.AnswerAsync(parked.Id, "   ", Now.AddMinutes(1));
 
-        Assert.Equal((SessionState.AwaitingPerson, "carry on."), (answered.Session!.State, answered.Session.Answer));
+        Assert.Equal(SessionState.AwaitingPerson, answered.Session!.State);
+        Assert.Equal(["carry on."], answered.Session.Said.Select(word => word.Text));
         Assert.Equal("It stopped to ask the person; its question is in its transcript.\n\nAnswered: carry on.", answered.Session.Note);
     }
 
@@ -875,7 +877,6 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         Assert.Equal(["Port 8080.", "Port 9090, not 8080."], record.Said.Select(word => word.Text));
         Assert.Equal([Now.AddMinutes(1), Now.AddMinutes(2)], record.Said.Select(word => word.At));
         Assert.Equal(2, record.Said.Select(word => word.Id).Distinct().Count());
-        Assert.Equal("Port 8080.\n\nPort 9090, not 8080.", record.Answer);
         Assert.Equal(
             "needs a merge, a sign-in and a go-ahead.\n\nAnswered: Port 8080.\n\nAnswered: Port 9090, not 8080.", record.Note);
     }
@@ -893,11 +894,11 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         await _ledger.AnswerAsync(parked.Id, "Port 8080.", Now.AddMinutes(1));
 
         await _ledger.AdvanceAsync(parked.Id, "working", "resumed with your answer.", null, null, Now.AddMinutes(2));
-        Assert.Equal("Port 8080.", (await _sessions.FindAsync(parked.Id))!.Answer);
+        Assert.Equal(["Port 8080."], (await _sessions.FindAsync(parked.Id))!.Said.Select(word => word.Text));
         await _ledger.AdvanceAsync(parked.Id, "awaiting-person", "and which host?", null, null, Now.AddMinutes(3));
 
         var reparked = (await _sessions.FindAsync(parked.Id))!;
-        Assert.Equal((SessionState.AwaitingPerson, null, "and which host?"), (reparked.State, reparked.Answer, reparked.Note));
+        Assert.Equal((SessionState.AwaitingPerson, false, "and which host?"), (reparked.State, reparked.PersonSaid, reparked.Note));
         Assert.Empty(reparked.Said);
 
         await _ledger.AnswerAsync(parked.Id, "localhost.", Now.AddMinutes(4));
@@ -905,7 +906,8 @@ public sealed class SessionLedgerTests : IAsyncLifetime
             parked.Id, "completed", "and which host?\n\nAnswered: localhost.\n\nCarried on in a new session, because its tree is gone.",
             null, null, Now.AddMinutes(5));
 
-        Assert.Equal((SessionState.Completed, "localhost."), (ended.Session!.State, ended.Session.Answer));
+        Assert.Equal(SessionState.Completed, ended.Session!.State);
+        Assert.Equal(["localhost."], ended.Session.Said.Select(word => word.Text));
         Assert.Equal(SessionOpenRefusal.None, (await _ledger.OpenAsync(quest.Id, "stub", Now.AddMinutes(6))).Refusal);
     }
 
@@ -921,7 +923,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
 
         Assert.Equal(SessionAdvanceRefusal.InvalidMove, late.Refusal);
         Assert.Equal($"Session `{parked.Id}` is working, not waiting on you — there is nothing to answer.", late.Message);
-        Assert.Equal("Port 8080.", (await _sessions.FindAsync(parked.Id))!.Answer);
+        Assert.Equal(["Port 8080."], (await _sessions.FindAsync(parked.Id))!.Said.Select(word => word.Text));
     }
 
     // ——— MSG1a (D137 §2.3, §2.4): the person's words wait on the record, and an ended record goes on with them.
@@ -1454,7 +1456,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         var record = (await _sessions.FindAsync(ended.Id))!;
         var word = Assert.Single(record.Said);
         Assert.Equal(("daoris", "reopen/q1/desk/44", false, true), (word.From, word.Key, word.Persons, word.Reopens));
-        Assert.Null(record.Answer);
+        Assert.False(record.PersonSaid);
 
         var reopened = await _ledger.AdvanceAsync(ended.Id, "working", null, null, null, Now.AddMinutes(30));
 
@@ -1555,7 +1557,6 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         await _ledger.TakeSaidAsync(ended.Id, [second.Id], by: null);
         var record = (await _sessions.FindAsync(ended.Id))!;
         Assert.Empty(record.Said);
-        Assert.Null(record.Answer);
 
         Assert.Equal(SessionSayRefusal.NotFound, (await _ledger.TakeSaidAsync(ended.Id, [first.Id], by: "nobody12")).Refusal);
         await _sessions.MirrorAsync(new Session(
@@ -1591,7 +1592,6 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         await _ledger.TakeBackAsync(ended.Id, second.Id, text: null, Now.AddMinutes(23));
         var record = (await _sessions.FindAsync(ended.Id))!;
         Assert.Empty(record.Said);
-        Assert.Null(record.Answer);
     }
 
     /// <summary>

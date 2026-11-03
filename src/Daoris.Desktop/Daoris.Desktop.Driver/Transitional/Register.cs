@@ -103,6 +103,15 @@ public static class TransitionalRegister
         },
         new()
         {
+            Id = "session-answer-column",
+            Kept = "../../Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs:1858",
+            Reaches = "A session row from before `said` that holds an `answer` and no `said`: the service's store reads it as the first said word, id `answer`, and the next word written empties the column.",
+            Ends = "No session row in the service's store holds an `answer` and no `said` (a census over the store; finished ones go with their history's clear). The condition lives in the service's store, so it never reads as ended here and the row deletes it.",
+            Row = "ONEWAY1af",
+            Ended = Floor,
+        },
+        new()
+        {
             Id = "solicited-old-guards",
             Kept = "Loop/DriverHelpers.cs:835, Loop/DriverPartners.cs:496",
             Reaches = "A driver rolled back before COMMS1b, or a host that drops its mark mid-hand: the helper state's and the partner receipt's attempt, still written.",

@@ -132,7 +132,7 @@ public sealed class SolicitedAnswersTests : IAsyncLifetime
 
         Assert.True(takes.Kept, takes.Message);
         var parked = (await _sessions.FindAsync(lead.Id))!;
-        Assert.Equal("go on", parked.Answer);
+        Assert.Equal("go on", parked.Said.Single(word => word.Persons).Text);
         Assert.Equal(2, parked.Said.Count);
     }
 

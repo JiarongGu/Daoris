@@ -31,7 +31,7 @@ public sealed class HelperHostTests(LocalHost host) : IClassFixture<LocalHost>
         await sessions.KeepSaidAsync(asker.Id, new Daoris.Knowledge.SaidWord("h1", "It stops at five.", DateTimeOffset.UtcNow, [], Reopens: true, Helper: helper.Id));
         var kept = (await sessions.FindAsync(asker.Id))!;
         Assert.Equal((helper.Id, null, false), (kept.Said[0].Helper, kept.Said[0].By, kept.Said[0].Persons));
-        Assert.Null(kept.Answer);
+        Assert.False(kept.PersonSaid);
 
         var word = (await ListedAsync(asker.Id))!.Value.GetProperty("said")[0];
         Assert.Equal(helper.Id, word.GetProperty("helper").GetString());
@@ -187,7 +187,7 @@ public sealed class HelperHostTests(LocalHost host) : IClassFixture<LocalHost>
         var record = (await sessions.FindAsync(asker.Id))!;
         Assert.Equal(Daoris.Knowledge.SessionState.AwaitingPerson, record.State);
         Assert.Equal(["person01", null], record.Said.Select(word => word.Helper is null ? word.Id : null));
-        Assert.Equal("Port 8080.", record.Answer);
+        Assert.Equal("Port 8080.", record.Said.Single(word => word.Persons).Text);
     }
 
     /// <summary>
