@@ -372,9 +372,8 @@ public sealed class BranchTidyingProcessTests : BranchTidyingFixture
         var work = await trees.WorkAsync(moved.Path);
         Assert.Equal(1, work!.Commits);
         Assert.Equal("feature/x", work.Branch);
-        DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Tidy: false))
-            .Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
-        var plan = await trees.PlanAsync(moved.Path, new LandingSubject("s1", null, "Fix the gap"));
+        var process = GraphLand.Gate(_home, GraphLand.Branch("feature/{quest}-{slug}")).Process;
+        var plan = await trees.PlanAsync(moved.Path, new LandingSubject("s1", null, "Fix the gap"), process: process);
         Assert.Equal(("branch", "feature/x", true), (plan.Form, plan.Target, plan.Own));
     }
 

@@ -44,7 +44,7 @@ public sealed class LandSyncProcessTests : LandedFixture
         Assert.Equal((picked, LeftOutWhy.Patch, onLine), (left.Sha, left.Why, left.On));
         Assert.Equal(["the rest of the work"], plan.Lands!.Select(commit => commit.Subject));
 
-        var landed = await trees.LandAsync(tree.Path, Subject);
+        var landed = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.True(landed.Landed, landed.Message);
         Assert.Equal("feature/own", landed.Branch);
@@ -82,7 +82,7 @@ public sealed class LandSyncProcessTests : LandedFixture
         var before = await StateAsync(root, tree);
 
         var plan = await trees.PlanAsync(tree.Path, Subject);
-        var refused = await trees.LandAsync(tree.Path, Subject);
+        var refused = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.Equal(picked, Assert.Single(plan.LeftOut!).Sha);
         Assert.NotNull(plan.Conflict);
@@ -108,7 +108,7 @@ public sealed class LandSyncProcessTests : LandedFixture
         var trees = new SessionTrees(Home);
         var tree = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(tree.Path, "work.txt", "the work\n", "the first work");
-        var first = await trees.LandAsync(tree.Path, Subject);
+        var first = await trees.LandAsync(tree.Path, Subject, gate: Lands);
         Assert.True(first.Landed, first.Message);
         var standsAt = (await GitAsync(root, "rev-parse", Branch)).Trim();
 
@@ -118,7 +118,7 @@ public sealed class LandSyncProcessTests : LandedFixture
         await PickAsync(root, picked);
         var onLine = await HeadAsync(root);
 
-        var advanced = await trees.LandAsync(tree.Path, Subject);
+        var advanced = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.True(advanced.Landed, advanced.Message);
         Assert.Equal(Branch, advanced.Branch);
@@ -160,7 +160,7 @@ public sealed class LandSyncProcessTests : LandedFixture
         var line = await HeadAsync(root);
 
         var landed = await trees.LandAsync(tree.Path, Subject,
-            inUse: _ => Task.FromResult<IReadOnlySet<string>>(new HashSet<string>(StringComparer.OrdinalIgnoreCase) { tree.Path }));
+            inUse: _ => Task.FromResult<IReadOnlySet<string>>(new HashSet<string>(StringComparer.OrdinalIgnoreCase) { tree.Path }), gate: Lands);
 
         Assert.True(landed.Landed, landed.Message);
         Assert.Contains("The session's tree stays where it was (a session still running or waiting holds it), so its next turn starts from its old commits.",

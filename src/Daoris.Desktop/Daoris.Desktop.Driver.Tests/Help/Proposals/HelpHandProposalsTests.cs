@@ -31,8 +31,8 @@ public sealed class HelpHandProposalsTests : HelpProposalsFixture
         };
     }
 
-    private static readonly DriverConfig HandsToPlugin = DriverConfig.Empty
-        .WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: "example.lands"));
+    /// <summary>The settings a hand-off reads: none name its plugin, which the landing or the card names.</summary>
+    private static readonly DriverConfig HandsToPlugin = DriverConfig.Empty;
 
     [Fact]
     public void A_landed_branch_is_handed_to_the_rules_plugin_and_the_plan_says_what_it_does()

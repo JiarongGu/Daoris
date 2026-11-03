@@ -40,7 +40,7 @@ public sealed class SquashSeenTests : LandedFixture
         {
             var before = await StateAsync(root, tree);
 
-            var landed = await trees.LandAsync(tree.Path, subject);
+            var landed = await trees.LandAsync(tree.Path, subject, gate: Lands);
 
             Assert.False(landed.Landed, landed.Message);
             Assert.Null(landed.Conflict);
@@ -86,7 +86,7 @@ public sealed class SquashSeenTests : LandedFixture
         await CommitAsync(a.Path, "more.txt", "more of the work\n", "more work, after the squash");
         var offered = await trees.DiscardOfferAsync(a.Path);
 
-        var refused = await trees.LandAsync(other.Path, new LandingSubject("s9a8b7c6", "0fda1a", "Other"));
+        var refused = await trees.LandAsync(other.Path, new LandingSubject("s9a8b7c6", "0fda1a", "Other"), gate: Lands);
         var told = await RebaseTelling.TellTreeAsync(SayAsync, "s9a8b7c6", other.Path, refused.Conflict!);
 
         Assert.False(refused.Landed, refused.Message);
@@ -108,7 +108,7 @@ public sealed class SquashSeenTests : LandedFixture
         await CommitAsync(root, "a.txt", "the a work, changed again\n", "the line changes it again");
 
         Assert.Null(await trees.DiscardOfferAsync(a.Path));
-        Assert.NotEqual(AutoLandingCode.Carried, (await trees.LandAsync(a.Path, First)).Refusal);
+        Assert.NotEqual(AutoLandingCode.Carried, (await trees.LandAsync(a.Path, First, gate: Lands)).Refusal);
     }
 
     /// <summary>

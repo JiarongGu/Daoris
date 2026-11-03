@@ -17,10 +17,9 @@ public sealed class IntegrationRequestsGitTests : LandedFixture
     private static readonly Func<CancellationToken, Task<IReadOnlySet<string>>> NoneRunning =
         _ => Task.FromResult<IReadOnlySet<string>>(new HashSet<string>());
 
-    /// <summary><c>engine</c>'s own branch rule, with <paramref name="integrate"/> or none.</summary>
-    private void Save(LandingRule rule, LandingIntegrate? integrate) =>
-        DriverConfig.Empty.WithLanding("engine", rule).WithLandingIntegrate("engine", integrate)
-            .Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
+    /// <summary><c>engine</c>'s line policy, <paramref name="integrate"/> or none; its landings are the fixture's bound <c>land</c>'s.</summary>
+    private void Save(LandingIntegrate? integrate) =>
+        DriverConfig.Empty.WithLinePolicy("engine", integrate).Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
 
     /// <summary>The door over this home's own records and settings, read as the driver reads them.</summary>
     private IntegrationRequests Door(IntegrationStore store) =>
@@ -32,30 +31,29 @@ public sealed class IntegrationRequestsGitTests : LandedFixture
     private static IntegrationAsk Card(string root, string branch, string route = IntegrationRoutes.Recorded) =>
         new("engine", "aurora", root, branch, route, IntegrationRequester.Card);
 
-    /// <summary>One session's tree with one commit, landed by the person's press.</summary>
-    private async Task<(string Branch, string Tip, string Tree)> LandedAsync(SessionTrees trees, string root, string quest, bool tidy = false)
+    /// <summary>One session's tree with one commit, landed by the run's bound <c>land</c>; its tree removed after where <paramref name="treeGone"/>.</summary>
+    private async Task<(string Branch, string Tip, string Tree)> LandedAsync(SessionTrees trees, string root, string quest, bool treeGone = false)
     {
         var opened = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(opened.Path, $"{quest}.txt", $"the work of {quest}\n", $"the work of {quest}");
-        var landed = tidy
-            ? await trees.LandAsync(opened.Path, new LandingSubject($"s-{quest}", quest, "Fix the gap"), inUse: NoneRunning)
-            : await trees.LandAsync(opened.Path, new LandingSubject($"s-{quest}", quest, "Fix the gap"));
+        var landed = await trees.LandAsync(opened.Path, new LandingSubject($"s-{quest}", quest, "Fix the gap"), inUse: NoneRunning, gate: Lands);
         Assert.True(landed.Landed, landed.Message);
+        if (treeGone) await GitAsync(root, "worktree", "remove", "--force", opened.Path);
         return (landed.Branch!, (await GitAsync(root, "rev-parse", landed.Branch!)).Trim(), opened.Path);
     }
 
     /// <summary>
-    /// 🔴 A landing whose tree LAND3's tidy took needs no tree (design §4.6, §6.3 step 5): it is requested from its record alone, its
+    /// 🔴 A landing whose tree is gone needs no tree (design §4.6, §6.3 step 5): it is requested from its record alone, its
     /// branch standing at the recorded tip, bound to the unit and session the record holds.
     /// </summary>
     [Fact]
-    public async Task A_landing_whose_tree_the_tidy_took_is_requested_from_its_record()
+    public async Task A_landing_whose_tree_is_gone_is_requested_from_its_record()
     {
         var root = await RepositoryAsync("engine");
-        Save(new LandingRule(LandingForm.Branch, Pattern, Tidy: true), new LandingIntegrate(Request: LandingIntegrate.Owner));
+        Save(new LandingIntegrate(Request: LandingIntegrate.Owner));
         var trees = new SessionTrees(Home);
-        var (branch, tip, tree) = await LandedAsync(trees, root, "q1", tidy: true);
-        Assert.False(Directory.Exists(tree), "LAND3's tidy took the session's tree");
+        var (branch, tip, tree) = await LandedAsync(trees, root, "q1", treeGone: true);
+        Assert.False(Directory.Exists(tree), "the session's tree is gone");
         var store = Requests();
 
         var admitted = await Door(store).AdmitAsync(Card(root, branch));
@@ -75,7 +73,7 @@ public sealed class IntegrationRequestsGitTests : LandedFixture
     public async Task A_recorded_landing_whose_branch_moved_is_refused_and_one_the_line_holds_is_never_requested()
     {
         var root = await RepositoryAsync("engine");
-        Save(new LandingRule(LandingForm.Branch, Pattern), new LandingIntegrate(Request: LandingIntegrate.Owner));
+        Save(new LandingIntegrate(Request: LandingIntegrate.Owner));
         var (branch, tip, _) = await LandedAsync(new SessionTrees(Home), root, "q1");
         await CommitOnAsync(root, branch, "later.txt", "a later commit\n", "a later commit");
         var store = Requests();
@@ -103,7 +101,7 @@ public sealed class IntegrationRequestsGitTests : LandedFixture
     public async Task A_session_branch_is_refused_at_the_records_branch_door_and_a_records_branch_is_requested_with_no_gate()
     {
         var root = await RepositoryAsync("engine");
-        Save(new LandingRule(LandingForm.Branch, Pattern), new LandingIntegrate(Request: LandingIntegrate.Owner));
+        Save(new LandingIntegrate(Request: LandingIntegrate.Owner));
         var opened = await new SessionTrees(Home).OpenAsync(root, "engine", "aurora");
         await CommitAsync(opened.Path, "work.txt", "the work\n", "the work");
         await GitAsync(root, "branch", "notes/records", "main");
@@ -129,8 +127,7 @@ public sealed class IntegrationRequestsGitTests : LandedFixture
     public async Task The_sweep_requests_each_standing_landing_once()
     {
         var root = await RepositoryAsync("engine");
-        Save(new LandingRule(LandingForm.Branch, Pattern, AutoAccept: true),
-            new LandingIntegrate(Request: LandingIntegrate.Done, Gates: LandingIntegrate.Declared));
+        Save(new LandingIntegrate(Request: LandingIntegrate.Done, Gates: LandingIntegrate.Declared));
         var trees = new SessionTrees(Home);
         var first = await LandedAsync(trees, root, "q1");
         var second = await LandedAsync(trees, root, "q2");
@@ -153,21 +150,20 @@ public sealed class IntegrationRequestsGitTests : LandedFixture
     public async Task A_landing_and_its_advance_each_write_the_integrate_that_stood_at_its_acceptance()
     {
         var root = await RepositoryAsync("engine");
-        Save(new LandingRule(LandingForm.Branch, Pattern), new LandingIntegrate(Request: LandingIntegrate.Owner));
+        Save(new LandingIntegrate(Request: LandingIntegrate.Owner));
         var trees = new SessionTrees(Home);
         var first = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(first.Path, "work.txt", "the work\n", "the work");
-        var landed = await trees.LandAsync(first.Path, new LandingSubject("s1", "q1", "Fix the gap"));
+        var landed = await trees.LandAsync(first.Path, new LandingSubject("s1", "q1", "Fix the gap"), gate: Lands);
         Assert.True(landed.Landed, landed.Message);
 
         var entry = trees.Recorded.Of("engine", landed.Branch!)!;
         Assert.Equal((AcceptedBy.Person, new LandedIntegrate(LandingIntegrate.Owner, LandedIntegrate.Rule)), (entry.AcceptedBy, entry.Integrate));
 
-        Save(new LandingRule(LandingForm.Branch, Pattern, AutoAccept: true),
-            new LandingIntegrate(Request: LandingIntegrate.Done, Gates: LandingIntegrate.Declared));
+        Save(new LandingIntegrate(Request: LandingIntegrate.Done, Gates: LandingIntegrate.Declared));
         var next = await trees.OpenAsync(root, "engine", "aurora", from: first.Branch);
         await CommitAsync(next.Path, "more.txt", "more work\n", "more work");
-        var advanced = await trees.LandAsync(next.Path, new LandingSubject("s2", "q1", "Fix the gap"));
+        var advanced = await trees.LandAsync(next.Path, new LandingSubject("s2", "q1", "Fix the gap"), gate: Lands);
         Assert.True(advanced.Landed, advanced.Message);
         Assert.Equal(landed.Branch, advanced.Branch);
 
@@ -195,8 +191,7 @@ public sealed class IntegrationRequestsGitTests : LandedFixture
     public async Task A_landing_under_a_named_version_whose_graph_integrates_writes_the_versions_own_provenance()
     {
         var root = await RepositoryAsync("engine");
-        Save(new LandingRule(LandingForm.Branch, Pattern, AutoAccept: true),
-            new LandingIntegrate(Request: LandingIntegrate.Done, Gates: LandingIntegrate.Declared));
+        Save(new LandingIntegrate(Request: LandingIntegrate.Done, Gates: LandingIntegrate.Declared));
         Directory.CreateDirectory(WorkflowStore.FolderOf(Home));
         File.WriteAllText(WorkflowStore.PathOf(Home, "integrated"),
             $$"""{"id":"integrated","name":"Integrated","versions":[{"version":1,"at":"2026-10-30T09:00:00Z","door":"terminal","schema":2,"graph":{{IntegratingGraph}}}]}""");

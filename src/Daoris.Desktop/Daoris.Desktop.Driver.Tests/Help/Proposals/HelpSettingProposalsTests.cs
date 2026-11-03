@@ -477,10 +477,8 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     {
         var config = DriverConfig.Empty;
         config = HelpProposals.Plan(Setting("drive", "engine"), config, Facts).Apply!(config);
-        config = HelpProposals.Plan(Setting("landing", null, "work", "branch feature/{quest}-{slug} --tidy"), config, Facts).Apply!(config);
 
         Assert.Contains("engine", config.Drivable);
-        Assert.Equal(new LandingRule("branch", "feature/{quest}-{slug}", Tidy: true), config.WorkspaceLandings["work"]);
     }
 
     /// <summary>HELP9: across (D107) and a cap, applied as `SET_READ_ACROSS`, `SET_WRITE_ACROSS` and the terminal make them.</summary>
@@ -564,7 +562,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
         [
             ("drive", "engine", null, null), ("undrive", "engine", null, null), ("hold", "engine", null, null),
             ("resume", "engine", null, null), ("trees", "engine", null, "off"), ("line", "engine", null, "main"),
-            ("landing", "engine", null, "merge"), ("across", "engine", null, "read on"), ("standing", "engine", null, "dev only"),
+            ("across", "engine", null, "read on"), ("standing", "engine", null, "dev only"),
             ("language", null, "work", "zh"), ("review", "engine", null, "none"), ("opinion", "engine", null, "none"),
             ("helpers", "engine", null, "--mode on"), ("commits", null, "work", "--mode ask"),
             ("retry", "q1a2b3c4", null, null), ("notify", null, null, "on"), ("cap", null, null, "1"),
@@ -583,7 +581,6 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     [InlineData("drive", "nowhere", null, null, "`nowhere` is not registered")]
     [InlineData("line", null, "elsewhere", "develop", "no workspace `elsewhere`")]
     [InlineData("line", "engine", null, "bad..name", "not a branch name git would take")]
-    [InlineData("landing", "engine", null, "branch feature/fixed", "`{quest}` or `{session}`")]
     // HELP9: what `daoris place across` refuses, in its words, and the names a helper can invent.
     [InlineData("across", "engine", null, "write-to engine", "`engine` writes in its own tree already")]
     [InlineData("across", "engine", null, "write-to nowhere", "`nowhere` is not registered")]
@@ -613,168 +610,6 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
         string door, string? target, string? workspace, string? value, string says)
     {
         var plan = HelpProposals.Plan(Setting(door, target, workspace, value), DriverConfig.Empty, Facts);
-
-        Assert.Contains(says, plan.Refusal);
-        Assert.Null(plan.Apply);
-    }
-
-    /// <summary>HELP8: a landing rule naming a plugin (D100), proposed the way the terminal spells it.</summary>
-    [Theory]
-    [InlineData("branch feature/{quest}-{slug} --plugin example.lands --tidy")]
-    [InlineData("branch feature/{quest}-{slug} --tidy --plugin example.lands")]
-    public void A_landing_may_name_a_plugin_that_lands_work_here(string value)
-    {
-        var facts = WithPlugin("example.lands");
-
-        var plan = HelpProposals.Plan(Setting("landing", null, "work", value), DriverConfig.Empty, facts);
-
-        Assert.Null(plan.Refusal);
-        Assert.Equal($"daoris place landing --workspace work {value}", plan.Terminal);
-        Assert.Contains("on a branch `feature/{quest}-{slug}`", plan.Describe);
-        Assert.Contains("plugin `example.lands` pushes it and opens the pull request", plan.Describe);
-        Assert.Equal(new LandingRule("branch", "feature/{quest}-{slug}", Tidy: true, Plugin: "example.lands"),
-            plan.Apply!(DriverConfig.Empty).WorkspaceLandings["work"]);
-    }
-
-    /// <summary>
-    /// LAND2a (D145): a branch rule that accepts automatically, proposed the way the terminal spells it, its card saying
-    /// that the plugin pushes and opens pull requests with no press, or, with none, that nothing leaves the machine.
-    /// </summary>
-    [Theory]
-    [InlineData("branch feature/{quest}-{slug} --plugin example.lands --auto-accept", "example.lands", "`example.lands` pushes it and opens a pull request without asking you each time")]
-    [InlineData("branch feature/{quest}-{slug} --auto-accept --tidy --plugin example.lands", "example.lands", "`example.lands` pushes it and opens a pull request without asking you each time")]
-    [InlineData("branch feature/{quest}-{slug} --auto-accept", null, "no plugin opens a pull request, so each done's branch waits here for you to push it")]
-    public void A_landing_may_accept_automatically(string value, string? plugin, string says)
-    {
-        var plan = HelpProposals.Plan(Setting("landing", null, "work", value), DriverConfig.Empty, WithPlugin("example.lands"));
-
-        Assert.Null(plan.Refusal);
-        Assert.Equal($"daoris place landing --workspace work {value}", plan.Terminal);
-        Assert.Contains("accepted automatically", plan.Describe);
-        Assert.Contains(says, plan.Describe);
-        var rule = plan.Apply!(DriverConfig.Empty).WorkspaceLandings["work"];
-        Assert.True(rule.AutoAccept);
-        Assert.Equal(plugin, rule.Plugin);
-    }
-
-    /// <summary>A repository's own rule saying off out loud replaces the workspace's switch; a merge and both at once are refused.</summary>
-    [Fact]
-    public void A_landing_that_waits_for_the_press_is_said_and_a_merge_that_accepts_automatically_is_planned()
-    {
-        var byHand = HelpProposals.Plan(Setting("landing", "engine", null, "branch feature/{quest}-{slug} --no-auto-accept"), DriverConfig.Empty, Facts);
-        Assert.Null(byHand.Refusal);
-        Assert.Contains("waits for your Accept", byHand.Describe);
-        Assert.False(byHand.Apply!(DriverConfig.Empty).Landings["engine"].AutoAccept);
-
-        // LANDNODE1c3: the workflow decides (D145's note of 2026-11-01), so a merge's switch is the rule's to hold too.
-        var merge = HelpProposals.Plan(Setting("landing", "engine", null, "merge --auto-accept"), DriverConfig.Empty, Facts);
-        Assert.Null(merge.Refusal);
-        Assert.True(merge.Apply!(DriverConfig.Empty).Landings["engine"].AutoAccept);
-        // REVIEW2 S1: the standing say-so is said on the card applied (D145 point 5), merge or branch.
-        Assert.Contains("accepted automatically", merge.Describe);
-        Assert.Contains("merged into its line with no press", merge.Describe);
-        Assert.Contains("`--auto-accept` or `--no-auto-accept`",
-            HelpProposals.Plan(Setting("landing", "engine", null, "branch feature/{quest} --auto-accept --no-auto-accept"), DriverConfig.Empty, Facts).Refusal);
-    }
-
-    /// <summary>HELP8: what `daoris place landing` refuses about a plugin, refused here in the same words.</summary>
-    [Theory]
-    [InlineData("branch feature/{quest} --plugin nowhere.lands", "", "not installed on this machine")]
-    [InlineData("branch feature/{quest} --plugin example.off", "off", "switched off")]
-    [InlineData("branch feature/{quest} --plugin example.quiet", "quiet", "does not land work")]
-    [InlineData("merge --plugin example.lands", "", "only a branch rule hands its work to a plugin")]
-    [InlineData("branch feature/{quest} --plugin", "", "`--plugin` needs the id of an installed plugin")]
-    [InlineData("branch feature/{quest} --plugin Not/An/Id", "", "is not a plugin id")]
-    public void A_landing_plugin_the_route_would_refuse_is_refused_in_its_words(string value, string install, string says)
-    {
-        var facts = WithPlugin("example.lands");
-        if (install == "off") facts = WithPlugin("example.off", enabled: false);
-        if (install == "quiet") facts = WithPlugin("example.quiet", points: "\"session/ended\"");
-
-        var plan = HelpProposals.Plan(Setting("landing", "engine", null, value), DriverConfig.Empty, facts);
-
-        Assert.Contains(says, plan.Refusal);
-        Assert.Null(plan.Apply);
-    }
-
-    /// <summary>
-    /// DOORS1a (D164's amendment point 2, PROCESS1b-i and -ii): a branch rule naming its ticket's key and asking for a squash, as
-    /// `daoris place landing` spells them, a quoted key kept whole; the card says what finds the ticket and what Accept makes.
-    /// </summary>
-    [Fact]
-    public void A_landing_may_name_its_tickets_key_and_squash()
-    {
-        const string value = "branch feature/{ticket}-{slug} --key \"TK-\\d+\" --squash";
-        var plan = HelpProposals.Plan(Setting("landing", "engine", null, value), DriverConfig.Empty, Facts);
-
-        Assert.Null(plan.Refusal);
-        Assert.Equal($"daoris place landing engine {value}", plan.Terminal);
-        Assert.Contains("on a branch `feature/{ticket}-{slug}`", plan.Describe);
-        Assert.Contains("`{ticket}` is the first match of `TK-\\d+` in the title, then the request, then its links, as written; "
-            + "where none is found, the session's id stands in.", plan.Describe);
-        Assert.Contains("Squashed: Accept makes the pull request's branch one commit from the session's work", plan.Describe);
-        Assert.Equal(new LandingRule("branch", "feature/{ticket}-{slug}", Key: "TK-\\d+", Squash: true),
-            plan.Apply!(DriverConfig.Empty).Landings["engine"]);
-
-        // No key named reads the default shape, said so; a pattern with no `{ticket}` says nothing of one.
-        Assert.Contains($"`{{ticket}}` is the first match of `{LandingRules.DefaultKey}` in the title, then the request, then its links, as "
-            + "written (the default shape)", HelpProposals.Plan(Setting("landing", "engine", null, "branch feature/{ticket}"), DriverConfig.Empty, Facts).Describe);
-        Assert.DoesNotContain("{ticket}` is", HelpProposals.Plan(Setting("landing", "engine", null, "branch feature/{quest}"), DriverConfig.Empty, Facts).Describe);
-    }
-
-    /// <summary>
-    /// DOORS1a: a card naming neither the key nor the squash keeps what is set there, where the new rule can hold it; `--no-key` and
-    /// `--no-squash` take them away. A rule built without them dropped what the terminal set (PROCESS1b-i's and -ii's notes).
-    /// </summary>
-    [Fact]
-    public void A_landing_keeps_the_key_and_the_squash_it_is_not_told_to_change()
-    {
-        var config = DriverConfig.Empty
-            .WithLanding("engine", new LandingRule("branch", "feature/{ticket}-{slug}", Key: "TK-\\d+", Squash: true))
-            .WithWorkspaceLanding("work", new LandingRule("branch", "work/{ticket}", Key: "WK-\\d+", Squash: true));
-
-        LandingRule Applied(string? target, string? workspace, string value)
-        {
-            var plan = HelpProposals.Plan(Setting("landing", target, workspace, value), config, Facts);
-            Assert.Null(plan.Refusal);
-            var after = plan.Apply!(config);
-            return workspace is null ? after.Landings[target!] : after.WorkspaceLandings[workspace];
-        }
-
-        Assert.Equal(new LandingRule("branch", "feature/{ticket}", Tidy: true, Key: "TK-\\d+", Squash: true),
-            Applied("engine", null, "branch feature/{ticket} --tidy"));
-        Assert.Equal(new LandingRule("branch", "work/{ticket}-{slug}", Key: "WK-\\d+", Squash: true),
-            Applied(null, "work", "branch work/{ticket}-{slug}"));
-        Assert.Equal(new LandingRule("branch", "feature/{ticket}", Squash: true), Applied("engine", null, "branch feature/{ticket} --no-key"));
-        Assert.Equal(new LandingRule("branch", "feature/{ticket}", Key: "TK-\\d+"), Applied("engine", null, "branch feature/{ticket} --no-squash"));
-        // A pattern that says no `{ticket}` reads no key, and a merge holds neither.
-        Assert.Equal(new LandingRule("branch", "feature/{quest}", Squash: true), Applied("engine", null, "branch feature/{quest}"));
-        Assert.Equal(LandingRule.Merge, Applied("engine", null, "merge"));
-        // A repository with no rule of its own keeps nothing of its workspace's.
-        Assert.Equal(new LandingRule("branch", "game/{ticket}"), Applied("game", null, "branch game/{ticket}"));
-
-        // The card says what it keeps, as the rule it leaves.
-        var kept = HelpProposals.Plan(Setting("landing", "engine", null, "branch feature/{ticket}"), config, Facts).Describe;
-        Assert.Contains("`{ticket}` is the first match of `TK-\\d+`", kept);
-        Assert.Contains("Squashed:", kept);
-        Assert.Contains("The branch holds the session's own commits",
-            HelpProposals.Plan(Setting("landing", "engine", null, "branch feature/{ticket} --no-squash"), config, Facts).Describe);
-    }
-
-    /// <summary>DOORS1a: what `daoris place landing` refuses about a key or a squash, refused here in the same words.</summary>
-    [Theory]
-    [InlineData("merge --key TK-\\d+", "only a branch rule reads a ticket's key")]
-    [InlineData("merge --squash", "only a branch rule squashes")]
-    [InlineData("branch feature/{quest} --key TK-\\d+", "a ticket's key is read only for `{ticket}`")]
-    [InlineData("branch feature/{ticket} --key (?<n>TK)", "a ticket's key may not use `(?`")]
-    [InlineData("branch feature/{ticket} --key", "`--key` needs the shape of a ticket's key — `--key <shape>`")]
-    [InlineData("branch feature/{ticket} --key --squash", "`--key` needs the shape of a ticket's key")]
-    [InlineData("branch feature/{ticket} --key TK-\\d+ --no-key", "say `--key <shape>` or `--no-key`, not both")]
-    [InlineData("branch feature/{ticket} --squash --no-squash", "say `--squash` or `--no-squash`, not both")]
-    [InlineData("branch \"feature/{ticket}", "close every quote they open")]
-    public void A_landing_key_or_squash_the_terminal_would_refuse_is_refused_in_its_words(string value, string says)
-    {
-        var plan = HelpProposals.Plan(Setting("landing", "engine", null, value), DriverConfig.Empty, Facts);
 
         Assert.Contains(says, plan.Refusal);
         Assert.Null(plan.Apply);

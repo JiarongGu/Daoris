@@ -495,9 +495,6 @@ public sealed class ObservedEventTests : ObservedEventFixture
     [Fact]
     public async Task Observed_only_work_arms_the_runtime_and_a_lease_lost_or_a_disarm_tells_and_writes_nothing()
     {
-        Assert.True(NodeRuntime.Armed(DriverConfig.Parse(ObservedOnly)));
-        Assert.False(NodeRuntime.Armed(DriverConfig.Parse("{}")));
-
         // Without the lease: nothing told, written or started.
         var unheld = new NodeRuntime(Files, _port, () => _now, () => false);
         var lost = await unheld.PassAsync(Look(ObservedOnly), CancellationToken.None);
@@ -526,15 +523,6 @@ public sealed class ObservedEventTests : ObservedEventFixture
     public async Task A_graph_with_two_observed_nodes_of_the_events_step_is_refused_at_its_reading_and_takes_neither()
     {
         // FABRIC-GRAPH1g: the graph is unreadable whole (its save says `observed-twice`), so no node of it waits and no event reaches one.
-        const string cycle = """
-            { "entries": ["again"], "end": "deployed", "nodes": [
-              { "id": "again", "kind": "acme.deploy/deployed", "version": 1, "reach": "observed" },
-              { "id": "deployed", "kind": "acme.deploy/deployed", "version": 1, "reach": "observed" } ],
-              "wires": [{ "id": "w1", "kind": "after", "from": "again", "to": "deployed" }] }
-            """;
-        var home = NodeGraphHomes.OfLanding(LandingRule.Merge with { Cycle = cycle }, LandingSource.Repository);
-        Assert.Equal([GraphRefusal.ObservedTwice], home.Problems.Select(problem => problem.Code));
-
         var runtime = Runtime();
         await PassAsync(runtime, Twice);
         _port.Heard.Enqueue(Event(WorkStates.Reached, "e1", _now));

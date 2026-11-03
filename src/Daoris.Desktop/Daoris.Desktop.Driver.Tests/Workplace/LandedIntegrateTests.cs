@@ -160,6 +160,5 @@ public sealed class LandedIntegrateTests : IDisposable
         // A value that is no choice never reads as a graph; the node's own reading is defensive the same way.
         var odd = new NodeDeclaration("integrate", NodeKinds.Integrate, 1, NodeReach.Waited) { Options = new Dictionary<string, string> { ["request"] = "\"whenever\"" } };
         Assert.Equal(LandingIntegrate.Owner, IntegrateNodes.RequestOf(odd));
-        Assert.Null((current with { Graph = NodeGraphHomes.Landing(new LandingRule(LandingForm.Branch, "feature/{quest}")) }).IntegrateRequest);
     }
 }

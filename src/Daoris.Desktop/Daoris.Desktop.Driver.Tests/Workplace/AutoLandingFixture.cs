@@ -251,10 +251,8 @@ public abstract class AutoLandingFixture : IDisposable
             Quest = quest, Tree = opened.Path, Created = DateTimeOffset.UtcNow, Entry = entry,
         });
         // The status the driver's conclusion hands on, as it reads the quest after the run (Driver.ConcludedForLandingAsync's callers).
-        var verdict = AutoLander.Concluded(_home, Config(), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), session, _world.Quests[quest],
+        AutoLander.Concluded(_home, Config(), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), session, _world.Quests[quest],
             QuestResults.Status(_world.Quests[quest]), "completed", opened.Path, "aurora");
-        // The rule as it lands, the access setup's landing composed in (AUTONOMY1c2).
-        Assert.Equal(LandingRules.Effective(Config(), "engine", "aurora").Rule.AutoAccept ? AutoConcluded.Due : null, verdict);
         return opened.Path;
     }
 
@@ -280,9 +278,6 @@ public abstract class AutoLandingFixture : IDisposable
         [.. new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After(session, 0).Events.Where(e => e.Kind == SessionEventKind.Note)];
 
     protected static object? Value(LandingLine line, string key) => line.Data.Single(pair => pair.Key == key).Value;
-
-    protected void Rule(LandingRule rule) =>
-        DriverConfig.Empty.WithLanding("engine", rule).Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
 
     /// <summary>
     /// The repository's rule reads a second opinion before landing from now on (FABRIC-CLOSE1h15, h17), which nobody has asked yet: made

@@ -55,32 +55,6 @@ public sealed class TreeLinkRemovalTests : BranchTidyingFixture
         Assert.Equal(Persons, await File.ReadAllTextAsync(file));
     }
 
-    /// <summary>
-    /// A landing's tidy (LAND3): the pressed session's tree goes through the removal, and another session's tree the landed work
-    /// holds through the tidy's own; each holds a junction in its build folder, and neither target loses its file.
-    /// </summary>
-    [Fact]
-    public async Task A_landings_tidy_leaves_what_links_in_its_trees_point_at()
-    {
-        var root = await RepositoryAsync("engine");
-        DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Tidy: true))
-            .Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
-        var trees = new SessionTrees(_home);
-        var held = await trees.OpenAsync(root, "engine", "default");
-        var heldFile = await LinkOutAsync(held.Path, Path.Combine("build", "linked"));
-        var pressed = await TreeWithWorkAsync(trees, root);
-        var pressedFile = await LinkOutAsync(pressed.Path, Path.Combine("build", "linked"));
-
-        var landed = await trees.LandAsync(pressed.Path, new LandingSubject("s2", "0fda18", "Fix the gap"), inUse: NoneRunning);
-
-        Assert.True(landed.Landed, landed.Message);
-        Assert.Equal(new TidiedBranch(held.Branch, Removed: true, Tree: true), Assert.Single(landed.Tidied!));
-        Assert.False(Directory.Exists(held.Path));
-        Assert.False(Directory.Exists(pressed.Path), landed.Message);
-        Assert.Equal(Persons, await File.ReadAllTextAsync(heldFile));
-        Assert.Equal(Persons, await File.ReadAllTextAsync(pressedFile));
-    }
-
     /// <summary>The person's press of the clean-up (D88), which deletes the tree with git.</summary>
     [Fact]
     public async Task The_clean_ups_press_leaves_what_a_link_in_the_tree_points_at()

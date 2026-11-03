@@ -21,7 +21,7 @@ public sealed class TreeSyncStepTests : TreeSyncFixture
         var (root, origin) = await RepositoryWithOriginAsync("engine");
         var trees = new SessionTrees(Home);
         var (_, b, step) = await ParentAndStepAsync(trees, root);
-        var landed = await trees.LandAsync(step.Path, new LandingSubject("s2", "q2", "Second"));
+        var landed = await trees.LandAsync(step.Path, new LandingSubject("s2", "q2", "Second"), gate: Lands);
         Assert.True(landed.Landed, landed.Message);
         await GitAsync(root, "push", "--quiet", "origin", b);
         await SquashOnPlatformAsync(origin, b);
